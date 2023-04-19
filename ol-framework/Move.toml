@@ -1,0 +1,21 @@
+[package]
+name = "OLFramework"
+version = "1.0.0"
+
+[addresses]
+std = "0x1"
+aptos_std = "0x1"
+ol_framework = "0x2"
+aptos_framework = "0x1"
+aptos_token = "0x3"
+core_resources = "0xA550C18"
+vm_reserved = "0x0"
+
+[dependencies]
+# Using this local solution due to move build errors when using git
+# aptos-core repo should be in the same dir as this repo
+AptosFramework = { local = "../../aptos-core/aptos-move/framework/aptos-framework" }
+AptosStdlib  = { local = "../../aptos-core/aptos-move/framework/aptos-stdlib" }
+# Todo: Use git instead of local copy
+# AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework", rev = "2e646fc" }
+# AptosStdlib = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-stdlib", rev = "2e646fc" }
