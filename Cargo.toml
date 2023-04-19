@@ -1,0 +1,61 @@
+[workspace]
+resolver = "2"
+
+members = [
+    "transactional-tests",
+]
+
+# TODO: Should we keep this?
+#
+# # All workspace members should inherit these keys
+# # for package declarations.
+# [workspace.package]
+# authors = ["Aptos Labs <opensource@aptoslabs.com>"]
+# edition = "2021"
+# homepage = "https://aptoslabs.com"
+# license = "Apache-2.0"
+# publish = false
+# repository = "https://github.com/aptos-labs/aptos-core"
+# rust-version = "1.64"
+
+[workspace.dependencies]
+### Internal crate dependencies.
+# Please do not add any test features here: they should be declared by the 
+# individual crate.
+# aptos = { path = "crates/aptos" }
+# aptos-accumulator = { path = "storage/accumulator" }
+
+### External crate dependencies.
+# Please do not add any test features here: they should be declared by the 
+# individual crate.
+# anyhow = "1.0.62"
+
+### MOVE DEPENDENCIES
+# move-abigen = { path = "third_party/move/move-prover/move-abigen" }
+# move-binary-format = { path = "third_party/move/move-binary-format" }
+# ... see full list in Aptos repo
+
+
+[profile.release]
+opt-level = 'z'     # Optimize for size.
+lto = true          # Enable Link Time Optimization
+codegen-units = 1   # Reduce number of codegen units to increase optimizations.
+panic = 'abort'     # Abort on panic
+
+[profile.bench]
+debug = true
+
+[profile.dev]
+opt-level = 0
+debug = true
+split-debuginfo = "unpacked" # Requires rustc 1.51
+lto = false
+incremental = true
+
+# This is a temporary workaround to avoid multiple library
+# definitions for LZ4 (caused by rust-rocksdb).
+# This will be removed once our pull requests land.
+# https://github.com/rust-rocksdb/rust-rocksdb/issues/666
+[patch.crates-io]
+rocksdb = { git = 'https://github.com/aptos-labs/rust-rocksdb' }
+serde-reflection = { git = "https://github.com/aptos-labs/serde-reflection", rev = "839aed62a20ddccf043c08961cfe74875741ccba" }

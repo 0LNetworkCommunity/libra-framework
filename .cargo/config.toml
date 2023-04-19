@@ -1,0 +1,6 @@
+[target.'cfg(target_os = "linux")']
+# Dramatically increases the link performance for the eventbus
+rustflags = ["-C", "link-arg=-fuse-ld=lld"] # sudo apt -y install lld
+# Uncomment following lines for faster link times (see brew cmd to install zld)
+# [target.'cfg(target_os = "macos")']
+# rustflags = ["-C", "link-arg=-fuse-ld=/usr/local/bin/zld"] # brew install michaeleisel/zld/zld
