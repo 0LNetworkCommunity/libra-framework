@@ -5,10 +5,11 @@ authors = [""]
 edition = "2018"
 
 [dependencies]
-# regex = { git = "https://github.com/rust-lang/regex.git", branch = "next" }
-
+datatest-stable = "0.1.1"
+# poem = { workspace = true }
+# poem-openapi = { workspace = true }
 # TODO: This fails to build
 # aptos-transactional-test-harness = { git = "https://github.com/OLSF/aptos-core.git", rev = "d8955a2692e9004e3f6790db2a0595c2186faf36" }
-# aptos-transactional-test-harness = { path = "../../aptos-core-0L/aptos-move/aptos-transactional-test-harness" }
+aptos-transactional-test-harness = { path = "../../aptos-core-0L/aptos-move/aptos-transactional-test-harness" }
 # aptos-types = { path = "../../aptos-core-0L/types" }
 # aptos-types = { git = "https://github.com/OLSF/aptos-core.git", rev = "d8955a2692e9004e3f6790db2a0595c2186faf36" }
