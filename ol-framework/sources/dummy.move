@@ -1,7 +1,7 @@
 // 0L 
 // This is a dummy module to test if we can import and use Aptos fw fns
 
-module ol_framework::util {
+module ol_framework::dummy {
     use aptos_framework::chain_id;
     use aptos_std::ed25519;
 
