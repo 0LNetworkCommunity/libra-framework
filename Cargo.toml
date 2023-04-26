@@ -17,14 +17,9 @@ edition = "2021"
 aptos-cached-packages = { git = "https://github.com/simsekgokhan/zapatos.git", rev = "2f39208" }
 aptos-debugger = { git = "https://github.com/simsekgokhan/zapatos.git", rev = "2f39208" }
 aptos-forge = { git = "https://github.com/simsekgokhan/zapatos.git", rev = "2f39208" }
+aptos-transactional-test-harness = { git = "https://github.com/simsekgokhan/zapatos.git", rev = "2f39208" }
 aptos-types = { git = "https://github.com/simsekgokhan/zapatos.git", rev = "2f39208" }
 aptos-smoke-test = { package = "smoke-test", git = "https://github.com/simsekgokhan/zapatos.git", rev = "2f39208" }
-#
-# aptos-cached-packages = { path = "../zapatos/aptos-move/framework/cached-packages" }
-# aptos-debugger = { path = "../zapatos/aptos-move/aptos-debugger/" }
-# aptos-forge = { path = "../zapatos/testsuite/forge" }
-# aptos-types = { path = "../zapatos/types" }
-# aptos-smoke-test = { path = "../zapatos/testsuite/smoke-test/", package = "smoke-test" }
 
 ### External crate dependencies.
 # Please do not add any test features here: they should be declared by the 
