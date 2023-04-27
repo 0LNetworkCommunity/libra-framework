@@ -6,6 +6,6 @@ echo -e "\n0L: Warning: Dev. usage only - Building ol-framework WITHOUT dependen
 $ZAPATOS/target/release/aptos-framework custom \
   --packages $LIBRA_V7/ol-framework \
   --rust-bindings "" \
-  --output ol.mrb
+  --output /tmp/ol.mrb
 
-printf "0L: Success building ol bundle 'ol.mrb' WITHOUT dependencies in current dir\n"
+printf "0L: Success building ol bundle '/tmp/ol.mrb' WITHOUT dependencies in current dir\n"
