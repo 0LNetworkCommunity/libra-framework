@@ -9,7 +9,7 @@ module ol_framework::epoch {
   use aptos_framework::timestamp;
   use ol_framework::globals;
   use aptos_framework::reconfiguration;
-//   use DiemFramework::Roles; // todo
+//   use DiemFramework::Roles; // todo v7
 
   /// Contains timing info for the current epoch
   /// epoch: the epoch number
@@ -24,7 +24,7 @@ module ol_framework::epoch {
   // Function code:01
   /// Called in genesis to initialize timer
   public fun initialize(vm: &signer) {
-    // todo: check Aptos role.move, but fns there are not used in aptos, why?
+    // todo v7: check Aptos role.move, but fns there are not used in aptos, why?
     //   Roles::assert_diem_root(vm);
       move_to<Timer>(
           vm, 
@@ -70,9 +70,9 @@ module ol_framework::epoch {
   /// Reset the timer to start the next epoch 
   /// Called by root in the reconfiguration process
   public fun reset_timer(_vm: &signer, height: u64) acquires Timer {
-    //   Roles::assert_diem_root(vm); // todo
+    //   Roles::assert_diem_root(vm); // todo v7
       let time = borrow_global_mut<Timer>(@ol_root);
-      // todo: current_epoch() gives @aptos_framework's epoch, 
+      // todo v7: current_epoch() gives @aptos_framework's epoch, 
       //       should we patch/use @ol_framework ?
       time.epoch = reconfiguration::current_epoch() + 1;
       time.height_start = height;

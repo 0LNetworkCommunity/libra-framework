@@ -9,7 +9,7 @@
 module ol_framework::globals {
     use ol_framework::testnet;
     use ol_framework::staging_net;
-    // todo
+    // todo v7
     // use DiemFramework::Diem;
     // use DiemFramework::GAS;
     
@@ -107,7 +107,7 @@ module ol_framework::globals {
     fun get_constants(): GlobalConstants {
       // let coin_scale = 1000000; // Diem::scaling_factor<GAS::T>();
 
-      // todo
+      // todo v7
       // assert!(
       //   COIN_SCALING_FACTOR == Diem::scaling_factor<GAS::GAS>(),
       //   error::invalid_argument(070001)
