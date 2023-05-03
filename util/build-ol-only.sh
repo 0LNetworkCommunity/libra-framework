@@ -8,4 +8,4 @@ $ZAPATOS/target/release/aptos-framework custom \
   --rust-bindings "" \
   --output /tmp/ol.mrb
 
-printf "0L: Success building ol bundle '/tmp/ol.mrb' WITHOUT dependencies in current dir\n"
+printf "0L: Success building ol bundle WITHOUT dependencies in '/tmp/ol.mrb'\n\n"

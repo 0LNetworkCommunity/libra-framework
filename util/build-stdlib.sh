@@ -16,4 +16,4 @@ $ZAPATOS/target/release/aptos-framework custom \
   --rust-bindings "" \
   --output head.mrb
 
-printf "0L: Success building release bundle 'head.mrb' in current dir\n"
+printf "0L: Success building release bundle 'head.mrb' in current dir\n\n"
