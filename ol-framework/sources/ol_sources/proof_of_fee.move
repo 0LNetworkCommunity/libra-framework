@@ -71,7 +71,8 @@ module ol_framework::proof_of_fee {
 
     let acc = signer::address_of(account_sig);
 
-    assert!(validator_universe::is_in_universe(acc), error::permission_denied(ENOT_AN_ACTIVE_VALIDATOR));
+    // TODO: V7
+    // assert!(validator_universe::is_in_universe(acc), error::permission_denied(ENOT_AN_ACTIVE_VALIDATOR));
 
     if (!exists<ProofOfFeeAuction>(acc)) {
       move_to<ProofOfFeeAuction>(

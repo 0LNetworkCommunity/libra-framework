@@ -18,14 +18,20 @@ module ol_framework::mock {
   use aptos_framework::stake;
   #[test_only]
   use ol_framework::cases;
-  #[test_only]
-  use ol_framework::testnet;
+  // #[test_only]
+  // use ol_framework::testnet;
   #[test_only]
   use std::vector;
   #[test_only]
   use aptos_framework::genesis;
   #[test_only]
+  use aptos_framework::account;
+  #[test_only]
   use aptos_std::debug::print;
+  #[test_only]
+  use ol_framework::proof_of_fee;
+  #[test_only]
+  use aptos_framework::system_addresses;
 
   #[test_only]
   public fun mock_case_1(vm: &signer, addr: address, success: u64, fail: u64){
@@ -50,6 +56,8 @@ module ol_framework::mock {
     // will assert! case_1
     mock_case_1(&vm, *val, 1, 0);
 
+    pof_default(&vm);
+
     // will assert! case_4
     mock_case_4(&vm, *val);
   }
@@ -61,13 +69,11 @@ module ol_framework::mock {
       stake::mock_performance(vm, addr, 0, 100); // 100 failing proposals
 
       assert!(cases::get_case(vm, addr, 0, 15) == 4, 777703);
-
     }
 
     // Mock all nodes being compliant case 1
     #[test_only]
     public fun all_good_validators(vm: &signer) {
-      testnet::assert_testnet(vm);
 
       let vals =  stake::get_current_validators();
 
@@ -81,49 +87,50 @@ module ol_framework::mock {
 
     }
 
-  //   //////// PROOF OF FEE ////////
-  //   public fun pof_default(vm: &signer): (vector<address>, vector<u64>, vector<u64>){
+    //////// PROOF OF FEE ////////
+    #[test_only]
+    public fun pof_default(vm: &signer): (vector<address>, vector<u64>, vector<u64>){
 
-  //     Testnet::assert_testnet(vm);
-  //     let vals = ValidatorUniverse::get_eligible_validators();
+      system_addresses::assert_vm(vm);
+      let vals =  stake::get_current_validators();
 
-  //     let (bids, expiry) = mock_bids(vm, &vals);
+      let (bids, expiry) = mock_bids(vm, &vals);
 
-  //     DiemAccount::slow_wallet_epoch_drip(vm, 100000); // unlock some coins for the validators
+      // DiemAccount::slow_wallet_epoch_drip(vm, 100000); // unlock some coins for the validators
 
-  //     // make all validators pay auction fee
-  //     // the clearing price in the fibonacci sequence is is 1
-  //     DiemAccount::vm_multi_pay_fee(vm, &vals, 1, &b"proof of fee");
+      // make all validators pay auction fee
+      // the clearing price in the fibonacci sequence is is 1
+      // DiemAccount::vm_multi_pay_fee(vm, &vals, 1, &b"proof of fee");
 
-  //     (vals, bids, expiry)
-  //   }
+      (vals, bids, expiry)
+    }
 
-  //   public fun mock_bids(vm: &signer, vals: &vector<address>): (vector<u64>, vector<u64>) {
-  //     Testnet::assert_testnet(vm);
+    #[test_only]
+    public fun mock_bids(vm: &signer, vals: &vector<address>): (vector<u64>, vector<u64>) {
+      system_addresses::assert_vm(vm);
+      let bids = vector::empty<u64>();
+      let expiry = vector::empty<u64>();
+      let i = 0;
+      let prev = 0;
+      let fib = 1;
+      while (i < vector::length(vals)) {
 
-  //     let bids = Vector::empty<u64>();
-  //     let expiry = Vector::empty<u64>();
-  //     let i = 0;
-  //     let prev = 0;
-  //     let fib = 1;
-  //     while (i < Vector::length(vals)) {
+        vector::push_back(&mut expiry, 1000);
+        let b = prev + fib;
+        vector::push_back(&mut bids, b);
 
-  //       Vector::push_back(&mut expiry, 1000);
-  //       let b = prev + fib;
-  //       Vector::push_back(&mut bids, b);
+        let a = vector::borrow(vals, i);
+        let sig = account::create_signer_for_test(*a);
+        // initialize and set.
+        proof_of_fee::set_bid(&sig, b, 1000);
+        prev = fib;
+        fib = b;
+        i = i + 1;
+      };
 
-  //       let a = Vector::borrow(vals, i);
-  //       let sig = DiemAccount::scary_create_signer_for_migrations(vm, *a);
-  //       // initialize and set.
-  //       ProofOfFee::set_bid(&sig, b, 1000);
-  //       prev = fib;
-  //       fib = b;
-  //       i = i + 1;
-  //     };
+      (bids, expiry)
 
-  //     (bids, expiry)
-
-  //   }
+    }
 
   //   // function to deposit into network fee account
   //   public fun mock_network_fees(vm: &signer, amount: u64) {
