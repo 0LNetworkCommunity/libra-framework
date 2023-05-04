@@ -462,4 +462,344 @@ module aptos_framework::aptos_governance {
         metadata
     }
 
+    // #[test_only]
+    // public entry fun create_proposal_for_test(proposer: signer, multi_step:bool) acquires GovernanceConfig, GovernanceEvents {
+    //     let execution_hash = vector::empty<u8>();
+    //     vector::push_back(&mut execution_hash, 1);
+
+    //     if (multi_step) {
+    //         create_proposal_v2(
+    //             &proposer,
+    //             signer::address_of(&proposer),
+    //             execution_hash,
+    //             b"",
+    //             b"",
+    //             true,
+    //         );
+    //     } else {
+    //         create_proposal(
+    //             &proposer,
+    //             signer::address_of(&proposer),
+    //             execution_hash,
+    //             b"",
+    //             b"",
+    //         );
+    //     };
+    // }
+
+    // #[test_only]
+    // public entry fun resolve_proposal_for_test(proposal_id: u64, signer_address: address, multi_step: bool, finish_multi_step_execution: bool): signer acquires ApprovedExecutionHashes, GovernanceResponsbility {
+    //     if (multi_step) {
+    //         let execution_hash = vector::empty<u8>();
+    //         vector::push_back(&mut execution_hash, 1);
+
+    //         if (finish_multi_step_execution) {
+    //             resolve_multi_step_proposal(proposal_id, signer_address, vector::empty<u8>())
+    //         } else {
+    //             resolve_multi_step_proposal(proposal_id, signer_address, execution_hash)
+    //         }
+    //     } else {
+    //         resolve(proposal_id, signer_address)
+    //     }
+    // }
+
+    // #[test_only]
+    // public entry fun test_voting_generic(
+    //     aptos_framework: signer,
+    //     proposer: signer,
+    //     yes_voter: signer,
+    //     no_voter: signer,
+    //     multi_step: bool,
+    //     use_generic_resolve_function: bool,
+    // ) acquires ApprovedExecutionHashes, GovernanceConfig, GovernanceEvents, GovernanceResponsbility, VotingRecords {
+    //     setup_voting(&aptos_framework, &proposer, &yes_voter, &no_voter);
+
+    //     let execution_hash = vector::empty<u8>();
+    //     vector::push_back(&mut execution_hash, 1);
+
+    //     create_proposal_for_test(proposer, multi_step);
+
+    //     vote(&yes_voter, signer::address_of(&yes_voter), 0, true);
+    //     vote(&no_voter, signer::address_of(&no_voter), 0, false);
+
+    //     // Once expiration time has passed, the proposal should be considered resolve now as there are more yes votes
+    //     // than no.
+    //     timestamp::update_global_time_for_test(100001000000);
+    //     let proposal_state = voting::get_proposal_state<GovernanceProposal>(signer::address_of(&aptos_framework), 0);
+    //     assert!(proposal_state == PROPOSAL_STATE_SUCCEEDED, proposal_state);
+
+    //     // Add approved script hash.
+    //     add_approved_script_hash(0);
+    //     let approved_hashes = borrow_global<ApprovedExecutionHashes>(@aptos_framework).hashes;
+    //     assert!(*simple_map::borrow(&approved_hashes, &0) == execution_hash, 0);
+
+    //     // Resolve the proposal.
+    //     let account = resolve_proposal_for_test(0, @aptos_framework, use_generic_resolve_function, true);
+    //     assert!(signer::address_of(&account) == @aptos_framework, 1);
+    //     assert!(voting::is_resolved<GovernanceProposal>(@aptos_framework, 0), 2);
+    //     let approved_hashes = borrow_global<ApprovedExecutionHashes>(@aptos_framework).hashes;
+    //     assert!(!simple_map::contains_key(&approved_hashes, &0), 3);
+    // }
+
+    // #[test(aptos_framework = @aptos_framework, proposer = @0x123, yes_voter = @0x234, no_voter = @345)]
+    // public entry fun test_voting(
+    //     aptos_framework: signer,
+    //     proposer: signer,
+    //     yes_voter: signer,
+    //     no_voter: signer,
+    // ) acquires ApprovedExecutionHashes, GovernanceConfig, GovernanceEvents, GovernanceResponsbility, VotingRecords {
+    //     test_voting_generic(aptos_framework, proposer, yes_voter, no_voter, false, false);
+    // }
+
+    // #[test(aptos_framework = @aptos_framework, proposer = @0x123, yes_voter = @0x234, no_voter = @345)]
+    // public entry fun test_voting_multi_step(
+    //     aptos_framework: signer,
+    //     proposer: signer,
+    //     yes_voter: signer,
+    //     no_voter: signer,
+    // ) acquires ApprovedExecutionHashes, GovernanceConfig, GovernanceEvents, GovernanceResponsbility, VotingRecords {
+    //     test_voting_generic(aptos_framework, proposer, yes_voter, no_voter, true, true);
+    // }
+
+    // #[test(aptos_framework = @aptos_framework, proposer = @0x123, yes_voter = @0x234, no_voter = @345)]
+    // #[expected_failure(abort_code=0x5000a, location = aptos_framework::voting)]
+    // public entry fun test_voting_multi_step_cannot_use_single_step_resolve(
+    //     aptos_framework: signer,
+    //     proposer: signer,
+    //     yes_voter: signer,
+    //     no_voter: signer,
+    // ) acquires ApprovedExecutionHashes, GovernanceConfig, GovernanceEvents, GovernanceResponsbility, VotingRecords {
+    //     test_voting_generic(aptos_framework, proposer, yes_voter, no_voter, true, false);
+    // }
+
+    // #[test(aptos_framework = @aptos_framework, proposer = @0x123, yes_voter = @0x234, no_voter = @345)]
+    // public entry fun test_voting_single_step_can_use_generic_resolve_function(
+    //     aptos_framework: signer,
+    //     proposer: signer,
+    //     yes_voter: signer,
+    //     no_voter: signer,
+    // ) acquires ApprovedExecutionHashes, GovernanceConfig, GovernanceEvents, GovernanceResponsbility, VotingRecords {
+    //     test_voting_generic(aptos_framework, proposer, yes_voter, no_voter, false, true);
+    // }
+
+    // #[test_only]
+    // public entry fun test_can_remove_approved_hash_if_executed_directly_via_voting_generic(
+    //     aptos_framework: signer,
+    //     proposer: signer,
+    //     yes_voter: signer,
+    //     no_voter: signer,
+    //     multi_step: bool,
+    // ) acquires ApprovedExecutionHashes, GovernanceConfig, GovernanceEvents, GovernanceResponsbility, VotingRecords {
+    //     setup_voting(&aptos_framework, &proposer, &yes_voter, &no_voter);
+
+    //     create_proposal_for_test(proposer, multi_step);
+    //     vote(&yes_voter, signer::address_of(&yes_voter), 0, true);
+    //     vote(&no_voter, signer::address_of(&no_voter), 0, false);
+
+    //     // Add approved script hash.
+    //     timestamp::update_global_time_for_test(100001000000);
+    //     add_approved_script_hash(0);
+
+    //     // Resolve the proposal.
+    //     if (multi_step) {
+    //         let execution_hash = vector::empty<u8>();
+    //         let next_execution_hash = vector::empty<u8>();
+    //         vector::push_back(&mut execution_hash, 1);
+    //         voting::resolve_proposal_v2<GovernanceProposal>(@aptos_framework, 0, next_execution_hash);
+    //         assert!(voting::is_resolved<GovernanceProposal>(@aptos_framework, 0), 0);
+    //         if (vector::length(&next_execution_hash) == 0) {
+    //             remove_approved_hash(0);
+    //         } else {
+    //             add_approved_script_hash(0)
+    //         };
+    //     } else {
+    //         voting::resolve<GovernanceProposal>(@aptos_framework, 0);
+    //         assert!(voting::is_resolved<GovernanceProposal>(@aptos_framework, 0), 0);
+    //         remove_approved_hash(0);
+    //     };
+    //     let approved_hashes = borrow_global<ApprovedExecutionHashes>(@aptos_framework).hashes;
+    //     assert!(!simple_map::contains_key(&approved_hashes, &0), 1);
+    // }
+
+    // #[test(aptos_framework = @aptos_framework, proposer = @0x123, yes_voter = @0x234, no_voter = @345)]
+    // public entry fun test_can_remove_approved_hash_if_executed_directly_via_voting(
+    //     aptos_framework: signer,
+    //     proposer: signer,
+    //     yes_voter: signer,
+    //     no_voter: signer,
+    // ) acquires ApprovedExecutionHashes, GovernanceConfig, GovernanceEvents, GovernanceResponsbility, VotingRecords {
+    //     test_can_remove_approved_hash_if_executed_directly_via_voting_generic(aptos_framework, proposer, yes_voter, no_voter, false);
+    // }
+
+    // #[test(aptos_framework = @aptos_framework, proposer = @0x123, yes_voter = @0x234, no_voter = @345)]
+    // public entry fun test_can_remove_approved_hash_if_executed_directly_via_voting_multi_step(
+    //     aptos_framework: signer,
+    //     proposer: signer,
+    //     yes_voter: signer,
+    //     no_voter: signer,
+    // ) acquires ApprovedExecutionHashes, GovernanceConfig, GovernanceEvents, GovernanceResponsbility, VotingRecords {
+    //     test_can_remove_approved_hash_if_executed_directly_via_voting_generic(aptos_framework, proposer, yes_voter, no_voter, true);
+    // }
+
+    // #[test(aptos_framework = @aptos_framework, proposer = @0x123, voter_1 = @0x234, voter_2 = @345)]
+    // #[expected_failure(abort_code = 0x10004, location = aptos_framework::voting)]
+    // public entry fun test_cannot_double_vote(
+    //     aptos_framework: signer,
+    //     proposer: signer,
+    //     voter_1: signer,
+    //     voter_2: signer,
+    // ) acquires ApprovedExecutionHashes, GovernanceConfig, GovernanceEvents, GovernanceResponsbility, VotingRecords {
+    //     setup_voting(&aptos_framework, &proposer, &voter_1, &voter_2);
+
+    //     create_proposal(
+    //         &proposer,
+    //         signer::address_of(&proposer),
+    //         b"",
+    //         b"",
+    //         b"",
+    //     );
+
+    //     // Double voting should throw an error.
+    //     vote(&voter_1, signer::address_of(&voter_1), 0, true);
+    //     vote(&voter_1, signer::address_of(&voter_1), 0, true);
+    // }
+
+    // #[test(aptos_framework = @aptos_framework, proposer = @0x123, voter_1 = @0x234, voter_2 = @345)]
+    // #[expected_failure(abort_code = 0x10004, location = aptos_framework::voting)]
+    // public entry fun test_cannot_double_vote_with_different_voter_addresses(
+    //     aptos_framework: signer,
+    //     proposer: signer,
+    //     voter_1: signer,
+    //     voter_2: signer,
+    // ) acquires ApprovedExecutionHashes, GovernanceConfig, GovernanceEvents, GovernanceResponsbility, VotingRecords {
+    //     setup_voting(&aptos_framework, &proposer, &voter_1, &voter_2);
+
+    //     create_proposal(
+    //         &proposer,
+    //         signer::address_of(&proposer),
+    //         b"",
+    //         b"",
+    //         b"",
+    //     );
+
+    //     // Double voting should throw an error for 2 different voters if they still use the same stake pool.
+    //     vote(&voter_1, signer::address_of(&voter_1), 0, true);
+    //     stake::set_delegated_voter(&voter_1, signer::address_of(&voter_2));
+    //     vote(&voter_2, signer::address_of(&voter_1), 0, true);
+    // }
+
+    // #[test_only]
+    // public fun setup_voting(
+    //     aptos_framework: &signer,
+    //     proposer: &signer,
+    //     yes_voter: &signer,
+    //     no_voter: &signer,
+    // ) acquires GovernanceResponsbility {
+    //     use std::vector;
+    //     use aptos_framework::account;
+    //     use aptos_framework::coin;
+    //     use aptos_framework::aptos_coin::{Self, AptosCoin};
+
+    //     timestamp::set_time_has_started_for_testing(aptos_framework);
+    //     account::create_account_for_test(signer::address_of(aptos_framework));
+    //     account::create_account_for_test(signer::address_of(proposer));
+    //     account::create_account_for_test(signer::address_of(yes_voter));
+    //     account::create_account_for_test(signer::address_of(no_voter));
+
+    //     // Initialize the governance.
+    //     staking_config::initialize_for_test(aptos_framework, 0, 1000, 2000, true, 0, 1, 100);
+    //     initialize(aptos_framework, 10, 100, 1000);
+    //     store_signer_cap(
+    //         aptos_framework,
+    //         @aptos_framework,
+    //         account::create_test_signer_cap(@aptos_framework),
+    //     );
+
+    //     // Initialize the stake pools for proposer and voters.
+    //     let active_validators = vector::empty<address>();
+    //     vector::push_back(&mut active_validators, signer::address_of(proposer));
+    //     vector::push_back(&mut active_validators, signer::address_of(yes_voter));
+    //     vector::push_back(&mut active_validators, signer::address_of(no_voter));
+    //     let (_sk_1, pk_1, _pop_1) = stake::generate_identity();
+    //     let (_sk_2, pk_2, _pop_2) = stake::generate_identity();
+    //     let (_sk_3, pk_3, _pop_3) = stake::generate_identity();
+    //     let pks = vector[pk_1, pk_2, pk_3];
+    //     stake::create_validator_set(aptos_framework, active_validators, pks);
+
+    //     let (burn_cap, mint_cap) = aptos_coin::initialize_for_test(aptos_framework);
+    //     // Spread stake among active and pending_inactive because both need to be accounted for when computing voting
+    //     // power.
+    //     stake::create_stake_pool(proposer, coin::mint(50, &mint_cap), coin::mint(50, &mint_cap), 10000);
+    //     stake::create_stake_pool(yes_voter, coin::mint(10, &mint_cap), coin::mint(10, &mint_cap), 10000);
+    //     stake::create_stake_pool(no_voter, coin::mint(5, &mint_cap), coin::mint(5, &mint_cap), 10000);
+    //     coin::destroy_mint_cap<AptosCoin>(mint_cap);
+    //     coin::destroy_burn_cap<AptosCoin>(burn_cap);
+    // }
+
+    // #[test(aptos_framework = @aptos_framework)]
+    // public entry fun test_update_governance_config(
+    //     aptos_framework: signer,
+    // ) acquires GovernanceConfig, GovernanceEvents {
+    //     account::create_account_for_test(signer::address_of(&aptos_framework));
+    //     initialize(&aptos_framework, 1, 2, 3);
+    //     update_governance_config(&aptos_framework, 10, 20, 30);
+
+    //     let config = borrow_global<GovernanceConfig>(@aptos_framework);
+    //     assert!(config.min_voting_threshold == 10, 0);
+    //     assert!(config.required_proposer_stake == 20, 1);
+    //     assert!(config.voting_duration_secs == 30, 3);
+    // }
+
+    // #[test(account = @0x123)]
+    // #[expected_failure(abort_code = 0x50003, location = aptos_framework::system_addresses)]
+    // public entry fun test_update_governance_config_unauthorized_should_fail(
+    //     account: signer) acquires GovernanceConfig, GovernanceEvents {
+    //     initialize(&account, 1, 2, 3);
+    //     update_governance_config(&account, 10, 20, 30);
+    // }
+
+    // #[test(aptos_framework = @aptos_framework, proposer = @0x123, yes_voter = @0x234, no_voter = @345)]
+    // public entry fun test_replace_execution_hash(
+    //     aptos_framework: signer,
+    //     proposer: signer,
+    //     yes_voter: signer,
+    //     no_voter: signer,
+    // ) acquires GovernanceResponsbility, GovernanceConfig, GovernanceEvents, ApprovedExecutionHashes, VotingRecords {
+    //     setup_voting(&aptos_framework, &proposer, &yes_voter, &no_voter);
+
+    //     create_proposal_for_test(proposer, true);
+    //     vote(&yes_voter, signer::address_of(&yes_voter), 0, true);
+    //     vote(&no_voter, signer::address_of(&no_voter), 0, false);
+
+    //     // Add approved script hash.
+    //     timestamp::update_global_time_for_test(100001000000);
+    //     add_approved_script_hash(0);
+
+    //     // Resolve the proposal.
+    //     let execution_hash = vector::empty<u8>();
+    //     let next_execution_hash = vector::empty<u8>();
+    //     vector::push_back(&mut execution_hash, 1);
+    //     vector::push_back(&mut next_execution_hash, 10);
+
+    //     voting::resolve_proposal_v2<GovernanceProposal>(@aptos_framework, 0, next_execution_hash);
+
+    //     if (vector::length(&next_execution_hash) == 0) {
+    //         remove_approved_hash(0);
+    //     } else {
+    //         add_approved_script_hash(0)
+    //     };
+
+    //     let approved_hashes = borrow_global<ApprovedExecutionHashes>(@aptos_framework).hashes;
+    //     assert!(*simple_map::borrow(&approved_hashes, &0) == vector[10u8,], 1);
+    // }
+
+    #[verify_only]
+    public fun initialize_for_verification(
+        aptos_framework: &signer,
+        min_voting_threshold: u128,
+        required_proposer_stake: u64,
+        voting_duration_secs: u64,
+    ) {
+        initialize(aptos_framework, min_voting_threshold, required_proposer_stake, voting_duration_secs);
+    }
 }

@@ -456,12 +456,12 @@ module aptos_framework::genesis {
         );
         features::change_feature_flags(aptos_framework, vector[1, 2], vector[]);
         initialize_aptos_coin(aptos_framework);
-        // aptos_governance::initialize_for_verification(
-        //     aptos_framework,
-        //     min_voting_threshold,
-        //     required_proposer_stake,
-        //     voting_duration_secs
-        // );
+        aptos_governance::initialize_for_verification(
+            aptos_framework,
+            min_voting_threshold,
+            required_proposer_stake,
+            voting_duration_secs
+        );
         create_accounts(aptos_framework, accounts);
         // create_employee_validators(employee_vesting_start, employee_vesting_period_duration, employees);
         create_initialize_validators_with_commission(aptos_framework, true, validators);

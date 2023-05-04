@@ -326,6 +326,20 @@ module aptos_framework::stake {
     // }
 
     #[view]
+    /// Returns the list of active validators
+    public fun get_current_validators(): vector<address> acquires ValidatorSet {
+        let validator_set = borrow_global<ValidatorSet>(@aptos_framework);
+        let addresses = vector::empty<address>();
+        let i = 0;
+        while (i < vector::length(&validator_set.active_validators)) {
+            let v_info = vector::borrow(&validator_set.active_validators, i);
+            vector::push_back(&mut addresses, v_info.addr);
+            i = i + 1;
+        };
+        addresses
+    }
+
+    #[view]
     /// Returns the validator's state.
     public fun get_validator_state(pool_address: address): u64 acquires ValidatorSet {
         let validator_set = borrow_global<ValidatorSet>(@aptos_framework);
@@ -339,6 +353,16 @@ module aptos_framework::stake {
             VALIDATOR_STATUS_INACTIVE
         }
     }
+
+
+    //////// 0L ////////
+    // TODO: v7
+    #[view]
+    /// Returns the validator's state.
+    public fun is_valid(pool_address: address): bool acquires ValidatorSet {
+        get_validator_state(pool_address) < VALIDATOR_STATUS_INACTIVE
+    }
+
 
     #[view]
     /// Return the voting power of the validator in the current epoch.
@@ -1389,5 +1413,18 @@ module aptos_framework::stake {
 
     fun assert_owner_cap_exists(owner: address) {
         assert!(exists<OwnerCapability>(owner), error::not_found(EOWNER_CAP_NOT_FOUND));
+    }
+
+    #[test_only]
+    public fun mock_performance(vm: &signer, addr: address, success: u64, fail: u64) acquires ValidatorConfig, ValidatorPerformance  {
+      system_addresses::assert_vm(vm);
+
+      let idx = get_validator_index(addr);
+
+      let perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+
+      let p = vector::borrow_mut(&mut perf.validators, idx);
+      p.successful_proposals = success;
+      p.failed_proposals = fail;
     }
 }

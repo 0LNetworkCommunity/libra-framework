@@ -313,15 +313,15 @@ spec aptos_framework::aptos_governance {
         aborts_if !string::spec_internal_check_utf8(METADATA_HASH_KEY);
     }
 
-    // /// verify_only
-    // spec initialize_for_verification(
-    //     aptos_framework: &signer,
-    //     min_voting_threshold: u128,
-    //     required_proposer_stake: u64,
-    //     voting_duration_secs: u64,
-    // ) {
-    //     pragma verify = false;
-    // }
+    /// verify_only
+    spec initialize_for_verification(
+        aptos_framework: &signer,
+        min_voting_threshold: u128,
+        required_proposer_stake: u64,
+        voting_duration_secs: u64,
+    ) {
+        pragma verify = false;
+    }
 
     spec resolve_multi_step_proposal(proposal_id: u64, signer_address: address, next_execution_hash: vector<u8>): signer {
         use aptos_framework::chain_status;
