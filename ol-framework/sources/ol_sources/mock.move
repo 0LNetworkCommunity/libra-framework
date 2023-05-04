@@ -16,9 +16,15 @@ module ol_framework::mock {
 
   #[test_only]
   use aptos_framework::stake;
+  #[test_only]
   use ol_framework::cases;
+  #[test_only]
+  use ol_framework::testnet;
+  #[test_only]
   use std::vector;
+  #[test_only]
   use aptos_framework::genesis;
+  #[test_only]
   use aptos_std::debug::print;
 
   #[test_only]
@@ -31,8 +37,7 @@ module ol_framework::mock {
     }
 
   #[test(vm = @vm_reserved, validator = @0x123)]
-
-  public entry fun mock_validators(vm: signer, validator: signer) {
+  public entry fun test_mock_validators(vm: signer, validator: signer) {
     genesis::setup();
     let (_sk, pk, pop) = stake::generate_identity();
     stake::initialize_test_validator(&pk, &pop, &validator, 100, true, true);
@@ -41,76 +46,40 @@ module ol_framework::mock {
     print(&vals);
     assert!(vector::length(&vals) > 0, 01);
     let val = vector::borrow(&vals, 0);
+
+    // will assert! case_1
     mock_case_1(&vm, *val, 1, 0);
+
+    // will assert! case_4
+    mock_case_4(&vm, *val);
   }
-  //   // V6: deprecated
 
-  //   // // did not do enough mining, but did validate.
-  //   // public fun mock_case_2(vm: &signer, addr: address, start_height: u64, end_height: u64){
-  //   //   // can only apply this to a validator
-  //   //   // assert!(DiemSystem::is_validator(addr) == true, 777704);
-  //   //   // mock mining for the address
-  //   //   // insufficient number of proofs
-  //   //   // TowerState::test_helper_mock_mining_vm(vm, addr, 0);
-  //   //   // assert!(TowerState::get_count_in_epoch(addr) == 0, 777705);
+    #[test_only]
+    // did not do enough mining, but did validate.
+    public fun mock_case_4(vm: &signer, addr: address){
+      assert!(stake::is_valid(addr), 01);
+      stake::mock_performance(vm, addr, 0, 100); // 100 failing proposals
 
-  //   //   // mock the consensus votes for the address
-  //   //   let voters = Vector::singleton<address>(addr);
+      assert!(cases::get_case(vm, addr, 0, 15) == 4, 777703);
 
-  //   //   let num_blocks = end_height - start_height;
-  //   //   // Overwrite the statistics to mock that all have been validating.
-  //   //   let i = 1;
-  //   //   let above_thresh = num_blocks / 2; // just be above 5% signatures
+    }
 
-  //   //   while (i < above_thresh) {
-  //   //       // Mock the validator doing work for 15 blocks, and stats being updated.
-  //   //       Stats::process_set_votes(vm, &voters);
-  //   //       i = i + 1;
-  //   //   };
+    // Mock all nodes being compliant case 1
+    #[test_only]
+    public fun all_good_validators(vm: &signer) {
+      testnet::assert_testnet(vm);
 
-  //   //   // TODO: careful that the range of heights is within the test
-  //   //   assert!(Cases::get_case(vm, addr, start_height, end_height) == 2, 777706);
+      let vals =  stake::get_current_validators();
 
-  //   // }
+      let i = 0;
+      while (i < vector::length(&vals)) {
 
-  //   // did not do enough mining, but did validate.
-  //   public fun mock_case_4(vm: &signer, addr: address, start_height: u64, end_height: u64){
-  //     Testnet::assert_testnet(vm);
+        let a = vector::borrow(&vals, i);
+        mock_case_1(vm, *a, 0, 15);
+        i = i + 1;
+      };
 
-
-  //     let voters = Vector::singleton<address>(addr);
-
-  //     // Overwrite the statistics to mock that all have been validating.
-  //     let i = 1;
-  //     let above_thresh = 1; // just be above 5% signatures
-  //     Stats::test_helper_remove_votes(vm, addr);
-  //     while (i < above_thresh) {
-  //         // Mock the validator doing work for 15 blocks, and stats being updated.
-
-  //         Stats::process_set_votes(vm, &voters);
-  //         i = i + 1;
-  //     };
-  //     // print(&Cases::get_case(vm, addr, start_height, end_height) );
-  //     // TODO: careful that the range of heights is within the test
-  //     assert!(Cases::get_case(vm, addr, start_height, end_height) == 4, 777706);
-
-  //   }
-
-  //   // Mockl all nodes being compliant case 1
-  //   public fun all_good_validators(vm: &signer) {
-
-  //     Testnet::assert_testnet(vm);
-  //     let vals = DiemSystem::get_val_set_addr();
-
-  //     let i = 0;
-  //     while (i < Vector::length(&vals)) {
-
-  //       let a = Vector::borrow(&vals, i);
-  //       mock_case_1(vm, *a, 0, 15);
-  //       i = i + 1;
-  //     };
-
-  //   }
+    }
 
   //   //////// PROOF OF FEE ////////
   //   public fun pof_default(vm: &signer): (vector<address>, vector<u64>, vector<u64>){
