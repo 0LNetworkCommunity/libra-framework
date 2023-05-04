@@ -19,6 +19,7 @@ module ol_framework::mock {
   use ol_framework::cases;
   use std::vector;
   use aptos_framework::genesis;
+  use aptos_std::debug::print;
 
   #[test_only]
   public fun mock_case_1(vm: &signer, addr: address, success: u64, fail: u64){
@@ -29,10 +30,15 @@ module ol_framework::mock {
       assert!(cases::get_case(vm, addr, 0, 15) == 1, 777703);
     }
 
-  #[test(vm = @vm_reserved)]
-  public entry fun mock_validators(vm: signer) {
+  #[test(vm = @vm_reserved, validator = @0x123)]
+
+  public entry fun mock_validators(vm: signer, validator: signer) {
     genesis::setup();
+    let (_sk, pk, pop) = stake::generate_identity();
+    stake::initialize_test_validator(&pk, &pop, &validator, 100, true, true);
+
     let vals = stake::get_current_validators();
+    print(&vals);
     assert!(vector::length(&vals) > 0, 01);
     let val = vector::borrow(&vals, 0);
     mock_case_1(&vm, *val, 1, 0);

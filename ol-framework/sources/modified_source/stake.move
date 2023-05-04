@@ -1415,6 +1415,10 @@ module aptos_framework::stake {
         assert!(exists<OwnerCapability>(owner), error::not_found(EOWNER_CAP_NOT_FOUND));
     }
 
+
+    #[test_only]
+    const EPOCH_DURATION: u64 = 60;
+
     #[test_only]
     public fun mock_performance(vm: &signer, addr: address, success: u64, fail: u64) acquires ValidatorConfig, ValidatorPerformance  {
       system_addresses::assert_vm(vm);
@@ -1426,5 +1430,67 @@ module aptos_framework::stake {
       let p = vector::borrow_mut(&mut perf.validators, idx);
       p.successful_proposals = success;
       p.failed_proposals = fail;
+    }
+
+    #[test_only]
+    public fun generate_identity(): (bls12381::SecretKey, bls12381::PublicKey, bls12381::ProofOfPossession) {
+        let (sk, pkpop) = bls12381::generate_keys();
+        let pop = bls12381::generate_proof_of_possession(&sk);
+        let unvalidated_pk = bls12381::public_key_with_pop_to_normal(&pkpop);
+        (sk, unvalidated_pk, pop)
+    }
+
+    #[test_only]
+    public fun end_epoch() acquires StakePool, ValidatorConfig, ValidatorPerformance, ValidatorSet {
+        // Set the number of blocks to 1, to give out rewards to non-failing validators.
+        set_validator_perf_at_least_one_block();
+        timestamp::fast_forward_seconds(EPOCH_DURATION);
+        on_new_epoch();
+    }
+
+
+
+        #[test_only]
+    public fun set_validator_perf_at_least_one_block() acquires ValidatorPerformance {
+        let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+        let len = vector::length(&validator_perf.validators);
+        let i = 0;
+        while (i < len) {
+            let validator = vector::borrow_mut(&mut validator_perf.validators, i);
+            if (validator.successful_proposals + validator.failed_proposals < 1) {
+                validator.successful_proposals = 1;
+            };
+            i = i + 1;
+        };
+    }
+
+    #[test_only]
+    public fun initialize_test_validator(
+        public_key: &bls12381::PublicKey,
+        proof_of_possession: &bls12381::ProofOfPossession,
+        validator: &signer,
+        _amount: u64,
+        should_join_validator_set: bool,
+        should_end_epoch: bool,
+    ) acquires AllowedValidators, StakePool, ValidatorConfig, ValidatorPerformance, ValidatorSet {
+        let validator_address = signer::address_of(validator);
+        if (!account::exists_at(signer::address_of(validator))) {
+            account::create_account_for_test(validator_address);
+        };
+
+        let pk_bytes = bls12381::public_key_to_bytes(public_key);
+        let pop_bytes = bls12381::proof_of_possession_to_bytes(proof_of_possession);
+        initialize_validator(validator, pk_bytes, pop_bytes, vector::empty(), vector::empty());
+
+        // if (amount > 0) {
+        //     mint_and_add_stake(validator, amount);
+        // };
+
+        if (should_join_validator_set) {
+            join_validator_set(validator, validator_address);
+        };
+        if (should_end_epoch) {
+            end_epoch();
+        };
     }
 }
