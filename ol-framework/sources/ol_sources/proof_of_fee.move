@@ -13,7 +13,7 @@ module ol_framework::proof_of_fee {
   use std::signer;
   use std::vector;
   use std::fixed_point32;
-  use ol_framework::validator_universe;
+  use aptos_framework::validator_universe;
   use ol_framework::jail;
   use ol_framework::ol_account;
   use ol_framework::vouch;
@@ -21,14 +21,17 @@ module ol_framework::proof_of_fee {
   use aptos_framework::reconfiguration;
   use aptos_framework::stake;
   use aptos_framework::system_addresses;
-
-  const ENOT_AN_ACTIVE_VALIDATOR: u64 = 190001;
-  const EBID_ABOVE_MAX_PCT: u64 = 190002;
-  const EABOVE_RETRACT_LIMIT: u64 = 190003; // Potential update
-
-
+  
+  /// The nominal reward for each validator in each epoch.
   const GENESIS_BASELINE_REWARD: u64 = 1000000;
 
+  //////// ERRORS /////////
+  /// Not and active validator
+  const ENOT_AN_ACTIVE_VALIDATOR: u64 = 190001;
+  /// Bid is above the maximum percentage of the total reward
+  const EBID_ABOVE_MAX_PCT: u64 = 190002;
+  /// Retracted your bid too many times
+  const EABOVE_RETRACT_LIMIT: u64 = 190003; // Potential update
 
   // A struct on the validators account which indicates their
   // latest bid (and epoch)

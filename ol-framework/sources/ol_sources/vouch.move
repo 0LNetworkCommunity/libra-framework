@@ -2,7 +2,7 @@
 module ol_framework::vouch {
     use std::signer;
     use std::vector;
-    use ol_framework::validator_universe;
+    use aptos_framework::validator_universe;
     use ol_framework::ancestry;
     use ol_framework::globals;
     use aptos_framework::system_addresses;

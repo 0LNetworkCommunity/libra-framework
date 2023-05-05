@@ -37,6 +37,8 @@ module aptos_framework::stake {
     // use aptos_framework::staking_config::{Self, StakingConfig, StakingRewardsConfig};
     use aptos_framework::chain_status;
 
+    use aptos_framework::validator_universe;
+
     friend aptos_framework::block;
     friend aptos_framework::genesis;
     friend aptos_framework::reconfiguration;
@@ -535,6 +537,7 @@ module aptos_framework::stake {
         assert!(option::is_some(pubkey_from_pop), error::invalid_argument(EINVALID_PUBLIC_KEY));
 
         initialize_owner(account);
+
         move_to(account, ValidatorConfig {
             consensus_pubkey,
             network_addresses,
@@ -547,6 +550,8 @@ module aptos_framework::stake {
         let owner_address = signer::address_of(owner);
         assert!(is_allowed(owner_address), error::not_found(EINELIGIBLE_VALIDATOR));
         assert!(!stake_pool_exists(owner_address), error::already_exists(EALREADY_REGISTERED));
+
+        validator_universe::add(owner);
 
         move_to(owner, StakePool {
             active: coin::zero<AptosCoin>(),
