@@ -53,7 +53,7 @@ module ol_framework::demo {
     public entry fun sender_can_set_message(account: signer) acquires MessageHolder {
         let addr = signer::address_of(&account);
         aptos_framework::account::create_account_for_test(addr);
-        set_message(account,  string::utf8(b"Hello, Blockchain"));
+        set_message(&account,  string::utf8(b"Hello, Blockchain"));
 
         assert!(
           get_message(addr) == string::utf8(b"Hello, Blockchain"),

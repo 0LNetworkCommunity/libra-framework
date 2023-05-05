@@ -16,7 +16,7 @@
 
 module ol_framework::migrations {
   use std::vector;
-  use ol_framework::system_addresses;
+  use ol_framework::libra_addresses;
   use std::option::{Self,Option};
 
   /// A list of Migrations that have been 
@@ -35,7 +35,7 @@ module ol_framework::migrations {
 
   /// initialize the Migrations structure
   public fun init(vm: &signer){
-    system_addresses::assert_ol_root(vm);
+    libra_addresses::assert_ol_root(vm);
     if (!exists<Migrations>(@0x0)) {
       move_to<Migrations>(vm, Migrations {
         list: vector::empty<Job>(),
@@ -59,7 +59,7 @@ module ol_framework::migrations {
   /// preventing a migration by inserting the migration's UID to this list 
   /// before it occurs
   public fun push(vm: &signer, uid: u64, text: vector<u8>) acquires Migrations {   
-    system_addresses::assert_ol_root(vm);
+    libra_addresses::assert_ol_root(vm);
     if (has_run(uid)) return;
     let s = borrow_global_mut<Migrations>(@0x0);
     let j = Job {
