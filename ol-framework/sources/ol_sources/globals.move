@@ -8,7 +8,7 @@
 /// This module provides global variables and constants that have no specific owner 
 module ol_framework::globals {
     use ol_framework::testnet;
-    use ol_framework::staging_net;
+    // use ol_framework::staging_net;
     // todo v7
     // use DiemFramework::Diem;
     // use DiemFramework::GAS;
@@ -131,7 +131,7 @@ module ol_framework::globals {
         }
       };
 
-      if (staging_net::is_staging_net()) {
+      if (testnet::is_staging_net()) {
         return GlobalConstants {
           epoch_length: 60 * 40, // 40 mins, enough for a hard miner proof.
           val_set_at_genesis: 100,

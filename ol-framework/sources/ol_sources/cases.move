@@ -5,12 +5,12 @@
 /////////////////////////////////////////////////////////////////////////
 
 /// # Summary
-/// This module can be used by root to determine whether a validator is compliant 
-/// Validators who are no longer compliant may be kicked out of the validator 
-/// set and/or jailed. To be compliant, validators must be BOTH validating and mining. 
+/// This module can be used by root to determine whether a validator is compliant
+/// Validators who are no longer compliant may be kicked out of the validator
+/// set and/or jailed. To be compliant, validators must be BOTH validating and mining.
 module ol_framework::cases{
     // use DiemFramework::TowerState;
-    use ol_framework::stats;
+    use aptos_framework::stake;
     // use DiemFramework::Roles; // todo v7
 
     const VALIDATOR_COMPLIANT: u64 = 1;
@@ -20,15 +20,23 @@ module ol_framework::cases{
 
     const INVALID_DATA: u64 = 0;
 
+    // TODO: temp just to get a build
+    fun node_above_thresh(node_addr: address): bool {
+      let idx = stake::get_validator_index(node_addr);
+      let (proposed, failed) = stake::get_current_epoch_proposal_counts(idx);
+
+      proposed > failed
+    }
+
     // Determine the consensus case for the validator.
-    // This happens at an epoch prologue, and labels the validator based on 
+    // This happens at an epoch prologue, and labels the validator based on
     // performance in the outgoing epoch.
-    // The consensus case determines if the validator receives transaction 
-    // fees or subsidy for performance, inclusion in following epoch, and 
-    // at what voting power. 
+    // The consensus case determines if the validator receives transaction
+    // fees or subsidy for performance, inclusion in following epoch, and
+    // at what voting power.
     // Permissions: Public, VM Only
     public fun get_case(
-        vm: &signer, node_addr: address, height_start: u64, height_end: u64
+        _vm: &signer, node_addr: address, height_start: u64, height_end: u64
     ): u64 {
 
         // this is a failure mode. Only usually seen in rescue missions,
@@ -37,7 +45,7 @@ module ol_framework::cases{
 
         // Roles::assert_diem_root(vm); // todo v7
         // did the validator sign blocks above threshold?
-        let signs = stats::node_above_thresh(vm, node_addr, height_start, height_end);
+        let signs = node_above_thresh(node_addr);
 
         // let mines = TowerState::node_above_thresh(node_addr);
 
@@ -47,19 +55,19 @@ module ol_framework::cases{
         }
         // V6: Simplify compliance cases by removing mining.
 
-        // } 
+        // }
         // else if (signs && !mines) {
-        //     // half compliant: not in next set, does not get paid, weight 
+        //     // half compliant: not in next set, does not get paid, weight
         //     // does not increment.
         //     VALIDATOR_HALF_COMPLIANT
         // }
         // else if (!signs && mines) {
-        //     // not compliant: jailed, not in next set, does not get paid, 
+        //     // not compliant: jailed, not in next set, does not get paid,
         //     // weight increments.
         //     VALIDATOR_NOT_COMPLIANT
         // }
         else {
-            // not compliant: jailed, not in next set, does not get paid, 
+            // not compliant: jailed, not in next set, does not get paid,
             // weight does not increment.
             VALIDATOR_DOUBLY_NOT_COMPLIANT
         }
