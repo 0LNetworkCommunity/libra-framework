@@ -171,4 +171,35 @@ module ol_framework::ancestry {
         // print(&100250);
       };
     }
+
+    #[test(alice = @0x1, bob = @0x2)]
+    fun init_(alice: signer, bob: signer) acquires Ancestry {
+        init(&alice, &bob);
+        let tree = get_tree(signer::address_of(&alice));
+        assert!(vector::contains<address>(&tree, &signer::address_of(&bob)), 7357001);
+    }
+
+    #[test(ol_root = @ol_root, bob = @0x2)]
+    fun fam(ol_root: signer, bob: signer) acquires Ancestry {
+        init(&bob, &ol_root);
+        let ol_root_addr = signer::address_of(&ol_root);
+        let bob_addr = signer::address_of(&bob);
+        // print(&ol_root_addr);
+        // print(&bob_addr);        
+        let tree = get_tree(bob_addr);
+        // print(&tree);        
+        assert!(vector::contains<address>(&tree, &ol_root_addr), 7357001);
+        let (is_family, _) = is_family(ol_root_addr, bob_addr);
+        // print(&is_family);
+        // if (is_)
+        assert!(is_family, 7357002);
+    }
+
+    #[test(vm = @vm_reserved, bob = @0x2, carol = @0x3)]
+    fun migrate(vm: signer, bob: signer, carol: signer) acquires Ancestry {
+        let carol_addr = signer::address_of(&carol);
+        fork_migrate(&vm, &bob, vector::singleton(carol_addr));
+        let tree = get_tree(signer::address_of(&bob));
+        assert!(vector::contains<address>(&tree, &carol_addr), 7357001);
+    }
 }
