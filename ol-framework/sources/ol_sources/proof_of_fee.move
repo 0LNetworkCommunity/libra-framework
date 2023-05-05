@@ -10,23 +10,17 @@
 
 module ol_framework::proof_of_fee {
   use std::error;
-  // use DiemFramework::DiemConfig;
   use std::signer;
   use std::vector;
   use std::fixed_point32;
-
   use ol_framework::validator_universe;
   use ol_framework::jail;
   use ol_framework::ol_account;
+  use ol_framework::vouch;
+  use ol_framework::testnet;
   use aptos_framework::reconfiguration;
   use aptos_framework::stake;
-  // use DiemFramework::DiemAccount;
-  // use DiemFramework::Vouch;
-
-  use ol_framework::testnet;
-  // use DiemFramework::ValidatorConfig;
   use aptos_framework::system_addresses;
-  // use DiemFramework::Debug::print;
 
   const ENOT_AN_ACTIVE_VALIDATOR: u64 = 190001;
   const EBID_ABOVE_MAX_PCT: u64 = 190002;
@@ -318,8 +312,7 @@ module ol_framework::proof_of_fee {
       // print(&8006010204);
       // we can't seat validators who don't have minimum viable vouches
 
-      // TODO: v7: vouch
-      // if (!Vouch::unrelated_buddies_above_thresh(*val)) return false;
+      if (!vouch::unrelated_buddies_above_thresh(*val)) return false;
 
       // print(&80060102041);
 
