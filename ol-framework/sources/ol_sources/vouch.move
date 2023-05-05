@@ -8,6 +8,9 @@ module ol_framework::vouch {
     use aptos_framework::system_addresses;
     use aptos_framework::stake;
 
+    /// Trying to vouch for yourself?
+    const ETRY_SELF_VOUCH_REALLY: u64 = 12345;
+
     // triggered once per epoch
     struct Vouch has key {
       vals: vector<address>,
@@ -30,7 +33,7 @@ module ol_framework::vouch {
 
     public fun vouch_for(buddy: &signer, val: address) acquires Vouch {
       let buddy_acc = signer::address_of(buddy);
-      assert!(buddy_acc!=val, 12345); // TODO: Error code.
+      assert!(buddy_acc!=val, ETRY_SELF_VOUCH_REALLY);
 
       if (!validator_universe::is_in_universe(buddy_acc)) return;
       if (!exists<Vouch>(val)) return;
@@ -43,7 +46,7 @@ module ol_framework::vouch {
 
     public fun revoke(buddy: &signer, val: address) acquires Vouch {
       let buddy_acc = signer::address_of(buddy);
-      assert!(buddy_acc!=val, 12345); // TODO: Error code.
+      assert!(buddy_acc!=val, ETRY_SELF_VOUCH_REALLY);
 
       if (!exists<Vouch>(val)) return;
 
