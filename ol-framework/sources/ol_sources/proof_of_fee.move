@@ -17,7 +17,7 @@ module ol_framework::proof_of_fee {
   use ol_framework::jail;
   use ol_framework::ol_account;
   use ol_framework::vouch;
-  use ol_framework::testnet;
+  // use ol_framework::testnet;
   use aptos_framework::reconfiguration;
   use aptos_framework::stake;
   use aptos_framework::system_addresses;
@@ -617,6 +617,9 @@ module ol_framework::proof_of_fee {
 
   //////// TEST HELPERS ////////
   #[test_only]
+  use ol_framework::testnet;
+  
+  #[test_only]
   public fun test_set_val_bids(vm: &signer, vals: &vector<address>, bids: &vector<u64>, expiry: &vector<u64>) acquires ProofOfFeeAuction {
     testnet::assert_testnet(vm);
 
@@ -727,4 +730,189 @@ module ol_framework::proof_of_fee {
 
   }
 
+  // Scenario: The reward is too low during 5 days (short window). People are not bidding very high.
+  #[test(vm = @ol_framework)]
+  fun thermostat_increase_short(vm: signer) acquires ConsensusReward {
+    use aptos_framework::chain_id;
+
+    init_genesis_baseline_reward(&vm);
+    chain_id::initialize_for_test(&vm, 4);
+
+    let start_value = 0200; // 20% of baseline fee. 
+    let median_history = vector::empty<u64>(); 
+
+    // we need between 5 and 10 epochs to be a short "window"
+    let i = 0;
+    while (i < 7) {
+      vector::push_back(&mut median_history, start_value);
+      i = i + 1;
+    };
+
+
+    test_mock_reward(
+      &vm,
+      100,
+      50,
+      33,
+      median_history,
+    ); 
+
+    // no changes until we run the thermostat.
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 100, 1000);
+    assert!(clearing == 50, 1001);
+    assert!(median == 33, 1002);
+
+    reward_thermostat(&vm);
+
+    // In the decrease case during a short period, we decrease by 5%
+    // No other parameters of consensus reward should change on calling this function.
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 105, 1003);
+    assert!(clearing == 50, 1004);
+    assert!(median == 33, 1005);
+
+  }
+
+
+  // Scenario: The reward is too low during 5 days (short window). People are not bidding very high.
+  #[test(vm = @ol_framework)]
+  fun thermostat_increase_long(vm: signer) acquires ConsensusReward {
+    use aptos_framework::chain_id;
+
+    init_genesis_baseline_reward(&vm);
+    chain_id::initialize_for_test(&vm, 4);
+
+    let start_value = 0200; // 20% of baseline fee. 
+    let median_history = vector::empty<u64>(); 
+
+    // we need at least 10 epochs above the 95% range to be a "long window"
+    let i = 0;
+    while (i < 12) {
+      // let factor = i * 10;
+      // let value = start_value + factor;
+      // // print(&value);
+      vector::push_back(&mut median_history, start_value);
+      i = i + 1;
+    };
+
+
+    test_mock_reward(
+      &vm,
+      100,
+      50,
+      33,
+      median_history,
+    ); 
+
+    // no changes until we run the thermostat.
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 100, 1000);
+    assert!(clearing == 50, 1001);
+    assert!(median == 33, 1002);
+
+    reward_thermostat(&vm);
+
+    // In the decrease case during a short period, we decrease by 5%
+    // No other parameters of consensus reward should change on calling this function.
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 110, 1003);
+    assert!(clearing == 50, 1004);
+    assert!(median == 33, 1005);
+
+  }
+
+
+  // Scenario: The reward is too high during 5 days (short window). People are bidding over 95% of the baseline fee.
+  #[test(vm = @ol_framework)]
+  fun thermostat_decrease_short(vm: signer) acquires ConsensusReward {
+    use aptos_framework::chain_id;
+
+    init_genesis_baseline_reward(&vm);
+    chain_id::initialize_for_test(&vm, 4);
+
+    let start_value = 0950; // 96% of baseline fee. 
+    let median_history = vector::empty<u64>(); 
+
+    // we need between 5 and 10 epochs to be a short "window"
+    let i = 0;
+    while (i < 7) {
+      let factor = i * 10;
+      let value = start_value + factor;
+      vector::push_back(&mut median_history, value);
+      i = i + 1;
+    };
+
+
+    test_mock_reward(
+      &vm,
+      100,
+      50,
+      33,
+      median_history,
+    ); 
+
+    // no changes until we run the thermostat.
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 100, 1000);
+    assert!(clearing == 50, 1001);
+    assert!(median == 33, 1002);
+
+    reward_thermostat(&vm);
+
+    // In the decrease case during a short period, we decrease by 5%
+    // No other parameters of consensus reward should change on calling this function.
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 95, 1000);
+    assert!(clearing == 50, 1004);
+    assert!(median == 33, 1005);
+
+  }
+
+    // Scenario: The reward is too low during 5 days (short window). People are not bidding very high.
+  #[test(vm = @ol_framework)]
+  fun thermostat_decrease_long(vm: signer) acquires ConsensusReward {
+    use aptos_framework::chain_id;
+
+    init_genesis_baseline_reward(&vm);
+    chain_id::initialize_for_test(&vm, 4);
+
+    let start_value = 0960; // 96% of baseline fee. 
+    let median_history = vector::empty<u64>(); 
+
+    // we need at least 10 epochs above the 95% range to be a "long window"
+    let i = 0;
+    while (i < 12) {
+      // let factor = i * 10;
+      // let value = start_value + factor;
+      // // print(&value);
+      vector::push_back(&mut median_history, start_value);
+      i = i + 1;
+    };
+
+
+    test_mock_reward(
+      &vm,
+      100,
+      50,
+      33,
+      median_history,
+    ); 
+
+    // no changes until we run the thermostat.
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 100, 1000);
+    assert!(clearing == 50, 1001);
+    assert!(median == 33, 1002);
+
+    reward_thermostat(&vm);
+
+    // In the decrease case during a short period, we decrease by 5%
+    // No other parameters of consensus reward should change on calling this function.
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 90, 1003);
+    assert!(clearing == 50, 1004);
+    assert!(median == 33, 1005);
+
+  }
 }
