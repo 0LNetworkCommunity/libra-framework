@@ -22,8 +22,7 @@ module ol_framework::mock {
 
   #[test_only]
   public fun reset_val_perf_one(vm: &signer, addr: address) {
-
-      stake::mock_performance(vm, addr, 0, 0);
+    stake::mock_performance(vm, addr, 0, 0);
   }
 
   #[test_only]
@@ -76,7 +75,7 @@ module ol_framework::mock {
     public fun pof_default(vm: &signer): (vector<address>, vector<u64>, vector<u64>){
 
       system_addresses::assert_ol(vm);
-      let vals =  stake::get_current_validators();
+      let vals = stake::get_current_validators();
 
       let (bids, expiry) = mock_bids(vm, &vals);
 

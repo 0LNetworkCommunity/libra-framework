@@ -618,7 +618,7 @@ module ol_framework::proof_of_fee {
   //////// TEST HELPERS ////////
   #[test_only]
   use ol_framework::testnet;
-  
+
   #[test_only]
   public fun test_set_val_bids(vm: &signer, vals: &vector<address>, bids: &vector<u64>, expiry: &vector<u64>) acquires ProofOfFeeAuction {
     testnet::assert_testnet(vm);
@@ -915,4 +915,18 @@ module ol_framework::proof_of_fee {
     assert!(median == 33, 1005);
 
   }
+
+  // #[test(vm = @ol_framework)]
+  // fun pof_set_retract(vm: signer) {
+  //     use aptos_framework::account;
+
+  //     validator_universe::initialize(&vm);
+
+  //     let sig = account::create_signer_for_test(@0x123);
+  //     let (_sk, pk, pop) = stake::generate_identity();
+  //     stake::initialize_test_validator(&pk, &pop, &sig, 100, true, true);
+
+  //     validator_universe::is_in_universe(@0x123);
+
+  // }
 }
