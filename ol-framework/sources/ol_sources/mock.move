@@ -26,22 +26,7 @@ module ol_framework::mock {
       assert!(cases::get_case(vm, addr, 0, 15) == 1, 777703);
     }
 
-  #[test(vm = @vm_reserved)]
-  public entry fun test_mock_validators(vm: signer) {
-    // genesis();
-    
-    let set = genesis_n_vals(4);
 
-    let addr = vector::borrow(&set, 0);
-
-    // will assert! case_1
-    mock_case_1(&vm, *addr, 1, 0);
-
-    pof_default(&vm);
-
-    // will assert! case_4
-    mock_case_4(&vm, *addr);
-  }
 
     #[test_only]
     // did not do enough mining, but did validate.
@@ -146,7 +131,7 @@ module ol_framework::mock {
     }
 
     #[test_only]
-    public fun end_epoch() {
+    public fun trigger_epoch() {
         stake::end_epoch(); // additionally forwards EPOCH_DURATION seconds
         reconfiguration::reconfigure_for_test_custom();
     }
@@ -159,5 +144,44 @@ module ol_framework::mock {
   //     assert!(c_value == amount, 777707);
   //     TransactionFee::pay_fee(c);
   //   }
+
+
+  //////// META TESTS ////////
+  #[test]
+  /// test we can trigger an epoch reconfiguration.
+  public fun meta_epoch() {
+    use aptos_std::debug::print;
+    genesis();
+
+    print(&1001);
+    let epoch = reconfiguration::current_epoch();
+    print(&epoch);
+    // reconfiguration::reconfigure_for_test();
+    trigger_epoch();
+    // reconfiguration::reconfigure_for_test_custom();
+    print(&1002);
+    let new_epoch = reconfiguration::current_epoch();
+    print(&new_epoch);
+    assert!(new_epoch > epoch, 7357001);
+
+  }
+
+  #[test(vm = @vm_reserved)]
+  public entry fun meta_val_perf(vm: signer) {
+    // genesis();
+    
+    let set = genesis_n_vals(4);
+
+    let addr = vector::borrow(&set, 0);
+
+    // will assert! case_1
+    mock_case_1(&vm, *addr, 1, 0);
+
+    pof_default(&vm);
+
+    // will assert! case_4
+    mock_case_4(&vm, *addr);
+  }
+
 
 }
