@@ -42,7 +42,7 @@ module ol_framework::mock {
   public fun mock_case_1(vm: &signer, addr: address){
       assert!(stake::is_valid(addr), 01);
       stake::mock_performance(vm, addr, 1, 0);
-      assert!(cases::get_case(vm, addr, 0, 15) == 1, 777703);
+      assert!(cases::get_case(addr, 0, 15) == 1, 777703);
     }
 
 
@@ -52,7 +52,7 @@ module ol_framework::mock {
       assert!(stake::is_valid(addr), 01);
       stake::mock_performance(vm, addr, 0, 100); // 100 failing proposals
 
-      assert!(cases::get_case(vm, addr, 0, 15) == 4, 777703);
+      assert!(cases::get_case(addr, 0, 15) == 4, 777703);
     }
 
     // Mock all nodes being compliant case 1
@@ -75,7 +75,7 @@ module ol_framework::mock {
     #[test_only]
     public fun pof_default(vm: &signer): (vector<address>, vector<u64>, vector<u64>){
 
-      system_addresses::assert_vm(vm);
+      system_addresses::assert_ol(vm);
       let vals =  stake::get_current_validators();
 
       let (bids, expiry) = mock_bids(vm, &vals);
@@ -91,7 +91,7 @@ module ol_framework::mock {
 
     #[test_only]
     public fun mock_bids(vm: &signer, vals: &vector<address>): (vector<u64>, vector<u64>) {
-      system_addresses::assert_vm(vm);
+      system_addresses::assert_ol(vm);
       let bids = vector::empty<u64>();
       let expiry = vector::empty<u64>();
       let i = 0;
@@ -176,7 +176,7 @@ module ol_framework::mock {
 
   }
 
-  #[test(vm = @vm_reserved)]
+  #[test(vm = @ol_framework)]
   public entry fun meta_val_perf(vm: signer) {
     // genesis();
     

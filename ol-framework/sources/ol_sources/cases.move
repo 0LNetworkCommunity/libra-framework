@@ -36,7 +36,7 @@ module ol_framework::cases{
     // at what voting power.
     // Permissions: Public, VM Only
     public fun get_case(
-        _vm: &signer, node_addr: address, height_start: u64, height_end: u64
+        node_addr: address, height_start: u64, height_end: u64
     ): u64 {
 
         // this is a failure mode. Only usually seen in rescue missions,

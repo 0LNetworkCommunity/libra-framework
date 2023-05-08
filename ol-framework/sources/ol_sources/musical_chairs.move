@@ -65,7 +65,7 @@ module ol_framework::musical_chairs {
       height_end: u64
     ): (vector<address>, u64) acquires Chairs {
         system_addresses::assert_ol(vm);
-        let (compliant, _non, ratio) = eval_compliance(vm, height_start, height_end);
+        let (compliant, _non, ratio) = eval_compliance(height_start, height_end);
 
         let chairs = borrow_global_mut<Chairs>(@ol_framework);
         if (fixed_point32::is_zero(*&ratio)) {
@@ -82,7 +82,7 @@ module ol_framework::musical_chairs {
 
     // use the Case statistic to determine what proportion of the network is compliant.
     public fun eval_compliance(
-      vm: &signer,
+      // vm: &signer,
       height_start: u64,
       height_end: u64
     ) : (vector<address>, vector<address>, fixed_point32::FixedPoint32) {
@@ -95,7 +95,7 @@ module ol_framework::musical_chairs {
         let i = 0;
         while (i < val_set_len) {
             let addr = vector::borrow(&validators, i);
-            let case = cases::get_case(vm, *addr, height_start, height_end);
+            let case = cases::get_case(*addr, height_start, height_end);
             if (case == 1) {
                 vector::push_back(&mut compliant_nodes, *addr);
             } else {
@@ -134,7 +134,7 @@ module ol_framework::musical_chairs {
     //////// GETTERS ////////
 
     public fun get_current_seats(): u64 acquires Chairs {
-        borrow_global<Chairs>(@vm_reserved).current_seats
+        borrow_global<Chairs>(@ol_framework).current_seats
     }
 
     #[test_only]
@@ -142,9 +142,9 @@ module ol_framework::musical_chairs {
 
     //////// TESTS ////////
 
-    #[test(vm = @vm_reserved, framework = @aptos_framework)]
-    public entry fun initialize_chairs(vm: signer, framework: signer) acquires Chairs {
-      chain_id::initialize_for_test(&framework, 4);
+    #[test(vm = @ol_framework)]
+    public entry fun initialize_chairs(vm: signer) acquires Chairs {
+      chain_id::initialize_for_test(&vm, 4);
       initialize(&vm);
       assert!(get_current_seats() == 10, 1004);
     }
