@@ -19,13 +19,31 @@ module ol_framework::mock {
   #[test_only]
   use aptos_framework::system_addresses;
 
+
   #[test_only]
-  public fun mock_case_1(vm: &signer, addr: address, success: u64, fail: u64){
+  public fun reset_val_perf_one(vm: &signer, addr: address) {
+
+      stake::mock_performance(vm, addr, 0, 0);
+  }
+
+  #[test_only]
+  public fun reset_val_perf_all(vm: &signer) {
+      let vals = stake::get_current_validators();
+      let i = 0;
+      while (i < vector::length(&vals)) {
+        let a = vector::borrow(&vals, i);
+        stake::mock_performance(vm, *a, 0, 0);
+        i = i + 1;
+      };
+  }
+
+
+  #[test_only]
+  public fun mock_case_1(vm: &signer, addr: address){
       assert!(stake::is_valid(addr), 01);
-      stake::mock_performance(vm, addr, success, fail);
+      stake::mock_performance(vm, addr, 1, 0);
       assert!(cases::get_case(vm, addr, 0, 15) == 1, 777703);
     }
-
 
 
     #[test_only]
@@ -47,7 +65,7 @@ module ol_framework::mock {
       while (i < vector::length(&vals)) {
 
         let a = vector::borrow(&vals, i);
-        mock_case_1(vm, *a, 0, 15);
+        mock_case_1(vm, *a);
         i = i + 1;
       };
 
@@ -150,18 +168,10 @@ module ol_framework::mock {
   #[test]
   /// test we can trigger an epoch reconfiguration.
   public fun meta_epoch() {
-    use aptos_std::debug::print;
     genesis();
-
-    print(&1001);
     let epoch = reconfiguration::current_epoch();
-    print(&epoch);
-    // reconfiguration::reconfigure_for_test();
     trigger_epoch();
-    // reconfiguration::reconfigure_for_test_custom();
-    print(&1002);
     let new_epoch = reconfiguration::current_epoch();
-    print(&new_epoch);
     assert!(new_epoch > epoch, 7357001);
 
   }
@@ -175,12 +185,17 @@ module ol_framework::mock {
     let addr = vector::borrow(&set, 0);
 
     // will assert! case_1
-    mock_case_1(&vm, *addr, 1, 0);
+    mock_case_1(&vm, *addr);
+
 
     pof_default(&vm);
 
     // will assert! case_4
     mock_case_4(&vm, *addr);
+
+    reset_val_perf_all(&vm);
+
+    all_good_validators(&vm);
   }
 
 

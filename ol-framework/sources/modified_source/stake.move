@@ -27,7 +27,7 @@ module aptos_framework::stake {
     use aptos_std::bls12381;
     // use aptos_std::math64::min;
     use aptos_std::table::{Self, Table};
-    use aptos_std::debug::print;
+    // use aptos_std::debug::print;
     use aptos_framework::aptos_coin::AptosCoin;
     use aptos_framework::account;
     use aptos_framework::coin::{Self, Coin, MintCapability};
@@ -848,7 +848,7 @@ module aptos_framework::stake {
     ) acquires StakePool, ValidatorConfig, ValidatorSet {
 
         assert_stake_pool_exists(pool_address);
-        print(&40001);
+        // print(&40001);
         let stake_pool = borrow_global_mut<StakePool>(pool_address);
         assert!(signer::address_of(operator) == stake_pool.operator_address, error::unauthenticated(ENOT_OPERATOR));
 
@@ -856,7 +856,7 @@ module aptos_framework::stake {
             get_validator_state(pool_address) == VALIDATOR_STATUS_INACTIVE,
             error::invalid_state(EALREADY_ACTIVE_VALIDATOR),
         );
-        print(&40002);
+        // print(&40002);
 
         // let config = staking_config::get();
         // let (minimum_stake, maximum_stake) = staking_config::get_required_stake(&config);
@@ -865,22 +865,22 @@ module aptos_framework::stake {
         let voting_power = 1; // voting power is always 1 in Libra
         assert!(voting_power >= minimum_stake, error::invalid_argument(ESTAKE_TOO_LOW));
         assert!(voting_power <= maximum_stake, error::invalid_argument(ESTAKE_TOO_HIGH));
-        print(&40003);
+        // print(&40003);
         // Track and validate voting power increase.
         update_voting_power_increase(voting_power);
 
-        print(&40004);
+        // print(&40004);
         // Add validator to pending_active, to be activated in the next epoch.
         let validator_config = borrow_global_mut<ValidatorConfig>(pool_address);
         assert!(!vector::is_empty(&validator_config.consensus_pubkey), error::invalid_argument(EINVALID_PUBLIC_KEY));
-        print(&40005);
+        // print(&40005);
         // Validate the current validator set size has not exceeded the limit.
         let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
         vector::push_back(&mut validator_set.pending_active, generate_validator_info(pool_address, stake_pool, *validator_config));
-        print(&40006);
+        // print(&40006);
         let validator_set_size = vector::length(&validator_set.active_validators) + vector::length(&validator_set.pending_active);
         assert!(validator_set_size <= MAX_VALIDATOR_SET_SIZE, error::invalid_argument(EVALIDATOR_SET_TOO_LARGE));
-        print(&40007);
+        // print(&40007);
         event::emit_event(
             &mut stake_pool.join_validator_set_events,
             JoinValidatorSetEvent { pool_address },
