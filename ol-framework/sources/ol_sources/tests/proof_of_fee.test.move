@@ -163,9 +163,9 @@ module ol_framework::test_pof {
     assert!(proof_of_fee::audit_qualification(alice), 1009);
   }
 
-  #[test]
+  #[test(vm = @ol_framework)]
 
-  fun audit_jail () {
+  fun audit_jail (vm: signer) {
     let set = mock::genesis_n_vals(4);
     let alice = vector::borrow(&set, 0);
 
