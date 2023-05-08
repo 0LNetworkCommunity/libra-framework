@@ -28,7 +28,10 @@ module aptos_framework::genesis {
     use aptos_framework::transaction_fee;
     use aptos_framework::transaction_validation;
     use aptos_framework::version;
+
+    //////// 0L ////////
     use aptos_framework::validator_universe;
+    use ol_framework::musical_chairs;
 
     const EDUPLICATE_ACCOUNT: u64 = 1;
     const EACCOUNT_DOES_NOT_EXIST: u64 = 2;
@@ -133,6 +136,9 @@ module aptos_framework::genesis {
 
         //////// 0L ////////
         validator_universe::initialize(&aptos_framework_account);  
+        musical_chairs::initialize(&aptos_framework_account);
+        // end 0L
+
         timestamp::set_time_has_started(&aptos_framework_account);
     }
 

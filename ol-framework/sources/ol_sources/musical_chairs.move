@@ -43,7 +43,9 @@ module ol_framework::musical_chairs {
     public fun initialize(
         vm: &signer,
     ) {
-        system_addresses::assert_vm(vm);
+        // system_addresses::assert_vm(vm);
+        // TODO: replace with VM
+        system_addresses::assert_ol(vm);
 
         chain_status::is_genesis();
         if (exists<Chairs>(@ol_framework)) {
@@ -62,7 +64,7 @@ module ol_framework::musical_chairs {
       height_start: u64,
       height_end: u64
     ): (vector<address>, u64) acquires Chairs {
-        system_addresses::assert_vm(vm);
+        system_addresses::assert_ol(vm);
         let (compliant, _non, ratio) = eval_compliance(vm, height_start, height_end);
 
         let chairs = borrow_global_mut<Chairs>(@ol_framework);
@@ -146,25 +148,4 @@ module ol_framework::musical_chairs {
       initialize(&vm);
       assert!(get_current_seats() == 10, 1004);
     }
-
-    #[test(vm = @vm_reserved)]
-    public entry fun eval_compliance_happy(vm: signer) {
-      use ol_framework::mock;
-      mock::genesis_n_vals(4);
-            // all vals compliant
-      mock::all_good_validators(&vm);
-
-      // let (good, bad, ratio) = MusicalChairs::eval_compliance(&dr, 0, 15);
-      // assert!(Vector::length(&good) == 5, 1001);
-      // assert!(Vector::length(&bad) == 0, 1002);
-      // assert!(FixedPoint32::is_zero(ratio), 1003);
-
-
-      // let (_outgoing_compliant_set, _new_set_size) = MusicalChairs::stop_the_music(&dr, 0, 15);
-
-      // //print(&outgoing_compliant_set);
-      // //print(&new_set_size);
-      // assert!(MusicalChairs::get_current_seats() == 11, 1004)
-    }
-
 }

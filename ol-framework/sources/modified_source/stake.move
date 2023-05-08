@@ -1426,7 +1426,7 @@ module aptos_framework::stake {
 
     #[test_only]
     public fun mock_performance(vm: &signer, addr: address, success: u64, fail: u64) acquires ValidatorConfig, ValidatorPerformance  {
-      system_addresses::assert_vm(vm);
+      system_addresses::assert_ol(vm);
 
       let idx = get_validator_index(addr);
 

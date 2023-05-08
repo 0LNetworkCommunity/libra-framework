@@ -1,0 +1,34 @@
+
+#[test_only]
+/// tests for external apis, and where a dependency cycle with genesis is created.
+module ol_framework::test_musical_chairs {
+
+    use ol_framework::musical_chairs;
+    use ol_framework::mock;
+    use aptos_std::debug::print;
+    use std::vector;
+    use std::fixed_point32;
+
+
+    #[test(vm = @ol_framework)]
+    public entry fun eval_compliance_happy(vm: signer) {
+
+      let vals = mock::genesis_n_vals(5);
+      assert!(vector::length(&vals) == 5, 7357001);
+
+            // all vals compliant
+      mock::all_good_validators(&vm);
+
+      let (good, bad, ratio) = musical_chairs::eval_compliance(&vm, 0, 15);
+      assert!(vector::length(&good) == 5, 7357002);
+      assert!(vector::length(&bad) == 0, 7357003);
+      assert!(fixed_point32::is_zero(ratio), 7357004);
+
+
+      let (outgoing_compliant_set, _new_set_size) = musical_chairs::stop_the_music(&vm, 0, 15);
+
+      print(&outgoing_compliant_set);
+      // //print(&new_set_size);
+      // assert!(MusicalChairs::get_current_seats() == 11, 1004)
+    }
+}

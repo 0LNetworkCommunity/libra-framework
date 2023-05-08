@@ -136,7 +136,7 @@ module ol_framework::mock {
       vector::push_back(&mut val_addr, @0x1000f);
 
       let i = 0;
-      while (i < (num -1)) {
+      while (i < num) {
         // create_signer_for_test
         let val = vector::borrow(&val_addr, i);
         let sig = account::create_signer_for_test(*val);
@@ -181,6 +181,7 @@ module ol_framework::mock {
     // genesis();
     
     let set = genesis_n_vals(4);
+    assert!(vector::length(&set) == 4, 7357001);
 
     let addr = vector::borrow(&set, 0);
 
