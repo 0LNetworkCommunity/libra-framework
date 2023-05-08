@@ -616,7 +616,7 @@ module ol_framework::proof_of_fee {
   }
 
   //////// TEST HELPERS ////////
-
+  #[test_only]
   public fun test_set_val_bids(vm: &signer, vals: &vector<address>, bids: &vector<u64>, expiry: &vector<u64>) acquires ProofOfFeeAuction {
     testnet::assert_testnet(vm);
 
@@ -631,6 +631,7 @@ module ol_framework::proof_of_fee {
     };
   }
 
+  #[test_only]
   public fun test_set_one_bid(vm: &signer, val: &address, bid:  u64, exp: u64) acquires ProofOfFeeAuction {
     testnet::assert_testnet(vm);
     let pof = borrow_global_mut<ProofOfFeeAuction>(*val);
@@ -638,6 +639,7 @@ module ol_framework::proof_of_fee {
     pof.bid = bid;
   }
 
+  #[test_only]
   public fun test_mock_reward(
     vm: &signer,
     value: u64,
@@ -654,4 +656,75 @@ module ol_framework::proof_of_fee {
     cr.median_history = median_history;
 
   }
+
+  #[test(vm = @ol_framework)]
+  fun meta_mock_reward(vm: signer) acquires ConsensusReward {
+    use aptos_framework::chain_id;
+
+    init_genesis_baseline_reward(&vm);
+
+    chain_id::initialize_for_test(&vm, 4);
+
+    test_mock_reward(
+      &vm,
+      100,
+      50,
+      33,
+      vector::singleton(33),
+    ); 
+
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 100, 1000);
+    assert!(clearing == 50, 1001);
+    assert!(median == 33, 1002);
+
+  }
+
+  #[test(vm = @ol_framework)]
+  public entry fun thermostat_unit_happy(vm: signer)  acquires ConsensusReward {
+    use aptos_framework::chain_id;
+    // use ol_framework::mock;
+
+    init_genesis_baseline_reward(&vm);
+
+    chain_id::initialize_for_test(&vm, 4);
+
+    let start_value = 0510; // 51% of baseline reward
+    let median_history = vector::empty<u64>(); 
+
+    let i = 0;
+    while (i < 10) {
+      let factor = i * 10;
+      let value = start_value + factor;
+      // print(&value);
+      vector::push_back(&mut median_history, value);
+      i = i + 1;
+    };
+
+
+    test_mock_reward(
+      &vm,
+      100,
+      50,
+      33,
+      median_history,
+    );
+
+    // no changes until we run the thermostat.
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 100, 1000);
+    assert!(clearing == 50, 1001);
+    assert!(median == 33, 1002);
+
+    reward_thermostat(&vm);
+
+    // This is the happy case. No changes since the rewards were within range
+    // the whole time.
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 100, 1000);
+    assert!(clearing == 50, 1001);
+    assert!(median == 33, 1002);
+
+  }
+
 }
