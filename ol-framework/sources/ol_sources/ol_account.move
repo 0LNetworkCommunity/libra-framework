@@ -22,7 +22,7 @@ module ol_framework::ol_account {
         list: vector<address>
     }
 
-    public fun vm_init_slow(vm: &signer){
+    public fun initialize(vm: &signer){
       system_addresses::assert_ol(vm);
       if (!exists<SlowWalletList>(@ol_framework)) {
         move_to<SlowWalletList>(vm, SlowWalletList {
@@ -58,7 +58,7 @@ module ol_framework::ol_account {
     ) acquires SlowWalletList{
       system_addresses::assert_ol(vm);
       if (!exists<SlowWalletList>(@ol_framework)) {
-        vm_init_slow(vm); //don't abort
+        initialize(vm); //don't abort
       };
       let list = borrow_global_mut<SlowWalletList>(@ol_framework);
       vector::push_back(&mut list.list, signer::address_of(user));
@@ -144,4 +144,5 @@ module ol_framework::ol_account {
   public fun vm_multi_pay_fee(_vm: &signer, _list: &vector<address>, _price: u64, _metadata: &vector<u8>) {
 
   }
+
 }

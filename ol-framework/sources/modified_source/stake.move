@@ -28,6 +28,8 @@ module aptos_framework::stake {
     // use aptos_std::math64::min;
     use aptos_std::table::{Self, Table};
     // use aptos_std::debug::print;
+
+    use ol_framework::ol_account;
     use aptos_framework::aptos_coin::AptosCoin;
     use aptos_framework::account;
     use aptos_framework::coin::{Self, Coin, MintCapability};
@@ -43,6 +45,7 @@ module aptos_framework::stake {
     friend aptos_framework::genesis;
     friend aptos_framework::reconfiguration;
     friend aptos_framework::transaction_fee;
+
 
     /// Validator Config not published.
     const EVALIDATOR_CONFIG: u64 = 1;
@@ -544,6 +547,8 @@ module aptos_framework::stake {
             fullnode_addresses,
             validator_index: 0,
         });
+
+        ol_account::set_slow(account);
     }
 
     fun initialize_owner(owner: &signer) acquires AllowedValidators {

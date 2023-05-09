@@ -33,6 +33,7 @@ module aptos_framework::genesis {
     use aptos_framework::validator_universe;
     use ol_framework::musical_chairs;
     use ol_framework::proof_of_fee;
+    use ol_framework::ol_account;
     use ol_framework::gas_coin;
 
     const EDUPLICATE_ACCOUNT: u64 = 1;
@@ -140,6 +141,7 @@ module aptos_framework::genesis {
         validator_universe::initialize(&aptos_framework_account);  
         musical_chairs::initialize(&aptos_framework_account);
         proof_of_fee::init_genesis_baseline_reward(&aptos_framework_account);
+        ol_account::initialize(&aptos_framework_account);
         // end 0L
 
         timestamp::set_time_has_started(&aptos_framework_account);
