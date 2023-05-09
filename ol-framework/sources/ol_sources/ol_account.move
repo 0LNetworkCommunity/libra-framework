@@ -1,6 +1,5 @@
 module ol_framework::ol_account {
     use aptos_framework::account::{Self, new_event_handle};
-    use aptos_framework::aptos_coin::AptosCoin;
     use aptos_framework::coin::{Self, Coin};
     use aptos_framework::create_signer::create_signer;
     use aptos_framework::event::{EventHandle, emit_event};
@@ -8,12 +7,15 @@ module ol_framework::ol_account {
     use std::signer;
     use std::vector;
 
+    use ol_framework::gas_coin::GasCoin;
+    use ol_framework::slow_wallet;
+
     friend aptos_framework::genesis;
     friend aptos_framework::resource_account;
 
     /// Account does not exist.
     const EACCOUNT_NOT_FOUND: u64 = 1;
-    /// Account is not registered to receive APT.
+    /// Account is not registered to receive GAS.
     const EACCOUNT_NOT_REGISTERED_FOR_APT: u64 = 2;
     /// Account opted out of receiving coins that they did not register to receive.
     const EACCOUNT_DOES_NOT_ACCEPT_DIRECT_COIN_TRANSFERS: u64 = 3;
@@ -39,12 +41,13 @@ module ol_framework::ol_account {
     /// Basic account creation methods.
     ///////////////////////////////////////////////////////////////////////////
 
+    // TODO: 0L, this should not be a public function in 0L
     public entry fun create_account(auth_key: address) {
         let signer = account::create_account(auth_key);
-        coin::register<AptosCoin>(&signer);
+        coin::register<GasCoin>(&signer);
     }
 
-    /// Batch version of APT transfer.
+    /// Batch version of GAS transfer.
     public entry fun batch_transfer(source: &signer, recipients: vector<address>, amounts: vector<u64>) {
         let recipients_len = vector::length(&recipients);
         assert!(
@@ -61,19 +64,31 @@ module ol_framework::ol_account {
         };
     }
 
-    /// Convenient function to transfer APT to a recipient account that might not exist.
-    /// This would create the recipient account first, which also registers it to receive APT, before transferring.
+    /// Convenient function to transfer GAS to a recipient account that might not exist.
+    /// This would create the recipient account first, which also registers it to receive GAS, before transferring.
     public entry fun transfer(source: &signer, to: address, amount: u64) {
         if (!account::exists_at(to)) {
             create_account(to)
         };
-        // Resource accounts can be created without registering them to receive APT.
+
+        let limit = get_slow_limit(signer::address_of(source));
+        if (limit < amount) { amount = limit };
+        // Resource accounts can be created without registering them to receive GAS.
         // This conveniently does the registration if necessary.
-        if (!coin::is_account_registered<AptosCoin>(to)) {
-            coin::register<AptosCoin>(&create_signer(to));
+        if (!coin::is_account_registered<GasCoin>(to)) {
+            coin::register<GasCoin>(&create_signer(to));
         };
-        coin::transfer<AptosCoin>(source, to, amount)
+        coin::transfer<GasCoin>(source, to, amount)
     }
+
+    //////// 0L ////////  
+    fun get_slow_limit(addr: address): u64 {
+      let full_balance = coin::balance<GasCoin>(addr);
+      // TODO: check if recipient is a donor directed account.
+      if (false) { return full_balance };
+      slow_wallet::unlocked_amount(addr)
+    }
+
 
     /// Batch version of transfer_coins.
     public entry fun batch_transfer_coins<CoinType>(
@@ -119,9 +134,9 @@ module ol_framework::ol_account {
         assert!(account::exists_at(addr), error::not_found(EACCOUNT_NOT_FOUND));
     }
 
-    public fun assert_account_is_registered_for_apt(addr: address) {
+    public fun assert_account_is_registered_for_gas(addr: address) {
         assert_account_exists(addr);
-        assert!(coin::is_account_registered<AptosCoin>(addr), error::not_found(EACCOUNT_NOT_REGISTERED_FOR_APT));
+        assert!(coin::is_account_registered<GasCoin>(addr), error::not_found(EACCOUNT_NOT_REGISTERED_FOR_APT));
     }
 
     /// Set whether `account` can receive direct transfers of coins that they have not explicitly registered to receive.
@@ -175,15 +190,15 @@ module ol_framework::ol_account {
         let bob = from_bcs::to_address(x"0000000000000000000000000000000000000000000000000000000000000b0b");
         let carol = from_bcs::to_address(x"00000000000000000000000000000000000000000000000000000000000ca501");
 
-        let (burn_cap, mint_cap) = aptos_framework::aptos_coin::initialize_for_test(core);
+        let (burn_cap, mint_cap) = ol_framework::gas_coin::initialize_for_test(core);
         create_account(signer::address_of(alice));
         coin::deposit(signer::address_of(alice), coin::mint(10000, &mint_cap));
         transfer(alice, bob, 500);
-        assert!(coin::balance<AptosCoin>(bob) == 500, 0);
+        assert!(coin::balance<GasCoin>(bob) == 500, 0);
         transfer(alice, carol, 500);
-        assert!(coin::balance<AptosCoin>(carol) == 500, 1);
+        assert!(coin::balance<GasCoin>(carol) == 500, 1);
         transfer(alice, carol, 1500);
-        assert!(coin::balance<AptosCoin>(carol) == 2000, 2);
+        assert!(coin::balance<GasCoin>(carol) == 2000, 2);
 
         coin::destroy_burn_cap(burn_cap);
         coin::destroy_mint_cap(mint_cap);
@@ -193,13 +208,13 @@ module ol_framework::ol_account {
     public fun test_transfer_to_resource_account(alice: &signer, core: &signer) {
         let (resource_account, _) = account::create_resource_account(alice, vector[]);
         let resource_acc_addr = signer::address_of(&resource_account);
-        assert!(!coin::is_account_registered<AptosCoin>(resource_acc_addr), 0);
+        assert!(!coin::is_account_registered<GasCoin>(resource_acc_addr), 0);
 
-        let (burn_cap, mint_cap) = aptos_framework::aptos_coin::initialize_for_test(core);
+        let (burn_cap, mint_cap) = ol_framework::gas_coin::initialize_for_test(core);
         create_account(signer::address_of(alice));
         coin::deposit(signer::address_of(alice), coin::mint(10000, &mint_cap));
         transfer(alice, resource_acc_addr, 500);
-        assert!(coin::balance<AptosCoin>(resource_acc_addr) == 500, 1);
+        assert!(coin::balance<GasCoin>(resource_acc_addr) == 500, 1);
 
         coin::destroy_burn_cap(burn_cap);
         coin::destroy_mint_cap(mint_cap);
@@ -219,8 +234,8 @@ module ol_framework::ol_account {
             vector[recipient_1_addr, recipient_2_addr],
             vector[100, 500],
         );
-        assert!(coin::balance<AptosCoin>(recipient_1_addr) == 100, 0);
-        assert!(coin::balance<AptosCoin>(recipient_2_addr) == 500, 1);
+        assert!(coin::balance<GasCoin>(recipient_1_addr) == 100, 0);
+        assert!(coin::balance<GasCoin>(recipient_2_addr) == 500, 1);
         coin::destroy_burn_cap(burn_cap);
         coin::destroy_mint_cap(mint_cap);
     }

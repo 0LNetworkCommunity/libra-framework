@@ -6,6 +6,9 @@ module ol_framework::test_slow_wallet {
   use aptos_framework::account;
   use ol_framework::slow_wallet;
   use ol_framework::mock;
+  use ol_framework::ol_account;
+  use ol_framework::gas_coin;
+  use aptos_framework::coin;
   use aptos_std::debug::print;
   use std::vector;
 
@@ -41,6 +44,65 @@ module ol_framework::test_slow_wallet {
     slow_wallet::slow_wallet_epoch_drip(&vm, 100);
     assert!(slow_wallet::unlocked_amount(*a) == 100, 735702);
   }
+
+  #[test(vm = @ol_framework, alice = @0x123, bob = @0x456)]
+  fun test_transfer_happy(vm: signer, alice: signer) {
+    slow_wallet::initialize(&vm);
+    ol_account::create_account(@0x123);
+
+
+    // let _vm = vm;
+    // let set = mock::genesis_n_vals(4);
+
+    // let a_sig = account::create_signer_for_test(*a);
+
+    slow_wallet::set_slow(&alice);
+    assert!(slow_wallet::is_slow(@0x123), 7357000);
+    assert!(slow_wallet::unlocked_amount(@0x123) == 0, 735701);
+    let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&vm);
+    coin::deposit(@0x123, coin::mint(10000, &mint_cap));
+
+    coin::destroy_burn_cap(burn_cap);
+    coin::destroy_mint_cap(mint_cap);
+    ol_account::transfer(&alice, @0x456, 99);
+
+    let b_balance = coin::balance<gas_coin::GasCoin>(@0x456);
+    assert!(b_balance == 0, 735702);
+    slow_wallet::slow_wallet_epoch_drip(&vm, 100);
+
+    assert!(slow_wallet::unlocked_amount(@0x123) == 100, 735703);
+    ol_account::transfer(&alice, @0x456, 10);
+    let b_balance = coin::balance<gas_coin::GasCoin>(@0x456);
+    assert!(b_balance == 10, 735704);
+  }
+
+  #[test(vm = @ol_framework, alice = @0x123, bob = @0x456)]
+  #[expected_failure(abort_code = 735704, location = Self)]
+
+  fun test_transfer_sad(vm: signer, alice: signer) {
+    slow_wallet::initialize(&vm);
+    ol_account::create_account(@0x123);
+
+    slow_wallet::set_slow(&alice);
+    assert!(slow_wallet::is_slow(@0x123), 7357000);
+    assert!(slow_wallet::unlocked_amount(@0x123) == 0, 735701);
+    let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&vm);
+    coin::deposit(@0x123, coin::mint(10000, &mint_cap));
+
+    coin::destroy_burn_cap(burn_cap);
+    coin::destroy_mint_cap(mint_cap);
+    ol_account::transfer(&alice, @0x456, 99);
+
+    let b_balance = coin::balance<gas_coin::GasCoin>(@0x456);
+    assert!(b_balance == 0, 735702);
+    slow_wallet::slow_wallet_epoch_drip(&vm, 100);
+
+    assert!(slow_wallet::unlocked_amount(@0x123) == 100, 735703);
+    ol_account::transfer(&alice, @0x456, 200); // TOO MUCH
+    let b_balance = coin::balance<gas_coin::GasCoin>(@0x456);
+    assert!(b_balance == 10, 735704);
+  }
+
 
 
 }

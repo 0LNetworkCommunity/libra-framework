@@ -12,7 +12,9 @@ module ol_framework::slow_wallet {
   use std::signer;
   use ol_framework::globals;
   use ol_framework::gas_coin::GasCoin;
+  use std::error;
 
+  const EGENESIS_ERROR: u64 = 10001;
 
     struct SlowWallet has key {
         unlocked: u64,
@@ -66,7 +68,8 @@ module ol_framework::slow_wallet {
     }
 
     public fun set_slow(sig: &signer) acquires SlowWalletList {
-      if (exists<SlowWalletList>(@ol_framework)) {
+      assert!(exists<SlowWalletList>(@ol_framework), error::invalid_argument(EGENESIS_ERROR));
+
         let addr = signer::address_of(sig);
         let list = get_slow_list();
         if (!vector::contains<address>(&list, &addr)) {
@@ -80,7 +83,6 @@ module ol_framework::slow_wallet {
             transferred: 0,
           });  
         }
-      }
     }
 
     public fun slow_wallet_epoch_drip(vm: &signer, amount: u64) acquires SlowWallet, SlowWalletList{

@@ -10,7 +10,7 @@ spec ol_framework::ol_account {
     spec create_account(auth_key: address) {
         include CreateAccountAbortsIf;
         ensures exists<account::Account>(auth_key);
-        ensures exists<coin::CoinStore<AptosCoin>>(auth_key);
+        ensures exists<coin::CoinStore<GasCoin>>(auth_key);
     }
     spec schema CreateAccountAbortsIf {
         auth_key: address;
@@ -35,10 +35,10 @@ spec ol_framework::ol_account {
     }
 
     /// Check if the address existed.
-    /// Check if the AptosCoin under the address existed.
-    spec assert_account_is_registered_for_apt(addr: address) {
+    /// Check if the GasCoin under the address existed.
+    spec assert_account_is_registered_for_gas(addr: address) {
         aborts_if !account::exists_at(addr);
-        aborts_if !coin::is_account_registered<AptosCoin>(addr);
+        aborts_if !coin::is_account_registered<GasCoin>(addr);
     }
 
     spec set_allow_direct_coin_transfers(account: &signer, allow: bool) {
