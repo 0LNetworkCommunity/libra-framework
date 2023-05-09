@@ -4,6 +4,7 @@
 module ol_framework::test_slow_wallet {
   use aptos_framework::stake;
   use aptos_framework::account;
+  use aptos_framework::reconfiguration;
   use ol_framework::slow_wallet;
   use ol_framework::mock;
   use ol_framework::ol_account;
@@ -32,7 +33,7 @@ module ol_framework::test_slow_wallet {
     
   }
 
-  #[test(vm=@ol_framework)]
+  #[test(vm=@vm_reserved)]
   fun test_epoch_drip(vm: signer) {
     let set = mock::genesis_n_vals(4);
     let a = vector::borrow(&set, 0);
@@ -45,9 +46,9 @@ module ol_framework::test_slow_wallet {
     assert!(slow_wallet::unlocked_amount(*a) == 100, 735702);
   }
 
-  #[test(vm = @ol_framework, alice = @0x123, bob = @0x456)]
-  fun test_transfer_happy(vm: signer, alice: signer) {
-    slow_wallet::initialize(&vm);
+  #[test(genesis = @ol_framework, vm = @vm_reserved, alice = @0x123, bob = @0x456)]
+  fun test_transfer_happy(genesis: signer, vm: signer, alice: signer) {
+    slow_wallet::initialize(&genesis);
     ol_account::create_account(@0x123);
 
 
@@ -59,7 +60,7 @@ module ol_framework::test_slow_wallet {
     slow_wallet::set_slow(&alice);
     assert!(slow_wallet::is_slow(@0x123), 7357000);
     assert!(slow_wallet::unlocked_amount(@0x123) == 0, 735701);
-    let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&vm);
+    let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&genesis);
     coin::deposit(@0x123, coin::mint(10000, &mint_cap));
 
     coin::destroy_burn_cap(burn_cap);
@@ -76,17 +77,17 @@ module ol_framework::test_slow_wallet {
     assert!(b_balance == 10, 735704);
   }
 
-  #[test(vm = @ol_framework, alice = @0x123, bob = @0x456)]
+  #[test(genesis = @ol_framework, vm = @vm_reserved, alice = @0x123, bob = @0x456)]
   #[expected_failure(abort_code = 735704, location = Self)]
 
-  fun test_transfer_sad(vm: signer, alice: signer) {
-    slow_wallet::initialize(&vm);
+  fun test_transfer_sad(genesis: signer, vm: signer, alice: signer) {
+    slow_wallet::initialize(&genesis);
     ol_account::create_account(@0x123);
 
     slow_wallet::set_slow(&alice);
     assert!(slow_wallet::is_slow(@0x123), 7357000);
     assert!(slow_wallet::unlocked_amount(@0x123) == 0, 735701);
-    let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&vm);
+    let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&genesis);
     coin::deposit(@0x123, coin::mint(10000, &mint_cap));
 
     coin::destroy_burn_cap(burn_cap);
@@ -103,6 +104,21 @@ module ol_framework::test_slow_wallet {
     assert!(b_balance == 10, 735704);
   }
 
+
+  #[test(vm = @0x0)]
+  // we are testing that genesis creates the needed struct
+  // and a validator creation sets the users account to slow.
+  fun slow_wallet_reconfigure (vm: signer) {
+    let set = mock::genesis_n_vals(4);
+    let a = vector::borrow(&set, 0);
+    // let a_sig = account::create_signer_for_test(*a);
+
+    // slow_wallet::set_slow(&a_sig);
+    assert!(slow_wallet::unlocked_amount(*a) == 0, 735701);
+      // let list = slow_wallet::get_slow_list();
+    reconfiguration::ol_reconfigure_for_test(&vm)
+    
+  }
 
 
 }

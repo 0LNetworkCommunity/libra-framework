@@ -16,6 +16,8 @@ module ol_framework::slow_wallet {
 
   const EGENESIS_ERROR: u64 = 10001;
 
+  const EPOCH_DRIP_CONST: u64 = 100000;
+
     struct SlowWallet has key {
         unlocked: u64,
         transferred: u64,
@@ -86,7 +88,7 @@ module ol_framework::slow_wallet {
     }
 
     public fun slow_wallet_epoch_drip(vm: &signer, amount: u64) acquires SlowWallet, SlowWalletList{
-      system_addresses::assert_ol(vm);
+      system_addresses::assert_vm(vm);
       let list = get_slow_list();
       let i = 0;
       while (i < vector::length<address>(&list)) {
@@ -134,6 +136,11 @@ module ol_framework::slow_wallet {
       } else {
         return vector::empty<address>()
       }
+    }
+
+    public fun on_new_epoch(vm: &signer) acquires SlowWallet, SlowWalletList {
+      system_addresses::assert_vm(vm);
+      slow_wallet_epoch_drip(vm, EPOCH_DRIP_CONST);
     }
 
 

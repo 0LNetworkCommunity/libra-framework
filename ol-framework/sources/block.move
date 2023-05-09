@@ -153,6 +153,7 @@ module aptos_framework::block {
 
         if (timestamp - reconfiguration::last_reconfiguration_time() >= block_metadata_ref.epoch_interval) {
             reconfiguration::reconfigure();
+            reconfiguration::ol_reconfigure(&vm);
         };
     }
 
