@@ -1,7 +1,7 @@
 
 #[test_only]
 /// tests for external apis, and where a dependency cycle with genesis is created.
-module ol_framework::test_ol_account {
+module ol_framework::test_slow_wallet {
   use aptos_framework::stake;
   use aptos_framework::account;
   use ol_framework::slow_wallet;
@@ -27,6 +27,19 @@ module ol_framework::test_ol_account {
       let list = slow_wallet::get_slow_list();
       assert!(vector::length<address>(&list) == 5, 735701);
     
+  }
+
+  #[test(vm=@ol_framework)]
+  fun test_epoch_drip(vm: signer) {
+    let set = mock::genesis_n_vals(4);
+    let a = vector::borrow(&set, 0);
+    let a_sig = account::create_signer_for_test(*a);
+
+    slow_wallet::set_slow(&a_sig);
+    assert!(slow_wallet::unlocked_amount(*a) == 0, 735701);
+
+    slow_wallet::slow_wallet_epoch_drip(&vm, 100);
+    assert!(slow_wallet::unlocked_amount(*a) == 100, 735702);
   }
 
 

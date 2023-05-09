@@ -1,3 +1,9 @@
+//////// SLOW WALLETS ////////
+// Slow wallets have a limited amount available to transfer between accounts.
+// Using Coins for network operations has no limit. Sending funds to DonorDirected wallets is also unlimited. Coins are free and clear user's property.
+// Every epoch a new amount is made available (unlocked)
+// slow wallets can use the normal payment and transfer mechanisms to move
+// the unlocked amount.
 
 module ol_framework::slow_wallet {
   use aptos_framework::system_addresses;
@@ -6,13 +12,8 @@ module ol_framework::slow_wallet {
   use std::signer;
   use ol_framework::globals;
   use ol_framework::gas_coin::GasCoin;
-  // TODO: v7: just stubs
 
-      //////// SLOW WALLETS ////////
-    // Slow wallets have a limited amount available to spend at every epoch.
-    // Every epoch a new amount is made available (unlocked)
-    // slow wallets can use the normal payment and transfer mechanisms to move
-    // the unlocked amount.
+
     struct SlowWallet has key {
         unlocked: u64,
         transferred: u64,
@@ -31,7 +32,7 @@ module ol_framework::slow_wallet {
       }
     }
 
-        /// private function which can only be called at genesis
+    /// private function which can only be called at genesis
     /// must apply the coin split factor.
     fun fork_migrate_slow_wallet(
       vm: &signer,
@@ -144,5 +145,5 @@ module ol_framework::slow_wallet {
   public fun vm_multi_pay_fee(_vm: &signer, _list: &vector<address>, _price: u64, _metadata: &vector<u8>) {
 
   }
-
+ 
 }
