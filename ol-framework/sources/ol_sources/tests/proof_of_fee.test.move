@@ -5,7 +5,7 @@ module ol_framework::test_pof {
   use ol_framework::proof_of_fee;
   use ol_framework::reconfiguration;
   use ol_framework::jail;
-  use ol_framework::ol_account;
+  use ol_framework::slow_wallet;
   use ol_framework::vouch;
   use aptos_framework::stake;
   use std::vector;
@@ -60,8 +60,8 @@ module ol_framework::test_pof {
     assert!(bid == 1, 1001);
     assert!(expires == 10000, 1002);
     
-    // ol_account::slow_wallet_epoch_drip(&vm, 500000);
-    let coin = ol_account::unlocked_amount(*alice);
+    // slow_wallet::slow_wallet_epoch_drip(&vm, 500000);
+    let coin = slow_wallet::unlocked_amount(*alice);
     let (r, _, _) = proof_of_fee::get_consensus_reward();
     let bid_cost = (bid * r) / 1000;
     assert!(coin > bid_cost, 1005);
@@ -83,8 +83,8 @@ module ol_framework::test_pof {
     assert!(bid == 1, 1001);
     assert!(expires == 10000, 1002);
     
-    // ol_account::slow_wallet_epoch_drip(&vm, 500000);
-    let coin = ol_account::unlocked_amount(*alice);
+    // slow_wallet::slow_wallet_epoch_drip(&vm, 500000);
+    let coin = slow_wallet::unlocked_amount(*alice);
     let (r, _, _) = proof_of_fee::get_consensus_reward();
     let bid_cost = (bid * r) / 1000;
     print(&coin);
@@ -118,8 +118,8 @@ module ol_framework::test_pof {
     assert!(bid == 1, 1001);
     assert!(expires == 10000, 1002);
     
-    // ol_account::slow_wallet_epoch_drip(&vm, 500000);
-    let coin = ol_account::unlocked_amount(*alice);
+    // slow_wallet::slow_wallet_epoch_drip(&vm, 500000);
+    let coin = slow_wallet::unlocked_amount(*alice);
     let (r, _, _) = proof_of_fee::get_consensus_reward();
     let bid_cost = (bid * r) / 1000;
     assert!(coin < bid_cost, 1005);
@@ -141,8 +141,8 @@ module ol_framework::test_pof {
     assert!(bid == 1, 1001);
     assert!(expires == 10000, 1002);
     
-    // ol_account::slow_wallet_epoch_drip(&vm, 500000);
-    let coin = ol_account::unlocked_amount(*alice);
+    // slow_wallet::slow_wallet_epoch_drip(&vm, 500000);
+    let coin = slow_wallet::unlocked_amount(*alice);
     let (r, _, _) = proof_of_fee::get_consensus_reward();
     let bid_cost = (bid * r) / 1000;
     assert!(coin > bid_cost, 1005);
@@ -177,8 +177,8 @@ module ol_framework::test_pof {
     assert!(bid == 1, 1001);
     assert!(expires == 10000, 1002);
     
-    // ol_account::slow_wallet_epoch_drip(&vm, 500000);
-    let coin = ol_account::unlocked_amount(*alice);
+    // slow_wallet::slow_wallet_epoch_drip(&vm, 500000);
+    let coin = slow_wallet::unlocked_amount(*alice);
     let (r, _, _) = proof_of_fee::get_consensus_reward();
     let bid_cost = (bid * r) / 1000;
     assert!(coin > bid_cost, 1005);

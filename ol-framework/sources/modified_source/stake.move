@@ -29,7 +29,7 @@ module aptos_framework::stake {
     use aptos_std::table::{Self, Table};
     // use aptos_std::debug::print;
 
-    use ol_framework::ol_account;
+    use ol_framework::slow_wallet;
     use aptos_framework::aptos_coin::AptosCoin;
     use aptos_framework::account;
     use aptos_framework::coin::{Self, Coin, MintCapability};
@@ -548,7 +548,7 @@ module aptos_framework::stake {
             validator_index: 0,
         });
 
-        ol_account::set_slow(account);
+        slow_wallet::set_slow(account);
     }
 
     fun initialize_owner(owner: &signer) acquires AllowedValidators {

@@ -15,7 +15,7 @@ module ol_framework::proof_of_fee {
   use std::fixed_point32;
   use aptos_framework::validator_universe;
   use ol_framework::jail;
-  use ol_framework::ol_account;
+  use ol_framework::slow_wallet;
   use ol_framework::vouch;
   // use ol_framework::testnet;
   use aptos_framework::reconfiguration;
@@ -98,7 +98,7 @@ module ol_framework::proof_of_fee {
       let (auction_winners, price) = fill_seats_and_get_price(vm, n_musical_chairs, &sorted_bids, outgoing_compliant_set);
       // print(&price);
 
-      ol_account::vm_multi_pay_fee(vm, &auction_winners, price, &b"proof of fee");
+      slow_wallet::vm_multi_pay_fee(vm, &auction_winners, price, &b"proof of fee");
 
       auction_winners
   }
@@ -305,7 +305,7 @@ module ol_framework::proof_of_fee {
       if (oper == *val) return false;
 
       // is a slow wallet
-      if (!ol_account::is_slow(*val)) return false;
+      if (!slow_wallet::is_slow(*val)) return false;
 
       // print(&8006010203);
       // we can't seat validators that were just jailed
@@ -332,7 +332,7 @@ module ol_framework::proof_of_fee {
       // skip the user if they don't have sufficient UNLOCKED funds
       // or if the bid expired.
       // print(&80060102042);
-      let unlocked_coins = ol_account::unlocked_amount(*val);
+      let unlocked_coins = slow_wallet::unlocked_amount(*val);
       // print(&unlocked_coins);
 
       let (baseline_reward, _, _) = get_consensus_reward();
