@@ -11,6 +11,9 @@ module ol_framework::ancestry {
     // use std::debug::print;
     use aptos_framework::system_addresses;
 
+    #[test_only] use aptos_framework::genesis;
+    #[test_only] use aptos_framework::stake;
+
     // triggered once per epoch
     struct Ancestry has key {
       // the full tree back to genesis set
@@ -172,15 +175,21 @@ module ol_framework::ancestry {
       };
     }
 
-    #[test(alice = @0x1, bob = @0x2)]
-    fun init_(alice: signer, bob: signer) acquires Ancestry {
-        init(&alice, &bob);
-        let tree = get_tree(signer::address_of(&alice));
-        assert!(vector::contains<address>(&tree, &signer::address_of(&bob)), 7357001);
+    //// ================ Tests ================
+
+    #[test(validator = @0x1, bob = @0x2)]
+    fun test_init(validator: &signer, bob: &signer) acquires Ancestry {
+        genesis::setup();
+        let (_sk_1, pk_1, pop_1) = stake::generate_identity();
+        stake::initialize_test_validator(&pk_1, &pop_1, validator, 100, true, true);
+
+        init(validator, bob);
+        let tree = get_tree(signer::address_of(validator));
+        assert!(vector::contains<address>(&tree, &signer::address_of(bob)), 7357001);
     }
 
     #[test(ol_root = @ol_root, bob = @0x2)]
-    fun fam(ol_root: signer, bob: signer) acquires Ancestry {
+    fun test_fam(ol_root: signer, bob: signer) acquires Ancestry {
         init(&bob, &ol_root);
         let ol_root_addr = signer::address_of(&ol_root);
         let bob_addr = signer::address_of(&bob);
@@ -196,7 +205,7 @@ module ol_framework::ancestry {
     }
 
     #[test(vm = @vm_reserved, bob = @0x2, carol = @0x3)]
-    fun migrate(vm: signer, bob: signer, carol: signer) acquires Ancestry {
+    fun test_migrate(vm: signer, bob: signer, carol: signer) acquires Ancestry {
         let carol_addr = signer::address_of(&carol);
         fork_migrate(&vm, &bob, vector::singleton(carol_addr));
         let tree = get_tree(signer::address_of(&bob));
