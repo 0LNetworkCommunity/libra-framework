@@ -17,8 +17,8 @@ module ol_framework::stats {
   
   struct SetData has copy, drop, store {
     addrs: vector<address>,
-    prop_count: vector<u64>,
-    vote_count: vector<u64>,
+    prop_counts: vector<u64>,
+    vote_counts: vector<u64>,
     total_votes: u64,
     total_props: u64,
   }
@@ -45,8 +45,8 @@ module ol_framework::stats {
   fun blank():SetData {
     SetData {
       addrs: vector::empty(),
-      prop_count: vector::empty(),
-      vote_count: vector::empty(),
+      prop_counts: vector::empty(),
+      vote_counts: vector::empty(),
       total_votes: 0,
       total_props: 0,
     }
@@ -64,8 +64,8 @@ module ol_framework::stats {
     if (!is_init) {
       let stats = borrow_global_mut<ValStats>(sender);
       vector::push_back(&mut stats.current.addrs, node_addr);
-      vector::push_back(&mut stats.current.prop_count, 0);
-      vector::push_back(&mut stats.current.vote_count, 0);
+      vector::push_back(&mut stats.current.prop_counts, 0);
+      vector::push_back(&mut stats.current.vote_counts, 0);
     }
   }
 
@@ -103,7 +103,7 @@ module ol_framework::stats {
     assert!(sender == @ol_root, error::permission_denied(190005));
     let stats = borrow_global_mut<ValStats>(sender);
     let (is_found, i) = vector::index_of<address>(&mut stats.current.addrs, &node_addr);
-    if (is_found) return *vector::borrow<u64>(&mut stats.current.vote_count, i)
+    if (is_found) return *vector::borrow<u64>(&mut stats.current.vote_counts, i)
     else 0
   }
 
@@ -150,7 +150,7 @@ module ol_framework::stats {
     assert!(sender == @ol_root, error::permission_denied(190008));
     let stats = borrow_global_mut<ValStats>(sender);
     let (is_found, i) = vector::index_of<address>(&mut stats.current.addrs, &node_addr);
-    if (is_found) return *vector::borrow<u64>(&mut stats.current.prop_count, i)
+    if (is_found) return *vector::borrow<u64>(&mut stats.current.prop_counts, i)
     else 0
   }
 
@@ -165,9 +165,9 @@ module ol_framework::stats {
     // in emergency recovery.
 
     if (is_true) {
-      let current_count = *vector::borrow<u64>(&mut stats.current.prop_count, i);
-      vector::push_back(&mut stats.current.prop_count, current_count + 1);
-      vector::swap_remove(&mut stats.current.prop_count, i);
+      let current_count = *vector::borrow<u64>(&mut stats.current.prop_counts, i);
+      vector::push_back(&mut stats.current.prop_counts, current_count + 1);
+      vector::swap_remove(&mut stats.current.prop_counts, i);
     };
 
     stats.current.total_props = stats.current.total_props + 1;
@@ -182,9 +182,9 @@ module ol_framework::stats {
     let stats = borrow_global_mut<ValStats>(sender);
     let (is_true, i) = vector::index_of<address>(&mut stats.current.addrs, &node_addr);
     if (is_true) {
-      let test = *vector::borrow<u64>(&mut stats.current.vote_count, i);
-      vector::push_back(&mut stats.current.vote_count, test + 1);
-      vector::swap_remove(&mut stats.current.vote_count, i);
+      let test = *vector::borrow<u64>(&mut stats.current.vote_counts, i);
+      vector::push_back(&mut stats.current.vote_counts, test + 1);
+      vector::swap_remove(&mut stats.current.vote_counts, i);
     } else {
       // debugging rescue mission. Remove after network stabilizes Apr 2022.
       // something bad happened and we can't find this node in our list.
@@ -303,9 +303,9 @@ module ol_framework::stats {
     let stats = borrow_global_mut<ValStats>(@vm_reserved);
     let (is_true, i) = vector::index_of<address>(&mut stats.current.addrs, &node_addr);
     if (is_true) {
-      let votes = *vector::borrow<u64>(&mut stats.current.vote_count, i);
-      vector::push_back(&mut stats.current.vote_count, 0);
-      vector::swap_remove(&mut stats.current.vote_count, i);
+      let votes = *vector::borrow<u64>(&mut stats.current.vote_counts, i);
+      vector::push_back(&mut stats.current.vote_counts, 0);
+      vector::swap_remove(&mut stats.current.vote_counts, i);
       stats.current.total_votes = stats.current.total_votes - votes;
     }
   }
