@@ -10,7 +10,10 @@ module ol_framework::persistence_demo {
     use std::signer;
     use std::error;
     use ol_framework::testnet::is_testnet;
-
+    
+    #[test_only] use aptos_framework::stake;
+    #[test_only] use aptos_framework::genesis;
+    
     // In Move the types for data storage are `resource struct`. Here a type 
     // State is being defined. Once a type is initialized in the global state, 
     // the resource is treated as if in-memory on the heap, the diem database 
@@ -101,4 +104,45 @@ module ol_framework::persistence_demo {
       let st = borrow_global<State>(signer::address_of(sender));
       vector::contains(&st.hist, &num)
     }
+
+    //// ================ Tests ================
+
+    ///// DEMO 1: Happy case, the State resource is initialized to validator's 
+    ///// account, and can subsequently by written to, and read from.
+    #[test(validator_1 = @0x11)]
+    #[expected_failure(abort_code = 4, location = Self)]
+    fun test_demo_1(validator_1: &signer) acquires State {
+        genesis::setup();
+        let (_sk_1, pk_1, pop_1) = stake::generate_identity();
+        stake::initialize_test_validator(
+            &pk_1, &pop_1, validator_1, 100, true, true
+        );
+
+        //script stuff
+        initialize(validator_1);
+        add_stuff(validator_1);
+
+        // our checks
+        assert!(length(validator_1) == 3, 0);
+        assert!(contains(validator_1, 1), 1);
+        assert!(length(validator_1) == 2, 4);
+    }
+
+    // todo v7 
+    //
+    ///// DEMO 2: State is not initialized in validator's address
+    ///// this will fail because validator does not have the data struct, 
+    ///// and we tried to operate on it.
+    // #[test(validator_1 = @0x11)]
+    // // #[expected_failure(abort_code = 4008, location = Self)] // todo v7
+    // fun test_demo_2(validator_1: &signer) acquires State {
+    //     genesis::setup();
+    //     let (_sk_1, pk_1, pop_1) = stake::generate_identity();
+    //     stake::initialize_test_validator(
+    //         &pk_1, &pop_1, validator_1, 100, true, true
+    //     );
+
+    //     add_stuff(validator_1); // todo v7: abort_code = 4008
+    // }
+
 }
