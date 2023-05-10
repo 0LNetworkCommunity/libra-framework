@@ -16,7 +16,7 @@ module ol_framework::stats {
   // mode this will be moved to Rust, in the vm execution block prologue. TBD.
   
   struct SetData has copy, drop, store {
-    addr: vector<address>,
+    addrs: vector<address>,
     prop_count: vector<u64>,
     vote_count: vector<u64>,
     total_votes: u64,
@@ -44,7 +44,7 @@ module ol_framework::stats {
   
   fun blank():SetData {
     SetData {
-      addr: vector::empty(),
+      addrs: vector::empty(),
       prop_count: vector::empty(),
       vote_count: vector::empty(),
       total_votes: 0,
@@ -60,10 +60,10 @@ module ol_framework::stats {
     assert!(sender == @ol_root, error::permission_denied(190002));
 
     let stats = borrow_global<ValStats>(sender);
-    let (is_init, _) = vector::index_of<address>(&stats.current.addr, &node_addr);
+    let (is_init, _) = vector::index_of<address>(&stats.current.addrs, &node_addr);
     if (!is_init) {
       let stats = borrow_global_mut<ValStats>(sender);
-      vector::push_back(&mut stats.current.addr, node_addr);
+      vector::push_back(&mut stats.current.addrs, node_addr);
       vector::push_back(&mut stats.current.prop_count, 0);
       vector::push_back(&mut stats.current.vote_count, 0);
     }
@@ -102,7 +102,7 @@ module ol_framework::stats {
     let sender = signer::address_of(vm);
     assert!(sender == @ol_root, error::permission_denied(190005));
     let stats = borrow_global_mut<ValStats>(sender);
-    let (is_found, i) = vector::index_of<address>(&mut stats.current.addr, &node_addr);
+    let (is_found, i) = vector::index_of<address>(&mut stats.current.addrs, &node_addr);
     if (is_found) return *vector::borrow<u64>(&mut stats.current.vote_count, i)
     else 0
   }
@@ -130,7 +130,7 @@ module ol_framework::stats {
     let sender = signer::address_of(vm);
     assert!(sender == @ol_root, error::permission_denied(190007));
     let density = 0u64;
-    let nodes = *&(borrow_global_mut<ValStats>(sender).current.addr);
+    let nodes = *&(borrow_global_mut<ValStats>(sender).current.addrs);
     let len = vector::length(&nodes);
     let k = 0;
     while (k < len) {
@@ -149,7 +149,7 @@ module ol_framework::stats {
     let sender = signer::address_of(vm);
     assert!(sender == @ol_root, error::permission_denied(190008));
     let stats = borrow_global_mut<ValStats>(sender);
-    let (is_found, i) = vector::index_of<address>(&mut stats.current.addr, &node_addr);
+    let (is_found, i) = vector::index_of<address>(&mut stats.current.addrs, &node_addr);
     if (is_found) return *vector::borrow<u64>(&mut stats.current.prop_count, i)
     else 0
   }
@@ -160,7 +160,7 @@ module ol_framework::stats {
     let sender = signer::address_of(vm);
     assert!(sender == @ol_root, error::permission_denied(190009));
     let stats = borrow_global_mut<ValStats>(@ol_root);
-    let (is_true, i) = vector::index_of<address>(&mut stats.current.addr, &node_addr);
+    let (is_true, i) = vector::index_of<address>(&mut stats.current.addrs, &node_addr);
     // don't try to increment if no state. This has caused issues in the past
     // in emergency recovery.
 
@@ -180,7 +180,7 @@ module ol_framework::stats {
     let sender = signer::address_of(vm);
     assert!(sender == @ol_root, error::permission_denied(190010));
     let stats = borrow_global_mut<ValStats>(sender);
-    let (is_true, i) = vector::index_of<address>(&mut stats.current.addr, &node_addr);
+    let (is_true, i) = vector::index_of<address>(&mut stats.current.addrs, &node_addr);
     if (is_true) {
       let test = *vector::borrow<u64>(&mut stats.current.vote_count, i);
       vector::push_back(&mut stats.current.vote_count, test + 1);
@@ -301,7 +301,7 @@ module ol_framework::stats {
     testnet::assert_testnet(vm);
 
     let stats = borrow_global_mut<ValStats>(@vm_reserved);
-    let (is_true, i) = vector::index_of<address>(&mut stats.current.addr, &node_addr);
+    let (is_true, i) = vector::index_of<address>(&mut stats.current.addrs, &node_addr);
     if (is_true) {
       let votes = *vector::borrow<u64>(&mut stats.current.vote_count, i);
       vector::push_back(&mut stats.current.vote_count, 0);
