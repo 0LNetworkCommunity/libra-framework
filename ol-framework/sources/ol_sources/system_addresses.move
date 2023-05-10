@@ -1,4 +1,4 @@
-module ol_framework::libra_addresses {
+module ol_framework::ol_addresses {
     use std::error;
     use std::signer;
 

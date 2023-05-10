@@ -36,7 +36,6 @@ module aptos_framework::validator_universe {
     });
   }
 
-
   /// This function is called to add validator to the validator universe.
   /// it can only be called by `stake` module, on validator registration.
   public (friend) fun add(sender: &signer) acquires ValidatorUniverse, JailedBit {
@@ -49,8 +48,6 @@ module aptos_framework::validator_universe {
       unjail(sender);
     }
   }
-
-
 
   // A simple public function to query the EligibleValidators.
   // Function code: 03 Prefix: 220103
