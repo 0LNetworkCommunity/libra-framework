@@ -22,7 +22,7 @@ module ol_framework::proof_of_fee {
   use aptos_framework::stake;
   use aptos_framework::system_addresses;
 
-  use aptos_std::debug::print;
+  // use aptos_std::debug::print;
   
   /// The nominal reward for each validator in each epoch.
   const GENESIS_BASELINE_REWARD: u64 = 1000000;
@@ -320,8 +320,8 @@ module ol_framework::proof_of_fee {
 
       // Skip if the bid expired. belt and suspenders, this should have been checked in the sorting above.
       // TODO: make this it's own function so it can be publicly callable, it's useful generally, and for debugging.
-      print(&reconfiguration::get_current_epoch());
-      print(&expire);
+      // print(&reconfiguration::get_current_epoch());
+      // print(&expire);
 
       if (reconfiguration::get_current_epoch() > expire) return false;
 

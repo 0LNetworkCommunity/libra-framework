@@ -113,18 +113,16 @@ module aptos_framework::reconfiguration {
     }
     /// Signal validators to start using new configuration. Must be called from friend config modules.
     public(friend) fun reconfigure() acquires Configuration {
-      use aptos_std::debug::print;
         // Do not do anything if genesis has not finished.
-        print(&100001);
-        print(&chain_status::is_genesis());
+
         if (chain_status::is_genesis() || timestamp::now_microseconds() == 0 || !reconfiguration_enabled()) {
             return
         };
-        print(&100002);
+
 
         let config_ref = borrow_global_mut<Configuration>(@aptos_framework);
         let current_time = timestamp::now_microseconds();
-        print(&current_time);
+
 
         // Do not do anything if a reconfiguration event is already emitted within this transaction.
         //

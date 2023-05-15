@@ -11,7 +11,7 @@ module ol_framework::test_pof {
   use aptos_framework::stake;
   use std::vector;
 
-  use aptos_std::debug::print;
+  // use aptos_std::debug::print;
 
   #[test]
   fun pof_set_retract () {
@@ -131,15 +131,15 @@ module ol_framework::test_pof {
     // TODO: Improve this test by doing more advanced epochs
     let a_sig = account::create_signer_for_test(*alice);
 
-    let this_epoch = reconfiguration::get_current_epoch();
-    print(&this_epoch);
+    // let this_epoch = reconfiguration::get_current_epoch();
+
 
     
     reconfiguration::reconfigure_for_test();
     stake::end_epoch();
     
-    let this_epoch = reconfiguration::get_current_epoch();
-    print(&this_epoch);
+    // let this_epoch = reconfiguration::get_current_epoch();
+
 
     proof_of_fee::set_bid(&a_sig, 1, 0); 
     let (bid, expires) = proof_of_fee::current_bid(*alice);

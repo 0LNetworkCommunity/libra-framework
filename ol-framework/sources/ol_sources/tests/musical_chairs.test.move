@@ -5,7 +5,7 @@ module ol_framework::test_musical_chairs {
 
     use ol_framework::musical_chairs;
     use ol_framework::mock;
-    use aptos_std::debug::print;
+    // use aptos_std::debug::print;
     use std::vector;
     use std::fixed_point32;
 
@@ -25,9 +25,9 @@ module ol_framework::test_musical_chairs {
       assert!(fixed_point32::is_zero(ratio), 7357004);
 
 
-      let (outgoing_compliant_set, _new_set_size) = musical_chairs::stop_the_music(&vm, 0, 15);
+      let (_outgoing_compliant_set, _new_set_size) = musical_chairs::stop_the_music(&vm, 0, 15);
 
-      print(&outgoing_compliant_set);
+      // print(&outgoing_compliant_set);
       // //print(&new_set_size);
       // assert!(MusicalChairs::get_current_seats() == 11, 1004)
     }
@@ -50,9 +50,9 @@ module ol_framework::test_musical_chairs {
       assert!(fixed_point32::create_from_rational(4, 5) == bad_ratio, 7357005);
 
 
-      let (outgoing_compliant_set, _new_set_size) = musical_chairs::stop_the_music(&vm, 0, 15);
+      let (_outgoing_compliant_set, _new_set_size) = musical_chairs::stop_the_music(&vm, 0, 15);
 
-      print(&outgoing_compliant_set);
+      // print(&outgoing_compliant_set);
       // //print(&new_set_size);
       // assert!(MusicalChairs::get_current_seats() == 11, 1004)
     }
