@@ -222,7 +222,7 @@ module ol_framework::ol_account {
 
     #[test(from = @0x123, core = @0x1, recipient_1 = @0x124, recipient_2 = @0x125)]
     public fun test_batch_transfer(from: &signer, core: &signer, recipient_1: &signer, recipient_2: &signer) {
-        let (burn_cap, mint_cap) = aptos_framework::aptos_coin::initialize_for_test(core);
+        let (burn_cap, mint_cap) = aptos_framework::gas_coin::initialize_for_test(core);
         create_account(signer::address_of(from));
         let recipient_1_addr = signer::address_of(recipient_1);
         let recipient_2_addr = signer::address_of(recipient_2);
