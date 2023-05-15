@@ -143,14 +143,6 @@ module ol_framework::slow_wallet {
       slow_wallet_epoch_drip(vm, EPOCH_DRIP_CONST);
     }
 
-
-  // public fun is_slow(_addr: address): bool {
-  //   true
-  // }
-
-  // public fun unlocked_amount(_addr: address): u64 {
-  //   0
-
   public fun vm_multi_pay_fee(_vm: &signer, _list: &vector<address>, _price: u64, _metadata: &vector<u8>) {
 
   }

@@ -13,6 +13,7 @@ module ol_framework::testnet {
     use std::signer;
     use std::chain_id;
 
+
     const ENOT_TESTNET: u64 = 666; // out satan!
     const EWHY_U_NO_ROOT: u64 = 667;
 
@@ -31,5 +32,13 @@ module ol_framework::testnet {
 
     public fun is_staging_net(): bool {
         chain_id::get() == 2
+    }
+
+    #[test_only]
+    public fun unset(vm: &signer) {
+      use aptos_framework::system_addresses;
+      system_addresses::assert_vm(vm);
+      chain_id::set_for_test(vm, 1);
+
     }
 }

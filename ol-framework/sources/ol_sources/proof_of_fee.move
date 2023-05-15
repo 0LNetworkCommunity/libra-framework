@@ -21,6 +21,8 @@ module ol_framework::proof_of_fee {
   use aptos_framework::reconfiguration;
   use aptos_framework::stake;
   use aptos_framework::system_addresses;
+
+  // use aptos_std::debug::print;
   
   /// The nominal reward for each validator in each epoch.
   const GENESIS_BASELINE_REWARD: u64 = 1000000;
@@ -300,48 +302,35 @@ module ol_framework::proof_of_fee {
 
       // Safety check: node has valid configs
       if (!stake::is_valid(*val)) return false;
-      // has operator account set to another address
-      let oper = stake::get_operator(*val);
-      if (oper == *val) return false;
 
       // is a slow wallet
       if (!slow_wallet::is_slow(*val)) return false;
 
-      // print(&8006010203);
       // we can't seat validators that were just jailed
       // NOTE: epoch reconfigure needs to reset the jail
       // before calling the proof of fee.
       if (jail::is_jailed(*val)) return false;
-      // print(&8006010204);
+
       // we can't seat validators who don't have minimum viable vouches
 
       if (!vouch::unrelated_buddies_above_thresh(*val)) return false;
+      let (bid_pct, expire) = current_bid(*val);
 
-      // print(&80060102041);
-
-      let (bid, expire) = current_bid(*val);
-      //print(val);
-      // print(&bid);
-      // print(&expire);
+      if (bid_pct < 1) return false;
 
       // Skip if the bid expired. belt and suspenders, this should have been checked in the sorting above.
       // TODO: make this it's own function so it can be publicly callable, it's useful generally, and for debugging.
-      // print(&reconfiguration::get_current_epoch());
       if (reconfiguration::get_current_epoch() > expire) return false;
 
       // skip the user if they don't have sufficient UNLOCKED funds
       // or if the bid expired.
-      // print(&80060102042);
+
       let unlocked_coins = slow_wallet::unlocked_amount(*val);
-      // print(&unlocked_coins);
-
       let (baseline_reward, _, _) = get_consensus_reward();
-      let coin_required = fixed_point32::multiply_u64(baseline_reward, fixed_point32::create_from_rational(bid, 1000));
+      let coin_required = fixed_point32::multiply_u64(baseline_reward, fixed_point32::create_from_rational(bid_pct, 1000));
 
-      // print(&coin_required);
       if (unlocked_coins < coin_required) return false;
 
-      // print(&80060102043);
       true
   }
   // Adjust the reward at the end of the epoch

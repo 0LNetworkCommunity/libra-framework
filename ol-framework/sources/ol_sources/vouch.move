@@ -5,6 +5,7 @@ module ol_framework::vouch {
     use aptos_framework::validator_universe;
     use ol_framework::ancestry;
     use ol_framework::globals;
+    use ol_framework::testnet;
     use aptos_framework::system_addresses;
     use aptos_framework::stake;
 
@@ -13,7 +14,7 @@ module ol_framework::vouch {
 
     // triggered once per epoch
     struct Vouch has key {
-      vals: vector<address>,
+      my_buddies: vector<address>,
     }
 
     // init the struct on a validators account.
@@ -22,7 +23,7 @@ module ol_framework::vouch {
 
       if (validator_universe::is_in_universe(acc) && !is_init(acc)) {
         move_to<Vouch>(new_account_sig, Vouch {
-            vals: vector::empty(), 
+            my_buddies: vector::empty(), 
           });
       }
     }
@@ -39,8 +40,8 @@ module ol_framework::vouch {
       if (!exists<Vouch>(val)) return;
 
       let v = borrow_global_mut<Vouch>(val);
-      if (!vector::contains(&v.vals, &buddy_acc)) { // prevent duplicates
-        vector::push_back<address>(&mut v.vals, buddy_acc);
+      if (!vector::contains(&v.my_buddies, &buddy_acc)) { // prevent duplicates
+        vector::push_back<address>(&mut v.my_buddies, buddy_acc);
       }
     }
 
@@ -51,14 +52,19 @@ module ol_framework::vouch {
       if (!exists<Vouch>(val)) return;
 
       let v = borrow_global_mut<Vouch>(val);
-      let (found, i) = vector::index_of(&v.vals, &buddy_acc);
+      let (found, i) = vector::index_of(&v.my_buddies, &buddy_acc);
       if (found) {
-        vector::remove(&mut v.vals, i);
+        vector::remove(&mut v.my_buddies, i);
       };
     }    
 
     public fun vm_migrate(vm: &signer, val: address, buddy_list: vector<address>) acquires Vouch {
       system_addresses::assert_vm(vm);
+      bulk_set(val, buddy_list);
+
+    }
+
+    fun bulk_set(val: address, buddy_list: vector<address>) acquires Vouch {
 
       if (!validator_universe::is_in_universe(val)) return;
       if (!exists<Vouch>(val)) return;
@@ -72,12 +78,12 @@ module ol_framework::vouch {
         vector::swap_remove<address>(&mut buddy_list, i);
       };
       
-      v.vals = buddy_list;
+      v.my_buddies = buddy_list;
     }
 
     public fun get_buddies(val: address): vector<address> acquires Vouch{
       if (is_init(val)) {
-        return *&borrow_global<Vouch>(val).vals
+        return *&borrow_global<Vouch>(val).my_buddies
       };
       vector::empty<address>()
     }
@@ -90,8 +96,8 @@ module ol_framework::vouch {
 
       let buddies_in_set = vector::empty<address>();
       let  i = 0;
-      while (i < vector::length<address>(&v.vals)) {
-        let a = vector::borrow<address>(&v.vals, i);
+      while (i < vector::length<address>(&v.my_buddies)) {
+        let a = vector::borrow<address>(&v.my_buddies, i);
         if (vector::contains(&current_set, a)) {
           vector::push_back(&mut buddies_in_set, *a);
         };
@@ -142,8 +148,15 @@ module ol_framework::vouch {
 
     public fun unrelated_buddies_above_thresh(val: address): bool acquires Vouch{
       if (!exists<Vouch>(val)) return false;
+      
+      if (testnet::is_testnet()) return true;
 
       let len = vector::length(&unrelated_buddies(val));
       (len >= globals::get_vouch_threshold())
+    }
+
+    #[test_only]
+    public fun test_set_buddies(val: address, buddy_list: vector<address>) acquires Vouch {
+      bulk_set(val, buddy_list);
     }
   }

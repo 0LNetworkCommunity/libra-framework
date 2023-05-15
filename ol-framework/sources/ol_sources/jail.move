@@ -32,10 +32,8 @@
 
 module ol_framework::jail {
   use aptos_framework::system_addresses;
-  // use DiemFramework::TowerState; // todo v7
   use std::signer;
   use std::vector;
-  // use DiemFramework::Vouch; // todo v7
 
   struct Jail has key {
       is_jailed: bool,

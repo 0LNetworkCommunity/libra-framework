@@ -7,6 +7,8 @@ module ol_framework::mock {
   #[test_only]
   use ol_framework::cases;
   #[test_only]
+  use ol_framework::vouch;
+  #[test_only]
   use std::vector;
   #[test_only]
   use aptos_framework::genesis;
@@ -141,8 +143,11 @@ module ol_framework::mock {
         let sig = account::create_signer_for_test(*val);
         let (_sk, pk, pop) = stake::generate_identity();
         stake::initialize_test_validator(&pk, &pop, &sig, 100, true, true);
+        vouch::init(&sig);
+        vouch::test_set_buddies(*val, val_addr);
         i = i + 1;
       };
+
 
       stake::get_current_validators()
     }
