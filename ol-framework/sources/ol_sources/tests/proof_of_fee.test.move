@@ -11,6 +11,8 @@ module ol_framework::test_pof {
   use aptos_framework::stake;
   use std::vector;
 
+  use aptos_std::debug::print;
+
   #[test]
   fun pof_set_retract () {
     // genesis();
@@ -114,29 +116,31 @@ module ol_framework::test_pof {
   }
 
   #[test(vm = @vm_reserved)]
-  fun set_bid_expired(vm: signer) {
+  fun audit_expired(vm: signer) {
     let set = mock::genesis_n_vals(4);
     let alice = vector::borrow(&set, 0);
 
     assert!(!jail::is_jailed(*alice), 1001);
 
-    let a_sig = account::create_signer_for_test(*alice);
-
-    proof_of_fee::set_bid(&a_sig, 1, 10000);
-    let (bid, expires) = proof_of_fee::current_bid(*alice);
-    assert!(bid == 1, 1001);
-    assert!(expires == 10000, 1002);
-    
-    slow_wallet::slow_wallet_epoch_drip(&vm, 500000);
-    let coin = slow_wallet::unlocked_amount(*alice);
-    let (r, _, _) = proof_of_fee::get_consensus_reward();
-    let bid_cost = (bid * r) / 1000;
-    assert!(coin > bid_cost, 1005);
+    // initially set a good bid
+    mock_good_bid(&vm, alice);
 
 
     // has a bid which IS expired
     // test runner is at epoch 1, they put expiry at 0.
     // TODO: Improve this test by doing more advanced epochs
+    let a_sig = account::create_signer_for_test(*alice);
+
+    let this_epoch = reconfiguration::get_current_epoch();
+    print(&this_epoch);
+
+    
+    reconfiguration::reconfigure_for_test();
+    stake::end_epoch();
+    
+    let this_epoch = reconfiguration::get_current_epoch();
+    print(&this_epoch);
+
     proof_of_fee::set_bid(&a_sig, 1, 0); 
     let (bid, expires) = proof_of_fee::current_bid(*alice);
     assert!(bid == 1, 1006);

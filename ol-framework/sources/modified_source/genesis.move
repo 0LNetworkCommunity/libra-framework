@@ -502,6 +502,12 @@ module aptos_framework::genesis {
         set_genesis_end(aptos_framework);
     }
 
+    //////// 0L ////////
+    #[test_only]
+    public fun test_end_genesis(framework: &signer) {
+        set_genesis_end(framework);
+    }
+
     #[test_only]
     public fun setup() {
         initialize(

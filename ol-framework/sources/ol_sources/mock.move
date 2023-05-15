@@ -148,6 +148,8 @@ module ol_framework::mock {
         i = i + 1;
       };
 
+      let framework_sig = account::create_signer_for_test(@aptos_framework);
+      genesis::test_end_genesis(&framework_sig);
 
       stake::get_current_validators()
     }
