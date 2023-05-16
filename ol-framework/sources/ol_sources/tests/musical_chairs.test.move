@@ -17,7 +17,7 @@ module ol_framework::test_musical_chairs {
       assert!(vector::length(&vals) == 5, 7357001);
 
             // all vals compliant
-      mock::all_good_validators(&vm);
+      mock::mock_all_vals_good_performance(&vm);
 
       let (good, bad, ratio) = musical_chairs::eval_compliance(0, 15);
       assert!(vector::length(&good) == 5, 7357002);

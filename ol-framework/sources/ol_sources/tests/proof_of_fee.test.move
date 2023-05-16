@@ -11,7 +11,7 @@ module ol_framework::test_pof {
   use aptos_framework::stake;
   use std::vector;
 
-  // use aptos_std::debug::print;
+  use aptos_std::debug::print;
 
   #[test_only]
   fun mock_good_bid(vm: &signer, alice: &address) {
@@ -214,6 +214,101 @@ module ol_framework::test_pof {
     assert!(vector::length(&sorted) != vector::length(&val_universe), 1003);
     assert!(vector::length(&sorted) == 0, 1004);
   }
+
+  #[test(vm = @vm_reserved)]
+  fun sorted_vals_jail(vm: signer) {
+    let set = mock::genesis_n_vals(4);
+    let len = vector::length(&set);
+    let i = 0;
+    while (i < len) {
+      let addr = vector::borrow(&set, i);
+      mock_good_bid(&vm, addr);
+      i = i + 1;
+    };
+
+    // jail alice, the filtered sort should have one less.
+    let alice = vector::borrow(&set, 0);
+    jail::jail(&vm, *alice);
+
+    let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
+
+
+    // let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
+    let sorted = proof_of_fee::get_sorted_vals(false);
+    let len = vector::length(&sorted);
+    assert!(len == vector::length(&val_universe), 1000);
+    assert!(vector::length(&sorted) == vector::length(&val_universe), 1002);
+
+
+    let sorted_two = proof_of_fee::get_sorted_vals(true);
+    assert!(vector::length(&sorted_two) != vector::length(&val_universe), 1004);
+    assert!(vector::length(&sorted_two) == vector::length(&val_universe) - 1, 1005);
+
+  }
+
+
+
+  #[test(vm = @vm_reserved)]
+  fun sorted_vals_expired_bid(vm: signer) {
+    let set = mock::genesis_n_vals(4);
+    let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
+
+    let len = vector::length(&set);
+    let i = 0;
+    while (i < len) {
+      let addr = vector::borrow(&set, i);
+      mock_good_bid(&vm, addr);
+      i = i + 1;
+    };
+
+    // set an expired bid for alice
+    let alice = vector::borrow(&set, 0);
+    let alice_sig = account::create_signer_for_test(*alice);
+    proof_of_fee::set_bid(&alice_sig, 55, 1);
+  
+
+    mock::trigger_epoch();
+    mock::trigger_epoch();
+
+
+    // let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
+    let sorted = proof_of_fee::get_sorted_vals(false);
+    let len = vector::length(&sorted);
+    assert!(len == vector::length(&val_universe), 1000);
+    assert!(vector::length(&sorted) == vector::length(&val_universe), 1002);
+
+
+    let sorted_two = proof_of_fee::get_sorted_vals(true);
+    assert!(vector::length(&sorted_two) != vector::length(&val_universe), 1004);
+    assert!(vector::length(&sorted_two) == vector::length(&val_universe) - 1, 1005);
+
+  }
+
+  #[test(vm = @vm_reserved)]
+  fun fill_seats_happy(vm: signer) {
+    let set = mock::genesis_n_vals(5);
+    mock::pof_default();
+    
+    slow_wallet::slow_wallet_epoch_drip(&vm, 500000);
+
+    let sorted = proof_of_fee::get_sorted_vals(true);
+    assert!(vector::length(&sorted) == vector::length(&set), 1003);
+    print(&sorted);
+
+    let len = vector::length(&set);
+    let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&vm, len, &sorted, &sorted);
+    print(&seats);
+
+    assert!(vector::contains(&seats, vector::borrow(&set, 0)), 1004);
+
+    // filling the seat updated the computation of the consensu reward.
+    let (reward, clear_price, median_bid) = proof_of_fee::get_consensus_reward();
+    assert!(reward == 1000000, 1005);
+    assert!(clear_price == 1, 1006);
+    assert!(median_bid == 3, 1007);
+
+  }
+  
 
 
 }

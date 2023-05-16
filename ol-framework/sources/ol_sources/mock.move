@@ -58,7 +58,7 @@ module ol_framework::mock {
 
     // Mock all nodes being compliant case 1
     #[test_only]
-    public fun all_good_validators(vm: &signer) {
+    public fun mock_all_vals_good_performance(vm: &signer) {
 
       let vals =  stake::get_current_validators();
 
@@ -202,7 +202,7 @@ module ol_framework::mock {
 
     reset_val_perf_all(&vm);
 
-    all_good_validators(&vm);
+    mock_all_vals_good_performance(&vm);
   }
 
 
