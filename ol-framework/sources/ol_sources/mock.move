@@ -136,10 +136,12 @@ module ol_framework::mock {
       vector::push_back(&mut val_addr, @0x1000e);
       vector::push_back(&mut val_addr, @0x1000f);
 
+    
       let i = 0;
       while (i < num) {
         // create_signer_for_test
-        let val = vector::borrow(&val_addr, i);
+        // reverse the order so the validator vector prints are in order.
+        let val = vector::borrow(&val_addr, num - (1+i));
         let sig = account::create_signer_for_test(*val);
         let (_sk, pk, pop) = stake::generate_identity();
         stake::initialize_test_validator(&pk, &pop, &sig, 100, true, true);
