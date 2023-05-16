@@ -13,6 +13,16 @@ module ol_framework::test_pof {
 
   // use aptos_std::debug::print;
 
+
+  const Alice: address = @0x1000a;
+  const Bob: address = @0x1000b;
+  const Carol: address = @0x1000c;
+  const Dave: address = @0x1000d;
+  const Eve: address = @0x1000e;
+  const Frank: address = @0x1000f;
+
+
+
   #[test_only]
   fun mock_good_bid(vm: &signer, alice: &address) {
     let a_sig = account::create_signer_for_test(*alice);
@@ -383,6 +393,180 @@ module ol_framework::test_pof {
     assert!(clear_price == 1, 1007);
     assert!(median_bid == 2, 1008);
 
+  }
+
+// Scenario: We have 5 validators but only 3 seats in the set.
+// They have all placed bids, per TestFixtures::pof_default().
+// The lowest bidders Alice and Bob, will be excluded.
+
+// For all lists we are using the validators in the ValidatorUniverse
+// the desired validator set is the same size as the universe.
+// All validators in the universe are properly configured
+// All validators performed perfectly in the previous epoch.
+
+  #[test(vm = @ol_framework)]
+  fun fill_seats_many_bidders(vm: signer) {
+    let set = mock::genesis_n_vals(5);
+    mock::pof_default();
+
+    
+    slow_wallet::slow_wallet_epoch_drip(&vm, 500000);
+
+    let sorted = proof_of_fee::get_sorted_vals(true);
+
+
+
+    let set_size = 3;
+    let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&vm, set_size, &sorted, &sorted);
+
+    assert!(vector::length(&set) == 5, 1004);
+    assert!(vector::length(&seats) == 3, 1005);
+
+     // alice, bob, had low bids, and are out
+     // see mock::pof_deault for fibonacci bids
+    assert!(!vector::contains(&seats, vector::borrow(&set, 0)), 1001);
+    assert!(!vector::contains(&seats, vector::borrow(&set, 1)), 1002);
+    // carol, dave, and eve are in
+    assert!(vector::contains(&seats, vector::borrow(&set, 2)), 1003);
+    assert!(vector::contains(&seats, vector::borrow(&set, 3)), 1004);
+    assert!(vector::contains(&seats, vector::borrow(&set, 4)), 1004);
+
+    // filling the seat updated the computation of the consensu reward.
+    // Median bids and clearing prices will be different than the happy path test.
+    let (reward, clear_price, median_bid) = proof_of_fee::get_consensus_reward();
+    assert!(reward == 1000000, 1004);
+    assert!(clear_price == 3, 1005);
+    assert!(median_bid == 5, 1006);
+  }
+
+
+  // Scenario: Here we have 6 validators and 6 seats, but only 4 come
+  // from the previous epoch.
+  // They have all placed bids, per TestFixtures::pof_default().
+
+  // However Alice and Bob have not been in the last epoch's set.
+  // So we consider them "unproven".
+  // Alice and Bob happen to also be the lowest bidders. But we will
+  // seat them, and their bids will count toward getting the clearing price.
+
+  // In this scenario there will be sufficient seats. 
+  // We will open up 2 seats (1/3 of 6 seats).
+  // As such both Eve and Frank should be seated.
+
+  // The clearing price will not change. The lowest is still alice
+  // who is also seated.
+
+
+  // For all lists we are using the validators in the ValidatorUniverse
+  // the desired validator set is the same size as the universe.
+  // All validators in the universe are properly configured
+  // All validators performed perfectly in the previous epoch.
+
+  #[test(root = @ol_framework)]
+  fun fill_seats_unproven_happy(root: signer) {
+    // we need 6 seats so that we can have 4 proven, and 2 unproven slots
+    let set = mock::genesis_n_vals(6);
+    mock::pof_default();
+
+    slow_wallet::slow_wallet_epoch_drip(&root, 500000);
+
+    let sorted = proof_of_fee::get_sorted_vals(true);
+
+    let set_size = 6;
+
+    // Alice and Bob were not in the previous round. They are not "proven"
+    let proven_vals = vector::singleton(*vector::borrow(&set, 2));
+    vector::push_back(&mut proven_vals, *vector::borrow(&set, 3));
+    vector::push_back(&mut proven_vals, *vector::borrow(&set, 4));
+    vector::push_back(&mut proven_vals, *vector::borrow(&set, 5));
+
+    let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &proven_vals);
+
+    assert!(vector::length(&set) == 6, 1004);
+    assert!(vector::length(&seats) == 6, 1005);
+
+    // Alice and Bob must be in, even though they were not "proven".
+    assert!(vector::contains(&seats, vector::borrow(&set, 0)), 1001);
+    assert!(vector::contains(&seats, vector::borrow(&set, 1)), 1002);
+    assert!(vector::contains(&seats, vector::borrow(&set, 2)), 1003);
+
+
+    // filling the seat updated the computation of the consensu reward.
+    // Median bids and clearing prices will be different than the happy path test.
+    let (reward, clear_price, median_bid) = proof_of_fee::get_consensus_reward();
+    assert!(reward == 1000000, 1004);
+    // The clearing price is 1, Alice's lowest bid. Even though she was not "proven"
+    assert!(clear_price == 1, 1005);
+    assert!(median_bid == 3, 1006);
+  }
+
+
+  // Scenario: Here we have 6 validators and 4 seats, but only 3 come
+  // from the previous epoch (proven).
+  // This time Eve and Frank are "unproven nodes", they also happen
+  // to have the highest bids.
+  // They have all placed bids, per TestFixtures::pof_default().
+
+  // At 4 seats, we only have space for 1 unproven node.
+  // It should be Frank that gets seated.
+  // Eve will not be seated at all, even though she has a higher bid
+  // than the proven nodes.
+
+  // The clearing price will not change. The lowest is still Alice
+  // who is also seated.
+
+  // For all lists we are using the validators in the ValidatorUniverse
+  // the desired validator set is the same size as the universe.
+  // All validators in the universe are properly configured
+  // All validators performed perfectly in the previous epoch.
+
+  #[test(root = @ol_framework)]
+  fun fill_seats_unproven_sad(root: signer) {
+
+    
+    // we need 6 seats so that we can have 4 proven, and 2 unproven slots
+    let set = mock::genesis_n_vals(6);
+    mock::pof_default();
+
+    slow_wallet::slow_wallet_epoch_drip(&root, 500000);
+
+    let sorted = proof_of_fee::get_sorted_vals(true);
+
+    let set_size = 4;
+
+    // Exclude Eve and Frank were not in the previous round. They are not "proven", but they have the highest bids
+    let proven_vals = vector::singleton(Alice);
+    vector::push_back(&mut proven_vals, Bob);
+    vector::push_back(&mut proven_vals, Carol);
+    vector::push_back(&mut proven_vals, Dave);
+
+    let (alice_bid, _) = proof_of_fee::current_bid(Alice);
+    assert!(alice_bid == 1, 1001);
+    let (frank_bid, _) = proof_of_fee::current_bid(Frank);
+    assert!(alice_bid < frank_bid, 1002);
+
+    let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &proven_vals);
+
+    assert!(vector::length(&set) == 6, 1003);
+    assert!(vector::length(&seats) == 4, 1004);
+
+    // Alice dropped out, even though was "proven", was the lowest bidder for the three slots for proven, but ALSO lower than the highest bidder of unproven nodes FRANK.
+    assert!(!vector::contains(&seats, vector::borrow(&set, 0)), 1006);
+    assert!(vector::contains(&seats, vector::borrow(&set, 1)), 1007);
+    assert!(vector::contains(&seats, vector::borrow(&set, 2)), 1008);
+    assert!(vector::contains(&seats, vector::borrow(&set, 3)), 1009);
+    // Eve does not get in. There was only one slot for unproven nodes, 
+    // and her bid is lower than frank.
+    assert!(!vector::contains(&seats, vector::borrow(&set, 4)), 10010);
+    assert!(vector::contains(&seats, vector::borrow(&set, 5)), 10011);
+
+
+    // filling the seat updated the computation of the consensu reward.
+    // Median bids and clearing prices will be different than the happy path test.
+    let (reward, clear_price, median_bid) = proof_of_fee::get_consensus_reward();
+    assert!(reward == 1000000, 10012);
+    assert!(clear_price == 2, 10013);
+    assert!(median_bid == 3, 10014);
   }
 
 }

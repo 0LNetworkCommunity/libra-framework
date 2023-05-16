@@ -85,8 +85,8 @@ module ol_framework::mock {
 
       // make all validators pay auction fee
       // the clearing price in the fibonacci sequence is is 1
-      // DiemAccount::vm_multi_pay_fee(vm, &vals, 1, &b"proof of fee");
-
+      let (alice_bid, _) = proof_of_fee::current_bid(*vector::borrow(&vals, 0));
+      assert!(alice_bid == 1, 777703);
       (vals, bids, expiry)
     }
 
@@ -140,8 +140,7 @@ module ol_framework::mock {
       let i = 0;
       while (i < num) {
         // create_signer_for_test
-        // reverse the order so the validator vector prints are in order.
-        let val = vector::borrow(&val_addr, num - (1+i));
+        let val = vector::borrow(&val_addr, i);
         let sig = account::create_signer_for_test(*val);
         let (_sk, pk, pop) = stake::generate_identity();
         stake::initialize_test_validator(&pk, &pop, &sig, 100, true, true);
