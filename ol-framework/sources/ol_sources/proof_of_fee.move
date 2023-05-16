@@ -116,8 +116,13 @@ module ol_framework::proof_of_fee {
   // Leaving the unfiltered option for testing purposes, and any future use.
   // TODO: there's a known issue when many validators have the exact same
   // bid, the preferred node  will be the one LAST included in the validator universe.
-  public fun get_sorted_vals(unfiltered: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
+  public fun get_sorted_vals(remove_unqualified: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
     let eligible_validators = validator_universe::get_eligible_validators();
+    sort_vals_impl(eligible_validators, remove_unqualified)
+  }
+
+  fun sort_vals_impl(eligible_validators: vector<address>, remove_unqualified: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
+    // let eligible_validators = validator_universe::get_eligible_validators();
     let length = vector::length<address>(&eligible_validators);
     // print(&length);
     // vector to store each address's node_weight
@@ -131,7 +136,7 @@ module ol_framework::proof_of_fee {
       let (bid, _expire) = current_bid(cur_address);
       // print(&bid);
       // print(&expire);
-      if (!unfiltered && !audit_qualification(&cur_address)) {
+      if (remove_unqualified && !audit_qualification(&cur_address)) {
         k = k + 1;
         continue
       };

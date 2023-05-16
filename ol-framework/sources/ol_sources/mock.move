@@ -18,8 +18,8 @@ module ol_framework::mock {
   // use aptos_std::debug::print;
   #[test_only]
   use ol_framework::proof_of_fee;
-  #[test_only]
-  use aptos_framework::system_addresses;
+  // #[test_only]
+  // use aptos_framework::system_addresses;
 
 
   #[test_only]
@@ -74,12 +74,12 @@ module ol_framework::mock {
 
     //////// PROOF OF FEE ////////
     #[test_only]
-    public fun pof_default(vm: &signer): (vector<address>, vector<u64>, vector<u64>){
+    public fun pof_default(): (vector<address>, vector<u64>, vector<u64>){
 
-      system_addresses::assert_ol(vm);
+      // system_addresses::assert_ol(vm);
       let vals = stake::get_current_validators();
 
-      let (bids, expiry) = mock_bids(vm, &vals);
+      let (bids, expiry) = mock_bids(&vals);
 
       // DiemAccount::slow_wallet_epoch_drip(vm, 100000); // unlock some coins for the validators
 
@@ -91,8 +91,8 @@ module ol_framework::mock {
     }
 
     #[test_only]
-    public fun mock_bids(vm: &signer, vals: &vector<address>): (vector<u64>, vector<u64>) {
-      system_addresses::assert_ol(vm);
+    public fun mock_bids(vals: &vector<address>): (vector<u64>, vector<u64>) {
+      // system_addresses::assert_ol(vm);
       let bids = vector::empty<u64>();
       let expiry = vector::empty<u64>();
       let i = 0;
@@ -195,7 +195,7 @@ module ol_framework::mock {
     mock_case_1(&vm, *addr);
 
 
-    pof_default(&vm);
+    pof_default();
 
     // will assert! case_4
     mock_case_4(&vm, *addr);

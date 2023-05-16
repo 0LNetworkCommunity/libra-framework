@@ -13,6 +13,21 @@ module ol_framework::test_pof {
 
   // use aptos_std::debug::print;
 
+  #[test_only]
+  fun mock_good_bid(vm: &signer, alice: &address) {
+    let a_sig = account::create_signer_for_test(*alice);
+    proof_of_fee::set_bid(&a_sig, 1, 10000);
+    let (bid, expires) = proof_of_fee::current_bid(*alice);
+    assert!(bid == 1, 1001);
+    assert!(expires == 10000, 1002);
+    
+    slow_wallet::slow_wallet_epoch_drip(vm, 500000);
+    let coin = slow_wallet::unlocked_amount(*alice);
+    let (r, _, _) = proof_of_fee::get_consensus_reward();
+    let bid_cost = (bid * r) / 1000;
+    assert!(coin > bid_cost, 1005);
+  }
+
   #[test]
   fun pof_set_retract () {
     // genesis();
@@ -56,17 +71,8 @@ module ol_framework::test_pof {
     assert!(stake::is_valid(*alice), 1000);
     assert!(!jail::is_jailed(*alice), 1001);
 
-    let a_sig = account::create_signer_for_test(*alice);
-    proof_of_fee::set_bid(&a_sig, 1, 10000);
-    let (bid, expires) = proof_of_fee::current_bid(*alice);
-    assert!(bid == 1, 1001);
-    assert!(expires == 10000, 1002);
-    
-    slow_wallet::slow_wallet_epoch_drip(&vm, 500000);
-    let coin = slow_wallet::unlocked_amount(*alice);
-    let (r, _, _) = proof_of_fee::get_consensus_reward();
-    let bid_cost = (bid * r) / 1000;
-    assert!(coin > bid_cost, 1005);
+    mock_good_bid(&vm, alice);
+
 
     // // should NOTE pass audit.
     assert!(proof_of_fee::audit_qualification(alice), 1006);
@@ -92,7 +98,7 @@ module ol_framework::test_pof {
   }
 
   #[test(vm = @vm_reserved)]
-    fun audit_no_funds (vm: signer) {
+  fun audit_no_funds (vm: signer) {
     let set = mock::genesis_n_vals(4);
     let alice = vector::borrow(&set, 0);
 
@@ -171,18 +177,43 @@ module ol_framework::test_pof {
     
   }
 
-  #[test_only]
-  fun mock_good_bid(vm: &signer, alice: &address) {
-    let a_sig = account::create_signer_for_test(*alice);
-    proof_of_fee::set_bid(&a_sig, 1, 10000);
-    let (bid, expires) = proof_of_fee::current_bid(*alice);
-    assert!(bid == 1, 1001);
-    assert!(expires == 10000, 1002);
-    
-    slow_wallet::slow_wallet_epoch_drip(vm, 500000);
-    let coin = slow_wallet::unlocked_amount(*alice);
-    let (r, _, _) = proof_of_fee::get_consensus_reward();
-    let bid_cost = (bid * r) / 1000;
-    assert!(coin > bid_cost, 1005);
+  #[test(vm = @vm_reserved)]
+  fun sorted_vals_happy(vm: signer) {
+    let set = mock::genesis_n_vals(4);
+    let len = vector::length(&set);
+    let i = 0;
+    while (i < len) {
+      let addr = vector::borrow(&set, i);
+      mock_good_bid(&vm, addr);
+      i = i + 1;
+    };
+    // mock_good_bid(&vm, alice);
+    let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
+    let sorted = proof_of_fee::get_sorted_vals(false);
+
+    let len = vector::length(&sorted);
+    assert!(len == vector::length(&val_universe), 1000);
+    assert!(vector::length(&sorted) == vector::length(&val_universe), 1002);
+
+    let sorted_two = proof_of_fee::get_sorted_vals(true);
+    assert!(vector::length(&sorted_two) == vector::length(&val_universe), 1003);
   }
+
+
+  #[test]
+  fun sorted_vals_none_qualify() {
+    let _set = mock::genesis_n_vals(4);
+    let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
+    let sorted = proof_of_fee::get_sorted_vals(false);
+
+    let len = vector::length(&sorted);
+    assert!(len == vector::length(&val_universe), 1000);
+    assert!(vector::length(&sorted) == vector::length(&val_universe), 1002);
+
+    let sorted = proof_of_fee::get_sorted_vals(true);
+    assert!(vector::length(&sorted) != vector::length(&val_universe), 1003);
+    assert!(vector::length(&sorted) == 0, 1004);
+  }
+
+
 }
