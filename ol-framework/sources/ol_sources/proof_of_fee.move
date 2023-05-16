@@ -51,9 +51,9 @@ module ol_framework::proof_of_fee {
     median_history: vector<u64>,
   }
   public fun init_genesis_baseline_reward(vm: &signer) {
-    if (signer::address_of(vm) != @ol_framework) return;
+    if (signer::address_of(vm) != @vm_reserved) return;
 
-    if (!exists<ConsensusReward>(@ol_framework)) {
+    if (!exists<ConsensusReward>(@vm_reserved)) {
       move_to<ConsensusReward>(
         vm,
         ConsensusReward {
@@ -494,7 +494,7 @@ module ol_framework::proof_of_fee {
 
   // get the baseline reward from ConsensusReward
   public fun get_consensus_reward(): (u64, u64, u64) acquires ConsensusReward {
-    let b = borrow_global<ConsensusReward>(@ol_framework);
+    let b = borrow_global<ConsensusReward>(@vm_reserved);
     return (b.value, b.clearing_price, b.median_win_bid)
   }
 

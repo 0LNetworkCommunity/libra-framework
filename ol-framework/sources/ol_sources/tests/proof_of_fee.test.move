@@ -11,7 +11,7 @@ module ol_framework::test_pof {
   use aptos_framework::stake;
   use std::vector;
 
-  use aptos_std::debug::print;
+  // use aptos_std::debug::print;
 
   #[test_only]
   fun mock_good_bid(vm: &signer, alice: &address) {
@@ -284,20 +284,20 @@ module ol_framework::test_pof {
 
   }
 
+  // We can send the fill seats function a list of validators, and the list of performing validators, and it will return the winning bidders and the bid.
   #[test(vm = @vm_reserved)]
   fun fill_seats_happy(vm: signer) {
     let set = mock::genesis_n_vals(5);
+    let len = vector::length(&set);
+
     mock::pof_default();
     
     slow_wallet::slow_wallet_epoch_drip(&vm, 500000);
 
     let sorted = proof_of_fee::get_sorted_vals(true);
     assert!(vector::length(&sorted) == vector::length(&set), 1003);
-    print(&sorted);
 
-    let len = vector::length(&set);
     let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&vm, len, &sorted, &sorted);
-    print(&seats);
 
     assert!(vector::contains(&seats, vector::borrow(&set, 0)), 1004);
 
@@ -309,6 +309,80 @@ module ol_framework::test_pof {
 
   }
   
+  // We fill all the seats, and run the thermostat
+  // the thermostat is a noop since there is not enough historical data.
+  #[test(vm = @vm_reserved)]
+  fun fill_seats_happy_and_noop_thermostat(vm: signer) {
+    let set = mock::genesis_n_vals(5);
+    mock::pof_default();
+    
+    slow_wallet::slow_wallet_epoch_drip(&vm, 500000);
 
+    let sorted = proof_of_fee::get_sorted_vals(true);
+    assert!(vector::length(&sorted) == vector::length(&set), 1003);
+
+    let len = vector::length(&set);
+    let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&vm, len, &sorted, &sorted);
+
+    assert!(vector::contains(&seats, vector::borrow(&set, 0)), 1004);
+
+    // filling the seat updated the computation of the consensu reward.
+    let (reward, clear_price, median_bid) = proof_of_fee::get_consensus_reward();
+    assert!(reward == 1000000, 1005);
+    assert!(clear_price == 1, 1006);
+    assert!(median_bid == 3, 1007);
+
+    // we expect no change in the reward_thermostat because there haven't been 5 epochs or more of historical data.
+    proof_of_fee::reward_thermostat(&vm);
+
+    let (reward, win_bid, median_bid) = proof_of_fee::get_consensus_reward();
+    assert!(reward == 1000000, 1008);
+    assert!(win_bid == 1, 1009);
+    assert!(median_bid == 3, 1010);
+  }
+
+
+  // Scenario: Eve does not bid. So we have fewer bidders than seats
+  // Otherwise Eve is a performing and valid validator
+  // For all lists we are using the validators in the ValidatorUniverse
+  // the desired validator set is the same size as the universe.
+  // All validators in the universe are properly configured
+  // All validators performed perfectly in the previous epoch.
+  // They have all placed bids, per TestFixtures::pof_default().
+
+  #[test(vm = @vm_reserved)]
+  fun fill_seats_few_bidders(vm: signer) {
+    let set = mock::genesis_n_vals(5);
+    mock::pof_default();
+
+
+    // Ok now EVE changes her mind. Will force the bid to expire.
+    let a_sig = account::create_signer_for_test(*vector::borrow(&set, 4));
+    proof_of_fee::set_bid(&a_sig, 0, 0);
+    mock::trigger_epoch();
+    
+    slow_wallet::slow_wallet_epoch_drip(&vm, 500000);
+
+    let sorted = proof_of_fee::get_sorted_vals(true);
+    assert!(vector::length(&sorted) != vector::length(&set), 1003);
+
+    // let len = vector::length(&set);
+    assert!(vector::length(&set) == 5, 1004);
+    assert!(vector::length(&sorted) == 4, 1005);
+
+    let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&vm, vector::length(&set), &sorted, &sorted);
+
+    // EVE is not in the seats
+    assert!(!vector::contains(&seats, vector::borrow(&set, 4)), 1004);
+    // Alice is
+    assert!(vector::contains(&seats, vector::borrow(&set, 0)), 1005);
+
+    // filling the seat updated the computation of the consensu reward.
+    let (reward, clear_price, median_bid) = proof_of_fee::get_consensus_reward();
+    assert!(reward == 1000000, 1006);
+    assert!(clear_price == 1, 1007);
+    assert!(median_bid == 2, 1008);
+
+  }
 
 }
