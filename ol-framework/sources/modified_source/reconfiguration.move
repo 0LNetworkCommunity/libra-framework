@@ -105,7 +105,7 @@ module aptos_framework::reconfiguration {
 
     public(friend) fun ol_reconfigure(vm: &signer) {
 
-        system_addresses::assert_vm(vm);
+        system_addresses::assert_ol(vm);
 
         // TODO: this needs to be a friend function, but it's in a different namespace, so we are gating it with vm signer, which is what was done previously. Which means hacking block.move
         slow_wallet::on_new_epoch(vm);

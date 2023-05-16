@@ -74,7 +74,7 @@ module ol_framework::jail {
   }
 
   public fun jail(vm: &signer, validator: address) acquires Jail{
-    system_addresses::assert_vm(vm);
+    system_addresses::assert_ol(vm);
     if (exists<Jail>(validator)) {
       let j = borrow_global_mut<Jail>(validator);
       j.is_jailed = true;

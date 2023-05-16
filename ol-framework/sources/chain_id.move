@@ -29,7 +29,7 @@ module aptos_framework::chain_id {
     }
     #[test_only]
     public fun set_for_test(vm: &signer, id: u8) acquires ChainId {
-        system_addresses::assert_vm(vm);
+        system_addresses::assert_ol(vm);
         let state = borrow_global_mut<ChainId>(@aptos_framework);
         state.id = id;
     }

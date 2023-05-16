@@ -63,7 +63,7 @@ module ol_framework::test_pof {
     assert!(expires == 0, 10010);
   }
 
-  #[test(vm = @vm_reserved)]
+  #[test(vm = @ol_framework)]
   fun audit_happy (vm: signer) {
     let set = mock::genesis_n_vals(4);
     let alice = vector::borrow(&set, 0);
@@ -78,7 +78,7 @@ module ol_framework::test_pof {
     assert!(proof_of_fee::audit_qualification(alice), 1006);
   }
 
-  #[test(vm = @vm_reserved)]
+  #[test(vm = @ol_framework)]
   fun audit_vouch (vm: signer) {
     let set = mock::genesis_n_vals(4);
     let alice = vector::borrow(&set, 0);
@@ -97,7 +97,7 @@ module ol_framework::test_pof {
     assert!(!proof_of_fee::audit_qualification(alice), 1008);
   }
 
-  #[test(vm = @vm_reserved)]
+  #[test(vm = @ol_framework)]
   fun audit_no_funds (vm: signer) {
     let set = mock::genesis_n_vals(4);
     let alice = vector::borrow(&set, 0);
@@ -121,7 +121,7 @@ module ol_framework::test_pof {
     assert!(!proof_of_fee::audit_qualification(alice), 1006);
   }
 
-  #[test(vm = @vm_reserved)]
+  #[test(vm = @ol_framework)]
   fun audit_expired(vm: signer) {
     let set = mock::genesis_n_vals(4);
     let alice = vector::borrow(&set, 0);
@@ -159,7 +159,7 @@ module ol_framework::test_pof {
     assert!(proof_of_fee::audit_qualification(alice), 1009);
   }
 
-  #[test(vm = @vm_reserved)]
+  #[test(vm = @ol_framework)]
   fun audit_jail (vm: signer) {
     let set = mock::genesis_n_vals(4);
     let alice = vector::borrow(&set, 0);
@@ -177,7 +177,7 @@ module ol_framework::test_pof {
     
   }
 
-  #[test(vm = @vm_reserved)]
+  #[test(vm = @ol_framework)]
   fun sorted_vals_happy(vm: signer) {
     let set = mock::genesis_n_vals(4);
     let len = vector::length(&set);
@@ -215,7 +215,7 @@ module ol_framework::test_pof {
     assert!(vector::length(&sorted) == 0, 1004);
   }
 
-  #[test(vm = @vm_reserved)]
+  #[test(vm = @ol_framework)]
   fun sorted_vals_jail(vm: signer) {
     let set = mock::genesis_n_vals(4);
     let len = vector::length(&set);
@@ -248,7 +248,7 @@ module ol_framework::test_pof {
 
 
 
-  #[test(vm = @vm_reserved)]
+  #[test(vm = @ol_framework)]
   fun sorted_vals_expired_bid(vm: signer) {
     let set = mock::genesis_n_vals(4);
     let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
@@ -285,7 +285,7 @@ module ol_framework::test_pof {
   }
 
   // We can send the fill seats function a list of validators, and the list of performing validators, and it will return the winning bidders and the bid.
-  #[test(vm = @vm_reserved)]
+  #[test(vm = @ol_framework)]
   fun fill_seats_happy(vm: signer) {
     let set = mock::genesis_n_vals(5);
     let len = vector::length(&set);
@@ -311,7 +311,7 @@ module ol_framework::test_pof {
   
   // We fill all the seats, and run the thermostat
   // the thermostat is a noop since there is not enough historical data.
-  #[test(vm = @vm_reserved)]
+  #[test(vm = @ol_framework)]
   fun fill_seats_happy_and_noop_thermostat(vm: signer) {
     let set = mock::genesis_n_vals(5);
     mock::pof_default();
@@ -350,7 +350,7 @@ module ol_framework::test_pof {
   // All validators performed perfectly in the previous epoch.
   // They have all placed bids, per TestFixtures::pof_default().
 
-  #[test(vm = @vm_reserved)]
+  #[test(vm = @ol_framework)]
   fun fill_seats_few_bidders(vm: signer) {
     let set = mock::genesis_n_vals(5);
     mock::pof_default();

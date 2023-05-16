@@ -51,9 +51,9 @@ module ol_framework::proof_of_fee {
     median_history: vector<u64>,
   }
   public fun init_genesis_baseline_reward(vm: &signer) {
-    if (signer::address_of(vm) != @vm_reserved) return;
+    if (signer::address_of(vm) != @ol_framework) return;
 
-    if (!exists<ConsensusReward>(@vm_reserved)) {
+    if (!exists<ConsensusReward>(@ol_framework)) {
       move_to<ConsensusReward>(
         vm,
         ConsensusReward {
@@ -228,7 +228,7 @@ module ol_framework::proof_of_fee {
     sorted_vals_by_bid: &vector<address>,
     proven_nodes: &vector<address>
   ): (vector<address>, u64) acquires ProofOfFeeAuction, ConsensusReward {
-    if (signer::address_of(vm) != @vm_reserved) return (vector::empty<address>(), 0);
+    if (signer::address_of(vm) != @ol_framework) return (vector::empty<address>(), 0);
 
     let seats_to_fill = vector::empty<address>();
 
@@ -345,7 +345,7 @@ module ol_framework::proof_of_fee {
   // as described in the paper, the epoch reward needs to be adjustable
   // given that the implicit bond needs to be sufficient, eg 5-10x the reward.
   public fun reward_thermostat(vm: &signer) acquires ConsensusReward {
-    if (signer::address_of(vm) != @vm_reserved) {
+    if (signer::address_of(vm) != @ol_framework) {
       return
     };
     // check the bid history
@@ -453,7 +453,7 @@ module ol_framework::proof_of_fee {
   /// find the median bid to push to history
   // this is needed for reward_thermostat
   public fun set_history(vm: &signer, seats_to_fill: &vector<address>) acquires ProofOfFeeAuction, ConsensusReward {
-    if (signer::address_of(vm) != @vm_reserved) {
+    if (signer::address_of(vm) != @ol_framework) {
       return
     };
 
@@ -494,7 +494,7 @@ module ol_framework::proof_of_fee {
 
   // get the baseline reward from ConsensusReward
   public fun get_consensus_reward(): (u64, u64, u64) acquires ConsensusReward {
-    let b = borrow_global<ConsensusReward>(@vm_reserved);
+    let b = borrow_global<ConsensusReward>(@ol_framework);
     return (b.value, b.clearing_price, b.median_win_bid)
   }
 
@@ -649,7 +649,7 @@ module ol_framework::proof_of_fee {
   ) acquires ConsensusReward {
     testnet::assert_testnet(vm);
 
-    let cr = borrow_global_mut<ConsensusReward>(@vm_reserved );
+    let cr = borrow_global_mut<ConsensusReward>(@ol_framework );
     cr.value = value;
     cr.clearing_price = clearing_price;
     cr.median_win_bid = median_win_bid;
@@ -657,7 +657,7 @@ module ol_framework::proof_of_fee {
 
   }
 
-  #[test(vm = @vm_reserved)]
+  #[test(vm = @ol_framework)]
   fun meta_mock_reward(vm: signer) acquires ConsensusReward {
     use aptos_framework::chain_id;
 
@@ -680,7 +680,7 @@ module ol_framework::proof_of_fee {
 
   }
 
-  #[test(vm = @vm_reserved)]
+  #[test(vm = @ol_framework)]
   public entry fun thermostat_unit_happy(vm: signer)  acquires ConsensusReward {
     use aptos_framework::chain_id;
     // use ol_framework::mock;
@@ -728,7 +728,7 @@ module ol_framework::proof_of_fee {
   }
 
   // Scenario: The reward is too low during 5 days (short window). People are not bidding very high.
-  #[test(vm = @vm_reserved)]
+  #[test(vm = @ol_framework)]
   fun thermostat_increase_short(vm: signer) acquires ConsensusReward {
     use aptos_framework::chain_id;
 
@@ -773,7 +773,7 @@ module ol_framework::proof_of_fee {
 
 
   // Scenario: The reward is too low during 5 days (short window). People are not bidding very high.
-  #[test(vm = @vm_reserved)]
+  #[test(vm = @ol_framework)]
   fun thermostat_increase_long(vm: signer) acquires ConsensusReward {
     use aptos_framework::chain_id;
 
@@ -821,7 +821,7 @@ module ol_framework::proof_of_fee {
 
 
   // Scenario: The reward is too high during 5 days (short window). People are bidding over 95% of the baseline fee.
-  #[test(vm = @vm_reserved)]
+  #[test(vm = @ol_framework)]
   fun thermostat_decrease_short(vm: signer) acquires ConsensusReward {
     use aptos_framework::chain_id;
 
@@ -867,7 +867,7 @@ module ol_framework::proof_of_fee {
   }
 
     // Scenario: The reward is too low during 5 days (short window). People are not bidding very high.
-  #[test(vm = @vm_reserved)]
+  #[test(vm = @ol_framework)]
   fun thermostat_decrease_long(vm: signer) acquires ConsensusReward {
     use aptos_framework::chain_id;
 
@@ -913,7 +913,7 @@ module ol_framework::proof_of_fee {
 
   }
 
-  // #[test(vm = @vm_reserved)]
+  // #[test(vm = @ol_framework)]
   // fun pof_set_retract(vm: signer) {
   //     use aptos_framework::account;
 

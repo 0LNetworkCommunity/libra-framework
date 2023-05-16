@@ -88,7 +88,7 @@ module ol_framework::slow_wallet {
     }
 
     public fun slow_wallet_epoch_drip(vm: &signer, amount: u64) acquires SlowWallet, SlowWalletList{
-      system_addresses::assert_vm(vm);
+      system_addresses::assert_ol(vm);
       let list = get_slow_list();
       let i = 0;
       while (i < vector::length<address>(&list)) {
@@ -139,7 +139,7 @@ module ol_framework::slow_wallet {
     }
 
     public fun on_new_epoch(vm: &signer) acquires SlowWallet, SlowWalletList {
-      system_addresses::assert_vm(vm);
+      system_addresses::assert_ol(vm);
       slow_wallet_epoch_drip(vm, EPOCH_DRIP_CONST);
     }
 
