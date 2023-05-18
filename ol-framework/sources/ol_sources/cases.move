@@ -4,6 +4,8 @@
 // Error code for File: 0300
 /////////////////////////////////////////////////////////////////////////
 
+// TODO: v7: this is legacy, since we only now have two cases: performing and non-performing.
+
 /// # Summary
 /// This module can be used by root to determine whether a validator is compliant
 /// Validators who are no longer compliant may be kicked out of the validator
@@ -11,6 +13,7 @@
 module ol_framework::cases{
     // use DiemFramework::TowerState;
     use aptos_framework::stake;
+    use std::vector;
     // use DiemFramework::Roles; // todo v7
 
     const VALIDATOR_COMPLIANT: u64 = 1;
@@ -71,5 +74,20 @@ module ol_framework::cases{
             // weight does not increment.
             VALIDATOR_DOUBLY_NOT_COMPLIANT
         }
+    }
+
+    public fun get_jailed_set(): vector<address> {
+      let validator_set = stake::get_current_validators();
+      let jailed_set = vector::empty<address>();
+      let k = 0;
+      while(k < vector::length(&validator_set)){
+        let addr = *vector::borrow<address>(&validator_set, k);
+        // consensus case 1 allow inclusion into the next validator set.
+        if (get_case(addr, 0, 0) == 4){
+          vector::push_back<address>(&mut jailed_set, addr)
+        };
+        k = k + 1;
+      };
+      jailed_set
     }
 }

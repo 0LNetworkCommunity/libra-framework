@@ -5,6 +5,7 @@ module ol_framework::test_stake {
   use std::vector;
   use ol_framework::stake;
   use ol_framework::testnet;
+  use ol_framework::cases;
 
 
   // Scenario: can take 6 already initialized validators, from a previous set
@@ -69,4 +70,27 @@ module ol_framework::test_stake {
     assert!(vector::length(&vals) != 3, 1001);
 
   }
+
+
+  // Scenario: in production mode, we can't have fewer than 4 validators.
+  // if we try to pass less, no change will happen (does not abort)
+  #[test(root = @ol_framework)]
+  fun jail_list(root: signer) {
+
+    mock::genesis_n_vals(6);
+    mock::mock_all_vals_good_performance(&root);
+    // all validators bid
+    mock::pof_default();
+
+    // now make Eve not compliant
+    let eve = @0x1000e;
+    mock::mock_case_4(&root, eve);
+    assert!(cases::get_case(eve, 0, 15) == 4, 735701);
+
+    let v = cases::get_jailed_set();
+    assert!(vector::contains(&v, &eve), 735702);
+
+  }
+
+
 }

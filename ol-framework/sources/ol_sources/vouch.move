@@ -2,7 +2,7 @@
 module ol_framework::vouch {
     use std::signer;
     use std::vector;
-    use aptos_framework::validator_universe;
+    // use aptos_framework::validator_universe;
     use ol_framework::ancestry;
     use ol_framework::globals;
     use ol_framework::testnet;
@@ -21,7 +21,7 @@ module ol_framework::vouch {
     public fun init(new_account_sig: &signer ) {
       let acc = signer::address_of(new_account_sig);
 
-      if (validator_universe::is_in_universe(acc) && !is_init(acc)) {
+      if (!is_init(acc)) {
         move_to<Vouch>(new_account_sig, Vouch {
             my_buddies: vector::empty(), 
           });
@@ -36,7 +36,7 @@ module ol_framework::vouch {
       let buddy_acc = signer::address_of(buddy);
       assert!(buddy_acc!=val, ETRY_SELF_VOUCH_REALLY);
 
-      if (!validator_universe::is_in_universe(buddy_acc)) return;
+      // if (!validator_universe::is_in_universe(buddy_acc)) return;
       if (!exists<Vouch>(val)) return;
 
       let v = borrow_global_mut<Vouch>(val);
@@ -66,7 +66,7 @@ module ol_framework::vouch {
 
     fun bulk_set(val: address, buddy_list: vector<address>) acquires Vouch {
 
-      if (!validator_universe::is_in_universe(val)) return;
+      // if (!validator_universe::is_in_universe(val)) return;
       if (!exists<Vouch>(val)) return;
 
       let v = borrow_global_mut<Vouch>(val);

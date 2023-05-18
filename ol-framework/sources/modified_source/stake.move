@@ -30,7 +30,7 @@ module aptos_framework::stake {
     // use aptos_std::debug::print;
 
     use ol_framework::slow_wallet;
-    use ol_framework::jail;
+    
     use ol_framework::testnet;
     
     use aptos_framework::aptos_coin::AptosCoin;
@@ -42,7 +42,7 @@ module aptos_framework::stake {
     // use aptos_framework::staking_config::{Self, StakingConfig, StakingRewardsConfig};
     use aptos_framework::chain_status;
 
-    use aptos_framework::validator_universe;
+    // use aptos_framework::validator_universe;
 
     friend aptos_framework::block;
     friend aptos_framework::genesis;
@@ -560,8 +560,8 @@ module aptos_framework::stake {
         assert!(!stake_pool_exists(owner_address), error::already_exists(EALREADY_REGISTERED));
 
         //////// 0L ////////
-        validator_universe::add(owner);
-        jail::init(owner);
+        // validator_universe::add(owner);
+        // jail::init(owner);
 
         move_to(owner, StakePool {
             active: coin::zero<AptosCoin>(),

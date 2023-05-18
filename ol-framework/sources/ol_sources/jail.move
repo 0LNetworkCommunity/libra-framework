@@ -34,6 +34,7 @@ module ol_framework::jail {
   use aptos_framework::system_addresses;
   use std::signer;
   use std::vector;
+  use ol_framework::vouch;
 
   struct Jail has key {
       is_jailed: bool,
@@ -159,18 +160,18 @@ module ol_framework::jail {
   }
 
   // todo v7
-  // fun inc_voucher_jail(addr: address) acquires Jail {
-  //   let buddies = Vouch::get_buddies(addr);
-  //   let i = 0;
-  //   while (i < vector::length(&buddies)) {
-  //     let voucher = *vector::borrow(&buddies, i);
-  //     if (exists<Jail>(voucher)) {
-  //       let v = borrow_global_mut<Jail>(voucher);
-  //       v.lifetime_vouchees_jailed = v.lifetime_vouchees_jailed + 1;
-  //     };
-  //     i = i + 1;
-  //   }
-  // }
+  fun inc_voucher_jail(addr: address) acquires Jail {
+    let buddies = vouch::get_buddies(addr);
+    let i = 0;
+    while (i < vector::length(&buddies)) {
+      let voucher = *vector::borrow(&buddies, i);
+      if (exists<Jail>(voucher)) {
+        let v = borrow_global_mut<Jail>(voucher);
+        v.lifetime_vouchees_jailed = v.lifetime_vouchees_jailed + 1;
+      };
+      i = i + 1;
+    }
+  }
 
   ///////// GETTERS //////////
 
@@ -189,7 +190,7 @@ module ol_framework::jail {
   }
 
 
-  /////// TEST HELPERS ////////
+
   public fun exists_jail(addr: address): bool {
     exists<Jail>(addr)
   }
