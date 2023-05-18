@@ -857,7 +857,6 @@ module aptos_framework::stake {
     ) acquires StakePool, ValidatorConfig, ValidatorSet {
 
         assert_stake_pool_exists(pool_address);
-        // print(&40001);
         let stake_pool = borrow_global_mut<StakePool>(pool_address);
         assert!(signer::address_of(operator) == stake_pool.operator_address, error::unauthenticated(ENOT_OPERATOR));
 
@@ -865,7 +864,6 @@ module aptos_framework::stake {
             get_validator_state(pool_address) == VALIDATOR_STATUS_INACTIVE,
             error::invalid_state(EALREADY_ACTIVE_VALIDATOR),
         );
-        // print(&40002);
 
         // let config = staking_config::get();
         // let (minimum_stake, maximum_stake) = staking_config::get_required_stake(&config);
@@ -874,22 +872,21 @@ module aptos_framework::stake {
         let voting_power = 1; // voting power is always 1 in Libra
         assert!(voting_power >= minimum_stake, error::invalid_argument(ESTAKE_TOO_LOW));
         assert!(voting_power <= maximum_stake, error::invalid_argument(ESTAKE_TOO_HIGH));
-        // print(&40003);
         // Track and validate voting power increase.
         update_voting_power_increase(voting_power);
 
-        // print(&40004);
+
         // Add validator to pending_active, to be activated in the next epoch.
         let validator_config = borrow_global_mut<ValidatorConfig>(pool_address);
         assert!(!vector::is_empty(&validator_config.consensus_pubkey), error::invalid_argument(EINVALID_PUBLIC_KEY));
-        // print(&40005);
+
         // Validate the current validator set size has not exceeded the limit.
         let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
         vector::push_back(&mut validator_set.pending_active, generate_validator_info(pool_address, stake_pool, *validator_config));
-        // print(&40006);
+
         let validator_set_size = vector::length(&validator_set.active_validators) + vector::length(&validator_set.pending_active);
         assert!(validator_set_size <= MAX_VALIDATOR_SET_SIZE, error::invalid_argument(EVALIDATOR_SET_TOO_LARGE));
-        // print(&40007);
+
         event::emit_event(
             &mut stake_pool.join_validator_set_events,
             JoinValidatorSetEvent { pool_address },
@@ -1131,7 +1128,7 @@ module aptos_framework::stake {
         let next_epoch_validators = vector::empty();
         // let (minimum_stake, _) = staking_config::get_required_stake(&config);
         let minimum_stake = 0;
-        // debug::print(&minimum_stake);
+
 
         let vlen = vector::length(&validator_set.active_validators);
         let total_voting_power = 0;
@@ -1159,10 +1156,10 @@ module aptos_framework::stake {
             i = i + 1;
         };
 
-        // print(&validator_set.total_voting_power);
+
         validator_set.active_validators = next_epoch_validators;
         validator_set.total_voting_power = total_voting_power;
-        // print(&validator_set.total_voting_power);
+
 
         validator_set.total_joining_power = 0;
 
@@ -1220,6 +1217,73 @@ module aptos_framework::stake {
         // };
     }
 
+    /////// 0L ///////
+    #[test_only] 
+    public fun test_make_val_cfg(list: &vector<address>): (vector<ValidatorInfo>, u128) acquires StakePool, ValidatorConfig {
+      make_validator_set_config(list)
+    }
+
+    fun make_validator_set_config(list: &vector<address>): (vector<ValidatorInfo>, u128) acquires StakePool, ValidatorConfig  {
+
+      let next_epoch_validators = vector::empty();
+      let vlen = vector::length(list);
+
+      let total_voting_power = 0;
+      let i = 0;
+      while ({
+          spec {
+              invariant spec_validators_are_initialized(next_epoch_validators);
+          };
+          i < vlen
+      }) {
+          // let old_validator_info = vector::borrow_mut(&mut validator_set.active_validators, i);
+
+          let pool_address = *vector::borrow(list, i);
+
+
+          if (!exists<ValidatorConfig>(pool_address)) {
+            i = i + 1;
+            continue
+          }; // belt and suspenders
+
+          let validator_config = borrow_global_mut<ValidatorConfig>(pool_address);
+
+          if (!exists<StakePool>(pool_address)) {
+            i = i + 1;
+            continue
+          }; // belt and suspenders
+          let stake_pool = borrow_global_mut<StakePool>(pool_address);
+
+
+          let new_validator_info = generate_validator_info(pool_address, stake_pool, *validator_config);
+
+          // all validators have same weight
+          total_voting_power = total_voting_power + 1;
+
+          vector::push_back(&mut next_epoch_validators, new_validator_info);
+          // A validator needs at least the min stake required to join the validator set.
+
+          // spec {
+          //     assume total_voting_power + 1<= MAX_U128;
+          // };
+              
+          i = i + 1;
+      };
+
+      (next_epoch_validators, total_voting_power)
+    }
+
+    #[test_only] 
+    public fun test_set_next_vals(list: vector<ValidatorInfo>) acquires ValidatorSet {
+      set_next_validators(list);
+    }
+
+    /// sets the global state for the next epoch validators
+    fun set_next_validators(list: vector<ValidatorInfo>) acquires ValidatorSet {
+      let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
+      validator_set.active_validators = list;
+    }
+
     /// Update individual validator's stake pool
     /// 1. distribute transaction fees to active/pending_inactive delegations
     /// 2. distribute rewards to active/pending_inactive delegations
@@ -1242,8 +1306,8 @@ module aptos_framework::stake {
         let num_total_proposals = cur_validator_perf.successful_proposals + cur_validator_perf.failed_proposals;
 
         // let (rewards_rate, rewards_rate_denominator) = staking_config::get_reward_rate(staking_config);
-        // print(&rewards_rate);
-        // print(&rewards_rate_denominator);
+
+
         let rewards_rate = 1;
         let rewards_rate_denominator = 1;
 

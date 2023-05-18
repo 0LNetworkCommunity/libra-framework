@@ -123,10 +123,7 @@ module ol_framework::mock {
     }
 
     #[test_only]
-    /// mock up to 6 validators alice..frank
-    public fun genesis_n_vals(num: u64): vector<address> {
-      genesis::setup();
-
+    public fun personas(): vector<address> {
       let val_addr = vector::empty<address>();
 
       vector::push_back(&mut val_addr, @0x1000a);
@@ -135,8 +132,17 @@ module ol_framework::mock {
       vector::push_back(&mut val_addr, @0x1000d);
       vector::push_back(&mut val_addr, @0x1000e);
       vector::push_back(&mut val_addr, @0x1000f);
+      val_addr
+    }
 
-    
+    #[test_only]
+    /// mock up to 6 validators alice..frank
+    public fun genesis_n_vals(num: u64): vector<address> {
+      genesis::setup();
+
+      
+
+      let val_addr = personas();
       let i = 0;
       while (i < num) {
         // create_signer_for_test
