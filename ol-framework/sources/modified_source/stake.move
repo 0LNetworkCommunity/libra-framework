@@ -31,6 +31,7 @@ module aptos_framework::stake {
 
     use ol_framework::slow_wallet;
     use ol_framework::jail;
+    use ol_framework::testnet;
     
     use aptos_framework::aptos_coin::AptosCoin;
     use aptos_framework::account;
@@ -1275,11 +1276,16 @@ module aptos_framework::stake {
 
     #[test_only] 
     public fun test_set_next_vals(list: vector<ValidatorInfo>) acquires ValidatorSet {
-      set_next_validators(list);
+      maybe_set_next_validators(list);
     }
 
     /// sets the global state for the next epoch validators
-    fun set_next_validators(list: vector<ValidatorInfo>) acquires ValidatorSet {
+    fun maybe_set_next_validators(list: vector<ValidatorInfo>) acquires ValidatorSet {
+      // check if this is not test
+      if (!testnet::is_testnet() && vector::length(&list) < 5) {
+        return
+      };
+      
       let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
       validator_set.active_validators = list;
     }

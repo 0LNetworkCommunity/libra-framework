@@ -140,12 +140,10 @@ module ol_framework::mock {
     public fun genesis_n_vals(num: u64): vector<address> {
       genesis::setup();
 
-      
-
       let val_addr = personas();
       let i = 0;
       while (i < num) {
-        // create_signer_for_test
+
         let val = vector::borrow(&val_addr, i);
         let sig = account::create_signer_for_test(*val);
         let (_sk, pk, pop) = stake::generate_identity();
