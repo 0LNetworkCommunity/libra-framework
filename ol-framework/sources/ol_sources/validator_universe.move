@@ -66,11 +66,30 @@ module aptos_framework::validator_universe {
   }
 
   /// Used at epoch boundaries to evaluate the performance of the validator.
-  public(friend) fun maybe_jail(root: &signer, validator: address) {
-    if (!stake::is_valid(validator)) { // exit early if something is invalid about the config
+  /// only root can call this, and only by friend modules (reconfiguration). Belt and suspenders.
+  public(friend) fun maybe_jail(root: &signer, validator: address): bool {
+    maybe_jail_impl(root, validator)
+  }
+
+  #[test_only]
+  /// test helper for maybe_jail
+  public fun test_maybe_jail(root: &signer, validator: address): bool {
+    maybe_jail_impl(root, validator)
+  }
+
+  /// Common implementation for maybe_jail.
+  fun maybe_jail_impl(root: &signer, validator: address): bool {
+
+    if (
+      !stake::is_valid(validator) || // check if there are issues with config. belt and suspenders
+      cases::get_case(validator) == 4
+    
+    ) {
       jail::jail(root, validator);
+      return true
     };
 
+    false
   }
 
   //////// GENESIS ////////
