@@ -97,18 +97,19 @@ module ol_framework::jail {
       j.consecutive_failure_to_rejoin = j.consecutive_failure_to_rejoin + 1;
     };
 
-    // inc_voucher_jail(validator); // todo v7
+    inc_voucher_jail(validator);
   }
 
-  public fun remove_consecutive_fail(vm: &signer, validator: address) acquires Jail {
-    system_addresses::assert_vm(vm);
+  /// If the validator performs again after having been jailed,
+  /// then we can remove the consecutive fails.
+  /// Otherwise the lifetime counters on their account, and on buddy Voucher accounts does not get cleared.
+  public fun reset_consecutive_fail(root: &signer, validator: address) acquires Jail {
+    system_addresses::assert_ol(root);
     if (exists<Jail>(validator)) {
       let j = borrow_global_mut<Jail>(validator);
       j.consecutive_failure_to_rejoin = 0;
     }
   }
-
-
 
   /// Only a Voucher of the validator can flip the unjail bit.
   /// This is a way to make sure the validator is ready to rejoin.
@@ -116,18 +117,12 @@ module ol_framework::jail {
     assert!(
       stake::is_valid(addr),
       error::invalid_state(EVALIDATOR_CONFIG),
-
     );
-    // only a validator can un-jail themselves.
     let voucher = signer::address_of(sender);
-
     let buddies = vouch::buddies_in_set(addr);
-    // // print(&buddies);
     let (is_found, _idx) = vector::index_of(&buddies, &voucher);
     assert!(is_found, 100103);
 
-    // // check the node has been mining before unjailing.
-    // assert!(TowerState::node_above_thresh(addr), 100104);
     unjail(addr);
   }
 
@@ -152,8 +147,8 @@ module ol_framework::jail {
       let j = 0;
       while(j < length-i-1){
 
-        let value_j = get_failure_to_join(*vector::borrow(&vec_address, j));
-        let value_jp1 = get_failure_to_join(*vector::borrow(&vec_address, j + 1));
+        let (_, value_j) = get_jail_reputation(*vector::borrow(&vec_address, j));
+        let (_, value_jp1) = get_jail_reputation(*vector::borrow(&vec_address, j + 1));
 
         if(value_j > value_jp1){
           vector::swap<address>(&mut vec_address, j, j+1);
@@ -183,21 +178,29 @@ module ol_framework::jail {
   }
 
   ///////// GETTERS //////////
-
-  public fun get_failure_to_join(addr: address): u64 acquires Jail {
+  
+  #[view]
+  /// Returns how many times has the validator failed to join the network after consecutive attempts.
+  /// Should not abort, since its used in validator admission.
+  /// Returns (lifetime_jailed, consecutive_failure_to_rejoin)
+  public fun get_jail_reputation(addr: address): (u64, u64) acquires Jail {
     if (exists<Jail>(addr)) {
-      return borrow_global<Jail>(addr).consecutive_failure_to_rejoin
+      let s = borrow_global<Jail>(addr);
+      return (s.lifetime_jailed, s.consecutive_failure_to_rejoin)
     };
-    0
+    (0, 0)
   }
 
-  public fun get_vouchee_jail(addr: address): u64 acquires Jail {
+  #[view]
+  /// Returns the cumulative number of times someone a validator vouched for (vouchee) was jailed. I.e. are they picking performant validators.
+  public fun get_count_buddies_jailed(addr: address): u64 acquires Jail {
     if (exists<Jail>(addr)) {
       return borrow_global<Jail>(addr).lifetime_vouchees_jailed
     };
     0
   }
 
+  #[view]
   public fun exists_jail(addr: address): bool {
     exists<Jail>(addr)
   }
