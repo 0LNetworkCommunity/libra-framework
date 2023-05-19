@@ -559,10 +559,6 @@ module aptos_framework::stake {
         assert!(is_allowed(owner_address), error::not_found(EINELIGIBLE_VALIDATOR));
         assert!(!stake_pool_exists(owner_address), error::already_exists(EALREADY_REGISTERED));
 
-        //////// 0L ////////
-        // validator_universe::add(owner);
-        // jail::init(owner);
-
         move_to(owner, StakePool {
             active: coin::zero<AptosCoin>(),
             pending_active: coin::zero<AptosCoin>(),

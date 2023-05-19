@@ -14,7 +14,7 @@ module aptos_framework::validator_universe {
   use aptos_framework::stake;
   // use aptos_std::debug::print;
 
-  // friend aptos_framework::stake;
+  friend aptos_framework::reconfiguration;
   
   // resource for tracking the universe of accounts that have submitted 
   // a mined proof correctly, with the epoch number.
@@ -22,10 +22,7 @@ module aptos_framework::validator_universe {
       validators: vector<address>
   }
 
-  // // deprecated
-  // struct JailedBit has key {
-  //     is_jailed: bool
-  // }
+  // * DEPRECATED JailBit struct, now in jail.move * //
 
   // Genesis function to initialize ValidatorUniverse struct in 0x0.
   // This is triggered in new epoch by Configuration in Genesis.move
@@ -38,7 +35,9 @@ module aptos_framework::validator_universe {
     });
   }
 
-  // abstract this from stake.move
+  /// This is the entrypoint for a validator joining the network.
+  /// Separates the logic of registration from validator election etc. (in stake.move).
+  /// This prevents dependency cycling issues, since stake.move is a large module.
   public fun register_validator(
     account: &signer,
     consensus_pubkey: vector<u8>,
@@ -46,74 +45,78 @@ module aptos_framework::validator_universe {
     network_addresses: vector<u8>,
     fullnode_addresses: vector<u8>,
   ) acquires ValidatorUniverse {
-
-
-      // let owner_address = signer::address_of(account);
-
       stake::initialize_validator(account, consensus_pubkey, proof_of_possession, network_addresses, fullnode_addresses);
       // 0L specific,
       add(account);
       jail::init(account);
   }
 
-  #[test_only]
-  use aptos_std::bls12381;
 
-  #[test_only]
-  public fun test_register_validator(
-
-    public_key: &bls12381::PublicKey,
-    proof_of_possession: &bls12381::ProofOfPossession,
-    validator: &signer,
-    _amount: u64,
-    should_join_validator_set: bool,
-    should_end_epoch: bool,
-
-  ) acquires ValidatorUniverse {
-    stake::initialize_test_validator(public_key, proof_of_possession, validator, _amount, should_join_validator_set, should_end_epoch);
-
-    add(validator);
-    jail::init(validator);
-
-  }
   /// This function is called to add validator to the validator universe.
   /// it can only be called by `stake` module, on validator registration.
   fun add(sender: &signer) acquires ValidatorUniverse {
     let addr = signer::address_of(sender);
     let state = borrow_global<ValidatorUniverse>(@aptos_framework);
-    let (in_set, _) = vector::index_of<address>(&state.validators, &addr);
-    if (!in_set) {
+    let (elegible_list, _) = vector::index_of<address>(&state.validators, &addr);
+    if (!elegible_list) {
       let state = borrow_global_mut<ValidatorUniverse>(@aptos_framework);
       vector::push_back<address>(&mut state.validators, addr);
-      // unjail(sender);
-    }
+    };
+    jail::init(sender);
   }
 
+  /// Used at epoch boundaries to evaluate the performance of the validator.
+  public(friend) fun maybe_jail(root: &signer, validator: address) {
+    if (!stake::is_valid(validator)) { // exit early if something is invalid about the config
+      jail::jail(root, validator);
+    };
 
+  }
 
+  //////// GENESIS ////////
+  /// For 0L genesis, initialize and add the validators
+  /// both root and validator need to sign. This is only possible at genesis.
+  public fun genesis_helper_add_validator(root: &signer, validator: &signer) acquires ValidatorUniverse {
+    system_addresses::assert_ol(root);
+    add(validator);
+  }
 
-
+  //////// GETTERS ////////
   // A simple public function to query the EligibleValidators.
   // Function code: 03 Prefix: 220103
+  #[view]
   public fun get_eligible_validators(): vector<address> acquires ValidatorUniverse {
     let state = borrow_global<ValidatorUniverse>(@aptos_framework);
     *&state.validators
   }
 
   // Is a candidate for validation
+  #[view]
   public fun is_in_universe(addr: address): bool acquires ValidatorUniverse {
     let state = borrow_global<ValidatorUniverse>(@aptos_framework);
     vector::contains<address>(&state.validators, &addr)
   }
-  // * removed deprecated v3 jail implementation *//
+  // *  NOTE removed deprecated v3 jail implementation *//
 
-  // Todo: Better name? genesis_helper_add_validator()?
-  public fun genesis_helper(vm: &signer, validator: &signer) acquires ValidatorUniverse {
-    assert!(signer::address_of(vm) == @aptos_framework, 220101014010);
+
+
+  //////// TEST HELPERS ////////
+  #[test_only]
+  use aptos_std::bls12381;
+
+  #[test_only]
+  public fun test_register_validator(
+    public_key: &bls12381::PublicKey,
+    proof_of_possession: &bls12381::ProofOfPossession,
+    validator: &signer,
+    _amount: u64,
+    should_join_validator_set: bool,
+    should_end_epoch: bool,
+  ) acquires ValidatorUniverse {
+    stake::initialize_test_validator(public_key, proof_of_possession, validator, _amount, should_join_validator_set, should_end_epoch);
+
     add(validator);
   }
-
-  //////// TEST ////////
 
   #[test_only]
   use ol_framework::testnet;
@@ -138,4 +141,6 @@ module aptos_framework::validator_universe {
       vector::remove<address>(&mut state.validators, index);
     }
   }
+
+
 }

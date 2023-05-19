@@ -1,4 +1,4 @@
-// Some fixutres are complex and are repeatedly needed
+// Some fixtures are complex and are repeatedly needed
 module ol_framework::mock {
   #[test_only]
   use aptos_framework::stake;
@@ -18,6 +18,8 @@ module ol_framework::mock {
   // use aptos_std::debug::print;
   #[test_only]
   use ol_framework::proof_of_fee;
+  #[test_only]
+  use ol_framework::validator_universe;
   // #[test_only]
   // use aptos_framework::system_addresses;
 
@@ -147,7 +149,8 @@ module ol_framework::mock {
         let val = vector::borrow(&val_addr, i);
         let sig = account::create_signer_for_test(*val);
         let (_sk, pk, pop) = stake::generate_identity();
-        stake::initialize_test_validator(&pk, &pop, &sig, 100, true, true);
+        // stake::initialize_test_validator(&pk, &pop, &sig, 100, true, true);
+        validator_universe::test_register_validator(&pk, &pop, &sig, 100, true, true);
         vouch::init(&sig);
         vouch::test_set_buddies(*val, val_addr);
         i = i + 1;

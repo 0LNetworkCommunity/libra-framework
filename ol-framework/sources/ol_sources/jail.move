@@ -6,6 +6,15 @@
 // File Prefix for errors: 1001
 ///////////////////////////////////////////////////////////////////////////
 
+  //////// V7 Notes //////
+  // With this upgrade explicit hurdle that the validator
+  // needs to overcome now that we have deprecated Towers.
+  // Additionally there's not another practical and objective way
+  // to gate validator admission besides the very loose requirement
+  // of having a Vouch.
+  // So absent some other check that is objective, we could
+  // lean on the Vouch network for checking that a validator that fell out of these (jailed), is ready to continue (unjail).
+  ////////////////////////
 
 // The objective of the jail module is to allow a validator to do necessary 
 // maintenanance on the node before attempting to rejoin the validator set 
@@ -34,7 +43,12 @@ module ol_framework::jail {
   use aptos_framework::system_addresses;
   use std::signer;
   use std::vector;
+  use std::error;
   use ol_framework::vouch;
+  use ol_framework::stake;
+
+  /// Validator is misconfigured cannot unjail.
+  const EVALIDATOR_CONFIG: u64 = 10001;
 
   struct Jail has key {
       is_jailed: bool,
@@ -94,46 +108,39 @@ module ol_framework::jail {
     }
   }
 
-  //////// V6 //////
-  // V6 NOTE: there's no practical or explicit hurdle that the validator
-  // needs to overcome now that we have deprecated Towers.
-  // So absent some other check that is objective, we could
-  // lean on the Vouch network.
-  // There was a plan elsewhere discussed to make a
-  // voucher be the only one that can unjail a validator.
-  // We can promote that idea in V6. Seems like it fits 
-  // well with POF.
 
-  // public fun self_unjail(sender: &signer) acquires Jail {
-  //   // only a validator can un-jail themselves.
-  //   let self = signer::address_of(sender);
 
-  //   // check the node has been mining before unjailing.
-  //   assert!(TowerState::node_above_thresh(self), 100104);
-  //   unjail(self);
-  // }    
+  /// Only a Voucher of the validator can flip the unjail bit.
+  /// This is a way to make sure the validator is ready to rejoin.
+  public fun unjail_by_voucher(sender: &signer, addr: address) acquires Jail {
+    assert!(
+      stake::is_valid(addr),
+      error::invalid_state(EVALIDATOR_CONFIG),
 
-  // todo v7
-  // public fun vouch_unjail(sender: &signer, addr: address) acquires Jail {
-  //   // only a validator can un-jail themselves.
-  //   let voucher = signer::address_of(sender);
+    );
+    // only a validator can un-jail themselves.
+    let voucher = signer::address_of(sender);
 
-  //   let buddies = Vouch::buddies_in_set(addr);
-  //   // // print(&buddies);
-  //   let (is_found, _idx) = vector::index_of(&buddies, &voucher);
-  //   assert!(is_found, 100103);
+    let buddies = vouch::buddies_in_set(addr);
+    // // print(&buddies);
+    let (is_found, _idx) = vector::index_of(&buddies, &voucher);
+    assert!(is_found, 100103);
 
-  //   // // check the node has been mining before unjailing.
-  //   // assert!(TowerState::node_above_thresh(addr), 100104);
-  //   unjail(addr);
-  // }
+    // // check the node has been mining before unjailing.
+    // assert!(TowerState::node_above_thresh(addr), 100104);
+    unjail(addr);
+  }
 
   fun unjail(addr: address) acquires Jail {
     if (exists<Jail>(addr)) {
       borrow_global_mut<Jail>(addr).is_jailed = false;
     };
   }
-
+  
+  /// gets a list of validators based on their jail reputation
+  /// this is used in the bidding process for Proof-of-Fee where
+  /// we seat the validators with the least amount of consecutive failures
+  /// to rejoin.
   public fun sort_by_jail(vec_address: vector<address>): vector<address> acquires Jail {
 
     // Sorting the accounts vector based on value (weights).
@@ -159,7 +166,9 @@ module ol_framework::jail {
     vec_address
   }
 
-  // todo v7
+  /// the Vouchers who vouched for a jailed validator
+  /// will get a reputation mark. This is informational currently not used
+  /// for any consensus admission or weight etc.
   fun inc_voucher_jail(addr: address) acquires Jail {
     let buddies = vouch::get_buddies(addr);
     let i = 0;
@@ -188,8 +197,6 @@ module ol_framework::jail {
     };
     0
   }
-
-
 
   public fun exists_jail(addr: address): bool {
     exists<Jail>(addr)
