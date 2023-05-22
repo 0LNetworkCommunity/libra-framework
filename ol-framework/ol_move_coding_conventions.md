@@ -31,7 +31,7 @@ Wherever there are "critical mutations" i.e. state changes related to consensus,
 ## Denial of Service Precautions
 
 # Avoid looping on public calls
-There is an easy vector for DOS related to list looping. If a user can increment a list at low cost (i.e. an end user) via a public function, and then there is another public function which iterates over that list. This is especially true for functions without a signer, like in a `#[view]` function, since view functions are free.
+There is an easy vector for DOS related to list looping. When users can increment a list at low cost via a public function you've opened a vector for attack. In those cases there is likely another public function which iterates over that list. If there are cheap calls to both functions, then there is an easy DoS attack. With Move there is an even more dangerous vector:  `#[view]` functions are free to call via the REST api. So if it loops over a list, you have basically created a free DoS vector.
 
 Where this is unavoidable, a rate-limit needs to be placed on caller which increments the list.
 
