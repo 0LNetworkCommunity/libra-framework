@@ -20,8 +20,8 @@ module ol_framework::mock {
   use ol_framework::proof_of_fee;
   #[test_only]
   use ol_framework::validator_universe;
-  // #[test_only]
-  // use aptos_framework::system_addresses;
+  #[test_only]
+  use aptos_framework::timestamp;
   #[test_only]
   use ol_framework::epoch_boundary;
 
@@ -165,10 +165,18 @@ module ol_framework::mock {
     }
 
     #[test_only]
+    const EPOCH_DURATION: u64 = 60;
+
+    #[test_only]
+    // NOTE: The order of these is very important.
+    // ol first runs its own accounting at end of epoch with epoch_boundary
+    // Then the stake module needs to update the validators.
+    // the reconfiguration module must run last, since no other 
+    // transactions or operations can happen after the reconfig.
     public fun trigger_epoch(root: &signer) {
-        stake::end_epoch(); // additionally forwards EPOCH_DURATION seconds
-        reconfiguration::reconfigure_for_test_custom();
         epoch_boundary::ol_reconfigure_for_test(root);
+        timestamp::fast_forward_seconds(EPOCH_DURATION);
+        reconfiguration::reconfigure_for_test_custom();
     }
 
   //   // function to deposit into network fee account

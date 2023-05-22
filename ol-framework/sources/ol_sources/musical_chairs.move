@@ -7,7 +7,7 @@ module ol_framework::musical_chairs {
     use std::fixed_point32;
     use std::vector;
 
-    // use aptos_std::debug::print;
+    use aptos_std::debug::print;
 
     struct Chairs has key {
         // The number of chairs in the game
@@ -62,14 +62,21 @@ module ol_framework::musical_chairs {
     }
 
     // get the number of seats in the game
+    // TODO: make this a (friend)
     public fun stop_the_music( // sorry, had to.
       vm: &signer,
       // height_start: u64,
       // height_end: u64
     ): (vector<address>, u64) acquires Chairs {
         system_addresses::assert_ol(vm);
+        print(&66601);
 
-        let (compliant, _non, ratio) = eval_compliance();
+        let validators = stake::get_current_validators();
+        // print(&validators);
+
+        let (compliant, _non, ratio) = eval_compliance_impl(validators);
+        print(&compliant);
+        // print(&non);
 
         let chairs = borrow_global_mut<Chairs>(@ol_framework);
 
@@ -90,13 +97,18 @@ module ol_framework::musical_chairs {
         (compliant, chairs.current_seats)
     }
 
+    #[test_only]
+    public fun test_eval_compliance(root: &signer, validators: vector<address>): (vector<address>, vector<address>, fixed_point32::FixedPoint32) {
+      system_addresses::assert_ol(root);
+      eval_compliance_impl(validators)
+
+    }
     // use the Case statistic to determine what proportion of the network is compliant.
-    public fun eval_compliance(
-      // vm: &signer,
-      // height_start: u64,
-      // height_end: u64
+    // private function prevent list DoS.
+    fun eval_compliance_impl(
+      validators: vector<address>,
     ) : (vector<address>, vector<address>, fixed_point32::FixedPoint32) {
-        let validators = stake::get_current_validators();
+        
         let val_set_len = vector::length(&validators);
 
         let compliant_nodes = vector::empty<address>();
@@ -104,12 +116,11 @@ module ol_framework::musical_chairs {
 
         let i = 0;
         while (i < val_set_len) {
-            let addr = vector::borrow(&validators, i);
-            let case = cases::get_case(*addr);
-            if (case == 1) {
-                vector::push_back(&mut compliant_nodes, *addr);
+            let addr = *vector::borrow(&validators, i);
+            if (cases::get_case(addr) == 1) {
+                vector::push_back(&mut compliant_nodes, addr);
             } else {
-                vector::push_back(&mut non_compliant_nodes, *addr);
+                vector::push_back(&mut non_compliant_nodes, addr);
             };
             i = i + 1;
         };

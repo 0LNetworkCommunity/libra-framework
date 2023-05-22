@@ -8,24 +8,24 @@ module ol_framework::test_musical_chairs {
     use std::vector;
     use std::fixed_point32;
 
-    use aptos_std::debug::print;
+    // use aptos_std::debug::print;
 
-    #[test(vm = @ol_framework)]
-    public entry fun eval_compliance_happy(vm: signer) {
+    #[test(root = @ol_framework)]
+    public entry fun eval_compliance_happy(root: signer) {
 
       let vals = mock::genesis_n_vals(5);
       assert!(vector::length(&vals) == 5, 7357001);
 
-            // all vals compliant
-      mock::mock_all_vals_good_performance(&vm);
+      // all vals compliant
+      mock::mock_all_vals_good_performance(&root);
 
-      let (good, bad, ratio) = musical_chairs::eval_compliance();
+      let (good, bad, ratio) = musical_chairs::test_eval_compliance(&root, vals);
       assert!(vector::length(&good) == 5, 7357002);
       assert!(vector::length(&bad) == 0, 7357003);
       assert!(fixed_point32::is_zero(ratio), 7357004);
 
 
-      let (outgoing_compliant_set, new_set_size) = musical_chairs::stop_the_music(&vm);
+      let (outgoing_compliant_set, new_set_size) = musical_chairs::stop_the_music(&root);
 
       let musical_chairs_default_seats = 10;
       assert!(vector::length(&outgoing_compliant_set) == 5, 7357005);
@@ -42,7 +42,7 @@ module ol_framework::test_musical_chairs {
       // all vals compliant
       mock::mock_case_1(&vm, *vector::borrow(&vals, 0));
 
-      let (good, bad, bad_ratio) = musical_chairs::eval_compliance();
+      let (good, bad, bad_ratio) = musical_chairs::test_eval_compliance(&vm, vals);
       assert!(vector::length(&good) == 1, 7357002);
       assert!(vector::length(&bad) == 4, 7357003);
       assert!(!fixed_point32::is_zero(bad_ratio), 7357004);

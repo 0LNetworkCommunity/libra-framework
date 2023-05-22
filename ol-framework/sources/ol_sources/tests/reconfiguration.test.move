@@ -6,20 +6,25 @@ module ol_framework::test_reconfiguration {
   use aptos_framework::reconfiguration;
   use aptos_framework::stake;
   use ol_framework::mock;
+  use ol_framework::musical_chairs;
   use aptos_std::debug::print;
 
 
   #[test(root = @ol_framework)]
   fun reconfig_happy_case(root: signer) {
-    // mock::genesis();
-    let _vals = mock::genesis_n_vals(5);
-    mock::mock_all_vals_good_performance(&root);
-    mock::pof_default();
+      let vals = mock::genesis_n_vals(5);
+      assert!(vector::length(&vals) == 5, 7357001);
+      let vals = stake::get_current_validators();
+      assert!(vector::length(&vals) == 5, 7357002);
 
-    // let a = reconfiguration::get_current_epoch();
 
-    // make alice non performant
-    // mock::mock_case_4(&root, *vector::borrow(&vals, 0));
+      // all vals compliant
+      mock::mock_all_vals_good_performance(&root);
+
+      let (good, bad, _ratio) = musical_chairs::test_eval_compliance(&root, vals);
+      // print(&good);
+      assert!(vector::length(&good) == 5, 7357003);
+      assert!(vector::length(&bad) == 0, 7357004);
 
 
     mock::trigger_epoch(&root);

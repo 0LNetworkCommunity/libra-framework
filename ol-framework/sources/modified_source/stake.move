@@ -1616,6 +1616,7 @@ module aptos_framework::stake {
 
 
 
+
     #[test_only]
     public fun set_validator_perf_at_least_one_block() acquires ValidatorPerformance {
         let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
