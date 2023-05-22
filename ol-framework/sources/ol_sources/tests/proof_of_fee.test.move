@@ -257,6 +257,7 @@ module ol_framework::test_pof {
   }
 
 
+  // Scenario: we are checking that bids expire as the epochs progress.  
 
   #[test(root = @ol_framework)]
   fun sorted_vals_expired_bid(root: signer) {
@@ -276,12 +277,12 @@ module ol_framework::test_pof {
     let alice_sig = account::create_signer_for_test(*alice);
     proof_of_fee::set_bid(&alice_sig, 55, 1);
   
-
+    // advance the epoch 2x, so the previous bid is expired.
     mock::trigger_epoch(&root);
     mock::trigger_epoch(&root);
 
 
-    // let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
+    // Get all vals but don't filter the ones that have passing bids
     let sorted = proof_of_fee::get_sorted_vals(false);
     let len = vector::length(&sorted);
     assert!(len == vector::length(&val_universe), 1000);
@@ -290,6 +291,7 @@ module ol_framework::test_pof {
 
     let sorted_two = proof_of_fee::get_sorted_vals(true);
     assert!(vector::length(&sorted_two) != vector::length(&val_universe), 1004);
+
     assert!(vector::length(&sorted_two) == vector::length(&val_universe) - 1, 1005);
 
   }
@@ -369,7 +371,6 @@ module ol_framework::test_pof {
     // Ok now EVE changes her mind. Will force the bid to expire.
     let a_sig = account::create_signer_for_test(*vector::borrow(&set, 4));
     proof_of_fee::set_bid(&a_sig, 0, 0);
-    mock::trigger_epoch(&root);
     
     slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 

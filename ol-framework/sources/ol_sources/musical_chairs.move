@@ -3,7 +3,7 @@ module ol_framework::musical_chairs {
     use aptos_framework::system_addresses;
     use aptos_framework::stake;
     use ol_framework::cases;
-    use ol_framework::globals;
+    // use ol_framework::globals;
     use std::fixed_point32;
     use std::vector;
 
@@ -44,6 +44,7 @@ module ol_framework::musical_chairs {
     /// Called by root in genesis to initialize the GAS coin
     public fun initialize(
         vm: &signer,
+        genesis_seats: u64,
     ) {
         // system_addresses::assert_vm(vm);
         // TODO: replace with VM
@@ -55,7 +56,7 @@ module ol_framework::musical_chairs {
         };
 
         move_to(vm, Chairs {
-            current_seats: globals::get_val_set_at_genesis(),
+            current_seats: genesis_seats,
             history: vector::empty<u64>(),
         });
     }
@@ -71,7 +72,13 @@ module ol_framework::musical_chairs {
         let (compliant, _non, ratio) = eval_compliance();
 
         let chairs = borrow_global_mut<Chairs>(@ol_framework);
-        if (fixed_point32::is_zero(*&ratio)) {
+
+        // if the ratio of non-compliant nodes is between 0 and 5%
+        // we can increase the number of chairs by 1.
+        // otherwise (if more than 5% are failing) we wall back to the size of ther performant set.
+        if (fixed_point32::is_zero(*&ratio)) { // catch zeros
+          chairs.current_seats = chairs.current_seats + 1;
+        } else if (fixed_point32::multiply_u64(100, *&ratio) <= 5){
           chairs.current_seats = chairs.current_seats + 1;
         } else if (fixed_point32::multiply_u64(100, *&ratio) > 5) {
           // remove chairs
@@ -148,7 +155,7 @@ module ol_framework::musical_chairs {
     #[test(vm = @ol_framework)]
     public entry fun initialize_chairs(vm: signer) acquires Chairs {
       chain_id::initialize_for_test(&vm, 4);
-      initialize(&vm);
+      initialize(&vm, 10);
       assert!(get_current_seats() == 10, 1004);
     }
 }

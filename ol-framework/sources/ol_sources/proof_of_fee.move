@@ -97,6 +97,8 @@ module ol_framework::proof_of_fee {
       system_addresses::assert_ol(vm);
       print(&88888);
       let sorted_bids = get_sorted_vals(false);
+      print(&sorted_bids);
+      print(outgoing_compliant_set);
 
       let (auction_winners, price) = fill_seats_and_get_price(vm, n_musical_chairs, &sorted_bids, outgoing_compliant_set);
       print(&auction_winners);
@@ -125,7 +127,7 @@ module ol_framework::proof_of_fee {
   fun sort_vals_impl(eligible_validators: vector<address>, remove_unqualified: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
     // let eligible_validators = validator_universe::get_eligible_validators();
     let length = vector::length<address>(&eligible_validators);
-    // print(&length);
+
     // vector to store each address's node_weight
     let weights = vector::empty<u64>();
     let filtered_vals = vector::empty<address>();
@@ -135,8 +137,6 @@ module ol_framework::proof_of_fee {
 
       let cur_address = *vector::borrow<address>(&eligible_validators, k);
       let (bid, _expire) = current_bid(cur_address);
-      // print(&bid);
-      // print(&expire);
       if (remove_unqualified && !audit_qualification(&cur_address)) {
         k = k + 1;
         continue
@@ -146,37 +146,32 @@ module ol_framework::proof_of_fee {
       k = k + 1;
     };
 
-    // print(&weights);
-
     // Sorting the accounts vector based on value (weights).
     // Bubble sort algorithm
     let len_filtered = vector::length<address>(&filtered_vals);
-    // print(&len_filtered);
-    // print(&vector::length(&weights));
     if (len_filtered < 2) return filtered_vals;
     let i = 0;
     while (i < len_filtered){
       let j = 0;
       while(j < len_filtered-i-1){
-        // print(&8888801);
 
         let value_j = *(vector::borrow<u64>(&weights, j));
-        // print(&8888802);
+
         let value_jp1 = *(vector::borrow<u64>(&weights, j+1));
         if(value_j > value_jp1){
-          // print(&8888803);
+
           vector::swap<u64>(&mut weights, j, j+1);
-          // print(&8888804);
+
           vector::swap<address>(&mut filtered_vals, j, j+1);
         };
         j = j + 1;
-        // print(&8888805);
+
       };
       i = i + 1;
-      // print(&8888806);
+
     };
 
-    // print(&filtered_vals);
+
     // Reverse to have sorted order - high to low.
     vector::reverse<address>(&mut filtered_vals);
 
@@ -284,7 +279,7 @@ module ol_framework::proof_of_fee {
     // we failed to seat anyone.
     // let EpochBoundary deal with this.
     if (vector::is_empty(&seats_to_fill)) {
-      // print(&8006010209);
+
 
       return (seats_to_fill, 0)
     };
@@ -294,7 +289,7 @@ module ol_framework::proof_of_fee {
 
     let (lowest_bid_pct, _) = current_bid(*lowest_bidder);
 
-    // print(&lowest_bid_pct);
+
 
     // update the clearing price
     let cr = borrow_global_mut<ConsensusReward>(@ol_framework);
@@ -306,8 +301,9 @@ module ol_framework::proof_of_fee {
   // consolidate all the checks for a validator to be seated
   public fun audit_qualification(val: &address): bool acquires ProofOfFeeAuction, ConsensusReward {
 
+
       // Safety check: node has valid configs
-      if (!stake::is_valid(*val)) return false;
+      if (!stake::stake_pool_exists(*val)) return false;
 
       // is a slow wallet
       if (!slow_wallet::is_slow(*val)) return false;
@@ -326,11 +322,10 @@ module ol_framework::proof_of_fee {
 
       // Skip if the bid expired. belt and suspenders, this should have been checked in the sorting above.
       // TODO: make this it's own function so it can be publicly callable, it's useful generally, and for debugging.
-      // print(&reconfiguration::get_current_epoch());
-      // print(&expire);
+
+
 
       if (reconfiguration::get_current_epoch() > expire) return false;
-
       // skip the user if they don't have sufficient UNLOCKED funds
       // or if the bid expired.
 
@@ -340,6 +335,7 @@ module ol_framework::proof_of_fee {
 
       if (unlocked_coins < coin_required) return false;
 
+      // friend of ours
       true
   }
   // Adjust the reward at the end of the epoch
@@ -363,16 +359,16 @@ module ol_framework::proof_of_fee {
 
     let cr = borrow_global_mut<ConsensusReward>(@ol_framework);
 
-    // print(&8006010551);
+
     let len = vector::length<u64>(&cr.median_history);
     let i = 0;
 
     let epochs_above = 0;
     let epochs_below = 0;
     while (i < 16 && i < len) { // max ten days, but may have less in history, filling set should truncate the history at 15 epochs.
-    // print(&8006010552);
+
       let avg_bid = *vector::borrow<u64>(&cr.median_history, i);
-      // print(&8006010553);
+
       if (avg_bid > bid_upper_bound) {
         epochs_above = epochs_above + 1;
       } else if (avg_bid < bid_lower_bound) {
@@ -382,11 +378,8 @@ module ol_framework::proof_of_fee {
       i = i + 1;
     };
 
-    // print(&8006010554);
+
     if (cr.value > 0) {
-      // print(&8006010555);
-      // print(&epochs_above);
-      // print(&epochs_below);
 
 
       // TODO: this is an initial implementation, we need to
@@ -395,7 +388,7 @@ module ol_framework::proof_of_fee {
       if (epochs_above > epochs_below) {
 
         // if (epochs_above > short_window) {
-        // print(&8006010556);
+
         // check for zeros.
         // TODO: put a better safety check here
 
@@ -405,19 +398,17 @@ module ol_framework::proof_of_fee {
         // implicit bond is very high on validators. E.g.
         // at 1% median bid, the implicit bond is 100x the reward.
         // We need to DECREASE the reward
-        // print(&8006010558);
+
 
         if (epochs_above > long_window) {
 
           // decrease the reward by 10%
-          // print(&8006010559);
-
 
           cr.value = cr.value - (cr.value / 10);
           return // return early since we can't increase and decrease simultaneously
         } else if (epochs_above > short_window) {
           // decrease the reward by 5%
-          // print(&80060105510);
+
           cr.value = cr.value - (cr.value / 20);
 
 
@@ -434,15 +425,15 @@ module ol_framework::proof_of_fee {
         // At a 25% bid (potential loss), the profit is thus 75% of the value, which means the implicit bond is 25/75, or 1/3 of the bond, the risk favors the validator. This means among other things, that an attacker can pay for the cost of the attack with the profits. See paper, for more details.
 
         // we need to INCREASE the reward, so that the bond is more meaningful.
-        // print(&80060105511);
+
 
         if (epochs_below > long_window) {
-          // print(&80060105513);
+
 
           // increase the reward by 10%
           cr.value = cr.value + (cr.value / 10);
         } else if (epochs_below > short_window) {
-          // print(&80060105512);
+
 
           // increase the reward by 5%
           cr.value = cr.value + (cr.value / 20);
@@ -458,16 +449,16 @@ module ol_framework::proof_of_fee {
       return
     };
 
-    // print(&99901);
+
     let median_bid = get_median(seats_to_fill);
     // push to history
     let cr = borrow_global_mut<ConsensusReward>(@ol_framework);
     cr.median_win_bid = median_bid;
     if (vector::length(&cr.median_history) < 10) {
-      // print(&99902);
+
       vector::push_back(&mut cr.median_history, median_bid);
     } else {
-      // print(&99903);
+
       vector::remove(&mut cr.median_history, 0);
       vector::push_back(&mut cr.median_history, median_bid);
     };
@@ -697,7 +688,7 @@ module ol_framework::proof_of_fee {
     while (i < 10) {
       let factor = i * 10;
       let value = start_value + factor;
-      // print(&value);
+
       vector::push_back(&mut median_history, value);
       i = i + 1;
     };
@@ -789,7 +780,7 @@ module ol_framework::proof_of_fee {
     while (i < 12) {
       // let factor = i * 10;
       // let value = start_value + factor;
-      // // print(&value);
+
       vector::push_back(&mut median_history, start_value);
       i = i + 1;
     };
@@ -883,7 +874,7 @@ module ol_framework::proof_of_fee {
     while (i < 12) {
       // let factor = i * 10;
       // let value = start_value + factor;
-      // // print(&value);
+
       vector::push_back(&mut median_history, start_value);
       i = i + 1;
     };

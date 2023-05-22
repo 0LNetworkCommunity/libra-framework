@@ -49,6 +49,9 @@ module aptos_framework::stake {
     friend aptos_framework::reconfiguration;
     friend aptos_framework::transaction_fee;
 
+    //////// 0L ///////
+    friend aptos_framework::epoch_boundary;
+
 
     /// Validator Config not published.
     const EVALIDATOR_CONFIG: u64 = 1;
@@ -1214,19 +1217,84 @@ module aptos_framework::stake {
         // };
     }
 
+    public(friend) fun ol_on_new_epoch(root: &signer, list: &vector<address>) acquires StakePool, ValidatorConfig, ValidatorPerformance, ValidatorSet {
+
+
+        // will update the stake of active validators.
+        // NOTE: ol does not use the pending, and pending inactive lists.
+        // critical mutation, belt and suspenders
+        try_bulk_update(root, list);
+
+        let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
+        let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+
+
+        // Officially deactivate all pending_inactive validators. They will now no longer receive rewards.
+        // validator_set.pending_inactive = vector::empty();
+        // validator_set.total_joining_power = 0;
+
+
+        // Update validator indices, reset performance scores, and renew lockups.
+        validator_perf.validators = vector::empty();
+
+
+        let vlen = vector::length(&validator_set.active_validators);
+        let validator_index = 0;
+        while ({
+            spec {
+                invariant spec_validators_are_initialized(validator_set.active_validators);
+                invariant len(validator_set.pending_active) == 0;
+                invariant len(validator_set.pending_inactive) == 0;
+                invariant 0 <= validator_index && validator_index <= vlen;
+                invariant vlen == len(validator_set.active_validators);
+                invariant forall i in 0..validator_index:
+                    global<ValidatorConfig>(validator_set.active_validators[i].addr).validator_index < validator_index;
+                invariant len(validator_perf.validators) == validator_index;
+            };
+            validator_index < vlen
+        }) {
+
+            // Update validator index.
+            let validator_info = vector::borrow_mut(&mut validator_set.active_validators, validator_index);
+            validator_info.config.validator_index = validator_index;
+            let validator_config = borrow_global_mut<ValidatorConfig>(validator_info.addr);
+            validator_config.validator_index = validator_index;
+
+            // reset performance scores.
+            vector::push_back(&mut validator_perf.validators, IndividualValidatorPerformance {
+                successful_proposals: 0,
+                failed_proposals: 0,
+            });
+
+            // // Automatically renew a validator's lockup for validators that will still be in the validator set in the
+            // // next epoch.
+            // let stake_pool = borrow_global_mut<StakePool>(validator_info.addr);
+            // if (stake_pool.locked_until_secs <= timestamp::now_seconds()) {
+            //     spec {
+            //         assume timestamp::spec_now_seconds() + recurring_lockup_duration_secs <= MAX_U64;
+            //     };
+            //     stake_pool.locked_until_secs =
+            //         timestamp::now_seconds() + recurring_lockup_duration_secs;
+            // };
+
+            validator_index = validator_index + 1;
+        };
+
+        // if (features::periodical_reward_rate_decrease_enabled()) {
+        //     // Update rewards rate after reward distribution.
+        //     staking_config::calculate_and_save_latest_epoch_rewards_rate();
+        // };
+    }
+
     /////// 0L ///////
     // Critical mutation. Using belt and suspenders
-    public(friend) fun try_bulk_update(root: &signer, list: &vector<address>) acquires StakePool, ValidatorConfig, ValidatorSet {
+    fun try_bulk_update(root: &signer, list: &vector<address>) acquires StakePool, ValidatorConfig, ValidatorSet {
       if (signer::address_of(root) != @ol_framework) return;
 
       let (list_info, _voting_power) = make_validator_set_config(list);
 
       // mutations happen in private function
       maybe_set_next_validators(root, list_info);
-
-
-
-      
     }
 
     #[test_only] 

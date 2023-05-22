@@ -5,10 +5,10 @@ module ol_framework::test_musical_chairs {
 
     use ol_framework::musical_chairs;
     use ol_framework::mock;
-    // use aptos_std::debug::print;
     use std::vector;
     use std::fixed_point32;
 
+    use aptos_std::debug::print;
 
     #[test(vm = @ol_framework)]
     public entry fun eval_compliance_happy(vm: signer) {
@@ -25,8 +25,11 @@ module ol_framework::test_musical_chairs {
       assert!(fixed_point32::is_zero(ratio), 7357004);
 
 
-      let (_outgoing_compliant_set, _new_set_size) = musical_chairs::stop_the_music(&vm);
+      let (outgoing_compliant_set, new_set_size) = musical_chairs::stop_the_music(&vm);
 
+      let musical_chairs_default_seats = 10;
+      assert!(vector::length(&outgoing_compliant_set) == 5, 7357005);
+      assert!(new_set_size == (musical_chairs_default_seats + 1), 7357006);
     }
 
     #[test(vm = @ol_framework)]

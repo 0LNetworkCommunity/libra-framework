@@ -1,10 +1,12 @@
 
-module ol_framework::epoch_boundary {
+module aptos_framework::epoch_boundary {
 
     use std::signer;
     use ol_framework::slow_wallet;
     use ol_framework::musical_chairs;
     use ol_framework::proof_of_fee;
+    use ol_framework::stake;
+    use aptos_std::debug::print;
 
     friend aptos_framework::block;
 
@@ -19,7 +21,10 @@ module ol_framework::epoch_boundary {
         // TODO: this needs to be a friend function, but it's in a different namespace, so we are gating it with vm signer, which is what was done previously. Which means hacking block.move
         slow_wallet::on_new_epoch(root);
         let (compliant, n_seats) = musical_chairs::stop_the_music(root);
-        proof_of_fee::end_epoch(root, &compliant, n_seats);
+        print(&666);
+        print(&compliant);
+        let validators = proof_of_fee::end_epoch(root, &compliant, n_seats);
+        stake::ol_on_new_epoch(root, &validators);
 
     }
 

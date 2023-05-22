@@ -138,8 +138,10 @@ module aptos_framework::genesis {
         state_storage::initialize(&aptos_framework_account);
 
         //////// 0L ////////
-        validator_universe::initialize(&aptos_framework_account);  
-        musical_chairs::initialize(&aptos_framework_account);
+        validator_universe::initialize(&aptos_framework_account);
+        //todo: genesis seats
+        let genesis_seats = 10;
+        musical_chairs::initialize(&aptos_framework_account, genesis_seats);
         proof_of_fee::init_genesis_baseline_reward(&aptos_framework_account);
         slow_wallet::initialize(&aptos_framework_account);
         // end 0L
