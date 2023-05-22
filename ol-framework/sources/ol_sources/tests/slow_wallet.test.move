@@ -4,11 +4,11 @@
 module ol_framework::test_slow_wallet {
   use aptos_framework::stake;
   use aptos_framework::account;
-  use aptos_framework::reconfiguration;
   use ol_framework::slow_wallet;
   use ol_framework::mock;
   use ol_framework::ol_account;
   use ol_framework::gas_coin;
+  use ol_framework::epoch_boundary;
   use aptos_framework::coin;
   use std::vector;
 
@@ -110,12 +110,8 @@ module ol_framework::test_slow_wallet {
   fun slow_wallet_reconfigure (root: signer) {
     let set = mock::genesis_n_vals(4);
     let a = vector::borrow(&set, 0);
-    // let a_sig = account::create_signer_for_test(*a);
-
-    // slow_wallet::set_slow(&a_sig);
     assert!(slow_wallet::unlocked_amount(*a) == 0, 735701);
-      // let list = slow_wallet::get_slow_list();
-    reconfiguration::ol_reconfigure_for_test(&root)
+    epoch_boundary::ol_reconfigure_for_test(&root)
     
   }
 

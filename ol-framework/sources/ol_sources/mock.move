@@ -22,6 +22,8 @@ module ol_framework::mock {
   use ol_framework::validator_universe;
   // #[test_only]
   // use aptos_framework::system_addresses;
+  #[test_only]
+  use ol_framework::epoch_boundary;
 
 
   #[test_only]
@@ -163,9 +165,10 @@ module ol_framework::mock {
     }
 
     #[test_only]
-    public fun trigger_epoch() {
+    public fun trigger_epoch(root: &signer) {
         stake::end_epoch(); // additionally forwards EPOCH_DURATION seconds
         reconfiguration::reconfigure_for_test_custom();
+        epoch_boundary::ol_reconfigure_for_test(root);
     }
 
   //   // function to deposit into network fee account
@@ -179,12 +182,12 @@ module ol_framework::mock {
 
 
   //////// META TESTS ////////
-  #[test]
+  #[test(root=@ol_framework)]
   /// test we can trigger an epoch reconfiguration.
-  public fun meta_epoch() {
+  public fun meta_epoch(root: signer) {
     genesis();
     let epoch = reconfiguration::current_epoch();
-    trigger_epoch();
+    trigger_epoch(&root);
     let new_epoch = reconfiguration::current_epoch();
     assert!(new_epoch > epoch, 7357001);
 

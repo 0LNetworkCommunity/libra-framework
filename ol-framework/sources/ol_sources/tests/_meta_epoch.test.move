@@ -53,12 +53,12 @@ module ol_framework::test_meta {
     assert!(b == 1, 10002);
   }
 
-    #[test(vm = @vm_reserved)]
-  fun test_reconfigure_mock_trigger() {
+  #[test(root = @ol_framework)]
+  fun test_reconfigure_mock_trigger(root: signer) {
     mock::genesis();
     let a = reconfiguration::get_current_epoch();
 
-    mock::trigger_epoch();
+    mock::trigger_epoch(&root);
     let b = reconfiguration::get_current_epoch();
     
     assert!(a == 0, 10001);

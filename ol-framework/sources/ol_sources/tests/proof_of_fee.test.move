@@ -258,8 +258,8 @@ module ol_framework::test_pof {
 
 
 
-  #[test(vm = @ol_framework)]
-  fun sorted_vals_expired_bid(vm: signer) {
+  #[test(root = @ol_framework)]
+  fun sorted_vals_expired_bid(root: signer) {
     let set = mock::genesis_n_vals(4);
     let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
 
@@ -267,7 +267,7 @@ module ol_framework::test_pof {
     let i = 0;
     while (i < len) {
       let addr = vector::borrow(&set, i);
-      mock_good_bid(&vm, addr);
+      mock_good_bid(&root, addr);
       i = i + 1;
     };
 
@@ -277,8 +277,8 @@ module ol_framework::test_pof {
     proof_of_fee::set_bid(&alice_sig, 55, 1);
   
 
-    mock::trigger_epoch();
-    mock::trigger_epoch();
+    mock::trigger_epoch(&root);
+    mock::trigger_epoch(&root);
 
 
     // let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
@@ -360,8 +360,8 @@ module ol_framework::test_pof {
   // All validators performed perfectly in the previous epoch.
   // They have all placed bids, per TestFixtures::pof_default().
 
-  #[test(vm = @ol_framework)]
-  fun fill_seats_few_bidders(vm: signer) {
+  #[test(root = @ol_framework)]
+  fun fill_seats_few_bidders(root: signer) {
     let set = mock::genesis_n_vals(5);
     mock::pof_default();
 
@@ -369,9 +369,9 @@ module ol_framework::test_pof {
     // Ok now EVE changes her mind. Will force the bid to expire.
     let a_sig = account::create_signer_for_test(*vector::borrow(&set, 4));
     proof_of_fee::set_bid(&a_sig, 0, 0);
-    mock::trigger_epoch();
+    mock::trigger_epoch(&root);
     
-    slow_wallet::slow_wallet_epoch_drip(&vm, 500000);
+    slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
     let sorted = proof_of_fee::get_sorted_vals(true);
     assert!(vector::length(&sorted) != vector::length(&set), 1003);
@@ -380,7 +380,7 @@ module ol_framework::test_pof {
     assert!(vector::length(&set) == 5, 1004);
     assert!(vector::length(&sorted) == 4, 1005);
 
-    let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&vm, vector::length(&set), &sorted, &sorted);
+    let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&root, vector::length(&set), &sorted, &sorted);
 
     // EVE is not in the seats
     assert!(!vector::contains(&seats, vector::borrow(&set, 4)), 1004);

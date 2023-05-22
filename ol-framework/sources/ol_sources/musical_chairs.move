@@ -7,6 +7,8 @@ module ol_framework::musical_chairs {
     use std::fixed_point32;
     use std::vector;
 
+    // use aptos_std::debug::print;
+
     struct Chairs has key {
         // The number of chairs in the game
         current_seats: u64,
@@ -65,6 +67,7 @@ module ol_framework::musical_chairs {
       // height_end: u64
     ): (vector<address>, u64) acquires Chairs {
         system_addresses::assert_ol(vm);
+
         let (compliant, _non, ratio) = eval_compliance();
 
         let chairs = borrow_global_mut<Chairs>(@ol_framework);

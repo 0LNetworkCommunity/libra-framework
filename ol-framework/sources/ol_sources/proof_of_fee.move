@@ -22,7 +22,7 @@ module ol_framework::proof_of_fee {
   use aptos_framework::stake;
   use aptos_framework::system_addresses;
 
-  // use aptos_std::debug::print;
+  use aptos_std::debug::print;
   
   /// The nominal reward for each validator in each epoch.
   const GENESIS_BASELINE_REWARD: u64 = 1000000;
@@ -89,12 +89,13 @@ module ol_framework::proof_of_fee {
   // includes getting the sorted bids
   // filling the seats (determined by MusicalChairs), and getting a price.
   // and finally charging the validators for their bid (everyone pays the lowest)
-  public fun epoch_boundary(
+  public fun end_epoch(
     vm: &signer,
     outgoing_compliant_set: &vector<address>,
     n_musical_chairs: u64
   ): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
-      system_addresses::assert_vm(vm);
+      system_addresses::assert_ol(vm);
+      print(&88888);
       let sorted_bids = get_sorted_vals(false);
 
       let (auction_winners, price) = fill_seats_and_get_price(vm, n_musical_chairs, &sorted_bids, outgoing_compliant_set);

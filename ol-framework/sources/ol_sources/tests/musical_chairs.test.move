@@ -27,9 +27,6 @@ module ol_framework::test_musical_chairs {
 
       let (_outgoing_compliant_set, _new_set_size) = musical_chairs::stop_the_music(&vm);
 
-      // print(&outgoing_compliant_set);
-      // //print(&new_set_size);
-      // assert!(MusicalChairs::get_current_seats() == 11, 1004)
     }
 
     #[test(vm = @ol_framework)]
@@ -39,21 +36,17 @@ module ol_framework::test_musical_chairs {
       let vals = mock::genesis_n_vals(5);
       assert!(vector::length(&vals) == 5, 7357001);
 
-            // all vals compliant
+      // all vals compliant
       mock::mock_case_1(&vm, *vector::borrow(&vals, 0));
 
       let (good, bad, bad_ratio) = musical_chairs::eval_compliance();
       assert!(vector::length(&good) == 1, 7357002);
       assert!(vector::length(&bad) == 4, 7357003);
       assert!(!fixed_point32::is_zero(bad_ratio), 7357004);
-      // print(&fixed_point32::multiply_u64(100, bad_ratio));
       assert!(fixed_point32::create_from_rational(4, 5) == bad_ratio, 7357005);
 
 
       let (_outgoing_compliant_set, _new_set_size) = musical_chairs::stop_the_music(&vm);
 
-      // print(&outgoing_compliant_set);
-      // //print(&new_set_size);
-      // assert!(MusicalChairs::get_current_seats() == 11, 1004)
     }
 }

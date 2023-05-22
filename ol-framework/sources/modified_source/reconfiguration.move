@@ -14,8 +14,6 @@ module aptos_framework::reconfiguration {
     use aptos_framework::storage_gas;
     use aptos_framework::transaction_fee;
 
-    use ol_framework::slow_wallet;
-
     friend aptos_framework::aptos_governance;
     friend aptos_framework::block;
     friend aptos_framework::consensus_config;
@@ -103,14 +101,6 @@ module aptos_framework::reconfiguration {
         !exists<DisableReconfiguration>(@aptos_framework)
     }
 
-    public(friend) fun ol_reconfigure(vm: &signer) {
-
-        system_addresses::assert_ol(vm);
-
-        // TODO: this needs to be a friend function, but it's in a different namespace, so we are gating it with vm signer, which is what was done previously. Which means hacking block.move
-        slow_wallet::on_new_epoch(vm);
-
-    }
     /// Signal validators to start using new configuration. Must be called from friend config modules.
     public(friend) fun reconfigure() acquires Configuration {
         // Do not do anything if genesis has not finished.
@@ -213,11 +203,6 @@ module aptos_framework::reconfiguration {
     #[test_only]
     public fun reconfigure_for_test() acquires Configuration {
         reconfigure();
-    }
-
-    #[test_only]
-    public fun ol_reconfigure_for_test(vm: &signer) {
-        ol_reconfigure(vm);
     }
 
     // This is used together with stake::end_epoch() for testing with last_reconfiguration_time
