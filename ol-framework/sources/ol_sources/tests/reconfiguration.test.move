@@ -7,7 +7,7 @@ module ol_framework::test_reconfiguration {
   use ol_framework::mock;
   use ol_framework::testnet;
 
-  // use aptos_std::debug::print;
+  use aptos_std::debug::print;
 
   // Scenario: all genesis validators make it to next epoch
   #[test(root = @ol_framework)]
@@ -73,6 +73,8 @@ module ol_framework::test_reconfiguration {
       mock::trigger_epoch(&root);    
 
       let vals = stake::get_current_validators();
+
+      print(&vals);
 
 
       assert!(vector::length(&vals) == 5, 7357003);

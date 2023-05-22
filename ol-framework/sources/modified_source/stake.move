@@ -25,13 +25,7 @@ module aptos_framework::stake {
     use std::signer;
     use std::vector;
     use aptos_std::bls12381;
-    // use aptos_std::math64::min;
     use aptos_std::table::{Self, Table};
-    // use aptos_std::debug::print;
-
-    use ol_framework::slow_wallet;
-    
-    use ol_framework::testnet;
     
     use aptos_framework::aptos_coin::AptosCoin;
     use aptos_framework::account;
@@ -39,10 +33,12 @@ module aptos_framework::stake {
     use aptos_framework::event::{Self, EventHandle};
     use aptos_framework::timestamp;
     use aptos_framework::system_addresses;
-    // use aptos_framework::staking_config::{Self, StakingConfig, StakingRewardsConfig};
     use aptos_framework::chain_status;
 
-    // use aptos_framework::validator_universe;
+
+    use ol_framework::slow_wallet;
+    use ol_framework::testnet;
+    // use aptos_std::debug::print;
 
     friend aptos_framework::block;
     friend aptos_framework::genesis;
@@ -1349,12 +1345,6 @@ module aptos_framework::stake {
     /// belt and suspenders, private function is authorized. Test functions also authorized.
     fun maybe_set_next_validators(root: &signer, list: vector<ValidatorInfo>) acquires ValidatorSet {
       if (signer::address_of(root) != @ol_framework) return;
-      // check if this is not test
-      if (!testnet::is_testnet() && vector::length(&list) < 5) {
-        return
-      };
-
-
       
       let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
       validator_set.active_validators = list;
@@ -1365,21 +1355,36 @@ module aptos_framework::stake {
     // If the cardinality of validator_set in the next epoch is less than 4, 
     // if we are failing to qualify anyone. Pick top 1/2 of outgoing compliant validator set
     // by proposals. They are probably online.
-    fun check_failover_rules(proposed: vector<address>): vector<address> acquires ValidatorSet, ValidatorConfig, ValidatorPerformance  {
-        if (vector::length(&proposed)  <= 3) { 
-            proposed = get_sorted_vals_by_props(vector::length(&proposed) / 2);
+    public fun check_failover_rules(proposed: vector<address>): vector<address> acquires ValidatorSet, ValidatorConfig, ValidatorPerformance  {
+        let min = 4;
+
+        // check if this is not test. Failover doesn't apply here
+        if (testnet::is_testnet()) {
+
+          return proposed
         };
-        // It's not clear that there could be another failure, but fully backstop it by having the same validtor set.
-        if (vector::length(&proposed) <= 3) {
-          return get_current_validators()
-        };
+
+        let current_vals = get_current_validators();
         
+        if (vector::length(&proposed) <= min) { 
+
+            proposed = get_sorted_vals_by_props(vector::length(&current_vals) / 2);
+
+        };
+
+
+        // It's not clear that there could be another failure, but fully backstop it by having the same validtor set.
+        if (vector::length(&proposed) <= min) {
+
+          return current_vals
+        };
+
         // return proposed by default
         proposed
     }
 
     /// Bubble sort the validators by their proposal counts.
-    fun get_sorted_vals_by_props(n: u64): vector<address> acquires ValidatorSet, ValidatorConfig, ValidatorPerformance {
+    public fun get_sorted_vals_by_props(n: u64): vector<address> acquires ValidatorSet, ValidatorConfig, ValidatorPerformance {
       let eligible_validators = get_current_validators();
       let length = vector::length<address>(&eligible_validators);
 
@@ -1387,7 +1392,7 @@ module aptos_framework::stake {
       let weights = vector::empty<u64>();
       let filtered_vals = vector::empty<address>();
       let k = 0;
-      while (k < length && k < n) {
+      while (k < length) {
         // TODO: Ensure that this address is an active validator
 
         let cur_address = *vector::borrow<address>(&eligible_validators, k);
@@ -1433,7 +1438,15 @@ module aptos_framework::stake {
       // Reverse to have sorted order - high to low.
       vector::reverse<address>(&mut filtered_vals);
 
-      return filtered_vals
+      // Return the top n validators
+      let final = vector::empty<address>();
+      let m = 0;
+      while ( m < n) {
+         vector::push_back(&mut final, *vector::borrow(&filtered_vals, m));
+         m = m + 1;
+      };
+
+      return final
       
     }
 

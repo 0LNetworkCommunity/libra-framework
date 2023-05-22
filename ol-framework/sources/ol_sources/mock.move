@@ -136,6 +136,10 @@ module ol_framework::mock {
       vector::push_back(&mut val_addr, @0x1000d);
       vector::push_back(&mut val_addr, @0x1000e);
       vector::push_back(&mut val_addr, @0x1000f);
+      vector::push_back(&mut val_addr, @0x10010); // g
+      vector::push_back(&mut val_addr, @0x10011); // h
+      vector::push_back(&mut val_addr, @0x10012); // i
+      vector::push_back(&mut val_addr, @0x10013); // k
       val_addr
     }
 
