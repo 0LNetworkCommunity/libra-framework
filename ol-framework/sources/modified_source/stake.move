@@ -1217,7 +1217,7 @@ module aptos_framework::stake {
         // };
     }
 
-    public(friend) fun ol_on_new_epoch(root: &signer, list: &vector<address>) acquires StakePool, ValidatorConfig, ValidatorPerformance, ValidatorSet {
+    public(friend) fun ol_on_new_epoch(root: &signer, list: vector<address>) acquires StakePool, ValidatorConfig, ValidatorPerformance, ValidatorSet {
 
 
         // will update the stake of active validators.
@@ -1266,32 +1266,19 @@ module aptos_framework::stake {
                 failed_proposals: 0,
             });
 
-            // // Automatically renew a validator's lockup for validators that will still be in the validator set in the
-            // // next epoch.
-            // let stake_pool = borrow_global_mut<StakePool>(validator_info.addr);
-            // if (stake_pool.locked_until_secs <= timestamp::now_seconds()) {
-            //     spec {
-            //         assume timestamp::spec_now_seconds() + recurring_lockup_duration_secs <= MAX_U64;
-            //     };
-            //     stake_pool.locked_until_secs =
-            //         timestamp::now_seconds() + recurring_lockup_duration_secs;
-            // };
-
             validator_index = validator_index + 1;
         };
 
-        // if (features::periodical_reward_rate_decrease_enabled()) {
-        //     // Update rewards rate after reward distribution.
-        //     staking_config::calculate_and_save_latest_epoch_rewards_rate();
-        // };
     }
 
     /////// 0L ///////
     // Critical mutation. Using belt and suspenders
-    fun try_bulk_update(root: &signer, list: &vector<address>) acquires StakePool, ValidatorConfig, ValidatorSet {
+    fun try_bulk_update(root: &signer, list: vector<address>) acquires StakePool, ValidatorConfig, ValidatorSet, ValidatorPerformance {
       if (signer::address_of(root) != @ol_framework) return;
 
-      let (list_info, _voting_power) = make_validator_set_config(list);
+      let list = check_failover_rules(list);
+
+      let (list_info, _voting_power) = make_validator_set_config(&list);
 
       // mutations happen in private function
       maybe_set_next_validators(root, list_info);
@@ -1366,10 +1353,88 @@ module aptos_framework::stake {
       if (!testnet::is_testnet() && vector::length(&list) < 5) {
         return
       };
+
+
       
       let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
       validator_set.active_validators = list;
       validator_set.total_voting_power = (vector::length(&list) as u128);
+    }
+
+    //////// Failover Rules ////////
+    // If the cardinality of validator_set in the next epoch is less than 4, 
+    // if we are failing to qualify anyone. Pick top 1/2 of outgoing compliant validator set
+    // by proposals. They are probably online.
+    fun check_failover_rules(proposed: vector<address>): vector<address> acquires ValidatorSet, ValidatorConfig, ValidatorPerformance  {
+        if (vector::length(&proposed)  <= 3) { 
+            proposed = get_sorted_vals_by_props(vector::length(&proposed) / 2);
+        };
+        // It's not clear that there could be another failure, but fully backstop it by having the same validtor set.
+        if (vector::length(&proposed) <= 3) {
+          return get_current_validators()
+        };
+        
+        // return proposed by default
+        proposed
+    }
+
+    /// Bubble sort the validators by their proposal counts.
+    fun get_sorted_vals_by_props(n: u64): vector<address> acquires ValidatorSet, ValidatorConfig, ValidatorPerformance {
+      let eligible_validators = get_current_validators();
+      let length = vector::length<address>(&eligible_validators);
+
+      // vector to store each address's node_weight
+      let weights = vector::empty<u64>();
+      let filtered_vals = vector::empty<address>();
+      let k = 0;
+      while (k < length && k < n) {
+        // TODO: Ensure that this address is an active validator
+
+        let cur_address = *vector::borrow<address>(&eligible_validators, k);
+
+        let idx = get_validator_index(cur_address);
+        let (proposed, failed) = get_current_epoch_proposal_counts(idx);
+        let delta = 0;
+        if (proposed > failed) {
+          delta = proposed - failed;
+        };
+         
+        vector::push_back<u64>(&mut weights, delta);
+        vector::push_back<address>(&mut filtered_vals, cur_address);
+        k = k + 1;
+      };
+
+      // Sorting the accounts vector based on value (weights).
+      // Bubble sort algorithm
+      let len_filtered = vector::length<address>(&filtered_vals);
+      if (len_filtered < 2) return filtered_vals;
+      let i = 0;
+      while (i < len_filtered){
+        let j = 0;
+        while(j < len_filtered-i-1){
+
+          let value_j = *(vector::borrow<u64>(&weights, j));
+
+          let value_jp1 = *(vector::borrow<u64>(&weights, j+1));
+          if(value_j > value_jp1){
+
+            vector::swap<u64>(&mut weights, j, j+1);
+
+            vector::swap<address>(&mut filtered_vals, j, j+1);
+          };
+          j = j + 1;
+
+        };
+        i = i + 1;
+
+      };
+
+
+      // Reverse to have sorted order - high to low.
+      vector::reverse<address>(&mut filtered_vals);
+
+      return filtered_vals
+      
     }
 
     /// Update individual validator's stake pool
