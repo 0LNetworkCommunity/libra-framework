@@ -99,7 +99,7 @@ module ol_framework::proof_of_fee {
       let sorted_bids = get_sorted_vals(false);
 
       let (auction_winners, price) = fill_seats_and_get_price(vm, n_musical_chairs, &sorted_bids, outgoing_compliant_set);
-      // print(&price);
+      print(&auction_winners);
 
       slow_wallet::vm_multi_pay_fee(vm, &auction_winners, price, &b"proof of fee");
 

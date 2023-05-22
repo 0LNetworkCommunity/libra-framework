@@ -1215,6 +1215,20 @@ module aptos_framework::stake {
     }
 
     /////// 0L ///////
+    // Critical mutation. Using belt and suspenders
+    public(friend) fun try_bulk_update(root: &signer, list: &vector<address>) acquires StakePool, ValidatorConfig, ValidatorSet {
+      if (signer::address_of(root) != @ol_framework) return;
+
+      let (list_info, _voting_power) = make_validator_set_config(list);
+
+      // mutations happen in private function
+      maybe_set_next_validators(root, list_info);
+
+
+
+      
+    }
+
     #[test_only] 
     public fun test_make_val_cfg(list: &vector<address>): (vector<ValidatorInfo>, u128) acquires StakePool, ValidatorConfig {
       make_validator_set_config(list)
@@ -1271,12 +1285,15 @@ module aptos_framework::stake {
     }
 
     #[test_only] 
-    public fun test_set_next_vals(list: vector<ValidatorInfo>) acquires ValidatorSet {
-      maybe_set_next_validators(list);
+    public fun test_set_next_vals(root: &signer, list: vector<ValidatorInfo>) acquires ValidatorSet {
+      system_addresses::assert_ol(root);
+      maybe_set_next_validators(root, list);
     }
 
     /// sets the global state for the next epoch validators
-    fun maybe_set_next_validators(list: vector<ValidatorInfo>) acquires ValidatorSet {
+    /// belt and suspenders, private function is authorized. Test functions also authorized.
+    fun maybe_set_next_validators(root: &signer, list: vector<ValidatorInfo>) acquires ValidatorSet {
+      if (signer::address_of(root) != @ol_framework) return;
       // check if this is not test
       if (!testnet::is_testnet() && vector::length(&list) < 5) {
         return
@@ -1284,6 +1301,7 @@ module aptos_framework::stake {
       
       let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
       validator_set.active_validators = list;
+      validator_set.total_voting_power = (vector::length(&list) as u128);
     }
 
     /// Update individual validator's stake pool

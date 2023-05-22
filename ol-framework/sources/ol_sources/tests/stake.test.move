@@ -10,8 +10,8 @@ module ol_framework::test_stake {
 
   // Scenario: can take 6 already initialized validators, from a previous set
   // and reduce the set to 3 of those validators.
-  #[test]
-  fun bulk_update_validators() {
+  #[test(root = @ol_framework)]
+  fun bulk_update_validators(root: signer) {
     let set = mock::genesis_n_vals(6);
     let alice = vector::borrow(&set, 0);
     assert!(stake::is_valid(*alice), 1000);
@@ -31,7 +31,7 @@ module ol_framework::test_stake {
     let (cfg_list, _weight) = stake::test_make_val_cfg(&new_list);
 
     
-    stake::test_set_next_vals(cfg_list);
+    stake::test_set_next_vals(&root, cfg_list);
 
     let vals = stake::get_current_validators();
     assert!(vector::length(&vals) == 3, 1001);
@@ -41,10 +41,10 @@ module ol_framework::test_stake {
   // Scenario: in production mode, we can't have fewer than 4 validators.
   // if we try to pass less, no change will happen (does not abort)
   #[test(root = @ol_framework)]
-  fun minimum_four_failover(root: &signer) {
+  fun minimum_four_failover(root: signer) {
 
     let set = mock::genesis_n_vals(6);
-    testnet::unset(root); // set to production mode
+    testnet::unset(&root); // set to production mode
 
     let alice = vector::borrow(&set, 0);
     assert!(stake::is_valid(*alice), 1000);
@@ -64,7 +64,7 @@ module ol_framework::test_stake {
     let (cfg_list, _weight) = stake::test_make_val_cfg(&new_list);
 
     
-    stake::test_set_next_vals(cfg_list);
+    stake::test_set_next_vals(&root, cfg_list);
 
     let vals = stake::get_current_validators();
     assert!(vector::length(&vals) != 3, 1001);
