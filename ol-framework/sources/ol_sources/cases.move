@@ -39,12 +39,11 @@ module ol_framework::cases{
     // at what voting power.
     // Permissions: Public, VM Only
     public fun get_case(
-        node_addr: address, height_start: u64, height_end: u64
-    ): u64 {
+        node_addr: address): u64 {
 
         // this is a failure mode. Only usually seen in rescue missions,
         // where epoch counters are reconfigured by writeset offline.
-        if (height_end < height_start) return INVALID_DATA;
+        // if (height_end < height_start) return INVALID_DATA;
 
         // Roles::assert_diem_root(vm); // todo v7
         // did the validator sign blocks above threshold?
@@ -83,7 +82,7 @@ module ol_framework::cases{
       while(k < vector::length(&validator_set)){
         let addr = *vector::borrow<address>(&validator_set, k);
         // consensus case 1 allow inclusion into the next validator set.
-        if (get_case(addr, 0, 0) == 4){
+        if (get_case(addr) == 4){
           vector::push_back<address>(&mut jailed_set, addr)
         };
         k = k + 1;

@@ -45,7 +45,7 @@ module ol_framework::mock {
   public fun mock_case_1(vm: &signer, addr: address){
       assert!(stake::is_valid(addr), 01);
       stake::mock_performance(vm, addr, 1, 0);
-      assert!(cases::get_case(addr, 0, 15) == 1, 777703);
+      assert!(cases::get_case(addr) == 1, 777703);
     }
 
 
@@ -55,7 +55,7 @@ module ol_framework::mock {
       assert!(stake::is_valid(addr), 01);
       stake::mock_performance(vm, addr, 0, 100); // 100 failing proposals
 
-      assert!(cases::get_case(addr, 0, 15) == 4, 777703);
+      assert!(cases::get_case(addr) == 4, 777703);
     }
 
     // Mock all nodes being compliant case 1

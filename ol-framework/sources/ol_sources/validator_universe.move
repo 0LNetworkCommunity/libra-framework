@@ -11,6 +11,7 @@ module aptos_framework::validator_universe {
   use std::vector;
   use aptos_framework::system_addresses;
   use ol_framework::jail;
+  use ol_framework::cases;
   use aptos_framework::stake;
   // use aptos_std::debug::print;
 

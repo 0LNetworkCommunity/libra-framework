@@ -85,7 +85,7 @@ module ol_framework::test_stake {
     // now make Eve not compliant
     let eve = @0x1000e;
     mock::mock_case_4(&root, eve);
-    assert!(cases::get_case(eve, 0, 15) == 4, 735701);
+    assert!(cases::get_case(eve) == 4, 735701);
 
     let v = cases::get_jailed_set();
     assert!(vector::contains(&v, &eve), 735702);
