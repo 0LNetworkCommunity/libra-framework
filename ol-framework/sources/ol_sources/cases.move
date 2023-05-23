@@ -4,6 +4,8 @@
 // Error code for File: 0300
 /////////////////////////////////////////////////////////////////////////
 
+// TODO: v7: this is legacy, since we only now have two cases: performing and non-performing.
+
 /// # Summary
 /// This module can be used by root to determine whether a validator is compliant
 /// Validators who are no longer compliant may be kicked out of the validator
@@ -11,6 +13,7 @@
 module ol_framework::cases{
     // use DiemFramework::TowerState;
     use aptos_framework::stake;
+    use std::vector;
     // use DiemFramework::Roles; // todo v7
 
     const VALIDATOR_COMPLIANT: u64 = 1;
@@ -36,12 +39,11 @@ module ol_framework::cases{
     // at what voting power.
     // Permissions: Public, VM Only
     public fun get_case(
-        _vm: &signer, node_addr: address, height_start: u64, height_end: u64
-    ): u64 {
+        node_addr: address): u64 {
 
         // this is a failure mode. Only usually seen in rescue missions,
         // where epoch counters are reconfigured by writeset offline.
-        if (height_end < height_start) return INVALID_DATA;
+        // if (height_end < height_start) return INVALID_DATA;
 
         // Roles::assert_diem_root(vm); // todo v7
         // did the validator sign blocks above threshold?
@@ -71,5 +73,20 @@ module ol_framework::cases{
             // weight does not increment.
             VALIDATOR_DOUBLY_NOT_COMPLIANT
         }
+    }
+
+    public fun get_jailed_set(): vector<address> {
+      let validator_set = stake::get_current_validators();
+      let jailed_set = vector::empty<address>();
+      let k = 0;
+      while(k < vector::length(&validator_set)){
+        let addr = *vector::borrow<address>(&validator_set, k);
+        // consensus case 1 allow inclusion into the next validator set.
+        if (get_case(addr) == 4){
+          vector::push_back<address>(&mut jailed_set, addr)
+        };
+        k = k + 1;
+      };
+      jailed_set
     }
 }

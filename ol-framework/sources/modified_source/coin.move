@@ -14,6 +14,7 @@ module aptos_framework::coin {
 
     use aptos_std::type_info;
 
+    friend ol_framework::gas_coin;
     friend aptos_framework::aptos_coin;
     friend aptos_framework::genesis;
     friend aptos_framework::transaction_fee;

@@ -15,12 +15,14 @@ module ol_framework::proof_of_fee {
   use std::fixed_point32;
   use aptos_framework::validator_universe;
   use ol_framework::jail;
-  use ol_framework::ol_account;
+  use ol_framework::slow_wallet;
   use ol_framework::vouch;
-  use ol_framework::testnet;
+  // use ol_framework::testnet;
   use aptos_framework::reconfiguration;
   use aptos_framework::stake;
   use aptos_framework::system_addresses;
+
+  // use aptos_std::debug::print;
   
   /// The nominal reward for each validator in each epoch.
   const GENESIS_BASELINE_REWARD: u64 = 1000000;
@@ -87,18 +89,17 @@ module ol_framework::proof_of_fee {
   // includes getting the sorted bids
   // filling the seats (determined by MusicalChairs), and getting a price.
   // and finally charging the validators for their bid (everyone pays the lowest)
-  public fun epoch_boundary(
+  public fun end_epoch(
     vm: &signer,
     outgoing_compliant_set: &vector<address>,
     n_musical_chairs: u64
   ): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
-      system_addresses::assert_vm(vm);
+      system_addresses::assert_ol(vm);
+
       let sorted_bids = get_sorted_vals(false);
-
       let (auction_winners, price) = fill_seats_and_get_price(vm, n_musical_chairs, &sorted_bids, outgoing_compliant_set);
-      // print(&price);
 
-      ol_account::vm_multi_pay_fee(vm, &auction_winners, price, &b"proof of fee");
+      slow_wallet::vm_multi_pay_fee(vm, &auction_winners, price, &b"proof of fee");
 
       auction_winners
   }
@@ -114,10 +115,15 @@ module ol_framework::proof_of_fee {
   // Leaving the unfiltered option for testing purposes, and any future use.
   // TODO: there's a known issue when many validators have the exact same
   // bid, the preferred node  will be the one LAST included in the validator universe.
-  public fun get_sorted_vals(unfiltered: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
+  public fun get_sorted_vals(remove_unqualified: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
     let eligible_validators = validator_universe::get_eligible_validators();
+    sort_vals_impl(eligible_validators, remove_unqualified)
+  }
+
+  fun sort_vals_impl(eligible_validators: vector<address>, remove_unqualified: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
+    // let eligible_validators = validator_universe::get_eligible_validators();
     let length = vector::length<address>(&eligible_validators);
-    // print(&length);
+
     // vector to store each address's node_weight
     let weights = vector::empty<u64>();
     let filtered_vals = vector::empty<address>();
@@ -127,9 +133,7 @@ module ol_framework::proof_of_fee {
 
       let cur_address = *vector::borrow<address>(&eligible_validators, k);
       let (bid, _expire) = current_bid(cur_address);
-      // print(&bid);
-      // print(&expire);
-      if (!unfiltered && !audit_qualification(&cur_address)) {
+      if (remove_unqualified && !audit_qualification(&cur_address)) {
         k = k + 1;
         continue
       };
@@ -138,37 +142,32 @@ module ol_framework::proof_of_fee {
       k = k + 1;
     };
 
-    // print(&weights);
-
     // Sorting the accounts vector based on value (weights).
     // Bubble sort algorithm
     let len_filtered = vector::length<address>(&filtered_vals);
-    // print(&len_filtered);
-    // print(&vector::length(&weights));
     if (len_filtered < 2) return filtered_vals;
     let i = 0;
     while (i < len_filtered){
       let j = 0;
       while(j < len_filtered-i-1){
-        // print(&8888801);
 
         let value_j = *(vector::borrow<u64>(&weights, j));
-        // print(&8888802);
+
         let value_jp1 = *(vector::borrow<u64>(&weights, j+1));
         if(value_j > value_jp1){
-          // print(&8888803);
+
           vector::swap<u64>(&mut weights, j, j+1);
-          // print(&8888804);
+
           vector::swap<address>(&mut filtered_vals, j, j+1);
         };
         j = j + 1;
-        // print(&8888805);
+
       };
       i = i + 1;
-      // print(&8888806);
+
     };
 
-    // print(&filtered_vals);
+
     // Reverse to have sorted order - high to low.
     vector::reverse<address>(&mut filtered_vals);
 
@@ -276,7 +275,7 @@ module ol_framework::proof_of_fee {
     // we failed to seat anyone.
     // let EpochBoundary deal with this.
     if (vector::is_empty(&seats_to_fill)) {
-      // print(&8006010209);
+
 
       return (seats_to_fill, 0)
     };
@@ -286,7 +285,7 @@ module ol_framework::proof_of_fee {
 
     let (lowest_bid_pct, _) = current_bid(*lowest_bidder);
 
-    // print(&lowest_bid_pct);
+
 
     // update the clearing price
     let cr = borrow_global_mut<ConsensusReward>(@ol_framework);
@@ -298,50 +297,41 @@ module ol_framework::proof_of_fee {
   // consolidate all the checks for a validator to be seated
   public fun audit_qualification(val: &address): bool acquires ProofOfFeeAuction, ConsensusReward {
 
+
       // Safety check: node has valid configs
-      if (!stake::is_valid(*val)) return false;
-      // has operator account set to another address
-      let oper = stake::get_operator(*val);
-      if (oper == *val) return false;
+      if (!stake::stake_pool_exists(*val)) return false;
 
       // is a slow wallet
-      if (!ol_account::is_slow(*val)) return false;
+      if (!slow_wallet::is_slow(*val)) return false;
 
-      // print(&8006010203);
       // we can't seat validators that were just jailed
       // NOTE: epoch reconfigure needs to reset the jail
       // before calling the proof of fee.
       if (jail::is_jailed(*val)) return false;
-      // print(&8006010204);
+
       // we can't seat validators who don't have minimum viable vouches
 
       if (!vouch::unrelated_buddies_above_thresh(*val)) return false;
+      let (bid_pct, expire) = current_bid(*val);
 
-      // print(&80060102041);
-
-      let (bid, expire) = current_bid(*val);
-      //print(val);
-      // print(&bid);
-      // print(&expire);
+      if (bid_pct < 1) return false;
 
       // Skip if the bid expired. belt and suspenders, this should have been checked in the sorting above.
       // TODO: make this it's own function so it can be publicly callable, it's useful generally, and for debugging.
-      // print(&reconfiguration::get_current_epoch());
-      if (reconfiguration::get_current_epoch() > expire) return false;
 
+
+
+      if (reconfiguration::get_current_epoch() > expire) return false;
       // skip the user if they don't have sufficient UNLOCKED funds
       // or if the bid expired.
-      // print(&80060102042);
-      let unlocked_coins = ol_account::unlocked_amount(*val);
-      // print(&unlocked_coins);
 
+      let unlocked_coins = slow_wallet::unlocked_amount(*val);
       let (baseline_reward, _, _) = get_consensus_reward();
-      let coin_required = fixed_point32::multiply_u64(baseline_reward, fixed_point32::create_from_rational(bid, 1000));
+      let coin_required = fixed_point32::multiply_u64(baseline_reward, fixed_point32::create_from_rational(bid_pct, 1000));
 
-      // print(&coin_required);
       if (unlocked_coins < coin_required) return false;
 
-      // print(&80060102043);
+      // friend of ours
       true
   }
   // Adjust the reward at the end of the epoch
@@ -365,16 +355,16 @@ module ol_framework::proof_of_fee {
 
     let cr = borrow_global_mut<ConsensusReward>(@ol_framework);
 
-    // print(&8006010551);
+
     let len = vector::length<u64>(&cr.median_history);
     let i = 0;
 
     let epochs_above = 0;
     let epochs_below = 0;
     while (i < 16 && i < len) { // max ten days, but may have less in history, filling set should truncate the history at 15 epochs.
-    // print(&8006010552);
+
       let avg_bid = *vector::borrow<u64>(&cr.median_history, i);
-      // print(&8006010553);
+
       if (avg_bid > bid_upper_bound) {
         epochs_above = epochs_above + 1;
       } else if (avg_bid < bid_lower_bound) {
@@ -384,11 +374,8 @@ module ol_framework::proof_of_fee {
       i = i + 1;
     };
 
-    // print(&8006010554);
+
     if (cr.value > 0) {
-      // print(&8006010555);
-      // print(&epochs_above);
-      // print(&epochs_below);
 
 
       // TODO: this is an initial implementation, we need to
@@ -397,7 +384,7 @@ module ol_framework::proof_of_fee {
       if (epochs_above > epochs_below) {
 
         // if (epochs_above > short_window) {
-        // print(&8006010556);
+
         // check for zeros.
         // TODO: put a better safety check here
 
@@ -407,19 +394,17 @@ module ol_framework::proof_of_fee {
         // implicit bond is very high on validators. E.g.
         // at 1% median bid, the implicit bond is 100x the reward.
         // We need to DECREASE the reward
-        // print(&8006010558);
+
 
         if (epochs_above > long_window) {
 
           // decrease the reward by 10%
-          // print(&8006010559);
-
 
           cr.value = cr.value - (cr.value / 10);
           return // return early since we can't increase and decrease simultaneously
         } else if (epochs_above > short_window) {
           // decrease the reward by 5%
-          // print(&80060105510);
+
           cr.value = cr.value - (cr.value / 20);
 
 
@@ -436,15 +421,15 @@ module ol_framework::proof_of_fee {
         // At a 25% bid (potential loss), the profit is thus 75% of the value, which means the implicit bond is 25/75, or 1/3 of the bond, the risk favors the validator. This means among other things, that an attacker can pay for the cost of the attack with the profits. See paper, for more details.
 
         // we need to INCREASE the reward, so that the bond is more meaningful.
-        // print(&80060105511);
+
 
         if (epochs_below > long_window) {
-          // print(&80060105513);
+
 
           // increase the reward by 10%
           cr.value = cr.value + (cr.value / 10);
         } else if (epochs_below > short_window) {
-          // print(&80060105512);
+
 
           // increase the reward by 5%
           cr.value = cr.value + (cr.value / 20);
@@ -460,16 +445,16 @@ module ol_framework::proof_of_fee {
       return
     };
 
-    // print(&99901);
+
     let median_bid = get_median(seats_to_fill);
     // push to history
     let cr = borrow_global_mut<ConsensusReward>(@ol_framework);
     cr.median_win_bid = median_bid;
     if (vector::length(&cr.median_history) < 10) {
-      // print(&99902);
+
       vector::push_back(&mut cr.median_history, median_bid);
     } else {
-      // print(&99903);
+
       vector::remove(&mut cr.median_history, 0);
       vector::push_back(&mut cr.median_history, median_bid);
     };
@@ -497,7 +482,7 @@ module ol_framework::proof_of_fee {
 
   // get the baseline reward from ConsensusReward
   public fun get_consensus_reward(): (u64, u64, u64) acquires ConsensusReward {
-    let b = borrow_global<ConsensusReward>(@ol_framework );
+    let b = borrow_global<ConsensusReward>(@ol_framework);
     return (b.value, b.clearing_price, b.median_win_bid)
   }
 
@@ -616,7 +601,10 @@ module ol_framework::proof_of_fee {
   }
 
   //////// TEST HELPERS ////////
+  #[test_only]
+  use ol_framework::testnet;
 
+  #[test_only]
   public fun test_set_val_bids(vm: &signer, vals: &vector<address>, bids: &vector<u64>, expiry: &vector<u64>) acquires ProofOfFeeAuction {
     testnet::assert_testnet(vm);
 
@@ -631,6 +619,7 @@ module ol_framework::proof_of_fee {
     };
   }
 
+  #[test_only]
   public fun test_set_one_bid(vm: &signer, val: &address, bid:  u64, exp: u64) acquires ProofOfFeeAuction {
     testnet::assert_testnet(vm);
     let pof = borrow_global_mut<ProofOfFeeAuction>(*val);
@@ -638,6 +627,7 @@ module ol_framework::proof_of_fee {
     pof.bid = bid;
   }
 
+  #[test_only]
   public fun test_mock_reward(
     vm: &signer,
     value: u64,
@@ -654,4 +644,274 @@ module ol_framework::proof_of_fee {
     cr.median_history = median_history;
 
   }
+
+  #[test(vm = @ol_framework)]
+  fun meta_mock_reward(vm: signer) acquires ConsensusReward {
+    use aptos_framework::chain_id;
+
+    init_genesis_baseline_reward(&vm);
+
+    chain_id::initialize_for_test(&vm, 4);
+
+    test_mock_reward(
+      &vm,
+      100,
+      50,
+      33,
+      vector::singleton(33),
+    ); 
+
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 100, 1000);
+    assert!(clearing == 50, 1001);
+    assert!(median == 33, 1002);
+
+  }
+
+  #[test(vm = @ol_framework)]
+  public entry fun thermostat_unit_happy(vm: signer)  acquires ConsensusReward {
+    use aptos_framework::chain_id;
+    // use ol_framework::mock;
+
+    init_genesis_baseline_reward(&vm);
+
+    chain_id::initialize_for_test(&vm, 4);
+
+    let start_value = 0510; // 51% of baseline reward
+    let median_history = vector::empty<u64>(); 
+
+    let i = 0;
+    while (i < 10) {
+      let factor = i * 10;
+      let value = start_value + factor;
+
+      vector::push_back(&mut median_history, value);
+      i = i + 1;
+    };
+
+
+    test_mock_reward(
+      &vm,
+      100,
+      50,
+      33,
+      median_history,
+    );
+
+    // no changes until we run the thermostat.
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 100, 1000);
+    assert!(clearing == 50, 1001);
+    assert!(median == 33, 1002);
+
+    reward_thermostat(&vm);
+
+    // This is the happy case. No changes since the rewards were within range
+    // the whole time.
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 100, 1000);
+    assert!(clearing == 50, 1001);
+    assert!(median == 33, 1002);
+
+  }
+
+  // Scenario: The reward is too low during 5 days (short window). People are not bidding very high.
+  #[test(vm = @ol_framework)]
+  fun thermostat_increase_short(vm: signer) acquires ConsensusReward {
+    use aptos_framework::chain_id;
+
+    init_genesis_baseline_reward(&vm);
+    chain_id::initialize_for_test(&vm, 4);
+
+    let start_value = 0200; // 20% of baseline fee. 
+    let median_history = vector::empty<u64>(); 
+
+    // we need between 5 and 10 epochs to be a short "window"
+    let i = 0;
+    while (i < 7) {
+      vector::push_back(&mut median_history, start_value);
+      i = i + 1;
+    };
+
+
+    test_mock_reward(
+      &vm,
+      100,
+      50,
+      33,
+      median_history,
+    ); 
+
+    // no changes until we run the thermostat.
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 100, 1000);
+    assert!(clearing == 50, 1001);
+    assert!(median == 33, 1002);
+
+    reward_thermostat(&vm);
+
+    // In the decrease case during a short period, we decrease by 5%
+    // No other parameters of consensus reward should change on calling this function.
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 105, 1003);
+    assert!(clearing == 50, 1004);
+    assert!(median == 33, 1005);
+
+  }
+
+
+  // Scenario: The reward is too low during 5 days (short window). People are not bidding very high.
+  #[test(vm = @ol_framework)]
+  fun thermostat_increase_long(vm: signer) acquires ConsensusReward {
+    use aptos_framework::chain_id;
+
+    init_genesis_baseline_reward(&vm);
+    chain_id::initialize_for_test(&vm, 4);
+
+    let start_value = 0200; // 20% of baseline fee. 
+    let median_history = vector::empty<u64>(); 
+
+    // we need at least 10 epochs above the 95% range to be a "long window"
+    let i = 0;
+    while (i < 12) {
+      // let factor = i * 10;
+      // let value = start_value + factor;
+
+      vector::push_back(&mut median_history, start_value);
+      i = i + 1;
+    };
+
+
+    test_mock_reward(
+      &vm,
+      100,
+      50,
+      33,
+      median_history,
+    ); 
+
+    // no changes until we run the thermostat.
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 100, 1000);
+    assert!(clearing == 50, 1001);
+    assert!(median == 33, 1002);
+
+    reward_thermostat(&vm);
+
+    // In the decrease case during a short period, we decrease by 5%
+    // No other parameters of consensus reward should change on calling this function.
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 110, 1003);
+    assert!(clearing == 50, 1004);
+    assert!(median == 33, 1005);
+
+  }
+
+
+  // Scenario: The reward is too high during 5 days (short window). People are bidding over 95% of the baseline fee.
+  #[test(vm = @ol_framework)]
+  fun thermostat_decrease_short(vm: signer) acquires ConsensusReward {
+    use aptos_framework::chain_id;
+
+    init_genesis_baseline_reward(&vm);
+    chain_id::initialize_for_test(&vm, 4);
+
+    let start_value = 0950; // 96% of baseline fee. 
+    let median_history = vector::empty<u64>(); 
+
+    // we need between 5 and 10 epochs to be a short "window"
+    let i = 0;
+    while (i < 7) {
+      let factor = i * 10;
+      let value = start_value + factor;
+      vector::push_back(&mut median_history, value);
+      i = i + 1;
+    };
+
+
+    test_mock_reward(
+      &vm,
+      100,
+      50,
+      33,
+      median_history,
+    ); 
+
+    // no changes until we run the thermostat.
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 100, 1000);
+    assert!(clearing == 50, 1001);
+    assert!(median == 33, 1002);
+
+    reward_thermostat(&vm);
+
+    // In the decrease case during a short period, we decrease by 5%
+    // No other parameters of consensus reward should change on calling this function.
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 95, 1000);
+    assert!(clearing == 50, 1004);
+    assert!(median == 33, 1005);
+
+  }
+
+    // Scenario: The reward is too low during 5 days (short window). People are not bidding very high.
+  #[test(vm = @ol_framework)]
+  fun thermostat_decrease_long(vm: signer) acquires ConsensusReward {
+    use aptos_framework::chain_id;
+
+    init_genesis_baseline_reward(&vm);
+    chain_id::initialize_for_test(&vm, 4);
+
+    let start_value = 0960; // 96% of baseline fee. 
+    let median_history = vector::empty<u64>(); 
+
+    // we need at least 10 epochs above the 95% range to be a "long window"
+    let i = 0;
+    while (i < 12) {
+      // let factor = i * 10;
+      // let value = start_value + factor;
+
+      vector::push_back(&mut median_history, start_value);
+      i = i + 1;
+    };
+
+
+    test_mock_reward(
+      &vm,
+      100,
+      50,
+      33,
+      median_history,
+    ); 
+
+    // no changes until we run the thermostat.
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 100, 1000);
+    assert!(clearing == 50, 1001);
+    assert!(median == 33, 1002);
+
+    reward_thermostat(&vm);
+
+    // In the decrease case during a short period, we decrease by 5%
+    // No other parameters of consensus reward should change on calling this function.
+    let (value, clearing, median) = get_consensus_reward();
+    assert!(value == 90, 1003);
+    assert!(clearing == 50, 1004);
+    assert!(median == 33, 1005);
+
+  }
+
+  // #[test(vm = @ol_framework)]
+  // fun pof_set_retract(vm: signer) {
+  //     use aptos_framework::account;
+
+  //     validator_universe::initialize(&vm);
+
+  //     let sig = account::create_signer_for_test(@0x123);
+  //     let (_sk, pk, pop) = stake::generate_identity();
+  //     stake::initialize_test_validator(&pk, &pop, &sig, 100, true, true);
+
+  //     validator_universe::is_in_universe(@0x123);
+
+  // }
 }

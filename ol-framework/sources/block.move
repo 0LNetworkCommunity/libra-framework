@@ -14,6 +14,9 @@ module aptos_framework::block {
     use aptos_framework::timestamp;
     use aptos_framework::transaction_fee;
 
+    //////// 0L ////////
+    use ol_framework::epoch_boundary;
+
     friend aptos_framework::genesis;
 
     const MAX_U64: u64 = 18446744073709551615;
@@ -153,6 +156,7 @@ module aptos_framework::block {
 
         if (timestamp - reconfiguration::last_reconfiguration_time() >= block_metadata_ref.epoch_interval) {
             reconfiguration::reconfigure();
+            epoch_boundary::epoch_boundary(&vm);
         };
     }
 
