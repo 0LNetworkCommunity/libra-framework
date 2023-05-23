@@ -21,7 +21,8 @@ module aptos_framework::account {
     friend aptos_framework::genesis;
     friend aptos_framework::resource_account;
     friend aptos_framework::transaction_validation;
-
+    //////// 0L ////////
+    friend ol_framework::ol_account;
     /// Resource representing an account.
     struct Account has key, store {
         authentication_key: vector<u8>,

@@ -79,4 +79,23 @@ module aptos_framework::system_addresses {
     public fun is_reserved_address(addr: address): bool {
         is_aptos_framework_address(addr) || is_vm_address(addr)
     }
+
+
+    //////// 0L ////////
+
+    const ENOT_OL_ROOT_ADDRESS: u64 = 0;
+
+    public fun is_ol_framework_address(addr: address): bool {
+        addr == @ol_framework
+    }
+
+    // public fun assert_ol_framework_address(addr: address) {
+    //     assert!(is_ol_root_address(addr),
+    //     error::permission_denied(ENOT_OL_ROOT_ADDRESS))
+    // }
+
+    public fun assert_ol(sig: &signer) {
+        assert!(is_ol_framework_address(signer::address_of(sig)),
+        error::permission_denied(ENOT_OL_ROOT_ADDRESS))
+    }
 }

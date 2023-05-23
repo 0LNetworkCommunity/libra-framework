@@ -28,7 +28,13 @@ module aptos_framework::genesis {
     use aptos_framework::transaction_fee;
     use aptos_framework::transaction_validation;
     use aptos_framework::version;
+
+    //////// 0L ////////
     use aptos_framework::validator_universe;
+    use ol_framework::musical_chairs;
+    use ol_framework::proof_of_fee;
+    use ol_framework::slow_wallet;
+    use ol_framework::gas_coin;
 
     const EDUPLICATE_ACCOUNT: u64 = 1;
     const EACCOUNT_DOES_NOT_EXIST: u64 = 2;
@@ -132,26 +138,48 @@ module aptos_framework::genesis {
         state_storage::initialize(&aptos_framework_account);
 
         //////// 0L ////////
-        validator_universe::initialize(&aptos_framework_account);  
+        validator_universe::initialize(&aptos_framework_account);
+        //todo: genesis seats
+        let genesis_seats = 10;
+        musical_chairs::initialize(&aptos_framework_account, genesis_seats);
+        proof_of_fee::init_genesis_baseline_reward(&aptos_framework_account);
+        slow_wallet::initialize(&aptos_framework_account);
+        // end 0L
+
         timestamp::set_time_has_started(&aptos_framework_account);
     }
 
+
+    // TODO: 0L: this is called at genesis from Rust side. Need to replace names there.
+    // we are leaving vendor's coin in place.
     /// Genesis step 2: Initialize Aptos coin.
     fun initialize_aptos_coin(aptos_framework: &signer) {
+
         let (burn_cap, mint_cap) = aptos_coin::initialize(aptos_framework);
         // Give stake module MintCapability<AptosCoin> so it can mint rewards.
         // stake::store_aptos_coin_mint_cap(aptos_framework, mint_cap);
         coin::destroy_mint_cap(mint_cap);
         // Give transaction_fee module BurnCapability<AptosCoin> so it can burn gas.
         transaction_fee::store_aptos_coin_burn_cap(aptos_framework, burn_cap);
+
+        // 0L: genesis ceremony is calling this
+        let (burn_cap, mint_cap) = gas_coin::initialize(aptos_framework);
+        // Give stake module MintCapability<AptosCoin> so it can mint rewards.
+        // stake::store_aptos_coin_mint_cap(aptos_framework, mint_cap);
+        coin::destroy_mint_cap(mint_cap);
+        coin::destroy_burn_cap(burn_cap);
     }
 
+    // TODO: 0L: replace this with gas coin. using vendor's to preserve tests while WIP.
     /// Only called for testnets and e2e tests.
     fun initialize_core_resources_and_aptos_coin(
         aptos_framework: &signer,
         core_resources_auth_key: vector<u8>,
     ) {
         let (burn_cap, mint_cap) = aptos_coin::initialize(aptos_framework);
+
+        
+        
         // Give stake module MintCapability<AptosCoin> so it can mint rewards.
         // stake::store_aptos_coin_mint_cap(aptos_framework, mint_cap);
         coin::destroy_mint_cap(mint_cap);
@@ -161,6 +189,11 @@ module aptos_framework::genesis {
         let core_resources = account::create_account(@core_resources);
         account::rotate_authentication_key_internal(&core_resources, core_resources_auth_key);
         aptos_coin::configure_accounts_for_test(aptos_framework, &core_resources, mint_cap);
+
+        let (burn_cap, mint_cap) = gas_coin::initialize(aptos_framework);
+        coin::destroy_mint_cap(mint_cap);
+        coin::destroy_burn_cap(burn_cap);
+
     }
 
     fun create_accounts(aptos_framework: &signer, accounts: vector<AccountMap>) {
@@ -469,6 +502,12 @@ module aptos_framework::genesis {
         // create_employee_validators(employee_vesting_start, employee_vesting_period_duration, employees);
         create_initialize_validators_with_commission(aptos_framework, true, validators);
         set_genesis_end(aptos_framework);
+    }
+
+    //////// 0L ////////
+    #[test_only]
+    public fun test_end_genesis(framework: &signer) {
+        set_genesis_end(framework);
     }
 
     #[test_only]

@@ -1,66 +1,55 @@
-// Some fixutres are complex and are repeatedly needed
+// Some fixtures are complex and are repeatedly needed
 module ol_framework::mock {
-  // use DiemFramework::TowerState;
-  // use Std::Vector;
-  // use DiemFramework::Stats;
-  // use DiemFramework::Cases;
-  // // use DiemFramework::Debug::print;
-  // use DiemFramework::Testnet;
-  // use DiemFramework::ValidatorUniverse;
-  // use DiemFramework::DiemAccount;
-  // use DiemFramework::ProofOfFee;
-  // use DiemFramework::DiemSystem;
-  // use DiemFramework::Diem;
-  // use DiemFramework::TransactionFee;
-  // use DiemFramework::GAS::GAS;
-
   #[test_only]
   use aptos_framework::stake;
   #[test_only]
+  use aptos_framework::reconfiguration;
+  #[test_only]
   use ol_framework::cases;
-  // #[test_only]
-  // use ol_framework::testnet;
+  #[test_only]
+  use ol_framework::vouch;
   #[test_only]
   use std::vector;
   #[test_only]
   use aptos_framework::genesis;
   #[test_only]
   use aptos_framework::account;
-  #[test_only]
-  use aptos_std::debug::print;
+  // #[test_only]
+  // use aptos_std::debug::print;
   #[test_only]
   use ol_framework::proof_of_fee;
   #[test_only]
-  use aptos_framework::system_addresses;
+  use ol_framework::validator_universe;
+  #[test_only]
+  use aptos_framework::timestamp;
+  #[test_only]
+  use ol_framework::epoch_boundary;
+
 
   #[test_only]
-  public fun mock_case_1(vm: &signer, addr: address, success: u64, fail: u64){
-      // test::assert_testnet(vm);
-      assert!(stake::is_valid(addr), 01);
-      stake::mock_performance(vm, addr, success, fail);
+  public fun reset_val_perf_one(vm: &signer, addr: address) {
+    stake::mock_performance(vm, addr, 0, 0);
+  }
 
-      assert!(cases::get_case(vm, addr, 0, 15) == 1, 777703);
+  #[test_only]
+  public fun reset_val_perf_all(vm: &signer) {
+      let vals = stake::get_current_validators();
+      let i = 0;
+      while (i < vector::length(&vals)) {
+        let a = vector::borrow(&vals, i);
+        stake::mock_performance(vm, *a, 0, 0);
+        i = i + 1;
+      };
+  }
+
+
+  #[test_only]
+  public fun mock_case_1(vm: &signer, addr: address){
+      assert!(stake::is_valid(addr), 01);
+      stake::mock_performance(vm, addr, 1, 0);
+      assert!(cases::get_case(addr) == 1, 777703);
     }
 
-  #[test(vm = @vm_reserved, validator = @0x123)]
-  public entry fun test_mock_validators(vm: signer, validator: signer) {
-    genesis::setup();
-    let (_sk, pk, pop) = stake::generate_identity();
-    stake::initialize_test_validator(&pk, &pop, &validator, 100, true, true);
-
-    let vals = stake::get_current_validators();
-    print(&vals);
-    assert!(vector::length(&vals) > 0, 01);
-    let val = vector::borrow(&vals, 0);
-
-    // will assert! case_1
-    mock_case_1(&vm, *val, 1, 0);
-
-    pof_default(&vm);
-
-    // will assert! case_4
-    mock_case_4(&vm, *val);
-  }
 
     #[test_only]
     // did not do enough mining, but did validate.
@@ -68,12 +57,12 @@ module ol_framework::mock {
       assert!(stake::is_valid(addr), 01);
       stake::mock_performance(vm, addr, 0, 100); // 100 failing proposals
 
-      assert!(cases::get_case(vm, addr, 0, 15) == 4, 777703);
+      assert!(cases::get_case(addr) == 4, 777703);
     }
 
     // Mock all nodes being compliant case 1
     #[test_only]
-    public fun all_good_validators(vm: &signer) {
+    public fun mock_all_vals_good_performance(vm: &signer) {
 
       let vals =  stake::get_current_validators();
 
@@ -81,7 +70,7 @@ module ol_framework::mock {
       while (i < vector::length(&vals)) {
 
         let a = vector::borrow(&vals, i);
-        mock_case_1(vm, *a, 0, 15);
+        mock_case_1(vm, *a);
         i = i + 1;
       };
 
@@ -89,25 +78,25 @@ module ol_framework::mock {
 
     //////// PROOF OF FEE ////////
     #[test_only]
-    public fun pof_default(vm: &signer): (vector<address>, vector<u64>, vector<u64>){
+    public fun pof_default(): (vector<address>, vector<u64>, vector<u64>){
 
-      system_addresses::assert_vm(vm);
-      let vals =  stake::get_current_validators();
+      // system_addresses::assert_ol(vm);
+      let vals = stake::get_current_validators();
 
-      let (bids, expiry) = mock_bids(vm, &vals);
+      let (bids, expiry) = mock_bids(&vals);
 
       // DiemAccount::slow_wallet_epoch_drip(vm, 100000); // unlock some coins for the validators
 
       // make all validators pay auction fee
       // the clearing price in the fibonacci sequence is is 1
-      // DiemAccount::vm_multi_pay_fee(vm, &vals, 1, &b"proof of fee");
-
+      let (alice_bid, _) = proof_of_fee::current_bid(*vector::borrow(&vals, 0));
+      assert!(alice_bid == 1, 777703);
       (vals, bids, expiry)
     }
 
     #[test_only]
-    public fun mock_bids(vm: &signer, vals: &vector<address>): (vector<u64>, vector<u64>) {
-      system_addresses::assert_vm(vm);
+    public fun mock_bids(vals: &vector<address>): (vector<u64>, vector<u64>) {
+      // system_addresses::assert_ol(vm);
       let bids = vector::empty<u64>();
       let expiry = vector::empty<u64>();
       let i = 0;
@@ -132,6 +121,68 @@ module ol_framework::mock {
 
     }
 
+    #[test_only]
+    public fun genesis() {
+      genesis::setup();
+    }
+
+    #[test_only]
+    public fun personas(): vector<address> {
+      let val_addr = vector::empty<address>();
+
+      vector::push_back(&mut val_addr, @0x1000a);
+      vector::push_back(&mut val_addr, @0x1000b);
+      vector::push_back(&mut val_addr, @0x1000c);
+      vector::push_back(&mut val_addr, @0x1000d);
+      vector::push_back(&mut val_addr, @0x1000e);
+      vector::push_back(&mut val_addr, @0x1000f);
+      vector::push_back(&mut val_addr, @0x10010); // g
+      vector::push_back(&mut val_addr, @0x10011); // h
+      vector::push_back(&mut val_addr, @0x10012); // i
+      vector::push_back(&mut val_addr, @0x10013); // k
+      val_addr
+    }
+
+    #[test_only]
+    /// mock up to 6 validators alice..frank
+    public fun genesis_n_vals(num: u64): vector<address> {
+      genesis::setup();
+
+      let val_addr = personas();
+      let i = 0;
+      while (i < num) {
+
+        let val = vector::borrow(&val_addr, i);
+        let sig = account::create_signer_for_test(*val);
+        let (_sk, pk, pop) = stake::generate_identity();
+        // stake::initialize_test_validator(&pk, &pop, &sig, 100, true, true);
+        validator_universe::test_register_validator(&pk, &pop, &sig, 100, true, true);
+        vouch::init(&sig);
+        vouch::test_set_buddies(*val, val_addr);
+        i = i + 1;
+      };
+
+      let framework_sig = account::create_signer_for_test(@aptos_framework);
+      genesis::test_end_genesis(&framework_sig);
+
+      stake::get_current_validators()
+    }
+
+    #[test_only]
+    const EPOCH_DURATION: u64 = 60;
+
+    #[test_only]
+    // NOTE: The order of these is very important.
+    // ol first runs its own accounting at end of epoch with epoch_boundary
+    // Then the stake module needs to update the validators.
+    // the reconfiguration module must run last, since no other 
+    // transactions or operations can happen after the reconfig.
+    public fun trigger_epoch(root: &signer) {
+        epoch_boundary::ol_reconfigure_for_test(root);
+        timestamp::fast_forward_seconds(EPOCH_DURATION);
+        reconfiguration::reconfigure_for_test_custom();
+    }
+
   //   // function to deposit into network fee account
   //   public fun mock_network_fees(vm: &signer, amount: u64) {
   //     Testnet::assert_testnet(vm);
@@ -140,5 +191,42 @@ module ol_framework::mock {
   //     assert!(c_value == amount, 777707);
   //     TransactionFee::pay_fee(c);
   //   }
+
+
+  //////// META TESTS ////////
+  #[test(root=@ol_framework)]
+  /// test we can trigger an epoch reconfiguration.
+  public fun meta_epoch(root: signer) {
+    genesis();
+    let epoch = reconfiguration::current_epoch();
+    trigger_epoch(&root);
+    let new_epoch = reconfiguration::current_epoch();
+    assert!(new_epoch > epoch, 7357001);
+
+  }
+
+  #[test(vm = @ol_framework)]
+  public entry fun meta_val_perf(vm: signer) {
+    // genesis();
+    
+    let set = genesis_n_vals(4);
+    assert!(vector::length(&set) == 4, 7357001);
+
+    let addr = vector::borrow(&set, 0);
+
+    // will assert! case_1
+    mock_case_1(&vm, *addr);
+
+
+    pof_default();
+
+    // will assert! case_4
+    mock_case_4(&vm, *addr);
+
+    reset_val_perf_all(&vm);
+
+    mock_all_vals_good_performance(&vm);
+  }
+
 
 }
