@@ -11,6 +11,10 @@ module ol_framework::upgrade {
     // use DiemFramework::DiemConfig; // todo v7
     use aptos_framework::system_addresses;
 
+    #[test_only] use aptos_framework::genesis;
+    #[test_only] use aptos_framework::stake;
+    #[test_only] use ol_framework::vector_helper;
+
     /// Structs for UpgradePayload resource
     struct UpgradePayload has key {
         payload: vector<u8>, 
@@ -116,5 +120,43 @@ module ol_framework::upgrade {
     public fun get_payload(): vector<u8> acquires UpgradePayload {
         assert!(exists<UpgradePayload>(@ol_root), error::permission_denied(210006));
         *&borrow_global<UpgradePayload>(@ol_root).payload
+    }
+
+    //// ================ Tests ================
+
+    // val: validator
+    #[test(ol_root = @ol_root, val_1 = @0x11, val_2 = @0x22)]
+    fun test_record_history(ol_root: &signer, val_1: &signer, val_2: &signer) 
+    acquires UpgradeHistory {
+        genesis::setup();
+        let (_sk_1, pk_1, pop_1) = stake::generate_identity();
+        let (_sk_2, pk_2, pop_2) = stake::generate_identity();
+        stake::initialize_test_validator(&pk_1, &pop_1, val_1, 100, true, true);
+        stake::initialize_test_validator(&pk_2, &pop_2, val_2, 100, true, true);
+        initialize(ol_root);
+        let val_1_addr = signer::address_of(val_1);
+        let val_2_addr = signer::address_of(val_2);  
+
+        let validators = vector::empty<address>();
+        vector::push_back(&mut validators, val_1_addr);
+        vector::push_back(&mut validators, val_2_addr);
+
+        record_history(ol_root, 0, x"1234", *&validators, 200);
+        
+        let (upgraded_version, payload, voters, height) = retrieve_latest_history();
+        assert!(upgraded_version == 0, 1);
+        assert!(payload == x"1234", 1);
+        assert!(vector_helper::compare(&voters, &validators), 1);
+        assert!(height == 200, 1);
+    }
+
+    #[test(ol_root = @ol_root)]
+    fun test_toggle_upgrade_flag(ol_root: &signer) 
+    acquires UpgradePayload {
+        initialize(ol_root);
+        assert!(has_upgrade() == false, 1);
+        set_update(ol_root, x"1234");
+        assert!(has_upgrade() == true, 1);
+        assert!(get_payload() == x"1234", 1);
     }
 }
