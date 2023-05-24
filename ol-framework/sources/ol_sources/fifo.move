@@ -90,4 +90,78 @@ module ol_framework::fifo {
         };
     }
 
+    //// ================ Tests ================
+
+    #[test]
+    fun test_basics() {
+        let f = empty<u64>();
+        let len = len<u64>(& f);
+        assert!(len == 0, 1);
+
+        push<u64>(&mut f, 1);
+        push<u64>(&mut f, 2);
+        push<u64>(&mut f, 3);
+        push<u64>(&mut f, 4);
+        push<u64>(&mut f, 5);
+        push<u64>(&mut f, 6);
+        push<u64>(&mut f, 7);
+
+        let len = len<u64>(& f);
+        assert!(len == 7, 1);
+
+        let a = pop<u64>(&mut f); //1
+        let b = pop<u64>(&mut f); //2
+        let c = pop<u64>(&mut f); //3
+        let d = pop<u64>(&mut f); //4
+        assert!(a == 1, 1);
+        assert!(b == 2, 1);
+        assert!(c == 3, 1);
+        assert!(d == 4, 1);
+        let len = len<u64>(& f);
+        assert!(len == 3, 1);
+
+        push<u64>(&mut f, 8);
+        push<u64>(&mut f, 9);
+        push<u64>(&mut f, 10);
+        let len = len<u64>(& f);
+        assert!(len == 6, 1);
+
+        let e_1 = peek<u64>(&mut f);
+        assert!(*e_1 == 5, 1);
+        let len = len<u64>(& f);
+        assert!(len == 6, 1);
+        let e_2 = pop<u64>(&mut f); //5
+        assert!(e_2 == 5, 1);
+        let len = len<u64>(& f);
+        assert!(len == 5, 1);
+        
+        let f_1 = peek_mut<u64>(&mut f);
+        assert!(*f_1 == 6, 1);
+        *f_1 = 42;
+        
+        let len = len<u64>(& f);
+        assert!(len == 5, 1);
+
+        let f_2 = pop<u64>(&mut f); //42, changed above
+        assert!(f_2 == 42, 1);
+        let len = len<u64>(& f);
+        assert!(len == 4, 1);
+
+        push_LIFO<u64>(&mut f, 77);
+        let g = pop<u64>(&mut f); //77
+        assert!(g == 77, 1);
+
+        let g = pop<u64>(&mut f); //7
+        let h = pop<u64>(&mut f); //8
+        let i = pop<u64>(&mut f); //9
+        let j = pop<u64>(&mut f); //10
+        assert!(g == 7, 1);
+        assert!(h == 8, 1);
+        assert!(i == 9, 1);
+        assert!(j == 10, 1);  
+
+        let len = len<u64>(& f);
+        assert!(len == 0, 1);
+    }
+
 }
