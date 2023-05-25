@@ -25,7 +25,7 @@ module aptos_framework::genesis {
     use aptos_framework::state_storage;
     use aptos_framework::storage_gas;
     use aptos_framework::timestamp;
-    use aptos_framework::transaction_fee;
+    // use aptos_framework::transaction_fee;
     use aptos_framework::transaction_validation;
     use aptos_framework::version;
 
@@ -160,7 +160,8 @@ module aptos_framework::genesis {
         // stake::store_aptos_coin_mint_cap(aptos_framework, mint_cap);
         coin::destroy_mint_cap(mint_cap);
         // Give transaction_fee module BurnCapability<AptosCoin> so it can burn gas.
-        transaction_fee::store_aptos_coin_burn_cap(aptos_framework, burn_cap);
+        // transaction_fee::store_aptos_coin_burn_cap(aptos_framework, burn_cap);
+        coin::destroy_burn_cap(burn_cap);
 
         // 0L: genesis ceremony is calling this
         let (burn_cap, mint_cap) = gas_coin::initialize(aptos_framework);
@@ -184,7 +185,8 @@ module aptos_framework::genesis {
         // stake::store_aptos_coin_mint_cap(aptos_framework, mint_cap);
         coin::destroy_mint_cap(mint_cap);
         // Give transaction_fee module BurnCapability<AptosCoin> so it can burn gas.
-        transaction_fee::store_aptos_coin_burn_cap(aptos_framework, burn_cap);
+        // transaction_fee::store_aptos_coin_burn_cap(aptos_framework, burn_cap);
+        coin::destroy_burn_cap(burn_cap);
 
         let core_resources = account::create_account(@core_resources);
         account::rotate_authentication_key_internal(&core_resources, core_resources_auth_key);
