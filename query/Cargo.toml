@@ -1,0 +1,19 @@
+[package]
+name = "query"
+version = "0.1.0"
+
+# Workspace inherited keys
+authors = { workspace = true }
+edition = { workspace = true }
+homepage = { workspace = true }
+license = { workspace = true }
+repository = { workspace = true }
+
+[dependencies]
+zapatos-sdk = { workspace = true }
+libra-config = { workspace = true }
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+clap = { workspace = true }
+tokio = { workspace = true }
+url = { workspace = true }

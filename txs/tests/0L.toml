@@ -1,0 +1,12 @@
+[workspace]
+node_home = ""
+block_dir = ""
+db_path = ""
+
+[profile]
+account = "test-account"
+auth_key = "test-auth-key"
+statement = "test-statement"
+ip = "0.0.0.0"
+vfn_ip = "0.0.0.0"
+upstream_nodes = ["http://localhost:8080/", "http://104.248.94.195:8080/", "http://63.229.234.76:8080/"]
