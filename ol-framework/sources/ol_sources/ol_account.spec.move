@@ -4,14 +4,14 @@ spec ol_framework::ol_account {
         pragma aborts_if_is_strict;
     }
 
-    /// Check if the bytes of the auth_key is 32.
-    /// The Account does not exist under the auth_key before creating the account.
-    /// Limit the address of auth_key is not @vm_reserved / @aptos_framework / @aptos_toke.
-    spec create_account(auth_key: address) {
-        include CreateAccountAbortsIf;
-        ensures exists<account::Account>(auth_key);
-        ensures exists<coin::CoinStore<GasCoin>>(auth_key);
-    }
+    // /// Check if the bytes of the auth_key is 32.
+    // /// The Account does not exist under the auth_key before creating the account.
+    // /// Limit the address of auth_key is not @vm_reserved / @aptos_framework / @aptos_toke.
+    // spec create_account(auth_key: address) {
+    //     include CreateAccountAbortsIf;
+    //     ensures exists<account::Account>(auth_key);
+    //     ensures exists<coin::CoinStore<GasCoin>>(auth_key);
+    // }
     spec schema CreateAccountAbortsIf {
         auth_key: address;
         aborts_if exists<account::Account>(auth_key);
@@ -26,9 +26,9 @@ spec ol_framework::ol_account {
         len(authentication_key) != 32
     }
 
-    spec transfer(source: &signer, to: address, amount: u64) {
-        pragma verify = false;
-    }
+    // spec transfer(source: &signer, to: address, amount: u64) {
+    //     pragma verify = false;
+    // }
 
     spec assert_account_exists(addr: address) {
         aborts_if !account::exists_at(addr);
@@ -46,10 +46,10 @@ spec ol_framework::ol_account {
         include !exists<DirectTransferConfig>(addr) ==> account::NewEventHandleAbortsIf;
     }
 
-    spec batch_transfer(source: &signer, recipients: vector<address>, amounts: vector<u64>) {
-        // TODO: missing aborts_if spec
-        pragma verify=false;
-    }
+    // spec batch_transfer(source: &signer, recipients: vector<address>, amounts: vector<u64>) {
+    //     // TODO: missing aborts_if spec
+    //     pragma verify=false;
+    // }
 
     spec can_receive_direct_coin_transfers(account: address): bool {
         aborts_if false;
@@ -59,18 +59,18 @@ spec ol_framework::ol_account {
         );
     }
 
-    spec batch_transfer_coins<CoinType>(from: &signer, recipients: vector<address>, amounts: vector<u64>) {
-        // TODO: missing aborts_if spec
-        pragma verify=false;
-    }
+    // spec batch_transfer_coins<CoinType>(from: &signer, recipients: vector<address>, amounts: vector<u64>) {
+    //     // TODO: missing aborts_if spec
+    //     pragma verify=false;
+    // }
 
-    spec deposit_coins<CoinType>(to: address, coins: Coin<CoinType>) {
-        // TODO: missing aborts_if spec
-        pragma verify=false;
-    }
+    // spec deposit_coins<CoinType>(to: address, coins: Coin<CoinType>) {
+    //     // TODO: missing aborts_if spec
+    //     pragma verify=false;
+    // }
 
-    spec transfer_coins<CoinType>(from: &signer, to: address, amount: u64) {
-        // TODO: missing aborts_if spec
-        pragma verify=false;
-    }
+    // spec transfer_coins<CoinType>(from: &signer, to: address, amount: u64) {
+    //     // TODO: missing aborts_if spec
+    //     pragma verify=false;
+    // }
 }
