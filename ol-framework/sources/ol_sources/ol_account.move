@@ -1,11 +1,20 @@
 module ol_framework::ol_account {
     use aptos_framework::account::{Self, new_event_handle};
-    use aptos_framework::coin::{Self, Coin};
-    use aptos_framework::create_signer::create_signer;
+    use aptos_framework::coin;
     use aptos_framework::event::{EventHandle, emit_event};
+    use aptos_framework::system_addresses;
+    use aptos_framework::chain_status;
     use std::error;
     use std::signer;
+
+    #[test_only]
     use std::vector;
+    #[test_only]
+    use aptos_framework::coin::Coin;
+    #[test_only]
+    use aptos_framework::create_signer::create_signer;
+
+
 
     use ol_framework::gas_coin::GasCoin;
     use ol_framework::slow_wallet;
@@ -38,15 +47,32 @@ module ol_framework::ol_account {
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    /// Basic account creation methods.
+    // Basic account creation methods.
     ///////////////////////////////////////////////////////////////////////////
 
+    #[test_only]
     // TODO: 0L, this should not be a public function in 0L
     public entry fun create_account(auth_key: address) {
-        let signer = account::create_account(auth_key);
-        coin::register<GasCoin>(&signer);
+        let new_signer = account::create_account(auth_key);
+        coin::register<GasCoin>(&new_signer);
     }
 
+    /// For migrating accounts from a legacy system
+    public fun vm_create_account_migration(
+        root: &signer,
+        new_account: address,
+        auth_key: vector<u8>,
+        // value: u64,
+    ) {
+        system_addresses::assert_ol(root);
+        chain_status::assert_genesis();
+        let new_signer = account::vm_create_account(root, new_account, auth_key);
+        // Roles::new_user_role_with_proof(&new_signer);
+        // make_account(&new_signer, auth_key);
+        coin::register<GasCoin>(&new_signer);
+    }
+
+    #[test_only]
     /// Batch version of GAS transfer.
     public entry fun batch_transfer(source: &signer, recipients: vector<address>, amounts: vector<u64>) {
         let recipients_len = vector::length(&recipients);
@@ -64,6 +90,7 @@ module ol_framework::ol_account {
         };
     }
 
+    #[test_only]
     /// Convenient function to transfer GAS to a recipient account that might not exist.
     /// This would create the recipient account first, which also registers it to receive GAS, before transferring.
     public entry fun transfer(source: &signer, to: address, amount: u64) {
@@ -90,6 +117,7 @@ module ol_framework::ol_account {
     }
 
 
+    #[test_only]
     /// Batch version of transfer_coins.
     public entry fun batch_transfer_coins<CoinType>(
         from: &signer, recipients: vector<address>, amounts: vector<u64>) acquires DirectTransferConfig {
@@ -108,12 +136,14 @@ module ol_framework::ol_account {
         };
     }
 
+    #[test_only]
     /// Convenient function to transfer a custom CoinType to a recipient account that might not exist.
     /// This would create the recipient account first and register it to receive the CoinType, before transferring.
     public entry fun transfer_coins<CoinType>(from: &signer, to: address, amount: u64) acquires DirectTransferConfig {
         deposit_coins(to, coin::withdraw<CoinType>(from, amount));
     }
 
+    #[test_only]
     /// Convenient function to deposit a custom CoinType into a recipient account that might not exist.
     /// This would create the recipient account first and register it to receive the CoinType, before transferring.
     public fun deposit_coins<CoinType>(to: address, coins: Coin<CoinType>) acquires DirectTransferConfig {
@@ -164,6 +194,7 @@ module ol_framework::ol_account {
             move_to(account, direct_transfer_config);
         };
     }
+    
 
     #[view]
     /// Return true if `account` can receive direct transfers of coins that they have not explicitly registered to
