@@ -37,8 +37,8 @@
 // mitigation is to only allow Unlocked coins, which levels the playing field.
 ///////////////////////////////////////////////////////////////////////////
 
-address ol_framework{
-    module PledgeAccounts{
+
+    module ol_framework::pledge_accounts{
         use std::vector;
         use std::signer;
         use std::error;
@@ -636,4 +636,4 @@ address ol_framework{
         withdraw_from_one_pledge_account(bene, donor, amount)
       }
 }
-}
+

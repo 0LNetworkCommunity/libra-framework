@@ -14,6 +14,7 @@ module ol_framework::genesis_migration {
   use ol_framework::validator_universe;
   use ol_framework::gas_coin;
   use ol_framework::gas_coin::GasCoin;
+  use ol_framework::infra_escrow;
 
   const EBALANCE_MISMATCH: u64 = 0;
 
@@ -54,9 +55,8 @@ module ol_framework::genesis_migration {
 
     // establish the infrastructure escrow pledge
     if (is_validator) {
-      let _share = (balance * VAL_ESCROW_PCT) / 100;
-      // TODO: deposit
-      // InfraEscrow::user_pledge_infra(user_sig, share)
+      let to_escrow = (balance * VAL_ESCROW_PCT) / 100;
+      infra_escrow::user_pledge_infra(user_sig, to_escrow)
     };
   }
 
