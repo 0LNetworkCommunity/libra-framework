@@ -2,13 +2,13 @@
 resolver = "2"
 
 members = [
-    "smoke-tests",
-    "transactional-tests",
-    "tools/txs",
-    "tools/query",
-    "tools/wallet",
-    "tools/config",
-    "tools/genesis"
+  "smoke-tests",
+  "transactional-tests",
+  "tools/txs",
+  "tools/query",
+  "tools/wallet",
+  "tools/config",
+  "tools/genesis",
 ]
 
 # All workspace members should inherit these keys for package declarations.
@@ -73,15 +73,15 @@ indicatif = "0.17.3"
 base64 = "0.13.0"
 chrono = { version = "0.4.19", features = ["clock", "serde"] }
 ureq = { version = "1.5.4", features = [
-    "json",
-    "native-tls",
+  "json",
+  "native-tls",
 ], default_features = false }
 
 # Libra dependencies
-ol-keys = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err"}
-ol-types = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err"}
-diem-wallet = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err"}
-diem-types = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err"}
+ol-keys = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err" }
+ol-types = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err" }
+diem-wallet = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err" }
+diem-types = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err" }
 
 
 ### MOVE DEPENDENCIES
@@ -91,10 +91,10 @@ diem-types = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-d
 
 
 [profile.release]
-opt-level = 'z'     # Optimize for size.
-lto = true          # Enable Link Time Optimization
-codegen-units = 1   # Reduce number of codegen units to increase optimizations.
-panic = 'abort'     # Abort on panic
+opt-level = 'z'   # Optimize for size.
+lto = true        # Enable Link Time Optimization
+codegen-units = 1 # Reduce number of codegen units to increase optimizations.
+panic = 'abort'   # Abort on panic
 
 [profile.bench]
 debug = true
