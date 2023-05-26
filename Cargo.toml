@@ -4,11 +4,11 @@ resolver = "2"
 members = [
     "smoke-tests",
     "transactional-tests",
-    "txs",
-    "query",
-    "libra-wallet",
-    "libra-config",
-    "genesis-tools"
+    "tools/txs",
+    "tools/query",
+    "tools/wallet",
+    "tools/config",
+    "tools/genesis"
 ]
 
 # All workspace members should inherit these keys for package declarations.
@@ -24,8 +24,8 @@ rust-version = "1.64"
 [workspace.dependencies]
 ### Internal crate dependencies.
 # Internal crate dependencies.
-libra-wallet = { path = "libra-wallet" }
-libra-config = { path = "libra-config" }
+libra-wallet = { path = "tools/wallet" }
+libra-config = { path = "tools/config" }
 
 
 # Please do not add any test features here: they should be declared by the 
