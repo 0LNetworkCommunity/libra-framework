@@ -1,5 +1,5 @@
 [package]
-name = "genesis-tools"
+name = "libra-genesis-tools"
 version = "0.1.0"
 
 # Workspace inherited keys
