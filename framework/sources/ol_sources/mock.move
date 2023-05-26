@@ -15,7 +15,7 @@ module ol_framework::mock {
   #[test_only]
   use aptos_framework::account;
   // #[test_only]
-  // use aptos_std::debug::print;
+  // use ol_framework::ol_account;
   #[test_only]
   use ol_framework::proof_of_fee;
   #[test_only]
@@ -24,7 +24,10 @@ module ol_framework::mock {
   use aptos_framework::timestamp;
   #[test_only]
   use ol_framework::epoch_boundary;
-
+  #[test_only]
+  use aptos_framework::coin;
+  #[test_only]
+  use ol_framework::gas_coin::GasCoin;
 
   #[test_only]
   public fun reset_val_perf_one(vm: &signer, addr: address) {
@@ -157,6 +160,8 @@ module ol_framework::mock {
         let (_sk, pk, pop) = stake::generate_identity();
         // stake::initialize_test_validator(&pk, &pop, &sig, 100, true, true);
         validator_universe::test_register_validator(&pk, &pop, &sig, 100, true, true);
+        coin::register<GasCoin>(&sig);
+
         vouch::init(&sig);
         vouch::test_set_buddies(*val, val_addr);
         i = i + 1;

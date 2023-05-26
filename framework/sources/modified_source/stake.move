@@ -47,7 +47,7 @@ module aptos_framework::stake {
 
     //////// 0L ///////
     friend aptos_framework::epoch_boundary;
-
+    friend ol_framework::rewards;
 
     /// Validator Config not published.
     const EVALIDATOR_CONFIG: u64 = 1;
@@ -1505,6 +1505,20 @@ module aptos_framework::stake {
         );
     }
 
+    //////// 0L ////////
+    // since rewards are handled externally to stake.move we need an api to emit the event
+    public(friend) fun emit_distribute_reward(root: &signer, pool_address: address, rewards_amount: u64) acquires StakePool {
+        system_addresses::assert_ol(root); 
+        let stake_pool = borrow_global_mut<StakePool>(pool_address);
+        event::emit_event(
+          &mut stake_pool.distribute_rewards_events,
+          DistributeRewardsEvent {
+              pool_address,
+              rewards_amount,
+          },
+      );
+    }
+
     // /// Calculate the rewards amount.
     // // TODO: v7 - remove this
     // fun calculate_rewards_amount(
@@ -1720,5 +1734,13 @@ module aptos_framework::stake {
         if (should_end_epoch) {
             end_epoch();
         };
+    }
+
+    #[test_only]
+    /// One step setup for tests
+    public fun quick_init(root: &signer, val_sig: &signer) acquires ValidatorPerformance, ValidatorSet, StakePool, ValidatorConfig, AllowedValidators {
+      system_addresses::assert_ol(root);
+      let (_sk, pk, pop) = generate_identity();
+      initialize_test_validator(&pk, &pop, val_sig, 100, true, true);
     }
 }
