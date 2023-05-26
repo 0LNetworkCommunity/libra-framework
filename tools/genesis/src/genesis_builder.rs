@@ -19,7 +19,8 @@ use zapatos_genesis::{
 use zapatos_github_client::Client;
 use zapatos_types::account_address::AccountAddress;
 use zapatos_types::{
-    account_address::AccountAddressWithChecks, on_chain_config::OnChainConsensusConfig,
+    account_address::AccountAddressWithChecks, on_chain_config::{OnChainConsensusConfig, OnChainExecutionConfig},
+
 };
 use zapatos_vm_genesis::default_gas_schedule;
 
@@ -121,6 +122,7 @@ pub fn fetch_genesis_info(
             employee_vesting_start: layout.employee_vesting_start,
             employee_vesting_period_duration: layout.employee_vesting_period_duration,
             consensus_config: OnChainConsensusConfig::default(),
+            execution_config: OnChainExecutionConfig::default(),
             gas_schedule: default_gas_schedule(),
         },
     )?)

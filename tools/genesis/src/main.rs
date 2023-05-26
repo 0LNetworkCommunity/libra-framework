@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use genesis_tools::wizard::GenesisWizard;
+use libra_genesis_tools::wizard::GenesisWizard;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]

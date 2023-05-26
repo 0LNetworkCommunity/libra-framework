@@ -7,7 +7,7 @@ use zapatos_gas::{
 };
 use zapatos_types::{
     chain_id::ChainId,
-    on_chain_config::{Features, GasScheduleV2, OnChainConsensusConfig, TimedFeatures},
+    on_chain_config::{Features, GasScheduleV2, OnChainConsensusConfig, OnChainExecutionConfig, TimedFeatures},
     transaction::{ChangeSet, Transaction, WriteSetPayload},
 };
 use zapatos_vm::{
@@ -38,6 +38,7 @@ pub fn zapatos_mainnet_genesis(
         ChainId::test(),
         &mainnet_genesis_config(),
         &OnChainConsensusConfig::default(),
+        &OnChainExecutionConfig::default(),
         &default_gas_schedule(),
     );
 
@@ -53,6 +54,7 @@ pub fn encode_zapatos_recovery_genesis_change_set(
     chain_id: ChainId,
     genesis_config: &GenesisConfiguration,
     consensus_config: &OnChainConsensusConfig,
+    execution_config: &OnChainExecutionConfig,
     gas_schedule: &GasScheduleV2,
 ) -> ChangeSet {
     if let Some(r) = recovery {
@@ -83,13 +85,13 @@ pub fn encode_zapatos_recovery_genesis_change_set(
     .unwrap();
     let id1 = HashValue::zero();
     let mut session = move_vm.new_session(&data_cache, SessionId::genesis(id1));
-
     // On-chain genesis process.
     initialize(
         &mut session,
         chain_id,
         genesis_config,
         consensus_config,
+        execution_config,
         gas_schedule,
     );
     initialize_features(&mut session);
@@ -186,6 +188,7 @@ pub fn encode_aptos_mainnet_genesis_transaction(
 
     // On-chain genesis process.
     let consensus_config = OnChainConsensusConfig::default();
+    let execution_config = OnChainExecutionConfig::default();
     let gas_schedule = default_gas_schedule();
 
     initialize(
@@ -193,6 +196,7 @@ pub fn encode_aptos_mainnet_genesis_transaction(
         chain_id,
         genesis_config,
         &consensus_config,
+        &execution_config,
         &gas_schedule,
     );
     initialize_features(&mut session);
