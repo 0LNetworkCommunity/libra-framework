@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use libra_config::extension::client_ext::{ClientExt, DEFAULT_TIMEOUT_SECS};
-use txs::{
+use libra_txs::{
     coin_client::{CoinClient, TransferOptions},
     constant::{DEFAULT_GAS_UNIT_PRICE, DEFAULT_MAX_GAS_AMOUNT},
     crypto::{ed25519::Ed25519PrivateKey, ValidCryptoMaterialStringExt},

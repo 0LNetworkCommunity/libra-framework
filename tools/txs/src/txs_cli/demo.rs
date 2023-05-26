@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use libra_config::extension::{client_ext::ClientExt, faucet_client_ext::FaucetClientExt};
-use txs::{
+use libra_txs::{
     coin_client::CoinClient,
     crypto::ed25519::Ed25519PrivateKey,
     rest_client::{Client, FaucetClient},

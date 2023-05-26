@@ -1,6 +1,6 @@
 use anyhow::Result;
 use libra_config::extension::client_ext::ClientExt;
-use txs::{rest_client::Client, types::transaction::SignedTransaction};
+use libra_txs::{rest_client::Client, types::transaction::SignedTransaction};
 
 pub async fn run(signed_trans: &SignedTransaction) -> Result<()> {
     let client = Client::default()?;

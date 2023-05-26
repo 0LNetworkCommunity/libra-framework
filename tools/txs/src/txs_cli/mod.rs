@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 use colored::Colorize;
 use indoc::indoc;
-use txs::util::format_signed_transaction;
+use libra_txs::util::format_signed_transaction;
 
 mod create_account;
 mod demo;
