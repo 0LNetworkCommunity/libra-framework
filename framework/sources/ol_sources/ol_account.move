@@ -52,6 +52,7 @@ module ol_framework::ol_account {
 
     #[test_only]
     // TODO: 0L, this should not be a public function in 0L
+    // should do belt and suspenders
     public entry fun create_account(auth_key: address) {
         let new_signer = account::create_account(auth_key);
         coin::register<GasCoin>(&new_signer);

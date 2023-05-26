@@ -189,6 +189,24 @@ module aptos_framework::transaction_fee {
         coin::merge_aggregatable_coin<GasCoin>(collected_amount, fee);
     }
 
+    /////// 0L ////////
+    /// withdraw from system transaction account.
+    // belt and suspenders
+    public(friend) fun root_withdraw_all(root: &signer): Coin<GasCoin> acquires CollectedFeesPerBlock {
+      system_addresses::assert_ol(root);
+      withdraw_all_impl(root)
+    }
+
+    // belt and suspenders implementation
+    fun withdraw_all_impl(root: &signer): Coin<GasCoin> acquires CollectedFeesPerBlock {
+      system_addresses::assert_ol(root);
+
+      let collected_fees = borrow_global_mut<CollectedFeesPerBlock>(@aptos_framework);
+
+      coin::drain_aggregatable_coin<GasCoin>(&mut collected_fees.amount)
+    }
+
+
     /// Only called during genesis.
     public(friend) fun store_aptos_coin_burn_cap(aptos_framework: &signer, burn_cap: BurnCapability<GasCoin>) {
         system_addresses::assert_aptos_framework(aptos_framework);
