@@ -53,6 +53,7 @@ module ol_framework::test_reconfiguration {
       mock::mock_case_4(&root, *vector::borrow(&vals, 0));
 
       let (reward, _, _ ) = proof_of_fee::get_consensus_reward();
+
       print(&reward);
 
       // run ol reconfiguration
@@ -67,6 +68,7 @@ module ol_framework::test_reconfiguration {
       // alice doesn't get paid
       assert!(coin::balance<GasCoin>(@0x1000a) == 0, 7357005);
       // bob does
+      print(&coin::balance<GasCoin>(@0x1000b) );
       assert!(coin::balance<GasCoin>(@0x1000b) == reward, 7357006);
 
 
