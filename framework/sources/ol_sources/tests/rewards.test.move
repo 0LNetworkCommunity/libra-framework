@@ -19,9 +19,9 @@ module ol_framework::test_rewards {
   // #[test_only]
   // use aptos_framework::stake;
 
-  #[test(root=@ol_framework, alice=@0x1000a)]
-  fun test_pay_reward(root: &signer, alice: address) {
-
+  #[test(root=@ol_framework)]
+  fun test_pay_reward(root: &signer) {
+    let alice = @0x1000a;
     mock::genesis_n_vals(1);
 
     let (burn_cap, mint_cap) = gas_coin::initialize_for_test_without_aggregator_factory(root);
@@ -32,7 +32,7 @@ module ol_framework::test_rewards {
     rewards::test_helper_pay_reward(root, alice, new_coin, 1);
 
     let b = coin::balance<GasCoin>(alice);
-    // print(&b);
+
     assert!(b == 10000, 7357001);
   }
 }

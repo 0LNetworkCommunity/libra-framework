@@ -41,7 +41,7 @@ module ol_framework::infra_escrow{
     public fun epoch_boundary_collection(vm: &signer, amount: u64) {
         system_addresses::assert_ol(vm);
         let opt = pledge_accounts::withdraw_from_all_pledge_accounts(vm, amount);
-        // print(&opt);
+
         if (option::is_none(&opt)) {
           option::destroy_none(opt);
           return

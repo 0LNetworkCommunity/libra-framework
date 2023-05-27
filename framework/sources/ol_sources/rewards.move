@@ -51,7 +51,6 @@ module ol_framework::rewards {
     // funds to pay all members the proof-of-fee reward.
     // if we don't have enough funds, we should exit without abort.
     system_addresses::assert_ol(root);
-    // print(&10101);
     let amount = coin::value(&coin);
     coin::deposit(addr, coin);
 

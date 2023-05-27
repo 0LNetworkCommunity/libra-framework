@@ -18,7 +18,7 @@ module ol_framework::test_slow_wallet {
   fun slow_wallet_init () {
       let _set = mock::genesis_n_vals(4);
       let list = slow_wallet::get_slow_list();
-      // print(&list);
+
       // alice, the validator, is already a slow wallet.
       assert!(vector::length<address>(&list) == 4, 735701);
 

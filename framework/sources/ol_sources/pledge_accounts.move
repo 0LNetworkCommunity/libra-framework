@@ -232,8 +232,8 @@
             let pledgers = *&borrow_global<BeneficiaryPolicy>(signer::address_of(sig_beneficiary)).pledgers;
 
             let amount_available = *&borrow_global<BeneficiaryPolicy>(signer::address_of(sig_beneficiary)).amount_available;
-            // print(&amount_available);
-            // print(&amount);
+
+
 
             if (amount_available < 1) {
               return option::none<coin::Coin<GasCoin>>()
@@ -292,33 +292,29 @@
               let pledge_state = borrow_global_mut<MyPledges>(*payer);
 
               let pledge_account = vector::borrow_mut(&mut pledge_state.list, idx);
-              // print(&66);
-              // print(&pledge_account.amount);
+
               if (
                 pledge_account.amount > 0 &&
                 pledge_account.amount >= amount
                 
                 ) {
-                  // print(&1101);
+
                   pledge_account.amount = pledge_account.amount - amount;
-                  // print(&1102);
+
                   pledge_account.lifetime_withdrawn = pledge_account.lifetime_withdrawn + amount;
-                  // print(&1103);
+
                   
                   let coin = coin::extract(&mut pledge_account.pledge, amount);
-                  // print(&coin);
+
                   // return coin
 
                   // update the beneficiaries state too
 
                   let bp = borrow_global_mut<BeneficiaryPolicy>(*address_of_beneficiary);
 
-                  // print(&bp.amount_available);
+
                   bp.amount_available = bp.amount_available - amount;
-                  // print(&1104);
-                  // print(&bp.amount_available);
                   bp.lifetime_withdrawn = bp.lifetime_withdrawn + amount;
-                  // print(&1105);
 
                   return option::some(coin)
                 };
@@ -343,33 +339,23 @@
 
               let amount_withdraw = fixed_point32::multiply_u64(pledge_account.amount, *pct);
 
-              // print(&amount_withdraw);
-              // print(&pledge_account.amount);
               if (
                 pledge_account.amount > 0 &&
                 pledge_account.amount >= amount_withdraw
                 
                 ) {
-                  // print(&1101);
                   pledge_account.amount = pledge_account.amount - amount_withdraw;
-                  // print(&1102);
                   pledge_account.lifetime_withdrawn = pledge_account.lifetime_withdrawn + amount_withdraw;
-                  // print(&1103);
                   
                   let coin = coin::extract(&mut pledge_account.pledge, amount_withdraw);
-                  // print(&coin);
-                  // return coin
 
                   // update the beneficiaries state too
 
                   let bp = borrow_global_mut<BeneficiaryPolicy>(*address_of_beneficiary);
 
-                  // print(&bp.amount_available);
                   bp.amount_available = bp.amount_available - amount_withdraw;
-                  // print(&1104);
-                  // print(&bp.amount_available);
+
                   bp.lifetime_withdrawn = bp.lifetime_withdrawn + amount_withdraw;
-                  // print(&1105);
 
                   return option::some(coin)
                 };
@@ -399,7 +385,6 @@
             // The first voter to cross the threshold  also
             // triggers the dissolution.
             if (tally_vote(address_of_beneficiary)) {
-              // print(&444);
               dissolve_beneficiary_project(address_of_beneficiary);
             };
         }
@@ -460,19 +445,15 @@
         // Danger: this function must remain private!
         // private function to dissolve the beneficiary project, and return all funds to the pledgers.
         fun dissolve_beneficiary_project(address_of_beneficiary: address) acquires MyPledges, BeneficiaryPolicy {
-            // print(&888888888);
             let pledgers = *&borrow_global<BeneficiaryPolicy>(address_of_beneficiary).pledgers;
 
             let is_burn = *&borrow_global<BeneficiaryPolicy>(address_of_beneficiary).burn_funds_on_revoke;
 
             let i = 0;
             while (i < vector::length(&pledgers)) {
-                // print(&888);
                 let pledge_account = vector::borrow(&pledgers, i);
                 let user_pledge_balance = get_user_pledge_amount(pledge_account, &address_of_beneficiary);
-                // print(&user_pledge_balance);
                 let c = withdraw_from_one_pledge_account(&address_of_beneficiary, pledge_account, user_pledge_balance);
-                // print(&coin);
 
                 // TODO: if burn case.
                 if (is_burn && option::is_some(&c)) {
@@ -500,7 +481,6 @@
 
           let bp = borrow_global_mut<BeneficiaryPolicy>(address_of_beneficiary);
           bp.revoked = true;
-          // print(&bp.revoked);
 
           // otherwise leave the information as-is for reference purposes
         }

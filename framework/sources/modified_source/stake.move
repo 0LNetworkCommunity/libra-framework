@@ -38,7 +38,8 @@ module aptos_framework::stake {
 
     use ol_framework::slow_wallet;
     use ol_framework::testnet;
-    use aptos_std::debug::print;
+    // use ol_framework::ol_account;
+    // use aptos_std::debug::print;
 
     friend aptos_framework::block;
     friend aptos_framework::genesis;
@@ -1466,7 +1467,7 @@ module aptos_framework::stake {
 
         let rewards_rate = 1;
         let rewards_rate_denominator = 1;
-        print(&88888);
+
         let rewards_amount = distribute_rewards(
             &mut stake_pool.active,
             num_successful_proposals,
@@ -1715,9 +1716,11 @@ module aptos_framework::stake {
         should_join_validator_set: bool,
         should_end_epoch: bool,
     ) acquires AllowedValidators, StakePool, ValidatorConfig, ValidatorPerformance, ValidatorSet {
+        use ol_framework::ol_account;
         let validator_address = signer::address_of(validator);
         if (!account::exists_at(signer::address_of(validator))) {
-            account::create_account_for_test(validator_address);
+            // account::create_account_for_test(validator_address);
+            ol_account::create_account(validator_address);
         };
 
         let pk_bytes = bls12381::public_key_to_bytes(public_key);
