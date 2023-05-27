@@ -14,6 +14,8 @@ module aptos_framework::transaction_fee {
     friend aptos_framework::reconfiguration;
     friend aptos_framework::transaction_validation;
 
+    friend ol_framework::epoch_boundary;
+
     /// Gas fees are already being collected and the struct holding
     /// information about collected amounts is already published.
     const EALREADY_COLLECTING_FEES: u64 = 1;
@@ -179,7 +181,9 @@ module aptos_framework::transaction_fee {
 
     //////// 0L ////////
     /// pay a fee
-    public fun pay_fee(fee: Coin<GasCoin>) acquires CollectedFeesPerBlock {
+    public fun pay_fee(_sender: &signer, fee: Coin<GasCoin>) acquires CollectedFeesPerBlock {
+        // TODO: need to track who is making payments.
+        
         let collected_fees = borrow_global_mut<CollectedFeesPerBlock>(@aptos_framework);
 
         // Here, we are always optimistic and always collect fees. If the proposer is not set,

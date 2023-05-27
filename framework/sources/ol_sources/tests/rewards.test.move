@@ -29,7 +29,7 @@ module ol_framework::test_rewards {
 
     mock::genesis_n_vals(1);
     let uid_before = stake::get_reward_event_guid(alice);
-    // print(&uid);
+
     let (burn_cap, mint_cap) = gas_coin::initialize_for_test_without_aggregator_factory(root);
     let new_coin = coin::mint(10000, &mint_cap);
     coin::destroy_burn_cap(burn_cap);
@@ -38,7 +38,7 @@ module ol_framework::test_rewards {
     rewards::test_helper_pay_reward(root, alice, new_coin, 1);
     let uid_after = stake::get_reward_event_guid(alice);
     assert!(uid_after > uid_before, 7357001);
-    // print(&uid);
+
     let b = coin::balance<GasCoin>(alice);
     assert!(b == 10000, 7357002);
   }

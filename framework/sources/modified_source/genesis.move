@@ -25,7 +25,7 @@ module aptos_framework::genesis {
     use aptos_framework::state_storage;
     use aptos_framework::storage_gas;
     use aptos_framework::timestamp;
-    // use aptos_framework::transaction_fee;
+    use aptos_framework::transaction_fee;
     use aptos_framework::transaction_validation;
     use aptos_framework::version;
 
@@ -138,6 +138,7 @@ module aptos_framework::genesis {
         state_storage::initialize(&aptos_framework_account);
 
         //////// 0L ////////
+
         validator_universe::initialize(&aptos_framework_account);
         //todo: genesis seats
         let genesis_seats = 10;
@@ -169,6 +170,7 @@ module aptos_framework::genesis {
         // stake::store_aptos_coin_mint_cap(aptos_framework, mint_cap);
         coin::destroy_mint_cap(mint_cap);
         coin::destroy_burn_cap(burn_cap);
+        transaction_fee::initialize_fee_collection_and_distribution(aptos_framework, 0);
     }
 
     // TODO: 0L: replace this with gas coin. using vendor's to preserve tests while WIP.

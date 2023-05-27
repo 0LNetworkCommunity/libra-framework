@@ -109,6 +109,7 @@ module ol_framework::test_slow_wallet {
   // and a validator creation sets the users account to slow.
   fun slow_wallet_reconfigure (root: signer) {
     let set = mock::genesis_n_vals(4);
+    mock::ol_initialize_coin(&root);
     let a = vector::borrow(&set, 0);
     assert!(slow_wallet::unlocked_amount(*a) == 0, 735701);
     epoch_boundary::ol_reconfigure_for_test(&root)

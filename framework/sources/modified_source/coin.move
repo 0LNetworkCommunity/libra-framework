@@ -298,13 +298,17 @@ module aptos_framework::coin {
     }
 
     //////// 0L ////////
-    // user can burn own coin they are holding.
+    /// user can burn own coin they are holding.
     public fun user_burn<CoinType>(
         coin: Coin<CoinType>,
-    ) acquires CoinInfo {
-        let Coin { value: amount } = coin;
-        assert!(amount > 0, error::invalid_argument(EZERO_COIN_AMOUNT));
+    ) acquires CoinInfo { // cannot abort
+        if (value(&coin) == 0) {
+          destroy_zero(coin);
+          return
+        };
 
+        let Coin { value: amount } = coin;
+        
         let maybe_supply = &mut borrow_global_mut<CoinInfo<CoinType>>(coin_address<CoinType>()).supply;
         if (option::is_some(maybe_supply)) {
             let supply = option::borrow_mut(maybe_supply);

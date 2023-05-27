@@ -8,13 +8,15 @@ module ol_framework::test_reconfiguration {
   use ol_framework::testnet;
   use aptos_framework::coin;
   use ol_framework::gas_coin::GasCoin;
+  use ol_framework::proof_of_fee;
 
-  use aptos_std::debug::print;
+  // use aptos_std::debug::print;
 
   // Scenario: all genesis validators make it to next epoch
   #[test(root = @ol_framework)]
   fun reconfig_happy_case(root: signer) {
       let vals = mock::genesis_n_vals(5);
+      mock::ol_initialize_coin(&root);
       mock::pof_default();
       assert!(vector::length(&vals) == 5, 7357001);
       let vals = stake::get_current_validators();
@@ -22,19 +24,23 @@ module ol_framework::test_reconfiguration {
       // all vals compliant
       mock::mock_all_vals_good_performance(&root);
 
-      print(&coin::balance<GasCoin>(@0x1000a));
+      assert!(coin::balance<GasCoin>(@0x1000a) == 0, 7357003);
+
+      let (reward, _, _ ) = proof_of_fee::get_consensus_reward();
       // run ol reconfiguration
       mock::trigger_epoch(&root);    
 
       let vals = stake::get_current_validators();
-      print(&coin::balance<GasCoin>(@0x1000a));
 
       assert!(vector::length(&vals) == 5, 7357003);
+      assert!(coin::balance<GasCoin>(@0x1000a) == reward, 7357004)
+
   }
 
   #[test(root = @ol_framework)]
   fun drop_non_performing(root: signer) {
       let vals = mock::genesis_n_vals(5);
+      mock::ol_initialize_coin(&root);
       mock::pof_default();
       assert!(vector::length(&vals) == 5, 7357001);
       let vals = stake::get_current_validators();
@@ -46,6 +52,8 @@ module ol_framework::test_reconfiguration {
       // make alice non performant
       mock::mock_case_4(&root, *vector::borrow(&vals, 0));
 
+      let (reward, _, _ ) = proof_of_fee::get_consensus_reward();
+
       // run ol reconfiguration
       mock::trigger_epoch(&root);    
 
@@ -54,6 +62,13 @@ module ol_framework::test_reconfiguration {
       // one validator missing.
       assert!(vector::length(&vals) == 4, 7357003);
       assert!(!vector::contains(&vals, &@0x1000a), 7357004);
+
+      // alice doesn't get paid
+      assert!(coin::balance<GasCoin>(@0x1000a) == 0, 7357004);
+      // bob does
+      assert!(coin::balance<GasCoin>(@0x1000b) == reward, 7357004);
+
+
   }
 
 
@@ -62,6 +77,7 @@ module ol_framework::test_reconfiguration {
   #[test(root = @ol_framework)]
   fun reconfig_failover(root: signer) {
       let vals = mock::genesis_n_vals(5);
+      mock::ol_initialize_coin(&root);
       testnet::unset(&root); // note: needs to happen after genesis.
 
       mock::pof_default();
