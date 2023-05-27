@@ -1746,4 +1746,10 @@ module aptos_framework::stake {
       let (_sk, pk, pop) = generate_identity();
       initialize_test_validator(&pk, &pop, val_sig, 100, true, true);
     }
+
+    #[test_only]
+    public fun get_reward_event_guid(val: address): u64 acquires StakePool{
+      let sp = borrow_global<StakePool>(val);
+      event::counter(&sp.distribute_rewards_events)
+    }
 }

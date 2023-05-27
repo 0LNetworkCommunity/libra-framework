@@ -13,6 +13,11 @@ module aptos_framework::validator_universe {
   use ol_framework::jail;
   use ol_framework::cases;
   use aptos_framework::stake;
+
+  #[test_only]
+  use ol_framework::testnet;
+  #[test_only]
+  use aptos_std::bls12381;
   // use aptos_framework::account;
   // use aptos_std::debug::print;
 
@@ -122,8 +127,7 @@ module aptos_framework::validator_universe {
 
 
   //////// TEST HELPERS ////////
-  #[test_only]
-  use aptos_std::bls12381;
+
 
   #[test_only]
   public fun test_register_validator(
@@ -134,13 +138,13 @@ module aptos_framework::validator_universe {
     should_join_validator_set: bool,
     should_end_epoch: bool,
   ) acquires ValidatorUniverse {
+    assert!(testnet::is_testnet(), 220101014014);
     stake::initialize_test_validator(public_key, proof_of_possession, validator, _amount, should_join_validator_set, should_end_epoch);
 
     add(validator);
   }
 
-  #[test_only]
-  use ol_framework::testnet;
+
 
 
   #[test_only]
@@ -154,6 +158,7 @@ module aptos_framework::validator_universe {
   #[test_only]
   /// Validator universe is append only, only in tests remove self from validator list.
   public fun remove_self(validator: &signer) acquires ValidatorUniverse {
+    assert!(testnet::is_testnet(), 220101014014);
     let val = signer::address_of(validator);
     let state = borrow_global<ValidatorUniverse>(@aptos_framework);
     let (in_set, index) = vector::index_of<address>(&state.validators, &val);
