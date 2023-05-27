@@ -7,7 +7,7 @@ module ol_framework::rewards {
   use aptos_framework::stake;
   // use aptos_std::debug::print;
 
-  friend aptos_framework::reconfiguration;
+  friend aptos_framework::epoch_boundary;
   // friend aptos_framework::stake;
 
   const REWARD_VALIDATOR: u8 = 1;

@@ -6,8 +6,10 @@ module ol_framework::test_reconfiguration {
   use aptos_framework::stake;
   use ol_framework::mock;
   use ol_framework::testnet;
+  use aptos_framework::coin;
+  use ol_framework::gas_coin::GasCoin;
 
-  // use aptos_std::debug::print;
+  use aptos_std::debug::print;
 
   // Scenario: all genesis validators make it to next epoch
   #[test(root = @ol_framework)]
@@ -20,10 +22,12 @@ module ol_framework::test_reconfiguration {
       // all vals compliant
       mock::mock_all_vals_good_performance(&root);
 
+      print(&coin::balance<GasCoin>(@0x1000a));
       // run ol reconfiguration
       mock::trigger_epoch(&root);    
 
       let vals = stake::get_current_validators();
+      print(&coin::balance<GasCoin>(@0x1000a));
 
       assert!(vector::length(&vals) == 5, 7357003);
   }
