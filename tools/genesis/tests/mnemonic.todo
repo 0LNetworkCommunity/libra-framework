@@ -1,0 +1,21 @@
+
+use libra_sdk::types::LocalAccount;
+#[test]
+fn test_recover_account_from_derive_path() {
+    // Same constants in test cases of TypeScript
+    // https://github.com/aptos-labs/aptos-core/blob/main/ecosystem/typescript/sdk/src/aptos_account.test.ts
+    let derive_path = "m/44'/637'/0'/0'/0'";
+    let mnemonic_phrase =
+        "shoot island position soft burden budget tooth cruel issue economy destroy above";
+    let expected_address = "0x7968dab936c1bad187c60ce4082f307d030d780e91e694ae03aef16aba73f30";
+
+    // Validate if the expected address.
+    let account = LocalAccount::from_derive_path(derive_path, mnemonic_phrase, 0).unwrap();
+    assert_eq!(account.address().to_hex_literal(), expected_address);
+
+    // Return an error for empty derive path.
+    assert!(LocalAccount::from_derive_path("", mnemonic_phrase, 0).is_err());
+
+    // Return an error for empty mnemonic phrase.
+    assert!(LocalAccount::from_derive_path(derive_path, "", 0).is_err());
+}
