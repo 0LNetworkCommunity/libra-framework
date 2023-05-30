@@ -292,7 +292,6 @@
               let pledge_state = borrow_global_mut<MyPledges>(*payer);
 
               let pledge_account = vector::borrow_mut(&mut pledge_state.list, idx);
-
               if (
                 pledge_account.amount > 0 &&
                 pledge_account.amount >= amount

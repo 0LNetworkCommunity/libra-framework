@@ -346,7 +346,6 @@ module aptos_framework::genesis {
         // validators.
         // aptos_coin::destroy_mint_cap(aptos_framework);
 
-
         stake::on_new_epoch();
 
     }
