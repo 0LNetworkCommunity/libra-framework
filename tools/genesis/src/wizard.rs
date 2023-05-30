@@ -366,7 +366,7 @@ fn initialize_host(
     username: &str,
     host: HostAndPort,
 ) -> anyhow::Result<()> {
-    libra_wallet::keys::refresh_validator_files(home_path.clone())?;
+    libra_wallet::keys::refresh_validator_files(None, home_path.clone())?;
     OLProgress::complete("Initialized validator key files");
     // TODO: set validator fullnode configs. Not NONE
     SetValidatorConfiguration::new(home_path.clone(), username.to_owned(), host, None)
