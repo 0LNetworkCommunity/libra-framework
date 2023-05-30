@@ -14,12 +14,13 @@ edition = "2021"
 ### Internal crate dependencies.
 # Please do not add any test features here: they should be declared by the 
 # individual crate.
-aptos-cached-packages = { git = "https://github.com/simsekgokhan/zapatos.git", rev = "2f39208" }
-aptos-debugger = { git = "https://github.com/simsekgokhan/zapatos.git", rev = "2f39208" }
-aptos-forge = { git = "https://github.com/simsekgokhan/zapatos.git", rev = "2f39208" }
-aptos-transactional-test-harness = { git = "https://github.com/simsekgokhan/zapatos.git", rev = "2f39208" }
-aptos-types = { git = "https://github.com/simsekgokhan/zapatos.git", rev = "2f39208" }
-aptos-smoke-test = { package = "smoke-test", git = "https://github.com/simsekgokhan/zapatos.git", rev = "2f39208" }
+aptos-cached-packages = { git = "https://github.com/simsekgokhan/zapatos.git", rev = "ab252b3" }
+aptos-debugger = { git = "https://github.com/simsekgokhan/zapatos.git", rev = "ab252b3" }
+aptos-forge = { git = "https://github.com/simsekgokhan/zapatos.git", rev = "ab252b3" }
+aptos-transactional-test-harness = { git = "https://github.com/simsekgokhan/zapatos.git", rev = "ab252b3" }
+aptos-types = { git = "https://github.com/simsekgokhan/zapatos.git", rev = "ab252b3" }
+aptos-smoke-test = { package = "smoke-test", git = "https://github.com/simsekgokhan/zapatos.git", rev = "ab252b3" }
+
 
 ### External crate dependencies.
 # Please do not add any test features here: they should be declared by the 
