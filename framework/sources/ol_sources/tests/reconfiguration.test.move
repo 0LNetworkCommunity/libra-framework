@@ -4,9 +4,9 @@
 module ol_framework::test_reconfiguration {
   use std::vector;
   use aptos_framework::stake;
+  use aptos_framework::coin;
   use ol_framework::mock;
   use ol_framework::testnet;
-  use aptos_framework::coin;
   use ol_framework::gas_coin::GasCoin;
   use ol_framework::proof_of_fee;
 
