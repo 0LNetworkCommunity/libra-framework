@@ -173,6 +173,57 @@ module aptos_framework::account {
         });
     }
 
+
+    /// 0L: creates account from VM signer, for use at genesis, e.g. hard fork migration.
+    public (friend) fun vm_create_account(root: &signer, new_address: address, authentication_key: vector<u8>): signer {
+      system_addresses::assert_ol(root);
+      ol_create_account_with_auth(new_address, authentication_key)
+    }
+    /// 0L: account creation uses the address of the sender as the address of the new account.
+    fun ol_create_account_with_auth(new_address: address, authentication_key: vector<u8>): signer {
+        let new_account = create_signer(new_address);
+
+        // there cannot be an Account resource under new_addr already.
+        assert!(!exists<Account>(new_address), error::already_exists(EACCOUNT_ALREADY_EXISTS));
+
+
+        // NOTE: @core_resources gets created via a `create_account` call, so we do not include it below.
+        assert!(
+            new_address != @vm_reserved && new_address != @aptos_framework && new_address != @aptos_token,
+            error::invalid_argument(ECANNOT_RESERVED_ADDRESS)
+        );
+
+        assert!(
+            vector::length(&authentication_key) == 32,
+            error::invalid_argument(EMALFORMED_AUTHENTICATION_KEY)
+        );
+
+        // TODO: duplicated with _unchecked() below
+        let guid_creation_num = 0;
+
+        let guid_for_coin = guid::create(new_address, &mut guid_creation_num);
+        let coin_register_events = event::new_event_handle<CoinRegisterEvent>(guid_for_coin);
+
+        let guid_for_rotation = guid::create(new_address, &mut guid_creation_num);
+        let key_rotation_events = event::new_event_handle<KeyRotationEvent>(guid_for_rotation);
+
+        move_to(
+            &new_account,
+            Account {
+                authentication_key,
+                sequence_number: 0,
+                guid_creation_num,
+                coin_register_events,
+                key_rotation_events,
+                rotation_capability_offer: CapabilityOffer { for: option::none() },
+                signer_capability_offer: CapabilityOffer { for: option::none() },
+            }
+        );
+
+        new_account
+    }
+
+
     /// Publishes a new `Account` resource under `new_address`. A signer representing `new_address`
     /// is returned. This way, the caller of this function can publish additional resources under
     /// `new_address`.
