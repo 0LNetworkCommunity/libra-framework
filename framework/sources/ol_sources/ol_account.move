@@ -6,6 +6,7 @@ module ol_framework::ol_account {
     use aptos_framework::chain_status;
     use std::error;
     use std::signer;
+    // use aptos_std::debug::print;
 
     #[test_only]
     use std::vector;
@@ -33,6 +34,10 @@ module ol_framework::ol_account {
     /// The lengths of the recipients and amounts lists don't match.
     const EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH: u64 = 5;
 
+    /// for 0L the account which does onboarding needs to have at least 2 gas coins
+    const EINSUFFICIENT_BALANCE: u64 = 6;
+
+    const BOOTSTRAP_GAS_COIN_AMOUNT: u64 = 1000000;
     /// Configuration for whether an account can receive direct transfers of coins that they have not registered.
     ///
     /// By default, this is enabled. Users can opt-out by disabling at any time.
@@ -50,8 +55,30 @@ module ol_framework::ol_account {
     // Basic account creation methods.
     ///////////////////////////////////////////////////////////////////////////
 
+    /// Users with existsing accounts can onboard new accounts.
+    // TODO: they must deposit 1 gas coin.
+    public entry fun user_create_account(sender: &signer, auth_key: address) {
+        let sender_addr = signer::address_of(sender);
+        assert!(
+            !account::exists_at(auth_key),
+            error::invalid_argument(EACCOUNT_NOT_FOUND),
+        );
+
+        assert!(
+            (coin::balance<GasCoin>(sender_addr) > 2 * BOOTSTRAP_GAS_COIN_AMOUNT),
+            error::invalid_state(EINSUFFICIENT_BALANCE),
+        );
+
+        let new_signer = account::create_account(auth_key);
+        coin::register<GasCoin>(&new_signer);
+        
+      coin::transfer<GasCoin>(sender, auth_key, BOOTSTRAP_GAS_COIN_AMOUNT);
+
+    }
+
     #[test_only]
     // TODO: 0L, this should not be a public function in 0L
+    // should do belt and suspenders
     public entry fun create_account(auth_key: address) {
         let new_signer = account::create_account(auth_key);
         coin::register<GasCoin>(&new_signer);

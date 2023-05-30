@@ -14,6 +14,8 @@ module aptos_framework::transaction_fee {
     friend aptos_framework::reconfiguration;
     friend aptos_framework::transaction_validation;
 
+    friend ol_framework::epoch_boundary;
+
     /// Gas fees are already being collected and the struct holding
     /// information about collected amounts is already published.
     const EALREADY_COLLECTING_FEES: u64 = 1;
@@ -179,7 +181,9 @@ module aptos_framework::transaction_fee {
 
     //////// 0L ////////
     /// pay a fee
-    public fun pay_fee(fee: Coin<GasCoin>) acquires CollectedFeesPerBlock {
+    public fun pay_fee(_sender: &signer, fee: Coin<GasCoin>) acquires CollectedFeesPerBlock {
+        // TODO: need to track who is making payments.
+        
         let collected_fees = borrow_global_mut<CollectedFeesPerBlock>(@aptos_framework);
 
         // Here, we are always optimistic and always collect fees. If the proposer is not set,
@@ -188,6 +192,24 @@ module aptos_framework::transaction_fee {
         let collected_amount = &mut collected_fees.amount;
         coin::merge_aggregatable_coin<GasCoin>(collected_amount, fee);
     }
+
+    /////// 0L ////////
+    /// withdraw from system transaction account.
+    // belt and suspenders
+    public(friend) fun root_withdraw_all(root: &signer): Coin<GasCoin> acquires CollectedFeesPerBlock {
+      system_addresses::assert_ol(root);
+      withdraw_all_impl(root)
+    }
+
+    // belt and suspenders implementation
+    fun withdraw_all_impl(root: &signer): Coin<GasCoin> acquires CollectedFeesPerBlock {
+      system_addresses::assert_ol(root);
+
+      let collected_fees = borrow_global_mut<CollectedFeesPerBlock>(@aptos_framework);
+
+      coin::drain_aggregatable_coin<GasCoin>(&mut collected_fees.amount)
+    }
+
 
     /// Only called during genesis.
     public(friend) fun store_aptos_coin_burn_cap(aptos_framework: &signer, burn_cap: BurnCapability<GasCoin>) {

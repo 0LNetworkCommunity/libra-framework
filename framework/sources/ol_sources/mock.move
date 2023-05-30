@@ -15,7 +15,7 @@ module ol_framework::mock {
   #[test_only]
   use aptos_framework::account;
   // #[test_only]
-  // use aptos_std::debug::print;
+  // use ol_framework::ol_account;
   #[test_only]
   use ol_framework::proof_of_fee;
   #[test_only]
@@ -23,8 +23,17 @@ module ol_framework::mock {
   #[test_only]
   use aptos_framework::timestamp;
   #[test_only]
+  use aptos_framework::system_addresses;
+  #[test_only]
   use ol_framework::epoch_boundary;
-
+  #[test_only]
+  use aptos_framework::coin;
+  #[test_only]
+  use ol_framework::gas_coin;
+  #[test_only]
+  use aptos_framework::transaction_fee;
+  // #[test_only]
+  // use aptos_std::debug::print;
 
   #[test_only]
   public fun reset_val_perf_one(vm: &signer, addr: address) {
@@ -64,7 +73,7 @@ module ol_framework::mock {
     #[test_only]
     public fun mock_all_vals_good_performance(vm: &signer) {
 
-      let vals =  stake::get_current_validators();
+      let vals = stake::get_current_validators();
 
       let i = 0;
       while (i < vector::length(&vals)) {
@@ -122,8 +131,28 @@ module ol_framework::mock {
     }
 
     #[test_only]
-    public fun genesis() {
+    public fun ol_test_genesis(root: &signer) {
+      system_addresses::assert_ol(root);
       genesis::setup();
+    }
+    
+    #[test_only]
+    public fun ol_initialize_coin(root: &signer) {
+      system_addresses::assert_ol(root);
+
+      let (burn_cap, mint_cap) = gas_coin::initialize_for_test_without_aggregator_factory(root);
+      // Give stake module MintCapability<AptosCoin> so it can mint rewards.
+      // stake::store_aptos_coin_mint_cap(aptos_framework, mint_cap);
+
+      transaction_fee::initialize_fee_collection_and_distribution(root, 0);
+
+      let initial_fees = 1000000 * 100;
+      let tx_fees = coin::mint(initial_fees, &mint_cap);
+      transaction_fee::pay_fee(root, tx_fees);
+
+      coin::destroy_mint_cap(mint_cap);
+      coin::destroy_burn_cap(burn_cap);
+
     }
 
     #[test_only]
@@ -146,23 +175,25 @@ module ol_framework::mock {
     #[test_only]
     /// mock up to 6 validators alice..frank
     public fun genesis_n_vals(num: u64): vector<address> {
-      genesis::setup();
+      let framework_sig = account::create_signer_for_test(@aptos_framework);
+      ol_test_genesis(&framework_sig);
 
       let val_addr = personas();
       let i = 0;
       while (i < num) {
-
         let val = vector::borrow(&val_addr, i);
         let sig = account::create_signer_for_test(*val);
+        
         let (_sk, pk, pop) = stake::generate_identity();
         // stake::initialize_test_validator(&pk, &pop, &sig, 100, true, true);
         validator_universe::test_register_validator(&pk, &pop, &sig, 100, true, true);
+
         vouch::init(&sig);
         vouch::test_set_buddies(*val, val_addr);
         i = i + 1;
       };
 
-      let framework_sig = account::create_signer_for_test(@aptos_framework);
+      
       genesis::test_end_genesis(&framework_sig);
 
       stake::get_current_validators()
@@ -197,12 +228,12 @@ module ol_framework::mock {
   #[test(root=@ol_framework)]
   /// test we can trigger an epoch reconfiguration.
   public fun meta_epoch(root: signer) {
-    genesis();
+    ol_test_genesis(&root);
+    ol_initialize_coin(&root);
     let epoch = reconfiguration::current_epoch();
     trigger_epoch(&root);
     let new_epoch = reconfiguration::current_epoch();
     assert!(new_epoch > epoch, 7357001);
-
   }
 
   #[test(vm = @ol_framework)]

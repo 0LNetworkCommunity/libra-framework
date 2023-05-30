@@ -10,10 +10,10 @@ module ol_framework::test_meta {
   // can we trigger a reconfiguration and get to a new epoch?
   // see also mock::trigger_epoch()  and meta_epoch() test
 
-  #[test(vm = @vm_reserved)]
-  fun test_reconfigure_custom() {
+  #[test(root = @ol_framework)]
+  fun test_reconfigure_custom(root: signer) {
 
-    mock::genesis();
+    mock::ol_test_genesis(&root);
     // NOTE: There was no genesis END event here. 
     // Which means we need to use reconfigure_for_test_custom
 
@@ -55,7 +55,8 @@ module ol_framework::test_meta {
 
   #[test(root = @ol_framework)]
   fun test_reconfigure_mock_trigger(root: signer) {
-    mock::genesis();
+    mock::ol_test_genesis(&root);
+    mock::ol_initialize_coin(&root);
     let a = reconfiguration::get_current_epoch();
 
     mock::trigger_epoch(&root);
