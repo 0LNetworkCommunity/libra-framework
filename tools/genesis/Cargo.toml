@@ -1,0 +1,50 @@
+[package]
+name = "libra-genesis-tools"
+version = "0.1.0"
+
+# Workspace inherited keys
+authors = { workspace = true }
+edition = { workspace = true }
+homepage = { workspace = true }
+license = { workspace = true }
+publish = { workspace = true }
+repository = { workspace = true }
+rust-version = { workspace = true }
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+libra-wallet = { workspace = true }
+clap = { workspace = true }
+anyhow = { workspace = true }
+ol-types = { workspace = true }
+diem-types = { workspace = true }
+base64 = { workspace = true }
+bcs = { workspace = true }
+hex = { workspace = true }
+chrono = { workspace = true }
+dirs = { workspace = true }
+ureq = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+zapatos-genesis = { workspace = true }
+zapatos-gas = { workspace = true }
+zapatos-vm = { workspace = true }
+zapatos-framework = { workspace = true }
+zapatos-crypto = { workspace = true }
+zapatos-cached-packages = { workspace = true }
+zapatos-github-client = { workspace = true }
+zapatos-types = { workspace = true }
+zapatos-vm-genesis = { workspace = true }
+zapatos-config = { workspace = true }
+
+
+# for the hack_ files
+dialoguer = { workspace = true }
+console = { workspace = true }
+indicatif = { workspace = true }
+
+[dev-dependencies]
+zapatos-sdk = { workspace = true }
+
