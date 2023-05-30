@@ -3,7 +3,7 @@
 
 echo -e "\n0L: running smoke tests"
 
-export MRB_PATH=$(pwd | xargs -I % echo '%/ol-framework/releases')
+export MRB_PATH=$(pwd | xargs -I % echo '%/framework/releases')
 # export ZAPATOS_BIN_PATH=(~/code/rust/zapatos/target/release)
 # echo $ZAPATOS_BIN_PATH
 echo $MRB_PATH

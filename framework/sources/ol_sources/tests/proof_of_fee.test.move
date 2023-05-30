@@ -13,7 +13,6 @@ module ol_framework::test_pof {
 
   // use aptos_std::debug::print;
 
-
   const Alice: address = @0x1000a;
   const Bob: address = @0x1000b;
   const Carol: address = @0x1000c;
@@ -262,6 +261,7 @@ module ol_framework::test_pof {
   #[test(root = @ol_framework)]
   fun sorted_vals_expired_bid(root: signer) {
     let set = mock::genesis_n_vals(4);
+    mock::ol_initialize_coin(&root);
     let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
 
     let len = vector::length(&set);
@@ -278,9 +278,10 @@ module ol_framework::test_pof {
     proof_of_fee::set_bid(&alice_sig, 55, 1);
   
     // advance the epoch 2x, so the previous bid is expired.
+    mock::mock_all_vals_good_performance(&root);
     mock::trigger_epoch(&root);
+    mock::mock_all_vals_good_performance(&root);
     mock::trigger_epoch(&root);
-
 
     // Get all vals but don't filter the ones that have passing bids
     let sorted = proof_of_fee::get_sorted_vals(false);

@@ -38,10 +38,10 @@ module ol_framework::infra_escrow{
 
     /// Helper for epoch boundaries.
     /// Collects funds from pledge and places temporarily in network account (TransactionFee account)
-    public fun epoch_boundary_collection(vm: &signer, amount: u64) {
-        system_addresses::assert_ol(vm);
-        let opt = pledge_accounts::withdraw_from_all_pledge_accounts(vm, amount);
-        // print(&opt);
+    public fun epoch_boundary_collection(root: &signer, amount: u64) {
+        system_addresses::assert_ol(root);
+        let opt = pledge_accounts::withdraw_from_all_pledge_accounts(root, amount);
+
         if (option::is_none(&opt)) {
           option::destroy_none(opt);
           return
@@ -49,7 +49,7 @@ module ol_framework::infra_escrow{
         let c = option::extract(&mut opt);
         option::destroy_none(opt);
 
-        transaction_fee::pay_fee(c);
+        transaction_fee::pay_fee(root, c);
     }
 
     // Transaction script for user to pledge to infra escrow.
