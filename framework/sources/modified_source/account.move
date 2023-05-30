@@ -16,6 +16,9 @@ module aptos_framework::account {
     use aptos_std::table::{Self, Table};
     use aptos_std::type_info::{Self, TypeInfo};
 
+    // use aptos_std::debug::print;
+
+
     friend aptos_framework::aptos_account;
     friend aptos_framework::coin;
     friend aptos_framework::genesis;

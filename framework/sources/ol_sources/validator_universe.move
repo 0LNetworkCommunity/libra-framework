@@ -12,7 +12,18 @@ module aptos_framework::validator_universe {
   use aptos_framework::system_addresses;
   use ol_framework::jail;
   use ol_framework::cases;
+  // use aptos_framework::coin;
   use aptos_framework::stake;
+
+  // use aptos_framework::coin::Coin;
+  // use ol_framework::gas_coin::GasCoin;
+  // use ol_framework::rewards;
+
+  #[test_only]
+  use ol_framework::testnet;
+  #[test_only]
+  use aptos_std::bls12381;
+  // use aptos_framework::account;
   // use aptos_std::debug::print;
 
   friend aptos_framework::reconfiguration;
@@ -69,20 +80,16 @@ module aptos_framework::validator_universe {
   /// Used at epoch boundaries to evaluate the performance of the validator.
   /// only root can call this, and only by friend modules (reconfiguration). Belt and suspenders.
   public(friend) fun maybe_jail(root: &signer, validator: address): bool {
-    maybe_jail_impl(root, validator)
-  }
-
-  #[test_only]
-  /// test helper for maybe_jail
-  public fun test_maybe_jail(root: &signer, validator: address): bool {
+    system_addresses::assert_ol(root);
     maybe_jail_impl(root, validator)
   }
 
   /// Common implementation for maybe_jail.
   fun maybe_jail_impl(root: &signer, validator: address): bool {
-
+    system_addresses::assert_ol(root);
+    
     if (
-      !stake::is_valid(validator) || // check if there are issues with config. belt and suspenders
+      // TODO check if there are issues with config. belt and suspenders
       cases::get_case(validator) == 4
     
     ) {
@@ -92,6 +99,14 @@ module aptos_framework::validator_universe {
 
     false
   }
+
+
+  // /// performs the business logic for admitting new validators
+  // /// includes proof-of-fee auction and collecting payment
+  // /// includes drawing from infrastructure escrow into transaction fee account
+  // public(friend) fun end_epoch_process_incoming() {
+
+  // }
 
   //////// GENESIS ////////
   /// For 0L genesis, initialize and add the validators
@@ -119,10 +134,7 @@ module aptos_framework::validator_universe {
   // *  NOTE removed deprecated v3 jail implementation *//
 
 
-
   //////// TEST HELPERS ////////
-  #[test_only]
-  use aptos_std::bls12381;
 
   #[test_only]
   public fun test_register_validator(
@@ -133,14 +145,17 @@ module aptos_framework::validator_universe {
     should_join_validator_set: bool,
     should_end_epoch: bool,
   ) acquires ValidatorUniverse {
+    assert!(testnet::is_testnet(), 220101014014);
     stake::initialize_test_validator(public_key, proof_of_possession, validator, _amount, should_join_validator_set, should_end_epoch);
 
     add(validator);
   }
 
   #[test_only]
-  use ol_framework::testnet;
-
+  /// test helper for maybe_jail
+  public fun test_maybe_jail(root: &signer, validator: address): bool {
+    maybe_jail_impl(root, validator)
+  }
 
   #[test_only]
   public fun test_helper_add_self_onboard(vm: &signer, addr:address) acquires ValidatorUniverse {
@@ -153,6 +168,7 @@ module aptos_framework::validator_universe {
   #[test_only]
   /// Validator universe is append only, only in tests remove self from validator list.
   public fun remove_self(validator: &signer) acquires ValidatorUniverse {
+    assert!(testnet::is_testnet(), 220101014014);
     let val = signer::address_of(validator);
     let state = borrow_global<ValidatorUniverse>(@aptos_framework);
     let (in_set, index) = vector::index_of<address>(&state.validators, &val);

@@ -94,7 +94,6 @@ module ol_framework::test_jail {
 
       let jail_sort = jail::sort_by_jail(vals);
       assert!(vector::length(&jail_sort) == 5, 10004);
-      // print(&jail_sort);
       let (is_found, idx) = vector::index_of(&jail_sort, &bob);
       assert!(is_found, 10005);
       assert!(idx == 4, 10006);
