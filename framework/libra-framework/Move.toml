@@ -13,8 +13,4 @@ ol_framework = "0x1"
 root = "0x1"
 
 [dependencies]
-# Using latest rev = "6b610f4" of Aptos CLI Release v1.0.11
-# Update "rev" regularly from: https://github.com/aptos-labs/aptos-core/releases
-# AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework", rev = "6b610f4" }
 VendorStdlib = { local = "../vendor-stdlib" }
-# MoveStdlib = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/move-stdlib", rev = "6b610f4" }
