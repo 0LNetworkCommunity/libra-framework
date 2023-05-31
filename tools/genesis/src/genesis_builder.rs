@@ -1,5 +1,7 @@
 use anyhow::{anyhow, bail, Result};
 use libra_wallet::utils::{check_if_file_exists, from_yaml, write_to_user_only_file};
+use libra_framework::release;
+
 use std::str::FromStr;
 use std::{
     cmp::Ordering,
@@ -38,6 +40,7 @@ pub fn build(
     github_repository: String,
     github_token: String,
     home_path: PathBuf,
+    use_local_framework: bool,
 ) -> Result<Vec<PathBuf>> {
     let output_dir = home_path.join("genesis"); // TODO
     std::fs::create_dir_all(&output_dir)?;
@@ -50,7 +53,7 @@ pub fn build(
 
     // Generate genesis and waypoint files
     let (genesis_bytes, waypoint) = {
-        let mut test_genesis = fetch_genesis_info(github_owner, github_repository, github_token)?;
+        let mut test_genesis = fetch_genesis_info(github_owner, github_repository, github_token, use_local_framework)?;
         let genesis_bytes = bcs::to_bytes(test_genesis.clone().get_genesis())?;
         (genesis_bytes, test_genesis.generate_waypoint()?)
     };
@@ -69,6 +72,7 @@ pub fn fetch_genesis_info(
     github_owner: String,
     github_repository: String,
     github_token: String,
+    use_local_framework: bool,
 ) -> Result<GenesisInfo> {
     // let client = git_options.get_client()?;
     let client = Client::new(
@@ -92,9 +96,13 @@ pub fn fetch_genesis_info(
 
     let validators = get_validator_configs(&client, &layout, false)?;
 
-    // let framework = client.get_file(&path.display())ring())?);
-    let bytes = base64::decode(client.get_file(FRAMEWORK_NAME)?)?;
-    let framework = bcs::from_bytes::<ReleaseBundle>(&bytes)?;
+    let framework = if use_local_framework {
+      release::ReleaseTarget::Head.load_bundle()?
+    } else {
+      let bytes = base64::decode(client.get_file(FRAMEWORK_NAME)?)?;
+      bcs::from_bytes::<ReleaseBundle>(&bytes)?
+    };
+
 
     // let framework = client.get_framework()?;
     let dummy_root = Ed25519PublicKey::from_encoded_string(

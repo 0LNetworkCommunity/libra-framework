@@ -10,4 +10,5 @@ Cargo.lock
 **/*.rs.bk
 
 # 0L
-framework/build
+**/build
+**/doc
