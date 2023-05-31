@@ -1,5 +1,5 @@
 // Simple example to set/get string on chain
-// Taken/modified from diem-core: 
+// Taken/modified from aptos-core: 
 // diem-move/move-examples/hello_blockchain/sources/hello_blockchain.move
 
 module ol_framework::demo {
