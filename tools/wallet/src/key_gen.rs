@@ -48,10 +48,10 @@ mod tests {
     const ALICE_MNEMONIC: &str =
         "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse";
     #[tokio::test]
-    async fn generate_keys_properly() -> Result<()> {
+    async fn save_val_keys_from_mnemonic() -> Result<()> {
         let this_dir: PathBuf = env!("CARGO_MANIFEST_DIR").parse()?;
         dbg!(&this_dir);
-        let output_dir = this_dir.join("temp");
+        let output_dir = this_dir.join("temp_two");
         dbg!(&output_dir);
         let result = run(Some(ALICE_MNEMONIC.to_string()), Some(output_dir.clone())).await.unwrap();
 

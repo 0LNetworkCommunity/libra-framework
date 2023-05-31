@@ -92,7 +92,7 @@ impl GenesisWizard {
             .interact()?;
         if to_init {
             let temp: HostAndPort = HostAndPort::local(6180)?;
-            initialize_host(Some(self.data_path.clone()), &self.github_username, temp)?;
+            initialize_host(Some(self.data_path.clone()), &self.github_username, temp, None)?;
         }
 
         let to_register = Confirm::new()
@@ -365,8 +365,9 @@ fn initialize_host(
     home_path: Option<PathBuf>,
     username: &str,
     host: HostAndPort,
+    mnem: Option<String>,
 ) -> anyhow::Result<()> {
-    libra_wallet::keys::refresh_validator_files(None, home_path.clone())?;
+    libra_wallet::keys::refresh_validator_files(mnem, home_path.clone())?;
     OLProgress::complete("Initialized validator key files");
     // TODO: set validator fullnode configs. Not NONE
     SetValidatorConfiguration::new(home_path.clone(), username.to_owned(), host, None)
@@ -387,13 +388,20 @@ fn test_wizard() {
 }
 
 #[test]
-fn test_init() {
+fn test_validator_files_config() {
+    let alice_mnem = "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse".to_string();
     let h = HostAndPort::local(6180).unwrap();
     let test_path = dirs::home_dir()
         .unwrap()
         .join(DEFAULT_DATA_PATH)
         .join("test_genesis");
-    initialize_host(Some(test_path), "validator", h).unwrap();
+    if test_path.exists() {
+        fs::remove_dir_all(&test_path).unwrap();
+    }
+
+    initialize_host(Some(test_path.clone()), "validator", h, Some(alice_mnem)).unwrap();
+
+    fs::remove_dir_all(&test_path).unwrap();
 }
 
 #[test]
