@@ -9,7 +9,7 @@ module ol_framework::ancestry {
     use std::vector;
     use std::option::{Self, Option};
     // use std::debug::print;
-    use aptos_framework::system_addresses;
+    use diem_framework::system_addresses;
 
     // triggered once per epoch
     struct Ancestry has key {

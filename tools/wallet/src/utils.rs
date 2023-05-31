@@ -1,5 +1,5 @@
 //! file and directory utilities
-// TODO: this file is copied from vendor/crates/aptos/common/src/utils.rs
+// TODO: this file is copied from vendor/crates/diem/common/src/utils.rs
 // It's not being imported because of build issues when we try to import that module. So it's a copy paste hack for now. But should be reviewed.
 
 use anyhow::{anyhow, bail};

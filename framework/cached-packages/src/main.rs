@@ -1,12 +1,12 @@
 #![forbid(unsafe_code)]
 
-use aptos_cached_packages::release::ReleaseTarget;
+use diem_cached_packages::release::ReleaseTarget;
 use clap::Parser;
 
 #[derive(Parser)]
 #[clap(name = "libra-framework", author, version, propagate_version = true)]
 enum Commands {
-    /// Creates an Aptos framework release for the specified target.
+    /// Creates an Diem framework release for the specified target.
     Release(StandardRelease),
     // /// Allows to create a custom release package,
     // Custom(CustomRelease),

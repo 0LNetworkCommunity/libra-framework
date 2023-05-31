@@ -3,8 +3,8 @@
 /// tests for external apis, and where a dependency cycle with genesis is created.
 module ol_framework::test_reconfiguration {
   use std::vector;
-  use aptos_framework::stake;
-  use aptos_framework::coin;
+  use diem_framework::stake;
+  use diem_framework::coin;
   use ol_framework::mock;
   use ol_framework::testnet;
   use ol_framework::gas_coin::GasCoin;

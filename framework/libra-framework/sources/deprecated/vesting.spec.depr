@@ -1,4 +1,4 @@
-spec aptos_framework::vesting {
+spec diem_framework::vesting {
     spec module {
         pragma verify = true;
         pragma aborts_if_is_strict;
@@ -92,7 +92,7 @@ spec aptos_framework::vesting {
     ): VestingSchedule {
         aborts_if !(len(schedule) > 0);
         aborts_if !(period_duration > 0);
-        aborts_if !exists<timestamp::CurrentTimeMicroseconds>(@aptos_framework);
+        aborts_if !exists<timestamp::CurrentTimeMicroseconds>(@diem_framework);
         aborts_if !(start_timestamp_secs >= timestamp::now_seconds());
     }
 
@@ -201,7 +201,7 @@ spec aptos_framework::vesting {
         new_beneficiary: address,
     ) {
         aborts_if !account::exists_at(new_beneficiary);
-        aborts_if !coin::is_account_registered<AptosCoin>(new_beneficiary);
+        aborts_if !coin::is_account_registered<DiemCoin>(new_beneficiary);
         include VerifyAdminAbortsIf;
         let post vesting_contract = global<VestingContract>(contract_address);
         ensures simple_map::spec_contains_key(vesting_contract.beneficiaries,shareholder);
@@ -297,7 +297,7 @@ spec aptos_framework::vesting {
         pragma verify = false;
     }
 
-    spec withdraw_stake(vesting_contract: &VestingContract, contract_address: address): Coin<AptosCoin> {
+    spec withdraw_stake(vesting_contract: &VestingContract, contract_address: address): Coin<DiemCoin> {
         // TODO: Calls `staking_contract::distribute` which is not verified.
         pragma verify = false;
     }

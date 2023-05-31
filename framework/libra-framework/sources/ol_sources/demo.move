@@ -1,13 +1,13 @@
 // Simple example to set/get string on chain
-// Taken/modified from aptos-core: 
-// aptos-move/move-examples/hello_blockchain/sources/hello_blockchain.move
+// Taken/modified from diem-core: 
+// diem-move/move-examples/hello_blockchain/sources/hello_blockchain.move
 
 module ol_framework::demo {
     use std::error;
     use std::signer;
     use std::string;
-    use aptos_framework::account;
-    use aptos_framework::event;
+    use diem_framework::account;
+    use diem_framework::event;
 
 //:!:>resource
     struct MessageHolder has key {
@@ -52,7 +52,7 @@ module ol_framework::demo {
     #[test(account = @0x1)]
     public entry fun sender_can_set_message(account: signer) acquires MessageHolder {
         let addr = signer::address_of(&account);
-        aptos_framework::account::create_account_for_test(addr);
+        diem_framework::account::create_account_for_test(addr);
         set_message(&account,  string::utf8(b"Hello, Blockchain"));
 
         assert!(

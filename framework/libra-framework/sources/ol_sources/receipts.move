@@ -16,8 +16,8 @@ module ol_framework::receipts {
 
   use std::vector;
   use std::signer;
-  use aptos_framework::system_addresses;
-  use aptos_framework::timestamp;
+  use diem_framework::system_addresses;
+  use diem_framework::timestamp;
   use ol_framework::globals;
 
     struct UserReceipts has key {

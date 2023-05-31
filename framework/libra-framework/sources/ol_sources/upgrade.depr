@@ -9,7 +9,7 @@ module ol_framework::upgrade {
     use std::vector;
     use ol_framework::epoch;
     // use DiemFramework::DiemConfig; // todo v7
-    use aptos_framework::system_addresses;
+    use diem_framework::system_addresses;
 
     /// Structs for UpgradePayload resource
     struct UpgradePayload has key {

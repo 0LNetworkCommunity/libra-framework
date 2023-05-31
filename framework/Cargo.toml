@@ -16,7 +16,7 @@ rust-version = { workspace = true }
 anyhow = { workspace = true }
 clap = { workspace = true }
 zapatos-framework = { workspace = true }
-aptos-types = { workspace = true, features = ["fuzzing"] }
+diem-types = { workspace = true, features = ["fuzzing"] }
 bcs = { workspace = true }
 include_dir = { workspace = true }
 move-core-types = { workspace = true }

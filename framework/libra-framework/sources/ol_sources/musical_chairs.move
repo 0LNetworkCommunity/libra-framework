@@ -1,13 +1,13 @@
 module ol_framework::musical_chairs {
-    use aptos_framework::chain_status;
-    use aptos_framework::system_addresses;
-    use aptos_framework::stake;
+    use diem_framework::chain_status;
+    use diem_framework::system_addresses;
+    use diem_framework::stake;
     use ol_framework::cases;
     // use ol_framework::globals;
     use std::fixed_point32;
     use std::vector;
 
-    // use aptos_std::debug::print;
+    // use diem_std::debug::print;
 
     struct Chairs has key {
         // The number of chairs in the game
@@ -158,7 +158,7 @@ module ol_framework::musical_chairs {
     }
 
     #[test_only]
-    use aptos_framework::chain_id;
+    use diem_framework::chain_id;
 
     //////// TESTS ////////
 

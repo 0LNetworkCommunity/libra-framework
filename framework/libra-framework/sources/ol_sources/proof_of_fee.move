@@ -13,15 +13,15 @@ module ol_framework::proof_of_fee {
   use std::signer;
   use std::vector;
   use std::fixed_point32;
-  use aptos_framework::validator_universe;
+  use diem_framework::validator_universe;
   use ol_framework::jail;
   use ol_framework::slow_wallet;
   use ol_framework::vouch;
-  use aptos_framework::reconfiguration;
-  use aptos_framework::stake;
-  use aptos_framework::system_addresses;
+  use diem_framework::reconfiguration;
+  use diem_framework::stake;
+  use diem_framework::system_addresses;
 
-  // use aptos_std::debug::print;
+  // use diem_std::debug::print;
   
   /// The nominal reward for each validator in each epoch.
   const GENESIS_BASELINE_REWARD: u64 = 1000000;
@@ -647,7 +647,7 @@ module ol_framework::proof_of_fee {
 
   #[test(vm = @ol_framework)]
   fun meta_mock_reward(vm: signer) acquires ConsensusReward {
-    use aptos_framework::chain_id;
+    use diem_framework::chain_id;
 
     init_genesis_baseline_reward(&vm);
 
@@ -670,7 +670,7 @@ module ol_framework::proof_of_fee {
 
   #[test(vm = @ol_framework)]
   public entry fun thermostat_unit_happy(vm: signer)  acquires ConsensusReward {
-    use aptos_framework::chain_id;
+    use diem_framework::chain_id;
     // use ol_framework::mock;
 
     init_genesis_baseline_reward(&vm);
@@ -718,7 +718,7 @@ module ol_framework::proof_of_fee {
   // Scenario: The reward is too low during 5 days (short window). People are not bidding very high.
   #[test(vm = @ol_framework)]
   fun thermostat_increase_short(vm: signer) acquires ConsensusReward {
-    use aptos_framework::chain_id;
+    use diem_framework::chain_id;
 
     init_genesis_baseline_reward(&vm);
     chain_id::initialize_for_test(&vm, 4);
@@ -763,7 +763,7 @@ module ol_framework::proof_of_fee {
   // Scenario: The reward is too low during 5 days (short window). People are not bidding very high.
   #[test(vm = @ol_framework)]
   fun thermostat_increase_long(vm: signer) acquires ConsensusReward {
-    use aptos_framework::chain_id;
+    use diem_framework::chain_id;
 
     init_genesis_baseline_reward(&vm);
     chain_id::initialize_for_test(&vm, 4);
@@ -811,7 +811,7 @@ module ol_framework::proof_of_fee {
   // Scenario: The reward is too high during 5 days (short window). People are bidding over 95% of the baseline fee.
   #[test(vm = @ol_framework)]
   fun thermostat_decrease_short(vm: signer) acquires ConsensusReward {
-    use aptos_framework::chain_id;
+    use diem_framework::chain_id;
 
     init_genesis_baseline_reward(&vm);
     chain_id::initialize_for_test(&vm, 4);
@@ -857,7 +857,7 @@ module ol_framework::proof_of_fee {
     // Scenario: The reward is too low during 5 days (short window). People are not bidding very high.
   #[test(vm = @ol_framework)]
   fun thermostat_decrease_long(vm: signer) acquires ConsensusReward {
-    use aptos_framework::chain_id;
+    use diem_framework::chain_id;
 
     init_genesis_baseline_reward(&vm);
     chain_id::initialize_for_test(&vm, 4);
@@ -903,7 +903,7 @@ module ol_framework::proof_of_fee {
 
   // #[test(vm = @ol_framework)]
   // fun pof_set_retract(vm: signer) {
-  //     use aptos_framework::account;
+  //     use diem_framework::account;
 
   //     validator_universe::initialize(&vm);
 

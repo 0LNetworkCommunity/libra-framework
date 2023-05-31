@@ -2,22 +2,22 @@
 
 0L txs cli tool for sending transactions
 
-This initial version of txs is a combination of clap cli tool lib. and Aptos sdk/transfer-coin example modified to work with local tesnet and using 0L keys. 
+This initial version of txs is a combination of clap cli tool lib. and Diem sdk/transfer-coin example modified to work with local tesnet and using 0L keys. 
 See txs_args.rs, transfer_coin.rs  
 
 Sources:  
-https://aptos.dev/tutorials/your-first-transaction/  
-App https://github.com/aptos-labs/aptos-core/tree/main/sdk/examples  
-Lib https://github.com/aptos-labs/aptos-core/tree/main/sdk/src   
+https://diem.dev/tutorials/your-first-transaction/  
+App https://github.com/diem-labs/diem-core/tree/main/sdk/examples  
+Lib https://github.com/diem-labs/diem-core/tree/main/sdk/src   
 
 ## Example Usage - demo-tx Cmd
 
 ```
-1. Start local testnet, make sure Aptos node and faucet are running
+1. Start local testnet, make sure Diem node and faucet are running
 
-cargo run -p aptos -- node run-local-testnet --with-faucet --faucet-port 8081 --force-restart --assume-yes
+cargo run -p diem -- node run-local-testnet --with-faucet --faucet-port 8081 --force-restart --assume-yes
 ...
-Aptos is running, press ctrl-c to exit
+Diem is running, press ctrl-c to exit
 Faucet is running. Faucet endpoint: 0.0.0.0:8081
 
 
@@ -56,9 +56,9 @@ Bob: 1000
 
 ## Info
 
-This SDK provides all the necessary components for building on top of the Aptos Blockchain. Some of the important modules are:
+This SDK provides all the necessary components for building on top of the Diem Blockchain. Some of the important modules are:
 
-* `client` - Includes a [REST client](https://aptos.dev/nodes/aptos-api-spec#/) implementation
+* `client` - Includes a [REST client](https://diem.dev/nodes/diem-api-spec#/) implementation
 * `crypto` - Types used for signing and verifying
 * `transaction_builder` - Includes helpers for constructing transactions
-* `types` - Includes types for Aptos on-chain data structures
+* `types` - Includes types for Diem on-chain data structures

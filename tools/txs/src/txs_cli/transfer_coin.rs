@@ -27,7 +27,7 @@ pub async fn run(
         max_gas_amount: max_gas.unwrap_or(DEFAULT_MAX_GAS_AMOUNT),
         gas_unit_price: gas_unit_price.unwrap_or(DEFAULT_GAS_UNIT_PRICE),
         timeout_secs: DEFAULT_TIMEOUT_SECS,
-        coin_type: "0x1::aptos_coin::AptosCoin",
+        coin_type: "0x1::diem_coin::DiemCoin",
     };
 
     client

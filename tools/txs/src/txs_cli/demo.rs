@@ -12,7 +12,7 @@ pub async fn run() -> Result<()> {
     let coin_client = CoinClient::new(&client);
     let faucet_client = FaucetClient::default()?;
 
-    // let mut alice = LocalAccount::generate(&mut rand::rngs::OsRng); // Aptos Alice
+    // let mut alice = LocalAccount::generate(&mut rand::rngs::OsRng); // Diem Alice
     // 0L Alice - from pri key
     let arr: [u8; 32] = [
         196, 63, 87, 153, 70, 68, 235, 218, 30, 171, 254, 191, 132, 222, 247, 63, 189, 29, 60, 228,

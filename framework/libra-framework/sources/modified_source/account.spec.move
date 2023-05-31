@@ -1,24 +1,24 @@
-spec aptos_framework::account {
+spec diem_framework::account {
     spec module {
         pragma verify = true;
         pragma aborts_if_is_strict;
     }
 
-    /// Only the address `@aptos_framework` can call.
-    /// OriginatingAddress does not exist under `@aptos_framework` before the call.
-    spec initialize(aptos_framework: &signer) {
-        let aptos_addr = signer::address_of(aptos_framework);
-        aborts_if !system_addresses::is_aptos_framework_address(aptos_addr);
-        aborts_if exists<OriginatingAddress>(aptos_addr);
-        ensures exists<OriginatingAddress>(aptos_addr);
+    /// Only the address `@diem_framework` can call.
+    /// OriginatingAddress does not exist under `@diem_framework` before the call.
+    spec initialize(diem_framework: &signer) {
+        let diem_addr = signer::address_of(diem_framework);
+        aborts_if !system_addresses::is_diem_framework_address(diem_addr);
+        aborts_if exists<OriginatingAddress>(diem_addr);
+        ensures exists<OriginatingAddress>(diem_addr);
     }
 
     /// Check if the bytes of the new address is 32.
     /// The Account does not exist under the new address before creating the account.
-    /// Limit the new account address is not @vm_reserved / @aptos_framework / @aptos_toke.
+    /// Limit the new account address is not @vm_reserved / @diem_framework / @diem_toke.
     spec create_account(new_address: address): signer {
         include CreateAccountAbortsIf {addr: new_address};
-        aborts_if new_address == @vm_reserved || new_address == @aptos_framework || new_address == @aptos_token;
+        aborts_if new_address == @vm_reserved || new_address == @diem_framework || new_address == @diem_token;
         ensures signer::address_of(result) == new_address;
     }
 
@@ -166,7 +166,7 @@ spec aptos_framework::account {
         pragma aborts_if_is_partial;
 
         modifies global<Account>(addr);
-        modifies global<OriginatingAddress>(@aptos_framework);
+        modifies global<OriginatingAddress>(@diem_framework);
     }
 
     spec rotate_authentication_key_with_rotation_capability(
@@ -211,13 +211,13 @@ spec aptos_framework::account {
         let source_address = signer::address_of(account);
         let account_resource = global<Account>(source_address);
         let proof_challenge = RotationCapabilityOfferProofChallengeV2 {
-            chain_id: global<chain_id::ChainId>(@aptos_framework).id,
+            chain_id: global<chain_id::ChainId>(@diem_framework).id,
             sequence_number: account_resource.sequence_number,
             source_address,
             recipient_address,
         };
 
-        aborts_if !exists<chain_id::ChainId>(@aptos_framework);
+        aborts_if !exists<chain_id::ChainId>(@diem_framework);
         aborts_if !exists<Account>(recipient_address);
         aborts_if !exists<Account>(source_address);
 
@@ -457,17 +457,17 @@ spec aptos_framework::account {
         account_resource: &mut Account,
         new_auth_key_vector: vector<u8>,
     ) {
-        modifies global<OriginatingAddress>(@aptos_framework);
+        modifies global<OriginatingAddress>(@diem_framework);
         include UpdateAuthKeyAndOriginatingAddressTableAbortsIf;
     }
     spec schema UpdateAuthKeyAndOriginatingAddressTableAbortsIf {
         originating_addr: address;
         account_resource: Account;
         new_auth_key_vector: vector<u8>;
-        let address_map = global<OriginatingAddress>(@aptos_framework).address_map;
+        let address_map = global<OriginatingAddress>(@diem_framework).address_map;
         let curr_auth_key = from_bcs::deserialize<address>(account_resource.authentication_key);
         let new_auth_key = from_bcs::deserialize<address>(new_auth_key_vector);
-        aborts_if !exists<OriginatingAddress>(@aptos_framework);
+        aborts_if !exists<OriginatingAddress>(@diem_framework);
         aborts_if !from_bcs::deserializable<address>(account_resource.authentication_key);
         aborts_if table::spec_contains(address_map, curr_auth_key) &&
             table::spec_get(address_map, curr_auth_key) != originating_addr;

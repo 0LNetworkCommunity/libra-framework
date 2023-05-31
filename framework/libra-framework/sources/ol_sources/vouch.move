@@ -2,12 +2,12 @@
 module ol_framework::vouch {
     use std::signer;
     use std::vector;
-    // use aptos_framework::validator_universe;
+    // use diem_framework::validator_universe;
     use ol_framework::ancestry;
     use ol_framework::globals;
     use ol_framework::testnet;
-    use aptos_framework::system_addresses;
-    use aptos_framework::stake;
+    use diem_framework::system_addresses;
+    use diem_framework::stake;
 
     /// Trying to vouch for yourself?
     const ETRY_SELF_VOUCH_REALLY: u64 = 12345;

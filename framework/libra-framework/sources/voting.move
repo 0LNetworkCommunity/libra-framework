@@ -2,11 +2,11 @@
  * This is the general Voting module that can be used as part of a DAO Governance. Voting is designed to be used by
  * standalone governance modules, who has full control over the voting flow and is responsible for voting power
  * calculation and including proper capabilities when creating the proposal so resolution can go through.
- * On-chain governance of the Aptos network also uses Voting.
+ * On-chain governance of the Diem network also uses Voting.
  *
  * The voting flow:
- * 1. The Voting module can be deployed at a known address (e.g. 0x1 for Aptos on-chain governance)
- * 2. The governance module, e.g. AptosGovernance, can be deployed later and define a GovernanceProposal resource type
+ * 1. The Voting module can be deployed at a known address (e.g. 0x1 for Diem on-chain governance)
+ * 2. The governance module, e.g. DiemGovernance, can be deployed later and define a GovernanceProposal resource type
  * that can also contain other information such as Capability resource for authorization.
  * 3. The governance module's owner can then register the ProposalType with Voting. This also hosts the proposal list
  * (forum) on the calling account.
@@ -20,7 +20,7 @@
  * 7. Only the resolution script with the same script hash specified in the proposal can call Voting::resolve as part of
  * the resolution process.
  */
-module aptos_framework::voting {
+module diem_framework::voting {
     use std::bcs::to_bytes;
     use std::error;
     use std::option::{Self, Option};
@@ -28,16 +28,16 @@ module aptos_framework::voting {
     use std::string::{String, utf8};
     use std::vector;
 
-    use aptos_std::from_bcs::to_u64;
-    use aptos_std::simple_map::{Self, SimpleMap};
-    use aptos_std::table::{Self, Table};
-    use aptos_std::type_info::{Self, TypeInfo};
+    use diem_std::from_bcs::to_u64;
+    use diem_std::simple_map::{Self, SimpleMap};
+    use diem_std::table::{Self, Table};
+    use diem_std::type_info::{Self, TypeInfo};
 
-    use aptos_framework::account;
-    use aptos_framework::event::{Self, EventHandle};
-    use aptos_framework::timestamp;
-    use aptos_framework::transaction_context;
-    use aptos_std::from_bcs;
+    use diem_framework::account;
+    use diem_framework::event::{Self, EventHandle};
+    use diem_framework::timestamp;
+    use diem_framework::transaction_context;
+    use diem_std::from_bcs;
 
     /// Current script's execution hash does not match the specified proposal's
     const EPROPOSAL_EXECUTION_HASH_NOT_MATCHING: u64 = 1;
@@ -656,7 +656,7 @@ module aptos_framework::voting {
 
     #[test_only]
     public fun create_proposal_with_empty_execution_hash_should_fail_generic(governance: &signer, is_multi_step: bool) acquires VotingForum {
-        account::create_account_for_test(@aptos_framework);
+        account::create_account_for_test(@diem_framework);
         let governance_address = signer::address_of(governance);
         account::create_account_for_test(governance_address);
         register<TestProposal>(governance);
@@ -702,9 +702,9 @@ module aptos_framework::voting {
     }
 
     #[test_only]
-    public entry fun test_voting_passed_generic(aptos_framework: &signer, governance: &signer, use_create_multi_step: bool, use_resolve_multi_step: bool) acquires VotingForum {
-        account::create_account_for_test(@aptos_framework);
-        timestamp::set_time_has_started_for_testing(aptos_framework);
+    public entry fun test_voting_passed_generic(diem_framework: &signer, governance: &signer, use_create_multi_step: bool, use_resolve_multi_step: bool) acquires VotingForum {
+        account::create_account_for_test(@diem_framework);
+        timestamp::set_time_has_started_for_testing(diem_framework);
 
         // Register voting forum and create a proposal.
         let governance_address = signer::address_of(governance);
@@ -733,31 +733,31 @@ module aptos_framework::voting {
         assert!(table::borrow(&voting_forum.proposals, proposal_id).is_resolved, 2);
     }
 
-    #[test(aptos_framework = @aptos_framework, governance = @0x123)]
-    public entry fun test_voting_passed(aptos_framework: &signer, governance: &signer) acquires VotingForum {
-        test_voting_passed_generic(aptos_framework, governance, false, false);
+    #[test(diem_framework = @diem_framework, governance = @0x123)]
+    public entry fun test_voting_passed(diem_framework: &signer, governance: &signer) acquires VotingForum {
+        test_voting_passed_generic(diem_framework, governance, false, false);
     }
 
-    #[test(aptos_framework = @aptos_framework, governance = @0x123)]
-    public entry fun test_voting_passed_multi_step(aptos_framework: &signer, governance: &signer) acquires VotingForum {
-        test_voting_passed_generic(aptos_framework, governance, true, true);
+    #[test(diem_framework = @diem_framework, governance = @0x123)]
+    public entry fun test_voting_passed_multi_step(diem_framework: &signer, governance: &signer) acquires VotingForum {
+        test_voting_passed_generic(diem_framework, governance, true, true);
     }
 
-    #[test(aptos_framework = @aptos_framework, governance = @0x123)]
+    #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code=0x5000a, location = Self)]
-    public entry fun test_voting_passed_multi_step_cannot_use_single_step_resolve_function(aptos_framework: &signer, governance: &signer) acquires VotingForum {
-        test_voting_passed_generic(aptos_framework, governance, true, false);
+    public entry fun test_voting_passed_multi_step_cannot_use_single_step_resolve_function(diem_framework: &signer, governance: &signer) acquires VotingForum {
+        test_voting_passed_generic(diem_framework, governance, true, false);
     }
 
-    #[test(aptos_framework = @aptos_framework, governance = @0x123)]
-    public entry fun test_voting_passed_single_step_can_use_generic_function(aptos_framework: &signer, governance: &signer) acquires VotingForum {
-        test_voting_passed_generic(aptos_framework, governance, false, true);
+    #[test(diem_framework = @diem_framework, governance = @0x123)]
+    public entry fun test_voting_passed_single_step_can_use_generic_function(diem_framework: &signer, governance: &signer) acquires VotingForum {
+        test_voting_passed_generic(diem_framework, governance, false, true);
     }
 
     #[test_only]
-    public entry fun test_cannot_resolve_twice_generic(aptos_framework: &signer, governance: &signer, is_multi_step: bool) acquires VotingForum {
-        account::create_account_for_test(@aptos_framework);
-        timestamp::set_time_has_started_for_testing(aptos_framework);
+    public entry fun test_cannot_resolve_twice_generic(diem_framework: &signer, governance: &signer, is_multi_step: bool) acquires VotingForum {
+        account::create_account_for_test(@diem_framework);
+        timestamp::set_time_has_started_for_testing(diem_framework);
 
         // Register voting forum and create a proposal.
         let governance_address = signer::address_of(governance);
@@ -777,22 +777,22 @@ module aptos_framework::voting {
         resolve_proposal_for_test<TestProposal>(governance_address, proposal_id, is_multi_step, true);
     }
 
-    #[test(aptos_framework = @aptos_framework, governance = @0x123)]
+    #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x30003, location = Self)]
-    public entry fun test_cannot_resolve_twice(aptos_framework: &signer, governance: &signer) acquires VotingForum {
-        test_cannot_resolve_twice_generic(aptos_framework, governance, false);
+    public entry fun test_cannot_resolve_twice(diem_framework: &signer, governance: &signer) acquires VotingForum {
+        test_cannot_resolve_twice_generic(diem_framework, governance, false);
     }
 
-    #[test(aptos_framework = @aptos_framework, governance = @0x123)]
+    #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x30003, location = Self)]
-    public entry fun test_cannot_resolve_twice_multi_step(aptos_framework: &signer, governance: &signer) acquires VotingForum {
-        test_cannot_resolve_twice_generic(aptos_framework, governance, true);
+    public entry fun test_cannot_resolve_twice_multi_step(diem_framework: &signer, governance: &signer) acquires VotingForum {
+        test_cannot_resolve_twice_generic(diem_framework, governance, true);
     }
 
     #[test_only]
-    public entry fun test_voting_passed_early_generic(aptos_framework: &signer, governance: &signer, is_multi_step: bool) acquires VotingForum {
-        account::create_account_for_test(@aptos_framework);
-        timestamp::set_time_has_started_for_testing(aptos_framework);
+    public entry fun test_voting_passed_early_generic(diem_framework: &signer, governance: &signer, is_multi_step: bool) acquires VotingForum {
+        account::create_account_for_test(@diem_framework);
+        timestamp::set_time_has_started_for_testing(diem_framework);
 
         // Register voting forum and create a proposal.
         let governance_address = signer::address_of(governance);
@@ -837,24 +837,24 @@ module aptos_framework::voting {
         };
     }
 
-    #[test(aptos_framework = @aptos_framework, governance = @0x123)]
-    public entry fun test_voting_passed_early(aptos_framework: &signer, governance: &signer) acquires VotingForum {
-        test_voting_passed_early_generic(aptos_framework, governance, false);
+    #[test(diem_framework = @diem_framework, governance = @0x123)]
+    public entry fun test_voting_passed_early(diem_framework: &signer, governance: &signer) acquires VotingForum {
+        test_voting_passed_early_generic(diem_framework, governance, false);
     }
 
-    #[test(aptos_framework = @aptos_framework, governance = @0x123)]
-    public entry fun test_voting_passed_early_multi_step(aptos_framework: &signer, governance: &signer) acquires VotingForum {
-        test_voting_passed_early_generic(aptos_framework, governance, true);
+    #[test(diem_framework = @diem_framework, governance = @0x123)]
+    public entry fun test_voting_passed_early_multi_step(diem_framework: &signer, governance: &signer) acquires VotingForum {
+        test_voting_passed_early_generic(diem_framework, governance, true);
     }
 
     #[test_only]
     public entry fun test_voting_passed_early_in_same_tx_should_fail_generic(
-        aptos_framework: &signer,
+        diem_framework: &signer,
         governance: &signer,
         is_multi_step: bool
     ) acquires VotingForum {
-        account::create_account_for_test(@aptos_framework);
-        timestamp::set_time_has_started_for_testing(aptos_framework);
+        account::create_account_for_test(@diem_framework);
+        timestamp::set_time_has_started_for_testing(diem_framework);
         let governance_address = signer::address_of(governance);
         account::create_account_for_test(governance_address);
         let proposal_id = create_test_proposal_generic(governance, option::some(100), is_multi_step);
@@ -867,28 +867,28 @@ module aptos_framework::voting {
         resolve_proposal_for_test<TestProposal>(governance_address, proposal_id, is_multi_step, true);
     }
 
-    #[test(aptos_framework = @aptos_framework, governance = @0x123)]
+    #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x30008, location = Self)]
     public entry fun test_voting_passed_early_in_same_tx_should_fail(
-        aptos_framework: &signer,
+        diem_framework: &signer,
         governance: &signer
     ) acquires VotingForum {
-        test_voting_passed_early_in_same_tx_should_fail_generic(aptos_framework, governance, false);
+        test_voting_passed_early_in_same_tx_should_fail_generic(diem_framework, governance, false);
     }
 
-    #[test(aptos_framework = @aptos_framework, governance = @0x123)]
+    #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x30008, location = Self)]
     public entry fun test_voting_passed_early_in_same_tx_should_fail_multi_step(
-        aptos_framework: &signer,
+        diem_framework: &signer,
         governance: &signer
     ) acquires VotingForum {
-        test_voting_passed_early_in_same_tx_should_fail_generic(aptos_framework, governance, true);
+        test_voting_passed_early_in_same_tx_should_fail_generic(diem_framework, governance, true);
     }
 
     #[test_only]
-    public entry fun test_voting_failed_generic(aptos_framework: &signer, governance: &signer, is_multi_step: bool) acquires VotingForum {
-        account::create_account_for_test(@aptos_framework);
-        timestamp::set_time_has_started_for_testing(aptos_framework);
+    public entry fun test_voting_failed_generic(diem_framework: &signer, governance: &signer, is_multi_step: bool) acquires VotingForum {
+        account::create_account_for_test(@diem_framework);
+        timestamp::set_time_has_started_for_testing(diem_framework);
 
         // Register voting forum and create a proposal.
         let governance_address = signer::address_of(governance);
@@ -907,26 +907,26 @@ module aptos_framework::voting {
         resolve_proposal_for_test<TestProposal>(governance_address, proposal_id, is_multi_step, true);
     }
 
-    #[test(aptos_framework = @aptos_framework, governance = @0x123)]
+    #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x30002, location = Self)]
-    public entry fun test_voting_failed(aptos_framework: &signer, governance: &signer) acquires VotingForum {
-        test_voting_failed_generic(aptos_framework, governance, false);
+    public entry fun test_voting_failed(diem_framework: &signer, governance: &signer) acquires VotingForum {
+        test_voting_failed_generic(diem_framework, governance, false);
     }
 
-    #[test(aptos_framework = @aptos_framework, governance = @0x123)]
+    #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x30002, location = Self)]
-    public entry fun test_voting_failed_multi_step(aptos_framework: &signer, governance: &signer) acquires VotingForum {
-        test_voting_failed_generic(aptos_framework, governance, true);
+    public entry fun test_voting_failed_multi_step(diem_framework: &signer, governance: &signer) acquires VotingForum {
+        test_voting_failed_generic(diem_framework, governance, true);
     }
 
-    #[test(aptos_framework = @aptos_framework, governance = @0x123)]
+    #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x30005, location = Self)]
     public entry fun test_cannot_vote_after_voting_period_is_over(
-        aptos_framework: signer,
+        diem_framework: signer,
         governance: signer
     ) acquires VotingForum {
-        account::create_account_for_test(@aptos_framework);
-        timestamp::set_time_has_started_for_testing(&aptos_framework);
+        account::create_account_for_test(@diem_framework);
+        timestamp::set_time_has_started_for_testing(&diem_framework);
         let governance_address = signer::address_of(&governance);
         account::create_account_for_test(governance_address);
         let proposal_id = create_test_proposal(&governance, option::none<u128>());
@@ -937,14 +937,14 @@ module aptos_framework::voting {
         let TestProposal {} = proof;
     }
 
-    #[test(aptos_framework = @aptos_framework, governance = @0x123)]
+    #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code=0x30009, location = Self)]
     public entry fun test_cannot_vote_after_multi_step_proposal_starts_executing(
-        aptos_framework: signer,
+        diem_framework: signer,
         governance: signer
     ) acquires VotingForum {
-        account::create_account_for_test(@aptos_framework);
-        timestamp::set_time_has_started_for_testing(&aptos_framework);
+        account::create_account_for_test(@diem_framework);
+        timestamp::set_time_has_started_for_testing(&diem_framework);
 
         // Register voting forum and create a proposal.
         let governance_address = signer::address_of(&governance);
@@ -965,9 +965,9 @@ module aptos_framework::voting {
     }
 
     #[test_only]
-    public entry fun test_voting_failed_early_generic(aptos_framework: &signer, governance: &signer, is_multi_step: bool) acquires VotingForum {
-        account::create_account_for_test(@aptos_framework);
-        timestamp::set_time_has_started_for_testing(aptos_framework);
+    public entry fun test_voting_failed_early_generic(diem_framework: &signer, governance: &signer, is_multi_step: bool) acquires VotingForum {
+        account::create_account_for_test(@diem_framework);
+        timestamp::set_time_has_started_for_testing(diem_framework);
 
         // Register voting forum and create a proposal.
         let governance_address = signer::address_of(governance);
@@ -986,53 +986,53 @@ module aptos_framework::voting {
         resolve_proposal_for_test<TestProposal>(governance_address, proposal_id, is_multi_step, true);
     }
 
-    #[test(aptos_framework = @aptos_framework, governance = @0x123)]
+    #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x30002, location = Self)]
-    public entry fun test_voting_failed_early(aptos_framework: &signer, governance: &signer) acquires VotingForum {
-        test_voting_failed_early_generic(aptos_framework, governance, true);
+    public entry fun test_voting_failed_early(diem_framework: &signer, governance: &signer) acquires VotingForum {
+        test_voting_failed_early_generic(diem_framework, governance, true);
     }
 
-    #[test(aptos_framework = @aptos_framework, governance = @0x123)]
+    #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x30002, location = Self)]
-    public entry fun test_voting_failed_early_multi_step(aptos_framework: &signer, governance: &signer) acquires VotingForum {
-        test_voting_failed_early_generic(aptos_framework, governance, false);
+    public entry fun test_voting_failed_early_multi_step(diem_framework: &signer, governance: &signer) acquires VotingForum {
+        test_voting_failed_early_generic(diem_framework, governance, false);
     }
 
     #[test_only]
     public entry fun test_cannot_set_min_threshold_higher_than_early_resolution_generic(
-        aptos_framework: &signer,
+        diem_framework: &signer,
         governance: &signer,
         is_multi_step: bool,
     ) acquires VotingForum {
-        account::create_account_for_test(@aptos_framework);
-        timestamp::set_time_has_started_for_testing(aptos_framework);
+        account::create_account_for_test(@diem_framework);
+        timestamp::set_time_has_started_for_testing(diem_framework);
         account::create_account_for_test(signer::address_of(governance));
         // This should fail.
         create_test_proposal_generic(governance, option::some(5), is_multi_step);
     }
 
-    #[test(aptos_framework = @aptos_framework, governance = @0x123)]
+    #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x10007, location = Self)]
     public entry fun test_cannot_set_min_threshold_higher_than_early_resolution(
-        aptos_framework: &signer,
+        diem_framework: &signer,
         governance: &signer,
     ) acquires VotingForum {
-        test_cannot_set_min_threshold_higher_than_early_resolution_generic(aptos_framework, governance, false);
+        test_cannot_set_min_threshold_higher_than_early_resolution_generic(diem_framework, governance, false);
     }
 
-    #[test(aptos_framework = @aptos_framework, governance = @0x123)]
+    #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x10007, location = Self)]
     public entry fun test_cannot_set_min_threshold_higher_than_early_resolution_multi_step(
-        aptos_framework: &signer,
+        diem_framework: &signer,
         governance: &signer,
     ) acquires VotingForum {
-        test_cannot_set_min_threshold_higher_than_early_resolution_generic(aptos_framework, governance, true);
+        test_cannot_set_min_threshold_higher_than_early_resolution_generic(diem_framework, governance, true);
     }
 
-    #[test(aptos_framework = @aptos_framework, governance = @0x123)]
-    public entry fun test_replace_execution_hash(aptos_framework: &signer, governance: &signer) acquires VotingForum {
-        account::create_account_for_test(@aptos_framework);
-        timestamp::set_time_has_started_for_testing(aptos_framework);
+    #[test(diem_framework = @diem_framework, governance = @0x123)]
+    public entry fun test_replace_execution_hash(diem_framework: &signer, governance: &signer) acquires VotingForum {
+        account::create_account_for_test(@diem_framework);
+        timestamp::set_time_has_started_for_testing(diem_framework);
 
         // Register voting forum and create a proposal.
         let governance_address = signer::address_of(governance);

@@ -1,27 +1,27 @@
 module ol_framework::ol_account {
-    use aptos_framework::account::{Self, new_event_handle};
-    use aptos_framework::coin;
-    use aptos_framework::event::{EventHandle, emit_event};
-    use aptos_framework::system_addresses;
-    use aptos_framework::chain_status;
+    use diem_framework::account::{Self, new_event_handle};
+    use diem_framework::coin;
+    use diem_framework::event::{EventHandle, emit_event};
+    use diem_framework::system_addresses;
+    use diem_framework::chain_status;
     use std::error;
     use std::signer;
-    // use aptos_std::debug::print;
+    // use diem_std::debug::print;
 
     #[test_only]
     use std::vector;
     #[test_only]
-    use aptos_framework::coin::Coin;
+    use diem_framework::coin::Coin;
     #[test_only]
-    use aptos_framework::create_signer::create_signer;
+    use diem_framework::create_signer::create_signer;
 
 
 
     use ol_framework::gas_coin::GasCoin;
     use ol_framework::slow_wallet;
 
-    friend aptos_framework::genesis;
-    friend aptos_framework::resource_account;
+    friend diem_framework::genesis;
+    friend diem_framework::resource_account;
 
     /// Account does not exist.
     const EACCOUNT_NOT_FOUND: u64 = 1;
@@ -234,11 +234,11 @@ module ol_framework::ol_account {
     }
 
     #[test_only]
-    use aptos_std::from_bcs;
+    use diem_std::from_bcs;
     #[test_only]
     use std::string::utf8;
     #[test_only]
-    use aptos_framework::account::create_account_for_test;
+    use diem_framework::account::create_account_for_test;
 
     #[test_only]
     struct FakeCoin {}
@@ -280,7 +280,7 @@ module ol_framework::ol_account {
 
     #[test(from = @0x123, core = @0x1, recipient_1 = @0x124, recipient_2 = @0x125)]
     public fun test_batch_transfer(from: &signer, core: &signer, recipient_1: &signer, recipient_2: &signer) {
-        let (burn_cap, mint_cap) = aptos_framework::gas_coin::initialize_for_test(core);
+        let (burn_cap, mint_cap) = diem_framework::gas_coin::initialize_for_test(core);
         create_account(signer::address_of(from));
         let recipient_1_addr = signer::address_of(recipient_1);
         let recipient_2_addr = signer::address_of(recipient_2);

@@ -1,18 +1,18 @@
-module aptos_framework::transaction_validation {
+module diem_framework::transaction_validation {
     use std::error;
     use std::features;
     use std::signer;
     use std::vector;
 
-    use aptos_framework::account;
-    use aptos_framework::aptos_coin::AptosCoin;
-    use aptos_framework::chain_id;
-    use aptos_framework::coin;
-    use aptos_framework::system_addresses;
-    use aptos_framework::timestamp;
-    use aptos_framework::transaction_fee;
+    use diem_framework::account;
+    use diem_framework::diem_coin::DiemCoin;
+    use diem_framework::chain_id;
+    use diem_framework::coin;
+    use diem_framework::system_addresses;
+    use diem_framework::timestamp;
+    use diem_framework::transaction_fee;
 
-    friend aptos_framework::genesis;
+    friend diem_framework::genesis;
 
     /// This holds information that will be picked up by the VM to call the
     /// correct chain-specific prologue and epilogue functions
@@ -45,16 +45,16 @@ module aptos_framework::transaction_validation {
 
     /// Only called during genesis to initialize system resources for this module.
     public(friend) fun initialize(
-        aptos_framework: &signer,
+        diem_framework: &signer,
         script_prologue_name: vector<u8>,
         module_prologue_name: vector<u8>,
         multi_agent_prologue_name: vector<u8>,
         user_epilogue_name: vector<u8>,
     ) {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_diem_framework(diem_framework);
 
-        move_to(aptos_framework, TransactionValidation {
-            module_addr: @aptos_framework,
+        move_to(diem_framework, TransactionValidation {
+            module_addr: @diem_framework,
             module_name: b"transaction_validation",
             script_prologue_name,
             module_prologue_name,
@@ -105,10 +105,10 @@ module aptos_framework::transaction_validation {
 
         let max_transaction_fee = txn_gas_price * txn_max_gas_units;
         assert!(
-            coin::is_account_registered<AptosCoin>(transaction_sender),
+            coin::is_account_registered<DiemCoin>(transaction_sender),
             error::invalid_argument(PROLOGUE_ECANT_PAY_GAS_DEPOSIT),
         );
-        let balance = coin::balance<AptosCoin>(transaction_sender);
+        let balance = coin::balance<DiemCoin>(transaction_sender);
         assert!(balance >= max_transaction_fee, error::invalid_argument(PROLOGUE_ECANT_PAY_GAS_DEPOSIT));
     }
 
@@ -192,7 +192,7 @@ module aptos_framework::transaction_validation {
         // it's important to maintain the error code consistent with vm
         // to do failed transaction cleanup.
         assert!(
-            coin::balance<AptosCoin>(addr) >= transaction_fee_amount,
+            coin::balance<DiemCoin>(addr) >= transaction_fee_amount,
             error::out_of_range(PROLOGUE_ECANT_PAY_GAS_DEPOSIT),
         );
 

@@ -18,7 +18,7 @@ use zapatos_vm_genesis::{
     allow_core_resources_to_set_version, create_accounts, create_and_initialize_validators,
     create_and_initialize_validators_with_commission, create_employee_validators,
     default_gas_schedule, emit_new_block_and_epoch_event, genesis_context::GenesisStateView,
-    initialize, initialize_aptos_coin, initialize_core_resources_and_aptos_coin,
+    initialize, initialize_diem_coin, initialize_core_resources_and_diem_coin,
     initialize_features, initialize_on_chain_governance, mainnet_genesis_config, publish_framework,
     set_genesis_end, validate_genesis_config, verify_genesis_write_set, AccountBalance,
     EmployeePool, GenesisConfiguration, Validator, ValidatorWithCommissionRate, GENESIS_KEYPAIR,
@@ -97,9 +97,9 @@ pub fn encode_zapatos_recovery_genesis_change_set(
     initialize_features(&mut session);
     // dbg!(&genesis_config.is_test);
     if genesis_config.is_test {
-        initialize_core_resources_and_aptos_coin(&mut session, core_resources_key);
+        initialize_core_resources_and_diem_coin(&mut session, core_resources_key);
     } else {
-        initialize_aptos_coin(&mut session);
+        initialize_diem_coin(&mut session);
     }
     dbg!(&"initialize_on_chain_governance");
     initialize_on_chain_governance(&mut session, genesis_config);
@@ -157,7 +157,7 @@ pub fn encode_zapatos_recovery_genesis_change_set(
     change_set
 }
 
-pub fn encode_aptos_mainnet_genesis_transaction(
+pub fn encode_diem_mainnet_genesis_transaction(
     accounts: &[AccountBalance],
     employees: &[EmployeePool],
     validators: &[ValidatorWithCommissionRate],
@@ -200,7 +200,7 @@ pub fn encode_aptos_mainnet_genesis_transaction(
         &gas_schedule,
     );
     initialize_features(&mut session);
-    initialize_aptos_coin(&mut session);
+    initialize_diem_coin(&mut session);
     initialize_on_chain_governance(&mut session, genesis_config);
     create_accounts(&mut session, accounts);
     create_employee_validators(&mut session, employees, genesis_config);
@@ -262,10 +262,10 @@ pub fn test_mainnet_end_to_end() {
         write_set::{TransactionWrite, WriteSet},
     };
     use zapatos_vm_genesis::TestValidator;
-    const APTOS_COINS_BASE_WITH_DECIMALS: u64 = u64::pow(10, 8);
+    const DIEM_COINS_BASE_WITH_DECIMALS: u64 = u64::pow(10, 8);
 
-    let balance = 10_000_000 * APTOS_COINS_BASE_WITH_DECIMALS;
-    let non_validator_balance = 10 * APTOS_COINS_BASE_WITH_DECIMALS;
+    let balance = 10_000_000 * DIEM_COINS_BASE_WITH_DECIMALS;
+    let non_validator_balance = 10 * DIEM_COINS_BASE_WITH_DECIMALS;
 
     // currently just test that all functions have the right interface
     let account44 = AccountAddress::from_hex_literal("0x44").unwrap();
@@ -441,7 +441,7 @@ pub fn test_mainnet_end_to_end() {
         },
     ];
 
-    let transaction = encode_aptos_mainnet_genesis_transaction(
+    let transaction = encode_diem_mainnet_genesis_transaction(
         &accounts,
         &employees,
         &validators,

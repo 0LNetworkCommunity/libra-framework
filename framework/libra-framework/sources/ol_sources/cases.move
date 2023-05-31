@@ -12,7 +12,7 @@
 /// set and/or jailed. To be compliant, validators must be BOTH validating and mining.
 module ol_framework::cases{
     // use DiemFramework::TowerState;
-    use aptos_framework::stake;
+    use diem_framework::stake;
     use std::vector;
     use std::fixed_point32::{Self, FixedPoint32};
     // use DiemFramework::Roles; // todo v7

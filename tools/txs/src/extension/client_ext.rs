@@ -10,7 +10,7 @@ use zapatos_sdk::{
         transaction_argument::convert_txn_args,
     },
     rest_client::{
-        aptos_api_types::{EntryFunctionId, MoveType, ViewRequest},
+        diem_api_types::{EntryFunctionId, MoveType, ViewRequest},
         Account, Client,
     },
     transaction_builder::TransactionBuilder,

@@ -1,4 +1,4 @@
-spec aptos_framework::voting {
+spec diem_framework::voting {
     spec module {
         pragma verify = true;
         pragma aborts_if_is_strict;
@@ -30,7 +30,7 @@ spec aptos_framework::voting {
         early_resolution_vote_threshold: Option<u128>,
         metadata: SimpleMap<String, vector<u8>>,
     ): u64 {
-        use aptos_framework::chain_status;
+        use diem_framework::chain_status;
 
         requires chain_status::is_operating();
         include CreateProposalAbortsIf<ProposalType>{is_multi_step_proposal: false};
@@ -40,7 +40,7 @@ spec aptos_framework::voting {
     /// Make sure the execution script's hash is not empty.
     /// VotingForum<ProposalType> existed under the voting_forum_address.
     /// The next_proposal_id in VotingForum is up to MAX_U64.
-    /// CurrentTimeMicroseconds existed under the @aptos_framework.
+    /// CurrentTimeMicroseconds existed under the @diem_framework.
     spec create_proposal_v2<ProposalType: store>(
         proposer: address,
         voting_forum_address: address,
@@ -52,7 +52,7 @@ spec aptos_framework::voting {
         metadata: SimpleMap<String, vector<u8>>,
         is_multi_step_proposal: bool,
     ): u64 {
-        use aptos_framework::chain_status;
+        use diem_framework::chain_status;
 
         requires chain_status::is_operating();
         include CreateProposalAbortsIf<ProposalType>;
@@ -89,7 +89,7 @@ spec aptos_framework::voting {
         num_votes: u64,
         should_pass: bool,
     ) {
-        use aptos_framework::chain_status;
+        use diem_framework::chain_status;
         requires chain_status::is_operating(); // Ensures existence of Timestamp
 
         aborts_if !exists<VotingForum<ProposalType>>(voting_forum_address);
@@ -114,7 +114,7 @@ spec aptos_framework::voting {
         voting_forum_address: address,
         proposal_id: u64,
     ) {
-        use aptos_framework::chain_status;
+        use diem_framework::chain_status;
 
         requires chain_status::is_operating(); // Ensures existence of Timestamp
 
@@ -128,7 +128,7 @@ spec aptos_framework::voting {
         voting_forum_address: address,
         proposal_id: u64,
     ): ProposalType {
-        use aptos_framework::chain_status;
+        use diem_framework::chain_status;
         requires chain_status::is_operating(); // Ensures existence of Timestamp
 
         pragma aborts_if_is_partial;
@@ -141,7 +141,7 @@ spec aptos_framework::voting {
         proposal_id: u64,
         next_execution_hash: vector<u8>,
     ) {
-        use aptos_framework::chain_status;
+        use diem_framework::chain_status;
         requires chain_status::is_operating(); // Ensures existence of Timestamp
 
         pragma aborts_if_is_partial;
@@ -151,7 +151,7 @@ spec aptos_framework::voting {
     }
 
     spec is_voting_closed<ProposalType: store>(voting_forum_address: address, proposal_id: u64): bool {
-        use aptos_framework::chain_status;
+        use diem_framework::chain_status;
         requires chain_status::is_operating(); // Ensures existence of Timestamp
         include AbortsIfNotContainProposalID<ProposalType>;
     }
@@ -164,7 +164,7 @@ spec aptos_framework::voting {
         voting_forum_address: address,
         proposal_id: u64,
     ): u64 {
-        use aptos_framework::chain_status;
+        use diem_framework::chain_status;
         requires chain_status::is_operating(); // Ensures existence of Timestamp
         // Addition of yes_votes and no_votes might overflow.
         pragma addition_overflow_unchecked;
@@ -215,11 +215,11 @@ spec aptos_framework::voting {
         aborts_if !simple_map::spec_contains_key(proposal.metadata,execution_key);
 
         let is_multi_step_in_execution_key = simple_map::spec_get(proposal.metadata,execution_key);
-        aborts_if !aptos_std::from_bcs::deserializable<bool>(is_multi_step_in_execution_key);
+        aborts_if !diem_std::from_bcs::deserializable<bool>(is_multi_step_in_execution_key);
     }
 
     spec is_voting_period_over<ProposalType: store>(proposal: &Proposal<ProposalType>): bool {
-        use aptos_framework::chain_status;
+        use diem_framework::chain_status;
         requires chain_status::is_operating();
         aborts_if false;
     }

@@ -7,7 +7,7 @@ module ol_framework::test_stake {
   use ol_framework::testnet;
   use ol_framework::cases;
 
-  // use aptos_std::debug::print;
+  // use diem_std::debug::print;
 
   // Scenario: can take 6 already initialized validators, from a previous set
   // and reduce the set to 3 of those validators.

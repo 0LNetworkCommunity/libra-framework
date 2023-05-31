@@ -4,7 +4,7 @@ module ol_framework::test_jail {
     use std::vector;
     use ol_framework::mock;
     use ol_framework::jail;
-    // use aptos_std::debug::print;
+    // use diem_std::debug::print;
 
     #[test(root = @ol_framework)]
     public entry fun jail_reputation(root: signer) {

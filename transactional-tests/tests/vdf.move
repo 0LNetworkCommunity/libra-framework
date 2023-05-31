@@ -4,8 +4,8 @@
 
 //# run --script --signers Alice
 script {
-  use aptos_framework::vdf; // todo
-  use aptos_framework::test_fixtures; // todo
+  use diem_framework::vdf; // todo
+  use diem_framework::test_fixtures; // todo
 
   fun main() {
     // Scenario: Bob, an existing validator, is sending a transaction for Eve, 

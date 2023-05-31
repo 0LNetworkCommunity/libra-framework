@@ -1,4 +1,4 @@
-// Copyright © Aptos Foundation
+// Copyright © Diem Foundation
 // SPDX-License-Identifier: Apache-2.0
 
 #![forbid(unsafe_code)]
@@ -57,18 +57,18 @@ impl ReleaseTarget {
     pub fn packages(self) -> Vec<(&'static str, Option<&'static str>)> {
         let result = vec![
             // ("move-stdlib", None),
-            // ("aptos-stdlib", None),
+            // ("diem-stdlib", None),
             (
                 "libra-framework",
-                Some("cached-packages/src/aptos_framework_sdk_builder.rs"),
+                Some("cached-packages/src/diem_framework_sdk_builder.rs"),
             ),
             // (
-            //     "aptos-token",
-            //     Some("cached-packages/src/aptos_token_sdk_builder.rs"),
+            //     "diem-token",
+            //     Some("cached-packages/src/diem_token_sdk_builder.rs"),
             // ),
             // (
-            //     "aptos-token-objects",
-            //     Some("cached-packages/src/aptos_token_objects_sdk_builder.rs"),
+            //     "diem-token-objects",
+            //     Some("cached-packages/src/diem_token_objects_sdk_builder.rs"),
             // ),
         ];
         // Currently we don't have experimental packages only included in particular targets.
@@ -176,10 +176,10 @@ static NAMED_ADDRESSES: Lazy<BTreeMap<String, NumericalAddress>> = Lazy::new(|| 
     let four = NumericalAddress::parse_str("0x4").unwrap();
     let resources = NumericalAddress::parse_str("0xA550C18").unwrap();
     result.insert("std".to_owned(), one);
-    result.insert("aptos_std".to_owned(), one);
-    result.insert("aptos_framework".to_owned(), one);
-    result.insert("aptos_token".to_owned(), three);
-    result.insert("aptos_token_objects".to_owned(), four);
+    result.insert("diem_std".to_owned(), one);
+    result.insert("diem_framework".to_owned(), one);
+    result.insert("diem_token".to_owned(), three);
+    result.insert("diem_token_objects".to_owned(), four);
     result.insert("core_resources".to_owned(), resources);
     result.insert("vm_reserved".to_owned(), zero);
     result.insert("ol_framework".to_owned(), four); /////// 0L /////////

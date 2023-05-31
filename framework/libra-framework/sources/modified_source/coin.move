@@ -1,23 +1,23 @@
 /// This module provides the foundation for typesafe Coins.
-module aptos_framework::coin {
+module diem_framework::coin {
     use std::string;
     use std::error;
     use std::option::{Self, Option};
     use std::signer;
 
-    use aptos_framework::account;
-    use aptos_framework::aggregator_factory;
-    use aptos_framework::aggregator::{Self, Aggregator};
-    use aptos_framework::event::{Self, EventHandle};
-    use aptos_framework::optional_aggregator::{Self, OptionalAggregator};
-    use aptos_framework::system_addresses;
+    use diem_framework::account;
+    use diem_framework::aggregator_factory;
+    use diem_framework::aggregator::{Self, Aggregator};
+    use diem_framework::event::{Self, EventHandle};
+    use diem_framework::optional_aggregator::{Self, OptionalAggregator};
+    use diem_framework::system_addresses;
 
-    use aptos_std::type_info;
+    use diem_std::type_info;
 
     friend ol_framework::gas_coin;
-    friend aptos_framework::aptos_coin;
-    friend aptos_framework::genesis;
-    friend aptos_framework::transaction_fee;
+    friend diem_framework::diem_coin;
+    friend diem_framework::genesis;
+    friend diem_framework::transaction_fee;
 
     //
     // Errors.
@@ -79,7 +79,7 @@ module aptos_framework::coin {
 
     /// Represents a coin with aggregator as its value. This allows to update
     /// the coin in every transaction avoiding read-modify-write conflicts. Only
-    /// used for gas fees distribution by Aptos Framework (0x1).
+    /// used for gas fees distribution by Diem Framework (0x1).
     struct AggregatableCoin<phantom CoinType> has store {
         /// Amount of aggregatable coin this address has.
         value: Aggregator,
@@ -144,16 +144,16 @@ module aptos_framework::coin {
     //
 
     /// Publishes supply configuration. Initially, upgrading is not allowed.
-    public(friend) fun initialize_supply_config(aptos_framework: &signer) {
-        system_addresses::assert_aptos_framework(aptos_framework);
-        move_to(aptos_framework, SupplyConfig { allow_upgrades: false });
+    public(friend) fun initialize_supply_config(diem_framework: &signer) {
+        system_addresses::assert_diem_framework(diem_framework);
+        move_to(diem_framework, SupplyConfig { allow_upgrades: false });
     }
 
     /// This should be called by on-chain governance to update the config and allow
     // or disallow upgradability of total supply.
-    public fun allow_supply_upgrades(aptos_framework: &signer, allowed: bool) acquires SupplyConfig {
-        system_addresses::assert_aptos_framework(aptos_framework);
-        let allow_upgrades = &mut borrow_global_mut<SupplyConfig>(@aptos_framework).allow_upgrades;
+    public fun allow_supply_upgrades(diem_framework: &signer, allowed: bool) acquires SupplyConfig {
+        system_addresses::assert_diem_framework(diem_framework);
+        let allow_upgrades = &mut borrow_global_mut<SupplyConfig>(@diem_framework).allow_upgrades;
         *allow_upgrades = allowed;
     }
 
@@ -162,9 +162,9 @@ module aptos_framework::coin {
     //
 
     /// Creates a new aggregatable coin with value overflowing on `limit`. Note that this function can
-    /// only be called by Aptos Framework (0x1) account for now becuase of `create_aggregator`.
-    public(friend) fun initialize_aggregatable_coin<CoinType>(aptos_framework: &signer): AggregatableCoin<CoinType> {
-        let aggregator = aggregator_factory::create_aggregator(aptos_framework, MAX_U64);
+    /// only be called by Diem Framework (0x1) account for now becuase of `create_aggregator`.
+    public(friend) fun initialize_aggregatable_coin<CoinType>(diem_framework: &signer): AggregatableCoin<CoinType> {
+        let aggregator = aggregator_factory::create_aggregator(diem_framework, MAX_U64);
         AggregatableCoin<CoinType> {
             value: aggregator,
         }
@@ -412,7 +412,7 @@ module aptos_framework::coin {
 
         // Can only succeed once on-chain governance agreed on the upgrade.
         assert!(
-            borrow_global_mut<SupplyConfig>(@aptos_framework).allow_upgrades,
+            borrow_global_mut<SupplyConfig>(@diem_framework).allow_upgrades,
             error::permission_denied(ECOIN_SUPPLY_UPGRADE_NOT_SUPPORTED)
         );
 
@@ -448,7 +448,7 @@ module aptos_framework::coin {
         decimals: u8,
         monitor_supply: bool,
     ): (BurnCapability<CoinType>, FreezeCapability<CoinType>, MintCapability<CoinType>) {
-        system_addresses::assert_aptos_framework(account);
+        system_addresses::assert_diem_framework(account);
         initialize_internal(account, name, symbol, decimals, monitor_supply, true)
     }
 
@@ -737,7 +737,7 @@ module aptos_framework::coin {
         });
     }
 
-    #[test(source = @0x2, framework = @aptos_framework)]
+    #[test(source = @0x2, framework = @diem_framework)]
     #[expected_failure(abort_code = 0x10001, location = Self)]
     public fun fail_initialize(source: signer, framework: signer) {
         aggregator_factory::initialize_aggregator_factory_for_test(&framework);
@@ -979,14 +979,14 @@ module aptos_framework::coin {
         });
     }
 
-    #[test(framework = @aptos_framework, other = @0x123)]
-    #[expected_failure(abort_code = 0x50003, location = aptos_framework::system_addresses)]
+    #[test(framework = @diem_framework, other = @0x123)]
+    #[expected_failure(abort_code = 0x50003, location = diem_framework::system_addresses)]
     fun test_supply_initialize_fails(framework: signer, other: signer) {
         aggregator_factory::initialize_aggregator_factory_for_test(&framework);
         initialize_with_aggregator(&other);
     }
 
-    #[test(framework = @aptos_framework)]
+    #[test(framework = @diem_framework)]
     fun test_supply_initialize(framework: signer) acquires CoinInfo {
         aggregator_factory::initialize_aggregator_factory_for_test(&framework);
         initialize_with_aggregator(&framework);
@@ -1003,8 +1003,8 @@ module aptos_framework::coin {
         assert!(optional_aggregator::read(supply) == 1000, 0);
     }
 
-    #[test(framework = @aptos_framework)]
-    #[expected_failure(abort_code = 0x20001, location = aptos_framework::aggregator)]
+    #[test(framework = @diem_framework)]
+    #[expected_failure(abort_code = 0x20001, location = diem_framework::aggregator)]
     fun test_supply_overflow(framework: signer) acquires CoinInfo {
         aggregator_factory::initialize_aggregator_factory_for_test(&framework);
         initialize_with_aggregator(&framework);
@@ -1017,8 +1017,8 @@ module aptos_framework::coin {
         optional_aggregator::sub(supply, 1);
     }
 
-    #[test(framework = @aptos_framework)]
-    #[expected_failure(abort_code = 0x5000B, location = aptos_framework::coin)]
+    #[test(framework = @diem_framework)]
+    #[expected_failure(abort_code = 0x5000B, location = diem_framework::coin)]
     fun test_supply_upgrade_fails(framework: signer) acquires CoinInfo, SupplyConfig {
         initialize_supply_config(&framework);
         aggregator_factory::initialize_aggregator_factory_for_test(&framework);
@@ -1038,7 +1038,7 @@ module aptos_framework::coin {
         upgrade_supply<FakeMoney>(&framework);
     }
 
-    #[test(framework = @aptos_framework)]
+    #[test(framework = @diem_framework)]
     fun test_supply_upgrade(framework: signer) acquires CoinInfo, SupplyConfig {
         initialize_supply_config(&framework);
         aggregator_factory::initialize_aggregator_factory_for_test(&framework);
@@ -1067,7 +1067,7 @@ module aptos_framework::coin {
         aggregator::destroy(value);
     }
 
-    #[test(framework = @aptos_framework)]
+    #[test(framework = @diem_framework)]
     public entry fun test_register_twice_should_not_fail(framework: &signer) {
         let framework_addr = signer::address_of(framework);
         account::create_account_for_test(framework_addr);
@@ -1085,7 +1085,7 @@ module aptos_framework::coin {
         });
     }
 
-    #[test(framework = @aptos_framework)]
+    #[test(framework = @diem_framework)]
     public entry fun test_collect_from_and_drain(
         framework: signer,
     ) acquires CoinInfo, CoinStore {

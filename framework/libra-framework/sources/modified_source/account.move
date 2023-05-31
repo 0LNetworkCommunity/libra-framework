@@ -1,29 +1,29 @@
-module aptos_framework::account {
+module diem_framework::account {
     use std::bcs;
     use std::error;
     use std::hash;
     use std::option::{Self, Option};
     use std::signer;
     use std::vector;
-    use aptos_framework::chain_id;
-    use aptos_framework::create_signer::create_signer;
-    use aptos_framework::event::{Self, EventHandle};
-    use aptos_framework::guid;
-    use aptos_framework::system_addresses;
-    use aptos_std::ed25519;
-    use aptos_std::from_bcs;
-    use aptos_std::multi_ed25519;
-    use aptos_std::table::{Self, Table};
-    use aptos_std::type_info::{Self, TypeInfo};
+    use diem_framework::chain_id;
+    use diem_framework::create_signer::create_signer;
+    use diem_framework::event::{Self, EventHandle};
+    use diem_framework::guid;
+    use diem_framework::system_addresses;
+    use diem_std::ed25519;
+    use diem_std::from_bcs;
+    use diem_std::multi_ed25519;
+    use diem_std::table::{Self, Table};
+    use diem_std::type_info::{Self, TypeInfo};
 
-    // use aptos_std::debug::print;
+    // use diem_std::debug::print;
 
 
-    friend aptos_framework::aptos_account;
-    friend aptos_framework::coin;
-    friend aptos_framework::genesis;
-    friend aptos_framework::resource_account;
-    friend aptos_framework::transaction_validation;
+    friend diem_framework::diem_account;
+    friend diem_framework::coin;
+    friend diem_framework::genesis;
+    friend diem_framework::resource_account;
+    friend diem_framework::transaction_validation;
     //////// 0L ////////
     friend ol_framework::ol_account;
     /// Resource representing an account.
@@ -141,7 +141,7 @@ module aptos_framework::account {
     const ENO_CAPABILITY: u64 = 9;
     /// The caller does not have a valid rotation capability offer from the other account
     const EINVALID_ACCEPT_ROTATION_CAPABILITY: u64 = 10;
-    /// Address to create is not a valid reserved address for Aptos framework
+    /// Address to create is not a valid reserved address for Diem framework
     const ENO_VALID_FRAMEWORK_RESERVED_ADDRESS: u64 = 11;
     /// Specified scheme required to proceed with the smart contract operation - can only be ED25519_SCHEME(0) OR MULTI_ED25519_SCHEME(1)
     const EINVALID_SCHEME: u64 = 12;
@@ -165,13 +165,13 @@ module aptos_framework::account {
     /// Explicitly separate the GUID space between Object and Account to prevent accidental overlap.
     const MAX_GUID_CREATION_NUM: u64 = 0x4000000000000;
     #[test_only]
-    /// Create signer for testing, independently of an Aptos-style `Account`.
+    /// Create signer for testing, independently of an Diem-style `Account`.
     public fun create_signer_for_test(addr: address): signer { create_signer(addr) }
 
     /// Only called during genesis to initialize system resources for this module.
-    public(friend) fun initialize(aptos_framework: &signer) {
-        system_addresses::assert_aptos_framework(aptos_framework);
-        move_to(aptos_framework, OriginatingAddress {
+    public(friend) fun initialize(diem_framework: &signer) {
+        system_addresses::assert_diem_framework(diem_framework);
+        move_to(diem_framework, OriginatingAddress {
             address_map: table::new(),
         });
     }
@@ -192,7 +192,7 @@ module aptos_framework::account {
 
         // NOTE: @core_resources gets created via a `create_account` call, so we do not include it below.
         assert!(
-            new_address != @vm_reserved && new_address != @aptos_framework && new_address != @aptos_token,
+            new_address != @vm_reserved && new_address != @diem_framework && new_address != @diem_token,
             error::invalid_argument(ECANNOT_RESERVED_ADDRESS)
         );
 
@@ -236,7 +236,7 @@ module aptos_framework::account {
 
         // NOTE: @core_resources gets created via a `create_account` call, so we do not include it below.
         assert!(
-            new_address != @vm_reserved && new_address != @aptos_framework && new_address != @aptos_token,
+            new_address != @vm_reserved && new_address != @diem_framework && new_address != @diem_token,
             error::invalid_argument(ECANNOT_RESERVED_ADDRESS)
         );
 
@@ -597,7 +597,7 @@ module aptos_framework::account {
         account_resource: &mut Account,
         new_auth_key_vector: vector<u8>,
     ) acquires OriginatingAddress {
-        let address_map = &mut borrow_global_mut<OriginatingAddress>(@aptos_framework).address_map;
+        let address_map = &mut borrow_global_mut<OriginatingAddress>(@diem_framework).address_map;
         let curr_auth_key = from_bcs::to_address(account_resource.authentication_key);
 
         // Checks `OriginatingAddress[curr_auth_key]` is either unmapped, or mapped to `originating_address`.
@@ -646,10 +646,10 @@ module aptos_framework::account {
     }
 
     /// A resource account is used to manage resources independent of an account managed by a user.
-    /// In Aptos a resource account is created based upon the sha3 256 of the source's address and additional seed data.
+    /// In Diem a resource account is created based upon the sha3 256 of the source's address and additional seed data.
     /// A resource account can only be created once, this is designated by setting the
     /// `Account::signer_capability_offer::for` to the address of the resource account. While an entity may call
-    /// `create_account` to attempt to claim an account ahead of the creation of a resource account, if found Aptos will
+    /// `create_account` to attempt to claim an account ahead of the creation of a resource account, if found Diem will
     /// transition ownership of the account over to the resource account. This is done by validating that the account has
     /// yet to execute any transactions and that the `Account::signer_capability_offer::for` is none. The probability of a
     /// collision where someone has legitimately produced a private key that maps to a resource account address is less
@@ -800,7 +800,7 @@ module aptos_framework::account {
     #[test]
     /// Assert correct signer creation.
     fun test_create_signer_for_test() {
-        assert!(signer::address_of(&create_signer_for_test(@aptos_framework)) == @0x1, 0);
+        assert!(signer::address_of(&create_signer_for_test(@diem_framework)) == @0x1, 0);
         assert!(signer::address_of(&create_signer_for_test(@0x123)) == @0x123, 0);
     }
 
@@ -933,7 +933,7 @@ module aptos_framework::account {
     ///////////////////////////////////////////////////////////////////////////
 
     #[test(alice = @0xa11ce)]
-    #[expected_failure(abort_code = 65537, location = aptos_framework::ed25519)]
+    #[expected_failure(abort_code = 65537, location = diem_framework::ed25519)]
     public entry fun test_empty_public_key(alice: signer) acquires Account, OriginatingAddress {
         create_account(signer::address_of(&alice));
         let pk = vector::empty<u8>();
@@ -1118,7 +1118,7 @@ module aptos_framework::account {
     //
     // Tests for offering rotation capabilities
     //
-    #[test(bob = @0x345, framework = @aptos_framework)]
+    #[test(bob = @0x345, framework = @diem_framework)]
     public entry fun test_valid_offer_rotation_capability(bob: signer, framework: signer) acquires Account {
         chain_id::initialize_for_test(&framework, 4);
         let (alice_sk, alice_pk) = ed25519::generate_keys();
@@ -1144,7 +1144,7 @@ module aptos_framework::account {
         assert!(option::contains(&alice_resource.rotation_capability_offer.for, &bob_addr), 0);
     }
 
-    #[test(bob = @0x345, framework = @aptos_framework)]
+    #[test(bob = @0x345, framework = @diem_framework)]
     #[expected_failure(abort_code = 65544, location = Self)]
     public entry fun test_invalid_offer_rotation_capability(bob: signer, framework: signer) acquires Account {
         chain_id::initialize_for_test(&framework, 4);
@@ -1169,7 +1169,7 @@ module aptos_framework::account {
         offer_rotation_capability(&alice, ed25519::signature_to_bytes(&alice_rotation_capability_offer_sig), 0, alice_pk_bytes, signer::address_of(&bob));
     }
 
-    #[test(bob = @0x345, framework = @aptos_framework)]
+    #[test(bob = @0x345, framework = @diem_framework)]
     public entry fun test_valid_revoke_rotation_capability(bob: signer, framework: signer) acquires Account {
         chain_id::initialize_for_test(&framework, 4);
         let (alice_sk, alice_pk) = ed25519::generate_keys();
@@ -1193,7 +1193,7 @@ module aptos_framework::account {
         revoke_rotation_capability(&alice, signer::address_of(&bob));
     }
 
-    #[test(bob = @0x345, charlie = @0x567, framework = @aptos_framework)]
+    #[test(bob = @0x345, charlie = @0x567, framework = @diem_framework)]
     #[expected_failure(abort_code = 393234, location = Self)]
     public entry fun test_invalid_revoke_rotation_capability(bob: signer, charlie: signer, framework: signer) acquires Account {
         chain_id::initialize_for_test(&framework, 4);
@@ -1223,7 +1223,7 @@ module aptos_framework::account {
     // Tests for key rotation
     //
 
-    #[test(account = @aptos_framework)]
+    #[test(account = @diem_framework)]
     public entry fun test_valid_rotate_authentication_key_multi_ed25519_to_multi_ed25519(account: signer) acquires Account, OriginatingAddress {
         initialize(&account);
         let (curr_sk, curr_pk) = multi_ed25519::generate_keys(2, 3);
@@ -1256,13 +1256,13 @@ module aptos_framework::account {
             multi_ed25519::signature_to_bytes(&from_sig),
             multi_ed25519::signature_to_bytes(&to_sig),
         );
-        let address_map = &mut borrow_global_mut<OriginatingAddress>(@aptos_framework).address_map;
+        let address_map = &mut borrow_global_mut<OriginatingAddress>(@diem_framework).address_map;
         let expected_originating_address = table::borrow(address_map, new_address);
         assert!(*expected_originating_address == alice_addr, 0);
         assert!(borrow_global<Account>(alice_addr).authentication_key == new_auth_key, 0);
     }
 
-    #[test(account = @aptos_framework)]
+    #[test(account = @diem_framework)]
     public entry fun test_valid_rotate_authentication_key_multi_ed25519_to_ed25519(account: signer) acquires Account, OriginatingAddress {
         initialize(&account);
 
@@ -1299,13 +1299,13 @@ module aptos_framework::account {
             ed25519::signature_to_bytes(&to_sig),
         );
 
-        let address_map = &mut borrow_global_mut<OriginatingAddress>(@aptos_framework).address_map;
+        let address_map = &mut borrow_global_mut<OriginatingAddress>(@diem_framework).address_map;
         let expected_originating_address = table::borrow(address_map, new_addr);
         assert!(*expected_originating_address == alice_addr, 0);
         assert!(borrow_global<Account>(alice_addr).authentication_key == new_auth_key, 0);
     }
 
-    #[test(account = @aptos_framework)]
+    #[test(account = @diem_framework)]
     #[expected_failure(abort_code = 0x20014, location = Self)]
     public entry fun test_max_guid(account: &signer) acquires Account {
         let addr = signer::address_of(account);

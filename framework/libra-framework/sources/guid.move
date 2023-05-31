@@ -1,7 +1,7 @@
 /// A module for generating globally unique identifiers
-module aptos_framework::guid {
-    friend aptos_framework::account;
-    friend aptos_framework::object;
+module diem_framework::guid {
+    friend diem_framework::account;
+    friend diem_framework::object;
 
     /// A globally unique identifier derived from the sender's address and a counter
     struct GUID has drop, store {

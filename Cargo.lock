@@ -251,42 +251,42 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos"
+name = "diem"
 version = "1.0.11"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-backup-cli",
- "aptos-bitvec",
- "aptos-build-info",
- "aptos-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
- "aptos-config",
- "aptos-crypto",
- "aptos-db-tool",
- "aptos-debugger",
- "aptos-faucet-core",
- "aptos-framework",
- "aptos-gas",
- "aptos-gas-profiling",
- "aptos-genesis",
- "aptos-github-client",
- "aptos-global-constants",
- "aptos-keygen",
- "aptos-logger",
- "aptos-network-checker",
- "aptos-node",
- "aptos-rest-client",
- "aptos-sdk",
- "aptos-storage-interface",
- "aptos-telemetry",
- "aptos-temppath",
- "aptos-transactional-test-harness",
- "aptos-types",
- "aptos-vm",
- "aptos-vm-genesis",
+ "diem-backup-cli",
+ "diem-bitvec",
+ "diem-build-info",
+ "diem-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
+ "diem-config",
+ "diem-crypto",
+ "diem-db-tool",
+ "diem-debugger",
+ "diem-faucet-core",
+ "diem-framework",
+ "diem-gas",
+ "diem-gas-profiling",
+ "diem-genesis",
+ "diem-github-client",
+ "diem-global-constants",
+ "diem-keygen",
+ "diem-logger",
+ "diem-network-checker",
+ "diem-node",
+ "diem-rest-client",
+ "diem-sdk",
+ "diem-storage-interface",
+ "diem-telemetry",
+ "diem-temppath",
+ "diem-transactional-test-harness",
+ "diem-types",
+ "diem-vm",
+ "diem-vm-genesis",
  "async-trait",
  "base64",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "chrono",
  "clap 3.2.23",
  "clap_complete",
@@ -327,25 +327,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-accumulator"
+name = "diem-accumulator"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-crypto",
- "aptos-types",
+ "diem-crypto",
+ "diem-types",
 ]
 
 [[package]]
-name = "aptos-aggregator"
+name = "diem-aggregator"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-crypto",
- "aptos-state-view",
- "aptos-types",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-crypto",
+ "diem-state-view",
+ "diem-types",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "better_any",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
  "move-core-types 0.0.4",
@@ -355,26 +355,26 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-api"
+name = "diem-api"
 version = "0.2.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-api-types",
- "aptos-build-info",
- "aptos-config",
- "aptos-crypto",
- "aptos-gas",
- "aptos-logger",
- "aptos-mempool",
- "aptos-metrics-core",
- "aptos-runtimes",
- "aptos-state-view",
- "aptos-storage-interface",
- "aptos-types",
- "aptos-vm",
+ "diem-api-types",
+ "diem-build-info",
+ "diem-config",
+ "diem-crypto",
+ "diem-gas",
+ "diem-logger",
+ "diem-mempool",
+ "diem-metrics-core",
+ "diem-runtimes",
+ "diem-state-view",
+ "diem-storage-interface",
+ "diem-types",
+ "diem-vm",
  "async-trait",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "bytes",
  "fail 0.5.0",
  "futures",
@@ -396,21 +396,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-api-types"
+name = "diem-api-types"
 version = "0.0.1"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-config",
- "aptos-crypto",
- "aptos-framework",
- "aptos-logger",
- "aptos-openapi",
- "aptos-storage-interface",
- "aptos-types",
- "aptos-vm",
+ "diem-config",
+ "diem-crypto",
+ "diem-framework",
+ "diem-logger",
+ "diem-openapi",
+ "diem-storage-interface",
+ "diem-types",
+ "diem-vm",
  "async-trait",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "hex",
  "indoc 1.0.7",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
@@ -423,28 +423,28 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-backup-cli"
+name = "diem-backup-cli"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-config",
- "aptos-crypto",
- "aptos-db",
- "aptos-executor",
- "aptos-executor-test-helpers",
- "aptos-executor-types",
- "aptos-infallible",
- "aptos-jellyfish-merkle",
- "aptos-logger",
- "aptos-push-metrics",
- "aptos-scratchpad",
- "aptos-storage-interface",
- "aptos-temppath",
- "aptos-types",
- "aptos-vm",
+ "diem-config",
+ "diem-crypto",
+ "diem-db",
+ "diem-executor",
+ "diem-executor-test-helpers",
+ "diem-executor-types",
+ "diem-infallible",
+ "diem-jellyfish-merkle",
+ "diem-logger",
+ "diem-push-metrics",
+ "diem-scratchpad",
+ "diem-storage-interface",
+ "diem-temppath",
+ "diem-types",
+ "diem-vm",
  "async-trait",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "bytes",
  "clap 3.2.23",
  "csv",
@@ -468,19 +468,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-backup-service"
+name = "diem-backup-service"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-crypto",
- "aptos-db",
- "aptos-logger",
- "aptos-metrics-core",
- "aptos-runtimes",
- "aptos-storage-interface",
- "aptos-types",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-crypto",
+ "diem-db",
+ "diem-logger",
+ "diem-metrics-core",
+ "diem-runtimes",
+ "diem-storage-interface",
+ "diem-types",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "bytes",
  "hyper",
  "once_cell",
@@ -490,7 +490,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-bitvec"
+name = "diem-bitvec"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
@@ -499,21 +499,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-block-executor"
+name = "diem-block-executor"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-aggregator",
- "aptos-infallible",
- "aptos-logger",
- "aptos-metrics-core",
- "aptos-mvhashmap",
- "aptos-state-view",
- "aptos-types",
- "aptos-vm-logging",
+ "diem-aggregator",
+ "diem-infallible",
+ "diem-logger",
+ "diem-metrics-core",
+ "diem-mvhashmap",
+ "diem-state-view",
+ "diem-types",
+ "diem-vm-logging",
  "arc-swap",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "crossbeam",
  "dashmap",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
@@ -524,7 +524,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-bounded-executor"
+name = "diem-bounded-executor"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
@@ -533,7 +533,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-build-info"
+name = "diem-build-info"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
@@ -541,12 +541,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-cached-packages"
+name = "diem-cached-packages"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "aptos-framework",
- "aptos-types",
+ "diem-framework",
+ "diem-types",
  "bcs 0.1.3",
  "clap 4.3.0",
  "include_dir 0.7.2",
@@ -558,57 +558,57 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-cached-packages"
+name = "diem-cached-packages"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-framework",
- "aptos-types",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-framework",
+ "diem-types",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "include_dir 0.7.2",
  "move-core-types 0.0.4",
  "once_cell",
 ]
 
 [[package]]
-name = "aptos-channels"
+name = "diem-channels"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-infallible",
- "aptos-logger",
- "aptos-metrics-core",
+ "diem-infallible",
+ "diem-logger",
+ "diem-metrics-core",
  "futures",
 ]
 
 [[package]]
-name = "aptos-compression"
+name = "diem-compression"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-logger",
- "aptos-metrics-core",
+ "diem-logger",
+ "diem-metrics-core",
  "lz4",
  "once_cell",
  "thiserror",
 ]
 
 [[package]]
-name = "aptos-config"
+name = "diem-config"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-crypto",
- "aptos-crypto-derive",
- "aptos-global-constants",
- "aptos-logger",
- "aptos-secure-storage",
- "aptos-short-hex-str",
- "aptos-temppath",
- "aptos-types",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-crypto",
+ "diem-crypto-derive",
+ "diem-global-constants",
+ "diem-logger",
+ "diem-secure-storage",
+ "diem-short-hex-str",
+ "diem-temppath",
+ "diem-types",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "byteorder",
  "cfg-if 1.0.0",
  "get_if_addrs",
@@ -622,41 +622,41 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-consensus"
+name = "diem-consensus"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-bitvec",
- "aptos-bounded-executor",
- "aptos-channels",
- "aptos-config",
- "aptos-consensus-notifications",
- "aptos-consensus-types",
- "aptos-crypto",
- "aptos-crypto-derive",
- "aptos-event-notifications",
- "aptos-executor",
- "aptos-executor-types",
- "aptos-fallible",
- "aptos-global-constants",
- "aptos-infallible",
- "aptos-logger",
- "aptos-mempool",
- "aptos-metrics-core",
- "aptos-network",
- "aptos-runtimes",
- "aptos-safety-rules",
- "aptos-schemadb",
- "aptos-secure-storage",
- "aptos-short-hex-str",
- "aptos-storage-interface",
- "aptos-temppath",
- "aptos-types",
- "aptos-vm",
+ "diem-bitvec",
+ "diem-bounded-executor",
+ "diem-channels",
+ "diem-config",
+ "diem-consensus-notifications",
+ "diem-consensus-types",
+ "diem-crypto",
+ "diem-crypto-derive",
+ "diem-event-notifications",
+ "diem-executor",
+ "diem-executor-types",
+ "diem-fallible",
+ "diem-global-constants",
+ "diem-infallible",
+ "diem-logger",
+ "diem-mempool",
+ "diem-metrics-core",
+ "diem-network",
+ "diem-runtimes",
+ "diem-safety-rules",
+ "diem-schemadb",
+ "diem-secure-storage",
+ "diem-short-hex-str",
+ "diem-storage-interface",
+ "diem-temppath",
+ "diem-types",
+ "diem-vm",
  "arc-swap",
  "async-trait",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "byteorder",
  "bytes",
  "chrono",
@@ -682,13 +682,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-consensus-notifications"
+name = "diem-consensus-notifications"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-crypto",
- "aptos-runtimes",
- "aptos-types",
+ "diem-crypto",
+ "diem-runtimes",
+ "diem-types",
  "async-trait",
  "futures",
  "serde 1.0.163",
@@ -697,19 +697,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-consensus-types"
+name = "diem-consensus-types"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-bitvec",
- "aptos-crypto",
- "aptos-crypto-derive",
- "aptos-executor-types",
- "aptos-infallible",
- "aptos-short-hex-str",
- "aptos-types",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-bitvec",
+ "diem-crypto",
+ "diem-crypto-derive",
+ "diem-executor-types",
+ "diem-infallible",
+ "diem-short-hex-str",
+ "diem-types",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "futures",
  "itertools",
  "mirai-annotations",
@@ -720,11 +720,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-crash-handler"
+name = "diem-crash-handler"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-logger",
+ "diem-logger",
  "backtrace",
  "move-core-types 0.0.4",
  "serde 1.0.163",
@@ -732,16 +732,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-crypto"
+name = "diem-crypto"
 version = "0.0.3"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-crypto-derive",
+ "diem-crypto-derive",
  "ark-ec",
  "ark-ff",
  "ark-std",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "blst",
  "bytes",
  "curve25519-dalek",
@@ -769,7 +769,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-crypto-derive"
+name = "diem-crypto-derive"
 version = "0.0.3"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
@@ -779,22 +779,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-data-client"
+name = "diem-data-client"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-config",
- "aptos-crypto",
- "aptos-id-generator",
- "aptos-infallible",
- "aptos-logger",
- "aptos-metrics-core",
- "aptos-netcore",
- "aptos-network",
- "aptos-storage-service-client",
- "aptos-storage-service-types",
- "aptos-time-service",
- "aptos-types",
+ "diem-config",
+ "diem-crypto",
+ "diem-id-generator",
+ "diem-infallible",
+ "diem-logger",
+ "diem-metrics-core",
+ "diem-netcore",
+ "diem-network",
+ "diem-storage-service-client",
+ "diem-storage-service-types",
+ "diem-time-service",
+ "diem-types",
  "async-trait",
  "futures",
  "itertools",
@@ -805,21 +805,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-data-streaming-service"
+name = "diem-data-streaming-service"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-channels",
- "aptos-config",
- "aptos-crypto",
- "aptos-data-client",
- "aptos-id-generator",
- "aptos-infallible",
- "aptos-logger",
- "aptos-metrics-core",
- "aptos-network",
- "aptos-short-hex-str",
- "aptos-types",
+ "diem-channels",
+ "diem-config",
+ "diem-crypto",
+ "diem-data-client",
+ "diem-id-generator",
+ "diem-infallible",
+ "diem-logger",
+ "diem-metrics-core",
+ "diem-network",
+ "diem-short-hex-str",
+ "diem-types",
  "async-trait",
  "enum_dispatch",
  "futures",
@@ -831,32 +831,32 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-db"
+name = "diem-db"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-accumulator",
- "aptos-config",
- "aptos-crypto",
- "aptos-db-indexer",
- "aptos-executor-types",
- "aptos-infallible",
- "aptos-jellyfish-merkle",
- "aptos-logger",
- "aptos-metrics-core",
- "aptos-proptest-helpers",
- "aptos-rocksdb-options",
- "aptos-schemadb",
- "aptos-scratchpad",
- "aptos-state-view",
- "aptos-storage-interface",
- "aptos-temppath",
- "aptos-types",
- "aptos-vm",
+ "diem-accumulator",
+ "diem-config",
+ "diem-crypto",
+ "diem-db-indexer",
+ "diem-executor-types",
+ "diem-infallible",
+ "diem-jellyfish-merkle",
+ "diem-logger",
+ "diem-metrics-core",
+ "diem-proptest-helpers",
+ "diem-rocksdb-options",
+ "diem-schemadb",
+ "diem-scratchpad",
+ "diem-state-view",
+ "diem-storage-interface",
+ "diem-temppath",
+ "diem-types",
+ "diem-vm",
  "arc-swap",
  "arr_macro",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "byteorder",
  "claims",
  "clap 3.2.23",
@@ -879,24 +879,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-db-indexer"
+name = "diem-db-indexer"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-config",
- "aptos-crypto",
- "aptos-infallible",
- "aptos-logger",
- "aptos-metrics-core",
- "aptos-rocksdb-options",
- "aptos-schemadb",
- "aptos-scratchpad",
- "aptos-state-view",
- "aptos-storage-interface",
- "aptos-types",
- "aptos-vm",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-config",
+ "diem-crypto",
+ "diem-infallible",
+ "diem-logger",
+ "diem-metrics-core",
+ "diem-rocksdb-options",
+ "diem-schemadb",
+ "diem-scratchpad",
+ "diem-state-view",
+ "diem-storage-interface",
+ "diem-types",
+ "diem-vm",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "byteorder",
  "move-core-types 0.0.4",
  "move-resource-viewer",
@@ -905,42 +905,42 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-db-tool"
+name = "diem-db-tool"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-backup-cli",
- "aptos-backup-service",
- "aptos-config",
- "aptos-db",
- "aptos-executor-types",
- "aptos-logger",
- "aptos-push-metrics",
- "aptos-temppath",
- "aptos-types",
+ "diem-backup-cli",
+ "diem-backup-service",
+ "diem-config",
+ "diem-db",
+ "diem-executor-types",
+ "diem-logger",
+ "diem-push-metrics",
+ "diem-temppath",
+ "diem-types",
  "clap 3.2.23",
  "owo-colors",
  "tokio",
 ]
 
 [[package]]
-name = "aptos-debugger"
+name = "diem-debugger"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-crypto",
- "aptos-gas",
- "aptos-gas-profiling",
- "aptos-logger",
- "aptos-resource-viewer",
- "aptos-rest-client",
- "aptos-state-view",
- "aptos-types",
- "aptos-validator-interface",
- "aptos-vm",
- "aptos-vm-logging",
+ "diem-crypto",
+ "diem-gas",
+ "diem-gas-profiling",
+ "diem-logger",
+ "diem-resource-viewer",
+ "diem-rest-client",
+ "diem-state-view",
+ "diem-types",
+ "diem-validator-interface",
+ "diem-vm",
+ "diem-vm-logging",
  "clap 3.2.23",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
  "move-cli",
@@ -955,16 +955,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-event-notifications"
+name = "diem-event-notifications"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-channels",
- "aptos-id-generator",
- "aptos-infallible",
- "aptos-state-view",
- "aptos-storage-interface",
- "aptos-types",
+ "diem-channels",
+ "diem-id-generator",
+ "diem-infallible",
+ "diem-state-view",
+ "diem-storage-interface",
+ "diem-types",
  "async-trait",
  "futures",
  "serde 1.0.163",
@@ -972,25 +972,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-executor"
+name = "diem-executor"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-consensus-types",
- "aptos-crypto",
- "aptos-executor-types",
- "aptos-gas",
- "aptos-infallible",
- "aptos-logger",
- "aptos-metrics-core",
- "aptos-scratchpad",
- "aptos-secure-net",
- "aptos-state-view",
- "aptos-storage-interface",
- "aptos-types",
- "aptos-vm",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-consensus-types",
+ "diem-crypto",
+ "diem-executor-types",
+ "diem-gas",
+ "diem-infallible",
+ "diem-logger",
+ "diem-metrics-core",
+ "diem-scratchpad",
+ "diem-secure-net",
+ "diem-state-view",
+ "diem-storage-interface",
+ "diem-types",
+ "diem-vm",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "fail 0.5.0",
  "itertools",
  "move-core-types 0.0.4",
@@ -1000,42 +1000,42 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-executor-test-helpers"
+name = "diem-executor-test-helpers"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
- "aptos-config",
- "aptos-consensus-types",
- "aptos-crypto",
- "aptos-db",
- "aptos-executor",
- "aptos-executor-types",
- "aptos-genesis",
- "aptos-sdk",
- "aptos-state-view",
- "aptos-storage-interface",
- "aptos-temppath",
- "aptos-types",
- "aptos-vm",
- "aptos-vm-genesis",
+ "diem-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
+ "diem-config",
+ "diem-consensus-types",
+ "diem-crypto",
+ "diem-db",
+ "diem-executor",
+ "diem-executor-types",
+ "diem-genesis",
+ "diem-sdk",
+ "diem-state-view",
+ "diem-storage-interface",
+ "diem-temppath",
+ "diem-types",
+ "diem-vm",
+ "diem-vm-genesis",
  "rand 0.7.3",
 ]
 
 [[package]]
-name = "aptos-executor-types"
+name = "diem-executor-types"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-crypto",
- "aptos-scratchpad",
- "aptos-secure-net",
- "aptos-state-view",
- "aptos-storage-interface",
- "aptos-types",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-crypto",
+ "diem-scratchpad",
+ "diem-secure-net",
+ "diem-state-view",
+ "diem-storage-interface",
+ "diem-types",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "dashmap",
  "itertools",
  "once_cell",
@@ -1044,7 +1044,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-fallible"
+name = "diem-fallible"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
@@ -1052,16 +1052,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-faucet-core"
+name = "diem-faucet-core"
 version = "2.0.1"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-config",
- "aptos-faucet-metrics-server",
- "aptos-logger",
- "aptos-metrics-core",
- "aptos-sdk",
+ "diem-config",
+ "diem-faucet-metrics-server",
+ "diem-logger",
+ "diem-metrics-core",
+ "diem-sdk",
  "async-trait",
  "captcha",
  "clap 3.2.23",
@@ -1086,13 +1086,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-faucet-metrics-server"
+name = "diem-faucet-metrics-server"
 version = "2.0.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-logger",
- "aptos-metrics-core",
+ "diem-logger",
+ "diem-metrics-core",
  "once_cell",
  "poem",
  "prometheus 0.13.0",
@@ -1101,29 +1101,29 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-forge"
+name = "diem-forge"
 version = "0.0.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "again",
  "anyhow",
- "aptos",
- "aptos-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
- "aptos-config",
- "aptos-db",
- "aptos-framework",
- "aptos-genesis",
- "aptos-global-constants",
- "aptos-infallible",
- "aptos-inspection-service",
- "aptos-logger",
- "aptos-rest-client",
- "aptos-retrier",
- "aptos-sdk",
- "aptos-secure-storage",
- "aptos-state-sync-driver",
- "aptos-transaction-emitter-lib",
- "aptos-transaction-generator-lib",
+ "diem",
+ "diem-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
+ "diem-config",
+ "diem-db",
+ "diem-framework",
+ "diem-genesis",
+ "diem-global-constants",
+ "diem-infallible",
+ "diem-inspection-service",
+ "diem-logger",
+ "diem-rest-client",
+ "diem-retrier",
+ "diem-sdk",
+ "diem-secure-storage",
+ "diem-state-sync-driver",
+ "diem-transaction-emitter-lib",
+ "diem-transaction-generator-lib",
  "async-trait",
  "chrono",
  "either",
@@ -1154,25 +1154,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-framework"
+name = "diem-framework"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-aggregator",
- "aptos-crypto",
- "aptos-gas-algebra-ext",
- "aptos-move-stdlib",
- "aptos-sdk-builder",
- "aptos-state-view",
- "aptos-types",
+ "diem-aggregator",
+ "diem-crypto",
+ "diem-gas-algebra-ext",
+ "diem-move-stdlib",
+ "diem-sdk-builder",
+ "diem-state-view",
+ "diem-types",
  "ark-bls12-381",
  "ark-ec",
  "ark-ff",
  "ark-serialize",
  "ark-std",
  "base64",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "better_any",
  "blake2-rfc",
  "blst",
@@ -1219,19 +1219,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-gas"
+name = "diem-gas"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-framework",
- "aptos-gas-algebra-ext",
- "aptos-global-constants",
- "aptos-logger",
- "aptos-move-stdlib",
- "aptos-package-builder",
- "aptos-types",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-framework",
+ "diem-gas-algebra-ext",
+ "diem-global-constants",
+ "diem-logger",
+ "diem-move-stdlib",
+ "diem-package-builder",
+ "diem-types",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
  "move-core-types 0.0.4",
@@ -1241,7 +1241,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-gas-algebra-ext"
+name = "diem-gas-algebra-ext"
 version = "0.0.1"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
@@ -1249,15 +1249,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-gas-profiling"
+name = "diem-gas-profiling"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-framework",
- "aptos-gas",
- "aptos-package-builder",
- "aptos-types",
+ "diem-framework",
+ "diem-gas",
+ "diem-package-builder",
+ "diem-types",
  "inferno",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
  "move-core-types 0.0.4",
@@ -1266,37 +1266,37 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-genesis"
+name = "diem-genesis"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
- "aptos-config",
- "aptos-crypto",
- "aptos-db",
- "aptos-executor",
- "aptos-framework",
- "aptos-keygen",
- "aptos-logger",
- "aptos-state-view",
- "aptos-storage-interface",
- "aptos-temppath",
- "aptos-types",
- "aptos-vm",
- "aptos-vm-genesis",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
+ "diem-config",
+ "diem-crypto",
+ "diem-db",
+ "diem-executor",
+ "diem-framework",
+ "diem-keygen",
+ "diem-logger",
+ "diem-state-view",
+ "diem-storage-interface",
+ "diem-temppath",
+ "diem-types",
+ "diem-vm",
+ "diem-vm-genesis",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "rand 0.7.3",
  "serde 1.0.163",
  "serde_yaml 0.8.26",
 ]
 
 [[package]]
-name = "aptos-github-client"
+name = "diem-github-client"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-proxy",
+ "diem-proxy",
  "serde 1.0.163",
  "serde_json",
  "thiserror",
@@ -1304,34 +1304,34 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-global-constants"
+name = "diem-global-constants"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 
 [[package]]
-name = "aptos-id-generator"
+name = "diem-id-generator"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 
 [[package]]
-name = "aptos-indexer"
+name = "diem-indexer"
 version = "0.0.1"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-api",
- "aptos-api-types",
- "aptos-bitvec",
- "aptos-config",
- "aptos-logger",
- "aptos-mempool",
- "aptos-metrics-core",
- "aptos-runtimes",
- "aptos-storage-interface",
- "aptos-types",
- "aptos-vm",
+ "diem-api",
+ "diem-api-types",
+ "diem-bitvec",
+ "diem-config",
+ "diem-logger",
+ "diem-mempool",
+ "diem-metrics-core",
+ "diem-runtimes",
+ "diem-storage-interface",
+ "diem-types",
+ "diem-vm",
  "async-trait",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "bigdecimal",
  "chrono",
  "clap 3.2.23",
@@ -1353,24 +1353,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-indexer-grpc-fullnode"
+name = "diem-indexer-grpc-fullnode"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-api",
- "aptos-api-types",
- "aptos-bitvec",
- "aptos-config",
- "aptos-logger",
- "aptos-mempool",
- "aptos-metrics-core",
- "aptos-moving-average",
- "aptos-protos",
- "aptos-runtimes",
- "aptos-storage-interface",
- "aptos-types",
- "aptos-vm",
+ "diem-api",
+ "diem-api-types",
+ "diem-bitvec",
+ "diem-config",
+ "diem-logger",
+ "diem-mempool",
+ "diem-metrics-core",
+ "diem-moving-average",
+ "diem-protos",
+ "diem-runtimes",
+ "diem-storage-interface",
+ "diem-types",
+ "diem-vm",
  "base64",
  "bytes",
  "chrono",
@@ -1391,23 +1391,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-infallible"
+name = "diem-infallible"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 
 [[package]]
-name = "aptos-inspection-service"
+name = "diem-inspection-service"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-build-info",
- "aptos-config",
- "aptos-infallible",
- "aptos-logger",
- "aptos-metrics-core",
- "aptos-runtimes",
- "aptos-telemetry",
+ "diem-build-info",
+ "diem-config",
+ "diem-infallible",
+ "diem-logger",
+ "diem-metrics-core",
+ "diem-runtimes",
+ "diem-telemetry",
  "futures",
  "hyper",
  "once_cell",
@@ -1419,19 +1419,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-jellyfish-merkle"
+name = "diem-jellyfish-merkle"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-crypto",
- "aptos-crypto-derive",
- "aptos-infallible",
- "aptos-logger",
- "aptos-metrics-core",
- "aptos-storage-interface",
- "aptos-types",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-crypto",
+ "diem-crypto-derive",
+ "diem-infallible",
+ "diem-logger",
+ "diem-metrics-core",
+ "diem-storage-interface",
+ "diem-types",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "byteorder",
  "itertools",
  "num-derive",
@@ -1445,33 +1445,33 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-keygen"
+name = "diem-keygen"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-crypto",
- "aptos-types",
+ "diem-crypto",
+ "diem-types",
  "rand 0.7.3",
 ]
 
 [[package]]
-name = "aptos-language-e2e-tests"
+name = "diem-language-e2e-tests"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-bitvec",
- "aptos-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
- "aptos-crypto",
- "aptos-framework",
- "aptos-gas",
- "aptos-keygen",
- "aptos-proptest-helpers",
- "aptos-state-view",
- "aptos-types",
- "aptos-vm",
- "aptos-vm-genesis",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-bitvec",
+ "diem-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
+ "diem-crypto",
+ "diem-framework",
+ "diem-gas",
+ "diem-keygen",
+ "diem-proptest-helpers",
+ "diem-state-view",
+ "diem-types",
+ "diem-vm",
+ "diem-vm-genesis",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "goldenfile",
  "hex",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
@@ -1489,7 +1489,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-log-derive"
+name = "diem-log-derive"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
@@ -1499,13 +1499,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-logger"
+name = "diem-logger"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-infallible",
- "aptos-log-derive",
- "aptos-node-identity",
+ "diem-infallible",
+ "diem-log-derive",
+ "diem-node-identity",
  "backtrace",
  "chrono",
  "erased-serde",
@@ -1523,30 +1523,30 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-mempool"
+name = "diem-mempool"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-bounded-executor",
- "aptos-channels",
- "aptos-config",
- "aptos-consensus-types",
- "aptos-crypto",
- "aptos-event-notifications",
- "aptos-infallible",
- "aptos-logger",
- "aptos-mempool-notifications",
- "aptos-metrics-core",
- "aptos-netcore",
- "aptos-network",
- "aptos-runtimes",
- "aptos-short-hex-str",
- "aptos-storage-interface",
- "aptos-types",
- "aptos-vm-validator",
+ "diem-bounded-executor",
+ "diem-channels",
+ "diem-config",
+ "diem-consensus-types",
+ "diem-crypto",
+ "diem-event-notifications",
+ "diem-infallible",
+ "diem-logger",
+ "diem-mempool-notifications",
+ "diem-metrics-core",
+ "diem-netcore",
+ "diem-network",
+ "diem-runtimes",
+ "diem-short-hex-str",
+ "diem-storage-interface",
+ "diem-types",
+ "diem-vm-validator",
  "async-trait",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "fail 0.5.0",
  "futures",
  "itertools",
@@ -1562,12 +1562,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-mempool-notifications"
+name = "diem-mempool-notifications"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-runtimes",
- "aptos-types",
+ "diem-runtimes",
+ "diem-types",
  "async-trait",
  "futures",
  "serde 1.0.163",
@@ -1576,18 +1576,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-memsocket"
+name = "diem-memsocket"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-infallible",
+ "diem-infallible",
  "bytes",
  "futures",
  "once_cell",
 ]
 
 [[package]]
-name = "aptos-metrics-core"
+name = "diem-metrics-core"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
@@ -1596,7 +1596,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-move-stdlib"
+name = "diem-move-stdlib"
 version = "0.1.1"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
@@ -1619,7 +1619,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-moving-average"
+name = "diem-moving-average"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
@@ -1627,28 +1627,28 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-mvhashmap"
+name = "diem-mvhashmap"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-aggregator",
- "aptos-crypto",
- "aptos-infallible",
- "aptos-types",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-aggregator",
+ "diem-crypto",
+ "diem-infallible",
+ "diem-types",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "crossbeam",
  "dashmap",
 ]
 
 [[package]]
-name = "aptos-netcore"
+name = "diem-netcore"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-memsocket",
- "aptos-proxy",
- "aptos-types",
+ "diem-memsocket",
+ "diem-proxy",
+ "diem-types",
  "bytes",
  "futures",
  "pin-project",
@@ -1659,30 +1659,30 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-network"
+name = "diem-network"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-bitvec",
- "aptos-channels",
- "aptos-compression",
- "aptos-config",
- "aptos-crypto",
- "aptos-crypto-derive",
- "aptos-id-generator",
- "aptos-infallible",
- "aptos-logger",
- "aptos-metrics-core",
- "aptos-netcore",
- "aptos-num-variants",
- "aptos-peer-monitoring-service-types",
- "aptos-rate-limiter",
- "aptos-short-hex-str",
- "aptos-time-service",
- "aptos-types",
+ "diem-bitvec",
+ "diem-channels",
+ "diem-compression",
+ "diem-config",
+ "diem-crypto",
+ "diem-crypto-derive",
+ "diem-id-generator",
+ "diem-infallible",
+ "diem-logger",
+ "diem-metrics-core",
+ "diem-netcore",
+ "diem-num-variants",
+ "diem-peer-monitoring-service-types",
+ "diem-rate-limiter",
+ "diem-short-hex-str",
+ "diem-time-service",
+ "diem-types",
  "async-trait",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "bytes",
  "futures",
  "futures-util",
@@ -1702,24 +1702,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-network-builder"
+name = "diem-network-builder"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-channels",
- "aptos-config",
- "aptos-crypto",
- "aptos-event-notifications",
- "aptos-infallible",
- "aptos-logger",
- "aptos-netcore",
- "aptos-network",
- "aptos-network-discovery",
- "aptos-secure-storage",
- "aptos-time-service",
- "aptos-types",
+ "diem-channels",
+ "diem-config",
+ "diem-crypto",
+ "diem-event-notifications",
+ "diem-infallible",
+ "diem-logger",
+ "diem-netcore",
+ "diem-network",
+ "diem-network-discovery",
+ "diem-secure-storage",
+ "diem-time-service",
+ "diem-types",
  "async-trait",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "futures",
  "maplit",
  "rand 0.7.3",
@@ -1728,16 +1728,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-network-checker"
+name = "diem-network-checker"
 version = "0.0.1"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-config",
- "aptos-crypto",
- "aptos-logger",
- "aptos-network",
- "aptos-types",
+ "diem-config",
+ "diem-crypto",
+ "diem-logger",
+ "diem-network",
+ "diem-types",
  "clap 3.2.23",
  "futures",
  "serde 1.0.163",
@@ -1745,24 +1745,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-network-discovery"
+name = "diem-network-discovery"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-channels",
- "aptos-config",
- "aptos-crypto",
- "aptos-event-notifications",
- "aptos-logger",
- "aptos-metrics-core",
- "aptos-network",
- "aptos-rest-client",
- "aptos-secure-storage",
- "aptos-short-hex-str",
- "aptos-time-service",
- "aptos-types",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-channels",
+ "diem-config",
+ "diem-crypto",
+ "diem-event-notifications",
+ "diem-logger",
+ "diem-metrics-core",
+ "diem-network",
+ "diem-rest-client",
+ "diem-secure-storage",
+ "diem-short-hex-str",
+ "diem-time-service",
+ "diem-types",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "futures",
  "once_cell",
  "serde_yaml 0.8.26",
@@ -1771,55 +1771,55 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-node"
+name = "diem-node"
 version = "1.4.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-api",
- "aptos-backup-service",
- "aptos-build-info",
- "aptos-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
- "aptos-channels",
- "aptos-config",
- "aptos-consensus",
- "aptos-consensus-notifications",
- "aptos-crash-handler",
- "aptos-crypto",
- "aptos-data-client",
- "aptos-data-streaming-service",
- "aptos-db",
- "aptos-event-notifications",
- "aptos-executor",
- "aptos-executor-types",
- "aptos-framework",
- "aptos-genesis",
- "aptos-indexer-grpc-fullnode",
- "aptos-infallible",
- "aptos-inspection-service",
- "aptos-logger",
- "aptos-mempool",
- "aptos-mempool-notifications",
- "aptos-network",
- "aptos-network-builder",
- "aptos-node-identity",
- "aptos-peer-monitoring-service-client",
- "aptos-peer-monitoring-service-server",
- "aptos-peer-monitoring-service-types",
- "aptos-runtimes",
- "aptos-secure-storage",
- "aptos-state-sync-driver",
- "aptos-state-view",
- "aptos-storage-interface",
- "aptos-storage-service-client",
- "aptos-storage-service-server",
- "aptos-storage-service-types",
- "aptos-telemetry",
- "aptos-temppath",
- "aptos-time-service",
- "aptos-types",
- "aptos-vm",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-api",
+ "diem-backup-service",
+ "diem-build-info",
+ "diem-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
+ "diem-channels",
+ "diem-config",
+ "diem-consensus",
+ "diem-consensus-notifications",
+ "diem-crash-handler",
+ "diem-crypto",
+ "diem-data-client",
+ "diem-data-streaming-service",
+ "diem-db",
+ "diem-event-notifications",
+ "diem-executor",
+ "diem-executor-types",
+ "diem-framework",
+ "diem-genesis",
+ "diem-indexer-grpc-fullnode",
+ "diem-infallible",
+ "diem-inspection-service",
+ "diem-logger",
+ "diem-mempool",
+ "diem-mempool-notifications",
+ "diem-network",
+ "diem-network-builder",
+ "diem-node-identity",
+ "diem-peer-monitoring-service-client",
+ "diem-peer-monitoring-service-server",
+ "diem-peer-monitoring-service-types",
+ "diem-runtimes",
+ "diem-secure-storage",
+ "diem-state-sync-driver",
+ "diem-state-view",
+ "diem-storage-interface",
+ "diem-storage-service-client",
+ "diem-storage-service-server",
+ "diem-storage-service-types",
+ "diem-telemetry",
+ "diem-temppath",
+ "diem-time-service",
+ "diem-types",
+ "diem-vm",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "fail 0.5.0",
  "futures",
@@ -1836,26 +1836,26 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-node-identity"
+name = "diem-node-identity"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-types",
+ "diem-types",
  "claims",
  "hostname",
  "once_cell",
 ]
 
 [[package]]
-name = "aptos-node-resource-metrics"
+name = "diem-node-resource-metrics"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-build-info",
- "aptos-infallible",
- "aptos-logger",
- "aptos-metrics-core",
+ "diem-build-info",
+ "diem-infallible",
+ "diem-logger",
+ "diem-metrics-core",
  "cfg-if 1.0.0",
  "once_cell",
  "procfs",
@@ -1864,7 +1864,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-num-variants"
+name = "diem-num-variants"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
@@ -1874,7 +1874,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-openapi"
+name = "diem-openapi"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
@@ -1887,12 +1887,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-package-builder"
+name = "diem-package-builder"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-framework",
+ "diem-framework",
  "itertools",
  "move-command-line-common",
  "move-package",
@@ -1900,20 +1900,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-peer-monitoring-service-client"
+name = "diem-peer-monitoring-service-client"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-channels",
- "aptos-config",
- "aptos-id-generator",
- "aptos-infallible",
- "aptos-logger",
- "aptos-metrics-core",
- "aptos-network",
- "aptos-peer-monitoring-service-types",
- "aptos-time-service",
- "aptos-types",
+ "diem-channels",
+ "diem-config",
+ "diem-id-generator",
+ "diem-infallible",
+ "diem-logger",
+ "diem-metrics-core",
+ "diem-network",
+ "diem-peer-monitoring-service-types",
+ "diem-time-service",
+ "diem-types",
  "async-trait",
  "enum_dispatch",
  "futures",
@@ -1925,23 +1925,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-peer-monitoring-service-server"
+name = "diem-peer-monitoring-service-server"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-bounded-executor",
- "aptos-build-info",
- "aptos-channels",
- "aptos-config",
- "aptos-logger",
- "aptos-metrics-core",
- "aptos-netcore",
- "aptos-network",
- "aptos-peer-monitoring-service-types",
- "aptos-storage-interface",
- "aptos-time-service",
- "aptos-types",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-bounded-executor",
+ "diem-build-info",
+ "diem-channels",
+ "diem-config",
+ "diem-logger",
+ "diem-metrics-core",
+ "diem-netcore",
+ "diem-network",
+ "diem-peer-monitoring-service-types",
+ "diem-storage-interface",
+ "diem-time-service",
+ "diem-types",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "bytes",
  "futures",
  "once_cell",
@@ -1951,19 +1951,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-peer-monitoring-service-types"
+name = "diem-peer-monitoring-service-types"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-config",
- "aptos-types",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-config",
+ "diem-types",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "serde 1.0.163",
  "thiserror",
 ]
 
 [[package]]
-name = "aptos-proptest-helpers"
+name = "diem-proptest-helpers"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
@@ -1973,7 +1973,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-protos"
+name = "diem-protos"
 version = "0.1.2"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
@@ -1984,7 +1984,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-proxy"
+name = "diem-proxy"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
@@ -1992,24 +1992,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-push-metrics"
+name = "diem-push-metrics"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-logger",
- "aptos-metrics-core",
+ "diem-logger",
+ "diem-metrics-core",
  "ureq",
  "url",
 ]
 
 [[package]]
-name = "aptos-rate-limiter"
+name = "diem-rate-limiter"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-infallible",
- "aptos-logger",
- "aptos-metrics-core",
+ "diem-infallible",
+ "diem-logger",
+ "diem-metrics-core",
  "futures",
  "pin-project",
  "tokio",
@@ -2017,23 +2017,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-release-builder"
+name = "diem-release-builder"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos",
- "aptos-api-types",
- "aptos-build-info",
- "aptos-crypto",
- "aptos-framework",
- "aptos-gas",
- "aptos-genesis",
- "aptos-rest-client",
- "aptos-temppath",
- "aptos-types",
- "aptos-vm-genesis",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem",
+ "diem-api-types",
+ "diem-build-info",
+ "diem-crypto",
+ "diem-framework",
+ "diem-gas",
+ "diem-genesis",
+ "diem-rest-client",
+ "diem-temppath",
+ "diem-types",
+ "diem-vm-genesis",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "futures",
  "git2 0.16.1",
@@ -2053,29 +2053,29 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-resource-viewer"
+name = "diem-resource-viewer"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-types",
- "aptos-vm",
+ "diem-types",
+ "diem-vm",
  "move-core-types 0.0.4",
  "move-resource-viewer",
 ]
 
 [[package]]
-name = "aptos-rest-client"
+name = "diem-rest-client"
 version = "0.0.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-api-types",
- "aptos-crypto",
- "aptos-infallible",
- "aptos-logger",
- "aptos-types",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-api-types",
+ "diem-crypto",
+ "diem-infallible",
+ "diem-logger",
+ "diem-types",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "bytes",
  "futures",
  "hex",
@@ -2091,41 +2091,41 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-retrier"
+name = "diem-retrier"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-logger",
+ "diem-logger",
  "tokio",
 ]
 
 [[package]]
-name = "aptos-rocksdb-options"
+name = "diem-rocksdb-options"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-config",
+ "diem-config",
  "rocksdb",
 ]
 
 [[package]]
-name = "aptos-rosetta"
+name = "diem-rosetta"
 version = "0.0.1"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
- "aptos-config",
- "aptos-crypto",
- "aptos-global-constants",
- "aptos-logger",
- "aptos-node",
- "aptos-rest-client",
- "aptos-runtimes",
- "aptos-sdk",
- "aptos-types",
- "aptos-warp-webserver",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
+ "diem-config",
+ "diem-crypto",
+ "diem-global-constants",
+ "diem-logger",
+ "diem-node",
+ "diem-rest-client",
+ "diem-runtimes",
+ "diem-sdk",
+ "diem-types",
+ "diem-warp-webserver",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "futures",
  "hex",
@@ -2143,7 +2143,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-runtimes"
+name = "diem-runtimes"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
@@ -2151,22 +2151,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-safety-rules"
+name = "diem-safety-rules"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-config",
- "aptos-consensus-types",
- "aptos-crypto",
- "aptos-global-constants",
- "aptos-infallible",
- "aptos-logger",
- "aptos-metrics-core",
- "aptos-secure-net",
- "aptos-secure-storage",
- "aptos-temppath",
- "aptos-types",
- "aptos-vault-client",
+ "diem-config",
+ "diem-consensus-types",
+ "diem-crypto",
+ "diem-global-constants",
+ "diem-infallible",
+ "diem-logger",
+ "diem-metrics-core",
+ "diem-secure-net",
+ "diem-secure-storage",
+ "diem-temppath",
+ "diem-types",
+ "diem-vault-client",
  "once_cell",
  "rand 0.7.3",
  "serde 1.0.163",
@@ -2175,28 +2175,28 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-schemadb"
+name = "diem-schemadb"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-infallible",
- "aptos-logger",
- "aptos-metrics-core",
+ "diem-infallible",
+ "diem-logger",
+ "diem-metrics-core",
  "once_cell",
  "proptest",
  "rocksdb",
 ]
 
 [[package]]
-name = "aptos-scratchpad"
+name = "diem-scratchpad"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-crypto",
- "aptos-infallible",
- "aptos-metrics-core",
- "aptos-types",
+ "diem-crypto",
+ "diem-infallible",
+ "diem-metrics-core",
+ "diem-types",
  "bitvec 0.19.6",
  "itertools",
  "once_cell",
@@ -2206,17 +2206,17 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-sdk"
+name = "diem-sdk"
 version = "0.0.3"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
- "aptos-crypto",
- "aptos-global-constants",
- "aptos-rest-client",
- "aptos-types",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
+ "diem-crypto",
+ "diem-global-constants",
+ "diem-rest-client",
+ "diem-types",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "ed25519-dalek-bip32",
  "move-core-types 0.0.4",
  "rand_core 0.5.1",
@@ -2225,13 +2225,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-sdk-builder"
+name = "diem-sdk-builder"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-types",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-types",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "heck 0.3.3",
  "move-core-types 0.0.4",
  "once_cell",
@@ -2244,33 +2244,33 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-secure-net"
+name = "diem-secure-net"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-logger",
- "aptos-metrics-core",
+ "diem-logger",
+ "diem-metrics-core",
  "once_cell",
  "serde 1.0.163",
  "thiserror",
 ]
 
 [[package]]
-name = "aptos-secure-storage"
+name = "diem-secure-storage"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-crypto",
- "aptos-github-client",
- "aptos-infallible",
- "aptos-logger",
- "aptos-schemadb",
- "aptos-temppath",
- "aptos-time-service",
- "aptos-vault-client",
+ "diem-crypto",
+ "diem-github-client",
+ "diem-infallible",
+ "diem-logger",
+ "diem-schemadb",
+ "diem-temppath",
+ "diem-time-service",
+ "diem-vault-client",
  "base64",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "chrono",
  "enum_dispatch",
  "rand 0.7.3",
@@ -2280,7 +2280,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-short-hex-str"
+name = "diem-short-hex-str"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
@@ -2291,42 +2291,42 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-speculative-state-helper"
+name = "diem-speculative-state-helper"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-infallible",
+ "diem-infallible",
  "crossbeam",
  "once_cell",
  "rayon",
 ]
 
 [[package]]
-name = "aptos-state-sync-driver"
+name = "diem-state-sync-driver"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-config",
- "aptos-consensus-notifications",
- "aptos-crypto",
- "aptos-data-client",
- "aptos-data-streaming-service",
- "aptos-event-notifications",
- "aptos-executor-types",
- "aptos-infallible",
- "aptos-logger",
- "aptos-mempool-notifications",
- "aptos-metrics-core",
- "aptos-runtimes",
- "aptos-schemadb",
- "aptos-scratchpad",
- "aptos-storage-interface",
- "aptos-time-service",
- "aptos-types",
+ "diem-config",
+ "diem-consensus-notifications",
+ "diem-crypto",
+ "diem-data-client",
+ "diem-data-streaming-service",
+ "diem-event-notifications",
+ "diem-executor-types",
+ "diem-infallible",
+ "diem-logger",
+ "diem-mempool-notifications",
+ "diem-metrics-core",
+ "diem-runtimes",
+ "diem-schemadb",
+ "diem-scratchpad",
+ "diem-storage-interface",
+ "diem-time-service",
+ "diem-types",
  "async-trait",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "futures",
  "once_cell",
  "serde 1.0.163",
@@ -2336,34 +2336,34 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-state-view"
+name = "diem-state-view"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-crypto",
- "aptos-types",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-crypto",
+ "diem-types",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "serde 1.0.163",
  "serde_bytes",
  "serde_json",
 ]
 
 [[package]]
-name = "aptos-storage-interface"
+name = "diem-storage-interface"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-crypto",
- "aptos-logger",
- "aptos-metrics-core",
- "aptos-scratchpad",
- "aptos-secure-net",
- "aptos-state-view",
- "aptos-types",
- "aptos-vm",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-crypto",
+ "diem-logger",
+ "diem-metrics-core",
+ "diem-scratchpad",
+ "diem-secure-net",
+ "diem-state-view",
+ "diem-types",
+ "diem-vm",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "crossbeam-channel",
  "dashmap",
  "move-core-types 0.0.4",
@@ -2375,36 +2375,36 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-storage-service-client"
+name = "diem-storage-service-client"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-channels",
- "aptos-config",
- "aptos-network",
- "aptos-storage-service-types",
- "aptos-types",
+ "diem-channels",
+ "diem-config",
+ "diem-network",
+ "diem-storage-service-types",
+ "diem-types",
  "async-trait",
  "thiserror",
 ]
 
 [[package]]
-name = "aptos-storage-service-server"
+name = "diem-storage-service-server"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-bounded-executor",
- "aptos-channels",
- "aptos-config",
- "aptos-infallible",
- "aptos-logger",
- "aptos-metrics-core",
- "aptos-network",
- "aptos-storage-interface",
- "aptos-storage-service-types",
- "aptos-time-service",
- "aptos-types",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-bounded-executor",
+ "diem-channels",
+ "diem-config",
+ "diem-infallible",
+ "diem-logger",
+ "diem-metrics-core",
+ "diem-network",
+ "diem-storage-interface",
+ "diem-storage-service-types",
+ "diem-time-service",
+ "diem-types",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "bytes",
  "futures",
  "lru 0.7.8",
@@ -2415,41 +2415,41 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-storage-service-types"
+name = "diem-storage-service-types"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-compression",
- "aptos-config",
- "aptos-crypto",
- "aptos-types",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-compression",
+ "diem-config",
+ "diem-crypto",
+ "diem-types",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "num-traits 0.2.15",
  "serde 1.0.163",
  "thiserror",
 ]
 
 [[package]]
-name = "aptos-telemetry"
+name = "diem-telemetry"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-api",
- "aptos-config",
- "aptos-consensus",
- "aptos-crypto",
- "aptos-db",
- "aptos-infallible",
- "aptos-logger",
- "aptos-mempool",
- "aptos-metrics-core",
- "aptos-network",
- "aptos-node-resource-metrics",
- "aptos-runtimes",
- "aptos-state-sync-driver",
- "aptos-telemetry-service",
- "aptos-types",
+ "diem-api",
+ "diem-config",
+ "diem-consensus",
+ "diem-crypto",
+ "diem-db",
+ "diem-infallible",
+ "diem-logger",
+ "diem-mempool",
+ "diem-metrics-core",
+ "diem-network",
+ "diem-node-resource-metrics",
+ "diem-runtimes",
+ "diem-state-sync-driver",
+ "diem-telemetry-service",
+ "diem-types",
  "flate2",
  "futures",
  "once_cell",
@@ -2471,21 +2471,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-telemetry-service"
+name = "diem-telemetry-service"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-config",
- "aptos-crypto",
- "aptos-crypto-derive",
- "aptos-infallible",
- "aptos-logger",
- "aptos-metrics-core",
- "aptos-rest-client",
- "aptos-types",
+ "diem-config",
+ "diem-crypto",
+ "diem-crypto-derive",
+ "diem-infallible",
+ "diem-logger",
+ "diem-metrics-core",
+ "diem-rest-client",
+ "diem-types",
  "base64",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "chrono",
  "clap 3.2.23",
  "debug-ignore",
@@ -2514,7 +2514,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-temppath"
+name = "diem-temppath"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
@@ -2523,11 +2523,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-time-service"
+name = "diem-time-service"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-infallible",
+ "diem-infallible",
  "enum_dispatch",
  "futures",
  "pin-project",
@@ -2536,22 +2536,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-transaction-emitter-lib"
+name = "diem-transaction-emitter-lib"
 version = "0.0.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "again",
  "anyhow",
- "aptos",
- "aptos-config",
- "aptos-crypto",
- "aptos-framework",
- "aptos-global-constants",
- "aptos-infallible",
- "aptos-logger",
- "aptos-rest-client",
- "aptos-sdk",
- "aptos-transaction-generator-lib",
+ "diem",
+ "diem-config",
+ "diem-crypto",
+ "diem-framework",
+ "diem-global-constants",
+ "diem-infallible",
+ "diem-logger",
+ "diem-rest-client",
+ "diem-sdk",
+ "diem-transaction-generator-lib",
  "async-trait",
  "clap 3.2.23",
  "futures",
@@ -2567,21 +2567,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-transaction-generator-lib"
+name = "diem-transaction-generator-lib"
 version = "0.0.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "again",
  "anyhow",
- "aptos",
- "aptos-config",
- "aptos-crypto",
- "aptos-framework",
- "aptos-global-constants",
- "aptos-infallible",
- "aptos-logger",
- "aptos-rest-client",
- "aptos-sdk",
+ "diem",
+ "diem-config",
+ "diem-crypto",
+ "diem-framework",
+ "diem-global-constants",
+ "diem-infallible",
+ "diem-logger",
+ "diem-rest-client",
+ "diem-sdk",
  "async-trait",
  "clap 3.2.23",
  "futures",
@@ -2597,23 +2597,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-transactional-test-harness"
+name = "diem-transactional-test-harness"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-api-types",
- "aptos-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
- "aptos-crypto",
- "aptos-framework",
- "aptos-gas",
- "aptos-language-e2e-tests",
- "aptos-state-view",
- "aptos-storage-interface",
- "aptos-types",
- "aptos-vm",
- "aptos-vm-genesis",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-api-types",
+ "diem-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
+ "diem-crypto",
+ "diem-framework",
+ "diem-gas",
+ "diem-language-e2e-tests",
+ "diem-state-view",
+ "diem-storage-interface",
+ "diem-types",
+ "diem-vm",
+ "diem-vm-genesis",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "hex",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
@@ -2629,15 +2629,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-types"
+name = "diem-types"
 version = "0.0.3"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-bitvec",
- "aptos-crypto",
- "aptos-crypto-derive",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-bitvec",
+ "diem-crypto",
+ "diem-crypto-derive",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "chrono",
  "derivative",
  "hex",
@@ -2659,18 +2659,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-validator-interface"
+name = "diem-validator-interface"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-api-types",
- "aptos-config",
- "aptos-db",
- "aptos-rest-client",
- "aptos-state-view",
- "aptos-storage-interface",
- "aptos-types",
+ "diem-api-types",
+ "diem-config",
+ "diem-db",
+ "diem-rest-client",
+ "diem-state-view",
+ "diem-storage-interface",
+ "diem-types",
  "async-trait",
  "itertools",
  "lru 0.7.8",
@@ -2679,11 +2679,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-vault-client"
+name = "diem-vault-client"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-crypto",
+ "diem-crypto",
  "base64",
  "chrono",
  "native-tls",
@@ -2695,26 +2695,26 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-vm"
+name = "diem-vm"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-aggregator",
- "aptos-block-executor",
- "aptos-crypto",
- "aptos-crypto-derive",
- "aptos-framework",
- "aptos-gas",
- "aptos-infallible",
- "aptos-logger",
- "aptos-metrics-core",
- "aptos-move-stdlib",
- "aptos-mvhashmap",
- "aptos-state-view",
- "aptos-types",
- "aptos-vm-logging",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-aggregator",
+ "diem-block-executor",
+ "diem-crypto",
+ "diem-crypto-derive",
+ "diem-framework",
+ "diem-gas",
+ "diem-infallible",
+ "diem-logger",
+ "diem-metrics-core",
+ "diem-move-stdlib",
+ "diem-mvhashmap",
+ "diem-state-view",
+ "diem-types",
+ "diem-vm-logging",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "dashmap",
  "fail 0.5.0",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
@@ -2737,19 +2737,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-vm-genesis"
+name = "diem-vm-genesis"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
- "aptos-crypto",
- "aptos-framework",
- "aptos-gas",
- "aptos-state-view",
- "aptos-types",
- "aptos-vm",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
+ "diem-crypto",
+ "diem-framework",
+ "diem-gas",
+ "diem-state-view",
+ "diem-types",
+ "diem-vm",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "move-core-types 0.0.4",
  "move-vm-types",
  "once_cell",
@@ -2758,46 +2758,46 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-vm-logging"
+name = "diem-vm-logging"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "aptos-crypto",
- "aptos-logger",
- "aptos-metrics-core",
- "aptos-speculative-state-helper",
- "aptos-state-view",
- "aptos-types",
+ "diem-crypto",
+ "diem-logger",
+ "diem-metrics-core",
+ "diem-speculative-state-helper",
+ "diem-state-view",
+ "diem-types",
  "arc-swap",
  "once_cell",
  "serde 1.0.163",
 ]
 
 [[package]]
-name = "aptos-vm-validator"
+name = "diem-vm-validator"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-gas",
- "aptos-scratchpad",
- "aptos-state-view",
- "aptos-storage-interface",
- "aptos-types",
- "aptos-vm",
+ "diem-gas",
+ "diem-scratchpad",
+ "diem-state-view",
+ "diem-storage-interface",
+ "diem-types",
+ "diem-vm",
  "fail 0.5.0",
 ]
 
 [[package]]
-name = "aptos-warp-webserver"
+name = "diem-warp-webserver"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-api-types",
- "aptos-config",
- "aptos-logger",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-api-types",
+ "diem-config",
+ "diem-logger",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "hyper",
  "serde 1.0.163",
  "serde_json",
@@ -2805,20 +2805,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-writeset-generator"
+name = "diem-writeset-generator"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
- "aptos-crypto",
- "aptos-crypto-derive",
- "aptos-framework",
- "aptos-gas",
- "aptos-state-view",
- "aptos-types",
- "aptos-vm",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "diem-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
+ "diem-crypto",
+ "diem-crypto-derive",
+ "diem-framework",
+ "diem-gas",
+ "diem-state-view",
+ "diem-types",
+ "diem-vm",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "handlebars",
  "move-command-line-common",
  "move-compiler",
@@ -3142,7 +3142,7 @@ checksum = "8c3c1a368f70d6cf7302d78f8f7093da241fb8e8807c05cc9e51a125895a6d5b"
 [[package]]
 name = "bcs"
 version = "0.1.3"
-source = "git+https://github.com/aptos-labs/bcs.git?branch=main#2cde3e8446c460cb17b0c1d6bac7e27e964ac169"
+source = "git+https://github.com/diem-labs/bcs.git?branch=main#2cde3e8446c460cb17b0c1d6bac7e27e964ac169"
 dependencies = [
  "serde 1.0.163",
  "thiserror",
@@ -3161,7 +3161,7 @@ dependencies = [
 [[package]]
 name = "bcs"
 version = "0.1.4"
-source = "git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d#d31fab9d81748e2594be5cd5cdf845786a30562d"
+source = "git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d#d31fab9d81748e2594be5cd5cdf845786a30562d"
 dependencies = [
  "serde 1.0.163",
  "thiserror",
@@ -5997,9 +5997,9 @@ name = "libra-config"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "aptos",
- "aptos-crypto",
- "aptos-rest-client",
+ "diem",
+ "diem-crypto",
+ "diem-rest-client",
  "clap 4.3.0",
  "dirs 5.0.1",
  "serde_yaml 0.9.21",
@@ -6012,8 +6012,8 @@ name = "libra-framework"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "aptos-framework",
- "aptos-types",
+ "diem-framework",
+ "diem-types",
  "bcs 0.1.3",
  "clap 4.3.0",
  "include_dir 0.7.2",
@@ -6029,17 +6029,17 @@ name = "libra-genesis-tools"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "aptos-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
- "aptos-config",
- "aptos-crypto",
- "aptos-framework",
- "aptos-gas",
- "aptos-genesis",
- "aptos-github-client",
- "aptos-sdk",
- "aptos-types",
- "aptos-vm",
- "aptos-vm-genesis",
+ "diem-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
+ "diem-config",
+ "diem-crypto",
+ "diem-framework",
+ "diem-gas",
+ "diem-genesis",
+ "diem-github-client",
+ "diem-sdk",
+ "diem-types",
+ "diem-vm",
+ "diem-vm-genesis",
  "base64",
  "bcs 0.1.3",
  "chrono",
@@ -6063,7 +6063,7 @@ name = "libra-query"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "aptos-sdk",
+ "diem-sdk",
  "async-trait",
  "clap 4.3.0",
  "libra-config",
@@ -6076,7 +6076,7 @@ name = "libra-txs"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "aptos-sdk",
+ "diem-sdk",
  "async-trait",
  "bcs 0.1.3",
  "clap 4.3.0",
@@ -6095,11 +6095,11 @@ name = "libra-wallet"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "aptos-config",
- "aptos-crypto",
- "aptos-genesis",
- "aptos-keygen",
- "aptos-types",
+ "diem-config",
+ "diem-crypto",
+ "diem-genesis",
+ "diem-keygen",
+ "diem-types",
  "blst",
  "clap 4.3.0",
  "dialoguer 0.10.4",
@@ -6461,7 +6461,7 @@ version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "heck 0.3.3",
  "log",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
@@ -6514,7 +6514,7 @@ version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
  "move-command-line-common",
  "move-core-types 0.0.4",
@@ -6571,7 +6571,7 @@ version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "codespan-reporting",
  "colored",
@@ -6634,7 +6634,7 @@ version = "0.0.1"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "codespan-reporting",
  "difference",
@@ -6680,7 +6680,7 @@ source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0
 dependencies = [
  "anyhow",
  "arbitrary",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "ethnum",
  "hex",
  "num",
@@ -6701,7 +6701,7 @@ version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "codespan",
  "colored",
@@ -6757,7 +6757,7 @@ version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "log",
  "move-command-line-common",
  "move-core-types 0.0.4",
@@ -6771,7 +6771,7 @@ version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
  "move-bytecode-source-map",
@@ -6862,7 +6862,7 @@ version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "colored",
  "dirs-next 2.0.0",
@@ -6986,7 +6986,7 @@ version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "hex",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
  "move-bytecode-utils",
@@ -7060,7 +7060,7 @@ version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "better_any",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
  "move-core-types 0.0.4",
@@ -7168,7 +7168,7 @@ name = "move-vm-types"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
  "move-core-types 0.0.4",
  "once_cell",
@@ -9033,7 +9033,7 @@ dependencies = [
 [[package]]
 name = "serde-generate"
 version = "0.20.6"
-source = "git+https://github.com/aptos-labs/serde-reflection?rev=839aed62a20ddccf043c08961cfe74875741ccba#839aed62a20ddccf043c08961cfe74875741ccba"
+source = "git+https://github.com/diem-labs/serde-reflection?rev=839aed62a20ddccf043c08961cfe74875741ccba#839aed62a20ddccf043c08961cfe74875741ccba"
 dependencies = [
  "bcs 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "bincode",
@@ -9073,7 +9073,7 @@ dependencies = [
 [[package]]
 name = "serde-reflection"
 version = "0.3.5"
-source = "git+https://github.com/aptos-labs/serde-reflection?rev=839aed62a20ddccf043c08961cfe74875741ccba#839aed62a20ddccf043c08961cfe74875741ccba"
+source = "git+https://github.com/diem-labs/serde-reflection?rev=839aed62a20ddccf043c08961cfe74875741ccba#839aed62a20ddccf043c08961cfe74875741ccba"
 dependencies = [
  "once_cell",
  "serde 1.0.163",
@@ -9410,39 +9410,39 @@ version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "aptos",
- "aptos-backup-cli",
- "aptos-bitvec",
- "aptos-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
- "aptos-config",
- "aptos-consensus",
- "aptos-crypto",
- "aptos-debugger",
- "aptos-faucet-core",
- "aptos-forge",
- "aptos-framework",
- "aptos-gas",
- "aptos-genesis",
- "aptos-global-constants",
- "aptos-indexer",
- "aptos-infallible",
- "aptos-keygen",
- "aptos-logger",
- "aptos-release-builder",
- "aptos-rest-client",
- "aptos-rosetta",
- "aptos-sdk",
- "aptos-secure-storage",
- "aptos-temppath",
- "aptos-time-service",
- "aptos-types",
- "aptos-vault-client",
- "aptos-vm",
- "aptos-vm-genesis",
- "aptos-writeset-generator",
+ "diem",
+ "diem-backup-cli",
+ "diem-bitvec",
+ "diem-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
+ "diem-config",
+ "diem-consensus",
+ "diem-crypto",
+ "diem-debugger",
+ "diem-faucet-core",
+ "diem-forge",
+ "diem-framework",
+ "diem-gas",
+ "diem-genesis",
+ "diem-global-constants",
+ "diem-indexer",
+ "diem-infallible",
+ "diem-keygen",
+ "diem-logger",
+ "diem-release-builder",
+ "diem-rest-client",
+ "diem-rosetta",
+ "diem-sdk",
+ "diem-secure-storage",
+ "diem-temppath",
+ "diem-time-service",
+ "diem-types",
+ "diem-vault-client",
+ "diem-vm",
+ "diem-vm-genesis",
+ "diem-writeset-generator",
  "async-trait",
  "base64",
- "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "diesel",
  "futures",
  "hex",
@@ -9464,10 +9464,10 @@ dependencies = [
 name = "smoke-tests"
 version = "0.1.0"
 dependencies = [
- "aptos-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
- "aptos-debugger",
- "aptos-forge",
- "aptos-types",
+ "diem-cached-packages 0.1.0 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
+ "diem-debugger",
+ "diem-forge",
+ "diem-types",
  "smoke-test",
  "tokio",
 ]
@@ -10191,7 +10191,7 @@ dependencies = [
 name = "transactional-tests"
 version = "0.1.0"
 dependencies = [
- "aptos-transactional-test-harness",
+ "diem-transactional-test-harness",
  "datatest-stable",
 ]
 

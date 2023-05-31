@@ -1,5 +1,5 @@
-/// Defines feature flags for Aptos. Those are used in Aptos specific implementations of features in
-/// the Move stdlib, the Aptos stdlib, and the Aptos framework.
+/// Defines feature flags for Diem. Those are used in Diem specific implementations of features in
+/// the Move stdlib, the Diem stdlib, and the Diem framework.
 module std::features {
     use std::error;
     use std::signer;
@@ -58,15 +58,15 @@ module std::features {
         is_enabled(SHA_512_AND_RIPEMD_160_NATIVES)
     }
 
-    /// Whether the new `aptos_stdlib::type_info::chain_id()` native for fetching the chain ID is enabled.
+    /// Whether the new `diem_stdlib::type_info::chain_id()` native for fetching the chain ID is enabled.
     /// This is needed because of the introduction of a new native function.
     /// Lifetime: transient
-    const APTOS_STD_CHAIN_ID_NATIVES: u64 = 4;
+    const DIEM_STD_CHAIN_ID_NATIVES: u64 = 4;
 
-    public fun get_aptos_stdlib_chain_id_feature(): u64 { APTOS_STD_CHAIN_ID_NATIVES }
+    public fun get_diem_stdlib_chain_id_feature(): u64 { DIEM_STD_CHAIN_ID_NATIVES }
 
-    public fun aptos_stdlib_chain_id_enabled(): bool acquires Features {
-        is_enabled(APTOS_STD_CHAIN_ID_NATIVES)
+    public fun diem_stdlib_chain_id_enabled(): bool acquires Features {
+        is_enabled(DIEM_STD_CHAIN_ID_NATIVES)
     }
 
     /// Whether to allow the use of binary format version v6.
@@ -89,7 +89,7 @@ module std::features {
         is_enabled(COLLECT_AND_DISTRIBUTE_GAS_FEES)
     }
 
-    /// Whether the new `aptos_stdlib::multi_ed25519::public_key_validate_internal_v2()` native is enabled.
+    /// Whether the new `diem_stdlib::multi_ed25519::public_key_validate_internal_v2()` native is enabled.
     /// This is needed because of the introduction of a new native function.
     /// Lifetime: transient
     const MULTI_ED25519_PK_VALIDATE_V2_NATIVES: u64 = 7;

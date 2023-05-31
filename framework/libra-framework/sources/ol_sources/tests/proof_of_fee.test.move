@@ -8,10 +8,10 @@ module ol_framework::test_pof {
   use ol_framework::slow_wallet;
   use ol_framework::vouch;
   use ol_framework::testnet;
-  use aptos_framework::stake;
+  use diem_framework::stake;
   use std::vector;
 
-  // use aptos_std::debug::print;
+  // use diem_std::debug::print;
 
   const Alice: address = @0x1000a;
   const Bob: address = @0x1000b;

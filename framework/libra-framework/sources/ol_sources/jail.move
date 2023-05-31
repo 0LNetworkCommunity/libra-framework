@@ -40,7 +40,7 @@
 
 
 module ol_framework::jail {
-  use aptos_framework::system_addresses;
+  use diem_framework::system_addresses;
   use std::signer;
   use std::vector;
   use std::error;

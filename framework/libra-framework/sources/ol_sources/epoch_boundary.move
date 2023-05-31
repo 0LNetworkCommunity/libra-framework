@@ -1,5 +1,5 @@
 
-module aptos_framework::epoch_boundary {
+module diem_framework::epoch_boundary {
 
     use std::signer;
     use ol_framework::slow_wallet;
@@ -10,13 +10,13 @@ module aptos_framework::epoch_boundary {
     use ol_framework::rewards;
     use ol_framework::jail;
     use ol_framework::cases;
-    use aptos_framework::transaction_fee;
-    use aptos_framework::coin::{Self, Coin};
+    use diem_framework::transaction_fee;
+    use diem_framework::coin::{Self, Coin};
     use std::vector;
 
-    // use aptos_std::debug::print;
+    // use diem_std::debug::print;
 
-    friend aptos_framework::block;
+    friend diem_framework::block;
 
     // Contains all of 0L's business logic for end of epoch.
     // This removed business logic from reconfiguration.move
@@ -92,7 +92,7 @@ module aptos_framework::epoch_boundary {
 
     #[test_only]
     public fun ol_reconfigure_for_test(vm: &signer) {
-        use aptos_framework::system_addresses;
+        use diem_framework::system_addresses;
 
         system_addresses::assert_ol(vm);
         epoch_boundary(vm);

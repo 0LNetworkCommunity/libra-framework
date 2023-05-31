@@ -1,9 +1,9 @@
 // Some fixtures are complex and are repeatedly needed
 module ol_framework::mock {
   #[test_only]
-  use aptos_framework::stake;
+  use diem_framework::stake;
   #[test_only]
-  use aptos_framework::reconfiguration;
+  use diem_framework::reconfiguration;
   #[test_only]
   use ol_framework::cases;
   #[test_only]
@@ -11,9 +11,9 @@ module ol_framework::mock {
   #[test_only]
   use std::vector;
   #[test_only]
-  use aptos_framework::genesis;
+  use diem_framework::genesis;
   #[test_only]
-  use aptos_framework::account;
+  use diem_framework::account;
   // #[test_only]
   // use ol_framework::ol_account;
   #[test_only]
@@ -21,19 +21,19 @@ module ol_framework::mock {
   #[test_only]
   use ol_framework::validator_universe;
   #[test_only]
-  use aptos_framework::timestamp;
+  use diem_framework::timestamp;
   #[test_only]
-  use aptos_framework::system_addresses;
+  use diem_framework::system_addresses;
   #[test_only]
   use ol_framework::epoch_boundary;
   #[test_only]
-  use aptos_framework::coin;
+  use diem_framework::coin;
   #[test_only]
   use ol_framework::gas_coin;
   #[test_only]
-  use aptos_framework::transaction_fee;
+  use diem_framework::transaction_fee;
   // #[test_only]
-  // use aptos_std::debug::print;
+  // use diem_std::debug::print;
 
   #[test_only]
   public fun reset_val_perf_one(vm: &signer, addr: address) {
@@ -141,8 +141,8 @@ module ol_framework::mock {
       system_addresses::assert_ol(root);
 
       let (burn_cap, mint_cap) = gas_coin::initialize_for_test_without_aggregator_factory(root);
-      // Give stake module MintCapability<AptosCoin> so it can mint rewards.
-      // stake::store_aptos_coin_mint_cap(aptos_framework, mint_cap);
+      // Give stake module MintCapability<DiemCoin> so it can mint rewards.
+      // stake::store_diem_coin_mint_cap(diem_framework, mint_cap);
 
       transaction_fee::initialize_fee_collection_and_distribution(root, 0);
 
@@ -175,7 +175,7 @@ module ol_framework::mock {
     #[test_only]
     /// mock up to 6 validators alice..frank
     public fun genesis_n_vals(num: u64): vector<address> {
-      let framework_sig = account::create_signer_for_test(@aptos_framework);
+      let framework_sig = account::create_signer_for_test(@diem_framework);
       ol_test_genesis(&framework_sig);
 
       let val_addr = personas();

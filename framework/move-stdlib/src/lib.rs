@@ -1,4 +1,4 @@
-// Copyright © Aptos Foundation
+// Copyright © Diem Foundation
 
 // Copyright (c) The Diem Core Contributors
 // Copyright (c) The Move Contributors

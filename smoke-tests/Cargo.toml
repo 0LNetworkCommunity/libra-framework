@@ -7,9 +7,9 @@ version = "0.1.0"
 edition = { workspace = true }
 
 [dependencies]
-aptos-cached-packages = { workspace = true }
-aptos-debugger = { workspace = true }
-aptos-forge = { workspace = true }
-aptos-types = { workspace = true }
-aptos-smoke-test = { workspace = true }
+diem-cached-packages = { workspace = true }
+diem-debugger = { workspace = true }
+diem-forge = { workspace = true }
+diem-types = { workspace = true }
+diem-smoke-test = { workspace = true }
 tokio = { workspace = true }

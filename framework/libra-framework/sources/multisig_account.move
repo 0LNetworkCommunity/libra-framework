@@ -1,4 +1,4 @@
-/// Enhanced multisig account standard on Aptos. This is different from the native multisig scheme support enforced via
+/// Enhanced multisig account standard on Diem. This is different from the native multisig scheme support enforced via
 /// the account's auth key.
 ///
 /// This module allows creating a flexible and powerful multisig account with seamless support for updating owners
@@ -9,7 +9,7 @@
 /// the special multisig transaction flow. However, owners can create a transaction to change the auth key to match a
 /// private key off chain if so desired.
 ///
-/// Transactions need to be executed in order of creation, similar to transactions for a normal Aptos account (enforced
+/// Transactions need to be executed in order of creation, similar to transactions for a normal Diem account (enforced
 /// with account nonce).
 ///
 /// The flow is like below:
@@ -35,16 +35,16 @@
 /// are, the more expensive voting on transactions will become. If a large number of owners is designed, such as in a
 /// flat governance structure, clients are encouraged to write their own modules on top of this multisig account module
 /// and implement the governance voting logic on top.
-module aptos_framework::multisig_account {
-    use aptos_framework::account::{Self, SignerCapability, new_event_handle, create_resource_address};
-    use aptos_framework::aptos_coin::AptosCoin;
-    use aptos_framework::chain_id;
-    use aptos_framework::create_signer::create_signer;
-    use aptos_framework::coin;
-    use aptos_framework::event::{EventHandle, emit_event};
-    use aptos_framework::timestamp::now_seconds;
-    use aptos_std::simple_map::{Self, SimpleMap};
-    use aptos_std::table::{Self, Table};
+module diem_framework::multisig_account {
+    use diem_framework::account::{Self, SignerCapability, new_event_handle, create_resource_address};
+    use diem_framework::diem_coin::DiemCoin;
+    use diem_framework::chain_id;
+    use diem_framework::create_signer::create_signer;
+    use diem_framework::coin;
+    use diem_framework::event::{EventHandle, emit_event};
+    use diem_framework::timestamp::now_seconds;
+    use diem_std::simple_map::{Self, SimpleMap};
+    use diem_std::table::{Self, Table};
     use std::bcs::to_bytes;
     use std::error;
     use std::hash::sha3_256;
@@ -56,7 +56,7 @@ module aptos_framework::multisig_account {
     /// The salt used to create a resource account during multisig account creation.
     /// This is used to avoid conflicts with other modules that also create resource accounts with the same owner
     /// account.
-    const DOMAIN_SEPARATOR: vector<u8> = b"aptos_framework::multisig_account";
+    const DOMAIN_SEPARATOR: vector<u8> = b"diem_framework::multisig_account";
 
     // Any error codes > 2000 can be thrown as part of transaction prologue.
     /// Owner list cannot contain the same address more than once.
@@ -889,8 +889,8 @@ module aptos_framework::multisig_account {
             account::create_resource_account(owner, create_multisig_account_seed(to_bytes(&owner_nonce)));
         // Register the account to receive APT as this is not done by default as part of the resource account creation
         // flow.
-        if (!coin::is_account_registered<AptosCoin>(address_of(&multisig_signer))) {
-            coin::register<AptosCoin>(&multisig_signer);
+        if (!coin::is_account_registered<DiemCoin>(address_of(&multisig_signer))) {
+            coin::register<DiemCoin>(&multisig_signer);
         };
 
         (multisig_signer, multisig_signer_cap)
@@ -948,13 +948,13 @@ module aptos_framework::multisig_account {
     ////////////////////////// Tests ///////////////////////////////
 
     #[test_only]
-    use aptos_framework::aptos_account::create_account;
+    use diem_framework::diem_account::create_account;
     #[test_only]
-    use aptos_framework::timestamp;
+    use diem_framework::timestamp;
     #[test_only]
-    use aptos_std::from_bcs;
+    use diem_std::from_bcs;
     #[test_only]
-    use aptos_std::multi_ed25519;
+    use diem_std::multi_ed25519;
     #[test_only]
     use std::string::utf8;
     use std::features;

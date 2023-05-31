@@ -17,14 +17,14 @@ Export the path to your `zapatos` source, to make this easier.
 #### build executables
 You want to create a `zapatos` executable so you can run the `move` cli with the framework changes.
 
-You'll want `aptos` (cli for move tests), `aptos-framework` (framework compiler), `aptos-node` (for smoke tests only).
+You'll want `diem` (cli for move tests), `diem-framework` (framework compiler), `diem-node` (for smoke tests only).
 
 ```
 cd $ZAPATOS
-cargo build --release -p aptos-framework -p aptos -p aptos-node --target-dir ~/.cargo/bin
+cargo build --release -p diem-framework -p diem -p diem-node --target-dir ~/.cargo/bin
 cd ~/.cargo/bin
-mv aptos-framework zapatos-framework
-mv aptos zapatos
+mv diem-framework zapatos-framework
+mv diem zapatos
 ```
 
 Just check those executables appear in your path.

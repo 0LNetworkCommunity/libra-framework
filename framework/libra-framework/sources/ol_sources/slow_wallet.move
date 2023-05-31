@@ -6,8 +6,8 @@
 // the unlocked amount.
 
 module ol_framework::slow_wallet {
-  use aptos_framework::system_addresses;
-  use aptos_framework::coin;
+  use diem_framework::system_addresses;
+  use diem_framework::coin;
   use std::vector;
   use std::signer;
   use ol_framework::globals;

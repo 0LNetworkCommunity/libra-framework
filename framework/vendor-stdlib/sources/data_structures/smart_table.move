@@ -4,13 +4,13 @@
 /// when expanding to avoid unexpected gas cost.
 /// SmartTable uses faster hash function SipHash instead of cryptographically secure hash functions like sha3-256 since
 /// it tolerates collisions.
-module aptos_std::smart_table {
+module diem_std::smart_table {
     use std::error;
     use std::vector;
-    use aptos_std::aptos_hash::sip_hash_from_value;
-    use aptos_std::table_with_length::{Self, TableWithLength};
-    use aptos_std::type_info::size_of_val;
-    use aptos_std::math64::max;
+    use diem_std::diem_hash::sip_hash_from_value;
+    use diem_std::table_with_length::{Self, TableWithLength};
+    use diem_std::type_info::size_of_val;
+    use diem_std::math64::max;
 
     /// Key not found in the smart table
     const ENOT_FOUND: u64 = 1;

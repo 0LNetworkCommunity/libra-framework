@@ -1,4 +1,4 @@
-spec aptos_framework::create_signer {
+spec diem_framework::create_signer {
     use std::signer;
 
     spec module {

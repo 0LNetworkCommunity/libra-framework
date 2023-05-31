@@ -1,13 +1,13 @@
-// Copyright © Aptos Foundation
+// Copyright © Diem Foundation
 // SPDX-License-Identifier: Apache-2.0
 
 use zapatos_framework::ReleaseBundle;
 // use once_cell::sync::Lazy; //////// 0L ///////
 
-pub mod aptos_framework_sdk_builder;
-pub mod aptos_stdlib;
-// pub mod aptos_token_objects_sdk_builder;
-// pub mod aptos_token_sdk_builder;
+pub mod diem_framework_sdk_builder;
+pub mod diem_stdlib;
+// pub mod diem_token_objects_sdk_builder;
+// pub mod diem_token_sdk_builder;
 
 pub mod release;
 //////// 0L ///////

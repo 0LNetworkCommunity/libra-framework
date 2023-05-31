@@ -11,11 +11,11 @@
 
 module ol_framework::infra_escrow{
     use std::option::{Self, Option};
-    use aptos_framework::system_addresses;
+    use diem_framework::system_addresses;
     use ol_framework::gas_coin::GasCoin;
     use ol_framework::pledge_accounts;
-    use aptos_framework::coin;
-    use aptos_framework::transaction_fee;
+    use diem_framework::coin;
+    use diem_framework::transaction_fee;
     // use DiemFramework::Debug::print;
 
     /// for use on genesis, creates the infra escrow pledge policy struct

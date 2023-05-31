@@ -2,8 +2,8 @@
 #[test_only]
 /// tests for external apis, and where a dependency cycle with genesis is created.
 module ol_framework::test_meta {
-  use aptos_framework::reconfiguration;
-  use aptos_framework::stake;
+  use diem_framework::reconfiguration;
+  use diem_framework::stake;
   
   use ol_framework::mock;
 

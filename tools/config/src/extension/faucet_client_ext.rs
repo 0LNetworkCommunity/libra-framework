@@ -12,7 +12,7 @@ pub trait FaucetClientExt {
 
 static FAUCET_URL: Lazy<Url> = Lazy::new(|| {
     Url::from_str(
-        std::env::var("APTOS_FAUCET_URL")
+        std::env::var("DIEM_FAUCET_URL")
             .as_ref()
             .map(|s| s.as_str())
             .unwrap_or("http://0.0.0.0:8081"),

@@ -1,4 +1,4 @@
-spec aptos_std::from_bcs {
+spec diem_std::from_bcs {
     // ----------------------------------
     // Uninterpreted functions and axioms
     // ----------------------------------

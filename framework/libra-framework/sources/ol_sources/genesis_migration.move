@@ -8,7 +8,7 @@
 module ol_framework::genesis_migration {
   use std::signer;
   use std::error;
-  use aptos_framework::coin;
+  use diem_framework::coin;
   use ol_framework::ol_account;
   use ol_framework::globals;
   use ol_framework::validator_universe;

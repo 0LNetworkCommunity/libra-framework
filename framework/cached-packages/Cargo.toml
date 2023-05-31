@@ -1,5 +1,5 @@
 [package]
-name = "aptos-cached-packages"
+name = "diem-cached-packages"
 description = "Builds framework packages for caching in builds and tests"
 version = "0.1.0"
 
@@ -16,7 +16,7 @@ rust-version = { workspace = true }
 anyhow = { workspace = true }
 clap = { workspace = true }
 zapatos-framework = { workspace = true }
-aptos-types = { workspace = true, features = ["fuzzing"] }
+diem-types = { workspace = true, features = ["fuzzing"] }
 bcs = { workspace = true }
 include_dir = { workspace = true }
 move-core-types = { workspace = true }

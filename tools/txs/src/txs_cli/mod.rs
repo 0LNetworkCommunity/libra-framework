@@ -23,7 +23,7 @@ enum Subcommand {
     /// Demo transfer coin example for local testnet
     Demo,
 
-    /// Create onchain account by using Aptos faucet
+    /// Create onchain account by using Diem faucet
     CreateAccount {
         /// Create onchain account with the given address
         #[clap(short, long)]
@@ -79,7 +79,7 @@ enum Subcommand {
 
                 Example: 
                 'u8, u16, u32, u64, u128, u256, bool, address, vector<u8>, signer'
-                '0x1::aptos_coin::AptosCoin'
+                '0x1::diem_coin::DiemCoin'
             "#}
         )]
         type_args: Option<String>,
@@ -135,7 +135,7 @@ enum Subcommand {
 
                 Example: 
                 'u8, u16, u32, u64, u128, u256, bool, address, vector<u8>, signer'
-                '0x1::aptos_coin::AptosCoin'
+                '0x1::diem_coin::DiemCoin'
             "#}
         )]
         type_args: Option<String>,

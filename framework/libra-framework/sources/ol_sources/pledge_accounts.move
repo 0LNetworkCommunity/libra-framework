@@ -47,10 +47,10 @@
         use ol_framework::testnet;
         use ol_framework::gas_coin::GasCoin;
         // use ol_framework::ol_account;
-        use aptos_framework::reconfiguration;
-        use aptos_framework::chain_status;
-        use aptos_framework::system_addresses;
-        use aptos_framework::coin;
+        use diem_framework::reconfiguration;
+        use diem_framework::chain_status;
+        use diem_framework::system_addresses;
+        use diem_framework::coin;
 
 
         const ENO_BENEFICIARY_POLICY: u64 = 150001;

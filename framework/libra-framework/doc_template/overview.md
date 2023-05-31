@@ -1,6 +1,6 @@
-# Aptos Framework
+# Diem Framework
 
-This is the reference documentation of the Aptos framework.
+This is the reference documentation of the Diem framework.
 
 ## Index
 

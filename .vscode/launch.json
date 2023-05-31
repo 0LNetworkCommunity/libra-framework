@@ -6,10 +6,10 @@
     // target/debug/ol-genesis-tools --fork --output-path /opt/genesis_from_snapshot.blob --snapshot-path /Users/gsimsek/code/libra-main/ol/devnet/snapshot/state_ver_267.54ab`
     "configurations": [
         {
-            "name": "aptos-node",
+            "name": "diem-node",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/target/debug/aptos-node",
+            "program": "${workspaceFolder}/target/debug/diem-node",
             "args": ["test"],
             "cwd": "${workspaceFolder}"
         },        

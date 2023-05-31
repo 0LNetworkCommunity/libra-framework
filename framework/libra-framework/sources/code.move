@@ -1,14 +1,14 @@
 /// This module supports functionality related to code management.
-module aptos_framework::code {
+module diem_framework::code {
     use std::string::String;
     use std::error;
     use std::signer;
     use std::vector;
     use std::features;
 
-    use aptos_framework::util;
-    use aptos_framework::system_addresses;
-    use aptos_std::copyable_any::Any;
+    use diem_framework::util;
+    use diem_framework::system_addresses;
+    use diem_std::copyable_any::Any;
     use std::option::Option;
     use std::string;
 
@@ -116,9 +116,9 @@ module aptos_framework::code {
     }
 
     /// Initialize package metadata for Genesis.
-    fun initialize(aptos_framework: &signer, package_owner: &signer, metadata: PackageMetadata)
+    fun initialize(diem_framework: &signer, package_owner: &signer, metadata: PackageMetadata)
     acquires PackageRegistry {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_diem_framework(diem_framework);
         let addr = signer::address_of(package_owner);
         if (!exists<PackageRegistry>(addr)) {
             move_to(package_owner, PackageRegistry { packages: vector[metadata] })
