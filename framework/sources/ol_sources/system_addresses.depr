@@ -6,7 +6,7 @@ module ol_framework::libra_addresses {
     const ENOT_OL_ROOT_ADDRESS: u64 = 0;
     
     public fun is_ol_root_address(addr: address): bool {
-        addr == @ol_root
+        addr == @root
     }
 
     public fun assert_ol_root_address(addr: address) {

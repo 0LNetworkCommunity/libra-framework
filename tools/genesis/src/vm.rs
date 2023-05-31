@@ -445,7 +445,7 @@ pub fn test_mainnet_end_to_end() {
         &accounts,
         &employees,
         &validators,
-        zapatos_cached_packages::head_release_bundle(),
+        &zapatos_cached_packages::head_release_bundle(),
         ChainId::mainnet(),
         &mainnet_genesis_config(),
     );
