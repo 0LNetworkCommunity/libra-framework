@@ -2,7 +2,8 @@
 resolver = "2"
 
 members = [
-  "cached-packages",
+  "framework",
+  "framework/cached-packages",
   "smoke-tests",
   "transactional-tests",
   "tools/txs",
@@ -98,6 +99,7 @@ diem-types = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-d
 # move-binary-format = { path = "third_party/move/move-binary-format" }
 # ... see full list in Aptos repo
 move-core-types = { git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "94b0d85"}
+move-command-line-common = { git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "94b0d85" }
 
 
 [profile.release]
