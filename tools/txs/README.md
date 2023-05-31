@@ -7,8 +7,8 @@ See txs_args.rs, transfer_coin.rs
 
 Sources:  
 https://diem.dev/tutorials/your-first-transaction/  
-App https://github.com/diem-labs/diem-core/tree/main/sdk/examples  
-Lib https://github.com/diem-labs/diem-core/tree/main/sdk/src   
+App https://github.com/aptos-labs/diem-core/tree/main/sdk/examples  
+Lib https://github.com/aptos-labs/diem-core/tree/main/sdk/src   
 
 ## Example Usage - demo-tx Cmd
 

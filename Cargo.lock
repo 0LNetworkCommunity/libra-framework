@@ -286,7 +286,7 @@ dependencies = [
  "diem-vm-genesis",
  "async-trait",
  "base64",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "chrono",
  "clap 3.2.23",
  "clap_complete",
@@ -345,7 +345,7 @@ dependencies = [
  "diem-crypto",
  "diem-state-view",
  "diem-types",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "better_any",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
  "move-core-types 0.0.4",
@@ -374,7 +374,7 @@ dependencies = [
  "diem-types",
  "diem-vm",
  "async-trait",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "bytes",
  "fail 0.5.0",
  "futures",
@@ -410,7 +410,7 @@ dependencies = [
  "diem-types",
  "diem-vm",
  "async-trait",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "hex",
  "indoc 1.0.7",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
@@ -444,7 +444,7 @@ dependencies = [
  "diem-types",
  "diem-vm",
  "async-trait",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "bytes",
  "clap 3.2.23",
  "csv",
@@ -480,7 +480,7 @@ dependencies = [
  "diem-runtimes",
  "diem-storage-interface",
  "diem-types",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "bytes",
  "hyper",
  "once_cell",
@@ -513,7 +513,7 @@ dependencies = [
  "diem-types",
  "diem-vm-logging",
  "arc-swap",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "crossbeam",
  "dashmap",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
@@ -564,7 +564,7 @@ source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0
 dependencies = [
  "diem-framework",
  "diem-types",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "include_dir 0.7.2",
  "move-core-types 0.0.4",
  "once_cell",
@@ -608,7 +608,7 @@ dependencies = [
  "diem-short-hex-str",
  "diem-temppath",
  "diem-types",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "byteorder",
  "cfg-if 1.0.0",
  "get_if_addrs",
@@ -656,7 +656,7 @@ dependencies = [
  "diem-vm",
  "arc-swap",
  "async-trait",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "byteorder",
  "bytes",
  "chrono",
@@ -709,7 +709,7 @@ dependencies = [
  "diem-infallible",
  "diem-short-hex-str",
  "diem-types",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "futures",
  "itertools",
  "mirai-annotations",
@@ -741,7 +741,7 @@ dependencies = [
  "ark-ec",
  "ark-ff",
  "ark-std",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "blst",
  "bytes",
  "curve25519-dalek",
@@ -856,7 +856,7 @@ dependencies = [
  "diem-vm",
  "arc-swap",
  "arr_macro",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "byteorder",
  "claims",
  "clap 3.2.23",
@@ -896,7 +896,7 @@ dependencies = [
  "diem-storage-interface",
  "diem-types",
  "diem-vm",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "byteorder",
  "move-core-types 0.0.4",
  "move-resource-viewer",
@@ -990,7 +990,7 @@ dependencies = [
  "diem-storage-interface",
  "diem-types",
  "diem-vm",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "fail 0.5.0",
  "itertools",
  "move-core-types 0.0.4",
@@ -1035,7 +1035,7 @@ dependencies = [
  "diem-state-view",
  "diem-storage-interface",
  "diem-types",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "dashmap",
  "itertools",
  "once_cell",
@@ -1172,7 +1172,7 @@ dependencies = [
  "ark-serialize",
  "ark-std",
  "base64",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "better_any",
  "blake2-rfc",
  "blst",
@@ -1231,7 +1231,7 @@ dependencies = [
  "diem-move-stdlib",
  "diem-package-builder",
  "diem-types",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
  "move-core-types 0.0.4",
@@ -1285,7 +1285,7 @@ dependencies = [
  "diem-types",
  "diem-vm",
  "diem-vm-genesis",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "rand 0.7.3",
  "serde 1.0.163",
  "serde_yaml 0.8.26",
@@ -1331,7 +1331,7 @@ dependencies = [
  "diem-types",
  "diem-vm",
  "async-trait",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "bigdecimal",
  "chrono",
  "clap 3.2.23",
@@ -1431,7 +1431,7 @@ dependencies = [
  "diem-metrics-core",
  "diem-storage-interface",
  "diem-types",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "byteorder",
  "itertools",
  "num-derive",
@@ -1471,7 +1471,7 @@ dependencies = [
  "diem-types",
  "diem-vm",
  "diem-vm-genesis",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "goldenfile",
  "hex",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
@@ -1546,7 +1546,7 @@ dependencies = [
  "diem-types",
  "diem-vm-validator",
  "async-trait",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "fail 0.5.0",
  "futures",
  "itertools",
@@ -1636,7 +1636,7 @@ dependencies = [
  "diem-crypto",
  "diem-infallible",
  "diem-types",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "crossbeam",
  "dashmap",
 ]
@@ -1682,7 +1682,7 @@ dependencies = [
  "diem-time-service",
  "diem-types",
  "async-trait",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "bytes",
  "futures",
  "futures-util",
@@ -1719,7 +1719,7 @@ dependencies = [
  "diem-time-service",
  "diem-types",
  "async-trait",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "futures",
  "maplit",
  "rand 0.7.3",
@@ -1762,7 +1762,7 @@ dependencies = [
  "diem-short-hex-str",
  "diem-time-service",
  "diem-types",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "futures",
  "once_cell",
  "serde_yaml 0.8.26",
@@ -1819,7 +1819,7 @@ dependencies = [
  "diem-time-service",
  "diem-types",
  "diem-vm",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "fail 0.5.0",
  "futures",
@@ -1941,7 +1941,7 @@ dependencies = [
  "diem-storage-interface",
  "diem-time-service",
  "diem-types",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "bytes",
  "futures",
  "once_cell",
@@ -1957,7 +1957,7 @@ source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0
 dependencies = [
  "diem-config",
  "diem-types",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "serde 1.0.163",
  "thiserror",
 ]
@@ -2033,7 +2033,7 @@ dependencies = [
  "diem-temppath",
  "diem-types",
  "diem-vm-genesis",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "futures",
  "git2 0.16.1",
@@ -2075,7 +2075,7 @@ dependencies = [
  "diem-infallible",
  "diem-logger",
  "diem-types",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "bytes",
  "futures",
  "hex",
@@ -2125,7 +2125,7 @@ dependencies = [
  "diem-sdk",
  "diem-types",
  "diem-warp-webserver",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "futures",
  "hex",
@@ -2216,7 +2216,7 @@ dependencies = [
  "diem-global-constants",
  "diem-rest-client",
  "diem-types",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "ed25519-dalek-bip32",
  "move-core-types 0.0.4",
  "rand_core 0.5.1",
@@ -2231,7 +2231,7 @@ source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0
 dependencies = [
  "anyhow",
  "diem-types",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "heck 0.3.3",
  "move-core-types 0.0.4",
  "once_cell",
@@ -2270,7 +2270,7 @@ dependencies = [
  "diem-time-service",
  "diem-vault-client",
  "base64",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "chrono",
  "enum_dispatch",
  "rand 0.7.3",
@@ -2326,7 +2326,7 @@ dependencies = [
  "diem-time-service",
  "diem-types",
  "async-trait",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "futures",
  "once_cell",
  "serde 1.0.163",
@@ -2343,7 +2343,7 @@ dependencies = [
  "anyhow",
  "diem-crypto",
  "diem-types",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "serde 1.0.163",
  "serde_bytes",
  "serde_json",
@@ -2363,7 +2363,7 @@ dependencies = [
  "diem-state-view",
  "diem-types",
  "diem-vm",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "crossbeam-channel",
  "dashmap",
  "move-core-types 0.0.4",
@@ -2404,7 +2404,7 @@ dependencies = [
  "diem-storage-service-types",
  "diem-time-service",
  "diem-types",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "bytes",
  "futures",
  "lru 0.7.8",
@@ -2423,7 +2423,7 @@ dependencies = [
  "diem-config",
  "diem-crypto",
  "diem-types",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "num-traits 0.2.15",
  "serde 1.0.163",
  "thiserror",
@@ -2485,7 +2485,7 @@ dependencies = [
  "diem-rest-client",
  "diem-types",
  "base64",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "chrono",
  "clap 3.2.23",
  "debug-ignore",
@@ -2613,7 +2613,7 @@ dependencies = [
  "diem-types",
  "diem-vm",
  "diem-vm-genesis",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "hex",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
@@ -2637,7 +2637,7 @@ dependencies = [
  "diem-bitvec",
  "diem-crypto",
  "diem-crypto-derive",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "chrono",
  "derivative",
  "hex",
@@ -2714,7 +2714,7 @@ dependencies = [
  "diem-state-view",
  "diem-types",
  "diem-vm-logging",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "dashmap",
  "fail 0.5.0",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
@@ -2749,7 +2749,7 @@ dependencies = [
  "diem-state-view",
  "diem-types",
  "diem-vm",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "move-core-types 0.0.4",
  "move-vm-types",
  "once_cell",
@@ -2797,7 +2797,7 @@ dependencies = [
  "diem-api-types",
  "diem-config",
  "diem-logger",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "hyper",
  "serde 1.0.163",
  "serde_json",
@@ -2818,7 +2818,7 @@ dependencies = [
  "diem-state-view",
  "diem-types",
  "diem-vm",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "handlebars",
  "move-command-line-common",
  "move-compiler",
@@ -3142,7 +3142,7 @@ checksum = "8c3c1a368f70d6cf7302d78f8f7093da241fb8e8807c05cc9e51a125895a6d5b"
 [[package]]
 name = "bcs"
 version = "0.1.3"
-source = "git+https://github.com/diem-labs/bcs.git?branch=main#2cde3e8446c460cb17b0c1d6bac7e27e964ac169"
+source = "git+https://github.com/aptos-labs/bcs.git?branch=main#2cde3e8446c460cb17b0c1d6bac7e27e964ac169"
 dependencies = [
  "serde 1.0.163",
  "thiserror",
@@ -3161,7 +3161,7 @@ dependencies = [
 [[package]]
 name = "bcs"
 version = "0.1.4"
-source = "git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d#d31fab9d81748e2594be5cd5cdf845786a30562d"
+source = "git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d#d31fab9d81748e2594be5cd5cdf845786a30562d"
 dependencies = [
  "serde 1.0.163",
  "thiserror",
@@ -6461,7 +6461,7 @@ version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "heck 0.3.3",
  "log",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
@@ -6514,7 +6514,7 @@ version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
  "move-command-line-common",
  "move-core-types 0.0.4",
@@ -6571,7 +6571,7 @@ version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "codespan-reporting",
  "colored",
@@ -6634,7 +6634,7 @@ version = "0.0.1"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "codespan-reporting",
  "difference",
@@ -6680,7 +6680,7 @@ source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0
 dependencies = [
  "anyhow",
  "arbitrary",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "ethnum",
  "hex",
  "num",
@@ -6701,7 +6701,7 @@ version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "codespan",
  "colored",
@@ -6757,7 +6757,7 @@ version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "log",
  "move-command-line-common",
  "move-core-types 0.0.4",
@@ -6771,7 +6771,7 @@ version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
  "move-bytecode-source-map",
@@ -6862,7 +6862,7 @@ version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "colored",
  "dirs-next 2.0.0",
@@ -6986,7 +6986,7 @@ version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "hex",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
  "move-bytecode-utils",
@@ -7060,7 +7060,7 @@ version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
  "anyhow",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "better_any",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
  "move-core-types 0.0.4",
@@ -7168,7 +7168,7 @@ name = "move-vm-types"
 version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85#94b0d8506ffaadd192f98bb7e8e64a908875d638"
 dependencies = [
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "move-binary-format 0.0.3 (git+https://github.com/0LNetworkCommunity/zapatos.git?rev=94b0d85)",
  "move-core-types 0.0.4",
  "once_cell",
@@ -9033,7 +9033,7 @@ dependencies = [
 [[package]]
 name = "serde-generate"
 version = "0.20.6"
-source = "git+https://github.com/diem-labs/serde-reflection?rev=839aed62a20ddccf043c08961cfe74875741ccba#839aed62a20ddccf043c08961cfe74875741ccba"
+source = "git+https://github.com/aptos-labs/serde-reflection?rev=839aed62a20ddccf043c08961cfe74875741ccba#839aed62a20ddccf043c08961cfe74875741ccba"
 dependencies = [
  "bcs 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "bincode",
@@ -9073,7 +9073,7 @@ dependencies = [
 [[package]]
 name = "serde-reflection"
 version = "0.3.5"
-source = "git+https://github.com/diem-labs/serde-reflection?rev=839aed62a20ddccf043c08961cfe74875741ccba#839aed62a20ddccf043c08961cfe74875741ccba"
+source = "git+https://github.com/aptos-labs/serde-reflection?rev=839aed62a20ddccf043c08961cfe74875741ccba#839aed62a20ddccf043c08961cfe74875741ccba"
 dependencies = [
  "once_cell",
  "serde 1.0.163",
@@ -9442,7 +9442,7 @@ dependencies = [
  "diem-writeset-generator",
  "async-trait",
  "base64",
- "bcs 0.1.4 (git+https://github.com/diem-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
+ "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "diesel",
  "futures",
  "hex",

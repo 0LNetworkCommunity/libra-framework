@@ -54,7 +54,7 @@ zapatos-framework = { package = "diem-framework", git = "https://github.com/0LNe
 zapatos-cached-packages = { package = "diem-cached-packages", git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "94b0d85" }
 zapatos-github-client = { package = "diem-github-client", git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "94b0d85"}
 
-bcs = { git = "https://github.com/diem-labs/bcs.git", branch = "main" }
+bcs = { git = "https://github.com/aptos-labs/bcs.git", branch = "main" }
 
 ### External crate dependencies.
 anyhow = "1.0.70"
@@ -123,5 +123,5 @@ incremental = true
 # # This will be removed once our pull requests land.
 # # https://github.com/rust-rocksdb/rust-rocksdb/issues/666
 # [patch.crates-io]
-# rocksdb = { git = 'https://github.com/diem-labs/rust-rocksdb' }
-# serde-reflection = { git = "https://github.com/diem-labs/serde-reflection", rev = "839aed62a20ddccf043c08961cfe74875741ccba" }
+# rocksdb = { git = 'https://github.com/aptos-labs/rust-rocksdb' }
+# serde-reflection = { git = "https://github.com/aptos-labs/serde-reflection", rev = "839aed62a20ddccf043c08961cfe74875741ccba" }
