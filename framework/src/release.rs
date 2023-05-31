@@ -4,7 +4,7 @@
 #![forbid(unsafe_code)]
 
 use zapatos_framework::{
-    docgen::DocgenOptions, path_in_crate, RELEASE_BUNDLE_EXTENSION, ReleaseBundle, BuildOptions, ReleaseOptions,
+    docgen::DocgenOptions, RELEASE_BUNDLE_EXTENSION, ReleaseBundle, BuildOptions, ReleaseOptions,
 };
 // use clap::Args;
 use move_command_line_common::address::NumericalAddress;
@@ -83,7 +83,9 @@ impl ReleaseTarget {
 
     /// Loads the release bundle for this particular target.
     pub fn load_bundle(self) -> anyhow::Result<ReleaseBundle> {
-        let path = path_in_crate("releases").join(self.file_name());
+        //////// 0L ////////
+        let this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR"))?;
+        let path = this_path.join("releases").join(self.file_name());
         ReleaseBundle::read(path)
     }
 

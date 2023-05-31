@@ -28,7 +28,7 @@ rust-version = "1.64"
 # Internal crate dependencies.
 libra-wallet = { path = "tools/wallet" }
 libra-config = { path = "tools/config" }
-
+libra-framework = { path = "framework" }
 
 # Please do not add any test features here: they should be declared by the 
 # individual crate.

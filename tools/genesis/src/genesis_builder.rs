@@ -1,6 +1,7 @@
 use anyhow::{anyhow, bail, Result};
 use libra_wallet::utils::{check_if_file_exists, from_yaml, write_to_user_only_file};
-use zapatos_cached_packages::head_release_bundle;
+use libra_framework::release;
+
 use std::str::FromStr;
 use std::{
     cmp::Ordering,
@@ -96,7 +97,7 @@ pub fn fetch_genesis_info(
     let validators = get_validator_configs(&client, &layout, false)?;
 
     let framework = if use_local_framework {
-      head_release_bundle()
+      release::ReleaseTarget::Head.load_bundle()?
     } else {
       let bytes = base64::decode(client.get_file(FRAMEWORK_NAME)?)?;
       bcs::from_bytes::<ReleaseBundle>(&bytes)?
