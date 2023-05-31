@@ -1,9 +1,9 @@
 #!/bin/bash
-# set -e # exit on error
+#set -e # exit on error
 
 echo -e "\n0L: Building move framework ..."
 
-export OUT=(./framework/releases/framework_fresh.mrb)
-aptos-framework custom --packages ./framework --rust-bindings "" --output $OUT 
+# release without source code
+cargo r -p libra-framework -- release -w
 
-printf "0L: Success building .mrb release bundle. Saved to: $OUT \n"
+printf "0L: Success building .mrb release bundle. Saved to: framework/releases/head.mrb \n"

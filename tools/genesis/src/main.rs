@@ -23,6 +23,10 @@ enum Sub {
         /// defaults to $HOME/.libra
         #[arg(long)]
         home_dir: Option<PathBuf>,
+
+        /// if we should use a local mrb framework instead of the one from github. This is useful for testing.
+        #[arg(short,long)]
+        local_framework: bool,
     }
 }
 
@@ -33,8 +37,8 @@ fn main() -> anyhow::Result<()>{
             dbg!(&test_mode);
             // make_recovery_genesis_from_vec_legacy_recovery();
         }
-        Some(Sub::Wizard { home_dir }) => {
-            GenesisWizard::default().start_wizard(home_dir)?;
+        Some(Sub::Wizard { home_dir, local_framework }) => {
+            GenesisWizard::default().start_wizard(home_dir, local_framework)?;
         }
         _ => {}
     }

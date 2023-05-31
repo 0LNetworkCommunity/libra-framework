@@ -69,7 +69,7 @@ impl Default for GenesisWizard {
 }
 impl GenesisWizard {
     /// start wizard for end-to-end genesis
-    pub fn start_wizard(&mut self, home_dir: Option<PathBuf>) -> anyhow::Result<()> {
+    pub fn start_wizard(&mut self, home_dir: Option<PathBuf>, use_local_framework: bool) -> anyhow::Result<()> {
         if let Some(d) = home_dir {
             self.data_path = d;
         }
@@ -138,6 +138,7 @@ impl GenesisWizard {
                 self.repo_name.clone(),
                 self.github_token.clone(),
                 self.data_path.clone(),
+                use_local_framework,
             )?;
             // pb.finish_and_clear();
 
@@ -384,7 +385,7 @@ fn initialize_host(
 
 fn test_wizard() {
     let mut wizard = GenesisWizard::default();
-    wizard.start_wizard(None).unwrap();
+    wizard.start_wizard(None, false).unwrap();
 }
 
 #[test]
