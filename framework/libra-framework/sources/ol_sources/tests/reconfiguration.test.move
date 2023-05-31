@@ -10,8 +10,6 @@ module ol_framework::test_reconfiguration {
   use ol_framework::gas_coin::GasCoin;
   use ol_framework::proof_of_fee;
 
-  use aptos_std::debug::print;
-
   // Scenario: all genesis validators make it to next epoch
   #[test(root = @ol_framework)]
   fun reconfig_happy_case(root: signer) {
@@ -54,8 +52,6 @@ module ol_framework::test_reconfiguration {
 
       let (reward, _, _ ) = proof_of_fee::get_consensus_reward();
 
-      print(&reward);
-
       // run ol reconfiguration
       mock::trigger_epoch(&root);    
 
@@ -68,7 +64,6 @@ module ol_framework::test_reconfiguration {
       // alice doesn't get paid
       assert!(coin::balance<GasCoin>(@0x1000a) == 0, 7357005);
       // bob does
-      print(&coin::balance<GasCoin>(@0x1000b) );
       assert!(coin::balance<GasCoin>(@0x1000b) == reward, 7357006);
 
 
