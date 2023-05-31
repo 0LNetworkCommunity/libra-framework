@@ -1,5 +1,5 @@
 [package]
-name = "OLFramework"
+name = "LibraFramework"
 version = "1.0.0"
 
 [addresses]
@@ -16,5 +16,5 @@ root = "0x1"
 # Using latest rev = "6b610f4" of Aptos CLI Release v1.0.11
 # Update "rev" regularly from: https://github.com/aptos-labs/aptos-core/releases
 # AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework", rev = "6b610f4" }
-AptosStdlib = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-stdlib", rev = "6b610f4" }
+VendorStdlib = { local = "../vendor-stdlib" }
 # MoveStdlib = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/move-stdlib", rev = "6b610f4" }

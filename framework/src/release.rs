@@ -56,8 +56,8 @@ impl ReleaseTarget {
     /// rust bindings generated from the package should be stored.
     pub fn packages(self) -> Vec<(&'static str, Option<&'static str>)> {
         let result = vec![
-            // ("move-stdlib", None),
-            // ("aptos-stdlib", None),
+            ("move-stdlib", None),
+            ("vendor-stdlib", None),
             (
                 "libra-framework",
                 Some("cached-packages/src/aptos_framework_sdk_builder.rs"),

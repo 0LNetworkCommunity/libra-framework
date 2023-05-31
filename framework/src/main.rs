@@ -6,10 +6,8 @@ use clap::Parser;
 #[derive(Parser)]
 #[clap(name = "libra-framework", author, version, propagate_version = true)]
 enum Commands {
-    /// Creates an Aptos framework release for the specified target.
+    /// Creates a .mrb move framework release
     Release(StandardRelease),
-    // /// Allows to create a custom release package,
-    // Custom(CustomRelease),
 }
 
 fn main() {
@@ -23,25 +21,6 @@ fn main() {
         std::process::exit(1)
     }
 }
-
-// ========================
-// Custom Release
-
-// #[derive(Debug, Parser)]
-// struct CustomRelease {
-//     #[clap(flatten)]
-//     options: ReleaseOptions,
-// }
-
-// impl CustomRelease {
-//     fn execute(self) -> anyhow::Result<()> {
-//         self.options.create_release()
-//     }
-// }
-
-// // ========================
-// // Standard Release
-
 #[derive(Debug, Parser)]
 struct  StandardRelease {
     /// The release target. One of head, devnet, testnet, or mainnet. Notice the type
@@ -51,7 +30,7 @@ struct  StandardRelease {
     target: ReleaseTarget,
 
     /// Remove the source code from the release package to shrink its size.
-    #[clap(long)]
+    #[clap(short, long)]
     without_source_code: bool,
 }
 
