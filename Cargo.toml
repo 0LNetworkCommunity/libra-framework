@@ -15,13 +15,13 @@ members = [
 
 # All workspace members should inherit these keys for package declarations.
 [workspace.package]
-authors = ["East Agile <open-source@eastagile.com>"]
+authors = ["libra contributors"]
 edition = "2021"
 homepage = "https://0l.network/"
 license = "Apache-2.0"
 publish = false
-repository = "https://github.com/EastAgile/libra-cli"
-rust-version = "1.64"
+repository = "https://github.com/0LNetworkCommunity/libra-v7"
+rust-version = "1.66.1"
 
 [workspace.dependencies]
 ### Internal crate dependencies.
