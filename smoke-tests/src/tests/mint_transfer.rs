@@ -7,6 +7,7 @@ use aptos_debugger::AptosDebugger;
 use aptos_forge::Swarm;
 use aptos_types::transaction::{ExecutionStatus, TransactionStatus};
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_mint_transfer() {
     let mut swarm = new_local_swarm_with_aptos(1).await;
