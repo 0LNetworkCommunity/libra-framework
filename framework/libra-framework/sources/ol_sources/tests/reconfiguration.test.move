@@ -10,7 +10,7 @@ module ol_framework::test_reconfiguration {
   use ol_framework::gas_coin::GasCoin;
   use ol_framework::proof_of_fee;
 
-  // use aptos_std::debug::print;
+  use aptos_std::debug::print;
 
   // Scenario: all genesis validators make it to next epoch
   #[test(root = @ol_framework)]
@@ -53,6 +53,7 @@ module ol_framework::test_reconfiguration {
       mock::mock_case_4(&root, *vector::borrow(&vals, 0));
 
       let (reward, _, _ ) = proof_of_fee::get_consensus_reward();
+      print(&reward);
 
       // run ol reconfiguration
       mock::trigger_epoch(&root);    
@@ -64,9 +65,9 @@ module ol_framework::test_reconfiguration {
       assert!(!vector::contains(&vals, &@0x1000a), 7357004);
 
       // alice doesn't get paid
-      assert!(coin::balance<GasCoin>(@0x1000a) == 0, 7357004);
+      assert!(coin::balance<GasCoin>(@0x1000a) == 0, 7357005);
       // bob does
-      assert!(coin::balance<GasCoin>(@0x1000b) == reward, 7357004);
+      assert!(coin::balance<GasCoin>(@0x1000b) == reward, 7357006);
 
 
   }
