@@ -33,26 +33,26 @@ libra-framework = { path = "framework" }
 # Please do not add any test features here: they should be declared by the 
 # individual crate.
 
-aptos-cached-packages = { git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be" }
-aptos-debugger = { git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be" }
-aptos-forge = { git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be" }
-aptos-transactional-test-harness = { git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be" }
-aptos-types = { git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be" }
-aptos-smoke-test = { package = "smoke-test", git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be" }
-zapatos = { package = "aptos", git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be" }
-zapatos-rest-client = { package = "aptos-rest-client", git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be" }
-zapatos-sdk = { package = "aptos-sdk", git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be" }
-zapatos-config = { package = "aptos-config", git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be" }
-zapatos-crypto = { package = "aptos-crypto", git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be"}
-zapatos-genesis = { package = "aptos-genesis", git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be"}
-zapatos-keygen = { package = "aptos-keygen", git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be" }
-zapatos-types = { package = "aptos-types", git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be"}
-zapatos-gas = { package = "aptos-gas", git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be"}
-zapatos-vm = { package = "aptos-vm", git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be"}
-zapatos-vm-genesis = { package = "aptos-vm-genesis", git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be"}
-zapatos-framework = { package = "aptos-framework", git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be"}
-zapatos-cached-packages = { package = "aptos-cached-packages", git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be" }
-zapatos-github-client = { package = "aptos-github-client", git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be"}
+aptos-cached-packages = { git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3" }
+aptos-debugger = { git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3" }
+aptos-forge = { git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3" }
+aptos-transactional-test-harness = { git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3" }
+aptos-types = { git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3" }
+aptos-smoke-test = { package = "smoke-test", git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3" }
+zapatos = { package = "aptos", git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3" }
+zapatos-rest-client = { package = "aptos-rest-client", git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3" }
+zapatos-sdk = { package = "aptos-sdk", git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3" }
+zapatos-config = { package = "aptos-config", git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3" }
+zapatos-crypto = { package = "aptos-crypto", git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3"}
+zapatos-genesis = { package = "aptos-genesis", git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3"}
+zapatos-keygen = { package = "aptos-keygen", git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3" }
+zapatos-types = { package = "aptos-types", git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3"}
+zapatos-gas = { package = "aptos-gas", git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3"}
+zapatos-vm = { package = "aptos-vm", git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3"}
+zapatos-vm-genesis = { package = "aptos-vm-genesis", git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3"}
+zapatos-framework = { package = "aptos-framework", git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3"}
+zapatos-cached-packages = { package = "aptos-cached-packages", git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3" }
+zapatos-github-client = { package = "aptos-github-client", git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3"}
 
 bcs = { git = "https://github.com/aptos-labs/bcs.git", branch = "main" }
 
@@ -99,8 +99,8 @@ diem-types = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-d
 # move-abigen = { path = "third_party/move/move-prover/move-abigen" }
 # move-binary-format = { path = "third_party/move/move-binary-format" }
 # ... see full list in Aptos repo
-move-core-types = { git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be"}
-move-command-line-common = { git = "https://github.com/0o-de-lally/zapatos.git", rev = "98746be" }
+move-core-types = { git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3"}
+move-command-line-common = { git = "https://github.com/0LNetworkCommunity/zapatos.git", rev = "08489b3" }
 
 
 [profile.release]
