@@ -8,6 +8,7 @@ use crate::{genesis_builder, node_yaml};
 use crate::{genesis_registration, hack_cli_progress::OLProgress};
 //////
 use crate::github_extensions::LibraGithubClient;
+use crate::helpers::MODE_0L;
 
 use anyhow::bail;
 use dialoguer::{Confirm, Input};
@@ -22,10 +23,12 @@ use std::{
 
 use libra_wallet::{keys::VALIDATOR_FILE, validator_files::SetValidatorConfiguration};
 use ol_types::config::AppCfg;
-
+use zapatos_types::chain_id::NamedChain;
 use zapatos_config::config::IdentityBlob;
 use zapatos_genesis::config::HostAndPort;
 use zapatos_github_client::Client;
+use std::str::FromStr;
+
 
 pub const DEFAULT_DATA_PATH: &str = ".libra";
 pub const DEFAULT_GIT_BRANCH: &str = "main";
@@ -91,8 +94,8 @@ impl GenesisWizard {
             ))
             .interact()?;
         if to_init {
-            let temp: HostAndPort = HostAndPort::local(6180)?;
-            initialize_host(Some(self.data_path.clone()), &self.github_username, temp, None)?;
+            let host = what_host()?;
+            initialize_host(Some(self.data_path.clone()), &self.github_username, host, None)?;
         }
 
         let to_register = Confirm::new()
@@ -380,6 +383,45 @@ fn initialize_host(
     Ok(())
 }
 
+
+/// interact with user to get ip address
+pub fn what_host() -> Result<HostAndPort, anyhow::Error> {
+    // get from external source since many cloud providers show different interfaces for `machine_ip`
+    let resp = reqwest::blocking::get("https://ifconfig.me")?;
+    // let ip_str = resp.text()?;
+
+     let host = match resp.text() {
+       Ok(ip_str) => { 
+          let h = HostAndPort::from_str(&format!("{}:6180", ip_str))?;
+          if *MODE_0L == NamedChain::DEVNET { return Ok(h) }
+          Some(h)
+        }
+        _ => None
+     };
+
+
+    if let Some(h) = host {
+          let txt = &format!(
+        "Will you use this host, and this IP address {:?}, for your node?",
+        h
+      );
+      if Confirm::new().with_prompt(txt).interact().unwrap() {
+          return Ok(h)
+      }
+    };
+
+
+    let input: String = Input::new()
+                .with_prompt("Enter the DNS or IP address, with port 6180")
+                .interact_text()
+                .unwrap();
+    let ip = input
+      .parse::<HostAndPort>()
+      .expect("Could not parse IP or DNS address");
+
+    Ok(ip)
+}
+
 #[test]
 #[ignore]
 
@@ -412,3 +454,5 @@ fn test_register() {
     g.git_token_check().unwrap();
     g.genesis_registration_github().unwrap();
 }
+
+
