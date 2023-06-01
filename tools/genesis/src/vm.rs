@@ -29,13 +29,15 @@ use crate::convert_types;
 pub fn zapatos_mainnet_genesis(
     validators: &[Validator],
     recovery: Option<&[LegacyRecovery]>,
+    framework: &ReleaseBundle,
+    chain_id: ChainId, 
 ) -> anyhow::Result<ChangeSet> {
     let genesis = encode_zapatos_recovery_genesis_change_set(
         &GENESIS_KEYPAIR.1,
         validators,
         recovery,
-        zapatos_framework::testnet_release_bundle(),
-        ChainId::test(),
+        framework,
+        chain_id,
         &mainnet_genesis_config(),
         &OnChainConsensusConfig::default(),
         &OnChainExecutionConfig::default(),

@@ -130,6 +130,10 @@ impl GenesisWizard {
             .unwrap();
 
         if ready {
+
+            // Get Legacy Recovery from file
+            let legacy_recovery = vec![];
+
             // TODO: progress bar is odd when we  ask "already exists, are you sure you want to overwrite"
 
             // let pb = ProgressBar::new(1000).with_style(OLProgress::spinner());
@@ -142,6 +146,7 @@ impl GenesisWizard {
                 self.github_token.clone(),
                 self.data_path.clone(),
                 use_local_framework,
+                &legacy_recovery,
             )?;
             // pb.finish_and_clear();
 

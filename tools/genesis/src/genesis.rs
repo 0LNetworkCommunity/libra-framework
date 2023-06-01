@@ -3,16 +3,19 @@
 use crate::vm::zapatos_mainnet_genesis;
 use anyhow::Error;
 use ol_types::legacy_recovery::LegacyRecovery;
+use zapatos_framework::ReleaseBundle;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use zapatos_types::transaction::{Transaction, WriteSetPayload};
+use zapatos_types::{transaction::{Transaction, WriteSetPayload}, chain_id::ChainId};
 use zapatos_vm_genesis::Validator;
 /// Make a recovery genesis blob
 pub fn make_recovery_genesis_from_vec_legacy_recovery(
     recovery: &[LegacyRecovery],
     genesis_vals: &[Validator],
-    genesis_blob_path: &PathBuf,
+    // genesis_blob_path: &PathBuf,
+    framework_release: &ReleaseBundle,
+    chain_id: ChainId,
     // append_user_accounts: bool,
 ) -> Result<Transaction, Error> {
     // // get consensus accounts
@@ -36,7 +39,7 @@ pub fn make_recovery_genesis_from_vec_legacy_recovery(
     //   anyhow::bail!("no val configs found for genesis set");
     // }
 
-    let recovery_changeset = zapatos_mainnet_genesis(genesis_vals, Some(recovery))?;
+    let recovery_changeset = zapatos_mainnet_genesis(genesis_vals, Some(recovery), framework_release, chain_id)?;
 
     // For a real upgrade or fork, we want to include all user accounts.
     // this is the default.
@@ -47,7 +50,7 @@ pub fn make_recovery_genesis_from_vec_legacy_recovery(
     let gen_tx = Transaction::GenesisTransaction(WriteSetPayload::Direct(recovery_changeset));
 
     // save genesis
-    save_genesis(&gen_tx, genesis_blob_path)?;
+    // save_genesis(&gen_tx, genesis_blob_path)?;
     // todo!()
     Ok(gen_tx)
 }
