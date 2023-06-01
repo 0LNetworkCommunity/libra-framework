@@ -6053,6 +6053,8 @@ dependencies = [
  "libra-framework",
  "libra-wallet",
  "ol-types",
+ "once_cell",
+ "reqwest",
  "serde 1.0.163",
  "serde_json",
  "ureq",
