@@ -18,6 +18,7 @@ pub fn make_recovery_genesis_from_vec_legacy_recovery(
     chain_id: ChainId,
     // append_user_accounts: bool,
 ) -> Result<Transaction, Error> {
+    dbg!(&"make_recovery_genesis_from_vec_legacy_recovery");
     // // get consensus accounts
     // let all_validator_configs = legacy_recovery::recover_validator_configs(recovery)?;
 

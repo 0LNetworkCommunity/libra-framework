@@ -97,7 +97,7 @@ pub fn encode_zapatos_recovery_genesis_change_set(
         gas_schedule,
     );
     initialize_features(&mut session);
-    // dbg!(&genesis_config.is_test);
+    dbg!(&genesis_config.is_test);
     if genesis_config.is_test {
         initialize_core_resources_and_aptos_coin(&mut session, core_resources_key);
     } else {
@@ -107,6 +107,8 @@ pub fn encode_zapatos_recovery_genesis_change_set(
     initialize_on_chain_governance(&mut session, genesis_config);
     dbg!("create_and_initialize_validators");
     create_and_initialize_validators(&mut session, validators);
+    // create_initialize_validators_with_commission
+
     if genesis_config.is_test {
         allow_core_resources_to_set_version(&mut session);
     }

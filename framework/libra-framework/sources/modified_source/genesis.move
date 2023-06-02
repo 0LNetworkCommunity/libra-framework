@@ -34,7 +34,7 @@ module aptos_framework::genesis {
     use ol_framework::musical_chairs;
     use ol_framework::proof_of_fee;
     use ol_framework::slow_wallet;
-    use ol_framework::gas_coin;
+    use ol_framework::gas_coin::{Self, GasCoin};
 
     const EDUPLICATE_ACCOUNT: u64 = 1;
     const EACCOUNT_DOES_NOT_EXIST: u64 = 2;
@@ -231,7 +231,10 @@ module aptos_framework::genesis {
         } else {
             let account = account::create_account(account_address);
             coin::register<AptosCoin>(&account);
+            coin::register<GasCoin>(&account);
+
             aptos_coin::mint(aptos_framework, account_address, balance);
+            gas_coin::mint(aptos_framework, account_address, 100000);
             account
         }
     }
@@ -337,7 +340,7 @@ module aptos_framework::genesis {
         while (i < num_validators) {
 
             let validator = vector::borrow(&validators, i);
-            create_initialize_validator(aptos_framework, validator, use_staking_contract);
+            validator_init(aptos_framework, validator, use_staking_contract);
 
             i = i + 1;
         };
@@ -380,7 +383,7 @@ module aptos_framework::genesis {
         create_initialize_validators_with_commission(aptos_framework, false, validators_with_commission);
     }
 
-    fun create_initialize_validator(
+    fun validator_init(
         aptos_framework: &signer,
         commission_config: &ValidatorConfigurationWithCommission,
         _use_staking_contract: bool,
@@ -388,6 +391,7 @@ module aptos_framework::genesis {
         let validator = &commission_config.validator_config;
 
         let owner = &create_account(aptos_framework, validator.owner_address, validator.stake_amount);
+        // TODO: we probably don't need either of these accounts.
         create_account(aptos_framework, validator.operator_address, 0);
         create_account(aptos_framework, validator.voter_address, 0);
 
@@ -418,8 +422,7 @@ module aptos_framework::genesis {
         };
 
 
-        if (commission_config.join_during_genesis) {
-
+        if (commission_config.join_during_genesis) { // TODO: remove this check
             initialize_validator(pool_address, validator);
         };
     }
