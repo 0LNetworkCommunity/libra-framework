@@ -86,7 +86,7 @@ pub fn build(
     github_token: String,
     home_path: PathBuf,
     use_local_framework: bool,
-    legacy_recovery: &[LegacyRecovery],
+    legacy_recovery: Option<&[LegacyRecovery]>,
 ) -> Result<Vec<PathBuf>> {
     let output_dir = home_path.join("genesis"); // TODO
     std::fs::create_dir_all(&output_dir)?;
@@ -101,10 +101,9 @@ pub fn build(
     let (genesis_bytes, waypoint) = {
         let mut gen_info = fetch_genesis_info(github_owner, github_repository, github_token, use_local_framework)?;
 
-
-        if !legacy_recovery.is_empty() {
+        if legacy_recovery.is_some() {
           let tx = make_recovery_genesis_from_vec_legacy_recovery(
-            legacy_recovery,
+            legacy_recovery.unwrap(),
             &gen_info.validators,
             &gen_info.framework,
             gen_info.chain_id,

@@ -32,8 +32,9 @@ use std::str::FromStr;
 
 pub const DEFAULT_DATA_PATH: &str = ".libra";
 pub const DEFAULT_GIT_BRANCH: &str = "main";
-const GITHUB_TOKEN_FILENAME: &str = "github_token.txt";
+pub const GITHUB_TOKEN_FILENAME: &str = "github_token.txt";
 /// Wizard for genesis
+#[derive(Debug, Clone)]
 pub struct GenesisWizard {
     /// a name to use only for genesis purposes
     pub username: String,
@@ -42,11 +43,11 @@ pub struct GenesisWizard {
     /// name of the repo
     pub repo_name: String,
     /// the registrant's github username
-    github_username: String,
+    pub github_username: String,
     /// the registrant's github api token.
-    github_token: String,
+    pub github_token: String,
     /// the home path of the user
-    data_path: PathBuf,
+    pub data_path: PathBuf,
     /// what epoch is the fork happening from
     pub epoch: Option<u64>,
 }
@@ -146,7 +147,7 @@ impl GenesisWizard {
                 self.github_token.clone(),
                 self.data_path.clone(),
                 use_local_framework,
-                &legacy_recovery,
+                Some(&legacy_recovery),
             )?;
             // pb.finish_and_clear();
 
