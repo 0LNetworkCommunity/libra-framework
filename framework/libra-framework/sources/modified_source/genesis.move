@@ -35,6 +35,7 @@ module aptos_framework::genesis {
     use ol_framework::proof_of_fee;
     use ol_framework::slow_wallet;
     use ol_framework::gas_coin::{Self, GasCoin};
+    // use ol_framework::ol_account;
 
     const EDUPLICATE_ACCOUNT: u64 = 1;
     const EACCOUNT_DOES_NOT_EXIST: u64 = 2;
@@ -239,6 +240,18 @@ module aptos_framework::genesis {
         }
     }
 
+    // This creates an funds an account if it doesn't exist.
+    /// If it exists, it just returns the signer.
+    fun ol_create_account(root: &signer, account_address: address): signer {
+        assert!(!account::exists_at(account_address), error::already_exists(EDUPLICATE_ACCOUNT));
+        // NOTE: after the inital genesis set up, the validators can rotate their auth keys.
+        let new_signer = account::create_account(account_address);
+        coin::register<GasCoin>(&new_signer);
+        // mint genesis bootstrap coins
+        gas_coin::mint(root, account_address, 100000);
+        new_signer
+    }
+
     // fun create_employee_validators(
     //     employee_vesting_start: u64,
     //     employee_vesting_period_duration: u64,
@@ -329,29 +342,29 @@ module aptos_framework::genesis {
     //     }
     // }
 
-    fun create_initialize_validators_with_commission(
-        aptos_framework: &signer,
-        use_staking_contract: bool,
-        validators: vector<ValidatorConfigurationWithCommission>,
-    ) {
-        let i = 0;
-        let num_validators = vector::length(&validators);
+    // fun create_initialize_validators_with_commission(
+    //     aptos_framework: &signer,
+    //     use_staking_contract: bool,
+    //     validators: vector<ValidatorConfigurationWithCommission>,
+    // ) {
+    //     let i = 0;
+    //     let num_validators = vector::length(&validators);
 
-        while (i < num_validators) {
+    //     while (i < num_validators) {
 
-            let validator = vector::borrow(&validators, i);
-            validator_init(aptos_framework, validator, use_staking_contract);
+    //         let validator = vector::borrow(&validators, i);
+    //         create_validator_accounts(aptos_framework, validator, use_staking_contract);
 
-            i = i + 1;
-        };
+    //         i = i + 1;
+    //     };
 
-        // Destroy the aptos framework account's ability to mint coins now that we're done with setting up the initial
-        // validators.
-        // aptos_coin::destroy_mint_cap(aptos_framework);
+    //     // Destroy the aptos framework account's ability to mint coins now that we're done with setting up the initial
+    //     // validators.
+    //     // aptos_coin::destroy_mint_cap(aptos_framework);
 
-        stake::on_new_epoch();
+    //     stake::on_new_epoch();
 
-    }
+    // }
 
     /// Sets up the initial validator set for the network.
     /// The validator "owner" accounts, and their authentication
@@ -367,23 +380,63 @@ module aptos_framework::genesis {
         let i = 0;
         let num_validators = vector::length(&validators);
 
-        let validators_with_commission = vector::empty();
+        // let validators_with_commission = vector::empty();
 
         while (i < num_validators) {
-            let validator_with_commission = ValidatorConfigurationWithCommission {
-                validator_config: vector::pop_back(&mut validators),
-                commission_percentage: 0,
-                join_during_genesis: true,
-            };
-            vector::push_back(&mut validators_with_commission, validator_with_commission);
+            ol_create_validator_accounts(aptos_framework, vector::borrow(&validators, i));
 
             i = i + 1;
         };
 
-        create_initialize_validators_with_commission(aptos_framework, false, validators_with_commission);
+        // create_initialize_validators_with_commission(aptos_framework, false, validators_with_commission);
     }
 
-    fun validator_init(
+
+    fun ol_create_validator_accounts(
+        aptos_framework: &signer,
+        validator: &ValidatorConfiguration,
+        // _use_staking_contract: bool,
+    ) { // NOTE: after the accounts are created, the migration will restore the previous authentication keys.
+        // let validator = &commission_config.validator_config;
+
+        let owner = &ol_create_account(aptos_framework, validator.owner_address);
+        // TODO: we probably don't need either of these accounts.
+        ol_create_account(aptos_framework, validator.operator_address);
+        ol_create_account(aptos_framework, validator.voter_address);
+
+        // Initialize the stake pool and join the validator set.
+        // let pool_address = if (use_staking_contract) {
+
+        //     staking_contract::create_staking_contract(
+        //         owner,
+        //         validator.operator_address,
+        //         validator.voter_address,
+        //         validator.stake_amount,
+        //         commission_config.commission_percentage,
+        //         x"",
+        //     );
+        //     staking_contract::stake_pool_address(validator.owner_address, validator.operator_address)
+        // } else
+        let pool_address = {
+
+
+            stake::initialize_stake_owner(
+                owner,
+                validator.stake_amount,
+                validator.operator_address,
+                validator.voter_address,
+            );
+
+            validator.owner_address
+        };
+
+
+        // if (commission_config.join_during_genesis) { // TODO: remove this check
+            initialize_validator(pool_address, validator);
+        // };
+    }
+
+    fun create_validator_accounts(
         aptos_framework: &signer,
         commission_config: &ValidatorConfigurationWithCommission,
         _use_staking_contract: bool,
@@ -479,7 +532,7 @@ module aptos_framework::genesis {
         _employee_vesting_start: u64,
         _employee_vesting_period_duration: u64,
         _employees: vector<EmployeeAccountMap>,
-        validators: vector<ValidatorConfigurationWithCommission>
+        _validators: vector<ValidatorConfigurationWithCommission>
     ) {
         initialize(
             gas_schedule,
@@ -506,7 +559,7 @@ module aptos_framework::genesis {
         );
         create_accounts(aptos_framework, accounts);
         // create_employee_validators(employee_vesting_start, employee_vesting_period_duration, employees);
-        create_initialize_validators_with_commission(aptos_framework, true, validators);
+        // create_initialize_validators_with_commission(aptos_framework, true, validators);
         set_genesis_end(aptos_framework);
     }
 

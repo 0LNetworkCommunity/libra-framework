@@ -98,13 +98,14 @@ module ol_framework::ol_account {
         new_account: address,
         auth_key: vector<u8>,
         // value: u64,
-    ) {
+    ): signer {
         system_addresses::assert_ol(root);
         chain_status::assert_genesis();
         let new_signer = account::vm_create_account(root, new_account, auth_key);
         // Roles::new_user_role_with_proof(&new_signer);
         // make_account(&new_signer, auth_key);
         coin::register<GasCoin>(&new_signer);
+        new_signer
     }
 
     // #[test_only]
