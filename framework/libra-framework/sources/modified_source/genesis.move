@@ -243,7 +243,10 @@ module aptos_framework::genesis {
     // This creates an funds an account if it doesn't exist.
     /// If it exists, it just returns the signer.
     fun ol_create_account(root: &signer, account_address: address): signer {
-        assert!(!account::exists_at(account_address), error::already_exists(EDUPLICATE_ACCOUNT));
+        // assert!(!account::exists_at(account_address), error::already_exists(EDUPLICATE_ACCOUNT));
+        if (account::exists_at(account_address)) {
+            return create_signer(account_address)
+        };
         // NOTE: after the inital genesis set up, the validators can rotate their auth keys.
         let new_signer = account::create_account(account_address);
         coin::register<GasCoin>(&new_signer);
