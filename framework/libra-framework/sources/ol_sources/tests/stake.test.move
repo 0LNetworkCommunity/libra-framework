@@ -13,7 +13,7 @@ module ol_framework::test_stake {
   // and reduce the set to 3 of those validators.
   #[test(root = @ol_framework)]
   fun bulk_update_validators(root: signer) {
-    let set = mock::genesis_n_vals(6);
+    let set = mock::genesis_n_vals(&root, 6);
     let alice = vector::borrow(&set, 0);
     assert!(stake::is_valid(*alice), 1000);
 
@@ -47,7 +47,7 @@ module ol_framework::test_stake {
   #[test(root = @ol_framework)]
   fun minimum_four_failover(root: signer) {
 
-    let set = mock::genesis_n_vals(10);
+    let set = mock::genesis_n_vals(&root, 10);
     testnet::unset(&root); // set to production mode
 
     let alice = vector::borrow(&set, 0);
@@ -76,7 +76,7 @@ module ol_framework::test_stake {
   #[test(root = @ol_framework)]
   fun sorted_vals_by_props(root: signer) {
 
-    let set = mock::genesis_n_vals(8);
+    let set = mock::genesis_n_vals(&root, 8);
     testnet::unset(&root); // set to production mode
 
     let alice = vector::borrow(&set, 0);
@@ -105,7 +105,7 @@ module ol_framework::test_stake {
   #[test(root = @ol_framework)]
   fun jail_list(root: signer) {
 
-    mock::genesis_n_vals(6);
+    mock::genesis_n_vals(&root, 6);
     mock::mock_all_vals_good_performance(&root);
     // all validators bid
     mock::pof_default();
