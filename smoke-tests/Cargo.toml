@@ -8,6 +8,8 @@ edition = { workspace = true }
 
 [dependencies]
 libra-cached-packages = { workspace = true }
+libra-framework = { workspace = true }
+
 aptos-debugger = { workspace = true }
 aptos-forge = { workspace = true }
 aptos-types = { workspace = true }

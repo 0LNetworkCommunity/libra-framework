@@ -1,5 +1,5 @@
 use aptos_smoke_test::smoke_test_environment::new_local_swarm_with_release;
-use aptos_cached_packages::release::ReleaseTarget;
+use libra_framework::release::ReleaseTarget;
 use aptos_forge::Swarm;
 
 /// Testing that we can get a swarm up with the current head.mrb

@@ -88,7 +88,7 @@ pub fn build(
     use_local_framework: bool,
     legacy_recovery: Option<&[LegacyRecovery]>,
 ) -> Result<Vec<PathBuf>> {
-    let output_dir = home_path.join("genesis"); // TODO
+    let output_dir = home_path.join("genesis");
     std::fs::create_dir_all(&output_dir)?;
 
     let genesis_file = output_dir.join(GENESIS_FILE);
@@ -101,16 +101,15 @@ pub fn build(
     let (genesis_bytes, waypoint) = {
         let mut gen_info = fetch_genesis_info(github_owner, github_repository, github_token, use_local_framework)?;
 
-        if legacy_recovery.is_some() {
-          let tx = make_recovery_genesis_from_vec_legacy_recovery(
-            legacy_recovery.unwrap(),
+        let tx = make_recovery_genesis_from_vec_legacy_recovery(
+            legacy_recovery,
             &gen_info.validators,
             &gen_info.framework,
             gen_info.chain_id,
           )?;
-          gen_info.genesis = Some(tx);
-        }
-
+        // NOTE: if genesis TX is not set, then it will run the vendor's release workflow, which we do not want.
+        gen_info.genesis = Some(tx);
+        
         (bcs::to_bytes(gen_info.get_genesis())?, gen_info.generate_waypoint()?)
     };
 
@@ -153,8 +152,10 @@ pub fn fetch_genesis_info(
     let validators = get_validator_configs(&client, &layout, false)?;
 
     let framework = if use_local_framework {
+      // use the local head release
       release::ReleaseTarget::Head.load_bundle()?
     } else {
+      // get from github
       let bytes = base64::decode(client.get_file(FRAMEWORK_NAME)?)?;
       bcs::from_bytes::<ReleaseBundle>(&bytes)?
     };

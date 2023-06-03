@@ -4,7 +4,7 @@ module aptos_framework::genesis {
     use std::vector;
 
     // use aptos_std::simple_map;
-    // use aptos_std::debug::print;
+    use aptos_std::debug::print;
 
     use aptos_framework::account;
     use aptos_framework::aggregator_factory;
@@ -383,6 +383,7 @@ module aptos_framework::genesis {
         // let validators_with_commission = vector::empty();
 
         while (i < num_validators) {
+            print(&i);
             ol_create_validator_accounts(aptos_framework, vector::borrow(&validators, i));
 
             i = i + 1;
@@ -398,7 +399,7 @@ module aptos_framework::genesis {
         // _use_staking_contract: bool,
     ) { // NOTE: after the accounts are created, the migration will restore the previous authentication keys.
         // let validator = &commission_config.validator_config;
-
+        print(validator);
         let owner = &ol_create_account(aptos_framework, validator.owner_address);
         // TODO: we probably don't need either of these accounts.
         ol_create_account(aptos_framework, validator.operator_address);

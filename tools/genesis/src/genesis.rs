@@ -11,7 +11,7 @@ use zapatos_types::{transaction::{Transaction, WriteSetPayload}, chain_id::Chain
 use zapatos_vm_genesis::Validator;
 /// Make a recovery genesis blob
 pub fn make_recovery_genesis_from_vec_legacy_recovery(
-    recovery: &[LegacyRecovery],
+    recovery: Option<&[LegacyRecovery]>,
     genesis_vals: &[Validator],
     // genesis_blob_path: &PathBuf,
     framework_release: &ReleaseBundle,
@@ -19,40 +19,15 @@ pub fn make_recovery_genesis_from_vec_legacy_recovery(
     // append_user_accounts: bool,
 ) -> Result<Transaction, Error> {
     dbg!(&"make_recovery_genesis_from_vec_legacy_recovery");
-    // // get consensus accounts
-    // let all_validator_configs = legacy_recovery::recover_validator_configs(recovery)?;
 
-    // // check the validators that are joining genesis actually have legacy data
-    // let count = all_validator_configs.vals
-    // .iter()
-    // .filter(
-    //   |v| {
-    //     dbg!(&v.val_account);
-    //     // let string_addr = v.val_account.to_string();
-    //     // let addr = AccountAddress::from_hex_literal(&string_addr).unwrap();
-    //     // genesis_vals.contains(&addr)
-    //     true
-    //   }
-    // )
-    // .count();
+    // Note: For `recovery` on a real upgrade or fork, we want to include all user accounts. If a None is passed, then we'll just run the default genesis
+    // which only uses the validator accounts.
+    let recovery_changeset = zapatos_mainnet_genesis(genesis_vals, recovery, framework_release, chain_id)?;
 
-    // if count == 0 {
-    //   anyhow::bail!("no val configs found for genesis set");
-    // }
 
-    let recovery_changeset = zapatos_mainnet_genesis(genesis_vals, Some(recovery), framework_release, chain_id)?;
-
-    // For a real upgrade or fork, we want to include all user accounts.
-    // this is the default.
-    // Otherwise, we might need to just collect the validator accounts
-    // for debugging or other test purposes.
-    // let expected_len_all_users = recovery.len() as u64;
 
     let gen_tx = Transaction::GenesisTransaction(WriteSetPayload::Direct(recovery_changeset));
 
-    // save genesis
-    // save_genesis(&gen_tx, genesis_blob_path)?;
-    // todo!()
     Ok(gen_tx)
 }
 
