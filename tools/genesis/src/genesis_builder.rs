@@ -494,5 +494,5 @@ fn test_build() {
     let token = std::fs::read_to_string(&gh_token_path).unwrap();
 
     let _genesis_info =
-        fetch_genesis_info("0o-de-lally".to_string(), "a-genesis".to_string(), token).unwrap();
+        fetch_genesis_info("0o-de-lally".to_string(), "a-genesis".to_string(), token, true).unwrap();
 }
