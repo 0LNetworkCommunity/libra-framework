@@ -35,7 +35,8 @@ module aptos_framework::genesis {
     use ol_framework::proof_of_fee;
     use ol_framework::slow_wallet;
     use ol_framework::gas_coin::{Self, GasCoin};
-    // use ol_framework::ol_account;
+    use ol_framework::infra_escrow;
+    //////// end 0L ////////
 
     const EDUPLICATE_ACCOUNT: u64 = 1;
     const EACCOUNT_DOES_NOT_EXIST: u64 = 2;
@@ -146,6 +147,7 @@ module aptos_framework::genesis {
         musical_chairs::initialize(&aptos_framework_account, genesis_seats);
         proof_of_fee::init_genesis_baseline_reward(&aptos_framework_account);
         slow_wallet::initialize(&aptos_framework_account);
+        infra_escrow::initialize(&aptos_framework_account);
         // end 0L
 
         timestamp::set_time_has_started(&aptos_framework_account);
@@ -166,11 +168,11 @@ module aptos_framework::genesis {
         coin::destroy_burn_cap(burn_cap);
 
         // 0L: genesis ceremony is calling this
-        let (burn_cap, mint_cap) = gas_coin::initialize(aptos_framework);
+        gas_coin::initialize(aptos_framework);
         // Give stake module MintCapability<AptosCoin> so it can mint rewards.
         // stake::store_aptos_coin_mint_cap(aptos_framework, mint_cap);
-        coin::destroy_mint_cap(mint_cap);
-        coin::destroy_burn_cap(burn_cap);
+        // gas_coin::restore_mint_cap(aptos_framework, mint_cap);
+        // coin::destroy_burn_cap(burn_cap);
         transaction_fee::initialize_fee_collection_and_distribution(aptos_framework, 0);
     }
 
@@ -195,9 +197,9 @@ module aptos_framework::genesis {
         account::rotate_authentication_key_internal(&core_resources, core_resources_auth_key);
         aptos_coin::configure_accounts_for_test(aptos_framework, &core_resources, mint_cap);
 
-        let (burn_cap, mint_cap) = gas_coin::initialize(aptos_framework);
-        coin::destroy_mint_cap(mint_cap);
-        coin::destroy_burn_cap(burn_cap);
+        gas_coin::initialize(aptos_framework);
+        // coin::destroy_mint_cap(mint_cap);
+        // coin::destroy_burn_cap(burn_cap);
 
     }
 
@@ -503,6 +505,13 @@ module aptos_framework::genesis {
     public fun test_end_genesis(framework: &signer) {
         set_genesis_end(framework);
     }
+
+    //////// 0L ////////
+    #[test_only]
+    public fun test_initalize_coins(framework: &signer) {
+        initialize_aptos_coin(framework);
+    }
+
 
     #[test_only]
     public fun setup() {

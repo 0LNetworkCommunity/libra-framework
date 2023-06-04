@@ -3,7 +3,7 @@ module ol_framework::ol_account {
     use aptos_framework::coin;
     use aptos_framework::event::{EventHandle, emit_event};
     use aptos_framework::system_addresses;
-    use aptos_framework::chain_status;
+    // use aptos_framework::chain_status;
     use std::error;
     use std::signer;
     // use aptos_std::debug::print;
@@ -100,7 +100,7 @@ module ol_framework::ol_account {
         // value: u64,
     ): signer {
         system_addresses::assert_ol(root);
-        chain_status::assert_genesis();
+        // chain_status::assert_genesis(); TODO
         let new_signer = account::vm_create_account(root, new_account, auth_key);
         // Roles::new_user_role_with_proof(&new_signer);
         // make_account(&new_signer, auth_key);

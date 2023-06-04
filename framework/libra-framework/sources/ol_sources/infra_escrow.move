@@ -16,10 +16,10 @@ module ol_framework::infra_escrow{
     use ol_framework::pledge_accounts;
     use aptos_framework::coin;
     use aptos_framework::transaction_fee;
-    // use DiemFramework::Debug::print;
+    // use aptos_std::debug::print;
 
     /// for use on genesis, creates the infra escrow pledge policy struct
-    public fun initialize_infra_pledge(vm: &signer) {
+    public fun initialize(vm: &signer) {
         system_addresses::assert_ol(vm);
         // TODO: perhaps this policy needs to be published to a different address?
         pledge_accounts::publish_beneficiary_policy(
@@ -56,6 +56,18 @@ module ol_framework::infra_escrow{
     public fun user_pledge_infra(user_sig: &signer, amount: u64){
 
       pledge_accounts::user_pledge(user_sig, @ol_framework, amount);
+    }
+
+    #[view]
+    /// gets the amount a user has pledged to infra escrow
+    public fun user_infra_pledge_balance(addr: address): u64 {
+      pledge_accounts::get_user_pledge_amount(addr, @ol_framework)
+    }
+
+    #[view]
+    /// gets the amount a user has pledged to infra escrow
+    public fun infra_escrow_balance(): u64 {
+      pledge_accounts::get_available_to_beneficiary(@ol_framework)
     }
 
 }

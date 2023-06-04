@@ -1,4 +1,5 @@
 // Some fixtures are complex and are repeatedly needed
+#[test_only]
 module ol_framework::mock {
   #[test_only]
   use aptos_framework::stake;
@@ -29,7 +30,7 @@ module ol_framework::mock {
   #[test_only]
   use aptos_framework::coin;
   #[test_only]
-  use ol_framework::gas_coin;
+  use ol_framework::gas_coin::{Self, GasCoin};
   #[test_only]
   use aptos_framework::transaction_fee;
   // #[test_only]
@@ -191,6 +192,13 @@ module ol_framework::mock {
 
         vouch::init(&sig);
         vouch::test_set_buddies(*val, val_addr);
+
+        // TODO: validators should have a balance
+        // in Mock, we should use the same validator creation path as genesis.move
+        let _b = coin::balance<GasCoin>(*val);
+        // print(&b);
+
+
         i = i + 1;
       };
 

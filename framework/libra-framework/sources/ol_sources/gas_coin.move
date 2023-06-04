@@ -35,7 +35,7 @@ module ol_framework::gas_coin {
     }
 
     /// Can only called during genesis to initialize the Aptos coin.
-    public(friend) fun initialize(aptos_framework: &signer): (BurnCapability<GasCoin>, MintCapability<GasCoin>) {
+    public(friend) fun initialize(aptos_framework: &signer) {
         system_addresses::assert_aptos_framework(aptos_framework);
 
         let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<GasCoin>(
@@ -51,7 +51,8 @@ module ol_framework::gas_coin {
         move_to(aptos_framework, MintCapStore { mint_cap });
 
         coin::destroy_freeze_cap(freeze_cap);
-        (burn_cap, mint_cap)
+        coin::destroy_burn_cap(burn_cap);
+        // (burn_cap, mint_cap)
     }
 
     public fun has_mint_capability(account: &signer): bool {
@@ -64,6 +65,11 @@ module ol_framework::gas_coin {
         system_addresses::assert_aptos_framework(aptos_framework);
         let MintCapStore { mint_cap } = move_from<MintCapStore>(@aptos_framework);
         coin::destroy_mint_cap(mint_cap);
+    }
+
+    public(friend) fun restore_mint_cap(aptos_framework: &signer, mint_cap: MintCapability<GasCoin>) {
+        system_addresses::assert_aptos_framework(aptos_framework);
+        move_to(aptos_framework, MintCapStore { mint_cap });
     }
 
     /// Can only be called during genesis for tests to grant mint capability to aptos framework and core resources
@@ -156,12 +162,28 @@ module ol_framework::gas_coin {
     #[test_only]
     public fun initialize_for_test(aptos_framework: &signer): (BurnCapability<GasCoin>, MintCapability<GasCoin>) {
         aggregator_factory::initialize_aggregator_factory_for_test(aptos_framework);
-        initialize(aptos_framework)
+        let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<GasCoin>(
+            aptos_framework,
+            string::utf8(b"Gas Coin"),
+            string::utf8(b"GAS"),
+            8, /* decimals */
+            true, /* monitor_supply */
+        );
+        coin::destroy_freeze_cap(freeze_cap);
+        (burn_cap, mint_cap)
     }
 
     // This is particularly useful if the aggregator_factory is already initialized via another call path.
     #[test_only]
     public fun initialize_for_test_without_aggregator_factory(aptos_framework: &signer): (BurnCapability<GasCoin>, MintCapability<GasCoin>) {
-        initialize(aptos_framework)
+                let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<GasCoin>(
+            aptos_framework,
+            string::utf8(b"Gas Coin"),
+            string::utf8(b"GAS"),
+            8, /* decimals */
+            true, /* monitor_supply */
+        );
+        coin::destroy_freeze_cap(freeze_cap);
+        (burn_cap, mint_cap)
     }
 }

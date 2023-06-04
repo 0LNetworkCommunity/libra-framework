@@ -44,7 +44,6 @@
         use std::error;
         use std::option::{Self, Option};
         use std::fixed_point32;
-        use ol_framework::testnet;
         use ol_framework::gas_coin::GasCoin;
         // use ol_framework::ol_account;
         use aptos_framework::reconfiguration;
@@ -141,7 +140,7 @@
           address_of_beneficiary: address,
           pledge: coin::Coin<GasCoin>
           ) acquires MyPledges, BeneficiaryPolicy {
-          
+          maybe_initialize_my_pledges(sig);
           assert!(exists<BeneficiaryPolicy>(address_of_beneficiary), error::invalid_state(ENO_BENEFICIARY_POLICY));
           let sender_addr = signer::address_of(sig);
           let (found, idx) = pledge_at_idx(&sender_addr, &address_of_beneficiary);
@@ -377,7 +376,7 @@
             let bp = borrow_global_mut<BeneficiaryPolicy>(address_of_beneficiary);
 
             vector::push_back(&mut bp.table_revoking_electors, pledger);
-            let user_pledge_balance = get_user_pledge_amount(&pledger, &address_of_beneficiary);
+            let user_pledge_balance = get_user_pledge_amount(pledger, address_of_beneficiary);
             vector::push_back(&mut bp.table_votes_to_revoke, user_pledge_balance);
             bp.total_revoke_vote = bp.total_revoke_vote + user_pledge_balance;
 
@@ -451,7 +450,7 @@
             let i = 0;
             while (i < vector::length(&pledgers)) {
                 let pledge_account = vector::borrow(&pledgers, i);
-                let user_pledge_balance = get_user_pledge_amount(pledge_account, &address_of_beneficiary);
+                let user_pledge_balance = get_user_pledge_amount(*pledge_account, address_of_beneficiary);
                 let c = withdraw_from_one_pledge_account(&address_of_beneficiary, pledge_account, user_pledge_balance);
 
                 // TODO: if burn case.
@@ -553,44 +552,53 @@
         //     return option::none()
         // }
         // get the pledge amount on a specific pledge account
-      public fun get_user_pledge_amount(account: &address, address_of_beneficiary: &address): u64 acquires MyPledges {
-          let (found, idx) = pledge_at_idx(account, address_of_beneficiary);
+      #[view]
+      public fun get_user_pledge_amount(account: address, address_of_beneficiary: address): u64 acquires MyPledges {
+          let (found, idx) = pledge_at_idx(&account, &address_of_beneficiary);
           if (found) {
-            let my_pledges = borrow_global<MyPledges>(*account);
+            let my_pledges = borrow_global<MyPledges>(account);
             let p = vector::borrow(&my_pledges.list, idx);
             return p.amount
           };
           return 0
       }
 
-      public fun get_available_to_beneficiary(bene: &address): u64 acquires BeneficiaryPolicy {
-        if (exists<BeneficiaryPolicy>(*bene)) {
-          let bp = borrow_global<BeneficiaryPolicy>(*bene);
+      #[view]
+      /// total amount availabe to withdraw for a beneficiary
+      public fun get_available_to_beneficiary(bene: address): u64 acquires BeneficiaryPolicy {
+        if (exists<BeneficiaryPolicy>(bene)) {
+          let bp = borrow_global<BeneficiaryPolicy>(bene);
           return bp.amount_available
         };
         0
       }
 
-      public fun get_lifetime_to_beneficiary(bene: &address): (u64, u64)acquires BeneficiaryPolicy {
-        if (exists<BeneficiaryPolicy>(*bene)) {
-          let bp = borrow_global<BeneficiaryPolicy>(*bene);
+      #[view]
+      /// total amount pledged to a beneficiary over the lifetime of account
+      public fun get_lifetime_to_beneficiary(bene: address): (u64, u64)acquires BeneficiaryPolicy {
+        if (exists<BeneficiaryPolicy>(bene)) {
+          let bp = borrow_global<BeneficiaryPolicy>(bene);
           return (bp.lifetime_pledged, bp.lifetime_withdrawn)
         };
         (0, 0)
       }
 
-      public fun get_all_pledgers(bene: &address): vector<address> acquires BeneficiaryPolicy {
-        if (exists<BeneficiaryPolicy>(*bene)) {
-          let bp = borrow_global<BeneficiaryPolicy>(*bene);
+      #[view]
+      /// get a list of all the addresses that pledged to this beneficiary
+      public fun get_all_pledgers(bene: address): vector<address> acquires BeneficiaryPolicy {
+        if (exists<BeneficiaryPolicy>(bene)) {
+          let bp = borrow_global<BeneficiaryPolicy>(bene);
           return *&bp.pledgers
         };
         vector::empty<address>()
       }
 
-      public fun get_revoke_vote(bene: &address): (bool, fixed_point32::FixedPoint32) acquires BeneficiaryPolicy {
+      #[view]
+      /// list the revocation votes for a beneficiary
+      public fun get_revoke_vote(bene: address): (bool, fixed_point32::FixedPoint32) acquires BeneficiaryPolicy {
         let null = fixed_point32::create_from_raw_value(0);
-        if (exists<BeneficiaryPolicy>(*bene)) {
-          let bp = borrow_global<BeneficiaryPolicy>(*bene);
+        if (exists<BeneficiaryPolicy>(bene)) {
+          let bp = borrow_global<BeneficiaryPolicy>(bene);
           if (bp.revoked) {
             return (true, null)
           } else if (
@@ -609,9 +617,11 @@
 
 
       //////// TEST HELPERS ///////
+      #[test_only]
       // Danger! withdraws from an account.
       public fun test_single_withdrawal(vm: &signer, bene: &address, donor: &address, amount: u64): option::Option<coin::Coin<GasCoin>> acquires MyPledges, BeneficiaryPolicy{
-        testnet::assert_testnet(vm);
+        system_addresses::assert_ol(vm);  
+        // testnet::assert_testnet(vm);
         withdraw_from_one_pledge_account(bene, donor, amount)
       }
 }
