@@ -41,7 +41,7 @@ zapatos-github-client = { workspace = true }
 zapatos-types = { workspace = true }
 zapatos-vm-genesis = { workspace = true }
 zapatos-config = { workspace = true }
-
+move-core-types = { workspace = true }
 
 # for the hack_ files
 dialoguer = { workspace = true }

@@ -6048,6 +6048,7 @@ dependencies = [
  "indicatif",
  "libra-framework",
  "libra-wallet",
+ "move-core-types 0.0.4",
  "ol-types",
  "once_cell",
  "reqwest",

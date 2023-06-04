@@ -1,4 +1,4 @@
-zapats_types::account_config::CORE_CODE_ADDRESS,
+use zapatos_types::account_config::CORE_CODE_ADDRESS;
 use zapatos_vm::{
     move_vm_ext::SessionExt,
 };
