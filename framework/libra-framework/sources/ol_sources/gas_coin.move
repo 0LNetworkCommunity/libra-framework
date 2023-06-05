@@ -6,8 +6,11 @@ module ol_framework::gas_coin {
     use std::vector;
     use std::option::{Self, Option};
 
-    use aptos_framework::coin::{Self, BurnCapability, MintCapability};
+    use aptos_framework::coin::{Self, MintCapability};
     use aptos_framework::system_addresses;
+
+    #[test_only]
+    use aptos_framework::coin::BurnCapability;
 
     friend aptos_framework::genesis;
 
