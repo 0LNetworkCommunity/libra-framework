@@ -45,7 +45,9 @@ pub fn genesis_migrate_one_user( //////// 0L ////////
       // legacy_balance: u64,
       // is_validator: bool,
 
-    if user_recovery.account.is_none() {
+    if user_recovery.account.is_none() ||
+        user_recovery.auth_key.is_none() ||
+        user_recovery.balance.is_none() {
         anyhow::bail!("no user account found");
     }
 

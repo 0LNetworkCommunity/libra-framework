@@ -109,7 +109,6 @@ pub fn encode_zapatos_recovery_genesis_change_set(
 
     create_and_initialize_validators(&mut session, validators);
 
-    dbg!("migrate users");
     if let Some(r) = recovery {
         crate::genesis_functions::genesis_migrate_all_users(&mut session, r).expect("could not migrate users");
     }

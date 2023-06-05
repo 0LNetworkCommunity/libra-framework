@@ -28,6 +28,7 @@ use zapatos_types::{
 use zapatos_vm_genesis::default_gas_schedule;
 
 use crate::genesis::make_recovery_genesis_from_vec_legacy_recovery;
+use crate::hack_cli_progress::OLProgress;
 use crate::wizard::DEFAULT_GIT_BRANCH;
 
 pub const LAYOUT_FILE: &str = "layout.yaml";
@@ -119,6 +120,8 @@ pub fn build(
         WAYPOINT_FILE,
         waypoint.to_string().as_bytes(),
     )?;
+
+    OLProgress::complete(&format!("genesis successfully built at {}", output_dir.to_str().unwrap()));
     Ok(vec![genesis_file, waypoint_file])
 }
 
@@ -486,7 +489,8 @@ fn parse_optional_option<F: Fn(&str) -> Result<T, E>, T, E: std::fmt::Display>(
 }
 
 #[test]
-fn test_build() {
+#[ignore] //dev helper
+fn test_github_info() {
     let gh_token_path = dirs::home_dir()
         .unwrap()
         .join(".libra")
@@ -495,4 +499,23 @@ fn test_build() {
 
     let _genesis_info =
         fetch_genesis_info("0o-de-lally".to_string(), "a-genesis".to_string(), token, true).unwrap();
+}
+
+
+#[test]
+#[ignore] //dev helper
+fn test_build() {
+    let home = dirs::home_dir()
+        .unwrap()
+        .join(".libra");
+    let token = std::fs::read_to_string(&home.join("github_token.txt")).unwrap();
+
+    build(
+    "0o-de-lally".to_string(),
+    "a-genesis".to_string(),
+    token,
+    home,
+    true,
+    None,
+    ).unwrap();
 }
