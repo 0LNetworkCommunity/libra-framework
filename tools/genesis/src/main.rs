@@ -13,21 +13,21 @@ struct GenesisCliArgs {
     /// defaults to $HOME/.libra
     #[arg(long)]
     home_dir: Option<PathBuf>,
-    /// uses the local framework build
-    #[arg(short, long)]
-    github_token: Option<String>,
+    /// optionally provide a github token, otherwise will search in home_dir/github_token.txt
+    #[arg(long)]
+    token_github: Option<String>,
     /// what are the settings for the genesis repo configs
     #[arg(short, long)]
-    genesis_repo_org: String,
+    org_github: String,
     /// name of the repo
     #[arg(short, long)]
-    repo_name: String,
+    name_github: String,
     /// uses the local framework build
     #[arg(short, long)]
-    use_local_framework: bool,
-    /// uses the local framework build
+    local_framework: bool,
+    /// path to file for legacy migration file
     #[arg(short, long)]
-    legacy_json: Option<PathBuf>,
+    json_legacy: Option<PathBuf>,
 }
 
 #[derive(Subcommand)]
@@ -47,7 +47,7 @@ fn main() -> anyhow::Result<()>{
           });
        
           
-          let github_token = cli.github_token
+          let github_token = cli.token_github
           .unwrap_or(
             std::fs::read_to_string(
               &data_path
@@ -56,21 +56,21 @@ fn main() -> anyhow::Result<()>{
           );
           
 
-          let recovery = if let Some(p) = cli.legacy_json {
+          let recovery = if let Some(p) = cli.json_legacy {
             parse_json::parse(p)?
           } else { vec![] };
 
           genesis_builder::build(
-                cli.genesis_repo_org,
-                cli.repo_name,
+                cli.org_github,
+                cli.name_github,
                 github_token,
                 data_path,
-                cli.use_local_framework,
+                cli.local_framework,
                 Some(&recovery),
             )?;
         }
         Some(Sub::Wizard { }) => {
-            GenesisWizard::default().start_wizard(cli.home_dir, cli.use_local_framework)?;
+            GenesisWizard::default().start_wizard(cli.home_dir, cli.local_framework)?;
         }
         _ => {}
     }
