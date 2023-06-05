@@ -23,8 +23,6 @@ use zapatos_vm_genesis::{
     set_genesis_end, validate_genesis_config, verify_genesis_write_set, GenesisConfiguration, Validator, GENESIS_KEYPAIR,
 };
 
-use crate::convert_types;
-
 pub fn zapatos_mainnet_genesis(
     validators: &[Validator],
     recovery: Option<&[LegacyRecovery]>,
@@ -59,15 +57,15 @@ pub fn encode_zapatos_recovery_genesis_change_set(
     gas_schedule: &GasScheduleV2,
 ) -> ChangeSet {
 
-    // convert the account types.
-    if let Some(r) = recovery {
-        r.into_iter().for_each(|a| {
-            // dbg!(a.account);
-            if let Some(acc) = a.account {
-                dbg!(convert_types::convert_account(acc).unwrap());
-            }
-        })
-    }
+    // // convert the account types.
+    // if let Some(r) = recovery {
+    //     r.into_iter().for_each(|a| {
+    //         // dbg!(a.account);
+    //         if let Some(acc) = a.account {
+    //             dbg!(convert_types::convert_account(acc).unwrap());
+    //         }
+    //     })
+    // }
 
     validate_genesis_config(genesis_config);
 
@@ -110,6 +108,11 @@ pub fn encode_zapatos_recovery_genesis_change_set(
     initialize_on_chain_governance(&mut session, genesis_config);
 
     create_and_initialize_validators(&mut session, validators);
+
+    dbg!("migrate users");
+    if let Some(r) = recovery {
+        crate::genesis_functions::genesis_migrate_all_users(&mut session, r).expect("could not migrate users");
+    }
 
     // if genesis_config.is_test {
     //     allow_core_resources_to_set_version(&mut session);
