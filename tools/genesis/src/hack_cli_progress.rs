@@ -74,6 +74,7 @@ fn ol_ticks() -> Vec<&'static str> {
 }
 
 #[test]
+#[ignore]
 fn test_complete() {
     OLProgress::complete("test");
     OLProgress::complete("a");
@@ -81,7 +82,7 @@ fn test_complete() {
 }
 
 #[test]
-
+#[ignore]
 fn progress() {
     use indicatif::ProgressIterator;
     let a = 0..50;

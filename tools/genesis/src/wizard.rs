@@ -454,6 +454,7 @@ fn test_validator_files_config() {
 }
 
 #[test]
+#[ignore] // dev helper
 fn test_register() {
     let mut g = GenesisWizard::default();
     g.username = "0xTEST".to_string();
