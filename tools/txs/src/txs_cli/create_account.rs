@@ -1,7 +1,7 @@
-use anyhow::{Context, Result};
+use anyhow::{ Result};
 // use libra_config::extension::faucet_client_ext::FaucetClientExt;
 use libra_txs::{
-  rest_client::FaucetClient,
+  // rest_client::FaucetClient,
   types::account_address::AccountAddress
 };
 

@@ -1,22 +1,12 @@
-// use anyhow::{Context, Result};
-// use libra_config::extension::{client_ext::ClientExt, faucet_client_ext::FaucetClientExt};
-// use libra_txs::{
-//     coin_client::CoinClient,
-//     crypto::ed25519::Ed25519PrivateKey,
-//     rest_client::{Client, FaucetClient},
-//     types::{AccountKey, LocalAccount},
-// };
-
-// use libra
-
 use zapatos_sdk::transaction_builder::TransactionBuilder;
 use zapatos_sdk::types::{LocalAccount, AccountKey};
-use zapatos_sdk::{rest_client::Client, 
-  // transaction_builder::TransactionFactory
-};
+use zapatos_sdk::rest_client::Client;
+use zapatos_sdk::types::account_address::AccountAddress;
 use zapatos_sdk::types::chain_id::ChainId;
-use libra_cached_packages::aptos_framework_sdk_builder::EntryFunctionCall::AptosAccountSetAllowDirectCoinTransfers;
-use libra_config::extension::client_ext::ClientExt;
+use libra_cached_packages::aptos_framework_sdk_builder::EntryFunctionCall::{AptosAccountSetAllowDirectCoinTransfers, AptosAccountTransfer};
+use libra_config::extension::client_ext::{ClientExt, DEFAULT_TIMEOUT_SECS};
+
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub async fn run() -> anyhow::Result<()> {
     let client = Client::default()?;
@@ -32,20 +22,20 @@ pub async fn run() -> anyhow::Result<()> {
         allow: true,
     }.encode();
 
-    // let account;
-    // let factory = TransactionFactory::new(ChainId::test());
-    
-    let tb = TransactionBuilder::new(payload,10000, ChainId::test());
+    // let payload = AptosAccountTransfer {
+    //   to: AccountAddress::from_hex_literal("0x88C0B80B70314FEC169492561C9B20B5")?,
+    //   amount: 33
+    // }.encode();
+
+
+    let t = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
+    let time = t + DEFAULT_TIMEOUT_SECS;
+    let tb = TransactionBuilder::new(payload,time, ChainId::test());
 
     let signed = local_acct.sign_with_transaction_builder(tb);
 
-    // let signed = factory
-    // .payload(payload)
-    // .build()
-    // .sign(private_key, public_key)?
-    // .into_inner();
-
     let res = client.submit_and_wait(&signed).await?;
+
 
     dbg!(&res);
 

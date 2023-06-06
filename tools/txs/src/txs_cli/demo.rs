@@ -6,7 +6,7 @@ use libra_config::extension::{
 use libra_txs::{
     coin_client::CoinClient,
     crypto::ed25519::Ed25519PrivateKey,
-    rest_client::{Client, FaucetClient},
+    rest_client::{Client},
     types::{AccountKey, LocalAccount},
 };
 
