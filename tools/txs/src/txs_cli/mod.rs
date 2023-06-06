@@ -8,22 +8,35 @@ mod create_account;
 mod demo;
 mod generate_transaction;
 mod submit_transaction;
-mod transfer_coin;
+// mod transfer_coin;
 mod view;
-mod test_tx;
+mod transfer;
 
 #[derive(Parser)]
 #[clap(name = env!("CARGO_PKG_NAME"), author, version, about, long_about = None, arg_required_else_help = true)]
 pub struct TxsCli {
     #[clap(subcommand)]
     subcommand: Option<Subcommand>,
+
+      /// Optional mnemonic to pass at runtime. Otherwise this will prompt for mnemonic.
+      #[clap(short, long)]
+      mnemonic: Option<String>,
+
+      /// Private key of the account. Otherwise this will prompt for mnemonic
+      #[clap(short, long)]
+      private_key: Option<String>,
+
+      /// Maximum number of gas units to be used to send this transaction
+      #[clap(short, long)]
+      max_gas: Option<u64>,
+
+      /// The amount of coins to pay for 1 gas unit. The higher the price is, the higher priority your transaction will be executed with
+      #[clap(short, long)]
+      gas_unit_price: Option<u64>,
 }
 
 #[derive(clap::Subcommand)]
 enum Subcommand {
-    Test,
-    /// Demo transfer coin example for local testnet
-    Demo,
 
     /// Create onchain account by using Aptos faucet
     CreateAccount {
@@ -37,7 +50,7 @@ enum Subcommand {
     },
 
     /// Transfer coins between accounts
-    TransferCoins {
+    Transfer {
         /// Address of the recipient
         #[clap(short, long)]
         to_account: String,
@@ -45,18 +58,6 @@ enum Subcommand {
         /// The amount of coins to transfer
         #[clap(short, long)]
         amount: u64,
-
-        /// Private key of the account to withdraw money from
-        #[clap(short, long)]
-        private_key: String,
-
-        /// Maximum number of gas units to be used to send this transaction
-        #[clap(short, long)]
-        max_gas: Option<u64>,
-
-        /// The amount of coins to pay for 1 gas unit. The higher the price is, the higher priority your transaction will be executed with
-        #[clap(short, long)]
-        gas_unit_price: Option<u64>,
     },
 
     /// Generate a transaction that executes an Entry function on-chain
@@ -159,26 +160,20 @@ enum Subcommand {
 impl TxsCli {
     pub async fn run(&self) -> Result<()> {
         match &self.subcommand {
-            Some(Subcommand::Test) => test_tx::run().await,
+            // Some(Subcommand::Test) => transfer::run().await,
 
-            Some(Subcommand::Demo) => demo::run().await,
+            // Some(Subcommand::Demo) => demo::run().await,
             Some(Subcommand::CreateAccount {
                 account_address,
                 coins,
             }) => create_account::run(account_address, coins.unwrap_or_default()).await,
-            Some(Subcommand::TransferCoins {
+            Some(Subcommand::Transfer {
                 to_account,
                 amount,
-                private_key,
-                max_gas,
-                gas_unit_price,
             }) => {
-                transfer_coin::run(
+                transfer::run(
                     to_account,
                     amount.to_owned(),
-                    private_key,
-                    max_gas.to_owned(),
-                    gas_unit_price.to_owned(),
                 )
                 .await
             }
@@ -206,7 +201,7 @@ impl TxsCli {
 
                 if *submit {
                     println!("{}", "Submitting transaction...".green().bold());
-                    submit_transaction::run(&signed_trans).await?;
+                    submit_transaction::submit(&signed_trans).await?;
                     println!("Success!");
                 }
                 Ok(())
