@@ -3,6 +3,7 @@ use clap::Parser;
 use colored::Colorize;
 use indoc::indoc;
 use libra_txs::util::format_signed_transaction;
+use zapatos_sdk::rest_client::Account;
 
 mod create_account;
 mod demo;
@@ -53,7 +54,7 @@ enum Subcommand {
     Transfer {
         /// Address of the recipient
         #[clap(short, long)]
-        to_account: String,
+        to_account: AccountAddress,
 
         /// The amount of coins to transfer
         #[clap(short, long)]

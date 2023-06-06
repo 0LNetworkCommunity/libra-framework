@@ -37,5 +37,5 @@ pub async fn run(to: AccountAddress, amount: u64) -> anyhow::Result<()> {
 
     let signed = local_acct.sign_with_transaction_builder(tb);
 
-    submit(&signed)
+    submit(&signed).await
 }
