@@ -1,5 +1,5 @@
 use libra_types::LIBRA_CONFIG_DIRECTORY;
-use super::global_config_ext::GlobalConfigExt;
+// use super::global_config_ext::GlobalConfigExt;
 use anyhow::{anyhow, bail, Result};
 use std::path::PathBuf;
 use zapatos::{
@@ -9,7 +9,7 @@ use zapatos::{
         },
         utils::{create_dir_if_not_exist, read_from_file, write_to_user_only_file},
     },
-    config::GlobalConfig,
+    // config::GlobalConfig,
     genesis::git::from_yaml,
 };
 
@@ -17,19 +17,19 @@ const CONFIG_FILE: &str = "config.yaml";
 const LEGACY_CONFIG_FILE: &str = "config.yml";
 
 pub trait CliConfigExt {
-    fn config_exists_ext(mode: ConfigSearchMode) -> bool;
-    fn load_ext(starting_dir: PathBuf, mode: ConfigSearchMode) -> CliTypedResult<CliConfig>;
+    fn config_exists_ext(workspace: Option<PathBuf>, mode: ConfigSearchMode) -> bool;
+    fn load_ext(workspace: Option<PathBuf>, mode: ConfigSearchMode) -> CliTypedResult<CliConfig>;
     fn load_profile_ext(
         profile: Option<&str>,
-        starting_dir: PathBuf,
+        workspace: Option<PathBuf>,
         mode: ConfigSearchMode,
     ) -> Result<Option<ProfileConfig>>;
-    fn save_ext(&self) -> CliTypedResult<()>;
+    fn save_ext(&self, workspace: Option<PathBuf>) -> CliTypedResult<()>;
 }
 
 impl CliConfigExt for CliConfig {
-    fn config_exists_ext(mode: ConfigSearchMode) -> bool {
-        if let Ok(folder) = libra_folder(mode) {
+    fn config_exists_ext(workspace: Option<PathBuf>, mode: ConfigSearchMode) -> bool {
+        if let Ok(folder) = libra_folder(workspace, mode) {
             let config_file = folder.join(CONFIG_FILE);
             // let old_config_file = folder.join(LEGACY_CONFIG_FILE);
             config_file.exists()
@@ -39,11 +39,11 @@ impl CliConfigExt for CliConfig {
     }
 
     /// Loads the config from the current working directory or one of its parents.
-    fn load_ext(starting_dir: PathBuf, mode: ConfigSearchMode) -> CliTypedResult<CliConfig> {
-        let folder = find_workspace_config(starting_dir, mode)?;
+    fn load_ext(workspace: Option<PathBuf>, mode: ConfigSearchMode) -> CliTypedResult<CliConfig> {
+        let folder = libra_folder(workspace, mode)?;
 
         let config_file = folder.join(CONFIG_FILE);
-        let old_config_file = folder.join(LEGACY_CONFIG_FILE);
+        // let old_config_file = folder.join(LEGACY_CONFIG_FILE);
         if config_file.exists() {
             from_yaml(
                 &String::from_utf8(read_from_file(config_file.as_path())?)
@@ -59,10 +59,10 @@ impl CliConfigExt for CliConfig {
 
     fn load_profile_ext(
         profile: Option<&str>,
-        starting_dir: PathBuf,
+        workspace: Option<PathBuf>,
         mode: ConfigSearchMode,
     ) -> Result<Option<ProfileConfig>> {
-        let config = CliConfig::load_ext(starting_dir, mode);
+        let config = CliConfig::load_ext(workspace, mode);
         if let Some(CliError::ConfigNotFoundError(path)) = config.as_ref().err() {
             bail!("Unable to find config {path}, have you run `libra-config init`?");
         }
@@ -81,8 +81,8 @@ impl CliConfigExt for CliConfig {
     }
 
     /// Saves the config to ./.0L/config.yaml
-    fn save_ext(&self) -> CliTypedResult<()> {
-        let _0l_folder = libra_folder(ConfigSearchMode::CurrentDir)?;
+    fn save_ext(&self, workspace: Option<PathBuf>) -> CliTypedResult<()> {
+        let _0l_folder = libra_folder(workspace, ConfigSearchMode::CurrentDir)?;
 
         // Create if it doesn't exist
         create_dir_if_not_exist(_0l_folder.as_path())?;
@@ -105,14 +105,16 @@ impl CliConfigExt for CliConfig {
     }
 }
 
-fn libra_folder(mode: ConfigSearchMode) -> CliTypedResult<PathBuf> {
-    let global_config = GlobalConfig::load_ext()?;
-    global_config.get_config_location_ext(mode)
-}
-
-// fn libra_folder(starting_path: PathBuf, mode: ConfigSearchMode) -> CliTypedResult<PathBuf> {
-//     find_workspace_config
+// fn libra_folder(mode: ConfigSearchMode) -> CliTypedResult<PathBuf> {
+//     let global_config = GlobalConfig::load_ext()?;
+//     global_config.get_config_location_ext(mode)
 // }
+
+fn libra_folder(workspace: Option<PathBuf>, mode: ConfigSearchMode) -> CliTypedResult<PathBuf> {
+   
+   let workspace = workspace.unwrap_or(libra_types::global_config_dir().parent().unwrap().to_owned());
+    find_workspace_config(workspace, mode)
+}
 
 
 

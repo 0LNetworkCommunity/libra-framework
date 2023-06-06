@@ -14,11 +14,11 @@ pub trait ClientExt {
 
 impl ClientExt for Client {
     fn default() -> Result<Client> {
-        let starting_dir = libra_types::global_config_dir().parent().unwrap().to_owned();
+        let workspace = libra_types::global_config_dir().parent().unwrap().to_path_buf();
         let profile =
             CliConfig::load_profile_ext( 
               Some(DEFAULT_PROFILE),
-              starting_dir,
+              Some(workspace),
               ConfigSearchMode::CurrentDir
         )?
           .unwrap_or_default();

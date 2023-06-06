@@ -1,13 +1,16 @@
 use anyhow::{bail, Result};
-use libra_config::extension::{cli_config_ext::CliConfigExt, global_config_ext::GlobalConfigExt};
-use std::{collections::BTreeMap, str::FromStr};
+use libra_config::extension::{
+  cli_config_ext::CliConfigExt,
+  // global_config_ext::GlobalConfigExt
+};
+use std::{collections::BTreeMap, str::FromStr, env};
 use url::Url;
 use zapatos::{
     account::key_rotation::lookup_address,
     common::{
         init::Network,
         types::{
-            account_address_from_public_key, CliConfig, CliError, CliTypedResult, ConfigSearchMode,
+            account_address_from_public_key, CliConfig, CliError, CliTypedResult,
             ProfileConfig, PromptOptions, DEFAULT_PROFILE,
         },
         utils::{prompt_yes_with_override, read_line},
@@ -20,7 +23,7 @@ use zapatos_rest_client::{
     Client,
 };
 
-pub async fn run(public_key: &str, profile: Option<&str>, init_workspace: bool) -> Result<()> {
+pub async fn run(public_key: &str, profile: Option<&str>, workspace: bool) -> Result<()> {
 
     // init_workspace
   let mut config = CliConfig::default();
@@ -141,7 +144,13 @@ pub async fn run(public_key: &str, profile: Option<&str>, init_workspace: bool) 
         .as_mut()
         .expect("Must have profiles, as created above")
         .insert(profile_name.to_string(), profile_config);
-    config.save_ext()?;
+
+    // In 0L we default to the configs being global in $HOME/.libra
+    // Otherwise you should pass -w to use the workspace configuration.
+    let config_location = if workspace {
+      env::current_dir().ok()
+    } else { None };
+    config.save_ext(config_location)?;
     eprintln!(
         "\n0L CLI is now set up for account {} as profile {}!",
         address,

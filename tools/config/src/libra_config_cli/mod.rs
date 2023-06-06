@@ -27,11 +27,12 @@ enum Subcommand {
         #[clap(long)]
         profile: Option<String>,
 
-        /// Initializes configs in this directory
-        /// You will only use this if you are developing apps
-        /// and each app will have different public key configurations.
-        #[clap(long)]
-        init_workspace: bool,
+        /// In 0L we default to the configs being global in $HOME/.libra
+        /// Otherwise you should pass -w to use the workspace configuration.
+        /// Uses this directory as the workspace, instead of using the global
+        /// parameters in $HOME/.libra
+        #[clap(short, long)]
+        workspace: bool,
     },
 }
 
@@ -41,11 +42,11 @@ impl LibraConfigCli {
             Some(Subcommand::Init {
                 public_key,
                 profile,
-                init_workspace,
+                workspace,
             }) => init::run(
               public_key, 
               profile.as_deref().to_owned(),
-              *init_workspace,
+              *workspace,
             ).await,
             _ => Ok(()),
         }
