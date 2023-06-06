@@ -26,6 +26,12 @@ enum Subcommand {
         /// Defaults to "default"
         #[clap(long)]
         profile: Option<String>,
+
+        /// Initializes configs in this directory
+        /// You will only use this if you are developing apps
+        /// and each app will have different public key configurations.
+        #[clap(long)]
+        init_workspace: bool,
     },
 }
 
@@ -35,7 +41,12 @@ impl LibraConfigCli {
             Some(Subcommand::Init {
                 public_key,
                 profile,
-            }) => init::run(public_key, profile.as_deref().to_owned()).await,
+                init_workspace,
+            }) => init::run(
+              public_key, 
+              profile.as_deref().to_owned(),
+              *init_workspace,
+            ).await,
             _ => Ok(()),
         }
     }

@@ -19,3 +19,4 @@ tokio = { workspace = true }
 url = { workspace = true }
 dirs = { workspace = true }
 serde_yaml = { workspace = true }
+libra-types = { workspace = true }

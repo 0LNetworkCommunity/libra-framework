@@ -11,6 +11,7 @@ members = [
   "tools/wallet",
   "tools/config",
   "tools/genesis",
+  "types",
 ]
 
 # All workspace members should inherit these keys for package declarations.
@@ -30,6 +31,7 @@ libra-wallet = { path = "tools/wallet" }
 libra-config = { path = "tools/config" }
 libra-framework = { path = "framework" }
 libra-cached-packages = { path = "framework/cached-packages" }
+libra-types = { path = "types" }
 # Please do not add any test features here: they should be declared by the 
 # individual crate.
 

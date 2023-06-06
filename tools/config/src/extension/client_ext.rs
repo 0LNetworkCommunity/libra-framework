@@ -14,9 +14,14 @@ pub trait ClientExt {
 
 impl ClientExt for Client {
     fn default() -> Result<Client> {
+        let starting_dir = libra_types::global_config_dir().parent().unwrap().to_owned();
         let profile =
-            CliConfig::load_profile_ext(Some(DEFAULT_PROFILE), ConfigSearchMode::CurrentDir)?
-                .unwrap_or_default();
+            CliConfig::load_profile_ext( 
+              Some(DEFAULT_PROFILE),
+              starting_dir,
+              ConfigSearchMode::CurrentDir
+        )?
+          .unwrap_or_default();
         let rest_url = profile.rest_url.context("Rest url is not set")?;
         Ok(Client::new_with_timeout_and_user_agent(
             Url::from_str(&rest_url).unwrap(),

@@ -1,5 +1,5 @@
 use anyhow::{bail, Result};
-use libra_config::extension::cli_config_ext::CliConfigExt;
+use libra_config::extension::{cli_config_ext::CliConfigExt, global_config_ext::GlobalConfigExt};
 use std::{collections::BTreeMap, str::FromStr};
 use url::Url;
 use zapatos::{
@@ -11,7 +11,7 @@ use zapatos::{
             ProfileConfig, PromptOptions, DEFAULT_PROFILE,
         },
         utils::{prompt_yes_with_override, read_line},
-    },
+    }, config::GlobalConfig,
 };
 use zapatos_crypto::{ed25519::Ed25519PublicKey, ValidCryptoMaterialStringExt};
 use zapatos_rest_client::{
@@ -20,12 +20,25 @@ use zapatos_rest_client::{
     Client,
 };
 
-pub async fn run(public_key: &str, profile: Option<&str>) -> Result<()> {
-    let mut config = if CliConfig::config_exists_ext(ConfigSearchMode::CurrentDir) {
-        CliConfig::load_ext(ConfigSearchMode::CurrentDir)?
-    } else {
-        CliConfig::default()
-    };
+pub async fn run(public_key: &str, profile: Option<&str>, init_workspace: bool) -> Result<()> {
+
+    // init_workspace
+  let mut config = CliConfig::default();
+    // let mut config = if init_workspace {
+    //   if CliConfig::config_exists_ext(ConfigSearchMode::CurrentDir) {
+    //       CliConfig::load_ext(ConfigSearchMode::CurrentDir)?
+    //   } else {
+    //       CliConfig::default()
+    //   };
+    // } else {
+    //   if GlobalConfig::load_ext().is_ok() {
+       
+    // } else {
+    //   CliConfig::default()
+    // }
+      // CliConfig::config_exists_ext(mode)
+    // };
+    
     let profile_name = profile.unwrap_or(DEFAULT_PROFILE);
     let prompt_options = PromptOptions::default();
     let public_key = Ed25519PublicKey::from_encoded_string(public_key)?;
@@ -104,8 +117,10 @@ pub async fn run(public_key: &str, profile: Option<&str>) -> Result<()> {
             {
                 false
             } else {
-                bail!("Failed to check if account exists: {:?}", err);
+                eprintln!("Failed to check if account exists on chain: {:?}", err);
+                false
             }
+
         }
     };
 

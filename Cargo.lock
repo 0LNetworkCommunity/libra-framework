@@ -5998,6 +5998,7 @@ dependencies = [
  "aptos-rest-client",
  "clap 4.3.0",
  "dirs 5.0.1",
+ "libra-types",
  "serde_yaml 0.9.21",
  "tokio",
  "url",
@@ -6089,6 +6090,13 @@ dependencies = [
  "serde_json",
  "tokio",
  "url",
+]
+
+[[package]]
+name = "libra-types"
+version = "0.1.0"
+dependencies = [
+ "dirs 5.0.1",
 ]
 
 [[package]]
