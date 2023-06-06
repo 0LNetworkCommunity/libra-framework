@@ -10,6 +10,7 @@ mod generate_transaction;
 mod submit_transaction;
 mod transfer_coin;
 mod view;
+mod test_tx;
 
 #[derive(Parser)]
 #[clap(name = env!("CARGO_PKG_NAME"), author, version, about, long_about = None, arg_required_else_help = true)]
@@ -20,6 +21,7 @@ pub struct TxsCli {
 
 #[derive(clap::Subcommand)]
 enum Subcommand {
+    Test,
     /// Demo transfer coin example for local testnet
     Demo,
 
@@ -157,6 +159,8 @@ enum Subcommand {
 impl TxsCli {
     pub async fn run(&self) -> Result<()> {
         match &self.subcommand {
+            Some(Subcommand::Test) => test_tx::run().await,
+
             Some(Subcommand::Demo) => demo::run().await,
             Some(Subcommand::CreateAccount {
                 account_address,
