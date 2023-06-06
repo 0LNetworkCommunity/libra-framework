@@ -18,14 +18,16 @@ pub async fn run() -> anyhow::Result<()> {
 
     let mut local_acct = LocalAccount::new(owner.account, new_key, 0);
 
-    let payload = AptosAccountSetAllowDirectCoinTransfers {
-        allow: true,
-    }.encode();
-
-    // let payload = AptosAccountTransfer {
-    //   to: AccountAddress::from_hex_literal("0x88C0B80B70314FEC169492561C9B20B5")?,
-    //   amount: 33
+    // let payload = AptosAccountSetAllowDirectCoinTransfers {
+    //     allow: true,
     // }.encode();
+
+    // dbg!(&payload);
+
+    let payload = AptosAccountTransfer {
+      to: AccountAddress::from_hex_literal("0x88C0B80B70314FEC169492561C9B20B5")?,
+      amount: 33
+    }.encode();
 
 
     let t = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
