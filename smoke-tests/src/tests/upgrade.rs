@@ -23,6 +23,7 @@ async fn test_upgrade_flow() {
     let release = ReleaseTarget::Head.load_bundle().unwrap();
     let mut swarm = new_local_swarm_with_release(4, release).await;
     let mut public_info = swarm.aptos_public_info();
+    let c = public_info.rest_client();
 
     let url = public_info.url().to_string();
     let private_key = public_info

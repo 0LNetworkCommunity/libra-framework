@@ -1,13 +1,10 @@
-// Copyright © Aptos Foundation
-// SPDX-License-Identifier: Apache-2.0
-
 use libra_framework::release::ReleaseTarget;
 use std::{env::current_dir, path::PathBuf};
 
 fn main() {
     // Set the below variable to skip the building step. This might be useful if the build
     // is broken so it can be debugged with the old outdated artifacts.
-    if std::env::var("SKIP_FRAMEWORK_BUILD").is_err() {
+    if std::env::var("LIBRA_BUILD_FRAMEWORK").is_ok() {
         let current_dir = current_dir().expect("Should be able to get current dir");
         // Get the previous directory
         let mut prev_dir = current_dir;
