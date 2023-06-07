@@ -55,6 +55,7 @@ zapatos-vm-genesis = { package = "aptos-vm-genesis", git = "https://github.com/0
 zapatos-framework = { package = "aptos-framework", git = "https://github.com/0o-de-lally/zapatos.git", rev = "440b5"}
 zapatos-cached-packages = { package = "aptos-cached-packages", git = "https://github.com/0o-de-lally/zapatos.git", rev = "440b5" }
 zapatos-github-client = { package = "aptos-github-client", git = "https://github.com/0o-de-lally/zapatos.git", rev = "440b5"}
+zapatos-release-builder = { package = "aptos-release-builder", git = "https://github.com/0o-de-lally/zapatos.git", rev = "440b5"}
 
 bcs = { git = "https://github.com/aptos-labs/bcs.git", branch = "main" }
 

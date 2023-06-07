@@ -15,7 +15,6 @@ rust-version = { workspace = true }
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true }
-zapatos-framework = { workspace = true }
 aptos-types = { workspace = true, features = ["fuzzing"] }
 bcs = { workspace = true }
 include_dir = { workspace = true }
@@ -24,6 +23,9 @@ move-command-line-common = { workspace = true }
 once_cell = { workspace = true }
 proptest = { workspace = true, optional = true }
 proptest-derive = { workspace = true, optional = true }
+
+zapatos-framework = { workspace = true }
+zapatos-release-builder = { workspace = true }
 
 [build-dependencies]
 zapatos-framework = { workspace = true }
