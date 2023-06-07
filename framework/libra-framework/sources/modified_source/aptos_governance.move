@@ -33,6 +33,8 @@ module aptos_framework::aptos_governance {
     use aptos_framework::timestamp;
     use aptos_framework::voting;
 
+    use ol_framework::testnet;
+
     /// The specified stake pool does not have sufficient stake to create a proposal
     const EINSUFFICIENT_PROPOSER_STAKE: u64 = 1;
     /// This account is not the designated voter of the specified stake pool
@@ -297,7 +299,7 @@ module aptos_framework::aptos_governance {
     /// Vote on proposal with `proposal_id` and voting power from `stake_pool`.
     public entry fun vote(
         voter: &signer,
-        stake_pool: address,
+        // stake_pool: address,
         proposal_id: u64,
         should_pass: bool,
     ) acquires ApprovedExecutionHashes, GovernanceEvents, VotingRecords {
@@ -307,7 +309,7 @@ module aptos_framework::aptos_governance {
         // Ensure the voter doesn't double vote with the same stake pool.
         let voting_records = borrow_global_mut<VotingRecords>(@aptos_framework);
         let record_key = RecordKey {
-            stake_pool,
+            stake_pool: voter_address,
             proposal_id,
         };
         assert!(
@@ -315,9 +317,9 @@ module aptos_framework::aptos_governance {
             error::invalid_argument(EALREADY_VOTED));
         table::add(&mut voting_records.votes, record_key, true);
 
-        let voting_power = get_voting_power(stake_pool);
-        // Short-circuit if the voter has no voting power.
-        assert!(voting_power > 0, error::invalid_argument(ENO_VOTING_POWER));
+        // let voting_power = get_voting_power(stake_pool);
+        // // Short-circuit if the voter has no voting power.
+        // assert!(voting_power > 0, error::invalid_argument(ENO_VOTING_POWER));
 
         // The voter's stake needs to be locked up at least as long as the proposal's expiration.
         // let proposal_expiration = voting::get_proposal_expiration_secs<GovernanceProposal>(@aptos_framework, proposal_id);
@@ -325,7 +327,7 @@ module aptos_framework::aptos_governance {
         //     stake::get_lockup_secs(stake_pool) >= proposal_expiration,
         //     error::invalid_argument(EINSUFFICIENT_STAKE_LOCKUP),
         // );
-
+        let voting_power = 1;
         voting::vote<GovernanceProposal>(
             &governance_proposal::create_empty_proposal(),
             @aptos_framework,
@@ -340,7 +342,7 @@ module aptos_framework::aptos_governance {
             VoteEvent {
                 proposal_id,
                 voter: voter_address,
-                stake_pool,
+                stake_pool: voter_address,
                 num_votes: voting_power,
                 should_pass,
             },
@@ -356,12 +358,18 @@ module aptos_framework::aptos_governance {
         add_approved_script_hash(proposal_id)
     }
 
+    //////// 0L ////////
+    // DANGER!!!! experimental
+    public entry fun set_allowed_script(execution_hash: vector<u8>, proposal_id: u64) acquires ApprovedExecutionHashes {
+      let approved_hashes = borrow_global_mut<ApprovedExecutionHashes>(@aptos_framework);
+      simple_map::add(&mut approved_hashes.hashes, proposal_id, execution_hash);
+    }
+
     /// Add the execution script hash of a successful governance proposal to the approved list.
     /// This is needed to bypass the mempool transaction size limit for approved governance proposal transactions that
     /// are too large (e.g. module upgrades).
-    public fun add_approved_script_hash(proposal_id: u64) acquires ApprovedExecutionHashes {
+    fun add_approved_script_hash(proposal_id: u64) acquires ApprovedExecutionHashes {
         let approved_hashes = borrow_global_mut<ApprovedExecutionHashes>(@aptos_framework);
-
         // Ensure the proposal can be resolved.
         let proposal_state = voting::get_proposal_state<GovernanceProposal>(@aptos_framework, proposal_id);
         assert!(proposal_state == PROPOSAL_STATE_SUCCEEDED, error::invalid_argument(EPROPOSAL_NOT_RESOLVABLE_YET));
@@ -381,11 +389,11 @@ module aptos_framework::aptos_governance {
     //////// 0L ///////
     // TESTING governance
     // This function HAS NO AUTHORIZATION
-    const ENOT_TESTNET: u16 = 666;
+    const ENOT_TESTNET: u64 = 666;
     /// Resolve a successful single-step proposal. This would fail if the proposal is not successful (not enough votes or more no
     /// than yes).
     public fun resolve(proposal_id: u64, signer_address: address): signer acquires ApprovedExecutionHashes, GovernanceResponsbility {
-        assert!(is_testnet(), error::invalid_state(ENOT_TESTNET));
+        assert!(testnet::is_testnet(), error::invalid_state(ENOT_TESTNET));
         // voting::resolve<GovernanceProposal>(@aptos_framework, proposal_id);
         remove_approved_hash(proposal_id);
         get_signer(signer_address)

@@ -7,6 +7,7 @@ use libra_framework::release::ReleaseTarget;
 use aptos_forge::Swarm;
 
 use zapatos_crypto::traits::ValidCryptoMaterialStringExt;
+use std::process::Stdio;
 
 #[tokio::test]
 async fn test_upgrade_flow() {
@@ -31,20 +32,25 @@ async fn test_upgrade_flow() {
         .unwrap();
 
     let proposal_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests").join("fixtures");
+        .join("src").join("tests").join("fixtures").join("proposal_script").join("script.mv");
+    dbg!(&proposal_path);
+    assert!(&proposal_path.exists());
 
-    let framework_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent().unwrap().join("framework").join("libra-framework");
+    // let framework_path = PathBuf::from(env!("ZAPATOS"))
+    //     .parent().unwrap().join("framework").join("libra-framework");
+    // dbg!(&framework_path);
+    // assert!(&framework_path.exists());
 
-    assert!(Command::new("vendor")
-    .current_dir(&proposal_path)
+    let cmd = Command::new("vendor")
+    // .current_dir(&proposal_path)
     .args(&vec![
         "move",
         "run-script",
-        "--script-path",
+        // "--script-path",
+        "--compiled-script-path",
         &proposal_path.to_str().unwrap(),
-        "--framework-local-dir",
-        framework_path.as_os_str().to_str().unwrap(),
+        // "--framework-local-dir",
+        // framework_path.as_os_str().to_str().unwrap(),
         "--sender-account",
         "0xA550C18",
         "--url",
@@ -53,10 +59,12 @@ async fn test_upgrade_flow() {
         private_key.as_str(),
         "--assume-yes",
     ])
+    .stdout(Stdio::inherit())
     .output()
-    .unwrap()
-    .status
-    .success());
+    .unwrap();
+    
+    
+    assert!(cmd.status.success());
 
     // //TODO: Make sure gas schedule is indeed updated by the tool.
 
@@ -69,4 +77,21 @@ async fn test_upgrade_flow() {
     //     .unwrap();
 
     // check_create_mint_transfer(&mut env).await;
+}
+
+#[test]
+fn test_command() {
+  let cmd = Command::new("vendor")
+    // .current_dir(&proposal_path)
+    .args(&vec![
+        "move",
+        "run-script",
+        "--assume-yes",
+    ])
+    .stdout(Stdio::inherit())
+    .output()
+    .unwrap();
+
+    assert!(cmd.status.success());
+
 }

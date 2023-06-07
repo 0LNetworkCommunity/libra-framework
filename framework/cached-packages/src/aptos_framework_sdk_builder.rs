@@ -216,9 +216,13 @@ pub enum EntryFunctionCall {
         is_multi_step_proposal: bool,
     },
 
+    AptosGovernanceSetAllowedScript {
+        execution_hash: Vec<u8>,
+        proposal_id: u64,
+    },
+
     /// Vote on proposal with `proposal_id` and voting power from `stake_pool`.
     AptosGovernanceVote {
-        stake_pool: AccountAddress,
         proposal_id: u64,
         should_pass: bool,
     },
@@ -639,11 +643,14 @@ impl EntryFunctionCall {
                 metadata_hash,
                 is_multi_step_proposal,
             ),
+            AptosGovernanceSetAllowedScript {
+                execution_hash,
+                proposal_id,
+            } => aptos_governance_set_allowed_script(execution_hash, proposal_id),
             AptosGovernanceVote {
-                stake_pool,
                 proposal_id,
                 should_pass,
-            } => aptos_governance_vote(stake_pool, proposal_id, should_pass),
+            } => aptos_governance_vote(proposal_id, should_pass),
             CodePublishPackageTxn {
                 metadata_serialized,
                 code,
@@ -1294,12 +1301,29 @@ pub fn aptos_governance_create_proposal_v2(
     ))
 }
 
-/// Vote on proposal with `proposal_id` and voting power from `stake_pool`.
-pub fn aptos_governance_vote(
-    stake_pool: AccountAddress,
+pub fn aptos_governance_set_allowed_script(
+    execution_hash: Vec<u8>,
     proposal_id: u64,
-    should_pass: bool,
 ) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("aptos_governance").to_owned(),
+        ),
+        ident_str!("set_allowed_script").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&execution_hash).unwrap(),
+            bcs::to_bytes(&proposal_id).unwrap(),
+        ],
+    ))
+}
+
+/// Vote on proposal with `proposal_id` and voting power from `stake_pool`.
+pub fn aptos_governance_vote(proposal_id: u64, should_pass: bool) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
@@ -1311,7 +1335,6 @@ pub fn aptos_governance_vote(
         ident_str!("vote").to_owned(),
         vec![],
         vec![
-            bcs::to_bytes(&stake_pool).unwrap(),
             bcs::to_bytes(&proposal_id).unwrap(),
             bcs::to_bytes(&should_pass).unwrap(),
         ],
@@ -2469,12 +2492,24 @@ mod decoder {
         }
     }
 
+    pub fn aptos_governance_set_allowed_script(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::AptosGovernanceSetAllowedScript {
+                execution_hash: bcs::from_bytes(script.args().get(0)?).ok()?,
+                proposal_id: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn aptos_governance_vote(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::AptosGovernanceVote {
-                stake_pool: bcs::from_bytes(script.args().get(0)?).ok()?,
-                proposal_id: bcs::from_bytes(script.args().get(1)?).ok()?,
-                should_pass: bcs::from_bytes(script.args().get(2)?).ok()?,
+                proposal_id: bcs::from_bytes(script.args().get(0)?).ok()?,
+                should_pass: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
             None
@@ -3086,6 +3121,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "aptos_governance_create_proposal_v2".to_string(),
             Box::new(decoder::aptos_governance_create_proposal_v2),
+        );
+        map.insert(
+            "aptos_governance_set_allowed_script".to_string(),
+            Box::new(decoder::aptos_governance_set_allowed_script),
         );
         map.insert(
             "aptos_governance_vote".to_string(),

@@ -168,11 +168,11 @@ spec aptos_framework::aptos_governance {
     /// Address @aptos_framework must exist VotingRecords and GovernanceProposal.
     spec vote (
         voter: &signer,
-        stake_pool: address,
+        // stake_pool: address,
         proposal_id: u64,
         should_pass: bool,
     ) {
-        use aptos_framework::stake;
+        // use aptos_framework::stake;
         use aptos_framework::chain_status;
 
         // TODO: The variable `voting_power` is the return value of the function `get_voting_power`.
@@ -184,9 +184,9 @@ spec aptos_framework::aptos_governance {
         requires chain_status::is_operating();
 
         let voter_address = signer::address_of(voter);
-        let stake_pool_res = global<stake::StakePool>(stake_pool);
-        aborts_if !exists<stake::StakePool>(stake_pool);
-        aborts_if stake_pool_res.delegated_voter != voter_address;
+        // let stake_pool_res = global<stake::StakePool>(stake_pool);
+        // aborts_if !exists<stake::StakePool>(stake_pool);
+        // aborts_if stake_pool_res.delegated_voter != voter_address;
         aborts_if !exists<VotingRecords>(@aptos_framework);
         aborts_if !exists<voting::VotingForum<GovernanceProposal>>(@aptos_framework);
         // let allow_validator_set_change = global<staking_config::StakingConfig>(@aptos_framework).allow_validator_set_change;
@@ -194,8 +194,8 @@ spec aptos_framework::aptos_governance {
         let voting_forum = global<voting::VotingForum<GovernanceProposal>>(@aptos_framework);
         let proposal = table::spec_get(voting_forum.proposals, proposal_id);
         let proposal_expiration = proposal.expiration_secs;
-        let locked_until_secs = global<stake::StakePool>(stake_pool).locked_until_secs;
-        aborts_if proposal_expiration > locked_until_secs;
+        // let locked_until_secs = global<stake::StakePool>(stake_pool).locked_until_secs;
+        // aborts_if proposal_expiration > locked_until_secs;
     }
 
     spec add_approved_script_hash(proposal_id: u64) {
