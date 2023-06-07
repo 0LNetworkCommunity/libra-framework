@@ -15,3 +15,4 @@ aptos-forge = { workspace = true }
 aptos-types = { workspace = true }
 aptos-smoke-test = { workspace = true }
 tokio = { workspace = true }
+zapatos-crypto = { workspace = true}
