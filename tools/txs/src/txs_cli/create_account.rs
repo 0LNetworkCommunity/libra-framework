@@ -5,7 +5,7 @@ use libra_txs::{
   types::account_address::AccountAddress
 };
 
-pub async fn run(account_address: &str, coins: u64) -> Result<()> {
+pub async fn run(account_address: &str, _coins: u64) -> Result<()> {
     // let faucet_client = FaucetClient::default()?;
     let _account_address = AccountAddress::from_hex_literal(account_address)?;
 

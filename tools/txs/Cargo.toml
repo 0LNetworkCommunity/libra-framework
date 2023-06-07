@@ -26,3 +26,6 @@ colored = { workspace = true }
 
 libra-cached-packages = { workspace = true }
 libra-wallet = { workspace = true }
+
+zapatos = { workspace = true }
+zapatos-types = { workspace = true }
