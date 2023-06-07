@@ -217,20 +217,20 @@ spec aptos_framework::aptos_governance {
         pragma verify = false;
     }
 
-    /// Address @aptos_framework must exist ApprovedExecutionHashes and GovernanceProposal and GovernanceResponsbility.
-    spec resolve(proposal_id: u64, signer_address: address): signer {
-        use aptos_framework::chain_status;
-        // TODO: Executing the prove command gives an error that the target file is in `from_bcs::from_bytes`,
-        // and the call level of the function `resolve` is too deep to obtain the parameter `bytes` of spec `from_bytes`,
-        // so verification cannot be performed.
-        // Can't cover all aborts_if conditions
-        pragma aborts_if_is_partial;
+    // /// Address @aptos_framework must exist ApprovedExecutionHashes and GovernanceProposal and GovernanceResponsbility.
+    // spec resolve(proposal_id: u64, signer_address: address): signer {
+    //     use aptos_framework::chain_status;
+    //     // TODO: Executing the prove command gives an error that the target file is in `from_bcs::from_bytes`,
+    //     // and the call level of the function `resolve` is too deep to obtain the parameter `bytes` of spec `from_bytes`,
+    //     // so verification cannot be performed.
+    //     // Can't cover all aborts_if conditions
+    //     pragma aborts_if_is_partial;
 
-        requires chain_status::is_operating();
-        aborts_if !exists<voting::VotingForum<GovernanceProposal>>(@aptos_framework);
-        aborts_if !exists<ApprovedExecutionHashes>(@aptos_framework);
-        include GetSignerAbortsIf;
-    }
+    //     requires chain_status::is_operating();
+    //     aborts_if !exists<voting::VotingForum<GovernanceProposal>>(@aptos_framework);
+    //     aborts_if !exists<ApprovedExecutionHashes>(@aptos_framework);
+    //     include GetSignerAbortsIf;
+    // }
 
     /// Address @aptos_framework must exist ApprovedExecutionHashes and GovernanceProposal.
     spec remove_approved_hash(proposal_id: u64) {
