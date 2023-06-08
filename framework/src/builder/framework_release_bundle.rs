@@ -1,7 +1,4 @@
-// Copyright © Aptos Foundation
-// SPDX-License-Identifier: Apache-2.0
 
-use crate::{built_package::BuiltPackage, natives::code::PackageMetadata, path_in_crate};
 use anyhow::Context;
 use aptos_types::account_address::AccountAddress;
 use move_binary_format::{access::ModuleAccess, errors::PartialVMError, CompiledModule};
@@ -10,6 +7,10 @@ use move_core_types::language_storage::ModuleId;
 use move_model::{code_writer::CodeWriter, emit, emitln, model::Loc};
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, path::PathBuf};
+
+use zapatos_framework::natives::code::PackageMetadata;
+use zapatos_framework::BuiltPackage;
+use zapatos_framework::path_in_crate;
 
 /// A release bundle consists of a list of release packages.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

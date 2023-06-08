@@ -105,8 +105,10 @@ diem-types = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-d
 # move-abigen = { path = "third_party/move/move-prover/move-abigen" }
 # move-binary-format = { path = "third_party/move/move-binary-format" }
 # ... see full list in Aptos repo
+move-binary-format = { git = "https://github.com/0o-de-lally/zapatos.git", rev = "440b5" }
 move-core-types = { git = "https://github.com/0o-de-lally/zapatos.git", rev = "440b5"}
 move-command-line-common = { git = "https://github.com/0o-de-lally/zapatos.git", rev = "440b5" }
+move-model = { git = "https://github.com/0o-de-lally/zapatos.git", rev = "440b5" }
 
 
 [profile.release]
