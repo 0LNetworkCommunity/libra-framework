@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
 
-use libra_framework::release::ReleaseTarget;
+use libra_framework::{release::ReleaseTarget, builder::{release_config_ext::libra_release_cfg_default, main_generate_proposals}};
 use clap::Parser;
 use std::path::PathBuf;
 
@@ -47,21 +47,25 @@ impl GenesisRelease {
 /// NOTE: this is an 0L reconstruction of vendor apis.
 #[derive(Debug, Parser)]
 struct UpgradeRelease {
-    /// The file path the the configuration file for the release.
-    #[clap(short, long)]
-    release_config: PathBuf,
+
     /// dir to save all the artifacts for the release.
     #[clap(short, long)]
     output_dir: PathBuf,
     /// directory of the framework source code
     /// usually ./framework
     #[clap(short, long)]
-    framework_local_dir: PathBuf
+    framework_local_dir: PathBuf,
+
+    /// TODO: optionally pass a config file with the release config
+    /// if there are parameter or raw script changes.
+    #[clap(short, long)]
+    release_config: Option<PathBuf>,
 }
 
 impl UpgradeRelease {
     fn execute(self) -> anyhow::Result<()> {
-      todo!()
-        // self.target.create_release(!self.without_source_code, None)
+      // we are usually only interested in upgrading the framework
+      let release_cfg = libra_release_cfg_default();
+      main_generate_proposals::run(release_cfg, self.output_dir, self.framework_local_dir)
     }
 }

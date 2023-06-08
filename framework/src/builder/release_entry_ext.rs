@@ -3,13 +3,15 @@ use crate::builder::framework_generate_upgrade_proposal;
 use zapatos_release_builder::components::get_execution_hash;
 use zapatos_release_builder::ExecutionMode;
 use zapatos_release_builder::ReleaseEntry;
-use zapatos_rest_client::Client;
+use std::path::Path;
+// use zapatos_rest_client::Client;
 pub trait LibraReleaseEntry {
   fn libra_generate_release_script (
     &self,
-    client: Option<&Client>,
+    // client: Option<&Client>,
     result: &mut Vec<(String, String)>,
     execution_mode: ExecutionMode,
+    framework_local_dir: &Path,
   ) -> anyhow::Result<()>;
 }
 
@@ -17,9 +19,10 @@ pub trait LibraReleaseEntry {
 impl LibraReleaseEntry for ReleaseEntry {
     fn libra_generate_release_script(
         &self,
-        _client: Option<&Client>,
+        // _client: Option<&Client>,
         result: &mut Vec<(String, String)>,
         execution_mode: ExecutionMode,
+        framework_local_dir: &Path,
     ) -> anyhow::Result<()> {
         let (is_testnet, is_multi_step) = match execution_mode {
             ExecutionMode::MultiStep => (false, true),
@@ -37,6 +40,7 @@ impl LibraReleaseEntry for ReleaseEntry {
                         } else {
                             "".to_owned().into_bytes()
                         },
+                        framework_local_dir,
                     )
                     .unwrap(),
                 );

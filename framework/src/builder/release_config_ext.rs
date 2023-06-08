@@ -5,23 +5,26 @@ use std::path::{Path, PathBuf};
 use zapatos_release_builder::{ReleaseConfig, ExecutionMode};
 use zapatos_temppath::TempPath;
 use zapatos_crypto::HashValue;
-use zapatos_rest_client::Client;
+// use zapatos_rest_client::Client;
 use zapatos::{
   common::types::PromptOptions,
   move_tool::FrameworkPackageArgs,
   governance::CompileScriptFunction,
 };
-
+use zapatos_release_builder::components::Proposal;
+use zapatos_release_builder::components::ProposalMetadata;
+use zapatos_release_builder::ReleaseEntry;
+use zapatos_release_builder::components::framework::FrameworkReleaseConfig;
 pub trait LibraReleaseConfig {
     fn libra_generate_release_proposal_scripts(&self, base_path: &Path, framework_local_dir: PathBuf) -> anyhow::Result<()>;
 }
 
 impl LibraReleaseConfig for ReleaseConfig {
     fn libra_generate_release_proposal_scripts(&self, base_path: &Path, framework_local_dir: PathBuf) -> anyhow::Result<()> {
-        let client = self
-            .remote_endpoint
-            .as_ref()
-            .map(|url| Client::new(url.clone()));
+        // let client = self
+        //     .remote_endpoint
+        //     .as_ref()
+        //     .map(|url| Client::new(url.clone()));
 
         // Create directories for source and metadata.
         let mut source_dir = base_path.to_path_buf();
@@ -50,18 +53,20 @@ impl LibraReleaseConfig for ReleaseConfig {
             if let ExecutionMode::MultiStep = &proposal.execution_mode {
                 for entry in proposal.update_sequence.iter().rev() {
                     entry.libra_generate_release_script( //////// 0L //////// our change to use the extension
-                        client.as_ref(),
+                        // client.as_ref(),
                         &mut result,
                         proposal.execution_mode,
+                        &framework_local_dir,
                     )?;
                 }
                 result.reverse();
             } else {
                 for entry in proposal.update_sequence.iter() {
                     entry.libra_generate_release_script( //////// 0L //////// our change to use the extension
-                        client.as_ref(),
+                        // client.as_ref(),
                         &mut result,
                         proposal.execution_mode,
+                        &framework_local_dir,
                     )?;
                 }
             }
@@ -135,4 +140,21 @@ fn generate_hash(script_path: PathBuf, framework_local_dir: PathBuf) -> anyhow::
     }
     .compile("execution_hash", PromptOptions::yes())?;
     Ok(res)
+}
+
+pub fn libra_release_cfg_default() -> ReleaseConfig {
+    ReleaseConfig {
+        remote_endpoint: None,
+        proposals: vec![
+          Proposal {
+              execution_mode: ExecutionMode::MultiStep,
+              metadata: ProposalMetadata::default(),
+              name: "framework".to_string(),
+              update_sequence: vec![ReleaseEntry::Framework(FrameworkReleaseConfig {
+                  bytecode_version: 6, // Only numbers 5 to 6 are supported
+                  git_hash: None,
+              })],
+          }
+        ],
+    }
 }
