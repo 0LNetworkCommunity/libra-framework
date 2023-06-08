@@ -7,7 +7,9 @@ version = "0.1.0"
 edition = { workspace = true }
 
 [dependencies]
-aptos-cached-packages = { workspace = true }
+libra-cached-packages = { workspace = true }
+libra-framework = { workspace = true }
+
 aptos-debugger = { workspace = true }
 aptos-forge = { workspace = true }
 aptos-types = { workspace = true }

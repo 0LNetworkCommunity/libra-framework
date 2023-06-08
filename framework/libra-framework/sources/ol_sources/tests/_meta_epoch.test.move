@@ -32,13 +32,11 @@ module ol_framework::test_meta {
     
   }
 
-  #[test(vm = @vm_reserved)]
+  #[test(root = @ol_framework)]
   // can we trigger a reconfiguration and get to a new epoch?
-  fun test_reconfigure_ol_setup() {
+  fun test_reconfigure_ol_setup(root: signer) {
     // NOTE: genesis_n_vals, DOES trigger a genesis END event.
-    mock::genesis_n_vals(4);
-
-
+    mock::genesis_n_vals(&root, 4);
 
 
     let a = reconfiguration::get_current_epoch();

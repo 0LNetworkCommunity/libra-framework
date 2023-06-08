@@ -13,7 +13,7 @@ module ol_framework::test_musical_chairs {
     #[test(root = @ol_framework)]
     public entry fun eval_compliance_happy(root: signer) {
 
-      let vals = mock::genesis_n_vals(5);
+      let vals = mock::genesis_n_vals(&root, 5);
       assert!(vector::length(&vals) == 5, 7357001);
 
       // all vals compliant
@@ -32,24 +32,24 @@ module ol_framework::test_musical_chairs {
       assert!(new_set_size == (musical_chairs_default_seats + 1), 7357006);
     }
 
-    #[test(vm = @ol_framework)]
+    #[test(root = @ol_framework)]
     // only one seat opens up
-    public entry fun eval_compliance_one_val(vm: signer) {
+    public entry fun eval_compliance_one_val(root: signer) {
 
-      let vals = mock::genesis_n_vals(5);
+      let vals = mock::genesis_n_vals(&root, 5);
       assert!(vector::length(&vals) == 5, 7357001);
 
       // all vals compliant
-      mock::mock_case_1(&vm, *vector::borrow(&vals, 0));
+      mock::mock_case_1(&root, *vector::borrow(&vals, 0));
 
-      let (good, bad, bad_ratio) = musical_chairs::test_eval_compliance(&vm, vals);
+      let (good, bad, bad_ratio) = musical_chairs::test_eval_compliance(&root, vals);
       assert!(vector::length(&good) == 1, 7357002);
       assert!(vector::length(&bad) == 4, 7357003);
       assert!(!fixed_point32::is_zero(bad_ratio), 7357004);
       assert!(fixed_point32::create_from_rational(4, 5) == bad_ratio, 7357005);
 
 
-      let (_outgoing_compliant_set, _new_set_size) = musical_chairs::stop_the_music(&vm);
+      let (_outgoing_compliant_set, _new_set_size) = musical_chairs::stop_the_music(&root);
 
     }
 }

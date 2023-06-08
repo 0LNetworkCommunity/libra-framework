@@ -16,7 +16,7 @@ module aptos_framework::create_signer {
     friend aptos_framework::object;
     
     //////// 0L ////////
-    friend ol_framework::ol_account;
+    // friend ol_framework::ol_account;
 
     public(friend) native fun create_signer(addr: address): signer;
 }

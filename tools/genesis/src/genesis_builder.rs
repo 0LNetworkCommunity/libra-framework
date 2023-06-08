@@ -1,6 +1,7 @@
 use anyhow::{anyhow, bail, Result};
 use libra_wallet::utils::{check_if_file_exists, from_yaml, write_to_user_only_file};
 use libra_framework::release;
+use ol_types::legacy_recovery::LegacyRecovery;
 
 use std::str::FromStr;
 use std::{
@@ -26,6 +27,8 @@ use zapatos_types::{
 };
 use zapatos_vm_genesis::default_gas_schedule;
 
+use crate::genesis::make_recovery_genesis_from_vec_legacy_recovery;
+use crate::hack_cli_progress::OLProgress;
 use crate::wizard::DEFAULT_GIT_BRANCH;
 
 pub const LAYOUT_FILE: &str = "layout.yaml";
@@ -35,14 +38,58 @@ pub const FRAMEWORK_NAME: &str = "framework.mrb";
 const WAYPOINT_FILE: &str = "waypoint.txt";
 const GENESIS_FILE: &str = "genesis.blob";
 
+// trait LibraGetGenesis {
+//   fn get_genesis(&mut self) -> &Transaction;
+//   fn generate_genesis_txn(&self) -> Transaction;
+// }
+
+
+// impl LibraGetGenesis for GenesisInfo {
+//       fn get_genesis(&mut self) -> &Transaction {
+//         if let Some(ref genesis) = self.genesis {
+//             genesis
+//         } else {
+//             self.genesis = Some(self.generate_genesis_txn());
+//             self.genesis.as_ref().unwrap()
+//         }
+//     }
+
+//     fn generate_genesis_txn(&self) -> Transaction {
+//         vm::encode_zapatos_recovery_genesis_change_set(
+//             self.root_key.clone(),
+//             &self.validators,
+//             &self.framework,
+//             self.chain_id,
+//             &zapatos_vm_genesis::GenesisConfiguration {
+//                 allow_new_validators: self.allow_new_validators,
+//                 epoch_duration_secs: self.epoch_duration_secs,
+//                 is_test: true,
+//                 min_stake: self.min_stake,
+//                 min_voting_threshold: self.min_voting_threshold,
+//                 max_stake: self.max_stake,
+//                 recurring_lockup_duration_secs: self.recurring_lockup_duration_secs,
+//                 required_proposer_stake: self.required_proposer_stake,
+//                 rewards_apy_percentage: self.rewards_apy_percentage,
+//                 voting_duration_secs: self.voting_duration_secs,
+//                 voting_power_increase_limit: self.voting_power_increase_limit,
+//                 employee_vesting_start: 1663456089,
+//                 employee_vesting_period_duration: 5 * 60, // 5 minutes
+//             },
+//             &self.consensus_config,
+//             &self.execution_config,
+//             &self.gas_schedule,
+//         )
+//     }
+// }
 pub fn build(
     github_owner: String,
     github_repository: String,
     github_token: String,
     home_path: PathBuf,
     use_local_framework: bool,
+    legacy_recovery: Option<&[LegacyRecovery]>,
 ) -> Result<Vec<PathBuf>> {
-    let output_dir = home_path.join("genesis"); // TODO
+    let output_dir = home_path.join("genesis");
     std::fs::create_dir_all(&output_dir)?;
 
     let genesis_file = output_dir.join(GENESIS_FILE);
@@ -53,9 +100,18 @@ pub fn build(
 
     // Generate genesis and waypoint files
     let (genesis_bytes, waypoint) = {
-        let mut test_genesis = fetch_genesis_info(github_owner, github_repository, github_token, use_local_framework)?;
-        let genesis_bytes = bcs::to_bytes(test_genesis.clone().get_genesis())?;
-        (genesis_bytes, test_genesis.generate_waypoint()?)
+        let mut gen_info = fetch_genesis_info(github_owner, github_repository, github_token, use_local_framework)?;
+
+        let tx = make_recovery_genesis_from_vec_legacy_recovery(
+            legacy_recovery,
+            &gen_info.validators,
+            &gen_info.framework,
+            gen_info.chain_id,
+          )?;
+        // NOTE: if genesis TX is not set, then it will run the vendor's release workflow, which we do not want.
+        gen_info.genesis = Some(tx);
+        
+        (bcs::to_bytes(gen_info.get_genesis())?, gen_info.generate_waypoint()?)
     };
 
     write_to_user_only_file(genesis_file.as_path(), GENESIS_FILE, &genesis_bytes)?;
@@ -64,6 +120,8 @@ pub fn build(
         WAYPOINT_FILE,
         waypoint.to_string().as_bytes(),
     )?;
+
+    OLProgress::complete(&format!("genesis successfully built at {}", output_dir.to_str().unwrap()));
     Ok(vec![genesis_file, waypoint_file])
 }
 
@@ -97,8 +155,10 @@ pub fn fetch_genesis_info(
     let validators = get_validator_configs(&client, &layout, false)?;
 
     let framework = if use_local_framework {
+      // use the local head release
       release::ReleaseTarget::Head.load_bundle()?
     } else {
+      // get from github
       let bytes = base64::decode(client.get_file(FRAMEWORK_NAME)?)?;
       bcs::from_bytes::<ReleaseBundle>(&bytes)?
     };
@@ -429,7 +489,8 @@ fn parse_optional_option<F: Fn(&str) -> Result<T, E>, T, E: std::fmt::Display>(
 }
 
 #[test]
-fn test_build() {
+#[ignore] //dev helper
+fn test_github_info() {
     let gh_token_path = dirs::home_dir()
         .unwrap()
         .join(".libra")
@@ -437,5 +498,24 @@ fn test_build() {
     let token = std::fs::read_to_string(&gh_token_path).unwrap();
 
     let _genesis_info =
-        fetch_genesis_info("0o-de-lally".to_string(), "a-genesis".to_string(), token).unwrap();
+        fetch_genesis_info("0o-de-lally".to_string(), "a-genesis".to_string(), token, true).unwrap();
+}
+
+
+#[test]
+#[ignore] //dev helper
+fn test_build() {
+    let home = dirs::home_dir()
+        .unwrap()
+        .join(".libra");
+    let token = std::fs::read_to_string(&home.join("github_token.txt")).unwrap();
+
+    build(
+    "0o-de-lally".to_string(),
+    "a-genesis".to_string(),
+    token,
+    home,
+    true,
+    None,
+    ).unwrap();
 }
