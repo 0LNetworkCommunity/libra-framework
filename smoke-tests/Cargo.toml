@@ -10,9 +10,9 @@ edition = { workspace = true }
 libra-cached-packages = { workspace = true }
 libra-framework = { workspace = true }
 
-aptos-debugger = { workspace = true }
-aptos-forge = { workspace = true }
-aptos-types = { workspace = true }
-aptos-smoke-test = { workspace = true }
+zapatos-debugger = { workspace = true }
+zapatos-forge = { workspace = true }
+zapatos-types = { workspace = true }
+zapatos-smoke-test = { workspace = true }
 tokio = { workspace = true }
 zapatos-crypto = { workspace = true}

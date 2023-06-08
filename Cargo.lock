@@ -253,7 +253,7 @@ dependencies = [
 [[package]]
 name = "aptos"
 version = "1.0.11"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-backup-cli",
@@ -296,7 +296,7 @@ dependencies = [
  "hex",
  "itertools",
  "jemallocator",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-cli",
  "move-command-line-common",
  "move-compiler",
@@ -329,7 +329,7 @@ dependencies = [
 [[package]]
 name = "aptos-accumulator"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-crypto",
@@ -339,7 +339,7 @@ dependencies = [
 [[package]]
 name = "aptos-aggregator"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-crypto",
@@ -347,7 +347,7 @@ dependencies = [
  "aptos-types",
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "better_any",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-core-types 0.0.4",
  "move-table-extension",
  "once_cell",
@@ -357,7 +357,7 @@ dependencies = [
 [[package]]
 name = "aptos-api"
 version = "0.2.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-api-types",
@@ -398,7 +398,7 @@ dependencies = [
 [[package]]
 name = "aptos-api-types"
 version = "0.0.1"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-config",
@@ -413,7 +413,7 @@ dependencies = [
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "hex",
  "indoc 1.0.7",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-core-types 0.0.4",
  "move-resource-viewer",
  "poem",
@@ -425,7 +425,7 @@ dependencies = [
 [[package]]
 name = "aptos-backup-cli"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-config",
@@ -450,7 +450,7 @@ dependencies = [
  "csv",
  "futures",
  "itertools",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-bytecode-verifier",
  "num_cpus",
  "once_cell",
@@ -470,7 +470,7 @@ dependencies = [
 [[package]]
 name = "aptos-backup-service"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-crypto",
@@ -492,7 +492,7 @@ dependencies = [
 [[package]]
 name = "aptos-bitvec"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "serde 1.0.163",
  "serde_bytes",
@@ -501,7 +501,7 @@ dependencies = [
 [[package]]
 name = "aptos-block-executor"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-aggregator",
@@ -516,7 +516,7 @@ dependencies = [
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "crossbeam",
  "dashmap",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "num_cpus",
  "once_cell",
  "parking_lot 0.12.1",
@@ -526,7 +526,7 @@ dependencies = [
 [[package]]
 name = "aptos-bounded-executor"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "futures",
  "tokio",
@@ -535,7 +535,7 @@ dependencies = [
 [[package]]
 name = "aptos-build-info"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "shadow-rs",
 ]
@@ -543,7 +543,7 @@ dependencies = [
 [[package]]
 name = "aptos-cached-packages"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-framework",
  "aptos-types",
@@ -556,7 +556,7 @@ dependencies = [
 [[package]]
 name = "aptos-channels"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-infallible",
@@ -568,7 +568,7 @@ dependencies = [
 [[package]]
 name = "aptos-compression"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-logger",
  "aptos-metrics-core",
@@ -580,7 +580,7 @@ dependencies = [
 [[package]]
 name = "aptos-config"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-crypto",
@@ -607,7 +607,7 @@ dependencies = [
 [[package]]
 name = "aptos-consensus"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-bitvec",
@@ -667,7 +667,7 @@ dependencies = [
 [[package]]
 name = "aptos-consensus-notifications"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-crypto",
  "aptos-runtimes",
@@ -682,7 +682,7 @@ dependencies = [
 [[package]]
 name = "aptos-consensus-types"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-bitvec",
@@ -705,7 +705,7 @@ dependencies = [
 [[package]]
 name = "aptos-crash-handler"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-logger",
  "backtrace",
@@ -717,7 +717,7 @@ dependencies = [
 [[package]]
 name = "aptos-crypto"
 version = "0.0.3"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-crypto-derive",
@@ -754,7 +754,7 @@ dependencies = [
 [[package]]
 name = "aptos-crypto-derive"
 version = "0.0.3"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "proc-macro2 1.0.59",
  "quote 1.0.28",
@@ -764,7 +764,7 @@ dependencies = [
 [[package]]
 name = "aptos-data-client"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-config",
  "aptos-crypto",
@@ -790,7 +790,7 @@ dependencies = [
 [[package]]
 name = "aptos-data-streaming-service"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-channels",
  "aptos-config",
@@ -816,7 +816,7 @@ dependencies = [
 [[package]]
 name = "aptos-db"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-accumulator",
@@ -864,7 +864,7 @@ dependencies = [
 [[package]]
 name = "aptos-db-indexer"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-config",
@@ -890,7 +890,7 @@ dependencies = [
 [[package]]
 name = "aptos-db-tool"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-backup-cli",
@@ -910,7 +910,7 @@ dependencies = [
 [[package]]
 name = "aptos-debugger"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-crypto",
@@ -925,7 +925,7 @@ dependencies = [
  "aptos-vm",
  "aptos-vm-logging",
  "clap 3.2.23",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-cli",
  "move-compiler",
  "move-core-types 0.0.4",
@@ -940,7 +940,7 @@ dependencies = [
 [[package]]
 name = "aptos-event-notifications"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-channels",
  "aptos-id-generator",
@@ -957,7 +957,7 @@ dependencies = [
 [[package]]
 name = "aptos-executor"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-consensus-types",
@@ -985,7 +985,7 @@ dependencies = [
 [[package]]
 name = "aptos-executor-test-helpers"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-cached-packages",
@@ -1009,7 +1009,7 @@ dependencies = [
 [[package]]
 name = "aptos-executor-types"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-crypto",
@@ -1029,7 +1029,7 @@ dependencies = [
 [[package]]
 name = "aptos-fallible"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "thiserror",
 ]
@@ -1037,7 +1037,7 @@ dependencies = [
 [[package]]
 name = "aptos-faucet-core"
 version = "2.0.1"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-config",
@@ -1071,7 +1071,7 @@ dependencies = [
 [[package]]
 name = "aptos-faucet-metrics-server"
 version = "2.0.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-logger",
@@ -1086,7 +1086,7 @@ dependencies = [
 [[package]]
 name = "aptos-forge"
 version = "0.0.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "again",
  "anyhow",
@@ -1139,7 +1139,7 @@ dependencies = [
 [[package]]
 name = "aptos-framework"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-aggregator",
@@ -1168,7 +1168,7 @@ dependencies = [
  "itertools",
  "libsecp256k1",
  "log",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-command-line-common",
  "move-compiler",
  "move-core-types 0.0.4",
@@ -1204,7 +1204,7 @@ dependencies = [
 [[package]]
 name = "aptos-gas"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-framework",
@@ -1216,7 +1216,7 @@ dependencies = [
  "aptos-types",
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-core-types 0.0.4",
  "move-model",
  "move-table-extension",
@@ -1226,7 +1226,7 @@ dependencies = [
 [[package]]
 name = "aptos-gas-algebra-ext"
 version = "0.0.1"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "move-core-types 0.0.4",
 ]
@@ -1234,7 +1234,7 @@ dependencies = [
 [[package]]
 name = "aptos-gas-profiling"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-framework",
@@ -1242,7 +1242,7 @@ dependencies = [
  "aptos-package-builder",
  "aptos-types",
  "inferno",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-core-types 0.0.4",
  "move-vm-types",
  "regex",
@@ -1251,7 +1251,7 @@ dependencies = [
 [[package]]
 name = "aptos-genesis"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-cached-packages",
@@ -1277,7 +1277,7 @@ dependencies = [
 [[package]]
 name = "aptos-github-client"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-proxy",
  "serde 1.0.163",
@@ -1289,17 +1289,17 @@ dependencies = [
 [[package]]
 name = "aptos-global-constants"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 
 [[package]]
 name = "aptos-id-generator"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 
 [[package]]
 name = "aptos-indexer"
 version = "0.0.1"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-api",
@@ -1338,7 +1338,7 @@ dependencies = [
 [[package]]
 name = "aptos-indexer-grpc-fullnode"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-api",
@@ -1361,7 +1361,7 @@ dependencies = [
  "futures",
  "hex",
  "hyper",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-core-types 0.0.4",
  "move-package",
  "once_cell",
@@ -1376,12 +1376,12 @@ dependencies = [
 [[package]]
 name = "aptos-infallible"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 
 [[package]]
 name = "aptos-inspection-service"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-build-info",
@@ -1404,7 +1404,7 @@ dependencies = [
 [[package]]
 name = "aptos-jellyfish-merkle"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-crypto",
@@ -1430,7 +1430,7 @@ dependencies = [
 [[package]]
 name = "aptos-keygen"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-crypto",
  "aptos-types",
@@ -1440,7 +1440,7 @@ dependencies = [
 [[package]]
 name = "aptos-language-e2e-tests"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-bitvec",
@@ -1457,7 +1457,7 @@ dependencies = [
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "goldenfile",
  "hex",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-command-line-common",
  "move-core-types 0.0.4",
  "move-ir-compiler",
@@ -1474,7 +1474,7 @@ dependencies = [
 [[package]]
 name = "aptos-log-derive"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "proc-macro2 1.0.59",
  "quote 1.0.28",
@@ -1484,7 +1484,7 @@ dependencies = [
 [[package]]
 name = "aptos-logger"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-infallible",
  "aptos-log-derive",
@@ -1508,7 +1508,7 @@ dependencies = [
 [[package]]
 name = "aptos-mempool"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-bounded-executor",
@@ -1547,7 +1547,7 @@ dependencies = [
 [[package]]
 name = "aptos-mempool-notifications"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-runtimes",
  "aptos-types",
@@ -1561,7 +1561,7 @@ dependencies = [
 [[package]]
 name = "aptos-memsocket"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-infallible",
  "bytes",
@@ -1572,7 +1572,7 @@ dependencies = [
 [[package]]
 name = "aptos-metrics-core"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "prometheus 0.13.0",
@@ -1581,12 +1581,12 @@ dependencies = [
 [[package]]
 name = "aptos-move-stdlib"
 version = "0.1.1"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "hex",
  "log",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-command-line-common",
  "move-compiler",
  "move-core-types 0.0.4",
@@ -1604,7 +1604,7 @@ dependencies = [
 [[package]]
 name = "aptos-moving-average"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "chrono",
 ]
@@ -1612,7 +1612,7 @@ dependencies = [
 [[package]]
 name = "aptos-mvhashmap"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-aggregator",
@@ -1627,7 +1627,7 @@ dependencies = [
 [[package]]
 name = "aptos-netcore"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-memsocket",
  "aptos-proxy",
@@ -1644,7 +1644,7 @@ dependencies = [
 [[package]]
 name = "aptos-network"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-bitvec",
@@ -1687,7 +1687,7 @@ dependencies = [
 [[package]]
 name = "aptos-network-builder"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-channels",
  "aptos-config",
@@ -1713,7 +1713,7 @@ dependencies = [
 [[package]]
 name = "aptos-network-checker"
 version = "0.0.1"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-config",
@@ -1730,7 +1730,7 @@ dependencies = [
 [[package]]
 name = "aptos-network-discovery"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-channels",
@@ -1756,7 +1756,7 @@ dependencies = [
 [[package]]
 name = "aptos-node"
 version = "1.4.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-api",
@@ -1821,7 +1821,7 @@ dependencies = [
 [[package]]
 name = "aptos-node-identity"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-types",
@@ -1833,7 +1833,7 @@ dependencies = [
 [[package]]
 name = "aptos-node-resource-metrics"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-build-info",
  "aptos-infallible",
@@ -1849,7 +1849,7 @@ dependencies = [
 [[package]]
 name = "aptos-num-variants"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "proc-macro2 1.0.59",
  "quote 1.0.28",
@@ -1859,7 +1859,7 @@ dependencies = [
 [[package]]
 name = "aptos-openapi"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "async-trait",
  "percent-encoding",
@@ -1872,7 +1872,7 @@ dependencies = [
 [[package]]
 name = "aptos-package-builder"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-framework",
@@ -1885,7 +1885,7 @@ dependencies = [
 [[package]]
 name = "aptos-peer-monitoring-service-client"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-channels",
  "aptos-config",
@@ -1910,7 +1910,7 @@ dependencies = [
 [[package]]
 name = "aptos-peer-monitoring-service-server"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-bounded-executor",
  "aptos-build-info",
@@ -1936,7 +1936,7 @@ dependencies = [
 [[package]]
 name = "aptos-peer-monitoring-service-types"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-config",
  "aptos-types",
@@ -1948,7 +1948,7 @@ dependencies = [
 [[package]]
 name = "aptos-proptest-helpers"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "crossbeam",
  "proptest",
@@ -1958,7 +1958,7 @@ dependencies = [
 [[package]]
 name = "aptos-protos"
 version = "0.1.2"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "pbjson",
  "prost",
@@ -1969,7 +1969,7 @@ dependencies = [
 [[package]]
 name = "aptos-proxy"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "ipnet",
 ]
@@ -1977,7 +1977,7 @@ dependencies = [
 [[package]]
 name = "aptos-push-metrics"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-logger",
  "aptos-metrics-core",
@@ -1988,7 +1988,7 @@ dependencies = [
 [[package]]
 name = "aptos-rate-limiter"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-infallible",
  "aptos-logger",
@@ -2002,7 +2002,7 @@ dependencies = [
 [[package]]
 name = "aptos-release-builder"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos",
@@ -2022,7 +2022,7 @@ dependencies = [
  "git2 0.16.1",
  "handlebars",
  "hex",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-core-types 0.0.4",
  "move-model",
  "once_cell",
@@ -2038,7 +2038,7 @@ dependencies = [
 [[package]]
 name = "aptos-resource-viewer"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-types",
@@ -2050,7 +2050,7 @@ dependencies = [
 [[package]]
 name = "aptos-rest-client"
 version = "0.0.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-api-types",
@@ -2062,7 +2062,7 @@ dependencies = [
  "bytes",
  "futures",
  "hex",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-core-types 0.0.4",
  "poem-openapi",
  "reqwest",
@@ -2076,7 +2076,7 @@ dependencies = [
 [[package]]
 name = "aptos-retrier"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-logger",
  "tokio",
@@ -2085,7 +2085,7 @@ dependencies = [
 [[package]]
 name = "aptos-rocksdb-options"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-config",
  "rocksdb",
@@ -2094,7 +2094,7 @@ dependencies = [
 [[package]]
 name = "aptos-rosetta"
 version = "0.0.1"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-cached-packages",
@@ -2128,7 +2128,7 @@ dependencies = [
 [[package]]
 name = "aptos-runtimes"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "tokio",
 ]
@@ -2136,7 +2136,7 @@ dependencies = [
 [[package]]
 name = "aptos-safety-rules"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-config",
  "aptos-consensus-types",
@@ -2160,7 +2160,7 @@ dependencies = [
 [[package]]
 name = "aptos-schemadb"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-infallible",
@@ -2174,7 +2174,7 @@ dependencies = [
 [[package]]
 name = "aptos-scratchpad"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-crypto",
  "aptos-infallible",
@@ -2191,7 +2191,7 @@ dependencies = [
 [[package]]
 name = "aptos-sdk"
 version = "0.0.3"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-cached-packages",
@@ -2210,7 +2210,7 @@ dependencies = [
 [[package]]
 name = "aptos-sdk-builder"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-types",
@@ -2229,7 +2229,7 @@ dependencies = [
 [[package]]
 name = "aptos-secure-net"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-logger",
  "aptos-metrics-core",
@@ -2241,7 +2241,7 @@ dependencies = [
 [[package]]
 name = "aptos-secure-storage"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-crypto",
@@ -2265,7 +2265,7 @@ dependencies = [
 [[package]]
 name = "aptos-short-hex-str"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "mirai-annotations",
  "serde 1.0.163",
@@ -2276,7 +2276,7 @@ dependencies = [
 [[package]]
 name = "aptos-speculative-state-helper"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-infallible",
@@ -2288,7 +2288,7 @@ dependencies = [
 [[package]]
 name = "aptos-state-sync-driver"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-config",
@@ -2321,7 +2321,7 @@ dependencies = [
 [[package]]
 name = "aptos-state-view"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-crypto",
@@ -2335,7 +2335,7 @@ dependencies = [
 [[package]]
 name = "aptos-storage-interface"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-crypto",
@@ -2360,7 +2360,7 @@ dependencies = [
 [[package]]
 name = "aptos-storage-service-client"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-channels",
  "aptos-config",
@@ -2374,7 +2374,7 @@ dependencies = [
 [[package]]
 name = "aptos-storage-service-server"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-bounded-executor",
  "aptos-channels",
@@ -2400,7 +2400,7 @@ dependencies = [
 [[package]]
 name = "aptos-storage-service-types"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-compression",
  "aptos-config",
@@ -2415,7 +2415,7 @@ dependencies = [
 [[package]]
 name = "aptos-telemetry"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-api",
@@ -2456,7 +2456,7 @@ dependencies = [
 [[package]]
 name = "aptos-telemetry-service"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-config",
@@ -2499,7 +2499,7 @@ dependencies = [
 [[package]]
 name = "aptos-temppath"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "hex",
  "rand 0.7.3",
@@ -2508,7 +2508,7 @@ dependencies = [
 [[package]]
 name = "aptos-time-service"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-infallible",
  "enum_dispatch",
@@ -2521,7 +2521,7 @@ dependencies = [
 [[package]]
 name = "aptos-transaction-emitter-lib"
 version = "0.0.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "again",
  "anyhow",
@@ -2539,7 +2539,7 @@ dependencies = [
  "clap 3.2.23",
  "futures",
  "itertools",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "once_cell",
  "rand 0.7.3",
  "rand_core 0.5.1",
@@ -2552,7 +2552,7 @@ dependencies = [
 [[package]]
 name = "aptos-transaction-generator-lib"
 version = "0.0.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "again",
  "anyhow",
@@ -2569,7 +2569,7 @@ dependencies = [
  "clap 3.2.23",
  "futures",
  "itertools",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "once_cell",
  "rand 0.7.3",
  "rand_core 0.5.1",
@@ -2582,7 +2582,7 @@ dependencies = [
 [[package]]
 name = "aptos-transactional-test-harness"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-api-types",
@@ -2599,7 +2599,7 @@ dependencies = [
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "hex",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-command-line-common",
  "move-compiler",
  "move-core-types 0.0.4",
@@ -2614,7 +2614,7 @@ dependencies = [
 [[package]]
 name = "aptos-types"
 version = "0.0.3"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-bitvec",
@@ -2644,7 +2644,7 @@ dependencies = [
 [[package]]
 name = "aptos-validator-interface"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-api-types",
@@ -2657,14 +2657,14 @@ dependencies = [
  "async-trait",
  "itertools",
  "lru 0.7.8",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "tokio",
 ]
 
 [[package]]
 name = "aptos-vault-client"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-crypto",
  "base64",
@@ -2680,7 +2680,7 @@ dependencies = [
 [[package]]
 name = "aptos-vm"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-aggregator",
@@ -2700,7 +2700,7 @@ dependencies = [
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "dashmap",
  "fail 0.5.0",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-bytecode-utils",
  "move-bytecode-verifier",
  "move-core-types 0.0.4",
@@ -2722,7 +2722,7 @@ dependencies = [
 [[package]]
 name = "aptos-vm-genesis"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-cached-packages",
@@ -2743,7 +2743,7 @@ dependencies = [
 [[package]]
 name = "aptos-vm-logging"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "aptos-crypto",
  "aptos-logger",
@@ -2759,7 +2759,7 @@ dependencies = [
 [[package]]
 name = "aptos-vm-validator"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-gas",
@@ -2774,7 +2774,7 @@ dependencies = [
 [[package]]
 name = "aptos-warp-webserver"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-api-types",
@@ -2790,7 +2790,7 @@ dependencies = [
 [[package]]
 name = "aptos-writeset-generator"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos-cached-packages",
@@ -6009,7 +6009,9 @@ name = "libra-framework"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "aptos",
  "aptos-build-info",
+ "aptos-crypto",
  "aptos-framework",
  "aptos-release-builder",
  "aptos-rest-client",
@@ -6019,7 +6021,7 @@ dependencies = [
  "clap 4.3.0",
  "git2 0.16.1",
  "include_dir 0.7.2",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-command-line-common",
  "move-core-types 0.0.4",
  "move-model",
@@ -6027,6 +6029,7 @@ dependencies = [
  "proptest",
  "proptest-derive",
  "serde 1.0.163",
+ "serde_json",
 ]
 
 [[package]]
@@ -6477,13 +6480,13 @@ checksum = "5474f8732dc7e0635ae9df6595bcd39cd30e3cfe8479850d4fa3e69306c19712"
 [[package]]
 name = "move-abigen"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "heck 0.3.3",
  "log",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-bytecode-verifier",
  "move-command-line-common",
  "move-core-types 0.0.4",
@@ -6508,7 +6511,7 @@ dependencies = [
 [[package]]
 name = "move-binary-format"
 version = "0.0.3"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "arbitrary",
@@ -6525,16 +6528,16 @@ dependencies = [
 [[package]]
 name = "move-borrow-graph"
 version = "0.0.1"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 
 [[package]]
 name = "move-bytecode-source-map"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-command-line-common",
  "move-core-types 0.0.4",
  "move-ir-types",
@@ -6545,10 +6548,10 @@ dependencies = [
 [[package]]
 name = "move-bytecode-utils"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-core-types 0.0.4",
  "petgraph 0.5.1",
  "serde-reflection 0.3.6",
@@ -6557,11 +6560,11 @@ dependencies = [
 [[package]]
 name = "move-bytecode-verifier"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "fail 0.4.0",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-borrow-graph",
  "move-core-types 0.0.4",
  "petgraph 0.5.1",
@@ -6570,12 +6573,12 @@ dependencies = [
 [[package]]
 name = "move-bytecode-viewer"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "clap 3.2.23",
  "crossterm 0.21.0",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-bytecode-source-map",
  "move-command-line-common",
  "move-disassembler",
@@ -6587,7 +6590,7 @@ dependencies = [
 [[package]]
 name = "move-cli"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
@@ -6596,7 +6599,7 @@ dependencies = [
  "colored",
  "difference",
  "itertools",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-bytecode-source-map",
  "move-bytecode-utils",
  "move-bytecode-verifier",
@@ -6633,7 +6636,7 @@ dependencies = [
 [[package]]
 name = "move-command-line-common"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "difference",
@@ -6650,7 +6653,7 @@ dependencies = [
 [[package]]
 name = "move-compiler"
 version = "0.0.1"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
@@ -6658,7 +6661,7 @@ dependencies = [
  "codespan-reporting",
  "difference",
  "hex",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-borrow-graph",
  "move-bytecode-source-map",
  "move-bytecode-verifier",
@@ -6695,7 +6698,7 @@ dependencies = [
 [[package]]
 name = "move-core-types"
 version = "0.0.4"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "arbitrary",
@@ -6717,14 +6720,14 @@ dependencies = [
 [[package]]
 name = "move-coverage"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
  "codespan",
  "colored",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-bytecode-source-map",
  "move-command-line-common",
  "move-core-types 0.0.4",
@@ -6737,12 +6740,12 @@ dependencies = [
 [[package]]
 name = "move-disassembler"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "clap 3.2.23",
  "colored",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-bytecode-source-map",
  "move-bytecode-verifier",
  "move-command-line-common",
@@ -6755,7 +6758,7 @@ dependencies = [
 [[package]]
 name = "move-docgen"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "codespan",
@@ -6773,7 +6776,7 @@ dependencies = [
 [[package]]
 name = "move-errmapgen"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
@@ -6787,12 +6790,12 @@ dependencies = [
 [[package]]
 name = "move-ir-compiler"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 3.2.23",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-bytecode-source-map",
  "move-bytecode-verifier",
  "move-command-line-common",
@@ -6806,12 +6809,12 @@ dependencies = [
 [[package]]
 name = "move-ir-to-bytecode"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "codespan-reporting",
  "log",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-bytecode-source-map",
  "move-command-line-common",
  "move-core-types 0.0.4",
@@ -6825,7 +6828,7 @@ dependencies = [
 [[package]]
 name = "move-ir-to-bytecode-syntax"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "hex",
@@ -6838,7 +6841,7 @@ dependencies = [
 [[package]]
 name = "move-ir-types"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "hex",
@@ -6852,7 +6855,7 @@ dependencies = [
 [[package]]
 name = "move-model"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "codespan",
@@ -6860,7 +6863,7 @@ dependencies = [
  "internment",
  "itertools",
  "log",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-bytecode-source-map",
  "move-bytecode-verifier",
  "move-command-line-common",
@@ -6878,7 +6881,7 @@ dependencies = [
 [[package]]
 name = "move-package"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
@@ -6887,7 +6890,7 @@ dependencies = [
  "dirs-next 2.0.0",
  "itertools",
  "move-abigen",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-bytecode-source-map",
  "move-bytecode-utils",
  "move-command-line-common",
@@ -6914,7 +6917,7 @@ dependencies = [
 [[package]]
 name = "move-prover"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -6927,7 +6930,7 @@ dependencies = [
  "itertools",
  "log",
  "move-abigen",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-command-line-common",
  "move-compiler",
  "move-core-types 0.0.4",
@@ -6951,7 +6954,7 @@ dependencies = [
 [[package]]
 name = "move-prover-boogie-backend"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -6960,7 +6963,7 @@ dependencies = [
  "futures",
  "itertools",
  "log",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-command-line-common",
  "move-compiler",
  "move-core-types 0.0.4",
@@ -6991,10 +6994,10 @@ dependencies = [
 [[package]]
 name = "move-read-write-set-types"
 version = "0.0.3"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-core-types 0.0.4",
  "serde 1.0.163",
 ]
@@ -7002,12 +7005,12 @@ dependencies = [
 [[package]]
 name = "move-resource-viewer"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "hex",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-bytecode-utils",
  "move-core-types 0.0.4",
  "once_cell",
@@ -7017,7 +7020,7 @@ dependencies = [
 [[package]]
 name = "move-stackless-bytecode"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "codespan",
  "codespan-reporting",
@@ -7025,7 +7028,7 @@ dependencies = [
  "im",
  "itertools",
  "log",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-borrow-graph",
  "move-bytecode-verifier",
  "move-command-line-common",
@@ -7033,7 +7036,7 @@ dependencies = [
  "move-core-types 0.0.4",
  "move-ir-to-bytecode",
  "move-model",
- "move-read-write-set-types 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-read-write-set-types 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "num",
  "once_cell",
  "paste",
@@ -7044,12 +7047,12 @@ dependencies = [
 [[package]]
 name = "move-stdlib"
 version = "0.1.1"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "hex",
  "log",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-command-line-common",
  "move-compiler",
  "move-core-types 0.0.4",
@@ -7067,7 +7070,7 @@ dependencies = [
 [[package]]
 name = "move-symbol-pool"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "once_cell",
  "serde 1.0.163",
@@ -7076,12 +7079,12 @@ dependencies = [
 [[package]]
 name = "move-table-extension"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "better_any",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-core-types 0.0.4",
  "move-vm-runtime",
  "move-vm-types",
@@ -7093,12 +7096,12 @@ dependencies = [
 [[package]]
 name = "move-transactional-test-runner"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "clap 3.2.23",
  "colored",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-bytecode-source-map",
  "move-bytecode-utils",
  "move-bytecode-verifier",
@@ -7124,7 +7127,7 @@ dependencies = [
 [[package]]
 name = "move-unit-test"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "better_any",
@@ -7132,7 +7135,7 @@ dependencies = [
  "codespan-reporting",
  "colored",
  "itertools",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-bytecode-utils",
  "move-command-line-common",
  "move-compiler",
@@ -7154,11 +7157,11 @@ dependencies = [
 [[package]]
 name = "move-vm-runtime"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "better_any",
  "fail 0.4.0",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-bytecode-verifier",
  "move-core-types 0.0.4",
  "move-vm-types",
@@ -7171,10 +7174,10 @@ dependencies = [
 [[package]]
 name = "move-vm-test-utils"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-core-types 0.0.4",
  "move-table-extension",
  "move-vm-types",
@@ -7185,10 +7188,10 @@ dependencies = [
 [[package]]
 name = "move-vm-types"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-core-types 0.0.4",
  "once_cell",
  "serde 1.0.163",
@@ -8491,14 +8494,14 @@ dependencies = [
 [[package]]
 name = "read-write-set"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-bytecode-utils",
  "move-core-types 0.0.4",
  "move-model",
- "move-read-write-set-types 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-read-write-set-types 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-stackless-bytecode",
  "read-write-set-dynamic",
 ]
@@ -8506,13 +8509,13 @@ dependencies = [
 [[package]]
 name = "read-write-set-dynamic"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
- "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-binary-format 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
  "move-bytecode-utils",
  "move-core-types 0.0.4",
- "move-read-write-set-types 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=440b5)",
+ "move-read-write-set-types 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0)",
 ]
 
 [[package]]
@@ -9426,7 +9429,7 @@ checksum = "f67ad224767faa3c7d8b6d91985b78e70a1324408abcb1cfcc2be4c06bc06043"
 [[package]]
 name = "smoke-test"
 version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/zapatos.git?rev=440b5#440b5c6f583b66475e921cd224c2c7aaa60a5f9a"
+source = "git+https://github.com/0o-de-lally/zapatos.git?rev=3d1a0#3d1a0df93c46089e7ffe4a251fafda9cdda0b8de"
 dependencies = [
  "anyhow",
  "aptos",

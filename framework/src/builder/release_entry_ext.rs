@@ -1,18 +1,10 @@
-//! extends new traits for ReleaseEntry
-
-
+//! extends ReleaseEntry with new methods with custom trait.
+use crate::builder::framework_generate_upgrade_proposal;
 use zapatos_release_builder::components::get_execution_hash;
-
-
 use zapatos_release_builder::ExecutionMode;
 use zapatos_release_builder::ReleaseEntry;
-
-
 use zapatos_rest_client::Client;
-
-use crate::builder::framework_generate_upgrade_proposal::generate_upgrade_proposals;
-
-trait LibraReleaseEntry {
+pub trait LibraReleaseEntry {
   fn libra_generate_release_script (
     &self,
     client: Option<&Client>,
@@ -37,7 +29,7 @@ impl LibraReleaseEntry for ReleaseEntry {
         match self {
             ReleaseEntry::Framework(framework_release) => {
                 result.append(
-                    &mut generate_upgrade_proposals(
+                    &mut framework_generate_upgrade_proposal::generate_upgrade_proposals(
                         framework_release,
                         is_testnet,
                         if is_multi_step {
