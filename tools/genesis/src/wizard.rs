@@ -32,8 +32,9 @@ use std::str::FromStr;
 
 pub const DEFAULT_DATA_PATH: &str = ".libra";
 pub const DEFAULT_GIT_BRANCH: &str = "main";
-const GITHUB_TOKEN_FILENAME: &str = "github_token.txt";
+pub const GITHUB_TOKEN_FILENAME: &str = "github_token.txt";
 /// Wizard for genesis
+#[derive(Debug, Clone)]
 pub struct GenesisWizard {
     /// a name to use only for genesis purposes
     pub username: String,
@@ -42,11 +43,11 @@ pub struct GenesisWizard {
     /// name of the repo
     pub repo_name: String,
     /// the registrant's github username
-    github_username: String,
+    pub github_username: String,
     /// the registrant's github api token.
-    github_token: String,
+    pub github_token: String,
     /// the home path of the user
-    data_path: PathBuf,
+    pub data_path: PathBuf,
     /// what epoch is the fork happening from
     pub epoch: Option<u64>,
 }
@@ -130,6 +131,10 @@ impl GenesisWizard {
             .unwrap();
 
         if ready {
+
+            // Get Legacy Recovery from file
+            let legacy_recovery = vec![];
+
             // TODO: progress bar is odd when we  ask "already exists, are you sure you want to overwrite"
 
             // let pb = ProgressBar::new(1000).with_style(OLProgress::spinner());
@@ -142,6 +147,7 @@ impl GenesisWizard {
                 self.github_token.clone(),
                 self.data_path.clone(),
                 use_local_framework,
+                Some(&legacy_recovery),
             )?;
             // pb.finish_and_clear();
 
@@ -448,6 +454,7 @@ fn test_validator_files_config() {
 }
 
 #[test]
+#[ignore] // dev helper
 fn test_register() {
     let mut g = GenesisWizard::default();
     g.username = "0xTEST".to_string();

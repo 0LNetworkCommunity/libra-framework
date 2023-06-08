@@ -1710,6 +1710,7 @@ module aptos_framework::stake {
 
     #[test_only]
     public fun initialize_test_validator(
+        root: &signer,
         public_key: &bls12381::PublicKey,
         proof_of_possession: &bls12381::ProofOfPossession,
         validator: &signer,
@@ -1718,10 +1719,11 @@ module aptos_framework::stake {
         should_end_epoch: bool,
     ) acquires AllowedValidators, StakePool, ValidatorConfig, ValidatorPerformance, ValidatorSet {
         use ol_framework::ol_account;
+        system_addresses::assert_ol(root);
         let validator_address = signer::address_of(validator);
         if (!account::exists_at(signer::address_of(validator))) {
             // account::create_account_for_test(validator_address);
-            ol_account::create_account(validator_address);
+            ol_account::create_account(root, validator_address);
         };
 
         let pk_bytes = bls12381::public_key_to_bytes(public_key);
@@ -1745,7 +1747,7 @@ module aptos_framework::stake {
     public fun quick_init(root: &signer, val_sig: &signer) acquires ValidatorPerformance, ValidatorSet, StakePool, ValidatorConfig, AllowedValidators {
       system_addresses::assert_ol(root);
       let (_sk, pk, pop) = generate_identity();
-      initialize_test_validator(&pk, &pop, val_sig, 100, true, true);
+      initialize_test_validator(root, &pk, &pop, val_sig, 100, true, true);
     }
 
     #[test_only]

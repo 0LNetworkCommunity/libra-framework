@@ -100,7 +100,7 @@ module ol_framework::globals {
 
     /// get the V6 coin split factor
     public fun get_coin_split_factor(): u64 {
-      10
+      5 // TODO: get exact factor from a genesis variable.
     }
 
     /// Get the constants for the current network 

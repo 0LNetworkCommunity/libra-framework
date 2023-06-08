@@ -22,20 +22,20 @@ module ol_framework::test_rewards {
   // #[test_only]
   // use aptos_std::debug::print;
 
-  #[test(root=@ol_framework)]
-  fun test_pay_reward_single(root: &signer) {
+  #[test(root = @ol_framework)]
+  fun test_pay_reward_single(root: signer) {
 
     let alice = @0x1000a;
 
-    mock::genesis_n_vals(1);
+    mock::genesis_n_vals(&root, 1);
     let uid_before = stake::get_reward_event_guid(alice);
 
-    let (burn_cap, mint_cap) = gas_coin::initialize_for_test_without_aggregator_factory(root);
+    let (burn_cap, mint_cap) = gas_coin::initialize_for_test_without_aggregator_factory(&root);
     let new_coin = coin::mint(10000, &mint_cap);
     coin::destroy_burn_cap(burn_cap);
     coin::destroy_mint_cap(mint_cap);
 
-    rewards::test_helper_pay_reward(root, alice, new_coin, 1);
+    rewards::test_helper_pay_reward(&root, alice, new_coin, 1);
     let uid_after = stake::get_reward_event_guid(alice);
     assert!(uid_after > uid_before, 7357001);
 
@@ -49,7 +49,7 @@ module ol_framework::test_rewards {
     let alice = @0x1000a;
     let dave = @0x1000d;
 
-    let vals = mock::genesis_n_vals(4);
+    let vals = mock::genesis_n_vals(root, 4);
     let uid_before = stake::get_reward_event_guid(dave);
     assert!(uid_before == 0, 7357000);
 

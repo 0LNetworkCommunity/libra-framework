@@ -16,10 +16,6 @@ pub fn convert_account(acc: LegacyAddress) -> anyhow::Result<AccountAddress> {
 /// helper to convert auth key structs. Note the struct appears to not have changed, but we need to convert the type and use the new codebase
 pub fn convert_auth_key(key: LegacyAuthKey) -> anyhow::Result<AuthenticationKey> {
     let key_vec = key.to_vec();
-    dbg!(&hex::encode(&key_vec));
     let a = AuthenticationKey::try_from(key_vec.as_slice())?;
-
-    dbg!(&hex::encode(&a.to_vec()));
-
     Ok(a)
 }

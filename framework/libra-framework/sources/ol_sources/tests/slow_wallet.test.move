@@ -12,11 +12,11 @@ module ol_framework::test_slow_wallet {
   use aptos_framework::coin;
   use std::vector;
 
-  #[test]
+  #[test(root = @ol_framework)]
   // we are testing that genesis creates the needed struct
   // and a validator creation sets the users account to slow.
-  fun slow_wallet_init () {
-      let _set = mock::genesis_n_vals(4);
+  fun slow_wallet_init (root: signer) {
+      let _set = mock::genesis_n_vals(&root, 4);
       let list = slow_wallet::get_slow_list();
 
       // alice, the validator, is already a slow wallet.
@@ -25,7 +25,7 @@ module ol_framework::test_slow_wallet {
       // frank was not created above
       let sig = account::create_signer_for_test(@0x1000f);
       let (_sk, pk, pop) = stake::generate_identity();
-      stake::initialize_test_validator(&pk, &pop, &sig, 100, true, true);
+      stake::initialize_test_validator(&root, &pk, &pop, &sig, 100, true, true);
 
       let list = slow_wallet::get_slow_list();
       assert!(vector::length<address>(&list) == 5, 735701);
@@ -34,7 +34,7 @@ module ol_framework::test_slow_wallet {
 
   #[test(root = @ol_framework)]
   fun test_epoch_drip(root: signer) {
-    let set = mock::genesis_n_vals(4);
+    let set = mock::genesis_n_vals(&root, 4);
     let a = vector::borrow(&set, 0);
     let a_sig = account::create_signer_for_test(*a);
 
@@ -48,11 +48,11 @@ module ol_framework::test_slow_wallet {
   #[test(root = @ol_framework, alice = @0x123, bob = @0x456)]
   fun test_transfer_happy(root: signer, alice: signer) {
     slow_wallet::initialize(&root);
-    ol_account::create_account(@0x123);
+    ol_account::create_account(&root, @0x123);
 
 
     // let _vm = vm;
-    // let set = mock::genesis_n_vals(4);
+    // let set = mock::genesis_n_vals(&root, 4);
 
     // let a_sig = account::create_signer_for_test(*a);
 
@@ -64,6 +64,8 @@ module ol_framework::test_slow_wallet {
 
     coin::destroy_burn_cap(burn_cap);
     coin::destroy_mint_cap(mint_cap);
+
+    ol_account::create_account(&root, @0x456);
     ol_account::transfer(&alice, @0x456, 99);
 
     let b_balance = coin::balance<gas_coin::GasCoin>(@0x456);
@@ -81,7 +83,7 @@ module ol_framework::test_slow_wallet {
 
   fun test_transfer_sad(root: signer, alice: signer) {
     slow_wallet::initialize(&root);
-    ol_account::create_account(@0x123);
+    ol_account::create_account(&root, @0x123);
 
     slow_wallet::set_slow(&alice);
     assert!(slow_wallet::is_slow(@0x123), 7357000);
@@ -91,6 +93,7 @@ module ol_framework::test_slow_wallet {
 
     coin::destroy_burn_cap(burn_cap);
     coin::destroy_mint_cap(mint_cap);
+    ol_account::create_account(&root, @0x456);
     ol_account::transfer(&alice, @0x456, 99);
 
     let b_balance = coin::balance<gas_coin::GasCoin>(@0x456);
@@ -108,7 +111,7 @@ module ol_framework::test_slow_wallet {
   // we are testing that genesis creates the needed struct
   // and a validator creation sets the users account to slow.
   fun slow_wallet_reconfigure (root: signer) {
-    let set = mock::genesis_n_vals(4);
+    let set = mock::genesis_n_vals(&root, 4);
     mock::ol_initialize_coin(&root);
     let a = vector::borrow(&set, 0);
     assert!(slow_wallet::unlocked_amount(*a) == 0, 735701);

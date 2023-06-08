@@ -16,16 +16,17 @@ module ol_framework::genesis_migration {
   use ol_framework::gas_coin::GasCoin;
   use ol_framework::infra_escrow;
 
+  // use aptos_std::debug::print;
+
   const EBALANCE_MISMATCH: u64 = 0;
 
   const VAL_ESCROW_PCT: u64 = 80;
   /// Called by root in genesis to initialize the GAS coin 
-  public fun fork_migrate_account(
+  public fun migrate_legacy_user(
       vm: &signer,
       user_sig: &signer,
-      // user_addr: address,
       auth_key: vector<u8>,
-      balance: u64,
+      legacy_balance: u64,
       is_validator: bool,
   ) {
     let user_addr = signer::address_of(user_sig);
@@ -42,20 +43,24 @@ module ol_framework::genesis_migration {
     
     // mint coins again to migrate balance, and all
     // system tracking of balances
-    if (balance == 0) {
+    if (legacy_balance == 0) {
       return
     };
+    let genesis_balance = coin::balance<GasCoin>(user_addr);
+
     // scale up by the coin split factor
-    let new_balance = globals::get_coin_split_factor() * balance;
+    let expected_final_balance = globals::get_coin_split_factor() * legacy_balance;
+    let coins_to_mint = expected_final_balance - genesis_balance;
+    gas_coin::mint(vm, user_addr, coins_to_mint);
 
-    gas_coin::mint(vm, user_addr, new_balance);
+    // TODO: only mint the delta of the expected balance vs what is in the account.
+    let new_balance = coin::balance<GasCoin>(user_addr);
 
-    let balance = coin::balance<GasCoin>(user_addr);
-    assert!(balance == new_balance, error::invalid_state(EBALANCE_MISMATCH));
+    assert!(new_balance == expected_final_balance, error::invalid_state(EBALANCE_MISMATCH));
 
     // establish the infrastructure escrow pledge
     if (is_validator) {
-      let to_escrow = (balance * VAL_ESCROW_PCT) / 100;
+      let to_escrow = (new_balance * VAL_ESCROW_PCT) / 100;
       infra_escrow::user_pledge_infra(user_sig, to_escrow)
     };
   }

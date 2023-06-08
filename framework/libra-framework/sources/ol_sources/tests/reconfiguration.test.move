@@ -13,7 +13,7 @@ module ol_framework::test_reconfiguration {
   // Scenario: all genesis validators make it to next epoch
   #[test(root = @ol_framework)]
   fun reconfig_happy_case(root: signer) {
-      let vals = mock::genesis_n_vals(5);
+      let vals = mock::genesis_n_vals(&root, 5);
       mock::ol_initialize_coin(&root);
       mock::pof_default();
       assert!(vector::length(&vals) == 5, 7357001);
@@ -37,7 +37,7 @@ module ol_framework::test_reconfiguration {
 
   #[test(root = @ol_framework)]
   fun drop_non_performing(root: signer) {
-      let vals = mock::genesis_n_vals(5);
+      let vals = mock::genesis_n_vals(&root, 5);
       mock::ol_initialize_coin(&root);
       mock::pof_default();
       assert!(vector::length(&vals) == 5, 7357001);
@@ -74,7 +74,7 @@ module ol_framework::test_reconfiguration {
   // need to unset testnet id, since the failover only applies to non-testnet
   #[test(root = @ol_framework)]
   fun reconfig_failover(root: signer) {
-      let vals = mock::genesis_n_vals(5);
+      let vals = mock::genesis_n_vals(&root, 5);
       mock::ol_initialize_coin(&root);
       testnet::unset(&root); // note: needs to happen after genesis.
 
