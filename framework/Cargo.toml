@@ -26,6 +26,7 @@ proptest-derive = { workspace = true, optional = true }
 
 zapatos-framework = { workspace = true }
 zapatos-release-builder = { workspace = true }
+zapatos-rest-client = { workspace = true }
 
 [build-dependencies]
 zapatos-framework = { workspace = true }

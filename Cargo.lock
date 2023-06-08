@@ -6011,6 +6011,7 @@ dependencies = [
  "anyhow",
  "aptos-framework",
  "aptos-release-builder",
+ "aptos-rest-client",
  "aptos-types",
  "bcs 0.1.3",
  "clap 4.3.0",
