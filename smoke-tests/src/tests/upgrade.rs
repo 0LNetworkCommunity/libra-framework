@@ -1,10 +1,10 @@
 use std::{path::PathBuf, process::Command};
 
-use aptos_smoke_test::smoke_test_environment::{
+use zapatos_smoke_test::smoke_test_environment::{
   new_local_swarm_with_release,
 };
 use libra_framework::release::ReleaseTarget;
-use aptos_forge::Swarm;
+use zapatos_forge::Swarm;
 
 use zapatos_crypto::traits::ValidCryptoMaterialStringExt;
 use std::process::Stdio;
@@ -23,7 +23,7 @@ async fn test_upgrade_flow() {
     let release = ReleaseTarget::Head.load_bundle().unwrap();
     let mut swarm = new_local_swarm_with_release(4, release).await;
     let mut public_info = swarm.aptos_public_info();
-    let c = public_info.rest_client();
+    let c = public_info.client();
 
     let url = public_info.url().to_string();
     let private_key = public_info

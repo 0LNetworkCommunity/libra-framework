@@ -101,6 +101,84 @@ impl ReleaseBundle {
         }
         Ok(result)
     }
+
+    pub fn generate_script_proposal_impl( //////// 0L //////// turn and MRB into a script proposal
+        &self,
+        for_address: AccountAddress,
+        out: PathBuf,
+        metadata: Option<PackageMetadata>,
+        // is_testnet: bool,
+        // is_multi_step: bool,
+        // next_execution_hash: Vec<u8>,
+    ) -> anyhow::Result<()> {
+        let metadata = metadata.unwrap_or_else(|| self.packages.last().unwrap().metadata.clone());
+
+        let writer = CodeWriter::new(Loc::default());
+        emitln!(
+            writer,
+            "// Upgrade proposal for package `{}`\n",
+            metadata.name
+        );
+        emitln!(writer, "// source digest: {}", metadata.source_digest);
+        emitln!(writer, "script {");
+        writer.indent();
+        emitln!(writer, "use std::vector;");
+        emitln!(writer, "use aptos_framework::aptos_governance;");
+        emitln!(writer, "use aptos_framework::code;\n");
+
+        emitln!(writer, "fun main(proposal_id: u64){");
+        writer.indent();
+        emitln!(
+            writer,
+            "let framework_signer = aptos_governance::resolve(proposal_id, @{});",
+            for_address
+        );
+
+        emitln!(writer, "let code = vector::empty();");
+        
+        let code = self.code();
+        for i in 0..code.len() {
+            emitln!(writer, "let chunk{} = ", i);
+            generate_blob(&writer, code[i]);
+            emitln!(writer, ";");
+            emitln!(writer, "vector::push_back(&mut code, chunk{});", i);
+        }
+
+        // The package metadata can be larger than 64k, which is the max for Move constants.
+        // We therefore have to split it into chunks. Three chunks should be large enough
+        // to cover any current and future needs. We then dynamically append them to obtain
+        // the result.
+        let mut metadata = bcs::to_bytes(&metadata)?;
+        let chunk_size = (u16::MAX / 2) as usize;
+        let num_of_chunks = (metadata.len() / chunk_size) + 1;
+
+        for i in 1..num_of_chunks + 1 {
+            let to_drain = if i == num_of_chunks {
+                metadata.len()
+            } else {
+                chunk_size
+            };
+            let chunk = metadata.drain(0..to_drain).collect::<Vec<_>>();
+            emit!(writer, "let chunk{} = ", i);
+            generate_blob(&writer, &chunk);
+            emitln!(writer, ";")
+        }
+
+        for i in 2..num_of_chunks + 1 {
+            emitln!(writer, "vector::append(&mut chunk1, chunk{});", i);
+        }
+
+        emitln!(
+            writer,
+            "code::publish_package_txn(&framework_signer, chunk1, code)"
+        );
+        writer.unindent();
+        emitln!(writer, "}");
+        writer.unindent();
+        emitln!(writer, "}");
+        writer.process_result(|s| std::fs::write(&out, s))?;
+        Ok(())
+    }
 }
 
 impl ReleasePackage {
@@ -233,7 +311,7 @@ impl ReleasePackage {
 
         for i in 0..self.code.len() {
             emitln!(writer, "let chunk{} = ", i);
-            Self::generate_blob(&writer, &self.code[i]);
+            generate_blob(&writer, &self.code[i]);
             emitln!(writer, ";");
             emitln!(writer, "vector::push_back(&mut code, chunk{});", i);
         }
@@ -254,7 +332,7 @@ impl ReleasePackage {
             };
             let chunk = metadata.drain(0..to_drain).collect::<Vec<_>>();
             emit!(writer, "let chunk{} = ", i);
-            Self::generate_blob(&writer, &chunk);
+            generate_blob(&writer, &chunk);
             emitln!(writer, ";")
         }
 
@@ -274,19 +352,20 @@ impl ReleasePackage {
         Ok(())
     }
 
-    fn generate_blob(writer: &CodeWriter, data: &[u8]) {
-        emitln!(writer, "vector[");
-        writer.indent();
-        for (i, b) in data.iter().enumerate() {
-            if (i + 1) % 20 == 0 {
-                emitln!(writer);
-            }
-            emit!(writer, "{}u8,", b);
-        }
-        emitln!(writer);
-        writer.unindent();
-        emit!(writer, "]")
-    }
+    //////// 0L //////// moved to super
+    // fn generate_blob(writer: &CodeWriter, data: &[u8]) {
+    //     emitln!(writer, "vector[");
+    //     writer.indent();
+    //     for (i, b) in data.iter().enumerate() {
+    //         if (i + 1) % 20 == 0 {
+    //             emitln!(writer);
+    //         }
+    //         emit!(writer, "{}u8,", b);
+    //     }
+    //     emitln!(writer);
+    //     writer.unindent();
+    //     emit!(writer, "]")
+    // }
 
     fn generate_next_execution_hash_blob(
         writer: &CodeWriter,
@@ -337,4 +416,18 @@ fn sort_by_deps(
         }
     }
     order.push(id)
+}
+
+fn generate_blob(writer: &CodeWriter, data: &[u8]) {
+    emitln!(writer, "vector[");
+    writer.indent();
+    for (i, b) in data.iter().enumerate() {
+        if (i + 1) % 20 == 0 {
+            emitln!(writer);
+        }
+        emit!(writer, "{}u8,", b);
+    }
+    emitln!(writer);
+    writer.unindent();
+    emit!(writer, "]")
 }

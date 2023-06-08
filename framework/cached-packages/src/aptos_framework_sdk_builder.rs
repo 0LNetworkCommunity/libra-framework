@@ -13,7 +13,7 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 #![allow(clippy::too_many_arguments)]
-use aptos_types::{
+use zapatos_types::{
     account_address::AccountAddress,
     transaction::{EntryFunction, TransactionPayload},
 };

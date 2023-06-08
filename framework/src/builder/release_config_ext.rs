@@ -98,12 +98,13 @@ impl LibraReleaseConfig for ReleaseConfig {
     }
 }
 
-fn append_script_hash(raw_script: String, script_path: PathBuf, framework_local_dir: PathBuf) -> String {
+fn append_script_hash(raw_script: String, _script_path: PathBuf, framework_local_dir: PathBuf) -> String {
     let temp_script_path = TempPath::new();
     temp_script_path.create_as_file().unwrap();
 
     let mut move_script_path = temp_script_path.path().to_path_buf();
     move_script_path.set_extension("move");
+    dbg!(&move_script_path);
     std::fs::write(move_script_path.as_path(), raw_script.as_bytes())
         .map_err(|err| {
             anyhow!(
@@ -113,7 +114,7 @@ fn append_script_hash(raw_script: String, script_path: PathBuf, framework_local_
         })
         .unwrap();
 
-    let (_, hash) = generate_hash(script_path, framework_local_dir).unwrap();
+    let (_, hash) = generate_hash(move_script_path, framework_local_dir).unwrap();
 
     format!("// Script hash: {} \n{}", hash, raw_script)
 }
@@ -127,7 +128,7 @@ fn append_script_hash(raw_script: String, script_path: PathBuf, framework_local_
 //     pub framework_local_dir: Option<PathBuf>,
 // }
 
-fn generate_hash(script_path: PathBuf, framework_local_dir: PathBuf) -> anyhow::Result<(Vec<u8>, HashValue)> {
+pub fn generate_hash(script_path: PathBuf, framework_local_dir: PathBuf) -> anyhow::Result<(Vec<u8>, HashValue)> {
     let res = CompileScriptFunction {
         script_path: Some(script_path),
         compiled_script_path: None,

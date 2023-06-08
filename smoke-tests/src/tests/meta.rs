@@ -1,8 +1,8 @@
-use aptos_smoke_test::smoke_test_environment::{
+use zapatos_smoke_test::smoke_test_environment::{
   new_local_swarm_with_release,
 };
 use libra_framework::release::ReleaseTarget;
-use aptos_forge::Swarm;
+use zapatos_forge::Swarm;
 
 /// Testing that we can get a swarm up with the current head.mrb
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]

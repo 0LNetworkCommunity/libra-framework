@@ -8,4 +8,4 @@ pub use crate::{
     // aptos_token_objects_sdk_builder as aptos_token_objects_stdlib,
     // aptos_token_sdk_builder as aptos_token_stdlib,
 };
-use aptos_types::{account_address::AccountAddress, transaction::TransactionPayload};
+use zapatos_types::{account_address::AccountAddress, transaction::TransactionPayload};
