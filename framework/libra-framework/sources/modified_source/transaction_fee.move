@@ -273,9 +273,9 @@ module aptos_framework::transaction_fee {
         coin::destroy_mint_cap(mint_cap);
     }
 
-    #[test(aptos_framework = @aptos_framework, alice = @0xa11ce, bob = @0xb0b, carol = @0xca101)]
+    #[test(root = @ol_framework, alice = @0xa11ce, bob = @0xb0b, carol = @0xca101)]
     fun test_fees_distribution(
-        aptos_framework: signer,
+        root: signer,
         alice: signer,
         bob: signer,
         carol: signer,
@@ -287,17 +287,17 @@ module aptos_framework::transaction_fee {
         use ol_framework::gas_coin;
 
         // Initialization.
-        let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&aptos_framework);
-        store_aptos_coin_burn_cap(&aptos_framework, burn_cap);
-        initialize_fee_collection_and_distribution(&aptos_framework, 10);
+        let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&root);
+        store_aptos_coin_burn_cap(&root, burn_cap);
+        initialize_fee_collection_and_distribution(&root, 10);
 
         // Create dummy accounts.
         let alice_addr = signer::address_of(&alice);
         let bob_addr = signer::address_of(&bob);
         let carol_addr = signer::address_of(&carol);
-        ol_account::create_account(alice_addr);
-        ol_account::create_account(bob_addr);
-        ol_account::create_account(carol_addr);
+        ol_account::create_account(&root, alice_addr);
+        ol_account::create_account(&root, bob_addr);
+        ol_account::create_account(&root, carol_addr);
         coin::deposit(alice_addr, coin::mint(10000, &mint_cap));
         coin::deposit(bob_addr, coin::mint(10000, &mint_cap));
         coin::deposit(carol_addr, coin::mint(10000, &mint_cap));
@@ -308,7 +308,7 @@ module aptos_framework::transaction_fee {
         register_proposer_for_fee_collection(alice_addr);
 
         // Check that there was no fees distribution in the first block.
-        let collected_fees = borrow_global<CollectedFeesPerBlock>(@aptos_framework);
+        let collected_fees = borrow_global<CollectedFeesPerBlock>(@ol_framework);
         assert!(coin::is_aggregatable_coin_zero(&collected_fees.amount), 0);
         assert!(*option::borrow(&collected_fees.proposer) == alice_addr, 0);
         assert!(*option::borrow(&coin::supply<GasCoin>()) == 30000, 0);
@@ -334,7 +334,7 @@ module aptos_framework::transaction_fee {
         assert!(coin::balance<GasCoin>(carol_addr) == 10000, 0);
 
         // Also, aggregator coin is drained and total supply is slightly changed (10% of 1000 is burnt).
-        let collected_fees = borrow_global<CollectedFeesPerBlock>(@aptos_framework);
+        let collected_fees = borrow_global<CollectedFeesPerBlock>(@ol_framework);
         assert!(coin::is_aggregatable_coin_zero(&collected_fees.amount), 0);
         assert!(*option::borrow(&collected_fees.proposer) == bob_addr, 0);
         // assert!(*option::borrow(&coin::supply<GasCoin>()) == 29900, 0);

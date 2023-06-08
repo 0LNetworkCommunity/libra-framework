@@ -9,7 +9,7 @@ module ol_framework::test_jail {
     #[test(root = @ol_framework)]
     public entry fun jail_reputation(root: signer) {
 
-      let vals = mock::genesis_n_vals(5);
+      let vals = mock::genesis_n_vals(&root, 5);
       let alice = *vector::borrow(&vals, 0);
       let bob_the_buddy = *vector::borrow(&vals, 1);
 
@@ -56,7 +56,7 @@ module ol_framework::test_jail {
     #[test(root = @ol_framework, bob = @0x1000b)]
     public entry fun unjail_by_vouch(root: signer, bob: signer) {
 
-      let vals = mock::genesis_n_vals(5);
+      let vals = mock::genesis_n_vals(&root, 5);
       let alice = *vector::borrow(&vals, 0);
       assert!(!jail::is_jailed(alice), 10001);
 
@@ -77,7 +77,7 @@ module ol_framework::test_jail {
     #[test(root = @ol_framework)]
     public entry fun sort_by_jail(root: signer) {
 
-      let vals = mock::genesis_n_vals(5);
+      let vals = mock::genesis_n_vals(&root, 5);
       let alice = *vector::borrow(&vals, 0);
       let bob = *vector::borrow(&vals, 1);
       

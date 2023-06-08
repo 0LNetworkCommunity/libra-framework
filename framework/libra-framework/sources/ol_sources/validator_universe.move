@@ -138,6 +138,7 @@ module aptos_framework::validator_universe {
 
   #[test_only]
   public fun test_register_validator(
+    root: &signer,
     public_key: &bls12381::PublicKey,
     proof_of_possession: &bls12381::ProofOfPossession,
     validator: &signer,
@@ -145,8 +146,9 @@ module aptos_framework::validator_universe {
     should_join_validator_set: bool,
     should_end_epoch: bool,
   ) acquires ValidatorUniverse {
+    system_addresses::assert_ol(root);
     assert!(testnet::is_testnet(), 220101014014);
-    stake::initialize_test_validator(public_key, proof_of_possession, validator, _amount, should_join_validator_set, should_end_epoch);
+    stake::initialize_test_validator(root, public_key, proof_of_possession, validator, _amount, should_join_validator_set, should_end_epoch);
 
     add(validator);
   }

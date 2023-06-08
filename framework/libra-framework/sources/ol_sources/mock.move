@@ -1,4 +1,5 @@
 // Some fixtures are complex and are repeatedly needed
+#[test_only]
 module ol_framework::mock {
   #[test_only]
   use aptos_framework::stake;
@@ -29,7 +30,7 @@ module ol_framework::mock {
   #[test_only]
   use aptos_framework::coin;
   #[test_only]
-  use ol_framework::gas_coin;
+  use ol_framework::gas_coin::{Self, GasCoin};
   #[test_only]
   use aptos_framework::transaction_fee;
   // #[test_only]
@@ -174,7 +175,8 @@ module ol_framework::mock {
 
     #[test_only]
     /// mock up to 6 validators alice..frank
-    public fun genesis_n_vals(num: u64): vector<address> {
+    public fun genesis_n_vals(root: &signer, num: u64): vector<address> {
+      system_addresses::assert_ol(root);
       let framework_sig = account::create_signer_for_test(@aptos_framework);
       ol_test_genesis(&framework_sig);
 
@@ -186,10 +188,17 @@ module ol_framework::mock {
         
         let (_sk, pk, pop) = stake::generate_identity();
         // stake::initialize_test_validator(&pk, &pop, &sig, 100, true, true);
-        validator_universe::test_register_validator(&pk, &pop, &sig, 100, true, true);
+        validator_universe::test_register_validator(root, &pk, &pop, &sig, 100, true, true);
 
         vouch::init(&sig);
         vouch::test_set_buddies(*val, val_addr);
+
+        // TODO: validators should have a balance
+        // in Mock, we should use the same validator creation path as genesis.move
+        let _b = coin::balance<GasCoin>(*val);
+        // print(&b);
+
+
         i = i + 1;
       };
 
@@ -236,27 +245,26 @@ module ol_framework::mock {
     assert!(new_epoch > epoch, 7357001);
   }
 
-  #[test(vm = @ol_framework)]
-  public entry fun meta_val_perf(vm: signer) {
+  #[test(root = @ol_framework)]
+  public entry fun meta_val_perf(root: signer) {
     // genesis();
     
-    let set = genesis_n_vals(4);
+    let set = genesis_n_vals(&root, 4);
     assert!(vector::length(&set) == 4, 7357001);
 
     let addr = vector::borrow(&set, 0);
 
     // will assert! case_1
-    mock_case_1(&vm, *addr);
-
+    mock_case_1(&root, *addr);
 
     pof_default();
 
     // will assert! case_4
-    mock_case_4(&vm, *addr);
+    mock_case_4(&root, *addr);
 
-    reset_val_perf_all(&vm);
+    reset_val_perf_all(&root);
 
-    mock_all_vals_good_performance(&vm);
+    mock_all_vals_good_performance(&root);
   }
 
 
