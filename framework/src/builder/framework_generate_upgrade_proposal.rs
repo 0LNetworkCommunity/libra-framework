@@ -6,7 +6,7 @@ use zapatos_framework::{BuildOptions, BuiltPackage, ReleasePackage};
 use zapatos_temppath::TempPath;
 use aptos_types::account_address::AccountAddress;
 use git2::{Oid, Repository};
-use serde::{Deserialize, Serialize};
+
 use zapatos_release_builder::components::get_execution_hash;
 
 use zapatos_release_builder::components::framework::FrameworkReleaseConfig;

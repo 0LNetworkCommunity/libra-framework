@@ -1,13 +1,13 @@
 //! extends new traits for ReleaseEntry
 
-use std::path::PathBuf;
+
 use zapatos_release_builder::components::get_execution_hash;
-use aptos_types::account_config::CORE_CODE_ADDRESS;
-use aptos_types::on_chain_config::Version;
+
+
 use zapatos_release_builder::ExecutionMode;
 use zapatos_release_builder::ReleaseEntry;
 
-use zapatos_release_builder::components::framework;
+
 use zapatos_rest_client::Client;
 
 use crate::builder::framework_generate_upgrade_proposal::generate_upgrade_proposals;
@@ -25,7 +25,7 @@ trait LibraReleaseEntry {
 impl LibraReleaseEntry for ReleaseEntry {
     fn libra_generate_release_script(
         &self,
-        client: Option<&Client>,
+        _client: Option<&Client>,
         result: &mut Vec<(String, String)>,
         execution_mode: ExecutionMode,
     ) -> anyhow::Result<()> {
