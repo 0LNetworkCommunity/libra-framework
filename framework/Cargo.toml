@@ -17,16 +17,21 @@ anyhow = { workspace = true }
 clap = { workspace = true }
 aptos-types = { workspace = true, features = ["fuzzing"] }
 bcs = { workspace = true }
+git2 = { workspace = true }
 include_dir = { workspace = true }
 move-core-types = { workspace = true }
 move-command-line-common = { workspace = true }
 once_cell = { workspace = true }
 proptest = { workspace = true, optional = true }
 proptest-derive = { workspace = true, optional = true }
+serde = { workspace = true }
 
 zapatos-framework = { workspace = true }
 zapatos-release-builder = { workspace = true }
 zapatos-rest-client = { workspace = true }
+zapatos-build-info = { workspace = true }
+zapatos-temppath = { workspace = true }
+
 
 [build-dependencies]
 zapatos-framework = { workspace = true }

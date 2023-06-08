@@ -10,6 +10,8 @@ use zapatos_release_builder::ReleaseEntry;
 use zapatos_release_builder::components::framework;
 use zapatos_rest_client::Client;
 
+use crate::builder::framework_generate_upgrade_proposal::generate_upgrade_proposals;
+
 trait LibraReleaseEntry {
   fn libra_generate_release_script (
     &self,
@@ -35,7 +37,7 @@ impl LibraReleaseEntry for ReleaseEntry {
         match self {
             ReleaseEntry::Framework(framework_release) => {
                 result.append(
-                    &mut framework::generate_upgrade_proposals(
+                    &mut generate_upgrade_proposals(
                         framework_release,
                         is_testnet,
                         if is_multi_step {
