@@ -4,7 +4,7 @@
 use anyhow::Result;
 use zapatos_framework::{BuildOptions, BuiltPackage, ReleasePackage};
 use zapatos_temppath::TempPath;
-use aptos_types::account_address::AccountAddress;
+use zapatos_types::account_address::AccountAddress;
 use git2::{Oid, Repository};
 
 use zapatos_release_builder::components::get_execution_hash;
