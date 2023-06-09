@@ -5,19 +5,10 @@ use anyhow::Result;
 use zapatos_framework::{BuildOptions, BuiltPackage, ReleasePackage};
 use zapatos_temppath::TempPath;
 use zapatos_types::account_address::AccountAddress;
-// use git2::{Oid, Repository};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use zapatos_release_builder::components::get_execution_hash;
 
 use zapatos_release_builder::components::framework::FrameworkReleaseConfig;
-// #[derive(Serialize, Deserialize, Clone, Eq, PartialEq, Debug)]
-// pub struct FrameworkReleaseConfig {
-//     /// Move bytecode version the framework release would be compiled to.
-//     pub bytecode_version: u32,
-//     /// Compile the framework release at a given git commit hash.
-//     /// If set to None, we will use the aptos framework under current repo.
-//     pub git_hash: Option<String>,
-// }
 
 pub fn generate_upgrade_proposals(
     config: &FrameworkReleaseConfig,
@@ -25,7 +16,6 @@ pub fn generate_upgrade_proposals(
     next_execution_hash: Vec<u8>,
     framework_local_dir: &Path,
 ) -> Result<Vec<(String, String)>> {
-    // const APTOS_GIT_PATH: &str = "https://github.com/aptos-labs/aptos-core.git";
 
     // 0L TODO: don't make this hard coded
     let mut package_path_list = vec![
@@ -40,20 +30,6 @@ pub fn generate_upgrade_proposals(
 
     let temp_root_path = TempPath::new();
     temp_root_path.create_as_dir()?;
-
-    // let commit_info = if let Some(revision) = &config.git_hash {
-    //     // If a commit hash is set, clone the repo from github and checkout to desired hash to a local temp directory.
-    //     let repository = Repository::clone(APTOS_GIT_PATH, temp_root_path.path())?;
-    //     let commit = repository.find_commit(Oid::from_str(revision)?)?;
-    //     let commit_info = commit
-    //         .as_object()
-    //         .describe(&git2::DescribeOptions::default())?
-    //         .format(None)?;
-    //     repository.checkout_tree(commit.as_object(), None)?;
-    //     commit_info
-    // } else {
-        
-    // };
 
     let commit_info =  zapatos_build_info::get_git_hash();
 
@@ -141,4 +117,22 @@ pub fn generate_upgrade_proposals(
         result.push((script_name, script));
     }
     Ok(result)
+}
+
+
+// /Users/lucas/code/rust/zapatos/crates/aptos/src/move_tool/mod.rs
+/// Need to create a dummy package so that we can build the script into bytecode
+/// so that we can then get the hash of the script.
+/// ... so that we can then submit it as part of a proposal framework/libra-framework/sources/modified_source/aptos_governance.move
+/// ... so that then the VM doesn't complain about its size /aptos-move/aptos-vm/src/aptos_vm_impl.rs
+/// ... and so that when the proposal is approved a third party can execute the source upgrade.
+
+pub fn init_move_dir_wrapper(package_dir: PathBuf, script_name: &str, framework_local_dir: PathBuf) -> anyhow::Result<()>{
+  zapatos::move_tool::init_move_dir_generic(
+    package_dir,
+    script_name,
+    "LibraFramework".to_string(),
+    framework_local_dir,
+  )?;
+  Ok(())
 }
