@@ -102,7 +102,7 @@ impl ReleaseBundle {
         Ok(result)
     }
 
-    pub fn generate_script_proposal_impl( //////// 0L //////// turn and MRB into a script proposal
+    pub fn generate_script_proposal_impl( //////// 0L //////// turn an MRB into a script proposal
         &self,
         for_address: AccountAddress,
         out: PathBuf,

@@ -129,7 +129,7 @@ pub fn generate_upgrade_proposals(
 
 pub fn init_move_dir_wrapper(package_dir: PathBuf, script_name: &str, framework_local_dir: PathBuf) -> anyhow::Result<()>{
   zapatos::move_tool::init_move_dir_generic(
-    package_dir,
+    &package_dir,
     script_name,
     "LibraFramework".to_string(),
     framework_local_dir,
