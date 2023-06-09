@@ -114,7 +114,7 @@ fn append_script_hash(raw_script: String, _script_path: PathBuf, framework_local
         })
         .unwrap();
 
-    let (_, hash) = generate_hash(move_script_path, framework_local_dir).unwrap();
+    let (_, hash) = libra_generate_hash(move_script_path, framework_local_dir).unwrap();
 
     format!("// Script hash: {} \n{}", hash, raw_script)
 }
@@ -128,7 +128,7 @@ fn append_script_hash(raw_script: String, _script_path: PathBuf, framework_local
 //     pub framework_local_dir: Option<PathBuf>,
 // }
 
-pub fn generate_hash(script_path: PathBuf, framework_local_dir: PathBuf) -> anyhow::Result<(Vec<u8>, HashValue)> {
+pub fn libra_generate_hash(script_path: PathBuf, framework_local_dir: PathBuf) -> anyhow::Result<(Vec<u8>, HashValue)> {
     let res = CompileScriptFunction {
         script_path: Some(script_path),
         compiled_script_path: None,
@@ -159,3 +159,5 @@ pub fn libra_release_cfg_default() -> ReleaseConfig {
         ],
     }
 }
+
+

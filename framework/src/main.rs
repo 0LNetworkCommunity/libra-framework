@@ -4,7 +4,8 @@ use libra_framework::{release::ReleaseTarget, builder::{release_config_ext::libr
 use clap::Parser;
 use zapatos_types::account_address::AccountAddress;
 use std::path::PathBuf;
-use libra_framework::builder::release_config_ext;
+// use libra_framework::builder::release_config_ext;
+use libra_framework::builder::framework_generate_upgrade_proposal::libra_compile_script;
 
 #[derive(Parser)]
 #[clap(name = "libra-framework", author, version, propagate_version = true)]
@@ -71,12 +72,17 @@ struct UpgradeRelease {
 impl UpgradeRelease {
     fn execute(self) -> anyhow::Result<()> {
       // we are usually only interested in upgrading the framework
-
+      dbg!(&self.mrb_path);
       if let Some(path) = self.mrb_path {
+        assert!(path.exists());
         let bundle = framework_release_bundle::ReleaseBundle::read(path)?;
+        // dbg!(&bundle);
         // let release_package = bundle.release_package;
         bundle.generate_script_proposal_impl(AccountAddress::ONE, self.output_dir.clone(), None)?;
-        let hash = release_config_ext::generate_hash(self.output_dir.clone(), self.framework_local_dir)?;
+        dbg!("ok");
+        let hash = libra_compile_script(&self.output_dir)?;
+        // let hash = release_config_ext::libra_generate_hash(self.output_dir.clone(), self.framework_local_dir)?;
+        println!("hash: {:?}", hash.1);
         Ok(())
       } else {
         let release_cfg = libra_release_cfg_default();

@@ -7,7 +7,7 @@ use zapatos_temppath::TempPath;
 use zapatos_types::account_address::AccountAddress;
 use std::path::{Path, PathBuf};
 use zapatos_release_builder::components::get_execution_hash;
-
+use zapatos_crypto::HashValue;
 use zapatos_release_builder::components::framework::FrameworkReleaseConfig;
 
 pub fn generate_upgrade_proposals(
@@ -135,4 +135,38 @@ pub fn init_move_dir_wrapper(package_dir: PathBuf, script_name: &str, framework_
     framework_local_dir,
   )?;
   Ok(())
+}
+
+pub fn libra_compile_script(
+    // skip_fetch_latest_git_deps: bool,
+    package_dir: &Path,
+    // bytecode_version: Option<u32>,
+) -> Result<(Vec<u8>, HashValue)> {
+
+    let build_options = BuildOptions {
+        with_srcs: false,
+        with_abis: false,
+        with_source_maps: false,
+        with_error_map: false,
+        skip_fetch_latest_git_deps: true,
+        bytecode_version: Some(6),
+        ..BuildOptions::default()
+    };
+
+    let pack = BuiltPackage::build(package_dir.to_path_buf(), build_options)?;
+        // .map_err(|e| CliError::MoveCompilationError(format!("{:#}", e)))?;
+
+    let scripts_count = pack.script_count();
+
+    if scripts_count != 1 {
+        anyhow::bail!(
+            "Only one script can be prepared a time. Make sure one and only one script file \
+                is included in the Move package. Found {} scripts.",
+            scripts_count
+        );
+    }
+
+    let bytes = pack.extract_script_code().pop().unwrap();
+    let hash = HashValue::sha3_256_of(bytes.as_slice());
+    Ok((bytes, hash))
 }
