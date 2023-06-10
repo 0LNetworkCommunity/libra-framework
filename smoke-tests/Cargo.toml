@@ -10,6 +10,7 @@ edition = { workspace = true }
 libra-cached-packages = { workspace = true }
 libra-framework = { workspace = true }
 
+zapatos = { workspace = true }
 zapatos-debugger = { workspace = true }
 zapatos-forge = { workspace = true }
 zapatos-framework  = { workspace = true }

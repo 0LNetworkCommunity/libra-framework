@@ -9496,6 +9496,7 @@ dependencies = [
 name = "smoke-tests"
 version = "0.1.0"
 dependencies = [
+ "aptos",
  "aptos-crypto",
  "aptos-debugger",
  "aptos-forge",

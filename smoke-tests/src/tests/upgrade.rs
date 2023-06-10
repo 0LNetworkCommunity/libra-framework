@@ -4,12 +4,12 @@ use zapatos_smoke_test::smoke_test_environment::{
   new_local_swarm_with_release,
 };
 use libra_framework::release::ReleaseTarget;
-use zapatos_forge::Swarm;
+use zapatos_forge::{Node, Swarm};
 use zapatos_sdk::types::LocalAccount;
 // use zapatos_crypto::traits::ValidCryptoMaterialStringExt;
 use std::process::Stdio;
 use libra_cached_packages::aptos_stdlib::aptos_governance_create_proposal_v2;
-
+use zapatos::test::CliTestFramework;
 
 #[tokio::test]
 async fn test_upgrade_flow() {
@@ -18,7 +18,13 @@ async fn test_upgrade_flow() {
     // let (mut swarm, mut cli, _) = swarm_builder_with_release(4, release).build_with_cli(1).await;
 
     let mut swarm = new_local_swarm_with_release(4, release).await;
-
+    // let public_info = swarm.aptos_public_info();
+    let endpoint = swarm.validators_mut().next().unwrap().rest_api_endpoint();
+    let tool = CliTestFramework::new(
+        endpoint.clone(),
+        endpoint,
+        0,
+    );
 
     // let c = public_info.client();
 
