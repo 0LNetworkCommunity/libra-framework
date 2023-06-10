@@ -44,7 +44,7 @@ async fn sanity_balances() {
     assert!(&33000000000 == &gas_balance.coin.value.0);
 
 
-    mint_libra(&mut public_info, address, 100_000_000).await.unwrap();
+    mint_libra(&mut public_info, address, 10_000_000).await.unwrap();
 
     let gas_balance = get_libra_balance(&public_info.client(), address)
       .await
