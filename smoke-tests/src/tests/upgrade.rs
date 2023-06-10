@@ -5,78 +5,83 @@ use zapatos_smoke_test::smoke_test_environment::{
 };
 use libra_framework::release::ReleaseTarget;
 use zapatos_forge::Swarm;
-
-use zapatos_crypto::traits::ValidCryptoMaterialStringExt;
+use zapatos_sdk::types::LocalAccount;
+// use zapatos_crypto::traits::ValidCryptoMaterialStringExt;
 use std::process::Stdio;
+use libra_cached_packages::aptos_stdlib::aptos_governance_create_proposal_v2;
+
 
 #[tokio::test]
 async fn test_upgrade_flow() {
-    // // prebuild tools.
-    // // let aptos_cli = workspace_builder::get_bin("aptos");
-
-    // let num_nodes = 5;
-    // let (mut env, _cli, _) = SwarmBuilder::new_local(num_nodes)
-    //     .with_aptos_testnet()
-    //     .build_with_cli(0)
-    //     .await;
 
     let release = ReleaseTarget::Head.load_bundle().unwrap();
+    // let (mut swarm, mut cli, _) = swarm_builder_with_release(4, release).build_with_cli(1).await;
+
     let mut swarm = new_local_swarm_with_release(4, release).await;
-    let mut public_info = swarm.aptos_public_info();
-    let c = public_info.client();
 
-    let url = public_info.url().to_string();
-    let private_key = public_info
-        .root_account()
-        .private_key()
-        .to_encoded_string()
-        .unwrap();
 
-    let proposal_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("src").join("tests").join("fixtures").join("proposal_script").join("script.mv");
-    dbg!(&proposal_path);
-    assert!(&proposal_path.exists());
+    // let c = public_info.client();
 
-    // let framework_path = PathBuf::from(env!("ZAPATOS"))
-    //     .parent().unwrap().join("framework").join("libra-framework");
-    // dbg!(&framework_path);
-    // assert!(&framework_path.exists());
-
-    let cmd = Command::new("vendor")
-    // .current_dir(&proposal_path)
-    .args(&vec![
-        "move",
-        "run-script",
-        // "--script-path",
-        "--compiled-script-path",
-        &proposal_path.to_str().unwrap(),
-        // "--framework-local-dir",
-        // framework_path.as_os_str().to_str().unwrap(),
-        "--sender-account",
-        "0xA550C18",
-        "--url",
-        url.as_str(),
-        "--private-key",
-        private_key.as_str(),
-        "--assume-yes",
-    ])
-    .stdout(Stdio::inherit())
-    .output()
-    .unwrap();
-    
-    
-    assert!(cmd.status.success());
-
-    // //TODO: Make sure gas schedule is indeed updated by the tool.
-
-    // // Test the module publishing workflow
-    // let base_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-    // let base_path_v1 = base_dir.join("src/aptos/package_publish_modules_v1/");
-
-    // move_test_helpers::publish_package(&mut env.aptos_public_info(), base_path_v1)
-    //     .await
+    // let url = public_info.url().to_string();
+    // let private_key = public_info
+    //     .root_account()
+    //     .private_key()
+    //     .to_encoded_string()
     //     .unwrap();
 
+    // let proposal_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+    //     .join("src").join("tests").join("fixtures").join("proposal_script").join("script.mv");
+    // dbg!(&proposal_path);
+    // assert!(&proposal_path.exists());
+
+    // let v = swarm.validators_mut().next().unwrap();
+    // let pri_key = v.account_private_key().as_ref().unwrap();
+    // // pri_key.private_key()
+    // let address = v.peer_id().to_owned();
+    // let mut account = LocalAccount::new(v.peer_id(), pri_key.private_key(), 0);
+    
+
+    // let payload = aptos_governance_create_proposal_v2(
+    //     // self.pool_address_args.pool_address,
+    //     // account.
+    //     v.peer_id(),
+    //     vec![],
+    //     vec![],
+    //     vec![],
+    //     true,
+    // );
+
+    // let mut public_info: zapatos_forge::AptosPublicInfo = swarm.aptos_public_info();
+
+
+    // let balance = public_info.client()
+    //     .get_account_balance(address)
+    //     .await
+    //     .unwrap()
+    //     .into_inner();
+
+    // dbg!(&balance);
+
+
+    // public_info.mint(address, 10_000_000).await.unwrap();
+
+    // let balance = public_info.client()
+    //     .get_account_balance(address)
+    //     .await
+    //     .unwrap()
+    //     .into_inner();
+
+    // dbg!(&balance);
+
+    // let txn = account.sign_with_transaction_builder(
+    //     public_info.transaction_factory()
+    //         .payload(payload),
+    // );
+
+    // let res = public_info.client().submit_and_wait(&txn).await.unwrap();
+    // dbg!(&res);
+
+    // check the network still runs
     // check_create_mint_transfer(&mut env).await;
 }
 

@@ -12,7 +12,9 @@ libra-framework = { workspace = true }
 
 zapatos-debugger = { workspace = true }
 zapatos-forge = { workspace = true }
+zapatos-framework  = { workspace = true }
 zapatos-types = { workspace = true }
+zapatos-sdk = { workspace = true }
 zapatos-smoke-test = { workspace = true }
 tokio = { workspace = true }
 zapatos-crypto = { workspace = true}

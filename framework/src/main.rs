@@ -1,8 +1,9 @@
 #![forbid(unsafe_code)]
 
-use libra_framework::{release::ReleaseTarget, builder::{release_config_ext::libra_release_cfg_default, main_generate_proposals, framework_release_bundle}};
+use libra_framework::{release::ReleaseTarget, builder::{release_config_ext::libra_release_cfg_default, main_generate_proposals, framework_release_bundle::libra_generate_script_proposal_impl}};
 use clap::Parser;
 use zapatos_types::account_address::AccountAddress;
+use zapatos_framework::ReleaseBundle;
 use std::path::PathBuf;
 // use libra_framework::builder::release_config_ext;
 use libra_framework::builder::framework_generate_upgrade_proposal::{libra_compile_script, init_move_dir_wrapper};
@@ -75,7 +76,7 @@ impl UpgradeRelease {
       dbg!(&self.mrb_path);
       if let Some(path) = self.mrb_path {
         assert!(path.exists());
-        let bundle = framework_release_bundle::ReleaseBundle::read(path)?;
+        let bundle = ReleaseBundle::read(path)?;
         // dbg!(&bundle);
         // let release_package = bundle.release_package;
         let script_name = "test_script";
@@ -86,7 +87,7 @@ impl UpgradeRelease {
 
         let new_file_name = new_path.join("sources").join(&format!("{}.move", script_name));
         dbg!(&new_file_name);
-        bundle.generate_script_proposal_impl(AccountAddress::ONE, new_file_name, None)?;
+        libra_generate_script_proposal_impl(&bundle, AccountAddress::ONE, new_file_name, None)?;
         dbg!("ok");
         
         let (bytes, hash) = libra_compile_script(&new_path)?;

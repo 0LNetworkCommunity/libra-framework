@@ -9499,6 +9499,8 @@ dependencies = [
  "aptos-crypto",
  "aptos-debugger",
  "aptos-forge",
+ "aptos-framework",
+ "aptos-sdk",
  "aptos-types",
  "libra-cached-packages",
  "libra-framework",
