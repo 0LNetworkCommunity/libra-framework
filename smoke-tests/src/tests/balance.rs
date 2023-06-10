@@ -14,7 +14,7 @@ async fn sanity_balances() {
     let v = swarm.validators_mut().next().unwrap();
     let pri_key = v.account_private_key().as_ref().unwrap();
     let address = v.peer_id().to_owned();
-    let account = LocalAccount::new(v.peer_id(), pri_key.private_key(), 0);
+    let _account = LocalAccount::new(v.peer_id(), pri_key.private_key(), 0);
     let mut public_info: zapatos_forge::AptosPublicInfo = swarm.aptos_public_info();
 
     let balance = public_info.client()

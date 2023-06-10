@@ -3,7 +3,7 @@ use zapatos_forge::AptosPublicInfo;
 use zapatos_sdk::rest_client::aptos::Balance;
 use zapatos_sdk::rest_client::Client;
 use zapatos_sdk::rest_client::Response;
-use zapatos_sdk::types::LocalAccount;
+
 use zapatos_types::account_address::AccountAddress;
 use anyhow::bail;
 

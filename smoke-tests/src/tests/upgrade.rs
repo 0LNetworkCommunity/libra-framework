@@ -1,4 +1,4 @@
-use std::{process::Command};
+
 
 use zapatos_smoke_test::smoke_test_environment::{
   new_local_swarm_with_release,
@@ -7,7 +7,7 @@ use libra_framework::release::ReleaseTarget;
 use zapatos_forge::Swarm;
 use std::path::PathBuf;
 // use zapatos_crypto::traits::ValidCryptoMaterialStringExt;
-use std::process::Stdio;
+
 use libra_cached_packages::aptos_stdlib::aptos_governance_create_proposal_v2;
 use zapatos_sdk::types::LocalAccount;
 #[tokio::test]
@@ -20,7 +20,7 @@ async fn can_submit_proposal() {
     let v = swarm.validators_mut().next().unwrap();
     let pri_key = v.account_private_key().as_ref().unwrap();
     
-    let address = v.peer_id().to_owned();
+    let _address = v.peer_id().to_owned();
     let mut account = LocalAccount::new(v.peer_id(), pri_key.private_key(), 0);
     
     let proposal_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -45,7 +45,7 @@ async fn can_submit_proposal() {
         true,
     );
 
-    let mut public_info: zapatos_forge::AptosPublicInfo = swarm.aptos_public_info();
+    let public_info: zapatos_forge::AptosPublicInfo = swarm.aptos_public_info();
 
     let txn = account.sign_with_transaction_builder(
         public_info.transaction_factory()
