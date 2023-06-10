@@ -1,5 +1,0 @@
-[package]
-name = 'test_script'
-version = '1.0.0'
-[dependencies.LibraFramework]
-local = '/Users/lucas/code/rust/seven/framework/libra-framework'

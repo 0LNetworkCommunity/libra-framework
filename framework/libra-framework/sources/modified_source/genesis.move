@@ -1,11 +1,8 @@
 module aptos_framework::genesis {
-    use std::error;
-    // use std::fixed_point32;
-    use std::vector;
-    use std::signer;
-
-    // use aptos_std::simple_map;
     use aptos_std::debug::print;
+
+    use std::error;
+    use std::vector;
 
     use aptos_framework::account;
     use aptos_framework::aggregator_factory;
@@ -198,12 +195,14 @@ module aptos_framework::genesis {
         account::rotate_authentication_key_internal(&core_resources, core_resources_auth_key);
         aptos_coin::configure_accounts_for_test(aptos_framework, &core_resources, mint_cap);
 
+        // initialize gas
         gas_coin::initialize(aptos_framework);
-        // give the root account coins
-        coin::register<GasCoin>(aptos_framework);
-        // NOTE: reminder, this is for test accounts only.
-        gas_coin::mint(aptos_framework, signer::address_of(aptos_framework), 1000000000000000000);
+        // give coins to the 'core_resources' account, which has sudo
+        // core_resources is a temporary account, not the same as framework account.
+        gas_coin::configure_accounts_for_test(aptos_framework, &core_resources);
 
+        // NOTE: 0L: the commented code below shows that we are destroying
+        // there capabilities elsewhere, at gas_coin::initialize
         // coin::destroy_mint_cap(mint_cap);
         // coin::destroy_burn_cap(burn_cap);
 

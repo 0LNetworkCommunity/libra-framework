@@ -80,20 +80,21 @@ module ol_framework::gas_coin {
     public(friend) fun configure_accounts_for_test(
         aptos_framework: &signer,
         core_resources: &signer,
-        mint_cap: MintCapability<GasCoin>,
-    ) {
+        // mint_cap: MintCapability<GasCoin>,
+    ) acquires MintCapStore {
         system_addresses::assert_aptos_framework(aptos_framework);
 
         // Mint the core resource account GasCoin for gas so it can execute system transactions.
         coin::register<GasCoin>(core_resources);
-        let coins = coin::mint<GasCoin>(
-            18446744073709551615,
-            &mint_cap,
-        );
-        coin::deposit<GasCoin>(signer::address_of(core_resources), coins);
+        mint(aptos_framework, signer::address_of(core_resources), 18446744073709551615);
+        // let coins = coin::mint<GasCoin>(
+        //     18446744073709551615,
+        //     &mint_cap,
+        // );
+        // coin::deposit<GasCoin>(signer::address_of(core_resources), coins);
 
-        move_to(core_resources, MintCapStore { mint_cap });
-        move_to(core_resources, Delegations { inner: vector::empty() });
+        // move_to(core_resources, MintCapStore { mint_cap });
+        // move_to(core_resources, Delegations { inner: vector::empty() });
     }
 
     /// Only callable in tests and testnets where the core resources account exists.

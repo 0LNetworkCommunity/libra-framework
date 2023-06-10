@@ -46,7 +46,6 @@ module aptos_framework::transaction_validation {
     const PROLOGUE_ESEQUENCE_NUMBER_TOO_BIG: u64 = 1008;
     const PROLOGUE_ESECONDARY_KEYS_ADDRESSES_COUNT_MISMATCH: u64 = 1009;
 
-    const PROLOGUE_ECOIN_NOT_REGISTERED: u64 = 1010;
     /// Only called during genesis to initialize system resources for this module.
     public(friend) fun initialize(
         aptos_framework: &signer,
@@ -110,7 +109,7 @@ module aptos_framework::transaction_validation {
         let max_transaction_fee = txn_gas_price * txn_max_gas_units;
         assert!(
             coin::is_account_registered<GasCoin>(transaction_sender),
-            error::invalid_argument(PROLOGUE_ECOIN_NOT_REGISTERED),
+            error::invalid_argument(PROLOGUE_ECANT_PAY_GAS_DEPOSIT),
         );
         let balance = coin::balance<GasCoin>(transaction_sender);
         assert!(balance >= max_transaction_fee, error::invalid_argument(PROLOGUE_ECANT_PAY_GAS_DEPOSIT));
