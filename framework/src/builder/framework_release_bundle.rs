@@ -1,17 +1,7 @@
-
-use anyhow::Context;
-use zapatos_types::account_address::AccountAddress;
-use move_binary_format::{access::ModuleAccess, errors::PartialVMError, CompiledModule};
-use move_command_line_common::files::{extension_equals, find_filenames, MOVE_EXTENSION};
-use move_core_types::language_storage::ModuleId;
 use move_model::{code_writer::CodeWriter, emit, emitln, model::Loc};
-use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap, path::PathBuf};
-
-use zapatos_framework::natives::code::PackageMetadata;
-use zapatos_framework::BuiltPackage;
-use zapatos_framework::path_in_crate;
-use zapatos_framework::ReleaseBundle;
+use std::{path::PathBuf};
+use zapatos_framework::{ReleaseBundle, natives::code::PackageMetadata};
+use zapatos_types::account_address::AccountAddress;
 // /// A release bundle consists of a list of release packages.
 // #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 // pub struct ReleaseBundle {
