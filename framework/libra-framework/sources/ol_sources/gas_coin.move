@@ -75,26 +75,39 @@ module ol_framework::gas_coin {
         move_to(aptos_framework, MintCapStore { mint_cap });
     }
 
+    /// FOR TESTS ONLY
+    /// The `core addresses` sudo account is used to execute system transactions for testing
     /// Can only be called during genesis for tests to grant mint capability to aptos framework and core resources
     /// accounts.
     public(friend) fun configure_accounts_for_test(
         aptos_framework: &signer,
         core_resources: &signer,
         // mint_cap: MintCapability<GasCoin>,
-    ) acquires MintCapStore {
+    ) {
         system_addresses::assert_aptos_framework(aptos_framework);
+
+        let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<GasCoin>(
+            aptos_framework,
+            string::utf8(b"Gas Coin"),
+            string::utf8(b"GAS"),
+            8, /* decimals */
+            true, /* monitor_supply */
+        );
 
         // Mint the core resource account GasCoin for gas so it can execute system transactions.
         coin::register<GasCoin>(core_resources);
-        mint(aptos_framework, signer::address_of(core_resources), 18446744073709551615);
-        // let coins = coin::mint<GasCoin>(
-        //     18446744073709551615,
-        //     &mint_cap,
-        // );
-        // coin::deposit<GasCoin>(signer::address_of(core_resources), coins);
+        // mint(aptos_framework, signer::address_of(core_resources), 18446744073709551615);
+        let coins = coin::mint<GasCoin>(
+            18446744073709551615,
+            &mint_cap,
+        );
+        coin::deposit<GasCoin>(signer::address_of(core_resources), coins);
 
-        // move_to(core_resources, MintCapStore { mint_cap });
-        // move_to(core_resources, Delegations { inner: vector::empty() });
+        move_to(core_resources, MintCapStore { mint_cap });
+        move_to(core_resources, Delegations { inner: vector::empty() });
+
+        coin::destroy_freeze_cap(freeze_cap);
+        coin::destroy_burn_cap(burn_cap);
     }
 
     /// Only callable in tests and testnets where the core resources account exists.

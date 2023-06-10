@@ -196,7 +196,7 @@ module aptos_framework::genesis {
         aptos_coin::configure_accounts_for_test(aptos_framework, &core_resources, mint_cap);
 
         // initialize gas
-        gas_coin::initialize(aptos_framework);
+        // let (burn_cap, mint_cap) = gas_coin::initialize_for_test(aptos_framework);
         // give coins to the 'core_resources' account, which has sudo
         // core_resources is a temporary account, not the same as framework account.
         gas_coin::configure_accounts_for_test(aptos_framework, &core_resources);
