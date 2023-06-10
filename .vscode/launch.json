@@ -18,9 +18,9 @@
       },
       "args": [
         "upgrade",
-        "-o", "${workspaceFolder}/framework/releases/test_script.move",
+        "-o", "${workspaceFolder}/framework/releases/scripts",
         "-m", "${workspaceFolder}/framework/releases/head.mrb",
-        "-f", "${workspaceFolder}/framework/",
+        "-f", "${workspaceFolder}/framework/libra-framework",
       ],
       "cwd": "${workspaceFolder}"
     },
