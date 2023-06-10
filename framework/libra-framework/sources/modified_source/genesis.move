@@ -2,6 +2,7 @@ module aptos_framework::genesis {
     use std::error;
     // use std::fixed_point32;
     use std::vector;
+    use std::signer;
 
     // use aptos_std::simple_map;
     use aptos_std::debug::print;
@@ -198,6 +199,11 @@ module aptos_framework::genesis {
         aptos_coin::configure_accounts_for_test(aptos_framework, &core_resources, mint_cap);
 
         gas_coin::initialize(aptos_framework);
+        // give the root account coins
+        coin::register<GasCoin>(aptos_framework);
+        // NOTE: reminder, this is for test accounts only.
+        gas_coin::mint(aptos_framework, signer::address_of(aptos_framework), 1000000000000000000);
+
         // coin::destroy_mint_cap(mint_cap);
         // coin::destroy_burn_cap(burn_cap);
 
@@ -228,7 +234,7 @@ module aptos_framework::genesis {
 
     /// This creates an funds an account if it doesn't exist.
     /// If it exists, it just returns the signer.
-    fun create_account(aptos_framework: &signer, account_address: address, balance: u64): signer {
+    fun create_account(aptos_framework: &signer, account_address: address, _balance: u64): signer {
         if (account::exists_at(account_address)) {
             create_signer(account_address)
         } else {
@@ -236,8 +242,9 @@ module aptos_framework::genesis {
             coin::register<AptosCoin>(&account);
             coin::register<GasCoin>(&account);
 
-            aptos_coin::mint(aptos_framework, account_address, balance);
-            gas_coin::mint(aptos_framework, account_address, 100000);
+            assert!(coin::is_account_registered<GasCoin>(account_address), 666);
+            aptos_coin::mint(aptos_framework, account_address, 11000000000);
+            gas_coin::mint(aptos_framework, account_address, 33000000000);
             account
         }
     }
@@ -272,6 +279,8 @@ module aptos_framework::genesis {
 
             i = i + 1;
         };
+
+
 
         // Destroy the aptos framework account's ability to mint coins now that we're done with setting up the initial
         // validators.
