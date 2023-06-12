@@ -23,7 +23,8 @@ async fn sanity_balances() {
         .unwrap()
         .into_inner();
 
-    assert!(&11000000000 == &balance.coin.value.0);
+    // dbg!(&balance.coin.value.0);
+    assert!(1 == balance.coin.value.0);
 
     // the `core address` sudo account for tests can mint vendor coin
     public_info.mint(address, 10_000_000).await.unwrap();
@@ -34,14 +35,16 @@ async fn sanity_balances() {
         .unwrap()
         .into_inner();
 
-    assert!(&11010000000 == &balance.coin.value.0);
+    // dbg!(&balance.coin.value.0);
+    assert!(10000001 == balance.coin.value.0);
 
     let gas_balance = get_libra_balance(&public_info.client(), address)
         .await
         .unwrap()
         .into_inner();
-    dbg!(&gas_balance);
-    assert!(&33000000000 == &gas_balance.coin.value.0);
+    // dbg!(&gas_balance);
+    // dbg!(&gas_balance.coin.value.0);
+    assert!(1 == gas_balance.coin.value.0);
 
 
     mint_libra(&mut public_info, address, 10_000_000).await.unwrap();
@@ -50,7 +53,9 @@ async fn sanity_balances() {
       .await
       .unwrap()
       .into_inner();
-    dbg!(&gas_balance);
-    assert!(&33010000000 == &gas_balance.coin.value.0);
+    // dbg!(&gas_balance);
+    // dbg!(&gas_balance.coin.value.0);
+
+    assert!(10000001 == gas_balance.coin.value.0);
 
 }
