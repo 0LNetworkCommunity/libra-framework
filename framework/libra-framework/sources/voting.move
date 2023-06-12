@@ -505,6 +505,19 @@ module aptos_framework::voting {
         false
     }
 
+    //////// 0L ////////
+    #[view]
+    /// Return true if the governance proposal has already been resolved.
+    public fun can_resolve<ProposalType: store>(
+        voting_forum_address: address,
+        proposal_id: u64,
+    ): bool acquires VotingForum {
+      is_proposal_resolvable<ProposalType>(voting_forum_address, proposal_id)
+    }
+
+    //////// end 0L ////////
+
+
     #[view]
     /// Return the state of the proposal with given id.
     ///

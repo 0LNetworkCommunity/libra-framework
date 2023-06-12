@@ -393,12 +393,21 @@ module aptos_framework::aptos_governance {
     /// Resolve a successful single-step proposal. This would fail if the proposal is not successful (not enough votes or more no
     /// than yes).
     public fun resolve(proposal_id: u64, signer_address: address): signer acquires ApprovedExecutionHashes, GovernanceResponsbility {
-        assert!(testnet::is_testnet(), error::invalid_state(ENOT_TESTNET));
-        // voting::resolve<GovernanceProposal>(@aptos_framework, proposal_id);
+        // assert!(testnet::is_testnet(), error::invalid_state(ENOT_TESTNET));
+        voting::resolve<GovernanceProposal>(@aptos_framework, proposal_id);
         remove_approved_hash(proposal_id);
         get_signer(signer_address)
     }
 
+    #[view]
+    public fun is_resolved(proposal_id: u64): bool {
+      voting::is_resolved<GovernanceProposal>((@aptos_framework, proposal_id)
+    }
+
+    #[view]
+    public fun can_resolve(proposal_id: u64): bool {
+      voting::can_resolve<GovernanceProposal>((@aptos_framework, proposal_id)
+    }
     /// Resolve a successful multi-step proposal. This would fail if the proposal is not successful.
     public fun resolve_multi_step_proposal(proposal_id: u64, signer_address: address, next_execution_hash: vector<u8>): signer acquires GovernanceResponsbility, ApprovedExecutionHashes {
         voting::resolve_proposal_v2<GovernanceProposal>(@aptos_framework, proposal_id, next_execution_hash);
