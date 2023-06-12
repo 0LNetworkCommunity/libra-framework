@@ -195,6 +195,10 @@ pub enum EntryFunctionCall {
         proposal_id: u64,
     },
 
+    AptosGovernanceCanResolve {
+        proposal_id: u64,
+    },
+
     /// Create a single-step proposal with the backing `stake_pool`.
     /// @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
     /// only the exact script with matching hash can be successfully executed.
@@ -619,6 +623,7 @@ impl EntryFunctionCall {
             AptosGovernanceAddApprovedScriptHashScript { proposal_id } => {
                 aptos_governance_add_approved_script_hash_script(proposal_id)
             }
+            AptosGovernanceCanResolve { proposal_id } => aptos_governance_can_resolve(proposal_id),
             AptosGovernanceCreateProposal {
                 stake_pool,
                 execution_hash,
@@ -1238,6 +1243,21 @@ pub fn aptos_governance_add_approved_script_hash_script(proposal_id: u64) -> Tra
             ident_str!("aptos_governance").to_owned(),
         ),
         ident_str!("add_approved_script_hash_script").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&proposal_id).unwrap()],
+    ))
+}
+
+pub fn aptos_governance_can_resolve(proposal_id: u64) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("aptos_governance").to_owned(),
+        ),
+        ident_str!("can_resolve").to_owned(),
         vec![],
         vec![bcs::to_bytes(&proposal_id).unwrap()],
     ))
@@ -2461,6 +2481,16 @@ mod decoder {
         }
     }
 
+    pub fn aptos_governance_can_resolve(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::AptosGovernanceCanResolve {
+                proposal_id: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn aptos_governance_create_proposal(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -3113,6 +3143,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "aptos_governance_add_approved_script_hash_script".to_string(),
             Box::new(decoder::aptos_governance_add_approved_script_hash_script),
+        );
+        map.insert(
+            "aptos_governance_can_resolve".to_string(),
+            Box::new(decoder::aptos_governance_can_resolve),
         );
         map.insert(
             "aptos_governance_create_proposal".to_string(),

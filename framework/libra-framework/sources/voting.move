@@ -512,7 +512,8 @@ module aptos_framework::voting {
         voting_forum_address: address,
         proposal_id: u64,
     ): bool acquires VotingForum {
-      is_proposal_resolvable<ProposalType>(voting_forum_address, proposal_id)
+      is_proposal_resolvable<ProposalType>(voting_forum_address, proposal_id);
+      true
     }
 
     //////// end 0L ////////

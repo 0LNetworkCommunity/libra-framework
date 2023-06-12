@@ -33,7 +33,7 @@ module aptos_framework::aptos_governance {
     use aptos_framework::timestamp;
     use aptos_framework::voting;
 
-    use ol_framework::testnet;
+    // use ol_framework::testnet;
 
     /// The specified stake pool does not have sufficient stake to create a proposal
     const EINSUFFICIENT_PROPOSER_STAKE: u64 = 1;
@@ -242,11 +242,11 @@ module aptos_framework::aptos_governance {
 
         // The proposer's stake needs to be at least the required bond amount.
         let governance_config = borrow_global<GovernanceConfig>(@aptos_framework);
-        let stake_balance = get_voting_power(stake_pool);
-        assert!(
-            stake_balance >= governance_config.required_proposer_stake,
-            error::invalid_argument(EINSUFFICIENT_PROPOSER_STAKE),
-        );
+        // let stake_balance = get_voting_power(stake_pool);
+        // assert!(
+        //     stake_balance >= governance_config.required_proposer_stake,
+        //     error::invalid_argument(EINSUFFICIENT_PROPOSER_STAKE),
+        // );
 
         // The proposer's stake needs to be locked up at least as long as the proposal's voting period.
         let current_time = timestamp::now_seconds();
@@ -401,12 +401,14 @@ module aptos_framework::aptos_governance {
 
     #[view]
     public fun is_resolved(proposal_id: u64): bool {
-      voting::is_resolved<GovernanceProposal>((@aptos_framework, proposal_id)
+      voting::is_resolved<GovernanceProposal>(@aptos_framework, proposal_id)
     }
 
-    #[view]
-    public fun can_resolve(proposal_id: u64): bool {
-      voting::can_resolve<GovernanceProposal>((@aptos_framework, proposal_id)
+    //////// 0L ////////
+    // TODO: do better.
+    // Hack: This will error so we can see if it's resolvable. For smoke-tests.
+    public entry fun can_resolve(proposal_id: u64) {
+      voting::can_resolve<GovernanceProposal>(@aptos_framework, proposal_id);
     }
     /// Resolve a successful multi-step proposal. This would fail if the proposal is not successful.
     public fun resolve_multi_step_proposal(proposal_id: u64, signer_address: address, next_execution_hash: vector<u8>): signer acquires GovernanceResponsbility, ApprovedExecutionHashes {
