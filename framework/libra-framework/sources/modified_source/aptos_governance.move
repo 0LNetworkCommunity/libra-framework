@@ -32,10 +32,12 @@ module aptos_framework::aptos_governance {
     use aptos_framework::timestamp;
     use aptos_framework::voting;
 
-    use ol_framework::gas_coin::{Self, GasCoin};
+    use ol_framework::gas_coin::GasCoin;
     use aptos_std::debug::print;
     // use ol_framework::testnet;
 
+    #[test_only]
+    use ol_framework::gas_coin;
 
 
     /// The specified stake pool does not have sufficient stake to create a proposal
