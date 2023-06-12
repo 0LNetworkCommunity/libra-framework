@@ -235,7 +235,7 @@ module aptos_framework::genesis {
             coin::register<GasCoin>(&account);
 
             aptos_coin::mint(aptos_framework, account_address, balance);
-            gas_coin::mint(aptos_framework, account_address, balance);
+            gas_coin::mint(aptos_framework, account_address, 10000000000);
             account
         }
     }
