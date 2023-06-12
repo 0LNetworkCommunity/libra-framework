@@ -557,6 +557,10 @@ module aptos_framework::aptos_governance {
         // than no.
         timestamp::update_global_time_for_test(100001000000);
         let proposal_state = voting::get_proposal_state<GovernanceProposal>(signer::address_of(&aptos_framework), 0);
+        let (yes, no) = voting::get_votes<GovernanceProposal>(signer::address_of(&aptos_framework), 0);
+        print(&yes);
+        print(&no);
+
         assert!(proposal_state == PROPOSAL_STATE_SUCCEEDED, proposal_state);
 
         // Add approved script hash.
@@ -762,9 +766,9 @@ module aptos_framework::aptos_governance {
         coin::register<GasCoin>(yes_voter);
         coin::register<GasCoin>(no_voter);
 
-        gas_coin::mint(aptos_framework, signer::address_of(proposer), 10000);
-        gas_coin::mint(aptos_framework, signer::address_of(yes_voter), 10000);
-        gas_coin::mint(aptos_framework, signer::address_of(no_voter), 10000);
+        gas_coin::mint(aptos_framework, signer::address_of(proposer), 50);
+        gas_coin::mint(aptos_framework, signer::address_of(yes_voter), 10);
+        gas_coin::mint(aptos_framework, signer::address_of(no_voter), 5);
         // // Spread stake among active and pending_inactive because both need to be accounted for when computing voting
         // // power.
         // stake::create_stake_pool(proposer, coin::mint(50, &mint_cap), coin::mint(50, &mint_cap), 10000);

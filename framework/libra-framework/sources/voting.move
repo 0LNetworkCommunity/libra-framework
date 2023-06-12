@@ -558,6 +558,17 @@ module aptos_framework::voting {
         }
     }
 
+    #[view] //////// 0L ////////
+    /// Return the proposal's expiration time.
+    public fun get_votes<ProposalType: store>(
+        voting_forum_address: address,
+        proposal_id: u64,
+    ): (u128, u128) acquires VotingForum {
+        let voting_forum = borrow_global_mut<VotingForum<ProposalType>>(voting_forum_address);
+        let proposal = table::borrow_mut(&mut voting_forum.proposals, proposal_id);
+        (proposal.yes_votes, proposal.no_votes)
+    }
+
     #[view]
     /// Return the proposal's expiration time.
     public fun get_proposal_expiration_secs<ProposalType: store>(
