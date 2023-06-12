@@ -194,6 +194,8 @@ module ol_framework::gas_coin {
             8, /* decimals */
             true, /* monitor_supply */
         );
+        move_to(aptos_framework, MintCapStore { mint_cap });
+
         coin::destroy_freeze_cap(freeze_cap);
         (burn_cap, mint_cap)
     }

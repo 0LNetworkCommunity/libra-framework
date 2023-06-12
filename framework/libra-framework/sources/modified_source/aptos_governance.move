@@ -27,13 +27,16 @@ module aptos_framework::aptos_governance {
     use aptos_framework::governance_proposal::{Self, GovernanceProposal};
     use aptos_framework::reconfiguration;
     use aptos_framework::stake;
-    // use aptos_framework::staking_config;
     use aptos_framework::system_addresses;
-    use aptos_framework::aptos_coin::{Self, AptosCoin};
+    use aptos_framework::aptos_coin; // TODO: remove, testnet only
     use aptos_framework::timestamp;
     use aptos_framework::voting;
 
+    use ol_framework::gas_coin::{Self, GasCoin};
+    use aptos_std::debug::print;
     // use ol_framework::testnet;
+
+
 
     /// The specified stake pool does not have sufficient stake to create a proposal
     const EINSUFFICIENT_PROPOSER_STAKE: u64 = 1;
@@ -263,13 +266,17 @@ module aptos_framework::aptos_governance {
         // has voted. This doesn't take into subsequent inflation/deflation (rewards are issued every epoch and gas fees
         // are burnt after every transaction), but inflation/delation is very unlikely to have a major impact on total
         // supply during the voting period.
-        let total_voting_token_supply = coin::supply<AptosCoin>();
+        let total_voting_token_supply = coin::supply<GasCoin>(); //////// 0L ////////
         let early_resolution_vote_threshold = option::none<u128>();
         if (option::is_some(&total_voting_token_supply)) {
             let total_supply = *option::borrow(&total_voting_token_supply);
             // 50% + 1 to avoid rounding errors.
             early_resolution_vote_threshold = option::some(total_supply / 2 + 1);
         };
+
+        print(&88888);
+        print(&governance_config.min_voting_threshold);
+        print(&early_resolution_vote_threshold);
 
         let proposal_id = voting::create_proposal_v2(
             proposer_address,
@@ -327,7 +334,7 @@ module aptos_framework::aptos_governance {
         //     stake::get_lockup_secs(stake_pool) >= proposal_expiration,
         //     error::invalid_argument(EINSUFFICIENT_STAKE_LOCKUP),
         // );
-        let voting_power = 1;
+        let voting_power = coin::balance<GasCoin>(voter_address);
         voting::vote<GovernanceProposal>(
             &governance_proposal::create_empty_proposal(),
             @aptos_framework,
@@ -543,8 +550,8 @@ module aptos_framework::aptos_governance {
 
         create_proposal_for_test(proposer, multi_step);
 
-        vote(&yes_voter, signer::address_of(&yes_voter), 0, true);
-        vote(&no_voter, signer::address_of(&no_voter), 0, false);
+        vote(&yes_voter, 0, true); //////// 0L ////////
+        vote(&no_voter, 0, false);  //////// 0L ////////
 
         // Once expiration time has passed, the proposal should be considered resolve now as there are more yes votes
         // than no.
@@ -732,7 +739,7 @@ module aptos_framework::aptos_governance {
 
         // Initialize the governance.
         // staking_config::initialize_for_test(aptos_framework, 0, 1000, 2000, true, 0, 1, 100);
-        initialize(aptos_framework, 10, 100, 1000);
+        initialize(aptos_framework, 0, 100, 1000); //////// 0L //////// remove minimum threshold
         store_signer_cap(
             aptos_framework,
             @aptos_framework,
@@ -750,14 +757,21 @@ module aptos_framework::aptos_governance {
         // let pks = vector[pk_1, pk_2, pk_3];
         // stake::create_validator_set(aptos_framework, active_validators, pks);
 
-        // let (burn_cap, mint_cap) = aptos_coin::initialize_for_test(aptos_framework);
+        let (burn_cap, mint_cap) = gas_coin::initialize_for_test(aptos_framework);
+        coin::register<GasCoin>(proposer);
+        coin::register<GasCoin>(yes_voter);
+        coin::register<GasCoin>(no_voter);
+
+        gas_coin::mint(aptos_framework, signer::address_of(proposer), 10000);
+        gas_coin::mint(aptos_framework, signer::address_of(yes_voter), 10000);
+        gas_coin::mint(aptos_framework, signer::address_of(no_voter), 10000);
         // // Spread stake among active and pending_inactive because both need to be accounted for when computing voting
         // // power.
         // stake::create_stake_pool(proposer, coin::mint(50, &mint_cap), coin::mint(50, &mint_cap), 10000);
         // stake::create_stake_pool(yes_voter, coin::mint(10, &mint_cap), coin::mint(10, &mint_cap), 10000);
         // stake::create_stake_pool(no_voter, coin::mint(5, &mint_cap), coin::mint(5, &mint_cap), 10000);
-        // coin::destroy_mint_cap<AptosCoin>(mint_cap);
-        // coin::destroy_burn_cap<AptosCoin>(burn_cap);
+        coin::destroy_mint_cap<GasCoin>(mint_cap);
+        coin::destroy_burn_cap<GasCoin>(burn_cap);
     }
 
     // #[test(aptos_framework = @aptos_framework)]

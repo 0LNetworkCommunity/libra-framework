@@ -226,7 +226,7 @@ module aptos_framework::genesis {
 
     /// This creates an funds an account if it doesn't exist.
     /// If it exists, it just returns the signer.
-    fun create_account(aptos_framework: &signer, account_address: address, _balance: u64): signer {
+    fun create_account(aptos_framework: &signer, account_address: address, balance: u64): signer {
         if (account::exists_at(account_address)) {
             create_signer(account_address)
         } else {
@@ -234,9 +234,8 @@ module aptos_framework::genesis {
             coin::register<AptosCoin>(&account);
             coin::register<GasCoin>(&account);
 
-            assert!(coin::is_account_registered<GasCoin>(account_address), 666);
-            aptos_coin::mint(aptos_framework, account_address, 11000000000);
-            gas_coin::mint(aptos_framework, account_address, 33000000000);
+            aptos_coin::mint(aptos_framework, account_address, balance);
+            gas_coin::mint(aptos_framework, account_address, balance);
             account
         }
     }

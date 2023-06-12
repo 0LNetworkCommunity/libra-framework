@@ -39,6 +39,8 @@ module aptos_framework::voting {
     use aptos_framework::transaction_context;
     use aptos_std::from_bcs;
 
+    use aptos_std::debug::print;
+
     /// Current script's execution hash does not match the specified proposal's
     const EPROPOSAL_EXECUTION_HASH_NOT_MATCHING: u64 = 1;
     /// Proposal cannot be resolved. Either voting duration has not passed, not enough votes, or fewer yes than no votes
@@ -64,6 +66,13 @@ module aptos_framework::voting {
     const ESINGLE_STEP_PROPOSAL_CANNOT_HAVE_NEXT_EXECUTION_HASH: u64 = 11;
     /// Cannot call `is_multi_step_proposal_in_execution()` on single-step proposals.
     const EPROPOSAL_IS_SINGLE_STEP: u64 = 12;
+
+
+    /// Proposal is pending
+    const EPROPOSAL_IS_PENDING: u64 = 13;
+    /// Proposal is failed
+    const EPROPOSAL_IS_FAILED: u64 = 14;
+
 
     /// ProposalStateEnum representing proposal state.
     const PROPOSAL_STATE_PENDING: u64 = 0;
@@ -365,6 +374,10 @@ module aptos_framework::voting {
         proposal_id: u64,
     ) acquires VotingForum {
         let proposal_state = get_proposal_state<ProposalType>(voting_forum_address, proposal_id);
+        print(&7777777777777777777);
+        print(&proposal_state);
+        // assert!(proposal_state != PROPOSAL_STATE_PENDING, error::invalid_state(EPROPOSAL_IS_PENDING));
+        // assert!(proposal_state != PROPOSAL_STATE_FAILED, error::invalid_state(EPROPOSAL_IS_FAILED));
         assert!(proposal_state == PROPOSAL_STATE_SUCCEEDED, error::invalid_state(EPROPOSAL_CANNOT_BE_RESOLVED));
 
         let voting_forum = borrow_global_mut<VotingForum<ProposalType>>(voting_forum_address);
