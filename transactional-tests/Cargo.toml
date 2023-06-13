@@ -6,4 +6,4 @@ edition = "2018"
 
 [dependencies]
 datatest-stable = "0.1.1"
-aptos-transactional-test-harness = { workspace = true }
+zapatos-transactional-test-harness = { workspace = true }

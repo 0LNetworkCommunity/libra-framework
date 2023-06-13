@@ -1,10 +1,8 @@
 module aptos_framework::genesis {
-    use std::error;
-    // use std::fixed_point32;
-    use std::vector;
-
-    // use aptos_std::simple_map;
     use aptos_std::debug::print;
+
+    use std::error;
+    use std::vector;
 
     use aptos_framework::account;
     use aptos_framework::aggregator_factory;
@@ -184,22 +182,22 @@ module aptos_framework::genesis {
     ) {
         let (burn_cap, mint_cap) = aptos_coin::initialize(aptos_framework);
 
-        
-        
-        // Give stake module MintCapability<AptosCoin> so it can mint rewards.
-        // stake::store_aptos_coin_mint_cap(aptos_framework, mint_cap);
-        coin::destroy_mint_cap(mint_cap);
-        // Give transaction_fee module BurnCapability<AptosCoin> so it can burn gas.
-        // transaction_fee::store_aptos_coin_burn_cap(aptos_framework, burn_cap);
-        coin::destroy_burn_cap(burn_cap);
-
         let core_resources = account::create_account(@core_resources);
         account::rotate_authentication_key_internal(&core_resources, core_resources_auth_key);
         aptos_coin::configure_accounts_for_test(aptos_framework, &core_resources, mint_cap);
+        coin::destroy_mint_cap(mint_cap);
+        coin::destroy_burn_cap(burn_cap);
 
-        gas_coin::initialize(aptos_framework);
-        // coin::destroy_mint_cap(mint_cap);
-        // coin::destroy_burn_cap(burn_cap);
+        // initialize gas
+        let (burn_cap_two, mint_cap_two) = gas_coin::initialize_for_core(aptos_framework);
+        // give coins to the 'core_resources' account, which has sudo
+        // core_resources is a temporary account, not the same as framework account.
+        gas_coin::configure_accounts_for_test(aptos_framework, &core_resources, mint_cap_two);
+
+        // NOTE: 0L: the commented code below shows that we are destroying
+        // there capabilities elsewhere, at gas_coin::initialize
+        coin::destroy_mint_cap(mint_cap_two);
+        coin::destroy_burn_cap(burn_cap_two);
 
     }
 
@@ -237,7 +235,7 @@ module aptos_framework::genesis {
             coin::register<GasCoin>(&account);
 
             aptos_coin::mint(aptos_framework, account_address, balance);
-            gas_coin::mint(aptos_framework, account_address, 100000);
+            gas_coin::mint(aptos_framework, account_address, 10000000000);
             account
         }
     }
@@ -272,6 +270,8 @@ module aptos_framework::genesis {
 
             i = i + 1;
         };
+
+
 
         // Destroy the aptos framework account's ability to mint coins now that we're done with setting up the initial
         // validators.

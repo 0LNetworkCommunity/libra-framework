@@ -39,6 +39,8 @@ module aptos_framework::voting {
     use aptos_framework::transaction_context;
     use aptos_std::from_bcs;
 
+    // use aptos_std::debug::print;
+
     /// Current script's execution hash does not match the specified proposal's
     const EPROPOSAL_EXECUTION_HASH_NOT_MATCHING: u64 = 1;
     /// Proposal cannot be resolved. Either voting duration has not passed, not enough votes, or fewer yes than no votes
@@ -64,6 +66,13 @@ module aptos_framework::voting {
     const ESINGLE_STEP_PROPOSAL_CANNOT_HAVE_NEXT_EXECUTION_HASH: u64 = 11;
     /// Cannot call `is_multi_step_proposal_in_execution()` on single-step proposals.
     const EPROPOSAL_IS_SINGLE_STEP: u64 = 12;
+
+
+    /// Proposal is pending
+    const EPROPOSAL_IS_PENDING: u64 = 13;
+    /// Proposal is failed
+    const EPROPOSAL_IS_FAILED: u64 = 14;
+
 
     /// ProposalStateEnum representing proposal state.
     const PROPOSAL_STATE_PENDING: u64 = 0;
@@ -365,6 +374,7 @@ module aptos_framework::voting {
         proposal_id: u64,
     ) acquires VotingForum {
         let proposal_state = get_proposal_state<ProposalType>(voting_forum_address, proposal_id);
+
         assert!(proposal_state == PROPOSAL_STATE_SUCCEEDED, error::invalid_state(EPROPOSAL_CANNOT_BE_RESOLVED));
 
         let voting_forum = borrow_global_mut<VotingForum<ProposalType>>(voting_forum_address);
@@ -505,6 +515,20 @@ module aptos_framework::voting {
         false
     }
 
+    //////// 0L ////////
+    #[view]
+    /// Return true if the governance proposal has already been resolved.
+    public fun can_resolve<ProposalType: store>(
+        voting_forum_address: address,
+        proposal_id: u64,
+    ): bool acquires VotingForum {
+      is_proposal_resolvable<ProposalType>(voting_forum_address, proposal_id);
+      true
+    }
+
+    //////// end 0L ////////
+
+
     #[view]
     /// Return the state of the proposal with given id.
     ///
@@ -529,6 +553,17 @@ module aptos_framework::voting {
         } else {
             PROPOSAL_STATE_PENDING
         }
+    }
+
+    #[view] //////// 0L ////////
+    /// Return the proposal's expiration time.
+    public fun get_votes<ProposalType: store>(
+        voting_forum_address: address,
+        proposal_id: u64,
+    ): (u128, u128) acquires VotingForum {
+        let voting_forum = borrow_global_mut<VotingForum<ProposalType>>(voting_forum_address);
+        let proposal = table::borrow_mut(&mut voting_forum.proposals, proposal_id);
+        (proposal.yes_votes, proposal.no_votes)
     }
 
     #[view]
