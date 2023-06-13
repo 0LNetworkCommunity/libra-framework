@@ -29,6 +29,8 @@ Pro tip: double check your system installs. If you missed any of the system inst
 
 ```
 git clone git@github.com:0o-de-lally/libra-v7.git
+cd libra-v7
+git checkout release-0.6.9
 
 cargo build --release -p libra -p libra-genesis-tools
 ```
