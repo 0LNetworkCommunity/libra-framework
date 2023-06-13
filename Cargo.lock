@@ -9497,15 +9497,13 @@ name = "smoke-tests"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "aptos",
  "aptos-crypto",
  "aptos-debugger",
  "aptos-forge",
- "aptos-framework",
- "aptos-sdk",
  "aptos-types",
  "libra-cached-packages",
  "libra-framework",
+ "libra-txs",
  "serde_json",
  "smoke-test",
  "tokio",
