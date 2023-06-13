@@ -49,7 +49,7 @@ You'll use the wizard for both configuring, registering, and building the genesi
 
 You'll input the name of the github repo (`--org-github` and `--name-github `) being used to coordinate. 
 ```
-./target/release/libra-genesis-tools  --org-github <ORG_GITHUB> --name-github <NAME_GITHUB> wizard 
+./target/release/libra-genesis-tools  --org-github <ORG_GITHUB> --name-github <NAME_GITHUB> register 
 ```
 
 6. Coordinator: merge pull requests.
@@ -58,7 +58,7 @@ The owner of the coordinator repo should merge the pull requests the registrants
 
 7. Run the genesis transaction builder with `libra-genesis-tools genesis`
 
-Plus you'll be using a local copy of the move framework (`--local-framework`). Last, you'll tell the wizard which DB backup file to use to migrate state from the previous network (`--json-legacy`). 
+You'll use the same github arguments as above plus two more. You'll be using a local copy of the move framework (`--local-framework`). Last, you'll tell the wizard which DB backup file to use to migrate state from the previous network (`--json-legacy`). 
 
 For the legacy JSON you can use the test example: `tools/genesis/tests/fixtures/sample_export_recovery.json`
 
