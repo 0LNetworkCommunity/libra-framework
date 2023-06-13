@@ -30,7 +30,38 @@ Pro tip: double check your system installs. If you missed any of the system inst
 ```
 git clone git@github.com:0o-de-lally/libra-v7.git
 
-cargo build --release -p libra -p libra-genesis-tools -p libra-framework
+cargo build --release -p libra -p libra-genesis-tools
+```
+
+4. Get your Github app api token
+
+
+4a. Follow the github instructions: `https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic`
+
+You'll want to choose the `repo permissions` setting.
+
+4b You'll need a directory at `$HOME/.libra`. Place your github api token in `github_token.txt` under that directory.
+
+5. Do the genesis ceremony.
+You'll use the wizard for both configuring, registering, and building the genesis transaction.
+
+```
+./target/release/libra-genesis-tools wizard --local-framework
+```
+
+6. Coordinator: merge pull requests.
+
+The owner of the coordinator repo should merge the pull requests the registrants made to the repo.
+
+### Troubleshooting
+
+1. I made changes to a .move file
+
+You'll need to rebuild the framework and its generated code.
+```
+cd framework/
+cargo r --release release
+# yes two releases in there.
 ```
 
 
