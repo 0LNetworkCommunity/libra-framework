@@ -27,11 +27,18 @@ module aptos_framework::aptos_governance {
     use aptos_framework::governance_proposal::{Self, GovernanceProposal};
     use aptos_framework::reconfiguration;
     use aptos_framework::stake;
-    // use aptos_framework::staking_config;
     use aptos_framework::system_addresses;
-    use aptos_framework::aptos_coin::{Self, AptosCoin};
+    use aptos_framework::aptos_coin; // TODO: remove, testnet only
     use aptos_framework::timestamp;
     use aptos_framework::voting;
+
+    use ol_framework::gas_coin::GasCoin;
+    use aptos_std::debug::print;
+    // use ol_framework::testnet;
+
+    #[test_only]
+    use ol_framework::gas_coin;
+
 
     /// The specified stake pool does not have sufficient stake to create a proposal
     const EINSUFFICIENT_PROPOSER_STAKE: u64 = 1;
@@ -240,11 +247,11 @@ module aptos_framework::aptos_governance {
 
         // The proposer's stake needs to be at least the required bond amount.
         let governance_config = borrow_global<GovernanceConfig>(@aptos_framework);
-        let stake_balance = get_voting_power(stake_pool);
-        assert!(
-            stake_balance >= governance_config.required_proposer_stake,
-            error::invalid_argument(EINSUFFICIENT_PROPOSER_STAKE),
-        );
+        // let stake_balance = get_voting_power(stake_pool);
+        // assert!(
+        //     stake_balance >= governance_config.required_proposer_stake,
+        //     error::invalid_argument(EINSUFFICIENT_PROPOSER_STAKE),
+        // );
 
         // The proposer's stake needs to be locked up at least as long as the proposal's voting period.
         let current_time = timestamp::now_seconds();
@@ -261,13 +268,17 @@ module aptos_framework::aptos_governance {
         // has voted. This doesn't take into subsequent inflation/deflation (rewards are issued every epoch and gas fees
         // are burnt after every transaction), but inflation/delation is very unlikely to have a major impact on total
         // supply during the voting period.
-        let total_voting_token_supply = coin::supply<AptosCoin>();
+        let total_voting_token_supply = coin::supply<GasCoin>(); //////// 0L ////////
         let early_resolution_vote_threshold = option::none<u128>();
         if (option::is_some(&total_voting_token_supply)) {
             let total_supply = *option::borrow(&total_voting_token_supply);
             // 50% + 1 to avoid rounding errors.
             early_resolution_vote_threshold = option::some(total_supply / 2 + 1);
         };
+
+        print(&88888);
+        print(&governance_config.min_voting_threshold);
+        print(&early_resolution_vote_threshold);
 
         let proposal_id = voting::create_proposal_v2(
             proposer_address,
@@ -294,20 +305,84 @@ module aptos_framework::aptos_governance {
         );
     }
 
+    /// Create a single-step or multi-step proposal with the backing `stake_pool`.
+    /// @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
+    /// only the exact script with matching hash can be successfully executed.
+    public entry fun ol_create_proposal_v2(
+        proposer: &signer,
+        // stake_pool: address,
+        execution_hash: vector<u8>,
+        metadata_location: vector<u8>, // url
+        metadata_hash: vector<u8>, // descriptions etc.
+        is_multi_step_proposal: bool,
+    ) acquires GovernanceConfig, GovernanceEvents {
+        let proposer_address = signer::address_of(proposer);
+        assert!(stake::is_current_val(proposer_address), error::invalid_argument(EUNAUTHORIZED));
+
+        // check this is a current validator.
+        let governance_config = borrow_global<GovernanceConfig>(@aptos_framework);
+
+
+        // The proposer's stake needs to be locked up at least as long as the proposal's voting period.
+        let current_time = timestamp::now_seconds();
+        let proposal_expiration = current_time + (60 * 60 * 24 * 3); // Three days
+
+
+        // Create and validate proposal metadata.
+        // NOTE: 0L: this is a buffer sent from  rust because there is no type
+        // that can be sent in an entry transactions. Not clear why it's not implemented as ASCII
+        let proposal_metadata = create_proposal_metadata(metadata_location, metadata_hash);
+
+        // We want to allow early resolution of proposals if more than 50% of the total supply of the network coins
+        // has voted. This doesn't take into subsequent inflation/deflation (rewards are issued every epoch and gas fees
+        // are burnt after every transaction), but inflation/delation is very unlikely to have a major impact on total
+        // supply during the voting period.
+        let validator_len = vector::length(&stake::get_current_validators());
+        let early_resolution_vote_threshold = ((validator_len/3) * 2) + 1;
+
+        print(&88888);
+        print(&governance_config.min_voting_threshold);
+        print(&early_resolution_vote_threshold);
+
+        let proposal_id = voting::create_proposal_v2(
+            proposer_address,
+            @aptos_framework,
+            governance_proposal::create_proposal(),
+            execution_hash,
+            (early_resolution_vote_threshold as u128), // 0L we always expect the minimum of 2/3+1 to pass
+            proposal_expiration,
+            option::none(), // 0L we always expect the minimum of 2/3+1 to pass
+            proposal_metadata,
+            is_multi_step_proposal,
+        );
+
+        let events = borrow_global_mut<GovernanceEvents>(@aptos_framework);
+        event::emit_event<CreateProposalEvent>(
+            &mut events.create_proposal_events,
+            CreateProposalEvent {
+                proposal_id,
+                proposer: proposer_address,
+                stake_pool: proposer_address,
+                execution_hash,
+                proposal_metadata,
+            },
+        );
+    }
+
     /// Vote on proposal with `proposal_id` and voting power from `stake_pool`.
-    public entry fun vote(
+    public entry fun ol_vote(
         voter: &signer,
-        stake_pool: address,
+        // stake_pool: address,
         proposal_id: u64,
         should_pass: bool,
     ) acquires ApprovedExecutionHashes, GovernanceEvents, VotingRecords {
         let voter_address = signer::address_of(voter);
-        // assert!(stake::get_delegated_voter(stake_pool) == voter_address, error::invalid_argument(ENOT_DELEGATED_VOTER));
-
-        // Ensure the voter doesn't double vote with the same stake pool.
+        assert!(stake::is_current_val(voter_address), error::invalid_argument(EUNAUTHORIZED));
+        // register the vote. Prevent double votes
+        // TODO: method to retract.
         let voting_records = borrow_global_mut<VotingRecords>(@aptos_framework);
         let record_key = RecordKey {
-            stake_pool,
+            stake_pool: voter_address,
             proposal_id,
         };
         assert!(
@@ -315,17 +390,7 @@ module aptos_framework::aptos_governance {
             error::invalid_argument(EALREADY_VOTED));
         table::add(&mut voting_records.votes, record_key, true);
 
-        let voting_power = get_voting_power(stake_pool);
-        // Short-circuit if the voter has no voting power.
-        assert!(voting_power > 0, error::invalid_argument(ENO_VOTING_POWER));
-
-        // The voter's stake needs to be locked up at least as long as the proposal's expiration.
-        // let proposal_expiration = voting::get_proposal_expiration_secs<GovernanceProposal>(@aptos_framework, proposal_id);
-        // assert!(
-        //     stake::get_lockup_secs(stake_pool) >= proposal_expiration,
-        //     error::invalid_argument(EINSUFFICIENT_STAKE_LOCKUP),
-        // );
-
+        let voting_power = 1; // every validator has just one equal vote.
         voting::vote<GovernanceProposal>(
             &governance_proposal::create_empty_proposal(),
             @aptos_framework,
@@ -340,7 +405,66 @@ module aptos_framework::aptos_governance {
             VoteEvent {
                 proposal_id,
                 voter: voter_address,
-                stake_pool,
+                stake_pool: voter_address,
+                num_votes: voting_power,
+                should_pass,
+            },
+        );
+
+        let proposal_state = voting::get_proposal_state<GovernanceProposal>(@aptos_framework, proposal_id);
+        if (proposal_state == PROPOSAL_STATE_SUCCEEDED) {
+            add_approved_script_hash(proposal_id);
+        }
+    }
+
+
+    /// Vote on proposal with `proposal_id` and voting power from `stake_pool`.
+    public entry fun vote(
+        voter: &signer,
+        // stake_pool: address,
+        proposal_id: u64,
+        should_pass: bool,
+    ) acquires ApprovedExecutionHashes, GovernanceEvents, VotingRecords {
+        let voter_address = signer::address_of(voter);
+        // assert!(stake::get_delegated_voter(stake_pool) == voter_address, error::invalid_argument(ENOT_DELEGATED_VOTER));
+
+        // Ensure the voter doesn't double vote with the same stake pool.
+        let voting_records = borrow_global_mut<VotingRecords>(@aptos_framework);
+        let record_key = RecordKey {
+            stake_pool: voter_address,
+            proposal_id,
+        };
+        assert!(
+            !table::contains(&voting_records.votes, record_key),
+            error::invalid_argument(EALREADY_VOTED));
+        table::add(&mut voting_records.votes, record_key, true);
+
+        // let voting_power = get_voting_power(stake_pool);
+        // // Short-circuit if the voter has no voting power.
+        // assert!(voting_power > 0, error::invalid_argument(ENO_VOTING_POWER));
+
+        // The voter's stake needs to be locked up at least as long as the proposal's expiration.
+        // let proposal_expiration = voting::get_proposal_expiration_secs<GovernanceProposal>(@aptos_framework, proposal_id);
+        // assert!(
+        //     stake::get_lockup_secs(stake_pool) >= proposal_expiration,
+        //     error::invalid_argument(EINSUFFICIENT_STAKE_LOCKUP),
+        // );
+        let voting_power = coin::balance<GasCoin>(voter_address);
+        voting::vote<GovernanceProposal>(
+            &governance_proposal::create_empty_proposal(),
+            @aptos_framework,
+            proposal_id,
+            voting_power,
+            should_pass,
+        );
+
+        let events = borrow_global_mut<GovernanceEvents>(@aptos_framework);
+        event::emit_event<VoteEvent>(
+            &mut events.vote_events,
+            VoteEvent {
+                proposal_id,
+                voter: voter_address,
+                stake_pool: voter_address,
                 num_votes: voting_power,
                 should_pass,
             },
@@ -356,12 +480,18 @@ module aptos_framework::aptos_governance {
         add_approved_script_hash(proposal_id)
     }
 
+    // //////// 0L ////////
+    // // DANGER!!!! experimental
+    // public entry fun set_allowed_script(execution_hash: vector<u8>, proposal_id: u64) acquires ApprovedExecutionHashes {
+    //   let approved_hashes = borrow_global_mut<ApprovedExecutionHashes>(@aptos_framework);
+    //   simple_map::add(&mut approved_hashes.hashes, proposal_id, execution_hash);
+    // }
+
     /// Add the execution script hash of a successful governance proposal to the approved list.
     /// This is needed to bypass the mempool transaction size limit for approved governance proposal transactions that
     /// are too large (e.g. module upgrades).
-    public fun add_approved_script_hash(proposal_id: u64) acquires ApprovedExecutionHashes {
+    fun add_approved_script_hash(proposal_id: u64) acquires ApprovedExecutionHashes {
         let approved_hashes = borrow_global_mut<ApprovedExecutionHashes>(@aptos_framework);
-
         // Ensure the proposal can be resolved.
         let proposal_state = voting::get_proposal_state<GovernanceProposal>(@aptos_framework, proposal_id);
         assert!(proposal_state == PROPOSAL_STATE_SUCCEEDED, error::invalid_argument(EPROPOSAL_NOT_RESOLVABLE_YET));
@@ -378,14 +508,30 @@ module aptos_framework::aptos_governance {
         }
     }
 
+    //////// 0L ///////
+    // TESTING governance
+    // This function HAS NO AUTHORIZATION
+    const ENOT_TESTNET: u64 = 666;
     /// Resolve a successful single-step proposal. This would fail if the proposal is not successful (not enough votes or more no
     /// than yes).
     public fun resolve(proposal_id: u64, signer_address: address): signer acquires ApprovedExecutionHashes, GovernanceResponsbility {
+        // assert!(testnet::is_testnet(), error::invalid_state(ENOT_TESTNET));
         voting::resolve<GovernanceProposal>(@aptos_framework, proposal_id);
         remove_approved_hash(proposal_id);
         get_signer(signer_address)
     }
 
+    #[view]
+    public fun is_resolved(proposal_id: u64): bool {
+      voting::is_resolved<GovernanceProposal>(@aptos_framework, proposal_id)
+    }
+
+    //////// 0L ////////
+    // TODO: do better.
+    // Hack: This will error so we can see if it's resolvable. For smoke-tests.
+    public entry fun can_resolve(proposal_id: u64) {
+      voting::can_resolve<GovernanceProposal>(@aptos_framework, proposal_id);
+    }
     /// Resolve a successful multi-step proposal. This would fail if the proposal is not successful.
     public fun resolve_multi_step_proposal(proposal_id: u64, signer_address: address, next_execution_hash: vector<u8>): signer acquires GovernanceResponsbility, ApprovedExecutionHashes {
         voting::resolve_proposal_v2<GovernanceProposal>(@aptos_framework, proposal_id, next_execution_hash);
@@ -462,94 +608,98 @@ module aptos_framework::aptos_governance {
         metadata
     }
 
-    // #[test_only]
-    // public entry fun create_proposal_for_test(proposer: signer, multi_step:bool) acquires GovernanceConfig, GovernanceEvents {
-    //     let execution_hash = vector::empty<u8>();
-    //     vector::push_back(&mut execution_hash, 1);
+    #[test_only]
+    public entry fun create_proposal_for_test(proposer: signer, multi_step:bool) acquires GovernanceConfig, GovernanceEvents {
+        let execution_hash = vector::empty<u8>();
+        vector::push_back(&mut execution_hash, 1);
 
-    //     if (multi_step) {
-    //         create_proposal_v2(
-    //             &proposer,
-    //             signer::address_of(&proposer),
-    //             execution_hash,
-    //             b"",
-    //             b"",
-    //             true,
-    //         );
-    //     } else {
-    //         create_proposal(
-    //             &proposer,
-    //             signer::address_of(&proposer),
-    //             execution_hash,
-    //             b"",
-    //             b"",
-    //         );
-    //     };
-    // }
+        if (multi_step) {
+            create_proposal_v2(
+                &proposer,
+                signer::address_of(&proposer),
+                execution_hash,
+                b"",
+                b"",
+                true,
+            );
+        } else {
+            create_proposal(
+                &proposer,
+                signer::address_of(&proposer),
+                execution_hash,
+                b"",
+                b"",
+            );
+        };
+    }
 
-    // #[test_only]
-    // public entry fun resolve_proposal_for_test(proposal_id: u64, signer_address: address, multi_step: bool, finish_multi_step_execution: bool): signer acquires ApprovedExecutionHashes, GovernanceResponsbility {
-    //     if (multi_step) {
-    //         let execution_hash = vector::empty<u8>();
-    //         vector::push_back(&mut execution_hash, 1);
+    #[test_only]
+    public entry fun resolve_proposal_for_test(proposal_id: u64, signer_address: address, multi_step: bool, finish_multi_step_execution: bool): signer acquires ApprovedExecutionHashes, GovernanceResponsbility {
+        if (multi_step) {
+            let execution_hash = vector::empty<u8>();
+            vector::push_back(&mut execution_hash, 1);
 
-    //         if (finish_multi_step_execution) {
-    //             resolve_multi_step_proposal(proposal_id, signer_address, vector::empty<u8>())
-    //         } else {
-    //             resolve_multi_step_proposal(proposal_id, signer_address, execution_hash)
-    //         }
-    //     } else {
-    //         resolve(proposal_id, signer_address)
-    //     }
-    // }
+            if (finish_multi_step_execution) {
+                resolve_multi_step_proposal(proposal_id, signer_address, vector::empty<u8>())
+            } else {
+                resolve_multi_step_proposal(proposal_id, signer_address, execution_hash)
+            }
+        } else {
+            resolve(proposal_id, signer_address)
+        }
+    }
 
-    // #[test_only]
-    // public entry fun test_voting_generic(
-    //     aptos_framework: signer,
-    //     proposer: signer,
-    //     yes_voter: signer,
-    //     no_voter: signer,
-    //     multi_step: bool,
-    //     use_generic_resolve_function: bool,
-    // ) acquires ApprovedExecutionHashes, GovernanceConfig, GovernanceEvents, GovernanceResponsbility, VotingRecords {
-    //     setup_voting(&aptos_framework, &proposer, &yes_voter, &no_voter);
+    #[test_only]
+    public entry fun test_voting_generic(
+        aptos_framework: signer,
+        proposer: signer,
+        yes_voter: signer,
+        no_voter: signer,
+        multi_step: bool,
+        use_generic_resolve_function: bool,
+    ) acquires ApprovedExecutionHashes, GovernanceConfig, GovernanceEvents, GovernanceResponsbility, VotingRecords {
+        setup_voting(&aptos_framework, &proposer, &yes_voter, &no_voter);
 
-    //     let execution_hash = vector::empty<u8>();
-    //     vector::push_back(&mut execution_hash, 1);
+        let execution_hash = vector::empty<u8>();
+        vector::push_back(&mut execution_hash, 1);
 
-    //     create_proposal_for_test(proposer, multi_step);
+        create_proposal_for_test(proposer, multi_step);
 
-    //     vote(&yes_voter, signer::address_of(&yes_voter), 0, true);
-    //     vote(&no_voter, signer::address_of(&no_voter), 0, false);
+        vote(&yes_voter, 0, true); //////// 0L ////////
+        vote(&no_voter, 0, false);  //////// 0L ////////
 
-    //     // Once expiration time has passed, the proposal should be considered resolve now as there are more yes votes
-    //     // than no.
-    //     timestamp::update_global_time_for_test(100001000000);
-    //     let proposal_state = voting::get_proposal_state<GovernanceProposal>(signer::address_of(&aptos_framework), 0);
-    //     assert!(proposal_state == PROPOSAL_STATE_SUCCEEDED, proposal_state);
+        // Once expiration time has passed, the proposal should be considered resolve now as there are more yes votes
+        // than no.
+        timestamp::update_global_time_for_test(100001000000);
+        let proposal_state = voting::get_proposal_state<GovernanceProposal>(signer::address_of(&aptos_framework), 0);
+        let (yes, no) = voting::get_votes<GovernanceProposal>(signer::address_of(&aptos_framework), 0);
+        print(&yes);
+        print(&no);
 
-    //     // Add approved script hash.
-    //     add_approved_script_hash(0);
-    //     let approved_hashes = borrow_global<ApprovedExecutionHashes>(@aptos_framework).hashes;
-    //     assert!(*simple_map::borrow(&approved_hashes, &0) == execution_hash, 0);
+        assert!(proposal_state == PROPOSAL_STATE_SUCCEEDED, proposal_state);
 
-    //     // Resolve the proposal.
-    //     let account = resolve_proposal_for_test(0, @aptos_framework, use_generic_resolve_function, true);
-    //     assert!(signer::address_of(&account) == @aptos_framework, 1);
-    //     assert!(voting::is_resolved<GovernanceProposal>(@aptos_framework, 0), 2);
-    //     let approved_hashes = borrow_global<ApprovedExecutionHashes>(@aptos_framework).hashes;
-    //     assert!(!simple_map::contains_key(&approved_hashes, &0), 3);
-    // }
+        // Add approved script hash.
+        add_approved_script_hash(0);
+        let approved_hashes = borrow_global<ApprovedExecutionHashes>(@aptos_framework).hashes;
+        assert!(*simple_map::borrow(&approved_hashes, &0) == execution_hash, 0);
 
-    // #[test(aptos_framework = @aptos_framework, proposer = @0x123, yes_voter = @0x234, no_voter = @345)]
-    // public entry fun test_voting(
-    //     aptos_framework: signer,
-    //     proposer: signer,
-    //     yes_voter: signer,
-    //     no_voter: signer,
-    // ) acquires ApprovedExecutionHashes, GovernanceConfig, GovernanceEvents, GovernanceResponsbility, VotingRecords {
-    //     test_voting_generic(aptos_framework, proposer, yes_voter, no_voter, false, false);
-    // }
+        // Resolve the proposal.
+        let account = resolve_proposal_for_test(0, @aptos_framework, use_generic_resolve_function, true);
+        assert!(signer::address_of(&account) == @aptos_framework, 1);
+        assert!(voting::is_resolved<GovernanceProposal>(@aptos_framework, 0), 2);
+        let approved_hashes = borrow_global<ApprovedExecutionHashes>(@aptos_framework).hashes;
+        assert!(!simple_map::contains_key(&approved_hashes, &0), 3);
+    }
+
+    #[test(aptos_framework = @aptos_framework, proposer = @0x123, yes_voter = @0x234, no_voter = @345)]
+    public entry fun test_voting(
+        aptos_framework: signer,
+        proposer: signer,
+        yes_voter: signer,
+        no_voter: signer,
+    ) acquires ApprovedExecutionHashes, GovernanceConfig, GovernanceEvents, GovernanceResponsbility, VotingRecords {
+        test_voting_generic(aptos_framework, proposer, yes_voter, no_voter, false, false);
+    }
 
     // #[test(aptos_framework = @aptos_framework, proposer = @0x123, yes_voter = @0x234, no_voter = @345)]
     // public entry fun test_voting_multi_step(
@@ -688,53 +838,60 @@ module aptos_framework::aptos_governance {
     //     vote(&voter_2, signer::address_of(&voter_1), 0, true);
     // }
 
-    // #[test_only]
-    // public fun setup_voting(
-    //     aptos_framework: &signer,
-    //     proposer: &signer,
-    //     yes_voter: &signer,
-    //     no_voter: &signer,
-    // ) acquires GovernanceResponsbility {
-    //     use std::vector;
-    //     use aptos_framework::account;
-    //     use aptos_framework::coin;
-    //     use aptos_framework::aptos_coin::{Self, AptosCoin};
+    #[test_only]
+    public fun setup_voting(
+        aptos_framework: &signer,
+        proposer: &signer,
+        yes_voter: &signer,
+        no_voter: &signer,
+    ) acquires GovernanceResponsbility {
+        // use std::vector;
+        use aptos_framework::account;
+        // use aptos_framework::coin;
+        // use aptos_framework::aptos_coin::{Self, AptosCoin};
 
-    //     timestamp::set_time_has_started_for_testing(aptos_framework);
-    //     account::create_account_for_test(signer::address_of(aptos_framework));
-    //     account::create_account_for_test(signer::address_of(proposer));
-    //     account::create_account_for_test(signer::address_of(yes_voter));
-    //     account::create_account_for_test(signer::address_of(no_voter));
+        timestamp::set_time_has_started_for_testing(aptos_framework);
+        account::create_account_for_test(signer::address_of(aptos_framework));
+        account::create_account_for_test(signer::address_of(proposer));
+        account::create_account_for_test(signer::address_of(yes_voter));
+        account::create_account_for_test(signer::address_of(no_voter));
 
-    //     // Initialize the governance.
-    //     staking_config::initialize_for_test(aptos_framework, 0, 1000, 2000, true, 0, 1, 100);
-    //     initialize(aptos_framework, 10, 100, 1000);
-    //     store_signer_cap(
-    //         aptos_framework,
-    //         @aptos_framework,
-    //         account::create_test_signer_cap(@aptos_framework),
-    //     );
+        // Initialize the governance.
+        // staking_config::initialize_for_test(aptos_framework, 0, 1000, 2000, true, 0, 1, 100);
+        initialize(aptos_framework, 0, 100, 1000); //////// 0L //////// remove minimum threshold
+        store_signer_cap(
+            aptos_framework,
+            @aptos_framework,
+            account::create_test_signer_cap(@aptos_framework),
+        );
 
-    //     // Initialize the stake pools for proposer and voters.
-    //     let active_validators = vector::empty<address>();
-    //     vector::push_back(&mut active_validators, signer::address_of(proposer));
-    //     vector::push_back(&mut active_validators, signer::address_of(yes_voter));
-    //     vector::push_back(&mut active_validators, signer::address_of(no_voter));
-    //     let (_sk_1, pk_1, _pop_1) = stake::generate_identity();
-    //     let (_sk_2, pk_2, _pop_2) = stake::generate_identity();
-    //     let (_sk_3, pk_3, _pop_3) = stake::generate_identity();
-    //     let pks = vector[pk_1, pk_2, pk_3];
-    //     stake::create_validator_set(aptos_framework, active_validators, pks);
+        // Initialize the stake pools for proposer and voters.
+        // let active_validators = vector::empty<address>();
+        // vector::push_back(&mut active_validators, signer::address_of(proposer));
+        // vector::push_back(&mut active_validators, signer::address_of(yes_voter));
+        // vector::push_back(&mut active_validators, signer::address_of(no_voter));
+        // let (_sk_1, pk_1, _pop_1) = stake::generate_identity();
+        // let (_sk_2, pk_2, _pop_2) = stake::generate_identity();
+        // let (_sk_3, pk_3, _pop_3) = stake::generate_identity();
+        // let pks = vector[pk_1, pk_2, pk_3];
+        // stake::create_validator_set(aptos_framework, active_validators, pks);
 
-    //     let (burn_cap, mint_cap) = aptos_coin::initialize_for_test(aptos_framework);
-    //     // Spread stake among active and pending_inactive because both need to be accounted for when computing voting
-    //     // power.
-    //     stake::create_stake_pool(proposer, coin::mint(50, &mint_cap), coin::mint(50, &mint_cap), 10000);
-    //     stake::create_stake_pool(yes_voter, coin::mint(10, &mint_cap), coin::mint(10, &mint_cap), 10000);
-    //     stake::create_stake_pool(no_voter, coin::mint(5, &mint_cap), coin::mint(5, &mint_cap), 10000);
-    //     coin::destroy_mint_cap<AptosCoin>(mint_cap);
-    //     coin::destroy_burn_cap<AptosCoin>(burn_cap);
-    // }
+        let (burn_cap, mint_cap) = gas_coin::initialize_for_test(aptos_framework);
+        coin::register<GasCoin>(proposer);
+        coin::register<GasCoin>(yes_voter);
+        coin::register<GasCoin>(no_voter);
+
+        gas_coin::mint(aptos_framework, signer::address_of(proposer), 50);
+        gas_coin::mint(aptos_framework, signer::address_of(yes_voter), 10);
+        gas_coin::mint(aptos_framework, signer::address_of(no_voter), 5);
+        // // Spread stake among active and pending_inactive because both need to be accounted for when computing voting
+        // // power.
+        // stake::create_stake_pool(proposer, coin::mint(50, &mint_cap), coin::mint(50, &mint_cap), 10000);
+        // stake::create_stake_pool(yes_voter, coin::mint(10, &mint_cap), coin::mint(10, &mint_cap), 10000);
+        // stake::create_stake_pool(no_voter, coin::mint(5, &mint_cap), coin::mint(5, &mint_cap), 10000);
+        coin::destroy_mint_cap<GasCoin>(mint_cap);
+        coin::destroy_burn_cap<GasCoin>(burn_cap);
+    }
 
     // #[test(aptos_framework = @aptos_framework)]
     // public entry fun test_update_governance_config(

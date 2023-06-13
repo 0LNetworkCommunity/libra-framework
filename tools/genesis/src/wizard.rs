@@ -2,7 +2,7 @@
 //! instead of using many CLI tools.
 //! genesis wizard
 
-use crate::{genesis_builder, node_yaml};
+use crate::{genesis_builder, node_yaml, parse_json};
 ///////
 // TODO: import from libra
 use crate::{genesis_registration, hack_cli_progress::OLProgress};
@@ -73,7 +73,7 @@ impl Default for GenesisWizard {
 }
 impl GenesisWizard {
     /// start wizard for end-to-end genesis
-    pub fn start_wizard(&mut self, home_dir: Option<PathBuf>, use_local_framework: bool) -> anyhow::Result<()> {
+    pub fn start_wizard(&mut self, home_dir: Option<PathBuf>, use_local_framework: bool, legacy_recovery_path: Option<PathBuf>, do_genesis: bool) -> anyhow::Result<()> {
         if let Some(d) = home_dir {
             self.data_path = d;
         }
@@ -125,15 +125,18 @@ impl GenesisWizard {
             self.make_pull_request()?
         }
 
-        let ready = Confirm::new()
+        let ready = if do_genesis { 
+          Confirm::new()
             .with_prompt("\nNOW WAIT for everyone to do genesis. Is everyone ready?")
             .interact()
-            .unwrap();
+            .unwrap()
+        } else { false };
 
         if ready {
-
             // Get Legacy Recovery from file
-            let legacy_recovery = vec![];
+            let legacy_recovery = if let Some(p) = legacy_recovery_path {
+            parse_json::parse(p)?
+          } else { vec![] };
 
             // TODO: progress bar is odd when we  ask "already exists, are you sure you want to overwrite"
 

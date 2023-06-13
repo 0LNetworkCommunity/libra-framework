@@ -168,11 +168,11 @@ spec aptos_framework::aptos_governance {
     /// Address @aptos_framework must exist VotingRecords and GovernanceProposal.
     spec vote (
         voter: &signer,
-        stake_pool: address,
+        // stake_pool: address,
         proposal_id: u64,
         should_pass: bool,
     ) {
-        use aptos_framework::stake;
+        // use aptos_framework::stake;
         use aptos_framework::chain_status;
 
         // TODO: The variable `voting_power` is the return value of the function `get_voting_power`.
@@ -184,9 +184,9 @@ spec aptos_framework::aptos_governance {
         requires chain_status::is_operating();
 
         let voter_address = signer::address_of(voter);
-        let stake_pool_res = global<stake::StakePool>(stake_pool);
-        aborts_if !exists<stake::StakePool>(stake_pool);
-        aborts_if stake_pool_res.delegated_voter != voter_address;
+        // let stake_pool_res = global<stake::StakePool>(stake_pool);
+        // aborts_if !exists<stake::StakePool>(stake_pool);
+        // aborts_if stake_pool_res.delegated_voter != voter_address;
         aborts_if !exists<VotingRecords>(@aptos_framework);
         aborts_if !exists<voting::VotingForum<GovernanceProposal>>(@aptos_framework);
         // let allow_validator_set_change = global<staking_config::StakingConfig>(@aptos_framework).allow_validator_set_change;
@@ -194,8 +194,8 @@ spec aptos_framework::aptos_governance {
         let voting_forum = global<voting::VotingForum<GovernanceProposal>>(@aptos_framework);
         let proposal = table::spec_get(voting_forum.proposals, proposal_id);
         let proposal_expiration = proposal.expiration_secs;
-        let locked_until_secs = global<stake::StakePool>(stake_pool).locked_until_secs;
-        aborts_if proposal_expiration > locked_until_secs;
+        // let locked_until_secs = global<stake::StakePool>(stake_pool).locked_until_secs;
+        // aborts_if proposal_expiration > locked_until_secs;
     }
 
     spec add_approved_script_hash(proposal_id: u64) {
@@ -217,20 +217,20 @@ spec aptos_framework::aptos_governance {
         pragma verify = false;
     }
 
-    /// Address @aptos_framework must exist ApprovedExecutionHashes and GovernanceProposal and GovernanceResponsbility.
-    spec resolve(proposal_id: u64, signer_address: address): signer {
-        use aptos_framework::chain_status;
-        // TODO: Executing the prove command gives an error that the target file is in `from_bcs::from_bytes`,
-        // and the call level of the function `resolve` is too deep to obtain the parameter `bytes` of spec `from_bytes`,
-        // so verification cannot be performed.
-        // Can't cover all aborts_if conditions
-        pragma aborts_if_is_partial;
+    // /// Address @aptos_framework must exist ApprovedExecutionHashes and GovernanceProposal and GovernanceResponsbility.
+    // spec resolve(proposal_id: u64, signer_address: address): signer {
+    //     use aptos_framework::chain_status;
+    //     // TODO: Executing the prove command gives an error that the target file is in `from_bcs::from_bytes`,
+    //     // and the call level of the function `resolve` is too deep to obtain the parameter `bytes` of spec `from_bytes`,
+    //     // so verification cannot be performed.
+    //     // Can't cover all aborts_if conditions
+    //     pragma aborts_if_is_partial;
 
-        requires chain_status::is_operating();
-        aborts_if !exists<voting::VotingForum<GovernanceProposal>>(@aptos_framework);
-        aborts_if !exists<ApprovedExecutionHashes>(@aptos_framework);
-        include GetSignerAbortsIf;
-    }
+    //     requires chain_status::is_operating();
+    //     aborts_if !exists<voting::VotingForum<GovernanceProposal>>(@aptos_framework);
+    //     aborts_if !exists<ApprovedExecutionHashes>(@aptos_framework);
+    //     include GetSignerAbortsIf;
+    // }
 
     /// Address @aptos_framework must exist ApprovedExecutionHashes and GovernanceProposal.
     spec remove_approved_hash(proposal_id: u64) {
