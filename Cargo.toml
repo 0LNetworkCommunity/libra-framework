@@ -7,6 +7,7 @@ members = [
   "framework/cached-packages",
   "smoke-tests",
   "transactional-tests",
+  "tools/cli",
   "tools/txs",
   "tools/query",
   "tools/wallet",
@@ -47,6 +48,7 @@ zapatos-smoke-test = { package = "smoke-test", git = "https://github.com/0o-de-l
 
 zapatos = { package = "aptos", git = "https://github.com/0o-de-lally/zapatos.git", rev = "4ad9dd29b5" }
 zapatos-build-info= { package = "aptos-build-info", git = "https://github.com/0o-de-lally/zapatos.git", rev = "4ad9dd29b5"}
+zapatos-node = { package = "aptos-node", git = "https://github.com/0o-de-lally/zapatos.git", rev = "4ad9dd29b5" }
 zapatos-rest-client = { package = "aptos-rest-client", git = "https://github.com/0o-de-lally/zapatos.git", rev = "4ad9dd29b5" }
 zapatos-sdk = { package = "aptos-sdk", git = "https://github.com/0o-de-lally/zapatos.git", rev = "4ad9dd29b5" }
 zapatos-config = { package = "aptos-config", git = "https://github.com/0o-de-lally/zapatos.git", rev = "4ad9dd29b5" }

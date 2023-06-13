@@ -5976,6 +5976,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "libra"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "aptos-config",
+ "aptos-node",
+ "clap 4.3.0",
+]
+
+[[package]]
 name = "libra-cached-packages"
 version = "0.1.0"
 dependencies = [
