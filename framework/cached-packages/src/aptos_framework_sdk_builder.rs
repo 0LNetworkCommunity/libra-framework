@@ -220,9 +220,20 @@ pub enum EntryFunctionCall {
         is_multi_step_proposal: bool,
     },
 
-    AptosGovernanceSetAllowedScript {
+    /// Create a single-step or multi-step proposal with the backing `stake_pool`.
+    /// @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
+    /// only the exact script with matching hash can be successfully executed.
+    AptosGovernanceOlCreateProposalV2 {
         execution_hash: Vec<u8>,
+        metadata_location: Vec<u8>,
+        metadata_hash: Vec<u8>,
+        is_multi_step_proposal: bool,
+    },
+
+    /// Vote on proposal with `proposal_id` and voting power from `stake_pool`.
+    AptosGovernanceOlVote {
         proposal_id: u64,
+        should_pass: bool,
     },
 
     /// Vote on proposal with `proposal_id` and voting power from `stake_pool`.
@@ -648,10 +659,21 @@ impl EntryFunctionCall {
                 metadata_hash,
                 is_multi_step_proposal,
             ),
-            AptosGovernanceSetAllowedScript {
+            AptosGovernanceOlCreateProposalV2 {
                 execution_hash,
+                metadata_location,
+                metadata_hash,
+                is_multi_step_proposal,
+            } => aptos_governance_ol_create_proposal_v2(
+                execution_hash,
+                metadata_location,
+                metadata_hash,
+                is_multi_step_proposal,
+            ),
+            AptosGovernanceOlVote {
                 proposal_id,
-            } => aptos_governance_set_allowed_script(execution_hash, proposal_id),
+                should_pass,
+            } => aptos_governance_ol_vote(proposal_id, should_pass),
             AptosGovernanceVote {
                 proposal_id,
                 should_pass,
@@ -1321,9 +1343,14 @@ pub fn aptos_governance_create_proposal_v2(
     ))
 }
 
-pub fn aptos_governance_set_allowed_script(
+/// Create a single-step or multi-step proposal with the backing `stake_pool`.
+/// @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
+/// only the exact script with matching hash can be successfully executed.
+pub fn aptos_governance_ol_create_proposal_v2(
     execution_hash: Vec<u8>,
-    proposal_id: u64,
+    metadata_location: Vec<u8>,
+    metadata_hash: Vec<u8>,
+    is_multi_step_proposal: bool,
 ) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -1333,11 +1360,32 @@ pub fn aptos_governance_set_allowed_script(
             ]),
             ident_str!("aptos_governance").to_owned(),
         ),
-        ident_str!("set_allowed_script").to_owned(),
+        ident_str!("ol_create_proposal_v2").to_owned(),
         vec![],
         vec![
             bcs::to_bytes(&execution_hash).unwrap(),
+            bcs::to_bytes(&metadata_location).unwrap(),
+            bcs::to_bytes(&metadata_hash).unwrap(),
+            bcs::to_bytes(&is_multi_step_proposal).unwrap(),
+        ],
+    ))
+}
+
+/// Vote on proposal with `proposal_id` and voting power from `stake_pool`.
+pub fn aptos_governance_ol_vote(proposal_id: u64, should_pass: bool) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("aptos_governance").to_owned(),
+        ),
+        ident_str!("ol_vote").to_owned(),
+        vec![],
+        vec![
             bcs::to_bytes(&proposal_id).unwrap(),
+            bcs::to_bytes(&should_pass).unwrap(),
         ],
     ))
 }
@@ -2522,13 +2570,26 @@ mod decoder {
         }
     }
 
-    pub fn aptos_governance_set_allowed_script(
+    pub fn aptos_governance_ol_create_proposal_v2(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::AptosGovernanceSetAllowedScript {
+            Some(EntryFunctionCall::AptosGovernanceOlCreateProposalV2 {
                 execution_hash: bcs::from_bytes(script.args().get(0)?).ok()?,
-                proposal_id: bcs::from_bytes(script.args().get(1)?).ok()?,
+                metadata_location: bcs::from_bytes(script.args().get(1)?).ok()?,
+                metadata_hash: bcs::from_bytes(script.args().get(2)?).ok()?,
+                is_multi_step_proposal: bcs::from_bytes(script.args().get(3)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn aptos_governance_ol_vote(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::AptosGovernanceOlVote {
+                proposal_id: bcs::from_bytes(script.args().get(0)?).ok()?,
+                should_pass: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
             None
@@ -3157,8 +3218,12 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::aptos_governance_create_proposal_v2),
         );
         map.insert(
-            "aptos_governance_set_allowed_script".to_string(),
-            Box::new(decoder::aptos_governance_set_allowed_script),
+            "aptos_governance_ol_create_proposal_v2".to_string(),
+            Box::new(decoder::aptos_governance_ol_create_proposal_v2),
+        );
+        map.insert(
+            "aptos_governance_ol_vote".to_string(),
+            Box::new(decoder::aptos_governance_ol_vote),
         );
         map.insert(
             "aptos_governance_vote".to_string(),

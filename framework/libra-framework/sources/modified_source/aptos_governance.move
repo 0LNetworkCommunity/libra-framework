@@ -377,7 +377,7 @@ module aptos_framework::aptos_governance {
         should_pass: bool,
     ) acquires ApprovedExecutionHashes, GovernanceEvents, VotingRecords {
         let voter_address = signer::address_of(voter);
-
+        assert!(stake::is_current_val(voter_address), error::invalid_argument(EUNAUTHORIZED));
         // register the vote. Prevent double votes
         // TODO: method to retract.
         let voting_records = borrow_global_mut<VotingRecords>(@aptos_framework);

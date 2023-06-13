@@ -8,7 +8,7 @@ use zapatos_forge::Swarm;
 use std::path::PathBuf;
 // use zapatos_crypto::traits::ValidCryptoMaterialStringExt;
 
-use libra_cached_packages::aptos_stdlib::{aptos_governance_create_proposal_v2, aptos_governance_vote, aptos_governance_can_resolve};
+use libra_cached_packages::aptos_stdlib::{aptos_governance_ol_create_proposal_v2, aptos_governance_ol_vote, aptos_governance_can_resolve};
 use zapatos_sdk::types::LocalAccount;
 
 use crate::helpers::mint_libra;
@@ -39,8 +39,8 @@ async fn can_submit_proposal() {
     let proposal_hash = std::fs::read(proposal_hash_path).unwrap();
     dbg!(&proposal_hash);
     
-    let payload = aptos_governance_create_proposal_v2(
-        v.peer_id(),
+    let payload = aptos_governance_ol_create_proposal_v2(
+        // v.peer_id(),
         proposal_hash,
         "metadata url".to_string().as_bytes().to_vec(),
         "metadata struct".to_string().as_bytes().to_vec(),
@@ -104,8 +104,8 @@ async fn can_vote() {
     let proposal_hash = std::fs::read(proposal_hash_path).unwrap();
     // dbg!(&proposal_hash);
     
-    let payload = aptos_governance_create_proposal_v2(
-        alice.peer_id(),
+    let payload = aptos_governance_ol_create_proposal_v2(
+        // alice.peer_id(),
         proposal_hash,
         "metadata url".to_string().as_bytes().to_vec(),
         "metadata struct".to_string().as_bytes().to_vec(),
@@ -119,19 +119,11 @@ async fn can_vote() {
             .payload(payload),
     );
     dbg!("proposal txn");
-    // // needs gas
-    // mint_libra(&mut public_info, alice_account.address(), 10_000_000_000).await.unwrap();
-    // // needs gas
-    // mint_libra(&mut public_info, bob_account.address(), 10_000_000_000).await.unwrap();
-    // // needs gas
-    // mint_libra(&mut public_info, carol_account.address(), 10_000_000_000).await.unwrap();
-    // // needs gas
-    // mint_libra(&mut public_info, dave_account.address(), 10_000_000_000).await.unwrap();
 
     public_info.client().submit_and_wait(&txn).await.unwrap();
     // dbg!(&res);
     let proposal_id = 0;
-    let vote_payload = aptos_governance_vote(
+    let vote_payload = aptos_governance_ol_vote(
         proposal_id,
         true, // should_pass
     );
@@ -176,17 +168,15 @@ async fn can_vote() {
     public_info.client().submit_and_wait(&txn).await.expect("could not send tx");
 
 
-    // // // check the state of voting
+    // check the state of voting
 
-    // let check_vote_payload = aptos_governance_can_resolve(proposal_id);
+    let check_vote_payload = aptos_governance_can_resolve(proposal_id);
 
-    // let built_tx = public_info
-    //   .transaction_factory()
-    //   .payload(check_vote_payload);
-    // let txn = alice_account.sign_with_transaction_builder(built_tx);
-    // // needs gas
-    // mint_libra(&mut public_info, alice_account.address(), 10_000_000_000).await.unwrap();
-    // public_info.client().submit_and_wait(&txn).await;
+    let built_tx = public_info
+      .transaction_factory()
+      .payload(check_vote_payload);
+    let txn = alice_account.sign_with_transaction_builder(built_tx);
+    public_info.client().submit_and_wait(&txn).await;
   
 
 }
