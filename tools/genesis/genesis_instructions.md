@@ -47,14 +47,24 @@ You'll want to choose the `repo permissions` setting.
 5. Do the genesis ceremony.
 You'll use the wizard for both configuring, registering, and building the genesis transaction.
 
+You'll input the name of the github repo (`--org-github` and `--name-github `) being used to coordinate. 
 ```
-./target/release/libra-genesis-tools wizard --local-framework
+./target/release/libra-genesis-tools  --org-github <ORG_GITHUB> --name-github <NAME_GITHUB> register 
 ```
 
 6. Coordinator: merge pull requests.
 
 The owner of the coordinator repo should merge the pull requests the registrants made to the repo.
 
+7. Run the genesis transaction builder with `libra-genesis-tools genesis`
+
+You'll use the same github arguments as above plus two more. You'll be using a local copy of the move framework (`--local-framework`). Last, you'll tell the wizard which DB backup file to use to migrate state from the previous network (`--json-legacy`). 
+
+For the legacy JSON you can use the test example: `tools/genesis/tests/fixtures/sample_export_recovery.json`
+
+```
+./target/release/libra-genesis-tools  --org-github <ORG_GITHUB> --name-github <NAME_GITHUB> --local-framework --json-legacy <PATH_TO_JSON> genesis
+```
 ### Troubleshooting
 
 1. I made changes to a .move file
