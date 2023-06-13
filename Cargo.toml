@@ -6,6 +6,7 @@ members = [
   "framework/cached-packages",
   "smoke-tests",
   "transactional-tests",
+  "tools/cli",
   "tools/txs",
   "tools/query",
   "tools/wallet",
@@ -46,6 +47,7 @@ zapatos-config = { package = "aptos-config", git = "https://github.com/0o-de-lal
 zapatos-crypto = { package = "aptos-crypto", git = "https://github.com/0o-de-lally/zapatos.git", rev = "440b5"}
 zapatos-genesis = { package = "aptos-genesis", git = "https://github.com/0o-de-lally/zapatos.git", rev = "440b5"}
 zapatos-keygen = { package = "aptos-keygen", git = "https://github.com/0o-de-lally/zapatos.git", rev = "440b5" }
+zapatos-node = { package = "aptos-node", git = "https://github.com/0o-de-lally/zapatos.git", rev = "440b5"}
 zapatos-types = { package = "aptos-types", git = "https://github.com/0o-de-lally/zapatos.git", rev = "440b5"}
 zapatos-gas = { package = "aptos-gas", git = "https://github.com/0o-de-lally/zapatos.git", rev = "440b5"}
 zapatos-vm = { package = "aptos-vm", git = "https://github.com/0o-de-lally/zapatos.git", rev = "440b5"}
