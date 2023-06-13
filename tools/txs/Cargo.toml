@@ -23,3 +23,9 @@ url = { workspace = true }
 hex = { workspace = true }
 indoc = { workspace = true }
 colored = { workspace = true }
+
+libra-cached-packages = { workspace = true }
+libra-wallet = { workspace = true }
+
+zapatos = { workspace = true }
+zapatos-types = { workspace = true }

@@ -26,6 +26,13 @@ enum Subcommand {
         /// Defaults to "default"
         #[clap(long)]
         profile: Option<String>,
+
+        /// In 0L we default to the configs being global in $HOME/.libra
+        /// Otherwise you should pass -w to use the workspace configuration.
+        /// Uses this directory as the workspace, instead of using the global
+        /// parameters in $HOME/.libra
+        #[clap(short, long)]
+        workspace: bool,
     },
 }
 
@@ -35,7 +42,12 @@ impl LibraConfigCli {
             Some(Subcommand::Init {
                 public_key,
                 profile,
-            }) => init::run(public_key, profile.as_deref().to_owned()).await,
+                workspace,
+            }) => init::run(
+              public_key, 
+              profile.as_deref().to_owned(),
+              *workspace,
+            ).await,
             _ => Ok(()),
         }
     }

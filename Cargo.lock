@@ -5998,6 +5998,7 @@ dependencies = [
  "aptos-rest-client",
  "clap 4.3.0",
  "dirs 5.0.1",
+ "libra-types",
  "serde_yaml 0.9.21",
  "tokio",
  "url",
@@ -6075,18 +6076,29 @@ name = "libra-txs"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "aptos",
  "aptos-sdk",
+ "aptos-types",
  "async-trait",
  "bcs 0.1.3",
  "clap 4.3.0",
  "colored",
  "hex",
  "indoc 2.0.1",
+ "libra-cached-packages",
  "libra-config",
+ "libra-wallet",
  "serde 1.0.163",
  "serde_json",
  "tokio",
  "url",
+]
+
+[[package]]
+name = "libra-types"
+version = "0.1.0"
+dependencies = [
+ "dirs 5.0.1",
 ]
 
 [[package]]
@@ -9463,11 +9475,14 @@ dependencies = [
 name = "smoke-tests"
 version = "0.1.0"
 dependencies = [
+ "aptos-crypto",
  "aptos-debugger",
  "aptos-forge",
  "aptos-types",
+ "hex",
  "libra-cached-packages",
  "libra-framework",
+ "libra-txs",
  "smoke-test",
  "tokio",
 ]

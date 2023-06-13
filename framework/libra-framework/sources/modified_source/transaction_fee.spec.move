@@ -64,7 +64,7 @@ spec aptos_framework::transaction_fee {
         use aptos_framework::coin::CoinInfo;
         use ol_framework::gas_coin::GasCoin;
         requires exists<GasCoinCapabilities>(@aptos_framework);
-        requires exists<stake::ValidatorFees>(@aptos_framework);
+        // requires exists<stake::ValidatorFees>(@aptos_framework);
         requires exists<CoinInfo<GasCoin>>(@aptos_framework);
         include RequiresCollectedFeesPerValueLeqBlockAptosSupply;
     }
