@@ -48,8 +48,8 @@ spec aptos_framework::transaction_validation {
         let max_transaction_fee = txn_gas_price * txn_max_gas_units;
         aborts_if max_transaction_fee > MAX_U64;
         aborts_if !(txn_sequence_number == global<Account>(transaction_sender).sequence_number);
-        aborts_if !exists<CoinStore<AptosCoin>>(transaction_sender);
-        aborts_if !(global<CoinStore<AptosCoin>>(transaction_sender).coin.value >= max_transaction_fee);
+        aborts_if !exists<CoinStore<GasCoin>>(transaction_sender);
+        aborts_if !(global<CoinStore<GasCoin>>(transaction_sender).coin.value >= max_transaction_fee);
     }
 
     spec prologue_common(

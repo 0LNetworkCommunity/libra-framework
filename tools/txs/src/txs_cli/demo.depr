@@ -1,16 +1,19 @@
 use anyhow::{Context, Result};
-use libra_config::extension::{client_ext::ClientExt, faucet_client_ext::FaucetClientExt};
+use libra_config::extension::{
+  client_ext::ClientExt,
+  // faucet_client_ext::FaucetClientExt
+};
 use libra_txs::{
     coin_client::CoinClient,
     crypto::ed25519::Ed25519PrivateKey,
-    rest_client::{Client, FaucetClient},
+    rest_client::{Client},
     types::{AccountKey, LocalAccount},
 };
 
 pub async fn run() -> Result<()> {
     let client = Client::default()?;
     let coin_client = CoinClient::new(&client);
-    let faucet_client = FaucetClient::default()?;
+    // let faucet_client = FaucetClient::default()?;
 
     // let mut alice = LocalAccount::generate(&mut rand::rngs::OsRng); // Aptos Alice
     // 0L Alice - from pri key
@@ -43,15 +46,15 @@ pub async fn run() -> Result<()> {
     println!("Alice: {}", alice.address().to_hex_literal());
     println!("Bob: {}", bob.address().to_hex_literal());
 
-    // Create the accounts on chain, but only fund Alice.
-    faucet_client
-        .fund(alice.address(), 100_000_000)
-        .await
-        .context("Failed to fund Alice's account")?;
-    faucet_client
-        .create_account(bob.address())
-        .await
-        .context("Failed to fund Bob's account")?;
+    // // Create the accounts on chain, but only fund Alice.
+    // faucet_client
+    //     .fund(alice.address(), 100_000_000)
+    //     .await
+    //     .context("Failed to fund Alice's account")?;
+    // faucet_client
+    //     .create_account(bob.address())
+    //     .await
+    //     .context("Failed to fund Bob's account")?;
 
     // Print initial balances.
     println!("\n=== Initial Balances ===");

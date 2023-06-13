@@ -1,8 +1,8 @@
 /// This module provides an interface to burn or collect and redistribute transaction fees.
 module aptos_framework::transaction_fee {
     use aptos_framework::coin::{Self, AggregatableCoin, BurnCapability, Coin};
-    // use aptos_framework::g::GasCoin;
-    use aptos_framework::stake;
+
+    // use aptos_framework::stake;
     use aptos_framework::system_addresses;
     use std::error;
     use std::option::{Self, Option};
@@ -58,7 +58,7 @@ module aptos_framework::transaction_fee {
         move_to(aptos_framework, collected_fees);
     }
 
-    fun is_fees_collection_enabled(): bool {
+    public fun is_fees_collection_enabled(): bool {
         exists<CollectedFeesPerBlock>(@aptos_framework)
     }
 
