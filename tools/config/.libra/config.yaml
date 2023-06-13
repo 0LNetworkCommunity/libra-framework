@@ -1,5 +1,0 @@
-profiles:
-  default:
-    public_key: 0x5b263ba945c68538d72ccb44a687a37a94662a7aa4e59351e1d88b8552700006
-    account: 740ddad55b8947fbcc11ea9a3cd3e67169a385e1744e33fbb24a42ecbd1603e3
-    rest_url: http://localhost:8080

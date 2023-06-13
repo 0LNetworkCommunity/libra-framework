@@ -1,15 +1,13 @@
 use anyhow::Result;
 use libra_config::extension::client_ext::{ClientExt as ConfigClientExt, DEFAULT_TIMEOUT_SECS};
-use libra_txs::{
-    constant::{DEFAULT_GAS_UNIT_PRICE, DEFAULT_MAX_GAS_AMOUNT},
-    crypto::{ed25519::Ed25519PrivateKey},
-    extension::{
-        client_ext::{ClientExt, TransactionOptions},
-        ed25519_private_key_ext::Ed25519PrivateKeyExt,
-    },
-    rest_client::Client,
-    types::transaction::SignedTransaction,
+use crate::constant::{DEFAULT_GAS_UNIT_PRICE, DEFAULT_MAX_GAS_AMOUNT};
+use crate::extension::{
+    client_ext::{ClientExt, TransactionOptions},
+    ed25519_private_key_ext::Ed25519PrivateKeyExt,
 };
+use zapatos_sdk::crypto::ed25519::Ed25519PrivateKey;
+use zapatos_sdk::rest_client::Client;
+use zapatos_types::transaction::SignedTransaction;
 
 pub async fn _run(
     function_id: &str,

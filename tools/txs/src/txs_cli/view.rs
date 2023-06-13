@@ -1,6 +1,8 @@
 use anyhow::Result;
 use libra_config::extension::client_ext::ClientExt;
-use libra_txs::{extension::client_ext::ClientExt as ConfigClientExt, rest_client::Client};
+use crate::{extension::client_ext::ClientExt as ConfigClientExt}; 
+
+use zapatos_sdk::rest_client::Client;
 
 pub async fn run(
     function_id: &str,

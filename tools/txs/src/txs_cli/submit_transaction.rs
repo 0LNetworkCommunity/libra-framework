@@ -1,12 +1,12 @@
+use crate::extension::client_ext::ClientExt;
+use libra_config::extension::client_ext::ClientExt as ClientExtDupl;
+
 use anyhow::{bail};
-use libra_config::extension::client_ext::ClientExt;
-use libra_txs::{rest_client::Client, types::transaction::SignedTransaction};
-use libra_txs::extension::client_ext::ClientExt as ClientExtDupl;
-// use zapatos_sdk::rest_client::aptos_api_types::TransactionPayload;
+use url::Url;
+use zapatos_sdk::rest_client::Client;
+use zapatos_types::transaction::SignedTransaction;
 use zapatos_sdk::types::chain_id::ChainId;
 use zapatos_sdk::types::{LocalAccount, AccountKey};
-
-// use zapatos_sdk::types::account_address::AccountAddress;
 use zapatos_sdk::transaction_builder::TransactionBuilder;
 use zapatos::account::key_rotation::lookup_address;
 use zapatos_types::transaction::TransactionPayload;
@@ -67,8 +67,11 @@ pub struct Sender {
 }
 
 impl Sender {
-  pub async fn new(account_key: AccountKey, chain_id: ChainId) -> anyhow::Result<Self> {
-    let client = Client::default()?;
+  pub async fn new(account_key: AccountKey, chain_id: ChainId, url: Option<Url>) -> anyhow::Result<Self> {
+    let client = if let Some(u) = url {
+      Client::new(u)
+    } else { Client::default()? };
+
     let address = lookup_address(&client, account_key.authentication_key().derived_address(), false).await?;
 
     let seq = client.get_sequence_number(address).await?;
