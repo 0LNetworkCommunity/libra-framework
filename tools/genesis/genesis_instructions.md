@@ -65,6 +65,15 @@ For the legacy JSON you can use the test example: `tools/genesis/tests/fixtures/
 ```
 ./target/release/libra-genesis-tools  --org-github <ORG_GITHUB> --name-github <NAME_GITHUB> --local-framework --json-legacy <PATH_TO_JSON> genesis
 ```
+
+8. Check your files
+You should have a `genesis/genesis.blob` file now in `$HOME/libra` plus a `validator.yaml`.
+
+9. Start your node!
+
+```
+libra node --config-path ~/.libra/validator.yaml
+```
 ### Troubleshooting
 
 1. I made changes to a .move file
