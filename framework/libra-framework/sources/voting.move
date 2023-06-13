@@ -39,7 +39,7 @@ module aptos_framework::voting {
     use aptos_framework::transaction_context;
     use aptos_std::from_bcs;
 
-    use aptos_std::debug::print;
+    // use aptos_std::debug::print;
 
     /// Current script's execution hash does not match the specified proposal's
     const EPROPOSAL_EXECUTION_HASH_NOT_MATCHING: u64 = 1;
@@ -374,10 +374,7 @@ module aptos_framework::voting {
         proposal_id: u64,
     ) acquires VotingForum {
         let proposal_state = get_proposal_state<ProposalType>(voting_forum_address, proposal_id);
-        print(&7777777777777777777);
-        print(&proposal_state);
-        // assert!(proposal_state != PROPOSAL_STATE_PENDING, error::invalid_state(EPROPOSAL_IS_PENDING));
-        // assert!(proposal_state != PROPOSAL_STATE_FAILED, error::invalid_state(EPROPOSAL_IS_FAILED));
+
         assert!(proposal_state == PROPOSAL_STATE_SUCCEEDED, error::invalid_state(EPROPOSAL_CANNOT_BE_RESOLVED));
 
         let voting_forum = borrow_global_mut<VotingForum<ProposalType>>(voting_forum_address);

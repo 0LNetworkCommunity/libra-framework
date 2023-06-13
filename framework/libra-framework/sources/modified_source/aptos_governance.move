@@ -305,6 +305,72 @@ module aptos_framework::aptos_governance {
         );
     }
 
+
+        /// Create a single-step or multi-step proposal with the backing `stake_pool`.
+    /// @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
+    /// only the exact script with matching hash can be successfully executed.
+    public entry fun ol_create_proposal_v2(
+        proposer: &signer,
+        // stake_pool: address,
+        execution_hash: vector<u8>,
+        metadata_location: vector<u8>, // url
+        metadata_hash: vector<u8>, // descriptions etc.
+        is_multi_step_proposal: bool,
+    ) acquires GovernanceConfig, GovernanceEvents {
+        let proposer_address = signer::address_of(proposer);
+
+
+        // check this is a current validator.
+
+        let governance_config = borrow_global<GovernanceConfig>(@aptos_framework);
+
+
+        // The proposer's stake needs to be locked up at least as long as the proposal's voting period.
+        let current_time = timestamp::now_seconds();
+        let proposal_expiration = current_time + (60 * 60 * 24 * 3); // Three days
+
+
+        // Create and validate proposal metadata.
+        // NOTE: 0L: this is a buffer sent from  rust because there is no type
+        // that can be sent in an entry transactions. Not clear why it's not implemented as ASCII
+        let proposal_metadata = create_proposal_metadata(metadata_location, metadata_hash);
+
+        // We want to allow early resolution of proposals if more than 50% of the total supply of the network coins
+        // has voted. This doesn't take into subsequent inflation/deflation (rewards are issued every epoch and gas fees
+        // are burnt after every transaction), but inflation/delation is very unlikely to have a major impact on total
+        // supply during the voting period.
+        let total_voting_token_supply = 10; // TODO: count number of validators.
+        let early_resolution_vote_threshold = ((total_voting_token_supply/3) * 2) + 1;
+
+        print(&88888);
+        print(&governance_config.min_voting_threshold);
+        print(&early_resolution_vote_threshold);
+
+        let proposal_id = voting::create_proposal_v2(
+            proposer_address,
+            @aptos_framework,
+            governance_proposal::create_proposal(),
+            execution_hash,
+            early_resolution_vote_threshold, // 0L we always expect the minimum of 2/3+1 to pass
+            proposal_expiration,
+            option::none(), // 0L we always expect the minimum of 2/3+1 to pass
+            proposal_metadata,
+            is_multi_step_proposal,
+        );
+
+        let events = borrow_global_mut<GovernanceEvents>(@aptos_framework);
+        event::emit_event<CreateProposalEvent>(
+            &mut events.create_proposal_events,
+            CreateProposalEvent {
+                proposal_id,
+                proposer: proposer_address,
+                stake_pool: proposer_address,
+                execution_hash,
+                proposal_metadata,
+            },
+        );
+    }
+
     /// Vote on proposal with `proposal_id` and voting power from `stake_pool`.
     public entry fun vote(
         voter: &signer,
@@ -367,12 +433,12 @@ module aptos_framework::aptos_governance {
         add_approved_script_hash(proposal_id)
     }
 
-    //////// 0L ////////
-    // DANGER!!!! experimental
-    public entry fun set_allowed_script(execution_hash: vector<u8>, proposal_id: u64) acquires ApprovedExecutionHashes {
-      let approved_hashes = borrow_global_mut<ApprovedExecutionHashes>(@aptos_framework);
-      simple_map::add(&mut approved_hashes.hashes, proposal_id, execution_hash);
-    }
+    // //////// 0L ////////
+    // // DANGER!!!! experimental
+    // public entry fun set_allowed_script(execution_hash: vector<u8>, proposal_id: u64) acquires ApprovedExecutionHashes {
+    //   let approved_hashes = borrow_global_mut<ApprovedExecutionHashes>(@aptos_framework);
+    //   simple_map::add(&mut approved_hashes.hashes, proposal_id, execution_hash);
+    // }
 
     /// Add the execution script hash of a successful governance proposal to the approved list.
     /// This is needed to bypass the mempool transaction size limit for approved governance proposal transactions that
