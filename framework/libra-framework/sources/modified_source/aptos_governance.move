@@ -305,8 +305,7 @@ module aptos_framework::aptos_governance {
         );
     }
 
-
-        /// Create a single-step or multi-step proposal with the backing `stake_pool`.
+    /// Create a single-step or multi-step proposal with the backing `stake_pool`.
     /// @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
     /// only the exact script with matching hash can be successfully executed.
     public entry fun ol_create_proposal_v2(
@@ -318,10 +317,9 @@ module aptos_framework::aptos_governance {
         is_multi_step_proposal: bool,
     ) acquires GovernanceConfig, GovernanceEvents {
         let proposer_address = signer::address_of(proposer);
-
+        assert!(stake::is_current_val(proposer_address), error::invalid_argument(EUNAUTHORIZED));
 
         // check this is a current validator.
-
         let governance_config = borrow_global<GovernanceConfig>(@aptos_framework);
 
 
@@ -339,8 +337,8 @@ module aptos_framework::aptos_governance {
         // has voted. This doesn't take into subsequent inflation/deflation (rewards are issued every epoch and gas fees
         // are burnt after every transaction), but inflation/delation is very unlikely to have a major impact on total
         // supply during the voting period.
-        let total_voting_token_supply = 10; // TODO: count number of validators.
-        let early_resolution_vote_threshold = ((total_voting_token_supply/3) * 2) + 1;
+        let validator_len = vector::length(&stake::get_current_validators());
+        let early_resolution_vote_threshold = ((validator_len/3) * 2) + 1;
 
         print(&88888);
         print(&governance_config.min_voting_threshold);
@@ -351,7 +349,7 @@ module aptos_framework::aptos_governance {
             @aptos_framework,
             governance_proposal::create_proposal(),
             execution_hash,
-            early_resolution_vote_threshold, // 0L we always expect the minimum of 2/3+1 to pass
+            (early_resolution_vote_threshold as u128), // 0L we always expect the minimum of 2/3+1 to pass
             proposal_expiration,
             option::none(), // 0L we always expect the minimum of 2/3+1 to pass
             proposal_metadata,
@@ -370,6 +368,55 @@ module aptos_framework::aptos_governance {
             },
         );
     }
+
+    /// Vote on proposal with `proposal_id` and voting power from `stake_pool`.
+    public entry fun ol_vote(
+        voter: &signer,
+        // stake_pool: address,
+        proposal_id: u64,
+        should_pass: bool,
+    ) acquires ApprovedExecutionHashes, GovernanceEvents, VotingRecords {
+        let voter_address = signer::address_of(voter);
+
+        // register the vote. Prevent double votes
+        // TODO: method to retract.
+        let voting_records = borrow_global_mut<VotingRecords>(@aptos_framework);
+        let record_key = RecordKey {
+            stake_pool: voter_address,
+            proposal_id,
+        };
+        assert!(
+            !table::contains(&voting_records.votes, record_key),
+            error::invalid_argument(EALREADY_VOTED));
+        table::add(&mut voting_records.votes, record_key, true);
+
+        let voting_power = 1; // every validator has just one equal vote.
+        voting::vote<GovernanceProposal>(
+            &governance_proposal::create_empty_proposal(),
+            @aptos_framework,
+            proposal_id,
+            voting_power,
+            should_pass,
+        );
+
+        let events = borrow_global_mut<GovernanceEvents>(@aptos_framework);
+        event::emit_event<VoteEvent>(
+            &mut events.vote_events,
+            VoteEvent {
+                proposal_id,
+                voter: voter_address,
+                stake_pool: voter_address,
+                num_votes: voting_power,
+                should_pass,
+            },
+        );
+
+        let proposal_state = voting::get_proposal_state<GovernanceProposal>(@aptos_framework, proposal_id);
+        if (proposal_state == PROPOSAL_STATE_SUCCEEDED) {
+            add_approved_script_hash(proposal_id);
+        }
+    }
+
 
     /// Vote on proposal with `proposal_id` and voting power from `stake_pool`.
     public entry fun vote(

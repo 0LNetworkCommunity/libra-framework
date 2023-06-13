@@ -349,6 +349,13 @@ module aptos_framework::stake {
     }
 
     #[view]
+    /// helper to check if this address is a current one.
+    public fun is_current_val(addr: address):bool acquires ValidatorSet {
+      let vals = get_current_validators();
+      vector::contains(&vals, &addr)
+    }
+
+    #[view]
     /// Returns the validator's state.
     public fun get_validator_state(pool_address: address): u64 acquires ValidatorSet {
         let validator_set = borrow_global<ValidatorSet>(@aptos_framework);
