@@ -33,6 +33,7 @@ struct GenesisCliArgs {
 #[derive(Subcommand)]
 enum Sub {
     Genesis {}, // just do genesis without wizard
+    Register {}, // just do registration without wizard
     Wizard {}
 }
 
@@ -69,8 +70,11 @@ fn main() -> anyhow::Result<()>{
                 Some(&recovery),
             )?;
         }
+        Some(Sub::Register { }) => {
+            GenesisWizard::default().start_wizard(cli.home_dir, cli.local_framework, cli.json_legacy, false)?;
+        }
         Some(Sub::Wizard { }) => {
-            GenesisWizard::default().start_wizard(cli.home_dir, cli.local_framework)?;
+            GenesisWizard::default().start_wizard(cli.home_dir, cli.local_framework, cli.json_legacy, true)?;
         }
         _ => {}
     }
