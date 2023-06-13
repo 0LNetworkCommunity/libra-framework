@@ -9475,9 +9475,11 @@ dependencies = [
 name = "smoke-tests"
 version = "0.1.0"
 dependencies = [
+ "aptos-crypto",
  "aptos-debugger",
  "aptos-forge",
  "aptos-types",
+ "hex",
  "libra-cached-packages",
  "libra-framework",
  "libra-txs",

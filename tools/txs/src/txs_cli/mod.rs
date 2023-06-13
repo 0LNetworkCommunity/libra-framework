@@ -5,6 +5,7 @@ use indoc::indoc;
 
 use libra_wallet::legacy::{get_keys_from_prompt, get_keys_from_mnem};
 
+use url::Url;
 use zapatos_sdk::types::AccountKey;
 use zapatos_sdk::types::account_address::AccountAddress;
 use zapatos_sdk::crypto::ValidCryptoMaterialStringExt;
@@ -26,27 +27,32 @@ mod transfer;
 #[clap(name = env!("CARGO_PKG_NAME"), author, version, about, long_about = None, arg_required_else_help = true)]
 pub struct TxsCli {
       #[clap(subcommand)]
-      subcommand: Option<Subcommand>,
+      pub subcommand: Option<Subcommand>,
 
       /// Optional mnemonic to pass at runtime. Otherwise this will prompt for mnemonic.
       #[clap(short, long)]
-      mnemonic: Option<String>,
+      pub mnemonic: Option<String>,
 
       /// Private key of the account. Otherwise this will prompt for mnemonic
       #[clap(short, long)]
-      private_key: Option<String>,
+      pub private_key: Option<String>,
+
+      /// URL of the upstream node to send tx to, including port
+      /// Otherwise will default to what is in config file in .libra
+      #[clap(short, long)]
+      pub url: Option<Url>,
 
       /// Maximum number of gas units to be used to send this transaction
       #[clap(short, long)]
-      max_gas: Option<u64>,
+      pub max_gas: Option<u64>,
 
       /// The amount of coins to pay for 1 gas unit. The higher the price is, the higher priority your transaction will be executed with
       #[clap(short, long)]
-      gas_unit_price: Option<u64>,
+      pub gas_unit_price: Option<u64>,
 }
 
 #[derive(clap::Subcommand)]
-enum Subcommand {
+pub enum Subcommand {
 
     /// Create onchain account by using Aptos faucet
     CreateAccount {
@@ -169,7 +175,7 @@ enum Subcommand {
 
 impl TxsCli {
     pub async fn run(&self) -> Result<()> {
-
+        dbg!("hello");
         let pri_key = if self.private_key.is_none() && self.mnemonic.is_none() {
           let legacy = get_keys_from_prompt()?;
           legacy.child_0_owner.pri_key
@@ -179,8 +185,9 @@ impl TxsCli {
         } else {
           Ed25519PrivateKey::from_encoded_string(&self.private_key.as_ref().unwrap())?
         };
-
-        let mut send = Sender::new(AccountKey::from_private_key(pri_key), ChainId::test()).await?; // TODO: change this from test.
+        
+        dbg!("now send");
+        let mut send = Sender::new(AccountKey::from_private_key(pri_key), ChainId::test(), self.url.to_owned()).await?; // TODO: change this from test.
         
 
         match &self.subcommand {

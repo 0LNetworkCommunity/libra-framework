@@ -2,6 +2,7 @@ use crate::extension::client_ext::ClientExt;
 use libra_config::extension::client_ext::ClientExt as ClientExtDupl;
 
 use anyhow::{bail};
+use url::Url;
 use zapatos_sdk::rest_client::Client;
 use zapatos_types::transaction::SignedTransaction;
 use zapatos_sdk::types::chain_id::ChainId;
@@ -66,8 +67,11 @@ pub struct Sender {
 }
 
 impl Sender {
-  pub async fn new(account_key: AccountKey, chain_id: ChainId) -> anyhow::Result<Self> {
-    let client = Client::default()?;
+  pub async fn new(account_key: AccountKey, chain_id: ChainId, url: Option<Url>) -> anyhow::Result<Self> {
+    let client = if let Some(u) = url {
+      Client::new(u)
+    } else { Client::default()? };
+
     let address = lookup_address(&client, account_key.authentication_key().derived_address(), false).await?;
 
     let seq = client.get_sequence_number(address).await?;
