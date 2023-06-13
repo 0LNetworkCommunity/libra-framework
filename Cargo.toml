@@ -27,11 +27,13 @@ rust-version = "1.66.1"
 [workspace.dependencies]
 ### Internal crate dependencies.
 # Internal crate dependencies.
-libra-wallet = { path = "tools/wallet" }
+libra-cached-packages = { path = "framework/cached-packages" }
 libra-config = { path = "tools/config" }
 libra-framework = { path = "framework" }
-libra-cached-packages = { path = "framework/cached-packages" }
 libra-types = { path = "types" }
+libra-txs = { path = "tools/txs" }
+libra-wallet = { path = "tools/wallet" }
+
 # Please do not add any test features here: they should be declared by the 
 # individual crate.
 

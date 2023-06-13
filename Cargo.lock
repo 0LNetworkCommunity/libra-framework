@@ -9480,6 +9480,7 @@ dependencies = [
  "aptos-types",
  "libra-cached-packages",
  "libra-framework",
+ "libra-txs",
  "smoke-test",
  "tokio",
 ]
