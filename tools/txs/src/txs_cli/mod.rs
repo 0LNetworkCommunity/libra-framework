@@ -1,27 +1,58 @@
 use anyhow::Result;
 use clap::Parser;
-use colored::Colorize;
+
 use indoc::indoc;
-use libra_txs::util::format_signed_transaction;
+
+use libra_wallet::legacy::{get_keys_from_prompt, get_keys_from_mnem};
+
+use url::Url;
+use zapatos_sdk::types::AccountKey;
+use zapatos_sdk::types::account_address::AccountAddress;
+use zapatos_sdk::crypto::ValidCryptoMaterialStringExt;
+use zapatos_sdk::crypto::ed25519::Ed25519PrivateKey;
+
+use zapatos_types::chain_id::ChainId;
+use self::submit_transaction::Sender;
+
 
 mod create_account;
-mod demo;
+// mod demo;
 mod generate_transaction;
 mod submit_transaction;
-mod transfer_coin;
+// mod transfer_coin;
 mod view;
+mod transfer;
 
 #[derive(Parser)]
 #[clap(name = env!("CARGO_PKG_NAME"), author, version, about, long_about = None, arg_required_else_help = true)]
 pub struct TxsCli {
-    #[clap(subcommand)]
-    subcommand: Option<Subcommand>,
+      #[clap(subcommand)]
+      pub subcommand: Option<Subcommand>,
+
+      /// Optional mnemonic to pass at runtime. Otherwise this will prompt for mnemonic.
+      #[clap(short, long)]
+      pub mnemonic: Option<String>,
+
+      /// Private key of the account. Otherwise this will prompt for mnemonic
+      #[clap(short, long)]
+      pub private_key: Option<String>,
+
+      /// URL of the upstream node to send tx to, including port
+      /// Otherwise will default to what is in config file in .libra
+      #[clap(short, long)]
+      pub url: Option<Url>,
+
+      /// Maximum number of gas units to be used to send this transaction
+      #[clap(short, long)]
+      pub max_gas: Option<u64>,
+
+      /// The amount of coins to pay for 1 gas unit. The higher the price is, the higher priority your transaction will be executed with
+      #[clap(short, long)]
+      pub gas_unit_price: Option<u64>,
 }
 
 #[derive(clap::Subcommand)]
-enum Subcommand {
-    /// Demo transfer coin example for local testnet
-    Demo,
+pub enum Subcommand {
 
     /// Create onchain account by using Aptos faucet
     CreateAccount {
@@ -35,26 +66,14 @@ enum Subcommand {
     },
 
     /// Transfer coins between accounts
-    TransferCoins {
+    Transfer {
         /// Address of the recipient
         #[clap(short, long)]
-        to_account: String,
+        to_account: AccountAddress,
 
         /// The amount of coins to transfer
         #[clap(short, long)]
         amount: u64,
-
-        /// Private key of the account to withdraw money from
-        #[clap(short, long)]
-        private_key: String,
-
-        /// Maximum number of gas units to be used to send this transaction
-        #[clap(short, long)]
-        max_gas: Option<u64>,
-
-        /// The amount of coins to pay for 1 gas unit. The higher the price is, the higher priority your transaction will be executed with
-        #[clap(short, long)]
-        gas_unit_price: Option<u64>,
     },
 
     /// Generate a transaction that executes an Entry function on-chain
@@ -104,9 +123,9 @@ enum Subcommand {
         #[clap(short, long)]
         gas_unit_price: Option<u64>,
 
-        /// Private key to sign the transaction
-        #[clap(short, long)]
-        private_key: String,
+        // / Private key to sign the transaction
+        // #[clap(short, long)]
+        // private_key: String,
 
         /// Submit the generated transaction to the blockchain
         #[clap(short, long)]
@@ -156,57 +175,68 @@ enum Subcommand {
 
 impl TxsCli {
     pub async fn run(&self) -> Result<()> {
+        dbg!("hello");
+        let pri_key = if self.private_key.is_none() && self.mnemonic.is_none() {
+          let legacy = get_keys_from_prompt()?;
+          legacy.child_0_owner.pri_key
+        } else if self.mnemonic.is_some() {
+          let legacy = get_keys_from_mnem(self.mnemonic.as_ref().unwrap().to_owned())?;
+          legacy.child_0_owner.pri_key
+        } else {
+          Ed25519PrivateKey::from_encoded_string(&self.private_key.as_ref().unwrap())?
+        };
+        
+        dbg!("now send");
+        let mut send = Sender::new(AccountKey::from_private_key(pri_key), ChainId::test(), self.url.to_owned()).await?; // TODO: change this from test.
+        
+
         match &self.subcommand {
-            Some(Subcommand::Demo) => demo::run().await,
+            // Some(Subcommand::Test) => transfer::run().await,
+
+            // Some(Subcommand::Demo) => demo::run().await,
             Some(Subcommand::CreateAccount {
                 account_address,
                 coins,
             }) => create_account::run(account_address, coins.unwrap_or_default()).await,
-            Some(Subcommand::TransferCoins {
+            Some(Subcommand::Transfer {
                 to_account,
                 amount,
-                private_key,
-                max_gas,
-                gas_unit_price,
             }) => {
-                transfer_coin::run(
-                    to_account,
+                send.transfer(
+                    to_account.to_owned(),
                     amount.to_owned(),
-                    private_key,
-                    max_gas.to_owned(),
-                    gas_unit_price.to_owned(),
                 )
                 .await
             }
-            Some(Subcommand::GenerateTransaction {
-                function_id,
-                type_args,
-                args,
-                max_gas,
-                gas_unit_price,
-                private_key,
-                submit,
-            }) => {
-                println!("====================");
-                let signed_trans = generate_transaction::run(
-                    function_id,
-                    private_key,
-                    type_args.to_owned(),
-                    args.to_owned(),
-                    max_gas.to_owned(),
-                    gas_unit_price.to_owned(),
-                )
-                .await?;
+            // Some(Subcommand::GenerateTransaction {
+            //     function_id,
+            //     type_args,
+            //     args,
+            //     _max_gas,
+            //     _gas_unit_price,
+            //     // private_key,
+            //     submit,
+            // }) => {
+            //     println!("====================");
+            //     let signed_trans = send::generate_transaction(
+            //         function_id,
+            //         // &pri_key,
+            //         type_args.to_owned(),
+            //         args.to_owned(),
+            //         // max_gas.to_owned(),
+            //         // gas_unit_price.to_owned(),
+            //     )
+            //     .await?;
 
-                println!("{}", format_signed_transaction(&signed_trans));
+            //     println!("{}", format_signed_transaction(&signed_trans));
 
-                if *submit {
-                    println!("{}", "Submitting transaction...".green().bold());
-                    submit_transaction::run(&signed_trans).await?;
-                    println!("Success!");
-                }
-                Ok(())
-            }
+            //     if *submit {
+            //         println!("{}", "Submitting transaction...".green().bold());
+            //         send.submit(&signed_trans).await?;
+            //         println!("Success!");
+            //     }
+            //     Ok(())
+            // }
             Some(Subcommand::View {
                 function_id,
                 type_args,

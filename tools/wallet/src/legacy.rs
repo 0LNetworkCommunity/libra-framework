@@ -34,7 +34,7 @@ pub struct LegacyKeys {
 
 /// The AccountAddress and AuthenticationKey are zapatos structs, they have the same NAME in the diem_types crate. So we need to cast them into usuable structs.
 #[derive(Serialize)]
-pub struct AccountKeys {
+pub struct AccountKeys { // TODO: change this to use vendor AccountKey
     /// The account address derived from AuthenticationKey
     pub account: AccountAddress,
     /// The authentication key derived from private key

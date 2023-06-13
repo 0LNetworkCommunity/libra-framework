@@ -243,6 +243,8 @@ pub enum EntryFunctionCall {
         coin_type: TypeTag,
     },
 
+    DemoPrintThis {},
+
     DemoSetMessage {
         message: Vec<u8>,
     },
@@ -652,6 +654,7 @@ impl EntryFunctionCall {
                 amount,
             } => coin_transfer(coin_type, to, amount),
             CoinUpgradeSupply { coin_type } => coin_upgrade_supply(coin_type),
+            DemoPrintThis {} => demo_print_this(),
             DemoSetMessage { message } => demo_set_message(message),
             DummyUseFnFromAptosFramework {} => dummy_use_fn_from_aptos_framework(),
             DummyUseFnFromAptosStd {
@@ -1367,6 +1370,21 @@ pub fn coin_upgrade_supply(coin_type: TypeTag) -> TransactionPayload {
         ),
         ident_str!("upgrade_supply").to_owned(),
         vec![coin_type],
+        vec![],
+    ))
+}
+
+pub fn demo_print_this() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("demo").to_owned(),
+        ),
+        ident_str!("print_this").to_owned(),
+        vec![],
         vec![],
     ))
 }
@@ -2496,6 +2514,14 @@ mod decoder {
         }
     }
 
+    pub fn demo_print_this(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::DemoPrintThis {})
+        } else {
+            None
+        }
+    }
+
     pub fn demo_set_message(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DemoSetMessage {
@@ -3076,6 +3102,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "coin_upgrade_supply".to_string(),
             Box::new(decoder::coin_upgrade_supply),
+        );
+        map.insert(
+            "demo_print_this".to_string(),
+            Box::new(decoder::demo_print_this),
         );
         map.insert(
             "demo_set_message".to_string(),

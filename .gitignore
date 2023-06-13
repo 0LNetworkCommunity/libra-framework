@@ -12,3 +12,5 @@ Cargo.lock
 # 0L
 **/build
 **/doc
+
+sccache.log

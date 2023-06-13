@@ -9,6 +9,8 @@ module ol_framework::demo {
     use aptos_framework::account;
     use aptos_framework::event;
 
+    use aptos_std::debug::print;
+
 //:!:>resource
     struct MessageHolder has key {
         message: string::String,
@@ -28,6 +30,11 @@ module ol_framework::demo {
     public fun get_message(addr: address): string::String acquires MessageHolder {
         assert!(exists<MessageHolder>(addr), error::not_found(ENO_MESSAGE));
         *&borrow_global<MessageHolder>(addr).message
+    }
+
+    public entry fun print_this(account: signer) {
+      print(&11111111);
+      print(&account);
     }
 
     public entry fun set_message(account: &signer, message: string::String)

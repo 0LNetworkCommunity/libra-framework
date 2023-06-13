@@ -1,16 +1,19 @@
 module aptos_framework::transaction_validation {
     use std::error;
-    use std::features;
+    // use std::features;
     use std::signer;
     use std::vector;
 
     use aptos_framework::account;
-    use aptos_framework::aptos_coin::AptosCoin;
+    // use aptos_framework::aptos_coin::AptosCoin;
+    use ol_framework::gas_coin::GasCoin;
     use aptos_framework::chain_id;
     use aptos_framework::coin;
     use aptos_framework::system_addresses;
     use aptos_framework::timestamp;
     use aptos_framework::transaction_fee;
+
+    use aptos_std::debug::print;
 
     friend aptos_framework::genesis;
 
@@ -105,10 +108,10 @@ module aptos_framework::transaction_validation {
 
         let max_transaction_fee = txn_gas_price * txn_max_gas_units;
         assert!(
-            coin::is_account_registered<AptosCoin>(transaction_sender),
+            coin::is_account_registered<GasCoin>(transaction_sender),
             error::invalid_argument(PROLOGUE_ECANT_PAY_GAS_DEPOSIT),
         );
-        let balance = coin::balance<AptosCoin>(transaction_sender);
+        let balance = coin::balance<GasCoin>(transaction_sender);
         assert!(balance >= max_transaction_fee, error::invalid_argument(PROLOGUE_ECANT_PAY_GAS_DEPOSIT));
     }
 
@@ -180,6 +183,7 @@ module aptos_framework::transaction_validation {
         txn_max_gas_units: u64,
         gas_units_remaining: u64
     ) {
+        print(&1111111111111111);
         assert!(txn_max_gas_units >= gas_units_remaining, error::invalid_argument(EOUT_OF_GAS));
         let gas_used = txn_max_gas_units - gas_units_remaining;
 
@@ -192,21 +196,20 @@ module aptos_framework::transaction_validation {
         // it's important to maintain the error code consistent with vm
         // to do failed transaction cleanup.
         assert!(
-            coin::balance<AptosCoin>(addr) >= transaction_fee_amount,
+            coin::balance<GasCoin>(addr) >= transaction_fee_amount,
             error::out_of_range(PROLOGUE_ECANT_PAY_GAS_DEPOSIT),
         );
 
-        if (features::collect_and_distribute_gas_fees()) {
+        print(&10001);
+
+        if (transaction_fee::is_fees_collection_enabled()) {
+          print(&10002);
             // If transaction fees are redistributed to validators, collect them here for
             // later redistribution.
             transaction_fee::collect_fee(addr, transaction_fee_amount);
-        } else {
-            // Otherwise, just burn the fee.
-            // TODO: this branch should be removed completely when transaction fee collection
-            // is tested and is fully proven to work well.
-            transaction_fee::burn_fee(addr, transaction_fee_amount);
         };
 
+        print(&10003);
         // Increment sequence number
         account::increment_sequence_number(addr);
     }
