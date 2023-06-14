@@ -89,7 +89,7 @@ module ol_framework::oracle {
       provider: &signer,
       public_key_bytes: vector<u8>,
       signature_bytes: vector<u8>,
-      ) acquires GlobalCounter, Tower {
+      ) acquires GlobalCounter, Tower, ProviderList {
       let provider_addr = signer::address_of(provider);
 
       // the message needs to be exactly the hash of the previous proof.
@@ -126,28 +126,30 @@ module ol_framework::oracle {
       let global = borrow_global_mut<GlobalCounter>(@ol_framework);
       global.lifetime_proofs = global.lifetime_proofs + 1;
       global.proofs_in_epoch = global.proofs_in_epoch + 1;
-      if (global.proofs_in_epoch > threshold_of_signatures()) {
-        global.proofs_in_epoch_above_thresh = global.proofs_in_epoch_above_thresh + 1;
-      };
+
 
       // update providers state
       tower.last_commit_timestamp = time;
       tower.previous_proof_hash = signature_bytes;
       tower.verified_tower_height = tower.verified_tower_height + 1;
-      tower.latest_epoch_mining = 0; // todo: get current epoch;
       tower.count_proofs_in_epoch = tower.count_proofs_in_epoch + 1;
+
+      // also check if the tower is now above the threshold
+       if (tower.count_proofs_in_epoch > threshold_of_signatures()) {
+        global.proofs_in_epoch_above_thresh = global.proofs_in_epoch_above_thresh + 1;
+        // also add to the provider list which would be elegible for rewards
+        let provider_list = borrow_global_mut<ProviderList>(@ol_framework);
+        vector::push_back(&mut provider_list.list, provider_addr);
+      };
+
+
+      let current_epoch = 0; // todo: get current epoch
+      if (current_epoch == (tower.latest_epoch_mining - 1)) {
+        tower.contiguous_epochs_mining = tower.contiguous_epochs_mining + 1;
+
+      };
       tower.epochs_mining = tower.epochs_mining + 1;
-      tower.contiguous_epochs_mining = tower.contiguous_epochs_mining + 1;
-
-
-
-
-
-
-
-
-
-
+      tower.latest_epoch_mining = 0; // todo: get current epoch;
 
 
     }
@@ -170,5 +172,9 @@ module ol_framework::oracle {
       } else {
         12
       }
+    }
+
+    fun has_unrelated_vouches_above_threshold() {
+
     }
 }

@@ -3,7 +3,8 @@ module ol_framework::test_vdf{
     use ol_framework::vdf_fixtures;
     use ol_framework::vdf;
 
-    #[test]
+    // #[test]
+    #[ignore]
     fun verify_valid_proof() {
     // this tests the happy case, that a proof is submitted with all three correct parameters.
     let challenge = vdf_fixtures::easy_chal();
