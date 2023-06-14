@@ -105,8 +105,17 @@ module ol_framework::vouch {
       v.my_buddies = buddy_list;
     }
 
-    /// gets the buddies and checks if they are expired
+    /// gets all buddies, including expired ones
     public fun get_buddies(val: address): vector<address> acquires MyVouches{
+      
+      if (!exists<MyVouches>(val)) return vector::empty<address>();
+      let state = borrow_global<MyVouches>(val);
+      *&state.my_buddies
+    }
+
+    /// gets the buddies and checks if they are expired
+    public fun get_buddies_valid(val: address): vector<address> acquires MyVouches{
+      if (!exists<MyVouches>(val)) return vector::empty<address>();
 
       let valid_vouches = vector::empty<address>();
       if (is_init(val)) {
