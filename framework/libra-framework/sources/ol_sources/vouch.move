@@ -90,40 +90,47 @@ module ol_framework::vouch {
 
     public fun buddies_in_set(val: address): vector<address> acquires Vouch {
       let current_set = stake::get_current_validators();
-      if (!exists<Vouch>(val)) return vector::empty<address>();
+      let (list, _) = buddies_in_list(val, current_set);
+      list
+    }
 
-      let v = borrow_global<Vouch>(val);
+    public fun buddies_in_list(addr: address, list: vector<address>): (vector<address>, u64) acquires Vouch {
 
-      let buddies_in_set = vector::empty<address>();
+      if (!exists<Vouch>(addr)) return (vector::empty<address>(), 0);
+
+      let v = borrow_global<Vouch>(addr);
+
+      let buddies_in_list = vector::empty<address>();
       let  i = 0;
       while (i < vector::length<address>(&v.my_buddies)) {
         let a = vector::borrow<address>(&v.my_buddies, i);
-        if (vector::contains(&current_set, a)) {
-          vector::push_back(&mut buddies_in_set, *a);
+        if (vector::contains(&list, a)) {
+          vector::push_back(&mut buddies_in_list, *a);
         };
         i = i + 1;
       };
 
-      buddies_in_set
+      (buddies_in_list, vector::length<address>(&buddies_in_list))
     }
 
-    public fun unrelated_buddies(val: address): vector<address> acquires Vouch {
+
+    public fun unrelated_buddies(list: vector<address>): vector<address> {
       // start our list empty
       let unrelated_buddies = vector::empty<address>();
 
-      // find all our buddies in this validator set
-      let buddies_in_set = buddies_in_set(val);
-      let len = vector::length<address>(&buddies_in_set);
+      // iterare througth this list to see which accounts are created downstream of others.
+      let len = vector::length<address>(&list);
       let  i = 0;
       while (i < len) {
-      
-        let target_acc = vector::borrow<address>(&buddies_in_set, i);
+        // for each account in list, compare to the others.
+        // if they are unrelated, add them to the list.
+        let target_acc = vector::borrow<address>(&list, i);
 
         // now loop through all the accounts again, and check if this target
         // account is related to anyone.
         let  k = 0;
-        while (k < vector::length<address>(&buddies_in_set)) {
-          let comparison_acc = vector::borrow(&buddies_in_set, k);
+        while (k < vector::length<address>(&list)) {
+          let comparison_acc = vector::borrow(&list, k);
           // skip if you're the same person
           if (comparison_acc != target_acc) {
             // check ancestry algo
@@ -136,10 +143,6 @@ module ol_framework::vouch {
           };
           k = k + 1;
         };
-      
-        // if (vector::contains(&current_set, a)) {
-        //   vector::push_back(&mut buddies_in_set, *a);
-        // };
         i = i + 1;
       };
 
@@ -150,8 +153,9 @@ module ol_framework::vouch {
       if (!exists<Vouch>(val)) return false;
       
       if (testnet::is_testnet()) return true;
+      let vouches = borrow_global<Vouch>(val);
 
-      let len = vector::length(&unrelated_buddies(val));
+      let len = vector::length(&unrelated_buddies(vouches.my_buddies));
       (len >= globals::get_vouch_threshold())
     }
 
