@@ -12,6 +12,7 @@ module ol_framework::vdf {
       solution: &vector<u8>,
       difficulty: &u64,
       security: &u64,
+      wesolowski_algo: bool, // else it will be pietrezak (from ol V5)
     ): bool;
 
     // For the 0th proof of a Delay Tower, this is used to check 
