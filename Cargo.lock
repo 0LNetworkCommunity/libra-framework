@@ -6123,9 +6123,11 @@ name = "libra"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "aptos",
  "aptos-config",
  "aptos-node",
  "clap 4.3.0",
+ "tokio",
 ]
 
 [[package]]
