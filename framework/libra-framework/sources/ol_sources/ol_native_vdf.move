@@ -1,6 +1,6 @@
 //////// 0L ////////
 module ol_framework::ol_native_vdf {
-    use std::vector;
+    
     // verifies a VDF proof with security parameters.
     // For the 0th proof of a Delay Tower, this is used to check
     // the tower belongs to an authorization key and address.
@@ -17,7 +17,8 @@ module ol_framework::ol_native_vdf {
     ): (address, vector<u8>);
 
     #[test]
-    fun test_native_vdf() {
+    fun sanity_native_impl() {
+      use std::vector;
       let r = verify(
         &vector::empty(),
         &vector::empty(),
