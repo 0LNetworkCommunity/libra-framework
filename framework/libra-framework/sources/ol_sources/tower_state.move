@@ -10,6 +10,8 @@ module ol_framework::tower_state {
     use aptos_framework::testnet;
     use aptos_framework::ol_native_vdf;
 
+    use aptos_std::debug::print;
+
     /// The current solution does not solve to previous hash.
     /// The delay proofs are not chained
     const EDELAY_NOT_CHAINED: u64 = 13001;
@@ -19,6 +21,9 @@ module ol_framework::tower_state {
     const EWRONG_SECURITY: u64 = 13003;
     /// security param of proof does not match requirement.
     const EADDRESS_NOT_IN_CHALLENGE: u64 = 13004;
+    /// Proof is not valid. The verification failed for solution at the expected difficulty and security parameter.
+    const EPROOF_NOT_VALID: u64 = 13005;
+
 
 
     // const EPOCHS_UNTIL_ACCOUNT_CREATION: u64 = 14;
@@ -99,6 +104,11 @@ module ol_framework::tower_state {
       prev_sec: u64,
     }
 
+    public fun initialize(root: &signer) {
+      init_difficulty(root);
+      init_miner_list(root);
+      init_tower_counter(root, 0, 0, 0);
+    }
     // Create the difficulty struct
     public fun init_difficulty(vm: &signer) {
       system_addresses::assert_ol(vm);
@@ -152,13 +162,13 @@ module ol_framework::tower_state {
 
     }
 
-    /// Create empty miners list and stats
-    public fun init_miner_list_and_stats(vm: &signer) {
-      init_miner_list(vm);
+    // /// Create empty miners list and stats
+    // public fun init_miner_list_and_stats(vm: &signer) {
+    //   init_miner_list(vm);
 
-      // Note: for testing migration we need to destroy this struct, see test_danger_destroy_tower_counter
-      init_tower_counter(vm, 0, 0, 0); 
-    }
+    //   // Note: for testing migration we need to destroy this struct, see test_danger_destroy_tower_counter
+    //   init_tower_counter(vm, 0, 0, 0); 
+    // }
 
 
     // for hard fork migration
@@ -361,7 +371,7 @@ module ol_framework::tower_state {
 
       let wesolowski_algo = false;
       let valid = ol_native_vdf::verify(&proof.challenge, &proof.solution, proof.difficulty, proof.security, wesolowski_algo);
-      assert!(valid, error::invalid_argument(130110));
+      assert!(valid, error::out_of_range(EPROOF_NOT_VALID));
 
       // add the miner to the miner list if not present
       increment_miners_list(miner_addr);
@@ -564,6 +574,9 @@ module ol_framework::tower_state {
       // The auth_key must be at least 32 bytes long
       assert!(vector::length(challenge) >= 32, error::invalid_argument(130113));
       let (parsed_address, _auth_key) = ol_native_vdf::extract_address_from_challenge(challenge);
+
+      print(&parsed_address);
+      print(&new_account_address);
       // Confirm the address is corect and included in challenge
       assert!(new_account_address == parsed_address, error::permission_denied(130114));
     }
@@ -1064,4 +1077,32 @@ module ol_framework::tower_state {
           fullnode_proofs_in_epoch_above_thresh: _,
        } = move_from<TowerCounter>(@ol_framework);
     }
+
+    //////// TESTS ////////
+
+    #[test]
+    fun parse_challenge() {
+        // First 32 bytes (64 hex characters) make up the auth_key. Of this,
+        // the first 16 bytes (32 hex characters) make up the auth_key pefix
+        // the last 16 bytes of the auth_key make up the account address
+        // The native function implemented in Rust parses this and gives out the
+        // address. This is then confirmed in the the TowerState module (move-space)
+        // to be the same address as the one passed in
+
+        let challenge = x"232fb6ae7221c853232fb6ae7221c853000000000000000000000000deadbeef";
+        let new_account_address = @0x232fb6ae7221c853232fb6ae7221c853000000000000000000000000deadbeef;
+
+        // Parse key and check
+        first_challenge_includes_address(new_account_address, &challenge);
+        // Note: There is a assert statement in this function already
+        // which checks to confim that the parsed address and new_account_address
+        // the same. Execution of this guarantees that the test of the native
+        // function passed.
+
+        challenge = x"232fb6ae7221c853232fb6ae7221c853000000000000000000000000deadbeef00000000000000000000000000000000000000000000000000000000000000000000000000004f6c20746573746e6574640000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000070726f74657374732072616765206163726f737320416d6572696361";
+
+        let new_account_address = @0x232fb6ae7221c853232fb6ae7221c853000000000000000000000000deadbeef;
+        first_challenge_includes_address(new_account_address, &challenge);
+    }
+
 }
