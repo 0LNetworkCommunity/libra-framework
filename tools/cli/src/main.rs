@@ -2,6 +2,8 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 use zapatos_config::config::NodeConfig;
 use anyhow::anyhow;
+use zapatos::move_tool;
+use tokio;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -18,7 +20,8 @@ enum Sub {
   },
 }
 
-fn main() -> anyhow::Result<()>{
+#[tokio::main]
+async fn main() -> anyhow::Result<()>{
     let cli = LibraCli::parse();
     match cli.command {
         Some(Sub::Node { config_path }) => {
@@ -35,7 +38,8 @@ fn main() -> anyhow::Result<()>{
             // Start the node
             zapatos_node::start(config, None, true).expect("Node should start correctly");
 
-        }
+        },
+        Some(tool) => tool.exectute().await,
 
         _ => { println!("\nliving is easy with eyes closed") }
     }
