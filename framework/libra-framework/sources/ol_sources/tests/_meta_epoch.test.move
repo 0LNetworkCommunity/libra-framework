@@ -43,7 +43,6 @@ module ol_framework::test_meta {
 
     // create a new epoch
     reconfiguration::reconfigure_for_test();
-    // stake::end_epoch();
 
     let b = reconfiguration::get_current_epoch();
 
