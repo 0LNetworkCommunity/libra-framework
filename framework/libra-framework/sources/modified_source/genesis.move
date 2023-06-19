@@ -34,7 +34,9 @@ module aptos_framework::genesis {
     use ol_framework::slow_wallet;
     use ol_framework::gas_coin::{Self, GasCoin};
     use ol_framework::infra_escrow;
+    use ol_framework::tower_state;
     //////// end 0L ////////
+
 
     const EDUPLICATE_ACCOUNT: u64 = 1;
     const EACCOUNT_DOES_NOT_EXIST: u64 = 2;
@@ -146,6 +148,7 @@ module aptos_framework::genesis {
         proof_of_fee::init_genesis_baseline_reward(&aptos_framework_account);
         slow_wallet::initialize(&aptos_framework_account);
         infra_escrow::initialize(&aptos_framework_account);
+        tower_state::initialize(&aptos_framework_account);
         // end 0L
 
         timestamp::set_time_has_started(&aptos_framework_account);

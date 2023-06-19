@@ -14,5 +14,7 @@ rust-version = { workspace = true }
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true }
+tokio = { workspace = true }
+zapatos = { workspace = true }
 zapatos-config = { workspace = true }
 zapatos-node = { workspace = true }
