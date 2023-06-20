@@ -1,4 +1,4 @@
-use crate::extension::client_ext::ClientExt;
+use libra_types::type_extensions::client_ext::ClientExt;
 use anyhow::Result;
 use zapatos_sdk::{
     coin_client::CoinClient, rest_client::Client, types::account_address::AccountAddress,
@@ -64,6 +64,8 @@ pub enum QueryType {
         /// the account of the validator
         account: AccountAddress,
     },
+    
+    // TODO: View function
 }
 
 pub struct Querier {

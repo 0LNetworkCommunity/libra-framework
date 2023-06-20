@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
-use libra_config::extension::client_ext::ClientExt;
+use libra_types::type_extensions::client_ext::ClientExt;
 use libra_query::querier::{Querier, QueryType::*};
 use zapatos_sdk::{rest_client::Client, types::account_address::AccountAddress};
 

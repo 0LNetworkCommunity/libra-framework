@@ -6160,7 +6160,7 @@ dependencies = [
  "aptos-sdk",
  "async-trait",
  "clap 4.3.0",
- "libra-config",
+ "libra-types",
  "tokio",
  "url",
 ]
