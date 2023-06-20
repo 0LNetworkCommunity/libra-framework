@@ -32,6 +32,7 @@ rust-version = "1.66.1"
 libra-cached-packages = { path = "framework/cached-packages" }
 libra-config = { path = "tools/config" }
 libra-framework = { path = "framework" }
+libra-query = { path = "tools/query" }
 libra-types = { path = "types" }
 libra-txs = { path = "tools/txs" }
 libra-wallet = { path = "tools/wallet" }

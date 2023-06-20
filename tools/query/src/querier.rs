@@ -83,7 +83,9 @@ pub enum QueryType {
 impl QueryType {
 
   pub async fn query(&self, client: Option<Client>) -> Result<Vec<serde_json::Value>>{
-    let client = client.unwrap_or_default();
+    let client = client.unwrap_or_else(|| Client::default().expect("Failed to create client"));
+
+    // let client = client.unwrap_or_else(|| Client::default().expect("Failed to create client"));
     match self {
         QueryType::Balance { account } => {
           Ok(client.get_account_balance_libra(*account).await?)

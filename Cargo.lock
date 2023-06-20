@@ -9609,6 +9609,7 @@ dependencies = [
  "aptos-types",
  "libra-cached-packages",
  "libra-framework",
+ "libra-query",
  "libra-txs",
  "serde_json",
  "smoke-test",
