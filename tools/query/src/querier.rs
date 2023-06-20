@@ -82,7 +82,8 @@ pub enum QueryType {
 
 impl QueryType {
 
-  pub async fn query(&self, client: &Client) -> Result<Vec<serde_json::Value>>{
+  pub async fn query(&self, client: Option<Client>) -> Result<Vec<serde_json::Value>>{
+    let client = client.unwrap_or_default();
     match self {
         QueryType::Balance { account } => {
           Ok(client.get_account_balance_libra(*account).await?)
@@ -98,7 +99,7 @@ impl QueryType {
 
   }
 
-  pub async fn query_into_type<T: DeserializeOwned> (&self, client: &Client) -> Result<T> {
+  pub async fn query_into_type<T: DeserializeOwned> (&self, client: Option<Client>) -> Result<T> {
     let value = self.query(client).await?;
     if let Some(res) = value.into_iter().next() {
       Ok(serde_json::from_value::<T>(res)?)
