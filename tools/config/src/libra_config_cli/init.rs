@@ -1,5 +1,5 @@
 use anyhow::{bail, Result};
-use libra_config::extension::{
+use libra_types::type_extensions::{
   cli_config_ext::CliConfigExt,
   // global_config_ext::GlobalConfigExt
 };
@@ -14,7 +14,7 @@ use zapatos::{
             ProfileConfig, PromptOptions, DEFAULT_PROFILE,
         },
         utils::{prompt_yes_with_override, read_line},
-    }, config::GlobalConfig,
+    },
 };
 use zapatos_crypto::{ed25519::Ed25519PublicKey, ValidCryptoMaterialStringExt};
 use zapatos_rest_client::{
