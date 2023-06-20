@@ -10,8 +10,6 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-zapatos-sdk = { workspace = true }
-libra-config = { workspace = true }
 bcs = { workspace = true }
 anyhow = { workspace = true }
 async-trait = { workspace = true }
@@ -25,7 +23,10 @@ indoc = { workspace = true }
 colored = { workspace = true }
 
 libra-cached-packages = { workspace = true }
+libra-config = { workspace = true }
+libra-types = { workspace = true }
 libra-wallet = { workspace = true }
 
 zapatos = { workspace = true }
+zapatos-sdk = { workspace = true }
 zapatos-types = { workspace = true }

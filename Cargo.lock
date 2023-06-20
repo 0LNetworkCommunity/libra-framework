@@ -6181,6 +6181,7 @@ dependencies = [
  "indoc 2.0.1",
  "libra-cached-packages",
  "libra-config",
+ "libra-types",
  "libra-wallet",
  "serde 1.0.163",
  "serde_json",

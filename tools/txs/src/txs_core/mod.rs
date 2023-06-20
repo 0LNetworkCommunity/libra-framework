@@ -14,12 +14,10 @@ use zapatos_sdk::crypto::ed25519::Ed25519PrivateKey;
 use zapatos_types::chain_id::ChainId;
 use self::submit_transaction::Sender;
 
-
+mod constants;
 mod create_account;
-// mod demo;
 mod generate_transaction;
 mod submit_transaction;
-// mod transfer_coin;
 mod view;
 mod transfer;
 mod tower;
