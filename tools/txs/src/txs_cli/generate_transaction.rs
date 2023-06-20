@@ -1,5 +1,5 @@
 use anyhow::Result;
-use libra_config::extension::client_ext::{ClientExt as ConfigClientExt, DEFAULT_TIMEOUT_SECS};
+// use libra_config::extension::client_ext::{ClientExt as ConfigClientExt, DEFAULT_TIMEOUT_SECS};
 use crate::constant::{DEFAULT_GAS_UNIT_PRICE, DEFAULT_MAX_GAS_AMOUNT};
 use crate::extension::{
     client_ext::{ClientExt, TransactionOptions},

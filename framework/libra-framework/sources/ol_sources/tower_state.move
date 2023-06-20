@@ -268,6 +268,8 @@ module ol_framework::tower_state {
         return
       };
 
+      
+
       // // Skip this check on local tests, we need tests to send different difficulties.
       // if (!testnet::is_testnet()){
       //   // Get vdf difficulty constant. Will be different in tests than in production.
@@ -292,6 +294,25 @@ module ol_framework::tower_state {
       // Process the proof
       verify_and_update_state(miner_addr, proof, true);
     }
+
+    /// The entry point to commit miner state.
+    public entry fun minerstate_commit(
+        sender: signer,
+        challenge: vector<u8>, 
+        solution: vector<u8>,
+        difficulty: u64,
+        security: u64,
+    ) acquires TowerCounter, TowerList, TowerProofHistory {
+        let proof = create_proof_blob(
+            challenge,
+            solution,
+            difficulty,
+            security,
+        );
+
+        commit_state(&sender, proof);
+    }
+
 
     // // This function is called by the OPERATOR associated with node,
     // // it verifies the proof and commits to chain.

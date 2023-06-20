@@ -22,6 +22,7 @@ mod submit_transaction;
 // mod transfer_coin;
 mod view;
 mod transfer;
+mod tower;
 
 #[derive(Parser)]
 #[clap(name = env!("CARGO_PKG_NAME"), author, version, about, long_about = None, arg_required_else_help = true)]
