@@ -6161,6 +6161,8 @@ dependencies = [
  "async-trait",
  "clap 4.3.0",
  "libra-types",
+ "serde 1.0.163",
+ "serde_json",
  "tokio",
  "url",
 ]
@@ -6195,6 +6197,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "aptos",
+ "aptos-api-types",
  "aptos-sdk",
  "async-trait",
  "dirs 5.0.1",

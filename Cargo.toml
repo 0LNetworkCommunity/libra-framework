@@ -39,7 +39,7 @@ libra-wallet = { path = "tools/wallet" }
 # Please do not add any test features here: they should be declared by the 
 # individual crate.
 
-# zapatos-cached-packages = { git = "https://github.com/0o-de-lally/zapatos.git", rev = "14db26a3f6" }
+zapatos-api-types = { package = "aptos-api-types", git = "https://github.com/0o-de-lally/zapatos.git", rev = "14db26a3f6" }
 zapatos-debugger = { package = "aptos-debugger", git = "https://github.com/0o-de-lally/zapatos.git", rev = "14db26a3f6" }
 zapatos-forge = { package = "aptos-forge", git = "https://github.com/0o-de-lally/zapatos.git", rev = "14db26a3f6" }
 zapatos-transactional-test-harness = { package = "aptos-transactional-test-harness", git = "https://github.com/0o-de-lally/zapatos.git", rev = "14db26a3f6" }

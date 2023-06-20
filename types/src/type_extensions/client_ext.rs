@@ -35,7 +35,7 @@ pub const USER_AGENT: &str = concat!("libra-config/", env!("CARGO_PKG_VERSION"))
 pub trait ClientExt {
     fn default() -> Result<Client>;
 
-    async fn get_account_balance_libra(&self, account: AccountAddress) -> Result<u64>;
+    async fn get_account_balance_libra(&self, account: AccountAddress) -> Result<Vec<serde_json::Value>>;
 
     async fn get_account_resources_ext(&self, account: AccountAddress) -> Result<String>;
 
@@ -77,8 +77,21 @@ impl ClientExt for Client {
         ))
     }
 
-    async fn get_account_balance_libra(&self, account: AccountAddress) -> Result<u64> {
+    async fn get_account_balance_libra(&self, account: AccountAddress) -> Result<Vec<serde_json::Value>> {
+
+      let slow_balance_id = entry_function_id("gas_coin", "unlocked_amount")?;
+      let request = ViewRequest {
+          function: slow_balance_id,
+          type_arguments: vec![],
+          arguments: vec![account.to_string().into()],
+      };
       
+      let res = self.view(&request, None).await?.into_inner();
+
+      dbg!(&res);
+
+      Ok(res)
+
     }
 
 
@@ -151,6 +164,28 @@ impl ClientExt for Client {
         Ok(from_account.sign_with_transaction_builder(transaction_builder))
     }
 
+    // async fn view_bcs(
+    //     &self,
+    //     request: &ViewRequest,
+    //     version: Option<u64>,
+    // ) -> Result<bytes::Bytes> {
+    //     let request = serde_json::to_string(request)?;
+    //     let mut url = self.build_path("view")?;
+    //     if let Some(version) = version {
+    //         url.set_query(Some(format!("ledger_version={}", version).as_str()));
+    //     }
+
+    //     let response = self
+    //         .inner
+    //         .post(url)
+    //         .header(CONTENT_TYPE, JSON)
+    //         .body(request)
+    //         .send()
+    //         .await?;
+
+    //     Ok(self.check_and_parse_bcs_response(response).await?.inner())
+    // }
+
     async fn view_ext(
         &self,
         function_id: &str,
@@ -200,4 +235,33 @@ pub struct TransactionOptions {
     pub max_gas_amount: u64,
     pub gas_unit_price: u64,
     pub timeout_secs: u64,
+}
+
+
+pub fn entry_function_id(module_name: &str, function_name: &str) -> Result<EntryFunctionId> {
+  let s = format!("0x1::{}::{}", module_name, function_name);
+  EntryFunctionId::from_str(&s)
+      .context(format!("Invalid function id: {s}"))
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+struct Person {
+    x: f64,
+    y: f64,
+}
+
+
+#[test]
+fn serde_test() {
+
+
+
+    let s = r#"{"x": 1.0, "y": 2.0}"#;
+    let mut value: serde_json::Value = serde_json::from_str(s).unwrap();
+    // value.
+    dbg!(&value);
+
+    let p: Person = serde_json::from_value(value).unwrap();
+    dbg!(&p);
+
 }

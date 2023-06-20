@@ -1,5 +1,6 @@
 pub mod type_extensions;
 pub mod util;
+pub mod gas_coin;
 
 use std::path::PathBuf;
 
