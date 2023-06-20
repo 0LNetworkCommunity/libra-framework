@@ -1,11 +1,10 @@
-use libra_types::type_extensions::client_ext::ClientExt;
 use anyhow::Result;
 use zapatos_sdk::{
-    coin_client::CoinClient, rest_client::Client, types::account_address::AccountAddress,
+  rest_client::{Client, Response},
+  types::account_address::AccountAddress,
 };
-use QueryType::*;
 
-#[derive(Debug)]
+#[derive(Debug, clap::Subcommand)]
 pub enum QueryType {
     /// Account balance
     Balance {
@@ -77,18 +76,18 @@ impl Querier {
         Self { client }
     }
 
-    pub async fn query(&self, query_type: QueryType) -> Result<String> {
-        let print = match query_type {
-            Balance { account } => {
-                let coin_client = CoinClient::new(&self.client);
-                coin_client.get_account_balance(&account).await?.to_string()
-            }
-            Resources { account } => self.client.get_account_resources_ext(account).await?,
-            _ => {
-                //TODO: Implement other types of Query
-                String::new()
-            }
-        };
-        Ok(print)
+    pub async fn query(&self, query_type: QueryType) -> Result<Response> {
+        match query_type {
+            QueryType::Balance { account } => todo!(),
+            QueryType::UnlockedBalance { account } => todo!(),
+            QueryType::Epoch => todo!(),
+            QueryType::BlockHeight => todo!(),
+            QueryType::Resources { account } => todo!(),
+            QueryType::MoveValue { account, module_name, struct_name, key_name } => todo!(),
+            QueryType::SyncDelay => todo!(),
+            QueryType::Txs { account, txs_height, txs_count, txs_type } => todo!(),
+            QueryType::Events { account, sent_or_received, seq_start } => todo!(),
+            QueryType::ValConfig { account } => todo!(),
+        }
     }
 }

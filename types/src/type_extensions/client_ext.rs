@@ -35,6 +35,8 @@ pub const USER_AGENT: &str = concat!("libra-config/", env!("CARGO_PKG_VERSION"))
 pub trait ClientExt {
     fn default() -> Result<Client>;
 
+    async fn get_account_balance_libra(&self, account: AccountAddress) -> Result<u64>;
+
     async fn get_account_resources_ext(&self, account: AccountAddress) -> Result<String>;
 
     async fn get_sequence_number(&self, account: AccountAddress) -> Result<u64>;
@@ -75,6 +77,11 @@ impl ClientExt for Client {
         ))
     }
 
+    async fn get_account_balance_libra(&self, account: AccountAddress) -> Result<u64> {
+      
+    }
+
+
     async fn get_account_resources_ext(&self, account: AccountAddress) -> Result<String> {
         let response = self
             .get_account_resources(account)
@@ -82,7 +89,7 @@ impl ClientExt for Client {
             .context("Failed to get account resources")?;
         Ok(format!("{:#?}", response.inner()))
     }
-    
+
     async fn get_sequence_number(&self, account: AccountAddress) -> Result<u64> {
         let response = self
             .get_account_resource(account, "0x1::account::Account")

@@ -113,21 +113,36 @@ module ol_framework::slow_wallet {
       s.unlocked = s.unlocked + amount;
     }
 
+    public fun on_new_epoch(vm: &signer) acquires SlowWallet, SlowWalletList {
+      system_addresses::assert_ol(vm);
+      slow_wallet_epoch_drip(vm, EPOCH_DRIP_CONST);
+    }
+
+    public fun vm_multi_pay_fee(_vm: &signer, _list: &vector<address>, _price: u64, _metadata: &vector<u8>) {
+    }
+
     ///////// SLOW GETTERS ////////
 
+    #[view]
     public fun is_slow(addr: address): bool {
       exists<SlowWallet>(addr)
     }
 
-    public fun unlocked_amount(addr: address): u64 acquires SlowWallet{
+    #[view]
+    /// Returns the amount of unlocked funds for a slow wallet. For convenienc add the total balance. (unlocked, total)
+    public fun unlocked_amount(addr: address): (u64, u64) acquires SlowWallet{
+      // this is a normal account, so return the normal balance
+      let total = coin::balance<GasCoin>(addr);
       if (exists<SlowWallet>(addr)) {
         let s = borrow_global<SlowWallet>(addr);
-        return s.unlocked
+        return (s.unlocked, total)
       };
-      // this is a normal account, so return the normal balance
-      coin::balance<GasCoin>(addr)
+
+      // if the account has no SlowWallet tracker, then everything is unlocked.
+      (total, total)
     }
 
+    #[view]
     // Getter for retrieving the list of slow wallets.
     public fun get_slow_list(): vector<address> acquires SlowWalletList{
       if (exists<SlowWalletList>(@ol_framework)) {
@@ -138,13 +153,6 @@ module ol_framework::slow_wallet {
       }
     }
 
-    public fun on_new_epoch(vm: &signer) acquires SlowWallet, SlowWalletList {
-      system_addresses::assert_ol(vm);
-      slow_wallet_epoch_drip(vm, EPOCH_DRIP_CONST);
-    }
 
-  public fun vm_multi_pay_fee(_vm: &signer, _list: &vector<address>, _price: u64, _metadata: &vector<u8>) {
-
-  }
  
 }
