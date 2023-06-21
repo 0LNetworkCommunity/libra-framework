@@ -1,7 +1,6 @@
 use anyhow::{bail, Result};
-use libra_config::extension::{
+use libra_types::type_extensions::{
   cli_config_ext::CliConfigExt,
-  // global_config_ext::GlobalConfigExt
 };
 use std::{collections::BTreeMap, str::FromStr, env};
 use url::Url;
@@ -14,7 +13,7 @@ use zapatos::{
             ProfileConfig, PromptOptions, DEFAULT_PROFILE,
         },
         utils::{prompt_yes_with_override, read_line},
-    }, config::GlobalConfig,
+    },
 };
 use zapatos_crypto::{ed25519::Ed25519PublicKey, ValidCryptoMaterialStringExt};
 use zapatos_rest_client::{
@@ -22,25 +21,12 @@ use zapatos_rest_client::{
     error::{AptosErrorResponse, RestError},
     Client,
 };
+use zapatos_types::account_address::AccountAddress;
 
 pub async fn run(public_key: &str, profile: Option<&str>, workspace: bool) -> Result<()> {
 
     // init_workspace
-  let mut config = CliConfig::default();
-    // let mut config = if init_workspace {
-    //   if CliConfig::config_exists_ext(ConfigSearchMode::CurrentDir) {
-    //       CliConfig::load_ext(ConfigSearchMode::CurrentDir)?
-    //   } else {
-    //       CliConfig::default()
-    //   };
-    // } else {
-    //   if GlobalConfig::load_ext().is_ok() {
-       
-    // } else {
-    //   CliConfig::default()
-    // }
-      // CliConfig::config_exists_ext(mode)
-    // };
+    let mut config = CliConfig::default();
     
     let profile_name = profile.unwrap_or(DEFAULT_PROFILE);
     let prompt_options = PromptOptions::default();
@@ -77,63 +63,30 @@ pub async fn run(public_key: &str, profile: Option<&str>, workspace: bool) -> Re
         _ => bail!("0L only supports Local and Custom networks (for now)"),
     }
 
-    let client = Client::new(
-        Url::parse(
-            profile_config
-                .rest_url
-                .as_ref()
-                .expect("Must have rest client as created above"),
-        )
-        .map_err(|err| CliError::UnableToParse("rest_url", err.to_string()))?,
-    );
+
+    let mut address = account_address_from_public_key(&public_key);
 
     // lookup the address from onchain instead of deriving it
     // if this is the rotated key, deriving it will outputs an incorrect address
-    let derived_address = account_address_from_public_key(&public_key);
-    let address = lookup_address(&client, derived_address, false).await?;
+    eprintln!("Have you ever rotated the account keys? We can look on chain to see what your actual address is. [y/N]");
+    let input = read_line("address")?;
+    let input = input.trim();
+    if input.contains("y") {
+      let client = check_network(&profile_config);
+      if client.is_ok() {
+        match lookup_address(&client.unwrap(), address, false).await {
+            Ok(a) => address = a,
+            Err(_) =>  eprintln!("Could not lookup address on chain, using derived address"),
+        };
+      } else {
+        eprintln!("Could not lookup address on chain, using derived address");
+      }
+    };
 
     profile_config.private_key = None;
     profile_config.public_key = Some(public_key);
     profile_config.account = Some(address);
 
-    // Create account if it doesn't exist
-    // Check if account exists
-    let account_exists = match client.get_account(address).await {
-        Ok(_) => true,
-        Err(err) => {
-            if let RestError::Api(AptosErrorResponse {
-                error:
-                    AptosError {
-                        error_code: AptosErrorCode::ResourceNotFound,
-                        ..
-                    },
-                ..
-            })
-            | RestError::Api(AptosErrorResponse {
-                error:
-                    AptosError {
-                        error_code: AptosErrorCode::AccountNotFound,
-                        ..
-                    },
-                ..
-            }) = err
-            {
-                false
-            } else {
-                eprintln!("Failed to check if account exists on chain: {:?}", err);
-                false
-            }
-
-        }
-    };
-
-    if account_exists {
-        eprintln!("Account {} has been already found onchain", address);
-    } else if network == Network::Mainnet {
-        eprintln!("Account {} does not exist, you will need to create and fund the account by transferring funds from another account", address);
-    } else {
-        eprintln!("Account {} has been initialized locally, but you must transfer coins to it to create the account onchain", address);
-    }
 
     // Ensure the loaded config has profiles setup for a possible empty file
     if config.profiles.is_none() {
@@ -150,10 +103,11 @@ pub async fn run(public_key: &str, profile: Option<&str>, workspace: bool) -> Re
     let config_location = if workspace {
       env::current_dir().ok()
     } else { None };
-    config.save_ext(config_location)?;
+    let path = config.save_ext(config_location.clone())?;
     eprintln!(
-        "\n0L CLI is now set up for account {} as profile {}!",
+        "\nThe libra configuration is saved! \nfor account {} \nat path: {}  as profile {}",
         address,
+        path.to_str().unwrap(),
         profile.unwrap_or(DEFAULT_PROFILE)
     );
     Ok(())
@@ -188,4 +142,58 @@ fn custom_network(profile_config: &mut ProfileConfig) -> CliTypedResult<()> {
     profile_config.rest_url = rest_url;
     profile_config.faucet_url = None;
     Ok(())
+}
+
+
+fn check_network(cfg: &ProfileConfig) -> Result<Client> {
+      let base = Url::parse(
+          cfg
+              .rest_url
+              .as_ref()
+              .expect("Must have rest client as created above"),
+      )
+      .map_err(|err| CliError::UnableToParse("rest_url", err.to_string()))?;
+
+      let client = Client::new(base);
+
+    Ok(client)
+
+}
+
+async fn _check_account_on_chain(client: &Client, address: AccountAddress) {
+    // Check if account exists
+    let account_exists = match client.get_account(address).await {
+        Ok(_) => true,
+        Err(err) => {
+            if let RestError::Api(AptosErrorResponse {
+                error:
+                    AptosError {
+                        error_code: AptosErrorCode::ResourceNotFound,
+                        ..
+                    },
+                ..
+            })
+            | RestError::Api(AptosErrorResponse {
+                error:
+                    AptosError {
+                        error_code: AptosErrorCode::AccountNotFound,
+                        ..
+                    },
+                ..
+            }) = err
+            {
+                false
+            } else {
+                eprintln!("Failed to check if account exists on chain: {:?}", err);
+                false
+            }
+
+        }
+    };
+
+    if account_exists {
+        eprintln!("Account {} has been already found onchain", address);
+    } else {
+        eprintln!("Account {} has been initialized locally, but you must transfer coins to it to create the account onchain", address);
+    }
 }

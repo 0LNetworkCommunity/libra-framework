@@ -32,6 +32,7 @@ rust-version = "1.66.1"
 libra-cached-packages = { path = "framework/cached-packages" }
 libra-config = { path = "tools/config" }
 libra-framework = { path = "framework" }
+libra-query = { path = "tools/query" }
 libra-types = { path = "types" }
 libra-txs = { path = "tools/txs" }
 libra-wallet = { path = "tools/wallet" }
@@ -39,7 +40,7 @@ libra-wallet = { path = "tools/wallet" }
 # Please do not add any test features here: they should be declared by the 
 # individual crate.
 
-# zapatos-cached-packages = { git = "https://github.com/0o-de-lally/zapatos.git", rev = "14db26a3f6" }
+zapatos-api-types = { package = "aptos-api-types", git = "https://github.com/0o-de-lally/zapatos.git", rev = "14db26a3f6" }
 zapatos-debugger = { package = "aptos-debugger", git = "https://github.com/0o-de-lally/zapatos.git", rev = "14db26a3f6" }
 zapatos-forge = { package = "aptos-forge", git = "https://github.com/0o-de-lally/zapatos.git", rev = "14db26a3f6" }
 zapatos-transactional-test-harness = { package = "aptos-transactional-test-harness", git = "https://github.com/0o-de-lally/zapatos.git", rev = "14db26a3f6" }
@@ -75,7 +76,9 @@ async-trait = "0.1.68"
 base64 = "0.13.0"
 blst = "0.3.7"
 chrono = { version = "0.4.19", features = ["clock", "serde"] }
-clap = { version = "4.2.7", features = ["derive", "env", "suggestions"] }
+# clap = { version = "4.2.7", features = ["derive", "env", "suggestions"] }
+clap = { version = "3.2.23" }
+
 colored = "2.0.0"
 console = "0.15.5"
 dialoguer = "0.10.4"

@@ -4,29 +4,29 @@ use clap::{Parser, Subcommand};
 use libra_genesis_tools::{wizard::{GenesisWizard, DEFAULT_DATA_PATH, GITHUB_TOKEN_FILENAME}, genesis_builder, parse_json};
 
 #[derive(Parser)]
-#[command(author, version, about, long_about = None)]
+#[clap(author, version, about, long_about = None)]
 struct GenesisCliArgs {
-    #[command(subcommand)]
+    #[clap(subcommand)]
     command: Option<Sub>,
 
     /// choose a different home data folder for all node data.
     /// defaults to $HOME/.libra
-    #[arg(long)]
+    #[clap(long)]
     home_dir: Option<PathBuf>,
     /// optionally provide a github token, otherwise will search in home_dir/github_token.txt
-    #[arg(long)]
+    #[clap(long)]
     token_github: Option<String>,
     /// what are the settings for the genesis repo configs
-    #[arg(short, long)]
+    #[clap(short, long)]
     org_github: String,
     /// name of the repo
-    #[arg(short, long)]
+    #[clap(short, long)]
     name_github: String,
     /// uses the local framework build
-    #[arg(short, long)]
+    #[clap(short, long)]
     local_framework: bool,
     /// path to file for legacy migration file
-    #[arg(short, long)]
+    #[clap(short, long)]
     json_legacy: Option<PathBuf>,
 }
 
