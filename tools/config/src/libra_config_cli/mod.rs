@@ -5,13 +5,13 @@ mod init;
 
 #[derive(Parser)]
 #[clap(name = env!("CARGO_PKG_NAME"), author, version, about, long_about = None, arg_required_else_help = true)]
-pub struct LibraConfigCli {
+pub struct ConfigCli {
     #[clap(subcommand)]
-    subcommand: Option<Subcommand>,
+    subcommand: Option<ConfigSub>,
 }
 
 #[derive(clap::Subcommand)]
-enum Subcommand {
+enum ConfigSub {
     /// Generate config.yaml file that stores 0L configuration
     Init {
         /// Ed25519 public key
@@ -36,10 +36,10 @@ enum Subcommand {
     },
 }
 
-impl LibraConfigCli {
+impl ConfigCli {
     pub async fn run(&self) -> Result<()> {
         match &self.subcommand {
-            Some(Subcommand::Init {
+            Some(ConfigSub::Init {
                 public_key,
                 profile,
                 workspace,

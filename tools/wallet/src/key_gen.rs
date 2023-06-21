@@ -1,6 +1,6 @@
+use crate::keys::{validator_keygen, refresh_validator_files};
 use anyhow::Result;
 use indoc::formatdoc;
-use libra_wallet::keys::{validator_keygen, refresh_validator_files};
 use ol_keys::wallet::get_account_from_mnem;
 use std::path::PathBuf;
 use zapatos_crypto::ed25519::{Ed25519PrivateKey, Ed25519PublicKey};

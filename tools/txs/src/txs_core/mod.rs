@@ -26,7 +26,7 @@ mod tower;
 #[clap(name = env!("CARGO_PKG_NAME"), author, version, about, long_about = None, arg_required_else_help = true)]
 pub struct TxsCli {
       #[clap(subcommand)]
-      pub subcommand: Option<Subcommand>,
+      pub subcommand: Option<TxsSub>,
 
       /// Optional mnemonic to pass at runtime. Otherwise this will prompt for mnemonic.
       #[clap(short, long)]
@@ -51,7 +51,7 @@ pub struct TxsCli {
 }
 
 #[derive(clap::Subcommand)]
-pub enum Subcommand {
+pub enum TxsSub {
 
     /// Create onchain account by using Aptos faucet
     CreateAccount {
@@ -174,7 +174,6 @@ pub enum Subcommand {
 
 impl TxsCli {
     pub async fn run(&self) -> Result<()> {
-        dbg!("hello");
         let pri_key = if self.private_key.is_none() && self.mnemonic.is_none() {
           let legacy = get_keys_from_prompt()?;
           legacy.child_0_owner.pri_key
@@ -185,7 +184,6 @@ impl TxsCli {
           Ed25519PrivateKey::from_encoded_string(&self.private_key.as_ref().unwrap())?
         };
         
-        dbg!("now send");
         let mut send = Sender::new(AccountKey::from_private_key(pri_key), ChainId::test(), self.url.to_owned()).await?; // TODO: change this from test.
         
 
@@ -193,11 +191,11 @@ impl TxsCli {
             // Some(Subcommand::Test) => transfer::run().await,
 
             // Some(Subcommand::Demo) => demo::run().await,
-            Some(Subcommand::CreateAccount {
+            Some(TxsSub::CreateAccount {
                 account_address,
                 coins,
             }) => create_account::run(account_address, coins.unwrap_or_default()).await,
-            Some(Subcommand::Transfer {
+            Some(TxsSub::Transfer {
                 to_account,
                 amount,
             }) => {
@@ -236,7 +234,7 @@ impl TxsCli {
             //     }
             //     Ok(())
             // }
-            Some(Subcommand::View {
+            Some(TxsSub::View {
                 function_id,
                 type_args,
                 args,

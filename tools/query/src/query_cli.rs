@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
-use libra_query::query_type::QueryType;
+use crate::query_type::QueryType;
 
 #[derive(Parser)]
 #[clap(name = env!("CARGO_PKG_NAME"), author, version, about, long_about = None, arg_required_else_help = true)]
