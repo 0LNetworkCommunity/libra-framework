@@ -1,29 +1,18 @@
+use crate::submit_transaction::Sender;
+
 use anyhow::Result;
 use clap::Parser;
-
 use indoc::indoc;
-
 use libra_wallet::legacy::{get_keys_from_prompt, get_keys_from_mnem};
-
 use url::Url;
-use zapatos_sdk::types::AccountKey;
-use zapatos_sdk::types::account_address::AccountAddress;
-use zapatos_sdk::crypto::ValidCryptoMaterialStringExt;
-use zapatos_sdk::crypto::ed25519::Ed25519PrivateKey;
 
+use zapatos_sdk::types::{AccountKey, account_address::AccountAddress};
+use zapatos_sdk::crypto::{ValidCryptoMaterialStringExt, ed25519::Ed25519PrivateKey};
 use zapatos_types::chain_id::ChainId;
-use self::submit_transaction::Sender;
-
-mod constants;
-mod create_account;
-mod generate_transaction;
-mod submit_transaction;
-mod view;
-mod transfer;
-mod tower;
 
 #[derive(Parser)]
 #[clap(name = env!("CARGO_PKG_NAME"), author, version, about, long_about = None, arg_required_else_help = true)]
+/// Submit a transaction to the blockchain.
 pub struct TxsCli {
       #[clap(subcommand)]
       pub subcommand: Option<TxsSub>,
@@ -194,7 +183,7 @@ impl TxsCli {
             Some(TxsSub::CreateAccount {
                 account_address,
                 coins,
-            }) => create_account::run(account_address, coins.unwrap_or_default()).await,
+            }) => crate::create_account::run(account_address, coins.unwrap_or_default()).await,
             Some(TxsSub::Transfer {
                 to_account,
                 amount,
@@ -242,7 +231,7 @@ impl TxsCli {
                 println!("====================");
                 println!(
                     "{}",
-                    view::run(function_id, type_args.to_owned(), args.to_owned()).await?
+                    crate::view::run(function_id, type_args.to_owned(), args.to_owned()).await?
                 );
                 Ok(())
             }

@@ -10,20 +10,14 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-bcs = { workspace = true }
 anyhow = { workspace = true }
-async-trait = { workspace = true }
 clap = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
+indoc = { workspace = true }
 tokio = { workspace = true }
 url = { workspace = true }
-hex = { workspace = true }
-indoc = { workspace = true }
-colored = { workspace = true }
+
 
 libra-cached-packages = { workspace = true }
-libra-config = { workspace = true }
 libra-types = { workspace = true }
 libra-wallet = { workspace = true }
 

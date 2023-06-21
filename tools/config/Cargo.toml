@@ -10,13 +10,14 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-zapatos = { workspace = true }
-zapatos-rest-client = { workspace = true }
-zapatos-crypto = { workspace = true }
 anyhow = { workspace = true }
 clap = { workspace = true }
 tokio = { workspace = true }
 url = { workspace = true }
-dirs = { workspace = true }
-serde_yaml = { workspace = true }
+
 libra-types = { workspace = true }
+
+zapatos = { workspace = true }
+zapatos-rest-client = { workspace = true }
+zapatos-crypto = { workspace = true }
+

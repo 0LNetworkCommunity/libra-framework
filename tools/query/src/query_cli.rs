@@ -4,27 +4,13 @@ use crate::query_type::QueryType;
 
 #[derive(Parser)]
 #[clap(name = env!("CARGO_PKG_NAME"), author, version, about, long_about = None, arg_required_else_help = true)]
+
+/// Query the blockchain for views and resources.
 pub struct QueryCli {
     #[clap(subcommand)]
+    /// what to query
     subcommand: QueryType,
 }
-
-// #[derive(clap::Subcommand)]
-// enum Subcommand {
-//     /// Get account balance
-//     AccountBalance {
-//         /// Address of the onchain account to get balance from
-//         #[clap(short, long)]
-//         account_address: String,
-//     },
-
-//     /// Get all resources of an account
-//     AccountResources {
-//         /// Address of the onchain account to get resources from
-//         #[clap(short, long)]
-//         account_address: String,
-//     },
-// }
 
 impl QueryCli {
     pub async fn run(&self) -> Result<()> {

@@ -8,6 +8,7 @@ use std::path::PathBuf;
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 #[clap(propagate_version = true)]
+/// Generate keys, key schemes, and save key files.
 pub struct WalletCli {
     #[clap(subcommand)]
     command: WalletSub,
@@ -43,12 +44,8 @@ struct LegArgs {
 }
 
 impl WalletCli {
-  pub async fn run() -> Result<()> {
-      let cli = WalletCli::parse();
-
-      // You can check for the existence of subcommands, and if found use their
-      // matches just as you would the top level cmd
-      match &cli.command {
+  pub async fn run(&self) -> Result<()> {
+      match &self.command {
           WalletSub::Legacy(args) => {
               if !args.display && args.output_path.is_none() {
                   println!("pass --display to show keys and/or --output-path to save keys");

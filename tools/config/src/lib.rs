@@ -1,1 +1,2 @@
-pub mod libra_config_cli;
+pub mod config_cli;
+pub mod make_profile;

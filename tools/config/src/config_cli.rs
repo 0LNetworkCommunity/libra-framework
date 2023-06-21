@@ -1,10 +1,10 @@
+use crate::make_profile;
 use anyhow::Result;
 use clap::Parser;
 
-mod init;
-
 #[derive(Parser)]
 #[clap(name = env!("CARGO_PKG_NAME"), author, version, about, long_about = None, arg_required_else_help = true)]
+/// Generate a libra config file in the home .libra directory
 pub struct ConfigCli {
     #[clap(subcommand)]
     subcommand: Option<ConfigSub>,
@@ -43,7 +43,7 @@ impl ConfigCli {
                 public_key,
                 profile,
                 workspace,
-            }) => init::run(
+            }) => make_profile::run(
               public_key, 
               profile.as_deref().to_owned(),
               *workspace,

@@ -36,7 +36,6 @@ zapatos-gas = { workspace = true }
 zapatos-vm = { workspace = true }
 zapatos-framework = { workspace = true }
 zapatos-crypto = { workspace = true }
-zapatos-cached-packages = { workspace = true }
 zapatos-github-client = { workspace = true }
 zapatos-types = { workspace = true }
 zapatos-vm-genesis = { workspace = true }

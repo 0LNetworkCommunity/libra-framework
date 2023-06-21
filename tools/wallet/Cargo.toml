@@ -22,7 +22,6 @@ serde = { workspace = true }
 blst = { workspace = true }
 zapatos-types = { workspace = true }
 zapatos-crypto = { workspace = true }
-zapatos-keygen = { workspace = true }
 zapatos-genesis = { workspace = true }
 zapatos-config = { workspace = true }
 ol-keys = { workspace = true }
