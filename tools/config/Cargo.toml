@@ -20,4 +20,5 @@ libra-types = { workspace = true }
 zapatos = { workspace = true }
 zapatos-rest-client = { workspace = true }
 zapatos-crypto = { workspace = true }
+zapatos-types = { workspace = true }
 

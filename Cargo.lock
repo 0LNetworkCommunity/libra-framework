@@ -6073,6 +6073,7 @@ dependencies = [
  "aptos",
  "aptos-crypto",
  "aptos-rest-client",
+ "aptos-types",
  "clap 3.2.23",
  "libra-types",
  "tokio",

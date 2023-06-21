@@ -24,7 +24,7 @@ pub trait CliConfigExt {
         workspace: Option<PathBuf>,
         mode: ConfigSearchMode,
     ) -> Result<Option<ProfileConfig>>;
-    fn save_ext(&self, workspace: Option<PathBuf>) -> CliTypedResult<()>;
+    fn save_ext(&self, workspace: Option<PathBuf>) -> anyhow::Result<PathBuf>;
 }
 
 impl CliConfigExt for CliConfig {
@@ -81,7 +81,7 @@ impl CliConfigExt for CliConfig {
     }
 
     /// Saves the config to ./.0L/config.yaml
-    fn save_ext(&self, workspace: Option<PathBuf>) -> CliTypedResult<()> {
+    fn save_ext(&self, workspace: Option<PathBuf>) -> anyhow::Result<PathBuf> {
         let _0l_folder = libra_folder(workspace, ConfigSearchMode::CurrentDir)?;
 
         // Create if it doesn't exist
@@ -93,7 +93,6 @@ impl CliConfigExt for CliConfig {
             CliError::UnexpectedError(format!("Failed to serialize config {}", err))
         })?;
         write_to_user_only_file(&config_file, CONFIG_FILE, config_bytes.as_bytes())?;
-        dbg!(&config_file);
 
         // As a cleanup, delete the old if it exists
         let legacy_config_file = _0l_folder.join(LEGACY_CONFIG_FILE);
@@ -101,19 +100,17 @@ impl CliConfigExt for CliConfig {
             eprintln!("Removing legacy config file {}", LEGACY_CONFIG_FILE);
             let _ = std::fs::remove_file(legacy_config_file);
         }
-        Ok(())
+        Ok(config_file)
     }
 }
 
-// fn libra_folder(mode: ConfigSearchMode) -> CliTypedResult<PathBuf> {
-//     let global_config = GlobalConfig::load_ext()?;
-//     global_config.get_config_location_ext(mode)
-// }
-
 fn libra_folder(workspace: Option<PathBuf>, mode: ConfigSearchMode) -> CliTypedResult<PathBuf> {
-   
-   let workspace = workspace.unwrap_or(crate::global_config_dir().parent().unwrap().to_owned());
-    find_workspace_config(workspace, mode)
+  
+  if let Some(p) = workspace {
+      return find_workspace_config(p, mode)
+  };
+
+  Ok(crate::global_config_dir())
 }
 
 
