@@ -1,49 +1,59 @@
-use std::path::PathBuf;
+mod node_cli;
+
 use clap::{Parser, Subcommand};
-use zapatos_config::config::NodeConfig;
+use libra_txs::txs_cli::TxsCli;
+use libra_query::query_cli::QueryCli;
+use libra_config::config_cli::ConfigCli;
+use libra_wallet::wallet_cli::WalletCli;
+use zapatos::move_tool::MoveTool;
 use anyhow::anyhow;
-use zapatos::move_tool;
 use tokio;
 
 #[derive(Parser)]
-#[command(author, version, about, long_about = None)]
+#[clap(author, version, about, long_about = None)]
+#[clap(arg_required_else_help(true))]
 struct LibraCli {
-    #[command(subcommand)]
+    #[clap(subcommand)]
     command: Option<Sub>,
 }
 
 #[derive(Subcommand)]
 enum Sub {
-  Node { 
-    #[clap(short,long)]
-    config_path: PathBuf 
-  },
+  Node(node_cli::NodeCli),
+  #[clap(subcommand)]
+  Move(MoveTool), // from vendor
+  Txs(TxsCli),
+  Query(QueryCli),
+  Config(ConfigCli),
+  Wallet(WalletCli),
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()>{
     let cli = LibraCli::parse();
     match cli.command {
-        Some(Sub::Node { config_path }) => {
-                      // A config file exists, attempt to parse the config
-            let config = NodeConfig::load_from_path(config_path.clone()).
-            map_err(|error| {
-                anyhow!(
-                    "Failed to load the node config file! Given file path: {:?}. Error: {:?}",
-                    config_path.display(),
-                    error
-                )
-            })?;
-
-            // Start the node
-            zapatos_node::start(config, None, true).expect("Node should start correctly");
-
+        Some(Sub::Node(n)) => {
+          n.run().await?;
         },
-        Some(tool) => tool.exectute().await,
-
+        Some(Sub::Move(move_tool)) => {
+            move_tool.execute().await
+            .map_err(|e| anyhow!("Failed to execute move tool, message: {}", e.to_string()))?;
+        },
+        Some(Sub::Txs(txs_cli)) => {
+            txs_cli.run().await?;
+        },
+        Some(Sub::Query(query_cli)) => {
+            query_cli.run().await?;
+        },
+        Some(Sub::Config(config_cli)) => {
+            config_cli.run().await?;
+        },
+        Some(Sub::Wallet(wallet_cli)) => {
+            wallet_cli.run().await?;
+        },
         _ => { println!("\nliving is easy with eyes closed") }
     }
 
-    // Continued program logic goes here...
+
     Ok(())
 }

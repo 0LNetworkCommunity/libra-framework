@@ -1,33 +1,21 @@
+use crate::submit_transaction::Sender;
+
 use anyhow::Result;
 use clap::Parser;
-
 use indoc::indoc;
-
 use libra_wallet::legacy::{get_keys_from_prompt, get_keys_from_mnem};
-
 use url::Url;
-use zapatos_sdk::types::AccountKey;
-use zapatos_sdk::types::account_address::AccountAddress;
-use zapatos_sdk::crypto::ValidCryptoMaterialStringExt;
-use zapatos_sdk::crypto::ed25519::Ed25519PrivateKey;
 
+use zapatos_sdk::types::{AccountKey, account_address::AccountAddress};
+use zapatos_sdk::crypto::{ValidCryptoMaterialStringExt, ed25519::Ed25519PrivateKey};
 use zapatos_types::chain_id::ChainId;
-use self::submit_transaction::Sender;
-
-
-mod create_account;
-// mod demo;
-mod generate_transaction;
-mod submit_transaction;
-// mod transfer_coin;
-mod view;
-mod transfer;
 
 #[derive(Parser)]
 #[clap(name = env!("CARGO_PKG_NAME"), author, version, about, long_about = None, arg_required_else_help = true)]
+/// Submit a transaction to the blockchain.
 pub struct TxsCli {
       #[clap(subcommand)]
-      pub subcommand: Option<Subcommand>,
+      pub subcommand: Option<TxsSub>,
 
       /// Optional mnemonic to pass at runtime. Otherwise this will prompt for mnemonic.
       #[clap(short, long)]
@@ -52,7 +40,7 @@ pub struct TxsCli {
 }
 
 #[derive(clap::Subcommand)]
-pub enum Subcommand {
+pub enum TxsSub {
 
     /// Create onchain account by using Aptos faucet
     CreateAccount {
@@ -175,7 +163,6 @@ pub enum Subcommand {
 
 impl TxsCli {
     pub async fn run(&self) -> Result<()> {
-        dbg!("hello");
         let pri_key = if self.private_key.is_none() && self.mnemonic.is_none() {
           let legacy = get_keys_from_prompt()?;
           legacy.child_0_owner.pri_key
@@ -186,7 +173,6 @@ impl TxsCli {
           Ed25519PrivateKey::from_encoded_string(&self.private_key.as_ref().unwrap())?
         };
         
-        dbg!("now send");
         let mut send = Sender::new(AccountKey::from_private_key(pri_key), ChainId::test(), self.url.to_owned()).await?; // TODO: change this from test.
         
 
@@ -194,11 +180,11 @@ impl TxsCli {
             // Some(Subcommand::Test) => transfer::run().await,
 
             // Some(Subcommand::Demo) => demo::run().await,
-            Some(Subcommand::CreateAccount {
+            Some(TxsSub::CreateAccount {
                 account_address,
                 coins,
-            }) => create_account::run(account_address, coins.unwrap_or_default()).await,
-            Some(Subcommand::Transfer {
+            }) => crate::create_account::run(account_address, coins.unwrap_or_default()).await,
+            Some(TxsSub::Transfer {
                 to_account,
                 amount,
             }) => {
@@ -237,7 +223,7 @@ impl TxsCli {
             //     }
             //     Ok(())
             // }
-            Some(Subcommand::View {
+            Some(TxsSub::View {
                 function_id,
                 type_args,
                 args,
@@ -245,7 +231,7 @@ impl TxsCli {
                 println!("====================");
                 println!(
                     "{}",
-                    view::run(function_id, type_args.to_owned(), args.to_owned()).await?
+                    crate::view::run(function_id, type_args.to_owned(), args.to_owned()).await?
                 );
                 Ok(())
             }

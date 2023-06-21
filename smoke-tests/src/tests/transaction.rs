@@ -1,11 +1,13 @@
-use aptos_forge::Node;
-use aptos_smoke_test::smoke_test_environment::{
+use zapatos_forge::Node;
+use zapatos_smoke_test::smoke_test_environment::{
   new_local_swarm_with_release,
 };
 use libra_framework::release::ReleaseTarget;
-use libra_txs::txs_cli::TxsCli;
-use libra_txs::txs_cli::Subcommand::Transfer;
 use zapatos_crypto::traits::ValidCryptoMaterialStringExt;
+use libra_txs::txs_core::{
+  TxsCli,
+  Subcommand::Transfer,
+};
 
 /// Testing that we can get a swarm up with the current head.mrb
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
@@ -21,7 +23,7 @@ async fn can_send_txs_cli() {
 
     let t = TxsCli {
       subcommand: Some(Transfer {
-        to_account: swarm.validators().nth(1).unwrap().peer_id(), // sending to sedond node.
+        to_account: swarm.validators().nth(1).unwrap().peer_id(), // sending to second node.
         amount: 1,
       }),
       mnemonic: None,

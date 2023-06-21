@@ -7,7 +7,7 @@ use zapatos::{
     config::{ConfigType, GlobalConfig},
     genesis::git::from_yaml,
 };
-use libra_types::LIBRA_CONFIG_DIRECTORY;
+use crate::LIBRA_CONFIG_DIRECTORY;
 // const LIBRA_CONFIG_DIRECTORY: &str = ".0L";
 const GLOBAL_CONFIG_FILE: &str = "global_config.yaml";
 

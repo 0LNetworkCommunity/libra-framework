@@ -48,7 +48,7 @@ async fn can_submit_proposal() {
         true,
     );
 
-    let mut public_info: zapatos_forge::AptosPublicInfo = swarm.aptos_public_info();
+    let public_info: zapatos_forge::AptosPublicInfo = swarm.aptos_public_info();
 
     // make sure we have gas
 
@@ -306,7 +306,7 @@ async fn can_upgrade() {
       .transaction_factory()
       .payload(check_vote_payload);
     let txn = alice_account.sign_with_transaction_builder(built_tx);
-    public_info.client().submit_and_wait(&txn).await;
+    public_info.client().submit_and_wait(&txn).await.unwrap();
 
 
     // send the proposal.
@@ -325,7 +325,7 @@ async fn can_upgrade() {
       // .payload(vote_payload);
     let txn = dave_account.sign_with_transaction_builder(built_tx);
 
-    public_info.client().submit_and_wait(&txn).await;
+    public_info.client().submit_and_wait(&txn).await.unwrap();
 
 
     // make sure the network is functioning after the upgrade

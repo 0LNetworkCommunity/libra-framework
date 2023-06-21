@@ -1,13 +1,13 @@
+use super::constants::{DEFAULT_GAS_UNIT_PRICE, DEFAULT_MAX_GAS_AMOUNT};
 use anyhow::Result;
-use libra_config::extension::client_ext::{ClientExt as ConfigClientExt, DEFAULT_TIMEOUT_SECS};
-use crate::constant::{DEFAULT_GAS_UNIT_PRICE, DEFAULT_MAX_GAS_AMOUNT};
-use crate::extension::{
-    client_ext::{ClientExt, TransactionOptions},
-    ed25519_private_key_ext::Ed25519PrivateKeyExt,
-};
 use zapatos_sdk::crypto::ed25519::Ed25519PrivateKey;
 use zapatos_sdk::rest_client::Client;
 use zapatos_types::transaction::SignedTransaction;
+
+use libra_types::type_extensions::{
+  client_ext::{ClientExt,TransactionOptions, DEFAULT_TIMEOUT_SECS},
+  ed25519_private_key_ext::Ed25519PrivateKeyExt,
+};
 
 pub async fn _run(
     function_id: &str,

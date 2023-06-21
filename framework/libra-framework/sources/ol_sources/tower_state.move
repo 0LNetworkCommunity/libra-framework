@@ -75,22 +75,22 @@ module ol_framework::tower_state {
     ///     proofs (see GlobalConstants.epoch_mining_thres_lower)
     /// `count_proofs_in_epoch`: the number of proofs the miner has submitted 
     ///     in the current epoch 
-    /// `epochs_validating_and_mining`: the cumulative number of epochs 
+    /// `epochs_mining`: the cumulative number of epochs 
     ///     the miner has been mining above threshold 
     ///     TODO does this actually only apply to validators? 
-    /// `contiguous_epochs_validating_and_mining`: the number of contiguous 
+    /// `contiguous_epochs_mining`: the number of contiguous 
     ///     epochs the miner has been mining above threshold 
     ///     TODO does this actually only apply to validators?
     /// `epochs_since_last_account_creation`: the number of epochs since 
     ///     the miner last created a new account
-    struct TowerProofHistory has key { // Todo: rename to TowerState ?
+    struct TowerProofHistory has key {
         previous_proof_hash: vector<u8>,
         verified_tower_height: u64, 
         latest_epoch_mining: u64,
         count_proofs_in_epoch: u64,
-        epochs_validating_and_mining: u64,
-        contiguous_epochs_validating_and_mining: u64,
-        epochs_since_last_account_creation: u64
+        epochs_mining: u64,
+        contiguous_epochs_mining: u64,
+        // epochs_since_last_account_creation: u64
     }
 
     struct VDFDifficulty has key {
@@ -190,14 +190,14 @@ module ol_framework::tower_state {
       exists<TowerProofHistory>(addr)
     }
 
-    /// is onboarding
-    public fun is_onboarding(addr: address): bool acquires TowerProofHistory {
-      let count = get_count_in_epoch(addr);
-      let state = borrow_global<TowerProofHistory>(addr);
+    // /// is onboarding
+    // public fun is_onboarding(addr: address): bool acquires TowerProofHistory {
+    //   let count = get_count_in_epoch(addr);
+    //   let state = borrow_global<TowerProofHistory>(addr);
 
-      count < 2 &&
-      state.epochs_since_last_account_creation < 2
-    }
+    //   count < 2 &&
+    //   state.epochs_since_last_account_creation < 2
+    // }
 
     // Creates proof blob object from input parameters
     // Permissions: PUBLIC, ANYONE can call this function.
@@ -268,6 +268,8 @@ module ol_framework::tower_state {
         return
       };
 
+      
+
       // // Skip this check on local tests, we need tests to send different difficulties.
       // if (!testnet::is_testnet()){
       //   // Get vdf difficulty constant. Will be different in tests than in production.
@@ -292,6 +294,25 @@ module ol_framework::tower_state {
       // Process the proof
       verify_and_update_state(miner_addr, proof, true);
     }
+
+    /// The entry point to commit miner state.
+    public entry fun minerstate_commit(
+        sender: signer,
+        challenge: vector<u8>, 
+        solution: vector<u8>,
+        difficulty: u64,
+        security: u64,
+    ) acquires TowerCounter, TowerList, TowerProofHistory {
+        let proof = create_proof_blob(
+            challenge,
+            solution,
+            difficulty,
+            security,
+        );
+
+        commit_state(&sender, proof);
+    }
+
 
     // // This function is called by the OPERATOR associated with node,
     // // it verifies the proof and commits to chain.
@@ -420,15 +441,15 @@ module ol_framework::tower_state {
       if (passed) {
           // let this_epoch = reconfiguration::get_current_epoch();
           // miner_history.latest_epoch_mining = this_epoch; // TODO: Don't need this
-          miner_history.epochs_validating_and_mining 
-            = miner_history.epochs_validating_and_mining + 1u64;
-          miner_history.contiguous_epochs_validating_and_mining 
-            = miner_history.contiguous_epochs_validating_and_mining + 1u64;
-          miner_history.epochs_since_last_account_creation 
-            = miner_history.epochs_since_last_account_creation + 1u64;
+          miner_history.epochs_mining 
+            = miner_history.epochs_mining + 1u64;
+          miner_history.contiguous_epochs_mining 
+            = miner_history.contiguous_epochs_mining + 1u64;
+          // miner_history.epochs_since_last_account_creation 
+          //   = miner_history.epochs_since_last_account_creation + 1u64;
       } else {
         // didn't meet the threshold, reset this count
-        miner_history.contiguous_epochs_validating_and_mining = 0;
+        miner_history.contiguous_epochs_mining = 0;
       };
 
       // This is the end of the epoch, reset the count of proofs
@@ -516,9 +537,9 @@ module ol_framework::tower_state {
         verified_tower_height: 0u64,
         latest_epoch_mining: 0u64,
         count_proofs_in_epoch: 1u64,
-        epochs_validating_and_mining: 0u64,
-        contiguous_epochs_validating_and_mining: 0u64,
-        epochs_since_last_account_creation: 0u64,
+        epochs_mining: 0u64,
+        contiguous_epochs_mining: 0u64,
+        // epochs_since_last_account_creation: 0u64,
       });
       // create the initial proof submission
       let proof = Proof {
@@ -540,9 +561,9 @@ module ol_framework::tower_state {
       verified_tower_height: u64,
       latest_epoch_mining: u64,
       count_proofs_in_epoch: u64,
-      epochs_validating_and_mining: u64,
-      contiguous_epochs_validating_and_mining: u64,
-      epochs_since_last_account_creation: u64,
+      epochs_mining: u64,
+      contiguous_epochs_mining: u64,
+      // epochs_since_last_account_creation: u64,
     ) {
       system_addresses::assert_ol(vm);
       move_to<TowerProofHistory>(miner_sig, TowerProofHistory{
@@ -550,9 +571,9 @@ module ol_framework::tower_state {
         verified_tower_height,
         latest_epoch_mining,
         count_proofs_in_epoch,
-        epochs_validating_and_mining,
-        contiguous_epochs_validating_and_mining,
-        epochs_since_last_account_creation,
+        epochs_mining,
+        contiguous_epochs_mining,
+        // epochs_since_last_account_creation,
       });
     }
 
@@ -589,13 +610,13 @@ module ol_framework::tower_state {
       *&addr_state.latest_epoch_mining
     }
 
-    // Function to reset the timer for when an account can be created 
-    // must be signed by the account being reset 
-    // done as a part of the creation of new accounts. 
-    public fun reset_rate_limit(miner: &signer) acquires TowerProofHistory {
-      let state = borrow_global_mut<TowerProofHistory>(signer::address_of(miner));
-      state.epochs_since_last_account_creation = 0;
-    }
+    // // Function to reset the timer for when an account can be created 
+    // // must be signed by the account being reset 
+    // // done as a part of the creation of new accounts. 
+    // public fun reset_rate_limit(miner: &signer) acquires TowerProofHistory {
+    //   let state = borrow_global_mut<TowerProofHistory>(signer::address_of(miner));
+    //   state.epochs_since_last_account_creation = 0;
+    // }
 
     fun increment_stats(miner_addr: address) acquires TowerProofHistory, TowerCounter {
       // safety. Don't cause VM to halt
@@ -716,7 +737,7 @@ module ol_framework::tower_state {
     // TODO: Rename
     public fun get_epochs_compliant(node_addr: address): u64 acquires TowerProofHistory {
       if (exists<TowerProofHistory>(node_addr)) {
-        return borrow_global<TowerProofHistory>(node_addr).epochs_validating_and_mining
+        return borrow_global<TowerProofHistory>(node_addr).epochs_mining
       };
       0
     }
@@ -791,6 +812,7 @@ module ol_framework::tower_state {
     //   (0,0,0)
     // }
 
+    #[view]
     public fun get_difficulty(): (u64, u64) acquires VDFDifficulty {
       if (exists<VDFDifficulty>(@ol_framework )) {
         let v = borrow_global_mut<VDFDifficulty>(@ol_framework );
@@ -822,9 +844,9 @@ module ol_framework::tower_state {
           verified_tower_height: 0u64,
           latest_epoch_mining: 0u64,
           count_proofs_in_epoch: 0u64,
-          epochs_validating_and_mining: 1u64,
-          contiguous_epochs_validating_and_mining: 0u64,
-          epochs_since_last_account_creation: 10u64, // is not rate-limited
+          epochs_mining: 1u64,
+          contiguous_epochs_mining: 0u64,
+          // epochs_since_last_account_creation: 10u64, // is not rate-limited
         });
 
         // Needs difficulty to test between easy and hard mode.
@@ -971,26 +993,26 @@ module ol_framework::tower_state {
     public fun test_helper_get_contiguous_vm(vm: &signer, miner_addr: address): u64 acquires TowerProofHistory {
       assert!(testnet::is_testnet(), error::invalid_state(130125));
       system_addresses::assert_ol(vm);
-      borrow_global<TowerProofHistory>(miner_addr).contiguous_epochs_validating_and_mining
+      borrow_global<TowerProofHistory>(miner_addr).contiguous_epochs_mining
     }
 
 
-    #[test_only]
-    // Sets the epochs since last account creation variable to allow `account`
-    // to create a new account
-    public fun test_helper_set_rate_limit(account: &signer, value: u64) acquires TowerProofHistory {
-      assert!(testnet::is_testnet(), error::invalid_state(130126));
-      let addr = signer::address_of(account);
-      let state = borrow_global_mut<TowerProofHistory>(addr);
-      state.epochs_since_last_account_creation = value;
-    }
+    // #[test_only]
+    // // Sets the epochs since last account creation variable to allow `account`
+    // // to create a new account
+    // public fun test_helper_set_rate_limit(account: &signer, value: u64) acquires TowerProofHistory {
+    //   assert!(testnet::is_testnet(), error::invalid_state(130126));
+    //   let addr = signer::address_of(account);
+    //   let state = borrow_global_mut<TowerProofHistory>(addr);
+    //   state.epochs_since_last_account_creation = value;
+    // }
 
     #[test_only]
     public fun test_helper_set_epochs_mining(node_addr: address, value: u64) acquires TowerProofHistory {
       assert!(testnet::is_testnet(), error::invalid_state(130126));
 
       let s = borrow_global_mut<TowerProofHistory>(node_addr);
-      s.epochs_validating_and_mining = value;
+      s.epochs_mining = value;
     }
 
     #[test_only]
