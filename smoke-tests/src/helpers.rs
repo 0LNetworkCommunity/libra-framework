@@ -1,11 +1,9 @@
 use libra_cached_packages::aptos_stdlib;
 use zapatos_forge::AptosPublicInfo;
-use zapatos_sdk::rest_client::aptos::Balance;
-use zapatos_sdk::rest_client::Client;
-use zapatos_sdk::rest_client::Response;
-
+use zapatos_sdk::rest_client::{Client, Response, aptos::Balance};
 use zapatos_types::account_address::AccountAddress;
 use anyhow::bail;
+
 
 /// Get the balance of the 0L coin. Client methods are hardcoded for vendor
 pub async fn get_libra_balance(client: &Client, address: AccountAddress) -> anyhow::Result<Response<Balance>> {

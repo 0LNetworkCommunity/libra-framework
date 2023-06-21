@@ -1,5 +1,3 @@
-use crate::extension::client_ext::ClientExt;
-use libra_config::extension::client_ext::ClientExt as ClientExtDupl;
 
 use anyhow::{bail};
 use url::Url;
@@ -13,7 +11,7 @@ use zapatos_types::transaction::TransactionPayload;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
-use libra_config::extension::client_ext::DEFAULT_TIMEOUT_SECS;
+use libra_types::type_extensions::client_ext::{ClientExt, DEFAULT_TIMEOUT_SECS};
 
 // #[derive(Debug)]
 // /// a transaction error type specific to ol txs

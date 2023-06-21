@@ -181,6 +181,13 @@ module ol_framework::gas_coin {
         index
     }
 
+    #[view] 
+    /// helper to get balance in gas coin
+    public fun get_balance(account: address): u64 {
+        coin::balance<GasCoin>(account)
+    }
+
+
     #[test_only]
     use aptos_framework::aggregator_factory;
 

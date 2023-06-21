@@ -1,7 +1,7 @@
 use super::client_ext::ClientExt;
 use anyhow::Result;
 use async_trait::async_trait;
-use libra_config::extension::client_ext::ClientExt as ConfigClientExt;
+// use crate::type_extensions::client_ext::ClientExt;
 use zapatos_sdk::{
     crypto::ed25519::Ed25519PrivateKey,
     rest_client::Client,
@@ -36,7 +36,7 @@ impl Ed25519PrivateKeyExt for Ed25519PrivateKey {
 
 #[cfg(test)]
 mod tests {
-    use crate::extension::ed25519_private_key_ext::Ed25519PrivateKeyExt;
+    use crate::type_extensions::ed25519_private_key_ext::Ed25519PrivateKeyExt;
     use zapatos_sdk::crypto::{ed25519::Ed25519PrivateKey, ValidCryptoMaterialStringExt};
 
     #[tokio::test]
