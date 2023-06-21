@@ -129,8 +129,8 @@ module ol_framework::slow_wallet {
     }
 
     #[view]
-    /// Returns the amount of unlocked funds for a slow wallet. For convenienc add the total balance. (unlocked, total)
-    public fun unlocked_amount(addr: address): (u64, u64) acquires SlowWallet{
+    /// helper to get the unlocked and total balance. (unlocked, total)
+    public fun balance(addr: address): (u64, u64) acquires SlowWallet{
       // this is a normal account, so return the normal balance
       let total = coin::balance<GasCoin>(addr);
       if (exists<SlowWallet>(addr)) {
@@ -140,6 +140,19 @@ module ol_framework::slow_wallet {
 
       // if the account has no SlowWallet tracker, then everything is unlocked.
       (total, total)
+    }
+
+    #[view]
+    // TODO: Deprecate this function in favor of `balance`
+    /// Returns the amount of unlocked funds for a slow wallet.
+    public fun unlocked_amount(addr: address): u64 acquires SlowWallet{
+      // this is a normal account, so return the normal balance
+      if (exists<SlowWallet>(addr)) {
+        let s = borrow_global<SlowWallet>(addr);
+        return s.unlocked
+      };
+
+      coin::balance<GasCoin>(addr)
     }
 
     #[view]

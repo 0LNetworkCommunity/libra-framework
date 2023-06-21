@@ -9611,6 +9611,7 @@ dependencies = [
  "libra-framework",
  "libra-query",
  "libra-txs",
+ "libra-types",
  "serde_json",
  "smoke-test",
  "tokio",

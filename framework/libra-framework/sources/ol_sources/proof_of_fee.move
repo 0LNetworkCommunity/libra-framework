@@ -324,7 +324,7 @@ module ol_framework::proof_of_fee {
       // skip the user if they don't have sufficient UNLOCKED funds
       // or if the bid expired.
 // print(&1007);
-      let (unlocked_coins, _) = slow_wallet::unlocked_amount(*val);
+      let unlocked_coins = slow_wallet::unlocked_amount(*val);
       let (baseline_reward, _, _) = get_consensus_reward();
       let coin_required = fixed_point32::multiply_u64(baseline_reward, fixed_point32::create_from_rational(bid_pct, 1000));
 // print(&1008);

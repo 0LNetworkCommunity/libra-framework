@@ -4,7 +4,9 @@ use zapatos_smoke_test::smoke_test_environment::{
 use libra_framework::release::ReleaseTarget;
 use zapatos_forge::Swarm;
 use libra_query::querier::QueryType;
-/// Testing that we can get a swarm up with the current head.mrb
+use libra_types::gas_coin::SlowWalletBalance;
+
+/// Testing the query library
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn libra_query_test() {
 
@@ -19,13 +21,13 @@ async fn libra_query_test() {
     match q.query(Some(c.to_owned())).await {
       Ok(v) => {
         println!("v: {:?}", v);
+        let b = SlowWalletBalance::from_value(v).expect("could not deserialize SlowWalletBalance");
+        assert!(b.unlocked == 10000000000);
+        assert!(b.total == 10000000000);
       },
       Err(e) => {
         println!("e: {:?}", e);
         assert!(false);
       }
     }
-    
-
-
 }

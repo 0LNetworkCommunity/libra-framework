@@ -14,7 +14,6 @@ tokio = { workspace = true }
 libra-cached-packages = { workspace = true }
 libra-framework = { workspace = true }
 libra-query = { workspace = true }
-libra-txs = { workspace = true }
 
 zapatos-debugger = { workspace = true }
 zapatos-forge = { workspace = true }
@@ -24,3 +23,5 @@ zapatos-types = { workspace = true }
 zapatos-crypto = { workspace = true }
 
 [dev-dependencies]
+libra-types = { workspace = true }
+libra-txs = { workspace = true }

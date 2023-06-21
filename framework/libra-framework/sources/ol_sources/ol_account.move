@@ -147,7 +147,7 @@ module ol_framework::ol_account {
       let full_balance = coin::balance<GasCoin>(addr);
       // TODO: check if recipient is a donor directed account.
       if (false) { return full_balance };
-      let (unlocked, _) = slow_wallet::unlocked_amount(addr);
+      let unlocked = slow_wallet::unlocked_amount(addr);
       unlocked
     }
 

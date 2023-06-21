@@ -79,7 +79,7 @@ impl ClientExt for Client {
 
     async fn get_account_balance_libra(&self, account: AccountAddress) -> Result<Vec<serde_json::Value>> {
 
-      let slow_balance_id = entry_function_id("slow_wallet", "unlocked_amount")?;
+      let slow_balance_id = entry_function_id("slow_wallet", "balance")?;
       let request = ViewRequest {
           function: slow_balance_id,
           type_arguments: vec![],
@@ -88,10 +88,7 @@ impl ClientExt for Client {
       
       let res = self.view(&request, None).await?.into_inner();
 
-      dbg!(&res);
-
       Ok(res)
-
     }
 
 
