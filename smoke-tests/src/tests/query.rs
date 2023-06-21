@@ -3,7 +3,7 @@ use zapatos_smoke_test::smoke_test_environment::{
 };
 use libra_framework::release::ReleaseTarget;
 use zapatos_forge::Swarm;
-use libra_query::querier::QueryType;
+use libra_query::query_type::QueryType;
 use libra_types::gas_coin::SlowWalletBalance;
 
 /// Testing the query library
@@ -18,10 +18,10 @@ async fn libra_query_test() {
     let c = info.client();
     
     let q = QueryType::Balance { account: val_acct };
-    match q.query(Some(c.to_owned())).await {
+    match q.query_to_json(Some(c.to_owned())).await {
       Ok(v) => {
         println!("v: {:?}", v);
-        let b = SlowWalletBalance::from_value(v).expect("could not deserialize SlowWalletBalance");
+        let b: SlowWalletBalance = serde_json::from_value(v).unwrap();
         assert!(b.unlocked == 10000000000);
         assert!(b.total == 10000000000);
       },

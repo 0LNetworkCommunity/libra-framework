@@ -1,4 +1,4 @@
-use crate::gas_coin::SlowWalletBalance;
+// use crate::gas_coin::SlowWalletBalance;
 use crate::util::{format_args, format_type_args, parse_function_id};
 use crate::type_extensions::cli_config_ext::CliConfigExt;
 
@@ -9,6 +9,7 @@ use std::{str::FromStr, time::UNIX_EPOCH};
 use zapatos::common::types::{CliConfig, ConfigSearchMode, DEFAULT_PROFILE};
 use zapatos_sdk::{
     move_types::{
+        move_resource::MoveStructType,
         language_storage::{ModuleId, TypeTag},
         parser::{parse_transaction_arguments, parse_type_tags},
         transaction_argument::convert_txn_args,
@@ -27,6 +28,7 @@ use zapatos_sdk::{
 };
 use url::Url;
 use std::time::Duration;
+use serde::de::DeserializeOwned;
 
 pub const DEFAULT_TIMEOUT_SECS: u64 = 10;
 pub const USER_AGENT: &str = concat!("libra-config/", env!("CARGO_PKG_VERSION"));
@@ -36,7 +38,7 @@ pub const USER_AGENT: &str = concat!("libra-config/", env!("CARGO_PKG_VERSION"))
 pub trait ClientExt {
     fn default() -> Result<Client>;
 
-    async fn get_account_balance_libra(&self, account: AccountAddress) -> Result<SlowWalletBalance>;
+    async fn get_move_resource<T: MoveStructType + DeserializeOwned> (&self, address: AccountAddress) -> Result<T>;
 
     async fn get_account_resources_ext(&self, account: AccountAddress) -> Result<String>;
 
@@ -78,20 +80,29 @@ impl ClientExt for Client {
         ))
     }
 
-    async fn get_account_balance_libra(&self, account: AccountAddress) -> Result<SlowWalletBalance> {
+    // async fn get_account_balance_libra(&self, account: AccountAddress) -> Result<SlowWalletBalance> {
 
-      let slow_balance_id = entry_function_id("slow_wallet", "balance")?;
-      let request = ViewRequest {
-          function: slow_balance_id,
-          type_arguments: vec![],
-          arguments: vec![account.to_string().into()],
-      };
+    //   let slow_balance_id = entry_function_id("slow_wallet", "balance")?;
+    //   let request = ViewRequest {
+    //       function: slow_balance_id,
+    //       type_arguments: vec![],
+    //       arguments: vec![account.to_string().into()],
+    //   };
       
-      let res = self.view(&request, None).await?.into_inner();
+    //   let res = self.view(&request, None).await?.into_inner();
 
-      SlowWalletBalance::from_value(res)
-    }
+    //   SlowWalletBalance::from_value(res)
+    // }
 
+    async fn get_move_resource<T: MoveStructType + DeserializeOwned> (&self, address: AccountAddress) -> Result<T> {
+      let resource_type = format!("0x1::{}::{}", T::MODULE_NAME, T::STRUCT_NAME);
+      let res = self
+        .get_account_resource_bcs::<T>(address, &resource_type)
+        .await?
+        .into_inner();
+
+      Ok(res)
+  }
 
     async fn get_account_resources_ext(&self, account: AccountAddress) -> Result<String> {
         let response = self

@@ -1,14 +1,16 @@
+use crate::account_queries::{
+  get_account_balance_libra,
+  get_tower_state,
+};
+
 use anyhow::{bail, Result};
 use zapatos_sdk::{
   rest_client::Client,
   types::account_address::AccountAddress,
 };
 use libra_types::{
-  tower::TowerProofHistoryView,
   type_extensions::client_ext::ClientExt
 };
-use serde::de::DeserializeOwned;
-use zapatos_sdk::move_types::move_resource::MoveStructType;
 use serde_json::json;
 
 #[derive(Debug, clap::Subcommand)]
@@ -93,24 +95,18 @@ pub enum QueryType {
 
 impl QueryType {
 
-  pub async fn query(&self, client: Option<Client>) -> Result<serde_json::Value>{
+  pub async fn query_to_json(&self, client: Option<Client>) -> Result<serde_json::Value>{
     let client = client.unwrap_or_else(|| Client::default().expect("Failed to create client"));
 
-    // let client = client.unwrap_or_else(|| Client::default().expect("Failed to create client"));
     match self {
         QueryType::Balance { account } => {
-          let res = client.get_account_balance_libra(*account).await?;
+          let res = get_account_balance_libra(&client, *account).await?;
           Ok(json!(res))
         },
         QueryType::Tower { account } => {
-          let resource_type = format!("0x1::{}::{}", TowerProofHistoryView::MODULE_NAME, TowerProofHistoryView::STRUCT_NAME);
-          match client
-            .get_account_resource(*account, &resource_type)
-            .await?
-            .into_inner(){ 
-              Some(res) => Ok(res.data),
-              None => bail!("no data found")
-            }
+          let res = get_tower_state(&client, *account).await?;
+          Ok(json!(res))
+
         },
         _ => { bail!("Not implemented for type: {:?}", self) }
         // QueryType::Epoch => todo!(),
@@ -123,46 +119,5 @@ impl QueryType {
 
   }
 
-  pub async fn query_into_type<T: DeserializeOwned> (&self, client: Option<Client>) -> Result<T> {
-    let value = self.query(client).await?;
-    Ok(serde_json::from_value::<T>(value)?)
-  }
-
-  pub async fn get_move_resource<T: MoveStructType + DeserializeOwned> (client: Option<Client>, address: AccountAddress) -> Result<T> {
-      let client = client.unwrap_or_else(|| Client::default().expect("Failed to create client"));
-      let resource_type = format!("0x1::{}::{}", T::MODULE_NAME, T::STRUCT_NAME);
-      let res = client
-        .get_account_resource_bcs::<T>(address, &resource_type)
-        .await?
-        .into_inner();
-
-      Ok(res)
-  }
 }
 
-// pub struct Querier {
-//     pub client: Client,
-// }
-
-// impl Querier {
-//     pub fn new(client: Client) -> Self {
-//         Self { client }
-//     }
-
-//     pub async fn query(&self, query_type: QueryType) -> Result<Vec<serde_json::Value>> {
-//         match query_type {
-//             QueryType::Balance { account } => {
-//               self.client.get_account_balance_libra(account).await
-//             },
-//             // QueryType::UnlockedBalance { account } => todo!(),
-//             QueryType::Epoch => todo!(),
-//             QueryType::BlockHeight => todo!(),
-//             QueryType::Resources { account } => todo!(),
-//             QueryType::MoveValue { account, module_name, struct_name, key_name } => todo!(),
-//             QueryType::SyncDelay => todo!(),
-//             QueryType::Txs { account, txs_height, txs_count, txs_type } => todo!(),
-//             // QueryType::Events { account, sent_or_received, seq_start } => todo!(),
-//             // QueryType::ValConfig { account } => todo!(),
-//         }
-//     }
-// }
