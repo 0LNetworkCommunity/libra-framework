@@ -26,21 +26,7 @@ use zapatos_rest_client::{
 pub async fn run(public_key: &str, profile: Option<&str>, workspace: bool) -> Result<()> {
 
     // init_workspace
-  let mut config = CliConfig::default();
-    // let mut config = if init_workspace {
-    //   if CliConfig::config_exists_ext(ConfigSearchMode::CurrentDir) {
-    //       CliConfig::load_ext(ConfigSearchMode::CurrentDir)?
-    //   } else {
-    //       CliConfig::default()
-    //   };
-    // } else {
-    //   if GlobalConfig::load_ext().is_ok() {
-       
-    // } else {
-    //   CliConfig::default()
-    // }
-      // CliConfig::config_exists_ext(mode)
-    // };
+    let mut config = CliConfig::default();
     
     let profile_name = profile.unwrap_or(DEFAULT_PROFILE);
     let prompt_options = PromptOptions::default();

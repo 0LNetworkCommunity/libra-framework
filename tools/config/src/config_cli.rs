@@ -15,19 +15,17 @@ enum ConfigSub {
     /// Generate config.yaml file that stores 0L configuration
     Init {
         /// Ed25519 public key
-        #[clap(long)]
+        #[clap(short, long)]
         public_key: String,
 
-        /// Profile to use from the CLI config
+        /// Profile name to use when saving the config. Defaults to "default"
         ///
         /// This will be used to override associated settings such as
-        /// the REST URL, the Faucet URL, and the private key arguments.
-        ///
-        /// Defaults to "default"
+        /// the REST URL, and the private key arguments.
         #[clap(long)]
         profile: Option<String>,
 
-        /// In 0L we default to the configs being global in $HOME/.libra
+        /// In libra we default to the configs being global in $HOME/.libra
         /// Otherwise you should pass -w to use the workspace configuration.
         /// Uses this directory as the workspace, instead of using the global
         /// parameters in $HOME/.libra
