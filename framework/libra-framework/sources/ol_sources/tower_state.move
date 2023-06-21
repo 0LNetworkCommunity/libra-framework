@@ -812,6 +812,7 @@ module ol_framework::tower_state {
     //   (0,0,0)
     // }
 
+    #[view]
     public fun get_difficulty(): (u64, u64) acquires VDFDifficulty {
       if (exists<VDFDifficulty>(@ol_framework )) {
         let v = borrow_global_mut<VDFDifficulty>(@ol_framework );
