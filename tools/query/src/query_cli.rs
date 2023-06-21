@@ -1,8 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
-use libra_types::type_extensions::client_ext::ClientExt;
 use libra_query::querier::QueryType;
-use zapatos_sdk::rest_client::Client;
 
 #[derive(Parser)]
 #[clap(name = env!("CARGO_PKG_NAME"), author, version, about, long_about = None, arg_required_else_help = true)]
@@ -30,10 +28,10 @@ pub struct QueryCli {
 
 impl QueryCli {
     pub async fn run(&self) -> Result<()> {
-        let client = Client::default()?;
-        // let querier = Querier::new(client);
+        // let client = Client::default()?;
+        // TODO: get client from configs
 
-        let res = self.subcommand.query(&client).await?;
+        let res = self.subcommand.query(None).await?;
 
         println!("{:#?}", res);
 

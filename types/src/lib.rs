@@ -1,7 +1,7 @@
 pub mod type_extensions;
 pub mod util;
 pub mod gas_coin;
-
+pub mod tower;
 use std::path::PathBuf;
 
 /// default directory name for all configs

@@ -1,3 +1,4 @@
+use crate::gas_coin::SlowWalletBalance;
 use crate::util::{format_args, format_type_args, parse_function_id};
 use crate::type_extensions::cli_config_ext::CliConfigExt;
 
@@ -35,7 +36,7 @@ pub const USER_AGENT: &str = concat!("libra-config/", env!("CARGO_PKG_VERSION"))
 pub trait ClientExt {
     fn default() -> Result<Client>;
 
-    async fn get_account_balance_libra(&self, account: AccountAddress) -> Result<Vec<serde_json::Value>>;
+    async fn get_account_balance_libra(&self, account: AccountAddress) -> Result<SlowWalletBalance>;
 
     async fn get_account_resources_ext(&self, account: AccountAddress) -> Result<String>;
 
@@ -77,7 +78,7 @@ impl ClientExt for Client {
         ))
     }
 
-    async fn get_account_balance_libra(&self, account: AccountAddress) -> Result<Vec<serde_json::Value>> {
+    async fn get_account_balance_libra(&self, account: AccountAddress) -> Result<SlowWalletBalance> {
 
       let slow_balance_id = entry_function_id("slow_wallet", "balance")?;
       let request = ViewRequest {
@@ -88,7 +89,7 @@ impl ClientExt for Client {
       
       let res = self.view(&request, None).await?.into_inner();
 
-      Ok(res)
+      SlowWalletBalance::from_value(res)
     }
 
 

@@ -83,7 +83,7 @@ module ol_framework::tower_state {
     ///     TODO does this actually only apply to validators?
     /// `epochs_since_last_account_creation`: the number of epochs since 
     ///     the miner last created a new account
-    struct TowerProofHistory has key { // Todo: rename to TowerState ?
+    struct TowerProofHistory has key {
         previous_proof_hash: vector<u8>,
         verified_tower_height: u64, 
         latest_epoch_mining: u64,
