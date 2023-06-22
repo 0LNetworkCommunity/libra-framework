@@ -6183,6 +6183,7 @@ dependencies = [
  "aptos-api-types",
  "aptos-crypto",
  "aptos-sdk",
+ "aptos-types",
  "async-trait",
  "dirs 5.0.1",
  "serde 1.0.163",

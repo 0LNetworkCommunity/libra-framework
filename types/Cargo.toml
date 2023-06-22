@@ -18,3 +18,4 @@ zapatos = { workspace = true }
 zapatos-api-types = { workspace = true }
 zapatos-crypto = { workspace = true }
 zapatos-sdk = { workspace = true }
+zapatos-types = { workspace = true }
