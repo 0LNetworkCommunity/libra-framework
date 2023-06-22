@@ -12,7 +12,7 @@ pub mod tower_state;
 // pub mod fullnode_counter;
 // pub mod gas_resource;
 // pub mod genesis_proof;
-// pub mod makewhole_resource;
+pub mod makewhole_resource;
 // pub mod pay_instruction;
 // pub mod rpc_playlist;
 // pub mod validator_config;

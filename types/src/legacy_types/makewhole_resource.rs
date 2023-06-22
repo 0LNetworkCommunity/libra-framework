@@ -1,16 +1,17 @@
 //! The Makewhole on-chain resource
 //!
-use diem_types::{access_path::AccessPath, account_config::constants::CORE_CODE_ADDRESS};
+use crate::gas_coin::GasCoin;
+
 use move_core_types::{
     ident_str,
     identifier::IdentStr,
     language_storage::StructTag,
     move_resource::{MoveResource, MoveStructType},
-};
 
+};
+use zapatos_types::account_config::CORE_CODE_ADDRESS;
 use serde::{Deserialize, Serialize};
 
-use crate::gas_resource::GasResource;
 
 /// The balance resource held under an account.
 #[derive(Debug, Serialize, Deserialize)]
@@ -27,11 +28,11 @@ pub struct CreditResource {
     ///
     pub claimed: bool,
     ///
-    pub coins: GasResource,
+    pub coins: GasCoin,
 }
 
 impl MoveStructType for CreditResource {
-    const MODULE_NAME: &'static IdentStr = ident_str!("MakeWhole");
+    const MODULE_NAME: &'static IdentStr = ident_str!("make_whole");
     const STRUCT_NAME: &'static IdentStr = ident_str!("Credit");
 }
 
@@ -48,10 +49,10 @@ impl MakeWholeResource {
         }
     }
 
-    ///
-    pub fn access_path_for() -> Vec<u8> {
-        AccessPath::resource_access_vec(MakeWholeResource::struct_tag())
-    }
+    // ///
+    // pub fn access_path_for() -> Vec<u8> {
+    //     AccessPath::resource_access_vec(MakeWholeResource::struct_tag())
+    // }
 }
 
 impl MoveStructType for MakeWholeResource {
