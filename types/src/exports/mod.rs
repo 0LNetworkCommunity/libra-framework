@@ -4,3 +4,5 @@ pub use zapatos_crypto::{
   test_utils::KeyPair,
   ValidCryptoMaterialStringExt,
 };
+
+pub use zapatos_types::{account_address::AccountAddress, transaction::authenticator::AuthenticationKey};
