@@ -19,9 +19,8 @@ pub static GENESIS_VDF_SECURITY_PARAM: Lazy<u64> = Lazy::new(|| {
     match MODE_0L.clone() {
 
         NamedChain::MAINNET => 350,
-        // NamedChain::STAGE => 350,
-        NamedChain::TESTNET => 512, // TODO(wiri): this should be updated to 350 after new fixtures are generated.
-        // NamedChain::CI => 512,
+        NamedChain::TESTNET => 350,  // TODO: Do we want a different one?
+        _ => 350
     }
 });
 
@@ -32,9 +31,8 @@ pub static GENESIS_VDF_ITERATIONS: Lazy<u64> = Lazy::new(|| {
         // Difficulty updated in V6
         // see ol/documentation/tower/difficulty_benchmarking.md
         NamedChain::MAINNET => 3_000_000_000, // 3 billion, ol/documentation/tower/difficulty_benchmarking.md
-        // NamedChain::STAGE => 3_000_000_000,
         NamedChain::TESTNET => 100,
-        // NamedChain::CI => 100,
+        _ => 100,
     }
 });
 
