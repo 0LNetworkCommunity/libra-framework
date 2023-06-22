@@ -5,4 +5,4 @@ pub use zapatos_crypto::{
   ValidCryptoMaterialStringExt,
 };
 
-pub use zapatos_types::{account_address::AccountAddress, transaction::authenticator::AuthenticationKey};
+pub use zapatos_types::{account_address::AccountAddress, transaction::authenticator::AuthenticationKey, waypoint::Waypoint, chain_id::{NamedChain}};
