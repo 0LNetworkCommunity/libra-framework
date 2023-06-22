@@ -2,7 +2,7 @@
 
 // pub mod account;
 // pub mod autopay;
-// pub mod block;
+pub mod block;
 pub mod mode_ol;
 // pub mod config;
 // pub mod dialogue;

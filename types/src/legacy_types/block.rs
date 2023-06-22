@@ -1,10 +1,10 @@
 //! Proof block datastructure
 
-use diem_types::chain_id::{MODE_0L, NamedChain};
+use crate::legacy_types::mode_ol::MODE_0L;
+use crate::exports::NamedChain;
 use hex;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-
 use std::{fs, io::BufReader, path::PathBuf};
 
 
@@ -19,9 +19,9 @@ pub static GENESIS_VDF_SECURITY_PARAM: Lazy<u64> = Lazy::new(|| {
     match MODE_0L.clone() {
 
         NamedChain::MAINNET => 350,
-        NamedChain::STAGE => 350,
+        // NamedChain::STAGE => 350,
         NamedChain::TESTNET => 512, // TODO(wiri): this should be updated to 350 after new fixtures are generated.
-        NamedChain::CI => 512,
+        // NamedChain::CI => 512,
     }
 });
 
@@ -32,9 +32,9 @@ pub static GENESIS_VDF_ITERATIONS: Lazy<u64> = Lazy::new(|| {
         // Difficulty updated in V6
         // see ol/documentation/tower/difficulty_benchmarking.md
         NamedChain::MAINNET => 3_000_000_000, // 3 billion, ol/documentation/tower/difficulty_benchmarking.md
-        NamedChain::STAGE => 3_000_000_000,
+        // NamedChain::STAGE => 3_000_000_000,
         NamedChain::TESTNET => 100,
-        NamedChain::CI => 100,
+        // NamedChain::CI => 100,
     }
 });
 

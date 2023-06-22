@@ -6194,6 +6194,7 @@ dependencies = [
  "aptos-types",
  "async-trait",
  "dirs 5.0.1",
+ "hex",
  "once_cell",
  "serde 1.0.163",
  "serde_json",
