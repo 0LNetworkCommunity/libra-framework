@@ -1,14 +1,18 @@
-
 pub use zapatos_crypto::{
-  ed25519::{Ed25519PrivateKey, Ed25519PublicKey},
-  test_utils::KeyPair,
-  ValidCryptoMaterialStringExt,
+    ed25519::{Ed25519PrivateKey, Ed25519PublicKey},
+    test_utils::KeyPair,
+    ValidCryptoMaterialStringExt,
 };
 
-pub use zapatos_types::{account_address::AccountAddress, transaction::authenticator::AuthenticationKey, waypoint::Waypoint, chain_id::{NamedChain}, event::EventKey};
+pub use zapatos_types::{
+    account_address::AccountAddress, chain_id::NamedChain, event::EventKey,
+    transaction::authenticator::AuthenticationKey, waypoint::Waypoint,
+};
 
 pub use zapatos_sdk::{
-  // bcs,
-  rest_client::error::RestError,
-  move_types::account_address::AccountAddressParseError,
+    move_types::account_address::AccountAddressParseError,
+    // bcs,
+    rest_client::error::RestError,
 };
+
+pub use zapatos_rest_client::Client;

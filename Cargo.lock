@@ -6270,6 +6270,7 @@ dependencies = [
  "aptos",
  "aptos-api-types",
  "aptos-crypto 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=996a2dd65b)",
+ "aptos-rest-client",
  "aptos-sdk",
  "aptos-types 0.0.3 (git+https://github.com/0o-de-lally/zapatos.git?rev=996a2dd65b)",
  "async-trait",
