@@ -8,8 +8,10 @@ edition = "2021"
 [dependencies]
 anyhow = { workspace = true }
 async-trait = { workspace = true }
+bcs = { workspace = true }
 dirs = { workspace = true }
 hex = { workspace = true }
+move-core-types = { workspace = true }
 once_cell = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
