@@ -6,3 +6,9 @@ pub use zapatos_crypto::{
 };
 
 pub use zapatos_types::{account_address::AccountAddress, transaction::authenticator::AuthenticationKey, waypoint::Waypoint, chain_id::{NamedChain}};
+
+pub use zapatos_sdk::{
+  // bcs,
+  rest_client::error::RestError,
+  move_types::account_address::AccountAddressParseError,
+};
