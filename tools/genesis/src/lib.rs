@@ -8,5 +8,4 @@ pub mod node_yaml;
 pub mod parse_json;
 pub mod vm;
 pub mod wizard;
-pub mod helpers;
 pub mod genesis_functions;

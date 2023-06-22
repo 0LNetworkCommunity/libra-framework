@@ -15,7 +15,10 @@ rust-version = { workspace = true }
 
 [dependencies]
 libra-framework = { workspace = true }
+libra-types = { workspace = true }
 libra-wallet = { workspace = true }
+
+
 clap = { workspace = true }
 anyhow = { workspace = true }
 ol-types = { workspace = true }
