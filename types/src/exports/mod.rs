@@ -5,8 +5,9 @@ pub use zapatos_crypto::{
 };
 
 pub use zapatos_types::{
-    account_address::AccountAddress, chain_id::NamedChain, event::EventKey,
+    account_address::AccountAddress, chain_id::{ChainId, NamedChain}, event::EventKey,
     transaction::authenticator::AuthenticationKey, waypoint::Waypoint,
+
 };
 
 pub use zapatos_sdk::{
