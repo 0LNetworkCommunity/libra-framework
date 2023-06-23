@@ -637,7 +637,11 @@ module aptos_framework::account {
     /// that is mapped to it in the `OriginatingAddress` table.
 
     public fun get_originating_address(curr_auth_key: address): address acquires OriginatingAddress {
+        // if the auth key is the same as the address (never been rotated), just return it
+        if (exists<Account>(curr_auth_key)) return curr_auth_key;
+
         let address_map = &borrow_global<OriginatingAddress>(@aptos_framework).address_map;
+        // will abort if not found.
         *table::borrow(address_map, curr_auth_key)
     }
 
