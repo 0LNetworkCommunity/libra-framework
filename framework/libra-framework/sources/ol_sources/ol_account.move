@@ -138,9 +138,10 @@ module ol_framework::ol_account {
     /// Convenient function to transfer GAS to a recipient account that might not exist.
     /// This would create the recipient account first, which also registers it to receive GAS, before transferring.
     public entry fun transfer(source: &signer, to: address, amount: u64) {
-        // if (!account::exists_at(to)) {
-        //     create_account(to)
-        // };
+        if (!account::exists_at(to)) {
+            create_user_account_by_coin(source, to);
+            return
+        };
 
         let limit = get_slow_limit(signer::address_of(source));
         if (limit < amount) { amount = limit };
