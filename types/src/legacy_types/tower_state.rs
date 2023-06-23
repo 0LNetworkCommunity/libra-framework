@@ -8,14 +8,12 @@ use anyhow::Result;
 use move_core_types::{
     ident_str,
     identifier::IdentStr,
-    language_storage::{ResourceKey, StructTag},
+    language_storage::{StructTag},
     move_resource::{MoveResource, MoveStructType},
-    account_address::AccountAddress,
 };
 use serde::{Deserialize, Serialize};
 use bcs;
 use zapatos_types::{
-  access_path::AccessPath,
   account_config::CORE_CODE_ADDRESS,
 };
 

@@ -632,6 +632,15 @@ module aptos_framework::account {
         account_resource.authentication_key = new_auth_key_vector;
     }
 
+    #[view]
+    /// For an authentication key, return the originating address
+    /// that is mapped to it in the `OriginatingAddress` table.
+
+    public fun get_originating_address(curr_auth_key: address): address acquires OriginatingAddress {
+        let address_map = &borrow_global<OriginatingAddress>(@aptos_framework).address_map;
+        *table::borrow(address_map, curr_auth_key)
+    }
+
     ///////////////////////////////////////////////////////////////////////////
     /// Basic account creation methods.
     ///////////////////////////////////////////////////////////////////////////
@@ -1303,6 +1312,10 @@ module aptos_framework::account {
         let expected_originating_address = table::borrow(address_map, new_addr);
         assert!(*expected_originating_address == alice_addr, 0);
         assert!(borrow_global<Account>(alice_addr).authentication_key == new_auth_key, 0);
+
+        ///////// 0L ////////
+        assert!(get_originating_address(new_addr) == alice_addr, 2);
+        assert!(get_originating_address(new_addr) != new_addr, 3);
     }
 
     #[test(account = @aptos_framework)]
@@ -1314,4 +1327,6 @@ module aptos_framework::account {
         account_state.guid_creation_num = MAX_GUID_CREATION_NUM - 1;
         create_guid(account);
     }
+
+
 }
