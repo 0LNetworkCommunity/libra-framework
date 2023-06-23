@@ -82,6 +82,14 @@ module ol_framework::ol_account {
     //   account::create_account_for_test(addr);
     //   coin::register<GasCoin>(&new_signer);
     // }
+    public entry fun create_user_account_by_coin(sender: &signer, auth_key: address) {
+        let standard_coin_amount = 1000000;
+        // system_addresses::assert_ol(root);
+        let new_signer = account::create_account(auth_key);
+        coin::register<GasCoin>(&new_signer);
+        coin::transfer<GasCoin>(sender, auth_key, standard_coin_amount);
+    }
+
 
     #[test_only]
     /// Helper for tests to create acounts
