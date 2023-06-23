@@ -13,6 +13,7 @@ pub use zapatos_sdk::{
     move_types::account_address::AccountAddressParseError,
     // bcs,
     rest_client::error::RestError,
+    types::AccountKey,
 };
 
 pub use zapatos_rest_client::Client;
