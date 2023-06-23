@@ -6,6 +6,7 @@ use zapatos_sdk::{
   types::account_address::AccountAddress,
 };
 use libra_types::{
+  exports::AuthenticationKey,
   type_extensions::client_ext::{ ClientExt, entry_function_id },
   gas_coin::SlowWalletBalance,
   tower::TowerProofHistoryView
@@ -42,14 +43,17 @@ pub async fn get_tower_state(client: &Client, account: AccountAddress) -> anyhow
 /// looks up the original address for a given derived address.
 pub async fn lookup_originating_address(
     client: &Client,
-    address_key: AccountAddress,
+    authentication_key: AuthenticationKey,
 ) -> anyhow::Result<AccountAddress> {
   // the move View will return the same address_key if it has an unmodified Authkey (never been rotated)
+  let bytes = authentication_key.to_vec();
+  let cast_address = AccountAddress::from_bytes(bytes.as_slice())?;
+
   let function_id = entry_function_id("account", "get_originating_address")?;
   let request = ViewRequest {
       function: function_id,
       type_arguments: vec![],
-      arguments: vec![address_key.to_string().into()],
+      arguments: vec![cast_address.to_string().into()],
   };
   
   let res = client.view(&request, None).await?.into_inner();
