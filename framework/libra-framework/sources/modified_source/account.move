@@ -642,6 +642,7 @@ module aptos_framework::account {
 
         let address_map = &borrow_global<OriginatingAddress>(@aptos_framework).address_map;
         // will abort if not found.
+        assert!(table::contains(address_map, curr_auth_key), error::not_found(EINVALID_ORIGINATING_ADDRESS));
         *table::borrow(address_map, curr_auth_key)
     }
 
