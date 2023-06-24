@@ -53,22 +53,22 @@ module ol_framework::ol_account {
     // Basic account creation methods.
     ///////////////////////////////////////////////////////////////////////////
 
-    /// Users with existsing accounts can onboard new accounts.
-    // TODO: they must deposit 1 gas coin.
-    public entry fun user_create_account(sender: &signer, auth_key: address) {
-        let sender_addr = signer::address_of(sender);
-        assert!(
-            !account::exists_at(auth_key),
-            error::invalid_argument(EACCOUNT_NOT_FOUND),
-        );
+    // /// Users with existsing accounts can onboard new accounts.
+    // // TODO: they must deposit 1 gas coin.
+    // public entry fun user_create_account(sender: &signer, auth_key: address) {
+    //     let sender_addr = signer::address_of(sender);
+    //     assert!(
+    //         !account::exists_at(auth_key),
+    //         error::invalid_argument(EACCOUNT_NOT_FOUND),
+    //     );
 
-        assert!(
-            (coin::balance<GasCoin>(sender_addr) > 2 * BOOTSTRAP_GAS_COIN_AMOUNT),
-            error::invalid_state(EINSUFFICIENT_BALANCE),
-        );
+    //     assert!(
+    //         (coin::balance<GasCoin>(sender_addr) > 2 * BOOTSTRAP_GAS_COIN_AMOUNT),
+    //         error::invalid_state(EINSUFFICIENT_BALANCE),
+    //     );
         
-        coin::transfer<GasCoin>(sender, auth_key, BOOTSTRAP_GAS_COIN_AMOUNT);
-    }
+    //     coin::transfer<GasCoin>(sender, auth_key, BOOTSTRAP_GAS_COIN_AMOUNT);
+    // }
 
     /// A wrapper to create a resource account and register it to receive GAS.
     public fun ol_create_resource_account(user: &signer, seed: vector<u8>): (signer, account::SignerCapability) {
@@ -77,17 +77,14 @@ module ol_framework::ol_account {
       (resource_account_sig, cap)
     }
 
-    // #[test_only]
-    // fun create_account(&root, addr: address) {
-    //   account::create_account_for_test(addr);
-    //   coin::register<GasCoin>(&new_signer);
-    // }
-    public entry fun create_user_account_by_coin(sender: &signer, auth_key: address) {
-        let standard_coin_amount = 1000000;
-        // system_addresses::assert_ol(root);
+    /// Creates an account by sending an initial amount of GAS to it.
+    public entry fun create_user_account_by_coin(sender: &signer, auth_key: address, amount: u64) {
+        let limit = get_slow_limit(signer::address_of(sender));
+        assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
+
         let new_signer = account::create_account(auth_key);
         coin::register<GasCoin>(&new_signer);
-        coin::transfer<GasCoin>(sender, auth_key, standard_coin_amount);
+        coin::transfer<GasCoin>(sender, auth_key, amount);
     }
 
 
@@ -134,21 +131,23 @@ module ol_framework::ol_account {
     //     };
     // }
 
-    // #[test_only]
     /// Convenient function to transfer GAS to a recipient account that might not exist.
     /// This would create the recipient account first, which also registers it to receive GAS, before transferring.
-    public entry fun transfer(source: &signer, to: address, amount: u64) {
+    public entry fun transfer(sender: &signer, to: address, amount: u64) {
+
         if (!account::exists_at(to)) {
-            create_user_account_by_coin(source, to);
+            // NOTE: is also an entry function as is checking the slow limit there too.
+            create_user_account_by_coin(sender, to, amount);
             return
         };
 
-        let limit = get_slow_limit(signer::address_of(source));
-        if (limit < amount) { amount = limit };
+        let limit = get_slow_limit(signer::address_of(sender));
+        assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
+
         // Resource accounts can be created without registering them to receive GAS.
         // This conveniently does the registration if necessary.
         assert!(coin::is_account_registered<GasCoin>(to), error::invalid_argument(EACCOUNT_NOT_REGISTERED_FOR_GAS));
-        coin::transfer<GasCoin>(source, to, amount)
+        coin::transfer<GasCoin>(sender, to, amount)
     }
 
     //////// 0L ////////  

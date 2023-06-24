@@ -66,10 +66,6 @@ module ol_framework::test_slow_wallet {
     coin::destroy_mint_cap(mint_cap);
 
     ol_account::create_account(&root, @0x456);
-    ol_account::transfer(&alice, @0x456, 99);
-
-    let b_balance = coin::balance<gas_coin::GasCoin>(@0x456);
-    assert!(b_balance == 0, 735702);
     slow_wallet::slow_wallet_epoch_drip(&root, 100);
 
     assert!(slow_wallet::unlocked_amount(@0x123) == 100, 735703);
@@ -79,7 +75,7 @@ module ol_framework::test_slow_wallet {
   }
 
   #[test(root = @ol_framework, alice = @0x123, bob = @0x456)]
-  #[expected_failure(abort_code = 735704, location = Self)]
+  #[expected_failure(abort_code = 196614, location = 0x1::ol_account)]
 
   fun test_transfer_sad(root: signer, alice: signer) {
     slow_wallet::initialize(&root);
