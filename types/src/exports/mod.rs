@@ -18,3 +18,5 @@ pub use zapatos_sdk::{
 };
 
 pub use zapatos_rest_client::Client;
+
+pub use zapatos_api_types::IndexResponse;
