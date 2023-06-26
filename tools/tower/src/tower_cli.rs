@@ -1,4 +1,3 @@
-
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -7,16 +6,34 @@ use clap::{Parser, Subcommand};
 /// clap struct entry point for the tower cli
 pub struct TowerCli {
     #[clap(subcommand)]
-    subcommand: TowerSub,
+    command: TowerSub,
 }
 
 #[derive(Subcommand)]
 enum TowerSub {
+  Backlog,
+  Start,
   Test,
+  Zero,
 }
 
 impl TowerCli {
     pub async fn run(&self) -> anyhow::Result<()>{
-        todo!()
+      let cli = TowerCli::parse();
+      match cli.command {
+        TowerSub::Backlog => {
+          println!("backlog");
+        },
+        TowerSub::Start => {
+          println!("start");
+        },
+        TowerSub::Test => {
+          println!("test");
+        },
+        TowerSub::Zero => {
+          println!("zero");
+        },
+      }
+
     }
 }
