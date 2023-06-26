@@ -25,3 +25,7 @@ vdf = { workspace = true }
 
 zapatos-api-types = { workspace = true }
 zapatos-sdk = { workspace = true }
+
+[dev-dependencies]
+toml = { workspace = true }
+libra-wallet = { workspace = true }

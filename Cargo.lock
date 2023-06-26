@@ -6179,9 +6179,11 @@ dependencies = [
  "libra-query",
  "libra-txs",
  "libra-types",
+ "libra-wallet",
  "serde 1.0.163",
  "serde_json",
  "tokio",
+ "toml",
  "vdf",
 ]
 

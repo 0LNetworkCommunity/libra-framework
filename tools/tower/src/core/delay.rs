@@ -2,9 +2,6 @@
 #![forbid(unsafe_code)]
 use anyhow::{anyhow, Error};
 use libra_types::{legacy_types::mode_ol::MODE_0L, exports::NamedChain};
-// use diem_logger::error;
-// use diem_types::chain_id::{NamedChain, MODE_0L};
-/// Functions for running the VDF.
 use vdf::{PietrzakVDFParams, VDFParams, VDF, WesolowskiVDFParams};
 
 /// Runs the VDF

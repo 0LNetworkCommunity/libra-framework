@@ -144,17 +144,15 @@ fn test_helper_clear_block_dir(blocks_dir: &PathBuf) {
 #[ignore]
 //Not really a test, just a way to generate fixtures.
 fn create_fixtures() {
-    use diem_wallet::WalletLibrary;
+    use std::io::Write;
+    use toml;
 
     // if no file is found, the block height is 0
     //let blocks_dir = Path::new("./test_blocks");
     for i in 0..6 {
         let ns = i.to_string();
-        let mut wallet = WalletLibrary::new();
 
-        let (_auth_key, _) = wallet.new_address().expect("Could not generate address");
-
-        let mnemonic_string = wallet.mnemonic(); //wallet.mnemonic()
+        // let mnemonic_string = wallet.mnemonic(); //wallet.mnemonic()
         let save_to = format!("./test_fixtures_{}/", ns);
         fs::create_dir_all(save_to.clone()).unwrap();
         let mut configs_fixture = test_make_configs_fixture();
@@ -162,13 +160,6 @@ fn create_fixtures() {
 
         // mine to save_to path
         write_genesis(&configs_fixture).unwrap();
-
-        // also create mnemonic
-        let mut mnemonic_path = PathBuf::from(save_to.clone());
-        mnemonic_path.push("owner.mnem");
-        let mut file = fs::File::create(&mnemonic_path).expect("Could not create file");
-        file.write_all(mnemonic_string.as_bytes())
-            .expect("Could not write mnemonic");
 
         // create miner.toml
         //rename the path for actual fixtures
@@ -185,8 +176,11 @@ fn create_fixtures() {
 
 #[test]
 fn test_mine_once() {
-    use diem_crypto::HashValue;
-    use diem_types::ol_vdf_difficulty::VDFDifficulty;
+    use libra_types::legacy_types::{
+      block::VDFProof,
+    };
+    use zapatos_sdk::crypto::HashValue;
+    use libra_types::legacy_types::vdf_difficulty::VDFDifficulty;
     use hex::decode;
 
     // if no file is found, the block height is 0
@@ -207,7 +201,7 @@ fn test_mine_once() {
         security: Some(512),
     };
 
-    write_json(&fixture_block, &configs_fixture.get_block_dir()).unwrap();
+    fixture_block.write_json(&configs_fixture.get_block_dir()).unwrap();
 
     let next = NextProof {
         next_height: fixture_block.height + 1,
@@ -274,7 +268,7 @@ fn test_parse_no_files() {
     // if no file is found, the block height is 0
     let blocks_dir = PathBuf::from(".");
 
-    match get_highest_block(&blocks_dir) {
+    match VDFProof::get_highest_block(&blocks_dir) {
         Ok(_) => assert!(false),
         Err(_) => assert!(true),
     }
@@ -282,6 +276,7 @@ fn test_parse_no_files() {
 
 #[test]
 fn test_parse_one_file() {
+    use std::io::Write;
     // create a file temporarily in ./test_blocks with height 33
     let current_block_number = 33;
     let block = VDFProof {
@@ -306,7 +301,7 @@ fn test_parse_one_file() {
         .expect("Could not write block");
 
     // block height
-    assert_eq!(get_highest_block(&blocks_dir).unwrap().0.height, 33);
+    assert_eq!(VDFProof::get_highest_block(&blocks_dir).unwrap().0.height, 33);
 
     test_helper_clear_block_dir(&blocks_dir)
 }
@@ -314,6 +309,8 @@ fn test_parse_one_file() {
 #[cfg(test)]
 /// make fixtures for file
 pub fn test_make_configs_fixture() -> AppCfg {
+    use libra_types::exports::NamedChain;
+
     let mut cfg = AppCfg::default();
     cfg.workspace.node_home = PathBuf::from(".");
     cfg.workspace.block_dir = "test_blocks_temp_1".to_owned();
