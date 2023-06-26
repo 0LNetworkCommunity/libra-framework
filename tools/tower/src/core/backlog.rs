@@ -12,7 +12,7 @@ use std::io::BufReader;
 use std::{fs::File, path::PathBuf};
 
 use libra_txs::submit_transaction::Sender;
-use libra_query::account_queries;
+use libra_query::{account_queries, get_client};
 // use diem_client::BlockingClient as DiemClient;
 // use diem_logger::prelude::*;
 use libra_types::legacy_types::{
@@ -45,7 +45,7 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
 
     // Getting remote miner state
     // there may not be any onchain state.
-    if let Some((remote_height, proofs_in_epoch)) = get_remote_tower_height(config.profile.account).await? {
+    if let Some((remote_height, proofs_in_epoch)) = get_remote_tower_height(config).await? {
         println!("Remote tower height: {}", remote_height);
         println!("Proofs already submitted in epoch: {}", proofs_in_epoch);
 
@@ -190,7 +190,7 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
 pub async fn show_backlog(config: &AppCfg) -> Result<(), TxError> {
     // Getting remote miner state
     // there may not be any onchain state.
-    match get_remote_tower_height(config.profile.account).await? {
+    match get_remote_tower_height(config).await? {
         Some((remote_height, _proofs_in_epoch)) => {
             println!("Remote tower height: {}", remote_height);
         },
@@ -212,8 +212,9 @@ pub async fn show_backlog(config: &AppCfg) -> Result<(), TxError> {
 }
 
 /// returns remote tower height and current proofs in epoch
-pub async fn get_remote_tower_height(account: AccountAddress) -> Result<Option<(i64, i64)>, Error> {
-    let ts = account_queries::get_tower_state().await?;
+pub async fn get_remote_tower_height(app_cfg: &AppCfg) -> Result<Option<(i64, i64)>, Error> {
+    let (client, _) = get_client::find_good_upstream(app_cfg).await?;
+    let ts = account_queries::get_tower_state(&client, app_cfg.profile.account.to_owned()).await?;
     todo!();
 
     // let client = DiemClient::new(tx_params.url.clone());
