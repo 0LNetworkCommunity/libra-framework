@@ -7,7 +7,7 @@ use crate::core::{
 };
 
 use anyhow::{anyhow, bail, Error, Result};
-
+use std::path::PathBuf;
 
 
 use libra_txs::submit_transaction::Sender;
@@ -29,11 +29,15 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
     let mut blocks_dir = config.workspace.node_home.clone();
     blocks_dir.push(&config.workspace.block_dir);
 
-    let (current_local_proof, _current_block_path) = VDFProof::get_highest_block(&blocks_dir)?;
+    let (current_local_proof, current_block_path) = VDFProof::get_highest_block(&blocks_dir)?;
 
     let current_proof_number = current_local_proof.height;
 
     println!("Local tower height: {:?}", current_proof_number);
+
+    if current_proof_number == 0 { // if we are at genesis
+      return submit_or_delete(config, current_local_proof, current_block_path).await
+    }
 
 
     let mut i = 0;
@@ -74,21 +78,23 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
         println!("submitting proof {}, in this backlog: {}", i, submitted_now);
 
         let (block, path) = VDFProof::get_proof_number(i, &blocks_dir)?;
-        // let path = PathBuf::from(format!("{}/{}_{}.json", blocks_dir.display(), FILENAME, i));
+        
+        submit_or_delete(config, block, path).await?;
 
-        // let file = File::open(&path).map_err(|e| {
-        //     anyhow!("failed to open file: {:?}, message, {}", &path.to_str(), e.to_string())
-        // })?;
 
-        // let reader = BufReader::new(file);
-        // let block: VDFProof = serde_json::from_reader(reader).map_err(|e| Error::from(e))?;
+        i = i + 1;
+        submitted_now = submitted_now + 1;
+    }
+    Ok(())
+}
 
+async fn submit_or_delete(config: &AppCfg, block: VDFProof, path: PathBuf) -> Result<()>{
         let mut sender = Sender::from_app_cfg(config, None).await?;
         sender.commit_proof(
           block.clone()
         ).await?;
         match sender.eval_response() {
-            Ok(_) => {}
+            Ok(_) => Ok(()),
             Err(e) => {
                 eprintln!(
                     "WARN: could not fetch TX status, aborting. Message: {:?} ",
@@ -103,13 +109,8 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
                 }
                 bail!("Cannot submit tower proof: {:?}", e);
             }
-        };
-        i = i + 1;
-        submitted_now = submitted_now + 1;
-    }
-    Ok(())
-}
-
+        }
+  }
 // /// submit an exact proof height
 // pub fn submit_proof_by_number(
 //     config: &AppCfg,

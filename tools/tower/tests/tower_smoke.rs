@@ -36,6 +36,7 @@ async fn tower_genesis() {
 
     app_cfg.workspace.node_home = temp_files.to_owned();
     app_cfg.profile.upstream_nodes = vec![url.parse().unwrap()];
+    app_cfg.profile.test_private_key = Some(node.account_private_key().as_ref().unwrap().private_key());
 
     let _proof = proof::write_genesis(&app_cfg).expect("could not write genesis proof");
 

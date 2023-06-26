@@ -1,6 +1,7 @@
 //! Configs for all 0L apps.
 
 use anyhow::Error;
+use zapatos_crypto::ed25519::Ed25519PrivateKey;
 use crate::{
   legacy_types::mode_ol::MODE_0L,
    exports::{
@@ -361,6 +362,9 @@ pub struct Profile {
 
     /// Link to another delay tower.
     pub tower_link: Option<String>,
+
+    /// Private key only for use with testing
+    pub test_private_key: Option<Ed25519PrivateKey>,
 }
 
 impl Default for Profile {
@@ -378,6 +382,7 @@ impl Default for Profile {
             override_playlist: None,
             upstream_nodes: vec!["http://localhost:8080".parse().expect("parse url")],
             tower_link: None,
+            test_private_key: None,
         }
     }
 }
