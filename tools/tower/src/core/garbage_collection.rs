@@ -1,12 +1,14 @@
 //! garbage collection
 
-use crate::{next_proof, proof};
+use crate::core::{next_proof};
 use anyhow::bail;
-// use diem_client::BlockingClient as DiemClient;
-// use diem_crypto::HashValue;
-use ol::config::AppCfg;
-use std::{fs, path::PathBuf, time::SystemTime};
+use libra_types::legacy_types::{
+  app_cfg::AppCfg,
+  block::VDFProof,
+};
 
+use std::{fs, path::PathBuf, time::SystemTime};
+use zapatos_sdk::crypto::HashValue;
 /// Start the GC for a proof that is known bad
 pub fn gc_failed_proof(cfg: &AppCfg, bad_proof_path: PathBuf) -> anyhow::Result<()> {
     println!(
@@ -24,9 +26,9 @@ pub fn collect_subsequent_proofs(
     bad_proof_path: PathBuf,
     block_dir: PathBuf,
 ) -> anyhow::Result<Option<Vec<PathBuf>>> {
-    let bad_proof = proof::parse_block_file(&bad_proof_path, true)?;
+    let bad_proof = VDFProof::parse_block_file(&bad_proof_path, true)?;
 
-    let highest_local = proof::get_highest_block(&block_dir)?.0.height;
+    let highest_local = VDFProof::get_highest_block(&block_dir)?.0.height;
 
     // something is wrong with file list
     if highest_local < bad_proof.height {
@@ -36,7 +38,7 @@ pub fn collect_subsequent_proofs(
     let mut vec_trash: Vec<PathBuf> = vec![];
     let mut i = bad_proof.height;
     while i < highest_local {
-        let (_, file) = proof::find_proof_number(i, &block_dir)?;
+        let (_, file) = VDFProof::get_proof_number(i, &block_dir)?;
         vec_trash.push(file);
         i += 1;
     }
@@ -68,13 +70,13 @@ pub fn put_in_trash(to_trash: Vec<PathBuf>, cfg: &AppCfg) -> anyhow::Result<()> 
 /// if they all fail, move the list to a trash file
 pub fn find_first_discontinous_proof(
     cfg: AppCfg,
-    client: DiemClient,
-    swarm_path: Option<PathBuf>,
+    // client: DiemClient,
+    // swarm_path: Option<PathBuf>,
 ) -> anyhow::Result<Option<PathBuf>> {
     let block_dir = cfg.get_block_dir();
-    let highest_local = proof::get_highest_block(&block_dir)?.0.height;
+    let highest_local = VDFProof::get_highest_block(&block_dir)?.0.height;
     // start from last known proof on chain.
-    let p = next_proof::get_next_proof_from_chain(&mut cfg.clone(), client, swarm_path)?;
+    let p = next_proof::get_next_proof_from_chain(&mut cfg.clone())?;
 
     if highest_local < p.next_height {
         return Ok(None);
@@ -84,7 +86,7 @@ pub fn find_first_discontinous_proof(
     let mut i = p.next_height;
     let mut preimage = p.preimage;
     while i < highest_local {
-        let (proof, file) = proof::find_proof_number(i, &block_dir)?;
+        let (proof, file) = VDFProof::get_proof_number(i, &block_dir)?;
         let next_preimage = HashValue::sha3_256_of(&proof.proof).to_vec();
         if preimage != next_preimage {
             return Ok(Some(file));

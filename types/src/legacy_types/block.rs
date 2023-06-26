@@ -91,7 +91,7 @@ impl VDFProof {
         self.security.unwrap() as u64 // if the block doesn't have this info, assume it's legacy block.
     }
 
-    pub fn write_json(&self, blocks_dir: &PathBuf) -> Result<(), std::io::Error> {
+    pub fn write_json(&self, blocks_dir: &PathBuf) -> Result<PathBuf, std::io::Error> {
     if !&blocks_dir.exists() {
             // first run, create the directory if there is none, or if the user changed the configs.
             // note: user may have blocks but they are in a different directory than what miner.toml says.
@@ -101,7 +101,8 @@ impl VDFProof {
         let mut latest_block_path = blocks_dir.clone();
         latest_block_path.push(format!("{}_{}.json", FILENAME, self.height));
         let mut file = fs::File::create(&latest_block_path)?;
-        file.write_all(serde_json::to_string(&self)?.as_bytes())
+        file.write_all(serde_json::to_string(&self)?.as_bytes())?;
+        Ok(latest_block_path)
     }
 
     /// Parse a proof_x.json file and return a VDFProof
@@ -122,7 +123,7 @@ impl VDFProof {
     }
 
     /// Parse a proof_x.json file and return a VDFProof
-    pub fn find_proof_number(num: u64, blocks_dir: &PathBuf) -> Result<(Self, PathBuf)>{
+    pub fn get_proof_number(num: u64, blocks_dir: &PathBuf) -> Result<(Self, PathBuf)>{
         let file = PathBuf::from(&format!(
             "{}/{}_{}.json",
             blocks_dir.display(),

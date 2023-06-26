@@ -1,15 +1,14 @@
 //! Miner resubmit backlog transactions module
 #![forbid(unsafe_code)]
 
-use crate::{
+use crate::core::{
   garbage_collection::gc_failed_proof,
-  proof::{get_highest_block, FILENAME},
-  core::tower_error,
+  tower_error,
 };
 
 use anyhow::{anyhow, bail, Error, Result};
-use std::io::BufReader;
-use std::{fs::File, path::PathBuf};
+
+
 
 use libra_txs::submit_transaction::Sender;
 use libra_query::{account_queries, get_client};
@@ -22,9 +21,6 @@ use libra_types::legacy_types::{
 };
 
 
-
-use zapatos_sdk::types::account_address::AccountAddress;
-
 const EPOCH_MINING_THRES_UPPER: u64 = 72;
 /// Submit a backlog of blocks that may have been mined while network is offline.
 /// Likely not more than 1.
@@ -33,7 +29,7 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
     let mut blocks_dir = config.workspace.node_home.clone();
     blocks_dir.push(&config.workspace.block_dir);
 
-    let (current_local_proof, _current_block_path) = get_highest_block(&blocks_dir)?;
+    let (current_local_proof, _current_block_path) = VDFProof::get_highest_block(&blocks_dir)?;
 
     let current_proof_number = current_local_proof.height;
 
@@ -77,16 +73,17 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
     while i <= current_proof_number && submitted_now <= remaining_in_epoch {
         println!("submitting proof {}, in this backlog: {}", i, submitted_now);
 
-        let path = PathBuf::from(format!("{}/{}_{}.json", blocks_dir.display(), FILENAME, i));
+        let (block, path) = VDFProof::get_proof_number(i, &blocks_dir)?;
+        // let path = PathBuf::from(format!("{}/{}_{}.json", blocks_dir.display(), FILENAME, i));
 
-        let file = File::open(&path).map_err(|e| {
-            anyhow!("failed to open file: {:?}, message, {}", &path.to_str(), e.to_string())
-        })?;
+        // let file = File::open(&path).map_err(|e| {
+        //     anyhow!("failed to open file: {:?}, message, {}", &path.to_str(), e.to_string())
+        // })?;
 
-        let reader = BufReader::new(file);
-        let block: VDFProof = serde_json::from_reader(reader).map_err(|e| Error::from(e))?;
+        // let reader = BufReader::new(file);
+        // let block: VDFProof = serde_json::from_reader(reader).map_err(|e| Error::from(e))?;
 
-        let sender = Sender::from_app_cfg(config, None).await?;
+        let mut sender = Sender::from_app_cfg(config, None).await?;
         sender.commit_proof(
           block.clone()
         ).await?;
@@ -98,7 +95,7 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
                     &e
                 );
                 // evaluate type of error and maybe garbage collect
-                match tower_error::parse_error(e) {
+                match tower_error::parse_error(e.clone()) {
                     tower_error::TowerError::WrongDifficulty => gc_failed_proof(config, path)?,
                     tower_error::TowerError::Discontinuity => gc_failed_proof(config, path)?,
                     tower_error::TowerError::Invalid => gc_failed_proof(config, path)?,
@@ -146,7 +143,7 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
 //     // Getting local state height
 //     let mut blocks_dir = config.workspace.node_home.clone();
 //     blocks_dir.push(&config.workspace.block_dir);
-//     let (current_local_proof, _current_block_path) = get_highest_block(&blocks_dir)?;
+//     let (current_local_proof, _current_block_path) = VDFProof::get_highest_block(&blocks_dir)?;
 //     let current_proof_number = current_local_proof.height;
 //     // if let Some(current_proof_number) = current_local_proof {
 //     println!("Local tower height: {:?}", current_proof_number);
@@ -202,7 +199,7 @@ pub async fn show_backlog(config: &AppCfg) -> Result<(), TxError> {
     // Getting local state height
     let mut blocks_dir = config.workspace.node_home.clone();
     blocks_dir.push(&config.workspace.block_dir);
-    let (current_local_proof, _current_block_path) = get_highest_block(&blocks_dir)?;
+    let (current_local_proof, _current_block_path) = VDFProof::get_highest_block(&blocks_dir)?;
     // if let Some(current_proof_number) = current_local_proof.height {
     println!("Local tower height: {:?}", current_local_proof.height);
     // } else {
@@ -214,7 +211,7 @@ pub async fn show_backlog(config: &AppCfg) -> Result<(), TxError> {
 /// returns remote tower height and current proofs in epoch
 pub async fn get_remote_tower_height(app_cfg: &AppCfg) -> Result<Option<(i64, i64)>, Error> {
     let (client, _) = get_client::find_good_upstream(app_cfg).await?;
-    let ts = account_queries::get_tower_state(&client, app_cfg.profile.account.to_owned()).await?;
+    let _ts = account_queries::get_tower_state(&client, app_cfg.profile.account.to_owned()).await?;
     todo!();
 
     // let client = DiemClient::new(tx_params.url.clone());

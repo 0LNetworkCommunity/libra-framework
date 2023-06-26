@@ -1,8 +1,9 @@
 //! MinerApp delay module
 #![forbid(unsafe_code)]
 use anyhow::{anyhow, Error};
-use diem_logger::error;
-use diem_types::chain_id::{NamedChain, MODE_0L};
+use libra_types::{legacy_types::mode_ol::MODE_0L, exports::NamedChain};
+// use diem_logger::error;
+// use diem_types::chain_id::{NamedChain, MODE_0L};
 /// Functions for running the VDF.
 use vdf::{PietrzakVDFParams, VDFParams, VDF, WesolowskiVDFParams};
 
@@ -13,7 +14,7 @@ pub fn do_delay(preimage: &[u8], difficulty: u64, security: u64) -> Result<Vec<u
     // TODO(Wiri): we need new fixtures so that we're not switching algorithms.
     let vdf = if
       MODE_0L.clone() == NamedChain::TESTNET || 
-      MODE_0L.clone() == NamedChain::CI {
+      MODE_0L.clone() == NamedChain::TESTING {
       let vdf = PietrzakVDFParams(security as u16).new();
       vdf.solve(preimage, difficulty)
     } else {
@@ -32,7 +33,7 @@ pub fn verify(preimage: &[u8], proof: &[u8], difficulty: u64, security: u16) -> 
     // TODO(Wiri): we need new fixtures so that we're not switching algorithms.
     let verifies = if
       MODE_0L.clone() == NamedChain::TESTNET || 
-      MODE_0L.clone() == NamedChain::CI {
+      MODE_0L.clone() == NamedChain::TESTING {
       let vdf = PietrzakVDFParams(security as u16).new();
       vdf.verify(preimage, difficulty, proof)
     } else {
@@ -43,7 +44,7 @@ pub fn verify(preimage: &[u8], proof: &[u8], difficulty: u64, security: u16) -> 
     match verifies {
         Ok(_) => true,
         Err(e) => {
-          error!("Proof is not valid. {:?}", &e);
+          eprintln!("Proof is not valid. {:?}", &e);
           false
         },
     }

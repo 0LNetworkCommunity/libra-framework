@@ -21,6 +21,7 @@ tokio = { workspace = true }
 libra-query = { workspace = true }
 libra-types = { workspace = true }
 libra-txs = { workspace = true }
+vdf = { workspace = true }
 
 zapatos-api-types = { workspace = true }
 zapatos-sdk = { workspace = true }

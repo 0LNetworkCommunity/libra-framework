@@ -6182,6 +6182,7 @@ dependencies = [
  "serde 1.0.163",
  "serde_json",
  "tokio",
+ "vdf",
 ]
 
 [[package]]

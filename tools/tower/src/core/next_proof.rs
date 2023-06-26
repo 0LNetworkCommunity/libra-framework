@@ -3,12 +3,9 @@
 
 use crate::core::proof_preimage;
 
-use anyhow::{bail, Error};
+use anyhow::Error;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 
-// use diem_client::BlockingClient as DiemClient;
-// use diem_crypto::HashValue;
 use libra_types::legacy_types::{
   app_cfg::AppCfg,
   block::{GENESIS_VDF_ITERATIONS, GENESIS_VDF_SECURITY_PARAM, VDFProof},
@@ -52,7 +49,7 @@ pub fn get_next_proof_params_from_local(config: &AppCfg) -> Result<NextProof, Er
     // get the location of this miner's blocks
     let mut blocks_dir = config.workspace.node_home.clone();
     blocks_dir.push(&config.workspace.block_dir);
-    let (current_local_block, _) = get_highest_block(&blocks_dir)?;
+    let (current_local_block, _) = VDFProof::get_highest_block(&blocks_dir)?;
     let diff = VDFDifficulty {
         difficulty: current_local_block.difficulty(),
         security: current_local_block.security.unwrap(),
@@ -66,39 +63,40 @@ pub fn get_next_proof_params_from_local(config: &AppCfg) -> Result<NextProof, Er
     })
 }
 
-// /// query the chain for parameters to use in the next VDF proof.
-// /// includes global parameters for difficulty
-// /// and individual parameters like tower height and the preimage (previous proof hash)
-// pub fn get_next_proof_from_chain(
-//     config: &mut AppCfg,
-//     client: DiemClient,
-//     swarm_path: Option<PathBuf>,
-// ) -> Result<NextProof, Error> {
-//     // dbg!("pick_client");
-//     // let client = pick_client(swarm_path.clone(), config)?;
+/// query the chain for parameters to use in the next VDF proof.
+/// includes global parameters for difficulty
+/// and individual parameters like tower height and the preimage (previous proof hash)
+pub fn get_next_proof_from_chain(
+    _config: &mut AppCfg,
+    // // client: DiemClient,
+    // swarm_path: Option<PathBuf>,
+) -> Result<NextProof, Error> {
+    todo!();
+    // // dbg!("pick_client");
+    // // let client = pick_client(swarm_path.clone(), config)?;
 
-//     // dbg!("get user tower state");
-//     let mut n = Node::new(client, config, swarm_path.is_some());
+    // // dbg!("get user tower state");
+    // let mut n = Node::new(client, config, swarm_path.is_some());
 
-//     n.refresh_onchain_state();
-//     // TODO: we are picking Client twice
-//     let diff = get_difficulty_from_chain(&n)?;
+    // n.refresh_onchain_state();
+    // // TODO: we are picking Client twice
+    // let diff = get_difficulty_from_chain(&n)?;
   
-//     // get the user's tower state from chain.
-//     let ts = n.client
-//       .get_account_state(config.profile.account)?
-//       .get_miner_state()?;
+    // // get the user's tower state from chain.
+    // let ts = n.client
+    //   .get_account_state(config.profile.account)?
+    //   .get_miner_state()?;
 
-//       if let Some(t) = ts {
-//             Ok(NextProof {
-//           diff,
-//           next_height: t.verified_tower_height + 1,
-//           preimage: t.previous_proof_hash,
-//       })
-//       } else {
-//         bail!("cannot get tower resource for account")
-//     }
-// }
+    //   if let Some(t) = ts {
+    //         Ok(NextProof {
+    //       diff,
+    //       next_height: t.verified_tower_height + 1,
+    //       preimage: t.previous_proof_hash,
+    //   })
+    //   } else {
+    //     bail!("cannot get tower resource for account")
+    // }
+}
 
 // /// Get the VDF difficulty from chain.
 // pub fn get_difficulty_from_chain(n: &Node) -> anyhow::Result<VDFDifficulty> {

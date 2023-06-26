@@ -1,15 +1,13 @@
 //! Proof block datastructure
 
-use crate::next_proof::{self, NextProof};
-use crate::{backlog, delay::*, preimage::genesis_preimage};
-use anyhow::{bail, Error};
-use diem_types::chain_id::NamedChain;
-use glob::glob;
-use ol::node::client;
-use ol_types::block::{VDFProof, GENESIS_VDF_SECURITY_PARAM, GENESIS_VDF_ITERATIONS};
-use ol_types::config::AppCfg;
-use std::{fs, io::Write, path::PathBuf, time::Instant};
-use txs::tx_params::TxParams;
+use crate::core::{
+  next_proof::{self, NextProof},
+  backlog, delay::*, proof_preimage::genesis_preimage
+};
+use anyhow::Error;
+use libra_types::legacy_types::block::{VDFProof, GENESIS_VDF_SECURITY_PARAM, GENESIS_VDF_ITERATIONS};
+use libra_types::legacy_types::app_cfg::AppCfg;
+use std::{fs, path::PathBuf, time::Instant};
 
 // writes a JSON file with the first vdf proof
 fn mine_genesis(config: &AppCfg, difficulty: u64, security: u64) -> VDFProof {
@@ -39,11 +37,11 @@ pub fn write_genesis(config: &AppCfg) -> Result<VDFProof, Error> {
     let block = mine_genesis(config, difficulty, security);
     //TODO: check for overwriting file...
     // write_json(&block, &config.get_block_dir())?;
-    block.write_json(&config.get_block_dir())?;
+    let path = block.write_json(&config.get_block_dir())?;
     // let genesis_proof_filename = &format!("{}_0.json", FILENAME);
     println!(
         "proof zero mined, file saved to: {:?}",
-        &config.get_block_dir().join(genesis_proof_filename)
+        &path
     );
     Ok(block)
 }
@@ -63,16 +61,16 @@ pub fn mine_once(config: &AppCfg, next: NextProof) -> Result<VDFProof, Error> {
         security: Some(next.diff.security),
     };
 
-    write_json(&block, &config.get_block_dir())?;
+    block.write_json( &config.get_block_dir())?;
     Ok(block)
 }
 
 /// Write block to file
-pub fn mine_and_submit(
+pub async fn mine_and_submit(
     config: &mut AppCfg,
-    tx_params: TxParams,
+    // tx_params: TxParams,
     local_mode: bool,
-    swarm_path: Option<PathBuf>,
+    _swarm_path: Option<PathBuf>,
 ) -> Result<(), Error> {
     // get the location of this miner's blocks
     let mut blocks_dir = config.workspace.node_home.clone();
@@ -86,11 +84,11 @@ pub fn mine_and_submit(
         let next = match local_mode {
             true => next_proof::get_next_proof_params_from_local(config)?,
             false => {
-                let client = client::find_a_remote_jsonrpc(
-                    &config,
-                    // config.get_waypoint(swarm_path.clone())?, // 0L todo
-                )?;
-                match next_proof::get_next_proof_from_chain(config, client, swarm_path.clone()) {
+                // let client = client::find_a_remote_jsonrpc(
+                //     &config,
+                //     // config.get_waypoint(swarm_path.clone())?, // 0L todo
+                // )?;
+                match next_proof::get_next_proof_from_chain(config) {
                     Ok(n) => n,
                     // failover to local mode, if no onchain data can be found.
                     // TODO: this is important for migrating to the new protocol.
@@ -114,7 +112,7 @@ pub fn mine_and_submit(
         );
 
         // submits backlog to client
-        match backlog::process_backlog(&config, &tx_params) {
+        match backlog::process_backlog(&config).await {
             Ok(()) => println!("Success: Proof committed to chain"),
             Err(e) => {
                 // don't stop on tx errors
@@ -313,6 +311,7 @@ fn test_parse_one_file() {
     test_helper_clear_block_dir(&blocks_dir)
 }
 
+#[cfg(test)]
 /// make fixtures for file
 pub fn test_make_configs_fixture() -> AppCfg {
     let mut cfg = AppCfg::default();

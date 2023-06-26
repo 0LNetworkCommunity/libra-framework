@@ -1,6 +1,6 @@
 // TODO:
 
-use anyhow::{bail, Context};
+use anyhow::Context;
 // use futures::future;
 
 use libra_types::legacy_types::app_cfg::AppCfg;
