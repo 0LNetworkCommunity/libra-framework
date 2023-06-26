@@ -6171,7 +6171,6 @@ name = "libra-tower"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "aptos-api-types",
  "aptos-sdk",
  "byteorder",
  "clap 3.2.23",

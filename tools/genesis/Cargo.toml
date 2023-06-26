@@ -22,7 +22,6 @@ libra-wallet = { workspace = true }
 clap = { workspace = true }
 anyhow = { workspace = true }
 ol-types = { workspace = true }
-once_cell = { workspace = true }
 reqwest = { workspace = true }
 diem-types = { workspace = true }
 base64 = { workspace = true }
