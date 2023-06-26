@@ -104,14 +104,12 @@ ureq = { version = "1.5.4", features = [
 ], default_features = false }
 url = { version = "2.3.1", features = ["serde"] }
 
-
-
-
 # Libra dependencies
 ol-keys = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err" }
 ol-types = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err" }
 diem-wallet = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err" }
 diem-types = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err" }
+vdf = { git = "https://github.com/0o-de-lally/verifiable_delay.git" }
 
 
 ### MOVE DEPENDENCIES

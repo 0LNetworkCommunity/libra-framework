@@ -1,9 +1,10 @@
 //! TowerError
 
-use diem_json_rpc_types::views::VMStatusView;
+// use diem_json_rpc_types::views::VMStatusView;
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use txs::submit_tx::TxError;
+use libra_types::legacy_types::tx_error::TxError;
+use zapatos_api_types::TransactionOnChainData;
 
 /// Common errors in Tower transaction submission
 #[derive(Debug, Serialize, Deserialize)]
@@ -11,7 +12,7 @@ pub enum TowerError {
     ///
     Unknown,
     ///
-    Other(VMStatusView),
+    Other(TransactionOnChainData),
     ///
     AppConfigs,
     /// No local blocks to be found
@@ -40,9 +41,12 @@ impl fmt::Display for TowerError {
             TowerError::Unknown => write!(f, "Unknown: {}", TowerError::Unknown.value()),
             TowerError::Other(vmv) => write!(
                 f,
-                "Other: {}, {}",
+                "Other: {:#?}",
                 TowerError::Other(vmv.to_owned()).value(),
-                &vmv.to_string()
+                // vmv.into_transaction_info().unwrap().vm_status()
+                // vmv.transaction.
+                // TODO
+                // &vmv.to_string()
             ),
             TowerError::AppConfigs => write!(
                 f,
@@ -138,14 +142,14 @@ pub fn parse_error(tx_err: &TxError) -> TowerError {
         Some(130109) => TowerError::Discontinuity,
         Some(130110) => TowerError::Invalid,
         _ => {
-            if let Some(tv) = &tx_err.tx_view {
-                match tv.vm_status {
-                    diem_json_rpc_types::views::VMStatusView::OutOfGas => TowerError::OutOfGas,
-                    _ => TowerError::Other(tv.vm_status.to_owned()),
-                }
-            } else {
+            // if let Some(tv) = &tx_err.tx_view {
+            //     match tv.vm_status() {
+            //         ExecutionStatus::OutOfGas => TowerError::OutOfGas,
+            //         _ => TowerError::Other(tv.vm_status().to_owned()),
+            //     }
+            // } else {
                 TowerError::Unknown
-            }
+            // }
         }
     }
 }

@@ -1,4 +1,5 @@
 use anyhow;
+use zapatos_api_types::TransactionOnChainData;
 
 #[derive(Debug)]
 /// a transaction error type specific to ol txs
@@ -6,7 +7,7 @@ pub struct TxError {
     /// the actual error type
     pub err: Option<anyhow::Error>,
     /// transaction view if the transaction got that far
-    pub tx_view: Option<String>,
+    pub tx_view: Option<TransactionOnChainData>,
     /// Move module or script where error occurred
     pub location: Option<String>,
     /// Move abort code used in error
