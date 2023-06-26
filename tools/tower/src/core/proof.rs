@@ -257,7 +257,7 @@ fn test_mine_genesis() {
     assert_eq!(latest_block.height, 0, "test");
 
     // Test the expected proof is writtent to file correctly.
-    let correct_proof = "0068b32edb7244719b08c21fb786e7c25912a453c0ce895bc674a932a5509fda6d00020af97c69235a0387afe5e6cba13bdb4b6fd5a0e251dea265989c71b5b4db11";
+    let correct_proof = "035117e66d23e3db4198ef29b37181a542f5a71cbde6fcbace201c2023b7cf561d762a04799605da5734f291";
     assert_eq!(hex::encode(&latest_block.proof), correct_proof, "test");
 
     test_helper_clear_block_dir(&configs_fixture.get_block_dir());

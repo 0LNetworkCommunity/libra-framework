@@ -709,7 +709,7 @@ module ol_framework::tower_state {
     }
 
     //////////////////////
-    ///    Getters    ///
+    //      Getters     //
     /////////////////////
 
     #[view]

@@ -147,71 +147,21 @@ impl AppCfg {
     pub fn init_app_configs(
         authkey: AuthenticationKey,
         account: AccountAddress,
-        _upstream_peer: &Option<Url>,
-        config_path: &Option<PathBuf>,
-        _base_epoch: &Option<u64>,
-        // base_waypoint: &Option<Waypoint>,
-        _source_path: &Option<PathBuf>,
-        _statement: Option<String>,
-        _ip: Option<Ipv4Addr>,
-        network_id: &Option<NamedChain>,
+        config_path: Option<PathBuf>,
+        network_id: Option<NamedChain>,
     ) -> Result<AppCfg, Error> {
         // TODO: Check if configs exist and warn on overwrite.
         let mut default_config = AppCfg::default();
         default_config.profile.auth_key = authkey;
         default_config.profile.account = account;
 
-        // // Get statement which goes into genesis block
-        // default_config.profile.statement = match statement {
-        //     Some(s) => s,
-        //     None => "".to_string,
-        // };
-
-        // default_config.profile.ip = match ip {
-        //     Some(i) => i,
-        //     None => {},
-        // };
-
-        // default_config.profile.vfn_ip = match ip {
-        //     Some(i) => Some(i),
-        //     None => {},
-        // };
-
         default_config.workspace.node_home =
             config_path.clone().unwrap_or_else(|| default_file_path());
 
-        // if let Some(u) = upstream_peer {
-        //     default_config.profile.upstream_nodes = vec![u.to_owned()]
-        // };
-        // Add link to previous tower
-        // if !*IS_TEST {
-        //     default_config.profile.tower_link = add_tower(&default_config);
-        // }
 
         if let Some(id) = network_id {
             default_config.chain_info.chain_id = id.to_owned();
         };
-
-        // if source_path.is_some() {
-        //     // let source_path = what_source();
-        //     default_config.workspace.source_path = source_path.clone();
-        //     default_config.workspace.stdlib_bin_path = Some(
-        //         source_path
-        //             .as_ref()
-        //             .unwrap()
-        //             .join("language/diem-framework/staged/stdlib.mv"),
-        //     );
-        // }
-
-        // // override from args
-        // if base_epoch.is_some()  {
-        //     default_config.chain_info.base_epoch = *base_epoch;
-        //     // default_config.chain_info.base_waypoint = *base_waypoint;
-        // } else {
-        //     default_config.chain_info.base_epoch = None;
-        //     // default_config.chain_info.base_waypoint = None;
-        //     println!("WARN: No --epoch or --waypoint or upstream --url passed. This should only be done at genesis. If that's not correct either pass --epoch and --waypoint as CLI args, or provide a URL to fetch this data from --upstream-peer or --template-url");
-        // }
 
         // skip questionnaire if CI
         if MODE_0L.clone() == NamedChain::TESTING {
@@ -220,8 +170,7 @@ impl AppCfg {
             return Ok(default_config);
         }
 
-        fs::create_dir_all(&default_config.workspace.node_home).unwrap();
-        default_config.save_file()?;
+        // default_config.save_file()?;
 
         Ok(default_config)
     }
