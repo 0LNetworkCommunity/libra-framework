@@ -1,5 +1,5 @@
 use anyhow::bail;
-use zapatos::account::key_rotation::lookup_address;
+use zapatos::{account::key_rotation::lookup_address, common::types::{CliConfig, ConfigSearchMode}};
 use zapatos_sdk::{
     rest_client::{aptos_api_types::TransactionOnChainData, Client},
     transaction_builder::TransactionBuilder,
@@ -10,10 +10,10 @@ use zapatos_sdk::{
     },
 };
 
-use std::time::SystemTime;
-use std::time::UNIX_EPOCH;
+use std::{time::{SystemTime, UNIX_EPOCH}, path::PathBuf};
+use url::Url;
 
-use libra_types::type_extensions::client_ext::{ClientExt, DEFAULT_TIMEOUT_SECS};
+use libra_types::{type_extensions::{client_ext::{ClientExt, DEFAULT_TIMEOUT_SECS}, cli_config_ext::CliConfigExt}, exports::Ed25519PrivateKey};
 
 // #[derive(Debug)]
 // /// a transaction error type specific to ol txs
@@ -90,6 +90,60 @@ impl Sender {
             chain_id,
             response: None,
         })
+    }
+
+    pub async fn from_profile(profile_name: Option<&str>, workspace: Option<PathBuf>, pri_key: Option<Ed25519PrivateKey>) -> anyhow::Result<Self> {
+      
+      let cfg = CliConfig::load_profile_ext(None, None, ConfigSearchMode::CurrentDir)?;
+      if let Some(c) = cfg {
+        let address = match c.account {
+            Some(acc) => acc,
+            None => bail!("no profile found"),
+        };
+
+        let key = match pri_key  {
+          Some(p) => p,
+          None => {
+            let leg_keys = libra_wallet::legacy::get_keys_from_prompt()?;
+            leg_keys.child_0_owner.pri_key
+          }
+        };
+        
+        let temp_seq_num = 0;
+        let mut local_account = LocalAccount::new(address, key, temp_seq_num);
+
+        let url: Url = match c.rest_url {
+            Some(url_str) => url_str.parse()?,
+            None => bail!("could not find rest_url in profile"),
+        };
+
+        // check if we can connect to this client, or exit
+        let client = Client::new(url.clone());
+        
+        let seq_num = match client.get_index().await {
+            Ok(_) => client.get_sequence_number(address).await?,
+            Err(_) => bail!("cannot connect to client at {:?}", &url)
+        };
+
+        let s = local_account.sequence_number_mut();
+        *s = seq_num;
+        // update the sequence number of account.
+        let chain_id = match c.network {
+            Some(net) => ChainId::new(net as u8),
+            None => bail!("cannot get which network id to connect to"),
+        };
+
+        let s = Sender {
+            client: Client::new(url),
+            local_account,
+            chain_id,
+            response: None,
+        };
+        return Ok(s)
+      }
+      bail!("could not read profile: {:?} at {:?}", profile_name, workspace);
+
+
     }
 
     pub async fn sign_submit_wait(

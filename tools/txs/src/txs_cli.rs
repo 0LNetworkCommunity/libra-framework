@@ -178,6 +178,7 @@ impl TxsCli {
           Some(Client::new(self.url.as_ref().unwrap().to_owned()))
         } else { None };
 
+        // TODO: load profile from ConfigCli::load_ext
         let mut send = Sender::new(AccountKey::from_private_key(pri_key), ChainId::test(), client_opt).await?;
         
         match &self.subcommand {
