@@ -105,7 +105,7 @@ impl Sender {
         })
     }
     pub async fn from_app_cfg(
-        app_cfg: AppCfg,
+        app_cfg: &AppCfg,
         pri_key: Option<Ed25519PrivateKey>,
     ) -> anyhow::Result<Self> {
         let address = app_cfg.profile.account;
@@ -121,7 +121,7 @@ impl Sender {
         let temp_seq_num = 0;
         let mut local_account = LocalAccount::new(address, key, temp_seq_num);
 
-        let nodes = app_cfg.profile.upstream_nodes;
+        let nodes = &app_cfg.profile.upstream_nodes;
         // Todo: find one out of the list which can produce metadata, not the first one.
         let url: Url = match nodes.iter().next() {
             Some(u) => u.to_owned(),
@@ -245,9 +245,9 @@ impl Sender {
 
         Ok(res)
     }
-    pub fn eval_response(&self) -> anyhow::Result<ExecutionStatus> {
+    pub fn eval_response(&self) -> anyhow::Result<ExecutionStatus, ExecutionStatus> {
         if self.response.is_none() {
-            bail!("no response to evaluate")
+            return Err(ExecutionStatus::MiscellaneousError(None))
         };
         let status = self.response.as_ref().unwrap().info.status();
         match status.is_success() {
@@ -257,7 +257,7 @@ impl Sender {
             }
             false => {
                 println!("transaction not successful, status: {:?}", &status);
-                bail!("transaction not successful, status: {:?}", &status)
+                Err(status.to_owned())
             }
         }
     }

@@ -6176,8 +6176,11 @@ dependencies = [
  "byteorder",
  "clap 3.2.23",
  "hex",
+ "libra-query",
+ "libra-txs",
  "libra-types",
  "serde 1.0.163",
+ "serde_json",
  "tokio",
 ]
 

@@ -15,9 +15,12 @@ byteorder = { workspace = true }
 clap = { workspace = true }
 hex = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 tokio = { workspace = true }
 
+libra-query = { workspace = true }
 libra-types = { workspace = true }
+libra-txs = { workspace = true }
 
 zapatos-api-types = { workspace = true }
 zapatos-sdk = { workspace = true }
