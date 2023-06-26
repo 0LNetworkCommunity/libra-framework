@@ -34,6 +34,6 @@ impl TowerCli {
           println!("zero");
         },
       }
-
+      Ok(())
     }
 }
