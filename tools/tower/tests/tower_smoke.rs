@@ -6,6 +6,7 @@ use zapatos_smoke_test::smoke_test_environment::{
   new_local_swarm_with_release,
 };
 use libra_framework::release::ReleaseTarget;
+use libra_tower::core::proof;
 
 /// Testing that we can get a swarm up with the current head.mrb
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
@@ -18,7 +19,7 @@ async fn tower_genesis() {
     // let local = LocalAccount::new(node.peer_id(), node.account_private_key().unwrap().private_key(), 0);
     // let info = swarm.aptos_public_info();
 
-    let app_cfg = AppCfg::init_app_configs(
+    let mut app_cfg = AppCfg::init_app_configs(
       AuthenticationKey::ed25519(&node.account_private_key().as_ref().unwrap().public_key()),
       node.peer_id(),
       None,
@@ -26,9 +27,17 @@ async fn tower_genesis() {
     ).unwrap();
     dbg!(&app_cfg.profile);
 
-    let path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
-    let path = path.join("_smoke_test_temp");
+    let temp_home_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
+    temp_home_path.push("_smoke_test_temp");
 
+    app_cfg.workspace.node_home = temp_home_path;
+
+    std::fs::create_dir_all(temp_home_path);
+
+    let p = proof::write_genesis(&app_cfg).expect("could not write genesis proof");
+
+    dbg!(&p);
+// next_proof::get_next_proof_params_from_local(config)?
     // dbg!(&path);
     // libra_tower::
 

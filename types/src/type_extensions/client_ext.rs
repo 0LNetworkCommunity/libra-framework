@@ -266,7 +266,7 @@ fn serde_test() {
 
 
     let s = r#"{"x": 1.0, "y": 2.0}"#;
-    let mut value: serde_json::Value = serde_json::from_str(s).unwrap();
+    let value: serde_json::Value = serde_json::from_str(s).unwrap();
     // value.
     dbg!(&value);
 
