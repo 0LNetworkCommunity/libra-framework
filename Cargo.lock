@@ -6172,7 +6172,9 @@ dependencies = [
  "anyhow",
  "aptos-api-types",
  "aptos-sdk",
+ "byteorder",
  "clap 3.2.23",
+ "hex",
  "libra-types",
  "serde 1.0.163",
  "tokio",
@@ -6216,6 +6218,7 @@ dependencies = [
  "serde_json",
  "serde_yaml 0.9.21",
  "tokio",
+ "toml",
  "url",
 ]
 

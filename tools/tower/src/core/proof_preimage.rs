@@ -2,8 +2,10 @@
 
 use byteorder::{LittleEndian, WriteBytesExt};
 use hex::decode;
-use ol::config::AppCfg;
-use ol_types::block::{GENESIS_VDF_SECURITY_PARAM, GENESIS_VDF_ITERATIONS};
+use libra_types::legacy_types::{
+  app_cfg::AppCfg,
+  block::{GENESIS_VDF_SECURITY_PARAM, GENESIS_VDF_ITERATIONS}
+};
 
 /// Format the config file data into a fixed byte structure for easy parsing in Move/other languages
 pub fn genesis_preimage(cfg: &AppCfg) -> Vec<u8> {

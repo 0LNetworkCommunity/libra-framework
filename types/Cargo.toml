@@ -17,6 +17,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
 tokio = { workspace = true }
+toml = { workspace = true }
 url = { workspace = true }
 zapatos = { workspace = true }
 zapatos-api-types = { workspace = true }

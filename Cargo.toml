@@ -77,6 +77,7 @@ anyhow = "1.0.70"
 async-trait = "0.1.68"
 base64 = "0.13.0"
 blst = "0.3.7"
+byteorder = { version = "1.4.3", default-features = false }
 chrono = { version = "0.4.19", features = ["clock", "serde"] }
 # clap = { version = "4.2.7", features = ["derive", "env", "suggestions"] }
 clap = { version = "3.2.23", features = ["derive", "env", "suggestions"]}
@@ -98,6 +99,7 @@ serde = { version = "1.0.159", features = ["derive", "rc"] }
 serde_json = "1.0.95"
 serde_yaml = "0.9.21"
 tokio = { version = "1.28.0", features = ["full"] }
+toml = "0.5.9"
 ureq = { version = "1.5.4", features = [
   "json",
   "native-tls",
