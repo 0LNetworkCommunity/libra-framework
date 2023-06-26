@@ -131,13 +131,13 @@ impl Sender {
         // check if we can connect to this client, or exit
         let client = Client::new(url.clone());
 
-        let mut chain_id = ChainId::testnet();
+        // let mut chain_id = ChainId::testnet();
         let seq_num = local_account.sequence_number_mut();
 
-        match client.get_index().await {
+        let chain_id = match client.get_index().await {
             Ok(metadata) => {
-                chain_id = ChainId::new(metadata.into_inner().chain_id);
-                *seq_num = client.get_sequence_number(address).await?
+                *seq_num = client.get_sequence_number(address).await?;
+                ChainId::new(metadata.into_inner().chain_id)
             }
             Err(_) => bail!("cannot connect to client at {:?}", &url),
         };
