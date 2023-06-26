@@ -6053,6 +6053,7 @@ dependencies = [
  "clap 3.2.23",
  "libra-config",
  "libra-query",
+ "libra-tower",
  "libra-txs",
  "libra-wallet",
  "tokio",
@@ -6161,6 +6162,15 @@ dependencies = [
  "clap 3.2.23",
  "libra-types",
  "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "libra-tower"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap 3.2.23",
  "tokio",
 ]
 
