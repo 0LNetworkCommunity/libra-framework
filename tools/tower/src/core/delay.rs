@@ -9,15 +9,17 @@ pub fn do_delay(preimage: &[u8], difficulty: u64, security: u64) -> Result<Vec<u
     // Functions for running the VDF.
 
     // TODO(Wiri): we need new fixtures so that we're not switching algorithms.
-    let vdf = if
-      MODE_0L.clone() == NamedChain::TESTNET || 
-      MODE_0L.clone() == NamedChain::TESTING {
-      let vdf = PietrzakVDFParams(security as u16).new();
-      vdf.solve(preimage, difficulty)
-    } else {
-      let vdf = WesolowskiVDFParams(security as u16).new();
-      vdf.solve(preimage, difficulty)
-    };
+    // let vdf = if
+    //   MODE_0L.clone() == NamedChain::TESTNET || 
+    //   MODE_0L.clone() == NamedChain::TESTING {
+    //   let vdf = PietrzakVDFParams(security as u16).new();
+    //   vdf.solve(preimage, difficulty)
+    // } else {
+    //   let vdf = WesolowskiVDFParams(security as u16).new();
+    //   vdf.solve(preimage, difficulty)
+    // };
+    let params = WesolowskiVDFParams(security as u16).new();
+    let vdf = params.solve(preimage, difficulty);
 
     vdf.map_err(|e| {
         anyhow!("ERROR: cannot solve VDF, message: {:?}", &e)

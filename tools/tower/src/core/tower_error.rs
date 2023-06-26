@@ -135,6 +135,7 @@ impl TowerError {
 }
 
 pub fn parse_error(status: ExecutionStatus) -> TowerError {
+    // status
     match status.clone() {
         ExecutionStatus::OutOfGas => TowerError::OutOfGas,
         // ExecutionStatus::MoveAbort({location, code, info}) {

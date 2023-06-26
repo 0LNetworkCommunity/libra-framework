@@ -14,19 +14,15 @@ module ol_framework::tower_state {
 
     /// The current solution does not solve to previous hash.
     /// The delay proofs are not chained
-    const EDELAY_NOT_CHAINED: u64 = 13001;
+    const EDELAY_NOT_CHAINED: u64 = 1;
     /// difficulty of proof does not match requirement.
-    const EWRONG_DIFFICULTY: u64 = 13002;
+    const EWRONG_DIFFICULTY: u64 = 2;
     /// security param of proof does not match requirement.
-    const EWRONG_SECURITY: u64 = 13003;
+    const EWRONG_SECURITY: u64 = 3;
     /// security param of proof does not match requirement.
-    const EADDRESS_NOT_IN_CHALLENGE: u64 = 13004;
+    const EADDRESS_NOT_IN_CHALLENGE: u64 = 4;
     /// Proof is not valid. The verification failed for solution at the expected difficulty and security parameter.
-    const EPROOF_NOT_VALID: u64 = 13005;
-
-
-
-    // const EPOCHS_UNTIL_ACCOUNT_CREATION: u64 = 14;
+    const EPROOF_NOT_VALID: u64 = 5;
 
     /// A list of all miners' addresses 
     // reset at epoch boundary
@@ -248,6 +244,7 @@ module ol_framework::tower_state {
       miner_sign: &signer,
       proof: Proof
     ) acquires TowerProofHistory, TowerList, TowerCounter {
+      print(&7777777777777);
       // Get address, assumes the sender is the signer.
       let miner_addr = signer::address_of(miner_sign);
       // let diff = borrow_global<VDFDifficulty>(@ol_framework );

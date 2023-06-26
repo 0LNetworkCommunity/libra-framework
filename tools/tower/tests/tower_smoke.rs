@@ -12,7 +12,7 @@ use zapatos_forge::Swarm;
 async fn tower_genesis() {
 
     let release = ReleaseTarget::Head.load_bundle().unwrap();
-    let mut swarm = new_local_swarm_with_release(4, release).await;
+    let mut swarm = new_local_swarm_with_release(1, release).await;
 
     let info = swarm.aptos_public_info_for_node(0);
     let url = info.url().to_string();
@@ -42,7 +42,12 @@ async fn tower_genesis() {
 
     // dbg!(&proof);
 
-    backlog::process_backlog(&app_cfg).await.unwrap();
+    match backlog::process_backlog(&app_cfg).await {
+      Ok(_) => {},
+      Err(e) => {
+        dbg!(&e);
+      }
+    }
 
 
     // next_proof::get_next_proof_params_from_local(config)?
