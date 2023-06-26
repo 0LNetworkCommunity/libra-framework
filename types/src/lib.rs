@@ -5,7 +5,7 @@ pub mod gas_coin;
 pub mod type_extensions;
 pub mod exports;
 pub mod legacy_types;
-#[cfg(test)]
+// #[cfg(test)]
 pub mod test_drop_helper;
 
 use std::path::PathBuf;
