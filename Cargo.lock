@@ -6160,6 +6160,7 @@ dependencies = [
  "anyhow",
  "aptos-sdk",
  "clap 3.2.23",
+ "futures",
  "libra-types",
  "serde_json",
  "tokio",

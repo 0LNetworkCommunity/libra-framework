@@ -1,21 +1,22 @@
 //! Miner resubmit backlog transactions module
 #![forbid(unsafe_code)]
 
+use crate::garbage_collection::gc_failed_proof;
+use crate::proof::{get_highest_block, FILENAME};
+use crate::{tower_errors, EPOCH_MINING_THRES_UPPER};
+
 use anyhow::{anyhow, bail, Error, Result};
 use std::io::BufReader;
 use std::{fs::File, path::PathBuf};
 
-use diem_client::BlockingClient as DiemClient;
-use diem_logger::prelude::*;
-use ol_types::block::VDFProof;
-use ol_types::config::AppCfg;
-use txs::submit_tx::{eval_tx_status, TxError};
-use txs::tx_params::TxParams;
+// use diem_client::BlockingClient as DiemClient;
+// use diem_logger::prelude::*;
+use libra_types::legacy_types::block::VDFProof;
+use libra_types::legacy_types::app_cfg::AppCfg;
+// use libra_txs::submit_tx::{eval_tx_status, TxError};
+// use libra_txs::tx_params::TxParams;
+use libra_txs::tower::commit_proof;
 
-use crate::commit_proof::commit_proof_tx;
-use crate::garbage_collection::gc_failed_proof;
-use crate::proof::{get_highest_block, FILENAME};
-use crate::{tower_errors, EPOCH_MINING_THRES_UPPER};
 
 /// Submit a backlog of blocks that may have been mined while network is offline.
 /// Likely not more than 1.
@@ -77,7 +78,7 @@ pub fn process_backlog(config: &AppCfg, tx_params: &TxParams) -> Result<(), TxEr
         let reader = BufReader::new(file);
         let block: VDFProof = serde_json::from_reader(reader).map_err(|e| Error::from(e))?;
 
-        let view = commit_proof_tx(&tx_params, block.clone())?;
+        let view = commit_proof(&tx_params, block.clone())?;
         match eval_tx_status(view) {
             Ok(_) => {}
             Err(e) => {
@@ -160,7 +161,7 @@ pub fn submit_proof_by_number(
     let reader = BufReader::new(file);
     let block: VDFProof = serde_json::from_reader(reader).map_err(|e| Error::from(e))?;
 
-    let view = commit_proof_tx(&tx_params, block)?;
+    let view = commit_proof(&tx_params, block)?;
     match eval_tx_status(view) {
         Ok(_) => {}
         Err(e) => {
