@@ -130,11 +130,11 @@ impl AppCfg {
     // }
 
     // /// Get where the block/proofs are stored.
-    // pub fn get_block_dir(&self) -> PathBuf {
-    //     let mut home = self.workspace.node_home.clone();
-    //     home.push(&self.workspace.block_dir);
-    //     home
-    // }
+    pub fn get_block_dir(&self) -> PathBuf {
+        let mut home = self.workspace.node_home.clone();
+        home.push(&self.workspace.block_dir);
+        home
+    }
 
     // /// Get where node key_store.json stored.
     // pub fn get_key_store_path(&self) -> PathBuf {

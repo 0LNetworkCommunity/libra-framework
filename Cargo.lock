@@ -6215,6 +6215,7 @@ dependencies = [
  "async-trait",
  "bcs 0.1.3",
  "dirs 5.0.1",
+ "glob",
  "hex",
  "move-core-types 0.0.4",
  "once_cell",

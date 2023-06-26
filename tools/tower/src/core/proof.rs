@@ -11,9 +11,6 @@ use ol_types::config::AppCfg;
 use std::{fs, io::Write, path::PathBuf, time::Instant};
 use txs::tx_params::TxParams;
 
-/// name of the proof files
-pub const FILENAME: &str = "proof";
-
 // writes a JSON file with the first vdf proof
 fn mine_genesis(config: &AppCfg, difficulty: u64, security: u64) -> VDFProof {
     println!("Mining Genesis Proof"); // TODO: use logger
@@ -41,8 +38,9 @@ pub fn write_genesis(config: &AppCfg) -> Result<VDFProof, Error> {
     let security = GENESIS_VDF_SECURITY_PARAM.clone();
     let block = mine_genesis(config, difficulty, security);
     //TODO: check for overwriting file...
-    write_json(&block, &config.get_block_dir())?;
-    let genesis_proof_filename = &format!("{}_0.json", FILENAME);
+    // write_json(&block, &config.get_block_dir())?;
+    block.write_json(&config.get_block_dir())?;
+    // let genesis_proof_filename = &format!("{}_0.json", FILENAME);
     println!(
         "proof zero mined, file saved to: {:?}",
         &config.get_block_dir().join(genesis_proof_filename)
@@ -126,114 +124,10 @@ pub fn mine_and_submit(
     }
 }
 
-fn write_json(block: &VDFProof, blocks_dir: &PathBuf) -> Result<(), std::io::Error> {
-    if !&blocks_dir.exists() {
-        // first run, create the directory if there is none, or if the user changed the configs.
-        // note: user may have blocks but they are in a different directory than what miner.toml says.
-        fs::create_dir(&blocks_dir)?;
-    };
-    // Write the file.
-    let mut latest_block_path = blocks_dir.clone();
-    latest_block_path.push(format!("{}_{}.json", FILENAME, block.height));
-    let mut file = fs::File::create(&latest_block_path)?;
-    file.write_all(serde_json::to_string(&block)?.as_bytes())
-}
 
-/// parse the existing blocks in the miner's path. This function receives any path. Note: the path is configured in miner.toml which abscissa Configurable parses, see commands.rs.
-pub fn get_highest_block(blocks_dir: &PathBuf) -> Result<(VDFProof, PathBuf), Error> {
-    let mut max_block: Option<VDFProof> = None;
-    let mut max_block_path: Option<PathBuf> = None;
 
-    let file_list = glob(&format!("{}/{}_*.json", blocks_dir.display(), FILENAME))?;
-    // iterate through all json files in the directory.
-    // if file_list.last().is_none() {
-    //   bail!("cannot find any VDF proof files in, {:?}", blocks_dir);
-    // }
 
-    for entry in file_list {
-        if let Ok(entry) = entry {
-            // let file = fs::File::open(&entry).expect("Could not open block file");
-            // let reader = BufReader::new(file);
-            let block = match parse_block_file(&entry, false) {
-                Ok(v) => v,
-                Err(e) => {
-                    println!("could not parse the proof file: {}, skipping. Manually delete if this proof is not readable.", e.to_string());
-                    continue;
-                }
-            };
 
-            let blocknumber = block.height;
-
-            if let Some(b) = &max_block {
-                if blocknumber > b.height {
-                    max_block = Some(block);
-                    max_block_path = Some(entry);
-                }
-            } else {
-                max_block = Some(block);
-                max_block_path = Some(entry);
-            }
-        }
-    }
-
-    if max_block.is_some() && max_block_path.is_some() {
-        return Ok((max_block.unwrap(), max_block_path.unwrap()));
-    } else {
-        bail!(
-            "cannot find a valid VDF proof in files to determine next proof's parameters. Exiting."
-        )
-    }
-    // (max_block, max_block_path)
-}
-
-/// Parse a proof_x.json file and return a VDFProof
-pub fn parse_block_file(path: &PathBuf, purge_if_bad: bool) -> Result<VDFProof, Error> {
-    let block_file = fs::read_to_string(path)?;
-
-    match serde_json::from_str(&block_file) {
-        Ok(v) => Ok(v),
-        Err(e) => {
-            if purge_if_bad { fs::remove_file(&block_file)? }
-            bail!(
-                "Could not read latest block file in path {:?}, message: {:?}",
-                &path,
-                e
-            )
-        }
-    }
-}
-
-/// Parse a proof_x.json file and return a VDFProof
-pub fn find_proof_number(num: u64, blocks_dir: &PathBuf) -> Result<(VDFProof, PathBuf), Error> {
-    let file = PathBuf::from(&format!(
-        "{}/{}_{}.json",
-        blocks_dir.display(),
-        FILENAME,
-        num.to_string()
-    ));
-    match parse_block_file(&file, false) {
-        Ok(p) => {
-            if p.height == num {
-                return Ok((p, file));
-            } else {
-                bail!(
-                    "file {} does not contain proof height {}, found {} instead",
-                    file.to_str().unwrap(),
-                    num,
-                    p.height
-                );
-            }
-        }
-        Err(e) => Err(e),
-    }
-}
-
-/// find the most recent proof on disk
-pub fn get_latest_proof(config: &AppCfg, purge_if_bad: bool) -> Result<VDFProof, Error> {
-    let (_current_block_number, current_block_path) = get_highest_block(&config.get_block_dir())?;
-
-    parse_block_file(&current_block_path, purge_if_bad)
-}
 
 /* ////////////// */
 /* / Unit tests / */
