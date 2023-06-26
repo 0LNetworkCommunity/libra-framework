@@ -6171,6 +6171,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "aptos-api-types",
+ "aptos-sdk",
  "clap 3.2.23",
  "libra-types",
  "serde 1.0.163",

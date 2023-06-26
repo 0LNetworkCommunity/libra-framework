@@ -1,10 +1,12 @@
 //! TowerError
 
-// use diem_json_rpc_types::views::VMStatusView;
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use libra_types::legacy_types::tx_error::TxError;
-use zapatos_api_types::TransactionOnChainData;
+use zapatos_sdk::{
+  types::{
+  transaction::ExecutionStatus,
+  },
+};
 
 /// Common errors in Tower transaction submission
 #[derive(Debug, Serialize, Deserialize)]
@@ -12,7 +14,7 @@ pub enum TowerError {
     ///
     Unknown,
     ///
-    Other(TransactionOnChainData),
+    Other(ExecutionStatus),
     ///
     AppConfigs,
     /// No local blocks to be found
@@ -132,24 +134,24 @@ impl TowerError {
     }
 }
 
-/// get the Tower Error from TxError
-pub fn parse_error(tx_err: &TxError) -> TowerError {
-    match tx_err.abort_code {
-        Some(404) => TowerError::NoClientCx,
-        Some(1004) => TowerError::AccountDNE,
-        Some(130102) => TowerError::WrongDifficulty,
-        Some(130108) => TowerError::TooManyProofs,
-        Some(130109) => TowerError::Discontinuity,
-        Some(130110) => TowerError::Invalid,
-        _ => {
-            // if let Some(tv) = &tx_err.tx_view {
-            //     match tv.vm_status() {
-            //         ExecutionStatus::OutOfGas => TowerError::OutOfGas,
-            //         _ => TowerError::Other(tv.vm_status().to_owned()),
-            //     }
-            // } else {
-                TowerError::Unknown
-            // }
-        }
+pub fn parse_error(status: ExecutionStatus) -> TowerError {
+    match status.clone() {
+        ExecutionStatus::OutOfGas => TowerError::OutOfGas,
+        // ExecutionStatus::MoveAbort({location, code, info}) {
+
+        // }
+        ExecutionStatus::MoveAbort{ location: _, code, .. } => {
+            match code {
+                404 => TowerError::NoClientCx,
+                1004 => TowerError::AccountDNE,
+                130102 => TowerError::WrongDifficulty,
+                130108 => TowerError::TooManyProofs,
+                130109 => TowerError::Discontinuity,
+                130110 => TowerError::Invalid,
+                _ => TowerError::Other(status),
+            }
+        },
+        _ => TowerError::Other(status),
     }
+
 }

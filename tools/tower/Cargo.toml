@@ -18,3 +18,4 @@ tokio = { workspace = true }
 libra-types = { workspace = true }
 
 zapatos-api-types = { workspace = true }
+zapatos-sdk = { workspace = true }
