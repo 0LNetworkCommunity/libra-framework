@@ -88,7 +88,7 @@ pub async fn mine_and_submit(
                 //     &config,
                 //     // config.get_waypoint(swarm_path.clone())?, // 0L todo
                 // )?;
-                match next_proof::get_next_proof_from_chain(config) {
+                match next_proof::get_next_proof_from_chain(config).await {
                     Ok(n) => n,
                     // failover to local mode, if no onchain data can be found.
                     // TODO: this is important for migrating to the new protocol.

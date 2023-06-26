@@ -9,7 +9,7 @@ use libra_types::{
   exports::AuthenticationKey,
   type_extensions::client_ext::{ ClientExt, entry_function_id },
   gas_coin::SlowWalletBalance,
-  tower::TowerProofHistoryView
+  legacy_types::tower::TowerProofHistoryView
 };
 
 /// helper to get libra balance at a SlowWalletBalance type which shows

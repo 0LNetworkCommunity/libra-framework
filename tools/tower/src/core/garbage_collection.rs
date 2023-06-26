@@ -68,7 +68,7 @@ pub fn put_in_trash(to_trash: Vec<PathBuf>, cfg: &AppCfg) -> anyhow::Result<()> 
 
 /// check remaining proofs in backlog.
 /// if they all fail, move the list to a trash file
-pub fn find_first_discontinous_proof(
+pub async fn find_first_discontinous_proof(
     cfg: AppCfg,
     // client: DiemClient,
     // swarm_path: Option<PathBuf>,
@@ -76,7 +76,7 @@ pub fn find_first_discontinous_proof(
     let block_dir = cfg.get_block_dir();
     let highest_local = VDFProof::get_highest_block(&block_dir)?.0.height;
     // start from last known proof on chain.
-    let p = next_proof::get_next_proof_from_chain(&mut cfg.clone())?;
+    let p = next_proof::get_next_proof_from_chain(&mut cfg.clone()).await?;
 
     if highest_local < p.next_height {
         return Ok(None);

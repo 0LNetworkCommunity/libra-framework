@@ -37,7 +37,7 @@ pub struct TowerStateResource {
 }
 
 impl MoveStructType for TowerStateResource {
-    const MODULE_NAME: &'static IdentStr = ident_str!("TowerState");
+    const MODULE_NAME: &'static IdentStr = ident_str!("tower_state");
     const STRUCT_NAME: &'static IdentStr = ident_str!("TowerProofHistory");
 }
 impl MoveResource for TowerStateResource {}

@@ -1,7 +1,6 @@
 // TODO:
 
 use anyhow::Context;
-// use futures::future;
 
 use libra_types::legacy_types::app_cfg::AppCfg;
 use zapatos_sdk::rest_client::Client;

@@ -5,7 +5,7 @@
 pub mod app_cfg;
 pub mod block;
 pub mod mode_ol;
-pub mod tower_state;
+pub mod tower;
 pub mod tx_error;
 pub mod vdf_difficulty;
 // pub mod config;

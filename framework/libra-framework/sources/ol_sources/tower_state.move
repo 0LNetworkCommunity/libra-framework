@@ -712,9 +712,8 @@ module ol_framework::tower_state {
     ///    Getters    ///
     /////////////////////
 
-    // Returns number of epochs for input miner's state
-    // Permissions: PUBLIC, ANYONE
-    // TODO: Rename
+    #[view]
+    /// Returns number of epochs for input miner's state
     public fun get_miner_list(): vector<address> acquires TowerList {
       if (!exists<TowerList>(@0x0)) {
         return vector::empty<address>()  
@@ -722,9 +721,8 @@ module ol_framework::tower_state {
       *&borrow_global<TowerList>(@0x0).list
     }
 
-    // Returns number of epochs for input miner's state
-    // Permissions: PUBLIC, ANYONE
-    // TODO: Rename
+    #[view]
+    /// Returns number of epochs for input miner's state
     public fun get_tower_height(node_addr: address): u64 acquires TowerProofHistory {
       if (exists<TowerProofHistory>(node_addr)) {
         return borrow_global<TowerProofHistory>(node_addr).verified_tower_height
@@ -732,9 +730,9 @@ module ol_framework::tower_state {
       0
     }
 
-    // Returns number of epochs user successfully mined AND validated
-    // Permissions: PUBLIC, ANYONE
-    // TODO: Rename
+    #[view]
+    /// Returns number of epochs user successfully mined AND validated
+
     public fun get_epochs_compliant(node_addr: address): u64 acquires TowerProofHistory {
       if (exists<TowerProofHistory>(node_addr)) {
         return borrow_global<TowerProofHistory>(node_addr).epochs_mining
@@ -742,7 +740,8 @@ module ol_framework::tower_state {
       0
     }
 
-    // returns the number of proofs for a miner in the current epoch
+    #[view]
+    /// returns the number of proofs for a miner in the current epoch
     public fun get_count_in_epoch(miner_addr: address): u64 acquires TowerProofHistory {
       if (exists<TowerProofHistory>(miner_addr)) {
         let s = borrow_global<TowerProofHistory>(miner_addr);
@@ -753,7 +752,8 @@ module ol_framework::tower_state {
       0
     }
 
-    // returns the number of proofs for a miner in the current epoch in EXCESS Of the the threshold
+    #[view]
+    /// returns the number of proofs for a miner in the current epoch in EXCESS Of the the threshold
     public fun get_count_above_thresh_in_epoch(miner_addr: address): u64 acquires TowerProofHistory {
       if (exists<TowerProofHistory>(miner_addr)) {
         if (borrow_global<TowerProofHistory>(miner_addr).count_proofs_in_epoch > globals::get_epoch_mining_thres_lower()) {
@@ -784,24 +784,28 @@ module ol_framework::tower_state {
     //   false 
     // }
 
-    public fun get_validator_proofs_in_epoch(): u64 acquires TowerCounter{
-      let state = borrow_global<TowerCounter>(@ol_framework);
-      state.validator_proofs_in_epoch
-    }
+    // #[view]
+    // /// 
+    // public fun get_validator_proofs_in_epoch(): u64 acquires TowerCounter{
+    //   let state = borrow_global<TowerCounter>(@ol_framework);
+    //   state.validator_proofs_in_epoch
+    // }
 
-    public fun get_fullnode_proofs_in_epoch(): u64 acquires TowerCounter{
-      let state = borrow_global<TowerCounter>(@ol_framework);
-      state.fullnode_proofs_in_epoch
-    }
+    // public fun get_fullnode_proofs_in_epoch(): u64 acquires TowerCounter{
+    //   let state = borrow_global<TowerCounter>(@ol_framework);
+    //   state.fullnode_proofs_in_epoch
+    // }
 
-    public fun get_fullnode_proofs_in_epoch_above_thresh(): u64 acquires TowerCounter{
-      let state = borrow_global<TowerCounter>(@ol_framework);
-      state.fullnode_proofs_in_epoch_above_thresh
-    }
+    // public fun get_fullnode_proofs_in_epoch_above_thresh(): u64 acquires TowerCounter{
+    //   let state = borrow_global<TowerCounter>(@ol_framework);
+    //   state.fullnode_proofs_in_epoch_above_thresh
+    // }
 
-    public fun get_lifetime_proof_count(): (u64, u64, u64) acquires TowerCounter{
+    #[view]
+    /// number of proof submitted over lifetime of chain
+    public fun get_lifetime_proof_count(): u64 acquires TowerCounter{
       let s = borrow_global<TowerCounter>(@ol_framework);
-      (s.lifetime_proofs, s.lifetime_validator_proofs, s.lifetime_fullnode_proofs)
+      s.lifetime_proofs
     }
 
     // public fun danger_migrate_get_lifetime_proof_count(): (u64, u64, u64) acquires TowerStats{
