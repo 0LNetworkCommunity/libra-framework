@@ -71,10 +71,28 @@ fn main() -> anyhow::Result<()>{
             )?;
         }
         Some(Sub::Register { }) => {
-            GenesisWizard::default().start_wizard(cli.home_dir, cli.local_framework, cli.json_legacy, false)?;
+            GenesisWizard::new(
+              cli.org_github, 
+              cli.name_github, 
+              cli.home_dir
+            )
+              .start_wizard(
+                cli.local_framework, 
+                cli.json_legacy, 
+                false
+            )?;
         }
         Some(Sub::Wizard { }) => {
-            GenesisWizard::default().start_wizard(cli.home_dir, cli.local_framework, cli.json_legacy, true)?;
+            GenesisWizard::new(
+              cli.org_github, 
+              cli.name_github, 
+              cli.home_dir
+            )
+              .start_wizard(
+                cli.local_framework, 
+                cli.json_legacy, 
+                false
+            )?;
         }
         _ => {}
     }
