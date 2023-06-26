@@ -471,13 +471,13 @@ impl TxConfigs {
     pub fn get_cost(&self, tx_type: TxType) -> TxCost {
         let ref baseline = self.baseline_cost.clone();
         let cost = match tx_type {
-            TxType::Critical => self.critical_txs_cost.as_ref().unwrap_or_else(|| baseline),
+            TxType::Critical => self.critical_txs_cost.as_ref().unwrap_or(baseline),
             TxType::Mgmt => self
                 .management_txs_cost
                 .as_ref()
                 .unwrap_or_else(|| baseline),
-            TxType::Miner => self.miner_txs_cost.as_ref().unwrap_or_else(|| baseline),
-            TxType::Cheap => self.cheap_txs_cost.as_ref().unwrap_or_else(|| baseline),
+            TxType::Miner => self.miner_txs_cost.as_ref().unwrap_or(baseline),
+            TxType::Cheap => self.cheap_txs_cost.as_ref().unwrap_or(baseline),
         };
         cost.to_owned()
     }
