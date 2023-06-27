@@ -18,9 +18,13 @@ clap = { workspace = true }
 dialoguer = { workspace = true }
 dirs = { workspace = true }
 hex = { workspace = true }
+indoc = { workspace = true }
+mirai-annotations = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
+sha2 = { workspace = true }
+tokio = { workspace = true }
 
 libra-types = { workspace = true }
 
@@ -29,8 +33,7 @@ zapatos-crypto = { workspace = true }
 zapatos-genesis = { workspace = true }
 zapatos-config = { workspace = true }
 
-indoc = { workspace = true }
-tokio = { workspace = true }
+
 
 
 # TODO remove these

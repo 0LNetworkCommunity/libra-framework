@@ -6248,10 +6248,12 @@ dependencies = [
  "hex",
  "indoc 2.0.1",
  "libra-types",
+ "mirai-annotations",
  "ol-keys",
  "serde 1.0.163",
  "serde_json",
  "serde_yaml 0.9.21",
+ "sha2 0.9.9",
  "tokio",
 ]
 
