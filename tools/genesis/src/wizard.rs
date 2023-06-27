@@ -8,7 +8,7 @@ use crate::{genesis_builder, node_yaml, parse_json};
 use crate::{genesis_registration, hack_cli_progress::OLProgress};
 //////
 use crate::github_extensions::LibraGithubClient;
-use crate::helpers::MODE_0L;
+use libra_types::legacy_types::mode_ol::MODE_0L;
 
 use anyhow::bail;
 use dialoguer::{Confirm, Input};

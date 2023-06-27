@@ -8,6 +8,7 @@ use serde::Serialize;
 use std::path::Path;
 use std::str::FromStr;
 use zapatos_crypto::ed25519::Ed25519PrivateKey;
+use zapatos_crypto::PrivateKey;
 use zapatos_types::account_address::AccountAddress;
 use zapatos_types::transaction::authenticator::AuthenticationKey;
 
@@ -61,7 +62,21 @@ pub fn get_keys_from_mnem(mnem: String) -> Result<LegacyKeys> {
     LegacyKeys::new(&wallet)
 }
 
-fn get_account_from_private_key(w: &WalletLibrary, n: u8) -> Result<AccountKeys> {
+pub fn get_account_from_private(pri_key: &Ed25519PrivateKey) -> AccountKeys {
+
+    let pub_key = pri_key.public_key();
+    let auth_key = AuthenticationKey::ed25519(&pub_key);
+    let account = auth_key.derived_address();
+
+    AccountKeys {
+        account,
+        auth_key,
+        pri_key: pri_key.clone(),
+    }
+
+}
+
+fn get_account_from_nth(w: &WalletLibrary, n: u8) -> Result<AccountKeys> {
     let pri_keys = KeyScheme::new(w);
 
     let key = match n {
@@ -88,12 +103,12 @@ impl LegacyKeys {
         Ok(LegacyKeys {
             mnemonic: w.mnemonic(),
             seed: w.get_key_factory().main().to_owned(),
-            child_0_owner: get_account_from_private_key(w, 0)?,
-            child_1_operator: get_account_from_private_key(w, 1)?,
-            child_2_val_network: get_account_from_private_key(w, 2)?,
-            child_3_fullnode_network: get_account_from_private_key(w, 3)?,
-            child_4_consensus: get_account_from_private_key(w, 4)?,
-            child_5_executor: get_account_from_private_key(w, 5)?,
+            child_0_owner: get_account_from_nth(w, 0)?,
+            child_1_operator: get_account_from_nth(w, 1)?,
+            child_2_val_network: get_account_from_nth(w, 2)?,
+            child_3_fullnode_network: get_account_from_nth(w, 3)?,
+            child_4_consensus: get_account_from_nth(w, 4)?,
+            child_5_executor: get_account_from_nth(w, 5)?,
         })
     }
 
