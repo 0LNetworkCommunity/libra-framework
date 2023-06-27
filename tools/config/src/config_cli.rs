@@ -12,9 +12,9 @@ use libra_types::exports::AccountAddress;
 pub struct ConfigCli {
     #[clap(subcommand)]
     subcommand: Option<ConfigSub>,
-    /// Path if not the default $HOME/.libra
+    /// Path for configs if not the default $HOME/.libra
     #[clap(short, long)]
-    config_dir: Option<PathBuf>,
+    path: Option<PathBuf>,
     /// Network ID if different than MAINNET
     #[clap(short, long)]
     chain_name: Option<NamedChain>,
@@ -22,7 +22,7 @@ pub struct ConfigCli {
 
 #[derive(clap::Subcommand)]
 enum ConfigSub {
-    /// Generates a libra.toml for use with libra-cli tools like txs, tower, and also carpe.
+    /// Generates a 0L.toml for cli tools like txs, tower, and also carpe.
     Init {
       /// force an account address instead of reading from mnemonic. Requires -- force_authkey
       #[clap(long)]
@@ -76,7 +76,7 @@ impl ConfigCli {
               legacy_config::wizard(
                 force_authkey.to_owned(),
                 force_address.to_owned(),
-                self.config_dir.to_owned(),
+                self.path.to_owned(),
                 self.chain_name.to_owned(),
                 test_private_key.to_owned(),
               )?;
