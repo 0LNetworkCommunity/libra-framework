@@ -6,7 +6,7 @@ pub mod keys;
 pub mod key_gen;
 pub mod legacy;
 pub mod load_keys;
-pub mod scheme;
+pub mod wallet_library;
 pub mod utils;
 pub mod validator_files;
 pub mod wallet_cli;

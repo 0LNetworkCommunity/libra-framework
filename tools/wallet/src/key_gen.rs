@@ -1,5 +1,5 @@
 use crate::{
-  scheme::wallet_library::WalletLibrary,
+  wallet_library::wallet_library::WalletLibrary,
   keys::{validator_keygen, refresh_validator_files}, load_keys
 };
 use anyhow::Result;

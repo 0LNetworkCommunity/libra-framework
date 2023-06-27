@@ -4,7 +4,7 @@
 // our key gen process, which is quite simple if you are already using BIP-44.
 // Different from vendor, we prioritize making the mnemonic seed known to all users, and then derive all possible keys from there. Currently this applies to ed25519 keys. Vendor's keygen also includes BLS keys, which are used specifically for consensus. As such those are not relevant to end-user account holders.
 
-use crate::account_keys::{legacy_keygen, LegacyKeys, get_keys_from_prompt, get_keys_from_mnem};
+use crate::account_keys::{legacy_keygen, KeyChain, get_keys_from_prompt, get_keys_from_mnem};
 use crate::utils::{
     check_if_file_exists, create_dir_if_not_exist, dir_default_to_current, prompt_yes, to_yaml,
     write_to_user_only_file,
@@ -116,7 +116,7 @@ fn save_val_files(
 
 /// Generates objects used for a user in genesis
 pub fn generate_key_objects_from_legacy(
-    legacy_keys: LegacyKeys,
+    legacy_keys: KeyChain,
 ) -> anyhow::Result<(IdentityBlob, IdentityBlob, PrivateIdentity, PublicIdentity)> {
     // let account_key = ConfigKey::new(keygen.generate_ed25519_private_key());
     let account_key: ConfigKey<Ed25519PrivateKey> =

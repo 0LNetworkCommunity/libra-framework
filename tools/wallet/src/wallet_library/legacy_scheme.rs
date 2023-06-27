@@ -5,7 +5,10 @@ use super::{
   mnemonic::Mnemonic,
   wallet_library::WalletLibrary,
 };
-pub struct KeyScheme {
+// NOTE: this is included here for compatibility.
+// The successor of this struct is KeyChain.
+
+pub struct LegacyKeyScheme {
     /// Owner key, the main key where funds are kept
     pub child_0_owner: ExtendedPrivKey,
     /// Operator of node
@@ -20,7 +23,7 @@ pub struct KeyScheme {
     pub child_5_executor: ExtendedPrivKey,
 }
 
-impl KeyScheme {
+impl LegacyKeyScheme {
     /// Generates the necessary private keys for validator and full node set up.
     pub fn new(wallet: &WalletLibrary) -> Self {
         let kf = wallet.get_key_factory();
@@ -34,8 +37,8 @@ impl KeyScheme {
         }
     }
     /// Get KeyScheme from a mnemonic string.
-    pub fn new_from_mnemonic(mnemonic: String) -> KeyScheme {
+    pub fn new_from_mnemonic(mnemonic: String) -> LegacyKeyScheme {
         let wallet = WalletLibrary::new_from_mnemonic(Mnemonic::from(&mnemonic).unwrap());
-        KeyScheme::new(&wallet)
+        LegacyKeyScheme::new(&wallet)
     }
 }
