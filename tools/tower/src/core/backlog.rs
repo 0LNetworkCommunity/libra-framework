@@ -17,7 +17,6 @@ use libra_query::{account_queries, get_client};
 use libra_types::legacy_types::{
   app_cfg::AppCfg,
   block::VDFProof,
-  tx_error::TxError,
 };
 
 
@@ -187,7 +186,7 @@ async fn submit_or_delete(config: &AppCfg, block: VDFProof, path: PathBuf) -> Re
 // }
 
 /// display the user's tower backlog
-pub async fn show_backlog(config: &AppCfg) -> Result<(), TxError> {
+pub async fn show_backlog(config: &AppCfg) -> Result<()> {
     // Getting remote miner state
     // there may not be any onchain state.
     match get_remote_tower_height(config).await {
@@ -203,11 +202,9 @@ pub async fn show_backlog(config: &AppCfg) -> Result<(), TxError> {
     let mut blocks_dir = config.workspace.node_home.clone();
     blocks_dir.push(&config.workspace.block_dir);
     let (current_local_proof, _current_block_path) = VDFProof::get_highest_block(&blocks_dir)?;
-    // if let Some(current_proof_number) = current_local_proof.height {
+
     println!("Local tower height: {:?}", current_local_proof.height);
-    // } else {
-    // println!("Local tower height: 0");
-    // }
+
     Ok(())
 }
 

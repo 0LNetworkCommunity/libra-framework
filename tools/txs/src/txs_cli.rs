@@ -22,9 +22,9 @@ pub struct TxsCli {
       #[clap(short, long)]
       pub mnemonic: Option<String>,
 
-      /// Private key of the account. Otherwise this will prompt for mnemonic
+      /// Private key of the account. Otherwise this will prompt for mnemonic. Warning: intended for testing.
       #[clap(short, long)]
-      pub private_key: Option<String>,
+      pub test_private_key: Option<String>,
 
       /// URL of the upstream node to send tx to, including port
       /// Otherwise will default to what is in config file in .libra
@@ -164,14 +164,14 @@ pub enum TxsSub {
 
 impl TxsCli {
     pub async fn run(&self) -> Result<()> {
-        let pri_key = if self.private_key.is_none() && self.mnemonic.is_none() {
+        let pri_key = if self.test_private_key.is_none() && self.mnemonic.is_none() {
           let legacy = get_keys_from_prompt()?;
           legacy.child_0_owner.pri_key
         } else if self.mnemonic.is_some() {
           let legacy = get_keys_from_mnem(self.mnemonic.as_ref().unwrap().to_owned())?;
           legacy.child_0_owner.pri_key
         } else {
-          Ed25519PrivateKey::from_encoded_string(&self.private_key.as_ref().unwrap())?
+          Ed25519PrivateKey::from_encoded_string(&self.test_private_key.as_ref().unwrap())?
         };
         
         let client_opt = if self.url.is_some() {

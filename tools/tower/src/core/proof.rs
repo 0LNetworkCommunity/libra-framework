@@ -70,7 +70,7 @@ pub async fn mine_and_submit(
     config: &mut AppCfg,
     // tx_params: TxParams,
     local_mode: bool,
-    _swarm_path: Option<PathBuf>,
+    // _swarm_path: Option<PathBuf>,
 ) -> Result<(), Error> {
     // get the location of this miner's blocks
     let mut blocks_dir = config.workspace.node_home.clone();

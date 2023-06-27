@@ -6082,6 +6082,7 @@ dependencies = [
  "aptos-types",
  "clap 3.2.23",
  "libra-types",
+ "libra-wallet",
  "tokio",
  "url",
 ]

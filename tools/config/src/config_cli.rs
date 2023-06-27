@@ -1,6 +1,10 @@
-use crate::make_profile;
+use crate::{make_profile, legacy_config};
 use anyhow::Result;
 use clap::Parser;
+use std::path::PathBuf;
+use libra_types::exports::NamedChain;
+use libra_types::exports::AuthenticationKey;
+use libra_types::exports::AccountAddress;
 
 #[derive(Parser)]
 #[clap(name = env!("CARGO_PKG_NAME"), author, version, about, long_about = None, arg_required_else_help = true)]
@@ -8,12 +12,30 @@ use clap::Parser;
 pub struct ConfigCli {
     #[clap(subcommand)]
     subcommand: Option<ConfigSub>,
+    /// Path if not the default $HOME/.libra
+    #[clap(short, long)]
+    config_dir: Option<PathBuf>,
+    /// Network ID if different than MAINNET
+    #[clap(short, long)]
+    chain_name: Option<NamedChain>,
 }
 
 #[derive(clap::Subcommand)]
 enum ConfigSub {
-    /// Generate config.yaml file that stores 0L configuration
+    /// Generates a libra.toml for use with libra-cli tools like txs, tower, and also carpe.
     Init {
+      /// force an account address instead of reading from mnemonic. Requires -- force_authkey
+      #[clap(long)]
+      force_address: Option<AccountAddress>,
+      /// force an authkey instead of reading from mnemonic. Requires -- force_address
+      #[clap(long)]
+      force_authkey: Option<AuthenticationKey>, 
+      /// use a private key to initialize. Warning: intended for testing only.
+      #[clap(long)]
+      test_private_key: Option<String>,
+    },
+    /// Generate config.yaml file that stores vendor configuration.
+    VendorInit {
         /// Ed25519 public key
         #[clap(short, long)]
         public_key: String,
@@ -37,7 +59,7 @@ enum ConfigSub {
 impl ConfigCli {
     pub async fn run(&self) -> Result<()> {
         match &self.subcommand {
-            Some(ConfigSub::Init {
+            Some(ConfigSub::VendorInit {
                 public_key,
                 profile,
                 workspace,
@@ -46,7 +68,25 @@ impl ConfigCli {
               profile.as_deref().to_owned(),
               *workspace,
             ).await,
-            _ => Ok(()),
+            Some(ConfigSub::Init {
+                force_address,
+                force_authkey,
+                test_private_key,
+            }) => {
+              legacy_config::wizard(
+                force_authkey.to_owned(),
+                force_address.to_owned(),
+                self.config_dir.to_owned(),
+                self.chain_name.to_owned(),
+                test_private_key.to_owned(),
+              )?;
+
+              Ok(())
+            },
+            _ => { println!("Sometimes I'm right and I can be wrong. My own beliefs are in my song. The butcher, the banker, the drummer and then. Makes no difference what group I'm in.");
+            
+            Ok(()) 
+          },
         }
     }
 }
