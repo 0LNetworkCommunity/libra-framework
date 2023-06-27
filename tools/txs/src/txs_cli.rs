@@ -6,6 +6,7 @@ use indoc::indoc;
 use libra_wallet::legacy::{get_keys_from_prompt, get_keys_from_mnem};
 use url::Url;
 
+use zapatos_sdk::rest_client::Client;
 use zapatos_sdk::types::{AccountKey, account_address::AccountAddress};
 use zapatos_sdk::crypto::{ValidCryptoMaterialStringExt, ed25519::Ed25519PrivateKey};
 use zapatos_types::chain_id::ChainId;
@@ -173,13 +174,13 @@ impl TxsCli {
           Ed25519PrivateKey::from_encoded_string(&self.private_key.as_ref().unwrap())?
         };
         
-        let mut send = Sender::new(AccountKey::from_private_key(pri_key), ChainId::test(), self.url.to_owned()).await?; // TODO: change this from test.
+        let client_opt = if self.url.is_some() {
+          Some(Client::new(self.url.as_ref().unwrap().to_owned()))
+        } else { None };
+
+        let mut send = Sender::new(AccountKey::from_private_key(pri_key), ChainId::test(), client_opt).await?;
         
-
         match &self.subcommand {
-            // Some(Subcommand::Test) => transfer::run().await,
-
-            // Some(Subcommand::Demo) => demo::run().await,
             Some(TxsSub::CreateAccount {
                 account_address,
                 coins,

@@ -1,6 +1,5 @@
 
 use anyhow::{bail};
-use url::Url;
 use zapatos_sdk::rest_client::Client;
 use zapatos_types::transaction::SignedTransaction;
 use zapatos_sdk::types::chain_id::ChainId;
@@ -65,10 +64,8 @@ pub struct Sender {
 }
 
 impl Sender {
-  pub async fn new(account_key: AccountKey, chain_id: ChainId, url: Option<Url>) -> anyhow::Result<Self> {
-    let client = if let Some(u) = url {
-      Client::new(u)
-    } else { Client::default()? };
+  pub async fn new(account_key: AccountKey, chain_id: ChainId, client_opt: Option<Client>) -> anyhow::Result<Self> {
+    let client = client_opt.unwrap_or(Client::default()?);
 
     let address = lookup_address(&client, account_key.authentication_key().derived_address(), false).await?;
 

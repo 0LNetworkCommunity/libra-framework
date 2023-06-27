@@ -45,6 +45,7 @@ pub fn global_folder() -> CliTypedResult<PathBuf> {
     }
 }
 
+/// Find the workspace config directory
 pub fn find_workspace_config(
     starting_path: PathBuf,
     mode: ConfigSearchMode,

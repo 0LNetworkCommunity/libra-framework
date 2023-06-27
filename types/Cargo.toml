@@ -8,7 +8,11 @@ edition = "2021"
 [dependencies]
 anyhow = { workspace = true }
 async-trait = { workspace = true }
+bcs = { workspace = true }
 dirs = { workspace = true }
+hex = { workspace = true }
+move-core-types = { workspace = true }
+once_cell = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
@@ -16,4 +20,7 @@ tokio = { workspace = true }
 url = { workspace = true }
 zapatos = { workspace = true }
 zapatos-api-types = { workspace = true }
+zapatos-crypto = { workspace = true }
+zapatos-rest-client = { workspace = true }
 zapatos-sdk = { workspace = true }
+zapatos-types = { workspace = true }
