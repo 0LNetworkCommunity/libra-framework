@@ -24,6 +24,24 @@ module ol_framework::tower_state {
     /// Proof is not valid. The verification failed for solution at the expected difficulty and security parameter.
     const EPROOF_NOT_VALID: u64 = 5;
 
+    /// Not the expected user sending the transaction
+    const EUNAUTHORIZED: u64 = 6;
+
+    /// Challenge in genesis proof is not the right size
+    const ECHALLENGE_WRONG_SIZE: u64 = 7;
+
+    /// Trying to submit too many proofs in period
+    const EABOVE_SUBMISSION_THRESH: u64 = 8;
+
+    /// Already initialized this account
+    const EALREADY_INITIALIZED: u64 = 9;
+
+    /// Not testnet
+    const ENOT_TESTNET: u64 = 10;
+
+    
+
+
     /// A list of all miners' addresses 
     // reset at epoch boundary
     struct TowerList has key {
@@ -352,11 +370,11 @@ module ol_framework::tower_state {
           let is_sec = &proof.security == &diff.security ||
           &proof.security == &diff.prev_sec;
 
-          assert!(is_diff, error::invalid_argument(130102));
-          assert!(is_sec, error::invalid_argument(13010202));
+          assert!(is_diff, error::invalid_argument(EWRONG_DIFFICULTY));
+          assert!(is_sec, error::invalid_argument(EWRONG_SECURITY));
         } else {
-          assert!(&proof.difficulty == &diff.difficulty, error::invalid_argument(130102));
-          assert!(&proof.security == &diff.security, error::invalid_argument(13010202));
+          assert!(&proof.difficulty == &diff.difficulty, error::invalid_argument(EWRONG_DIFFICULTY));
+          assert!(&proof.security == &diff.security, error::invalid_argument(EWRONG_SECURITY));
         };
       };
     }    
@@ -375,7 +393,7 @@ module ol_framework::tower_state {
 
       assert!(
         get_count_in_epoch(miner_addr) < globals::get_epoch_mining_thres_upper(), 
-        error::invalid_state(130108)
+        error::invalid_state(EABOVE_SUBMISSION_THRESH)
       );
 
       let miner_history = borrow_global<TowerProofHistory>(miner_addr);
@@ -387,7 +405,7 @@ module ol_framework::tower_state {
         error::invalid_state(EDELAY_NOT_CHAINED));      
       };
 
-      let wesolowski_algo = false;
+      let wesolowski_algo = true;
       let valid = ol_native_vdf::verify(&proof.challenge, &proof.solution, proof.difficulty, proof.security, wesolowski_algo);
       assert!(valid, error::out_of_range(EPROOF_NOT_VALID));
 
@@ -525,7 +543,7 @@ module ol_framework::tower_state {
       
       // NOTE Only signer can update own state.
       // Should only happen once.
-      assert!(!exists<TowerProofHistory>(signer::address_of(miner_sig)), error::permission_denied(130111));
+      assert!(!exists<TowerProofHistory>(signer::address_of(miner_sig)), error::permission_denied(EALREADY_INITIALIZED));
       // DiemAccount calls this.
       // Exception is DiemAccount which can simulate a signer.
       // Initialize TowerProofHistory object and give to miner account
@@ -590,13 +608,13 @@ module ol_framework::tower_state {
 
       // Calling native function to do this parsing in rust
       // The auth_key must be at least 32 bytes long
-      assert!(vector::length(challenge) >= 32, error::invalid_argument(130113));
+      assert!(vector::length(challenge) >= 32, error::invalid_argument(ECHALLENGE_WRONG_SIZE));
       let (parsed_address, _auth_key) = ol_native_vdf::extract_address_from_challenge(challenge);
 
       print(&parsed_address);
       print(&new_account_address);
       // Confirm the address is corect and included in challenge
-      assert!(new_account_address == parsed_address, error::permission_denied(130114));
+      assert!(new_account_address == parsed_address, error::permission_denied(EUNAUTHORIZED));
     }
 
     // Get latest epoch mined by node on given address
@@ -865,7 +883,7 @@ module ol_framework::tower_state {
 
     // Note: Used only in tests
     public fun test_epoch_reset_counter(vm: &signer) acquires TowerCounter {
-      assert!(testnet::is_testnet(), error::invalid_state(130118));
+      assert!(testnet::is_testnet(), error::invalid_state(ENOT_TESTNET));
       system_addresses::assert_vm(vm);
       let state = borrow_global_mut<TowerCounter>(@ol_framework);
       state.lifetime_proofs = 0;
