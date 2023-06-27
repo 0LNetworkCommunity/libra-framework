@@ -11,12 +11,17 @@ use std::path::PathBuf;
 
 
 use libra_txs::submit_transaction::Sender;
-use libra_query::{account_queries, get_client};
+use libra_query::account_queries;
+
 // use diem_client::BlockingClient as DiemClient;
 // use diem_logger::prelude::*;
-use libra_types::legacy_types::{
-  app_cfg::AppCfg,
-  block::VDFProof,
+use libra_types::{
+  exports::Client,
+  type_extensions::client_ext::ClientExt,
+  legacy_types::{
+    app_cfg::AppCfg,
+    block::VDFProof,
+  }
 };
 
 
@@ -210,7 +215,7 @@ pub async fn show_backlog(config: &AppCfg) -> Result<()> {
 
 /// returns remote tower height and current proofs in epoch
 pub async fn get_remote_tower_height(app_cfg: &AppCfg) -> Result<(u64, u64), Error> {
-    let (client, _) = get_client::find_good_upstream(app_cfg).await?;
+    let (client, _) = Client::from_libra_config(app_cfg).await?;
     let ts = account_queries::get_tower_state(&client, app_cfg.profile.account.to_owned()).await?;
 
     Ok((ts.verified_tower_height, ts.count_proofs_in_epoch))

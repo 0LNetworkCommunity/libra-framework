@@ -6,13 +6,17 @@ use crate::core::proof_preimage;
 use anyhow::{bail, Error};
 use serde::{Deserialize, Serialize};
 
-use libra_types::legacy_types::{
-  app_cfg::AppCfg,
-  block::{GENESIS_VDF_ITERATIONS, GENESIS_VDF_SECURITY_PARAM, VDFProof},
-  vdf_difficulty::VDFDifficulty,
+use libra_types::{
+  exports::Client,
+  type_extensions::client_ext::ClientExt,
+  legacy_types::{
+    app_cfg::AppCfg,
+    block::{GENESIS_VDF_ITERATIONS, GENESIS_VDF_SECURITY_PARAM, VDFProof},
+    vdf_difficulty::VDFDifficulty,
+  }
 };
 
-use libra_query::{get_client, account_queries, chain_queries};
+use libra_query::{account_queries, chain_queries};
 
 use zapatos_sdk::crypto::HashValue;
 
@@ -74,7 +78,7 @@ pub async fn get_next_proof_from_chain(
     // swarm_path: Option<PathBuf>,
 ) -> Result<NextProof, Error> {
     // todo!();
-    let (client, _) = get_client::find_good_upstream(app_cfg).await?;
+    let (client, _) = Client::from_libra_config(app_cfg).await?;
     // // dbg!("pick_client");
     // // let client = pick_client(swarm_path.clone(), config)?;
 

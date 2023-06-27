@@ -14,7 +14,6 @@ use libra_types::{
 };
 use anyhow::bail;
 use dialoguer::{Confirm, Input};
-use dirs;
 use indicatif::{ProgressBar, ProgressIterator};
 use std::{
     fs,

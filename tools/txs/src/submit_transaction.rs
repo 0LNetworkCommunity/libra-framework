@@ -85,8 +85,10 @@ impl Sender {
         chain_id: ChainId,
         client_opt: Option<Client>,
     ) -> anyhow::Result<Self> {
-        let client = client_opt.unwrap_or(Client::default()?);
-
+    let client = match client_opt{
+        Some(c) => c,
+        None => Client::default().await?,
+    };
         let address = lookup_address(
             &client,
             account_key.authentication_key().derived_address(),

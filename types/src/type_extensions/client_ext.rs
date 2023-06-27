@@ -1,8 +1,9 @@
+use crate::legacy_types::app_cfg::AppCfg;
 // use crate::gas_coin::SlowWalletBalance;
 use crate::util::{format_args, format_type_args, parse_function_id};
 use crate::type_extensions::cli_config_ext::CliConfigExt;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context};
 use async_trait::async_trait;
 use std::time::SystemTime;
 use std::{str::FromStr, time::UNIX_EPOCH};
@@ -36,13 +37,19 @@ pub const USER_AGENT: &str = concat!("libra-config/", env!("CARGO_PKG_VERSION"))
 
 #[async_trait]
 pub trait ClientExt {
-    fn default() -> Result<Client>;
+    async fn default() -> anyhow::Result<Client>;
 
-    async fn get_move_resource<T: MoveStructType + DeserializeOwned> (&self, address: AccountAddress) -> Result<T>;
+    async fn from_libra_config(app_cfg: &AppCfg) -> anyhow::Result<(Client, ChainId)>;
 
-    async fn get_account_resources_ext(&self, account: AccountAddress) -> Result<String>;
+    async fn find_good_upstream(list: Vec<Url>) -> anyhow::Result<(Client, ChainId)>;
 
-    async fn get_sequence_number(&self, account: AccountAddress) -> Result<u64>;
+    fn from_vendor_config() -> anyhow::Result<Client>;
+
+    async fn get_move_resource<T: MoveStructType + DeserializeOwned> (&self, address: AccountAddress) -> anyhow::Result<T>;
+
+    async fn get_account_resources_ext(&self, account: AccountAddress) -> anyhow::Result<String>;
+
+    async fn get_sequence_number(&self, account: AccountAddress) -> anyhow::Result<u64>;
 
     async fn generate_transaction(
         &self,
@@ -51,19 +58,54 @@ pub trait ClientExt {
         ty_args: Option<String>,
         args: Option<String>,
         options: TransactionOptions,
-    ) -> Result<SignedTransaction>;
+    ) -> anyhow::Result<SignedTransaction>;
 
     async fn view_ext(
         &self,
         function_id: &str,
         ty_args: Option<String>,
         args: Option<String>,
-    ) -> Result<Vec<serde_json::Value>>;
+    ) -> anyhow::Result<Vec<serde_json::Value>>;
 }
 
 #[async_trait]
 impl ClientExt for Client {
-      fn default() -> Result<Client> {
+  /// assumes the location of the config files, and gets a node from list in config
+  async fn default() -> anyhow::Result<Client> {
+    let app_cfg = AppCfg::load(None)?;
+    let (client, _) = Self::from_libra_config(&app_cfg).await?;
+    Ok(client)
+  }
+ 
+
+  /// Finds a good working upstream based on the list in a config file
+  async fn from_libra_config(app_cfg: &AppCfg) -> anyhow::Result<(Client, ChainId)> {
+    // check if we can connect to this client, or exit
+    let nodes = &app_cfg.profile.upstream_nodes;
+    let url = nodes.iter().next().context("cannot get url")?;
+    let client = Client::new(url.to_owned());
+    let res = client.get_index().await?;
+    
+    Ok((client, ChainId::new(res.inner().chain_id)))
+  }
+
+  async fn find_good_upstream(_list: Vec<Url>) -> anyhow::Result<(Client, ChainId)> {
+        // TODO: iterate through all and find a valid one.
+
+    //   let metadata =  future::select_all(
+    //     nodes.into_iter().find_map(|u| async {
+    //         let client = Client::new(u);
+    //         match client.get_index().await {
+    //             Ok(index) => Some((client, index.inner().chain_id)),
+    //             _ => None,
+    //         }
+    //     })
+    // ).await?;
+    todo!()
+
+  }
+
+    fn from_vendor_config() -> anyhow::Result<Client> {
         let workspace = crate::global_config_dir().parent().unwrap().to_path_buf();
         let profile =
             CliConfig::load_profile_ext( 
@@ -94,7 +136,7 @@ impl ClientExt for Client {
     //   SlowWalletBalance::from_value(res)
     // }
 
-    async fn get_move_resource<T: MoveStructType + DeserializeOwned> (&self, address: AccountAddress) -> Result<T> {
+    async fn get_move_resource<T: MoveStructType + DeserializeOwned> (&self, address: AccountAddress) -> anyhow::Result<T> {
       let resource_type = format!("0x1::{}::{}", T::MODULE_NAME, T::STRUCT_NAME);
       let res = self
         .get_account_resource_bcs::<T>(address, &resource_type)
@@ -104,7 +146,7 @@ impl ClientExt for Client {
       Ok(res)
   }
 
-    async fn get_account_resources_ext(&self, account: AccountAddress) -> Result<String> {
+    async fn get_account_resources_ext(&self, account: AccountAddress) -> anyhow::Result<String> {
         let response = self
             .get_account_resources(account)
             .await
@@ -112,7 +154,7 @@ impl ClientExt for Client {
         Ok(format!("{:#?}", response.inner()))
     }
 
-    async fn get_sequence_number(&self, account: AccountAddress) -> Result<u64> {
+    async fn get_sequence_number(&self, account: AccountAddress) -> anyhow::Result<u64> {
         let response = self
             .get_account_resource(account, "0x1::account::Account")
             .await
@@ -131,7 +173,7 @@ impl ClientExt for Client {
         ty_args: Option<String>,
         args: Option<String>,
         options: TransactionOptions,
-    ) -> Result<SignedTransaction> {
+    ) -> anyhow::Result<SignedTransaction> {
         let chain_id = self.get_index().await?.inner().chain_id;
         let (module_address, module_name, function_name) = parse_function_id(function_id)?;
         let module = ModuleId::new(module_address, module_name);
@@ -177,7 +219,7 @@ impl ClientExt for Client {
     //     &self,
     //     request: &ViewRequest,
     //     version: Option<u64>,
-    // ) -> Result<bytes::Bytes> {
+    // ) -> anyhow::Result<bytes::Bytes> {
     //     let request = serde_json::to_string(request)?;
     //     let mut url = self.build_path("view")?;
     //     if let Some(version) = version {
@@ -200,7 +242,7 @@ impl ClientExt for Client {
         function_id: &str,
         ty_args: Option<String>,
         args: Option<String>,
-    ) -> Result<Vec<serde_json::Value>> {
+    ) -> anyhow::Result<Vec<serde_json::Value>> {
         let entry_fuction_id = EntryFunctionId::from_str(function_id)
             .context(format!("Invalid function id: {function_id}"))?;
         let ty_args: Vec<MoveType> = if let Some(ty_args) = ty_args {
@@ -247,7 +289,7 @@ pub struct TransactionOptions {
 }
 
 
-pub fn entry_function_id(module_name: &str, function_name: &str) -> Result<EntryFunctionId> {
+pub fn entry_function_id(module_name: &str, function_name: &str) -> anyhow::Result<EntryFunctionId> {
   let s = format!("0x1::{}::{}", module_name, function_name);
   EntryFunctionId::from_str(&s)
       .context(format!("Invalid function id: {s}"))

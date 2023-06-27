@@ -95,8 +95,11 @@ pub enum QueryType {
 
 impl QueryType {
 
-  pub async fn query_to_json(&self, client: Option<Client>) -> Result<serde_json::Value>{
-    let client = client.unwrap_or_else(|| Client::default().expect("Failed to create client"));
+  pub async fn query_to_json(&self, client_opt: Option<Client>) -> Result<serde_json::Value>{
+    let client = match client_opt{
+        Some(c) => c,
+        None => Client::default().await?,
+    };
 
     match self {
         QueryType::Balance { account } => {

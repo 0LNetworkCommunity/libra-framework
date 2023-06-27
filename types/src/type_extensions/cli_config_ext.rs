@@ -64,7 +64,7 @@ impl CliConfigExt for CliConfig {
     ) -> Result<Option<ProfileConfig>> {
         let config = CliConfig::load_ext(workspace, mode);
         if let Some(CliError::ConfigNotFoundError(path)) = config.as_ref().err() {
-            bail!("Unable to find config {path}, have you run `libra-config init`?");
+            bail!("Unable to find config {path}, have you run `libra-config vendor-init`?");
         }
 
         let mut config = config?;
