@@ -15,28 +15,50 @@
 //! Note further that the Key Derivation Function (KDF) chosen in the derivation of Child
 //! Private Keys adheres to [HKDF RFC 5869](https://tools.ietf.org/html/rfc5869).
 
-use crate::mnemonic::Mnemonic;
-use anyhow::{anyhow, Result};
-use byteorder::{ByteOrder, LittleEndian};
-use diem_crypto::{
-    compat::Sha3_256,
-    ed25519::{Ed25519PrivateKey, Ed25519PublicKey, Ed25519Signature},
-    hash::CryptoHash,
-    hkdf::Hkdf,
-    traits::SigningKey,
+use crate::scheme::mnemonic::Mnemonic;
+use anyhow::{
+  anyhow, 
+  Result
 };
-use diem_types::{account_address::AccountAddress, transaction::authenticator::AuthenticationKey};
+// use byteorder::LittleEndian;
+use byteorder::{ByteOrder, LittleEndian};
+// use diem_crypto::{
+//     compat::Sha3_256,
+//     ed25519::{Ed25519PrivateKey, Ed25519PublicKey, Ed25519Signature},
+//     hash::CryptoHash,
+//     hkdf::Hkdf,
+//     traits::SigningKey,
+// };
+// use diem_types::{account_address::AccountAddress, transaction::authenticator::AuthenticationKey};
 use hmac::Hmac;
 use mirai_annotations::*;
 use pbkdf2::pbkdf2;
 use serde::{Deserialize, Serialize};
-use std::{convert::TryFrom, ops::AddAssign};
+use std::{
+  // convert::TryFrom,
+  ops::AddAssign
+};
+
+use zapatos_crypto::compat::Sha3_256;
+use zapatos_crypto::ed25519::{Ed25519PrivateKey, Ed25519PublicKey};
+use zapatos_crypto::hkdf::Hkdf;
+use zapatos_types::account_address::AccountAddress;
+use zapatos_types::transaction::authenticator::AuthenticationKey;
+// use zapatos_crypto::ed25519::Ed25519Signature;
+
 
 /// Main is a set of raw bytes that are used for child key derivation
 pub struct Main([u8; 32]);
-impl_array_newtype!(Main, u8, 32);
-impl_array_newtype_show!(Main);
-impl_array_newtype_encodable!(Main, u8, 32);
+
+// NOTE: 0L, removed the macros, since on the FROM is still used
+impl From<&[u8]> for Main {
+    fn from(data: &[u8]) -> Main {
+        assert_eq!(data.len(), 32);
+        let mut ret = [0; 32];
+        ret.copy_from_slice(data);
+        Main(ret)
+    }
+}
 
 /// A child number for a derived key, used to derive a certain private key from Main
 #[derive(Default, Copy, Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -99,9 +121,22 @@ impl ExtendedPrivKey {
         (&self.private_key).into()
     }
 
-    /// Compute the account address for this account's public key
+    // /// Compute the account address for this account's public key
+    // pub fn get_address(&self) -> AccountAddress {
+    //     diem_types::account_address::from_public_key(&self.get_public())
+    // }
     pub fn get_address(&self) -> AccountAddress {
-        diem_types::account_address::from_public_key(&self.get_public())
+      AuthenticationKey::ed25519(&self.get_public()).derived_address()
+    }
+
+    //////// 0L ////////
+    // addresses in the 0L chains before V7 had a truncated address of 16 bytes
+    pub fn get_ol_legacy_address(&self) -> AccountAddress {
+      // keep only last 16 bytes
+      let addr = &self.get_address();
+      let mut array = [0u8; 32]; // fill the buffer with 0 to prefix the address
+      array.copy_from_slice(&addr.as_slice()[16..]);
+      AccountAddress::new(array)
     }
 
     /// Get private key
@@ -114,20 +149,20 @@ impl ExtendedPrivKey {
         AuthenticationKey::ed25519(&self.get_public())
     }
 
-    /// Diem specific sign function that is capable of signing an arbitrary
-    /// Serializable value.
-    ///
-    /// NOTE: In Diem, we do not sign the raw bytes of a transaction, but
-    /// those raw bytes prefixed by a domain separation hash.
-    /// Informally signed_bytes = sha3(domain_separator) || bcs_serialization_bytes
-    ///
-    /// The domain separator hash is derived automatically from a `#[derive(CryptoHasher,
-    /// BCSCryptoHash)]` annotation, or can be declared manually in a process
-    /// described in `diem_crypto::hash`.
-    ///
-    pub fn sign<T: CryptoHash + Serialize>(&self, msg: &T) -> Ed25519Signature {
-        self.private_key.sign(msg)
-    }
+    // /// Diem specific sign function that is capable of signing an arbitrary
+    // /// Serializable value.
+    // ///
+    // /// NOTE: In Diem, we do not sign the raw bytes of a transaction, but
+    // /// those raw bytes prefixed by a domain separation hash.
+    // /// Informally signed_bytes = sha3(domain_separator) || bcs_serialization_bytes
+    // ///
+    // /// The domain separator hash is derived automatically from a `#[derive(CryptoHasher,
+    // /// BCSCryptoHash)]` annotation, or can be declared manually in a process
+    // /// described in `diem_crypto::hash`.
+    // ///
+    // pub fn sign<T: CryptoHash + Serialize>(&self, msg: &T) -> Ed25519Signature {
+    //     self.private_key.sign(msg)
+    // }
 }
 
 /// Wrapper struct from which we derive child keys

@@ -17,19 +17,23 @@ use super::{
     key_factory::{ChildNumber, KeyFactory, Seed},
     mnemonic::Mnemonic,
 };
-use anyhow::Result;
+use anyhow::{bail, Result};
+use zapatos_types::account_address::AccountAddress;
+use zapatos_crypto::ed25519::Ed25519PrivateKey;
+use zapatos_types::transaction::authenticator::AuthenticationKey;
+
 // use diem_crypto::ed25519::Ed25519PrivateKey;
-use diem_types::{
-    account_address::AccountAddress,
-    transaction::{
-        authenticator::AuthenticationKey, 
-        // helpers::TransactionSigner,
-        // RawTransaction,
-        // SignedTransaction,
-    },
-};
+// use diem_types::{
+//     account_address::AccountAddress,
+//     transaction::{
+//         authenticator::AuthenticationKey, 
+//         // helpers::TransactionSigner,
+//         // RawTransaction,
+//         // SignedTransaction,
+//     },
+// };
 use rand::{rngs::OsRng, Rng};
-use std::{collections::HashMap, path::Path};
+use std::collections::HashMap;
 
 /// WalletLibrary contains all the information needed to recreate a particular wallet
 pub struct WalletLibrary {
@@ -67,18 +71,18 @@ impl WalletLibrary {
         self.mnemonic.to_string()
     }
 
-    /// Function that writes the wallet Mnemonic to file
-    /// NOTE: This is not secure, and in general the Mnemonic would need to be decrypted before it
-    /// can be written to file; otherwise the encrypted Mnemonic should be written to file
-    pub fn write_recovery(&self, output_file_path: &Path) -> Result<()> {
-        io_utils::write_recovery(self, &output_file_path)?;
-        Ok(())
-    }
+    // /// Function that writes the wallet Mnemonic to file
+    // /// NOTE: This is not secure, and in general the Mnemonic would need to be decrypted before it
+    // /// can be written to file; otherwise the encrypted Mnemonic should be written to file
+    // pub fn write_recovery(&self, output_file_path: &Path) -> Result<()> {
+    //     io_utils::write_recovery(self, &output_file_path)?;
+    //     Ok(())
+    // }
 
-    /// Recover wallet from input_file_path
-    pub fn recover(input_file_path: &Path) -> Result<WalletLibrary> {
-        io_utils::recover(&input_file_path)
-    }
+    // /// Recover wallet from input_file_path
+    // pub fn recover(input_file_path: &Path) -> Result<WalletLibrary> {
+    //     io_utils::recover(&input_file_path)
+    // }
 
     /// Get the current ChildNumber in u64 format
     pub fn key_leaf(&self) -> u64 {
@@ -89,10 +93,7 @@ impl WalletLibrary {
     pub fn generate_addresses(&mut self, depth: u64) -> Result<()> {
         let current = self.key_leaf.0;
         if current > depth {
-            return Err(WalletError::DiemWalletGeneric(
-                "Addresses already generated up to the supplied depth".to_string(),
-            )
-            .into());
+           bail!("Addresses already generated up to the supplied depth")
         }
         while self.key_leaf != ChildNumber(depth) {
             let _ = self.new_address();
@@ -123,10 +124,7 @@ impl WalletLibrary {
         {
             Ok((authentication_key, old_key_leaf))
         } else {
-            Err(WalletError::DiemWalletGeneric(
-                "This address is already in your wallet".to_string(),
-            )
-            .into())
+            bail!("This address is already in your wallet")
         }
     }
 
@@ -145,12 +143,7 @@ impl WalletLibrary {
                     ret.push(*account_address);
                 }
                 None => {
-                    return Err(WalletError::DiemWalletGeneric(format!(
-                        "Child num {} not exist while depth is {}",
-                        i,
-                        self.addr_map.len()
-                    ))
-                    .into())
+                    bail!("This address is already in your wallet")
                 }
             }
         }
@@ -182,7 +175,7 @@ impl WalletLibrary {
         if let Some(child) = self.addr_map.get(address) {
             Ok(self.key_factory.private_child(*child)?.get_private_key())
         } else {
-            Err(WalletError::DiemWalletGeneric("missing address".to_string()).into())
+            bail!("missing address")
         }
     }
 
@@ -194,7 +187,7 @@ impl WalletLibrary {
                 .private_child(*child)?
                 .get_authentication_key())
         } else {
-            Err(WalletError::DiemWalletGeneric("missing address".to_string()).into())
+            bail!("missing address")
         }
     }
 
