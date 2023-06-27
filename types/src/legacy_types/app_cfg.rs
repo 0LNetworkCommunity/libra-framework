@@ -7,9 +7,8 @@ use crate::{
    exports::{
     AccountAddress, NamedChain,
     AuthenticationKey,
- }, GLOBAL_CONFIG_DIRECTORY_0L, global_config_dir
+ }, global_config_dir
 };
-use dirs;
 use url::Url;
 use serde::{Deserialize, Serialize};
 
@@ -38,10 +37,7 @@ pub struct AppCfg {
 }
 
 pub fn default_file_path() -> PathBuf {
-    let mut path = dirs::home_dir().unwrap();
-    path.push(GLOBAL_CONFIG_DIRECTORY_0L);
-    path.push(CONFIG_FILE_NAME);
-    path
+    global_config_dir().join(CONFIG_FILE_NAME)
 }
 
 impl AppCfg {

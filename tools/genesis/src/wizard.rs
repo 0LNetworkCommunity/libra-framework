@@ -8,8 +8,8 @@ use crate::{genesis_builder, node_yaml, parse_json};
 use crate::{genesis_registration, hack_cli_progress::OLProgress};
 //////
 use crate::github_extensions::LibraGithubClient;
+use libra_types::global_config_dir;
 use libra_types::{
-  GLOBAL_CONFIG_DIRECTORY_0L,
   legacy_types::mode_ol::MODE_0L
 };
 use anyhow::bail;
@@ -76,9 +76,7 @@ impl GenesisWizard {
 
     /// constructor
     pub fn new(genesis_repo_org: String, repo_name: String, data_path: Option<PathBuf>) -> Self {
-        let data_path = data_path.unwrap_or(dirs::home_dir()
-            .expect("no home dir found")
-            .join(GLOBAL_CONFIG_DIRECTORY_0L);
+        let data_path = data_path.unwrap_or(global_config_dir());
 
         Self {
             validator_address: "tbd".to_string(),
@@ -475,9 +473,7 @@ fn test_wizard() {
 fn test_validator_files_config() {
     let alice_mnem = "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse".to_string();
     let h = HostAndPort::local(6180).unwrap();
-    let test_path = dirs::home_dir()
-        .unwrap()
-        .join(GLOBAL_CONFIG_DIRECTORY_0L)
+    let test_path = global_config_dir()
         .join("test_genesis");
     if test_path.exists() {
         fs::remove_dir_all(&test_path).unwrap();
