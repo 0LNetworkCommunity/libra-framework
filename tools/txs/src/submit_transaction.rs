@@ -1,6 +1,5 @@
 
 use anyhow::{bail};
-use url::Url;
 use zapatos_sdk::rest_client::Client;
 use zapatos_types::transaction::SignedTransaction;
 use zapatos_sdk::types::chain_id::ChainId;

@@ -36,8 +36,8 @@ pub const GITHUB_TOKEN_FILENAME: &str = "github_token.txt";
 /// Wizard for genesis
 #[derive(Debug, Clone)]
 pub struct GenesisWizard {
-    /// a name to use only for genesis purposes
-    pub username: String,
+    /// the validator address only for genesis purposes
+    pub validator_address: String,
     /// the github org hosting the genesis repo
     pub genesis_repo_org: String,
     /// name of the repo
@@ -52,31 +52,49 @@ pub struct GenesisWizard {
     pub epoch: Option<u64>,
 }
 
-impl Default for GenesisWizard {
-    /// testnet values for genesis wizard
-    fn default() -> Self {
-        let data_path = dirs::home_dir()
+// impl Default for GenesisWizard {
+//     /// testnet values for genesis wizard
+//     fn default() -> Self {
+//         let data_path = dirs::home_dir()
+//             .expect("no home dir found")
+//             .join(DEFAULT_DATA_PATH);
+
+//         Self {
+//             username: "alice".to_string(),
+//             genesis_repo_org: "0o-de-lally".to_string(),
+//             // genesis_repo_org: "alice".to_string(),
+//             repo_name: "a-genesis".to_string(),
+//             github_username: "".to_string(),
+//             github_token: "".to_string(),
+//             data_path,
+//             epoch: None,
+//         }
+//     }
+// }
+
+impl GenesisWizard {
+
+    /// constructor
+    pub fn new(genesis_repo_org: String, repo_name: String, data_path: Option<PathBuf>) -> Self {
+        let data_path = data_path.unwrap_or(dirs::home_dir()
             .expect("no home dir found")
-            .join(DEFAULT_DATA_PATH);
+            .join(DEFAULT_DATA_PATH)
+        );
 
         Self {
-            username: "alice".to_string(),
-            genesis_repo_org: "0o-de-lally".to_string(),
-            // genesis_repo_org: "alice".to_string(),
-            repo_name: "a-genesis".to_string(),
+            validator_address: "tbd".to_string(),
+            genesis_repo_org,
+            repo_name,
             github_username: "".to_string(),
             github_token: "".to_string(),
             data_path,
             epoch: None,
         }
     }
-}
-impl GenesisWizard {
+
     /// start wizard for end-to-end genesis
-    pub fn start_wizard(&mut self, home_dir: Option<PathBuf>, use_local_framework: bool, legacy_recovery_path: Option<PathBuf>, do_genesis: bool) -> anyhow::Result<()> {
-        if let Some(d) = home_dir {
-            self.data_path = d;
-        }
+    pub fn start_wizard(&mut self, use_local_framework: bool, legacy_recovery_path: Option<PathBuf>, do_genesis: bool) -> anyhow::Result<()> {
+
 
         if !Path::exists(&self.data_path) {
             println!(
@@ -108,7 +126,7 @@ impl GenesisWizard {
         if to_register {
             let id = IdentityBlob::from_file(&self.data_path.clone().join(VALIDATOR_FILE))?;
 
-            self.username = id
+            self.validator_address = id
                 .account_address
                 .expect(&format!(
                     "cannot find an account address in {}",
@@ -122,7 +140,7 @@ impl GenesisWizard {
 
             self.genesis_registration_github()?;
 
-            self.make_pull_request()?
+            self.make_pull_request()?;
         }
 
         let ready = if do_genesis { 
@@ -245,6 +263,7 @@ impl GenesisWizard {
         } else {
             println!("Found a genesis repo on your account, we'll use that for registration.\n");
         }
+        OLProgress::complete(&format!("Forked the genesis repo from {}/{}", self.genesis_repo_org.clone(), self.repo_name.clone()));
         // Remeber to clear out the /owner key from the key_store.json for safety.
         Ok(())
     }
@@ -273,7 +292,7 @@ impl GenesisWizard {
         pb.enable_steady_tick(Duration::from_millis(100));
 
         genesis_registration::register(
-            self.username.clone(),
+            self.validator_address.clone(),
             self.github_username.clone(), // Do the registration on the fork.
             self.repo_name.clone(),
             self.github_token.clone(),
@@ -281,7 +300,7 @@ impl GenesisWizard {
         )?;
         pb.finish_and_clear();
 
-        OLProgress::complete("Registered to genesis on github.");
+        OLProgress::complete(&format!("Configs written to {}/{}", self.github_username, self.repo_name));
 
         Ok(())
     }
@@ -345,12 +364,22 @@ impl GenesisWizard {
             &*self.genesis_repo_org,
             &*self.repo_name,
             &*self.github_username,
+            None, // default to "main"
         ) {
-            Ok(_) => println!("created pull request to genesis repo"),
-            Err(_) => println!("failed to create pull request to genesis repo: do you already have an open PR? If so, you don't need to do anything else."),
+            Ok(_) => {},
+            Err(e) => {
+              if e.to_string().contains("A pull request already exists") {
+                println!("INFO: A pull request already exists, you don't need to do anything else.");
+                // return Ok(())
+              } else {
+                bail!("failed to create pull, message: {}", e.to_string())
+              }
+              
+            },
         };
         pb.inc(1);
         pb.finish_and_clear();
+        OLProgress::complete("Pull request to genesis repo complete");
         Ok(())
     }
 
@@ -435,8 +464,12 @@ pub fn what_host() -> Result<HostAndPort, anyhow::Error> {
 #[ignore]
 
 fn test_wizard() {
-    let mut wizard = GenesisWizard::default();
-    wizard.start_wizard(None, false).unwrap();
+    let mut wizard = GenesisWizard::new(
+        "0LNetworkCommunity".to_string(),
+        "test_genesis".to_string(),
+        None,
+      );
+      wizard.start_wizard( false, None, false).unwrap();
 }
 
 #[test]
@@ -459,8 +492,12 @@ fn test_validator_files_config() {
 #[test]
 #[ignore] // dev helper
 fn test_register() {
-    let mut g = GenesisWizard::default();
-    g.username = "0xTEST".to_string();
+    let mut g = GenesisWizard::new(
+        "0LNetworkCommunity".to_string(),
+        "test_genesis".to_string(),
+        None,
+      );
+      g.validator_address = "0xTEST".to_string();
     g.git_token_check().unwrap();
     g.genesis_registration_github().unwrap();
 }
