@@ -24,7 +24,7 @@ use std::{
 };
 
 use libra_wallet::{keys::VALIDATOR_FILE, validator_files::SetValidatorConfiguration};
-use ol_types::config::AppCfg;
+use libra_types::legacy_types::app_cfg::AppCfg;
 use zapatos_types::chain_id::NamedChain;
 use zapatos_config::config::IdentityBlob;
 use zapatos_genesis::config::HostAndPort;

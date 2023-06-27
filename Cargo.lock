@@ -6138,7 +6138,6 @@ dependencies = [
  "clap 3.2.23",
  "console 0.15.7",
  "dialoguer 0.10.4",
- "diem-types",
  "dirs 5.0.1",
  "hex",
  "indicatif",

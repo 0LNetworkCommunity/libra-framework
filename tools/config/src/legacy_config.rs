@@ -16,10 +16,10 @@ pub fn wizard(
     (force_authkey.unwrap(), force_address.unwrap())
   } else if let Some(pk_string) = test_private_key {
     let pk = Ed25519PrivateKey::from_encoded_string(&pk_string)?;
-    let account_keys = libra_wallet::legacy::get_account_from_private(&pk);
+    let account_keys = libra_wallet::account_keys::get_account_from_private(&pk);
     (account_keys.auth_key, account_keys.account)
   } else {
-    let account_keys = libra_wallet::legacy::get_keys_from_prompt()?.child_0_owner;
+    let account_keys = libra_wallet::account_keys::get_keys_from_prompt()?.child_0_owner;
     (account_keys.auth_key, account_keys.account)
   };
 
