@@ -154,6 +154,8 @@ fn test_legacy_keys() {
 #[test]
 // We want to check that the address and auth key derivation is the same from what Diem generates, and what the vendor types do.
 fn type_conversion_give_same_auth_and_address() {
+    use crate::load_keys::get_account_from_mnem;
+    
     let alice_mnem = "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse";
 
     let (auth_key, account, wallet) = get_account_from_mnem(alice_mnem.to_owned()).unwrap();

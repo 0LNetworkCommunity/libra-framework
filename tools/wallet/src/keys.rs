@@ -196,8 +196,9 @@ pub fn network_keys_x25519_from_ed25519(
 #[test]
 // checks we can get deterministic bls keys from the seed from mnemonic.
 fn deterministic_bls_from_seed() {
-    use ol_keys::wallet::get_account_from_mnem;
+    // use ol_keys::wallet::get_account_from_mnem;
     use crate::account_keys::get_keys_from_mnem;
+    use crate::load_keys::get_account_from_mnem;
     use zapatos_crypto::ValidCryptoMaterialStringExt;
 
     let alice_mnem = "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse";

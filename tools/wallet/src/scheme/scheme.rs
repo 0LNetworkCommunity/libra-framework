@@ -3,19 +3,8 @@
 use super::{
   key_factory::{ChildNumber, ExtendedPrivKey},
   mnemonic::Mnemonic,
-  // scheme::KeyScheme,
   wallet_library::WalletLibrary,
 };
-use libra_types::exports::{AccountAddress, AuthenticationKey};
-
-// use diem_types::{account_address::AccountAddress, transaction::authenticator::AuthenticationKey};
-// use diem_wallet::{
-//     key_factory::{ChildNumber, ExtendedPrivKey},
-//     Mnemonic, WalletLibrary,
-// };
-
-/// The key derivation used throughout 0L for configuration of validators and miners. Depended on by config/management for genesis.
-// #[derive(Debug)]
 pub struct KeyScheme {
     /// Owner key, the main key where funds are kept
     pub child_0_owner: ExtendedPrivKey,
@@ -48,10 +37,5 @@ impl KeyScheme {
     pub fn new_from_mnemonic(mnemonic: String) -> KeyScheme {
         let wallet = WalletLibrary::new_from_mnemonic(Mnemonic::from(&mnemonic).unwrap());
         KeyScheme::new(&wallet)
-    }
-    /// Returns the default owner address given the key derivation.
-    pub fn derived_address(&self) -> AccountAddress {
-        let staged_owner_auth_key = AuthenticationKey::ed25519(&self.child_0_owner.get_public());
-        staged_owner_auth_key.derived_address()
     }
 }
