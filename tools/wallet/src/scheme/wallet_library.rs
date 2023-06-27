@@ -18,20 +18,11 @@ use super::{
     mnemonic::Mnemonic,
 };
 use anyhow::{bail, Result};
-use zapatos_types::account_address::AccountAddress;
+use zapatos_types::{
+  account_address::AccountAddress,
+  transaction::authenticator::AuthenticationKey,
+};
 use zapatos_crypto::ed25519::Ed25519PrivateKey;
-use zapatos_types::transaction::authenticator::AuthenticationKey;
-
-// use diem_crypto::ed25519::Ed25519PrivateKey;
-// use diem_types::{
-//     account_address::AccountAddress,
-//     transaction::{
-//         authenticator::AuthenticationKey, 
-//         // helpers::TransactionSigner,
-//         // RawTransaction,
-//         // SignedTransaction,
-//     },
-// };
 use rand::{rngs::OsRng, Rng};
 use std::collections::HashMap;
 
@@ -70,19 +61,6 @@ impl WalletLibrary {
     pub fn mnemonic(&self) -> String {
         self.mnemonic.to_string()
     }
-
-    // /// Function that writes the wallet Mnemonic to file
-    // /// NOTE: This is not secure, and in general the Mnemonic would need to be decrypted before it
-    // /// can be written to file; otherwise the encrypted Mnemonic should be written to file
-    // pub fn write_recovery(&self, output_file_path: &Path) -> Result<()> {
-    //     io_utils::write_recovery(self, &output_file_path)?;
-    //     Ok(())
-    // }
-
-    // /// Recover wallet from input_file_path
-    // pub fn recover(input_file_path: &Path) -> Result<WalletLibrary> {
-    //     io_utils::recover(&input_file_path)
-    // }
 
     /// Get the current ChildNumber in u64 format
     pub fn key_leaf(&self) -> u64 {
@@ -150,26 +128,6 @@ impl WalletLibrary {
         Ok(ret)
     }
 
-    // /// Simple public function that allows to sign a Diem RawTransaction with the PrivateKey
-    // /// associated to a particular AccountAddress. If the PrivateKey associated to an
-    // /// AccountAddress is not contained in the addr_map, then this function will return an Error
-    // pub fn sign_txn(&self, txn: RawTransaction) -> Result<SignedTransaction> {
-    //     if let Some(child) = self.addr_map.get(&txn.sender()) {
-    //         let child_key = self.key_factory.private_child(*child)?;
-    //         let signature = child_key.sign(&txn);
-    //         Ok(SignedTransaction::new(
-    //             txn,
-    //             child_key.get_public(),
-    //             signature,
-    //         ))
-    //     } else {
-    //         Err(WalletError::DiemWalletGeneric(
-    //             "Well, that address is nowhere to be found... This is awkward".to_string(),
-    //         )
-    //         .into())
-    //     }
-    // }
-
     /// Return private key for an address in the wallet
     pub fn get_private_key(&self, address: &AccountAddress) -> Result<Ed25519PrivateKey> {
         if let Some(child) = self.addr_map.get(address) {
@@ -197,9 +155,3 @@ impl WalletLibrary {
     }    
 }
 
-// /// WalletLibrary naturally support TransactionSigner trait.
-// impl TransactionSigner for WalletLibrary {
-//     fn sign_txn(&self, raw_txn: RawTransaction) -> Result<SignedTransaction, anyhow::Error> {
-//         self.sign_txn(raw_txn)
-//     }
-// }

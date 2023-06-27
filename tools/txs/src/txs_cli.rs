@@ -3,7 +3,7 @@ use crate::submit_transaction::Sender;
 use anyhow::Result;
 use clap::Parser;
 use indoc::indoc;
-use libra_wallet::legacy::{get_keys_from_prompt, get_keys_from_mnem};
+use libra_wallet::account_keys::{get_keys_from_prompt, get_keys_from_mnem};
 use url::Url;
 
 use zapatos_sdk::rest_client::Client;

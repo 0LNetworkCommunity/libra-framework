@@ -4,7 +4,7 @@
 // our key gen process, which is quite simple if you are already using BIP-44.
 // Different from vendor, we prioritize making the mnemonic seed known to all users, and then derive all possible keys from there. Currently this applies to ed25519 keys. Vendor's keygen also includes BLS keys, which are used specifically for consensus. As such those are not relevant to end-user account holders.
 
-use crate::legacy::{legacy_keygen, LegacyKeys, get_keys_from_prompt, get_keys_from_mnem};
+use crate::account_keys::{legacy_keygen, LegacyKeys, get_keys_from_prompt, get_keys_from_mnem};
 use crate::utils::{
     check_if_file_exists, create_dir_if_not_exist, dir_default_to_current, prompt_yes, to_yaml,
     write_to_user_only_file,
@@ -197,7 +197,7 @@ pub fn network_keys_x25519_from_ed25519(
 // checks we can get deterministic bls keys from the seed from mnemonic.
 fn deterministic_bls_from_seed() {
     use ol_keys::wallet::get_account_from_mnem;
-    use crate::legacy::get_keys_from_mnem;
+    use crate::account_keys::get_keys_from_mnem;
     use zapatos_crypto::ValidCryptoMaterialStringExt;
 
     let alice_mnem = "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse";

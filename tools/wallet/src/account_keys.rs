@@ -1,9 +1,17 @@
 //! Use ol-keys to generate or parse keys using the legacy key derivation scheme
+use crate::{
+  load_keys,
+  key_gen::keygen,
+  scheme::{
+    scheme::KeyScheme,
+    wallet_library::WalletLibrary
+  }
+};
 
 use anyhow::Result;
-use diem_wallet::WalletLibrary;
-use ol_keys::wallet::{get_account_from_mnem, keygen};
-use ol_keys::{scheme::KeyScheme, wallet::get_account_from_prompt};
+// use diem_wallet::WalletLibrary;
+// use ol_keys::wallet::{get_account_from_mnem, keygen};
+// use ol_keys::{scheme::KeyScheme, wallet::get_account_from_prompt};
 use serde::Serialize;
 use std::path::Path;
 use std::str::FromStr;
@@ -11,6 +19,8 @@ use zapatos_crypto::ed25519::Ed25519PrivateKey;
 use zapatos_crypto::PrivateKey;
 use zapatos_types::account_address::AccountAddress;
 use zapatos_types::transaction::authenticator::AuthenticationKey;
+
+
 
 #[derive(Serialize)]
 /// A Struct to store ALL the legacy keys for storage.
@@ -52,13 +62,13 @@ pub fn legacy_keygen() -> Result<LegacyKeys> {
 
 /// Get the legacy keys from the wallet
 pub fn get_keys_from_prompt() -> Result<LegacyKeys> {
-    let (_auth_key, _account, wallet) = get_account_from_prompt();
+    let (_auth_key, _account, wallet) = load_keys::get_account_from_prompt();
     LegacyKeys::new(&wallet)
 }
 
 /// for libs to get the keys from a mnemonic
 pub fn get_keys_from_mnem(mnem: String) -> Result<LegacyKeys> {
-    let (_auth_key, _account, wallet) = get_account_from_mnem(mnem)?;
+    let (_auth_key, _account, wallet) = load_keys::get_account_from_mnem(mnem)?;
     LegacyKeys::new(&wallet)
 }
 

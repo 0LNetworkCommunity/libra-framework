@@ -5,3 +5,4 @@
 pub mod mnemonic;
 pub mod key_factory;
 pub mod wallet_library;
+pub mod scheme;

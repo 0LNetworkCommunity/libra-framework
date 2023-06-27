@@ -116,7 +116,7 @@ impl Sender {
                 match app_cfg.profile.test_private_key.clone() {
                     Some(k) => k,
                     None => {
-                      let leg_keys =  libra_wallet::legacy::get_keys_from_prompt()?;
+                      let leg_keys =  libra_wallet::account_keys::get_keys_from_prompt()?;
                       leg_keys.child_0_owner.pri_key
                     },
                 }
@@ -172,7 +172,7 @@ impl Sender {
             let key = match pri_key {
                 Some(p) => p,
                 None => {
-                    let leg_keys = libra_wallet::legacy::get_keys_from_prompt()?;
+                    let leg_keys = libra_wallet::account_keys::get_keys_from_prompt()?;
                     leg_keys.child_0_owner.pri_key
                 }
             };
