@@ -14,13 +14,13 @@ rust-version = { workspace = true }
 
 [dependencies]
 # Note the generated SDK code uses hard coded `aptos-types`
-aptos-types = { git = "https://github.com/0o-de-lally/zapatos.git", rev = "14db26a3f6"}
+aptos-types = { git = "https://github.com/0o-de-lally/zapatos.git", rev = "996a2dd65b"}
 
-libra-framework = { workspace = true }
+# libra-framework = { workspace = true }
 bcs = { workspace = true }
 move-core-types = { workspace = true }
 once_cell = { workspace = true }
-proptest = { workspace = true, optional = true }
+# proptest = { workspace = true, optional = true }
 proptest-derive = { workspace = true, optional = true }
 
 

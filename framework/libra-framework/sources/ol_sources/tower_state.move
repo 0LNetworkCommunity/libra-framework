@@ -813,6 +813,7 @@ module ol_framework::tower_state {
     // }
 
     #[view]
+    /// returns the current difficulty and security in a tuple (difficulty, security)
     public fun get_difficulty(): (u64, u64) acquires VDFDifficulty {
       if (exists<VDFDifficulty>(@ol_framework )) {
         let v = borrow_global_mut<VDFDifficulty>(@ol_framework );

@@ -15,7 +15,7 @@ libra-cached-packages = { workspace = true }
 libra-framework = { workspace = true }
 libra-query = { workspace = true }
 
-zapatos-debugger = { workspace = true }
+# zapatos-debugger = { workspace = true }
 zapatos-forge = { workspace = true }
 zapatos-sdk = { workspace = true }
 zapatos-smoke-test = { workspace = true }

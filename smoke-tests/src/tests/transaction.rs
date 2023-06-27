@@ -4,9 +4,9 @@ use zapatos_smoke_test::smoke_test_environment::{
 };
 use libra_framework::release::ReleaseTarget;
 use zapatos_crypto::traits::ValidCryptoMaterialStringExt;
-use libra_txs::txs_core::{
+use libra_txs::txs_cli::{
   TxsCli,
-  Subcommand::Transfer,
+  TxsSub::Transfer,
 };
 
 /// Testing that we can get a swarm up with the current head.mrb
