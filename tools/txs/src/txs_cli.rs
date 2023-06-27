@@ -27,7 +27,7 @@ pub struct TxsCli {
       pub test_private_key: Option<String>,
 
       /// URL of the upstream node to send tx to, including port
-      /// Otherwise will default to what is in config file in .libra
+      /// Otherwise will default to what is in the config file
       #[clap(short, long)]
       pub url: Option<Url>,
 

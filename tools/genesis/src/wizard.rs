@@ -8,8 +8,10 @@ use crate::{genesis_builder, node_yaml, parse_json};
 use crate::{genesis_registration, hack_cli_progress::OLProgress};
 //////
 use crate::github_extensions::LibraGithubClient;
-use libra_types::legacy_types::mode_ol::MODE_0L;
-
+use libra_types::{
+  GLOBAL_CONFIG_DIRECTORY_0L,
+  legacy_types::mode_ol::MODE_0L
+};
 use anyhow::bail;
 use dialoguer::{Confirm, Input};
 use dirs;
@@ -29,8 +31,6 @@ use zapatos_genesis::config::HostAndPort;
 use zapatos_github_client::Client;
 use std::str::FromStr;
 
-
-pub const DEFAULT_DATA_PATH: &str = ".libra";
 pub const DEFAULT_GIT_BRANCH: &str = "main";
 pub const GITHUB_TOKEN_FILENAME: &str = "github_token.txt";
 /// Wizard for genesis
@@ -78,8 +78,7 @@ impl GenesisWizard {
     pub fn new(genesis_repo_org: String, repo_name: String, data_path: Option<PathBuf>) -> Self {
         let data_path = data_path.unwrap_or(dirs::home_dir()
             .expect("no home dir found")
-            .join(DEFAULT_DATA_PATH)
-        );
+            .join(GLOBAL_CONFIG_DIRECTORY_0L);
 
         Self {
             validator_address: "tbd".to_string(),
@@ -478,7 +477,7 @@ fn test_validator_files_config() {
     let h = HostAndPort::local(6180).unwrap();
     let test_path = dirs::home_dir()
         .unwrap()
-        .join(DEFAULT_DATA_PATH)
+        .join(GLOBAL_CONFIG_DIRECTORY_0L)
         .join("test_genesis");
     if test_path.exists() {
         fs::remove_dir_all(&test_path).unwrap();

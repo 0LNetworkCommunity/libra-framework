@@ -21,9 +21,11 @@ pub fn wizard(
   } else {
     let account_keys = libra_wallet::legacy::get_keys_from_prompt()?.child_0_owner;
     (account_keys.auth_key, account_keys.account)
-
-    // todo!()
   };
 
-  AppCfg::init_app_configs(authkey, address, config_dir, chain_name)
+  let cfg = AppCfg::init_app_configs(authkey, address, config_dir, chain_name)?;
+
+  cfg.save_file()?;
+
+  Ok(cfg)
 }

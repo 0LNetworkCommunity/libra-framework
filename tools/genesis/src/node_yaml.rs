@@ -1,9 +1,12 @@
 //! saves a validator yaml file with the minimal configurations.
 
-use crate::wizard::DEFAULT_DATA_PATH;
-use anyhow::Result;
-use libra_wallet::utils::write_to_user_only_file;
 use std::path::PathBuf;
+
+use anyhow::Result;
+
+use libra_types::global_config_dir;
+use libra_wallet::utils::write_to_user_only_file;
+
 
 pub const NODE_YAML_FILE: &str = "validator.yaml";
 
@@ -11,9 +14,7 @@ pub const NODE_YAML_FILE: &str = "validator.yaml";
 /// NOTE: this will not work for fullnodes
 pub fn save_validator_yaml(home_dir: Option<PathBuf>) -> Result<PathBuf> {
     let home_dir = home_dir.unwrap_or_else(|| {
-        dirs::home_dir()
-            .expect("Unable to determine home directory")
-            .join(DEFAULT_DATA_PATH)
+        global_config_dir()
     });
     let path = home_dir.display().to_string();
 

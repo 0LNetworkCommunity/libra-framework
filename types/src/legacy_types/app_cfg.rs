@@ -7,7 +7,7 @@ use crate::{
    exports::{
     AccountAddress, NamedChain,
     AuthenticationKey,
- }
+ }, GLOBAL_CONFIG_DIRECTORY_0L, global_config_dir
 };
 use dirs;
 use url::Url;
@@ -21,8 +21,8 @@ use std::{
     str::FromStr,
 };
 
-const NODE_HOME: &str = ".0L";
-const CONFIG_FILE: &str = "0L.toml";
+// const NODE_HOME: &str = ".0L";
+const CONFIG_FILE_NAME: &str = "0L.toml";
 
 /// MinerApp Configuration
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -39,8 +39,8 @@ pub struct AppCfg {
 
 pub fn default_file_path() -> PathBuf {
     let mut path = dirs::home_dir().unwrap();
-    path.push(NODE_HOME);
-    path.push(CONFIG_FILE);
+    path.push(GLOBAL_CONFIG_DIRECTORY_0L);
+    path.push(CONFIG_FILE_NAME);
     path
 }
 
@@ -107,7 +107,7 @@ impl AppCfg {
         let home_path = &self.workspace.node_home.clone();
         // create home path if doesn't exist, usually only in dev/ci environments.
         fs::create_dir_all(&home_path)?;
-        let toml_path = home_path.join(CONFIG_FILE);
+        let toml_path = home_path.join(CONFIG_FILE_NAME);
         let mut file = fs::File::create(&toml_path)?;
         file.write(&toml.as_bytes())?;
 
@@ -149,13 +149,13 @@ pub struct Workspace {
 }
 
 fn default_db_path() -> PathBuf {
-    dirs::home_dir().unwrap().join(NODE_HOME).join("db")
+    global_config_dir().join("db")
 }
 
 impl Default for Workspace {
     fn default() -> Self {
         Self {
-            node_home: dirs::home_dir().unwrap().join(NODE_HOME),
+            node_home: crate::global_config_dir(),
             source_path: None,
             block_dir: "vdf_proofs".to_owned(),
             db_path: default_db_path(),

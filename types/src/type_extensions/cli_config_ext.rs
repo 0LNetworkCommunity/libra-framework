@@ -1,4 +1,4 @@
-use crate::LIBRA_CONFIG_DIRECTORY;
+use crate::GLOBAL_CONFIG_DIRECTORY_0L;
 // use super::global_config_ext::GlobalConfigExt;
 use anyhow::{anyhow, bail, Result};
 use std::path::PathBuf;
@@ -121,16 +121,16 @@ pub fn find_workspace_config(
     mode: ConfigSearchMode,
 ) -> CliTypedResult<PathBuf> {
     match mode {
-        ConfigSearchMode::CurrentDir => Ok(starting_path.join(LIBRA_CONFIG_DIRECTORY)),
+        ConfigSearchMode::CurrentDir => Ok(starting_path.join(GLOBAL_CONFIG_DIRECTORY_0L)),
         ConfigSearchMode::CurrentDirAndParents => {
             let mut current_path = starting_path.clone();
             loop {
-                current_path.push(LIBRA_CONFIG_DIRECTORY);
+                current_path.push(GLOBAL_CONFIG_DIRECTORY_0L);
                 if current_path.is_dir() {
                     break Ok(current_path);
                 } else if !(current_path.pop() && current_path.pop()) {
                     // If we aren't able to find the folder, we'll create a new one right here
-                    break Ok(starting_path.join(LIBRA_CONFIG_DIRECTORY));
+                    break Ok(starting_path.join(GLOBAL_CONFIG_DIRECTORY_0L));
                 }
             }
         }

@@ -14,7 +14,7 @@ pub struct TowerCli {
     /// without querying chain
     #[clap(short,long)]
     local_mode: bool,
-    /// The optional path to an alternate path besides $HOME/.libra
+    /// The optional path to an alternate path besides $HOME/.0L
     #[clap(short,long)]
     config_file: Option<PathBuf>,
 }
