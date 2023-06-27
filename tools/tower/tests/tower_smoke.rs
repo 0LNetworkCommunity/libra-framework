@@ -4,7 +4,7 @@ use zapatos_smoke_test::smoke_test_environment::{
 };
 
 use libra_framework::release::ReleaseTarget;
-use libra_tower::core::{backlog, proof};
+use libra_tower::core::{backlog, proof, next_proof};
 use zapatos_forge::Swarm;
 
 /// Testing that we can get a swarm up with the current head.mrb
@@ -32,25 +32,34 @@ async fn tower_genesis() {
       None,
     ).unwrap();
 
+
+
     let temp_files = &DropTemp::new_in_crate("_smoke_test_temp").0;
 
     app_cfg.workspace.node_home = temp_files.to_owned();
     app_cfg.profile.upstream_nodes = vec![url.parse().unwrap()];
     app_cfg.profile.test_private_key = Some(node.account_private_key().as_ref().unwrap().private_key());
 
+    // check the tower state is blank
+    assert!(backlog::get_remote_tower_height(&app_cfg).await.is_err());
+
     let _proof = proof::write_genesis(&app_cfg).expect("could not write genesis proof");
 
     // dbg!(&proof);
 
-    match backlog::process_backlog(&app_cfg).await {
-      Ok(_) => {},
-      Err(e) => {
-        dbg!(&e);
-      }
-    }
+    backlog::process_backlog(&app_cfg).await.unwrap();
 
+    let (_proof_num, count) = backlog::get_remote_tower_height(&app_cfg).await.unwrap();
+    assert!(count == 1);
 
-    // next_proof::get_next_proof_params_from_local(config)?
+    let next = next_proof::get_next_proof_params_from_local(&app_cfg).unwrap();
+    
+    proof::mine_once(&app_cfg, next).unwrap();
 
+    backlog::process_backlog(&app_cfg).await.unwrap();
+
+    let (_proof_num, count) = backlog::get_remote_tower_height(&app_cfg).await.unwrap();
+
+    assert!(count == 2);
 
 }

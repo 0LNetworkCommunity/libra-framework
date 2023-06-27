@@ -45,15 +45,15 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
 
     // Getting remote miner state
     // there may not be any onchain state.
-    if let Some((remote_height, proofs_in_epoch)) = get_remote_tower_height(config).await? {
+    if let Some((remote_height, proofs_in_epoch)) = get_remote_tower_height(config).await.ok() {
         println!("Remote tower height: {}", remote_height);
         println!("Proofs already submitted in epoch: {}", proofs_in_epoch);
 
-        if remote_height < 0 || current_proof_number > remote_height as u64 {
+        if remote_height < 1 || current_proof_number > remote_height {
             i = remote_height as u64 + 1;
 
             // use i64 for safety
-            if !(proofs_in_epoch < EPOCH_MINING_THRES_UPPER as i64) {
+            if !(proofs_in_epoch < EPOCH_MINING_THRES_UPPER) {
                 println!(
                     "Backlog: Maximum number of proofs sent this epoch {}, exiting.",
                     EPOCH_MINING_THRES_UPPER
@@ -90,9 +90,11 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
 
 async fn submit_or_delete(config: &AppCfg, block: VDFProof, path: PathBuf) -> Result<()>{
         let mut sender = Sender::from_app_cfg(config, None).await?;
+
         sender.commit_proof(
           block.clone()
         ).await?;
+
         match sender.eval_response() {
             Ok(_) => Ok(()),
             Err(e) => {
@@ -188,11 +190,11 @@ async fn submit_or_delete(config: &AppCfg, block: VDFProof, path: PathBuf) -> Re
 pub async fn show_backlog(config: &AppCfg) -> Result<(), TxError> {
     // Getting remote miner state
     // there may not be any onchain state.
-    match get_remote_tower_height(config).await? {
-        Some((remote_height, _proofs_in_epoch)) => {
+    match get_remote_tower_height(config).await {
+        Ok((remote_height, _proofs_in_epoch)) => {
             println!("Remote tower height: {}", remote_height);
         },
-        None => {
+        _ => {
             println!("Remote tower state no initialized");
         },
     }
@@ -210,60 +212,9 @@ pub async fn show_backlog(config: &AppCfg) -> Result<(), TxError> {
 }
 
 /// returns remote tower height and current proofs in epoch
-pub async fn get_remote_tower_height(app_cfg: &AppCfg) -> Result<Option<(i64, i64)>, Error> {
+pub async fn get_remote_tower_height(app_cfg: &AppCfg) -> Result<(u64, u64), Error> {
     let (client, _) = get_client::find_good_upstream(app_cfg).await?;
-    let _ts = account_queries::get_tower_state(&client, app_cfg.profile.account.to_owned()).await?;
-    todo!();
+    let ts = account_queries::get_tower_state(&client, app_cfg.profile.account.to_owned()).await?;
 
-    // let client = DiemClient::new(tx_params.url.clone());
-    // println!(
-    //     "Fetching remote tower height: {}, {}",
-    //     tx_params.url.clone(),
-    //     tx_params.owner_address.clone()
-    // );
-    // let tower_state = client.get_miner_state(tx_params.owner_address);
-    // match tower_state {
-    //     Ok(response) => match response.into_inner() {
-    //         Some(s) => {
-    //             debug!("verified_tower_height: {:?}", s.verified_tower_height);
-    //             debug!("latest_epoch_mining: {:?}", s.latest_epoch_mining);
-    //             debug!("count_proofs_in_epoch: {:?}", s.count_proofs_in_epoch);
-    //             debug!(
-    //                 "epochs_validating_and_mining: {:?}",
-    //                 s.epochs_validating_and_mining
-    //             );
-    //             debug!(
-    //                 "contiguous_epochs_validating_and_mining: {:?}",
-    //                 s.contiguous_epochs_validating_and_mining
-    //             );
-    //             debug!(
-    //                 "epochs_since_last_account_creation: {:?}",
-    //                 s.epochs_since_last_account_creation
-    //             );
-    //             debug!(
-    //                 "actual_count_proofs_in_epoch: {:?}",
-    //                 s.actual_count_proofs_in_epoch
-    //             );
-
-    //             return Ok(Some((
-    //                 s.verified_tower_height as i64,
-    //                 s.actual_count_proofs_in_epoch as i64,
-    //             )));
-    //         }
-    //         None => bail!("ERROR: user has no tower state on chain"),
-    //     },
-    //     Err(error) => {
-    //         if let Some(rpc_error) = error.json_rpc_error() {
-    //             if rpc_error.message == "Server error: could not get tower state" {
-    //                 return Ok(None);
-    //             }
-    //         }
-
-    //         println!(
-    //             "ERROR: unable to get tower height from chain, message: {:?}",
-    //             error
-    //         );
-    //         return Err(anyhow!(error));
-    //     }
-    // }
+    Ok((ts.verified_tower_height, ts.count_proofs_in_epoch))
 }

@@ -222,6 +222,7 @@ impl Sender {
     ) -> anyhow::Result<TransactionOnChainData> {
         let signed = self.sign_payload(payload);
         let r = self.submit(&signed).await?;
+        self.response = Some(r.clone());
         Ok(r)
     }
 
