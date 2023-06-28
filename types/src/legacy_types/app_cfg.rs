@@ -1,6 +1,7 @@
 //! Configs for all 0L apps.
 
 use anyhow::{Context, bail};
+// use tokio::sync::futures;
 use zapatos_crypto::ed25519::Ed25519PrivateKey;
 use crate::{
   legacy_types::mode_ol::MODE_0L,
@@ -20,6 +21,8 @@ use std::{
     str::FromStr,
 };
 
+use super::network_profile::NetworkPlaylist;
+
 // const NODE_HOME: &str = ".0L";
 const CONFIG_FILE_NAME: &str = "0L.toml";
 
@@ -30,6 +33,9 @@ pub struct AppCfg {
     pub workspace: Workspace,
     /// User Profile
     pub profile: Profile,
+    /// Network profile
+    // NOTE: new field from V7, so it's an option so that previous files can load.
+    pub network_profiles: Option<Vec<NetworkPlaylist>>,
     /// Chain Info for all users
     pub chain_info: ChainInfo,
     /// Transaction configurations
@@ -129,17 +135,42 @@ impl AppCfg {
           Ok(())
         }
       }
-
-      // pub fn network_profile() -> anyhow::Result<Self> {
-      //   let cfg = get_cfg()?;
-      //   Ok(NetworkProfile {
-      //     chain_id: cfg.chain_info.chain_id,
-      //     urls: cfg.profile.upstream_nodes,
-      //     // waypoint: cfg.chain_info.base_waypoint.unwrap_or_default(),
-      //     profile: "default".to_string(),
-      //   })
-      // }
     }
+
+      ///fetch a network profile, optionally by profile name
+      pub fn get_network_profile(&self, chain_id: Option<NamedChain>) -> anyhow::Result<NetworkPlaylist> {
+        // TODO: avoid clone
+        let np = self.network_profiles.clone().context("no network profiles set")?;
+        
+       let profile = if let Some(id) = chain_id {
+          np.into_iter()
+            .find(|each| each.chain_id == id)
+        } else {
+          np.into_iter().next()
+        };
+
+        profile.context("could not find a network profile")
+      }
+
+      // ///fetch a network profile, optionally by profile name
+      // pub fn refresh_network_profiles(&mut self, profile_name: Option<String>) -> anyhow::Result<()> {
+      //   // TODO: avoid clone
+      //   let np = self.network_profiles.clone().context("no network profiles set")?;
+        
+      //   // join_all(
+      //   //   np.iter().map(|e| {
+      //   //     e.refresh()
+      //   //   })
+      //   // )
+      // //  let profile = if let Some(name) = profile_name {
+      // //     np.into_iter()
+      // //       .find(|each| !each.profile_name.contains(&name))
+      // //   } else {
+      // //     np.into_iter().next()
+      // //   };
+
+      // //   profile.context("could not find a network profile")
+      // }
 }
 
 /// Default configuration settings.
@@ -148,6 +179,7 @@ impl Default for AppCfg {
         Self {
             workspace: Workspace::default(),
             profile: Profile::default(),
+            network_profiles: Some(vec![NetworkPlaylist::default()]),
             chain_info: ChainInfo::default(),
             tx_configs: TxConfigs::default(),
         }
@@ -359,4 +391,11 @@ fn default_cheap_txs_cost() -> Option<TxCost> {
 #[derive(Serialize, Deserialize, Debug)]
 struct EpochJSON {
     epoch: u64,
+}
+
+#[test]
+fn save_file() {
+  let a = AppCfg::default();
+  a.save_file();
+
 }
