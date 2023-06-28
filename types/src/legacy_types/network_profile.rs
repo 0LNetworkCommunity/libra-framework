@@ -9,8 +9,11 @@ use url::Url;
 pub struct HostProfile {
   pub url: Url,
   pub note: String,
+  #[serde(default)]
   pub version: u64,
+  #[serde(default)]
   pub is_api: bool,
+  #[serde(default)]
   pub is_sync: bool,
 }
 /// from the list of seed_peers find the best peer to connect to.
