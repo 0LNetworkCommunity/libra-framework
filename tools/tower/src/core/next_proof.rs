@@ -8,7 +8,6 @@ use serde::{Deserialize, Serialize};
 
 use libra_types::{
   exports::Client,
-  type_extensions::client_ext::ClientExt,
   legacy_types::{
     app_cfg::AppCfg,
     block::{GENESIS_VDF_ITERATIONS, GENESIS_VDF_SECURITY_PARAM, VDFProof},
@@ -74,11 +73,11 @@ pub fn get_next_proof_params_from_local(config: &AppCfg) -> Result<NextProof, Er
 /// and individual parameters like tower height and the preimage (previous proof hash)
 pub async fn get_next_proof_from_chain(
     app_cfg: &AppCfg,
-    // // client: DiemClient,
+    client: &Client,
     // swarm_path: Option<PathBuf>,
 ) -> Result<NextProof, Error> {
     // todo!();
-    let (client, _) = Client::from_libra_config(app_cfg).await?;
+    // let (client, _) = Client::from_libra_config(app_cfg).await?;
     // // dbg!("pick_client");
     // // let client = pick_client(swarm_path.clone(), config)?;
 
@@ -88,7 +87,7 @@ pub async fn get_next_proof_from_chain(
     let (difficulty, security) = chain_queries::get_tower_difficulty(&client).await?;
 
     // get user's state
-    let p = match account_queries::get_tower_state(&client, app_cfg.profile.account).await {
+    let p = match account_queries::get_tower_state(client, app_cfg.profile.account).await {
       Ok(ts) => {
         NextProof {
             diff: VDFDifficulty{

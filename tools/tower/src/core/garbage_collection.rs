@@ -2,9 +2,12 @@
 
 use crate::core::{next_proof};
 use anyhow::bail;
-use libra_types::legacy_types::{
-  app_cfg::AppCfg,
-  block::VDFProof,
+use libra_types::{
+  exports::Client,
+  legacy_types::{
+    app_cfg::AppCfg,
+    block::VDFProof,
+  }
 };
 
 use std::{fs, path::PathBuf, time::SystemTime};
@@ -70,13 +73,13 @@ pub fn put_in_trash(to_trash: Vec<PathBuf>, cfg: &AppCfg) -> anyhow::Result<()> 
 /// if they all fail, move the list to a trash file
 pub async fn find_first_discontinous_proof(
     cfg: AppCfg,
-    // client: DiemClient,
+    client: &Client,
     // swarm_path: Option<PathBuf>,
 ) -> anyhow::Result<Option<PathBuf>> {
     let block_dir = cfg.get_block_dir();
     let highest_local = VDFProof::get_highest_block(&block_dir)?.0.height;
     // start from last known proof on chain.
-    let p = next_proof::get_next_proof_from_chain(&mut cfg.clone()).await?;
+    let p = next_proof::get_next_proof_from_chain(&mut cfg.clone(), client).await?;
 
     if highest_local < p.next_height {
         return Ok(None);

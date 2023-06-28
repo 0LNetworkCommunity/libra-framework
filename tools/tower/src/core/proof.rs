@@ -6,7 +6,12 @@ use crate::core::{
 };
 use anyhow::Error;
 use libra_types::legacy_types::block::{VDFProof, GENESIS_VDF_SECURITY_PARAM, GENESIS_VDF_ITERATIONS};
-use libra_types::legacy_types::app_cfg::AppCfg;
+use libra_types::{
+  legacy_types::app_cfg::AppCfg,
+  exports::Client,
+  type_extensions::client_ext::ClientExt
+};
+
 use std::{fs, path::PathBuf, time::Instant};
 
 // writes a JSON file with the first vdf proof
@@ -75,6 +80,7 @@ pub async fn mine_and_submit(
     // get the location of this miner's blocks
     let mut blocks_dir = config.workspace.node_home.clone();
     blocks_dir.push(&config.workspace.block_dir);
+    let (client, _) = Client::from_libra_config(config).await?;
 
     loop {
         // the default behavior is to fetch info from the chain to produce the next proof, including dynamic params for VDF difficulty.
@@ -88,7 +94,7 @@ pub async fn mine_and_submit(
                 //     &config,
                 //     // config.get_waypoint(swarm_path.clone())?, // 0L todo
                 // )?;
-                match next_proof::get_next_proof_from_chain(config).await {
+                match next_proof::get_next_proof_from_chain(config, &client).await {
                     Ok(n) => n,
                     // failover to local mode, if no onchain data can be found.
                     // TODO: this is important for migrating to the new protocol.
