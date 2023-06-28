@@ -281,6 +281,8 @@ pub struct Profile {
 
     /// Private key only for use with testing
     pub test_private_key: Option<Ed25519PrivateKey>,
+    /// Language settings, for use with Carpe
+    pub locale: Option<String>,
 }
 
 impl Default for Profile {
@@ -299,6 +301,7 @@ impl Default for Profile {
             upstream_nodes: vec!["http://localhost:8080".parse().expect("parse url")],
             tower_link: None,
             test_private_key: None,
+            locale: None,
         }
     }
 }
