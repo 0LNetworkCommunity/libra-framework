@@ -174,11 +174,8 @@ impl NetworkPlaylist {
     let avg = sum_squares as f64 / sync_list.len() as f64;
     let rms = avg.sqrt();
 
-    let checked: Vec<HostProfile> = sync_list
+    let mut checked: Vec<HostProfile> = sync_list
       .into_iter()
-      // .sort_by(|p| {
-      //   p.version
-      // })
       .map(|mut p| {
         if p.version as f64 >= rms {
           // there may be only one in list
@@ -187,8 +184,12 @@ impl NetworkPlaylist {
         p
       })
       .collect();
-
+    
+    checked.sort_by_key(|p| {
+      p.version
+    });
     self.nodes = checked;
+
     Ok(())
   }
 
