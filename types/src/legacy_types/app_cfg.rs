@@ -1,17 +1,15 @@
 //! Configs for all 0L apps.
 
-use anyhow::{Context, bail};
+use anyhow::Context;
 // use tokio::sync::futures;
-use zapatos_crypto::ed25519::Ed25519PrivateKey;
 use crate::{
-  legacy_types::mode_ol::MODE_0L,
-   exports::{
-    AccountAddress, NamedChain,
-    AuthenticationKey,
- }, global_config_dir
+    exports::{AccountAddress, AuthenticationKey, NamedChain},
+    global_config_dir,
+    legacy_types::mode_ol::MODE_0L,
 };
-use url::Url;
 use serde::{Deserialize, Serialize};
+use url::Url;
+use zapatos_crypto::ed25519::Ed25519PrivateKey;
 
 use std::{
     fs::{self, File},
@@ -21,7 +19,7 @@ use std::{
     str::FromStr,
 };
 
-use super::network_profile::NetworkPlaylist;
+use super::network_playlist::{NetworkPlaylist, self};
 
 // const NODE_HOME: &str = ".0L";
 const CONFIG_FILE_NAME: &str = "0L.toml";
@@ -35,7 +33,7 @@ pub struct AppCfg {
     pub profile: Profile,
     /// Network profile
     // NOTE: new field from V7, so it's an option so that previous files can load.
-    pub network_profiles: Option<Vec<NetworkPlaylist>>,
+    pub network_playlist: Option<Vec<NetworkPlaylist>>,
     /// Chain Info for all users
     pub chain_info: ChainInfo,
     /// Transaction configurations
@@ -49,15 +47,18 @@ pub fn default_file_path() -> PathBuf {
 impl AppCfg {
     /// load from default path
     pub fn load(file: Option<PathBuf>) -> anyhow::Result<Self> {
-      let path = file.unwrap_or(default_file_path());
-      Self::parse_toml(path)
+        let path = file.unwrap_or(default_file_path());
+        Self::parse_toml(path)
     }
-    
+
     /// Get a AppCfg object from toml file
     pub fn parse_toml(path: PathBuf) -> anyhow::Result<Self> {
         let parent_dir = path.parent().context("no parent directory")?;
         if !parent_dir.exists() {
-          println!("Directory for app configs {} doesn't exist, exiting.", &parent_dir.to_str().unwrap());
+            println!(
+                "Directory for app configs {} doesn't exist, exiting.",
+                &parent_dir.to_str().unwrap()
+            );
         }
         let mut toml_buf = "".to_string();
         let mut file = File::open(&path)?;
@@ -87,7 +88,6 @@ impl AppCfg {
 
         default_config.workspace.node_home =
             config_path.clone().unwrap_or_else(|| default_file_path());
-
 
         if let Some(id) = network_id {
             default_config.chain_info.chain_id = id.to_owned();
@@ -120,57 +120,71 @@ impl AppCfg {
         Ok(toml_path)
     }
 
-    /// Removes current node from upstream nodes
-    /// To be used when DB is corrupted for instance.
-    pub fn remove_node(&mut self, host: String) -> anyhow::Result<()> {
-        let nodes = self.profile.upstream_nodes.clone();
-        match nodes.len() {
-        1 => bail!("Cannot remove last node"),
-        _ => {
-          self.profile.upstream_nodes = nodes
-            .into_iter()
-            .filter(|each| !each.to_string().contains(&host))
-            .collect();
-          self.save_file()?;
-          Ok(())
-        }
-      }
-    }
+    // /// Removes current node from upstream nodes
+    // /// To be used when DB is corrupted for instance.
+    // pub fn remove_node(&mut self, host: String) -> anyhow::Result<()> {
+    //     let nodes = self.profile.upstream_nodes.clone();
+    //     match nodes.len() {
+    //         1 => bail!("Cannot remove last node"),
+    //         _ => {
+    //             self.profile.upstream_nodes = nodes
+    //                 .into_iter()
+    //                 .filter(|each| !each.to_string().contains(&host))
+    //                 .collect();
+    //             self.save_file()?;
+    //             Ok(())
+    //         }
+    //     }
+    // }
 
-      ///fetch a network profile, optionally by profile name
-      pub fn get_network_profile(&self, chain_id: Option<NamedChain>) -> anyhow::Result<NetworkPlaylist> {
+    pub async fn update_network_playlist(&mut self, chain_id: NamedChain) -> anyhow::Result<NetworkPlaylist>{
+      let url = network_playlist::find_default_playlist(Some(chain_id))?;
+      let np = NetworkPlaylist::from_url(url, None).await?;
+
+      if let Some(playlist) = &mut self.network_playlist {
+         for e in playlist.iter_mut(){
+            if e.chain_id == Some(chain_id) { *e = np.clone(); }
+         };
+      } else { self.network_playlist = Some(vec![np.clone()])}
+
+      Ok(np)
+
+    }
+    ///fetch a network profile, optionally by profile name
+    pub fn get_network_profile(
+        &self,
+        chain_id: Option<NamedChain>,
+    ) -> anyhow::Result<NetworkPlaylist> {
         // TODO: avoid clone
-        let np = self.network_profiles.clone().context("no network profiles set")?;
-        
-       let profile = if chain_id.is_some() {
-          np.into_iter()
-            .find(|each| each.chain_id == chain_id)
+        let np = self
+            .network_playlist
+            .clone()
+            .context("no network profiles set")?;
+
+        let profile = if chain_id.is_some() {
+            np.into_iter().find(|each| each.chain_id == chain_id)
         } else {
-          np.into_iter().next()
+            np.into_iter().next()
         };
 
         profile.context("could not find a network profile")
-      }
+    }
 
-      // ///fetch a network profile, optionally by profile name
-      // pub fn refresh_network_profiles(&mut self, profile_name: Option<String>) -> anyhow::Result<()> {
-      //   // TODO: avoid clone
-      //   let np = self.network_profiles.clone().context("no network profiles set")?;
-        
-      //   // join_all(
-      //   //   np.iter().map(|e| {
-      //   //     e.refresh()
-      //   //   })
-      //   // )
-      // //  let profile = if let Some(name) = profile_name {
-      // //     np.into_iter()
-      // //       .find(|each| !each.profile_name.contains(&name))
-      // //   } else {
-      // //     np.into_iter().next()
-      // //   };
+    pub async fn refresh_network_profile_and_save(
+        &mut self,
+        chain_id: Option<NamedChain>,
+    ) -> anyhow::Result<NetworkPlaylist> {
+        let mut np = self.get_network_profile(chain_id)?;
+        np.refresh_sync_status().await?;
+        self.save_file()?;
+        Ok(np)
+    }
 
-      // //   profile.context("could not find a network profile")
-      // }
+    ///fetch a network profile, optionally by profile name
+    pub fn best_url(&mut self, chain_id: Option<NamedChain>) -> anyhow::Result<Url> {
+        let np = self.get_network_profile(chain_id)?;
+        np.the_best_one()
+    }
 }
 
 /// Default configuration settings.
@@ -179,7 +193,7 @@ impl Default for AppCfg {
         Self {
             workspace: Workspace::default(),
             profile: Profile::default(),
-            network_profiles: Some(vec![NetworkPlaylist::default()]),
+            network_playlist: Some(vec![NetworkPlaylist::default()]),
             chain_info: ChainInfo::default(),
             tx_configs: TxConfigs::default(),
         }
@@ -384,11 +398,4 @@ fn default_miner_txs_cost() -> Option<TxCost> {
 }
 fn default_cheap_txs_cost() -> Option<TxCost> {
     Some(TxCost::new(1_000))
-}
-
-
-
-#[derive(Serialize, Deserialize, Debug)]
-struct EpochJSON {
-    epoch: u64,
 }
