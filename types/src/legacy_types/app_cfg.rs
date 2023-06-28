@@ -136,9 +136,14 @@ impl AppCfg {
     //         }
     //     }
     // }
+    pub fn set_chain_id (&mut self, chain_id: NamedChain) {
+      self.chain_info.chain_id = chain_id;
+    }
 
-    pub async fn update_network_playlist(&mut self, chain_id: NamedChain) -> anyhow::Result<NetworkPlaylist>{
-      let url = network_playlist::find_default_playlist(Some(chain_id))?;
+    pub async fn update_network_playlist(&mut self, chain_id: Option<NamedChain>,  playlist_url: Option<Url>) -> anyhow::Result<NetworkPlaylist>{
+      let chain_id = chain_id.unwrap_or(self.chain_info.chain_id);
+      let url = playlist_url.unwrap_or(network_playlist::find_default_playlist(Some(self.chain_info.chain_id))?);
+
       let np = NetworkPlaylist::from_url(url, None).await?;
 
       if let Some(playlist) = &mut self.network_playlist {
@@ -180,6 +185,7 @@ impl AppCfg {
         Ok(np)
     }
 
+    // TODO: always use CHAIN_ID from AppCfg
     ///fetch a network profile, optionally by profile name
     pub fn best_url(&mut self, chain_id: Option<NamedChain>) -> anyhow::Result<Url> {
         let np = self.get_network_profile(chain_id)?;
