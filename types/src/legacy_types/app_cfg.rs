@@ -1,6 +1,6 @@
 //! Configs for all 0L apps.
 
-use anyhow::Context;
+use anyhow::{Context, bail};
 use zapatos_crypto::ed25519::Ed25519PrivateKey;
 use crate::{
   legacy_types::mode_ol::MODE_0L,
@@ -112,6 +112,33 @@ impl AppCfg {
             &toml_path
         );
         Ok(toml_path)
+    }
+
+    /// Removes current node from upstream nodes
+    /// To be used when DB is corrupted for instance.
+    pub fn remove_node(&mut self, host: String) -> anyhow::Result<()> {
+        let nodes = self.profile.upstream_nodes.clone();
+        match nodes.len() {
+        1 => bail!("Cannot remove last node"),
+        _ => {
+          self.profile.upstream_nodes = nodes
+            .into_iter()
+            .filter(|each| !each.to_string().contains(&host))
+            .collect();
+          self.save_file()?;
+          Ok(())
+        }
+      }
+
+      // pub fn network_profile() -> anyhow::Result<Self> {
+      //   let cfg = get_cfg()?;
+      //   Ok(NetworkProfile {
+      //     chain_id: cfg.chain_info.chain_id,
+      //     urls: cfg.profile.upstream_nodes,
+      //     // waypoint: cfg.chain_info.base_waypoint.unwrap_or_default(),
+      //     profile: "default".to_string(),
+      //   })
+      // }
     }
 }
 
