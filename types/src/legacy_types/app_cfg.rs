@@ -136,7 +136,7 @@ impl AppCfg {
     //         }
     //     }
     // }
-    pub fn set_chain_id (&mut self, chain_id: NamedChain) {
+    pub fn set_chain_id(&mut self, chain_id: NamedChain) {
       self.chain_info.chain_id = chain_id;
     }
 
@@ -166,11 +166,8 @@ impl AppCfg {
             .clone()
             .context("no network profiles set")?;
 
-        let profile = if chain_id.is_some() {
-            np.into_iter().find(|each| each.chain_id == chain_id)
-        } else {
-            np.into_iter().next()
-        };
+        let chain_id = chain_id.unwrap_or(self.chain_info.chain_id);
+        let profile = np.into_iter().find(|each| each.chain_id == Some(chain_id));
 
         profile.context("could not find a network profile")
     }
