@@ -142,9 +142,9 @@ impl AppCfg {
         // TODO: avoid clone
         let np = self.network_profiles.clone().context("no network profiles set")?;
         
-       let profile = if let Some(id) = chain_id {
+       let profile = if chain_id.is_some() {
           np.into_iter()
-            .find(|each| each.chain_id == id)
+            .find(|each| each.chain_id == chain_id)
         } else {
           np.into_iter().next()
         };
@@ -391,11 +391,4 @@ fn default_cheap_txs_cost() -> Option<TxCost> {
 #[derive(Serialize, Deserialize, Debug)]
 struct EpochJSON {
     epoch: u64,
-}
-
-#[test]
-fn save_file() {
-  let a = AppCfg::default();
-  a.save_file();
-
 }

@@ -62,8 +62,8 @@ impl HostProfile {
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
 pub struct NetworkPlaylist {
-  pub chain_id: NamedChain,
-  pub hosts: Vec<HostProfile>,
+  pub chain_id: Option<NamedChain>,
+  pub nodes: Vec<HostProfile>,
 
 }
 
@@ -72,8 +72,8 @@ impl Default for NetworkPlaylist {
     let chain_id = NamedChain::MAINNET;
     NetworkPlaylist {
       // profile_name: chain_id.to_string(),
-      chain_id,
-      hosts: vec![HostProfile::default()]
+      chain_id: Some(chain_id),
+      nodes: vec![HostProfile::default()]
     }
   }
 }
@@ -105,21 +105,21 @@ impl NetworkPlaylist {
     let mut play: NetworkPlaylist = serde_json::from_str(&out)?; //res.text()?.
     // NetworkProfile::read_from_cfg()
     if let Some(c) = override_chain_id {
-      play.chain_id = c;
+      play.chain_id = Some(c);
     }
     
     Ok(play)
   }
 
   pub fn shuffle_order(&mut self) {
-    let urls_list = &mut self.hosts;
+    let urls_list = &mut self.nodes;
     let mut rng = thread_rng();
     urls_list.shuffle(&mut rng);
   }
 
   pub fn the_good_ones(&self) -> anyhow::Result<Vec<Url>> {
     let list_urls: Vec<Url> = self
-      .hosts
+      .nodes
       .iter()
       .filter_map(|e| {
         if e.is_sync && e.is_api {
@@ -151,7 +151,7 @@ impl NetworkPlaylist {
     let futures = FuturesUnordered::new();
 
     // TODO: remove clone
-    self.hosts.clone().into_iter().for_each(|p| {
+    self.nodes.clone().into_iter().for_each(|p| {
       futures.push(p.check_sync());
     });
 
@@ -185,13 +185,13 @@ impl NetworkPlaylist {
       })
       .collect();
 
-    self.hosts = checked;
+    self.nodes = checked;
     Ok(())
   }
 
   pub async fn check_which_are_alive(mut self) -> anyhow::Result<Self> {
 
-    let mut upstream = self.hosts;
+    let mut upstream = self.nodes;
 
     // try getting waypoint from upstream nodes
     // no waypoint is necessary in advance.
@@ -210,7 +210,15 @@ impl NetworkPlaylist {
       .collect::<Vec<_>>()
       .await;
 
-    self.hosts = checked;
+    self.nodes = checked;
     Ok(self)
   }
+}
+
+
+#[tokio::test]
+async fn test_parse_from_url() {
+  let url = find_default_playlist(NamedChain::MAINNET).unwrap();
+  let pl = NetworkPlaylist::from_url(url, None).await.unwrap();
+  dbg!(&pl);
 }
