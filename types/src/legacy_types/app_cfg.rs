@@ -74,12 +74,16 @@ impl AppCfg {
     }
 
     /// Get where the block/proofs are stored.
-    pub fn get_block_dir(&self) -> PathBuf {
+    pub fn get_block_dir(&self, nickname: Option<String>) -> anyhow::Result<PathBuf> {
         let mut home = self.workspace.node_home.clone();
-        home.push(&self.workspace.block_dir);
-        home
+        let profile = self.get_profile(nickname)?;
+        let vdf_dir_name = format!("vdf_proofs_{}", &profile.account.to_string());
+
+        home.push(vdf_dir_name);
+        Ok(home)
     }
 
+    /// can get profile by account fragment: full account string or shortened "nickname"
     pub fn get_profile(&self, mut nickname: Option<String>) -> anyhow::Result<Profile>{
       if self.user_profiles.len() == 0 { bail!("no profiles found") };
       if self.user_profiles.len() == 1 { 
@@ -100,7 +104,7 @@ impl AppCfg {
       if let Some(n) = nickname {
         let found = self.user_profiles.iter()
         .find(|e| {
-          e.nickname.contains(&n)
+          e.nickname.contains(&n) || e.account.to_string().contains(&n)
         });
         if let Some(f) = found { return Ok(f.to_owned()) }
       }

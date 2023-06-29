@@ -3,6 +3,7 @@
 use crate::legacy_types::{
   mode_ol::MODE_0L,
   app_cfg::AppCfg,
+  
 };
 
 use crate::exports::NamedChain;
@@ -149,7 +150,7 @@ impl VDFProof {
 
   /// find the most recent proof on disk
   pub fn get_latest_proof(config: &AppCfg, purge_if_bad: bool) -> Result<Self> {
-      let (_current_block_number, current_block_path) = Self::get_highest_block(&config.get_block_dir())?;
+      let (_current_block_number, current_block_path) = Self::get_highest_block(&config.get_block_dir(None)?)?;
 
       Self::parse_block_file(&current_block_path, purge_if_bad)
   }

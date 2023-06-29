@@ -17,6 +17,9 @@ pub struct TowerCli {
     /// The optional path to an alternate path besides $HOME/.0L
     #[clap(short,long)]
     config_file: Option<PathBuf>,
+    /// nickname of the profile to use, if there is more than one. Defaults to first.
+    #[clap(short,long)]
+    profile: Option<String>,
 }
 
 #[derive(Subcommand)]
@@ -36,7 +39,7 @@ impl TowerCli {
       let cli = TowerCli::parse();
 
       let mut app_cfg = AppCfg::load(cli.config_file)?;
-      
+
       match cli.command {
         TowerSub::Backlog { show } => {
           println!("backlog");

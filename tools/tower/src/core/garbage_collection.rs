@@ -13,13 +13,16 @@ use libra_types::{
 use std::{fs, path::PathBuf, time::SystemTime};
 use zapatos_sdk::crypto::HashValue;
 /// Start the GC for a proof that is known bad
-pub fn gc_failed_proof(cfg: &AppCfg, bad_proof_path: PathBuf) -> anyhow::Result<()> {
+pub fn gc_failed_proof(app_cfg: &AppCfg, bad_proof_path: PathBuf) -> anyhow::Result<()> {
     println!(
         "bad proof found at {}. Will collect subsequent proofs and move to vdf proof archive",
         bad_proof_path.to_str().unwrap()
     );
-    if let Some(v) = collect_subsequent_proofs(bad_proof_path, cfg.get_block_dir())? {
-        put_in_trash(v, cfg)?;
+
+    // gets the profile from workspace default
+    let block_dir = app_cfg.get_block_dir(None)?;
+    if let Some(v) = collect_subsequent_proofs(bad_proof_path, block_dir.clone())? {
+        put_in_trash(v, &block_dir)?;
     }
     Ok(())
 }
@@ -49,10 +52,9 @@ pub fn collect_subsequent_proofs(
 }
 
 /// take list of proofs and save in garbage file
-pub fn put_in_trash(to_trash: Vec<PathBuf>, cfg: &AppCfg) -> anyhow::Result<()> {
-    let vdf_path: PathBuf = cfg.workspace.block_dir.parse()?;
+pub fn put_in_trash(to_trash: Vec<PathBuf>, blocks_dir: &PathBuf) -> anyhow::Result<()> {
     let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?;
-    let new_dir = vdf_path.join(now.as_secs().to_string());
+    let new_dir = blocks_dir.join(now.as_secs().to_string());
     fs::create_dir_all(&new_dir)?;
 
     println!(
@@ -74,9 +76,8 @@ pub fn put_in_trash(to_trash: Vec<PathBuf>, cfg: &AppCfg) -> anyhow::Result<()> 
 pub async fn find_first_discontinous_proof(
     cfg: AppCfg,
     client: &Client,
-    // swarm_path: Option<PathBuf>,
 ) -> anyhow::Result<Option<PathBuf>> {
-    let block_dir = cfg.get_block_dir();
+    let block_dir = cfg.get_block_dir(None)?;
     let highest_local = VDFProof::get_highest_block(&block_dir)?.0.height;
     // start from last known proof on chain.
     let p = next_proof::get_next_proof_from_chain(&mut cfg.clone(), client).await?;

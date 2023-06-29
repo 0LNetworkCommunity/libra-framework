@@ -4,12 +4,13 @@ use crate::core::{
   next_proof::{self, NextProof},
   backlog, delay::*, proof_preimage::genesis_preimage
 };
+
 use anyhow::Error;
 use libra_types::legacy_types::block::{VDFProof, GENESIS_VDF_SECURITY_PARAM, GENESIS_VDF_ITERATIONS};
 use libra_types::{
   legacy_types::app_cfg::AppCfg,
   exports::Client,
-  type_extensions::client_ext::ClientExt
+  type_extensions::client_ext::ClientExt,
 };
 
 use std::{fs, path::PathBuf, time::Instant};
@@ -42,7 +43,7 @@ pub fn write_genesis(config: &AppCfg) -> anyhow::Result<VDFProof> {
     let block = mine_genesis(config, difficulty, security)?;
     //TODO: check for overwriting file...
     // write_json(&block, &config.get_block_dir())?;
-    let path = block.write_json(&config.get_block_dir())?;
+    let path = block.write_json(&config.get_block_dir(None)?)?;
     // let genesis_proof_filename = &format!("{}_0.json", FILENAME);
     println!(
         "proof zero mined, file saved to: {:?}",
@@ -66,7 +67,7 @@ pub fn mine_once(config: &AppCfg, next: NextProof) -> Result<VDFProof, Error> {
         security: Some(next.diff.security),
     };
 
-    block.write_json( &config.get_block_dir())?;
+    block.write_json( &config.get_block_dir(None)?)?;
     Ok(block)
 }
 
