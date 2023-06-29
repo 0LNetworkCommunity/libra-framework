@@ -254,8 +254,8 @@ impl Default for AppCfg {
         Self {
             workspace: Workspace::default(),
             profile: None,
-            user_profiles: vec![Profile::default()],
-            network_playlist: Some(vec![NetworkPlaylist::default()]),
+            user_profiles: vec![],
+            network_playlist: Some(vec![]),
             chain_info: ChainInfo::default(),
             tx_configs: TxConfigs::default(),
         }
