@@ -15,9 +15,9 @@ use libra_types::{
 use std::{fs, path::PathBuf, time::Instant};
 
 // writes a JSON file with the first vdf proof
-fn mine_genesis(config: &AppCfg, difficulty: u64, security: u64) -> VDFProof {
+fn mine_genesis(config: &AppCfg, difficulty: u64, security: u64) -> anyhow::Result<VDFProof> {
     println!("Mining Genesis Proof"); // TODO: use logger
-    let preimage = genesis_preimage(&config);
+    let preimage = genesis_preimage(&config)?;
     let now = Instant::now();
 
     let proof = do_delay(&preimage, difficulty, security).unwrap(); // Todo: make mine_genesis return a result.
@@ -32,14 +32,14 @@ fn mine_genesis(config: &AppCfg, difficulty: u64, security: u64) -> VDFProof {
         security: Some(security),
     };
 
-    block
+    Ok(block)
 }
 
 /// Mines genesis and writes the file
-pub fn write_genesis(config: &AppCfg) -> Result<VDFProof, Error> {
+pub fn write_genesis(config: &AppCfg) -> anyhow::Result<VDFProof> {
     let difficulty = GENESIS_VDF_ITERATIONS.clone();
     let security = GENESIS_VDF_SECURITY_PARAM.clone();
-    let block = mine_genesis(config, difficulty, security);
+    let block = mine_genesis(config, difficulty, security)?;
     //TODO: check for overwriting file...
     // write_json(&block, &config.get_block_dir())?;
     let path = block.write_json(&config.get_block_dir())?;
@@ -80,7 +80,7 @@ pub async fn mine_and_submit(
     // get the location of this miner's blocks
     let mut blocks_dir = config.workspace.node_home.clone();
     blocks_dir.push(&config.workspace.block_dir);
-    let (client, _) = Client::from_libra_config(config).await?;
+    let (client, _) = Client::from_libra_config(config, None).await?;
 
     loop {
         // the default behavior is to fetch info from the chain to produce the next proof, including dynamic params for VDF difficulty.

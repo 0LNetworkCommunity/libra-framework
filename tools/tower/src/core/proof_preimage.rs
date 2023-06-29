@@ -8,7 +8,7 @@ use libra_types::legacy_types::{
 };
 
 /// Format the config file data into a fixed byte structure for easy parsing in Move/other languages
-pub fn genesis_preimage(cfg: &AppCfg) -> Vec<u8> {
+pub fn genesis_preimage(cfg: &AppCfg) -> anyhow::Result<Vec<u8>> {
     const AUTH_KEY_BYTES: usize = 32;
     const CHAIN_ID_BYTES: usize = 16;
     const DIFFICULTY_BYTES: usize = 8;
@@ -19,8 +19,11 @@ pub fn genesis_preimage(cfg: &AppCfg) -> Vec<u8> {
 
     let mut preimage: Vec<u8> = vec![];
 
+    // assume user has set default_profile_nickname
+    let profile = cfg.get_profile(None)?;
+
     // AUTH_KEY_BYTES
-    let mut padded_key_bytes = match decode(cfg.profile.auth_key.clone().to_string()) {
+    let mut padded_key_bytes = match decode(profile.auth_key.clone().to_string()) {
         Err(x) => panic!("Invalid 0L Auth Key: {}", x),
         Ok(key_bytes) => padding(key_bytes, AUTH_KEY_BYTES),
     };
@@ -49,20 +52,18 @@ pub fn genesis_preimage(cfg: &AppCfg) -> Vec<u8> {
     // PIETRZAK
     preimage.write_u8(1).unwrap();
 
+
     // LINK_TO_TOWER
+    // Note: V7: Deprecated
     let mut padded_tower_link_bytes = padding(
-        cfg.profile
-            .tower_link
-            .clone()
-            .unwrap_or("".to_string())
-            .into_bytes(),
+        "".to_string().as_bytes().to_vec(),
         LINK_TO_TOWER,
     );
     preimage.append(&mut padded_tower_link_bytes);
 
     // STATEMENT
     let mut padded_statements_bytes =
-        padding(cfg.profile.statement.clone().into_bytes(), STATEMENT_BYTES);
+        padding(profile.statement.clone().into_bytes(), STATEMENT_BYTES);
     preimage.append(&mut padded_statements_bytes);
 
     assert_eq!(
@@ -86,7 +87,7 @@ pub fn genesis_preimage(cfg: &AppCfg) -> Vec<u8> {
         "Preimage is the incorrect byte length"
     );
 
-    return preimage;
+    return Ok(preimage);
 }
 
 fn padding(mut statement_bytes: Vec<u8>, limit: usize) -> Vec<u8> {

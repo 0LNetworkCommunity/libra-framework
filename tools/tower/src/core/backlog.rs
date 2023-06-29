@@ -215,8 +215,9 @@ pub async fn show_backlog(config: &AppCfg) -> Result<()> {
 
 /// returns remote tower height and current proofs in epoch
 pub async fn get_remote_tower_height(app_cfg: &AppCfg) -> Result<(u64, u64), Error> {
-    let (client, _) = Client::from_libra_config(app_cfg).await?;
-    let ts = account_queries::get_tower_state(&client, app_cfg.profile.account.to_owned()).await?;
+    let (client, _) = Client::from_libra_config(app_cfg, None).await?;
+    let profile = app_cfg.get_profile(None)?;
+    let ts = account_queries::get_tower_state(&client, profile.account.to_owned()).await?;
 
     Ok((ts.verified_tower_height, ts.count_proofs_in_epoch))
 }

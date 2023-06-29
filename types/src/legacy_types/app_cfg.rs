@@ -1,11 +1,11 @@
 //! Configs for all 0L apps.
 
-use anyhow::Context;
+use anyhow::{Context, bail};
 // use tokio::sync::futures;
 use crate::{
     exports::{AccountAddress, AuthenticationKey, NamedChain},
     global_config_dir,
-    legacy_types::mode_ol::MODE_0L,
+    // legacy_types::mode_ol::MODE_0L,
 };
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -14,7 +14,7 @@ use zapatos_crypto::ed25519::Ed25519PrivateKey;
 use std::{
     fs::{self, File},
     io::{Read, Write},
-    net::Ipv4Addr,
+    // net::Ipv4Addr,
     path::PathBuf,
     str::FromStr,
 };
@@ -30,7 +30,11 @@ pub struct AppCfg {
     /// Workspace config
     pub workspace: Workspace,
     /// User Profile
-    pub profile: Profile,
+    // NOTE: this profile is being deprecated
+    pub profile: Option<Profile>,
+
+    /// accounts which we have profiles for
+    pub user_profiles: Vec<Profile>,
     /// Network profile
     // NOTE: new field from V7, so it's an option so that previous files can load.
     pub network_playlist: Option<Vec<NetworkPlaylist>>,
@@ -74,6 +78,40 @@ impl AppCfg {
         home
     }
 
+    pub fn get_profile(&self, mut nickname: Option<String>) -> anyhow::Result<Profile>{
+      if self.user_profiles.len() == 0 { bail!("no profiles found") };
+      if self.user_profiles.len() == 1 { 
+        return Ok(
+          self.user_profiles
+          .iter()
+          .next()
+          .context("could not find a profile")?
+          .to_owned()
+        ) 
+      };
+
+      // try to use the default profile unless one was requested
+      if nickname.is_none() {
+        nickname = self.workspace.default_profile_nickname.clone()
+      };
+
+      if let Some(n) = nickname {
+        let found = self.user_profiles.iter()
+        .find(|e| {
+          e.nickname.contains(&n)
+        });
+        if let Some(f) = found { return Ok(f.to_owned()) }
+      }
+      
+      return Ok(
+        self.user_profiles
+        .iter()
+        .next()
+        .context("could not find a profile")?
+        .to_owned()
+      ) 
+    }
+
     /// Get where node key_store.json stored.
     pub fn init_app_configs(
         authkey: AuthenticationKey,
@@ -83,8 +121,9 @@ impl AppCfg {
     ) -> anyhow::Result<Self> {
         // TODO: Check if configs exist and warn on overwrite.
         let mut default_config = AppCfg::default();
-        default_config.profile.auth_key = authkey;
-        default_config.profile.account = account;
+
+        let profile = Profile::new(authkey, account);
+        default_config.user_profiles = vec![profile];
 
         default_config.workspace.node_home =
             config_path.clone().unwrap_or_else(|| default_file_path());
@@ -93,12 +132,7 @@ impl AppCfg {
             default_config.chain_info.chain_id = id.to_owned();
         };
 
-        // skip questionnaire if CI
-        if MODE_0L.clone() == NamedChain::TESTING {
-            default_config.save_file()?;
-
-            return Ok(default_config);
-        }
+        default_config.save_file()?;
 
         Ok(default_config)
     }
@@ -195,7 +229,8 @@ impl Default for AppCfg {
     fn default() -> Self {
         Self {
             workspace: Workspace::default(),
-            profile: Profile::default(),
+            profile: None,
+            user_profiles: vec![Profile::default()],
             network_playlist: Some(vec![NetworkPlaylist::default()]),
             chain_info: ChainInfo::default(),
             tx_configs: TxConfigs::default(),
@@ -206,6 +241,9 @@ impl Default for AppCfg {
 /// Information about the Chain to mined for
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Workspace {
+    /// default profile
+    #[serde(default)]
+    pub default_profile_nickname: Option<String>,
     /// home directory of the diem node, may be the same as miner.
     pub node_home: PathBuf,
     /// Directory of source code (for developer tests only)
@@ -232,6 +270,7 @@ impl Default for Workspace {
             block_dir: "vdf_proofs".to_owned(),
             db_path: default_db_path(),
             stdlib_bin_path: None,
+            default_profile_nickname: None,
         }
     }
 }
@@ -257,55 +296,92 @@ impl Default for ChainInfo {
 pub struct Profile {
     /// The 0L account for the Miner and prospective validator. This is derived from auth_key
     pub account: AccountAddress,
-
     /// Miner Authorization Key for 0L Blockchain. Note: not the same as public key, nor account.
     pub auth_key: AuthenticationKey,
 
+    /// Private key only for use with testing
+    pub test_private_key: Option<Ed25519PrivateKey>,
+    
+    /// nickname for this profile
+    pub nickname: String,
+    #[serde(default)]
+    /// is it already on chain
+    pub on_chain: bool,
+    #[serde(default)]
+    /// what the last balance checked
+    pub balance: u64,
+    /// Language settings, for use with Carpe
+    pub locale: Option<String>,
+    
     /// An opportunity for the Miner to write a message on their genesis block.
     pub statement: String,
 
-    /// ip address of this node. May be different from transaction URL.
-    pub ip: Ipv4Addr,
+    // NOTE: V7: deprecated fields from 0L.toml
+    // should have no effect on reading legacy files
 
-    /// ip address of the validator fullnodee
-    pub vfn_ip: Option<Ipv4Addr>,
+    // /// ip address of this node. May be different from transaction URL.
+    // pub ip: Ipv4Addr,
 
-    /// Other nodes to connect for fallback connections
-    pub upstream_nodes: Vec<Url>,
+    // /// ip address of the validator fullnodee
+    // pub vfn_ip: Option<Ipv4Addr>,
 
-    /// fullnode playlist URL to override default
-    pub override_playlist: Option<Url>,
+    // /// Other nodes to connect for fallback connections
+    // pub upstream_nodes: Vec<Url>,
 
-    /// Link to another delay tower.
-    pub tower_link: Option<String>,
+    // /// fullnode playlist URL to override default
+    // pub override_playlist: Option<Url>,
 
-    /// Private key only for use with testing
-    pub test_private_key: Option<Ed25519PrivateKey>,
-    /// Language settings, for use with Carpe
-    pub locale: Option<String>,
+    // /// Link to another delay tower.
+    // pub tower_link: Option<String>,
+
+
+
+    
+
 }
 
 impl Default for Profile {
     fn default() -> Self {
         Self {
-            account: AccountAddress::from_hex_literal("0x0").unwrap(),
+            account: AccountAddress::ZERO,
             auth_key: AuthenticationKey::from_str(
                 "0000000000000000000000000000000000000000000000000000000000000000",
             )
             .unwrap(),
             statement: "Protests rage across the nation".to_owned(),
-            ip: "0.0.0.0".parse().unwrap(),
-            vfn_ip: "0.0.0.0".parse().ok(),
-            // default_node: Some("http://localhost:8080".parse().expect("parse url")),
-            override_playlist: None,
-            upstream_nodes: vec!["http://localhost:8080".parse().expect("parse url")],
-            tower_link: None,
+            // ip: "0.0.0.0".parse().unwrap(),
+            // vfn_ip: "0.0.0.0".parse().ok(),
+            // // default_node: Some("http://localhost:8080".parse().expect("parse url")),
+            // override_playlist: None,
+            // upstream_nodes: vec!["http://localhost:8080".parse().expect("parse url")],
+            // tower_link: None,
             test_private_key: None,
             locale: None,
+            nickname: "default".to_string(),
+            on_chain: false,
+            balance: 0,
         }
     }
 }
 
+impl Profile {
+  pub fn new(auth: AuthenticationKey, acc: AccountAddress) -> Self {
+    let mut p = Self::default();
+    p.account = acc;
+    p.auth_key = auth;
+    p.nickname = get_nickname(p.account);
+    return p
+  }
+}
+
+pub fn get_nickname(acc: AccountAddress) -> String {
+    // let's check if this is a legacy/founder key, it will have 16 zeros at the start, and that's not a useful nickname
+    if acc.to_string()[..32] == "00000000000000000000000000000000".to_string() {
+        return acc.to_string()[33..36].to_owned()
+    }
+
+    acc.to_string()[..3].to_owned()
+}
 /// Transaction types
 pub enum TxType {
     /// critical txs

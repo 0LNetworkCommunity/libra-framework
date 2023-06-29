@@ -22,7 +22,7 @@ use zapatos_sdk::{
     transaction_builder::TransactionBuilder,
     types::{
         account_address::AccountAddress,
-        chain_id::ChainId,
+        chain_id::{ChainId, NamedChain},
         transaction::{EntryFunction, SignedTransaction, TransactionArgument, TransactionPayload},
         LocalAccount,
     },
@@ -39,7 +39,7 @@ pub const USER_AGENT: &str = concat!("libra-config/", env!("CARGO_PKG_VERSION"))
 pub trait ClientExt {
     async fn default() -> anyhow::Result<Client>;
 
-    async fn from_libra_config(app_cfg: &AppCfg) -> anyhow::Result<(Client, ChainId)>;
+    async fn from_libra_config(app_cfg: &AppCfg, chain_id_opt: Option<NamedChain>) -> anyhow::Result<(Client, ChainId)>;
 
     async fn find_good_upstream(list: Vec<Url>) -> anyhow::Result<(Client, ChainId)>;
 
@@ -73,16 +73,15 @@ impl ClientExt for Client {
   /// assumes the location of the config files, and gets a node from list in config
   async fn default() -> anyhow::Result<Client> {
     let app_cfg = AppCfg::load(None)?;
-    let (client, _) = Self::from_libra_config(&app_cfg).await?;
+    let (client, _) = Self::from_libra_config(&app_cfg, None).await?;
     Ok(client)
   }
  
 
   /// Finds a good working upstream based on the list in a config file
-  async fn from_libra_config(app_cfg: &AppCfg) -> anyhow::Result<(Client, ChainId)> {
+  async fn from_libra_config(app_cfg: &AppCfg, chain_id_opt: Option<NamedChain>) -> anyhow::Result<(Client, ChainId)> {
     // check if we can connect to this client, or exit
-    let nodes = &app_cfg.profile.upstream_nodes;
-    let url = nodes.iter().next().context("cannot get url")?;
+    let url = &app_cfg.get_network_profile(chain_id_opt)?.the_best_one()?;
     let client = Client::new(url.to_owned());
     let res = client.get_index().await?;
     

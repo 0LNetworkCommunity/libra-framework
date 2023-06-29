@@ -33,7 +33,7 @@ pub struct NextProof {
 
 impl NextProof {
     /// create a genesis proof
-    pub fn genesis_proof(config: &AppCfg) -> Self {
+    pub fn genesis_proof(config: &AppCfg) -> anyhow::Result<Self>{
       // NOTE: can't set defautlsin VDFDifficulty::default() because of circular dependency
         let mut diff = VDFDifficulty::default();
 
@@ -42,11 +42,11 @@ impl NextProof {
         diff.prev_diff = GENESIS_VDF_ITERATIONS.clone();
         diff.prev_sec = GENESIS_VDF_SECURITY_PARAM.clone();
 
-        NextProof {
+        Ok(NextProof {
             diff,
             next_height: 0,
-            preimage: proof_preimage::genesis_preimage(config),
-        }
+            preimage: proof_preimage::genesis_preimage(config)?,
+        })
     }
 }
 /// return the VDF difficulty expected and the next tower height
@@ -86,8 +86,9 @@ pub async fn get_next_proof_from_chain(
 
     let (difficulty, security) = chain_queries::get_tower_difficulty(&client).await?;
 
+    let profile = app_cfg.get_profile(None)?;
     // get user's state
-    let p = match account_queries::get_tower_state(client, app_cfg.profile.account).await {
+    let p = match account_queries::get_tower_state(client, profile.account).await {
       Ok(ts) => {
         NextProof {
             diff: VDFDifficulty{

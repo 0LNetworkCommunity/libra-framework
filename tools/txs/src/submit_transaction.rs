@@ -110,12 +110,13 @@ impl Sender {
         app_cfg: &AppCfg,
         pri_key: Option<Ed25519PrivateKey>,
     ) -> anyhow::Result<Self> {
-        let address = app_cfg.profile.account;
+        let profile = app_cfg.get_profile(None)?;
+        let address = profile.account;
 
         let key = match pri_key {
             Some(p) => p,
             None => {
-                match app_cfg.profile.test_private_key.clone() {
+                match profile.test_private_key.clone() {
                     Some(k) => k,
                     None => {
                       let leg_keys =  libra_wallet::account_keys::get_keys_from_prompt()?;
@@ -128,12 +129,12 @@ impl Sender {
         let temp_seq_num = 0;
         let mut local_account = LocalAccount::new(address, key, temp_seq_num);
 
-        let nodes = &app_cfg.profile.upstream_nodes;
-        // Todo: find one out of the list which can produce metadata, not the first one.
-        let url: Url = match nodes.iter().next() {
-            Some(u) => u.to_owned(),
-            None => bail!("could not find rest_url in profile"),
-        };
+        let url = &app_cfg.get_network_profile(None)?.the_best_one()?;
+        // // Todo: find one out of the list which can produce metadata, not the first one.
+        // let url: Url = match nodes.iter().next() {
+        //     Some(u) => u.to_owned(),
+        //     None => bail!("could not find rest_url in profile"),
+        // };
 
         // check if we can connect to this client, or exit
         let client = Client::new(url.clone());
