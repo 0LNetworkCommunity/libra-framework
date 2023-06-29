@@ -116,8 +116,9 @@ impl NetworkPlaylist {
   }
 
   pub fn testing() -> Self {
-    let np = NetworkPlaylist::default();
+    let mut np = NetworkPlaylist::default();
     np.chain_id = NamedChain::TESTING;
+    np
   }
 
   pub fn shuffle_order(&mut self) {
