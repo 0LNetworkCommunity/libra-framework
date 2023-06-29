@@ -92,7 +92,7 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn submit_or_delete(config: &AppCfg, block: VDFProof, path: PathBuf) -> Result<()>{
+pub async fn submit_or_delete(config: &AppCfg, block: VDFProof, path: PathBuf) -> Result<()>{
         let mut sender = Sender::from_app_cfg(config, None).await?;
 
         sender.commit_proof(
