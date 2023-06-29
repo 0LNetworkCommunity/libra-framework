@@ -1,49 +1,62 @@
 //! Configs for all 0L apps.
 
 use anyhow::{Context, bail};
-// use tokio::sync::futures;
 use crate::{
     exports::{AccountAddress, AuthenticationKey, NamedChain},
     global_config_dir,
-    // legacy_types::mode_ol::MODE_0L,
 };
 use serde::{Deserialize, Serialize};
 use url::Url;
 use zapatos_crypto::ed25519::Ed25519PrivateKey;
 
 use std::{
-    fs::{self, File},
-    io::{Read, Write},
-    // net::Ipv4Addr,
+    fs,
+    io::Write,
     path::PathBuf,
     str::FromStr,
 };
 
-use super::network_playlist::{NetworkPlaylist, self};
+use super::network_playlist::{NetworkPlaylist, self, HostProfile};
 
-// const NODE_HOME: &str = ".0L";
-const CONFIG_FILE_NAME: &str = "0L.toml";
-
+const CONFIG_FILE_NAME: &str = "libra.yaml";
 /// MinerApp Configuration
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct AppCfg {
     /// Workspace config
     pub workspace: Workspace,
-    /// User Profile
-    // NOTE: this profile is being deprecated
-    pub profile: Option<Profile>,
-
     /// accounts which we have profiles for
     // NOTE: for v7 it will load the default() for migration
-    #[serde(default)]
+    // #[serde(default)]
     pub user_profiles: Vec<Profile>,
     /// Network profile
     // NOTE: new field from V7, so it's an option so that previous files can load.
-    pub network_playlist: Option<Vec<NetworkPlaylist>>,
+    pub network_playlist: Vec<NetworkPlaylist>,
+    /// Transaction configurations
+    pub tx_configs: TxConfigs,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct LegacyToml {
+    /// Workspace config
+    pub workspace: Workspace,
+    /// User Profile
+    // NOTE: this profile is being deprecated
+    pub profile: Profile,
     /// Chain Info for all users
     pub chain_info: ChainInfo,
     /// Transaction configurations
     pub tx_configs: TxConfigs,
+    
+}
+
+impl LegacyToml {
+    /// Get a AppCfg object from toml file
+    pub fn parse_toml(path: Option<PathBuf>) -> anyhow::Result<Self> {
+      let path = path.unwrap_or(global_config_dir().join("0L.toml"));
+      let toml_buf = fs::read_to_string(path)?;
+      Ok(toml::from_str(&toml_buf)?)
+  }
+
 }
 
 pub fn default_file_path() -> PathBuf {
@@ -54,24 +67,63 @@ impl AppCfg {
     /// load from default path
     pub fn load(file: Option<PathBuf>) -> anyhow::Result<Self> {
         let path = file.unwrap_or(default_file_path());
-        Self::parse_toml(path)
+
+        let s = fs::read_to_string(path)?;
+        Ok(serde_yaml::from_str(&s)?)
     }
 
-    /// Get a AppCfg object from toml file
-    pub fn parse_toml(path: PathBuf) -> anyhow::Result<Self> {
-        let parent_dir = path.parent().context("no parent directory")?;
-        if !parent_dir.exists() {
-            println!(
-                "Directory for app configs {} doesn't exist, exiting.",
-                &parent_dir.to_str().unwrap()
-            );
-        }
-        let mut toml_buf = "".to_string();
-        let mut file = File::open(&path)?;
-        file.read_to_string(&mut toml_buf)?;
+    /// save the config file to 0L.toml to the workspace home path
+    pub fn save_file(&self) -> anyhow::Result<PathBuf> {
+        // let toml = toml::to_string(&self)?;
+        let yaml = serde_yaml::to_string(&self)?;
+        let home_path = &self.workspace.node_home.clone();
+        // create home path if doesn't exist, usually only in dev/ci environments.
+        fs::create_dir_all(&home_path)?;
+        let toml_path = home_path.join(CONFIG_FILE_NAME);
+        let mut file = fs::File::create(&toml_path)?;
+        file.write(&yaml.as_bytes())?;
 
-        Ok(toml::from_str(&toml_buf)?)
+        println!(
+            "\nhost configs initialized, file saved to: {:?}",
+            &toml_path
+        );
+        Ok(toml_path)
     }
+
+    pub fn migrate(legacy_file: Option<PathBuf>, output: Option<PathBuf>) -> anyhow::Result<Self> {
+      let l = LegacyToml::parse_toml(legacy_file)?;
+
+      let nodes = if let Some(v) = l.profile.upstream_nodes.as_ref() {
+        v.iter().map(|u| {
+        let mut h = HostProfile::default();
+        h.url = u.to_owned();
+        h.note = u.to_string();
+        h
+      }).collect::<Vec<HostProfile>>()
+    } else { vec![] };
+      let np = NetworkPlaylist{
+        chain_id: Some(l.chain_info.chain_id),
+        nodes: nodes,
+      };
+      let app_cfg = AppCfg {
+        workspace: l.workspace,
+        user_profiles: vec![l.profile],
+        network_playlist: vec![np],
+        tx_configs: l.tx_configs,
+      };
+
+      if let Some(p) = output {
+        fs::create_dir_all(&p)?;
+        println!("created file for {}", p.to_str().unwrap());
+        let yaml = serde_yaml::to_string(&app_cfg)?;
+        fs::write(p, yaml.as_bytes())?;
+      } else {
+        app_cfg.save_file()?;
+      }
+      
+      Ok(app_cfg)
+    }
+
 
     /// Get where the block/proofs are stored.
     pub fn get_block_dir(&self, nickname: Option<String>) -> anyhow::Result<PathBuf> {
@@ -157,29 +209,12 @@ impl AppCfg {
             config_path.clone().unwrap_or_else(|| default_file_path());
 
         if let Some(id) = network_id {
-            default_config.chain_info.chain_id = id.to_owned();
+            default_config.workspace.default_chain_id = Some(id.to_owned());
         };
 
         default_config.save_file()?;
 
         Ok(default_config)
-    }
-
-    /// save the config file to 0L.toml to the workspace home path
-    pub fn save_file(&self) -> anyhow::Result<PathBuf> {
-        let toml = toml::to_string(&self)?;
-        let home_path = &self.workspace.node_home.clone();
-        // create home path if doesn't exist, usually only in dev/ci environments.
-        fs::create_dir_all(&home_path)?;
-        let toml_path = home_path.join(CONFIG_FILE_NAME);
-        let mut file = fs::File::create(&toml_path)?;
-        file.write(&toml.as_bytes())?;
-
-        println!(
-            "\nhost configs initialized, file saved to: {:?}",
-            &toml_path
-        );
-        Ok(toml_path)
     }
 
     // /// Removes current node from upstream nodes
@@ -199,20 +234,27 @@ impl AppCfg {
     //     }
     // }
     pub fn set_chain_id(&mut self, chain_id: NamedChain) {
-      self.chain_info.chain_id = chain_id;
+      
+      self.workspace.default_chain_id = Some(chain_id);
     }
 
     pub async fn update_network_playlist(&mut self, chain_id: Option<NamedChain>,  playlist_url: Option<Url>) -> anyhow::Result<NetworkPlaylist>{
-      let chain_id = chain_id.unwrap_or(self.chain_info.chain_id);
-      let url = playlist_url.unwrap_or(network_playlist::find_default_playlist(Some(self.chain_info.chain_id))?);
+      // let chain_id = chain_id.unwrap_or(self.chain_info.chain_id);
+      let url = playlist_url.unwrap_or(network_playlist::find_default_playlist(chain_id)?);
 
       let np = NetworkPlaylist::from_url(url, chain_id).await?;
 
-      if let Some(playlist) = &mut self.network_playlist {
-         for e in playlist.iter_mut(){
-            if e.chain_id == Some(chain_id) { *e = np.clone(); }
-         };
-      } else { self.network_playlist = Some(vec![np.clone()])}
+      // if the network playlist has the same chain_id as a prior one
+      // overwrite it.
+      // if no match push a new one to vector
+
+      if self.network_playlist.iter().find(|e| e.chain_id == np.chain_id).is_some() {
+                for e in self.network_playlist.iter_mut(){
+          if e.chain_id == np.chain_id { *e = np.clone(); }
+        };
+      } else {
+        self.network_playlist.push(np.clone())
+      }
 
       Ok(np)
 
@@ -225,11 +267,10 @@ impl AppCfg {
         // TODO: avoid clone
         let np = self
             .network_playlist
-            .clone()
-            .context("no network profiles set")?;
+            .clone();
 
-        let chain_id = chain_id.unwrap_or(self.chain_info.chain_id);
-        let profile = np.into_iter().find(|each| each.chain_id == Some(chain_id));
+        // let chain_id = chain_id.unwrap_or(self.chain_info.chain_id);
+        let profile = np.into_iter().find(|each| each.chain_id == chain_id);
 
         profile.context("could not find a network profile")
     }
@@ -257,10 +298,10 @@ impl Default for AppCfg {
     fn default() -> Self {
         Self {
             workspace: Workspace::default(),
-            profile: None,
+            // profile: None,
             user_profiles: vec![],
-            network_playlist: Some(vec![]),
-            chain_info: ChainInfo::default(),
+            network_playlist: vec![],
+            // chain_info: ChainInfo::default(),
             tx_configs: TxConfigs::default(),
         }
     }
@@ -269,9 +310,12 @@ impl Default for AppCfg {
 /// Information about the Chain to mined for
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Workspace {
-    /// default profile
+    /// default profile. can be a string fragment of a full address (nickname)
     #[serde(default)]
     pub default_profile_nickname: Option<String>,
+    /// default chain network profile to use 
+    pub default_chain_id: Option<NamedChain>,
+
     /// home directory of the diem node, may be the same as miner.
     pub node_home: PathBuf,
     /// Directory of source code (for developer tests only)
@@ -293,12 +337,13 @@ fn default_db_path() -> PathBuf {
 impl Default for Workspace {
     fn default() -> Self {
         Self {
+            default_profile_nickname: None,
+            default_chain_id: Some(NamedChain::MAINNET),
             node_home: crate::global_config_dir(),
             source_path: None,
             block_dir: "vdf_proofs".to_owned(),
             db_path: default_db_path(),
             stdlib_bin_path: None,
-            default_profile_nickname: None,
         }
     }
 }
@@ -340,7 +385,6 @@ pub struct Profile {
     pub balance: u64,
     /// Language settings, for use with Carpe
     pub locale: Option<String>,
-
     /// An opportunity for the Miner to write a message on their genesis block.
     pub statement: String,
 
@@ -353,8 +397,8 @@ pub struct Profile {
     // /// ip address of the validator fullnodee
     // pub vfn_ip: Option<Ipv4Addr>,
 
-    // /// Other nodes to connect for fallback connections
-    // pub upstream_nodes: Vec<Url>,
+    /// Deprecation: Other nodes to connect for fallback connections
+    pub upstream_nodes: Option<Vec<Url>>,
 
     // /// fullnode playlist URL to override default
     // pub override_playlist: Option<Url>,
@@ -388,6 +432,7 @@ impl Default for Profile {
             nickname: "default".to_string(),
             on_chain: false,
             balance: 0,
+            upstream_nodes: None, // deprecation
         }
     }
 }
@@ -508,4 +553,12 @@ fn default_miner_txs_cost() -> Option<TxCost> {
 }
 fn default_cheap_txs_cost() -> Option<TxCost> {
     Some(TxCost::new(1_000))
+}
+
+
+#[tokio::test]
+async fn test_create() {
+  let mut a = AppCfg::default();
+  a.user_profiles = vec![Profile::default()];
+  a.save_file().unwrap();
 }

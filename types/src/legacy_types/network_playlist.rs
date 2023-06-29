@@ -99,14 +99,16 @@ impl NetworkPlaylist {
 
   pub async fn from_url(
     playlist_url: Url,
-    chain_id: NamedChain,
+    chain_id: Option<NamedChain>,
   ) -> anyhow::Result<NetworkPlaylist> {
 
     let res = reqwest::get(playlist_url).await?;
     let out = res.text().await?;
     let mut play: NetworkPlaylist = serde_json::from_str(&out)?; //res.text()?.
     
-    play.chain_id = Some(chain_id);
+    if let Some(c) = chain_id {
+      play.chain_id = Some(c);
+    }
     
     Ok(play)
   }
