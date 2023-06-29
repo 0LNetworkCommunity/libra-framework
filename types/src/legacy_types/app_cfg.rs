@@ -285,6 +285,9 @@ impl AppCfg {
         Ok(np)
     }
 
+    pub fn add_custom_playlist(&mut self, playlist: NetworkPlaylist) {
+      self.network_playlist.push(playlist);
+    }
     // TODO: always use CHAIN_ID from AppCfg
     ///fetch a network profile, optionally by profile name
     pub fn best_url(&mut self, chain_id: Option<NamedChain>) -> anyhow::Result<Url> {
