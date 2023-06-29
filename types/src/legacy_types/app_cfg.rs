@@ -102,7 +102,7 @@ impl AppCfg {
       }).collect::<Vec<HostProfile>>()
     } else { vec![] };
       let np = NetworkPlaylist{
-        chain_id: Some(l.chain_info.chain_id),
+        chain_id: l.chain_info.chain_id,
         nodes: nodes,
       };
       let app_cfg = AppCfg {
@@ -269,7 +269,7 @@ impl AppCfg {
             .network_playlist
             .clone();
 
-        // let chain_id = chain_id.unwrap_or(self.chain_info.chain_id);
+        let chain_id = chain_id.unwrap_or(self.workspace.default_chain_id);
         let profile = np.into_iter().find(|each| each.chain_id == chain_id);
 
         profile.context("could not find a network profile")

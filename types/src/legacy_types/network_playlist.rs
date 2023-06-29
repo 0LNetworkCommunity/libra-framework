@@ -65,17 +65,19 @@ impl HostProfile {
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
 pub struct NetworkPlaylist {
-  pub chain_id: Option<NamedChain>,
+  #[serde(default = "default_chain")]
+  pub chain_id: NamedChain,
   pub nodes: Vec<HostProfile>,
 
+}
+fn default_chain() -> NamedChain{
+  NamedChain::MAINNET
 }
 
 impl Default for NetworkPlaylist {
   fn default() -> Self {
-    let chain_id = NamedChain::MAINNET;
     NetworkPlaylist {
-      // profile_name: chain_id.to_string(),
-      chain_id: Some(chain_id),
+      chain_id: NamedChain::MAINNET,
       nodes: vec![HostProfile::default()]
     }
   }
@@ -107,10 +109,15 @@ impl NetworkPlaylist {
     let mut play: NetworkPlaylist = serde_json::from_str(&out)?; //res.text()?.
     
     if let Some(c) = chain_id {
-      play.chain_id = Some(c);
+      play.chain_id = c;
     }
     
     Ok(play)
+  }
+
+  pub fn testing() -> Self {
+    let np = NetworkPlaylist::default();
+    np.chain_id = NamedChain::TESTING;
   }
 
   pub fn shuffle_order(&mut self) {
