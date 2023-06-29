@@ -114,6 +114,28 @@ impl AppCfg {
       ) 
     }
 
+    pub fn maybe_add_profile(&mut self, profile: Profile) -> anyhow::Result<()>{
+      if self.user_profiles.len() == 0 {
+        self.user_profiles = vec![profile];
+        return Ok(())
+      }
+
+      let mut found = false;
+      // if it exists lets update it.
+      self.user_profiles
+      .iter_mut()
+      .for_each(|e| {
+        if e.account == profile.account {
+          *e = profile.clone();
+          found = true;
+        }
+      });
+
+      if !found { self.user_profiles.push(profile); }
+
+      Ok(())
+
+    }
     /// Get where node key_store.json stored.
     pub fn init_app_configs(
         authkey: AuthenticationKey,
