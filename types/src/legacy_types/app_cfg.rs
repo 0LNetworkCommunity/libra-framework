@@ -144,7 +144,7 @@ impl AppCfg {
       let chain_id = chain_id.unwrap_or(self.chain_info.chain_id);
       let url = playlist_url.unwrap_or(network_playlist::find_default_playlist(Some(self.chain_info.chain_id))?);
 
-      let np = NetworkPlaylist::from_url(url, None).await?;
+      let np = NetworkPlaylist::from_url(url, chain_id).await?;
 
       if let Some(playlist) = &mut self.network_playlist {
          for e in playlist.iter_mut(){

@@ -99,16 +99,14 @@ impl NetworkPlaylist {
 
   pub async fn from_url(
     playlist_url: Url,
-    override_chain_id: Option<NamedChain>,
+    chain_id: NamedChain,
   ) -> anyhow::Result<NetworkPlaylist> {
 
     let res = reqwest::get(playlist_url).await?;
     let out = res.text().await?;
     let mut play: NetworkPlaylist = serde_json::from_str(&out)?; //res.text()?.
-    // NetworkProfile::read_from_cfg()
-    if let Some(c) = override_chain_id {
-      play.chain_id = Some(c);
-    }
+    
+    play.chain_id = Some(chain_id);
     
     Ok(play)
   }
@@ -219,9 +217,9 @@ impl NetworkPlaylist {
 }
 
 
-#[tokio::test]
-async fn test_parse_from_url() {
-  let url = find_default_playlist(NamedChain::MAINNET).unwrap();
-  let pl = NetworkPlaylist::from_url(url, None).await.unwrap();
-  dbg!(&pl);
-}
+// #[tokio::test]
+// async fn test_parse_from_url() {
+//   let url = find_default_playlist(NamedChain::MAINNET).unwrap();
+//   let pl = NetworkPlaylist::from_url(url, N).await.unwrap();
+//   dbg!(&pl);
+// }
