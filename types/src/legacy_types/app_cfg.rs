@@ -272,7 +272,7 @@ impl AppCfg {
         let chain_id = chain_id.unwrap_or(self.workspace.default_chain_id);
         let profile = np.into_iter().find(|each| each.chain_id == chain_id);
 
-        profile.context("could not find a network profile")
+        Ok(profile.context("could not find a network profile")?)
     }
 
     pub async fn refresh_network_profile_and_save(
@@ -285,8 +285,16 @@ impl AppCfg {
         Ok(np)
     }
 
-    pub fn add_custom_playlist(&mut self, playlist: NetworkPlaylist) {
-      self.network_playlist.push(playlist);
+    pub fn add_custom_playlist(&mut self, new_playlist: NetworkPlaylist) {
+      let existing_playlist = self.network_playlist.iter_mut().find(|e| {
+        e.chain_id == new_playlist.chain_id
+      });
+      if let Some(p) = existing_playlist {
+        *p = new_playlist
+      } else {
+        self.network_playlist.push(new_playlist);
+      }
+      
     }
     // TODO: always use CHAIN_ID from AppCfg
     ///fetch a network profile, optionally by profile name
