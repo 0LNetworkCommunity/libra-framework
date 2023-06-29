@@ -34,6 +34,8 @@ pub struct AppCfg {
     pub profile: Option<Profile>,
 
     /// accounts which we have profiles for
+    // NOTE: for v7 it will load the default() for migration
+    #[serde(default)]
     pub user_profiles: Vec<Profile>,
     /// Network profile
     // NOTE: new field from V7, so it's an option so that previous files can load.
@@ -312,7 +314,7 @@ pub struct Profile {
     pub balance: u64,
     /// Language settings, for use with Carpe
     pub locale: Option<String>,
-    
+
     /// An opportunity for the Miner to write a message on their genesis block.
     pub statement: String,
 
