@@ -132,7 +132,7 @@ impl NetworkPlaylist {
       .nodes
       .iter()
       .map(|e| {
-        Some(e.url.to_owned())
+        e.url.to_owned()
       })
       .collect();
 
