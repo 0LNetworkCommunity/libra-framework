@@ -127,6 +127,18 @@ impl NetworkPlaylist {
     urls_list.shuffle(&mut rng);
   }
 
+  pub fn all_urls(&self) -> anyhow::Result<Vec<Url>> {
+    let list_urls: Vec<Url> = self
+      .nodes
+      .iter()
+      .map(|e| {
+        Some(e.url.to_owned())
+      })
+      .collect();
+
+    Ok(list_urls)
+  }
+
   pub fn the_good_ones(&self) -> anyhow::Result<Vec<Url>> {
     let list_urls: Vec<Url> = self
       .nodes
