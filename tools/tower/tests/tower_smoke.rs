@@ -1,4 +1,4 @@
-use libra_types::{test_drop_helper::DropTemp, legacy_types::app_cfg::AppCfg, exports::AuthenticationKey};
+use libra_types::{legacy_types::app_cfg::AppCfg, exports::AuthenticationKey};
 use zapatos_smoke_test::smoke_test_environment::{
   new_local_swarm_with_release,
 };
@@ -15,7 +15,7 @@ async fn tower_genesis() {
     let mut swarm = new_local_swarm_with_release(1, release).await;
 
     let info = swarm.aptos_public_info_for_node(0);
-    let url = info.url().to_string();
+    let _url = info.url().to_string();
 
     let node = swarm.validators().into_iter().next().unwrap();
 
@@ -25,7 +25,7 @@ async fn tower_genesis() {
     // let port = swarm.validators().next().unwrap().port();
     // let url = Url::from_str(&format!("http://localhost:{}", port));
 
-    let mut app_cfg = AppCfg::init_app_configs(
+    let app_cfg = AppCfg::init_app_configs(
       AuthenticationKey::ed25519(&node.account_private_key().as_ref().unwrap().public_key()),
       node.peer_id(),
       None,
@@ -34,11 +34,11 @@ async fn tower_genesis() {
 
 
 
-    let temp_files = &DropTemp::new_in_crate("_smoke_test_temp").0;
+    // let temp_files = &DropTemp::new_in_crate("_smoke_test_temp").0;
 
-    app_cfg.workspace.node_home = temp_files.to_owned();
-    app_cfg.profile.upstream_nodes = vec![url.parse().unwrap()];
-    app_cfg.profile.test_private_key = Some(node.account_private_key().as_ref().unwrap().private_key());
+    // app_cfg.workspace.node_home = temp_files.to_owned();
+    // app_cfg.profile.upstream_nodes = vec![url.parse().unwrap()];
+    // app_cfg.profile.test_private_key = Some(node.account_private_key().as_ref().unwrap().private_key());
 
     // check the tower state is blank
     assert!(backlog::get_remote_tower_height(&app_cfg).await.is_err());

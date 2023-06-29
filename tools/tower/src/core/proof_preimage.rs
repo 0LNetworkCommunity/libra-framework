@@ -33,7 +33,7 @@ pub fn genesis_preimage(cfg: &AppCfg) -> anyhow::Result<Vec<u8>> {
     // CHAIN_ID_BYTES
 
     let mut padded_chain_id_bytes = padding(
-        cfg.chain_info.chain_id.to_string().as_bytes().to_vec(),
+        cfg.workspace.default_chain_id.to_string().as_bytes().to_vec(),
         CHAIN_ID_BYTES,
     );
 

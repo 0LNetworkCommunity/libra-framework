@@ -77,9 +77,7 @@ fn test_yaml() {
     use libra_wallet::utils::from_yaml;
     use zapatos_config::config::NodeConfig;
 
-    let path = dirs::home_dir()
-        .expect("Unable to determine home directory")
-        .join(DEFAULT_DATA_PATH)
+    let path = global_config_dir()
         .join("test_yaml");
 
     std::fs::create_dir_all(&path).unwrap();

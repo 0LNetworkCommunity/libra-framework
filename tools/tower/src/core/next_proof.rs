@@ -53,7 +53,7 @@ impl NextProof {
 pub fn get_next_proof_params_from_local(config: &AppCfg) -> Result<NextProof, Error> {
     // get the location of this miner's blocks
     let mut blocks_dir = config.workspace.node_home.clone();
-    blocks_dir.push(&config.workspace.block_dir);
+    blocks_dir.push(&config.get_block_dir(None)?);
     let (current_local_block, _) = VDFProof::get_highest_block(&blocks_dir)?;
     let diff = VDFDifficulty {
         difficulty: current_local_block.difficulty(),

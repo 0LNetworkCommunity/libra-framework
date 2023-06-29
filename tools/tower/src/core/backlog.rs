@@ -31,7 +31,7 @@ const EPOCH_MINING_THRES_UPPER: u64 = 72;
 pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
     // Getting local state height
     let mut blocks_dir = config.workspace.node_home.clone();
-    blocks_dir.push(&config.workspace.block_dir);
+    blocks_dir.push(&config.get_block_dir(None)?);
 
     let (current_local_proof, current_block_path) = VDFProof::get_highest_block(&blocks_dir)?;
 
@@ -205,7 +205,7 @@ pub async fn show_backlog(config: &AppCfg) -> Result<()> {
 
     // Getting local state height
     let mut blocks_dir = config.workspace.node_home.clone();
-    blocks_dir.push(&config.workspace.block_dir);
+    blocks_dir.push(&config.get_block_dir(None)?);
     let (current_local_proof, _current_block_path) = VDFProof::get_highest_block(&blocks_dir)?;
 
     println!("Local tower height: {:?}", current_local_proof.height);

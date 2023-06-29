@@ -150,7 +150,7 @@ impl AppCfg {
 
       // try to use the default profile unless one was requested
       if nickname.is_none() {
-        nickname = self.workspace.default_profile_nickname.clone()
+        nickname = Some(self.workspace.default_profile.clone())
       };
 
       if let Some(n) = nickname {
@@ -209,7 +209,7 @@ impl AppCfg {
             config_path.clone().unwrap_or_else(|| default_file_path());
 
         if let Some(id) = network_id {
-            default_config.workspace.default_chain_id = Some(id.to_owned());
+            default_config.workspace.default_chain_id = id.to_owned();
         };
 
         default_config.save_file()?;
@@ -235,7 +235,7 @@ impl AppCfg {
     // }
     pub fn set_chain_id(&mut self, chain_id: NamedChain) {
       
-      self.workspace.default_chain_id = Some(chain_id);
+      self.workspace.default_chain_id = chain_id;
     }
 
     pub async fn update_network_playlist(&mut self, chain_id: Option<NamedChain>,  playlist_url: Option<Url>) -> anyhow::Result<NetworkPlaylist>{
@@ -310,40 +310,40 @@ impl Default for AppCfg {
 /// Information about the Chain to mined for
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Workspace {
-    /// default profile. can be a string fragment of a full address (nickname)
+    /// default profile. Will match the substring of a full address or the nickname
     #[serde(default)]
-    pub default_profile_nickname: Option<String>,
+    pub default_profile: String,
     /// default chain network profile to use 
-    pub default_chain_id: Option<NamedChain>,
+    pub default_chain_id: NamedChain,
 
     /// home directory of the diem node, may be the same as miner.
     pub node_home: PathBuf,
-    /// Directory of source code (for developer tests only)
-    pub source_path: Option<PathBuf>,
-    /// Directory to store blocks in
-    pub block_dir: String,
-    /// Directory for the database
-    #[serde(default = "default_db_path")]
-    pub db_path: PathBuf,
-    /// Path to which stdlib binaries for upgrades get built typically
-    /// /language/diem-framework/staged/stdlib.mv
-    pub stdlib_bin_path: Option<PathBuf>,
+    // /// Directory of source code (for developer tests only)
+    // pub source_path: Option<PathBuf>,
+    // /// Directory to store blocks in
+    // pub block_dir: String,
+    // /// Directory for the database
+    // #[serde(default = "default_db_path")]
+    // pub db_path: PathBuf,
+    // /// Path to which stdlib binaries for upgrades get built typically
+    // /// /language/diem-framework/staged/stdlib.mv
+    // pub stdlib_bin_path: Option<PathBuf>,
 }
 
-fn default_db_path() -> PathBuf {
-    global_config_dir().join("db")
-}
+// fn default_db_path() -> PathBuf {
+//     global_config_dir().join("db")
+// }
 
 impl Default for Workspace {
     fn default() -> Self {
         Self {
-            default_profile_nickname: None,
-            default_chain_id: Some(NamedChain::MAINNET),
+            default_profile: "default".to_string(),
+            default_chain_id: NamedChain::MAINNET,
             node_home: crate::global_config_dir(),
-            source_path: None,
-            block_dir: "vdf_proofs".to_owned(),
-            db_path: default_db_path(),
-            stdlib_bin_path: None,
+            // source_path: None,
+            // block_dir: "vdf_proofs".to_owned(),
+            // db_path: default_db_path(),
+            // stdlib_bin_path: None,
         }
     }
 }
