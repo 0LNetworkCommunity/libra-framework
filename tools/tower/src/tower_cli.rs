@@ -1,5 +1,7 @@
 use clap::{Parser, Subcommand};
 use libra_types::legacy_types::app_cfg::AppCfg;
+use libra_types::exports::Client;
+use libra_types::type_extensions::client_ext::ClientExt;
 use std::path::PathBuf;
 use crate::core::{proof, backlog};
 
@@ -30,7 +32,7 @@ enum TowerSub {
     show: bool 
   },
   Start,
-  Test,
+  Once,
   Zero,
 }
 
@@ -52,9 +54,9 @@ impl TowerCli {
         TowerSub::Start => {
           proof::mine_and_submit(&mut app_cfg, cli.local_mode).await?;
         },
-        TowerSub::Test => {
-          println!("test");
-
+        TowerSub::Once => {
+          let (client, _) = Client::from_libra_config(&app_cfg, None).await?;
+          proof::get_next_and_mine(&app_cfg, &client, cli.local_mode).await?;
         },
         TowerSub::Zero => {
           proof::write_genesis(&app_cfg)?;
