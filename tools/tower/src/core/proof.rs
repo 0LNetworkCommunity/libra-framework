@@ -6,12 +6,14 @@ use crate::core::{
 };
 
 use anyhow::Error;
-use libra_types::legacy_types::block::{VDFProof, GENESIS_VDF_SECURITY_PARAM, GENESIS_VDF_ITERATIONS};
+
+use libra_types::{legacy_types::block::{VDFProof, GENESIS_VDF_SECURITY_PARAM, GENESIS_VDF_ITERATIONS}};
 use libra_types::{
   legacy_types::app_cfg::AppCfg,
   exports::Client,
   type_extensions::client_ext::ClientExt,
 };
+
 
 use std::{fs, path::PathBuf, time::Instant};
 
@@ -346,7 +348,7 @@ fn test_parse_one_file() {
 pub fn test_make_configs_fixture() -> AppCfg {
     // use libra_types::exports::NamedChain;
 
-    let cfg = AppCfg::default();
+    let cfg: AppCfg = AppCfg::default();
     let mut profile = cfg.get_profile(None).unwrap();
     // cfg.workspace.node_home = PathBuf::from(".");
     // cfg.workspace.block_dir = "test_blocks_temp_1".to_owned();
@@ -355,4 +357,26 @@ pub fn test_make_configs_fixture() -> AppCfg {
         .parse()
         .unwrap();
     cfg
+}
+
+
+#[tokio::test]
+async fn test_get_next() {
+  use libra_types::{test_drop_helper::DropTemp, exports::AuthenticationKey};
+  use zapatos_sdk::crypto::HashValue;
+
+  let d = DropTemp::new_in_crate("temp_tower");
+  dbg!(&d.0);
+  let a = AuthenticationKey::random();
+  let app_cfg: AppCfg = AppCfg::init_app_configs(a, a.derived_address(), Some(d.dir()), None, None).unwrap();
+  let dummy_client = Client::new("http://localhost:8080".parse().unwrap());
+  // let n = NextProof::genesis_proof(&app_cfg).unwrap();
+  let gen_vdf = write_genesis(&app_cfg).unwrap();
+  let hash = HashValue::sha3_256_of(&gen_vdf.proof);
+  let proof_hash_str = &hex::encode(&hash.to_vec());
+  let vdf = get_next_and_mine(&app_cfg, &dummy_client, true).await.unwrap();
+  // dbg!(&hex::encode(&vdf.preimage));
+  let next_preimage = &hex::encode(&vdf.preimage);
+  assert!(proof_hash_str == next_preimage);
+  // dbg!(&vdf);
 }
