@@ -84,7 +84,7 @@ impl AppCfg {
         file.write(&yaml.as_bytes())?;
 
         println!(
-            "\nhost configs initialized, file saved to: {:?}",
+            "app configs file saved to: {:?}",
             &toml_path
         );
         Ok(toml_path)
