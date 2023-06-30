@@ -129,21 +129,15 @@ impl Sender {
         let temp_seq_num = 0;
         let mut local_account = LocalAccount::new(address, key, temp_seq_num);
 
-        let url = &app_cfg.get_network_profile(None)?.the_best_one()?;
-        // // Todo: find one out of the list which can produce metadata, not the first one.
-        // let url: Url = match nodes.iter().next() {
-        //     Some(u) => u.to_owned(),
-        //     None => bail!("could not find rest_url in profile"),
-        // };
-
-        // check if we can connect to this client, or exit
+        let url = &app_cfg.pick_url(None)?;
         let client = Client::new(url.clone());
 
-        // let mut chain_id = ChainId::testnet();
         let seq_num = local_account.sequence_number_mut();
 
+        // check if we can connect to this client, or exit
         let chain_id = match client.get_index().await {
             Ok(metadata) => {
+                // update sequence number
                 *seq_num = client.get_sequence_number(address).await?;
                 ChainId::new(metadata.into_inner().chain_id)
             }
