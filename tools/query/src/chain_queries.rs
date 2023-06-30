@@ -23,8 +23,9 @@ pub async fn get_tower_difficulty(client: &Client) -> anyhow::Result<(u64, u64)>
   
   let res = client.view(&request, None).await?.into_inner();
 
-  let difficulty: u64 = serde_json::from_value(res.iter().nth(0).context("no difficulty returned")?.clone())?;
-  let security: u64 = serde_json::from_value(res.iter().nth(0).context("no security param returned")?.clone())?;
+  // TODO: Gross.
+  let difficulty: u64 = serde_json::from_value::<String>(res.iter().nth(0).context("no difficulty returned")?.clone())?.parse()?;
+  let security: u64 = serde_json::from_value::<String>(res.iter().nth(1).context("no security param returned")?.clone())?.parse()?;
 
   Ok((difficulty, security))
   

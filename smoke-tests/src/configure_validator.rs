@@ -4,7 +4,7 @@ use libra_types::legacy_types::network_playlist::NetworkPlaylist;
 use zapatos_sdk::types::LocalAccount;
 use zapatos_forge::{Swarm, LocalSwarm};
 use url::Url;
-use zapatos_sdk::crypto::{PrivateKey, ValidCryptoMaterialStringExt};
+use zapatos_sdk::crypto::PrivateKey;
 use std::path::PathBuf;
 
 /// Set up the 0L local files, and get an AppCfg back after initializing in a temp dir, that will drop at the end of the test.

@@ -74,15 +74,7 @@ pub fn get_next_proof_params_from_local(config: &AppCfg) -> Result<NextProof, Er
 pub async fn get_next_proof_from_chain(
     app_cfg: &AppCfg,
     client: &Client,
-    // swarm_path: Option<PathBuf>,
 ) -> Result<NextProof, Error> {
-    // todo!();
-    // let (client, _) = Client::from_libra_config(app_cfg).await?;
-    // // dbg!("pick_client");
-    // // let client = pick_client(swarm_path.clone(), config)?;
-
-    // // dbg!("get user tower state");
-    // let mut n = Node::new(client, config, swarm_path.is_some());
 
     let (difficulty, security) = chain_queries::get_tower_difficulty(&client).await?;
 
