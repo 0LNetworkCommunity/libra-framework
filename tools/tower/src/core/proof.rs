@@ -87,35 +87,6 @@ pub async fn mine_and_submit(
 
     loop {
         get_next_and_mine(config, &client, local_mode).await?;
-        // // the default behavior is to fetch info from the chain to produce the next proof, including dynamic params for VDF difficulty.
-        // // if the user is offline, they must use local mode
-        // // however the user may end up using stale config proofs if the epoch changes and the params are different now.
-
-        // let next = match local_mode {
-        //     true => next_proof::get_next_proof_params_from_local(config)?,
-        //     false => {
-        //         // let client = client::find_a_remote_jsonrpc(
-        //         //     &config,
-        //         //     // config.get_waypoint(swarm_path.clone())?, // 0L todo
-        //         // )?;
-        //         match next_proof::get_next_proof_from_chain(config, &client).await {
-        //             Ok(n) => n,
-        //             // failover to local mode, if no onchain data can be found.
-        //             // TODO: this is important for migrating to the new protocol.
-        //             // in future versions we should remove this since we may be producing bad proofs, and users should explicitly choose to use local mode.
-        //             Err(_) => next_proof::get_next_proof_params_from_local(config)?,
-        //         }
-        //     }
-        // };
-
-        // println!("Mining VDF Proof # {}", next.next_height);
-        // println!(
-        //     "difficulty: {}, security: {}",
-        //     next.diff.difficulty, next.diff.security
-        // );
-
-        // let block = mine_once(&config, next)?;
-
         // submits backlog to client
         match backlog::process_backlog(&config).await {
             Ok(()) => println!("Success: Proof committed to chain"),
@@ -127,24 +98,32 @@ pub async fn mine_and_submit(
     }
 }
 
+/// get the next proof either from chain or offline
+pub async fn get_next_proof(config: &AppCfg, client: &Client, local_mode: bool) -> anyhow::Result<NextProof> {
+
+  let next: NextProof = match local_mode {
+      true => next_proof::get_next_proof_params_from_local(config)?,
+      false => {
+          match next_proof::get_next_proof_from_chain(config, &client).await {
+              Ok(n) => n,
+              // failover to local mode, if no onchain data can be found.
+              // TODO: this is important for migrating to the new protocol.
+              // in future versions we should remove this since we may be producing bad proofs, and users should explicitly choose to use local mode.
+              Err(_) => next_proof::get_next_proof_params_from_local(config)?,
+          }
+      }
+  };
+
+  Ok(next)
+}
+
+/// combined get next and mining for convenience
 pub async fn get_next_and_mine(config: &AppCfg, client: &Client, local_mode: bool) -> anyhow::Result<VDFProof>{
         // the default behavior is to fetch info from the chain to produce the next proof, including dynamic params for VDF difficulty.
         // if the user is offline, they must use local mode
         // however the user may end up using stale config proofs if the epoch changes and the params are different now.
 
-        let next = match local_mode {
-            true => next_proof::get_next_proof_params_from_local(config)?,
-            false => {
-                match next_proof::get_next_proof_from_chain(config, &client).await {
-                    Ok(n) => n,
-                    // failover to local mode, if no onchain data can be found.
-                    // TODO: this is important for migrating to the new protocol.
-                    // in future versions we should remove this since we may be producing bad proofs, and users should explicitly choose to use local mode.
-                    Err(_) => next_proof::get_next_proof_params_from_local(config)?,
-                }
-            }
-        };
-
+        let next = get_next_proof(config, client, local_mode).await?;
         println!("Mining VDF Proof # {}", next.next_height);
         println!(
             "difficulty: {}, security: {}",
