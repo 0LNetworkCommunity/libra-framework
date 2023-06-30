@@ -151,7 +151,7 @@ impl NetworkPlaylist {
         }
       })
       .collect();
-
+    if list_urls.is_empty() { bail!("no verified nodes found") }
     Ok(list_urls)
   }
 
