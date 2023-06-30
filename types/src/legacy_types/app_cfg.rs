@@ -135,17 +135,11 @@ impl AppCfg {
         Ok(home)
     }
 
-    /// can get profile by account fragment: full account string or shortened "nickname"
-    pub fn get_profile(&self, mut nickname: Option<String>) -> anyhow::Result<Profile>{
+    /// get profile index by account fragment: full account string or shortened "nickname"
+    fn get_profile_idx(&self, mut nickname: Option<String>) -> anyhow::Result<usize>{
       if self.user_profiles.len() == 0 { bail!("no profiles found") };
       if self.user_profiles.len() == 1 { 
-        return Ok(
-          self.user_profiles
-          .iter()
-          .next()
-          .context("could not find a profile")?
-          .to_owned()
-        ) 
+        return Ok(0) 
       };
 
       // try to use the default profile unless one was requested
@@ -155,19 +149,30 @@ impl AppCfg {
 
       if let Some(n) = nickname {
         let found = self.user_profiles.iter()
-        .find(|e| {
-          e.nickname.contains(&n) || e.account.to_string().contains(&n)
+        .enumerate()
+        .find_map(|(i, e)| {
+          if e.nickname.contains(&n) || e.account.to_string().contains(&n) {
+            Some(i)
+          } else { None }
         });
-        if let Some(f) = found { return Ok(f.to_owned()) }
-      }
-      
-      return Ok(
-        self.user_profiles
-        .iter()
-        .next()
-        .context("could not find a profile")?
-        .to_owned()
-      ) 
+        return found.context("could not find a profile")
+      };
+
+      bail!("no profiles found")
+    }
+
+    /// can get profile by account fragment: full account string or shortened "nickname"
+    pub fn get_profile(&self, nickname: Option<String>) -> anyhow::Result<Profile>{
+      let idx = self.get_profile_idx(nickname)?;
+      let p = self.user_profiles.iter().nth(idx).context("no profile at index")?;
+      Ok(p.to_owned())
+    }
+
+    /// get profile mutable borrow
+    pub fn get_profile_mut(&mut self, nickname: Option<String>) -> anyhow::Result<&mut Profile>{
+      let idx = self.get_profile_idx(nickname)?;
+      let p = self.user_profiles.iter_mut().nth(idx).context("no profile at index")?;
+      Ok(p)
     }
 
     pub fn maybe_add_profile(&mut self, profile: Profile) -> anyhow::Result<()>{
