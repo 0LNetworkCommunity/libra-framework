@@ -189,8 +189,8 @@ impl ClientExt for Client {
             vec![]
         };
 
-        println!("{}", format_type_args(&ty_args));
-        println!("{}", format_args(&args));
+        // println!("{}", format_type_args(&ty_args));
+        // println!("{}", format_args(&args));
 
         let expiration_timestamp_secs = SystemTime::now()
             .duration_since(UNIX_EPOCH)
