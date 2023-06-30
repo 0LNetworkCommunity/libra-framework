@@ -23,7 +23,7 @@ pub fn wizard(
     (account_keys.auth_key, account_keys.account)
   };
 
-  let cfg = AppCfg::init_app_configs(authkey, address, config_dir, chain_name)?;
+  let cfg = AppCfg::init_app_configs(authkey, address, config_dir, chain_name, None)?;
 
   cfg.save_file()?;
 
