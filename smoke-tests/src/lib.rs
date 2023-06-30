@@ -1,4 +1,6 @@
 #[cfg(test)]
 mod tests;
-#[cfg(test)]
-mod helpers;
+// #[cfg(test)]
+pub mod helpers;
+// #[cfg(test)]
+pub mod configure_validator;

@@ -98,7 +98,15 @@ pub fn find_default_playlist(chain_id: Option<NamedChain>) -> anyhow::Result<Url
 }
 
 impl NetworkPlaylist {
+  pub async fn default_for_network(chain_id: Option<NamedChain>) -> anyhow::Result<Self> {
+    match chain_id {
+        Some(NamedChain::TESTING) => return Ok(Self::testing(None)),
+        _ => {}
+    }
+    let url = find_default_playlist(chain_id)?;
 
+    Self::from_url(url, chain_id).await
+  }
   pub async fn from_url(
     playlist_url: Url,
     chain_id: Option<NamedChain>,
@@ -115,8 +123,12 @@ impl NetworkPlaylist {
     Ok(play)
   }
 
-  pub fn testing() -> Self {
+  pub fn testing(url: Option<Url>) -> Self {
     let mut np = NetworkPlaylist::default();
+    if let Some(u) = url {
+      let h = np.nodes.iter_mut().next().expect("didn't find a hostprofile");
+      h.url = u;
+    }
     np.chain_id = NamedChain::TESTING;
     np
   }

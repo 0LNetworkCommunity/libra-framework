@@ -28,6 +28,8 @@ zapatos-sdk = { workspace = true }
 [dev-dependencies]
 toml = { workspace = true }
 libra-wallet = { workspace = true }
+libra-smoke-tests = { workspace = true }
 zapatos-forge = { workspace = true }
 zapatos-smoke-test = { workspace = true }
 libra-framework = { workspace = true }
+url = { workspace = true }

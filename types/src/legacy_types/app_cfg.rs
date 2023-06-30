@@ -203,6 +203,7 @@ impl AppCfg {
         account: AccountAddress,
         config_path: Option<PathBuf>,
         network_id: Option<NamedChain>,
+        network_playlist: Option<NetworkPlaylist>,
     ) -> anyhow::Result<Self> {
         // TODO: Check if configs exist and warn on overwrite.
         let mut default_config = AppCfg::default();
@@ -217,6 +218,10 @@ impl AppCfg {
             default_config.workspace.default_chain_id = id.to_owned();
         };
 
+        if let Some(np) = network_playlist {
+          default_config.network_playlist.push(np)
+        }
+        
         default_config.save_file()?;
 
         Ok(default_config)
@@ -397,6 +402,8 @@ pub struct Profile {
     pub auth_key: AuthenticationKey,
 
     /// Private key only for use with testing
+    /// Note: skip_serializing so that it is never saved to disk.
+    #[serde(skip_serializing)]
     pub test_private_key: Option<Ed25519PrivateKey>,
     
     /// nickname for this profile

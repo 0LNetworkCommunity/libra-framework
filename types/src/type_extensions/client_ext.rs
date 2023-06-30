@@ -81,7 +81,7 @@ impl ClientExt for Client {
   /// Finds a good working upstream based on the list in a config file
   async fn from_libra_config(app_cfg: &AppCfg, chain_id_opt: Option<NamedChain>) -> anyhow::Result<(Client, ChainId)> {
     // check if we can connect to this client, or exit
-    let url = &app_cfg.get_network_profile(chain_id_opt)?.the_best_one()?;
+    let url = &app_cfg.pick_url(chain_id_opt)?;
     let client = Client::new(url.to_owned());
     let res = client.get_index().await?;
     

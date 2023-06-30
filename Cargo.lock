@@ -6165,6 +6165,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "libra-smoke-tests"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "aptos-crypto",
+ "aptos-forge",
+ "aptos-sdk",
+ "aptos-types",
+ "libra-cached-packages",
+ "libra-framework",
+ "libra-query",
+ "libra-txs",
+ "libra-types",
+ "serde_json",
+ "smoke-test",
+ "tokio",
+ "url",
+]
+
+[[package]]
 name = "libra-tower"
 version = "0.1.0"
 dependencies = [
@@ -6176,6 +6196,7 @@ dependencies = [
  "hex",
  "libra-framework",
  "libra-query",
+ "libra-smoke-tests",
  "libra-txs",
  "libra-types",
  "libra-wallet",
@@ -6184,6 +6205,7 @@ dependencies = [
  "smoke-test",
  "tokio",
  "toml",
+ "url",
  "vdf",
 ]
 
@@ -9637,25 +9659,6 @@ dependencies = [
  "tokio",
  "url",
  "walkdir",
-]
-
-[[package]]
-name = "smoke-tests"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "aptos-crypto",
- "aptos-forge",
- "aptos-sdk",
- "aptos-types",
- "libra-cached-packages",
- "libra-framework",
- "libra-query",
- "libra-txs",
- "libra-types",
- "serde_json",
- "smoke-test",
- "tokio",
 ]
 
 [[package]]

@@ -13,9 +13,13 @@ impl Drop for DropTemp {
 
 impl DropTemp {
   pub fn new_in_crate(dir_string: &str) -> Self {
-    let test_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(dir_string);
+    let test_path: PathBuf = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(dir_string);
     std::fs::create_dir_all(&test_path).ok();
     DropTemp(test_path)
+  }
+
+  pub fn dir(&self) -> PathBuf{
+    self.0.clone()
   }
   
   pub fn maybe_cleanup(&self) {

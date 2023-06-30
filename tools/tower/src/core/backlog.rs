@@ -38,7 +38,6 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
     let current_proof_number = current_local_proof.height;
 
     println!("Local tower height: {:?}", current_proof_number);
-
     if current_proof_number == 0 { // if we are at genesis
       return submit_or_delete(config, current_local_proof, current_block_path).await
     }
