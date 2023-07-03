@@ -53,10 +53,10 @@ pub fn genesis_migrate_one_user( //////// 0L ////////
         anyhow::bail!("no user account found");
     }
 
-    // let new_addr_type = convert_account(user_recovery.account.expect("no account found"))?;
+    // convert between different types from ol_types in diem, to current 
     let acc_str = user_recovery.account.context("could not parse account")?.to_string();
     let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
-    // let new_auth_type = convert_auth_key(user_recovery.auth_key.expect("no auth key found"))?;
+
     // NOTE: Authkeys have the same format as in pre V7
     let auth_key = user_recovery.auth_key.context("no auth key found")?;
 

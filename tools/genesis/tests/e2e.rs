@@ -11,30 +11,12 @@ use zapatos_types::{
 };
 
 use libra_framework::head_release_bundle;
+use libra_types::test_drop_helper::DropTemp;
 use std::fs;
-// NOTE: Useing drop trait for cleaning up env
-// https://doc.rust-lang.org/std/ops/trait.Drop.html
-struct HasDrop;
-impl Drop for HasDrop {
-    fn drop(&mut self) {
-      println!("we dropped, running cleanup");
-      maybe_cleanup();
-    }
-}
-
-fn maybe_cleanup() {
-  let blob = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-    .join("tests/fixtures/genesis.blob");
-
-  if blob.exists() {
-    println!("\n RUNNING CLEANUP \n");
-    std::fs::remove_file(blob).unwrap();
-  }
-}
 
 #[test]
 fn end_to_end() {
-  let _drop = HasDrop;
+  let drop = DropTemp::new_in_crate("temp_genesis_e2e");
 
   let blob = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/genesis.blob");
@@ -77,5 +59,5 @@ fn end_to_end() {
       _ => panic!("not a genesis transaction"),
   }
 
-  maybe_cleanup();
+  drop.maybe_cleanup();
 }

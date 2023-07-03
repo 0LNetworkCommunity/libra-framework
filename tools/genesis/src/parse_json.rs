@@ -1,4 +1,4 @@
-use anyhow::Error;
+use anyhow::{Error, Context};
 use ol_types::legacy_recovery::{self, LegacyRecovery};
 use std::path::PathBuf;
 
@@ -9,22 +9,51 @@ pub fn parse(recovery_json_path: PathBuf) -> Result<Vec<LegacyRecovery>, Error> 
     ))
 }
 
-
-// #[test]
-// fn parse_json() {
-//     // use crate::convert_types;
-//     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-//         .join("tests/fixtures/sample_end_user_single.json");
+/// iterate over the recovery file and get the sum of all balances.
+/// Note: this may not be the "total supply", since there may be coins in other structs beside an account::balance, e.g escrowed in contracts.
+pub fn get_supply(rec: &Vec<LegacyRecovery>) -> anyhow::Result<u64> {
+  rec.iter().try_fold(0u64, |acc, r| {
     
-//     let r = parse(p).unwrap();
-//     if let Some(acc) = r[0].account {
-//         let a = convert_types::convert_account(acc).unwrap();
-//         assert!(&a.to_string() == "00000000000000000000000000000000b78ba84a443873f2e324c80f3e4e2334");
-//     }
+    let amount = match &r.balance {
+        Some(b) => b.coin(),
+        None => 0,
+    };
+    acc.checked_add(amount).context("cannot add balance")
+  })
+}
 
-//     if let Some(acc) = r[0].auth_key {
-//         let a = convert_types::convert_auth_key(acc).unwrap();
-//         dbg!(&hex::encode(&a));
-//         assert!(&hex::encode(&a) == "c99e93112458b404daaed49c019c6de5b78ba84a443873f2e324c80f3e4e2334");
-//     }
-// }
+/// iterate over the recovery file and get the sum of slow wallet fields:
+/// locked and unlocked.
+pub fn get_slow_wallet_balance(rec: &Vec<LegacyRecovery>) -> anyhow::Result<u64> {
+  rec.iter().try_fold(0u64, |acc, r| {
+    
+    let amount = match &r.balance {
+        Some(b) => b.coin(),
+        None => 0,
+    };
+    acc.checked_add(amount).context("cannot add balance")
+  })
+}
+
+
+#[test]
+fn parse_json() {
+    let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/sample_end_user_single.json");
+    
+    let r = parse(p).unwrap();
+    if let Some(acc) = r[0].account {
+        assert!(&acc.to_string() == "B78BA84A443873F2E324C80F3E4E2334");
+    }
+}
+
+#[test]
+fn test_get_supply() {
+    let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/sample_export_recovery.json");
+    
+    let r = parse(p).unwrap();
+
+    let supply = get_supply(&r).unwrap();
+    assert!(supply == 1569138150863961);
+}

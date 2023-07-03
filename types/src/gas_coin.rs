@@ -12,6 +12,13 @@ pub struct Balance {
 }
 
 impl Balance {
+    pub fn new(value: u64) -> Self {
+      Balance {
+        coin: GasCoin {
+          value: U64::from(value),
+        }
+      }
+    }
     pub fn get(&self) -> u64 {
         *self.coin.value.inner()
     }

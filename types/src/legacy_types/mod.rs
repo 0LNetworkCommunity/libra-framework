@@ -5,10 +5,11 @@
 pub mod app_cfg;
 pub mod block;
 pub mod mode_ol;
-pub mod tower;
+pub mod tower_state;
 pub mod tx_error;
 pub mod vdf_difficulty;
 pub mod network_playlist;
+pub mod makewhole_resource;
 // pub mod config;
 // pub mod dialogue;
 // pub mod epoch_timer;
@@ -16,7 +17,7 @@ pub mod network_playlist;
 // pub mod fullnode_counter;
 // pub mod gas_resource;
 // pub mod genesis_proof;
-pub mod makewhole_resource;
+
 // pub mod pay_instruction;
 // pub mod rpc_playlist;
 // pub mod validator_config;
