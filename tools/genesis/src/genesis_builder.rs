@@ -491,9 +491,7 @@ fn parse_optional_option<F: Fn(&str) -> Result<T, E>, T, E: std::fmt::Display>(
 #[test]
 #[ignore] //dev helper
 fn test_github_info() {
-    let gh_token_path = dirs::home_dir()
-        .unwrap()
-        .join(".libra")
+    let gh_token_path = libra_types::global_config_dir()
         .join("github_token.txt");
     let token = std::fs::read_to_string(&gh_token_path).unwrap();
 
@@ -505,9 +503,7 @@ fn test_github_info() {
 #[test]
 #[ignore] //dev helper
 fn test_build() {
-    let home = dirs::home_dir()
-        .unwrap()
-        .join(".libra");
+    let home = libra_types::global_config_dir();
     let token = std::fs::read_to_string(&home.join("github_token.txt")).unwrap();
 
     build(

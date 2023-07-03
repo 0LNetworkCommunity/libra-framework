@@ -16,6 +16,7 @@ tokio = { workspace = true }
 url = { workspace = true }
 
 libra-types = { workspace = true }
+libra-wallet = { workspace = true }
 
 zapatos = { workspace = true }
 zapatos-rest-client = { workspace = true }

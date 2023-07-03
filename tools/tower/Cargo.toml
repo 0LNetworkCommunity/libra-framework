@@ -1,0 +1,35 @@
+[package]
+name = "libra-tower"
+version = "0.1.0"
+
+# Workspace inherited keys
+authors = { workspace = true }
+edition = { workspace = true }
+homepage = { workspace = true }
+license = { workspace = true }
+repository = { workspace = true }
+
+[dependencies]
+anyhow = { workspace = true }
+byteorder = { workspace = true }
+clap = { workspace = true }
+hex = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+
+libra-query = { workspace = true }
+libra-types = { workspace = true }
+libra-txs = { workspace = true }
+vdf = { workspace = true }
+
+zapatos-sdk = { workspace = true }
+
+[dev-dependencies]
+toml = { workspace = true }
+libra-wallet = { workspace = true }
+libra-smoke-tests = { workspace = true }
+zapatos-forge = { workspace = true }
+zapatos-smoke-test = { workspace = true }
+libra-framework = { workspace = true }
+url = { workspace = true }

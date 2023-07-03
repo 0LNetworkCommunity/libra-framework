@@ -1,6 +1,7 @@
 //! ol functions to run at genesis e.g. migration.
 use crate::hack_cli_progress::OLProgress;
-use crate::convert_types::{convert_account, convert_auth_key};
+// use libra_wallet::legacy::convert_legacy::convert_account;
+use anyhow::Context;
 use zapatos_types::account_config::CORE_CODE_ADDRESS;
 use zapatos_vm::{
     move_vm_ext::SessionExt,
@@ -11,6 +12,7 @@ use move_core_types::{
 
 };
 use ol_types::legacy_recovery::{LegacyRecovery, AccountRole};
+use libra_types::exports::AccountAddress;
 use zapatos_vm_genesis::exec_function;
 use indicatif::ProgressIterator;
 
@@ -51,13 +53,17 @@ pub fn genesis_migrate_one_user( //////// 0L ////////
         anyhow::bail!("no user account found");
     }
 
-    let new_addr_type = convert_account(user_recovery.account.expect("no account found"))?;
-    let new_auth_type = convert_auth_key(user_recovery.auth_key.expect("no auth key found"))?;
+    // let new_addr_type = convert_account(user_recovery.account.expect("no account found"))?;
+    let acc_str = user_recovery.account.context("could not parse account")?.to_string();
+    let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
+    // let new_auth_type = convert_auth_key(user_recovery.auth_key.expect("no auth key found"))?;
+    // NOTE: Authkeys have the same format as in pre V7
+    let auth_key = user_recovery.auth_key.context("no auth key found")?;
 
     let serialized_values = serialize_values(&vec![
         MoveValue::Signer(CORE_CODE_ADDRESS),
         MoveValue::Signer(new_addr_type),
-        MoveValue::vector_u8(new_auth_type.to_vec()),
+        MoveValue::vector_u8(auth_key.to_vec()),
         MoveValue::U64(user_recovery.balance.as_ref().expect("no balance found").coin()),
         MoveValue::Bool(user_recovery.role == AccountRole::Validator),
     ]);

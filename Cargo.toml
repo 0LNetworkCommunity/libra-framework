@@ -6,13 +6,14 @@ members = [
   "framework",
   "framework/cached-packages",
   "smoke-tests",
-  "transactional-tests",
   "tools/cli",
-  "tools/txs",
-  "tools/query",
-  "tools/wallet",
   "tools/config",
   "tools/genesis",
+  "tools/query",
+  "tools/tower",
+  "tools/txs",
+  "tools/wallet",
+  "transactional-tests",
   "types",
 ]
 
@@ -33,6 +34,8 @@ libra-cached-packages = { path = "framework/cached-packages" }
 libra-config = { path = "tools/config" }
 libra-framework = { path = "framework" }
 libra-query = { path = "tools/query" }
+libra-smoke-tests = { path = "smoke-tests" }
+libra-tower = { path = "tools/tower" }
 libra-types = { path = "types" }
 libra-txs = { path = "tools/txs" }
 libra-wallet = { path = "tools/wallet" }
@@ -75,41 +78,49 @@ anyhow = "1.0.70"
 async-trait = "0.1.68"
 base64 = "0.13.0"
 blst = "0.3.7"
+byteorder = { version = "1.4.3", default-features = false }
 chrono = { version = "0.4.19", features = ["clock", "serde"] }
 # clap = { version = "4.2.7", features = ["derive", "env", "suggestions"] }
-clap = { version = "3.2.23" }
+clap = { version = "3.2.23", features = ["derive", "env", "suggestions"]}
 
 colored = "2.0.0"
 console = "0.15.5"
 dialoguer = "0.10.4"
 dirs = "5.0.1"
+futures = "= 0.3.24"
 git2 = "0.16.1"
+glob = "0.3.0"
 include_dir = { version = "0.7.2", features = ["glob"] }
 indicatif = "0.17.3"
 indoc = "2.0.1"
 hex = { version = "0.4.3", features = ["serde"] } # //////// 0L ////////
+hmac = "0.10.1" # //////// 0L ////////
+mirai-annotations = "1.12.0" # //////// 0L ////////
 once_cell = "1.17.1"
+pbkdf2 = "0.7.3" # //////// 0L ////////
 proptest = "1.0.0"
 proptest-derive = "0.3.0"
+rand = "0.7.3" # //////// 0L ////////
 reqwest = { version = "0.11.11", features = ["blocking", "cookies", "json", "stream"] }
+rpassword = "5.0" # //////// 0L ////////
 serde = { version = "1.0.159", features = ["derive", "rc"] }
 serde_json = "1.0.95"
 serde_yaml = "0.9.21"
+sha2 = "0.9.3"  # //////// 0L ////////
 tokio = { version = "1.28.0", features = ["full"] }
+toml = "0.5.9"
 ureq = { version = "1.5.4", features = [
   "json",
   "native-tls",
 ], default_features = false }
 url = { version = "2.3.1", features = ["serde"] }
 
-
-
-
 # Libra dependencies
-ol-keys = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err" }
+# ol-keys = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err" }
 ol-types = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err" }
-diem-wallet = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err" }
-diem-types = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err" }
+# diem-wallet = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err" }
+# diem-types = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err" }
+vdf = { git = "https://github.com/0o-de-lally/verifiable_delay.git" }
 
 
 ### MOVE DEPENDENCIES

@@ -1,13 +1,13 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 use zapatos_framework;
-use zapatos_language_e2e_tests::account::TransactionBuilder;
-use zapatos_types::{
-    account_address::AccountAddress,
-    // account_config::CoinStoreResource,
-    transaction::{Script, TransactionArgument},
-};
-use move_core_types::move_resource::MoveStructType;
+// use zapatos_language_e2e_tests::account::TransactionBuilder;
+// use zapatos_types::{
+//     // account_address::AccountAddress,
+//     // account_config::CoinStoreResource,
+//     // transaction::{Script, TransactionArgument},
+// };
+// use move_core_types::move_resource::MoveStructType;
 
 #[test]
 fn test_two_to_two_transfer() {
@@ -35,7 +35,7 @@ fn test_two_to_two_transfer() {
     dbg!(&"build options ok");
     let package_dir = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap().join("fixtures").join("proposal_script");
 
-    let package = zapatos_framework::BuiltPackage::build(
+    let _package = zapatos_framework::BuiltPackage::build(
         package_dir,
         build_options,
     )

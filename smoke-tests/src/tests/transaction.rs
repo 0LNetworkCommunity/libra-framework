@@ -27,7 +27,7 @@ async fn can_send_txs_cli() {
         amount: 1,
       }),
       mnemonic: None,
-      private_key: Some(pri_key.to_encoded_string().expect("cannot decode pri key")),
+      test_private_key: Some(pri_key.to_encoded_string().expect("cannot decode pri key")),
       url: Some(node.rest_api_endpoint()),
       max_gas: None,
       gas_unit_price: None,
