@@ -18,6 +18,7 @@ tokio = { workspace = true }
 
 libra-config = { workspace = true }
 libra-query = { workspace = true }
+libra-tower = { workspace = true }
 libra-txs = { workspace = true }
 libra-wallet = { workspace = true }
 

@@ -8,11 +8,12 @@ use crate::{genesis_builder, node_yaml, parse_json};
 use crate::{genesis_registration, hack_cli_progress::OLProgress};
 //////
 use crate::github_extensions::LibraGithubClient;
-use libra_types::legacy_types::mode_ol::MODE_0L;
-
+use libra_types::global_config_dir;
+use libra_types::{
+  legacy_types::mode_ol::MODE_0L
+};
 use anyhow::bail;
 use dialoguer::{Confirm, Input};
-use dirs;
 use indicatif::{ProgressBar, ProgressIterator};
 use std::{
     fs,
@@ -22,15 +23,13 @@ use std::{
 };
 
 use libra_wallet::{keys::VALIDATOR_FILE, validator_files::SetValidatorConfiguration};
-use ol_types::config::AppCfg;
+use libra_types::legacy_types::app_cfg::AppCfg;
 use zapatos_types::chain_id::NamedChain;
 use zapatos_config::config::IdentityBlob;
 use zapatos_genesis::config::HostAndPort;
 use zapatos_github_client::Client;
 use std::str::FromStr;
 
-
-pub const DEFAULT_DATA_PATH: &str = ".libra";
 pub const DEFAULT_GIT_BRANCH: &str = "main";
 pub const GITHUB_TOKEN_FILENAME: &str = "github_token.txt";
 /// Wizard for genesis
@@ -76,10 +75,7 @@ impl GenesisWizard {
 
     /// constructor
     pub fn new(genesis_repo_org: String, repo_name: String, data_path: Option<PathBuf>) -> Self {
-        let data_path = data_path.unwrap_or(dirs::home_dir()
-            .expect("no home dir found")
-            .join(DEFAULT_DATA_PATH)
-        );
+        let data_path = data_path.unwrap_or(global_config_dir());
 
         Self {
             validator_address: "tbd".to_string(),
@@ -476,9 +472,7 @@ fn test_wizard() {
 fn test_validator_files_config() {
     let alice_mnem = "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse".to_string();
     let h = HostAndPort::local(6180).unwrap();
-    let test_path = dirs::home_dir()
-        .unwrap()
-        .join(DEFAULT_DATA_PATH)
+    let test_path = global_config_dir()
         .join("test_genesis");
     if test_path.exists() {
         fs::remove_dir_all(&test_path).unwrap();

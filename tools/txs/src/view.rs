@@ -7,7 +7,7 @@ pub async fn run(
     type_args: Option<String>,
     args: Option<String>,
 ) -> Result<String> {
-    let client = Client::default()?;
+    let client = Client::default().await?;
     let result = client
         .view_ext(function_id, type_args, args)
         .await?

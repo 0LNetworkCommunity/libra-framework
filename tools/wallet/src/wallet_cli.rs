@@ -1,5 +1,5 @@
 
-use crate::legacy::get_keys_from_prompt;
+use crate::account_keys::{get_keys_from_prompt, self};
 
 use anyhow::Result;
 use clap::{Args, Parser, Subcommand};
@@ -53,7 +53,7 @@ impl WalletCli {
               }
 
               let l = if args.keygen {
-                  crate::legacy::legacy_keygen()?
+                  account_keys::legacy_keygen()?
               } else {
                   get_keys_from_prompt()?
               };

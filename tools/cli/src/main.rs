@@ -4,6 +4,7 @@ use clap::{Parser, Subcommand};
 use libra_txs::txs_cli::TxsCli;
 use libra_query::query_cli::QueryCli;
 use libra_config::config_cli::ConfigCli;
+use libra_tower::tower_cli::TowerCli;
 use libra_wallet::wallet_cli::WalletCli;
 use zapatos::move_tool::MoveTool;
 use anyhow::anyhow;
@@ -19,12 +20,13 @@ struct LibraCli {
 
 #[derive(Subcommand)]
 enum Sub {
-  Node(node_cli::NodeCli),
+  Config(ConfigCli),
   #[clap(subcommand)]
   Move(MoveTool), // from vendor
-  Txs(TxsCli),
+  Node(node_cli::NodeCli),
   Query(QueryCli),
-  Config(ConfigCli),
+  Tower(TowerCli),
+  Txs(TxsCli),
   Wallet(WalletCli),
 }
 
@@ -32,21 +34,24 @@ enum Sub {
 async fn main() -> anyhow::Result<()>{
     let cli = LibraCli::parse();
     match cli.command {
-        Some(Sub::Node(n)) => {
-          n.run().await?;
+        Some(Sub::Config(config_cli)) => {
+            config_cli.run().await?;
         },
         Some(Sub::Move(move_tool)) => {
             move_tool.execute().await
             .map_err(|e| anyhow!("Failed to execute move tool, message: {}", e.to_string()))?;
         },
-        Some(Sub::Txs(txs_cli)) => {
-            txs_cli.run().await?;
+        Some(Sub::Node(n)) => {
+          n.run().await?;
         },
         Some(Sub::Query(query_cli)) => {
             query_cli.run().await?;
         },
-        Some(Sub::Config(config_cli)) => {
-            config_cli.run().await?;
+        Some(Sub::Tower(tower_cli)) => {
+            tower_cli.run().await?;
+        },
+        Some(Sub::Txs(txs_cli)) => {
+            txs_cli.run().await?;
         },
         Some(Sub::Wallet(wallet_cli)) => {
             wallet_cli.run().await?;

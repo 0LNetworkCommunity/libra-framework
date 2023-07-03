@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use libra_genesis_tools::{wizard::{GenesisWizard, DEFAULT_DATA_PATH, GITHUB_TOKEN_FILENAME}, genesis_builder, parse_json};
+use libra_genesis_tools::{wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME}, genesis_builder, parse_json};
+use libra_types::global_config_dir;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -42,9 +43,7 @@ fn main() -> anyhow::Result<()>{
     match cli.command {
         Some(Sub::Genesis {}) => {
           let data_path = cli.home_dir.unwrap_or_else(|| {
-            dirs::home_dir()
-            .expect("no home dir found")
-            .join(DEFAULT_DATA_PATH)
+            global_config_dir()
           });
        
           

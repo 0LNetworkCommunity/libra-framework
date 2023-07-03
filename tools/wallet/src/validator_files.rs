@@ -1,6 +1,7 @@
 use std::path::PathBuf;
-
 use anyhow::{bail, Result};
+
+use libra_types::global_config_dir;
 use zapatos_genesis::config::{HostAndPort, OperatorConfiguration, OwnerConfiguration};
 
 use crate::{
@@ -10,7 +11,6 @@ use crate::{
     },
 };
 
-pub const DEFAULT_VALIDATOR_DIR: &str = ".libra";
 pub const OPERATOR_FILE: &str = "operator.yaml";
 pub const OWNER_FILE: &str = "owner.yaml";
 
@@ -47,7 +47,7 @@ impl SetValidatorConfiguration {
 
     pub fn set_config_files(self) -> Result<(OperatorConfiguration, OwnerConfiguration)> {
         let home_dir = self.home_dir
-          .unwrap_or_else(|| dirs::home_dir().unwrap().join(DEFAULT_VALIDATOR_DIR));
+          .unwrap_or_else(|| global_config_dir() );
 
       let owner_keys_file  =home_dir.join(PUBLIC_KEYS_FILE);
 
@@ -141,7 +141,7 @@ impl SetValidatorConfiguration {
     pub fn read_configs_from_file(
         home_path: Option<PathBuf>,
     ) -> Result<(OperatorConfiguration, OwnerConfiguration)> {
-        let dir = home_path.unwrap_or_else(|| dirs::home_dir().unwrap().join(DEFAULT_VALIDATOR_DIR));
+        let dir = home_path.unwrap_or_else(|| global_config_dir());
 
         let operator_config: OperatorConfiguration = from_yaml(
             &String::from_utf8(read_from_file(&dir.join(OPERATOR_FILE)).unwrap()).unwrap(),

@@ -10,12 +10,18 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TowerProofHistoryView {
-    previous_proof_hash: Vec<u8>,
-    verified_tower_height: u64, 
-    latest_epoch_mining: u64,
-    count_proofs_in_epoch: u64,
-    epochs_mining: u64,
-    contiguous_epochs_mining: u64,
+    ///
+    pub previous_proof_hash: Vec<u8>,
+    ///
+    pub verified_tower_height: u64,
+    ///
+    pub latest_epoch_mining: u64,
+    ///
+    pub count_proofs_in_epoch: u64,
+    ///
+    pub epochs_mining: u64,
+    ///
+    pub contiguous_epochs_mining: u64,
 }
 
 impl MoveStructType for TowerProofHistoryView {

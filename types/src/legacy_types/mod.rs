@@ -2,9 +2,13 @@
 
 // pub mod account;
 // pub mod autopay;
+pub mod app_cfg;
 pub mod block;
 pub mod mode_ol;
-pub mod tower_state;
+pub mod tower;
+pub mod tx_error;
+pub mod vdf_difficulty;
+pub mod network_playlist;
 // pub mod config;
 // pub mod dialogue;
 // pub mod epoch_timer;
