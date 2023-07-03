@@ -1,16 +1,32 @@
+use anyhow::bail;
+use zapatos::{
+    account::key_rotation::lookup_address,
+    common::types::{CliConfig, ConfigSearchMode},
+};
+use zapatos_sdk::{
+    rest_client::{aptos_api_types::TransactionOnChainData, Client},
+    transaction_builder::TransactionBuilder,
+    types::{
+        chain_id::ChainId,
+        transaction::{ExecutionStatus, SignedTransaction, TransactionPayload},
+        AccountKey, LocalAccount,
+    },
+};
 
-use anyhow::{bail};
-use zapatos_sdk::rest_client::Client;
-use zapatos_types::transaction::SignedTransaction;
-use zapatos_sdk::types::chain_id::ChainId;
-use zapatos_sdk::types::{LocalAccount, AccountKey};
-use zapatos_sdk::transaction_builder::TransactionBuilder;
-use zapatos::account::key_rotation::lookup_address;
-use zapatos_types::transaction::TransactionPayload;
-use std::time::SystemTime;
-use std::time::UNIX_EPOCH;
+use std::{
+    path::PathBuf,
+    time::{SystemTime, UNIX_EPOCH},
+};
+use url::Url;
 
-use libra_types::type_extensions::client_ext::{ClientExt, DEFAULT_TIMEOUT_SECS};
+use libra_types::{
+    exports::Ed25519PrivateKey,
+    legacy_types::app_cfg::AppCfg,
+    type_extensions::{
+        cli_config_ext::CliConfigExt,
+        client_ext::{ClientExt, DEFAULT_TIMEOUT_SECS},
+    },
+};
 
 // #[derive(Debug)]
 // /// a transaction error type specific to ol txs
@@ -57,64 +73,195 @@ use libra_types::type_extensions::client_ext::{ClientExt, DEFAULT_TIMEOUT_SECS};
 
 /// Struct to organize all the TXS sending, so we're not creating new Client on every TX, if there are multiple.
 pub struct Sender {
-  client: Client,
-  // address: AccountAddress,
-  local_account: LocalAccount,
-  chain_id: ChainId,
+    client: Client,
+    local_account: LocalAccount,
+    chain_id: ChainId,
+    response: Option<TransactionOnChainData>,
 }
 
 impl Sender {
-  pub async fn new(account_key: AccountKey, chain_id: ChainId, client_opt: Option<Client>) -> anyhow::Result<Self> {
-    let client = client_opt.unwrap_or(Client::default()?);
+    pub async fn new(
+        account_key: AccountKey,
+        chain_id: ChainId,
+        client_opt: Option<Client>,
+    ) -> anyhow::Result<Self> {
+    let client = match client_opt{
+        Some(c) => c,
+        None => Client::default().await?,
+    };
+        let address = lookup_address(
+            &client,
+            account_key.authentication_key().derived_address(),
+            false,
+        )
+        .await?;
 
-    let address = lookup_address(&client, account_key.authentication_key().derived_address(), false).await?;
+        let seq = client.get_sequence_number(address).await?;
+        let local_account = LocalAccount::new(address, account_key, seq);
 
-    let seq = client.get_sequence_number(address).await?;
-    let local_account = LocalAccount::new(address, account_key, seq);
-
-
-    Ok(Self {
-      client,
-      // address,
-      local_account,
-      chain_id,
-    })
-  }
-
-  pub async fn sign_submit_wait(&mut self, payload: TransactionPayload) -> anyhow::Result<String> {
-    let signed = self.sign_payload(payload);
-    let r = self.submit(&signed).await?;
-    Ok(r)
-  }
-
-  pub fn sign_payload(&mut self, payload: TransactionPayload) -> SignedTransaction {
-      let t = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
-      let time = t + DEFAULT_TIMEOUT_SECS*10;
-      let tb = TransactionBuilder::new(payload, time, self.chain_id);
-      self.local_account.sign_with_transaction_builder(tb)
-  }
-  // pub fn refresh_sequence(&mut self) -> Result<()>{
-  //   // let seq = self.client.get_sequence_number(self.local_account.address).await?;
-  //   let s = self.local_account.sequence_number_mut();
-  //   s = self.client.get_sequence_number(self.local_account.address).await?
-  //   Ok(())
-  // }
-
-  // TODO: return a more useful type, 
-  pub async fn submit(&self, signed_trans: &SignedTransaction) -> anyhow::Result<String>{
-    // let client = Client::default()?;
-    let pending_trans = self.client.submit(signed_trans).await?.into_inner();
-    let res = self.client.wait_for_transaction(&pending_trans).await?;
-
-    match res.inner().success() {
-        true => {
-          println!("transaction success!");
-          Ok(res.inner().vm_status())
-        },
-        false => {
-          println!("transaction not successful, status: {:?}", &res.inner().vm_status());
-          bail!("transaction not successful, status: {:?}", &res.inner().vm_status())
-        },
+        Ok(Self {
+            client,
+            local_account,
+            chain_id,
+            response: None,
+        })
     }
-}
+    pub async fn from_app_cfg(
+        app_cfg: &AppCfg,
+        pri_key: Option<Ed25519PrivateKey>,
+    ) -> anyhow::Result<Self> {
+        let profile = app_cfg.get_profile(None)?;
+        let address = profile.account;
+
+        let key = match pri_key {
+            Some(p) => p,
+            None => {
+                match profile.test_private_key.clone() {
+                    Some(k) => k,
+                    None => {
+                      let leg_keys =  libra_wallet::account_keys::get_keys_from_prompt()?;
+                      leg_keys.child_0_owner.pri_key
+                    },
+                }
+            }
+        };
+
+        let temp_seq_num = 0;
+        let mut local_account = LocalAccount::new(address, key, temp_seq_num);
+
+        let url = &app_cfg.pick_url(None)?;
+        let client = Client::new(url.clone());
+
+        let seq_num = local_account.sequence_number_mut();
+
+        // check if we can connect to this client, or exit
+        let chain_id = match client.get_index().await {
+            Ok(metadata) => {
+                // update sequence number
+                *seq_num = client.get_sequence_number(address).await?;
+                ChainId::new(metadata.into_inner().chain_id)
+            }
+            Err(_) => bail!("cannot connect to client at {:?}", &url),
+        };
+
+        let s = Sender {
+            client,
+            local_account,
+            chain_id,
+            response: None,
+        };
+
+        return Ok(s);
+    }
+
+    pub async fn from_vendor_profile(
+        profile_name: Option<&str>,
+        workspace: Option<PathBuf>,
+        pri_key: Option<Ed25519PrivateKey>,
+    ) -> anyhow::Result<Self> {
+        let cfg = CliConfig::load_profile_ext(None, None, ConfigSearchMode::CurrentDir)?;
+        if let Some(c) = cfg {
+            let address = match c.account {
+                Some(acc) => acc,
+                None => bail!("no profile found"),
+            };
+
+            let key = match pri_key {
+                Some(p) => p,
+                None => {
+                    let leg_keys = libra_wallet::account_keys::get_keys_from_prompt()?;
+                    leg_keys.child_0_owner.pri_key
+                }
+            };
+
+            let temp_seq_num = 0;
+            let mut local_account = LocalAccount::new(address, key, temp_seq_num);
+
+            let url: Url = match c.rest_url {
+                Some(url_str) => url_str.parse()?,
+                None => bail!("could not find rest_url in profile"),
+            };
+
+            // check if we can connect to this client, or exit
+            let client = Client::new(url.clone());
+
+            let seq_num = match client.get_index().await {
+                Ok(_) => client.get_sequence_number(address).await?,
+                Err(_) => bail!("cannot connect to client at {:?}", &url),
+            };
+
+            let s = local_account.sequence_number_mut();
+            *s = seq_num;
+            // update the sequence number of account.
+            let chain_id = match c.network {
+                Some(net) => ChainId::new(net as u8),
+                None => bail!("cannot get which network id to connect to"),
+            };
+
+            let s = Sender {
+                client,
+                local_account,
+                chain_id,
+                response: None,
+            };
+            return Ok(s);
+        }
+        bail!(
+            "could not read profile: {:?} at {:?}",
+            profile_name,
+            workspace
+        );
+    }
+
+    pub async fn sign_submit_wait(
+        &mut self,
+        payload: TransactionPayload,
+    ) -> anyhow::Result<TransactionOnChainData> {
+        let signed = self.sign_payload(payload);
+        let r = self.submit(&signed).await?;
+        self.response = Some(r.clone());
+        Ok(r)
+    }
+
+    pub fn sign_payload(&mut self, payload: TransactionPayload) -> SignedTransaction {
+        let t = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        let time = t + DEFAULT_TIMEOUT_SECS * 10;
+        let tb = TransactionBuilder::new(payload, time, self.chain_id);
+        self.local_account.sign_with_transaction_builder(tb)
+    }
+
+    /// submit to API and wait for the transaction on chain data
+    pub async fn submit(
+        &mut self,
+        signed_trans: &SignedTransaction,
+    ) -> anyhow::Result<TransactionOnChainData> {
+        let pending_trans = self.client.submit(signed_trans).await?.into_inner();
+
+        let res = self
+            .client
+            .wait_for_transaction_bcs(&pending_trans)
+            .await?
+            .into_inner();
+
+        Ok(res)
+    }
+    pub fn eval_response(&self) -> anyhow::Result<ExecutionStatus, ExecutionStatus> {
+        if self.response.is_none() {
+            return Err(ExecutionStatus::MiscellaneousError(None))
+        };
+        let status = self.response.as_ref().unwrap().info.status();
+        match status.is_success() {
+            true => {
+                println!("transaction success!");
+                Ok(status.to_owned())
+            }
+            false => {
+                println!("transaction not successful, status: {:?}", &status);
+                Err(status.to_owned())
+            }
+        }
+    }
 }

@@ -6053,6 +6053,7 @@ dependencies = [
  "clap 3.2.23",
  "libra-config",
  "libra-query",
+ "libra-tower",
  "libra-txs",
  "libra-wallet",
  "tokio",
@@ -6081,6 +6082,7 @@ dependencies = [
  "aptos-types",
  "clap 3.2.23",
  "libra-types",
+ "libra-wallet",
  "tokio",
  "url",
 ]
@@ -6136,7 +6138,6 @@ dependencies = [
  "clap 3.2.23",
  "console 0.15.7",
  "dialoguer 0.10.4",
- "diem-types",
  "dirs 5.0.1",
  "hex",
  "indicatif",
@@ -6145,7 +6146,6 @@ dependencies = [
  "libra-wallet",
  "move-core-types 0.0.4",
  "ol-types",
- "once_cell",
  "reqwest",
  "serde 1.0.163",
  "serde_json",
@@ -6162,6 +6162,51 @@ dependencies = [
  "libra-types",
  "serde_json",
  "tokio",
+]
+
+[[package]]
+name = "libra-smoke-tests"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "aptos-crypto",
+ "aptos-forge",
+ "aptos-sdk",
+ "aptos-types",
+ "libra-cached-packages",
+ "libra-framework",
+ "libra-query",
+ "libra-txs",
+ "libra-types",
+ "serde_json",
+ "smoke-test",
+ "tokio",
+ "url",
+]
+
+[[package]]
+name = "libra-tower"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "aptos-forge",
+ "aptos-sdk",
+ "byteorder",
+ "clap 3.2.23",
+ "hex",
+ "libra-framework",
+ "libra-query",
+ "libra-smoke-tests",
+ "libra-txs",
+ "libra-types",
+ "libra-wallet",
+ "serde 1.0.163",
+ "serde_json",
+ "smoke-test",
+ "tokio",
+ "toml",
+ "url",
+ "vdf",
 ]
 
 [[package]]
@@ -6195,13 +6240,18 @@ dependencies = [
  "async-trait",
  "bcs 0.1.3",
  "dirs 5.0.1",
+ "futures",
+ "glob",
  "hex",
  "move-core-types 0.0.4",
  "once_cell",
+ "rand 0.7.3",
+ "reqwest",
  "serde 1.0.163",
  "serde_json",
  "serde_yaml 0.9.21",
  "tokio",
+ "toml",
  "url",
 ]
 
@@ -6215,16 +6265,22 @@ dependencies = [
  "aptos-genesis",
  "aptos-types",
  "blst",
+ "byteorder",
  "clap 3.2.23",
  "dialoguer 0.10.4",
- "diem-wallet",
  "dirs 5.0.1",
  "hex",
+ "hmac 0.10.1",
  "indoc 2.0.1",
- "ol-keys",
+ "libra-types",
+ "mirai-annotations",
+ "pbkdf2 0.7.5",
+ "rand 0.7.3",
+ "rpassword",
  "serde 1.0.163",
  "serde_json",
  "serde_yaml 0.9.21",
+ "sha2 0.9.9",
  "tokio",
 ]
 
@@ -9603,25 +9659,6 @@ dependencies = [
  "tokio",
  "url",
  "walkdir",
-]
-
-[[package]]
-name = "smoke-tests"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "aptos-crypto",
- "aptos-forge",
- "aptos-sdk",
- "aptos-types",
- "libra-cached-packages",
- "libra-framework",
- "libra-query",
- "libra-txs",
- "libra-types",
- "serde_json",
- "smoke-test",
- "tokio",
 ]
 
 [[package]]

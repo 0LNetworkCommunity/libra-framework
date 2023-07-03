@@ -1,9 +1,14 @@
 //! Use ol-keys to generate or parse keys using the legacy key derivation scheme
+use crate::{
+  load_keys,
+  key_gen::keygen,
+  wallet_library::{
+    legacy_scheme::LegacyKeyScheme,
+    wallet_library::WalletLibrary,
+  }
+};
 
 use anyhow::Result;
-use diem_wallet::WalletLibrary;
-use ol_keys::wallet::{get_account_from_mnem, keygen};
-use ol_keys::{scheme::KeyScheme, wallet::get_account_from_prompt};
 use serde::Serialize;
 use std::path::Path;
 use std::str::FromStr;
@@ -12,9 +17,11 @@ use zapatos_crypto::PrivateKey;
 use zapatos_types::account_address::AccountAddress;
 use zapatos_types::transaction::authenticator::AuthenticationKey;
 
+
+
 #[derive(Serialize)]
 /// A Struct to store ALL the legacy keys for storage.
-pub struct LegacyKeys {
+pub struct KeyChain {
     /// The mnemonic
     pub mnemonic: String,
     /// seed generated from mnemonic
@@ -44,22 +51,40 @@ pub struct AccountKeys { // TODO: change this to use vendor AccountKey
     pub pri_key: Ed25519PrivateKey,
 }
 
+    //////// 0L ////////
+    // addresses in the 0L chains before V7 had a truncated address of 16 bytes
+    pub fn get_ol_legacy_address(addr: AccountAddress) -> anyhow::Result<AccountAddress> {
+        // keep only last 16 bytes
+    
+      // let addr = &self.get_address();
+      let leg_addr = hex::encode(&addr[16..]);
+      
+      // dbg!(&hex::encode(leg_addr_slice));
+
+      let literal = &format!("0x0000000000000000{}", leg_addr);
+
+
+
+      // array.copy_from_slice(&self.account.as_slice()[16..]);
+      Ok(AccountAddress::from_hex_literal(literal)?)
+    }
+
 /// Legacy Keygen. These note these keys are not sufficient to create a validator from V7 onwards. Besides the Mnemonic the keypair for 0th derivation (owner key) is reusable.
-pub fn legacy_keygen() -> Result<LegacyKeys> {
+pub fn legacy_keygen() -> Result<KeyChain> {
     let (_auth_key, _account, wallet, _mnem) = keygen();
-    LegacyKeys::new(&wallet)
+    KeyChain::new(&wallet)
 }
 
 /// Get the legacy keys from the wallet
-pub fn get_keys_from_prompt() -> Result<LegacyKeys> {
-    let (_auth_key, _account, wallet) = get_account_from_prompt();
-    LegacyKeys::new(&wallet)
+pub fn get_keys_from_prompt() -> Result<KeyChain> {
+    let (_auth_key, _account, wallet) = load_keys::get_account_from_prompt();
+    KeyChain::new(&wallet)
 }
 
 /// for libs to get the keys from a mnemonic
-pub fn get_keys_from_mnem(mnem: String) -> Result<LegacyKeys> {
-    let (_auth_key, _account, wallet) = get_account_from_mnem(mnem)?;
-    LegacyKeys::new(&wallet)
+pub fn get_keys_from_mnem(mnem: String) -> Result<KeyChain> {
+    let (_auth_key, _account, wallet) = load_keys::get_account_from_mnem(mnem)?;
+    KeyChain::new(&wallet)
 }
 
 pub fn get_account_from_private(pri_key: &Ed25519PrivateKey) -> AccountKeys {
@@ -77,7 +102,7 @@ pub fn get_account_from_private(pri_key: &Ed25519PrivateKey) -> AccountKeys {
 }
 
 fn get_account_from_nth(w: &WalletLibrary, n: u8) -> Result<AccountKeys> {
-    let pri_keys = KeyScheme::new(w);
+    let pri_keys = LegacyKeyScheme::new(w);
 
     let key = match n {
         0 => pri_keys.child_0_owner,
@@ -98,9 +123,9 @@ fn get_account_from_nth(w: &WalletLibrary, n: u8) -> Result<AccountKeys> {
     })
 }
 
-impl LegacyKeys {
+impl KeyChain {
     pub fn new(w: &WalletLibrary) -> Result<Self> {
-        Ok(LegacyKeys {
+        Ok(KeyChain {
             mnemonic: w.mnemonic(),
             seed: w.get_key_factory().main().to_owned(),
             child_0_owner: get_account_from_nth(w, 0)?,
@@ -132,7 +157,7 @@ fn test_legacy_keys() {
     let l = get_keys_from_mnem(alice_mnem.to_string()).unwrap();
 
     assert!(
-        &l.child_0_owner.account.to_string()
+      get_ol_legacy_address(l.child_0_owner.account).unwrap().to_string()
             == "000000000000000000000000000000004c613c2f4b1e67ca8d98a542ee3f59f5"
     );
 
@@ -144,11 +169,13 @@ fn test_legacy_keys() {
 #[test]
 // We want to check that the address and auth key derivation is the same from what Diem generates, and what the vendor types do.
 fn type_conversion_give_same_auth_and_address() {
+    use crate::load_keys::get_account_from_mnem;
+
     let alice_mnem = "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse";
 
     let (auth_key, account, wallet) = get_account_from_mnem(alice_mnem.to_owned()).unwrap();
 
-    let l = LegacyKeys::new(&wallet).unwrap();
+    let l = KeyChain::new(&wallet).unwrap();
 
     assert!(account.to_hex_literal() == l.child_0_owner.account.to_hex_literal());
     assert!(auth_key.to_string() == l.child_0_owner.auth_key.to_string());
@@ -161,3 +188,4 @@ fn type_conversion_give_same_auth_and_address() {
     let auth_key_from_cfg = AuthenticationKey::ed25519(&cfg_key.public_key()).derived_address();
     assert!(auth_key_from_cfg.to_string() == l.child_0_owner.auth_key.to_string());
 }
+

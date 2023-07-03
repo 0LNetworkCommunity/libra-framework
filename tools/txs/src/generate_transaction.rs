@@ -17,7 +17,7 @@ pub async fn _run(
     max_gas: Option<u64>,
     gas_unit_price: Option<u64>,
 ) -> Result<SignedTransaction> {
-    let client = Client::default()?;
+    let client = Client::default().await?;
     let mut account = private_key.get_account(None).await?;
     let options = TransactionOptions {
         max_gas_amount: max_gas.unwrap_or(DEFAULT_MAX_GAS_AMOUNT),

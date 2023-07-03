@@ -7,8 +7,8 @@ use zapatos::{
     config::{ConfigType, GlobalConfig},
     genesis::git::from_yaml,
 };
-use crate::LIBRA_CONFIG_DIRECTORY;
-// const LIBRA_CONFIG_DIRECTORY: &str = ".0L";
+use crate::GLOBAL_CONFIG_DIRECTORY_0L;
+// const GLOBAL_CONFIG_DIRECTORY_0L: &str = ".0L";
 const GLOBAL_CONFIG_FILE: &str = "global_config.yaml";
 
 pub trait GlobalConfigExt {
@@ -37,7 +37,7 @@ impl GlobalConfigExt for GlobalConfig {
 
 pub fn global_folder() -> CliTypedResult<PathBuf> {
     if let Some(dir) = dirs::home_dir() {
-        Ok(dir.join(LIBRA_CONFIG_DIRECTORY))
+        Ok(dir.join(GLOBAL_CONFIG_DIRECTORY_0L))
     } else {
         Err(CliError::UnexpectedError(
             "Unable to retrieve home directory".to_string(),
@@ -51,16 +51,16 @@ pub fn find_workspace_config(
     mode: ConfigSearchMode,
 ) -> CliTypedResult<PathBuf> {
     match mode {
-        ConfigSearchMode::CurrentDir => Ok(starting_path.join(LIBRA_CONFIG_DIRECTORY)),
+        ConfigSearchMode::CurrentDir => Ok(starting_path.join(GLOBAL_CONFIG_DIRECTORY_0L)),
         ConfigSearchMode::CurrentDirAndParents => {
             let mut current_path = starting_path.clone();
             loop {
-                current_path.push(LIBRA_CONFIG_DIRECTORY);
+                current_path.push(GLOBAL_CONFIG_DIRECTORY_0L);
                 if current_path.is_dir() {
                     break Ok(current_path);
                 } else if !(current_path.pop() && current_path.pop()) {
                     // If we aren't able to find the folder, we'll create a new one right here
-                    break Ok(starting_path.join(LIBRA_CONFIG_DIRECTORY));
+                    break Ok(starting_path.join(GLOBAL_CONFIG_DIRECTORY_0L));
                 }
             }
         }
