@@ -2,7 +2,7 @@
 
 use crate::vm::zapatos_mainnet_genesis;
 use anyhow::Error;
-use ol_types::legacy_recovery::LegacyRecovery;
+use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use zapatos_framework::ReleaseBundle;
 use std::fs::File;
 use std::io::Write;

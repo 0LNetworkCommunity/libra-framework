@@ -1,9 +1,10 @@
-use anyhow::{Error, Context};
-use ol_types::legacy_recovery::{self, LegacyRecovery};
+
+use libra_types::legacy_types::legacy_recovery::{self, LegacyRecovery};
 use std::path::PathBuf;
+use anyhow::Context;
 
 /// Make a recovery genesis blob
-pub fn parse(recovery_json_path: PathBuf) -> Result<Vec<LegacyRecovery>, Error> {
+pub fn parse(recovery_json_path: PathBuf) -> anyhow::Result<Vec<LegacyRecovery>> {
     Ok(legacy_recovery::read_from_recovery_file(
         &recovery_json_path,
     ))
@@ -15,7 +16,7 @@ pub fn get_supply(rec: &Vec<LegacyRecovery>) -> anyhow::Result<u64> {
   rec.iter().try_fold(0u64, |acc, r| {
     
     let amount = match &r.balance {
-        Some(b) => b.coin(),
+        Some(b) => b.coin,
         None => 0,
     };
     acc.checked_add(amount).context("cannot add balance")
@@ -28,7 +29,7 @@ pub fn get_slow_wallet_balance(rec: &Vec<LegacyRecovery>) -> anyhow::Result<u64>
   rec.iter().try_fold(0u64, |acc, r| {
     
     let amount = match &r.balance {
-        Some(b) => b.coin(),
+        Some(b) => b.coin,
         None => 0,
     };
     acc.checked_add(amount).context("cannot add balance")

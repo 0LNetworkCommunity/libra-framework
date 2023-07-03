@@ -1,7 +1,7 @@
 use anyhow::{anyhow, bail, Result};
 use libra_wallet::utils::{check_if_file_exists, from_yaml, write_to_user_only_file};
 use libra_framework::release;
-use ol_types::legacy_recovery::LegacyRecovery;
+use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 
 use std::str::FromStr;
 use std::{

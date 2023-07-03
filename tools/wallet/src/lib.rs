@@ -4,7 +4,6 @@
 pub mod account_keys;
 pub mod keys;
 pub mod key_gen;
-pub mod legacy;
 pub mod load_keys;
 pub mod wallet_library;
 pub mod utils;

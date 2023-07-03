@@ -1,4 +1,4 @@
-use ol_types::legacy_recovery::LegacyRecovery;
+use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use zapatos_crypto::{ed25519::Ed25519PublicKey, HashValue};
 use zapatos_framework::{self, ReleaseBundle};
 use zapatos_gas::{

@@ -1,7 +1,5 @@
 //! ol functions to run at genesis e.g. migration.
 use crate::hack_cli_progress::OLProgress;
-// use libra_wallet::legacy::convert_legacy::convert_account;
-use anyhow::Context;
 use zapatos_types::account_config::CORE_CODE_ADDRESS;
 use zapatos_vm::{
     move_vm_ext::SessionExt,
@@ -11,11 +9,11 @@ use move_core_types::{
         value::{serialize_values, MoveValue},
 
 };
-use ol_types::legacy_recovery::{LegacyRecovery, AccountRole};
+use libra_types::legacy_types::legacy_recovery::{LegacyRecovery, AccountRole};
 use libra_types::exports::AccountAddress;
 use zapatos_vm_genesis::exec_function;
+use anyhow::Context;
 use indicatif::ProgressIterator;
-
 
 pub fn genesis_migrate_all_users(
     session: &mut SessionExt<impl MoveResolver>,
@@ -64,7 +62,7 @@ pub fn genesis_migrate_one_user( //////// 0L ////////
         MoveValue::Signer(CORE_CODE_ADDRESS),
         MoveValue::Signer(new_addr_type),
         MoveValue::vector_u8(auth_key.to_vec()),
-        MoveValue::U64(user_recovery.balance.as_ref().expect("no balance found").coin()),
+        MoveValue::U64(user_recovery.balance.as_ref().expect("no balance found").coin),
         MoveValue::Bool(user_recovery.role == AccountRole::Validator),
     ]);
 
