@@ -34,16 +34,16 @@ pub enum AccountRole {
     EndUser,
 }
 
-/// Wallet type
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum WalletType {
-    ///
-    Normal,
-    ///
-    Slow,
-    ///
-    Community,
-}
+// /// Wallet type
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub enum WalletType {
+//     ///
+//     Normal,
+//     ///
+//     Slow,
+//     ///
+//     Community,
+// }
 
 /// The basic structs needed to recover account state in a new network.
 /// This is necessary for catastrophic recoveries, when the source code changes too much.

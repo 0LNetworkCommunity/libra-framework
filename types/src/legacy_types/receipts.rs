@@ -1,19 +1,20 @@
 //! fullnode counter for system address
 
 use anyhow::Result;
-use move_core_types::account_address::AccountAddress;
+// use move_core_types::account_address::LegacyAddress;
 use move_core_types::{
     ident_str,
     identifier::IdentStr,
     move_resource::MoveStructType,
 };
 use serde::{Deserialize, Serialize};
+use super::legacy_address::LegacyAddress;
 
 /// Struct that represents a CurrencyInfo resource
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReceiptsResource {
     ///
-    pub destination: Vec<AccountAddress>,
+    pub destination: Vec<LegacyAddress>,
     ///
     pub cumulative: Vec<u64>,
     ///

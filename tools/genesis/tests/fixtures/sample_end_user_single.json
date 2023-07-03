@@ -1,57 +1,88 @@
 [
-    {
-      "account": "b78ba84a443873f2e324c80f3e4e2334",
-      "auth_key": "c99e93112458b404daaed49c019c6de5b78ba84a443873f2e324c80f3e4e2334",
-      "role": "EndUser",
-      "balance": {
-        "coin": 1775895358
-      },
-      "val_cfg": null,
-      "miner_state": {
-        "previous_proof_hash": [
-          146,
-          202,
-          170,
-          181,
-          22,
-          66,
-          17,
-          59,
-          146,
-          129,
-          61,
-          200,
-          78,
-          19,
-          112,
-          68,
-          39,
-          154,
-          88,
-          78,
-          228,
-          167,
-          26,
-          110,
-          139,
-          102,
-          37,
-          37,
-          125,
-          218,
-          93,
-          74
-        ],
-        "verified_tower_height": 1916,
-        "latest_epoch_mining": 359,
-        "count_proofs_in_epoch": 1,
-        "epochs_validating_and_mining": 0,
-        "contiguous_epochs_validating_and_mining": 0,
-        "epochs_since_last_account_creation": 0
-      },
-      "comm_wallet": null,
-      "fullnode_counter": null,
-      "autopay": null,
-      "currency_info": null
+  {
+    "account": "6bbf853aa6521db445e5cbdf3c85e8a0",
+    "auth_key": "27c8f748d6d65cb19ba09f3f1f087fa36bbf853aa6521db445e5cbdf3c85e8a0",
+    "role": "EndUser",
+    "balance": {
+      "coin": 623727004
+    },
+    "miner_state": {
+      "previous_proof_hash": [
+        233,
+        46,
+        181,
+        90,
+        24,
+        162,
+        196,
+        36,
+        93,
+        184,
+        146,
+        70,
+        140,
+        169,
+        104,
+        6,
+        53,
+        122,
+        130,
+        150,
+        53,
+        196,
+        237,
+        194,
+        122,
+        62,
+        20,
+        150,
+        146,
+        224,
+        87,
+        192
+      ],
+      "verified_tower_height": 18,
+      "latest_epoch_mining": 22,
+      "count_proofs_in_epoch": 0,
+      "epochs_validating_and_mining": 2,
+      "contiguous_epochs_validating_and_mining": 2,
+      "epochs_since_last_account_creation": 2
+    },
+    "ancestry": {
+      "tree": [
+        "bdb8ad37341cec0817fd8e2474e25031",
+        "cd7c59c9d7ca50fe417e3083771fa7e8"
+      ]
+    },
+    "make_whole": {
+      "credits": [
+        {
+          "incident_name": [
+            99,
+            97,
+            114,
+            112,
+            101,
+            32,
+            117,
+            110,
+            100,
+            101,
+            114,
+            112,
+            97,
+            121,
+            109,
+            101,
+            110,
+            116
+          ],
+          "claimed": false,
+          "coins": {
+            "value": 512748877
+          }
+        }
+      ]
     }
+  }
 ]
