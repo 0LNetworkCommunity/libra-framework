@@ -8,7 +8,7 @@
 module ol_framework::genesis_migration {
   use std::signer;
   use std::error;
-  use std::fixed_point32;
+  // use std::fixed_point32;
   use aptos_framework::coin;
   use ol_framework::ol_account;
   // use ol_framework::globals;
@@ -66,9 +66,7 @@ module ol_framework::genesis_migration {
 
     // establish the infrastructure escrow pledge
     if (is_validator) {
-      let pct = fixed_point32::create_from_rational(escrow_pct, 1000000);
-
-      let to_escrow = fixed_point32::multiply_u64(new_balance, pct);
+      let to_escrow = (escrow_pct * new_balance) / 1000000;
       infra_escrow::user_pledge_infra(user_sig, to_escrow)
     };
   }

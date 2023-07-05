@@ -26,7 +26,7 @@ module ol_framework::test_migration {
       20000,
       false,
       5,
-      80,
+      800000,
     )
   }
 
@@ -48,16 +48,17 @@ module ol_framework::test_migration {
       20000,
       true, // is_validator
       5,
-      80,
+      800000, // of 1m
     );
 
-    let pledge = infra_escrow::user_infra_pledge_balance(alice_addr);
-    let balance = infra_escrow::infra_escrow_balance();
+    let user_pledge = infra_escrow::user_infra_pledge_balance(alice_addr);
+    let all_pledge_balance = infra_escrow::infra_escrow_balance();
     let user_balance = coin::balance<GasCoin>(alice_addr);
 
-    assert!(pledge > 0, 73570001);
-    assert!(balance == pledge, 73570001);
+    assert!(all_pledge_balance > 0, 73570001);
 
-    assert!((user_balance + pledge) == user_balance * 5, 73570002);
+    assert!(all_pledge_balance == user_pledge, 73570001);
+
+    assert!((user_balance + user_pledge) == user_balance * 5, 73570002);
   }
 }
