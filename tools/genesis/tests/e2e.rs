@@ -53,7 +53,7 @@ fn end_to_end() {
             .extract_raw_bytes()
             .unwrap();
         let validator_set: ValidatorSet = bcs::from_bytes(&bytes).unwrap();
-        dbg!(&validator_set.active_validators().len());
+        // dbg!(&validator_set.active_validators().len());
         assert!(validator_set.active_validators().len() == num_vals, "validator set count does not match");
       }
       _ => panic!("not a genesis transaction"),

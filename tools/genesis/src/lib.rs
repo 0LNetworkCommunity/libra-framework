@@ -9,3 +9,4 @@ pub mod parse_json;
 pub mod vm;
 pub mod wizard;
 pub mod genesis_functions;
+pub mod supply;

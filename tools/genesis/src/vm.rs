@@ -96,12 +96,8 @@ pub fn encode_zapatos_recovery_genesis_change_set(
         gas_schedule,
     );
     initialize_features(&mut session);
-    // dbg!(&genesis_config.is_test);
-    // if genesis_config.is_test {
-    //     initialize_core_resources_and_aptos_coin(&mut session, core_resources_key);
-    // } else {
-    //     initialize_aptos_coin(&mut session);
-    // }
+
+    // TODO: 0L initialize migration params
 
     initialize_aptos_coin(&mut session);
 
