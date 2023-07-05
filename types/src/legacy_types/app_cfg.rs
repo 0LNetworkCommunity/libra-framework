@@ -254,18 +254,7 @@ impl AppCfg {
 
       let np = NetworkPlaylist::from_url(url, chain_id).await?;
 
-      // if the network playlist has the same chain_id as a prior one
-      // overwrite it.
-      // if no match push a new one to vector
-
-      if self.network_playlist.iter().find(|e| e.chain_id == np.chain_id).is_some() {
-                for e in self.network_playlist.iter_mut(){
-          if e.chain_id == np.chain_id { *e = np.clone(); }
-        };
-      } else {
-        self.network_playlist.push(np.clone())
-      }
-
+      self.maybe_add_custom_playlist(&np);
       Ok(np)
 
     }
@@ -295,14 +284,17 @@ impl AppCfg {
         Ok(np)
     }
 
-    pub fn add_custom_playlist(&mut self, new_playlist: NetworkPlaylist) {
-      let existing_playlist = self.network_playlist.iter_mut().find(|e| {
-        e.chain_id == new_playlist.chain_id
+    /// if there is a custom playlist update it
+    pub fn maybe_add_custom_playlist(&mut self, new_playlist: &NetworkPlaylist) {
+      let mut found = false;
+      self.network_playlist.iter_mut().for_each(|play| {
+        if play.chain_id == new_playlist.chain_id {
+          found = true;
+          *play = new_playlist.to_owned();
+        }
       });
-      if let Some(p) = existing_playlist {
-        *p = new_playlist
-      } else {
-        self.network_playlist.push(new_playlist);
+      if !found {
+        self.network_playlist.push(new_playlist.to_owned());
       }
       
     }
