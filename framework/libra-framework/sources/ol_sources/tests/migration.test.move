@@ -25,6 +25,8 @@ module ol_framework::test_migration {
       temp_auth_key,
       20000,
       false,
+      5,
+      80,
     )
   }
 
@@ -45,6 +47,8 @@ module ol_framework::test_migration {
       temp_auth_key,
       20000,
       true, // is_validator
+      5,
+      80,
     );
 
     let pledge = infra_escrow::user_infra_pledge_balance(alice_addr);

@@ -8,19 +8,21 @@
 module ol_framework::genesis_migration {
   use std::signer;
   use std::error;
+  use std::fixed_point32;
   use aptos_framework::coin;
   use ol_framework::ol_account;
-  use ol_framework::globals;
+  // use ol_framework::globals;
   use ol_framework::validator_universe;
   use ol_framework::gas_coin;
   use ol_framework::gas_coin::GasCoin;
   use ol_framework::infra_escrow;
-
-  // use aptos_std::debug::print;
+  use aptos_framework::system_addresses;
 
   const EBALANCE_MISMATCH: u64 = 0;
 
-  const VAL_ESCROW_PCT: u64 = 80;
+  // const VAL_ESCROW_PCT: u64 = 80;
+
+
   /// Called by root in genesis to initialize the GAS coin 
   public fun migrate_legacy_user(
       vm: &signer,
@@ -28,7 +30,11 @@ module ol_framework::genesis_migration {
       auth_key: vector<u8>,
       legacy_balance: u64,
       is_validator: bool,
+      split_factor: u64,
+      escrow_pct: u64, // precision of 1,000,000
   ) {
+    system_addresses::assert_aptos_framework(vm);
+
     let user_addr = signer::address_of(user_sig);
     // if not a validator OR operator of a validator, create a new account
     // previously during genesis validator and oper accounts were already created
@@ -49,7 +55,7 @@ module ol_framework::genesis_migration {
     let genesis_balance = coin::balance<GasCoin>(user_addr);
 
     // scale up by the coin split factor
-    let expected_final_balance = globals::get_coin_split_factor() * legacy_balance;
+    let expected_final_balance = split_factor * legacy_balance;
     let coins_to_mint = expected_final_balance - genesis_balance;
     gas_coin::mint(vm, user_addr, coins_to_mint);
 
@@ -60,7 +66,9 @@ module ol_framework::genesis_migration {
 
     // establish the infrastructure escrow pledge
     if (is_validator) {
-      let to_escrow = (new_balance * VAL_ESCROW_PCT) / 100;
+      let pct = fixed_point32::create_from_rational(escrow_pct, 1000000);
+
+      let to_escrow = fixed_point32::multiply_u64(new_balance, pct);
       infra_escrow::user_pledge_infra(user_sig, to_escrow)
     };
   }
