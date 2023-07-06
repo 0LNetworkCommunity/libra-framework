@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use libra_genesis_tools::{wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME}, genesis_builder, parse_json};
+use libra_genesis_tools::{wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME}, genesis_builder, parse_json, ancestry};
 use libra_types::global_config_dir;
 
 #[derive(Parser)]
@@ -29,6 +29,9 @@ struct GenesisCliArgs {
     /// path to file for legacy migration file
     #[clap(short, long)]
     json_legacy: Option<PathBuf>,
+    // /// path to file for ancestry file to patch data
+    // #[clap(short, long)]
+    // json_ancestry: Option<PathBuf>,
 }
 
 #[derive(Subcommand)]
@@ -55,6 +58,11 @@ fn main() -> anyhow::Result<()>{
             )?.trim().to_string()
           );
           
+          // // if we have an ancestry file we need it before loading recovery and possinly fixing ancestry fields there
+          // let ancestry = if let Some(p) = cli.json_ancestry {
+          //   let json = ancestry::parse_ancestry_json(p)?;
+          //   Some(&ancestry::map_ancestry(&json)?)
+          // } else{ None };
 
           let recovery = if let Some(p) = cli.json_legacy {
             parse_json::parse(p)?

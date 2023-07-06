@@ -1,6 +1,8 @@
-use std::path::PathBuf;
+//! helper functions for parsing Ancestry data and fixing recovery files.
 
-use libra_types::legacy_types::legacy_address::LegacyAddress;
+use std::path::PathBuf;
+use libra_types::legacy_types::{legacy_address::LegacyAddress, legacy_recovery::LegacyRecovery};
+use libra_types::legacy_types::ancestry::AncestryResource;
 use serde::Deserialize;
 
 #[derive(Debug, Clone)]
@@ -35,12 +37,10 @@ pub fn parse_ancestry_json(path: PathBuf) -> anyhow::Result<Vec<JsonAncestry>>{
 pub fn find_all_ancestors(my_account: &JsonAncestry, list: &Vec<JsonAncestry>) -> anyhow::Result<Vec<LegacyAddress>>{
   let mut my_ancestors: Vec<LegacyAddress> = vec![];
   let mut i = 0;
-  let mut found = true;
 
   let mut parent_to_find_next = my_account.tree.parent;
-  // my_ancestors.push(parent_to_find_next);
 
-  while found && i < 100 {
+  while i < 100 {
     let parent_struct = list.iter()
     .find(|el|{
       el.address == parent_to_find_next
@@ -49,7 +49,6 @@ pub fn find_all_ancestors(my_account: &JsonAncestry, list: &Vec<JsonAncestry>) -
       my_ancestors.push(p.address);
       parent_to_find_next = p.tree.parent;
     } else {
-      found = false;
       break;
     }
     i+=1;
@@ -71,6 +70,50 @@ pub fn map_ancestry(list: &Vec<JsonAncestry>) -> anyhow::Result<Vec<Ancestry>>{
     })
   .collect()
 }
+
+pub fn fix_legacy_recovery_data(legacy: &mut [LegacyRecovery], ancestry: &[Ancestry]) {
+  ancestry.iter().for_each(|a| {
+    let legacy_data = legacy.iter_mut().find(|l| {
+      if let Some(acc) = l.account {
+        acc == a.address
+      } else { false }
+    });
+    if let Some(l) = legacy_data {
+      let resource_type = AncestryResource {
+        tree: a.tree.clone()
+      };
+      l.ancestry = Some(resource_type);
+    }
+  })
+
+}
+
+#[test]
+fn test_fix() {
+    let a = Ancestry {
+        address: "02A892A449874E2BE18B7EA814688B04".parse().unwrap(),
+        tree: vec![
+            "C0A1F4D49658CF2FE5402E10F496BB80".parse().unwrap(),
+            "B080A6E0464CCA28ED6C7E116FECB837".parse().unwrap(),
+            "1EE5432BD3C6374E33798C4C9EDCD0CF".parse().unwrap(),
+            "2FDADCAF46532DFB8DA1F6BB97A096C6".parse().unwrap(),
+            "FBBF05F537D5D5103200317CDD961CDE".parse().unwrap(),
+            "F85BB8A1C58EF920864A9BF555700BFC".parse().unwrap(),
+        ],
+    };
+    let mut l = LegacyRecovery::default();
+    l.account = Some(LegacyAddress::from_hex_literal("0x02A892A449874E2BE18B7EA814688B04").unwrap());
+
+    assert!(l.ancestry.is_none());
+    let mut vec = vec![l];
+
+    fix_legacy_recovery_data(&mut vec, &[a] );
+    dbg!(&vec);
+    assert!(&vec.iter().next().unwrap().ancestry.is_some());
+    
+}
+
+
 
 #[test]
 fn parse_file() {
