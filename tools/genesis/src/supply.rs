@@ -3,7 +3,7 @@ use libra_types::legacy_types::{
   legacy_address::LegacyAddress,
   legacy_recovery::LegacyRecovery,
 };
-use std::path::PathBuf;
+// use std::path::PathBuf;
 use anyhow::Context;
 
 #[derive(Debug, Clone, Default)]
@@ -49,12 +49,12 @@ fn inc_supply(mut acc: Supply, r: &LegacyRecovery, dd_wallet_list: &Vec<LegacyAd
       }
 
 
-    } else if r.cumulative_deposits.is_some() { 
+    } else if r.cumulative_deposits.is_some() {
       // catches the cases of any dd wallets that were mapped to slow wallets
       acc.slow_locked += amount;
       acc.slow_total += amount;
     } else {
-      
+
       acc.normal += amount;
     }
     Ok(acc)
@@ -63,7 +63,7 @@ fn inc_supply(mut acc: Supply, r: &LegacyRecovery, dd_wallet_list: &Vec<LegacyAd
 /// iterate over the recovery file and get the sum of all balances.
 /// there's an option to map certain donor-directed wallets to be counted as slow wallets
 /// Note: this may not be the "total supply", since there may be coins in other structs beside an account::balance, e.g escrowed in contracts.
-pub fn get_supply_struct(rec: &Vec<LegacyRecovery>, map_dd_to_slow: Vec<LegacyAddress>) -> anyhow::Result<Supply> {
+pub fn get_supply_struct(rec: &[LegacyRecovery], map_dd_to_slow: Vec<LegacyAddress>) -> anyhow::Result<Supply> {
   let zeroth = Supply {
     total: 0.0,
     normal: 0.0,
@@ -92,12 +92,11 @@ pub fn get_supply_struct(rec: &Vec<LegacyRecovery>, map_dd_to_slow: Vec<LegacyAd
   })
 }
 
-
 #[test]
 fn test_genesis_math() {
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_export_recovery.json");
-    
+
     let r = crate::parse_json::parse(p).unwrap();
 
     // donor directed addresses that should be liquided before upgrade
@@ -110,7 +109,7 @@ fn test_genesis_math() {
     ];
 
     // confirm the supply of normal, slow, and donor directed will add up to 100%
-    
+
     let supply = get_supply_struct(&r, ignore_for_dd_count).unwrap();
     dbg!(&supply);
 

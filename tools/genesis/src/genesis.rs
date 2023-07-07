@@ -24,8 +24,6 @@ pub fn make_recovery_genesis_from_vec_legacy_recovery(
     // which only uses the validator accounts.
     let recovery_changeset = zapatos_mainnet_genesis(genesis_vals, recovery, framework_release, chain_id)?;
 
-
-
     let gen_tx = Transaction::GenesisTransaction(WriteSetPayload::Direct(recovery_changeset));
 
     Ok(gen_tx)

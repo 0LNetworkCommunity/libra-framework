@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use libra_genesis_tools::{wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME}, genesis_builder, parse_json, ancestry};
+use libra_genesis_tools::{wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME}, genesis_builder, parse_json};
 use libra_types::global_config_dir;
 
 #[derive(Parser)]
@@ -48,8 +48,8 @@ fn main() -> anyhow::Result<()>{
           let data_path = cli.home_dir.unwrap_or_else(|| {
             global_config_dir()
           });
-       
-          
+
+
           let github_token = cli.token_github
           .unwrap_or(
             std::fs::read_to_string(
@@ -57,7 +57,7 @@ fn main() -> anyhow::Result<()>{
               .join(GITHUB_TOKEN_FILENAME)
             )?.trim().to_string()
           );
-          
+
           // // if we have an ancestry file we need it before loading recovery and possinly fixing ancestry fields there
           // let ancestry = if let Some(p) = cli.json_ancestry {
           //   let json = ancestry::parse_ancestry_json(p)?;
@@ -79,25 +79,25 @@ fn main() -> anyhow::Result<()>{
         }
         Some(Sub::Register { }) => {
             GenesisWizard::new(
-              cli.org_github, 
-              cli.name_github, 
+              cli.org_github,
+              cli.name_github,
               cli.home_dir
             )
               .start_wizard(
-                cli.local_framework, 
-                cli.json_legacy, 
+                cli.local_framework,
+                cli.json_legacy,
                 false
             )?;
         }
         Some(Sub::Wizard { }) => {
             GenesisWizard::new(
-              cli.org_github, 
-              cli.name_github, 
+              cli.org_github,
+              cli.name_github,
               cli.home_dir
             )
               .start_wizard(
-                cli.local_framework, 
-                cli.json_legacy, 
+                cli.local_framework,
+                cli.json_legacy,
                 false
             )?;
         }

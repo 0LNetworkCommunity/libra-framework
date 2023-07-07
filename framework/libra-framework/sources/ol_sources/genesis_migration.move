@@ -8,10 +8,8 @@
 module ol_framework::genesis_migration {
   use std::signer;
   use std::error;
-  // use std::fixed_point32;
   use aptos_framework::coin;
   use ol_framework::ol_account;
-  // use ol_framework::globals;
   use ol_framework::validator_universe;
   use ol_framework::gas_coin;
   use ol_framework::gas_coin::GasCoin;
@@ -20,10 +18,7 @@ module ol_framework::genesis_migration {
 
   const EBALANCE_MISMATCH: u64 = 0;
 
-  // const VAL_ESCROW_PCT: u64 = 80;
-
-
-  /// Called by root in genesis to initialize the GAS coin 
+  /// Called by root in genesis to initialize the GAS coin
   public fun migrate_legacy_user(
       vm: &signer,
       user_sig: &signer,
@@ -46,7 +41,7 @@ module ol_framework::genesis_migration {
       );
     };
 
-    
+
     // mint coins again to migrate balance, and all
     // system tracking of balances
     if (legacy_balance == 0) {

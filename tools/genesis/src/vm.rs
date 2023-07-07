@@ -97,8 +97,6 @@ pub fn encode_zapatos_recovery_genesis_change_set(
     );
     initialize_features(&mut session);
 
-    // TODO: 0L initialize migration params
-
     initialize_aptos_coin(&mut session);
 
     initialize_on_chain_governance(&mut session, genesis_config);
