@@ -10,9 +10,10 @@ module ol_framework::slow_wallet {
   use aptos_framework::coin;
   use std::vector;
   use std::signer;
-  use ol_framework::globals;
+  // use ol_framework::globals;
   use ol_framework::gas_coin::GasCoin;
   use std::error;
+  use std::fixed_point32;
 
   const EGENESIS_ERROR: u64 = 10001;
 
@@ -44,20 +45,30 @@ module ol_framework::slow_wallet {
       user: &signer,
       unlocked: u64,
       transferred: u64,
+      split_factor: u64,
     ) acquires SlowWallet, SlowWalletList {
       system_addresses::assert_ol(vm);
+      let split_factor = fixed_point32::create_from_rational(split_factor, 1000000);
+      let unlocked = if (unlocked > 0) {
+        fixed_point32::multiply_u64(unlocked, split_factor)
+      } else { 0 };
+
+      let transferred = if (transferred > 0) {
+        fixed_point32::multiply_u64(transferred, split_factor)
+      } else { 0 };
+
       let user_addr = signer::address_of(user);
       if (!exists<SlowWallet>(user_addr)) {
         move_to<SlowWallet>(user, SlowWallet {
-          unlocked: unlocked * globals::get_coin_split_factor(),
-          transferred: transferred * globals::get_coin_split_factor(),
+          unlocked,
+          transferred,
         });
 
         fork_migrate_slow_list(vm, user);
       } else {
         let state = borrow_global_mut<SlowWallet>(user_addr);
-        state.unlocked = unlocked * globals::get_coin_split_factor();
-        state.transferred = transferred * globals::get_coin_split_factor();
+        state.unlocked = unlocked;
+        state.transferred = transferred;
       }
     }
 

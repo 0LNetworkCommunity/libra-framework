@@ -64,7 +64,7 @@ module ol_framework::test_migration {
 
     // alice only has 1000 unlocked, and 100 lifetime transferred out
     let legacy_unlocked = 1000;
-    slow_wallet::fork_migrate_slow_wallet(&root, &alice, legacy_unlocked, 100);
+    slow_wallet::fork_migrate_slow_wallet(&root, &alice, legacy_unlocked, 100, scale_integer * 1000000);
     let (unlocked, total) = slow_wallet::balance(alice_addr);
     assert!(unlocked == (legacy_unlocked * scale_integer), 73570001);
     assert!(total == user_balance, 73570002);
