@@ -102,10 +102,6 @@ pub fn encode_genesis_change_set(
         .expect("could not migrate users");
     }
 
-    // if genesis_config.is_test {
-    //     allow_core_resources_to_set_version(&mut session);
-    // }
-
     set_genesis_end(&mut session);
 
     // Reconfiguration should happen after all on-chain invocations.

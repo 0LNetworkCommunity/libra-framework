@@ -37,7 +37,7 @@ impl SlowWalletBalance {
     }
     let unlocked = serde_json::from_value::<String>(value[0].clone())?.parse::<u64>()?;
     let total = serde_json::from_value::<String>(value[1].clone())?.parse::<u64>()?;
-    
+
     Ok(Self { unlocked, total })
   }
 }

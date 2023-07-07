@@ -9,6 +9,8 @@ module ol_framework::gas_coin {
     use aptos_framework::coin::{Self, MintCapability, BurnCapability};
     use aptos_framework::system_addresses;
 
+    use ol_framework::globals;
+
     friend aptos_framework::genesis;
 
     /// Account does not have mint capability
@@ -42,7 +44,7 @@ module ol_framework::gas_coin {
             aptos_framework,
             string::utf8(b"Gas Coin"),
             string::utf8(b"GAS"),
-            8, /* decimals */
+            globals::get_coin_decimal_places(), /* decimals  MATCHES LEGACY 0L */
             true, /* monitor_supply */
         );
 
@@ -64,7 +66,7 @@ module ol_framework::gas_coin {
             aptos_framework,
             string::utf8(b"Gas Coin"),
             string::utf8(b"GAS"),
-            8, /* decimals */
+            globals::get_coin_decimal_places(), /* decimals  MATCHES LEGACY 0L */
             true, /* monitor_supply */
         );
 
@@ -181,7 +183,7 @@ module ol_framework::gas_coin {
         index
     }
 
-    #[view] 
+    #[view]
     /// helper to get balance in gas coin
     public fun get_balance(account: address): u64 {
         coin::balance<GasCoin>(account)
