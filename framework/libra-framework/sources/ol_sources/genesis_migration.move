@@ -25,7 +25,7 @@ module ol_framework::genesis_migration {
       auth_key: vector<u8>,
       legacy_balance: u64,
       is_validator: bool,
-      split_factor: u64,
+      split_factor: u64, // precision of 1,000,000
       escrow_pct: u64, // precision of 1,000,000
   ) {
     system_addresses::assert_aptos_framework(vm);
@@ -50,7 +50,7 @@ module ol_framework::genesis_migration {
     let genesis_balance = coin::balance<GasCoin>(user_addr);
 
     // scale up by the coin split factor
-    let expected_final_balance = split_factor * legacy_balance;
+    let expected_final_balance = legacy_balance * (split_factor / 1000000);
     let coins_to_mint = expected_final_balance - genesis_balance;
     gas_coin::mint(vm, user_addr, coins_to_mint);
 
@@ -61,7 +61,7 @@ module ol_framework::genesis_migration {
 
     // establish the infrastructure escrow pledge
     if (is_validator) {
-      let to_escrow = (escrow_pct * new_balance) / 1000000;
+      let to_escrow = new_balance * (escrow_pct / 1000000);
       infra_escrow::user_pledge_infra(user_sig, to_escrow)
     };
   }

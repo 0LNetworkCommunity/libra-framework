@@ -1,6 +1,6 @@
 //! ol functions to run at genesis e.g. migration.
 use crate::hack_cli_progress::OLProgress;
-use crate::supply::get_supply_struct;
+use crate::supply::{get_supply_struct, SupplySettings};
 use anyhow::Context;
 use indicatif::ProgressIterator;
 use libra_types::exports::AccountAddress;
@@ -20,31 +20,37 @@ pub fn genesis_migrate_all_users(
     session: &mut SessionExt<impl MoveResolver>,
     user_recovery: &[LegacyRecovery],
 ) -> anyhow::Result<()> {
-    // donor directed addresses that should be liquided before upgrade
-    // the sample would be distorted by including these
-    let ignore_for_dd_count = vec![
-        // FTW
-        "3A6C51A0B786D644590E8A21591FA8E2"
-            .parse::<LegacyAddress>()
-            .unwrap(),
-        // tip jar
-        "2B0E8325DEA5BE93D856CFDE2D0CBA12"
-            .parse::<LegacyAddress>()
-            .unwrap(),
-    ];
+    let settings = SupplySettings {
+        target_supply: 10_000_000_000.0,
+        target_future_uses: 0.70,
+        // donor directed addresses that should be liquided before upgrade
+        // the sample would be distorted by including these
+        map_dd_to_slow: vec![
+            // FTW
+            "3A6C51A0B786D644590E8A21591FA8E2"
+                .parse::<LegacyAddress>()
+                .unwrap(),
+            // tip jar
+            "2B0E8325DEA5BE93D856CFDE2D0CBA12"
+                .parse::<LegacyAddress>()
+                .unwrap(),
+        ],
+    };
 
-    let supply = get_supply_struct(user_recovery, ignore_for_dd_count)?;
-    let split_factor = 10_000_000_000.0 / supply.total;
+    let mut supply = get_supply_struct(user_recovery, &settings.map_dd_to_slow)?;
 
-    let target_future_uses = supply.total * 0.70;
-    let remaining_to_fund = target_future_uses - supply.donor_directed;
-    let escrow_pct: f64 = remaining_to_fund / supply.slow_validator_locked;
+    supply.set_ratios_from_settings(settings)?;
+    // let split_factor = 10_000_000_000.0 / supply.total;
+
+    // let target_future_uses = supply.total * 0.70;
+    // let remaining_to_fund = target_future_uses - supply.donor_directed;
+    // let escrow_pct: f64 = remaining_to_fund / supply.slow_validator_locked;
 
     user_recovery
         .iter()
         .progress_with_style(OLProgress::bar())
         .for_each(|a| {
-            match genesis_migrate_one_user(session, &a, split_factor, escrow_pct) {
+            match genesis_migrate_one_user(session, &a, supply.split_factor, supply.escrow_pct) {
                 Ok(_) => {}
                 Err(e) => {
                     // TODO: compile a list of errors.
@@ -62,7 +68,6 @@ pub fn genesis_migrate_one_user(
     split_factor: f64,
     escrow_pct: f64,
 ) -> anyhow::Result<()> {
-
     if user_recovery.account.is_none()
         || user_recovery.auth_key.is_none()
         || user_recovery.balance.is_none()
