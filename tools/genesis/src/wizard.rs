@@ -5,7 +5,8 @@
 use crate::{genesis_builder, node_yaml, parse_json, supply::SupplySettings};
 ///////
 // TODO: import from libra
-use crate::{genesis_registration, hack_cli_progress::OLProgress};
+use crate::{genesis_registration};
+use libra_types::ol_progress::OLProgress;
 //////
 use crate::github_extensions::LibraGithubClient;
 use anyhow::{bail, Context};

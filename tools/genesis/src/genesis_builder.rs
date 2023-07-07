@@ -31,7 +31,7 @@ use zapatos_types::{
 use zapatos_vm_genesis::default_gas_schedule;
 
 use crate::genesis::make_recovery_genesis_from_vec_legacy_recovery;
-use crate::hack_cli_progress::OLProgress;
+use libra_types::ol_progress::OLProgress;
 use crate::wizard::DEFAULT_GIT_BRANCH;
 
 pub const LAYOUT_FILE: &str = "layout.yaml";
@@ -127,6 +127,11 @@ pub fn build(
         WAYPOINT_FILE,
         waypoint.to_string().as_bytes(),
     )?;
+
+    // TODO: compare output
+    // if let Some(l) = legacy_recovery {
+    //   compare_json_to_genesis_blob(legacy_recovery, genesis_file, );
+    // }
 
     OLProgress::complete(&format!("genesis successfully built at {}", output_dir.to_str().unwrap()));
     Ok(vec![genesis_file, waypoint_file])

@@ -1,5 +1,5 @@
 //! ol functions to run at genesis e.g. migration.
-use crate::hack_cli_progress::OLProgress;
+use libra_types::ol_progress::OLProgress;
 use crate::supply::{get_supply_struct, SupplySettings};
 use anyhow::Context;
 use indicatif::ProgressIterator;
@@ -32,7 +32,9 @@ pub fn genesis_migrate_all_users(
                 Ok(_) => {}
                 Err(e) => {
                     // TODO: compile a list of errors.
-                    println!("Error migrating user: {:?}", e);
+                    if a.role != AccountRole::System {
+                      println!("Error migrating user: {:?}", e);
+                    }
                 }
             }
         });
@@ -40,7 +42,6 @@ pub fn genesis_migrate_all_users(
 }
 
 pub fn genesis_migrate_one_user(
-    //////// 0L ////////
     session: &mut SessionExt<impl MoveResolver>,
     user_recovery: &LegacyRecovery,
     split_factor: f64,
@@ -50,7 +51,7 @@ pub fn genesis_migrate_one_user(
         || user_recovery.auth_key.is_none()
         || user_recovery.balance.is_none()
     {
-        anyhow::bail!("no user account found");
+        anyhow::bail!("no user account found {:?}", user_recovery);
     }
 
     // convert between different types from ol_types in diem, to current
