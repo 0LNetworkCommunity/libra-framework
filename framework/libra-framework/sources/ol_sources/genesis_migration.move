@@ -16,6 +16,10 @@ module ol_framework::genesis_migration {
   use ol_framework::infra_escrow;
   use aptos_framework::system_addresses;
 
+  use std::fixed_point32;
+
+  use aptos_std::debug::print;
+
   const EBALANCE_MISMATCH: u64 = 0;
 
   /// Called by root in genesis to initialize the GAS coin
@@ -50,7 +54,9 @@ module ol_framework::genesis_migration {
     let genesis_balance = coin::balance<GasCoin>(user_addr);
 
     // scale up by the coin split factor
-    let expected_final_balance = legacy_balance * (split_factor / 1000000);
+
+    let split_factor = fixed_point32::create_from_rational(split_factor, 1000000);
+    let expected_final_balance = fixed_point32::multiply_u64(legacy_balance, split_factor);
     let coins_to_mint = expected_final_balance - genesis_balance;
     gas_coin::mint(vm, user_addr, coins_to_mint);
 
@@ -61,7 +67,11 @@ module ol_framework::genesis_migration {
 
     // establish the infrastructure escrow pledge
     if (is_validator) {
-      let to_escrow = new_balance * (escrow_pct / 1000000);
+      let escrow_pct = fixed_point32::create_from_rational(escrow_pct, 1000000);
+      // TODO: get locked amount
+      let locked = new_balance;
+      let to_escrow = fixed_point32::multiply_u64(locked, escrow_pct);
+      print(&to_escrow);
       infra_escrow::user_pledge_infra(user_sig, to_escrow)
     };
   }

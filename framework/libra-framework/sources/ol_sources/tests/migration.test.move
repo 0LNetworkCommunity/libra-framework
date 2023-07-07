@@ -41,13 +41,15 @@ module ol_framework::test_migration {
     let alice_addr = signer::address_of(&alice);
     let temp_auth_key =  bcs::to_bytes(&alice_addr);
 
+    let legacy_balance = 20000;
+    let scale_integer = 5;
     genesis_migration::migrate_legacy_user(
       &root,
       &alice,
       temp_auth_key,
-      20000,
+      legacy_balance,
       true, // is_validator
-      5,
+      scale_integer * 1000000,// of 1m
       800000, // of 1m
     );
 
@@ -59,6 +61,6 @@ module ol_framework::test_migration {
 
     assert!(all_pledge_balance == user_pledge, 73570001);
 
-    assert!((user_balance + user_pledge) == user_balance * 5, 73570002);
+    assert!((user_balance + user_pledge) == legacy_balance * scale_integer, 73570002);
   }
 }
