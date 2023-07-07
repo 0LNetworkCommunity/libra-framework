@@ -8,41 +8,41 @@ use anyhow::Context;
 
 #[derive(Debug, Clone, Default)]
 pub struct Supply {
-  pub total: u64,
-  pub normal: u64,
-  pub validator: u64, // will overlap with slow wallet
-  pub validator_locked: u64,
-  pub slow_total: u64,
-  pub slow_locked: u64,
-  pub slow_unlocked: u64,
-  pub donor_directed: u64,
+  pub total: f64,
+  pub normal: f64,
+  pub validator: f64, // will overlap with slow wallet
+  pub slow_total: f64,
+  pub slow_locked: f64,
+  pub slow_validator_locked: f64,
+  pub slow_unlocked: f64,
+  pub donor_directed: f64,
 }
 
 fn inc_supply(mut acc: Supply, r: &LegacyRecovery, dd_wallet_list: &Vec<LegacyAddress>) -> anyhow::Result<Supply> {
 
     // get balances
-    let amount: u64 = match &r.balance {
+    let amount: f64 = match &r.balance {
         Some(b) => {
-          b.coin
+          b.coin as f64
         },
-        None => 0,
+        None => 0.0,
     };
-    acc.total = acc.total.checked_add(amount).unwrap();
+    acc.total += amount;
 
     // get donor directed
     if dd_wallet_list.contains(&r.account.unwrap()) {
-      acc.donor_directed = acc.donor_directed.checked_add(amount).unwrap();
+      acc.donor_directed += amount;
     } else if let Some(sl) = &r.slow_wallet {
-      acc.slow_total = acc.slow_total.checked_add(amount).unwrap();
+      acc.slow_total += amount;
       if sl.unlocked > 0 {
-        acc.slow_unlocked = acc.slow_unlocked.checked_add(amount).unwrap();
-        if amount > sl.unlocked { // Note: the validator may have transferred everything out, and the unlocked may not have changed
-          let locked = amount - sl.unlocked;
-          acc.slow_locked = acc.slow_locked.checked_add(locked).unwrap();
+        acc.slow_unlocked += amount;
+        if amount > sl.unlocked as f64 { // Note: the validator may have transferred everything out, and the unlocked may not have changed
+          let locked = amount - sl.unlocked as f64;
+          acc.slow_locked += locked;
           // if this is the special case of a validator account with slow locked balance
           if r.val_cfg.is_some() {
-            acc.validator = acc.validator.checked_add(amount).unwrap();
-            acc.validator_locked = acc.validator_locked.checked_add(locked).unwrap();
+            acc.validator += amount;
+            acc.slow_validator_locked += locked;
           }
 
         }
@@ -51,11 +51,11 @@ fn inc_supply(mut acc: Supply, r: &LegacyRecovery, dd_wallet_list: &Vec<LegacyAd
 
     } else if r.cumulative_deposits.is_some() { 
       // catches the cases of any dd wallets that were mapped to slow wallets
-      acc.slow_locked = acc.slow_locked.checked_add(amount).unwrap();
-      acc.slow_total = acc.slow_total.checked_add(amount).unwrap();
+      acc.slow_locked += amount;
+      acc.slow_total += amount;
     } else {
       
-      acc.normal = acc.normal.checked_add(amount).unwrap();
+      acc.normal += amount;
     }
     Ok(acc)
 }
@@ -65,14 +65,14 @@ fn inc_supply(mut acc: Supply, r: &LegacyRecovery, dd_wallet_list: &Vec<LegacyAd
 /// Note: this may not be the "total supply", since there may be coins in other structs beside an account::balance, e.g escrowed in contracts.
 pub fn get_supply_struct(rec: &Vec<LegacyRecovery>, map_dd_to_slow: Vec<LegacyAddress>) -> anyhow::Result<Supply> {
   let zeroth = Supply {
-    total: 0,
-    normal: 0,
-    validator: 0,
-    validator_locked: 0,
-    slow_total: 0,
-    slow_locked: 0,
-    slow_unlocked: 0,
-    donor_directed: 0,
+    total: 0.0,
+    normal: 0.0,
+    validator: 0.0,
+    slow_total: 0.0,
+    slow_locked: 0.0,
+    slow_validator_locked: 0.0,
+    slow_unlocked: 0.0,
+    donor_directed: 0.0,
   };
 
   let dd_wallets = rec.iter()
@@ -94,45 +94,55 @@ pub fn get_supply_struct(rec: &Vec<LegacyRecovery>, map_dd_to_slow: Vec<LegacyAd
 
 
 #[test]
-fn test_get_struct() {
+fn test_genesis_math() {
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_export_recovery.json");
     
     let r = crate::parse_json::parse(p).unwrap();
 
-    let addr_to_map =  vec![
-    "2B0E8325DEA5BE93D856CFDE2D0CBA12".parse::<LegacyAddress>().unwrap(),
-    "3A6C51A0B786D644590E8A21591FA8E2".parse::<LegacyAddress>().unwrap()
+    // donor directed addresses that should be liquided before upgrade
+    // the sample would be distorted by including these
+    let ignore_for_dd_count =  vec![
+      // FTW
+      "3A6C51A0B786D644590E8A21591FA8E2".parse::<LegacyAddress>().unwrap(),
+      // tip jar
+      "2B0E8325DEA5BE93D856CFDE2D0CBA12".parse::<LegacyAddress>().unwrap(),
     ];
 
-    let supply = get_supply_struct(&r, addr_to_map).unwrap();
+    // confirm the supply of normal, slow, and donor directed will add up to 100%
+    
+    let supply = get_supply_struct(&r, ignore_for_dd_count).unwrap();
     dbg!(&supply);
-    let pct_normal= supply.normal as f64 / supply.total as f64;
+
+    println!("before");
+    let pct_normal= supply.normal / supply.total;
     dbg!(&pct_normal);
-    let pct_slow = supply.slow_total as f64 / supply.total as f64;
-    dbg!(&pct_slow);
-    let pct_dd = supply.donor_directed as f64 / supply.total as f64;
+    let pct_dd = supply.donor_directed / supply.total;
     dbg!(&pct_dd);
-    let pct_val_locked = supply.validator_locked as f64 / supply.total as f64;
+    let pct_slow = supply.slow_total / supply.total;
+    dbg!(&pct_slow);
+    let pct_val_locked = supply.slow_validator_locked / supply.total;
     dbg!(&pct_val_locked);
 
-    let  sum_types = pct_normal + pct_slow + pct_dd;
-    assert!(sum_types == 1.0);
-    dbg!(sum_types);
-    assert!(supply.total == 2397436809784621);
+    let sum_all_pct = pct_normal + pct_slow + pct_dd;
+    assert!(sum_all_pct == 1.0);
+    assert!(supply.total == 2397436809784621.0);
 
-    // future uses would equal 70% in this scenario.
-    let future = supply.total * 70 / 100;
-    dbg!(&future);
-    let remainder = future - supply.donor_directed;
-    dbg!("{#:}", remainder);
-    let ratio: f64 = remainder as f64 / supply.validator_locked as f64;
-    dbg!(&ratio);
+    // genesis infra escrow math
+    // future uses is intended to equal 70% in this scenario.
+    println!("after");
+    let target_future_uses = supply.total * 0.70;
+    let remaining_to_fund = target_future_uses - supply.donor_directed;
+    let ratio: f64 = remaining_to_fund / supply.slow_validator_locked;
 
-    let to_escrow = ratio * supply.validator_locked as f64;
-    dbg!(&to_escrow);
-    let sum = to_escrow as u64 + (supply.slow_total - to_escrow as u64) + supply.normal + supply.donor_directed;
-    dbg!(&sum);
-    assert!(supply.total == sum);
+    // escrow comes out of validator locked only
+    let to_escrow = ratio * supply.slow_validator_locked;
+    let new_slow = supply.slow_total - to_escrow;
+    dbg!(&pct_normal);
+    dbg!(&pct_dd);
+    dbg!(new_slow /supply.total);
+    dbg!(to_escrow /supply.total);
 
+    let sum_all = to_escrow + new_slow + supply.normal + supply.donor_directed;
+    assert!(supply.total == sum_all);
 }
