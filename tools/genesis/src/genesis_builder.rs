@@ -1,7 +1,10 @@
+//! build the genesis file
+use crate::supply::SupplySettings;
 use anyhow::{anyhow, bail, Result};
 use libra_wallet::utils::{check_if_file_exists, from_yaml, write_to_user_only_file};
 use libra_framework::release;
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
+
 
 use std::str::FromStr;
 use std::{
@@ -88,6 +91,7 @@ pub fn build(
     home_path: PathBuf,
     use_local_framework: bool,
     legacy_recovery: Option<&[LegacyRecovery]>,
+    supply_settings: Option<SupplySettings>,
 ) -> Result<Vec<PathBuf>> {
     let output_dir = home_path.join("genesis");
     std::fs::create_dir_all(&output_dir)?;
@@ -100,17 +104,20 @@ pub fn build(
 
     // Generate genesis and waypoint files
     let (genesis_bytes, waypoint) = {
+        println!("fetching genesis info from github");
         let mut gen_info = fetch_genesis_info(github_owner, github_repository, github_token, use_local_framework)?;
 
+        println!("building genesis block");
         let tx = make_recovery_genesis_from_vec_legacy_recovery(
             legacy_recovery,
             &gen_info.validators,
             &gen_info.framework,
             gen_info.chain_id,
+            supply_settings,
           )?;
         // NOTE: if genesis TX is not set, then it will run the vendor's release workflow, which we do not want.
         gen_info.genesis = Some(tx);
-        
+
         (bcs::to_bytes(gen_info.get_genesis())?, gen_info.generate_waypoint()?)
     };
 
@@ -141,18 +148,15 @@ pub fn fetch_genesis_info(
     );
 
     // let layout: Layout = client.get(Path::new(LAYOUT_FILE))?;
-
     let l_file = client.get_file(&Path::new(LAYOUT_FILE).display().to_string())?;
     let layout: Layout = from_yaml(&String::from_utf8(base64::decode(l_file)?)?)?;
+    OLProgress::complete("fetched layout file");
 
-    // if layout.root_key.is_none() {
-    //     return Err(CliError::UnexpectedError(
-    //         "Layout field root_key was not set.  Please provide a hex encoded Ed25519PublicKey."
-    //             .to_string(),
-    //     ));
-    // }
 
+    let pb = OLProgress::spin_steady(100, "fetching validator registrations".to_string());
     let validators = get_validator_configs(&client, &layout, false)?;
+    OLProgress::complete("fetched validator configs");
+    pb.finish_and_clear();
 
     let framework = if use_local_framework {
       // use the local head release

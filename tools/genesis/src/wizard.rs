@@ -2,19 +2,17 @@
 //! instead of using many CLI tools.
 //! genesis wizard
 
-use crate::{genesis_builder, node_yaml, parse_json};
+use crate::{genesis_builder, node_yaml, parse_json, supply::SupplySettings};
 ///////
 // TODO: import from libra
 use crate::{genesis_registration, hack_cli_progress::OLProgress};
 //////
 use crate::github_extensions::LibraGithubClient;
-use libra_types::global_config_dir;
-use libra_types::{
-  legacy_types::mode_ol::MODE_0L
-};
-use anyhow::bail;
+use anyhow::{bail, Context};
 use dialoguer::{Confirm, Input};
 use indicatif::{ProgressBar, ProgressIterator};
+use libra_types::global_config_dir;
+use libra_types::legacy_types::mode_ol::MODE_0L;
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -22,13 +20,13 @@ use std::{
     time::Duration,
 };
 
-use libra_wallet::{keys::VALIDATOR_FILE, validator_files::SetValidatorConfiguration};
 use libra_types::legacy_types::app_cfg::AppCfg;
-use zapatos_types::chain_id::NamedChain;
+use libra_wallet::{keys::VALIDATOR_FILE, validator_files::SetValidatorConfiguration};
+use std::str::FromStr;
 use zapatos_config::config::IdentityBlob;
 use zapatos_genesis::config::HostAndPort;
 use zapatos_github_client::Client;
-use std::str::FromStr;
+use zapatos_types::chain_id::NamedChain;
 
 pub const DEFAULT_GIT_BRANCH: &str = "main";
 pub const GITHUB_TOKEN_FILENAME: &str = "github_token.txt";
@@ -72,7 +70,6 @@ pub struct GenesisWizard {
 // }
 
 impl GenesisWizard {
-
     /// constructor
     pub fn new(genesis_repo_org: String, repo_name: String, data_path: Option<PathBuf>) -> Self {
         let data_path = data_path.unwrap_or(global_config_dir());
@@ -89,9 +86,13 @@ impl GenesisWizard {
     }
 
     /// start wizard for end-to-end genesis
-    pub fn start_wizard(&mut self, use_local_framework: bool, legacy_recovery_path: Option<PathBuf>, do_genesis: bool) -> anyhow::Result<()> {
-
-
+    pub fn start_wizard(
+        &mut self,
+        use_local_framework: bool,
+        legacy_recovery_path: Option<PathBuf>,
+        do_genesis: bool,
+        supply_settings: Option<SupplySettings>,
+    ) -> anyhow::Result<()> {
         if !Path::exists(&self.data_path) {
             println!(
                 "\nIt seems you have no files at {}, creating directory now",
@@ -110,7 +111,12 @@ impl GenesisWizard {
             .interact()?;
         if to_init {
             let host = what_host()?;
-            initialize_host(Some(self.data_path.clone()), &self.github_username, host, None)?;
+            initialize_host(
+                Some(self.data_path.clone()),
+                &self.github_username,
+                host,
+                None,
+            )?;
         }
 
         let to_register = Confirm::new()
@@ -139,18 +145,22 @@ impl GenesisWizard {
             self.make_pull_request()?;
         }
 
-        let ready = if do_genesis { 
-          Confirm::new()
-            .with_prompt("\nNOW WAIT for everyone to do genesis. Is everyone ready?")
-            .interact()
-            .unwrap()
-        } else { false };
+        let ready = if do_genesis {
+            Confirm::new()
+                .with_prompt("\nNOW WAIT for everyone to do genesis. Is everyone ready?")
+                .interact()
+                .unwrap()
+        } else {
+            false
+        };
 
         if ready {
             // Get Legacy Recovery from file
             let legacy_recovery = if let Some(p) = legacy_recovery_path {
-            parse_json::parse(p)?
-          } else { vec![] };
+                parse_json::parse(p)?
+            } else {
+                vec![]
+            };
 
             // TODO: progress bar is odd when we  ask "already exists, are you sure you want to overwrite"
 
@@ -165,6 +175,7 @@ impl GenesisWizard {
                 self.data_path.clone(),
                 use_local_framework,
                 Some(&legacy_recovery),
+                supply_settings,
             )?;
             // pb.finish_and_clear();
 
@@ -177,7 +188,7 @@ impl GenesisWizard {
                 thread::sleep(Duration::from_millis(100));
             }
         } else {
-            println!("Please wait for everyone to finish genesis and come back");
+            println!("Please wait for everyone to finish genesis registration and come back");
         }
 
         Ok(())
@@ -212,7 +223,8 @@ impl GenesisWizard {
             self.github_token.clone(),
         );
 
-        self.github_username = temp_gh_client.get_authenticated_user()?;
+        self.github_username = temp_gh_client.get_authenticated_user()
+        .context("could not get authenticated user on github api")?;
 
         if !Confirm::new()
             .with_prompt(format!(
@@ -259,7 +271,11 @@ impl GenesisWizard {
         } else {
             println!("Found a genesis repo on your account, we'll use that for registration.\n");
         }
-        OLProgress::complete(&format!("Forked the genesis repo from {}/{}", self.genesis_repo_org.clone(), self.repo_name.clone()));
+        OLProgress::complete(&format!(
+            "Forked the genesis repo from {}/{}",
+            self.genesis_repo_org.clone(),
+            self.repo_name.clone()
+        ));
         // Remeber to clear out the /owner key from the key_store.json for safety.
         Ok(())
     }
@@ -296,7 +312,10 @@ impl GenesisWizard {
         )?;
         pb.finish_and_clear();
 
-        OLProgress::complete(&format!("Configs written to {}/{}", self.github_username, self.repo_name));
+        OLProgress::complete(&format!(
+            "Configs written to {}/{}",
+            self.github_username, self.repo_name
+        ));
 
         Ok(())
     }
@@ -362,16 +381,17 @@ impl GenesisWizard {
             &*self.github_username,
             None, // default to "main"
         ) {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(e) => {
-              if e.to_string().contains("A pull request already exists") {
-                println!("INFO: A pull request already exists, you don't need to do anything else.");
-                // return Ok(())
-              } else {
-                bail!("failed to create pull, message: {}", e.to_string())
-              }
-              
-            },
+                if e.to_string().contains("A pull request already exists") {
+                    println!(
+                        "INFO: A pull request already exists, you don't need to do anything else."
+                    );
+                    // return Ok(())
+                } else {
+                    bail!("failed to create pull, message: {}", e.to_string())
+                }
+            }
         };
         pb.inc(1);
         pb.finish_and_clear();
@@ -417,41 +437,40 @@ fn initialize_host(
     Ok(())
 }
 
-
 /// interact with user to get ip address
 pub fn what_host() -> Result<HostAndPort, anyhow::Error> {
     // get from external source since many cloud providers show different interfaces for `machine_ip`
     let resp = reqwest::blocking::get("https://ifconfig.me")?;
     // let ip_str = resp.text()?;
 
-     let host = match resp.text() {
-       Ok(ip_str) => { 
-          let h = HostAndPort::from_str(&format!("{}:6180", ip_str))?;
-          if *MODE_0L == NamedChain::DEVNET { return Ok(h) }
-          Some(h)
+    let host = match resp.text() {
+        Ok(ip_str) => {
+            let h = HostAndPort::from_str(&format!("{}:6180", ip_str))?;
+            if *MODE_0L == NamedChain::DEVNET {
+                return Ok(h);
+            }
+            Some(h)
         }
-        _ => None
-     };
-
-
-    if let Some(h) = host {
-          let txt = &format!(
-        "Will you use this host, and this IP address {:?}, for your node?",
-        h
-      );
-      if Confirm::new().with_prompt(txt).interact().unwrap() {
-          return Ok(h)
-      }
+        _ => None,
     };
 
+    if let Some(h) = host {
+        let txt = &format!(
+            "Will you use this host, and this IP address {:?}, for your node?",
+            h
+        );
+        if Confirm::new().with_prompt(txt).interact().unwrap() {
+            return Ok(h);
+        }
+    };
 
     let input: String = Input::new()
-                .with_prompt("Enter the DNS or IP address, with port 6180")
-                .interact_text()
-                .unwrap();
+        .with_prompt("Enter the DNS or IP address, with port 6180")
+        .interact_text()
+        .unwrap();
     let ip = input
-      .parse::<HostAndPort>()
-      .expect("Could not parse IP or DNS address");
+        .parse::<HostAndPort>()
+        .expect("Could not parse IP or DNS address");
 
     Ok(ip)
 }
@@ -464,16 +483,15 @@ fn test_wizard() {
         "0LNetworkCommunity".to_string(),
         "test_genesis".to_string(),
         None,
-      );
-      wizard.start_wizard( false, None, false).unwrap();
+    );
+    wizard.start_wizard(false, None, false, None).unwrap();
 }
 
 #[test]
 fn test_validator_files_config() {
     let alice_mnem = "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse".to_string();
     let h = HostAndPort::local(6180).unwrap();
-    let test_path = global_config_dir()
-        .join("test_genesis");
+    let test_path = global_config_dir().join("test_genesis");
     if test_path.exists() {
         fs::remove_dir_all(&test_path).unwrap();
     }
@@ -490,10 +508,8 @@ fn test_register() {
         "0LNetworkCommunity".to_string(),
         "test_genesis".to_string(),
         None,
-      );
-      g.validator_address = "0xTEST".to_string();
+    );
+    g.validator_address = "0xTEST".to_string();
     g.git_token_check().unwrap();
     g.genesis_registration_github().unwrap();
 }
-
-

@@ -5,7 +5,6 @@ use anyhow::Context;
 use indicatif::ProgressIterator;
 use libra_types::exports::AccountAddress;
 use libra_types::legacy_types::{
-    legacy_address::LegacyAddress,
     legacy_recovery::{AccountRole, LegacyRecovery},
 };
 use move_core_types::{
@@ -19,32 +18,11 @@ use zapatos_vm_genesis::exec_function;
 pub fn genesis_migrate_all_users(
     session: &mut SessionExt<impl MoveResolver>,
     user_recovery: &[LegacyRecovery],
+    supply_settings: &SupplySettings,
 ) -> anyhow::Result<()> {
-    let settings = SupplySettings {
-        target_supply: 10_000_000_000.0,
-        target_future_uses: 0.70,
-        // donor directed addresses that should be liquided before upgrade
-        // the sample would be distorted by including these
-        map_dd_to_slow: vec![
-            // FTW
-            "3A6C51A0B786D644590E8A21591FA8E2"
-                .parse::<LegacyAddress>()
-                .unwrap(),
-            // tip jar
-            "2B0E8325DEA5BE93D856CFDE2D0CBA12"
-                .parse::<LegacyAddress>()
-                .unwrap(),
-        ],
-    };
+    let mut supply = get_supply_struct(user_recovery, &supply_settings.map_dd_to_slow)?;
 
-    let mut supply = get_supply_struct(user_recovery, &settings.map_dd_to_slow)?;
-
-    supply.set_ratios_from_settings(settings)?;
-    // let split_factor = 10_000_000_000.0 / supply.total;
-
-    // let target_future_uses = supply.total * 0.70;
-    // let remaining_to_fund = target_future_uses - supply.donor_directed;
-    // let escrow_pct: f64 = remaining_to_fund / supply.slow_validator_locked;
+    supply.set_ratios_from_settings(supply_settings)?;
 
     user_recovery
         .iter()

@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::Args;
 use libra_types::legacy_types::{legacy_address::LegacyAddress, legacy_recovery::LegacyRecovery};
 // use std::path::PathBuf;
 use anyhow::Context;
@@ -20,7 +20,7 @@ pub struct Supply {
 
 impl Supply {
   // returns the ratios (split_factor, escrow_pct)
-  pub fn set_ratios_from_settings(&mut self, settings: SupplySettings) -> anyhow::Result<()>{
+  pub fn set_ratios_from_settings(&mut self, settings: &SupplySettings) -> anyhow::Result<()>{
     self.split_factor = settings.target_supply / self.total;
 
     let target_future_uses = settings.target_future_uses * self.total;
@@ -30,7 +30,7 @@ impl Supply {
   }
 }
 
-#[derive(Debug, Clone, Parser)]
+#[derive(Debug, Clone, Args)]
 pub struct SupplySettings {
     #[clap(long)]
     /// what is the final supply units to be split to
@@ -41,6 +41,16 @@ pub struct SupplySettings {
     #[clap(long)]
     /// for future uses calc, are there any donor directed wallets which require mapping to slow wallets
     pub map_dd_to_slow: Vec<LegacyAddress>,
+}
+
+impl Default for SupplySettings {
+  fn default() -> Self {
+      Self {
+        target_supply: 10_000_000_000.0,
+        target_future_uses: 0.0,
+        map_dd_to_slow: vec![],
+      }
+  }
 }
 
 fn inc_supply(
@@ -168,7 +178,7 @@ fn test_genesis_math() {
     // genesis infra escrow math
     // future uses is intended to equal 70% in this scenario.
     println!("after");
-    supply.set_ratios_from_settings(settings).unwrap();
+    supply.set_ratios_from_settings(&settings).unwrap();
 
     // escrow comes out of validator locked only
     let to_escrow = supply.escrow_pct * supply.slow_validator_locked;

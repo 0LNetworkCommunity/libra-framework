@@ -1,6 +1,7 @@
 use libra_genesis_tools::{
     genesis::{make_recovery_genesis_from_vec_legacy_recovery, save_genesis},
     parse_json,
+    supply::SupplySettings,
 };
 use std::path::PathBuf;
 use zapatos_types::{
@@ -15,6 +16,7 @@ use zapatos_vm_genesis::{TestValidator, Validator};
 
 use libra_framework::head_release_bundle;
 use libra_types::test_drop_helper::DropTemp;
+use libra_types::legacy_types::legacy_address::LegacyAddress;
 use std::fs;
 
 #[test]
@@ -32,11 +34,25 @@ fn end_to_end_single() {
     let test_validators = TestValidator::new_test_set(Some(num_vals), Some(100_000_000_000_000));
     let validators: Vec<Validator> = test_validators.iter().map(|t| t.data.clone()).collect();
 
+    let mut supply_settings = SupplySettings::default();
+    supply_settings.target_future_uses = 0.70;
+    supply_settings.map_dd_to_slow = vec![
+        // FTW
+        "3A6C51A0B786D644590E8A21591FA8E2"
+            .parse::<LegacyAddress>()
+            .unwrap(),
+        // tip jar
+        "2B0E8325DEA5BE93D856CFDE2D0CBA12"
+            .parse::<LegacyAddress>()
+            .unwrap(),
+    ];
+
     let tx = make_recovery_genesis_from_vec_legacy_recovery(
         Some(&recovery),
         &validators,
         &head_release_bundle(),
         ChainId::test(),
+        Some(supply_settings),
     )
     .expect("could not write genesis.blob");
 
@@ -83,11 +99,25 @@ fn end_to_end_all() {
     let test_validators = TestValidator::new_test_set(Some(num_vals), Some(100_000_000_000_000));
     let validators: Vec<Validator> = test_validators.iter().map(|t| t.data.clone()).collect();
 
+    let mut supply_settings = SupplySettings::default();
+    supply_settings.target_future_uses = 0.70;
+    supply_settings.map_dd_to_slow = vec![
+        // FTW
+        "3A6C51A0B786D644590E8A21591FA8E2"
+            .parse::<LegacyAddress>()
+            .unwrap(),
+        // tip jar
+        "2B0E8325DEA5BE93D856CFDE2D0CBA12"
+            .parse::<LegacyAddress>()
+            .unwrap(),
+    ];
+
     let tx = make_recovery_genesis_from_vec_legacy_recovery(
         Some(&recovery),
         &validators,
         &head_release_bundle(),
         ChainId::test(),
+        Some(supply_settings),
     )
     .expect("could not write genesis.blob");
 
