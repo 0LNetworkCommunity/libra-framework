@@ -1,7 +1,7 @@
 pub mod txs_cli;
 pub mod constants;
 pub mod create_account;
-pub mod generate_transaction;
+pub mod generic_tx;
 pub mod submit_transaction;
 pub mod view;
 pub mod transfer;
