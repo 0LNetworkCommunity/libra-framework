@@ -3,6 +3,8 @@
 use crate::submit_transaction::Sender;
 use libra_cached_packages::aptos_stdlib::EntryFunctionCall::{
   JailUnjailByVoucher,
+  ProofOfFeePofRetractBid,
+  ProofOfFeePofUpdateBid,
   VouchRevoke,
   VouchVouchFor,
 };
@@ -17,6 +19,9 @@ pub enum ValidatorTxs {
         #[clap(short, long)]
         /// epoch number in which this bid expires. The validity of the bit is inclusive of the epoch number, that is, on `expiry + 1` the bid is no longer valid. If it should not expire the number must be 0.
         expiry: u64,
+        #[clap(short, long)]
+        /// eliminates the bid. There are only a limited amount of retractions that can happen in an epoch.
+        retract: bool,
     },
     Jail {
         #[clap(short, long)]
@@ -36,8 +41,15 @@ pub enum ValidatorTxs {
 impl ValidatorTxs {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         let  payload = match self {
-            ValidatorTxs::Pof { bid_pct, expiry } => {
-              todo!()
+            ValidatorTxs::Pof { bid_pct, expiry: epoch_expiry , retract} => {
+              if *retract {
+                ProofOfFeePofRetractBid{}
+              } else {
+                ProofOfFeePofUpdateBid{
+                    bid: (*bid_pct * 100.00) as u64, // scale two decimal places
+                    epoch_expiry: *epoch_expiry,
+                }
+              }
             }
             ValidatorTxs::Jail { unjail_acct } => {
               JailUnjailByVoucher { addr: unjail_acct.to_owned() }
@@ -58,6 +70,5 @@ impl ValidatorTxs {
 
         sender.sign_submit_wait(payload.encode()).await?;
         Ok(())
-        // Ok(())
     }
 }
