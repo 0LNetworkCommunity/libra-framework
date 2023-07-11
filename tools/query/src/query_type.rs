@@ -2,7 +2,7 @@ use crate::{
     account_queries::{get_account_balance_libra, get_tower_state},
     query_view,
 };
-
+use indoc::indoc;
 use anyhow::{bail, Result};
 use libra_types::type_extensions::client_ext::ClientExt;
 use serde_json::json;
@@ -37,37 +37,36 @@ pub enum QueryType {
         #[clap(
             short,
             long,
-            help = r#"
+            help = indoc!{r#"
                 Function identifier has the form <ADDRESS>::<MODULE_ID>::<FUNCTION_NAME>
 
                 Example:
                 0x1::coin::balance
-            "#
+            "#}
         )]
         function_id: String,
 
         #[clap(
             short,
             long,
-            help = r#"
+            help = indoc!{r#"
                 Type arguments separated by commas
 
                 Example:
                 'u8, u16, u32, u64, u128, u256, bool, address, vector<u8>, signer'
-                '0x1::aptos_coin::AptosCoin'
-            "#
+            "#}
         )]
         type_args: Option<String>,
 
         #[clap(
             short,
             long,
-            help = r#"
+            help = indoc!{r#"
                 Function arguments separated by commas
 
                 Example:
                 '0x1, true, 12, 24_u8, x"123456"'
-            "#
+            "#}
         )]
         args: Option<String>,
     },

@@ -136,46 +136,6 @@ pub enum TxsSub {
         // #[clap(short, long)]
         // submit: bool,
     },
-
-    /// Execute a View function on-chain
-    View {
-        #[clap(
-            short,
-            long,
-            help = indoc!{r#"
-                Function identifier has the form <ADDRESS>::<MODULE_ID>::<FUNCTION_NAME>
-
-                Example:
-                0x1::coin::balance
-            "#}
-        )]
-        function_id: String,
-
-        #[clap(
-            short,
-            long,
-            help = indoc!{ r#"
-                Type arguments separated by commas
-
-                Example:
-                'u8, u16, u32, u64, u128, u256, bool, address, vector<u8>, signer'
-                '0x1::aptos_coin::AptosCoin'
-            "#}
-        )]
-        type_args: Option<String>,
-
-        #[clap(
-            short,
-            long,
-            help = indoc!{ r#"
-                Function arguments separated by commas
-
-                Example:
-                '0x1, true, 12, 24_u8, x"123456"'
-            "#}
-        )]
-        args: Option<String>,
-    },
 }
 
 impl TxsCli {
@@ -227,22 +187,28 @@ impl TxsCli {
                 send.generic(function_id, ty_args, args).await
             }
 
-            Some(TxsSub::View {
-                function_id,
-                type_args,
-                args,
-            }) => {
-                println!("====================");
-                println!(
-                    "{}",
-                    crate::view::run(function_id, type_args.to_owned(), args.to_owned()).await?
-                );
-                Ok(())
-            },
+            // Some(TxsSub::View {
+            //     function_id,
+            //     type_args,
+            //     args,
+            // }) => {
+            //     println!("====================");
+            //     println!(
+            //         "{}",
+            //         crate::view::run(function_id, type_args.to_owned(), args.to_owned()).await?
+            //     );
+            //     Ok(())
+            // },
             Some(TxsSub::Validator(val_txs)) => {
               val_txs.run(&mut send).await
             },
-            _ => Ok(()),
+            _ => {
+              println!("I'm searching, though I don't succeed \n
+              But someone look, there's a growing need \n
+              Oh, he is lost, there's no place for beginning \n
+              All that's left is an unhappy ending");
+              Ok(())
+            },
         }
     }
 }
