@@ -1,4 +1,5 @@
 use crate::submit_transaction::Sender;
+use crate::txs_cli_vals::ValidatorTxs;
 use std::path::PathBuf;
 
 use anyhow::Result;
@@ -57,6 +58,8 @@ pub struct TxsCli {
 
 #[derive(clap::Subcommand)]
 pub enum TxsSub {
+    #[clap(subcommand)]
+    Validator(ValidatorTxs),
     /// Create onchain account by using Aptos faucet
     CreateAccount {
         /// Create onchain account with the given address
@@ -235,6 +238,9 @@ impl TxsCli {
                     crate::view::run(function_id, type_args.to_owned(), args.to_owned()).await?
                 );
                 Ok(())
+            },
+            Some(TxsSub::Validator(val_txs)) => {
+              todo!()
             }
             _ => Ok(()),
         }

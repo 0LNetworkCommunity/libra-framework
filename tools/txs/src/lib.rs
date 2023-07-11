@@ -1,4 +1,5 @@
 pub mod txs_cli;
+pub mod txs_cli_vals;
 pub mod constants;
 pub mod create_account;
 pub mod generic_tx;
