@@ -39,7 +39,7 @@ pub struct TxsCli {
     pub test_private_key: Option<String>,
 
     /// optional, id of chain as name. Will default to MAINNET;
-    #[clap(short, long)]
+    #[clap(long)]
     pub chain_id: Option<NamedChain>,
 
     /// optional, URL of the upstream node to send tx to, including port
@@ -49,10 +49,10 @@ pub struct TxsCli {
 
     /// optional, maximum number of gas units to be used to send this transaction
     #[clap(short, long)]
-    pub max_gas: Option<u64>,
+    pub gas_max: Option<u64>,
 
     /// optional, the amount of coins to pay for 1 gas unit. The higher the price is, the higher priority your transaction will be executed with
-    #[clap(short, long)]
+    #[clap(short = 'p', long)]
     pub gas_unit_price: Option<u64>,
 }
 
