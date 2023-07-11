@@ -12,7 +12,7 @@ use crate::legacy_types::{
     receipts::ReceiptsResource,
     validator_config::ValidatorConfigResource,
     wallet::{CommunityWalletsResourceLegacy, SlowWalletResource, SlowWalletListResource},
-    
+
     ancestry::AncestryResource,
     legacy_currency_info::CurrencyInfoResource,
     makewhole_resource::MakeWholeResource,
@@ -63,7 +63,7 @@ pub struct LegacyRecovery {
     pub auth_key: Option<AuthenticationKey>,
     ///
     pub role: AccountRole,
-    /// 
+    ///
     pub balance: Option<LegacyBalanceResource>,
     ///
     pub val_cfg: Option<ValidatorConfigResource>,
@@ -81,7 +81,7 @@ pub struct LegacyRecovery {
     pub receipts: Option<ReceiptsResource>,
     ///
     pub cumulative_deposits: Option<CumulativeDepositResource>,
-    /// 
+    ///
     pub slow_wallet: Option<SlowWalletResource>,
     ///
     pub slow_wallet_list: Option<SlowWalletListResource>,
@@ -123,7 +123,7 @@ pub struct OperRecover {
     pub fullnode_network_addresses: Vec<u8>,
 }
 /// RecoveryFile
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct RecoverConsensusAccounts {
     ///
     pub vals: Vec<ValStateRecover>,
@@ -132,14 +132,14 @@ pub struct RecoverConsensusAccounts {
 }
 
 
-impl Default for RecoverConsensusAccounts {
-    fn default() -> Self {
-        RecoverConsensusAccounts {
-            vals: vec![],
-            opers: vec![],
-        }
-    }
-}
+// impl Default for RecoverConsensusAccounts {
+//     fn default() -> Self {
+//         RecoverConsensusAccounts {
+//             vals: vec![],
+//             opers: vec![],
+//         }
+//     }
+// }
 
 /// Save genesis recovery file
 pub fn save_recovery_file(data: &[LegacyRecovery], path: &PathBuf) -> anyhow::Result<()> {

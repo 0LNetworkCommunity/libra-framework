@@ -151,7 +151,7 @@ impl Sender {
             response: None,
         };
 
-        return Ok(s);
+        Ok(s)
     }
 
     pub async fn from_vendor_profile(

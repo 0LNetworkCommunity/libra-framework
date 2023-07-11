@@ -81,7 +81,7 @@ impl AppCfg {
         fs::create_dir_all(&home_path)?;
         let toml_path = home_path.join(CONFIG_FILE_NAME);
         let mut file = fs::File::create(&toml_path)?;
-        file.write(&yaml.as_bytes())?;
+        file.write_all(&yaml.as_bytes())?;
 
         println!(
             "app configs file saved to: {:?}",

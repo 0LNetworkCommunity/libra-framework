@@ -37,13 +37,13 @@ pub fn build_entry_function(
     let (module_address, module_name, function_name) = parse_function_id(function_id)?;
     let module = ModuleId::new(module_address, module_name);
     let ty_args: Vec<TypeTag> = if let Some(ty_args) = ty_args {
-        parse_type_tags(&ty_args)
+        parse_type_tags(ty_args)
             .context(format!("Unable to parse the type argument(s): {ty_args}"))?
     } else {
         vec![]
     };
     let args: Vec<TransactionArgument> = if let Some(args) = args {
-        parse_transaction_arguments(&args)
+        parse_transaction_arguments(args)
             .context(format!("Unable to parse argument(s): {args}"))?
     } else {
         vec![]
