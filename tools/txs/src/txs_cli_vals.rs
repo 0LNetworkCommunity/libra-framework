@@ -1,7 +1,11 @@
 //! Validator subcommands
 
 use crate::submit_transaction::Sender;
-use libra_cached_packages::aptos_stdlib::EntryFunctionCall::JailUnjailByVoucher;
+use libra_cached_packages::aptos_stdlib::EntryFunctionCall::{
+  JailUnjailByVoucher,
+  VouchRevoke,
+  VouchVouchFor,
+};
 use zapatos_types::account_address::AccountAddress;
 
 #[derive(clap::Subcommand)]
@@ -31,17 +35,29 @@ pub enum ValidatorTxs {
 
 impl ValidatorTxs {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        match self {
+        let  payload = match self {
             ValidatorTxs::Pof { bid_pct, expiry } => {
               todo!()
             }
             ValidatorTxs::Jail { unjail_acct } => {
-                let payload = JailUnjailByVoucher { addr: unjail_acct.to_owned() };
-                sender.sign_submit_wait(payload.encode()).await?;
-                Ok(())
+              JailUnjailByVoucher { addr: unjail_acct.to_owned() }
             }
-            ValidatorTxs::Vouch { vouch_acct, revoke } => todo!(),
-        }
+            ValidatorTxs::Vouch { vouch_acct, revoke } => {
+              if *revoke {
+                VouchRevoke {
+                  its_not_me_its_you: *vouch_acct
+                }
+
+              } else {
+                VouchVouchFor {
+                  wanna_be_my_friend: *vouch_acct
+                }
+              }
+            },
+        };
+
+        sender.sign_submit_wait(payload.encode()).await?;
+        Ok(())
         // Ok(())
     }
 }

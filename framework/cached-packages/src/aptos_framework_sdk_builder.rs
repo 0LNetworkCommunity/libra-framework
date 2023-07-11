@@ -563,6 +563,14 @@ pub enum EntryFunctionCall {
     VersionSetVersion {
         major: u64,
     },
+
+    VouchRevoke {
+        its_not_me_its_you: AccountAddress,
+    },
+
+    VouchVouchFor {
+        wanna_be_my_friend: AccountAddress,
+    },
 }
 
 impl EntryFunctionCall {
@@ -866,6 +874,8 @@ impl EntryFunctionCall {
                 security,
             } => tower_state_minerstate_commit(challenge, solution, difficulty, security),
             VersionSetVersion { major } => version_set_version(major),
+            VouchRevoke { its_not_me_its_you } => vouch_revoke(its_not_me_its_you),
+            VouchVouchFor { wanna_be_my_friend } => vouch_vouch_for(wanna_be_my_friend),
         }
     }
 
@@ -2393,6 +2403,36 @@ pub fn version_set_version(major: u64) -> TransactionPayload {
         vec![bcs::to_bytes(&major).unwrap()],
     ))
 }
+
+pub fn vouch_revoke(its_not_me_its_you: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("vouch").to_owned(),
+        ),
+        ident_str!("revoke").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&its_not_me_its_you).unwrap()],
+    ))
+}
+
+pub fn vouch_vouch_for(wanna_be_my_friend: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("vouch").to_owned(),
+        ),
+        ident_str!("vouch_for").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&wanna_be_my_friend).unwrap()],
+    ))
+}
 mod decoder {
     use super::*;
     pub fn account_offer_rotation_capability(
@@ -3244,6 +3284,26 @@ mod decoder {
             None
         }
     }
+
+    pub fn vouch_revoke(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::VouchRevoke {
+                its_not_me_its_you: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn vouch_vouch_for(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::VouchVouchFor {
+                wanna_be_my_friend: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
 }
 
 type EntryFunctionDecoderMap = std::collections::HashMap<
@@ -3537,6 +3597,11 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "version_set_version".to_string(),
             Box::new(decoder::version_set_version),
+        );
+        map.insert("vouch_revoke".to_string(), Box::new(decoder::vouch_revoke));
+        map.insert(
+            "vouch_vouch_for".to_string(),
+            Box::new(decoder::vouch_vouch_for),
         );
         map
     });
