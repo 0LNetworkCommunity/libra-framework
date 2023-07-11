@@ -240,8 +240,8 @@ impl TxsCli {
                 Ok(())
             },
             Some(TxsSub::Validator(val_txs)) => {
-              todo!()
-            }
+              val_txs.run(&mut send).await
+            },
             _ => Ok(()),
         }
     }

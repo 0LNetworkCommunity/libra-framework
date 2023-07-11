@@ -291,6 +291,12 @@ pub enum EntryFunctionCall {
         amount: u64,
     },
 
+    /// Only a Voucher of the validator can flip the unjail bit.
+    /// This is a way to make sure the validator is ready to rejoin.
+    JailUnjailByVoucher {
+        addr: AccountAddress,
+    },
+
     /// Similar to add_owners, but only allow adding one owner.
     MultisigAccountAddOwner {
         new_owner: AccountAddress,
@@ -708,6 +714,7 @@ impl EntryFunctionCall {
             GasCoinClaimMintCapability {} => gas_coin_claim_mint_capability(),
             GasCoinDelegateMintCapability { to } => gas_coin_delegate_mint_capability(to),
             GasCoinMint { dst_addr, amount } => gas_coin_mint(dst_addr, amount),
+            JailUnjailByVoucher { addr } => jail_unjail_by_voucher(addr),
             MultisigAccountAddOwner { new_owner } => multisig_account_add_owner(new_owner),
             MultisigAccountAddOwners { new_owners } => multisig_account_add_owners(new_owners),
             MultisigAccountApproveTransaction {
@@ -1596,6 +1603,23 @@ pub fn gas_coin_mint(dst_addr: AccountAddress, amount: u64) -> TransactionPayloa
             bcs::to_bytes(&dst_addr).unwrap(),
             bcs::to_bytes(&amount).unwrap(),
         ],
+    ))
+}
+
+/// Only a Voucher of the validator can flip the unjail bit.
+/// This is a way to make sure the validator is ready to rejoin.
+pub fn jail_unjail_by_voucher(addr: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("jail").to_owned(),
+        ),
+        ident_str!("unjail_by_voucher").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&addr).unwrap()],
     ))
 }
 
@@ -2778,6 +2802,16 @@ mod decoder {
         }
     }
 
+    pub fn jail_unjail_by_voucher(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::JailUnjailByVoucher {
+                addr: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn multisig_account_add_owner(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountAddOwner {
@@ -3359,6 +3393,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "gas_coin_mint".to_string(),
             Box::new(decoder::gas_coin_mint),
+        );
+        map.insert(
+            "jail_unjail_by_voucher".to_string(),
+            Box::new(decoder::jail_unjail_by_voucher),
         );
         map.insert(
             "multisig_account_add_owner".to_string(),
