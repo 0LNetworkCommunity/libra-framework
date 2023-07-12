@@ -108,10 +108,21 @@ module aptos_framework::account {
     }
 
     //////// 0L ////////
-    // bring this back from diem for ol VoteLib
+    /// Is only authorized to withdraw, cannot make other changes to account
+    /// cannot be dropped once created
+    // bring back granular permissions from diem for ol VoteLib
+    struct WithdrawCapability has key, store {
+      addr: address
+    }
+
+    //////// 0L ////////
+    /// is authorized to increment the GUID, like creating voting proposals.
+    // bring back granular permissions from diem for ol VoteLib
     struct GUIDCapability has key, store, drop {
       addr: address // of the account with the id generator
     }
+
+
 
     const MAX_U64: u128 = 18446744073709551615;
     const ZERO_AUTH_KEY: vector<u8> = x"0000000000000000000000000000000000000000000000000000000000000000";
@@ -813,10 +824,26 @@ module aptos_framework::account {
     }
 
     //////// 0L ////////
+
+    public fun extract_withdraw_capability(owner: &signer): WithdrawCapability {
+      // this is a hot potato, can never be dropped.
+      WithdrawCapability { addr: signer::address_of(owner) }
+    }
+
     public fun create_guid_capability(owner: &signer): GUIDCapability {
         GUIDCapability {
           addr: signer::address_of(owner)
         }
+    }
+
+    public fun create_guid_with_capability(cap: &GUIDCapability): guid::GUID acquires Account {
+        let account = borrow_global_mut<Account>(cap.addr);
+        let guid = guid::create(cap.addr, &mut account.guid_creation_num);
+        assert!(
+            account.guid_creation_num < MAX_GUID_CREATION_NUM,
+            error::out_of_range(EEXCEEDED_MAX_GUID_CREATION_NUM),
+        );
+        guid
     }
 
 
