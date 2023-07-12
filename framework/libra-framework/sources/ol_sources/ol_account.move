@@ -6,17 +6,16 @@ module ol_framework::ol_account {
     // use aptos_framework::chain_status;
     use std::error;
     use std::signer;
-    // use aptos_std::debug::print;
-
-    #[test_only]
-    use std::vector;
-    #[test_only]
-    use aptos_framework::coin::Coin;
-
-
+    use std::option;
 
     use ol_framework::gas_coin::GasCoin;
     use ol_framework::slow_wallet;
+    // use aptos_std::debug::print;
+
+    #[test_only]
+    use aptos_framework::coin::Coin;
+    #[test_only]
+    use std::vector;
 
     friend aptos_framework::genesis;
     friend aptos_framework::resource_account;
@@ -66,7 +65,7 @@ module ol_framework::ol_account {
     //         (coin::balance<GasCoin>(sender_addr) > 2 * BOOTSTRAP_GAS_COIN_AMOUNT),
     //         error::invalid_state(EINSUFFICIENT_BALANCE),
     //     );
-        
+
     //     coin::transfer<GasCoin>(sender, auth_key, BOOTSTRAP_GAS_COIN_AMOUNT);
     // }
 
@@ -113,6 +112,9 @@ module ol_framework::ol_account {
         new_signer
     }
 
+
+
+
     // #[test_only]
     // /// Batch version of GAS transfer.
     // public entry fun batch_transfer(source: &signer, recipients: vector<address>, amounts: vector<u64>) {
@@ -150,7 +152,23 @@ module ol_framework::ol_account {
         coin::transfer<GasCoin>(sender, to, amount)
     }
 
-    //////// 0L ////////  
+    public fun vm_transfer(vm: &signer, from: address, to: address, amount: u64) {
+      system_addresses::assert_ol(vm);
+      // should not halt
+      if (!coin::is_account_registered<GasCoin>(to)) return;
+      if(amount < coin::balance<GasCoin>(from)) return;
+
+      let coin_option = coin::vm_withdraw<GasCoin>(from, amount);
+      if (option::is_some(&coin_option)) {
+        let c = option::extract(&mut coin_option);
+        coin::deposit(to, c);
+      };
+
+      option::destroy_none(coin_option);
+
+    }
+
+    //////// 0L ////////
     fun get_slow_limit(addr: address): u64 {
       let full_balance = coin::balance<GasCoin>(addr);
       // TODO: check if recipient is a donor directed account.
@@ -238,7 +256,7 @@ module ol_framework::ol_account {
             move_to(account, direct_transfer_config);
         };
     }
-    
+
 
     #[view]
     /// Return true if `account` can receive direct transfers of coins that they have not explicitly registered to
@@ -338,7 +356,7 @@ module ol_framework::ol_account {
     // }
 
     // #[test(root = @ol_framework, from = @0x1, recipient_1 = @0x124, recipient_2 = @0x125)]
-    // public fun test_batch_transfer_fake_coin(root: signer,  
+    // public fun test_batch_transfer_fake_coin(root: signer,
     //     from: &signer, recipient_1: &signer, recipient_2: &signer) {
     //     let (burn_cap, freeze_cap, mint_cap) = coin::initialize<FakeCoin>(
     //         from,

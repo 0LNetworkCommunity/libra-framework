@@ -18,6 +18,7 @@ module aptos_framework::coin {
     use aptos_std::debug::print;
 
     friend ol_framework::gas_coin;
+    friend ol_framework::ol_account;
     friend aptos_framework::aptos_coin;
     friend aptos_framework::genesis;
     friend aptos_framework::transaction_fee;
@@ -623,6 +624,25 @@ module aptos_framework::coin {
         );
 
         extract(&mut coin_store.coin, amount)
+    }
+
+    /// DANGER: only to be used by vm in friend functions
+    public(friend) fun vm_withdraw<CoinType>(
+        account_addr: address,
+        amount: u64,
+    ): Option<Coin<CoinType>> acquires CoinStore {
+        // should never halt
+        if (!is_account_registered<CoinType>(account_addr)) return option::none();
+        if (amount > balance<CoinType>(account_addr)) return option::none();
+
+        let coin_store = borrow_global_mut<CoinStore<CoinType>>(account_addr);
+
+        event::emit_event<WithdrawEvent>(
+            &mut coin_store.withdraw_events,
+            WithdrawEvent { amount },
+        );
+
+        option::some(extract(&mut coin_store.coin, amount))
     }
 
     /// Create a new `Coin<CoinType>` with a value of `0`.

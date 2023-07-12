@@ -829,6 +829,9 @@ module aptos_framework::account {
       // this is a hot potato, can never be dropped.
       WithdrawCapability { addr: signer::address_of(owner) }
     }
+    public fun get_withdraw_cap_address(cap: &WithdrawCapability): address {
+        cap.addr
+    }
 
     public fun create_guid_capability(owner: &signer): GUIDCapability {
         GUIDCapability {

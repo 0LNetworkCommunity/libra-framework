@@ -5,6 +5,7 @@ module aptos_framework::transaction_fee {
     // use aptos_framework::stake;
     use aptos_framework::system_addresses;
     use std::error;
+    use std::vector;
     use std::option::{Self, Option};
 
     use ol_framework::gas_coin::GasCoin;
@@ -182,8 +183,8 @@ module aptos_framework::transaction_fee {
     //////// 0L ////////
     /// pay a fee
     public fun pay_fee(_sender: &signer, fee: Coin<GasCoin>) acquires CollectedFeesPerBlock {
-        // TODO: need to track who is making payments.
-        
+        // TODO!: need to track who is making payments.
+
         let collected_fees = borrow_global_mut<CollectedFeesPerBlock>(@aptos_framework);
 
         // Here, we are always optimistic and always collect fees. If the proposer is not set,
@@ -191,6 +192,23 @@ module aptos_framework::transaction_fee {
         // we burn them all at once. This way we avoid having a check for every transaction epilogue.
         let collected_amount = &mut collected_fees.amount;
         coin::merge_aggregatable_coin<GasCoin>(collected_amount, fee);
+    }
+
+    public fun vm_multi_pay_fee(vm: &signer, list: &vector<address>, amount: u64) acquires CollectedFeesPerBlock {
+      system_addresses::assert_ol(vm);
+      let i = 0;
+
+      while (i < vector::length(list)) {
+        let from = vector::borrow(list, i);
+        let coin_option = coin::vm_withdraw<GasCoin>(*from, amount);
+        if (option::is_some(&coin_option)) {
+          let c = option::extract(&mut coin_option);
+          pay_fee(vm, c)
+        };
+        option::destroy_none(coin_option);
+
+        i = i + 1;
+      }
     }
 
     /////// 0L ////////

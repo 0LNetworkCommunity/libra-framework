@@ -1,4 +1,720 @@
 
-module ol_framework::donor_directed {
+/// Donor directed wallets is a service of the chain.
+/// Any address can voluntarily turn their account into a donor directed account.
 
+/// The DonorDirected payment workflow is:
+/// Managers use a MultiSig to schedule ->
+/// Once scheduled the Donors use a TurnoutTally to Veto ->
+/// Epoch boundary: transaction executes when the VM reads the Schedule struct at the epoch boundary, and issues payment.
+
+/// By creating a TxSchedule wallet you are providing certain restrictions and guarantees to the users that interact with this wallet.
+
+/// 1. The wallet's contents is propoperty of the owner. The owner is free to issue transactions which change the state of the wallet, including transferring funds. There are however time, and veto policies.
+
+/// 2. All transfers out of the account are timed. Meaning, they will execute automatically after a set period of time passes. The VM address triggers these events at each epoch boundary. The purpose of the delayed transfers is that the transaction can be paused for analysis, and eventually rejected by the donors of the wallet.
+
+/// 3. Every pending transaction can be "vetoed". The vetos delay the finalizing of the transaction, to allow more time for analysis. Each veto adds one day/epoch to the transaction PER DAY THAT A VETO OCCURRS. That is, two vetos happening in the same day, only extend the vote by one day. If a sufficient number of Donors vote on the Veto, then the transaction will be rejected. Since TxSchedule has an expiration time, as does ParticipationVote, each time there is a veto, the deadlines for both are syncronized, based on the new TxSchedule expiration time.
+
+/// 4. After three consecutive transaction rejections, the account will become frozen. The funds remain in the account but no operations are available until the Donors, un-freeze the account.
+
+/// 5. Voting for all purposes are done on a pro-rata basis according to the amounts donated. Voting using ParticipationVote method, which in short, biases the threshold based on the turnout of the vote. TL;DR a low turnout of 12.5% would require 100% of the voters to veto, and lower thresholds for higher turnouts until 51%.
+
+/// 6. The donors can vote to liquidate a frozen TxSchedule account. The result will depend on the configuration of the TxSchedule account from when it was initialized: the funds by default return to the end user who was the donor.
+
+/// 7. Third party contracts can wrap the Donor Directed wallet. The outcomes of the votes can be returned to a handler in a third party contract For example, liquidiation of a frozen account is programmable: a handler can be coded to determine the outcome of the donor directed wallet. See in CommunityWallets the funds return to the InfrastructureEscrow side-account of the user.
+
+module ol_framework::donor_directed {
+    // friend ol_framework::reconfiguration;
+
+    use aptos_framework::system_addresses;
+    use std::vector;
+    use std::signer;
+    use std::error;
+    use std::guid;
+    use aptos_framework::reconfiguration;
+    use std::option;
+    use ol_framework::ol_account;
+    // use ol_framework::gas_coin::GasCoin;
+    use ol_framework::safe;
+    use ol_framework::account::{Self, WithdrawCapability};
+    use ol_framework::donor_directed_governance;
+    use ol_framework::ballot;
+    // use ol_framework::transaction_fee;
+    // use ol_framework::Debug::print;
+
+    /// Not initialized as a donor directed account.
+    const ENOT_INIT_DONOR_DIRECTED: u64 = 231001;
+    /// User is not a donor and cannot vote on this account
+    const ENOT_AUTHORIZED_TO_VOTE: u64 = 231010;
+    /// Could not find a pending transaction by this GUID
+    const ENO_PEDNING_TRANSACTION_AT_UID: u64 = 231011;
+    /// No enum for this number
+    const ENOT_VALID_STATE_ENUM: u64 = 231012;
+    /// No enum for this number
+    const EMULTISIG_NOT_INIT: u64 = 231013;
+
+    const SCHEDULED: u8 = 1;
+    const VETO: u8 = 2;
+    const PAID: u8 = 3;
+
+    /// number of epochs to wait before a transaction is executed
+    /// Veto can happen in this time
+    /// at the end of the third epoch from when multisig gets consensus
+    const DEFAULT_PAYMENT_DURATION: u64 = 3;
+    /// minimum amount of time to evaluate when one donor flags for veto.
+    const DEFAULT_VETO_DURATION: u64 = 7;
+
+
+    // root registry for the donor directed accounts
+    struct Registry has key {
+      list: vector<address>,
+      liquidation_queue: vector<address>,
+    }
+
+    // Timed transfer schedule pipeline
+    struct TxSchedule has key {
+      scheduled: vector<TimedTransfer>,
+      veto: vector<TimedTransfer>,
+      paid: vector<TimedTransfer>,
+      guid_capability: account::GUIDCapability, // we need this for the MultiSig
+    }
+
+    /// This is the basic payment information.
+    /// This is used initially in a MultiSig, for the managers
+    /// initially to schedule.
+    struct Payment has copy, drop, store {
+      payee: address,
+      value: u64,
+      description: vector<u8>,
+    }
+
+    struct TimedTransfer has drop, store { // TODO: remove key, copy
+      uid: guid::ID, // copy of ID generated by MultiSig for the transaction
+      deadline: u64, // what epoch does the transaction execute
+      tx: Payment, // The transaction properties
+      epoch_latest_veto_received: u64, // This is to check if we need to extend the deadline
+    }
+
+    struct Freeze has key {
+      is_frozen: bool,
+      consecutive_rejections: u64,
+      unfreeze_votes: vector<address>,
+      liquidate_to_community_wallets: bool,
+    }
+
+    struct Donors has key {
+      list: vector<address>,
+    }
+
+    //////// INIT REGISRTY OF DONOR DIRECTED ACCOUNTS  ////////
+
+    // Donor Directed Accounts are a root security service. So the root account needs to keep a registry of all donor directed accounts, using this service.
+
+    // Utility used at genesis (and on upgrade) to initialize the system state.
+    public fun init_root_registry(vm: &signer) {
+      system_addresses::assert_ol(vm);
+      if (!is_root_init()) {
+        move_to<Registry>(vm, Registry {
+          list: vector::empty<address>(),
+          liquidation_queue: vector::empty<address>(),
+        });
+      };
+    }
+
+    public fun is_root_init():bool {
+      exists<Registry>(@ol_framework)
+    }
+
+
+    public fun migrate_root_registry(vm: &signer, list: vector<address>) {
+      system_addresses::assert_ol(vm);
+      if (!is_root_init()) {
+        move_to<Registry>(vm, Registry {
+          list,
+          liquidation_queue: vector::empty<address>(),
+        });
+      };
+    }
+
+    //////// DONOR DIRECTED INITIALIZATION ////////
+    // There are three steps in initializing an account. These steps can be combined in a single transaction, or done in separate transactions. The "bricking" of the sponsor key should be done in a separate transaction, in case there are any errors in the initialization.
+
+    // 1. The basic structs for a donor directed account need to be initialized, and the account needs to be added to the Registry at root.
+
+    // 2. A MultiSig action structs need to be initialized.
+
+    // 3. Once the MultiSig is initialized, the account needs to be bricked, before the MultiSig can be used.
+
+    public fun set_donor_directed(sig: &signer, liquidate_to_community_wallets: bool) {
+      if (!exists<Registry>(@ol_framework)) return;
+
+      move_to<Freeze>(
+        sig,
+        Freeze {
+          is_frozen: false,
+          consecutive_rejections: 0,
+          unfreeze_votes: vector::empty<address>(),
+          liquidate_to_community_wallets,
+        }
+      );
+
+      let guid_capability = account::create_guid_capability(sig);
+      move_to(sig, TxSchedule {
+          scheduled: vector::empty(),
+          veto: vector::empty(),
+          paid: vector::empty(),
+          guid_capability,
+        });
+
+      donor_directed_governance::init_donor_governance(sig);
+    }
+
+    // add to root registry
+    fun add_to_registry(sig: &signer) acquires Registry {
+      if (!exists<Registry>(@ol_framework)) return;
+
+      let addr = signer::address_of(sig);
+      let list = get_root_registry();
+      if (!vector::contains<address>(&list, &addr)) {
+        let s = borrow_global_mut<Registry>(@ol_framework);
+        vector::push_back(&mut s.list, addr);
+      };
+    }
+
+
+
+    /// Like any MultiSig instance, a sponsor which is the original owner of the account, needs to initialize the account.
+    /// The account must be "bricked" by the owner before MultiSig actions can be taken.
+    /// Note, as with any multisig, the new_authorities cannot include the sponsor, since that account will no longer be able to sign transactions.
+    public fun make_multisig(sponsor: &signer, cfg_default_n_sigs: u64, new_authorities: vector<address>) {
+      safe::init_gov(sponsor, cfg_default_n_sigs, &new_authorities);
+      safe::init_type<Payment>(sponsor, true); // "true": We make this multisig instance hold the WithdrawCapability. Even though we don't need it for any account pay functions, we can use it to make sure the entire pipeline of private functions scheduling a payment are authorized. Belt and suspenders.
+    }
+
+
+    /// Check if the account is a donor directed account, and initialized properly.
+    public fun is_donor_directed(multisig_address: address):bool {
+      safe::is_init(multisig_address) &&
+      safe::has_action<Payment>(multisig_address) &&
+      exists<Freeze>(multisig_address) &&
+      exists<TxSchedule>(multisig_address)
+    }
+
+    // Getter for retrieving the list of TxSchedule wallets.
+    public fun get_root_registry(): vector<address> acquires Registry{
+      if (exists<Registry>(@ol_framework)) {
+        let s = borrow_global<Registry>(@ol_framework);
+        return *&s.list
+      } else {
+        return vector::empty<address>()
+      }
+    }
+
+    ///////// MULTISIG ACTIONS TO SCHEDULE A TIMED TRANSFER /////////
+    /// As in any MultiSig instance, the transaction which proposes the action (the scheduled transfer) must be signed by an authority on the MultiSig.
+    /// The same function is the handler for the approval case of the MultiSig action.
+    /// Since Donor Directed accounts are involved with sensitive assets, we have moved the WithdrawCapability to the MultiSig instance. Even though we don't need it for any account functions for paying, we use it to ensure no private functions related to assets can be called. Belt and suspenders.
+
+    /// Returns the GUID of the transfer.
+    public fun propose_payment(
+      sender: &signer,
+      multisig_address: address,
+      payee: address,
+      value: u64,
+      description: vector<u8>
+    ): guid::ID acquires TxSchedule {
+      let tx = Payment {
+        payee,
+        value,
+        description,
+      };
+
+      // TODO: get expiration
+      let prop = safe::proposal_constructor(tx, option::none());
+
+      let uid = safe::propose_new<Payment>(sender, multisig_address, prop);
+
+      let (passed, withdraw_cap_opt) = safe::vote_with_id<Payment>(sender, &uid, multisig_address);
+
+      let tx = safe::extract_proposal_data(multisig_address, &uid);
+
+      if (passed && option::is_some(&withdraw_cap_opt)) {
+        schedule(option::borrow(&withdraw_cap_opt), tx, &uid);
+      };
+
+      safe::maybe_restore_withdraw_cap(sender, multisig_address, withdraw_cap_opt);
+
+      uid
+
+    }
+
+    /// Private function which handles the logic of adding a new timed transfer
+    /// DANGER upstream functions need to check the sender is authorized.
+    // TODO: perhaps require the WithdrawCapability
+
+    // The TxSchedule wallet signer can propose a timed transaction.
+    // the timed transaction defaults to occurring in the 3rd following epoch.
+    // TODO: Increase this time?
+    // the transaction will automatically occur at the epoch boundary,
+    // unless a veto vote by the validator set is successful.
+    // at that point the transaction leves the proposed queue, and is added
+    // the rejected list.
+
+    fun schedule(
+      withdraw_capability: &WithdrawCapability, tx: Payment, uid: &guid::ID
+    ) acquires TxSchedule {
+
+      let multisig_address = account::get_withdraw_cap_address(withdraw_capability);
+      let transfers = borrow_global_mut<TxSchedule>(multisig_address);
+
+      let deadline = reconfiguration::get_current_epoch() + DEFAULT_PAYMENT_DURATION;
+
+      let t = TimedTransfer {
+        uid: *uid,
+        deadline, // pays automatically at the end of seventh epoch. Unless there is a veto by a Donor. In that case a day is added for every day there is a veto. This deduplicates Vetos.
+        tx,
+        epoch_latest_veto_received: 0,
+      };
+
+      // let id = guid::id(&t.uid);
+      vector::push_back<TimedTransfer>(&mut transfers.scheduled, t);
+      // return id
+    }
+
+    public fun find_schedule_by_id(state: &TxSchedule, uid: &guid::ID): (bool, u64, u8) { // (is_found, index, state)
+      let (found, i) = schedule_status(state, uid, SCHEDULED);
+      if (found) return (found, i, SCHEDULED);
+
+      let (found, i) = schedule_status(state, uid, VETO);
+      if (found) return (found, i, VETO);
+
+      let (found, i) = schedule_status(state, uid, PAID);
+      if (found) return (found, i, PAID);
+
+      (false, 0, 0)
+    }
+
+    ///////// PROCESS PAYMENTS /////////
+    /// The VM on epoch boundaries will execute the payments without the users
+    /// needing to intervene.
+    public fun process_donor_directed_accounts(
+      vm: &signer,
+      epoch: u64,
+    ) acquires Registry, TxSchedule, Freeze {
+      // while we are here let's liquidate any expired accounts.
+      // vm_liquidate(vm);
+
+      let list = get_root_registry();
+
+      let i = 0;
+      while (i < vector::length(&list)) {
+        let multisig_address = vector::borrow(&list, i);
+        if (exists<TxSchedule>(*multisig_address)) {
+          let state = borrow_global_mut<TxSchedule>(*multisig_address);
+          maybe_pay_deadline(vm, state, epoch);
+        };
+        i = i + 1;
+      }
+    }
+
+    fun maybe_pay_deadline(vm: &signer, state: &mut TxSchedule, epoch: u64) acquires Freeze {
+      // let epoch = reconfiguration::get_current_epoch();
+      let i = 0;
+
+      while (i < vector::length(&state.scheduled)) {
+
+        let this_exp = *&vector::borrow(&state.scheduled, i).deadline;
+        if (this_exp == epoch) {
+          let t = vector::remove(&mut state.scheduled, i);
+          let multisig_address = guid::id_creator_address(&t.uid);
+
+          // Note the VM can do this without the WithdrawCapability
+
+          // let coin = account::vm_withdraw<GasCoin>(vm, multisig_address, t.tx.value);
+          ol_account::vm_transfer(vm, multisig_address, t.tx.payee, t.tx.value);
+
+
+          // update the records
+          vector::push_back(&mut state.paid, t);
+
+          // if theres a single transaction that gets approved, then the freeze consecutive rejection counter is reset
+          reset_rejection_counter(vm, multisig_address)
+        };
+
+        i = i + 1;
+      };
+
+    }
+
+    public fun find_by_deadline(multisig_address: address, epoch: u64): vector<guid::ID> acquires TxSchedule {
+      let state = borrow_global_mut<TxSchedule>(multisig_address);
+      let i = 0;
+      let list = vector::empty<guid::ID>();
+
+      while (i < vector::length(&state.scheduled)) {
+
+        let prop = vector::borrow(&state.scheduled, i);
+        if (prop.deadline == epoch) {
+          vector::push_back(&mut list, *&prop.uid);
+        };
+
+        i = i + 1;
+      };
+
+      list
+    }
+
+
+
+  //////// GOVERNANCE HANDLERS ////////
+
+  // Governance logic is defined in donor_directed_governance.move
+  // Below are functions to handle the cases for rejecting and freezing accounts based on governance outcomes.
+
+  //////// VETO ////////
+  // A validator casts a vote to veto a proposed/pending transaction
+  // by a TxSchedule wallet.
+  // The validator identifies the transaction by a unique id.
+  // Tallies are computed on the fly, such that if a veto happens,
+  // the community which is faster than waiting for epoch boundaries.
+  fun veto_handler(
+    sender: &signer,
+    uid: &guid::ID,
+  ) acquires TxSchedule, Freeze {
+    let multisig_address = guid::id_creator_address(uid);
+    donor_directed_governance::assert_authorized(sender, multisig_address);
+
+    let veto_is_approved = donor_directed_governance::veto_by_id(sender, uid);
+    if (option::is_none(&veto_is_approved)) return;
+
+    if (*option::borrow(&veto_is_approved)) {
+      // if the veto passes, freeze the account
+      reject(uid);
+
+      maybe_freeze(multisig_address);
+    } else {
+      // per the TxSchedule policy we need to slow
+      // down the payments further if there are rejections.
+      // Add another day for each veto
+      let state = borrow_global_mut<TxSchedule>(multisig_address);
+      let tx_mut = get_pending_timed_transfer_mut(state, uid);
+      if (tx_mut.epoch_latest_veto_received < reconfiguration::get_current_epoch()) {
+        tx_mut.deadline = tx_mut.deadline + 1;
+
+        // check that the expiration of the payment
+        // is the same as the end of the veto ballot
+        // This is because the ballot expiration can be
+        // extended based on the threshold of votes.
+        donor_directed_governance::sync_ballot_and_tx_expiration(sender, uid, tx_mut.deadline)
+      }
+
+    }
+  }
+
+  // private function. Once vetoed, the transaction is
+  // removed from proposed list.
+  fun reject(uid: &guid::ID)  acquires TxSchedule, Freeze {
+    let multisig_address = guid::id_creator_address(uid);
+    let c = borrow_global_mut<TxSchedule>(multisig_address);
+
+    let len = vector::length(&c.scheduled);
+    let i = 0;
+    while (i < len) {
+      let t = vector::borrow<TimedTransfer>(&c.scheduled, i);
+      if (&t.uid == uid) {
+        // remove from proposed list
+        let t = vector::remove<TimedTransfer>(&mut c.scheduled, i);
+        vector::push_back(&mut c.veto, t);
+        // increment consecutive rejections counter
+        let f = borrow_global_mut<Freeze>(multisig_address);
+        f.consecutive_rejections = f.consecutive_rejections + 1;
+
+      };
+
+      i = i + 1;
+    };
+
+  }
+
+  /// propose and vote on the veto of a specific transacation
+  public fun propose_veto(donor: &signer, guid: &guid::ID)  acquires TxSchedule {
+    let multisig_address = guid::id_creator_address(guid);
+    donor_directed_governance::assert_authorized(donor, multisig_address);
+    let state = borrow_global<TxSchedule>(multisig_address);
+    let epochs_duration = DEFAULT_VETO_DURATION;
+    donor_directed_governance::propose_veto(&state.guid_capability, guid,  epochs_duration);
+  }
+
+  /// If there are approved transactions, then the consectutive rejection counter is reset.
+  public fun reset_rejection_counter(vm: &signer, wallet: address) acquires Freeze {
+    system_addresses::assert_ol(vm);
+    borrow_global_mut<Freeze>(wallet).consecutive_rejections = 0;
+  }
+
+    /// TxSchedule wallets get frozen if 3 consecutive attempts to transfer are rejected.
+    fun maybe_freeze(wallet: address) acquires Freeze {
+      if (borrow_global<Freeze>(wallet).consecutive_rejections > 2) {
+        let f = borrow_global_mut<Freeze>(wallet);
+        f.is_frozen = true;
+      }
+    }
+
+    public fun get_pending_timed_transfer_mut(state: &mut TxSchedule, uid: &guid::ID): &mut TimedTransfer {
+      let (found, i) = schedule_status(state, uid, SCHEDULED);
+
+      assert!(found, error::invalid_argument(ENO_PEDNING_TRANSACTION_AT_UID));
+      vector::borrow_mut<TimedTransfer>(&mut state.scheduled, i)
+    }
+
+    public fun schedule_status(state: &TxSchedule, uid: &guid::ID, state_enum: u8): (bool, u64) {
+      let list = if (state_enum == SCHEDULED) { &state.scheduled }
+      else if (state_enum == VETO) { &state.veto }
+      else if (state_enum == PAID) { &state.paid }
+      else {
+        assert!(false, error::invalid_argument(ENOT_VALID_STATE_ENUM));
+        &state.scheduled  // dummy
+      };
+
+      let len = vector::length(list);
+      let i = 0;
+      while (i < len) {
+        let t = vector::borrow<TimedTransfer>(list, i);
+        if (&t.uid == uid) {
+          return (true, i)
+        };
+
+        i = i + 1;
+      };
+      (false, 0)
+    }
+
+
+    //////// LIQUIDATION ////////
+    /// propose and vote on the liquidation of this wallet
+    public fun propose_liquidation(donor: &signer, multisig_address: address)  acquires TxSchedule {
+      donor_directed_governance::assert_authorized(donor, multisig_address);
+      let state = borrow_global<TxSchedule>(multisig_address);
+      let epochs_duration = 365; // liquidation vote can take a whole year
+      donor_directed_governance::propose_liquidate(&state.guid_capability, epochs_duration);
+    }
+
+    /// Once a liquidation has been proposed, other donors can vote on it.
+    fun liquidation_handler(donor: &signer, multisig_address: address) acquires Freeze, Registry {
+      donor_directed_governance::assert_authorized(donor, multisig_address);
+      let res = donor_directed_governance::vote_liquidation(donor, multisig_address);
+
+      if (option::is_some(&res)) {
+        if (*option::borrow(&res)) {
+          // The VM will call this function to liquidate the wallet.
+          // the donors cannot do this because they cant get the withdrawal capability
+          // from the multisig account.
+
+          // first we freeze it so nothing can happen in the interim.
+          let f = borrow_global_mut<Freeze>(multisig_address);
+          f.is_frozen = true;
+          let f = borrow_global_mut<Registry>(@ol_framework);
+          vector::push_back(&mut f.liquidation_queue, multisig_address);
+      }
+    }
+  }
+
+  public fun get_liquidation_queue(): vector<address> acquires Registry{
+    let f = borrow_global<Registry>(@ol_framework);
+    *&f.liquidation_queue
+  }
+
+  /// The VM will call this function to liquidate all donor directed
+  /// wallets in the queue.
+
+  // TDDO
+  //  public(friend) fun vm_liquidate(vm: &signer) acquires Freeze, Registry {
+  //     system_addresses::assert_vm(vm);
+  //     let f = borrow_global_mut<Registry>(@ol_framework);
+  //     let len = vector::length(&f.liquidation_queue);
+
+  //     let i = 0;
+  //     while (i < len) {
+  //       let multisig_address = vector::swap_remove(&mut f.liquidation_queue, i);
+
+  //       // if this account was tagged a community wallet, then the
+  //       // funds get split pro-rata at the current split of the
+  //       // burn recycle algorithm.
+  //       // Easiest way to do this is to send it to transaction fee account
+  //       // so it can be split up by the burn recycle algorithm.
+  //       // and trying to call Burn, here will create a circular dependency.
+
+  //       if (liquidates_to_escrow(multisig_address)) {
+  //         let balance = account::balance<GasCoin>(multisig_address);
+  //         let c = account::vm_withdraw<GasCoin>(vm, multisig_address, balance);
+  //         transaction_fee::pay_fee(c);
+
+  //         return
+  //       };
+
+
+  //       // otherwise the default case is that donors get their funds back.
+  //       let (pro_rata_addresses, _, pro_rata_amounts) = account::get_pro_rata_cumu_deposits(multisig_address);
+  //       let k = 0;
+  //       let len = vector::length(&pro_rata_addresses);
+  //       // then we split the funds and send it back to the user's wallet
+  //       while (k < len) {
+  //           let addr = vector::borrow(&pro_rata_addresses, k);
+  //           let amount = vector::borrow(&pro_rata_amounts, k);
+  //           account::vm_make_payment_no_limit<GasCoin>(multisig_address, *addr, *amount, b"liquidation", b"", vm);
+
+  //           k = k + 1;
+  //       };
+  //       i = i + 1;
+  //     }
+  //  }
+
+  //   /// get the proportion of donoations of all donors to account.
+  //  public fun get_pro_rata(multisig_address: address): (vector<address>, vector<u64>) {
+  //   // get total fees
+  //   let balance = account::get_cumulative_deposits(multisig_address);
+  //   let donors = account::get_depositors(multisig_address);
+  //   let pro_rata_addresses = vector::empty<address>();
+  //   let pro_rata_amounts = vector::empty<u64>();
+
+  //   let i = 0;
+  //   let len = vector::length(&donors);
+  //   while (i < len) {
+  //     let donor = vector::borrow(&donors, i);
+  //     let (_, _, cumu)  = Receipts::read_receipt(multisig_address, *donor);
+
+  //     let ratio = FixedPoint32::create_from_rational(cumu, balance);
+  //     let pro_rata = FixedPoint32::multiply_u64(balance, ratios);
+
+  //     vector::push_back(&mut pro_rata_addresses, *donor);
+  //     vector::push_back(&mut pro_rata_amounts, pro_rata);
+  //     i = i + 1;
+  //   };
+
+  //     (pro_rata_addresses, pro_rata_amounts)
+  //  }
+
+    //////// GETTERS ////////
+    public fun get_tx_params(t: &TimedTransfer): (address, u64, vector<u8>, u64) {
+      (t.tx.payee, t.tx.value, *&t.tx.description, t.deadline)
+    }
+
+
+    /// Check the status of proposals in the MultiSig Workflow
+    /// NOTE: These are payments that have not yet been scheduled.
+    public fun get_multisig_proposal_state(directed_address: address, uid: &guid::ID): (bool, u64, u8, bool) { // (is_found, index, state)
+
+      safe::get_proposal_status_by_id<Payment>(directed_address, uid)
+    }
+
+    /// Get the status of a SCHEDULED payment which as already passed the multisig stage.
+    public fun get_schedule_state(directed_address: address, uid: &guid::ID): (bool, u64, u8) acquires TxSchedule { // (is_found, index, state)
+      let state = borrow_global<TxSchedule>(directed_address);
+      find_schedule_by_id(state, uid)
+    }
+
+    public fun is_scheduled(directed_address: address, uid: &guid::ID): bool acquires TxSchedule {
+      let (_, _, state) = get_schedule_state(directed_address, uid);
+      state == ballot::get_pending_enum()
+    }
+
+    public fun is_paid(directed_address: address, uid: &guid::ID): bool acquires TxSchedule {
+      let (_, _, state) = get_schedule_state(directed_address, uid);
+      state == ballot::get_approved_enum()
+    }
+
+    public fun is_veto(directed_address: address, uid: &guid::ID): bool acquires TxSchedule {
+      let (_, _, state) = get_schedule_state(directed_address, uid);
+      state == ballot::get_rejected_enum()
+    }
+
+    // getter to check if wallet is frozen
+    // used in account before attempting a transfer.
+    public fun is_account_frozen(addr: address): bool acquires Freeze{
+      let f = borrow_global<Freeze>(addr);
+      f.is_frozen
+    }
+
+    public fun liquidates_to_escrow(addr: address): bool acquires Freeze{
+      let f = borrow_global<Freeze>(addr);
+      f.liquidate_to_community_wallets
+    }
+
+    //////// TRANSACTION SCRIPTS ////////
+
+    /// Initialize the TxSchedule wallet with Three signers
+
+    // TODO: this version of Diem, does not allow vector<address> in the script arguments. So we are hard coding this to initialize with three signers. Gross.
+    public fun init_donor_directed(sponsor: &signer, signer_one: address, signer_two: address, signer_three: address, cfg_n_signers: u64) {
+      let init_signers = vector::singleton(signer_one);
+      vector::push_back(&mut init_signers, signer_two);
+      vector::push_back(&mut init_signers, signer_three);
+
+      // we are setting liquidation to infra escrow as false by default
+      // the user can send another transacton to change this.
+      let liquidate_to_community_wallets = false;
+      set_donor_directed(sponsor, liquidate_to_community_wallets);
+      make_multisig(sponsor, cfg_n_signers, init_signers);
+
+      // if not tracking cumulative donations, then don't use previous balance.
+      // start again.
+      // TODO!
+      // account::init_cumulative_deposits(sponsor, false);
+    }
+
+    /// option to set the liquidation destination to infrastructure escrow
+    /// must be done before the multisig is finalized and the sponsor cannot control the account.
+    public fun set_liquidate_to_community_wallets(sponsor: &signer, liquidate_to_community_wallets: bool) acquires Freeze {
+      let f = borrow_global_mut<Freeze>(signer::address_of(sponsor));
+      f.liquidate_to_community_wallets = liquidate_to_community_wallets;
+    }
+
+    /// the sponsor must finalize the initialization, this is a separate step so that the user can optionally check everything is in order before bricking the account key.
+    public fun finalize_init(sponsor: &signer) acquires Registry {
+      let multisig_address = signer::address_of(sponsor);
+      assert!(safe::is_init(multisig_address), error::invalid_state(EMULTISIG_NOT_INIT));
+
+      assert!(safe::has_action<Payment>(multisig_address), error::invalid_state(EMULTISIG_NOT_INIT));
+
+      assert!(exists<Freeze>(multisig_address), error::invalid_state(ENOT_INIT_DONOR_DIRECTED));
+
+      assert!(exists<TxSchedule>(multisig_address), error::invalid_state(ENOT_INIT_DONOR_DIRECTED));
+
+      // safe::finalize_and_brick(sponsor);
+      assert!(is_donor_directed(multisig_address), error::invalid_state(ENOT_INIT_DONOR_DIRECTED));
+
+      // only add to registry if INIT is successful.
+      add_to_registry(sponsor);
+    }
+
+
+
+    //////// TX HELPER ////////
+
+    public entry fun propose_payment_tx(
+      auth: signer,
+      multisig_address: address,
+      payee: address,
+      value: u64,
+      description: vector<u8>
+    )  acquires TxSchedule {
+      propose_payment(&auth, multisig_address, payee, value, description);
+    }
+
+
+    public entry fun propose_veto_tx(donor: signer, multisig_address: address, id: u64)  acquires TxSchedule {
+      let guid = guid::create_id(multisig_address, id);
+      propose_veto(&donor, &guid);
+    }
+    public entry fun veto_tx(donor: signer, multisig_address: address, id: u64)  acquires TxSchedule, Freeze {
+      let guid = guid::create_id(multisig_address, id);
+      veto_handler(&donor, &guid);
+    }
+
+    public entry fun propose_liquidate_tx(donor: signer, multisig_address: address)  acquires TxSchedule {
+      propose_liquidation(&donor, multisig_address);
+    }
+
+    public entry fun vote_liquidation_tx(donor: signer, multisig_address: address) acquires Freeze, Registry {
+      liquidation_handler(&donor, multisig_address);
+    }
 }
