@@ -10,9 +10,10 @@ module ol_framework::slow_wallet {
   use aptos_framework::coin;
   use std::vector;
   use std::signer;
-  use ol_framework::globals;
+  // use ol_framework::globals;
   use ol_framework::gas_coin::GasCoin;
   use std::error;
+  use std::fixed_point32;
 
   const EGENESIS_ERROR: u64 = 10001;
 
@@ -32,26 +33,42 @@ module ol_framework::slow_wallet {
       if (!exists<SlowWalletList>(@ol_framework)) {
         move_to<SlowWalletList>(vm, SlowWalletList {
           list: vector::empty<address>()
-        });  
+        });
       }
     }
 
     /// private function which can only be called at genesis
     /// must apply the coin split factor.
-    fun fork_migrate_slow_wallet(
+    // TODO: make this private with a public test helper
+    public fun fork_migrate_slow_wallet(
       vm: &signer,
       user: &signer,
       unlocked: u64,
       transferred: u64,
-    ) acquires SlowWalletList {
+      split_factor: u64,
+    ) acquires SlowWallet, SlowWalletList {
       system_addresses::assert_ol(vm);
-      if (!exists<SlowWallet>(signer::address_of(user))) {
-        move_to<SlowWallet>(vm, SlowWallet {
-          unlocked: unlocked * globals::get_coin_split_factor(),
-          transferred: transferred * globals::get_coin_split_factor(),
+      let split_factor = fixed_point32::create_from_rational(split_factor, 1000000);
+      let unlocked = if (unlocked > 0) {
+        fixed_point32::multiply_u64(unlocked, split_factor)
+      } else { 0 };
+
+      let transferred = if (transferred > 0) {
+        fixed_point32::multiply_u64(transferred, split_factor)
+      } else { 0 };
+
+      let user_addr = signer::address_of(user);
+      if (!exists<SlowWallet>(user_addr)) {
+        move_to<SlowWallet>(user, SlowWallet {
+          unlocked,
+          transferred,
         });
 
         fork_migrate_slow_list(vm, user);
+      } else {
+        let state = borrow_global_mut<SlowWallet>(user_addr);
+        state.unlocked = unlocked;
+        state.transferred = transferred;
       }
     }
 
@@ -83,7 +100,7 @@ module ol_framework::slow_wallet {
           move_to<SlowWallet>(sig, SlowWallet {
             unlocked: 0,
             transferred: 0,
-          });  
+          });
         }
     }
 
@@ -167,5 +184,5 @@ module ol_framework::slow_wallet {
     }
 
 
- 
+
 }
