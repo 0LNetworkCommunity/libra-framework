@@ -1,9 +1,9 @@
-use zapatos_api_types::U64;
+// use zapatos_api_types::U64;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GasCoin {
-    pub value: U64,
+    pub value: u64, // TODO: This might break reading from API maybe it must be zapatos_api_types::U64;
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -12,8 +12,15 @@ pub struct Balance {
 }
 
 impl Balance {
+    pub fn new(value: u64) -> Self {
+      Balance {
+        coin: GasCoin {
+          value,
+        }
+      }
+    }
     pub fn get(&self) -> u64 {
-        *self.coin.value.inner()
+        self.coin.value
     }
 }
 
@@ -30,7 +37,7 @@ impl SlowWalletBalance {
     }
     let unlocked = serde_json::from_value::<String>(value[0].clone())?.parse::<u64>()?;
     let total = serde_json::from_value::<String>(value[1].clone())?.parse::<u64>()?;
-    
+
     Ok(Self { unlocked, total })
   }
 }
