@@ -35,7 +35,7 @@ pub fn get_account_from_prompt() -> (AuthenticationKey, AccountAddress, WalletLi
 
     let test_env_mnem = env::var("MNEM");
     // if we are in debugging or CI mode
-    let mnem = match (MODE_0L.clone() == NamedChain::TESTING) && test_env_mnem.is_ok() {
+    let mnem = match (*MODE_0L == NamedChain::TESTING) && test_env_mnem.is_ok() {
         true => {
             println!("Debugging mode, using mnemonic from env variable, $MNEM");
             test_env_mnem.unwrap().trim().to_string()
@@ -92,7 +92,7 @@ fn wallet() {
 #[test]
 fn fixture_wallet() {
     use crate::account_keys::get_ol_legacy_address;
-    
+
     // alice
     let mnemonic_string = "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse";
 

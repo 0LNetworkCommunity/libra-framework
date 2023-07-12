@@ -16,26 +16,26 @@
   // lean on the Vouch network for checking that a validator that fell out of these (jailed), is ready to continue (unjail).
   ////////////////////////
 
-// The objective of the jail module is to allow a validator to do necessary 
-// maintenanance on the node before attempting to rejoin the validator set 
+// The objective of the jail module is to allow a validator to do necessary
+// maintenanance on the node before attempting to rejoin the validator set
 // before they are ready.
 // The jail module also incorporates some non-monetary reputation staking
 // features of Vouch, which cannot be included in that module due to code
 // cyclical dependencies.
 // Summary:
-// If Alice fails to validate at the threshold necessary (is either a Case 1, 
-// or Case 2), then her Jail state gets updated, with is_jailed=true. This means 
-// she cannot re-enter the validator set, until someone that vouched for Alice 
+// If Alice fails to validate at the threshold necessary (is either a Case 1,
+// or Case 2), then her Jail state gets updated, with is_jailed=true. This means
+// she cannot re-enter the validator set, until someone that vouched for Alice
 // (Bob) sends an un_jail transaction. Bob has interest in seeing Alice rejoin
 // and be performing since Bob's Jail state also gets updated based on Alice's performance.
 // On Bob's Jail card there is a lifetime_vouchees_jailed, every time Alice
-// (because Bob has vouched for her) gets marked for jail, this number gets 
+// (because Bob has vouched for her) gets marked for jail, this number gets
 // incremented on Bob's state too.
-// It is recursive. If Alice is vouching for Carol, and Carol gets a Jail term. 
-// Then both Alice, and Bob will have lifetime_vouchees_jailed incremented. 
+// It is recursive. If Alice is vouching for Carol, and Carol gets a Jail term.
+// Then both Alice, and Bob will have lifetime_vouchees_jailed incremented.
 // Even if Carol and Bob never met.
-// Not included in this code, but included in Vouch, is the logic for the deposit 
-// the Vouchers put on the Vouchee accounts. So besides the permanent mark on 
+// Not included in this code, but included in Vouch, is the logic for the deposit
+// the Vouchers put on the Vouchee accounts. So besides the permanent mark on
 // the account, Bob will lose the deposit.
 
 
@@ -113,7 +113,7 @@ module ol_framework::jail {
 
   /// Only a Voucher of the validator can flip the unjail bit.
   /// This is a way to make sure the validator is ready to rejoin.
-  public fun unjail_by_voucher(sender: &signer, addr: address) acquires Jail {
+  public entry fun unjail_by_voucher(sender: &signer, addr: address) acquires Jail {
     assert!(
       stake::is_valid(addr),
       error::invalid_state(EVALIDATOR_CONFIG),
@@ -131,7 +131,7 @@ module ol_framework::jail {
       borrow_global_mut<Jail>(addr).is_jailed = false;
     };
   }
-  
+
   /// gets a list of validators based on their jail reputation
   /// this is used in the bidding process for Proof-of-Fee where
   /// we seat the validators with the least amount of consecutive failures
@@ -178,7 +178,7 @@ module ol_framework::jail {
   }
 
   ///////// GETTERS //////////
-  
+
   #[view]
   /// Returns how many times has the validator failed to join the network after consecutive attempts.
   /// Should not abort, since its used in validator admission.

@@ -32,8 +32,8 @@ pub struct SetValidatorConfiguration {
 
 impl SetValidatorConfiguration {
     pub fn new(
-      home_dir: Option<PathBuf>, 
-      username: String, 
+      home_dir: Option<PathBuf>,
+      username: String,
       validator_host: HostAndPort,
       full_node_host: Option<HostAndPort>,
     ) -> Self {
@@ -47,7 +47,7 @@ impl SetValidatorConfiguration {
 
     pub fn set_config_files(self) -> Result<(OperatorConfiguration, OwnerConfiguration)> {
         let home_dir = self.home_dir
-          .unwrap_or_else(|| global_config_dir() );
+          .unwrap_or_else(global_config_dir);
 
       let owner_keys_file  =home_dir.join(PUBLIC_KEYS_FILE);
 
@@ -120,7 +120,7 @@ impl SetValidatorConfiguration {
             commission_percentage: 0,
             join_during_genesis: true,
         };
-        
+
         write_to_user_only_file(
             &home_dir
                 .join(OPERATOR_FILE),
@@ -141,7 +141,7 @@ impl SetValidatorConfiguration {
     pub fn read_configs_from_file(
         home_path: Option<PathBuf>,
     ) -> Result<(OperatorConfiguration, OwnerConfiguration)> {
-        let dir = home_path.unwrap_or_else(|| global_config_dir());
+        let dir = home_path.unwrap_or_else(global_config_dir);
 
         let operator_config: OperatorConfiguration = from_yaml(
             &String::from_utf8(read_from_file(&dir.join(OPERATOR_FILE)).unwrap()).unwrap(),
