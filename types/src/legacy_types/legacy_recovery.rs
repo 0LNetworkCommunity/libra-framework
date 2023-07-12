@@ -12,7 +12,6 @@ use crate::legacy_types::{
     receipts::ReceiptsResource,
     validator_config::ValidatorConfigResource,
     wallet::{CommunityWalletsResourceLegacy, SlowWalletResource, SlowWalletListResource},
-
     ancestry::AncestryResource,
     legacy_currency_info::CurrencyInfoResource,
     makewhole_resource::MakeWholeResource,
