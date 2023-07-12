@@ -1,6 +1,6 @@
 // NOTE: Useing drop trait for cleaning up env
 // https://doc.rust-lang.org/std/ops/trait.Drop.html
-#[allow(dead_code)]
+#![allow(dead_code)]
 use std::path::PathBuf;
 
 pub struct DropTemp(pub PathBuf);
@@ -21,7 +21,7 @@ impl DropTemp {
   pub fn dir(&self) -> PathBuf{
     self.0.clone()
   }
-  
+
   pub fn maybe_cleanup(&self) {
     if self.0.exists() {
       println!("\n RUNNING CLEANUP \n");

@@ -12,6 +12,7 @@ repository = { workspace = true }
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true }
+indoc = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
 

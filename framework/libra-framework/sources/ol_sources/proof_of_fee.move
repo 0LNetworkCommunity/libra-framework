@@ -22,7 +22,7 @@ module ol_framework::proof_of_fee {
   use aptos_framework::system_addresses;
 
   // use aptos_std::debug::print;
-  
+
   /// The nominal reward for each validator in each epoch.
   const GENESIS_BASELINE_REWARD: u64 = 1000000;
 
@@ -583,18 +583,18 @@ module ol_framework::proof_of_fee {
   }
 
   ////////// TRANSACTION APIS //////////
-  // manually init the struct, fallback in case of migration fail
+  //. manually init the struct, fallback in case of migration fail
   public entry fun init_bidding(sender: signer) {
     init(&sender);
   }
 
-  // update the bid for the sender
+  /// update the bid for the sender
   public entry fun pof_update_bid(sender: signer, bid: u64, epoch_expiry: u64) acquires ProofOfFeeAuction {
     // update the bid, initializes if not already.
     set_bid(&sender, bid, epoch_expiry);
   }
 
-  // retract bid
+  /// retract bid
   public entry fun pof_retract_bid(sender: signer) acquires ProofOfFeeAuction {
     // retract a bid
     retract_bid(&sender);
@@ -659,7 +659,7 @@ module ol_framework::proof_of_fee {
       50,
       33,
       vector::singleton(33),
-    ); 
+    );
 
     let (value, clearing, median) = get_consensus_reward();
     assert!(value == 100, 1000);
@@ -678,7 +678,7 @@ module ol_framework::proof_of_fee {
     chain_id::initialize_for_test(&vm, 4);
 
     let start_value = 0510; // 51% of baseline reward
-    let median_history = vector::empty<u64>(); 
+    let median_history = vector::empty<u64>();
 
     let i = 0;
     while (i < 10) {
@@ -723,8 +723,8 @@ module ol_framework::proof_of_fee {
     init_genesis_baseline_reward(&vm);
     chain_id::initialize_for_test(&vm, 4);
 
-    let start_value = 0200; // 20% of baseline fee. 
-    let median_history = vector::empty<u64>(); 
+    let start_value = 0200; // 20% of baseline fee.
+    let median_history = vector::empty<u64>();
 
     // we need between 5 and 10 epochs to be a short "window"
     let i = 0;
@@ -740,7 +740,7 @@ module ol_framework::proof_of_fee {
       50,
       33,
       median_history,
-    ); 
+    );
 
     // no changes until we run the thermostat.
     let (value, clearing, median) = get_consensus_reward();
@@ -768,8 +768,8 @@ module ol_framework::proof_of_fee {
     init_genesis_baseline_reward(&vm);
     chain_id::initialize_for_test(&vm, 4);
 
-    let start_value = 0200; // 20% of baseline fee. 
-    let median_history = vector::empty<u64>(); 
+    let start_value = 0200; // 20% of baseline fee.
+    let median_history = vector::empty<u64>();
 
     // we need at least 10 epochs above the 95% range to be a "long window"
     let i = 0;
@@ -788,7 +788,7 @@ module ol_framework::proof_of_fee {
       50,
       33,
       median_history,
-    ); 
+    );
 
     // no changes until we run the thermostat.
     let (value, clearing, median) = get_consensus_reward();
@@ -816,8 +816,8 @@ module ol_framework::proof_of_fee {
     init_genesis_baseline_reward(&vm);
     chain_id::initialize_for_test(&vm, 4);
 
-    let start_value = 0950; // 96% of baseline fee. 
-    let median_history = vector::empty<u64>(); 
+    let start_value = 0950; // 96% of baseline fee.
+    let median_history = vector::empty<u64>();
 
     // we need between 5 and 10 epochs to be a short "window"
     let i = 0;
@@ -835,7 +835,7 @@ module ol_framework::proof_of_fee {
       50,
       33,
       median_history,
-    ); 
+    );
 
     // no changes until we run the thermostat.
     let (value, clearing, median) = get_consensus_reward();
@@ -862,8 +862,8 @@ module ol_framework::proof_of_fee {
     init_genesis_baseline_reward(&vm);
     chain_id::initialize_for_test(&vm, 4);
 
-    let start_value = 0960; // 96% of baseline fee. 
-    let median_history = vector::empty<u64>(); 
+    let start_value = 0960; // 96% of baseline fee.
+    let median_history = vector::empty<u64>();
 
     // we need at least 10 epochs above the 95% range to be a "long window"
     let i = 0;
@@ -882,7 +882,7 @@ module ol_framework::proof_of_fee {
       50,
       33,
       median_history,
-    ); 
+    );
 
     // no changes until we run the thermostat.
     let (value, clearing, median) = get_consensus_reward();

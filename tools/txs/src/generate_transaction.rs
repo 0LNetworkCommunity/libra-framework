@@ -9,7 +9,7 @@ use libra_types::type_extensions::{
   ed25519_private_key_ext::Ed25519PrivateKeyExt,
 };
 
-pub async fn _run(
+pub async fn run(
     function_id: &str,
     private_key: &Ed25519PrivateKey,
     type_args: Option<String>,

@@ -32,7 +32,7 @@ module ol_framework::vouch {
 
       if (!is_init(acc)) {
         move_to<MyVouches>(new_account_sig, MyVouches {
-            my_buddies: vector::empty(), 
+            my_buddies: vector::empty(),
             epoch_vouched: vector::empty(),
           });
       }
@@ -42,7 +42,7 @@ module ol_framework::vouch {
       exists<MyVouches>(acc)
     }
 
-    public fun vouch_for(ill_be_your_friend: &signer, wanna_be_my_friend: address) acquires MyVouches {
+    public entry fun vouch_for(ill_be_your_friend: &signer, wanna_be_my_friend: address) acquires MyVouches {
       let buddy_acc = signer::address_of(ill_be_your_friend);
       assert!(buddy_acc != wanna_be_my_friend, ETRY_SELF_VOUCH_REALLY);
 
@@ -68,19 +68,19 @@ module ol_framework::vouch {
       }
     }
 
-    public fun revoke(buddy: &signer, val: address) acquires MyVouches {
+    public entry fun revoke(buddy: &signer, its_not_me_its_you: address) acquires MyVouches {
       let buddy_acc = signer::address_of(buddy);
-      assert!(buddy_acc!=val, ETRY_SELF_VOUCH_REALLY);
+      assert!(buddy_acc!=its_not_me_its_you, ETRY_SELF_VOUCH_REALLY);
 
-      if (!exists<MyVouches>(val)) return;
+      if (!exists<MyVouches>(its_not_me_its_you)) return;
 
-      let v = borrow_global_mut<MyVouches>(val);
+      let v = borrow_global_mut<MyVouches>(its_not_me_its_you);
       let (found, i) = vector::index_of(&v.my_buddies, &buddy_acc);
       if (found) {
         vector::remove(&mut v.my_buddies, i);
         vector::remove(&mut v.epoch_vouched, i);
       };
-    }    
+    }
 
     public fun vm_migrate(vm: &signer, val: address, buddy_list: vector<address>) acquires MyVouches {
       system_addresses::assert_vm(vm);
@@ -101,18 +101,20 @@ module ol_framework::vouch {
       if (is_found) {
         vector::swap_remove<address>(&mut buddy_list, i);
       };
-      
+
       v.my_buddies = buddy_list;
     }
 
+    #[view]
     /// gets all buddies, including expired ones
     public fun get_buddies(val: address): vector<address> acquires MyVouches{
-      
+
       if (!exists<MyVouches>(val)) return vector::empty<address>();
       let state = borrow_global<MyVouches>(val);
       *&state.my_buddies
     }
 
+    #[view]
     /// gets the buddies and checks if they are expired
     public fun get_buddies_valid(val: address): vector<address> acquires MyVouches{
       if (!exists<MyVouches>(val)) return vector::empty<address>();
@@ -139,6 +141,7 @@ module ol_framework::vouch {
       false
     }
 
+    #[view]
     public fun buddies_in_set(val: address): vector<address> acquires MyVouches {
       let current_set = stake::get_current_validators();
       let (list, _) = buddies_in_list(val, current_set);
@@ -203,7 +206,7 @@ module ol_framework::vouch {
 
     public fun unrelated_buddies_above_thresh(val: address): bool acquires MyVouches{
       if (!exists<MyVouches>(val)) return false;
-      
+
       if (testnet::is_testnet()) return true;
       let vouches = borrow_global<MyVouches>(val);
 

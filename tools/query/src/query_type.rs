@@ -1,17 +1,12 @@
-use crate::account_queries::{
-  get_account_balance_libra,
-  get_tower_state,
+use crate::{
+    account_queries::{get_account_balance_libra, get_tower_state},
+    query_view,
 };
-
+use indoc::indoc;
 use anyhow::{bail, Result};
-use zapatos_sdk::{
-  rest_client::Client,
-  types::account_address::AccountAddress,
-};
-use libra_types::{
-  type_extensions::client_ext::ClientExt
-};
+use libra_types::type_extensions::client_ext::ClientExt;
 use serde_json::json;
+use zapatos_sdk::{rest_client::Client, types::account_address::AccountAddress};
 
 #[derive(Debug, clap::Subcommand)]
 pub enum QueryType {
@@ -27,12 +22,6 @@ pub enum QueryType {
         /// account to query txs of
         account: AccountAddress,
     },
-    // /// Unlocked Account balance
-    // UnlockedBalance {
-    //     #[clap(short, long)]
-    //     /// account to query txs of
-    //     account: AccountAddress,
-    // },
     /// Epoch and waypoint
     Epoch,
     /// Network block height
@@ -43,6 +32,45 @@ pub enum QueryType {
         /// account to query txs of
         account: AccountAddress,
     },
+    /// Execute a View function on-chain
+    View {
+        #[clap(
+            short,
+            long,
+            help = indoc!{r#"
+                Function identifier has the form <ADDRESS>::<MODULE_ID>::<FUNCTION_NAME>
+
+                Example:
+                0x1::coin::balance
+            "#}
+        )]
+        function_id: String,
+
+        #[clap(
+            short,
+            long,
+            help = indoc!{r#"
+                Type arguments separated by commas
+
+                Example:
+                'u8, u16, u32, u64, u128, u256, bool, address, vector<u8>, signer'
+            "#}
+        )]
+        type_args: Option<String>,
+
+        #[clap(
+            short,
+            long,
+            help = indoc!{r#"
+                Function arguments separated by commas
+
+                Example:
+                '0x1, true, 12, 24_u8, x"123456"'
+            "#}
+        )]
+        args: Option<String>,
+    },
+
     /// get a move value from account blob
     MoveValue {
         #[clap(short, long)]
@@ -89,19 +117,16 @@ pub enum QueryType {
     //     /// the account of the validator
     //     account: AccountAddress,
     // },
-    
-    // TODO: View function
 }
 
 impl QueryType {
+    pub async fn query_to_json(&self, client_opt: Option<Client>) -> Result<serde_json::Value> {
+        let client = match client_opt {
+            Some(c) => c,
+            None => Client::default().await?,
+        };
 
-  pub async fn query_to_json(&self, client_opt: Option<Client>) -> Result<serde_json::Value>{
-    let client = match client_opt{
-        Some(c) => c,
-        None => Client::default().await?,
-    };
-
-    match self {
+        match self {
         QueryType::Balance { account } => {
           let res = get_account_balance_libra(&client, *account).await?;
           Ok(json!(res))
@@ -111,16 +136,23 @@ impl QueryType {
           Ok(json!(res))
 
         },
+        QueryType::View {
+            function_id,
+            type_args,
+            args,
+        } => {
+            let res = query_view::run(function_id, type_args.to_owned(), args.to_owned()).await?;
+            let json = json!({
+              "body": res
+            });
+            Ok(json)
+         },
         _ => { bail!("Not implemented for type: {:?}", self) }
         // QueryType::Epoch => todo!(),
         // QueryType::BlockHeight => todo!(),
         // QueryType::Resources { account } => todo!(),
         // QueryType::MoveValue { account, module_name, struct_name, key_name } => todo!(),
-        // QueryType::SyncDelay => todo!(),
-        // QueryType::Txs { account, txs_height, txs_count, txs_type } => todo!(),
+
     }
-
-  }
-
+    }
 }
-
