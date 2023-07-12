@@ -846,6 +846,11 @@ module aptos_framework::account {
         guid
     }
 
+    public fun get_guid_capability_address(cap: &GUIDCapability): address {
+        cap.addr
+    }
+
+
 
 
     #[test_only]
