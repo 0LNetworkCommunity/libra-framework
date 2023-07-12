@@ -40,8 +40,9 @@ libra-types = { path = "types" }
 libra-txs = { path = "tools/txs" }
 libra-wallet = { path = "tools/wallet" }
 vdf = { git = "https://github.com/0o-de-lally/verifiable_delay.git" }
+# ol-types = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err" }
 
-# Please do not add any test features here: they should be declared by the 
+# Please do not add any test features here: they should be declared by the
 # individual crate.
 
 zapatos-api-types = { package = "aptos-api-types", git = "https://github.com/0o-de-lally/zapatos.git", rev = "996a2dd65b" }
@@ -115,7 +116,6 @@ ureq = { version = "1.5.4", features = [
   "native-tls",
 ], default_features = false }
 url = { version = "2.3.1", features = ["serde"] }
-
 
 ### MOVE DEPENDENCIES
 # move-abigen = { path = "third_party/move/move-prover/move-abigen" }

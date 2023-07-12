@@ -50,7 +50,7 @@ fn main() -> anyhow::Result<()> {
     let cli = GenesisCliArgs::parse();
     match cli.command {
         Some(Sub::Genesis { supply_settings }) => {
-            let data_path = cli.home_dir.unwrap_or_else(|| global_config_dir());
+            let data_path = cli.home_dir.unwrap_or_else(global_config_dir);
 
             let github_token = cli.token_github.unwrap_or(
                 std::fs::read_to_string(&data_path.join(GITHUB_TOKEN_FILENAME))?

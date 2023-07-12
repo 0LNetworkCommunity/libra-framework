@@ -1,11 +1,11 @@
 //! ol functions to run at genesis e.g. migration.
-use libra_types::ol_progress::OLProgress;
 use crate::supply::{get_supply_struct, SupplySettings};
 use anyhow::Context;
 use indicatif::ProgressIterator;
-use libra_types::exports::AccountAddress;
-use libra_types::legacy_types::{
-    legacy_recovery::{AccountRole, LegacyRecovery},
+use libra_types::{
+    exports::AccountAddress,
+    legacy_types::legacy_recovery::{AccountRole, LegacyRecovery},
+    ol_progress::OLProgress,
 };
 use move_core_types::{
     resolver::MoveResolver,
@@ -28,65 +28,63 @@ pub fn genesis_migrate_all_users(
         .iter()
         .progress_with_style(OLProgress::bar())
         .for_each(|a| {
-
             // do basic account creation and coin scaling
             match genesis_migrate_one_user(session, &a, supply.split_factor, supply.escrow_pct) {
                 Ok(_) => {}
                 Err(e) => {
                     // TODO: compile a list of errors.
                     if a.role != AccountRole::System {
-                      println!("Error migrating user: {:?}", e);
+                        println!("Error migrating user: {:?}", e);
                     }
                 }
             }
 
             // migrating slow wallets
             if a.slow_wallet.is_some() {
-              match genesis_migrate_slow_wallet(session, a, supply.split_factor) {
-                Ok(_) => {},
-                Err(e) => {
-                  if a.role != AccountRole::System {
-                      println!("Error migrating user: {:?}", e);
+                match genesis_migrate_slow_wallet(session, a, supply.split_factor) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        if a.role != AccountRole::System {
+                            println!("Error migrating user: {:?}", e);
+                        }
                     }
-                },
-              }
+                }
             }
 
             // migrating infra escrow, check if this has historically been a validator and has a slow wallet
-            if a.val_cfg.is_some() && a.slow_wallet.is_some(){
-              match genesis_migrate_infra_escrow(session, a, supply.escrow_pct) {
-                Ok(_) => {},
-                Err(e) => {
-                  if a.role != AccountRole::System {
-                      println!("Error migrating user: {:?}", e);
+            if a.val_cfg.is_some() && a.slow_wallet.is_some() {
+                match genesis_migrate_infra_escrow(session, a, supply.escrow_pct) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        if a.role != AccountRole::System {
+                            println!("Error migrating user: {:?}", e);
+                        }
                     }
-                },
-              }
+                }
             }
 
             // migrating ancestry
             if a.ancestry.is_some() {
-              match genesis_migrate_ancestry(session, a) {
-                Ok(_) => {},
-                Err(e) => {
-                  if a.role != AccountRole::System {
-                      println!("Error migrating user: {:?}", e);
+                match genesis_migrate_ancestry(session, a) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        if a.role != AccountRole::System {
+                            println!("Error migrating user: {:?}", e);
+                        }
                     }
-                },
-              }
+                }
             }
-
 
             // migrating tower
             if a.miner_state.is_some() {
-              match genesis_migrate_tower_state(session, a) {
-                Ok(_) => {},
-                Err(e) => {
-                  if a.role != AccountRole::System {
-                      println!("Error migrating user: {:?}", e);
+                match genesis_migrate_tower_state(session, a) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        if a.role != AccountRole::System {
+                            println!("Error migrating user: {:?}", e);
+                        }
                     }
-                },
-              }
+                }
             }
         });
     Ok(())
@@ -141,7 +139,6 @@ pub fn genesis_migrate_one_user(
     Ok(())
 }
 
-
 pub fn genesis_migrate_slow_wallet(
     session: &mut SessionExt<impl MoveResolver>,
     user_recovery: &LegacyRecovery,
@@ -181,7 +178,6 @@ pub fn genesis_migrate_slow_wallet(
     Ok(())
 }
 
-
 pub fn genesis_migrate_infra_escrow(
     session: &mut SessionExt<impl MoveResolver>,
     user_recovery: &LegacyRecovery,
@@ -217,7 +213,6 @@ pub fn genesis_migrate_infra_escrow(
     );
     Ok(())
 }
-
 
 pub fn genesis_migrate_tower_state(
     session: &mut SessionExt<impl MoveResolver>,
@@ -282,12 +277,16 @@ pub fn genesis_migrate_ancestry(
 
     let ancestry = user_recovery.ancestry.as_ref().unwrap();
 
-    let mapped_addr: Vec<AccountAddress> = ancestry.tree.iter().map(|el| {
-
-        let acc_str = el.to_string();
-        let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str)).unwrap();
-        new_addr_type
-    }).collect();
+    let mapped_addr: Vec<AccountAddress> = ancestry
+        .tree
+        .iter()
+        .map(|el| {
+            let acc_str = el.to_string();
+            let new_addr_type =
+                AccountAddress::from_hex_literal(&format!("0x{}", acc_str)).unwrap();
+            new_addr_type
+        })
+        .collect();
 
     let serialized_values = serialize_values(&vec![
         MoveValue::Signer(CORE_CODE_ADDRESS),
