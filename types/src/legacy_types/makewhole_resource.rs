@@ -1,15 +1,13 @@
 //! The Makewhole on-chain resource
 //!
 use crate::gas_coin::GasCoin;
-
+use anyhow::Result;
 use move_core_types::{
     ident_str,
     identifier::IdentStr,
-    language_storage::StructTag,
-    move_resource::{MoveResource, MoveStructType},
+    move_resource::MoveStructType,
 
 };
-use zapatos_types::account_config::CORE_CODE_ADDRESS;
 use serde::{Deserialize, Serialize};
 
 
@@ -19,6 +17,19 @@ pub struct MakeWholeResource {
     ///
     pub credits: Vec<CreditResource>,
 }
+
+impl MakeWholeResource {
+    ///
+    pub fn try_from_bytes(bytes: &[u8]) -> Result<Self> {
+        bcs::from_bytes(bytes).map_err(Into::into)
+    }
+}
+
+impl MoveStructType for MakeWholeResource {
+    const MODULE_NAME: &'static IdentStr = ident_str!("MakeWhole");
+    const STRUCT_NAME: &'static IdentStr = ident_str!("Balance");
+}
+
 
 #[derive(Debug, Serialize, Deserialize)]
 /// the makewhole credit resource
@@ -31,33 +42,11 @@ pub struct CreditResource {
     pub coins: GasCoin,
 }
 
-impl MoveStructType for CreditResource {
-    const MODULE_NAME: &'static IdentStr = ident_str!("make_whole");
-    const STRUCT_NAME: &'static IdentStr = ident_str!("Credit");
-}
+// impl MoveStructType for CreditResource {
+//     const MODULE_NAME: &'static IdentStr = ident_str!("make_whole");
+//     const STRUCT_NAME: &'static IdentStr = ident_str!("Credit");
+// }
 
-impl MoveResource for CreditResource {}
 
-impl MakeWholeResource {
-    ///
-    pub fn struct_tag() -> StructTag {
-        StructTag {
-            address: CORE_CODE_ADDRESS,
-            name: MakeWholeResource::struct_identifier(),
-            module: MakeWholeResource::module_identifier(),
-            type_params: vec![],
-        }
-    }
 
-    // ///
-    // pub fn access_path_for() -> Vec<u8> {
-    //     AccessPath::resource_access_vec(MakeWholeResource::struct_tag())
-    // }
-}
 
-impl MoveStructType for MakeWholeResource {
-    const MODULE_NAME: &'static IdentStr = ident_str!("MakeWhole");
-    const STRUCT_NAME: &'static IdentStr = ident_str!("Balance");
-}
-
-impl MoveResource for MakeWholeResource {}

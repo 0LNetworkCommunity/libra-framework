@@ -9,10 +9,12 @@ edition = "2021"
 anyhow = { workspace = true }
 async-trait = { workspace = true }
 bcs = { workspace = true }
+console = { workspace = true }
 dirs = { workspace = true }
 futures = { workspace  = true }
 glob = { workspace = true }
 hex = { workspace = true }
+indicatif = { workspace = true }
 move-core-types = { workspace = true }
 once_cell = { workspace = true }
 rand =  { workspace = true }
@@ -29,3 +31,7 @@ zapatos-crypto = { workspace = true }
 zapatos-rest-client = { workspace = true }
 zapatos-sdk = { workspace = true }
 zapatos-types = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+proptest-derive = { workspace = true }

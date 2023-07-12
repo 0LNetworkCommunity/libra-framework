@@ -4,6 +4,7 @@ module aptos_framework::coin {
     use std::error;
     use std::option::{Self, Option};
     use std::signer;
+    use std::fixed_point32;
 
     use aptos_framework::account;
     use aptos_framework::aggregator_factory;
@@ -13,6 +14,8 @@ module aptos_framework::coin {
     use aptos_framework::system_addresses;
 
     use aptos_std::type_info;
+    use aptos_std::math64;
+    use aptos_std::debug::print;
 
     friend ol_framework::gas_coin;
     friend aptos_framework::aptos_coin;
@@ -235,6 +238,55 @@ module aptos_framework::coin {
     }
 
     #[view]
+    /// Returns a human readable version of the balance with (integer, decimal_part)
+    public fun balance_human<CoinType>(owner: address): (u64, u64) acquires CoinStore, CoinInfo {
+        assert!(
+            is_account_registered<CoinType>(owner),
+            error::not_found(ECOIN_STORE_NOT_PUBLISHED),
+        );
+
+        let unscaled_value = borrow_global<CoinStore<CoinType>>(owner).coin.value;
+        assert!(unscaled_value > 0, error::out_of_range(EZERO_COIN_AMOUNT));
+
+        let decimal_places = decimals<CoinType>();
+        let scaling = math64::pow(10, (decimal_places as u64));
+        print(&scaling);
+        let value = fixed_point32::create_from_rational(unscaled_value, scaling);
+        // multply will TRUNCATE.
+        let integer_part = fixed_point32::multiply_u64(1, value);
+        print(&integer_part);
+
+        let decimal_part = unscaled_value - (integer_part * scaling);
+        print(&decimal_part);
+
+        (integer_part, decimal_part)
+    }
+
+    #[test(source = @0x1)]
+    public entry fun test_human_read(
+        source: signer,
+    ) acquires CoinInfo, CoinStore {
+        let source_addr = signer::address_of(&source);
+        account::create_account_for_test(source_addr);
+        let (burn_cap, freeze_cap, mint_cap) = initialize_and_register_fake_money(&source, 8, true);
+
+        let coins_minted = mint<FakeMoney>(1234567890, &mint_cap);
+        deposit(source_addr, coins_minted);
+        // assert!(balance<FakeMoney>(source_addr) == 100, 0);
+
+        let (integer, decimal) = balance_human<FakeMoney>(source_addr);
+        print(&integer);
+        assert!(integer == 12, 7357001);
+        assert!(decimal == 34567890, 7357002);
+
+        move_to(&source, FakeMoneyCapabilities {
+            burn_cap,
+            freeze_cap,
+            mint_cap,
+        });
+    }
+
+    #[view]
     /// Returns `true` if the type `CoinType` is an initialized coin.
     public fun is_coin_initialized<CoinType>(): bool {
         exists<CoinInfo<CoinType>>(coin_address<CoinType>())
@@ -308,7 +360,7 @@ module aptos_framework::coin {
         };
 
         let Coin { value: amount } = coin;
-        
+
         let maybe_supply = &mut borrow_global_mut<CoinInfo<CoinType>>(coin_address<CoinType>()).supply;
         if (option::is_some(maybe_supply)) {
             let supply = option::borrow_mut(maybe_supply);

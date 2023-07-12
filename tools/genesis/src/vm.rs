@@ -1,4 +1,4 @@
-use ol_types::legacy_recovery::LegacyRecovery;
+use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use zapatos_crypto::{ed25519::Ed25519PublicKey, HashValue};
 use zapatos_framework::{self, ReleaseBundle};
 use zapatos_gas::{
@@ -23,13 +23,16 @@ use zapatos_vm_genesis::{
     set_genesis_end, validate_genesis_config, verify_genesis_write_set, GenesisConfiguration, Validator, GENESIS_KEYPAIR,
 };
 
-pub fn zapatos_mainnet_genesis(
+use crate::supply::SupplySettings;
+
+pub fn migration_genesis(
     validators: &[Validator],
     recovery: Option<&[LegacyRecovery]>,
     framework: &ReleaseBundle,
-    chain_id: ChainId, 
+    chain_id: ChainId,
+    supply_settings: &SupplySettings,
 ) -> anyhow::Result<ChangeSet> {
-    let genesis = encode_zapatos_recovery_genesis_change_set(
+    let genesis = encode_genesis_change_set(
         &GENESIS_KEYPAIR.1,
         validators,
         recovery,
@@ -39,13 +42,14 @@ pub fn zapatos_mainnet_genesis(
         &OnChainConsensusConfig::default(),
         &OnChainExecutionConfig::default(),
         &default_gas_schedule(),
+        supply_settings,
     );
 
     Ok(genesis)
 }
 
 /// Generates a genesis using the recovery file for hard forks.
-pub fn encode_zapatos_recovery_genesis_change_set(
+pub fn encode_genesis_change_set(
     _core_resources_key: &Ed25519PublicKey,
     validators: &[Validator],
     recovery: Option<&[LegacyRecovery]>,
@@ -55,18 +59,8 @@ pub fn encode_zapatos_recovery_genesis_change_set(
     consensus_config: &OnChainConsensusConfig,
     execution_config: &OnChainExecutionConfig,
     gas_schedule: &GasScheduleV2,
+    supply_settings: &SupplySettings,
 ) -> ChangeSet {
-
-    // // convert the account types.
-    // if let Some(r) = recovery {
-    //     r.into_iter().for_each(|a| {
-    //         // dbg!(a.account);
-    //         if let Some(acc) = a.account {
-    //             dbg!(convert_types::convert_account(acc).unwrap());
-    //         }
-    //     })
-    // }
-
     validate_genesis_config(genesis_config);
 
     // Create a Move VM session so we can invoke on-chain genesis intializations.
@@ -96,12 +90,6 @@ pub fn encode_zapatos_recovery_genesis_change_set(
         gas_schedule,
     );
     initialize_features(&mut session);
-    // dbg!(&genesis_config.is_test);
-    // if genesis_config.is_test {
-    //     initialize_core_resources_and_aptos_coin(&mut session, core_resources_key);
-    // } else {
-    //     initialize_aptos_coin(&mut session);
-    // }
 
     initialize_aptos_coin(&mut session);
 
@@ -110,12 +98,9 @@ pub fn encode_zapatos_recovery_genesis_change_set(
     create_and_initialize_validators(&mut session, validators);
 
     if let Some(r) = recovery {
-        crate::genesis_functions::genesis_migrate_all_users(&mut session, r).expect("could not migrate users");
+        crate::genesis_functions::genesis_migrate_all_users(&mut session, r, supply_settings)
+        .expect("could not migrate users");
     }
-
-    // if genesis_config.is_test {
-    //     allow_core_resources_to_set_version(&mut session);
-    // }
 
     set_genesis_end(&mut session);
 

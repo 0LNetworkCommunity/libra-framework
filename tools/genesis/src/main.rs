@@ -1,7 +1,12 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use libra_genesis_tools::{wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME}, genesis_builder, parse_json};
+use libra_genesis_tools::{
+    genesis_builder,
+    parse_json,
+    supply::SupplySettings,
+    wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME},
+};
 use libra_types::global_config_dir;
 
 #[derive(Parser)]
@@ -9,7 +14,6 @@ use libra_types::global_config_dir;
 struct GenesisCliArgs {
     #[clap(subcommand)]
     command: Option<Sub>,
-
     /// choose a different home data folder for all node data.
     /// defaults to $HOME/.libra
     #[clap(long)]
@@ -33,67 +37,62 @@ struct GenesisCliArgs {
 
 #[derive(Subcommand)]
 enum Sub {
-    Genesis {}, // just do genesis without wizard
+    Genesis {
+      #[clap(flatten)]
+      /// optional, settings for supply.
+      supply_settings: SupplySettings,
+    },  // just do genesis without wizard
     Register {}, // just do registration without wizard
-    Wizard {}
+    Wizard {},
 }
 
-fn main() -> anyhow::Result<()>{
+fn main() -> anyhow::Result<()> {
     let cli = GenesisCliArgs::parse();
     match cli.command {
-        Some(Sub::Genesis {}) => {
-          let data_path = cli.home_dir.unwrap_or_else(|| {
-            global_config_dir()
-          });
-       
-          
-          let github_token = cli.token_github
-          .unwrap_or(
-            std::fs::read_to_string(
-              &data_path
-              .join(GITHUB_TOKEN_FILENAME)
-            )?.trim().to_string()
-          );
-          
+        Some(Sub::Genesis { supply_settings }) => {
+            let data_path = cli.home_dir.unwrap_or_else(global_config_dir);
 
-          let recovery = if let Some(p) = cli.json_legacy {
-            parse_json::parse(p)?
-          } else { vec![] };
+            let github_token = cli.token_github.unwrap_or(
+                std::fs::read_to_string(&data_path.join(GITHUB_TOKEN_FILENAME))?
+                    .trim()
+                    .to_string(),
+            );
 
-          genesis_builder::build(
+            let recovery = if let Some(p) = cli.json_legacy {
+                parse_json::parse(p)?
+            } else {
+                vec![]
+            };
+
+            genesis_builder::build(
                 cli.org_github,
                 cli.name_github,
                 github_token,
                 data_path,
                 cli.local_framework,
                 Some(&recovery),
+                Some(supply_settings),
             )?;
         }
-        Some(Sub::Register { }) => {
-            GenesisWizard::new(
-              cli.org_github, 
-              cli.name_github, 
-              cli.home_dir
-            )
-              .start_wizard(
-                cli.local_framework, 
-                cli.json_legacy, 
-                false
+        Some(Sub::Register {}) => {
+            GenesisWizard::new(cli.org_github, cli.name_github, cli.home_dir).start_wizard(
+                cli.local_framework,
+                cli.json_legacy,
+                false,
+                None,
             )?;
         }
-        Some(Sub::Wizard { }) => {
-            GenesisWizard::new(
-              cli.org_github, 
-              cli.name_github, 
-              cli.home_dir
-            )
-              .start_wizard(
-                cli.local_framework, 
-                cli.json_legacy, 
-                false
+        Some(Sub::Wizard {}) => {
+            GenesisWizard::new(cli.org_github, cli.name_github, cli.home_dir).start_wizard(
+                cli.local_framework,
+                cli.json_legacy,
+                false,
+                None,
             )?;
         }
-        _ => {}
+        _ => {
+          println!("\nIf you're looking for trouble \nYou came to the right place");
+        }
     }
 
     // Continued program logic goes here...

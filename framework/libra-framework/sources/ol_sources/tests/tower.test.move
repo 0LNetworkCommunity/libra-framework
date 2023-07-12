@@ -34,10 +34,10 @@ module ol_framework::test_tower {
 
     tower_state::init_miner_state(
           &alice,
-          &vdf_fixtures::alice_0_easy_chal(),
-          &vdf_fixtures::alice_0_easy_sol(),
+          &vdf_fixtures::weso_alice_0_easy_chal(),
+          &vdf_fixtures::weso_alice_0_easy_sol(),
           vdf_fixtures::easy_difficulty(),
-          vdf_fixtures::security(),
+          350, // wesolowski
       );
 
       // // print(&TowerState::get_epochs_compliant(@Alice));

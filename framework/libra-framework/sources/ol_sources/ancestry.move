@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////
 // 0L Module
 // Ancestry Module
-// Error code: 
+// Error code:
 /////////////////////////////////////////////////////////////////////////
 
 module ol_framework::ancestry {
@@ -16,7 +16,7 @@ module ol_framework::ancestry {
       // the full tree back to genesis set
       tree: vector<address>,
     }
-  
+
     // this is limited to onboarding.
     // TODO: limit this with `friend` of DiemAccount module.
     public fun init(new_account_sig: &signer, onboarder_sig: &signer ) acquires Ancestry{
@@ -29,7 +29,7 @@ module ol_framework::ancestry {
     fun set_tree(new_account_sig: &signer, parent: address ) acquires Ancestry {
       let child = signer::address_of(new_account_sig);
 
-      let new_tree = vector::empty<address>(); 
+      let new_tree = vector::empty<address>();
 
       // get the parent's ancestry if initialized.
       // if not then this is an edge case possibly a migration error,
@@ -50,7 +50,7 @@ module ol_framework::ancestry {
 
       if (!exists<Ancestry>(child)) {
         move_to<Ancestry>(new_account_sig, Ancestry {
-          tree: new_tree, 
+          tree: new_tree,
         });
 
 
@@ -71,7 +71,7 @@ module ol_framework::ancestry {
       } else {
         vector::empty()
       }
-      
+
     }
 
     // checks if two addresses have an intersecting permission tree
@@ -95,7 +95,7 @@ module ol_framework::ancestry {
         // check for direct relationship.
         if (vector::contains(&left_tree, &right)) return (true, right);
         if (vector::contains(&right_tree, &left)) return (true, left);
-        
+
 
         let i = 0;
         // check every address on the list if there are overlaps.
@@ -124,7 +124,7 @@ module ol_framework::ancestry {
       while (k < vector::length(list)) {
         let right = vector::borrow(list, k);
         let (fam, _) = is_family(left, *right);
-        if (fam) { 
+        if (fam) {
           return (true, option::some(left), option::some(*right))
         };
         k = k + 1;
@@ -155,12 +155,12 @@ module ol_framework::ancestry {
       child_sig: &signer,
       migrate_tree: vector<address>
     ) acquires Ancestry {
-      system_addresses::assert_vm(vm);
+      system_addresses::assert_ol(vm);
       let child = signer::address_of(child_sig);
 
       if (!exists<Ancestry>(child)) {
         move_to<Ancestry>(child_sig, Ancestry {
-          tree: migrate_tree, 
+          tree: migrate_tree,
         });
 
 

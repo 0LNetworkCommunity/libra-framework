@@ -10,25 +10,29 @@ module ol_framework::genesis_migration {
   use std::error;
   use aptos_framework::coin;
   use ol_framework::ol_account;
-  use ol_framework::globals;
   use ol_framework::validator_universe;
   use ol_framework::gas_coin;
   use ol_framework::gas_coin::GasCoin;
-  use ol_framework::infra_escrow;
+  // use ol_framework::infra_escrow;
+  use aptos_framework::system_addresses;
 
-  // use aptos_std::debug::print;
+  use std::fixed_point32;
+
 
   const EBALANCE_MISMATCH: u64 = 0;
 
-  const VAL_ESCROW_PCT: u64 = 80;
-  /// Called by root in genesis to initialize the GAS coin 
+  /// Called by root in genesis to initialize the GAS coin
   public fun migrate_legacy_user(
       vm: &signer,
       user_sig: &signer,
       auth_key: vector<u8>,
       legacy_balance: u64,
-      is_validator: bool,
+      _validator: bool, // TODO remove
+      split_factor: u64, // precision of 1,000,000
+      _escrow_pct: u64, // precision of 1,000,000
   ) {
+    system_addresses::assert_aptos_framework(vm);
+
     let user_addr = signer::address_of(user_sig);
     // if not a validator OR operator of a validator, create a new account
     // previously during genesis validator and oper accounts were already created
@@ -40,7 +44,7 @@ module ol_framework::genesis_migration {
       );
     };
 
-    
+
     // mint coins again to migrate balance, and all
     // system tracking of balances
     if (legacy_balance == 0) {
@@ -49,7 +53,9 @@ module ol_framework::genesis_migration {
     let genesis_balance = coin::balance<GasCoin>(user_addr);
 
     // scale up by the coin split factor
-    let expected_final_balance = globals::get_coin_split_factor() * legacy_balance;
+
+    let split_factor = fixed_point32::create_from_rational(split_factor, 1000000);
+    let expected_final_balance = fixed_point32::multiply_u64(legacy_balance, split_factor);
     let coins_to_mint = expected_final_balance - genesis_balance;
     gas_coin::mint(vm, user_addr, coins_to_mint);
 
@@ -58,11 +64,15 @@ module ol_framework::genesis_migration {
 
     assert!(new_balance == expected_final_balance, error::invalid_state(EBALANCE_MISMATCH));
 
-    // establish the infrastructure escrow pledge
-    if (is_validator) {
-      let to_escrow = (new_balance * VAL_ESCROW_PCT) / 100;
-      infra_escrow::user_pledge_infra(user_sig, to_escrow)
-    };
+    // // establish the infrastructure escrow pledge
+    // if (is_validator) {
+    //   let escrow_pct = fixed_point32::create_from_rational(escrow_pct, 1000000);
+    //   // TODO: get locked amount
+    //   let locked = new_balance; //slow_wallet::balance(user_addr);
+    //   let to_escrow = fixed_point32::multiply_u64(locked, escrow_pct);
+    //   print(&to_escrow);
+    //   infra_escrow::user_pledge_infra(user_sig, to_escrow)
+    // };
   }
 
   fun is_genesis_val(addr: address): bool {

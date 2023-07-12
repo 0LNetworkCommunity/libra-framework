@@ -46,7 +46,7 @@ pub struct LegacyToml {
     pub chain_info: ChainInfo,
     /// Transaction configurations
     pub tx_configs: TxConfigs,
-    
+
 }
 
 impl LegacyToml {
@@ -120,7 +120,7 @@ impl AppCfg {
       } else {
         app_cfg.save_file()?;
       }
-      
+
       Ok(app_cfg)
     }
 
@@ -138,8 +138,8 @@ impl AppCfg {
     /// get profile index by account fragment: full account string or shortened "nickname"
     fn get_profile_idx(&self, mut nickname: Option<String>) -> anyhow::Result<usize>{
       if self.user_profiles.len() == 0 { bail!("no profiles found") };
-      if self.user_profiles.len() == 1 { 
-        return Ok(0) 
+      if self.user_profiles.len() == 1 {
+        return Ok(0)
       };
 
       // try to use the default profile unless one was requested
@@ -221,7 +221,7 @@ impl AppCfg {
         if let Some(np) = network_playlist {
           default_config.network_playlist.push(np)
         }
-        
+
         default_config.save_file()?;
 
         Ok(default_config)
@@ -244,7 +244,7 @@ impl AppCfg {
     //     }
     // }
     pub fn set_chain_id(&mut self, chain_id: NamedChain) {
-      
+
       self.workspace.default_chain_id = chain_id;
     }
 
@@ -254,18 +254,7 @@ impl AppCfg {
 
       let np = NetworkPlaylist::from_url(url, chain_id).await?;
 
-      // if the network playlist has the same chain_id as a prior one
-      // overwrite it.
-      // if no match push a new one to vector
-
-      if self.network_playlist.iter().find(|e| e.chain_id == np.chain_id).is_some() {
-                for e in self.network_playlist.iter_mut(){
-          if e.chain_id == np.chain_id { *e = np.clone(); }
-        };
-      } else {
-        self.network_playlist.push(np.clone())
-      }
-
+      self.maybe_add_custom_playlist(&np);
       Ok(np)
 
     }
@@ -295,16 +284,19 @@ impl AppCfg {
         Ok(np)
     }
 
-    pub fn add_custom_playlist(&mut self, new_playlist: NetworkPlaylist) {
-      let existing_playlist = self.network_playlist.iter_mut().find(|e| {
-        e.chain_id == new_playlist.chain_id
+    /// if there is a custom playlist update it
+    pub fn maybe_add_custom_playlist(&mut self, new_playlist: &NetworkPlaylist) {
+      let mut found = false;
+      self.network_playlist.iter_mut().for_each(|play| {
+        if play.chain_id == new_playlist.chain_id {
+          found = true;
+          *play = new_playlist.to_owned();
+        }
       });
-      if let Some(p) = existing_playlist {
-        *p = new_playlist
-      } else {
-        self.network_playlist.push(new_playlist);
+      if !found {
+        self.network_playlist.push(new_playlist.to_owned());
       }
-      
+
     }
     // TODO: always use CHAIN_ID from AppCfg
     ///fetch a network profile, optionally by profile name
@@ -342,7 +334,7 @@ pub struct Workspace {
     /// default profile. Will match the substring of a full address or the nickname
     #[serde(default)]
     pub default_profile: String,
-    /// default chain network profile to use 
+    /// default chain network profile to use
     pub default_chain_id: NamedChain,
 
     /// home directory of the diem node, may be the same as miner.
@@ -405,7 +397,7 @@ pub struct Profile {
     /// Note: skip_serializing so that it is never saved to disk.
     #[serde(skip_serializing)]
     pub test_private_key: Option<Ed25519PrivateKey>,
-    
+
     /// nickname for this profile
     pub nickname: String,
     #[serde(default)]
@@ -439,7 +431,7 @@ pub struct Profile {
 
 
 
-    
+
 
 }
 

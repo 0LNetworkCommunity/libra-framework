@@ -29,7 +29,6 @@ module ol_framework::test_slow_wallet {
 
       let list = slow_wallet::get_slow_list();
       assert!(vector::length<address>(&list) == 5, 735701);
-    
   }
 
   #[test(root = @ol_framework)]
@@ -112,7 +111,7 @@ module ol_framework::test_slow_wallet {
     let a = vector::borrow(&set, 0);
     assert!(slow_wallet::unlocked_amount(*a) == 0, 735701);
     epoch_boundary::ol_reconfigure_for_test(&root)
-    
+
   }
 
 
