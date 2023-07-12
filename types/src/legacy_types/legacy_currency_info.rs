@@ -1,6 +1,6 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
-#[allow(dead_code)]
+#![allow(dead_code)]
 use anyhow::Result;
 use move_core_types::{
     identifier::Identifier,

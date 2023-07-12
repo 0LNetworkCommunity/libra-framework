@@ -76,7 +76,7 @@ impl ClientExt for Client {
     let (client, _) = Self::from_libra_config(&app_cfg, None).await?;
     Ok(client)
   }
- 
+
 
   /// Finds a good working upstream based on the list in a config file
   async fn from_libra_config(app_cfg: &AppCfg, chain_id_opt: Option<NamedChain>) -> anyhow::Result<(Client, ChainId)> {
@@ -84,7 +84,7 @@ impl ClientExt for Client {
     let url = &app_cfg.pick_url(chain_id_opt)?;
     let client = Client::new(url.to_owned());
     let res = client.get_index().await?;
-    
+
     Ok((client, ChainId::new(res.inner().chain_id)))
   }
 
@@ -107,7 +107,7 @@ impl ClientExt for Client {
     fn from_vendor_config() -> anyhow::Result<Client> {
         let workspace = crate::global_config_dir().parent().unwrap().to_path_buf();
         let profile =
-            CliConfig::load_profile_ext( 
+            CliConfig::load_profile_ext(
               Some(DEFAULT_PROFILE),
               Some(workspace),
               ConfigSearchMode::CurrentDir
@@ -129,7 +129,7 @@ impl ClientExt for Client {
     //       type_arguments: vec![],
     //       arguments: vec![account.to_string().into()],
     //   };
-      
+
     //   let res = self.view(&request, None).await?.into_inner();
 
     //   SlowWalletBalance::from_value(res)

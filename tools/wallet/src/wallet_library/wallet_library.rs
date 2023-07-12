@@ -152,6 +152,6 @@ impl WalletLibrary {
     //////// 0L ////////
     pub fn get_key_factory(&self) -> &KeyFactory{
         &self.key_factory
-    }    
+    }
 }
 
