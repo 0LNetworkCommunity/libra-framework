@@ -107,6 +107,12 @@ module aptos_framework::account {
         recipient_address: address,
     }
 
+    //////// 0L ////////
+    // bring this back from diem for ol VoteLib
+    struct GUIDCapability has key, store, drop {
+      addr: address // of the account with the id generator
+    }
+
     const MAX_U64: u128 = 18446744073709551615;
     const ZERO_AUTH_KEY: vector<u8> = x"0000000000000000000000000000000000000000000000000000000000000000";
 
@@ -805,6 +811,15 @@ module aptos_framework::account {
             abort error::invalid_argument(EINVALID_SCHEME)
         };
     }
+
+    //////// 0L ////////
+    public fun create_guid_capability(owner: &signer): GUIDCapability {
+        GUIDCapability {
+          addr: signer::address_of(owner)
+        }
+    }
+
+
 
     #[test_only]
     public fun create_account_for_test(new_address: address): signer {
