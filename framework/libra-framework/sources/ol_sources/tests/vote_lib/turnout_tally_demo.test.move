@@ -45,17 +45,20 @@
       });
     }
 
-    public fun propose_ballot_by_owner(sig: &signer, voters: u64, duration: u64) acquires Vote {
+    public fun propose_ballot_by_owner(sig: &signer, voters: u64, duration: u64):guid::ID acquires Vote {
       assert!(testnet::is_testnet(), 0);
       // let cap = guid::gen_create_capability(sig);
-      let guid = account::create_guid(sig);
+      let ballot_guid = account::create_guid(sig);
       let noop = EmptyType {};
 
       let t = turnout_tally::new_tally_struct<EmptyType>(noop, voters, duration, 0);
 
       let vote = borrow_global_mut<Vote<TurnoutTally<EmptyType>>>(signer::address_of(sig));
 
-      ballot::propose_ballot<TurnoutTally<EmptyType>>(&mut vote.tracker, guid, t);
+      let id = guid::id(&ballot_guid);
+      ballot::propose_ballot<TurnoutTally<EmptyType>>(&mut vote.tracker, ballot_guid, t);
+
+      id
     }
 
      public fun vote(sig: &signer, election_addr: address, uid: &guid::ID, weight: u64, approve_reject: bool): Option<bool> acquires Vote {
