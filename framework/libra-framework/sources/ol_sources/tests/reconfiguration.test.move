@@ -9,6 +9,7 @@ module ol_framework::test_reconfiguration {
   use ol_framework::testnet;
   use ol_framework::gas_coin::GasCoin;
   use ol_framework::proof_of_fee;
+  // use aptos_std::debug::print;
 
   // Scenario: all genesis validators make it to next epoch
   #[test(root = @ol_framework)]
@@ -24,14 +25,20 @@ module ol_framework::test_reconfiguration {
 
       assert!(coin::balance<GasCoin>(@0x1000a) == 0, 7357003);
 
-      let (reward, _, _ ) = proof_of_fee::get_consensus_reward();
+      let (reward_one, _, _ ) = proof_of_fee::get_consensus_reward();
+      // The epoch's reward BEFORE reconfiguration
+      assert!(reward_one == 1000000, 7357004);
       // run ol reconfiguration
-      mock::trigger_epoch(&root);    
+      mock::trigger_epoch(&root);
 
       let vals = stake::get_current_validators();
 
-      assert!(vector::length(&vals) == 5, 7357003);
-      assert!(coin::balance<GasCoin>(@0x1000a) == reward, 7357004)
+      assert!(vector::length(&vals) == 5, 7357005);
+      let alice_bal = coin::balance<GasCoin>(@0x1000a);
+      let (_, entry_fee, _ ) = proof_of_fee::get_consensus_reward();
+      // need to check that the user paid an PoF entry fee for next epoch.
+      // which means the balance will be the nominal reward, net of the PoF clearing price bid
+      assert!(alice_bal == (reward_one-entry_fee), 7357006)
 
   }
 
@@ -53,7 +60,7 @@ module ol_framework::test_reconfiguration {
       let (reward, _, _ ) = proof_of_fee::get_consensus_reward();
 
       // run ol reconfiguration
-      mock::trigger_epoch(&root);    
+      mock::trigger_epoch(&root);
 
       let vals = stake::get_current_validators();
 
@@ -61,10 +68,12 @@ module ol_framework::test_reconfiguration {
       assert!(vector::length(&vals) == 4, 7357003);
       assert!(!vector::contains(&vals, &@0x1000a), 7357004);
 
+      let (_, entry_fee, _ ) = proof_of_fee::get_consensus_reward();
+
       // alice doesn't get paid
       assert!(coin::balance<GasCoin>(@0x1000a) == 0, 7357005);
       // bob does
-      assert!(coin::balance<GasCoin>(@0x1000b) == reward, 7357006);
+      assert!(coin::balance<GasCoin>(@0x1000b) == reward-entry_fee, 7357006);
 
 
   }
@@ -88,7 +97,7 @@ module ol_framework::test_reconfiguration {
       };
 
       // run ol reconfiguration
-      mock::trigger_epoch(&root);    
+      mock::trigger_epoch(&root);
 
       let vals = stake::get_current_validators();
 

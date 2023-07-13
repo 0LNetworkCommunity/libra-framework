@@ -1,14 +1,14 @@
 /// This module provides an interface to burn or collect and redistribute transaction fees.
 module aptos_framework::transaction_fee {
     use aptos_framework::coin::{Self, AggregatableCoin, BurnCapability, Coin};
-
-    // use aptos_framework::stake;
     use aptos_framework::system_addresses;
     use std::error;
     use std::vector;
     use std::option::{Self, Option};
-
     use ol_framework::gas_coin::GasCoin;
+
+    use aptos_std::debug::print;
+
 
     friend aptos_framework::block;
     friend aptos_framework::genesis;
@@ -201,6 +201,7 @@ module aptos_framework::transaction_fee {
       while (i < vector::length(list)) {
         let from = vector::borrow(list, i);
         let coin_option = coin::vm_withdraw<GasCoin>(*from, amount);
+        print(&amount);
         if (option::is_some(&coin_option)) {
           let c = option::extract(&mut coin_option);
           pay_fee(vm, c)
