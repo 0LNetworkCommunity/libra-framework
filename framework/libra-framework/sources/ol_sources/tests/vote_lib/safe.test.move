@@ -13,9 +13,13 @@
 module ol_framework::test_safe {
   use ol_framework::mock;
   use ol_framework::safe;
+  use ol_framework::safe_payment;
   use std::signer;
+  use std::option;
   use ol_framework::ol_account;
   use aptos_framework::resource_account;
+
+  use aptos_std::debug::print;
 
   struct DummyType has drop, store {}
 
@@ -38,5 +42,81 @@ module ol_framework::test_safe {
     safe::init_gov(&resource_sig, 2, &vals);
     safe::init_type<DummyType>(&resource_sig, true);
 
+  }
+
+
+  #[test(root = @ol_framework, dave = @0x1000d, alice = @0x1000a)]
+  fun propose_action(root: &signer, dave: &signer, alice: &signer) {
+
+    let vals = mock::genesis_n_vals(root, 2);
+    mock::ol_initialize_coin(root);
+
+    let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
+    let new_resource_address = signer::address_of(&resource_sig);
+    assert!(resource_account::is_resource_account(new_resource_address), 0);
+
+    // make the vals the signers on the safe
+    // SO ALICE IS AUTHORIZED
+    safe::init_gov(&resource_sig, 2, &vals);
+    safe::init_type<DummyType>(&resource_sig, true);
+
+    let proposal = safe::proposal_constructor(DummyType{}, option::none()); // ends at epoch 10
+    safe::propose_new(alice, new_resource_address, proposal);
+
+  }
+
+
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, dave = @0x1000d )]
+  fun propose_payment_happy(root: &signer, alice: &signer, bob: &signer, dave: &signer, ) {
+    use ol_framework::slow_wallet;
+
+    let vals = mock::genesis_n_vals(root, 2);
+    mock::ol_initialize_coin_and_fund_vals(root);
+    let (b, _) = slow_wallet::balance(@0x1000a);
+    print(&b);
+    // Dave creates the resource account. HE is not one of the validators, and is not an authority in the multisig.
+    let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
+    let new_resource_address = signer::address_of(&resource_sig);
+    assert!(resource_account::is_resource_account(new_resource_address), 0);
+
+    // fund the account
+    ol_account::transfer(alice, new_resource_address, 100);
+    // make the vals the signers on the safe
+    // SO ALICE and DAVE ARE AUTHORIZED
+    safe_payment::init_payment_multisig(&resource_sig, vals, 2); // both need to sign
+
+    // first make sure dave is initialized to receive GasCoin
+    ol_account::create_account(root, @0x1000d);
+    // when alice proposes, she also votes in a single step
+    let prop_id = safe_payment::propose_payment(alice, new_resource_address, @0x1000d, 42, b"cheers", option::none()); // ends at epoch 10
+
+    // vote should pass after bob also votes
+    let passed = safe_payment::vote_payment(bob, new_resource_address, &prop_id);
+    assert!(passed, 1);
+    let (_, total_dave) = slow_wallet::balance(@0x1000d);
+    assert!(total_dave == 42, 2);
+  }
+
+    #[test(root = @ol_framework, alice = @0x1000a, dave = @0x1000d )]
+  fun propose_payment_should_fail(root: &signer, alice: &signer, dave: &signer, ) {
+
+    // SCENARIO: Not enough votes above the threshold for the multisig
+    let vals = mock::genesis_n_vals(root, 4);
+    mock::ol_initialize_coin(root);
+
+    // Dave creates the resource account
+    let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
+    let new_resource_address = signer::address_of(&resource_sig);
+    assert!(resource_account::is_resource_account(new_resource_address), 0);
+
+    // make the vals the signers on the safe
+    // SO ALICE and DAVE ARE AUTHORIZED
+    safe_payment::init_payment_multisig(&resource_sig, vals, 3); // three signers of the 4 validators
+
+    let prop_id = safe_payment::propose_payment(alice, new_resource_address, @0x1000d, 1212, b"cheers", option::none()); // ends at epoch 10
+
+    // vote should pass
+    let passed = safe_payment::vote_payment(dave, new_resource_address, &prop_id);
+    assert!(passed, 1);
   }
 }

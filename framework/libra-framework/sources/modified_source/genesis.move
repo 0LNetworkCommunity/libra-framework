@@ -35,6 +35,7 @@ module aptos_framework::genesis {
     use ol_framework::gas_coin::{Self, GasCoin};
     use ol_framework::infra_escrow;
     use ol_framework::tower_state;
+    use ol_framework::safe_payment;
     //////// end 0L ////////
 
 
@@ -142,13 +143,14 @@ module aptos_framework::genesis {
         //////// 0L ////////
 
         validator_universe::initialize(&aptos_framework_account);
-        //todo: genesis seats
+        //TODO!: genesis seats
         let genesis_seats = 10;
         musical_chairs::initialize(&aptos_framework_account, genesis_seats);
         proof_of_fee::init_genesis_baseline_reward(&aptos_framework_account);
         slow_wallet::initialize(&aptos_framework_account);
         infra_escrow::initialize(&aptos_framework_account);
         tower_state::initialize(&aptos_framework_account);
+        safe_payment::initialize(&aptos_framework_account);
         // end 0L
 
         timestamp::set_time_has_started(&aptos_framework_account);

@@ -46,6 +46,7 @@ module ol_framework::safe_payment {
   use std::fixed_point32;
   use std::signer;
   use std::guid;
+  use std::error;
   use aptos_framework::account::WithdrawCapability;
   use aptos_framework::coin;
   // use DiemFramework::Debug::print;
@@ -54,6 +55,8 @@ module ol_framework::safe_payment {
   use ol_framework::safe;
   use ol_framework::system_addresses;
   use ol_framework::transaction_fee;
+
+  const ESAFE_NOT_INITIALIZED: u64 = 1;
 
   /// Genesis starting fee for multisig service
   const STARTING_FEE: u64 = 00000027; // 1% per year, 0.0027% per epoch
@@ -80,15 +83,6 @@ module ol_framework::safe_payment {
     add_to_registry(signer::address_of(sponsor));
   }
 
-  /// create a payment object, whcih can be send in a proposal.
-  public fun new_payment(destination: address, amount: u64, note: vector<u8>): PaymentType {
-    PaymentType {
-      destination,
-      amount,
-      note,
-    }
-  }
-
 
   // Propose a transaction
   // Transactions should be easy, and have one obvious way to do it. There should be no other method for voting for a tx.
@@ -99,15 +93,25 @@ module ol_framework::safe_payment {
   // Only the first proposer can set the expiration time. It will be ignored when a duplicate is caught.
 
 
-  public fun propose_payment(sig: &signer, multisig_addr: address, recipient: address, amount: u64, note: vector<u8>, duration_epochs: Option<u64>) {
+  public fun propose_payment(sig: &signer, multisig_addr: address, recipient: address, amount: u64, note: vector<u8>, duration_epochs: Option<u64>): guid::ID acquires RootMultiSigRegistry {
+    assert!(is_in_registry(multisig_addr), error::invalid_state(ESAFE_NOT_INITIALIZED));
     let pay = new_payment(recipient, amount, *&note);
     let prop = safe::proposal_constructor(pay, duration_epochs);
-    let guid = safe::propose_new<PaymentType>(sig, multisig_addr, prop);
-    vote_payment(sig, multisig_addr, &guid);
-
+    let id = safe::propose_new<PaymentType>(sig, multisig_addr, prop);
+    vote_payment(sig, multisig_addr, &id);
+    id
   }
 
-  public fun vote_payment(sig: &signer, multisig_address: address, id: &guid::ID) {
+    /// create a payment object, whcih can be send in a proposal.
+  fun new_payment(destination: address, amount: u64, note: vector<u8>): PaymentType {
+    PaymentType {
+      destination,
+      amount,
+      note,
+    }
+  }
+
+  public fun vote_payment(sig: &signer, multisig_address: address, id: &guid::ID): bool {
 
     let (passed, cap_opt) = safe::vote_with_id<PaymentType>(sig, id, multisig_address);
 
@@ -117,10 +121,9 @@ module ol_framework::safe_payment {
       release_payment(&data, cap);
 
     };
-
-
     safe::maybe_restore_withdraw_cap(sig, multisig_address, cap_opt); // don't need this and can't drop.
 
+    passed
   }
 
   public fun is_payment_multisig(addr: address):bool {
@@ -148,8 +151,8 @@ module ol_framework::safe_payment {
     fee: u64, // percentage balance fee denomiated in 4 decimal precision 123456 = 12.3456%
   }
 
-  public fun root_init(vm: &signer) {
-   system_addresses::assert_vm(vm);
+  public fun initialize(vm: &signer) {
+   system_addresses::assert_ol(vm);
    if (!exists<RootMultiSigRegistry>(@ol_framework)) {
      move_to<RootMultiSigRegistry>(vm, RootMultiSigRegistry {
        list: vector::empty(),
@@ -163,6 +166,11 @@ module ol_framework::safe_payment {
     if (!vector::contains(&reg.list, &addr)) {
       vector::push_back(&mut reg.list, addr);
     };
+  }
+
+  fun is_in_registry(addr: address):bool acquires RootMultiSigRegistry {
+    let reg = borrow_global_mut<RootMultiSigRegistry>(@ol_framework);
+    vector::contains(&reg.list, &addr)
   }
 
 

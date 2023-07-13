@@ -15,8 +15,8 @@ module ol_framework::mock {
   use aptos_framework::genesis;
   #[test_only]
   use aptos_framework::account;
-  // #[test_only]
-  // use ol_framework::ol_account;
+  #[test_only]
+  use ol_framework::slow_wallet;
   #[test_only]
   use ol_framework::proof_of_fee;
   #[test_only]
@@ -136,14 +136,43 @@ module ol_framework::mock {
       system_addresses::assert_ol(root);
       genesis::setup();
     }
-    
+
     #[test_only]
     public fun ol_initialize_coin(root: &signer) {
       system_addresses::assert_ol(root);
 
+      let mint_cap = init_coin_impl(root);
+
+      coin::destroy_mint_cap(mint_cap);
+    }
+
+    #[test_only]
+    public fun ol_initialize_coin_and_fund_vals(root: &signer) {
+      system_addresses::assert_ol(root);
+
+      let mint_cap = init_coin_impl(root);
+
+      let vals = stake::get_current_validators();
+      let i = 0;
+
+      while (i < vector::length(&vals)) {
+        let addr = vector::borrow(&vals, i);
+        let c = coin::mint(10000, &mint_cap);
+        coin::deposit<GasCoin>(*addr, c);
+        i = i + 1;
+      };
+
+      slow_wallet::slow_wallet_epoch_drip(root, 10000);
+      coin::destroy_mint_cap(mint_cap);
+    }
+
+    #[test_only]
+    fun init_coin_impl(root: &signer): coin::MintCapability<GasCoin> {
+      system_addresses::assert_ol(root);
+
       let (burn_cap, mint_cap) = gas_coin::initialize_for_test_without_aggregator_factory(root);
-      // Give stake module MintCapability<AptosCoin> so it can mint rewards.
-      // stake::store_aptos_coin_mint_cap(aptos_framework, mint_cap);
+      coin::destroy_burn_cap(burn_cap);
+
 
       transaction_fee::initialize_fee_collection_and_distribution(root, 0);
 
@@ -151,9 +180,7 @@ module ol_framework::mock {
       let tx_fees = coin::mint(initial_fees, &mint_cap);
       transaction_fee::pay_fee(root, tx_fees);
 
-      coin::destroy_mint_cap(mint_cap);
-      coin::destroy_burn_cap(burn_cap);
-
+      mint_cap
     }
 
     #[test_only]
@@ -185,7 +212,7 @@ module ol_framework::mock {
       while (i < num) {
         let val = vector::borrow(&val_addr, i);
         let sig = account::create_signer_for_test(*val);
-        
+
         let (_sk, pk, pop) = stake::generate_identity();
         // stake::initialize_test_validator(&pk, &pop, &sig, 100, true, true);
         validator_universe::test_register_validator(root, &pk, &pop, &sig, 100, true, true);
@@ -196,13 +223,11 @@ module ol_framework::mock {
         // TODO: validators should have a balance
         // in Mock, we should use the same validator creation path as genesis.move
         let _b = coin::balance<GasCoin>(*val);
-        // print(&b);
-
 
         i = i + 1;
       };
 
-      
+
       genesis::test_end_genesis(&framework_sig);
 
       stake::get_current_validators()
@@ -215,7 +240,7 @@ module ol_framework::mock {
     // NOTE: The order of these is very important.
     // ol first runs its own accounting at end of epoch with epoch_boundary
     // Then the stake module needs to update the validators.
-    // the reconfiguration module must run last, since no other 
+    // the reconfiguration module must run last, since no other
     // transactions or operations can happen after the reconfig.
     public fun trigger_epoch(root: &signer) {
         epoch_boundary::ol_reconfigure_for_test(root);
@@ -248,7 +273,7 @@ module ol_framework::mock {
   #[test(root = @ol_framework)]
   public entry fun meta_val_perf(root: signer) {
     // genesis();
-    
+
     let set = genesis_n_vals(&root, 4);
     assert!(vector::length(&set) == 4, 7357001);
 

@@ -68,6 +68,7 @@ module ol_framework::safe {
 
   /// Note, the WithdrawCApability is moved to this shared structure, and as such the signer of the account is bricked. The signer who was the original owner of this account ("sponsor") can no longer issue transactions to this account, and as such the WithdrawCapability would be inaccessible. So on initialization we extract the WithdrawCapability into the Governance governance struct.
 
+  //TODO: feature: signers is a hashmap and each can have a different weight
   struct Governance has key {
     cfg_duration_epochs: u64,
     cfg_default_n_sigs: u64,

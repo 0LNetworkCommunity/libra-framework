@@ -179,7 +179,4 @@ module ol_framework::slow_wallet {
         return vector::empty<address>()
       }
     }
-
-
-
 }
