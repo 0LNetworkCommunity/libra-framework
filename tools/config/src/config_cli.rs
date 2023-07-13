@@ -80,7 +80,7 @@ impl ConfigCli {
                 self.path.to_owned(),
                 self.chain_name.to_owned(),
                 test_private_key.to_owned(),
-              )?;
+              ).await?;
 
               Ok(())
             },

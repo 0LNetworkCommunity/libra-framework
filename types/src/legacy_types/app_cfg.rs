@@ -24,7 +24,6 @@ pub struct AppCfg {
     // #[serde(default)]
     pub user_profiles: Vec<Profile>,
     /// Network profile
-    // NOTE: new field from V7, so it's an option so that previous files can load.
     pub network_playlist: Vec<NetworkPlaylist>,
     /// Transaction configurations
     pub tx_configs: TxConfigs,
@@ -80,7 +79,6 @@ impl AppCfg {
         let mut file = fs::File::create(&toml_path)?;
         file.write_all(&yaml.as_bytes())?;
 
-        println!("app configs file saved to: {:?}", &toml_path);
         Ok(toml_path)
     }
 
@@ -218,7 +216,7 @@ impl AppCfg {
         default_config.user_profiles = vec![profile];
 
         default_config.workspace.node_home =
-            config_path.clone().unwrap_or_else(|| default_file_path());
+            config_path.clone().unwrap_or_else(global_config_dir);
 
         if let Some(id) = network_id {
             default_config.workspace.default_chain_id = id.to_owned();
