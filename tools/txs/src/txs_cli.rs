@@ -60,18 +60,7 @@ pub struct TxsCli {
 pub enum TxsSub {
     #[clap(subcommand)]
     Validator(ValidatorTxs),
-    /// Create onchain account by using Aptos faucet
-    CreateAccount {
-        /// Create onchain account with the given address
-        #[clap(short, long)]
-        account_address: String,
-
-        /// The amount of coins to fund the new account
-        #[clap(short, long)]
-        coins: Option<u64>,
-    },
-
-    /// Transfer coins between accounts
+    /// Transfer coins between accounts. Transferring can also be used to create accounts.
     Transfer {
         /// Address of the recipient
         #[clap(short, long)]
@@ -81,7 +70,6 @@ pub enum TxsSub {
         #[clap(short, long)]
         amount: u64,
     },
-
     /// Generate a transaction that executes an Entry function on-chain
     GenerateTransaction {
         #[clap(
@@ -155,7 +143,8 @@ impl TxsCli {
         let url = if let Some(u) = self.url.as_ref() {
             u.to_owned()
         } else {
-            AppCfg::load(self.config_path.clone())?.pick_url(Some(chain_name))?
+            AppCfg::load(self.config_path.clone())?
+              .pick_url(Some(chain_name))?
         };
 
         let client = Client::new(url);
@@ -169,11 +158,6 @@ impl TxsCli {
         .await?;
 
         match &self.subcommand {
-            Some(TxsSub::CreateAccount {
-                account_address,
-                coins,
-            }) => crate::create_account::run(account_address, coins.unwrap_or_default()).await,
-
             Some(TxsSub::Transfer { to_account, amount }) => {
                 send.transfer(to_account.to_owned(), amount.to_owned())
                     .await

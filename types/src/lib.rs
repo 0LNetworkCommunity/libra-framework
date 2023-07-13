@@ -12,7 +12,7 @@ pub mod test_drop_helper;
 use std::path::PathBuf;
 
 /// default directory name for all configs
-pub const GLOBAL_CONFIG_DIRECTORY_0L: &str = ".0L";
+pub const GLOBAL_CONFIG_DIRECTORY_0L: &str = ".libra";
 
 /// The default home folder
 pub fn global_config_dir() -> PathBuf {
