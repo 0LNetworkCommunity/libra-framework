@@ -1,6 +1,7 @@
 use crate::{make_profile, legacy_config};
 use anyhow::Result;
 use clap::Parser;
+use url::Url;
 use std::path::PathBuf;
 use libra_types::exports::NamedChain;
 use libra_types::exports::AuthenticationKey;
@@ -15,7 +16,7 @@ pub struct ConfigCli {
     /// Path for configs if not the default $HOME/.libra
     #[clap(short, long)]
     path: Option<PathBuf>,
-    /// Network ID if different than MAINNET
+      /// optional. Which network to use as the default. Defaults to MAINNET other options: TESTNET, TESTING, DEVNET
     #[clap(short, long)]
     chain_name: Option<NamedChain>,
 }
@@ -24,15 +25,18 @@ pub struct ConfigCli {
 enum ConfigSub {
     /// Generates a libra.yaml for cli tools like txs, tower, etc.  Note: the file can also be used for Carpe, though that app uses a different default directory than these cli tools.
     Init {
-      /// force an account address instead of reading from mnemonic. Requires -- force_authkey
+      /// force an account address instead of reading from mnemonic, requires --force_authkey
       #[clap(long)]
       force_address: Option<AccountAddress>,
-      /// force an authkey instead of reading from mnemonic. Requires -- force_address
+      /// force an authkey instead of reading from mnemonic, requires --force_address
       #[clap(long)]
       force_authkey: Option<AuthenticationKey>,
       /// use a private key to initialize. Warning: intended for testing only.
       #[clap(long)]
       test_private_key: Option<String>,
+      /// optional. A URL for a network playlist to load default nodes from
+      #[clap(long)]
+      playlist_url: Option<Url>,
     },
     /// For core developers. Generates a config.yaml in the vendor format. This is a hidden command in the CLI.
     #[clap(hide(true))]
@@ -73,6 +77,7 @@ impl ConfigCli {
                 force_address,
                 force_authkey,
                 test_private_key,
+                playlist_url,
             }) => {
               legacy_config::wizard(
                 force_authkey.to_owned(),
@@ -80,6 +85,7 @@ impl ConfigCli {
                 self.path.to_owned(),
                 self.chain_name.to_owned(),
                 test_private_key.to_owned(),
+                playlist_url.to_owned()
               ).await?;
 
               Ok(())

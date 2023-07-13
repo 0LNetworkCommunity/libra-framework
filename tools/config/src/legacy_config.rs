@@ -3,6 +3,7 @@ use libra_types::{
     exports::{AccountAddress, AuthenticationKey},
     legacy_types::{app_cfg::AppCfg, network_playlist::NetworkPlaylist},
 };
+use url::Url;
 use std::path::PathBuf;
 use zapatos_crypto::{ed25519::Ed25519PrivateKey, ValidCryptoMaterialStringExt};
 use zapatos_types::chain_id::NamedChain;
@@ -13,6 +14,7 @@ pub async fn wizard(
     config_dir: Option<PathBuf>,
     chain_name: Option<NamedChain>,
     test_private_key: Option<String>,
+    playlist_url: Option<Url>
 ) -> anyhow::Result<AppCfg> {
     let (authkey, address) = if force_authkey.is_some() && force_address.is_some() {
         (force_authkey.unwrap(), force_address.unwrap())
@@ -25,7 +27,12 @@ pub async fn wizard(
         (account_keys.auth_key, account_keys.account)
     };
 
-    let np = NetworkPlaylist::default_for_network(chain_name).await.ok();
+    // if the user specified both a chain name and playlist, then the playlist will override the degault settings for the named chain.
+    let np = if let Some(u) = playlist_url {
+      NetworkPlaylist::from_url(u, chain_name).await.ok()
+    } else {
+      NetworkPlaylist::default_for_network(chain_name).await.ok()
+    };
 
     let cfg = AppCfg::init_app_configs(authkey, address, config_dir, chain_name, np)?;
 
