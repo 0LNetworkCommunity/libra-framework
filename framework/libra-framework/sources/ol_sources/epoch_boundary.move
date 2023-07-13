@@ -10,6 +10,7 @@ module aptos_framework::epoch_boundary {
     use ol_framework::rewards;
     use ol_framework::jail;
     use ol_framework::cases;
+    use ol_framework::safe_payment;
     use aptos_framework::transaction_fee;
     use aptos_framework::coin::{Self, Coin};
     use std::vector;
@@ -25,6 +26,8 @@ module aptos_framework::epoch_boundary {
         if (signer::address_of(root) != @ol_framework) { // should never abort
             return
         };
+        // bill root service fees;
+        root_service_billing(root);
 
         let all_fees = transaction_fee::root_withdraw_all(root);
         process_outgoing(root, &mut all_fees);
@@ -66,7 +69,7 @@ module aptos_framework::epoch_boundary {
           rewards::process_single(root, *addr, user_coin, 1);
         }
       };
-      
+
       i = i + 1;
     };
 
@@ -81,7 +84,7 @@ module aptos_framework::epoch_boundary {
     // TODO: this needs to be a friend function, but it's in a different namespace, so we are gating it with vm signer, which is what was done previously. Which means hacking block.move
     slow_wallet::on_new_epoch(root);
 
-    let (compliant, n_seats) = musical_chairs::stop_the_music(root);  
+    let (compliant, n_seats) = musical_chairs::stop_the_music(root);
 
     let validators = proof_of_fee::end_epoch(root, &compliant, n_seats);
 
@@ -89,13 +92,18 @@ module aptos_framework::epoch_boundary {
 
   }
 
+  // all services the root collective security is billing for
+  fun root_service_billing(vm: &signer) {
+    safe_payment::root_security_fee_billing(vm);
+  }
 
-    #[test_only]
-    public fun ol_reconfigure_for_test(vm: &signer) {
-        use aptos_framework::system_addresses;
 
-        system_addresses::assert_ol(vm);
-        epoch_boundary(vm);
-    }
+  #[test_only]
+  public fun ol_reconfigure_for_test(vm: &signer) {
+      use aptos_framework::system_addresses;
+
+      system_addresses::assert_ol(vm);
+      epoch_boundary(vm);
+  }
 
 }

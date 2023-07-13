@@ -147,7 +147,7 @@ module ol_framework::mock {
     }
 
     #[test_only]
-    public fun ol_initialize_coin_and_fund_vals(root: &signer) {
+    public fun ol_initialize_coin_and_fund_vals(root: &signer, amount: u64) {
       system_addresses::assert_ol(root);
 
       let mint_cap = init_coin_impl(root);
@@ -157,12 +157,12 @@ module ol_framework::mock {
 
       while (i < vector::length(&vals)) {
         let addr = vector::borrow(&vals, i);
-        let c = coin::mint(10000, &mint_cap);
+        let c = coin::mint(amount, &mint_cap);
         coin::deposit<GasCoin>(*addr, c);
         i = i + 1;
       };
 
-      slow_wallet::slow_wallet_epoch_drip(root, 10000);
+      slow_wallet::slow_wallet_epoch_drip(root, amount);
       coin::destroy_mint_cap(mint_cap);
     }
 

@@ -49,12 +49,13 @@ module ol_framework::safe_payment {
   use std::error;
   use aptos_framework::account::WithdrawCapability;
   use aptos_framework::coin;
-  // use DiemFramework::Debug::print;
   use ol_framework::ol_account;
   use ol_framework::gas_coin::GasCoin;
   use ol_framework::safe;
   use ol_framework::system_addresses;
   use ol_framework::transaction_fee;
+
+  // use aptos_std::debug::print;
 
   const ESAFE_NOT_INITIALIZED: u64 = 1;
 
@@ -175,7 +176,7 @@ module ol_framework::safe_payment {
 
 
   public fun root_security_fee_billing(vm: &signer) acquires RootMultiSigRegistry {
-    system_addresses::assert_vm(vm);
+    system_addresses::assert_ol(vm);
     let reg = borrow_global<RootMultiSigRegistry>(@ol_framework);
     let i = 0;
     while (i < vector::length(&reg.list)) {
@@ -189,7 +190,7 @@ module ol_framework::safe_payment {
       let coin_opt = coin::vm_withdraw<GasCoin>(vm, *multi_sig_addr, fee);
       if (option::is_some(&coin_opt)) {
         let c = option::extract(&mut coin_opt);
-        transaction_fee::pay_fee(vm, c); // TODO
+        transaction_fee::pay_fee(vm, c); // TODO! track user paying
       };
       option::destroy_none(coin_opt);
 
