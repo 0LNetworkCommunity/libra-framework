@@ -44,6 +44,8 @@
     use aptos_framework::reconfiguration;
     use ol_framework::vote_receipt;
 
+    // use aptos_std::debug::print;
+
     /// The ballot has already been completed.
     const ECOMPLETED: u64 = 300010;
     /// The number of votes cast cannot be greater than the max number of votes available from enrollment.
@@ -109,8 +111,8 @@
       last_epoch_approve: u64, // what was the approval percentage at the last epoch. For purposes of calculating extensions.
       last_epoch_reject: u64, // what was the rejection percentage at the last epoch. For purposes of calculating extensions.
       provisional_pass_epoch: u64, // once a threshold is met, mark that epoch, a further vote on the next epoch will seal the election, to give time for the minority to vote.
-      tally_approve: u64,  // use two decimal places 1234 = 12.34%
-      tally_turnout: u64, // use two decimal places 1234 = 12.34%
+      tally_approve_pct: u64,  // use two decimal places 1234 = 12.34%
+      tally_turnout_pct: u64, // use two decimal places 1234 = 12.34%
       tally_pass: bool, // if it passed
     }
 
@@ -137,8 +139,8 @@
           last_epoch_approve: 0,
           last_epoch_reject: 0,
           provisional_pass_epoch: 0,
-          tally_approve: 0,
-          tally_turnout: 0,
+          tally_approve_pct: 0,
+          tally_turnout_pct: 0,
           tally_pass: false,
         }
     }
@@ -313,18 +315,18 @@
       // figure out the turnout
       let m = fixed_point32::create_from_rational(total_votes, ballot.max_votes);
 
-      ballot.tally_turnout = fixed_point32::multiply_u64(PCT_SCALE, m); // scale up
+      ballot.tally_turnout_pct = fixed_point32::multiply_u64(PCT_SCALE, m); // scale up
 
       // calculate the dynamic threshold needed.
       let thresh = get_threshold_from_turnout(total_votes, ballot.max_votes);
       // check the threshold that needs to be met met turnout
-      ballot.tally_approve = fixed_point32::multiply_u64(PCT_SCALE, fixed_point32::create_from_rational(ballot.votes_approve, total_votes));
+      ballot.tally_approve_pct = fixed_point32::multiply_u64(PCT_SCALE, fixed_point32::create_from_rational(ballot.votes_approve, total_votes));
 
       // the first vote which crosses the threshold causes the poll to end.
-      if (ballot.tally_approve > thresh) {
+      if (ballot.tally_approve_pct > thresh) {
         // before marking it pass, make sure the minimum quorum was met
         // by default 12.50%
-        if (ballot.tally_turnout > ballot.cfg_min_turnout) {
+        if (ballot.tally_turnout_pct > ballot.cfg_min_turnout) {
           let epoch = reconfiguration::get_current_epoch();
 
           // cool off period, to next epoch.
@@ -341,7 +343,7 @@
             ballot.tally_pass = true;
           }
         }
-      }
+      };
     }
 
     // TODO: this should probably use Decimal.move
