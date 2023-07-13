@@ -22,19 +22,20 @@ pub struct ConfigCli {
 
 #[derive(clap::Subcommand)]
 enum ConfigSub {
-    /// Generates a 0L.toml for cli tools like txs, tower, and also carpe.
+    /// Generates a libra.yaml for cli tools like txs, tower, etc.  Note: the file can also be used for Carpe, though that app uses a different default directory than these cli tools.
     Init {
       /// force an account address instead of reading from mnemonic. Requires -- force_authkey
       #[clap(long)]
       force_address: Option<AccountAddress>,
       /// force an authkey instead of reading from mnemonic. Requires -- force_address
       #[clap(long)]
-      force_authkey: Option<AuthenticationKey>, 
+      force_authkey: Option<AuthenticationKey>,
       /// use a private key to initialize. Warning: intended for testing only.
       #[clap(long)]
       test_private_key: Option<String>,
     },
-    /// Generate config.yaml file that stores vendor configuration.
+    /// For core developers. Generates a config.yaml in the vendor format. This is a hidden command in the CLI.
+    #[clap(hide(true))]
     VendorInit {
         /// Ed25519 public key
         #[clap(short, long)]
@@ -64,7 +65,7 @@ impl ConfigCli {
                 profile,
                 workspace,
             }) => make_profile::run(
-              public_key, 
+              public_key,
               profile.as_deref().to_owned(),
               *workspace,
             ).await,
@@ -84,8 +85,8 @@ impl ConfigCli {
               Ok(())
             },
             _ => { println!("Sometimes I'm right and I can be wrong. My own beliefs are in my song. The butcher, the banker, the drummer and then. Makes no difference what group I'm in.");
-            
-            Ok(()) 
+
+            Ok(())
           },
         }
     }

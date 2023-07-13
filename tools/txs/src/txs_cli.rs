@@ -155,7 +155,8 @@ impl TxsCli {
         let url = if let Some(u) = self.url.as_ref() {
             u.to_owned()
         } else {
-            AppCfg::load(self.config_path.clone())?.pick_url(Some(chain_name))?
+            AppCfg::load(self.config_path.clone())?
+              .pick_url(Some(chain_name))?
         };
 
         let client = Client::new(url);
