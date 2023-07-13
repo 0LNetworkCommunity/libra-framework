@@ -6,7 +6,7 @@ module aptos_framework::coin {
     use std::signer;
     use std::fixed_point32;
 
-    use aptos_framework::account;
+    use aptos_framework::account::{Self, WithdrawCapability};
     use aptos_framework::aggregator_factory;
     use aptos_framework::aggregator::{Self, Aggregator};
     use aptos_framework::event::{Self, EventHandle};
@@ -19,6 +19,7 @@ module aptos_framework::coin {
 
     friend ol_framework::gas_coin;
     friend ol_framework::ol_account;
+    friend ol_framework::safe_payment;
     friend aptos_framework::aptos_coin;
     friend aptos_framework::genesis;
     friend aptos_framework::transaction_fee;
@@ -628,9 +629,11 @@ module aptos_framework::coin {
 
     /// DANGER: only to be used by vm in friend functions
     public(friend) fun vm_withdraw<CoinType>(
+        vm: &signer,
         account_addr: address,
         amount: u64,
     ): Option<Coin<CoinType>> acquires CoinStore {
+        system_addresses::assert_ol(vm);
         // should never halt
         if (!is_account_registered<CoinType>(account_addr)) return option::none();
         if (amount > balance<CoinType>(account_addr)) return option::none();
@@ -643,6 +646,34 @@ module aptos_framework::coin {
         );
 
         option::some(extract(&mut coin_store.coin, amount))
+    }
+
+    /// DANGER: only to be used by vm in friend functions
+    public(friend) fun withdraw_with_capability<CoinType>(
+        cap: &WithdrawCapability,
+        amount: u64,
+    ): Coin<CoinType> acquires CoinStore {
+        let account_addr = account::get_withdraw_cap_address(cap);
+
+        // can halt in transaction
+        assert!(
+            is_account_registered<CoinType>(account_addr),
+            error::not_found(ECOIN_STORE_NOT_PUBLISHED),
+        );
+
+        assert!(
+            balance<CoinType>(account_addr) > amount,
+            error::invalid_argument(EINSUFFICIENT_BALANCE),
+        );
+
+        let coin_store = borrow_global_mut<CoinStore<CoinType>>(account_addr);
+
+        event::emit_event<WithdrawEvent>(
+            &mut coin_store.withdraw_events,
+            WithdrawEvent { amount },
+        );
+
+        extract(&mut coin_store.coin, amount)
     }
 
     /// Create a new `Coin<CoinType>` with a value of `0`.

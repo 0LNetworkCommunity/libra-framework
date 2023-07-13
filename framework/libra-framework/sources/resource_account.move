@@ -189,7 +189,7 @@ module aptos_framework::resource_account {
     //////// 0L ////////
     /// is the account properly configurated as a resource account
     public fun is_resource_account(addr: address): bool {
-      exists<Container>(addr) && account::get_authentication_key(addr) == ZERO_AUTH_KEY
+      account::get_authentication_key(addr) == ZERO_AUTH_KEY
     }
 
     #[test(user = @0x1111)]

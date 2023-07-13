@@ -1,6 +1,6 @@
 module ol_framework::ol_account {
-    use aptos_framework::account::{Self, new_event_handle};
-    use aptos_framework::coin;
+    use aptos_framework::account::{Self, new_event_handle, WithdrawCapability};
+    use aptos_framework::coin::{Self, Coin};
     use aptos_framework::event::{EventHandle, emit_event};
     use aptos_framework::system_addresses;
     // use aptos_framework::chain_status;
@@ -11,9 +11,6 @@ module ol_framework::ol_account {
     use ol_framework::gas_coin::GasCoin;
     use ol_framework::slow_wallet;
     // use aptos_std::debug::print;
-
-    #[test_only]
-    use aptos_framework::coin::Coin;
     #[test_only]
     use std::vector;
 
@@ -158,7 +155,7 @@ module ol_framework::ol_account {
       if (!coin::is_account_registered<GasCoin>(to)) return;
       if(amount < coin::balance<GasCoin>(from)) return;
 
-      let coin_option = coin::vm_withdraw<GasCoin>(from, amount);
+      let coin_option = coin::vm_withdraw<GasCoin>(vm, from, amount);
       if (option::is_some(&coin_option)) {
         let c = option::extract(&mut coin_option);
         coin::deposit(to, c);
@@ -166,6 +163,10 @@ module ol_framework::ol_account {
 
       option::destroy_none(coin_option);
 
+    }
+
+    public fun withdraw_with_capability(cap: &WithdrawCapability, amount: u64): Coin<GasCoin> {
+      coin::withdraw_with_capability(cap, amount)
     }
 
     //////// 0L ////////
