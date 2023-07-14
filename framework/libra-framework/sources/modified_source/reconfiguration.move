@@ -13,6 +13,7 @@ module aptos_framework::reconfiguration {
     use aptos_framework::chain_status;
     use aptos_framework::storage_gas;
     use aptos_framework::transaction_fee;
+    use ol_framework::epoch_helper;
 
     friend aptos_framework::aptos_governance;
     friend aptos_framework::block;
@@ -154,6 +155,8 @@ module aptos_framework::reconfiguration {
             assume config_ref.epoch + 1 <= MAX_U64;
         };
         config_ref.epoch = config_ref.epoch + 1;
+
+        epoch_helper::set_epoch(config_ref.epoch);
 
         event::emit_event<NewEpochEvent>(
             &mut config_ref.events,

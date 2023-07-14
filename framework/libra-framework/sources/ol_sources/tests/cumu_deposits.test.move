@@ -2,31 +2,49 @@
 #[test_only]
 
 module ol_framework::test_cumu_deposits {
+    use ol_framework::ol_account;
     use ol_framework::cumulative_deposits;
     use ol_framework::receipts;
     use ol_framework::mock;
+    // use aptos_std::debug::print;
 
     #[test(root = @ol_framework, alice = @0x1000a)]
     fun cumu_deposits_init(root: &signer, alice: &signer) {
       mock::genesis_n_vals(root, 2);
-      cumulative_deposits::vm_migrate_cumulative_deposits(root, alice, false);
+      cumulative_deposits::vm_migrate_cumulative_deposits(root, alice, 0);
 
       assert!(cumulative_deposits::is_init_cumu_tracking(@0x1000a), 7357001);
       let t = cumulative_deposits::get_cumulative_deposits(@0x1000a);
       assert!(t == 0, 7357002);
 
-      // also check Carol's is properly initialized
+      // also check bob is properly initialized
       assert!(receipts::is_init(@0x1000b), 7357003);
     }
 
-// DiemAccount::vm_migrate_cumulative_deposits(&dr, &sender, false);
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
+    fun cumu_deposits_track(root: &signer, alice: &signer, bob: &signer) {
+      mock::genesis_n_vals(root, 2);
+      mock::ol_initialize_coin_and_fund_vals(root, 10000);
+      cumulative_deposits::vm_migrate_cumulative_deposits(root, alice, 0);
 
-// assert!(DiemAccount::is_init_cumu_tracking(@Alice), 7357001);
-// let t = DiemAccount::get_cumulative_deposits(@Alice);
-// assert!(t == 0, 7357002);
+      assert!(cumulative_deposits::is_init_cumu_tracking(@0x1000a), 7357001);
+      let t = cumulative_deposits::get_cumulative_deposits(@0x1000a);
+      assert!(t == 0, 7357002);
 
-// // also check Carol's is properly initialized
-// assert!(Receipts::is_init(@Carol), 7357003);
+      assert!(receipts::is_init(@0x1000b), 7357003);
+
+      let bob_donation = 42;
+      ol_account::transfer(bob, @0x1000a, bob_donation); // this should track
+
+      let (a, b, c) = receipts::read_receipt(@0x1000b, @0x1000a);
+      assert!(a > 0, 7357004); // timestamp is not genesis
+      assert!(b == bob_donation, 7357005); // last payment
+      assert!(c == bob_donation, 7357006); // cumulative payments
+
+      let alice_cumu = cumulative_deposits::get_cumulative_deposits(@0x1000a);
+      assert!(alice_cumu == bob_donation, 7357007);
+
+    }
 }
 
       // // mock more funds in Carol's account

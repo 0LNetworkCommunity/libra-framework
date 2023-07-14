@@ -2,10 +2,13 @@
 module ol_framework::cumulative_deposits {
   use std::signer;
   use std::vector;
-  use aptos_framework::reconfiguration;
+  use ol_framework::epoch_helper;
   use aptos_framework::system_addresses;
   use ol_framework::receipts;
-  use ol_framework::ol_account;
+  // use ol_framework::ol_account;
+  friend ol_framework::ol_account;
+  friend ol_framework::donor_directed;
+
   use std::fixed_point32::{Self, FixedPoint32};
       /// Separate struct to track cumulative deposits
     struct CumulativeDeposits has key {
@@ -21,14 +24,20 @@ module ol_framework::cumulative_deposits {
     // init struct for storing cumulative deposits, for community wallets
     // TODO: set true or false, that the account gets current balance or
     // starts at zero.
-    public(friend) fun init_cumulative_deposits(sender: &signer, use_starting_balance: bool) {
+    public(friend) fun init_cumulative_deposits(sender: &signer) {
       let addr = signer::address_of(sender);
+      if (!exists<CumulativeDeposits>(addr)) {
+        move_to<CumulativeDeposits>(sender, CumulativeDeposits {
+          value: 0,
+          index: 0,
+          depositors: vector::empty<address>(),
+        })
+      };
+    }
 
-      let starting_balance = if (use_starting_balance) {
-        let (_, balance) = ol_account::balance(addr);
-        balance
-      } else { 0 };
-
+    public fun vm_migrate_cumulative_deposits(vm: &signer, sender: &signer, starting_balance: u64) {
+      system_addresses::assert_ol(vm);
+      let addr = signer::address_of(sender);
       if (!exists<CumulativeDeposits>(addr)) {
         move_to<CumulativeDeposits>(sender, CumulativeDeposits {
           value: starting_balance,
@@ -36,11 +45,6 @@ module ol_framework::cumulative_deposits {
           depositors: vector::empty<address>(),
         })
       };
-    }
-
-    public fun vm_migrate_cumulative_deposits(vm: &signer, sender: &signer, use_starting_balance: bool) {
-      system_addresses::assert_ol(vm);
-      init_cumulative_deposits(sender, use_starting_balance);
     }
 
     /// private function for the genesis fork migration
@@ -57,10 +61,10 @@ module ol_framework::cumulative_deposits {
       };
     }
 
-    fun maybe_update_deposit(payer: address, payee: address, deposit_value: u64) acquires CumulativeDeposits {
+    public(friend) fun maybe_update_deposit(payer: address, payee: address, deposit_value: u64) acquires CumulativeDeposits {
         // update cumulative deposits if the account has the struct.
         if (exists<CumulativeDeposits>(payee)) {
-          let epoch = reconfiguration::get_current_epoch();
+          let epoch = epoch_helper::get_current_epoch();
           // adjusted for the time-weighted index.
           let index = deposit_index_curve(epoch, deposit_value);
           let cumu = borrow_global_mut<CumulativeDeposits>(payee);

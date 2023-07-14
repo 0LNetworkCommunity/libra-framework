@@ -39,6 +39,7 @@ module ol_framework::donor_directed {
     use ol_framework::account::{Self, WithdrawCapability};
     use ol_framework::donor_directed_governance;
     use ol_framework::ballot;
+    use ol_framework::cumulative_deposits;
     // use ol_framework::transaction_fee;
     // use aptos_std::debug::print;
 
@@ -650,17 +651,14 @@ module ol_framework::donor_directed {
       vector::push_back(&mut init_signers, signer_two);
       vector::push_back(&mut init_signers, signer_three);
 
+      cumulative_deposits::init_cumulative_deposits(sponsor);
+
       // we are setting liquidation to infra escrow as false by default
       // the user can send another transacton to change this.
       let liquidate_to_community_wallets = false;
       set_donor_directed(sponsor, liquidate_to_community_wallets);
       make_multi_action(sponsor, cfg_n_signers, init_signers);
       add_to_registry(sponsor);
-
-      // if not tracking cumulative donations, then don't use previous balance.
-      // start again.
-      // TODO!
-      // account::init_cumulative_deposits(sponsor, false);
     }
 
     /// option to set the liquidation destination to infrastructure escrow

@@ -38,6 +38,7 @@ module aptos_framework::genesis {
     use ol_framework::tower_state;
     use ol_framework::safe;
     use ol_framework::donor_directed;
+    use ol_framework::epoch_helper;
 
     //////// end 0L ////////
 
@@ -155,6 +156,7 @@ module aptos_framework::genesis {
         tower_state::initialize(&aptos_framework_account);
         safe::initialize(&aptos_framework_account);
         donor_directed::initialize(&aptos_framework_account);
+        epoch_helper::initialize(&aptos_framework_account);
         // end 0L
 
         timestamp::set_time_has_started(&aptos_framework_account);

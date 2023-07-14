@@ -39,6 +39,7 @@ module ol_framework::globals {
 
     const COIN_DECIMAL_PLACES: u8 = 6;
 
+
     /// Get the epoch length
     public fun get_epoch_length(): u64 {
        get_constants().epoch_length

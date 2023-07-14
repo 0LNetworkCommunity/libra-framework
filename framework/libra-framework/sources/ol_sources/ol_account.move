@@ -11,6 +11,8 @@ module ol_framework::ol_account {
     use ol_framework::gas_coin::GasCoin;
     use ol_framework::slow_wallet;
     use ol_framework::receipts;
+    use ol_framework::cumulative_deposits;
+
     // use aptos_std::debug::print;
     #[test_only]
     use std::vector;
@@ -151,7 +153,10 @@ module ol_framework::ol_account {
         // Resource accounts can be created without registering them to receive GAS.
         // This conveniently does the registration if necessary.
         assert!(coin::is_account_registered<GasCoin>(to), error::invalid_argument(EACCOUNT_NOT_REGISTERED_FOR_GAS));
-        coin::transfer<GasCoin>(sender, to, amount)
+
+        coin::transfer<GasCoin>(sender, to, amount);
+
+        cumulative_deposits::maybe_update_deposit(signer::address_of(sender), to, amount);
     }
 
     /// Withdraw funds while respecting the transfer limits
