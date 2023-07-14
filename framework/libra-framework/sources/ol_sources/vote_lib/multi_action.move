@@ -7,7 +7,7 @@
 
 // MultiAction is part of the Vote tooling (aka DAO tooling). It's a module which allows for a group of authorities to approve a generic action, and on a successful vote return account capabilities to a calling third party contract. The Action type can be defined by a third party smart contract, and the MultiAction module will only check if the Action has been approved by the required number of authorities.
 
-// For example an 0L "root service" called Safe, uses MultiAction to create a simple abstraction for a payment multisig (in turn DonorDirected accounts, use Safe to make payments);
+// The goal is for MultiAction to be composable. For example an 0L "root service" called Safe, uses MultiAction to create a simple abstraction for a payment multisig. DonorDirected is similar to Safe, and has more rules for paying out (timed transfers).
 
 // This is a type of multisig that can be programmable by other on-chain contracts. Previously in V6 we used to call this MultiSig. However platform vendor introduced a new (and great) multisig feature. Both of these can coexist as they have different purposes.
 
@@ -18,7 +18,7 @@
 // The Actions are triggered "lazily", that is: the last authorized sender of a proposal/vote, is the one to trigger the action.
 // Theere is no offline signature aggregation. The authorities over the address should not require collecting signatures offline: proposal should be submitted directly to this contract.
 
-// With this design, the multisig can be used for different actions. A MultiSigPayment contract is an example of a Root Service which the chain provides, which leverages the Governance module to provide a payment service which requires n-of-m approvals.
+// With this design, the multisig can be used for different actions. The safe.move contract is an example of a Root Service which the chain provides, which leverages the Governance module to provide a payment service which requires n-of-m approvals.
 
 //V7 NOTE: from V6 we are refactoring so the the account first needs to be created as a "resource account". It's a minor change given that V6 had a similar construct of a "signerless account", Previously in ol this meant to "Brick" the authkey after the WithdrawCapability was stored in a common struct. Vendor had independenly made the same design using Signer Capability.
 
@@ -130,8 +130,8 @@ module ol_framework::multi_action {
 
 
   fun assert_authorized(sig: &signer, multisig_address: address) acquires Governance {
-        // cannot start manipulating contract until it is finalized
-    assert!(is_finalized(multisig_address), error::invalid_argument(ENOT_FINALIZED_NOT_BRICK));
+    // cannot start manipulating contract until the sponsor gave up the auth key
+    assert!(resource_account::is_resource_account(multisig_address), error::invalid_argument(ENOT_FINALIZED_NOT_BRICK));
 
     assert!(exists<Governance>(multisig_address), error::invalid_argument(ENOT_AUTHORIZED));
 
@@ -175,10 +175,23 @@ module ol_framework::multi_action {
 
   //////// Helper functions to check initialization //////////
   /// Is the Multisig Governance initialized?
-  public fun is_init(multisig_address: address): bool {
-    exists<Governance>(multisig_address) &&
-    exists<Action<PropGovSigners>>(multisig_address)
+  public fun is_multi_action(addr: address): bool {
+    exists<Governance>(addr) &&
+    exists<Action<PropGovSigners>>(addr) &&
+    resource_account::is_resource_account(addr)
   }
+
+  public fun is_gov_init(addr: address): bool {
+    exists<Governance>(addr) &&
+    exists<Action<PropGovSigners>>(addr)
+  }
+
+  // Deprecation note: is_finalized() is now replaced by the resource_account.move helpers
+  // Deprecated Note, this is how signerless accounts used to work: Once the "sponsor" which is setting up the multisig has created all the multisig types (payment, generic, gov), they need to brick this account so that the signer for this address is rendered useless, and it is a true multisig.
+
+  // public fun is_finalized(addr: address): bool {
+  //   resource_account::is_resource_account(addr)
+  // }
 
   /// Has a multisig struct for a given action been created?
   public fun has_action<ProposalData: store>(addr: address):bool {
@@ -194,7 +207,7 @@ module ol_framework::multi_action {
     let multisig_address = signer::address_of(sig);
     // TODO: there is no way of creating a new Action by multisig. The "signer" would need to be spoofed, which account does only in specific and scary situations (e.g. vm_create_account_migration)
 
-    assert!(is_init(multisig_address), error::invalid_argument(EGOV_NOT_INITIALIZED));
+    assert!(is_gov_init(multisig_address), error::invalid_argument(EGOV_NOT_INITIALIZED));
 
     assert!(!exists<Action<ProposalData>>(multisig_address), error::invalid_argument(EACTION_ALREADY_EXISTS));
     // make sure the signer's address is not in the list of authorities.
@@ -243,13 +256,6 @@ module ol_framework::multi_action {
       option::fill(&mut ms.withdraw_capability, cap);
     };
     option::destroy_none(cap_opt);
-  }
-
-  // is_finalized() is now replaced by the resource_account.move helpers
-  // Deprecated Note, this is how signerless accounts used to work: Once the "sponsor" which is setting up the multisig has created all the multisig types (payment, generic, gov), they need to brick this account so that the signer for this address is rendered useless, and it is a true multisig.
-
-  public fun is_finalized(addr: address): bool {
-    resource_account::is_resource_account(addr)
   }
 
 

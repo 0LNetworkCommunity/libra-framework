@@ -36,6 +36,8 @@ module aptos_framework::genesis {
     use ol_framework::infra_escrow;
     use ol_framework::tower_state;
     use ol_framework::safe;
+    use ol_framework::donor_directed;
+
     //////// end 0L ////////
 
 
@@ -151,6 +153,7 @@ module aptos_framework::genesis {
         infra_escrow::initialize(&aptos_framework_account);
         tower_state::initialize(&aptos_framework_account);
         safe::initialize(&aptos_framework_account);
+        donor_directed::initialize(&aptos_framework_account);
         // end 0L
 
         timestamp::set_time_has_started(&aptos_framework_account);

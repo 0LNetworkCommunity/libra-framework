@@ -40,7 +40,7 @@ module ol_framework::donor_directed {
     use ol_framework::donor_directed_governance;
     use ol_framework::ballot;
     // use ol_framework::transaction_fee;
-    // use ol_framework::Debug::print;
+    // use aptos_std::debug::print;
 
     /// Not initialized as a donor directed account.
     const ENOT_INIT_DONOR_DIRECTED: u64 = 231001;
@@ -111,8 +111,9 @@ module ol_framework::donor_directed {
     // Donor Directed Accounts are a root security service. So the root account needs to keep a registry of all donor directed accounts, using this service.
 
     // Utility used at genesis (and on upgrade) to initialize the system state.
-    public fun init_root_registry(vm: &signer) {
+    public fun initialize(vm: &signer) {
       system_addresses::assert_ol(vm);
+
       if (!is_root_init()) {
         move_to<Registry>(vm, Registry {
           list: vector::empty<address>(),
@@ -186,7 +187,7 @@ module ol_framework::donor_directed {
     /// Like any MultiSig instance, a sponsor which is the original owner of the account, needs to initialize the account.
     /// The account must be "bricked" by the owner before MultiSig actions can be taken.
     /// Note, as with any multisig, the new_authorities cannot include the sponsor, since that account will no longer be able to sign transactions.
-    public fun make_multisig(sponsor: &signer, cfg_default_n_sigs: u64, new_authorities: vector<address>) {
+    public fun make_multi_action(sponsor: &signer, cfg_default_n_sigs: u64, new_authorities: vector<address>) {
       multi_action::init_gov(sponsor, cfg_default_n_sigs, &new_authorities);
       multi_action::init_type<Payment>(sponsor, true); // "true": We make this multisig instance hold the WithdrawCapability. Even though we don't need it for any account pay functions, we can use it to make sure the entire pipeline of private functions scheduling a payment are authorized. Belt and suspenders.
     }
@@ -194,7 +195,7 @@ module ol_framework::donor_directed {
 
     /// Check if the account is a donor directed account, and initialized properly.
     public fun is_donor_directed(multisig_address: address):bool {
-      multi_action::is_init(multisig_address) &&
+      multi_action::is_multi_action(multisig_address) &&
       multi_action::has_action<Payment>(multisig_address) &&
       exists<Freeze>(multisig_address) &&
       exists<TxSchedule>(multisig_address)
@@ -644,7 +645,7 @@ module ol_framework::donor_directed {
     /// Initialize the TxSchedule wallet with Three signers
 
     // TODO: this version of Diem, does not allow vector<address> in the script arguments. So we are hard coding this to initialize with three signers. Gross.
-    public fun init_donor_directed(sponsor: &signer, signer_one: address, signer_two: address, signer_three: address, cfg_n_signers: u64) {
+    public fun init_donor_directed(sponsor: &signer, signer_one: address, signer_two: address, signer_three: address, cfg_n_signers: u64) acquires Registry {
       let init_signers = vector::singleton(signer_one);
       vector::push_back(&mut init_signers, signer_two);
       vector::push_back(&mut init_signers, signer_three);
@@ -653,7 +654,8 @@ module ol_framework::donor_directed {
       // the user can send another transacton to change this.
       let liquidate_to_community_wallets = false;
       set_donor_directed(sponsor, liquidate_to_community_wallets);
-      make_multisig(sponsor, cfg_n_signers, init_signers);
+      make_multi_action(sponsor, cfg_n_signers, init_signers);
+      add_to_registry(sponsor);
 
       // if not tracking cumulative donations, then don't use previous balance.
       // start again.
@@ -668,23 +670,23 @@ module ol_framework::donor_directed {
       f.liquidate_to_community_wallets = liquidate_to_community_wallets;
     }
 
-    /// the sponsor must finalize the initialization, this is a separate step so that the user can optionally check everything is in order before bricking the account key.
-    public fun finalize_init(sponsor: &signer) acquires Registry {
-      let multisig_address = signer::address_of(sponsor);
-      assert!(multi_action::is_init(multisig_address), error::invalid_state(EMULTISIG_NOT_INIT));
+    // /// the sponsor must finalize the initialization, this is a separate step so that the user can optionally check everything is in order before bricking the account key.
+    // public fun finalize_init(sponsor: &signer) acquires Registry {
+    //   let multisig_address = signer::address_of(sponsor);
+    //   assert!(multi_action::is_multi_action(multisig_address), error::invalid_state(EMULTISIG_NOT_INIT));
 
-      assert!(multi_action::has_action<Payment>(multisig_address), error::invalid_state(EMULTISIG_NOT_INIT));
+    //   assert!(multi_action::has_action<Payment>(multisig_address), error::invalid_state(EMULTISIG_NOT_INIT));
 
-      assert!(exists<Freeze>(multisig_address), error::invalid_state(ENOT_INIT_DONOR_DIRECTED));
+    //   assert!(exists<Freeze>(multisig_address), error::invalid_state(ENOT_INIT_DONOR_DIRECTED));
 
-      assert!(exists<TxSchedule>(multisig_address), error::invalid_state(ENOT_INIT_DONOR_DIRECTED));
+    //   assert!(exists<TxSchedule>(multisig_address), error::invalid_state(ENOT_INIT_DONOR_DIRECTED));
 
-      // multi_action::finalize_and_brick(sponsor);
-      assert!(is_donor_directed(multisig_address), error::invalid_state(ENOT_INIT_DONOR_DIRECTED));
+    //   // multi_action::finalize_and_brick(sponsor);
+    //   assert!(is_donor_directed(multisig_address), error::invalid_state(ENOT_INIT_DONOR_DIRECTED));
 
-      // only add to registry if INIT is successful.
-      add_to_registry(sponsor);
-    }
+    //   // only add to registry if INIT is successful.
+    //   add_to_registry(sponsor);
+    // }
 
 
 
