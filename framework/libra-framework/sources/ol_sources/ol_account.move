@@ -10,6 +10,7 @@ module ol_framework::ol_account {
 
     use ol_framework::gas_coin::GasCoin;
     use ol_framework::slow_wallet;
+    use ol_framework::receipts;
     // use aptos_std::debug::print;
     #[test_only]
     use std::vector;
@@ -79,19 +80,22 @@ module ol_framework::ol_account {
         let limit = get_slow_limit(signer::address_of(sender));
         assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
 
-        let new_signer = account::create_account(auth_key);
-        coin::register<GasCoin>(&new_signer);
+        create_impl(auth_key);
         coin::transfer<GasCoin>(sender, auth_key, amount);
     }
 
+    fun create_impl(auth_key: address) {
+        let new_signer = account::create_account(auth_key);
+        coin::register<GasCoin>(&new_signer);
+        receipts::user_init(&new_signer);
+    }
 
-    #[test_only]
+    // #[test_only]
     /// Helper for tests to create acounts
     /// Belt and suspenders
     public entry fun create_account(root: &signer, auth_key: address) {
         system_addresses::assert_ol(root);
-        let new_signer = account::create_account(auth_key);
-        coin::register<GasCoin>(&new_signer);
+        create_impl(auth_key);
     }
 
     /// For migrating accounts from a legacy system

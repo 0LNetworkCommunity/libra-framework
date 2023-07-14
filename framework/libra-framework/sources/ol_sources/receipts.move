@@ -28,7 +28,7 @@ module ol_framework::receipts {
     }
 
     // Utility used at genesis (and on upgrade) to initialize the system state.
-    public fun init(account: &signer) {
+    public fun user_init(account: &signer) {
       let addr = signer::address_of(account);
       if (!exists<UserReceipts>(addr)) {
         move_to<UserReceipts>(

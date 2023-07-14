@@ -29,6 +29,7 @@ module aptos_framework::genesis {
 
     //////// 0L ////////
     use aptos_framework::validator_universe;
+    use ol_framework::ol_account;
     use ol_framework::musical_chairs;
     use ol_framework::proof_of_fee;
     use ol_framework::slow_wallet;
@@ -252,15 +253,18 @@ module aptos_framework::genesis {
     /// If it exists, it just returns the signer.
     fun ol_create_account(root: &signer, account_address: address): signer {
         // assert!(!account::exists_at(account_address), error::already_exists(EDUPLICATE_ACCOUNT));
-        if (account::exists_at(account_address)) {
-            return create_signer(account_address)
+        if (!account::exists_at(account_address)) {
+            ol_account::create_account(root, account_address);
+            gas_coin::mint(root, account_address, 10000);
+
         };
         // NOTE: after the inital genesis set up, the validators can rotate their auth keys.
-        let new_signer = account::create_account(account_address);
-        coin::register<GasCoin>(&new_signer);
+        // let new_signer = account::create_account(account_address);
+        // coin::register<GasCoin>(&new_signer);
         // mint genesis bootstrap coins
-        gas_coin::mint(root, account_address, 100000);
-        new_signer
+
+
+        create_signer(account_address)
     }
 
     fun create_initialize_validators_with_commission(

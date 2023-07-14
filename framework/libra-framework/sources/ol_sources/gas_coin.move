@@ -140,6 +140,19 @@ module ol_framework::gas_coin {
         coin::deposit<GasCoin>(dst_addr, coins_minted);
     }
 
+    // public(friend) fun genesis_mint(
+    //     account: &signer,
+    // ): Coin<GasCoin> acquires MintCapStore {
+    //     let account_addr = signer::address_of(account);
+    //     assert!(
+    //         exists<MintCapStore>(account_addr),
+    //         error::not_found(ENO_CAPABILITIES),
+    //     );
+
+    //     let mint_cap = &borrow_global<MintCapStore>(account_addr).mint_cap;
+    //     coin::mint<GasCoin>(100000, mint_cap)
+    // }
+
     /// Only callable in tests and testnets where the core resources account exists.
     /// Create delegated token for the address so the account could claim MintCapability later.
     public entry fun delegate_mint_capability(account: signer, to: address) acquires Delegations {
