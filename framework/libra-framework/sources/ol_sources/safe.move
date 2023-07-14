@@ -11,10 +11,10 @@
 // The Actions are triggered "lazily", that is: the last authorized sender of a proposal/vote, is the one to trigger the action.
 // Theere is no offline signature aggregation. The authorities over the address should not require collecting signatures offline: proposal should be submitted directly to this contract.
 
-// Witht this design, the multisig can be used for different actions. A MultiSigPayment contract is an example of a Root Service which the chain provides, which leverages the Governance module to provide a payment service which requires n-of-m approvals.
+// With this design, the multisig can be used for different actions. A MultiSigPayment contract is an example of a Root Service which the chain provides, which leverages the Governance module to provide a payment service which requires n-of-m approvals.
 
+//V7 NOTE: from V6 we are refactoring so the the account first needs to be created as a "resource account". It's a minor change given that V6 had a similar construct of a "signerless account", Previously in ol this meant to "Brick" the authkey after the WithdrawCapability was stored in a common struct. Vendor had independenly made the same design using Signer Capability.
 
-// address DiemFramework {
 module ol_framework::safe {
   use std::vector;
   use std::option::{Self, Option};
@@ -48,6 +48,10 @@ module ol_framework::safe {
   const EDUPLICATE_PROPOSAL: u64 = 440009;
   /// Proposal is expired
   const EPROPOSAL_NOT_FOUND: u64 = 440010;
+  /// Proposal voting is closed
+  const EVOTING_CLOSED: u64 = 440011;
+
+
   /// default setting for a proposal to expire
   const DEFAULT_EPOCHS_EXPIRE: u64 = 14;
 
@@ -327,13 +331,19 @@ module ol_framework::safe {
     let ms = borrow_global_mut<Governance>(multisig_address);
     let action = borrow_global_mut<Action<ProposalData>>(multisig_address);
     // print(&61);
+    // always run this to cleanup all missing ballots
     lazy_cleanup_expired(action);
+
+    // if (check_expired(&action.vote)) return (false, option::none());
     // print(&62);
 
     // does this proposal already exist in the pending list?
     let (found, _idx, status_enum, is_complete) = ballot::find_anywhere<Proposal<ProposalData>>(&action.vote, id);
     // print(&63);
-    assert!((found && status_enum == ballot::get_pending_enum() && !is_complete), error::invalid_argument(EPROPOSAL_NOT_FOUND));
+    assert!(found, error::invalid_argument(EPROPOSAL_NOT_FOUND));
+    assert!(status_enum == ballot::get_pending_enum(), error::invalid_argument(EVOTING_CLOSED));
+     assert!(!is_complete, error::invalid_argument(EVOTING_CLOSED));
+
     // print(&64);
     let b = ballot::get_ballot_by_id_mut(&mut action.vote, id);
     let t = ballot::get_type_struct_mut(b);
@@ -538,7 +548,7 @@ module ol_framework::safe {
     n_of_m: Option<u64>, // Optionally change the n of m threshold. To only change the n_of_m threshold, an empty list of addresses is required.
   }
 
-
+  // Proposing a governance change of adding or removing signer, or changing the n-of-m of the authorities. Note that proposing will deduplicate in the event that two authorities miscommunicate and send the same proposal, in that case for UX purposes the second proposal becomes a vote.
   public fun propose_governance(sig: &signer, multisig_address: address, addresses: vector<address>, add_remove: bool, n_of_m: Option<u64>, duration_epochs: Option<u64> ): guid::ID acquires Governance, Action {
     assert_authorized(sig, multisig_address); // Duplicated with propose(), belt and suspenders
     let data = PropGovSigners {
@@ -554,7 +564,8 @@ module ol_framework::safe {
     id
   }
 
-  fun vote_governance(sig: &signer, multisig_address: address, id: &guid::ID) acquires Governance, Action {
+  /// This function can be called directly. Or the user can call propose_governance() with same parameters, which will deduplicate the proposal and instead vote. Voting is always a positive vote. There is no negative (reject) vote.
+  public fun vote_governance(sig: &signer, multisig_address: address, id: &guid::ID): bool acquires Governance, Action {
     assert_authorized(sig, multisig_address);
 
 
@@ -570,7 +581,8 @@ module ol_framework::safe {
       let data = extract_proposal_data<PropGovSigners>(multisig_address, id);
       maybe_update_authorities(ms, data.add_remove, &data.addresses);
       maybe_update_threshold(ms, &data.n_of_m);
-    }
+    };
+    passed
   }
 
   /// Updates the authorities of the multisig. This is a helper function for governance.
@@ -606,16 +618,16 @@ module ol_framework::safe {
   }
 
   //////// GETTERS ////////
-
+  #[view]
   public fun get_authorities(multisig_address: address): vector<address> acquires Governance {
     let m = borrow_global<Governance>(multisig_address);
     *&m.signers
   }
 
-  public fun get_n_of_m_cfg(multisig_address: address): (u64, u64) acquires Governance {
+  #[view]
+  public fun get_threshold(multisig_address: address): (u64, u64) acquires Governance {
     let m = borrow_global<Governance>(multisig_address);
     (*&m.cfg_default_n_sigs, vector::length(&m.signers))
   }
 
 }
-// }
