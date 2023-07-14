@@ -9,6 +9,7 @@ module ol_framework::test_slow_wallet {
   use ol_framework::ol_account;
   use ol_framework::gas_coin;
   use ol_framework::epoch_boundary;
+  use aptos_framework::reconfiguration;
   use aptos_framework::coin;
   use std::vector;
 
@@ -110,7 +111,7 @@ module ol_framework::test_slow_wallet {
     mock::ol_initialize_coin(&root);
     let a = vector::borrow(&set, 0);
     assert!(slow_wallet::unlocked_amount(*a) == 0, 735701);
-    epoch_boundary::ol_reconfigure_for_test(&root)
+    epoch_boundary::ol_reconfigure_for_test(&root, reconfiguration::get_current_epoch())
 
   }
 

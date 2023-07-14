@@ -11,6 +11,7 @@ module aptos_framework::epoch_boundary {
     use ol_framework::jail;
     use ol_framework::cases;
     use ol_framework::safe;
+    use ol_framework::donor_directed;
     use aptos_framework::transaction_fee;
     use aptos_framework::coin::{Self, Coin};
     use std::vector;
@@ -22,12 +23,13 @@ module aptos_framework::epoch_boundary {
     // Contains all of 0L's business logic for end of epoch.
     // This removed business logic from reconfiguration.move
     // and prevents dependency cycling.
-    public(friend) fun epoch_boundary(root: &signer) {
+    public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64) {
         if (signer::address_of(root) != @ol_framework) { // should never abort
             return
         };
         // bill root service fees;
         root_service_billing(root);
+        donor_directed::process_donor_directed_accounts(root, closing_epoch);
 
         let all_fees = transaction_fee::root_withdraw_all(root);
         process_outgoing(root, &mut all_fees);
@@ -99,11 +101,11 @@ module aptos_framework::epoch_boundary {
 
 
   #[test_only]
-  public fun ol_reconfigure_for_test(vm: &signer) {
+  public fun ol_reconfigure_for_test(vm: &signer, closing_epoch: u64) {
       use aptos_framework::system_addresses;
 
       system_addresses::assert_ol(vm);
-      epoch_boundary(vm);
+      epoch_boundary(vm, closing_epoch);
   }
 
 }

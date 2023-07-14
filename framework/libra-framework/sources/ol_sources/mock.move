@@ -243,7 +243,7 @@ module ol_framework::mock {
     // the reconfiguration module must run last, since no other
     // transactions or operations can happen after the reconfig.
     public fun trigger_epoch(root: &signer) {
-        epoch_boundary::ol_reconfigure_for_test(root);
+        epoch_boundary::ol_reconfigure_for_test(root, reconfiguration::get_current_epoch());
         timestamp::fast_forward_seconds(EPOCH_DURATION);
         reconfiguration::reconfigure_for_test_custom();
     }
