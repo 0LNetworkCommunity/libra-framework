@@ -198,10 +198,10 @@ module ol_framework::test_donor_directed {
 
       // process epoch 3 accounts
       // donor_directed::process_donor_directed_accounts(root, 3);
-      mock::trigger_epoch(root);
-      mock::trigger_epoch(root);
-      mock::trigger_epoch(root);
-      mock::trigger_epoch(root);
+      mock::trigger_epoch(root); // into epoch 1
+      mock::trigger_epoch(root); // into epoch 2
+      mock::trigger_epoch(root); // into epoch 3, processes at the end of this epoch.
+      mock::trigger_epoch(root); // epoch 4 should include the payment
 
 
       let (_, bob_balance) = ol_account::balance(@0x1000b);

@@ -12,7 +12,7 @@
 // a payment to a community wallet can have a receipt for later use in a smart contract.
 
 module ol_framework::receipts {
-  // friend DiemFramework::DiemAccount; todo v7
+  friend ol_framework::cumulative_deposits;
 
   use std::vector;
   use std::signer;
