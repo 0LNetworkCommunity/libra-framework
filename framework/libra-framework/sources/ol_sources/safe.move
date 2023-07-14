@@ -122,7 +122,7 @@ module ol_framework::safe {
       release_payment(&data, cap);
 
     };
-    multi_action::maybe_restore_withdraw_cap(sig, multisig_address, cap_opt); // don't need this and can't drop.
+    multi_action::maybe_restore_withdraw_cap(cap_opt); // don't need this and can't drop.
 
     passed
   }

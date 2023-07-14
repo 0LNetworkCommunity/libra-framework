@@ -170,6 +170,14 @@ module ol_framework::ol_account {
     }
 
     //////// 0L ////////
+
+    #[view]
+    /// return the GasCoin balance as tuple (unlocked, total)
+    // TODO v7: consolidate balance checks here, not in account, slow_wallet, or coin
+    public fun balance(addr: address): (u64, u64) {
+      slow_wallet::balance(addr)
+    }
+
     fun get_slow_limit(addr: address): u64 {
       let full_balance = coin::balance<GasCoin>(addr);
       // TODO: check if recipient is a donor directed account.

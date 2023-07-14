@@ -242,7 +242,7 @@ module ol_framework::donor_directed {
         schedule(option::borrow(&withdraw_cap_opt), tx, &uid);
       };
 
-      multi_action::maybe_restore_withdraw_cap(sender, multisig_address, withdraw_cap_opt);
+      multi_action::maybe_restore_withdraw_cap(withdraw_cap_opt);
 
       uid
 

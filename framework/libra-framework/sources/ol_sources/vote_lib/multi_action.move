@@ -9,9 +9,9 @@
 
 // For example an 0L "root service" called Safe, uses MultiAction to create a simple abstraction for a payment multisig (in turn DonorDirected accounts, use Safe to make payments);
 
-// This is a type of multisig that can be programmable by other on-chain contracts. Previously in V6 we used to call this MultiSig. However platform vendor introduced a new, and great multisig feature. Both of these can coexist as they have different purposes.
+// This is a type of multisig that can be programmable by other on-chain contracts. Previously in V6 we used to call this MultiSig. However platform vendor introduced a new (and great) multisig feature. Both of these can coexist as they have different purposes.
 
-// With vendor::MultiSig, the action needs to be constructed offline using a script. There are advantages to this. Anything that can be written into a script can be made to execute by the authorities. However: the code is not inspectable, it's stored as bytecode. MultiAction, on the other hand requires that all the logic be written in a deploted contract. The execution of the action depends on that third-party published contract, group action will only return the Capabilities necessary for the smart contract to do what it needs, e.g a simple passed/rejected result, an optional WithdrawCapability, and and optional (dangerous) SignerCapability (tbd as of V7).
+// With vendor::MultiSig, the action needs to be constructed offline using a script. There are advantages to this. Anything that can be written into a script can be made to execute by the authorities. However the code is not inspectable, it's stored as bytecode. MultiAction, on the other hand requires that all the logic be written in a deployed contract. The execution of the action depends on the third-party published contract. MultiAction will only return the Capabilities necessary for the smart contract to do what it needs, e.g. a simple passed/rejected result, an optional WithdrawCapability, and and optional (dangerous) SignerCapability (tbd as of V7).
 
 // similarly any handler for the Action can be executed by an external contract, and the Governance module will only check if the Action has been approved by the required number of authorities.
 // Each Action has a separate data structure for tabulating the votes in approval of the Action. But there is shared state between the Actions, that being Governance, which contains the constraints for each Action that are checked on each vote (n_sigs, expiration, signers, etc)
@@ -231,16 +231,18 @@ module ol_framework::multi_action {
     }
   }
 
-  public fun maybe_restore_withdraw_cap(sig: &signer, multisig_addr: address, w: Option<WithdrawCapability>) acquires Governance {
-    assert_authorized(sig, multisig_addr);
-    assert!(exists<Governance>(multisig_addr), error::invalid_argument(ENOT_AUTHORIZED));
-    if (option::is_some(&w)) {
-      let ms = borrow_global_mut<Governance>(multisig_addr);
-      let cap = option::extract(&mut w);
+  /// Withdraw cap is a hot-potato and can never be dropped, we can extract and fill it into a struct that holds it.
+
+  public fun maybe_restore_withdraw_cap(cap_opt: Option<WithdrawCapability>) acquires Governance {
+    // assert_authorized(sig, multisig_addr);
+    // assert!(exists<Governance>(multisig_addr), error::invalid_argument(ENOT_AUTHORIZED));
+    if (option::is_some(&cap_opt)) {
+      let cap = option::extract(&mut cap_opt);
+      let addr = account::get_withdraw_cap_address(&cap);
+      let ms = borrow_global_mut<Governance>(addr);
       option::fill(&mut ms.withdraw_capability, cap);
     };
-    option::destroy_none(w);
-
+    option::destroy_none(cap_opt);
   }
 
   // is_finalized() is now replaced by the resource_account.move helpers
@@ -579,7 +581,7 @@ module ol_framework::multi_action {
       // let action = borrow_global_mut<Action<PropGovSigners>>(multisig_address);
       vote_impl<PropGovSigners>(sig, multisig_address, id)
     };
-    maybe_restore_withdraw_cap(sig, multisig_address, cap_opt); // don't need this and can't drop.
+    maybe_restore_withdraw_cap(cap_opt); // don't need this and can't drop.
 
     if (passed) {
       let ms = borrow_global_mut<Governance>(multisig_address);
