@@ -10,7 +10,7 @@ module aptos_framework::epoch_boundary {
     use ol_framework::rewards;
     use ol_framework::jail;
     use ol_framework::cases;
-    use ol_framework::safe_payment;
+    use ol_framework::safe;
     use aptos_framework::transaction_fee;
     use aptos_framework::coin::{Self, Coin};
     use std::vector;
@@ -94,7 +94,7 @@ module aptos_framework::epoch_boundary {
 
   // all services the root collective security is billing for
   fun root_service_billing(vm: &signer) {
-    safe_payment::root_security_fee_billing(vm);
+    safe::root_security_fee_billing(vm);
   }
 
 

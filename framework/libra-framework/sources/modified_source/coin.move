@@ -19,7 +19,7 @@ module aptos_framework::coin {
 
     friend ol_framework::gas_coin;
     friend ol_framework::ol_account;
-    friend ol_framework::safe_payment;
+    friend ol_framework::safe;
     friend aptos_framework::aptos_coin;
     friend aptos_framework::genesis;
     friend aptos_framework::transaction_fee;

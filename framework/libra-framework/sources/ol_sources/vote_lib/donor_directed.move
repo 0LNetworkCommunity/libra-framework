@@ -35,7 +35,7 @@ module ol_framework::donor_directed {
     use std::option;
     use ol_framework::ol_account;
     // use ol_framework::gas_coin::GasCoin;
-    use ol_framework::safe;
+    use ol_framework::multi_action;
     use ol_framework::account::{Self, WithdrawCapability};
     use ol_framework::donor_directed_governance;
     use ol_framework::ballot;
@@ -187,15 +187,15 @@ module ol_framework::donor_directed {
     /// The account must be "bricked" by the owner before MultiSig actions can be taken.
     /// Note, as with any multisig, the new_authorities cannot include the sponsor, since that account will no longer be able to sign transactions.
     public fun make_multisig(sponsor: &signer, cfg_default_n_sigs: u64, new_authorities: vector<address>) {
-      safe::init_gov(sponsor, cfg_default_n_sigs, &new_authorities);
-      safe::init_type<Payment>(sponsor, true); // "true": We make this multisig instance hold the WithdrawCapability. Even though we don't need it for any account pay functions, we can use it to make sure the entire pipeline of private functions scheduling a payment are authorized. Belt and suspenders.
+      multi_action::init_gov(sponsor, cfg_default_n_sigs, &new_authorities);
+      multi_action::init_type<Payment>(sponsor, true); // "true": We make this multisig instance hold the WithdrawCapability. Even though we don't need it for any account pay functions, we can use it to make sure the entire pipeline of private functions scheduling a payment are authorized. Belt and suspenders.
     }
 
 
     /// Check if the account is a donor directed account, and initialized properly.
     public fun is_donor_directed(multisig_address: address):bool {
-      safe::is_init(multisig_address) &&
-      safe::has_action<Payment>(multisig_address) &&
+      multi_action::is_init(multisig_address) &&
+      multi_action::has_action<Payment>(multisig_address) &&
       exists<Freeze>(multisig_address) &&
       exists<TxSchedule>(multisig_address)
     }
@@ -230,19 +230,19 @@ module ol_framework::donor_directed {
       };
 
       // TODO: get expiration
-      let prop = safe::proposal_constructor(tx, option::none());
+      let prop = multi_action::proposal_constructor(tx, option::none());
 
-      let uid = safe::propose_new<Payment>(sender, multisig_address, prop);
+      let uid = multi_action::propose_new<Payment>(sender, multisig_address, prop);
 
-      let (passed, withdraw_cap_opt) = safe::vote_with_id<Payment>(sender, &uid, multisig_address);
+      let (passed, withdraw_cap_opt) = multi_action::vote_with_id<Payment>(sender, &uid, multisig_address);
 
-      let tx = safe::extract_proposal_data(multisig_address, &uid);
+      let tx = multi_action::extract_proposal_data(multisig_address, &uid);
 
       if (passed && option::is_some(&withdraw_cap_opt)) {
         schedule(option::borrow(&withdraw_cap_opt), tx, &uid);
       };
 
-      safe::maybe_restore_withdraw_cap(sender, multisig_address, withdraw_cap_opt);
+      multi_action::maybe_restore_withdraw_cap(sender, multisig_address, withdraw_cap_opt);
 
       uid
 
@@ -603,7 +603,7 @@ module ol_framework::donor_directed {
     /// NOTE: These are payments that have not yet been scheduled.
     public fun get_multisig_proposal_state(directed_address: address, uid: &guid::ID): (bool, u64, u8, bool) { // (is_found, index, state)
 
-      safe::get_proposal_status_by_id<Payment>(directed_address, uid)
+      multi_action::get_proposal_status_by_id<Payment>(directed_address, uid)
     }
 
     /// Get the status of a SCHEDULED payment which as already passed the multisig stage.
@@ -671,15 +671,15 @@ module ol_framework::donor_directed {
     /// the sponsor must finalize the initialization, this is a separate step so that the user can optionally check everything is in order before bricking the account key.
     public fun finalize_init(sponsor: &signer) acquires Registry {
       let multisig_address = signer::address_of(sponsor);
-      assert!(safe::is_init(multisig_address), error::invalid_state(EMULTISIG_NOT_INIT));
+      assert!(multi_action::is_init(multisig_address), error::invalid_state(EMULTISIG_NOT_INIT));
 
-      assert!(safe::has_action<Payment>(multisig_address), error::invalid_state(EMULTISIG_NOT_INIT));
+      assert!(multi_action::has_action<Payment>(multisig_address), error::invalid_state(EMULTISIG_NOT_INIT));
 
       assert!(exists<Freeze>(multisig_address), error::invalid_state(ENOT_INIT_DONOR_DIRECTED));
 
       assert!(exists<TxSchedule>(multisig_address), error::invalid_state(ENOT_INIT_DONOR_DIRECTED));
 
-      // safe::finalize_and_brick(sponsor);
+      // multi_action::finalize_and_brick(sponsor);
       assert!(is_donor_directed(multisig_address), error::invalid_state(ENOT_INIT_DONOR_DIRECTED));
 
       // only add to registry if INIT is successful.

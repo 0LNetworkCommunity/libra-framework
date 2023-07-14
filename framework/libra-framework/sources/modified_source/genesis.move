@@ -35,7 +35,7 @@ module aptos_framework::genesis {
     use ol_framework::gas_coin::{Self, GasCoin};
     use ol_framework::infra_escrow;
     use ol_framework::tower_state;
-    use ol_framework::safe_payment;
+    use ol_framework::safe;
     //////// end 0L ////////
 
 
@@ -150,7 +150,7 @@ module aptos_framework::genesis {
         slow_wallet::initialize(&aptos_framework_account);
         infra_escrow::initialize(&aptos_framework_account);
         tower_state::initialize(&aptos_framework_account);
-        safe_payment::initialize(&aptos_framework_account);
+        safe::initialize(&aptos_framework_account);
         // end 0L
 
         timestamp::set_time_has_started(&aptos_framework_account);
