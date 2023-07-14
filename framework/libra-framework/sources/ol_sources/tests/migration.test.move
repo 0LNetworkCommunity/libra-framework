@@ -26,37 +26,36 @@ module ol_framework::test_migration {
       &user,
       temp_auth_key,
       20000,
-      false,
       5,
-      800000,
     )
   }
 
   // test for infra escrow contribution
-  #[test(root = @ol_framework, alice = @0x1000a)]
-  fun test_migration_balance_validators(root: signer, alice: signer) {
+  #[test(root = @ol_framework, marlon_rando = @0x123456)]
+  fun test_migration_balance_validators(root: signer, marlon_rando: signer) {
 
     let _vals = mock::genesis_n_vals(&root, 4);
+    // mock::ol_initialize_coin_and_fund_vals(&root, 1000000);
     genesis::test_initalize_coins(&root);
 
     // let alice = vector::borrow(&vals, 0);
-    let alice_addr = signer::address_of(&alice);
-    let temp_auth_key =  bcs::to_bytes(&alice_addr);
+    let addr = signer::address_of(&marlon_rando);
+    let temp_auth_key =  bcs::to_bytes(&addr);
 
     let legacy_balance = 20000;
     let scale_integer = 5;
     let escrow_pct = 80;
     genesis_migration::migrate_legacy_user(
       &root,
-      &alice,
+      &marlon_rando,
       temp_auth_key,
       legacy_balance,
-      true, // is_validator
+      // true, // is_validator
       scale_integer * 1000000,// of 1m
-      escrow_pct * 10000, // of 1m
+      // escrow_pct * 10000, // of 1m
     );
 
-    let user_balance = coin::balance<GasCoin>(alice_addr);
+    let user_balance = coin::balance<GasCoin>(addr);
 
     assert!(user_balance == (legacy_balance * scale_integer), 73570000);
 
@@ -64,16 +63,16 @@ module ol_framework::test_migration {
 
     // alice only has 1000 unlocked, and 100 lifetime transferred out
     let legacy_unlocked = 1000;
-    slow_wallet::fork_migrate_slow_wallet(&root, &alice, legacy_unlocked, 100, scale_integer * 1000000);
-    let (unlocked, total) = slow_wallet::balance(alice_addr);
+    slow_wallet::fork_migrate_slow_wallet(&root, &marlon_rando, legacy_unlocked, 100, scale_integer * 1000000);
+    let (unlocked, total) = slow_wallet::balance(addr);
     assert!(unlocked == (legacy_unlocked * scale_integer), 73570001);
     assert!(total == user_balance, 73570002);
 
 
     // after the slow wallets have been calculated we check the infra escrow pledges
-    infra_escrow::fork_escrow_init(&root, &alice, 800000);
+    infra_escrow::fork_escrow_init(&root, &marlon_rando, escrow_pct * 10000);
 
-    let user_pledge = infra_escrow::user_infra_pledge_balance(alice_addr);
+    let user_pledge = infra_escrow::user_infra_pledge_balance(addr);
     let all_pledge_balance = infra_escrow::infra_escrow_balance();
 
     let pct = fixed_point32::create_from_rational(escrow_pct, 100);
@@ -86,7 +85,7 @@ module ol_framework::test_migration {
 
     assert!(all_pledge_balance == user_pledge, 73570005);
 
-    let updated_balance = coin::balance<GasCoin>(alice_addr);
+    let updated_balance = coin::balance<GasCoin>(addr);
 
     assert!((updated_balance + user_pledge) == legacy_balance * scale_integer, 73570006);
   }

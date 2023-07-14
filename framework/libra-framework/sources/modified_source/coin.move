@@ -20,9 +20,13 @@ module aptos_framework::coin {
     friend ol_framework::gas_coin;
     friend ol_framework::ol_account;
     friend ol_framework::safe;
+    friend ol_framework::pledge_accounts;
     friend aptos_framework::aptos_coin;
     friend aptos_framework::genesis;
     friend aptos_framework::transaction_fee;
+    friend aptos_framework::aptos_account;
+    friend aptos_framework::resource_account;
+
 
     //
     // Errors.
@@ -587,8 +591,10 @@ module aptos_framework::coin {
         move_to(account, coin_store);
     }
 
+    // NOTE 0L: Locking down transfers so that only system contracts can use this
+    // to enforce transfer limits on higher order contracts.
     /// Transfers `amount` of coins `CoinType` from `from` to `to`.
-    public entry fun transfer<CoinType>(
+    public(friend) entry fun transfer<CoinType>(
         from: &signer,
         to: address,
         amount: u64,
@@ -603,7 +609,7 @@ module aptos_framework::coin {
     }
 
     /// Withdraw specifed `amount` of coin `CoinType` from the signing account.
-    public fun withdraw<CoinType>(
+    public(friend) fun withdraw<CoinType>(
         account: &signer,
         amount: u64,
     ): Coin<CoinType> acquires CoinStore {

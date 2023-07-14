@@ -91,7 +91,8 @@ module ol_framework::gas_coin {
         coin::destroy_mint_cap(mint_cap);
     }
 
-    public(friend) fun restore_mint_cap(aptos_framework: &signer, mint_cap: MintCapability<GasCoin>) {
+    #[test_only]
+    public fun restore_mint_cap(aptos_framework: &signer, mint_cap: MintCapability<GasCoin>) {
         system_addresses::assert_aptos_framework(aptos_framework);
         move_to(aptos_framework, MintCapStore { mint_cap });
     }

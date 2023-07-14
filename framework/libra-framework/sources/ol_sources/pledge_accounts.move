@@ -2,8 +2,8 @@
 // 0L Module
 // Pledge Accounts
 ///////////////////////////////////////////////////////////////////////////
-// How does a decentralized project gather funds, without the authority of a foundation? 
-// 0L presents two options to builders: PledgeAccounts and DonorDirectedAccounts. Pledge accounts are coins which are the user's property 
+// How does a decentralized project gather funds, without the authority of a foundation?
+// 0L presents two options to builders: PledgeAccounts and DonorDirectedAccounts. Pledge accounts are coins which are the user's property
 // but use strong coordination of smart contracts to guarantee funding.
 // DonorDirectedAccounts are coins which are the beneficiary's property, but have strong coordination to refund, and veto account transactions.
 // Regarding DonorDirectedAccounts, there is a subtype called CommunityWallets which have special properties: they can (permissionlessly) receive matching funds from the Burn Match of user/validator rewards. These have voluntary restrictions such as funds can only be transferred to slow wallet (to prevent gaming of the matching funds ), and have a purpose designed multisig n-of-m authorization for transactions.
@@ -14,24 +14,24 @@
 
 // The hard problem of coordination is how to get a group of people to
 // fund common interest, when each person in the group
-// can only pledge a small amount, and has no guarantee that the remainder 
+// can only pledge a small amount, and has no guarantee that the remainder
 // will be filled. And once pledged there is always the risk that the
 // user will renege on the pledge, this is a classic prisoner's dilemma.
 // As such not even the first funds of most committed members will arrive
 // because it's known that the project is doomed. This is the tragedy of
-// the commons. 
+// the commons.
 
 // Smart contracts may help, if they can be trusted. Thus the service needs
 // to be provided with the highest level of shared security (no one can hold
 // the key to the funds.
 // Pledge Accounts are a service that the chain provides.
-// The funds never leave the user's possession. They are placed in Pledged Accounts, a segregated sub-account on the user's account. 
+// The funds never leave the user's possession. They are placed in Pledged Accounts, a segregated sub-account on the user's account.
 // The pledged accounts are project-specific.
-// Projects which raise through pledges, can lose the pledge though a vote 
+// Projects which raise through pledges, can lose the pledge though a vote
 // of the pledgers. There are no funds to return, instead the earmarked funds are no longer authorized for withdrawal, i.e. they return to user accounts.
 
 // For voting we can only use the value pledged at the time of the vote,
-// same for the purposes of revoking. 
+// same for the purposes of revoking.
 // Note that there's a known policy issue here, which is not addresses for
 // now. A "chip bully" can add funds to the pledge, and then vote to revoke, knowing that they can get over the threshold. The current
 // mitigation is to only allow Unlocked coins, which levels the playing field.
@@ -45,9 +45,8 @@
         use std::option::{Self, Option};
         use std::fixed_point32;
         use ol_framework::gas_coin::GasCoin;
-        // use ol_framework::ol_account;
+        use ol_framework::ol_account;
         use aptos_framework::reconfiguration;
-        use aptos_framework::chain_status;
         use aptos_framework::system_addresses;
         use aptos_framework::coin;
 
@@ -77,7 +76,7 @@
 
         struct BeneficiaryPolicy has key, store, copy {
           purpose: vector<u8>, // a string that describes the purpose of the pledge
-          vote_threshold_to_revoke: u64, // Percent in two digits, no decimals: the threshold of votes, weighted by pledged balance, needed to dissolve, and revoke the pledge. 
+          vote_threshold_to_revoke: u64, // Percent in two digits, no decimals: the threshold of votes, weighted by pledged balance, needed to dissolve, and revoke the pledge.
           burn_funds_on_revoke: bool, // neither the beneficiary not the pledger can get the funds back, they are burned. Changes the game theory, may be necessary to in certain cases to prevent attacks in high stakes projects.
           amount_available: u64, // The amount available to withdraw
           lifetime_pledged: u64, // Of all users
@@ -93,9 +92,9 @@
         // beneficiary publishes a policy to their account.
         // NOTE: It cannot be modified after a first pledge is made!.
         public fun publish_beneficiary_policy(
-          account: &signer, 
-          purpose: vector<u8>, 
-          vote_threshold_to_revoke: u64, 
+          account: &signer,
+          purpose: vector<u8>,
+          vote_threshold_to_revoke: u64,
           burn_funds_on_revoke: bool
         ) acquires BeneficiaryPolicy {
             if (!exists<BeneficiaryPolicy>(signer::address_of(account))) {
@@ -111,7 +110,7 @@
                     table_revoking_electors: vector::empty(),
                     total_revoke_vote: 0,
                     revoked: false
-                    
+
                 };
                 move_to(account, beneficiary_policy);
             } else {
@@ -121,7 +120,7 @@
                 b.purpose = purpose;
                 b.vote_threshold_to_revoke = vote_threshold_to_revoke;
                 b.burn_funds_on_revoke = burn_funds_on_revoke;
-              } 
+              }
             }
             // no changes can be made if a pledge has been made.
         }
@@ -159,7 +158,7 @@
         ) acquires MyPledges, BeneficiaryPolicy {
           system_addresses::assert_ol(vm);
           assert!(exists<BeneficiaryPolicy>(address_of_beneficiary), error::invalid_state(ENO_BENEFICIARY_POLICY));
-          
+
           let (found, idx) = pledge_at_idx(&pledger, &address_of_beneficiary);
           let value = coin::value(pledge);
           if (found) {
@@ -251,7 +250,7 @@
                 // DANGER: this is a private function that changes balances.
                 let c = withdraw_pct_from_one_pledge_account(&address_of_beneficiary, &pledge_account, &pct_withdraw);
 
-                
+
 
                 // GROSS: dealing with options in Move.
                 // TODO: find a better way.
@@ -277,14 +276,14 @@
           all_coins
         }
 
-        
+
         // DANGER: private function that changes balances.
         // withdraw funds from one pledge account
         // this is to be used for funding,
         // but also for revoking a pledge
         // WARN: we must know there is a coin at this account before calling it.
         fun withdraw_from_one_pledge_account(address_of_beneficiary: &address, payer: &address, amount: u64): option::Option<coin::Coin<GasCoin>> acquires MyPledges, BeneficiaryPolicy {
-            
+
             let (found, idx) = pledge_at_idx(payer, address_of_beneficiary);
 
             if (found) {
@@ -294,14 +293,14 @@
               if (
                 pledge_account.amount > 0 &&
                 pledge_account.amount >= amount
-                
+
                 ) {
 
                   pledge_account.amount = pledge_account.amount - amount;
 
                   pledge_account.lifetime_withdrawn = pledge_account.lifetime_withdrawn + amount;
 
-                  
+
                   let coin = coin::extract(&mut pledge_account.pledge, amount);
 
                   // return coin
@@ -318,7 +317,7 @@
                 };
             };
 
-            option::none()  
+            option::none()
         }
 
         // DANGER: private function that changes balances.
@@ -327,7 +326,7 @@
         // but also for revoking a pledge
         // WARN: we must know there is a coin at this account before calling it.
         fun withdraw_pct_from_one_pledge_account(address_of_beneficiary: &address, payer: &address, pct: &fixed_point32::FixedPoint32):Option<coin::Coin<GasCoin>> acquires MyPledges, BeneficiaryPolicy {
-            
+
             let (found, idx) = pledge_at_idx(payer, address_of_beneficiary);
 
             if (found) {
@@ -340,11 +339,11 @@
               if (
                 pledge_account.amount > 0 &&
                 pledge_account.amount >= amount_withdraw
-                
+
                 ) {
                   pledge_account.amount = pledge_account.amount - amount_withdraw;
                   pledge_account.lifetime_withdrawn = pledge_account.lifetime_withdrawn + amount_withdraw;
-                  
+
                   let coin = coin::extract(&mut pledge_account.pledge, amount_withdraw);
 
                   // update the beneficiaries state too
@@ -359,14 +358,14 @@
                 };
             };
 
-            option::none()  
+            option::none()
         }
 
         // vote to revoke a beneficiary's policy
         // this is just a vote, it requires a tally, and consensus to
         // revert the fund OR burn them, depending on policy
         public fun vote_to_revoke_beneficiary_policy(account: &signer, address_of_beneficiary: address) acquires MyPledges, BeneficiaryPolicy {
-            
+
 
             // first check if they have already voted
             // and if so, cancel in one step
@@ -485,22 +484,23 @@
 
 
         //// Genesis helper
-        // private function only to be used at genesis.
-        public fun genesis_infra_escrow_pledge(vm: &signer, account: &signer) acquires MyPledges, BeneficiaryPolicy {
+        // private function only to be used at genesis for infra escrow
+        // TODO! is this only for testing?
+        public fun genesis_infra_escrow_pledge(vm: &signer, account: &signer, amount: u64) acquires MyPledges, BeneficiaryPolicy {
           // TODO: add genesis time here, once the timestamp genesis issue is fixed.
-          chain_status::assert_genesis();
+          // chain_status::assert_genesis();
           system_addresses::assert_ol(vm);
 
           // let addr = signer::address_of(account);
 
-          let coin = coin::withdraw<GasCoin>(account, 2500000);
+          let coin = coin::withdraw<GasCoin>(account, amount);
           save_pledge(account, @ol_framework, coin);
         }
 
-        ////////// TX  ////////// 
-
+        ////////// TX  //////////
+        // for general pledge accounts
         public fun user_pledge(user_sig: &signer, beneficiary: address, amount: u64) acquires BeneficiaryPolicy, MyPledges {
-          let coin = coin::withdraw(user_sig, amount);
+          let coin = ol_account::withdraw(user_sig, amount);
           save_pledge(user_sig, beneficiary, coin);
         }
 
@@ -620,7 +620,7 @@
       #[test_only]
       // Danger! withdraws from an account.
       public fun test_single_withdrawal(vm: &signer, bene: &address, donor: &address, amount: u64): option::Option<coin::Coin<GasCoin>> acquires MyPledges, BeneficiaryPolicy{
-        system_addresses::assert_ol(vm);  
+        system_addresses::assert_ol(vm);
         // testnet::assert_testnet(vm);
         withdraw_from_one_pledge_account(bene, donor, amount)
       }

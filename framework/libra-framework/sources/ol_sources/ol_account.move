@@ -14,6 +14,7 @@ module ol_framework::ol_account {
     #[test_only]
     use std::vector;
 
+    friend ol_framework::donor_directed;
     friend aptos_framework::genesis;
     friend aptos_framework::resource_account;
 
@@ -149,7 +150,16 @@ module ol_framework::ol_account {
         coin::transfer<GasCoin>(sender, to, amount)
     }
 
-    public fun vm_transfer(vm: &signer, from: address, to: address, amount: u64) {
+    /// Withdraw funds while respecting the transfer limits
+    public fun withdraw(sender: &signer, amount: u64): Coin<GasCoin> {
+
+        let limit = get_slow_limit(signer::address_of(sender));
+        assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
+
+        coin::withdraw<GasCoin>(sender, amount)
+    }
+
+    public(friend) fun vm_transfer(vm: &signer, from: address, to: address, amount: u64) {
       system_addresses::assert_ol(vm);
       // should not halt
       if (!coin::is_account_registered<GasCoin>(to)) return;

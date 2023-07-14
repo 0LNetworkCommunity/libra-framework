@@ -163,7 +163,7 @@ module ol_framework::mock {
       };
 
       slow_wallet::slow_wallet_epoch_drip(root, amount);
-      coin::destroy_mint_cap(mint_cap);
+      gas_coin::restore_mint_cap(root, mint_cap);
     }
 
     #[test_only]

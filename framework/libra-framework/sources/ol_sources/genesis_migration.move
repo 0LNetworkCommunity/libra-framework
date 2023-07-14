@@ -20,6 +20,7 @@ module ol_framework::genesis_migration {
 
 
   const EBALANCE_MISMATCH: u64 = 0;
+  const EGENESIS_BALANCE_TOO_HIGH: u64 = 1;
 
   /// Called by root in genesis to initialize the GAS coin
   public fun migrate_legacy_user(
@@ -27,9 +28,7 @@ module ol_framework::genesis_migration {
       user_sig: &signer,
       auth_key: vector<u8>,
       legacy_balance: u64,
-      _validator: bool, // TODO remove
       split_factor: u64, // precision of 1,000,000
-      _escrow_pct: u64, // precision of 1,000,000
   ) {
     system_addresses::assert_aptos_framework(vm);
 
@@ -56,6 +55,7 @@ module ol_framework::genesis_migration {
 
     let split_factor = fixed_point32::create_from_rational(split_factor, 1000000);
     let expected_final_balance = fixed_point32::multiply_u64(legacy_balance, split_factor);
+    assert!(expected_final_balance >= genesis_balance, error::invalid_state(EGENESIS_BALANCE_TOO_HIGH));
     let coins_to_mint = expected_final_balance - genesis_balance;
     gas_coin::mint(vm, user_addr, coins_to_mint);
 
