@@ -21,6 +21,8 @@ module ol_framework::test_tower {
     mock::trigger_epoch(&root);
 
     let (diff, sec) = tower_state::get_difficulty();
+    assert!(diff!=100, 735703);
+    assert!(sec!=512, 735704);
   }
 
   #[test(root = @ol_framework, alice = @0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5)]
