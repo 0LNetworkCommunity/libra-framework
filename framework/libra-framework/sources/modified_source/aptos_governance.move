@@ -33,7 +33,7 @@ module aptos_framework::aptos_governance {
     use aptos_framework::voting;
 
     use ol_framework::gas_coin::GasCoin;
-    use aptos_std::debug::print;
+    // use aptos_std::debug::print;
     // use ol_framework::testnet;
 
     #[test_only]
@@ -276,10 +276,6 @@ module aptos_framework::aptos_governance {
             early_resolution_vote_threshold = option::some(total_supply / 2 + 1);
         };
 
-        print(&88888);
-        print(&governance_config.min_voting_threshold);
-        print(&early_resolution_vote_threshold);
-
         let proposal_id = voting::create_proposal_v2(
             proposer_address,
             @aptos_framework,
@@ -319,8 +315,8 @@ module aptos_framework::aptos_governance {
         let proposer_address = signer::address_of(proposer);
         assert!(stake::is_current_val(proposer_address), error::invalid_argument(EUNAUTHORIZED));
 
-        // check this is a current validator.
-        let governance_config = borrow_global<GovernanceConfig>(@aptos_framework);
+        // TODO!: check this is a current validator.
+        let _governance_config = borrow_global<GovernanceConfig>(@aptos_framework);
 
 
         // The proposer's stake needs to be locked up at least as long as the proposal's voting period.
@@ -339,10 +335,6 @@ module aptos_framework::aptos_governance {
         // supply during the voting period.
         let validator_len = vector::length(&stake::get_current_validators());
         let early_resolution_vote_threshold = ((validator_len/3) * 2) + 1;
-
-        print(&88888);
-        print(&governance_config.min_voting_threshold);
-        print(&early_resolution_vote_threshold);
 
         let proposal_id = voting::create_proposal_v2(
             proposer_address,
@@ -672,9 +664,7 @@ module aptos_framework::aptos_governance {
         // than no.
         timestamp::update_global_time_for_test(100001000000);
         let proposal_state = voting::get_proposal_state<GovernanceProposal>(signer::address_of(&aptos_framework), 0);
-        let (yes, no) = voting::get_votes<GovernanceProposal>(signer::address_of(&aptos_framework), 0);
-        print(&yes);
-        print(&no);
+        // let (yes, no) = voting::get_votes<GovernanceProposal>(signer::address_of(&aptos_framework), 0);
 
         assert!(proposal_state == PROPOSAL_STATE_SUCCEEDED, proposal_state);
 

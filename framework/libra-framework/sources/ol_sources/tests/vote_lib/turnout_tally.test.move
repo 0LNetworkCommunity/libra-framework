@@ -16,29 +16,23 @@ module ol_framework::test_turnout_tally {
 
       // confirm lowerbound
       let y = turnout_tally::get_threshold_from_turnout(1250, 10000);
-      // print(&y);
       assert!(y == 10000, 0);
 
       let y = turnout_tally::get_threshold_from_turnout(1500, 10000);
-      // print(&y);
       assert!(y == 9837, 0);
 
       let y = turnout_tally::get_threshold_from_turnout(5000, 10000);
-      // print(&y);
       assert!(y == 7550, 0);
 
       let y = turnout_tally::get_threshold_from_turnout(7500, 10000);
-      // print(&y);
       assert!(y == 5917, 0);
 
       // cannot be below the minimum treshold. I.e. more than 100%
       let y = turnout_tally::get_threshold_from_turnout(500, 10000);
-      // print(&y);
       assert!(y == 10000, 0);
 
       // same for maximum. More votes cannot go below 51% approval
       let y = turnout_tally::get_threshold_from_turnout(9000, 10000);
-      // print(&y);
       assert!(y == 5100, 0);
   }
 

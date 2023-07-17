@@ -73,7 +73,6 @@ module ol_framework::infra_escrow{
 
       if (locked > 0) {
         let to_escrow = fixed_point32::multiply_u64(locked, escrow_pct);
-        // print(&to_escrow);
         pledge_accounts::genesis_infra_escrow_pledge(vm, user_sig, to_escrow)
       };
     }

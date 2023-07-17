@@ -297,25 +297,19 @@ module ol_framework::proof_of_fee {
   // consolidate all the checks for a validator to be seated
   public fun audit_qualification(val: &address): bool acquires ProofOfFeeAuction, ConsensusReward {
 
-      // print(&1001);
       // Safety check: node has valid configs
       if (!stake::stake_pool_exists(*val)) return false;
-// print(&1002);
       // is a slow wallet
       if (!slow_wallet::is_slow(*val)) return false;
-// print(&1003);
       // we can't seat validators that were just jailed
       // NOTE: epoch reconfigure needs to reset the jail
       // before calling the proof of fee.
       if (jail::is_jailed(*val)) return false;
-// print(&1004);
       // we can't seat validators who don't have minimum viable vouches
 
       if (!vouch::unrelated_buddies_above_thresh(*val)) return false;
       let (bid_pct, expire) = current_bid(*val);
-// print(&1005);
       if (bid_pct < 1) return false;
-// print(&1006);
       // Skip if the bid expired. belt and suspenders, this should have been checked in the sorting above.
       // TODO: make this it's own function so it can be publicly callable, it's useful generally, and for debugging.
 
@@ -324,13 +318,10 @@ module ol_framework::proof_of_fee {
       if (reconfiguration::get_current_epoch() > expire) return false;
       // skip the user if they don't have sufficient UNLOCKED funds
       // or if the bid expired.
-// print(&1007);
       let unlocked_coins = slow_wallet::unlocked_amount(*val);
       let (baseline_reward, _, _) = get_consensus_reward();
       let coin_required = fixed_point32::multiply_u64(baseline_reward, fixed_point32::create_from_rational(bid_pct, 1000));
-// print(&1008);
       if (unlocked_coins < coin_required) return false;
-// print(&1009);
       // friend of ours
       true
   }

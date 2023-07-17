@@ -10,7 +10,7 @@ module ol_framework::tower_state {
     use aptos_framework::testnet;
     use aptos_framework::ol_native_vdf;
 
-    use aptos_std::debug::print;
+    // use aptos_std::debug::print;
 
     /// The current solution does not solve to previous hash.
     /// The delay proofs are not chained
@@ -262,10 +262,8 @@ module ol_framework::tower_state {
       miner_sign: &signer,
       proof: Proof
     ) acquires TowerProofHistory, TowerList, TowerCounter {
-      print(&7777777777777);
       // Get address, assumes the sender is the signer.
       let miner_addr = signer::address_of(miner_sign);
-      // let diff = borrow_global<VDFDifficulty>(@ol_framework );
 
       // This may be the 0th proof of an end user that hasn't had tower state initialized
       if (!is_init(miner_addr)) {
@@ -608,9 +606,6 @@ module ol_framework::tower_state {
       // The auth_key must be at least 32 bytes long
       assert!(vector::length(challenge) >= 32, error::invalid_argument(ECHALLENGE_WRONG_SIZE));
       let (parsed_address, _auth_key) = ol_native_vdf::extract_address_from_challenge(challenge);
-
-      print(&parsed_address);
-      print(&new_account_address);
       // Confirm the address is corect and included in challenge
       assert!(new_account_address == parsed_address, error::permission_denied(EUNAUTHORIZED));
     }
@@ -699,24 +694,16 @@ module ol_framework::tower_state {
         // double check
         if (len <= n) return 0;
 
-        // print(&666602);
         let miner_addr = vector::borrow<address>(&l, n);
 
-        // print(&666603);
         let vec = if (exists<TowerProofHistory>(*miner_addr)) {
           *&borrow_global<TowerProofHistory>(*miner_addr).previous_proof_hash
         } else { return 0 };
-
-        // print(&vec);
-
-        // print(&666604);
         // take the last bit (B) from their last proof hash.
 
         n = (vector::pop_back(&mut vec) as u64);
-        // print(&666605);
         i = i + 1;
       };
-      // print(&8888);
 
       n
     }

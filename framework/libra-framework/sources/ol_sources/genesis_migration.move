@@ -70,7 +70,6 @@ module ol_framework::genesis_migration {
     //   // TODO: get locked amount
     //   let locked = new_balance; //slow_wallet::balance(user_addr);
     //   let to_escrow = fixed_point32::multiply_u64(locked, escrow_pct);
-    //   print(&to_escrow);
     //   infra_escrow::user_pledge_infra(user_sig, to_escrow)
     // };
   }

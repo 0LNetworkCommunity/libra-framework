@@ -113,7 +113,6 @@ module ol_framework::donor_directed_governance {
     // for liquidation there is only ever one proposal, which never expires
     // so always taket the first one from pending.
     let pending_list = ballot::get_list_ballots_by_enum_mut(&mut state.tracker, ballot::get_pending_enum());
-    // print(pending_list);
 
     if (vector::is_empty(pending_list)) {
       return option::none<bool>()

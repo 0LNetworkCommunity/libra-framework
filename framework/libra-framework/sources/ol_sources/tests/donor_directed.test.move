@@ -98,7 +98,6 @@ module ol_framework::test_donor_directed {
       mock::ol_initialize_coin_and_fund_vals(root, 10000000);
 
       let (_, bob_balance_pre) = ol_account::balance(@0x1000b);
-      // print(&bob_balance_pre);
       assert!(bob_balance_pre == 10000000, 7357001);
 
       let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
@@ -142,7 +141,6 @@ module ol_framework::test_donor_directed {
       donor_directed::process_donor_directed_accounts(root, 3);
 
       let (_, bob_balance) = ol_account::balance(@0x1000b);
-      // print(&bob_balance);
       assert!(bob_balance > bob_balance_pre, 7357005);
       assert!(bob_balance == 10000100, 7357006);
     }
@@ -156,7 +154,6 @@ module ol_framework::test_donor_directed {
       mock::ol_initialize_coin_and_fund_vals(root, 10000000);
 
       let (_, bob_balance_pre) = ol_account::balance(@0x1000b);
-      // print(&bob_balance_pre);
       assert!(bob_balance_pre == 10000000, 7357001);
 
       let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
@@ -205,7 +202,6 @@ module ol_framework::test_donor_directed {
 
 
       let (_, bob_balance) = ol_account::balance(@0x1000b);
-      // print(&bob_balance);
       assert!(bob_balance > bob_balance_pre, 7357005);
       assert!(bob_balance == 10000100, 7357006);
     }

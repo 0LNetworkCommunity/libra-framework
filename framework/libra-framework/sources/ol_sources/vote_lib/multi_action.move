@@ -272,34 +272,23 @@ module ol_framework::multi_action {
     multisig_address: address,
     proposal_data: Proposal<ProposalData>,
   ): guid::ID acquires Governance, Action {
-    // print(&20);
     assert_authorized(sig, multisig_address);
-// print(&21);
     let ms = borrow_global_mut<Governance>(multisig_address);
     let action = borrow_global_mut<Action<ProposalData>>(multisig_address);
-    // print(&22);
     // go through all proposals and clean up expired ones.
     lazy_cleanup_expired(action);
-// print(&23);
     // does this proposal already exist in the pending list?
     let (found, guid, _idx, status_enum, _is_complete) = search_proposals_by_data<ProposalData>(&action.vote, &proposal_data);
-    // print(&found);
-    // print(&status_enum);
-    // print(&24);
     if (found && status_enum == ballot::get_pending_enum()) {
-      // print(&2401);
       // this exact proposal is already pending, so we we will just return the guid of the existing proposal.
       // we'll let the caller decide what to do (we wont vote by default)
       return guid
     };
 
     let guid = account::create_guid_with_capability(&ms.guid_capability);
-
-// print(&25);
     let ballot = ballot::propose_ballot(&mut action.vote, guid, proposal_data);
-// print(&26);
     let id = ballot::get_ballot_id(ballot);
-// print(&27);
+
     id
   }
 
@@ -338,32 +327,24 @@ module ol_framework::multi_action {
     id: &guid::ID
   ): (bool, Option<WithdrawCapability>) acquires Governance, Action {
 
-    // print(&60);
     assert_authorized(sig, multisig_address); // belt and suspenders
     let ms = borrow_global_mut<Governance>(multisig_address);
     let action = borrow_global_mut<Action<ProposalData>>(multisig_address);
-    // print(&61);
     // always run this to cleanup all missing ballots
     lazy_cleanup_expired(action);
 
     // if (check_expired(&action.vote)) return (false, option::none());
-    // print(&62);
 
     // does this proposal already exist in the pending list?
     let (found, _idx, status_enum, is_complete) = ballot::find_anywhere<Proposal<ProposalData>>(&action.vote, id);
-    // print(&63);
     assert!(found, error::invalid_argument(EPROPOSAL_NOT_FOUND));
     assert!(status_enum == ballot::get_pending_enum(), error::invalid_argument(EVOTING_CLOSED));
      assert!(!is_complete, error::invalid_argument(EVOTING_CLOSED));
 
-    // print(&64);
     let b = ballot::get_ballot_by_id_mut(&mut action.vote, id);
     let t = ballot::get_type_struct_mut(b);
-    // print(&65);
     vector::push_back(&mut t.votes, signer::address_of(sig));
-    // print(&66);
     let passed = tally(t, *&ms.cfg_default_n_sigs);
-    // print(&67);
 
     if (passed) {
       ballot::complete_ballot(b);
@@ -382,22 +363,14 @@ module ol_framework::multi_action {
       option::none()
     };
 
-    // print(&withdraw_cap);
-    // print(&68);
-
     (passed, withdraw_cap)
   }
 
 
   fun tally<ProposalData: store + drop>(prop: &mut Proposal<ProposalData>, n: u64): bool {
-    // print(&40001);
-
-    // print(&prop.votes);
 
     if (vector::length(&prop.votes) >= n) {
       prop.approved = true;
-      // print(&40002);
-
       return true
     };
 
@@ -407,22 +380,17 @@ module ol_framework::multi_action {
 
 
   fun find_expired<ProposalData: store + drop>(a: & Action<ProposalData>): vector<guid::ID>{
-    // print(&40);
     let epoch = reconfiguration::get_current_epoch();
     let b_vec = ballot::get_list_ballots_by_enum(&a.vote, ballot::get_pending_enum());
     let id_vec = vector::empty();
-    // print(&41);
     let i = 0;
     while (i < vector::length(b_vec)) {
-      // print(&4101);
       let b = vector::borrow(b_vec, i);
       let t = ballot::get_type_struct<Proposal<ProposalData>>(b);
 
 
       if (epoch > t.expiration_epoch) {
-        // print(&4010101);
         let id = ballot::get_ballot_id(b);
-        // print(&4010102);
         vector::push_back(&mut id_vec, id);
 
       };
@@ -434,9 +402,7 @@ module ol_framework::multi_action {
 
   fun lazy_cleanup_expired<ProposalData: store + drop>(a: &mut Action<ProposalData>) {
     let expired_vec = find_expired(a);
-    // print(&expired_vec);
     let len = vector::length(&expired_vec);
-    // print(&len);
     let i = 0;
     while (i < len) {
       let id = vector::borrow(&expired_vec, i);

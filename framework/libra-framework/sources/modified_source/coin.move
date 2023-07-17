@@ -15,7 +15,7 @@ module aptos_framework::coin {
 
     use aptos_std::type_info;
     use aptos_std::math64;
-    use aptos_std::debug::print;
+    // use aptos_std::debug::print;
 
     friend ol_framework::gas_coin;
     friend ol_framework::ol_account;
@@ -256,14 +256,11 @@ module aptos_framework::coin {
 
         let decimal_places = decimals<CoinType>();
         let scaling = math64::pow(10, (decimal_places as u64));
-        print(&scaling);
         let value = fixed_point32::create_from_rational(unscaled_value, scaling);
         // multply will TRUNCATE.
         let integer_part = fixed_point32::multiply_u64(1, value);
-        print(&integer_part);
 
         let decimal_part = unscaled_value - (integer_part * scaling);
-        print(&decimal_part);
 
         (integer_part, decimal_part)
     }
@@ -281,7 +278,6 @@ module aptos_framework::coin {
         // assert!(balance<FakeMoney>(source_addr) == 100, 0);
 
         let (integer, decimal) = balance_human<FakeMoney>(source_addr);
-        print(&integer);
         assert!(integer == 12, 7357001);
         assert!(decimal == 34567890, 7357002);
 

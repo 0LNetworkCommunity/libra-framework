@@ -7,7 +7,7 @@ module aptos_framework::transaction_fee {
     use std::option::{Self, Option};
     use ol_framework::gas_coin::GasCoin;
 
-    use aptos_std::debug::print;
+    // use aptos_std::debug::print;
 
 
     friend aptos_framework::block;
@@ -201,7 +201,6 @@ module aptos_framework::transaction_fee {
       while (i < vector::length(list)) {
         let from = vector::borrow(list, i);
         let coin_option = coin::vm_withdraw<GasCoin>(vm, *from, amount);
-        print(&amount);
         if (option::is_some(&coin_option)) {
           let c = option::extract(&mut coin_option);
           pay_fee(vm, c)
