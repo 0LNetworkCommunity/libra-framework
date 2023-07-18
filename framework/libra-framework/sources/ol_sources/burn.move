@@ -15,7 +15,7 @@ module ol_framework::burn {
   use std::fixed_point32;
   use std::signer;
   use std::vector;
-  use ol_framework::ol_account;
+  // use ol_framework::ol_account;
   use ol_framework::system_addresses;
   use ol_framework::gas_coin::GasCoin;
   use ol_framework::transaction_fee;
@@ -116,68 +116,27 @@ module ol_framework::burn {
     vm: &signer, payer: address, user_share: Coin<GasCoin>
   ) acquires BurnMatchState, UserBurnPreference {
     system_addresses::assert_vm(vm);
+    let value_sent = coin::value(&user_share);
     if (exists<UserBurnPreference>(payer)) {
 
       if (borrow_global<UserBurnPreference>(payer).send_community) {
-        match_and_recycle(vm, &mut user_share);
+        match_index::match_and_recycle(vm, &mut user_share);
 
+         // update the root state tracker
+        let state = borrow_global_mut<BurnMatchState>(@ol_framework);
+        state.lifetime_recycled = state.lifetime_recycled + value_sent;
+
+        coin::user_burn(user_share);
+        return
       }
     };
 
     // Superman 3
     let state = borrow_global_mut<BurnMatchState>(@ol_framework);
-    state.lifetime_burned = state.lifetime_burned + coin::value(&user_share);
+    state.lifetime_burned = state.lifetime_burned + value_sent;
     coin::user_burn(user_share);
   }
 
-
-  /// the root account can take a user coin, and match with accounts in index.
-  // Note, this leave NO REMAINDER, and burns any rounding.
-  // TODO: When the coin is sent, an attribution is also made to the payer.
-  public fun match_and_recycle(vm: &signer, coin: &mut Coin<GasCoin>) acquires BurnMatchState {
-
-    match_impl(vm, coin);
-    // if there is anything remaining it's a superman 3 issue
-    // so we send it back to the transaction fee account
-    // makes it easier to track since we know no burns should be happening.
-    // which is what would happen if the coin didn't get emptied here
-    let remainder_amount = coin::value(coin);
-    if (remainder_amount > 0) {
-      let last_coin = coin::extract(coin, remainder_amount);
-      // use pay_fee which doesn't track the sender, so we're not double counting the receipts, even though it's a small amount.
-      transaction_fee::pay_fee(vm, last_coin);
-    };
-  }
-
-    /// the root account can take a user coin, and match with accounts in index.
-  // TODO: When the coin is sent, an attribution is also made to the payer.
-  fun match_impl(vm: &signer, coin: &mut Coin<GasCoin>) acquires BurnMatchState {
-    system_addresses::assert_ol(vm);
-    let list = { match_index::get_address_list() }; // NOTE devs, the added scope drops the borrow which is used below.
-    let len = vector::length<address>(&list);
-    let total_coin_value_to_recycle = coin::value(coin);
-
-    // There could be errors in the array, and underpayment happen.
-    let value_sent = 0;
-
-    let i = 0;
-    while (i < len) {
-
-      let payee = *vector::borrow<address>(&list, i);
-      let amount_to_payee = match_index::get_payee_share(payee, total_coin_value_to_recycle);
-      let coin_split = coin::extract(coin, amount_to_payee);
-      ol_account::deposit_coins(
-          payee,
-          coin_split,
-      );
-      value_sent = value_sent + amount_to_payee;
-      i = i + 1;
-    };
-
-    // update the root state tracker
-    let state = borrow_global_mut<BurnMatchState>(@ol_framework);
-    state.lifetime_recycled = state.lifetime_recycled + value_sent;
-  }
 
   public fun set_send_community(sender: &signer, community: bool) acquires UserBurnPreference {
     let addr = signer::address_of(sender);

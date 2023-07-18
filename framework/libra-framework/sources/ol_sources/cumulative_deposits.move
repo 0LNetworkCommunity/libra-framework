@@ -110,7 +110,7 @@ module ol_framework::cumulative_deposits {
 
 
     /// adjust the points of the deposits favoring more recent deposits.
-    /// inflation by x% per day from the start of network.
+    /// adjusting by x% per day from the start of network.
     fun deposit_index_curve(
       epoch: u64,
       value: u64,

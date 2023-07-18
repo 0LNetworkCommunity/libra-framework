@@ -43,7 +43,7 @@ module ol_framework::donor_directed {
     use ol_framework::ballot;
     use ol_framework::cumulative_deposits;
     use ol_framework::transaction_fee;
-    use ol_framework::burn;
+    use ol_framework::match_index;
 
     use aptos_framework::coin;
     // use ol_framework::transaction_fee;
@@ -114,6 +114,11 @@ module ol_framework::donor_directed {
     struct Donors has key {
       list: vector<address>,
     }
+
+
+    // A flag on the account that it wants to be considered a community walley
+    struct CommunityWallet has key { }
+
 
     //////// INIT REGISRTY OF DONOR DIRECTED ACCOUNTS  ////////
 
@@ -585,7 +590,7 @@ module ol_framework::donor_directed {
                 if (option::is_some(&coin_opt)) {
                   let c = option::extract(&mut coin_opt);
 
-                  burn::match_and_recycle(vm, &mut c);
+                  match_index::match_and_recycle(vm, &mut c);
                   option::fill(&mut coin_opt, c);
                 };
                 option::destroy_none(coin_opt);
@@ -689,6 +694,7 @@ module ol_framework::donor_directed {
       f.liquidate_to_community_wallets
     }
 
+
     //////// TRANSACTION SCRIPTS ////////
 
     /// Initialize the TxSchedule wallet with Three signers
@@ -773,4 +779,6 @@ module ol_framework::donor_directed {
     public entry fun vote_liquidation_tx(donor: &signer, multisig_address: address) acquires Freeze, Registry {
       liquidation_handler(donor, multisig_address);
     }
+
+
 }

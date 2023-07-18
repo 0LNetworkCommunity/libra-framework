@@ -26,8 +26,8 @@ module ol_framework::community_wallet {
     use std::error;
     use std::signer;
     use std::fixed_point32;
-    use std::vector;
-    use std::option;
+    // use std::vector;
+    // use std::option;
     use ol_framework::donor_directed;
     use ol_framework::multi_action;
     use ol_framework::ancestry;
@@ -69,9 +69,9 @@ module ol_framework::community_wallet {
 
     /// Dynamic check to see if CommunityWallet is qualifying.
     /// if it is not qualifying it wont be part of the burn funds matching.
-    public fun is_comm(addr: address): bool {
+    public fun qualifies(addr: address): bool {
       // The CommunityWallet flag is set
-      is_init(addr) &&
+      // is_init(addr) &&
       // has donor_directed instantiated properly
       donor_directed::is_donor_directed(addr) &&
       donor_directed::liquidates_to_dd_accounts(addr) &&
@@ -109,56 +109,56 @@ module ol_framework::community_wallet {
 
     //////// MULTISIG TX HELPERS ////////
 
-    /// Helper to initialize the PaymentMultisig, but also while confirming that the signers are not related family
-    /// These transactions can be sent directly to donor_directed, but this is a helper to make it easier to initialize the multisig with the acestry requirements.
+    // Helper to initialize the PaymentMultisig, but also while confirming that the signers are not related family
+    // These transactions can be sent directly to donor_directed, but this is a helper to make it easier to initialize the multisig with the acestry requirements.
 
     // TODO: this version of Diem, does not allow vector<address> in the script arguments. So we are hard coding this to initialize with the minimum of 5 signers.
 
-    public entry fun init_community_multisig(
-      sig: &signer,
-      signer_one: address,
-      signer_two: address,
-      signer_three: address,
-      signer_four: address,
-      signer_five: address,
-    ) {
-      let init_signers = vector::singleton(signer_one);
-      vector::push_back(&mut init_signers, signer_two);
-      vector::push_back(&mut init_signers, signer_three);
-      vector::push_back(&mut init_signers, signer_four);
-      vector::push_back(&mut init_signers, signer_five);
+    // public entry fun init_community_multisig(
+    //   sig: &signer,
+    //   signer_one: address,
+    //   signer_two: address,
+    //   signer_three: address,
+    //   signer_four: address,
+    //   signer_five: address,
+    // ) {
+    //   let init_signers = vector::singleton(signer_one);
+    //   vector::push_back(&mut init_signers, signer_two);
+    //   vector::push_back(&mut init_signers, signer_three);
+    //   vector::push_back(&mut init_signers, signer_four);
+    //   vector::push_back(&mut init_signers, signer_five);
 
-      let (fam, _, _) = ancestry::any_family_in_list(*&init_signers);
+    //   let (fam, _, _) = ancestry::any_family_in_list(*&init_signers);
 
-      assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
+    //   assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
 
-      // set as donor directed with any liquidation going to infrastructure escrow
-      let liquidate_to_infra_escrow = true;
-      donor_directed::set_donor_directed(sig, liquidate_to_infra_escrow);
-      donor_directed::make_multi_action(sig, 3, init_signers);
-    }
+    //   // set as donor directed with any liquidation going to infrastructure escrow
+    //   let liquidate_to_infra_escrow = true;
+    //   donor_directed::set_donor_directed(sig, liquidate_to_infra_escrow);
+    //   donor_directed::make_multi_action(sig, 3, init_signers);
+    // }
 
-    /// add signer to multisig, and check if they may be related in ancestry tree
-    public entry fun add_signer_community_multisig(
-      sig: &signer,
-      multisig_address: address,
-      new_signer: address,
-      n_of_m: u64,
-      vote_duration_epochs: u64
-    ) {
-      let current_signers = multi_action::get_authorities(multisig_address);
-      let (fam, _, _) = ancestry::is_family_one_in_list(new_signer, &current_signers);
+    // /// add signer to multisig, and check if they may be related in ancestry tree
+    // public entry fun add_signer_community_multisig(
+    //   sig: &signer,
+    //   multisig_address: address,
+    //   new_signer: address,
+    //   n_of_m: u64,
+    //   vote_duration_epochs: u64
+    // ) {
+    //   let current_signers = multi_action::get_authorities(multisig_address);
+    //   let (fam, _, _) = ancestry::is_family_one_in_list(new_signer, &current_signers);
 
-      assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
+    //   assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
 
-      multi_action::propose_governance(
-        sig,
-        multisig_address,
-        vector::singleton(new_signer),
-        true, option::some(n_of_m),
-        option::some(vote_duration_epochs)
-      );
+    //   multi_action::propose_governance(
+    //     sig,
+    //     multisig_address,
+    //     vector::singleton(new_signer),
+    //     true, option::some(n_of_m),
+    //     option::some(vote_duration_epochs)
+    //   );
 
-    }
+    // }
 
 }

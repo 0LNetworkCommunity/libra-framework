@@ -2,8 +2,16 @@
 module ol_framework::match_index {
   use aptos_framework::system_addresses;
   use ol_framework::cumulative_deposits;
+  // use ol_framework::community_wallet;
+  use ol_framework::gas_coin::GasCoin;
+  use ol_framework::ol_account;
+  use aptos_framework::coin::{Self, Coin};
+  use aptos_framework::transaction_fee;
   use std::fixed_point32;
   use std::vector;
+  // use std::signer;
+  // use std::error;
+
 
   // friend ol_framework::burn;
   /// The Match index keeps accounts that have opted-in. Also keeps the lifetime_burned for convenience.
@@ -65,6 +73,50 @@ module ol_framework::match_index {
 
     burn_state.deposits = deposit_vec;
     burn_state.ratio = ratios_vec;
+  }
+
+    /// the root account can take a user coin, and match with accounts in index.
+  // Note, this leave NO REMAINDER, and burns any rounding.
+  // TODO: When the coin is sent, an attribution is also made to the payer.
+  public fun match_and_recycle(vm: &signer, coin: &mut Coin<GasCoin>) acquires MatchIndex {
+
+    match_impl(vm, coin);
+    // if there is anything remaining it's a superman 3 issue
+    // so we send it back to the transaction fee account
+    // makes it easier to track since we know no burns should be happening.
+    // which is what would happen if the coin didn't get emptied here
+    let remainder_amount = coin::value(coin);
+    if (remainder_amount > 0) {
+      let last_coin = coin::extract(coin, remainder_amount);
+      // use pay_fee which doesn't track the sender, so we're not double counting the receipts, even though it's a small amount.
+      transaction_fee::pay_fee(vm, last_coin);
+    };
+  }
+
+    /// the root account can take a user coin, and match with accounts in index.
+  // TODO: When the coin is sent, an attribution is also made to the payer.
+  fun match_impl(vm: &signer, coin: &mut Coin<GasCoin>) acquires MatchIndex {
+    system_addresses::assert_ol(vm);
+    let list = { get_address_list() }; // NOTE devs, the added scope drops the borrow which is used below.
+    let len = vector::length<address>(&list);
+    let total_coin_value_to_recycle = coin::value(coin);
+
+    // There could be errors in the array, and underpayment happen.
+    let value_sent = 0;
+
+    let i = 0;
+    while (i < len) {
+
+      let payee = *vector::borrow<address>(&list, i);
+      let amount_to_payee = get_payee_share(payee, total_coin_value_to_recycle);
+      let coin_split = coin::extract(coin, amount_to_payee);
+      ol_account::deposit_coins(
+          payee,
+          coin_split,
+      );
+      value_sent = value_sent + amount_to_payee;
+      i = i + 1;
+    };
   }
 
   //////// GETTERS ////////
