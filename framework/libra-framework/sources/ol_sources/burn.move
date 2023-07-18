@@ -30,9 +30,19 @@ module ol_framework::burn {
   }
 
   /// The Match index he accounts that have opted-in. Also keeps the lifetime_burned for convenience.
-  struct BurnMatchState has key {
+  struct BurnCounter has key {
     lifetime_burned: u64,
     lifetime_recycled: u64,
+  }
+
+    /// initialize, usually for testnet.
+  public fun initialize(vm: &signer) {
+    system_addresses::assert_ol(vm);
+
+    move_to<BurnCounter>(vm, BurnCounter {
+        lifetime_burned: 0,
+        lifetime_recycled: 0,
+      })
   }
 
   /// At the end of the epoch, after everyone has been paid
@@ -45,7 +55,7 @@ module ol_framework::burn {
   public fun epoch_burn_fees(
       vm: &signer,
       total_fees_collected: u64,
-  )  acquires UserBurnPreference, BurnMatchState {
+  )  acquires UserBurnPreference, BurnCounter {
       system_addresses::assert_ol(vm);
 
       // extract fees
@@ -86,15 +96,7 @@ module ol_framework::burn {
     coin::user_burn(coins);
   }
 
-  /// initialize, usually for testnet.
-  public fun initialize(vm: &signer) {
-    system_addresses::assert_vm(vm);
 
-    move_to<BurnMatchState>(vm, BurnMatchState {
-        lifetime_burned: 0,
-        lifetime_recycled: 0,
-      })
-  }
 
   /// Migration script for hard forks
   public fun vm_migration(vm: &signer,
@@ -105,17 +107,17 @@ module ol_framework::burn {
     // TODO: assert genesis when timesetamp is working again.
     system_addresses::assert_vm(vm);
 
-    move_to<BurnMatchState>(vm, BurnMatchState {
+    move_to<BurnCounter>(vm, BurnCounter {
         lifetime_burned,
         lifetime_recycled,
       })
   }
 
 
-  fun burn_with_user_preference(
+  public fun burn_with_user_preference(
     vm: &signer, payer: address, user_share: Coin<GasCoin>
-  ) acquires BurnMatchState, UserBurnPreference {
-    system_addresses::assert_vm(vm);
+  ) acquires BurnCounter, UserBurnPreference {
+    system_addresses::assert_ol(vm);
     let value_sent = coin::value(&user_share);
     if (exists<UserBurnPreference>(payer)) {
 
@@ -123,7 +125,7 @@ module ol_framework::burn {
         match_index::match_and_recycle(vm, &mut user_share);
 
          // update the root state tracker
-        let state = borrow_global_mut<BurnMatchState>(@ol_framework);
+        let state = borrow_global_mut<BurnCounter>(@ol_framework);
         state.lifetime_recycled = state.lifetime_recycled + value_sent;
 
         coin::user_burn(user_share);
@@ -132,7 +134,7 @@ module ol_framework::burn {
     };
 
     // Superman 3
-    let state = borrow_global_mut<BurnMatchState>(@ol_framework);
+    let state = borrow_global_mut<BurnCounter>(@ol_framework);
     state.lifetime_burned = state.lifetime_burned + value_sent;
     coin::user_burn(user_share);
   }
@@ -152,8 +154,9 @@ module ol_framework::burn {
 
   //////// GETTERS ////////
 
-  public fun get_lifetime_tracker(): (u64, u64) acquires BurnMatchState {
-    let state = borrow_global<BurnMatchState>(@ol_framework);
+  /// returns tuple of (lifetime burned, lifetime recycled)
+  public fun get_lifetime_tracker(): (u64, u64) acquires BurnCounter {
+    let state = borrow_global<BurnCounter>(@ol_framework);
     (state.lifetime_burned, state.lifetime_recycled)
   }
 

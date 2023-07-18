@@ -8,6 +8,7 @@ module ol_framework::test_donor_directed {
   use aptos_framework::resource_account;
   use ol_framework::receipts;
   use ol_framework::donor_directed_governance;
+  use ol_framework::burn;
   use std::guid;
   use std::vector;
   use std::signer;
@@ -16,7 +17,7 @@ module ol_framework::test_donor_directed {
 
     #[test(root = @ol_framework, alice = @0x1000a)]
     fun dd_init(root: &signer, alice: &signer) {
-      mock::genesis_n_vals(root, 4);
+      let vals = mock::genesis_n_vals(root, 4);
 
       // Alice turns this account into a resource account. This can also happen after other donor directed initializations happen (or deposits). But must be complete before the donor directed wallet can be used.
       let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
@@ -24,7 +25,7 @@ module ol_framework::test_donor_directed {
       assert!(resource_account::is_resource_account(donor_directed_address), 7357003);
 
       // the account needs basic donor directed structs
-      donor_directed::init_donor_directed(&resource_sig, @0x1000b, @0x1000c, @0x1000d, 2);
+      donor_directed::make_donor_directed(&resource_sig, vals, 2);
 
 
       let list = donor_directed::get_root_registry();
@@ -38,12 +39,12 @@ module ol_framework::test_donor_directed {
       // Scenario: Alice creates a resource_account which will be a donor directed account. She will not be one of the authorities of the account.
       // only bob, carol, and dave with be authorities
 
-      mock::genesis_n_vals(root, 4);
+      let vals = mock::genesis_n_vals(root, 4);
       let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
       let donor_directed_address = signer::address_of(&resource_sig);
 
       // the account needs basic donor directed structs
-      donor_directed::init_donor_directed(&resource_sig, @0x1000b, @0x1000c, @0x1000d, 2);
+      donor_directed::make_donor_directed(&resource_sig, vals, 2);
 
       let uid = donor_directed::propose_payment(bob, donor_directed_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_directed::get_multisig_proposal_state(donor_directed_address, &uid);
@@ -61,12 +62,12 @@ module ol_framework::test_donor_directed {
       // Scenario: Alice creates a resource_account which will be a donor directed account. She will not be one of the authorities of the account.
       // only bob, carol, and dave with be authorities
 
-      mock::genesis_n_vals(root, 4);
+      let vals = mock::genesis_n_vals(root, 4);
       let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
       let donor_directed_address = signer::address_of(&resource_sig);
 
       // the account needs basic donor directed structs
-      donor_directed::init_donor_directed(&resource_sig, @0x1000b, @0x1000c, @0x1000d, 2);
+      donor_directed::make_donor_directed(&resource_sig, vals, 2);
 
       let uid = donor_directed::propose_payment(bob, donor_directed_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_directed::get_multisig_proposal_state(donor_directed_address, &uid);
@@ -99,7 +100,7 @@ module ol_framework::test_donor_directed {
       // Alice creates a donor directed account where Alice, Bob and Carol, are admins.
       // Dave and Eve make a donation and so are able to have some voting on that account. The veto can only happen after Alice Bob and Carol are able to schedule a tx.
 
-      mock::genesis_n_vals(root, 5); // need to include eve to init funds
+      let vals = mock::genesis_n_vals(root, 5); // need to include eve to init funds
       mock::ol_initialize_coin_and_fund_vals(root, 100000);
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
       mock::trigger_epoch(root);
@@ -108,7 +109,7 @@ module ol_framework::test_donor_directed {
       let donor_directed_address = signer::address_of(&resource_sig);
 
       // the account needs basic donor directed structs
-      donor_directed::init_donor_directed(&resource_sig, @0x1000a, @0x1000b, @0x1000c, 2);
+      donor_directed::make_donor_directed(&resource_sig, vals, 2);
 
       // EVE Establishes some governance over the wallet, when donating.
       let eve_donation = 42;
@@ -180,7 +181,7 @@ module ol_framework::test_donor_directed {
       // Scenario: Alice creates a resource_account which will be a donor directed account. She will not be one of the authorities of the account.
       // only bob, carol, and dave with be authorities
 
-      mock::genesis_n_vals(root, 4);
+      let vals = mock::genesis_n_vals(root, 4);
       mock::ol_initialize_coin_and_fund_vals(root, 10000000);
 
       let (_, bob_balance_pre) = ol_account::balance(@0x1000b);
@@ -196,7 +197,7 @@ module ol_framework::test_donor_directed {
 
 
       // the account needs basic donor directed structs
-      donor_directed::init_donor_directed(&resource_sig, @0x1000b, @0x1000c, @0x1000d, 2);
+      donor_directed::make_donor_directed(&resource_sig, vals, 2);
 
       let uid = donor_directed::propose_payment(bob, donor_directed_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_directed::get_multisig_proposal_state(donor_directed_address, &uid);
@@ -236,7 +237,7 @@ module ol_framework::test_donor_directed {
       // Scenario: Alice creates a resource_account which will be a donor directed account. She will not be one of the authorities of the account.
       // only bob, carol, and dave with be authorities
 
-      mock::genesis_n_vals(root, 4);
+      let vals = mock::genesis_n_vals(root, 4);
       mock::ol_initialize_coin_and_fund_vals(root, 10000000);
 
       let (_, bob_balance_pre) = ol_account::balance(@0x1000b);
@@ -252,7 +253,7 @@ module ol_framework::test_donor_directed {
 
 
       // the account needs basic donor directed structs
-      donor_directed::init_donor_directed(&resource_sig, @0x1000b, @0x1000c, @0x1000d, 2);
+      donor_directed::make_donor_directed(&resource_sig, vals, 2);
 
       let uid = donor_directed::propose_payment(bob, donor_directed_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_directed::get_multisig_proposal_state(donor_directed_address, &uid);
@@ -300,7 +301,7 @@ module ol_framework::test_donor_directed {
       // Dave and Eve make a donation and so are able to have some voting on that account.
       // Dave and Eve are unhappy, and vote to liquidate the account.
 
-      mock::genesis_n_vals(root, 5); // need to include eve to init funds
+      let vals = mock::genesis_n_vals(root, 5); // need to include eve to init funds
       mock::ol_initialize_coin_and_fund_vals(root, 100000);
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
       mock::trigger_epoch(root);
@@ -308,8 +309,8 @@ module ol_framework::test_donor_directed {
       let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
       let donor_directed_address = signer::address_of(&resource_sig);
       // the account needs basic donor directed structs
-      donor_directed::init_donor_directed(&resource_sig, @0x1000a, @0x1000b, @0x1000c, 2);
-      // donor_directed::set_liquidate_to_community_wallets(&resource_sig, true);
+      donor_directed::make_donor_directed(&resource_sig, vals, 2);
+      // donor_directed::set_liquidate_to_match_index(&resource_sig, true);
 
       // EVE Establishes some governance over the wallet, when donating.
       let eve_donation = 42;
@@ -368,6 +369,10 @@ module ol_framework::test_donor_directed {
 
       assert!(eve_balance > eve_balance_pre, 7357010);
 
+      let (lifetime_burn, _lifetime_match) = burn::get_lifetime_tracker();
+      // nothing should have been burned, it was a refund
+      assert!(lifetime_burn == 0, 7357011);
+
     }
 
     #[test(root = @ol_framework, alice = @0x1000a, dave = @0x1000d, eve = @0x1000e)]
@@ -377,7 +382,7 @@ module ol_framework::test_donor_directed {
       // Dave and Eve make a donation and so are able to have some voting on that account.
       // Dave and Eve are unhappy, and vote to liquidate the account.
 
-      mock::genesis_n_vals(root, 5); // need to include eve to init funds
+      let vals = mock::genesis_n_vals(root, 5); // need to include eve to init funds
       mock::ol_initialize_coin_and_fund_vals(root, 100000);
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
       mock::trigger_epoch(root);
@@ -385,8 +390,8 @@ module ol_framework::test_donor_directed {
       let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
       let donor_directed_address = signer::address_of(&resource_sig);
       // the account needs basic donor directed structs
-      donor_directed::init_donor_directed(&resource_sig, @0x1000a, @0x1000b, @0x1000c, 2);
-      donor_directed::set_liquidate_to_community_wallets(&resource_sig, true);
+      donor_directed::make_donor_directed(&resource_sig, vals, 2);
+      donor_directed::set_liquidate_to_match_index(&resource_sig, true);
 
       // EVE Establishes some governance over the wallet, when donating.
       let eve_donation = 42;
@@ -442,6 +447,10 @@ module ol_framework::test_donor_directed {
       assert!(program_balance == 0, 7357011);
 
       assert!(eve_balance == eve_balance_pre, 7357010);
+
+      let (lifetime_burn, _lifetime_match) = burn::get_lifetime_tracker();
+      // nothing should have been burned, it was a refund
+      assert!(lifetime_burn == 0, 7357011);
     }
 }
 

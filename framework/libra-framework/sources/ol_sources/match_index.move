@@ -9,11 +9,12 @@ module ol_framework::match_index {
   use aptos_framework::transaction_fee;
   use std::fixed_point32;
   use std::vector;
-  // use std::signer;
-  // use std::error;
+  use std::signer;
+  use std::error;
 
+  const ENOT_INIT: u64 = 100023;
 
-  // friend ol_framework::burn;
+  friend ol_framework::community_wallet;
   /// The Match index keeps accounts that have opted-in. Also keeps the lifetime_burned for convenience.
   struct MatchIndex has key {
     addr: vector<address>,
@@ -32,18 +33,32 @@ module ol_framework::match_index {
       })
   }
 
+  // account can opt into match_index
+  // checking for qualification should happen first in friend module
+  public(friend) fun opt_into_match_index(sig: &signer) acquires MatchIndex {
+    assert!(exists<MatchIndex>(@ol_framework), error::invalid_state(ENOT_INIT));
+    let burn_state = borrow_global_mut<MatchIndex>(@ol_framework);
+    let addr = signer::address_of(sig);
+    if (!vector::contains(&burn_state.addr, &addr)) {
+      vector::push_back(&mut burn_state.addr, addr);
+    };
+  }
+
+
+
 
   /// At each epoch boundary, we recalculate the index of the Match recipients.
-  public fun reset_ratios(vm: &signer) acquires MatchIndex {
+  // NOTE: can't call community_wallet here to check for qualification because of cyclic dependencies, need to do it in ol_reconfig
+  public(friend) fun calc_ratios(vm: &signer, qualifying: vector<address>) acquires MatchIndex {
     system_addresses::assert_ol(vm);
     // don't abort
     if (!exists<MatchIndex>(@ol_framework)) return;
 
-    // it it doesn't qualify don't let it bias the ratios
+    // TODO! if it doesn't qualify don't let it bias the ratios
 
     let burn_state = borrow_global_mut<MatchIndex>(@ol_framework);
 
-    let len = vector::length(&burn_state.addr);
+    let len = vector::length(&qualifying);
     let i = 0;
     let global_deposits = 0;
     let deposit_vec = vector::empty<u64>();
@@ -120,6 +135,7 @@ module ol_framework::match_index {
   }
 
   //////// GETTERS ////////
+  /// get the proportional share of each account qualified for Match, based on the recent-weighted donations.
   public fun get_ratios():
     (vector<address>, vector<u64>, vector<fixed_point32::FixedPoint32>) acquires MatchIndex
   {
@@ -153,6 +169,13 @@ module ol_framework::match_index {
     };
 
     0
+  }
+
+  //////// TEST HELPERS ////////
+  #[test_only]
+  public fun test_reset_ratio(root: &signer, addr_list: vector<address>) acquires MatchIndex{
+    system_addresses::assert_ol(root);
+    calc_ratios(root, addr_list);
   }
 
 }

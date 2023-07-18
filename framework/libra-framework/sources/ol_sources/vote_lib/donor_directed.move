@@ -108,7 +108,7 @@ module ol_framework::donor_directed {
       is_frozen: bool,
       consecutive_rejections: u64,
       unfreeze_votes: vector<address>,
-      liquidate_to_community_wallets: bool,
+      liquidate_to_match_index: bool,
     }
 
     struct Donors has key {
@@ -160,7 +160,22 @@ module ol_framework::donor_directed {
 
     // 3. Once the MultiSig is initialized, the account needs to be bricked, before the MultiSig can be used.
 
-    public fun set_donor_directed(sig: &signer, liquidate_to_community_wallets: bool) {
+    public fun make_donor_directed(sponsor: &signer, init_signers: vector<address>, cfg_n_signers: u64) acquires Registry {
+      // let init_signers = vector::singleton(signer_one);
+      // vector::push_back(&mut init_signers, signer_two);
+      // vector::push_back(&mut init_signers, signer_three);
+
+      cumulative_deposits::init_cumulative_deposits(sponsor);
+
+      // we are setting liquidation to infra escrow as false by default
+      // the user can send another transacton to change this.
+      let liquidate_to_match_index = false;
+      structs_init(sponsor, liquidate_to_match_index);
+      make_multi_action(sponsor, cfg_n_signers, init_signers);
+      add_to_registry(sponsor);
+    }
+
+    fun structs_init(sig: &signer, liquidate_to_match_index: bool) {
       if (!exists<Registry>(@ol_framework)) return;
 
       move_to<Freeze>(
@@ -169,7 +184,7 @@ module ol_framework::donor_directed {
           is_frozen: false,
           consecutive_rejections: 0,
           unfreeze_votes: vector::empty<address>(),
-          liquidate_to_community_wallets,
+          liquidate_to_match_index,
         }
       );
 
@@ -576,7 +591,7 @@ module ol_framework::donor_directed {
         // and trying to call Burn, here will create a circular dependency.
 
 
-        if (!liquidates_to_dd_accounts(multisig_address)) {
+        if (!is_liquidate_to_match_index(multisig_address)) {
           // otherwise the default case is that donors get their funds back.
           let (pro_rata_addresses, pro_rata_amounts) = get_pro_rata(multisig_address);
           let k = 0;
@@ -585,7 +600,7 @@ module ol_framework::donor_directed {
           while (k < len) {
               let addr = vector::borrow(&pro_rata_addresses, k);
               let amount = vector::borrow(&pro_rata_amounts, k);
-              if (liquidates_to_dd_accounts(multisig_address)) {
+              if (is_liquidate_to_match_index(multisig_address)) {
                 let coin_opt = coin::vm_withdraw<GasCoin>(vm, multisig_address, *amount);
                 if (option::is_some(&coin_opt)) {
                   let c = option::extract(&mut coin_opt);
@@ -689,37 +704,34 @@ module ol_framework::donor_directed {
       f.is_frozen
     }
 
-    public fun liquidates_to_dd_accounts(addr: address): bool acquires Freeze{
+    public fun is_liquidate_to_match_index(addr: address): bool acquires Freeze{
       let f = borrow_global<Freeze>(addr);
-      f.liquidate_to_community_wallets
+      f.liquidate_to_match_index
     }
 
 
     //////// TRANSACTION SCRIPTS ////////
 
-    /// Initialize the TxSchedule wallet with Three signers
+    // public fun init_donor_directed(sponsor: &signer, init_signers: vector<address>, cfg_n_signers: u64) acquires Registry {
+    //   // let init_signers = vector::singleton(signer_one);
+    //   // vector::push_back(&mut init_signers, signer_two);
+    //   // vector::push_back(&mut init_signers, signer_three);
 
-    // TODO: this version of Diem, does not allow vector<address> in the script arguments. So we are hard coding this to initialize with three signers. Gross.
-    public fun init_donor_directed(sponsor: &signer, signer_one: address, signer_two: address, signer_three: address, cfg_n_signers: u64) acquires Registry {
-      let init_signers = vector::singleton(signer_one);
-      vector::push_back(&mut init_signers, signer_two);
-      vector::push_back(&mut init_signers, signer_three);
+    //   cumulative_deposits::init_cumulative_deposits(sponsor);
 
-      cumulative_deposits::init_cumulative_deposits(sponsor);
-
-      // we are setting liquidation to infra escrow as false by default
-      // the user can send another transacton to change this.
-      let liquidate_to_community_wallets = false;
-      set_donor_directed(sponsor, liquidate_to_community_wallets);
-      make_multi_action(sponsor, cfg_n_signers, init_signers);
-      add_to_registry(sponsor);
-    }
+    //   // we are setting liquidation to infra escrow as false by default
+    //   // the user can send another transacton to change this.
+    //   let liquidate_to_match_index = false;
+    //   set_donor_directed(sponsor, liquidate_to_match_index);
+    //   make_multi_action(sponsor, cfg_n_signers, init_signers);
+    //   add_to_registry(sponsor);
+    // }
 
     /// option to set the liquidation destination to infrastructure escrow
     /// must be done before the multisig is finalized and the sponsor cannot control the account.
-    public fun set_liquidate_to_community_wallets(sponsor: &signer, liquidate_to_community_wallets: bool) acquires Freeze {
+    public fun set_liquidate_to_match_index(sponsor: &signer, liquidate_to_match_index: bool) acquires Freeze {
       let f = borrow_global_mut<Freeze>(signer::address_of(sponsor));
-      f.liquidate_to_community_wallets = liquidate_to_community_wallets;
+      f.liquidate_to_match_index = liquidate_to_match_index;
     }
 
     // /// the sponsor must finalize the initialization, this is a separate step so that the user can optionally check everything is in order before bricking the account key.
@@ -743,6 +755,11 @@ module ol_framework::donor_directed {
 
 
     //////// TX HELPER ////////
+
+    // transaction helper to wrap donor directed init
+    public entry fun make_donor_directed_tx(sponsor: &signer, init_signers: vector<address>, cfg_n_signers: u64) acquires Registry {
+      make_donor_directed(sponsor, init_signers, cfg_n_signers);
+    }
 
     public entry fun propose_payment_tx(
       auth: signer,

@@ -18,8 +18,7 @@ module aptos_framework::genesis {
     use aptos_framework::gas_schedule;
     use aptos_framework::reconfiguration;
     use aptos_framework::stake;
-    // use aptos_framework::staking_contract;
-    // use aptos_framework::staking_config;
+    use aptos_framework::match_index;
     use aptos_framework::state_storage;
     use aptos_framework::storage_gas;
     use aptos_framework::timestamp;
@@ -39,6 +38,7 @@ module aptos_framework::genesis {
     use ol_framework::safe;
     use ol_framework::donor_directed;
     use ol_framework::epoch_helper;
+    use ol_framework::burn;
 
     //////// end 0L ////////
 
@@ -157,6 +157,9 @@ module aptos_framework::genesis {
         safe::initialize(&aptos_framework_account);
         donor_directed::initialize(&aptos_framework_account);
         epoch_helper::initialize(&aptos_framework_account);
+        burn::initialize(&aptos_framework_account);
+        match_index::initialize(&aptos_framework_account);
+
         // end 0L
 
         timestamp::set_time_has_started(&aptos_framework_account);

@@ -31,6 +31,8 @@ module ol_framework::community_wallet {
     use ol_framework::donor_directed;
     use ol_framework::multi_action;
     use ol_framework::ancestry;
+    use ol_framework::match_index;
+    use aptos_framework::system_addresses;
 
     const ENOT_AUTHORIZED: u64 = 023;
 
@@ -45,12 +47,13 @@ module ol_framework::community_wallet {
     const ESIG_THRESHOLD: u64 = 120003;
     /// The multisig threshold does not equal 3/5
     const ESIG_THRESHOLD_RATIO: u64 = 120004;
-
     /// Signers may be sybil
     const ESIGNERS_SYBIL: u64 = 120005;
-
     /// Recipient does not have a slow wallet
     const EPAYEE_NOT_SLOW_WALLET: u64 = 120006;
+    /// Too few signers for Match Index
+    const ETOO_FEW_SIGNERS: u64 = 120007;
+
 
     // A flag on the account that it wants to be considered a community walley
     struct CommunityWallet has key { }
@@ -74,11 +77,12 @@ module ol_framework::community_wallet {
       is_init(addr) &&
       // has donor_directed instantiated properly
       donor_directed::is_donor_directed(addr) &&
-      donor_directed::liquidates_to_dd_accounts(addr) &&
+      donor_directed::is_liquidate_to_match_index(addr) &&
       // has multi_action instantialized
       multi_action::is_multi_action(addr) &&
       // multisig has minimum requirement of 3 signatures, and minimum list of 5 signers, and a minimum of 3/5 threshold. I.e. OK to have 4/5 signatures.
-      multisig_thresh(addr) &&
+      multisig_thresh(addr)
+      &&
       // the multisig authorities are unrelated per ancestry
       !multisig_common_ancestry(addr)
     }
@@ -107,24 +111,50 @@ module ol_framework::community_wallet {
       fam
     }
 
+
+    /// check qualifications of community wallets
+    /// need to check every epoch so that wallets who no longer qualify are not biasing the Match algorithm.
+    public fun epoch_reset_ratios(root: &signer) {
+      system_addresses::assert_ol(root);
+      let good = get_qualifying();
+      match_index::calc_ratios(root, good);
+    }
+
+    #[view]
+    /// from the list of addresses that opted into the match_index, filter for only those that qualified.
+    public fun get_qualifying(): vector<address> {
+      let opt_in_list = match_index::get_address_list();
+
+      vector::filter(opt_in_list, |addr|{
+        qualifies(*addr)
+      })
+    }
+
     //////// MULTISIG TX HELPERS ////////
 
     // Helper to initialize the PaymentMultiAction but also while confirming that the signers are not related family
     // These transactions can be sent directly to donor_directed, but this is a helper to make it easier to initialize the multisig with the acestry requirements.
 
-    public entry fun init_community_multisig(
+    public entry fun init_community(
       sig: &signer,
       init_signers: vector<address>
     ) {
+      // policy is to have at least 5 signers as auths on the account.
+      let len = vector::length(&init_signers);
+      assert!(len > 4, error::invalid_argument(ETOO_FEW_SIGNERS));
+
+      // enforce 3/5 multi auth
+      let n = (3 * len) / 5;
 
       let (fam, _, _) = ancestry::any_family_in_list(*&init_signers);
 
       assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
 
-      // set as donor directed with any liquidation going to infrastructure escrow
-      let liquidate_to_infra_escrow = true;
-      donor_directed::set_donor_directed(sig, liquidate_to_infra_escrow);
-      donor_directed::make_multi_action(sig, 3, init_signers);
+      // set as donor directed with any liquidation going to existing matching index
+
+      donor_directed::make_donor_directed(sig, init_signers, n);
+      donor_directed::set_liquidate_to_match_index(sig, true);
+      match_index::opt_into_match_index(sig);
     }
 
     /// add signer to multisig, and check if they may be related in ancestry tree
