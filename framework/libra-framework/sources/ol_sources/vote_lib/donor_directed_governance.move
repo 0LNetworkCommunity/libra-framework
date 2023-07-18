@@ -23,12 +23,16 @@ module ol_framework::donor_directed_governance {
     use aptos_framework::account;
     use aptos_framework::reconfiguration;
     use std::vector;
-    // use ol_framework::Debug::print;
+    use ol_framework::debug::print;
 
     /// Is not a donor to this account
     const ENOT_A_DONOR: u64 = 220000;
     /// No ballot found under that GUID
     const ENO_BALLOT_FOUND: u64 = 220001;
+    /// A proposal already exists with this data
+    const EDUPLICATE_PROPOSAL: u64 = 220001;
+
+
 
     /// Data struct to store all the governance Ballots for vetos
     /// allows for a generic type of Governance action, using the Participation Vote Poll type to keep track of ballots
@@ -100,7 +104,7 @@ module ol_framework::donor_directed_governance {
     fun vote_veto(user: &signer, ballot: &mut TurnoutTally<Veto>, uid: &guid::ID, multisig_address: address): Option<bool> {
       let user_votes = get_user_donations(multisig_address, signer::address_of(user));
 
-      let veto_tx = true; // True means  approve the ballot, meaning: "veto transaction". Rejecting the ballot would mean "approve transaction".
+      let veto_tx = true; // True means  approve the ballot, meaning: "veto this transaction". Rejecting the ballot would mean "approve the transaction".
 
       turnout_tally::vote<Veto>(user, ballot, uid, veto_tx, user_votes)
     }
@@ -130,7 +134,7 @@ module ol_framework::donor_directed_governance {
 
     //////// API ////////
 
-        /// Public script transaction to propose a veto, or vote on it if it already exists.
+    /// Public script transaction to propose a veto, or vote on it if it already exists.
 
     /// should only be called by the DonorDirected.move so that the handlers can be called on "pass" conditions.
 
@@ -139,8 +143,12 @@ module ol_framework::donor_directed_governance {
       assert_authorized(user, directed_account);
 
       let state = borrow_global_mut<Governance<TurnoutTally<Veto>>>(directed_account);
+      print(state);
+
+      print(proposal_guid);
 
       let ballot = ballot::get_ballot_by_id_mut(&mut state.tracker, proposal_guid);
+
       let tally_state = ballot::get_type_struct_mut(ballot);
 
       vote_veto(user, tally_state, proposal_guid, directed_account)
@@ -165,26 +173,26 @@ module ol_framework::donor_directed_governance {
       cap: &account::GUIDCapability,
       guid: &guid::ID, // Id of initiated transaction.
       epochs_duration: u64
-    ) acquires Governance {
+    ): guid::ID  acquires Governance {
       let data = Veto { guid: *guid };
-      propose_gov<Veto>(cap, data, epochs_duration);
+      propose_gov<Veto>(cap, data, epochs_duration)
     }
 
     public(friend) fun propose_liquidate(
       cap: &account::GUIDCapability,
       epochs_duration: u64
-    ) acquires Governance {
+    ): guid::ID acquires Governance {
       let data = Liquidate { };
-      propose_gov<Liquidate>(cap, data, epochs_duration);
+      propose_gov<Liquidate>(cap, data, epochs_duration)
     }
 
     /// a private function to propose a ballot for a veto. This is called by a verified donor.
 
-    fun propose_gov<GovAction: drop + store>(cap: &account::GUIDCapability, data: GovAction, epochs_duration: u64) acquires Governance {
+    fun propose_gov<GovAction: drop + store>(cap: &account::GUIDCapability, data: GovAction, epochs_duration: u64): guid::ID acquires Governance {
       let directed_account = account::get_guid_capability_address(cap);
       let gov_state = borrow_global_mut<Governance<TurnoutTally<GovAction>>>(directed_account);
 
-      if (!is_unique_proposal(&gov_state.tracker, &data)) return;
+      assert!(is_unique_proposal(&gov_state.tracker, &data), error::invalid_argument(EDUPLICATE_PROPOSAL));
 
       // what's the maximum universe of valid votes.
       let max_votes_enrollment = get_enrollment(directed_account);
@@ -203,8 +211,10 @@ module ol_framework::donor_directed_governance {
       );
 
       let guid = account::create_guid_with_capability(cap);
+      let id = guid::id(&guid);
 
       ballot::propose_ballot(&mut gov_state.tracker, guid, t);
+      id
     }
 
     /// Check if a proposal has already been made for this transaction.
@@ -224,6 +234,50 @@ module ol_framework::donor_directed_governance {
         i = i + 1;
       };
       true
+    }
+
+    // with a known transaction uid, scan all the pending vetos to see if there is a veto for that transaction, and what the index is.
+    // NOTE: what is being returned is a different ID, that of the proposal to veto
+    public fun find_tx_veto_id(tx_id: guid::ID): (bool, guid::ID) acquires Governance {
+      // let proposal_guid = guid::create_id(directed_account, id);
+      let directed_account = guid::id_creator_address(&tx_id);
+      let state = borrow_global_mut<Governance<TurnoutTally<Veto>>>(directed_account);
+
+      let pending = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
+      let i = 0;
+      while (i < vector::length(pending)) {
+        let a_ballot = vector::borrow(pending, i);
+        let turnout_tally = ballot::get_type_struct(a_ballot);
+        let proposed_veto = turnout_tally::get_tally_data(turnout_tally);
+        if (proposed_veto.guid == tx_id) {
+          return (true, ballot::get_ballot_id(a_ballot))
+        };
+        i = i + 1;
+      };
+
+      (false, guid::create_id(@0x1, 0))
+    }
+
+    //////// GETTERS ////////
+    #[view]
+    // for a transaction UID return if the address and proposal ID have any vetos. guid::ID is destructured for view functions
+    public fun has_veto(directed_account: address, id: u64): bool acquires Governance {
+      let uid = guid::create_id(directed_account, id);
+      let (found, _) = find_tx_veto_id(uid);
+      found
+    }
+
+    #[view]
+    // returns a tuple of the (percent approval, threshold required)
+    public fun get_veto_tally(directed_account: address, id: u64): (u64,u64)  acquires Governance{
+      let proposal_guid = guid::create_id(directed_account, id);
+      let state = borrow_global_mut<Governance<TurnoutTally<Veto>>>(directed_account);
+
+      let ballot = ballot::get_ballot_by_id(&state.tracker, &proposal_guid);
+      let tally = ballot::get_type_struct(ballot);
+      let approval_pct = turnout_tally::get_current_ballot_approval(tally);
+      let current_threshold = turnout_tally::get_current_threshold_required(tally);
+      (approval_pct, current_threshold)
     }
 
 }

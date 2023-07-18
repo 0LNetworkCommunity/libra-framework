@@ -6,9 +6,13 @@ module ol_framework::test_donor_directed {
   use ol_framework::mock;
   use ol_framework::ol_account;
   use aptos_framework::resource_account;
-
+  use ol_framework::receipts;
+  use ol_framework::donor_directed_governance;
+  use std::guid;
   use std::vector;
   use std::signer;
+
+  use aptos_std::debug::print;
 
     #[test(root = @ol_framework, alice = @0x1000a)]
     fun dd_init(root: &signer, alice: &signer) {
@@ -50,6 +54,62 @@ module ol_framework::test_donor_directed {
 
       // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_directed::is_scheduled(new_resource_address, &uid), 7357008);
+    }
+
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
+    fun dd_propose_and_veto(root: &signer, alice: &signer, bob: &signer, carol: &signer) {
+      // Scenario: Alice creates a resource_account which will be a donor directed account. She will not be one of the authorities of the account.
+      // only bob, carol, and dave with be authorities
+
+      mock::genesis_n_vals(root, 4);
+      mock::ol_initialize_coin_and_fund_vals(root, 100000);
+      let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
+      let new_resource_address = signer::address_of(&resource_sig);
+
+      // the account needs basic donor directed structs
+      donor_directed::init_donor_directed(&resource_sig, @0x1000b, @0x1000c, @0x1000d, 2);
+
+      // Establish some governance over the wallet. Alice is a
+      // see cumu_deposits.test.move
+      let carols_donation = 42;
+      ol_account::transfer(carol, new_resource_address, 42); // this should track
+      let (_, _, total_funds_sent_by_carol) = receipts::read_receipt(@0x1000c, new_resource_address);
+      assert!(total_funds_sent_by_carol == carols_donation, 7357005); // last payment
+
+      // let (_a, _b, _c) = Receipts::read_receipt(@Carol, @Alice);
+
+      let uid_of_transfer = donor_directed::propose_payment(bob, new_resource_address, @0x1000b, 100, b"thanks bob");
+      print(&uid_of_transfer);
+      let (_found, _idx, _status_enum, completed) = donor_directed::get_multisig_proposal_state(new_resource_address, &uid_of_transfer);
+      // assert!(found, 7357004);
+      // assert!(idx == 0, 7357005);
+      // assert!(status_enum == 1, 7357006);
+      assert!(!completed, 7357007);
+
+
+      let is_donor = donor_directed_governance::check_is_donor(new_resource_address, signer::address_of(carol));
+      assert!(is_donor, 7357009);
+      // let guid = GUID::create_id(@Alice, 2);
+      // print(&a);
+      // need to destructure ID for the entry and view functions
+
+      let _uid_of_veto_prop = donor_directed::propose_veto(carol, &uid_of_transfer);
+
+      // now vote on the proposal
+      let id_num = guid::id_creation_num(&uid_of_transfer);
+      donor_directed::vote_veto_tx(carol, new_resource_address, id_num);
+
+      // let has_veto = donor_directed_governance::has_veto(new_resource_address, guid::id_creation_num(&uid_of_veto_prop));
+      // assert!(has_veto, 7357010); // propose does not cast a vote.
+
+
+      // let (approve_pct, req_threshold) = donor_directed_governance::get_veto_tally(new_resource_address, guid::id_creation_num(&uid));
+
+      // print(&approve_pct);
+      // print(&req_threshold);
+
+      // // it is not yet scheduled, it's still only a proposal by an admin
+      // assert!(!donor_directed::is_scheduled(new_resource_address, &uid), 7357008);
     }
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]

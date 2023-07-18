@@ -102,7 +102,7 @@
     }
     // with only a GUID, return a ballot reference
     public fun get_ballot_by_id<TallyType: drop + store> (
-      poll: & BallotTracker<TallyType>,
+      poll: &BallotTracker<TallyType>,
       guid: &guid::ID,
     ): &Ballot<TallyType> {
 

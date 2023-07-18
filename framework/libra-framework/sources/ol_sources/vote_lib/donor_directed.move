@@ -41,7 +41,7 @@ module ol_framework::donor_directed {
     use ol_framework::ballot;
     use ol_framework::cumulative_deposits;
     // use ol_framework::transaction_fee;
-    // use aptos_std::debug::print;
+    use aptos_std::debug::print;
 
     /// Not initialized as a donor directed account.
     const ENOT_INIT_DONOR_DIRECTED: u64 = 231001;
@@ -439,12 +439,12 @@ module ol_framework::donor_directed {
   }
 
   /// propose and vote on the veto of a specific transacation
-  public fun propose_veto(donor: &signer, guid: &guid::ID)  acquires TxSchedule {
-    let multisig_address = guid::id_creator_address(guid);
+  public fun propose_veto(donor: &signer, uid_of_tx: &guid::ID): guid::ID  acquires TxSchedule {
+    let multisig_address = guid::id_creator_address(uid_of_tx);
     donor_directed_governance::assert_authorized(donor, multisig_address);
     let state = borrow_global<TxSchedule>(multisig_address);
     let epochs_duration = DEFAULT_VETO_DURATION;
-    donor_directed_governance::propose_veto(&state.guid_capability, guid,  epochs_duration);
+    donor_directed_governance::propose_veto(&state.guid_capability, uid_of_tx,  epochs_duration)
   }
 
   /// If there are approved transactions, then the consectutive rejection counter is reset.
@@ -701,13 +701,20 @@ module ol_framework::donor_directed {
     }
 
 
-    public entry fun propose_veto_tx(donor: signer, multisig_address: address, id: u64)  acquires TxSchedule {
-      let guid = guid::create_id(multisig_address, id);
-      propose_veto(&donor, &guid);
+    public entry fun propose_veto_tx(donor: &signer, multisig_address: address, id: u64) acquires TxSchedule, Freeze{
+      let uid = guid::create_id(multisig_address, id);
+      print(&uid);
+      let uid_of_gov_prop = propose_veto(donor, &uid);
+      veto_handler(donor, &uid_of_gov_prop);
     }
-    public entry fun veto_tx(donor: signer, multisig_address: address, id: u64)  acquires TxSchedule, Freeze {
-      let guid = guid::create_id(multisig_address, id);
-      veto_handler(&donor, &guid);
+
+    /// Entry functiont to vote the veto.
+    public entry fun vote_veto_tx(donor: &signer, multisig_address: address, id: u64)  acquires TxSchedule, Freeze {
+      let tx_uid = guid::create_id(multisig_address, id);
+      let (found, gov_prop_uid) = donor_directed_governance::find_tx_veto_id(tx_uid);
+      if (found) {
+        veto_handler(donor, &gov_prop_uid);
+      }
     }
 
     public entry fun propose_liquidate_tx(donor: signer, multisig_address: address)  acquires TxSchedule {

@@ -379,8 +379,8 @@
 
     //////// GETTERS ////////
 
-    /// get current tally
-    public fun get_tally<Data: copy + store>(ballot: &TurnoutTally<Data>): u64 {
+    /// get current tally percentage scaled
+    public fun get_current_ballot_participation<Data: store>(ballot: &TurnoutTally<Data>): u64 {
       let total = ballot.votes_approve + ballot.votes_reject;
       if (ballot.votes_approve + ballot.votes_reject > ballot.max_votes) {
         return 0
@@ -390,6 +390,18 @@
       };
       return fixed_point32::multiply_u64(PCT_SCALE, fixed_point32::create_from_rational(total, ballot.max_votes))
     }
+
+    // with the current participation get the threshold to pass
+    public fun get_current_threshold_required<Data: store>(ballot: &TurnoutTally<Data>): u64 {
+      get_threshold_from_turnout(ballot.votes_approve + ballot.votes_reject, ballot.max_votes)
+    }
+
+    /// get current tally percentage scaled
+    public fun get_current_ballot_approval<Data: store>(ballot: &TurnoutTally<Data>): u64 {
+      let total = ballot.votes_approve + ballot.votes_reject;
+      return fixed_point32::multiply_u64(PCT_SCALE, fixed_point32::create_from_rational(ballot.votes_approve ,total))
+    }
+
 
     public fun get_tally_data<Data: store>(ballot: &TurnoutTally<Data>): &Data {
       &ballot.data
