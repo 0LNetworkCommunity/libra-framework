@@ -41,7 +41,7 @@ module ol_framework::donor_directed {
     use ol_framework::ballot;
     use ol_framework::cumulative_deposits;
     // use ol_framework::transaction_fee;
-    use aptos_std::debug::print;
+    // use aptos_std::debug::print;
 
     /// Not initialized as a donor directed account.
     const ENOT_INIT_DONOR_DIRECTED: u64 = 231001;
@@ -703,7 +703,6 @@ module ol_framework::donor_directed {
 
     public entry fun propose_veto_tx(donor: &signer, multisig_address: address, id: u64) acquires TxSchedule, Freeze{
       let uid = guid::create_id(multisig_address, id);
-      print(&uid);
       let uid_of_gov_prop = propose_veto(donor, &uid);
       veto_handler(donor, &uid_of_gov_prop);
     }

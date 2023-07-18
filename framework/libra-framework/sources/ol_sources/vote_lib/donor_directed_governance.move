@@ -19,11 +19,11 @@ module ol_framework::donor_directed_governance {
     use ol_framework::receipts;
     use ol_framework::turnout_tally::{Self, TurnoutTally};
     use ol_framework::ballot::{Self, BallotTracker};
-    // use ol_framework::DiemAccount;
+    use ol_framework::cumulative_deposits;
     use aptos_framework::account;
     use aptos_framework::reconfiguration;
     use std::vector;
-    use ol_framework::debug::print;
+    // use ol_framework::debug::print;
 
     /// Is not a donor to this account
     const ENOT_A_DONOR: u64 = 220000;
@@ -67,10 +67,8 @@ module ol_framework::donor_directed_governance {
     }
 
     /// For a DonorDirected account get the total number of votes enrolled from reading the Cumulative tracker.
-    fun get_enrollment(_directed_account: address): u64 {
-      // TODO!
-      0
-      // DiemAccount::get_cumulative_deposits(directed_account)
+    fun get_enrollment(directed_account: address): u64 {
+      cumulative_deposits::get_cumulative_deposits(directed_account)
     }
 
     /// public function to check that a user account is a Donor for a DonorDirected account.
@@ -143,9 +141,6 @@ module ol_framework::donor_directed_governance {
       assert_authorized(user, directed_account);
 
       let state = borrow_global_mut<Governance<TurnoutTally<Veto>>>(directed_account);
-      print(state);
-
-      print(proposal_guid);
 
       let ballot = ballot::get_ballot_by_id_mut(&mut state.tracker, proposal_guid);
 
@@ -196,6 +191,7 @@ module ol_framework::donor_directed_governance {
 
       // what's the maximum universe of valid votes.
       let max_votes_enrollment = get_enrollment(directed_account);
+
       if (epochs_duration < 7) {
         epochs_duration = 7;
       };
@@ -261,7 +257,7 @@ module ol_framework::donor_directed_governance {
     //////// GETTERS ////////
     #[view]
     // for a transaction UID return if the address and proposal ID have any vetos. guid::ID is destructured for view functions
-    public fun has_veto(directed_account: address, id: u64): bool acquires Governance {
+    public fun tx_has_veto(directed_account: address, id: u64): bool acquires Governance {
       let uid = guid::create_id(directed_account, id);
       let (found, _) = find_tx_veto_id(uid);
       found
@@ -269,11 +265,13 @@ module ol_framework::donor_directed_governance {
 
     #[view]
     // returns a tuple of the (percent approval, threshold required)
-    public fun get_veto_tally(directed_account: address, id: u64): (u64,u64)  acquires Governance{
-      let proposal_guid = guid::create_id(directed_account, id);
+    public fun get_veto_tally(directed_account: address, id: u64): (u64, u64)  acquires Governance{
+      let (found, prop_id) = find_tx_veto_id(guid::create_id(directed_account, id));
+      assert!(found, error::invalid_argument(ENO_BALLOT_FOUND));
+
       let state = borrow_global_mut<Governance<TurnoutTally<Veto>>>(directed_account);
 
-      let ballot = ballot::get_ballot_by_id(&state.tracker, &proposal_guid);
+      let ballot = ballot::get_ballot_by_id(&state.tracker, &prop_id);
       let tally = ballot::get_type_struct(ballot);
       let approval_pct = turnout_tally::get_current_ballot_approval(tally);
       let current_threshold = turnout_tally::get_current_threshold_required(tally);

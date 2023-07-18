@@ -12,7 +12,7 @@ module ol_framework::test_donor_directed {
   use std::vector;
   use std::signer;
 
-  use aptos_std::debug::print;
+  // use aptos_std::debug::print;
 
     #[test(root = @ol_framework, alice = @0x1000a)]
     fun dd_init(root: &signer, alice: &signer) {
@@ -79,7 +79,7 @@ module ol_framework::test_donor_directed {
       // let (_a, _b, _c) = Receipts::read_receipt(@Carol, @Alice);
 
       let uid_of_transfer = donor_directed::propose_payment(bob, new_resource_address, @0x1000b, 100, b"thanks bob");
-      print(&uid_of_transfer);
+
       let (_found, _idx, _status_enum, completed) = donor_directed::get_multisig_proposal_state(new_resource_address, &uid_of_transfer);
       // assert!(found, 7357004);
       // assert!(idx == 0, 7357005);
@@ -90,7 +90,7 @@ module ol_framework::test_donor_directed {
       let is_donor = donor_directed_governance::check_is_donor(new_resource_address, signer::address_of(carol));
       assert!(is_donor, 7357009);
       // let guid = GUID::create_id(@Alice, 2);
-      // print(&a);
+
       // need to destructure ID for the entry and view functions
 
       let _uid_of_veto_prop = donor_directed::propose_veto(carol, &uid_of_transfer);
@@ -99,17 +99,16 @@ module ol_framework::test_donor_directed {
       let id_num = guid::id_creation_num(&uid_of_transfer);
       donor_directed::vote_veto_tx(carol, new_resource_address, id_num);
 
-      // let has_veto = donor_directed_governance::has_veto(new_resource_address, guid::id_creation_num(&uid_of_veto_prop));
-      // assert!(has_veto, 7357010); // propose does not cast a vote.
+      let has_veto = donor_directed_governance::tx_has_veto(new_resource_address, guid::id_creation_num(&uid_of_transfer));
+      assert!(has_veto, 7357010); // propose does not cast a vote.
 
+      let (approve_pct, req_threshold) = donor_directed_governance::get_veto_tally(new_resource_address, guid::id_creation_num(&uid_of_transfer));
 
-      // let (approve_pct, req_threshold) = donor_directed_governance::get_veto_tally(new_resource_address, guid::id_creation_num(&uid));
-
-      // print(&approve_pct);
-      // print(&req_threshold);
+      assert!(approve_pct == 10000, 7357011);
+      assert!(req_threshold == 5100, 7357012);
 
       // // it is not yet scheduled, it's still only a proposal by an admin
-      // assert!(!donor_directed::is_scheduled(new_resource_address, &uid), 7357008);
+      assert!(!donor_directed::is_scheduled(new_resource_address, &uid_of_transfer), 7357013);
     }
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
