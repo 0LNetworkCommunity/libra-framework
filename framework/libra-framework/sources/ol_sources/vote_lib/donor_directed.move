@@ -32,7 +32,7 @@ module ol_framework::donor_directed {
     use std::error;
     use std::guid;
     use aptos_framework::reconfiguration;
-    use std::option;
+    use std::option::{Self, Option};
     use ol_framework::ol_account;
     // use ol_framework::gas_coin::GasCoin;
     use ol_framework::multi_action;
@@ -53,6 +53,8 @@ module ol_framework::donor_directed {
     const ENOT_VALID_STATE_ENUM: u64 = 231012;
     /// No enum for this number
     const EMULTISIG_NOT_INIT: u64 = 231013;
+    /// No enum for this number
+    const ENO_VETO_ID_FOUND: u64 = 231014;
 
     const SCHEDULED: u8 = 1;
     const VETO: u8 = 2;
@@ -283,6 +285,7 @@ module ol_framework::donor_directed {
       // return id
     }
 
+    /// saerch for a transction ID in the queues. Returns (is found, index, status enum)
     public fun find_schedule_by_id(state: &TxSchedule, uid: &guid::ID): (bool, u64, u8) { // (is_found, index, state)
       let (found, i) = schedule_status(state, uid, SCHEDULED);
       if (found) return (found, i, SCHEDULED);
@@ -379,19 +382,24 @@ module ol_framework::donor_directed {
   // The validator identifies the transaction by a unique id.
   // Tallies are computed on the fly, such that if a veto happens,
   // the community which is faster than waiting for epoch boundaries.
+  // NOTE: veto and tx both have UIDs but they are separate
   fun veto_handler(
     sender: &signer,
-    uid: &guid::ID,
+    veto_uid: &guid::ID,
+    tx_uid: &guid::ID,
   ) acquires TxSchedule, Freeze {
-    let multisig_address = guid::id_creator_address(uid);
+    let multisig_address = guid::id_creator_address(tx_uid);
     donor_directed_governance::assert_authorized(sender, multisig_address);
 
-    let veto_is_approved = donor_directed_governance::veto_by_id(sender, uid);
+    let veto_is_approved = donor_directed_governance::veto_by_id(sender, veto_uid);
     if (option::is_none(&veto_is_approved)) return;
+
+    let (_found, _idx, state) = get_schedule_state(multisig_address, tx_uid);
+    assert!(state == 1, error::invalid_state(ENOT_VALID_STATE_ENUM)); // is scheduled
 
     if (*option::borrow(&veto_is_approved)) {
       // if the veto passes, freeze the account
-      reject(uid);
+      reject(tx_uid);
 
       maybe_freeze(multisig_address);
     } else {
@@ -399,7 +407,7 @@ module ol_framework::donor_directed {
       // down the payments further if there are rejections.
       // Add another day for each veto
       let state = borrow_global_mut<TxSchedule>(multisig_address);
-      let tx_mut = get_pending_timed_transfer_mut(state, uid);
+      let tx_mut = get_pending_timed_transfer_mut(state, tx_uid);
       if (tx_mut.epoch_latest_veto_received < reconfiguration::get_current_epoch()) {
         tx_mut.deadline = tx_mut.deadline + 1;
 
@@ -407,7 +415,7 @@ module ol_framework::donor_directed {
         // is the same as the end of the veto ballot
         // This is because the ballot expiration can be
         // extended based on the threshold of votes.
-        donor_directed_governance::sync_ballot_and_tx_expiration(sender, uid, tx_mut.deadline)
+        donor_directed_governance::sync_ballot_and_tx_expiration(sender, veto_uid, tx_mut.deadline)
       }
 
     }
@@ -417,6 +425,10 @@ module ol_framework::donor_directed {
   // removed from proposed list.
   fun reject(uid: &guid::ID)  acquires TxSchedule, Freeze {
     let multisig_address = guid::id_creator_address(uid);
+    let (found, _idx, state) = get_schedule_state(multisig_address, uid);
+    assert!(found, error::invalid_state(ENO_PEDNING_TRANSACTION_AT_UID));
+    assert!(state == 1, error::invalid_state(ENOT_VALID_STATE_ENUM));
+
     let c = borrow_global_mut<TxSchedule>(multisig_address);
 
     let len = vector::length(&c.scheduled);
@@ -438,13 +450,22 @@ module ol_framework::donor_directed {
 
   }
 
-  /// propose and vote on the veto of a specific transacation
-  public fun propose_veto(donor: &signer, uid_of_tx: &guid::ID): guid::ID  acquires TxSchedule {
+  /// propose and vote on the veto of a specific transaction.
+  /// The transaction must first have been scheduled, otherwise this proposal will abort.
+  public fun propose_veto(donor: &signer, uid_of_tx: &guid::ID): Option<guid::ID>  acquires TxSchedule {
     let multisig_address = guid::id_creator_address(uid_of_tx);
     donor_directed_governance::assert_authorized(donor, multisig_address);
     let state = borrow_global<TxSchedule>(multisig_address);
-    let epochs_duration = DEFAULT_VETO_DURATION;
-    donor_directed_governance::propose_veto(&state.guid_capability, uid_of_tx,  epochs_duration)
+    // need to check if the tx is already schdules.
+
+    let (found, _index, status) = find_schedule_by_id(state, uid_of_tx);
+    if (found && status == SCHEDULED) {
+      let epochs_duration = DEFAULT_VETO_DURATION;
+
+      let uid = donor_directed_governance::propose_veto(&state.guid_capability, uid_of_tx,  epochs_duration);
+      return option::some(uid)
+    };
+    option::none()
   }
 
   /// If there are approved transactions, then the consectutive rejection counter is reset.
@@ -702,18 +723,20 @@ module ol_framework::donor_directed {
 
 
     public entry fun propose_veto_tx(donor: &signer, multisig_address: address, id: u64) acquires TxSchedule, Freeze{
-      let uid = guid::create_id(multisig_address, id);
-      let uid_of_gov_prop = propose_veto(donor, &uid);
-      veto_handler(donor, &uid_of_gov_prop);
+      let tx_uid = guid::create_id(multisig_address, id);
+      let opt_uid_of_gov_prop = propose_veto(donor, &tx_uid);
+      if (option::is_some(&opt_uid_of_gov_prop)) { // check successful proposal
+        let veto_uid = option::borrow(&opt_uid_of_gov_prop);
+        veto_handler(donor, veto_uid, &tx_uid);
+      }
     }
 
     /// Entry functiont to vote the veto.
     public entry fun vote_veto_tx(donor: &signer, multisig_address: address, id: u64)  acquires TxSchedule, Freeze {
       let tx_uid = guid::create_id(multisig_address, id);
-      let (found, gov_prop_uid) = donor_directed_governance::find_tx_veto_id(tx_uid);
-      if (found) {
-        veto_handler(donor, &gov_prop_uid);
-      }
+      let (found, veto_uid) = donor_directed_governance::find_tx_veto_id(tx_uid);
+      assert!(found, error::invalid_argument(ENO_VETO_ID_FOUND));
+      veto_handler(donor, &veto_uid, &tx_uid);
     }
 
     public entry fun propose_liquidate_tx(donor: signer, multisig_address: address)  acquires TxSchedule {

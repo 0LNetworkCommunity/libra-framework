@@ -183,24 +183,25 @@ module ol_framework::donor_directed_governance {
 
     /// a private function to propose a ballot for a veto. This is called by a verified donor.
 
-    fun propose_gov<GovAction: drop + store>(cap: &account::GUIDCapability, data: GovAction, epochs_duration: u64): guid::ID acquires Governance {
+    fun propose_gov<GovAction: drop + store>(cap: &account::GUIDCapability, proposal: GovAction, epochs_duration: u64): guid::ID acquires Governance {
       let directed_account = account::get_guid_capability_address(cap);
       let gov_state = borrow_global_mut<Governance<TurnoutTally<GovAction>>>(directed_account);
 
-      assert!(is_unique_proposal(&gov_state.tracker, &data), error::invalid_argument(EDUPLICATE_PROPOSAL));
+      assert!(is_unique_proposal(&gov_state.tracker, &proposal), error::invalid_argument(EDUPLICATE_PROPOSAL));
 
       // what's the maximum universe of valid votes.
       let max_votes_enrollment = get_enrollment(directed_account);
 
+      // TODO: governance action, should have different deadlines for Veto and Liquidate.
       if (epochs_duration < 7) {
         epochs_duration = 7;
       };
 
-      let deadline = reconfiguration::get_current_epoch() + epochs_duration; // 7 epochs is about 1 week
+      let deadline = reconfiguration::get_current_epoch() + epochs_duration;
       let max_extensions = 0; // infinite
 
       let t = turnout_tally::new_tally_struct(
-        data,
+        proposal,
         max_votes_enrollment,
         deadline,
         max_extensions

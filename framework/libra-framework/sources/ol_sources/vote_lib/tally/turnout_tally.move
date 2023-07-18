@@ -173,7 +173,7 @@
 
       assert!(!is_found, error::invalid_state(EALREADY_VOTED));
 
-      // if we are in a new epoch than the previous last voter, then store that epoch data.
+      // if we are in a new epoch than the previous last voter, then update that state (for purposes of extending competitive votes, if that option is set).
       let epoch_now = reconfiguration::get_current_epoch();
       if (epoch_now > ballot.last_epoch_voted) {
         ballot.last_epoch_approve = ballot.votes_approve;
@@ -341,7 +341,7 @@
             // multiple days may have passed since the provisional pass.
             ballot.completed = true;
             ballot.tally_pass = true;
-          }
+          };
         }
       };
     }
