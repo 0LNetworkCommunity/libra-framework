@@ -91,6 +91,19 @@ module ol_framework::gas_coin {
         coin::destroy_mint_cap(mint_cap);
     }
 
+
+    #[view]
+    /// get the gas coin supply. Helper which wraps coin::supply and extracts option type
+    // NOTE: there is casting between u128 and u64, but 0L has final supply below the u64.
+    public fun supply(): u64 {
+      let supply_opt = coin::supply<GasCoin>();
+      if (option::is_some(&supply_opt)) {
+        return (*option::borrow(&supply_opt) as u64)
+      };
+      0
+    }
+
+
     #[test_only]
     public fun restore_mint_cap(aptos_framework: &signer, mint_cap: MintCapability<GasCoin>) {
         system_addresses::assert_aptos_framework(aptos_framework);

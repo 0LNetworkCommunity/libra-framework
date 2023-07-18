@@ -422,7 +422,6 @@ module ol_framework::test_donor_directed {
       assert!(*vector::borrow(&addrs, 0) == @0x1000e, 7357006);
       assert!(*vector::borrow(&addrs, 1) == @0x1000d, 7357007);
 
-
       let eve_donation_pro_rata = vector::borrow(&refunds, 0);
       let superman_3 = 1; // rounding from fixed_point32
       assert!((*eve_donation_pro_rata + superman_3) == eve_donation, 7357008);
@@ -430,7 +429,6 @@ module ol_framework::test_donor_directed {
       let eve_donation_pro_rata = vector::borrow(&refunds, 1);
       let superman_3 = 1; // rounding from fixed_point32
       assert!((*eve_donation_pro_rata + superman_3) == 21, 7357009);
-
 
       let (_, program_balance_pre) = ol_account::balance(donor_directed_address);
       let (_, eve_balance_pre) = ol_account::balance(@0x1000e);
@@ -444,8 +442,6 @@ module ol_framework::test_donor_directed {
       assert!(program_balance == 0, 7357011);
 
       assert!(eve_balance == eve_balance_pre, 7357010);
-
     }
-
 }
 
