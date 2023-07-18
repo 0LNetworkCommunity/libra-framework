@@ -20,6 +20,8 @@ module aptos_framework::coin {
     friend ol_framework::gas_coin;
     friend ol_framework::ol_account;
     friend ol_framework::safe;
+    friend ol_framework::rewards;
+    friend ol_framework::donor_directed;
     friend ol_framework::pledge_accounts;
     friend aptos_framework::aptos_coin;
     friend aptos_framework::genesis;
@@ -391,7 +393,7 @@ module aptos_framework::coin {
     }
 
     /// Deposit the coin balance into the recipient's account and emit an event.
-    public fun deposit<CoinType>(account_addr: address, coin: Coin<CoinType>) acquires CoinStore {
+    public(friend) fun deposit<CoinType>(account_addr: address, coin: Coin<CoinType>) acquires CoinStore {
         assert!(
             is_account_registered<CoinType>(account_addr),
             error::not_found(ECOIN_STORE_NOT_PUBLISHED),

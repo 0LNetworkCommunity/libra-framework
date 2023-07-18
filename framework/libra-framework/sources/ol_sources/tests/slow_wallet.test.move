@@ -60,7 +60,7 @@ module ol_framework::test_slow_wallet {
     assert!(slow_wallet::is_slow(@0x123), 7357000);
     assert!(slow_wallet::unlocked_amount(@0x123) == 0, 735701);
     let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&root);
-    coin::deposit(@0x123, coin::mint(10000, &mint_cap));
+    ol_account::deposit_coins(@0x123, coin::mint(10000, &mint_cap));
 
     coin::destroy_burn_cap(burn_cap);
     coin::destroy_mint_cap(mint_cap);
@@ -85,7 +85,7 @@ module ol_framework::test_slow_wallet {
     assert!(slow_wallet::is_slow(@0x123), 7357000);
     assert!(slow_wallet::unlocked_amount(@0x123) == 0, 735701);
     let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&root);
-    coin::deposit(@0x123, coin::mint(10000, &mint_cap));
+    ol_account::deposit_coins(@0x123, coin::mint(10000, &mint_cap));
 
     coin::destroy_burn_cap(burn_cap);
     coin::destroy_mint_cap(mint_cap);

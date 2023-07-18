@@ -12,7 +12,7 @@ module ol_framework::test_multi_action {
   use aptos_framework::resource_account;
   // use ol_framework::slow_wallet;
   use aptos_framework::reconfiguration;
-  use aptos_framework::coin;
+  // use aptos_framework::coin;
 
   // use aptos_std::debug::print;
 
@@ -177,7 +177,7 @@ module ol_framework::test_multi_action {
       42,
     );
     ol_account::create_account(root, @0x1000d);
-    coin::deposit(@0x1000d, c);
+    ol_account::deposit_coins(@0x1000d, c);
     option::fill(&mut cap_opt, cap);
 
     let (_, balance) = ol_account::balance(@0x1000d);

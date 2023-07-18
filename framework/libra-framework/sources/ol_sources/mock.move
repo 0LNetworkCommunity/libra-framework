@@ -1,38 +1,23 @@
 // Some fixtures are complex and are repeatedly needed
 #[test_only]
 module ol_framework::mock {
-  #[test_only]
   use aptos_framework::stake;
-  #[test_only]
   use aptos_framework::reconfiguration;
-  #[test_only]
   use ol_framework::cases;
-  #[test_only]
   use ol_framework::vouch;
-  #[test_only]
   use std::vector;
-  #[test_only]
   use aptos_framework::genesis;
-  #[test_only]
   use aptos_framework::account;
-  #[test_only]
   use ol_framework::slow_wallet;
-  #[test_only]
   use ol_framework::proof_of_fee;
-  #[test_only]
   use ol_framework::validator_universe;
-  #[test_only]
   use aptos_framework::timestamp;
-  #[test_only]
   use aptos_framework::system_addresses;
-  #[test_only]
   use ol_framework::epoch_boundary;
-  #[test_only]
   use aptos_framework::coin;
-  #[test_only]
   use ol_framework::gas_coin::{Self, GasCoin};
-  #[test_only]
   use aptos_framework::transaction_fee;
+  use ol_framework::ol_account;
   // #[test_only]
   // use aptos_std::debug::print;
 
@@ -158,7 +143,7 @@ module ol_framework::mock {
       while (i < vector::length(&vals)) {
         let addr = vector::borrow(&vals, i);
         let c = coin::mint(amount, &mint_cap);
-        coin::deposit<GasCoin>(*addr, c);
+        ol_account::deposit_coins<GasCoin>(*addr, c);
         i = i + 1;
       };
 
