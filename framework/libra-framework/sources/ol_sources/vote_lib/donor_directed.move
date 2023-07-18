@@ -43,6 +43,8 @@ module ol_framework::donor_directed {
     use ol_framework::ballot;
     use ol_framework::cumulative_deposits;
     use ol_framework::transaction_fee;
+    use ol_framework::burn;
+
     use aptos_framework::coin;
     // use ol_framework::transaction_fee;
     use aptos_std::debug::print;
@@ -579,13 +581,24 @@ module ol_framework::donor_directed {
               let addr = vector::borrow(&pro_rata_addresses, k);
               let amount = vector::borrow(&pro_rata_amounts, k);
               print(amount);
-              ol_account::vm_transfer(vm, multisig_address, *addr, *amount);
+              if (liquidates_to_dd_accounts(multisig_address)) {
+                let coin_opt = coin::vm_withdraw<GasCoin>(vm, multisig_address, *amount);
+                if (option::is_some(&coin_opt)) {
+                  let c = option::extract(&mut coin_opt);
 
+                  burn::match_and_recycle(vm, &mut c);
+                  option::fill(&mut coin_opt, c);
+                };
+                option::destroy_none(coin_opt);
+
+              } else {
+                ol_account::vm_transfer(vm, multisig_address, *addr, *amount);
+              };
               k = k + 1;
           };
         };
 
-        // there may be some funds left from rounding issues
+        // there may be some superman 3 funds left from rounding issues
         let (_, balance) = ol_account::balance(multisig_address);
         let coin_opt = coin::vm_withdraw<GasCoin>(vm, multisig_address, balance);
         if (option::is_some(&coin_opt)) {

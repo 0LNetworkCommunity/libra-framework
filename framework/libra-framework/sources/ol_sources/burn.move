@@ -15,24 +15,27 @@ module ol_framework::burn {
   use std::fixed_point32;
   use std::signer;
   use std::vector;
-  use ol_framework::donor_directed;
+  // use ol_framework::donor_directed;
   use ol_framework::ol_account;
   use ol_framework::system_addresses;
   use ol_framework::gas_coin::GasCoin;
   use ol_framework::transaction_fee;
   use ol_framework::coin::{Self, Coin};
-  use ol_framework::cumulative_deposits;
+  use ol_framework::match_index;
+  // use ol_framework::cumulative_deposits;
   use ol_framework::fee_maker;
   // use ol_framework::Debug::print;
 
-  struct BurnPreference has key {
+  // the users preferences for system burns
+  struct UserBurnPreference has key {
     send_community: bool
   }
 
-  struct BurnState has key {
-    addr: vector<address>,
-    deposits: vector<u64>,
-    ratio: vector<fixed_point32::FixedPoint32>,
+  /// The Match index he accounts that have opted-in. Also keeps the lifetime_burned for convenience.
+  struct BurnMatchState has key {
+    // addr: vector<address>,
+    // deposits: vector<u64>,
+    // ratio: vector<fixed_point32::FixedPoint32>,
     lifetime_burned: u64,
     lifetime_recycled: u64,
   }
@@ -47,7 +50,7 @@ module ol_framework::burn {
   public fun epoch_burn_fees(
       vm: &signer,
       total_fees_collected: u64,
-  )  acquires BurnPreference, BurnState {
+  )  acquires UserBurnPreference, BurnMatchState {
       system_addresses::assert_ol(vm);
 
       // extract fees
@@ -97,10 +100,10 @@ module ol_framework::burn {
   public fun initialize(vm: &signer) {
     system_addresses::assert_vm(vm);
 
-    move_to<BurnState>(vm, BurnState {
-        addr: vector::empty(),
-        deposits: vector::empty(),
-        ratio: vector::empty(),
+    move_to<BurnMatchState>(vm, BurnMatchState {
+        // addr: vector::empty(),
+        // deposits: vector::empty(),
+        // ratio: vector::empty(),
         lifetime_burned: 0,
         lifetime_recycled: 0,
       })
@@ -108,9 +111,9 @@ module ol_framework::burn {
 
   /// Migration script for hard forks
   public fun vm_migration(vm: &signer,
-    addr_list: vector<address>,
-    deposit_vec: vector<u64>,
-    ratios_vec: vector<fixed_point32::FixedPoint32>,
+    // addr_list: vector<address>,
+    // deposit_vec: vector<u64>,
+    // ratios_vec: vector<fixed_point32::FixedPoint32>,
     lifetime_burned: u64, // these get reset on final supply V6. Future upgrades need to decide what to do with this
     lifetime_recycled: u64,
   ) {
@@ -118,106 +121,87 @@ module ol_framework::burn {
     // TODO: assert genesis when timesetamp is working again.
     system_addresses::assert_vm(vm);
 
-    move_to<BurnState>(vm, BurnState {
-        addr: addr_list,
-        deposits: deposit_vec,
-        ratio: ratios_vec,
+    move_to<BurnMatchState>(vm, BurnMatchState {
+        // addr: addr_list,
+        // deposits: deposit_vec,
+        // ratio: ratios_vec,
         lifetime_burned,
         lifetime_recycled,
       })
   }
 
-  /// At each epoch boundary, we recalculate the index of the Match recipients.
-  public fun reset_ratios(vm: &signer) acquires BurnState {
-    system_addresses::assert_ol(vm);
-    let list = donor_directed::get_root_registry();
+  // /// an entity which has a donor directed account can opt-into being a matching recipient. Check are conducted here.
+  // // can only be called by community_wallet
+  // public(friend) fun opt_in(sig: &signer) {
+  //   let addr = signer::address_of(sig);
+  //   if (!exists<BurnMatchState>(vm)) return;
 
-    let len = vector::length(&list);
-    let i = 0;
-    let global_deposits = 0;
-    let deposit_vec = vector::empty<u64>();
+  //   let burn_state = borrow_global_mut<BurnMatchState>(@ol_framework);
+  //   vector::push_back()
 
-    while (i < len) {
 
-      let addr = *vector::borrow(&list, i);
-      let cumu = cumulative_deposits::get_index_cumu_deposits(addr);
+  // }
 
-      global_deposits = global_deposits + cumu;
-      vector::push_back(&mut deposit_vec, cumu);
-      i = i + 1;
-    };
+  // /// At each epoch boundary, we recalculate the index of the Match recipients.
+  // public fun reset_ratios(vm: &signer) acquires BurnMatchState {
+  //   system_addresses::assert_ol(vm);
+  //   // don't abort
+  //   if (!exists<BurnMatchState>(vm)) return;
 
-    if (global_deposits == 0) return;
+  //   // it it doesn't qualify don't let it bias the ratios
 
-    let ratios_vec = vector::empty<fixed_point32::FixedPoint32>();
-    let k = 0;
-    while (k < len) {
-      let cumu = *vector::borrow(&deposit_vec, k);
+  //   let burn_state = borrow_global_mut<BurnMatchState>(@ol_framework);
 
-      let ratio = fixed_point32::create_from_rational(cumu, global_deposits);
+  //   let len = vector::length(&burn_state.addr);
+  //   let i = 0;
+  //   let global_deposits = 0;
+  //   let deposit_vec = vector::empty<u64>();
 
-      vector::push_back(&mut ratios_vec, ratio);
-      k = k + 1;
-    };
+  //   while (i < len) {
 
-    if (exists<BurnState>(@ol_framework)) {
-      let d = borrow_global_mut<BurnState>(@ol_framework);
-      d.addr = list;
-      d.deposits = deposit_vec;
-      d.ratio = ratios_vec;
-    } else { // hot migration
-      move_to<BurnState>(vm, BurnState {
-        addr: list,
-        deposits: deposit_vec,
-        ratio: ratios_vec,
-        lifetime_burned: 0,
-        lifetime_recycled: 0,
-      })
-    }
-  }
+  //     let addr = *vector::borrow(&list, i);
+  //     let cumu = cumulative_deposits::get_index_cumu_deposits(addr);
 
-  fun get_address_list(): vector<address> acquires BurnState {
-    if (!exists<BurnState>(@ol_framework))
-      return vector::empty<address>();
+  //     global_deposits = global_deposits + cumu;
+  //     vector::push_back(&mut deposit_vec, cumu);
+  //     i = i + 1;
+  //   };
 
-    *&borrow_global<BurnState>(@ol_framework).addr
-  }
+  //   if (global_deposits == 0) return;
 
-  /// calculate the ratio which the matching wallet should receive per the recently weighted historical donations.
-  fun get_payee_value(payee: address, value: u64): u64 acquires BurnState {
-    if (!exists<BurnState>(@ol_framework))
-      return 0;
+  //   let ratios_vec = vector::empty<fixed_point32::FixedPoint32>();
+  //   let k = 0;
+  //   while (k < len) {
+  //     let cumu = *vector::borrow(&deposit_vec, k);
 
-    let d = borrow_global<BurnState>(@ol_framework);
-    let _contains = vector::contains(&d.addr, &payee);
-    let (is_found, i) = vector::index_of(&d.addr, &payee);
-    if (is_found) {
-      let len = vector::length(&d.ratio);
-      if (i + 1 > len) return 0;
-      let ratio = *vector::borrow(&d.ratio, i);
-      if (fixed_point32::is_zero(copy ratio)) return 0;
-      return fixed_point32::multiply_u64(value, ratio)
-    };
+  //     let ratio = fixed_point32::create_from_rational(cumu, global_deposits);
 
-    0
-  }
+  //     vector::push_back(&mut ratios_vec, ratio);
+  //     k = k + 1;
+  //   };
+
+  //   burn_state.deposits = deposit_vec;
+  //   burn_state.ratio = ratios_vec;
+  // }
+
+
 
   fun burn_with_user_preference(
     vm: &signer, payer: address, user_share: Coin<GasCoin>
-  ) acquires BurnState, BurnPreference {
+  ) acquires BurnMatchState, UserBurnPreference {
     system_addresses::assert_vm(vm);
     // print(&5050);
-    if (exists<BurnPreference>(payer)) {
+    if (exists<UserBurnPreference>(payer)) {
 
-      if (borrow_global<BurnPreference>(payer).send_community) {
+      if (borrow_global<UserBurnPreference>(payer).send_community) {
         // print(&5051);
-        recycle(vm, payer, &mut user_share);
+        match_and_recycle(vm, &mut user_share);
 
       }
     };
 
     // Superman 3
-    let state = borrow_global_mut<BurnState>(@ol_framework);
+    let state = borrow_global_mut<BurnMatchState>(@ol_framework);
     // print(&state.lifetime_burned);
     state.lifetime_burned = state.lifetime_burned + coin::value(&user_share);
     // print(&state.lifetime_burned);
@@ -225,8 +209,29 @@ module ol_framework::burn {
   }
 
 
-  fun recycle(vm: &signer, payer: address, coin: &mut Coin<GasCoin>) acquires BurnState {
-    let list = { get_address_list() }; // NOTE devs, the added scope drops the borrow which is used below.
+  /// the root account can take a user coin, and match with accounts in index.
+  // Note, this leave NO REMAINDER, and burns any rounding.
+  // TODO: When the coin is sent, an attribution is also made to the payer.
+  public fun match_and_recycle(vm: &signer, coin: &mut Coin<GasCoin>) acquires BurnMatchState {
+
+    match_impl(vm, coin);
+    // if there is anything remaining it's a superman 3 issue
+    // so we send it back to the transaction fee account
+    // makes it easier to track since we know no burns should be happening.
+    // which is what would happen if the coin didn't get emptied here
+    let remainder_amount = coin::value(coin);
+    if (remainder_amount > 0) {
+      let last_coin = coin::extract(coin, remainder_amount);
+      // use pay_fee which doesn't track the sender, so we're not double counting the receipts, even though it's a small amount.
+      transaction_fee::pay_fee(vm, last_coin);
+    };
+  }
+
+    /// the root account can take a user coin, and match with accounts in index.
+  // TODO: When the coin is sent, an attribution is also made to the payer.
+  fun match_impl(vm: &signer, coin: &mut Coin<GasCoin>) acquires BurnMatchState {
+    system_addresses::assert_ol(vm);
+    let list = { match_index::get_address_list() }; // NOTE devs, the added scope drops the borrow which is used below.
     let len = vector::length<address>(&list);
     let total_coin_value_to_recycle = coin::value(coin);
 
@@ -238,59 +243,40 @@ module ol_framework::burn {
 
       let payee = *vector::borrow<address>(&list, i);
       // print(&payee);
-      let amount_to_payee = get_payee_value(payee, total_coin_value_to_recycle);
+      let amount_to_payee = match_index::get_payee_share(payee, total_coin_value_to_recycle);
       // let to_deposit = coin::withdraw(coin, amount_to_payee);
-
-      ol_account::vm_transfer(
-          vm,
-          payer,
+      let coin_split = coin::extract(coin, amount_to_payee);
+      ol_account::deposit_coins(
           payee,
-          amount_to_payee,
+          coin_split,
       );
       value_sent = value_sent + amount_to_payee;
       i = i + 1;
     };
 
-    // if there is anything remaining it's a superman 3 issue
-    // so we send it back to the transaction fee account
-    // makes it easier to track since we know no burns should be happening.
-    // which is what would happen if the coin didn't get emptied here
-    let remainder_amount = coin::value(coin);
-    if (remainder_amount > 0) {
-      let last_coin = coin::extract(coin, remainder_amount);
-      // use pay_fee which doesn't track the sender, so we're not double counting the receipts, even though it's a small amount.
-      transaction_fee::pay_fee(vm, last_coin);
-    };
-
     // update the root state tracker
-    let state = borrow_global_mut<BurnState>(@ol_framework);
+    let state = borrow_global_mut<BurnMatchState>(@ol_framework);
     // print(&state.lifetime_recycled);
     state.lifetime_recycled = state.lifetime_recycled + value_sent;
     // print(&state.lifetime_recycled);
   }
 
-  public fun set_send_community(sender: &signer, community: bool) acquires BurnPreference {
+  public fun set_send_community(sender: &signer, community: bool) acquires UserBurnPreference {
     let addr = signer::address_of(sender);
-    if (exists<BurnPreference>(addr)) {
-      let b = borrow_global_mut<BurnPreference>(addr);
+    if (exists<UserBurnPreference>(addr)) {
+      let b = borrow_global_mut<UserBurnPreference>(addr);
       b.send_community = community;
     } else {
-      move_to<BurnPreference>(sender, BurnPreference {
+      move_to<UserBurnPreference>(sender, UserBurnPreference {
         send_community: community
       });
     }
   }
 
   //////// GETTERS ////////
-  public fun get_ratios():
-    (vector<address>, vector<u64>, vector<fixed_point32::FixedPoint32>) acquires BurnState
-  {
-    let d = borrow_global<BurnState>(@ol_framework);
-    (*&d.addr, *&d.deposits, *&d.ratio)
-  }
 
-  public fun get_lifetime_tracker(): (u64, u64) acquires BurnState {
-    let state = borrow_global<BurnState>(@ol_framework);
+  public fun get_lifetime_tracker(): (u64, u64) acquires BurnMatchState {
+    let state = borrow_global<BurnMatchState>(@ol_framework);
     (state.lifetime_burned, state.lifetime_recycled)
   }
 
