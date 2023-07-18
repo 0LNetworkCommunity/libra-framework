@@ -47,7 +47,7 @@ module ol_framework::donor_directed {
 
     use aptos_framework::coin;
     // use ol_framework::transaction_fee;
-    use aptos_std::debug::print;
+    // use aptos_std::debug::print;
 
     /// Not initialized as a donor directed account.
     const ENOT_INIT_DONOR_DIRECTED: u64 = 231001;
@@ -580,7 +580,6 @@ module ol_framework::donor_directed {
           while (k < len) {
               let addr = vector::borrow(&pro_rata_addresses, k);
               let amount = vector::borrow(&pro_rata_amounts, k);
-              print(amount);
               if (liquidates_to_dd_accounts(multisig_address)) {
                 let coin_opt = coin::vm_withdraw<GasCoin>(vm, multisig_address, *amount);
                 if (option::is_some(&coin_opt)) {

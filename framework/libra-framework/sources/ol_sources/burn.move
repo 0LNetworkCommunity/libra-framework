@@ -8,21 +8,19 @@
 /// It doesn't require any permission to be a recipient of matching funds, it's open to all (including attackers). However, this mechanism uses a market to establish which of the opt-in accounts will receive funds. And this is a simple weighting algorithm which more heavily weights toward recent donations. Evidently there are attacks possible,
 
 // It will be costly and unpredictable (but not impossible) for attacker to close the loop, on Matching funds to themselves. It's evident that an attacker can get return on investment by re-weighting the Match Index to favor a recipient controlled by them. This is especially the case if there is low participation in the market (i.e. very few people are donating out of band).
-// Mitigations: There are conditions to qualify for matching. Matching accounts must be "resource accounts" with a Donor Directed multi-sig enabled. See more under donor_directed.move, but in short there is a multisig to authorize transactions, and donors to that account can vote to delay, freeze, and ultimately liquidate the donor directed account. Since the attacker can clearly own all the multisig authorities on the Donor Directed account, there is another condition which is checked for: the multisig signers cannot be related by Ancestry, meaning the attacker needs to collect conspirators from across the network graph. Lastly, any system burns (e.g. proof-of-fee) from other honest users to that account gives them governance and possibly legal claims against that wallet, there is afterall an off-chain world.
+// Mitigations: There are conditions to qualify for matching. Matching accounts must be Community Wallets, which mostly means they are a Donor Directed with multi-sig enabled. See more under donor_directed.move, but in short there is a multisig to authorize transactions, and donors to that account can vote to delay, freeze, and ultimately liquidate the donor directed account. Since the attacker can clearly own all the multisig authorities on the Donor Directed account, there is another condition which is checked for: the multisig signers cannot be related by Ancestry, meaning the attacker needs to collect conspirators from across the network graph. Lastly, any system burns (e.g. proof-of-fee) from other honest users to that account gives them governance and possibly legal claims against that wallet, there is afterall an off-chain world.
 // The expectation is that there is no additional overhead to honest actors, but considerable uncertainty and cost to abusers. Probabilistically there will be will some attacks or anti-social behavior. However, not all is lost: abusive behavior requires playing many other games honestly. The expectation of this experiment is that abuse is de-minimis compared to the total coin supply. As the saying goes: You can only prevent all theft if you also prevent all sales.
 
 module ol_framework::burn {
   use std::fixed_point32;
   use std::signer;
   use std::vector;
-  // use ol_framework::donor_directed;
   use ol_framework::ol_account;
   use ol_framework::system_addresses;
   use ol_framework::gas_coin::GasCoin;
   use ol_framework::transaction_fee;
   use ol_framework::coin::{Self, Coin};
   use ol_framework::match_index;
-  // use ol_framework::cumulative_deposits;
   use ol_framework::fee_maker;
   // use ol_framework::Debug::print;
 
@@ -33,9 +31,6 @@ module ol_framework::burn {
 
   /// The Match index he accounts that have opted-in. Also keeps the lifetime_burned for convenience.
   struct BurnMatchState has key {
-    // addr: vector<address>,
-    // deposits: vector<u64>,
-    // ratio: vector<fixed_point32::FixedPoint32>,
     lifetime_burned: u64,
     lifetime_recycled: u64,
   }
@@ -61,10 +56,8 @@ module ol_framework::burn {
         return
       };
 
-      // print(&coin::value(&coins));
       // get the list of fee makers
       let fee_makers = fee_maker::get_fee_makers();
-      // print(&fee_makers);
 
       let len = vector::length(&fee_makers);
 
@@ -74,14 +67,11 @@ module ol_framework::burn {
           let user = vector::borrow(&fee_makers, i);
           let amount = fee_maker::get_epoch_fees_made(*user);
           let share = fixed_point32::create_from_rational(amount, total_fees_collected);
-          // print(&share);
 
           let to_withdraw = fixed_point32::multiply_u64(coin::value(&coins), share);
-          // print(&to_withdraw);
 
           if (to_withdraw > 0 && to_withdraw <= coin::value(&coins)) {
             let user_share = coin::extract(&mut coins, to_withdraw);
-            // print(&user_share);
 
             burn_with_user_preference(vm, *user, user_share);
           };
@@ -101,9 +91,6 @@ module ol_framework::burn {
     system_addresses::assert_vm(vm);
 
     move_to<BurnMatchState>(vm, BurnMatchState {
-        // addr: vector::empty(),
-        // deposits: vector::empty(),
-        // ratio: vector::empty(),
         lifetime_burned: 0,
         lifetime_recycled: 0,
       })
@@ -111,9 +98,6 @@ module ol_framework::burn {
 
   /// Migration script for hard forks
   public fun vm_migration(vm: &signer,
-    // addr_list: vector<address>,
-    // deposit_vec: vector<u64>,
-    // ratios_vec: vector<fixed_point32::FixedPoint32>,
     lifetime_burned: u64, // these get reset on final supply V6. Future upgrades need to decide what to do with this
     lifetime_recycled: u64,
   ) {
@@ -122,79 +106,19 @@ module ol_framework::burn {
     system_addresses::assert_vm(vm);
 
     move_to<BurnMatchState>(vm, BurnMatchState {
-        // addr: addr_list,
-        // deposits: deposit_vec,
-        // ratio: ratios_vec,
         lifetime_burned,
         lifetime_recycled,
       })
   }
-
-  // /// an entity which has a donor directed account can opt-into being a matching recipient. Check are conducted here.
-  // // can only be called by community_wallet
-  // public(friend) fun opt_in(sig: &signer) {
-  //   let addr = signer::address_of(sig);
-  //   if (!exists<BurnMatchState>(vm)) return;
-
-  //   let burn_state = borrow_global_mut<BurnMatchState>(@ol_framework);
-  //   vector::push_back()
-
-
-  // }
-
-  // /// At each epoch boundary, we recalculate the index of the Match recipients.
-  // public fun reset_ratios(vm: &signer) acquires BurnMatchState {
-  //   system_addresses::assert_ol(vm);
-  //   // don't abort
-  //   if (!exists<BurnMatchState>(vm)) return;
-
-  //   // it it doesn't qualify don't let it bias the ratios
-
-  //   let burn_state = borrow_global_mut<BurnMatchState>(@ol_framework);
-
-  //   let len = vector::length(&burn_state.addr);
-  //   let i = 0;
-  //   let global_deposits = 0;
-  //   let deposit_vec = vector::empty<u64>();
-
-  //   while (i < len) {
-
-  //     let addr = *vector::borrow(&list, i);
-  //     let cumu = cumulative_deposits::get_index_cumu_deposits(addr);
-
-  //     global_deposits = global_deposits + cumu;
-  //     vector::push_back(&mut deposit_vec, cumu);
-  //     i = i + 1;
-  //   };
-
-  //   if (global_deposits == 0) return;
-
-  //   let ratios_vec = vector::empty<fixed_point32::FixedPoint32>();
-  //   let k = 0;
-  //   while (k < len) {
-  //     let cumu = *vector::borrow(&deposit_vec, k);
-
-  //     let ratio = fixed_point32::create_from_rational(cumu, global_deposits);
-
-  //     vector::push_back(&mut ratios_vec, ratio);
-  //     k = k + 1;
-  //   };
-
-  //   burn_state.deposits = deposit_vec;
-  //   burn_state.ratio = ratios_vec;
-  // }
-
 
 
   fun burn_with_user_preference(
     vm: &signer, payer: address, user_share: Coin<GasCoin>
   ) acquires BurnMatchState, UserBurnPreference {
     system_addresses::assert_vm(vm);
-    // print(&5050);
     if (exists<UserBurnPreference>(payer)) {
 
       if (borrow_global<UserBurnPreference>(payer).send_community) {
-        // print(&5051);
         match_and_recycle(vm, &mut user_share);
 
       }
@@ -202,9 +126,7 @@ module ol_framework::burn {
 
     // Superman 3
     let state = borrow_global_mut<BurnMatchState>(@ol_framework);
-    // print(&state.lifetime_burned);
     state.lifetime_burned = state.lifetime_burned + coin::value(&user_share);
-    // print(&state.lifetime_burned);
     coin::user_burn(user_share);
   }
 
@@ -242,9 +164,7 @@ module ol_framework::burn {
     while (i < len) {
 
       let payee = *vector::borrow<address>(&list, i);
-      // print(&payee);
       let amount_to_payee = match_index::get_payee_share(payee, total_coin_value_to_recycle);
-      // let to_deposit = coin::withdraw(coin, amount_to_payee);
       let coin_split = coin::extract(coin, amount_to_payee);
       ol_account::deposit_coins(
           payee,
@@ -256,9 +176,7 @@ module ol_framework::burn {
 
     // update the root state tracker
     let state = borrow_global_mut<BurnMatchState>(@ol_framework);
-    // print(&state.lifetime_recycled);
     state.lifetime_recycled = state.lifetime_recycled + value_sent;
-    // print(&state.lifetime_recycled);
   }
 
   public fun set_send_community(sender: &signer, community: bool) acquires UserBurnPreference {

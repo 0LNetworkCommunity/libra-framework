@@ -12,7 +12,7 @@ module ol_framework::test_donor_directed {
   use std::vector;
   use std::signer;
 
-  use aptos_std::debug::print;
+  // use aptos_std::debug::print;
 
     #[test(root = @ol_framework, alice = @0x1000a)]
     fun dd_init(root: &signer, alice: &signer) {
@@ -342,7 +342,6 @@ module ol_framework::test_donor_directed {
 
       let (addrs, refunds) = donor_directed::get_pro_rata(donor_directed_address);
 
-      print(&addrs);
       assert!(*vector::borrow(&addrs, 0) == @0x1000e, 7357006);
       assert!(*vector::borrow(&addrs, 1) == @0x1000d, 7357007);
 
@@ -358,8 +357,6 @@ module ol_framework::test_donor_directed {
 
       let (_, program_balance_pre) = ol_account::balance(donor_directed_address);
       let (_, eve_balance_pre) = ol_account::balance(@0x1000e);
-
-      // print(&program_balance);
 
       donor_directed::test_helper_vm_liquidate(root);
 
@@ -422,7 +419,6 @@ module ol_framework::test_donor_directed {
 
       let (addrs, refunds) = donor_directed::get_pro_rata(donor_directed_address);
 
-      print(&addrs);
       assert!(*vector::borrow(&addrs, 0) == @0x1000e, 7357006);
       assert!(*vector::borrow(&addrs, 1) == @0x1000d, 7357007);
 
@@ -438,8 +434,6 @@ module ol_framework::test_donor_directed {
 
       let (_, program_balance_pre) = ol_account::balance(donor_directed_address);
       let (_, eve_balance_pre) = ol_account::balance(@0x1000e);
-
-      // print(&program_balance);
 
       donor_directed::test_helper_vm_liquidate(root);
 
