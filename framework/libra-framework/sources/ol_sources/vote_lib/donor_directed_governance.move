@@ -111,7 +111,6 @@ module ol_framework::donor_directed_governance {
   public(friend) fun vote_liquidation(donor: &signer, multisig_address: address): Option<bool> acquires Governance{
     assert_authorized(donor, multisig_address);
     let state = borrow_global_mut<Governance<TurnoutTally<Liquidate>>>(multisig_address);
-
     // for liquidation there is only ever one proposal, which never expires
     // so always taket the first one from pending.
     let pending_list = ballot::get_list_ballots_by_enum_mut(&mut state.tracker, ballot::get_pending_enum());
@@ -177,7 +176,7 @@ module ol_framework::donor_directed_governance {
       cap: &account::GUIDCapability,
       epochs_duration: u64
     ): guid::ID acquires Governance {
-      let data = Liquidate { };
+      let data = Liquidate {};
       propose_gov<Liquidate>(cap, data, epochs_duration)
     }
 
@@ -192,7 +191,7 @@ module ol_framework::donor_directed_governance {
       // what's the maximum universe of valid votes.
       let max_votes_enrollment = get_enrollment(directed_account);
 
-      // TODO: governance action, should have different deadlines for Veto and Liquidate.
+      // enforce a minimum deadline. Liquidation deadlines are one year, Veto should be minimum 7.
       if (epochs_duration < 7) {
         epochs_duration = 7;
       };
@@ -277,6 +276,14 @@ module ol_framework::donor_directed_governance {
       let approval_pct = turnout_tally::get_current_ballot_approval(tally);
       let current_threshold = turnout_tally::get_current_threshold_required(tally);
       (approval_pct, current_threshold)
+    }
+
+    #[view]
+    public fun is_liquidation_propsed(directed_account: address): bool acquires Governance {
+      let state = borrow_global_mut<Governance<TurnoutTally<Liquidate>>>(directed_account);
+      let list_pending = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
+
+      vector::length(list_pending) > 0
     }
 
 }

@@ -19,6 +19,8 @@ module ol_framework::receipts {
   use aptos_framework::system_addresses;
   use aptos_framework::timestamp;
   use std::fixed_point32;
+
+  // use aptos_std::debug::print;
   // use ol_framework::epoch_helper;
 
     struct UserReceipts has key {
@@ -146,6 +148,11 @@ module ol_framework::receipts {
       let time = vector::borrow<u64>(&receipt.last_payment_timestamp, i);
       let value = vector::borrow<u64>(&receipt.last_payment_value, i);
       let cumu = vector::borrow<u64>(&receipt.cumulative, i);
+
+            // print(time);
+            // print(value);
+            // print(cumu);
+
 
       (*time, *value, *cumu)
     }

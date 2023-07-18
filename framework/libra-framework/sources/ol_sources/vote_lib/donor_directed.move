@@ -31,10 +31,11 @@ module ol_framework::donor_directed {
     use std::signer;
     use std::error;
     use std::guid;
+    use std::fixed_point32;
     use aptos_framework::reconfiguration;
     use std::option::{Self, Option};
     use ol_framework::ol_account;
-    // use ol_framework::gas_coin::GasCoin;
+    use ol_framework::receipts;
     use ol_framework::multi_action;
     use ol_framework::account::{Self, WithdrawCapability};
     use ol_framework::donor_directed_governance;
@@ -526,21 +527,21 @@ module ol_framework::donor_directed {
       donor_directed_governance::assert_authorized(donor, multisig_address);
       let res = donor_directed_governance::vote_liquidation(donor, multisig_address);
 
-      if (option::is_some(&res)) {
-        if (*option::borrow(&res)) {
-          // The VM will call this function to liquidate the wallet.
-          // the donors cannot do this because they cant get the withdrawal capability
-          // from the multisig account.
+      if (option::is_some(&res) && *option::borrow(&res)) {
+        // The VM will call this function to liquidate the wallet.
+        // the donors cannot do this because they cant get the withdrawal capability
+        // from the multisig account.
 
-          // first we freeze it so nothing can happen in the interim.
-          let f = borrow_global_mut<Freeze>(multisig_address);
-          f.is_frozen = true;
-          let f = borrow_global_mut<Registry>(@ol_framework);
-          vector::push_back(&mut f.liquidation_queue, multisig_address);
-      }
+        // first we freeze it so nothing can happen in the interim.
+        let f = borrow_global_mut<Freeze>(multisig_address);
+        f.is_frozen = true;
+        let f = borrow_global_mut<Registry>(@ol_framework);
+        vector::push_back(&mut f.liquidation_queue, multisig_address);
     }
   }
 
+  #[view]
+  // list of accounts that are pending liquidation after a successful vote to liquidate
   public fun get_liquidation_queue(): vector<address> acquires Registry{
     let f = borrow_global<Registry>(@ol_framework);
     *&f.liquidation_queue
@@ -591,30 +592,33 @@ module ol_framework::donor_directed {
   //     }
   //  }
 
-  //   /// get the proportion of donoations of all donors to account.
-  //  public fun get_pro_rata(multisig_address: address): (vector<address>, vector<u64>) {
-  //   // get total fees
-  //   let balance = account::get_cumulative_deposits(multisig_address);
-  //   let donors = account::get_depositors(multisig_address);
-  //   let pro_rata_addresses = vector::empty<address>();
-  //   let pro_rata_amounts = vector::empty<u64>();
+    /// get the proportion of donoations of all donors to account.
+   public fun get_pro_rata(multisig_address: address): (vector<address>, vector<u64>) {
+    // get total fees
+    let (_, current_balance) = ol_account::balance(multisig_address);
+    let all_time_donations = cumulative_deposits::get_cumulative_deposits(multisig_address);
+    let donors = cumulative_deposits::get_depositors(multisig_address);
+    let pro_rata_addresses = vector::empty<address>();
+    let pro_rata_amounts = vector::empty<u64>();
 
-  //   let i = 0;
-  //   let len = vector::length(&donors);
-  //   while (i < len) {
-  //     let donor = vector::borrow(&donors, i);
-  //     let (_, _, cumu)  = Receipts::read_receipt(multisig_address, *donor);
+    let i = 0;
+    let len = vector::length(&donors);
+    while (i < len) {
+      let donor = vector::borrow(&donors, i);
+      let (_, _, my_total_donations) = receipts::read_receipt(*donor, multisig_address);
 
-  //     let ratio = FixedPoint32::create_from_rational(cumu, balance);
-  //     let pro_rata = FixedPoint32::multiply_u64(balance, ratios);
+      // proportionally how much has this donor contributed to the all time cumulative donations.
+      let ratio = fixed_point32::create_from_rational(my_total_donations, all_time_donations);
+      // of the current remaining balance, how much would be the share attributed to that donor.
+      let pro_rata = fixed_point32::multiply_u64(current_balance, ratio);
 
-  //     vector::push_back(&mut pro_rata_addresses, *donor);
-  //     vector::push_back(&mut pro_rata_amounts, pro_rata);
-  //     i = i + 1;
-  //   };
+      vector::push_back(&mut pro_rata_addresses, *donor);
+      vector::push_back(&mut pro_rata_amounts, pro_rata);
+      i = i + 1;
+    };
 
-  //     (pro_rata_addresses, pro_rata_amounts)
-  //  }
+      (pro_rata_addresses, pro_rata_amounts)
+   }
 
     //////// GETTERS ////////
     public fun get_tx_params(t: &TimedTransfer): (address, u64, vector<u8>, u64) {
@@ -739,11 +743,11 @@ module ol_framework::donor_directed {
       veto_handler(donor, &veto_uid, &tx_uid);
     }
 
-    public entry fun propose_liquidate_tx(donor: signer, multisig_address: address)  acquires TxSchedule {
-      propose_liquidation(&donor, multisig_address);
+    public entry fun propose_liquidate_tx(donor: &signer, multisig_address: address)  acquires TxSchedule {
+      propose_liquidation(donor, multisig_address);
     }
 
-    public entry fun vote_liquidation_tx(donor: signer, multisig_address: address) acquires Freeze, Registry {
-      liquidation_handler(&donor, multisig_address);
+    public entry fun vote_liquidation_tx(donor: &signer, multisig_address: address) acquires Freeze, Registry {
+      liquidation_handler(donor, multisig_address);
     }
 }
