@@ -45,7 +45,7 @@ module ol_framework::donor_directed {
     use ol_framework::transaction_fee;
     use aptos_framework::coin;
     // use ol_framework::transaction_fee;
-    // use aptos_std::debug::print;
+    use aptos_std::debug::print;
 
     /// Not initialized as a donor directed account.
     const ENOT_INIT_DONOR_DIRECTED: u64 = 231001;
@@ -311,7 +311,7 @@ module ol_framework::donor_directed {
       epoch: u64,
     ) acquires Registry, TxSchedule, Freeze {
       // while we are here let's liquidate any expired accounts.
-      // vm_liquidate(vm);
+      vm_liquidate(vm);
 
       let list = get_root_registry();
 
@@ -553,7 +553,7 @@ module ol_framework::donor_directed {
   /// The VM will call this function to liquidate all donor directed
   /// wallets in the queue.
    public(friend) fun vm_liquidate(vm: &signer) acquires Freeze, Registry {
-      system_addresses::assert_vm(vm);
+      system_addresses::assert_ol(vm);
       let f = borrow_global_mut<Registry>(@ol_framework);
       let len = vector::length(&f.liquidation_queue);
 
@@ -568,36 +568,39 @@ module ol_framework::donor_directed {
         // so it can be split up by the burn recycle algorithm.
         // and trying to call Burn, here will create a circular dependency.
 
-        if (liquidates_to_escrow(multisig_address)) {
-          let (_, balance) = ol_account::balance(multisig_address);
-          let coin_opt = coin::vm_withdraw<GasCoin>(vm, multisig_address, balance);
-          if (option::is_some(&coin_opt)) {
-            let c = option::extract(&mut coin_opt);
-            transaction_fee::pay_fee(vm, c);
+
+        if (!liquidates_to_escrow(multisig_address)) {
+          // otherwise the default case is that donors get their funds back.
+          let (pro_rata_addresses, pro_rata_amounts) = get_pro_rata(multisig_address);
+          let k = 0;
+          let len = vector::length(&pro_rata_addresses);
+          // then we split the funds and send it back to the user's wallet
+          while (k < len) {
+              let addr = vector::borrow(&pro_rata_addresses, k);
+              let amount = vector::borrow(&pro_rata_amounts, k);
+              print(amount);
+              ol_account::vm_transfer(vm, multisig_address, *addr, *amount);
+
+              k = k + 1;
           };
-          option::destroy_none(coin_opt);
-
-
-          return
         };
 
-
-        // otherwise the default case is that donors get their funds back.
-        let (pro_rata_addresses, pro_rata_amounts) = get_pro_rata(multisig_address);
-        let k = 0;
-        let len = vector::length(&pro_rata_addresses);
-        // then we split the funds and send it back to the user's wallet
-        while (k < len) {
-            let addr = vector::borrow(&pro_rata_addresses, k);
-            let amount = vector::borrow(&pro_rata_amounts, k);
-            ol_account::vm_transfer(vm, multisig_address, *addr, *amount);
-
-            // account::vm_make_payment_no_limit<GasCoin>(multisig_address, *addr, *amount, b"liquidation", b"", vm);
-
-            k = k + 1;
+        // there may be some funds left from rounding issues
+        let (_, balance) = ol_account::balance(multisig_address);
+        let coin_opt = coin::vm_withdraw<GasCoin>(vm, multisig_address, balance);
+        if (option::is_some(&coin_opt)) {
+          let c = option::extract(&mut coin_opt);
+          transaction_fee::pay_fee(vm, c);
         };
+        option::destroy_none(coin_opt);
+
         i = i + 1;
       }
+   }
+
+   #[test_only]
+   public fun test_helper_vm_liquidate(vm: &signer) acquires Registry, Freeze {
+    vm_liquidate(vm);
    }
 
     /// get the proportion of donoations of all donors to account.

@@ -149,11 +149,6 @@ module ol_framework::receipts {
       let value = vector::borrow<u64>(&receipt.last_payment_value, i);
       let cumu = vector::borrow<u64>(&receipt.cumulative, i);
 
-            // print(time);
-            // print(value);
-            // print(cumu);
-
-
       (*time, *value, *cumu)
     }
 

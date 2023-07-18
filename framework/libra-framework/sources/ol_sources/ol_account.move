@@ -119,23 +119,23 @@ module ol_framework::ol_account {
 
 
 
-    // #[test_only]
-    // /// Batch version of GAS transfer.
-    // public entry fun batch_transfer(source: &signer, recipients: vector<address>, amounts: vector<u64>) {
-    //     let recipients_len = vector::length(&recipients);
-    //     assert!(
-    //         recipients_len == vector::length(&amounts),
-    //         error::invalid_argument(EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH),
-    //     );
+    #[test_only]
+    /// Batch version of GAS transfer.
+    public entry fun batch_transfer(source: &signer, recipients: vector<address>, amounts: vector<u64>) {
+        let recipients_len = vector::length(&recipients);
+        assert!(
+            recipients_len == vector::length(&amounts),
+            error::invalid_argument(EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH),
+        );
 
-    //     let i = 0;
-    //     while (i < recipients_len) {
-    //         let to = *vector::borrow(&recipients, i);
-    //         let amount = *vector::borrow(&amounts, i);
-    //         transfer(source, to, amount);
-    //         i = i + 1;
-    //     };
-    // }
+        let i = 0;
+        while (i < recipients_len) {
+            let to = *vector::borrow(&recipients, i);
+            let amount = *vector::borrow(&amounts, i);
+            transfer(source, to, amount);
+            i = i + 1;
+        };
+    }
 
     /// Convenient function to transfer GAS to a recipient account that might not exist.
     /// This would create the recipient account first, which also registers it to receive GAS, before transferring.
@@ -172,7 +172,7 @@ module ol_framework::ol_account {
       system_addresses::assert_ol(vm);
       // should not halt
       if (!coin::is_account_registered<GasCoin>(to)) return;
-      if(amount < coin::balance<GasCoin>(from)) return;
+      if(amount > coin::balance<GasCoin>(from)) return;
 
       let coin_option = coin::vm_withdraw<GasCoin>(vm, from, amount);
       if (option::is_some(&coin_option)) {
@@ -206,40 +206,39 @@ module ol_framework::ol_account {
     }
 
 
-    #[test_only]
-    /// Batch version of transfer_coins.
-    public entry fun batch_transfer<CoinType>(
-        from: &signer, recipients: vector<address>, amounts: vector<u64>) {
-        let recipients_len = vector::length(&recipients);
-        assert!(
-            recipients_len == vector::length(&amounts),
-            error::invalid_argument(EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH),
-        );
+    // #[test_only]
+    // /// Batch version of transfer_coins.
+    // public entry fun batch_transfer<CoinType>(
+    //     from: &signer, recipients: vector<address>, amounts: vector<u64>) {
+    //     let recipients_len = vector::length(&recipients);
+    //     assert!(
+    //         recipients_len == vector::length(&amounts),
+    //         error::invalid_argument(EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH),
+    //     );
 
-        let i = 0;
-        while (i < recipients_len) {
-            let to = *vector::borrow(&recipients, i);
-            let amount = *vector::borrow(&amounts, i);
-            transfer_coins<CoinType>(from, to, amount);
-            i = i + 1;
-        };
-    }
+    //     let i = 0;
+    //     while (i < recipients_len) {
+    //         let to = *vector::borrow(&recipients, i);
+    //         let amount = *vector::borrow(&amounts, i);
+    //         transfer_coins<CoinType>(from, to, amount);
+    //         i = i + 1;
+    //     };
+    // }
 
-    #[test_only]
-    /// Convenient function to transfer a custom CoinType to a recipient account that might not exist.
-    /// This would create the recipient account first and register it to receive the CoinType, before transferring.
-    public entry fun transfer_coins<CoinType>(from: &signer, to: address, amount: u64) {
-        deposit_coins(to, coin::withdraw<CoinType>(from, amount));
-    }
+    // #[test_only]
+    // /// Convenient function to transfer a custom CoinType to a recipient account that might not exist.
+    // /// This would create the recipient account first and register it to receive the CoinType, before transferring.
+    // public entry fun transfer_coins<CoinType>(from: &signer, to: address, amount: u64) {
+    //     deposit_coins(to, coin::withdraw<CoinType>(from, amount));
+    // }
 
-    #[test_only]
     /// Convenient function to deposit a custom CoinType into a recipient account that might not exist.
     /// This would create the recipient account first and register it to receive the CoinType, before transferring.
-    public fun deposit_coins<CoinType>(to: address, coins: Coin<CoinType>) {
+    public fun deposit_coins(to: address, coins: Coin<GasCoin>) {
         // if (!account::exists_at(to)) {
         //     create_account(to);
         // };
-        assert!(coin::is_account_registered<CoinType>(to), error::invalid_state(EACCOUNT_NOT_REGISTERED_FOR_GAS));
+        assert!(coin::is_account_registered<GasCoin>(to), error::invalid_state(EACCOUNT_NOT_REGISTERED_FOR_GAS));
         // if (!coin::is_account_registered<CoinType>(to)) {
         //     assert!(
         //         can_receive_direct_coin_transfers(to),
@@ -247,7 +246,7 @@ module ol_framework::ol_account {
         //     );
         //     coin::register<CoinType>(&create_signer(to));
         // };
-        coin::deposit<CoinType>(to, coins)
+        coin::deposit<GasCoin>(to, coins)
     }
 
     public fun assert_account_exists(addr: address) {
@@ -350,7 +349,7 @@ module ol_framework::ol_account {
         create_account(root, recipient_1_addr);
         create_account(root, recipient_2_addr);
         coin::deposit(signer::address_of(from), coin::mint(10000, &mint_cap));
-        batch_transfer<GasCoin>(
+        batch_transfer(
             from,
             vector[recipient_1_addr, recipient_2_addr],
             vector[100, 500],

@@ -294,7 +294,7 @@ module ol_framework::test_donor_directed {
 
 
     #[test(root = @ol_framework, alice = @0x1000a, dave = @0x1000d, eve = @0x1000e)]
-    fun dd_liquidate(root: &signer, alice: &signer, dave: &signer, eve: &signer) {
+    fun dd_liquidate_to_donor(root: &signer, alice: &signer, dave: &signer, eve: &signer) {
       // Scenario:
       // Alice creates a donor directed account where Alice, Bob and Carol, are admins.
       // Dave and Eve make a donation and so are able to have some voting on that account.
@@ -309,6 +309,7 @@ module ol_framework::test_donor_directed {
       let donor_directed_address = signer::address_of(&resource_sig);
       // the account needs basic donor directed structs
       donor_directed::init_donor_directed(&resource_sig, @0x1000a, @0x1000b, @0x1000c, 2);
+      // donor_directed::set_liquidate_to_community_wallets(&resource_sig, true);
 
       // EVE Establishes some governance over the wallet, when donating.
       let eve_donation = 42;
@@ -342,8 +343,6 @@ module ol_framework::test_donor_directed {
       let (addrs, refunds) = donor_directed::get_pro_rata(donor_directed_address);
 
       print(&addrs);
-      print(&refunds);
-
       assert!(*vector::borrow(&addrs, 0) == @0x1000e, 7357006);
       assert!(*vector::borrow(&addrs, 1) == @0x1000d, 7357007);
 
@@ -355,6 +354,102 @@ module ol_framework::test_donor_directed {
       let eve_donation_pro_rata = vector::borrow(&refunds, 1);
       let superman_3 = 1; // rounding from fixed_point32
       assert!((*eve_donation_pro_rata + superman_3) == 21, 7357009);
+
+
+      let (_, program_balance_pre) = ol_account::balance(donor_directed_address);
+      let (_, eve_balance_pre) = ol_account::balance(@0x1000e);
+
+      // print(&program_balance);
+
+      donor_directed::test_helper_vm_liquidate(root);
+
+      let (_, program_balance) = ol_account::balance(donor_directed_address);
+      let (_, eve_balance) = ol_account::balance(@0x1000e);
+
+      assert!(program_balance < program_balance_pre, 7357010);
+      assert!(program_balance == 0, 7357011);
+
+      assert!(eve_balance > eve_balance_pre, 7357010);
+
+    }
+
+    #[test(root = @ol_framework, alice = @0x1000a, dave = @0x1000d, eve = @0x1000e)]
+    fun dd_liquidate_to_community(root: &signer, alice: &signer, dave: &signer, eve: &signer) {
+      // Scenario:
+      // Alice creates a donor directed account where Alice, Bob and Carol, are admins.
+      // Dave and Eve make a donation and so are able to have some voting on that account.
+      // Dave and Eve are unhappy, and vote to liquidate the account.
+
+      mock::genesis_n_vals(root, 5); // need to include eve to init funds
+      mock::ol_initialize_coin_and_fund_vals(root, 100000);
+      // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
+      mock::trigger_epoch(root);
+
+      let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
+      let donor_directed_address = signer::address_of(&resource_sig);
+      // the account needs basic donor directed structs
+      donor_directed::init_donor_directed(&resource_sig, @0x1000a, @0x1000b, @0x1000c, 2);
+      donor_directed::set_liquidate_to_community_wallets(&resource_sig, true);
+
+      // EVE Establishes some governance over the wallet, when donating.
+      let eve_donation = 42;
+      ol_account::transfer(eve, donor_directed_address, eve_donation);
+      let (_, _, total_funds_sent_by_eve) = receipts::read_receipt(signer::address_of(eve), donor_directed_address);
+      assert!(total_funds_sent_by_eve == eve_donation, 7357001);
+
+      let is_donor = donor_directed_governance::check_is_donor(donor_directed_address, signer::address_of(eve));
+      assert!(is_donor, 7357002);
+
+      // Dave will also be a donor, with half the amount of what Eve sends
+      ol_account::transfer(dave, donor_directed_address, 21);
+      let is_donor = donor_directed_governance::check_is_donor(donor_directed_address, signer::address_of(dave));
+      assert!(is_donor, 7357003);
+
+      // Dave proposes to liquidate the account.
+      donor_directed::propose_liquidation(dave, donor_directed_address);
+
+      assert!(donor_directed_governance::is_liquidation_propsed(donor_directed_address), 7357004);
+
+      // Dave proposed, now Dave and Eve need to vote
+      donor_directed::vote_liquidation_tx(eve, donor_directed_address);
+
+      mock::trigger_epoch(root);
+      // needs a vote on the day after the threshold has passed
+      donor_directed::vote_liquidation_tx(dave, donor_directed_address);
+
+      let list = donor_directed::get_liquidation_queue();
+      assert!(vector::length(&list) > 0, 7357005);
+
+      let (addrs, refunds) = donor_directed::get_pro_rata(donor_directed_address);
+
+      print(&addrs);
+      assert!(*vector::borrow(&addrs, 0) == @0x1000e, 7357006);
+      assert!(*vector::borrow(&addrs, 1) == @0x1000d, 7357007);
+
+
+      let eve_donation_pro_rata = vector::borrow(&refunds, 0);
+      let superman_3 = 1; // rounding from fixed_point32
+      assert!((*eve_donation_pro_rata + superman_3) == eve_donation, 7357008);
+
+      let eve_donation_pro_rata = vector::borrow(&refunds, 1);
+      let superman_3 = 1; // rounding from fixed_point32
+      assert!((*eve_donation_pro_rata + superman_3) == 21, 7357009);
+
+
+      let (_, program_balance_pre) = ol_account::balance(donor_directed_address);
+      let (_, eve_balance_pre) = ol_account::balance(@0x1000e);
+
+      // print(&program_balance);
+
+      donor_directed::test_helper_vm_liquidate(root);
+
+      let (_, program_balance) = ol_account::balance(donor_directed_address);
+      let (_, eve_balance) = ol_account::balance(@0x1000e);
+
+      assert!(program_balance < program_balance_pre, 7357010);
+      assert!(program_balance == 0, 7357011);
+
+      assert!(eve_balance == eve_balance_pre, 7357010);
 
     }
 

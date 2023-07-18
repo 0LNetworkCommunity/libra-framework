@@ -143,7 +143,7 @@ module ol_framework::mock {
       while (i < vector::length(&vals)) {
         let addr = vector::borrow(&vals, i);
         let c = coin::mint(amount, &mint_cap);
-        ol_account::deposit_coins<GasCoin>(*addr, c);
+        ol_account::deposit_coins(*addr, c);
         i = i + 1;
       };
 
