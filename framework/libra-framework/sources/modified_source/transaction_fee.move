@@ -16,6 +16,7 @@ module aptos_framework::transaction_fee {
     friend aptos_framework::transaction_validation;
 
     friend ol_framework::epoch_boundary;
+    friend ol_framework::burn;
 
     /// Gas fees are already being collected and the struct holding
     /// information about collected amounts is already published.

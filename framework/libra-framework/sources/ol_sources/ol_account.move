@@ -18,6 +18,7 @@ module ol_framework::ol_account {
     use std::vector;
 
     friend ol_framework::donor_directed;
+    friend ol_framework::burn;
     friend aptos_framework::genesis;
     friend aptos_framework::resource_account;
 

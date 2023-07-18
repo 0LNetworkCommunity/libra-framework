@@ -569,7 +569,7 @@ module ol_framework::donor_directed {
         // and trying to call Burn, here will create a circular dependency.
 
 
-        if (!liquidates_to_escrow(multisig_address)) {
+        if (!liquidates_to_dd_accounts(multisig_address)) {
           // otherwise the default case is that donors get their funds back.
           let (pro_rata_addresses, pro_rata_amounts) = get_pro_rata(multisig_address);
           let k = 0;
@@ -672,7 +672,7 @@ module ol_framework::donor_directed {
       f.is_frozen
     }
 
-    public fun liquidates_to_escrow(addr: address): bool acquires Freeze{
+    public fun liquidates_to_dd_accounts(addr: address): bool acquires Freeze{
       let f = borrow_global<Freeze>(addr);
       f.liquidate_to_community_wallets
     }

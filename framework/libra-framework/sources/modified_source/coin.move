@@ -18,6 +18,7 @@ module aptos_framework::coin {
     // use aptos_std::debug::print;
 
     friend ol_framework::gas_coin;
+    friend ol_framework::burn;
     friend ol_framework::ol_account;
     friend ol_framework::safe;
     friend ol_framework::rewards;
