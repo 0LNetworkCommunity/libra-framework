@@ -1,3 +1,15 @@
+// Burn or Match
+// This (experimental) mechanism allows users to set their preferences for system-wide burns.
+// A system burn may exist because of rate-limiting, or collecting more fees than there are rewards to pay out. Or other third-party contracts may have a requirement to burn.
+// The user can elect a simple Burn, where the coin is permanently taken out of circulation, and the total supply is adjusted downward.
+// A Match (aka recycle) will keep the coin internal, submit to wallets which have opted into being a Match recipient.
+// There's a longer discussion on the game theory in ol/docs/burn_match.md
+// The short version is: in 0L there are no whitelists anyhwere. As such an important design goal for Burn or Match is that there is no privilege required for an account to opt it. Another design goal is that you "put your money where your mouth is" and the cost is real (you could not weight the index by "stake-based" voting, you must forfeit the coins). This does not mean that opting-in has no constraints.
+/// It doesn't require any permission to be a recipient of matching funds, it's open to all (including attackers). However, this mechanism uses a market to establish which of the opt-in accounts will receive funds. And this is a simple weighting algorithm which more heavily weights toward recent donations. Evidently there are attacks possible,
+
+// It will be costly and unpredictable (but not impossible) for attacker to close the loop, on Matching funds to themselves. It's evident that an attacker can get return on investment by re-weighting the Match Index to favor a recipient controlled by them. This is especially the case if there is low participation in the market (i.e. very few people are donating out of band).
+// Mitigations: There are conditions to qualify for matching. Matching accounts must be "resource accounts" with a Donor Directed multi-sig enabled. See more under donor_directed.move, but in short there is a multisig to authorize transactions, and donors to that account can vote to delay, freeze, and ultimately liquidate the donor directed account. Since the attacker can clearly own all the multisig authorities on the Donor Directed account, there is another condition which is checked for: the multisig signers cannot be related by Ancestry, meaning the attacker needs to collect conspirators from across the network graph. Lastly, any system burns (e.g. proof-of-fee) from other honest users to that account gives them governance and possibly legal claims against that wallet, there is afterall an off-chain world.
+// The expectation is that there is no additional overhead to honest actors, but considerable uncertainty and cost to abusers. Probabilistically there will be will some attacks or anti-social behavior. However, not all is lost: abusive behavior requires playing many other games honestly. The expectation of this experiment is that abuse is de-minimis compared to the total coin supply. As the saying goes: You can only prevent all theft if you also prevent all sales.
 
 module ol_framework::burn {
   use std::fixed_point32;
@@ -68,7 +80,7 @@ module ol_framework::burn {
             let user_share = coin::extract(&mut coins, to_withdraw);
             // print(&user_share);
 
-            burn_or_recycle_user_fees(vm, *user, user_share);
+            burn_with_user_preference(vm, *user, user_share);
           };
 
 
@@ -115,6 +127,7 @@ module ol_framework::burn {
       })
   }
 
+  /// At each epoch boundary, we recalculate the index of the Match recipients.
   public fun reset_ratios(vm: &signer) acquires BurnState {
     system_addresses::assert_ol(vm);
     let list = donor_directed::get_root_registry();
@@ -170,7 +183,7 @@ module ol_framework::burn {
     *&borrow_global<BurnState>(@ol_framework).addr
   }
 
-  // calculate the ratio which the community wallet should receive
+  /// calculate the ratio which the matching wallet should receive per the recently weighted historical donations.
   fun get_payee_value(payee: address, value: u64): u64 acquires BurnState {
     if (!exists<BurnState>(@ol_framework))
       return 0;
@@ -189,7 +202,7 @@ module ol_framework::burn {
     0
   }
 
-  public fun burn_or_recycle_user_fees(
+  fun burn_with_user_preference(
     vm: &signer, payer: address, user_share: Coin<GasCoin>
   ) acquires BurnState, BurnPreference {
     system_addresses::assert_vm(vm);
@@ -233,8 +246,6 @@ module ol_framework::burn {
           payer,
           payee,
           amount_to_payee,
-          // b"recycle",
-          // b"",
       );
       value_sent = value_sent + amount_to_payee;
       i = i + 1;
