@@ -622,7 +622,7 @@ module ol_framework::donor_directed {
         let coin_opt = coin::vm_withdraw<GasCoin>(vm, multisig_address, balance);
         if (option::is_some(&coin_opt)) {
           let c = option::extract(&mut coin_opt);
-          transaction_fee::pay_fee(vm, c);
+          transaction_fee::vm_pay_fee(vm, @ol_framework, c);
         };
         option::destroy_none(coin_opt);
 

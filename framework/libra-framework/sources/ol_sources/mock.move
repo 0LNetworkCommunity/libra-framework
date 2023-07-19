@@ -163,7 +163,7 @@ module ol_framework::mock {
 
       let initial_fees = 1000000 * 100;
       let tx_fees = coin::mint(initial_fees, &mint_cap);
-      transaction_fee::pay_fee(root, tx_fees);
+      transaction_fee::vm_pay_fee(root, @ol_framework, tx_fees);
 
       mint_cap
     }

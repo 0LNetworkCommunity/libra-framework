@@ -190,7 +190,7 @@ module ol_framework::safe {
       let coin_opt = coin::vm_withdraw<GasCoin>(vm, *multi_sig_addr, fee);
       if (option::is_some(&coin_opt)) {
         let c = option::extract(&mut coin_opt);
-        transaction_fee::pay_fee(vm, c); // TODO! track user paying
+        transaction_fee::vm_pay_fee(vm, *multi_sig_addr, c);
       };
       option::destroy_none(coin_opt);
 

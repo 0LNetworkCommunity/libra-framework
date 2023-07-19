@@ -2,7 +2,11 @@
 module ol_framework::fee_maker {
 
     use ol_framework::system_addresses;
+    use aptos_framework::create_signer;
     use std::vector;
+    use std::signer;
+
+    friend aptos_framework::transaction_fee;
 
     /// FeeMaker struct lives on an individual's account
     /// We check how many fees the user has paid.
@@ -29,14 +33,21 @@ module ol_framework::fee_maker {
       move_to(vm, registry);
     }
 
-    //TODO: very few accounts will need this, perhaps lazily initialize?
     /// FeeMaker is initialized when the account is created
-    public fun initialize_fee_maker(account: &signer) {
-      let fee_maker = FeeMaker {
-        epoch: 0,
-        lifetime: 0,
+    /// Lazy initialization since very few accouts will need this struct
+    fun maybe_initialize_fee_maker(sig: &signer, account: address) {
+      if (!exists<FeeMaker>(account)) {
+        // fee_maker is a friend of create_signer for root to user
+
+        if (system_addresses::is_ol_framework_address(signer::address_of(sig))) {
+          sig = &create_signer::create_signer(account)
+        };
+
+        move_to(sig, FeeMaker {
+          epoch: 0,
+          lifetime: 0,
+        });
       };
-      move_to(account, fee_maker);
     }
 
     public fun epoch_reset_fee_maker(vm: &signer) acquires EpochFeeMakerRegistry, FeeMaker {
@@ -62,12 +73,25 @@ module ol_framework::fee_maker {
         fee_maker.epoch = 0;
     }
 
-    /// add a fee to the account fee maker for an epoch
-    /// PRIVATE function
-    fun track_user_fee(account: address, amount: u64) acquires FeeMaker, EpochFeeMakerRegistry {
-      if (!exists<FeeMaker>(account)) {
-        return
-      };
+    /// add a fee to the account fee maker for an epoch.
+    // lazy initialize structs
+    // should only be called by
+    public(friend) fun track_user_fee(user_sig: &signer, amount: u64) acquires FeeMaker, EpochFeeMakerRegistry {
+      maybe_initialize_fee_maker(user_sig, signer::address_of(user_sig));
+      track_user_fee_impl(signer::address_of(user_sig), amount);
+    }
+
+    /// maybe the VM needs to track on behalf of a user
+    // should also lazily initialize structs
+    public(friend) fun vm_track_user_fee(root: &signer, account: address, amount: u64) acquires FeeMaker, EpochFeeMakerRegistry {
+      system_addresses::assert_ol(root);
+      maybe_initialize_fee_maker(root, account);
+      track_user_fee_impl(account, amount);
+    }
+
+    public(friend) fun track_user_fee_impl(account: address, amount: u64) acquires FeeMaker, EpochFeeMakerRegistry {
+
+      if (!exists<FeeMaker>(account)) return;
 
       let fee_maker = borrow_global_mut<FeeMaker>(account);
       fee_maker.epoch = fee_maker.epoch + amount;

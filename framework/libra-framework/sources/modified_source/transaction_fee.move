@@ -6,6 +6,7 @@ module aptos_framework::transaction_fee {
     use std::vector;
     use std::option::{Self, Option};
     use ol_framework::gas_coin::GasCoin;
+    use ol_framework::fee_maker;
 
     // use aptos_std::debug::print;
 
@@ -182,9 +183,23 @@ module aptos_framework::transaction_fee {
     }
 
     //////// 0L ////////
-    /// pay a fee
-    public fun pay_fee(_sender: &signer, fee: Coin<GasCoin>) acquires CollectedFeesPerBlock {
-        // TODO!: need to track who is making payments.
+    /// a user can pay a fee directly
+    public fun user_pay_fee(sender: &signer, fee: Coin<GasCoin>) acquires CollectedFeesPerBlock {
+        // Need to track who is making payments to Fee Maker
+        fee_maker::track_user_fee(sender, coin::value(&fee));
+        pay_fee_impl(fee);
+    }
+
+    /// root account will pay a fee on behalf of someone.
+    // if VM is not going to track the tx it will just add a system address here
+    public fun vm_pay_fee(sender: &signer, account: address, fee: Coin<GasCoin>) acquires CollectedFeesPerBlock {
+        // Need to track who is making payments to Fee Maker
+      fee_maker::vm_track_user_fee(sender, account, coin::value(&fee));
+      pay_fee_impl(fee);
+    }
+
+    /// implementation
+    fun pay_fee_impl(fee: Coin<GasCoin>) acquires CollectedFeesPerBlock {
 
         let collected_fees = borrow_global_mut<CollectedFeesPerBlock>(@aptos_framework);
 
@@ -212,7 +227,7 @@ module aptos_framework::transaction_fee {
         let coin_option = coin::vm_withdraw<GasCoin>(vm, *from, amount);
         if (option::is_some(&coin_option)) {
           let c = option::extract(&mut coin_option);
-          pay_fee(vm, c)
+          vm_pay_fee(vm, *from, c)
         };
         option::destroy_none(coin_option);
 

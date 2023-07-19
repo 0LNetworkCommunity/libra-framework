@@ -178,7 +178,7 @@ module ol_framework::test_burn {
       // put some fees in the system fee account
       let alice_fee = 100000;
       let c = ol_account::withdraw(alice, alice_fee);
-      transaction_fee::pay_fee(alice, c);
+      transaction_fee::user_pay_fee(alice, c);
 
       let fees = transaction_fee::system_fees_collected();
       assert!(fees == alice_fee, 73570001);

@@ -52,7 +52,7 @@ module ol_framework::vouch {
 
       // this fee is paid to the system, cannot be reclaimed
       let c = ol_account::withdraw(ill_be_your_friend, vouch_cost());
-      transaction_fee::pay_fee(ill_be_your_friend, c);
+      transaction_fee::user_pay_fee(ill_be_your_friend, c);
 
       let v = borrow_global_mut<MyVouches>(wanna_be_my_friend);
 

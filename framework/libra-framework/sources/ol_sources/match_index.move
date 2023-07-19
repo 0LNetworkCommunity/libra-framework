@@ -103,7 +103,7 @@ module ol_framework::match_index {
     if (remainder_amount > 0) {
       let last_coin = coin::extract(coin, remainder_amount);
       // use pay_fee which doesn't track the sender, so we're not double counting the receipts, even though it's a small amount.
-      transaction_fee::pay_fee(vm, last_coin);
+      transaction_fee::vm_pay_fee(vm, @ol_framework, last_coin);
     };
   }
 

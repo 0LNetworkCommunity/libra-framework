@@ -52,7 +52,7 @@ module ol_framework::infra_escrow{
         let c = option::extract(&mut opt);
         option::destroy_none(opt);
 
-        transaction_fee::pay_fee(root, c);
+        transaction_fee::vm_pay_fee(root, @ol_framework, c); // don't attribute to the user
     }
 
     /// for an uprade using an escrow percent. Only to be called at genesis
