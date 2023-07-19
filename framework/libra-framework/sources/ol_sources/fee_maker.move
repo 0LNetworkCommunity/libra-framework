@@ -16,13 +16,15 @@ module ol_framework::fee_maker {
     /// This lives on the VM address
     struct EpochFeeMakerRegistry has key {
       fee_makers: vector<address>,
+      epoch_fees_made: u64,
     }
 
     /// Initialize the registry at the VM address.
-    public fun initialize_epoch_fee_maker_registry(vm: &signer) {
+    public fun initialize(vm: &signer) {
       system_addresses::assert_ol(vm);
       let registry = EpochFeeMakerRegistry {
         fee_makers: vector::empty(),
+        epoch_fees_made: 0,
       };
       move_to(vm, registry);
     }
@@ -49,6 +51,7 @@ module ol_framework::fee_maker {
         i = i + 1;
       };
       registry.fee_makers = vector::empty();
+      registry.epoch_fees_made = 0;
     }
 
     /// FeeMaker is reset at the epoch boundary, and the lifetime is updated.
@@ -73,7 +76,8 @@ module ol_framework::fee_maker {
       let registry = borrow_global_mut<EpochFeeMakerRegistry>(@ol_framework);
       if (!vector::contains(&registry.fee_makers, &account)) {
         vector::push_back(&mut registry.fee_makers, account);
-      }
+      };
+      registry.epoch_fees_made = registry.epoch_fees_made + amount;
     }
 
     //////// GETTERS ///////
@@ -84,13 +88,23 @@ module ol_framework::fee_maker {
       *&registry.fee_makers
     }
 
-    // get the fees made by the user in the epoch
-    public fun get_epoch_fees_made(account: address): u64 acquires FeeMaker {
+    #[view]
+    /// get the fees made by the user in the epoch
+    public fun get_user_fees_made(account: address): u64 acquires FeeMaker {
       if (!exists<FeeMaker>(account)) {
         return 0
       };
       let fee_maker = borrow_global<FeeMaker>(account);
       fee_maker.epoch
+    }
+
+    #[view]
+    /// get total fees made across all epochs
+    public fun get_all_fees_made(): u64 acquires EpochFeeMakerRegistry {
+      if (!exists<EpochFeeMakerRegistry>(@ol_framework)) return 0;
+
+      let registry = borrow_global<EpochFeeMakerRegistry>(@ol_framework);
+      registry.epoch_fees_made
     }
 
 }

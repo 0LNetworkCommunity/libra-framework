@@ -195,6 +195,14 @@ module aptos_framework::transaction_fee {
         coin::merge_aggregatable_coin<GasCoin>(collected_amount, fee);
     }
 
+    #[view]
+    /// get the total system fees available now.
+    public fun system_fees_collected(): u64 acquires CollectedFeesPerBlock {
+      let collected_fees = borrow_global<CollectedFeesPerBlock>(@aptos_framework);
+      (coin::aggregatable_value(&collected_fees.amount) as u64)
+    }
+
+    /// root account can use system fees to pay multiple accounts, e.g. for Proof of Fee reward.
     public fun vm_multi_pay_fee(vm: &signer, list: &vector<address>, amount: u64) acquires CollectedFeesPerBlock {
       system_addresses::assert_ol(vm);
       let i = 0;

@@ -11,6 +11,7 @@ module aptos_framework::epoch_boundary {
     use ol_framework::jail;
     use ol_framework::cases;
     use ol_framework::safe;
+    use ol_framework::burn;
     use ol_framework::donor_directed;
     use aptos_framework::transaction_fee;
     use aptos_framework::coin::{Self, Coin};
@@ -31,11 +32,14 @@ module aptos_framework::epoch_boundary {
         root_service_billing(root);
         donor_directed::process_donor_directed_accounts(root, closing_epoch);
 
+
         let all_fees = transaction_fee::root_withdraw_all(root);
         process_outgoing(root, &mut all_fees);
 
         process_incoming(root);
 
+        // remainder gets burnt according to fee maker preferences
+        burn::epoch_burn_fees(root, &mut all_fees);
         // any remaining fees get burned
         coin::user_burn(all_fees);
 

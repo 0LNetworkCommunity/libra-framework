@@ -182,6 +182,13 @@ module aptos_framework::coin {
         }
     }
 
+
+    //////// 0L ////////
+    /// the value of the aggregated coin
+    public fun aggregatable_value<CoinType>(aggregatable_coin: &AggregatableCoin<CoinType>): u128 {
+        aggregator::read(&aggregatable_coin.value)
+    }
+
     /// Returns true if the value of aggregatable coin is zero.
     public(friend) fun is_aggregatable_coin_zero<CoinType>(coin: &AggregatableCoin<CoinType>): bool {
         let amount = aggregator::read(&coin.value);

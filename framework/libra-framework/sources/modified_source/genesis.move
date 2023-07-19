@@ -39,6 +39,7 @@ module aptos_framework::genesis {
     use ol_framework::donor_directed;
     use ol_framework::epoch_helper;
     use ol_framework::burn;
+    use ol_framework::fee_maker;
 
     //////// end 0L ////////
 
@@ -159,6 +160,7 @@ module aptos_framework::genesis {
         epoch_helper::initialize(&aptos_framework_account);
         burn::initialize(&aptos_framework_account);
         match_index::initialize(&aptos_framework_account);
+        fee_maker::initialize(&aptos_framework_account);
 
         // end 0L
 

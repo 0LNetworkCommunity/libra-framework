@@ -18,7 +18,7 @@ module ol_framework::burn {
   // use ol_framework::ol_account;
   use ol_framework::system_addresses;
   use ol_framework::gas_coin::GasCoin;
-  use ol_framework::transaction_fee;
+  // use ol_framework::transaction_fee;
   use ol_framework::coin::{Self, Coin};
   use ol_framework::match_index;
   use ol_framework::fee_maker;
@@ -54,15 +54,20 @@ module ol_framework::burn {
   /// produced, and then do a weighted burn/recycle.
   public fun epoch_burn_fees(
       vm: &signer,
-      total_fees_collected: u64,
+      coins: &mut Coin<GasCoin>,
   )  acquires UserBurnPreference, BurnCounter {
       system_addresses::assert_ol(vm);
 
-      // extract fees
-      let coins = transaction_fee::root_withdraw_all(vm);
+      // get the total fees made. This will likely be different than
+      // the value of Coins, since some have already been spent on validator rewards.
+      let total_fees_made = fee_maker::get_all_fees_made();
 
-      if (coin::value(&coins) == 0) {
-        coin::destroy_zero(coins);
+      // extract fees
+      // let coins = transaction_fee::root_withdraw_all(vm);
+
+      let available_to_burn = coin::value(coins);
+      if (available_to_burn == 0) {
+        // coin::destroy_zero(coins);
         return
       };
 
@@ -75,13 +80,13 @@ module ol_framework::burn {
       let i = 0;
       while (i < len) {
           let user = vector::borrow(&fee_makers, i);
-          let amount = fee_maker::get_epoch_fees_made(*user);
-          let share = fixed_point32::create_from_rational(amount, total_fees_collected);
+          let user_made = fee_maker::get_user_fees_made(*user);
+          let share = fixed_point32::create_from_rational(user_made, total_fees_made);
 
-          let to_withdraw = fixed_point32::multiply_u64(coin::value(&coins), share);
+          let to_withdraw = fixed_point32::multiply_u64(available_to_burn, share);
 
-          if (to_withdraw > 0 && to_withdraw <= coin::value(&coins)) {
-            let user_share = coin::extract(&mut coins, to_withdraw);
+          if (to_withdraw > 0 && to_withdraw <= available_to_burn) {
+            let user_share = coin::extract(coins, to_withdraw);
 
             burn_with_user_preference(vm, *user, user_share);
           };
@@ -90,10 +95,10 @@ module ol_framework::burn {
           i = i + 1;
       };
 
-    // Transaction fee account should be empty at the end of the epoch
-    // Superman 3 decimal errors. https://www.youtube.com/watch?v=N7JBXGkBoFc
-    // anything that is remaining should be burned
-    coin::user_burn(coins);
+    // // Transaction fee account should be empty at the end of the epoch
+    // // Superman 3 decimal errors. https://www.youtube.com/watch?v=N7JBXGkBoFc
+    // // anything that is remaining should be burned
+    // coin::user_burn(coins);
   }
 
 
