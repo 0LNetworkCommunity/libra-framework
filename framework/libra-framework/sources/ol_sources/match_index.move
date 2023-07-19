@@ -15,12 +15,11 @@ module ol_framework::match_index {
   const ENOT_INIT: u64 = 100023;
 
   friend ol_framework::community_wallet;
-  /// The Match index keeps accounts that have opted-in. Also keeps the lifetime_burned for convenience.
+  /// The Match index keeps accounts that have opted-in.
   struct MatchIndex has key {
     addr: vector<address>,
-    deposits: vector<u64>,
+    index: vector<u64>, // the index of cumulative deposits: weighted in favor of most recent deposits.
     ratio: vector<fixed_point32::FixedPoint32>,
-
   }
   /// initialize, usually for testnet.
   public fun initialize(vm: &signer) {
@@ -28,7 +27,7 @@ module ol_framework::match_index {
 
     move_to<MatchIndex>(vm, MatchIndex {
         addr: vector::empty(),
-        deposits: vector::empty(),
+        index: vector::empty(),
         ratio: vector::empty(),
       })
   }
@@ -66,10 +65,10 @@ module ol_framework::match_index {
     while (i < len) {
 
       let addr = *vector::borrow(&burn_state.addr, i);
-      let cumu = cumulative_deposits::get_index_cumu_deposits(addr);
+      let deposit_index = cumulative_deposits::get_index_cumu_deposits(addr);
 
-      global_deposits = global_deposits + cumu;
-      vector::push_back(&mut deposit_vec, cumu);
+      global_deposits = global_deposits + deposit_index;
+      vector::push_back(&mut deposit_vec, deposit_index);
       i = i + 1;
     };
 
@@ -86,7 +85,7 @@ module ol_framework::match_index {
       k = k + 1;
     };
 
-    burn_state.deposits = deposit_vec;
+    burn_state.index = deposit_vec;
     burn_state.ratio = ratios_vec;
   }
 
@@ -135,12 +134,11 @@ module ol_framework::match_index {
   }
 
   //////// GETTERS ////////
-  /// get the proportional share of each account qualified for Match, based on the recent-weighted donations.
-  public fun get_ratios():
-    (vector<address>, vector<u64>, vector<fixed_point32::FixedPoint32>) acquires MatchIndex
-  {
+  /// get the proportional share of each account qualified for Match, based on the recent-weighted donations. Returns a tuple of the table (list addresses, list of index of cumulative deposits, list fraction of total index)
+  public fun get_ratios(): (vector<address>, vector<u64>, vector<fixed_point32::FixedPoint32>)
+  acquires MatchIndex {
     let d = borrow_global<MatchIndex>(@ol_framework);
-    (*&d.addr, *&d.deposits, *&d.ratio)
+    (*&d.addr, *&d.index, *&d.ratio)
   }
 
   #[view]
