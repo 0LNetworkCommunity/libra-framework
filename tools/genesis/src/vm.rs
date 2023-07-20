@@ -94,7 +94,6 @@ pub fn encode_genesis_change_set(
 
     initialize_on_chain_governance(&mut session, genesis_config);
 
-    create_and_initialize_validators(&mut session, validators);
 
     if let Some(r) = recovery {
         if r.len() > 0 {
@@ -102,6 +101,12 @@ pub fn encode_genesis_change_set(
           .expect("could not migrate users");
         }
     }
+
+    //////// 0L ////////
+    // moved this to happen after legacy account migration, since the validators need to have their accounts migrated as well, including the mapping of legacy address to the authkey (which no longer derives to the previous same address).
+    // Note: the operator accounts at genesis will be different.
+    create_and_initialize_validators(&mut session, validators);
+
 
     set_genesis_end(&mut session);
 

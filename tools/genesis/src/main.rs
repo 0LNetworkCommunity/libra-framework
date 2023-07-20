@@ -43,7 +43,11 @@ enum Sub {
       supply_settings: SupplySettings,
     },  // just do genesis without wizard
     Register {}, // just do registration without wizard
-    Wizard {},
+    Wizard {
+      #[clap(flatten)]
+      /// optional, settings for supply.
+      supply_settings: SupplySettings,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -82,12 +86,12 @@ fn main() -> anyhow::Result<()> {
                 None,
             )?;
         }
-        Some(Sub::Wizard {}) => {
+        Some(Sub::Wizard {supply_settings}) => {
             GenesisWizard::new(cli.org_github, cli.name_github, cli.home_dir).start_wizard(
                 cli.local_framework,
                 cli.json_legacy,
-                false,
-                None,
+                true,
+                Some(supply_settings),
             )?;
         }
         _ => {

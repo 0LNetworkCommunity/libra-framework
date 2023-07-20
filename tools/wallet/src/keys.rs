@@ -17,7 +17,7 @@ use std::path::{Path, PathBuf};
 use zapatos_config::{config::IdentityBlob, keys::ConfigKey};
 use zapatos_crypto::{bls12381, ed25519::Ed25519PrivateKey, traits::PrivateKey, x25519};
 use zapatos_genesis::keys::{PrivateIdentity, PublicIdentity};
-use zapatos_types::transaction::authenticator::AuthenticationKey;
+// use zapatos_types::transaction::authenticator::AuthenticationKey;
 
 // These are consistent with Vendor
 const PRIVATE_KEYS_FILE: &str = "private-keys.yaml";
@@ -123,12 +123,10 @@ fn save_val_files(
 pub fn generate_key_objects_from_legacy(
     legacy_keys: KeyChain,
 ) -> anyhow::Result<(IdentityBlob, IdentityBlob, PrivateIdentity, PublicIdentity)> {
-    // let account_key = ConfigKey::new(keygen.generate_ed25519_private_key());
     let account_key: ConfigKey<Ed25519PrivateKey> =
         ConfigKey::new(legacy_keys.child_0_owner.pri_key);
 
     // consensus key needs to be generated anew as it is not part of the legacy keys
-    // let keygen = KeyGen::from_os_rng();
     let consensus_key = ConfigKey::new(bls_generate_key(&legacy_keys.seed)?);
 
     let vnk = network_keys_x25519_from_ed25519(legacy_keys.child_2_val_network.pri_key)?;
@@ -138,7 +136,7 @@ pub fn generate_key_objects_from_legacy(
 
     let full_node_network_key = ConfigKey::new(fnk);
 
-    let account_address = AuthenticationKey::ed25519(&account_key.public_key()).derived_address();
+    let account_address = legacy_keys.child_0_owner.account; // don't use the derived account. Since legacy account addresses will no longer map to the legacy authkey derived address.
 
     // Build these for use later as node identity
     let validator_blob = IdentityBlob {
