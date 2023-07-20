@@ -378,7 +378,13 @@ impl GenesisWizard {
                     );
                     // return Ok(())
                 } else {
+                  if e.to_string().contains("No commits between main and main") {
+                    println!(
+                        "INFO: A pull request already exists, and there are no changes with main"
+                    );
+                  } else {
                     bail!("failed to create pull, message: {}", e.to_string())
+                  }
                 }
             }
         };
