@@ -220,6 +220,7 @@ impl Sender {
         let signed = self.sign_payload(payload);
         let r = self.submit(&signed).await?;
         self.response = Some(r.clone());
+        println!("Success");
         Ok(r)
     }
 

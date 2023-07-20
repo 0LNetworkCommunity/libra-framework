@@ -187,10 +187,10 @@ impl TxsCli {
               val_txs.run(&mut send).await
             },
             _ => {
-              println!("I'm searching, though I don't succeed \n
-              But someone look, there's a growing need \n
-              Oh, he is lost, there's no place for beginning \n
-              All that's left is an unhappy ending");
+              println!("\nI'm searching, though I don't succeed\n
+But someone look, there's a growing need\n
+Oh, he is lost, there's no place for beginning\n
+All that's left is an unhappy ending");
               Ok(())
             },
         }
