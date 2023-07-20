@@ -65,8 +65,10 @@ impl AppCfg {
                 path.to_str().unwrap()
             ))
         }
-        let s = fs::read_to_string(path)?;
-        Ok(serde_yaml::from_str(&s)?)
+        let s = fs::read_to_string(&path)?;
+        let de: AppCfg = serde_yaml::from_str(&s)
+          .context(format!("could not read {:?} file into an AppCfg. Is there an issue with the file?", &path))?;
+        Ok(de)
     }
     /// save the config file to 0L.toml to the workspace home path
     pub fn save_file(&self) -> anyhow::Result<PathBuf> {
