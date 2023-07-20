@@ -58,19 +58,9 @@ module ol_framework::genesis_migration {
     let coins_to_mint = expected_final_balance - genesis_balance;
     gas_coin::mint(vm, user_addr, coins_to_mint);
 
-    // TODO: only mint the delta of the expected balance vs what is in the account.
     let new_balance = coin::balance<GasCoin>(user_addr);
 
     assert!(new_balance == expected_final_balance, error::invalid_state(EBALANCE_MISMATCH));
-
-    // // establish the infrastructure escrow pledge
-    // if (is_validator) {
-    //   let escrow_pct = fixed_point32::create_from_rational(escrow_pct, 1000000);
-    //   // TODO: get locked amount
-    //   let locked = new_balance; //slow_wallet::balance(user_addr);
-    //   let to_escrow = fixed_point32::multiply_u64(locked, escrow_pct);
-    //   infra_escrow::user_pledge_infra(user_sig, to_escrow)
-    // };
   }
 
   fun is_genesis_val(addr: address): bool {

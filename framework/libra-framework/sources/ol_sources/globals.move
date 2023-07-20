@@ -37,7 +37,7 @@ module ol_framework::globals {
       signing_threshold_pct: u64,
     }
 
-    const COIN_DECIMAL_PLACES: u8 = 6;
+    const COIN_DECIMAL_PLACES: u8 = 6; // Or 10^6, 1 coin is 1_000_000 units in the database. Any human display needs to consider this scaling factor.
 
 
     /// Get the epoch length

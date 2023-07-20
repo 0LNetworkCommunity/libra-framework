@@ -254,4 +254,44 @@ module ol_framework::test_burn {
       assert!(balance > balance_pre, 7357004);
       assert!(balance == (bob_burn_share_A + eve_donation_to_A), 7357005);
     }
+
+    // #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000d, eve = @0x1000e)]
+    // fun fee_makers_calc(root: &signer, alice: &signer, bob: &signer, eve: &signer) {
+    //   // Scenario:
+    //   assert!(TransactionFee::get_fees_collected()==0, 735701);
+    //   let coin = Diem::mint<GAS>(&vm, 1);
+    //   TransactionFee::pay_fee_and_track(@Alice, coin);
+
+    //   let fee_makers = TransactionFee::get_fee_makers();
+    //   // print(&fee_makers);
+    //   assert!(Vector::length(&fee_makers)==1, 735702);
+    //   assert!(TransactionFee::get_fees_collected()==1, 735703);
+    // }
+
+     #[test(root=@ol_framework, alice=@0x1000a)]
+    fun track_fees(root: &signer, alice: &signer) {
+      // use ol_framework::gas_coin;
+      let _vals = mock::genesis_n_vals(root, 1); // need to include eve to init funds
+
+      let (burn, mint) = gas_coin::initialize_for_test(root);
+
+      coin::destroy_burn_cap(burn);
+      // gas_coin::restore_mint_cap(root, mint);
+      // coin::destroy_mint_cap(mint);
+
+    //   assert!(TransactionFee::get_fees_collected()==0, 735701);
+      let coin = coin::mint<GasCoin>(100, &mint);
+      coin::destroy_mint_cap(mint);
+
+      transaction_fee::user_pay_fee(alice, coin);
+      // coin::destroy_mint_cap(mint);
+
+      // transaction_fee::pay_fee(alice, coin);
+
+    //   let fee_makers = TransactionFee::get_fee_makers();
+    //   // print(&fee_makers);
+    //   assert!(Vector::length(&fee_makers)==1, 735702);
+    //   assert!(TransactionFee::get_fees_collected()==1, 735703);
+
+    }
 }
