@@ -43,7 +43,6 @@ module ol_framework::genesis_migration {
       );
     };
 
-
     // mint coins again to migrate balance, and all
     // system tracking of balances
     if (legacy_balance == 0) {

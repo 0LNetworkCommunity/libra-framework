@@ -8,15 +8,14 @@ use zapatos_gas::{
 use zapatos_types::{
     chain_id::ChainId,
     on_chain_config::{Features, GasScheduleV2, OnChainConsensusConfig, OnChainExecutionConfig, TimedFeatures},
-    transaction::{ChangeSet},
+    transaction::ChangeSet,
 };
 use zapatos_vm::{
     data_cache::AsMoveResolver,
     move_vm_ext::{MoveVmExt, SessionId},
 };
 use zapatos_vm_genesis::{
-     create_and_initialize_validators,
-    // create_and_initialize_validators_with_commission, create_employee_validators,
+    create_and_initialize_validators,
     default_gas_schedule, emit_new_block_and_epoch_event, genesis_context::GenesisStateView,
     initialize, initialize_aptos_coin,
     initialize_features, initialize_on_chain_governance, mainnet_genesis_config, publish_framework,

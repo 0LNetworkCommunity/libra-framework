@@ -102,6 +102,9 @@ module ol_framework::ol_account {
     }
 
     /// For migrating accounts from a legacy system
+    /// NOTE: the legacy accounts (prefixed with 32 zeros) from 0L v5 will not be found by searching via authkey. Since the legacy authkey does not derive to the legcy account any longer, it is as if the account has rotated the authkey.
+    /// The remedy is to run the authkey rotation
+    /// even if it hasn't changed, such that the lookup table (OriginatingAddress) is created and populated with legacy accounts.
     public fun vm_create_account_migration(
         root: &signer,
         new_account: address,
@@ -111,8 +114,8 @@ module ol_framework::ol_account {
         system_addresses::assert_ol(root);
         // chain_status::assert_genesis(); TODO
         let new_signer = account::vm_create_account(root, new_account, auth_key);
-        // Roles::new_user_role_with_proof(&new_signer);
-        // make_account(&new_signer, auth_key);
+        // fake "rotate" legacy auth key  to itself so that the lookup is populated
+        account::rotate_authentication_key_internal(&new_signer, auth_key);
         coin::register<GasCoin>(&new_signer);
         new_signer
     }

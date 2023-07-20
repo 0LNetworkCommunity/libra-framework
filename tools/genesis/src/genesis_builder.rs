@@ -41,49 +41,6 @@ pub const FRAMEWORK_NAME: &str = "framework.mrb";
 const WAYPOINT_FILE: &str = "waypoint.txt";
 const GENESIS_FILE: &str = "genesis.blob";
 
-// trait LibraGetGenesis {
-//   fn get_genesis(&mut self) -> &Transaction;
-//   fn generate_genesis_txn(&self) -> Transaction;
-// }
-
-
-// impl LibraGetGenesis for GenesisInfo {
-//       fn get_genesis(&mut self) -> &Transaction {
-//         if let Some(ref genesis) = self.genesis {
-//             genesis
-//         } else {
-//             self.genesis = Some(self.generate_genesis_txn());
-//             self.genesis.as_ref().unwrap()
-//         }
-//     }
-
-//     fn generate_genesis_txn(&self) -> Transaction {
-//         vm::encode_zapatos_recovery_genesis_change_set(
-//             self.root_key.clone(),
-//             &self.validators,
-//             &self.framework,
-//             self.chain_id,
-//             &zapatos_vm_genesis::GenesisConfiguration {
-//                 allow_new_validators: self.allow_new_validators,
-//                 epoch_duration_secs: self.epoch_duration_secs,
-//                 is_test: true,
-//                 min_stake: self.min_stake,
-//                 min_voting_threshold: self.min_voting_threshold,
-//                 max_stake: self.max_stake,
-//                 recurring_lockup_duration_secs: self.recurring_lockup_duration_secs,
-//                 required_proposer_stake: self.required_proposer_stake,
-//                 rewards_apy_percentage: self.rewards_apy_percentage,
-//                 voting_duration_secs: self.voting_duration_secs,
-//                 voting_power_increase_limit: self.voting_power_increase_limit,
-//                 employee_vesting_start: 1663456089,
-//                 employee_vesting_period_duration: 5 * 60, // 5 minutes
-//             },
-//             &self.consensus_config,
-//             &self.execution_config,
-//             &self.gas_schedule,
-//         )
-//     }
-// }
 pub fn build(
     github_owner: String,
     github_repository: String,
@@ -128,7 +85,7 @@ pub fn build(
         waypoint.to_string().as_bytes(),
     )?;
 
-    // TODO: compare output
+    // TODO!: compare output
     // if let Some(l) = legacy_recovery {
     //   compare_json_to_genesis_blob(legacy_recovery, genesis_file, );
     // }
