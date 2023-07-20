@@ -4,7 +4,7 @@
 // our key gen process, which is quite simple if you are already using BIP-44.
 // Different from vendor, we prioritize making the mnemonic seed known to all users, and then derive all possible keys from there. Currently this applies to ed25519 keys. Vendor's keygen also includes BLS keys, which are used specifically for consensus. As such those are not relevant to end-user account holders.
 
-use crate::account_keys::{legacy_keygen, KeyChain, get_keys_from_prompt, get_keys_from_mnem};
+use crate::account_keys::{legacy_keygen, KeyChain, get_keys_from_prompt, get_keys_from_mnem, get_ol_legacy_address};
 use crate::utils::{
     check_if_file_exists, create_dir_if_not_exist, dir_default_to_current, prompt_yes, to_yaml,
     write_to_user_only_file,
@@ -63,13 +63,18 @@ pub fn validator_keygen(
 pub fn refresh_validator_files(
     mnem: Option<String>,
     output_opt: Option<PathBuf>,
+    keep_legacy_addr: bool,
 ) -> anyhow::Result<(IdentityBlob, IdentityBlob, PrivateIdentity, PublicIdentity)> {
-    let legacy_keys = if let Some(m) = mnem {
+    let mut legacy_keys = if let Some(m) = mnem {
       get_keys_from_mnem(m)?
     } else {
       get_keys_from_prompt()?
     };
-    // let legacy_keys = get_keys_from_prompt()?;
+
+    if keep_legacy_addr {
+      let legacy_format = get_ol_legacy_address(legacy_keys.child_0_owner.account)?;
+      legacy_keys.child_0_owner.account = legacy_format;
+    }
 
     let (validator_blob, vfn_blob, private_identity, public_identity) =
         generate_key_objects_from_legacy(legacy_keys)?;

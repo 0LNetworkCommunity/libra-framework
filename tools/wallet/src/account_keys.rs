@@ -52,20 +52,14 @@ pub struct AccountKeys { // TODO: change this to use vendor AccountKey
 }
 
     //////// 0L ////////
-    // addresses in the 0L chains before V7 had a truncated address of 16 bytes
+    /// addresses in the 0L chains before V7 had a truncated address of 16 bytes
     pub fn get_ol_legacy_address(addr: AccountAddress) -> anyhow::Result<AccountAddress> {
-        // keep only last 16 bytes
-    
-      // let addr = &self.get_address();
+      // keep only last 16 bytes
+
       let leg_addr = hex::encode(&addr[16..]);
-      
-      // dbg!(&hex::encode(leg_addr_slice));
 
       let literal = &format!("0x0000000000000000{}", leg_addr);
 
-
-
-      // array.copy_from_slice(&self.account.as_slice()[16..]);
       Ok(AccountAddress::from_hex_literal(literal)?)
     }
 

@@ -54,7 +54,7 @@ pub async fn run(mnemonic: Option<String>, output_dir: Option<PathBuf>) -> Resul
     let private_key = if let Some(mnemonic) = mnemonic {
         let (_, account_address, wallet_lib) = load_keys::get_account_from_mnem(mnemonic.clone())?;
 
-        refresh_validator_files(Some(mnemonic), output_dir)?;
+        refresh_validator_files(Some(mnemonic), output_dir, false)?;
 
         Ed25519PrivateKey::try_from(
             wallet_lib

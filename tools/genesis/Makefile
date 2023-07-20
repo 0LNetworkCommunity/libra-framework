@@ -1,5 +1,5 @@
 
-TARGET_SUPPLY = 100000000000
+TARGET_SUPPLY = 10000000000 # 10 billion
 FUTURE_USES = 0.70
 ONE_USER_FILE = sample_end_user_single
 ALL_USERS_FILE = sample_export_recovery

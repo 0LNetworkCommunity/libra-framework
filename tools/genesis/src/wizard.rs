@@ -50,25 +50,6 @@ pub struct GenesisWizard {
     pub epoch: Option<u64>,
 }
 
-// impl Default for GenesisWizard {
-//     /// testnet values for genesis wizard
-//     fn default() -> Self {
-//         let data_path = dirs::home_dir()
-//             .expect("no home dir found")
-//             .join(DEFAULT_DATA_PATH);
-
-//         Self {
-//             username: "alice".to_string(),
-//             genesis_repo_org: "0o-de-lally".to_string(),
-//             // genesis_repo_org: "alice".to_string(),
-//             repo_name: "a-genesis".to_string(),
-//             github_username: "".to_string(),
-//             github_token: "".to_string(),
-//             data_path,
-//             epoch: None,
-//         }
-//     }
-// }
 
 impl GenesisWizard {
     /// constructor
@@ -111,12 +92,19 @@ impl GenesisWizard {
             ))
             .interact()?;
         if to_init {
+
             let host = what_host()?;
+
+            let keep_legacy_address = Confirm::new()
+            .with_prompt("Is this a legacy V5 address you wish to keep?")
+            .interact()?;
+
             initialize_host(
                 Some(self.data_path.clone()),
                 &self.github_username,
                 host,
                 None,
+                keep_legacy_address,
             )?;
         }
 
@@ -425,8 +413,9 @@ fn initialize_host(
     username: &str,
     host: HostAndPort,
     mnem: Option<String>,
+    keep_legacy_address: bool,
 ) -> anyhow::Result<()> {
-    libra_wallet::keys::refresh_validator_files(mnem, home_path.clone())?;
+    libra_wallet::keys::refresh_validator_files(mnem, home_path.clone(), keep_legacy_address)?;
     OLProgress::complete("Initialized validator key files");
     // TODO: set validator fullnode configs. Not NONE
     SetValidatorConfiguration::new(home_path.clone(), username.to_owned(), host, None)

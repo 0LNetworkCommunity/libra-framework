@@ -97,8 +97,10 @@ pub fn encode_genesis_change_set(
     create_and_initialize_validators(&mut session, validators);
 
     if let Some(r) = recovery {
-        crate::genesis_functions::genesis_migrate_all_users(&mut session, r, supply_settings)
-        .expect("could not migrate users");
+        if r.len() > 0 {
+          crate::genesis_functions::genesis_migrate_all_users(&mut session, r, supply_settings)
+          .expect("could not migrate users");
+        }
     }
 
     set_genesis_end(&mut session);
