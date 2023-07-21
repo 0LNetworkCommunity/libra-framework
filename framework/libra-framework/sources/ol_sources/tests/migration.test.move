@@ -26,7 +26,7 @@ module ol_framework::test_migration {
       &user,
       temp_auth_key,
       20000,
-      5,
+      // 5,
     )
   }
 
@@ -42,30 +42,30 @@ module ol_framework::test_migration {
     let addr = signer::address_of(&marlon_rando);
     let temp_auth_key =  bcs::to_bytes(&addr);
 
-    let legacy_balance = 20000;
-    let scale_integer = 5;
+    let init_balance = 100000; // note: the scaling happens on RUST side.
     let escrow_pct = 80;
+
     genesis_migration::migrate_legacy_user(
       &root,
       &marlon_rando,
       temp_auth_key,
-      legacy_balance,
+      init_balance,
       // true, // is_validator
-      scale_integer * 1000000,// of 1m
+      // scale_integer * 1000000,// of 1m
       // escrow_pct * 10000, // of 1m
     );
 
     let user_balance = coin::balance<GasCoin>(addr);
 
-    assert!(user_balance == (legacy_balance * scale_integer), 73570000);
+    assert!(user_balance == init_balance, 73570000);
 
     // now we migrate validators
 
     // alice only has 1000 unlocked, and 100 lifetime transferred out
     let legacy_unlocked = 1000;
-    slow_wallet::fork_migrate_slow_wallet(&root, &marlon_rando, legacy_unlocked, 100, scale_integer * 1000000);
+    slow_wallet::fork_migrate_slow_wallet(&root, &marlon_rando, legacy_unlocked, 100);
     let (unlocked, total) = slow_wallet::balance(addr);
-    assert!(unlocked == (legacy_unlocked * scale_integer), 73570001);
+    assert!(unlocked == legacy_unlocked, 73570001);
     assert!(total == user_balance, 73570002);
 
 
@@ -87,6 +87,6 @@ module ol_framework::test_migration {
 
     let updated_balance = coin::balance<GasCoin>(addr);
 
-    assert!((updated_balance + user_pledge) == legacy_balance * scale_integer, 73570006);
+    assert!((updated_balance + user_pledge) == init_balance, 73570006);
   }
 }

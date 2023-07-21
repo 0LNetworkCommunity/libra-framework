@@ -192,5 +192,4 @@ pub fn check_supply(
     assert!(expected_supply as u128 == on_chain_supply, "unexpected supply");
 
     Ok(())
-
 }

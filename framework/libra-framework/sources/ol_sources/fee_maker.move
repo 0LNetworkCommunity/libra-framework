@@ -67,7 +67,7 @@ module ol_framework::fee_maker {
 
     /// FeeMaker is reset at the epoch boundary, and the lifetime is updated.
     fun reset_one_fee_maker(vm: &signer, account: address) acquires FeeMaker {
-      system_addresses::assert_vm(vm);
+      system_addresses::assert_ol(vm);
       let fee_maker = borrow_global_mut<FeeMaker>(account);
         fee_maker.lifetime = fee_maker.lifetime + fee_maker.epoch;
         fee_maker.epoch = 0;

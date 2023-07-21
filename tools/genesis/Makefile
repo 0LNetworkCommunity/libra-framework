@@ -8,7 +8,7 @@ genesis:
 	cargo r -- --org-github  0o-de-lally \
 	--name-github a-genesis \
 	--local-framework \
-	--json-legacy ./tests/fixtures/${ALL_USERS_FILE}.json \
+	--json-legacy ./tests/fixtures/${ONE_USER_FILE}.json \
 	genesis \
 	--target-supply ${TARGET_SUPPLY} \
 	--target-future-uses ${FUTURE_USES} \

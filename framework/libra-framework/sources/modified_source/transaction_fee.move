@@ -193,8 +193,11 @@ module aptos_framework::transaction_fee {
     /// root account will pay a fee on behalf of someone.
     // if VM is not going to track the tx it will just add a system address here
     public fun vm_pay_fee(sender: &signer, account: address, fee: Coin<GasCoin>) acquires CollectedFeesPerBlock {
-        // Need to track who is making payments to Fee Maker
-      fee_maker::vm_track_user_fee(sender, account, coin::value(&fee));
+      // Need to track who is making payments to Fee Maker
+      // don't track system transfers into transaction fee
+      if (!system_addresses::is_framework_reserved_address(account)) {
+        fee_maker::vm_track_user_fee(sender, account, coin::value(&fee));
+      };
       pay_fee_impl(fee);
     }
 

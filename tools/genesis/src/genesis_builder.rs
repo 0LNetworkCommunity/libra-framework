@@ -85,13 +85,15 @@ pub fn build(
         waypoint.to_string().as_bytes(),
     )?;
 
-    // TODO!: compare output
+    // Audits the generated genesis.blob comparing to the JSON input.
     if let Some(recovery) = legacy_recovery {
       let settings = supply_settings.context("no supply settings provided")?;
       let mut s = supply::populate_supply_stats_from_legacy(recovery, &settings.map_dd_to_slow)?;
 
       s.set_ratios_from_settings(&settings)?;
       compare::compare_recovery_vec_to_genesis_tx(&recovery, &gen_tx, &s)?;
+
+      compare::check_supply(settings.scale_supply() as u64, &gen_tx);
     }
 
     OLProgress::complete(&format!("genesis successfully built at {}", output_dir.to_str().unwrap()));

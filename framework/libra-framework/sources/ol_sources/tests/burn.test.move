@@ -9,6 +9,7 @@ module ol_framework::test_burn {
   use ol_framework::receipts;
   use ol_framework::community_wallet;
   use ol_framework::transaction_fee;
+  use ol_framework::fee_maker;
   use aptos_framework::coin;
   use std::signer;
   use std::vector;
@@ -272,26 +273,34 @@ module ol_framework::test_burn {
     fun track_fees(root: &signer, alice: &signer) {
       // use ol_framework::gas_coin;
       let _vals = mock::genesis_n_vals(root, 1); // need to include eve to init funds
+      mock::ol_initialize_coin_and_fund_vals(root, 10000);
 
-      let (burn, mint) = gas_coin::initialize_for_test(root);
-
-      coin::destroy_burn_cap(burn);
-      // gas_coin::restore_mint_cap(root, mint);
-      // coin::destroy_mint_cap(mint);
-
-    //   assert!(TransactionFee::get_fees_collected()==0, 735701);
-      let coin = coin::mint<GasCoin>(100, &mint);
-      coin::destroy_mint_cap(mint);
+      let alice_burn = 5;
+      let coin = ol_account::withdraw(alice, alice_burn);
 
       transaction_fee::user_pay_fee(alice, coin);
-      // coin::destroy_mint_cap(mint);
 
-      // transaction_fee::pay_fee(alice, coin);
+      let fees = transaction_fee::system_fees_collected();
+      // Fees will include the initialization by MOCK. ol_initialize_coin_and_fund_vals
+      assert!(fees == 100000005, 7357001);
 
-    //   let fee_makers = TransactionFee::get_fee_makers();
-    //   // print(&fee_makers);
-    //   assert!(Vector::length(&fee_makers)==1, 735702);
-    //   assert!(TransactionFee::get_fees_collected()==1, 735703);
+      let fee_makers = fee_maker::get_fee_makers();
+      // includes 0x1 which makes a deposit on
+      assert!(vector::length(&fee_makers)==1, 735702);
+
+      let alice_fees_made = fee_maker::get_user_fees_made(@0x1000a);
+      assert!(alice_fees_made == 5, 735703);
+
+      mock::trigger_epoch(root);
+      let fee_makers = fee_maker::get_fee_makers();
+      assert!(vector::length(&fee_makers)==0, 735704);
+
+      let fees = transaction_fee::system_fees_collected();
+      assert!(fees == 0, 7357005);
+
+      let alice_fees_made = fee_maker::get_user_fees_made(@0x1000a);
+      assert!(alice_fees_made == 0, 735706);
+
 
     }
 }
