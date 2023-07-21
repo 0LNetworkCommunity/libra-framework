@@ -3,6 +3,7 @@
 //! every day is like sunday
 //! -- morrissey via github copilot
 use crate::genesis_reader::{self, get_account_state, make_access_path};
+use crate::supply::Supply;
 // use crate::db_utils;
 use anyhow::{self, Context};
 use libra_types::gas_coin::SlowWalletBalance;
@@ -53,6 +54,7 @@ pub struct CompareError {
 pub fn compare_recovery_vec_to_genesis_tx(
     recovery: &[LegacyRecovery],
     genesis_transaction: &Transaction,
+    supply: &Supply,
 ) -> Result<Vec<CompareError>, anyhow::Error> {
     // start an empty btree map
     let mut err_list: Vec<CompareError> = vec![];
@@ -64,8 +66,6 @@ pub fn compare_recovery_vec_to_genesis_tx(
     // iterate over the recovery file and compare balances
     let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&genesis_transaction)?;
     pb.finish_and_clear();
-
-
 
     recovery.iter()
     .progress_with_style(OLProgress::bar())
@@ -99,7 +99,7 @@ pub fn compare_recovery_vec_to_genesis_tx(
 
         // let b = get_balance(&convert_address, &db_rw);
         // dbg!(&b);
-        if let Some(slow) = &v.slow_wallet {
+        if let Some(slow_legacy) = &v.slow_wallet {
             let db_state_view = db_rw.reader.latest_state_checkpoint_view().unwrap();
             let account_state_view = db_state_view.as_account_with_state_view(&convert_address);
             let on_chain_slow_wallet = account_state_view
@@ -107,16 +107,23 @@ pub fn compare_recovery_vec_to_genesis_tx(
               .expect("should have a slow wallet struct")
               .unwrap();
 
-            if on_chain_slow_wallet.unlocked != slow.unlocked {
+            let expected_unlocked = supply.split_factor * slow_legacy.unlocked as f64;
+
+            if on_chain_slow_wallet.unlocked != slow_legacy.unlocked {
               err_list.push(CompareError {
                   index: i as u64,
                   account: v.account,
-                  bal_diff: 0,
-                  message: "slow wallet unlocked values not what expected".to_string(),
+                  bal_diff: on_chain_slow_wallet.unlocked as i64 - slow_legacy.unlocked as i64,
+                  message: "unexpected slow wallet unlocked".to_string(),
               });
             }
 
         }
+
+
+        // 753,614,948,274
+        // 47,005,000,000
+        // 706,609,948,274
 
         // dbg!(&b);
         // .get_coin_store_resource()
@@ -212,11 +219,12 @@ pub fn compare_recovery_vec_to_genesis_tx(
 pub fn compare_json_to_genesis_blob(
     json_path: PathBuf,
     genesis_path: PathBuf,
+    supply: &Supply,
 ) -> Result<Vec<CompareError>, anyhow::Error> {
     let recovery = read_from_recovery_file(&json_path);
 
     let gen_tx = genesis_reader::read_blob_to_tx(genesis_path)?;
-    compare_recovery_vec_to_genesis_tx(&recovery,&gen_tx)
+    compare_recovery_vec_to_genesis_tx(&recovery,&gen_tx, supply)
 }
 
 

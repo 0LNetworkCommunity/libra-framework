@@ -1,5 +1,5 @@
 //! ol functions to run at genesis e.g. migration.
-use crate::supply::{get_supply_struct, SupplySettings};
+use crate::supply::{populate_supply_stats_from_legacy, SupplySettings};
 use anyhow::Context;
 use indicatif::ProgressIterator;
 use libra_types::{
@@ -20,7 +20,7 @@ pub fn genesis_migrate_all_users(
     user_recovery: &[LegacyRecovery],
     supply_settings: &SupplySettings,
 ) -> anyhow::Result<()> {
-    let mut supply = get_supply_struct(user_recovery, &supply_settings.map_dd_to_slow)?;
+    let mut supply = populate_supply_stats_from_legacy(user_recovery, &supply_settings.map_dd_to_slow)?;
 
     supply.set_ratios_from_settings(supply_settings)?;
 

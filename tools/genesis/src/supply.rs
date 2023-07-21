@@ -1,7 +1,29 @@
 use clap::Args;
 use libra_types::legacy_types::{legacy_address::LegacyAddress, legacy_recovery::LegacyRecovery};
-// use std::path::PathBuf;
 use anyhow::Context;
+
+#[derive(Debug, Clone, Args)]
+pub struct SupplySettings {
+    #[clap(long)]
+    /// what is the final supply units to be split to
+    pub target_supply: f64,
+    #[clap(long)]
+    /// for calculating escrow, what's the desired percent to future uses
+    pub target_future_uses: f64,
+    #[clap(long)]
+    /// for future uses calc, are there any donor directed wallets which require mapping to slow wallets
+    pub map_dd_to_slow: Vec<LegacyAddress>,
+}
+
+impl Default for SupplySettings {
+  fn default() -> Self {
+      Self {
+        target_supply: 10_000_000_000.0,
+        target_future_uses: 0.0,
+        map_dd_to_slow: vec![],
+      }
+  }
+}
 
 #[derive(Debug, Clone, Default)]
 pub struct Supply {
@@ -30,28 +52,6 @@ impl Supply {
   }
 }
 
-#[derive(Debug, Clone, Args)]
-pub struct SupplySettings {
-    #[clap(long)]
-    /// what is the final supply units to be split to
-    pub target_supply: f64,
-    #[clap(long)]
-    /// for calculating escrow, what's the desired percent to future uses
-    pub target_future_uses: f64,
-    #[clap(long)]
-    /// for future uses calc, are there any donor directed wallets which require mapping to slow wallets
-    pub map_dd_to_slow: Vec<LegacyAddress>,
-}
-
-impl Default for SupplySettings {
-  fn default() -> Self {
-      Self {
-        target_supply: 10_000_000_000.0,
-        target_future_uses: 0.0,
-        map_dd_to_slow: vec![],
-      }
-  }
-}
 
 fn inc_supply(
     mut acc: Supply,
@@ -96,7 +96,7 @@ fn inc_supply(
 /// iterate over the recovery file and get the sum of all balances.
 /// there's an option to map certain donor-directed wallets to be counted as slow wallets
 /// Note: this may not be the "total supply", since there may be coins in other structs beside an account::balance, e.g escrowed in contracts.
-pub fn get_supply_struct(
+pub fn populate_supply_stats_from_legacy(
     rec: &[LegacyRecovery],
     map_dd_to_slow: &[LegacyAddress],
 ) -> anyhow::Result<Supply> {
@@ -158,7 +158,7 @@ fn test_genesis_math() {
 
     // confirm the supply of normal, slow, and donor directed will add up to 100%``
 
-    let mut supply = get_supply_struct(&r, &settings.map_dd_to_slow).unwrap();
+    let mut supply = populate_supply_stats_from_legacy(&r, &settings.map_dd_to_slow).unwrap();
     dbg!(&supply);
 
     println!("before");

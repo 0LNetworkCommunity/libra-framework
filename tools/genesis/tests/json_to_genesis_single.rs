@@ -7,6 +7,7 @@ use libra_genesis_tools::{
   genesis::make_recovery_genesis_from_vec_legacy_recovery
 };
 use libra_types::exports::ChainId;
+use libra_genesis_tools::supply::{self, SupplySettings};
 // use ol_types::legacy_recovery::LegacyRecovery;
 use std::fs;
 use support::{path_utils::json_path, test_vals};
@@ -24,16 +25,22 @@ fn test_parse_json_for_one_validator_and_save_blob() {
     let json_str = fs::read_to_string(json.clone()).unwrap();
     let user_accounts: Vec<LegacyRecovery> = serde_json::from_str(&json_str).unwrap();
 
+    // get the supply arithmetic so that we can compare outputs
+    let mut supply_stats = supply::populate_supply_stats_from_legacy(&user_accounts, &vec![]).unwrap();
+    let supply_settings = SupplySettings::default();
+    supply_stats.set_ratios_from_settings(&supply_settings).unwrap();
+
+
     let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
       Some(&user_accounts),
       &genesis_vals,
       &head_release_bundle(),
       ChainId::test(),
-      None
+      Some(supply_settings)
     )
     .unwrap();
 
-    match compare::compare_recovery_vec_to_genesis_tx(&user_accounts, &gen_tx){
+    match compare::compare_recovery_vec_to_genesis_tx(&user_accounts, &gen_tx, &supply_stats){
         Ok(list) => {
           if !list.is_empty() {
             println!("list: {:?}", &list);
