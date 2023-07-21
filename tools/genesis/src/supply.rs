@@ -1,8 +1,10 @@
-use clap::Args;
-use libra_types::legacy_types::{legacy_address::LegacyAddress, legacy_recovery::LegacyRecovery};
 use anyhow::Context;
+use clap::Args;
+use libra_types::{
+    legacy_types::{legacy_address::LegacyAddress, legacy_recovery::LegacyRecovery},
+    ONCHAIN_DECIMAL_PRECISION,
+};
 
-const ONCHAIN_DECIMAL_PRECISION: u8 = 6;
 #[derive(Debug, Clone, Args)]
 pub struct SupplySettings {
     #[clap(long)]
@@ -17,20 +19,20 @@ pub struct SupplySettings {
 }
 
 impl Default for SupplySettings {
-  fn default() -> Self {
-      Self {
-        target_supply: 10_000_000_000.0,
-        target_future_uses: 0.0,
-        map_dd_to_slow: vec![],
-      }
-  }
+    fn default() -> Self {
+        Self {
+            target_supply: 10_000_000_000.0,
+            target_future_uses: 0.0,
+            map_dd_to_slow: vec![],
+        }
+    }
 }
 
 impl SupplySettings {
-  // convert to the correct coin scaling
-  pub fn scale_supply(&self) -> f64 {
-    self.target_supply * 10f64.powf(ONCHAIN_DECIMAL_PRECISION.into())
-  }
+    // convert to the correct coin scaling
+    pub fn scale_supply(&self) -> f64 {
+        self.target_supply * 10f64.powf(ONCHAIN_DECIMAL_PRECISION.into())
+    }
 }
 #[derive(Debug, Clone, Default)]
 pub struct Supply {
@@ -48,19 +50,17 @@ pub struct Supply {
 }
 
 impl Supply {
-  // returns the ratios (split_factor, escrow_pct)
-  pub fn set_ratios_from_settings(&mut self, settings: &SupplySettings) -> anyhow::Result<()>{
-    // NOTE IMPORTANT: the CLI receives an unscaled integer number. And it should be scaled up to the Movevm decimal precision being used: 10^6
-    self.split_factor = settings.scale_supply() / self.total;
+    // returns the ratios (split_factor, escrow_pct)
+    pub fn set_ratios_from_settings(&mut self, settings: &SupplySettings) -> anyhow::Result<()> {
+        // NOTE IMPORTANT: the CLI receives an unscaled integer number. And it should be scaled up to the Movevm decimal precision being used: 10^6
+        self.split_factor = settings.scale_supply() / self.total;
 
-
-    let target_future_uses = settings.target_future_uses * self.total;
-    let remaining_to_fund = target_future_uses - self.donor_directed;
-    self.escrow_pct = remaining_to_fund / self.slow_validator_locked;
-    Ok(())
-  }
+        let target_future_uses = settings.target_future_uses * self.total;
+        let remaining_to_fund = target_future_uses - self.donor_directed;
+        self.escrow_pct = remaining_to_fund / self.slow_validator_locked;
+        Ok(())
+    }
 }
-
 
 fn inc_supply(
     mut acc: Supply,
@@ -120,7 +120,6 @@ pub fn populate_supply_stats_from_legacy(
         donor_directed: 0.0,
         split_factor: 0.0,
         escrow_pct: 0.0,
-
     };
 
     let dd_wallets = rec

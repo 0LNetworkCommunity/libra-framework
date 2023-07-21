@@ -129,7 +129,7 @@ impl QueryType {
         match self {
         QueryType::Balance { account } => {
           let res = get_account_balance_libra(&client, *account).await?;
-          Ok(json!(res))
+          Ok(json!(res.scaled()))
         },
         QueryType::Tower { account } => {
           let res = get_tower_state(&client, *account).await?;

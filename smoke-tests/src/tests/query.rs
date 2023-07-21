@@ -16,7 +16,7 @@ async fn libra_query_test() {
 
     let info = swarm.aptos_public_info();
     let c = info.client();
-    
+
     let q = QueryType::Balance { account: val_acct };
     match q.query_to_json(Some(c.to_owned())).await {
       Ok(v) => {

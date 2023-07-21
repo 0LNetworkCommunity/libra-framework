@@ -8,6 +8,8 @@ use move_core_types::identifier::IdentStr;
 use once_cell::sync::Lazy;
 use zapatos_types::{event::EventHandle, account_address::AccountAddress};
 
+use crate::ONCHAIN_DECIMAL_PRECISION;
+
 pub static GAS_COIN_TYPE: Lazy<TypeTag> = Lazy::new(|| {
     TypeTag::Struct(Box::new(StructTag {
         address: AccountAddress::ONE,
@@ -116,11 +118,13 @@ pub struct GasCoin {
 //     }
 // }
 
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SlowWalletBalance {
   pub unlocked: u64,
   pub total: u64,
 }
+
 
 impl MoveStructType for SlowWalletBalance {
     const MODULE_NAME: &'static IdentStr = ident_str!("slow_wallet");
@@ -139,4 +143,22 @@ impl SlowWalletBalance {
 
     Ok(Self { unlocked, total })
   }
+
+  // scale it to include decimals
+  pub fn scaled(&self) -> LibraBalanceDisplay {
+    LibraBalanceDisplay {
+        unlocked: self.unlocked as f64 / 10f64.powf(ONCHAIN_DECIMAL_PRECISION as f64),
+        total: self.total as f64 / 10f64.powf(ONCHAIN_DECIMAL_PRECISION as f64),
+    }
+  }
+}
+
+
+/// This is the same shape as Slow Wallet balance, except that it is scaled.
+/// The slow wallet struct contains the coin value as it exists in the database which is without decimals. The decimal precision for GasCoin is 6. So we need to scale it for human consumption.
+#[derive(Debug, Serialize, Deserialize)]
+
+pub struct LibraBalanceDisplay {
+  pub unlocked: f64,
+  pub total: f64,
 }
