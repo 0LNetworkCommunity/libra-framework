@@ -19,7 +19,7 @@ pub static GAS_COIN_TYPE: Lazy<TypeTag> = Lazy::new(|| {
 
 /// The balance resource held under an account.
 #[derive(Debug, Serialize, Deserialize)]
-#[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
+// #[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
 pub struct GasCoinStoreResource {
     coin: u64,
     frozen: bool,

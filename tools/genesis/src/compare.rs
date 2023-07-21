@@ -4,8 +4,11 @@
 //! -- morrissey via github copilot
 use crate::genesis_reader;
 use crate::supply::Supply;
+use crate::genesis_reader::total_supply;
+
 use anyhow;
-use libra_types::gas_coin::{SlowWalletBalance, GasCoinStoreResource};
+// use libra_types::move_resource::coin_info::GasCoinInfoResource;
+use libra_types::move_resource::gas_coin::{SlowWalletBalance, GasCoinStoreResource};
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
 use zapatos_types::transaction::Transaction;
 use libra_types::exports::AccountAddress;
@@ -18,6 +21,8 @@ use zapatos_state_view::account_with_state_view::AsAccountWithStateView;
 use zapatos_types::account_view::AccountView;
 use std::path::PathBuf;
 use indicatif::{ProgressIterator, ProgressBar};
+use zapatos_storage_interface::DbReader;
+use std::sync::Arc;
 
 #[derive(Debug)]
 /// struct for holding the results of a comparison
@@ -139,32 +144,31 @@ pub fn compare_json_to_genesis_blob(
 
 // Check that the genesis validators are present in the genesis blob file, once we read the db.
 
-pub fn check_val_set(
-  expected_vals: &[AccountAddress],
-  genesis_transaction: &Transaction,
-) -> Result<(), anyhow::Error>{
+fn get_val_set(db_reader: &Arc<dyn DbReader>) -> anyhow::Result< Vec<AccountAddress>> {
 
-    let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&genesis_transaction)?;
-
-    let db_state_view = db_rw.reader.latest_state_checkpoint_view().unwrap();
+    let db_state_view = db_reader.latest_state_checkpoint_view().unwrap();
     let root_account_state_view =
         db_state_view.as_account_with_state_view(&CORE_CODE_ADDRESS);
 
     let val_set = root_account_state_view.get_validator_set()
             .unwrap()
             .unwrap();
-            // .payload();
-    // dbg!(&x);
-    // Ok(())
+    Ok(val_set
+        .payload()
+        .map(|v|  *v.account_address())
+        .collect()
+    )
+}
+
+pub fn check_val_set(
+  expected_vals: &[AccountAddress],
+  genesis_transaction: &Transaction,
+) -> Result<(), anyhow::Error>{
 
 
-      let addrs = val_set.payload()
-      // .iter()
-      .map(|v| {
-        // dbg!(&v);
-        *v.account_address()
-      })
-      .collect::<Vec<AccountAddress>>();
+      let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&genesis_transaction)?;
+
+      let addrs = get_val_set(&db_rw.reader)?;
 
       assert!(addrs.len() == expected_vals.len(), "validator set length mismatch");
 
@@ -176,12 +180,17 @@ pub fn check_val_set(
 
 }
 
-// fn get_balance(account: &AccountAddress, db: &DbReaderWriter) -> u64 {
-//     let db_state_view = db.reader.latest_state_checkpoint_view().unwrap();
-//     let account_state_view = db_state_view.as_account_with_state_view(account);
-//     account_state_view
-//         .get_coin_store_resource()
-//         .unwrap()
-//         .unwrap()
-//         .coin()
-// }
+pub fn check_supply(
+  expected_supply: u64,
+  genesis_transaction: &Transaction,
+) -> Result<(), anyhow::Error>{
+
+    let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&genesis_transaction)?;
+
+    let on_chain_supply = total_supply(&db_rw.reader).unwrap();
+
+    assert!(expected_supply as u128 == on_chain_supply, "unexpected supply");
+
+    Ok(())
+
+}

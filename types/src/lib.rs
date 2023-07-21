@@ -1,6 +1,6 @@
 //! Exprorting some types from vendor so that they can be used in other crates
 pub mod util;
-pub mod gas_coin;
+pub mod move_resource;
 // pub mod tower;
 pub mod type_extensions;
 pub mod exports;

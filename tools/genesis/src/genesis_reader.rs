@@ -21,7 +21,10 @@ use std::fs::File;
 use std::io::Read;
 use zapatos_executor::db_bootstrapper::generate_waypoint;
 use zapatos_db::AptosDB;
-
+use zapatos_storage_interface::state_view::LatestDbStateCheckpointView;
+use libra_types::move_resource::coin_info::GasCoinInfoResource;
+use zapatos_state_view::account_with_state_view::AsAccountWithStateView;
+use zapatos_types::account_view::AccountView;
 /// Compute the ledger given a genesis writeset transaction and return access to that ledger and
 /// the waypoint for that state.
 pub fn bootstrap_db_reader_from_gen_tx(
@@ -92,6 +95,34 @@ fn make_struct_tag_no_types(module: &str, name: &str) -> StructTag {
 pub fn make_access_path(account: AccountAddress, module: &str, name: &str) -> anyhow::Result<AccessPath> {
     let tag = make_struct_tag_no_types(module, name);
     AccessPath::resource_access_path(account, tag)
+}
+
+
+pub fn total_supply(db_reader: &Arc<dyn DbReader>) -> Option<u128> {
+    let db_state_view = db_reader.latest_state_checkpoint_view().unwrap();
+    let root_account_state_view =
+        db_state_view.as_account_with_state_view(&CORE_CODE_ADDRESS);
+
+    let coin_info = root_account_state_view
+    .get_move_resource::<GasCoinInfoResource>()
+    .expect("should have move resource")
+    .expect("root should have a GasCoinInfoResourcee");
+
+    let version = db_reader.get_latest_version().unwrap();
+
+    coin_info.supply().as_ref().map(|o| match o.aggregator.as_ref() {
+        Some(aggregator) => {
+            let state_key = aggregator.state_key();
+            let value = db_reader
+                .get_state_value_by_version(&state_key, version)
+                .expect("aggregator value must exist in data store")
+                .expect("supply value exists");
+            // dbg!(&value);
+              // todo!()
+            bcs::from_bytes(&value.bytes()).unwrap()
+        }
+        None => o.integer.as_ref().unwrap().value,
+    })
 }
 
 #[test]

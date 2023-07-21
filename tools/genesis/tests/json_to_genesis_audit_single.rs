@@ -13,7 +13,8 @@ use libra_types::exports::AccountAddress;
 // test that a genesis blob created from struct, will actually contain the data
 fn test_correct_supply_arithmetic_single() {
     // let path = DropTemp::new_in_crate("db_rw").dir();
-    let genesis_vals = test_vals::get_test_valset(4);
+    let num_vals = 1;
+    let genesis_vals = test_vals::get_test_valset(num_vals);
 
     let json = json_path()
         .parent()
@@ -24,10 +25,10 @@ fn test_correct_supply_arithmetic_single() {
     let user_accounts: Vec<LegacyRecovery> = serde_json::from_str(&json_str).unwrap();
 
     // get the supply arithmetic so that we can compare outputs
-    let mut supply_stats =
+    let mut supply =
         supply::populate_supply_stats_from_legacy(&user_accounts, &vec![]).unwrap();
     let supply_settings = SupplySettings::default();
-    supply_stats
+    supply
         .set_ratios_from_settings(&supply_settings)
         .unwrap();
 
@@ -36,13 +37,13 @@ fn test_correct_supply_arithmetic_single() {
         &genesis_vals,
         &head_release_bundle(),
         ChainId::test(),
-        Some(supply_settings),
+        Some(supply_settings.clone()),
     )
     .unwrap();
 
     // NOTE: in the case of a single account being migrated, that account balance will equal the total supply as set in: SupplySettings. i.e. 10B
 
-    match compare::compare_recovery_vec_to_genesis_tx(&user_accounts, &gen_tx, &supply_stats) {
+    match compare::compare_recovery_vec_to_genesis_tx(&user_accounts, &gen_tx, &supply) {
         Ok(list) => {
             if !list.is_empty() {
                 assert!(false, "list is not empty: {list:#?}");
@@ -50,6 +51,8 @@ fn test_correct_supply_arithmetic_single() {
         }
         Err(_e) => assert!(false, "error creating comparison"),
     }
+    let expected_supply = supply_settings.target_supply as u64 + (num_vals * 10000000000) as u64; // the genesis reward at testnet for one validator
+    compare::check_supply(expected_supply, &gen_tx).unwrap();
 
 }
 

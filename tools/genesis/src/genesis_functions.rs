@@ -164,7 +164,6 @@ pub fn genesis_migrate_slow_wallet(
         MoveValue::Signer(new_addr_type),
         MoveValue::U64((slow.unlocked as f64 * split_factor) as u64),
         MoveValue::U64((slow.transferred as f64 * split_factor) as u64),
-        // MoveValue::U64((split_factor * 1_000_000.0) as u64),
     ]);
 
     exec_function(

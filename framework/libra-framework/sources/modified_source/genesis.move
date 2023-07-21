@@ -41,6 +41,7 @@ module aptos_framework::genesis {
     use ol_framework::burn;
     use ol_framework::fee_maker;
 
+    const TESTNET_GENESIS_BOOTSTRAP_COIN: u64 = 10000000000; //10,000 coins with 6 digits precision: 10B coins.
     //////// end 0L ////////
 
 
@@ -251,7 +252,7 @@ module aptos_framework::genesis {
             coin::register<GasCoin>(&account);
 
             aptos_coin::mint(aptos_framework, account_address, balance);
-            gas_coin::mint(aptos_framework, account_address, 10000000000);
+            gas_coin::mint(aptos_framework, account_address, TESTNET_GENESIS_BOOTSTRAP_COIN);
             account
         }
     }
