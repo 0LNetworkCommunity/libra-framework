@@ -2,40 +2,21 @@
 //!
 //! every day is like sunday
 //! -- morrissey via github copilot
-use crate::genesis_reader::{self, get_account_state, make_access_path};
+use crate::genesis_reader;
 use crate::supply::Supply;
-// use crate::db_utils;
-use anyhow::{self, Context};
+use anyhow;
 use libra_types::gas_coin::SlowWalletBalance;
-use libra_types::legacy_types::ancestry::AncestryResource;
-use zapatos_types::state_store::state_key::StateKey;
+use zapatos_types::account_config::CoinStoreResource;
 use zapatos_types::transaction::Transaction;
-// use libra_types::legacy_types::ancestry::AncestryResource;
 use libra_types::exports::AccountAddress;
 use libra_types::legacy_types::legacy_address::LegacyAddress;
 use libra_types::legacy_types::legacy_recovery::{LegacyRecovery, read_from_recovery_file};
-// use libra_types::exports::Waypoint;
 use libra_types::ol_progress::OLProgress;
-use zapatos_storage_interface::DbReaderWriter;
 use zapatos_storage_interface::state_view::LatestDbStateCheckpointView;
 
 use zapatos_state_view::account_with_state_view::AsAccountWithStateView;
 use zapatos_types::account_view::AccountView;
-// use zapatos_types::access_path::AccessPath;
-// use zapatos_types::state_store::state_key::StateKey;
-// use zapatos_types::transaction::Transaction;
-// use zapatos_types::{
-//   account_view::AccountView,
-//   account_state::AccountState,
-//   move_resource::MoveStorage,
-// };
-// use zapatos_storage_interface::DbReaderWriter;
-// use std::convert::TryFrom;
 use std::path::PathBuf;
-// use std::path::Path;
-// use std::fs::File;
-// use std::io::Read;
-// use std::ops::Deref;
 use indicatif::{ProgressIterator, ProgressBar};
 
 #[derive(Debug)]
@@ -97,11 +78,12 @@ pub fn compare_recovery_vec_to_genesis_tx(
 
         let convert_address = AccountAddress::from_hex_literal(&v.account.unwrap().to_hex_literal()).expect("could not convert address types");
 
-        // let b = get_balance(&convert_address, &db_rw);
-        // dbg!(&b);
+        let db_state_view = db_rw.reader.latest_state_checkpoint_view().unwrap();
+        let account_state_view = db_state_view.as_account_with_state_view(&convert_address);
+
         if let Some(slow_legacy) = &v.slow_wallet {
-            let db_state_view = db_rw.reader.latest_state_checkpoint_view().unwrap();
-            let account_state_view = db_state_view.as_account_with_state_view(&convert_address);
+            // let db_state_view = db_rw.reader.latest_state_checkpoint_view().unwrap();
+            // let account_state_view = db_state_view.as_account_with_state_view(&convert_address);
             let on_chain_slow_wallet = account_state_view
               .get_move_resource::<SlowWalletBalance>()
               .expect("should have a slow wallet struct")
@@ -109,16 +91,38 @@ pub fn compare_recovery_vec_to_genesis_tx(
 
             let expected_unlocked = supply.split_factor * slow_legacy.unlocked as f64;
 
-            if on_chain_slow_wallet.unlocked != slow_legacy.unlocked {
+            if on_chain_slow_wallet.unlocked != expected_unlocked.trunc() as u64 {
               err_list.push(CompareError {
                   index: i as u64,
                   account: v.account,
-                  bal_diff: on_chain_slow_wallet.unlocked as i64 - slow_legacy.unlocked as i64,
+                  bal_diff: on_chain_slow_wallet.unlocked as i64 - expected_unlocked as i64,
                   message: "unexpected slow wallet unlocked".to_string(),
               });
             }
 
         }
+
+        if let Some(balance_legacy) = &v.balance {
+
+            let on_chain_balance = account_state_view
+              .get_move_resource::<CoinStoreResource>()
+              .expect("should have a CoinStore resource for balance")
+              .unwrap();
+
+            let expected_balance: f64= supply.split_factor * balance_legacy.coin as f64;
+
+            if on_chain_balance.coin() != expected_balance.trunc() as u64 {
+              err_list.push(CompareError {
+                  index: i as u64,
+                  account: v.account,
+                  bal_diff: on_chain_balance.coin() as i64 - expected_balance as i64,
+                  message: "unexpected slow wallet unlocked".to_string(),
+              });
+            }
+
+        }
+
+        // CoinStoreResource
 
 
         // 753,614,948,274
@@ -264,12 +268,12 @@ pub fn compare_json_to_genesis_blob(
 
 // }
 
-fn get_balance(account: &AccountAddress, db: &DbReaderWriter) -> u64 {
-    let db_state_view = db.reader.latest_state_checkpoint_view().unwrap();
-    let account_state_view = db_state_view.as_account_with_state_view(account);
-    account_state_view
-        .get_coin_store_resource()
-        .unwrap()
-        .unwrap()
-        .coin()
-}
+// fn get_balance(account: &AccountAddress, db: &DbReaderWriter) -> u64 {
+//     let db_state_view = db.reader.latest_state_checkpoint_view().unwrap();
+//     let account_state_view = db_state_view.as_account_with_state_view(account);
+//     account_state_view
+//         .get_coin_store_resource()
+//         .unwrap()
+//         .unwrap()
+//         .coin()
+// }
