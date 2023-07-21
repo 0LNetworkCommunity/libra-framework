@@ -18,7 +18,7 @@ impl DropTemp {
     DropTemp(test_path)
   }
 
-  pub fn dir(&self) -> PathBuf{
+  pub fn dir(&self) -> PathBuf {
     self.0.clone()
   }
 

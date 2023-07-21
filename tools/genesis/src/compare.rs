@@ -1,17 +1,32 @@
 //! functions for comparing LegacyRecovery data to a genesis blob
-//! 
+//!
 //! every day is like sunday
 //! -- morrissey via github copilot
-
-use crate::db_utils;
+use crate::genesis_reader::read_db_and_compute_genesis;
+// use crate::db_utils;
 use anyhow;
-use diem_types::account_address::AccountAddress;
-use diem_types::account_state::AccountState;
-use libra_types::legacy_recovery::LegacyRecovery;
-use libra_types::legacy_recovery::read_from_recovery_file;
-use std::convert::TryFrom;
+// use libra_types::legacy_types::ancestry::AncestryResource;
+// use libra_types::exports::AccountAddress;
+use libra_types::legacy_types::legacy_address::LegacyAddress;
+use libra_types::legacy_types::legacy_recovery::{LegacyRecovery, read_from_recovery_file};
+// use libra_types::exports::Waypoint;
+use libra_types::ol_progress::OLProgress;
+
+// use zapatos_types::access_path::AccessPath;
+// use zapatos_types::state_store::state_key::StateKey;
+// use zapatos_types::transaction::Transaction;
+// use zapatos_types::{
+//   account_view::AccountView,
+//   account_state::AccountState,
+//   move_resource::MoveStorage,
+// };
+// use zapatos_storage_interface::DbReaderWriter;
+// use std::convert::TryFrom;
 use std::path::PathBuf;
-use ol_types::OLProgress;
+// use std::path::Path;
+// use std::fs::File;
+// use std::io::Read;
+// use std::ops::Deref;
 use indicatif::{ProgressIterator, ProgressBar};
 
 #[derive(Debug)]
@@ -20,7 +35,7 @@ pub struct CompareError {
     /// index of LegacyRecover
     pub index: u64,
     /// user account
-    pub account: Option<AccountAddress>,
+    pub account: Option<LegacyAddress>,
     /// balance difference [LegacyRecover]- [genesis blob]
     pub bal_diff: i64,
     /// error message
@@ -39,7 +54,7 @@ pub fn compare_recovery_vec_to_genesis_blob(
     .with_message("Test database from genesis.blob");
     pb.enable_steady_tick(core::time::Duration::from_millis(500));
     // iterate over the recovery file and compare balances
-    let (db_rw, _) = db_utils::read_db_and_compute_genesis(genesis_path)?;
+    let (_db_rw, _) = read_db_and_compute_genesis(&genesis_path)?;
     pb.finish_and_clear();
 
 
@@ -59,7 +74,7 @@ pub fn compare_recovery_vec_to_genesis_blob(
             return;
         };
 
-        if v.account.unwrap() == AccountAddress::ZERO {
+        if v.account.unwrap() == LegacyAddress::ZERO {
             return;
         };
         if v.balance.is_none() {
@@ -72,70 +87,70 @@ pub fn compare_recovery_vec_to_genesis_blob(
             return;
         }
 
-        let val_state = match db_rw
-            .reader
-            .get_latest_account_state(v.account.expect("need an address"))
-        {
-            Ok(Some(val_state)) => val_state,
-            _ => {
-                err_list.push(CompareError {
-                    index: i as u64,
-                    account: v.account,
-                    bal_diff: 0,
-                    message: "find account blob".to_string(),
-                });
-                return;
-            }
-        };
+        // let val_state = match db_rw
+        //     .reader
+        //     .get_latest_account_state(v.account.expect("need an address"))
+        // {
+        //     Ok(Some(val_state)) => val_state,
+        //     _ => {
+        //         err_list.push(CompareError {
+        //             index: i as u64,
+        //             account: v.account,
+        //             bal_diff: 0,
+        //             message: "find account blob".to_string(),
+        //         });
+        //         return;
+        //     }
+        // };
 
-        let account_state = match AccountState::try_from(&val_state) {
-            Ok(account_state) => account_state,
-            _ => {
-                err_list.push(CompareError {
-                    index: i as u64,
-                    account: v.account,
-                    bal_diff: 0,
-                    message: "parse account state".to_string(),
-                });
-                return;
-            }
-        };
+        // let account_state = match AccountState::try_from(&val_state) {
+        //     Ok(account_state) => account_state,
+        //     _ => {
+        //         err_list.push(CompareError {
+        //             index: i as u64,
+        //             account: v.account,
+        //             bal_diff: 0,
+        //             message: "parse account state".to_string(),
+        //         });
+        //         return;
+        //     }
+        // };
 
-        let bal = match account_state.get_balance_resources() {
-            Ok(bal) => bal,
-            _ => {
-                err_list.push(CompareError {
-                    index: i as u64,
-                    account: v.account,
-                    bal_diff: 0,
-                    message: "get balance resource".to_string(),
-                });
-                return;
-            }
-        };
+        // let bal = match account_state.get_balance_resources() {
+        //     Ok(bal) => bal,
+        //     _ => {
+        //         err_list.push(CompareError {
+        //             index: i as u64,
+        //             account: v.account,
+        //             bal_diff: 0,
+        //             message: "get balance resource".to_string(),
+        //         });
+        //         return;
+        //     }
+        // };
 
-        let genesis_bal = match bal.iter().next() {
-            Some((_, b)) => b.coin(),
-            _ => {
-                err_list.push(CompareError {
-                    index: i as u64,
-                    account: v.account,
-                    bal_diff: 0,
-                    message: "genesis resource is None".to_string(),
-                });
-                return;
-            }
-        };
+        // let genesis_bal = match bal.iter().next() {
+        //     Some((_, b)) => b.coin(),
+        //     _ => {
+        //         err_list.push(CompareError {
+        //             index: i as u64,
+        //             account: v.account,
+        //             bal_diff: 0,
+        //             message: "genesis resource is None".to_string(),
+        //         });
+        //         return;
+        //     }
+        // };
 
-        let recovery_bal = v.balance.as_ref().unwrap().coin();
-        if recovery_bal != genesis_bal {
-            err_list.push(CompareError {
-                index: i as u64,
-                account: v.account,
-                bal_diff: recovery_bal as i64 - genesis_bal as i64,
-                message: "balance mismatch".to_string(),
-            });
-        }
+        // let recovery_bal = v.balance.as_ref().unwrap().coin();
+        // if recovery_bal != genesis_bal {
+        //     err_list.push(CompareError {
+        //         index: i as u64,
+        //         account: v.account,
+        //         bal_diff: recovery_bal as i64 - genesis_bal as i64,
+        //         message: "balance mismatch".to_string(),
+        //     });
+        // }
     });
 
     Ok(err_list)
@@ -151,38 +166,39 @@ pub fn compare_json_to_genesis_blob(
 }
 
 
-/// Check that the genesis validators are present in the genesis blob file, once we read the db.
+// Check that the genesis validators are present in the genesis blob file, once we read the db.
 
-pub fn check_val_set(
-  expected_vals: Vec<AccountAddress>,
-  genesis_path: PathBuf,
-) -> Result<(), anyhow::Error>{
-      let (db_rw, _) = db_utils::read_db_and_compute_genesis(genesis_path)?;
+// pub fn check_val_set(
+//   expected_vals: Vec<AccountAddress>,
+//   genesis_path: PathBuf,
+// ) -> Result<(), anyhow::Error>{
+//       let (db_rw, _) = read_db_and_compute_genesis(&genesis_path)?;
 
-      let root_blob = db_rw
-      .reader
-      .get_latest_account_state(AccountAddress::ZERO)?
-      .expect("no account state blob");
+//       let root_blob = db_rw
+//       .reader
+//       .get_latest_account_state(AccountAddress::ZERO)?
+//       .expect("no account state blob");
 
-      let root_state = AccountState::try_from(&root_blob)?;
+//       let root_state = AccountState::try_from(&root_blob)?;
 
-      let val_set = root_state.get_validator_set()?
-      .expect("no validator config state");
+//       let val_set = root_state.get_validator_set()?
+//       .expect("no validator config state");
 
-      let addrs = val_set.payload()
-      .iter()
-      .map(|v| {
-        // dbg!(&v);
-        *v.account_address()
-      })
-      .collect::<Vec<AccountAddress>>();
+//       let addrs = val_set.payload()
+//       // .iter()
+//       .map(|v| {
+//         // dbg!(&v);
+//         *v.account_address()
+//       })
+//       .collect::<Vec<AccountAddress>>();
 
-      assert!(addrs.len() == expected_vals.len(), "validator set length mismatch");
+//       assert!(addrs.len() == expected_vals.len(), "validator set length mismatch");
 
-      for v in expected_vals {
-        assert!(addrs.contains(&v), "genesis does not contain validator");
-      }
+//       for v in expected_vals {
+//         assert!(addrs.contains(&v), "genesis does not contain validator");
+//       }
 
-      Ok(())
+//       Ok(())
 
-}
+// }
+

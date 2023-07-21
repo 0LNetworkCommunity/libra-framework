@@ -479,5 +479,6 @@ fn test_build() {
     home,
     true,
     None,
+    None,
     ).unwrap();
 }

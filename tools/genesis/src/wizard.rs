@@ -492,7 +492,7 @@ fn test_validator_files_config() {
         fs::remove_dir_all(&test_path).unwrap();
     }
 
-    initialize_host(Some(test_path.clone()), "validator", h, Some(alice_mnem)).unwrap();
+    initialize_host(Some(test_path.clone()), "validator", h, Some(alice_mnem), false).unwrap();
 
     fs::remove_dir_all(&test_path).unwrap();
 }

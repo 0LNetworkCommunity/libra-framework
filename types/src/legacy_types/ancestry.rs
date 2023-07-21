@@ -8,6 +8,10 @@ use move_core_types::{
     move_resource::{MoveResource, MoveStructType},
 };
 use serde::{Deserialize, Serialize};
+use zapatos_types::access_path::AccessPath;
+use move_core_types::language_storage::StructTag;
+use move_core_types::account_address::AccountAddress;
+use move_core_types::language_storage::CORE_CODE_ADDRESS;
 
 use super::legacy_address::LegacyAddress;
 
@@ -26,22 +30,22 @@ impl MoveResource for AncestryResource {}
 
 impl AncestryResource {
     // ///
-    // pub fn struct_tag() -> StructTag {
-    //     StructTag {
-    //         address: CORE_CODE_ADDRESS,
-    //         module: AncestryResource::module_identifier(),
-    //         name: AncestryResource::struct_identifier(),
-    //         type_params: vec![],
-    //     }
-    // }
+    pub fn struct_tag() -> StructTag {
+        StructTag {
+            address: CORE_CODE_ADDRESS,
+            module: AncestryResource::module_identifier(),
+            name: AncestryResource::struct_identifier(),
+            type_params: vec![],
+        }
+    }
     // ///
-    // pub fn access_path(account: AccountAddress) -> AccessPath {
-    //     let resource_key = ResourceKey::new(account, AncestryResource::struct_tag());
-    //     AccessPath::resource_access_path(resource_key)
-    // }
+    pub fn access_path(account: AccountAddress) -> AccessPath {
+        AccessPath::resource_access_path(account, AncestryResource::struct_tag()).unwrap()
+    }
     // ///
     // pub fn resource_path() -> Vec<u8> {
-    //     AccessPath::resource_access_vec(AncestryResource::struct_tag())
+
+    //     AccessPath::resource_access_path(AncestryResource::struct_tag())
     // }
 
     ///
