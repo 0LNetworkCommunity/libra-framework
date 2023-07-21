@@ -8,6 +8,7 @@ use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use std::fs;
 use support::{path_utils::json_path, test_vals};
 use libra_types::exports::AccountAddress;
+
 #[test]
 // test that a genesis blob created from struct, will actually contain the data
 fn test_correct_supply_arithmetic_single() {
