@@ -243,7 +243,7 @@ module aptos_framework::genesis {
 
     /// This creates an funds an account if it doesn't exist.
     /// If it exists, it just returns the signer.
-    fun create_account(aptos_framework: &signer, account_address: address, balance: u64): signer {
+    fun create_account(_aptos_framework: &signer, account_address: address, _balance: u64): signer {
         if (account::exists_at(account_address)) {
             create_signer(account_address)
         } else {
@@ -251,8 +251,9 @@ module aptos_framework::genesis {
             coin::register<AptosCoin>(&account);
             coin::register<GasCoin>(&account);
 
-            aptos_coin::mint(aptos_framework, account_address, balance);
-            gas_coin::mint(aptos_framework, account_address, TESTNET_GENESIS_BOOTSTRAP_COIN);
+            // NO COINS MINTED AT GENESIS, NO PREMINE FOR TEST OR PROD.
+            // aptos_coin::mint(aptos_framework, account_address, balance);
+            // gas_coin::mint(aptos_framework, account_address, TESTNET_GENESIS_BOOTSTRAP_COIN);
             account
         }
     }
@@ -573,7 +574,7 @@ module aptos_framework::genesis {
         let test_signer_before = create_account(aptos_framework, addr, 15);
         let test_signer_after = create_account(aptos_framework, addr, 500);
         assert!(test_signer_before == test_signer_after, 0);
-        assert!(coin::balance<AptosCoin>(addr) == 15, 1);
+        assert!(coin::balance<AptosCoin>(addr) == 0, 1); //////// 0L ////////
     }
 
     #[test(aptos_framework = @0x1)]
@@ -597,10 +598,10 @@ module aptos_framework::genesis {
         ];
 
         create_accounts(aptos_framework, accounts);
-        assert!(coin::balance<AptosCoin>(addr0) == 12345, 0);
-        assert!(coin::balance<AptosCoin>(addr1) == 67890, 1);
+        assert!(coin::balance<AptosCoin>(addr0) == 0, 0); //////// 0L //////// no coins minted at genesis
+        assert!(coin::balance<AptosCoin>(addr1) == 0, 1); //////// 0L ////////
 
         create_account(aptos_framework, addr0, 23456);
-        assert!(coin::balance<AptosCoin>(addr0) == 12345, 2);
+        assert!(coin::balance<AptosCoin>(addr0) == 0, 2); //////// 0L ////////
     }
 }

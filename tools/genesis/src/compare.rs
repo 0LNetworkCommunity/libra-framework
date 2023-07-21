@@ -55,7 +55,7 @@ pub fn compare_recovery_vec_to_genesis_tx(
 
     recovery.iter()
     .progress_with_style(OLProgress::bar())
-    .with_message("Comaparing new genesis to recovery json")
+    .with_message("Comparing new genesis to recovery json")
     .enumerate()
     .for_each(|(i, v)| {
         if v.account.is_none() {

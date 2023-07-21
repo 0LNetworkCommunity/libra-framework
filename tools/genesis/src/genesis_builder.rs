@@ -93,7 +93,7 @@ pub fn build(
       s.set_ratios_from_settings(&settings)?;
       compare::compare_recovery_vec_to_genesis_tx(&recovery, &gen_tx, &s)?;
 
-      compare::check_supply(settings.scale_supply() as u64, &gen_tx);
+      compare::check_supply(settings.scale_supply() as u64, &gen_tx)?;
     }
 
     OLProgress::complete(&format!("genesis successfully built at {}", output_dir.to_str().unwrap()));

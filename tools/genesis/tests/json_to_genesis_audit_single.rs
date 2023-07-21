@@ -51,8 +51,7 @@ fn test_correct_supply_arithmetic_single() {
         }
         Err(_e) => assert!(false, "error creating comparison"),
     }
-    let expected_supply = supply_settings.scale_supply() as u64 + (num_vals * 10000000000) as u64; // the genesis reward at testnet for one validator
-    compare::check_supply(expected_supply, &gen_tx).unwrap();
+    compare::check_supply(supply_settings.scale_supply() as u64, &gen_tx).unwrap();
 
 }
 
