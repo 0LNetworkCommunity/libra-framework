@@ -2,17 +2,24 @@
 //!
 //! every day is like sunday
 //! -- morrissey via github copilot
-use crate::genesis_reader;
+use crate::genesis_reader::{self, get_account_state, make_access_path};
 // use crate::db_utils;
-use anyhow;
+use anyhow::{self, Context};
+use libra_types::gas_coin::SlowWalletBalance;
+use libra_types::legacy_types::ancestry::AncestryResource;
+use zapatos_types::state_store::state_key::StateKey;
 use zapatos_types::transaction::Transaction;
 // use libra_types::legacy_types::ancestry::AncestryResource;
-// use libra_types::exports::AccountAddress;
+use libra_types::exports::AccountAddress;
 use libra_types::legacy_types::legacy_address::LegacyAddress;
 use libra_types::legacy_types::legacy_recovery::{LegacyRecovery, read_from_recovery_file};
 // use libra_types::exports::Waypoint;
 use libra_types::ol_progress::OLProgress;
+use zapatos_storage_interface::DbReaderWriter;
+use zapatos_storage_interface::state_view::LatestDbStateCheckpointView;
 
+use zapatos_state_view::account_with_state_view::AsAccountWithStateView;
+use zapatos_types::account_view::AccountView;
 // use zapatos_types::access_path::AccessPath;
 // use zapatos_types::state_store::state_key::StateKey;
 // use zapatos_types::transaction::Transaction;
@@ -55,14 +62,14 @@ pub fn compare_recovery_vec_to_genesis_tx(
     .with_message("Test database from genesis.blob");
     pb.enable_steady_tick(core::time::Duration::from_millis(500));
     // iterate over the recovery file and compare balances
-    let (_db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&genesis_transaction)?;
+    let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&genesis_transaction)?;
     pb.finish_and_clear();
 
 
 
     recovery.iter()
     .progress_with_style(OLProgress::bar())
-    .with_message("Comaparing snapshot to new genesis")
+    .with_message("Comaparing new genesis to recovery json")
     .enumerate()
     .for_each(|(i, v)| {
         if v.account.is_none() {
@@ -88,6 +95,50 @@ pub fn compare_recovery_vec_to_genesis_tx(
             return;
         }
 
+        let convert_address = AccountAddress::from_hex_literal(&v.account.unwrap().to_hex_literal()).expect("could not convert address types");
+
+        // let b = get_balance(&convert_address, &db_rw);
+        // dbg!(&b);
+        if let Some(slow) = &v.slow_wallet {
+            let db_state_view = db_rw.reader.latest_state_checkpoint_view().unwrap();
+            let account_state_view = db_state_view.as_account_with_state_view(&convert_address);
+            let on_chain_slow_wallet = account_state_view
+              .get_move_resource::<SlowWalletBalance>()
+              .expect("should have a slow wallet struct")
+              .unwrap();
+
+            if on_chain_slow_wallet.unlocked != slow.unlocked {
+              err_list.push(CompareError {
+                  index: i as u64,
+                  account: v.account,
+                  bal_diff: 0,
+                  message: "slow wallet unlocked values not what expected".to_string(),
+              });
+            }
+
+        }
+
+        // dbg!(&b);
+        // .get_coin_store_resource()
+        // .unwrap()
+        // .unwrap()
+        // .coin()
+
+        // let _account_state = get_account_state(&db_rw.reader, convert_address, None)
+        //   .context("cannot read db for account state")
+        //   .unwrap()
+        //   .context("no account state found")
+        //   .unwrap();
+
+        // dbg!(&account_state);
+
+
+        // let ap = make_access_path(convert_address, "ancestry", "Ancestry").unwrap();
+        // let version = db_rw.reader.get_latest_version().unwrap();
+        // let state_value = db_rw.reader.get_state_value_by_version(&StateKey::access_path(ap), version).unwrap().unwrap();
+        // let ancestry: AncestryResource = bcs::from_bytes(state_value.bytes()).unwrap();
+
+        // dbg!(&ancestry);
         // let val_state = match db_rw
         //     .reader
         //     .get_latest_account_state(v.account.expect("need an address"))
@@ -205,3 +256,12 @@ pub fn compare_json_to_genesis_blob(
 
 // }
 
+fn get_balance(account: &AccountAddress, db: &DbReaderWriter) -> u64 {
+    let db_state_view = db.reader.latest_state_checkpoint_view().unwrap();
+    let account_state_view = db_state_view.as_account_with_state_view(account);
+    account_state_view
+        .get_coin_store_resource()
+        .unwrap()
+        .unwrap()
+        .coin()
+}

@@ -24,11 +24,6 @@ fn test_parse_json_for_one_validator_and_save_blob() {
     let json_str = fs::read_to_string(json.clone()).unwrap();
     let user_accounts: Vec<LegacyRecovery> = serde_json::from_str(&json_str).unwrap();
 
-    // dbg!(&user_accounts);
-
-    // let temp_genesis_blob_path = path.join("fork_genesis.blob");
-    // dbg!(&temp_genesis_blob_path);
-
     let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
       Some(&user_accounts),
       &genesis_vals,
@@ -41,7 +36,7 @@ fn test_parse_json_for_one_validator_and_save_blob() {
     match compare::compare_recovery_vec_to_genesis_tx(&user_accounts, &gen_tx){
         Ok(list) => {
           if !list.is_empty() {
-            println!("{:?}", &list);
+            println!("list: {:?}", &list);
             // fs::remove_file(&temp_genesis_blob_path).unwrap();
             assert!(false, "list is not empty");
           }

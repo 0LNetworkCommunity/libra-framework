@@ -5709,6 +5709,7 @@ dependencies = [
  "aptos-genesis",
  "aptos-github-client",
  "aptos-sdk",
+ "aptos-state-view",
  "aptos-storage-interface",
  "aptos-temppath",
  "aptos-types",

@@ -1,8 +1,9 @@
-use move_core_types::{language_storage::{StructTag, CORE_CODE_ADDRESS}, identifier::Identifier};
+use move_core_types::{language_storage::{StructTag, CORE_CODE_ADDRESS}, identifier::Identifier, move_resource::{MoveResource, MoveStructType}, ident_str};
 // use move_core_types::language_storage::StructTag;
 // use zapatos_api_types::U64;
 use serde::{Deserialize, Serialize};
 use move_core_types::language_storage::TypeTag;
+use move_core_types::identifier::IdentStr;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GasCoin {
     pub value: u64, // TODO: This might break reading from API maybe it must be zapatos_api_types::U64;
@@ -50,6 +51,13 @@ pub struct SlowWalletBalance {
   pub unlocked: u64,
   pub total: u64,
 }
+
+impl MoveStructType for SlowWalletBalance {
+    const MODULE_NAME: &'static IdentStr = ident_str!("slow_wallet");
+    const STRUCT_NAME: &'static IdentStr = ident_str!("SlowWallet");
+}
+
+impl MoveResource for SlowWalletBalance {}
 
 impl SlowWalletBalance {
   pub fn from_value(value: Vec<serde_json::Value>) -> anyhow::Result<Self> {

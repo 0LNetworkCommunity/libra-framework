@@ -38,6 +38,7 @@ zapatos-framework = { workspace = true }
 zapatos-gas = { workspace = true }
 zapatos-genesis = { workspace = true }
 zapatos-github-client = { workspace = true }
+zapatos-state-view = { workspace = true }
 zapatos-storage-interface = { workspace = true }
 zapatos-temppath = { workspace = true }
 zapatos-types = { workspace = true }

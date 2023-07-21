@@ -72,7 +72,7 @@ zapatos-cached-packages = { package = "aptos-cached-packages", git = "https://gi
 zapatos-github-client = { package = "aptos-github-client", git = "https://github.com/0o-de-lally/zapatos.git", rev = "34c987d70"}
 zapatos-release-builder = { package = "aptos-release-builder", git = "https://github.com/0o-de-lally/zapatos.git", rev = "34c987d70"}
 zapatos-language-e2e-tests = { package = "aptos-language-e2e-tests", git = "https://github.com/0o-de-lally/zapatos.git", rev = "34c987d70"}
-
+zapatos-state-view = { package = "aptos-state-view", git = "https://github.com/0o-de-lally/zapatos.git", rev = "34c987d70"}
 zapatos-storage-interface= { package = "aptos-storage-interface", git = "https://github.com/0o-de-lally/zapatos.git", rev = "34c987d70"}
 
 zapatos-temppath = { package = "aptos-temppath", git = "https://github.com/0o-de-lally/zapatos.git", rev = "34c987d70"}

@@ -1,37 +1,25 @@
 //! helpers for reading state from a genesis blob
 
-// use crate::db_utils;
-use anyhow::{self, Context};
+use anyhow::{self, Context, bail};
 use libra_types::exports::AccountAddress;
 use move_core_types::identifier::Identifier;
-// use zapatos_executor::db_bootstrapper::maybe_bootstrap;
 use zapatos_temppath::TempPath;
-// use libra_types::legacy_types::ancestry::AncestryResource;
-// use libra_types::exports::AccountAddress;
-// use libra_types::legacy_types::legacy_address::LegacyAddress;
-// use libra_types::legacy_types::legacy_recovery::{LegacyRecovery, read_from_recovery_file};
+use zapatos_types::state_store::state_key::StateKey;
+use std::sync::Arc;
+use zapatos_executor::db_bootstrapper::maybe_bootstrap;
 use libra_types::exports::Waypoint;
 use move_core_types::language_storage::{StructTag, CORE_CODE_ADDRESS};
 use zapatos_types::access_path::AccessPath;
-// use libra_types::ol_progress::OLProgress;
-// use zapatos_types::access_path::AccessPath;
-// use zapatos_types::state_store::state_key::StateKey;
+use zapatos_types::account_state::AccountState;
+use zapatos_types::state_store::state_key_prefix::StateKeyPrefix;
+use zapatos_storage_interface::DbReader;
 use zapatos_types::transaction::Transaction;
-// use zapatos_types::{
-//   account_view::AccountView,
-//   account_state::AccountState,
-//   move_resource::MoveStorage,
-// };
 use zapatos_storage_interface::DbReaderWriter;
 use zapatos_vm::AptosVM;
-// use std::convert::TryFrom;
-// use std::path::PathBuf;
 use std::path::PathBuf;
 use std::fs::File;
 use std::io::Read;
 use zapatos_executor::db_bootstrapper::generate_waypoint;
-// use std::ops::Deref;
-// use indicatif::{ProgressIterator, ProgressBar};
 use zapatos_db::AptosDB;
 
 /// Compute the ledger given a genesis writeset transaction and return access to that ledger and
@@ -41,12 +29,6 @@ pub fn bootstrap_db_reader_from_gen_tx(
     // db_path: &Path,
 ) -> anyhow::Result<(DbReaderWriter, Waypoint)> {
 
-    // let mut file = File::open(genesis_path).context("unable to find genesis file")?;
-    // let mut buffer = vec![];
-    // file.read_to_end(&mut buffer).context("unable to read file")?;
-    // let _genesis: Transaction = bcs::from_bytes(&buffer).context("unable load bytes")?;
-
-    // let genesis_txn = Transaction::GenesisTransaction(WriteSetPayload::Direct(genesis.0));
     let tmp_dir = TempPath::new();
     let db_rw = DbReaderWriter::new(AptosDB::new_for_test(&tmp_dir));
 
@@ -56,36 +38,11 @@ pub fn bootstrap_db_reader_from_gen_tx(
         .unwrap()
         .is_none());
 
-    // // Bootstrap empty DB.
+    // Bootstrap an empty DB with the genesis tx, so it has state
     let waypoint = generate_waypoint::<AptosVM>(&db_rw, &genesis_transaction).expect("Should not fail.");
-    // maybe_bootstrap::<AptosVM>(&db_rw, &genesis_txn, waypoint).unwrap();
-    // let ledger_info = db_rw.reader.get_latest_ledger_info().unwrap();
-
-    // let diemdb = DiemDB::open(
-    //     db_path,
-    //     false,
-    //     None,
-    //     RocksdbConfig::default(),
-    //     true, /* account_count_migration */
-    // )
-    // .map_err(|e| Error::UnexpectedError(e.to_string()))?;
-    // let db_rw = DbReaderWriter::new(diemdb);
-
-    // let mut file = File::open(genesis_path)
-    //     .map_err(|e| Error::UnexpectedError(format!("Unable to open genesis file: {}", e)))?;
-    // let mut buffer = vec![];
-    // file.read_to_end(&mut buffer)
-    //     .map_err(|e| Error::UnexpectedError(format!("Unable to read genesis: {}", e)))?;
-    // let genesis = bcs::from_bytes(&buffer)
-    //     .map_err(|e| Error::UnexpectedError(format!("Unable to parse genesis: {}", e)))?;
-
-    // let waypoint = db_bootstrapper::generate_waypoint::<DiemVM>(&db_rw, &genesis)
-    //     .map_err(|e| Error::UnexpectedError(e.to_string()))?;
-    // db_bootstrapper::maybe_bootstrap::<DiemVM>(&db_rw, &genesis, waypoint)
-    //     .map_err(|e| Error::UnexpectedError(format!("Unable to commit genesis: {}", e)))?;
+    maybe_bootstrap::<AptosVM>(&db_rw, &genesis_transaction, waypoint).unwrap();
 
     Ok((db_rw, waypoint))
-    // todo!()
 }
 
 
@@ -96,39 +53,31 @@ pub fn read_blob_to_tx(genesis_path: PathBuf) -> anyhow::Result<Transaction> {
     bcs::from_bytes(&buffer).context("unable load bytes")
 }
 
-#[test]
-fn test_db_rw() {
-    use libra_types::test_drop_helper::DropTemp;
-    use zapatos_db::AptosDB;
-    use zapatos_executor::db_bootstrapper::maybe_bootstrap;
 
-    // use libra_types::legacy_types::ancestry::AncestryResource;
-    use libra_types::exports::AccountAddress;
-    use zapatos_types::state_store::state_key::StateKey;
+pub const MAX_REQUEST_LIMIT: u64 = 10000;
 
-
-    let tmp_dir = DropTemp::new_in_crate("db_rw").dir();
-    let db_rw = DbReaderWriter::new(AptosDB::new_for_test(&tmp_dir));
-
-    let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/fixtures/genesis.blob");
-    let genesis_txn = read_blob_to_tx(p).unwrap();
-
-    // Bootstrap empty DB.
-    let waypoint = generate_waypoint::<AptosVM>(&db_rw, &genesis_txn).expect("Should not fail.");
-    maybe_bootstrap::<AptosVM>(&db_rw, &genesis_txn, waypoint).unwrap();
-    // let ledger_info = db_rw.reader.get_latest_ledger_info().unwrap();
-
-  let ap = make_access_path(AccountAddress::ZERO, "slow_wallet", "SlowWalletList").unwrap();
-  let version = db_rw.reader.get_latest_version().unwrap();
-  let bytes = db_rw.reader.get_state_value_by_version(&StateKey::access_path(ap), version).unwrap();
-
-
-  dbg!(&bytes);
-
-  //   };
-
-}
+pub fn get_account_state(
+        db: &Arc<dyn DbReader>,
+        account: AccountAddress,
+        state_key_opt: Option<&StateKey>,
+        // version: Version,
+    ) -> anyhow::Result<Option<AccountState>> {
+        let key_prefix = StateKeyPrefix::from(account);
+        let version = db.get_latest_version()?;
+        let mut iter = db.get_prefixed_state_value_iterator(&key_prefix, state_key_opt, version)?;
+        let kvs = iter
+            .by_ref()
+            .take(MAX_REQUEST_LIMIT as usize)
+            .collect::<anyhow::Result<_>>()?;
+        if iter.next().is_some() {
+            bail!(
+                "Too many state items under state key prefix {:?}.",
+                key_prefix
+            );
+        }
+        AccountState::from_access_paths_and_values(account, &kvs)
+        // todo!()
+    }
 
 
 fn make_struct_tag_no_types(module: &str, name: &str) -> StructTag {
@@ -145,11 +94,39 @@ pub fn make_access_path(account: AccountAddress, module: &str, name: &str) -> an
     AccessPath::resource_access_path(account, tag)
 }
 
-// fn get_move_resource(db_rw: &DbReaderWriter, path: AccessPath) -> anyhow::Result<Vec<u8>> {
-//   let version = db_rw.get_latest_version()?;
-//     let state_bytes = db_rw.get_state_value_by_version(
-//         &StateKey::access_path(path),
-//         version,
-//     )?;
-//     Ok(state_bytes)
-// }
+#[test]
+fn test_db_rw() {
+    use libra_types::test_drop_helper::DropTemp;
+    use zapatos_db::AptosDB;
+    use zapatos_executor::db_bootstrapper::maybe_bootstrap;
+
+    // use libra_types::legacy_types::ancestry::AncestryResource;
+    use libra_types::exports::AccountAddress;
+    use zapatos_types::state_store::state_key::StateKey;
+
+
+    let tmp_dir = DropTemp::new_in_crate("db_rw").dir();
+    let temp_db = AptosDB::new_for_test(&tmp_dir);
+    let db_rw = DbReaderWriter::new(temp_db);
+
+    let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/genesis.blob");
+    let genesis_txn = read_blob_to_tx(p).unwrap();
+
+    // Bootstrap empty DB.
+    let waypoint = generate_waypoint::<AptosVM>(&db_rw, &genesis_txn).expect("Should not fail.");
+    maybe_bootstrap::<AptosVM>(&db_rw, &genesis_txn, waypoint).unwrap();
+    // let ledger_info = db_rw.reader.get_latest_ledger_info().unwrap();
+
+  let ap = make_access_path(AccountAddress::ZERO, "slow_wallet", "SlowWalletList").unwrap();
+  let version = db_rw.reader.get_latest_version().unwrap();
+  let bytes = db_rw.reader.get_state_value_by_version(&StateKey::access_path(ap), version).unwrap();
+  // db_rw.reader.get_prefixed_state_value_iterator();
+
+
+  dbg!(&bytes);
+
+  //   };
+
+}
+

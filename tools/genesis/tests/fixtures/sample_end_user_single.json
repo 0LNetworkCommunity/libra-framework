@@ -48,6 +48,10 @@
       "contiguous_epochs_validating_and_mining": 2,
       "epochs_since_last_account_creation": 2
     },
+    "slow_wallet": {
+      "unlocked": 47005000000,
+      "transferred": 349995000000
+    },
     "ancestry": {
       "tree": [
         "bdb8ad37341cec0817fd8e2474e25031",
