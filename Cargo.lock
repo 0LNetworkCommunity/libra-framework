@@ -5633,6 +5633,7 @@ dependencies = [
  "libra-query",
  "libra-tower",
  "libra-txs",
+ "libra-types",
  "libra-wallet",
  "tokio",
 ]
