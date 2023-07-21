@@ -5710,6 +5710,7 @@ dependencies = [
  "aptos-github-client",
  "aptos-sdk",
  "aptos-storage-interface",
+ "aptos-temppath",
  "aptos-types",
  "aptos-vm",
  "aptos-vm-genesis",

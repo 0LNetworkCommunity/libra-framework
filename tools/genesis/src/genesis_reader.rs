@@ -4,7 +4,8 @@
 use anyhow::{self, Context};
 use libra_types::exports::AccountAddress;
 use move_core_types::identifier::Identifier;
-use zapatos_executor::db_bootstrapper::maybe_bootstrap;
+// use zapatos_executor::db_bootstrapper::maybe_bootstrap;
+use zapatos_temppath::TempPath;
 // use libra_types::legacy_types::ancestry::AncestryResource;
 // use libra_types::exports::AccountAddress;
 // use libra_types::legacy_types::legacy_address::LegacyAddress;
@@ -25,17 +26,18 @@ use zapatos_storage_interface::DbReaderWriter;
 use zapatos_vm::AptosVM;
 // use std::convert::TryFrom;
 // use std::path::PathBuf;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::fs::File;
 use std::io::Read;
 use zapatos_executor::db_bootstrapper::generate_waypoint;
 // use std::ops::Deref;
 // use indicatif::{ProgressIterator, ProgressBar};
+use zapatos_db::AptosDB;
 
 /// Compute the ledger given a genesis writeset transaction and return access to that ledger and
 /// the waypoint for that state.
-pub fn read_db_and_compute_genesis(
-    _genesis_path: &Path,
+pub fn bootstrap_db_reader_from_gen_tx(
+    genesis_transaction: &Transaction,
     // db_path: &Path,
 ) -> anyhow::Result<(DbReaderWriter, Waypoint)> {
 
@@ -45,17 +47,17 @@ pub fn read_db_and_compute_genesis(
     // let _genesis: Transaction = bcs::from_bytes(&buffer).context("unable load bytes")?;
 
     // let genesis_txn = Transaction::GenesisTransaction(WriteSetPayload::Direct(genesis.0));
-    // let tmp_dir = TempPath::new();
-    // let db_rw = DbReaderWriter::new(AptosDB::new_for_test(&tmp_dir));
+    let tmp_dir = TempPath::new();
+    let db_rw = DbReaderWriter::new(AptosDB::new_for_test(&tmp_dir));
 
-    // assert!(db_rw
-    //     .reader
-    //     .get_latest_ledger_info_option()
-    //     .unwrap()
-    //     .is_none());
+    assert!(db_rw
+        .reader
+        .get_latest_ledger_info_option()
+        .unwrap()
+        .is_none());
 
     // // Bootstrap empty DB.
-    // let waypoint = generate_waypoint::<AptosVM>(&db_rw, &genesis_txn).expect("Should not fail.");
+    let waypoint = generate_waypoint::<AptosVM>(&db_rw, &genesis_transaction).expect("Should not fail.");
     // maybe_bootstrap::<AptosVM>(&db_rw, &genesis_txn, waypoint).unwrap();
     // let ledger_info = db_rw.reader.get_latest_ledger_info().unwrap();
 
@@ -82,8 +84,8 @@ pub fn read_db_and_compute_genesis(
     // db_bootstrapper::maybe_bootstrap::<DiemVM>(&db_rw, &genesis, waypoint)
     //     .map_err(|e| Error::UnexpectedError(format!("Unable to commit genesis: {}", e)))?;
 
-    // Ok((db_rw, waypoint))
-    todo!()
+    Ok((db_rw, waypoint))
+    // todo!()
 }
 
 
@@ -98,6 +100,8 @@ pub fn read_blob_to_tx(genesis_path: PathBuf) -> anyhow::Result<Transaction> {
 fn test_db_rw() {
     use libra_types::test_drop_helper::DropTemp;
     use zapatos_db::AptosDB;
+    use zapatos_executor::db_bootstrapper::maybe_bootstrap;
+
     // use libra_types::legacy_types::ancestry::AncestryResource;
     use libra_types::exports::AccountAddress;
     use zapatos_types::state_store::state_key::StateKey;

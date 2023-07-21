@@ -2,9 +2,10 @@
 //!
 //! every day is like sunday
 //! -- morrissey via github copilot
-use crate::genesis_reader::read_db_and_compute_genesis;
+use crate::genesis_reader;
 // use crate::db_utils;
 use anyhow;
+use zapatos_types::transaction::Transaction;
 // use libra_types::legacy_types::ancestry::AncestryResource;
 // use libra_types::exports::AccountAddress;
 use libra_types::legacy_types::legacy_address::LegacyAddress;
@@ -42,9 +43,9 @@ pub struct CompareError {
     pub message: String,
 }
 /// Compare the balances in a recovery file to the balances in a genesis blob.
-pub fn compare_recovery_vec_to_genesis_blob(
+pub fn compare_recovery_vec_to_genesis_tx(
     recovery: &[LegacyRecovery],
-    genesis_path: PathBuf,
+    genesis_transaction: &Transaction,
 ) -> Result<Vec<CompareError>, anyhow::Error> {
     // start an empty btree map
     let mut err_list: Vec<CompareError> = vec![];
@@ -54,7 +55,7 @@ pub fn compare_recovery_vec_to_genesis_blob(
     .with_message("Test database from genesis.blob");
     pb.enable_steady_tick(core::time::Duration::from_millis(500));
     // iterate over the recovery file and compare balances
-    let (_db_rw, _) = read_db_and_compute_genesis(&genesis_path)?;
+    let (_db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&genesis_transaction)?;
     pb.finish_and_clear();
 
 
@@ -162,7 +163,9 @@ pub fn compare_json_to_genesis_blob(
     genesis_path: PathBuf,
 ) -> Result<Vec<CompareError>, anyhow::Error> {
     let recovery = read_from_recovery_file(&json_path);
-    compare_recovery_vec_to_genesis_blob(&recovery, genesis_path)
+
+    let gen_tx = genesis_reader::read_blob_to_tx(genesis_path)?;
+    compare_recovery_vec_to_genesis_tx(&recovery,&gen_tx)
 }
 
 
