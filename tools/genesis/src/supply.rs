@@ -2,10 +2,11 @@ use clap::Args;
 use libra_types::legacy_types::{legacy_address::LegacyAddress, legacy_recovery::LegacyRecovery};
 use anyhow::Context;
 
+const ONCHAIN_DECIMAL_PRECISION: u8 = 6;
 #[derive(Debug, Clone, Args)]
 pub struct SupplySettings {
     #[clap(long)]
-    /// what is the final supply units to be split to
+    /// what is the final supply units to be split to. This is an "unscaled" number, meaning you should use the expected integer units of the coin, without the decimal precision.
     pub target_supply: f64,
     #[clap(long)]
     /// for calculating escrow, what's the desired percent to future uses
@@ -25,6 +26,12 @@ impl Default for SupplySettings {
   }
 }
 
+impl SupplySettings {
+  // convert to the correct coin scaling
+  pub fn scale_supply(&self) -> f64 {
+    self.target_supply * 10f64.powf(ONCHAIN_DECIMAL_PRECISION.into())
+  }
+}
 #[derive(Debug, Clone, Default)]
 pub struct Supply {
     pub total: f64,
@@ -43,8 +50,8 @@ pub struct Supply {
 impl Supply {
   // returns the ratios (split_factor, escrow_pct)
   pub fn set_ratios_from_settings(&mut self, settings: &SupplySettings) -> anyhow::Result<()>{
-    // split factor needs to be truncted to the same precision the MOVE vm will use: 6 digits.
-    self.split_factor = settings.target_supply / self.total;
+    // NOTE IMPORTANT: the CLI receives an unscaled integer number. And it should be scaled up to the Movevm decimal precision being used: 10^6
+    self.split_factor = settings.scale_supply() / self.total;
 
 
     let target_future_uses = settings.target_future_uses * self.total;

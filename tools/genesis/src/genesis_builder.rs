@@ -1,10 +1,10 @@
 //! build the genesis file
+use crate::{compare, supply};
 use crate::supply::SupplySettings;
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, bail, Result, Context};
 use libra_wallet::utils::{check_if_file_exists, from_yaml, write_to_user_only_file};
 use libra_framework::release;
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
-
 
 use std::str::FromStr;
 use std::{
@@ -60,7 +60,7 @@ pub fn build(
     check_if_file_exists(waypoint_file.as_path())?;
 
     // Generate genesis and waypoint files
-    let (genesis_bytes, waypoint) = {
+    let (genesis_bytes, waypoint, gen_tx) = {
         println!("fetching genesis info from github");
         let mut gen_info = fetch_genesis_info(github_owner, github_repository, github_token, use_local_framework)?;
 
@@ -70,12 +70,12 @@ pub fn build(
             &gen_info.validators,
             &gen_info.framework,
             gen_info.chain_id,
-            supply_settings,
+            supply_settings.clone(),
           )?;
         // NOTE: if genesis TX is not set, then it will run the vendor's release workflow, which we do not want.
-        gen_info.genesis = Some(tx);
+        gen_info.genesis = Some(tx.clone());
 
-        (bcs::to_bytes(gen_info.get_genesis())?, gen_info.generate_waypoint()?)
+        (bcs::to_bytes(gen_info.get_genesis())?, gen_info.generate_waypoint()?, tx)
     };
 
     write_to_user_only_file(genesis_file.as_path(), GENESIS_FILE, &genesis_bytes)?;
@@ -86,9 +86,13 @@ pub fn build(
     )?;
 
     // TODO!: compare output
-    // if let Some(l) = legacy_recovery {
-    //   compare_json_to_genesis_blob(legacy_recovery, genesis_file, );
-    // }
+    if let Some(recovery) = legacy_recovery {
+      let settings = supply_settings.context("no supply settings provided")?;
+      let mut s = supply::populate_supply_stats_from_legacy(recovery, &settings.map_dd_to_slow)?;
+
+      s.set_ratios_from_settings(&settings)?;
+      compare::compare_recovery_vec_to_genesis_tx(&recovery, &gen_tx, &s)?;
+    }
 
     OLProgress::complete(&format!("genesis successfully built at {}", output_dir.to_str().unwrap()));
     Ok(vec![genesis_file, waypoint_file])
