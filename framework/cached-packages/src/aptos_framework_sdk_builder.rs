@@ -262,10 +262,53 @@ pub enum EntryFunctionCall {
         coin_type: TypeTag,
     },
 
+    /// add signer to multisig, and check if they may be related in ancestry tree
+    CommunityWalletAddSignerCommunityMultisig {
+        multisig_address: AccountAddress,
+        new_signer: AccountAddress,
+        n_of_m: u64,
+        vote_duration_epochs: u64,
+    },
+
+    CommunityWalletInitCommunity {
+        init_signers: Vec<AccountAddress>,
+    },
+
     DemoPrintThis {},
 
     DemoSetMessage {
         message: Vec<u8>,
+    },
+
+    DonorDirectedMakeDonorDirectedTx {
+        init_signers: Vec<AccountAddress>,
+        cfg_n_signers: u64,
+    },
+
+    DonorDirectedProposeLiquidateTx {
+        multisig_address: AccountAddress,
+    },
+
+    DonorDirectedProposePaymentTx {
+        multisig_address: AccountAddress,
+        payee: AccountAddress,
+        value: u64,
+        description: Vec<u8>,
+    },
+
+    DonorDirectedProposeVetoTx {
+        multisig_address: AccountAddress,
+        id: u64,
+    },
+
+    DonorDirectedVoteLiquidationTx {
+        multisig_address: AccountAddress,
+    },
+
+    /// Entry functiont to vote the veto.
+    DonorDirectedVoteVetoTx {
+        multisig_address: AccountAddress,
+        id: u64,
     },
 
     DummyUseFnFromAptosFramework {},
@@ -437,6 +480,12 @@ pub enum EntryFunctionCall {
         to: AccountAddress,
     },
 
+    /// Helper for tests to create acounts
+    /// Belt and suspenders
+    OlAccountCreateAccount {
+        auth_key: AccountAddress,
+    },
+
     /// Creates an account by sending an initial amount of GAS to it.
     OlAccountCreateUserAccountByCoin {
         auth_key: AccountAddress,
@@ -459,8 +508,10 @@ pub enum EntryFunctionCall {
 
     ProofOfFeeInitBidding {},
 
+    /// retract bid
     ProofOfFeePofRetractBid {},
 
+    /// update the bid for the sender
     ProofOfFeePofUpdateBid {
         bid: u64,
         epoch_expiry: u64,
@@ -713,8 +764,46 @@ impl EntryFunctionCall {
                 amount,
             } => coin_transfer(coin_type, to, amount),
             CoinUpgradeSupply { coin_type } => coin_upgrade_supply(coin_type),
+            CommunityWalletAddSignerCommunityMultisig {
+                multisig_address,
+                new_signer,
+                n_of_m,
+                vote_duration_epochs,
+            } => community_wallet_add_signer_community_multisig(
+                multisig_address,
+                new_signer,
+                n_of_m,
+                vote_duration_epochs,
+            ),
+            CommunityWalletInitCommunity { init_signers } => {
+                community_wallet_init_community(init_signers)
+            }
             DemoPrintThis {} => demo_print_this(),
             DemoSetMessage { message } => demo_set_message(message),
+            DonorDirectedMakeDonorDirectedTx {
+                init_signers,
+                cfg_n_signers,
+            } => donor_directed_make_donor_directed_tx(init_signers, cfg_n_signers),
+            DonorDirectedProposeLiquidateTx { multisig_address } => {
+                donor_directed_propose_liquidate_tx(multisig_address)
+            }
+            DonorDirectedProposePaymentTx {
+                multisig_address,
+                payee,
+                value,
+                description,
+            } => donor_directed_propose_payment_tx(multisig_address, payee, value, description),
+            DonorDirectedProposeVetoTx {
+                multisig_address,
+                id,
+            } => donor_directed_propose_veto_tx(multisig_address, id),
+            DonorDirectedVoteLiquidationTx { multisig_address } => {
+                donor_directed_vote_liquidation_tx(multisig_address)
+            }
+            DonorDirectedVoteVetoTx {
+                multisig_address,
+                id,
+            } => donor_directed_vote_veto_tx(multisig_address, id),
             DummyUseFnFromAptosFramework {} => dummy_use_fn_from_aptos_framework(),
             DummyUseFnFromAptosStd {
                 account_public_key_bytes,
@@ -797,6 +886,7 @@ impl EntryFunctionCall {
                 approved,
             } => multisig_account_vote_transanction(multisig_account, sequence_number, approved),
             ObjectTransferCall { object, to } => object_transfer_call(object, to),
+            OlAccountCreateAccount { auth_key } => ol_account_create_account(auth_key),
             OlAccountCreateUserAccountByCoin { auth_key, amount } => {
                 ol_account_create_user_account_by_coin(auth_key, amount)
             }
@@ -1502,6 +1592,47 @@ pub fn coin_upgrade_supply(coin_type: TypeTag) -> TransactionPayload {
     ))
 }
 
+/// add signer to multisig, and check if they may be related in ancestry tree
+pub fn community_wallet_add_signer_community_multisig(
+    multisig_address: AccountAddress,
+    new_signer: AccountAddress,
+    n_of_m: u64,
+    vote_duration_epochs: u64,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("community_wallet").to_owned(),
+        ),
+        ident_str!("add_signer_community_multisig").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&multisig_address).unwrap(),
+            bcs::to_bytes(&new_signer).unwrap(),
+            bcs::to_bytes(&n_of_m).unwrap(),
+            bcs::to_bytes(&vote_duration_epochs).unwrap(),
+        ],
+    ))
+}
+
+pub fn community_wallet_init_community(init_signers: Vec<AccountAddress>) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("community_wallet").to_owned(),
+        ),
+        ident_str!("init_community").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&init_signers).unwrap()],
+    ))
+}
+
 pub fn demo_print_this() -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -1529,6 +1660,125 @@ pub fn demo_set_message(message: Vec<u8>) -> TransactionPayload {
         ident_str!("set_message").to_owned(),
         vec![],
         vec![bcs::to_bytes(&message).unwrap()],
+    ))
+}
+
+pub fn donor_directed_make_donor_directed_tx(
+    init_signers: Vec<AccountAddress>,
+    cfg_n_signers: u64,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("donor_directed").to_owned(),
+        ),
+        ident_str!("make_donor_directed_tx").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&init_signers).unwrap(),
+            bcs::to_bytes(&cfg_n_signers).unwrap(),
+        ],
+    ))
+}
+
+pub fn donor_directed_propose_liquidate_tx(multisig_address: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("donor_directed").to_owned(),
+        ),
+        ident_str!("propose_liquidate_tx").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&multisig_address).unwrap()],
+    ))
+}
+
+pub fn donor_directed_propose_payment_tx(
+    multisig_address: AccountAddress,
+    payee: AccountAddress,
+    value: u64,
+    description: Vec<u8>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("donor_directed").to_owned(),
+        ),
+        ident_str!("propose_payment_tx").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&multisig_address).unwrap(),
+            bcs::to_bytes(&payee).unwrap(),
+            bcs::to_bytes(&value).unwrap(),
+            bcs::to_bytes(&description).unwrap(),
+        ],
+    ))
+}
+
+pub fn donor_directed_propose_veto_tx(
+    multisig_address: AccountAddress,
+    id: u64,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("donor_directed").to_owned(),
+        ),
+        ident_str!("propose_veto_tx").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&multisig_address).unwrap(),
+            bcs::to_bytes(&id).unwrap(),
+        ],
+    ))
+}
+
+pub fn donor_directed_vote_liquidation_tx(multisig_address: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("donor_directed").to_owned(),
+        ),
+        ident_str!("vote_liquidation_tx").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&multisig_address).unwrap()],
+    ))
+}
+
+/// Entry functiont to vote the veto.
+pub fn donor_directed_vote_veto_tx(
+    multisig_address: AccountAddress,
+    id: u64,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("donor_directed").to_owned(),
+        ),
+        ident_str!("vote_veto_tx").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&multisig_address).unwrap(),
+            bcs::to_bytes(&id).unwrap(),
+        ],
     ))
 }
 
@@ -2007,6 +2257,23 @@ pub fn object_transfer_call(object: AccountAddress, to: AccountAddress) -> Trans
     ))
 }
 
+/// Helper for tests to create acounts
+/// Belt and suspenders
+pub fn ol_account_create_account(auth_key: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("ol_account").to_owned(),
+        ),
+        ident_str!("create_account").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&auth_key).unwrap()],
+    ))
+}
+
 /// Creates an account by sending an initial amount of GAS to it.
 pub fn ol_account_create_user_account_by_coin(
     auth_key: AccountAddress,
@@ -2092,6 +2359,7 @@ pub fn proof_of_fee_init_bidding() -> TransactionPayload {
     ))
 }
 
+/// retract bid
 pub fn proof_of_fee_pof_retract_bid() -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -2107,6 +2375,7 @@ pub fn proof_of_fee_pof_retract_bid() -> TransactionPayload {
     ))
 }
 
+/// update the bid for the sender
 pub fn proof_of_fee_pof_update_bid(bid: u64, epoch_expiry: u64) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -2771,6 +3040,35 @@ mod decoder {
         }
     }
 
+    pub fn community_wallet_add_signer_community_multisig(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(
+                EntryFunctionCall::CommunityWalletAddSignerCommunityMultisig {
+                    multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+                    new_signer: bcs::from_bytes(script.args().get(1)?).ok()?,
+                    n_of_m: bcs::from_bytes(script.args().get(2)?).ok()?,
+                    vote_duration_epochs: bcs::from_bytes(script.args().get(3)?).ok()?,
+                },
+            )
+        } else {
+            None
+        }
+    }
+
+    pub fn community_wallet_init_community(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::CommunityWalletInitCommunity {
+                init_signers: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn demo_print_this(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(_script) = payload {
             Some(EntryFunctionCall::DemoPrintThis {})
@@ -2783,6 +3081,82 @@ mod decoder {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DemoSetMessage {
                 message: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn donor_directed_make_donor_directed_tx(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::DonorDirectedMakeDonorDirectedTx {
+                init_signers: bcs::from_bytes(script.args().get(0)?).ok()?,
+                cfg_n_signers: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn donor_directed_propose_liquidate_tx(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::DonorDirectedProposeLiquidateTx {
+                multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn donor_directed_propose_payment_tx(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::DonorDirectedProposePaymentTx {
+                multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+                payee: bcs::from_bytes(script.args().get(1)?).ok()?,
+                value: bcs::from_bytes(script.args().get(2)?).ok()?,
+                description: bcs::from_bytes(script.args().get(3)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn donor_directed_propose_veto_tx(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::DonorDirectedProposeVetoTx {
+                multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+                id: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn donor_directed_vote_liquidation_tx(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::DonorDirectedVoteLiquidationTx {
+                multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn donor_directed_vote_veto_tx(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::DonorDirectedVoteVetoTx {
+                multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+                id: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
             None
@@ -3057,6 +3431,16 @@ mod decoder {
             Some(EntryFunctionCall::ObjectTransferCall {
                 object: bcs::from_bytes(script.args().get(0)?).ok()?,
                 to: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn ol_account_create_account(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::OlAccountCreateAccount {
+                auth_key: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -3427,12 +3811,44 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::coin_upgrade_supply),
         );
         map.insert(
+            "community_wallet_add_signer_community_multisig".to_string(),
+            Box::new(decoder::community_wallet_add_signer_community_multisig),
+        );
+        map.insert(
+            "community_wallet_init_community".to_string(),
+            Box::new(decoder::community_wallet_init_community),
+        );
+        map.insert(
             "demo_print_this".to_string(),
             Box::new(decoder::demo_print_this),
         );
         map.insert(
             "demo_set_message".to_string(),
             Box::new(decoder::demo_set_message),
+        );
+        map.insert(
+            "donor_directed_make_donor_directed_tx".to_string(),
+            Box::new(decoder::donor_directed_make_donor_directed_tx),
+        );
+        map.insert(
+            "donor_directed_propose_liquidate_tx".to_string(),
+            Box::new(decoder::donor_directed_propose_liquidate_tx),
+        );
+        map.insert(
+            "donor_directed_propose_payment_tx".to_string(),
+            Box::new(decoder::donor_directed_propose_payment_tx),
+        );
+        map.insert(
+            "donor_directed_propose_veto_tx".to_string(),
+            Box::new(decoder::donor_directed_propose_veto_tx),
+        );
+        map.insert(
+            "donor_directed_vote_liquidation_tx".to_string(),
+            Box::new(decoder::donor_directed_vote_liquidation_tx),
+        );
+        map.insert(
+            "donor_directed_vote_veto_tx".to_string(),
+            Box::new(decoder::donor_directed_vote_veto_tx),
         );
         map.insert(
             "dummy_use_fn_from_aptos_framework".to_string(),
@@ -3521,6 +3937,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "object_transfer_call".to_string(),
             Box::new(decoder::object_transfer_call),
+        );
+        map.insert(
+            "ol_account_create_account".to_string(),
+            Box::new(decoder::ol_account_create_account),
         );
         map.insert(
             "ol_account_create_user_account_by_coin".to_string(),

@@ -43,7 +43,9 @@ pub struct Supply {
 impl Supply {
   // returns the ratios (split_factor, escrow_pct)
   pub fn set_ratios_from_settings(&mut self, settings: &SupplySettings) -> anyhow::Result<()>{
+    // split factor needs to be truncted to the same precision the MOVE vm will use: 6 digits.
     self.split_factor = settings.target_supply / self.total;
+
 
     let target_future_uses = settings.target_future_uses * self.total;
     let remaining_to_fund = target_future_uses - self.donor_directed;

@@ -13,10 +13,8 @@ module ol_framework::genesis_migration {
   use ol_framework::validator_universe;
   use ol_framework::gas_coin;
   use ol_framework::gas_coin::GasCoin;
-  // use ol_framework::infra_escrow;
   use aptos_framework::system_addresses;
-
-  use std::fixed_point32;
+  // use aptos_std::debug::print;
 
 
   const EBALANCE_MISMATCH: u64 = 0;
@@ -27,8 +25,8 @@ module ol_framework::genesis_migration {
       vm: &signer,
       user_sig: &signer,
       auth_key: vector<u8>,
-      legacy_balance: u64,
-      split_factor: u64, // precision of 1,000,000
+      expected_initial_balance: u64,
+      // split_factor: u64, // precision of 1,000,000
   ) {
     system_addresses::assert_aptos_framework(vm);
 
@@ -45,22 +43,30 @@ module ol_framework::genesis_migration {
 
     // mint coins again to migrate balance, and all
     // system tracking of balances
-    if (legacy_balance == 0) {
+    if (expected_initial_balance == 0) {
       return
     };
+
+    // Genesis validators receive a minimal bootstrap mint, to do network operations. If the user has a balance to migrate, then the balance is net of this amount.
     let genesis_balance = coin::balance<GasCoin>(user_addr);
 
     // scale up by the coin split factor
 
-    let split_factor = fixed_point32::create_from_rational(split_factor, 1000000);
-    let expected_final_balance = fixed_point32::multiply_u64(legacy_balance, split_factor);
-    assert!(expected_final_balance >= genesis_balance, error::invalid_state(EGENESIS_BALANCE_TOO_HIGH));
-    let coins_to_mint = expected_final_balance - genesis_balance;
+    // let split_factor = fixed_point32::create_from_rational(split_factor, 1000000);
+    // let expected_final_balance = fixed_point32::multiply_u64(legacy_balance, split_factor);
+
+    // let expected_final_balance = (legacy_balance * split_factor) / 1000000;
+    // print(&expected_final_balance);
+
+
+    assert!(expected_initial_balance >= genesis_balance, error::invalid_state(EGENESIS_BALANCE_TOO_HIGH));
+
+    let coins_to_mint = expected_initial_balance - genesis_balance;
     gas_coin::mint(vm, user_addr, coins_to_mint);
 
     let new_balance = coin::balance<GasCoin>(user_addr);
 
-    assert!(new_balance == expected_final_balance, error::invalid_state(EBALANCE_MISMATCH));
+    assert!(new_balance == expected_initial_balance, error::invalid_state(EBALANCE_MISMATCH));
   }
 
   fun is_genesis_val(addr: address): bool {

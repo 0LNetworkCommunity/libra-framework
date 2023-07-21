@@ -5,8 +5,8 @@
 use crate::genesis_reader;
 use crate::supply::Supply;
 use anyhow;
-use libra_types::gas_coin::SlowWalletBalance;
-use zapatos_types::account_config::CoinStoreResource;
+use libra_types::gas_coin::{SlowWalletBalance, GasCoinStoreResource};
+use move_core_types::language_storage::CORE_CODE_ADDRESS;
 use zapatos_types::transaction::Transaction;
 use libra_types::exports::AccountAddress;
 use libra_types::legacy_types::legacy_address::LegacyAddress;
@@ -82,8 +82,6 @@ pub fn compare_recovery_vec_to_genesis_tx(
         let account_state_view = db_state_view.as_account_with_state_view(&convert_address);
 
         if let Some(slow_legacy) = &v.slow_wallet {
-            // let db_state_view = db_rw.reader.latest_state_checkpoint_view().unwrap();
-            // let account_state_view = db_state_view.as_account_with_state_view(&convert_address);
             let on_chain_slow_wallet = account_state_view
               .get_move_resource::<SlowWalletBalance>()
               .expect("should have a slow wallet struct")
@@ -91,7 +89,7 @@ pub fn compare_recovery_vec_to_genesis_tx(
 
             let expected_unlocked = supply.split_factor * slow_legacy.unlocked as f64;
 
-            if on_chain_slow_wallet.unlocked != expected_unlocked.trunc() as u64 {
+            if on_chain_slow_wallet.unlocked != expected_unlocked as u64 {
               err_list.push(CompareError {
                   index: i as u64,
                   account: v.account,
@@ -105,115 +103,22 @@ pub fn compare_recovery_vec_to_genesis_tx(
         if let Some(balance_legacy) = &v.balance {
 
             let on_chain_balance = account_state_view
-              .get_move_resource::<CoinStoreResource>()
-              .expect("should have a CoinStore resource for balance")
-              .unwrap();
+              .get_move_resource::<GasCoinStoreResource>()
+              .expect("should have move resource")
+              .expect("should have a GasCoinStoreResource for balance");
 
-            let expected_balance: f64= supply.split_factor * balance_legacy.coin as f64;
+            let expected_balance = supply.split_factor * balance_legacy.coin as f64;
 
-            if on_chain_balance.coin() != expected_balance.trunc() as u64 {
+            if on_chain_balance.coin() != expected_balance as u64 {
               err_list.push(CompareError {
                   index: i as u64,
                   account: v.account,
                   bal_diff: on_chain_balance.coin() as i64 - expected_balance as i64,
-                  message: "unexpected slow wallet unlocked".to_string(),
+                  message: "unexpected balance".to_string(),
               });
             }
 
         }
-
-        // CoinStoreResource
-
-
-        // 753,614,948,274
-        // 47,005,000,000
-        // 706,609,948,274
-
-        // dbg!(&b);
-        // .get_coin_store_resource()
-        // .unwrap()
-        // .unwrap()
-        // .coin()
-
-        // let _account_state = get_account_state(&db_rw.reader, convert_address, None)
-        //   .context("cannot read db for account state")
-        //   .unwrap()
-        //   .context("no account state found")
-        //   .unwrap();
-
-        // dbg!(&account_state);
-
-
-        // let ap = make_access_path(convert_address, "ancestry", "Ancestry").unwrap();
-        // let version = db_rw.reader.get_latest_version().unwrap();
-        // let state_value = db_rw.reader.get_state_value_by_version(&StateKey::access_path(ap), version).unwrap().unwrap();
-        // let ancestry: AncestryResource = bcs::from_bytes(state_value.bytes()).unwrap();
-
-        // dbg!(&ancestry);
-        // let val_state = match db_rw
-        //     .reader
-        //     .get_latest_account_state(v.account.expect("need an address"))
-        // {
-        //     Ok(Some(val_state)) => val_state,
-        //     _ => {
-        //         err_list.push(CompareError {
-        //             index: i as u64,
-        //             account: v.account,
-        //             bal_diff: 0,
-        //             message: "find account blob".to_string(),
-        //         });
-        //         return;
-        //     }
-        // };
-
-        // let account_state = match AccountState::try_from(&val_state) {
-        //     Ok(account_state) => account_state,
-        //     _ => {
-        //         err_list.push(CompareError {
-        //             index: i as u64,
-        //             account: v.account,
-        //             bal_diff: 0,
-        //             message: "parse account state".to_string(),
-        //         });
-        //         return;
-        //     }
-        // };
-
-        // let bal = match account_state.get_balance_resources() {
-        //     Ok(bal) => bal,
-        //     _ => {
-        //         err_list.push(CompareError {
-        //             index: i as u64,
-        //             account: v.account,
-        //             bal_diff: 0,
-        //             message: "get balance resource".to_string(),
-        //         });
-        //         return;
-        //     }
-        // };
-
-        // let genesis_bal = match bal.iter().next() {
-        //     Some((_, b)) => b.coin(),
-        //     _ => {
-        //         err_list.push(CompareError {
-        //             index: i as u64,
-        //             account: v.account,
-        //             bal_diff: 0,
-        //             message: "genesis resource is None".to_string(),
-        //         });
-        //         return;
-        //     }
-        // };
-
-        // let recovery_bal = v.balance.as_ref().unwrap().coin();
-        // if recovery_bal != genesis_bal {
-        //     err_list.push(CompareError {
-        //         index: i as u64,
-        //         account: v.account,
-        //         bal_diff: recovery_bal as i64 - genesis_bal as i64,
-        //         message: "balance mismatch".to_string(),
-        //     });
-        // }
     });
 
     Ok(err_list)
@@ -234,39 +139,42 @@ pub fn compare_json_to_genesis_blob(
 
 // Check that the genesis validators are present in the genesis blob file, once we read the db.
 
-// pub fn check_val_set(
-//   expected_vals: Vec<AccountAddress>,
-//   genesis_path: PathBuf,
-// ) -> Result<(), anyhow::Error>{
-//       let (db_rw, _) = read_db_and_compute_genesis(&genesis_path)?;
+pub fn check_val_set(
+  expected_vals: &[AccountAddress],
+  genesis_transaction: &Transaction,
+) -> Result<(), anyhow::Error>{
 
-//       let root_blob = db_rw
-//       .reader
-//       .get_latest_account_state(AccountAddress::ZERO)?
-//       .expect("no account state blob");
+    let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&genesis_transaction)?;
 
-//       let root_state = AccountState::try_from(&root_blob)?;
+    let db_state_view = db_rw.reader.latest_state_checkpoint_view().unwrap();
+    let root_account_state_view =
+        db_state_view.as_account_with_state_view(&CORE_CODE_ADDRESS);
 
-//       let val_set = root_state.get_validator_set()?
-//       .expect("no validator config state");
+    let val_set = root_account_state_view.get_validator_set()
+            .unwrap()
+            .unwrap();
+            // .payload();
+    // dbg!(&x);
+    // Ok(())
 
-//       let addrs = val_set.payload()
-//       // .iter()
-//       .map(|v| {
-//         // dbg!(&v);
-//         *v.account_address()
-//       })
-//       .collect::<Vec<AccountAddress>>();
 
-//       assert!(addrs.len() == expected_vals.len(), "validator set length mismatch");
+      let addrs = val_set.payload()
+      // .iter()
+      .map(|v| {
+        // dbg!(&v);
+        *v.account_address()
+      })
+      .collect::<Vec<AccountAddress>>();
 
-//       for v in expected_vals {
-//         assert!(addrs.contains(&v), "genesis does not contain validator");
-//       }
+      assert!(addrs.len() == expected_vals.len(), "validator set length mismatch");
 
-//       Ok(())
+      for v in expected_vals {
+        assert!(addrs.contains(v), "genesis does not contain validator");
+      }
 
-// }
+      Ok(())
+
+}
 
 // fn get_balance(account: &AccountAddress, db: &DbReaderWriter) -> u64 {
 //     let db_state_view = db.reader.latest_state_checkpoint_view().unwrap();
