@@ -147,8 +147,16 @@ impl QueryType {
             });
             Ok(json)
          },
+        QueryType::Epoch => {
+            let res = query_view::run("0x1::reconfiguration::get_current_epoch", None, None).await?;
+            let value = res.first().unwrap().to_owned();
+            let num: u64 = serde_json::from_value::<String>(value)?.parse()?;
+            let json = json!({
+              "epoch": num,
+            });
+            Ok(json)
+        },
         _ => { bail!("Not implemented for type: {:?}", self) }
-        // QueryType::Epoch => todo!(),
         // QueryType::BlockHeight => todo!(),
         // QueryType::Resources { account } => todo!(),
         // QueryType::MoveValue { account, module_name, struct_name, key_name } => todo!(),
