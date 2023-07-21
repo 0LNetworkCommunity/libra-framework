@@ -8,7 +8,7 @@ use zapatos_sdk::{
 use libra_types::{
   exports::AuthenticationKey,
   type_extensions::client_ext::{ ClientExt, entry_function_id },
-  gas_coin::SlowWalletBalance,
+  move_resource::gas_coin::SlowWalletBalance,
   legacy_types::tower::TowerProofHistoryView
 };
 
@@ -22,7 +22,7 @@ pub async fn get_account_balance_libra(client: &Client, account: AccountAddress)
       type_arguments: vec![],
       arguments: vec![account.to_string().into()],
   };
-  
+
   let res = client.view(&request, None).await?.into_inner();
 
   SlowWalletBalance::from_value(res)
@@ -36,7 +36,7 @@ pub async fn get_tower_state(client: &Client, account: AccountAddress) -> anyhow
 
 /// Addresses will diverge from the keypair which originally created the address.
 /// The Address and AuthenticationKey key are the same bytes: a sha3 hash
-/// of the public key. If you rotate the keypair for that address, the implied (derived) public key, and thus authentication key will not be the same as the 
+/// of the public key. If you rotate the keypair for that address, the implied (derived) public key, and thus authentication key will not be the same as the
 ///  Origial/originating address. For this reason, we need to look up the original address
 /// Addresses are stored in the OriginatingAddress table, which is a table
 /// that maps a derived address to the original address. This function
@@ -55,7 +55,7 @@ pub async fn lookup_originating_address(
       type_arguments: vec![],
       arguments: vec![cast_address.to_string().into()],
   };
-  
+
   let res = client.view(&request, None).await?.into_inner();
   let addr = serde_json::from_value(res[0].clone())?;
   Ok(addr)
