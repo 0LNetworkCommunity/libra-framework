@@ -16,7 +16,7 @@ module aptos_framework::account {
     use aptos_std::table::{Self, Table};
     use aptos_std::type_info::{Self, TypeInfo};
 
-    // use aptos_std::debug::print;
+    use aptos_std::debug::print;
 
 
     friend aptos_framework::aptos_account;
@@ -65,6 +65,28 @@ module aptos_framework::account {
     /// This struct solves this problem by mapping the new authentication key `b` to the original address `a` and thus helping the wallet software during recovery find the correct address.
     struct OriginatingAddress has key {
         address_map: Table<address, address>,
+    }
+
+
+    //////// 0L ////////
+    // in V5 and prior, a user could have the same authkey shared by multiple accounts under their control. From V7 this is no longer possible. So we need a way to tell those users they need to either:
+    // 1) change the authkey on certain accounts.
+    // 2) use different tools/commands for sending transactions, since the usual tools will lookup and find a different address.
+    struct DuplicatedAuthKeys has store {
+      list: vector<address>
+    }
+
+    struct MigrateOriginatingAddress has key {
+      duplicates_map: Table<address, DuplicatedAuthKeys>
+    }
+
+    public(friend) fun initialize_duplicate_originating(root: &signer) {
+      system_addresses::assert_ol(root);
+      if (!exists<MigrateOriginatingAddress>(@ol_framework)) {
+        move_to(root, MigrateOriginatingAddress {
+          duplicates_map: table::new(),
+        });
+      }
     }
 
     /// This structs stores the challenge message that should be signed during key rotation. First, this struct is
@@ -338,13 +360,13 @@ module aptos_framework::account {
 
     //////// 0L ////////
     /// 0L needs a way to rotate the authkey and update the OriginatingAddress toble at once.
-    public(friend) fun vm_migrate_rotate_authentication_key_internal(root: &signer, account: &signer, new_auth_key: vector<u8>) acquires Account, OriginatingAddress {
+    public(friend) fun vm_migrate_rotate_authentication_key_internal(root: &signer, account: &signer, new_auth_key: vector<u8>) acquires Account, OriginatingAddress, MigrateOriginatingAddress {
         system_addresses::assert_ol(root);
         rotate_authentication_key_internal(account, new_auth_key);
         let addr = signer::address_of(account);
         let account_resource = borrow_global_mut<Account>(addr);
         // Update the `OriginatingAddress` table, so we can find the originating address using the new address.
-        update_auth_key_and_originating_address_table(addr, account_resource, new_auth_key);
+        vm_migrate_update_auth_key_and_originating_address_table(root, addr, account_resource, new_auth_key);
 
     }
 
@@ -627,27 +649,109 @@ module aptos_framework::account {
         new_auth_key_vector: vector<u8>,
     ) acquires OriginatingAddress {
         let address_map = &mut borrow_global_mut<OriginatingAddress>(@aptos_framework).address_map;
+        print(&1111);
+
         let curr_auth_key = from_bcs::to_address(account_resource.authentication_key);
+
+        print(&111100000);
 
         // Checks `OriginatingAddress[curr_auth_key]` is either unmapped, or mapped to `originating_address`.
         // If it's mapped to the originating address, removes that mapping.
         // Otherwise, abort if it's mapped to a different address.
         if (table::contains(address_map, curr_auth_key)) {
+            print(&111100001);
+
             // If account_a with address_a is rotating its keypair from keypair_a to keypair_b, we expect
             // the address of the account to stay the same, while its keypair updates to keypair_b.
             // Here, by asserting that we're calling from the account with the originating address, we enforce
             // the standard of keeping the same address and updating the keypair at the contract level.
             // Without this assertion, the dapps could also update the account's address to address_b (the address that
-            // is programmatically related to keypaier_b) and update the keypair to keypair_b. This causes problems
+            // is programmatically related to keypair_b) and update the keypair to keypair_b. This causes problems
             // for interoperability because different dapps can implement this in different ways.
             // If the account with address b calls this function with two valid signatures, it will abort at this step,
             // because address b is not the account's originating address.
+            // 0L NOTE: this implementation means that the transaction will abort for users which try to use the same private key / mnemonic for two accounts (i.e. they rotated account_b account_c etc, to use the private key of account_a ). There is an issue with migration from V5 where there are cases like this, since this check was not in place then.
             assert!(originating_addr == table::remove(address_map, curr_auth_key), error::not_found(EINVALID_ORIGINATING_ADDRESS));
         };
+
+        print(&111100002);
 
         // Set `OriginatingAddress[new_auth_key] = originating_address`.
         let new_auth_key = from_bcs::to_address(new_auth_key_vector);
         table::add(address_map, new_auth_key, originating_addr);
+
+        print(&111100003);
+
+        event::emit_event<KeyRotationEvent>(
+            &mut account_resource.key_rotation_events,
+            KeyRotationEvent {
+                old_authentication_key: account_resource.authentication_key,
+                new_authentication_key: new_auth_key_vector,
+            }
+        );
+
+        // Update the account resource's authentication key.
+        account_resource.authentication_key = new_auth_key_vector;
+    }
+
+
+    /// Update the `OriginatingAddress` table, so that we can find the originating address using the latest address
+    /// in the event of key recovery.
+    fun vm_migrate_update_auth_key_and_originating_address_table(
+        root: &signer,
+        originating_addr: address,
+        account_resource: &mut Account,
+        new_auth_key_vector: vector<u8>,
+    ) acquires OriginatingAddress, MigrateOriginatingAddress {
+        system_addresses::assert_ol(root);
+
+        let address_map = &mut borrow_global_mut<OriginatingAddress>(@aptos_framework).address_map;
+        print(&1111);
+
+        let curr_auth_key = from_bcs::to_address(account_resource.authentication_key);
+
+        print(&111100000);
+
+        // Checks `OriginatingAddress[curr_auth_key]` is either unmapped, or mapped to `originating_address`.
+        // If it's mapped to the originating address, removes that mapping.
+        // Otherwise, abort if it's mapped to a different address.
+        if (table::contains(address_map, curr_auth_key)) {
+            print(&111100001);
+
+            // because address b is not the account's originating address.
+            // 0L NOTE: this should not abort on migration only, and the duplcates need to be identified for the users.
+            // The original implementation meant that the transaction will abort for users which try to use the same private key / mnemonic for two accounts (i.e. they rotated account_b account_c etc, to use the private key of account_a ). There is an issue with migration from V5 where there are cases like this, since this check was not in place then.
+            let maybe_duplicated_addr = *table::borrow(address_map, curr_auth_key);
+            // there's an address returned in the table lookup for the authentication key of this account, it's not what the caller is expecting. We need to start populating the duplicates
+            if (originating_addr != maybe_duplicated_addr) {
+              // we need to first cleanup the lookup table of the first entry.
+              table::remove(address_map, curr_auth_key);
+
+              // now we begin populating the struct for the duplicate cases.
+              let duplicate_table = &mut borrow_global_mut<MigrateOriginatingAddress>(@ol_framework).duplicates_map;
+              // the table doesn't have any duplicates, let put the first two in it.
+              // we assume the duplicates table is empty, this is the default path
+              if (!table::contains(duplicate_table, curr_auth_key)) {
+                let list = vector::singleton<address>(maybe_duplicated_addr);
+                  vector::push_back(&mut list, originating_addr);
+                  table::add(duplicate_table, curr_auth_key, DuplicatedAuthKeys {
+                    list,
+                  })
+              } else {
+                // if it's initialized for that authkey, and theres more than 2 accounts sharing the authkey, then we add to it.
+                let list_struct = table::borrow_mut(duplicate_table, curr_auth_key);
+                vector::push_back(&mut list_struct.list, originating_addr);
+              }
+            }
+        };
+
+        print(&111100002);
+
+        // Set `OriginatingAddress[new_auth_key] = originating_address`.
+        let new_auth_key = from_bcs::to_address(new_auth_key_vector);
+        table::add(address_map, new_auth_key, originating_addr);
+
+        print(&111100003);
 
         event::emit_event<KeyRotationEvent>(
             &mut account_resource.key_rotation_events,

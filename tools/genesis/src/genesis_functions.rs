@@ -110,6 +110,8 @@ pub fn genesis_migrate_one_user(
         .to_string();
     let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
 
+    dbg!(&new_addr_type.to_hex_literal());
+
     // NOTE: Authkeys have the same format as in pre V7
     let auth_key = user_recovery.auth_key.context("no auth key found")?;
 
