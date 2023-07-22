@@ -38,6 +38,11 @@ pub struct TxsCli {
     #[clap(short, long)]
     pub test_private_key: Option<String>,
 
+    // TODO
+    // /// optional, pick name (substring of address or nickname) of a user profile, if there are multiple. Will choose the default one set..
+    // #[clap(short, long)]
+    // pub nickname_profile: Option<String>,
+
     /// optional, id of chain as name. Will default to MAINNET;
     #[clap(long)]
     pub chain_id: Option<NamedChain>,
@@ -138,18 +143,17 @@ impl TxsCli {
             legacy.child_0_owner.pri_key
         };
 
-        let chain_name = self.chain_id.unwrap_or(NamedChain::MAINNET);
+        let app_cfg = AppCfg::load(self.config_path.clone())?;
 
+        let chain_name = self.chain_id.unwrap_or(app_cfg.workspace.default_chain_id);
         let url = if let Some(u) = self.url.as_ref() {
             u.to_owned()
         } else {
-            AppCfg::load(self.config_path.clone())?
-              .pick_url(Some(chain_name))?
+            app_cfg.pick_url(Some(chain_name))?
         };
 
         let client = Client::new(url);
 
-        // TODO: load profile from ConfigCli::load_ext
         let mut send = Sender::new(
             AccountKey::from_private_key(pri_key),
             ChainId::new(chain_name.id()),

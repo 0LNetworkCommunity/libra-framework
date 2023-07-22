@@ -92,9 +92,10 @@ impl Sender {
         let address = lookup_address(
             &client,
             account_key.authentication_key().derived_address(),
-            false,
+            true,
         )
         .await?;
+        dbg!(&address);
 
         let seq = client.get_sequence_number(address).await?;
         let local_account = LocalAccount::new(address, account_key, seq);

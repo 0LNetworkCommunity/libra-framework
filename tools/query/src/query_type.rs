@@ -1,10 +1,10 @@
 use crate::{
-    account_queries::{get_account_balance_libra, get_tower_state},
+    account_queries::{get_account_balance_libra, get_tower_state, self},
     query_view,
 };
 use indoc::indoc;
 use anyhow::{bail, Result};
-use libra_types::type_extensions::client_ext::ClientExt;
+use libra_types::{type_extensions::client_ext::ClientExt, exports::AuthenticationKey};
 use serde_json::json;
 use zapatos_sdk::{rest_client::Client, types::account_address::AccountAddress};
 
@@ -69,6 +69,11 @@ pub enum QueryType {
             "#}
         )]
         args: Option<String>,
+    },
+    /// Looks up the address of an account given an auth key. The authkey diverges from the address after a key rotation.
+    LookupAddress {
+      #[clap(short, long)]
+      auth_key: AuthenticationKey
     },
 
     /// get a move value from account blob
@@ -155,6 +160,13 @@ impl QueryType {
               "epoch": num,
             });
             Ok(json)
+        },
+        QueryType::LookupAddress { auth_key } => {
+          let addr = account_queries::lookup_originating_address(&client, auth_key.to_owned()).await?;
+
+          Ok(json!({
+            "address": addr
+          }))
         },
         _ => { bail!("Not implemented for type: {:?}", self) }
         // QueryType::BlockHeight => todo!(),

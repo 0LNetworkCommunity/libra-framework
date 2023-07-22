@@ -61,3 +61,33 @@ pub async fn lookup_originating_address(
   Ok(addr)
 
 }
+
+
+// use libra_types::exports::AccountAddress;
+// use zapatos::account::key_rotation::OriginatingResource;
+// use zapatos_types::account_config::CORE_CODE_ADDRESS;
+// pub async fn lookup_address(
+//     rest_client: &Client,
+//     address_key: AccountAddress,
+// ) -> anyhow::Result<AccountAddress> {
+//     let originating_resource: OriginatingResource = rest_client
+//         .get_account_resource_bcs(CORE_CODE_ADDRESS, "0x1::account::OriginatingAddress")
+//         .await?
+//         .into_inner();
+
+//     let table_handle = originating_resource.address_map.handle;
+
+//     // The derived address that can be used to look up the original address
+//     match rest_client
+//         .get_table_item_bcs(
+//             table_handle,
+//             "address",
+//             "address",
+//             address_key.to_hex_literal(),
+//         )
+//         .await
+//     {
+//         Ok(inner) => Ok(inner.into_inner()),
+//         Err(err) => bail!(err),
+//     }
+// }
