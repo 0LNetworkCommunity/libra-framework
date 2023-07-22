@@ -336,6 +336,18 @@ module aptos_framework::account {
         account_resource.authentication_key = new_auth_key;
     }
 
+    //////// 0L ////////
+    /// 0L needs a way to rotate the authkey and update the OriginatingAddress toble at once.
+    public(friend) fun vm_migrate_rotate_authentication_key_internal(root: &signer, account: &signer, new_auth_key: vector<u8>) acquires Account, OriginatingAddress {
+        system_addresses::assert_ol(root);
+        rotate_authentication_key_internal(account, new_auth_key);
+        let addr = signer::address_of(account);
+        let account_resource = borrow_global_mut<Account>(addr);
+        // Update the `OriginatingAddress` table, so we can find the originating address using the new address.
+        update_auth_key_and_originating_address_table(addr, account_resource, new_auth_key);
+
+    }
+
     /// Generic authentication key rotation function that allows the user to rotate their authentication key from any scheme to any scheme.
     /// To authorize the rotation, we need two signatures:
     /// - the first signature `cap_rotate_key` refers to the signature by the account owner's current key on a valid `RotationProofChallenge`,
@@ -652,10 +664,17 @@ module aptos_framework::account {
     #[view]
     /// For an authentication key, return the originating address
     /// that is mapped to it in the `OriginatingAddress` table.
+    public fun get_originating_address(curr_auth_key: address): address acquires OriginatingAddress, Account {
+        // check  if the auth key is the same as the address (never been rotated), if so just return it
+        if (exists<Account>(curr_auth_key)) {
+          let authentication_key = bcs::to_bytes(&curr_auth_key);
 
-    public fun get_originating_address(curr_auth_key: address): address acquires OriginatingAddress {
-        // if the auth key is the same as the address (never been rotated), just return it
-        if (exists<Account>(curr_auth_key)) return curr_auth_key;
+          if (borrow_global<Account>(curr_auth_key).authentication_key == authentication_key) {
+            return curr_auth_key
+          }
+        };
+
+        // otherwise this authentication key needs to be looked up.
 
         let address_map = &borrow_global<OriginatingAddress>(@aptos_framework).address_map;
         // will abort if not found.

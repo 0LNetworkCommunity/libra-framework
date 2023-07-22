@@ -73,7 +73,7 @@ pub enum QueryType {
     /// Looks up the address of an account given an auth key. The authkey diverges from the address after a key rotation.
     LookupAddress {
       #[clap(short, long)]
-      auth_key: AuthenticationKey
+      auth_key: AccountAddress // we use account address to parse, because that's the format needed to lookup users. AuthKeys and AccountAddress are the same formats.
     },
 
     /// get a move value from account blob

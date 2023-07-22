@@ -43,17 +43,17 @@ pub async fn get_tower_state(client: &Client, account: AccountAddress) -> anyhow
 /// looks up the original address for a given derived address.
 pub async fn lookup_originating_address(
     client: &Client,
-    authentication_key: AuthenticationKey,
+    authentication_key: AccountAddress, // we use account address to simplify parsing since authkey and accountaddress are the same.
 ) -> anyhow::Result<AccountAddress> {
   // the move View will return the same address_key if it has an unmodified Authkey (never been rotated)
-  let bytes = authentication_key.to_vec();
-  let cast_address = AccountAddress::from_bytes(bytes.as_slice())?;
+  // let bytes = authentication_key.to_vec();
+  // let cast_address = AccountAddress::from_bytes(bytes.as_slice())?;
 
   let function_id = entry_function_id("account", "get_originating_address")?;
   let request = ViewRequest {
       function: function_id,
       type_arguments: vec![],
-      arguments: vec![cast_address.to_string().into()],
+      arguments: vec![authentication_key.to_hex_literal().into()],
   };
 
   let res = client.view(&request, None).await?.into_inner();

@@ -7,6 +7,7 @@ module ol_framework::ol_account {
     use std::error;
     use std::signer;
     use std::option;
+    use aptos_std::from_bcs;
 
     use ol_framework::gas_coin::GasCoin;
     use ol_framework::slow_wallet;
@@ -36,7 +37,15 @@ module ol_framework::ol_account {
     /// for 0L the account which does onboarding needs to have at least 2 gas coins
     const EINSUFFICIENT_BALANCE: u64 = 6;
 
-    const BOOTSTRAP_GAS_COIN_AMOUNT: u64 = 1000000;
+    /// On legacy account migration we need to check if we rotated auth keys correctly and can find the user address.
+    const ECANT_MATCH_ADDRESS_IN_LOOKUP: u64 = 7;
+
+
+    // const BOOTSTRAP_GAS_COIN_AMOUNT: u64 = 1000000;
+
+
+
+
     /// Configuration for whether an account can receive direct transfers of coins that they have not registered.
     ///
     /// By default, this is enabled. Users can opt-out by disabling at any time.
@@ -115,7 +124,15 @@ module ol_framework::ol_account {
         // chain_status::assert_genesis(); TODO
         let new_signer = account::vm_create_account(root, new_account, auth_key);
         // fake "rotate" legacy auth key  to itself so that the lookup is populated
-        account::rotate_authentication_key_internal(&new_signer, auth_key);
+        account::vm_migrate_rotate_authentication_key_internal(root, &new_signer, auth_key);
+        // check we can in fact look up the account
+        let auth_key_as_address = from_bcs::to_address(auth_key);
+        let lookup_addr = account::get_originating_address(auth_key_as_address);
+        assert!(
+          lookup_addr == signer::address_of(&new_signer),
+          error::invalid_state(ECANT_MATCH_ADDRESS_IN_LOOKUP)
+        );
+
         coin::register<GasCoin>(&new_signer);
         new_signer
     }
@@ -299,10 +316,10 @@ module ol_framework::ol_account {
             borrow_global<DirectTransferConfig>(account).allow_arbitrary_coin_transfers
     }
 
-    #[test_only]
-    use aptos_std::from_bcs;
     // #[test_only]
-    // use std::string::utf8;
+    // use aptos_std::from_bcs;
+    // // #[test_only]
+    // // use std::string::utf8;
 
     #[test_only]
     struct FakeCoin {}
