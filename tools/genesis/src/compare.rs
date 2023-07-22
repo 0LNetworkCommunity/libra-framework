@@ -47,7 +47,7 @@ pub fn compare_recovery_vec_to_genesis_tx(
 
     let pb = ProgressBar::new(1000)
     .with_style(OLProgress::spinner())
-    .with_message("Test database from genesis.blob");
+    .with_message("check genesis bootstraps db");
     pb.enable_steady_tick(core::time::Duration::from_millis(500));
     // iterate over the recovery file and compare balances
     let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&genesis_transaction)?;
@@ -55,7 +55,7 @@ pub fn compare_recovery_vec_to_genesis_tx(
 
     recovery.iter()
     .progress_with_style(OLProgress::bar())
-    .with_message("Comparing new genesis to recovery json")
+    .with_message("auditing migration")
     .enumerate()
     .for_each(|(i, v)| {
         if v.account.is_none() {
@@ -189,7 +189,7 @@ pub fn check_supply(
 
     let on_chain_supply = total_supply(&db_rw.reader).unwrap();
 
-    assert!(expected_supply as u128 == on_chain_supply, "unexpected supply");
+    assert!(expected_supply as u128 == on_chain_supply, "supply mismatch, expected: {expected_supply:?} vs in genesis tx {on_chain_supply:?}");
 
     Ok(())
 }

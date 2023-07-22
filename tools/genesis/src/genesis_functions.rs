@@ -110,7 +110,7 @@ pub fn genesis_migrate_one_user(
         .to_string();
     let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
 
-    dbg!(&new_addr_type.to_hex_literal());
+    // dbg!(&new_addr_type.to_hex_literal());
 
     // NOTE: Authkeys have the same format as in pre V7
     let auth_key = user_recovery.auth_key.context("no auth key found")?;
@@ -302,4 +302,25 @@ pub fn genesis_migrate_ancestry(
         serialized_values,
     );
     Ok(())
+}
+
+
+/// Since we are minting for each account to convert account balances there may be a rounding difference from target. Add those micro cents into the transaction fee account.
+/// Note: we could have minted one giant coin and then split it, however there's no place to store in on chain without repurposing accounts (ie. system accounts by design do no hold any funds, only the transaction_fee contract can temporarily hold an aggregatable coin which by design can only be fully withdrawn (not split)). So the rounding mint is less elegant, but practical.
+pub fn rounding_mint(
+    session: &mut SessionExt<impl MoveResolver>,
+    supply_settings: &SupplySettings,
+) {
+    let serialized_values = serialize_values(&vec![
+        MoveValue::Signer(CORE_CODE_ADDRESS),
+        MoveValue::U64(supply_settings.scale_supply() as u64),
+    ]);
+
+    exec_function(
+        session,
+        "genesis_migration",
+        "rounding_mint",
+        vec![],
+        serialized_values,
+    );
 }

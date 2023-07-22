@@ -6,12 +6,13 @@ module ol_framework::gas_coin {
     use std::vector;
     use std::option::{Self, Option};
 
-    use aptos_framework::coin::{Self, MintCapability, BurnCapability};
+    use aptos_framework::coin::{Self, Coin, MintCapability, BurnCapability};
     use aptos_framework::system_addresses;
 
     use ol_framework::globals;
 
     friend aptos_framework::genesis;
+    friend ol_framework::genesis_migration;
 
     /// Account does not have mint capability
     const ENO_CAPABILITIES: u64 = 1;
@@ -136,12 +137,24 @@ module ol_framework::gas_coin {
 
     /// Only callable in tests and testnets where the core resources account exists.
     /// Create new coins and deposit them into dst_addr's account.
-    public entry fun mint(
-        account: &signer,
+    public(friend) fun mint_impl(
+        root: &signer,
+        amount: u64,
+    ): Coin<GasCoin> acquires MintCapStore {
+        system_addresses::assert_ol(root);
+
+        let mint_cap = &borrow_global<MintCapStore>(signer::address_of(root)).mint_cap;
+        coin::mint<GasCoin>(amount, mint_cap)
+    }
+
+    public(friend) fun mint_to(
+        root: &signer,
         dst_addr: address,
         amount: u64,
     ) acquires MintCapStore {
-        let account_addr = signer::address_of(account);
+        system_addresses::assert_ol(root);
+
+        let account_addr = signer::address_of(root);
 
         assert!(
             exists<MintCapStore>(account_addr),
@@ -151,6 +164,16 @@ module ol_framework::gas_coin {
         let mint_cap = &borrow_global<MintCapStore>(account_addr).mint_cap;
         let coins_minted = coin::mint<GasCoin>(amount, mint_cap);
         coin::deposit<GasCoin>(dst_addr, coins_minted);
+    }
+
+    #[test_only]
+    public fun test_mint_to(
+        root: &signer,
+        dst_addr: address,
+        amount: u64,
+    ) acquires MintCapStore {
+      system_addresses::assert_ol(root);
+      mint_to(root, dst_addr, amount);
     }
 
     // public(friend) fun genesis_mint(

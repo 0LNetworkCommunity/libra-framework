@@ -871,9 +871,9 @@ module aptos_framework::aptos_governance {
         coin::register<GasCoin>(yes_voter);
         coin::register<GasCoin>(no_voter);
 
-        gas_coin::mint(aptos_framework, signer::address_of(proposer), 50);
-        gas_coin::mint(aptos_framework, signer::address_of(yes_voter), 10);
-        gas_coin::mint(aptos_framework, signer::address_of(no_voter), 5);
+        gas_coin::test_mint_to(aptos_framework, signer::address_of(proposer), 50);
+        gas_coin::test_mint_to(aptos_framework, signer::address_of(yes_voter), 10);
+        gas_coin::test_mint_to(aptos_framework, signer::address_of(no_voter), 5);
         // // Spread stake among active and pending_inactive because both need to be accounted for when computing voting
         // // power.
         // stake::create_stake_pool(proposer, coin::mint(50, &mint_cap), coin::mint(50, &mint_cap), 10000);

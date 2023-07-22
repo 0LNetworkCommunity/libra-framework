@@ -16,7 +16,7 @@ module aptos_framework::account {
     use aptos_std::table::{Self, Table};
     use aptos_std::type_info::{Self, TypeInfo};
 
-    use aptos_std::debug::print;
+    // use aptos_std::debug::print;
 
 
     friend aptos_framework::aptos_account;
@@ -80,7 +80,8 @@ module aptos_framework::account {
       duplicates_map: Table<address, DuplicatedAuthKeys>
     }
 
-    public(friend) fun initialize_duplicate_originating(root: &signer) {
+    // migrate on the fly only if we need it in migration
+    public(friend) fun maybe_initialize_duplicate_originating(root: &signer) {
       system_addresses::assert_ol(root);
       if (!exists<MigrateOriginatingAddress>(@ol_framework)) {
         move_to(root, MigrateOriginatingAddress {
@@ -649,18 +650,12 @@ module aptos_framework::account {
         new_auth_key_vector: vector<u8>,
     ) acquires OriginatingAddress {
         let address_map = &mut borrow_global_mut<OriginatingAddress>(@aptos_framework).address_map;
-        print(&1111);
 
         let curr_auth_key = from_bcs::to_address(account_resource.authentication_key);
-
-        print(&111100000);
-
         // Checks `OriginatingAddress[curr_auth_key]` is either unmapped, or mapped to `originating_address`.
         // If it's mapped to the originating address, removes that mapping.
         // Otherwise, abort if it's mapped to a different address.
         if (table::contains(address_map, curr_auth_key)) {
-            print(&111100001);
-
             // If account_a with address_a is rotating its keypair from keypair_a to keypair_b, we expect
             // the address of the account to stay the same, while its keypair updates to keypair_b.
             // Here, by asserting that we're calling from the account with the originating address, we enforce
@@ -673,14 +668,9 @@ module aptos_framework::account {
             // 0L NOTE: this implementation means that the transaction will abort for users which try to use the same private key / mnemonic for two accounts (i.e. they rotated account_b account_c etc, to use the private key of account_a ). There is an issue with migration from V5 where there are cases like this, since this check was not in place then.
             assert!(originating_addr == table::remove(address_map, curr_auth_key), error::not_found(EINVALID_ORIGINATING_ADDRESS));
         };
-
-        print(&111100002);
-
         // Set `OriginatingAddress[new_auth_key] = originating_address`.
         let new_auth_key = from_bcs::to_address(new_auth_key_vector);
         table::add(address_map, new_auth_key, originating_addr);
-
-        print(&111100003);
 
         event::emit_event<KeyRotationEvent>(
             &mut account_resource.key_rotation_events,
@@ -706,24 +696,20 @@ module aptos_framework::account {
         system_addresses::assert_ol(root);
 
         let address_map = &mut borrow_global_mut<OriginatingAddress>(@aptos_framework).address_map;
-        print(&1111);
 
         let curr_auth_key = from_bcs::to_address(account_resource.authentication_key);
-
-        print(&111100000);
 
         // Checks `OriginatingAddress[curr_auth_key]` is either unmapped, or mapped to `originating_address`.
         // If it's mapped to the originating address, removes that mapping.
         // Otherwise, abort if it's mapped to a different address.
         if (table::contains(address_map, curr_auth_key)) {
-            print(&111100001);
-
             // because address b is not the account's originating address.
             // 0L NOTE: this should not abort on migration only, and the duplcates need to be identified for the users.
             // The original implementation meant that the transaction will abort for users which try to use the same private key / mnemonic for two accounts (i.e. they rotated account_b account_c etc, to use the private key of account_a ). There is an issue with migration from V5 where there are cases like this, since this check was not in place then.
             let maybe_duplicated_addr = *table::borrow(address_map, curr_auth_key);
             // there's an address returned in the table lookup for the authentication key of this account, it's not what the caller is expecting. We need to start populating the duplicates
             if (originating_addr != maybe_duplicated_addr) {
+              maybe_initialize_duplicate_originating(root);
               // we need to first cleanup the lookup table of the first entry.
               table::remove(address_map, curr_auth_key);
 
@@ -745,13 +731,9 @@ module aptos_framework::account {
             }
         };
 
-        print(&111100002);
-
         // Set `OriginatingAddress[new_auth_key] = originating_address`.
         let new_auth_key = from_bcs::to_address(new_auth_key_vector);
         table::add(address_map, new_auth_key, originating_addr);
-
-        print(&111100003);
 
         event::emit_event<KeyRotationEvent>(
             &mut account_resource.key_rotation_events,

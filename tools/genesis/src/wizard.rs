@@ -151,12 +151,6 @@ impl GenesisWizard {
                 vec![]
             };
 
-            // TODO: progress bar is odd when we  ask "already exists, are you sure you want to overwrite"
-
-            // let pb = ProgressBar::new(1000).with_style(OLProgress::spinner());
-
-            // pb.enable_steady_tick(Duration::from_millis(100));
-
             genesis_builder::build(
                 self.genesis_repo_org.clone(),
                 self.repo_name.clone(),
@@ -166,9 +160,6 @@ impl GenesisWizard {
                 Some(&legacy_recovery),
                 supply_settings,
             )?;
-            // pb.finish_and_clear();
-
-            OLProgress::complete("Genesis files built");
 
             for _ in (0..10)
                 .progress_with_style(OLProgress::fun())

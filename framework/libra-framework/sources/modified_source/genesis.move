@@ -264,7 +264,7 @@ module aptos_framework::genesis {
         // assert!(!account::exists_at(account_address), error::already_exists(EDUPLICATE_ACCOUNT));
         if (!account::exists_at(account_address)) {
             ol_account::create_account(root, account_address);
-            gas_coin::mint(root, account_address, 10000);
+            // gas_coin::mint_to(root, account_address, 10000);
 
         };
         // NOTE: after the inital genesis set up, the validators can rotate their auth keys.
