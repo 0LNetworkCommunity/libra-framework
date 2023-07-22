@@ -1,14 +1,14 @@
 
 TARGET_SUPPLY = 10000000000 # 10 billion
 FUTURE_USES = 0.70
-ONE_USER_FILE = sample_end_user_single
-ALL_USERS_FILE = sample_export_recovery
+# RECOVERY_FILE = sample_end_user_single
+RECOVERY_FILE = sample_export_recovery
 
 genesis:
 	cargo r -- --org-github  0o-de-lally \
 	--name-github a-genesis \
 	--local-framework \
-	--json-legacy ./tests/fixtures/${ONE_USER_FILE}.json \
+	--json-legacy ./tests/fixtures/${RECOVERY_FILE}.json \
 	genesis \
 	--target-supply ${TARGET_SUPPLY} \
 	--target-future-uses ${FUTURE_USES} \
@@ -20,7 +20,7 @@ wizard:
 	cargo r -- --org-github  0o-de-lally \
 	--name-github a-genesis \
 	--local-framework \
-	--json-legacy ./tests/fixtures/${ALL_USERS_FILE}.json \
+	--json-legacy ./tests/fixtures/${RECOVERY_FILE}.json \
 	wizard \
 	--target-supply ${TARGET_SUPPLY} \
 	--target-future-uses ${FUTURE_USES} \
