@@ -62,6 +62,7 @@ zapatos-config = { package = "aptos-config", git = "https://github.com/0o-de-lal
 zapatos-crypto = { package = "aptos-crypto", git = "https://github.com/0o-de-lally/zapatos.git", rev = "34c987d70"}
 zapatos-genesis = { package = "aptos-genesis", git = "https://github.com/0o-de-lally/zapatos.git", rev = "34c987d70"}
 zapatos-keygen = { package = "aptos-keygen", git = "https://github.com/0o-de-lally/zapatos.git", rev = "34c987d70" }
+zapatos-logger = { package = "aptos-logger", git = "https://github.com/0o-de-lally/zapatos.git", rev = "34c987d70" }
 zapatos-types = { package = "aptos-types", git = "https://github.com/0o-de-lally/zapatos.git", rev = "34c987d70"}
 zapatos-gas = { package = "aptos-gas", git = "https://github.com/0o-de-lally/zapatos.git", rev = "34c987d70"}
 zapatos-vm = { package = "aptos-vm", git = "https://github.com/0o-de-lally/zapatos.git", rev = "34c987d70"}

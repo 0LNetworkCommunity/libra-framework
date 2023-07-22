@@ -3,6 +3,7 @@ use zapatos::{
     account::key_rotation::lookup_address,
     common::types::{CliConfig, ConfigSearchMode},
 };
+use zapatos_logger::prelude::*;
 use zapatos_sdk::{
     rest_client::{aptos_api_types::TransactionOnChainData, Client},
     transaction_builder::TransactionBuilder,
@@ -25,7 +26,7 @@ use libra_types::{
     type_extensions::{
         cli_config_ext::CliConfigExt,
         client_ext::{ClientExt, DEFAULT_TIMEOUT_SECS},
-    },
+    }, ol_progress::OLProgress,
 };
 
 // #[derive(Debug)]
@@ -95,7 +96,7 @@ impl Sender {
             true,
         )
         .await?;
-        dbg!(&address);
+        info!("using address {}", &address);
 
         let seq = client.get_sequence_number(address).await?;
         let local_account = LocalAccount::new(address, account_key, seq);
@@ -219,9 +220,12 @@ impl Sender {
         payload: TransactionPayload,
     ) -> anyhow::Result<TransactionOnChainData> {
         let signed = self.sign_payload(payload);
+        let spin = OLProgress::spin_steady(250, "awaiting transaction response".to_string());
         let r = self.submit(&signed).await?;
         self.response = Some(r.clone());
-        println!("Success");
+        spin.finish_and_clear();
+        debug!("{:?}", &r);
+        OLProgress::complete("transaction success");
         Ok(r)
     }
 

@@ -5799,6 +5799,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "aptos",
+ "aptos-logger",
  "aptos-sdk",
  "aptos-types",
  "clap 3.2.23",
