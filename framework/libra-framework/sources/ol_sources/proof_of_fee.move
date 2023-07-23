@@ -29,11 +29,11 @@ module ol_framework::proof_of_fee {
 
   //////// ERRORS /////////
   /// Not and active validator
-  const ENOT_AN_ACTIVE_VALIDATOR: u64 = 190001;
+  const ENOT_AN_ACTIVE_VALIDATOR: u64 = 1;
   /// Bid is above the maximum percentage of the total reward
-  const EBID_ABOVE_MAX_PCT: u64 = 190002;
+  const EBID_ABOVE_MAX_PCT: u64 = 2;
   /// Retracted your bid too many times
-  const EABOVE_RETRACT_LIMIT: u64 = 190003; // Potential update
+  const EABOVE_RETRACT_LIMIT: u64 = 3; // Potential update
 
   // A struct on the validators account which indicates their
   // latest bid (and epoch)

@@ -40,7 +40,7 @@ pub enum ValidatorTxs {
 
 impl ValidatorTxs {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let  payload = match self {
+        let payload = match self {
             ValidatorTxs::Pof { bid_pct, expiry: epoch_expiry , retract} => {
               if *retract {
                 ProofOfFeePofRetractBid{}
