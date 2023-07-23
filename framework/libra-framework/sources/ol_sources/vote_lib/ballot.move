@@ -28,9 +28,9 @@
     use std::error;
 
     /// No ballot found under that GUID
-    const ENO_BALLOT_FOUND: u64 = 300010;
+    const ENO_BALLOT_FOUND: u64 = 1;
     /// Bad status enum
-    const EBAD_STATUS_ENUM: u64 = 300011;
+    const EBAD_STATUS_ENUM: u64 = 2;
 
 
     // poor man's enum for the ballot status. Wen enum?

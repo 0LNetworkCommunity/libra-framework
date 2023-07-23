@@ -51,9 +51,9 @@
         use aptos_framework::coin;
 
 
-        const ENO_BENEFICIARY_POLICY: u64 = 150001;
-        const ENON_ZERO_BALANCE: u64 = 150002;
-        const ENO_PLEDGE_INIT: u64 = 150003;
+        const ENO_BENEFICIARY_POLICY: u64 = 1;
+        const ENON_ZERO_BALANCE: u64 = 2;
+        const ENO_PLEDGE_INIT: u64 = 3;
 
         struct MyPledges has key {
           list: vector<PledgeAccount>

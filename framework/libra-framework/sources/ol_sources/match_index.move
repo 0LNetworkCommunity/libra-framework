@@ -12,7 +12,7 @@ module ol_framework::match_index {
   use std::signer;
   use std::error;
 
-  const ENOT_INIT: u64 = 100023;
+  const ENOT_INIT: u64 = 1;
 
   friend ol_framework::community_wallet;
   /// The Match index keeps accounts that have opted-in.

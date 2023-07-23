@@ -13,7 +13,7 @@ module ol_framework::slow_wallet {
   use ol_framework::gas_coin::GasCoin;
   use std::error;
 
-  const EGENESIS_ERROR: u64 = 10001;
+  const EGENESIS_ERROR: u64 = 1;
 
   const EPOCH_DRIP_CONST: u64 = 100000;
 

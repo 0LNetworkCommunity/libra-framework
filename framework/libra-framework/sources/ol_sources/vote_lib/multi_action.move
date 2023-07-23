@@ -34,29 +34,29 @@ module ol_framework::multi_action {
   use aptos_framework::reconfiguration;
   // use DiemFramework::Debug::print;
 
-  const EGOV_NOT_INITIALIZED: u64 = 440000;
+  const EGOV_NOT_INITIALIZED: u64 = 1;
   /// The owner of this account can't be an authority, since it will subsequently be bricked. The signer of this account is no longer useful. The account is now controlled by the Governance logic.
-  const ESIGNER_CANT_BE_AUTHORITY: u64 = 440001;
+  const ESIGNER_CANT_BE_AUTHORITY: u64 = 2;
   /// signer not authorized to approve a transaction.
-  const ENOT_AUTHORIZED: u64 = 440002;
+  const ENOT_AUTHORIZED: u64 = 3;
   /// There are no pending transactions to search
-  const EPENDING_EMPTY: u64 = 440003;
+  const EPENDING_EMPTY: u64 = 4;
   /// Not enough signers configured
-  const ENO_SIGNERS: u64 = 440004;
+  const ENO_SIGNERS: u64 = 5;
   /// The multisig setup  is not finalized, the sponsor needs to brick their authkey. The account setup sponsor needs to be verifiably locked out before operations can begin.
-  const ENOT_FINALIZED_NOT_BRICK: u64 = 440005;
+  const ENOT_FINALIZED_NOT_BRICK: u64 = 6;
   /// Already registered this action type
-  const EACTION_ALREADY_EXISTS: u64 = 440006;
+  const EACTION_ALREADY_EXISTS: u64 = 7;
   /// Action not found
-  const EACTION_NOT_FOUND: u64 = 440007;
+  const EACTION_NOT_FOUND: u64 = 8;
   /// Proposal is expired
-  const EPROPOSAL_EXPIRED: u64 = 440008;
+  const EPROPOSAL_EXPIRED: u64 = 9;
   /// Proposal is expired
-  const EDUPLICATE_PROPOSAL: u64 = 440009;
+  const EDUPLICATE_PROPOSAL: u64 = 10;
   /// Proposal is expired
-  const EPROPOSAL_NOT_FOUND: u64 = 440010;
+  const EPROPOSAL_NOT_FOUND: u64 = 11;
   /// Proposal voting is closed
-  const EVOTING_CLOSED: u64 = 440011;
+  const EVOTING_CLOSED: u64 = 12;
 
 
   /// default setting for a proposal to expire

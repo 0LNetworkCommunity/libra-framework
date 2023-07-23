@@ -34,25 +34,25 @@ module ol_framework::community_wallet {
     use ol_framework::match_index;
     use aptos_framework::system_addresses;
 
-    const ENOT_AUTHORIZED: u64 = 023;
+    const ENOT_AUTHORIZED: u64 = 1;
 
-    const ENOT_QUALIFY_COMMUNITY_WALLET: u64 = 12000;
+    const ENOT_QUALIFY_COMMUNITY_WALLET: u64 = 2;
 
     /// This account needs to be donor directed.
-    const ENOT_DONOR_DIRECTED: u64 = 120001;
+    const ENOT_DONOR_DIRECTED: u64 = 3;
 
     /// This account needs a multisig enabled
-    const ENOT_MULTISIG: u64 = 120002;
+    const ENOT_MULTISIG: u64 = 4;
     /// The multisig does not have minimum 5 signers and 3 approvals in config
-    const ESIG_THRESHOLD: u64 = 120003;
+    const ESIG_THRESHOLD: u64 = 5;
     /// The multisig threshold does not equal 3/5
-    const ESIG_THRESHOLD_RATIO: u64 = 120004;
+    const ESIG_THRESHOLD_RATIO: u64 = 6;
     /// Signers may be sybil
-    const ESIGNERS_SYBIL: u64 = 120005;
+    const ESIGNERS_SYBIL: u64 = 7;
     /// Recipient does not have a slow wallet
-    const EPAYEE_NOT_SLOW_WALLET: u64 = 120006;
+    const EPAYEE_NOT_SLOW_WALLET: u64 = 8;
     /// Too few signers for Match Index
-    const ETOO_FEW_SIGNERS: u64 = 120007;
+    const ETOO_FEW_SIGNERS: u64 = 9;
 
 
     // A flag on the account that it wants to be considered a community walley

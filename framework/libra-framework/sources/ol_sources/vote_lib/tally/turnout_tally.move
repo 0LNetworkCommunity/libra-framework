@@ -47,19 +47,19 @@
     // use aptos_std::debug::print;
 
     /// The ballot has already been completed.
-    const ECOMPLETED: u64 = 300010;
+    const ECOMPLETED: u64 = 1;
     /// The number of votes cast cannot be greater than the max number of votes available from enrollment.
-    const EVOTES_GREATER_THAN_ENROLLMENT: u64 = 300011;
+    const EVOTES_GREATER_THAN_ENROLLMENT: u64 = 2;
     /// The threshold curve parameters are wrong. The curve is not decreasing.
-    const EVOTE_CALC_PARAMS: u64 = 300012;
+    const EVOTE_CALC_PARAMS: u64 = 3;
     /// Voters cannot vote twice, but they can retract a vote
-    const EALREADY_VOTED: u64 = 300013;
+    const EALREADY_VOTED: u64 = 4;
     /// The voter has not voted yet. Cannot retract a vote.
-    const ENOT_VOTED: u64 = 300014;
+    const ENOT_VOTED: u64 = 5;
     /// No ballot found under that guid
-    const ENO_BALLOT_FOUND: u64 = 300015;
+    const ENO_BALLOT_FOUND: u64 = 6;
     /// Bad status enum
-    const EBAD_STATUS_ENUM: u64 = 300016;
+    const EBAD_STATUS_ENUM: u64 = 7;
 
     // TODO: These may be variable on a per project basis. And these
     // should just be defaults.

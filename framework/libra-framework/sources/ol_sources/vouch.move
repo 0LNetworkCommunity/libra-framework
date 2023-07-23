@@ -14,7 +14,7 @@ module ol_framework::vouch {
     use aptos_framework::transaction_fee;
 
     /// Trying to vouch for yourself?
-    const ETRY_SELF_VOUCH_REALLY: u64 = 12345;
+    const ETRY_SELF_VOUCH_REALLY: u64 = 1;
 
     /// how many epochs must pass before the voucher expires.
     const EXPIRATION_ELAPSED_EPOCHS: u64 = 90;

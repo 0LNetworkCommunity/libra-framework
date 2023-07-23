@@ -50,17 +50,17 @@ module ol_framework::donor_directed {
     // use aptos_std::debug::print;
 
     /// Not initialized as a donor directed account.
-    const ENOT_INIT_DONOR_DIRECTED: u64 = 231001;
+    const ENOT_INIT_DONOR_DIRECTED: u64 = 1;
     /// User is not a donor and cannot vote on this account
-    const ENOT_AUTHORIZED_TO_VOTE: u64 = 231010;
+    const ENOT_AUTHORIZED_TO_VOTE: u64 = 2;
     /// Could not find a pending transaction by this GUID
-    const ENO_PEDNING_TRANSACTION_AT_UID: u64 = 231011;
+    const ENO_PEDNING_TRANSACTION_AT_UID: u64 = 3;
     /// No enum for this number
-    const ENOT_VALID_STATE_ENUM: u64 = 231012;
+    const ENOT_VALID_STATE_ENUM: u64 = 4;
     /// No enum for this number
-    const EMULTISIG_NOT_INIT: u64 = 231013;
+    const EMULTISIG_NOT_INIT: u64 = 5;
     /// No enum for this number
-    const ENO_VETO_ID_FOUND: u64 = 231014;
+    const ENO_VETO_ID_FOUND: u64 = 6;
 
     const SCHEDULED: u8 = 1;
     const VETO: u8 = 2;

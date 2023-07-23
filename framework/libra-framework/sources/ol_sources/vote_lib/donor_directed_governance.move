@@ -26,11 +26,11 @@ module ol_framework::donor_directed_governance {
     // use ol_framework::debug::print;
 
     /// Is not a donor to this account
-    const ENOT_A_DONOR: u64 = 220000;
+    const ENOT_A_DONOR: u64 = 1;
     /// No ballot found under that GUID
-    const ENO_BALLOT_FOUND: u64 = 220001;
+    const ENO_BALLOT_FOUND: u64 = 2;
     /// A proposal already exists with this data
-    const EDUPLICATE_PROPOSAL: u64 = 220001;
+    const EDUPLICATE_PROPOSAL: u64 = 3;
 
 
 

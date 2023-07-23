@@ -8,8 +8,8 @@ module ol_framework::testnet {
     use std::chain_id;
 
 
-    const ENOT_TESTNET: u64 = 666; // out satan!
-    const EWHY_U_NO_ROOT: u64 = 667;
+    const ENOT_TESTNET: u64 = 1; // out satan!
+    const EWHY_U_NO_ROOT: u64 = 2;
 
     public fun is_testnet(): bool {
         chain_id::get() == 4
