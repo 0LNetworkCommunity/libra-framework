@@ -148,9 +148,10 @@ module ol_framework::gas_coin {
     // }
 
     // NOTE: needed for smoke tests
+    // TODO: guard some other way besides using the testing root account.
     /// Root account can mint to an address. Only used for genesis and tests.
     /// The "root" account in smoke tests has some privileges.
-    fun mint_to_impl(
+    public entry fun mint_to_impl(
         root: &signer,
         dst_addr: address,
         amount: u64,

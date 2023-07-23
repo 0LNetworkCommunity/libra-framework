@@ -327,8 +327,9 @@ pub enum EntryFunctionCall {
         to: AccountAddress,
     },
 
-    /// Root vm account can mint to an address. Only used for genesis and tests.
-    GasCoinMintTo {
+    /// Root account can mint to an address. Only used for genesis and tests.
+    /// The "root" account in smoke tests has some privileges.
+    GasCoinMintToImpl {
         dst_addr: AccountAddress,
         amount: u64,
     },
@@ -809,7 +810,7 @@ impl EntryFunctionCall {
             } => dummy_use_fn_from_aptos_std(account_public_key_bytes),
             GasCoinClaimMintCapability {} => gas_coin_claim_mint_capability(),
             GasCoinDelegateMintCapability { to } => gas_coin_delegate_mint_capability(to),
-            GasCoinMintTo { dst_addr, amount } => gas_coin_mint_to(dst_addr, amount),
+            GasCoinMintToImpl { dst_addr, amount } => gas_coin_mint_to_impl(dst_addr, amount),
             JailUnjailByVoucher { addr } => jail_unjail_by_voucher(addr),
             MultisigAccountAddOwner { new_owner } => multisig_account_add_owner(new_owner),
             MultisigAccountAddOwners { new_owners } => multisig_account_add_owners(new_owners),
@@ -1845,8 +1846,9 @@ pub fn gas_coin_delegate_mint_capability(to: AccountAddress) -> TransactionPaylo
     ))
 }
 
-/// Root vm account can mint to an address. Only used for genesis and tests.
-pub fn gas_coin_mint_to(dst_addr: AccountAddress, amount: u64) -> TransactionPayload {
+/// Root account can mint to an address. Only used for genesis and tests.
+/// The "root" account in smoke tests has some privileges.
+pub fn gas_coin_mint_to_impl(dst_addr: AccountAddress, amount: u64) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
@@ -1855,7 +1857,7 @@ pub fn gas_coin_mint_to(dst_addr: AccountAddress, amount: u64) -> TransactionPay
             ]),
             ident_str!("gas_coin").to_owned(),
         ),
-        ident_str!("mint_to").to_owned(),
+        ident_str!("mint_to_impl").to_owned(),
         vec![],
         vec![
             bcs::to_bytes(&dst_addr).unwrap(),
@@ -3203,9 +3205,9 @@ mod decoder {
         }
     }
 
-    pub fn gas_coin_mint_to(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+    pub fn gas_coin_mint_to_impl(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::GasCoinMintTo {
+            Some(EntryFunctionCall::GasCoinMintToImpl {
                 dst_addr: bcs::from_bytes(script.args().get(0)?).ok()?,
                 amount: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
@@ -3865,8 +3867,8 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::gas_coin_delegate_mint_capability),
         );
         map.insert(
-            "gas_coin_mint_to".to_string(),
-            Box::new(decoder::gas_coin_mint_to),
+            "gas_coin_mint_to_impl".to_string(),
+            Box::new(decoder::gas_coin_mint_to_impl),
         );
         map.insert(
             "jail_unjail_by_voucher".to_string(),

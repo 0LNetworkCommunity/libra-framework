@@ -24,7 +24,7 @@ pub async fn get_libra_balance(client: &Client, address: AccountAddress) -> anyh
 pub async fn mint_libra(public_info: &mut AptosPublicInfo<'_>, addr: AccountAddress, amount: u64) -> anyhow::Result<()> {
   let payload = public_info
       .transaction_factory()
-      .payload(aptos_stdlib::gas_coin_mint_to(addr, amount));
+      .payload(aptos_stdlib::gas_coin_mint_to_impl(addr, amount));
 
     let mint_txn = public_info
       .root_account()

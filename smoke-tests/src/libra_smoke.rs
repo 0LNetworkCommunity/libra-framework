@@ -49,7 +49,8 @@ impl LibraSmoke {
       let mut pub_info: zapatos_forge::AptosPublicInfo<'_> = swarm.aptos_public_info();
       // mint one coin to the main validator.
       // the genesis does NOT mint by default to genesis validators
-      helpers::mint_libra(&mut pub_info, addr, 1000000).await?;
+      // 10,000 coins with 6 decimals precision
+      helpers::mint_libra(&mut pub_info, addr, 10_000_000_000).await?;
 
 
       Ok(Self {
