@@ -56,7 +56,8 @@ module ol_framework::genesis_migration {
     assert!(expected_initial_balance >= genesis_balance, error::invalid_state(EGENESIS_BALANCE_TOO_HIGH));
 
     let coins_to_mint = expected_initial_balance - genesis_balance;
-    gas_coin::mint_to(vm, user_addr, coins_to_mint);
+    let c = coin::vm_mint<GasCoin>(vm, coins_to_mint);
+    coin::deposit<GasCoin>(user_addr, c);
 
     let new_balance = coin::balance<GasCoin>(user_addr);
 
@@ -73,7 +74,7 @@ module ol_framework::genesis_migration {
 
     assert!(target_supply >= existing_supply, error::invalid_state(EMINTED_OVER_TARGET));
     if (target_supply > existing_supply) {
-        let coin = gas_coin::mint_impl(root, target_supply - existing_supply);
+        let coin = coin::vm_mint<GasCoin>(root, target_supply - existing_supply);
         transaction_fee::vm_pay_fee(root, @ol_framework, coin);
 
     }

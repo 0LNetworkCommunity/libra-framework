@@ -6,7 +6,7 @@ module ol_framework::gas_coin {
     use std::vector;
     use std::option::{Self, Option};
 
-    use aptos_framework::coin::{Self, Coin, MintCapability, BurnCapability};
+    use aptos_framework::coin::{Self, MintCapability, BurnCapability};
     use aptos_framework::system_addresses;
 
     use ol_framework::globals;
@@ -135,26 +135,26 @@ module ol_framework::gas_coin {
         move_to(core_resources, Delegations { inner: vector::empty() });
     }
 
-    /// Only callable in tests and testnets where the core resources account exists.
-    /// Create new coins and deposit them into dst_addr's account.
-    public(friend) fun mint_impl(
-        root: &signer,
-        amount: u64,
-    ): Coin<GasCoin> acquires MintCapStore {
-        system_addresses::assert_ol(root);
+    // /// Only callable in tests and testnets where the core resources account exists.
+    // /// Create new coins and deposit them into dst_addr's account.
+    // mint_impl(
+    //     root: &signer,
+    //     amount: u64,
+    // ): Coin<GasCoin> acquires MintCapStore {
+    //     system_addresses::assert_ol(root);
 
-        let mint_cap = &borrow_global<MintCapStore>(signer::address_of(root)).mint_cap;
-        coin::mint<GasCoin>(amount, mint_cap)
-    }
+    //     let mint_cap = &borrow_global<MintCapStore>(signer::address_of(root)).mint_cap;
+    //     coin::mint<GasCoin>(amount, mint_cap)
+    // }
 
     // NOTE: needed for smoke tests
-    /// Root vm account can mint to an address. Only used for genesis and tests.
-    public entry fun mint_to(
+    /// Root account can mint to an address. Only used for genesis and tests.
+    /// The "root" account in smoke tests has some privileges.
+    fun mint_to_impl(
         root: &signer,
         dst_addr: address,
         amount: u64,
     ) acquires MintCapStore {
-        system_addresses::assert_ol(root);
 
         let account_addr = signer::address_of(root);
 
@@ -169,27 +169,14 @@ module ol_framework::gas_coin {
     }
 
     #[test_only]
-    public fun test_mint_to(
+    public entry fun test_mint_to(
         root: &signer,
         dst_addr: address,
         amount: u64,
     ) acquires MintCapStore {
       system_addresses::assert_ol(root);
-      mint_to(root, dst_addr, amount);
+      mint_to_impl(root, dst_addr, amount);
     }
-
-    // public(friend) fun genesis_mint(
-    //     account: &signer,
-    // ): Coin<GasCoin> acquires MintCapStore {
-    //     let account_addr = signer::address_of(account);
-    //     assert!(
-    //         exists<MintCapStore>(account_addr),
-    //         error::not_found(ENO_CAPABILITIES),
-    //     );
-
-    //     let mint_cap = &borrow_global<MintCapStore>(account_addr).mint_cap;
-    //     coin::mint<GasCoin>(100000, mint_cap)
-    // }
 
     /// Only callable in tests and testnets where the core resources account exists.
     /// Create delegated token for the address so the account could claim MintCapability later.

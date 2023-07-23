@@ -189,7 +189,7 @@ module ol_framework::test_multi_action {
 
 
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, dave = @0x1000d)]
-  #[expected_failure(abort_code = 505547, location = ol_framework::multi_action)]
+  #[expected_failure(abort_code = 65548, location = ol_framework::multi_action)]
 
   fun vote_action_expiration(root: &signer, alice: &signer, bob: &signer, dave: &signer) {
     // Scenario: Testing that if an action expires voting cannot be done.

@@ -97,7 +97,7 @@ module ol_framework::test_turnout_tally {
     }
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
-    #[expected_failure(abort_code = 496618, location = 0x1::turnout_tally)]
+    #[expected_failure(abort_code = 196609, location = 0x1::turnout_tally)]
 
     fun tally_vote_expired(root: &signer, alice: &signer, bob: &signer) {
       let _vals = mock::genesis_n_vals(root, 1);

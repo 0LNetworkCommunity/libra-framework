@@ -15,6 +15,8 @@ module aptos_framework::coin {
 
     use aptos_std::type_info;
     use aptos_std::math64;
+
+    // use aptos_framework::chain_status;
     // use aptos_std::debug::print;
 
     friend ol_framework::gas_coin;
@@ -401,7 +403,7 @@ module aptos_framework::coin {
     }
 
     /// Deposit the coin balance into the recipient's account and emit an event.
-    public(friend) fun deposit<CoinType>(account_addr: address, coin: Coin<CoinType>) acquires CoinStore {
+    public fun deposit<CoinType>(account_addr: address, coin: Coin<CoinType>) acquires CoinStore {
         assert!(
             is_account_registered<CoinType>(account_addr),
             error::not_found(ECOIN_STORE_NOT_PUBLISHED),
@@ -567,6 +569,30 @@ module aptos_framework::coin {
         amount: u64,
         _cap: &MintCapability<CoinType>,
     ): Coin<CoinType> acquires CoinInfo {
+        if (amount == 0) {
+            return zero<CoinType>()
+        };
+
+        let maybe_supply = &mut borrow_global_mut<CoinInfo<CoinType>>(coin_address<CoinType>()).supply;
+        if (option::is_some(maybe_supply)) {
+            let supply = option::borrow_mut(maybe_supply);
+            optional_aggregator::add(supply, (amount as u128));
+        };
+
+        Coin<CoinType> { value: amount }
+    }
+
+    //////// 0L ////////
+    // the VM needs to mint only once in 0L for genesis.
+    // in gas_coin there are some helpers for test suite minting.
+    // otherwise there is no ongoing minting except at genesis
+    public fun vm_mint<CoinType>(
+        root: &signer,
+        amount: u64,
+    ): Coin<CoinType> acquires CoinInfo {
+        system_addresses::assert_ol(root);
+        // chain_status::assert_genesis(); // TODO: make this assert genesis.
+
         if (amount == 0) {
             return zero<CoinType>()
         };

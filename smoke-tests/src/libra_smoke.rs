@@ -6,9 +6,11 @@ use url::Url;
 use libra_framework::release::ReleaseTarget;
 
 use zapatos_crypto::traits::ValidCryptoMaterialStringExt;
-use zapatos_forge::{LocalSwarm, Node};
+use zapatos_forge::{LocalSwarm, Node, Swarm};
 use zapatos_sdk::types::LocalAccount;
 use zapatos_smoke_test::smoke_test_environment;
+
+use crate::helpers;
 
 /// We provide the minimal set of structs to conduct most tests: a swarm object, and a validator keys object (LocalAccount)
 pub struct LibraSmoke {
@@ -28,20 +30,27 @@ impl LibraSmoke {
       let release = ReleaseTarget::Head.load_bundle().unwrap();
       let mut swarm = smoke_test_environment::new_local_swarm_with_release(count_vals.unwrap_or(1).into(), release).await;
 
-      let node = swarm.validators_mut()
+      let node = swarm.validators()
         .next()
-        .context("no first validator")?;
+        .context("no first validator")?.to_owned();
+      let addr = node.peer_id();
+
+      // set up libra_smoke object
       let pri_key = node.account_private_key()
         .as_ref().
         context("no private key for validator")?;
-
       let encoded_pri_key = pri_key.private_key().to_encoded_string().expect("cannot decode pri key");
-
-
       let first_account = LocalAccount::new(node.peer_id(), pri_key.private_key(), 0);
-
-
       let api_endpoint = node.rest_api_endpoint();
+
+      // TODO: order here is awkward because of borrow issues. Clean this up.
+
+      // mint to first validator account
+      let mut pub_info: zapatos_forge::AptosPublicInfo<'_> = swarm.aptos_public_info();
+      // mint one coin to the main validator.
+      // the genesis does NOT mint by default to genesis validators
+      helpers::mint_libra(&mut pub_info, addr, 1000000).await?;
+
 
       Ok(Self {
         swarm,
