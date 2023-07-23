@@ -28,6 +28,8 @@ async fn can_send_txs_cli() {
       }),
       mnemonic: None,
       test_private_key: Some(pri_key.to_encoded_string().expect("cannot decode pri key")),
+      chain_id: None,
+      config_path: None,
       url: Some(node.rest_api_endpoint()),
       gas_max: None,
       gas_unit_price: None,

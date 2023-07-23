@@ -4,7 +4,7 @@ use zapatos_smoke_test::smoke_test_environment::{
 use libra_framework::release::ReleaseTarget;
 use zapatos_forge::Swarm;
 use libra_query::query_type::QueryType;
-use libra_types::gas_coin::SlowWalletBalance;
+use libra_types::move_resource::gas_coin::SlowWalletBalance;
 
 /// Testing the query library
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
