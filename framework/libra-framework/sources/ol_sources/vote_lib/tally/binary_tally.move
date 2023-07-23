@@ -15,10 +15,15 @@
     use std::option::{Self, Option};
     use aptos_framework::reconfiguration;
 
+    /// tally not initialized
     const ENOT_INITIALIZED: u64 = 0;
+    /// no ballot found
     const ENO_BALLOT_FOUND: u64 = 1;
+    /// not enrolled to participate in ballot
     const ENOT_ENROLLED: u64 = 2;
+    /// you've already voted
     const EALREADY_VOTED: u64 = 3;
+    /// not a valid vote option
     const EINVALID_VOTE: u64 = 4;
 
     // Duplicated from Ballot

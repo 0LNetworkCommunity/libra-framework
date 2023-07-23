@@ -12,8 +12,7 @@ module ol_framework::tower_state {
 
     // use aptos_std::debug::print;
 
-    /// The current solution does not solve to previous hash.
-    /// The delay proofs are not chained
+    /// The current solution does not solve to previous hash, the delay proofs are not chained
     const EDELAY_NOT_CHAINED: u64 = 1;
     /// difficulty of proof does not match requirement.
     const EWRONG_DIFFICULTY: u64 = 2;

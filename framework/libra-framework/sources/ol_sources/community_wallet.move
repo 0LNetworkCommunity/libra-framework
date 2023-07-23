@@ -34,13 +34,12 @@ module ol_framework::community_wallet {
     use ol_framework::match_index;
     use aptos_framework::system_addresses;
 
+    /// not authorized to operate on this account
     const ENOT_AUTHORIZED: u64 = 1;
-
+    /// does not meet criteria for community wallet
     const ENOT_QUALIFY_COMMUNITY_WALLET: u64 = 2;
-
     /// This account needs to be donor directed.
     const ENOT_DONOR_DIRECTED: u64 = 3;
-
     /// This account needs a multisig enabled
     const ENOT_MULTISIG: u64 = 4;
     /// The multisig does not have minimum 5 signers and 3 approvals in config

@@ -2,7 +2,6 @@
 module ol_framework::match_index {
   use aptos_framework::system_addresses;
   use ol_framework::cumulative_deposits;
-  // use ol_framework::community_wallet;
   use ol_framework::gas_coin::GasCoin;
   use ol_framework::ol_account;
   use aptos_framework::coin::{Self, Coin};
@@ -12,6 +11,7 @@ module ol_framework::match_index {
   use std::signer;
   use std::error;
 
+  /// matching index is not initialized
   const ENOT_INIT: u64 = 1;
 
   friend ol_framework::community_wallet;

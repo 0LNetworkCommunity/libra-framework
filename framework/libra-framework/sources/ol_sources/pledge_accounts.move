@@ -50,9 +50,11 @@
         use aptos_framework::system_addresses;
         use aptos_framework::coin;
 
-
+        /// no policy at this address
         const ENO_BENEFICIARY_POLICY: u64 = 1;
+        /// there is a non zero balance
         const ENON_ZERO_BALANCE: u64 = 2;
+        /// pledge is not initialized
         const ENO_PLEDGE_INIT: u64 = 3;
 
         struct MyPledges has key {

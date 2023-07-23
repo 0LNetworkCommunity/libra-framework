@@ -22,7 +22,7 @@ module ol_framework::persistence_demo {
       hist: vector<u8>,
     }
 
-    // The operation can only be performed on testnet
+    /// this operation can only be performed on testnet
     const ETESTNET : u64 = 1;
 
     // For this demo, the `initialize` function writes a PersistenceDemo::State

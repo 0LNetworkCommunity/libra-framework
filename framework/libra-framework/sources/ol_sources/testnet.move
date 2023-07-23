@@ -7,8 +7,9 @@ module ol_framework::testnet {
     use std::signer;
     use std::chain_id;
 
-
-    const ENOT_TESTNET: u64 = 1; // out satan!
+    /// trying something that should only be done on testnet, out satan!
+    const ENOT_TESTNET: u64 = 1;
+    /// yo! only root should be trying this
     const EWHY_U_NO_ROOT: u64 = 2;
 
     public fun is_testnet(): bool {

@@ -12,6 +12,7 @@ module ol_framework::fifo {
     use std::vector;
     use std::error;
 
+    /// trying to operate on an empty FIFO queue
     const EACCESSING_EMPTY_FIFO: u64 = 1;
 
     /// FIFO implemented using two LIFO vectors

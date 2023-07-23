@@ -57,6 +57,7 @@ module ol_framework::safe {
 
   // use aptos_std::debug::print;
 
+  /// a multi action safe is not initialized on this account
   const ESAFE_NOT_INITIALIZED: u64 = 1;
 
   /// Genesis starting fee for multisig service
