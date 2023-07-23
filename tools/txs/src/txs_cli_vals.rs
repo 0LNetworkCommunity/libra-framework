@@ -1,6 +1,7 @@
 //! Validator subcommands
 
 use crate::submit_transaction::Sender;
+use anyhow::bail;
 use libra_cached_packages::aptos_stdlib::EntryFunctionCall::{
   JailUnjailByVoucher,
   ProofOfFeePofRetractBid,
@@ -14,7 +15,7 @@ use zapatos_types::account_address::AccountAddress;
 pub enum ValidatorTxs {
     Pof {
         #[clap(short, long)]
-        /// what percent of the nominal reward you are paying to join set, with two decimal places: 12.34 becomes 12.34%
+        /// the percentage of the nominal reward you will bid to join the validator set. Numbers can include three decimal places: 1.234 is 123.4%. Note this is the maximum precision allowed in the bid (i.e. one decimal of a percent). Numbers with more decimals will be truncated (not rounded)
         bid_pct: f64,
         #[clap(short, long)]
         /// epoch number in which this bid expires. The validity of the bit is inclusive of the epoch number, that is, on `expiry + 1` the bid is no longer valid. If it should not expire the number must be 0.
@@ -45,8 +46,13 @@ impl ValidatorTxs {
               if *retract {
                 ProofOfFeePofRetractBid{}
               } else {
+                // TODO: the u64 will truncate, but without rounding it will drop the last digit.
+                let scaled_bid = (bid_pct * 1000.0).round() as u64;  // scale to 10ˆ3.
+                if scaled_bid > 1100 {
+                  bail!("a bid amount at 110.0% or above the epoch's reward, will be rejected");
+                }
                 ProofOfFeePofUpdateBid{
-                    bid: (*bid_pct * 100.00) as u64, // scale two decimal places
+                    bid: scaled_bid,
                     epoch_expiry: *epoch_expiry,
                 }
               }

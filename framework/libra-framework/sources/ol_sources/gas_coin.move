@@ -147,7 +147,9 @@ module ol_framework::gas_coin {
         coin::mint<GasCoin>(amount, mint_cap)
     }
 
-    public(friend) fun mint_to(
+    // NOTE: needed for smoke tests
+    /// Root vm account can mint to an address. Only used for genesis and tests.
+    public entry fun mint_to(
         root: &signer,
         dst_addr: address,
         amount: u64,

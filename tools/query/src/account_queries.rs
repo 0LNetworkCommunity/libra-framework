@@ -6,7 +6,6 @@ use zapatos_sdk::{
   types::account_address::AccountAddress,
 };
 use libra_types::{
-  exports::AuthenticationKey,
   type_extensions::client_ext::{ ClientExt, entry_function_id },
   move_resource::gas_coin::SlowWalletBalance,
   legacy_types::tower::TowerProofHistoryView

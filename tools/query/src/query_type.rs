@@ -4,7 +4,7 @@ use crate::{
 };
 use indoc::indoc;
 use anyhow::{bail, Result};
-use libra_types::{type_extensions::client_ext::ClientExt, exports::AuthenticationKey};
+use libra_types::type_extensions::client_ext::ClientExt;
 use serde_json::json;
 use zapatos_sdk::{rest_client::Client, types::account_address::AccountAddress};
 
