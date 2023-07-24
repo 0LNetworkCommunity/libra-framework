@@ -7,7 +7,7 @@ use crate::core::{
 
 use anyhow::Error;
 
-use libra_types::{legacy_types::block::{VDFProof, GENESIS_VDF_SECURITY_PARAM, GENESIS_VDF_ITERATIONS}};
+use libra_types::legacy_types::block::{VDFProof, GENESIS_VDF_SECURITY_PARAM, GENESIS_VDF_ITERATIONS};
 use libra_types::{
   legacy_types::app_cfg::AppCfg,
   exports::Client,

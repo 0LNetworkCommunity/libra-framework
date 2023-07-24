@@ -81,7 +81,7 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
         println!("submitting proof {}, in this backlog: {}", i, submitted_now);
 
         let (block, path) = VDFProof::get_proof_number(i, &blocks_dir)?;
-        
+
         submit_or_delete(config, block, path).await?;
 
 
@@ -92,6 +92,7 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
 }
 
 pub async fn submit_or_delete(config: &AppCfg, block: VDFProof, path: PathBuf) -> Result<()>{
+        // TODO: allow user to set a profile
         let mut sender = Sender::from_app_cfg(config, None).await?;
 
         sender.commit_proof(
@@ -139,7 +140,7 @@ pub async fn submit_or_delete(config: &AppCfg, block: VDFProof, path: PathBuf) -
 //         None => {
 //             if proof_to_submit != 0 {
 //                 warn!(
-//                     "unable to submit proof - remote tower state is not initiliazed. Sent proof 0 first" 
+//                     "unable to submit proof - remote tower state is not initiliazed. Sent proof 0 first"
 //                 );
 //                 return Ok(());
 //             }
@@ -212,7 +213,7 @@ pub async fn show_backlog(config: &AppCfg) -> Result<()> {
     Ok(())
 }
 
-/// returns remote tower height and current proofs in epoch
+/// returns the chain's height as a tuple of (total tower height, current proofs in epoch)
 pub async fn get_remote_tower_height(app_cfg: &AppCfg) -> Result<(u64, u64), Error> {
     let (client, _) = Client::from_libra_config(app_cfg, None).await?;
     let profile = app_cfg.get_profile(None)?;

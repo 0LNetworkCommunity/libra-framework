@@ -108,24 +108,20 @@ impl Sender {
             response: None,
         })
     }
+
+    ///
     pub async fn from_app_cfg(
         app_cfg: &AppCfg,
-        pri_key: Option<Ed25519PrivateKey>,
+        profile: Option<String>,
     ) -> anyhow::Result<Self> {
-        let profile = app_cfg.get_profile(None)?;
+        let profile = app_cfg.get_profile(profile)?;
         let address = profile.account;
-
-        let key = match pri_key {
-            Some(p) => p,
+        let key = match &profile.test_private_key.clone() {
+            Some(k) => k.to_owned(),
             None => {
-                match profile.test_private_key.clone() {
-                    Some(k) => k,
-                    None => {
-                      let leg_keys =  libra_wallet::account_keys::get_keys_from_prompt()?;
-                      leg_keys.child_0_owner.pri_key
-                    },
-                }
-            }
+              let leg_keys =  libra_wallet::account_keys::get_keys_from_prompt()?;
+              leg_keys.child_0_owner.pri_key
+            },
         };
 
         let temp_seq_num = 0;
@@ -156,6 +152,7 @@ impl Sender {
         Ok(s)
     }
 
+    // TODO: is this deprecated
     pub async fn from_vendor_profile(
         profile_name: Option<&str>,
         workspace: Option<PathBuf>,
