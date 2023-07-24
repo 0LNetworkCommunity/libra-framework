@@ -30,3 +30,4 @@ zapatos-types = { workspace = true }
 
 [dev-dependencies]
 libra-smoke-tests = { workspace = true }
+serde_json = { workspace = true }

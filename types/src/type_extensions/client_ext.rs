@@ -29,6 +29,7 @@ use zapatos_sdk::{
 use url::Url;
 use std::time::Duration;
 use serde::de::DeserializeOwned;
+use serde_json::{self, Value};
 
 pub const DEFAULT_TIMEOUT_SECS: u64 = 10;
 pub const USER_AGENT: &str = concat!("libra-config/", env!("CARGO_PKG_VERSION"));
@@ -64,7 +65,7 @@ pub trait ClientExt {
         function_id: &str,
         ty_args: Option<String>,
         args: Option<String>,
-    ) -> anyhow::Result<Vec<serde_json::Value>>;
+    ) -> anyhow::Result<Value>;
 }
 
 #[async_trait]
@@ -240,7 +241,7 @@ impl ClientExt for Client {
         function_id: &str,
         ty_args: Option<String>,
         args: Option<String>,
-    ) -> anyhow::Result<Vec<serde_json::Value>> {
+    ) -> anyhow::Result<Value> {
         let entry_fuction_id = EntryFunctionId::from_str(function_id)
             .context(format!("Invalid function id: {function_id}"))?;
         let ty_args: Vec<MoveType> = if let Some(ty_args) = ty_args {
@@ -261,7 +262,7 @@ impl ClientExt for Client {
             }
             output
         } else {
-            vec![]
+           vec![]
         };
 
         // println!("{}", format_type_args(&ty_args));
@@ -273,10 +274,11 @@ impl ClientExt for Client {
             arguments: args,
         };
 
-        self.view(&request, None)
+        let array = self.view(&request, None)
             .await
             .context("Failed to execute View request")
-            .map(|res| res.inner().to_owned())
+            .map(|res| res.inner().to_owned())?;
+        Ok(Value::Array(array))
     }
 }
 

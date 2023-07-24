@@ -7,14 +7,15 @@ pub async fn run(
     function_id: &str,
     type_args: Option<String>,
     args: Option<String>,
-) -> Result<Vec<Value>> {
+) -> Result<Value> {
     let client = Client::default().await?;
     client
       .view_ext(function_id, type_args, args)
       .await
 }
 
-// TODO: deprecate
+// helper to turn a serde_json value to string
+// TODO: must be a better way
 pub fn display_view(res: Vec<Value>) -> Result<String>{
      let values_to_string = res.iter()
         .map(|v| v.to_string())

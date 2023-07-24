@@ -154,10 +154,10 @@ impl QueryType {
          },
         QueryType::Epoch => {
             let res = query_view::run("0x1::reconfiguration::get_current_epoch", None, None).await?;
-            let value = res.first().unwrap().to_owned();
-            let num: u64 = serde_json::from_value::<String>(value)?.parse()?;
+            // let value = res.first().unwrap().to_owned();
+            let num: Vec<String> = serde_json::from_value(res)?;
             let json = json!({
-              "epoch": num,
+              "epoch": num.first().unwrap().parse::<u64>()?,
             });
             Ok(json)
         },

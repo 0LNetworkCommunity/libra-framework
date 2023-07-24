@@ -12,7 +12,7 @@ publish = { workspace = true }
 repository = { workspace = true }
 rust-version = { workspace = true }
 
-[dependencies]
+[dev-dependencies]
 move-core-types = { workspace = true }
 
 zapatos-framework = { workspace = true }

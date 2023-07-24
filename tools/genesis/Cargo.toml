@@ -23,9 +23,9 @@ anyhow = { workspace = true }
 reqwest = { workspace = true }
 base64 = { workspace = true }
 bcs = { workspace = true }
-hex = { workspace = true }
+# hex = { workspace = true }
 chrono = { workspace = true }
-dirs = { workspace = true }
+# dirs = { workspace = true }
 ureq = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -49,7 +49,7 @@ move-core-types = { workspace = true }
 
 # for the hack_ files
 dialoguer = { workspace = true }
-console = { workspace = true }
+# console = { workspace = true }
 indicatif = { workspace = true }
 
 [dev-dependencies]
