@@ -1,4 +1,4 @@
-use crate::submit_transaction::Sender;
+use crate::{submit_transaction::Sender, publish::encode_publish_payload};
 use crate::txs_cli_vals::ValidatorTxs;
 use std::path::PathBuf;
 
@@ -12,6 +12,7 @@ use libra_types::{
 use libra_wallet::account_keys::{get_keys_from_mnem, get_keys_from_prompt};
 use url::Url;
 
+use zapatos::common::types::MovePackageDir;
 use zapatos_sdk::{
     // chain_id::{ChainId, NamedChain},
     crypto::{ed25519::Ed25519PrivateKey, ValidCryptoMaterialStringExt},
@@ -75,6 +76,7 @@ pub enum TxsSub {
         #[clap(short, long)]
         amount: u64,
     },
+    Publish(MovePackageDir),
     /// Generate a transaction that executes an Entry function on-chain
     GenerateTransaction {
         #[clap(
@@ -165,7 +167,12 @@ impl TxsCli {
             Some(TxsSub::Transfer { to_account, amount }) => {
                 send.transfer(to_account.to_owned(), amount.to_owned())
                     .await
-            }
+            },
+            Some(TxsSub::Publish(move_opts)) => {
+              let payload = encode_publish_payload(move_opts)?;
+              send.sign_submit_wait(payload).await?;
+              Ok(())
+            },
 
             Some(TxsSub::GenerateTransaction {
                 function_id,
@@ -173,20 +180,7 @@ impl TxsCli {
                 args,
             }) => {
                 send.generic(function_id, ty_args, args).await
-            }
-
-            // Some(TxsSub::View {
-            //     function_id,
-            //     type_args,
-            //     args,
-            // }) => {
-            //     println!("====================");
-            //     println!(
-            //         "{}",
-            //         crate::view::run(function_id, type_args.to_owned(), args.to_owned()).await?
-            //     );
-            //     Ok(())
-            // },
+            },
             Some(TxsSub::Validator(val_txs)) => {
               val_txs.run(&mut send).await
             },
