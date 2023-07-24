@@ -5743,6 +5743,7 @@ dependencies = [
  "aptos-sdk",
  "clap 3.2.23",
  "indoc 2.0.1",
+ "libra-smoke-tests",
  "libra-types",
  "serde_json",
  "tokio",

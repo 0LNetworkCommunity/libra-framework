@@ -9,6 +9,7 @@ use zapatos_crypto::traits::ValidCryptoMaterialStringExt;
 use zapatos_forge::{LocalSwarm, Node, Swarm};
 use zapatos_sdk::types::LocalAccount;
 use zapatos_smoke_test::smoke_test_environment;
+use libra_types::exports::Client;
 
 use crate::helpers;
 
@@ -46,7 +47,7 @@ impl LibraSmoke {
       // TODO: order here is awkward because of borrow issues. Clean this up.
 
       // mint to first validator account
-      let mut pub_info: zapatos_forge::AptosPublicInfo<'_> = swarm.aptos_public_info();
+      let mut pub_info = swarm.aptos_public_info();
       // mint one coin to the main validator.
       // the genesis does NOT mint by default to genesis validators
       // 10,000 coins with 6 decimals precision
@@ -60,4 +61,14 @@ impl LibraSmoke {
         api_endpoint,
       })
   }
+
+  pub fn client(&mut self) -> Client {
+    self.swarm.aptos_public_info().client().to_owned()
+  }
+
+  pub fn marlon_rando(&mut self) -> LocalAccount{
+    self.swarm.aptos_public_info().random_account()
+  }
+
+
 }
