@@ -2,8 +2,8 @@
 name = 'test_publish'
 version = '1.0.0'
 
-[addresses]
-this_address='0000000000000000000000000000000069a385e1744e33fbb24a42ecbd1603e3'
+# [addresses]
+# this_address='0000000000000000000000000000000069a385e1744e33fbb24a42ecbd1603e3'
 
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core.git'

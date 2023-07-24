@@ -2,13 +2,13 @@
 
 0L txs cli tool for sending transactions
 
-This initial version of txs is a combination of clap cli tool lib. and Aptos sdk/transfer-coin example modified to work with local tesnet and using 0L keys. 
-See txs_args.rs, transfer_coin.rs  
+This initial version of txs is a combination of clap cli tool lib. and Aptos sdk/transfer-coin example modified to work with local tesnet and using 0L keys.
+See txs_args.rs, transfer_coin.rs
 
-Sources:  
-https://aptos.dev/tutorials/your-first-transaction/  
-App https://github.com/aptos-labs/aptos-core/tree/main/sdk/examples  
-Lib https://github.com/aptos-labs/aptos-core/tree/main/sdk/src   
+Sources:
+https://aptos.dev/tutorials/your-first-transaction/
+App https://github.com/aptos-labs/aptos-core/tree/main/sdk/examples
+Lib https://github.com/aptos-labs/aptos-core/tree/main/sdk/src
 
 ## Example Usage - demo-tx Cmd
 
@@ -24,7 +24,7 @@ Faucet is running. Faucet endpoint: 0.0.0.0:8081
 2. Run txs demo cmd
 
 cargo r -- --demo-tx
-or 
+or
 target/debug/txs --demo-tx
 
 running demo tx ...

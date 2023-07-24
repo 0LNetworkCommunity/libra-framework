@@ -8,10 +8,8 @@ module this_address::message {
     }
 
     #[view]
-    public fun read(account: signer): u64 acquires MessageHolder {
-      let account_addr = signer::address_of(&account);
-
-      let state = borrow_global<MessageHolder>(account_addr);
+    public fun read(account: address): u64 acquires MessageHolder {
+      let state = borrow_global<MessageHolder>(account);
       state.message
     }
 

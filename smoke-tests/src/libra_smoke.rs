@@ -25,6 +25,17 @@ pub struct LibraSmoke {
   pub api_endpoint: Url,
 }
 
+// like DropTemp, but tries to make all the nodes stop on drop.
+// NOTE: Useing drop trait for cleaning up env
+// https://doc.rust-lang.org/std/ops/trait.Drop.html
+impl Drop for LibraSmoke {
+    fn drop(&mut self) {
+      println!("test dropped, running cleanup");
+      let nodes = self.swarm.validators_mut();
+      nodes.for_each(|n| n.stop());
+    }
+}
+
 impl LibraSmoke {
   /// start a swarm and return first val account
   pub async fn new(count_vals: Option<u8>) -> anyhow::Result<Self> {

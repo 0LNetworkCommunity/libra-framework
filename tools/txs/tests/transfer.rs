@@ -9,7 +9,7 @@ use libra_txs::txs_cli::{
 /// Case 1: send to an existing account: another genesis validator
 /// Case 2: send to an account which does not yet exist, and the account gets created on chain.
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn transfer() {
+async fn smoke_transfer() {
     let mut s = LibraSmoke::new(Some(2)).await.expect("can't start swarm");
 
     // 1. simple case: account already exitsts

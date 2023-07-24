@@ -13,11 +13,21 @@ Don't add functionality tests in this module. The tests here are meta tests to s
 
 ## How to run tests
 
+### Node Binary
 Any tests that depend on `libra-smoke-tests` will require that there is a compiled version of `zapatos-node` locally.
 
 For the tests to find the binary's path an environment variable must be set `ZAPATOS_BIN_PATH`
 
 So either export that variable in the test environment (CI), or run inline with `ZAPATOS_BIN_PATH=path/to/target/release/zapatos_node`
+
+### Stack Overflow
+
+Since the smoke tests can have nested operations, it's possible that a test function could exceed its stack (e.g. `txs smoke_publish()`). At test runtime you can change the stack size with a rust env variable `RUST_MIN_STACK`
+
+Run with:
+```
+RUST_MIN_STACK=104857600 cargo t smoke_publish
+```
 
 ### expected error
 If you did not export the variable you will see:
