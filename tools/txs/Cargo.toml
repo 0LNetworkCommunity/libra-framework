@@ -13,6 +13,7 @@ repository = { workspace = true }
 anyhow = { workspace = true }
 bcs = { workspace = true }
 clap = { workspace = true }
+hex = { workspace = true }
 indoc = { workspace = true }
 tokio = { workspace = true }
 url = { workspace = true }
