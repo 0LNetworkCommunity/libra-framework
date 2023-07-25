@@ -1,8 +1,10 @@
 //! Validator subcommands
 
 use crate::submit_transaction::Sender;
+use std::fs;
 use std::path::PathBuf;
 
+use anyhow::bail;
 use zapatos_types::transaction::Script;
 use zapatos_types::transaction::TransactionPayload;
 
@@ -14,17 +16,15 @@ use libra_cached_packages::aptos_stdlib::{
 pub enum UpgradeTxs {
     /// after compiling a proposal script with `libra-framework upgrade` any authorized voter can create a proposal.
     Propose {
-        #[clap(short, long)]
-        /// string of the hash of the execution output of the upgrade script
-        script_hash: String,
+
+        #[clap(short='d', long)]
+        /// Path to the directory of the compiled proposal script
+        proposal_script_dir: PathBuf,
 
         #[clap(short, long)]
         /// a url which describes the proposal
         metadata_url: String,
 
-        #[clap(short='d', long)]
-        /// Path to the directory of the compiled proposal script
-        script_dir: Option<PathBuf>,
     },
     Vote {
         #[clap(short, long)]
@@ -47,8 +47,14 @@ impl UpgradeTxs {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         let payload = match self {
             UpgradeTxs::Propose {
-                script_hash: hash, metadata_url, ..
+                proposal_script_dir, metadata_url,
             } => {
+                let hash_path = proposal_script_dir.join("script_sha3");
+                if !proposal_script_dir.exists() || !hash_path.exists() {
+                  bail!("cannot find upgrade script pacage at {:?}", proposal_script_dir);
+                }
+                let hash = fs::read_to_string(&hash_path)?;
+
                 aptos_governance_ol_create_proposal_v2(
                     hex::decode(hash)?,
                     metadata_url.as_bytes().to_vec(),
