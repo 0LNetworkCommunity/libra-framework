@@ -3,12 +3,12 @@ use libra_types::type_extensions::client_ext::ClientExt;
 use serde_json::Value;
 use zapatos_sdk::rest_client::Client;
 
-pub async fn run(
+pub async fn get_view(
+    client: &Client,
     function_id: &str,
     type_args: Option<String>,
     args: Option<String>,
 ) -> Result<Value> {
-    let client = Client::default().await?;
     client
       .view_ext(function_id, type_args, args)
       .await

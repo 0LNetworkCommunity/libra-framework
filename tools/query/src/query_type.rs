@@ -1,6 +1,6 @@
 use crate::{
     account_queries::{get_account_balance_libra, get_tower_state, self},
-    query_view,
+    query_view::get_view,
 };
 use indoc::indoc;
 use anyhow::{bail, Result};
@@ -146,14 +146,14 @@ impl QueryType {
             type_args,
             args,
         } => {
-            let res = query_view::run(function_id, type_args.to_owned(), args.to_owned()).await?;
+            let res = get_view(&client, function_id, type_args.to_owned(), args.to_owned()).await?;
             let json = json!({
               "body": res
             });
             Ok(json)
          },
         QueryType::Epoch => {
-            let res = query_view::run("0x1::reconfiguration::get_current_epoch", None, None).await?;
+            let res = get_view(&client, "0x1::reconfiguration::get_current_epoch", None, None).await?;
             // let value = res.first().unwrap().to_owned();
             let num: Vec<String> = serde_json::from_value(res)?;
             let json = json!({

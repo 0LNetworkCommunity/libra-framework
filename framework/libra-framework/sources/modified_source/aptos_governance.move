@@ -33,7 +33,7 @@ module aptos_framework::aptos_governance {
     use aptos_framework::voting;
 
     use ol_framework::gas_coin::GasCoin;
-    // use aptos_std::debug::print;
+    use aptos_std::debug::print;
     // use ol_framework::testnet;
 
     #[test_only]
@@ -404,6 +404,7 @@ module aptos_framework::aptos_governance {
         );
 
         let proposal_state = voting::get_proposal_state<GovernanceProposal>(@aptos_framework, proposal_id);
+        print(&proposal_state);
         if (proposal_state == PROPOSAL_STATE_SUCCEEDED) {
             add_approved_script_hash(proposal_id);
         }
@@ -500,29 +501,32 @@ module aptos_framework::aptos_governance {
         }
     }
 
-    //////// 0L ///////
-    // TESTING governance
-    // This function HAS NO AUTHORIZATION
-    const ENOT_TESTNET: u64 = 666;
     /// Resolve a successful single-step proposal. This would fail if the proposal is not successful (not enough votes or more no
     /// than yes).
     public fun resolve(proposal_id: u64, signer_address: address): signer acquires ApprovedExecutionHashes, GovernanceResponsbility {
-        // assert!(testnet::is_testnet(), error::invalid_state(ENOT_TESTNET));
         voting::resolve<GovernanceProposal>(@aptos_framework, proposal_id);
         remove_approved_hash(proposal_id);
         get_signer(signer_address)
     }
 
     #[view]
+    // is the proposal complete and executed?
     public fun is_resolved(proposal_id: u64): bool {
       voting::is_resolved<GovernanceProposal>(@aptos_framework, proposal_id)
     }
 
+    #[view]
+    // is the proposal complete and executed?
+    public fun get_votes(proposal_id: u64): (u128, u128) {
+      voting::get_votes<GovernanceProposal>(@aptos_framework, proposal_id)
+    }
+
+
     //////// 0L ////////
-    // TODO: do better.
-    // Hack: This will error so we can see if it's resolvable. For smoke-tests.
-    public entry fun can_resolve(proposal_id: u64) {
-      voting::can_resolve<GovernanceProposal>(@aptos_framework, proposal_id);
+    #[view]
+    // is the proposal approved and ready for resolution?
+    public fun can_resolve(proposal_id: u64): bool {
+      voting::can_resolve<GovernanceProposal>(@aptos_framework, proposal_id)
     }
     /// Resolve a successful multi-step proposal. This would fail if the proposal is not successful.
     public fun resolve_multi_step_proposal(proposal_id: u64, signer_address: address, next_execution_hash: vector<u8>): signer acquires GovernanceResponsbility, ApprovedExecutionHashes {

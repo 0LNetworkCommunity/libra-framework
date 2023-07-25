@@ -74,8 +74,8 @@ use libra_types::{
 
 /// Struct to organize all the TXS sending, so we're not creating new Client on every TX, if there are multiple.
 pub struct Sender {
+    pub local_account: LocalAccount,
     client: Client,
-    local_account: LocalAccount,
     chain_id: ChainId,
     response: Option<TransactionOnChainData>,
 }
@@ -266,5 +266,9 @@ impl Sender {
                 Err(status.to_owned())
             }
         }
+    }
+
+    pub fn client(&self) -> &Client {
+      &self.client
     }
 }
