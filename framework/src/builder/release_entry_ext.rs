@@ -1,6 +1,6 @@
 //! extends ReleaseEntry with new methods with custom trait.
 use crate::builder::framework_generate_upgrade_proposal;
-use anyhow::Context;
+// use anyhow::Context;
 use zapatos_release_builder::components::get_execution_hash;
 use zapatos_release_builder::ExecutionMode;
 use zapatos_release_builder::ReleaseEntry;
@@ -42,8 +42,7 @@ impl LibraReleaseEntry for ReleaseEntry {
                             "".to_owned().into_bytes()
                         },
                         framework_local_dir,
-                    )
-                    .context("could not generate upgrade")?,
+                    )?,
                 );
             },
             _ => todo!(),

@@ -6,7 +6,7 @@
   // target/debug/ol-genesis-tools --fork --output-path /opt/genesis_from_snapshot.blob --snapshot-path /Users/gsimsek/code/libra-main/ol/devnet/snapshot/state_ver_267.54ab`
   "configurations": [
     {
-      "name": "framework-upgrade",
+     "name": "framework-upgrade",
       "type": "lldb",
       "request": "launch",
       "cargo": {
@@ -18,8 +18,8 @@
       },
       "args": [
         "upgrade",
-        "-o", "${workspaceFolder}/framework/releases/scripts",
-        "-m", "${workspaceFolder}/framework/releases/head.mrb",
+        "-o", "${workspaceFolder}/framework/releases/",
+        // "-m", "${workspaceFolder}/framework/releases/head.mrb",
         "-f", "${workspaceFolder}/framework/libra-framework",
       ],
       "cwd": "${workspaceFolder}"
@@ -296,7 +296,7 @@
           "miner"
         ],
       },
-      // "args": ["val-wizard"],  
+      // "args": ["val-wizard"],
       "args": [
         "keygen"
       ],

@@ -146,8 +146,8 @@ pub fn libra_compile_script(
     let build_options = BuildOptions {
         with_srcs: false,
         with_abis: false,
-        with_source_maps: false,
-        with_error_map: false,
+        with_source_maps: true,
+        with_error_map: true,
         skip_fetch_latest_git_deps: true,
         bytecode_version: Some(6),
         ..BuildOptions::default()

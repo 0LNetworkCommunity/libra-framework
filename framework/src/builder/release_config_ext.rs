@@ -21,6 +21,7 @@ pub trait LibraReleaseConfig {
 
 impl LibraReleaseConfig for ReleaseConfig {
     fn libra_generate_release_proposal_scripts(&self, base_path: &Path, framework_local_dir: PathBuf) -> anyhow::Result<()> {
+      dbg!("libra_generate_release_proposal_scripts");
         // let client = self
         //     .remote_endpoint
         //     .as_ref()
@@ -31,13 +32,13 @@ impl LibraReleaseConfig for ReleaseConfig {
         source_dir.push("sources");
 
         std::fs::create_dir(source_dir.as_path())
-            .map_err(|err| anyhow!("Fail to create folder for source: {:?}", err))?;
+            .map_err(|err| anyhow!("source output directory not empty: {:?} at {:?}", &source_dir, err))?;
 
         let mut metadata_dir = base_path.to_path_buf();
         metadata_dir.push("metadata");
 
         std::fs::create_dir(metadata_dir.as_path())
-            .map_err(|err| anyhow!("Fail to create folder for metadata: {:?}", err))?;
+            .map_err(|err| anyhow!("metadata output directory not empty: {:?} at {:?}", &source_dir, err))?;
 
         // If we are generating multi-step proposal files, we generate the files in reverse order,
         // since we need to pass in the hash of the next file to the previous file.
@@ -70,6 +71,8 @@ impl LibraReleaseConfig for ReleaseConfig {
                     )?;
                 }
             }
+
+            println!("writing upgrade scripts to folder");
 
             for (idx, (script_name, script)) in result.into_iter().enumerate() {
                 let mut script_path = proposal_dir.clone();

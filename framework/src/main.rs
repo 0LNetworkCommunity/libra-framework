@@ -1,12 +1,23 @@
 #![forbid(unsafe_code)]
 
-use libra_framework::{release::ReleaseTarget, builder::{release_config_ext::libra_release_cfg_default, main_generate_proposals, framework_release_bundle::libra_generate_script_proposal_impl}};
+use anyhow::{Context, bail};
 use clap::Parser;
-use zapatos_types::account_address::AccountAddress;
-use zapatos_framework::ReleaseBundle;
+use zapatos_crypto::HashValue;
 use std::path::PathBuf;
+
+use libra_framework::{
+    builder::framework_generate_upgrade_proposal::{init_move_dir_wrapper, libra_compile_script},
+    builder::{
+        framework_release_bundle::libra_generate_script_proposal_impl, main_generate_proposals,
+        release_config_ext::libra_release_cfg_default,
+    },
+    release::ReleaseTarget,
+};
+
+use zapatos_framework::ReleaseBundle;
+use zapatos_types::account_address::AccountAddress;
+
 // use libra_framework::builder::release_config_ext;
-use libra_framework::builder::framework_generate_upgrade_proposal::{libra_compile_script, init_move_dir_wrapper};
 
 #[derive(Parser)]
 #[clap(name = "libra-framework", author, version, propagate_version = true)]
@@ -51,7 +62,6 @@ impl GenesisRelease {
 /// NOTE: this is an 0L reconstruction of vendor apis.
 #[derive(Debug, Parser)]
 struct UpgradeRelease {
-
     /// dir to save all the artifacts for the release.
     #[clap(short, long)]
     output_dir: PathBuf,
@@ -72,35 +82,55 @@ struct UpgradeRelease {
 
 impl UpgradeRelease {
     fn execute(self) -> anyhow::Result<()> {
-      // we are usually only interested in upgrading the framework
-      // dbg!(&self.mrb_path);
+        // we are usually only interested in upgrading the framework
+        // dbg!(&self.mrb_path);
+      let script_name = "framework_upgrade";
+      let package_dir = self.output_dir.join(script_name);
       if let Some(path) = self.mrb_path {
-        assert!(path.exists());
-        let bundle = ReleaseBundle::read(path)?;
-        // dbg!(&bundle);
-        // let release_package = bundle.release_package;
-        let script_name = "test_script";
-        let new_path = self.output_dir.join(script_name);
-        dbg!(&new_path);
-        std::fs::create_dir_all(&new_path)?;
-        init_move_dir_wrapper(new_path.clone(), script_name, self.framework_local_dir.clone())?;
+            assert!(path.exists(), "no .mrb bundle at this address {path:?}");
 
-        let new_file_name = new_path.join("sources").join(&format!("{}.move", script_name));
-        dbg!(&new_file_name);
-        libra_generate_script_proposal_impl(&bundle, AccountAddress::ONE, new_file_name, None)?;
-        dbg!("ok");
+            println!("preparing upgrade Move package from prebuilt framework at: {path:?}");
 
-        let (bytes, hash) = libra_compile_script(&new_path)?;
+            let bundle = ReleaseBundle::read(path).context("could not read a bundle release")?;
 
-        std::fs::write(new_path.join("script.mv"), bytes)?;
-        std::fs::write(new_path.join("script_sha3"), hash.to_string().as_bytes())?;
-        // let hash = release_config_ext::libra_generate_hash(self.output_dir.clone(), self.framework_local_dir)?;
-        println!("hash: {:?}", hash);
+
+            dbg!(&package_dir);
+            std::fs::create_dir_all(&package_dir)
+                .context("could not create the output directory {new_path:?}")?;
+            init_move_dir_wrapper(
+                package_dir.clone(),
+                script_name,
+                self.framework_local_dir.clone(),
+            )?;
+
+            let tx_script_filename = package_dir
+                .join("sources")
+                .join(&format!("{}.move", script_name));
+            dbg!(&tx_script_filename);
+            libra_generate_script_proposal_impl(&bundle, AccountAddress::ONE, tx_script_filename, None)?;
+            dbg!("ok");
+
+            println!("compiling script");
+            let (bytes, hash) = libra_compile_script(&package_dir)?;
+
+            std::fs::write(package_dir.join("script.mv"), bytes)?;
+            std::fs::write(package_dir.join("script_sha3"), hash.to_string().as_bytes())?;
+
+            println!("success: upgrade script built at: {:?}", hash);
+            println!("hash: {:?}", hash);
+        } else {
+          // println!("need a path to a pre-build framework .mrb file, exiting.");
+          bail!("need a path to a pre-build framework .mrb file, exiting.")
+        }
+        // else {
+
+        //     let release_cfg = libra_release_cfg_default();
+        //     match main_generate_proposals::run(release_cfg, package_dir, self.framework_local_dir) {
+        //         Ok(_) => HashValue::random(),
+        //         Err(e) => bail!("could not create releas build, message: {}", &e.to_string()),
+        //     }
+        // };
+
         Ok(())
-      } else {
-        let release_cfg = libra_release_cfg_default();
-        main_generate_proposals::run(release_cfg, self.output_dir, self.framework_local_dir)
-      }
-
     }
 }

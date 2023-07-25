@@ -125,7 +125,7 @@ use zapatos_types::account_address::AccountAddress;
 //         );
 
 //         emitln!(writer, "let code = vector::empty();");
-        
+
 //         let code = self.code();
 //         for i in 0..code.len() {
 //             emitln!(writer, "let chunk{} = ", i);
@@ -457,7 +457,7 @@ fn generate_blob(writer: &CodeWriter, data: &[u8]) {
         );
 
         emitln!(writer, "let code = vector::empty();");
-        
+
         let code = release_bundle.code();
         for i in 0..code.len() {
             emitln!(writer, "let chunk{} = ", i);
