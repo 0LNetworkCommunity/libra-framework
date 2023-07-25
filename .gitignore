@@ -12,5 +12,6 @@ Cargo.lock
 # 0L
 **/build
 **/doc
+**/framework_upgrade
 
 sccache.log
