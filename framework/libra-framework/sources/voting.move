@@ -526,8 +526,12 @@ module aptos_framework::voting {
       true
     }
 
+    #[view]
+    public fun get_next_proposal_id<ProposalType: store>(voting_forum_address: address):u64 acquires VotingForum {
+      let voting_forum = borrow_global<VotingForum<ProposalType>>(voting_forum_address);
+      voting_forum.next_proposal_id
+    }
     //////// end 0L ////////
-
 
     #[view]
     /// Return the state of the proposal with given id.

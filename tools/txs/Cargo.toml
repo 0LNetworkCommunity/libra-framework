@@ -15,11 +15,13 @@ bcs = { workspace = true }
 clap = { workspace = true }
 hex = { workspace = true }
 indoc = { workspace = true }
+serde_json = { workspace = true }
 tokio = { workspace = true }
 url = { workspace = true }
 
 
 libra-cached-packages = { workspace = true }
+libra-query = { workspace = true }
 libra-types = { workspace = true }
 libra-wallet = { workspace = true }
 
@@ -31,4 +33,3 @@ zapatos-types = { workspace = true }
 
 [dev-dependencies]
 libra-smoke-tests = { workspace = true }
-serde_json = { workspace = true }

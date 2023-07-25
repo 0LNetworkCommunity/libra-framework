@@ -55,6 +55,10 @@ impl UpgradeTxs {
                 }
                 let hash = fs::read_to_string(&hash_path)?;
 
+                let query_res = libra_query::query_view::run("0x1::aptos_governance::get_next_governance_proposal_id", None, None).await?;
+                let id: Vec<u64> = serde_json::from_value(query_res)?;
+                dbg!(&id);
+
                 aptos_governance_ol_create_proposal_v2(
                     hex::decode(hash)?,
                     metadata_url.as_bytes().to_vec(),

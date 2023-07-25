@@ -583,6 +583,11 @@ module aptos_framework::aptos_governance {
         1
     }
 
+    #[view]
+    public fun get_next_governance_proposal_id():u64 {
+      voting::get_next_proposal_id<GovernanceProposal>(@aptos_framework)
+    }
+
     /// Return a signer for making changes to 0x1 as part of on-chain governance proposal process.
     fun get_signer(signer_address: address): signer acquires GovernanceResponsbility {
         let governance_responsibility = borrow_global<GovernanceResponsbility>(@aptos_framework);
