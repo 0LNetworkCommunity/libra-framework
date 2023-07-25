@@ -1,3 +1,4 @@
+use crate::txs_cli_upgrade::UpgradeTxs;
 use crate::{submit_transaction::Sender, publish::encode_publish_payload};
 use crate::txs_cli_vals::ValidatorTxs;
 use std::path::PathBuf;
@@ -64,8 +65,11 @@ pub struct TxsCli {
 
 #[derive(clap::Subcommand)]
 pub enum TxsSub {
+
     #[clap(subcommand)]
     Validator(ValidatorTxs),
+    #[clap(subcommand)]
+    Upgrade(UpgradeTxs),
     /// Transfer coins between accounts. Transferring can also be used to create accounts.
     Transfer {
         /// Address of the recipient
@@ -183,6 +187,9 @@ impl TxsCli {
             },
             Some(TxsSub::Validator(val_txs)) => {
               val_txs.run(&mut send).await
+            },
+            Some(TxsSub::Upgrade(upgrade_txs)) => {
+              upgrade_txs.run(&mut send).await
             },
             _ => {
               println!("\nI'm searching, though I don't succeed\n

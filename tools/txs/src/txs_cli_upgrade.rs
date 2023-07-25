@@ -1,18 +1,14 @@
 //! Validator subcommands
 
 use crate::submit_transaction::Sender;
-// use anyhow::bail;
 use std::path::PathBuf;
 
 use zapatos_types::transaction::Script;
- use zapatos_types::transaction::TransactionPayload;
+use zapatos_types::transaction::TransactionPayload;
 
 use libra_cached_packages::aptos_stdlib::{
-  aptos_governance_ol_create_proposal_v2,
-  aptos_governance_ol_vote,
+    aptos_governance_ol_create_proposal_v2, aptos_governance_ol_vote,
 };
-
-// use zapatos_types::account_address::AccountAddress;
 
 #[derive(clap::Subcommand)]
 pub enum UpgradeTxs {
@@ -20,21 +16,21 @@ pub enum UpgradeTxs {
     Propose {
         #[clap(short, long)]
         /// string of the hash of the execution output of the upgrade script
-        hash: String,
+        script_hash: String,
 
         #[clap(short, long)]
         /// a url which describes the proposal
         metadata_url: String,
 
-        #[clap(short, long)]
+        #[clap(short='d', long)]
         /// Path to the directory of the compiled proposal script
-       script_dir: Option<PathBuf>,
+        script_dir: Option<PathBuf>,
     },
-  Vote {
+    Vote {
         #[clap(short, long)]
         /// the on chain ID of the proposal
         proposal_id: u64,
-        #[clap(short, long, default_value="true")]
+        #[clap(short, long, default_value = "true")]
         /// whether the proposal should pass (true), or be rejected (false)
         should_pass: bool,
     },
@@ -49,30 +45,34 @@ pub enum UpgradeTxs {
 impl UpgradeTxs {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         let payload = match self {
-          UpgradeTxs::Propose { hash, metadata_url, ..  } => {
-            aptos_governance_ol_create_proposal_v2(
-                hex::decode(hash)?,
-                metadata_url.as_bytes().to_vec(),
-                "metadata struct".to_string().as_bytes().to_vec(), // TODO
-                true,
-            )
-          },
-          UpgradeTxs::Vote { proposal_id, should_pass } => {
-              aptos_governance_ol_vote(
-                  *proposal_id,
-                  *should_pass,
-              )
-          },
-          UpgradeTxs::Resolve { proposal_script_dir } => {
+            UpgradeTxs::Propose {
+                script_hash: hash, metadata_url, ..
+            } => {
+                aptos_governance_ol_create_proposal_v2(
+                    hex::decode(hash)?,
+                    metadata_url.as_bytes().to_vec(),
+                    "metadata struct".to_string().as_bytes().to_vec(), // TODO
+                    true,
+                )
+            }
+            UpgradeTxs::Vote {
+                proposal_id,
+                should_pass,
+            } => aptos_governance_ol_vote(*proposal_id, *should_pass),
+            UpgradeTxs::Resolve {
+                proposal_script_dir,
+            } => {
+                assert!(
+                    &proposal_script_dir.exists(),
+                    "proposal script cannot be found at {proposal_script_dir:?}"
+                );
 
-            assert!(&proposal_script_dir.exists(), "proposal script cannot be found at {proposal_script_dir:?}");
+                // TODO: get the compiled script
+                let proposal_bytes = std::fs::read(proposal_script_dir).unwrap();
 
-            // TODO: get the compiled script
-            let proposal_bytes = std::fs::read(proposal_script_dir).unwrap();
+                let proposal_script = Script::new(proposal_bytes, vec![], vec![]);
 
-            let proposal_script = Script::new(proposal_bytes, vec![], vec![]);
-
-            TransactionPayload::Script(proposal_script)
+                TransactionPayload::Script(proposal_script)
             }
         };
 
