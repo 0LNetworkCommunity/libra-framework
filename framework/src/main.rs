@@ -1,16 +1,13 @@
 #![forbid(unsafe_code)]
 
-use anyhow::{Context, bail};
+use anyhow::Context;
 use clap::Parser;
-use zapatos_crypto::HashValue;
+// use zapatos_crypto::HashValue;
 use std::path::PathBuf;
 
 use libra_framework::{
     builder::framework_generate_upgrade_proposal::{init_move_dir_wrapper, libra_compile_script},
-    builder::{
-        framework_release_bundle::libra_generate_script_proposal_impl, main_generate_proposals,
-        release_config_ext::libra_release_cfg_default,
-    },
+    builder::framework_release_bundle::libra_generate_script_proposal_impl,
     release::ReleaseTarget,
 };
 
@@ -70,14 +67,16 @@ struct UpgradeRelease {
     #[clap(short, long)]
     framework_local_dir: PathBuf,
 
+    /// provide a prebuilt release framework.mrb
+    #[clap(short, long)]
+    mrb_path: PathBuf,
+
     /// TODO: optionally pass a config file with the release config
     /// if there are parameter or raw script changes.
     #[clap(short, long)]
     release_config: Option<PathBuf>,
 
-    /// Optionally provide the framework.mrb instead of recomputing it.
-    #[clap(short, long)]
-    mrb_path: Option<PathBuf>,
+
 }
 
 impl UpgradeRelease {
@@ -86,17 +85,19 @@ impl UpgradeRelease {
         // dbg!(&self.mrb_path);
       let script_name = "framework_upgrade";
       let package_dir = self.output_dir.join(script_name);
-      if let Some(path) = self.mrb_path {
-            assert!(path.exists(), "no .mrb bundle at this address {path:?}");
+      // if let Some(path) = self.mrb_path {
+            // assert!(path.exists(), "no .mrb bundle at this address {path:?}");
 
-            println!("preparing upgrade Move package from prebuilt framework at: {path:?}");
+            println!("preparing upgrade Move package from prebuilt framework at: {:?}", &self.mrb_path);
 
-            let bundle = ReleaseBundle::read(path).context("could not read a bundle release")?;
+            let bundle = ReleaseBundle::read(self.mrb_path.clone()).context("could not read a bundle release")?;
 
 
             dbg!(&package_dir);
             std::fs::create_dir_all(&package_dir)
                 .context("could not create the output directory {new_path:?}")?;
+
+            // TODO: rename this. init_move_package_with_local_framework
             init_move_dir_wrapper(
                 package_dir.clone(),
                 script_name,
@@ -116,12 +117,9 @@ impl UpgradeRelease {
             std::fs::write(package_dir.join("script.mv"), bytes)?;
             std::fs::write(package_dir.join("script_sha3"), hash.to_string().as_bytes())?;
 
-            println!("success: upgrade script built at: {:?}", hash);
+            println!("success: upgrade script built at: {:?}", package_dir);
             println!("hash: {:?}", hash);
-        } else {
-          // println!("need a path to a pre-build framework .mrb file, exiting.");
-          bail!("need a path to a pre-build framework .mrb file, exiting.")
-        }
+
         // else {
 
         //     let release_cfg = libra_release_cfg_default();

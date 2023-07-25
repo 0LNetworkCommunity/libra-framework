@@ -30,9 +30,10 @@ pub enum UpgradeTxs {
         #[clap(short, long)]
         /// the on chain ID of the proposal
         proposal_id: u64,
-        #[clap(short, long, default_value = "true")]
-        /// whether the proposal should pass (true), or be rejected (false)
-        should_pass: bool,
+
+        #[clap(short, long)]
+        /// must explicitly inform if it should fail. In the absense of this flag it assumes you are voting "should pass"
+        should_fail: bool,
     },
     /// All proposals need to be resolved by any user submitting the actual bytes in a transaction. This transaction has it's hash registered in the proposal, so that only the actual bytes of the script can be submitted, and any user is able to do so. This assumes that the proposal passed.
     Resolve {
@@ -57,8 +58,8 @@ impl UpgradeTxs {
             }
             UpgradeTxs::Vote {
                 proposal_id,
-                should_pass,
-            } => aptos_governance_ol_vote(*proposal_id, *should_pass),
+                should_fail,
+            } => aptos_governance_ol_vote(*proposal_id, !*should_fail), // NOTE: we are inverting the BOOL here.
             UpgradeTxs::Resolve {
                 proposal_script_dir,
             } => {
