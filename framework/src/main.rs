@@ -73,7 +73,7 @@ struct UpgradeRelease {
 impl UpgradeRelease {
     fn execute(self) -> anyhow::Result<()> {
       // we are usually only interested in upgrading the framework
-      dbg!(&self.mrb_path);
+      // dbg!(&self.mrb_path);
       if let Some(path) = self.mrb_path {
         assert!(path.exists());
         let bundle = ReleaseBundle::read(path)?;
