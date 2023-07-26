@@ -374,7 +374,6 @@ module aptos_framework::voting {
         proposal_id: u64,
     ) acquires VotingForum {
         let proposal_state = get_proposal_state<ProposalType>(voting_forum_address, proposal_id);
-
         assert!(proposal_state == PROPOSAL_STATE_SUCCEEDED, error::invalid_state(EPROPOSAL_CANNOT_BE_RESOLVED));
 
         let voting_forum = borrow_global_mut<VotingForum<ProposalType>>(voting_forum_address);
@@ -384,6 +383,7 @@ module aptos_framework::voting {
         // We need to make sure that the resolution is happening in
         // a separate transaction from the last vote to guard against any potential flashloan attacks.
         let resolvable_time = to_u64(*simple_map::borrow(&proposal.metadata, &utf8(RESOLVABLE_TIME_METADATA_KEY)));
+
         assert!(timestamp::now_seconds() > resolvable_time, error::invalid_state(ERESOLUTION_CANNOT_BE_ATOMIC));
 
         assert!(
@@ -502,6 +502,13 @@ module aptos_framework::voting {
         let voting_forum = borrow_global<VotingForum<ProposalType>>(voting_forum_address);
         let proposal = table::borrow(&voting_forum.proposals, proposal_id);
         can_be_resolved_early(proposal) || is_voting_period_over(proposal)
+    }
+
+    #[view]
+    public fun is_early_close_possible<ProposalType: store>(voting_forum_address: address, proposal_id: u64): bool acquires VotingForum {
+        let voting_forum = borrow_global<VotingForum<ProposalType>>(voting_forum_address);
+        let proposal = table::borrow(&voting_forum.proposals, proposal_id);
+        can_be_resolved_early(proposal)
     }
 
     /// Return true if the proposal has reached early resolution threshold (if specified).

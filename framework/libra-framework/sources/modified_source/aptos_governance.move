@@ -33,7 +33,7 @@ module aptos_framework::aptos_governance {
     use aptos_framework::voting;
 
     use ol_framework::gas_coin::GasCoin;
-    use aptos_std::debug::print;
+    // use aptos_std::debug::print;
     // use ol_framework::testnet;
 
     #[test_only]
@@ -315,7 +315,7 @@ module aptos_framework::aptos_governance {
         let proposer_address = signer::address_of(proposer);
         assert!(stake::is_current_val(proposer_address), error::invalid_argument(EUNAUTHORIZED));
 
-        // TODO!: check this is a current validator.
+        // TODO what's this for?
         let _governance_config = borrow_global<GovernanceConfig>(@aptos_framework);
 
 
@@ -334,16 +334,16 @@ module aptos_framework::aptos_governance {
         // are burnt after every transaction), but inflation/delation is very unlikely to have a major impact on total
         // supply during the voting period.
         let validator_len = vector::length(&stake::get_current_validators());
-        let early_resolution_vote_threshold = ((validator_len/3) * 2) + 1;
+        let early_resolution_vote_threshold = ((((validator_len/3) * 2) + 1) as u128);
 
         let proposal_id = voting::create_proposal_v2(
             proposer_address,
             @aptos_framework,
             governance_proposal::create_proposal(),
             execution_hash,
-            (early_resolution_vote_threshold as u128), // 0L we always expect the minimum of 2/3+1 to pass
+            early_resolution_vote_threshold, // 0L we always expect the minimum of 2/3+1 to pass
             proposal_expiration,
-            option::none(), // 0L we always expect the minimum of 2/3+1 to pass
+            option::some(early_resolution_vote_threshold), // will end before deadline at this threshold
             proposal_metadata,
             is_multi_step_proposal,
         );
@@ -404,7 +404,6 @@ module aptos_framework::aptos_governance {
         );
 
         let proposal_state = voting::get_proposal_state<GovernanceProposal>(@aptos_framework, proposal_id);
-        print(&proposal_state);
         if (proposal_state == PROPOSAL_STATE_SUCCEEDED) {
             add_approved_script_hash(proposal_id);
         }
@@ -521,8 +520,22 @@ module aptos_framework::aptos_governance {
       voting::get_votes<GovernanceProposal>(@aptos_framework, proposal_id)
     }
 
+    #[view]
+    // what is the state of the proposal
+    public fun get_proposal_state(proposal_id: u64):u64  {
+      voting::get_proposal_state<GovernanceProposal>(@aptos_framework, proposal_id)
+    }
+
+
+
 
     //////// 0L ////////
+    // hack for smoke testing:
+    // is the proposal approved and ready for resolution?
+    public entry fun test_can_resolve(proposal_id: u64) {
+      voting::can_resolve<GovernanceProposal>(@aptos_framework, proposal_id);
+    }
+
     #[view]
     // is the proposal approved and ready for resolution?
     public fun can_resolve(proposal_id: u64): bool {
@@ -836,6 +849,18 @@ module aptos_framework::aptos_governance {
     //     stake::set_delegated_voter(&voter_1, signer::address_of(&voter_2));
     //     vote(&voter_2, signer::address_of(&voter_1), 0, true);
     // }
+
+    #[test_only]
+    //////// 0L //////// remove minimum threshold
+    public fun initialize_for_test(root: &signer) {
+      system_addresses::assert_ol(root);
+
+      let min_voting_threshold = 0;
+      let required_proposer_stake = 1;
+      let voting_duration_secs = 100000000000;
+
+      initialize(root, min_voting_threshold, required_proposer_stake, voting_duration_secs);
+    }
 
     #[test_only]
     public fun setup_voting(

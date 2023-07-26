@@ -232,6 +232,10 @@ pub enum EntryFunctionCall {
         should_pass: bool,
     },
 
+    AptosGovernanceTestCanResolve {
+        proposal_id: u64,
+    },
+
     /// Vote on proposal with `proposal_id` and voting power from `stake_pool`.
     AptosGovernanceVote {
         proposal_id: u64,
@@ -745,6 +749,9 @@ impl EntryFunctionCall {
                 proposal_id,
                 should_pass,
             } => aptos_governance_ol_vote(proposal_id, should_pass),
+            AptosGovernanceTestCanResolve { proposal_id } => {
+                aptos_governance_test_can_resolve(proposal_id)
+            }
             AptosGovernanceVote {
                 proposal_id,
                 should_pass,
@@ -1494,6 +1501,21 @@ pub fn aptos_governance_ol_vote(proposal_id: u64, should_pass: bool) -> Transact
             bcs::to_bytes(&proposal_id).unwrap(),
             bcs::to_bytes(&should_pass).unwrap(),
         ],
+    ))
+}
+
+pub fn aptos_governance_test_can_resolve(proposal_id: u64) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("aptos_governance").to_owned(),
+        ),
+        ident_str!("test_can_resolve").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&proposal_id).unwrap()],
     ))
 }
 
@@ -2966,6 +2988,18 @@ mod decoder {
         }
     }
 
+    pub fn aptos_governance_test_can_resolve(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::AptosGovernanceTestCanResolve {
+                proposal_id: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn aptos_governance_vote(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::AptosGovernanceVote {
@@ -3759,6 +3793,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "aptos_governance_ol_vote".to_string(),
             Box::new(decoder::aptos_governance_ol_vote),
+        );
+        map.insert(
+            "aptos_governance_test_can_resolve".to_string(),
+            Box::new(decoder::aptos_governance_test_can_resolve),
         );
         map.insert(
             "aptos_governance_vote".to_string(),

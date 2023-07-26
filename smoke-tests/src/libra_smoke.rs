@@ -4,7 +4,7 @@
 use anyhow::Context;
 use url::Url;
 use libra_framework::release::ReleaseTarget;
-
+use libra_types::exports::AccountAddress;
 use zapatos_crypto::traits::ValidCryptoMaterialStringExt;
 use zapatos_forge::{LocalSwarm, Node, Swarm};
 use zapatos_sdk::types::LocalAccount;
@@ -56,14 +56,11 @@ impl LibraSmoke {
       let api_endpoint = node.rest_api_endpoint();
 
       // TODO: order here is awkward because of borrow issues. Clean this up.
-
-      // mint to first validator account
-      let mut pub_info = swarm.aptos_public_info();
       // mint one coin to the main validator.
       // the genesis does NOT mint by default to genesis validators
       // 10,000 coins with 6 decimals precision
+      let mut pub_info = swarm.aptos_public_info();
       helpers::mint_libra(&mut pub_info, addr, 10_000_000_000).await?;
-
 
       Ok(Self {
         swarm,
@@ -71,6 +68,13 @@ impl LibraSmoke {
         encoded_pri_key,
         api_endpoint,
       })
+  }
+
+  pub async fn mint(&mut self, addr: AccountAddress, amount: u64) -> anyhow::Result<()>{
+      let mut pub_info = self.swarm.aptos_public_info();
+
+      helpers::mint_libra(&mut pub_info, addr, amount).await?;
+      Ok(())
   }
 
   pub fn client(&mut self) -> Client {

@@ -8,7 +8,7 @@ use zapatos_forge::Swarm;
 use zapatos_types::transaction::Script;
 use std::path::PathBuf;
 
-use libra_cached_packages::aptos_stdlib::{aptos_governance_ol_create_proposal_v2, aptos_governance_ol_vote, aptos_governance_can_resolve};
+use libra_cached_packages::aptos_stdlib::{aptos_governance_ol_create_proposal_v2, aptos_governance_ol_vote, aptos_governance_test_can_resolve};
 use zapatos_sdk::types::LocalAccount;
 
 use crate::helpers::mint_libra;
@@ -111,7 +111,7 @@ async fn can_vote() {
         true,
     );
 
-    let public_info: zapatos_forge::AptosPublicInfo = swarm.aptos_public_info();
+    let mut public_info = swarm.aptos_public_info();
 
     let txn = alice_account.sign_with_transaction_builder(
         public_info.transaction_factory()
@@ -134,12 +134,14 @@ async fn can_vote() {
 
     dbg!("alice votes");
     // needs gas
-    // mint_libra(&mut public_info, alice_account.address(), 10_000_000_000).await.unwrap();
+    mint_libra(&mut public_info, alice_account.address(), 10_000_000_000).await.unwrap();
     public_info.client().submit_and_wait(&txn).await.expect("could not send tx");
 
     // TODO: make this a for_each, and solve the error[E0507]: cannot move out of `public_info`, a captured variable in an `FnMut` closure
     // BOB
     dbg!("bob votes");
+    mint_libra(&mut public_info, bob_account.address(), 10_000_000_000).await.unwrap();
+
     let built_tx = public_info
       .transaction_factory()
       .payload(vote_payload.clone());
@@ -149,6 +151,8 @@ async fn can_vote() {
 
     // CAROL
     dbg!("carol votes");
+    mint_libra(&mut public_info, carol_account.address(), 10_000_000_000).await.unwrap();
+
     let built_tx = public_info
       .transaction_factory()
       .payload(vote_payload.clone());
@@ -159,6 +163,8 @@ async fn can_vote() {
 
     // DAVE
     dbg!("dave votes");
+    mint_libra(&mut public_info, dave_account.address(), 10_000_000_000).await.unwrap();
+
     let built_tx = public_info
       .transaction_factory()
       .payload(vote_payload);
@@ -169,7 +175,7 @@ async fn can_vote() {
 
     // check the state of voting
 
-    let check_vote_payload = aptos_governance_can_resolve(proposal_id);
+    let check_vote_payload = aptos_governance_test_can_resolve(proposal_id);
 
     let built_tx = public_info
       .transaction_factory()
@@ -218,6 +224,14 @@ async fn can_upgrade() {
     let pri_key = dave.account_private_key().as_ref().unwrap();
     let mut dave_account = LocalAccount::new(dave.peer_id(), pri_key.private_key(), 0);
     //////// end create accounts
+    let mut public_info = swarm.aptos_public_info();
+    mint_libra(&mut public_info, alice_account.address(), 10_000_000_000).await.unwrap();
+
+    mint_libra(&mut public_info, bob_account.address(), 10_000_000_000).await.unwrap();
+
+    mint_libra(&mut public_info, carol_account.address(), 10_000_000_000).await.unwrap();
+
+    mint_libra(&mut public_info, dave_account.address(), 10_000_000_000).await.unwrap();
 
     let proposal_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("src").join("tests").join("fixtures").join("example_proposal_script").join("script.mv");
@@ -296,7 +310,7 @@ async fn can_upgrade() {
 
     // check the state of voting
 
-    let check_vote_payload = aptos_governance_can_resolve(proposal_id);
+    let check_vote_payload = aptos_governance_test_can_resolve(proposal_id);
 
     let built_tx = public_info
       .transaction_factory()
