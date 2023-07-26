@@ -63,8 +63,6 @@ impl UpgradeRelease {
 
       let bundle = ReleaseBundle::read(self.mrb_path.clone()).context("could not read a bundle release")?;
 
-
-      dbg!(&package_dir);
       std::fs::create_dir_all(&package_dir)
           .context("could not create the output directory {new_path:?}")?;
 
@@ -78,9 +76,8 @@ impl UpgradeRelease {
       let tx_script_filename = package_dir
           .join("sources")
           .join(&format!("{}.move", script_name));
-      dbg!(&tx_script_filename);
+
       libra_generate_script_proposal_impl(&bundle, AccountAddress::ONE, tx_script_filename, None)?;
-      dbg!("ok");
 
       println!("compiling script");
       let (bytes, hash) = libra_compile_script(&package_dir)?;
