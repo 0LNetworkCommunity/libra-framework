@@ -1,7 +1,12 @@
 
-# DEPENDENCY MANAGEMENT
-As stated elsewhere, 0L's innovations are in the middleware and application layers primarily in regards to economic policy. We rely heavily on (wonderful and cutting edge) infrastructure dependencies.
+# TECH STRATEGY
+The tech strategy in line with overall community goals: optimize for being opinionated about economic policy, and having long-term optionality in picking infrastructure vendors.
 
+The content is the priority. It's too risky being your own infrastructure stack vendor during a standards war. Instead, optimize for longevity and portability of the native asset and its policies.
+
+As such 0L's innovations are in the middleware and application layers primarily in regards to economic policy. We intentionally rely heavily on (wonderful and cutting edge) infrastructure vendors, and aim to be agnostic for the inevitable next technology wave arrives.
+
+# DEPENDENCY MANAGEMENT
 Our code management strategy means we separate some concerns and have clear APIs between each major system component.
 - `Libra Framework`: is responsible for the framework source and tools to test and deploy etc. This is mostly original source that wraps or relies heavily on Move Language and Diem Platform (see below).
 - `Carpe` is a reference light miner and wallet. This is original source imports our libra-tools and tower.
@@ -13,7 +18,7 @@ Our code management strategy means we separate some concerns and have clear APIs
 # Commit History
 
 ## Hello World
-The commit history of `ol/diem-platform` will show that 0L forked Facebook's Libra (later renamed Diem) on their launch day in June 2019.
+The commit history of `ol/diem-platform` will show that 0L forked Facebook's Libra (later renamed Diem) on their launch day in June 2019. Facebook was our first vendor.
 
 ## 2019
 A majority of the work in 2019 existed in separated now deprecated projects; `ol/movemint` for example, based on Cosmos SDK tooling.

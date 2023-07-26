@@ -15,7 +15,7 @@ There are many tools needed for the framework to be properly developed, installe
 There isn't any code regarding database, consensus, networking, virtual machines here. That code belongs in Diem Platform. There are many vendors of the Diem technologies, and 0L maintains a version which brings in maintenance upgrades from our peers.
 
 # Technology Strategy
-In general, we have a light touch approach, and abstract this framework with very clear APIS. [Read Dependency Management](./docs/core_devs/dependency_management.md)
+In general, we have a light touch approach with our upstream dependencies, and optimize for clean APIs easily pull changes from vendors (and even ultimately have freedom to change infrastructure vendors)[Read Dependency Management](./docs/core_devs/dependency_management.md)
 
 ### [Go To Documentation](./docs/README.md)
 
