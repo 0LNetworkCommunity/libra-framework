@@ -9,7 +9,7 @@ use crate::{
     release::ReleaseTarget,
 };
 
-use zapatos_framework::ReleaseBundle;
+use zapatos_framework::{ReleaseBundle, natives::code::PackageMetadata};
 use zapatos_types::account_address::AccountAddress;
 
 #[derive(Debug, Parser)]
@@ -77,6 +77,7 @@ impl UpgradeRelease {
           .join("sources")
           .join(&format!("{}.move", script_name));
 
+      // let PackageMetadata::
       libra_generate_script_proposal_impl(&bundle, AccountAddress::ONE, tx_script_filename, None)?;
 
       println!("compiling script");

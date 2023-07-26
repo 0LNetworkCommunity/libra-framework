@@ -9,6 +9,7 @@ use anyhow::Context;
 use zapatos_types::transaction::Script;
 use zapatos_types::transaction::TransactionPayload;
 
+use zapatos_sdk::types::transaction::TransactionArgument;
 use libra_cached_packages::aptos_stdlib::{
     aptos_governance_ol_create_proposal_v2, aptos_governance_ol_vote,
 };
@@ -26,7 +27,7 @@ pub enum UpgradeTxs {
         metadata_url: String,
     },
     Vote {
-        #[clap(short='i', long)]
+        #[clap(short = 'i', long)]
         /// the on chain ID of the proposal
         proposal_id: u64,
 
@@ -36,10 +37,10 @@ pub enum UpgradeTxs {
     },
     /// All proposals need to be resolved by any user submitting the actual bytes in a transaction. This transaction has it's hash registered in the proposal, so that only the actual bytes of the script can be submitted, and any user is able to do so. This assumes that the proposal passed.
     Resolve {
-        #[clap(short='i', long)]
+        #[clap(short = 'i', long)]
         /// the on chain ID of the proposal
         proposal_id: u64,
-        #[clap(short='d', long)]
+        #[clap(short = 'd', long)]
         /// Path to the directory of the compiled proposal script
         proposal_script_dir: PathBuf,
     },
@@ -61,7 +62,9 @@ impl UpgradeTxs {
                 }
                 let hash = fs::read_to_string(&hash_path)?;
 
-                let num = libra_query::chain_queries::get_next_governance_proposal_id(sender.client()).await?;
+                let num =
+                    libra_query::chain_queries::get_next_governance_proposal_id(sender.client())
+                        .await?;
                 // let query_res = libra_query::query_view::run(
                 //     "0x1::aptos_governance::get_next_governance_proposal_id",
                 //     None,
@@ -75,7 +78,10 @@ impl UpgradeTxs {
                 //   .context("could not get a response from view function get_next_governance_proposal_id")?
                 //   .parse()?;
 
-                println!("next proposal id is: {}. Save this and use it for voting.", &num);
+                println!(
+                    "next proposal id is: {}. Save this and use it for voting.",
+                    &num
+                );
 
                 aptos_governance_ol_create_proposal_v2(
                     hex::decode(hash)?,
@@ -89,11 +95,17 @@ impl UpgradeTxs {
                 should_fail,
             } => aptos_governance_ol_vote(*proposal_id, !*should_fail), // NOTE: we are inverting the BOOL here.
             UpgradeTxs::Resolve {
-                proposal_id, proposal_script_dir,
+                proposal_id,
+                proposal_script_dir,
             } => {
-
-                if libra_query::chain_queries::is_gov_proposal_resolved(sender.client(), *proposal_id).await.context("cannot get status of proposal")? {
-                  bail!("proposal {} has already been resolved", proposal_id);
+                if libra_query::chain_queries::is_gov_proposal_resolved(
+                    sender.client(),
+                    *proposal_id,
+                )
+                .await
+                .context("cannot get status of proposal")?
+                {
+                    bail!("proposal {} has already been resolved", proposal_id);
                 }
 
                 // if !libra_query::chain_queries::can_gov_proposal_resolve(sender.client(), *proposal_id).await.context("error calling view")?{
@@ -107,7 +119,10 @@ impl UpgradeTxs {
                 // TODO: get the compiled script
                 let proposal_bytes = std::fs::read(proposal_script_dir.join("script.mv")).unwrap();
 
-                let proposal_script = Script::new(proposal_bytes, vec![], vec![]);
+                let proposal_script = Script::new(proposal_bytes, vec![], vec![
+                  TransactionArgument::U64(*proposal_id)
+                  // proposal_id.into()
+                  ]);
 
                 TransactionPayload::Script(proposal_script)
             }
