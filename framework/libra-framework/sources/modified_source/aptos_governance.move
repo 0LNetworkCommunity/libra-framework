@@ -532,15 +532,17 @@ module aptos_framework::aptos_governance {
     //////// 0L ////////
     // hack for smoke testing:
     // is the proposal approved and ready for resolution?
-    public entry fun test_can_resolve(proposal_id: u64) {
-      voting::can_resolve<GovernanceProposal>(@aptos_framework, proposal_id);
+    public entry fun assert_can_resolve(proposal_id: u64) {
+      assert!(get_can_resolve(proposal_id), error::invalid_state(EPROPOSAL_NOT_RESOLVABLE_YET));
     }
 
     #[view]
     // is the proposal approved and ready for resolution?
-    public fun can_resolve(proposal_id: u64): bool {
-      voting::can_resolve<GovernanceProposal>(@aptos_framework, proposal_id)
+    public fun get_can_resolve(proposal_id: u64): bool {
+      let (can, _) = voting::check_resolvable_ex_hash<GovernanceProposal>(@aptos_framework, proposal_id);
+      can
     }
+
     /// Resolve a successful multi-step proposal. This would fail if the proposal is not successful.
     public fun resolve_multi_step_proposal(proposal_id: u64, signer_address: address, next_execution_hash: vector<u8>): signer acquires GovernanceResponsbility, ApprovedExecutionHashes {
         voting::resolve_proposal_v2<GovernanceProposal>(@aptos_framework, proposal_id, next_execution_hash);

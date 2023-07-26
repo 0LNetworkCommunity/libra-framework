@@ -54,16 +54,16 @@ pub async fn get_next_governance_proposal_id(client: &Client) -> anyhow::Result<
 pub async fn can_gov_proposal_resolve(client: &Client, id: u64) -> anyhow::Result<bool> {
     let query_res = query_view::get_view(
         &client,
-        &format!("0x1::aptos_governance::can_resolve"),
+        &format!("0x1::aptos_governance::get_can_resolve"),
         None,
         Some(id.to_string()), //Some(format!("{}u64", id)),
     )
     .await?;
     // let id: Vec<String> = serde_json::from_value(query_res)?;
-    serde_json::from_value::<Vec<bool>>(query_res)?
-        .into_iter()
-        .next()
-        .context("could not get a response from view function can_resolve")
+    Ok(serde_json::from_value::<bool>(query_res)?)
+        // .into_iter()
+        // .next()
+        // .context("could not get a response from view function can_resolve")
 }
 
 // TODO: code duplication

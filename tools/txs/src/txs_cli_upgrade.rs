@@ -96,7 +96,7 @@ impl UpgradeTxs {
                   bail!("proposal {} has already been resolved", proposal_id);
                 }
 
-                if !libra_query::chain_queries::can_gov_proposal_resolve(sender.client(), *proposal_id).await.context("proposal cannot be resolved")? {
+                if !libra_query::chain_queries::can_gov_proposal_resolve(sender.client(), *proposal_id).await.context("proposal cannot be resolved")?{
                   bail!("proposal {} is not resolvable", proposal_id);
                 }
                 assert!(

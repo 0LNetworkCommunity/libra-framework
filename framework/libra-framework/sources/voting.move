@@ -392,6 +392,43 @@ module aptos_framework::voting {
         );
     }
 
+
+    //////// 0L ////////
+    #[view]
+    /// view function to see if the proposal could resolve, and if not return the error
+    public fun check_resolvable_ex_hash<ProposalType: store>(
+        voting_forum_address: address,
+        proposal_id: u64,
+    ): (bool, u64) acquires VotingForum {
+        let proposal_state = get_proposal_state<ProposalType>(voting_forum_address, proposal_id);
+        if (proposal_state == PROPOSAL_STATE_PENDING) {
+          return (false, EPROPOSAL_IS_PENDING)
+        };
+        if (proposal_state == PROPOSAL_STATE_FAILED) {
+          return (false, EPROPOSAL_IS_FAILED)
+        };
+
+        let voting_forum = borrow_global_mut<VotingForum<ProposalType>>(voting_forum_address);
+        let proposal = table::borrow_mut(&mut voting_forum.proposals, proposal_id);
+        if(proposal.is_resolved) {
+          return (false, EPROPOSAL_ALREADY_RESOLVED)
+        };
+
+        // We need to make sure that the resolution is happening in
+        // a separate transaction from the last vote to guard against any potential flashloan attacks.
+        let resolvable_time = to_u64(*simple_map::borrow(&proposal.metadata, &utf8(RESOLVABLE_TIME_METADATA_KEY)));
+
+        if(timestamp::now_seconds() <= resolvable_time){
+          return (false, ERESOLUTION_CANNOT_BE_ATOMIC)
+        };
+
+        // if(transaction_context::get_script_hash() != proposal.execution_hash) {
+        //   return (false, EPROPOSAL_EXECUTION_HASH_NOT_MATCHING)
+        // };
+
+        (true, 0)
+    }
+
     /// Resolve a single-step proposal with given id. Can only be done if there are at least as many votes as min required and
     /// there are more yes votes than no. If either of these conditions is not met, this will revert.
     ///

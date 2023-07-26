@@ -5,6 +5,7 @@ module ol_framework::test_governance {
   use aptos_framework::aptos_governance;
   use aptos_framework::governance_proposal::GovernanceProposal;
   use aptos_framework::voting;
+  use aptos_framework::timestamp;
   // use aptos_std::debug::print;
 
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
@@ -52,8 +53,14 @@ module ol_framework::test_governance {
 
     // state of 1 means passed
     let state = aptos_governance::get_proposal_state(prop_id);
-    assert!(state == 1, 73570006)
+    assert!(state == 1, 73570006);
 
+    // issue with transactions being atomic
+    timestamp::fast_forward_seconds(1);
+
+    // confirm that the voting would allow for a resolution
+    // it cannot resolve because the transaction hashes (of this test script) do no match.
+    let can_resolve = voting::check_resolvable_ex_hash<GovernanceProposal>(@ol_framework, prop_id);
+    assert!(can_resolve, 73570007);
   }
-
 }
