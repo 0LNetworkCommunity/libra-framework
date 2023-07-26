@@ -1,6 +1,6 @@
 # LIBRA FRAMEWORK
 
-The Libra Framework is a minimalist Move framework that can run on Diem Platform nodes.
+The Libra Framework is a Move framework that can run on Diem Platform nodes. It contains the policies for the 0L network. [See here a brief history of this source](./docs/core_devs/dependency_management.md#commit-history).
 
 ## What are Move Frameworks
 Move frameworks are source code written in the Move Language. In Diem Platform and their vendor versions, the framework does all most all of the state machine's business logic: account creation, coin minting, asset transferring, code publishing, code upgrades, selecting validators, etc.
@@ -15,8 +15,10 @@ There are many tools needed for the framework to be properly developed, installe
 There isn't any code regarding database, consensus, networking, virtual machines here. That code belongs in Diem Platform. There are many vendors of the Diem technologies, and 0L maintains a version which brings in maintenance upgrades from our peers.
 
 # Technology Strategy
-In general, we have a light touch approach, and abstract this framework with very clear APIS
+In general, we have a light touch approach, and abstract this framework with very clear APIS. [Read Dependency Management](./docs/core_devs/dependency_management.md)
 
+### [Go To Documentation](./docs/README.md)
 
+Smart Contract Devs should [start here](./docs/publishing_smart_contracts.md).
 
-where we only fork repos when we require ce
+Core Devs should [start here](./docs/core_devs/dev_quick_start.md).
