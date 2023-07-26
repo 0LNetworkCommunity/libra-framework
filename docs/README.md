@@ -4,8 +4,6 @@
 # Basics
 [Sending transactions with CLI](./txs.md)
 
-// TODO: Query
-
 # Developers
 [Publishing Smart Contracts](./publishing_smart_contracts.md)
 
