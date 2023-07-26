@@ -138,7 +138,7 @@ pub fn libra_generate_hash(script_path: PathBuf, framework_local_dir: PathBuf) -
         framework_package_args: FrameworkPackageArgs {
             framework_git_rev: None,
             framework_local_dir: Some(framework_local_dir),
-            skip_fetch_latest_git_deps: false,
+            skip_fetch_latest_git_deps: true,
         },
         bytecode_version: None,
     }
@@ -146,6 +146,8 @@ pub fn libra_generate_hash(script_path: PathBuf, framework_local_dir: PathBuf) -
     Ok(res)
 }
 
+// TODO: this is not used.
+/// Generate a release config file which could generate an upgrade payload
 pub fn libra_release_cfg_default() -> ReleaseConfig {
     ReleaseConfig {
         remote_endpoint: None,

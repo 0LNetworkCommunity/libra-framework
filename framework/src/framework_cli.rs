@@ -83,7 +83,7 @@ impl UpgradeRelease {
       let (bytes, hash) = libra_compile_script(&package_dir)?;
 
       std::fs::write(package_dir.join("script.mv"), bytes)?;
-      std::fs::write(package_dir.join("script_sha3"), hash.to_string().as_bytes())?;
+      std::fs::write(package_dir.join("script_sha3"), hash.to_hex_literal())?;
 
       println!("success: upgrade script built at: {:?}", package_dir);
       println!("hash: {:?}", hash.to_hex_literal());

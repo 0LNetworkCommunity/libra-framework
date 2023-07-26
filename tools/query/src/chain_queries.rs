@@ -60,7 +60,7 @@ pub async fn can_gov_proposal_resolve(client: &Client, id: u64) -> anyhow::Resul
     )
     .await?;
     // let id: Vec<String> = serde_json::from_value(query_res)?;
-    Ok(serde_json::from_value::<bool>(query_res)?)
+    Ok(serde_json::from_value::<bool>(query_res).context("cannot parse api res")?)
         // .into_iter()
         // .next()
         // .context("could not get a response from view function can_resolve")

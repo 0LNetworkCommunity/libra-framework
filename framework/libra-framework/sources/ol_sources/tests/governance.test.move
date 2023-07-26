@@ -60,7 +60,7 @@ module ol_framework::test_governance {
 
     // confirm that the voting would allow for a resolution
     // it cannot resolve because the transaction hashes (of this test script) do no match.
-    let can_resolve = voting::check_resolvable_ex_hash<GovernanceProposal>(@ol_framework, prop_id);
+    let (can_resolve, _err) = voting::check_resolvable_ex_hash<GovernanceProposal>(@ol_framework, prop_id);
     assert!(can_resolve, 73570007);
   }
 }

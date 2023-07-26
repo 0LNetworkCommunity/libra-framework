@@ -143,11 +143,14 @@ pub fn libra_compile_script(
     // bytecode_version: Option<u32>,
 ) -> Result<(Vec<u8>, HashValue)> {
 
+    // these are the options only for the upgrade SCRIPT
+    // the payload needs to be small, because even approved TX scripts have
+    // an upperbound in the transaction admission.
     let build_options = BuildOptions {
         with_srcs: false,
         with_abis: false,
-        with_source_maps: true,
-        with_error_map: true,
+        with_source_maps: false,
+        with_error_map: false,
         skip_fetch_latest_git_deps: true,
         bytecode_version: Some(6),
         ..BuildOptions::default()

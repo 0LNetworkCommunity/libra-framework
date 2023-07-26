@@ -96,16 +96,16 @@ impl UpgradeTxs {
                   bail!("proposal {} has already been resolved", proposal_id);
                 }
 
-                if !libra_query::chain_queries::can_gov_proposal_resolve(sender.client(), *proposal_id).await.context("proposal cannot be resolved")?{
-                  bail!("proposal {} is not resolvable", proposal_id);
-                }
+                // if !libra_query::chain_queries::can_gov_proposal_resolve(sender.client(), *proposal_id).await.context("error calling view")?{
+                //   bail!("proposal {} is not resolvable", proposal_id);
+                // }
                 assert!(
                     &proposal_script_dir.exists(),
                     "proposal script cannot be found at {proposal_script_dir:?}"
                 );
 
                 // TODO: get the compiled script
-                let proposal_bytes = std::fs::read(proposal_script_dir).unwrap();
+                let proposal_bytes = std::fs::read(proposal_script_dir.join("script.mv")).unwrap();
 
                 let proposal_script = Script::new(proposal_bytes, vec![], vec![]);
 

@@ -572,6 +572,16 @@ module aptos_framework::aptos_governance {
         };
     }
 
+    #[view]
+    /// we want to check what hash is expected for this upgrade
+    public fun get_approved_hash(proposal_id: u64): vector<u8> acquires ApprovedExecutionHashes {
+      let approved_hashes = &mut borrow_global_mut<ApprovedExecutionHashes>(@aptos_framework).hashes;
+        if (simple_map::contains_key(approved_hashes, &proposal_id)) {
+          return *simple_map::borrow(approved_hashes, &proposal_id)
+        };
+        vector::empty()
+    }
+
     /// Force reconfigure. To be called at the end of a proposal that alters on-chain configs.
     public fun reconfigure(aptos_framework: &signer) {
         system_addresses::assert_aptos_framework(aptos_framework);

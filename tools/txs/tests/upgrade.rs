@@ -120,6 +120,15 @@ async fn smoke_upgrade() {
 
     dbg!(&query_res[0]);
 
+    let query_res = query_view::get_view(
+        &s.client(),
+        "0x1::aptos_governance::get_approved_hash",
+        None,
+        Some("0".to_string()), //Some(format!("{}u64", id)),
+    ).await.unwrap();
+
+    dbg!(&query_res);
+
     // Now try to resolve upgrade
     cli.subcommand = Some(Upgrade(Resolve {
         proposal_id: 0,

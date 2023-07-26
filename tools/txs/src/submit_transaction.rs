@@ -11,7 +11,7 @@ use zapatos_sdk::{
         chain_id::ChainId,
         transaction::{ExecutionStatus, SignedTransaction, TransactionPayload},
         AccountKey, LocalAccount,
-    },
+    }, crypto::HashValue,
 };
 
 use std::{
@@ -77,7 +77,7 @@ pub struct Sender {
     pub local_account: LocalAccount,
     client: Client,
     chain_id: ChainId,
-    response: Option<TransactionOnChainData>,
+    pub response: Option<TransactionOnChainData>,
 }
 
 impl Sender {
@@ -216,6 +216,14 @@ impl Sender {
         &mut self,
         payload: TransactionPayload,
     ) -> anyhow::Result<TransactionOnChainData> {
+        match &payload {
+          TransactionPayload::Script(s) => {
+            let hash = HashValue::sha3_256_of(s.code());
+            info!("script code hash: {}", &hash.to_hex_literal());
+          },
+          _ => {}
+        }
+
         let signed = self.sign_payload(payload);
         let spin = OLProgress::spin_steady(250, "awaiting transaction response".to_string());
         let r = self.submit(&signed).await?;
@@ -227,6 +235,7 @@ impl Sender {
     }
 
     pub fn sign_payload(&mut self, payload: TransactionPayload) -> SignedTransaction {
+
         let t = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
@@ -242,6 +251,8 @@ impl Sender {
         signed_trans: &SignedTransaction,
     ) -> anyhow::Result<TransactionOnChainData> {
         let pending_trans = self.client.submit(signed_trans).await?.into_inner();
+
+        info!("pending tx hash: {}", &pending_trans.hash.to_string());
 
         let res = self
             .client
@@ -266,6 +277,13 @@ impl Sender {
                 Err(status.to_owned())
             }
         }
+    }
+
+    pub fn tx_hash(&self) -> Option<HashValue> {
+      if let Some(r) = & self.response {
+        return Some(r.info.transaction_hash())
+      };
+      None
     }
 
     pub fn client(&self) -> &Client {
