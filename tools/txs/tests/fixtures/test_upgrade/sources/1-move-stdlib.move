@@ -5,16 +5,33 @@
 
 // Next step script hash:
 
-// source digest: 112AE1963F36CEE35C3CC2875E6A64536C0486C1B3629A627E754E31C2E9A768
+// source digest: DA9C95057B6C4677DD154BBA90A17763139121E421E9A4D396B1BE47CC1FAB41
 script {
     use std::vector;
     use aptos_framework::aptos_governance;
     use aptos_framework::code;
 
     fun main(proposal_id: u64){
-        let framework_signer = aptos_governance::resolve(proposal_id, @0000000000000000000000000000000000000000000000000000000000000001);
+        let framework_signer = aptos_governance::resolve_multi_step_proposal(
+            proposal_id,
+            @0000000000000000000000000000000000000000000000000000000000000001,
+            vector[],
+        );
         let code = vector::empty();
         let chunk0 =
+        vector[
+            161u8,28u8,235u8,11u8,6u8,0u8,0u8,0u8,8u8,1u8,0u8,2u8,3u8,2u8,5u8,5u8,7u8,4u8,7u8,
+            11u8,28u8,8u8,39u8,32u8,6u8,71u8,6u8,16u8,77u8,40u8,12u8,117u8,9u8,0u8,0u8,0u8,1u8,0u8,1u8,
+            0u8,0u8,1u8,10u8,2u8,13u8,97u8,108u8,108u8,95u8,121u8,111u8,117u8,114u8,95u8,98u8,97u8,115u8,101u8,13u8,
+            97u8,114u8,101u8,95u8,98u8,101u8,108u8,111u8,110u8,103u8,95u8,116u8,111u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,
+            0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,
+            0u8,0u8,0u8,0u8,1u8,10u8,2u8,3u8,2u8,117u8,115u8,18u8,97u8,112u8,116u8,111u8,115u8,58u8,58u8,109u8,
+            101u8,116u8,97u8,100u8,97u8,116u8,97u8,95u8,118u8,49u8,20u8,0u8,0u8,1u8,13u8,97u8,114u8,101u8,95u8,98u8,
+            101u8,108u8,111u8,110u8,103u8,95u8,116u8,111u8,1u8,1u8,0u8,0u8,1u8,0u8,0u8,0u8,2u8,7u8,0u8,2u8,
+            0u8,
+        ];
+        vector::push_back(&mut code, chunk0);
+        let chunk1 =
         vector[
             161u8,28u8,235u8,11u8,6u8,0u8,0u8,0u8,6u8,1u8,0u8,2u8,3u8,2u8,6u8,5u8,8u8,7u8,7u8,
             15u8,13u8,8u8,28u8,32u8,12u8,60u8,4u8,0u8,0u8,0u8,1u8,0u8,1u8,1u8,0u8,1u8,6u8,9u8,0u8,
@@ -22,8 +39,8 @@ script {
             0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,
             0u8,0u8,0u8,0u8,0u8,0u8,0u8,1u8,0u8,1u8,2u8,0u8,0u8,
         ];
-        vector::push_back(&mut code, chunk0);
-        let chunk1 =
+        vector::push_back(&mut code, chunk1);
+        let chunk2 =
         vector[
             161u8,28u8,235u8,11u8,6u8,0u8,0u8,0u8,11u8,1u8,0u8,2u8,2u8,2u8,4u8,3u8,6u8,60u8,5u8,
             66u8,31u8,7u8,97u8,163u8,1u8,8u8,132u8,2u8,32u8,6u8,164u8,2u8,68u8,16u8,232u8,2u8,156u8,3u8,10u8,
@@ -93,8 +110,8 @@ script {
             20u8,11u8,3u8,49u8,32u8,48u8,12u8,1u8,5u8,23u8,11u8,0u8,17u8,0u8,12u8,1u8,11u8,1u8,2u8,0u8,
             0u8,0u8,
         ];
-        vector::push_back(&mut code, chunk1);
-        let chunk2 =
+        vector::push_back(&mut code, chunk2);
+        let chunk3 =
         vector[
             161u8,28u8,235u8,11u8,6u8,0u8,0u8,0u8,6u8,1u8,0u8,2u8,3u8,2u8,10u8,5u8,12u8,3u8,7u8,
             15u8,23u8,8u8,38u8,32u8,12u8,70u8,8u8,0u8,0u8,0u8,1u8,0u8,0u8,0u8,0u8,2u8,0u8,0u8,0u8,
@@ -103,8 +120,8 @@ script {
             0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,1u8,0u8,1u8,
             2u8,0u8,1u8,1u8,2u8,0u8,0u8,
         ];
-        vector::push_back(&mut code, chunk2);
-        let chunk3 =
+        vector::push_back(&mut code, chunk3);
+        let chunk4 =
         vector[
             161u8,28u8,235u8,11u8,6u8,0u8,0u8,0u8,9u8,1u8,0u8,2u8,3u8,2u8,138u8,1u8,4u8,140u8,1u8,
             12u8,5u8,152u8,1u8,106u8,7u8,130u8,2u8,221u8,1u8,8u8,223u8,3u8,32u8,6u8,255u8,3u8,20u8,16u8,147u8,
@@ -186,8 +203,8 @@ script {
             5u8,20u8,13u8,3u8,10u8,0u8,69u8,14u8,68u8,14u8,11u8,2u8,6u8,1u8,0u8,0u8,0u8,0u8,0u8,0u8,
             0u8,23u8,12u8,2u8,5u8,15u8,11u8,0u8,1u8,11u8,3u8,2u8,0u8,
         ];
-        vector::push_back(&mut code, chunk3);
-        let chunk4 =
+        vector::push_back(&mut code, chunk4);
+        let chunk5 =
         vector[
             161u8,28u8,235u8,11u8,6u8,0u8,0u8,0u8,7u8,1u8,0u8,2u8,3u8,2u8,65u8,5u8,67u8,6u8,7u8,
             73u8,183u8,1u8,8u8,128u8,2u8,32u8,6u8,160u8,2u8,130u8,1u8,12u8,162u8,3u8,171u8,1u8,0u8,0u8,0u8,
@@ -222,8 +239,8 @@ script {
             11u8,1u8,0u8,0u8,2u8,4u8,7u8,11u8,11u8,0u8,17u8,2u8,2u8,12u8,1u8,0u8,0u8,2u8,4u8,7u8,
             12u8,11u8,0u8,17u8,2u8,2u8,0u8,
         ];
-        vector::push_back(&mut code, chunk4);
-        let chunk5 =
+        vector::push_back(&mut code, chunk5);
+        let chunk6 =
         vector[
             161u8,28u8,235u8,11u8,6u8,0u8,0u8,0u8,12u8,1u8,0u8,6u8,2u8,6u8,4u8,3u8,10u8,48u8,4u8,
             58u8,6u8,5u8,64u8,47u8,7u8,111u8,94u8,8u8,205u8,1u8,32u8,6u8,237u8,1u8,20u8,16u8,129u8,2u8,137u8,
@@ -256,8 +273,8 @@ script {
             0u8,14u8,1u8,12u8,2u8,46u8,11u8,2u8,56u8,1u8,12u8,3u8,4u8,10u8,5u8,15u8,11u8,0u8,1u8,7u8,
             1u8,17u8,6u8,39u8,11u8,0u8,15u8,0u8,11u8,3u8,56u8,2u8,1u8,2u8,0u8,0u8,0u8,
         ];
-        vector::push_back(&mut code, chunk5);
-        let chunk6 =
+        vector::push_back(&mut code, chunk6);
+        let chunk7 =
         vector[
             161u8,28u8,235u8,11u8,6u8,0u8,0u8,0u8,11u8,1u8,0u8,2u8,2u8,2u8,4u8,3u8,6u8,35u8,5u8,
             41u8,36u8,7u8,77u8,109u8,8u8,186u8,1u8,32u8,6u8,218u8,1u8,40u8,16u8,130u8,2u8,131u8,1u8,10u8,133u8,
@@ -308,8 +325,8 @@ script {
             5u8,11u8,11u8,0u8,1u8,7u8,0u8,39u8,11u8,0u8,15u8,0u8,11u8,1u8,67u8,1u8,12u8,2u8,9u8,11u8,
             2u8,21u8,2u8,0u8,1u8,0u8,0u8,0u8,
         ];
-        vector::push_back(&mut code, chunk6);
-        let chunk7 =
+        vector::push_back(&mut code, chunk7);
+        let chunk8 =
         vector[
             161u8,28u8,235u8,11u8,6u8,0u8,0u8,0u8,6u8,1u8,0u8,2u8,3u8,2u8,10u8,5u8,12u8,9u8,7u8,
             21u8,33u8,8u8,54u8,32u8,12u8,86u8,16u8,0u8,0u8,0u8,1u8,0u8,1u8,0u8,0u8,2u8,0u8,2u8,0u8,
@@ -319,8 +336,8 @@ script {
             0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,1u8,0u8,1u8,0u8,0u8,3u8,4u8,
             11u8,0u8,17u8,1u8,20u8,2u8,1u8,1u8,2u8,0u8,0u8,
         ];
-        vector::push_back(&mut code, chunk7);
-        let chunk8 =
+        vector::push_back(&mut code, chunk8);
+        let chunk9 =
         vector[
             161u8,28u8,235u8,11u8,6u8,0u8,0u8,0u8,11u8,1u8,0u8,6u8,2u8,6u8,4u8,3u8,10u8,170u8,1u8,
             5u8,180u8,1u8,47u8,7u8,227u8,1u8,206u8,7u8,8u8,177u8,9u8,32u8,6u8,209u8,9u8,208u8,1u8,16u8,161u8,
@@ -446,8 +463,8 @@ script {
             0u8,0u8,3u8,7u8,13u8,17u8,22u8,2u8,31u8,1u8,0u8,1u8,0u8,0u8,3u8,7u8,15u8,17u8,22u8,2u8,
             0u8,0u8,0u8,
         ];
-        vector::push_back(&mut code, chunk8);
-        let chunk9 =
+        vector::push_back(&mut code, chunk9);
+        let chunk10 =
         vector[
             161u8,28u8,235u8,11u8,6u8,0u8,0u8,0u8,14u8,1u8,0u8,4u8,2u8,4u8,6u8,3u8,10u8,126u8,4u8,
             136u8,1u8,14u8,5u8,150u8,1u8,135u8,1u8,7u8,157u8,2u8,228u8,1u8,8u8,129u8,4u8,32u8,6u8,161u8,4u8,
@@ -530,8 +547,8 @@ script {
             14u8,10u8,4u8,69u8,8u8,56u8,6u8,12u8,2u8,11u8,2u8,12u8,3u8,11u8,4u8,11u8,1u8,68u8,8u8,11u8,
             3u8,2u8,17u8,1u8,0u8,0u8,7u8,3u8,11u8,0u8,58u8,0u8,2u8,0u8,0u8,0u8,8u8,0u8,
         ];
-        vector::push_back(&mut code, chunk9);
-        let chunk10 =
+        vector::push_back(&mut code, chunk10);
+        let chunk11 =
         vector[
             161u8,28u8,235u8,11u8,6u8,0u8,0u8,0u8,12u8,1u8,0u8,6u8,2u8,6u8,10u8,3u8,16u8,94u8,4u8,
             110u8,8u8,5u8,118u8,120u8,7u8,238u8,1u8,211u8,1u8,8u8,193u8,3u8,32u8,6u8,225u8,3u8,20u8,16u8,245u8,
@@ -587,23 +604,24 @@ script {
             0u8,1u8,9u8,14u8,0u8,17u8,5u8,4u8,4u8,5u8,6u8,7u8,1u8,39u8,11u8,0u8,18u8,0u8,2u8,0u8,
             0u8,0u8,
         ];
-        vector::push_back(&mut code, chunk10);
+        vector::push_back(&mut code, chunk11);
         let chunk1 = vector[
             10u8,77u8,111u8,118u8,101u8,83u8,116u8,100u8,108u8,105u8,98u8,1u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,
-            0u8,64u8,49u8,49u8,50u8,65u8,69u8,49u8,57u8,54u8,51u8,70u8,51u8,54u8,67u8,69u8,69u8,51u8,53u8,67u8,
-            51u8,67u8,67u8,50u8,56u8,55u8,53u8,69u8,54u8,65u8,54u8,52u8,53u8,51u8,54u8,67u8,48u8,52u8,56u8,54u8,
-            67u8,49u8,66u8,51u8,54u8,50u8,57u8,65u8,54u8,50u8,55u8,69u8,55u8,53u8,52u8,69u8,51u8,49u8,67u8,50u8,
-            69u8,57u8,65u8,55u8,54u8,56u8,96u8,31u8,139u8,8u8,0u8,0u8,0u8,0u8,0u8,2u8,255u8,1u8,73u8,0u8,
+            0u8,64u8,68u8,65u8,57u8,67u8,57u8,53u8,48u8,53u8,55u8,66u8,54u8,67u8,52u8,54u8,55u8,55u8,68u8,68u8,
+            49u8,53u8,52u8,66u8,66u8,65u8,57u8,48u8,65u8,49u8,55u8,55u8,54u8,51u8,49u8,51u8,57u8,49u8,50u8,49u8,
+            69u8,52u8,50u8,49u8,69u8,57u8,65u8,52u8,68u8,51u8,57u8,54u8,66u8,49u8,66u8,69u8,52u8,55u8,67u8,67u8,
+            49u8,70u8,65u8,66u8,52u8,49u8,96u8,31u8,139u8,8u8,0u8,0u8,0u8,0u8,0u8,2u8,255u8,1u8,73u8,0u8,
             182u8,255u8,91u8,112u8,97u8,99u8,107u8,97u8,103u8,101u8,93u8,10u8,110u8,97u8,109u8,101u8,32u8,61u8,32u8,34u8,
             77u8,111u8,118u8,101u8,83u8,116u8,100u8,108u8,105u8,98u8,34u8,10u8,118u8,101u8,114u8,115u8,105u8,111u8,110u8,32u8,
             61u8,32u8,34u8,49u8,46u8,53u8,46u8,48u8,34u8,10u8,10u8,91u8,97u8,100u8,100u8,114u8,101u8,115u8,115u8,101u8,
             115u8,93u8,10u8,115u8,116u8,100u8,32u8,61u8,32u8,34u8,48u8,120u8,49u8,34u8,10u8,209u8,25u8,56u8,252u8,73u8,
-            0u8,0u8,0u8,11u8,3u8,98u8,99u8,115u8,0u8,0u8,0u8,13u8,102u8,105u8,120u8,101u8,100u8,95u8,112u8,111u8,
-            105u8,110u8,116u8,51u8,50u8,0u8,0u8,0u8,4u8,104u8,97u8,115u8,104u8,0u8,0u8,0u8,6u8,118u8,101u8,99u8,
-            116u8,111u8,114u8,0u8,0u8,0u8,5u8,101u8,114u8,114u8,111u8,114u8,0u8,0u8,0u8,3u8,97u8,99u8,108u8,0u8,
-            0u8,0u8,10u8,98u8,105u8,116u8,95u8,118u8,101u8,99u8,116u8,111u8,114u8,0u8,0u8,0u8,6u8,115u8,105u8,103u8,
-            110u8,101u8,114u8,0u8,0u8,0u8,8u8,102u8,101u8,97u8,116u8,117u8,114u8,101u8,115u8,0u8,0u8,0u8,6u8,111u8,
-            112u8,116u8,105u8,111u8,110u8,0u8,0u8,0u8,6u8,115u8,116u8,114u8,105u8,110u8,103u8,0u8,0u8,0u8,0u8,0u8,
+            0u8,0u8,0u8,12u8,13u8,97u8,108u8,108u8,95u8,121u8,111u8,117u8,114u8,95u8,98u8,97u8,115u8,101u8,0u8,0u8,
+            0u8,3u8,98u8,99u8,115u8,0u8,0u8,0u8,13u8,102u8,105u8,120u8,101u8,100u8,95u8,112u8,111u8,105u8,110u8,116u8,
+            51u8,50u8,0u8,0u8,0u8,4u8,104u8,97u8,115u8,104u8,0u8,0u8,0u8,6u8,118u8,101u8,99u8,116u8,111u8,114u8,
+            0u8,0u8,0u8,5u8,101u8,114u8,114u8,111u8,114u8,0u8,0u8,0u8,3u8,97u8,99u8,108u8,0u8,0u8,0u8,10u8,
+            98u8,105u8,116u8,95u8,118u8,101u8,99u8,116u8,111u8,114u8,0u8,0u8,0u8,6u8,115u8,105u8,103u8,110u8,101u8,114u8,
+            0u8,0u8,0u8,8u8,102u8,101u8,97u8,116u8,117u8,114u8,101u8,115u8,0u8,0u8,0u8,6u8,111u8,112u8,116u8,105u8,
+            111u8,110u8,0u8,0u8,0u8,6u8,115u8,116u8,114u8,105u8,110u8,103u8,0u8,0u8,0u8,0u8,0u8,
         ];
         code::publish_package_txn(&framework_signer, chunk1, code)
     }

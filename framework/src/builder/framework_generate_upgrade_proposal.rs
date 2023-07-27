@@ -19,7 +19,7 @@ pub fn make_framework_upgrade_artifacts(
     // 0L TODO: don't make this hard coded
     let mut package_path_list = vec![
         ("0x1", "move-stdlib"),
-        ("0x1", "vendor-stdlib"),
+        // ("0x1", "vendor-stdlib"),
         // ("0x1", "libra-framework"),
         // ("0x3", "aptos-move/framework/aptos-token"),
         // ("0x4", "aptos-move/framework/aptos-token-objects"),
@@ -32,12 +32,11 @@ pub fn make_framework_upgrade_artifacts(
     // For generating multi-step proposal files, we need to generate them in the reverse order since
     // we need the hash of the next script.
     // We will reverse the order back when writing the files into a directory.
-    if !next_execution_hash.is_empty() {
-        package_path_list.reverse();
-    }
+    package_path_list.reverse();
+
     let len = package_path_list.len();
     for (idx, ( publish_addr, relative_package_path)) in package_path_list.iter().enumerate(){
-        let deploy_order = len - idx;
+        let deploy_order = len - idx; // we are compiling the last module to deploy first. This is because we need to know it's hash, ahead of the earlier modules. That is LibraFramework will compile first, although it will be 3rd to deploy. We need its execution hash known when we deploy the 2nd package: VendorStdlib, which needs that has IN THE GOVERNANCE SCRIPT.
 
         let account = AccountAddress::from_hex_literal(publish_addr)?;
 

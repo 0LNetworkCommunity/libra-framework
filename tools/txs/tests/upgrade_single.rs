@@ -29,7 +29,7 @@ async fn smoke_upgrade_single_step() {
     // we will upgrade a new binary which will include this function.
     let query_res = query_view::get_view(
       &s.client(),
-      "0x1::all_your_base::belong_to",
+      "0x1::all_your_base::are_belong_to",
       None,
       None,
     )
@@ -102,7 +102,7 @@ async fn smoke_upgrade_single_step() {
         Some("0".to_string()),
     ).await.unwrap();
 
-    assert!(query_res[0].as_str().unwrap().contains("0x0abb"), "expected this script hash, did you change the fixtures?");
+    assert!(query_res[0].as_str().unwrap().contains("3f3fe"), "expected this script hash, did you change the fixtures?");
 
     ///////// SHOW TIME ////////
     // Now try to resolve upgrade
@@ -115,7 +115,7 @@ async fn smoke_upgrade_single_step() {
 
     let query_res = query_view::get_view(
       &s.client(),
-      "0x1::all_your_base::belong_to",
+      "0x1::all_your_base::are_belong_to",
       None,
       None,
     )

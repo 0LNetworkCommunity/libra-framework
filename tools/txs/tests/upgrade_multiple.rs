@@ -22,14 +22,16 @@ use zapatos_types::chain_id::NamedChain;
 async fn smoke_upgrade_multiple_steps() {
     let mut s = LibraSmoke::new(Some(1)).await.expect("can't start swarm");
     let this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
-    let script_dir = this_path.join("tests/fixtures/test_upgrade_multiple");
+
+    ///// NOTE THERE ARE MULTIPLE STEPS, we are getting the artifacts for the first step.
+    let script_dir = this_path.join("tests/fixtures/test_upgrade_multiple/1-move-stdlib");
     assert!(script_dir.exists(), "can't find upgrade fixtures");
 
     // This step should fail. The view function does not yet exist in the system address.
     // we will upgrade a new binary which will include this function.
     let query_res = query_view::get_view(
       &s.client(),
-      "0x1::all_your_base::belong_to",
+      "0x1::all_your_base::are_belong_to",
       None,
       None,
     )
@@ -102,9 +104,9 @@ async fn smoke_upgrade_multiple_steps() {
         Some("0".to_string()),
     ).await.unwrap();
 
-    assert!(query_res[0].as_str().unwrap().contains("0x0abb"), "expected this script hash, did you change the fixtures?");
+    assert!(query_res[0].as_str().unwrap().contains("2a0d5"), "expected this script hash, did you change the fixtures?");
 
-    ///////// SHOW TIME ////////
+    ///////// SHOW TIME FIRST STEP ////////
     // Now try to resolve upgrade
     cli.subcommand = Some(Upgrade(Resolve {
         proposal_id: 0,
@@ -113,9 +115,21 @@ async fn smoke_upgrade_multiple_steps() {
     cli.run().await.unwrap();
    //////////////////////////////
 
+
+    let script_dir = this_path.join("tests/fixtures/test_upgrade_multiple/2-vendor-stdlib");
+
+    ///////// SHOW TIME LAST STEP ////////
+    // Now try to resolve upgrade
+    cli.subcommand = Some(Upgrade(Resolve {
+        proposal_id: 0,
+        proposal_script_dir: script_dir,
+    }));
+    cli.run().await.unwrap();
+    //////////////////////////////
+
     let query_res = query_view::get_view(
       &s.client(),
-      "0x1::all_your_base::belong_to",
+      "0x1::all_your_base::are_belong_to",
       None,
       None,
     )
