@@ -87,7 +87,7 @@ impl UpgradeTxs {
                     hex::decode(hash)?,
                     metadata_url.as_bytes().to_vec(),
                     "metadata struct".to_string().as_bytes().to_vec(), // TODO
-                    false,
+                    true,
                 )
             }
             UpgradeTxs::Vote {
