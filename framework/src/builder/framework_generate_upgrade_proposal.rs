@@ -19,7 +19,7 @@ pub fn make_framework_upgrade_artifacts(
     // 0L TODO: don't make this hard coded
     let mut package_path_list = vec![
         ("0x1", "move-stdlib"),
-        // ("0x1", "vendor-stdlib"),
+        ("0x1", "vendor-stdlib"),
         // ("0x1", "libra-framework"),
         // ("0x3", "aptos-move/framework/aptos-token"),
         // ("0x4", "aptos-move/framework/aptos-token-objects"),
