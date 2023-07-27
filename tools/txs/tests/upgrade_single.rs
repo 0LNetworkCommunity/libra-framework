@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 
-// use libra_types::exports::ValidCryptoMaterialStringExt;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_query::query_view;
 use libra_txs::{
@@ -18,12 +17,25 @@ use zapatos_types::chain_id::NamedChain;
 /// 2. the validator can vote for the proposal
 /// 3. check that the proposal is resolvable
 /// 4. resolve a propsosal by sending the upgrade payload.
+/// 5. Check that the new function all_your_base can be called
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn smoke_upgrade() {
+async fn smoke_upgrade_single_step() {
     let mut s = LibraSmoke::new(Some(1)).await.expect("can't start swarm");
     let this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
     let script_dir = this_path.join("tests/fixtures/test_upgrade");
     assert!(script_dir.exists(), "can't find upgrade fixtures");
+
+    // This step should fail. The view function does not yet exist in the system address.
+    // we will upgrade a new binary which will include this function.
+    let query_res = query_view::get_view(
+      &s.client(),
+      "0x1::all_your_base::belong_to",
+      None,
+      None,
+    )
+    .await;
+    assert!(query_res.is_err(), "expected all_your_base to fail");
+
 
     let mut cli = TxsCli {
         subcommand: Some(Upgrade(Propose {
@@ -43,99 +55,63 @@ async fn smoke_upgrade() {
         .await
         .expect("cli could not send upgrade proposal");
 
-
     // ALICE VOTES
     cli.subcommand = Some(Upgrade(Vote {
         proposal_id: 0,
         should_fail: false,
     }));
     cli.run().await.unwrap();
-    // cli.subcommand = Some(Upgrade(Vote {
-    //     proposal_id: 0,
-    //     should_fail: false,
-    // }));
-
-    // TODO: do this in a sane way.
-
-    // let vals_keys = s.swarm.validators()
-    // .map(|node| {
-    //   node.account_private_key()
-    //   .as_ref()
-    //   .unwrap()
-    //   .private_key()
-    //   .to_encoded_string()
-    //   .expect("cannot decode pri key")
-    // }).collect::<Vec<String>>();
-    // //ALICE
-
-    // let mut key_iter = vals_keys.iter();
-
-    // cli.test_private_key = Some(key_iter.next().unwrap().to_owned());
-    // cli.run().await.expect("could not send vote");
-
-
-    // BOB
-
-    // let bob = s.swarm.validators().nth(1).unwrap().peer_id();
-    // s.mint(bob, 5_000_000_000).await.unwrap();
-    // cli.test_private_key = Some(key_iter.next().unwrap().to_owned());
-    // cli.run().await.expect("could not send vote");
-
-    // // CAROL
-    // let carol = s.swarm.validators().nth(2).unwrap().peer_id();
-    // s.mint(carol, 5_000_000_000).await.unwrap();
-    // cli.test_private_key = Some(key_iter.next().unwrap().to_owned());
-    // cli.run().await.expect("could not send vote");
-    // let node = vals_iter.next().unwrap();
-
-
 
     let query_res = query_view::get_view(
         &s.client(),
         "0x1::aptos_governance::get_proposal_state",
         None,
-        Some("0".to_string()), //Some(format!("{}u64", id)),
+        Some("0".to_string()),
     )
     .await.unwrap();
-    // assert!(query_res[0].into() == "1", "proposal state should be 1, passing.");
 
-    dbg!(&query_res[0]);
+    assert!(query_res[0].as_str().unwrap() == "1", "proposal state should be 1, passing");
 
     let query_res = query_view::get_view(
         &s.client(),
         "0x1::voting::is_voting_closed",
         Some("0x1::governance_proposal::GovernanceProposal".to_string()),
-        Some("0x1, 0".to_string()), //Some(format!("{}u64", id)),
+        Some("0x1, 0".to_string()),
     )
     .await.unwrap();
-    // assert!(query_res[0].into() == true, "voting should be closed");
-    dbg!(&query_res[0]);
 
+    assert!(query_res[0].as_bool().unwrap(), "expected to be closed");
+
+
+    // Note, if there isn't a pause here, the next request might happen on the same on-chain clock seconds as the previous.
+    // this will intentionally cause a failure since it's designed to prevent "atomic" transactions which can manipulate governance (flash loans)
+    std::thread::sleep(std::time::Duration::from_secs(2));
 
     let query_res = query_view::get_view(
         &s.client(),
         "0x1::aptos_governance::get_can_resolve",
         None,
-        Some("0".to_string()), //Some(format!("{}u64", id)),
+        Some("0".to_string()),
     ).await.unwrap();
-
-    dbg!(&query_res[0]);
+    assert!(query_res[0].as_bool().unwrap(), "expected to be able to resolve");
 
     let query_res = query_view::get_view(
         &s.client(),
         "0x1::aptos_governance::get_approved_hash",
         None,
-        Some("0".to_string()), //Some(format!("{}u64", id)),
+        Some("0".to_string()),
     ).await.unwrap();
 
-    dbg!(&query_res);
+    assert!(query_res[0].as_str().unwrap().contains("0x0abb"), "expected this script hash, did you change the fixtures?");
 
+    ///////// SHOW TIME ////////
     // Now try to resolve upgrade
     cli.subcommand = Some(Upgrade(Resolve {
         proposal_id: 0,
         proposal_script_dir: script_dir,
     }));
     cli.run().await.unwrap();
+   //////////////////////////////
 
     let query_res = query_view::get_view(
       &s.client(),
@@ -144,5 +120,7 @@ async fn smoke_upgrade() {
       None,
     )
     .await.unwrap();
-    dbg!(&query_res);
+    assert!(&query_res.as_array().unwrap()[0].as_str().unwrap().contains("7573"));
+
 }
+
