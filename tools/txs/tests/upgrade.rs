@@ -8,6 +8,7 @@ use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Upgrade},
     txs_cli_upgrade::UpgradeTxs::{Propose, Resolve, Vote},
 };
+use zapatos_types::chain_id::NamedChain;
 
 
 /// Testing that we can upgrade the chain framework using txs tools.
@@ -31,7 +32,7 @@ async fn smoke_upgrade() {
         })),
         mnemonic: None,
         test_private_key: Some(s.encoded_pri_key.clone()),
-        chain_id: None,
+        chain_id: Some(NamedChain::TESTING),
         config_path: None,
         url: Some(s.api_endpoint.clone()),
         gas_max: None,

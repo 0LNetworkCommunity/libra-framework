@@ -107,7 +107,7 @@ script {
         }
 
         let (bytes, hash) = libra_compile_script(&package_dir, false)?;
-        save_build(package_dir, bytes, hash)?;
+        save_build(package_dir, &bytes, &hash)?;
 
         Ok(())
     }

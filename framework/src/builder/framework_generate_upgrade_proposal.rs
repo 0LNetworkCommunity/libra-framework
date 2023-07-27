@@ -196,11 +196,14 @@ pub fn libra_compile_script(
         .context("could not find any code in BuiltPackage")?;
 
     let hash = HashValue::sha3_256_of(bytes.as_slice());
+
+    save_build(script_package_dir.to_path_buf(), &bytes, &hash)?;
+
     Ok((bytes, hash))
 }
 
 
-pub fn save_build(script_package_dir: PathBuf, bytes: Vec<u8>, hash: HashValue) -> anyhow::Result<()>{
+pub fn save_build(script_package_dir: PathBuf, bytes: &[u8], hash: &HashValue) -> anyhow::Result<()>{
     std::fs::write(script_package_dir.join("script.mv"), bytes)?;
     std::fs::write(script_package_dir.join("script_sha3"), hash.to_hex())?;
 
