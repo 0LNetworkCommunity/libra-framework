@@ -1,6 +1,4 @@
-use anyhow::Context;
-use clap::Parser;
-use std::path::PathBuf;
+//! framework cli entry points
 
 use crate::{
     builder::framework_generate_upgrade_proposal::{
@@ -8,6 +6,12 @@ use crate::{
     },
     release::ReleaseTarget,
 };
+
+use anyhow::Context;
+use clap::Parser;
+use std::path::PathBuf;
+
+
 #[derive(Debug, Parser)]
 /// Creates a framework release used for test genesis (as well as production genesis).
 pub struct GenesisRelease {
@@ -39,6 +43,10 @@ pub struct FrameworkUpgrade {
     /// directory of the framework source code. Usually `./framework/lbra-framework`
     #[clap(short, long)]
     pub framework_local_dir: PathBuf,
+
+    /// optional, list of core module directory names to compile. It will default to this order: move-stdlib, vendor-stdlib, libra-framework
+    #[clap(long)]
+    pub core_modules: Option<Vec<String>>,
 }
 
 impl FrameworkUpgrade {
@@ -52,7 +60,7 @@ impl FrameworkUpgrade {
             std::fs::create_dir_all(&self.output_dir)?;
         }
 
-        make_framework_upgrade_artifacts(&self.output_dir, &self.framework_local_dir)?;
+        make_framework_upgrade_artifacts(&self.output_dir, &self.framework_local_dir, &self.core_modules)?;
 
         Ok(())
     }

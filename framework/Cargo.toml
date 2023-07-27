@@ -30,7 +30,7 @@ zapatos = { workspace = true }
 zapatos-crypto = { workspace = true }
 zapatos-framework = { workspace = true }
 zapatos-release-builder = { workspace = true }
-# zapatos-rest-client = { workspace = true }
+zapatos-rest-client = { workspace = true }
 zapatos-build-info = { workspace = true }
 zapatos-temppath = { workspace = true }
 

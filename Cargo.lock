@@ -5685,6 +5685,7 @@ dependencies = [
  "aptos-crypto",
  "aptos-framework",
  "aptos-release-builder",
+ "aptos-rest-client",
  "aptos-temppath",
  "aptos-types",
  "bcs 0.1.3",

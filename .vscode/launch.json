@@ -21,7 +21,7 @@
         "upgrade",
         "-o",
         "${workspaceFolder}/framework/releases/framework_upgrade",
-        // "-m", "${workspaceFolder}/framework/releases/head.mrb",
+        "--core-modules", "move-stdlib",
         "-f",
         "${workspaceFolder}/framework",
       ],
