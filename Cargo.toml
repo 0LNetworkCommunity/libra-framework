@@ -105,8 +105,8 @@ hmac = "0.10.1" # //////// 0L ////////
 mirai-annotations = "1.12.0" # //////// 0L ////////
 once_cell = "1.17.1"
 pbkdf2 = "0.7.3" # //////// 0L ////////
-proptest = "1.0.0"
-proptest-derive = "0.3.0"
+# proptest = "1.0.0"
+# proptest-derive = "0.3.0"
 rand = "0.7.3" # //////// 0L ////////
 reqwest = { version = "0.11.11", features = ["blocking", "cookies", "json", "stream"] }
 rpassword = "5.0" # //////// 0L ////////
@@ -131,7 +131,6 @@ move-core-types = { git = "https://github.com/0o-de-lally/zapatos.git", rev = "3
 move-command-line-common = { git = "https://github.com/0o-de-lally/zapatos.git", rev = "3e524a2d" }
 move-model = { git = "https://github.com/0o-de-lally/zapatos.git", rev = "3e524a2d" }
 
-
 [profile.release]
 opt-level = 'z'   # Optimize for size.
 lto = true        # Enable Link Time Optimization
@@ -147,6 +146,8 @@ debug = true
 split-debuginfo = "unpacked" # Requires rustc 1.51
 lto = false
 incremental = true
+
+
 
 # # This is a temporary workaround to avoid multiple library
 # # definitions for LZ4 (caused by rust-rocksdb).

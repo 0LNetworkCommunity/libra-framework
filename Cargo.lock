@@ -5647,7 +5647,6 @@ dependencies = [
  "libra-framework",
  "move-core-types",
  "once_cell",
- "proptest-derive",
 ]
 
 [[package]]
@@ -5834,8 +5833,6 @@ dependencies = [
  "indicatif",
  "move-core-types",
  "once_cell",
- "proptest",
- "proptest-derive",
  "rand 0.7.3",
  "reqwest",
  "serde 1.0.163",

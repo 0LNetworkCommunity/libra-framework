@@ -6,16 +6,19 @@ use zapatos_framework::{BuildOptions, BuiltPackage, ReleasePackage};
 use zapatos_temppath::TempPath;
 use zapatos_types::account_address::AccountAddress;
 use std::path::{Path, PathBuf};
-use zapatos_release_builder::components::get_execution_hash;
+// use zapatos_release_builder::components::get_execution_hash;
 use zapatos_crypto::HashValue;
-use zapatos_release_builder::components::framework::FrameworkReleaseConfig;
 
-pub fn generate_upgrade_proposals(
-    config: &FrameworkReleaseConfig,
-    is_testnet: bool,
-    next_execution_hash: Vec<u8>,
+use crate::builder::framework_release_bundle::libra_generate_script_proposal_impl;
+// use zapatos_release_builder::components::framework::FrameworkReleaseConfig;
+
+pub fn make_framework_upgrade_artifacts(
+    // config: &FrameworkReleaseConfig,
+    // is_testnet: bool,
+    // next_execution_hash: Vec<u8>,
     framework_local_dir: &Path,
 ) -> Result<Vec<(String, String)>> {
+    let mut next_execution_hash = vec![];
 
     // 0L TODO: don't make this hard coded
     let mut package_path_list = vec![
@@ -28,8 +31,8 @@ pub fn generate_upgrade_proposals(
 
     let mut result: Vec<(String, String)> = vec![];
 
-    let temp_root_path = TempPath::new();
-    temp_root_path.create_as_dir()?;
+    // let temp_root_path = TempPath::new();
+    // temp_root_path.create_as_dir()?;
 
     let commit_info =  zapatos_build_info::get_git_hash();
 
@@ -49,11 +52,13 @@ pub fn generate_upgrade_proposals(
         let mut move_script_path = temp_script_path.path().to_path_buf();
         move_script_path.set_extension("move");
 
-        let mut package_path = if config.git_hash.is_some() {
-            temp_root_path.path().to_path_buf()
-        } else {
-            framework_local_dir.to_owned().canonicalize()?
-        };
+        // let mut package_path = if config.git_hash.is_some() {
+        //     temp_root_path.path().to_path_buf()
+        // } else {
+        //     framework_local_dir.to_owned().canonicalize()?
+        // };
+
+        let mut package_path = framework_local_dir.to_owned().canonicalize()?;
 
         package_path.push(relative_package_path);
 
@@ -80,36 +85,54 @@ pub fn generate_upgrade_proposals(
             with_source_maps: false,
             with_error_map: true,
             skip_fetch_latest_git_deps: false,
-            bytecode_version: Some(config.bytecode_version),
+            bytecode_version: Some(6),
             ..BuildOptions::default()
         };
 
         assert!(package_path.exists(), "package path does not exist at {}", package_path.to_str().unwrap());
 
-        let package = BuiltPackage::build(package_path, options)?;
+        let package = BuiltPackage::build(package_path.clone(), options)?;
         let release = ReleasePackage::new(package)?;
 
-        // If we're generating a single-step proposal on testnet
-        if is_testnet && next_execution_hash.is_empty() {
-            release.generate_script_proposal_testnet(account, move_script_path.clone())?;
-            // If we're generating a single-step proposal on mainnet
-        } else if next_execution_hash.is_empty() {
-            release.generate_script_proposal(account, move_script_path.clone())?;
-            // If we're generating a multi-step proposal
-        } else {
-            let next_execution_hash_bytes = if result.is_empty() {
-                next_execution_hash.clone()
-            } else {
-                get_execution_hash(&result)
-            };
-            release.generate_script_proposal_multi_step(
-                account,
-                move_script_path.clone(),
-                next_execution_hash_bytes,
-            )?;
+        // 0L only uses multi-step proposal workflow
+          // let next_execution_hash_bytes = if result.is_empty() {
+          //   next_execution_hash.clone()
+          // } else {
+          //     get_execution_hash(&result)
+          // };
 
-            // generate_script_proposal_impl(for_address, out, true, true, next_execution_hash)
-        };
+          // release.generate_script_proposal_multi_step(
+          //     account,
+          //     move_script_path.clone(),
+          //     next_execution_hash_bytes,
+          // )?;
+
+          libra_generate_script_proposal_impl(&release, account, move_script_path.clone())?;
+
+          let (_, hash) = libra_compile_script(&package_path)?;
+          next_execution_hash = hash.to_vec();
+        // next_execution_hash_bytes
+        // // If we're generating a single-step proposal on testnet
+        // if is_testnet && next_execution_hash.is_empty() {
+        //     release.generate_script_proposal_testnet(account, move_script_path.clone())?;
+        //     // If we're generating a single-step proposal on mainnet
+        // } else if next_execution_hash.is_empty() {
+        //     release.generate_script_proposal(account, move_script_path.clone())?;
+        //     // If we're generating a multi-step proposal
+        // } else {
+        //     let next_execution_hash_bytes = if result.is_empty() {
+        //         next_execution_hash.clone()
+        //     } else {
+        //         get_execution_hash(&result)
+        //     };
+        //     release.generate_script_proposal_multi_step(
+        //         account,
+        //         move_script_path.clone(),
+        //         next_execution_hash_bytes,
+        //     )?;
+
+        //     // generate_script_proposal_impl(for_address, out, true, true, next_execution_hash)
+        // };
 
         let mut script = format!(
             "// Framework commit hash: {}\n// Builder commit hash: {}\n",
@@ -125,6 +148,21 @@ pub fn generate_upgrade_proposals(
 }
 
 
+
+pub fn write_to_file(result: Vec<(String, String)>, proposal_dir: PathBuf) -> anyhow::Result<()>{
+      println!("writing upgrade scripts to folder");
+
+    for (idx, (script_name, script)) in result.into_iter().enumerate() {
+        let mut script_path = proposal_dir.clone();
+        let proposal_name = format!("{}-{}", idx, script_name);
+        script_path.push(&proposal_name);
+        script_path.set_extension("move");
+
+        // let execution_hash = append_script_hash(script, script_path.clone(), framework_local_dir.clone())?;
+        std::fs::write(&script_path, script.as_bytes())?;
+    }
+    Ok(())
+}
 // /Users/lucas/code/rust/zapatos/crates/aptos/src/move_tool/mod.rs
 /// Need to create a dummy package so that we can build the script into bytecode
 /// so that we can then get the hash of the script.
@@ -147,7 +185,7 @@ pub fn libra_compile_script(
     package_dir: &Path,
     // bytecode_version: Option<u32>,
 ) -> Result<(Vec<u8>, HashValue)> {
-
+    println!("compiling libra script...");
     dbg!(&package_dir);
     // these are the options only for the upgrade SCRIPT
     // the payload needs to be small, because even approved TX scripts have

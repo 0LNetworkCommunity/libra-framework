@@ -1,6 +1,6 @@
 use move_model::{code_writer::CodeWriter, emit, emitln, model::Loc};
-use std::{path::PathBuf};
-use zapatos_framework::{ReleaseBundle, natives::code::PackageMetadata};
+use std::path::PathBuf;
+use zapatos_framework::ReleasePackage;
 use zapatos_types::account_address::AccountAddress;
 // /// A release bundle consists of a list of release packages.
 // #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -425,15 +425,15 @@ fn generate_blob(writer: &CodeWriter, data: &[u8]) {
 }
 
     pub fn libra_generate_script_proposal_impl( //////// 0L //////// turn an MRB into a script proposal
-        release_bundle: &ReleaseBundle,
+        release_package: &ReleasePackage,
         for_address: AccountAddress,
         out: PathBuf,
-        metadata: Option<PackageMetadata>,
+        // metadata: Option<PackageMetadata>,
         // is_testnet: bool,
         // is_multi_step: bool,
         // next_execution_hash: Vec<u8>,
     ) -> anyhow::Result<()> {
-        let metadata = metadata.unwrap_or_else(|| release_bundle.packages.last().unwrap().metadata.clone());
+        let metadata = &release_package.metadata;
 
         let writer = CodeWriter::new(Loc::default());
         emitln!(
@@ -458,7 +458,7 @@ fn generate_blob(writer: &CodeWriter, data: &[u8]) {
 
         emitln!(writer, "let code = vector::empty();");
 
-        let code = release_bundle.code();
+        let code = release_package.code();
         for i in 0..code.len() {
             emitln!(writer, "let chunk{} = ", i);
             generate_blob(&writer, code[i]);

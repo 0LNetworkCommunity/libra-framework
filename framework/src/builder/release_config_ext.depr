@@ -1,6 +1,9 @@
 //! extends ReleaseConfig with new methods with custom trait.
-use crate::builder::release_entry_ext::LibraReleaseEntry; // our refactored methods trait
+use crate::builder::framework_generate_upgrade_proposal;
+use crate::builder::framework_generate_upgrade_proposal::libra_compile_script;
+// use crate::builder::release_entry_ext::LibraReleaseEntry; // our refactored methods trait
 use anyhow::anyhow;
+// use zapatos_release_builder::components::get_execution_hash;
 use std::path::{Path, PathBuf};
 use zapatos_release_builder::{ReleaseConfig, ExecutionMode};
 use zapatos_temppath::TempPath;
@@ -16,11 +19,12 @@ use zapatos_release_builder::components::ProposalMetadata;
 use zapatos_release_builder::ReleaseEntry;
 use zapatos_release_builder::components::framework::FrameworkReleaseConfig;
 pub trait LibraReleaseConfig {
-    fn libra_generate_release_proposal_scripts(&self, base_path: &Path, framework_local_dir: PathBuf) -> anyhow::Result<()>;
+    fn libra_make_upgrade(&self, base_path: &Path, framework_local_dir: PathBuf) -> anyhow::Result<()>;
 }
 
-impl LibraReleaseConfig for ReleaseConfig {
-    fn libra_generate_release_proposal_scripts(&self, base_path: &Path, framework_local_dir: PathBuf) -> anyhow::Result<()> {
+// impl LibraReleaseConfig for ReleaseConfig {
+    pub fn libra_make_upgrade(base_path: &Path, framework_local_dir: PathBuf) -> anyhow::Result<()> {
+
       // dbg!("libra_generate_release_proposal_scripts");
         // let client = self
         //     .remote_endpoint
@@ -34,43 +38,68 @@ impl LibraReleaseConfig for ReleaseConfig {
         std::fs::create_dir(source_dir.as_path())
             .map_err(|err| anyhow!("source output directory not empty: {:?} at {:?}", &source_dir, err))?;
 
-        let mut metadata_dir = base_path.to_path_buf();
-        metadata_dir.push("metadata");
+        // let mut metadata_dir = base_path.to_path_buf();
+        // metadata_dir.push("metadata");
 
-        std::fs::create_dir(metadata_dir.as_path())
-            .map_err(|err| anyhow!("metadata output directory not empty: {:?} at {:?}", &source_dir, err))?;
+        // std::fs::create_dir(metadata_dir.as_path())
+        //     .map_err(|err| anyhow!("metadata output directory not empty: {:?} at {:?}", &source_dir, err))?;
 
         // If we are generating multi-step proposal files, we generate the files in reverse order,
         // since we need to pass in the hash of the next file to the previous file.
-        for proposal in &self.proposals {
+        // for proposal in &self.proposals {
+            // assert!(proposal.execution_mode == ExecutionMode::MultiStep, "always use multistep execution");
+
             let mut proposal_dir = base_path.to_path_buf();
             proposal_dir.push("sources");
-            proposal_dir.push(proposal.name.as_str());
+            proposal_dir.push("framework_upgrade");
 
             std::fs::create_dir(proposal_dir.as_path())
                 .map_err(|err| anyhow!("Fail to create folder for proposal: {:?}", err))?;
 
             let mut result: Vec<(String, String)> = vec![];
-            if let ExecutionMode::MultiStep = &proposal.execution_mode {
-                for entry in proposal.update_sequence.iter().rev() {
-                    entry.libra_generate_release_script( //////// 0L //////// our change to use the extension
-                        // client.as_ref(),
-                        &mut result,
-                        proposal.execution_mode,
+
+            // for entry in proposal.update_sequence.iter().rev() {
+                    // first we want to compile the entry.
+                    // entry.
+
+                    // last script that will execute needs to have no execution hash
+                    let execution_hash = "vector::empty<u8>()".to_owned().into_bytes();
+
+
+                    // entry.libra_generate_release_script( //////// 0L //////// our change to use the extension
+                    //     // client.as_ref(),
+                    //     &mut result,
+                    //     execution_hash,
+                    //     &framework_local_dir,
+                    // )?;
+                // let config = FrameworkReleaseConfig {
+                //     bytecode_version: 6, // Only numbers 5 to 6 are supported
+                //     git_hash: None, // TODO: get this
+                // };
+
+                result.append(
+                    &mut framework_generate_upgrade_proposal::generate_upgrade_proposals(
+                        // &config,
+                        // fal,
+                        execution_hash,
                         &framework_local_dir,
-                    )?;
-                }
-                result.reverse();
-            } else {
-                for entry in proposal.update_sequence.iter() {
-                    entry.libra_generate_release_script( //////// 0L //////// our change to use the extension
-                        // client.as_ref(),
-                        &mut result,
-                        proposal.execution_mode,
-                        &framework_local_dir,
-                    )?;
-                }
-            }
+                    )?,
+                );
+                // }
+            result.reverse();
+
+            // if let ExecutionMode::MultiStep = &proposal.execution_mode {
+
+            // } else {
+            //     for entry in proposal.update_sequence.iter() {
+            //         entry.libra_generate_release_script( //////// 0L //////// our change to use the extension
+            //             // client.as_ref(),
+            //             &mut result,
+            //             proposal.execution_mode,
+            //             &framework_local_dir,
+            //         )?;
+            //     }
+            // }
 
             println!("writing upgrade scripts to folder");
 
@@ -80,28 +109,28 @@ impl LibraReleaseConfig for ReleaseConfig {
                 script_path.push(&proposal_name);
                 script_path.set_extension("move");
 
-                let execution_hash = append_script_hash(script, script_path.clone(), framework_local_dir.clone());
+                let execution_hash = append_script_hash(script, script_path.clone(), framework_local_dir.clone())?;
                 std::fs::write(&script_path, execution_hash.as_bytes())
                     .map_err(|err| anyhow!("Failed to write to file: {:?}", err))?;
             }
 
-            let mut metadata_path = base_path.to_path_buf();
-            metadata_path.push("metadata");
-            metadata_path.push(proposal.name.as_str());
-            metadata_path.set_extension("json");
+            // let mut metadata_path = base_path.to_path_buf();
+            // metadata_path.push("metadata");
+            // metadata_path.push("framework_upgrade");
+            // metadata_path.set_extension("json");
 
-            std::fs::write(
-                metadata_path.as_path(),
-                serde_json::to_string_pretty(&proposal.metadata)?,
-            )
-            .map_err(|err| anyhow!("Failed to write to file: {:?}", err))?;
-        }
+            // std::fs::write(
+            //     metadata_path.as_path(),
+            //     serde_json::to_string_pretty(&proposal.metadata)?,
+            // )
+            // .map_err(|err| anyhow!("Failed to write to file: {:?}", err))?;
+        // }
 
         Ok(())
     }
-}
+// }
 
-fn append_script_hash(raw_script: String, _script_path: PathBuf, framework_local_dir: PathBuf) -> String {
+fn append_script_hash(raw_script: String, _script_path: PathBuf, _framework_local_dir: PathBuf) -> anyhow::Result<String> {
     let temp_script_path = TempPath::new();
     temp_script_path.create_as_file().unwrap();
 
@@ -117,9 +146,11 @@ fn append_script_hash(raw_script: String, _script_path: PathBuf, framework_local
             )
         }).expect(&format!("could not write file {:?}", &move_script_path));
 
-    let (_, hash) = libra_generate_hash(move_script_path, framework_local_dir).unwrap();
+    // let (_, hash) = libra_generate_hash(move_script_path, framework_local_dir)?;
+      // we are compiling so that we can get a script hash.
+     let (_, hash)  = libra_compile_script(&move_script_path)?;
 
-    format!("// Script hash: {} \n{}", hash, raw_script)
+    Ok(format!("// Script hash: {} \n{}", hash, raw_script))
 }
 
 
@@ -143,6 +174,7 @@ pub fn libra_generate_hash(script_path: PathBuf, framework_local_dir: PathBuf) -
         bytecode_version: None,
     }
     .compile("execution_hash", PromptOptions::yes())?;
+  // TODO: change this
     Ok(res)
 }
 

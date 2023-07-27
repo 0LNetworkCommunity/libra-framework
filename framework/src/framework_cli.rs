@@ -3,13 +3,13 @@ use clap::Parser;
 use std::path::PathBuf;
 
 use crate::{
-    builder::framework_generate_upgrade_proposal::{init_move_dir_wrapper, libra_compile_script},
-    builder::{
-        // framework_release_bundle::libra_generate_script_proposal_impl,
-        release_config_ext::libra_release_cfg_default,
-        release_config_ext::LibraReleaseConfig,
+    builder::framework_generate_upgrade_proposal::{init_move_dir_wrapper, libra_compile_script, make_framework_upgrade_artifacts, write_to_file},
+    // builder::{release_config_ext::libra_make_upgrade
+    //     // framework_release_bundle::libra_generate_script_proposal_impl,
+    //     // release_config_ext::libra_release_cfg_default,
+    //     // release_config_ext::LibraReleaseConfig,
 
-    },
+    // },
     release::ReleaseTarget,
 };
 
@@ -59,14 +59,15 @@ pub struct FrameworkUpgrade {
 
 impl FrameworkUpgrade {
     pub fn execute(&self) -> anyhow::Result<()> {
-        let release_cfg = libra_release_cfg_default();
+        // let release_cfg = libra_release_cfg_default();
         if !self.output_dir.exists() {
           println!("creating output dir at {}", self.output_dir.to_str().unwrap());
           std::fs::create_dir_all(&self.output_dir)?;
         }
 
         // main_generate_proposals::run(release_cfg, self.output_dir.to_owned(), self.framework_local_dir.to_owned())
-        release_cfg.libra_generate_release_proposal_scripts(&self.output_dir, self.framework_local_dir.to_owned())
+        let scripts = make_framework_upgrade_artifacts(&self.framework_local_dir)?;
+        write_to_file(scripts, self.output_dir.clone())
     }
 }
 
@@ -110,14 +111,15 @@ impl GovernanceScript {
               script_name,
               self.framework_local_dir.clone(),
           )?;
-          let t = r#"script {
-            use aptos_framework::aptos_governance;
+          let t = r#"
+script {
+  use aptos_framework::aptos_governance;
 
-            fun main(proposal_id: u64){
-                let _framework_signer = aptos_governance::resolve(proposal_id, @0000000000000000000000000000000000000000000000000000000000000001);
-              }
-            }
-          "#;
+  fun main(proposal_id: u64){
+    let _framework_signer = aptos_governance::resolve(proposal_id, @0000000000000000000000000000000000000000000000000000000000000001);
+  }
+}
+"#;
           let filename = package_dir.join("sources").join(format!("{}.move", script_name));
           std::fs::write(filename, t)?;
           println!("governance template created");

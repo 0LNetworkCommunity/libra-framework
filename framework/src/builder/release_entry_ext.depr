@@ -1,8 +1,9 @@
 //! extends ReleaseEntry with new methods with custom trait.
 use crate::builder::framework_generate_upgrade_proposal;
+use zapatos_crypto::HashValue;
 // use anyhow::Context;
-use zapatos_release_builder::components::get_execution_hash;
-use zapatos_release_builder::ExecutionMode;
+// use zapatos_release_builder::components::get_execution_hash;
+// use zapatos_release_builder::ExecutionMode;
 use zapatos_release_builder::ReleaseEntry;
 use std::path::Path;
 // use zapatos_rest_client::Client;
@@ -11,7 +12,7 @@ pub trait LibraReleaseEntry {
     &self,
     // client: Option<&Client>,
     result: &mut Vec<(String, String)>,
-    execution_mode: ExecutionMode,
+    execution_hash: HashValue,
     framework_local_dir: &Path,
   ) -> anyhow::Result<()>;
 }
@@ -22,25 +23,21 @@ impl LibraReleaseEntry for ReleaseEntry {
         &self,
         // _client: Option<&Client>,
         result: &mut Vec<(String, String)>,
-        execution_mode: ExecutionMode,
+        execution_hash: HashValue,
         framework_local_dir: &Path,
     ) -> anyhow::Result<()> {
-        let (is_testnet, is_multi_step) = match execution_mode {
-            ExecutionMode::MultiStep => (false, true),
-            ExecutionMode::SingleStep => (false, false),
-            ExecutionMode::RootSigner => (true, false),
-        };
+        // let (is_testnet, is_multi_step) = match execution_mode {
+        //     ExecutionMode::MultiStep => (false, true),
+        //     ExecutionMode::SingleStep => (false, false),
+        //     ExecutionMode::RootSigner => (true, false),
+        // };
         match self {
-            ReleaseEntry::Framework(framework_release) => {
+            ReleaseEntry::Framework(_framework_release) => {
                 result.append(
                     &mut framework_generate_upgrade_proposal::generate_upgrade_proposals(
-                        framework_release,
-                        is_testnet,
-                        if is_multi_step {
-                            get_execution_hash(result)
-                        } else {
-                            "".to_owned().into_bytes()
-                        },
+                        // framework_release,
+                        // fal,
+                        execution_hash.to_vec(),
                         framework_local_dir,
                     )?,
                 );
