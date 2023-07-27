@@ -136,4 +136,13 @@ async fn smoke_upgrade() {
         proposal_script_dir: script_dir,
     }));
     cli.run().await.unwrap();
+
+    let query_res = query_view::get_view(
+      &s.client(),
+      "0x1::all_your_base::belong_to",
+      None,
+      None,
+    )
+    .await.unwrap();
+    dbg!(&query_res);
 }
