@@ -20,8 +20,8 @@ pub fn generate_upgrade_proposals(
     // 0L TODO: don't make this hard coded
     let mut package_path_list = vec![
         // ("0x1", "move-stdlib"),
-        ("0x1", "vendor-stdlib"),
-        // ("0x1", "libra-framework"),
+        // ("0x1", "vendor-stdlib"),
+        ("0x1", "libra-framework"),
         // ("0x3", "aptos-move/framework/aptos-token"),
         // ("0x4", "aptos-move/framework/aptos-token-objects"),
     ];
@@ -83,6 +83,9 @@ pub fn generate_upgrade_proposals(
             bytecode_version: Some(config.bytecode_version),
             ..BuildOptions::default()
         };
+
+        assert!(package_path.exists(), "package path does not exist at {}", package_path.to_str().unwrap());
+
         let package = BuiltPackage::build(package_path, options)?;
         let release = ReleasePackage::new(package)?;
 
@@ -104,6 +107,8 @@ pub fn generate_upgrade_proposals(
                 move_script_path.clone(),
                 next_execution_hash_bytes,
             )?;
+
+            // generate_script_proposal_impl(for_address, out, true, true, next_execution_hash)
         };
 
         let mut script = format!(
@@ -143,6 +148,7 @@ pub fn libra_compile_script(
     // bytecode_version: Option<u32>,
 ) -> Result<(Vec<u8>, HashValue)> {
 
+    dbg!(&package_dir);
     // these are the options only for the upgrade SCRIPT
     // the payload needs to be small, because even approved TX scripts have
     // an upperbound in the transaction admission.

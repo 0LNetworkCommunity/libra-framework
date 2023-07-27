@@ -21,7 +21,7 @@ pub trait LibraReleaseConfig {
 
 impl LibraReleaseConfig for ReleaseConfig {
     fn libra_generate_release_proposal_scripts(&self, base_path: &Path, framework_local_dir: PathBuf) -> anyhow::Result<()> {
-      dbg!("libra_generate_release_proposal_scripts");
+      // dbg!("libra_generate_release_proposal_scripts");
         // let client = self
         //     .remote_endpoint
         //     .as_ref()
@@ -108,14 +108,14 @@ fn append_script_hash(raw_script: String, _script_path: PathBuf, framework_local
     let mut move_script_path = temp_script_path.path().to_path_buf();
     move_script_path.set_extension("move");
     dbg!(&move_script_path);
+
     std::fs::write(move_script_path.as_path(), raw_script.as_bytes())
         .map_err(|err| {
             anyhow!(
                 "Failed to get execution hash: failed to write to file: {:?}",
                 err
             )
-        })
-        .unwrap();
+        }).expect(&format!("could not write file {:?}", &move_script_path));
 
     let (_, hash) = libra_generate_hash(move_script_path, framework_local_dir).unwrap();
 
