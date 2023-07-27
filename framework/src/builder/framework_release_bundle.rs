@@ -424,23 +424,42 @@ fn generate_blob(writer: &CodeWriter, data: &[u8]) {
     emit!(writer, "]")
 }
 
-    pub fn libra_generate_script_proposal_impl( //////// 0L //////// turn an MRB into a script proposal
+    pub fn libra_author_script_file( //////// 0L //////// turn an MRB into a script proposal
         release_package: &ReleasePackage,
         for_address: AccountAddress,
         out: PathBuf,
+        next_execution_hash: Vec<u8>
         // metadata: Option<PackageMetadata>,
         // is_testnet: bool,
         // is_multi_step: bool,
         // next_execution_hash: Vec<u8>,
     ) -> anyhow::Result<()> {
+        println!("autogenerating .move governance script file");
         let metadata = &release_package.metadata;
 
         let writer = CodeWriter::new(Loc::default());
+
+
         emitln!(
             writer,
             "// Upgrade proposal for package `{}`\n",
             metadata.name
         );
+
+        emitln!(
+            writer,
+            "// Framework commit hash: {}\n// Builder commit hash: {}\n",
+            zapatos_build_info::get_git_hash(),
+            zapatos_build_info::get_git_hash(),
+        );
+
+        emitln!(
+            writer,
+            "// Next step script hash: {}\n",
+            hex::encode(&next_execution_hash),
+
+        );
+
         emitln!(writer, "// source digest: {}", metadata.source_digest);
         emitln!(writer, "script {");
         writer.indent();

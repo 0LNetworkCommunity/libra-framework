@@ -5689,6 +5689,7 @@ dependencies = [
  "aptos-types",
  "bcs 0.1.3",
  "clap 3.2.23",
+ "hex",
  "move-command-line-common",
  "move-model",
  "once_cell",

@@ -20,7 +20,7 @@
       "args": [
         "upgrade",
         "-o",
-        "${workspaceFolder}/framework/releases/upgrade",
+        "${workspaceFolder}/framework/releases/framework_upgrade",
         // "-m", "${workspaceFolder}/framework/releases/head.mrb",
         "-f",
         "${workspaceFolder}/framework",
