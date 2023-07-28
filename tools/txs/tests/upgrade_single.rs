@@ -1,7 +1,7 @@
-use std::path::PathBuf;
-use std::str::FromStr;
+use std::{path::PathBuf, fs};
 
 use libra_smoke_tests::libra_smoke::LibraSmoke;
+use libra_smoke_tests::upgrade_fixtures::fixtures_path;
 use libra_query::query_view;
 use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Upgrade},
@@ -21,8 +21,8 @@ use zapatos_types::chain_id::NamedChain;
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn smoke_upgrade_single_step() {
     let mut s = LibraSmoke::new(Some(1)).await.expect("can't start swarm");
-    let this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
-    let script_dir = this_path.join("tests/fixtures/test_upgrade");
+    // let this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
+    let script_dir = get_package_path();
     assert!(script_dir.exists(), "can't find upgrade fixtures");
 
     // This step should fail. The view function does not yet exist in the system address.
@@ -102,7 +102,8 @@ async fn smoke_upgrade_single_step() {
         Some("0".to_string()),
     ).await.unwrap();
 
-    assert!(query_res[0].as_str().unwrap().contains("3f3fe"), "expected this script hash, did you change the fixtures?");
+    let expected_hash = fs::read_to_string(script_dir.join("script_sha3")).unwrap();
+    assert!(query_res[0].as_str().unwrap().contains(&expected_hash), "expected this script hash, did you change the fixtures?");
 
     ///////// SHOW TIME ////////
     // Now try to resolve upgrade
@@ -124,3 +125,8 @@ async fn smoke_upgrade_single_step() {
 
 }
 
+
+
+fn get_package_path() -> PathBuf {
+  fixtures_path().join("upgrade_single_step").join("1-move-stdlib")
+}

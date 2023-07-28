@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use libra_smoke_tests::libra_smoke::LibraSmoke;
+use libra_smoke_tests::upgrade_fixtures::fixtures_path;
 use libra_query::query_view;
 use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Upgrade},
@@ -21,10 +22,9 @@ use zapatos_types::chain_id::NamedChain;
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn smoke_upgrade_multiple_steps() {
     let mut s = LibraSmoke::new(Some(1)).await.expect("can't start swarm");
-    let this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
 
     ///// NOTE THERE ARE MULTIPLE STEPS, we are getting the artifacts for the first step.
-    let script_dir = this_path.join("tests/fixtures/test_upgrade_multiple/1-move-stdlib");
+    let script_dir = fixtures_path().join("upgrade_multi_step").join("1-move-stdlib");
     assert!(script_dir.exists(), "can't find upgrade fixtures");
 
     // This step should fail. The view function does not yet exist in the system address.
@@ -104,7 +104,8 @@ async fn smoke_upgrade_multiple_steps() {
         Some("0".to_string()),
     ).await.unwrap();
 
-    assert!(query_res[0].as_str().unwrap().contains("2a0d5"), "expected this script hash, did you change the fixtures?");
+    let expected_hash = std::fs::read_to_string(script_dir.join("script_sha3")).unwrap();
+    assert!(query_res[0].as_str().unwrap().contains(&expected_hash), "expected this script hash, did you change the fixtures?");
 
     ///////// SHOW TIME FIRST STEP ////////
     // Now try to resolve upgrade
@@ -116,7 +117,7 @@ async fn smoke_upgrade_multiple_steps() {
    //////////////////////////////
 
 
-    let script_dir = this_path.join("tests/fixtures/test_upgrade_multiple/2-vendor-stdlib");
+    let script_dir = fixtures_path().join("upgrade_multi_step").join("2-vendor-stdlib");
 
     ///////// SHOW TIME LAST STEP ////////
     // Now try to resolve upgrade
@@ -137,4 +138,3 @@ async fn smoke_upgrade_multiple_steps() {
     assert!(&query_res.as_array().unwrap()[0].as_str().unwrap().contains("7573"));
 
 }
-
