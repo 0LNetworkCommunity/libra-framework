@@ -10,7 +10,7 @@ use libra_types::{
   move_resource::gas_coin::SlowWalletBalance,
   legacy_types::tower::TowerProofHistoryView
 };
-
+use libra_types::exports::AuthenticationKey;
 /// helper to get libra balance at a SlowWalletBalance type which shows
 /// total balance and the unlocked balance.
 pub async fn get_account_balance_libra(client: &Client, account: AccountAddress) -> anyhow::Result<SlowWalletBalance> {
@@ -42,7 +42,7 @@ pub async fn get_tower_state(client: &Client, account: AccountAddress) -> anyhow
 /// looks up the original address for a given derived address.
 pub async fn lookup_originating_address(
     client: &Client,
-    authentication_key: AccountAddress, // we use account address to simplify parsing since authkey and accountaddress are the same.
+    authentication_key: AuthenticationKey,
 ) -> anyhow::Result<AccountAddress> {
   // the move View will return the same address_key if it has an unmodified Authkey (never been rotated)
   // let bytes = authentication_key.to_vec();
@@ -52,7 +52,7 @@ pub async fn lookup_originating_address(
   let request = ViewRequest {
       function: function_id,
       type_arguments: vec![],
-      arguments: vec![authentication_key.to_hex_literal().into()],
+      arguments: vec![authentication_key.to_vec().into()],
   };
 
   let res = client.view(&request, None).await?.into_inner();

@@ -7,6 +7,7 @@ use anyhow::{bail, Result};
 use libra_types::type_extensions::client_ext::ClientExt;
 use serde_json::json;
 use zapatos_sdk::{rest_client::Client, types::account_address::AccountAddress};
+use libra_types::exports::AuthenticationKey;
 
 #[derive(Debug, clap::Subcommand)]
 pub enum QueryType {
@@ -73,7 +74,7 @@ pub enum QueryType {
     /// Looks up the address of an account given an auth key. The authkey diverges from the address after a key rotation.
     LookupAddress {
       #[clap(short, long)]
-      auth_key: AccountAddress // we use account address to parse, because that's the format needed to lookup users. AuthKeys and AccountAddress are the same formats.
+      auth_key: AuthenticationKey // we use account address to parse, because that's the format needed to lookup users. AuthKeys and AccountAddress are the same formats.
     },
 
     /// get a move value from account blob
