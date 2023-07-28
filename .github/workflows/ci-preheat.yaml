@@ -17,7 +17,7 @@ jobs:
         with:
           components: rustfmt
       - name: update cargo index
-        continue-on-error: false
+        continue-on-error: true
         run: cargo install empty-library
       - name: install dependencies (ubuntu)
         run: |
