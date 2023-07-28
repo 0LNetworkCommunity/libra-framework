@@ -7,14 +7,14 @@ on:
     branches:
       - 'ci'
 jobs:
-  preheat:
-    uses: ./.github/workflows/preheat.yaml
   tools:
     strategy:
       fail-fast: true
     name: libra-types test
     runs-on: ubuntu-20.04
     steps:
+      - name: try preheat here
+        uses: ./.github/workflows/preheat.yaml
       - uses: dtolnay/rust-toolchain@1.66.1
         with:
           components: rustfmt
