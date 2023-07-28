@@ -6,7 +6,7 @@ use std::str::FromStr;
 use libra_framework::builder::framework_generate_upgrade_proposal::make_framework_upgrade_artifacts;
 
 
-// TODO make this a once_cell
+// TODO: This could be generated dynamically at the start of the test suites. using `Once`. Though if the tools aren't compiled it will take approximately forever to do so. Hence fixtures, though not ideal.
 
 pub fn fixtures_path() -> PathBuf {
     let this_crate = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
