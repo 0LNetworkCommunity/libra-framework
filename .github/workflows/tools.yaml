@@ -10,10 +10,10 @@ jobs:
   preheat:
     uses: ./.github/workflows/preheat.yaml
   types:
+    name: libra-types test
     needs: preheat
     strategy:
       fail-fast: true
-    name: libra-types test
     runs-on: ubuntu-20.04
     steps:
       - uses: dtolnay/rust-toolchain@1.66.1
@@ -38,9 +38,11 @@ jobs:
         working-directory: ./types
         run: cargo t --release
   tools:
+    name: tools check
     needs: preheat
     strategy:
       fail-fast: true
-      - name: tools check
-        working-directory: ./tools
-        run: cargo c --release --tests
+    steps:
+      - name: check
+      working-directory: ./tools
+      run: cargo c --release --tests
