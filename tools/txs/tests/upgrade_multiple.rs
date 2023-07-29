@@ -1,6 +1,4 @@
-use std::path::PathBuf;
-use std::str::FromStr;
-
+//! test framework upgrades with multiple steps
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_smoke_tests::upgrade_fixtures::fixtures_path;
 use libra_query::query_view;

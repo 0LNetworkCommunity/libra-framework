@@ -127,16 +127,14 @@ pub fn total_supply(db_reader: &Arc<dyn DbReader>) -> Option<u128> {
 
 #[test]
 fn test_db_rw() {
-    use libra_types::test_drop_helper::DropTemp;
     use zapatos_db::AptosDB;
     use zapatos_executor::db_bootstrapper::maybe_bootstrap;
-
-    // use libra_types::legacy_types::ancestry::AncestryResource;
     use libra_types::exports::AccountAddress;
     use zapatos_types::state_store::state_key::StateKey;
+    use zapatos_temppath::TempPath;
 
+    let tmp_dir = TempPath::new().path().to_owned();
 
-    let tmp_dir = DropTemp::new_in_crate("db_rw").dir();
     let temp_db = AptosDB::new_for_test(&tmp_dir);
     let db_rw = DbReaderWriter::new(temp_db);
 
@@ -147,17 +145,13 @@ fn test_db_rw() {
     // Bootstrap empty DB.
     let waypoint = generate_waypoint::<AptosVM>(&db_rw, &genesis_txn).expect("Should not fail.");
     maybe_bootstrap::<AptosVM>(&db_rw, &genesis_txn, waypoint).unwrap();
-    // let ledger_info = db_rw.reader.get_latest_ledger_info().unwrap();
 
   let ap = make_access_path(AccountAddress::ZERO, "slow_wallet", "SlowWalletList").unwrap();
   let version = db_rw.reader.get_latest_version().unwrap();
   let bytes = db_rw.reader.get_state_value_by_version(&StateKey::access_path(ap), version).unwrap();
-  // db_rw.reader.get_prefixed_state_value_iterator();
 
 
   dbg!(&bytes);
-
-  //   };
 
 }
 

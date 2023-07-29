@@ -7,8 +7,11 @@ on:
     branches:
       - 'ci'
 jobs:
-  preheat:
+  ######## WARM UP CACHES ########
+  preheat: # Warm up the ca
     uses: ./.github/workflows/preheat.yaml
+
+  ######## TYPES CHECK ########
   types:
     name: libra-types test
     needs: preheat
@@ -62,9 +65,25 @@ jobs:
           cache-all-crates: true
           cache-on-failure: true
 
-      - name: tools check
-        working-directory: ./tools
-        run: cargo c --release --tests
-      - name: tools test
-        working-directory: ./tools
+      # Check test suite meta tests
+      - name: smoke-tests
+        working-directory: ./tools/smoke-tests
+        run: cargo t --release
+
+      # Tools tests
+
+      - name: genesis
+        working-directory: ./tools/genesis
+        run: cargo t --release
+      - name: query
+        working-directory: ./tools/query
+        run: cargo t --release
+      - name: tower
+        working-directory: ./tools/tower
+        run: cargo t --release
+      - name: txs
+        working-directory: ./tools/txs
+        run: cargo t --release
+      - name: wallet
+        working-directory: ./tools/wallet
         run: cargo t --release
