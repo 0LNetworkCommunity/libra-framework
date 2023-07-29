@@ -15,13 +15,11 @@ use zapatos_types::{
 use zapatos_vm_genesis::{TestValidator, Validator};
 
 use libra_framework::head_release_bundle;
-use libra_types::test_drop_helper::DropTemp;
 use libra_types::legacy_types::legacy_address::LegacyAddress;
 use std::fs;
 
 #[test]
 fn end_to_end_single() {
-    let _drop = DropTemp::new_in_crate("temp_genesis_e2e");
 
     let blob = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/genesis.blob");
 
@@ -86,8 +84,6 @@ fn end_to_end_single() {
 
 #[test]
 fn end_to_end_all() {
-    let _drop = DropTemp::new_in_crate("temp_genesis_e2e");
-
     let blob = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/genesis.blob");
 
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))

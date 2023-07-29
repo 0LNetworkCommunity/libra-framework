@@ -12,10 +12,7 @@ use libra_tower::{
   tower_cli::{TowerCli, TowerSub},
 };
 
-use libra_types::{
-  exports::ValidCryptoMaterialStringExt,
-  test_drop_helper::DropTemp
-};
+use libra_types::exports::ValidCryptoMaterialStringExt;
 
 // Scenario: We want to start from a blank slate and with the CLI tool:
 // 1. have the validator reate a zeroth proof locally
@@ -27,11 +24,11 @@ use libra_types::{
 /// Testing that we can get a swarm up with the current head.mrb
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn tower_cli_e2e() {
-    let d: DropTemp = DropTemp::new_in_crate("temp_smoke_test");
+    let d = zapatos_temppath::TempPath::new();
 
     let mut ls = LibraSmoke::new(Some(1)).await.expect("could not start libra smoke");
 
-    let (_, app_cfg) = configure_validator::init_val_config_files(&mut ls.swarm, 0, d.dir()).await.expect("could not init validator config");
+    let (_, app_cfg) = configure_validator::init_val_config_files(&mut ls.swarm, 0, d.path().to_owned()).await.expect("could not init validator config");
 
     // check the tower state is blank
     assert!(backlog::get_remote_tower_height(&app_cfg).await.is_err());
@@ -41,7 +38,7 @@ async fn tower_cli_e2e() {
     let pri_key_string = profile.test_private_key.unwrap().to_encoded_string().unwrap();
     let mut cli = TowerCli {
       command: TowerSub::Zero,
-      config_file: Some(d.dir().join("libra.yaml")),
+      config_file: Some(d.path().join("libra.yaml")),
       local_mode: false,
       profile: None,
       test_private_key: Some(pri_key_string), // Note: the cli will get a new app_cfg instance and any fields populated at runtime are lost

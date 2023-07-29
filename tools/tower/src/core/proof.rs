@@ -354,13 +354,13 @@ fn test_parse_one_file() {
 
 #[tokio::test]
 async fn test_get_next() {
-  use libra_types::{test_drop_helper::DropTemp, exports::AuthenticationKey};
+  use libra_types::exports::AuthenticationKey;
   use zapatos_sdk::crypto::HashValue;
+  use zapatos_temppath::TempPath;
 
-  let d = DropTemp::new_in_crate("temp_tower");
-  dbg!(&d.0);
+  let d = TempPath::new();
   let a = AuthenticationKey::random();
-  let app_cfg: AppCfg = AppCfg::init_app_configs(a, a.derived_address(), Some(d.dir()), None, None).unwrap();
+  let app_cfg: AppCfg = AppCfg::init_app_configs(a, a.derived_address(), Some(d.path().to_owned()), None, None).unwrap();
   let dummy_client = Client::new("http://localhost:8080".parse().unwrap());
   // let n = NextProof::genesis_proof(&app_cfg).unwrap();
   let gen_vdf = write_genesis(&app_cfg).unwrap();
