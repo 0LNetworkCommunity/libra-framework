@@ -156,57 +156,63 @@ fn test_helper_clear_block_dir(blocks_dir: &PathBuf) {
         fs::remove_dir_all(blocks_dir).unwrap();
     }
 }
-#[test]
-#[ignore]
-//Not really a test, just a way to generate fixtures.
-fn create_fixtures() {
-    use std::io::Write;
-    use toml;
+// #[test]
+// #[ignore]
+// //Not really a test, just a way to generate fixtures.
+// fn create_fixtures() {
+//     use std::io::Write;
+//     use toml;
 
-    // if no file is found, the block height is 0
-    //let blocks_dir = Path::new("./test_blocks");
-    for i in 0..6 {
-        let ns = i.to_string();
+//     // if no file is found, the block height is 0
+//     //let blocks_dir = Path::new("./test_blocks");
+//     for i in 0..6 {
+//         let ns = i.to_string();
 
-        // let mnemonic_string = wallet.mnemonic(); //wallet.mnemonic()
-        let save_to = format!("./test_fixtures_{}/", ns);
-        fs::create_dir_all(save_to.clone()).unwrap();
-        let configs_fixture = test_make_configs_fixture();
-        // configs_fixture.workspace.block_dir = save_to.clone();
+//         // let mnemonic_string = wallet.mnemonic(); //wallet.mnemonic()
+//         let save_to = format!("./test_fixtures_{}/", ns);
+//         fs::create_dir_all(save_to.clone()).unwrap();
+//         let configs_fixture = AppCfg::init_for_tests(&format!("create_fixtures_{}", ns)).expect("can't make test configs");
+//         // configs_fixture.workspace.block_dir = save_to.clone();
 
-        // mine to save_to path
-        write_genesis(&configs_fixture).unwrap();
+//         // mine to save_to path
+//         write_genesis(&configs_fixture).unwrap();
 
-        // create miner.toml
-        //rename the path for actual fixtures
-        // configs_fixture.workspace.block_dir = "vdf_proofs".to_string();
-        let toml = toml::to_string(&configs_fixture).unwrap();
-        let mut toml_path = PathBuf::from(save_to);
-        toml_path.push("miner.toml");
-        let file = fs::File::create(&toml_path);
-        file.unwrap()
-            .write(&toml.as_bytes())
-            .expect("Could not write toml");
-    }
-}
+//         // create miner.toml
+//         //rename the path for actual fixtures
+//         // configs_fixture.workspace.block_dir = "vdf_proofs".to_string();
+//         let toml = toml::to_string(&configs_fixture).unwrap();
+//         let mut toml_path = PathBuf::from(save_to);
+//         toml_path.push("miner.toml");
+//         let file = fs::File::create(&toml_path);
+//         file.unwrap()
+//             .write(&toml.as_bytes())
+//             .expect("Could not write toml");
+//     }
+// }
+
+#[cfg(test)]
+use zapatos_temppath::TempPath;
+#[cfg(test)]
+use zapatos_sdk::crypto::HashValue;
+#[cfg(test)]
+use libra_types::legacy_types::vdf_difficulty::VDFDifficulty;
+
+// use libra_types::legacy_types::{
+//   block::VDFProof,
+// };
+
 
 #[test]
 fn test_mine_once() {
-    use libra_types::legacy_types::{
-      block::VDFProof,
-    };
-    use zapatos_sdk::crypto::HashValue;
-    use libra_types::legacy_types::vdf_difficulty::VDFDifficulty;
-    use hex::decode;
-
     // if no file is found, the block height is 0
-    let configs_fixture = test_make_configs_fixture();
+    let configs_fixture = AppCfg::init_for_tests(TempPath::new().path().to_owned()).expect("can't make test configs");
     // configs_fixture.workspace.block_dir = "test_blocks_temp_2".to_owned();
 
+    let block_dir = configs_fixture.get_block_dir(None).unwrap();
     // Clear at start. Clearing at end can pollute the path when tests fail.
-    test_helper_clear_block_dir(&configs_fixture.get_block_dir(None).unwrap());
+    test_helper_clear_block_dir(&block_dir);
 
-    let fixture_previous_proof = decode("0016f43606b957ab9d93046cdffa73a1e6be4f21f3848eb7b55b81756f7d31919affef388c0d92ca7d68232de4fea46884186c23ef1d6c86f63f5c586000048bce05").unwrap();
+    let fixture_previous_proof = hex::decode("0016f43606b957ab9d93046cdffa73a1e6be4f21f3848eb7b55b81756f7d31919affef388c0d92ca7d68232de4fea46884186c23ef1d6c86f63f5c586000048bce05").unwrap();
 
     let fixture_block = VDFProof {
         height: 0u64, // Tower height
@@ -217,7 +223,7 @@ fn test_mine_once() {
         security: Some(512),
     };
 
-    fixture_block.write_json(&configs_fixture.get_block_dir(None).unwrap()).unwrap();
+    fixture_block.write_json(&block_dir).unwrap();
 
     let next = NextProof {
         next_height: fixture_block.height + 1,
@@ -232,7 +238,7 @@ fn test_mine_once() {
 
     mine_once(&configs_fixture, next).unwrap();
     // confirm this file was written to disk.
-    let block_file = fs::read_to_string("./test_blocks_temp_2/proof_1.json")
+    let block_file = fs::read_to_string(block_dir.join("proof_1.json"))
         .expect("Could not read latest block");
     let latest_block: VDFProof =
         serde_json::from_str(&block_file).expect("could not deserialize latest block");
@@ -240,7 +246,7 @@ fn test_mine_once() {
     assert_eq!(latest_block.height, 1, "Not the droid you are looking for.");
 
     // Test the expected proof is writtent to file correctly.
-    let correct_proof = "006036397bd5c35644e2b20f2334a5343911de7cf29588654c322c0fc063c1a2c50000bc9923bdb96a97beaf67f3530ad00f735b7a795ea651f6a88cfd4deeb5aa29";
+    let correct_proof = "006036397bd5c35644e2b20f2334a5343911de7cf29588654c322c0fc063c1a2c50000bc9923bdb96a97beaf67f3530ad00f735b7a795ea651f6a88cfd4deeb5aa29000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000001";
     assert_eq!(
         hex::encode(&latest_block.proof),
         correct_proof,
@@ -254,17 +260,19 @@ fn test_mine_once() {
 fn test_mine_genesis() {
     // if no file is found, the block height is 0
     //let blocks_dir = Path::new("./test_blocks");
-    let configs_fixture = test_make_configs_fixture();
+    let configs_fixture = AppCfg::init_for_tests(TempPath::new().path().to_owned()).expect("can't make test configs");
+
+    let block_dir = configs_fixture.get_block_dir(None).unwrap();
 
     //clear from sideffects.
-    test_helper_clear_block_dir(&configs_fixture.get_block_dir(None).unwrap());
+    test_helper_clear_block_dir(&block_dir);
 
     // mine
-    write_genesis(&configs_fixture).unwrap();
+    write_genesis(&configs_fixture).expect("could not write genesis");
     // read file
     let block_file =
         // TODO: make this work: let latest_block_path = &configs_fixture.chain_info.block_dir.to_string().push(format!("proof_0.json"));
-        fs::read_to_string("./test_blocks_temp_1/proof_0.json").expect("Could not read latest block");
+        fs::read_to_string(block_dir.join("proof_0.json")).expect("Could not read latest block");
 
     let latest_block: VDFProof =
         serde_json::from_str(&block_file).expect("could not deserialize latest block");
@@ -273,7 +281,7 @@ fn test_mine_genesis() {
     assert_eq!(latest_block.height, 0, "test");
 
     // Test the expected proof is writtent to file correctly.
-    let correct_proof = "035117e66d23e3db4198ef29b37181a542f5a71cbde6fcbace201c2023b7cf561d762a04799605da5734f291";
+    let correct_proof = "261581f8cbcdb643fb0d92bb90ed31abd45a0705b246097d79f3b2e790f2a0dcb659221dad7484d2c60811fb0000000000000000000000000000000000000000000100000000000000000000000000000000000000000001";
     assert_eq!(hex::encode(&latest_block.proof), correct_proof, "test");
 
     test_helper_clear_block_dir(&configs_fixture.get_block_dir(None).unwrap());
@@ -322,21 +330,26 @@ fn test_parse_one_file() {
     test_helper_clear_block_dir(&blocks_dir)
 }
 
-#[cfg(test)]
-/// make fixtures for file
-pub fn test_make_configs_fixture() -> AppCfg {
-    // use libra_types::exports::NamedChain;
+// #[cfg(test)]
+// /// make fixtures for file
+// pub fn test_make_configs_fixture(path_name: &str) -> AppCfg {
+//     // use libra_types::exports::NamedChain;
+//     use libra_types::test_drop_helper::DropTemp;
 
-    let cfg: AppCfg = AppCfg::default();
-    let mut profile = cfg.get_profile(None).unwrap();
-    // cfg.workspace.node_home = PathBuf::from(".");
-    // cfg.workspace.block_dir = "test_blocks_temp_1".to_owned();
-    // cfg.chain_info.chain_id = NamedChain::TESTNET;
-    profile.auth_key = "3e4629ba1e63114b59a161e89ad4a083b3a31b5fd59e39757c493e96398e4df2"
-        .parse()
-        .unwrap();
-    cfg
-}
+//     let drop = DropTemp::new_in_crate(path_name);
+
+//     let mut cfg: AppCfg = AppCfg::default();
+//     cfg.workspace.node_home = drop.dir();
+//     let mut profile = cfg.get_profile(None).unwrap();
+
+//     // cfg.workspace.node_home = PathBuf::from(".");
+//     // cfg.workspace.block_dir = "test_blocks_temp_1".to_owned();
+//     // cfg.chain_info.chain_id = NamedChain::TESTNET;
+//     profile.auth_key = "3e4629ba1e63114b59a161e89ad4a083b3a31b5fd59e39757c493e96398e4df2"
+//         .parse()
+//         .unwrap();
+//     cfg
+// }
 
 
 #[tokio::test]

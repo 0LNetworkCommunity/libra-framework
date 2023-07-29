@@ -143,7 +143,7 @@ impl AppCfg {
 
         // try to use the default profile unless one was requested
         if nickname.is_none() {
-            nickname = Some(self.workspace.default_profile.clone())
+          nickname = self.workspace.default_profile.clone()
         };
 
         if let Some(n) = nickname {
@@ -162,7 +162,7 @@ impl AppCfg {
 
     /// can get profile by account fragment: full account string or shortened "nickname"
     pub fn get_profile(&self, nickname: Option<String>) -> anyhow::Result<Profile> {
-        let idx = self.get_profile_idx(nickname)?;
+        let idx = self.get_profile_idx(nickname).unwrap_or(0);
         let p = self
             .user_profiles
             .iter()
@@ -173,7 +173,7 @@ impl AppCfg {
 
     /// get profile mutable borrow
     pub fn get_profile_mut(&mut self, nickname: Option<String>) -> anyhow::Result<&mut Profile> {
-        let idx = self.get_profile_idx(nickname)?;
+        let idx = self.get_profile_idx(nickname).unwrap_or(0);
         let p = self
             .user_profiles
             .iter_mut()
@@ -231,6 +231,36 @@ impl AppCfg {
         default_config.save_file()?;
 
         Ok(default_config)
+    }
+
+
+    pub fn init_for_tests(path: PathBuf) -> anyhow::Result<AppCfg> {
+        // use crate::test_drop_helper::DropTemp;
+        // use zapatos_temppath::TempPath;
+        use zapatos_crypto::ValidCryptoMaterialStringExt;
+
+         // Alice = "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse"
+        // "child_0_owner": {
+        //   "account": "87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5",
+        //   "auth_key": "0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5",
+        //   "pri_key": "0x74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b"
+        // },
+
+        // let temp = DropTemp::new_in_crate(test_name);
+        // let temp = TempPath::new();
+
+        let mut cfg =  Self::init_app_configs(
+          "87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5".parse()?,
+          "0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5".parse()?,
+          Some(path),
+          Some(NamedChain::TESTING),
+          None
+        )?;
+
+        let mut profile = cfg.get_profile_mut(None)?;
+        profile.test_private_key = Some(Ed25519PrivateKey::from_encoded_string("0x74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b")?);
+
+        Ok(cfg)
     }
 
     // /// Removes current node from upstream nodes
@@ -337,7 +367,7 @@ impl Default for AppCfg {
 pub struct Workspace {
     /// default profile. Will match the substring of a full address or the nickname
     #[serde(default)]
-    pub default_profile: String,
+    pub default_profile: Option<String>,
     /// default chain network profile to use
     pub default_chain_id: NamedChain,
 
@@ -362,7 +392,7 @@ pub struct Workspace {
 impl Default for Workspace {
     fn default() -> Self {
         Self {
-            default_profile: "default".to_string(),
+            default_profile: None,
             default_chain_id: NamedChain::MAINNET,
             node_home: crate::global_config_dir(),
             // source_path: None,

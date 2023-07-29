@@ -1,22 +1,19 @@
-
-use zapatos_smoke_test::smoke_test_environment::{
-  new_local_swarm_with_release,
-};
-use libra_framework::release::ReleaseTarget;
+//! test tower proof chaining
 use libra_tower::core::{backlog, proof, next_proof};
 use libra_smoke_tests::configure_validator;
 use libra_types::test_drop_helper::DropTemp;
-
+use libra_smoke_tests::libra_smoke::LibraSmoke;
 /// Testing that we can get a swarm up with the current head.mrb
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn tower_local_chained() {
     let d: DropTemp = DropTemp::new_in_crate("temp_smoke_test");
 
-    let release = ReleaseTarget::Head.load_bundle().unwrap();
-    let mut swarm = new_local_swarm_with_release(1, release).await;
+    let mut ls = LibraSmoke::new(Some(1)).await.expect("could not start libra smoke");
 
+    let (_, app_cfg) = configure_validator::init_val_config_files(&mut ls.swarm, 0, d.dir()).await.expect("could not init validator config");
 
-    let (_, app_cfg) = configure_validator::init_val_config_files(&mut swarm, 0, d.dir()).await.expect("could not init validator config");
+    ls.mint(app_cfg.get_profile(None).unwrap().account, 10_000_000).await.unwrap();
+
 
     // check the tower state is blank
     assert!(backlog::get_remote_tower_height(&app_cfg).await.is_err());

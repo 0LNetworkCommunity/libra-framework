@@ -3,7 +3,7 @@
 use crate::legacy_types::{
   mode_ol::MODE_0L,
   app_cfg::AppCfg,
-  
+
 };
 
 use crate::exports::NamedChain;
@@ -95,8 +95,8 @@ impl VDFProof {
     pub fn write_json(&self, blocks_dir: &PathBuf) -> Result<PathBuf, std::io::Error> {
     if !&blocks_dir.exists() {
             // first run, create the directory if there is none, or if the user changed the configs.
-            // note: user may have blocks but they are in a different directory than what miner.toml says.
-            fs::create_dir(&blocks_dir)?;
+            // note: user may have blocks but they are in a different directory than what AppCfg says.
+            fs::create_dir_all(&blocks_dir)?;
         };
         // Write the file.
         let mut latest_block_path = blocks_dir.clone();

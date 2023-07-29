@@ -27,7 +27,7 @@ pub async fn run(public_key: &str, profile: Option<&str>, workspace: bool) -> Re
 
     // init_workspace
     let mut config = CliConfig::default();
-    
+
     let profile_name = profile.unwrap_or(DEFAULT_PROFILE);
     let prompt_options = PromptOptions::default();
     let public_key = Ed25519PublicKey::from_encoded_string(public_key)?;

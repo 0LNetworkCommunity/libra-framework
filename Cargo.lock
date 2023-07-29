@@ -5772,6 +5772,7 @@ dependencies = [
  "anyhow",
  "aptos-forge",
  "aptos-sdk",
+ "aptos-temppath",
  "byteorder",
  "clap 3.2.23",
  "hex",
