@@ -27,9 +27,9 @@ jobs:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
         with:
-          # prefix-key: "v1-rust"
+          prefix-key: "v1-rust"
           shared-key: "libra" # to share across CI builds, so it is not job-id specific
           cache-all-crates: true
           cache-on-failure: true
       - name: cargo release build
-        run: cargo b --release
+        run: cargo b --release --tests
