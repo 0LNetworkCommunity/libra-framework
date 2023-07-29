@@ -9,7 +9,7 @@ on:
 jobs:
   preheat:
     uses: ./.github/workflows/preheat.yaml
-  tools:
+  types:
     needs: preheat
     strategy:
       fail-fast: true
@@ -29,6 +29,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
         with:
+          # prefix-key: "v1-rust"
           shared-key: "libra" # to share across CI builds, so it is not job-id specific
           cache-all-crates: true
           cache-on-failure: true
@@ -36,3 +37,10 @@ jobs:
       - name: types test
         working-directory: ./types
         run: cargo t --release
+  tools:
+    needs: preheat
+    strategy:
+      fail-fast: true
+      - name: tools check
+        working-directory: ./tools
+        run: cargo c --release --tests
