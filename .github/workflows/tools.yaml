@@ -61,11 +61,10 @@ jobs:
 
       # Check test suite meta tests
       - name: smoke-tests
-        working-directory: ./tools/smoke-tests
+        working-directory: ./smoke-tests
         run: cargo t --release
 
       # Tools tests
-
       - name: genesis
         working-directory: ./tools/genesis
         run: cargo t --release
