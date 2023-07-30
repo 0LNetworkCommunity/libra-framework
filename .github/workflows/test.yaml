@@ -22,12 +22,12 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            # $HOME/.cargo/git
+            $HOME/.cargo/git
             $HOME/.cargo/registry/src/
             # $HOME/.cargo/registry/src/**/librocksdb-sys*
             # $HOME/.cargo/registry/src/**/jemalloc-sys*
             ./target
-          key: v0-${{ runner.os }}-rust
+          key: v1-${{ runner.os }}-rust
       - name: build query
         run: cargo c -p libra-query
 
