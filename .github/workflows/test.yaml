@@ -12,13 +12,22 @@ jobs:
     runs-on: ubuntu-20.04
     name: libra-types test
     steps:
+      - uses: actions/checkout@v3
+
       - name: test
         uses: actions/cache@v3
         with:
           path: |
-            $HOME/.cargo/git
-            $HOME/.cargo/registry
+            # $HOME/.cargo/git
+            $HOME/.cargo/registry/src/
+            # $HOME/.cargo/registry/src/**/librocksdb-sys*
+            # $HOME/.cargo/registry/src/**/jemalloc-sys*
             ./target
           key: v0-${{ runner.os }}-rust
       - name: build query
         run: cargo c -p libra-query
+
+
+      # - uses: bmwill/rust-cache@v1 # Fork of 'Swatinem/rust-cache' which allows caching additional paths
+      #   with:
+      #     path: ~/.cargo/registry/src/**/librocksdb-sys-*
