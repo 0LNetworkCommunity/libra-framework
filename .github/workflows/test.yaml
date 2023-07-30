@@ -1,0 +1,24 @@
+name: test-cache
+
+on:
+  push:
+    tags:
+      - '*'
+    branches:
+      - 'test-ci'
+jobs:
+
+  types:
+    runs-on: ubuntu-20.04
+    name: libra-types test
+    steps:
+      - name: test
+        uses: actions/cache@v3
+        with:
+          path: |
+            $HOME/.cargo/git
+            $HOME/.cargo/registry
+            ./target
+          key: v0-${{ runner.os }}-rust
+      - name: build query
+        run: cargo c -p libra-query
