@@ -18,21 +18,25 @@ jobs:
           version: 1.0
 
       - uses: actions/checkout@v3
-      - name: test
-        uses: actions/cache@v3
-        with:
+      # - name: test
+      #   uses: actions/cache@v3
+      #   with:
 
+      #     path: |
+      #       $HOME/.cargo/git
+      #       $HOME/.cargo/registry/src/
+      #       # $HOME/.cargo/registry/src/**/librocksdb-sys*
+      #       # $HOME/.cargo/registry/src/**/jemalloc-sys*
+      #       ./target
+      #     key: v1-${{ runner.os }}-rust
+
+      - uses: bmwill/rust-cache@v1 # Fork of 'Swatinem/rust-cache' which allows caching additional paths
+        with:
           path: |
-            $HOME/.cargo/git
-            $HOME/.cargo/registry/src/
-            # $HOME/.cargo/registry/src/**/librocksdb-sys*
-            # $HOME/.cargo/registry/src/**/jemalloc-sys*
-            ./target
-          key: v1-${{ runner.os }}-rust
+            ~/.cargo/registry/src/**/librocksdb-sys-*
+            ~/.cargo/registry/src/**/jemalloc-sys-*
+
       - name: build query
         run: cargo c -p libra-query
 
 
-      # - uses: bmwill/rust-cache@v1 # Fork of 'Swatinem/rust-cache' which allows caching additional paths
-      #   with:
-      #     path: ~/.cargo/registry/src/**/librocksdb-sys-*
