@@ -38,6 +38,6 @@ jobs:
             ~/.cargo/registry/src/**/jemalloc-sys-*
 
       - name: build query
-        run: cargo c -p libra-query
+        run: cargo b -p libra-query
 
 
