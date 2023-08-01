@@ -30,7 +30,6 @@ jobs:
       #       # $HOME/.cargo/registry/src/**/jemalloc-sys*
       #       ./target
       #     key: v1-${{ runner.os }}-rust
-
       - uses: bmwill/rust-cache@842ef286fff290e445b90b4002cc9807c3669641 # Fork of 'Swatinem/rust-cache' which allows caching additional paths
         with:
           path: |
