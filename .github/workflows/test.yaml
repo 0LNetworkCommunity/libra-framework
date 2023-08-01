@@ -31,7 +31,7 @@ jobs:
       #       ./target
       #     key: v1-${{ runner.os }}-rust
 
-      - uses: bmwill/rust-cache@v1 # Fork of 'Swatinem/rust-cache' which allows caching additional paths
+      - uses: bmwill/rust-cache # Fork of 'Swatinem/rust-cache' which allows caching additional paths
         with:
           path: |
             ~/.cargo/registry/src/**/librocksdb-sys-*
