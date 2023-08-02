@@ -15,15 +15,23 @@ jobs:
         with:
           packages: build-essential ca-certificates clang curl git libpq-dev libssl-dev pkg-config lsof lld libgmp-dev
           version: 1.0
-      - uses: actions/checkout@v3
+      - name: Checkout sources
+        uses: actions/checkout@v3
+        with:
+          # git-restore-mtime-bare uses the ref log to find the correct timestamp
+          # for each file. This requires a full git history. The default value (1)
+          # creates a shallow checkout.
+          fetch-depth: 0
+      - name: cargo git mtime restore for cargo github dependencies
+        uses: chetan/git-restore-mtime-action@v2
+
       - uses: bmwill/rust-cache@842ef286fff290e445b90b4002cc9807c3669641 # Fork of 'Swatinem/rust-cache' which allows caching additional paths
     #https://github.com/rust-lang/cargo/issues/8845
         with:
             path: |
               ~/.cargo/registry/src/**/librocksdb-sys-*
               ~/.cargo/registry/src/**/jemalloc-sys-*
-
-              ~/.cargo/git/checkouts
+# ~/.cargo/git/checkouts
       # - name: test
       #   uses: actions/cache@v3
       #   with:
