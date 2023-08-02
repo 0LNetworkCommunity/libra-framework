@@ -22,11 +22,13 @@ jobs:
           # for each file. This requires a full git history. The default value (1)
           # creates a shallow checkout.
           fetch-depth: 0
-      - name: cargo git mtime restore for cargo github dependencies
-        uses: chetan/git-restore-mtime-action@v2
+
 
       - name: cache rust
         uses: Swatinem/rust-cache@v2.6.0
+
+      - name: cargo git mtime restore for cargo github dependencies
+        uses: chetan/git-restore-mtime-action@v2
 
       - name: build query
         run: cargo b -p libra-query
