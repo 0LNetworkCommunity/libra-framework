@@ -13,10 +13,17 @@ jobs:
     steps:
       - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: build-essential lld pkg-config libclang-dev libwebkit2gtk-4.0-dev libglib2.0-* libssl-dev libgtk-3-dev libappindicator3-dev patchelf librsvg2-dev libvips-dev libgmp-dev
+          packages: build-essential ca-certificates clang curl git libpq-dev libssl-dev pkg-config lsof lld libgmp-dev
           version: 1.0
-
       - uses: actions/checkout@v3
+      - uses: bmwill/rust-cache@842ef286fff290e445b90b4002cc9807c3669641 # Fork of 'Swatinem/rust-cache' which allows caching additional paths
+    #https://github.com/rust-lang/cargo/issues/8845
+        with:
+            path: |
+              ~/.cargo/registry/src/**/librocksdb-sys-*
+              ~/.cargo/registry/src/**/jemalloc-sys-*
+
+              ~/.cargo/git/checkouts
       # - name: test
       #   uses: actions/cache@v3
       #   with:
@@ -28,11 +35,7 @@ jobs:
       #       # $HOME/.cargo/registry/src/**/jemalloc-sys*
       #       ./target
       #     key: v1-${{ runner.os }}-rust
-      - uses: bmwill/rust-cache@842ef286fff290e445b90b4002cc9807c3669641 # Fork of 'Swatinem/rust-cache' which allows caching additional paths
-        with:
-          path: |
-            ~/.cargo/registry/src/**/librocksdb-sys-*
-            ~/.cargo/registry/src/**/jemalloc-sys-*
+
 
       - name: build query
         run: cargo b -p libra-query
