@@ -4,14 +4,13 @@ on:
     branches: ["*"]
 
 jobs:
+  setup:
+    uses: ./.github/workflows/env.yaml
+
   fmt:
-    name: Rustfmt
+    needs: setup
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-
-      - uses: ./.github/workflows/env.yaml
-
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
