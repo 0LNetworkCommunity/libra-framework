@@ -6,7 +6,7 @@ jobs:
   heat:
     runs-on: ubuntu-20.04
     steps:
-      - name: set up common ubuntu test environment
+      - name: setup
         uses: 0o-de-lally/libra-v7/.github/actions/build_env@ci
 
       - name: build query
