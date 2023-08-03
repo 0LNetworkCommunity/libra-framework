@@ -10,4 +10,4 @@ jobs:
         uses: 0o-de-lally/libra-v7/.github/actions/build_env@ci
 
       - name: build query
-        run: cargo b -p libra-query
+        run: cargo b

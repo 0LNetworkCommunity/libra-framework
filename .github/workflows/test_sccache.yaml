@@ -1,0 +1,33 @@
+
+name: ci
+
+on:
+  push:
+    tags:
+      - '*'
+    branches:
+      - 'ci'
+jobs:
+  types:
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: build-essential ca-certificates clang curl git libpq-dev libssl-dev pkg-config lsof lld libgmp-dev
+          version: 1.0
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: "1.66.1"
+          override: true
+      - name: checkout sources
+        uses: actions/checkout@v3
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.3
+
+      - name: all tests
+        run: cargo test -- --no-fail-fast
+
