@@ -24,6 +24,7 @@ jobs:
       - name: types test
         working-directory: ./types
         run: cargo t
+
   # tools:
   #   name: libra-tools test
   #   needs: preheat
