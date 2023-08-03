@@ -5,7 +5,7 @@ runs:
       with:
         packages: build-essential ca-certificates clang curl git libpq-dev libssl-dev pkg-config lsof lld libgmp-dev
         version: 1.0
-    - name: Checkout sources
+    - name: checkout sources
       uses: actions/checkout@v3
       with:
         # git-restore-mtime-bare uses the ref log to find the correct timestamp

@@ -18,9 +18,8 @@ jobs:
       fail-fast: true
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
-
-      - uses: ./.github/workflows/env.yaml
+      - name: set up common ubuntu test environment
+        uses: 0o-de-lally/libra-v7/.github/actions/build_env@ci
 
       - name: types test
         working-directory: ./types

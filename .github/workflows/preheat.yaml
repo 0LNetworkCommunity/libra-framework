@@ -6,10 +6,8 @@ jobs:
   heat:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
-
-      - name: setup env
-        uses: ./.github/workflows/env.yaml
+      - name: set up common ubuntu test environment
+        uses: 0o-de-lally/libra-v7/.github/actions/build_env@ci
 
       - name: build query
         run: cargo b -p libra-query
