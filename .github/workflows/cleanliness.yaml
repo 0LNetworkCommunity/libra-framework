@@ -4,13 +4,12 @@ on:
     branches: ["*"]
 
 jobs:
-  setup:
-    uses: ./.github/workflows/env.yaml
-
   fmt:
-    needs: setup
     runs-on: ubuntu-latest
     steps:
+      - name: set up common ubuntu test environment
+        uses: 0o-de-lally/libra-v7/.github/actions/build_env@ci
+
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
