@@ -16,10 +16,7 @@
 //! Private Keys adheres to [HKDF RFC 5869](https://tools.ietf.org/html/rfc5869).
 
 use crate::wallet_library::mnemonic::Mnemonic;
-use anyhow::{
-  anyhow, 
-  Result
-};
+use anyhow::{anyhow, Result};
 // use byteorder::LittleEndian;
 use byteorder::{ByteOrder, LittleEndian};
 // use diem_crypto::{
@@ -34,10 +31,7 @@ use hmac::Hmac;
 use mirai_annotations::*;
 use pbkdf2::pbkdf2;
 use serde::{Deserialize, Serialize};
-use std::{
-  // convert::TryFrom,
-  ops::AddAssign
-};
+use std::ops::AddAssign;
 
 use zapatos_crypto::compat::Sha3_256;
 use zapatos_crypto::ed25519::{Ed25519PrivateKey, Ed25519PublicKey};
@@ -45,7 +39,6 @@ use zapatos_crypto::hkdf::Hkdf;
 use zapatos_types::account_address::AccountAddress;
 use zapatos_types::transaction::authenticator::AuthenticationKey;
 // use zapatos_crypto::ed25519::Ed25519Signature;
-
 
 /// Main is a set of raw bytes that are used for child key derivation
 pub struct Main([u8; 32]);
@@ -126,7 +119,7 @@ impl ExtendedPrivKey {
     //     diem_types::account_address::from_public_key(&self.get_public())
     // }
     pub fn get_address(&self) -> AccountAddress {
-      AuthenticationKey::ed25519(&self.get_public()).derived_address()
+        AuthenticationKey::ed25519(&self.get_public()).derived_address()
     }
 
     // //////// 0L ////////
@@ -172,10 +165,13 @@ pub struct KeyFactory {
 
 impl KeyFactory {
     //////// 0L ////////
-    const MNEMONIC_SALT_PREFIX: &'static [u8] = b"0L WALLET: UNREST, FIRES, AND VIOLENCE AS PROTESTS RAGE ACROSS US: mnemonic salt prefix$"; // https://markets.businessinsider.com/news/stocks/why-stock-market-rising-amid-nationwide-police-brutality-protests-2020-6-1029273996
-    const MAIN_KEY_SALT: &'static [u8] = b"0L WALLET: 30 MILLION AMERICANS HAVE FILED INITIAL UNEMPLOYMENT CLAIMS: master key salt$"; // https://www.cnn.com/2020/04/30/economy/unemployment-benefits-coronavirus/index.html
-    const INFO_PREFIX: &'static [u8] = b"0L WALLET: US DEATHS NEAR 100,000, AN INCALCULABLE LOSS: derived key$"; // https://www.nytimes.com/interactive/2020/05/24/us/us-coronavirus-deaths-100000.html
-    
+    const MNEMONIC_SALT_PREFIX: &'static [u8] =
+        b"0L WALLET: UNREST, FIRES, AND VIOLENCE AS PROTESTS RAGE ACROSS US: mnemonic salt prefix$"; // https://markets.businessinsider.com/news/stocks/why-stock-market-rising-amid-nationwide-police-brutality-protests-2020-6-1029273996
+    const MAIN_KEY_SALT: &'static [u8] =
+        b"0L WALLET: 30 MILLION AMERICANS HAVE FILED INITIAL UNEMPLOYMENT CLAIMS: master key salt$"; // https://www.cnn.com/2020/04/30/economy/unemployment-benefits-coronavirus/index.html
+    const INFO_PREFIX: &'static [u8] =
+        b"0L WALLET: US DEATHS NEAR 100,000, AN INCALCULABLE LOSS: derived key$"; // https://www.nytimes.com/interactive/2020/05/24/us/us-coronavirus-deaths-100000.html
+
     /// Instantiate a new KeyFactor from a Seed, where the [u8; 64] raw bytes of the Seed are used
     /// to derive both the Main and its child keys
     pub fn new(seed: &Seed) -> Result<Self> {

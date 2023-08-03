@@ -3,10 +3,8 @@
 // This struct lives here for convenience to use in Genesis where we load
 // previous data.
 
-
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
-
 
 use hex::FromHex;
 use rand::{rngs::OsRng, Rng};
@@ -382,5 +380,4 @@ mod tests {
         assert!(LegacyAddress::try_from("".to_string()).is_err());
         assert!(LegacyAddress::from_str("").is_err());
     }
-
 }

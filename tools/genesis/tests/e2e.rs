@@ -20,7 +20,6 @@ use std::fs;
 
 #[test]
 fn end_to_end_single() {
-
     let blob = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/genesis.blob");
 
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))

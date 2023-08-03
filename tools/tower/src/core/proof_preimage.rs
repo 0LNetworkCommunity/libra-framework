@@ -3,8 +3,8 @@
 use byteorder::{LittleEndian, WriteBytesExt};
 use hex::decode;
 use libra_types::legacy_types::{
-  app_cfg::AppCfg,
-  block::{GENESIS_VDF_SECURITY_PARAM, GENESIS_VDF_ITERATIONS}
+    app_cfg::AppCfg,
+    block::{GENESIS_VDF_ITERATIONS, GENESIS_VDF_SECURITY_PARAM},
 };
 
 /// Format the config file data into a fixed byte structure for easy parsing in Move/other languages
@@ -33,7 +33,11 @@ pub fn genesis_preimage(cfg: &AppCfg) -> anyhow::Result<Vec<u8>> {
     // CHAIN_ID_BYTES
 
     let mut padded_chain_id_bytes = padding(
-        cfg.workspace.default_chain_id.to_string().as_bytes().to_vec(),
+        cfg.workspace
+            .default_chain_id
+            .to_string()
+            .as_bytes()
+            .to_vec(),
         CHAIN_ID_BYTES,
     );
 
@@ -52,13 +56,9 @@ pub fn genesis_preimage(cfg: &AppCfg) -> anyhow::Result<Vec<u8>> {
     // PIETRZAK
     preimage.write_u8(1).unwrap();
 
-
     // LINK_TO_TOWER
     // Note: V7: Deprecated
-    let mut padded_tower_link_bytes = padding(
-        "".to_string().as_bytes().to_vec(),
-        LINK_TO_TOWER,
-    );
+    let mut padded_tower_link_bytes = padding("".to_string().as_bytes().to_vec(), LINK_TO_TOWER);
     preimage.append(&mut padded_tower_link_bytes);
 
     // STATEMENT

@@ -23,7 +23,7 @@ zapatos = { workspace = true }
 zapatos-build-info = { workspace = true }
 zapatos-crypto = { workspace = true }
 zapatos-framework = { workspace = true }
-zapatos-build-info = { workspace = true }
+zapatos-types = { workspace = true }
 move-command-line-common = { workspace = true }
 move-model = { workspace = true }
 

@@ -1,10 +1,6 @@
 //! Proof block datastructure
 
-use crate::legacy_types::{
-  mode_ol::MODE_0L,
-  app_cfg::AppCfg,
-
-};
+use crate::legacy_types::{app_cfg::AppCfg, mode_ol::MODE_0L};
 
 use crate::exports::NamedChain;
 
@@ -25,10 +21,9 @@ use std::{fs, io::Write, path::PathBuf};
 /// The VDF security parameter.
 pub static GENESIS_VDF_SECURITY_PARAM: Lazy<u64> = Lazy::new(|| {
     match MODE_0L.clone() {
-
         NamedChain::MAINNET => 350,
-        NamedChain::TESTNET => 350,  // TODO: Do we want a different one?
-        _ => 350
+        NamedChain::TESTNET => 350, // TODO: Do we want a different one?
+        _ => 350,
     }
 });
 
@@ -93,7 +88,7 @@ impl VDFProof {
     }
 
     pub fn write_json(&self, blocks_dir: &PathBuf) -> Result<PathBuf, std::io::Error> {
-    if !&blocks_dir.exists() {
+        if !&blocks_dir.exists() {
             // first run, create the directory if there is none, or if the user changed the configs.
             // note: user may have blocks but they are in a different directory than what AppCfg says.
             fs::create_dir_all(&blocks_dir)?;
@@ -107,13 +102,15 @@ impl VDFProof {
     }
 
     /// Parse a proof_x.json file and return a VDFProof
-    pub fn parse_block_file(path: &PathBuf, purge_if_bad: bool) -> Result<Self>{
+    pub fn parse_block_file(path: &PathBuf, purge_if_bad: bool) -> Result<Self> {
         let block_file = fs::read_to_string(path)?;
 
         match serde_json::from_str(&block_file) {
             Ok(v) => Ok(v),
             Err(e) => {
-                if purge_if_bad { fs::remove_file(&block_file)? }
+                if purge_if_bad {
+                    fs::remove_file(&block_file)?
+                }
                 bail!(
                     "Could not read latest block file in path {:?}, message: {:?}",
                     &path,
@@ -124,7 +121,7 @@ impl VDFProof {
     }
 
     /// Parse a proof_x.json file and return a VDFProof
-    pub fn get_proof_number(num: u64, blocks_dir: &PathBuf) -> Result<(Self, PathBuf)>{
+    pub fn get_proof_number(num: u64, blocks_dir: &PathBuf) -> Result<(Self, PathBuf)> {
         let file = PathBuf::from(&format!(
             "{}/{}_{}.json",
             blocks_dir.display(),
@@ -148,58 +145,58 @@ impl VDFProof {
         }
     }
 
-  /// find the most recent proof on disk
-  pub fn get_latest_proof(config: &AppCfg, purge_if_bad: bool) -> Result<Self> {
-      let (_current_block_number, current_block_path) = Self::get_highest_block(&config.get_block_dir(None)?)?;
+    /// find the most recent proof on disk
+    pub fn get_latest_proof(config: &AppCfg, purge_if_bad: bool) -> Result<Self> {
+        let (_current_block_number, current_block_path) =
+            Self::get_highest_block(&config.get_block_dir(None)?)?;
 
-      Self::parse_block_file(&current_block_path, purge_if_bad)
-  }
+        Self::parse_block_file(&current_block_path, purge_if_bad)
+    }
 
-  /// parse the existing blocks in the miner's path. This function receives any path. Note: the path is configured in miner.toml which abscissa Configurable parses, see commands.rs.
-pub fn get_highest_block(blocks_dir: &PathBuf) -> Result<(Self, PathBuf)> {
-    let mut max_block: Option<VDFProof> = None;
-    let mut max_block_path: Option<PathBuf> = None;
+    /// parse the existing blocks in the miner's path. This function receives any path. Note: the path is configured in miner.toml which abscissa Configurable parses, see commands.rs.
+    pub fn get_highest_block(blocks_dir: &PathBuf) -> Result<(Self, PathBuf)> {
+        let mut max_block: Option<VDFProof> = None;
+        let mut max_block_path: Option<PathBuf> = None;
 
-    let file_list = glob(&format!("{}/{}_*.json", blocks_dir.display(), FILENAME))?;
-    // iterate through all json files in the directory.
-    // if file_list.last().is_none() {
-    //   bail!("cannot find any VDF proof files in, {:?}", blocks_dir);
-    // }
+        let file_list = glob(&format!("{}/{}_*.json", blocks_dir.display(), FILENAME))?;
+        // iterate through all json files in the directory.
+        // if file_list.last().is_none() {
+        //   bail!("cannot find any VDF proof files in, {:?}", blocks_dir);
+        // }
 
-    for entry in file_list {
-        if let Ok(entry) = entry {
-            // let file = fs::File::open(&entry).expect("Could not open block file");
-            // let reader = BufReader::new(file);
-            let block = match VDFProof::parse_block_file(&entry, false) {
-                Ok(v) => v,
-                Err(e) => {
-                    println!("could not parse the proof file: {}, skipping. Manually delete if this proof is not readable.", e.to_string());
-                    continue;
-                }
-            };
+        for entry in file_list {
+            if let Ok(entry) = entry {
+                // let file = fs::File::open(&entry).expect("Could not open block file");
+                // let reader = BufReader::new(file);
+                let block = match VDFProof::parse_block_file(&entry, false) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        println!("could not parse the proof file: {}, skipping. Manually delete if this proof is not readable.", e.to_string());
+                        continue;
+                    }
+                };
 
-            let blocknumber = block.height;
+                let blocknumber = block.height;
 
-            if let Some(b) = &max_block {
-                if blocknumber > b.height {
+                if let Some(b) = &max_block {
+                    if blocknumber > b.height {
+                        max_block = Some(block);
+                        max_block_path = Some(entry);
+                    }
+                } else {
                     max_block = Some(block);
                     max_block_path = Some(entry);
                 }
-            } else {
-                max_block = Some(block);
-                max_block_path = Some(entry);
             }
         }
-    }
 
-    if max_block.is_some() && max_block_path.is_some() {
-        return Ok((max_block.unwrap(), max_block_path.unwrap()));
-    } else {
-        bail!(
+        if max_block.is_some() && max_block_path.is_some() {
+            return Ok((max_block.unwrap(), max_block_path.unwrap()));
+        } else {
+            bail!(
             "cannot find a valid VDF proof in files to determine next proof's parameters. Exiting."
         )
+        }
+        // (max_block, max_block_path)
     }
-    // (max_block, max_block_path)
-}
-
 }

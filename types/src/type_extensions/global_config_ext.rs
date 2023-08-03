@@ -1,3 +1,4 @@
+use crate::GLOBAL_CONFIG_DIRECTORY_0L;
 use std::path::PathBuf;
 use zapatos::{
     common::{
@@ -7,7 +8,6 @@ use zapatos::{
     config::{ConfigType, GlobalConfig},
     genesis::git::from_yaml,
 };
-use crate::GLOBAL_CONFIG_DIRECTORY_0L;
 // const GLOBAL_CONFIG_DIRECTORY_0L: &str = ".0L";
 const GLOBAL_CONFIG_FILE: &str = "global_config.yaml";
 

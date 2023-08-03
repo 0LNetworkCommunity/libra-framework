@@ -1,12 +1,12 @@
 use anyhow::Context;
 use clap::Args;
+use indicatif::ProgressBar;
+use libra_types::ol_progress::OLProgress;
 use libra_types::{
     legacy_types::{legacy_address::LegacyAddress, legacy_recovery::LegacyRecovery},
     ONCHAIN_DECIMAL_PRECISION,
 };
-use indicatif::ProgressBar;
 use std::time::Duration;
-use libra_types::ol_progress::OLProgress;
 
 #[derive(Debug, Clone, Args)]
 pub struct SupplySettings {
@@ -112,7 +112,9 @@ pub fn populate_supply_stats_from_legacy(
     rec: &[LegacyRecovery],
     map_dd_to_slow: &[LegacyAddress],
 ) -> anyhow::Result<Supply> {
-    let pb = ProgressBar::new(1000).with_style(OLProgress::spinner()).with_message("calculating coin supply");
+    let pb = ProgressBar::new(1000)
+        .with_style(OLProgress::spinner())
+        .with_message("calculating coin supply");
     pb.enable_steady_tick(Duration::from_millis(100));
     let zeroth = Supply {
         total: 0.0,
@@ -142,7 +144,8 @@ pub fn populate_supply_stats_from_legacy(
         .filter(|e| !map_dd_to_slow.contains(e))
         .collect();
 
-   let s = rec.iter()
+    let s = rec
+        .iter()
         .try_fold(zeroth, |acc, r| inc_supply(acc, r, &dd_list))?;
     pb.finish_and_clear();
     Ok(s)

@@ -2,13 +2,12 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 // use libra_types::exports::ValidCryptoMaterialStringExt;
-use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_query::query_view;
+use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Upgrade},
     txs_cli_upgrade::UpgradeTxs::{Propose, Resolve, Vote},
 };
-
 
 /// Testing that we can upgrade the chain framework using txs tools.
 /// Note: We have another upgrade meta test in ./smoke-tests
@@ -42,7 +41,6 @@ async fn smoke_gov_script() {
         .await
         .expect("cli could not send upgrade proposal");
 
-
     // ALICE VOTES
     cli.subcommand = Some(Upgrade(Vote {
         proposal_id: 0,
@@ -56,7 +54,8 @@ async fn smoke_gov_script() {
         None,
         Some("0".to_string()),
     )
-    .await.unwrap();
+    .await
+    .unwrap();
 
     dbg!(&query_res[0]);
 
@@ -66,16 +65,18 @@ async fn smoke_gov_script() {
         Some("0x1::governance_proposal::GovernanceProposal".to_string()),
         Some("0x1, 0".to_string()),
     )
-    .await.unwrap();
+    .await
+    .unwrap();
     dbg!(&query_res[0]);
-
 
     let query_res = query_view::get_view(
         &s.client(),
         "0x1::aptos_governance::get_can_resolve",
         None,
         Some("0".to_string()), //Some(format!("{}u64", id)),
-    ).await.unwrap();
+    )
+    .await
+    .unwrap();
 
     dbg!(&query_res[0]);
 
@@ -84,7 +85,9 @@ async fn smoke_gov_script() {
         "0x1::aptos_governance::get_approved_hash",
         None,
         Some("0".to_string()),
-    ).await.unwrap();
+    )
+    .await
+    .unwrap();
 
     dbg!(&query_res[0]);
 

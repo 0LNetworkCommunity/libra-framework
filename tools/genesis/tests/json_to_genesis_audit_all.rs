@@ -50,6 +50,4 @@ fn test_correct_supply_arithmetic_all() {
         }
         Err(_e) => assert!(false, "error creating comparison"),
     }
-
 }
-

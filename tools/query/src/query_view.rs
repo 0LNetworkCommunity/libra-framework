@@ -9,20 +9,19 @@ pub async fn get_view(
     type_args: Option<String>,
     args: Option<String>,
 ) -> Result<Value> {
-    client
-      .view_ext(function_id, type_args, args)
-      .await
+    client.view_ext(function_id, type_args, args).await
 }
 
 // helper to turn a serde_json value to string
 // TODO: must be a better way
-pub fn display_view(res: Vec<Value>) -> Result<String>{
-     let values_to_string = res.iter()
-        .map(|v| v.to_string())
-        .collect::<Vec<_>>();
+pub fn display_view(res: Vec<Value>) -> Result<String> {
+    let values_to_string = res.iter().map(|v| v.to_string()).collect::<Vec<_>>();
     if values_to_string.len() > 1 {
-      Ok(format!("[{}]", values_to_string.join(", ")))
+        Ok(format!("[{}]", values_to_string.join(", ")))
     } else {
-      Ok(format!("[{}]", values_to_string.first().expect("api didn't return a value")))
+        Ok(format!(
+            "[{}]",
+            values_to_string.first().expect("api didn't return a value")
+        ))
     }
 }

@@ -9,10 +9,10 @@ use anyhow::Context;
 use zapatos_types::transaction::Script;
 use zapatos_types::transaction::TransactionPayload;
 
-use zapatos_sdk::types::transaction::TransactionArgument;
 use libra_cached_packages::aptos_stdlib::{
     aptos_governance_ol_create_proposal_v2, aptos_governance_ol_vote,
 };
+use zapatos_sdk::types::transaction::TransactionArgument;
 
 #[derive(clap::Subcommand)]
 pub enum UpgradeTxs {
@@ -119,10 +119,13 @@ impl UpgradeTxs {
                 // TODO: get the compiled script
                 let proposal_bytes = std::fs::read(proposal_script_dir.join("script.mv")).unwrap();
 
-                let proposal_script = Script::new(proposal_bytes, vec![], vec![
-                  TransactionArgument::U64(*proposal_id)
-                  // proposal_id.into()
-                  ]);
+                let proposal_script = Script::new(
+                    proposal_bytes,
+                    vec![],
+                    vec![
+                        TransactionArgument::U64(*proposal_id), // proposal_id.into()
+                    ],
+                );
 
                 TransactionPayload::Script(proposal_script)
             }

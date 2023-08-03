@@ -66,8 +66,10 @@ impl AppCfg {
             ))
         }
         let s = fs::read_to_string(&path)?;
-        let de: AppCfg = serde_yaml::from_str(&s)
-          .context(format!("could not read {:?} file into an AppCfg. Is there an issue with the file?", &path))?;
+        let de: AppCfg = serde_yaml::from_str(&s).context(format!(
+            "could not read {:?} file into an AppCfg. Is there an issue with the file?",
+            &path
+        ))?;
         Ok(de)
     }
     /// save the config file to 0L.toml to the workspace home path
@@ -143,7 +145,7 @@ impl AppCfg {
 
         // try to use the default profile unless one was requested
         if nickname.is_none() {
-          nickname = self.workspace.default_profile.clone()
+            nickname = self.workspace.default_profile.clone()
         };
 
         if let Some(n) = nickname {
@@ -217,8 +219,7 @@ impl AppCfg {
         let profile = Profile::new(authkey, account);
         default_config.user_profiles = vec![profile];
 
-        default_config.workspace.node_home =
-            config_path.clone().unwrap_or_else(global_config_dir);
+        default_config.workspace.node_home = config_path.clone().unwrap_or_else(global_config_dir);
 
         if let Some(id) = network_id {
             default_config.workspace.default_chain_id = id.to_owned();
@@ -233,13 +234,12 @@ impl AppCfg {
         Ok(default_config)
     }
 
-
     pub fn init_for_tests(path: PathBuf) -> anyhow::Result<AppCfg> {
         // use crate::test_drop_helper::DropTemp;
         // use zapatos_temppath::TempPath;
         use zapatos_crypto::ValidCryptoMaterialStringExt;
 
-         // Alice = "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse"
+        // Alice = "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse"
         // "child_0_owner": {
         //   "account": "87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5",
         //   "auth_key": "0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5",
@@ -249,16 +249,18 @@ impl AppCfg {
         // let temp = DropTemp::new_in_crate(test_name);
         // let temp = TempPath::new();
 
-        let mut cfg =  Self::init_app_configs(
-          "87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5".parse()?,
-          "0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5".parse()?,
-          Some(path),
-          Some(NamedChain::TESTING),
-          None
+        let mut cfg = Self::init_app_configs(
+            "87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5".parse()?,
+            "0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5".parse()?,
+            Some(path),
+            Some(NamedChain::TESTING),
+            None,
         )?;
 
         let mut profile = cfg.get_profile_mut(None)?;
-        profile.test_private_key = Some(Ed25519PrivateKey::from_encoded_string("0x74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b")?);
+        profile.test_private_key = Some(Ed25519PrivateKey::from_encoded_string(
+            "0x74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b",
+        )?);
 
         Ok(cfg)
     }

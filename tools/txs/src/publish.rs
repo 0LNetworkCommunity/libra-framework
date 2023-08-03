@@ -11,9 +11,7 @@ use zapatos_framework::{BuildOptions, BuiltPackage};
 use zapatos_types::transaction::TransactionPayload;
 
 /// build the move package and create a transaction payload.
-pub fn encode_publish_payload(
-    move_options: &MovePackageDir,
-) -> anyhow::Result<TransactionPayload> {
+pub fn encode_publish_payload(move_options: &MovePackageDir) -> anyhow::Result<TransactionPayload> {
     let package_path = move_options.get_package_path()?;
     let mut options = BuildOptions::default();
 

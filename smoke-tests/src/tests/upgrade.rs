@@ -3,29 +3,30 @@
 use crate::helpers::mint_libra;
 use crate::upgrade_fixtures::fixtures_path;
 
-use zapatos_smoke_test::smoke_test_environment::new_local_swarm_with_release;
 use libra_framework::release::ReleaseTarget;
-use zapatos_forge::Swarm;
-use zapatos_types::transaction::Script;
 use std::path::PathBuf;
+use zapatos_forge::Swarm;
+use zapatos_smoke_test::smoke_test_environment::new_local_swarm_with_release;
+use zapatos_types::transaction::Script;
 
-use libra_cached_packages::aptos_stdlib::{aptos_governance_ol_create_proposal_v2, aptos_governance_ol_vote, aptos_governance_assert_can_resolve};
+use libra_cached_packages::aptos_stdlib::{
+    aptos_governance_assert_can_resolve, aptos_governance_ol_create_proposal_v2,
+    aptos_governance_ol_vote,
+};
 use zapatos_sdk::types::LocalAccount;
 
 // NOTE: These tests are deprecated in favor of the TXS tests for upgrades.
 // These tests should be kept here in case we need to debug the actual sending mechanisms outside of txs.
 
-
 fn get_package_path() -> PathBuf {
-  fixtures_path().join("upgrade_single_step").join("1-move-stdlib")
+    fixtures_path()
+        .join("upgrade_single_step")
+        .join("1-move-stdlib")
 }
 
-
 #[ignore]
-
 #[tokio::test]
 async fn can_upgrade() {
-
     let release = ReleaseTarget::Head.load_bundle().unwrap();
 
     let mut swarm = new_local_swarm_with_release(1, release).await;
@@ -48,7 +49,9 @@ async fn can_upgrade() {
     // let mut dave_account = LocalAccount::new(dave.peer_id(), pri_key.private_key(), 0);
     // //////// end create accounts
     let mut public_info = swarm.aptos_public_info();
-    mint_libra(&mut public_info, alice_account.address(), 10_000_000_000).await.unwrap();
+    mint_libra(&mut public_info, alice_account.address(), 10_000_000_000)
+        .await
+        .unwrap();
 
     // mint_libra(&mut public_info, bob_account.address(), 10_000_000_000).await.unwrap();
 
@@ -68,7 +71,6 @@ async fn can_upgrade() {
     let proposal_hash = std::fs::read_to_string(proposal_hash_path).unwrap();
     dbg!(&proposal_hash);
 
-
     let payload = aptos_governance_ol_create_proposal_v2(
         proposal_hash.as_bytes().to_vec(),
         "metadata url".to_string().as_bytes().to_vec(),
@@ -78,10 +80,8 @@ async fn can_upgrade() {
 
     let mut public_info: zapatos_forge::AptosPublicInfo = swarm.aptos_public_info();
 
-    let txn = alice_account.sign_with_transaction_builder(
-        public_info.transaction_factory()
-            .payload(payload),
-    );
+    let txn = alice_account
+        .sign_with_transaction_builder(public_info.transaction_factory().payload(payload));
     dbg!("proposal txn");
 
     public_info.client().submit_and_wait(&txn).await.unwrap();
@@ -91,15 +91,20 @@ async fn can_upgrade() {
         true, // should_pass
     );
 
-    let built_tx = public_info.transaction_factory()
-            .payload(vote_payload.clone());
+    let built_tx = public_info
+        .transaction_factory()
+        .payload(vote_payload.clone());
     // Alice submits. Note: the sequence number incremented.
     let txn = alice_account.sign_with_transaction_builder(built_tx);
 
     dbg!("alice votes");
     // needs gas
 
-    public_info.client().submit_and_wait(&txn).await.expect("could not send tx");
+    public_info
+        .client()
+        .submit_and_wait(&txn)
+        .await
+        .expect("could not send tx");
 
     // // TODO: make this a for_each, and solve the error[E0507]: cannot move out of `public_info`, a captured variable in an `FnMut` closure
     // // BOB
@@ -120,7 +125,6 @@ async fn can_upgrade() {
 
     // public_info.client().submit_and_wait(&txn).await.expect("could not send tx");
 
-
     // // DAVE
     // dbg!("dave votes");
     // let built_tx = public_info
@@ -130,41 +134,40 @@ async fn can_upgrade() {
 
     // public_info.client().submit_and_wait(&txn).await.expect("could not send tx");
 
-
     // check the state of voting
 
     let check_vote_payload = aptos_governance_assert_can_resolve(proposal_id);
 
     let built_tx = public_info
-      .transaction_factory()
-      .payload(check_vote_payload);
+        .transaction_factory()
+        .payload(check_vote_payload);
     let txn = alice_account.sign_with_transaction_builder(built_tx);
     public_info.client().submit_and_wait(&txn).await.unwrap();
 
-
     // send the proposal.
     let proposal_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("src").join("tests").join("fixtures").join("example_proposal_script").join("script.mv");
+        .join("src")
+        .join("tests")
+        .join("fixtures")
+        .join("example_proposal_script")
+        .join("script.mv");
     // dbg!(&proposal_path);
     assert!(&proposal_path.exists());
 
     let proposal_bytes = std::fs::read(proposal_path).unwrap();
 
     let proposal_script = Script::new(proposal_bytes, vec![], vec![]);
-    let built_tx = public_info
-      .transaction_factory()
-      .script(proposal_script);
+    let built_tx = public_info.transaction_factory().script(proposal_script);
 
-      // .payload(vote_payload);
+    // .payload(vote_payload);
     let txn = alice_account.sign_with_transaction_builder(built_tx);
 
     public_info.client().submit_and_wait(&txn).await.unwrap();
 
-
     // make sure the network is functioning after the upgrade
-    mint_libra(&mut public_info, alice_account.address(), 10_000_000_000).await.unwrap();
+    mint_libra(&mut public_info, alice_account.address(), 10_000_000_000)
+        .await
+        .unwrap();
 
     // TODO: test with a transaction that only exists in the new version of the code.
-
-
 }

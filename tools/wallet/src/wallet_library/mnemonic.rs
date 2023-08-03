@@ -55,8 +55,7 @@ impl Mnemonic {
         let words: Vec<_> = s.split(' ').collect();
         let len = words.len();
         if !(12..=24).contains(&len) || len % 3 != 0 {
-            bail!(
-                "Mnemonic must have a word count of the following lengths: 24, 21, 18, 15, 12");
+            bail!("Mnemonic must have a word count of the following lengths: 24, 21, 18, 15, 12");
         }
 
         let mut mnemonic = Vec::with_capacity(len);
@@ -112,8 +111,10 @@ impl Mnemonic {
     /// Write mnemonic to output_file_path.
     pub fn write(&self, output_file_path: &Path) -> Result<()> {
         if output_file_path.exists() && !output_file_path.is_file() {
-            bail!("Output file {:?} for mnemonic backup is reserved",
-                output_file_path.to_str())
+            bail!(
+                "Output file {:?} for mnemonic backup is reserved",
+                output_file_path.to_str()
+            )
         }
         let mut file = File::create(output_file_path)?;
         file.write_all(self.to_string().as_bytes())?;

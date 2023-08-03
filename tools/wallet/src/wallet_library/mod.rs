@@ -2,7 +2,7 @@
 
 #![forbid(unsafe_code)]
 
-pub mod mnemonic;
 pub mod key_factory;
-pub mod wallet_library;
 pub mod legacy_scheme;
+pub mod mnemonic;
+pub mod wallet_library;

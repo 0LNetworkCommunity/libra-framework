@@ -1,5 +1,4 @@
-
-use crate::account_keys::{get_keys_from_prompt, self};
+use crate::account_keys::{self, get_keys_from_prompt};
 
 use anyhow::Result;
 use clap::{Args, Parser, Subcommand};
@@ -44,39 +43,42 @@ struct LegArgs {
 }
 
 impl WalletCli {
-  pub async fn run(&self) -> Result<()> {
-      match &self.command {
-          WalletSub::Legacy(args) => {
-              if !args.display && args.output_path.is_none() {
-                  println!("pass --display to show keys and/or --output-path to save keys");
-                  return Ok(());
-              }
+    pub async fn run(&self) -> Result<()> {
+        match &self.command {
+            WalletSub::Legacy(args) => {
+                if !args.display && args.output_path.is_none() {
+                    println!("pass --display to show keys and/or --output-path to save keys");
+                    return Ok(());
+                }
 
-              let l = if args.keygen {
-                  account_keys::legacy_keygen()?
-              } else {
-                  get_keys_from_prompt()?
-              };
+                let l = if args.keygen {
+                    account_keys::legacy_keygen()?
+                } else {
+                    get_keys_from_prompt()?
+                };
 
-              if let Some(dir) = &args.output_path {
-                  l.save_keys(dir)?;
-              }
+                if let Some(dir) = &args.output_path {
+                    l.save_keys(dir)?;
+                }
 
-              if args.display {
-                  l.display();
-              }
-          }
-          WalletSub::Keygen {
-              mnemonic,
-              output_dir,
-          } => {
-              println!(
-                  "{}",
-                  crate::key_gen::run(mnemonic.to_owned(), output_dir.as_ref().map(PathBuf::from)).await?
-              );
-          }
-      }
-      Ok(())
-  }
+                if args.display {
+                    l.display();
+                }
+            }
+            WalletSub::Keygen {
+                mnemonic,
+                output_dir,
+            } => {
+                println!(
+                    "{}",
+                    crate::key_gen::run(
+                        mnemonic.to_owned(),
+                        output_dir.as_ref().map(PathBuf::from)
+                    )
+                    .await?
+                );
+            }
+        }
+        Ok(())
+    }
 }
-

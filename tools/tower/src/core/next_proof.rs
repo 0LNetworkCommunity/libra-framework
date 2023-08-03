@@ -1,18 +1,17 @@
 //! next proof
 
-
 use crate::core::proof_preimage;
 
 use anyhow::{bail, Error};
 use serde::{Deserialize, Serialize};
 
 use libra_types::{
-  exports::Client,
-  legacy_types::{
-    app_cfg::AppCfg,
-    block::{GENESIS_VDF_ITERATIONS, GENESIS_VDF_SECURITY_PARAM, VDFProof},
-    vdf_difficulty::VDFDifficulty,
-  }
+    exports::Client,
+    legacy_types::{
+        app_cfg::AppCfg,
+        block::{VDFProof, GENESIS_VDF_ITERATIONS, GENESIS_VDF_SECURITY_PARAM},
+        vdf_difficulty::VDFDifficulty,
+    },
 };
 
 use libra_query::{account_queries, chain_queries};
@@ -33,8 +32,8 @@ pub struct NextProof {
 
 impl NextProof {
     /// create a genesis proof
-    pub fn genesis_proof(config: &AppCfg) -> anyhow::Result<Self>{
-      // NOTE: can't set defautlsin VDFDifficulty::default() because of circular dependency
+    pub fn genesis_proof(config: &AppCfg) -> anyhow::Result<Self> {
+        // NOTE: can't set defautlsin VDFDifficulty::default() because of circular dependency
         let mut diff = VDFDifficulty::default();
 
         diff.difficulty = GENESIS_VDF_ITERATIONS.clone();
@@ -75,30 +74,27 @@ pub async fn get_next_proof_from_chain(
     app_cfg: &AppCfg,
     client: &Client,
 ) -> Result<NextProof, Error> {
-
     let (difficulty, security) = chain_queries::get_tower_difficulty(&client).await?;
 
     let profile = app_cfg.get_profile(None)?;
     // get user's state
     let p = match account_queries::get_tower_state(client, profile.account).await {
-      Ok(ts) => {
-        NextProof {
-            diff: VDFDifficulty{
-              difficulty,
-              security,
-              prev_diff: 0, // not relevant off chain
-              prev_sec: 0, // not relevant off chain
-          },
-            next_height: ts.verified_tower_height + 1, // add one for next
-            preimage: ts.previous_proof_hash,
+        Ok(ts) => {
+            NextProof {
+                diff: VDFDifficulty {
+                    difficulty,
+                    security,
+                    prev_diff: 0, // not relevant off chain
+                    prev_sec: 0,  // not relevant off chain
+                },
+                next_height: ts.verified_tower_height + 1, // add one for next
+                preimage: ts.previous_proof_hash,
+            }
         }
-      }
-      _ => bail!("cannot get tower resource for account")
-
+        _ => bail!("cannot get tower resource for account"),
     };
 
     Ok(p)
-
 
     // n.refresh_onchain_state();
     // // TODO: we are picking Client twice
@@ -128,5 +124,3 @@ pub async fn get_next_proof_from_chain(
 //     }
 //     bail!("could not get account state for 0x0")
 // }
-
-

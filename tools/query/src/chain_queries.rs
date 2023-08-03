@@ -5,7 +5,6 @@ use anyhow::Context;
 use libra_types::type_extensions::client_ext::entry_function_id;
 use zapatos_sdk::rest_client::{aptos_api_types::ViewRequest, Client};
 
-
 /// helper to get libra balance at a SlowWalletBalance type which shows
 /// total balance and the unlocked balance.
 pub async fn get_tower_difficulty(client: &Client) -> anyhow::Result<(u64, u64)> {
@@ -61,9 +60,9 @@ pub async fn can_gov_proposal_resolve(client: &Client, id: u64) -> anyhow::Resul
     .await?;
     // let id: Vec<String> = serde_json::from_value(query_res)?;
     Ok(serde_json::from_value::<bool>(query_res).context("cannot parse api res")?)
-        // .into_iter()
-        // .next()
-        // .context("could not get a response from view function can_resolve")
+    // .into_iter()
+    // .next()
+    // .context("could not get a response from view function can_resolve")
 }
 
 // TODO: code duplication
@@ -84,16 +83,13 @@ pub async fn is_gov_proposal_resolved(client: &Client, id: u64) -> anyhow::Resul
 
 // TODO: code duplication
 pub async fn get_gov_proposal_votes(client: &Client, id: u64) -> anyhow::Result<Vec<u128>> {
-  let query_res = query_view::get_view(
-      &client,
-      "0x1::aptos_governance::get_votes",
-      None,
-      Some(id.to_string()), //Some(format!("{}u64", id)),
-  )
-  .await?;
-  // let id: Vec<String> = serde_json::from_value(query_res)?;
-  Ok(serde_json::from_value::<Vec<u128>>(query_res)?)
+    let query_res = query_view::get_view(
+        &client,
+        "0x1::aptos_governance::get_votes",
+        None,
+        Some(id.to_string()), //Some(format!("{}u64", id)),
+    )
+    .await?;
+    // let id: Vec<String> = serde_json::from_value(query_res)?;
+    Ok(serde_json::from_value::<Vec<u128>>(query_res)?)
 }
-
-
-

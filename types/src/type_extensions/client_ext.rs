@@ -1,16 +1,20 @@
 use crate::legacy_types::app_cfg::AppCfg;
-use crate::util::parse_function_id;
 use crate::type_extensions::cli_config_ext::CliConfigExt;
+use crate::util::parse_function_id;
 
 use anyhow::{anyhow, Context};
 use async_trait::async_trait;
+use serde::de::DeserializeOwned;
+use serde_json::{self, Value};
+use std::time::Duration;
 use std::time::SystemTime;
 use std::{str::FromStr, time::UNIX_EPOCH};
+use url::Url;
 use zapatos::common::types::{CliConfig, ConfigSearchMode, DEFAULT_PROFILE};
 use zapatos_sdk::{
     move_types::{
-        move_resource::MoveStructType,
         language_storage::{ModuleId, TypeTag},
+        move_resource::MoveStructType,
         parser::{parse_transaction_arguments, parse_type_tags},
         transaction_argument::convert_txn_args,
     },
@@ -26,26 +30,27 @@ use zapatos_sdk::{
         LocalAccount,
     },
 };
-use url::Url;
-use std::time::Duration;
-use serde::de::DeserializeOwned;
-use serde_json::{self, Value};
 
 pub const DEFAULT_TIMEOUT_SECS: u64 = 10;
 pub const USER_AGENT: &str = concat!("libra-config/", env!("CARGO_PKG_VERSION"));
-
 
 #[async_trait]
 pub trait ClientExt {
     async fn default() -> anyhow::Result<Client>;
 
-    async fn from_libra_config(app_cfg: &AppCfg, chain_id_opt: Option<NamedChain>) -> anyhow::Result<(Client, ChainId)>;
+    async fn from_libra_config(
+        app_cfg: &AppCfg,
+        chain_id_opt: Option<NamedChain>,
+    ) -> anyhow::Result<(Client, ChainId)>;
 
     async fn find_good_upstream(list: Vec<Url>) -> anyhow::Result<(Client, ChainId)>;
 
     fn from_vendor_config() -> anyhow::Result<Client>;
 
-    async fn get_move_resource<T: MoveStructType + DeserializeOwned> (&self, address: AccountAddress) -> anyhow::Result<T>;
+    async fn get_move_resource<T: MoveStructType + DeserializeOwned>(
+        &self,
+        address: AccountAddress,
+    ) -> anyhow::Result<T>;
 
     async fn get_account_resources_ext(&self, account: AccountAddress) -> anyhow::Result<String>;
 
@@ -70,49 +75,49 @@ pub trait ClientExt {
 
 #[async_trait]
 impl ClientExt for Client {
-  /// assumes the location of the config files, and gets a node from list in config
-  async fn default() -> anyhow::Result<Client> {
-    let app_cfg = AppCfg::load(None)?;
-    let (client, _) = Self::from_libra_config(&app_cfg, None).await?;
-    Ok(client)
-  }
+    /// assumes the location of the config files, and gets a node from list in config
+    async fn default() -> anyhow::Result<Client> {
+        let app_cfg = AppCfg::load(None)?;
+        let (client, _) = Self::from_libra_config(&app_cfg, None).await?;
+        Ok(client)
+    }
 
+    /// Finds a good working upstream based on the list in a config file
+    async fn from_libra_config(
+        app_cfg: &AppCfg,
+        chain_id_opt: Option<NamedChain>,
+    ) -> anyhow::Result<(Client, ChainId)> {
+        // check if we can connect to this client, or exit
+        let url = &app_cfg.pick_url(chain_id_opt)?;
+        let client = Client::new(url.to_owned());
+        let res = client.get_index().await?;
 
-  /// Finds a good working upstream based on the list in a config file
-  async fn from_libra_config(app_cfg: &AppCfg, chain_id_opt: Option<NamedChain>) -> anyhow::Result<(Client, ChainId)> {
-    // check if we can connect to this client, or exit
-    let url = &app_cfg.pick_url(chain_id_opt)?;
-    let client = Client::new(url.to_owned());
-    let res = client.get_index().await?;
+        Ok((client, ChainId::new(res.inner().chain_id)))
+    }
 
-    Ok((client, ChainId::new(res.inner().chain_id)))
-  }
-
-  async fn find_good_upstream(_list: Vec<Url>) -> anyhow::Result<(Client, ChainId)> {
+    async fn find_good_upstream(_list: Vec<Url>) -> anyhow::Result<(Client, ChainId)> {
         // TODO: iterate through all and find a valid one.
 
-    //   let metadata =  future::select_all(
-    //     nodes.into_iter().find_map(|u| async {
-    //         let client = Client::new(u);
-    //         match client.get_index().await {
-    //             Ok(index) => Some((client, index.inner().chain_id)),
-    //             _ => None,
-    //         }
-    //     })
-    // ).await?;
-    todo!()
-
-  }
+        //   let metadata =  future::select_all(
+        //     nodes.into_iter().find_map(|u| async {
+        //         let client = Client::new(u);
+        //         match client.get_index().await {
+        //             Ok(index) => Some((client, index.inner().chain_id)),
+        //             _ => None,
+        //         }
+        //     })
+        // ).await?;
+        todo!()
+    }
 
     fn from_vendor_config() -> anyhow::Result<Client> {
         let workspace = crate::global_config_dir().parent().unwrap().to_path_buf();
-        let profile =
-            CliConfig::load_profile_ext(
-              Some(DEFAULT_PROFILE),
-              Some(workspace),
-              ConfigSearchMode::CurrentDir
+        let profile = CliConfig::load_profile_ext(
+            Some(DEFAULT_PROFILE),
+            Some(workspace),
+            ConfigSearchMode::CurrentDir,
         )?
-          .unwrap_or_default();
+        .unwrap_or_default();
         let rest_url = profile.rest_url.context("Rest url is not set")?;
         Ok(Client::new_with_timeout_and_user_agent(
             Url::from_str(&rest_url).unwrap(),
@@ -135,15 +140,18 @@ impl ClientExt for Client {
     //   SlowWalletBalance::from_value(res)
     // }
 
-    async fn get_move_resource<T: MoveStructType + DeserializeOwned> (&self, address: AccountAddress) -> anyhow::Result<T> {
-      let resource_type = format!("0x1::{}::{}", T::MODULE_NAME, T::STRUCT_NAME);
-      let res = self
-        .get_account_resource_bcs::<T>(address, &resource_type)
-        .await?
-        .into_inner();
+    async fn get_move_resource<T: MoveStructType + DeserializeOwned>(
+        &self,
+        address: AccountAddress,
+    ) -> anyhow::Result<T> {
+        let resource_type = format!("0x1::{}::{}", T::MODULE_NAME, T::STRUCT_NAME);
+        let res = self
+            .get_account_resource_bcs::<T>(address, &resource_type)
+            .await?
+            .into_inner();
 
-      Ok(res)
-  }
+        Ok(res)
+    }
 
     async fn get_account_resources_ext(&self, account: AccountAddress) -> anyhow::Result<String> {
         let response = self
@@ -262,7 +270,7 @@ impl ClientExt for Client {
             }
             output
         } else {
-           vec![]
+            vec![]
         };
 
         // println!("{}", format_type_args(&ty_args));
@@ -274,7 +282,8 @@ impl ClientExt for Client {
             arguments: args,
         };
 
-        let array = self.view(&request, None)
+        let array = self
+            .view(&request, None)
             .await
             .context("Failed to execute View request")
             .map(|res| res.inner().to_owned())?;
@@ -288,11 +297,12 @@ pub struct TransactionOptions {
     pub timeout_secs: u64,
 }
 
-
-pub fn entry_function_id(module_name: &str, function_name: &str) -> anyhow::Result<EntryFunctionId> {
-  let s = format!("0x1::{}::{}", module_name, function_name);
-  EntryFunctionId::from_str(&s)
-      .context(format!("Invalid function id: {s}"))
+pub fn entry_function_id(
+    module_name: &str,
+    function_name: &str,
+) -> anyhow::Result<EntryFunctionId> {
+    let s = format!("0x1::{}::{}", module_name, function_name);
+    EntryFunctionId::from_str(&s).context(format!("Invalid function id: {s}"))
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -301,12 +311,8 @@ struct Person {
     y: f64,
 }
 
-
 #[test]
 fn serde_test() {
-
-
-
     let s = r#"{"x": 1.0, "y": 2.0}"#;
     let value: serde_json::Value = serde_json::from_str(s).unwrap();
     // value.
@@ -314,5 +320,4 @@ fn serde_test() {
 
     let p: Person = serde_json::from_value(value).unwrap();
     dbg!(&p);
-
 }

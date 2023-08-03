@@ -1,13 +1,10 @@
 //! garbage collection
 
-use crate::core::{next_proof};
+use crate::core::next_proof;
 use anyhow::bail;
 use libra_types::{
-  exports::Client,
-  legacy_types::{
-    app_cfg::AppCfg,
-    block::VDFProof,
-  }
+    exports::Client,
+    legacy_types::{app_cfg::AppCfg, block::VDFProof},
 };
 
 use std::{fs, path::PathBuf, time::SystemTime};

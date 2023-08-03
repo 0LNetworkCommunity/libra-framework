@@ -1,14 +1,13 @@
-use std::{path::PathBuf, fs};
+use std::{fs, path::PathBuf};
 
+use libra_query::query_view;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_smoke_tests::upgrade_fixtures::fixtures_path;
-use libra_query::query_view;
 use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Upgrade},
     txs_cli_upgrade::UpgradeTxs::{Propose, Resolve, Vote},
 };
 use zapatos_types::chain_id::NamedChain;
-
 
 /// Testing that we can upgrade the chain framework using txs tools.
 /// Note: We have another upgrade meta test in ./smoke-tests
@@ -27,15 +26,9 @@ async fn smoke_upgrade_single_step() {
 
     // This step should fail. The view function does not yet exist in the system address.
     // we will upgrade a new binary which will include this function.
-    let query_res = query_view::get_view(
-      &s.client(),
-      "0x1::all_your_base::are_belong_to",
-      None,
-      None,
-    )
-    .await;
+    let query_res =
+        query_view::get_view(&s.client(), "0x1::all_your_base::are_belong_to", None, None).await;
     assert!(query_res.is_err(), "expected all_your_base to fail");
-
 
     let mut cli = TxsCli {
         subcommand: Some(Upgrade(Propose {
@@ -68,9 +61,13 @@ async fn smoke_upgrade_single_step() {
         None,
         Some("0".to_string()),
     )
-    .await.unwrap();
+    .await
+    .unwrap();
 
-    assert!(query_res[0].as_str().unwrap() == "1", "proposal state should be 1, passing");
+    assert!(
+        query_res[0].as_str().unwrap() == "1",
+        "proposal state should be 1, passing"
+    );
 
     let query_res = query_view::get_view(
         &s.client(),
@@ -78,10 +75,10 @@ async fn smoke_upgrade_single_step() {
         Some("0x1::governance_proposal::GovernanceProposal".to_string()),
         Some("0x1, 0".to_string()),
     )
-    .await.unwrap();
+    .await
+    .unwrap();
 
     assert!(query_res[0].as_bool().unwrap(), "expected to be closed");
-
 
     // Note, if there isn't a pause here, the next request might happen on the same on-chain clock seconds as the previous.
     // this will intentionally cause a failure since it's designed to prevent "atomic" transactions which can manipulate governance (flash loans)
@@ -92,18 +89,28 @@ async fn smoke_upgrade_single_step() {
         "0x1::aptos_governance::get_can_resolve",
         None,
         Some("0".to_string()),
-    ).await.unwrap();
-    assert!(query_res[0].as_bool().unwrap(), "expected to be able to resolve");
+    )
+    .await
+    .unwrap();
+    assert!(
+        query_res[0].as_bool().unwrap(),
+        "expected to be able to resolve"
+    );
 
     let query_res = query_view::get_view(
         &s.client(),
         "0x1::aptos_governance::get_approved_hash",
         None,
         Some("0".to_string()),
-    ).await.unwrap();
+    )
+    .await
+    .unwrap();
 
     let expected_hash = fs::read_to_string(script_dir.join("script_sha3")).unwrap();
-    assert!(query_res[0].as_str().unwrap().contains(&expected_hash), "expected this script hash, did you change the fixtures?");
+    assert!(
+        query_res[0].as_str().unwrap().contains(&expected_hash),
+        "expected this script hash, did you change the fixtures?"
+    );
 
     ///////// SHOW TIME ////////
     // Now try to resolve upgrade
@@ -112,21 +119,20 @@ async fn smoke_upgrade_single_step() {
         proposal_script_dir: script_dir,
     }));
     cli.run().await.unwrap();
-   //////////////////////////////
+    //////////////////////////////
 
-    let query_res = query_view::get_view(
-      &s.client(),
-      "0x1::all_your_base::are_belong_to",
-      None,
-      None,
-    )
-    .await.unwrap();
-    assert!(&query_res.as_array().unwrap()[0].as_str().unwrap().contains("7573"));
-
+    let query_res =
+        query_view::get_view(&s.client(), "0x1::all_your_base::are_belong_to", None, None)
+            .await
+            .unwrap();
+    assert!(&query_res.as_array().unwrap()[0]
+        .as_str()
+        .unwrap()
+        .contains("7573"));
 }
 
-
-
 fn get_package_path() -> PathBuf {
-  fixtures_path().join("upgrade_single_step").join("1-move-stdlib")
+    fixtures_path()
+        .join("upgrade_single_step")
+        .join("1-move-stdlib")
 }

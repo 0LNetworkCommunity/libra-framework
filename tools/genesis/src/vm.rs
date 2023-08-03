@@ -7,7 +7,9 @@ use zapatos_gas::{
 };
 use zapatos_types::{
     chain_id::ChainId,
-    on_chain_config::{Features, GasScheduleV2, OnChainConsensusConfig, OnChainExecutionConfig, TimedFeatures},
+    on_chain_config::{
+        Features, GasScheduleV2, OnChainConsensusConfig, OnChainExecutionConfig, TimedFeatures,
+    },
     transaction::ChangeSet,
 };
 use zapatos_vm::{
@@ -15,14 +17,14 @@ use zapatos_vm::{
     move_vm_ext::{MoveVmExt, SessionId},
 };
 use zapatos_vm_genesis::{
-    create_and_initialize_validators,
-    default_gas_schedule, emit_new_block_and_epoch_event, genesis_context::GenesisStateView,
-    initialize, initialize_aptos_coin,
-    initialize_features, initialize_on_chain_governance, mainnet_genesis_config, publish_framework,
-    set_genesis_end, validate_genesis_config, verify_genesis_write_set, GenesisConfiguration, Validator, GENESIS_KEYPAIR,
+    create_and_initialize_validators, default_gas_schedule, emit_new_block_and_epoch_event,
+    genesis_context::GenesisStateView, initialize, initialize_aptos_coin, initialize_features,
+    initialize_on_chain_governance, mainnet_genesis_config, publish_framework, set_genesis_end,
+    validate_genesis_config, verify_genesis_write_set, GenesisConfiguration, Validator,
+    GENESIS_KEYPAIR,
 };
 
-use crate::{supply::SupplySettings, genesis_functions::rounding_mint};
+use crate::{genesis_functions::rounding_mint, supply::SupplySettings};
 
 pub fn migration_genesis(
     validators: &[Validator],
@@ -94,11 +96,10 @@ pub fn encode_genesis_change_set(
 
     initialize_on_chain_governance(&mut session, genesis_config);
 
-
     if let Some(r) = recovery {
         if r.len() > 0 {
-          crate::genesis_functions::genesis_migrate_all_users(&mut session, r, supply_settings)
-          .expect("could not migrate users");
+            crate::genesis_functions::genesis_migrate_all_users(&mut session, r, supply_settings)
+                .expect("could not migrate users");
         }
     }
     OLProgress::complete("user migration complete");
@@ -114,7 +115,6 @@ pub fn encode_genesis_change_set(
     //////// 0L ////////
     // need to ajust for rounding issues from target supply
     rounding_mint(&mut session, supply_settings);
-
 
     set_genesis_end(&mut session);
 

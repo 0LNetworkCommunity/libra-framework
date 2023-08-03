@@ -5,13 +5,14 @@ use zapatos::{
 };
 use zapatos_logger::prelude::*;
 use zapatos_sdk::{
+    crypto::HashValue,
     rest_client::{aptos_api_types::TransactionOnChainData, Client},
     transaction_builder::TransactionBuilder,
     types::{
         chain_id::ChainId,
         transaction::{ExecutionStatus, SignedTransaction, TransactionPayload},
         AccountKey, LocalAccount,
-    }, crypto::HashValue,
+    },
 };
 
 use std::{
@@ -23,10 +24,11 @@ use url::Url;
 use libra_types::{
     exports::Ed25519PrivateKey,
     legacy_types::app_cfg::AppCfg,
+    ol_progress::OLProgress,
     type_extensions::{
         cli_config_ext::CliConfigExt,
         client_ext::{ClientExt, DEFAULT_TIMEOUT_SECS},
-    }, ol_progress::OLProgress,
+    },
 };
 
 // #[derive(Debug)]
@@ -86,10 +88,10 @@ impl Sender {
         chain_id: ChainId,
         client_opt: Option<Client>,
     ) -> anyhow::Result<Self> {
-    let client = match client_opt{
-        Some(c) => c,
-        None => Client::default().await?,
-    };
+        let client = match client_opt {
+            Some(c) => c,
+            None => Client::default().await?,
+        };
         let address = lookup_address(
             &client,
             account_key.authentication_key().derived_address(),
@@ -110,18 +112,15 @@ impl Sender {
     }
 
     ///
-    pub async fn from_app_cfg(
-        app_cfg: &AppCfg,
-        profile: Option<String>,
-    ) -> anyhow::Result<Self> {
+    pub async fn from_app_cfg(app_cfg: &AppCfg, profile: Option<String>) -> anyhow::Result<Self> {
         let profile = app_cfg.get_profile(profile)?;
         let address = profile.account;
         let key = match &profile.test_private_key.clone() {
             Some(k) => k.to_owned(),
             None => {
-              let leg_keys =  libra_wallet::account_keys::get_keys_from_prompt()?;
-              leg_keys.child_0_owner.pri_key
-            },
+                let leg_keys = libra_wallet::account_keys::get_keys_from_prompt()?;
+                leg_keys.child_0_owner.pri_key
+            }
         };
 
         let temp_seq_num = 0;
@@ -217,11 +216,11 @@ impl Sender {
         payload: TransactionPayload,
     ) -> anyhow::Result<TransactionOnChainData> {
         match &payload {
-          TransactionPayload::Script(s) => {
-            let hash = HashValue::sha3_256_of(s.code());
-            info!("script code hash: {}", &hash.to_hex_literal());
-          },
-          _ => {}
+            TransactionPayload::Script(s) => {
+                let hash = HashValue::sha3_256_of(s.code());
+                info!("script code hash: {}", &hash.to_hex_literal());
+            }
+            _ => {}
         }
 
         let signed = self.sign_payload(payload);
@@ -235,7 +234,6 @@ impl Sender {
     }
 
     pub fn sign_payload(&mut self, payload: TransactionPayload) -> SignedTransaction {
-
         let t = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
@@ -264,7 +262,7 @@ impl Sender {
     }
     pub fn eval_response(&self) -> anyhow::Result<ExecutionStatus, ExecutionStatus> {
         if self.response.is_none() {
-            return Err(ExecutionStatus::MiscellaneousError(None))
+            return Err(ExecutionStatus::MiscellaneousError(None));
         };
         let status = self.response.as_ref().unwrap().info.status();
         match status.is_success() {
@@ -280,13 +278,13 @@ impl Sender {
     }
 
     pub fn tx_hash(&self) -> Option<HashValue> {
-      if let Some(r) = & self.response {
-        return Some(r.info.transaction_hash())
-      };
-      None
+        if let Some(r) = &self.response {
+            return Some(r.info.transaction_hash());
+        };
+        None
     }
 
     pub fn client(&self) -> &Client {
-      &self.client
+        &self.client
     }
 }

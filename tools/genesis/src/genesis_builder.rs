@@ -1,23 +1,23 @@
 //! build the genesis file
-use crate::{compare, supply};
-use crate::supply::SupplySettings;
 use crate::genesis::make_recovery_genesis_from_vec_legacy_recovery;
+use crate::supply::SupplySettings;
 use crate::wizard::DEFAULT_GIT_BRANCH;
+use crate::{compare, supply};
 
 use std::str::FromStr;
+use std::time::Duration;
 use std::{
     cmp::Ordering,
     path::{Path, PathBuf},
 };
-use std::time::Duration;
 
-use anyhow::{anyhow, bail, Result, Context};
+use anyhow::{anyhow, bail, Context, Result};
 use indicatif::ProgressBar;
 
-use libra_wallet::utils::{check_if_file_exists, from_yaml, write_to_user_only_file};
 use libra_framework::release;
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use libra_types::ol_progress::OLProgress;
+use libra_wallet::utils::{check_if_file_exists, from_yaml, write_to_user_only_file};
 
 use zapatos_crypto::ed25519::ED25519_PUBLIC_KEY_LENGTH;
 use zapatos_crypto::ValidCryptoMaterialStringExt;
@@ -33,13 +33,10 @@ use zapatos_genesis::{
 use zapatos_github_client::Client;
 use zapatos_types::account_address::AccountAddress;
 use zapatos_types::{
-    account_address::AccountAddressWithChecks, on_chain_config::{OnChainConsensusConfig, OnChainExecutionConfig},
-
+    account_address::AccountAddressWithChecks,
+    on_chain_config::{OnChainConsensusConfig, OnChainExecutionConfig},
 };
 use zapatos_vm_genesis::default_gas_schedule;
-
-
-
 
 pub const LAYOUT_FILE: &str = "layout.yaml";
 pub const OPERATOR_FILE: &str = "operator.yaml";
@@ -68,7 +65,12 @@ pub fn build(
     check_if_file_exists(waypoint_file.as_path())?;
 
     println!("\nfetching genesis info from github");
-    let mut gen_info = fetch_genesis_info(github_owner, github_repository, github_token, use_local_framework)?;
+    let mut gen_info = fetch_genesis_info(
+        github_owner,
+        github_repository,
+        github_token,
+        use_local_framework,
+    )?;
 
     // Generate genesis and waypoint files
     {
@@ -79,16 +81,22 @@ pub fn build(
             &gen_info.framework,
             gen_info.chain_id,
             supply_settings.clone(),
-          )?;
+        )?;
         gen_info.genesis = Some(tx);
         OLProgress::complete("genesis transaction encoded");
 
         // NOTE: if genesis TX is not set, then it will run the vendor's release workflow, which we do not want.
 
-        let pb = ProgressBar::new(1000).with_style(OLProgress::spinner()).with_message("saving files");
+        let pb = ProgressBar::new(1000)
+            .with_style(OLProgress::spinner())
+            .with_message("saving files");
         pb.enable_steady_tick(Duration::from_millis(100));
 
-        write_to_user_only_file(genesis_file.as_path(), GENESIS_FILE, bcs::to_bytes(gen_info.get_genesis())?.as_slice())?;
+        write_to_user_only_file(
+            genesis_file.as_path(),
+            GENESIS_FILE,
+            bcs::to_bytes(gen_info.get_genesis())?.as_slice(),
+        )?;
 
         write_to_user_only_file(
             waypoint_file.as_path(),
@@ -96,27 +104,27 @@ pub fn build(
             gen_info.generate_waypoint()?.to_string().as_bytes(),
         )?;
         pb.finish_and_clear();
-        OLProgress::complete(&format!("genesis file saved to {}", output_dir.to_str().unwrap()));
+        OLProgress::complete(&format!(
+            "genesis file saved to {}",
+            output_dir.to_str().unwrap()
+        ));
 
         // (bcs::to_bytes(gen_info.get_genesis())?, gen_info.generate_waypoint()?, tx)
     };
 
-
-
     // Audits the generated genesis.blob comparing to the JSON input.
     if let Some(recovery) = legacy_recovery {
-      let settings = supply_settings.context("no supply settings provided")?;
+        let settings = supply_settings.context("no supply settings provided")?;
 
-      let mut s = supply::populate_supply_stats_from_legacy(recovery, &settings.map_dd_to_slow)?;
+        let mut s = supply::populate_supply_stats_from_legacy(recovery, &settings.map_dd_to_slow)?;
 
-      s.set_ratios_from_settings(&settings)?;
-      compare::compare_recovery_vec_to_genesis_tx(&recovery, gen_info.get_genesis(), &s)?;
-      OLProgress::complete("account balances as expected");
+        s.set_ratios_from_settings(&settings)?;
+        compare::compare_recovery_vec_to_genesis_tx(&recovery, gen_info.get_genesis(), &s)?;
+        OLProgress::complete("account balances as expected");
 
-      compare::check_supply(settings.scale_supply() as u64, gen_info.get_genesis())?;
-      OLProgress::complete("final supply as expected");
+        compare::check_supply(settings.scale_supply() as u64, gen_info.get_genesis())?;
+        OLProgress::complete("final supply as expected");
     }
-
 
     OLProgress::complete("LFG, ready for genesis");
     Ok(vec![genesis_file, waypoint_file])
@@ -142,7 +150,6 @@ pub fn fetch_genesis_info(
     let layout: Layout = from_yaml(&String::from_utf8(base64::decode(l_file)?)?)?;
     OLProgress::complete("fetched layout file");
 
-
     let pb = OLProgress::spin_steady(100, "fetching validator registrations".to_string());
 
     let validators = get_validator_configs(&client, &layout, false)?;
@@ -150,14 +157,13 @@ pub fn fetch_genesis_info(
     pb.finish_and_clear();
 
     let framework = if use_local_framework {
-      // use the local head release
-      release::ReleaseTarget::Head.load_bundle()?
+        // use the local head release
+        release::ReleaseTarget::Head.load_bundle()?
     } else {
-      // get from github
-      let bytes = base64::decode(client.get_file(FRAMEWORK_NAME)?)?;
-      bcs::from_bytes::<ReleaseBundle>(&bytes)?
+        // get from github
+        let bytes = base64::decode(client.get_file(FRAMEWORK_NAME)?)?;
+        bcs::from_bytes::<ReleaseBundle>(&bytes)?
     };
-
 
     // let framework = client.get_framework()?;
     let dummy_root = Ed25519PublicKey::from_encoded_string(
@@ -486,14 +492,17 @@ fn parse_optional_option<F: Fn(&str) -> Result<T, E>, T, E: std::fmt::Display>(
 #[test]
 #[ignore] //dev helper
 fn test_github_info() {
-    let gh_token_path = libra_types::global_config_dir()
-        .join("github_token.txt");
+    let gh_token_path = libra_types::global_config_dir().join("github_token.txt");
     let token = std::fs::read_to_string(&gh_token_path).unwrap();
 
-    let _genesis_info =
-        fetch_genesis_info("0o-de-lally".to_string(), "a-genesis".to_string(), token, true).unwrap();
+    let _genesis_info = fetch_genesis_info(
+        "0o-de-lally".to_string(),
+        "a-genesis".to_string(),
+        token,
+        true,
+    )
+    .unwrap();
 }
-
 
 #[test]
 #[ignore] //dev helper
@@ -502,12 +511,13 @@ fn test_build() {
     let token = std::fs::read_to_string(&home.join("github_token.txt")).unwrap();
 
     build(
-    "0o-de-lally".to_string(),
-    "a-genesis".to_string(),
-    token,
-    home,
-    true,
-    None,
-    None,
-    ).unwrap();
+        "0o-de-lally".to_string(),
+        "a-genesis".to_string(),
+        token,
+        home,
+        true,
+        None,
+        None,
+    )
+    .unwrap();
 }

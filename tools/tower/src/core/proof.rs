@@ -1,19 +1,20 @@
 //! Proof block datastructure
 
 use crate::core::{
-  next_proof::{self, NextProof},
-  backlog, delay::*, proof_preimage::genesis_preimage
+    backlog,
+    delay::*,
+    next_proof::{self, NextProof},
+    proof_preimage::genesis_preimage,
 };
 
 use anyhow::Error;
 
-use libra_types::legacy_types::block::{VDFProof, GENESIS_VDF_SECURITY_PARAM, GENESIS_VDF_ITERATIONS};
-use libra_types::{
-  legacy_types::app_cfg::AppCfg,
-  exports::Client,
-  type_extensions::client_ext::ClientExt,
+use libra_types::legacy_types::block::{
+    VDFProof, GENESIS_VDF_ITERATIONS, GENESIS_VDF_SECURITY_PARAM,
 };
-
+use libra_types::{
+    exports::Client, legacy_types::app_cfg::AppCfg, type_extensions::client_ext::ClientExt,
+};
 
 use std::{fs, path::PathBuf, time::Instant};
 
@@ -47,10 +48,7 @@ pub fn write_genesis(config: &AppCfg) -> anyhow::Result<VDFProof> {
     // write_json(&block, &config.get_block_dir())?;
     let path = block.write_json(&config.get_block_dir(None)?)?;
     // let genesis_proof_filename = &format!("{}_0.json", FILENAME);
-    println!(
-        "proof zero mined, file saved to: {:?}",
-        &path
-    );
+    println!("proof zero mined, file saved to: {:?}", &path);
     Ok(block)
 }
 /// Mine one block
@@ -69,7 +67,7 @@ pub fn mine_once(config: &AppCfg, next: NextProof) -> Result<VDFProof, Error> {
         security: Some(next.diff.security),
     };
 
-    block.write_json( &config.get_block_dir(None)?)?;
+    block.write_json(&config.get_block_dir(None)?)?;
     Ok(block)
 }
 
@@ -99,49 +97,53 @@ pub async fn mine_and_submit(
 }
 
 /// get the next proof either from chain or offline
-pub async fn get_next_proof(config: &AppCfg, client: &Client, local_mode: bool) -> anyhow::Result<NextProof> {
+pub async fn get_next_proof(
+    config: &AppCfg,
+    client: &Client,
+    local_mode: bool,
+) -> anyhow::Result<NextProof> {
+    let next: NextProof = match local_mode {
+        true => next_proof::get_next_proof_params_from_local(config)?,
+        false => {
+            match next_proof::get_next_proof_from_chain(config, &client).await {
+                Ok(n) => n,
+                // failover to local mode, if no onchain data can be found.
+                // TODO: this is important for migrating to the new protocol.
+                // in future versions we should remove this since we may be producing bad proofs, and users should explicitly choose to use local mode.
+                Err(_) => next_proof::get_next_proof_params_from_local(config)?,
+            }
+        }
+    };
 
-  let next: NextProof = match local_mode {
-      true => next_proof::get_next_proof_params_from_local(config)?,
-      false => {
-          match next_proof::get_next_proof_from_chain(config, &client).await {
-              Ok(n) => n,
-              // failover to local mode, if no onchain data can be found.
-              // TODO: this is important for migrating to the new protocol.
-              // in future versions we should remove this since we may be producing bad proofs, and users should explicitly choose to use local mode.
-              Err(_) => next_proof::get_next_proof_params_from_local(config)?,
-          }
-      }
-  };
-
-  Ok(next)
+    Ok(next)
 }
 
 /// combined get next and mining for convenience
-pub async fn get_next_and_mine(config: &AppCfg, client: &Client, local_mode: bool) -> anyhow::Result<VDFProof>{
-        // the default behavior is to fetch info from the chain to produce the next proof, including dynamic params for VDF difficulty.
-        // if the user is offline, they must use local mode
-        // however the user may end up using stale config proofs if the epoch changes and the params are different now.
+pub async fn get_next_and_mine(
+    config: &AppCfg,
+    client: &Client,
+    local_mode: bool,
+) -> anyhow::Result<VDFProof> {
+    // the default behavior is to fetch info from the chain to produce the next proof, including dynamic params for VDF difficulty.
+    // if the user is offline, they must use local mode
+    // however the user may end up using stale config proofs if the epoch changes and the params are different now.
 
-        let next = get_next_proof(config, client, local_mode).await?;
-        println!("Mining VDF Proof # {}", next.next_height);
-        println!(
-            "difficulty: {}, security: {}",
-            next.diff.difficulty, next.diff.security
-        );
+    let next = get_next_proof(config, client, local_mode).await?;
+    println!("Mining VDF Proof # {}", next.next_height);
+    println!(
+        "difficulty: {}, security: {}",
+        next.diff.difficulty, next.diff.security
+    );
 
-        let block = mine_once(&config, next)?;
+    let block = mine_once(&config, next)?;
 
-        println!(
-            "Proof mined: proof_{}.json created.",
-            block.height.to_string()
-        );
+    println!(
+        "Proof mined: proof_{}.json created.",
+        block.height.to_string()
+    );
 
-        Ok(block)
+    Ok(block)
 }
-
-
-
 
 /* ////////////// */
 /* / Unit tests / */
@@ -191,21 +193,21 @@ fn test_helper_clear_block_dir(blocks_dir: &PathBuf) {
 // }
 
 #[cfg(test)]
-use zapatos_temppath::TempPath;
+use libra_types::legacy_types::vdf_difficulty::VDFDifficulty;
 #[cfg(test)]
 use zapatos_sdk::crypto::HashValue;
 #[cfg(test)]
-use libra_types::legacy_types::vdf_difficulty::VDFDifficulty;
+use zapatos_temppath::TempPath;
 
 // use libra_types::legacy_types::{
 //   block::VDFProof,
 // };
 
-
 #[test]
 fn test_mine_once() {
     // if no file is found, the block height is 0
-    let configs_fixture = AppCfg::init_for_tests(TempPath::new().path().to_owned()).expect("can't make test configs");
+    let configs_fixture =
+        AppCfg::init_for_tests(TempPath::new().path().to_owned()).expect("can't make test configs");
     // configs_fixture.workspace.block_dir = "test_blocks_temp_2".to_owned();
 
     let block_dir = configs_fixture.get_block_dir(None).unwrap();
@@ -238,8 +240,8 @@ fn test_mine_once() {
 
     mine_once(&configs_fixture, next).unwrap();
     // confirm this file was written to disk.
-    let block_file = fs::read_to_string(block_dir.join("proof_1.json"))
-        .expect("Could not read latest block");
+    let block_file =
+        fs::read_to_string(block_dir.join("proof_1.json")).expect("Could not read latest block");
     let latest_block: VDFProof =
         serde_json::from_str(&block_file).expect("could not deserialize latest block");
     // Test the file is read, and blockheight is 0
@@ -260,7 +262,8 @@ fn test_mine_once() {
 fn test_mine_genesis() {
     // if no file is found, the block height is 0
     //let blocks_dir = Path::new("./test_blocks");
-    let configs_fixture = AppCfg::init_for_tests(TempPath::new().path().to_owned()).expect("can't make test configs");
+    let configs_fixture =
+        AppCfg::init_for_tests(TempPath::new().path().to_owned()).expect("can't make test configs");
 
     let block_dir = configs_fixture.get_block_dir(None).unwrap();
 
@@ -325,7 +328,10 @@ fn test_parse_one_file() {
         .expect("Could not write block");
 
     // block height
-    assert_eq!(VDFProof::get_highest_block(&blocks_dir).unwrap().0.height, 33);
+    assert_eq!(
+        VDFProof::get_highest_block(&blocks_dir).unwrap().0.height,
+        33
+    );
 
     test_helper_clear_block_dir(&blocks_dir)
 }
@@ -351,24 +357,32 @@ fn test_parse_one_file() {
 //     cfg
 // }
 
-
 #[tokio::test]
 async fn test_get_next() {
-  use libra_types::exports::AuthenticationKey;
-  use zapatos_sdk::crypto::HashValue;
-  use zapatos_temppath::TempPath;
+    use libra_types::exports::AuthenticationKey;
+    use zapatos_sdk::crypto::HashValue;
+    use zapatos_temppath::TempPath;
 
-  let d = TempPath::new();
-  let a = AuthenticationKey::random();
-  let app_cfg: AppCfg = AppCfg::init_app_configs(a, a.derived_address(), Some(d.path().to_owned()), None, None).unwrap();
-  let dummy_client = Client::new("http://localhost:8080".parse().unwrap());
-  // let n = NextProof::genesis_proof(&app_cfg).unwrap();
-  let gen_vdf = write_genesis(&app_cfg).unwrap();
-  let hash = HashValue::sha3_256_of(&gen_vdf.proof);
-  let proof_hash_str = &hex::encode(&hash.to_vec());
-  let vdf = get_next_and_mine(&app_cfg, &dummy_client, true).await.unwrap();
-  // dbg!(&hex::encode(&vdf.preimage));
-  let next_preimage = &hex::encode(&vdf.preimage);
-  assert!(proof_hash_str == next_preimage);
-  // dbg!(&vdf);
+    let d = TempPath::new();
+    let a = AuthenticationKey::random();
+    let app_cfg: AppCfg = AppCfg::init_app_configs(
+        a,
+        a.derived_address(),
+        Some(d.path().to_owned()),
+        None,
+        None,
+    )
+    .unwrap();
+    let dummy_client = Client::new("http://localhost:8080".parse().unwrap());
+    // let n = NextProof::genesis_proof(&app_cfg).unwrap();
+    let gen_vdf = write_genesis(&app_cfg).unwrap();
+    let hash = HashValue::sha3_256_of(&gen_vdf.proof);
+    let proof_hash_str = &hex::encode(&hash.to_vec());
+    let vdf = get_next_and_mine(&app_cfg, &dummy_client, true)
+        .await
+        .unwrap();
+    // dbg!(&hex::encode(&vdf.preimage));
+    let next_preimage = &hex::encode(&vdf.preimage);
+    assert!(proof_hash_str == next_preimage);
+    // dbg!(&vdf);
 }

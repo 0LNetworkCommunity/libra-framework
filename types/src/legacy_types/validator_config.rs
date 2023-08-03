@@ -2,11 +2,7 @@
 
 use anyhow::Result;
 use move_core_types::account_address::AccountAddress;
-use move_core_types::{
-    ident_str,
-    identifier::IdentStr,
-    move_resource::MoveStructType,
-};
+use move_core_types::{ident_str, identifier::IdentStr, move_resource::MoveStructType};
 use serde::{Deserialize, Serialize};
 
 //// TODO THIS IS DUPLICATED WITH types/src/validator_config.rs
@@ -41,8 +37,6 @@ impl MoveStructType for ValidatorConfigResource {
 // impl MoveResource for ValidatorConfigResource {}
 
 impl ValidatorConfigResource {
-
-
     ///
     pub fn try_from_bytes(bytes: &[u8]) -> Result<Self> {
         bcs::from_bytes(bytes).map_err(Into::into)

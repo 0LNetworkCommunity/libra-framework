@@ -1,16 +1,12 @@
 //! Key generation
 // use diem_types::{account_address::AccountAddress, transaction::authenticator::AuthenticationKey, chain_id::MODE_0L};
 // use diem_wallet::{Mnemonic, WalletLibrary};
-use std::{env, process::exit};
-use libra_types::legacy_types::mode_ol::MODE_0L;
-use zapatos_types::chain_id::NamedChain;
-use crate::wallet_library::{
-  mnemonic::Mnemonic,
-  wallet_library::WalletLibrary,
-};
+use crate::wallet_library::{mnemonic::Mnemonic, wallet_library::WalletLibrary};
 use libra_types::exports::AccountAddress;
 use libra_types::exports::AuthenticationKey;
-
+use libra_types::legacy_types::mode_ol::MODE_0L;
+use std::{env, process::exit};
+use zapatos_types::chain_id::NamedChain;
 
 /// Get authkey and account from mnemonic
 pub fn get_account_from_mnem(
@@ -96,7 +92,6 @@ fn fixture_wallet() {
     // alice
     let mnemonic_string = "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse";
 
-
     let mut wallet = WalletLibrary::new_from_mnemonic(Mnemonic::from(&mnemonic_string).unwrap());
 
     let (main_addr, child_number) = wallet.new_address().unwrap();
@@ -107,5 +102,11 @@ fn fixture_wallet() {
 
     // expect the same address for alice
     assert!(&acc.to_string() == "87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5");
-    assert!(get_ol_legacy_address(acc).unwrap().to_string().to_uppercase() == "000000000000000000000000000000004C613C2F4B1E67CA8D98A542EE3F59F5");
+    assert!(
+        get_ol_legacy_address(acc)
+            .unwrap()
+            .to_string()
+            .to_uppercase()
+            == "000000000000000000000000000000004C613C2F4B1E67CA8D98A542EE3F59F5"
+    );
 }

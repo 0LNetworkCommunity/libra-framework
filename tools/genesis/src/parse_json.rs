@@ -1,7 +1,4 @@
-
-use libra_types::legacy_types::{
-  legacy_recovery::{self, LegacyRecovery}
-};
+use libra_types::legacy_types::legacy_recovery::{self, LegacyRecovery};
 use std::path::PathBuf;
 /// Make a recovery genesis blob
 pub fn parse(recovery_json_path: PathBuf) -> anyhow::Result<Vec<LegacyRecovery>> {
@@ -9,7 +6,6 @@ pub fn parse(recovery_json_path: PathBuf) -> anyhow::Result<Vec<LegacyRecovery>>
         &recovery_json_path,
     ))
 }
-
 
 #[test]
 fn parse_json_single() {

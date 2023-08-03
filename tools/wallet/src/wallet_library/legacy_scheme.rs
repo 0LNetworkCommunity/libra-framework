@@ -1,9 +1,9 @@
 //! Key derivation for 0L.
 
 use super::{
-  key_factory::{ChildNumber, ExtendedPrivKey},
-  mnemonic::Mnemonic,
-  wallet_library::WalletLibrary,
+    key_factory::{ChildNumber, ExtendedPrivKey},
+    mnemonic::Mnemonic,
+    wallet_library::WalletLibrary,
 };
 // NOTE: this is included here for compatibility.
 // The successor of this struct is KeyChain.

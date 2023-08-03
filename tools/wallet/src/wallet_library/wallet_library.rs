@@ -18,13 +18,12 @@ use super::{
     mnemonic::Mnemonic,
 };
 use anyhow::{bail, Result};
-use zapatos_types::{
-  account_address::AccountAddress,
-  transaction::authenticator::AuthenticationKey,
-};
-use zapatos_crypto::ed25519::Ed25519PrivateKey;
 use rand::{rngs::OsRng, Rng};
 use std::collections::HashMap;
+use zapatos_crypto::ed25519::Ed25519PrivateKey;
+use zapatos_types::{
+    account_address::AccountAddress, transaction::authenticator::AuthenticationKey,
+};
 
 /// WalletLibrary contains all the information needed to recreate a particular wallet
 pub struct WalletLibrary {
@@ -71,7 +70,7 @@ impl WalletLibrary {
     pub fn generate_addresses(&mut self, depth: u64) -> Result<()> {
         let current = self.key_leaf.0;
         if current > depth {
-           bail!("Addresses already generated up to the supplied depth")
+            bail!("Addresses already generated up to the supplied depth")
         }
         while self.key_leaf != ChildNumber(depth) {
             let _ = self.new_address();
@@ -150,8 +149,7 @@ impl WalletLibrary {
     }
 
     //////// 0L ////////
-    pub fn get_key_factory(&self) -> &KeyFactory{
+    pub fn get_key_factory(&self) -> &KeyFactory {
         &self.key_factory
     }
 }
-
