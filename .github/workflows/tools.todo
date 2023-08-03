@@ -5,6 +5,7 @@ on:
     tags:
       - '*'
     branches:
+
       - 'ci'
 jobs:
   ######## WARM UP CACHES ########
