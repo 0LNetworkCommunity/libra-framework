@@ -5,16 +5,15 @@ on:
     tags:
       - '*'
     branches:
-
       - 'ci'
 jobs:
-  ######## WARM UP CACHES ########
-  preheat: # Warm up the cache
-    uses: ./.github/workflows/preheat.yaml
+  # ######## WARM UP CACHES ########
+  # preheat: # Warm up the cache
+  #   uses: ./.github/workflows/preheat.yaml
 
   ######## TYPES CHECK ########
   types:
-    needs: preheat
+    # needs: preheat
     strategy:
       fail-fast: true
     runs-on: ubuntu-20.04
@@ -22,9 +21,8 @@ jobs:
       - name: setup
         uses: 0o-de-lally/libra-v7/.github/actions/build_env@ci
 
-      - name: types test
-        working-directory: ./types
-        run: cargo t
+      - name: test all
+        run: cargo test -- --no-fail-fast
 
   # tools:
   #   name: libra-tools test
