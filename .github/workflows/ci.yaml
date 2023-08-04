@@ -1,0 +1,44 @@
+name: ci
+
+on:
+  pull_request:
+    types: [opened]
+    branches:
+      - 'main'
+  push:
+    tags:
+      - '*'
+    branches:
+      - 'main'
+      - 'ci'
+jobs:
+  test:
+    # needs: preheat
+    strategy:
+      fail-fast: true
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: build-essential ca-certificates clang curl git libpq-dev libssl-dev pkg-config lsof lld libgmp-dev
+        version: 1.0
+    - name: checkout sources
+      uses: actions/checkout@v3
+      with:
+        # git-restore-mtime-bare uses the ref log to find the correct timestamp
+        # for each file. This requires a full git history. The default value (1)
+        # creates a shallow checkout.
+        fetch-depth: 0
+
+    - name: cache rust
+      uses: Swatinem/rust-cache@v2
+      with:
+        prefix-key: "v1"
+        shared-key: "libra" # to share across CI builds, so it is not job-id specific
+        cache-on-failure: true
+
+    - name: cargo mtime reset
+      uses: chetan/git-restore-mtime-action@v2
+
+    - name: test all
+      run: cargo test -- --no-fail-fast
