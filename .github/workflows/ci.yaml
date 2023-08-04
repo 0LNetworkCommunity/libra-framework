@@ -8,7 +8,6 @@ on:
       - 'ci'
 jobs:
   test:
-    # needs: preheat
     strategy:
       fail-fast: true
     runs-on: ubuntu-20.04
