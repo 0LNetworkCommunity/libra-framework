@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     strategy:
-      fail-fast: true
+      fail-fast: false
     runs-on: ubuntu-20.04
     steps:
     - uses: awalsh128/cache-apt-pkgs-action@latest
@@ -54,6 +54,10 @@ jobs:
     - name: test all
       run: cargo test -- --no-fail-fast
 
+    - name: disk space
+      run: df -h
+    - name: dir usage
+      run: du -sch ./target
   # tools:
   #   name: libra-tools test
   #   needs: preheat
