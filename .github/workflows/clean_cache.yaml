@@ -1,9 +1,6 @@
 name: Clear all Github actions caches on sundays
 on:
-  push:
-
-    branches:
-      - 'ci'
+  workflow_call:
 jobs:
   my-job:
 
