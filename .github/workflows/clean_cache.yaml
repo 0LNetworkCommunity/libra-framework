@@ -1,13 +1,17 @@
 name: Clear all Github actions caches on sundays
 on:
   push:
+
     branches:
       - 'ci'
 jobs:
   my-job:
+
     name: Delete all caches
     runs-on: ubuntu-20.04
-
+    permissions: write-all
     steps:
       - name: Clear caches
         uses: easimon/wipe-cache@main
+        with:
+          dry-run: 'true'
