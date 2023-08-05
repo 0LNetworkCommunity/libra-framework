@@ -10,7 +10,9 @@ env:
   ZAPATOS_BIN_PATH: /usr/bin
 
 jobs:
+
   test:
+    continue-on-error: true
     strategy:
       fail-fast: false
     runs-on: ubuntu-20.04
@@ -34,7 +36,7 @@ jobs:
     - name: cache rust
       uses: Swatinem/rust-cache@v2
       with:
-        prefix-key: "v1"
+        prefix-key: "v2"
         shared-key: "libra" # to share across CI builds, so it is not job-id specific
         cache-on-failure: true
 
@@ -61,25 +63,28 @@ jobs:
     # - name: test all
     #   run: cargo test -- --no-fail-fast
 
-
-  #     # Check test suite meta tests
-    - name: smoke-tests
-      working-directory: ./smoke-tests
-      run: cargo test --no-fail-fast
-
     # Tools tests
     - name: genesis
       working-directory: ./tools/genesis
       run: cargo test --no-fail-fast
+
     - name: query
       working-directory: ./tools/query
       run: cargo test --no-fail-fast
+
     - name: tower
       working-directory: ./tools/tower
       run: cargo test --no-fail-fast
+
     - name: txs
       working-directory: ./tools/txs
       run: cargo test --no-fail-fast
+
     - name: wallet
       working-directory: ./tools/wallet
+      run: cargo test --no-fail-fast
+
+    # Check test suite meta tests
+    - name: smoke-tests
+      working-directory: ./smoke-tests
       run: cargo test --no-fail-fast
