@@ -36,8 +36,8 @@ jobs:
 
     - name: Install zapatos-node (for smoke tests)
       run: >
-        sudo curl -o ./aptos-node https://github.com/0o-de-lally/zapatos/releases/download/v0.0.1/zapatos-node &&
-        sudo chmod 777 ./aptos-node &&
+        wget https://github.com/0o-de-lally/zapatos/releases/download/v0.0.1/aptos-node &&
+        sudo chmod 755 ./aptos-node &&
         export ZAPATOS_BIN_PATH=$(readlink -f ./aptos-node) &&
         echo $ZAPATOS_BIN_PATH &&
         ls -l
