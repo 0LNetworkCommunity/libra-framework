@@ -30,8 +30,8 @@ jobs:
     - name: Install zapatos-node (for smoke tests)
       run: sudo curl -o /bin/zapatos-node https://github.com/0o-de-lally/zapatos/releases/download/v0.0.1/zapatos-node
 
-    - name: has binary
-      run: which zapatos-node
+    - name: path
+      run: echo $PATH
 
     - name: has binary
       run: echo $ZAPATOS_BIN_PATH
