@@ -18,6 +18,9 @@ jobs:
     # allow shell access to github runner. Will print out tmate.io terminal url
     - name: Setup tmate session
       uses: mxschmitt/action-tmate@v3
+      with:
+        detached: true
+      timeout-minutes: 15
 
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
@@ -78,9 +81,9 @@ jobs:
     #   working-directory: ./tools/wallet
     #   run: cargo test --no-fail-fast
 
-    # - name: query
-    #   working-directory: ./tools/query
-    #   run: ZAPATOS_BIN_PATH=$ZAPATOS_BIN_PATH cargo test --no-fail-fast
+    - name: query
+      working-directory: ./tools/query
+      run: cargo test --no-fail-fast
 
     # - name: tower
     #   working-directory: ./tools/tower
