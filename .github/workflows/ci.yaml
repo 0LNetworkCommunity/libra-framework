@@ -6,6 +6,9 @@ on:
       - '*'
     branches:
       - 'ci'
+env:
+  ZAPATOS_BIN_PATH: /bin
+
 jobs:
   test:
     strategy:
@@ -23,6 +26,18 @@ jobs:
         # for each file. This requires a full git history. The default value (1)
         # creates a shallow checkout.
         fetch-depth: 0
+
+    - name: Install zapatos-node (for smoke tests)
+      uses: jaxxstorm/action-install-gh-release@v1.10.0
+      with: # Grab a specific tag
+        repo: 0o-de-lally/zapatos
+        tag: v0.0.1
+
+    - name: has binary
+      run: which zapatos-node
+
+    - name: has binary
+      run: echo $ZAPATOS_BIN_PATH
 
     - name: cache rust
       uses: Swatinem/rust-cache@v2
@@ -51,40 +66,34 @@ jobs:
         swap-storage: true
 
 
-    - name: test all
+    # - name: test all
+    #   run: cargo test -- --no-fail-fast
+
+
+  #     # Check test suite meta tests
+    - name: smoke-tests
+      working-directory: ./smoke-tests
+      run: cargo test -- --no-fail-fast
+
+    # Tools tests
+    - name: genesis
+      working-directory: ./tools/genesis
+      run: cargo test -- --no-fail-fast
+    - name: query
+      working-directory: ./tools/query
+      run: cargo test -- --no-fail-fast
+    - name: tower
+      working-directory: ./tools/tower
+      run: cargo test -- --no-fail-fast
+    - name: txs
+      working-directory: ./tools/txs
+      run: cargo test -- --no-fail-fast
+    - name: wallet
+      working-directory: ./tools/wallet
       run: cargo test -- --no-fail-fast
 
     - name: disk space
       run: df -h
+
     - name: dir usage
       run: du -sch ./target
-  # tools:
-  #   name: libra-tools test
-  #   needs: preheat
-  #   strategy:
-  #     fail-fast: false
-  #   runs-on: ubuntu-20.04
-  #   steps:
-  #     - uses: ./.github/workflows/env.yaml
-
-  #     # Check test suite meta tests
-  #     - name: smoke-tests
-  #       working-directory: ./smoke-tests
-  #       run: cargo t --release
-
-  #     # Tools tests
-  #     - name: genesis
-  #       working-directory: ./tools/genesis
-  #       run: cargo t --release
-  #     - name: query
-  #       working-directory: ./tools/query
-  #       run: cargo t --release
-  #     - name: tower
-  #       working-directory: ./tools/tower
-  #       run: cargo t --release
-  #     - name: txs
-  #       working-directory: ./tools/txs
-  #       run: cargo t --release
-  #     - name: wallet
-  #       working-directory: ./tools/wallet
-  #       run: cargo t --release
