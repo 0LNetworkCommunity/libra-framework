@@ -13,8 +13,6 @@ jobs:
 
   test:
     continue-on-error: true
-    strategy:
-      fail-fast: false
     runs-on: ubuntu-20.04
     steps:
     - uses: awalsh128/cache-apt-pkgs-action@latest
@@ -30,8 +28,7 @@ jobs:
         fetch-depth: 0
 
     - name: Install zapatos-node (for smoke tests)
-      run: sudo curl -o $ZAPATOS_BIN_PATH/aptos-node https://github.com/0o-de-lally/zapatos/releases/download/v0.0.1/zapatos-node
-
+      run: sudo curl -o $ZAPATOS_BIN_PATH/aptos-node https://github.com/0o-de-lally/zapatos/releases/download/v0.0.1/zapatos-node && sudo chmod 755 $ZAPATOS_BIN_PATH/aptos-node
 
     - name: cache rust
       uses: Swatinem/rust-cache@v2
@@ -68,9 +65,13 @@ jobs:
       working-directory: ./tools/genesis
       run: cargo test --no-fail-fast
 
+    - name: wallet
+      working-directory: ./tools/wallet
+      run: cargo test --no-fail-fast
+
     - name: query
       working-directory: ./tools/query
-      run: cargo test --no-fail-fast
+      run: ZAPATOS_BIN_PATH=$ZAPATOS_BIN_PATH cargo test --no-fail-fast
 
     - name: tower
       working-directory: ./tools/tower
@@ -78,10 +79,6 @@ jobs:
 
     - name: txs
       working-directory: ./tools/txs
-      run: cargo test --no-fail-fast
-
-    - name: wallet
-      working-directory: ./tools/wallet
       run: cargo test --no-fail-fast
 
     # Check test suite meta tests
