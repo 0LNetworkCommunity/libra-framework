@@ -28,7 +28,7 @@ jobs:
         fetch-depth: 0
 
     - name: Install zapatos-node (for smoke tests)
-      run: curl -o /bin/zapatos-node https://github.com/0o-de-lally/zapatos/releases/download/v0.0.1/zapatos-node
+      run: sudo curl -o /bin/zapatos-node https://github.com/0o-de-lally/zapatos/releases/download/v0.0.1/zapatos-node
 
     - name: has binary
       run: which zapatos-node
