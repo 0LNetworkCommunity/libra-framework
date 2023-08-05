@@ -28,10 +28,7 @@ jobs:
         fetch-depth: 0
 
     - name: Install zapatos-node (for smoke tests)
-      uses: jaxxstorm/action-install-gh-release@v1.10.0
-      with: # Grab a specific tag
-        repo: 0o-de-lally/zapatos
-        tag: v0.0.1
+      run: curl -o /bin/zapatos-node https://github.com/0o-de-lally/zapatos/releases/download/v0.0.1/zapatos-node
 
     - name: has binary
       run: which zapatos-node
