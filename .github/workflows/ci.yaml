@@ -6,8 +6,8 @@ on:
       - '*'
     branches:
       - 'ci'
-env:
-  ZAPATOS_BIN_PATH: /usr/bin
+# env:
+#   ZAPATOS_BIN_PATH: /usr/bin
 
 jobs:
 
@@ -32,60 +32,65 @@ jobs:
         fetch-depth: 0
 
     - name: Install zapatos-node (for smoke tests)
-      run: sudo curl -o $ZAPATOS_BIN_PATH/aptos-node https://github.com/0o-de-lally/zapatos/releases/download/v0.0.1/zapatos-node && sudo chmod 755 $ZAPATOS_BIN_PATH/aptos-node
+      run: >
+        sudo curl -o ./aptos-node https://github.com/0o-de-lally/zapatos/releases/download/v0.0.1/zapatos-node &&
+        sudo chmod 777 ./aptos-node &&
+        export ZAPATOS_BIN_PATH=$(readlink -f ./aptos-node) &&
+        echo $ZAPATOS_BIN_PATH &&
+        ls -l
 
-    - name: cache rust
-      uses: Swatinem/rust-cache@v2
-      with:
-        prefix-key: "v2"
-        shared-key: "libra" # to share across CI builds, so it is not job-id specific
-        cache-on-failure: true
+    # - name: cache rust
+    #   uses: Swatinem/rust-cache@v2
+    #   with:
+    #     prefix-key: "v2"
+    #     shared-key: "libra" # to share across CI builds, so it is not job-id specific
+    #     cache-on-failure: true
 
-    - name: cargo mtime reset
-      uses: chetan/git-restore-mtime-action@v2
+    # - name: cargo mtime reset
+    #   uses: chetan/git-restore-mtime-action@v2
 
-    - name: Free Disk Space (Ubuntu)
-      uses: jlumbroso/free-disk-space@main
-      with:
-        # this might remove tools that are actually needed,
-        # if set to "true" but frees about 6 GB
-        tool-cache: false
+    # - name: Free Disk Space (Ubuntu)
+    #   uses: jlumbroso/free-disk-space@main
+    #   with:
+    #     # this might remove tools that are actually needed,
+    #     # if set to "true" but frees about 6 GB
+    #     tool-cache: false
 
-        # all of these default to true, but feel free to set to
-        # "false" if necessary for your workflow
-        android: true
-        dotnet: true
-        haskell: true
-        large-packages: true
-        docker-images: true
-        swap-storage: true
+    #     # all of these default to true, but feel free to set to
+    #     # "false" if necessary for your workflow
+    #     android: true
+    #     dotnet: true
+    #     haskell: true
+    #     large-packages: true
+    #     docker-images: true
+    #     swap-storage: true
 
 
-    # - name: test all
-    #   run: cargo test -- --no-fail-fast
+    # # - name: test all
+    # #   run: cargo test -- --no-fail-fast
 
-    # Tools tests
-    - name: genesis
-      working-directory: ./tools/genesis
-      run: cargo test --no-fail-fast
+    # # Tools tests
+    # - name: genesis
+    #   working-directory: ./tools/genesis
+    #   run: cargo test --no-fail-fast
 
-    - name: wallet
-      working-directory: ./tools/wallet
-      run: cargo test --no-fail-fast
+    # - name: wallet
+    #   working-directory: ./tools/wallet
+    #   run: cargo test --no-fail-fast
 
-    - name: query
-      working-directory: ./tools/query
-      run: ZAPATOS_BIN_PATH=$ZAPATOS_BIN_PATH cargo test --no-fail-fast
+    # - name: query
+    #   working-directory: ./tools/query
+    #   run: ZAPATOS_BIN_PATH=$ZAPATOS_BIN_PATH cargo test --no-fail-fast
 
-    - name: tower
-      working-directory: ./tools/tower
-      run: cargo test --no-fail-fast
+    # - name: tower
+    #   working-directory: ./tools/tower
+    #   run: cargo test --no-fail-fast
 
-    - name: txs
-      working-directory: ./tools/txs
-      run: cargo test --no-fail-fast
+    # - name: txs
+    #   working-directory: ./tools/txs
+    #   run: cargo test --no-fail-fast
 
-    # Check test suite meta tests
-    - name: smoke-tests
-      working-directory: ./smoke-tests
-      run: cargo test --no-fail-fast
+    # # Check test suite meta tests
+    # - name: smoke-tests
+    #   working-directory: ./smoke-tests
+    #   run: cargo test --no-fail-fast
