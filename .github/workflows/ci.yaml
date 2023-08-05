@@ -65,27 +65,21 @@ jobs:
   #     # Check test suite meta tests
     - name: smoke-tests
       working-directory: ./smoke-tests
-      run: cargo test -- --no-fail-fast
+      run: cargo test --no-fail-fast
 
     # Tools tests
     - name: genesis
       working-directory: ./tools/genesis
-      run: cargo test -- --no-fail-fast
+      run: cargo test --no-fail-fast
     - name: query
       working-directory: ./tools/query
-      run: cargo test -- --no-fail-fast
+      run: cargo test --no-fail-fast
     - name: tower
       working-directory: ./tools/tower
-      run: cargo test -- --no-fail-fast
+      run: cargo test --no-fail-fast
     - name: txs
       working-directory: ./tools/txs
-      run: cargo test -- --no-fail-fast
+      run: cargo test --no-fail-fast
     - name: wallet
       working-directory: ./tools/wallet
-      run: cargo test -- --no-fail-fast
-
-    - name: disk space
-      run: df -h
-
-    - name: dir usage
-      run: du -sch ./target
+      run: cargo test --no-fail-fast
