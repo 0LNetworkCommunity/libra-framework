@@ -7,7 +7,7 @@ on:
     branches:
       - 'ci'
 env:
-  ZAPATOS_BIN_PATH: /bin
+  ZAPATOS_BIN_PATH: /usr/bin
 
 jobs:
   test:
@@ -28,13 +28,8 @@ jobs:
         fetch-depth: 0
 
     - name: Install zapatos-node (for smoke tests)
-      run: sudo curl -o /bin/zapatos-node https://github.com/0o-de-lally/zapatos/releases/download/v0.0.1/zapatos-node
+      run: sudo curl -o $ZAPATOS_BIN_PATH/zapatos-node https://github.com/0o-de-lally/zapatos/releases/download/v0.0.1/zapatos-node
 
-    - name: path
-      run: echo $PATH
-
-    - name: has binary
-      run: echo $ZAPATOS_BIN_PATH
 
     - name: cache rust
       uses: Swatinem/rust-cache@v2
