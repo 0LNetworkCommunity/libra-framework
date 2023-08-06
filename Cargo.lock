@@ -5659,6 +5659,7 @@ dependencies = [
  "aptos-rest-client",
  "aptos-types",
  "clap 3.2.23",
+ "libra-genesis-tools",
  "libra-types",
  "libra-wallet",
  "tokio",

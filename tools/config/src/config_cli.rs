@@ -1,13 +1,11 @@
 use crate::{legacy_config, make_profile};
 use anyhow::Result;
 use clap::Parser;
-use url::Url;
-use std::path::PathBuf;
+use libra_genesis_tools::wizard::initialize_validator_configs;
 use libra_types::exports::AccountAddress;
 use libra_types::exports::AuthenticationKey;
 use libra_types::exports::NamedChain;
-use libra_types::exports::AuthenticationKey;
-use libra_types::exports::AccountAddress;
+use libra_types::global_config_dir;
 use std::path::{Path, PathBuf};
 use url::Url;
 
@@ -63,6 +61,8 @@ enum ConfigSub {
         #[clap(short, long)]
         workspace: bool,
     },
+    /// Generate validators' config file
+    ValidatorInit {},
 }
 
 impl ConfigCli {
@@ -89,16 +89,24 @@ impl ConfigCli {
                 )
                 .await?;
 
-              Ok(())
-            },
-            _ => { println!("Sometimes I'm right and I can be wrong. My own beliefs are in my song. The butcher, the banker, the drummer and then. Makes no difference what group I'm in.");
+                Ok(())
+            }
+            Some(ConfigSub::ValidatorInit {}) => {
+                let data_path = global_config_dir();
+                if !Path::exists(&data_path) {
+                    println!(
+                        "\nIt seems you have no files at {}, creating directory now",
+                        data_path.display()
+                    );
+                    std::fs::create_dir_all(&data_path)?;
+                }
+                initialize_validator_configs(&data_path, None)?;
+                println!("Validators' config initialized.");
                 Ok(())
             }
             _ => {
                 println!("Sometimes I'm right and I can be wrong. My own beliefs are in my song. The butcher, the banker, the drummer and then. Makes no difference what group I'm in.");
 
-            Ok(())
-          },
                 Ok(())
             }
         }

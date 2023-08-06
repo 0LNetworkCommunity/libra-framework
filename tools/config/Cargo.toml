@@ -17,6 +17,7 @@ url = { workspace = true }
 
 libra-types = { workspace = true }
 libra-wallet = { workspace = true }
+libra-genesis-tools = { path = "../genesis" }
 
 zapatos = { workspace = true }
 zapatos-rest-client = { workspace = true }
