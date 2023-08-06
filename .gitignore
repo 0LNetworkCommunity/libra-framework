@@ -15,3 +15,5 @@ Cargo.lock
 **/framework_upgrade
 
 sccache.log
+
+.idea
