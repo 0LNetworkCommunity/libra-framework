@@ -9,6 +9,7 @@ on:
 env:
   ZAPATOS_BIN_PATH: ${{github.workspace}}
   LIBRA_CI: 1
+  MODE_0L: "TESTNET"
 
 jobs:
 
