@@ -407,15 +407,17 @@ impl GenesisWizard {
 
 fn initialize_host(
     home_path: Option<PathBuf>,
-    username: &str,
+    username: Option<&str>,
     host: HostAndPort,
     mnem: Option<String>,
     keep_legacy_address: bool,
 ) -> anyhow::Result<()> {
     libra_wallet::keys::refresh_validator_files(mnem, home_path.clone(), keep_legacy_address)?;
     OLProgress::complete("Initialized validator key files");
+
+    let effective_username = username.unwrap_or("default_username"); // Use default if None
     // TODO: set validator fullnode configs. Not NONE
-    SetValidatorConfiguration::new(home_path.clone(), username.to_owned(), host, None)
+    SetValidatorConfiguration::new(home_path.clone(), effective_username.to_owned(), host, None)
         .set_config_files()?;
     OLProgress::complete("Saved genesis registration files locally");
 
