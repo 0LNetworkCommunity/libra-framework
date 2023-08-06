@@ -85,27 +85,13 @@ impl GenesisWizard {
         // check the git token is as expected, and set it.
         self.git_token_check()?;
 
-        let to_init = Confirm::new()
-            .with_prompt(format!(
-                "Want to freshen configs at {:?} now?",
-                &self.data_path
-            ))
-            .interact()?;
-        if to_init {
-
-            let host = what_host()?;
-
-            let keep_legacy_address = Confirm::new()
-            .with_prompt("Is this a legacy V5 address you wish to keep?")
-            .interact()?;
-
-            initialize_host(
-                Some(self.data_path.clone()),
-                &self.github_username,
-                host,
-                None,
-                keep_legacy_address,
-            )?;
+        match initialize_validator_configs(&self.data_path, Some(&self.github_username)) {
+            Ok(_) => {
+                println!("Validators' config initialized!");
+            }
+            Err(error) => {
+                eprintln!("Error in initializing validators' config: {}", error);
+            }
         }
 
         let to_register = Confirm::new()
@@ -464,6 +450,32 @@ pub fn what_host() -> Result<HostAndPort, anyhow::Error> {
     Ok(ip)
 }
 
+pub fn initialize_validator_configs(data_path: &PathBuf, github_username: Option<&str>) -> Result<(), anyhow::Error> {
+    let to_init = Confirm::new()
+        .with_prompt(format!(
+            "Want to freshen configs at {:?} now?",
+            data_path.clone()
+        ))
+        .interact()?;
+    if to_init {
+        let host = what_host()?;
+
+        let keep_legacy_address = Confirm::new()
+            .with_prompt("Is this a legacy V5 address you wish to keep?")
+            .interact()?;
+
+        initialize_host(
+            Some(data_path.clone()),
+            github_username,
+            host,
+            None,
+            keep_legacy_address,
+        )?;
+    }
+
+    Ok(())
+}
+
 #[test]
 #[ignore]
 
@@ -485,7 +497,7 @@ fn test_validator_files_config() {
         fs::remove_dir_all(&test_path).unwrap();
     }
 
-    initialize_host(Some(test_path.clone()), "validator", h, Some(alice_mnem), false).unwrap();
+    initialize_host(Some(test_path.clone()), Some("validator"), h, Some(alice_mnem), false).unwrap();
 
     fs::remove_dir_all(&test_path).unwrap();
 }
