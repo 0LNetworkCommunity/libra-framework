@@ -15,12 +15,12 @@ jobs:
   test:
     runs-on: ubuntu-20.04
     steps:
-    # allow shell access to github runner. Will print out tmate.io terminal url
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
-      with:
-        detached: true
-      timeout-minutes: 15
+    # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
+    # - name: Setup tmate session
+    #   uses: mxschmitt/action-tmate@v3
+    #   with:
+    #     detached: true
+    #   timeout-minutes: 15
 
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
