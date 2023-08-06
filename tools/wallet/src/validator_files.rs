@@ -47,9 +47,9 @@ impl SetValidatorConfiguration {
 
     pub fn set_config_files(self) -> Result<(OperatorConfiguration, OwnerConfiguration)> {
         let home_dir = self.home_dir
-          .unwrap_or_else(global_config_dir);
+            .unwrap_or_else(global_config_dir);
 
-      let owner_keys_file  =home_dir.join(PUBLIC_KEYS_FILE);
+        let owner_keys_file = home_dir.join(PUBLIC_KEYS_FILE);
 
         let owner_identity = read_public_identity_file(owner_keys_file.as_path())?;
 
