@@ -19,7 +19,7 @@ pub fn initialize_host(
     OLProgress::complete("Initialized validator key files");
 
     let effective_username = username.unwrap_or("default_username"); // Use default if None
-    // TODO: set validator fullnode configs. Not NONE
+                                                                     // TODO: set validator fullnode configs. Not NONE
     SetValidatorConfiguration::new(home_path.clone(), effective_username.to_owned(), host, None)
         .set_config_files()?;
     OLProgress::complete("Saved genesis registration files locally");

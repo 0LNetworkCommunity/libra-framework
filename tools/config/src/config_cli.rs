@@ -1,4 +1,4 @@
-use crate::host::{initialize_validator_configs};
+use crate::host::initialize_validator_configs;
 use crate::{legacy_config, make_profile};
 use anyhow::Result;
 use clap::Parser;
