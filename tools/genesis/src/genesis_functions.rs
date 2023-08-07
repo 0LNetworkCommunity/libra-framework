@@ -30,7 +30,7 @@ pub fn genesis_migrate_all_users(
         .progress_with_style(OLProgress::bar())
         .for_each(|a| {
             // do basic account creation and coin scaling
-            match genesis_migrate_one_user(session, &a, supply.split_factor, supply.escrow_pct) {
+            match genesis_migrate_one_user(session, a, supply.split_factor, supply.escrow_pct) {
                 Ok(_) => {}
                 Err(e) => {
                     // TODO: compile a list of errors.

@@ -21,11 +21,11 @@ fn test_correct_supply_arithmetic_single() {
         .unwrap()
         .join("sample_end_user_single.json");
 
-    let json_str = fs::read_to_string(json.clone()).unwrap();
+    let json_str = fs::read_to_string(json).unwrap();
     let user_accounts: Vec<LegacyRecovery> = serde_json::from_str(&json_str).unwrap();
 
     // get the supply arithmetic so that we can compare outputs
-    let mut supply = supply::populate_supply_stats_from_legacy(&user_accounts, &vec![]).unwrap();
+    let mut supply = supply::populate_supply_stats_from_legacy(&user_accounts, &[]).unwrap();
     let supply_settings = SupplySettings::default();
     supply.set_ratios_from_settings(&supply_settings).unwrap();
 
@@ -62,7 +62,7 @@ fn test_check_genesis_validators() {
         .unwrap()
         .join("sample_end_user_single.json");
 
-    let json_str = fs::read_to_string(json.clone()).unwrap();
+    let json_str = fs::read_to_string(json).unwrap();
     let user_accounts: Vec<LegacyRecovery> = serde_json::from_str(&json_str).unwrap();
 
     let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(

@@ -85,7 +85,7 @@ impl Mnemonic {
     }
 
     /// Generate mnemonic from entropy byte-array.
-    pub fn mnemonic(entropy: &[u8]) -> Result<Mnemonic> {
+    pub fn new(entropy: &[u8]) -> Result<Mnemonic> {
         let len = entropy.len();
         if !(16..=32).contains(&len) || len % 4 != 0 {
             bail!("Entropy data for mnemonic must have one of the following byte lengths: 32, 28, 24, 20, 16")

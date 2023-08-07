@@ -12,7 +12,7 @@ pub const NODE_YAML_FILE: &str = "validator.yaml";
 /// Create a validator yaml file to start validator node.
 /// NOTE: this will not work for fullnodes
 pub fn save_validator_yaml(home_dir: Option<PathBuf>) -> Result<PathBuf> {
-    let home_dir = home_dir.unwrap_or_else(|| global_config_dir());
+    let home_dir = home_dir.unwrap_or_else(global_config_dir);
     let path = home_dir.display().to_string();
 
     let template = format!(
@@ -63,7 +63,7 @@ api:
 
     let output_file = home_dir.join(NODE_YAML_FILE);
 
-    write_to_user_only_file(&output_file, NODE_YAML_FILE, &template.as_bytes())?;
+    write_to_user_only_file(&output_file, NODE_YAML_FILE, template.as_bytes())?;
 
     Ok(output_file)
 }

@@ -21,7 +21,7 @@ use std::{fs, path::PathBuf, time::Instant};
 // writes a JSON file with the first vdf proof
 fn mine_genesis(config: &AppCfg, difficulty: u64, security: u64) -> anyhow::Result<VDFProof> {
     println!("Mining Genesis Proof"); // TODO: use logger
-    let preimage = genesis_preimage(&config)?;
+    let preimage = genesis_preimage(config)?;
     let now = Instant::now();
 
     let proof = do_delay(&preimage, difficulty, security).unwrap(); // Todo: make mine_genesis return a result.
@@ -41,8 +41,8 @@ fn mine_genesis(config: &AppCfg, difficulty: u64, security: u64) -> anyhow::Resu
 
 /// Mines genesis and writes the file
 pub fn write_genesis(config: &AppCfg) -> anyhow::Result<VDFProof> {
-    let difficulty = GENESIS_VDF_ITERATIONS.clone();
-    let security = GENESIS_VDF_SECURITY_PARAM.clone();
+    let difficulty = *GENESIS_VDF_ITERATIONS;
+    let security = *GENESIS_VDF_SECURITY_PARAM;
     let block = mine_genesis(config, difficulty, security)?;
     //TODO: check for overwriting file...
     // write_json(&block, &config.get_block_dir())?;
@@ -62,7 +62,7 @@ pub fn mine_once(config: &AppCfg, next: NextProof) -> Result<VDFProof, Error> {
         height: next.next_height,
         elapsed_secs,
         preimage: next.preimage,
-        proof: data.clone(),
+        proof: data,
         difficulty: Some(next.diff.difficulty),
         security: Some(next.diff.security),
     };
@@ -86,7 +86,7 @@ pub async fn mine_and_submit(
     loop {
         get_next_and_mine(config, &client, local_mode).await?;
         // submits backlog to client
-        match backlog::process_backlog(&config).await {
+        match backlog::process_backlog(config).await {
             Ok(()) => println!("Success: Proof committed to chain"),
             Err(e) => {
                 // don't stop on tx errors
@@ -105,7 +105,7 @@ pub async fn get_next_proof(
     let next: NextProof = match local_mode {
         true => next_proof::get_next_proof_params_from_local(config)?,
         false => {
-            match next_proof::get_next_proof_from_chain(config, &client).await {
+            match next_proof::get_next_proof_from_chain(config, client).await {
                 Ok(n) => n,
                 // failover to local mode, if no onchain data can be found.
                 // TODO: this is important for migrating to the new protocol.
@@ -135,11 +135,11 @@ pub async fn get_next_and_mine(
         next.diff.difficulty, next.diff.security
     );
 
-    let block = mine_once(&config, next)?;
+    let block = mine_once(config, next)?;
 
     println!(
         "Proof mined: proof_{}.json created.",
-        block.height.to_string()
+        block.height
     );
 
     Ok(block)
@@ -292,13 +292,9 @@ fn test_mine_genesis() {
 
 #[test]
 fn test_parse_no_files() {
-    // if no file is found, the block height is 0
     let blocks_dir = PathBuf::from(".");
 
-    match VDFProof::get_highest_block(&blocks_dir) {
-        Ok(_) => assert!(false),
-        Err(_) => assert!(true),
-    }
+    assert!(VDFProof::get_highest_block(&blocks_dir).is_err());
 }
 
 #[test]
@@ -377,12 +373,12 @@ async fn test_get_next() {
     // let n = NextProof::genesis_proof(&app_cfg).unwrap();
     let gen_vdf = write_genesis(&app_cfg).unwrap();
     let hash = HashValue::sha3_256_of(&gen_vdf.proof);
-    let proof_hash_str = &hex::encode(&hash.to_vec());
+    let proof_hash_str = &hex::encode(hash.to_vec());
     let vdf = get_next_and_mine(&app_cfg, &dummy_client, true)
         .await
         .unwrap();
     // dbg!(&hex::encode(&vdf.preimage));
-    let next_preimage = &hex::encode(&vdf.preimage);
+    let next_preimage = &hex::encode(vdf.preimage);
     assert!(proof_hash_str == next_preimage);
     // dbg!(&vdf);
 }

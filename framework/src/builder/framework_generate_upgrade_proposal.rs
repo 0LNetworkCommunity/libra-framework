@@ -167,7 +167,7 @@ pub fn init_move_dir_wrapper(
         &package_dir,
         script_name,
         "LibraFramework".to_string(),
-        std::fs::canonicalize(&framework_local_dir)?,
+        std::fs::canonicalize(framework_local_dir)?,
     )?;
     Ok(())
 }

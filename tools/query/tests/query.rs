@@ -20,7 +20,7 @@ async fn libra_query_test() {
         }
         Err(e) => {
             println!("e: {:?}", e);
-            assert!(false, "nothing returned from query");
+            panic!("nothing returned from query");
         }
     }
 }

@@ -38,7 +38,7 @@ async fn sanity_balances() {
     // dbg!(&balance.coin.value.0);
     assert!(10000001 == balance.coin.value.0);
 
-    let gas_balance = get_libra_balance(&public_info.client(), address)
+    let gas_balance = get_libra_balance(public_info.client(), address)
         .await
         .unwrap()
         .into_inner();
@@ -50,7 +50,7 @@ async fn sanity_balances() {
         .await
         .unwrap();
 
-    let gas_balance = get_libra_balance(&public_info.client(), address)
+    let gas_balance = get_libra_balance(public_info.client(), address)
         .await
         .unwrap()
         .into_inner();

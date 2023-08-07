@@ -68,7 +68,7 @@ impl Supply {
 fn inc_supply(
     mut acc: Supply,
     r: &LegacyRecovery,
-    dd_wallet_list: &Vec<LegacyAddress>,
+    dd_wallet_list: &[LegacyAddress],
 ) -> anyhow::Result<Supply> {
     // get balances
     let amount: f64 = match &r.balance {

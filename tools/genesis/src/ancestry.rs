@@ -35,7 +35,7 @@ pub fn parse_ancestry_json(path: PathBuf) -> anyhow::Result<Vec<JsonAncestry>> {
 
 pub fn find_all_ancestors(
     my_account: &JsonAncestry,
-    list: &Vec<JsonAncestry>,
+    list: &[JsonAncestry],
 ) -> anyhow::Result<Vec<LegacyAddress>> {
     let mut my_ancestors: Vec<LegacyAddress> = vec![];
     let mut i = 0;
@@ -57,10 +57,10 @@ pub fn find_all_ancestors(
     Ok(my_ancestors)
 }
 
-pub fn map_ancestry(list: &Vec<JsonAncestry>) -> anyhow::Result<Vec<Ancestry>> {
+pub fn map_ancestry(list: &[JsonAncestry]) -> anyhow::Result<Vec<Ancestry>> {
     list.iter()
         .map(|el| {
-            let tree = find_all_ancestors(el, list).unwrap_or(vec![]);
+            let tree = find_all_ancestors(el, list).unwrap_or_default();
             Ok(Ancestry {
                 address: el.address,
                 tree,
@@ -109,7 +109,7 @@ fn test_fix() {
 
     fix_legacy_recovery_data(&mut vec, &[a]);
     dbg!(&vec);
-    assert!(&vec.iter().next().unwrap().ancestry.is_some());
+    assert!(&vec.first().unwrap().ancestry.is_some());
 }
 
 #[test]
@@ -123,7 +123,7 @@ fn parse_file() {
 fn test_find() {
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/ancestry.json");
     let json_ancestry = parse_ancestry_json(p).unwrap();
-    let all = find_all_ancestors(json_ancestry.iter().next().unwrap(), &json_ancestry).unwrap();
+    let all = find_all_ancestors(json_ancestry.first().unwrap(), &json_ancestry).unwrap();
     // dbg!(&all);
     assert!(all.len() == 6);
 }
@@ -134,5 +134,5 @@ fn test_map() {
     let json_ancestry = parse_ancestry_json(p).unwrap();
     let res = map_ancestry(&json_ancestry).unwrap();
     dbg!(res.len());
-    dbg!(&res.iter().next());
+    dbg!(&res.first());
 }

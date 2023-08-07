@@ -40,7 +40,7 @@ impl WalletLibrary {
     pub fn new() -> Self {
         let mut rng = OsRng;
         let data: [u8; 32] = rng.gen();
-        let mnemonic = Mnemonic::mnemonic(&data).unwrap();
+        let mnemonic = Mnemonic::new(&data).unwrap();
         Self::new_from_mnemonic(mnemonic)
     }
 

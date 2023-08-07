@@ -7,7 +7,6 @@ use libra_query::query_cli::QueryCli;
 use libra_tower::tower_cli::TowerCli;
 use libra_txs::txs_cli::TxsCli;
 use libra_wallet::wallet_cli::WalletCli;
-use tokio;
 use zapatos::move_tool::MoveTool;
 
 #[derive(Parser)]
@@ -41,7 +40,7 @@ async fn main() -> anyhow::Result<()> {
             move_tool
                 .execute()
                 .await
-                .map_err(|e| anyhow!("Failed to execute move tool, message: {}", e.to_string()))?;
+                .map_err(|e| anyhow!("Failed to execute move tool, message: {}", &e))?;
         }
         Some(Sub::Node(n)) => {
             n.run().await?;

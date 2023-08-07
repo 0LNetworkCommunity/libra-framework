@@ -32,7 +32,7 @@ async fn can_upgrade() {
     let mut swarm = new_local_swarm_with_release(1, release).await;
 
     // Create accounts. Needs to happen up top because of borrowing swarm
-    let alice = swarm.validators().nth(0).unwrap();
+    let alice = swarm.validators().next().unwrap();
     let pri_key = alice.account_private_key().as_ref().unwrap();
     let mut alice_account = LocalAccount::new(alice.peer_id(), pri_key.private_key(), 0);
 

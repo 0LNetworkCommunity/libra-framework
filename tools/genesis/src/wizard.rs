@@ -52,7 +52,7 @@ pub struct GenesisWizard {
 impl GenesisWizard {
     /// constructor
     pub fn new(genesis_repo_org: String, repo_name: String, data_path: Option<PathBuf>) -> Self {
-        let data_path = data_path.unwrap_or(global_config_dir());
+        let data_path = data_path.unwrap_or_else(global_config_dir);
 
         Self {
             validator_address: "tbd".to_string(),
@@ -103,10 +103,9 @@ impl GenesisWizard {
 
             self.validator_address = id
                 .account_address
-                .expect(&format!(
-                    "cannot find an account address in {}",
-                    VALIDATOR_FILE
-                ))
+                .context(format!("cannot find an account address in {}",
+                    VALIDATOR_FILE)
+                )?
                 .to_hex_literal();
             // check if the user has the github auth token, and that
             // there is a forked repo on their account.
@@ -329,21 +328,21 @@ impl GenesisWizard {
 
     fn make_pull_request(&self) -> anyhow::Result<()> {
         let gh_token_path = self.data_path.join(GITHUB_TOKEN_FILENAME);
-        let api_token = std::fs::read_to_string(&gh_token_path)?;
+        let api_token = std::fs::read_to_string(gh_token_path)?;
 
         let pb = ProgressBar::new(1).with_style(OLProgress::bar());
         let gh_client = Client::new(
             self.genesis_repo_org.clone(),
             self.repo_name.clone(),
             DEFAULT_GIT_BRANCH.to_string(),
-            api_token.clone(),
+            api_token,
         );
         // repository_owner, genesis_repo_name, username
         // This will also fail if there already is a pull request!
         match gh_client.make_genesis_pull_request(
-            &*self.genesis_repo_org,
-            &*self.repo_name,
-            &*self.github_username,
+            &self.genesis_repo_org,
+            &self.repo_name,
+            &self.github_username,
             None, // default to "main"
         ) {
             Ok(_) => {}
@@ -353,14 +352,12 @@ impl GenesisWizard {
                         "INFO: A pull request already exists, you don't need to do anything else."
                     );
                     // return Ok(())
+                } else if e.to_string().contains("No commits between main and main") {
+                    println!(
+                    "INFO: A pull request already exists, and there are no changes with main"
+                );
                 } else {
-                    if e.to_string().contains("No commits between main and main") {
-                        println!(
-                        "INFO: A pull request already exists, and there are no changes with main"
-                    );
-                    } else {
-                        bail!("failed to create pull, message: {}", e.to_string())
-                    }
+                    bail!("failed to create pull, message: {}", e.to_string())
                 }
             }
         };

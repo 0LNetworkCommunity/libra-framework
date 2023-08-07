@@ -72,7 +72,7 @@ fn make_the_upgrade_fixtures() -> anyhow::Result<()> {
     dbg!(&p);
     let modules = vec!["move-stdlib".to_string()];
 
-    generate_fixtures(p.clone(), modules)?;
+    generate_fixtures(p, modules)?;
 
     let p = fixture_path.join("upgrade_multi_step");
     std::fs::create_dir_all(&p)?;

@@ -56,7 +56,7 @@ fn main() -> anyhow::Result<()> {
             let data_path = cli.home_dir.unwrap_or_else(global_config_dir);
 
             let github_token = cli.token_github.unwrap_or(
-                std::fs::read_to_string(&data_path.join(GITHUB_TOKEN_FILENAME))
+                std::fs::read_to_string(data_path.join(GITHUB_TOKEN_FILENAME))
                     .context("cannot find github_token.txt in config path")?
                     .trim()
                     .to_string(),

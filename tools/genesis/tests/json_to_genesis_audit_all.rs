@@ -20,12 +20,12 @@ fn test_correct_supply_arithmetic_all() {
         .unwrap()
         .join("sample_export_recovery.json");
 
-    let json_str = fs::read_to_string(json.clone()).unwrap();
+    let json_str = fs::read_to_string(json).unwrap();
     let user_accounts: Vec<LegacyRecovery> = serde_json::from_str(&json_str).unwrap();
 
     // get the supply arithmetic so that we can compare outputs
     let mut supply_stats =
-        supply::populate_supply_stats_from_legacy(&user_accounts, &vec![]).unwrap();
+        supply::populate_supply_stats_from_legacy(&user_accounts, &[]).unwrap();
     let supply_settings = SupplySettings::default();
     supply_stats
         .set_ratios_from_settings(&supply_settings)
@@ -45,9 +45,9 @@ fn test_correct_supply_arithmetic_all() {
     match compare::compare_recovery_vec_to_genesis_tx(&user_accounts, &gen_tx, &supply_stats) {
         Ok(list) => {
             if !list.is_empty() {
-                assert!(false, "list is not empty: {list:#?}");
+                panic!("list is not empty: {list:#?}");
             }
         }
-        Err(_e) => assert!(false, "error creating comparison"),
+        Err(_e) => panic!("error creating comparison"),
     }
 }

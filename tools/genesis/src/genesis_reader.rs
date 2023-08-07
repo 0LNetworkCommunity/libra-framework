@@ -1,4 +1,5 @@
 //! helpers for reading state from a genesis blob
+#![allow(clippy::mutable_key_type)] // TODO: don't quite know how to fix that warning
 
 use anyhow::{self, bail, Context};
 use libra_types::exports::AccountAddress;
@@ -42,8 +43,8 @@ pub fn bootstrap_db_reader_from_gen_tx(
 
     // Bootstrap an empty DB with the genesis tx, so it has state
     let waypoint =
-        generate_waypoint::<AptosVM>(&db_rw, &genesis_transaction).expect("Should not fail.");
-    maybe_bootstrap::<AptosVM>(&db_rw, &genesis_transaction, waypoint).unwrap();
+        generate_waypoint::<AptosVM>(&db_rw, genesis_transaction).expect("Should not fail.");
+    maybe_bootstrap::<AptosVM>(&db_rw, genesis_transaction, waypoint).unwrap();
 
     Ok((db_rw, waypoint))
 }
@@ -122,7 +123,7 @@ pub fn total_supply(db_reader: &Arc<dyn DbReader>) -> Option<u128> {
                     .expect("supply value exists");
                 // dbg!(&value);
                 // todo!()
-                bcs::from_bytes(&value.bytes()).unwrap()
+                bcs::from_bytes(value.bytes()).unwrap()
             }
             None => o.integer.as_ref().unwrap().value,
         })

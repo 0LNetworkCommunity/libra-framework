@@ -4,7 +4,7 @@ use libra_txs::txs_cli::{
     TxsSub::{GenerateTransaction, Publish},
 };
 use libra_types::type_extensions::client_ext::ClientExt;
-use serde_json;
+
 use std::path::PathBuf;
 use std::str::FromStr;
 use zapatos::common::types::MovePackageDir;

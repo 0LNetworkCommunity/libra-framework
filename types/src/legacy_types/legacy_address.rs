@@ -34,7 +34,7 @@ impl LegacyAddress {
     }
 
     pub fn short_str_lossless(&self) -> String {
-        let hex_str = hex::encode(&self.0).trim_start_matches('0').to_string();
+        let hex_str = hex::encode(self.0).trim_start_matches('0').to_string();
         if hex_str.is_empty() {
             "0".to_string()
         } else {
@@ -311,7 +311,7 @@ mod tests {
 
         assert_eq!(
             bytes.len(),
-            LegacyAddress::LENGTH as usize,
+            LegacyAddress::LENGTH,
             "Address {:?} is not {}-bytes long. Addresses must be {} bytes",
             bytes,
             LegacyAddress::LENGTH,

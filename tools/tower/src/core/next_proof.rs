@@ -34,12 +34,12 @@ impl NextProof {
     /// create a genesis proof
     pub fn genesis_proof(config: &AppCfg) -> anyhow::Result<Self> {
         // NOTE: can't set defautlsin VDFDifficulty::default() because of circular dependency
-        let mut diff = VDFDifficulty::default();
-
-        diff.difficulty = GENESIS_VDF_ITERATIONS.clone();
-        diff.security = GENESIS_VDF_SECURITY_PARAM.clone();
-        diff.prev_diff = GENESIS_VDF_ITERATIONS.clone();
-        diff.prev_sec = GENESIS_VDF_SECURITY_PARAM.clone();
+        let diff = VDFDifficulty {
+           difficulty: *GENESIS_VDF_ITERATIONS,
+           security: *GENESIS_VDF_SECURITY_PARAM,
+           prev_diff: *GENESIS_VDF_ITERATIONS,
+           prev_sec: *GENESIS_VDF_SECURITY_PARAM
+        };
 
         Ok(NextProof {
             diff,
@@ -74,7 +74,7 @@ pub async fn get_next_proof_from_chain(
     app_cfg: &AppCfg,
     client: &Client,
 ) -> Result<NextProof, Error> {
-    let (difficulty, security) = chain_queries::get_tower_difficulty(&client).await?;
+    let (difficulty, security) = chain_queries::get_tower_difficulty(client).await?;
 
     let profile = app_cfg.get_profile(None)?;
     // get user's state

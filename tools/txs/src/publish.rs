@@ -13,10 +13,10 @@ use zapatos_types::transaction::TransactionPayload;
 /// build the move package and create a transaction payload.
 pub fn encode_publish_payload(move_options: &MovePackageDir) -> anyhow::Result<TransactionPayload> {
     let package_path = move_options.get_package_path()?;
-    let mut options = BuildOptions::default();
-
-    // NOTE: if the file includes a named address the build will fail.
-    options.named_addresses = move_options.named_addresses();
+    let options = BuildOptions {
+      // NOTE: if the file includes a named address the build will fail.
+      named_addresses: move_options.named_addresses(), ..Default::default()
+    };
 
     let package = BuiltPackage::build(package_path, options)?;
     let compiled_units = package.extract_code();

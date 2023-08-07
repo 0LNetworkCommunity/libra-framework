@@ -9,6 +9,6 @@ pub const ENV_VAR_MODE_0L: &str = "MODE_0L";
 
 /// The environment variable `MODE_0L` can be set to any of the the NamedChain variants MAINNET, TESTNET, LOCAL
 pub static MODE_0L: Lazy<NamedChain> = Lazy::new(|| {
-    let st = env::var(ENV_VAR_MODE_0L).unwrap_or("MAINNET".to_string());
+    let st = env::var(ENV_VAR_MODE_0L).unwrap_or_else(|_| "MAINNET".to_string());
     NamedChain::from_str(st.to_uppercase().as_str()).unwrap_or(NamedChain::MAINNET)
 });

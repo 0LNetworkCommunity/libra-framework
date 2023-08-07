@@ -215,12 +215,10 @@ impl Sender {
         &mut self,
         payload: TransactionPayload,
     ) -> anyhow::Result<TransactionOnChainData> {
-        match &payload {
-            TransactionPayload::Script(s) => {
-                let hash = HashValue::sha3_256_of(s.code());
-                info!("script code hash: {}", &hash.to_hex_literal());
-            }
-            _ => {}
+
+        if let TransactionPayload::Script(s) = &payload {
+          let hash = HashValue::sha3_256_of(s.code());
+          info!("script code hash: {}", &hash.to_hex_literal());
         }
 
         let signed = self.sign_payload(payload);

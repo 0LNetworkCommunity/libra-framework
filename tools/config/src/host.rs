@@ -3,7 +3,7 @@ use dialoguer::{Confirm, Input};
 use libra_types::legacy_types::mode_ol::MODE_0L;
 use libra_types::ol_progress::OLProgress;
 use libra_wallet::validator_files::SetValidatorConfiguration;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use zapatos_genesis::config::HostAndPort;
 use zapatos_types::chain_id::NamedChain;
@@ -68,13 +68,13 @@ pub fn what_host() -> Result<HostAndPort, anyhow::Error> {
 }
 
 pub fn initialize_validator_configs(
-    data_path: &PathBuf,
+    data_path: &Path,
     github_username: Option<&str>,
 ) -> Result<(), anyhow::Error> {
     let to_init = Confirm::new()
         .with_prompt(format!(
-            "Want to freshen configs at {:?} now?",
-            data_path.clone()
+            "Want to freshen configs at {} now?",
+            data_path.display()
         ))
         .interact()?;
     if to_init {
@@ -85,7 +85,7 @@ pub fn initialize_validator_configs(
             .interact()?;
 
         initialize_host(
-            Some(data_path.clone()),
+            Some(data_path.to_path_buf()),
             github_username,
             host,
             None,
@@ -98,6 +98,7 @@ pub fn initialize_validator_configs(
 
 #[test]
 fn test_validator_files_config() {
+    use libra_types::global_config_dir;
     let alice_mnem = "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse".to_string();
     let h = HostAndPort::local(6180).unwrap();
     let test_path = global_config_dir().join("test_genesis");

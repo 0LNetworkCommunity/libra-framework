@@ -1,7 +1,5 @@
 //! Key generation
-// use diem_types::{account_address::AccountAddress, transaction::authenticator::AuthenticationKey, chain_id::MODE_0L};
-// use diem_wallet::{Mnemonic, WalletLibrary};
-use crate::wallet_library::{mnemonic::Mnemonic, wallet_library::WalletLibrary};
+use crate::core::{mnemonic::Mnemonic, wallet_library::WalletLibrary};
 use libra_types::exports::AccountAddress;
 use libra_types::exports::AuthenticationKey;
 use libra_types::legacy_types::mode_ol::MODE_0L;
@@ -98,7 +96,6 @@ fn fixture_wallet() {
     println!("wallet\n:{:?} === {:x}", child_number, main_addr);
 
     let (_, acc, _) = get_account_from_mnem(mnemonic_string.to_owned()).unwrap();
-    // dbg!(&acc);
 
     // expect the same address for alice
     assert!(&acc.to_string() == "87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5");

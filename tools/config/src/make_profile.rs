@@ -67,7 +67,7 @@ pub async fn run(public_key: &str, profile: Option<&str>, workspace: bool) -> Re
     eprintln!("Have you ever rotated the account keys? We can look on chain to see what your actual address is. [y/N]");
     let input = read_line("address")?;
     let input = input.trim();
-    if input.contains("y") {
+    if input.contains('y') {
         let client = check_network(&profile_config);
         if client.is_ok() {
             match lookup_address(&client.unwrap(), address, false).await {
@@ -100,7 +100,7 @@ pub async fn run(public_key: &str, profile: Option<&str>, workspace: bool) -> Re
     } else {
         None
     };
-    let path = config.save_ext(config_location.clone())?;
+    let path = config.save_ext(config_location)?;
     eprintln!(
         "\nThe libra configuration is saved! \nfor account {} \nat path: {}  as profile {}",
         address,

@@ -1,7 +1,7 @@
 use crate::{
     keys::{refresh_validator_files, validator_keygen},
     load_keys,
-    wallet_library::wallet_library::WalletLibrary,
+    core::wallet_library::WalletLibrary,
 };
 use anyhow::Result;
 use indoc::formatdoc;

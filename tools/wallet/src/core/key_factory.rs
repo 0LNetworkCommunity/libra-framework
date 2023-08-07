@@ -15,7 +15,7 @@
 //! Note further that the Key Derivation Function (KDF) chosen in the derivation of Child
 //! Private Keys adheres to [HKDF RFC 5869](https://tools.ietf.org/html/rfc5869).
 
-use crate::wallet_library::mnemonic::Mnemonic;
+use crate::core::mnemonic::Mnemonic;
 use anyhow::{anyhow, Result};
 // use byteorder::LittleEndian;
 use byteorder::{ByteOrder, LittleEndian};

@@ -50,7 +50,7 @@ pub fn compare_recovery_vec_to_genesis_tx(
         .with_message("check genesis bootstraps db");
     pb.enable_steady_tick(core::time::Duration::from_millis(500));
     // iterate over the recovery file and compare balances
-    let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&genesis_transaction)?;
+    let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(genesis_transaction)?;
     pb.finish_and_clear();
 
     recovery
@@ -158,7 +158,7 @@ pub fn check_val_set(
     expected_vals: &[AccountAddress],
     genesis_transaction: &Transaction,
 ) -> Result<(), anyhow::Error> {
-    let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&genesis_transaction)?;
+    let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(genesis_transaction)?;
 
     let addrs = get_val_set(&db_rw.reader)?;
 
@@ -178,7 +178,7 @@ pub fn check_supply(
     expected_supply: u64,
     genesis_transaction: &Transaction,
 ) -> Result<(), anyhow::Error> {
-    let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&genesis_transaction)?;
+    let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(genesis_transaction)?;
 
     let on_chain_supply = total_supply(&db_rw.reader).unwrap();
 

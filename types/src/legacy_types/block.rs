@@ -4,12 +4,12 @@ use crate::legacy_types::{app_cfg::AppCfg, mode_ol::MODE_0L};
 
 use crate::exports::NamedChain;
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Result, Context};
 use glob::glob;
 use hex;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use std::{fs, io::Write, path::PathBuf};
+use std::{fs, io::Write, path::{PathBuf, Path}};
 // use std::
 
 // TOWER DIFFICULTY SETTINGS
@@ -20,7 +20,7 @@ use std::{fs, io::Write, path::PathBuf};
 
 /// The VDF security parameter.
 pub static GENESIS_VDF_SECURITY_PARAM: Lazy<u64> = Lazy::new(|| {
-    match MODE_0L.clone() {
+    match *MODE_0L {
         NamedChain::MAINNET => 350,
         NamedChain::TESTNET => 350, // TODO: Do we want a different one?
         _ => 350,
@@ -32,7 +32,7 @@ pub const FILENAME: &str = "proof";
 
 /// The VDF iterations. Combined with security parameter we have the "difficulty".
 pub static GENESIS_VDF_ITERATIONS: Lazy<u64> = Lazy::new(|| {
-    match MODE_0L.clone() {
+    match *MODE_0L {
         // Difficulty updated in V6
         // see ol/documentation/tower/difficulty_benchmarking.md
         NamedChain::MAINNET => 3_000_000_000, // 3 billion, ol/documentation/tower/difficulty_benchmarking.md
@@ -67,7 +67,7 @@ impl VDFProof {
         let reader = std::io::BufReader::new(file);
         let block: VDFProof =
             serde_json::from_reader(reader).expect("Genesis block should deserialize");
-        return Ok((block.preimage, block.proof));
+        Ok((block.preimage, block.proof))
     }
 
     // /// new object deserialized from file
@@ -84,14 +84,14 @@ impl VDFProof {
 
     /// get the security param of the block, or assume legacy
     pub fn security(&self) -> u64 {
-        self.security.unwrap() as u64 // if the block doesn't have this info, assume it's legacy block.
+        self.security.unwrap() // if the block doesn't have this info, assume it's legacy block.
     }
 
     pub fn write_json(&self, blocks_dir: &PathBuf) -> Result<PathBuf, std::io::Error> {
         if !&blocks_dir.exists() {
             // first run, create the directory if there is none, or if the user changed the configs.
             // note: user may have blocks but they are in a different directory than what AppCfg says.
-            fs::create_dir_all(&blocks_dir)?;
+            fs::create_dir_all(blocks_dir)?;
         };
         // Write the file.
         let mut latest_block_path = blocks_dir.clone();
@@ -121,17 +121,17 @@ impl VDFProof {
     }
 
     /// Parse a proof_x.json file and return a VDFProof
-    pub fn get_proof_number(num: u64, blocks_dir: &PathBuf) -> Result<(Self, PathBuf)> {
+    pub fn get_proof_number(num: u64, blocks_dir: &Path) -> Result<(Self, PathBuf)> {
         let file = PathBuf::from(&format!(
             "{}/{}_{}.json",
             blocks_dir.display(),
             FILENAME,
-            num.to_string()
+            num
         ));
         match Self::parse_block_file(&file, false) {
             Ok(p) => {
                 if p.height == num {
-                    return Ok((p, file));
+                    Ok((p, file))
                 } else {
                     bail!(
                         "file {} does not contain proof height {}, found {} instead",
@@ -154,7 +154,7 @@ impl VDFProof {
     }
 
     /// parse the existing blocks in the miner's path. This function receives any path. Note: the path is configured in miner.toml which abscissa Configurable parses, see commands.rs.
-    pub fn get_highest_block(blocks_dir: &PathBuf) -> Result<(Self, PathBuf)> {
+    pub fn get_highest_block(blocks_dir: &Path) -> Result<(Self, PathBuf)> {
         let mut max_block: Option<VDFProof> = None;
         let mut max_block_path: Option<PathBuf> = None;
 
@@ -164,14 +164,14 @@ impl VDFProof {
         //   bail!("cannot find any VDF proof files in, {:?}", blocks_dir);
         // }
 
-        for entry in file_list {
-            if let Ok(entry) = entry {
+        for entry in file_list.flatten() {
+            // if let Ok(entry) = entry {
                 // let file = fs::File::open(&entry).expect("Could not open block file");
                 // let reader = BufReader::new(file);
                 let block = match VDFProof::parse_block_file(&entry, false) {
                     Ok(v) => v,
                     Err(e) => {
-                        println!("could not parse the proof file: {}, skipping. Manually delete if this proof is not readable.", e.to_string());
+                        println!("could not parse the proof file: {}, skipping. Manually delete if this proof is not readable.", e);
                         continue;
                     }
                 };
@@ -187,16 +187,10 @@ impl VDFProof {
                     max_block = Some(block);
                     max_block_path = Some(entry);
                 }
-            }
         }
 
-        if max_block.is_some() && max_block_path.is_some() {
-            return Ok((max_block.unwrap(), max_block_path.unwrap()));
-        } else {
-            bail!(
-            "cannot find a valid VDF proof in files to determine next proof's parameters. Exiting."
-        )
-        }
-        // (max_block, max_block_path)
+        let err_msg = "cannot find a valid VDF proof in files to determine next proof's parameters. Exiting.";
+
+        Ok((max_block.context(err_msg)?, max_block_path.context(err_msg)?))
     }
 }

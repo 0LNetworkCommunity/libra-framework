@@ -40,27 +40,26 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
 
     // Getting remote miner state
     // there may not be any onchain state.
-    if let Some((remote_height, proofs_in_epoch)) = get_remote_tower_height(config).await.ok() {
+    if let Ok((remote_height, proofs_in_epoch)) = get_remote_tower_height(config).await {
         println!("Remote tower height: {}", remote_height);
         println!("Proofs already submitted in epoch: {}", proofs_in_epoch);
 
         if remote_height < 1 || current_proof_number > remote_height {
-            i = remote_height as u64 + 1;
+            i = remote_height + 1;
 
             // use i64 for safety
-            if !(proofs_in_epoch < EPOCH_MINING_THRES_UPPER) {
+            if proofs_in_epoch >= EPOCH_MINING_THRES_UPPER {
                 println!(
                     "Backlog: Maximum number of proofs sent this epoch {}, exiting.",
                     EPOCH_MINING_THRES_UPPER
                 );
                 return Err(anyhow!(
                     "cannot submit more proofs than allowed in epoch, aborting backlog."
-                )
-                .into());
+                ));
             }
 
             if proofs_in_epoch > 0 {
-                remaining_in_epoch = EPOCH_MINING_THRES_UPPER - proofs_in_epoch as u64
+                remaining_in_epoch = EPOCH_MINING_THRES_UPPER - proofs_in_epoch
             }
         }
     }
@@ -76,8 +75,8 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
 
         submit_or_delete(config, block, path).await?;
 
-        i = i + 1;
-        submitted_now = submitted_now + 1;
+        i += 1;
+        submitted_now += 1;
     }
     Ok(())
 }

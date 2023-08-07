@@ -19,6 +19,7 @@ use zapatos_types::account_config::CORE_CODE_ADDRESS;
 
 /// difficulty of the VDF proof, for use as on-chain representation and in `tower`
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Default)]
 pub struct VDFDifficulty {
     /// Difficulty
     pub difficulty: u64,
@@ -64,13 +65,4 @@ impl MoveStructType for VDFDifficulty {
 
 impl MoveResource for VDFDifficulty {}
 
-impl Default for VDFDifficulty {
-    fn default() -> Self {
-        Self {
-            difficulty: 0,
-            security: 0,
-            prev_diff: 0,
-            prev_sec: 0,
-        }
-    }
-}
+

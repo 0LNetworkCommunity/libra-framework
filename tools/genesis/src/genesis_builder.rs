@@ -119,7 +119,7 @@ pub fn build(
         let mut s = supply::populate_supply_stats_from_legacy(recovery, &settings.map_dd_to_slow)?;
 
         s.set_ratios_from_settings(&settings)?;
-        compare::compare_recovery_vec_to_genesis_tx(&recovery, gen_info.get_genesis(), &s)?;
+        compare::compare_recovery_vec_to_genesis_tx(recovery, gen_info.get_genesis(), &s)?;
         OLProgress::complete("account balances as expected");
 
         compare::check_supply(settings.scale_supply() as u64, gen_info.get_genesis())?;
@@ -139,10 +139,10 @@ pub fn fetch_genesis_info(
 ) -> Result<GenesisInfo> {
     // let client = git_options.get_client()?;
     let client = Client::new(
-        github_owner.clone(), // doesn't matter
-        github_repository.clone(),
+        github_owner, // doesn't matter
+        github_repository,
         DEFAULT_GIT_BRANCH.to_string(),
-        github_token.clone(),
+        github_token,
     );
 
     // let layout: Layout = client.get(Path::new(LAYOUT_FILE))?;
@@ -171,7 +171,7 @@ pub fn fetch_genesis_info(
     )
     .expect("could not parse dummy root");
 
-    Ok(GenesisInfo::new(
+    GenesisInfo::new(
         layout.chain_id,
         dummy_root, // TODO: neuter from Move code
         validators,
@@ -194,7 +194,7 @@ pub fn fetch_genesis_info(
             execution_config: OnChainExecutionConfig::default(),
             gas_schedule: default_gas_schedule(),
         },
-    )?)
+    )
 }
 
 fn get_validator_configs(
@@ -493,7 +493,7 @@ fn parse_optional_option<F: Fn(&str) -> Result<T, E>, T, E: std::fmt::Display>(
 #[ignore] //dev helper
 fn test_github_info() {
     let gh_token_path = libra_types::global_config_dir().join("github_token.txt");
-    let token = std::fs::read_to_string(&gh_token_path).unwrap();
+    let token = std::fs::read_to_string(gh_token_path).unwrap();
 
     let _genesis_info = fetch_genesis_info(
         "0o-de-lally".to_string(),
@@ -508,7 +508,7 @@ fn test_github_info() {
 #[ignore] //dev helper
 fn test_build() {
     let home = libra_types::global_config_dir();
-    let token = std::fs::read_to_string(&home.join("github_token.txt")).unwrap();
+    let token = std::fs::read_to_string(home.join("github_token.txt")).unwrap();
 
     build(
         "0o-de-lally".to_string(),

@@ -1,3 +1,5 @@
+#![allow(clippy::too_many_arguments)]
+
 use libra_types::{legacy_types::legacy_recovery::LegacyRecovery, ol_progress::OLProgress};
 use zapatos_crypto::{ed25519::Ed25519PublicKey, HashValue};
 use zapatos_framework::{self, ReleaseBundle};
@@ -97,7 +99,7 @@ pub fn encode_genesis_change_set(
     initialize_on_chain_governance(&mut session, genesis_config);
 
     if let Some(r) = recovery {
-        if r.len() > 0 {
+        if !r.is_empty() {
             crate::genesis_functions::genesis_migrate_all_users(&mut session, r, supply_settings)
                 .expect("could not migrate users");
         }

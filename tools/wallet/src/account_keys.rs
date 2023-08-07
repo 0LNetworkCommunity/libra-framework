@@ -2,7 +2,7 @@
 use crate::{
     key_gen::keygen,
     load_keys,
-    wallet_library::{legacy_scheme::LegacyKeyScheme, wallet_library::WalletLibrary},
+    core::{legacy_scheme::LegacyKeyScheme, wallet_library::WalletLibrary},
 };
 
 use anyhow::Result;

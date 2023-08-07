@@ -19,12 +19,11 @@ pub async fn get_tower_difficulty(client: &Client) -> anyhow::Result<(u64, u64)>
 
     // TODO: Gross.
     let difficulty: u64 = serde_json::from_value::<String>(
-        res.iter().nth(0).context("no difficulty returned")?.clone(),
+        res.get(0).context("no difficulty returned")?.clone(),
     )?
     .parse()?;
     let security: u64 = serde_json::from_value::<String>(
-        res.iter()
-            .nth(1)
+        res.get(1)
             .context("no security param returned")?
             .clone(),
     )?
@@ -42,9 +41,7 @@ pub async fn get_next_governance_proposal_id(client: &Client) -> anyhow::Result<
     )
     .await?;
     // let id: Vec<String> = serde_json::from_value(query_res)?;
-    let num: u64 = serde_json::from_value::<Vec<String>>(query_res)?
-        .iter()
-        .next()
+    let num: u64 = serde_json::from_value::<Vec<String>>(query_res)?.first()
         .context("could not get a response from view function get_next_governance_proposal_id")?
         .parse()?;
     Ok(num)
@@ -52,14 +49,14 @@ pub async fn get_next_governance_proposal_id(client: &Client) -> anyhow::Result<
 
 pub async fn can_gov_proposal_resolve(client: &Client, id: u64) -> anyhow::Result<bool> {
     let query_res = query_view::get_view(
-        &client,
-        &format!("0x1::aptos_governance::get_can_resolve"),
+        client,
+        "0x1::aptos_governance::get_can_resolve",
         None,
         Some(id.to_string()), //Some(format!("{}u64", id)),
     )
     .await?;
     // let id: Vec<String> = serde_json::from_value(query_res)?;
-    Ok(serde_json::from_value::<bool>(query_res).context("cannot parse api res")?)
+    serde_json::from_value::<bool>(query_res).context("cannot parse api res")
     // .into_iter()
     // .next()
     // .context("could not get a response from view function can_resolve")
@@ -68,7 +65,7 @@ pub async fn can_gov_proposal_resolve(client: &Client, id: u64) -> anyhow::Resul
 // TODO: code duplication
 pub async fn is_gov_proposal_resolved(client: &Client, id: u64) -> anyhow::Result<bool> {
     let query_res = query_view::get_view(
-        &client,
+        client,
         "0x1::aptos_governance::is_resolved",
         None,
         Some(id.to_string()), //Some(format!("{}u64", id)),
@@ -84,7 +81,7 @@ pub async fn is_gov_proposal_resolved(client: &Client, id: u64) -> anyhow::Resul
 // TODO: code duplication
 pub async fn get_gov_proposal_votes(client: &Client, id: u64) -> anyhow::Result<Vec<u128>> {
     let query_res = query_view::get_view(
-        &client,
+        client,
         "0x1::aptos_governance::get_votes",
         None,
         Some(id.to_string()), //Some(format!("{}u64", id)),

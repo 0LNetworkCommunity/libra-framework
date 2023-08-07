@@ -30,7 +30,7 @@ async fn smoke_transfer() {
 
     //2. Account does not yet exist.
     cli.subcommand = Some(Transfer {
-        to_account: s.marlon_rando().address().clone(),
+        to_account: s.marlon_rando().address(),
         amount: 1,
     });
 
