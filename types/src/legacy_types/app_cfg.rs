@@ -13,7 +13,7 @@ use std::{fs, io::Write, path::PathBuf, str::FromStr};
 
 use super::network_playlist::{self, HostProfile, NetworkPlaylist};
 
-const CONFIG_FILE_NAME: &str = "libra.yaml";
+pub const CONFIG_FILE_NAME: &str = "libra.yaml";
 /// MinerApp Configuration
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct AppCfg {

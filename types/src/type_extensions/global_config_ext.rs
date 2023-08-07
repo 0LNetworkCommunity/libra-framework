@@ -8,7 +8,7 @@ use zapatos::{
     config::{ConfigType, GlobalConfig},
     genesis::git::from_yaml,
 };
-// const GLOBAL_CONFIG_DIRECTORY_0L: &str = ".0L";
+
 const GLOBAL_CONFIG_FILE: &str = "global_config.yaml";
 
 pub trait GlobalConfigExt {
