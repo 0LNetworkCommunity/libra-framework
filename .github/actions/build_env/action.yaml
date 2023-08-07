@@ -1,7 +1,7 @@
 runs:
   using: composite
   steps:
-    - name: Free Disk Space (Ubuntu)
+    - name: free disk space
       uses: jlumbroso/free-disk-space@main
       with:
         # this might remove tools that are actually needed,
@@ -28,7 +28,9 @@ runs:
         toolchain: 1.66.1
         override: true
 
-    - run: rustup component add rustfmt clippy
+    - name: install rustfmt clippy
+      shell: bash
+      run: rustup component add rustfmt clippy
 
 
     - name: checkout sources
