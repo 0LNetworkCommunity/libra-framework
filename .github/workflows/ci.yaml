@@ -3,16 +3,21 @@ name: ci
 on:
   push:
     tags:
-      - '*'
+      - 'v*'
     branches:
-      - 'ci'
+      - 'main'
+  pull_request:
+    types:
+      - opened
+    branches:
+      - 'release**'
+      - 'main'
 env:
   ZAPATOS_BIN_PATH: ${{github.workspace}}
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
 
 jobs:
-
   test:
     runs-on: ubuntu-20.04
     steps:
@@ -67,10 +72,6 @@ jobs:
         large-packages: true
         docker-images: true
         swap-storage: true
-
-
-    # # - name: test all
-    # #   run: cargo test -- --no-fail-fast
 
     # Tools tests
     - name: genesis

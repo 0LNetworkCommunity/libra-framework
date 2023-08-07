@@ -1,0 +1,40 @@
+name: cleanliness
+on:
+  push:
+    branches: ["*"]
+
+jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - run: rustup component add rustfmt clippy
+
+      - uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: build-essential ca-certificates clang curl git libpq-dev libssl-dev pkg-config lsof lld libgmp-dev
+          version: 1.0
+
+      - name: cache rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: "v3"
+          shared-key: "libra" # to share across CI builds, so it is not job-id specific
+          cache-on-failure: true
+
+      - name: format
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+      - name: clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --workspace --tests --examples -- -D warnings
