@@ -6,6 +6,7 @@ on:
       - 'v*'
     branches:
       - 'main'
+      - 'ci'
   pull_request:
     types:
       - opened
