@@ -91,12 +91,10 @@ impl AppCfg {
 
         let nodes = if let Some(v) = l.profile.upstream_nodes.as_ref() {
             v.iter()
-                .map(|u| {
-                    HostProfile {
-                      url: u.to_owned(),
-                      note: u.to_string(),
-                      ..Default::default()
-                    }
+                .map(|u| HostProfile {
+                    url: u.to_owned(),
+                    note: u.to_string(),
+                    ..Default::default()
                 })
                 .collect::<Vec<HostProfile>>()
         } else {
@@ -166,10 +164,7 @@ impl AppCfg {
     /// can get profile by account fragment: full account string or shortened "nickname"
     pub fn get_profile(&self, nickname: Option<String>) -> anyhow::Result<Profile> {
         let idx = self.get_profile_idx(nickname).unwrap_or(0);
-        let p = self
-            .user_profiles
-            .get(idx)
-            .context("no profile at index")?;
+        let p = self.user_profiles.get(idx).context("no profile at index")?;
         Ok(p.to_owned())
     }
 
@@ -545,10 +540,7 @@ impl TxConfigs {
         let baseline = &self.baseline_cost.clone();
         let cost = match tx_type {
             TxType::Critical => self.critical_txs_cost.as_ref().unwrap_or(baseline),
-            TxType::Mgmt => self
-                .management_txs_cost
-                .as_ref()
-                .unwrap_or(baseline),
+            TxType::Mgmt => self.management_txs_cost.as_ref().unwrap_or(baseline),
             TxType::Miner => self.miner_txs_cost.as_ref().unwrap_or(baseline),
             TxType::Cheap => self.cheap_txs_cost.as_ref().unwrap_or(baseline),
         };

@@ -24,8 +24,7 @@ fn test_correct_supply_arithmetic_all() {
     let user_accounts: Vec<LegacyRecovery> = serde_json::from_str(&json_str).unwrap();
 
     // get the supply arithmetic so that we can compare outputs
-    let mut supply_stats =
-        supply::populate_supply_stats_from_legacy(&user_accounts, &[]).unwrap();
+    let mut supply_stats = supply::populate_supply_stats_from_legacy(&user_accounts, &[]).unwrap();
     let supply_settings = SupplySettings::default();
     supply_stats
         .set_ratios_from_settings(&supply_settings)

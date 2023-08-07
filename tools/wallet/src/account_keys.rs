@@ -1,8 +1,8 @@
 //! Use ol-keys to generate or parse keys using the legacy key derivation scheme
 use crate::{
+    core::{legacy_scheme::LegacyKeyScheme, wallet_library::WalletLibrary},
     key_gen::keygen,
     load_keys,
-    core::{legacy_scheme::LegacyKeyScheme, wallet_library::WalletLibrary},
 };
 
 use anyhow::Result;

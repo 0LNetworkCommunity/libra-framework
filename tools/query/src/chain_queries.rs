@@ -18,14 +18,11 @@ pub async fn get_tower_difficulty(client: &Client) -> anyhow::Result<(u64, u64)>
     let res = client.view(&request, None).await?.into_inner();
 
     // TODO: Gross.
-    let difficulty: u64 = serde_json::from_value::<String>(
-        res.get(0).context("no difficulty returned")?.clone(),
-    )?
-    .parse()?;
+    let difficulty: u64 =
+        serde_json::from_value::<String>(res.get(0).context("no difficulty returned")?.clone())?
+            .parse()?;
     let security: u64 = serde_json::from_value::<String>(
-        res.get(1)
-            .context("no security param returned")?
-            .clone(),
+        res.get(1).context("no security param returned")?.clone(),
     )?
     .parse()?;
 
@@ -41,7 +38,8 @@ pub async fn get_next_governance_proposal_id(client: &Client) -> anyhow::Result<
     )
     .await?;
     // let id: Vec<String> = serde_json::from_value(query_res)?;
-    let num: u64 = serde_json::from_value::<Vec<String>>(query_res)?.first()
+    let num: u64 = serde_json::from_value::<Vec<String>>(query_res)?
+        .first()
         .context("could not get a response from view function get_next_governance_proposal_id")?
         .parse()?;
     Ok(num)

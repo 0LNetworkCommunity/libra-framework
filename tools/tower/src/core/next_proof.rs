@@ -35,10 +35,10 @@ impl NextProof {
     pub fn genesis_proof(config: &AppCfg) -> anyhow::Result<Self> {
         // NOTE: can't set defautlsin VDFDifficulty::default() because of circular dependency
         let diff = VDFDifficulty {
-           difficulty: *GENESIS_VDF_ITERATIONS,
-           security: *GENESIS_VDF_SECURITY_PARAM,
-           prev_diff: *GENESIS_VDF_ITERATIONS,
-           prev_sec: *GENESIS_VDF_SECURITY_PARAM
+            difficulty: *GENESIS_VDF_ITERATIONS,
+            security: *GENESIS_VDF_SECURITY_PARAM,
+            prev_diff: *GENESIS_VDF_ITERATIONS,
+            prev_sec: *GENESIS_VDF_SECURITY_PARAM,
         };
 
         Ok(NextProof {

@@ -103,9 +103,10 @@ impl GenesisWizard {
 
             self.validator_address = id
                 .account_address
-                .context(format!("cannot find an account address in {}",
-                    VALIDATOR_FILE)
-                )?
+                .context(format!(
+                    "cannot find an account address in {}",
+                    VALIDATOR_FILE
+                ))?
                 .to_hex_literal();
             // check if the user has the github auth token, and that
             // there is a forked repo on their account.
@@ -354,8 +355,8 @@ impl GenesisWizard {
                     // return Ok(())
                 } else if e.to_string().contains("No commits between main and main") {
                     println!(
-                    "INFO: A pull request already exists, and there are no changes with main"
-                );
+                        "INFO: A pull request already exists, and there are no changes with main"
+                    );
                 } else {
                     bail!("failed to create pull, message: {}", e.to_string())
                 }

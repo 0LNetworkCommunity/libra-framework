@@ -14,8 +14,9 @@ use zapatos_types::transaction::TransactionPayload;
 pub fn encode_publish_payload(move_options: &MovePackageDir) -> anyhow::Result<TransactionPayload> {
     let package_path = move_options.get_package_path()?;
     let options = BuildOptions {
-      // NOTE: if the file includes a named address the build will fail.
-      named_addresses: move_options.named_addresses(), ..Default::default()
+        // NOTE: if the file includes a named address the build will fail.
+        named_addresses: move_options.named_addresses(),
+        ..Default::default()
     };
 
     let package = BuiltPackage::build(package_path, options)?;

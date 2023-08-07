@@ -137,10 +137,7 @@ pub async fn get_next_and_mine(
 
     let block = mine_once(config, next)?;
 
-    println!(
-        "Proof mined: proof_{}.json created.",
-        block.height
-    );
+    println!("Proof mined: proof_{}.json created.", block.height);
 
     Ok(block)
 }

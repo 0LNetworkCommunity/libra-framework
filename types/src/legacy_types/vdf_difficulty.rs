@@ -18,8 +18,7 @@ use serde::{Deserialize, Serialize};
 use zapatos_types::account_config::CORE_CODE_ADDRESS;
 
 /// difficulty of the VDF proof, for use as on-chain representation and in `tower`
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[derive(Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct VDFDifficulty {
     /// Difficulty
     pub difficulty: u64,
@@ -64,5 +63,3 @@ impl MoveStructType for VDFDifficulty {
 }
 
 impl MoveResource for VDFDifficulty {}
-
-

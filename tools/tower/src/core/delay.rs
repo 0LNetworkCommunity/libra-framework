@@ -27,14 +27,13 @@ pub fn do_delay(preimage: &[u8], difficulty: u64, security: u64) -> Result<Vec<u
 /// Verifies a proof
 pub fn verify(preimage: &[u8], proof: &[u8], difficulty: u64, security: u16) -> bool {
     // TODO(Wiri): we need new fixtures so that we're not switching algorithms.
-    let verifies =
-        if *MODE_0L == NamedChain::TESTNET || *MODE_0L == NamedChain::TESTING {
-            let vdf = PietrzakVDFParams(security).new();
-            vdf.verify(preimage, difficulty, proof)
-        } else {
-            let vdf = WesolowskiVDFParams(security).new();
-            vdf.verify(preimage, difficulty, proof)
-        };
+    let verifies = if *MODE_0L == NamedChain::TESTNET || *MODE_0L == NamedChain::TESTING {
+        let vdf = PietrzakVDFParams(security).new();
+        vdf.verify(preimage, difficulty, proof)
+    } else {
+        let vdf = WesolowskiVDFParams(security).new();
+        vdf.verify(preimage, difficulty, proof)
+    };
 
     match verifies {
         Ok(_) => true,

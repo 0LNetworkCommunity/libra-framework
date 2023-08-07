@@ -4,12 +4,16 @@ use crate::legacy_types::{app_cfg::AppCfg, mode_ol::MODE_0L};
 
 use crate::exports::NamedChain;
 
-use anyhow::{bail, Result, Context};
+use anyhow::{bail, Context, Result};
 use glob::glob;
 use hex;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use std::{fs, io::Write, path::{PathBuf, Path}};
+use std::{
+    fs,
+    io::Write,
+    path::{Path, PathBuf},
+};
 // use std::
 
 // TOWER DIFFICULTY SETTINGS
@@ -166,31 +170,35 @@ impl VDFProof {
 
         for entry in file_list.flatten() {
             // if let Ok(entry) = entry {
-                // let file = fs::File::open(&entry).expect("Could not open block file");
-                // let reader = BufReader::new(file);
-                let block = match VDFProof::parse_block_file(&entry, false) {
-                    Ok(v) => v,
-                    Err(e) => {
-                        println!("could not parse the proof file: {}, skipping. Manually delete if this proof is not readable.", e);
-                        continue;
-                    }
-                };
+            // let file = fs::File::open(&entry).expect("Could not open block file");
+            // let reader = BufReader::new(file);
+            let block = match VDFProof::parse_block_file(&entry, false) {
+                Ok(v) => v,
+                Err(e) => {
+                    println!("could not parse the proof file: {}, skipping. Manually delete if this proof is not readable.", e);
+                    continue;
+                }
+            };
 
-                let blocknumber = block.height;
+            let blocknumber = block.height;
 
-                if let Some(b) = &max_block {
-                    if blocknumber > b.height {
-                        max_block = Some(block);
-                        max_block_path = Some(entry);
-                    }
-                } else {
+            if let Some(b) = &max_block {
+                if blocknumber > b.height {
                     max_block = Some(block);
                     max_block_path = Some(entry);
                 }
+            } else {
+                max_block = Some(block);
+                max_block_path = Some(entry);
+            }
         }
 
-        let err_msg = "cannot find a valid VDF proof in files to determine next proof's parameters. Exiting.";
+        let err_msg =
+            "cannot find a valid VDF proof in files to determine next proof's parameters. Exiting.";
 
-        Ok((max_block.context(err_msg)?, max_block_path.context(err_msg)?))
+        Ok((
+            max_block.context(err_msg)?,
+            max_block_path.context(err_msg)?,
+        ))
     }
 }
