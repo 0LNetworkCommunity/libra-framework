@@ -5688,9 +5688,6 @@ dependencies = [
  "aptos-build-info",
  "aptos-crypto",
  "aptos-framework",
- "aptos-release-builder",
- "aptos-rest-client",
- "aptos-temppath",
  "aptos-types",
  "bcs 0.1.3",
  "clap 3.2.23",
@@ -5698,7 +5695,6 @@ dependencies = [
  "move-command-line-common",
  "move-model",
  "once_cell",
- "serde_json",
 ]
 
 [[package]]
@@ -5732,7 +5728,6 @@ dependencies = [
  "libra-types",
  "libra-wallet",
  "move-core-types",
- "reqwest",
  "serde 1.0.163",
  "serde_json",
  "ureq",
