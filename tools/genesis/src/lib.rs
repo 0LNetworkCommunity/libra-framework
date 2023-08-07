@@ -7,7 +7,6 @@ pub mod genesis_functions;
 pub mod genesis_registration;
 pub mod genesis_reader;
 pub mod github_extensions;
-pub mod node_yaml;
 pub mod parse_json;
 pub mod supply;
 pub mod vm;

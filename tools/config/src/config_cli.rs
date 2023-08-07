@@ -1,12 +1,12 @@
+use crate::host::{initialize_validator_configs};
 use crate::{legacy_config, make_profile};
 use anyhow::Result;
 use clap::Parser;
-use libra_genesis_tools::wizard::initialize_validator_configs;
 use libra_types::exports::AccountAddress;
 use libra_types::exports::AuthenticationKey;
 use libra_types::exports::NamedChain;
 use libra_types::global_config_dir;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use url::Url;
 
 #[derive(Parser)]
@@ -93,7 +93,7 @@ impl ConfigCli {
             }
             Some(ConfigSub::ValidatorInit {}) => {
                 let data_path = global_config_dir();
-                if !Path::exists(&data_path) {
+                if !&data_path.exists() {
                     println!(
                         "\nIt seems you have no files at {}, creating directory now",
                         data_path.display()

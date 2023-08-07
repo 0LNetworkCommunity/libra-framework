@@ -17,6 +17,7 @@ rust-version = { workspace = true }
 libra-framework = { workspace = true }
 libra-types = { workspace = true }
 libra-wallet = { workspace = true }
+libra-config = { workspace = true }
 
 clap = { workspace = true }
 anyhow = { workspace = true }

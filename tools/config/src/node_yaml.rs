@@ -90,9 +90,7 @@ fn test_yaml() {
 
     assert!(y.base.role.is_validator());
 
-    assert!(
-        y.base.data_dir.display().to_string() == format!("{}/data", path.display().to_string())
-    );
+    assert_eq!(y.base.data_dir.display().to_string(), format!("{}/data", path.display().to_string()));
     // remove the file and directory
     std::fs::remove_dir_all(path).unwrap();
 }

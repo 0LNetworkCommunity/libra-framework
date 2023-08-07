@@ -14,13 +14,17 @@ anyhow = { workspace = true }
 clap = { workspace = true }
 tokio = { workspace = true }
 url = { workspace = true }
+reqwest = { workspace = true }
+dialoguer = { workspace = true }
 
 libra-types = { workspace = true }
 libra-wallet = { workspace = true }
-libra-genesis-tools = { path = "../genesis" }
 
 zapatos = { workspace = true }
 zapatos-rest-client = { workspace = true }
 zapatos-crypto = { workspace = true }
 zapatos-types = { workspace = true }
+zapatos-genesis = { workspace = true }
+zapatos-config = { workspace = true }
+
 
