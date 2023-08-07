@@ -1,0 +1,41 @@
+runs:
+  using: composite
+  steps:
+    - name: Free Disk Space (Ubuntu)
+      uses: jlumbroso/free-disk-space@main
+      with:
+        # this might remove tools that are actually needed,
+        # if set to "true" but frees about 6 GB
+        tool-cache: false
+
+        # all of these default to true, but feel free to set to
+        # "false" if necessary for your workflow
+        android: true
+        dotnet: true
+        haskell: true
+        large-packages: true
+        docker-images: true
+        swap-storage: true
+
+    - uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: build-essential ca-certificates clang curl git libpq-dev libssl-dev pkg-config lsof lld libgmp-dev
+        version: 1.0
+
+    - name: checkout sources
+      uses: actions/checkout@v3
+      with:
+        # git-restore-mtime-bare uses the ref log to find the correct timestamp
+        # for each file. This requires a full git history. The default value (1)
+        # creates a shallow checkout.
+        fetch-depth: 0
+
+    - name: cache rust
+      uses: Swatinem/rust-cache@v2
+      with:
+        prefix-key: "v3"
+        shared-key: "libra" # to share across CI builds, so it is not job-id specific
+        cache-on-failure: true
+
+    - name: cargo mtime reset
+      uses: chetan/git-restore-mtime-action@v2
