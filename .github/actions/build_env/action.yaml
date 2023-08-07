@@ -22,6 +22,15 @@ runs:
         packages: build-essential ca-certificates clang curl git libpq-dev libssl-dev pkg-config lsof lld libgmp-dev
         version: 1.0
 
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: 1.66.1
+          override: true
+
+      - run: rustup component add rustfmt clippy
+
+
     - name: checkout sources
       uses: actions/checkout@v3
       with:
