@@ -23,7 +23,6 @@ use std::{
 
 use libra_types::legacy_types::app_cfg::AppCfg;
 use libra_wallet::keys::VALIDATOR_FILE;
-use std::str::FromStr;
 use zapatos_config::config::IdentityBlob;
 use zapatos_github_client::Client;
 

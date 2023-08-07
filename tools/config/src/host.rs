@@ -1,6 +1,5 @@
 use crate::node_yaml;
 use dialoguer::{Confirm, Input};
-use libra_types::global_config_dir;
 use libra_types::legacy_types::mode_ol::MODE_0L;
 use libra_types::ol_progress::OLProgress;
 use libra_wallet::validator_files::SetValidatorConfiguration;
