@@ -1,5 +1,5 @@
 //! file and directory utilities
-// TODO: this file is copied from vendor/crates/aptos/common/src/utils.rs
+// TODO: this file is copied from vendor/crates/aptos/src/common/utils.rs
 // It's not being imported because of build issues when we try to import that module. So it's a copy paste hack for now. But should be reviewed.
 
 use anyhow::{anyhow, bail};
@@ -9,9 +9,11 @@ use std::{
     env::current_dir,
     fs::OpenOptions,
     io::Write,
-    os::unix::fs::OpenOptionsExt,
+    // os::unix::fs::OpenOptionsExt,
     path::{Path, PathBuf},
 };
+#[cfg(unix)]
+use std::os::unix::fs::OpenOptionsExt;
 use zapatos_genesis::keys::PublicIdentity;
 
 /// A common result to be returned to users
