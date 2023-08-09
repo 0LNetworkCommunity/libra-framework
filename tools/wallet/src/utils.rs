@@ -5,6 +5,8 @@
 use anyhow::{anyhow, bail};
 use dialoguer::Confirm;
 use serde::{de::DeserializeOwned, Serialize};
+#[cfg(unix)]
+use std::os::unix::fs::OpenOptionsExt;
 use std::{
     env::current_dir,
     fs::OpenOptions,
@@ -12,8 +14,6 @@ use std::{
     // os::unix::fs::OpenOptionsExt,
     path::{Path, PathBuf},
 };
-#[cfg(unix)]
-use std::os::unix::fs::OpenOptionsExt;
 use zapatos_genesis::keys::PublicIdentity;
 
 /// A common result to be returned to users
