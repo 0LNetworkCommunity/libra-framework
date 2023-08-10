@@ -11,6 +11,9 @@ module ol_framework::oracle {
     use diem_std::ed25519;
     use diem_std::comparator;
     use diem_framework::event::{Self, EventHandle};
+    use diem_framework::coin::{Self, Coin};
+    use ol_framework::ol_account;
+    use ol_framework::gas_coin::GasCoin;
 
     /// A list of all miners' addresses
     // reset at epoch boundary
@@ -181,8 +184,14 @@ module ol_framework::oracle {
       }
     }
 
-    fun has_unrelated_vouches_above_threshold() {
+    fun epoch_reward(vm: &signer, all_coins: &mut Coin<GasCoin>, per_user: u64) acquires ProviderList {
 
+      system_addresses::assert_ol(vm);
+      let provider_list = borrow_global_mut<ProviderList>(@ol_framework);
+      vector::for_each_ref(&provider_list.list, |addr| {
+        let split = coin::extract(all_coins, per_user);
+        ol_account::deposit_coins(*addr, split);
+      });
     }
 
     // since rewards are handled externally to stake.move we need an api to emit the event
