@@ -6,6 +6,8 @@ module ol_framework::ancestry {
     // use std::debug::print;
     use diem_framework::system_addresses;
 
+    friend ol_framework::vouch;
+
     struct Ancestry has key {
       // the full tree back to genesis set
       tree: vector<address>,
@@ -129,6 +131,43 @@ module ol_framework::ancestry {
       };
 
       (false, option::none(), option::none())
+    }
+
+    /// to check if within list how many are unrelated to each other.
+    /// should not be made public, or have views which can call
+    public(friend) fun list_unrelated(list: vector<address>): vector<address> acquires Ancestry {
+      // start our list empty
+      let unrelated_buddies = vector::empty<address>();
+
+      // iterate through this list to see which accounts are created downstream of others.
+      let len = vector::length<address>(&list);
+      let  i = 0;
+      while (i < len) {
+        // for each account in list, compare to the others.
+        // if they are unrelated, add them to the list.
+        let target_acc = vector::borrow<address>(&list, i);
+
+        // now loop through all the accounts again, and check if this target
+        // account is related to anyone.
+        let  k = 0;
+        while (k < vector::length<address>(&list)) {
+          let comparison_acc = vector::borrow(&list, k);
+          // skip if you're the same person
+          if (comparison_acc != target_acc) {
+            // check ancestry algo
+            let (is_fam, _) = is_family(*comparison_acc, *target_acc);
+            if (!is_fam) {
+              if (!vector::contains(&unrelated_buddies, target_acc)) {
+                vector::push_back<address>(&mut unrelated_buddies, *target_acc)
+              }
+            }
+          };
+          k = k + 1;
+        };
+        i = i + 1;
+      };
+
+      unrelated_buddies
     }
 
     // admin migration. Needs the signer object for both VM and child to prevent changes.

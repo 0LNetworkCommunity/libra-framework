@@ -2,7 +2,6 @@
 module ol_framework::vouch {
     use std::signer;
     use std::vector;
-    // use diem_framework::validator_universe;
     use ol_framework::ancestry;
     use ol_framework::globals;
     use ol_framework::testnet;
@@ -10,18 +9,14 @@ module ol_framework::vouch {
 
     use diem_framework::system_addresses;
     use diem_framework::stake;
-    // use diem_framework::coin;
     use diem_framework::transaction_fee;
 
-    /// Trying to vouch for yourself?
+    /// trying to vouch for yourself?
     const ETRY_SELF_VOUCH_REALLY: u64 = 1;
 
     /// how many epochs must pass before the voucher expires.
     const EXPIRATION_ELAPSED_EPOCHS: u64 = 90;
-    // struct OneVouch has key, store, drop, copy {
-    //   voucher: address,
-    //   epoch: u64,
-    // }
+
     // triggered once per epoch
     struct MyVouches has key {
       my_buddies: vector<address>,
@@ -92,7 +87,6 @@ module ol_framework::vouch {
 
     fun bulk_set(val: address, buddy_list: vector<address>) acquires MyVouches {
 
-      // if (!validator_universe::is_in_universe(val)) return;
       if (!exists<MyVouches>(val)) return;
 
       let v = borrow_global_mut<MyVouches>(val);
@@ -144,7 +138,7 @@ module ol_framework::vouch {
     }
 
     #[view]
-    public fun buddies_in_set(val: address): vector<address> acquires MyVouches {
+    public fun buddies_in_validator_set(val: address): vector<address> acquires MyVouches {
       let current_set = stake::get_current_validators();
       let (list, _) = buddies_in_list(val, current_set);
       list
@@ -171,48 +165,13 @@ module ol_framework::vouch {
     }
 
 
-    public fun unrelated_buddies(list: vector<address>): vector<address> {
-      // start our list empty
-      let unrelated_buddies = vector::empty<address>();
-
-      // iterare througth this list to see which accounts are created downstream of others.
-      let len = vector::length<address>(&list);
-      let  i = 0;
-      while (i < len) {
-        // for each account in list, compare to the others.
-        // if they are unrelated, add them to the list.
-        let target_acc = vector::borrow<address>(&list, i);
-
-        // now loop through all the accounts again, and check if this target
-        // account is related to anyone.
-        let  k = 0;
-        while (k < vector::length<address>(&list)) {
-          let comparison_acc = vector::borrow(&list, k);
-          // skip if you're the same person
-          if (comparison_acc != target_acc) {
-            // check ancestry algo
-            let (is_fam, _) = ancestry::is_family(*comparison_acc, *target_acc);
-            if (!is_fam) {
-              if (!vector::contains(&unrelated_buddies, target_acc)) {
-                vector::push_back<address>(&mut unrelated_buddies, *target_acc)
-              }
-            }
-          };
-          k = k + 1;
-        };
-        i = i + 1;
-      };
-
-      unrelated_buddies
-    }
-
     public fun unrelated_buddies_above_thresh(val: address): bool acquires MyVouches{
       if (!exists<MyVouches>(val)) return false;
 
       if (testnet::is_testnet()) return true;
       let vouches = borrow_global<MyVouches>(val);
 
-      let len = vector::length(&unrelated_buddies(vouches.my_buddies));
+      let len = vector::length(&ancestry::list_unrelated(vouches.my_buddies));
       (len >= globals::get_vouch_threshold())
     }
 
