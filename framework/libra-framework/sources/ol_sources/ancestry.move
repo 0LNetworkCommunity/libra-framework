@@ -1,8 +1,3 @@
-/////////////////////////////////////////////////////////////////////////
-// 0L Module
-// Ancestry Module
-// Error code:
-/////////////////////////////////////////////////////////////////////////
 
 module ol_framework::ancestry {
     use std::signer;
@@ -11,7 +6,6 @@ module ol_framework::ancestry {
     // use std::debug::print;
     use diem_framework::system_addresses;
 
-    // triggered once per epoch
     struct Ancestry has key {
       // the full tree back to genesis set
       tree: vector<address>,
@@ -20,7 +14,6 @@ module ol_framework::ancestry {
     // this is limited to onboarding.
     // TODO: limit this with `friend` of DiemAccount module.
     public fun init(new_account_sig: &signer, onboarder_sig: &signer ) acquires Ancestry{
-
         let parent = signer::address_of(onboarder_sig);
         set_tree(new_account_sig, parent);
     }
@@ -41,28 +34,20 @@ module ol_framework::ancestry {
         if (vector::length<address>(&parent_tree) > 0) {
           vector::append(&mut new_tree, parent_tree);
         };
-
       };
 
       // add the parent to the tree
       vector::push_back(&mut new_tree, parent);
 
-
       if (!exists<Ancestry>(child)) {
         move_to<Ancestry>(new_account_sig, Ancestry {
           tree: new_tree,
         });
-
-
       } else {
         // this is only for migration cases.
         let child_ancestry = borrow_global_mut<Ancestry>(child);
         child_ancestry.tree = new_tree;
-
-
       };
-
-
     }
 
     public fun get_tree(addr: address): vector<address> acquires Ancestry {
@@ -76,21 +61,13 @@ module ol_framework::ancestry {
 
     // checks if two addresses have an intersecting permission tree
     // will return true, and the common ancestor at the intersection.
+    // TODO: test if tree is empty does it abort.
     public fun is_family(left: address, right: address): (bool, address) acquires Ancestry {
       let is_family = false;
       let common_ancestor = @0x0;
 
-
-
-
-      // if (exists<Ancestry>(left) && exists<Ancestry>(right)) {
-        // if tree is empty it will still work.
-
         let left_tree = get_tree(left);
-
         let right_tree = get_tree(right);
-
-
 
         // check for direct relationship.
         if (vector::contains(&left_tree, &right)) return (true, right);
@@ -111,10 +88,12 @@ module ol_framework::ancestry {
           i = i + 1;
         };
 
-      // };
-
       (is_family, common_ancestor)
     }
+
+    /// given a list, will find a user has one family member in the list.
+    /// stops when it finds the first.
+    /// this is intended for relatively short lists, such as multisig checking.
 
     public fun is_family_one_in_list(
       left: address,
@@ -133,6 +112,9 @@ module ol_framework::ancestry {
       (false, option::none(), option::none())
     }
 
+    /// given one list, finds if any pair of addresses are family.
+    /// stops on the first pair found.
+    /// this is intended for relatively short lists, such as multisig checking.
     public fun any_family_in_list(
       addr_vec: vector<address>
     ):(bool, Option<address>, Option<address>) acquires Ancestry  {
@@ -163,12 +145,10 @@ module ol_framework::ancestry {
           tree: migrate_tree,
         });
 
-
       } else {
         // this is only for migration cases.
         let child_ancestry = borrow_global_mut<Ancestry>(child);
         child_ancestry.tree = migrate_tree;
-
       };
     }
 }
