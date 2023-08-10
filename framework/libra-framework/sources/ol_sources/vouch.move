@@ -39,7 +39,7 @@ module ol_framework::vouch {
       exists<MyVouches>(acc)
     }
 
-    public entry fun vouch_for(ill_be_your_friend: &signer, wanna_be_my_friend: address) acquires MyVouches {
+    fun vouch_impl(ill_be_your_friend: &signer, wanna_be_my_friend: address) acquires MyVouches {
       let buddy_acc = signer::address_of(ill_be_your_friend);
       assert!(buddy_acc != wanna_be_my_friend, ETRY_SELF_VOUCH_REALLY);
 
@@ -61,8 +61,21 @@ module ol_framework::vouch {
       } else {
         vector::push_back(&mut v.my_buddies, buddy_acc);
         vector::push_back(&mut v.epoch_vouched, 0); // TODO get epoch
-
       }
+    }
+
+    /// will only succesfully vouch if the two are not related by ancestry
+    /// prevents spending a vouch that would not be counted.
+    /// to add a vouch and ignore this check use insist_vouch
+    public entry fun vouch_for(grantor: &signer, recipient: address) acquires MyVouches {
+      ancestry::assert_unrelated(signer::address_of(grantor), recipient);
+      vouch_impl(grantor, recipient);
+    }
+
+    /// you may want to add people who are related to you
+    /// there are no known use cases for this at the moment.
+    public entry fun insist_vouch_for(grantor: &signer, recipient: address) acquires MyVouches {
+      vouch_impl(grantor, recipient);
     }
 
     public entry fun revoke(buddy: &signer, its_not_me_its_you: address) acquires MyVouches {
