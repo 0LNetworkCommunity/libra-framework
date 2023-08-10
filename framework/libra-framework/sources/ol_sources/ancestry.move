@@ -2,11 +2,15 @@
 module ol_framework::ancestry {
     use std::signer;
     use std::vector;
+    use std::error;
     use std::option::{Self, Option};
     // use std::debug::print;
     use diem_framework::system_addresses;
 
     friend ol_framework::vouch;
+
+    /// two accounts are related by ancestry and should not be.
+    const EACCOUNTS_ARE_FAMILY: u64 = 1;
 
     struct Ancestry has key {
       // the full tree back to genesis set
@@ -59,6 +63,11 @@ module ol_framework::ancestry {
         vector::empty()
       }
 
+    }
+    /// helper function to check on transactions (e.g. vouch) if accounts are related
+    public fun assert_unrelated(left: address, right: address) acquires Ancestry{
+      let (is, _) = is_family(left, right);
+      assert!(!is, error::invalid_state(EACCOUNTS_ARE_FAMILY));
     }
 
     // checks if two addresses have an intersecting permission tree
