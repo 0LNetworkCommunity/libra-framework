@@ -18,7 +18,7 @@ module ol_framework::oracle {
     /// A list of all miners' addresses
     // reset at epoch boundary
     struct ProviderList has key {
-      list: vector<address>
+      list: vector<address>,
     }
 
     struct GlobalCounter has key {
