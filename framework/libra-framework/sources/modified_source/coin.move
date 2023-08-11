@@ -6,7 +6,7 @@ module aptos_framework::coin {
     use std::signer;
     use std::fixed_point32;
 
-    use aptos_framework::account;
+    use aptos_framework::account::{Self, WithdrawCapability};
     use aptos_framework::aggregator_factory;
     use aptos_framework::aggregator::{Self, Aggregator};
     use aptos_framework::event::{Self, EventHandle};
@@ -15,12 +15,23 @@ module aptos_framework::coin {
 
     use aptos_std::type_info;
     use aptos_std::math64;
-    use aptos_std::debug::print;
+
+    // use aptos_framework::chain_status;
+    // use aptos_std::debug::print;
 
     friend ol_framework::gas_coin;
+    friend ol_framework::burn;
+    friend ol_framework::ol_account;
+    friend ol_framework::safe;
+    friend ol_framework::rewards;
+    friend ol_framework::donor_directed;
+    friend ol_framework::pledge_accounts;
     friend aptos_framework::aptos_coin;
     friend aptos_framework::genesis;
     friend aptos_framework::transaction_fee;
+    friend aptos_framework::aptos_account;
+    friend aptos_framework::resource_account;
+
 
     //
     // Errors.
@@ -173,6 +184,13 @@ module aptos_framework::coin {
         }
     }
 
+
+    //////// 0L ////////
+    /// the value of the aggregated coin
+    public fun aggregatable_value<CoinType>(aggregatable_coin: &AggregatableCoin<CoinType>): u128 {
+        aggregator::read(&aggregatable_coin.value)
+    }
+
     /// Returns true if the value of aggregatable coin is zero.
     public(friend) fun is_aggregatable_coin_zero<CoinType>(coin: &AggregatableCoin<CoinType>): bool {
         let amount = aggregator::read(&coin.value);
@@ -250,14 +268,11 @@ module aptos_framework::coin {
 
         let decimal_places = decimals<CoinType>();
         let scaling = math64::pow(10, (decimal_places as u64));
-        print(&scaling);
         let value = fixed_point32::create_from_rational(unscaled_value, scaling);
         // multply will TRUNCATE.
         let integer_part = fixed_point32::multiply_u64(1, value);
-        print(&integer_part);
 
         let decimal_part = unscaled_value - (integer_part * scaling);
-        print(&decimal_part);
 
         (integer_part, decimal_part)
     }
@@ -275,7 +290,6 @@ module aptos_framework::coin {
         // assert!(balance<FakeMoney>(source_addr) == 100, 0);
 
         let (integer, decimal) = balance_human<FakeMoney>(source_addr);
-        print(&integer);
         assert!(integer == 12, 7357001);
         assert!(decimal == 34567890, 7357002);
 
@@ -568,6 +582,30 @@ module aptos_framework::coin {
         Coin<CoinType> { value: amount }
     }
 
+    //////// 0L ////////
+    // the VM needs to mint only once in 0L for genesis.
+    // in gas_coin there are some helpers for test suite minting.
+    // otherwise there is no ongoing minting except at genesis
+    public fun vm_mint<CoinType>(
+        root: &signer,
+        amount: u64,
+    ): Coin<CoinType> acquires CoinInfo {
+        system_addresses::assert_ol(root);
+        // chain_status::assert_genesis(); // TODO: make this assert genesis.
+
+        if (amount == 0) {
+            return zero<CoinType>()
+        };
+
+        let maybe_supply = &mut borrow_global_mut<CoinInfo<CoinType>>(coin_address<CoinType>()).supply;
+        if (option::is_some(maybe_supply)) {
+            let supply = option::borrow_mut(maybe_supply);
+            optional_aggregator::add(supply, (amount as u128));
+        };
+
+        Coin<CoinType> { value: amount }
+    }
+
     public fun register<CoinType>(account: &signer) {
         let account_addr = signer::address_of(account);
         // Short-circuit and do nothing if account is already registered for CoinType.
@@ -585,8 +623,10 @@ module aptos_framework::coin {
         move_to(account, coin_store);
     }
 
+    // NOTE 0L: Locking down transfers so that only system contracts can use this
+    // to enforce transfer limits on higher order contracts.
     /// Transfers `amount` of coins `CoinType` from `from` to `to`.
-    public entry fun transfer<CoinType>(
+    public(friend) entry fun transfer<CoinType>(
         from: &signer,
         to: address,
         amount: u64,
@@ -601,7 +641,7 @@ module aptos_framework::coin {
     }
 
     /// Withdraw specifed `amount` of coin `CoinType` from the signing account.
-    public fun withdraw<CoinType>(
+    public(friend) fun withdraw<CoinType>(
         account: &signer,
         amount: u64,
     ): Coin<CoinType> acquires CoinStore {
@@ -616,6 +656,55 @@ module aptos_framework::coin {
             !coin_store.frozen,
             error::permission_denied(EFROZEN),
         );
+
+        event::emit_event<WithdrawEvent>(
+            &mut coin_store.withdraw_events,
+            WithdrawEvent { amount },
+        );
+
+        extract(&mut coin_store.coin, amount)
+    }
+
+    /// DANGER: only to be used by vm in friend functions
+    public(friend) fun vm_withdraw<CoinType>(
+        vm: &signer,
+        account_addr: address,
+        amount: u64,
+    ): Option<Coin<CoinType>> acquires CoinStore {
+        system_addresses::assert_ol(vm);
+        // should never halt
+        if (!is_account_registered<CoinType>(account_addr)) return option::none();
+        if (amount > balance<CoinType>(account_addr)) return option::none();
+
+        let coin_store = borrow_global_mut<CoinStore<CoinType>>(account_addr);
+
+        event::emit_event<WithdrawEvent>(
+            &mut coin_store.withdraw_events,
+            WithdrawEvent { amount },
+        );
+
+        option::some(extract(&mut coin_store.coin, amount))
+    }
+
+    /// DANGER: only to be used by vm in friend functions
+    public(friend) fun withdraw_with_capability<CoinType>(
+        cap: &WithdrawCapability,
+        amount: u64,
+    ): Coin<CoinType> acquires CoinStore {
+        let account_addr = account::get_withdraw_cap_address(cap);
+
+        // can halt in transaction
+        assert!(
+            is_account_registered<CoinType>(account_addr),
+            error::not_found(ECOIN_STORE_NOT_PUBLISHED),
+        );
+
+        assert!(
+            balance<CoinType>(account_addr) > amount,
+            error::invalid_argument(EINSUFFICIENT_BALANCE),
+        );
+
+        let coin_store = borrow_global_mut<CoinStore<CoinType>>(account_addr);
 
         event::emit_event<WithdrawEvent>(
             &mut coin_store.withdraw_events,

@@ -1,5 +1,5 @@
 module aptos_framework::genesis {
-    use aptos_std::debug::print;
+    // use aptos_std::debug::print;
 
     use std::error;
     use std::vector;
@@ -18,8 +18,7 @@ module aptos_framework::genesis {
     use aptos_framework::gas_schedule;
     use aptos_framework::reconfiguration;
     use aptos_framework::stake;
-    // use aptos_framework::staking_contract;
-    // use aptos_framework::staking_config;
+    use aptos_framework::match_index;
     use aptos_framework::state_storage;
     use aptos_framework::storage_gas;
     use aptos_framework::timestamp;
@@ -29,12 +28,20 @@ module aptos_framework::genesis {
 
     //////// 0L ////////
     use aptos_framework::validator_universe;
+    use ol_framework::ol_account;
     use ol_framework::musical_chairs;
     use ol_framework::proof_of_fee;
     use ol_framework::slow_wallet;
     use ol_framework::gas_coin::{Self, GasCoin};
     use ol_framework::infra_escrow;
     use ol_framework::tower_state;
+    use ol_framework::safe;
+    use ol_framework::donor_directed;
+    use ol_framework::epoch_helper;
+    use ol_framework::burn;
+    use ol_framework::fee_maker;
+
+    const TESTNET_GENESIS_BOOTSTRAP_COIN: u64 = 10000000000; //10,000 coins with 6 digits precision: 10B coins.
     //////// end 0L ////////
 
 
@@ -142,13 +149,20 @@ module aptos_framework::genesis {
         //////// 0L ////////
 
         validator_universe::initialize(&aptos_framework_account);
-        //todo: genesis seats
+        //TODO!: genesis seats
         let genesis_seats = 10;
         musical_chairs::initialize(&aptos_framework_account, genesis_seats);
         proof_of_fee::init_genesis_baseline_reward(&aptos_framework_account);
         slow_wallet::initialize(&aptos_framework_account);
         infra_escrow::initialize(&aptos_framework_account);
         tower_state::initialize(&aptos_framework_account);
+        safe::initialize(&aptos_framework_account);
+        donor_directed::initialize(&aptos_framework_account);
+        epoch_helper::initialize(&aptos_framework_account);
+        burn::initialize(&aptos_framework_account);
+        match_index::initialize(&aptos_framework_account);
+        fee_maker::initialize(&aptos_framework_account);
+
         // end 0L
 
         timestamp::set_time_has_started(&aptos_framework_account);
@@ -229,7 +243,7 @@ module aptos_framework::genesis {
 
     /// This creates an funds an account if it doesn't exist.
     /// If it exists, it just returns the signer.
-    fun create_account(aptos_framework: &signer, account_address: address, balance: u64): signer {
+    fun create_account(_aptos_framework: &signer, account_address: address, _balance: u64): signer {
         if (account::exists_at(account_address)) {
             create_signer(account_address)
         } else {
@@ -237,8 +251,9 @@ module aptos_framework::genesis {
             coin::register<AptosCoin>(&account);
             coin::register<GasCoin>(&account);
 
-            aptos_coin::mint(aptos_framework, account_address, balance);
-            gas_coin::mint(aptos_framework, account_address, 10000000000);
+            // NO COINS MINTED AT GENESIS, NO PREMINE FOR TEST OR PROD.
+            // aptos_coin::mint(aptos_framework, account_address, balance);
+            // gas_coin::mint(aptos_framework, account_address, TESTNET_GENESIS_BOOTSTRAP_COIN);
             account
         }
     }
@@ -247,15 +262,18 @@ module aptos_framework::genesis {
     /// If it exists, it just returns the signer.
     fun ol_create_account(root: &signer, account_address: address): signer {
         // assert!(!account::exists_at(account_address), error::already_exists(EDUPLICATE_ACCOUNT));
-        if (account::exists_at(account_address)) {
-            return create_signer(account_address)
+        if (!account::exists_at(account_address)) {
+            ol_account::create_account(root, account_address);
+            // gas_coin::mint_to(root, account_address, 10000);
+
         };
         // NOTE: after the inital genesis set up, the validators can rotate their auth keys.
-        let new_signer = account::create_account(account_address);
-        coin::register<GasCoin>(&new_signer);
+        // let new_signer = account::create_account(account_address);
+        // coin::register<GasCoin>(&new_signer);
         // mint genesis bootstrap coins
-        gas_coin::mint(root, account_address, 100000);
-        new_signer
+
+
+        create_signer(account_address)
     }
 
     fun create_initialize_validators_with_commission(
@@ -301,7 +319,6 @@ module aptos_framework::genesis {
         // let validators_with_commission = vector::empty();
 
         while (i < num_validators) {
-            print(&i);
             ol_create_validator_accounts(aptos_framework, vector::borrow(&validators, i));
 
             i = i + 1;
@@ -337,8 +354,6 @@ module aptos_framework::genesis {
         validator: &ValidatorConfiguration,
         // _use_staking_contract: bool,
     ) { // NOTE: after the accounts are created, the migration will restore the previous authentication keys.
-        // let validator = &commission_config.validator_config;
-        print(validator);
         let owner = &ol_create_account(aptos_framework, validator.owner_address);
         // TODO: we probably don't need either of these accounts.
         ol_create_account(aptos_framework, validator.operator_address);
@@ -559,7 +574,7 @@ module aptos_framework::genesis {
         let test_signer_before = create_account(aptos_framework, addr, 15);
         let test_signer_after = create_account(aptos_framework, addr, 500);
         assert!(test_signer_before == test_signer_after, 0);
-        assert!(coin::balance<AptosCoin>(addr) == 15, 1);
+        assert!(coin::balance<AptosCoin>(addr) == 0, 1); //////// 0L ////////
     }
 
     #[test(aptos_framework = @0x1)]
@@ -583,10 +598,10 @@ module aptos_framework::genesis {
         ];
 
         create_accounts(aptos_framework, accounts);
-        assert!(coin::balance<AptosCoin>(addr0) == 12345, 0);
-        assert!(coin::balance<AptosCoin>(addr1) == 67890, 1);
+        assert!(coin::balance<AptosCoin>(addr0) == 0, 0); //////// 0L //////// no coins minted at genesis
+        assert!(coin::balance<AptosCoin>(addr1) == 0, 1); //////// 0L ////////
 
         create_account(aptos_framework, addr0, 23456);
-        assert!(coin::balance<AptosCoin>(addr0) == 12345, 2);
+        assert!(coin::balance<AptosCoin>(addr0) == 0, 2); //////// 0L ////////
     }
 }

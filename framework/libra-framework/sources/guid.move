@@ -16,8 +16,8 @@ module aptos_framework::guid {
         addr: address
     }
 
-    /// GUID generator must be published ahead of first usage of `create_with_capability` function.
-    const EGUID_GENERATOR_NOT_PUBLISHED: u64 = 0;
+    // /// GUID generator must be published ahead of first usage of `create_with_capability` function.
+    // const EGUID_GENERATOR_NOT_PUBLISHED: u64 = 0;
 
     /// Create and return a new GUID from a trusted module.
     public(friend) fun create(addr: address, creation_num_ref: &mut u64): GUID {
@@ -65,4 +65,5 @@ module aptos_framework::guid {
     public fun eq_id(guid: &GUID, id: &ID): bool {
         &guid.id == id
     }
+
 }

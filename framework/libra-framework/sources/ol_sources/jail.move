@@ -48,7 +48,7 @@ module ol_framework::jail {
   use ol_framework::stake;
 
   /// Validator is misconfigured cannot unjail.
-  const EVALIDATOR_CONFIG: u64 = 10001;
+  const EVALIDATOR_CONFIG: u64 = 1;
 
   struct Jail has key {
       is_jailed: bool,

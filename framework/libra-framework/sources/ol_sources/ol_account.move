@@ -1,23 +1,25 @@
 module ol_framework::ol_account {
-    use aptos_framework::account::{Self, new_event_handle};
-    use aptos_framework::coin;
+    use aptos_framework::account::{Self, new_event_handle, WithdrawCapability};
+    use aptos_framework::coin::{Self, Coin};
     use aptos_framework::event::{EventHandle, emit_event};
     use aptos_framework::system_addresses;
     // use aptos_framework::chain_status;
     use std::error;
     use std::signer;
-    // use aptos_std::debug::print;
-
-    #[test_only]
-    use std::vector;
-    #[test_only]
-    use aptos_framework::coin::Coin;
-
-
+    use std::option;
+    use aptos_std::from_bcs;
 
     use ol_framework::gas_coin::GasCoin;
     use ol_framework::slow_wallet;
+    use ol_framework::receipts;
+    use ol_framework::cumulative_deposits;
 
+    // use aptos_std::debug::print;
+    #[test_only]
+    use std::vector;
+
+    friend ol_framework::donor_directed;
+    friend ol_framework::burn;
     friend aptos_framework::genesis;
     friend aptos_framework::resource_account;
 
@@ -35,7 +37,15 @@ module ol_framework::ol_account {
     /// for 0L the account which does onboarding needs to have at least 2 gas coins
     const EINSUFFICIENT_BALANCE: u64 = 6;
 
-    const BOOTSTRAP_GAS_COIN_AMOUNT: u64 = 1000000;
+    /// On legacy account migration we need to check if we rotated auth keys correctly and can find the user address.
+    const ECANT_MATCH_ADDRESS_IN_LOOKUP: u64 = 7;
+
+
+    // const BOOTSTRAP_GAS_COIN_AMOUNT: u64 = 1000000;
+
+
+
+
     /// Configuration for whether an account can receive direct transfers of coins that they have not registered.
     ///
     /// By default, this is enabled. Users can opt-out by disabling at any time.
@@ -66,7 +76,7 @@ module ol_framework::ol_account {
     //         (coin::balance<GasCoin>(sender_addr) > 2 * BOOTSTRAP_GAS_COIN_AMOUNT),
     //         error::invalid_state(EINSUFFICIENT_BALANCE),
     //     );
-        
+
     //     coin::transfer<GasCoin>(sender, auth_key, BOOTSTRAP_GAS_COIN_AMOUNT);
     // }
 
@@ -82,22 +92,28 @@ module ol_framework::ol_account {
         let limit = get_slow_limit(signer::address_of(sender));
         assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
 
-        let new_signer = account::create_account(auth_key);
-        coin::register<GasCoin>(&new_signer);
+        create_impl(auth_key);
         coin::transfer<GasCoin>(sender, auth_key, amount);
     }
 
+    fun create_impl(auth_key: address) {
+        let new_signer = account::create_account(auth_key);
+        coin::register<GasCoin>(&new_signer);
+        receipts::user_init(&new_signer);
+    }
 
-    #[test_only]
+    // #[test_only]
     /// Helper for tests to create acounts
     /// Belt and suspenders
     public entry fun create_account(root: &signer, auth_key: address) {
         system_addresses::assert_ol(root);
-        let new_signer = account::create_account(auth_key);
-        coin::register<GasCoin>(&new_signer);
+        create_impl(auth_key);
     }
 
     /// For migrating accounts from a legacy system
+    /// NOTE: the legacy accounts (prefixed with 32 zeros) from 0L v5 will not be found by searching via authkey. Since the legacy authkey does not derive to the legcy account any longer, it is as if the account has rotated the authkey.
+    /// The remedy is to run the authkey rotation
+    /// even if it hasn't changed, such that the lookup table (OriginatingAddress) is created and populated with legacy accounts.
     public fun vm_create_account_migration(
         root: &signer,
         new_account: address,
@@ -107,29 +123,40 @@ module ol_framework::ol_account {
         system_addresses::assert_ol(root);
         // chain_status::assert_genesis(); TODO
         let new_signer = account::vm_create_account(root, new_account, auth_key);
-        // Roles::new_user_role_with_proof(&new_signer);
-        // make_account(&new_signer, auth_key);
+        // fake "rotate" legacy auth key  to itself so that the lookup is populated
+        account::vm_migrate_rotate_authentication_key_internal(root, &new_signer, auth_key);
+        // check we can in fact look up the account
+        let auth_key_as_address = from_bcs::to_address(auth_key);
+        let lookup_addr = account::get_originating_address(auth_key_as_address);
+        assert!(
+          lookup_addr == signer::address_of(&new_signer),
+          error::invalid_state(ECANT_MATCH_ADDRESS_IN_LOOKUP)
+        );
+
         coin::register<GasCoin>(&new_signer);
         new_signer
     }
 
-    // #[test_only]
-    // /// Batch version of GAS transfer.
-    // public entry fun batch_transfer(source: &signer, recipients: vector<address>, amounts: vector<u64>) {
-    //     let recipients_len = vector::length(&recipients);
-    //     assert!(
-    //         recipients_len == vector::length(&amounts),
-    //         error::invalid_argument(EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH),
-    //     );
 
-    //     let i = 0;
-    //     while (i < recipients_len) {
-    //         let to = *vector::borrow(&recipients, i);
-    //         let amount = *vector::borrow(&amounts, i);
-    //         transfer(source, to, amount);
-    //         i = i + 1;
-    //     };
-    // }
+
+
+    #[test_only]
+    /// Batch version of GAS transfer.
+    public entry fun batch_transfer(source: &signer, recipients: vector<address>, amounts: vector<u64>) {
+        let recipients_len = vector::length(&recipients);
+        assert!(
+            recipients_len == vector::length(&amounts),
+            error::invalid_argument(EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH),
+        );
+
+        let i = 0;
+        while (i < recipients_len) {
+            let to = *vector::borrow(&recipients, i);
+            let amount = *vector::borrow(&amounts, i);
+            transfer(source, to, amount);
+            i = i + 1;
+        };
+    }
 
     /// Convenient function to transfer GAS to a recipient account that might not exist.
     /// This would create the recipient account first, which also registers it to receive GAS, before transferring.
@@ -147,10 +174,50 @@ module ol_framework::ol_account {
         // Resource accounts can be created without registering them to receive GAS.
         // This conveniently does the registration if necessary.
         assert!(coin::is_account_registered<GasCoin>(to), error::invalid_argument(EACCOUNT_NOT_REGISTERED_FOR_GAS));
-        coin::transfer<GasCoin>(sender, to, amount)
+
+        coin::transfer<GasCoin>(sender, to, amount);
+
+        cumulative_deposits::maybe_update_deposit(signer::address_of(sender), to, amount);
     }
 
-    //////// 0L ////////  
+    /// Withdraw funds while respecting the transfer limits
+    public fun withdraw(sender: &signer, amount: u64): Coin<GasCoin> {
+
+        let limit = get_slow_limit(signer::address_of(sender));
+        assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
+
+        coin::withdraw<GasCoin>(sender, amount)
+    }
+
+    public(friend) fun vm_transfer(vm: &signer, from: address, to: address, amount: u64) {
+      system_addresses::assert_ol(vm);
+      // should not halt
+      if (!coin::is_account_registered<GasCoin>(to)) return;
+      if(amount > coin::balance<GasCoin>(from)) return;
+
+      let coin_option = coin::vm_withdraw<GasCoin>(vm, from, amount);
+      if (option::is_some(&coin_option)) {
+        let c = option::extract(&mut coin_option);
+        coin::deposit(to, c);
+      };
+
+      option::destroy_none(coin_option);
+
+    }
+
+    public fun withdraw_with_capability(cap: &WithdrawCapability, amount: u64): Coin<GasCoin> {
+      coin::withdraw_with_capability(cap, amount)
+    }
+
+    //////// 0L ////////
+
+    #[view]
+    /// return the GasCoin balance as tuple (unlocked, total)
+    // TODO v7: consolidate balance checks here, not in account, slow_wallet, or coin
+    public fun balance(addr: address): (u64, u64) {
+      slow_wallet::balance(addr)
+    }
+
     fun get_slow_limit(addr: address): u64 {
       let full_balance = coin::balance<GasCoin>(addr);
       // TODO: check if recipient is a donor directed account.
@@ -160,40 +227,39 @@ module ol_framework::ol_account {
     }
 
 
-    #[test_only]
-    /// Batch version of transfer_coins.
-    public entry fun batch_transfer<CoinType>(
-        from: &signer, recipients: vector<address>, amounts: vector<u64>) {
-        let recipients_len = vector::length(&recipients);
-        assert!(
-            recipients_len == vector::length(&amounts),
-            error::invalid_argument(EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH),
-        );
+    // #[test_only]
+    // /// Batch version of transfer_coins.
+    // public entry fun batch_transfer<CoinType>(
+    //     from: &signer, recipients: vector<address>, amounts: vector<u64>) {
+    //     let recipients_len = vector::length(&recipients);
+    //     assert!(
+    //         recipients_len == vector::length(&amounts),
+    //         error::invalid_argument(EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH),
+    //     );
 
-        let i = 0;
-        while (i < recipients_len) {
-            let to = *vector::borrow(&recipients, i);
-            let amount = *vector::borrow(&amounts, i);
-            transfer_coins<CoinType>(from, to, amount);
-            i = i + 1;
-        };
-    }
+    //     let i = 0;
+    //     while (i < recipients_len) {
+    //         let to = *vector::borrow(&recipients, i);
+    //         let amount = *vector::borrow(&amounts, i);
+    //         transfer_coins<CoinType>(from, to, amount);
+    //         i = i + 1;
+    //     };
+    // }
 
-    #[test_only]
-    /// Convenient function to transfer a custom CoinType to a recipient account that might not exist.
-    /// This would create the recipient account first and register it to receive the CoinType, before transferring.
-    public entry fun transfer_coins<CoinType>(from: &signer, to: address, amount: u64) {
-        deposit_coins(to, coin::withdraw<CoinType>(from, amount));
-    }
+    // #[test_only]
+    // /// Convenient function to transfer a custom CoinType to a recipient account that might not exist.
+    // /// This would create the recipient account first and register it to receive the CoinType, before transferring.
+    // public entry fun transfer_coins<CoinType>(from: &signer, to: address, amount: u64) {
+    //     deposit_coins(to, coin::withdraw<CoinType>(from, amount));
+    // }
 
-    #[test_only]
     /// Convenient function to deposit a custom CoinType into a recipient account that might not exist.
     /// This would create the recipient account first and register it to receive the CoinType, before transferring.
-    public fun deposit_coins<CoinType>(to: address, coins: Coin<CoinType>) {
+    public fun deposit_coins(to: address, coins: Coin<GasCoin>) {
         // if (!account::exists_at(to)) {
         //     create_account(to);
         // };
-        assert!(coin::is_account_registered<CoinType>(to), error::invalid_state(EACCOUNT_NOT_REGISTERED_FOR_GAS));
+        assert!(coin::is_account_registered<GasCoin>(to), error::invalid_state(EACCOUNT_NOT_REGISTERED_FOR_GAS));
         // if (!coin::is_account_registered<CoinType>(to)) {
         //     assert!(
         //         can_receive_direct_coin_transfers(to),
@@ -201,7 +267,7 @@ module ol_framework::ol_account {
         //     );
         //     coin::register<CoinType>(&create_signer(to));
         // };
-        coin::deposit<CoinType>(to, coins)
+        coin::deposit<GasCoin>(to, coins)
     }
 
     public fun assert_account_exists(addr: address) {
@@ -238,7 +304,7 @@ module ol_framework::ol_account {
             move_to(account, direct_transfer_config);
         };
     }
-    
+
 
     #[view]
     /// Return true if `account` can receive direct transfers of coins that they have not explicitly registered to
@@ -250,10 +316,10 @@ module ol_framework::ol_account {
             borrow_global<DirectTransferConfig>(account).allow_arbitrary_coin_transfers
     }
 
-    #[test_only]
-    use aptos_std::from_bcs;
     // #[test_only]
-    // use std::string::utf8;
+    // use aptos_std::from_bcs;
+    // // #[test_only]
+    // // use std::string::utf8;
 
     #[test_only]
     struct FakeCoin {}
@@ -304,7 +370,7 @@ module ol_framework::ol_account {
         create_account(root, recipient_1_addr);
         create_account(root, recipient_2_addr);
         coin::deposit(signer::address_of(from), coin::mint(10000, &mint_cap));
-        batch_transfer<GasCoin>(
+        batch_transfer(
             from,
             vector[recipient_1_addr, recipient_2_addr],
             vector[100, 500],
@@ -338,7 +404,7 @@ module ol_framework::ol_account {
     // }
 
     // #[test(root = @ol_framework, from = @0x1, recipient_1 = @0x124, recipient_2 = @0x125)]
-    // public fun test_batch_transfer_fake_coin(root: signer,  
+    // public fun test_batch_transfer_fake_coin(root: signer,
     //     from: &signer, recipient_1: &signer, recipient_2: &signer) {
     //     let (burn_cap, freeze_cap, mint_cap) = coin::initialize<FakeCoin>(
     //         from,

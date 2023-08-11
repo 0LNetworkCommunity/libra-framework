@@ -17,6 +17,7 @@ module ol_framework::proof_of_fee {
   use ol_framework::jail;
   use ol_framework::slow_wallet;
   use ol_framework::vouch;
+  use aptos_framework::transaction_fee;
   use aptos_framework::reconfiguration;
   use aptos_framework::stake;
   use aptos_framework::system_addresses;
@@ -28,11 +29,11 @@ module ol_framework::proof_of_fee {
 
   //////// ERRORS /////////
   /// Not and active validator
-  const ENOT_AN_ACTIVE_VALIDATOR: u64 = 190001;
+  const ENOT_AN_ACTIVE_VALIDATOR: u64 = 1;
   /// Bid is above the maximum percentage of the total reward
-  const EBID_ABOVE_MAX_PCT: u64 = 190002;
+  const EBID_ABOVE_MAX_PCT: u64 = 2;
   /// Retracted your bid too many times
-  const EABOVE_RETRACT_LIMIT: u64 = 190003; // Potential update
+  const EABOVE_RETRACT_LIMIT: u64 = 3; // Potential update
 
   // A struct on the validators account which indicates their
   // latest bid (and epoch)
@@ -98,7 +99,7 @@ module ol_framework::proof_of_fee {
       let sorted_bids = get_sorted_vals(false);
       let (auction_winners, price) = fill_seats_and_get_price(vm, n_musical_chairs, &sorted_bids, outgoing_compliant_set);
 
-      slow_wallet::vm_multi_pay_fee(vm, &auction_winners, price, &b"proof of fee");
+      transaction_fee::vm_multi_pay_fee(vm, &auction_winners, price);
 
       auction_winners
   }
@@ -296,25 +297,19 @@ module ol_framework::proof_of_fee {
   // consolidate all the checks for a validator to be seated
   public fun audit_qualification(val: &address): bool acquires ProofOfFeeAuction, ConsensusReward {
 
-      // print(&1001);
       // Safety check: node has valid configs
       if (!stake::stake_pool_exists(*val)) return false;
-// print(&1002);
       // is a slow wallet
       if (!slow_wallet::is_slow(*val)) return false;
-// print(&1003);
       // we can't seat validators that were just jailed
       // NOTE: epoch reconfigure needs to reset the jail
       // before calling the proof of fee.
       if (jail::is_jailed(*val)) return false;
-// print(&1004);
       // we can't seat validators who don't have minimum viable vouches
 
       if (!vouch::unrelated_buddies_above_thresh(*val)) return false;
       let (bid_pct, expire) = current_bid(*val);
-// print(&1005);
       if (bid_pct < 1) return false;
-// print(&1006);
       // Skip if the bid expired. belt and suspenders, this should have been checked in the sorting above.
       // TODO: make this it's own function so it can be publicly callable, it's useful generally, and for debugging.
 
@@ -323,13 +318,10 @@ module ol_framework::proof_of_fee {
       if (reconfiguration::get_current_epoch() > expire) return false;
       // skip the user if they don't have sufficient UNLOCKED funds
       // or if the bid expired.
-// print(&1007);
       let unlocked_coins = slow_wallet::unlocked_amount(*val);
       let (baseline_reward, _, _) = get_consensus_reward();
       let coin_required = fixed_point32::multiply_u64(baseline_reward, fixed_point32::create_from_rational(bid_pct, 1000));
-// print(&1008);
       if (unlocked_coins < coin_required) return false;
-// print(&1009);
       // friend of ours
       true
   }

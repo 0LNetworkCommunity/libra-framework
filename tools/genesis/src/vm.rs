@@ -1,4 +1,4 @@
-use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
+use libra_types::{legacy_types::legacy_recovery::LegacyRecovery, ol_progress::OLProgress};
 use zapatos_crypto::{ed25519::Ed25519PublicKey, HashValue};
 use zapatos_framework::{self, ReleaseBundle};
 use zapatos_gas::{
@@ -8,22 +8,21 @@ use zapatos_gas::{
 use zapatos_types::{
     chain_id::ChainId,
     on_chain_config::{Features, GasScheduleV2, OnChainConsensusConfig, OnChainExecutionConfig, TimedFeatures},
-    transaction::{ChangeSet},
+    transaction::ChangeSet,
 };
 use zapatos_vm::{
     data_cache::AsMoveResolver,
     move_vm_ext::{MoveVmExt, SessionId},
 };
 use zapatos_vm_genesis::{
-     create_and_initialize_validators,
-    // create_and_initialize_validators_with_commission, create_employee_validators,
+    create_and_initialize_validators,
     default_gas_schedule, emit_new_block_and_epoch_event, genesis_context::GenesisStateView,
     initialize, initialize_aptos_coin,
     initialize_features, initialize_on_chain_governance, mainnet_genesis_config, publish_framework,
     set_genesis_end, validate_genesis_config, verify_genesis_write_set, GenesisConfiguration, Validator, GENESIS_KEYPAIR,
 };
 
-use crate::supply::SupplySettings;
+use crate::{supply::SupplySettings, genesis_functions::rounding_mint};
 
 pub fn migration_genesis(
     validators: &[Validator],
@@ -95,12 +94,27 @@ pub fn encode_genesis_change_set(
 
     initialize_on_chain_governance(&mut session, genesis_config);
 
-    create_and_initialize_validators(&mut session, validators);
 
     if let Some(r) = recovery {
-        crate::genesis_functions::genesis_migrate_all_users(&mut session, r, supply_settings)
-        .expect("could not migrate users");
+        if r.len() > 0 {
+          crate::genesis_functions::genesis_migrate_all_users(&mut session, r, supply_settings)
+          .expect("could not migrate users");
+        }
     }
+    OLProgress::complete("user migration complete");
+
+    //////// 0L ////////
+    // moved this to happen after legacy account migration, since the validators need to have their accounts migrated as well, including the mapping of legacy address to the authkey (which no longer derives to the previous same address).
+    // Note: the operator accounts at genesis will be different.
+    create_and_initialize_validators(&mut session, validators);
+    OLProgress::complete("initialized genesis validators");
+
+    let spin = OLProgress::spin_steady(100, "publishing framework".to_string());
+
+    //////// 0L ////////
+    // need to ajust for rounding issues from target supply
+    rounding_mint(&mut session, supply_settings);
+
 
     set_genesis_end(&mut session);
 
@@ -147,5 +161,7 @@ pub fn encode_genesis_change_set(
         .iter()
         .any(|(_, op)| op.is_deletion()));
     verify_genesis_write_set(change_set.events());
+
+    spin.finish_and_clear();
     change_set
 }

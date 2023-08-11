@@ -9,6 +9,7 @@ module ol_framework::test_slow_wallet {
   use ol_framework::ol_account;
   use ol_framework::gas_coin;
   use ol_framework::epoch_boundary;
+  use aptos_framework::reconfiguration;
   use aptos_framework::coin;
   use std::vector;
 
@@ -59,7 +60,7 @@ module ol_framework::test_slow_wallet {
     assert!(slow_wallet::is_slow(@0x123), 7357000);
     assert!(slow_wallet::unlocked_amount(@0x123) == 0, 735701);
     let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&root);
-    coin::deposit(@0x123, coin::mint(10000, &mint_cap));
+    ol_account::deposit_coins(@0x123, coin::mint(10000, &mint_cap));
 
     coin::destroy_burn_cap(burn_cap);
     coin::destroy_mint_cap(mint_cap);
@@ -84,7 +85,7 @@ module ol_framework::test_slow_wallet {
     assert!(slow_wallet::is_slow(@0x123), 7357000);
     assert!(slow_wallet::unlocked_amount(@0x123) == 0, 735701);
     let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&root);
-    coin::deposit(@0x123, coin::mint(10000, &mint_cap));
+    ol_account::deposit_coins(@0x123, coin::mint(10000, &mint_cap));
 
     coin::destroy_burn_cap(burn_cap);
     coin::destroy_mint_cap(mint_cap);
@@ -110,7 +111,7 @@ module ol_framework::test_slow_wallet {
     mock::ol_initialize_coin(&root);
     let a = vector::borrow(&set, 0);
     assert!(slow_wallet::unlocked_amount(*a) == 0, 735701);
-    epoch_boundary::ol_reconfigure_for_test(&root)
+    epoch_boundary::ol_reconfigure_for_test(&root, reconfiguration::get_current_epoch())
 
   }
 

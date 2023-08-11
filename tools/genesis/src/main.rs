@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-
+use anyhow::Context;
 use clap::{Parser, Subcommand};
 use libra_genesis_tools::{
     genesis_builder,
@@ -43,7 +43,11 @@ enum Sub {
       supply_settings: SupplySettings,
     },  // just do genesis without wizard
     Register {}, // just do registration without wizard
-    Wizard {},
+    Wizard {
+      #[clap(flatten)]
+      /// optional, settings for supply.
+      supply_settings: SupplySettings,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -53,7 +57,7 @@ fn main() -> anyhow::Result<()> {
             let data_path = cli.home_dir.unwrap_or_else(global_config_dir);
 
             let github_token = cli.token_github.unwrap_or(
-                std::fs::read_to_string(&data_path.join(GITHUB_TOKEN_FILENAME))?
+                std::fs::read_to_string(&data_path.join(GITHUB_TOKEN_FILENAME)).context("cannot find github_token.txt in config path")?
                     .trim()
                     .to_string(),
             );
@@ -82,12 +86,12 @@ fn main() -> anyhow::Result<()> {
                 None,
             )?;
         }
-        Some(Sub::Wizard {}) => {
+        Some(Sub::Wizard {supply_settings}) => {
             GenesisWizard::new(cli.org_github, cli.name_github, cli.home_dir).start_wizard(
                 cli.local_framework,
                 cli.json_legacy,
-                false,
-                None,
+                true,
+                Some(supply_settings),
             )?;
         }
         _ => {

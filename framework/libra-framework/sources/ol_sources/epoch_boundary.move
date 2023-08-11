@@ -10,6 +10,10 @@ module aptos_framework::epoch_boundary {
     use ol_framework::rewards;
     use ol_framework::jail;
     use ol_framework::cases;
+    use ol_framework::safe;
+    use ol_framework::burn;
+    use ol_framework::donor_directed;
+    use ol_framework::fee_maker;
     use aptos_framework::transaction_fee;
     use aptos_framework::coin::{Self, Coin};
     use std::vector;
@@ -21,16 +25,25 @@ module aptos_framework::epoch_boundary {
     // Contains all of 0L's business logic for end of epoch.
     // This removed business logic from reconfiguration.move
     // and prevents dependency cycling.
-    public(friend) fun epoch_boundary(root: &signer) {
+    public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64) {
         if (signer::address_of(root) != @ol_framework) { // should never abort
             return
         };
+        // bill root service fees;
+        root_service_billing(root);
+        // run the transactions of donor directed accounts
+        donor_directed::process_donor_directed_accounts(root, closing_epoch);
+        // reset fee makers tracking
+        fee_maker::epoch_reset_fee_maker(root);
+
 
         let all_fees = transaction_fee::root_withdraw_all(root);
         process_outgoing(root, &mut all_fees);
 
         process_incoming(root);
 
+        // remainder gets burnt according to fee maker preferences
+        burn::epoch_burn_fees(root, &mut all_fees);
         // any remaining fees get burned
         coin::user_burn(all_fees);
 
@@ -66,7 +79,7 @@ module aptos_framework::epoch_boundary {
           rewards::process_single(root, *addr, user_coin, 1);
         }
       };
-      
+
       i = i + 1;
     };
 
@@ -81,7 +94,7 @@ module aptos_framework::epoch_boundary {
     // TODO: this needs to be a friend function, but it's in a different namespace, so we are gating it with vm signer, which is what was done previously. Which means hacking block.move
     slow_wallet::on_new_epoch(root);
 
-    let (compliant, n_seats) = musical_chairs::stop_the_music(root);  
+    let (compliant, n_seats) = musical_chairs::stop_the_music(root);
 
     let validators = proof_of_fee::end_epoch(root, &compliant, n_seats);
 
@@ -89,13 +102,18 @@ module aptos_framework::epoch_boundary {
 
   }
 
+  // all services the root collective security is billing for
+  fun root_service_billing(vm: &signer) {
+    safe::root_security_fee_billing(vm);
+  }
 
-    #[test_only]
-    public fun ol_reconfigure_for_test(vm: &signer) {
-        use aptos_framework::system_addresses;
 
-        system_addresses::assert_ol(vm);
-        epoch_boundary(vm);
-    }
+  #[test_only]
+  public fun ol_reconfigure_for_test(vm: &signer, closing_epoch: u64) {
+      use aptos_framework::system_addresses;
+
+      system_addresses::assert_ol(vm);
+      epoch_boundary(vm, closing_epoch);
+  }
 
 }

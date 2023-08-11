@@ -41,7 +41,7 @@ pub fn get_account_from_prompt() -> (AuthenticationKey, AccountAddress, WalletLi
             test_env_mnem.unwrap().trim().to_string()
         }
         false => match rpassword::read_password_from_tty(Some("\u{1F511} ")) {
-            Ok(read) => read,
+            Ok(read) => read.trim().to_owned(),
             Err(e) => {
                 println!(
                     "ERROR: could not read mnemonic from prompt, message: {}",

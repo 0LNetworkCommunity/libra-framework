@@ -52,7 +52,7 @@ module ol_framework::infra_escrow{
         let c = option::extract(&mut opt);
         option::destroy_none(opt);
 
-        transaction_fee::pay_fee(root, c);
+        transaction_fee::vm_pay_fee(root, @ol_framework, c); // don't attribute to the user
     }
 
     /// for an uprade using an escrow percent. Only to be called at genesis
@@ -73,8 +73,7 @@ module ol_framework::infra_escrow{
 
       if (locked > 0) {
         let to_escrow = fixed_point32::multiply_u64(locked, escrow_pct);
-        // print(&to_escrow);
-        user_pledge_infra(user_sig, to_escrow)
+        pledge_accounts::genesis_infra_escrow_pledge(vm, user_sig, to_escrow)
       };
     }
 
