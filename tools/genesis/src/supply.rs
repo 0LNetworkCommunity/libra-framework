@@ -1,8 +1,42 @@
-use clap::Args;
-use libra_types::legacy_types::{legacy_address::LegacyAddress, legacy_recovery::LegacyRecovery};
-// use std::path::PathBuf;
 use anyhow::Context;
+use clap::Args;
+use libra_types::{
+    legacy_types::{legacy_address::LegacyAddress, legacy_recovery::LegacyRecovery},
+    ONCHAIN_DECIMAL_PRECISION,
+};
+use indicatif::ProgressBar;
+use std::time::Duration;
+use libra_types::ol_progress::OLProgress;
 
+#[derive(Debug, Clone, Args)]
+pub struct SupplySettings {
+    #[clap(long)]
+    /// what is the final supply units to be split to. This is an "unscaled" number, meaning you should use the expected integer units of the coin, without the decimal precision.
+    pub target_supply: f64,
+    #[clap(long)]
+    /// for calculating escrow, what's the desired percent to future uses
+    pub target_future_uses: f64,
+    #[clap(long)]
+    /// for future uses calc, are there any donor directed wallets which require mapping to slow wallets
+    pub map_dd_to_slow: Vec<LegacyAddress>,
+}
+
+impl Default for SupplySettings {
+    fn default() -> Self {
+        Self {
+            target_supply: 10_000_000_000.0,
+            target_future_uses: 0.0,
+            map_dd_to_slow: vec![],
+        }
+    }
+}
+
+impl SupplySettings {
+    // convert to the correct coin scaling
+    pub fn scale_supply(&self) -> f64 {
+        self.target_supply * 10f64.powf(ONCHAIN_DECIMAL_PRECISION.into())
+    }
+}
 #[derive(Debug, Clone, Default)]
 pub struct Supply {
     pub total: f64,
@@ -19,38 +53,16 @@ pub struct Supply {
 }
 
 impl Supply {
-  // returns the ratios (split_factor, escrow_pct)
-  pub fn set_ratios_from_settings(&mut self, settings: &SupplySettings) -> anyhow::Result<()>{
-    self.split_factor = settings.target_supply / self.total;
+    // returns the ratios (split_factor, escrow_pct)
+    pub fn set_ratios_from_settings(&mut self, settings: &SupplySettings) -> anyhow::Result<()> {
+        // NOTE IMPORTANT: the CLI receives an unscaled integer number. And it should be scaled up to the Movevm decimal precision being used: 10^6
+        self.split_factor = settings.scale_supply() / self.total;
 
-    let target_future_uses = settings.target_future_uses * self.total;
-    let remaining_to_fund = target_future_uses - self.donor_directed;
-    self.escrow_pct = remaining_to_fund / self.slow_validator_locked;
-    Ok(())
-  }
-}
-
-#[derive(Debug, Clone, Args)]
-pub struct SupplySettings {
-    #[clap(long)]
-    /// what is the final supply units to be split to
-    pub target_supply: f64,
-    #[clap(long)]
-    /// for calculating escrow, what's the desired percent to future uses
-    pub target_future_uses: f64,
-    #[clap(long)]
-    /// for future uses calc, are there any donor directed wallets which require mapping to slow wallets
-    pub map_dd_to_slow: Vec<LegacyAddress>,
-}
-
-impl Default for SupplySettings {
-  fn default() -> Self {
-      Self {
-        target_supply: 10_000_000_000.0,
-        target_future_uses: 0.0,
-        map_dd_to_slow: vec![],
-      }
-  }
+        let target_future_uses = settings.target_future_uses * self.total;
+        let remaining_to_fund = target_future_uses - self.donor_directed;
+        self.escrow_pct = remaining_to_fund / self.slow_validator_locked;
+        Ok(())
+    }
 }
 
 fn inc_supply(
@@ -96,10 +108,12 @@ fn inc_supply(
 /// iterate over the recovery file and get the sum of all balances.
 /// there's an option to map certain donor-directed wallets to be counted as slow wallets
 /// Note: this may not be the "total supply", since there may be coins in other structs beside an account::balance, e.g escrowed in contracts.
-pub fn get_supply_struct(
+pub fn populate_supply_stats_from_legacy(
     rec: &[LegacyRecovery],
     map_dd_to_slow: &[LegacyAddress],
 ) -> anyhow::Result<Supply> {
+    let pb = ProgressBar::new(1000).with_style(OLProgress::spinner()).with_message("calculating coin supply");
+    pb.enable_steady_tick(Duration::from_millis(100));
     let zeroth = Supply {
         total: 0.0,
         normal: 0.0,
@@ -111,7 +125,6 @@ pub fn get_supply_struct(
         donor_directed: 0.0,
         split_factor: 0.0,
         escrow_pct: 0.0,
-
     };
 
     let dd_wallets = rec
@@ -129,8 +142,10 @@ pub fn get_supply_struct(
         .filter(|e| !map_dd_to_slow.contains(e))
         .collect();
 
-    rec.iter()
-        .try_fold(zeroth, |acc, r| inc_supply(acc, r, &dd_list))
+   let s = rec.iter()
+        .try_fold(zeroth, |acc, r| inc_supply(acc, r, &dd_list))?;
+    pb.finish_and_clear();
+    Ok(s)
 }
 
 #[test]
@@ -158,7 +173,7 @@ fn test_genesis_math() {
 
     // confirm the supply of normal, slow, and donor directed will add up to 100%``
 
-    let mut supply = get_supply_struct(&r, &settings.map_dd_to_slow).unwrap();
+    let mut supply = populate_supply_stats_from_legacy(&r, &settings.map_dd_to_slow).unwrap();
     dbg!(&supply);
 
     println!("before");

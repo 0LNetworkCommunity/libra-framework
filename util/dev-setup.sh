@@ -3,7 +3,7 @@
 # Ubuntu
 apt-get update
 
-apt install -y build-essential lld pkg-config libssl-dev libclang-dev
+apt install -y build-essential lld pkg-config libssl-dev libclang-dev libgmp-dev
 
 # curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 

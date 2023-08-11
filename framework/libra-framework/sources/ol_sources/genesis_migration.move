@@ -13,23 +13,23 @@ module ol_framework::genesis_migration {
   use ol_framework::validator_universe;
   use ol_framework::gas_coin;
   use ol_framework::gas_coin::GasCoin;
-  // use ol_framework::infra_escrow;
+  use ol_framework::transaction_fee;
   use aptos_framework::system_addresses;
+  // use aptos_std::debug::print;
 
-  use std::fixed_point32;
-
-
+  /// the unexpected value of a converted balance
   const EBALANCE_MISMATCH: u64 = 0;
+  /// the balance of a genesis validator is higher than expected
+  const EGENESIS_BALANCE_TOO_HIGH: u64 = 1;
+  /// balances converted incorrectly, more coins created than the target
+  const EMINTED_OVER_TARGET: u64 = 2;
 
   /// Called by root in genesis to initialize the GAS coin
   public fun migrate_legacy_user(
       vm: &signer,
       user_sig: &signer,
       auth_key: vector<u8>,
-      legacy_balance: u64,
-      _validator: bool, // TODO remove
-      split_factor: u64, // precision of 1,000,000
-      _escrow_pct: u64, // precision of 1,000,000
+      expected_initial_balance: u64,
   ) {
     system_addresses::assert_aptos_framework(vm);
 
@@ -44,39 +44,39 @@ module ol_framework::genesis_migration {
       );
     };
 
-
     // mint coins again to migrate balance, and all
     // system tracking of balances
-    if (legacy_balance == 0) {
+    if (expected_initial_balance == 0) {
       return
     };
+
+    // Genesis validators receive a minimal bootstrap mint, to do network operations. If the user has a balance to migrate, then the balance is net of this amount.
     let genesis_balance = coin::balance<GasCoin>(user_addr);
 
-    // scale up by the coin split factor
+    assert!(expected_initial_balance >= genesis_balance, error::invalid_state(EGENESIS_BALANCE_TOO_HIGH));
 
-    let split_factor = fixed_point32::create_from_rational(split_factor, 1000000);
-    let expected_final_balance = fixed_point32::multiply_u64(legacy_balance, split_factor);
-    let coins_to_mint = expected_final_balance - genesis_balance;
-    gas_coin::mint(vm, user_addr, coins_to_mint);
+    let coins_to_mint = expected_initial_balance - genesis_balance;
+    let c = coin::vm_mint<GasCoin>(vm, coins_to_mint);
+    coin::deposit<GasCoin>(user_addr, c);
 
-    // TODO: only mint the delta of the expected balance vs what is in the account.
     let new_balance = coin::balance<GasCoin>(user_addr);
 
-    assert!(new_balance == expected_final_balance, error::invalid_state(EBALANCE_MISMATCH));
-
-    // // establish the infrastructure escrow pledge
-    // if (is_validator) {
-    //   let escrow_pct = fixed_point32::create_from_rational(escrow_pct, 1000000);
-    //   // TODO: get locked amount
-    //   let locked = new_balance; //slow_wallet::balance(user_addr);
-    //   let to_escrow = fixed_point32::multiply_u64(locked, escrow_pct);
-    //   print(&to_escrow);
-    //   infra_escrow::user_pledge_infra(user_sig, to_escrow)
-    // };
+    assert!(new_balance == expected_initial_balance, error::invalid_state(EBALANCE_MISMATCH));
   }
 
   fun is_genesis_val(addr: address): bool {
     // TODO: other checks?
     validator_universe::is_in_universe(addr)
+  }
+
+  fun rounding_mint(root: &signer, target_supply: u64) {
+    let existing_supply = gas_coin::supply();
+
+    assert!(target_supply >= existing_supply, error::invalid_state(EMINTED_OVER_TARGET));
+    if (target_supply > existing_supply) {
+        let coin = coin::vm_mint<GasCoin>(root, target_supply - existing_supply);
+        transaction_fee::vm_pay_fee(root, @ol_framework, coin);
+
+    }
   }
 }

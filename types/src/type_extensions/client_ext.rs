@@ -1,6 +1,5 @@
 use crate::legacy_types::app_cfg::AppCfg;
-// use crate::gas_coin::SlowWalletBalance;
-use crate::util::{format_args, format_type_args, parse_function_id};
+use crate::util::parse_function_id;
 use crate::type_extensions::cli_config_ext::CliConfigExt;
 
 use anyhow::{anyhow, Context};
@@ -265,8 +264,8 @@ impl ClientExt for Client {
             vec![]
         };
 
-        println!("{}", format_type_args(&ty_args));
-        println!("{}", format_args(&args));
+        // println!("{}", format_type_args(&ty_args));
+        // println!("{}", format_args(&args));
 
         let request = ViewRequest {
             function: entry_fuction_id,

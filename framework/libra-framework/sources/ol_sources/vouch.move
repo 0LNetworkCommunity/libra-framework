@@ -6,13 +6,15 @@ module ol_framework::vouch {
     use ol_framework::ancestry;
     use ol_framework::globals;
     use ol_framework::testnet;
+    use ol_framework::ol_account;
+
     use aptos_framework::system_addresses;
     use aptos_framework::stake;
-    use aptos_framework::coin;
+    // use aptos_framework::coin;
     use aptos_framework::transaction_fee;
 
     /// Trying to vouch for yourself?
-    const ETRY_SELF_VOUCH_REALLY: u64 = 12345;
+    const ETRY_SELF_VOUCH_REALLY: u64 = 1;
 
     /// how many epochs must pass before the voucher expires.
     const EXPIRATION_ELAPSED_EPOCHS: u64 = 90;
@@ -49,8 +51,8 @@ module ol_framework::vouch {
       if (!exists<MyVouches>(wanna_be_my_friend)) return;
 
       // this fee is paid to the system, cannot be reclaimed
-      let c = coin::withdraw(ill_be_your_friend, vouch_cost());
-      transaction_fee::pay_fee(ill_be_your_friend, c);
+      let c = ol_account::withdraw(ill_be_your_friend, vouch_cost());
+      transaction_fee::user_pay_fee(ill_be_your_friend, c);
 
       let v = borrow_global_mut<MyVouches>(wanna_be_my_friend);
 

@@ -1,5 +1,5 @@
 use crate::{
-    account_queries::{get_account_balance_libra, get_tower_state},
+    account_queries::{get_account_balance_libra, get_tower_state, self},
     query_view,
 };
 use indoc::indoc;
@@ -70,6 +70,11 @@ pub enum QueryType {
         )]
         args: Option<String>,
     },
+    /// Looks up the address of an account given an auth key. The authkey diverges from the address after a key rotation.
+    LookupAddress {
+      #[clap(short, long)]
+      auth_key: AccountAddress // we use account address to parse, because that's the format needed to lookup users. AuthKeys and AccountAddress are the same formats.
+    },
 
     /// get a move value from account blob
     MoveValue {
@@ -129,7 +134,7 @@ impl QueryType {
         match self {
         QueryType::Balance { account } => {
           let res = get_account_balance_libra(&client, *account).await?;
-          Ok(json!(res))
+          Ok(json!(res.scaled()))
         },
         QueryType::Tower { account } => {
           let res = get_tower_state(&client, *account).await?;
@@ -147,8 +152,23 @@ impl QueryType {
             });
             Ok(json)
          },
+        QueryType::Epoch => {
+            let res = query_view::run("0x1::reconfiguration::get_current_epoch", None, None).await?;
+            let value = res.first().unwrap().to_owned();
+            let num: u64 = serde_json::from_value::<String>(value)?.parse()?;
+            let json = json!({
+              "epoch": num,
+            });
+            Ok(json)
+        },
+        QueryType::LookupAddress { auth_key } => {
+          let addr = account_queries::lookup_originating_address(&client, auth_key.to_owned()).await?;
+
+          Ok(json!({
+            "address": addr
+          }))
+        },
         _ => { bail!("Not implemented for type: {:?}", self) }
-        // QueryType::Epoch => todo!(),
         // QueryType::BlockHeight => todo!(),
         // QueryType::Resources { account } => todo!(),
         // QueryType::MoveValue { account, module_name, struct_name, key_name } => todo!(),

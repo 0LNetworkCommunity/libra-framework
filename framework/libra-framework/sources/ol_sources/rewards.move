@@ -13,7 +13,7 @@ module ol_framework::rewards {
   const REWARD_VALIDATOR: u8 = 1;
   const REWARD_ORACLE: u8 = 2;
   const REWARD_MISC: u8 = 255;
-  
+
   /// process a single reward
   /// root needs to have an owned coin already extracted. Not a mutable borrow.
   public(friend) fun process_single(root: &signer, addr: address, coin: Coin<GasCoin>, reward_type: u8) {
@@ -34,7 +34,7 @@ module ol_framework::rewards {
   }
 
 
-  
+
   /// process all the validators
   // belt and suspenders
   fun process_recipients_impl(root: &signer, list: vector<address>, reward_per: u64, reward_budget: &mut Coin<GasCoin>, reward_type: u8) {
@@ -76,7 +76,7 @@ module ol_framework::rewards {
 
 
   //////// TEST HELPERS ////////
-  
+
   #[test_only]
   /// helps create a payment to a validator
   // belt and suspenders too

@@ -38,6 +38,11 @@ pub struct TxsCli {
     #[clap(short, long)]
     pub test_private_key: Option<String>,
 
+    // TODO
+    // /// optional, pick name (substring of address or nickname) of a user profile, if there are multiple. Will choose the default one set..
+    // #[clap(short, long)]
+    // pub nickname_profile: Option<String>,
+
     /// optional, id of chain as name. Will default to MAINNET;
     #[clap(long)]
     pub chain_id: Option<NamedChain>,
@@ -60,18 +65,7 @@ pub struct TxsCli {
 pub enum TxsSub {
     #[clap(subcommand)]
     Validator(ValidatorTxs),
-    /// Create onchain account by using Aptos faucet
-    CreateAccount {
-        /// Create onchain account with the given address
-        #[clap(short, long)]
-        account_address: String,
-
-        /// The amount of coins to fund the new account
-        #[clap(short, long)]
-        coins: Option<u64>,
-    },
-
-    /// Transfer coins between accounts
+    /// Transfer coins between accounts. Transferring can also be used to create accounts.
     Transfer {
         /// Address of the recipient
         #[clap(short, long)]
@@ -81,7 +75,6 @@ pub enum TxsSub {
         #[clap(short, long)]
         amount: u64,
     },
-
     /// Generate a transaction that executes an Entry function on-chain
     GenerateTransaction {
         #[clap(
@@ -150,17 +143,17 @@ impl TxsCli {
             legacy.child_0_owner.pri_key
         };
 
-        let chain_name = self.chain_id.unwrap_or(NamedChain::MAINNET);
+        let app_cfg = AppCfg::load(self.config_path.clone())?;
 
+        let chain_name = self.chain_id.unwrap_or(app_cfg.workspace.default_chain_id);
         let url = if let Some(u) = self.url.as_ref() {
             u.to_owned()
         } else {
-            AppCfg::load(self.config_path.clone())?.pick_url(Some(chain_name))?
+            app_cfg.pick_url(Some(chain_name))?
         };
 
         let client = Client::new(url);
 
-        // TODO: load profile from ConfigCli::load_ext
         let mut send = Sender::new(
             AccountKey::from_private_key(pri_key),
             ChainId::new(chain_name.id()),
@@ -169,11 +162,6 @@ impl TxsCli {
         .await?;
 
         match &self.subcommand {
-            Some(TxsSub::CreateAccount {
-                account_address,
-                coins,
-            }) => crate::create_account::run(account_address, coins.unwrap_or_default()).await,
-
             Some(TxsSub::Transfer { to_account, amount }) => {
                 send.transfer(to_account.to_owned(), amount.to_owned())
                     .await
@@ -203,10 +191,10 @@ impl TxsCli {
               val_txs.run(&mut send).await
             },
             _ => {
-              println!("I'm searching, though I don't succeed \n
-              But someone look, there's a growing need \n
-              Oh, he is lost, there's no place for beginning \n
-              All that's left is an unhappy ending");
+              println!("\nI'm searching, though I don't succeed\n
+But someone look, there's a growing need\n
+Oh, he is lost, there's no place for beginning\n
+All that's left is an unhappy ending");
               Ok(())
             },
         }

@@ -3,6 +3,7 @@ use zapatos::{
     account::key_rotation::lookup_address,
     common::types::{CliConfig, ConfigSearchMode},
 };
+use zapatos_logger::prelude::*;
 use zapatos_sdk::{
     rest_client::{aptos_api_types::TransactionOnChainData, Client},
     transaction_builder::TransactionBuilder,
@@ -25,7 +26,7 @@ use libra_types::{
     type_extensions::{
         cli_config_ext::CliConfigExt,
         client_ext::{ClientExt, DEFAULT_TIMEOUT_SECS},
-    },
+    }, ol_progress::OLProgress,
 };
 
 // #[derive(Debug)]
@@ -92,9 +93,10 @@ impl Sender {
         let address = lookup_address(
             &client,
             account_key.authentication_key().derived_address(),
-            false,
+            true,
         )
         .await?;
+        info!("using address {}", &address);
 
         let seq = client.get_sequence_number(address).await?;
         let local_account = LocalAccount::new(address, account_key, seq);
@@ -106,24 +108,20 @@ impl Sender {
             response: None,
         })
     }
+
+    ///
     pub async fn from_app_cfg(
         app_cfg: &AppCfg,
-        pri_key: Option<Ed25519PrivateKey>,
+        profile: Option<String>,
     ) -> anyhow::Result<Self> {
-        let profile = app_cfg.get_profile(None)?;
+        let profile = app_cfg.get_profile(profile)?;
         let address = profile.account;
-
-        let key = match pri_key {
-            Some(p) => p,
+        let key = match &profile.test_private_key.clone() {
+            Some(k) => k.to_owned(),
             None => {
-                match profile.test_private_key.clone() {
-                    Some(k) => k,
-                    None => {
-                      let leg_keys =  libra_wallet::account_keys::get_keys_from_prompt()?;
-                      leg_keys.child_0_owner.pri_key
-                    },
-                }
-            }
+              let leg_keys =  libra_wallet::account_keys::get_keys_from_prompt()?;
+              leg_keys.child_0_owner.pri_key
+            },
         };
 
         let temp_seq_num = 0;
@@ -154,6 +152,7 @@ impl Sender {
         Ok(s)
     }
 
+    // TODO: is this deprecated
     pub async fn from_vendor_profile(
         profile_name: Option<&str>,
         workspace: Option<PathBuf>,
@@ -218,8 +217,12 @@ impl Sender {
         payload: TransactionPayload,
     ) -> anyhow::Result<TransactionOnChainData> {
         let signed = self.sign_payload(payload);
+        let spin = OLProgress::spin_steady(250, "awaiting transaction response".to_string());
         let r = self.submit(&signed).await?;
         self.response = Some(r.clone());
+        spin.finish_and_clear();
+        debug!("{:?}", &r);
+        OLProgress::complete("transaction success");
         Ok(r)
     }
 

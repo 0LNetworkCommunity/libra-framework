@@ -1,6 +1,6 @@
 [package]
 name = "libra-smoke-tests"
-description = "0L end to end tests"
+description = "test harness for 0L modules"
 version = "0.1.0"
 
 # Workspace inherited keys
@@ -14,11 +14,9 @@ url = { workspace = true }
 
 libra-cached-packages = { workspace = true }
 libra-framework = { workspace = true }
-libra-query = { workspace = true }
 libra-types = { workspace = true }
-libra-txs = { workspace = true }
 
-# zapatos-debugger = { workspace = true }
+
 zapatos-forge = { workspace = true }
 zapatos-sdk = { workspace = true }
 zapatos-smoke-test = { workspace = true }

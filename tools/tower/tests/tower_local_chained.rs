@@ -29,7 +29,7 @@ async fn tower_local_chained() {
     assert!(count == 1);
 
     let next = next_proof::get_next_proof_params_from_local(&app_cfg).unwrap();
-    
+
     proof::mine_once(&app_cfg, next).unwrap();
 
     backlog::process_backlog(&app_cfg).await.unwrap();

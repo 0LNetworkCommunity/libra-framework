@@ -12,6 +12,7 @@ module ol_framework::gas_coin {
     use ol_framework::globals;
 
     friend aptos_framework::genesis;
+    friend ol_framework::genesis_migration;
 
     /// Account does not have mint capability
     const ENO_CAPABILITIES: u64 = 1;
@@ -91,7 +92,21 @@ module ol_framework::gas_coin {
         coin::destroy_mint_cap(mint_cap);
     }
 
-    public(friend) fun restore_mint_cap(aptos_framework: &signer, mint_cap: MintCapability<GasCoin>) {
+
+    #[view]
+    /// get the gas coin supply. Helper which wraps coin::supply and extracts option type
+    // NOTE: there is casting between u128 and u64, but 0L has final supply below the u64.
+    public fun supply(): u64 {
+      let supply_opt = coin::supply<GasCoin>();
+      if (option::is_some(&supply_opt)) {
+        return (*option::borrow(&supply_opt) as u64)
+      };
+      0
+    }
+
+
+    #[test_only]
+    public fun restore_mint_cap(aptos_framework: &signer, mint_cap: MintCapability<GasCoin>) {
         system_addresses::assert_aptos_framework(aptos_framework);
         move_to(aptos_framework, MintCapStore { mint_cap });
     }
@@ -120,14 +135,29 @@ module ol_framework::gas_coin {
         move_to(core_resources, Delegations { inner: vector::empty() });
     }
 
-    /// Only callable in tests and testnets where the core resources account exists.
-    /// Create new coins and deposit them into dst_addr's account.
-    public entry fun mint(
-        account: &signer,
+    // /// Only callable in tests and testnets where the core resources account exists.
+    // /// Create new coins and deposit them into dst_addr's account.
+    // mint_impl(
+    //     root: &signer,
+    //     amount: u64,
+    // ): Coin<GasCoin> acquires MintCapStore {
+    //     system_addresses::assert_ol(root);
+
+    //     let mint_cap = &borrow_global<MintCapStore>(signer::address_of(root)).mint_cap;
+    //     coin::mint<GasCoin>(amount, mint_cap)
+    // }
+
+    // NOTE: needed for smoke tests
+    // TODO: guard some other way besides using the testing root account.
+    /// Root account can mint to an address. Only used for genesis and tests.
+    /// The "root" account in smoke tests has some privileges.
+    public entry fun mint_to_impl(
+        root: &signer,
         dst_addr: address,
         amount: u64,
     ) acquires MintCapStore {
-        let account_addr = signer::address_of(account);
+
+        let account_addr = signer::address_of(root);
 
         assert!(
             exists<MintCapStore>(account_addr),
@@ -137,6 +167,16 @@ module ol_framework::gas_coin {
         let mint_cap = &borrow_global<MintCapStore>(account_addr).mint_cap;
         let coins_minted = coin::mint<GasCoin>(amount, mint_cap);
         coin::deposit<GasCoin>(dst_addr, coins_minted);
+    }
+
+    #[test_only]
+    public entry fun test_mint_to(
+        root: &signer,
+        dst_addr: address,
+        amount: u64,
+    ) acquires MintCapStore {
+      system_addresses::assert_ol(root);
+      mint_to_impl(root, dst_addr, amount);
     }
 
     /// Only callable in tests and testnets where the core resources account exists.

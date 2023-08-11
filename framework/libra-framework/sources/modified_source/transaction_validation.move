@@ -13,7 +13,7 @@ module aptos_framework::transaction_validation {
     use aptos_framework::timestamp;
     use aptos_framework::transaction_fee;
 
-    use aptos_std::debug::print;
+    // use aptos_std::debug::print;
 
     friend aptos_framework::genesis;
 
@@ -183,7 +183,6 @@ module aptos_framework::transaction_validation {
         txn_max_gas_units: u64,
         gas_units_remaining: u64
     ) {
-        print(&1111111111111111);
         assert!(txn_max_gas_units >= gas_units_remaining, error::invalid_argument(EOUT_OF_GAS));
         let gas_used = txn_max_gas_units - gas_units_remaining;
 
@@ -200,16 +199,11 @@ module aptos_framework::transaction_validation {
             error::out_of_range(PROLOGUE_ECANT_PAY_GAS_DEPOSIT),
         );
 
-        print(&10001);
-
         if (transaction_fee::is_fees_collection_enabled()) {
-          print(&10002);
             // If transaction fees are redistributed to validators, collect them here for
             // later redistribution.
             transaction_fee::collect_fee(addr, transaction_fee_amount);
         };
-
-        print(&10003);
         // Increment sequence number
         account::increment_sequence_number(addr);
     }

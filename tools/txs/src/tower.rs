@@ -1,6 +1,6 @@
 use super::submit_transaction::Sender;
 use anyhow::bail;
-use libra_cached_packages::aptos_framework_sdk_builder::EntryFunctionCall::{ TowerStateMinerstateCommit};
+use libra_cached_packages::aptos_framework_sdk_builder::EntryFunctionCall:: TowerStateMinerstateCommit;
 use libra_types::legacy_types::block::VDFProof;
 
 impl Sender {

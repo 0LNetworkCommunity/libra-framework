@@ -1,5 +1,5 @@
 //! ol functions to run at genesis e.g. migration.
-use crate::supply::{get_supply_struct, SupplySettings};
+use crate::supply::{populate_supply_stats_from_legacy, SupplySettings};
 use anyhow::Context;
 use indicatif::ProgressIterator;
 use libra_types::{
@@ -20,7 +20,7 @@ pub fn genesis_migrate_all_users(
     user_recovery: &[LegacyRecovery],
     supply_settings: &SupplySettings,
 ) -> anyhow::Result<()> {
-    let mut supply = get_supply_struct(user_recovery, &supply_settings.map_dd_to_slow)?;
+    let mut supply = populate_supply_stats_from_legacy(user_recovery, &supply_settings.map_dd_to_slow)?;
 
     supply.set_ratios_from_settings(supply_settings)?;
 
@@ -94,7 +94,7 @@ pub fn genesis_migrate_one_user(
     session: &mut SessionExt<impl MoveResolver>,
     user_recovery: &LegacyRecovery,
     split_factor: f64,
-    escrow_pct: f64,
+    _escrow_pct: f64,
 ) -> anyhow::Result<()> {
     if user_recovery.account.is_none()
         || user_recovery.auth_key.is_none()
@@ -110,23 +110,24 @@ pub fn genesis_migrate_one_user(
         .to_string();
     let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
 
+    // dbg!(&new_addr_type.to_hex_literal());
+
     // NOTE: Authkeys have the same format as in pre V7
     let auth_key = user_recovery.auth_key.context("no auth key found")?;
+
+    let legacy_balance = user_recovery
+      .balance
+      .as_ref()
+      .expect("no balance found")
+      .coin;
+
+    let rescaled_balance = (split_factor * legacy_balance as f64) as u64;
 
     let serialized_values = serialize_values(&vec![
         MoveValue::Signer(CORE_CODE_ADDRESS),
         MoveValue::Signer(new_addr_type),
         MoveValue::vector_u8(auth_key.to_vec()),
-        MoveValue::U64(
-            user_recovery
-                .balance
-                .as_ref()
-                .expect("no balance found")
-                .coin,
-        ),
-        MoveValue::Bool(user_recovery.role == AccountRole::Validator),
-        MoveValue::U64((split_factor * 1_000_000.0) as u64),
-        MoveValue::U64((escrow_pct * 1_000_000.0) as u64),
+        MoveValue::U64(rescaled_balance),
     ]);
 
     exec_function(
@@ -163,9 +164,8 @@ pub fn genesis_migrate_slow_wallet(
     let serialized_values = serialize_values(&vec![
         MoveValue::Signer(CORE_CODE_ADDRESS),
         MoveValue::Signer(new_addr_type),
-        MoveValue::U64(slow.unlocked),
-        MoveValue::U64(slow.transferred),
-        MoveValue::U64((split_factor * 1_000_000.0) as u64),
+        MoveValue::U64((slow.unlocked as f64 * split_factor) as u64),
+        MoveValue::U64((slow.transferred as f64 * split_factor) as u64),
     ]);
 
     exec_function(
@@ -302,4 +302,25 @@ pub fn genesis_migrate_ancestry(
         serialized_values,
     );
     Ok(())
+}
+
+
+/// Since we are minting for each account to convert account balances there may be a rounding difference from target. Add those micro cents into the transaction fee account.
+/// Note: we could have minted one giant coin and then split it, however there's no place to store in on chain without repurposing accounts (ie. system accounts by design do no hold any funds, only the transaction_fee contract can temporarily hold an aggregatable coin which by design can only be fully withdrawn (not split)). So the rounding mint is less elegant, but practical.
+pub fn rounding_mint(
+    session: &mut SessionExt<impl MoveResolver>,
+    supply_settings: &SupplySettings,
+) {
+    let serialized_values = serialize_values(&vec![
+        MoveValue::Signer(CORE_CODE_ADDRESS),
+        MoveValue::U64(supply_settings.scale_supply() as u64),
+    ]);
+
+    exec_function(
+        session,
+        "genesis_migration",
+        "rounding_mint",
+        vec![],
+        serialized_values,
+    );
 }

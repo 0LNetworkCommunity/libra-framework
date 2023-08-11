@@ -1,13 +1,15 @@
 /// This module provides an interface to burn or collect and redistribute transaction fees.
 module aptos_framework::transaction_fee {
     use aptos_framework::coin::{Self, AggregatableCoin, BurnCapability, Coin};
-
-    // use aptos_framework::stake;
     use aptos_framework::system_addresses;
     use std::error;
+    use std::vector;
     use std::option::{Self, Option};
-
     use ol_framework::gas_coin::GasCoin;
+    use ol_framework::fee_maker;
+
+    // use aptos_std::debug::print;
+
 
     friend aptos_framework::block;
     friend aptos_framework::genesis;
@@ -15,6 +17,7 @@ module aptos_framework::transaction_fee {
     friend aptos_framework::transaction_validation;
 
     friend ol_framework::epoch_boundary;
+    friend ol_framework::burn;
 
     /// Gas fees are already being collected and the struct holding
     /// information about collected amounts is already published.
@@ -180,10 +183,27 @@ module aptos_framework::transaction_fee {
     }
 
     //////// 0L ////////
-    /// pay a fee
-    public fun pay_fee(_sender: &signer, fee: Coin<GasCoin>) acquires CollectedFeesPerBlock {
-        // TODO: need to track who is making payments.
-        
+    /// a user can pay a fee directly
+    public fun user_pay_fee(sender: &signer, fee: Coin<GasCoin>) acquires CollectedFeesPerBlock {
+        // Need to track who is making payments to Fee Maker
+        fee_maker::track_user_fee(sender, coin::value(&fee));
+        pay_fee_impl(fee);
+    }
+
+    /// root account will pay a fee on behalf of someone.
+    // if VM is not going to track the tx it will just add a system address here
+    public fun vm_pay_fee(sender: &signer, account: address, fee: Coin<GasCoin>) acquires CollectedFeesPerBlock {
+      // Need to track who is making payments to Fee Maker
+      // don't track system transfers into transaction fee
+      if (!system_addresses::is_framework_reserved_address(account)) {
+        fee_maker::vm_track_user_fee(sender, account, coin::value(&fee));
+      };
+      pay_fee_impl(fee);
+    }
+
+    /// implementation
+    fun pay_fee_impl(fee: Coin<GasCoin>) acquires CollectedFeesPerBlock {
+
         let collected_fees = borrow_global_mut<CollectedFeesPerBlock>(@aptos_framework);
 
         // Here, we are always optimistic and always collect fees. If the proposer is not set,
@@ -191,6 +211,31 @@ module aptos_framework::transaction_fee {
         // we burn them all at once. This way we avoid having a check for every transaction epilogue.
         let collected_amount = &mut collected_fees.amount;
         coin::merge_aggregatable_coin<GasCoin>(collected_amount, fee);
+    }
+
+    #[view]
+    /// get the total system fees available now.
+    public fun system_fees_collected(): u64 acquires CollectedFeesPerBlock {
+      let collected_fees = borrow_global<CollectedFeesPerBlock>(@aptos_framework);
+      (coin::aggregatable_value(&collected_fees.amount) as u64)
+    }
+
+    /// root account can use system fees to pay multiple accounts, e.g. for Proof of Fee reward.
+    public fun vm_multi_pay_fee(vm: &signer, list: &vector<address>, amount: u64) acquires CollectedFeesPerBlock {
+      system_addresses::assert_ol(vm);
+      let i = 0;
+
+      while (i < vector::length(list)) {
+        let from = vector::borrow(list, i);
+        let coin_option = coin::vm_withdraw<GasCoin>(vm, *from, amount);
+        if (option::is_some(&coin_option)) {
+          let c = option::extract(&mut coin_option);
+          vm_pay_fee(vm, *from, c)
+        };
+        option::destroy_none(coin_option);
+
+        i = i + 1;
+      }
     }
 
     /////// 0L ////////

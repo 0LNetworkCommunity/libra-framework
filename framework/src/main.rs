@@ -89,7 +89,7 @@ impl UpgradeRelease {
         dbg!(&new_file_name);
         libra_generate_script_proposal_impl(&bundle, AccountAddress::ONE, new_file_name, None)?;
         dbg!("ok");
-        
+
         let (bytes, hash) = libra_compile_script(&new_path)?;
 
         std::fs::write(new_path.join("script.mv"), bytes)?;

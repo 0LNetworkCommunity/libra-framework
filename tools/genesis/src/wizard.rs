@@ -5,7 +5,7 @@
 use crate::{genesis_builder, node_yaml, parse_json, supply::SupplySettings};
 ///////
 // TODO: import from libra
-use crate::{genesis_registration};
+use crate::genesis_registration;
 use libra_types::ol_progress::OLProgress;
 //////
 use crate::github_extensions::LibraGithubClient;
@@ -50,25 +50,6 @@ pub struct GenesisWizard {
     pub epoch: Option<u64>,
 }
 
-// impl Default for GenesisWizard {
-//     /// testnet values for genesis wizard
-//     fn default() -> Self {
-//         let data_path = dirs::home_dir()
-//             .expect("no home dir found")
-//             .join(DEFAULT_DATA_PATH);
-
-//         Self {
-//             username: "alice".to_string(),
-//             genesis_repo_org: "0o-de-lally".to_string(),
-//             // genesis_repo_org: "alice".to_string(),
-//             repo_name: "a-genesis".to_string(),
-//             github_username: "".to_string(),
-//             github_token: "".to_string(),
-//             data_path,
-//             epoch: None,
-//         }
-//     }
-// }
 
 impl GenesisWizard {
     /// constructor
@@ -111,12 +92,19 @@ impl GenesisWizard {
             ))
             .interact()?;
         if to_init {
+
             let host = what_host()?;
+
+            let keep_legacy_address = Confirm::new()
+            .with_prompt("Is this a legacy V5 address you wish to keep?")
+            .interact()?;
+
             initialize_host(
                 Some(self.data_path.clone()),
                 &self.github_username,
                 host,
                 None,
+                keep_legacy_address,
             )?;
         }
 
@@ -163,12 +151,6 @@ impl GenesisWizard {
                 vec![]
             };
 
-            // TODO: progress bar is odd when we  ask "already exists, are you sure you want to overwrite"
-
-            // let pb = ProgressBar::new(1000).with_style(OLProgress::spinner());
-
-            // pb.enable_steady_tick(Duration::from_millis(100));
-
             genesis_builder::build(
                 self.genesis_repo_org.clone(),
                 self.repo_name.clone(),
@@ -178,9 +160,6 @@ impl GenesisWizard {
                 Some(&legacy_recovery),
                 supply_settings,
             )?;
-            // pb.finish_and_clear();
-
-            OLProgress::complete("Genesis files built");
 
             for _ in (0..10)
                 .progress_with_style(OLProgress::fun())
@@ -390,7 +369,13 @@ impl GenesisWizard {
                     );
                     // return Ok(())
                 } else {
+                  if e.to_string().contains("No commits between main and main") {
+                    println!(
+                        "INFO: A pull request already exists, and there are no changes with main"
+                    );
+                  } else {
                     bail!("failed to create pull, message: {}", e.to_string())
+                  }
                 }
             }
         };
@@ -425,8 +410,9 @@ fn initialize_host(
     username: &str,
     host: HostAndPort,
     mnem: Option<String>,
+    keep_legacy_address: bool,
 ) -> anyhow::Result<()> {
-    libra_wallet::keys::refresh_validator_files(mnem, home_path.clone())?;
+    libra_wallet::keys::refresh_validator_files(mnem, home_path.clone(), keep_legacy_address)?;
     OLProgress::complete("Initialized validator key files");
     // TODO: set validator fullnode configs. Not NONE
     SetValidatorConfiguration::new(home_path.clone(), username.to_owned(), host, None)
@@ -497,7 +483,7 @@ fn test_validator_files_config() {
         fs::remove_dir_all(&test_path).unwrap();
     }
 
-    initialize_host(Some(test_path.clone()), "validator", h, Some(alice_mnem)).unwrap();
+    initialize_host(Some(test_path.clone()), "validator", h, Some(alice_mnem), false).unwrap();
 
     fs::remove_dir_all(&test_path).unwrap();
 }
