@@ -1,22 +1,17 @@
 //! Configs for all 0L apps.
 
-use anyhow::{Context, bail};
 use crate::{
     exports::{AccountAddress, AuthenticationKey, NamedChain},
     global_config_dir,
 };
+use anyhow::{bail, Context};
 use serde::{Deserialize, Serialize};
 use url::Url;
 use zapatos_crypto::ed25519::Ed25519PrivateKey;
 
-use std::{
-    fs,
-    io::Write,
-    path::PathBuf,
-    str::FromStr,
-};
+use std::{fs, io::Write, path::PathBuf, str::FromStr};
 
-use super::network_playlist::{NetworkPlaylist, self, HostProfile};
+use super::network_playlist::{self, HostProfile, NetworkPlaylist};
 
 const CONFIG_FILE_NAME: &str = "libra.yaml";
 /// MinerApp Configuration
@@ -29,7 +24,6 @@ pub struct AppCfg {
     // #[serde(default)]
     pub user_profiles: Vec<Profile>,
     /// Network profile
-    // NOTE: new field from V7, so it's an option so that previous files can load.
     pub network_playlist: Vec<NetworkPlaylist>,
     /// Transaction configurations
     pub tx_configs: TxConfigs,
@@ -46,17 +40,15 @@ pub struct LegacyToml {
     pub chain_info: ChainInfo,
     /// Transaction configurations
     pub tx_configs: TxConfigs,
-
 }
 
 impl LegacyToml {
     /// Get a AppCfg object from toml file
     pub fn parse_toml(path: Option<PathBuf>) -> anyhow::Result<Self> {
-      let path = path.unwrap_or(global_config_dir().join("0L.toml"));
-      let toml_buf = fs::read_to_string(path)?;
-      Ok(toml::from_str(&toml_buf)?)
-  }
-
+        let path = path.unwrap_or(global_config_dir().join("0L.toml"));
+        let toml_buf = fs::read_to_string(path)?;
+        Ok(toml::from_str(&toml_buf)?)
+    }
 }
 
 pub fn default_file_path() -> PathBuf {
@@ -67,11 +59,17 @@ impl AppCfg {
     /// load from default path
     pub fn load(file: Option<PathBuf>) -> anyhow::Result<Self> {
         let path = file.unwrap_or(default_file_path());
-
-        let s = fs::read_to_string(path)?;
-        Ok(serde_yaml::from_str(&s)?)
+        if !path.exists() {
+            bail!(format!(
+                "libra.yaml dir does not exist at {}\nHave you initialized the configs with `libra config init`?",
+                path.to_str().unwrap()
+            ))
+        }
+        let s = fs::read_to_string(&path)?;
+        let de: AppCfg = serde_yaml::from_str(&s)
+          .context(format!("could not read {:?} file into an AppCfg. Is there an issue with the file?", &path))?;
+        Ok(de)
     }
-
     /// save the config file to 0L.toml to the workspace home path
     pub fn save_file(&self) -> anyhow::Result<PathBuf> {
         // let toml = toml::to_string(&self)?;
@@ -83,47 +81,46 @@ impl AppCfg {
         let mut file = fs::File::create(&toml_path)?;
         file.write_all(&yaml.as_bytes())?;
 
-        println!(
-            "app configs file saved to: {:?}",
-            &toml_path
-        );
         Ok(toml_path)
     }
 
     pub fn migrate(legacy_file: Option<PathBuf>, output: Option<PathBuf>) -> anyhow::Result<Self> {
-      let l = LegacyToml::parse_toml(legacy_file)?;
+        let l = LegacyToml::parse_toml(legacy_file)?;
 
-      let nodes = if let Some(v) = l.profile.upstream_nodes.as_ref() {
-        v.iter().map(|u| {
-        let mut h = HostProfile::default();
-        h.url = u.to_owned();
-        h.note = u.to_string();
-        h
-      }).collect::<Vec<HostProfile>>()
-    } else { vec![] };
-      let np = NetworkPlaylist{
-        chain_id: l.chain_info.chain_id,
-        nodes: nodes,
-      };
-      let app_cfg = AppCfg {
-        workspace: l.workspace,
-        user_profiles: vec![l.profile],
-        network_playlist: vec![np],
-        tx_configs: l.tx_configs,
-      };
+        let nodes = if let Some(v) = l.profile.upstream_nodes.as_ref() {
+            v.iter()
+                .map(|u| {
+                    let mut h = HostProfile::default();
+                    h.url = u.to_owned();
+                    h.note = u.to_string();
+                    h
+                })
+                .collect::<Vec<HostProfile>>()
+        } else {
+            vec![]
+        };
+        let np = NetworkPlaylist {
+            chain_id: l.chain_info.chain_id,
+            nodes: nodes,
+        };
+        let app_cfg = AppCfg {
+            workspace: l.workspace,
+            user_profiles: vec![l.profile],
+            network_playlist: vec![np],
+            tx_configs: l.tx_configs,
+        };
 
-      if let Some(p) = output {
-        fs::create_dir_all(&p)?;
-        println!("created file for {}", p.to_str().unwrap());
-        let yaml = serde_yaml::to_string(&app_cfg)?;
-        fs::write(p, yaml.as_bytes())?;
-      } else {
-        app_cfg.save_file()?;
-      }
+        if let Some(p) = output {
+            fs::create_dir_all(&p)?;
+            println!("created file for {}", p.to_str().unwrap());
+            let yaml = serde_yaml::to_string(&app_cfg)?;
+            fs::write(p, yaml.as_bytes())?;
+        } else {
+            app_cfg.save_file()?;
+        }
 
-      Ok(app_cfg)
+        Ok(app_cfg)
     }
-
 
     /// Get where the block/proofs are stored.
     pub fn get_block_dir(&self, nickname: Option<String>) -> anyhow::Result<PathBuf> {
@@ -136,66 +133,75 @@ impl AppCfg {
     }
 
     /// get profile index by account fragment: full account string or shortened "nickname"
-    fn get_profile_idx(&self, mut nickname: Option<String>) -> anyhow::Result<usize>{
-      if self.user_profiles.len() == 0 { bail!("no profiles found") };
-      if self.user_profiles.len() == 1 {
-        return Ok(0)
-      };
+    fn get_profile_idx(&self, mut nickname: Option<String>) -> anyhow::Result<usize> {
+        if self.user_profiles.len() == 0 {
+            bail!("no profiles found")
+        };
+        if self.user_profiles.len() == 1 {
+            return Ok(0);
+        };
 
-      // try to use the default profile unless one was requested
-      if nickname.is_none() {
-        nickname = Some(self.workspace.default_profile.clone())
-      };
+        // try to use the default profile unless one was requested
+        if nickname.is_none() {
+            nickname = Some(self.workspace.default_profile.clone())
+        };
 
-      if let Some(n) = nickname {
-        let found = self.user_profiles.iter()
-        .enumerate()
-        .find_map(|(i, e)| {
-          if e.nickname.contains(&n) || e.account.to_string().contains(&n) {
-            Some(i)
-          } else { None }
-        });
-        return found.context("could not find a profile")
-      };
+        if let Some(n) = nickname {
+            let found = self.user_profiles.iter().enumerate().find_map(|(i, e)| {
+                if e.nickname.contains(&n) || e.account.to_string().contains(&n) {
+                    Some(i)
+                } else {
+                    None
+                }
+            });
+            return found.context("could not find a profile");
+        };
 
-      bail!("no profiles found")
+        bail!("no profiles found")
     }
 
     /// can get profile by account fragment: full account string or shortened "nickname"
-    pub fn get_profile(&self, nickname: Option<String>) -> anyhow::Result<Profile>{
-      let idx = self.get_profile_idx(nickname)?;
-      let p = self.user_profiles.iter().nth(idx).context("no profile at index")?;
-      Ok(p.to_owned())
+    pub fn get_profile(&self, nickname: Option<String>) -> anyhow::Result<Profile> {
+        let idx = self.get_profile_idx(nickname)?;
+        let p = self
+            .user_profiles
+            .iter()
+            .nth(idx)
+            .context("no profile at index")?;
+        Ok(p.to_owned())
     }
 
     /// get profile mutable borrow
-    pub fn get_profile_mut(&mut self, nickname: Option<String>) -> anyhow::Result<&mut Profile>{
-      let idx = self.get_profile_idx(nickname)?;
-      let p = self.user_profiles.iter_mut().nth(idx).context("no profile at index")?;
-      Ok(p)
+    pub fn get_profile_mut(&mut self, nickname: Option<String>) -> anyhow::Result<&mut Profile> {
+        let idx = self.get_profile_idx(nickname)?;
+        let p = self
+            .user_profiles
+            .iter_mut()
+            .nth(idx)
+            .context("no profile at index")?;
+        Ok(p)
     }
 
-    pub fn maybe_add_profile(&mut self, profile: Profile) -> anyhow::Result<()>{
-      if self.user_profiles.len() == 0 {
-        self.user_profiles = vec![profile];
-        return Ok(())
-      }
-
-      let mut found = false;
-      // if it exists lets update it.
-      self.user_profiles
-      .iter_mut()
-      .for_each(|e| {
-        if e.account == profile.account {
-          *e = profile.clone();
-          found = true;
+    pub fn maybe_add_profile(&mut self, profile: Profile) -> anyhow::Result<()> {
+        if self.user_profiles.len() == 0 {
+            self.user_profiles = vec![profile];
+            return Ok(());
         }
-      });
 
-      if !found { self.user_profiles.push(profile); }
+        let mut found = false;
+        // if it exists lets update it.
+        self.user_profiles.iter_mut().for_each(|e| {
+            if e.account == profile.account {
+                *e = profile.clone();
+                found = true;
+            }
+        });
 
-      Ok(())
+        if !found {
+            self.user_profiles.push(profile);
+        }
 
+        Ok(())
     }
     /// Get where node key_store.json stored.
     pub fn init_app_configs(
@@ -212,14 +218,14 @@ impl AppCfg {
         default_config.user_profiles = vec![profile];
 
         default_config.workspace.node_home =
-            config_path.clone().unwrap_or_else(|| default_file_path());
+            config_path.clone().unwrap_or_else(global_config_dir);
 
         if let Some(id) = network_id {
             default_config.workspace.default_chain_id = id.to_owned();
         };
 
         if let Some(np) = network_playlist {
-          default_config.network_playlist.push(np)
+            default_config.network_playlist.push(np)
         }
 
         default_config.save_file()?;
@@ -244,19 +250,21 @@ impl AppCfg {
     //     }
     // }
     pub fn set_chain_id(&mut self, chain_id: NamedChain) {
-
-      self.workspace.default_chain_id = chain_id;
+        self.workspace.default_chain_id = chain_id;
     }
 
-    pub async fn update_network_playlist(&mut self, chain_id: Option<NamedChain>,  playlist_url: Option<Url>) -> anyhow::Result<NetworkPlaylist>{
-      // let chain_id = chain_id.unwrap_or(self.chain_info.chain_id);
-      let url = playlist_url.unwrap_or(network_playlist::find_default_playlist(chain_id)?);
+    pub async fn update_network_playlist(
+        &mut self,
+        chain_id: Option<NamedChain>,
+        playlist_url: Option<Url>,
+    ) -> anyhow::Result<NetworkPlaylist> {
+        // let chain_id = chain_id.unwrap_or(self.chain_info.chain_id);
+        let url = playlist_url.unwrap_or(network_playlist::find_default_playlist(chain_id)?);
 
-      let np = NetworkPlaylist::from_url(url, chain_id).await?;
+        let np = NetworkPlaylist::from_url(url, chain_id).await?;
 
-      self.maybe_add_custom_playlist(&np);
-      Ok(np)
-
+        self.maybe_add_custom_playlist(&np);
+        Ok(np)
     }
     ///fetch a network profile, optionally by profile name
     pub fn get_network_profile(
@@ -264,9 +272,7 @@ impl AppCfg {
         chain_id: Option<NamedChain>,
     ) -> anyhow::Result<NetworkPlaylist> {
         // TODO: avoid clone
-        let np = self
-            .network_playlist
-            .clone();
+        let np = self.network_playlist.clone();
 
         let chain_id = chain_id.unwrap_or(self.workspace.default_chain_id);
         let profile = np.into_iter().find(|each| each.chain_id == chain_id);
@@ -286,17 +292,16 @@ impl AppCfg {
 
     /// if there is a custom playlist update it
     pub fn maybe_add_custom_playlist(&mut self, new_playlist: &NetworkPlaylist) {
-      let mut found = false;
-      self.network_playlist.iter_mut().for_each(|play| {
-        if play.chain_id == new_playlist.chain_id {
-          found = true;
-          *play = new_playlist.to_owned();
+        let mut found = false;
+        self.network_playlist.iter_mut().for_each(|play| {
+            if play.chain_id == new_playlist.chain_id {
+                found = true;
+                *play = new_playlist.to_owned();
+            }
+        });
+        if !found {
+            self.network_playlist.push(new_playlist.to_owned());
         }
-      });
-      if !found {
-        self.network_playlist.push(new_playlist.to_owned());
-      }
-
     }
     // TODO: always use CHAIN_ID from AppCfg
     ///fetch a network profile, optionally by profile name
@@ -304,12 +309,11 @@ impl AppCfg {
         let np = self.get_network_profile(chain_id)?;
         match np.the_best_one() {
             Ok(u) => Ok(u),
-            Err(_) => {
-              np.all_urls()?
+            Err(_) => np
+                .all_urls()?
                 .into_iter()
                 .next()
-                .context("no urls to choose from")
-            },
+                .context("no urls to choose from"),
         }
     }
 }
@@ -419,20 +423,13 @@ pub struct Profile {
 
     // /// ip address of the validator fullnodee
     // pub vfn_ip: Option<Ipv4Addr>,
-
     /// Deprecation: Other nodes to connect for fallback connections
     pub upstream_nodes: Option<Vec<Url>>,
-
     // /// fullnode playlist URL to override default
     // pub override_playlist: Option<Url>,
 
     // /// Link to another delay tower.
     // pub tower_link: Option<String>,
-
-
-
-
-
 }
 
 impl Default for Profile {
@@ -461,19 +458,19 @@ impl Default for Profile {
 }
 
 impl Profile {
-  pub fn new(auth: AuthenticationKey, acc: AccountAddress) -> Self {
-    let mut p = Self::default();
-    p.account = acc;
-    p.auth_key = auth;
-    p.nickname = get_nickname(p.account);
-    return p
-  }
+    pub fn new(auth: AuthenticationKey, acc: AccountAddress) -> Self {
+        let mut p = Self::default();
+        p.account = acc;
+        p.auth_key = auth;
+        p.nickname = get_nickname(p.account);
+        return p;
+    }
 }
 
 pub fn get_nickname(acc: AccountAddress) -> String {
     // let's check if this is a legacy/founder key, it will have 16 zeros at the start, and that's not a useful nickname
     if acc.to_string()[..32] == "00000000000000000000000000000000".to_string() {
-        return acc.to_string()[33..36].to_owned()
+        return acc.to_string()[33..36].to_owned();
     }
 
     acc.to_string()[..3].to_owned()
@@ -578,19 +575,16 @@ fn default_cheap_txs_cost() -> Option<TxCost> {
     Some(TxCost::new(1_000))
 }
 
-
 #[tokio::test]
 async fn test_create() {
-  let mut a = AppCfg::default();
-  a.user_profiles = vec![Profile::default()];
-  a.save_file().unwrap();
+    let mut a = AppCfg::default();
+    a.user_profiles = vec![Profile::default()];
+    a.save_file().unwrap();
 }
-
 
 #[test]
 fn read_write() {
-
-  let raw_yaml = r"
+    let raw_yaml = r"
 workspace:
   default_profile: '636'
   default_chain_id: TESTING
@@ -661,24 +655,23 @@ tx_configs:
     user_tx_timeout: 5000
 ";
 
-  let cfg: AppCfg = serde_yaml::from_str(&raw_yaml).unwrap();
-  // dbg!(&cfg);
-  assert!(cfg.workspace.default_chain_id == NamedChain::TESTING);
+    let cfg: AppCfg = serde_yaml::from_str(&raw_yaml).unwrap();
+    // dbg!(&cfg);
+    assert!(cfg.workspace.default_chain_id == NamedChain::TESTING);
 
-  let np = cfg.get_network_profile(None).unwrap();
-  assert!(np.chain_id == NamedChain::TESTING);
+    let np = cfg.get_network_profile(None).unwrap();
+    assert!(np.chain_id == NamedChain::TESTING);
 
-  let np = cfg.get_network_profile(Some(NamedChain::MAINNET)).unwrap();
-  assert!(np.chain_id == NamedChain::MAINNET);
+    let np = cfg.get_network_profile(Some(NamedChain::MAINNET)).unwrap();
+    assert!(np.chain_id == NamedChain::MAINNET);
 
-  // none of the node have been verified
-  // dbg!(&np.the_good_ones().unwrap());
+    // none of the node have been verified
+    // dbg!(&np.the_good_ones().unwrap());
 
-  assert!(np.the_good_ones().is_err());
-  assert!(np.the_best_one().is_err());
+    assert!(np.the_good_ones().is_err());
+    assert!(np.the_best_one().is_err());
 
-  // pick url will failover to get the best, or the first in list
-  let url = cfg.pick_url(None).unwrap();
-  assert!(url.host_str().unwrap().contains(&"localhost"));
-
+    // pick url will failover to get the best, or the first in list
+    let url = cfg.pick_url(None).unwrap();
+    assert!(url.host_str().unwrap().contains(&"localhost"));
 }

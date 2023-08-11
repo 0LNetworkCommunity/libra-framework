@@ -1,6 +1,6 @@
 //! The Makewhole on-chain resource
 //!
-use crate::gas_coin::GasCoin;
+use crate::move_resource::gas_coin::GasCoin;
 use anyhow::Result;
 use move_core_types::{
     ident_str,

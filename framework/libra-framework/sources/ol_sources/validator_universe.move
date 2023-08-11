@@ -27,8 +27,8 @@ module aptos_framework::validator_universe {
   // use aptos_std::debug::print;
 
   friend aptos_framework::reconfiguration;
-  
-  // resource for tracking the universe of accounts that have submitted 
+
+  // resource for tracking the universe of accounts that have submitted
   // a mined proof correctly, with the epoch number.
   struct ValidatorUniverse has key {
       validators: vector<address>
@@ -87,11 +87,11 @@ module aptos_framework::validator_universe {
   /// Common implementation for maybe_jail.
   fun maybe_jail_impl(root: &signer, validator: address): bool {
     system_addresses::assert_ol(root);
-    
+
     if (
       // TODO check if there are issues with config. belt and suspenders
       cases::get_case(validator) == 4
-    
+
     ) {
       jail::jail(root, validator);
       return true

@@ -110,7 +110,7 @@ fn test_fix() {
     fix_legacy_recovery_data(&mut vec, &[a] );
     dbg!(&vec);
     assert!(&vec.iter().next().unwrap().ancestry.is_some());
-    
+
 }
 
 
@@ -131,7 +131,7 @@ fn test_find() {
     let all = find_all_ancestors(json_ancestry.iter().next().unwrap(), &json_ancestry).unwrap();
     // dbg!(&all);
     assert!(all.len() == 6);
-    
+
 }
 
 
@@ -143,5 +143,5 @@ fn test_map() {
     let res = map_ancestry(&json_ancestry).unwrap();
     dbg!(res.len());
     dbg!(&res.iter().next());
-    
+
 }

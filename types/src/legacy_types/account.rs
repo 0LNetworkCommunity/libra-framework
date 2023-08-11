@@ -6,7 +6,7 @@ use diem_crypto::x25519::PublicKey;
 use diem_global_constants::{DEFAULT_PUB_PORT, DEFAULT_VAL_PORT, DEFAULT_VFN_PORT};
 use diem_types::{
     account_address::AccountAddress,
-    network_address::{NetworkAddress},
+    network_address::NetworkAddress,
     transaction::{SignedTransaction, TransactionPayload}, chain_id::MODE_0L,
 };
 
@@ -217,16 +217,16 @@ impl ValConfigs {
             .enumerate()
             .for_each(|(i, instr)| {
                 println!("{}", instr.text_instruction());
-                if !MODE_0L.is_test() {  
+                if !MODE_0L.is_test() {
                   match Confirm::new().with_prompt("").interact().unwrap() {
                     true => {},
                     _ =>  {
                       print!("Autopay configuration aborted. Check batch configuration file or template");
                       exit(1);
                     }
-                  } 
+                  }
                 }
- 
+
                 if let Some(signed) = &self.autopay_signed {
                   let tx = signed.iter().nth(i).unwrap();
                   let payload = tx.clone().into_raw_transaction().into_payload();

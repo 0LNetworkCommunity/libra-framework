@@ -4,7 +4,7 @@
 // our key gen process, which is quite simple if you are already using BIP-44.
 // Different from vendor, we prioritize making the mnemonic seed known to all users, and then derive all possible keys from there. Currently this applies to ed25519 keys. Vendor's keygen also includes BLS keys, which are used specifically for consensus. As such those are not relevant to end-user account holders.
 
-use crate::account_keys::{legacy_keygen, KeyChain, get_keys_from_prompt, get_keys_from_mnem};
+use crate::account_keys::{legacy_keygen, KeyChain, get_keys_from_prompt, get_keys_from_mnem, get_ol_legacy_address};
 use crate::utils::{
     check_if_file_exists, create_dir_if_not_exist, dir_default_to_current, prompt_yes, to_yaml,
     write_to_user_only_file,
@@ -17,7 +17,7 @@ use std::path::{Path, PathBuf};
 use zapatos_config::{config::IdentityBlob, keys::ConfigKey};
 use zapatos_crypto::{bls12381, ed25519::Ed25519PrivateKey, traits::PrivateKey, x25519};
 use zapatos_genesis::keys::{PrivateIdentity, PublicIdentity};
-use zapatos_types::transaction::authenticator::AuthenticationKey;
+// use zapatos_types::transaction::authenticator::AuthenticationKey;
 
 // These are consistent with Vendor
 const PRIVATE_KEYS_FILE: &str = "private-keys.yaml";
@@ -63,13 +63,18 @@ pub fn validator_keygen(
 pub fn refresh_validator_files(
     mnem: Option<String>,
     output_opt: Option<PathBuf>,
+    keep_legacy_addr: bool,
 ) -> anyhow::Result<(IdentityBlob, IdentityBlob, PrivateIdentity, PublicIdentity)> {
-    let legacy_keys = if let Some(m) = mnem {
+    let mut legacy_keys = if let Some(m) = mnem {
       get_keys_from_mnem(m)?
     } else {
       get_keys_from_prompt()?
     };
-    // let legacy_keys = get_keys_from_prompt()?;
+
+    if keep_legacy_addr {
+      let legacy_format = get_ol_legacy_address(legacy_keys.child_0_owner.account)?;
+      legacy_keys.child_0_owner.account = legacy_format;
+    }
 
     let (validator_blob, vfn_blob, private_identity, public_identity) =
         generate_key_objects_from_legacy(legacy_keys)?;
@@ -118,12 +123,10 @@ fn save_val_files(
 pub fn generate_key_objects_from_legacy(
     legacy_keys: KeyChain,
 ) -> anyhow::Result<(IdentityBlob, IdentityBlob, PrivateIdentity, PublicIdentity)> {
-    // let account_key = ConfigKey::new(keygen.generate_ed25519_private_key());
     let account_key: ConfigKey<Ed25519PrivateKey> =
         ConfigKey::new(legacy_keys.child_0_owner.pri_key);
 
     // consensus key needs to be generated anew as it is not part of the legacy keys
-    // let keygen = KeyGen::from_os_rng();
     let consensus_key = ConfigKey::new(bls_generate_key(&legacy_keys.seed)?);
 
     let vnk = network_keys_x25519_from_ed25519(legacy_keys.child_2_val_network.pri_key)?;
@@ -133,7 +136,7 @@ pub fn generate_key_objects_from_legacy(
 
     let full_node_network_key = ConfigKey::new(fnk);
 
-    let account_address = AuthenticationKey::ed25519(&account_key.public_key()).derived_address();
+    let account_address = legacy_keys.child_0_owner.account; // don't use the derived account. Since legacy account addresses will no longer map to the legacy authkey derived address.
 
     // Build these for use later as node identity
     let validator_blob = IdentityBlob {

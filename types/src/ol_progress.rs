@@ -8,7 +8,7 @@ impl OLProgress {
     /// detailed bar
     pub fn bar() -> ProgressStyle {
         ProgressStyle::with_template(
-            "{msg} {spinner:.blue} [{elapsed_precise}] [{bar:50.blue}] ({pos}/{len}, ETA {eta})",
+            "{msg} {spinner:.blue} [{elapsed_precise}] [{bar:25.blue}] ({pos}/{len}, ETA {eta})",
         )
         .unwrap()
         .tick_strings(&ol_ticks())
@@ -27,7 +27,6 @@ impl OLProgress {
       .with_message(msg);
       pb.enable_steady_tick(std::time::Duration::from_millis(millis));
       pb
-
     }
 
     /// For special occasions. Don't overuse it :)

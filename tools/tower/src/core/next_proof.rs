@@ -103,7 +103,7 @@ pub async fn get_next_proof_from_chain(
     // n.refresh_onchain_state();
     // // TODO: we are picking Client twice
     // let diff = get_difficulty_from_chain(&n)?;
-  
+
     // // get the user's tower state from chain.
     // let ts = n.client
     //   .get_account_state(config.profile.account)?

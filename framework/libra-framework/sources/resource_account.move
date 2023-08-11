@@ -185,6 +185,13 @@ module aptos_framework::resource_account {
         resource_signer_cap
     }
 
+    #[view]
+    //////// 0L ////////
+    /// is the account properly configurated as a resource account
+    public fun is_resource_account(addr: address): bool {
+      account::get_authentication_key(addr) == ZERO_AUTH_KEY
+    }
+
     #[test(user = @0x1111)]
     public entry fun test_create_account_and_retrieve_cap(user: signer) acquires Container {
         let user_addr = signer::address_of(&user);

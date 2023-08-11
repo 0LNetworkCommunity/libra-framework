@@ -10,12 +10,11 @@ module ol_framework::slow_wallet {
   use aptos_framework::coin;
   use std::vector;
   use std::signer;
-  // use ol_framework::globals;
   use ol_framework::gas_coin::GasCoin;
   use std::error;
-  use std::fixed_point32;
 
-  const EGENESIS_ERROR: u64 = 10001;
+  /// genesis failed to initialized the slow wallet registry
+  const EGENESIS_ERROR: u64 = 1;
 
   const EPOCH_DRIP_CONST: u64 = 100000;
 
@@ -45,17 +44,9 @@ module ol_framework::slow_wallet {
       user: &signer,
       unlocked: u64,
       transferred: u64,
-      split_factor: u64,
+      // split_factor: u64,
     ) acquires SlowWallet, SlowWalletList {
       system_addresses::assert_ol(vm);
-      let split_factor = fixed_point32::create_from_rational(split_factor, 1000000);
-      let unlocked = if (unlocked > 0) {
-        fixed_point32::multiply_u64(unlocked, split_factor)
-      } else { 0 };
-
-      let transferred = if (transferred > 0) {
-        fixed_point32::multiply_u64(transferred, split_factor)
-      } else { 0 };
 
       let user_addr = signer::address_of(user);
       if (!exists<SlowWallet>(user_addr)) {
@@ -82,8 +73,11 @@ module ol_framework::slow_wallet {
       if (!exists<SlowWalletList>(@ol_framework)) {
         initialize(vm); //don't abort
       };
-      let list = borrow_global_mut<SlowWalletList>(@ol_framework);
-      vector::push_back(&mut list.list, signer::address_of(user));
+      let state = borrow_global_mut<SlowWalletList>(@ol_framework);
+      let addr = signer::address_of(user);
+      if (!vector::contains(&state.list, &addr)) {
+        vector::push_back(&mut state.list, addr);
+      }
     }
 
     public fun set_slow(sig: &signer) acquires SlowWalletList {
@@ -135,9 +129,6 @@ module ol_framework::slow_wallet {
       slow_wallet_epoch_drip(vm, EPOCH_DRIP_CONST);
     }
 
-    public fun vm_multi_pay_fee(_vm: &signer, _list: &vector<address>, _price: u64, _metadata: &vector<u8>) {
-    }
-
     ///////// SLOW GETTERS ////////
 
     #[view]
@@ -182,7 +173,4 @@ module ol_framework::slow_wallet {
         return vector::empty<address>()
       }
     }
-
-
-
 }
