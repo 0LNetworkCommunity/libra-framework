@@ -13,7 +13,7 @@ use std::{fs, io::Write, path::PathBuf, str::FromStr};
 
 use super::network_playlist::{self, HostProfile, NetworkPlaylist};
 
-const CONFIG_FILE_NAME: &str = "libra.yaml";
+pub const CONFIG_FILE_NAME: &str = "libra.yaml";
 /// MinerApp Configuration
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct AppCfg {
@@ -45,7 +45,7 @@ pub struct LegacyToml {
 impl LegacyToml {
     /// Get a AppCfg object from toml file
     pub fn parse_toml(path: Option<PathBuf>) -> anyhow::Result<Self> {
-        let path = path.unwrap_or(global_config_dir().join("0L.toml"));
+        let path = path.unwrap_or_else(|| global_config_dir().join("0L.toml"));
         let toml_buf = fs::read_to_string(path)?;
         Ok(toml::from_str(&toml_buf)?)
     }
@@ -58,7 +58,7 @@ pub fn default_file_path() -> PathBuf {
 impl AppCfg {
     /// load from default path
     pub fn load(file: Option<PathBuf>) -> anyhow::Result<Self> {
-        let path = file.unwrap_or(default_file_path());
+        let path = file.unwrap_or_else(default_file_path);
         if !path.exists() {
             bail!(format!(
                 "libra.yaml dir does not exist at {}\nHave you initialized the configs with `libra config init`?",
@@ -66,8 +66,10 @@ impl AppCfg {
             ))
         }
         let s = fs::read_to_string(&path)?;
-        let de: AppCfg = serde_yaml::from_str(&s)
-          .context(format!("could not read {:?} file into an AppCfg. Is there an issue with the file?", &path))?;
+        let de: AppCfg = serde_yaml::from_str(&s).context(format!(
+            "could not read {:?} file into an AppCfg. Is there an issue with the file?",
+            &path
+        ))?;
         Ok(de)
     }
     /// save the config file to 0L.toml to the workspace home path
@@ -76,10 +78,10 @@ impl AppCfg {
         let yaml = serde_yaml::to_string(&self)?;
         let home_path = &self.workspace.node_home.clone();
         // create home path if doesn't exist, usually only in dev/ci environments.
-        fs::create_dir_all(&home_path)?;
+        fs::create_dir_all(home_path)?;
         let toml_path = home_path.join(CONFIG_FILE_NAME);
         let mut file = fs::File::create(&toml_path)?;
-        file.write_all(&yaml.as_bytes())?;
+        file.write_all(yaml.as_bytes())?;
 
         Ok(toml_path)
     }
@@ -89,11 +91,10 @@ impl AppCfg {
 
         let nodes = if let Some(v) = l.profile.upstream_nodes.as_ref() {
             v.iter()
-                .map(|u| {
-                    let mut h = HostProfile::default();
-                    h.url = u.to_owned();
-                    h.note = u.to_string();
-                    h
+                .map(|u| HostProfile {
+                    url: u.to_owned(),
+                    note: u.to_string(),
+                    ..Default::default()
                 })
                 .collect::<Vec<HostProfile>>()
         } else {
@@ -101,7 +102,7 @@ impl AppCfg {
         };
         let np = NetworkPlaylist {
             chain_id: l.chain_info.chain_id,
-            nodes: nodes,
+            nodes,
         };
         let app_cfg = AppCfg {
             workspace: l.workspace,
@@ -134,7 +135,7 @@ impl AppCfg {
 
     /// get profile index by account fragment: full account string or shortened "nickname"
     fn get_profile_idx(&self, mut nickname: Option<String>) -> anyhow::Result<usize> {
-        if self.user_profiles.len() == 0 {
+        if self.user_profiles.is_empty() {
             bail!("no profiles found")
         };
         if self.user_profiles.len() == 1 {
@@ -143,7 +144,7 @@ impl AppCfg {
 
         // try to use the default profile unless one was requested
         if nickname.is_none() {
-            nickname = Some(self.workspace.default_profile.clone())
+            nickname = self.workspace.default_profile.clone()
         };
 
         if let Some(n) = nickname {
@@ -162,28 +163,23 @@ impl AppCfg {
 
     /// can get profile by account fragment: full account string or shortened "nickname"
     pub fn get_profile(&self, nickname: Option<String>) -> anyhow::Result<Profile> {
-        let idx = self.get_profile_idx(nickname)?;
-        let p = self
-            .user_profiles
-            .iter()
-            .nth(idx)
-            .context("no profile at index")?;
+        let idx = self.get_profile_idx(nickname).unwrap_or(0);
+        let p = self.user_profiles.get(idx).context("no profile at index")?;
         Ok(p.to_owned())
     }
 
     /// get profile mutable borrow
     pub fn get_profile_mut(&mut self, nickname: Option<String>) -> anyhow::Result<&mut Profile> {
-        let idx = self.get_profile_idx(nickname)?;
+        let idx = self.get_profile_idx(nickname).unwrap_or(0);
         let p = self
             .user_profiles
-            .iter_mut()
-            .nth(idx)
+            .get_mut(idx)
             .context("no profile at index")?;
         Ok(p)
     }
 
     pub fn maybe_add_profile(&mut self, profile: Profile) -> anyhow::Result<()> {
-        if self.user_profiles.len() == 0 {
+        if self.user_profiles.is_empty() {
             self.user_profiles = vec![profile];
             return Ok(());
         }
@@ -217,8 +213,7 @@ impl AppCfg {
         let profile = Profile::new(authkey, account);
         default_config.user_profiles = vec![profile];
 
-        default_config.workspace.node_home =
-            config_path.clone().unwrap_or_else(global_config_dir);
+        default_config.workspace.node_home = config_path.unwrap_or_else(global_config_dir);
 
         if let Some(id) = network_id {
             default_config.workspace.default_chain_id = id.to_owned();
@@ -231,6 +226,37 @@ impl AppCfg {
         default_config.save_file()?;
 
         Ok(default_config)
+    }
+
+    pub fn init_for_tests(path: PathBuf) -> anyhow::Result<AppCfg> {
+        // use crate::test_drop_helper::DropTemp;
+        // use zapatos_temppath::TempPath;
+        use zapatos_crypto::ValidCryptoMaterialStringExt;
+
+        // Alice = "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse"
+        // "child_0_owner": {
+        //   "account": "87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5",
+        //   "auth_key": "0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5",
+        //   "pri_key": "0x74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b"
+        // },
+
+        // let temp = DropTemp::new_in_crate(test_name);
+        // let temp = TempPath::new();
+
+        let mut cfg = Self::init_app_configs(
+            "87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5".parse()?,
+            "0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5".parse()?,
+            Some(path),
+            Some(NamedChain::TESTING),
+            None,
+        )?;
+
+        let mut profile = cfg.get_profile_mut(None)?;
+        profile.test_private_key = Some(Ed25519PrivateKey::from_encoded_string(
+            "0x74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b",
+        )?);
+
+        Ok(cfg)
     }
 
     // /// Removes current node from upstream nodes
@@ -277,7 +303,7 @@ impl AppCfg {
         let chain_id = chain_id.unwrap_or(self.workspace.default_chain_id);
         let profile = np.into_iter().find(|each| each.chain_id == chain_id);
 
-        Ok(profile.context("could not find a network profile")?)
+        profile.context("could not find a network profile")
     }
 
     pub async fn refresh_network_profile_and_save(
@@ -337,7 +363,7 @@ impl Default for AppCfg {
 pub struct Workspace {
     /// default profile. Will match the substring of a full address or the nickname
     #[serde(default)]
-    pub default_profile: String,
+    pub default_profile: Option<String>,
     /// default chain network profile to use
     pub default_chain_id: NamedChain,
 
@@ -362,7 +388,7 @@ pub struct Workspace {
 impl Default for Workspace {
     fn default() -> Self {
         Self {
-            default_profile: "default".to_string(),
+            default_profile: None,
             default_chain_id: NamedChain::MAINNET,
             node_home: crate::global_config_dir(),
             // source_path: None,
@@ -463,13 +489,13 @@ impl Profile {
         p.account = acc;
         p.auth_key = auth;
         p.nickname = get_nickname(p.account);
-        return p;
+        p
     }
 }
 
 pub fn get_nickname(acc: AccountAddress) -> String {
     // let's check if this is a legacy/founder key, it will have 16 zeros at the start, and that's not a useful nickname
-    if acc.to_string()[..32] == "00000000000000000000000000000000".to_string() {
+    if acc.to_string()[..32] == *"00000000000000000000000000000000" {
         return acc.to_string()[33..36].to_owned();
     }
 
@@ -511,13 +537,10 @@ pub struct TxConfigs {
 impl TxConfigs {
     /// get the user txs cost preferences for given transaction type
     pub fn get_cost(&self, tx_type: TxType) -> TxCost {
-        let ref baseline = self.baseline_cost.clone();
+        let baseline = &self.baseline_cost.clone();
         let cost = match tx_type {
             TxType::Critical => self.critical_txs_cost.as_ref().unwrap_or(baseline),
-            TxType::Mgmt => self
-                .management_txs_cost
-                .as_ref()
-                .unwrap_or_else(|| baseline),
+            TxType::Mgmt => self.management_txs_cost.as_ref().unwrap_or(baseline),
             TxType::Miner => self.miner_txs_cost.as_ref().unwrap_or(baseline),
             TxType::Cheap => self.cheap_txs_cost.as_ref().unwrap_or(baseline),
         };
@@ -655,7 +678,7 @@ tx_configs:
     user_tx_timeout: 5000
 ";
 
-    let cfg: AppCfg = serde_yaml::from_str(&raw_yaml).unwrap();
+    let cfg: AppCfg = serde_yaml::from_str(raw_yaml).unwrap();
     // dbg!(&cfg);
     assert!(cfg.workspace.default_chain_id == NamedChain::TESTING);
 
@@ -673,5 +696,5 @@ tx_configs:
 
     // pick url will failover to get the best, or the first in list
     let url = cfg.pick_url(None).unwrap();
-    assert!(url.host_str().unwrap().contains(&"localhost"));
+    assert!(url.host_str().unwrap().contains("localhost"));
 }

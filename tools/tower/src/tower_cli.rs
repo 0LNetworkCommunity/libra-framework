@@ -1,10 +1,10 @@
 use crate::core::{backlog, proof};
 use clap::{Parser, Subcommand};
 use libra_types::exports::Client;
+use libra_types::exports::{Ed25519PrivateKey, ValidCryptoMaterialStringExt};
 use libra_types::legacy_types::app_cfg::AppCfg;
 use libra_types::type_extensions::client_ext::ClientExt;
 use std::path::PathBuf;
-use libra_types::exports::{Ed25519PrivateKey, ValidCryptoMaterialStringExt};
 
 #[derive(Parser)]
 #[clap(name = env!("CARGO_PKG_NAME"), author, version, about, long_about = None, arg_required_else_help = true)]
@@ -28,7 +28,6 @@ pub struct TowerCli {
     /// optional, private key of the account. Otherwise this will prompt for mnemonic. Warning: intended for testing.
     #[clap(short, long)]
     pub test_private_key: Option<String>,
-
 }
 
 #[derive(Subcommand)]

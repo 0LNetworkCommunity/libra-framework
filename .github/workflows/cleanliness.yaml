@@ -1,0 +1,23 @@
+name: cleanliness
+on:
+  push:
+    branches: ["*"]
+
+jobs:
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: setup env
+        uses: 0o-de-lally/libra-v7/.github/actions/build_env@ci
+
+      - name: format
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+      - name: clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --workspace --tests -- -D warnings

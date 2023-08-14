@@ -1,16 +1,14 @@
 use anyhow::{bail, Result};
-use libra_types::type_extensions::{
-  cli_config_ext::CliConfigExt,
-};
-use std::{collections::BTreeMap, str::FromStr, env};
+use libra_types::type_extensions::cli_config_ext::CliConfigExt;
+use std::{collections::BTreeMap, env, str::FromStr};
 use url::Url;
 use zapatos::{
     account::key_rotation::lookup_address,
     common::{
         init::Network,
         types::{
-            account_address_from_public_key, CliConfig, CliError, CliTypedResult,
-            ProfileConfig, PromptOptions, DEFAULT_PROFILE,
+            account_address_from_public_key, CliConfig, CliError, CliTypedResult, ProfileConfig,
+            PromptOptions, DEFAULT_PROFILE,
         },
         utils::{prompt_yes_with_override, read_line},
     },
@@ -24,10 +22,9 @@ use zapatos_rest_client::{
 use zapatos_types::account_address::AccountAddress;
 
 pub async fn run(public_key: &str, profile: Option<&str>, workspace: bool) -> Result<()> {
-
     // init_workspace
     let mut config = CliConfig::default();
-    
+
     let profile_name = profile.unwrap_or(DEFAULT_PROFILE);
     let prompt_options = PromptOptions::default();
     let public_key = Ed25519PublicKey::from_encoded_string(public_key)?;
@@ -63,7 +60,6 @@ pub async fn run(public_key: &str, profile: Option<&str>, workspace: bool) -> Re
         _ => bail!("0L only supports Local and Custom networks (for now)"),
     }
 
-
     let mut address = account_address_from_public_key(&public_key);
 
     // lookup the address from onchain instead of deriving it
@@ -71,22 +67,21 @@ pub async fn run(public_key: &str, profile: Option<&str>, workspace: bool) -> Re
     eprintln!("Have you ever rotated the account keys? We can look on chain to see what your actual address is. [y/N]");
     let input = read_line("address")?;
     let input = input.trim();
-    if input.contains("y") {
-      let client = check_network(&profile_config);
-      if client.is_ok() {
-        match lookup_address(&client.unwrap(), address, false).await {
-            Ok(a) => address = a,
-            Err(_) =>  eprintln!("Could not lookup address on chain, using derived address"),
-        };
-      } else {
-        eprintln!("Could not lookup address on chain, using derived address");
-      }
+    if input.contains('y') {
+        let client = check_network(&profile_config);
+        if client.is_ok() {
+            match lookup_address(&client.unwrap(), address, false).await {
+                Ok(a) => address = a,
+                Err(_) => eprintln!("Could not lookup address on chain, using derived address"),
+            };
+        } else {
+            eprintln!("Could not lookup address on chain, using derived address");
+        }
     };
 
     profile_config.private_key = None;
     profile_config.public_key = Some(public_key);
     profile_config.account = Some(address);
-
 
     // Ensure the loaded config has profiles setup for a possible empty file
     if config.profiles.is_none() {
@@ -101,9 +96,11 @@ pub async fn run(public_key: &str, profile: Option<&str>, workspace: bool) -> Re
     // In 0L we default to the configs being global in $HOME/.libra
     // Otherwise you should pass -w to use the workspace configuration.
     let config_location = if workspace {
-      env::current_dir().ok()
-    } else { None };
-    let path = config.save_ext(config_location.clone())?;
+        env::current_dir().ok()
+    } else {
+        None
+    };
+    let path = config.save_ext(config_location)?;
     eprintln!(
         "\nThe libra configuration is saved! \nfor account {} \nat path: {}  as profile {}",
         address,
@@ -144,20 +141,17 @@ fn custom_network(profile_config: &mut ProfileConfig) -> CliTypedResult<()> {
     Ok(())
 }
 
-
 fn check_network(cfg: &ProfileConfig) -> Result<Client> {
-      let base = Url::parse(
-          cfg
-              .rest_url
-              .as_ref()
-              .expect("Must have rest client as created above"),
-      )
-      .map_err(|err| CliError::UnableToParse("rest_url", err.to_string()))?;
+    let base = Url::parse(
+        cfg.rest_url
+            .as_ref()
+            .expect("Must have rest client as created above"),
+    )
+    .map_err(|err| CliError::UnableToParse("rest_url", err.to_string()))?;
 
-      let client = Client::new(base);
+    let client = Client::new(base);
 
     Ok(client)
-
 }
 
 async fn _check_account_on_chain(client: &Client, address: AccountAddress) {
@@ -187,7 +181,6 @@ async fn _check_account_on_chain(client: &Client, address: AccountAddress) {
                 eprintln!("Failed to check if account exists on chain: {:?}", err);
                 false
             }
-
         }
     };
 

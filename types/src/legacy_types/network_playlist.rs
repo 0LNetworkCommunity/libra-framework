@@ -38,9 +38,10 @@ impl Default for HostProfile {
 /// The local data will be more complete than published data in seed peers.
 impl HostProfile {
     pub fn new(url: Url) -> Self {
-        let mut s = Self::default();
-        s.url = url;
-        s
+        HostProfile {
+            url,
+            ..Default::default()
+        }
     }
 
     async fn check_sync(mut self) -> anyhow::Result<HostProfile> {

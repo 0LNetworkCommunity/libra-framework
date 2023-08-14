@@ -2,11 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use zapatos_sdk::{
-  types::{
-  transaction::ExecutionStatus,
-  },
-};
+use zapatos_sdk::types::transaction::ExecutionStatus;
 
 /// Common errors in Tower transaction submission
 #[derive(Debug, Serialize, Deserialize)]
@@ -141,18 +137,17 @@ pub fn parse_error(status: ExecutionStatus) -> TowerError {
         // ExecutionStatus::MoveAbort({location, code, info}) {
 
         // }
-        ExecutionStatus::MoveAbort{ location: _, code, .. } => {
-            match code {
-                404 => TowerError::NoClientCx,
-                1004 => TowerError::AccountDNE,
-                130102 => TowerError::WrongDifficulty,
-                130108 => TowerError::TooManyProofs,
-                130109 => TowerError::Discontinuity,
-                130110 => TowerError::Invalid,
-                _ => TowerError::Other(status),
-            }
+        ExecutionStatus::MoveAbort {
+            location: _, code, ..
+        } => match code {
+            404 => TowerError::NoClientCx,
+            1004 => TowerError::AccountDNE,
+            130102 => TowerError::WrongDifficulty,
+            130108 => TowerError::TooManyProofs,
+            130109 => TowerError::Discontinuity,
+            130110 => TowerError::Invalid,
+            _ => TowerError::Other(status),
         },
         _ => TowerError::Other(status),
     }
-
 }

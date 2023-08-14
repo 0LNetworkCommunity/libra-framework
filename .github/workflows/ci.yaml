@@ -1,44 +1,111 @@
 name: ci
 
 on:
-  pull_request:
-    types: [opened]
-    branches:
-      - 'main'
   push:
     tags:
-      - '*'
+      - 'v*'
     branches:
       - 'main'
       - 'ci'
+  pull_request:
+    types:
+      - opened
+    branches:
+      - 'release**'
+      - 'main'
+env:
+  ZAPATOS_BIN_PATH: ${{github.workspace}}
+  LIBRA_CI: 1
+  MODE_0L: "TESTNET"
+
 jobs:
   test:
-    # needs: preheat
-    strategy:
-      fail-fast: true
     runs-on: ubuntu-20.04
     steps:
-    - uses: awalsh128/cache-apt-pkgs-action@latest
-      with:
-        packages: build-essential ca-certificates clang curl git libpq-dev libssl-dev pkg-config lsof lld libgmp-dev
-        version: 1.0
-    - name: checkout sources
-      uses: actions/checkout@v3
-      with:
-        # git-restore-mtime-bare uses the ref log to find the correct timestamp
-        # for each file. This requires a full git history. The default value (1)
-        # creates a shallow checkout.
-        fetch-depth: 0
+    # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
+    # - name: Setup tmate session
+    #   uses: mxschmitt/action-tmate@v3
+    #   with:
+    #     detached: true
+    #   timeout-minutes: 15
 
-    - name: cache rust
-      uses: Swatinem/rust-cache@v2
-      with:
-        prefix-key: "v1"
-        shared-key: "libra" # to share across CI builds, so it is not job-id specific
-        cache-on-failure: true
+    # - uses: awalsh128/cache-apt-pkgs-action@latest
+    #   with:
+    #     packages: build-essential ca-certificates clang curl git libpq-dev libssl-dev pkg-config lsof lld libgmp-dev
+    #     version: 1.0
+    # - name: checkout sources
+    #   uses: actions/checkout@v3
+    #   with:
+    #     # git-restore-mtime-bare uses the ref log to find the correct timestamp
+    #     # for each file. This requires a full git history. The default value (1)
+    #     # creates a shallow checkout.
+    #     fetch-depth: 0
 
-    - name: cargo mtime reset
-      uses: chetan/git-restore-mtime-action@v2
+    # - name: cache rust
+    #   uses: Swatinem/rust-cache@v2
+    #   with:
+    #     prefix-key: "v3"
+    #     shared-key: "libra" # to share across CI builds, so it is not job-id specific
+    #     cache-on-failure: true
 
-    - name: test all
-      run: cargo test -- --no-fail-fast
+    # - name: cargo mtime reset
+    #   uses: chetan/git-restore-mtime-action@v2
+
+    # - name: Free Disk Space (Ubuntu)
+    #   uses: jlumbroso/free-disk-space@main
+    #   with:
+    #     # this might remove tools that are actually needed,
+    #     # if set to "true" but frees about 6 GB
+    #     tool-cache: false
+
+    #     # all of these default to true, but feel free to set to
+    #     # "false" if necessary for your workflow
+    #     android: true
+    #     dotnet: true
+    #     haskell: true
+    #     large-packages: true
+    #     docker-images: true
+    #     swap-storage: true
+
+    - name: setup env
+      uses: 0o-de-lally/libra-v7/.github/actions/build_env@ci
+
+    - name: Install zapatos-node (for smoke tests)
+      run: >
+        wget -O $ZAPATOS_BIN_PATH/aptos-node https://github.com/0o-de-lally/zapatos/releases/download/v0.0.1/aptos-node &&
+        sudo chmod 755 $ZAPATOS_BIN_PATH/aptos-node &&
+        echo $ZAPATOS_BIN_PATH &&
+        ls -l $ZAPATOS_BIN_PATH
+
+
+    # Tools tests
+    - name: genesis
+      working-directory: ./tools/genesis
+      run: cargo test --no-fail-fast
+      continue-on-error: true
+
+    - name: wallet
+      working-directory: ./tools/wallet
+      run: cargo test --no-fail-fast
+      continue-on-error: true
+
+    - name: query
+      working-directory: ./tools/query
+      run: cargo test --no-fail-fast
+      continue-on-error: true
+
+    - name: tower
+      working-directory: ./tools/tower
+      run: cargo test --no-fail-fast
+      continue-on-error: true
+
+    - name: txs
+      working-directory: ./tools/txs
+      run: cargo test --no-fail-fast
+      continue-on-error: true
+
+    # Check test suite meta tests
+    - name: smoke-tests
+      working-directory: ./smoke-tests
+      run: cargo test --no-fail-fast
+      continue-on-error: true

@@ -1,11 +1,7 @@
 //! community wallet resource
 use crate::legacy_types::legacy_address::LegacyAddress;
 use anyhow::Result;
-use move_core_types::{
-    ident_str,
-    identifier::IdentStr,
-    move_resource::MoveStructType,
-};
+use move_core_types::{ident_str, identifier::IdentStr, move_resource::MoveStructType};
 use serde::{Deserialize, Serialize};
 
 // NOTE: these are legacy structs for v5

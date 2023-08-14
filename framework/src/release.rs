@@ -4,7 +4,7 @@
 #![forbid(unsafe_code)]
 
 use zapatos_framework::{
-    docgen::DocgenOptions, RELEASE_BUNDLE_EXTENSION, ReleaseBundle, BuildOptions, ReleaseOptions,
+    docgen::DocgenOptions, BuildOptions, ReleaseBundle, ReleaseOptions, RELEASE_BUNDLE_EXTENSION,
 };
 // use clap::Args;
 use move_command_line_common::address::NumericalAddress;

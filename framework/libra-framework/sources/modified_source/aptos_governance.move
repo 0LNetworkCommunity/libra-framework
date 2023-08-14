@@ -315,7 +315,7 @@ module aptos_framework::aptos_governance {
         let proposer_address = signer::address_of(proposer);
         assert!(stake::is_current_val(proposer_address), error::invalid_argument(EUNAUTHORIZED));
 
-        // TODO!: check this is a current validator.
+        // TODO what's this for?
         let _governance_config = borrow_global<GovernanceConfig>(@aptos_framework);
 
 
@@ -334,16 +334,16 @@ module aptos_framework::aptos_governance {
         // are burnt after every transaction), but inflation/delation is very unlikely to have a major impact on total
         // supply during the voting period.
         let validator_len = vector::length(&stake::get_current_validators());
-        let early_resolution_vote_threshold = ((validator_len/3) * 2) + 1;
+        let early_resolution_vote_threshold = ((((validator_len/3) * 2) + 1) as u128);
 
         let proposal_id = voting::create_proposal_v2(
             proposer_address,
             @aptos_framework,
             governance_proposal::create_proposal(),
             execution_hash,
-            (early_resolution_vote_threshold as u128), // 0L we always expect the minimum of 2/3+1 to pass
+            early_resolution_vote_threshold, // 0L we always expect the minimum of 2/3+1 to pass
             proposal_expiration,
-            option::none(), // 0L we always expect the minimum of 2/3+1 to pass
+            option::some(early_resolution_vote_threshold), // will end before deadline at this threshold
             proposal_metadata,
             is_multi_step_proposal,
         );
@@ -500,30 +500,49 @@ module aptos_framework::aptos_governance {
         }
     }
 
-    //////// 0L ///////
-    // TESTING governance
-    // This function HAS NO AUTHORIZATION
-    const ENOT_TESTNET: u64 = 666;
     /// Resolve a successful single-step proposal. This would fail if the proposal is not successful (not enough votes or more no
     /// than yes).
     public fun resolve(proposal_id: u64, signer_address: address): signer acquires ApprovedExecutionHashes, GovernanceResponsbility {
-        // assert!(testnet::is_testnet(), error::invalid_state(ENOT_TESTNET));
         voting::resolve<GovernanceProposal>(@aptos_framework, proposal_id);
         remove_approved_hash(proposal_id);
         get_signer(signer_address)
     }
 
     #[view]
+    // is the proposal complete and executed?
     public fun is_resolved(proposal_id: u64): bool {
       voting::is_resolved<GovernanceProposal>(@aptos_framework, proposal_id)
     }
 
-    //////// 0L ////////
-    // TODO: do better.
-    // Hack: This will error so we can see if it's resolvable. For smoke-tests.
-    public entry fun can_resolve(proposal_id: u64) {
-      voting::can_resolve<GovernanceProposal>(@aptos_framework, proposal_id);
+    #[view]
+    // is the proposal complete and executed?
+    public fun get_votes(proposal_id: u64): (u128, u128) {
+      voting::get_votes<GovernanceProposal>(@aptos_framework, proposal_id)
     }
+
+    #[view]
+    // what is the state of the proposal
+    public fun get_proposal_state(proposal_id: u64):u64  {
+      voting::get_proposal_state<GovernanceProposal>(@aptos_framework, proposal_id)
+    }
+
+
+
+
+    //////// 0L ////////
+    // hack for smoke testing:
+    // is the proposal approved and ready for resolution?
+    public entry fun assert_can_resolve(proposal_id: u64) {
+      assert!(get_can_resolve(proposal_id), error::invalid_state(EPROPOSAL_NOT_RESOLVABLE_YET));
+    }
+
+    #[view]
+    // is the proposal approved and ready for resolution?
+    public fun get_can_resolve(proposal_id: u64): bool {
+      let (can, _) = voting::check_resolvable_ex_hash<GovernanceProposal>(@aptos_framework, proposal_id);
+      can
+    }
+
     /// Resolve a successful multi-step proposal. This would fail if the proposal is not successful.
     public fun resolve_multi_step_proposal(proposal_id: u64, signer_address: address, next_execution_hash: vector<u8>): signer acquires GovernanceResponsbility, ApprovedExecutionHashes {
         voting::resolve_proposal_v2<GovernanceProposal>(@aptos_framework, proposal_id, next_execution_hash);
@@ -551,6 +570,16 @@ module aptos_framework::aptos_governance {
         if (simple_map::contains_key(approved_hashes, &proposal_id)) {
             simple_map::remove(approved_hashes, &proposal_id);
         };
+    }
+
+    #[view]
+    /// we want to check what hash is expected for this upgrade
+    public fun get_approved_hash(proposal_id: u64): vector<u8> acquires ApprovedExecutionHashes {
+      let approved_hashes = &mut borrow_global_mut<ApprovedExecutionHashes>(@aptos_framework).hashes;
+        if (simple_map::contains_key(approved_hashes, &proposal_id)) {
+          return *simple_map::borrow(approved_hashes, &proposal_id)
+        };
+        vector::empty()
     }
 
     /// Force reconfigure. To be called at the end of a proposal that alters on-chain configs.
@@ -581,6 +610,11 @@ module aptos_framework::aptos_governance {
         //     stake::get_current_epoch_voting_power(pool_address)
         // }
         1
+    }
+
+    #[view]
+    public fun get_next_governance_proposal_id():u64 {
+      voting::get_next_proposal_id<GovernanceProposal>(@aptos_framework)
     }
 
     /// Return a signer for making changes to 0x1 as part of on-chain governance proposal process.
@@ -827,6 +861,18 @@ module aptos_framework::aptos_governance {
     //     stake::set_delegated_voter(&voter_1, signer::address_of(&voter_2));
     //     vote(&voter_2, signer::address_of(&voter_1), 0, true);
     // }
+
+    #[test_only]
+    //////// 0L //////// remove minimum threshold
+    public fun initialize_for_test(root: &signer) {
+      system_addresses::assert_ol(root);
+
+      let min_voting_threshold = 0;
+      let required_proposer_stake = 1;
+      let voting_duration_secs = 100000000000;
+
+      initialize(root, min_voting_threshold, required_proposer_stake, voting_duration_secs);
+    }
 
     #[test_only]
     public fun setup_voting(

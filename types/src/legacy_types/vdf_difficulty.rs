@@ -15,12 +15,10 @@ use move_core_types::{
 
 use serde::{Deserialize, Serialize};
 
-use zapatos_types::{
-  account_config::CORE_CODE_ADDRESS,
-};
+use zapatos_types::account_config::CORE_CODE_ADDRESS;
 
 /// difficulty of the VDF proof, for use as on-chain representation and in `tower`
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct VDFDifficulty {
     /// Difficulty
     pub difficulty: u64,
@@ -32,26 +30,25 @@ pub struct VDFDifficulty {
     pub prev_sec: u64,
 }
 
-
 impl VDFDifficulty {
     /// get the difficulty/iterations of the block, or assume legacy
     pub fn difficulty(&self) -> u64 {
-      self.difficulty
+        self.difficulty
     }
 
     /// get the security param of the block, or assume legacy
     pub fn security(&self) -> u64 {
-      self.security
+        self.security
     }
-    
+
     ///
     pub fn struct_tag() -> StructTag {
         StructTag {
-          address: CORE_CODE_ADDRESS,
-          name: VDFDifficulty::struct_identifier(),
-          module: VDFDifficulty::module_identifier(),
-          type_params: vec![],
-      }
+            address: CORE_CODE_ADDRESS,
+            name: VDFDifficulty::struct_identifier(),
+            module: VDFDifficulty::module_identifier(),
+            type_params: vec![],
+        }
     }
 
     // ///
@@ -66,14 +63,3 @@ impl MoveStructType for VDFDifficulty {
 }
 
 impl MoveResource for VDFDifficulty {}
-
-impl Default for VDFDifficulty {
-    fn default() -> Self {
-        Self { 
-          difficulty: 0,
-          security: 0,
-          prev_diff: 0,
-          prev_sec: 0,
-        }
-    }
-}

@@ -1,6 +1,7 @@
+#![allow(clippy::needless_range_loop)]
 use move_model::{code_writer::CodeWriter, emit, emitln, model::Loc};
-use std::{path::PathBuf};
-use zapatos_framework::{ReleaseBundle, natives::code::PackageMetadata};
+use std::path::PathBuf;
+use zapatos_framework::ReleasePackage;
 use zapatos_types::account_address::AccountAddress;
 // /// A release bundle consists of a list of release packages.
 // #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -125,7 +126,7 @@ use zapatos_types::account_address::AccountAddress;
 //         );
 
 //         emitln!(writer, "let code = vector::empty();");
-        
+
 //         let code = self.code();
 //         for i in 0..code.len() {
 //             emitln!(writer, "let chunk{} = ", i);
@@ -388,7 +389,6 @@ use zapatos_types::account_address::AccountAddress;
 //     }
 // }
 
-
 // fn sort_by_deps(
 //     map: &BTreeMap<ModuleId, (&[u8], CompiledModule)>,
 //     order: &mut Vec<ModuleId>,
@@ -424,80 +424,127 @@ fn generate_blob(writer: &CodeWriter, data: &[u8]) {
     emit!(writer, "]")
 }
 
-    pub fn libra_generate_script_proposal_impl( //////// 0L //////// turn an MRB into a script proposal
-        release_bundle: &ReleaseBundle,
-        for_address: AccountAddress,
-        out: PathBuf,
-        metadata: Option<PackageMetadata>,
-        // is_testnet: bool,
-        // is_multi_step: bool,
-        // next_execution_hash: Vec<u8>,
-    ) -> anyhow::Result<()> {
-        let metadata = metadata.unwrap_or_else(|| release_bundle.packages.last().unwrap().metadata.clone());
+pub fn libra_author_script_file(
+    //////// 0L //////// turn an MRB into a script proposal
+    release_package: &ReleasePackage,
+    for_address: AccountAddress,
+    out: PathBuf,
+    next_execution_hash: Vec<u8>, // metadata: Option<PackageMetadata>,
+                                  // is_testnet: bool,
+                                  // is_multi_step: bool,
+                                  // next_execution_hash: Vec<u8>,
+) -> anyhow::Result<()> {
+    println!("autogenerating .move governance script file");
+    let metadata = &release_package.metadata;
 
-        let writer = CodeWriter::new(Loc::default());
-        emitln!(
-            writer,
-            "// Upgrade proposal for package `{}`\n",
-            metadata.name
-        );
-        emitln!(writer, "// source digest: {}", metadata.source_digest);
-        emitln!(writer, "script {");
-        writer.indent();
-        emitln!(writer, "use std::vector;");
-        emitln!(writer, "use aptos_framework::aptos_governance;");
-        emitln!(writer, "use aptos_framework::code;\n");
+    let writer = CodeWriter::new(Loc::default());
+    emitln!(
+        writer,
+        "// Upgrade proposal for package `{}`\n",
+        metadata.name
+    );
+    emitln!(
+        writer,
+        "// Framework commit hash: {}\n// Builder commit hash: {}\n",
+        zapatos_build_info::get_git_hash(),
+        zapatos_build_info::get_git_hash(),
+    );
+    emitln!(
+        writer,
+        "// Next step script hash: {}\n",
+        hex::encode(&next_execution_hash),
+    );
+    emitln!(writer, "// source digest: {}", metadata.source_digest);
+    emitln!(writer, "script {");
+    writer.indent();
+    emitln!(writer, "use std::vector;");
+    emitln!(writer, "use aptos_framework::aptos_governance;");
+    emitln!(writer, "use aptos_framework::code;\n");
 
-        emitln!(writer, "fun main(proposal_id: u64){");
-        writer.indent();
-        emitln!(
-            writer,
-            "let framework_signer = aptos_governance::resolve(proposal_id, @{});",
-            for_address
-        );
+    // emitln!(writer, "fun main(proposal_id: u64){");
+    // writer.indent();
+    // emitln!(
+    //     writer,
+    //     "let framework_signer = aptos_governance::resolve(proposal_id, @{});",
+    //     for_address
+    // );
+    emitln!(writer, "fun main(proposal_id: u64){");
+    writer.indent();
+    // This is the multi step proposal, needs a next hash even if it a single step and thus an empty vec.
+    generate_next_execution_hash_blob(&writer, for_address, next_execution_hash);
 
-        emitln!(writer, "let code = vector::empty();");
-        
-        let code = release_bundle.code();
-        for i in 0..code.len() {
-            emitln!(writer, "let chunk{} = ", i);
-            generate_blob(&writer, code[i]);
-            emitln!(writer, ";");
-            emitln!(writer, "vector::push_back(&mut code, chunk{});", i);
-        }
+    emitln!(writer, "let code = vector::empty();");
 
-        // The package metadata can be larger than 64k, which is the max for Move constants.
-        // We therefore have to split it into chunks. Three chunks should be large enough
-        // to cover any current and future needs. We then dynamically append them to obtain
-        // the result.
-        let mut metadata = bcs::to_bytes(&metadata)?;
-        let chunk_size = (u16::MAX / 2) as usize;
-        let num_of_chunks = (metadata.len() / chunk_size) + 1;
-
-        for i in 1..num_of_chunks + 1 {
-            let to_drain = if i == num_of_chunks {
-                metadata.len()
-            } else {
-                chunk_size
-            };
-            let chunk = metadata.drain(0..to_drain).collect::<Vec<_>>();
-            emit!(writer, "let chunk{} = ", i);
-            generate_blob(&writer, &chunk);
-            emitln!(writer, ";")
-        }
-
-        for i in 2..num_of_chunks + 1 {
-            emitln!(writer, "vector::append(&mut chunk1, chunk{});", i);
-        }
-
-        emitln!(
-            writer,
-            "code::publish_package_txn(&framework_signer, chunk1, code)"
-        );
-        writer.unindent();
-        emitln!(writer, "}");
-        writer.unindent();
-        emitln!(writer, "}");
-        writer.process_result(|s| std::fs::write(&out, s))?;
-        Ok(())
+    let code = release_package.code();
+    for i in 0..code.len() {
+        emitln!(writer, "let chunk{} = ", i);
+        generate_blob(&writer, code[i]);
+        emitln!(writer, ";");
+        emitln!(writer, "vector::push_back(&mut code, chunk{});", i);
     }
+
+    // The package metadata can be larger than 64k, which is the max for Move constants.
+    // We therefore have to split it into chunks. Three chunks should be large enough
+    // to cover any current and future needs. We then dynamically append them to obtain
+    // the result.
+    let mut metadata = bcs::to_bytes(&metadata)?;
+    let chunk_size = (u16::MAX / 2) as usize;
+    let num_of_chunks = (metadata.len() / chunk_size) + 1;
+
+    for i in 1..num_of_chunks + 1 {
+        let to_drain = if i == num_of_chunks {
+            metadata.len()
+        } else {
+            chunk_size
+        };
+        let chunk = metadata.drain(0..to_drain).collect::<Vec<_>>();
+        emit!(writer, "let chunk{} = ", i);
+        generate_blob(&writer, &chunk);
+        emitln!(writer, ";")
+    }
+
+    for i in 2..num_of_chunks + 1 {
+        emitln!(writer, "vector::append(&mut chunk1, chunk{});", i);
+    }
+
+    emitln!(
+        writer,
+        "code::publish_package_txn(&framework_signer, chunk1, code)"
+    );
+    writer.unindent();
+    emitln!(writer, "}");
+    writer.unindent();
+    emitln!(writer, "}");
+    writer.process_result(|s| std::fs::write(&out, s))?;
+    Ok(())
+}
+
+fn generate_next_execution_hash_blob(
+    writer: &CodeWriter,
+    for_address: AccountAddress,
+    next_execution_hash: Vec<u8>,
+) {
+    if next_execution_hash == "vector::empty<u8>()".as_bytes() {
+        emitln!(
+                writer,
+                "let framework_signer = aptos_governance::resolve_multi_step_proposal(proposal_id, @{}, {});\n",
+                for_address,
+                "vector::empty<u8>()",
+            );
+    } else {
+        emitln!(
+            writer,
+            "let framework_signer = aptos_governance::resolve_multi_step_proposal("
+        );
+        writer.indent();
+        emitln!(writer, "proposal_id,");
+        emitln!(writer, "@{},", for_address);
+        emit!(writer, "vector[");
+        for (_, b) in next_execution_hash.iter().enumerate() {
+            emit!(writer, "{}u8,", b);
+        }
+        emitln!(writer, "],");
+        writer.unindent();
+        emitln!(writer, ");");
+    }
+}

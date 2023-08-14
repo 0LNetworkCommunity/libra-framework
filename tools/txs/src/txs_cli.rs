@@ -1,17 +1,19 @@
-use crate::submit_transaction::Sender;
+use crate::txs_cli_upgrade::UpgradeTxs;
 use crate::txs_cli_vals::ValidatorTxs;
+use crate::{publish::encode_publish_payload, submit_transaction::Sender};
 use std::path::PathBuf;
 
 use anyhow::Result;
 use clap::Parser;
 use indoc::indoc;
 use libra_types::{
-  exports::{ChainId, NamedChain},
-  legacy_types::app_cfg::AppCfg,
+    exports::{ChainId, NamedChain},
+    legacy_types::app_cfg::AppCfg,
 };
 use libra_wallet::account_keys::{get_keys_from_mnem, get_keys_from_prompt};
 use url::Url;
 
+use zapatos::common::types::MovePackageDir;
 use zapatos_sdk::{
     // chain_id::{ChainId, NamedChain},
     crypto::{ed25519::Ed25519PrivateKey, ValidCryptoMaterialStringExt},
@@ -42,7 +44,6 @@ pub struct TxsCli {
     // /// optional, pick name (substring of address or nickname) of a user profile, if there are multiple. Will choose the default one set..
     // #[clap(short, long)]
     // pub nickname_profile: Option<String>,
-
     /// optional, id of chain as name. Will default to MAINNET;
     #[clap(long)]
     pub chain_id: Option<NamedChain>,
@@ -65,6 +66,8 @@ pub struct TxsCli {
 pub enum TxsSub {
     #[clap(subcommand)]
     Validator(ValidatorTxs),
+    #[clap(subcommand)]
+    Upgrade(UpgradeTxs),
     /// Transfer coins between accounts. Transferring can also be used to create accounts.
     Transfer {
         /// Address of the recipient
@@ -75,6 +78,7 @@ pub enum TxsSub {
         #[clap(short, long)]
         amount: u64,
     },
+    Publish(MovePackageDir),
     /// Generate a transaction that executes an Entry function on-chain
     GenerateTransaction {
         #[clap(
@@ -136,9 +140,9 @@ impl TxsCli {
         let pri_key = if let Some(pk) = &self.test_private_key {
             Ed25519PrivateKey::from_encoded_string(pk)?
         } else if let Some(m) = &self.mnemonic {
-          let legacy = get_keys_from_mnem(m.to_string())?;
-          legacy.child_0_owner.pri_key
-        } else  {
+            let legacy = get_keys_from_mnem(m.to_string())?;
+            legacy.child_0_owner.pri_key
+        } else {
             let legacy = get_keys_from_prompt()?;
             legacy.child_0_owner.pri_key
         };
@@ -166,37 +170,28 @@ impl TxsCli {
                 send.transfer(to_account.to_owned(), amount.to_owned())
                     .await
             }
+            Some(TxsSub::Publish(move_opts)) => {
+                let payload = encode_publish_payload(move_opts)?;
+                send.sign_submit_wait(payload).await?;
+                Ok(())
+            }
 
             Some(TxsSub::GenerateTransaction {
                 function_id,
                 type_args: ty_args,
                 args,
-            }) => {
-                send.generic(function_id, ty_args, args).await
-            }
-
-            // Some(TxsSub::View {
-            //     function_id,
-            //     type_args,
-            //     args,
-            // }) => {
-            //     println!("====================");
-            //     println!(
-            //         "{}",
-            //         crate::view::run(function_id, type_args.to_owned(), args.to_owned()).await?
-            //     );
-            //     Ok(())
-            // },
-            Some(TxsSub::Validator(val_txs)) => {
-              val_txs.run(&mut send).await
-            },
+            }) => send.generic(function_id, ty_args, args).await,
+            Some(TxsSub::Validator(val_txs)) => val_txs.run(&mut send).await,
+            Some(TxsSub::Upgrade(upgrade_txs)) => upgrade_txs.run(&mut send).await,
             _ => {
-              println!("\nI'm searching, though I don't succeed\n
+                println!(
+                    "\nI'm searching, though I don't succeed\n
 But someone look, there's a growing need\n
 Oh, he is lost, there's no place for beginning\n
-All that's left is an unhappy ending");
-              Ok(())
-            },
+All that's left is an unhappy ending"
+                );
+                Ok(())
+            }
         }
     }
 }

@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use anyhow::{bail, Result};
+use std::path::PathBuf;
 
 use libra_types::global_config_dir;
 use zapatos_genesis::config::{HostAndPort, OperatorConfiguration, OwnerConfiguration};
@@ -29,13 +29,12 @@ pub struct SetValidatorConfiguration {
     pub home_dir: Option<PathBuf>,
 }
 
-
 impl SetValidatorConfiguration {
     pub fn new(
-      home_dir: Option<PathBuf>,
-      username: String,
-      validator_host: HostAndPort,
-      full_node_host: Option<HostAndPort>,
+        home_dir: Option<PathBuf>,
+        username: String,
+        validator_host: HostAndPort,
+        full_node_host: Option<HostAndPort>,
     ) -> Self {
         Self {
             username,
@@ -46,10 +45,9 @@ impl SetValidatorConfiguration {
     }
 
     pub fn set_config_files(self) -> Result<(OperatorConfiguration, OwnerConfiguration)> {
-        let home_dir = self.home_dir
-          .unwrap_or_else(global_config_dir);
+        let home_dir = self.home_dir.unwrap_or_else(global_config_dir);
 
-      let owner_keys_file  =home_dir.join(PUBLIC_KEYS_FILE);
+        let owner_keys_file = home_dir.join(PUBLIC_KEYS_FILE);
 
         let owner_identity = read_public_identity_file(owner_keys_file.as_path())?;
 
@@ -122,15 +120,13 @@ impl SetValidatorConfiguration {
         };
 
         write_to_user_only_file(
-            &home_dir
-                .join(OPERATOR_FILE),
+            &home_dir.join(OPERATOR_FILE),
             OPERATOR_FILE,
             to_yaml(&operator_config)?.as_bytes(),
         )?;
 
         write_to_user_only_file(
-            &home_dir
-                .join(OWNER_FILE),
+            &home_dir.join(OWNER_FILE),
             OWNER_FILE,
             to_yaml(&owner_config)?.as_bytes(),
         )?;

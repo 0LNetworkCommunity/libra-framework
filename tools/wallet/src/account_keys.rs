@@ -1,11 +1,8 @@
 //! Use ol-keys to generate or parse keys using the legacy key derivation scheme
 use crate::{
-  load_keys,
-  key_gen::keygen,
-  wallet_library::{
-    legacy_scheme::LegacyKeyScheme,
-    wallet_library::WalletLibrary,
-  }
+    core::{legacy_scheme::LegacyKeyScheme, wallet_library::WalletLibrary},
+    key_gen::keygen,
+    load_keys,
 };
 
 use anyhow::Result;
@@ -16,8 +13,6 @@ use zapatos_crypto::ed25519::Ed25519PrivateKey;
 use zapatos_crypto::PrivateKey;
 use zapatos_types::account_address::AccountAddress;
 use zapatos_types::transaction::authenticator::AuthenticationKey;
-
-
 
 #[derive(Serialize)]
 /// A Struct to store ALL the legacy keys for storage.
@@ -42,7 +37,8 @@ pub struct KeyChain {
 
 /// The AccountAddress and AuthenticationKey are zapatos structs, they have the same NAME in the diem_types crate. So we need to cast them into usuable structs.
 #[derive(Serialize)]
-pub struct AccountKeys { // TODO: change this to use vendor AccountKey
+pub struct AccountKeys {
+    // TODO: change this to use vendor AccountKey
     /// The account address derived from AuthenticationKey
     pub account: AccountAddress,
     /// The authentication key derived from private key
@@ -51,17 +47,17 @@ pub struct AccountKeys { // TODO: change this to use vendor AccountKey
     pub pri_key: Ed25519PrivateKey,
 }
 
-    //////// 0L ////////
-    /// addresses in the 0L chains before V7 had a truncated address of 16 bytes
-    pub fn get_ol_legacy_address(addr: AccountAddress) -> anyhow::Result<AccountAddress> {
-      // keep only last 16 bytes
+//////// 0L ////////
+/// addresses in the 0L chains before V7 had a truncated address of 16 bytes
+pub fn get_ol_legacy_address(addr: AccountAddress) -> anyhow::Result<AccountAddress> {
+    // keep only last 16 bytes
 
-      let leg_addr = hex::encode(&addr[16..]);
+    let leg_addr = hex::encode(&addr[16..]);
 
-      let literal = &format!("0x0000000000000000{}", leg_addr);
+    let literal = &format!("0x0000000000000000{}", leg_addr);
 
-      Ok(AccountAddress::from_hex_literal(literal)?)
-    }
+    Ok(AccountAddress::from_hex_literal(literal)?)
+}
 
 /// Legacy Keygen. These note these keys are not sufficient to create a validator from V7 onwards. Besides the Mnemonic the keypair for 0th derivation (owner key) is reusable.
 pub fn legacy_keygen() -> Result<KeyChain> {
@@ -82,7 +78,6 @@ pub fn get_keys_from_mnem(mnem: String) -> Result<KeyChain> {
 }
 
 pub fn get_account_from_private(pri_key: &Ed25519PrivateKey) -> AccountKeys {
-
     let pub_key = pri_key.public_key();
     let auth_key = AuthenticationKey::ed25519(&pub_key);
     let account = auth_key.derived_address();
@@ -92,7 +87,6 @@ pub fn get_account_from_private(pri_key: &Ed25519PrivateKey) -> AccountKeys {
         auth_key,
         pri_key: pri_key.clone(),
     }
-
 }
 
 fn get_account_from_nth(w: &WalletLibrary, n: u8) -> Result<AccountKeys> {
@@ -151,7 +145,9 @@ fn test_legacy_keys() {
     let l = get_keys_from_mnem(alice_mnem.to_string()).unwrap();
 
     assert!(
-      get_ol_legacy_address(l.child_0_owner.account).unwrap().to_string()
+        get_ol_legacy_address(l.child_0_owner.account)
+            .unwrap()
+            .to_string()
             == "000000000000000000000000000000004c613c2f4b1e67ca8d98a542ee3f59f5"
     );
 
@@ -182,4 +178,3 @@ fn type_conversion_give_same_auth_and_address() {
     let auth_key_from_cfg = AuthenticationKey::ed25519(&cfg_key.public_key()).derived_address();
     assert!(auth_key_from_cfg.to_string() == l.child_0_owner.auth_key.to_string());
 }
-

@@ -1,4 +1,4 @@
 use zapatos_transactional_test_harness::run_aptos_test;
 
-// Todo: 
+// Todo:
 datatest_stable::harness!(run_aptos_test, "tests/", r".*\.(mvir|move)$");
