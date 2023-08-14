@@ -1,9 +1,10 @@
 use crate::{
-    account_queries::{get_account_balance_libra, get_tower_state, self},
-    query_view,
+    account_queries::{self, get_account_balance_libra, get_tower_state},
+    query_view::get_view,
 };
-use indoc::indoc;
 use anyhow::{bail, Result};
+use indoc::indoc;
+use libra_types::exports::AuthenticationKey;
 use libra_types::type_extensions::client_ext::ClientExt;
 use serde_json::json;
 use zapatos_sdk::{rest_client::Client, types::account_address::AccountAddress};
@@ -72,8 +73,8 @@ pub enum QueryType {
     },
     /// Looks up the address of an account given an auth key. The authkey diverges from the address after a key rotation.
     LookupAddress {
-      #[clap(short, long)]
-      auth_key: AccountAddress // we use account address to parse, because that's the format needed to lookup users. AuthKeys and AccountAddress are the same formats.
+        #[clap(short, long)]
+        auth_key: AuthenticationKey, // we use account address to parse, because that's the format needed to lookup users. AuthKeys and AccountAddress are the same formats.
     },
 
     /// get a move value from account blob
@@ -146,18 +147,18 @@ impl QueryType {
             type_args,
             args,
         } => {
-            let res = query_view::run(function_id, type_args.to_owned(), args.to_owned()).await?;
+            let res = get_view(&client, function_id, type_args.to_owned(), args.to_owned()).await?;
             let json = json!({
               "body": res
             });
             Ok(json)
          },
         QueryType::Epoch => {
-            let res = query_view::run("0x1::reconfiguration::get_current_epoch", None, None).await?;
-            let value = res.first().unwrap().to_owned();
-            let num: u64 = serde_json::from_value::<String>(value)?.parse()?;
+            let res = get_view(&client, "0x1::reconfiguration::get_current_epoch", None, None).await?;
+            // let value = res.first().unwrap().to_owned();
+            let num: Vec<String> = serde_json::from_value(res)?;
             let json = json!({
-              "epoch": num,
+              "epoch": num.first().unwrap().parse::<u64>()?,
             });
             Ok(json)
         },

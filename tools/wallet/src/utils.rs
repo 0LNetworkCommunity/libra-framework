@@ -1,15 +1,17 @@
 //! file and directory utilities
-// TODO: this file is copied from vendor/crates/aptos/common/src/utils.rs
+// TODO: this file is copied from vendor/crates/aptos/src/common/utils.rs
 // It's not being imported because of build issues when we try to import that module. So it's a copy paste hack for now. But should be reviewed.
 
 use anyhow::{anyhow, bail};
 use dialoguer::Confirm;
 use serde::{de::DeserializeOwned, Serialize};
+#[cfg(unix)]
+use std::os::unix::fs::OpenOptionsExt;
 use std::{
     env::current_dir,
     fs::OpenOptions,
     io::Write,
-    os::unix::fs::OpenOptionsExt,
+    // os::unix::fs::OpenOptionsExt,
     path::{Path, PathBuf},
 };
 use zapatos_genesis::keys::PublicIdentity;
@@ -24,9 +26,10 @@ pub type CliTypedResult<T> = Result<T, anyhow::Error>;
 pub fn check_if_file_exists(file: &Path) -> CliTypedResult<()> {
     if file.exists() {
         let o: Option<&str> = option_env!("LIBRA_CI");
-        if o.is_some() { // TODO: how to make tests always overwrite?
-          println!("LIBRA_CI is set, overwriting {:?}", file.as_os_str());
-          return Ok(());
+        if o.is_some() {
+            // TODO: how to make tests always overwrite?
+            println!("LIBRA_CI is set, overwriting {:?}", file.as_os_str());
+            return Ok(());
         }
 
         prompt_yes_with_override(&format!(

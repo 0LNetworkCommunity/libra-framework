@@ -1,29 +1,21 @@
 //! Miner resubmit backlog transactions module
 #![forbid(unsafe_code)]
 
-use crate::core::{
-  garbage_collection::gc_failed_proof,
-  tower_error,
-};
+use crate::core::{garbage_collection::gc_failed_proof, tower_error};
 
 use anyhow::{anyhow, bail, Error, Result};
 use std::path::PathBuf;
 
-
-use libra_txs::submit_transaction::Sender;
 use libra_query::account_queries;
+use libra_txs::submit_transaction::Sender;
 
 // use diem_client::BlockingClient as DiemClient;
 // use diem_logger::prelude::*;
 use libra_types::{
-  exports::Client,
-  type_extensions::client_ext::ClientExt,
-  legacy_types::{
-    app_cfg::AppCfg,
-    block::VDFProof,
-  }
+    exports::Client,
+    legacy_types::{app_cfg::AppCfg, block::VDFProof},
+    type_extensions::client_ext::ClientExt,
 };
-
 
 const EPOCH_MINING_THRES_UPPER: u64 = 72;
 /// Submit a backlog of blocks that may have been mined while network is offline.
@@ -38,37 +30,36 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
     let current_proof_number = current_local_proof.height;
 
     println!("Local tower height: {:?}", current_proof_number);
-    if current_proof_number == 0 { // if we are at genesis
-      return submit_or_delete(config, current_local_proof, current_block_path).await
+    if current_proof_number == 0 {
+        // if we are at genesis
+        return submit_or_delete(config, current_local_proof, current_block_path).await;
     }
-
 
     let mut i = 0;
     let mut remaining_in_epoch = EPOCH_MINING_THRES_UPPER;
 
     // Getting remote miner state
     // there may not be any onchain state.
-    if let Some((remote_height, proofs_in_epoch)) = get_remote_tower_height(config).await.ok() {
+    if let Ok((remote_height, proofs_in_epoch)) = get_remote_tower_height(config).await {
         println!("Remote tower height: {}", remote_height);
         println!("Proofs already submitted in epoch: {}", proofs_in_epoch);
 
         if remote_height < 1 || current_proof_number > remote_height {
-            i = remote_height as u64 + 1;
+            i = remote_height + 1;
 
             // use i64 for safety
-            if !(proofs_in_epoch < EPOCH_MINING_THRES_UPPER) {
+            if proofs_in_epoch >= EPOCH_MINING_THRES_UPPER {
                 println!(
                     "Backlog: Maximum number of proofs sent this epoch {}, exiting.",
                     EPOCH_MINING_THRES_UPPER
                 );
                 return Err(anyhow!(
                     "cannot submit more proofs than allowed in epoch, aborting backlog."
-                )
-                .into());
+                ));
             }
 
             if proofs_in_epoch > 0 {
-                remaining_in_epoch = EPOCH_MINING_THRES_UPPER - proofs_in_epoch as u64
+                remaining_in_epoch = EPOCH_MINING_THRES_UPPER - proofs_in_epoch
             }
         }
     }
@@ -84,39 +75,36 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
 
         submit_or_delete(config, block, path).await?;
 
-
-        i = i + 1;
-        submitted_now = submitted_now + 1;
+        i += 1;
+        submitted_now += 1;
     }
     Ok(())
 }
 
-pub async fn submit_or_delete(config: &AppCfg, block: VDFProof, path: PathBuf) -> Result<()>{
-        // TODO: allow user to set a profile
-        let mut sender = Sender::from_app_cfg(config, None).await?;
+pub async fn submit_or_delete(config: &AppCfg, block: VDFProof, path: PathBuf) -> Result<()> {
+    // TODO: allow user to set a profile
+    let mut sender = Sender::from_app_cfg(config, None).await?;
 
-        sender.commit_proof(
-          block.clone()
-        ).await?;
+    sender.commit_proof(block.clone()).await?;
 
-        match sender.eval_response() {
-            Ok(_) => Ok(()),
-            Err(e) => {
-                eprintln!(
-                    "WARN: could not fetch TX status, aborting. Message: {:?} ",
-                    &e
-                );
-                // evaluate type of error and maybe garbage collect
-                match tower_error::parse_error(e.clone()) {
-                    tower_error::TowerError::WrongDifficulty => gc_failed_proof(config, path)?,
-                    tower_error::TowerError::Discontinuity => gc_failed_proof(config, path)?,
-                    tower_error::TowerError::Invalid => gc_failed_proof(config, path)?,
-                    _ => {}
-                }
-                bail!("Cannot submit tower proof: {:?}", e);
+    match sender.eval_response() {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            eprintln!(
+                "WARN: could not fetch TX status, aborting. Message: {:?} ",
+                &e
+            );
+            // evaluate type of error and maybe garbage collect
+            match tower_error::parse_error(e.clone()) {
+                tower_error::TowerError::WrongDifficulty => gc_failed_proof(config, path)?,
+                tower_error::TowerError::Discontinuity => gc_failed_proof(config, path)?,
+                tower_error::TowerError::Invalid => gc_failed_proof(config, path)?,
+                _ => {}
             }
+            bail!("Cannot submit tower proof: {:?}", e);
         }
-  }
+    }
+}
 // /// submit an exact proof height
 // pub fn submit_proof_by_number(
 //     config: &AppCfg,
@@ -197,10 +185,10 @@ pub async fn show_backlog(config: &AppCfg) -> Result<()> {
     match get_remote_tower_height(config).await {
         Ok((remote_height, _proofs_in_epoch)) => {
             println!("Remote tower height: {}", remote_height);
-        },
+        }
         _ => {
             println!("Remote tower state no initialized");
-        },
+        }
     }
 
     // Getting local state height

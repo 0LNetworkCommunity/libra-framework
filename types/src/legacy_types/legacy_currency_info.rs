@@ -2,9 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #![allow(dead_code)]
 use anyhow::Result;
-use move_core_types::{
-    identifier::Identifier,
-};
+use move_core_types::identifier::Identifier;
 use serde::{Deserialize, Serialize};
 /// Struct that represents a CurrencyInfo resource
 #[derive(Debug, Serialize, Deserialize, Clone)]

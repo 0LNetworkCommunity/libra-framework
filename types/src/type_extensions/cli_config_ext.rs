@@ -105,16 +105,12 @@ impl CliConfigExt for CliConfig {
 }
 
 fn libra_folder(workspace: Option<PathBuf>, mode: ConfigSearchMode) -> CliTypedResult<PathBuf> {
-  
-  if let Some(p) = workspace {
-      return find_workspace_config(p, mode)
-  };
+    if let Some(p) = workspace {
+        return find_workspace_config(p, mode);
+    };
 
-  Ok(crate::global_config_dir())
+    Ok(crate::global_config_dir())
 }
-
-
-
 
 pub fn find_workspace_config(
     starting_path: PathBuf,

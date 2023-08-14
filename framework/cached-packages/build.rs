@@ -11,26 +11,19 @@ fn main() {
         prev_dir.pop();
         println!(
             "cargo:rerun-if-changed={}",
-            prev_dir
-                .join("libra-framework")
-                .join("Move.toml")
-                .display()
+            prev_dir.join("libra-framework").join("Move.toml").display()
         );
         println!(
             "cargo:rerun-if-changed={}",
-            prev_dir
-                .join("libra-framework")
-                .join("sources")
-                .display()
+            prev_dir.join("libra-framework").join("sources").display()
         );
-        
+
         ReleaseTarget::Head
             .create_release(
                 true,
                 Some(
-                    PathBuf::from(std::env::var("OUT_DIR")
-                    .expect("OUT_DIR defined"))
-                    .join("head.mrb"),
+                    PathBuf::from(std::env::var("OUT_DIR").expect("OUT_DIR defined"))
+                        .join("head.mrb"),
                 ),
             )
             .expect("release build failed");

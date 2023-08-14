@@ -2,14 +2,8 @@
 //!
 use crate::move_resource::gas_coin::GasCoin;
 use anyhow::Result;
-use move_core_types::{
-    ident_str,
-    identifier::IdentStr,
-    move_resource::MoveStructType,
-
-};
+use move_core_types::{ident_str, identifier::IdentStr, move_resource::MoveStructType};
 use serde::{Deserialize, Serialize};
-
 
 /// The balance resource held under an account.
 #[derive(Debug, Serialize, Deserialize)]
@@ -30,7 +24,6 @@ impl MoveStructType for MakeWholeResource {
     const STRUCT_NAME: &'static IdentStr = ident_str!("Balance");
 }
 
-
 #[derive(Debug, Serialize, Deserialize)]
 /// the makewhole credit resource
 pub struct CreditResource {
@@ -46,7 +39,3 @@ pub struct CreditResource {
 //     const MODULE_NAME: &'static IdentStr = ident_str!("make_whole");
 //     const STRUCT_NAME: &'static IdentStr = ident_str!("Credit");
 // }
-
-
-
-

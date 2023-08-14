@@ -1,5 +1,6 @@
+pub mod configure_validator;
+pub mod helpers;
+pub mod libra_smoke;
 #[cfg(test)]
 mod tests;
-pub mod helpers;
-pub mod configure_validator;
-pub mod libra_smoke;
+pub mod upgrade_fixtures;

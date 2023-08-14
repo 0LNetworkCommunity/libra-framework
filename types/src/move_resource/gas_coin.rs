@@ -1,12 +1,16 @@
-use move_core_types::{language_storage::StructTag, move_resource::{MoveResource, MoveStructType}, ident_str};
+use move_core_types::{
+    ident_str,
+    language_storage::StructTag,
+    move_resource::{MoveResource, MoveStructType},
+};
 // use move_core_types::language_storage::StructTag;
 // use zapatos_api_types::U64;
-use serde::{Deserialize, Serialize};
-use move_core_types::language_storage::TypeTag;
 use move_core_types::identifier::IdentStr;
+use move_core_types::language_storage::TypeTag;
+use serde::{Deserialize, Serialize};
 
 use once_cell::sync::Lazy;
-use zapatos_types::{event::EventHandle, account_address::AccountAddress};
+use zapatos_types::{account_address::AccountAddress, event::EventHandle};
 
 use crate::ONCHAIN_DECIMAL_PRECISION;
 
@@ -72,8 +76,6 @@ impl MoveStructType for GasCoinStoreResource {
 
 impl MoveResource for GasCoinStoreResource {}
 
-
-
 // TODO: This might break reading from API maybe it must be zapatos_api_types::U64;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -118,13 +120,11 @@ pub struct GasCoin {
 //     }
 // }
 
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SlowWalletBalance {
-  pub unlocked: u64,
-  pub total: u64,
+    pub unlocked: u64,
+    pub total: u64,
 }
-
 
 impl MoveStructType for SlowWalletBalance {
     const MODULE_NAME: &'static IdentStr = ident_str!("slow_wallet");
@@ -134,31 +134,30 @@ impl MoveStructType for SlowWalletBalance {
 impl MoveResource for SlowWalletBalance {}
 
 impl SlowWalletBalance {
-  pub fn from_value(value: Vec<serde_json::Value>) -> anyhow::Result<Self> {
-    if value.len() != 2 {
-      return Err(anyhow::anyhow!("invalid value length"));
-    }
-    let unlocked = serde_json::from_value::<String>(value[0].clone())?.parse::<u64>()?;
-    let total = serde_json::from_value::<String>(value[1].clone())?.parse::<u64>()?;
+    pub fn from_value(value: Vec<serde_json::Value>) -> anyhow::Result<Self> {
+        if value.len() != 2 {
+            return Err(anyhow::anyhow!("invalid value length"));
+        }
+        let unlocked = serde_json::from_value::<String>(value[0].clone())?.parse::<u64>()?;
+        let total = serde_json::from_value::<String>(value[1].clone())?.parse::<u64>()?;
 
-    Ok(Self { unlocked, total })
-  }
-
-  // scale it to include decimals
-  pub fn scaled(&self) -> LibraBalanceDisplay {
-    LibraBalanceDisplay {
-        unlocked: self.unlocked as f64 / 10f64.powf(ONCHAIN_DECIMAL_PRECISION as f64),
-        total: self.total as f64 / 10f64.powf(ONCHAIN_DECIMAL_PRECISION as f64),
+        Ok(Self { unlocked, total })
     }
-  }
+
+    // scale it to include decimals
+    pub fn scaled(&self) -> LibraBalanceDisplay {
+        LibraBalanceDisplay {
+            unlocked: self.unlocked as f64 / 10f64.powf(ONCHAIN_DECIMAL_PRECISION as f64),
+            total: self.total as f64 / 10f64.powf(ONCHAIN_DECIMAL_PRECISION as f64),
+        }
+    }
 }
-
 
 /// This is the same shape as Slow Wallet balance, except that it is scaled.
 /// The slow wallet struct contains the coin value as it exists in the database which is without decimals. The decimal precision for GasCoin is 6. So we need to scale it for human consumption.
 #[derive(Debug, Serialize, Deserialize)]
 
 pub struct LibraBalanceDisplay {
-  pub unlocked: f64,
-  pub total: f64,
+    pub unlocked: f64,
+    pub total: f64,
 }

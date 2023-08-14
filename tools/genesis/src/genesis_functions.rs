@@ -20,7 +20,8 @@ pub fn genesis_migrate_all_users(
     user_recovery: &[LegacyRecovery],
     supply_settings: &SupplySettings,
 ) -> anyhow::Result<()> {
-    let mut supply = populate_supply_stats_from_legacy(user_recovery, &supply_settings.map_dd_to_slow)?;
+    let mut supply =
+        populate_supply_stats_from_legacy(user_recovery, &supply_settings.map_dd_to_slow)?;
 
     supply.set_ratios_from_settings(supply_settings)?;
 
@@ -29,7 +30,7 @@ pub fn genesis_migrate_all_users(
         .progress_with_style(OLProgress::bar())
         .for_each(|a| {
             // do basic account creation and coin scaling
-            match genesis_migrate_one_user(session, &a, supply.split_factor, supply.escrow_pct) {
+            match genesis_migrate_one_user(session, a, supply.split_factor, supply.escrow_pct) {
                 Ok(_) => {}
                 Err(e) => {
                     // TODO: compile a list of errors.
@@ -116,10 +117,10 @@ pub fn genesis_migrate_one_user(
     let auth_key = user_recovery.auth_key.context("no auth key found")?;
 
     let legacy_balance = user_recovery
-      .balance
-      .as_ref()
-      .expect("no balance found")
-      .coin;
+        .balance
+        .as_ref()
+        .expect("no balance found")
+        .coin;
 
     let rescaled_balance = (split_factor * legacy_balance as f64) as u64;
 
@@ -303,7 +304,6 @@ pub fn genesis_migrate_ancestry(
     );
     Ok(())
 }
-
 
 /// Since we are minting for each account to convert account balances there may be a rounding difference from target. Add those micro cents into the transaction fee account.
 /// Note: we could have minted one giant coin and then split it, however there's no place to store in on chain without repurposing accounts (ie. system accounts by design do no hold any funds, only the transaction_fee contract can temporarily hold an aggregatable coin which by design can only be fully withdrawn (not split)). So the rounding mint is less elegant, but practical.

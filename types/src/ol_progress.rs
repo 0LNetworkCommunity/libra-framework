@@ -1,6 +1,6 @@
 //! standardize cli progress bars in 0L tools
 use console::{self, style};
-use indicatif::{ProgressStyle, ProgressBar};
+use indicatif::{ProgressBar, ProgressStyle};
 /// standard cli progress bars etc. for 0L tools
 pub struct OLProgress;
 
@@ -23,10 +23,11 @@ impl OLProgress {
     }
 
     pub fn spin_steady(millis: u64, msg: String) -> ProgressBar {
-      let pb = ProgressBar::new(1000).with_style(OLProgress::spinner())
-      .with_message(msg);
-      pb.enable_steady_tick(std::time::Duration::from_millis(millis));
-      pb
+        let pb = ProgressBar::new(1000)
+            .with_style(OLProgress::spinner())
+            .with_message(msg);
+        pb.enable_steady_tick(std::time::Duration::from_millis(millis));
+        pb
     }
 
     /// For special occasions. Don't overuse it :)

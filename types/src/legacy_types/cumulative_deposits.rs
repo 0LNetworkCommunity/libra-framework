@@ -2,12 +2,7 @@
 
 use anyhow::Result;
 
-use move_core_types::{
-    ident_str,
-    identifier::IdentStr,
-
-    move_resource::MoveStructType,
-};
+use move_core_types::{ident_str, identifier::IdentStr, move_resource::MoveStructType};
 use serde::{Deserialize, Serialize};
 
 // Legacy Balance resource
@@ -17,13 +12,11 @@ pub struct LegacyBalanceResource {
 }
 
 impl LegacyBalanceResource {
-
     ///
     pub fn try_from_bytes(bytes: &[u8]) -> Result<Self> {
         bcs::from_bytes(bytes).map_err(Into::into)
     }
 }
-
 
 /// Struct that represents a CurrencyInfo resource
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,7 +33,6 @@ impl MoveStructType for CumulativeDepositResource {
 }
 
 impl CumulativeDepositResource {
-
     ///
     pub fn try_from_bytes(bytes: &[u8]) -> Result<Self> {
         bcs::from_bytes(bytes).map_err(Into::into)

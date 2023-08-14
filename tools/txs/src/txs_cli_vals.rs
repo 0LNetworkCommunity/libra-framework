@@ -3,11 +3,8 @@
 use crate::submit_transaction::Sender;
 use anyhow::bail;
 use libra_cached_packages::aptos_stdlib::EntryFunctionCall::{
-  JailUnjailByVoucher,
-  ProofOfFeePofRetractBid,
-  ProofOfFeePofUpdateBid,
-  VouchRevoke,
-  VouchVouchFor,
+    JailUnjailByVoucher, ProofOfFeePofRetractBid, ProofOfFeePofUpdateBid, VouchRevoke,
+    VouchVouchFor,
 };
 use zapatos_types::account_address::AccountAddress;
 
@@ -42,36 +39,41 @@ pub enum ValidatorTxs {
 impl ValidatorTxs {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         let payload = match self {
-            ValidatorTxs::Pof { bid_pct, expiry: epoch_expiry , retract} => {
-              if *retract {
-                ProofOfFeePofRetractBid{}
-              } else {
-                // TODO: the u64 will truncate, but without rounding it will drop the last digit.
-                let scaled_bid = (bid_pct * 1000.0).round() as u64;  // scale to 10ˆ3.
-                if scaled_bid > 1100 {
-                  bail!("a bid amount at 110.0% or above the epoch's reward, will be rejected");
+            ValidatorTxs::Pof {
+                bid_pct,
+                expiry: epoch_expiry,
+                retract,
+            } => {
+                if *retract {
+                    ProofOfFeePofRetractBid {}
+                } else {
+                    // TODO: the u64 will truncate, but without rounding it will drop the last digit.
+                    let scaled_bid = (bid_pct * 1000.0).round() as u64; // scale to 10ˆ3.
+                    if scaled_bid > 1100 {
+                        bail!(
+                            "a bid amount at 110.0% or above the epoch's reward, will be rejected"
+                        );
+                    }
+                    ProofOfFeePofUpdateBid {
+                        bid: scaled_bid,
+                        epoch_expiry: *epoch_expiry,
+                    }
                 }
-                ProofOfFeePofUpdateBid{
-                    bid: scaled_bid,
-                    epoch_expiry: *epoch_expiry,
-                }
-              }
             }
-            ValidatorTxs::Jail { unjail_acct } => {
-              JailUnjailByVoucher { addr: unjail_acct.to_owned() }
-            }
-            ValidatorTxs::Vouch { vouch_acct, revoke } => {
-              if *revoke {
-                VouchRevoke {
-                  its_not_me_its_you: *vouch_acct
-                }
-
-              } else {
-                VouchVouchFor {
-                  wanna_be_my_friend: *vouch_acct
-                }
-              }
+            ValidatorTxs::Jail { unjail_acct } => JailUnjailByVoucher {
+                addr: unjail_acct.to_owned(),
             },
+            ValidatorTxs::Vouch { vouch_acct, revoke } => {
+                if *revoke {
+                    VouchRevoke {
+                        its_not_me_its_you: *vouch_acct,
+                    }
+                } else {
+                    VouchVouchFor {
+                        wanna_be_my_friend: *vouch_acct,
+                    }
+                }
+            }
         };
 
         sender.sign_submit_wait(payload.encode()).await?;

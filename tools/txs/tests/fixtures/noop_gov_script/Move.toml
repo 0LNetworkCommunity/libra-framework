@@ -1,0 +1,5 @@
+[package]
+name = 'framework_upgrade'
+version = '1.0.0'
+[dependencies.LibraFramework]
+local = '/Users/user/code/rust/seven/framework/libra-framework'

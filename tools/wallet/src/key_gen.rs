@@ -1,13 +1,14 @@
 use crate::{
-  wallet_library::wallet_library::WalletLibrary,
-  keys::{validator_keygen, refresh_validator_files}, load_keys
+    core::wallet_library::WalletLibrary,
+    keys::{refresh_validator_files, validator_keygen},
+    load_keys,
 };
 use anyhow::Result;
 use indoc::formatdoc;
 // use ol_keys::wallet::get_account_from_mnem;
+use libra_types::exports::{AccountAddress, AuthenticationKey};
 use std::path::PathBuf;
 use zapatos_crypto::ed25519::{Ed25519PrivateKey, Ed25519PublicKey};
-use libra_types::exports::{AccountAddress, AuthenticationKey};
 
 /// Genereates keys from WalletLibrary, updates a MinerConfig
 pub fn keygen() -> (AuthenticationKey, AccountAddress, WalletLibrary, String) {
@@ -95,7 +96,9 @@ mod tests {
     async fn save_val_keys_from_mnemonic() -> Result<()> {
         let this_dir: PathBuf = env!("CARGO_MANIFEST_DIR").parse()?;
         let output_dir = this_dir.join("temp_two");
-        let result = run(Some(ALICE_MNEMONIC.to_string()), Some(output_dir.clone())).await.unwrap();
+        let result = run(Some(ALICE_MNEMONIC.to_string()), Some(output_dir.clone()))
+            .await
+            .unwrap();
 
         let result = result.split("\n").collect::<Vec<_>>();
 
@@ -166,5 +169,4 @@ mod tests {
         fs::remove_dir_all(output_dir).ok();
         Ok(())
     }
-
 }

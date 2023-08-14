@@ -31,7 +31,3 @@ zapatos-crypto = { workspace = true }
 zapatos-rest-client = { workspace = true }
 zapatos-sdk = { workspace = true }
 zapatos-types = { workspace = true }
-
-[dev-dependencies]
-proptest = { workspace = true }
-proptest-derive = { workspace = true }

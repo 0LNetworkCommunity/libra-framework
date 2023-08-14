@@ -3,22 +3,18 @@
 use crate::exports::AuthenticationKey;
 
 use crate::legacy_types::{
-    cumulative_deposits::{
-      LegacyBalanceResource,
-      CumulativeDepositResource,
-    },
+    ancestry::AncestryResource,
+    cumulative_deposits::{CumulativeDepositResource, LegacyBalanceResource},
     legacy_address::LegacyAddress,
+    legacy_currency_info::CurrencyInfoResource,
     legacy_miner_state::TowerStateResource,
+    makewhole_resource::MakeWholeResource,
     receipts::ReceiptsResource,
     validator_config::ValidatorConfigResource,
-    wallet::{CommunityWalletsResourceLegacy, SlowWalletResource, SlowWalletListResource},
-    ancestry::AncestryResource,
-    legacy_currency_info::CurrencyInfoResource,
-    makewhole_resource::MakeWholeResource,
+    wallet::{CommunityWalletsResourceLegacy, SlowWalletListResource, SlowWalletResource},
 };
 use serde::{Deserialize, Serialize};
 use std::{fs, io::Write, path::PathBuf};
-
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 /// Account role
@@ -34,9 +30,9 @@ pub enum AccountRole {
 }
 
 impl Default for AccountRole {
-  fn default() -> Self {
-      Self::EndUser
-  }
+    fn default() -> Self {
+        Self::EndUser
+    }
 }
 
 // /// Wallet type
@@ -84,7 +80,6 @@ pub struct LegacyRecovery {
     pub slow_wallet: Option<SlowWalletResource>,
     ///
     pub slow_wallet_list: Option<SlowWalletListResource>,
-
     // TODO: use on V7 tools
     // ///
     // pub fullnode_counter: Option<FullnodeCounterResource>,
@@ -129,7 +124,6 @@ pub struct RecoverConsensusAccounts {
     ///
     pub opers: Vec<OperRecover>,
 }
-
 
 // impl Default for RecoverConsensusAccounts {
 //     fn default() -> Self {
