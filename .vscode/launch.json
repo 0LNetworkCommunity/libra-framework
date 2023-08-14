@@ -12,15 +12,40 @@
       "cargo": {
         "args": [
           "build",
+          // "--release",
           "-p",
           "libra-framework"
         ],
       },
       "args": [
         "upgrade",
-        "-o", "${workspaceFolder}/framework/releases/scripts",
-        "-m", "${workspaceFolder}/framework/releases/head.mrb",
-        "-f", "${workspaceFolder}/framework/libra-framework",
+        "-o",
+        "${workspaceFolder}/framework/releases/framework_upgrade",
+        "--core-modules", "move-stdlib",
+        "-f",
+        "${workspaceFolder}/framework",
+      ],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "governance-script",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": [
+          "build",
+          "--release",
+          "-p",
+          "libra-framework"
+        ],
+      },
+      "args": [
+        "governance",
+        "-o",
+        "${workspaceFolder}/framework/releases/upgrade",
+        // "-m", "${workspaceFolder}/framework/releases/head.mrb",
+        "-f",
+        "${workspaceFolder}/framework/libra-framework",
       ],
       "cwd": "${workspaceFolder}"
     },
@@ -296,7 +321,7 @@
           "miner"
         ],
       },
-      // "args": ["val-wizard"],  
+      // "args": ["val-wizard"],
       "args": [
         "keygen"
       ],

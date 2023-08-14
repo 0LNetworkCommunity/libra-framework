@@ -1,16 +1,17 @@
 //! garbage collection
 
-use crate::core::{next_proof};
+use crate::core::next_proof;
 use anyhow::bail;
 use libra_types::{
-  exports::Client,
-  legacy_types::{
-    app_cfg::AppCfg,
-    block::VDFProof,
-  }
+    exports::Client,
+    legacy_types::{app_cfg::AppCfg, block::VDFProof},
 };
 
-use std::{fs, path::PathBuf, time::SystemTime};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    time::SystemTime,
+};
 use zapatos_sdk::crypto::HashValue;
 /// Start the GC for a proof that is known bad
 pub fn gc_failed_proof(app_cfg: &AppCfg, bad_proof_path: PathBuf) -> anyhow::Result<()> {
@@ -52,7 +53,7 @@ pub fn collect_subsequent_proofs(
 }
 
 /// take list of proofs and save in garbage file
-pub fn put_in_trash(to_trash: Vec<PathBuf>, blocks_dir: &PathBuf) -> anyhow::Result<()> {
+pub fn put_in_trash(to_trash: Vec<PathBuf>, blocks_dir: &Path) -> anyhow::Result<()> {
     let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?;
     let new_dir = blocks_dir.join(now.as_secs().to_string());
     fs::create_dir_all(&new_dir)?;
@@ -80,7 +81,7 @@ pub async fn find_first_discontinous_proof(
     let block_dir = cfg.get_block_dir(None)?;
     let highest_local = VDFProof::get_highest_block(&block_dir)?.0.height;
     // start from last known proof on chain.
-    let p = next_proof::get_next_proof_from_chain(&mut cfg.clone(), client).await?;
+    let p = next_proof::get_next_proof_from_chain(&cfg, client).await?;
 
     if highest_local < p.next_height {
         return Ok(None);

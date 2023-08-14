@@ -1,12 +1,9 @@
 use anyhow::Context;
-use zapatos_sdk::{
-    move_types::{
-        language_storage::{ModuleId, TypeTag},
-        parser::{parse_transaction_arguments, parse_type_tags},
-        transaction_argument::convert_txn_args,
-    },
+use zapatos_sdk::move_types::{
+    language_storage::{ModuleId, TypeTag},
+    parser::{parse_transaction_arguments, parse_type_tags},
+    transaction_argument::convert_txn_args,
 };
-
 
 use libra_types::util::parse_function_id;
 use zapatos_types::transaction::{EntryFunction, TransactionArgument, TransactionPayload};
@@ -22,7 +19,7 @@ impl Sender {
         args: &Option<String>,
     ) -> anyhow::Result<()> {
         let payload =
-        TransactionPayload::EntryFunction(build_entry_function(function_id, ty_args, args)?);
+            TransactionPayload::EntryFunction(build_entry_function(function_id, ty_args, args)?);
 
         self.sign_submit_wait(payload).await?;
         Ok(())
@@ -43,8 +40,7 @@ pub fn build_entry_function(
         vec![]
     };
     let args: Vec<TransactionArgument> = if let Some(args) = args {
-        parse_transaction_arguments(args)
-            .context(format!("Unable to parse argument(s): {args}"))?
+        parse_transaction_arguments(args).context(format!("Unable to parse argument(s): {args}"))?
     } else {
         vec![]
     };

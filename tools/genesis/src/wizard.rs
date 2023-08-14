@@ -2,7 +2,7 @@
 //! instead of using many CLI tools.
 //! genesis wizard
 
-use crate::{genesis_builder, node_yaml, parse_json, supply::SupplySettings};
+use crate::{genesis_builder, parse_json, supply::SupplySettings};
 ///////
 // TODO: import from libra
 use crate::genesis_registration;
@@ -13,7 +13,7 @@ use anyhow::{bail, Context};
 use dialoguer::{Confirm, Input};
 use indicatif::{ProgressBar, ProgressIterator};
 use libra_types::global_config_dir;
-use libra_types::legacy_types::mode_ol::MODE_0L;
+
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -22,12 +22,11 @@ use std::{
 };
 
 use libra_types::legacy_types::app_cfg::AppCfg;
-use libra_wallet::{keys::VALIDATOR_FILE, validator_files::SetValidatorConfiguration};
-use std::str::FromStr;
+use libra_wallet::keys::VALIDATOR_FILE;
 use zapatos_config::config::IdentityBlob;
-use zapatos_genesis::config::HostAndPort;
 use zapatos_github_client::Client;
-use zapatos_types::chain_id::NamedChain;
+
+use libra_config::host::initialize_validator_configs;
 
 pub const DEFAULT_GIT_BRANCH: &str = "main";
 pub const GITHUB_TOKEN_FILENAME: &str = "github_token.txt";
@@ -50,11 +49,10 @@ pub struct GenesisWizard {
     pub epoch: Option<u64>,
 }
 
-
 impl GenesisWizard {
     /// constructor
     pub fn new(genesis_repo_org: String, repo_name: String, data_path: Option<PathBuf>) -> Self {
-        let data_path = data_path.unwrap_or(global_config_dir());
+        let data_path = data_path.unwrap_or_else(global_config_dir);
 
         Self {
             validator_address: "tbd".to_string(),
@@ -85,27 +83,13 @@ impl GenesisWizard {
         // check the git token is as expected, and set it.
         self.git_token_check()?;
 
-        let to_init = Confirm::new()
-            .with_prompt(format!(
-                "Want to freshen configs at {:?} now?",
-                &self.data_path
-            ))
-            .interact()?;
-        if to_init {
-
-            let host = what_host()?;
-
-            let keep_legacy_address = Confirm::new()
-            .with_prompt("Is this a legacy V5 address you wish to keep?")
-            .interact()?;
-
-            initialize_host(
-                Some(self.data_path.clone()),
-                &self.github_username,
-                host,
-                None,
-                keep_legacy_address,
-            )?;
+        match initialize_validator_configs(&self.data_path, Some(&self.github_username)) {
+            Ok(_) => {
+                println!("Validators' config initialized!");
+            }
+            Err(error) => {
+                eprintln!("Error in initializing validators' config: {}", error);
+            }
         }
 
         let to_register = Confirm::new()
@@ -119,10 +103,10 @@ impl GenesisWizard {
 
             self.validator_address = id
                 .account_address
-                .expect(&format!(
+                .context(format!(
                     "cannot find an account address in {}",
                     VALIDATOR_FILE
-                ))
+                ))?
                 .to_hex_literal();
             // check if the user has the github auth token, and that
             // there is a forked repo on their account.
@@ -203,8 +187,9 @@ impl GenesisWizard {
             self.github_token.clone(),
         );
 
-        self.github_username = temp_gh_client.get_authenticated_user()
-        .context("could not get authenticated user on github api")?;
+        self.github_username = temp_gh_client
+            .get_authenticated_user()
+            .context("could not get authenticated user on github api")?;
 
         if !Confirm::new()
             .with_prompt(format!(
@@ -344,21 +329,21 @@ impl GenesisWizard {
 
     fn make_pull_request(&self) -> anyhow::Result<()> {
         let gh_token_path = self.data_path.join(GITHUB_TOKEN_FILENAME);
-        let api_token = std::fs::read_to_string(&gh_token_path)?;
+        let api_token = std::fs::read_to_string(gh_token_path)?;
 
         let pb = ProgressBar::new(1).with_style(OLProgress::bar());
         let gh_client = Client::new(
             self.genesis_repo_org.clone(),
             self.repo_name.clone(),
             DEFAULT_GIT_BRANCH.to_string(),
-            api_token.clone(),
+            api_token,
         );
         // repository_owner, genesis_repo_name, username
         // This will also fail if there already is a pull request!
         match gh_client.make_genesis_pull_request(
-            &*self.genesis_repo_org,
-            &*self.repo_name,
-            &*self.github_username,
+            &self.genesis_repo_org,
+            &self.repo_name,
+            &self.github_username,
             None, // default to "main"
         ) {
             Ok(_) => {}
@@ -368,14 +353,12 @@ impl GenesisWizard {
                         "INFO: A pull request already exists, you don't need to do anything else."
                     );
                     // return Ok(())
-                } else {
-                  if e.to_string().contains("No commits between main and main") {
+                } else if e.to_string().contains("No commits between main and main") {
                     println!(
                         "INFO: A pull request already exists, and there are no changes with main"
                     );
-                  } else {
+                } else {
                     bail!("failed to create pull, message: {}", e.to_string())
-                  }
                 }
             }
         };
@@ -405,63 +388,6 @@ impl GenesisWizard {
     }
 }
 
-fn initialize_host(
-    home_path: Option<PathBuf>,
-    username: &str,
-    host: HostAndPort,
-    mnem: Option<String>,
-    keep_legacy_address: bool,
-) -> anyhow::Result<()> {
-    libra_wallet::keys::refresh_validator_files(mnem, home_path.clone(), keep_legacy_address)?;
-    OLProgress::complete("Initialized validator key files");
-    // TODO: set validator fullnode configs. Not NONE
-    SetValidatorConfiguration::new(home_path.clone(), username.to_owned(), host, None)
-        .set_config_files()?;
-    OLProgress::complete("Saved genesis registration files locally");
-
-    node_yaml::save_validator_yaml(home_path)?;
-    OLProgress::complete("Saved validator node yaml file locally");
-    Ok(())
-}
-
-/// interact with user to get ip address
-pub fn what_host() -> Result<HostAndPort, anyhow::Error> {
-    // get from external source since many cloud providers show different interfaces for `machine_ip`
-    let resp = reqwest::blocking::get("https://ifconfig.me")?;
-    // let ip_str = resp.text()?;
-
-    let host = match resp.text() {
-        Ok(ip_str) => {
-            let h = HostAndPort::from_str(&format!("{}:6180", ip_str))?;
-            if *MODE_0L == NamedChain::DEVNET {
-                return Ok(h);
-            }
-            Some(h)
-        }
-        _ => None,
-    };
-
-    if let Some(h) = host {
-        let txt = &format!(
-            "Will you use this host, and this IP address {:?}, for your node?",
-            h
-        );
-        if Confirm::new().with_prompt(txt).interact().unwrap() {
-            return Ok(h);
-        }
-    };
-
-    let input: String = Input::new()
-        .with_prompt("Enter the DNS or IP address, with port 6180")
-        .interact_text()
-        .unwrap();
-    let ip = input
-        .parse::<HostAndPort>()
-        .expect("Could not parse IP or DNS address");
-
-    Ok(ip)
-}
-
 #[test]
 #[ignore]
 
@@ -472,20 +398,6 @@ fn test_wizard() {
         None,
     );
     wizard.start_wizard(false, None, false, None).unwrap();
-}
-
-#[test]
-fn test_validator_files_config() {
-    let alice_mnem = "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse".to_string();
-    let h = HostAndPort::local(6180).unwrap();
-    let test_path = global_config_dir().join("test_genesis");
-    if test_path.exists() {
-        fs::remove_dir_all(&test_path).unwrap();
-    }
-
-    initialize_host(Some(test_path.clone()), "validator", h, Some(alice_mnem), false).unwrap();
-
-    fs::remove_dir_all(&test_path).unwrap();
 }
 
 #[test]

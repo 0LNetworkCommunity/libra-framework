@@ -3,10 +3,8 @@
 // This struct lives here for convenience to use in Genesis where we load
 // previous data.
 
-
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
-
 
 use hex::FromHex;
 use rand::{rngs::OsRng, Rng};
@@ -15,7 +13,7 @@ use std::{convert::TryFrom, fmt, str::FromStr};
 
 /// A struct that represents an account address.
 #[derive(Ord, PartialOrd, Eq, PartialEq, Hash, Clone, Copy)]
-#[cfg_attr(any(test, feature = "fuzzing"), derive(proptest_derive::Arbitrary))]
+// #[cfg_attr(any(test, feature = "fuzzing"), derive(proptest_derive::Arbitrary))]
 pub struct LegacyAddress([u8; LegacyAddress::LENGTH]);
 
 impl LegacyAddress {
@@ -36,7 +34,7 @@ impl LegacyAddress {
     }
 
     pub fn short_str_lossless(&self) -> String {
-        let hex_str = hex::encode(&self.0).trim_start_matches('0').to_string();
+        let hex_str = hex::encode(self.0).trim_start_matches('0').to_string();
         if hex_str.is_empty() {
             "0".to_string()
         } else {
@@ -268,7 +266,6 @@ impl std::error::Error for AccountAddressParseError {}
 mod tests {
     use super::LegacyAddress;
     use hex::FromHex;
-    use proptest::prelude::*;
     use std::{
         convert::{AsRef, TryFrom},
         str::FromStr,
@@ -314,7 +311,7 @@ mod tests {
 
         assert_eq!(
             bytes.len(),
-            LegacyAddress::LENGTH as usize,
+            LegacyAddress::LENGTH,
             "Address {:?} is not {}-bytes long. Addresses must be {} bytes",
             bytes,
             LegacyAddress::LENGTH,
@@ -382,22 +379,5 @@ mod tests {
     fn test_address_from_empty_string() {
         assert!(LegacyAddress::try_from("".to_string()).is_err());
         assert!(LegacyAddress::from_str("").is_err());
-    }
-
-    proptest! {
-        #[test]
-        fn test_address_string_roundtrip(addr in any::<LegacyAddress>()) {
-            let s = String::from(&addr);
-            let addr2 = LegacyAddress::try_from(s).expect("roundtrip to string should work");
-            prop_assert_eq!(addr, addr2);
-        }
-
-        #[test]
-        fn test_address_protobuf_roundtrip(addr in any::<LegacyAddress>()) {
-            let bytes = addr.to_vec();
-            prop_assert_eq!(bytes.clone(), addr.as_ref());
-            let addr2 = LegacyAddress::try_from(&bytes[..]).unwrap();
-            prop_assert_eq!(addr, addr2);
-        }
     }
 }

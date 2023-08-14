@@ -13,15 +13,13 @@ pub fn snapshot_path() -> PathBuf {
         .parent()
         .unwrap()
         .join("ol/fixtures/rescue/state_backup/state_ver_76353076.a0ff")
-
 }
 
 /// path to file fixture with JSON export of the data used in rescue genesis
 pub fn json_path() -> PathBuf {
     use std::path::Path;
     let path = env!("CARGO_MANIFEST_DIR");
-    Path::new(path)
-        .join("tests/fixtures/sample_export_recovery.json")
+    Path::new(path).join("tests/fixtures/sample_export_recovery.json")
 }
 
 /// path to file fixture with the rescue genesis blob

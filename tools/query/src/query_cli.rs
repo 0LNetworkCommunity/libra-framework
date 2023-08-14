@@ -1,6 +1,6 @@
+use crate::query_type::QueryType;
 use anyhow::Result;
 use clap::Parser;
-use crate::query_type::QueryType;
 
 #[derive(Parser)]
 #[clap(name = env!("CARGO_PKG_NAME"), author, version, about, long_about = None, arg_required_else_help = true)]
@@ -19,7 +19,7 @@ impl QueryCli {
 
         let res = self.subcommand.query_to_json(None).await?;
 
-        println!("{}", res.to_string());
+        println!("{}", res);
 
         Ok(())
     }

@@ -1,3 +1,2 @@
-
-pub mod tower_cli;
 pub mod core;
+pub mod tower_cli;

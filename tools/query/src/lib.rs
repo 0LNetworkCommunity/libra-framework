@@ -1,4 +1,3 @@
-
 pub mod account_queries;
 pub mod chain_queries;
 pub mod query_cli;

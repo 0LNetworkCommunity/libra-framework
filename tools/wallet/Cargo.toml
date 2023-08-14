@@ -17,7 +17,7 @@ blst = { workspace = true }
 byteorder = { workspace = true }
 clap = { workspace = true }
 dialoguer = { workspace = true }
-dirs = { workspace = true }
+# dirs = { workspace = true }
 hex = { workspace = true }
 hmac = { workspace = true }
 indoc = { workspace = true }

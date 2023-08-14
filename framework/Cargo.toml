@@ -14,35 +14,21 @@ rust-version = { workspace = true }
 
 [dependencies]
 anyhow = { workspace = true }
-clap = { workspace = true }
-zapatos-types = { workspace = true, features = ["fuzzing"] } #todo remove fuzzing
 bcs = { workspace = true }
-# git2 = { workspace = true }
-# include_dir = { workspace = true }
+clap = { workspace = true }
+hex = { workspace = true }
 once_cell = { workspace = true }
-# proptest = { workspace = true, optional = true }
-# proptest-derive = { workspace = true, optional = true }
-# serde = { workspace = true }
-serde_json = { workspace = true }
 
 zapatos = { workspace = true }
+zapatos-build-info = { workspace = true }
 zapatos-crypto = { workspace = true }
 zapatos-framework = { workspace = true }
-zapatos-release-builder = { workspace = true }
-# zapatos-rest-client = { workspace = true }
-zapatos-build-info = { workspace = true }
-zapatos-temppath = { workspace = true }
-
-# move-binary-format = { workspace = true }
-# move-core-types = { workspace = true }
+zapatos-types = { workspace = true }
 move-command-line-common = { workspace = true }
 move-model = { workspace = true }
 
 [build-dependencies]
 zapatos-framework = { workspace = true }
 
-# [features]
-# default = []
-# fuzzing = ["proptest", "proptest-derive"]
 
 

@@ -3,11 +3,11 @@ mod support;
 use libra_framework::head_release_bundle;
 use libra_genesis_tools::supply::{self, SupplySettings};
 use libra_genesis_tools::{compare, genesis::make_recovery_genesis_from_vec_legacy_recovery};
+use libra_types::exports::AccountAddress;
 use libra_types::exports::ChainId;
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use std::fs;
 use support::{path_utils::json_path, test_vals};
-use libra_types::exports::AccountAddress;
 
 #[test]
 // test that a genesis blob created from struct, will actually contain the data
@@ -21,16 +21,13 @@ fn test_correct_supply_arithmetic_single() {
         .unwrap()
         .join("sample_end_user_single.json");
 
-    let json_str = fs::read_to_string(json.clone()).unwrap();
+    let json_str = fs::read_to_string(json).unwrap();
     let user_accounts: Vec<LegacyRecovery> = serde_json::from_str(&json_str).unwrap();
 
     // get the supply arithmetic so that we can compare outputs
-    let mut supply =
-        supply::populate_supply_stats_from_legacy(&user_accounts, &vec![]).unwrap();
+    let mut supply = supply::populate_supply_stats_from_legacy(&user_accounts, &[]).unwrap();
     let supply_settings = SupplySettings::default();
-    supply
-        .set_ratios_from_settings(&supply_settings)
-        .unwrap();
+    supply.set_ratios_from_settings(&supply_settings).unwrap();
 
     let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
         Some(&user_accounts),
@@ -52,9 +49,7 @@ fn test_correct_supply_arithmetic_single() {
         Err(_e) => assert!(false, "error creating comparison"),
     }
     compare::check_supply(supply_settings.scale_supply() as u64, &gen_tx).unwrap();
-
 }
-
 
 #[test]
 // test that a genesis blob created from struct, will actually contain the data
@@ -67,9 +62,8 @@ fn test_check_genesis_validators() {
         .unwrap()
         .join("sample_end_user_single.json");
 
-    let json_str = fs::read_to_string(json.clone()).unwrap();
+    let json_str = fs::read_to_string(json).unwrap();
     let user_accounts: Vec<LegacyRecovery> = serde_json::from_str(&json_str).unwrap();
-
 
     let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
         Some(&user_accounts),
@@ -80,15 +74,15 @@ fn test_check_genesis_validators() {
     )
     .unwrap();
 
-
-    let vals_list: Vec<AccountAddress> = genesis_vals.into_iter().map(|v| v.owner_address).collect();
+    let vals_list: Vec<AccountAddress> =
+        genesis_vals.into_iter().map(|v| v.owner_address).collect();
 
     compare::check_val_set(&vals_list, &gen_tx).unwrap();
 
-    match compare::check_val_set(&vals_list, &gen_tx){
-        Ok(_) => {},
+    match compare::check_val_set(&vals_list, &gen_tx) {
+        Ok(_) => {}
         Err(_) => {
-          assert!(false, "validator set not correct");
-        },
+            assert!(false, "validator set not correct");
+        }
     }
 }

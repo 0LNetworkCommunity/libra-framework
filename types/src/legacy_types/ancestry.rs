@@ -52,5 +52,4 @@ impl AncestryResource {
     pub fn try_from_bytes(bytes: &[u8]) -> Result<Self> {
         bcs::from_bytes(bytes).map_err(Into::into)
     }
-
 }

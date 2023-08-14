@@ -1,13 +1,12 @@
-use std::path::PathBuf;
 use anyhow::Context;
 use clap::{Parser, Subcommand};
 use libra_genesis_tools::{
-    genesis_builder,
-    parse_json,
+    genesis_builder, parse_json,
     supply::SupplySettings,
     wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME},
 };
 use libra_types::global_config_dir;
+use std::path::PathBuf;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -38,15 +37,15 @@ struct GenesisCliArgs {
 #[derive(Subcommand)]
 enum Sub {
     Genesis {
-      #[clap(flatten)]
-      /// optional, settings for supply.
-      supply_settings: SupplySettings,
-    },  // just do genesis without wizard
+        #[clap(flatten)]
+        /// optional, settings for supply.
+        supply_settings: SupplySettings,
+    }, // just do genesis without wizard
     Register {}, // just do registration without wizard
     Wizard {
-      #[clap(flatten)]
-      /// optional, settings for supply.
-      supply_settings: SupplySettings,
+        #[clap(flatten)]
+        /// optional, settings for supply.
+        supply_settings: SupplySettings,
     },
 }
 
@@ -57,7 +56,8 @@ fn main() -> anyhow::Result<()> {
             let data_path = cli.home_dir.unwrap_or_else(global_config_dir);
 
             let github_token = cli.token_github.unwrap_or(
-                std::fs::read_to_string(&data_path.join(GITHUB_TOKEN_FILENAME)).context("cannot find github_token.txt in config path")?
+                std::fs::read_to_string(data_path.join(GITHUB_TOKEN_FILENAME))
+                    .context("cannot find github_token.txt in config path")?
                     .trim()
                     .to_string(),
             );
@@ -86,7 +86,7 @@ fn main() -> anyhow::Result<()> {
                 None,
             )?;
         }
-        Some(Sub::Wizard {supply_settings}) => {
+        Some(Sub::Wizard { supply_settings }) => {
             GenesisWizard::new(cli.org_github, cli.name_github, cli.home_dir).start_wizard(
                 cli.local_framework,
                 cli.json_legacy,
@@ -95,7 +95,7 @@ fn main() -> anyhow::Result<()> {
             )?;
         }
         _ => {
-          println!("\nIf you're looking for trouble \nYou came to the right place");
+            println!("\nIf you're looking for trouble \nYou came to the right place");
         }
     }
 
