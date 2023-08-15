@@ -211,7 +211,7 @@ fn deterministic_bls_from_seed() {
 
     let seed = wallet.get_key_factory().main();
     let l = get_keys_from_mnem(alice_mnem.to_string()).unwrap();
-    assert!(seed == &l.seed);
+    assert!(seed == l.seed);
 
     let prk1 = bls_generate_key(seed).unwrap();
     let prk2 = bls_generate_key(seed).unwrap();

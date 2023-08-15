@@ -31,18 +31,20 @@ fn end_to_end_single() {
     let test_validators = TestValidator::new_test_set(Some(num_vals), Some(100_000_000_000_000));
     let validators: Vec<Validator> = test_validators.iter().map(|t| t.data.clone()).collect();
 
-    let mut supply_settings = SupplySettings::default();
-    supply_settings.target_future_uses = 0.70;
-    supply_settings.map_dd_to_slow = vec![
-        // FTW
-        "3A6C51A0B786D644590E8A21591FA8E2"
-            .parse::<LegacyAddress>()
-            .unwrap(),
-        // tip jar
-        "2B0E8325DEA5BE93D856CFDE2D0CBA12"
-            .parse::<LegacyAddress>()
-            .unwrap(),
-    ];
+    let supply_settings = SupplySettings {
+        target_future_uses: 0.70,
+        map_dd_to_slow: vec![
+            // FTW
+            "3A6C51A0B786D644590E8A21591FA8E2"
+                .parse::<LegacyAddress>()
+                .unwrap(),
+            // tip jar
+            "2B0E8325DEA5BE93D856CFDE2D0CBA12"
+                .parse::<LegacyAddress>()
+                .unwrap(),
+        ],
+        ..Default::default()
+    };
 
     let tx = make_recovery_genesis_from_vec_legacy_recovery(
         Some(&recovery),
@@ -94,18 +96,20 @@ fn end_to_end_all() {
     let test_validators = TestValidator::new_test_set(Some(num_vals), Some(100_000_000_000_000));
     let validators: Vec<Validator> = test_validators.iter().map(|t| t.data.clone()).collect();
 
-    let mut supply_settings = SupplySettings::default();
-    supply_settings.target_future_uses = 0.70;
-    supply_settings.map_dd_to_slow = vec![
-        // FTW
-        "3A6C51A0B786D644590E8A21591FA8E2"
-            .parse::<LegacyAddress>()
-            .unwrap(),
-        // tip jar
-        "2B0E8325DEA5BE93D856CFDE2D0CBA12"
-            .parse::<LegacyAddress>()
-            .unwrap(),
-    ];
+    let supply_settings = SupplySettings {
+        target_future_uses: 0.70,
+        map_dd_to_slow: vec![
+            // FTW
+            "3A6C51A0B786D644590E8A21591FA8E2"
+                .parse::<LegacyAddress>()
+                .unwrap(),
+            // tip jar
+            "2B0E8325DEA5BE93D856CFDE2D0CBA12"
+                .parse::<LegacyAddress>()
+                .unwrap(),
+        ],
+        ..Default::default()
+    };
 
     let tx = make_recovery_genesis_from_vec_legacy_recovery(
         Some(&recovery),

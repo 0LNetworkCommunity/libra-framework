@@ -100,9 +100,12 @@ fn test_fix() {
             "F85BB8A1C58EF920864A9BF555700BFC".parse().unwrap(),
         ],
     };
-    let mut l = LegacyRecovery::default();
-    l.account =
-        Some(LegacyAddress::from_hex_literal("0x02A892A449874E2BE18B7EA814688B04").unwrap());
+    let l = LegacyRecovery {
+        account: Some(
+            LegacyAddress::from_hex_literal("0x02A892A449874E2BE18B7EA814688B04").unwrap(),
+        ),
+        ..Default::default()
+    };
 
     assert!(l.ancestry.is_none());
     let mut vec = vec![l];

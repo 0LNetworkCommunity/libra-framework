@@ -600,8 +600,10 @@ fn default_cheap_txs_cost() -> Option<TxCost> {
 
 #[tokio::test]
 async fn test_create() {
-    let mut a = AppCfg::default();
-    a.user_profiles = vec![Profile::default()];
+    let a = AppCfg {
+        user_profiles: vec![Profile::default()],
+        ..Default::default()
+    };
     a.save_file().unwrap();
 }
 

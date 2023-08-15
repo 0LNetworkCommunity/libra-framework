@@ -13,7 +13,7 @@ runs:
         android: true
         dotnet: true
         haskell: true
-        large-packages: true
+        large-packages: false
         docker-images: true
         swap-storage: true
 
