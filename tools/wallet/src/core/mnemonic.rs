@@ -457,9 +457,9 @@ fn test_deterministic_mnemonic() {
     let zeros_entropy: [u8; 32] = [0; 32];
     let ones_entropy: [u8; 32] = [1; 32];
 
-    let zeros_mnemonic = Mnemonic::mnemonic(&zeros_entropy).unwrap();
-    let other_zeros_mnemonic = Mnemonic::mnemonic(&zeros_entropy).unwrap();
-    let ones_mnemonic = Mnemonic::mnemonic(&ones_entropy).unwrap();
+    let zeros_mnemonic = Mnemonic::new(&zeros_entropy).unwrap();
+    let other_zeros_mnemonic = Mnemonic::new(&zeros_entropy).unwrap();
+    let ones_mnemonic = Mnemonic::new(&ones_entropy).unwrap();
 
     let zeros_mnemonic_words = zeros_mnemonic.to_string();
     let other_zeros_mnemonic_words = other_zeros_mnemonic.to_string();
@@ -474,14 +474,14 @@ fn test_entropy_length() {
     // entropy size in bytes.
     for size in (16..32).step_by(4) {
         let entropy = vec![0; size];
-        let mnemonic = Mnemonic::mnemonic(&entropy);
+        let mnemonic = Mnemonic::new(&entropy);
         assert!(mnemonic.is_ok());
     }
 
     let some_invalid_entropy_sizes: [usize; 4] = [0, 8, 18, 36];
     for size in some_invalid_entropy_sizes.iter() {
         let entropy = vec![0; *size];
-        let mnemonic = Mnemonic::mnemonic(&entropy);
+        let mnemonic = Mnemonic::new(&entropy);
         assert!(mnemonic.is_err());
     }
 }
@@ -490,7 +490,7 @@ fn test_entropy_length() {
 fn test_entropy_to_word_number_compatibility() {
     for size in (16..32).step_by(4) {
         let entropy = vec![1; size];
-        let mnemonic = Mnemonic::mnemonic(&entropy).unwrap();
+        let mnemonic = Mnemonic::new(&entropy).unwrap();
         let mnemonic_string = mnemonic.to_string();
         let mnemonic_from_string = Mnemonic::from(&mnemonic_string[..]);
         assert!(mnemonic_from_string.is_ok());
@@ -503,7 +503,7 @@ fn test_bips39_vectors() {
     for t in tests.iter() {
         let entropy = hex::decode(t.seed).unwrap();
         let correct_mnemonic_string = t.mnemonic;
-        let computed_mnemonic = Mnemonic::mnemonic(&entropy[..]).unwrap();
+        let computed_mnemonic = Mnemonic::new(&entropy[..]).unwrap();
         let computed_mnemonic_string = computed_mnemonic.to_string();
         assert_eq!(correct_mnemonic_string, computed_mnemonic_string);
     }
