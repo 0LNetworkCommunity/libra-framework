@@ -80,7 +80,7 @@ fn test_yaml() {
 
     let file = save_validator_yaml(Some(path.clone())).unwrap();
 
-    let read = std::fs::read_to_string(&file).unwrap();
+    let read = std::fs::read_to_string(file).unwrap();
 
     let y: NodeConfig = from_yaml(&read).unwrap();
 
@@ -88,7 +88,7 @@ fn test_yaml() {
 
     assert_eq!(
         y.base.data_dir.display().to_string(),
-        format!("{}/data", path.display().to_string())
+        format!("{}/data", path.display())
     );
     // remove the file and directory
     std::fs::remove_dir_all(path).unwrap();

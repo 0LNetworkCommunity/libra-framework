@@ -43,10 +43,10 @@ fn test_correct_supply_arithmetic_single() {
     match compare::compare_recovery_vec_to_genesis_tx(&user_accounts, &gen_tx, &supply) {
         Ok(list) => {
             if !list.is_empty() {
-                assert!(false, "list is not empty: {list:#?}");
+                panic!("list is not empty: {list:#?}");
             }
         }
-        Err(_e) => assert!(false, "error creating comparison"),
+        Err(_e) => panic!("error creating comparison"),
     }
     compare::check_supply(supply_settings.scale_supply() as u64, &gen_tx).unwrap();
 }
@@ -82,7 +82,7 @@ fn test_check_genesis_validators() {
     match compare::check_val_set(&vals_list, &gen_tx) {
         Ok(_) => {}
         Err(_) => {
-            assert!(false, "validator set not correct");
+            panic!("validator set not correct");
         }
     }
 }
