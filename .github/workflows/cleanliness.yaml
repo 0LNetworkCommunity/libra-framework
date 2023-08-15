@@ -2,7 +2,12 @@ name: cleanliness
 on:
   push:
     branches: ["*"]
-
+  pull_request:
+    types:
+      - opened
+    branches:
+      - 'release**'
+      - 'main'
 jobs:
   clippy:
     runs-on: ubuntu-latest

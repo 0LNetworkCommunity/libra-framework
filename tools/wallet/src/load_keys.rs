@@ -90,7 +90,7 @@ fn fixture_wallet() {
     // alice
     let mnemonic_string = "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse";
 
-    let mut wallet = WalletLibrary::new_from_mnemonic(Mnemonic::from(&mnemonic_string).unwrap());
+    let mut wallet = WalletLibrary::new_from_mnemonic(Mnemonic::from(mnemonic_string).unwrap());
 
     let (main_addr, child_number) = wallet.new_address().unwrap();
     println!("wallet\n:{:?} === {:x}", child_number, main_addr);

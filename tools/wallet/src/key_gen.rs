@@ -100,7 +100,7 @@ mod tests {
             .await
             .unwrap();
 
-        let result = result.split("\n").collect::<Vec<_>>();
+        let result = result.split('\n').collect::<Vec<_>>();
 
         let private_key = hex::decode(result[1].replace("Private key: ", "")).unwrap();
         assert_eq!(32, private_key.len());
@@ -119,7 +119,7 @@ mod tests {
             "validator-identity.yaml",
         ] {
             let path = output_dir.join(yaml_file);
-            if !fs::metadata(&path).is_ok() {
+            if fs::metadata(&path).is_err() {
                 // Clean up
                 // fs::remove_dir_all(output_dir).ok();
                 // Stop the test with error
@@ -138,7 +138,7 @@ mod tests {
 
         let output_dir = this_dir.join("temp");
         let result = run(None, Some(output_dir.clone())).await.unwrap();
-        let result = result.split("\n").collect::<Vec<_>>();
+        let result = result.split('\n').collect::<Vec<_>>();
 
         let private_key = hex::decode(result[1].replace("Private key: ", "")).unwrap();
         assert_eq!(32, private_key.len());
@@ -157,7 +157,7 @@ mod tests {
             "validator-identity.yaml",
         ] {
             let path = output_dir.join(yaml_file);
-            if !fs::metadata(&path).is_ok() {
+            if fs::metadata(&path).is_err() {
                 // Clean up
                 fs::remove_dir_all(output_dir).ok();
                 // Stop the test with error
