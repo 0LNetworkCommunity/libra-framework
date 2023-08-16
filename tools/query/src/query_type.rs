@@ -169,8 +169,15 @@ impl QueryType {
             "address": addr
           }))
         },
+        QueryType::BlockHeight => {
+            let res = get_view(&client, "0x1::block::get_current_block_height", None, None).await?;
+            let num: Vec<String> = serde_json::from_value(res)?;
+            let json = json!({
+              "block": num.first().unwrap().parse::<u64>()?,
+            });
+            Ok(json)
+        },
         _ => { bail!("Not implemented for type: {:?}", self) }
-        // QueryType::BlockHeight => todo!(),
         // QueryType::Resources { account } => todo!(),
         // QueryType::MoveValue { account, module_name, struct_name, key_name } => todo!(),
 
