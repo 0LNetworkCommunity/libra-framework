@@ -7,7 +7,7 @@
 // https://github.com/diem/diem/commit/782b31cb08eeb717ea2b6f3edbf616b13fd4cae8
 
 module 0x0::LibraCoin {
-    use 0x0::Transaction;
+    use std::signer;
 
     // A representing the Libra coin
     // The value of the coin. May be zero
@@ -23,8 +23,8 @@ module 0x0::LibraCoin {
     // sender does not have a MintCapability.
     // Since only the Association account has a mint capability, this will only succeed if it is
     // invoked by a transaction sent by that account.
-    public fun mint_with_default_capability(amount: u64): LibraCoin acquires MintCapability, MarketCap {
-        mint(amount, borrow_global<MintCapability>(Transaction.sender()))
+    public fun mint_with_default_capability(sender: &signer, amount: u64): LibraCoin acquires MintCapability, MarketCap {
+        mint(amount, borrow_global<MintCapability>(sender))
     }
 
     // Mint a new LibraCoin worth `value`. The caller must have a reference to a MintCapability.
@@ -36,7 +36,7 @@ module 0x0::LibraCoin {
         // minting. This will not be a problem in the production Libra system because coins will
         // be backed with real-world assets, and thus minting will be correspondingly rarer.
         // * 1000000 because the unit is microlibra
-        Transaction.assert(value <= 1000000000 * 1000000, 11);
+        assert!(value <= 1000000000 * 1000000, 11);
 
         // update market cap to reflect minting
         let market_cap = borrow_global_mut<MarketCap>(0xA550C18);
@@ -47,9 +47,9 @@ module 0x0::LibraCoin {
 
     // This can only be invoked by the Association address, and only a single time.
     // Currently, it is invoked in the genesis transaction
-    public fun initialize() {
+    public fun initialize(sender: &signer) {
         // Only callable by the Association address
-        Transaction.assert(Transaction.sender() == 0xA550C18, 1);
+        assert!(signer::address_of(sender)== 0xA550C18, 1);
 
         move_to(MintCapability{});
         move_to(MarketCap { total_value: 0 });
@@ -83,7 +83,7 @@ module 0x0::LibraCoin {
     // Fails if the coins value is less than `amount`
     public fun withdraw(coin: &mut LibraCoin, amount: u64): LibraCoin {
         // Check that `amount` is less than the coin's value
-        Transaction.assert(coin.value >= amount, 10);
+        assert!(coin.value >= amount, 10);
         // Split the coin
         coin.value = value(coin) - amount;
         LibraCoin { value: amount }
@@ -109,7 +109,7 @@ module 0x0::LibraCoin {
     // so you cannot "burn" any non-zero amount of LibraCoin
     public fun destroy_zero(coin: LibraCoin) {
         let LibraCoin { value } = coin;
-        Transaction.assert(value == 0, 11)
+        assert!(value == 0, 11)
     }
 
 }
