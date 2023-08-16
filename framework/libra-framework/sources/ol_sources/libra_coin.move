@@ -6,20 +6,18 @@
 // Original Commit:
 // https://github.com/diem/diem/commit/782b31cb08eeb717ea2b6f3edbf616b13fd4cae8
 
-address 0x0:
+module 0x0::LibraCoin {
+    use 0x0::Transaction;
 
-module LibraCoin {
-    use 0x0.Transaction;
-
-    // A resource representing the Libra coin
+    // A representing the Libra coin
     // The value of the coin. May be zero
-    resource struct T { value: u64 }
+    struct LibraCoin { value: u64 }
 
-    // A singleton resource that grants access to `LibraCoin.mint`. Only the Association has one.
-    resource struct MintCapability {}
+    // A singleton that grants access to `LibraCoin.mint`. Only the Association has one.
+    struct MintCapability {}
 
     // The sum of the values of all LibraCoin.T resources in the system
-    resource struct MarketCap { total_value: u64 }
+    struct MarketCap { total_value: u64 }
 
     // Return a reference to the MintCapability published under the sender's account. Fails if the
     // sender does not have a MintCapability.
@@ -40,7 +38,7 @@ module LibraCoin {
         // * 1000000 because the unit is microlibra
         Transaction.assert(value <= 1000000000 * 1000000, 11);
 
-        // update market cap resource to reflect minting
+        // update market cap to reflect minting
         let market_cap = borrow_global_mut<MarketCap>(0xA550C18);
         market_cap.total_value = market_cap.total_value + value;
 
@@ -53,8 +51,8 @@ module LibraCoin {
         // Only callable by the Association address
         Transaction.assert(Transaction.sender() == 0xA550C18, 1);
 
-        move_to_sender(MintCapability{});
-        move_to_sender(MarketCap { total_value: 0 });
+        move_to(MintCapability{});
+        move_to(MarketCap { total_value: 0 });
     }
 
     // Return the total value of all Libra in the system
