@@ -1,13 +1,21 @@
 use crate::{
     account_queries::{get_account_balance_libra, get_tower_state},
-    query_view::get_view,
+    query_view::fetch_and_display,
+    query_move_value::get_account_move_value,
 };
-use anyhow::{bail, Result};
+use anyhow::Result;
 use diem_sdk::{rest_client::Client, types::account_address::AccountAddress};
 use indoc::indoc;
-use libra_types::exports::AuthenticationKey;
-use libra_types::type_extensions::client_ext::ClientExt;
 use serde_json::json;
+use libra_types::exports::AuthenticationKey;
+use libra_types::legacy_types::app_cfg::AppCfg;
+use libra_types::type_extensions::client_ext::ClientExt;
+use libra_types::global_config_dir;
+
+pub enum OutputType {
+    Json(String),
+    KeyValue(String),
+}
 
 #[derive(Debug, clap::Subcommand)]
 pub enum QueryType {
@@ -96,84 +104,208 @@ pub enum QueryType {
     SyncDelay,
     /// Get transaction history
     Txs {
-        #[clap(short, long)]
-        /// account to query txs of
+        #[clap(
+            short = 'a',
+            long = "account",
+            help = "Account to query transactions for"
+        )]
         account: AccountAddress,
-        #[clap(long)]
-        /// get transactions after this height
-        txs_height: Option<u64>,
-        #[clap(long)]
-        /// limit how many txs
-        txs_count: Option<u64>,
-        #[clap(long)]
-        /// filter by type
-        txs_type: Option<String>,
+        #[clap(
+            short = 's',
+            long = "start",
+            help = "Starting sequence number for transactions"
+        )]
+        start: Option<u64>,
+        #[clap(
+            short = 'l',
+            long = "limit",
+            help = "Limit the number of transactions to fetch"
+        )]
+        limit: Option<u64>,
     },
-    // /// Get events
-    // Events {
-    //     /// account to query events
-    //     account: AccountAddress,
-    //     /// switch for sent or received events.
-    //     sent_or_received: bool,
-    //     /// what event sequence number to start querying from, if DB does not have all.
-    //     seq_start: Option<u64>,
-    // },
-    // /// get the validator's on-chain configuration, including network discovery addresses
-    // ValConfig {
-    //     /// the account of the validator
-    //     account: AccountAddress,
-    // },
+    /// Get events
+    Events {
+        /// Account to query events
+        #[clap(short, long)]
+        account: AccountAddress,
+        /// Move module struct tag
+        #[clap(
+            short = 't',
+            long = "tag",
+            help = "Move module struct tag eg 0x1::stake::StakePool"
+        )]
+        struct_tag: String,
+        /// Field name in the struct
+        #[clap(
+            short = 'f',
+            long = "field",
+            help = "Field name in the struct eg join_validator_set_events"
+        )]
+        field_name: String,
+        /// Starting sequence number for events
+        #[clap(
+            short = 's',
+            long = "start",
+            help = "Starting sequence number for events"
+        )]
+        start: Option<u64>,
+        /// Limit the number of events to fetch
+        #[clap(
+            short = 'l',
+            long = "limit",
+            help = "Limit the number of events to fetch"
+        )]
+        limit: Option<u16>,
+    }, // /// get the validator's on-chain configuration, including network discovery addresses
+       // ValConfig {
+       //     /// the account of the validator
+       //     account: AccountAddress,
+       // },
 }
 
 impl QueryType {
-    pub async fn query_to_json(&self, client_opt: Option<Client>) -> Result<serde_json::Value> {
+    pub async fn query(&self, client_opt: Option<Client>) -> Result<OutputType> {
         let client = match client_opt {
             Some(c) => c,
             None => Client::default().await?,
         };
 
         match self {
-        QueryType::Balance { account } => {
-          let res = get_account_balance_libra(&client, *account).await?;
-          Ok(json!(res.scaled()))
-        },
-        QueryType::Tower { account } => {
-          let res = get_tower_state(&client, *account).await?;
-          Ok(json!(res))
+            QueryType::Balance { account } => {
+                let json_data = get_account_balance_libra(&client, *account).await?;
+                Ok(OutputType::Json(serde_json::to_string_pretty(&json_data)?))
+            }
+            QueryType::Tower { account } => {
+                let tower_state = get_tower_state(&client, *account).await?;
+                let json_data = serde_json::to_value(tower_state)?;
+                Ok(OutputType::Json(serde_json::to_string_pretty(&json_data)?))
+            }
+            QueryType::View {
+                function_id,
+                type_args,
+                args,
+            } => {
+                let json_data =
+                    fetch_and_display(&client, function_id, type_args.to_owned(), args.to_owned())
+                        .await?;
+                Ok(OutputType::Json(serde_json::to_string_pretty(&json_data)?))
+            }
+            QueryType::Epoch => {
+                let json_data = fetch_and_display(
+                    &client,
+                    "0x1::reconfiguration::get_current_epoch",
+                    None,
+                    None,
+                )
+                .await?;
+                Ok(OutputType::Json(serde_json::to_string_pretty(&json_data)?))
+            }
+            QueryType::BlockHeight => {
+                let json_data =
+                    fetch_and_display(&client, "0x1::block::get_current_block_height", None, None)
+                        .await?;
+                Ok(OutputType::Json(serde_json::to_string_pretty(&json_data)?))
+            }
+            QueryType::Resources { account } => {
+                let res = client
+                    .get_account_resources(*account)
+                    .await?
+                    .into_inner()
+                    .into_iter()
+                    .map(|resource| {
+                        let mut map = serde_json::Map::new();
+                        map.insert(resource.resource_type.to_string(), resource.data);
+                        serde_json::Value::Object(map)
+                    })
+                    .collect::<Vec<serde_json::Value>>();
+                Ok(OutputType::Json(serde_json::to_string_pretty(&res)?))
+            }
+            QueryType::LookupAddress { auth_key } => {
+                let addr = client.lookup_originating_address(auth_key.to_owned()).await?;
 
-        },
-        QueryType::View {
-            function_id,
-            type_args,
-            args,
-        } => {
-            let res = get_view(&client, function_id, type_args.to_owned(), args.to_owned()).await?;
-            let json = json!({
-              "body": res
-            });
-            Ok(json)
-         },
-        QueryType::Epoch => {
-            let res = get_view(&client, "0x1::reconfiguration::get_current_epoch", None, None).await?;
+                Ok(OutputType::Json(serde_json::to_string(&json!({
+                    "address": addr
+                }))?))
+            }
+            QueryType::MoveValue {
+                account,
+                module_name,
+                struct_name,
+                key_name,
+            } => {
+                get_account_move_value(&client, &account, &module_name, &struct_name, &key_name).await
+            }
+            QueryType::SyncDelay {} => {
+                let config_path = global_config_dir();
+                let mut app_cfg = AppCfg::load(Some(config_path))?;
 
-            let num: Vec<String> = serde_json::from_value(res)?;
-            let json = json!({
-              "epoch": num.first().unwrap().parse::<u64>()?,
-            });
-            Ok(json)
-        },
-        QueryType::LookupAddress { auth_key } => {
-          let addr = client.lookup_originating_address( auth_key.to_owned()).await?;
+                // Get the block height from the local node
+                let (local_client, _) = Client::get_local_node().await?;
+                let local_client_res = local_client
+                    .view_ext("0x1::block::get_current_block_height", None, None)
+                    .await?;
 
-          Ok(json!({
-            "address": addr
-          }))
-        },
-        _ => { bail!("Not implemented for type: {:?}", self) }
-        // QueryType::BlockHeight => todo!(),
-        // QueryType::Resources { account } => todo!(),
-        // QueryType::MoveValue { account, module_name, struct_name, key_name } => todo!(),
+                let block_height_value_local = &local_client_res[0];
+                let local_client_block_height =
+                    if let Some(block_height_str) = block_height_value_local.as_str() {
+                        block_height_str.parse::<u64>()?
+                    } else {
+                        return Err(anyhow::anyhow!(
+                            "Block height from local client is not a string"
+                        ));
+                    };
 
-    }
+                // Get the block height from the working upstream
+                app_cfg.refresh_network_profile_and_save(Some(app_cfg.workspace.default_chain_id)).await?;
+                let upstream_client_url = app_cfg.pick_url()?;
+                let upstream_client = Client::new(upstream_client_url);
+                let upstream_client_res = upstream_client
+                    .view_ext("0x1::block::get_current_block_height", None, None)
+                    .await?;
+
+                let block_height_value_upstream = &upstream_client_res[0];
+                let upstream_client_block_height =
+                    if let Some(block_height_str) = block_height_value_upstream.as_str() {
+                        block_height_str.parse::<u64>()?
+                    } else {
+                        return Err(anyhow::anyhow!(
+                            "Block height from upstream client is not a string"
+                        ));
+                    };
+
+                // Calculate the sync delay
+                let sync_delay = upstream_client_block_height - local_client_block_height;
+
+                Ok(OutputType::Json(serde_json::to_string(&json!({
+                    "sync-delay": sync_delay
+                }))?))
+            }
+            QueryType::Txs {
+                account,
+                start,
+                limit,
+            } => {
+                let txns = client
+                    .get_account_transactions(*account, *start, *limit)
+                    .await?;
+                let transactions = txns.into_inner();
+                let json_data = serde_json::to_value(transactions)?;
+                Ok(OutputType::Json(serde_json::to_string_pretty(&json_data)?))
+            }
+            QueryType::Events {
+                account,
+                struct_tag,
+                field_name,
+                start,
+                limit,
+            } => {
+                let events = client
+                    .get_account_events(*account, struct_tag, field_name, *start, *limit)
+                    .await?;
+
+                let json_data = serde_json::to_value(events.into_inner())?;
+                Ok(OutputType::Json(serde_json::to_string_pretty(&json_data)?))
+            }
+        }
     }
 }

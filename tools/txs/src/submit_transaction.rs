@@ -121,7 +121,7 @@ impl Sender {
         let temp_seq_num = 0;
 
         let auth_key = AuthenticationKey::ed25519(&key.public_key());
-        let url = &app_cfg.pick_url(None)?;
+        let url = &app_cfg.pick_url()?;
         let client = Client::new(url.clone());
         let address = client
             .lookup_originating_address(auth_key)

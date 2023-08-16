@@ -104,7 +104,7 @@ impl ConfigCli {
                 if *address {
                     let mut account_keys = legacy_config::prompt_for_account()?;
 
-                    let client = Client::new(cfg.pick_url(self.chain_name)?);
+                    let client = Client::new(cfg.pick_url()?);
 
                     if client.get_index().await.is_ok() {
                         account_keys.account = client

@@ -5935,13 +5935,20 @@ name = "libra-query"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bytes",
  "clap 4.3.23",
+ "colored",
  "diem-sdk",
+ "dirs",
  "indoc",
  "libra-smoke-tests",
  "libra-types",
+ "move-binary-format",
+ "move-core-types",
+ "owo-colors",
  "serde_json",
  "tokio",
+ "url",
 ]
 
 [[package]]

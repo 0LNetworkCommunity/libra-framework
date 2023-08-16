@@ -324,11 +324,19 @@ impl AppCfg {
             self.network_playlist.push(new_playlist.to_owned());
         }
     }
-    // TODO: always use CHAIN_ID from AppCfg
+
     ///fetch a network profile, optionally by profile name
-    pub fn pick_url(&self, chain_id: Option<NamedChain>) -> anyhow::Result<Url> {
-        let np = self.get_network_profile(chain_id)?;
-        np.pick_one()
+    pub fn pick_url(&self) -> anyhow::Result<Url> {
+        let chain_id = self.workspace.default_chain_id;
+        let np = self.get_network_profile(Some(chain_id))?;
+        match np.the_best_one() {
+            Ok(u) => Ok(u),
+            Err(_) => np
+                .all_urls()?
+                .into_iter()
+                .next()
+                .context("no urls to choose from"),
+        }
     }
 }
 
@@ -693,6 +701,6 @@ tx_configs:
     assert!(np.the_best_one().is_err());
 
     // pick url will failover to get the best, or the first in list
-    let url = cfg.pick_url(None).unwrap();
+    let url = cfg.pick_url().unwrap();
     assert!(url.host_str().unwrap().contains("localhost"));
 }

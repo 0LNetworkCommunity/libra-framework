@@ -34,17 +34,20 @@ use url::Url;
 
 pub const DEFAULT_TIMEOUT_SECS: u64 = 10;
 pub const USER_AGENT: &str = concat!("libra-config/", env!("CARGO_PKG_VERSION"));
+pub const LOCAL_NODE_URL: &str = "http://localhost:8080";
+
 
 #[async_trait]
 pub trait ClientExt {
     async fn default() -> anyhow::Result<Client>;
+
+    async fn get_local_node() -> anyhow::Result<(Client, ChainId)>;
 
     async fn from_libra_config(
         app_cfg: &AppCfg,
         chain_id_opt: Option<NamedChain>,
     ) -> anyhow::Result<(Client, ChainId)>;
 
-    async fn find_good_upstream(list: Vec<Url>) -> anyhow::Result<(Client, ChainId)>;
 
     fn from_vendor_config() -> anyhow::Result<Client>;
 
@@ -88,32 +91,30 @@ impl ClientExt for Client {
         Ok(client)
     }
 
+    /// Gets the local node
+    async fn get_local_node() -> anyhow::Result<(Client, ChainId)> {
+        let local_url = Url::parse(LOCAL_NODE_URL)?;
+        let client = Client::new(local_url);
+        match client.get_index().await {
+            Ok(res) => Ok((client, ChainId::new(res.inner().chain_id))),
+            Err(e) => Err(anyhow::anyhow!(
+                "Failed to connect to the local node: {}",
+                e
+            )),
+        }
+    }
+
     /// Finds a good working upstream based on the list in a config file
     async fn from_libra_config(
         app_cfg: &AppCfg,
-        chain_id_opt: Option<NamedChain>,
+        _chain_id_opt: Option<NamedChain>,
     ) -> anyhow::Result<(Client, ChainId)> {
         // check if we can connect to this client, or exit
-        let url = &app_cfg.pick_url(chain_id_opt)?;
+        let url = &app_cfg.pick_url()?;
         let client = Client::new(url.to_owned());
         let res = client.get_index().await?;
 
         Ok((client, ChainId::new(res.inner().chain_id)))
-    }
-
-    async fn find_good_upstream(_list: Vec<Url>) -> anyhow::Result<(Client, ChainId)> {
-        // TODO: iterate through all and find a valid one.
-
-        //   let metadata =  future::select_all(
-        //     nodes.into_iter().find_map(|u| async {
-        //         let client = Client::new(u);
-        //         match client.get_index().await {
-        //             Ok(index) => Some((client, index.inner().chain_id)),
-        //             _ => None,
-        //         }
-        //     })
-        // ).await?;
-        todo!()
     }
 
     fn from_vendor_config() -> anyhow::Result<Client> {

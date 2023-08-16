@@ -1,4 +1,7 @@
-use crate::query_type::QueryType;
+use crate::{
+    query_type::{OutputType, QueryType},
+    utils::colorize_and_print,
+};
 use anyhow::Result;
 use clap::Parser;
 
@@ -17,10 +20,16 @@ impl QueryCli {
         // let client = Client::default()?;
         // TODO: get client from configs
 
-        let res = self.subcommand.query_to_json(None).await?;
+        let output = self.subcommand.query(None).await?;
 
-        println!("{}", res);
-
+        match output {
+            OutputType::Json(json_str) => {
+                colorize_and_print(&json_str)?;
+            }
+            OutputType::KeyValue(kv_str) => {
+                println!("{}", kv_str);
+            }
+        }
         Ok(())
     }
 }
