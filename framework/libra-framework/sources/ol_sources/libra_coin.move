@@ -11,26 +11,26 @@ module 0x0::LibraCoin {
 
     // A representing the Libra coin
     // The value of the coin. May be zero
-    struct LibraCoin { value: u64 }
+    struct LibraCoin has store { value: u64 }
 
     // A singleton that grants access to `LibraCoin.mint`. Only the Association has one.
-    struct MintCapability {}
+    struct MintCapability has store, key {}
 
     // The sum of the values of all LibraCoin resources in the system
-    struct MarketCap { total_value: u64 }
+    struct MarketCap has store, key { total_value: u64 }
 
     // Return a reference to the MintCapability published under the sender's account. Fails if the
     // sender does not have a MintCapability.
     // Since only the Association account has a mint capability, this will only succeed if it is
     // invoked by a transaction sent by that account.
     public fun mint_with_default_capability(sender: &signer, amount: u64): LibraCoin acquires MintCapability, MarketCap {
-        mint(amount, borrow_global<MintCapability>(sender))
+        mint(amount, borrow_global<MintCapability>(signer::address_of(sender)))
     }
 
     // Mint a new LibraCoin worth `value`. The caller must have a reference to a MintCapability.
     // Only the Association account can acquire such a reference, and it can do so only via
     // `borrow_sender_mint_capability`
-    public fun mint(value: u64, capability: &MintCapability): LibraCoin acquires MarketCap {
+    public fun mint(value: u64, _capability: &MintCapability): LibraCoin acquires MarketCap {
         // TODO: temporary measure for testnet only: limit minting to 1B Libra at a time.
         // this is to prevent the market cap's total value from hitting u64_max due to excessive
         // minting. This will not be a problem in the production Libra system because coins will
@@ -39,7 +39,7 @@ module 0x0::LibraCoin {
         assert!(value <= 1000000000 * 1000000, 11);
 
         // update market cap to reflect minting
-        let market_cap = borrow_global_mut<MarketCap>(0xA550C18);
+        let market_cap = borrow_global_mut<MarketCap>(@0xA550C18);
         market_cap.total_value = market_cap.total_value + value;
 
         LibraCoin { value }
@@ -49,15 +49,15 @@ module 0x0::LibraCoin {
     // Currently, it is invoked in the genesis transaction
     public fun initialize(sender: &signer) {
         // Only callable by the Association address
-        assert!(signer::address_of(sender)== 0xA550C18, 1);
+        assert!(signer::address_of(sender) == @0xA550C18, 1);
 
-        move_to(MintCapability{});
-        move_to(MarketCap { total_value: 0 });
+        move_to(sender, MintCapability{});
+        move_to(sender, MarketCap { total_value: 0 });
     }
 
     // Return the total value of all Libra in the system
     public fun market_cap(): u64 acquires MarketCap {
-        borrow_global<MarketCap>(0xA550C18).total_value
+        borrow_global<MarketCap>(@0xA550C18).total_value
     }
 
     // Create a new LibraCoin with a value of 0
@@ -72,9 +72,9 @@ module 0x0::LibraCoin {
 
     // Splits the given coin into two and returns them both
     // It leverages `Self.withdraw` for any verifications of the values
-    public fun split(coin: LibraCoin, amount: u64): (LibraCoin, LibraCoin) {
+    public fun split(coin: &mut LibraCoin, amount: u64): LibraCoin {
         let other = withdraw(coin, amount);
-        (coin, other)
+        other
     }
 
     // "Divides" the given coin into two, where original coin is modified in place
@@ -90,9 +90,8 @@ module 0x0::LibraCoin {
     }
 
     // Merges two coins and returns a new coin whose value is equal to the sum of the two inputs
-    public fun join(coin1: &mut LibraCoin, coin2: LibraCoin): LibraCoin  {
+    public fun join(coin1: &mut LibraCoin, coin2: LibraCoin)  {
         deposit(coin1, coin2);
-        coin1
     }
 
     // "Merges" the two coins
