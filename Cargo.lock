@@ -5730,6 +5730,7 @@ dependencies = [
  "anyhow",
  "aptos-sdk",
  "clap 3.2.23",
+ "colored",
  "indoc 2.0.1",
  "libra-smoke-tests",
  "libra-types",

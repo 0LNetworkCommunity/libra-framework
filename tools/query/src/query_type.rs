@@ -1,12 +1,14 @@
 use crate::{
     account_queries::{self, get_account_balance_libra, get_tower_state},
     query_view::get_view,
+    utils::colorize_json,
+
 };
 use anyhow::{bail, Result};
 use indoc::indoc;
 use libra_types::exports::AuthenticationKey;
 use libra_types::type_extensions::client_ext::ClientExt;
-use serde_json::json;
+use serde_json::{ json, Value };
 use zapatos_sdk::{rest_client::Client, types::account_address::AccountAddress};
 
 #[derive(Debug, clap::Subcommand)]
@@ -177,8 +179,32 @@ impl QueryType {
             });
             Ok(json)
         },
+        QueryType::Resources { account } => {
+            let res = &client.get_account_resources(*account)
+            .await?
+            .into_inner()
+            .into_iter()
+            .map(|resource| {
+                let mut map = serde_json::Map::new();
+                map.insert(resource.resource_type.to_string(), resource.data);
+                serde_json::Value::Object(map)
+            })
+            .collect::<Vec<serde_json::Value>>();
+    
+        // Serialize the Vec<Value> into a pretty-formatted JSON string
+        let json_str = serde_json::to_string_pretty(&res).expect("Failed to serialize to JSON");
+    
+        // Use the utility function to colorize the JSON string
+        let colored_output = colorize_json(&json_str).unwrap_or_else(|err| {
+            eprintln!("Error colorizing JSON: {}", err);
+            json_str.to_string()
+        });
+
+        println!("{}", colored_output);
+        Ok(())
+
+        },
         _ => { bail!("Not implemented for type: {:?}", self) }
-        // QueryType::Resources { account } => todo!(),
         // QueryType::MoveValue { account, module_name, struct_name, key_name } => todo!(),
 
     }
