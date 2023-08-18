@@ -1,6 +1,7 @@
 use serde_json::Value;
 use colored::Colorize;
 
+
 pub fn colorize_json(json_str: &str) -> Result<String, serde_json::Error> {
     let v: Value = serde_json::from_str(json_str)?;
     let colored_json = colorize_value(&v, 0);
@@ -41,4 +42,7 @@ fn colorize_value(value: &Value, indent: usize) -> String {
         Value::Null => "null".magenta().to_string(),
     }
 }
+
+
+
 

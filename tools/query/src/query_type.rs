@@ -1,10 +1,11 @@
 use crate::{
     account_queries::{self, get_account_balance_libra, get_tower_state},
     query_view::get_view,
-    utils::colorize_json,
+    utils::{ colorize_json },
 
 };
-use anyhow::{bail, Result};
+use anyhow::{bail, Result, anyhow};
+use owo_colors::OwoColorize;
 use indoc::indoc;
 use libra_types::exports::AuthenticationKey;
 use libra_types::type_extensions::client_ext::ClientExt;
@@ -191,21 +192,76 @@ impl QueryType {
             })
             .collect::<Vec<serde_json::Value>>();
     
-        // Serialize the Vec<Value> into a pretty-formatted JSON string
+
         let json_str = serde_json::to_string_pretty(&res).expect("Failed to serialize to JSON");
     
-        // Use the utility function to colorize the JSON string
+
         let colored_output = colorize_json(&json_str).unwrap_or_else(|err| {
             eprintln!("Error colorizing JSON: {}", err);
             json_str.to_string()
         });
 
         println!("{}", colored_output);
-        Ok(())
+        Ok(Value::String("Success".to_string()))
 
         },
+        QueryType::MoveValue { account, module_name, struct_name, key_name } => {
+     
+            let res = &client.get_account_resources(*account)
+            .await?
+            .into_inner()
+            .into_iter()
+            .map(|resource| {
+                let mut map = serde_json::Map::new();
+                map.insert(resource.resource_type.to_string(), resource.data);
+                serde_json::Value::Object(map)
+            })
+            .collect::<Vec<serde_json::Value>>();
+        
+            
+            let module_search_pattern = format!("::{}::", module_name);
+
+            let maybe_module_struct = res.iter().find(|value| {
+                if let Some(map) = value.as_object() {
+                    map.keys().any(|k| k.contains(&module_search_pattern) && k.ends_with(struct_name))
+                } else {
+                    false
+                }
+            });
+            
+            if let Some(module_struct) = maybe_module_struct {
+                if let Some(struct_data) = module_struct.as_object().and_then(|map| map.values().next()) {
+                    if let Some(key_value) = struct_data.get(key_name) {
+                        let account_str = module_struct.as_object().map_or("".to_string(), |map| map.keys().next().cloned().unwrap_or_else(|| "".to_string()));
+                        let account_parts: Vec<&str> = account_str.split("::").collect();
+                        let account = account_parts.get(0).unwrap_or(&"Unknown");
+                        
+                        println!("{} : {}", "account:".magenta().bold(), account.cyan());
+                        println!("{} : {}", "module_name:".magenta().bold(), module_name.cyan());
+                        println!("{} : {}", "module_struct:".magenta().bold(), struct_name.cyan());
+                        
+
+                        let parsed_value = key_value.as_str().and_then(|s| s.parse::<i32>().ok()).unwrap_or_default();
+                        println!("{}: {}", key_name.magenta().bold(), parsed_value.to_string().cyan());
+                        
+
+                        Ok(Value::String("Success".to_string()))
+                    } else {
+                        return Err(anyhow!("Key '{}' not found in struct '{}'", key_name, struct_name));
+                    }
+                } else {
+                    return Err(anyhow!("Struct '{}' not found in module '{}'", struct_name, module_name));
+                }
+            } else {
+                return Err(anyhow!("Module '{}' not found", module_name));
+            }
+            
+   
+        }
+        
+        
         _ => { bail!("Not implemented for type: {:?}", self) }
-        // QueryType::MoveValue { account, module_name, struct_name, key_name } => todo!(),
+       
 
     }
     }

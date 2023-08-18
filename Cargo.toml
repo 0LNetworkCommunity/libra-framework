@@ -84,11 +84,13 @@ anyhow = "1.0.70"
 async-trait = "0.1.68"
 base64 = "0.13.0"
 blst = "0.3.7"
+bytes = "1.0"
 byteorder = { version = "1.4.3", default-features = false }
 chrono = { version = "0.4.19", features = ["clock", "serde"] }
 # clap = { version = "4.2.7", features = ["derive", "env", "suggestions"] }
 clap = { version = "3.2.23", features = ["derive", "env", "suggestions"]}
 
+owo-colors = "1.2"
 colored = "2.0.0"
 console = "0.15.5"
 dialoguer = "0.10.4"

@@ -15,11 +15,16 @@ clap = { workspace = true }
 indoc = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
-colored = "2.0"
+colored = { workspace = true }
+owo-colors = { workspace = true }
+bytes = { workspace = true }
 
 libra-types = { workspace = true }
 
 zapatos-sdk = { workspace = true }
+
+move-binary-format = { workspace = true }
+move-core-types = { workspace = true }
 
 
 
