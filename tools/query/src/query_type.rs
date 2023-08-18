@@ -1,15 +1,14 @@
 use crate::{
-    account_queries::{self, get_account_balance_libra, get_tower_state},
-    query_view::get_view,
-    utils::{ colorize_json },
+    account_queries::{ get_account_balance_libra, get_tower_state},
+    query_view::{ fetch_and_display },
+    utils::{ colorize_and_print, print_colored_kv },
 
 };
 use anyhow::{bail, Result, anyhow};
-use owo_colors::OwoColorize;
 use indoc::indoc;
 use libra_types::exports::AuthenticationKey;
 use libra_types::type_extensions::client_ext::ClientExt;
-use serde_json::{ json, Value };
+use serde_json::Value;
 use zapatos_sdk::{rest_client::Client, types::account_address::AccountAddress};
 
 #[derive(Debug, clap::Subcommand)]
@@ -135,75 +134,59 @@ impl QueryType {
             None => Client::default().await?,
         };
 
-        match self {
+    match self {
         QueryType::Balance { account } => {
-          let res = get_account_balance_libra(&client, *account).await?;
-          Ok(json!(res.scaled()))
+            let json_data = get_account_balance_libra(&client, *account).await?;
+            let json_str = serde_json::to_string_pretty(&json_data)?;
+            match colorize_and_print(&json_str) {
+                Ok(_) => (), 
+                Err(err) => {
+                    eprintln!("Error colorizing JSON: {}", err);
+                    println!("{}", json_str); 
+                }
+            };
+            Ok(Value::String("Success".to_string()))
         },
         QueryType::Tower { account } => {
-          let res = get_tower_state(&client, *account).await?;
-          Ok(json!(res))
-
+            let tower_state = get_tower_state(&client, *account).await?;
+            let json_data = serde_json::to_value(tower_state)?;
+            let json_str = serde_json::to_string_pretty(&json_data)?;
+            match colorize_and_print(&json_str) {
+                Ok(_) => (), 
+                Err(err) => {
+                    eprintln!("Error colorizing JSON: {}", err);
+                    println!("{}", json_str); 
+                }
+            };
+            Ok(Value::String("Success".to_string()))
         },
-        QueryType::View {
-            function_id,
-            type_args,
-            args,
-        } => {
-            let res = get_view(&client, function_id, type_args.to_owned(), args.to_owned()).await?;
-            let json = json!({
-              "body": res
-            });
-            Ok(json)
-         },
+        QueryType::View { function_id, type_args, args } => {
+            let json = fetch_and_display(&client, function_id, type_args.to_owned(), args.to_owned()).await?;
+            Ok(Value::String("Success".to_string()))
+        },
         QueryType::Epoch => {
-            let res = get_view(&client, "0x1::reconfiguration::get_current_epoch", None, None).await?;
-            // let value = res.first().unwrap().to_owned();
-            let num: Vec<String> = serde_json::from_value(res)?;
-            let json = json!({
-              "epoch": num.first().unwrap().parse::<u64>()?,
-            });
-            Ok(json)
-        },
-        QueryType::LookupAddress { auth_key } => {
-          let addr = account_queries::lookup_originating_address(&client, auth_key.to_owned()).await?;
-
-          Ok(json!({
-            "address": addr
-          }))
+            let json = fetch_and_display(&client, "0x1::reconfiguration::get_current_epoch", None, None).await?;
+            Ok(Value::String("Success".to_string()))
         },
         QueryType::BlockHeight => {
-            let res = get_view(&client, "0x1::block::get_current_block_height", None, None).await?;
-            let num: Vec<String> = serde_json::from_value(res)?;
-            let json = json!({
-              "block": num.first().unwrap().parse::<u64>()?,
-            });
-            Ok(json)
+            let json = fetch_and_display(&client, "0x1::block::get_current_block_height", None, None).await?;
+            Ok(Value::String("Success".to_string()))
         },
         QueryType::Resources { account } => {
             let res = &client.get_account_resources(*account)
-            .await?
-            .into_inner()
-            .into_iter()
-            .map(|resource| {
-                let mut map = serde_json::Map::new();
-                map.insert(resource.resource_type.to_string(), resource.data);
-                serde_json::Value::Object(map)
-            })
-            .collect::<Vec<serde_json::Value>>();
-    
+                .await?
+                .into_inner()
+                .into_iter()
+                .map(|resource| {
+                    let mut map = serde_json::Map::new();
+                    map.insert(resource.resource_type.to_string(), resource.data);
+                    serde_json::Value::Object(map)
+                })
+                .collect::<Vec<serde_json::Value>>();
 
-        let json_str = serde_json::to_string_pretty(&res).expect("Failed to serialize to JSON");
-    
-
-        let colored_output = colorize_json(&json_str).unwrap_or_else(|err| {
-            eprintln!("Error colorizing JSON: {}", err);
-            json_str.to_string()
-        });
-
-        println!("{}", colored_output);
-        Ok(Value::String("Success".to_string()))
-
+            let json_str = serde_json::to_string_pretty(&res).expect("Failed to serialize to JSON");
+            colorize_and_print(&json_str)?;
+            Ok(Value::String("Success".to_string()))
         },
         QueryType::MoveValue { account, module_name, struct_name, key_name } => {
      
@@ -236,14 +219,13 @@ impl QueryType {
                         let account_parts: Vec<&str> = account_str.split("::").collect();
                         let account = account_parts.get(0).unwrap_or(&"Unknown");
                         
-                        println!("{} : {}", "account:".magenta().bold(), account.cyan());
-                        println!("{} : {}", "module_name:".magenta().bold(), module_name.cyan());
-                        println!("{} : {}", "module_struct:".magenta().bold(), struct_name.cyan());
+                        print_colored_kv("account", &account);
+                        print_colored_kv("module_name", &module_name);
+                        print_colored_kv("module_struct", &struct_name);
                         
 
                         let parsed_value = key_value.as_str().and_then(|s| s.parse::<i32>().ok()).unwrap_or_default();
-                        println!("{}: {}", key_name.magenta().bold(), parsed_value.to_string().cyan());
-                        
+                        print_colored_kv(key_name, &parsed_value.to_string());
 
                         Ok(Value::String("Success".to_string()))
                     } else {
