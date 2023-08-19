@@ -5445,25 +5445,13 @@ dependencies = [
 
 [[package]]
 name = "indicatif"
-version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7baab56125e25686df467fe470785512329883aab42696d661247aca2a2896e4"
-dependencies = [
- "console",
- "lazy_static 1.4.0",
- "number_prefix 0.3.0",
- "regex",
-]
-
-[[package]]
-name = "indicatif"
 version = "0.17.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b297dc40733f23a0e52728a58fa9489a5b7638a324932de16b41adc3ef80730"
 dependencies = [
  "console",
  "instant",
- "number_prefix 0.4.0",
+ "number_prefix",
  "portable-atomic",
  "unicode-width",
 ]
@@ -5909,7 +5897,7 @@ dependencies = [
  "chrono",
  "clap 4.3.23",
  "dialoguer",
- "indicatif 0.15.0",
+ "indicatif",
  "libra-config",
  "libra-framework",
  "libra-types",
@@ -6020,7 +6008,7 @@ dependencies = [
  "futures",
  "glob",
  "hex",
- "indicatif 0.15.0",
+ "indicatif",
  "move-core-types",
  "once_cell",
  "rand 0.7.3",
@@ -7272,12 +7260,6 @@ checksum = "2819ce041d2ee131036f4fc9d6ae7ae125a3a40e97ba64d04fe799ad9dabbb44"
 dependencies = [
  "libc",
 ]
-
-[[package]]
-name = "number_prefix"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "17b02fc0ff9a9e4b35b3342880f48e896ebf69f2967921fe8646bf5b7125956a"
 
 [[package]]
 name = "number_prefix"
@@ -8822,7 +8804,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b28d58e73c427061f46c801176f54349be3c1a2818cf549e1d9bcac37eef7bca"
 dependencies = [
  "hyper",
- "indicatif 0.17.6",
+ "indicatif",
  "log",
  "quick-xml 0.22.0",
  "regex",

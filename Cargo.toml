@@ -39,7 +39,6 @@ libra-types = { path = "types" }
 libra-txs = { path = "tools/txs" }
 libra-wallet = { path = "tools/wallet" }
 vdf = { git = "https://github.com/0o-de-lally/verifiable_delay.git" }
-# ol-types = { git = "https://github.com/simsekgokhan/libra.git", branch = "v6-dwh-err" }
 
 # Please do not add any test features here: they should be declared by the
 # individual crate.
@@ -172,7 +171,7 @@ httpmock = "0.6"
 hyper = { version = "0.14.18", features = ["full"] }
 hyper-tls = "0.5.0"
 include_dir = { version = "0.7.2", features = ["glob"] }
-indicatif = "0.15.0"
+# indicatif = "0.15.0"
 indoc = "1.0.6"
 inferno = "0.11.14"
 ipnet = "2.5.0"
@@ -324,7 +323,7 @@ dialoguer = "0.10.4"
 hex = { version = "0.4.3", features = ["serde"] } # //////// 0L ////////
 hmac = "0.10.1" # //////// 0L ////////
 # include_dir = { version = "0.7.2", features = ["glob"] }
-# indicatif = "0.15.0"
+indicatif = "0.17.3"
 # indoc = "1.0.6"
 
 # mirai-annotations = "1.12.0" # //////// 0L ////////
