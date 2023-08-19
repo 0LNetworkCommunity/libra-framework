@@ -33,7 +33,7 @@ module ol_framework::test_vdf{
 
     #[test]
     fun reject_invalid_proof() {
-    
+
     // sending an incorrect solution for this challenge
     let challenge = vdf_fixtures::easy_chal();
 
@@ -74,7 +74,7 @@ module ol_framework::test_vdf{
     #[test]
     #[expected_failure(abort_code = 10, location = 0x1::ol_native_vdf)]
     fun abort_large_security_param() {
-    
+
     // sending an incorrect solution for this challenge
     // This time we'll send the incorrect difficulty
     let challenge = vdf_fixtures::easy_chal();

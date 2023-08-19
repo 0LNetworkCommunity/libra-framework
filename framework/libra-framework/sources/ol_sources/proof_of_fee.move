@@ -482,6 +482,7 @@ module ol_framework::proof_of_fee {
   // ALL EYES ON THIS
   // Proof of Fee returns the current bid of the validator during the auction for upcoming epoch seats.
   // returns (current bid, expiration epoch)
+  #[view]
   public fun current_bid(node_addr: address): (u64, u64) acquires ProofOfFeeAuction {
     if (exists<ProofOfFeeAuction>(node_addr)) {
       let pof = borrow_global<ProofOfFeeAuction>(node_addr);
