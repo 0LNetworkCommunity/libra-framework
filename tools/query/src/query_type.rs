@@ -1,15 +1,17 @@
 use crate::{
-    account_queries::{ get_account_balance_libra, get_tower_state},
-    query_view::{ fetch_and_display },
-    utils::{ colorize_and_print, print_colored_kv },
-
+    account_queries::{get_account_balance_libra, get_tower_state},
+    query_view::fetch_and_display,
 };
-use anyhow::{bail, Result, anyhow};
+use anyhow::{anyhow, Result};
 use indoc::indoc;
 use libra_types::exports::AuthenticationKey;
 use libra_types::type_extensions::client_ext::ClientExt;
-use serde_json::Value;
 use zapatos_sdk::{rest_client::Client, types::account_address::AccountAddress};
+
+pub enum OutputType {
+    Json(String),
+    KeyValue(String),
+}
 
 #[derive(Debug, clap::Subcommand)]
 pub enum QueryType {
@@ -128,123 +130,99 @@ pub enum QueryType {
 }
 
 impl QueryType {
-    pub async fn query_to_json(&self, client_opt: Option<Client>) -> Result<serde_json::Value> {
+    pub async fn query(&self, client_opt: Option<Client>) -> Result<OutputType> {
         let client = match client_opt {
             Some(c) => c,
             None => Client::default().await?,
         };
 
-    match self {
-        QueryType::Balance { account } => {
-            let json_data = get_account_balance_libra(&client, *account).await?;
-            let json_str = serde_json::to_string_pretty(&json_data)?;
-            match colorize_and_print(&json_str) {
-                Ok(_) => (), 
-                Err(err) => {
-                    eprintln!("Error colorizing JSON: {}", err);
-                    println!("{}", json_str); 
-                }
-            };
-            Ok(Value::String("Success".to_string()))
-        },
-        QueryType::Tower { account } => {
-            let tower_state = get_tower_state(&client, *account).await?;
-            let json_data = serde_json::to_value(tower_state)?;
-            let json_str = serde_json::to_string_pretty(&json_data)?;
-            match colorize_and_print(&json_str) {
-                Ok(_) => (), 
-                Err(err) => {
-                    eprintln!("Error colorizing JSON: {}", err);
-                    println!("{}", json_str); 
-                }
-            };
-            Ok(Value::String("Success".to_string()))
-        },
-        QueryType::View { function_id, type_args, args } => {
-            let json = fetch_and_display(&client, function_id, type_args.to_owned(), args.to_owned()).await?;
-            Ok(Value::String("Success".to_string()))
-        },
-        QueryType::Epoch => {
-            let json = fetch_and_display(&client, "0x1::reconfiguration::get_current_epoch", None, None).await?;
-            Ok(Value::String("Success".to_string()))
-        },
-        QueryType::BlockHeight => {
-            let json = fetch_and_display(&client, "0x1::block::get_current_block_height", None, None).await?;
-            Ok(Value::String("Success".to_string()))
-        },
-        QueryType::Resources { account } => {
-            let res = &client.get_account_resources(*account)
-                .await?
-                .into_inner()
-                .into_iter()
-                .map(|resource| {
-                    let mut map = serde_json::Map::new();
-                    map.insert(resource.resource_type.to_string(), resource.data);
-                    serde_json::Value::Object(map)
-                })
-                .collect::<Vec<serde_json::Value>>();
+        match self {
+            QueryType::Balance { account } => {
+                let json_data = get_account_balance_libra(&client, *account).await?;
+                Ok(OutputType::Json(serde_json::to_string_pretty(&json_data)?))
+            },
+            QueryType::Tower { account } => {
+                let tower_state = get_tower_state(&client, *account).await?;
+                let json_data = serde_json::to_value(tower_state)?;
+                Ok(OutputType::Json(serde_json::to_string_pretty(&json_data)?))
+            },
+            QueryType::View { function_id, type_args, args } => {
+                let json_data = fetch_and_display(&client, function_id, type_args.to_owned(), args.to_owned()).await?;
+                Ok(OutputType::Json(serde_json::to_string_pretty(&json_data)?))
+            },
+            QueryType::Epoch => {
+                let json_data = fetch_and_display(&client, "0x1::reconfiguration::get_current_epoch", None, None).await?;
+                Ok(OutputType::Json(serde_json::to_string_pretty(&json_data)?))
+            },
+            QueryType::BlockHeight => {
+                let json_data = fetch_and_display(&client, "0x1::block::get_current_block_height", None, None).await?;
+                Ok(OutputType::Json(serde_json::to_string_pretty(&json_data)?))
+            },
+            QueryType::Resources { account } => {
+                let res = client.get_account_resources(*account)
+                    .await?
+                    .into_inner()
+                    .into_iter()
+                    .map(|resource| {
+                        let mut map = serde_json::Map::new();
+                        map.insert(resource.resource_type.to_string(), resource.data);
+                        serde_json::Value::Object(map)
+                    })
+                    .collect::<Vec<serde_json::Value>>();
+                Ok(OutputType::Json(serde_json::to_string_pretty(&res)?))
+            },
+            QueryType::MoveValue { account, module_name, struct_name, key_name } => {
+                let res = &client.get_account_resources(*account)
+                    .await?
+                    .into_inner()
+                    .into_iter()
+                    .map(|resource| {
+                        let mut map = serde_json::Map::new();
+                        map.insert(resource.resource_type.to_string(), resource.data);
+                        serde_json::Value::Object(map)
+                    })
+                    .collect::<Vec<serde_json::Value>>();
 
-            let json_str = serde_json::to_string_pretty(&res).expect("Failed to serialize to JSON");
-            colorize_and_print(&json_str)?;
-            Ok(Value::String("Success".to_string()))
-        },
-        QueryType::MoveValue { account, module_name, struct_name, key_name } => {
-     
-            let res = &client.get_account_resources(*account)
-            .await?
-            .into_inner()
-            .into_iter()
-            .map(|resource| {
-                let mut map = serde_json::Map::new();
-                map.insert(resource.resource_type.to_string(), resource.data);
-                serde_json::Value::Object(map)
-            })
-            .collect::<Vec<serde_json::Value>>();
-        
-            
-            let module_search_pattern = format!("::{}::", module_name);
+                let module_search_pattern = format!("::{}::", module_name);
 
-            let maybe_module_struct = res.iter().find(|value| {
-                if let Some(map) = value.as_object() {
-                    map.keys().any(|k| k.contains(&module_search_pattern) && k.ends_with(struct_name))
-                } else {
-                    false
-                }
-            });
-            
-            if let Some(module_struct) = maybe_module_struct {
-                if let Some(struct_data) = module_struct.as_object().and_then(|map| map.values().next()) {
-                    if let Some(key_value) = struct_data.get(key_name) {
-                        let account_str = module_struct.as_object().map_or("".to_string(), |map| map.keys().next().cloned().unwrap_or_else(|| "".to_string()));
-                        let account_parts: Vec<&str> = account_str.split("::").collect();
-                        let account = account_parts.get(0).unwrap_or(&"Unknown");
-                        
-                        print_colored_kv("account", &account);
-                        print_colored_kv("module_name", &module_name);
-                        print_colored_kv("module_struct", &struct_name);
-                        
-
-                        let parsed_value = key_value.as_str().and_then(|s| s.parse::<i32>().ok()).unwrap_or_default();
-                        print_colored_kv(key_name, &parsed_value.to_string());
-
-                        Ok(Value::String("Success".to_string()))
+                if let Some(module_struct) = res.iter().find(|value| {
+                    if let Some(map) = value.as_object() {
+                        map.keys().any(|k| k.contains(&module_search_pattern) && k.ends_with(struct_name))
                     } else {
-                        return Err(anyhow!("Key '{}' not found in struct '{}'", key_name, struct_name));
+                        false
+                    }
+                }) {
+                    if let Some(struct_data) = module_struct.as_object().and_then(|map| map.values().next()) {
+                        if let Some(key_value) = struct_data.get(key_name) {
+
+                            let parsed_value = key_value.as_str()
+                                .and_then(|s| s.parse::<i32>().ok())
+                                .unwrap_or_default();
+
+                            let output_json = serde_json::json!({
+                                "account": account,
+                                "module_name": module_name,
+                                "module_struct": struct_name,
+                                key_name: parsed_value
+                            });
+
+                            let output_str = serde_json::to_string_pretty(&output_json)?;
+                        
+
+                            Ok(OutputType::Json(output_str))
+                        } else {
+                            Err(anyhow!("Key '{}' not found in struct '{}'", key_name, struct_name))
+                        }
+                    } else {
+                        Err(anyhow!("Struct '{}' not found in module '{}'", struct_name, module_name))
                     }
                 } else {
-                    return Err(anyhow!("Struct '{}' not found in module '{}'", struct_name, module_name));
+                    Err(anyhow!("Module '{}' not found", module_name))
                 }
-            } else {
-                return Err(anyhow!("Module '{}' not found", module_name));
+            },
+            _ => {
+                Err(anyhow!("Not implemented for type: {:?}", self))
             }
-            
-   
         }
-        
-        
-        _ => { bail!("Not implemented for type: {:?}", self) }
-       
-
-    }
     }
 }

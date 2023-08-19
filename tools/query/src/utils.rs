@@ -1,8 +1,9 @@
 use serde_json::Value;
 use colored::Colorize;
+use anyhow::Context;
 
-pub fn colorize_and_print(json_str: &str) -> Result<(), serde_json::Error> {
-    let v: Value = serde_json::from_str(json_str)?;
+pub fn colorize_and_print(json_str: &str) -> anyhow::Result<()> {
+    let v: Value = serde_json::from_str(json_str).context("Failed to parse JSON string")?;
     let colored_json = colorize_value(&v, 0);
     println!("{}", colored_json);
     Ok(())
@@ -17,6 +18,10 @@ pub fn print_colored_kv(key: &str, value: &str) {
     println!("{} : {}", key.magenta().bold(), cleaned_value.cyan());
 }
 
+pub fn format_colored_kv(key: &str, value: &str) -> String {
+    format!("{}: {}", key.bright_yellow(), value.bright_green())
+}
+
 fn colorize_value(value: &Value, indent: usize) -> String {
     match value {
         Value::Object(map) => {
@@ -25,7 +30,7 @@ fn colorize_value(value: &Value, indent: usize) -> String {
                 let entry = format!(
                     "{}{}: {}",
                     " ".repeat(indent + 2),
-                    k.magenta(),
+                    k.purple(),
                     colorize_value(v, indent + 2)
                 );
                 entries.push(entry);
@@ -39,7 +44,7 @@ fn colorize_value(value: &Value, indent: usize) -> String {
                 .collect();
             format!("[\n{}\n{}]", elements.join(",\n"), " ".repeat(indent))
         }
-        Value::String(s) => s.magenta().to_string(),  
+        Value::String(s) => s.cyan().to_string(),  
         Value::Number(n) => n.to_string().cyan().to_string(),
         Value::Bool(b) => {
             if *b {
