@@ -6,7 +6,9 @@ use crate::{
 };
 use anyhow::{bail, Context};
 use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DisplayFromStr};
 use url::Url;
+
 use zapatos_crypto::ed25519::Ed25519PrivateKey;
 
 use std::{fs, io::Write, path::PathBuf, str::FromStr};
@@ -359,12 +361,14 @@ impl Default for AppCfg {
 }
 
 /// Information about the Chain to mined for
+#[serde_as]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Workspace {
     /// default profile. Will match the substring of a full address or the nickname
     #[serde(default)]
     pub default_profile: Option<String>,
     /// default chain network profile to use
+    #[serde_as(as = "DisplayFromStr")]
     pub default_chain_id: NamedChain,
 
     /// home directory of the diem node, may be the same as miner.
@@ -400,9 +404,11 @@ impl Default for Workspace {
 }
 
 /// Information about the Chain to mined for
+#[serde_as]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ChainInfo {
     /// Chain that this work is being committed to
+    #[serde_as(as = "DisplayFromStr")]
     pub chain_id: NamedChain,
 }
 

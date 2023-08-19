@@ -82,7 +82,7 @@ pub fn encode_genesis_change_set(
     )
     .unwrap();
     let id1 = HashValue::zero();
-    let mut session = move_vm.new_session(&data_cache, SessionId::genesis(id1));
+    let mut session = move_vm.new_session(&data_cache, SessionId::genesis(id1), true);
     // On-chain genesis process.
     initialize(
         &mut session,
@@ -94,6 +94,7 @@ pub fn encode_genesis_change_set(
     );
     initialize_features(&mut session);
 
+    // TODO: replace this
     initialize_aptos_coin(&mut session);
 
     initialize_on_chain_governance(&mut session, genesis_config);
@@ -122,33 +123,22 @@ pub fn encode_genesis_change_set(
 
     // Reconfiguration should happen after all on-chain invocations.
     emit_new_block_and_epoch_event(&mut session);
+    let configs = ChangeSetConfigs::unlimited_at_gas_feature_version(LATEST_GAS_FEATURE_VERSION);
+    let cs1 = session.finish(&mut (), &configs).unwrap();
 
-    let cs1 = session
-        .finish(
-            &mut (),
-            &ChangeSetConfigs::unlimited_at_gas_feature_version(LATEST_GAS_FEATURE_VERSION),
-        )
-        .unwrap();
-
+    // Publish the framework, using a different session id, in case both scripts creates tables
     let state_view = GenesisStateView::new();
     let data_cache = state_view.as_move_resolver();
 
-    // Publish the framework, using a different session id, in case both scripts creates tables
     let mut id2_arr = [0u8; 32];
     id2_arr[31] = 1;
     let id2 = HashValue::new(id2_arr);
-    let mut session = move_vm.new_session(&data_cache, SessionId::genesis(id2));
+    let mut session = move_vm.new_session(&data_cache, SessionId::genesis(id2), true);
     publish_framework(&mut session, framework);
-    let cs2 = session
-        .finish(
-            &mut (),
-            &ChangeSetConfigs::unlimited_at_gas_feature_version(LATEST_GAS_FEATURE_VERSION),
-        )
-        .unwrap();
+    let cs2 = session.finish(&mut (), &configs).unwrap();
+    let change_set = cs1.squash(cs2, &configs).unwrap();
 
-    let change_set_ext = cs1.squash(cs2).unwrap();
-
-    let (delta_change_set, change_set) = change_set_ext.into_inner();
+    let (write_set, delta_change_set, events) = change_set.unpack();
 
     // Publishing stdlib should not produce any deltas around aggregators and map to write ops and
     // not deltas. The second session only publishes the framework module bundle, which should not
@@ -158,12 +148,9 @@ pub fn encode_genesis_change_set(
         "non-empty delta change set in genesis"
     );
 
-    assert!(!change_set
-        .write_set()
-        .iter()
-        .any(|(_, op)| op.is_deletion()));
-    verify_genesis_write_set(change_set.events());
-
+    assert!(!write_set.iter().any(|(_, op)| op.is_deletion()));
+    verify_genesis_write_set(&events);
+    let change_set = ChangeSet::new(write_set, events);
     spin.finish_and_clear();
     change_set
 }
