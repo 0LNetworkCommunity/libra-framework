@@ -206,6 +206,7 @@ impl GenesisWizard {
     }
 
     fn git_setup(&mut self) -> anyhow::Result<()> {
+        let pb = ProgressBar::new(1000).with_style(OLProgress::spinner());
         let gh_client = Client::new(
             self.genesis_repo_org.clone(),
             self.repo_name.clone(),
@@ -230,12 +231,18 @@ impl GenesisWizard {
                 ))
                 .interact()
             {
-                Ok(true) => gh_client.fork_genesis_repo(&self.genesis_repo_org, &self.repo_name)?,
+                Ok(true) => {
+                    gh_client.fork_genesis_repo(&self.genesis_repo_org, &self.repo_name)?;
+                    // give it a few seconds after submitting. Otherwise will get a 500 error while the repo is being created
+                    thread::sleep(Duration::from_secs(5));
+                }
                 _ => bail!("no forked repo on your account, we need it to continue"),
             }
         } else {
             println!("Found a genesis repo on your account, we'll use that for registration.\n");
         }
+
+        pb.finish_and_clear();
         OLProgress::complete(&format!(
             "Forked the genesis repo from {}/{}",
             self.genesis_repo_org.clone(),
@@ -275,6 +282,7 @@ impl GenesisWizard {
             self.github_token.clone(),
             self.data_path.clone(),
         )?;
+
         pb.finish_and_clear();
 
         OLProgress::complete(&format!(
