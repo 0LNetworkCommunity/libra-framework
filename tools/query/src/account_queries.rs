@@ -1,10 +1,10 @@
-use serde_json::json;
 use libra_types::exports::AuthenticationKey;
 use libra_types::{
     legacy_types::tower::TowerProofHistoryView,
     move_resource::gas_coin::SlowWalletBalance,
     type_extensions::client_ext::{entry_function_id, ClientExt},
 };
+use serde_json::json;
 use zapatos_sdk::{
     rest_client::{aptos_api_types::ViewRequest, Client},
     types::account_address::AccountAddress,
@@ -33,7 +33,6 @@ pub async fn get_account_balance_libra(
 
     Ok(json)
 }
-
 
 pub async fn get_tower_state(
     client: &Client,

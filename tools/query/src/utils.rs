@@ -1,6 +1,6 @@
-use serde_json::Value;
-use colored::Colorize;
 use anyhow::Context;
+use colored::Colorize;
+use serde_json::Value;
 
 pub fn colorize_and_print(json_str: &str) -> anyhow::Result<()> {
     let v: Value = serde_json::from_str(json_str).context("Failed to parse JSON string")?;
@@ -10,7 +10,7 @@ pub fn colorize_and_print(json_str: &str) -> anyhow::Result<()> {
 }
 
 pub fn print_colored_kv(key: &str, value: &str) {
-    let cleaned_value = if value.starts_with("\"") && value.ends_with("\"") {
+    let cleaned_value = if value.starts_with('\"') && value.ends_with('\"') {
         &value[1..value.len() - 1]
     } else {
         value
@@ -40,11 +40,17 @@ fn colorize_value(value: &Value, indent: usize) -> String {
         Value::Array(arr) => {
             let elements: Vec<String> = arr
                 .iter()
-                .map(|v| format!("{}{}", " ".repeat(indent + 2), colorize_value(v, indent + 2)))
+                .map(|v| {
+                    format!(
+                        "{}{}",
+                        " ".repeat(indent + 2),
+                        colorize_value(v, indent + 2)
+                    )
+                })
                 .collect();
             format!("[\n{}\n{}]", elements.join(",\n"), " ".repeat(indent))
         }
-        Value::String(s) => s.cyan().to_string(),  
+        Value::String(s) => s.cyan().to_string(),
         Value::Number(n) => n.to_string().cyan().to_string(),
         Value::Bool(b) => {
             if *b {
@@ -53,10 +59,6 @@ fn colorize_value(value: &Value, indent: usize) -> String {
                 "false".red().to_string()
             }
         }
-        Value::Null => "null".cyan().to_string(),  
+        Value::Null => "null".cyan().to_string(),
     }
 }
-
-
-
-

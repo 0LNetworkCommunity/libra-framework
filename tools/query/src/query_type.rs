@@ -1,11 +1,12 @@
 use crate::{
-    account_queries::{get_account_balance_libra, get_tower_state},
+    account_queries::{get_account_balance_libra, get_tower_state, lookup_originating_address},
     query_view::fetch_and_display,
 };
 use anyhow::{anyhow, Result};
 use indoc::indoc;
 use libra_types::exports::AuthenticationKey;
 use libra_types::type_extensions::client_ext::ClientExt;
+use serde_json::json;
 use zapatos_sdk::{rest_client::Client, types::account_address::AccountAddress};
 
 pub enum OutputType {
@@ -140,26 +141,41 @@ impl QueryType {
             QueryType::Balance { account } => {
                 let json_data = get_account_balance_libra(&client, *account).await?;
                 Ok(OutputType::Json(serde_json::to_string_pretty(&json_data)?))
-            },
+            }
             QueryType::Tower { account } => {
                 let tower_state = get_tower_state(&client, *account).await?;
                 let json_data = serde_json::to_value(tower_state)?;
                 Ok(OutputType::Json(serde_json::to_string_pretty(&json_data)?))
-            },
-            QueryType::View { function_id, type_args, args } => {
-                let json_data = fetch_and_display(&client, function_id, type_args.to_owned(), args.to_owned()).await?;
+            }
+            QueryType::View {
+                function_id,
+                type_args,
+                args,
+            } => {
+                let json_data =
+                    fetch_and_display(&client, function_id, type_args.to_owned(), args.to_owned())
+                        .await?;
                 Ok(OutputType::Json(serde_json::to_string_pretty(&json_data)?))
-            },
+            }
             QueryType::Epoch => {
-                let json_data = fetch_and_display(&client, "0x1::reconfiguration::get_current_epoch", None, None).await?;
+                let json_data = fetch_and_display(
+                    &client,
+                    "0x1::reconfiguration::get_current_epoch",
+                    None,
+                    None,
+                )
+                .await?;
                 Ok(OutputType::Json(serde_json::to_string_pretty(&json_data)?))
-            },
+            }
             QueryType::BlockHeight => {
-                let json_data = fetch_and_display(&client, "0x1::block::get_current_block_height", None, None).await?;
+                let json_data =
+                    fetch_and_display(&client, "0x1::block::get_current_block_height", None, None)
+                        .await?;
                 Ok(OutputType::Json(serde_json::to_string_pretty(&json_data)?))
-            },
+            }
             QueryType::Resources { account } => {
-                let res = client.get_account_resources(*account)
+                let res = client
+                    .get_account_resources(*account)
                     .await?
                     .into_inner()
                     .into_iter()
@@ -170,9 +186,15 @@ impl QueryType {
                     })
                     .collect::<Vec<serde_json::Value>>();
                 Ok(OutputType::Json(serde_json::to_string_pretty(&res)?))
-            },
-            QueryType::MoveValue { account, module_name, struct_name, key_name } => {
-                let res = &client.get_account_resources(*account)
+            }
+            QueryType::MoveValue {
+                account,
+                module_name,
+                struct_name,
+                key_name,
+            } => {
+                let res = &client
+                    .get_account_resources(*account)
                     .await?
                     .into_inner()
                     .into_iter()
@@ -187,15 +209,19 @@ impl QueryType {
 
                 if let Some(module_struct) = res.iter().find(|value| {
                     if let Some(map) = value.as_object() {
-                        map.keys().any(|k| k.contains(&module_search_pattern) && k.ends_with(struct_name))
+                        map.keys()
+                            .any(|k| k.contains(&module_search_pattern) && k.ends_with(struct_name))
                     } else {
                         false
                     }
                 }) {
-                    if let Some(struct_data) = module_struct.as_object().and_then(|map| map.values().next()) {
+                    if let Some(struct_data) = module_struct
+                        .as_object()
+                        .and_then(|map| map.values().next())
+                    {
                         if let Some(key_value) = struct_data.get(key_name) {
-
-                            let parsed_value = key_value.as_str()
+                            let parsed_value = key_value
+                                .as_str()
                                 .and_then(|s| s.parse::<i32>().ok())
                                 .unwrap_or_default();
 
@@ -207,29 +233,34 @@ impl QueryType {
                             });
 
                             let output_str = serde_json::to_string_pretty(&output_json)?;
-                        
 
                             Ok(OutputType::Json(output_str))
                         } else {
-                            Err(anyhow!("Key '{}' not found in struct '{}'", key_name, struct_name))
+                            Err(anyhow!(
+                                "Key '{}' not found in struct '{}'",
+                                key_name,
+                                struct_name
+                            ))
                         }
                     } else {
-                        Err(anyhow!("Struct '{}' not found in module '{}'", struct_name, module_name))
+                        Err(anyhow!(
+                            "Struct '{}' not found in module '{}'",
+                            struct_name,
+                            module_name
+                        ))
                     }
                 } else {
                     Err(anyhow!("Module '{}' not found", module_name))
                 }
-            },
-            QueryType::LookupAddress { auth_key } => {
-                let addr = account_queries::lookup_originating_address(&client, auth_key.to_owned()).await?;
-      
-                Ok(json!({
-                  "address": addr
-                }))
-              },
-            _ => {
-                Err(anyhow!("Not implemented for type: {:?}", self))
             }
+            QueryType::LookupAddress { auth_key } => {
+                let addr =
+                    lookup_originating_address(&client, auth_key.to_owned())
+                        .await?;
+
+                        Ok(OutputType::Json(serde_json::to_string(&json!({ "address": addr }))?))
+                    }
+            _ => Err(anyhow!("Not implemented for type: {:?}", self)),
         }
     }
 }

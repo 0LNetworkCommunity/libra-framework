@@ -1,5 +1,5 @@
 use crate::{
-    query_type::{ QueryType, OutputType },
+    query_type::{OutputType, QueryType},
     utils::colorize_and_print,
 };
 use anyhow::Result;
@@ -25,10 +25,10 @@ impl QueryCli {
         match output {
             OutputType::Json(json_str) => {
                 colorize_and_print(&json_str)?;
-            },
+            }
             OutputType::KeyValue(kv_str) => {
                 println!("{}", kv_str);
-            },
+            }
         }
         Ok(())
     }
