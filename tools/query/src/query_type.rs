@@ -254,12 +254,12 @@ impl QueryType {
                 }
             }
             QueryType::LookupAddress { auth_key } => {
-                let addr =
-                    lookup_originating_address(&client, auth_key.to_owned())
-                        .await?;
+                let addr = lookup_originating_address(&client, auth_key.to_owned()).await?;
 
-                        Ok(OutputType::Json(serde_json::to_string(&json!({ "address": addr }))?))
-                    }
+                Ok(OutputType::Json(serde_json::to_string(&json!({
+                    "address": addr
+                }))?))
+            }
             _ => Err(anyhow!("Not implemented for type: {:?}", self)),
         }
     }
