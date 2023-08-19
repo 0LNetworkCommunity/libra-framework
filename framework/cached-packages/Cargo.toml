@@ -14,7 +14,7 @@ rust-version = { workspace = true }
 
 [dependencies]
 # Note the generated SDK code uses hard coded `aptos-types`
-aptos-types = { git = "https://github.com/0o-de-lally/zapatos.git", rev = "3e524a2d"}
+aptos-types = { git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2"}
 
 # libra-framework = { workspace = true }
 bcs = { workspace = true }
