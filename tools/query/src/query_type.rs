@@ -220,6 +220,13 @@ impl QueryType {
                     Err(anyhow!("Module '{}' not found", module_name))
                 }
             },
+            QueryType::LookupAddress { auth_key } => {
+                let addr = account_queries::lookup_originating_address(&client, auth_key.to_owned()).await?;
+      
+                Ok(json!({
+                  "address": addr
+                }))
+              },
             _ => {
                 Err(anyhow!("Not implemented for type: {:?}", self))
             }
