@@ -49,7 +49,7 @@ jobs:
         ls -l $ZAPATOS_BIN_PATH
 
     # Move framework tests
-    - name: genesis
+    - name: move framework
       working-directory: ./framework/libra-framework
       run: $ZAPATOS_BIN_PATH/aptos move test
       continue-on-error: true
