@@ -71,13 +71,19 @@ jobs:
     - name: setup env
       uses: 0o-de-lally/libra-v7/.github/actions/build_env@ci
 
-    - name: Install zapatos-node (for smoke tests)
+    - name: install zapatos-node (for smoke tests)
       run: >
-        wget -O $ZAPATOS_BIN_PATH/aptos-node https://github.com/0o-de-lally/zapatos/releases/download/v0.0.1/aptos-node &&
+        wget -O $ZAPATOS_BIN_PATH/aptos-node https://github.com/0o-de-lally/zapatos/releases/latest/download/aptos-node &&
         sudo chmod 755 $ZAPATOS_BIN_PATH/aptos-node &&
         echo $ZAPATOS_BIN_PATH &&
         ls -l $ZAPATOS_BIN_PATH
 
+    - name: install zapatos (for move tests)
+      run: >
+        wget -O $ZAPATOS_BIN_PATH/aptos-node https://github.com/0o-de-lally/zapatos/releases/latest/download/aptos &&
+        sudo chmod 755 $ZAPATOS_BIN_PATH/aptos &&
+        echo $ZAPATOS_BIN_PATH &&
+        ls -l $ZAPATOS_BIN_PATH
 
     # Tools tests
     - name: genesis
