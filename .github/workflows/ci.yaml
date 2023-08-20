@@ -80,7 +80,7 @@ jobs:
 
     - name: install zapatos (for move tests)
       run: >
-        wget -O $ZAPATOS_BIN_PATH/aptos-node https://github.com/0o-de-lally/zapatos/releases/latest/download/aptos &&
+        wget -O $ZAPATOS_BIN_PATH/aptos https://github.com/0o-de-lally/zapatos/releases/latest/download/aptos &&
         sudo chmod 755 $ZAPATOS_BIN_PATH/aptos &&
         echo $ZAPATOS_BIN_PATH &&
         ls -l $ZAPATOS_BIN_PATH
