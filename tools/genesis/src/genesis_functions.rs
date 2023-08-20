@@ -8,7 +8,7 @@ use libra_types::{
     ol_progress::OLProgress,
 };
 use move_core_types::{
-    resolver::MoveResolver,
+    // resolver::MoveResolver,
     value::{serialize_values, MoveValue},
 };
 use zapatos_types::account_config::CORE_CODE_ADDRESS;
@@ -16,7 +16,7 @@ use zapatos_vm::move_vm_ext::SessionExt;
 use zapatos_vm_genesis::exec_function;
 
 pub fn genesis_migrate_all_users(
-    session: &mut SessionExt<impl MoveResolver>,
+    session: &mut SessionExt,
     user_recovery: &[LegacyRecovery],
     supply_settings: &SupplySettings,
 ) -> anyhow::Result<()> {
@@ -92,7 +92,7 @@ pub fn genesis_migrate_all_users(
 }
 
 pub fn genesis_migrate_one_user(
-    session: &mut SessionExt<impl MoveResolver>,
+    session: &mut SessionExt,
     user_recovery: &LegacyRecovery,
     split_factor: f64,
     _escrow_pct: f64,
@@ -142,7 +142,7 @@ pub fn genesis_migrate_one_user(
 }
 
 pub fn genesis_migrate_slow_wallet(
-    session: &mut SessionExt<impl MoveResolver>,
+    session: &mut SessionExt,
     user_recovery: &LegacyRecovery,
     split_factor: f64,
 ) -> anyhow::Result<()> {
@@ -180,7 +180,7 @@ pub fn genesis_migrate_slow_wallet(
 }
 
 pub fn genesis_migrate_infra_escrow(
-    session: &mut SessionExt<impl MoveResolver>,
+    session: &mut SessionExt,
     user_recovery: &LegacyRecovery,
     escrow_pct: f64,
 ) -> anyhow::Result<()> {
@@ -216,7 +216,7 @@ pub fn genesis_migrate_infra_escrow(
 }
 
 pub fn genesis_migrate_tower_state(
-    session: &mut SessionExt<impl MoveResolver>,
+    session: &mut SessionExt,
     user_recovery: &LegacyRecovery,
 ) -> anyhow::Result<()> {
     if user_recovery.account.is_none()
@@ -258,7 +258,7 @@ pub fn genesis_migrate_tower_state(
 }
 
 pub fn genesis_migrate_ancestry(
-    session: &mut SessionExt<impl MoveResolver>,
+    session: &mut SessionExt,
     user_recovery: &LegacyRecovery,
 ) -> anyhow::Result<()> {
     if user_recovery.account.is_none()
@@ -308,7 +308,7 @@ pub fn genesis_migrate_ancestry(
 /// Since we are minting for each account to convert account balances there may be a rounding difference from target. Add those micro cents into the transaction fee account.
 /// Note: we could have minted one giant coin and then split it, however there's no place to store in on chain without repurposing accounts (ie. system accounts by design do no hold any funds, only the transaction_fee contract can temporarily hold an aggregatable coin which by design can only be fully withdrawn (not split)). So the rounding mint is less elegant, but practical.
 pub fn rounding_mint(
-    session: &mut SessionExt<impl MoveResolver>,
+    session: &mut SessionExt,
     supply_settings: &SupplySettings,
 ) {
     let serialized_values = serialize_values(&vec![
