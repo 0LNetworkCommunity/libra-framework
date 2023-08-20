@@ -280,9 +280,8 @@ pub fn genesis_migrate_ancestry(
         .iter()
         .map(|el| {
             let acc_str = el.to_string();
-            let new_addr_type =
-                AccountAddress::from_hex_literal(&format!("0x{}", acc_str)).unwrap();
-            new_addr_type
+            
+            AccountAddress::from_hex_literal(&format!("0x{}", acc_str)).unwrap()
         })
         .collect();
 

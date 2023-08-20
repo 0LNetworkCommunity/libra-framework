@@ -15,7 +15,7 @@ pub async fn init_val_config_files(
     let info = swarm.aptos_public_info_for_node(nth);
     let url: Url = info.url().parse().unwrap();
 
-    let node = swarm.validators().into_iter().next().unwrap();
+    let node = swarm.validators().next().unwrap();
     let np = NetworkPlaylist::testing(Some(url));
     let mut app_cfg = AppCfg::init_app_configs(
         AuthenticationKey::ed25519(&node.account_private_key().as_ref().unwrap().public_key()),
