@@ -119,9 +119,7 @@ impl ClientExt for Client {
         )?
         .unwrap_or_default();
         let rest_url = profile.rest_url.context("Rest url is not set")?;
-        Ok(Client::new(
-            Url::from_str(&rest_url).unwrap(),
-        ))
+        Ok(Client::new(Url::from_str(&rest_url).unwrap()))
     }
 
     // async fn get_account_balance_libra(&self, account: AccountAddress) -> Result<SlowWalletBalance> {

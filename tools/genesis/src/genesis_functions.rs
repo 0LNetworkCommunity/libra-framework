@@ -7,10 +7,7 @@ use libra_types::{
     legacy_types::legacy_recovery::{AccountRole, LegacyRecovery},
     ol_progress::OLProgress,
 };
-use move_core_types::{
-    // resolver::MoveResolver,
-    value::{serialize_values, MoveValue},
-};
+use move_core_types::value::{serialize_values, MoveValue};
 use zapatos_types::account_config::CORE_CODE_ADDRESS;
 use zapatos_vm::move_vm_ext::SessionExt;
 use zapatos_vm_genesis::exec_function;
@@ -307,10 +304,7 @@ pub fn genesis_migrate_ancestry(
 
 /// Since we are minting for each account to convert account balances there may be a rounding difference from target. Add those micro cents into the transaction fee account.
 /// Note: we could have minted one giant coin and then split it, however there's no place to store in on chain without repurposing accounts (ie. system accounts by design do no hold any funds, only the transaction_fee contract can temporarily hold an aggregatable coin which by design can only be fully withdrawn (not split)). So the rounding mint is less elegant, but practical.
-pub fn rounding_mint(
-    session: &mut SessionExt,
-    supply_settings: &SupplySettings,
-) {
+pub fn rounding_mint(session: &mut SessionExt, supply_settings: &SupplySettings) {
     let serialized_values = serialize_values(&vec![
         MoveValue::Signer(CORE_CODE_ADDRESS),
         MoveValue::U64(supply_settings.scale_supply() as u64),
