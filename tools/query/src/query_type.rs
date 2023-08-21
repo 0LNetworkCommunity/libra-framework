@@ -103,18 +103,24 @@ pub enum QueryType {
     SyncDelay,
     /// Get transaction history
     Txs {
-        #[clap(short, long)]
-        /// account to query txs of
+        #[clap(
+            short = 'a',
+            long = "account",
+            help = "Account to query transactions for"
+        )]
         account: AccountAddress,
-        #[clap(long)]
-        /// get transactions after this height
-        txs_height: Option<u64>,
-        #[clap(long)]
-        /// limit how many txs
-        txs_count: Option<u64>,
-        #[clap(long)]
-        /// filter by type
-        txs_type: Option<String>,
+        #[clap(
+            short = 's',
+            long = "start",
+            help = "Starting sequence number for transactions"
+        )]
+        start: Option<u64>,
+        #[clap(
+            short = 'l',
+            long = "limit",
+            help = "Limit the number of transactions to fetch"
+        )]
+        limit: Option<u64>,
     },
     /// Get events
     Events {
@@ -329,6 +335,18 @@ impl QueryType {
                     "sync-delay": sync_delay
                 }))?))
             }
+            QueryType::Txs {
+                account,
+                start,
+                limit,
+            } => {
+                let txns = client
+                    .get_account_transactions(*account, *start, *limit)
+                    .await?;
+                let transactions = txns.into_inner();
+                let json_data = serde_json::to_value(transactions)?;
+                Ok(OutputType::Json(serde_json::to_string_pretty(&json_data)?))
+            }
             QueryType::Events {
                 account,
                 struct_tag,
@@ -343,7 +361,6 @@ impl QueryType {
                 let json_data = serde_json::to_value(events.into_inner())?;
                 Ok(OutputType::Json(serde_json::to_string_pretty(&json_data)?))
             }
-            _ => Err(anyhow!("Not implemented for type: {:?}", self)),
         }
     }
 }
