@@ -6,7 +6,7 @@ use crate::{
 };
 use anyhow::{bail, Context};
 use serde::{Deserialize, Serialize};
-use serde_with::{DisplayFromStr, serde_as};
+use serde_with::{serde_as, DisplayFromStr};
 use url::Url;
 
 use zapatos_crypto::ed25519::Ed25519PrivateKey;

@@ -3,8 +3,8 @@ use crate::exports::{Client, NamedChain};
 use anyhow::bail;
 use futures::{stream::FuturesUnordered, StreamExt};
 use rand::{seq::SliceRandom, thread_rng};
+use serde_with::{serde_as, DisplayFromStr};
 use url::Url;
-use serde_with::{DisplayFromStr, serde_as};
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
 pub struct HostProfile {
