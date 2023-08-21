@@ -38,9 +38,6 @@ module ol_framework::tower_state {
     /// Not testnet
     const ENOT_TESTNET: u64 = 10;
 
-
-
-
     /// A list of all miners' addresses
     // reset at epoch boundary
     struct TowerList has key {
@@ -93,7 +90,6 @@ module ol_framework::tower_state {
     ///     TODO does this actually only apply to validators?
     /// `contiguous_epochs_mining`: the number of contiguous
     ///     epochs the miner has been mining above threshold
-    ///     TODO does this actually only apply to validators?
     /// `epochs_since_last_account_creation`: the number of epochs since
     ///     the miner last created a new account
     struct TowerProofHistory has key {
@@ -103,7 +99,6 @@ module ol_framework::tower_state {
         count_proofs_in_epoch: u64,
         epochs_mining: u64,
         contiguous_epochs_mining: u64,
-        // epochs_since_last_account_creation: u64
     }
 
     struct VDFDifficulty has key {
@@ -484,7 +479,7 @@ module ol_framework::tower_state {
       // NOTE: For now we are not changing the vdf security params.
       if (testnet::is_testnet()) {
         // VDF proofs must be even numbers.
-        let rng =  toy_rng(3, 2);
+        let rng = toy_rng(3, 2);
         if (rng > 0) {
           rng = rng * 2;
         };
@@ -868,7 +863,7 @@ module ol_framework::tower_state {
     // Note: Used only in tests
     public fun test_epoch_reset_counter(vm: &signer) acquires TowerCounter {
       assert!(testnet::is_testnet(), error::invalid_state(ENOT_TESTNET));
-      system_addresses::assert_vm(vm);
+      system_addresses::assert_ol(vm);
       let state = borrow_global_mut<TowerCounter>(@ol_framework);
       state.lifetime_proofs = 0;
       state.lifetime_validator_proofs = 0;

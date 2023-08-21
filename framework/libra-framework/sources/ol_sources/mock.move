@@ -18,6 +18,8 @@ module ol_framework::mock {
   use ol_framework::gas_coin::{Self, GasCoin};
   use diem_framework::transaction_fee;
   use ol_framework::ol_account;
+  use ol_framework::tower_state;
+  use ol_framework::vdf_fixtures;
   // #[test_only]
   // use diem_std::debug::print;
 
@@ -69,6 +71,26 @@ module ol_framework::mock {
         i = i + 1;
       };
 
+    }
+
+    //////// TOWER ///////
+    #[test_only]
+    public fun tower_default() {
+      let vals = stake::get_current_validators();
+
+      let i = 0;
+      while (i < vector::length(&vals)) {
+
+        let addr = vector::borrow(&vals, i);
+        tower_state::test_helper_init_val(
+            &account::create_signer_for_test(*addr),
+            vdf_fixtures::weso_alice_0_easy_chal(),
+            vdf_fixtures::weso_alice_0_easy_sol(),
+            vdf_fixtures::easy_difficulty(),
+            vdf_fixtures::security_weso(),
+        );
+        i = i + 1;
+      };
     }
 
     //////// PROOF OF FEE ////////

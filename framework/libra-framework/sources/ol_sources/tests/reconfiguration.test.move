@@ -101,9 +101,6 @@ module ol_framework::test_reconfiguration {
 
       let vals = stake::get_current_validators();
 
-
-
-
       assert!(vector::length(&vals) == 5, 7357003);
   }
 }
