@@ -116,20 +116,44 @@ pub enum QueryType {
         /// filter by type
         txs_type: Option<String>,
     },
-    // /// Get events
-    // Events {
-    //     /// account to query events
-    //     account: AccountAddress,
-    //     /// switch for sent or received events.
-    //     sent_or_received: bool,
-    //     /// what event sequence number to start querying from, if DB does not have all.
-    //     seq_start: Option<u64>,
-    // },
-    // /// get the validator's on-chain configuration, including network discovery addresses
-    // ValConfig {
-    //     /// the account of the validator
-    //     account: AccountAddress,
-    // },
+    /// Get events
+    Events {
+        /// Account to query events
+        #[clap(short, long)]
+        account: AccountAddress,
+        /// Move module struct tag
+        #[clap(
+            short = 't',
+            long = "tag",
+            help = "Move module struct tag eg 0x1::stake::StakePool"
+        )]
+        struct_tag: String,
+        /// Field name in the struct
+        #[clap(
+            short = 'f',
+            long = "field",
+            help = "Field name in the struct eg join_validator_set_events"
+        )]
+        field_name: String,
+        /// Starting sequence number for events
+        #[clap(
+            short = 's',
+            long = "start",
+            help = "Starting sequence number for events"
+        )]
+        start: Option<u64>,
+        /// Limit the number of events to fetch
+        #[clap(
+            short = 'l',
+            long = "limit",
+            help = "Limit the number of events to fetch"
+        )]
+        limit: Option<u16>,
+    }, // /// get the validator's on-chain configuration, including network discovery addresses
+       // ValConfig {
+       //     /// the account of the validator
+       //     account: AccountAddress,
+       // },
 }
 
 impl QueryType {
@@ -304,6 +328,20 @@ impl QueryType {
                 Ok(OutputType::Json(serde_json::to_string(&json!({
                     "sync-delay": sync_delay
                 }))?))
+            }
+            QueryType::Events {
+                account,
+                struct_tag,
+                field_name,
+                start,
+                limit,
+            } => {
+                let events = client
+                    .get_account_events(*account, struct_tag, field_name, *start, *limit)
+                    .await?;
+
+                let json_data = serde_json::to_value(events.into_inner())?;
+                Ok(OutputType::Json(serde_json::to_string_pretty(&json_data)?))
             }
             _ => Err(anyhow!("Not implemented for type: {:?}", self)),
         }
