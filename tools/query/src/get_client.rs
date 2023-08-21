@@ -1,30 +1,39 @@
-// TODO:
-
-use anyhow::Context;
-
 use libra_types::legacy_types::app_cfg::AppCfg;
+use std::path::PathBuf;
+use url::Url;
 use zapatos_sdk::rest_client::Client;
 use zapatos_sdk::types::chain_id::ChainId;
 
+const LOCAL_NODE_URL: &str = "http://localhost:8080";
+
+pub fn get_libra_config_path() -> PathBuf {
+    let mut config_path = dirs::home_dir().expect("Failed to get home directory");
+    config_path.push(".libra");
+    config_path.push("libra.yaml");
+    config_path
+}
+
 pub async fn find_good_upstream(app_cfg: &AppCfg) -> anyhow::Result<(Client, ChainId)> {
-    // check if we can connect to this client, or exit
+    //check playlist
+    if let Some(playlist) = app_cfg.network_playlist.first() {
+        for node in &playlist.nodes {
+            let client = Client::new(node.url.clone());
+            if let Ok(res) = client.get_index().await {
+                return Ok((client, ChainId::new(res.inner().chain_id)));
+            }
+        }
+    }
+    Err(anyhow::anyhow!("No working nodes found in upstream_nodes"))
+}
 
-  // TODO: iterate through all and find a valid one.
-
-  //   let metadata =  future::select_all(
-  //     nodes.into_iter().find_map(|u| async {
-  //         let client = Client::new(u);
-  //         match client.get_index().await {
-  //             Ok(index) => Some((client, index.inner().chain_id)),
-  //             _ => None,
-  //         }
-  //     })
-  // ).await?;
-  
-  let nodes = &app_cfg.profile.upstream_nodes;
-  let url = nodes.iter().next().context("cannot get url")?;
-  let client = Client::new(url.to_owned());
-  let res = client.get_index().await?;
-  
-  Ok((client, ChainId::new(res.inner().chain_id)))
+pub async fn get_local_node() -> anyhow::Result<(Client, ChainId)> {
+    let local_url = Url::parse(LOCAL_NODE_URL)?;
+    let client = Client::new(local_url);
+    match client.get_index().await {
+        Ok(res) => Ok((client, ChainId::new(res.inner().chain_id))),
+        Err(e) => Err(anyhow::anyhow!(
+            "Failed to connect to the local node: {}",
+            e
+        )),
+    }
 }

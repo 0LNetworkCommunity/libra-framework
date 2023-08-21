@@ -1,10 +1,12 @@
 use crate::{
     account_queries::{get_account_balance_libra, get_tower_state, lookup_originating_address},
+    get_client::{find_good_upstream, get_libra_config_path, get_local_node},
     query_view::fetch_and_display,
 };
 use anyhow::{anyhow, Result};
 use indoc::indoc;
 use libra_types::exports::AuthenticationKey;
+use libra_types::legacy_types::app_cfg::AppCfg;
 use libra_types::type_extensions::client_ext::ClientExt;
 use serde_json::json;
 use zapatos_sdk::{rest_client::Client, types::account_address::AccountAddress};
@@ -187,6 +189,13 @@ impl QueryType {
                     .collect::<Vec<serde_json::Value>>();
                 Ok(OutputType::Json(serde_json::to_string_pretty(&res)?))
             }
+            QueryType::LookupAddress { auth_key } => {
+                let addr = lookup_originating_address(&client, auth_key.to_owned()).await?;
+
+                Ok(OutputType::Json(serde_json::to_string(&json!({
+                    "address": addr
+                }))?))
+            }
             QueryType::MoveValue {
                 account,
                 module_name,
@@ -253,11 +262,47 @@ impl QueryType {
                     Err(anyhow!("Module '{}' not found", module_name))
                 }
             }
-            QueryType::LookupAddress { auth_key } => {
-                let addr = lookup_originating_address(&client, auth_key.to_owned()).await?;
+            QueryType::SyncDelay {} => {
+                let config_path = get_libra_config_path();
+                let app_cfg = AppCfg::load(Some(config_path))?;
+
+                // Get the block height from the local node
+                let (local_client, _) = get_local_node().await?;
+                let local_client_res = local_client
+                    .view_ext("0x1::block::get_current_block_height", None, None)
+                    .await?;
+
+                let block_height_value_local = &local_client_res[0];
+                let local_client_block_height =
+                    if let Some(block_height_str) = block_height_value_local.as_str() {
+                        block_height_str.parse::<u64>()?
+                    } else {
+                        return Err(anyhow::anyhow!(
+                            "Block height from local client is not a string"
+                        ));
+                    };
+
+                // Get the block height from the working upstream
+                let (upstream_client, _) = find_good_upstream(&app_cfg).await?;
+                let upstream_client_res = upstream_client
+                    .view_ext("0x1::block::get_current_block_height", None, None)
+                    .await?;
+
+                let block_height_value_upstream = &upstream_client_res[0];
+                let upstream_client_block_height =
+                    if let Some(block_height_str) = block_height_value_upstream.as_str() {
+                        block_height_str.parse::<u64>()?
+                    } else {
+                        return Err(anyhow::anyhow!(
+                            "Block height from upstream client is not a string"
+                        ));
+                    };
+
+                // Calculate the sync delay
+                let sync_delay = upstream_client_block_height - local_client_block_height;
 
                 Ok(OutputType::Json(serde_json::to_string(&json!({
-                    "address": addr
+                    "sync-delay": sync_delay
                 }))?))
             }
             _ => Err(anyhow!("Not implemented for type: {:?}", self)),
