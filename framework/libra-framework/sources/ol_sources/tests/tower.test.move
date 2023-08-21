@@ -5,18 +5,27 @@ module ol_framework::test_tower {
   // use std::debug::print;
   use ol_framework::tower_state;
   use ol_framework::vdf_fixtures;
+  use ol_framework::testnet;
 
 
   #[test(root = @ol_framework)]
   fun epoch_changes_difficulty(root: signer) {
-    mock::ol_test_genesis(&root);
+    mock::genesis_n_vals(&root, 4);
     mock::ol_initialize_coin(&root);
+
+    mock::tower_default(); // make all the validators initialize towers
+    // because we need randomness for the toy rng
+
 
     let (diff, sec) = tower_state::get_difficulty();
 
     // check the state started with the testnet defaults
     assert!(diff==100, 735701);
     assert!(sec==512, 735702);
+
+    // need to unset testnet for the epoch adjustment to run (ignored on testnet, or id==4)
+    // dont'do this before because tower_default uses testnet difficulty
+    testnet::unset(&root);
 
     mock::trigger_epoch(&root);
 
