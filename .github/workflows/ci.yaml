@@ -51,38 +51,38 @@ jobs:
 
     # Move framework tests
     - name: move framework
+      if: always()
       working-directory: ./framework/libra-framework
       run: $ZAPATOS_BIN_PATH/aptos move test
-      continue-on-error: true
-
-    # Tools tests
-    - name: genesis
-      working-directory: ./tools/genesis
-      run: cargo test --no-fail-fast
-      continue-on-error: true
-
-    - name: wallet
-      working-directory: ./tools/wallet
-      run: cargo test --no-fail-fast
-      continue-on-error: true
-
-    - name: query
-      working-directory: ./tools/query
-      run: cargo test --no-fail-fast
-      continue-on-error: true
-
-    - name: tower
-      working-directory: ./tools/tower
-      run: cargo test --no-fail-fast
-      continue-on-error: true
-
-    - name: txs
-      working-directory: ./tools/txs
-      run: cargo test --no-fail-fast
-      continue-on-error: true
 
     # Check test suite meta tests
     - name: smoke-tests
+      if: always()
       working-directory: ./smoke-tests
       run: cargo test --no-fail-fast
-      continue-on-error: true
+
+    # Tools tests
+    - name: genesis
+      if: always()
+      working-directory: ./tools/genesis
+      run: cargo test --no-fail-fast
+
+    - name: wallet
+      if: always()
+      working-directory: ./tools/wallet
+      run: cargo test --no-fail-fast
+
+    - name: query
+      if: always()
+      working-directory: ./tools/query
+      run: cargo test --no-fail-fast
+
+    - name: tower
+      if: always()
+      working-directory: ./tools/tower
+      run: cargo test --no-fail-fast
+
+    - name: txs
+      if: always()
+      working-directory: ./tools/txs
+      run: cargo test --no-fail-fast
