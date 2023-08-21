@@ -1,11 +1,11 @@
 #[test_only]
 // NOTE: the vdf natives live in Zapatos: /Users/lucas/code/rust/zapatos/diem-move/framework/src/natives/ol_native_vdf.rs
 module ol_framework::test_vdf{
-    use ol_framework::vdf_fixtures;
-    use ol_framework::ol_native_vdf;
+  use ol_framework::vdf_fixtures;
+  use ol_framework::ol_native_vdf;
 
-    #[test]
-    fun verify_valid_proof() {
+  #[test]
+  fun verify_valid_proof() {
     // this tests the happy case, that a proof is submitted with all three correct parameters.
     let challenge = vdf_fixtures::easy_chal();
       // Generate solutions with:
@@ -31,8 +31,35 @@ module ol_framework::test_vdf{
     assert!(ol_native_vdf::verify(&challenge, &proof, vdf_fixtures::hard_difficulty(), vdf_fixtures::security(), false), 1);
   }
 
-    #[test]
-    fun reject_invalid_proof() {
+  #[test]
+  fun verify_valid_weso_proof() {
+    // this tests the happy case, that a proof is submitted with all three correct parameters.
+    let challenge = vdf_fixtures::weso_alice_0_easy_chal();
+      // Generate solutions with:
+      // cd ./verfiable_delay/vdf-cli && cargo run --release -- -l=512 aa 100 -tpietrzak
+      // NOTE: the -l=512 is important because this is the security paramater of 0L miner.
+    let proof = vdf_fixtures::weso_alice_0_easy_sol();
+    let weso = true;
+    assert!(
+      ol_native_vdf::verify(
+        &challenge,
+        &proof,
+        vdf_fixtures::easy_difficulty(),
+        vdf_fixtures::security_weso(),
+        weso
+      ), 7357001);
+
+    let challenge = vdf_fixtures::alice_0_hard_chal();
+    // Generate solutions with:
+    // cd ./verfiable_delay/vdf-cli && cargo run --release -- -l=512 aa 100 -tpietrzak
+    // NOTE: the -l=512 is important because this is the security paramater of 0L miner.
+    let proof = vdf_fixtures::alice_0_hard_sol();
+
+    assert!(ol_native_vdf::verify(&challenge, &proof, vdf_fixtures::hard_difficulty(), vdf_fixtures::security(), false), 1);
+  }
+
+  #[test]
+  fun reject_invalid_proof() {
 
     // sending an incorrect solution for this challenge
     let challenge = vdf_fixtures::easy_chal();
@@ -50,9 +77,6 @@ module ol_framework::test_vdf{
       );
 
     assert!(!is_good, 7357001);
-
-
-
     // This time we'll send the incorrect difficulty
     let challenge = vdf_fixtures::easy_chal();
     // this is the CORRECT solution
