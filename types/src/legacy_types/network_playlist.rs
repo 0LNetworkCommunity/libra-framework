@@ -4,6 +4,7 @@ use anyhow::bail;
 use futures::{stream::FuturesUnordered, StreamExt};
 use rand::{seq::SliceRandom, thread_rng};
 use url::Url;
+use serde_with::{DisplayFromStr, serde_as};
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
 pub struct HostProfile {
@@ -62,10 +63,11 @@ impl HostProfile {
         Ok(self)
     }
 }
-
+#[serde_as]
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
 pub struct NetworkPlaylist {
     #[serde(default = "default_chain")]
+    #[serde_as(as = "DisplayFromStr")]
     pub chain_id: NamedChain,
     pub nodes: Vec<HostProfile>,
 }
