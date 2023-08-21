@@ -13,10 +13,18 @@ module ol_framework::vdf_fixtures {
       512
     }
 
+    public fun hard_difficulty_weso(): u64 {
+      3000000000
+    }
+
+    public fun security_weso(): u64 {
+      350
+    }
+
     public fun easy_chal(): vector<u8> {
       x"aa"
     }
-    
+
     public fun easy_sol(): vector<u8>  {
       x"0051dfa4c3341c18197b72f5e5eecc693eb56d408206c206d90f5ec7a75f833b2affb0ea7280d4513ab8351f39362d362203ff3e41882309e7900f470f0a27eeeb7b"
     }
