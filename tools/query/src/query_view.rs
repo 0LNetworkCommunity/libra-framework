@@ -22,12 +22,16 @@ pub async fn fetch_and_display(
     let json = serde_json::to_value(res)?;
 
     if let Value::Array(arr) = &json {
-        if arr.len() == 1 {
-            let key = function_id.split("::").last().unwrap_or("Result");
+        let key = function_id.split("::").last().unwrap_or("Result");
 
+        // If the array has only one item, return it under the derived key.
+        if arr.len() == 1 {
             return Ok(json!({ key: &arr[0] }));
         }
+
+        // If the array has more than one item, return the entire array under the derived key.
+        return Ok(json!({ key: arr }));
     }
 
-    Ok(Value::String("Success".to_string()))
+    Ok(Value::String("Unable to parse response".to_string()))
 }
