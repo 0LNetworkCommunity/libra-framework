@@ -26,11 +26,11 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
-    # - name: Setup tmate session
-    #   uses: mxschmitt/action-tmate@v3
-    #   with:
-    #     detached: true
-    #   timeout-minutes: 15
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+      with:
+        detached: true
+      timeout-minutes: 15
 
 
     - name: setup env
