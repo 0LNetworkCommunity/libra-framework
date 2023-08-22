@@ -52,7 +52,7 @@ jobs:
     - name: move framework
       if: always()
       working-directory: ./framework/libra-framework
-      run: $ZAPATOS_BIN_PATH/aptos move test
+      run: ${{github.workspace}}/aptos move test
 
     # Check test suite meta tests
     - name: smoke-tests # NOTE: needs working ZAPATOS_NODE_BIN_PATH
