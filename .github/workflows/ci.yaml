@@ -12,11 +12,12 @@ on:
   pull_request:
     types:
       - opened
+      - synchronize
     branches:
       - 'release**'
       - 'main'
 env:
-  ZAPATOS_BIN_PATH: ${{github.workspace}}
+  ZAPATOS_NODE_BIN_PATH: ${{github.workspace}}/aptos-node
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
 
@@ -37,17 +38,15 @@ jobs:
 
     - name: install zapatos-node (for smoke tests)
       run: >
-        wget -O $ZAPATOS_BIN_PATH/aptos-node https://github.com/0o-de-lally/zapatos/releases/latest/download/aptos-node &&
-        sudo chmod 755 $ZAPATOS_BIN_PATH/aptos-node &&
-        echo $ZAPATOS_BIN_PATH &&
-        ls -l $ZAPATOS_BIN_PATH
+        wget -O $ZAPATOS_NODE_BIN_PATH https://github.com/0o-de-lally/zapatos/releases/latest/download/aptos-node &&
+        sudo chmod 755 $ZAPATOS_NODE_BIN_PATH &&
+        echo $ZAPATOS_NODE_BIN_PATH &&
+        ls -l $ZAPATOS_NODE_BIN_PATH
 
     - name: install zapatos (for move tests)
       run: >
-        wget -O $ZAPATOS_BIN_PATH/aptos https://github.com/0o-de-lally/zapatos/releases/latest/download/aptos &&
-        sudo chmod 755 $ZAPATOS_BIN_PATH/aptos &&
-        echo $ZAPATOS_BIN_PATH &&
-        ls -l $ZAPATOS_BIN_PATH
+        wget -O ${{github.workspace}}/aptos https://github.com/0o-de-lally/zapatos/releases/latest/download/aptos &&
+        sudo chmod 755 ${{github.workspace}}/aptos
 
     # Move framework tests
     - name: move framework
@@ -56,7 +55,7 @@ jobs:
       run: $ZAPATOS_BIN_PATH/aptos move test
 
     # Check test suite meta tests
-    - name: smoke-tests
+    - name: smoke-tests # NOTE: needs working ZAPATOS_NODE_BIN_PATH
       if: always()
       working-directory: ./smoke-tests
       run: cargo test --no-fail-fast
