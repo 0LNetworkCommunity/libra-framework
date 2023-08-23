@@ -198,7 +198,7 @@ dependencies = [
 [[package]]
 name = "aptos"
 version = "2.0.2"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-api-types",
@@ -280,7 +280,7 @@ dependencies = [
 [[package]]
 name = "aptos-accumulator"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-crypto",
@@ -290,7 +290,7 @@ dependencies = [
 [[package]]
 name = "aptos-aggregator"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-crypto",
@@ -308,7 +308,7 @@ dependencies = [
 [[package]]
 name = "aptos-api"
 version = "0.2.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-api-types",
@@ -349,7 +349,7 @@ dependencies = [
 [[package]]
 name = "aptos-api-types"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-config",
@@ -376,7 +376,7 @@ dependencies = [
 [[package]]
 name = "aptos-backup-cli"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-backup-service",
@@ -423,7 +423,7 @@ dependencies = [
 [[package]]
 name = "aptos-backup-service"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-crypto",
@@ -445,7 +445,7 @@ dependencies = [
 [[package]]
 name = "aptos-bitvec"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "serde 1.0.171",
  "serde_bytes",
@@ -454,7 +454,7 @@ dependencies = [
 [[package]]
 name = "aptos-block-executor"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-aggregator",
@@ -479,7 +479,7 @@ dependencies = [
 [[package]]
 name = "aptos-block-partitioner"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-crypto",
@@ -499,7 +499,7 @@ dependencies = [
 [[package]]
 name = "aptos-bounded-executor"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "futures",
  "tokio",
@@ -508,7 +508,7 @@ dependencies = [
 [[package]]
 name = "aptos-build-info"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "shadow-rs",
 ]
@@ -516,7 +516,7 @@ dependencies = [
 [[package]]
 name = "aptos-cached-packages"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-framework",
  "aptos-types",
@@ -529,7 +529,7 @@ dependencies = [
 [[package]]
 name = "aptos-channels"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-infallible",
@@ -541,7 +541,7 @@ dependencies = [
 [[package]]
 name = "aptos-cli-common"
 version = "1.0.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anstyle",
  "clap 4.3.23",
@@ -551,7 +551,7 @@ dependencies = [
 [[package]]
 name = "aptos-compression"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-logger",
  "aptos-metrics-core",
@@ -563,7 +563,7 @@ dependencies = [
 [[package]]
 name = "aptos-config"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-crypto",
@@ -593,7 +593,7 @@ dependencies = [
 [[package]]
 name = "aptos-consensus"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-bitvec",
@@ -655,7 +655,7 @@ dependencies = [
 [[package]]
 name = "aptos-consensus-notifications"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-crypto",
  "aptos-runtimes",
@@ -670,7 +670,7 @@ dependencies = [
 [[package]]
 name = "aptos-consensus-types"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-bitvec",
@@ -693,7 +693,7 @@ dependencies = [
 [[package]]
 name = "aptos-crash-handler"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-logger",
  "backtrace",
@@ -705,7 +705,7 @@ dependencies = [
 [[package]]
 name = "aptos-crypto"
 version = "0.0.3"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-crypto-derive",
@@ -742,7 +742,7 @@ dependencies = [
 [[package]]
 name = "aptos-crypto-derive"
 version = "0.0.3"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "proc-macro2 1.0.66",
  "quote 1.0.33",
@@ -752,7 +752,7 @@ dependencies = [
 [[package]]
 name = "aptos-data-client"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-config",
  "aptos-crypto",
@@ -779,7 +779,7 @@ dependencies = [
 [[package]]
 name = "aptos-data-streaming-service"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-channels",
  "aptos-config",
@@ -805,7 +805,7 @@ dependencies = [
 [[package]]
 name = "aptos-db"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-accumulator",
@@ -853,7 +853,7 @@ dependencies = [
 [[package]]
 name = "aptos-db-indexer"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-config",
@@ -879,7 +879,7 @@ dependencies = [
 [[package]]
 name = "aptos-db-tool"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-backup-cli",
@@ -903,7 +903,7 @@ dependencies = [
 [[package]]
 name = "aptos-debugger"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-crypto",
@@ -934,7 +934,7 @@ dependencies = [
 [[package]]
 name = "aptos-enum-conversion-derive"
 version = "0.0.3"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "proc-macro2 1.0.66",
  "quote 1.0.33",
@@ -944,7 +944,7 @@ dependencies = [
 [[package]]
 name = "aptos-event-notifications"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-channels",
  "aptos-id-generator",
@@ -961,7 +961,7 @@ dependencies = [
 [[package]]
 name = "aptos-executor"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-block-partitioner",
@@ -992,7 +992,7 @@ dependencies = [
 [[package]]
 name = "aptos-executor-test-helpers"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-cached-packages",
@@ -1016,7 +1016,7 @@ dependencies = [
 [[package]]
 name = "aptos-executor-types"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-block-partitioner",
@@ -1037,7 +1037,7 @@ dependencies = [
 [[package]]
 name = "aptos-fallible"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "thiserror",
 ]
@@ -1045,7 +1045,7 @@ dependencies = [
 [[package]]
 name = "aptos-faucet-core"
 version = "2.0.1"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-config",
@@ -1079,7 +1079,7 @@ dependencies = [
 [[package]]
 name = "aptos-faucet-metrics-server"
 version = "2.0.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-logger",
@@ -1094,7 +1094,7 @@ dependencies = [
 [[package]]
 name = "aptos-forge"
 version = "0.0.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "again",
  "anyhow",
@@ -1149,7 +1149,7 @@ dependencies = [
 [[package]]
 name = "aptos-framework"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-aggregator",
@@ -1215,7 +1215,7 @@ dependencies = [
 [[package]]
 name = "aptos-gas"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-framework",
@@ -1238,7 +1238,7 @@ dependencies = [
 [[package]]
 name = "aptos-gas-algebra-ext"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "move-core-types",
 ]
@@ -1246,7 +1246,7 @@ dependencies = [
 [[package]]
 name = "aptos-gas-profiling"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-framework",
@@ -1264,7 +1264,7 @@ dependencies = [
 [[package]]
 name = "aptos-genesis"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-cached-packages",
@@ -1290,7 +1290,7 @@ dependencies = [
 [[package]]
 name = "aptos-github-client"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-proxy",
  "serde 1.0.171",
@@ -1302,17 +1302,17 @@ dependencies = [
 [[package]]
 name = "aptos-global-constants"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 
 [[package]]
 name = "aptos-id-generator"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 
 [[package]]
 name = "aptos-indexer"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-api",
@@ -1351,7 +1351,7 @@ dependencies = [
 [[package]]
 name = "aptos-indexer-grpc-fullnode"
 version = "1.0.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-api",
@@ -1388,12 +1388,12 @@ dependencies = [
 [[package]]
 name = "aptos-infallible"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 
 [[package]]
 name = "aptos-inspection-service"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-build-info",
@@ -1417,7 +1417,7 @@ dependencies = [
 [[package]]
 name = "aptos-jellyfish-merkle"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-crypto",
@@ -1443,7 +1443,7 @@ dependencies = [
 [[package]]
 name = "aptos-keygen"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-crypto",
  "aptos-types",
@@ -1453,7 +1453,7 @@ dependencies = [
 [[package]]
 name = "aptos-language-e2e-tests"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-bitvec",
@@ -1491,7 +1491,7 @@ dependencies = [
 [[package]]
 name = "aptos-log-derive"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "proc-macro2 1.0.66",
  "quote 1.0.33",
@@ -1501,7 +1501,7 @@ dependencies = [
 [[package]]
 name = "aptos-logger"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-infallible",
  "aptos-log-derive",
@@ -1525,7 +1525,7 @@ dependencies = [
 [[package]]
 name = "aptos-mempool"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-bounded-executor",
@@ -1565,7 +1565,7 @@ dependencies = [
 [[package]]
 name = "aptos-mempool-notifications"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-runtimes",
  "aptos-types",
@@ -1579,7 +1579,7 @@ dependencies = [
 [[package]]
 name = "aptos-memsocket"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-infallible",
  "bytes",
@@ -1590,7 +1590,7 @@ dependencies = [
 [[package]]
 name = "aptos-metrics-core"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "prometheus",
@@ -1599,7 +1599,7 @@ dependencies = [
 [[package]]
 name = "aptos-move-stdlib"
 version = "0.1.1"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "hex",
@@ -1622,7 +1622,7 @@ dependencies = [
 [[package]]
 name = "aptos-moving-average"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "chrono",
 ]
@@ -1630,7 +1630,7 @@ dependencies = [
 [[package]]
 name = "aptos-mvhashmap"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-aggregator",
@@ -1645,7 +1645,7 @@ dependencies = [
 [[package]]
 name = "aptos-netcore"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-memsocket",
  "aptos-proxy",
@@ -1662,7 +1662,7 @@ dependencies = [
 [[package]]
 name = "aptos-network"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-bitvec",
@@ -1705,7 +1705,7 @@ dependencies = [
 [[package]]
 name = "aptos-network-builder"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-channels",
  "aptos-config",
@@ -1731,7 +1731,7 @@ dependencies = [
 [[package]]
 name = "aptos-network-checker"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-config",
@@ -1748,7 +1748,7 @@ dependencies = [
 [[package]]
 name = "aptos-network-discovery"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-channels",
@@ -1774,7 +1774,7 @@ dependencies = [
 [[package]]
 name = "aptos-node"
 version = "1.6.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-api",
@@ -1840,7 +1840,7 @@ dependencies = [
 [[package]]
 name = "aptos-node-identity"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-types",
@@ -1852,7 +1852,7 @@ dependencies = [
 [[package]]
 name = "aptos-node-resource-metrics"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-build-info",
  "aptos-infallible",
@@ -1868,7 +1868,7 @@ dependencies = [
 [[package]]
 name = "aptos-num-variants"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "proc-macro2 1.0.66",
  "quote 1.0.33",
@@ -1878,7 +1878,7 @@ dependencies = [
 [[package]]
 name = "aptos-openapi"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "async-trait",
  "percent-encoding",
@@ -1891,7 +1891,7 @@ dependencies = [
 [[package]]
 name = "aptos-package-builder"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-framework",
@@ -1904,7 +1904,7 @@ dependencies = [
 [[package]]
 name = "aptos-peer-monitoring-service-client"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-channels",
  "aptos-config",
@@ -1930,7 +1930,7 @@ dependencies = [
 [[package]]
 name = "aptos-peer-monitoring-service-server"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-bounded-executor",
  "aptos-build-info",
@@ -1957,7 +1957,7 @@ dependencies = [
 [[package]]
 name = "aptos-peer-monitoring-service-types"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-config",
  "aptos-types",
@@ -1970,7 +1970,7 @@ dependencies = [
 [[package]]
 name = "aptos-proptest-helpers"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "crossbeam",
  "proptest",
@@ -1980,7 +1980,7 @@ dependencies = [
 [[package]]
 name = "aptos-protos"
 version = "1.0.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "pbjson",
  "prost",
@@ -1991,7 +1991,7 @@ dependencies = [
 [[package]]
 name = "aptos-proxy"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "ipnet",
 ]
@@ -1999,7 +1999,7 @@ dependencies = [
 [[package]]
 name = "aptos-push-metrics"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-logger",
  "aptos-metrics-core",
@@ -2010,7 +2010,7 @@ dependencies = [
 [[package]]
 name = "aptos-rate-limiter"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-infallible",
  "aptos-logger",
@@ -2024,7 +2024,7 @@ dependencies = [
 [[package]]
 name = "aptos-release-builder"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos",
@@ -2060,7 +2060,7 @@ dependencies = [
 [[package]]
 name = "aptos-resource-viewer"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-types",
@@ -2072,7 +2072,7 @@ dependencies = [
 [[package]]
 name = "aptos-rest-client"
 version = "0.0.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-api-types",
@@ -2098,7 +2098,7 @@ dependencies = [
 [[package]]
 name = "aptos-retrier"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-logger",
  "tokio",
@@ -2107,7 +2107,7 @@ dependencies = [
 [[package]]
 name = "aptos-rocksdb-options"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-config",
  "rocksdb",
@@ -2116,7 +2116,7 @@ dependencies = [
 [[package]]
 name = "aptos-rosetta"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-cached-packages",
@@ -2150,7 +2150,7 @@ dependencies = [
 [[package]]
 name = "aptos-runtimes"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "tokio",
 ]
@@ -2158,7 +2158,7 @@ dependencies = [
 [[package]]
 name = "aptos-safety-rules"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-config",
  "aptos-consensus-types",
@@ -2182,7 +2182,7 @@ dependencies = [
 [[package]]
 name = "aptos-schemadb"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-infallible",
@@ -2196,7 +2196,7 @@ dependencies = [
 [[package]]
 name = "aptos-scratchpad"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-crypto",
  "aptos-infallible",
@@ -2213,7 +2213,7 @@ dependencies = [
 [[package]]
 name = "aptos-sdk"
 version = "0.0.3"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-api-types",
@@ -2233,7 +2233,7 @@ dependencies = [
 [[package]]
 name = "aptos-sdk-builder"
 version = "0.2.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-types",
@@ -2252,7 +2252,7 @@ dependencies = [
 [[package]]
 name = "aptos-secure-net"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-logger",
  "aptos-metrics-core",
@@ -2264,7 +2264,7 @@ dependencies = [
 [[package]]
 name = "aptos-secure-storage"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-crypto",
@@ -2286,7 +2286,7 @@ dependencies = [
 [[package]]
 name = "aptos-short-hex-str"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "mirai-annotations",
  "serde 1.0.171",
@@ -2297,7 +2297,7 @@ dependencies = [
 [[package]]
 name = "aptos-speculative-state-helper"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-infallible",
@@ -2309,7 +2309,7 @@ dependencies = [
 [[package]]
 name = "aptos-state-sync-driver"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-config",
@@ -2342,7 +2342,7 @@ dependencies = [
 [[package]]
 name = "aptos-state-view"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-crypto",
@@ -2356,7 +2356,7 @@ dependencies = [
 [[package]]
 name = "aptos-storage-interface"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-crypto",
@@ -2383,7 +2383,7 @@ dependencies = [
 [[package]]
 name = "aptos-storage-service-client"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-channels",
  "aptos-config",
@@ -2397,7 +2397,7 @@ dependencies = [
 [[package]]
 name = "aptos-storage-service-server"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-bounded-executor",
  "aptos-channels",
@@ -2423,7 +2423,7 @@ dependencies = [
 [[package]]
 name = "aptos-storage-service-types"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-compression",
  "aptos-config",
@@ -2438,7 +2438,7 @@ dependencies = [
 [[package]]
 name = "aptos-telemetry"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-api",
@@ -2479,7 +2479,7 @@ dependencies = [
 [[package]]
 name = "aptos-telemetry-service"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-config",
@@ -2522,7 +2522,7 @@ dependencies = [
 [[package]]
 name = "aptos-temppath"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "hex",
  "rand 0.7.3",
@@ -2531,7 +2531,7 @@ dependencies = [
 [[package]]
 name = "aptos-time-service"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-infallible",
  "enum_dispatch",
@@ -2544,7 +2544,7 @@ dependencies = [
 [[package]]
 name = "aptos-transaction-emitter-lib"
 version = "0.0.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "again",
  "anyhow",
@@ -2575,7 +2575,7 @@ dependencies = [
 [[package]]
 name = "aptos-transaction-generator-lib"
 version = "0.0.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "again",
  "anyhow",
@@ -2605,7 +2605,7 @@ dependencies = [
 [[package]]
 name = "aptos-transactional-test-harness"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-api-types",
@@ -2637,7 +2637,7 @@ dependencies = [
 [[package]]
 name = "aptos-types"
 version = "0.0.3"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-bitvec",
@@ -2669,12 +2669,12 @@ dependencies = [
 [[package]]
 name = "aptos-utils"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 
 [[package]]
 name = "aptos-validator-interface"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-api-types",
@@ -2695,7 +2695,7 @@ dependencies = [
 [[package]]
 name = "aptos-vault-client"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-crypto",
  "base64 0.13.1",
@@ -2711,7 +2711,7 @@ dependencies = [
 [[package]]
 name = "aptos-vm"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-aggregator",
@@ -2758,7 +2758,7 @@ dependencies = [
 [[package]]
 name = "aptos-vm-genesis"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-cached-packages",
@@ -2779,7 +2779,7 @@ dependencies = [
 [[package]]
 name = "aptos-vm-logging"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "aptos-crypto",
  "aptos-logger",
@@ -2795,7 +2795,7 @@ dependencies = [
 [[package]]
 name = "aptos-vm-types"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-aggregator",
@@ -2808,7 +2808,7 @@ dependencies = [
 [[package]]
 name = "aptos-vm-validator"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-gas",
@@ -2823,7 +2823,7 @@ dependencies = [
 [[package]]
 name = "aptos-warp-webserver"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos-api-types",
@@ -6386,7 +6386,7 @@ checksum = "1fafa6961cabd9c63bcd77a45d7e3b7f3b552b70417831fb0f56db717e72407e"
 [[package]]
 name = "move-abigen"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6403,7 +6403,7 @@ dependencies = [
 [[package]]
 name = "move-binary-format"
 version = "0.0.3"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "arbitrary",
@@ -6420,12 +6420,12 @@ dependencies = [
 [[package]]
 name = "move-borrow-graph"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 
 [[package]]
 name = "move-bytecode-source-map"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6440,7 +6440,7 @@ dependencies = [
 [[package]]
 name = "move-bytecode-utils"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "move-binary-format",
@@ -6452,7 +6452,7 @@ dependencies = [
 [[package]]
 name = "move-bytecode-verifier"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "fail 0.4.0",
@@ -6466,7 +6466,7 @@ dependencies = [
 [[package]]
 name = "move-bytecode-viewer"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "clap 4.3.23",
@@ -6483,7 +6483,7 @@ dependencies = [
 [[package]]
 name = "move-cli"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6527,7 +6527,7 @@ dependencies = [
 [[package]]
 name = "move-command-line-common"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "difference",
@@ -6544,7 +6544,7 @@ dependencies = [
 [[package]]
 name = "move-compiler"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6573,7 +6573,7 @@ dependencies = [
 [[package]]
 name = "move-core-types"
 version = "0.0.4"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "arbitrary",
@@ -6595,7 +6595,7 @@ dependencies = [
 [[package]]
 name = "move-coverage"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6615,7 +6615,7 @@ dependencies = [
 [[package]]
 name = "move-disassembler"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "clap 4.3.23",
@@ -6633,7 +6633,7 @@ dependencies = [
 [[package]]
 name = "move-docgen"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "codespan",
@@ -6652,7 +6652,7 @@ dependencies = [
 [[package]]
 name = "move-errmapgen"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6666,7 +6666,7 @@ dependencies = [
 [[package]]
 name = "move-ir-compiler"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6685,7 +6685,7 @@ dependencies = [
 [[package]]
 name = "move-ir-to-bytecode"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "codespan-reporting",
@@ -6704,7 +6704,7 @@ dependencies = [
 [[package]]
 name = "move-ir-to-bytecode-syntax"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "hex",
@@ -6717,7 +6717,7 @@ dependencies = [
 [[package]]
 name = "move-ir-types"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "hex",
@@ -6731,7 +6731,7 @@ dependencies = [
 [[package]]
 name = "move-model"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "codespan",
@@ -6758,7 +6758,7 @@ dependencies = [
 [[package]]
 name = "move-package"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6794,7 +6794,7 @@ dependencies = [
 [[package]]
 name = "move-prover"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -6831,7 +6831,7 @@ dependencies = [
 [[package]]
 name = "move-prover-boogie-backend"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -6860,7 +6860,7 @@ dependencies = [
 [[package]]
 name = "move-resource-viewer"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6875,7 +6875,7 @@ dependencies = [
 [[package]]
 name = "move-stackless-bytecode"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "codespan",
  "codespan-reporting",
@@ -6901,7 +6901,7 @@ dependencies = [
 [[package]]
 name = "move-stdlib"
 version = "0.1.1"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "hex",
@@ -6924,7 +6924,7 @@ dependencies = [
 [[package]]
 name = "move-symbol-pool"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "once_cell",
  "serde 1.0.171",
@@ -6933,7 +6933,7 @@ dependencies = [
 [[package]]
 name = "move-table-extension"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6950,7 +6950,7 @@ dependencies = [
 [[package]]
 name = "move-transactional-test-runner"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "clap 4.3.23",
@@ -6981,7 +6981,7 @@ dependencies = [
 [[package]]
 name = "move-unit-test"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "better_any",
@@ -7011,7 +7011,7 @@ dependencies = [
 [[package]]
 name = "move-vm-runtime"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "better_any",
  "fail 0.4.0",
@@ -7028,7 +7028,7 @@ dependencies = [
 [[package]]
 name = "move-vm-test-utils"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "move-binary-format",
@@ -7042,7 +7042,7 @@ dependencies = [
 [[package]]
 name = "move-vm-types"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "bcs 0.1.4",
  "move-binary-format",
@@ -9284,7 +9284,7 @@ checksum = "f67ad224767faa3c7d8b6d91985b78e70a1324408abcb1cfcc2be4c06bc06043"
 [[package]]
 name = "smoke-test"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#1f7c159a0ed220458f8910ac1e047c30a76786b1"
+source = "git+https://github.com/0LNetworkCommunity/zapatos.git?branch=release-1.6.2#11e198d713f2374bb9e9bd9a393febc9659a6e45"
 dependencies = [
  "anyhow",
  "aptos",

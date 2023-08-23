@@ -17,7 +17,7 @@ on:
       - 'release**'
       - 'main'
 env:
-  ZAPATOS_NODE_BIN_PATH: ${{github.workspace}}/aptos-node
+  ZAPATOS_NODE_BIN_PATH: ${{github.workspace}}/target/release/aptos-node
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
 
@@ -26,22 +26,24 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
-    # - name: Setup tmate session
-    #   uses: mxschmitt/action-tmate@v3
-    #   with:
-    #     detached: true
-    #   timeout-minutes: 15
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+      with:
+        detached: true
+      timeout-minutes: 15
 
 
     - name: setup env
       uses: 0o-de-lally/libra-v7/.github/actions/build_env@ci
 
-    - name: install zapatos-node (for smoke tests)
-      run: >
-        wget -O $ZAPATOS_NODE_BIN_PATH https://github.com/0o-de-lally/zapatos/releases/latest/download/aptos-node &&
-        sudo chmod 755 $ZAPATOS_NODE_BIN_PATH &&
-        echo $ZAPATOS_NODE_BIN_PATH &&
-        ls -l $ZAPATOS_NODE_BIN_PATH
+    - name: build aptos node
+      run: cargo build --release -p aptos-node
+    # - name: install zapatos-node (for smoke tests)
+    #   run: >
+    #     wget -O $ZAPATOS_NODE_BIN_PATH https://github.com/0o-de-lally/zapatos/releases/latest/download/aptos-node &&
+    #     sudo chmod 755 $ZAPATOS_NODE_BIN_PATH &&
+    #     echo $ZAPATOS_NODE_BIN_PATH &&
+    #     ls -l $ZAPATOS_NODE_BIN_PATH
 
     - name: install zapatos (for move tests)
       run: >
