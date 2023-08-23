@@ -40,7 +40,7 @@ The Move Language repo became decoupled into its own repo on January 7th 2022. S
 
 On Feb 18th 2022, Facebook effectively ended maintenance of Diem at commit `50925260829a84d7a07b7f1922fcefc3b8147a2d`.
 
-0L V6 was based on that commit end-on-of-the-line Facebook commit `50925260829a84d7a07b7f1922fcefc3b8147a2d`.
+0L V6 was based on that end-of-the-line Diem code.
 
 Matonee's Aptos Platform forked Diem that commit. Compare: [aptos#50925](https://github.com/aptos-labs/aptos-core/commit/50925260829a84d7a07b7f1922fcefc3b8147a2d) and [diem#50925](https://github.com/diem/diem/commit/50925260829a84d7a07b7f1922fcefc3b8147a2d). More info here: https://github.com/aptos-labs/aptos-core/pull/14
 
