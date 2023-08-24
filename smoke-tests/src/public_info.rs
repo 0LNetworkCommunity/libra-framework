@@ -2,7 +2,7 @@ trait LibraPublicInfo {
     async fn ol_create_user_account(&self, address: AccountAddress) -> Result<(), Error>;
 }
 
-impl LibraPublicInfo for AptosPublicInfo {
+impl LibraPublicInfo for DiemPublicInfo {
     async fn ol_create_user_account(&self, address: AccountAddress) -> Result<(), Error> {
         let preimage = AuthenticationKeyPreimage::ed25519(pubkey);
         let auth_key = AuthenticationKey::from_preimage(&preimage);
