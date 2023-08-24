@@ -78,7 +78,7 @@ async fn can_upgrade() {
         true,
     );
 
-    let mut public_info: zapatos_forge::AptosPublicInfo = swarm.diem_public_info();
+    let mut public_info: zapatos_forge::DiemPublicInfo = swarm.diem_public_info();
 
     let txn = alice_account
         .sign_with_transaction_builder(public_info.transaction_factory().payload(payload));
