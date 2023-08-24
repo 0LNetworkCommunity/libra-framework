@@ -1,4 +1,3 @@
-
 use crate::move_resource::gas_coin::GAS_COIN_TYPE;
 use zapatos_types::state_store::state_key::StateKey;
 use zapatos_types::state_store::table::TableHandle;
