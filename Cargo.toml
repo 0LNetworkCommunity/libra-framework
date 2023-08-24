@@ -40,36 +40,36 @@ libra-txs = { path = "tools/txs" }
 libra-wallet = { path = "tools/wallet" }
 vdf = { git = "https://github.com/0o-de-lally/verifiable_delay.git" }
 
-zapatos-api-types = { package = "aptos-api-types", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2" }
-zapatos-debugger = { package = "aptos-debugger", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2" }
-zapatos-db = { package = "aptos-db", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2" }
-zapatos-forge = { package = "aptos-forge", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2" }
-zapatos-transactional-test-harness = { package = "aptos-transactional-test-harness", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2" }
-zapatos-smoke-test = { package = "smoke-test", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2" }
+zapatos-api-types = { package = "diem-api-types", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+zapatos-debugger = { package = "diem-debugger", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+zapatos-db = { package = "diem-db", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+zapatos-forge = { package = "diem-forge", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+zapatos-transactional-test-harness = { package = "diem-transactional-test-harness", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+zapatos-smoke-test = { package = "smoke-test", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 
-zapatos = { package = "aptos", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2" }
-zapatos-build-info= { package = "aptos-build-info", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2"}
-zapatos-node = { package = "aptos-node", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2" }
-zapatos-rest-client = { package = "aptos-rest-client", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2" }
-zapatos-sdk = { package = "aptos-sdk", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2" }
-zapatos-config = { package = "aptos-config", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2" }
-zapatos-crypto = { package = "aptos-crypto", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2"}
-zapatos-genesis = { package = "aptos-genesis", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2"}
-zapatos-keygen = { package = "aptos-keygen", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2" }
-zapatos-logger = { package = "aptos-logger", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2" }
-zapatos-types = { package = "aptos-types", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2"}
-zapatos-gas = { package = "aptos-gas", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2"}
-zapatos-vm = { package = "aptos-vm", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2"}
-zapatos-vm-genesis = { package = "aptos-vm-genesis", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2"}
-zapatos-executor= { package = "aptos-executor", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2"}
-zapatos-framework = { package = "aptos-framework", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2"}
-zapatos-cached-packages = { package = "aptos-cached-packages", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2" }
-zapatos-github-client = { package = "aptos-github-client", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2"}
-zapatos-release-builder = { package = "aptos-release-builder", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2"}
-zapatos-language-e2e-tests = { package = "aptos-language-e2e-tests", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2"}
-zapatos-state-view = { package = "aptos-state-view", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2"}
-zapatos-storage-interface= { package = "aptos-storage-interface", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2"}
-zapatos-temppath = { package = "aptos-temppath", git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2"}
+zapatos = { package = "diem", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+zapatos-build-info= { package = "diem-build-info", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
+zapatos-node = { package = "diem-node", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+zapatos-rest-client = { package = "diem-rest-client", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+zapatos-sdk = { package = "diem-sdk", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+zapatos-config = { package = "diem-config", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+zapatos-crypto = { package = "diem-crypto", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
+zapatos-genesis = { package = "diem-genesis", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
+zapatos-keygen = { package = "diem-keygen", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+zapatos-logger = { package = "diem-logger", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+zapatos-types = { package = "diem-types", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
+zapatos-gas = { package = "diem-gas", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
+zapatos-vm = { package = "diem-vm", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
+zapatos-vm-genesis = { package = "diem-vm-genesis", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
+zapatos-executor= { package = "diem-executor", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
+zapatos-framework = { package = "diem-framework", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
+zapatos-cached-packages = { package = "diem-cached-packages", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+zapatos-github-client = { package = "diem-github-client", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
+zapatos-release-builder = { package = "diem-release-builder", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
+zapatos-language-e2e-tests = { package = "diem-language-e2e-tests", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
+zapatos-state-view = { package = "diem-state-view", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
+zapatos-storage-interface= { package = "diem-storage-interface", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
+zapatos-temppath = { package = "diem-temppath", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
 
 
 ### External crate dependencies.
@@ -247,8 +247,8 @@ serde_json = { version = "1.0.81", features = ["preserve_order"] }
 serde_repr = "0.1"
 serde_merge = "0.1.3"
 serde-name = "0.1.1"
-serde-generate = { git = "https://github.com/aptos-labs/serde-reflection", rev = "839aed62a20ddccf043c08961cfe74875741ccba" }
-serde-reflection = { git = "https://github.com/aptos-labs/serde-reflection", rev = "839aed62a20ddccf043c08961cfe74875741ccba" }
+serde-generate = { git = "https://github.com/diem-labs/serde-reflection", rev = "839aed62a20ddccf043c08961cfe74875741ccba" }
+serde-reflection = { git = "https://github.com/diem-labs/serde-reflection", rev = "839aed62a20ddccf043c08961cfe74875741ccba" }
 serde_yaml = "0.8.24"
 shadow-rs = "0.16.2"
 smallvec = "1.8.0"
@@ -314,10 +314,10 @@ serde_with = "^3"
 # move-abigen = { path = "third_party/move/move-prover/move-abigen" }
 # move-binary-format = { path = "third_party/move/move-binary-format" }
 # ... see full list in Aptos repo
-move-binary-format = { git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2" }
-move-core-types = { git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2"}
-move-command-line-common = { git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2" }
-move-model = { git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2" }
+move-binary-format = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+move-core-types = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
+move-command-line-common = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+move-model = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 
 [profile.release]
 opt-level = 'z'   # Optimize for size.
