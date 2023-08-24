@@ -15,8 +15,8 @@ use zapatos::{
 };
 use zapatos_crypto::{ed25519::Ed25519PublicKey, ValidCryptoMaterialStringExt};
 use zapatos_rest_client::{
-    aptos_api_types::{AptosError, AptosErrorCode},
-    error::{AptosErrorResponse, RestError},
+    diem_api_types::{DiemError, DiemErrorCode},
+    error::{DiemErrorResponse, RestError},
     Client,
 };
 use zapatos_types::account_address::AccountAddress;
@@ -159,18 +159,18 @@ async fn _check_account_on_chain(client: &Client, address: AccountAddress) {
     let account_exists = match client.get_account(address).await {
         Ok(_) => true,
         Err(err) => {
-            if let RestError::Api(AptosErrorResponse {
+            if let RestError::Api(DiemErrorResponse {
                 error:
-                    AptosError {
-                        error_code: AptosErrorCode::ResourceNotFound,
+                    DiemError {
+                        error_code: DiemErrorCode::ResourceNotFound,
                         ..
                     },
                 ..
             })
-            | RestError::Api(AptosErrorResponse {
+            | RestError::Api(DiemErrorResponse {
                 error:
-                    AptosError {
-                        error_code: AptosErrorCode::AccountNotFound,
+                    DiemError {
+                        error_code: DiemErrorCode::AccountNotFound,
                         ..
                     },
                 ..

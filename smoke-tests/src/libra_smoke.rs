@@ -68,7 +68,7 @@ impl LibraSmoke {
         // mint one coin to the main validator.
         // the genesis does NOT mint by default to genesis validators
         // 10,000 coins with 6 decimals precision
-        let mut pub_info = swarm.aptos_public_info();
+        let mut pub_info = swarm.diem_public_info();
         helpers::mint_libra(&mut pub_info, addr, 10_000_000_000).await?;
 
         Ok(Self {
@@ -80,17 +80,17 @@ impl LibraSmoke {
     }
 
     pub async fn mint(&mut self, addr: AccountAddress, amount: u64) -> anyhow::Result<()> {
-        let mut pub_info = self.swarm.aptos_public_info();
+        let mut pub_info = self.swarm.diem_public_info();
 
         helpers::mint_libra(&mut pub_info, addr, amount).await?;
         Ok(())
     }
 
     pub fn client(&mut self) -> Client {
-        self.swarm.aptos_public_info().client().to_owned()
+        self.swarm.diem_public_info().client().to_owned()
     }
 
     pub fn marlon_rando(&mut self) -> LocalAccount {
-        self.swarm.aptos_public_info().random_account()
+        self.swarm.diem_public_info().random_account()
     }
 }

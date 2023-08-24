@@ -12,7 +12,7 @@ pub async fn init_val_config_files(
     nth: usize,
     dir: PathBuf,
 ) -> anyhow::Result<(LocalAccount, AppCfg)> {
-    let info = swarm.aptos_public_info_for_node(nth);
+    let info = swarm.diem_public_info_for_node(nth);
     let url: Url = info.url().parse().unwrap();
 
     let node = swarm.validators().next().unwrap();

@@ -11,7 +11,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
 use std::sync::Arc;
-use zapatos_db::AptosDB;
+use zapatos_db::DiemDB;
 use zapatos_executor::db_bootstrapper::generate_waypoint;
 use zapatos_executor::db_bootstrapper::maybe_bootstrap;
 use zapatos_state_view::account_with_state_view::AsAccountWithStateView;
@@ -25,7 +25,7 @@ use zapatos_types::account_view::AccountView;
 use zapatos_types::state_store::state_key::StateKey;
 use zapatos_types::state_store::state_key_prefix::StateKeyPrefix;
 use zapatos_types::transaction::Transaction;
-use zapatos_vm::AptosVM;
+use zapatos_vm::DiemVM;
 /// Compute the ledger given a genesis writeset transaction and return access to that ledger and
 /// the waypoint for that state.
 pub fn bootstrap_db_reader_from_gen_tx(
@@ -33,7 +33,7 @@ pub fn bootstrap_db_reader_from_gen_tx(
     // db_path: &Path,
 ) -> anyhow::Result<(DbReaderWriter, Waypoint)> {
     let tmp_dir = TempPath::new();
-    let db_rw = DbReaderWriter::new(AptosDB::new_for_test(&tmp_dir));
+    let db_rw = DbReaderWriter::new(DiemDB::new_for_test(&tmp_dir));
 
     assert!(db_rw
         .reader
@@ -43,8 +43,8 @@ pub fn bootstrap_db_reader_from_gen_tx(
 
     // Bootstrap an empty DB with the genesis tx, so it has state
     let waypoint =
-        generate_waypoint::<AptosVM>(&db_rw, genesis_transaction).expect("Should not fail.");
-    maybe_bootstrap::<AptosVM>(&db_rw, genesis_transaction, waypoint).unwrap();
+        generate_waypoint::<DiemVM>(&db_rw, genesis_transaction).expect("Should not fail.");
+    maybe_bootstrap::<DiemVM>(&db_rw, genesis_transaction, waypoint).unwrap();
 
     Ok((db_rw, waypoint))
 }
@@ -132,22 +132,22 @@ pub fn total_supply(db_reader: &Arc<dyn DbReader>) -> Option<u128> {
 #[test]
 fn test_db_rw() {
     use libra_types::exports::AccountAddress;
-    use zapatos_db::AptosDB;
+    use zapatos_db::DiemDB;
     use zapatos_executor::db_bootstrapper::maybe_bootstrap;
     use zapatos_temppath::TempPath;
     use zapatos_types::state_store::state_key::StateKey;
 
     let tmp_dir = TempPath::new().path().to_owned();
 
-    let temp_db = AptosDB::new_for_test(&tmp_dir);
+    let temp_db = DiemDB::new_for_test(&tmp_dir);
     let db_rw = DbReaderWriter::new(temp_db);
 
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/genesis.blob");
     let genesis_txn = read_blob_to_tx(p).unwrap();
 
     // Bootstrap empty DB.
-    let waypoint = generate_waypoint::<AptosVM>(&db_rw, &genesis_txn).expect("Should not fail.");
-    maybe_bootstrap::<AptosVM>(&db_rw, &genesis_txn, waypoint).unwrap();
+    let waypoint = generate_waypoint::<DiemVM>(&db_rw, &genesis_txn).expect("Should not fail.");
+    maybe_bootstrap::<DiemVM>(&db_rw, &genesis_txn, waypoint).unwrap();
 
     let ap = make_access_path(AccountAddress::ZERO, "slow_wallet", "SlowWalletList").unwrap();
     let version = db_rw.reader.get_latest_version().unwrap();

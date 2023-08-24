@@ -1,12 +1,3 @@
-// Copyright © Aptos Foundation
-// SPDX-License-Identifier: Apache-2.0
-
-// use crate::{
-//     access_path::AccessPath,
-//     state_store::{state_key::StateKey, table::TableHandle},
-//     utility_coin::APTOS_COIN_TYPE,
-//     write_set::{WriteOp, WriteSet, WriteSetMut},
-// };
 use crate::move_resource::gas_coin::GAS_COIN_TYPE;
 use zapatos_types::state_store::state_key::StateKey;
 use zapatos_types::state_store::table::TableHandle;
@@ -87,57 +78,4 @@ impl GasCoinInfoResource {
     pub fn supply(&self) -> &Option<OptionalAggregator> {
         &self.supply
     }
-
-    // /// Returns a new CoinInfo instance. Aggregator that tracks supply is
-    // /// initialized with random handle/key. This function is useful if we
-    // /// want to add CoinInfo to the fake data store.
-    // pub fn random(limit: u128) -> Self {
-    //     let handle = AccountAddress::random();
-    //     let key = AccountAddress::random();
-    //     CoinInfoResource::new(handle, key, limit)
-    // }
-
-    // /// Returns a new CoinInfo instance. This function is useful if we want to
-    // /// add CoinInfo to the fake data store.
-    // pub fn new(handle: AccountAddress, key: AccountAddress, limit: u128) -> Self {
-    //     let aggregator = OptionalAggregator {
-    //         aggregator: Some(Aggregator::new(handle, key, limit)),
-    //         integer: None,
-    //     };
-    //     Self {
-    //         name: "AptosCoin".to_string().into_bytes(),
-    //         symbol: "APT".to_string().into_bytes(),
-    //         decimals: 8,
-    //         supply: Some(aggregator),
-    //     }
-    // }
-
-    // /// Returns a writeset corresponding to the creation of CoinInfo in Move.
-    // /// This can be passed to data store for testing total supply.
-    // pub fn to_writeset(&self) -> anyhow::Result<WriteSet> {
-    //     let ap =
-    //         AccessPath::resource_access_path(AccountAddress::ONE, CoinInfoResource::struct_tag())?;
-
-    //     let value_state_key = self
-    //         .supply
-    //         .as_ref()
-    //         .unwrap()
-    //         .aggregator
-    //         .as_ref()
-    //         .unwrap()
-    //         .state_key();
-
-    //     // We store CoinInfo and aggregatable value separately.
-    //     let write_set = vec![
-    //         (
-    //             StateKey::access_path(ap),
-    //             WriteOp::Modification(bcs::to_bytes(&self).unwrap()),
-    //         ),
-    //         (
-    //             value_state_key,
-    //             WriteOp::Modification(bcs::to_bytes(&0_u128).unwrap()),
-    //         ),
-    //     ];
-    //     Ok(WriteSetMut::new(write_set).freeze().unwrap())
-    // }
 }
