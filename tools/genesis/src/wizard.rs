@@ -232,10 +232,10 @@ impl GenesisWizard {
                 .interact()
             {
                 Ok(true) => {
-                  gh_client.fork_genesis_repo(&self.genesis_repo_org, &self.repo_name)?;
-                  // give it a few seconds after submitting. Otherwise will get a 500 error while the repo is being created
-                  thread::sleep(Duration::from_secs(5));
-                },
+                    gh_client.fork_genesis_repo(&self.genesis_repo_org, &self.repo_name)?;
+                    // give it a few seconds after submitting. Otherwise will get a 500 error while the repo is being created
+                    thread::sleep(Duration::from_secs(5));
+                }
                 _ => bail!("no forked repo on your account, we need it to continue"),
             }
         } else {
