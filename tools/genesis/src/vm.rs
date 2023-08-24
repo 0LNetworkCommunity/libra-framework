@@ -20,7 +20,7 @@ use zapatos_vm::{
 };
 use zapatos_vm_genesis::{
     create_and_initialize_validators, default_gas_schedule, emit_new_block_and_epoch_event,
-    genesis_context::GenesisStateView, initialize, initialize_aptos_coin, initialize_features,
+    genesis_context::GenesisStateView, initialize, initialize_diem_coin, initialize_features,
     initialize_on_chain_governance, mainnet_genesis_config, publish_framework, set_genesis_end,
     validate_genesis_config, verify_genesis_write_set, GenesisConfiguration, Validator,
     GENESIS_KEYPAIR,
@@ -95,7 +95,7 @@ pub fn encode_genesis_change_set(
     initialize_features(&mut session);
 
     // TODO: replace this
-    initialize_aptos_coin(&mut session);
+    initialize_diem_coin(&mut session);
 
     initialize_on_chain_governance(&mut session, genesis_config);
 

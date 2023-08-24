@@ -4,4 +4,4 @@
 #![allow(unused_imports)]
 
 pub use crate::aptos_framework_sdk_builder::*;
-use aptos_types::{account_address::AccountAddress, transaction::TransactionPayload};
+use diem_types::{account_address::AccountAddress, transaction::TransactionPayload};

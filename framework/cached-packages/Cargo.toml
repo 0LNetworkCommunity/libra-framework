@@ -13,8 +13,8 @@ repository = { workspace = true }
 rust-version = { workspace = true }
 
 [dependencies]
-# Note the generated SDK code uses hard coded `aptos-types`
-aptos-types = { git = "https://github.com/0LNetworkCommunity/zapatos.git", branch = "release-1.6.2"}
+# Note the generated SDK code uses hard coded `diemtypes`
+diem-types = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
 
 # libra-framework = { workspace = true }
 bcs = { workspace = true }
