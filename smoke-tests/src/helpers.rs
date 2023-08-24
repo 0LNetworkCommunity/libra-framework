@@ -1,7 +1,7 @@
 use anyhow::bail;
 use libra_cached_packages::aptos_stdlib;
-use zapatos_forge::AptosPublicInfo;
-use zapatos_sdk::rest_client::{aptos::Balance, Client, Response};
+use zapatos_forge::DiemPublicInfo;
+use zapatos_sdk::rest_client::{diem::Balance, Client, Response};
 use zapatos_types::account_address::AccountAddress;
 
 /// Get the balance of the 0L coin. Client methods are hardcoded for vendor
@@ -24,7 +24,7 @@ pub async fn get_libra_balance(
 }
 
 pub async fn mint_libra(
-    public_info: &mut AptosPublicInfo<'_>,
+    public_info: &mut DiemPublicInfo<'_>,
     addr: AccountAddress,
     amount: u64,
 ) -> anyhow::Result<()> {
