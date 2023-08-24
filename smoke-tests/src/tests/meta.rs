@@ -9,7 +9,7 @@ use crate::libra_smoke::LibraSmoke;
 async fn meta_can_start_swarm() {
     let release = ReleaseTarget::Head.load_bundle().unwrap();
     let mut swarm = new_local_swarm_with_release(4, release).await;
-    let _info = swarm.aptos_public_info();
+    let _info = swarm.diem_public_info();
 }
 
 /// testing the LibraSmoke abstraction can load
@@ -17,7 +17,7 @@ async fn meta_can_start_swarm() {
 async fn meta_create_libra_smoke() {
     // let release = ReleaseTarget::Head.load_bundle().unwrap();
     // let mut swarm = new_local_swarm_with_release(4, release).await;
-    // let _info = swarm.aptos_public_info();
+    // let _info = swarm.diem_public_info();
     let _s = LibraSmoke::new(None)
         .await
         .expect("cannot start libra swarm");

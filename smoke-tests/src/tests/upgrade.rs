@@ -48,7 +48,7 @@ async fn can_upgrade() {
     // let pri_key = dave.account_private_key().as_ref().unwrap();
     // let mut dave_account = LocalAccount::new(dave.peer_id(), pri_key.private_key(), 0);
     // //////// end create accounts
-    let mut public_info = swarm.aptos_public_info();
+    let mut public_info = swarm.diem_public_info();
     mint_libra(&mut public_info, alice_account.address(), 10_000_000_000)
         .await
         .unwrap();
@@ -78,7 +78,7 @@ async fn can_upgrade() {
         true,
     );
 
-    let mut public_info: zapatos_forge::AptosPublicInfo = swarm.aptos_public_info();
+    let mut public_info: zapatos_forge::AptosPublicInfo = swarm.diem_public_info();
 
     let txn = alice_account
         .sign_with_transaction_builder(public_info.transaction_factory().payload(payload));

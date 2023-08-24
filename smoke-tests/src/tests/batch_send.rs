@@ -8,7 +8,7 @@ use zapatos_smoke_test::smoke_test_environment::new_local_swarm_with_release;
 async fn batch_send() {
     let release = ReleaseTarget::Head.load_bundle().unwrap();
     let mut swarm = new_local_swarm_with_release(4, release).await;
-    let mut info = swarm.aptos_public_info();
+    let mut info = swarm.diem_public_info();
 
     let mut account1 = info
         .create_and_fund_user_account(10000)
