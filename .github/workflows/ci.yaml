@@ -8,7 +8,7 @@ on:
       - 'ci*'
     branches:
       - 'main'
-      - 'ci'
+      # - 'ci'
   pull_request:
     types:
       - opened
