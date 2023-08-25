@@ -32,7 +32,7 @@ module ol_framework::community_wallet {
     use ol_framework::multi_action;
     use ol_framework::ancestry;
     use ol_framework::match_index;
-    use aptos_framework::system_addresses;
+    use diem_framework::system_addresses;
 
     /// not authorized to operate on this account
     const ENOT_AUTHORIZED: u64 = 1;

@@ -1,16 +1,16 @@
 /// This module defines a minimal and generic Coin and Balance.
 /// modified from https://github.com/move-language/move/tree/main/language/documentation/tutorial
-module aptos_framework::aptos_coin {
+module diem_framework::diem_coin {
     use std::string;
     use std::error;
     use std::signer;
     use std::vector;
     use std::option::{Self, Option};
 
-    use aptos_framework::coin::{Self, BurnCapability, MintCapability};
-    use aptos_framework::system_addresses;
+    use diem_framework::coin::{Self, BurnCapability, MintCapability};
+    use diem_framework::system_addresses;
 
-    friend aptos_framework::genesis;
+    friend diem_framework::genesis;
 
     /// Account does not have mint capability
     const ENO_CAPABILITIES: u64 = 1;
@@ -19,10 +19,10 @@ module aptos_framework::aptos_coin {
     /// Cannot find delegation of mint capability to this account
     const EDELEGATION_NOT_FOUND: u64 = 3;
 
-    struct AptosCoin has key {}
+    struct DiemCoin has key {}
 
     struct MintCapStore has key {
-        mint_cap: MintCapability<AptosCoin>,
+        mint_cap: MintCapability<DiemCoin>,
     }
 
     /// Delegation token created by delegator and can be claimed by the delegatee as MintCapability.
@@ -35,21 +35,21 @@ module aptos_framework::aptos_coin {
         inner: vector<DelegatedMintCapability>,
     }
 
-    /// Can only called during genesis to initialize the Aptos coin.
-    public(friend) fun initialize(aptos_framework: &signer): (BurnCapability<AptosCoin>, MintCapability<AptosCoin>) {
-        system_addresses::assert_aptos_framework(aptos_framework);
+    /// Can only called during genesis to initialize the Diem coin.
+    public(friend) fun initialize(diem_framework: &signer): (BurnCapability<DiemCoin>, MintCapability<DiemCoin>) {
+        system_addresses::assert_diem_framework(diem_framework);
 
-        let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<AptosCoin>(
-            aptos_framework,
-            string::utf8(b"Aptos Coin"),
+        let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<DiemCoin>(
+            diem_framework,
+            string::utf8(b"Diem Coin"),
             string::utf8(b"APT"),
             8, /* decimals */
             true, /* monitor_supply */
         );
 
-        // Aptos framework needs mint cap to mint coins to initial validators. This will be revoked once the validators
+        // Diem framework needs mint cap to mint coins to initial validators. This will be revoked once the validators
         // have been initialized.
-        move_to(aptos_framework, MintCapStore { mint_cap });
+        move_to(diem_framework, MintCapStore { mint_cap });
 
         coin::destroy_freeze_cap(freeze_cap);
         (burn_cap, mint_cap)
@@ -59,30 +59,30 @@ module aptos_framework::aptos_coin {
         exists<MintCapStore>(signer::address_of(account))
     }
 
-    /// Only called during genesis to destroy the aptos framework account's mint capability once all initial validators
+    /// Only called during genesis to destroy the diem framework account's mint capability once all initial validators
     /// and accounts have been initialized during genesis.
-    public(friend) fun destroy_mint_cap(aptos_framework: &signer) acquires MintCapStore {
-        system_addresses::assert_aptos_framework(aptos_framework);
-        let MintCapStore { mint_cap } = move_from<MintCapStore>(@aptos_framework);
+    public(friend) fun destroy_mint_cap(diem_framework: &signer) acquires MintCapStore {
+        system_addresses::assert_diem_framework(diem_framework);
+        let MintCapStore { mint_cap } = move_from<MintCapStore>(@diem_framework);
         coin::destroy_mint_cap(mint_cap);
     }
 
-    /// Can only be called during genesis for tests to grant mint capability to aptos framework and core resources
+    /// Can only be called during genesis for tests to grant mint capability to diem framework and core resources
     /// accounts.
     public(friend) fun configure_accounts_for_test(
-        aptos_framework: &signer,
+        diem_framework: &signer,
         core_resources: &signer,
-        mint_cap: MintCapability<AptosCoin>,
+        mint_cap: MintCapability<DiemCoin>,
     ) {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_diem_framework(diem_framework);
 
-        // Mint the core resource account AptosCoin for gas so it can execute system transactions.
-        coin::register<AptosCoin>(core_resources);
-        let coins = coin::mint<AptosCoin>(
+        // Mint the core resource account DiemCoin for gas so it can execute system transactions.
+        coin::register<DiemCoin>(core_resources);
+        let coins = coin::mint<DiemCoin>(
             18446744073709551615,
             &mint_cap,
         );
-        coin::deposit<AptosCoin>(signer::address_of(core_resources), coins);
+        coin::deposit<DiemCoin>(signer::address_of(core_resources), coins);
 
         move_to(core_resources, MintCapStore { mint_cap });
         move_to(core_resources, Delegations { inner: vector::empty() });
@@ -103,8 +103,8 @@ module aptos_framework::aptos_coin {
         );
 
         let mint_cap = &borrow_global<MintCapStore>(account_addr).mint_cap;
-        let coins_minted = coin::mint<AptosCoin>(amount, mint_cap);
-        coin::deposit<AptosCoin>(dst_addr, coins_minted);
+        let coins_minted = coin::mint<DiemCoin>(amount, mint_cap);
+        coin::deposit<DiemCoin>(dst_addr, coins_minted);
     }
 
     /// Only callable in tests and testnets where the core resources account exists.
@@ -152,17 +152,17 @@ module aptos_framework::aptos_coin {
     }
 
     #[test_only]
-    use aptos_framework::aggregator_factory;
+    use diem_framework::aggregator_factory;
 
     #[test_only]
-    public fun initialize_for_test(aptos_framework: &signer): (BurnCapability<AptosCoin>, MintCapability<AptosCoin>) {
-        aggregator_factory::initialize_aggregator_factory_for_test(aptos_framework);
-        initialize(aptos_framework)
+    public fun initialize_for_test(diem_framework: &signer): (BurnCapability<DiemCoin>, MintCapability<DiemCoin>) {
+        aggregator_factory::initialize_aggregator_factory_for_test(diem_framework);
+        initialize(diem_framework)
     }
 
     // This is particularly useful if the aggregator_factory is already initialized via another call path.
     #[test_only]
-    public fun initialize_for_test_without_aggregator_factory(aptos_framework: &signer): (BurnCapability<AptosCoin>, MintCapability<AptosCoin>) {
-        initialize(aptos_framework)
+    public fun initialize_for_test_without_aggregator_factory(diem_framework: &signer): (BurnCapability<DiemCoin>, MintCapability<DiemCoin>) {
+        initialize(diem_framework)
     }
 }

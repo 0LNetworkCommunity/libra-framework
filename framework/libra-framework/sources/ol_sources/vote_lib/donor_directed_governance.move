@@ -20,8 +20,8 @@ module ol_framework::donor_directed_governance {
     use ol_framework::turnout_tally::{Self, TurnoutTally};
     use ol_framework::ballot::{Self, BallotTracker};
     use ol_framework::cumulative_deposits;
-    use aptos_framework::account;
-    use aptos_framework::reconfiguration;
+    use diem_framework::account;
+    use diem_framework::reconfiguration;
     use std::vector;
     // use ol_framework::debug::print;
 

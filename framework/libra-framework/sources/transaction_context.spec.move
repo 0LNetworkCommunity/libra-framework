@@ -1,4 +1,4 @@
-spec aptos_framework::transaction_context {
+spec diem_framework::transaction_context {
     spec get_script_hash(): vector<u8> {
         pragma opaque;
         aborts_if false;

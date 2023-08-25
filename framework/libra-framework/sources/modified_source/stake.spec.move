@@ -1,20 +1,20 @@
-spec aptos_framework::stake {
+spec diem_framework::stake {
     // -----------------
     // Global invariants
     // -----------------
 
     spec module {
         // The validator set should satisfy its desired invariant.
-        invariant [suspendable] exists<ValidatorSet>(@aptos_framework) ==> validator_set_is_valid();
-        // After genesis, `AptosCoinCapabilities`, `ValidatorPerformance` and `ValidatorSet` exist.
-        invariant [suspendable] chain_status::is_operating() ==> exists<AptosCoinCapabilities>(@aptos_framework);
-        invariant [suspendable] chain_status::is_operating() ==> exists<ValidatorPerformance>(@aptos_framework);
-        invariant [suspendable] chain_status::is_operating() ==> exists<ValidatorSet>(@aptos_framework);
+        invariant [suspendable] exists<ValidatorSet>(@diem_framework) ==> validator_set_is_valid();
+        // After genesis, `DiemCoinCapabilities`, `ValidatorPerformance` and `ValidatorSet` exist.
+        invariant [suspendable] chain_status::is_operating() ==> exists<DiemCoinCapabilities>(@diem_framework);
+        invariant [suspendable] chain_status::is_operating() ==> exists<ValidatorPerformance>(@diem_framework);
+        invariant [suspendable] chain_status::is_operating() ==> exists<ValidatorSet>(@diem_framework);
     }
 
     // A desired invariant for the validator set.
     spec fun validator_set_is_valid(): bool {
-        let validator_set = global<ValidatorSet>(@aptos_framework);
+        let validator_set = global<ValidatorSet>(@diem_framework);
         spec_validators_are_initialized(validator_set.active_validators) &&
             spec_validators_are_initialized(validator_set.pending_inactive) &&
             spec_validators_are_initialized(validator_set.pending_active) &&
@@ -28,11 +28,11 @@ spec aptos_framework::stake {
     // -----------------------
 
     // `Validator` is initialized once.
-    spec initialize(aptos_framework: &signer) {
-        let aptos_addr = signer::address_of(aptos_framework);
-        aborts_if !system_addresses::is_aptos_framework_address(aptos_addr);
-        aborts_if exists<ValidatorSet>(aptos_addr);
-        aborts_if exists<ValidatorPerformance>(aptos_addr);
+    spec initialize(diem_framework: &signer) {
+        let diem_addr = signer::address_of(diem_framework);
+        aborts_if !system_addresses::is_diem_framework_address(diem_addr);
+        aborts_if exists<ValidatorSet>(diem_addr);
+        aborts_if exists<ValidatorPerformance>(diem_addr);
     }
 
     // spec extract_owner_cap(owner: &signer): OwnerCapability {
@@ -50,14 +50,14 @@ spec aptos_framework::stake {
     //     let pre_stake_pool = global<StakePool>(pool_address);
     //     let post stake_pool = global<StakePool>(pool_address);
     //     modifies global<StakePool>(pool_address);
-    //     let min_amount = aptos_std::math64::min(amount,pre_stake_pool.active.value);
+    //     let min_amount = diem_std::math64::min(amount,pre_stake_pool.active.value);
 
     //     ensures stake_pool.pending_inactive.value == pre_stake_pool.pending_inactive.value + min_amount;
     // }
 
     // Only active validator can update locked_until_secs.
     // spec increase_lockup_with_cap(owner_cap: &OwnerCapability) {
-    //     let config = global<staking_config::StakingConfig>(@aptos_framework);
+    //     let config = global<staking_config::StakingConfig>(@diem_framework);
     //     let pool_address = owner_cap.pool_address;
     //     let pre_stake_pool = global<StakePool>(pool_address);
     //     let post stake_pool = global<StakePool>(pool_address);
@@ -68,8 +68,8 @@ spec aptos_framework::stake {
     //     aborts_if !exists<StakePool>(pool_address);
     //     aborts_if pre_stake_pool.locked_until_secs >= lockup + now_seconds;
     //     aborts_if lockup + now_seconds > MAX_U64;
-    //     aborts_if !exists<timestamp::CurrentTimeMicroseconds>(@aptos_framework);
-    //     aborts_if !exists<staking_config::StakingConfig>(@aptos_framework);
+    //     aborts_if !exists<timestamp::CurrentTimeMicroseconds>(@diem_framework);
+    //     aborts_if !exists<staking_config::StakingConfig>(@diem_framework);
 
     //     ensures stake_pool.locked_until_secs == lockup + now_seconds;
     // }
@@ -107,7 +107,7 @@ spec aptos_framework::stake {
     //     let pre_stake_pool = global<StakePool>(pool_address);
     //     let post stake_pool = global<StakePool>(pool_address);
     //     modifies global<StakePool>(pool_address);
-    //     let min_amount = aptos_std::math64::min(amount,pre_stake_pool.pending_inactive.value);
+    //     let min_amount = diem_std::math64::min(amount,pre_stake_pool.pending_inactive.value);
 
     //     ensures stake_pool.active.value == pre_stake_pool.active.value + min_amount;
     // }
@@ -236,7 +236,7 @@ spec aptos_framework::stake {
     }
 
     spec get_validator_state {
-        let validator_set = global<ValidatorSet>(@aptos_framework);
+        let validator_set = global<ValidatorSet>(@diem_framework);
         ensures result == VALIDATOR_STATUS_PENDING_ACTIVE ==> spec_contains(validator_set.pending_active, pool_address);
         ensures result == VALIDATOR_STATUS_ACTIVE ==> spec_contains(validator_set.active_validators, pool_address);
         ensures result == VALIDATOR_STATUS_PENDING_INACTIVE ==> spec_contains(validator_set.pending_inactive, pool_address);
@@ -259,15 +259,15 @@ spec aptos_framework::stake {
         include ResourceRequirement;
     }
 
-    // spec add_transaction_fee(validator_addr: address, fee: Coin<AptosCoin>) {
-    //     aborts_if !exists<ValidatorFees>(@aptos_framework);
+    // spec add_transaction_fee(validator_addr: address, fee: Coin<DiemCoin>) {
+    //     aborts_if !exists<ValidatorFees>(@diem_framework);
     // }
 
     spec update_voting_power_increase(increase_amount: u64) {
-        let aptos = @aptos_framework;
-        let pre_validator_set = global<ValidatorSet>(aptos);
-        let post validator_set = global<ValidatorSet>(aptos);
-        // let staking_config = global<staking_config::StakingConfig>(aptos);
+        let diem = @diem_framework;
+        let pre_validator_set = global<ValidatorSet>(diem);
+        let post validator_set = global<ValidatorSet>(diem);
+        // let staking_config = global<staking_config::StakingConfig>(diem);
         // let voting_power_increase_limit = staking_config.voting_power_increase_limit;
 
         // Correctly modified total_joining_power and the value of total_voting_power is legal.
@@ -279,10 +279,10 @@ spec aptos_framework::stake {
         aborts_if !stake_pool_exists(pool_address);
     }
 
-    spec configure_allowed_validators(aptos_framework: &signer, accounts: vector<address>) {
-        let aptos_framework_address = signer::address_of(aptos_framework);
-        aborts_if !system_addresses::is_aptos_framework_address(aptos_framework_address);
-        let post allowed = global<AllowedValidators>(aptos_framework_address);
+    spec configure_allowed_validators(diem_framework: &signer, accounts: vector<address>) {
+        let diem_framework_address = signer::address_of(diem_framework);
+        aborts_if !system_addresses::is_diem_framework_address(diem_framework_address);
+        let post allowed = global<AllowedValidators>(diem_framework_address);
         // Make sure that the accounts of AllowedValidators are always the passed parameter.
         ensures allowed.accounts == accounts;
     }
@@ -310,7 +310,7 @@ spec aptos_framework::stake {
 
     // The upper bound of validator indices.
     spec fun spec_validator_index_upper_bound(): u64 {
-        len(global<ValidatorPerformance>(@aptos_framework).validators)
+        len(global<ValidatorPerformance>(@diem_framework).validators)
     }
 
     spec fun spec_has_stake_pool(a: address): bool {
@@ -335,7 +335,7 @@ spec aptos_framework::stake {
     }
 
     spec fun spec_is_current_epoch_validator(pool_address: address): bool {
-        let validator_set = global<ValidatorSet>(@aptos_framework);
+        let validator_set = global<ValidatorSet>(@diem_framework);
         !spec_contains(validator_set.pending_active, pool_address)
             && (spec_contains(validator_set.active_validators, pool_address)
             || spec_contains(validator_set.pending_inactive, pool_address))
@@ -344,12 +344,12 @@ spec aptos_framework::stake {
     // These resources are required to successfully execute `on_new_epoch`, which cannot
     // be discharged by the global invariants because `on_new_epoch` is called in genesis.
     spec schema ResourceRequirement {
-        requires exists<AptosCoinCapabilities>(@aptos_framework);
-        requires exists<ValidatorPerformance>(@aptos_framework);
-        requires exists<ValidatorSet>(@aptos_framework);
-        // requires exists<StakingConfig>(@aptos_framework);
-        // requires exists<StakingRewardsConfig>(@aptos_framework) || !features::spec_periodical_reward_rate_decrease_enabled();
-        requires exists<timestamp::CurrentTimeMicroseconds>(@aptos_framework);
-        requires exists<ValidatorFees>(@aptos_framework);
+        requires exists<DiemCoinCapabilities>(@diem_framework);
+        requires exists<ValidatorPerformance>(@diem_framework);
+        requires exists<ValidatorSet>(@diem_framework);
+        // requires exists<StakingConfig>(@diem_framework);
+        // requires exists<StakingRewardsConfig>(@diem_framework) || !features::spec_periodical_reward_rate_decrease_enabled();
+        requires exists<timestamp::CurrentTimeMicroseconds>(@diem_framework);
+        requires exists<ValidatorFees>(@diem_framework);
     }
 }

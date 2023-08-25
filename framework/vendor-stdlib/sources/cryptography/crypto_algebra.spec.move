@@ -1,4 +1,4 @@
-spec aptos_std::crypto_algebra {
+spec diem_std::crypto_algebra {
     spec add_internal<S>(handle_1: u64, handle_2: u64): u64 {
         pragma opaque;
     }

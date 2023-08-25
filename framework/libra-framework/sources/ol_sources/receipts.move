@@ -16,11 +16,11 @@ module ol_framework::receipts {
 
   use std::vector;
   use std::signer;
-  use aptos_framework::system_addresses;
-  use aptos_framework::timestamp;
+  use diem_framework::system_addresses;
+  use diem_framework::timestamp;
   use std::fixed_point32;
 
-  // use aptos_std::debug::print;
+  // use diem_std::debug::print;
   // use ol_framework::epoch_helper;
 
     struct UserReceipts has key {

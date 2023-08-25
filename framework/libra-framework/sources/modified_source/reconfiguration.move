@@ -1,27 +1,27 @@
 /// Publishes configuration information for validators, and issues reconfiguration events
 /// to synchronize configuration changes for the validators.
-module aptos_framework::reconfiguration {
+module diem_framework::reconfiguration {
     use std::error;
     use std::features;
     use std::signer;
 
-    use aptos_framework::account;
-    use aptos_framework::event;
-    use aptos_framework::stake;
-    use aptos_framework::system_addresses;
-    use aptos_framework::timestamp;
-    use aptos_framework::chain_status;
-    use aptos_framework::storage_gas;
-    use aptos_framework::transaction_fee;
+    use diem_framework::account;
+    use diem_framework::event;
+    use diem_framework::stake;
+    use diem_framework::system_addresses;
+    use diem_framework::timestamp;
+    use diem_framework::chain_status;
+    use diem_framework::storage_gas;
+    use diem_framework::transaction_fee;
     use ol_framework::epoch_helper;
 
-    friend aptos_framework::aptos_governance;
-    friend aptos_framework::block;
-    friend aptos_framework::consensus_config;
-    friend aptos_framework::execution_config;
-    friend aptos_framework::gas_schedule;
-    friend aptos_framework::genesis;
-    friend aptos_framework::version;
+    friend diem_framework::diem_governance;
+    friend diem_framework::block;
+    friend diem_framework::consensus_config;
+    friend diem_framework::execution_config;
+    friend diem_framework::gas_schedule;
+    friend diem_framework::genesis;
+    friend diem_framework::version;
 
     /// Event that signals consensus to start a new epoch,
     /// with new configuration information. This is also called a
@@ -41,7 +41,7 @@ module aptos_framework::reconfiguration {
     }
 
     /// Reconfiguration will be disabled if this resource is published under the
-    /// aptos_framework system address
+    /// diem_framework system address
     struct DisableReconfiguration has key {}
 
     /// The `Configuration` resource is in an invalid state
@@ -60,46 +60,46 @@ module aptos_framework::reconfiguration {
     #[view]
     /// Returns the current epoch number
     public fun get_current_epoch(): u64 acquires Configuration {
-        let config_ref = borrow_global<Configuration>(@aptos_framework);
+        let config_ref = borrow_global<Configuration>(@diem_framework);
         config_ref.epoch
     }
 
     /// Only called during genesis.
-    /// Publishes `Configuration` resource. Can only be invoked by aptos framework account, and only a single time in Genesis.
-    public(friend) fun initialize(aptos_framework: &signer) {
-        system_addresses::assert_aptos_framework(aptos_framework);
+    /// Publishes `Configuration` resource. Can only be invoked by diem framework account, and only a single time in Genesis.
+    public(friend) fun initialize(diem_framework: &signer) {
+        system_addresses::assert_diem_framework(diem_framework);
 
         // assert it matches `new_epoch_event_key()`, otherwise the event can't be recognized
-        assert!(account::get_guid_next_creation_num(signer::address_of(aptos_framework)) == 2, error::invalid_state(EINVALID_GUID_FOR_EVENT));
+        assert!(account::get_guid_next_creation_num(signer::address_of(diem_framework)) == 2, error::invalid_state(EINVALID_GUID_FOR_EVENT));
         move_to<Configuration>(
-            aptos_framework,
+            diem_framework,
             Configuration {
                 epoch: 0,
                 last_reconfiguration_time: 0,
-                events: account::new_event_handle<NewEpochEvent>(aptos_framework),
+                events: account::new_event_handle<NewEpochEvent>(diem_framework),
             }
         );
     }
 
     /// Private function to temporarily halt reconfiguration.
     /// This function should only be used for offline WriteSet generation purpose and should never be invoked on chain.
-    fun disable_reconfiguration(aptos_framework: &signer) {
-        system_addresses::assert_aptos_framework(aptos_framework);
+    fun disable_reconfiguration(diem_framework: &signer) {
+        system_addresses::assert_diem_framework(diem_framework);
         assert!(reconfiguration_enabled(), error::invalid_state(ECONFIGURATION));
-        move_to(aptos_framework, DisableReconfiguration {})
+        move_to(diem_framework, DisableReconfiguration {})
     }
 
     /// Private function to resume reconfiguration.
     /// This function should only be used for offline WriteSet generation purpose and should never be invoked on chain.
-    fun enable_reconfiguration(aptos_framework: &signer) acquires DisableReconfiguration {
-        system_addresses::assert_aptos_framework(aptos_framework);
+    fun enable_reconfiguration(diem_framework: &signer) acquires DisableReconfiguration {
+        system_addresses::assert_diem_framework(diem_framework);
 
         assert!(!reconfiguration_enabled(), error::invalid_state(ECONFIGURATION));
-        DisableReconfiguration {} = move_from<DisableReconfiguration>(signer::address_of(aptos_framework));
+        DisableReconfiguration {} = move_from<DisableReconfiguration>(signer::address_of(diem_framework));
     }
 
     fun reconfiguration_enabled(): bool {
-        !exists<DisableReconfiguration>(@aptos_framework)
+        !exists<DisableReconfiguration>(@diem_framework)
     }
 
     /// Signal validators to start using new configuration. Must be called from friend config modules.
@@ -111,7 +111,7 @@ module aptos_framework::reconfiguration {
         };
 
 
-        let config_ref = borrow_global_mut<Configuration>(@aptos_framework);
+        let config_ref = borrow_global_mut<Configuration>(@diem_framework);
         let current_time = timestamp::now_microseconds();
 
 
@@ -167,17 +167,17 @@ module aptos_framework::reconfiguration {
     }
 
     public fun last_reconfiguration_time(): u64 acquires Configuration {
-        borrow_global<Configuration>(@aptos_framework).last_reconfiguration_time
+        borrow_global<Configuration>(@diem_framework).last_reconfiguration_time
     }
 
     public fun current_epoch(): u64 acquires Configuration {
-        borrow_global<Configuration>(@aptos_framework).epoch
+        borrow_global<Configuration>(@diem_framework).epoch
     }
 
     /// Emit a `NewEpochEvent` event. This function will be invoked by genesis directly to generate the very first
     /// reconfiguration event.
     fun emit_genesis_reconfiguration_event() acquires Configuration {
-        let config_ref = borrow_global_mut<Configuration>(@aptos_framework);
+        let config_ref = borrow_global_mut<Configuration>(@diem_framework);
         assert!(config_ref.epoch == 0 && config_ref.last_reconfiguration_time == 0, error::invalid_state(ECONFIGURATION));
         config_ref.epoch = 1;
 
@@ -192,7 +192,7 @@ module aptos_framework::reconfiguration {
     // For tests, skips the guid validation.
     #[test_only]
     public fun initialize_for_test(account: &signer) {
-        system_addresses::assert_aptos_framework(account);
+        system_addresses::assert_diem_framework(account);
         move_to<Configuration>(
             account,
             Configuration {
@@ -212,7 +212,7 @@ module aptos_framework::reconfiguration {
     // It must be called each time an epoch changes
     #[test_only]
     public fun reconfigure_for_test_custom() acquires Configuration {
-        let config_ref = borrow_global_mut<Configuration>(@aptos_framework);
+        let config_ref = borrow_global_mut<Configuration>(@diem_framework);
         let current_time = timestamp::now_microseconds();
         if (current_time == config_ref.last_reconfiguration_time) {
             return

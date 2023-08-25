@@ -9,12 +9,12 @@ module ol_framework::test_multi_action {
   use std::vector;
   use std::guid;
   use ol_framework::ol_account;
-  use aptos_framework::resource_account;
+  use diem_framework::resource_account;
   // use ol_framework::slow_wallet;
-  use aptos_framework::reconfiguration;
-  // use aptos_framework::coin;
+  use diem_framework::reconfiguration;
+  // use diem_framework::coin;
 
-  // use aptos_std::debug::print;
+  // use diem_std::debug::print;
 
   struct DummyType has drop, store {}
 

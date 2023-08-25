@@ -7,7 +7,7 @@ module ol_framework::test_stake {
   use ol_framework::testnet;
   use ol_framework::cases;
 
-  // use aptos_std::debug::print;
+  // use diem_std::debug::print;
 
   // Scenario: can take 6 already initialized validators, from a previous set
   // and reduce the set to 3 of those validators.
@@ -31,7 +31,7 @@ module ol_framework::test_stake {
 
     let (cfg_list, _weight) = stake::test_make_val_cfg(&new_list);
 
-    
+
     stake::test_set_next_vals(&root, cfg_list);
 
     let vals = stake::get_current_validators();
@@ -93,7 +93,7 @@ module ol_framework::test_stake {
     };
 
     let cfg_list = stake::get_sorted_vals_by_props(3);
-    
+
     assert!(vector::length(&cfg_list) == 3, 1002);
     assert!(vector::contains(&cfg_list, &@0x10011), 1003); // take the last persona
     assert!(!vector::contains(&cfg_list, &@0x1000a), 1004); // alice should not be here.

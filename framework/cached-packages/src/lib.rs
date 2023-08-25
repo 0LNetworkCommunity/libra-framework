@@ -1,2 +1,2 @@
-pub mod aptos_framework_sdk_builder;
-pub mod aptos_stdlib;
+pub mod libra_framework_sdk_builder;
+pub mod libra_stdlib;

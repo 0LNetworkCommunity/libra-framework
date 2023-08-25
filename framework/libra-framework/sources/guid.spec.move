@@ -1,4 +1,4 @@
-spec aptos_framework::guid {
+spec diem_framework::guid {
     spec module {
         pragma verify = true;
         pragma aborts_if_is_strict;

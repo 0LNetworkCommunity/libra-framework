@@ -5,12 +5,12 @@ module ol_framework::tower_state {
     use std::vector;
     use std::hash;
     use ol_framework::globals;
-    use aptos_framework::system_addresses;
-    use aptos_framework::reconfiguration;
-    use aptos_framework::testnet;
-    use aptos_framework::ol_native_vdf;
+    use diem_framework::system_addresses;
+    use diem_framework::reconfiguration;
+    use diem_framework::testnet;
+    use diem_framework::ol_native_vdf;
 
-    // use aptos_std::debug::print;
+    // use diem_std::debug::print;
 
     /// The current solution does not solve to previous hash, the delay proofs are not chained
     const EDELAY_NOT_CHAINED: u64 = 1;
@@ -666,7 +666,7 @@ module ol_framework::tower_state {
     // We want to see where it breaks.
     // the first use case is to change the VDF difficulty parameter by tiny margins, in order to make it difficult to stockpile VDFs in a previous epoch, but not change the security properties.
     // the goal is to push all the RNG work to all the tower miners in the network, and minimize compute on the Move side
-    // use aptos_framework::Debug::print;
+    // use diem_framework::Debug::print;
 
     public fun toy_rng(seed: u64, iters: u64): u64 acquires TowerList, TowerProofHistory {
       // Get the list of all miners L
