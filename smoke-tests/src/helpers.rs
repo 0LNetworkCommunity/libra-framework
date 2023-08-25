@@ -1,27 +1,49 @@
-use anyhow::bail;
+
 use libra_cached_packages::libra_stdlib;
 use zapatos_forge::DiemPublicInfo;
-use zapatos_sdk::rest_client::{diem::Balance, Client, Response};
+use zapatos_sdk::rest_client::Client;
 use zapatos_types::account_address::AccountAddress;
+use libra_types::type_extensions::client_ext::ClientExt;
 
-/// Get the balance of the 0L coin. Client methods are hardcoded for vendor
+// /// Get the balance of the 0L coin. Client methods are hardcoded for vendor
+// pub async fn get_libra_balance(
+//     client: &Client,
+//     address: AccountAddress,
+// ) -> anyhow::Result<Response<Balance>> {
+//     let resp = client
+//         .get_account_resource(address, "0x1::coin::CoinStore<0x1::gas_coin::GasCoin>")
+//         .await?;
+//     resp.and_then(|resource| {
+//         if let Some(res) = resource {
+//             let b = serde_json::from_value::<Balance>(res.data)?;
+//             Ok(b)
+//         } else {
+//             bail!("No data returned")
+//         }
+//     })
+//     // bail!("No data returned");
+// }
+
 pub async fn get_libra_balance(
     client: &Client,
     address: AccountAddress,
-) -> anyhow::Result<Response<Balance>> {
-    let resp = client
-        .get_account_resource(address, "0x1::coin::CoinStore<0x1::gas_coin::GasCoin>")
+) -> anyhow::Result<Vec<u64>> {
+    let res = client
+        .view_ext(
+          "0x1::slow_wallet::balance",
+          None,
+          Some(address.to_string()),
+        )
         .await?;
-    resp.and_then(|resource| {
-        if let Some(res) = resource {
-            let b = serde_json::from_value::<Balance>(res.data)?;
-            Ok(b)
-        } else {
-            bail!("No data returned")
-        }
-    })
-    // bail!("No data returned");
+    let mut move_tuple = serde_json::from_value::<Vec<String>>(res)?;
+
+    let parsed = move_tuple
+      .iter_mut()
+      .filter_map(|e| { e.parse::<u64>().ok() })
+      .collect::<Vec<u64>>();
+    Ok(parsed)
 }
+
 
 pub async fn mint_libra(
     public_info: &mut DiemPublicInfo<'_>,
