@@ -1,4 +1,4 @@
-spec aptos_framework::aggregator {
+spec diem_framework::aggregator {
     spec Aggregator {
         pragma intrinsic;
     }

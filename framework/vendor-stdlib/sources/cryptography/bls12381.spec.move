@@ -1,4 +1,4 @@
-spec aptos_std::bls12381 {
+spec diem_std::bls12381 {
     spec aggregate_pubkeys_internal {
         // TODO: temporary mockup.
         pragma opaque;

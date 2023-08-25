@@ -2,19 +2,19 @@
 module ol_framework::test_governance {
 
   use ol_framework::mock;
-  use aptos_framework::aptos_governance;
-  use aptos_framework::governance_proposal::GovernanceProposal;
-  use aptos_framework::voting;
-  use aptos_framework::timestamp;
-  // use aptos_std::debug::print;
+  use diem_framework::diem_governance;
+  use diem_framework::governance_proposal::GovernanceProposal;
+  use diem_framework::voting;
+  use diem_framework::timestamp;
+  // use diem_std::debug::print;
 
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
   fun gov_threshold_can_resolve_early(root: &signer, alice: &signer, bob: &signer) {
     let _vals = mock::genesis_n_vals(root, 2);
-    aptos_governance::initialize_for_test(root);
-    let prop_id = aptos_governance::get_next_governance_proposal_id();
+    diem_governance::initialize_for_test(root);
+    let prop_id = diem_governance::get_next_governance_proposal_id();
 
-    aptos_governance::ol_create_proposal_v2(
+    diem_governance::ol_create_proposal_v2(
       alice,
       x"deadbeef",
       b"hi",
@@ -22,24 +22,24 @@ module ol_framework::test_governance {
       true,
     );
 
-    let prop_id_next = aptos_governance::get_next_governance_proposal_id();
+    let prop_id_next = diem_governance::get_next_governance_proposal_id();
     assert!(prop_id_next > prop_id, 73570001);
 
     // alice votes
-    aptos_governance::ol_vote(
+    diem_governance::ol_vote(
       alice,
       prop_id,
       true,
     );
 
     // bob votes
-    aptos_governance::ol_vote(
+    diem_governance::ol_vote(
       bob,
       prop_id,
       true,
     );
 
-    let (yes, no) = aptos_governance::get_votes(prop_id);
+    let (yes, no) = diem_governance::get_votes(prop_id);
     assert!(yes == 2, 73570002);
     assert!(no == 0, 73570003);
 
@@ -52,7 +52,7 @@ module ol_framework::test_governance {
     assert!(closed, 73570005);
 
     // state of 1 means passed
-    let state = aptos_governance::get_proposal_state(prop_id);
+    let state = diem_governance::get_proposal_state(prop_id);
     assert!(state == 1, 73570006);
 
     // issue with transactions being atomic

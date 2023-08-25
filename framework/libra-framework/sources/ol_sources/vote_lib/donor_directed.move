@@ -26,13 +26,13 @@
 module ol_framework::donor_directed {
     // friend ol_framework::reconfiguration;
 
-    use aptos_framework::system_addresses;
+    use diem_framework::system_addresses;
     use std::vector;
     use std::signer;
     use std::error;
     use std::guid;
     use std::fixed_point32;
-    use aptos_framework::reconfiguration;
+    use diem_framework::reconfiguration;
     use std::option::{Self, Option};
     use ol_framework::gas_coin::GasCoin;
     use ol_framework::ol_account;
@@ -45,9 +45,9 @@ module ol_framework::donor_directed {
     use ol_framework::transaction_fee;
     use ol_framework::match_index;
 
-    use aptos_framework::coin;
+    use diem_framework::coin;
     // use ol_framework::transaction_fee;
-    // use aptos_std::debug::print;
+    // use diem_std::debug::print;
 
     /// Not initialized as a donor directed account.
     const ENOT_INIT_DONOR_DIRECTED: u64 = 1;

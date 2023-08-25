@@ -2,11 +2,11 @@
 module ol_framework::fee_maker {
 
     use ol_framework::system_addresses;
-    use aptos_framework::create_signer;
+    use diem_framework::create_signer;
     use std::vector;
     use std::signer;
 
-    friend aptos_framework::transaction_fee;
+    friend diem_framework::transaction_fee;
 
     /// FeeMaker struct lives on an individual's account
     /// We check how many fees the user has paid.

@@ -10,12 +10,12 @@ module ol_framework::test_burn {
   use ol_framework::community_wallet;
   use ol_framework::transaction_fee;
   use ol_framework::fee_maker;
-  use aptos_framework::coin;
+  use diem_framework::coin;
   use std::signer;
   use std::vector;
   use std::fixed_point32;
 
-  // use aptos_std::debug::print;
+  // use diem_std::debug::print;
 
   #[test(root = @ol_framework, alice = @0x1000a)]
 

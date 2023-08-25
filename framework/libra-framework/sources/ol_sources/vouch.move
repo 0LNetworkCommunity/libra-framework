@@ -2,16 +2,16 @@
 module ol_framework::vouch {
     use std::signer;
     use std::vector;
-    // use aptos_framework::validator_universe;
+    // use diem_framework::validator_universe;
     use ol_framework::ancestry;
     use ol_framework::globals;
     use ol_framework::testnet;
     use ol_framework::ol_account;
 
-    use aptos_framework::system_addresses;
-    use aptos_framework::stake;
-    // use aptos_framework::coin;
-    use aptos_framework::transaction_fee;
+    use diem_framework::system_addresses;
+    use diem_framework::stake;
+    // use diem_framework::coin;
+    use diem_framework::transaction_fee;
 
     /// Trying to vouch for yourself?
     const ETRY_SELF_VOUCH_REALLY: u64 = 1;
