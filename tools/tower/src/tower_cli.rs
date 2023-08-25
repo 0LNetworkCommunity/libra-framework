@@ -45,7 +45,6 @@ pub enum TowerSub {
 
 impl TowerCli {
     pub async fn run(&self) -> anyhow::Result<()> {
-        // let cli = TowerCli::parse();
 
         let mut app_cfg = AppCfg::load(self.config_file.clone())?;
 

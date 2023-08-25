@@ -1,6 +1,6 @@
-use anyhow::bail;
+use anyhow::{bail, Context};
 use zapatos::{
-    account::key_rotation::lookup_address,
+    // account::key_rotation::lookup_address,
     common::types::{CliConfig, ConfigSearchMode},
 };
 use zapatos_logger::prelude::*;
@@ -92,11 +92,8 @@ impl Sender {
             Some(c) => c,
             None => Client::default().await?,
         };
-        let address = lookup_address(
-            &client,
-            account_key.authentication_key().derived_address(),
-            true,
-        )
+
+        let address = client.lookup_originating_address(account_key.authentication_key())
         .await?;
         info!("using address {}", &address);
 
@@ -135,7 +132,8 @@ impl Sender {
         let chain_id = match client.get_index().await {
             Ok(metadata) => {
                 // update sequence number
-                *seq_num = client.get_sequence_number(address).await?;
+                *seq_num = client.get_sequence_number(address).await
+                  .context("failed to get sequence number")?;
                 ChainId::new(metadata.into_inner().chain_id)
             }
             Err(_) => bail!("cannot connect to client at {:?}", &url),
