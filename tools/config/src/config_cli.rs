@@ -5,8 +5,10 @@ use clap::Parser;
 use libra_types::exports::AccountAddress;
 use libra_types::exports::AuthenticationKey;
 use libra_types::exports::NamedChain;
-use libra_types::legacy_types::app_cfg::AppCfg;
 use libra_types::global_config_dir;
+use libra_types::legacy_types::app_cfg::{AppCfg, self};
+use libra_types::exports::Client;
+use libra_types::type_extensions::client_ext::ClientExt;
 use std::path::PathBuf;
 use url::Url;
 
@@ -48,9 +50,16 @@ enum ConfigSub {
     /// try to add for fix the libra.yaml file
     #[clap(arg_required_else_help(true))]
     Fix {
-      // optional a network profile
-      #[clap(short, long)]
-      upstream_url: Option<Url>
+        /// optional, reset the address from mnemonic. Will also lookup on the chain for the actual address if you forgot it, or rotated your authkey.
+        #[clap(short, long)]
+        address: bool,
+
+        #[clap(short, long)]
+        remove_profile: Option<String>,
+
+        /// optional a network profile
+        #[clap(short, long)]
+        upstream_url: Option<Url>,
     },
     /// For core developers. Generates a config.yaml in the vendor format. This is a hidden command in the CLI.
     #[clap(hide(true))]
@@ -85,16 +94,45 @@ impl ConfigCli {
                 profile,
                 workspace,
             }) => make_profile::run(public_key, profile.as_deref().to_owned(), *workspace).await,
-            Some(ConfigSub::Fix {upstream_url}) => {
-              let mut cfg = AppCfg::load(self.path.clone())?;
+            Some(ConfigSub::Fix {
+                address,
+                remove_profile,
+                upstream_url,
+            }) => {
+                let mut cfg = AppCfg::load(self.path.clone())?;
 
-              if let Some(u) = upstream_url {
-                let np = cfg.get_network_profile_mut(self.chain_name.clone())?;
-                np.add_url(u.to_owned());
-              }
-              dbg!(&cfg);
-              cfg.save_file()?;
-              Ok(())
+                if *address {
+                    let mut account_keys = legacy_config::prompt_for_account()?;
+
+                    let client = Client::new(cfg.pick_url(self.chain_name.clone())?);
+
+                    if client.get_index().await.is_ok() {
+
+                        account_keys.account = client.lookup_originating_address(account_keys.auth_key).await?;
+                    };
+
+                    let profile = app_cfg::Profile::new(account_keys.auth_key, account_keys.account);
+
+                    if dialoguer::Confirm::new().with_prompt("set as default profile?")
+                    .interact()? {
+                      cfg.workspace.set_default(account_keys.account.to_hex_literal());
+                    }
+
+                    cfg.maybe_add_profile(profile)?;
+                }
+
+                if let Some(p) = remove_profile {
+                  let r = cfg.try_remove_profile(p);
+                  if r.is_err() { println!("no profile found matching {}", &p)}
+                }
+
+                if let Some(u) = upstream_url {
+                    let np = cfg.get_network_profile_mut(self.chain_name.clone())?;
+                    np.add_url(u.to_owned());
+                }
+                dbg!(&cfg);
+                cfg.save_file()?;
+                Ok(())
             }
             Some(ConfigSub::Init {
                 force_address,

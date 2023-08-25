@@ -201,6 +201,14 @@ impl AppCfg {
 
         Ok(())
     }
+
+    /// remove a profile
+    pub fn try_remove_profile(&mut self, nickname: &str) -> anyhow::Result<()> {
+      let idx = self.get_profile_idx(Some(nickname.to_owned()))?;
+      self.user_profiles.remove(idx);
+      Ok(())
+    }
+
     /// Get where node key_store.json stored.
     pub fn init_app_configs(
         authkey: AuthenticationKey,
@@ -408,6 +416,13 @@ impl Default for Workspace {
             // stdlib_bin_path: None,
         }
     }
+}
+
+impl Workspace {
+  /// set a profile as the default one
+  pub fn set_default(&mut self, profile: String) {
+    self.default_profile = Some(profile);
+  }
 }
 
 /// Information about the Chain to mined for
