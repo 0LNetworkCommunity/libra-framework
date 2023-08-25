@@ -1,5 +1,5 @@
 use anyhow::bail;
-use libra_cached_packages::diem_stdlib;
+use libra_cached_packages::libra_stdlib;
 use zapatos_forge::DiemPublicInfo;
 use zapatos_sdk::rest_client::{diem::Balance, Client, Response};
 use zapatos_types::account_address::AccountAddress;
@@ -30,7 +30,7 @@ pub async fn mint_libra(
 ) -> anyhow::Result<()> {
     let payload = public_info
         .transaction_factory()
-        .payload(diem_stdlib::gas_coin_mint_to_impl(addr, amount));
+        .payload(libra_stdlib::gas_coin_mint_to_impl(addr, amount));
 
     let mint_txn = public_info
         .root_account()

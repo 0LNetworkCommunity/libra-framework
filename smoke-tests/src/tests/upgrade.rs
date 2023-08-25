@@ -9,7 +9,7 @@ use zapatos_forge::Swarm;
 use zapatos_smoke_test::smoke_test_environment::new_local_swarm_with_release;
 use zapatos_types::transaction::Script;
 
-use libra_cached_packages::diem_stdlib::{
+use libra_cached_packages::libra_stdlib::{
     diem_governance_assert_can_resolve, diem_governance_ol_create_proposal_v2,
     diem_governance_ol_vote,
 };

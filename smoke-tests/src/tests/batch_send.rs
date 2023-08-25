@@ -1,4 +1,4 @@
-use libra_cached_packages::diem_stdlib::EntryFunctionCall::DemoPrintThis;
+use libra_cached_packages::libra_stdlib::EntryFunctionCall::DemoPrintThis;
 use libra_framework::release::ReleaseTarget;
 use zapatos_forge::Swarm;
 use zapatos_smoke_test::smoke_test_environment::new_local_swarm_with_release;
