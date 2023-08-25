@@ -2,6 +2,7 @@ runs:
   using: composite
   steps:
     - name: unset sccache
+      shell: bash
       # may be set by the calling script, but nothing will build
       run: unset RUSTC_WRAPPER
 
