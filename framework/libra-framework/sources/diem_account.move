@@ -1,15 +1,15 @@
-module aptos_framework::aptos_account {
-    use aptos_framework::account::{Self, new_event_handle};
-    use aptos_framework::aptos_coin::AptosCoin;
-    use aptos_framework::coin::{Self, Coin};
-    use aptos_framework::create_signer::create_signer;
-    use aptos_framework::event::{EventHandle, emit_event};
+module diem_framework::diem_account {
+    use diem_framework::account::{Self, new_event_handle};
+    use diem_framework::diem_coin::DiemCoin;
+    use diem_framework::coin::{Self, Coin};
+    use diem_framework::create_signer::create_signer;
+    use diem_framework::event::{EventHandle, emit_event};
     use std::error;
     use std::signer;
     use std::vector;
 
-    friend aptos_framework::genesis;
-    friend aptos_framework::resource_account;
+    friend diem_framework::genesis;
+    friend diem_framework::resource_account;
 
     /// Account does not exist.
     const EACCOUNT_NOT_FOUND: u64 = 1;
@@ -41,7 +41,7 @@ module aptos_framework::aptos_account {
 
     public entry fun create_account(auth_key: address) {
         let signer = account::create_account(auth_key);
-        coin::register<AptosCoin>(&signer);
+        coin::register<DiemCoin>(&signer);
     }
 
     /// Batch version of APT transfer.
@@ -69,10 +69,10 @@ module aptos_framework::aptos_account {
         };
         // Resource accounts can be created without registering them to receive APT.
         // This conveniently does the registration if necessary.
-        if (!coin::is_account_registered<AptosCoin>(to)) {
-            coin::register<AptosCoin>(&create_signer(to));
+        if (!coin::is_account_registered<DiemCoin>(to)) {
+            coin::register<DiemCoin>(&create_signer(to));
         };
-        coin::transfer<AptosCoin>(source, to, amount)
+        coin::transfer<DiemCoin>(source, to, amount)
     }
 
     /// Batch version of transfer_coins.
@@ -121,7 +121,7 @@ module aptos_framework::aptos_account {
 
     public fun assert_account_is_registered_for_apt(addr: address) {
         assert_account_exists(addr);
-        assert!(coin::is_account_registered<AptosCoin>(addr), error::not_found(EACCOUNT_NOT_REGISTERED_FOR_APT));
+        assert!(coin::is_account_registered<DiemCoin>(addr), error::not_found(EACCOUNT_NOT_REGISTERED_FOR_APT));
     }
 
     /// Set whether `account` can receive direct transfers of coins that they have not explicitly registered to receive.
@@ -161,11 +161,11 @@ module aptos_framework::aptos_account {
     }
 
     #[test_only]
-    use aptos_std::from_bcs;
+    use diem_std::from_bcs;
     #[test_only]
     use std::string::utf8;
     #[test_only]
-    use aptos_framework::account::create_account_for_test;
+    use diem_framework::account::create_account_for_test;
 
     #[test_only]
     struct FakeCoin {}
@@ -175,15 +175,15 @@ module aptos_framework::aptos_account {
         let bob = from_bcs::to_address(x"0000000000000000000000000000000000000000000000000000000000000b0b");
         let carol = from_bcs::to_address(x"00000000000000000000000000000000000000000000000000000000000ca501");
 
-        let (burn_cap, mint_cap) = aptos_framework::aptos_coin::initialize_for_test(core);
+        let (burn_cap, mint_cap) = diem_framework::diem_coin::initialize_for_test(core);
         create_account(signer::address_of(alice));
         coin::deposit(signer::address_of(alice), coin::mint(10000, &mint_cap));
         transfer(alice, bob, 500);
-        assert!(coin::balance<AptosCoin>(bob) == 500, 0);
+        assert!(coin::balance<DiemCoin>(bob) == 500, 0);
         transfer(alice, carol, 500);
-        assert!(coin::balance<AptosCoin>(carol) == 500, 1);
+        assert!(coin::balance<DiemCoin>(carol) == 500, 1);
         transfer(alice, carol, 1500);
-        assert!(coin::balance<AptosCoin>(carol) == 2000, 2);
+        assert!(coin::balance<DiemCoin>(carol) == 2000, 2);
 
         coin::destroy_burn_cap(burn_cap);
         coin::destroy_mint_cap(mint_cap);
@@ -193,13 +193,13 @@ module aptos_framework::aptos_account {
     public fun test_transfer_to_resource_account(alice: &signer, core: &signer) {
         let (resource_account, _) = account::create_resource_account(alice, vector[]);
         let resource_acc_addr = signer::address_of(&resource_account);
-        assert!(!coin::is_account_registered<AptosCoin>(resource_acc_addr), 0);
+        assert!(!coin::is_account_registered<DiemCoin>(resource_acc_addr), 0);
 
-        let (burn_cap, mint_cap) = aptos_framework::aptos_coin::initialize_for_test(core);
+        let (burn_cap, mint_cap) = diem_framework::diem_coin::initialize_for_test(core);
         create_account(signer::address_of(alice));
         coin::deposit(signer::address_of(alice), coin::mint(10000, &mint_cap));
         transfer(alice, resource_acc_addr, 500);
-        assert!(coin::balance<AptosCoin>(resource_acc_addr) == 500, 1);
+        assert!(coin::balance<DiemCoin>(resource_acc_addr) == 500, 1);
 
         coin::destroy_burn_cap(burn_cap);
         coin::destroy_mint_cap(mint_cap);
@@ -207,7 +207,7 @@ module aptos_framework::aptos_account {
 
     #[test(from = @0x123, core = @0x1, recipient_1 = @0x124, recipient_2 = @0x125)]
     public fun test_batch_transfer(from: &signer, core: &signer, recipient_1: &signer, recipient_2: &signer) {
-        let (burn_cap, mint_cap) = aptos_framework::aptos_coin::initialize_for_test(core);
+        let (burn_cap, mint_cap) = diem_framework::diem_coin::initialize_for_test(core);
         create_account(signer::address_of(from));
         let recipient_1_addr = signer::address_of(recipient_1);
         let recipient_2_addr = signer::address_of(recipient_2);
@@ -219,8 +219,8 @@ module aptos_framework::aptos_account {
             vector[recipient_1_addr, recipient_2_addr],
             vector[100, 500],
         );
-        assert!(coin::balance<AptosCoin>(recipient_1_addr) == 100, 0);
-        assert!(coin::balance<AptosCoin>(recipient_2_addr) == 500, 1);
+        assert!(coin::balance<DiemCoin>(recipient_1_addr) == 100, 0);
+        assert!(coin::balance<DiemCoin>(recipient_2_addr) == 500, 1);
         coin::destroy_burn_cap(burn_cap);
         coin::destroy_mint_cap(mint_cap);
     }

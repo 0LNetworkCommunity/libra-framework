@@ -3,16 +3,16 @@ module ol_framework::test_migration {
   use ol_framework::genesis_migration;
   use ol_framework::infra_escrow;
   use ol_framework::slow_wallet;
-  use aptos_framework::genesis;
+  use diem_framework::genesis;
   use std::fixed_point32;
   // use std::vector;
   use ol_framework::mock;
-  use aptos_framework::coin;
+  use diem_framework::coin;
   use ol_framework::gas_coin::GasCoin;
   use std::signer;
   use std::bcs;
 
-  // use aptos_std::debug::print;
+  // use diem_std::debug::print;
 
   #[test(root = @ol_framework, user = @0xaaaaaa)]
   fun test_migration_balance_end_user(root: signer, user: signer) {

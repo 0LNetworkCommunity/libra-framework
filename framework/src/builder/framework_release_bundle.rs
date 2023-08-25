@@ -114,14 +114,14 @@ use zapatos_types::account_address::AccountAddress;
 //         emitln!(writer, "script {");
 //         writer.indent();
 //         emitln!(writer, "use std::vector;");
-//         emitln!(writer, "use aptos_framework::aptos_governance;");
-//         emitln!(writer, "use aptos_framework::code;\n");
+//         emitln!(writer, "use diem_framework::diem_governance;");
+//         emitln!(writer, "use diem_framework::code;\n");
 
 //         emitln!(writer, "fun main(proposal_id: u64){");
 //         writer.indent();
 //         emitln!(
 //             writer,
-//             "let framework_signer = aptos_governance::resolve(proposal_id, @{});",
+//             "let framework_signer = diem_governance::resolve(proposal_id, @{});",
 //             for_address
 //         );
 
@@ -273,15 +273,15 @@ use zapatos_types::account_address::AccountAddress;
 //         emitln!(writer, "script {");
 //         writer.indent();
 //         emitln!(writer, "use std::vector;");
-//         emitln!(writer, "use aptos_framework::aptos_governance;");
-//         emitln!(writer, "use aptos_framework::code;\n");
+//         emitln!(writer, "use diem_framework::diem_governance;");
+//         emitln!(writer, "use diem_framework::code;\n");
 
 //         if is_testnet && !is_multi_step {
 //             emitln!(writer, "fun main(core_resources: &signer){");
 //             writer.indent();
 //             emitln!(
 //                 writer,
-//                 "let framework_signer = aptos_governance::get_signer_testnet_only(core_resources, @{});",
+//                 "let framework_signer = diem_governance::get_signer_testnet_only(core_resources, @{});",
 //                 for_address
 //             );
 //         } else if !is_multi_step {
@@ -289,7 +289,7 @@ use zapatos_types::account_address::AccountAddress;
 //             writer.indent();
 //             emitln!(
 //                 writer,
-//                 "let framework_signer = aptos_governance::resolve(proposal_id, @{});",
+//                 "let framework_signer = diem_governance::resolve(proposal_id, @{});",
 //                 for_address
 //             );
 //         } else {
@@ -366,14 +366,14 @@ use zapatos_types::account_address::AccountAddress;
 //         if next_execution_hash == "vector::empty<u8>()".as_bytes() {
 //             emitln!(
 //                 writer,
-//                 "let framework_signer = aptos_governance::resolve_multi_step_proposal(proposal_id, @{}, {});\n",
+//                 "let framework_signer = diem_governance::resolve_multi_step_proposal(proposal_id, @{}, {});\n",
 //                 for_address,
 //                 "vector::empty<u8>()",
 //             );
 //         } else {
 //             emitln!(
 //                 writer,
-//                 "let framework_signer = aptos_governance::resolve_multi_step_proposal("
+//                 "let framework_signer = diem_governance::resolve_multi_step_proposal("
 //             );
 //             writer.indent();
 //             emitln!(writer, "proposal_id,");
@@ -458,14 +458,14 @@ pub fn libra_author_script_file(
     emitln!(writer, "script {");
     writer.indent();
     emitln!(writer, "use std::vector;");
-    emitln!(writer, "use aptos_framework::aptos_governance;");
-    emitln!(writer, "use aptos_framework::code;\n");
+    emitln!(writer, "use diem_framework::diem_governance;");
+    emitln!(writer, "use diem_framework::code;\n");
 
     // emitln!(writer, "fun main(proposal_id: u64){");
     // writer.indent();
     // emitln!(
     //     writer,
-    //     "let framework_signer = aptos_governance::resolve(proposal_id, @{});",
+    //     "let framework_signer = diem_governance::resolve(proposal_id, @{});",
     //     for_address
     // );
     emitln!(writer, "fun main(proposal_id: u64){");
@@ -527,14 +527,14 @@ fn generate_next_execution_hash_blob(
     if next_execution_hash == "vector::empty<u8>()".as_bytes() {
         emitln!(
                 writer,
-                "let framework_signer = aptos_governance::resolve_multi_step_proposal(proposal_id, @{}, {});\n",
+                "let framework_signer = diem_governance::resolve_multi_step_proposal(proposal_id, @{}, {});\n",
                 for_address,
                 "vector::empty<u8>()",
             );
     } else {
         emitln!(
             writer,
-            "let framework_signer = aptos_governance::resolve_multi_step_proposal("
+            "let framework_signer = diem_governance::resolve_multi_step_proposal("
         );
         writer.indent();
         emitln!(writer, "proposal_id,");

@@ -1,4 +1,4 @@
-spec aptos_std::debug {
+spec diem_std::debug {
     spec native_print {
         pragma opaque;
     }

@@ -8,11 +8,11 @@
 // source digest: 112AE1963F36CEE35C3CC2875E6A64536C0486C1B3629A627E754E31C2E9A768
 script {
     use std::vector;
-    use aptos_framework::aptos_governance;
-    use aptos_framework::code;
+    use diem_framework::diem_governance;
+    use diem_framework::code;
 
     fun main(proposal_id: u64){
-        let framework_signer = aptos_governance::resolve_multi_step_proposal(
+        let framework_signer = diem_governance::resolve_multi_step_proposal(
             proposal_id,
             @0000000000000000000000000000000000000000000000000000000000000001,
             vector[202u8,167u8,82u8,143u8,58u8,254u8,250u8,75u8,190u8,205u8,15u8,80u8,42u8,25u8,220u8,106u8,115u8,66u8,181u8,140u8,68u8,188u8,28u8,51u8,248u8,83u8,171u8,192u8,202u8,122u8,209u8,80u8,],

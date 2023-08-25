@@ -1,6 +1,6 @@
 #[test_only]
-module aptos_std::fixed_point64_tests {
-    use aptos_std::fixed_point64;
+module diem_std::fixed_point64_tests {
+    use diem_std::fixed_point64;
 
     const POW2_64: u128 = 1 << 64;
     const MAX_U128: u128 = 340282366920938463463374607431768211455;

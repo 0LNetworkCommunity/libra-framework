@@ -1,25 +1,25 @@
 // Some fixtures are complex and are repeatedly needed
 #[test_only]
 module ol_framework::mock {
-  use aptos_framework::stake;
-  use aptos_framework::reconfiguration;
+  use diem_framework::stake;
+  use diem_framework::reconfiguration;
   use ol_framework::cases;
   use ol_framework::vouch;
   use std::vector;
-  use aptos_framework::genesis;
-  use aptos_framework::account;
+  use diem_framework::genesis;
+  use diem_framework::account;
   use ol_framework::slow_wallet;
   use ol_framework::proof_of_fee;
   use ol_framework::validator_universe;
-  use aptos_framework::timestamp;
-  use aptos_framework::system_addresses;
+  use diem_framework::timestamp;
+  use diem_framework::system_addresses;
   use ol_framework::epoch_boundary;
-  use aptos_framework::coin;
+  use diem_framework::coin;
   use ol_framework::gas_coin::{Self, GasCoin};
-  use aptos_framework::transaction_fee;
+  use diem_framework::transaction_fee;
   use ol_framework::ol_account;
   // #[test_only]
-  // use aptos_std::debug::print;
+  // use diem_std::debug::print;
 
   #[test_only]
   public fun reset_val_perf_one(vm: &signer, addr: address) {
@@ -189,7 +189,7 @@ module ol_framework::mock {
     /// mock up to 6 validators alice..frank
     public fun genesis_n_vals(root: &signer, num: u64): vector<address> {
       system_addresses::assert_ol(root);
-      let framework_sig = account::create_signer_for_test(@aptos_framework);
+      let framework_sig = account::create_signer_for_test(@diem_framework);
       ol_test_genesis(&framework_sig);
 
       let val_addr = personas();

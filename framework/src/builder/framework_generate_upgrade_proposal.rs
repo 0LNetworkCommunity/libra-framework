@@ -1,5 +1,5 @@
 //! generate framework upgrade proposal scripts
-//! see vendor aptos-move/framework/src/release_bundle.rs
+//! see vendor diem-move/framework/src/release_bundle.rs
 
 use anyhow::{ensure, Context, Result};
 use std::path::{Path, PathBuf};
@@ -40,8 +40,8 @@ pub fn make_framework_upgrade_artifacts(
     //     ("0x1", "move-stdlib"),
     //     // ("0x1", "vendor-stdlib"),
     //     // ("0x1", "libra-framework"),
-    //     // ("0x3", "aptos-move/framework/aptos-token"),
-    //     // ("0x4", "aptos-move/framework/aptos-token-objects"),
+    //     // ("0x3", "diem-move/framework/diem-token"),
+    //     // ("0x4", "diem-move/framework/diem-token-objects"),
     // ];
 
     // TODO: we are not using these formatted files now that we are saving them directly
@@ -150,11 +150,11 @@ pub fn write_to_file(result: Vec<(String, String)>, proposal_dir: PathBuf) -> an
     }
     Ok(())
 }
-// /Users/user/code/rust/zapatos/crates/aptos/src/move_tool/mod.rs
+// /Users/user/code/rust/zapatos/crates/diem/src/move_tool/mod.rs
 /// Need to create a dummy package so that we can build the script into bytecode
 /// so that we can then get the hash of the script.
-/// ... so that we can then submit it as part of a proposal framework/libra-framework/sources/modified_source/aptos_governance.move
-/// ... so that then the VM doesn't complain about its size /aptos-move/aptos-vm/src/aptos_vm_impl.rs
+/// ... so that we can then submit it as part of a proposal framework/libra-framework/sources/modified_source/diem_governance.move
+/// ... so that then the VM doesn't complain about its size /diem-move/diem-vm/src/diem_vm_impl.rs
 /// ... and so that when the proposal is approved a third party can execute the source upgrade.
 
 pub fn init_move_dir_wrapper(

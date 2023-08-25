@@ -59,7 +59,7 @@ async fn smoke_upgrade_multiple_steps() {
 
     let query_res = query_view::get_view(
         &s.client(),
-        "0x1::aptos_governance::get_proposal_state",
+        "0x1::diem_governance::get_proposal_state",
         None,
         Some("0".to_string()),
     )
@@ -88,7 +88,7 @@ async fn smoke_upgrade_multiple_steps() {
 
     let query_res = query_view::get_view(
         &s.client(),
-        "0x1::aptos_governance::get_can_resolve",
+        "0x1::diem_governance::get_can_resolve",
         None,
         Some("0".to_string()),
     )
@@ -101,7 +101,7 @@ async fn smoke_upgrade_multiple_steps() {
 
     let query_res = query_view::get_view(
         &s.client(),
-        "0x1::aptos_governance::get_approved_hash",
+        "0x1::diem_governance::get_approved_hash",
         None,
         Some("0".to_string()),
     )

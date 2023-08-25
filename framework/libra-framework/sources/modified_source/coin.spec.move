@@ -1,10 +1,10 @@
-spec aptos_framework::coin {
+spec diem_framework::coin {
     spec module {
         pragma verify = true;
     }
 
     spec AggregatableCoin {
-        use aptos_framework::aggregator;
+        use diem_framework::aggregator;
         invariant aggregator::spec_get_limit(value) == MAX_U64;
     }
 
@@ -25,21 +25,21 @@ spec aptos_framework::coin {
 
     /// Can only be initialized once.
     /// Can only be published by reserved addresses.
-    spec initialize_supply_config(aptos_framework: &signer) {
-        let aptos_addr = signer::address_of(aptos_framework);
-        aborts_if !system_addresses::is_aptos_framework_address(aptos_addr);
-        aborts_if exists<SupplyConfig>(aptos_addr);
-        ensures !global<SupplyConfig>(aptos_addr).allow_upgrades;
-        ensures exists<SupplyConfig>(aptos_addr);
+    spec initialize_supply_config(diem_framework: &signer) {
+        let diem_addr = signer::address_of(diem_framework);
+        aborts_if !system_addresses::is_diem_framework_address(diem_addr);
+        aborts_if exists<SupplyConfig>(diem_addr);
+        ensures !global<SupplyConfig>(diem_addr).allow_upgrades;
+        ensures exists<SupplyConfig>(diem_addr);
     }
 
-    /// Can only be updated by `@aptos_framework`.
-    spec allow_supply_upgrades(aptos_framework: &signer, allowed: bool) {
-        modifies global<SupplyConfig>(@aptos_framework);
-        let aptos_addr = signer::address_of(aptos_framework);
-        aborts_if !system_addresses::is_aptos_framework_address(aptos_addr);
-        aborts_if !exists<SupplyConfig>(aptos_addr);
-        let post allow_upgrades_post = global<SupplyConfig>(@aptos_framework);
+    /// Can only be updated by `@diem_framework`.
+    spec allow_supply_upgrades(diem_framework: &signer, allowed: bool) {
+        modifies global<SupplyConfig>(@diem_framework);
+        let diem_addr = signer::address_of(diem_framework);
+        aborts_if !system_addresses::is_diem_framework_address(diem_addr);
+        aborts_if !exists<SupplyConfig>(diem_addr);
+        let post allow_upgrades_post = global<SupplyConfig>(@diem_framework);
         ensures allow_upgrades_post.allow_upgrades == allowed;
     }
 
@@ -57,8 +57,8 @@ spec aptos_framework::coin {
     }
 
     spec schema AbortsIfAggregator<CoinType> {
-        use aptos_framework::optional_aggregator;
-        use aptos_framework::aggregator;
+        use diem_framework::optional_aggregator;
+        use diem_framework::aggregator;
         coin: Coin<CoinType>;
         let addr =  type_info::type_of<CoinType>().account_address;
         let maybe_supply = global<CoinInfo<CoinType>>(addr).supply;
@@ -172,7 +172,7 @@ spec aptos_framework::coin {
         ensures !coin_store.frozen;
     }
 
-    /// The creator of `CoinType` must be `@aptos_framework`.
+    /// The creator of `CoinType` must be `@diem_framework`.
     /// `SupplyConfig` allow upgrade.
     spec upgrade_supply<CoinType>(account: &signer) {
         // TODO: The error target is in `optional_aggregator::read`,
@@ -181,9 +181,9 @@ spec aptos_framework::coin {
         let account_addr = signer::address_of(account);
         let coin_address = type_info::type_of<CoinType>().account_address;
         aborts_if coin_address != account_addr;
-        aborts_if !exists<SupplyConfig>(@aptos_framework);
+        aborts_if !exists<SupplyConfig>(@diem_framework);
         aborts_if !exists<CoinInfo<CoinType>>(account_addr);
-        let supply_config = global<SupplyConfig>(@aptos_framework);
+        let supply_config = global<SupplyConfig>(@diem_framework);
         aborts_if !supply_config.allow_upgrades;
         modifies global<CoinInfo<CoinType>>(account_addr);
     }
@@ -196,7 +196,7 @@ spec aptos_framework::coin {
         aborts_if string::length(symbol) > MAX_COIN_SYMBOL_LENGTH;
     }
 
-    // `account` must be `@aptos_framework`.
+    // `account` must be `@diem_framework`.
     spec initialize_with_parallelizable_supply<CoinType>(
         account: &signer,
         name: string::String,
@@ -206,7 +206,7 @@ spec aptos_framework::coin {
     ): (BurnCapability<CoinType>, FreezeCapability<CoinType>, MintCapability<CoinType>) {
         pragma aborts_if_is_partial;
         let addr = signer::address_of(account);
-        aborts_if addr != @aptos_framework;
+        aborts_if addr != @diem_framework;
         include InitializeInternalSchema<CoinType>{
             name: name.bytes,
             symbol: symbol.bytes
@@ -311,8 +311,8 @@ spec aptos_framework::coin {
         aborts_if balance < amount;
     }
 
-    spec initialize_aggregatable_coin<CoinType>(aptos_framework: &signer): AggregatableCoin<CoinType> {
-        include system_addresses::AbortsIfNotAptosFramework{account: aptos_framework};
+    spec initialize_aggregatable_coin<CoinType>(diem_framework: &signer): AggregatableCoin<CoinType> {
+        include system_addresses::AbortsIfNotDiemFramework{account: diem_framework};
         include aggregator_factory::CreateAggregatorInternalAbortsIf;
     }
 

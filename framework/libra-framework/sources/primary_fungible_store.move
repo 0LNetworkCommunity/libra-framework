@@ -1,13 +1,13 @@
 /// This defines the module for interacting with primary stores of accounts/objects, which have deterministic addresses
-module aptos_framework::primary_fungible_store {
-    use aptos_framework::fungible_asset::{Self, FungibleAsset, FungibleStore};
-    use aptos_framework::object::{Self, Object, ConstructorRef, DeriveRef};
+module diem_framework::primary_fungible_store {
+    use diem_framework::fungible_asset::{Self, FungibleAsset, FungibleStore};
+    use diem_framework::object::{Self, Object, ConstructorRef, DeriveRef};
 
     use std::option::Option;
     use std::signer;
     use std::string::String;
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = diem_framework::object::ObjectGroup)]
     /// Resource stored on the fungible asset metadata object to allow creating primary stores for it.
     struct DeriveRefPod has key {
         metadata_derive_ref: DeriveRef,
@@ -119,7 +119,7 @@ module aptos_framework::primary_fungible_store {
     }
 
     #[test_only]
-    use aptos_framework::fungible_asset::{create_test_token, mint, generate_mint_ref, generate_burn_ref, MintRef, TransferRef, BurnRef, generate_transfer_ref};
+    use diem_framework::fungible_asset::{create_test_token, mint, generate_mint_ref, generate_burn_ref, MintRef, TransferRef, BurnRef, generate_transfer_ref};
     #[test_only]
     use std::string;
     #[test_only]

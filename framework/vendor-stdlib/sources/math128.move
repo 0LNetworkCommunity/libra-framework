@@ -1,5 +1,5 @@
 /// Standard math utilities missing in the Move Language.
-module aptos_std::math128 {
+module diem_std::math128 {
 
     use std::fixed_point32::FixedPoint32;
     use std::fixed_point32;

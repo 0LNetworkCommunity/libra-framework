@@ -8,7 +8,7 @@ on:
       - 'ci*'
     branches:
       - 'main'
-      - 'ci'
+      # - 'ci'
   pull_request:
     types:
       - opened
@@ -17,9 +17,14 @@ on:
       - 'release**'
       - 'main'
 env:
-  ZAPATOS_NODE_BIN_PATH: ${{github.workspace}}/aptos-node
+  DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
+  SCCACHE_BUCKET: sccache-libra
+  SCCACHE_ENDPOINT: https://afcdb03dd0764818ac9aec7fe0c0b8b5.r2.cloudflarestorage.com/sccache-libra
+  AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+  AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+  SCCACHE_REGION: auto
 
 jobs:
   test:
@@ -38,24 +43,27 @@ jobs:
 
     - name: install zapatos-node (for smoke tests)
       run: >
-        wget -O $ZAPATOS_NODE_BIN_PATH https://github.com/0o-de-lally/zapatos/releases/latest/download/aptos-node &&
-        sudo chmod 755 $ZAPATOS_NODE_BIN_PATH &&
-        echo $ZAPATOS_NODE_BIN_PATH &&
-        ls -l $ZAPATOS_NODE_BIN_PATH
+        wget -O $DIEM_FORGE_NODE_BIN_PATH https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem-node &&
+        sudo chmod 755 $DIEM_FORGE_NODE_BIN_PATH &&
+        echo $DIEM_FORGE_NODE_BIN_PATH &&
+        ls -l $DIEM_FORGE_NODE_BIN_PATH
 
     - name: install zapatos (for move tests)
       run: >
-        wget -O ${{github.workspace}}/aptos https://github.com/0o-de-lally/zapatos/releases/latest/download/aptos &&
-        sudo chmod 755 ${{github.workspace}}/aptos
+        wget -O ${{github.workspace}}/diem https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem &&
+        sudo chmod 755 ${{github.workspace}}/diem
 
+    - name: set sccache
+    # don't do this before because somethings may not build inluding sccache itself.
+      run: export RUSTC_WRAPPER=sccache
     # Move framework tests
     - name: move framework
       if: always()
       working-directory: ./framework/libra-framework
-      run: ${{github.workspace}}/aptos move test
+      run: ${{github.workspace}}/diem move test
 
     # Check test suite meta tests
-    - name: smoke-tests # NOTE: needs working ZAPATOS_NODE_BIN_PATH
+    - name: smoke-tests # NOTE: needs working DIEM_FORGE_NODE_BIN_PATH
       if: always()
       working-directory: ./smoke-tests
       run: cargo test --no-fail-fast

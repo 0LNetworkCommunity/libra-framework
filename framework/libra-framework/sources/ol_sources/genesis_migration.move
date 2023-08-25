@@ -8,14 +8,14 @@
 module ol_framework::genesis_migration {
   use std::signer;
   use std::error;
-  use aptos_framework::coin;
+  use diem_framework::coin;
   use ol_framework::ol_account;
   use ol_framework::validator_universe;
   use ol_framework::gas_coin;
   use ol_framework::gas_coin::GasCoin;
   use ol_framework::transaction_fee;
-  use aptos_framework::system_addresses;
-  // use aptos_std::debug::print;
+  use diem_framework::system_addresses;
+  // use diem_std::debug::print;
 
   /// the unexpected value of a converted balance
   const EBALANCE_MISMATCH: u64 = 0;
@@ -31,7 +31,7 @@ module ol_framework::genesis_migration {
       auth_key: vector<u8>,
       expected_initial_balance: u64,
   ) {
-    system_addresses::assert_aptos_framework(vm);
+    system_addresses::assert_diem_framework(vm);
 
     let user_addr = signer::address_of(user_sig);
     // if not a validator OR operator of a validator, create a new account

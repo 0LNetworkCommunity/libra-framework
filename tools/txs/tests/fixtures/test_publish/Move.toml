@@ -6,6 +6,6 @@ version = '1.0.0'
 # this_address='0000000000000000000000000000000069a385e1744e33fbb24a42ecbd1603e3'
 
 [dependencies.AptosFramework]
-git = 'https://github.com/aptos-labs/aptos-core.git'
-rev = 'main'
-subdir = 'aptos-move/framework/aptos-framework'
+git = 'https://github.com/0LNetworkCommunity/diem.git'
+rev = 'release'
+subdir = 'diem-move/framework/diem-framework'

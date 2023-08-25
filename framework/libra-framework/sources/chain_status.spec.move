@@ -1,4 +1,4 @@
-spec aptos_framework::chain_status {
+spec diem_framework::chain_status {
     spec module {
         pragma verify = true;
         pragma aborts_if_is_strict;

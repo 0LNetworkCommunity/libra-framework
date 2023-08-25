@@ -1,5 +1,5 @@
 #[test_only]
-// NOTE: the vdf natives live in Zapatos: /Users/user/code/rust/zapatos/aptos-move/framework/src/natives/ol_native_vdf.rs
+// NOTE: the vdf natives live in Zapatos: /Users/user/code/rust/zapatos/diem-move/framework/src/natives/ol_native_vdf.rs
 module ol_framework::test_vdf{
     use ol_framework::vdf_fixtures;
     use ol_framework::ol_native_vdf;
