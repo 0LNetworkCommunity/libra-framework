@@ -1,9 +1,9 @@
 /// This defines the fungible asset module that can issue fungible asset of any `Metadata` object. The
 /// metadata object can be any object that equipped with `Metadata` resource.
-module aptos_framework::fungible_asset {
-    use aptos_framework::event;
-    use aptos_framework::object::{Self, Object, ConstructorRef, DeleteRef};
-    use aptos_framework::optional_aggregator::{Self, OptionalAggregator};
+module diem_framework::fungible_asset {
+    use diem_framework::event;
+    use diem_framework::object::{Self, Object, ConstructorRef, DeleteRef};
+    use diem_framework::optional_aggregator::{Self, OptionalAggregator};
     use std::string;
 
     use std::error;
@@ -62,7 +62,7 @@ module aptos_framework::fungible_asset {
         maximum: Option<u128>,
     }
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = diem_framework::object::ObjectGroup)]
     /// Metadata of a Fungible asset
     struct Metadata has key {
         /// Optional tracking of the current supply of the fungible asset.
@@ -78,7 +78,7 @@ module aptos_framework::fungible_asset {
         decimals: u8,
     }
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = diem_framework::object::ObjectGroup)]
     /// The store object that holds fungible assets of a specific type associated with an account.
     struct FungibleStore has key {
         /// The address of the base metadata object.
@@ -89,7 +89,7 @@ module aptos_framework::fungible_asset {
         frozen: bool,
     }
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = diem_framework::object::ObjectGroup)]
     struct FungibleAssetEvents has key {
         deposit_events: event::EventHandle<DepositEvent>,
         withdraw_events: event::EventHandle<WithdrawEvent>,
@@ -564,10 +564,10 @@ module aptos_framework::fungible_asset {
     }
 
     #[test_only]
-    use aptos_framework::account;
+    use diem_framework::account;
 
     #[test_only]
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = diem_framework::object::ObjectGroup)]
     struct TestToken has key {}
 
     #[test_only]

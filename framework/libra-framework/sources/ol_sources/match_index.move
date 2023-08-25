@@ -1,11 +1,11 @@
 
 module ol_framework::match_index {
-  use aptos_framework::system_addresses;
+  use diem_framework::system_addresses;
   use ol_framework::cumulative_deposits;
   use ol_framework::gas_coin::GasCoin;
   use ol_framework::ol_account;
-  use aptos_framework::coin::{Self, Coin};
-  use aptos_framework::transaction_fee;
+  use diem_framework::coin::{Self, Coin};
+  use diem_framework::transaction_fee;
   use std::fixed_point32;
   use std::vector;
   use std::signer;

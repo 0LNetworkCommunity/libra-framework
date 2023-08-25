@@ -12,7 +12,7 @@
 /// set and/or jailed. To be compliant, validators must be BOTH validating and mining.
 module ol_framework::cases{
     // use DiemFramework::TowerState;
-    use aptos_framework::stake;
+    use diem_framework::stake;
     use std::vector;
     use std::fixed_point32::{Self, FixedPoint32};
     // use DiemFramework::Roles; // todo v7
@@ -202,7 +202,7 @@ module ol_framework::cases{
     }
 
     //////// GETTERS ////////
-    
+
     /// returns the validator's rank, ratio, compliant, and address as tuple
     public fun extract(pr: &PerformanceRank): (address, bool, u64, FixedPoint32) {
       (pr.val, pr.compliant,  pr.rank, pr.ratio)

@@ -1,11 +1,11 @@
-spec aptos_framework::timestamp {
+spec diem_framework::timestamp {
     spec module {
-        use aptos_framework::chain_status;
-        invariant chain_status::is_operating() ==> exists<CurrentTimeMicroseconds>(@aptos_framework);
+        use diem_framework::chain_status;
+        invariant chain_status::is_operating() ==> exists<CurrentTimeMicroseconds>(@diem_framework);
     }
 
     spec update_global_time {
-        use aptos_framework::chain_status;
+        use diem_framework::chain_status;
         requires chain_status::is_operating();
         include UpdateGlobalTimeAbortsIf;
     }
@@ -20,7 +20,7 @@ spec aptos_framework::timestamp {
     }
 
     spec fun spec_now_microseconds(): u64 {
-        global<CurrentTimeMicroseconds>(@aptos_framework).microseconds
+        global<CurrentTimeMicroseconds>(@diem_framework).microseconds
     }
 
     spec fun spec_now_seconds(): u64 {
