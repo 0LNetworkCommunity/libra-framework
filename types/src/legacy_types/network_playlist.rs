@@ -1,6 +1,6 @@
 //! network configs
 use crate::exports::{Client, NamedChain};
-use anyhow::bail;
+use anyhow::{bail, Context};
 use futures::{stream::FuturesUnordered, StreamExt};
 use rand::{seq::SliceRandom, thread_rng};
 use serde_with::{serde_as, DisplayFromStr};
@@ -178,6 +178,19 @@ impl NetworkPlaylist {
             None => bail!("Expected an URL for the best one"),
         }
     }
+
+    pub fn pick_one(&self) -> anyhow::Result<Url> {
+     match self.the_best_one() {
+          Ok(u) => Ok(u),
+          Err(_) => self
+              .all_urls()?
+              .into_iter()
+              .next()
+              .context("no urls to choose from"),
+      }
+    }
+
+
 
     pub async fn refresh_sync_status(&mut self) -> anyhow::Result<()> {
         // let _cfg = get_cfg()?;

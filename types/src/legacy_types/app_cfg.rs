@@ -349,14 +349,7 @@ impl AppCfg {
     ///fetch a network profile, optionally by profile name
     pub fn pick_url(&self, chain_id: Option<NamedChain>) -> anyhow::Result<Url> {
         let np = self.get_network_profile(chain_id)?;
-        match np.the_best_one() {
-            Ok(u) => Ok(u),
-            Err(_) => np
-                .all_urls()?
-                .into_iter()
-                .next()
-                .context("no urls to choose from"),
-        }
+        np.pick_one()
     }
 }
 

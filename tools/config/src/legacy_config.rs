@@ -28,13 +28,24 @@ pub async fn wizard(
     };
 
     // if the user specified both a chain name and playlist, then the playlist will override the degault settings for the named chain.
-    let np = if let Some(u) = playlist_url {
-        NetworkPlaylist::from_url(u, chain_name).await.ok()
+    let mut np = if let Some(u) = playlist_url {
+        NetworkPlaylist::from_url(u, chain_name).await
     } else {
-        NetworkPlaylist::default_for_network(chain_name).await.ok()
-    };
+        NetworkPlaylist::default_for_network(chain_name).await
+    }?;
+
+    np.refresh_sync_status()?;
+
+    let url = np.pick_one()?;
+
+    let client = Client::new(url);
+
+    match client.get_index().await.is_ok() {
+      client.lookup_originating_address(authkey);
+    }
 
     let cfg = AppCfg::init_app_configs(authkey, address, config_dir, chain_name, np)?;
+
 
     let p = cfg.save_file().context(format!(
         "could not initialize configs at {}",

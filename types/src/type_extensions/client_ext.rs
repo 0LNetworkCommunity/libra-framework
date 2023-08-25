@@ -152,19 +152,6 @@ impl ClientExt for Client {
         let addr = serde_json::from_value(res[0].clone())?;
         Ok(addr)
     }
-    // async fn get_account_balance_libra(&self, account: AccountAddress) -> Result<SlowWalletBalance> {
-
-    //   let slow_balance_id = entry_function_id("slow_wallet", "balance")?;
-    //   let request = ViewRequest {
-    //       function: slow_balance_id,
-    //       type_arguments: vec![],
-    //       arguments: vec![account.to_string().into()],
-    //   };
-
-    //   let res = self.view(&request, None).await?.into_inner();
-
-    //   SlowWalletBalance::from_value(res)
-    // }
 
     async fn get_move_resource<T: MoveStructType + DeserializeOwned>(
         &self,

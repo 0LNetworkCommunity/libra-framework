@@ -5,7 +5,7 @@ use zapatos::{
 };
 use zapatos_logger::prelude::*;
 use zapatos_sdk::{
-    crypto::HashValue,
+    crypto::{HashValue, PrivateKey},
     rest_client::{diem_api_types::TransactionOnChainData, Client},
     transaction_builder::TransactionBuilder,
     types::{
@@ -22,7 +22,7 @@ use std::{
 use url::Url;
 
 use libra_types::{
-    exports::Ed25519PrivateKey,
+    exports::{Ed25519PrivateKey, AuthenticationKey},
     legacy_types::app_cfg::AppCfg,
     ol_progress::OLProgress,
     type_extensions::{
@@ -111,7 +111,8 @@ impl Sender {
     ///
     pub async fn from_app_cfg(app_cfg: &AppCfg, profile: Option<String>) -> anyhow::Result<Self> {
         let profile = app_cfg.get_profile(profile)?;
-        let address = profile.account;
+
+
         let key = match profile.test_private_key {
             Some(k) => k.to_owned(),
             None => {
@@ -120,12 +121,18 @@ impl Sender {
             }
         };
 
-        let temp_seq_num = 0;
-        let mut local_account = LocalAccount::new(address, key, temp_seq_num);
 
+        let temp_seq_num = 0;
+
+        let auth_key = AuthenticationKey::ed25519(&key.public_key());
         let url = &app_cfg.pick_url(None)?;
         let client = Client::new(url.clone());
+        let address = client.lookup_originating_address(auth_key)
+          .await
+          .unwrap_or(profile.account);
 
+
+        let mut local_account = LocalAccount::new(address, key, temp_seq_num);
         let seq_num = local_account.sequence_number_mut();
 
         // check if we can connect to this client, or exit
