@@ -9,9 +9,9 @@ use zapatos_forge::Swarm;
 use zapatos_smoke_test::smoke_test_environment::new_local_swarm_with_release;
 use zapatos_types::transaction::Script;
 
-use libra_cached_packages::aptos_stdlib::{
-    aptos_governance_assert_can_resolve, aptos_governance_ol_create_proposal_v2,
-    aptos_governance_ol_vote,
+use libra_cached_packages::diem_stdlib::{
+    diem_governance_assert_can_resolve, diem_governance_ol_create_proposal_v2,
+    diem_governance_ol_vote,
 };
 use zapatos_sdk::types::LocalAccount;
 
@@ -71,7 +71,7 @@ async fn can_upgrade() {
     let proposal_hash = std::fs::read_to_string(proposal_hash_path).unwrap();
     dbg!(&proposal_hash);
 
-    let payload = aptos_governance_ol_create_proposal_v2(
+    let payload = diem_governance_ol_create_proposal_v2(
         proposal_hash.as_bytes().to_vec(),
         "metadata url".to_string().as_bytes().to_vec(),
         "metadata struct".to_string().as_bytes().to_vec(),
@@ -86,7 +86,7 @@ async fn can_upgrade() {
 
     public_info.client().submit_and_wait(&txn).await.unwrap();
     let proposal_id = 0;
-    let vote_payload = aptos_governance_ol_vote(
+    let vote_payload = diem_governance_ol_vote(
         proposal_id,
         true, // should_pass
     );
@@ -136,7 +136,7 @@ async fn can_upgrade() {
 
     // check the state of voting
 
-    let check_vote_payload = aptos_governance_assert_can_resolve(proposal_id);
+    let check_vote_payload = diem_governance_assert_can_resolve(proposal_id);
 
     let built_tx = public_info
         .transaction_factory()
