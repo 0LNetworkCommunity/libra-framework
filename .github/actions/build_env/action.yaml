@@ -38,8 +38,9 @@ runs:
       run: rustup component add rustfmt clippy
 
     - name: install sccache
-      shell: bash
-      run: cargo install sccache
+      uses: baptiste0928/cargo-install@v2
+      with:
+        crate: sccache
 
     - name: checkout sources
       uses: actions/checkout@v3
