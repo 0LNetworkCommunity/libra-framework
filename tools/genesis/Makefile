@@ -28,3 +28,6 @@ wizard:
 	--target-future-uses ${FUTURE_USES} \
 	--map-dd-to-slow 3A6C51A0B786D644590E8A21591FA8E2 \
 	--map-dd-to-slow  2B0E8325DEA5BE93D856CFDE2D0CBA12
+
+stdlib:
+	cargo r -p libra-framework -- release
