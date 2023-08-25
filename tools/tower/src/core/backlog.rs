@@ -187,7 +187,7 @@ pub async fn show_backlog(config: &AppCfg) -> Result<()> {
             println!("Remote tower height: {}", remote_height);
         }
         _ => {
-            println!("Remote tower state no initialized");
+            println!("Remote tower state not initialized");
         }
     }
 

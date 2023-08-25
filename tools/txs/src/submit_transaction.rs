@@ -115,7 +115,7 @@ impl Sender {
     pub async fn from_app_cfg(app_cfg: &AppCfg, profile: Option<String>) -> anyhow::Result<Self> {
         let profile = app_cfg.get_profile(profile)?;
         let address = profile.account;
-        let key = match &profile.test_private_key.clone() {
+        let key = match profile.test_private_key {
             Some(k) => k.to_owned(),
             None => {
                 let leg_keys = libra_wallet::account_keys::get_keys_from_prompt()?;
