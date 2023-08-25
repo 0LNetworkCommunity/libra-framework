@@ -9,7 +9,7 @@ use anyhow::Context;
 use zapatos_types::transaction::Script;
 use zapatos_types::transaction::TransactionPayload;
 
-use libra_cached_packages::diem_stdlib::{
+use libra_cached_packages::libra_stdlib::{
     diem_governance_ol_create_proposal_v2, diem_governance_ol_vote,
 };
 use zapatos_sdk::types::transaction::TransactionArgument;

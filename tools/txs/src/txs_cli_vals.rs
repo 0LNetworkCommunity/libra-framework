@@ -2,7 +2,7 @@
 
 use crate::submit_transaction::Sender;
 use anyhow::bail;
-use libra_cached_packages::diem_stdlib::EntryFunctionCall::{
+use libra_cached_packages::libra_stdlib::EntryFunctionCall::{
     JailUnjailByVoucher, ProofOfFeePofRetractBid, ProofOfFeePofUpdateBid, VouchRevoke,
     VouchVouchFor,
 };
