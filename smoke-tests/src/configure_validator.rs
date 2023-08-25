@@ -35,7 +35,7 @@ pub async fn init_val_config_files(
     let profile = app_cfg
         .get_profile_mut(None)
         .expect("could not get profile");
-    profile.test_private_key = Some(pri_key.clone());
+    profile.set_private_key(&pri_key);
     // dbg!(&profile);
 
     let local_account = LocalAccount::new(auth.derived_address(), pri_key, 0);

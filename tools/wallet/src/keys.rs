@@ -48,7 +48,7 @@ pub fn validator_keygen(
     let legacy_keys = legacy_keygen()?;
 
     let (validator_blob, vfn_blob, private_identity, public_identity) =
-        generate_key_objects_from_legacy(legacy_keys)?;
+        generate_key_objects_from_legacy(&legacy_keys)?;
 
     save_val_files(
         output_opt,
@@ -66,7 +66,7 @@ pub fn refresh_validator_files(
     mnem: Option<String>,
     output_opt: Option<PathBuf>,
     keep_legacy_addr: bool,
-) -> anyhow::Result<(IdentityBlob, IdentityBlob, PrivateIdentity, PublicIdentity)> {
+) -> anyhow::Result<(IdentityBlob, IdentityBlob, PrivateIdentity, PublicIdentity, KeyChain)> {
     let mut legacy_keys = if let Some(m) = mnem {
         get_keys_from_mnem(m)?
     } else {
@@ -79,7 +79,7 @@ pub fn refresh_validator_files(
     }
 
     let (validator_blob, vfn_blob, private_identity, public_identity) =
-        generate_key_objects_from_legacy(legacy_keys)?;
+        generate_key_objects_from_legacy(&legacy_keys)?;
 
     save_val_files(
         output_opt,
@@ -89,7 +89,7 @@ pub fn refresh_validator_files(
         &public_identity,
     )?;
 
-    Ok((validator_blob, vfn_blob, private_identity, public_identity))
+    Ok((validator_blob, vfn_blob, private_identity, public_identity, legacy_keys))
 }
 
 fn write_key_file<T: Serialize>(output_dir: &Path, filename: &str, data: T) -> anyhow::Result<()> {
@@ -123,18 +123,18 @@ fn save_val_files(
 
 /// Generates objects used for a user in genesis
 pub fn generate_key_objects_from_legacy(
-    legacy_keys: KeyChain,
+    legacy_keys: &KeyChain,
 ) -> anyhow::Result<(IdentityBlob, IdentityBlob, PrivateIdentity, PublicIdentity)> {
     let account_key: ConfigKey<Ed25519PrivateKey> =
-        ConfigKey::new(legacy_keys.child_0_owner.pri_key);
+        ConfigKey::new(legacy_keys.child_0_owner.pri_key.to_owned());
 
     // consensus key needs to be generated anew as it is not part of the legacy keys
     let consensus_key = ConfigKey::new(bls_generate_key(&legacy_keys.seed)?);
 
-    let vnk = network_keys_x25519_from_ed25519(legacy_keys.child_2_val_network.pri_key)?;
+    let vnk = network_keys_x25519_from_ed25519(legacy_keys.child_2_val_network.pri_key.to_owned())?;
     let validator_network_key = ConfigKey::new(vnk);
 
-    let fnk = network_keys_x25519_from_ed25519(legacy_keys.child_3_fullnode_network.pri_key)?;
+    let fnk = network_keys_x25519_from_ed25519(legacy_keys.child_3_fullnode_network.pri_key.to_owned())?;
 
     let full_node_network_key = ConfigKey::new(fnk);
 

@@ -1,11 +1,11 @@
-use anyhow::bail;
+use anyhow::{bail, Context};
 use zapatos::{
-    account::key_rotation::lookup_address,
+    // account::key_rotation::lookup_address,
     common::types::{CliConfig, ConfigSearchMode},
 };
 use zapatos_logger::prelude::*;
 use zapatos_sdk::{
-    crypto::HashValue,
+    crypto::{HashValue, PrivateKey},
     rest_client::{diem_api_types::TransactionOnChainData, Client},
     transaction_builder::TransactionBuilder,
     types::{
@@ -22,7 +22,7 @@ use std::{
 use url::Url;
 
 use libra_types::{
-    exports::Ed25519PrivateKey,
+    exports::{Ed25519PrivateKey, AuthenticationKey},
     legacy_types::app_cfg::AppCfg,
     ol_progress::OLProgress,
     type_extensions::{
@@ -92,11 +92,8 @@ impl Sender {
             Some(c) => c,
             None => Client::default().await?,
         };
-        let address = lookup_address(
-            &client,
-            account_key.authentication_key().derived_address(),
-            true,
-        )
+
+        let address = client.lookup_originating_address(account_key.authentication_key())
         .await?;
         info!("using address {}", &address);
 
@@ -114,28 +111,36 @@ impl Sender {
     ///
     pub async fn from_app_cfg(app_cfg: &AppCfg, profile: Option<String>) -> anyhow::Result<Self> {
         let profile = app_cfg.get_profile(profile)?;
-        let address = profile.account;
-        let key = match &profile.test_private_key.clone() {
-            Some(k) => k.to_owned(),
-            None => {
+
+
+        let key = match profile.borrow_private_key() {
+            Ok(k) => k.to_owned(),
+            _ => {
                 let leg_keys = libra_wallet::account_keys::get_keys_from_prompt()?;
                 leg_keys.child_0_owner.pri_key
             }
         };
 
-        let temp_seq_num = 0;
-        let mut local_account = LocalAccount::new(address, key, temp_seq_num);
 
+        let temp_seq_num = 0;
+
+        let auth_key = AuthenticationKey::ed25519(&key.public_key());
         let url = &app_cfg.pick_url(None)?;
         let client = Client::new(url.clone());
+        let address = client.lookup_originating_address(auth_key)
+          .await
+          .unwrap_or(profile.account);
 
+
+        let mut local_account = LocalAccount::new(address, key, temp_seq_num);
         let seq_num = local_account.sequence_number_mut();
 
         // check if we can connect to this client, or exit
         let chain_id = match client.get_index().await {
             Ok(metadata) => {
                 // update sequence number
-                *seq_num = client.get_sequence_number(address).await?;
+                *seq_num = client.get_sequence_number(address).await
+                  .context("failed to get sequence number")?;
                 ChainId::new(metadata.into_inner().chain_id)
             }
             Err(_) => bail!("cannot connect to client at {:?}", &url),

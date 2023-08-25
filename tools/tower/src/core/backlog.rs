@@ -83,8 +83,10 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
 
 pub async fn submit_or_delete(config: &AppCfg, block: VDFProof, path: PathBuf) -> Result<()> {
     // TODO: allow user to set a profile
+    dbg!("get sender");
     let mut sender = Sender::from_app_cfg(config, None).await?;
 
+    dbg!("try commit proof");
     sender.commit_proof(block.clone()).await?;
 
     match sender.eval_response() {
@@ -187,7 +189,7 @@ pub async fn show_backlog(config: &AppCfg) -> Result<()> {
             println!("Remote tower height: {}", remote_height);
         }
         _ => {
-            println!("Remote tower state no initialized");
+            println!("Remote tower state not initialized");
         }
     }
 

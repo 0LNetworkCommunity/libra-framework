@@ -1,5 +1,5 @@
 use crate::{
-    account_queries::{self, get_account_balance_libra, get_tower_state},
+    account_queries::{get_account_balance_libra, get_tower_state},
     query_view::get_view,
 };
 use anyhow::{bail, Result};
@@ -155,7 +155,7 @@ impl QueryType {
          },
         QueryType::Epoch => {
             let res = get_view(&client, "0x1::reconfiguration::get_current_epoch", None, None).await?;
-            // let value = res.first().unwrap().to_owned();
+
             let num: Vec<String> = serde_json::from_value(res)?;
             let json = json!({
               "epoch": num.first().unwrap().parse::<u64>()?,
@@ -163,7 +163,7 @@ impl QueryType {
             Ok(json)
         },
         QueryType::LookupAddress { auth_key } => {
-          let addr = account_queries::lookup_originating_address(&client, auth_key.to_owned()).await?;
+          let addr = client.lookup_originating_address( auth_key.to_owned()).await?;
 
           Ok(json!({
             "address": addr
