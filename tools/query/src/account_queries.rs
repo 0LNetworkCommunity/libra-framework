@@ -54,7 +54,7 @@ pub async fn lookup_originating_address(
     let request = ViewRequest {
         function: function_id,
         type_arguments: vec![],
-        arguments: vec![authentication_key.to_vec().into()],
+        arguments: vec![authentication_key.to_string().into()],
     };
 
     let res = client.view(&request, None).await?.into_inner();
