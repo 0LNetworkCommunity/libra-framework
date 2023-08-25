@@ -17,7 +17,7 @@ on:
       - 'release**'
       - 'main'
 env:
-  ZAPATOS_NODE_BIN_PATH: ${{github.workspace}}/aptos-node
+  DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
 
@@ -38,24 +38,24 @@ jobs:
 
     - name: install zapatos-node (for smoke tests)
       run: >
-        wget -O $ZAPATOS_NODE_BIN_PATH https://github.com/0o-de-lally/zapatos/releases/latest/download/aptos-node &&
-        sudo chmod 755 $ZAPATOS_NODE_BIN_PATH &&
-        echo $ZAPATOS_NODE_BIN_PATH &&
-        ls -l $ZAPATOS_NODE_BIN_PATH
+        wget -O $DIEM_FORGE_NODE_BIN_PATH https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem-node &&
+        sudo chmod 755 $DIEM_FORGE_NODE_BIN_PATH &&
+        echo $DIEM_FORGE_NODE_BIN_PATH &&
+        ls -l $DIEM_FORGE_NODE_BIN_PATH
 
     - name: install zapatos (for move tests)
       run: >
-        wget -O ${{github.workspace}}/aptos https://github.com/0o-de-lally/zapatos/releases/latest/download/aptos &&
-        sudo chmod 755 ${{github.workspace}}/aptos
+        wget -O ${{github.workspace}}/diem https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem &&
+        sudo chmod 755 ${{github.workspace}}/diem
 
     # Move framework tests
     - name: move framework
       if: always()
       working-directory: ./framework/libra-framework
-      run: ${{github.workspace}}/aptos move test
+      run: ${{github.workspace}}/diem move test
 
     # Check test suite meta tests
-    - name: smoke-tests # NOTE: needs working ZAPATOS_NODE_BIN_PATH
+    - name: smoke-tests # NOTE: needs working DIEM_FORGE_NODE_BIN_PATH
       if: always()
       working-directory: ./smoke-tests
       run: cargo test --no-fail-fast
