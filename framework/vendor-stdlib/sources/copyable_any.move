@@ -1,6 +1,6 @@
-module aptos_std::copyable_any {
-    use aptos_std::type_info;
-    use aptos_std::from_bcs::from_bytes;
+module diem_std::copyable_any {
+    use diem_std::type_info;
+    use diem_std::from_bcs::from_bytes;
     use std::bcs;
     use std::error;
     use std::string::String;

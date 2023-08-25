@@ -5,13 +5,13 @@ module ol_framework::oracle {
     use std::signer;
     use std::option;
     use ol_framework::testnet;
-    use aptos_framework::system_addresses;
-    use aptos_framework::timestamp;
-    use aptos_framework::account;
-    use aptos_std::ed25519;
-    use aptos_std::comparator;
+    use diem_framework::system_addresses;
+    use diem_framework::timestamp;
+    use diem_framework::account;
+    use diem_std::ed25519;
+    use diem_std::comparator;
 
-    /// A list of all miners' addresses 
+    /// A list of all miners' addresses
     // reset at epoch boundary
     struct ProviderList has key {
       list: vector<address>
@@ -26,7 +26,7 @@ module ol_framework::oracle {
     struct Tower has key {
         last_commit_timestamp: u64,
         previous_proof_hash: vector<u8>,
-        verified_tower_height: u64, 
+        verified_tower_height: u64,
         latest_epoch_mining: u64,
         count_proofs_in_epoch: u64,
         epochs_mining: u64,
@@ -51,7 +51,7 @@ module ol_framework::oracle {
       move_to(provider, Tower {
         last_commit_timestamp: 0,
         previous_proof_hash: vector::empty(),
-        verified_tower_height: 0, 
+        verified_tower_height: 0,
         latest_epoch_mining: 0,
         count_proofs_in_epoch: 0,
         epochs_mining: 0,
@@ -63,21 +63,21 @@ module ol_framework::oracle {
     /// At genesis this can be called once to migrate towers
     public fun migrate_from_vdf_tower(
       root: &signer,
-      provider: &signer, 
+      provider: &signer,
       previous_proof_hash: vector<u8>,
-      verified_tower_height: u64, 
+      verified_tower_height: u64,
       latest_epoch_mining: u64,
       count_proofs_in_epoch: u64,
       epochs_validating_and_mining: u64,
       contiguous_epochs_validating_and_mining: u64,
 
-    
+
     ) {
       system_addresses::assert_ol(root);
       move_to(provider, Tower {
         last_commit_timestamp: 0,
         previous_proof_hash,
-        verified_tower_height, 
+        verified_tower_height,
         latest_epoch_mining,
         count_proofs_in_epoch,
         epochs_mining: epochs_validating_and_mining,

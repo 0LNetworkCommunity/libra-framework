@@ -2,13 +2,13 @@
 /// `EventHandle`s with unique GUIDs. It contains a counter for the number
 /// of `EventHandle`s it generates. An `EventHandle` is used to count the number of
 /// events emitted to a handle and emit events to the event store.
-module aptos_framework::event {
+module diem_framework::event {
     use std::bcs;
 
-    use aptos_framework::guid::GUID;
+    use diem_framework::guid::GUID;
 
-    friend aptos_framework::account;
-    friend aptos_framework::object;
+    friend diem_framework::account;
+    friend diem_framework::object;
 
     /// A handle for an event such that:
     /// 1. Other modules can emit events to this handle.

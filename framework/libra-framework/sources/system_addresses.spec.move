@@ -1,4 +1,4 @@
-spec aptos_framework::system_addresses {
+spec diem_framework::system_addresses {
     spec module {
         pragma verify = true;
         pragma aborts_if_is_strict;
@@ -26,9 +26,9 @@ spec aptos_framework::system_addresses {
         aborts_if addr != @core_resources with error::PERMISSION_DENIED;
     }
 
-    spec assert_aptos_framework(account: &signer) {
+    spec assert_diem_framework(account: &signer) {
         pragma opaque;
-        include AbortsIfNotAptosFramework;
+        include AbortsIfNotDiemFramework;
     }
 
     spec assert_framework_reserved_address(account: &signer) {
@@ -38,10 +38,10 @@ spec aptos_framework::system_addresses {
     spec assert_framework_reserved(addr: address) {
         aborts_if !is_framework_reserved_address(addr);
     }
-    /// Specifies that a function aborts if the account does not have the aptos framework address.
-    spec schema AbortsIfNotAptosFramework {
+    /// Specifies that a function aborts if the account does not have the diem framework address.
+    spec schema AbortsIfNotDiemFramework {
         account: signer;
-        aborts_if signer::address_of(account) != @aptos_framework with error::PERMISSION_DENIED;
+        aborts_if signer::address_of(account) != @diem_framework with error::PERMISSION_DENIED;
     }
 
     spec assert_vm(account: &signer) {

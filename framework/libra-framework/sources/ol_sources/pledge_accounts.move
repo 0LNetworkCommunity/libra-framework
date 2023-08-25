@@ -46,9 +46,9 @@
         use std::fixed_point32;
         use ol_framework::gas_coin::GasCoin;
         use ol_framework::ol_account;
-        use aptos_framework::reconfiguration;
-        use aptos_framework::system_addresses;
-        use aptos_framework::coin;
+        use diem_framework::reconfiguration;
+        use diem_framework::system_addresses;
+        use diem_framework::coin;
 
         /// no policy at this address
         const ENO_BENEFICIARY_POLICY: u64 = 1;

@@ -4,11 +4,11 @@
 
 //# run --script --signers Alice
 script {
-  use aptos_framework::vdf; // todo
-  use aptos_framework::test_fixtures; // todo
+  use diem_framework::vdf; // todo
+  use diem_framework::test_fixtures; // todo
 
   fun main() {
-    // Scenario: Bob, an existing validator, is sending a transaction for Eve, 
+    // Scenario: Bob, an existing validator, is sending a transaction for Eve,
     // with a challenge and proof not yet submitted to the chain.
     let challenge = test_fixtures::eve_0_easy_chal();
     let solution = test_fixtures::eve_0_easy_sol();

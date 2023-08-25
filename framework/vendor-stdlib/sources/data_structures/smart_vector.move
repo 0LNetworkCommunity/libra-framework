@@ -1,9 +1,9 @@
-module aptos_std::smart_vector {
+module diem_std::smart_vector {
     use std::error;
     use std::vector;
-    use aptos_std::big_vector::{Self, BigVector};
-    use aptos_std::math64::max;
-    use aptos_std::type_info::size_of_val;
+    use diem_std::big_vector::{Self, BigVector};
+    use diem_std::math64::max;
+    use diem_std::type_info::size_of_val;
     use std::option::{Self, Option};
 
     /// Vector index is out of bounds

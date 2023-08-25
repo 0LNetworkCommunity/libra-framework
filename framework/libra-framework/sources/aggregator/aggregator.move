@@ -8,9 +8,9 @@
 /// dependency.
 /// However, reading the aggregator value (i.e. calling `read(X)`) is an expensive
 /// operation and should be avoided as much as possible because it reduces the
-/// parallelism. Moreover, **aggregators can only be created by Aptos Framework (0x1)
+/// parallelism. Moreover, **aggregators can only be created by Diem Framework (0x1)
 /// at the moment.**
-module aptos_framework::aggregator {
+module diem_framework::aggregator {
 
     /// The value of aggregator overflows. Raised by native code.
     const EAGGREGATOR_OVERFLOW: u64 = 1;

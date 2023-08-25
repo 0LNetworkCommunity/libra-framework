@@ -5,7 +5,7 @@ module ol_framework::test_donor_directed {
   use ol_framework::donor_directed;
   use ol_framework::mock;
   use ol_framework::ol_account;
-  use aptos_framework::resource_account;
+  use diem_framework::resource_account;
   use ol_framework::receipts;
   use ol_framework::donor_directed_governance;
   use ol_framework::burn;
@@ -13,7 +13,7 @@ module ol_framework::test_donor_directed {
   use std::vector;
   use std::signer;
 
-  // use aptos_std::debug::print;
+  // use diem_std::debug::print;
 
     #[test(root = @ol_framework, alice = @0x1000a)]
     fun dd_init(root: &signer, alice: &signer) {

@@ -1,4 +1,4 @@
-spec aptos_std::ristretto255 {
+spec diem_std::ristretto255 {
     spec point_equals {
         // TODO: temporary mockup.
         pragma opaque;

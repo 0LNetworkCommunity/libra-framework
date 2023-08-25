@@ -3,7 +3,7 @@ module ol_framework::cumulative_deposits {
   use std::signer;
   use std::vector;
   use ol_framework::epoch_helper;
-  use aptos_framework::system_addresses;
+  use diem_framework::system_addresses;
   use ol_framework::receipts;
   // use ol_framework::ol_account;
   friend ol_framework::ol_account;

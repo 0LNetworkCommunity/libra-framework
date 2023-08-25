@@ -9,8 +9,8 @@ use anyhow::Context;
 use zapatos_types::transaction::Script;
 use zapatos_types::transaction::TransactionPayload;
 
-use libra_cached_packages::aptos_stdlib::{
-    aptos_governance_ol_create_proposal_v2, aptos_governance_ol_vote,
+use libra_cached_packages::libra_stdlib::{
+    diem_governance_ol_create_proposal_v2, diem_governance_ol_vote,
 };
 use zapatos_sdk::types::transaction::TransactionArgument;
 
@@ -66,7 +66,7 @@ impl UpgradeTxs {
                     libra_query::chain_queries::get_next_governance_proposal_id(sender.client())
                         .await?;
                 // let query_res = libra_query::query_view::run(
-                //     "0x1::aptos_governance::get_next_governance_proposal_id",
+                //     "0x1::diem_governance::get_next_governance_proposal_id",
                 //     None,
                 //     None,
                 // )
@@ -83,7 +83,7 @@ impl UpgradeTxs {
                     &num
                 );
 
-                aptos_governance_ol_create_proposal_v2(
+                diem_governance_ol_create_proposal_v2(
                     hex::decode(hash)?,
                     metadata_url.as_bytes().to_vec(),
                     "metadata struct".to_string().as_bytes().to_vec(), // TODO
@@ -93,7 +93,7 @@ impl UpgradeTxs {
             UpgradeTxs::Vote {
                 proposal_id,
                 should_fail,
-            } => aptos_governance_ol_vote(*proposal_id, !*should_fail), // NOTE: we are inverting the BOOL here.
+            } => diem_governance_ol_vote(*proposal_id, !*should_fail), // NOTE: we are inverting the BOOL here.
             UpgradeTxs::Resolve {
                 proposal_id,
                 proposal_script_dir,

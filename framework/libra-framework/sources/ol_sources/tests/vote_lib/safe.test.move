@@ -6,7 +6,7 @@ module ol_framework::test_safe {
   use std::signer;
   use std::option;
   use ol_framework::ol_account;
-  use aptos_framework::resource_account;
+  use diem_framework::resource_account;
   use ol_framework::gas_coin;
 
   // NOTE: Most of the save.move features are tested in multi_action (e.g. governance). Here we are testing for specific APIs.

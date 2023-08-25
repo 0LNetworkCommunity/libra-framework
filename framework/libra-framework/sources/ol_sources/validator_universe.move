@@ -6,27 +6,27 @@
 // File Prefix for errors: 2201
 ///////////////////////////////////////////////////////////////////////////
 
-module aptos_framework::validator_universe {
+module diem_framework::validator_universe {
   use std::signer;
   use std::vector;
-  use aptos_framework::system_addresses;
+  use diem_framework::system_addresses;
   use ol_framework::jail;
   use ol_framework::cases;
-  // use aptos_framework::coin;
-  use aptos_framework::stake;
+  // use diem_framework::coin;
+  use diem_framework::stake;
 
-  // use aptos_framework::coin::Coin;
+  // use diem_framework::coin::Coin;
   // use ol_framework::gas_coin::GasCoin;
   // use ol_framework::rewards;
 
   #[test_only]
   use ol_framework::testnet;
   #[test_only]
-  use aptos_std::bls12381;
-  // use aptos_framework::account;
-  // use aptos_std::debug::print;
+  use diem_std::bls12381;
+  // use diem_framework::account;
+  // use diem_std::debug::print;
 
-  friend aptos_framework::reconfiguration;
+  friend diem_framework::reconfiguration;
 
   // resource for tracking the universe of accounts that have submitted
   // a mined proof correctly, with the epoch number.
@@ -41,7 +41,7 @@ module aptos_framework::validator_universe {
   // Function code: 01 Prefix: 220101
   public fun initialize(vm: &signer){
     // Check for transactions sender is association
-    system_addresses::assert_aptos_framework(vm);
+    system_addresses::assert_diem_framework(vm);
     move_to<ValidatorUniverse>(vm, ValidatorUniverse {
         validators: vector::empty<address>()
     });
@@ -68,10 +68,10 @@ module aptos_framework::validator_universe {
   /// it can only be called by `stake` module, on validator registration.
   fun add(sender: &signer) acquires ValidatorUniverse {
     let addr = signer::address_of(sender);
-    let state = borrow_global<ValidatorUniverse>(@aptos_framework);
+    let state = borrow_global<ValidatorUniverse>(@diem_framework);
     let (elegible_list, _) = vector::index_of<address>(&state.validators, &addr);
     if (!elegible_list) {
-      let state = borrow_global_mut<ValidatorUniverse>(@aptos_framework);
+      let state = borrow_global_mut<ValidatorUniverse>(@diem_framework);
       vector::push_back<address>(&mut state.validators, addr);
     };
     jail::init(sender);
@@ -121,14 +121,14 @@ module aptos_framework::validator_universe {
   // Function code: 03 Prefix: 220103
   #[view]
   public fun get_eligible_validators(): vector<address> acquires ValidatorUniverse {
-    let state = borrow_global<ValidatorUniverse>(@aptos_framework);
+    let state = borrow_global<ValidatorUniverse>(@diem_framework);
     *&state.validators
   }
 
   // Is a candidate for validation
   #[view]
   public fun is_in_universe(addr: address): bool acquires ValidatorUniverse {
-    let state = borrow_global<ValidatorUniverse>(@aptos_framework);
+    let state = borrow_global<ValidatorUniverse>(@diem_framework);
     vector::contains<address>(&state.validators, &addr)
   }
   // *  NOTE removed deprecated v3 jail implementation *//
@@ -162,8 +162,8 @@ module aptos_framework::validator_universe {
   #[test_only]
   public fun test_helper_add_self_onboard(vm: &signer, addr:address) acquires ValidatorUniverse {
     assert!(testnet::is_testnet(), 220101014014);
-    assert!(signer::address_of(vm) == @aptos_framework, 220101015010);
-    let state = borrow_global_mut<ValidatorUniverse>(@aptos_framework);
+    assert!(signer::address_of(vm) == @diem_framework, 220101015010);
+    let state = borrow_global_mut<ValidatorUniverse>(@diem_framework);
     vector::push_back<address>(&mut state.validators, addr);
   }
 
@@ -172,10 +172,10 @@ module aptos_framework::validator_universe {
   public fun remove_self(validator: &signer) acquires ValidatorUniverse {
     assert!(testnet::is_testnet(), 220101014014);
     let val = signer::address_of(validator);
-    let state = borrow_global<ValidatorUniverse>(@aptos_framework);
+    let state = borrow_global<ValidatorUniverse>(@diem_framework);
     let (in_set, index) = vector::index_of<address>(&state.validators, &val);
     if (in_set) {
-        let state = borrow_global_mut<ValidatorUniverse>(@aptos_framework);
+        let state = borrow_global_mut<ValidatorUniverse>(@diem_framework);
       vector::remove<address>(&mut state.validators, index);
     }
   }

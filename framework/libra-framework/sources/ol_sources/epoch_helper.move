@@ -1,5 +1,5 @@
 module ol_framework::epoch_helper {
-    friend aptos_framework::reconfiguration;
+    friend diem_framework::reconfiguration;
     // too many cyclic dependencies from reconfiguration being the only place to reach epoch.
     struct EpochHelper has key {
       epoch: u64

@@ -1,23 +1,23 @@
 /// This module defines a struct storing the metadata of the block and new block events.
-module aptos_framework::block {
+module diem_framework::block {
     use std::error;
     use std::features;
     use std::vector;
     use std::option;
 
-    use aptos_framework::account;
-    use aptos_framework::event::{Self, EventHandle};
-    use aptos_framework::reconfiguration;
-    use aptos_framework::stake;
-    use aptos_framework::state_storage;
-    use aptos_framework::system_addresses;
-    use aptos_framework::timestamp;
-    use aptos_framework::transaction_fee;
+    use diem_framework::account;
+    use diem_framework::event::{Self, EventHandle};
+    use diem_framework::reconfiguration;
+    use diem_framework::stake;
+    use diem_framework::state_storage;
+    use diem_framework::system_addresses;
+    use diem_framework::timestamp;
+    use diem_framework::transaction_fee;
 
     //////// 0L ////////
     use ol_framework::epoch_boundary;
 
-    friend aptos_framework::genesis;
+    friend diem_framework::genesis;
 
     const MAX_U64: u64 = 18446744073709551615;
 
@@ -59,31 +59,31 @@ module aptos_framework::block {
     const EZERO_EPOCH_INTERVAL: u64 = 3;
 
     /// This can only be called during Genesis.
-    public(friend) fun initialize(aptos_framework: &signer, epoch_interval_microsecs: u64) {
-        system_addresses::assert_aptos_framework(aptos_framework);
+    public(friend) fun initialize(diem_framework: &signer, epoch_interval_microsecs: u64) {
+        system_addresses::assert_diem_framework(diem_framework);
         assert!(epoch_interval_microsecs > 0, error::invalid_argument(EZERO_EPOCH_INTERVAL));
 
         move_to<BlockResource>(
-            aptos_framework,
+            diem_framework,
             BlockResource {
                 height: 0,
                 epoch_interval: epoch_interval_microsecs,
-                new_block_events: account::new_event_handle<NewBlockEvent>(aptos_framework),
-                update_epoch_interval_events: account::new_event_handle<UpdateEpochIntervalEvent>(aptos_framework),
+                new_block_events: account::new_event_handle<NewBlockEvent>(diem_framework),
+                update_epoch_interval_events: account::new_event_handle<UpdateEpochIntervalEvent>(diem_framework),
             }
         );
     }
 
     /// Update the epoch interval.
-    /// Can only be called as part of the Aptos governance proposal process established by the AptosGovernance module.
+    /// Can only be called as part of the Diem governance proposal process established by the DiemGovernance module.
     public fun update_epoch_interval_microsecs(
-        aptos_framework: &signer,
+        diem_framework: &signer,
         new_epoch_interval: u64,
     ) acquires BlockResource {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_diem_framework(diem_framework);
         assert!(new_epoch_interval > 0, error::invalid_argument(EZERO_EPOCH_INTERVAL));
 
-        let block_resource = borrow_global_mut<BlockResource>(@aptos_framework);
+        let block_resource = borrow_global_mut<BlockResource>(@diem_framework);
         let old_epoch_interval = block_resource.epoch_interval;
         block_resource.epoch_interval = new_epoch_interval;
 
@@ -96,7 +96,7 @@ module aptos_framework::block {
     #[view]
     /// Return epoch interval in seconds.
     public fun get_epoch_interval_secs(): u64 acquires BlockResource {
-        borrow_global<BlockResource>(@aptos_framework).epoch_interval / 1000000
+        borrow_global<BlockResource>(@diem_framework).epoch_interval / 1000000
     }
 
     /// Set the metadata for the current block.
@@ -125,7 +125,7 @@ module aptos_framework::block {
             proposer_index = option::some(stake::get_validator_index(proposer));
         };
 
-        let block_metadata_ref = borrow_global_mut<BlockResource>(@aptos_framework);
+        let block_metadata_ref = borrow_global_mut<BlockResource>(@diem_framework);
         block_metadata_ref.height = event::counter(&block_metadata_ref.new_block_events);
 
         let new_block_event = NewBlockEvent {
@@ -165,7 +165,7 @@ module aptos_framework::block {
     #[view]
     /// Get the current block height
     public fun get_current_block_height(): u64 acquires BlockResource {
-        borrow_global<BlockResource>(@aptos_framework).height
+        borrow_global<BlockResource>(@diem_framework).height
     }
 
     /// Emit the event and update height and global timestamp
@@ -181,7 +181,7 @@ module aptos_framework::block {
     /// Emit a `NewBlockEvent` event. This function will be invoked by genesis directly to generate the very first
     /// reconfiguration event.
     fun emit_genesis_block_event(vm: signer) acquires BlockResource {
-        let block_metadata_ref = borrow_global_mut<BlockResource>(@aptos_framework);
+        let block_metadata_ref = borrow_global_mut<BlockResource>(@diem_framework);
         let genesis_id = @0x0;
         emit_new_block_event(
             &vm,
@@ -203,7 +203,7 @@ module aptos_framework::block {
     ///  new block event for WriteSetPayload.
     public fun emit_writeset_block_event(vm_signer: &signer, fake_block_hash: address) acquires BlockResource {
         system_addresses::assert_vm(vm_signer);
-        let block_metadata_ref = borrow_global_mut<BlockResource>(@aptos_framework);
+        let block_metadata_ref = borrow_global_mut<BlockResource>(@diem_framework);
         block_metadata_ref.height = event::counter(&block_metadata_ref.new_block_events);
 
         event::emit_event<NewBlockEvent>(
@@ -226,23 +226,23 @@ module aptos_framework::block {
         initialize(account, epoch_interval_microsecs);
     }
 
-    #[test(aptos_framework = @aptos_framework)]
-    public entry fun test_update_epoch_interval(aptos_framework: signer) acquires BlockResource {
-        account::create_account_for_test(@aptos_framework);
-        initialize(&aptos_framework, 1);
-        assert!(borrow_global<BlockResource>(@aptos_framework).epoch_interval == 1, 0);
-        update_epoch_interval_microsecs(&aptos_framework, 2);
-        assert!(borrow_global<BlockResource>(@aptos_framework).epoch_interval == 2, 1);
+    #[test(diem_framework = @diem_framework)]
+    public entry fun test_update_epoch_interval(diem_framework: signer) acquires BlockResource {
+        account::create_account_for_test(@diem_framework);
+        initialize(&diem_framework, 1);
+        assert!(borrow_global<BlockResource>(@diem_framework).epoch_interval == 1, 0);
+        update_epoch_interval_microsecs(&diem_framework, 2);
+        assert!(borrow_global<BlockResource>(@diem_framework).epoch_interval == 2, 1);
     }
 
-    #[test(aptos_framework = @aptos_framework, account = @0x123)]
-    #[expected_failure(abort_code = 0x50003, location = aptos_framework::system_addresses)]
+    #[test(diem_framework = @diem_framework, account = @0x123)]
+    #[expected_failure(abort_code = 0x50003, location = diem_framework::system_addresses)]
     public entry fun test_update_epoch_interval_unauthorized_should_fail(
-        aptos_framework: signer,
+        diem_framework: signer,
         account: signer,
     ) acquires BlockResource {
-        account::create_account_for_test(@aptos_framework);
-        initialize(&aptos_framework, 1);
+        account::create_account_for_test(@diem_framework);
+        initialize(&diem_framework, 1);
         update_epoch_interval_microsecs(&account, 2);
     }
 }

@@ -13,7 +13,7 @@
     use std::signer;
     use std::error;
     use std::option::{Self, Option};
-    use aptos_framework::reconfiguration;
+    use diem_framework::reconfiguration;
 
     /// tally not initialized
     const ENOT_INITIALIZED: u64 = 0;
