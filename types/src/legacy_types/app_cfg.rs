@@ -294,6 +294,7 @@ impl AppCfg {
         self.maybe_add_custom_playlist(&np);
         Ok(np)
     }
+
     ///fetch a network profile, optionally by profile name
     pub fn get_network_profile(
         &self,
@@ -306,6 +307,19 @@ impl AppCfg {
         let profile = np.into_iter().find(|each| each.chain_id == chain_id);
 
         profile.context("could not find a network profile")
+    }
+
+      pub fn get_network_profile_mut(
+        &mut self,
+        chain_id: Option<NamedChain>,
+    ) -> anyhow::Result<&mut NetworkPlaylist> {
+        // TODO: avoid clone
+        let np = &mut self.network_playlist;
+
+        let chain_id = chain_id.unwrap_or(self.workspace.default_chain_id);
+        let profile = np.iter_mut().find(|each| each.chain_id == chain_id).context("cannot get network profile")?;
+
+        Ok(profile)
     }
 
     pub async fn refresh_network_profile_and_save(

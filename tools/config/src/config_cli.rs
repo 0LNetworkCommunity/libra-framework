@@ -46,9 +46,10 @@ enum ConfigSub {
     },
 
     /// try to add for fix the libra.yaml file
+    #[clap(arg_required_else_help(true))]
     Fix {
       // optional a network profile
-      #[clap(long)]
+      #[clap(short, long)]
       upstream_url: Option<Url>
     },
     /// For core developers. Generates a config.yaml in the vendor format. This is a hidden command in the CLI.
@@ -85,16 +86,14 @@ impl ConfigCli {
                 workspace,
             }) => make_profile::run(public_key, profile.as_deref().to_owned(), *workspace).await,
             Some(ConfigSub::Fix {upstream_url}) => {
+              let mut cfg = AppCfg::load(self.path.clone())?;
 
               if let Some(u) = upstream_url {
-                let mut cfg = AppCfg::load(self.path.clone())?;
-                let p = cfg.get_profile_mut(self.profile.clone())?;
-                if let Some(nodes) = &mut p.upstream_nodes {
-                  nodes.push(u.clone());
-                  // p.upstream_nodes = nodes;
-                }
-
+                let np = cfg.get_network_profile_mut(self.chain_name.clone())?;
+                np.add_url(u.to_owned());
               }
+              dbg!(&cfg);
+              cfg.save_file()?;
               Ok(())
             }
             Some(ConfigSub::Init {
