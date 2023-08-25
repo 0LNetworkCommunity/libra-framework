@@ -1,6 +1,6 @@
 //! network configs
 use crate::exports::{Client, NamedChain};
-use anyhow::bail;
+use anyhow::{bail, Context};
 use futures::{stream::FuturesUnordered, StreamExt};
 use rand::{seq::SliceRandom, thread_rng};
 use serde_with::{serde_as, DisplayFromStr};
@@ -99,6 +99,18 @@ pub fn find_default_playlist(chain_id: Option<NamedChain>) -> anyhow::Result<Url
 }
 
 impl NetworkPlaylist {
+    pub fn localhost(chain_name: Option<NamedChain>) -> Self {
+      Self {
+          chain_id: chain_name.unwrap_or(NamedChain::MAINNET),
+          nodes: vec![HostProfile {
+            url: "http://localhost:8080".parse().unwrap(),
+            note: "localhost".to_owned(),
+            version: 0,
+            is_api: true,
+            is_sync: true,
+        }],
+      }
+    }
     pub async fn default_for_network(chain_id: Option<NamedChain>) -> anyhow::Result<Self> {
         if let Some(NamedChain::TESTING) = chain_id {
             return Ok(Self::testing(None));
@@ -137,6 +149,11 @@ impl NetworkPlaylist {
         np
     }
 
+    pub fn add_url(&mut self, url: Url) {
+        let h = HostProfile::new(url);
+        self.nodes.push(h);
+    }
+
     pub fn shuffle_order(&mut self) {
         let urls_list = &mut self.nodes;
         let mut rng = thread_rng();
@@ -173,6 +190,19 @@ impl NetworkPlaylist {
             None => bail!("Expected an URL for the best one"),
         }
     }
+
+    pub fn pick_one(&self) -> anyhow::Result<Url> {
+     match self.the_best_one() {
+          Ok(u) => Ok(u),
+          Err(_) => self
+              .all_urls()?
+              .into_iter()
+              .next()
+              .context("no urls to choose from"),
+      }
+    }
+
+
 
     pub async fn refresh_sync_status(&mut self) -> anyhow::Result<()> {
         // let _cfg = get_cfg()?;
