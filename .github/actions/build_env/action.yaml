@@ -1,6 +1,10 @@
 runs:
   using: composite
   steps:
+    - name: unset sccache
+      # may be set by the calling script, but nothing will build
+      run: unset RUSTC_WRAPPER
+
     - name: free disk space
       uses: jlumbroso/free-disk-space@main
       with:
