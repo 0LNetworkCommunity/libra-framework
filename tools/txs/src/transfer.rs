@@ -1,6 +1,6 @@
 //! form a transfer payload and execute transaction
 use super::submit_transaction::Sender;
-use libra_cached_packages::aptos_framework_sdk_builder::EntryFunctionCall::OlAccountTransfer;
+use libra_cached_packages::diem_framework_sdk_builder::EntryFunctionCall::OlAccountTransfer;
 use zapatos_sdk::types::account_address::AccountAddress;
 
 impl Sender {
