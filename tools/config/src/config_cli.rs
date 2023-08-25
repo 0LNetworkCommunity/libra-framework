@@ -5,6 +5,7 @@ use clap::Parser;
 use libra_types::exports::AccountAddress;
 use libra_types::exports::AuthenticationKey;
 use libra_types::exports::NamedChain;
+use libra_types::legacy_types::app_cfg::AppCfg;
 use libra_types::global_config_dir;
 use std::path::PathBuf;
 use url::Url;
@@ -16,11 +17,14 @@ pub struct ConfigCli {
     #[clap(subcommand)]
     subcommand: Option<ConfigSub>,
     /// Path for configs if not the default $HOME/.libra
-    #[clap(short, long)]
+    #[clap(short('f'), long)]
     path: Option<PathBuf>,
     /// optional. Which network to use as the default. Defaults to MAINNET other options: TESTNET, TESTING, DEVNET
     #[clap(short, long)]
     chain_name: Option<NamedChain>,
+    /// optional. Name of the profile
+    #[clap(short, long)]
+    profile: Option<String>,
 }
 
 #[derive(clap::Subcommand)]
@@ -39,6 +43,13 @@ enum ConfigSub {
         /// optional. A URL for a network playlist to load default nodes from
         #[clap(long)]
         playlist_url: Option<Url>,
+    },
+
+    /// try to add for fix the libra.yaml file
+    Fix {
+      // optional a network profile
+      #[clap(long)]
+      upstream_url: Option<Url>
     },
     /// For core developers. Generates a config.yaml in the vendor format. This is a hidden command in the CLI.
     #[clap(hide(true))]
@@ -73,6 +84,19 @@ impl ConfigCli {
                 profile,
                 workspace,
             }) => make_profile::run(public_key, profile.as_deref().to_owned(), *workspace).await,
+            Some(ConfigSub::Fix {upstream_url}) => {
+
+              if let Some(u) = upstream_url {
+                let mut cfg = AppCfg::load(self.path.clone())?;
+                let p = cfg.get_profile_mut(self.profile.clone())?;
+                if let Some(nodes) = &mut p.upstream_nodes {
+                  nodes.push(u.clone());
+                  // p.upstream_nodes = nodes;
+                }
+
+              }
+              Ok(())
+            }
             Some(ConfigSub::Init {
                 force_address,
                 force_authkey,

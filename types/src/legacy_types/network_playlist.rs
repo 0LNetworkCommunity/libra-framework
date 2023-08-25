@@ -137,6 +137,11 @@ impl NetworkPlaylist {
         np
     }
 
+    pub fn add_url(&mut self, url: Url) {
+        let h = HostProfile::new(url);
+        self.nodes.push(h);
+    }
+
     pub fn shuffle_order(&mut self) {
         let urls_list = &mut self.nodes;
         let mut rng = thread_rng();
