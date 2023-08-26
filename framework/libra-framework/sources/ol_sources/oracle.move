@@ -1,6 +1,5 @@
 
 module ol_framework::oracle {
-
     use std::vector;
     use std::signer;
     use std::option;
@@ -14,19 +13,37 @@ module ol_framework::oracle {
     use diem_framework::coin::{Self, Coin};
     use ol_framework::ol_account;
     use ol_framework::gas_coin::GasCoin;
+    use ol_framework::vouch;
+    use ol_framework::epoch_helper;
+    use std::error;
+
+    friend ol_framework::epoch_boundary;
+
+    /// You need a minimum of three Vouches on your account, and of unrelated
+    /// buddies. Meaning: they don't come from the same ancestry of accounts.
+    /// Go meet more people!
+    const ENOT_THREE_UNRELATED_VOUCHERS: u64 = 1;
+    /// You'll need to have some vouches by accounts in the miner community.
+    /// We check if you had any vouchers (buddies) among the successful miners of the
+    /// previous epoch.
+    const ENEED_THREE_FRIENDS_IN_MINER_COMMUNITY: u64 = 2;
 
     /// A list of all miners' addresses
     // reset at epoch boundary
     struct ProviderList has key {
-      list: vector<address>,
+      current_above_threshold: vector<address>,
+      previous_epoch_list: vector<address>,
     }
 
+    /// the root account's counter
     struct GlobalCounter has key {
       lifetime_proofs: u64,
       proofs_in_epoch: u64,
       proofs_in_epoch_above_thresh: u64,
     }
 
+    /// a user's account Tower of proofs
+    /// a private blockchain of the proofs submitted.
     struct Tower has key {
         last_commit_timestamp: u64,
         previous_proof_hash: vector<u8>,
@@ -38,6 +55,8 @@ module ol_framework::oracle {
         distribute_rewards_events: EventHandle<DistributeRewardsEvent>,
     }
 
+
+    /// an event struct to register payment events
     struct DistributeRewardsEvent has drop, store {
         account: address,
         rewards_amount: u64,
@@ -52,7 +71,9 @@ module ol_framework::oracle {
       });
 
       move_to(root, ProviderList {
-        list: vector::empty(),
+        current_above_threshold: vector::empty(),
+        previous_epoch_list: vector::empty(),
+
       });
     }
 
@@ -102,6 +123,18 @@ module ol_framework::oracle {
       ) acquires GlobalCounter, Tower, ProviderList {
       let provider_addr = signer::address_of(provider);
 
+      // Don't populate the oracle miner list wit accounts that don't have vouches.
+      {
+        // must have 3 accounts who are unrelated vouching for you.
+        assert!(vouch::unrelated_buddies_above_thresh(provider_addr, 2), error::invalid_state(ENOT_THREE_UNRELATED_VOUCHERS));
+        // in the previous epoch of successful miners, you'll need to have 3 unrelated vouchers there as well.
+        let previous_epoch_list = &borrow_global<ProviderList>(@ol_framework).previous_epoch_list;
+        let (_, count_buddies) = vouch::buddies_in_list(provider_addr, previous_epoch_list);
+        assert!(count_buddies > 2, error::invalid_state(ENEED_THREE_FRIENDS_IN_MINER_COMMUNITY));
+
+      };
+
+
       // the message needs to be exactly the hash of the previous proof.
       // first check if enough time has passed.
       let time = timestamp::now_microseconds();
@@ -149,18 +182,17 @@ module ol_framework::oracle {
         global.proofs_in_epoch_above_thresh = global.proofs_in_epoch_above_thresh + 1;
         // also add to the provider list which would be elegible for rewards
         let provider_list = borrow_global_mut<ProviderList>(@ol_framework);
-        vector::push_back(&mut provider_list.list, provider_addr);
+        vector::push_back(&mut provider_list.current_above_threshold, provider_addr);
       };
 
 
-      let current_epoch = 0; // todo: get current epoch
+      let current_epoch = epoch_helper::get_current_epoch();
       if (current_epoch == (tower.latest_epoch_mining - 1)) {
         tower.contiguous_epochs_mining = tower.contiguous_epochs_mining + 1;
 
       };
       tower.epochs_mining = tower.epochs_mining + 1;
-      tower.latest_epoch_mining = 0; // todo: get current epoch;
-
+      tower.latest_epoch_mining = epoch_helper::get_current_epoch();
 
     }
 
@@ -171,7 +203,7 @@ module ol_framework::oracle {
       if (testnet::is_testnet()) {
         30
       } else {
-        60 * 60
+        60 * 60 // 1 hr
       }
     }
 
@@ -184,24 +216,52 @@ module ol_framework::oracle {
       }
     }
 
-    fun epoch_reward(vm: &signer, all_coins: &mut Coin<GasCoin>, per_user: u64) acquires ProviderList {
+    public(friend) fun epoch_boundary(root: &signer, budget: &mut Coin<GasCoin>) acquires GlobalCounter, ProviderList, Tower {
+      reset_counters(root);
+      epoch_reward(root, budget)
+    }
 
-      system_addresses::assert_ol(vm);
-      let provider_list = borrow_global_mut<ProviderList>(@ol_framework);
-      vector::for_each_ref(&provider_list.list, |addr| {
-        let split = coin::extract(all_coins, per_user);
+    fun reset_counters(root: &signer) acquires ProviderList, GlobalCounter{
+      system_addresses::assert_ol(root);
+      let provider_state = borrow_global_mut<ProviderList>(@ol_framework);
+      provider_state.previous_epoch_list = provider_state.current_above_threshold;
+      provider_state.current_above_threshold = vector::empty<address>();
+
+      let counter_state = borrow_global_mut<GlobalCounter>(@ol_framework);
+      counter_state.proofs_in_epoch = 0;
+      counter_state.proofs_in_epoch_above_thresh = 0;
+
+    }
+
+    /// from the total reward, available to the miners, divide equally among
+    /// successful miners.
+    fun epoch_reward(root: &signer, budget: &mut Coin<GasCoin>) acquires ProviderList, Tower {
+      system_addresses::assert_ol(root);
+
+      let coin_value = coin::value(budget);
+
+      let provider_list = &borrow_global_mut<ProviderList>(@ol_framework).current_above_threshold;
+      let len = vector::length(provider_list);
+
+      if (len == 0) return;
+
+      let per_user = coin_value / len;
+      vector::for_each_ref(provider_list, |addr| {
+        emit_distribute_reward(root, addr, per_user);
+        let split = coin::extract(budget, per_user);
         ol_account::deposit_coins(*addr, split);
+
       });
     }
 
     // since rewards are handled externally to stake.move we need an api to emit the event
-    public(friend) fun emit_distribute_reward(root: &signer, account: address, rewards_amount: u64) acquires Tower {
+    public(friend) fun emit_distribute_reward(root: &signer, account: &address, rewards_amount: u64) acquires Tower {
         system_addresses::assert_ol(root);
-        let oracle_tower = borrow_global_mut<Tower>(account);
+        let oracle_tower = borrow_global_mut<Tower>(*account);
         event::emit_event(
           &mut oracle_tower.distribute_rewards_events,
           DistributeRewardsEvent {
-              account,
+              account: *account,
               rewards_amount,
           },
       );
