@@ -21,6 +21,7 @@ module ol_framework::proof_of_fee {
   use diem_framework::reconfiguration;
   use diem_framework::stake;
   use diem_framework::system_addresses;
+  use ol_framework::globals;
 
   // use diem_std::debug::print;
 
@@ -307,7 +308,7 @@ module ol_framework::proof_of_fee {
       if (jail::is_jailed(*val)) return false;
       // we can't seat validators who don't have minimum viable vouches
 
-      if (!vouch::unrelated_buddies_above_thresh(*val)) return false;
+      if (!vouch::unrelated_buddies_above_thresh(*val, globals::get_validator_vouch_threshold())) return false;
       let (bid_pct, expire) = current_bid(*val);
       if (bid_pct < 1) return false;
       // Skip if the bid expired. belt and suspenders, this should have been checked in the sorting above.
