@@ -51,7 +51,7 @@ module ol_framework::tower_state {
       fullnode_proofs: u64,
     }
 
-    /// The struct to store the global count of proofs in 0x0
+    /// The struct to store the global count of proofs in ol_framework
     struct TowerCounter has key {
       lifetime_proofs: u64,
       lifetime_validator_proofs: u64,
@@ -226,8 +226,8 @@ module ol_framework::tower_state {
     /// Private, can only be called within module
     /// adds `tower` to list of towers
     fun increment_miners_list(miner: address) acquires TowerList {
-      if (exists<TowerList>(@0x0)) {
-        let state = borrow_global_mut<TowerList>(@0x0);
+      if (exists<TowerList>(@ol_framework)) {
+        let state = borrow_global_mut<TowerList>(@ol_framework);
         if (!vector::contains<address>(&mut state.list, &miner)) {
           vector::push_back<address>(&mut state.list, miner);
         }
@@ -476,22 +476,20 @@ module ol_framework::tower_state {
       diff.prev_diff = diff.difficulty;
       diff.prev_sec = diff.security;
 
-      // NOTE: For now we are not changing the vdf security params.
-      if (testnet::is_testnet()) {
-        // VDF proofs must be even numbers.
-        let rng = toy_rng(3, 2);
-        if (rng > 0) {
-          rng = rng * 2;
-        };
-        diff.difficulty = globals::get_vdf_difficulty_baseline() + rng;
+      // VDF proofs must be even numbers.
+      let rando = toy_rng(3, 2);
+      if (rando > 0) {
+        rando = rando * 2;
+      };
 
-      }
+      diff.difficulty = globals::get_vdf_difficulty_baseline() + rando;
+
     }
 
     // Used at epoch boundary by vm to reset all validator's statistics.
     // Permissions: PUBLIC, ONLY VM.
     public fun reconfig(
-      vm: &signer, outgoing_validators: &vector<address>
+      vm: &signer
     ) acquires TowerProofHistory, TowerList, TowerCounter, VDFDifficulty {
       // Check permissions
       system_addresses::assert_ol(vm);
@@ -501,10 +499,11 @@ module ol_framework::tower_state {
 
       // Iterate through validators and call update_metrics for each validator
       // that had proofs this epoch
-      let vals_len = vector::length<address>(outgoing_validators); // TODO: These references are weird
+      let outgoing_miners = get_miner_list();
+      let vals_len = vector::length(&outgoing_miners);
       let i = 0;
       while (i < vals_len) {
-          let val = vector::borrow(outgoing_validators, i);
+          let val = vector::borrow(&outgoing_miners, i);
 
           // For testing: don't call update_metrics unless there is account state for the address.
           if (exists<TowerProofHistory>(*val)){
@@ -515,9 +514,9 @@ module ol_framework::tower_state {
 
       epoch_reset(vm);
       // safety
-      if (exists<TowerList>(@0x0)) {
+      if (exists<TowerList>(@ol_framework)) {
         //reset miner list
-        let towerlist_state = borrow_global_mut<TowerList>(@0x0);
+        let towerlist_state = borrow_global_mut<TowerList>(@ol_framework);
         towerlist_state.list = vector::empty<address>();
       };
     }
@@ -640,7 +639,7 @@ module ol_framework::tower_state {
 
     /// Reset the tower counter at the end of epoch.
     public fun epoch_reset(vm: &signer) acquires TowerCounter {
-      system_addresses::assert_vm(vm);
+      system_addresses::assert_ol(vm);
       if (!exists<TowerCounter>(@ol_framework)) return;
 
       let state = borrow_global_mut<TowerCounter>(@ol_framework);
@@ -661,7 +660,6 @@ module ol_framework::tower_state {
     // We want to see where it breaks.
     // the first use case is to change the VDF difficulty parameter by tiny margins, in order to make it difficult to stockpile VDFs in a previous epoch, but not change the security properties.
     // the goal is to push all the RNG work to all the tower miners in the network, and minimize compute on the Move side
-    // use diem_framework::Debug::print;
 
     public fun toy_rng(seed: u64, iters: u64): u64 acquires TowerList, TowerProofHistory {
       // Get the list of all miners L
@@ -693,6 +691,7 @@ module ol_framework::tower_state {
         let vec = if (exists<TowerProofHistory>(*miner_addr)) {
           *&borrow_global<TowerProofHistory>(*miner_addr).previous_proof_hash
         } else { return 0 };
+
         // take the last bit (B) from their last proof hash.
 
         n = (vector::pop_back(&mut vec) as u64);
@@ -709,10 +708,10 @@ module ol_framework::tower_state {
     #[view]
     /// Returns number of epochs for input miner's state
     public fun get_miner_list(): vector<address> acquires TowerList {
-      if (!exists<TowerList>(@0x0)) {
+      if (!exists<TowerList>(@ol_framework)) {
         return vector::empty<address>()
       };
-      *&borrow_global<TowerList>(@0x0).list
+      *&borrow_global<TowerList>(@ol_framework).list
     }
 
     #[view]
