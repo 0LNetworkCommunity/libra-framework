@@ -17,7 +17,7 @@ use super::network_playlist::{self, HostProfile, NetworkPlaylist};
 
 pub const CONFIG_FILE_NAME: &str = "libra.yaml";
 /// MinerApp Configuration
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct AppCfg {
     /// Workspace config
     pub workspace: Workspace,
@@ -31,7 +31,7 @@ pub struct AppCfg {
     pub tx_configs: TxConfigs,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct LegacyToml {
     /// Workspace config
     pub workspace: Workspace,
@@ -164,10 +164,10 @@ impl AppCfg {
     }
 
     /// can get profile by account fragment: full account string or shortened "nickname"
-    pub fn get_profile(&self, nickname: Option<String>) -> anyhow::Result<Profile> {
+    pub fn get_profile(&self, nickname: Option<String>) -> anyhow::Result<&Profile> {
         let idx = self.get_profile_idx(nickname).unwrap_or(0);
         let p = self.user_profiles.get(idx).context("no profile at index")?;
-        Ok(p.to_owned())
+        Ok(p)
     }
 
     /// get profile mutable borrow
@@ -186,17 +186,12 @@ impl AppCfg {
             return Ok(());
         }
 
-        let mut found = false;
-        // if it exists lets update it.
-        self.user_profiles.iter_mut().for_each(|e| {
-            if e.account == profile.account {
-                *e = profile.clone();
-                found = true;
-            }
-        });
+       let maybe_here = self.user_profiles.iter_mut().find(|e| e.account == profile.account);
 
-        if !found {
-            self.user_profiles.push(profile);
+        if let Some(p) = maybe_here {
+            *p = profile; // replace it
+        } else {
+          self.user_profiles.push(profile);
         }
 
         Ok(())
@@ -239,20 +234,8 @@ impl AppCfg {
     }
 
     pub fn init_for_tests(path: PathBuf) -> anyhow::Result<AppCfg> {
-        // use crate::test_drop_helper::DropTemp;
-        // use zapatos_temppath::TempPath;
+
         use zapatos_crypto::ValidCryptoMaterialStringExt;
-
-        // Alice = "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse"
-        // "child_0_owner": {
-        //   "account": "87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5",
-        //   "auth_key": "0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5",
-        //   "pri_key": "0x74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b"
-        // },
-
-        // let temp = DropTemp::new_in_crate(test_name);
-        // let temp = TempPath::new();
-
         let mut cfg = Self::init_app_configs(
             "87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5".parse()?,
             "0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5".parse()?,
@@ -269,22 +252,6 @@ impl AppCfg {
         Ok(cfg)
     }
 
-    // /// Removes current node from upstream nodes
-    // /// To be used when DB is corrupted for instance.
-    // pub fn remove_node(&mut self, host: String) -> anyhow::Result<()> {
-    //     let nodes = self.profile.upstream_nodes.clone();
-    //     match nodes.len() {
-    //         1 => bail!("Cannot remove last node"),
-    //         _ => {
-    //             self.profile.upstream_nodes = nodes
-    //                 .into_iter()
-    //                 .filter(|each| !each.to_string().contains(&host))
-    //                 .collect();
-    //             self.save_file()?;
-    //             Ok(())
-    //         }
-    //     }
-    // }
     pub fn set_chain_id(&mut self, chain_id: NamedChain) {
         self.workspace.default_chain_id = chain_id;
     }
@@ -400,20 +367,12 @@ pub struct Workspace {
     // pub stdlib_bin_path: Option<PathBuf>,
 }
 
-// fn default_db_path() -> PathBuf {
-//     global_config_dir().join("db")
-// }
-
 impl Default for Workspace {
     fn default() -> Self {
         Self {
             default_profile: None,
             default_chain_id: NamedChain::MAINNET,
             node_home: crate::global_config_dir(),
-            // source_path: None,
-            // block_dir: "vdf_proofs".to_owned(),
-            // db_path: default_db_path(),
-            // stdlib_bin_path: None,
         }
     }
 }
@@ -444,7 +403,7 @@ impl Default for ChainInfo {
 }
 
 /// Miner profile to commit this work chain to a particular identity
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Profile {
     /// The 0L account for the Miner and prospective validator. This is derived from auth_key
     pub account: AccountAddress,
@@ -495,18 +454,12 @@ impl Default for Profile {
             )
             .unwrap(),
             statement: "Protests rage across the nation".to_owned(),
-            // ip: "0.0.0.0".parse().unwrap(),
-            // vfn_ip: "0.0.0.0".parse().ok(),
-            // // default_node: Some("http://localhost:8080".parse().expect("parse url")),
-            // override_playlist: None,
-            // upstream_nodes: vec!["http://localhost:8080".parse().expect("parse url")],
-            // tower_link: None,
             test_private_key: None,
             locale: None,
             nickname: "default".to_string(),
             on_chain: false,
             balance: 0,
-            upstream_nodes: None, // deprecation
+            upstream_nodes: None, // Note: deprecated, here for migration
         }
     }
 }
@@ -727,9 +680,6 @@ tx_configs:
 
     let np = cfg.get_network_profile(Some(NamedChain::MAINNET)).unwrap();
     assert!(np.chain_id == NamedChain::MAINNET);
-
-    // none of the node have been verified
-    // dbg!(&np.the_good_ones().unwrap());
 
     assert!(np.the_good_ones().is_err());
     assert!(np.the_best_one().is_err());
