@@ -33,7 +33,7 @@ module ol_framework::globals {
       epoch_mining_thres_upper: u64,
       epoch_slow_wallet_unlock: u64,
       min_blocks_per_epoch: u64,
-      vouch_threshold: u64,
+      validator_vouch_threshold: u64,
       signing_threshold_pct: u64,
     }
 
@@ -96,8 +96,8 @@ module ol_framework::globals {
     }
 
     /// Get the threshold for unrelated vouchers per validator
-    public fun get_vouch_threshold(): u64 {
-      get_constants().vouch_threshold
+    public fun get_validator_vouch_threshold(): u64 {
+      get_constants().validator_vouch_threshold
     }
 
     /// Get the threshold of number of signed blocks in an epoch per validator
@@ -133,7 +133,7 @@ module ol_framework::globals {
           epoch_mining_thres_upper: 1000, // upper bound unlimited
           epoch_slow_wallet_unlock: 10,
           min_blocks_per_epoch: 0,
-          vouch_threshold: 0,
+          validator_vouch_threshold: 0,
           signing_threshold_pct: 3,
         }
       };
@@ -150,7 +150,7 @@ module ol_framework::globals {
           epoch_mining_thres_upper: 72, // upper bound enforced at 20 mins per proof.
           epoch_slow_wallet_unlock: 1000  * get_coin_scaling_factor(),
           min_blocks_per_epoch: 1000,
-          vouch_threshold: 0,
+          validator_vouch_threshold: 0,
           signing_threshold_pct: 3,
         }
       } else {
@@ -169,7 +169,7 @@ module ol_framework::globals {
           epoch_mining_thres_upper: 6, // upper bound 6 * 6hrs
           epoch_slow_wallet_unlock: 1000 * get_coin_scaling_factor(), // approx 10 years for largest accounts in genesis.
           min_blocks_per_epoch: 10000,
-          vouch_threshold: 2, // Production is 2 vouchers per validator
+          validator_vouch_threshold: 2, // Production is 2 vouchers per validator
           signing_threshold_pct: 3,
         }
       }
