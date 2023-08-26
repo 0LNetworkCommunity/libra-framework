@@ -8,6 +8,7 @@ module ol_framework::test_pof {
   use ol_framework::slow_wallet;
   use ol_framework::vouch;
   use ol_framework::testnet;
+  use ol_framework::globals;
   use diem_framework::stake;
   use std::vector;
 
@@ -98,11 +99,11 @@ module ol_framework::test_pof {
 
     testnet::unset(&root);
 
-    assert!(vouch::unrelated_buddies_above_thresh(*alice), 1006);
+    assert!(vouch::unrelated_buddies_above_thresh(*alice, globals::get_validator_vouch_threshold()), 1006);
     assert!(proof_of_fee::audit_qualification(alice), 1008);
 
     vouch::test_set_buddies(*alice, vector::empty());
-    assert!(!vouch::unrelated_buddies_above_thresh(*alice), 1006);
+    assert!(!vouch::unrelated_buddies_above_thresh(*alice, globals::get_validator_vouch_threshold()), 1006);
     assert!(!proof_of_fee::audit_qualification(alice), 1008);
   }
 
