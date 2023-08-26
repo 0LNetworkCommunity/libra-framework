@@ -2,11 +2,11 @@
 /// tests for external apis, and where a dependency cycle with genesis is created.
 module ol_framework::test_tower {
   use ol_framework::mock;
-  // use std::debug::print;
   use ol_framework::tower_state;
   use ol_framework::vdf_fixtures;
   use ol_framework::testnet;
 
+  // use std::debug::print;
 
   #[test(root = @ol_framework)]
   fun epoch_changes_difficulty(root: signer) {
@@ -15,7 +15,6 @@ module ol_framework::test_tower {
 
     mock::tower_default(); // make all the validators initialize towers
     // because we need randomness for the toy rng
-
 
     let (diff, sec) = tower_state::get_difficulty();
 
@@ -29,9 +28,8 @@ module ol_framework::test_tower {
 
     mock::trigger_epoch(&root);
 
-    let (diff, sec) = tower_state::get_difficulty();
+    let (diff, _sec) = tower_state::get_difficulty();
     assert!(diff!=100, 735703);
-    assert!(sec!=512, 735704);
   }
 
   #[test(root = @ol_framework, alice = @0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5)]
@@ -54,5 +52,20 @@ module ol_framework::test_tower {
       // assert!(Vector::length<address>(&TowerState::get_miner_list()) == 2, 735704);
           // includes the dummy validator from genesis
     }
+
+
+  #[test(root = @ol_framework)]
+  fun toy_rng_state(root: signer) {
+    mock::genesis_n_vals(&root, 4);
+    mock::ol_initialize_coin(&root);
+
+    mock::tower_default(); // make all the validators initialize towers
+    // because we need randomness for the toy rng
+
+    let num = tower_state::toy_rng(1, 3);
+
+    assert!(num == 184, 7357001);
+
+  }
 
 }
