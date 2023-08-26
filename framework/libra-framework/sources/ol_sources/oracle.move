@@ -10,6 +10,7 @@ module ol_framework::oracle {
     use diem_framework::account;
     use diem_std::ed25519;
     use diem_std::comparator;
+    use diem_framework::event::{Self, EventHandle};
 
     /// A list of all miners' addresses
     // reset at epoch boundary
@@ -31,6 +32,12 @@ module ol_framework::oracle {
         count_proofs_in_epoch: u64,
         epochs_mining: u64,
         contiguous_epochs_mining: u64,
+        distribute_rewards_events: EventHandle<DistributeRewardsEvent>,
+    }
+
+    struct DistributeRewardsEvent has drop, store {
+        account: address,
+        rewards_amount: u64,
     }
 
 
@@ -56,6 +63,7 @@ module ol_framework::oracle {
         count_proofs_in_epoch: 0,
         epochs_mining: 0,
         contiguous_epochs_mining: 0,
+        distribute_rewards_events: account::new_event_handle<DistributeRewardsEvent>(provider)
       });
 
     }
@@ -70,8 +78,6 @@ module ol_framework::oracle {
       count_proofs_in_epoch: u64,
       epochs_validating_and_mining: u64,
       contiguous_epochs_validating_and_mining: u64,
-
-
     ) {
       system_addresses::assert_ol(root);
       move_to(provider, Tower {
@@ -82,6 +88,7 @@ module ol_framework::oracle {
         count_proofs_in_epoch,
         epochs_mining: epochs_validating_and_mining,
         contiguous_epochs_mining: contiguous_epochs_validating_and_mining,
+        distribute_rewards_events: account::new_event_handle<DistributeRewardsEvent>(provider)
       })
     }
 
@@ -176,5 +183,18 @@ module ol_framework::oracle {
 
     fun has_unrelated_vouches_above_threshold() {
 
+    }
+
+    // since rewards are handled externally to stake.move we need an api to emit the event
+    public(friend) fun emit_distribute_reward(root: &signer, account: address, rewards_amount: u64) acquires Tower {
+        system_addresses::assert_ol(root);
+        let oracle_tower = borrow_global_mut<Tower>(account);
+        event::emit_event(
+          &mut oracle_tower.distribute_rewards_events,
+          DistributeRewardsEvent {
+              account,
+              rewards_amount,
+          },
+      );
     }
 }
