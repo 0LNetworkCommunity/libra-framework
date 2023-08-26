@@ -20,8 +20,12 @@ module ol_framework::mock {
   use ol_framework::ol_account;
   use ol_framework::tower_state;
   use ol_framework::vdf_fixtures;
+  // use diem_framework::chain_status;
+  // use std::error;
   // #[test_only]
   // use diem_std::debug::print;
+
+  const ENO_GENESIS_END_MARKER: u64 = 1;
 
   #[test_only]
   public fun reset_val_perf_one(vm: &signer, addr: address) {
@@ -142,6 +146,8 @@ module ol_framework::mock {
     public fun ol_test_genesis(root: &signer) {
       system_addresses::assert_ol(root);
       genesis::setup();
+      genesis::test_end_genesis(root);
+      // assert!(!chain_status::is_genesis(), error::invalid_state(ENO_GENESIS_END_MARKER));
     }
 
     #[test_only]
@@ -234,9 +240,6 @@ module ol_framework::mock {
         i = i + 1;
       };
 
-
-      genesis::test_end_genesis(&framework_sig);
-
       stake::get_current_validators()
     }
 
@@ -252,7 +255,7 @@ module ol_framework::mock {
     public fun trigger_epoch(root: &signer) {
         epoch_boundary::ol_reconfigure_for_test(root, reconfiguration::get_current_epoch());
         timestamp::fast_forward_seconds(EPOCH_DURATION);
-        reconfiguration::reconfigure_for_test_custom();
+        reconfiguration::reconfigure_for_test();
     }
 
   //   // function to deposit into network fee account
