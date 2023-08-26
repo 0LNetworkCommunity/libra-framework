@@ -454,7 +454,7 @@ pub struct Profile {
     /// Private key only for use with testing
     /// Note: skip_serializing so that it is never saved to disk.
     #[serde(skip_serializing)]
-    pub test_private_key: Option<Ed25519PrivateKey>,
+    test_private_key: Option<Ed25519PrivateKey>,
 
     /// nickname for this profile
     pub nickname: String,
@@ -518,6 +518,16 @@ impl Profile {
         p.auth_key = auth;
         p.nickname = get_nickname(p.account);
         p
+    }
+
+    // sets the private key and consumes it.
+    pub fn set_private_key(&mut self, key: &Ed25519PrivateKey) {
+      self.test_private_key = Some(key.to_owned())
+    }
+
+    // sets the private key and consumes it.
+    pub fn borrow_private_key(&self) -> anyhow::Result<&Ed25519PrivateKey> {
+      Ok(self.test_private_key.as_ref().context("no private key found")?)
     }
 }
 

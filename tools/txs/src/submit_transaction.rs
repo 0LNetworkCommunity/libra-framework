@@ -113,9 +113,9 @@ impl Sender {
         let profile = app_cfg.get_profile(profile)?;
 
 
-        let key = match profile.test_private_key {
-            Some(k) => k.to_owned(),
-            None => {
+        let key = match profile.borrow_private_key() {
+            Ok(k) => k.to_owned(),
+            _ => {
                 let leg_keys = libra_wallet::account_keys::get_keys_from_prompt()?;
                 leg_keys.child_0_owner.pri_key
             }

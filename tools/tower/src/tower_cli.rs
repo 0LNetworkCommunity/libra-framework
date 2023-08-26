@@ -51,7 +51,7 @@ impl TowerCli {
         let profile = app_cfg.get_profile_mut(self.profile.clone())?;
 
         if let Some(pk) = &self.test_private_key {
-            profile.test_private_key = Some(Ed25519PrivateKey::from_encoded_string(pk)?);
+            profile.set_private_key(&Ed25519PrivateKey::from_encoded_string(pk)?);
         };
 
         match self.command {
@@ -84,6 +84,6 @@ impl TowerCli {
 // for any long running operations requiring the private key in memory.
 fn prompt_private_key(cfg: &mut Profile) -> anyhow::Result<()>{
   let leg_keys = libra_wallet::account_keys::get_keys_from_prompt()?;
-  cfg.test_private_key = Some(leg_keys.child_0_owner.pri_key);
+  cfg.set_private_key(&leg_keys.child_0_owner.pri_key);
   Ok(())
 }
