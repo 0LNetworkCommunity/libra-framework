@@ -15,6 +15,8 @@ module diem_framework::reconfiguration {
     use diem_framework::transaction_fee;
     use ol_framework::epoch_helper;
 
+    // use diem_std::debug::print;
+
     friend diem_framework::diem_governance;
     friend diem_framework::block;
     friend diem_framework::consensus_config;
@@ -105,11 +107,9 @@ module diem_framework::reconfiguration {
     /// Signal validators to start using new configuration. Must be called from friend config modules.
     public(friend) fun reconfigure() acquires Configuration {
         // Do not do anything if genesis has not finished.
-
         if (chain_status::is_genesis() || timestamp::now_microseconds() == 0 || !reconfiguration_enabled()) {
             return
         };
-
 
         let config_ref = borrow_global_mut<Configuration>(@diem_framework);
         let current_time = timestamp::now_microseconds();
@@ -211,7 +211,7 @@ module diem_framework::reconfiguration {
     // This is used together with stake::end_epoch() for testing with last_reconfiguration_time
     // It must be called each time an epoch changes
     #[test_only]
-    public fun reconfigure_for_test_custom() acquires Configuration {
+    public fun test_helper_increment_epoch_dont_reconfigure() acquires Configuration {
         let config_ref = borrow_global_mut<Configuration>(@diem_framework);
         let current_time = timestamp::now_microseconds();
         if (current_time == config_ref.last_reconfiguration_time) {
