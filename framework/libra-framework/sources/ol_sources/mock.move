@@ -20,12 +20,13 @@ module ol_framework::mock {
   use ol_framework::ol_account;
   use ol_framework::tower_state;
   use ol_framework::vdf_fixtures;
+  use ol_framework::epoch_helper;
+  use ol_framework::musical_chairs;
   // use diem_framework::chain_status;
-  // use std::error;
-  // #[test_only]
   // use diem_std::debug::print;
 
   const ENO_GENESIS_END_MARKER: u64 = 1;
+  const EDID_NOT_ADVANCE_EPOCH: u64 = 1;
 
   #[test_only]
   public fun reset_val_perf_one(vm: &signer, addr: address) {
@@ -219,6 +220,10 @@ module ol_framework::mock {
       system_addresses::assert_ol(root);
       let framework_sig = account::create_signer_for_test(@diem_framework);
       ol_test_genesis(&framework_sig);
+      // need to initialize musical chairs separate from genesis.
+      let musical_chairs_default_seats = 10;
+      musical_chairs::initialize(root, musical_chairs_default_seats);
+
 
       let val_addr = personas();
       let i = 0;
@@ -253,9 +258,11 @@ module ol_framework::mock {
     // the reconfiguration module must run last, since no other
     // transactions or operations can happen after the reconfig.
     public fun trigger_epoch(root: &signer) {
+        let old_epoch = epoch_helper::get_current_epoch();
         epoch_boundary::ol_reconfigure_for_test(root, reconfiguration::get_current_epoch());
         timestamp::fast_forward_seconds(EPOCH_DURATION);
         reconfiguration::reconfigure_for_test();
+        assert!(epoch_helper::get_current_epoch() > old_epoch, EDID_NOT_ADVANCE_EPOCH);
     }
 
   //   // function to deposit into network fee account
@@ -273,6 +280,7 @@ module ol_framework::mock {
   /// test we can trigger an epoch reconfiguration.
   public fun meta_epoch(root: signer) {
     ol_test_genesis(&root);
+    musical_chairs::initialize(&root, 10);
     ol_initialize_coin(&root);
     let epoch = reconfiguration::current_epoch();
     trigger_epoch(&root);
