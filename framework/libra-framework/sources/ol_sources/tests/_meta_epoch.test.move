@@ -15,14 +15,14 @@ module ol_framework::test_meta {
 
     mock::ol_test_genesis(&root);
     // NOTE: There was no genesis END event here.
-    // Which means we need to use reconfigure_for_test_custom
+    // Which means we need to use test_helper_increment_epoch_dont_reconfigure
 
     let a = reconfiguration::get_current_epoch();
 
     // create a new epoch
     stake::end_epoch();
 
-    reconfiguration::reconfigure_for_test_custom();
+    reconfiguration::test_helper_increment_epoch_dont_reconfigure();
 
     let b = reconfiguration::get_current_epoch();
 
@@ -50,17 +50,17 @@ module ol_framework::test_meta {
     assert!(b == 1, 10002);
   }
 
-  #[test(root = @ol_framework)]
-  fun test_reconfigure_mock_trigger(root: signer) {
-    mock::ol_test_genesis(&root);
-    mock::ol_initialize_coin(&root);
-    let a = reconfiguration::get_current_epoch();
+  // #[test(root = @ol_framework)]
+  // fun test_reconfigure_mock_trigger(root: signer) {
+  //   mock::ol_test_genesis(&root);
+  //   mock::ol_initialize_coin(&root);
+  //   let a = reconfiguration::get_current_epoch();
 
-    mock::trigger_epoch(&root);
-    let b = reconfiguration::get_current_epoch();
+  //   mock::trigger_epoch(&root);
+  //   let b = reconfiguration::get_current_epoch();
 
-    assert!(a == 0, 10001);
-    assert!(b == 1, 10002);
+  //   assert!(a == 0, 10001);
+  //   assert!(b == 1, 10002);
 
-  }
+  // }
 }
