@@ -67,7 +67,7 @@ module ol_framework::burn {
 
       let available_to_burn = coin::value(coins);
       if (available_to_burn == 0) {
-        // coin::destroy_zero(coins);
+        // don't destroy, let the caller handle empty coins
         return
       };
 

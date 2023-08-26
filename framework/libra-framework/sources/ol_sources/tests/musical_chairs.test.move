@@ -13,6 +13,7 @@ module ol_framework::test_musical_chairs {
     #[test(root = @ol_framework)]
     public entry fun eval_compliance_happy(root: signer) {
 
+      let musical_chairs_default_seats = 10;
       let vals = mock::genesis_n_vals(&root, 5);
       assert!(vector::length(&vals) == 5, 7357001);
 
@@ -27,7 +28,7 @@ module ol_framework::test_musical_chairs {
 
       let (outgoing_compliant_set, new_set_size) = musical_chairs::stop_the_music(&root);
 
-      let musical_chairs_default_seats = 10;
+
       assert!(vector::length(&outgoing_compliant_set) == 5, 7357005);
       assert!(new_set_size == (musical_chairs_default_seats + 1), 7357006);
     }
