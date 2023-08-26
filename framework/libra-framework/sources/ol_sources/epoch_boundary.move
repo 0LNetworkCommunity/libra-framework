@@ -14,6 +14,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::burn;
     use ol_framework::donor_directed;
     use ol_framework::fee_maker;
+    use ol_framework::tower_state;
     use diem_framework::transaction_fee;
     use diem_framework::coin::{Self, Coin};
     use std::vector;
@@ -35,6 +36,8 @@ module diem_framework::epoch_boundary {
         donor_directed::process_donor_directed_accounts(root, closing_epoch);
         // reset fee makers tracking
         fee_maker::epoch_reset_fee_maker(root);
+        // randomize the Tower/Oracle difficulty
+        tower_state::reconfig(root);
 
 
         let all_fees = transaction_fee::root_withdraw_all(root);
