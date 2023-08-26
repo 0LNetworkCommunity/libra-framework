@@ -99,6 +99,18 @@ pub fn find_default_playlist(chain_id: Option<NamedChain>) -> anyhow::Result<Url
 }
 
 impl NetworkPlaylist {
+    pub fn localhost(chain_name: Option<NamedChain>) -> Self {
+      Self {
+          chain_id: chain_name.unwrap_or(NamedChain::MAINNET),
+          nodes: vec![HostProfile {
+            url: "http://localhost:8080".parse().unwrap(),
+            note: "localhost".to_owned(),
+            version: 0,
+            is_api: true,
+            is_sync: true,
+        }],
+      }
+    }
     pub async fn default_for_network(chain_id: Option<NamedChain>) -> anyhow::Result<Self> {
         if let Some(NamedChain::TESTING) = chain_id {
             return Ok(Self::testing(None));

@@ -4,10 +4,10 @@ use anyhow::Result;
 use clap::Parser;
 use libra_types::exports::AccountAddress;
 use libra_types::exports::AuthenticationKey;
+use libra_types::exports::Client;
 use libra_types::exports::NamedChain;
 use libra_types::global_config_dir;
-use libra_types::legacy_types::app_cfg::{AppCfg, self};
-use libra_types::exports::Client;
+use libra_types::legacy_types::app_cfg::{self, AppCfg};
 use libra_types::type_extensions::client_ext::ClientExt;
 use std::path::PathBuf;
 use url::Url;
@@ -107,23 +107,30 @@ impl ConfigCli {
                     let client = Client::new(cfg.pick_url(self.chain_name.clone())?);
 
                     if client.get_index().await.is_ok() {
-
-                        account_keys.account = client.lookup_originating_address(account_keys.auth_key).await?;
+                        account_keys.account = client
+                            .lookup_originating_address(account_keys.auth_key)
+                            .await?;
                     };
 
-                    let profile = app_cfg::Profile::new(account_keys.auth_key, account_keys.account);
+                    let profile =
+                        app_cfg::Profile::new(account_keys.auth_key, account_keys.account);
 
-                    if dialoguer::Confirm::new().with_prompt("set as default profile?")
-                    .interact()? {
-                      cfg.workspace.set_default(account_keys.account.to_hex_literal());
+                    if dialoguer::Confirm::new()
+                        .with_prompt("set as default profile?")
+                        .interact()?
+                    {
+                        cfg.workspace
+                            .set_default(account_keys.account.to_hex_literal());
                     }
 
                     cfg.maybe_add_profile(profile)?;
                 }
 
                 if let Some(p) = remove_profile {
-                  let r = cfg.try_remove_profile(p);
-                  if r.is_err() { println!("no profile found matching {}", &p)}
+                    let r = cfg.try_remove_profile(p);
+                    if r.is_err() {
+                        println!("no profile found matching {}", &p)
+                    }
                 }
 
                 if let Some(u) = upstream_url {
@@ -147,6 +154,7 @@ impl ConfigCli {
                     self.chain_name.to_owned(),
                     test_private_key.to_owned(),
                     playlist_url.to_owned(),
+                    None,
                 )
                 .await?;
 

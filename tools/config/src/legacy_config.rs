@@ -18,6 +18,7 @@ pub async fn wizard(
     chain_name: Option<NamedChain>,
     test_private_key: Option<String>,
     playlist_url: Option<Url>,
+    network_playlist: Option<NetworkPlaylist>,
 ) -> anyhow::Result<AppCfg> {
     let (authkey, mut address) = if force_authkey.is_some() && force_address.is_some() {
         (force_authkey.unwrap(), force_address.unwrap())
@@ -32,11 +33,16 @@ pub async fn wizard(
     };
 
     // if the user specified both a chain name and playlist, then the playlist will override the degault settings for the named chain.
-    let mut np = if let Some(u) = playlist_url {
-        NetworkPlaylist::from_url(u, chain_name).await
-    } else {
-        NetworkPlaylist::default_for_network(chain_name).await
-    }?;
+    let mut np = match network_playlist {
+        Some(a) => a,
+        None => {
+          if let Some(u) = playlist_url {
+            NetworkPlaylist::from_url(u, chain_name).await
+        } else {
+            NetworkPlaylist::default_for_network(chain_name).await
+        }?
+      }
+    };
 
     np.refresh_sync_status().await?;
 
@@ -62,14 +68,14 @@ pub async fn wizard(
 
 /// Wrapper on get keys_from_prompt, which checks if this is a legacy account.
 pub fn prompt_for_account() -> anyhow::Result<AccountKeys> {
-          let mut account_keys = libra_wallet::account_keys::get_keys_from_prompt()?.child_0_owner;
+    let mut account_keys = libra_wallet::account_keys::get_keys_from_prompt()?.child_0_owner;
 
-        if dialoguer::Confirm::new()
-            .with_prompt("Is this an OG founder account (pre-v7)?")
-            .interact()?
-        {
-            account_keys.account = get_ol_legacy_address(account_keys.account)?;
-        }
+    if dialoguer::Confirm::new()
+        .with_prompt("Is this an OG founder account (pre-v7)?")
+        .interact()?
+    {
+        account_keys.account = get_ol_legacy_address(account_keys.account)?;
+    }
 
-        Ok(account_keys)
+    Ok(account_keys)
 }
