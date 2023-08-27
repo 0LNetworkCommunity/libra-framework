@@ -5,7 +5,7 @@ use libra_genesis_tools::{
     supply::SupplySettings,
     wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME},
 };
-use libra_types::global_config_dir;
+use libra_types::{global_config_dir, exports:: { NamedChain } };
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -13,6 +13,10 @@ use std::path::PathBuf;
 struct GenesisCliArgs {
     #[clap(subcommand)]
     command: Option<Sub>,
+    /// name of the type of chain we are starting
+    #[clap(short, long)]
+    chain: Option<NamedChain>,
+
     /// choose a different home data folder for all node data.
     /// defaults to $HOME/.libra
     #[clap(long)]
@@ -76,10 +80,16 @@ fn main() -> anyhow::Result<()> {
                 cli.local_framework,
                 Some(&recovery),
                 Some(supply_settings),
+                cli.chain.unwrap_or(NamedChain::TESTING),
             )?;
         }
         Some(Sub::Register {}) => {
-            GenesisWizard::new(cli.org_github, cli.name_github, cli.home_dir).start_wizard(
+            GenesisWizard::new(
+              cli.org_github,
+              cli.name_github,
+              cli.home_dir,
+              cli.chain.unwrap_or(NamedChain::TESTING)
+            ).start_wizard(
                 cli.local_framework,
                 cli.json_legacy,
                 false,
@@ -87,7 +97,11 @@ fn main() -> anyhow::Result<()> {
             )?;
         }
         Some(Sub::Wizard { supply_settings }) => {
-            GenesisWizard::new(cli.org_github, cli.name_github, cli.home_dir).start_wizard(
+            GenesisWizard::new(              cli.org_github,
+              cli.name_github,
+              cli.home_dir,
+              cli.chain.unwrap_or(NamedChain::TESTING)
+            ).start_wizard(
                 cli.local_framework,
                 cli.json_legacy,
                 true,

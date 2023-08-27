@@ -2,7 +2,7 @@
 use crate::genesis::make_recovery_genesis_from_vec_legacy_recovery;
 use crate::supply::SupplySettings;
 use crate::wizard::DEFAULT_GIT_BRANCH;
-use crate::{compare, supply};
+use crate::{compare, supply, vm};
 
 use std::str::FromStr;
 use std::time::Duration;
@@ -53,6 +53,7 @@ pub fn build(
     use_local_framework: bool,
     legacy_recovery: Option<&[LegacyRecovery]>,
     supply_settings: Option<SupplySettings>,
+    chain: NamedChain,
 ) -> Result<Vec<PathBuf>> {
     let output_dir = home_path.join("genesis");
     std::fs::create_dir_all(&output_dir)?;
@@ -81,6 +82,7 @@ pub fn build(
             &gen_info.framework,
             gen_info.chain_id,
             supply_settings.clone(),
+            &vm::libra_genesis_default(chain),
         )?;
         gen_info.genesis = Some(tx);
         OLProgress::complete("genesis transaction encoded");
