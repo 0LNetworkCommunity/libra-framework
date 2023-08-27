@@ -2,7 +2,7 @@
 use crate::genesis::make_recovery_genesis_from_vec_legacy_recovery;
 use crate::supply::SupplySettings;
 use crate::wizard::DEFAULT_GIT_BRANCH;
-use crate::{compare, supply};
+use crate::{compare, supply, vm};
 
 use std::str::FromStr;
 use std::time::Duration;
@@ -18,7 +18,7 @@ use libra_framework::release;
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use libra_types::ol_progress::OLProgress;
 use libra_wallet::utils::{check_if_file_exists, from_yaml, write_to_user_only_file};
-
+use libra_types::exports::NamedChain;
 use diem_crypto::ed25519::ED25519_PUBLIC_KEY_LENGTH;
 use diem_crypto::ValidCryptoMaterialStringExt;
 use diem_crypto::{bls12381, ed25519::Ed25519PublicKey, ValidCryptoMaterial};
@@ -53,6 +53,7 @@ pub fn build(
     use_local_framework: bool,
     legacy_recovery: Option<&[LegacyRecovery]>,
     supply_settings: Option<SupplySettings>,
+    chain: NamedChain,
 ) -> Result<Vec<PathBuf>> {
     let output_dir = home_path.join("genesis");
     std::fs::create_dir_all(&output_dir)?;
@@ -81,6 +82,7 @@ pub fn build(
             &gen_info.framework,
             gen_info.chain_id,
             supply_settings.clone(),
+            &vm::libra_genesis_default(chain),
         )?;
         gen_info.genesis = Some(tx);
         OLProgress::complete("genesis transaction encoded");

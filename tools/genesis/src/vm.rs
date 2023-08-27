@@ -8,7 +8,7 @@ use diem_gas::{
     LATEST_GAS_FEATURE_VERSION,
 };
 use diem_types::{
-    chain_id::ChainId,
+    chain_id::{ChainId, NamedChain},
     on_chain_config::{
         Features, GasScheduleV2, OnChainConsensusConfig, OnChainExecutionConfig, TimedFeatures,
     },
@@ -21,12 +21,40 @@ use diem_vm::{
 use diem_vm_genesis::{
     create_and_initialize_validators, default_gas_schedule, emit_new_block_and_epoch_event,
     genesis_context::GenesisStateView, initialize, initialize_diem_coin, initialize_features,
-    initialize_on_chain_governance, mainnet_genesis_config, publish_framework, set_genesis_end,
+    initialize_on_chain_governance, publish_framework, set_genesis_end,
     validate_genesis_config, verify_genesis_write_set, GenesisConfiguration, Validator,
     GENESIS_KEYPAIR,
 };
 
 use crate::{genesis_functions::rounding_mint, supply::SupplySettings};
+
+
+/// set the genesis parameters
+/// NOTE: many of the parameters are ignored in libra_framework
+/// but are kept for api compatibility.
+pub fn libra_genesis_default(chain: NamedChain) -> GenesisConfiguration {
+
+  let epoch_duration_secs = match chain {
+      NamedChain::MAINNET => 24 * 60 * 60, // one day
+      NamedChain::TESTING => 2 * 60, // for CI suite: two mins
+      _ => 15 * 60, // for all testnets, not using mainnet settings, 15 mins
+  };
+  GenesisConfiguration {
+      allow_new_validators: true,
+      epoch_duration_secs,
+      is_test: false,
+      max_stake: 0, // no-op
+      min_stake: 0, // no-op
+      min_voting_threshold: 0, // no-op
+      recurring_lockup_duration_secs: 0, // no-op
+      required_proposer_stake: 0, // no-op
+      rewards_apy_percentage: 0, // no-op
+      voting_duration_secs: 0, // no-op
+      voting_power_increase_limit: 0, // no-op
+      employee_vesting_start: 0, // no-op lol
+      employee_vesting_period_duration: 0, // no-op srsly
+  }
+}
 
 pub fn migration_genesis(
     validators: &[Validator],
@@ -34,6 +62,7 @@ pub fn migration_genesis(
     framework: &ReleaseBundle,
     chain_id: ChainId,
     supply_settings: &SupplySettings,
+    genesis_config: &GenesisConfiguration,
 ) -> anyhow::Result<ChangeSet> {
     let genesis = encode_genesis_change_set(
         &GENESIS_KEYPAIR.1,
@@ -41,7 +70,7 @@ pub fn migration_genesis(
         recovery,
         framework,
         chain_id,
-        &mainnet_genesis_config(),
+        genesis_config,
         &OnChainConsensusConfig::default(),
         &OnChainExecutionConfig::default(),
         &default_gas_schedule(),
@@ -84,6 +113,7 @@ pub fn encode_genesis_change_set(
     let id1 = HashValue::zero();
     let mut session = move_vm.new_session(&data_cache, SessionId::genesis(id1), true);
     // On-chain genesis process.
+    dbg!(&genesis_config.epoch_duration_secs);
     initialize(
         &mut session,
         chain_id,
@@ -92,6 +122,7 @@ pub fn encode_genesis_change_set(
         execution_config,
         gas_schedule,
     );
+
     initialize_features(&mut session);
 
     // TODO: replace this
