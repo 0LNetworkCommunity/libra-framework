@@ -24,7 +24,7 @@ pub struct SupplySettings {
 impl Default for SupplySettings {
     fn default() -> Self {
         Self {
-            target_supply: 10_000_000_000.0,
+            target_supply: 100_000_000_000.0,
             target_future_uses: 0.0,
             map_dd_to_slow: vec![],
         }

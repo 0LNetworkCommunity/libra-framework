@@ -154,6 +154,7 @@ impl GenesisWizard {
                 Some(&legacy_recovery),
                 supply_settings,
                 self.chain.clone(),
+                false,
             )?;
 
             for _ in (0..10)

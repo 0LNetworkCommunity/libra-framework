@@ -32,8 +32,9 @@ use zapatos_genesis::{
     },
     GenesisInfo,
 };
+use zapatos_types::transaction::Transaction;
 use zapatos_vm_genesis::{default_gas_schedule,
-  GenesisConfiguration as VmGenesisGenesisConfiguration // in vendor codethere are two structs separately called the same name with nearly identical fields
+  GenesisConfiguration as VmGenesisGenesisConfiguration, Validator // in vendor codethere are two structs separately called the same name with nearly identical fields
 };
 use zapatos_github_client::Client;
 use zapatos_types::account_address::AccountAddress;
@@ -67,7 +68,8 @@ pub fn build(
     use_local_framework: bool,
     legacy_recovery: Option<&[LegacyRecovery]>,
     supply_settings: Option<SupplySettings>,
-    chain_id: NamedChain,
+    chain_name: NamedChain,
+    testnet: bool,
 ) -> Result<Vec<PathBuf>> {
     let output_dir = home_path.join("genesis");
     std::fs::create_dir_all(&output_dir)?;
@@ -76,10 +78,12 @@ pub fn build(
     let waypoint_file = output_dir.join(WAYPOINT_FILE);
 
     // NOTE: export env LIBRA_CI=1 to avoid y/n prompt
-    check_if_file_exists(genesis_file.as_path())?;
-    check_if_file_exists(waypoint_file.as_path())?;
+    if !testnet {
+      check_if_file_exists(genesis_file.as_path())?;
+      check_if_file_exists(waypoint_file.as_path())?;
+    }
 
-    let genesis_config = vm::libra_genesis_default(chain_id);
+    let genesis_config = vm::libra_genesis_default(chain_name);
     println!("\nfetching genesis info from github");
     let mut gen_info = fetch_genesis_info(
         github_owner,
@@ -87,7 +91,7 @@ pub fn build(
         github_token,
         use_local_framework,
         &genesis_config,
-        &chain_id,
+        &chain_name,
     )?;
 
     // Generate genesis and waypoint files
@@ -101,10 +105,11 @@ pub fn build(
             supply_settings.clone(),
             &genesis_config,
         )?;
+
+        // NOTE: if genesis TX is not set, then it will run the vendor's release workflow, which we do not want.
         gen_info.genesis = Some(tx);
         OLProgress::complete("genesis transaction encoded");
 
-        // NOTE: if genesis TX is not set, then it will run the vendor's release workflow, which we do not want.
 
         let pb = ProgressBar::new(1000)
             .with_style(OLProgress::spinner())
@@ -147,6 +152,55 @@ pub fn build(
 
     OLProgress::complete("LFG, ready for genesis");
     Ok(vec![genesis_file, waypoint_file])
+}
+
+
+/// make genesis transaction from Github
+fn make_genesis_tx(
+  github_owner: String,
+  github_repository: String,
+  github_token: String,
+  use_local_framework: bool,
+  legacy_recovery: Option<&[LegacyRecovery]>,
+  // genesis_vals: &[Validator],
+  // framework_release: &ReleaseBundle,
+  chain_name: NamedChain,
+  supply_settings: &Option<SupplySettings>,
+  genesis_config: &VmGenesisGenesisConfiguration
+) -> anyhow::Result<Transaction>{
+    println!("\nfetching genesis info from github");
+    let mut gen_info = fetch_genesis_info(
+        github_owner,
+        github_repository,
+        github_token,
+        use_local_framework,
+        genesis_config,
+        &chain_name,
+    )?;
+
+    println!("building genesis block");
+        let tx = make_recovery_genesis_from_vec_legacy_recovery(
+            legacy_recovery,
+            &gen_info.validators,
+            &gen_info.framework,
+            gen_info.chain_id,
+            supply_settings.to_owned(),
+            &genesis_config,
+        )?;
+    Ok(tx)
+}
+
+/// helper to create a testnet with defaults
+fn make_testnet_tx(legacy_recovery: Option<&[LegacyRecovery]>, genesis_vals: &[Validator], framework_release: &ReleaseBundle, chain_name: NamedChain, supply_settings: &Option<SupplySettings>, genesis_config: &VmGenesisGenesisConfiguration) -> anyhow::Result<Transaction>{
+      let tx = make_recovery_genesis_from_vec_legacy_recovery(
+        legacy_recovery,
+        genesis_vals,
+        framework_release,
+        ChainId::new(chain_name.id()),
+        supply_settings.to_owned(),
+        genesis_config,
+    )?;
+    Ok(tx)
 }
 
 /// Retrieves all information for mainnet genesis from the Git repository
