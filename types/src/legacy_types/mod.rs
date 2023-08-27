@@ -14,6 +14,7 @@ pub mod network_playlist;
 pub mod tower;
 pub mod tx_error;
 pub mod vdf_difficulty;
+pub mod fixtures;
 // pub mod config;
 // pub mod dialogue;
 // pub mod epoch_timer;

@@ -104,7 +104,7 @@ impl ConfigCli {
                 if *address {
                     let mut account_keys = legacy_config::prompt_for_account()?;
 
-                    let client = Client::new(cfg.pick_url(self.chain_name.clone())?);
+                    let client = Client::new(cfg.pick_url(self.chain_name)?);
 
                     if client.get_index().await.is_ok() {
                         account_keys.account = client
@@ -134,7 +134,7 @@ impl ConfigCli {
                 }
 
                 if let Some(u) = upstream_url {
-                    let np = cfg.get_network_profile_mut(self.chain_name.clone())?;
+                    let np = cfg.get_network_profile_mut(self.chain_name)?;
                     np.add_url(u.to_owned());
                 }
                 dbg!(&cfg);
