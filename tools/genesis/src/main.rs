@@ -1,12 +1,14 @@
 use anyhow::Context;
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
+
 use libra_genesis_tools::{
     genesis_builder, parse_json,
     supply::SupplySettings,
+    testnet_setup,
     wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME},
 };
-use libra_types::{exports::NamedChain, global_config_dir};
-use std::path::PathBuf;
+use libra_types::{exports::NamedChain, global_config_dir, legacy_types::fixtures::TestPersona};
+use std::{net::Ipv4Addr, path::PathBuf};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -16,11 +18,15 @@ struct GenesisCliArgs {
     /// name of the type of chain we are starting
     #[clap(short, long)]
     chain: Option<NamedChain>,
-
     /// choose a different home data folder for all node data.
     /// defaults to $HOME/.libra
     #[clap(long)]
     home_dir: Option<PathBuf>,
+}
+
+#[derive(Debug, Clone, Args)]
+#[clap(arg_required_else_help = true)]
+struct GithubArgs {
     /// optionally provide a github token, otherwise will search in home_dir/github_token.txt
     #[clap(long)]
     token_github: Option<String>,
@@ -41,76 +47,109 @@ struct GenesisCliArgs {
 #[derive(Subcommand)]
 enum Sub {
     Genesis {
+        /// github args
+        #[clap(flatten)]
+        github: GithubArgs,
         #[clap(flatten)]
         /// optional, settings for supply.
         supply_settings: SupplySettings,
     }, // just do genesis without wizard
-    Register {}, // just do registration without wizard
+    Register {
+        /// github args
+        #[clap(flatten)]
+        github: GithubArgs,
+    },
+    // full wizard
     Wizard {
+        /// github args
+        #[clap(flatten)]
+        github: GithubArgs,
         #[clap(flatten)]
         /// optional, settings for supply.
         supply_settings: SupplySettings,
+    },
+    /// sensible defaults for testnet, does not need a genesis repo
+    /// accounts are created from fixture mnemonics for alice, bob, carol, dave
+    Testnet {
+        /// which persona is this machine going to register as
+        #[clap(short, long)]
+        me: TestPersona,
+
+        /// list of IP addresses of each persona Alice, Bob, Carol, Dave
+        #[clap(short, long)]
+        ip_list: Vec<Ipv4Addr>,
     },
 }
 
 fn main() -> anyhow::Result<()> {
     let cli = GenesisCliArgs::parse();
     match cli.command {
-        Some(Sub::Genesis { supply_settings }) => {
+        Some(Sub::Genesis {
+            github,
+            supply_settings,
+        }) => {
             let data_path = cli.home_dir.unwrap_or_else(global_config_dir);
 
-            let github_token = cli.token_github.unwrap_or(
+            let github_token = github.token_github.unwrap_or(
                 std::fs::read_to_string(data_path.join(GITHUB_TOKEN_FILENAME))
                     .context("cannot find github_token.txt in config path")?
                     .trim()
                     .to_string(),
             );
 
-            let recovery = if let Some(p) = cli.json_legacy {
-                parse_json::parse(p)?
+            let recovery = if let Some(p) = github.json_legacy {
+                parse_json::recovery_file_parse(p)?
             } else {
                 vec![]
             };
 
             genesis_builder::build(
-                cli.org_github,
-                cli.name_github,
+                github.org_github,
+                github.name_github,
                 github_token,
                 data_path,
-                cli.local_framework,
+                github.local_framework,
                 Some(&recovery),
                 Some(supply_settings),
                 cli.chain.unwrap_or(NamedChain::TESTING),
+                None,
             )?;
         }
-        Some(Sub::Register {}) => {
+        Some(Sub::Register { github }) => {
             GenesisWizard::new(
-                cli.org_github,
-                cli.name_github,
+                github.org_github,
+                github.name_github,
                 cli.home_dir,
                 cli.chain.unwrap_or(NamedChain::TESTING),
             )
-            .start_wizard(cli.local_framework, cli.json_legacy, false, None)?;
+            .start_wizard(github.local_framework, github.json_legacy, false, None)?;
         }
-        Some(Sub::Wizard { supply_settings }) => {
+        Some(Sub::Wizard {
+            github,
+            supply_settings,
+        }) => {
             GenesisWizard::new(
-                cli.org_github,
-                cli.name_github,
+                github.org_github,
+                github.name_github,
                 cli.home_dir,
                 cli.chain.unwrap_or(NamedChain::TESTING),
             )
             .start_wizard(
-                cli.local_framework,
-                cli.json_legacy,
+                github.local_framework,
+                github.json_legacy,
                 true,
                 Some(supply_settings),
             )?;
         }
+        Some(Sub::Testnet { me, ip_list }) => testnet_setup::setup(
+            &me,
+            &ip_list,
+            cli.chain.unwrap_or(NamedChain::TESTING),
+            cli.home_dir.unwrap_or_else(global_config_dir),
+        )?,
         _ => {
             println!("\nIf you're looking for trouble \nYou came to the right place");
         }
     }
-
-    // Continued program logic goes here...
     Ok(())
 }

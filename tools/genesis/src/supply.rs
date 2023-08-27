@@ -24,7 +24,7 @@ pub struct SupplySettings {
 impl Default for SupplySettings {
     fn default() -> Self {
         Self {
-            target_supply: 10_000_000_000.0,
+            target_supply: 100_000_000_000.0,
             target_future_uses: 0.0,
             map_dd_to_slow: vec![],
         }
@@ -132,7 +132,7 @@ pub fn populate_supply_stats_from_legacy(
     let dd_wallets = rec
         .iter()
         .find(|el| el.comm_wallet.is_some())
-        .context("could not find 0x0 state")?
+        .context("could not find 0x0 state in recovery file")?
         .comm_wallet
         .as_ref()
         .context("could not find list of community wallets")?;
@@ -157,7 +157,7 @@ fn test_genesis_math() {
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_export_recovery.json");
 
-    let r = crate::parse_json::parse(p).unwrap();
+    let r = crate::parse_json::recovery_file_parse(p).unwrap();
 
     let settings = SupplySettings {
         target_supply: 10_000_000_000.0,
