@@ -11,7 +11,7 @@ use diem_types::{
     chain_id::ChainId,
     transaction::{Transaction, WriteSetPayload},
 };
-use diem_vm_genesis::Validator;
+use diem_vm_genesis::{GenesisConfiguration, Validator};
 /// Make a recovery genesis blob
 pub fn make_recovery_genesis_from_vec_legacy_recovery(
     recovery: Option<&[LegacyRecovery]>,
