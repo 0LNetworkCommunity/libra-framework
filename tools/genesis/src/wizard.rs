@@ -56,10 +56,10 @@ pub struct GenesisWizard {
 impl GenesisWizard {
     /// constructor
     pub fn new(
-      genesis_repo_org: String,
-      repo_name: String,
-      data_path: Option<PathBuf>,
-      chain: NamedChain,
+        genesis_repo_org: String,
+        repo_name: String,
+        data_path: Option<PathBuf>,
+        chain: NamedChain,
     ) -> Self {
         let data_path = data_path.unwrap_or_else(global_config_dir);
 
