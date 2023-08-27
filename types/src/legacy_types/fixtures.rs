@@ -1,10 +1,6 @@
 //! helper to get fixtures data from files in ol/fixtures folder.
 use std::{fs, path::Path};
 
-// use diem_types::chain_id::NamedChain;
-
-// use crate::{block::VDFProof, config::{AppCfg, parse_toml}};
-
 /// get mnemonic
 pub fn get_persona_mnem(persona: &str) -> String {
     let path = env!("CARGO_MANIFEST_DIR");

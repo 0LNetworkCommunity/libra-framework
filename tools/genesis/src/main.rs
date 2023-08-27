@@ -84,6 +84,7 @@ fn main() -> anyhow::Result<()> {
                 Some(&recovery),
                 Some(supply_settings),
                 cli.chain.unwrap_or(NamedChain::TESTING),
+                false,
             )?;
         }
         Some(Sub::Register {}) => {
@@ -108,7 +109,23 @@ fn main() -> anyhow::Result<()> {
                 true,
                 Some(supply_settings),
             )?;
-        }
+        },
+        Some(Sub::Testnet {}) => {
+            let data_path = cli.home_dir.unwrap_or_else(global_config_dir);
+
+            let recovery = vec![];
+            genesis_builder::build(
+                "none".to_string(), // when is testnet is ignored
+                "none".to_string(),
+                "none".to_string(),
+                data_path,
+                true,
+                Some(&recovery),
+                Some(SupplySettings::default()),
+                cli.chain.unwrap_or(NamedChain::TESTING),
+                true
+            )?;
+        },
         _ => {
             println!("\nIf you're looking for trouble \nYou came to the right place");
         }
