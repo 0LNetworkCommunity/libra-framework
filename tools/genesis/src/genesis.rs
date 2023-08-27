@@ -11,15 +11,15 @@ use zapatos_types::{
     chain_id::ChainId,
     transaction::{Transaction, WriteSetPayload},
 };
-use zapatos_vm_genesis::Validator;
+use zapatos_vm_genesis::{Validator, GenesisConfiguration};
 /// Make a recovery genesis blob
 pub fn make_recovery_genesis_from_vec_legacy_recovery(
     recovery: Option<&[LegacyRecovery]>,
     genesis_vals: &[Validator],
-    // genesis_blob_path: &PathBuf,
     framework_release: &ReleaseBundle,
     chain_id: ChainId,
     supply_settings: Option<SupplySettings>,
+    genesis_config: &GenesisConfiguration,
 ) -> Result<Transaction, Error> {
     let supply_settings = supply_settings.unwrap_or_default();
     // Note: For `recovery` on a real upgrade or fork, we want to include all user accounts. If a None is passed, then we'll just run the default genesis
@@ -30,6 +30,7 @@ pub fn make_recovery_genesis_from_vec_legacy_recovery(
         framework_release,
         chain_id,
         &supply_settings,
+        genesis_config,
     )?;
 
     let gen_tx = Transaction::GenesisTransaction(WriteSetPayload::Direct(recovery_changeset));
