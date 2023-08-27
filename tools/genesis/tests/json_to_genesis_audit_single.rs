@@ -2,12 +2,14 @@
 mod support;
 use libra_framework::head_release_bundle;
 use libra_genesis_tools::supply::{self, SupplySettings};
+use libra_genesis_tools::vm::libra_genesis_default;
 use libra_genesis_tools::{compare, genesis::make_recovery_genesis_from_vec_legacy_recovery};
 use libra_types::exports::AccountAddress;
 use libra_types::exports::ChainId;
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use std::fs;
 use support::{path_utils::json_path, test_vals};
+use zapatos_types::chain_id::NamedChain;
 
 #[test]
 // test that a genesis blob created from struct, will actually contain the data
@@ -35,6 +37,7 @@ fn test_correct_supply_arithmetic_single() {
         &head_release_bundle(),
         ChainId::test(),
         Some(supply_settings.clone()),
+        &libra_genesis_default(NamedChain::TESTING),
     )
     .unwrap();
 
@@ -71,6 +74,7 @@ fn test_check_genesis_validators() {
         &head_release_bundle(),
         ChainId::test(),
         None,
+        &libra_genesis_default(NamedChain::TESTING),
     )
     .unwrap();
 
