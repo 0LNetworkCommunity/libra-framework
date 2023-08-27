@@ -1,8 +1,8 @@
 
 TARGET_SUPPLY = 100000000000 # 100 billion
 FUTURE_USES = 0.70
-# RECOVERY_FILE = sample_end_user_single
-RECOVERY_FILE = sample_export_recovery
+RECOVERY_FILE = sample_end_user_single
+# RECOVERY_FILE = sample_export_recovery
 # RECOVERY_FILE = sample_rotated_auth
 
 
