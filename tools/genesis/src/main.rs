@@ -5,7 +5,7 @@ use libra_genesis_tools::{
     supply::SupplySettings,
     wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME},
 };
-use libra_types::{global_config_dir, exports:: { NamedChain } };
+use libra_types::{exports::NamedChain, global_config_dir};
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -85,23 +85,21 @@ fn main() -> anyhow::Result<()> {
         }
         Some(Sub::Register {}) => {
             GenesisWizard::new(
-              cli.org_github,
-              cli.name_github,
-              cli.home_dir,
-              cli.chain.unwrap_or(NamedChain::TESTING)
-            ).start_wizard(
-                cli.local_framework,
-                cli.json_legacy,
-                false,
-                None,
-            )?;
+                cli.org_github,
+                cli.name_github,
+                cli.home_dir,
+                cli.chain.unwrap_or(NamedChain::TESTING),
+            )
+            .start_wizard(cli.local_framework, cli.json_legacy, false, None)?;
         }
         Some(Sub::Wizard { supply_settings }) => {
-            GenesisWizard::new(              cli.org_github,
-              cli.name_github,
-              cli.home_dir,
-              cli.chain.unwrap_or(NamedChain::TESTING)
-            ).start_wizard(
+            GenesisWizard::new(
+                cli.org_github,
+                cli.name_github,
+                cli.home_dir,
+                cli.chain.unwrap_or(NamedChain::TESTING),
+            )
+            .start_wizard(
                 cli.local_framework,
                 cli.json_legacy,
                 true,

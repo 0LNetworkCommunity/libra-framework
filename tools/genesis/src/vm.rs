@@ -21,39 +21,36 @@ use zapatos_vm::{
 use zapatos_vm_genesis::{
     create_and_initialize_validators, default_gas_schedule, emit_new_block_and_epoch_event,
     genesis_context::GenesisStateView, initialize, initialize_diem_coin, initialize_features,
-    initialize_on_chain_governance, publish_framework, set_genesis_end,
-    validate_genesis_config, verify_genesis_write_set, GenesisConfiguration, Validator,
-    GENESIS_KEYPAIR,
+    initialize_on_chain_governance, publish_framework, set_genesis_end, validate_genesis_config,
+    verify_genesis_write_set, GenesisConfiguration, Validator, GENESIS_KEYPAIR,
 };
 
 use crate::{genesis_functions::rounding_mint, supply::SupplySettings};
-
 
 /// set the genesis parameters
 /// NOTE: many of the parameters are ignored in libra_framework
 /// but are kept for api compatibility.
 pub fn libra_genesis_default(chain: NamedChain) -> GenesisConfiguration {
-
-  let epoch_duration_secs = match chain {
-      NamedChain::MAINNET => 24 * 60 * 60, // one day
-      NamedChain::TESTING => 2 * 60, // for CI suite: two mins
-      _ => 15 * 60, // for all testnets, not using mainnet settings, 15 mins
-  };
-  GenesisConfiguration {
-      allow_new_validators: true,
-      epoch_duration_secs,
-      is_test: false,
-      max_stake: 0, // no-op
-      min_stake: 0, // no-op
-      min_voting_threshold: 0, // no-op
-      recurring_lockup_duration_secs: 0, // no-op
-      required_proposer_stake: 0, // no-op
-      rewards_apy_percentage: 0, // no-op
-      voting_duration_secs: 0, // no-op
-      voting_power_increase_limit: 0, // no-op
-      employee_vesting_start: 0, // no-op lol
-      employee_vesting_period_duration: 0, // no-op srsly
-  }
+    let epoch_duration_secs = match chain {
+        NamedChain::MAINNET => 24 * 60 * 60, // one day
+        NamedChain::TESTING => 2 * 60,       // for CI suite: two mins
+        _ => 15 * 60, // for all testnets, not using mainnet settings, 15 mins
+    };
+    GenesisConfiguration {
+        allow_new_validators: true,
+        epoch_duration_secs,
+        is_test: false,
+        max_stake: 0,                        // no-op
+        min_stake: 0,                        // no-op
+        min_voting_threshold: 0,             // no-op
+        recurring_lockup_duration_secs: 0,   // no-op
+        required_proposer_stake: 0,          // no-op
+        rewards_apy_percentage: 0,           // no-op
+        voting_duration_secs: 0,             // no-op
+        voting_power_increase_limit: 0,      // no-op
+        employee_vesting_start: 0,           // no-op lol
+        employee_vesting_period_duration: 0, // no-op srsly
+    }
 }
 
 pub fn migration_genesis(
