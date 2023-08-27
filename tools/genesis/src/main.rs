@@ -51,6 +51,9 @@ enum Sub {
         /// optional, settings for supply.
         supply_settings: SupplySettings,
     },
+    /// sensible defaults for testnet, does not need a genesis repo
+    /// accounts are created from fixture mnemonics for alice, bob, carol, dave
+    Testnet {}
 }
 
 fn main() -> anyhow::Result<()> {
