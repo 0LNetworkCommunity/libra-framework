@@ -9,5 +9,6 @@ pub mod genesis_registration;
 pub mod github_extensions;
 pub mod parse_json;
 pub mod supply;
+pub mod testnet_setup;
 pub mod vm;
 pub mod wizard;
