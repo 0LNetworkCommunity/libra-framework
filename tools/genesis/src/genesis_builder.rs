@@ -18,7 +18,9 @@ use libra_framework::release;
 use libra_types::exports::NamedChain;
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use libra_types::ol_progress::OLProgress;
+use libra_types::exports::ChainId;
 use libra_wallet::utils::{check_if_file_exists, from_yaml, write_to_user_only_file};
+use serde::{Deserialize, Serialize};
 use zapatos_crypto::ed25519::ED25519_PUBLIC_KEY_LENGTH;
 use zapatos_crypto::ValidCryptoMaterialStringExt;
 use zapatos_crypto::{bls12381, ed25519::Ed25519PublicKey, ValidCryptoMaterial};
@@ -26,9 +28,12 @@ use zapatos_framework::ReleaseBundle;
 use zapatos_genesis::{
     builder::GenesisConfiguration,
     config::{
-        Layout, StringOperatorConfiguration, StringOwnerConfiguration, ValidatorConfiguration,
+        StringOperatorConfiguration, StringOwnerConfiguration, ValidatorConfiguration,
     },
     GenesisInfo,
+};
+use zapatos_vm_genesis::{default_gas_schedule,
+  GenesisConfiguration as VmGenesisGenesisConfiguration // in vendor codethere are two structs separately called the same name with nearly identical fields
 };
 use zapatos_github_client::Client;
 use zapatos_types::account_address::AccountAddress;
@@ -36,7 +41,7 @@ use zapatos_types::{
     account_address::AccountAddressWithChecks,
     on_chain_config::{OnChainConsensusConfig, OnChainExecutionConfig},
 };
-use zapatos_vm_genesis::default_gas_schedule;
+
 
 pub const LAYOUT_FILE: &str = "layout.yaml";
 pub const OPERATOR_FILE: &str = "operator.yaml";
@@ -44,6 +49,15 @@ pub const OWNER_FILE: &str = "owner.yaml";
 pub const FRAMEWORK_NAME: &str = "framework.mrb";
 const WAYPOINT_FILE: &str = "waypoint.txt";
 const GENESIS_FILE: &str = "genesis.blob";
+
+/// Minimal template for layout.yaml accounts in Genesis
+///
+#[derive(Debug, Deserialize, Serialize)]
+struct LibraSimpleLayout {
+    /// List of usernames or identifiers
+    pub users: Vec<String>
+
+}
 
 pub fn build(
     github_owner: String,
@@ -53,7 +67,7 @@ pub fn build(
     use_local_framework: bool,
     legacy_recovery: Option<&[LegacyRecovery]>,
     supply_settings: Option<SupplySettings>,
-    chain: NamedChain,
+    chain_id: NamedChain,
 ) -> Result<Vec<PathBuf>> {
     let output_dir = home_path.join("genesis");
     std::fs::create_dir_all(&output_dir)?;
@@ -65,12 +79,15 @@ pub fn build(
     check_if_file_exists(genesis_file.as_path())?;
     check_if_file_exists(waypoint_file.as_path())?;
 
+    let genesis_config = vm::libra_genesis_default(chain_id);
     println!("\nfetching genesis info from github");
     let mut gen_info = fetch_genesis_info(
         github_owner,
         github_repository,
         github_token,
         use_local_framework,
+        &genesis_config,
+        &chain_id,
     )?;
 
     // Generate genesis and waypoint files
@@ -82,7 +99,7 @@ pub fn build(
             &gen_info.framework,
             gen_info.chain_id,
             supply_settings.clone(),
-            &vm::libra_genesis_default(chain),
+            &genesis_config,
         )?;
         gen_info.genesis = Some(tx);
         OLProgress::complete("genesis transaction encoded");
@@ -138,6 +155,8 @@ pub fn fetch_genesis_info(
     github_repository: String,
     github_token: String,
     use_local_framework: bool,
+    genesis_config: &VmGenesisGenesisConfiguration,
+    chain_id: &NamedChain,
 ) -> Result<GenesisInfo> {
     // let client = git_options.get_client()?;
     let client = Client::new(
@@ -149,7 +168,7 @@ pub fn fetch_genesis_info(
 
     // let layout: Layout = client.get(Path::new(LAYOUT_FILE))?;
     let l_file = client.get_file(&Path::new(LAYOUT_FILE).display().to_string())?;
-    let layout: Layout = from_yaml(&String::from_utf8(base64::decode(l_file)?)?)?;
+    let layout: LibraSimpleLayout = from_yaml(&String::from_utf8(base64::decode(l_file)?)?)?;
     OLProgress::complete("fetched layout file");
 
     let pb = OLProgress::spin_steady(100, "fetching validator registrations".to_string());
@@ -167,31 +186,31 @@ pub fn fetch_genesis_info(
         bcs::from_bytes::<ReleaseBundle>(&bytes)?
     };
 
-    // let framework = client.get_framework()?;
+    // NOTE: in vendor code a root key is used in testnet to facilitate some tests. In libra we have written our test suite to be as close to mainnet as possible, so we don't have a faucet or other functions which need a root key.
     let dummy_root = Ed25519PublicKey::from_encoded_string(
         "0x0000000000000000000000000000000000000000000000000000000000000000",
     )
     .expect("could not parse dummy root");
 
     GenesisInfo::new(
-        layout.chain_id,
-        dummy_root, // TODO: neuter from Move code
+        ChainId::new(chain_id.id()),
+        dummy_root, // NOTE: neutered in caller and in Move code
         validators,
         framework,
-        &GenesisConfiguration {
-            allow_new_validators: layout.allow_new_validators,
-            epoch_duration_secs: layout.epoch_duration_secs,
-            is_test: layout.is_test,
-            min_stake: layout.min_stake,
-            min_voting_threshold: layout.min_voting_threshold,
-            max_stake: layout.max_stake,
-            recurring_lockup_duration_secs: layout.recurring_lockup_duration_secs,
-            required_proposer_stake: layout.required_proposer_stake,
-            rewards_apy_percentage: layout.rewards_apy_percentage,
-            voting_duration_secs: layout.voting_duration_secs,
-            voting_power_increase_limit: layout.voting_power_increase_limit,
-            employee_vesting_start: layout.employee_vesting_start,
-            employee_vesting_period_duration: layout.employee_vesting_period_duration,
+        &GenesisConfiguration { // TODO: there are two structs called GenesisConfiguration in Vendor code, sigh.
+            allow_new_validators: genesis_config.allow_new_validators,
+            epoch_duration_secs: genesis_config.epoch_duration_secs,
+            is_test: genesis_config.is_test,
+            min_stake: genesis_config.min_stake,
+            min_voting_threshold: genesis_config.min_voting_threshold,
+            max_stake: genesis_config.max_stake,
+            recurring_lockup_duration_secs: genesis_config.recurring_lockup_duration_secs,
+            required_proposer_stake: genesis_config.required_proposer_stake,
+            rewards_apy_percentage: genesis_config.rewards_apy_percentage,
+            voting_duration_secs: genesis_config.voting_duration_secs,
+            voting_power_increase_limit: genesis_config.voting_power_increase_limit,
+            employee_vesting_start: None,
+            employee_vesting_period_duration: None,
             consensus_config: OnChainConsensusConfig::default(),
             execution_config: OnChainExecutionConfig::default(),
             gas_schedule: default_gas_schedule(),
@@ -201,7 +220,7 @@ pub fn fetch_genesis_info(
 
 fn get_validator_configs(
     client: &Client,
-    layout: &Layout,
+    layout: &LibraSimpleLayout,
     is_mainnet: bool,
 ) -> Result<Vec<ValidatorConfiguration>> {
     let mut validators = Vec::new();
