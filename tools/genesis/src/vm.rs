@@ -40,16 +40,18 @@ pub fn libra_genesis_default(chain: NamedChain) -> GenesisConfiguration {
         allow_new_validators: true,
         epoch_duration_secs,
         is_test: false,
+        // hacky, but annoying surgery otherwise.
+        // TODO: do the surgery
         max_stake: 0,                        // no-op
         min_stake: 0,                        // no-op
         min_voting_threshold: 0,             // no-op
-        recurring_lockup_duration_secs: 0,   // no-op
+        recurring_lockup_duration_secs: epoch_duration_secs + 1,   // no-op
         required_proposer_stake: 0,          // no-op
-        rewards_apy_percentage: 0,           // no-op
-        voting_duration_secs: 0,             // no-op
-        voting_power_increase_limit: 0,      // no-op
-        employee_vesting_start: 0,           // no-op lol
-        employee_vesting_period_duration: 0, // no-op srsly
+        rewards_apy_percentage: 1,           // no-op
+        voting_duration_secs: 1,             // no-op
+        voting_power_increase_limit: 1,      // no-op
+        employee_vesting_start: 1,           // no-op lol
+        employee_vesting_period_duration: 1, // no-op srsly
     }
 }
 
