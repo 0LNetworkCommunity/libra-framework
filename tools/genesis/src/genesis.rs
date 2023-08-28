@@ -2,16 +2,16 @@
 
 use crate::{
     supply::SupplySettings,
-    vm::{libra_genesis_default, migration_genesis},
+    vm::{migration_genesis},
 };
-use anyhow::{Chain, Error};
+use anyhow::{Error};
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use zapatos_framework::ReleaseBundle;
 use zapatos_types::{
-    chain_id::{ChainId, NamedChain},
+    chain_id::{ChainId},
     transaction::{Transaction, WriteSetPayload},
 };
 use zapatos_vm_genesis::{GenesisConfiguration, Validator};
