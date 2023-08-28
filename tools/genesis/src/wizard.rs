@@ -416,6 +416,7 @@ fn test_wizard() {
         "0LNetworkCommunity".to_string(),
         "test_genesis".to_string(),
         None,
+        NamedChain::TESTING,
     );
     wizard.start_wizard(false, None, false, None).unwrap();
 }
@@ -427,6 +428,7 @@ fn test_register() {
         "0LNetworkCommunity".to_string(),
         "test_genesis".to_string(),
         None,
+        NamedChain::TESTING,
     );
     g.validator_address = "0xTEST".to_string();
     g.git_token_check().unwrap();
