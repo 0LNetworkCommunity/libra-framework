@@ -1,9 +1,6 @@
 //! create a genesis from a LegacyRecovery struct
 
-use crate::{
-    supply::SupplySettings,
-    vm::migration_genesis,
-};
+use crate::{supply::SupplySettings, vm::migration_genesis};
 use anyhow::Error;
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use std::fs::File;
@@ -17,9 +14,9 @@ use zapatos_types::{
 use zapatos_vm_genesis::{GenesisConfiguration, Validator};
 
 #[cfg(test)]
-use zapatos_types::chain_id::NamedChain;
-#[cfg(test)]
 use crate::vm::libra_genesis_default;
+#[cfg(test)]
+use zapatos_types::chain_id::NamedChain;
 
 /// Make a recovery genesis blob
 pub fn make_recovery_genesis_from_vec_legacy_recovery(
