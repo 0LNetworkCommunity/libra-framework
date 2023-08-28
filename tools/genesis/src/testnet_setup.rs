@@ -1,14 +1,13 @@
-use anyhow::{Context};
-use clap::{Args, Subcommand};
+
+
 use libra_config::host;
 use crate::{
     genesis_builder, parse_json,
     supply::SupplySettings,
-    wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME},
 };
-use libra_types::{exports::NamedChain, global_config_dir, legacy_types::fixtures::TestPersona};
+use libra_types::{exports::NamedChain, legacy_types::fixtures::TestPersona};
 use std::{path::PathBuf, net::Ipv4Addr, fs, time, thread};
-use zapatos_genesis::config::{HostAndPort, ValidatorConfiguration};
+use diem_genesis::config::{HostAndPort, ValidatorConfiguration};
 
 
 pub fn setup(me: &TestPersona, ip_list: &[Ipv4Addr], chain: NamedChain, data_path: PathBuf) -> anyhow::Result<()>{;
