@@ -6,7 +6,7 @@ use libra_genesis_tools::{
     wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME},
 };
 use libra_types::{exports::NamedChain, global_config_dir, legacy_types::fixtures::Persona};
-use diem_genesis::config::ValidatorConfiguration;
+use diem_genesis::config::{ValidatorConfiguration, HostAndPort};
 use std::{path::PathBuf, net::Ipv4Addr};
 
 #[derive(Parser)]
@@ -62,7 +62,7 @@ enum Sub {
 
       /// list of IP addresses of each persona Alice, Bob, Carol, Dave
       #[clap(short, long)]
-      ip_list: Vec<Ipv4Addr>,
+      ip_list: Vec<HostAndPort>,
 
     }
 }
@@ -126,6 +126,9 @@ fn main() -> anyhow::Result<()> {
           ip_list
         }) => {
             let data_path = cli.home_dir.unwrap_or_else(global_config_dir);
+
+            // TODO: make validator config here
+            // testnet_validator_config
 
             let recovery = vec![];
             genesis_builder::build(
