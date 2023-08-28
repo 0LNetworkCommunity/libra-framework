@@ -140,7 +140,7 @@ impl GenesisWizard {
         if ready {
             // Get Legacy Recovery from file
             let legacy_recovery = if let Some(p) = legacy_recovery_path {
-                parse_json::parse(p)?
+                parse_json::recovery_file_parse(p)?
             } else {
                 vec![]
             };

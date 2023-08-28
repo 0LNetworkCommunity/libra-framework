@@ -16,7 +16,7 @@ use indicatif::ProgressBar;
 
 use libra_framework::release;
 use libra_types::exports::NamedChain;
-use libra_types::legacy_types::fixtures;
+use libra_types::legacy_types::fixtures::TestPersona;
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use libra_types::ol_progress::OLProgress;
 use libra_types::exports::ChainId;
@@ -519,8 +519,8 @@ fn get_config(client: &Client, user: &str, _is_mainnet: bool) -> Result<Validato
 
 
 /// create validator configs from fixture mnemonics
-pub fn testnet_validator_config(persona: &str, host: HostAndPort) -> anyhow::Result<ValidatorConfiguration> {
-      let mnem = fixtures::get_persona_mnem(persona);
+pub fn testnet_validator_config(persona: &TestPersona, host: &HostAndPort) -> anyhow::Result<ValidatorConfiguration> {
+      let mnem = persona.get_persona_mnem();
       let key_chain = get_keys_from_mnem(mnem)?;
       let (_, _, _, public_identity) =
         generate_key_objects_from_legacy(&key_chain)?;
@@ -535,9 +535,9 @@ pub fn testnet_validator_config(persona: &str, host: HostAndPort) -> anyhow::Res
         consensus_public_key: public_identity.consensus_public_key,
         proof_of_possession: public_identity.consensus_proof_of_possession,
         validator_network_public_key: public_identity.validator_network_public_key,
-        validator_host: Some(host.clone()),
+        validator_host: Some(host.to_owned()),
         full_node_network_public_key: public_identity.full_node_network_public_key,
-        full_node_host: Some(host),
+        full_node_host: Some(host.to_owned()),
         stake_amount: 1,
         commission_percentage: 1,
         join_during_genesis: true,

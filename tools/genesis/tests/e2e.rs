@@ -25,7 +25,7 @@ fn end_to_end_single() {
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_end_user_single.json");
 
-    let recovery = parse_json::parse(p).unwrap();
+    let recovery = parse_json::recovery_file_parse(p).unwrap();
 
     let num_vals = 6;
     let test_validators = TestValidator::new_test_set(Some(num_vals), Some(100_000_000_000_000));
@@ -90,7 +90,7 @@ fn end_to_end_all() {
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_export_recovery.json");
 
-    let recovery = parse_json::parse(p).unwrap();
+    let recovery = parse_json::recovery_file_parse(p).unwrap();
 
     let num_vals = 6;
     let test_validators = TestValidator::new_test_set(Some(num_vals), Some(100_000_000_000_000));
