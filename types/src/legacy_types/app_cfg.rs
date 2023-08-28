@@ -480,7 +480,8 @@ impl Profile {
 
     // sets the private key and consumes it.
     pub fn borrow_private_key(&self) -> anyhow::Result<&Ed25519PrivateKey> {
-      Ok(self.test_private_key.as_ref().context("no private key found")?)
+      let key = self.test_private_key.as_ref().context("no private key found")?;
+      Ok(key)
     }
 }
 

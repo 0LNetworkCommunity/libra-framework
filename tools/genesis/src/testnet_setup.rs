@@ -10,7 +10,6 @@ pub fn setup(
     chain: NamedChain,
     data_path: PathBuf,
 ) -> anyhow::Result<()> {
-
     let db_path = data_path.join("data");
     println!("WARN: deleting {}, in 5 secs", db_path.display());
     let delay = time::Duration::from_secs(5);
@@ -21,10 +20,7 @@ pub fn setup(
     let index = me.idx();
     let format_host_str = format!(
         "{}:6180",
-        ip_list
-            .get(index)
-            .expect("could not get an IP and index")
-            .to_string()
+        ip_list.get(index).expect("could not get an IP and index")
     );
     println!(
         "your persona {me:?}is expected to use IP: {}",
@@ -47,7 +43,7 @@ pub fn setup(
         .iter()
         .enumerate()
         .filter_map(|(idx, ip)| {
-            let format_host_str = format!("{}:6180", ip.to_string());
+            let format_host_str = format!("{}:6180", ip);
             let host: HostAndPort = format_host_str
                 .parse()
                 .expect("could not parse IP address for host");
