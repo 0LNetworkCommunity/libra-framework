@@ -1,14 +1,14 @@
 use anyhow::{Context};
 use clap::{Args, Parser, Subcommand};
-use libra_config::host;
+
 use libra_genesis_tools::{
     genesis_builder, parse_json,
     supply::SupplySettings,
     wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME}, testnet_setup,
 };
 use libra_types::{exports::NamedChain, global_config_dir, legacy_types::fixtures::TestPersona};
-use std::{path::PathBuf, net::Ipv4Addr, fs, time, thread};
-use zapatos_genesis::config::{HostAndPort, ValidatorConfiguration};
+use std::{path::PathBuf, net::Ipv4Addr};
+
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
