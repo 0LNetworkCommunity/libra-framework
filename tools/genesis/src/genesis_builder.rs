@@ -88,24 +88,13 @@ pub fn build(
     }
 
     let genesis_config = vm::libra_genesis_default(chain_name);
-    // println!("\nfetching genesis info from github");
-    // let mut gen_info = fetch_genesis_info(
-    //     github_owner,
-    //     github_repository,
-    //     github_token,
-    //     use_local_framework,
-    //     &genesis_config,
-    //     &chain_name,
-    // )?;
 
-    // Generate genesis and waypoint files
-    // {
     let mut gen_info = if let Some(vals) = testnet_vals {
         let dummy_root = Ed25519PublicKey::from_encoded_string(
             "0x0000000000000000000000000000000000000000000000000000000000000000",
         )
         .expect("could not parse dummy root");
-        // make_testnet_tx(legacy_recovery, vals, chain_name, &supply_settings, &genesis_config)
+
         GenesisInfo::new(
             ChainId::new(chain_name.id()),
             dummy_root,
@@ -237,56 +226,6 @@ fn silly_config(cfg: &VmGenesisGenesisConfiguration) -> GenesisConfiguration {
         gas_schedule: default_gas_schedule(),
     }
 }
-
-// /// make genesis transaction from Github
-// fn make_genesis_tx(
-//   github_owner: String,
-//   github_repository: String,
-//   github_token: String,
-//   use_local_framework: bool,
-//   legacy_recovery: Option<&[LegacyRecovery]>,
-//   // genesis_vals: &[Validator],
-//   // framework_release: &ReleaseBundle,
-//   chain_name: NamedChain,
-//   supply_settings: &Option<SupplySettings>,
-//   genesis_config: &VmGenesisGenesisConfiguration
-// ) -> anyhow::Result<GenesisInfo>{
-//     println!("\nfetching genesis info from github");
-//     fetch_genesis_info(
-//         github_owner,
-//         github_repository,
-//         github_token,
-//         use_local_framework,
-//         genesis_config,
-//         &chain_name,
-//     )?
-
-//     // println!("building genesis block");
-//     //     let tx = make_recovery_genesis_from_vec_legacy_recovery(
-//     //         legacy_recovery,
-//     //         &gen_info.validators,
-//     //         &gen_info.framework,
-//     //         gen_info.chain_id,
-//     //         supply_settings.to_owned(),
-//     //         &genesis_config,
-//     //     )?;
-//     Ok(tx)
-// }
-
-// /// helper to create a testnet with defaults
-// fn make_testnet_tx(legacy_recovery: Option<&[LegacyRecovery]>, genesis_vals: &[Validator], chain_name: NamedChain, supply_settings: &Option<SupplySettings>, genesis_config: &VmGenesisGenesisConfiguration) -> anyhow::Result<Transaction>{
-
-//       let framerwork_releae = libra_framework::head_release_bundle();
-//       let tx = make_recovery_genesis_from_vec_legacy_recovery(
-//         legacy_recovery,
-//         genesis_vals,
-//         &framework_release,
-//         ChainId::new(chain_name.id()),
-//         supply_settings.to_owned(),
-//         genesis_config,
-//     )?;
-//     Ok(tx)
-// }
 
 /// Retrieves all information for mainnet genesis from the Git repository
 pub fn fetch_genesis_info(
@@ -444,35 +383,12 @@ fn get_config(client: &Client, user: &str, _is_mainnet: bool) -> Result<Validato
     )?
     .unwrap_or(true);
 
-    // We don't require the operator file if the validator is not joining during genesis.
-    // if is_mainnet && !join_during_genesis {
-    //     return Ok(ValidatorConfiguration {
-    //         owner_account_address: owner_account_address.into(),
-    //         owner_account_public_key,
-    //         operator_account_address: operator_account_address.into(),
-    //         operator_account_public_key,
-    //         voter_account_address: voter_account_address.into(),
-    //         voter_account_public_key,
-    //         consensus_public_key: None,
-    //         proof_of_possession: None,
-    //         validator_network_public_key: None,
-    //         validator_host: None,
-    //         full_node_network_public_key: None,
-    //         full_node_host: None,
-    //         stake_amount,
-    //         commission_percentage,
-    //         join_during_genesis,
-    //     });
-    // };
-
     let operator_file = dir.join(OPERATOR_FILE);
     let operator_file = operator_file.as_path();
 
     let file = client.get_file(&Path::new(operator_file).display().to_string())?;
     let operator_config: StringOperatorConfiguration =
         from_yaml(&String::from_utf8(base64::decode(file)?)?)?;
-
-    // let operator_config = client.get::<StringOperatorConfiguration>(operator_file)?;
 
     // Check and convert fields in operator file
     let operator_account_address_from_file: AccountAddress = parse_required_option(
