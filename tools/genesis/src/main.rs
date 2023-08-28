@@ -1,14 +1,14 @@
-use anyhow::{Context};
+use anyhow::Context;
 use clap::{Args, Parser, Subcommand};
 
 use libra_genesis_tools::{
     genesis_builder, parse_json,
     supply::SupplySettings,
-    wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME}, testnet_setup,
+    testnet_setup,
+    wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME},
 };
 use libra_types::{exports::NamedChain, global_config_dir, legacy_types::fixtures::TestPersona};
-use std::{path::PathBuf, net::Ipv4Addr};
-
+use std::{net::Ipv4Addr, path::PathBuf};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -141,7 +141,12 @@ fn main() -> anyhow::Result<()> {
                 Some(supply_settings),
             )?;
         }
-        Some(Sub::Testnet { me, ip_list }) => testnet_setup::setup(&me, &ip_list, cli.chain.unwrap_or(NamedChain::TESTING), cli.home_dir.unwrap_or_else(global_config_dir))?,
+        Some(Sub::Testnet { me, ip_list }) => testnet_setup::setup(
+            &me,
+            &ip_list,
+            cli.chain.unwrap_or(NamedChain::TESTING),
+            cli.home_dir.unwrap_or_else(global_config_dir),
+        )?,
         _ => {
             println!("\nIf you're looking for trouble \nYou came to the right place");
         }
