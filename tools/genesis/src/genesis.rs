@@ -1,14 +1,14 @@
 //! create a genesis from a LegacyRecovery struct
 
-use crate::{supply::SupplySettings, vm::migration_genesis};
-use anyhow::Error;
+use crate::{supply::SupplySettings, vm::{migration_genesis, libra_genesis_default}};
+use anyhow::{Error, Chain};
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use diem_framework::ReleaseBundle;
 use diem_types::{
-    chain_id::ChainId,
+    chain_id::{ChainId, NamedChain},
     transaction::{Transaction, WriteSetPayload},
 };
 use diem_vm_genesis::{GenesisConfiguration, Validator};
@@ -60,6 +60,7 @@ fn test_basic_genesis() {
         &head_release_bundle(),
         ChainId::test(),
         None,
+        &libra_genesis_default(NamedChain::TESTING)
     )
     .unwrap();
 }
@@ -87,6 +88,7 @@ fn test_recovery_genesis() {
         &head_release_bundle(),
         ChainId::test(),
         None,
+        &libra_genesis_default(NamedChain::TESTING)
     )
     .unwrap();
 

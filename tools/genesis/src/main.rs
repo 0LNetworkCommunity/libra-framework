@@ -180,6 +180,8 @@ fn main() -> anyhow::Result<()> {
 
           let recovery = parse_json::recovery_file_parse(p).unwrap();
 
+          dbg!(&recovery.len());
+
 
             let recovery = vec![];
             genesis_builder::build(

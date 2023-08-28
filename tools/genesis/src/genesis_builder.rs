@@ -1,6 +1,7 @@
 //! build the genesis file
 use crate::genesis::make_recovery_genesis_from_vec_legacy_recovery;
 use crate::supply::SupplySettings;
+use crate::vm::libra_genesis_default;
 use crate::wizard::DEFAULT_GIT_BRANCH;
 use crate::{compare, supply, vm};
 
@@ -669,6 +670,8 @@ fn test_github_info() {
         "a-genesis".to_string(),
         token,
         true,
+        &libra_genesis_default(NamedChain::TESTING),
+        &NamedChain::TESTING,
     )
     .unwrap();
 }
@@ -686,6 +689,8 @@ fn test_build() {
         home,
         true,
         None,
+        None,
+        NamedChain::TESTING,
         None,
     )
     .unwrap();

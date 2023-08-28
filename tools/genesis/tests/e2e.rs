@@ -1,11 +1,11 @@
 use libra_genesis_tools::{
     genesis::{make_recovery_genesis_from_vec_legacy_recovery, save_genesis},
     parse_json,
-    supply::SupplySettings,
+    supply::SupplySettings, vm::libra_genesis_default,
 };
 use std::path::PathBuf;
 use diem_types::{
-    chain_id::ChainId,
+    chain_id::{ChainId, NamedChain},
     on_chain_config::OnChainConfig,
     on_chain_config::ValidatorSet,
     state_store::state_key::StateKey,
@@ -52,6 +52,7 @@ fn end_to_end_single() {
         &head_release_bundle(),
         ChainId::test(),
         Some(supply_settings),
+        &libra_genesis_default(NamedChain::TESTING),
     )
     .expect("could not write genesis.blob");
 
@@ -117,6 +118,7 @@ fn end_to_end_all() {
         &head_release_bundle(),
         ChainId::test(),
         Some(supply_settings),
+        &libra_genesis_default(NamedChain::TESTING),
     )
     .expect("could not write genesis.blob");
 
