@@ -12,10 +12,12 @@ pub fn setup(
     supply_settings: &Option<SupplySettings>
 ) -> anyhow::Result<()> {
     let db_path = data_path.join("data");
-    println!("WARN: deleting {}, in 5 secs", db_path.display());
-    let delay = time::Duration::from_secs(5);
-    thread::sleep(delay);
-    fs::remove_dir_all(db_path)?;
+    if db_path.exists() {
+        println!("WARN: deleting {}, in 5 secs", db_path.display());
+        let delay = time::Duration::from_secs(5);
+        thread::sleep(delay);
+        fs::remove_dir_all(db_path)?;
+    }
 
     // create the local files for my_persona
     let index = me.idx();
