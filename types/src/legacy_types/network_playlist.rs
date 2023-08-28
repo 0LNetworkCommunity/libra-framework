@@ -111,21 +111,21 @@ impl NetworkPlaylist {
         }],
       }
     }
-    pub async fn default_for_network(chain_id: Option<NamedChain>) -> anyhow::Result<Self> {
+    pub fn default_for_network(chain_id: Option<NamedChain>) -> anyhow::Result<Self> {
         if let Some(NamedChain::TESTING) = chain_id {
             return Ok(Self::testing(None));
         }
         let url = find_default_playlist(chain_id)?;
 
-        Self::from_url(url, chain_id).await
+        Self::from_url(url, chain_id)
     }
 
-    pub async fn from_url(
+    pub fn from_url(
         playlist_url: Url,
         chain_id: Option<NamedChain>,
     ) -> anyhow::Result<NetworkPlaylist> {
-        let res = reqwest::get(playlist_url).await?;
-        let out = res.text().await?;
+        let res = reqwest::blocking::get(playlist_url)?;
+        let out = res.text()?;
         let mut play: NetworkPlaylist = serde_json::from_str(&out)?; //res.text()?.
 
         if let Some(c) = chain_id {
