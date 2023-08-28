@@ -52,6 +52,15 @@ impl TestPersona {
         }
     }
 
+    /// get persona from index. Used for testnet to assign persona to validator seat
+    pub fn idx(&self) -> usize {
+         match self {
+          TestPersona::Alice => 0,
+          TestPersona::Bob => 1,
+          TestPersona::Carol => 2,
+          TestPersona::Dave => 3
+      }
+    }
     /// get mnemonic
     pub fn get_persona_mnem(&self) -> String {
         let path = env!("CARGO_MANIFEST_DIR");

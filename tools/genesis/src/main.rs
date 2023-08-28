@@ -1,12 +1,13 @@
 use anyhow::{Context};
 use clap::{Args, Parser, Subcommand};
+use libra_config::host;
 use libra_genesis_tools::{
     genesis_builder, parse_json,
     supply::SupplySettings,
-    wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME},
+    wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME}, testnet_setup,
 };
 use libra_types::{exports::NamedChain, global_config_dir, legacy_types::fixtures::TestPersona};
-use std::{path::PathBuf, net::Ipv4Addr};
+use std::{path::PathBuf, net::Ipv4Addr, fs, time, thread};
 use diem_genesis::config::{HostAndPort, ValidatorConfiguration};
 
 #[derive(Parser)]
@@ -140,42 +141,7 @@ fn main() -> anyhow::Result<()> {
                 Some(supply_settings),
             )?;
         }
-        Some(Sub::Testnet { me: _, ip_list }) => {
-            let data_path = cli.home_dir.unwrap_or_else(global_config_dir);
-
-            // create validator configurations from fixtures
-            // without needing to use a github repo to register and read
-            let val_cfg: Vec<ValidatorConfiguration> = ip_list
-                .iter()
-                .enumerate()
-                .filter_map(|(idx, ip)| {
-
-                    let format_host_str = format!("{}:6180", ip.to_string());
-                    let host: HostAndPort = format_host_str.parse().expect("could not parse IP address for host");
-                    let p = TestPersona::from(idx).ok()?;
-                    genesis_builder::testnet_validator_config(&p, &host).ok()
-                })
-                .collect();
-
-            // let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            //     .join("tests/fixtures/sample_export_recovery.json");
-            let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("tests/fixtures/sample_export_recovery.json");
-
-            let recovery = parse_json::recovery_file_parse(p)?;
-
-            genesis_builder::build(
-                "none".to_string(), // when is testnet is ignored
-                "none".to_string(),
-                "none".to_string(),
-                data_path,
-                true,
-                Some(&recovery),
-                Some(SupplySettings::default()),
-                cli.chain.unwrap_or(NamedChain::TESTING),
-                Some(val_cfg),
-            )?;
-        }
+        Some(Sub::Testnet { me, ip_list }) => testnet_setup::setup(&me, &ip_list, cli.chain.unwrap_or(NamedChain::TESTING), cli.home_dir.unwrap_or_else(global_config_dir))?,
         _ => {
             println!("\nIf you're looking for trouble \nYou came to the right place");
         }
