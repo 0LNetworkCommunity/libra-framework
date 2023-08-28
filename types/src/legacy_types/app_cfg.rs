@@ -261,7 +261,7 @@ impl AppCfg {
         chain_id: Option<NamedChain>,
         playlist_url: Option<Url>,
     ) -> anyhow::Result<NetworkPlaylist> {
-        // let chain_id = chain_id.unwrap_or(self.chain_info.chain_id);
+
         let url = playlist_url.unwrap_or(network_playlist::find_default_playlist(chain_id)?);
 
         let np = NetworkPlaylist::from_url(url, chain_id)?;

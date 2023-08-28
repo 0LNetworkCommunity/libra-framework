@@ -1,5 +1,7 @@
-use crate::{legacy_config, node_yaml};
+use crate::node_yaml;
+use anyhow::Context;
 use dialoguer::{Confirm, Input};
+use libra_types::legacy_types::app_cfg::AppCfg;
 use libra_types::legacy_types::mode_ol::MODE_0L;
 use libra_types::legacy_types::network_playlist::NetworkPlaylist;
 use libra_types::ol_progress::OLProgress;
@@ -29,19 +31,15 @@ pub fn initialize_host(
     node_yaml::save_validator_yaml(home_path.clone())?;
     OLProgress::complete("Saved validator node yaml file locally");
 
+        // TODO: nice to have
     // also for convenience create a local user libra.yaml file so the
     // validator can make transactions against the localhost
-    tokio::task::spawn_blocking(move || {
-        legacy_config::wizard(
-            Some(keys.child_0_owner.auth_key),
-            Some(keys.child_0_owner.account),
-            home_path,
-            None,
-            None,
-            None,
-            Some(NetworkPlaylist::localhost(None))
-        )
-    });
+    let cfg = AppCfg::init_app_configs(keys.child_0_owner.auth_key, keys.child_0_owner.account, home_path.clone(), None, Some(NetworkPlaylist::localhost(None)))?;
+
+    cfg.save_file().context(format!(
+        "could not initialize configs at {}",
+        cfg.workspace.node_home.to_str().unwrap()
+    ))?;
     OLProgress::complete("Saved a user libra.yaml file locally");
 
     Ok(())
