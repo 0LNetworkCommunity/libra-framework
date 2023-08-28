@@ -1,41 +1,72 @@
 //! helper to get fixtures data from files in ol/fixtures folder.
-use std::{fs, path::Path, str::FromStr};
+use core::fmt;
+use std::{fs, path::PathBuf, str::FromStr};
+
+use anyhow::bail;
 
 
 
-#[derive(Clone)]
-pub enum Persona {
+#[derive(Clone, Debug)]
+pub enum TestPersona {
   Alice,
   Bob,
   Carol,
   Dave
 }
 
-impl FromStr for Persona {
+impl FromStr for TestPersona {
     type Err = &'static str;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_ascii_lowercase().as_str() {
-            "alice" => Ok(Persona::Alice),
-            "bob" => Ok(Persona::Bob),
-            "carol" => Ok(Persona::Carol),
-            "dave" => Ok(Persona::Dave),
+            "alice" => Ok(TestPersona::Alice),
+            "bob" => Ok(TestPersona::Bob),
+            "carol" => Ok(TestPersona::Carol),
+            "dave" => Ok(TestPersona::Dave),
             _ => Err("not found"),
         }
     }
 }
 
-/// get mnemonic
-pub fn get_persona_mnem(persona: &str) -> String {
-    let path = env!("CARGO_MANIFEST_DIR");
-    let buf = Path::new(path)
-        .parent()
-        .unwrap()
-        .join("util/fixtures/mnemonic")
-        .join(format!("{}.mnem", persona));
-    dbg!(&buf);
-    fs::read_to_string(&buf).expect("could not find mnemonic file")
+impl fmt::Display for TestPersona {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+      let s = match self {
+          TestPersona::Alice => "alice",
+          TestPersona::Bob => "bob",
+          TestPersona::Carol => "carol",
+          TestPersona::Dave => "dave",
+      };
+       write!(f, "{}", s)
+    }
 }
+
+impl TestPersona {
+    /// get persona from index. Used for testnet to assign persona to validator seat
+    pub fn from(idx: usize) -> anyhow::Result<Self> {
+        match idx {
+            0 => Ok(TestPersona::Alice),
+            1 => Ok(TestPersona::Bob),
+            2 => Ok(TestPersona::Carol),
+            3 => Ok(TestPersona::Dave),
+            _ => bail!("no default persona at this index")
+        }
+    }
+
+    /// get mnemonic
+    pub fn get_persona_mnem(&self) -> String {
+        let path = env!("CARGO_MANIFEST_DIR");
+        // dbg!(&self.to_string());
+        let buf = PathBuf::from_str(path)
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join("util/fixtures/mnemonic")
+            .join(format!("{}.mnem", &self.to_string()));
+        fs::read_to_string(&buf).expect("could not find mnemonic file")
+    }
+}
+
+
 
 // /// get account json
 // pub fn get_persona_account_json(persona: &str) -> (String, PathBuf) {
@@ -135,6 +166,6 @@ pub fn get_persona_mnem(persona: &str) -> String {
 
 #[test]
 fn test_block() {
-    let mnem = get_persona_mnem("alice");
+    let mnem = TestPersona::Alice.get_persona_mnem();
     assert!(mnem.contains("talent"));
 }
