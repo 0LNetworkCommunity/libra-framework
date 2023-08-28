@@ -25,7 +25,7 @@ pub fn setup(
         ip_list.get(index).expect("could not get an IP and index")
     );
     println!(
-        "your persona {me:?}is expected to use IP: {}",
+        "your persona {me:?} is expected to use IP: {}",
         format_host_str
     );
     let my_host: HostAndPort = format_host_str
