@@ -256,7 +256,7 @@ impl AppCfg {
         self.workspace.default_chain_id = chain_id;
     }
 
-    pub async fn update_network_playlist(
+    pub fn update_network_playlist(
         &mut self,
         chain_id: Option<NamedChain>,
         playlist_url: Option<Url>,
@@ -264,7 +264,7 @@ impl AppCfg {
         // let chain_id = chain_id.unwrap_or(self.chain_info.chain_id);
         let url = playlist_url.unwrap_or(network_playlist::find_default_playlist(chain_id)?);
 
-        let np = NetworkPlaylist::from_url(url, chain_id).await?;
+        let np = NetworkPlaylist::from_url(url, chain_id)?;
 
         self.maybe_add_custom_playlist(&np);
         Ok(np)
