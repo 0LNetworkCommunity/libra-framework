@@ -1,5 +1,29 @@
 //! helper to get fixtures data from files in ol/fixtures folder.
-use std::{fs, path::Path};
+use std::{fs, path::Path, str::FromStr};
+
+
+
+#[derive(Clone)]
+pub enum Persona {
+  Alice,
+  Bob,
+  Carol,
+  Dave
+}
+
+impl FromStr for Persona {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_ascii_lowercase().as_str() {
+            "alice" => Ok(Persona::Alice),
+            "bob" => Ok(Persona::Bob),
+            "carol" => Ok(Persona::Carol),
+            "dave" => Ok(Persona::Dave),
+            _ => Err("not found"),
+        }
+    }
+}
 
 /// get mnemonic
 pub fn get_persona_mnem(persona: &str) -> String {
