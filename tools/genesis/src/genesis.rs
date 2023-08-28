@@ -2,19 +2,25 @@
 
 use crate::{
     supply::SupplySettings,
-    vm::{migration_genesis},
+    vm::migration_genesis,
 };
-use anyhow::{Error};
+use anyhow::Error;
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use zapatos_framework::ReleaseBundle;
 use zapatos_types::{
-    chain_id::{ChainId},
+    chain_id::ChainId,
     transaction::{Transaction, WriteSetPayload},
 };
 use zapatos_vm_genesis::{GenesisConfiguration, Validator};
+
+#[cfg(test)]
+use zapatos_types::chain_id::NamedChain;
+#[cfg(test)]
+use crate::vm::libra_genesis_default;
+
 /// Make a recovery genesis blob
 pub fn make_recovery_genesis_from_vec_legacy_recovery(
     recovery: Option<&[LegacyRecovery]>,
