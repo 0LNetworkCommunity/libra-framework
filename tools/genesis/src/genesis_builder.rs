@@ -660,6 +660,7 @@ fn parse_optional_option<F: Fn(&str) -> Result<T, E>, T, E: std::fmt::Display>(
 #[test]
 #[ignore] //dev helper
 fn test_github_info() {
+    use crate::vm::libra_genesis_default;
     let gh_token_path = libra_types::global_config_dir().join("github_token.txt");
     let token = std::fs::read_to_string(gh_token_path).unwrap();
 

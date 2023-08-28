@@ -6,7 +6,7 @@ use libra_genesis_tools::{
     wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME},
 };
 use libra_types::{exports::NamedChain, global_config_dir, legacy_types::fixtures::TestPersona};
-use std::{path::PathBuf};
+use std::{path::PathBuf, net::Ipv4Addr};
 use diem_genesis::config::{HostAndPort, ValidatorConfiguration};
 
 #[derive(Parser)]
@@ -76,7 +76,7 @@ enum Sub {
 
         /// list of IP addresses of each persona Alice, Bob, Carol, Dave
         #[clap(short, long)]
-        ip_list: Vec<HostAndPort>,
+        ip_list: Vec<Ipv4Addr>,
     },
 }
 
@@ -143,35 +143,27 @@ fn main() -> anyhow::Result<()> {
         Some(Sub::Testnet { me: _, ip_list }) => {
             let data_path = cli.home_dir.unwrap_or_else(global_config_dir);
 
-            // TODO: make validator config here
-            // testnet_validator_config
+            // create validator configurations from fixtures
+            // without needing to use a github repo to register and read
             let val_cfg: Vec<ValidatorConfiguration> = ip_list
                 .iter()
                 .enumerate()
-                .filter_map(|(idx, host)| {
+                .filter_map(|(idx, ip)| {
+
+                    let format_host_str = format!("{}:6180", ip.to_string());
+                    let host: HostAndPort = format_host_str.parse().expect("could not parse IP address for host");
                     let p = TestPersona::from(idx).ok()?;
-                    genesis_builder::testnet_validator_config(&p, host).ok()
+                    genesis_builder::testnet_validator_config(&p, &host).ok()
                 })
                 .collect();
 
-            // ip_list.iter()
-            //   .enumerate()
-            //   .for_each(|(idx, host)| {
-            //     let p = TestPersona::from(idx).ok().unwrap();
-            //     dbg!(&p);
-            //     let c = genesis_builder::testnet_validator_config(&p, host).ok();
-            //     dbg!(&c);
-            //   });
-            //   // .collect();
-
+            // let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            //     .join("tests/fixtures/sample_export_recovery.json");
             let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("tests/fixtures/sample_end_user_single.json");
+                .join("tests/fixtures/sample_export_recovery.json");
 
-            let recovery = parse_json::recovery_file_parse(p).unwrap();
+            let recovery = parse_json::recovery_file_parse(p)?;
 
-            dbg!(&recovery.len());
-
-            let recovery = vec![];
             genesis_builder::build(
                 "none".to_string(), // when is testnet is ignored
                 "none".to_string(),
