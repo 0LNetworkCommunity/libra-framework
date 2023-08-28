@@ -1,7 +1,10 @@
 //! create a genesis from a LegacyRecovery struct
 
-use crate::{supply::SupplySettings, vm::{migration_genesis, libra_genesis_default}};
-use anyhow::{Error, Chain};
+use crate::{
+    supply::SupplySettings,
+    vm::{libra_genesis_default, migration_genesis},
+};
+use anyhow::{Chain, Error};
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use std::fs::File;
 use std::io::Write;
@@ -60,7 +63,7 @@ fn test_basic_genesis() {
         &head_release_bundle(),
         ChainId::test(),
         None,
-        &libra_genesis_default(NamedChain::TESTING)
+        &libra_genesis_default(NamedChain::TESTING),
     )
     .unwrap();
 }
@@ -88,7 +91,7 @@ fn test_recovery_genesis() {
         &head_release_bundle(),
         ChainId::test(),
         None,
-        &libra_genesis_default(NamedChain::TESTING)
+        &libra_genesis_default(NamedChain::TESTING),
     )
     .unwrap();
 

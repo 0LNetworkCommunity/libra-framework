@@ -7,9 +7,9 @@ use libra_genesis_tools::{compare, genesis::make_recovery_genesis_from_vec_legac
 use libra_types::exports::AccountAddress;
 use libra_types::exports::ChainId;
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
-use zapatos_types::chain_id::NamedChain;
 use std::fs;
 use support::{path_utils::json_path, test_vals};
+use zapatos_types::chain_id::NamedChain;
 
 #[test]
 // test that a genesis blob created from struct, will actually contain the data

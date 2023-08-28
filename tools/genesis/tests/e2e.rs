@@ -1,7 +1,8 @@
 use libra_genesis_tools::{
     genesis::{make_recovery_genesis_from_vec_legacy_recovery, save_genesis},
     parse_json,
-    supply::SupplySettings, vm::libra_genesis_default,
+    supply::SupplySettings,
+    vm::libra_genesis_default,
 };
 use std::path::PathBuf;
 use zapatos_types::{

@@ -1,13 +1,13 @@
-use anyhow::{Context, bail};
-use clap::{Parser, Subcommand, Args};
+use anyhow::{bail, Context};
+use clap::{Args, Parser, Subcommand};
 use libra_genesis_tools::{
     genesis_builder, parse_json,
     supply::SupplySettings,
     wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME},
 };
 use libra_types::{exports::NamedChain, global_config_dir, legacy_types::fixtures::TestPersona};
-use zapatos_genesis::config::{ValidatorConfiguration, HostAndPort};
-use std::{path::PathBuf, net::Ipv4Addr};
+use std::{net::Ipv4Addr, path::PathBuf};
+use zapatos_genesis::config::{HostAndPort, ValidatorConfiguration};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -21,9 +21,7 @@ struct GenesisCliArgs {
     /// defaults to $HOME/.libra
     #[clap(long)]
     home_dir: Option<PathBuf>,
-
 }
-
 
 #[derive(Debug, Clone, Args)]
 #[clap(arg_required_else_help = true)]
@@ -45,7 +43,6 @@ struct GithubArgs {
     json_legacy: Option<PathBuf>,
 }
 
-
 #[derive(Subcommand)]
 enum Sub {
     Genesis {
@@ -57,10 +54,9 @@ enum Sub {
         supply_settings: SupplySettings,
     }, // just do genesis without wizard
     Register {
-      /// github args
+        /// github args
         #[clap(flatten)]
         github: GithubArgs,
-
     },
     // full wizard
     Wizard {
@@ -74,26 +70,23 @@ enum Sub {
     /// sensible defaults for testnet, does not need a genesis repo
     /// accounts are created from fixture mnemonics for alice, bob, carol, dave
     Testnet {
+        /// which persona is this machine going to register as
+        #[clap(short, long)]
+        me: TestPersona,
 
-      /// which persona is this machine going to register as
-      #[clap(short, long)]
-      me: TestPersona,
-
-      /// list of IP addresses of each persona Alice, Bob, Carol, Dave
-      #[clap(short, long)]
-      ip_list: Vec<HostAndPort>,
-
-    }
+        /// list of IP addresses of each persona Alice, Bob, Carol, Dave
+        #[clap(short, long)]
+        ip_list: Vec<HostAndPort>,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
     let cli = GenesisCliArgs::parse();
     match cli.command {
         Some(Sub::Genesis {
-          github,
-          supply_settings
+            github,
+            supply_settings,
         }) => {
-
             let data_path = cli.home_dir.unwrap_or_else(global_config_dir);
 
             let github_token = github.token_github.unwrap_or(
@@ -121,9 +114,7 @@ fn main() -> anyhow::Result<()> {
                 None,
             )?;
         }
-        Some(Sub::Register {
-          github
-        }) => {
+        Some(Sub::Register { github }) => {
             GenesisWizard::new(
                 github.org_github,
                 github.name_github,
@@ -133,8 +124,8 @@ fn main() -> anyhow::Result<()> {
             .start_wizard(github.local_framework, github.json_legacy, false, None)?;
         }
         Some(Sub::Wizard {
-          github,
-          supply_settings
+            github,
+            supply_settings,
         }) => {
             GenesisWizard::new(
                 github.org_github,
@@ -148,22 +139,20 @@ fn main() -> anyhow::Result<()> {
                 true,
                 Some(supply_settings),
             )?;
-        },
-        Some(Sub::Testnet {
-          me,
-          ip_list
-        }) => {
+        }
+        Some(Sub::Testnet { me, ip_list }) => {
             let data_path = cli.home_dir.unwrap_or_else(global_config_dir);
 
             // TODO: make validator config here
             // testnet_validator_config
-            let val_cfg: Vec<ValidatorConfiguration> = ip_list.iter()
-              .enumerate()
-              .filter_map(|(idx, host)| {
-                let p = TestPersona::from(idx).ok()?;
-                genesis_builder::testnet_validator_config(&p, host).ok()
-              })
-              .collect();
+            let val_cfg: Vec<ValidatorConfiguration> = ip_list
+                .iter()
+                .enumerate()
+                .filter_map(|(idx, host)| {
+                    let p = TestPersona::from(idx).ok()?;
+                    genesis_builder::testnet_validator_config(&p, host).ok()
+                })
+                .collect();
 
             // ip_list.iter()
             //   .enumerate()
@@ -175,13 +164,12 @@ fn main() -> anyhow::Result<()> {
             //   });
             //   // .collect();
 
-          let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/fixtures/sample_end_user_single.json");
+            let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("tests/fixtures/sample_end_user_single.json");
 
-          let recovery = parse_json::recovery_file_parse(p).unwrap();
+            let recovery = parse_json::recovery_file_parse(p).unwrap();
 
-          dbg!(&recovery.len());
-
+            dbg!(&recovery.len());
 
             let recovery = vec![];
             genesis_builder::build(
@@ -193,9 +181,9 @@ fn main() -> anyhow::Result<()> {
                 Some(&recovery),
                 Some(SupplySettings::default()),
                 cli.chain.unwrap_or(NamedChain::TESTING),
-                Some(val_cfg)
+                Some(val_cfg),
             )?;
-        },
+        }
         _ => {
             println!("\nIf you're looking for trouble \nYou came to the right place");
         }
