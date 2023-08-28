@@ -62,6 +62,8 @@ struct LibraSimpleLayout {
     pub users: Vec<String>,
 }
 
+// TODO: too many arguments, minor infraction
+#[allow(clippy::too_many_arguments)]
 pub fn build(
     github_owner: String,
     github_repository: String,

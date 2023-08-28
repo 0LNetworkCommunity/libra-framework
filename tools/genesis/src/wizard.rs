@@ -153,7 +153,7 @@ impl GenesisWizard {
                 use_local_framework,
                 Some(&legacy_recovery),
                 supply_settings,
-                self.chain.clone(),
+                self.chain,
                 None,
             )?;
 

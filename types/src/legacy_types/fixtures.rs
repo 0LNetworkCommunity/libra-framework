@@ -71,7 +71,7 @@ impl TestPersona {
             .unwrap()
             .join("util/fixtures/mnemonic")
             .join(format!("{}.mnem", &self.to_string()));
-        fs::read_to_string(&buf).expect("could not find mnemonic file")
+        fs::read_to_string(buf).expect("could not find mnemonic file")
     }
 }
 
