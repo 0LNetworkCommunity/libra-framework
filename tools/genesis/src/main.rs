@@ -5,8 +5,9 @@ use libra_genesis_tools::{
     supply::SupplySettings,
     wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME},
 };
-use libra_types::{exports::NamedChain, global_config_dir};
-use std::path::PathBuf;
+use libra_types::{exports::NamedChain, global_config_dir, legacy_types::fixtures::Persona};
+use diem_genesis::config::ValidatorConfiguration;
+use std::{path::PathBuf, net::Ipv4Addr};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -53,7 +54,17 @@ enum Sub {
     },
     /// sensible defaults for testnet, does not need a genesis repo
     /// accounts are created from fixture mnemonics for alice, bob, carol, dave
-    Testnet {}
+    Testnet {
+
+      /// which persona is this machine going to register as
+      #[clap(short, long)]
+      me: Persona,
+
+      /// list of IP addresses of each persona Alice, Bob, Carol, Dave
+      #[clap(short, long)]
+      ip_list: Vec<Ipv4Addr>,
+
+    }
 }
 
 fn main() -> anyhow::Result<()> {
@@ -84,7 +95,7 @@ fn main() -> anyhow::Result<()> {
                 Some(&recovery),
                 Some(supply_settings),
                 cli.chain.unwrap_or(NamedChain::TESTING),
-                false,
+                None,
             )?;
         }
         Some(Sub::Register {}) => {
@@ -110,7 +121,10 @@ fn main() -> anyhow::Result<()> {
                 Some(supply_settings),
             )?;
         },
-        Some(Sub::Testnet {}) => {
+        Some(Sub::Testnet {
+          me,
+          ip_list
+        }) => {
             let data_path = cli.home_dir.unwrap_or_else(global_config_dir);
 
             let recovery = vec![];
@@ -123,14 +137,12 @@ fn main() -> anyhow::Result<()> {
                 Some(&recovery),
                 Some(SupplySettings::default()),
                 cli.chain.unwrap_or(NamedChain::TESTING),
-                true
+                Some(vec![])
             )?;
         },
         _ => {
             println!("\nIf you're looking for trouble \nYou came to the right place");
         }
     }
-
-    // Continued program logic goes here...
     Ok(())
 }
