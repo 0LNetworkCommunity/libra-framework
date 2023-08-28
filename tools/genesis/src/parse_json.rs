@@ -9,7 +9,6 @@ pub fn recovery_file_parse(recovery_json_path: PathBuf) -> anyhow::Result<Vec<Le
 
 #[test]
 fn parse_json_single() {
-    use anyhow::Context;
 
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_end_user_single.json");

@@ -1,7 +1,7 @@
 //! build the genesis file
 use crate::genesis::make_recovery_genesis_from_vec_legacy_recovery;
 use crate::supply::SupplySettings;
-use crate::vm::libra_genesis_default;
+
 use crate::wizard::DEFAULT_GIT_BRANCH;
 use crate::{compare, supply, vm};
 

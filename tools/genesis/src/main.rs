@@ -1,4 +1,4 @@
-use anyhow::{bail, Context};
+use anyhow::{Context};
 use clap::{Args, Parser, Subcommand};
 use libra_genesis_tools::{
     genesis_builder, parse_json,
@@ -6,7 +6,7 @@ use libra_genesis_tools::{
     wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME},
 };
 use libra_types::{exports::NamedChain, global_config_dir, legacy_types::fixtures::TestPersona};
-use std::{net::Ipv4Addr, path::PathBuf};
+use std::{path::PathBuf};
 use diem_genesis::config::{HostAndPort, ValidatorConfiguration};
 
 #[derive(Parser)]
@@ -140,7 +140,7 @@ fn main() -> anyhow::Result<()> {
                 Some(supply_settings),
             )?;
         }
-        Some(Sub::Testnet { me, ip_list }) => {
+        Some(Sub::Testnet { me: _, ip_list }) => {
             let data_path = cli.home_dir.unwrap_or_else(global_config_dir);
 
             // TODO: make validator config here
