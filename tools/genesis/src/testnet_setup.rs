@@ -9,6 +9,7 @@ pub fn setup(
     ip_list: &[Ipv4Addr],
     chain: NamedChain,
     data_path: PathBuf,
+    supply_settings: &Option<SupplySettings>
 ) -> anyhow::Result<()> {
     let db_path = data_path.join("data");
     println!("WARN: deleting {}, in 5 secs", db_path.display());
@@ -23,7 +24,7 @@ pub fn setup(
         ip_list.get(index).expect("could not get an IP and index")
     );
     println!(
-        "your persona {me:?}is expected to use IP: {}",
+        "your persona {me:?} is expected to use IP: {}",
         format_host_str
     );
     let my_host: HostAndPort = format_host_str
@@ -64,7 +65,7 @@ pub fn setup(
         data_path,
         true,
         Some(&recovery),
-        Some(SupplySettings::default()),
+        supply_settings.to_owned(),
         chain,
         Some(val_cfg),
     )?;
