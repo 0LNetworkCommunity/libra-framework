@@ -24,7 +24,7 @@
 
     module ol_framework::ballot {
     use std::vector;
-    use aptos_framework::guid::{Self, ID};
+    use diem_framework::guid::{Self, ID};
     use std::error;
 
     /// No ballot found under that GUID

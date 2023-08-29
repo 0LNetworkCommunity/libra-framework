@@ -1,36 +1,58 @@
-use anyhow::bail;
-use libra_cached_packages::aptos_stdlib;
-use zapatos_forge::AptosPublicInfo;
-use zapatos_sdk::rest_client::{aptos::Balance, Client, Response};
-use zapatos_types::account_address::AccountAddress;
 
-/// Get the balance of the 0L coin. Client methods are hardcoded for vendor
+use libra_cached_packages::libra_stdlib;
+use zapatos_forge::DiemPublicInfo;
+use zapatos_sdk::rest_client::Client;
+use zapatos_types::account_address::AccountAddress;
+use libra_types::type_extensions::client_ext::ClientExt;
+
+// /// Get the balance of the 0L coin. Client methods are hardcoded for vendor
+// pub async fn get_libra_balance(
+//     client: &Client,
+//     address: AccountAddress,
+// ) -> anyhow::Result<Response<Balance>> {
+//     let resp = client
+//         .get_account_resource(address, "0x1::coin::CoinStore<0x1::gas_coin::GasCoin>")
+//         .await?;
+//     resp.and_then(|resource| {
+//         if let Some(res) = resource {
+//             let b = serde_json::from_value::<Balance>(res.data)?;
+//             Ok(b)
+//         } else {
+//             bail!("No data returned")
+//         }
+//     })
+//     // bail!("No data returned");
+// }
+
 pub async fn get_libra_balance(
     client: &Client,
     address: AccountAddress,
-) -> anyhow::Result<Response<Balance>> {
-    let resp = client
-        .get_account_resource(address, "0x1::coin::CoinStore<0x1::gas_coin::GasCoin>")
+) -> anyhow::Result<Vec<u64>> {
+    let res = client
+        .view_ext(
+          "0x1::slow_wallet::balance",
+          None,
+          Some(address.to_string()),
+        )
         .await?;
-    resp.and_then(|resource| {
-        if let Some(res) = resource {
-            let b = serde_json::from_value::<Balance>(res.data)?;
-            Ok(b)
-        } else {
-            bail!("No data returned")
-        }
-    })
-    // bail!("No data returned");
+    let mut move_tuple = serde_json::from_value::<Vec<String>>(res)?;
+
+    let parsed = move_tuple
+      .iter_mut()
+      .filter_map(|e| { e.parse::<u64>().ok() })
+      .collect::<Vec<u64>>();
+    Ok(parsed)
 }
 
+
 pub async fn mint_libra(
-    public_info: &mut AptosPublicInfo<'_>,
+    public_info: &mut DiemPublicInfo<'_>,
     addr: AccountAddress,
     amount: u64,
 ) -> anyhow::Result<()> {
     let payload = public_info
         .transaction_factory()
-        .payload(aptos_stdlib::gas_coin_mint_to_impl(addr, amount));
+        .payload(libra_stdlib::gas_coin_mint_to_impl(addr, amount));
 
     let mint_txn = public_info
         .root_account()

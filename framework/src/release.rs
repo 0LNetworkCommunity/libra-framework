@@ -60,15 +60,15 @@ impl ReleaseTarget {
             ("vendor-stdlib", None),
             (
                 "libra-framework",
-                Some("cached-packages/src/aptos_framework_sdk_builder.rs"),
+                Some("cached-packages/src/libra_framework_sdk_builder.rs"),
             ),
             // (
-            //     "aptos-token",
-            //     Some("cached-packages/src/aptos_token_sdk_builder.rs"),
+            //     "diem-token",
+            //     Some("cached-packages/src/diem_token_sdk_builder.rs"),
             // ),
             // (
-            //     "aptos-token-objects",
-            //     Some("cached-packages/src/aptos_token_objects_sdk_builder.rs"),
+            //     "diem-token-objects",
+            //     Some("cached-packages/src/diem_token_objects_sdk_builder.rs"),
             // ),
         ];
         // Currently we don't have experimental packages only included in particular targets.
@@ -101,6 +101,7 @@ impl ReleaseTarget {
             .collect::<Vec<_>>();
         ReleaseOptions {
             build_options: BuildOptions {
+                dev: false,
                 with_srcs,
                 with_abis: true,
                 with_source_maps: false,
@@ -178,10 +179,10 @@ static NAMED_ADDRESSES: Lazy<BTreeMap<String, NumericalAddress>> = Lazy::new(|| 
     let four = NumericalAddress::parse_str("0x4").unwrap();
     let resources = NumericalAddress::parse_str("0xA550C18").unwrap();
     result.insert("std".to_owned(), one);
-    result.insert("aptos_std".to_owned(), one);
-    result.insert("aptos_framework".to_owned(), one);
-    result.insert("aptos_token".to_owned(), three);
-    result.insert("aptos_token_objects".to_owned(), four);
+    result.insert("diem_std".to_owned(), one);
+    result.insert("diem_framework".to_owned(), one);
+    result.insert("diem_token".to_owned(), three);
+    result.insert("diem_token_objects".to_owned(), four);
     result.insert("core_resources".to_owned(), resources);
     result.insert("vm_reserved".to_owned(), zero);
     result.insert("ol_framework".to_owned(), four); /////// 0L /////////

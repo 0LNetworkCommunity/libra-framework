@@ -18,37 +18,37 @@
  * 9. An owner can always switch operators by calling stake::set_operator.
  * 10. An owner can always switch designated voter by calling stake::set_designated_voter.
 */
-module aptos_framework::stake {
+module diem_framework::stake {
     use std::error;
     // use std::features;
     use std::option::{Self, Option};
     use std::signer;
     use std::vector;
-    use aptos_std::bls12381;
-    use aptos_std::table::Table;
-    
-    use aptos_framework::aptos_coin::AptosCoin;
-    use aptos_framework::account;
-    use aptos_framework::coin::{Self, Coin, MintCapability};
-    use aptos_framework::event::{Self, EventHandle};
-    use aptos_framework::timestamp;
-    use aptos_framework::system_addresses;
-    use aptos_framework::chain_status;
+    use diem_std::bls12381;
+    use diem_std::table::Table;
+
+    use diem_framework::diem_coin::DiemCoin;
+    use diem_framework::account;
+    use diem_framework::coin::{Self, Coin, MintCapability};
+    use diem_framework::event::{Self, EventHandle};
+    use diem_framework::timestamp;
+    use diem_framework::system_addresses;
+    use diem_framework::chain_status;
 
 
     use ol_framework::slow_wallet;
     use ol_framework::testnet;
     // use std::fixed_point32::{Self, FixedPoint32};
     // use ol_framework::ol_account;
-    // use aptos_std::debug::print;
+    // use diem_std::debug::print;
 
-    friend aptos_framework::block;
-    friend aptos_framework::genesis;
-    friend aptos_framework::reconfiguration;
-    friend aptos_framework::transaction_fee;
+    friend diem_framework::block;
+    friend diem_framework::genesis;
+    friend diem_framework::reconfiguration;
+    friend diem_framework::transaction_fee;
 
     //////// 0L ///////
-    friend aptos_framework::epoch_boundary;
+    friend diem_framework::epoch_boundary;
     friend ol_framework::rewards;
 
     /// Validator Config not published.
@@ -97,7 +97,7 @@ module aptos_framework::stake {
     const VALIDATOR_STATUS_INACTIVE: u64 = 4;
 
     /// Limit the maximum size to u16::max, it's the current limit of the bitvec
-    /// https://github.com/aptos-labs/aptos-core/blob/main/crates/aptos-bitvec/src/lib.rs#L20
+    /// https://github.com/diem-labs/diem-core/blob/main/crates/diem-bitvec/src/lib.rs#L20
     const MAX_VALIDATOR_SET_SIZE: u64 = 65536;
 
     /// Limit the maximum value of `rewards_rate` in order to avoid any arithmetic overflow.
@@ -125,13 +125,13 @@ module aptos_framework::stake {
     /// 3. When the next epoch starts, the validator can be activated if their active stake is more than the minimum.
     struct StakePool has key {
         // active stake
-        active: Coin<AptosCoin>,
+        active: Coin<DiemCoin>,
         // inactive stake, can be withdrawn
-        inactive: Coin<AptosCoin>,
+        inactive: Coin<DiemCoin>,
         // pending activation for next epoch
-        pending_active: Coin<AptosCoin>,
+        pending_active: Coin<DiemCoin>,
         // pending deactivation for next epoch
-        pending_inactive: Coin<AptosCoin>,
+        pending_inactive: Coin<DiemCoin>,
         locked_until_secs: u64,
         // Track the current operator of the validator node.
         // This allows the operator to be different from the original account and allow for separation of
@@ -175,7 +175,7 @@ module aptos_framework::stake {
         config: ValidatorConfig,
     }
 
-    /// Full ValidatorSet, stored in @aptos_framework.
+    /// Full ValidatorSet, stored in @diem_framework.
     /// 1. join_validator_set adds to pending_active queue.
     /// 2. leave_valdiator_set moves from active to pending_inactive queue.
     /// 3. on_new_epoch processes two pending queues and refresh ValidatorInfo from the owner's address.
@@ -193,10 +193,10 @@ module aptos_framework::stake {
         total_joining_power: u128,
     }
 
-    /// AptosCoin capabilities, set during genesis and stored in @CoreResource account.
+    /// DiemCoin capabilities, set during genesis and stored in @CoreResource account.
     /// This allows the Stake module to mint rewards to stakers.
-    struct AptosCoinCapabilities has key {
-        mint_cap: MintCapability<AptosCoin>,
+    struct DiemCoinCapabilities has key {
+        mint_cap: MintCapability<DiemCoin>,
     }
 
     struct IndividualValidatorPerformance has store, drop {
@@ -274,23 +274,23 @@ module aptos_framework::stake {
     /// Stores transaction fees assigned to validators. All fees are distributed to validators
     /// at the end of the epoch.
     struct ValidatorFees has key {
-        fees_table: Table<address, Coin<AptosCoin>>,
+        fees_table: Table<address, Coin<DiemCoin>>,
     }
 
     // /// Initializes the resource storing information about collected transaction fees per validator.
     // /// Used by `transaction_fee.move` to initialize fee collection and distribution.
-    // public(friend) fun initialize_validator_fees(aptos_framework: &signer) {
-    //     system_addresses::assert_aptos_framework(aptos_framework);
+    // public(friend) fun initialize_validator_fees(diem_framework: &signer) {
+    //     system_addresses::assert_diem_framework(diem_framework);
     //     assert!(
-    //         !exists<ValidatorFees>(@aptos_framework),
+    //         !exists<ValidatorFees>(@diem_framework),
     //         error::already_exists(EFEES_TABLE_ALREADY_EXISTS)
     //     );
-    //     move_to(aptos_framework, ValidatorFees { fees_table: table::new() });
+    //     move_to(diem_framework, ValidatorFees { fees_table: table::new() });
     // }
 
     // /// Stores the transaction fee collected to the specified validator address.
-    // public(friend) fun add_transaction_fee(validator_addr: address, fee: Coin<AptosCoin>) acquires ValidatorFees {
-    //     let fees_table = &mut borrow_global_mut<ValidatorFees>(@aptos_framework).fees_table;
+    // public(friend) fun add_transaction_fee(validator_addr: address, fee: Coin<DiemCoin>) acquires ValidatorFees {
+    //     let fees_table = &mut borrow_global_mut<ValidatorFees>(@diem_framework).fees_table;
     //     if (table::contains(fees_table, validator_addr)) {
     //         let collected_fee = table::borrow_mut(fees_table, validator_addr);
     //         coin::merge(collected_fee, fee);
@@ -337,7 +337,7 @@ module aptos_framework::stake {
     #[view]
     /// Returns the list of active validators
     public fun get_current_validators(): vector<address> acquires ValidatorSet {
-        let validator_set = borrow_global<ValidatorSet>(@aptos_framework);
+        let validator_set = borrow_global<ValidatorSet>(@diem_framework);
         let addresses = vector::empty<address>();
         let i = 0;
         while (i < vector::length(&validator_set.active_validators)) {
@@ -358,7 +358,7 @@ module aptos_framework::stake {
     #[view]
     /// Returns the validator's state.
     public fun get_validator_state(pool_address: address): u64 acquires ValidatorSet {
-        let validator_set = borrow_global<ValidatorSet>(@aptos_framework);
+        let validator_set = borrow_global<ValidatorSet>(@diem_framework);
         if (option::is_some(&find_validator(&validator_set.pending_active, pool_address))) {
             VALIDATOR_STATUS_PENDING_ACTIVE
         } else if (option::is_some(&find_validator(&validator_set.active_validators, pool_address))) {
@@ -425,7 +425,7 @@ module aptos_framework::stake {
     #[view]
     /// Return the number of successful and failed proposals for the proposal at the given validator index.
     public fun get_current_epoch_proposal_counts(validator_index: u64): (u64, u64) acquires ValidatorPerformance {
-        let validator_performances = &borrow_global<ValidatorPerformance>(@aptos_framework).validators;
+        let validator_performances = &borrow_global<ValidatorPerformance>(@diem_framework).validators;
         let validator_performance = vector::borrow(validator_performances, validator_index);
         (validator_performance.successful_proposals, validator_performance.failed_proposals)
     }
@@ -444,10 +444,10 @@ module aptos_framework::stake {
     }
 
     /// Initialize validator set to the core resource account.
-    public(friend) fun initialize(aptos_framework: &signer) {
-        system_addresses::assert_aptos_framework(aptos_framework);
+    public(friend) fun initialize(diem_framework: &signer) {
+        system_addresses::assert_diem_framework(diem_framework);
 
-        move_to(aptos_framework, ValidatorSet {
+        move_to(diem_framework, ValidatorSet {
             consensus_scheme: 0,
             active_validators: vector::empty(),
             pending_active: vector::empty(),
@@ -456,30 +456,30 @@ module aptos_framework::stake {
             total_joining_power: 0,
         });
 
-        move_to(aptos_framework, ValidatorPerformance {
+        move_to(diem_framework, ValidatorPerformance {
             validators: vector::empty(),
         });
     }
 
-    /// This is only called during Genesis, which is where MintCapability<AptosCoin> can be created.
-    /// Beyond genesis, no one can create AptosCoin mint/burn capabilities.
+    /// This is only called during Genesis, which is where MintCapability<DiemCoin> can be created.
+    /// Beyond genesis, no one can create DiemCoin mint/burn capabilities.
 
     // TODO: v7 - remove this
-    // public(friend) fun store_aptos_coin_mint_cap(aptos_framework: &signer, mint_cap: MintCapability<AptosCoin>) {
-    //     system_addresses::assert_aptos_framework(aptos_framework);
-    //     move_to(aptos_framework, AptosCoinCapabilities { mint_cap })
+    // public(friend) fun store_diem_coin_mint_cap(diem_framework: &signer, mint_cap: MintCapability<DiemCoin>) {
+    //     system_addresses::assert_diem_framework(diem_framework);
+    //     move_to(diem_framework, DiemCoinCapabilities { mint_cap })
     // }
 
     /// Allow on chain governance to remove validators from the validator set.
     // TODO: v7 - remove this
 
     public fun remove_validators(
-        aptos_framework: &signer,
+        diem_framework: &signer,
         validators: &vector<address>,
     ) acquires ValidatorSet {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_diem_framework(diem_framework);
 
-        let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
+        let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
         let active_validators = &mut validator_set.active_validators;
         let pending_inactive = &mut validator_set.pending_inactive;
         let len = vector::length(validators);
@@ -568,10 +568,10 @@ module aptos_framework::stake {
         assert!(!stake_pool_exists(owner_address), error::already_exists(EALREADY_REGISTERED));
 
         move_to(owner, StakePool {
-            active: coin::zero<AptosCoin>(),
-            pending_active: coin::zero<AptosCoin>(),
-            pending_inactive: coin::zero<AptosCoin>(),
-            inactive: coin::zero<AptosCoin>(),
+            active: coin::zero<DiemCoin>(),
+            pending_active: coin::zero<DiemCoin>(),
+            pending_inactive: coin::zero<DiemCoin>(),
+            inactive: coin::zero<DiemCoin>(),
             locked_until_secs: 0,
             operator_address: owner_address,
             delegated_voter: owner_address,
@@ -661,13 +661,13 @@ module aptos_framework::stake {
     //     let owner_address = signer::address_of(owner);
     //     assert_owner_cap_exists(owner_address);
     //     let ownership_cap = borrow_global<OwnerCapability>(owner_address);
-    //     add_stake_with_cap(ownership_cap, coin::withdraw<AptosCoin>(owner, amount));
+    //     add_stake_with_cap(ownership_cap, coin::withdraw<DiemCoin>(owner, amount));
     // }
 
     // TODO: v7 - remove this
 
     // /// Add `coins` into `pool_address`. this requires the corresponding `owner_cap` to be passed in.
-    // public fun add_stake_with_cap(owner_cap: &OwnerCapability, coins: Coin<AptosCoin>) acquires StakePool, ValidatorSet {
+    // public fun add_stake_with_cap(owner_cap: &OwnerCapability, coins: Coin<DiemCoin>) acquires StakePool, ValidatorSet {
     //     let pool_address = owner_cap.pool_address;
     //     assert_stake_pool_exists(pool_address);
 
@@ -680,7 +680,7 @@ module aptos_framework::stake {
     //     // Only track and validate voting power increase for active and pending_active validator.
     //     // Pending_inactive validator will be removed from the validator set in the next epoch.
     //     // Inactive validator's total stake will be tracked when they join the validator set.
-    //     let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
+    //     let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
     //     // Search directly rather using get_validator_state to save on unnecessary loops.
     //     if (option::is_some(&find_validator(&validator_set.active_validators, pool_address)) ||
     //         option::is_some(&find_validator(&validator_set.pending_active, pool_address))) {
@@ -691,9 +691,9 @@ module aptos_framework::stake {
     //     // Otherwise, the delegation can be added to active directly as the validator is also activated in the epoch.
     //     let stake_pool = borrow_global_mut<StakePool>(pool_address);
     //     if (is_current_epoch_validator(pool_address)) {
-    //         coin::merge<AptosCoin>(&mut stake_pool.pending_active, coins);
+    //         coin::merge<DiemCoin>(&mut stake_pool.pending_active, coins);
     //     } else {
-    //         coin::merge<AptosCoin>(&mut stake_pool.active, coins);
+    //         coin::merge<DiemCoin>(&mut stake_pool.active, coins);
     //     };
 
     //     // let (_, maximum_stake) = staking_config::get_required_stake(&staking_config::get());
@@ -886,7 +886,7 @@ module aptos_framework::stake {
         assert!(!vector::is_empty(&validator_config.consensus_pubkey), error::invalid_argument(EINVALID_PUBLIC_KEY));
 
         // Validate the current validator set size has not exceeded the limit.
-        let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
+        let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
         vector::push_back(&mut validator_set.pending_active, generate_validator_info(pool_address, stake_pool, *validator_config));
 
         let validator_set_size = vector::length(&validator_set.active_validators) + vector::length(&validator_set.pending_active);
@@ -921,7 +921,7 @@ module aptos_framework::stake {
     //     // Cap amount to unlock by maximum active stake.
     //     let amount = min(amount, coin::value(&stake_pool.active));
     //     let unlocked_stake = coin::extract(&mut stake_pool.active, amount);
-    //     coin::merge<AptosCoin>(&mut stake_pool.pending_inactive, unlocked_stake);
+    //     coin::merge<DiemCoin>(&mut stake_pool.pending_inactive, unlocked_stake);
 
     //     event::emit_event(
     //         &mut stake_pool.unlock_stake_events,
@@ -941,14 +941,14 @@ module aptos_framework::stake {
     //     assert_owner_cap_exists(owner_address);
     //     let ownership_cap = borrow_global<OwnerCapability>(owner_address);
     //     let coins = withdraw_with_cap(ownership_cap, withdraw_amount);
-    //     coin::deposit<AptosCoin>(owner_address, coins);
+    //     coin::deposit<DiemCoin>(owner_address, coins);
     // }
 
     // /// Withdraw from `pool_address`'s inactive stake with the corresponding `owner_cap`.
     // public fun withdraw_with_cap(
     //     owner_cap: &OwnerCapability,
     //     withdraw_amount: u64
-    // ): Coin<AptosCoin> acquires StakePool, ValidatorSet {
+    // ): Coin<DiemCoin> acquires StakePool, ValidatorSet {
     //     let pool_address = owner_cap.pool_address;
     //     assert_stake_pool_exists(pool_address);
     //     let stake_pool = borrow_global_mut<StakePool>(pool_address);
@@ -963,7 +963,7 @@ module aptos_framework::stake {
 
     //     // Cap withdraw amount by total ianctive coins.
     //     withdraw_amount = min(withdraw_amount, coin::value(&stake_pool.inactive));
-    //     if (withdraw_amount == 0) return coin::zero<AptosCoin>();
+    //     if (withdraw_amount == 0) return coin::zero<DiemCoin>();
 
     //     event::emit_event(
     //         &mut stake_pool.withdraw_stake_events,
@@ -999,7 +999,7 @@ module aptos_framework::stake {
         // Account has to be the operator.
         assert!(signer::address_of(operator) == stake_pool.operator_address, error::unauthenticated(ENOT_OPERATOR));
 
-        let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
+        let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
         // If the validator is still pending_active, directly kick the validator out.
         let maybe_pending_active_index = find_validator(&validator_set.pending_active, pool_address);
         if (option::is_some(&maybe_pending_active_index)) {
@@ -1050,7 +1050,7 @@ module aptos_framework::stake {
     public(friend) fun update_performance_statistics(proposer_index: Option<u64>, failed_proposer_indices: vector<u64>) acquires ValidatorPerformance {
         // Validator set cannot change until the end of the epoch, so the validator index in arguments should
         // match with those of the validators in ValidatorPerformance resource.
-        let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+        let validator_perf = borrow_global_mut<ValidatorPerformance>(@diem_framework);
         let validator_len = vector::length(&validator_perf.validators);
 
         // proposer_index is an option because it can be missing (for NilBlocks)
@@ -1098,9 +1098,9 @@ module aptos_framework::stake {
     /// 4. The validator's voting power in the validator set is updated to be the corresponding staking pool's voting
     /// power.
     public(friend) fun on_new_epoch() acquires StakePool, ValidatorConfig, ValidatorPerformance, ValidatorSet {
-        let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
+        let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
         // let config = staking_config::get();
-        let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+        let validator_perf = borrow_global_mut<ValidatorPerformance>(@diem_framework);
 
         // Process pending stake and distribute transaction fees and rewards for each currently active validator.
         // let i = 0;
@@ -1220,8 +1220,8 @@ module aptos_framework::stake {
         // critical mutation, belt and suspenders
         try_bulk_update(root, list);
 
-        let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
-        let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+        let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
+        let validator_perf = borrow_global_mut<ValidatorPerformance>(@diem_framework);
 
 
         // Officially deactivate all pending_inactive validators. They will now no longer receive rewards.
@@ -1279,7 +1279,7 @@ module aptos_framework::stake {
       maybe_set_next_validators(root, list_info);
     }
 
-    #[test_only] 
+    #[test_only]
     public fun test_make_val_cfg(list: &vector<address>): (vector<ValidatorInfo>, u128) acquires StakePool, ValidatorConfig {
       make_validator_set_config(list)
     }
@@ -1327,14 +1327,14 @@ module aptos_framework::stake {
           // spec {
           //     assume total_voting_power + 1<= MAX_U128;
           // };
-              
+
           i = i + 1;
       };
 
       (next_epoch_validators, total_voting_power)
     }
 
-    #[test_only] 
+    #[test_only]
     public fun test_set_next_vals(root: &signer, list: vector<ValidatorInfo>) acquires ValidatorSet {
       system_addresses::assert_ol(root);
       maybe_set_next_validators(root, list);
@@ -1344,14 +1344,14 @@ module aptos_framework::stake {
     /// belt and suspenders, private function is authorized. Test functions also authorized.
     fun maybe_set_next_validators(root: &signer, list: vector<ValidatorInfo>) acquires ValidatorSet {
       if (signer::address_of(root) != @ol_framework) return;
-      
-      let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
+
+      let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
       validator_set.active_validators = list;
       validator_set.total_voting_power = (vector::length(&list) as u128);
     }
 
     //////// Failover Rules ////////
-    // If the cardinality of validator_set in the next epoch is less than 4, 
+    // If the cardinality of validator_set in the next epoch is less than 4,
     // if we are failing to qualify anyone. Pick top 1/2 of outgoing compliant validator set
     // by proposals. They are probably online.
     public fun check_failover_rules(proposed: vector<address>): vector<address> acquires ValidatorSet, ValidatorConfig, ValidatorPerformance  {
@@ -1364,8 +1364,8 @@ module aptos_framework::stake {
         };
 
         let current_vals = get_current_validators();
-        
-        if (vector::length(&proposed) <= min) { 
+
+        if (vector::length(&proposed) <= min) {
 
             proposed = get_sorted_vals_by_props(vector::length(&current_vals) / 2);
 
@@ -1402,7 +1402,7 @@ module aptos_framework::stake {
         if (proposed > failed) {
           delta = proposed - failed;
         };
-         
+
         vector::push_back<u64>(&mut weights, delta);
         vector::push_back<address>(&mut filtered_vals, cur_address);
         k = k + 1;
@@ -1446,7 +1446,7 @@ module aptos_framework::stake {
       };
 
       return final
-      
+
     }
 
     /// Update individual validator's stake pool
@@ -1458,7 +1458,7 @@ module aptos_framework::stake {
         validator_perf: &ValidatorPerformance,
         pool_address: address,
         // _staking_config: &StakingConfig,
-    ) acquires StakePool, AptosCoinCapabilities, ValidatorConfig {
+    ) acquires StakePool, DiemCoinCapabilities, ValidatorConfig {
         let stake_pool = borrow_global_mut<StakePool>(pool_address);
         let validator_config = borrow_global<ValidatorConfig>(pool_address);
         let cur_validator_perf = vector::borrow(&validator_perf.validators, validator_config.validator_index);
@@ -1489,7 +1489,7 @@ module aptos_framework::stake {
 
         // // Additionally, distribute transaction fees.
         // if (features::collect_and_distribute_gas_fees()) {
-        //     let fees_table = &mut borrow_global_mut<ValidatorFees>(@aptos_framework).fees_table;
+        //     let fees_table = &mut borrow_global_mut<ValidatorFees>(@diem_framework).fees_table;
         //     if (table::contains(fees_table, pool_address)) {
         //         let coin = table::remove(fees_table, pool_address);
         //         coin::merge(&mut stake_pool.active, coin);
@@ -1517,7 +1517,7 @@ module aptos_framework::stake {
     //////// 0L ////////
     // since rewards are handled externally to stake.move we need an api to emit the event
     public(friend) fun emit_distribute_reward(root: &signer, pool_address: address, rewards_amount: u64) acquires StakePool {
-        system_addresses::assert_ol(root); 
+        system_addresses::assert_ol(root);
         let stake_pool = borrow_global_mut<StakePool>(pool_address);
         event::emit_event(
           &mut stake_pool.distribute_rewards_events,
@@ -1545,19 +1545,19 @@ module aptos_framework::stake {
 
 
     /// Mint rewards corresponding to current epoch's `stake` and `num_successful_votes`.
-  
+
     // TODO: v7 - change this
     fun distribute_rewards(
-        stake: &mut Coin<AptosCoin>,
+        stake: &mut Coin<DiemCoin>,
         _num_successful_proposals: u64,
         _num_total_proposals: u64,
         _rewards_rate: u64,
         _rewards_rate_denominator: u64,
-    ): u64 acquires AptosCoinCapabilities {
+    ): u64 acquires DiemCoinCapabilities {
         // let _stake_amount = coin::value(stake);
         let rewards_amount = 0;
         if (rewards_amount > 0) {
-            let mint_cap = &borrow_global<AptosCoinCapabilities>(@aptos_framework).mint_cap;
+            let mint_cap = &borrow_global<DiemCoinCapabilities>(@diem_framework).mint_cap;
             let rewards = coin::mint(rewards_amount, mint_cap);
             coin::merge(stake, rewards);
         };
@@ -1612,7 +1612,7 @@ module aptos_framework::stake {
     }
 
     fun update_voting_power_increase(increase_amount: u64) acquires ValidatorSet {
-        let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
+        let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
         // let voting_power_increase_limit =
         //     (staking_config::get_voting_power_increase_limit(&staking_config::get()) as u128);
         let voting_power_increase_limit = 1000;
@@ -1640,22 +1640,22 @@ module aptos_framework::stake {
         accounts: vector<address>,
     }
 
-    public fun configure_allowed_validators(aptos_framework: &signer, accounts: vector<address>) acquires AllowedValidators {
-        let aptos_framework_address = signer::address_of(aptos_framework);
-        system_addresses::assert_aptos_framework(aptos_framework);
-        if (!exists<AllowedValidators>(aptos_framework_address)) {
-            move_to(aptos_framework, AllowedValidators { accounts });
+    public fun configure_allowed_validators(diem_framework: &signer, accounts: vector<address>) acquires AllowedValidators {
+        let diem_framework_address = signer::address_of(diem_framework);
+        system_addresses::assert_diem_framework(diem_framework);
+        if (!exists<AllowedValidators>(diem_framework_address)) {
+            move_to(diem_framework, AllowedValidators { accounts });
         } else {
-            let allowed = borrow_global_mut<AllowedValidators>(aptos_framework_address);
+            let allowed = borrow_global_mut<AllowedValidators>(diem_framework_address);
             allowed.accounts = accounts;
         }
     }
 
     fun is_allowed(account: address): bool acquires AllowedValidators {
-        if (!exists<AllowedValidators>(@aptos_framework)) {
+        if (!exists<AllowedValidators>(@diem_framework)) {
             true
         } else {
-            let allowed = borrow_global<AllowedValidators>(@aptos_framework);
+            let allowed = borrow_global<AllowedValidators>(@diem_framework);
             vector::contains(&allowed.accounts, &account)
         }
     }
@@ -1675,7 +1675,7 @@ module aptos_framework::stake {
 
       let idx = get_validator_index(addr);
 
-      let perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+      let perf = borrow_global_mut<ValidatorPerformance>(@diem_framework);
 
       let p = vector::borrow_mut(&mut perf.validators, idx);
       p.successful_proposals = success;
@@ -1703,7 +1703,7 @@ module aptos_framework::stake {
 
     #[test_only]
     public fun set_validator_perf_at_least_one_block() acquires ValidatorPerformance {
-        let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+        let validator_perf = borrow_global_mut<ValidatorPerformance>(@diem_framework);
         let len = vector::length(&validator_perf.validators);
         let i = 0;
         while (i < len) {

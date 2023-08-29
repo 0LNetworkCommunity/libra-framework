@@ -8,10 +8,10 @@ module ol_framework::test_pof {
   use ol_framework::slow_wallet;
   use ol_framework::vouch;
   use ol_framework::testnet;
-  use aptos_framework::stake;
+  use diem_framework::stake;
   use std::vector;
 
-  // use aptos_std::debug::print;
+  // use diem_std::debug::print;
 
   const Alice: address = @0x1000a;
   const Bob: address = @0x1000b;
@@ -29,7 +29,7 @@ module ol_framework::test_pof {
     let (bid, expires) = proof_of_fee::current_bid(*alice);
     assert!(bid == 1, 1001);
     assert!(expires == 10000, 1002);
-    
+
     slow_wallet::slow_wallet_epoch_drip(root, 500000);
     let coin = slow_wallet::unlocked_amount(*alice);
     let (r, _, _) = proof_of_fee::get_consensus_reward();
@@ -40,7 +40,7 @@ module ol_framework::test_pof {
   #[test(root = @ol_framework)]
   fun pof_set_retract (root: signer) {
     // genesis();
-    
+
     let set = mock::genesis_n_vals(&root, 4);
     let alice = vector::borrow(&set, 0);
     stake::is_valid(*alice);
@@ -93,7 +93,7 @@ module ol_framework::test_pof {
     let alice = vector::borrow(&set, 0);
 
     assert!(!jail::is_jailed(*alice), 1001);
-    
+
     mock_good_bid(&root, alice);
 
     testnet::unset(&root);
@@ -118,7 +118,7 @@ module ol_framework::test_pof {
     let (bid, expires) = proof_of_fee::current_bid(*alice);
     assert!(bid == 100, 1001);
     assert!(expires == 10000, 1002);
-    
+
     // NOT ENOUGH FUNDS WERE UNLOCKED
     slow_wallet::slow_wallet_epoch_drip(&root, 500);
     let coin = slow_wallet::unlocked_amount(*alice);
@@ -149,14 +149,14 @@ module ol_framework::test_pof {
     // let this_epoch = reconfiguration::get_current_epoch();
 
 
-    
+
     reconfiguration::reconfigure_for_test();
     stake::end_epoch();
-    
+
     // let this_epoch = reconfiguration::get_current_epoch();
 
 
-    proof_of_fee::set_bid(&a_sig, 1, 0); 
+    proof_of_fee::set_bid(&a_sig, 1, 0);
     let (bid, expires) = proof_of_fee::current_bid(*alice);
     assert!(bid == 1, 1006);
     assert!(expires == 0, 1007);
@@ -164,7 +164,7 @@ module ol_framework::test_pof {
     assert!(!proof_of_fee::audit_qualification(alice), 1008);
 
     // fix it
-    proof_of_fee::set_bid(&a_sig, 1, 1000); 
+    proof_of_fee::set_bid(&a_sig, 1, 1000);
     assert!(proof_of_fee::audit_qualification(alice), 1009);
   }
 
@@ -183,7 +183,7 @@ module ol_framework::test_pof {
     assert!(jail::is_jailed(*alice), 1006);
     // won't pass audit
     assert!(!proof_of_fee::audit_qualification(&*alice), 1007);
-    
+
   }
 
   #[test(root = @ol_framework)]
@@ -256,7 +256,7 @@ module ol_framework::test_pof {
   }
 
 
-  // Scenario: we are checking that bids expire as the epochs progress.  
+  // Scenario: we are checking that bids expire as the epochs progress.
 
   #[test(root = @ol_framework)]
   fun sorted_vals_expired_bid(root: signer) {
@@ -276,7 +276,7 @@ module ol_framework::test_pof {
     let alice = vector::borrow(&set, 0);
     let alice_sig = account::create_signer_for_test(*alice);
     proof_of_fee::set_bid(&alice_sig, 55, 1);
-  
+
     // advance the epoch 2x, so the previous bid is expired.
     mock::mock_all_vals_good_performance(&root);
     mock::trigger_epoch(&root);
@@ -304,7 +304,7 @@ module ol_framework::test_pof {
     let len = vector::length(&set);
 
     mock::pof_default();
-    
+
     slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
     let sorted = proof_of_fee::get_sorted_vals(true);
@@ -321,14 +321,14 @@ module ol_framework::test_pof {
     assert!(median_bid == 3, 1007);
 
   }
-  
+
   // We fill all the seats, and run the thermostat
   // the thermostat is a noop since there is not enough historical data.
   #[test(root = @ol_framework)]
   fun fill_seats_happy_and_noop_thermostat(root: signer) {
     let set = mock::genesis_n_vals(&root, 5);
     mock::pof_default();
-    
+
     slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
     let sorted = proof_of_fee::get_sorted_vals(true);
@@ -372,7 +372,7 @@ module ol_framework::test_pof {
     // Ok now EVE changes her mind. Will force the bid to expire.
     let a_sig = account::create_signer_for_test(*vector::borrow(&set, 4));
     proof_of_fee::set_bid(&a_sig, 0, 0);
-    
+
     slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
     let sorted = proof_of_fee::get_sorted_vals(true);
@@ -411,7 +411,7 @@ module ol_framework::test_pof {
     let set = mock::genesis_n_vals(&root, 5);
     mock::pof_default();
 
-    
+
     slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
     let sorted = proof_of_fee::get_sorted_vals(true);
@@ -451,7 +451,7 @@ module ol_framework::test_pof {
   // Alice and Bob happen to also be the lowest bidders. But we will
   // seat them, and their bids will count toward getting the clearing price.
 
-  // In this scenario there will be sufficient seats. 
+  // In this scenario there will be sufficient seats.
   // We will open up 2 seats (1/3 of 6 seats).
   // As such both Eve and Frank should be seated.
 
@@ -525,7 +525,7 @@ module ol_framework::test_pof {
   #[test(root = @ol_framework)]
   fun fill_seats_unproven_sad(root: signer) {
 
-    
+
     // we need 6 seats so that we can have 4 proven, and 2 unproven slots
     let set = mock::genesis_n_vals(&root, 6);
     mock::pof_default();
@@ -557,7 +557,7 @@ module ol_framework::test_pof {
     assert!(vector::contains(&seats, vector::borrow(&set, 1)), 1007);
     assert!(vector::contains(&seats, vector::borrow(&set, 2)), 1008);
     assert!(vector::contains(&seats, vector::borrow(&set, 3)), 1009);
-    // Eve does not get in. There was only one slot for unproven nodes, 
+    // Eve does not get in. There was only one slot for unproven nodes,
     // and her bid is lower than frank.
     assert!(!vector::contains(&seats, vector::borrow(&set, 4)), 10010);
     assert!(vector::contains(&seats, vector::borrow(&set, 5)), 10011);

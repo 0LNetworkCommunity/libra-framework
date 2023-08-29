@@ -2,15 +2,15 @@
 #[test_only]
 /// tests for external apis, and where a dependency cycle with genesis is created.
 module ol_framework::test_slow_wallet {
-  use aptos_framework::stake;
-  use aptos_framework::account;
+  use diem_framework::stake;
+  use diem_framework::account;
   use ol_framework::slow_wallet;
   use ol_framework::mock;
   use ol_framework::ol_account;
   use ol_framework::gas_coin;
   use ol_framework::epoch_boundary;
-  use aptos_framework::reconfiguration;
-  use aptos_framework::coin;
+  use diem_framework::reconfiguration;
+  use diem_framework::coin;
   use std::vector;
 
   #[test(root = @ol_framework)]

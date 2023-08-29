@@ -16,7 +16,7 @@
     use ol_framework::turnout_tally::{Self, TurnoutTally};
     use ol_framework::ballot::{Self, BallotTracker};
     use ol_framework::testnet;
-    use aptos_framework::account;
+    use diem_framework::account;
     use std::guid;
     use std::signer;
     use std::vector;

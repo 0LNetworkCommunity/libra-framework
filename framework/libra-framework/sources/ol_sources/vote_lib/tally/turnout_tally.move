@@ -41,10 +41,10 @@
     use std::guid;
     use std::error;
     use std::option::{Self, Option};
-    use aptos_framework::reconfiguration;
+    use diem_framework::reconfiguration;
     use ol_framework::vote_receipt;
 
-    // use aptos_std::debug::print;
+    // use diem_std::debug::print;
 
     /// The ballot has already been completed.
     const ECOMPLETED: u64 = 1;

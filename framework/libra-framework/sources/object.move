@@ -14,20 +14,20 @@
 /// TODO:
 /// * There is no means to borrow an object or a reference to an object. We are exploring how to
 ///   make it so that a reference to a global object can be returned from a function.
-module aptos_framework::object {
+module diem_framework::object {
     use std::bcs;
     use std::error;
     use std::hash;
     use std::signer;
     use std::vector;
 
-    use aptos_framework::account;
-    use aptos_framework::create_signer::create_signer;
-    use aptos_framework::event;
-    use aptos_framework::from_bcs;
-    use aptos_framework::guid;
+    use diem_framework::account;
+    use diem_framework::create_signer::create_signer;
+    use diem_framework::event;
+    use diem_framework::from_bcs;
+    use diem_framework::guid;
 
-    friend aptos_framework::primary_fungible_store;
+    friend diem_framework::primary_fungible_store;
 
     /// An object already exists at this address
     const EOBJECT_EXISTS: u64 = 1;
@@ -79,7 +79,7 @@ module aptos_framework::object {
     /// derivation to produce an object address.
     const OBJECT_FROM_SEED_ADDRESS_SCHEME: u8 = 0xFE;
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = diem_framework::object::ObjectGroup)]
     /// The core of the object model that defines ownership, transferability, and events.
     struct ObjectCore has key {
         /// Used by guid to guarantee globally unique objects and create event streams
@@ -551,14 +551,14 @@ module aptos_framework::object {
     }
 
     #[test_only]
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = diem_framework::object::ObjectGroup)]
     struct Hero has key {
         equip_events: event::EventHandle<HeroEquipEvent>,
         weapon: Option<Object<Weapon>>,
     }
 
     #[test_only]
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = diem_framework::object::ObjectGroup)]
     struct Weapon has key {}
 
     #[test_only]

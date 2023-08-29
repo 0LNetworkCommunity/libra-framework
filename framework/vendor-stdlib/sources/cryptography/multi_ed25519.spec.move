@@ -1,4 +1,4 @@
-spec aptos_std::multi_ed25519 {
+spec diem_std::multi_ed25519 {
 
     // -----------------------
     // Function specifications

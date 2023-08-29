@@ -1,10 +1,10 @@
-spec aptos_std::copyable_any {
+spec diem_std::copyable_any {
 
     // -----------------------
     // Function specifications
     // -----------------------
 
-    spec pack<T: drop + store>(x: T): Any {
+    spec pack<T: drop + store + copy>(x: T): Any {
         use std::bcs;
         aborts_if false;
         ensures result == Any {
@@ -14,7 +14,7 @@ spec aptos_std::copyable_any {
     }
 
     spec unpack<T>(x: Any): T {
-        use aptos_std::from_bcs;
+        use diem_std::from_bcs;
         aborts_if type_info::type_name<T>() != x.type_name;
         aborts_if !from_bcs::deserializable<T>(x.data);
         ensures result == from_bcs::deserialize<T>(x.data);

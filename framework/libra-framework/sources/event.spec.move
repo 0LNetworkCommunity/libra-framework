@@ -1,4 +1,4 @@
-spec aptos_framework::event {
+spec diem_framework::event {
     spec module {
         pragma verify = true;
         pragma aborts_if_is_strict;

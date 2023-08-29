@@ -3,7 +3,7 @@ use crate::query_view;
 
 use anyhow::Context;
 use libra_types::type_extensions::client_ext::entry_function_id;
-use zapatos_sdk::rest_client::{aptos_api_types::ViewRequest, Client};
+use zapatos_sdk::rest_client::{diem_api_types::ViewRequest, Client};
 
 /// helper to get libra balance at a SlowWalletBalance type which shows
 /// total balance and the unlocked balance.
@@ -32,7 +32,7 @@ pub async fn get_tower_difficulty(client: &Client) -> anyhow::Result<(u64, u64)>
 pub async fn get_next_governance_proposal_id(client: &Client) -> anyhow::Result<u64> {
     let query_res = query_view::get_view(
         client,
-        "0x1::aptos_governance::get_next_governance_proposal_id",
+        "0x1::diem_governance::get_next_governance_proposal_id",
         None,
         None,
     )
@@ -48,7 +48,7 @@ pub async fn get_next_governance_proposal_id(client: &Client) -> anyhow::Result<
 pub async fn can_gov_proposal_resolve(client: &Client, id: u64) -> anyhow::Result<bool> {
     let query_res = query_view::get_view(
         client,
-        "0x1::aptos_governance::get_can_resolve",
+        "0x1::diem_governance::get_can_resolve",
         None,
         Some(id.to_string()), //Some(format!("{}u64", id)),
     )
@@ -64,7 +64,7 @@ pub async fn can_gov_proposal_resolve(client: &Client, id: u64) -> anyhow::Resul
 pub async fn is_gov_proposal_resolved(client: &Client, id: u64) -> anyhow::Result<bool> {
     let query_res = query_view::get_view(
         client,
-        "0x1::aptos_governance::is_resolved",
+        "0x1::diem_governance::is_resolved",
         None,
         Some(id.to_string()), //Some(format!("{}u64", id)),
     )
@@ -80,7 +80,7 @@ pub async fn is_gov_proposal_resolved(client: &Client, id: u64) -> anyhow::Resul
 pub async fn get_gov_proposal_votes(client: &Client, id: u64) -> anyhow::Result<Vec<u128>> {
     let query_res = query_view::get_view(
         client,
-        "0x1::aptos_governance::get_votes",
+        "0x1::diem_governance::get_votes",
         None,
         Some(id.to_string()), //Some(format!("{}u64", id)),
     )

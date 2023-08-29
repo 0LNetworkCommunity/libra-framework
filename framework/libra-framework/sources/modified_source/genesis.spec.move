@@ -1,4 +1,4 @@
-spec aptos_framework::genesis {
+spec diem_framework::genesis {
     spec module {
         // We are not proving each genesis step individually. Instead, we construct
         // and prove `initialize_for_verification` which is a "#[verify_only]" function that

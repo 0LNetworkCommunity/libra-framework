@@ -6,7 +6,7 @@ use zapatos::{
 use zapatos_logger::prelude::*;
 use zapatos_sdk::{
     crypto::HashValue,
-    rest_client::{aptos_api_types::TransactionOnChainData, Client},
+    rest_client::{diem_api_types::TransactionOnChainData, Client},
     transaction_builder::TransactionBuilder,
     types::{
         chain_id::ChainId,

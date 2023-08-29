@@ -14,7 +14,7 @@
 
     use std::vector;
     use std::signer;
-    use aptos_framework::guid::{Self, ID};
+    use diem_framework::guid::{Self, ID};
 
     struct VoteReceipt has key, store, drop, copy {
       guid: guid::ID,

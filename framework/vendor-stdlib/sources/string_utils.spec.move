@@ -1,4 +1,4 @@
-spec aptos_std::string_utils {
+spec diem_std::string_utils {
     spec native_format {
         pragma opaque;
     }

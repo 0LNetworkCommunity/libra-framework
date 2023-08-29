@@ -8,7 +8,7 @@
 /// This module provides global variables and constants that have no specific owner
 module ol_framework::globals {
     use ol_framework::testnet;
-    use aptos_std::math64;
+    use diem_std::math64;
     // use ol_framework::staging_net;
     // todo v7
     // use DiemFramework::Diem;
