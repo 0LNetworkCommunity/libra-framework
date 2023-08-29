@@ -50,8 +50,8 @@ enum Sub {
         /// github args
         #[clap(flatten)]
         github: GithubArgs,
+        /// required, settings for supply.
         #[clap(flatten)]
-        /// optional, settings for supply.
         supply_settings: SupplySettings,
     }, // just do genesis without wizard
     Register {
@@ -64,8 +64,8 @@ enum Sub {
         /// github args
         #[clap(flatten)]
         github: GithubArgs,
+        /// required, settings for supply.
         #[clap(flatten)]
-        /// optional, settings for supply.
         supply_settings: SupplySettings,
     },
     /// sensible defaults for testnet, does not need a genesis repo
@@ -74,10 +74,12 @@ enum Sub {
         /// which persona is this machine going to register as
         #[clap(short, long)]
         me: TestPersona,
-
         /// list of IP addresses of each persona Alice, Bob, Carol, Dave
         #[clap(short, long)]
         ip_list: Vec<Ipv4Addr>,
+        /// optional, settings for supply.
+        #[clap(flatten)]
+        supply_settings: Option<SupplySettings>,
     },
 }
 
@@ -141,11 +143,13 @@ fn main() -> anyhow::Result<()> {
                 Some(supply_settings),
             )?;
         }
-        Some(Sub::Testnet { me, ip_list }) => testnet_setup::setup(
+        Some(Sub::Testnet { me, ip_list , supply_settings}) => testnet_setup::setup(
             &me,
             &ip_list,
             cli.chain.unwrap_or(NamedChain::TESTING),
             cli.home_dir.unwrap_or_else(global_config_dir),
+            &supply_settings,
+
         )?,
         _ => {
             println!("\nIf you're looking for trouble \nYou came to the right place");
