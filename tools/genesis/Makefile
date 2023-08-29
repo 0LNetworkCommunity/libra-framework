@@ -4,7 +4,9 @@ FUTURE_USES = 0.70
 RECOVERY_FILE = sample_end_user_single
 # RECOVERY_FILE = sample_export_recovery
 # RECOVERY_FILE = sample_rotated_auth
-
+ifndef CHAIN
+CHAIN = testnet
+endif
 
 genesis:
 	cargo r -- --org-github  0LNetworkCommunity \
@@ -39,4 +41,4 @@ test-node:
 	cargo r -p libra -- node
 
 test-genesis:
-	LIBRA_CI=1 cargo r -- -c mainnet testnet -m ${PERSONA} -i 134.209.32.159 -i 174.138.92.116 -i 174.138.92.121
+	LIBRA_CI=1 cargo r -- -c ${CHAIN} testnet -m ${PERSONA} -i 134.209.32.159 -i 174.138.92.116 -i 174.138.92.121
