@@ -5,8 +5,7 @@ module diem_framework::transaction_validation {
     use std::vector;
 
     use diem_framework::account;
-    // use diem_framework::diem_coin::DiemCoin;
-    use ol_framework::libra_coin::LibraCoin;
+    use ol_framework::libra_coin::LibraCoin as GasCoin;
     use diem_framework::chain_id;
     use diem_framework::coin;
     use diem_framework::system_addresses;
@@ -28,6 +27,7 @@ module diem_framework::transaction_validation {
         user_epilogue_name: vector<u8>,
     }
 
+    /// MSB is used to indicate a gas payer tx
     const MAX_U64: u128 = 18446744073709551615;
 
     /// Transaction exceeded its allocated max gas
@@ -45,6 +45,8 @@ module diem_framework::transaction_validation {
     const PROLOGUE_EBAD_CHAIN_ID: u64 = 1007;
     const PROLOGUE_ESEQUENCE_NUMBER_TOO_BIG: u64 = 1008;
     const PROLOGUE_ESECONDARY_KEYS_ADDRESSES_COUNT_MISMATCH: u64 = 1009;
+    const PROLOGUE_EFEE_PAYER_NOT_ENABLED: u64 = 1010;
+
 
     /// Only called during genesis to initialize system resources for this module.
     public(friend) fun initialize(
@@ -68,6 +70,7 @@ module diem_framework::transaction_validation {
 
     fun prologue_common(
         sender: signer,
+        gas_payer: address,
         txn_sequence_number: u64,
         txn_authentication_key: vector<u8>,
         txn_gas_price: u64,
@@ -89,7 +92,7 @@ module diem_framework::transaction_validation {
         );
 
         assert!(
-            (txn_sequence_number as u128) < MAX_U64,
+            txn_sequence_number < (1u64 << 63),
             error::out_of_range(PROLOGUE_ESEQUENCE_NUMBER_TOO_BIG)
         );
 
@@ -108,10 +111,10 @@ module diem_framework::transaction_validation {
 
         let max_transaction_fee = txn_gas_price * txn_max_gas_units;
         assert!(
-            coin::is_account_registered<LibraCoin>(transaction_sender),
+            coin::is_account_registered<GasCoin>(gas_payer),
             error::invalid_argument(PROLOGUE_ECANT_PAY_GAS_DEPOSIT),
         );
-        let balance = coin::balance<LibraCoin>(transaction_sender);
+        let balance = coin::balance<GasCoin>(gas_payer);
         assert!(balance >= max_transaction_fee, error::invalid_argument(PROLOGUE_ECANT_PAY_GAS_DEPOSIT));
     }
 
@@ -124,7 +127,8 @@ module diem_framework::transaction_validation {
         txn_expiration_time: u64,
         chain_id: u8,
     ) {
-        prologue_common(sender, txn_sequence_number, txn_public_key, txn_gas_price, txn_max_gas_units, txn_expiration_time, chain_id)
+        let gas_payer = signer::address_of(&sender);
+        prologue_common(sender, gas_payer, txn_sequence_number, txn_public_key, txn_gas_price, txn_max_gas_units, txn_expiration_time, chain_id)
     }
 
     fun script_prologue(
@@ -137,7 +141,8 @@ module diem_framework::transaction_validation {
         chain_id: u8,
         _script_hash: vector<u8>,
     ) {
-        prologue_common(sender, txn_sequence_number, txn_public_key, txn_gas_price, txn_max_gas_units, txn_expiration_time, chain_id)
+        let gas_payer = signer::address_of(&sender);
+        prologue_common(sender, gas_payer, txn_sequence_number, txn_public_key, txn_gas_price, txn_max_gas_units, txn_expiration_time, chain_id)
     }
 
     fun multi_agent_script_prologue(
@@ -151,17 +156,41 @@ module diem_framework::transaction_validation {
         txn_expiration_time: u64,
         chain_id: u8,
     ) {
-        prologue_common(sender, txn_sequence_number, txn_sender_public_key, txn_gas_price, txn_max_gas_units, txn_expiration_time, chain_id);
+        let sender_addr = signer::address_of(&sender);
+        prologue_common(
+            sender,
+            sender_addr,
+            txn_sequence_number,
+            txn_sender_public_key,
+            txn_gas_price,
+            txn_max_gas_units,
+            txn_expiration_time,
+            chain_id,
+        );
+        multi_agent_common_prologue(secondary_signer_addresses, secondary_signer_public_key_hashes);
+    }
 
+    fun multi_agent_common_prologue(
+        secondary_signer_addresses: vector<address>,
+        secondary_signer_public_key_hashes: vector<vector<u8>>,
+    ) {
         let num_secondary_signers = vector::length(&secondary_signer_addresses);
-
         assert!(
             vector::length(&secondary_signer_public_key_hashes) == num_secondary_signers,
             error::invalid_argument(PROLOGUE_ESECONDARY_KEYS_ADDRESSES_COUNT_MISMATCH),
         );
 
         let i = 0;
-        while (i < num_secondary_signers) {
+        while ({
+            spec {
+                invariant i <= num_secondary_signers;
+                invariant forall j in 0..i:
+                    account::exists_at(secondary_signer_addresses[j])
+                    && secondary_signer_public_key_hashes[j]
+                       == account::get_authentication_key(secondary_signer_addresses[j]);
+            };
+            (i < num_secondary_signers)
+        }) {
             let secondary_address = *vector::borrow(&secondary_signer_addresses, i);
             assert!(account::exists_at(secondary_address), error::invalid_argument(PROLOGUE_EACCOUNT_DOES_NOT_EXIST));
 
@@ -174,10 +203,55 @@ module diem_framework::transaction_validation {
         }
     }
 
+    fun fee_payer_script_prologue(
+        sender: signer,
+        txn_sequence_number: u64,
+        txn_sender_public_key: vector<u8>,
+        secondary_signer_addresses: vector<address>,
+        secondary_signer_public_key_hashes: vector<vector<u8>>,
+        fee_payer_address: address,
+        fee_payer_public_key_hash: vector<u8>,
+        txn_gas_price: u64,
+        txn_max_gas_units: u64,
+        txn_expiration_time: u64,
+        chain_id: u8,
+    ) {
+        // assert!(features::fee_payer_enabled(), error::invalid_state(PROLOGUE_EFEE_PAYER_NOT_ENABLED));
+        prologue_common(
+            sender,
+            fee_payer_address,
+            txn_sequence_number,
+            txn_sender_public_key,
+            txn_gas_price,
+            txn_max_gas_units,
+            txn_expiration_time,
+            chain_id,
+        );
+        multi_agent_common_prologue(secondary_signer_addresses, secondary_signer_public_key_hashes);
+        assert!(
+            fee_payer_public_key_hash == account::get_authentication_key(fee_payer_address),
+            error::invalid_argument(PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY),
+        );
+    }
+
     /// Epilogue function is run after a transaction is successfully executed.
     /// Called by the Adapter
     fun epilogue(
         account: signer,
+        txn_sequence_number: u64,
+        txn_gas_price: u64,
+        txn_max_gas_units: u64,
+        gas_units_remaining: u64
+    ) {
+        let addr = signer::address_of(&account);
+        epilogue_gas_payer(account, addr, txn_sequence_number, txn_gas_price, txn_max_gas_units, gas_units_remaining);
+    }
+
+    /// Epilogue function with explicit gas payer specified, is run after a transaction is successfully executed.
+    /// Called by the Adapter
+    fun epilogue_gas_payer(
+        account: signer,
+        gas_payer: address,
         _txn_sequence_number: u64,
         txn_gas_price: u64,
         txn_max_gas_units: u64,
@@ -191,20 +265,26 @@ module diem_framework::transaction_validation {
             error::out_of_range(EOUT_OF_GAS)
         );
         let transaction_fee_amount = txn_gas_price * gas_used;
-        let addr = signer::address_of(&account);
         // it's important to maintain the error code consistent with vm
         // to do failed transaction cleanup.
         assert!(
-            coin::balance<LibraCoin>(addr) >= transaction_fee_amount,
+            coin::balance<GasCoin>(gas_payer) >= transaction_fee_amount,
             error::out_of_range(PROLOGUE_ECANT_PAY_GAS_DEPOSIT),
         );
 
-        if (transaction_fee::is_fees_collection_enabled()) {
-            // If transaction fees are redistributed to validators, collect them here for
-            // later redistribution.
-            transaction_fee::collect_fee(addr, transaction_fee_amount);
-        };
+        // if (features::collect_and_distribute_gas_fees()) {
+        //     // If transaction fees are redistributed to validators, collect them here for
+        //     // later redistribution.
+            transaction_fee::collect_fee(gas_payer, transaction_fee_amount);
+        // } else {
+            // Otherwise, just burn the fee.
+            // TODO: this branch should be removed completely when transaction fee collection
+            // is tested and is fully proven to work well.
+            // transaction_fee::burn_fee(gas_payer, transaction_fee_amount);
+        // };
+
         // Increment sequence number
+        let addr = signer::address_of(&account);
         account::increment_sequence_number(addr);
     }
 }
