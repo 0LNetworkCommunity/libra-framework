@@ -33,6 +33,10 @@ stdlib:
 	cargo r -p libra-framework -- release
 
 
-testnet: stdlib
-	LIBRA_CI=1 cargo r -- --c mainnet testnet -m ${PERSONA} -i 134.209.32.159 -i 174.138.92.116 -i 174.138.92.121
+testnet: stdlib test-genesis test-node
+
+test-node:
 	cargo r -p libra -- node
+
+test-genesis:
+	LIBRA_CI=1 cargo r -- -c mainnet testnet -m ${PERSONA} -i 134.209.32.159 -i 174.138.92.116 -i 174.138.92.121
