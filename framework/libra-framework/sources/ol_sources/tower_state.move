@@ -130,10 +130,10 @@ module ol_framework::tower_state {
           });
         } else {
           move_to<VDFDifficulty>(vm, VDFDifficulty {
-            difficulty: 120000000,
-            security: 512,
+            difficulty: 3000000000,
+            security: 350,
             prev_diff: 120000000,
-            prev_sec: 512,
+            prev_sec: 350,
           });
         }
 
