@@ -9,6 +9,7 @@ pub fn setup(
     ip_list: &[Ipv4Addr],
     chain: NamedChain,
     data_path: PathBuf,
+    supply_settings: &Option<SupplySettings>
 ) -> anyhow::Result<()> {
     let db_path = data_path.join("data");
     if db_path.exists() {
@@ -66,7 +67,7 @@ pub fn setup(
         data_path,
         true,
         Some(&recovery),
-        Some(SupplySettings::default()),
+        supply_settings.to_owned(),
         chain,
         Some(val_cfg),
     )?;
