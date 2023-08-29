@@ -34,5 +34,5 @@ stdlib:
 
 
 testnet: stdlib
-	LIBRA_CI=1 cargo r testnet -m ${PERSONA} -i 134.209.32.159 -i 174.138.92.116 -i 174.138.92.121
+	LIBRA_CI=1 cargo r -- --c mainnet testnet -m ${PERSONA} -i 134.209.32.159 -i 174.138.92.116 -i 174.138.92.121
 	cargo r -p libra -- node
