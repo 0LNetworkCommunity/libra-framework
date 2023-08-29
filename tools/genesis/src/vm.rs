@@ -111,6 +111,7 @@ pub fn encode_genesis_change_set(
     .unwrap();
     let id1 = HashValue::zero();
     let mut session = move_vm.new_session(&data_cache, SessionId::genesis(id1), true);
+
     // On-chain genesis process.
     initialize(
         &mut session,
