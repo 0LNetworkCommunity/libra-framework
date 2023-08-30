@@ -2276,7 +2276,7 @@ dependencies = [
  "num-derive",
  "num_cpus",
  "once_cell",
- "owo-colors 3.5.0",
+ "owo-colors",
  "proptest",
  "proptest-derive",
  "rayon",
@@ -5937,15 +5937,15 @@ dependencies = [
  "anyhow",
  "bytes",
  "clap 4.3.23",
- "diem-sdk",
  "colored",
- "dirs 5.0.1",
+ "diem-sdk",
+ "dirs",
  "indoc",
  "libra-smoke-tests",
  "libra-types",
  "move-binary-format",
  "move-core-types",
- "owo-colors 1.3.0",
+ "owo-colors",
  "serde_json",
  "tokio",
  "url",
@@ -7434,12 +7434,6 @@ name = "overload"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
-
-[[package]]
-name = "owo-colors"
-version = "1.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2386b4ebe91c2f7f51082d4cefa145d030e33a1842a96b12e4885cc3c01f7a55"
 
 [[package]]
 name = "owo-colors"

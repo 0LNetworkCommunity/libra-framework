@@ -1,17 +1,9 @@
 use libra_types::legacy_types::app_cfg::AppCfg;
-use std::path::PathBuf;
 use url::Url;
 use zapatos_sdk::rest_client::Client;
 use zapatos_sdk::types::chain_id::ChainId;
 
 const LOCAL_NODE_URL: &str = "http://localhost:8080";
-
-pub fn get_libra_config_path() -> PathBuf {
-    let mut config_path = dirs::home_dir().expect("Failed to get home directory");
-    config_path.push(".libra");
-    config_path.push("libra.yaml");
-    config_path
-}
 
 pub async fn find_good_upstream(app_cfg: &AppCfg) -> anyhow::Result<(Client, ChainId)> {
     //check playlist

@@ -1,6 +1,6 @@
 use crate::{
     account_queries::{get_account_balance_libra, get_tower_state, lookup_originating_address},
-    get_client::{find_good_upstream, get_libra_config_path, get_local_node},
+    get_client::{find_good_upstream, get_local_node},
     query_view::fetch_and_display,
 };
 use anyhow::{anyhow, Result};
@@ -8,6 +8,7 @@ use indoc::indoc;
 use libra_types::exports::AuthenticationKey;
 use libra_types::legacy_types::app_cfg::AppCfg;
 use libra_types::type_extensions::client_ext::ClientExt;
+use libra_types::global_config_dir;
 use serde_json::json;
 use zapatos_sdk::{rest_client::Client, types::account_address::AccountAddress};
 
@@ -293,7 +294,7 @@ impl QueryType {
                 }
             }
             QueryType::SyncDelay {} => {
-                let config_path = get_libra_config_path();
+                let config_path = global_config_dir();
                 let app_cfg = AppCfg::load(Some(config_path))?;
 
                 // Get the block height from the local node
