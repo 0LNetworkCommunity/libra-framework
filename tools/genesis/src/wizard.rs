@@ -7,7 +7,7 @@ use crate::{genesis_builder, parse_json, supply::SupplySettings};
 // TODO: import from libra
 use crate::genesis_registration;
 use libra_types::ol_progress::OLProgress;
-use zapatos_types::chain_id::NamedChain;
+use diem_types::chain_id::NamedChain;
 //////
 use crate::github_extensions::LibraGithubClient;
 use anyhow::{bail, Context};
