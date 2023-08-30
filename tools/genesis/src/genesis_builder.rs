@@ -1,5 +1,6 @@
 //! build the genesis file
 use crate::genesis::make_recovery_genesis_from_vec_legacy_recovery;
+use crate::genesis_reader::bootstrap_db_reader_from_gen_tx;
 use crate::supply::SupplySettings;
 
 use crate::wizard::DEFAULT_GIT_BRANCH;
@@ -152,15 +153,19 @@ pub fn build(
 
     // Audits the generated genesis.blob comparing to the JSON input.
     if let Some(recovery) = legacy_recovery {
+        // get a boostrapped DB to do audits
+        let (db_rw, _) = bootstrap_db_reader_from_gen_tx(gen_info.get_genesis())?;
+
         let settings = supply_settings.context("no supply settings provided")?;
 
         let mut s = supply::populate_supply_stats_from_legacy(recovery, &settings.map_dd_to_slow)?;
 
         s.set_ratios_from_settings(&settings)?;
-        compare::compare_recovery_vec_to_genesis_tx(recovery, gen_info.get_genesis(), &s)?;
+
+        compare::compare_recovery_vec_to_genesis_tx(recovery, &db_rw.reader, &s, )?;
         OLProgress::complete("account balances as expected");
 
-        compare::check_supply(settings.scale_supply() as u64, gen_info.get_genesis())?;
+        compare::check_supply(settings.scale_supply() as u64, &db_rw.reader)?;
         OLProgress::complete("final supply as expected");
     }
 
