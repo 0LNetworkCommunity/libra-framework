@@ -2,7 +2,7 @@
 
 // pub mod account;
 // pub mod autopay;
-pub mod ancestry;
+pub mod ancestry_legacy;
 pub mod app_cfg;
 pub mod block;
 pub mod legacy_address;
