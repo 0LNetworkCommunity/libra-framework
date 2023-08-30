@@ -2,4 +2,4 @@
 name = 'upgrade_scripts'
 version = '1.0.0'
 [dependencies.LibraFramework]
-local = '/Users/user/code/rust/seven/framework/libra-framework'
+local = '$HOME/code/rust/seven/framework/libra-framework'

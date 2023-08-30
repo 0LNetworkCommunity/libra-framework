@@ -4,7 +4,7 @@ use libra_types::{
     move_resource::gas_coin::SlowWalletBalance,
     type_extensions::client_ext::{entry_function_id, ClientExt},
 };
-use zapatos_sdk::{
+use diem_sdk::{
     rest_client::{diem_api_types::ViewRequest, Client},
     types::account_address::AccountAddress,
 };

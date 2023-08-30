@@ -7,7 +7,7 @@ use libra_query::query_cli::QueryCli;
 use libra_tower::tower_cli::TowerCli;
 use libra_txs::txs_cli::TxsCli;
 use libra_wallet::wallet_cli::WalletCli;
-use zapatos::move_tool::MoveTool;
+use diem::move_tool::MoveTool;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
