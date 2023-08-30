@@ -2,7 +2,7 @@ use crate::{genesis_builder, parse_json, supply::SupplySettings};
 use libra_config::host;
 use libra_types::{exports::NamedChain, legacy_types::fixtures::TestPersona};
 use std::{fs, net::Ipv4Addr, path::PathBuf, thread, time};
-use zapatos_genesis::config::{HostAndPort, ValidatorConfiguration};
+use diem_genesis::config::{HostAndPort, ValidatorConfiguration};
 
 pub fn setup(
     me: &TestPersona,
