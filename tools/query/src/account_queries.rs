@@ -6,7 +6,7 @@ use libra_types::{
 };
 use serde_json::json;
 use zapatos_sdk::{
-    rest_client::{aptos_api_types::ViewRequest, Client},
+    rest_client::{diem_api_types::ViewRequest, Client},
     types::account_address::AccountAddress,
 };
 /// helper to get libra balance at a SlowWalletBalance type which shows

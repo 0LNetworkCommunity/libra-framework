@@ -4,7 +4,7 @@ module ol_framework::test_jail {
     use std::vector;
     use ol_framework::mock;
     use ol_framework::jail;
-    // use aptos_std::debug::print;
+    // use diem_std::debug::print;
 
     #[test(root = @ol_framework)]
     public entry fun jail_reputation(root: signer) {
@@ -43,7 +43,7 @@ module ol_framework::test_jail {
 
       assert!(rep == 3, 10009);
       // Now we say that Alice returned to the set successfully
-      // so we can reset the consecutive fail. Other reputation 
+      // so we can reset the consecutive fail. Other reputation
       // marks on the account and on buddy Voucher accounts should fail.
       jail::reset_consecutive_fail(&root, alice);
       let (lifetime, consecutive) = jail::get_jail_reputation(alice);
@@ -80,11 +80,11 @@ module ol_framework::test_jail {
       let vals = mock::genesis_n_vals(&root, 5);
       let alice = *vector::borrow(&vals, 0);
       let bob = *vector::borrow(&vals, 1);
-      
+
       assert!(!jail::is_jailed(alice), 10001);
 
       jail::jail(&root, alice);
-      
+
       assert!(jail::is_jailed(alice), 10002);
 
       jail::jail(&root, bob);

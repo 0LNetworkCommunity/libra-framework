@@ -1,4 +1,4 @@
-module aptos_std::type_info {
+module diem_std::type_info {
     use std::bcs;
     use std::string;
     use std::features;
@@ -36,11 +36,11 @@ module aptos_std::type_info {
         type_info.struct_name
     }
 
-    /// Returns the current chain ID, mirroring what `aptos_framework::chain_id::get()` would return, except in `#[test]`
-    /// functions, where this will always return `4u8` as the chain ID, whereas `aptos_framework::chain_id::get()` will
-    /// return whichever ID was passed to `aptos_framework::chain_id::initialize_for_test()`.
+    /// Returns the current chain ID, mirroring what `diem_framework::chain_id::get()` would return, except in `#[test]`
+    /// functions, where this will always return `4u8` as the chain ID, whereas `diem_framework::chain_id::get()` will
+    /// return whichever ID was passed to `diem_framework::chain_id::initialize_for_test()`.
     public fun chain_id(): u8 {
-        if (!features::aptos_stdlib_chain_id_enabled()) {
+        if (!features::diem_stdlib_chain_id_enabled()) {
             abort(std::error::invalid_state(E_NATIVE_FUN_NOT_AVAILABLE))
         };
 
@@ -68,7 +68,7 @@ module aptos_std::type_info {
     #[test]
     fun test() {
         let type_info = type_of<TypeInfo>();
-        assert!(account_address(&type_info) == @aptos_std, 0);
+        assert!(account_address(&type_info) == @diem_std, 0);
         assert!(module_name(&type_info) == b"type_info", 1);
         assert!(struct_name(&type_info) == b"TypeInfo", 2);
     }
@@ -76,7 +76,7 @@ module aptos_std::type_info {
     #[test(fx = @std)]
     fun test_chain_id(fx: signer) {
         // We need to enable the feature in order for the native call to be allowed.
-        features::change_feature_flags(&fx, vector[features::get_aptos_stdlib_chain_id_feature()], vector[]);
+        features::change_feature_flags(&fx, vector[features::get_diem_stdlib_chain_id_feature()], vector[]);
 
         // The testing environment chain ID is 4u8.
         assert!(chain_id() == 4u8, 1);
@@ -84,7 +84,7 @@ module aptos_std::type_info {
 
     #[test]
     fun test_type_name() {
-        use aptos_std::table::Table;
+        use diem_std::table::Table;
 
         assert!(type_name<bool>() == string::utf8(b"bool"), 0);
         assert!(type_name<u8>() == string::utf8(b"u8"), 1);
@@ -116,7 +116,7 @@ module aptos_std::type_info {
         let module_name = module_name(&type_info);
         let struct_name = struct_name(&type_info);
         spec {
-            assert account_address == @aptos_std;
+            assert account_address == @diem_std;
             assert module_name == b"type_info";
             assert struct_name == b"TypeInfo";
         };

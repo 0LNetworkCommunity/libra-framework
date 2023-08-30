@@ -2,9 +2,9 @@
 #[test_only]
 /// tests for external apis, and where a dependency cycle with genesis is created.
 module ol_framework::test_meta {
-  use aptos_framework::reconfiguration;
-  use aptos_framework::stake;
-  
+  use diem_framework::reconfiguration;
+  use diem_framework::stake;
+
   use ol_framework::mock;
 
   // can we trigger a reconfiguration and get to a new epoch?
@@ -14,7 +14,7 @@ module ol_framework::test_meta {
   fun test_reconfigure_custom(root: signer) {
 
     mock::ol_test_genesis(&root);
-    // NOTE: There was no genesis END event here. 
+    // NOTE: There was no genesis END event here.
     // Which means we need to use reconfigure_for_test_custom
 
     let a = reconfiguration::get_current_epoch();
@@ -29,7 +29,7 @@ module ol_framework::test_meta {
 
     assert!(a == 0, 10001);
     assert!(b == 1, 10002);
-    
+
   }
 
   #[test(root = @ol_framework)]
@@ -58,9 +58,9 @@ module ol_framework::test_meta {
 
     mock::trigger_epoch(&root);
     let b = reconfiguration::get_current_epoch();
-    
+
     assert!(a == 0, 10001);
     assert!(b == 1, 10002);
-    
+
   }
 }

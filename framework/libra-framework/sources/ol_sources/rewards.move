@@ -1,14 +1,14 @@
 
 module ol_framework::rewards {
-  use aptos_framework::system_addresses;
+  use diem_framework::system_addresses;
   use ol_framework::gas_coin::GasCoin;
-  use aptos_framework::coin::{Self, Coin};
+  use diem_framework::coin::{Self, Coin};
   use std::vector;
-  use aptos_framework::stake;
-  // use aptos_std::debug::print;
+  use diem_framework::stake;
+  // use diem_std::debug::print;
 
-  friend aptos_framework::epoch_boundary;
-  // friend aptos_framework::stake;
+  friend diem_framework::epoch_boundary;
+  // friend diem_framework::stake;
 
   const REWARD_VALIDATOR: u8 = 1;
   const REWARD_ORACLE: u8 = 2;

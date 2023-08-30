@@ -9,7 +9,7 @@
 
     use ol_framework::ballot::{Self, BallotTracker};
     use ol_framework::binary_tally::{Self, BinaryTally};
-    use aptos_framework::account;
+    use diem_framework::account;
     use std::guid;
     use std::error;
     use std::signer;

@@ -9,18 +9,18 @@ module ol_framework::test_rewards {
   #[test_only]
   use ol_framework::gas_coin::{Self, GasCoin};
   #[test_only]
-  use aptos_framework::coin;
+  use diem_framework::coin;
   #[test_only]
   use ol_framework::mock;
 
   // #[test_only]
   // use ol_framework::gas_coin::GasCoin;
   #[test_only]
-  use aptos_framework::stake;
+  use diem_framework::stake;
 
 
   // #[test_only]
-  // use aptos_std::debug::print;
+  // use diem_std::debug::print;
 
   #[test(root = @ol_framework)]
   fun test_pay_reward_single(root: signer) {

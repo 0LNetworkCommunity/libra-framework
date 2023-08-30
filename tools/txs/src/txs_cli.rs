@@ -101,7 +101,7 @@ pub enum TxsSub {
 
                 Example:
                 'u8, u16, u32, u64, u128, u256, bool, address, vector<u8>, signer'
-                '0x1::aptos_coin::AptosCoin'
+                '0x1::diem_coin::AptosCoin'
             "#}
         )]
         type_args: Option<String>,

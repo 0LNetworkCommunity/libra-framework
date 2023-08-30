@@ -1,4 +1,4 @@
-spec aptos_framework::resource_account {
+spec diem_framework::resource_account {
     spec module {
         pragma verify = true;
         pragma aborts_if_is_strict;
@@ -45,7 +45,7 @@ spec aptos_framework::resource_account {
     }
 
     spec schema RotateAccountAuthenticationKeyAndStoreCapabilityAbortsIf {
-        use aptos_framework::account::{Account};
+        use diem_framework::account::{Account};
         origin: signer;
         resource_addr: address;
         optional_auth_key: vector<u8>;

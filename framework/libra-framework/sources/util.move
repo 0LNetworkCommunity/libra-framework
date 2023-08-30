@@ -1,7 +1,7 @@
 /// Utility functions used by the framework modules.
-module aptos_framework::util {
-    friend aptos_framework::code;
-    friend aptos_framework::gas_schedule;
+module diem_framework::util {
+    friend diem_framework::code;
+    friend diem_framework::gas_schedule;
 
     /// Native function to deserialize a type T.
     ///

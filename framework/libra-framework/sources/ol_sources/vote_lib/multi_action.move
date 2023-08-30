@@ -28,10 +28,10 @@ module ol_framework::multi_action {
   use std::signer;
   use std::error;
   use std::guid;
-  use aptos_framework::account::{Self, WithdrawCapability};
-  use aptos_framework::resource_account;
+  use diem_framework::account::{Self, WithdrawCapability};
+  use diem_framework::resource_account;
   use ol_framework::ballot::{Self, BallotTracker};
-  use aptos_framework::reconfiguration;
+  use diem_framework::reconfiguration;
   // use DiemFramework::Debug::print;
 
   const EGOV_NOT_INITIALIZED: u64 = 1;

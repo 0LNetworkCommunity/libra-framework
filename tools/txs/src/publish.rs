@@ -24,7 +24,7 @@ pub fn encode_publish_payload(move_options: &MovePackageDir) -> anyhow::Result<T
 
     // Send the compiled module and metadata using the code::publish_package_txn.
     let metadata = package.extract_metadata()?;
-    let payload = libra_cached_packages::aptos_stdlib::code_publish_package_txn(
+    let payload = libra_cached_packages::libra_stdlib::code_publish_package_txn(
         bcs::to_bytes(&metadata).expect("PackageMetadata has BCS"),
         compiled_units,
     );

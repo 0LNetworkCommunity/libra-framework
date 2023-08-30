@@ -47,15 +47,15 @@ module ol_framework::safe {
   use std::signer;
   use std::guid;
   use std::error;
-  use aptos_framework::account::WithdrawCapability;
-  use aptos_framework::coin;
+  use diem_framework::account::WithdrawCapability;
+  use diem_framework::coin;
   use ol_framework::ol_account;
   use ol_framework::gas_coin::GasCoin;
   use ol_framework::multi_action;
   use ol_framework::system_addresses;
   use ol_framework::transaction_fee;
 
-  // use aptos_std::debug::print;
+  // use diem_std::debug::print;
 
   /// a multi action safe is not initialized on this account
   const ESAFE_NOT_INITIALIZED: u64 = 1;

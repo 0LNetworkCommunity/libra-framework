@@ -6,7 +6,7 @@ use anyhow::{anyhow, Context};
 use async_trait::async_trait;
 use serde::de::DeserializeOwned;
 use serde_json::{self, Value};
-use std::time::Duration;
+// use std::time::Duration;
 use std::time::SystemTime;
 use std::{str::FromStr, time::UNIX_EPOCH};
 use url::Url;
@@ -19,7 +19,7 @@ use zapatos_sdk::{
         transaction_argument::convert_txn_args,
     },
     rest_client::{
-        aptos_api_types::{EntryFunctionId, MoveType, ViewRequest},
+        diem_api_types::{EntryFunctionId, MoveType, ViewRequest},
         Account, Client,
     },
     transaction_builder::TransactionBuilder,
@@ -119,11 +119,7 @@ impl ClientExt for Client {
         )?
         .unwrap_or_default();
         let rest_url = profile.rest_url.context("Rest url is not set")?;
-        Ok(Client::new_with_timeout_and_user_agent(
-            Url::from_str(&rest_url).unwrap(),
-            Duration::from_secs(DEFAULT_TIMEOUT_SECS),
-            USER_AGENT,
-        ))
+        Ok(Client::new(Url::from_str(&rest_url).unwrap()))
     }
 
     // async fn get_account_balance_libra(&self, account: AccountAddress) -> Result<SlowWalletBalance> {

@@ -1,4 +1,4 @@
-spec aptos_framework::execution_config {
+spec diem_framework::execution_config {
     spec module {
         pragma verify = true;
         pragma aborts_if_is_strict;
@@ -7,14 +7,14 @@ spec aptos_framework::execution_config {
     /// Ensure the caller is admin
     /// When setting now time must be later than last_reconfiguration_time.
     spec set(account: &signer, config: vector<u8>) {
-        use aptos_framework::chain_status;
-        use aptos_framework::timestamp;
+        use diem_framework::chain_status;
+        use diem_framework::timestamp;
         use std::signer;
 
         pragma verify = false; // TODO: set to false because of timeout
 
         let addr = signer::address_of(account);
-        aborts_if !system_addresses::is_aptos_framework_address(addr);
+        aborts_if !system_addresses::is_diem_framework_address(addr);
         aborts_if !(len(config) > 0);
 
         requires chain_status::is_operating();
