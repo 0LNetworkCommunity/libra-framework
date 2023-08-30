@@ -20,8 +20,8 @@ use super::{
 use anyhow::{bail, Result};
 use rand::{rngs::OsRng, Rng};
 use std::collections::HashMap;
-use zapatos_crypto::ed25519::Ed25519PrivateKey;
-use zapatos_types::{
+use diem_crypto::ed25519::Ed25519PrivateKey;
+use diem_types::{
     account_address::AccountAddress, transaction::authenticator::AuthenticationKey,
 };
 

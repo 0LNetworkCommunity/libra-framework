@@ -1,8 +1,8 @@
 use crate::helpers::{get_libra_balance, mint_libra};
 use libra_framework::release::ReleaseTarget;
-use zapatos_forge::Swarm;
-use zapatos_sdk::types::LocalAccount;
-use zapatos_smoke_test::smoke_test_environment::new_local_swarm_with_release;
+use diem_forge::Swarm;
+use diem_sdk::types::LocalAccount;
+use diem_smoke_test::smoke_test_environment::new_local_swarm_with_release;
 
 #[tokio::test]
 // let's check that this test environment produces same coins as expected in unit tests, and we have the tools to mint and test balances
@@ -13,7 +13,7 @@ async fn sanity_balances() -> anyhow::Result<()>{
     let pri_key = v.account_private_key().as_ref().unwrap();
     let address = v.peer_id().to_owned();
     let _account = LocalAccount::new(v.peer_id(), pri_key.private_key(), 0);
-    let mut public_info: zapatos_forge::DiemPublicInfo = swarm.diem_public_info();
+    let mut public_info: diem_forge::DiemPublicInfo = swarm.diem_public_info();
 
     let bal_vec = get_libra_balance(public_info.client(), address).await?;
     assert!(bal_vec.first().unwrap() == &0, "expected zero balance at genesis");

@@ -4,13 +4,13 @@ use move_core_types::{
     move_resource::{MoveResource, MoveStructType},
 };
 // use move_core_types::language_storage::StructTag;
-// use zapatos_api_types::U64;
+// use diem_api_types::U64;
 use move_core_types::identifier::IdentStr;
 use move_core_types::language_storage::TypeTag;
 use serde::{Deserialize, Serialize};
 
 use once_cell::sync::Lazy;
-use zapatos_types::{account_address::AccountAddress, event::EventHandle};
+use diem_types::{account_address::AccountAddress, event::EventHandle};
 
 use crate::ONCHAIN_DECIMAL_PRECISION;
 
@@ -76,7 +76,7 @@ impl MoveStructType for GasCoinStoreResource {
 
 impl MoveResource for GasCoinStoreResource {}
 
-// TODO: This might break reading from API maybe it must be zapatos_api_types::U64;
+// TODO: This might break reading from API maybe it must be diem_api_types::U64;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GasCoin {

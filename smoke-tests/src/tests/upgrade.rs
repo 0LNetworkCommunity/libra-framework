@@ -5,15 +5,15 @@ use crate::upgrade_fixtures::fixtures_path;
 
 use libra_framework::release::ReleaseTarget;
 use std::path::PathBuf;
-use zapatos_forge::Swarm;
-use zapatos_smoke_test::smoke_test_environment::new_local_swarm_with_release;
-use zapatos_types::transaction::Script;
+use diem_forge::Swarm;
+use diem_smoke_test::smoke_test_environment::new_local_swarm_with_release;
+use diem_types::transaction::Script;
 
 use libra_cached_packages::libra_stdlib::{
     diem_governance_assert_can_resolve, diem_governance_ol_create_proposal_v2,
     diem_governance_ol_vote,
 };
-use zapatos_sdk::types::LocalAccount;
+use diem_sdk::types::LocalAccount;
 
 // NOTE: These tests are deprecated in favor of the TXS tests for upgrades.
 // These tests should be kept here in case we need to debug the actual sending mechanisms outside of txs.
@@ -78,7 +78,7 @@ async fn can_upgrade() {
         true,
     );
 
-    let mut public_info: zapatos_forge::DiemPublicInfo = swarm.diem_public_info();
+    let mut public_info: diem_forge::DiemPublicInfo = swarm.diem_public_info();
 
     let txn = alice_account
         .sign_with_transaction_builder(public_info.transaction_factory().payload(payload));

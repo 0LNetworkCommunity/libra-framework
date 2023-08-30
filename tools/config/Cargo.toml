@@ -20,11 +20,11 @@ dialoguer = { workspace = true }
 libra-types = { workspace = true }
 libra-wallet = { workspace = true }
 
-zapatos = { workspace = true }
-zapatos-rest-client = { workspace = true }
-zapatos-crypto = { workspace = true }
-zapatos-types = { workspace = true }
-zapatos-genesis = { workspace = true }
-zapatos-config = { workspace = true }
+diem = { workspace = true }
+diem-rest-client = { workspace = true }
+diem-crypto = { workspace = true }
+diem-types = { workspace = true }
+diem-genesis = { workspace = true }
+diem-config = { workspace = true }
 
 

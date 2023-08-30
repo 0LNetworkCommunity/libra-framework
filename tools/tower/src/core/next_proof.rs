@@ -16,7 +16,7 @@ use libra_types::{
 
 use libra_query::{account_queries, chain_queries};
 
-use zapatos_sdk::crypto::HashValue;
+use diem_sdk::crypto::HashValue;
 
 /// container for the next proof parameters to be fed to VDF prover.
 #[derive(Clone, Debug, Deserialize, Serialize)]

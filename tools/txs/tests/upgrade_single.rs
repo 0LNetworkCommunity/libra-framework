@@ -7,7 +7,7 @@ use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Upgrade},
     txs_cli_upgrade::UpgradeTxs::{Propose, Resolve, Vote},
 };
-use zapatos_types::chain_id::NamedChain;
+use diem_types::chain_id::NamedChain;
 
 /// Testing that we can upgrade the chain framework using txs tools.
 /// Note: We have another upgrade meta test in ./smoke-tests

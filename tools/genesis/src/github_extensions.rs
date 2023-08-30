@@ -1,6 +1,6 @@
 use serde::Deserialize;
 use serde_json::json;
-use zapatos_github_client::{Client, Error};
+use diem_github_client::{Client, Error};
 
 pub trait LibraGithubClient {
     fn make_genesis_pull_request(

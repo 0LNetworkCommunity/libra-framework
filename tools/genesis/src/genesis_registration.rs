@@ -5,7 +5,7 @@ use libra_wallet::{
     validator_files::{OPERATOR_FILE, OWNER_FILE},
 };
 use std::path::PathBuf;
-use zapatos_github_client::Client;
+use diem_github_client::Client;
 
 // TODO: duplicate with libra-wallet and crate/aptos/src/genesis/keys
 pub const PUBLIC_KEYS_FILE: &str = "public-keys.yaml";
