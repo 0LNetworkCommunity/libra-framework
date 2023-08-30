@@ -33,10 +33,14 @@ use zapatos_sdk::{
 
 pub const DEFAULT_TIMEOUT_SECS: u64 = 10;
 pub const USER_AGENT: &str = concat!("libra-config/", env!("CARGO_PKG_VERSION"));
+pub const LOCAL_NODE_URL: &str = "http://localhost:8080";
+
 
 #[async_trait]
 pub trait ClientExt {
     async fn default() -> anyhow::Result<Client>;
+
+    async fn get_local_node() -> anyhow::Result<(Client, ChainId)>;
 
     async fn from_libra_config(
         app_cfg: &AppCfg,
@@ -79,6 +83,19 @@ impl ClientExt for Client {
         let app_cfg = AppCfg::load(None)?;
         let (client, _) = Self::from_libra_config(&app_cfg, None).await?;
         Ok(client)
+    }
+
+    /// Gets the local node
+    async fn get_local_node() -> anyhow::Result<(Client, ChainId)> {
+        let local_url = Url::parse(LOCAL_NODE_URL)?;
+        let client = Client::new(local_url);
+        match client.get_index().await {
+            Ok(res) => Ok((client, ChainId::new(res.inner().chain_id))),
+            Err(e) => Err(anyhow::anyhow!(
+                "Failed to connect to the local node: {}",
+                e
+            )),
+        }
     }
 
     /// Finds a good working upstream based on the list in a config file

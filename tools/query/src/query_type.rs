@@ -1,6 +1,5 @@
 use crate::{
     account_queries::{get_account_balance_libra, get_tower_state, lookup_originating_address},
-    get_client::{get_local_node},
     query_view::fetch_and_display,
 };
 use anyhow::{anyhow, Result};
@@ -298,7 +297,7 @@ impl QueryType {
                 let mut app_cfg = AppCfg::load(Some(config_path))?;
 
                 // Get the block height from the local node
-                let (local_client, _) = get_local_node().await?;
+                let (local_client, _) = Client::get_local_node().await?;
                 let local_client_res = local_client
                     .view_ext("0x1::block::get_current_block_height", None, None)
                     .await?;
