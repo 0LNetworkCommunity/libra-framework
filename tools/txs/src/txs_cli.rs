@@ -153,7 +153,7 @@ impl TxsCli {
         let url = if let Some(u) = self.url.as_ref() {
             u.to_owned()
         } else {
-            app_cfg.pick_url(Some(chain_name))?
+            app_cfg.pick_url()?
         };
 
         let client = Client::new(url);

@@ -1,6 +1,6 @@
 use crate::{
     account_queries::{get_account_balance_libra, get_tower_state, lookup_originating_address},
-    get_client::{find_good_upstream, get_local_node},
+    get_client::{get_local_node},
     query_view::fetch_and_display,
 };
 use anyhow::{anyhow, Result};
@@ -295,7 +295,7 @@ impl QueryType {
             }
             QueryType::SyncDelay {} => {
                 let config_path = global_config_dir();
-                let app_cfg = AppCfg::load(Some(config_path))?;
+                let mut app_cfg = AppCfg::load(Some(config_path))?;
 
                 // Get the block height from the local node
                 let (local_client, _) = get_local_node().await?;
@@ -314,7 +314,9 @@ impl QueryType {
                     };
 
                 // Get the block height from the working upstream
-                let (upstream_client, _) = find_good_upstream(&app_cfg).await?;
+                app_cfg.refresh_network_profile_and_save(Some(app_cfg.workspace.default_chain_id)).await?;
+                let upstream_client_url = app_cfg.pick_url()?;
+                let upstream_client = Client::new(upstream_client_url);
                 let upstream_client_res = upstream_client
                     .view_ext("0x1::block::get_current_block_height", None, None)
                     .await?;

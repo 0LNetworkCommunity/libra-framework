@@ -126,7 +126,7 @@ impl Sender {
         let temp_seq_num = 0;
         let mut local_account = LocalAccount::new(address, key, temp_seq_num);
 
-        let url = &app_cfg.pick_url(None)?;
+        let url = &app_cfg.pick_url()?;
         let client = Client::new(url.clone());
 
         let seq_num = local_account.sequence_number_mut();

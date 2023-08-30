@@ -32,7 +32,7 @@ async fn tower_remote_chained() {
     let (_proof_num, count) = backlog::get_remote_tower_height(&app_cfg).await.unwrap();
     assert!(count == 1);
 
-    let client = Client::new(app_cfg.pick_url(None).unwrap());
+    let client = Client::new(app_cfg.pick_url().unwrap());
 
     let next = next_proof::get_next_proof_from_chain(&app_cfg, &client)
         .await

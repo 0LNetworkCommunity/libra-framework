@@ -43,7 +43,6 @@ pub trait ClientExt {
         chain_id_opt: Option<NamedChain>,
     ) -> anyhow::Result<(Client, ChainId)>;
 
-    async fn find_good_upstream(list: Vec<Url>) -> anyhow::Result<(Client, ChainId)>;
 
     fn from_vendor_config() -> anyhow::Result<Client>;
 
@@ -85,29 +84,14 @@ impl ClientExt for Client {
     /// Finds a good working upstream based on the list in a config file
     async fn from_libra_config(
         app_cfg: &AppCfg,
-        chain_id_opt: Option<NamedChain>,
+        _chain_id_opt: Option<NamedChain>,
     ) -> anyhow::Result<(Client, ChainId)> {
         // check if we can connect to this client, or exit
-        let url = &app_cfg.pick_url(chain_id_opt)?;
+        let url = &app_cfg.pick_url()?;
         let client = Client::new(url.to_owned());
         let res = client.get_index().await?;
 
         Ok((client, ChainId::new(res.inner().chain_id)))
-    }
-
-    async fn find_good_upstream(_list: Vec<Url>) -> anyhow::Result<(Client, ChainId)> {
-        // TODO: iterate through all and find a valid one.
-
-        //   let metadata =  future::select_all(
-        //     nodes.into_iter().find_map(|u| async {
-        //         let client = Client::new(u);
-        //         match client.get_index().await {
-        //             Ok(index) => Some((client, index.inner().chain_id)),
-        //             _ => None,
-        //         }
-        //     })
-        // ).await?;
-        todo!()
     }
 
     fn from_vendor_config() -> anyhow::Result<Client> {
