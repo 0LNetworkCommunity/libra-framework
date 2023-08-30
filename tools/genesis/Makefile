@@ -15,7 +15,7 @@ RECOVERY_FILE = sample_end_user_single
 endif
 
 ifndef CHAIN
-CHAIN = testnet
+CHAIN = testing
 endif
 
 
