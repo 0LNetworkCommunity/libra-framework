@@ -8,18 +8,19 @@ use move_core_types::{
     move_resource::{MoveResource, MoveStructType},
 };
 use serde::{Deserialize, Serialize};
-// use diem_types::access_path::AccessPath;
+use zapatos_types::account_address::AccountAddress;
+// use zapatos_types::access_path::AccessPath;
 // use move_core_types::language_storage::StructTag;
 // use move_core_types::account_address::AccountAddress;
 // use move_core_types::language_storage::CORE_CODE_ADDRESS;
 
-use super::legacy_address::LegacyAddress;
+// use super::legacy_address::LegacyAddress;
 
 /// Struct that represents a AutoPay resource
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AncestryResource {
     ///
-    pub tree: Vec<LegacyAddress>,
+    pub tree: Vec<AccountAddress>,
 }
 
 impl MoveStructType for AncestryResource {
