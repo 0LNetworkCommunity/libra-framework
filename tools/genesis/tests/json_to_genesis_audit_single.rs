@@ -7,7 +7,7 @@ use libra_genesis_tools::vm::libra_genesis_default;
 use libra_genesis_tools::{compare, genesis::make_recovery_genesis_from_vec_legacy_recovery};
 use libra_types::exports::AccountAddress;
 use libra_types::exports::ChainId;
-use libra_types::legacy_types::ancestry_legacy::LegacyAncestryResource;
+use libra_types::move_resource::ancestry::AncestryResource;
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use std::fs;
 use support::{path_utils::json_path, test_vals};
@@ -110,7 +110,6 @@ fn test_check_ancestry() {
 
     let json_str = fs::read_to_string(json).unwrap();
     let user_accounts: Vec<LegacyRecovery> = serde_json::from_str(&json_str).unwrap();
-    dbg!(&user_accounts.get(0).unwrap().ancestry);
 
     let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
         Some(&user_accounts),
@@ -125,15 +124,13 @@ fn test_check_ancestry() {
 
     let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&gen_tx).unwrap();
     let db_state_view = db_rw.reader.latest_state_checkpoint_view().unwrap();
-    // let use_account_state_view = db_state_view.get_resource<AncestryResource>(&"0x6bbf853aa6521db445e5cbdf3c85e8a0".parse().unwrap());
 
     let acc = AccountAddress::from_hex_literal("0x6bbf853aa6521db445e5cbdf3c85e8a0").unwrap();
     let acc_state = db_state_view.as_account_with_state_view(&acc);
-    // let ancestry =
-    match acc_state.get_resource::<LegacyAncestryResource>() {
-        Ok(a) => {dbg!(&a);},
-        Err(e) => {dbg!(&e);},
-    };
+    let ancestry = acc_state.get_resource::<AncestryResource>().unwrap().unwrap();
+    assert!(ancestry.tree.len() == 2);
+    dbg!(&ancestry.tree);
+    assert!(ancestry.tree.get(0).unwrap().to_string().contains("bdb8ad37341c"));
 
     // dbg!(&ancestry);
     // let vals_list: Vec<AccountAddress> =
