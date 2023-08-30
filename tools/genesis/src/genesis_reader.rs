@@ -11,21 +11,21 @@ use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
 use std::sync::Arc;
-use zapatos_db::DiemDB;
-use zapatos_executor::db_bootstrapper::generate_waypoint;
-use zapatos_executor::db_bootstrapper::maybe_bootstrap;
-use zapatos_state_view::account_with_state_view::AsAccountWithStateView;
-use zapatos_storage_interface::state_view::LatestDbStateCheckpointView;
-use zapatos_storage_interface::DbReader;
-use zapatos_storage_interface::DbReaderWriter;
-use zapatos_temppath::TempPath;
-use zapatos_types::access_path::AccessPath;
-use zapatos_types::account_state::AccountState;
-use zapatos_types::account_view::AccountView;
-use zapatos_types::state_store::state_key::StateKey;
-use zapatos_types::state_store::state_key_prefix::StateKeyPrefix;
-use zapatos_types::transaction::Transaction;
-use zapatos_vm::DiemVM;
+use diem_db::DiemDB;
+use diem_executor::db_bootstrapper::generate_waypoint;
+use diem_executor::db_bootstrapper::maybe_bootstrap;
+use diem_state_view::account_with_state_view::AsAccountWithStateView;
+use diem_storage_interface::state_view::LatestDbStateCheckpointView;
+use diem_storage_interface::DbReader;
+use diem_storage_interface::DbReaderWriter;
+use diem_temppath::TempPath;
+use diem_types::access_path::AccessPath;
+use diem_types::account_state::AccountState;
+use diem_types::account_view::AccountView;
+use diem_types::state_store::state_key::StateKey;
+use diem_types::state_store::state_key_prefix::StateKeyPrefix;
+use diem_types::transaction::Transaction;
+use diem_vm::DiemVM;
 /// Compute the ledger given a genesis writeset transaction and return access to that ledger and
 /// the waypoint for that state.
 pub fn bootstrap_db_reader_from_gen_tx(
@@ -132,10 +132,10 @@ pub fn total_supply(db_reader: &Arc<dyn DbReader>) -> Option<u128> {
 #[test]
 fn test_db_rw() {
     use libra_types::exports::AccountAddress;
-    use zapatos_db::DiemDB;
-    use zapatos_executor::db_bootstrapper::maybe_bootstrap;
-    use zapatos_temppath::TempPath;
-    use zapatos_types::state_store::state_key::StateKey;
+    use diem_db::DiemDB;
+    use diem_executor::db_bootstrapper::maybe_bootstrap;
+    use diem_temppath::TempPath;
+    use diem_types::state_store::state_key::StateKey;
 
     let tmp_dir = TempPath::new().path().to_owned();
 

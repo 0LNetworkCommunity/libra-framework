@@ -41,14 +41,14 @@ jobs:
     - name: setup env
       uses: 0o-de-lally/libra-v7/.github/actions/build_env@ci
 
-    - name: install zapatos-node (for smoke tests)
+    - name: install diem-node (for smoke tests)
       run: >
         wget -O $DIEM_FORGE_NODE_BIN_PATH https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem-node &&
         sudo chmod 755 $DIEM_FORGE_NODE_BIN_PATH &&
         echo $DIEM_FORGE_NODE_BIN_PATH &&
         ls -l $DIEM_FORGE_NODE_BIN_PATH
 
-    - name: install zapatos (for move tests)
+    - name: install diem (for move tests)
       run: >
         wget -O ${{github.workspace}}/diem https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem &&
         sudo chmod 755 ${{github.workspace}}/diem

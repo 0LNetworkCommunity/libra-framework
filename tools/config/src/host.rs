@@ -6,8 +6,8 @@ use libra_types::ol_progress::OLProgress;
 use libra_wallet::validator_files::SetValidatorConfiguration;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
-use zapatos_genesis::config::HostAndPort;
-use zapatos_types::chain_id::NamedChain;
+use diem_genesis::config::HostAndPort;
+use diem_types::chain_id::NamedChain;
 
 pub fn initialize_host(
     home_path: Option<PathBuf>,

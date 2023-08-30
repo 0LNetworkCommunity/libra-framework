@@ -40,36 +40,36 @@ libra-txs = { path = "tools/txs" }
 libra-wallet = { path = "tools/wallet" }
 vdf = { git = "https://github.com/0o-de-lally/verifiable_delay.git" }
 
-zapatos-api-types = { package = "diem-api-types", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-zapatos-debugger = { package = "diem-debugger", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-zapatos-db = { package = "diem-db", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-zapatos-forge = { package = "diem-forge", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-zapatos-transactional-test-harness = { package = "diem-transactional-test-harness", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-zapatos-smoke-test = { package = "smoke-test", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-api-types = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-debugger = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-db = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-forge = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-transactional-test-harness = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+smoke-test = { package = "smoke-test", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 
-zapatos = { package = "diem", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-zapatos-build-info= { package = "diem-build-info", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
-zapatos-node = { package = "diem-node", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-zapatos-rest-client = { package = "diem-rest-client", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-zapatos-sdk = { package = "diem-sdk", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-zapatos-config = { package = "diem-config", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-zapatos-crypto = { package = "diem-crypto", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
-zapatos-genesis = { package = "diem-genesis", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
-zapatos-keygen = { package = "diem-keygen", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-zapatos-logger = { package = "diem-logger", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-zapatos-types = { package = "diem-types", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
-zapatos-gas = { package = "diem-gas", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
-zapatos-vm = { package = "diem-vm", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
-zapatos-vm-genesis = { package = "diem-vm-genesis", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
-zapatos-executor= { package = "diem-executor", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
-zapatos-framework = { package = "diem-framework", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
-zapatos-cached-packages = { package = "diem-cached-packages", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-zapatos-github-client = { package = "diem-github-client", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
-zapatos-release-builder = { package = "diem-release-builder", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
-zapatos-language-e2e-tests = { package = "diem-language-e2e-tests", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
-zapatos-state-view = { package = "diem-state-view", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
-zapatos-storage-interface= { package = "diem-storage-interface", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
-zapatos-temppath = { package = "diem-temppath", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
+diem = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-build-info = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-node = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-rest-client = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-sdk = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-config = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-crypto = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-genesis = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-keygen = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-logger = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-types = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-gas = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-vm = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-vm-genesis = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-executor = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-framework = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-cached-packages = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-github-client = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-release-builder = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-language-e2e-tests = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-state-view = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-storage-interface = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-temppath = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 
 
 ### External crate dependencies.
@@ -125,11 +125,11 @@ datatest-stable = "0.1.1"
 debug-ignore = { version = "1.0.3", features = ["serde"] }
 derivative = "2.2.0"
 diesel = { version = "2.1.0", features = [
-    "chrono",
-    "postgres",
-    "r2d2",
-    "numeric",
-    "serde_json",
+  "chrono",
+  "postgres",
+  "r2d2",
+  "numeric",
+  "serde_json",
 ] }
 diesel_migrations = { version = "2.1.0", features = ["postgres"] }
 digest = "0.9.0"
@@ -172,8 +172,8 @@ inferno = "0.11.14"
 ipnet = "2.5.0"
 itertools = "0.10.3"
 jemallocator = { version = "0.3.2", features = [
-    "profiling",
-    "unprefixed_malloc_on_supported_platforms",
+  "profiling",
+  "unprefixed_malloc_on_supported_platforms",
 ] }
 json-patch = "0.2.6"
 jsonwebtoken = "8.1"
@@ -224,10 +224,10 @@ redis = { version = "0.22.3", features = ["tokio-comp", "script"] }
 redis-test = { version = "0.1.1", features = ["aio"] }
 regex = "1.5.5"
 reqwest = { version = "0.11.11", features = [
-    "blocking",
-    "cookies",
-    "json",
-    "stream",
+  "blocking",
+  "cookies",
+  "json",
+  "stream",
 ] }
 reqwest-middleware = "0.2.0"
 reqwest-retry = "0.2.1"
@@ -279,16 +279,16 @@ tokio-test = "0.4.1"
 tokio-util = { version = "0.7.2", features = ["compat", "codec"] }
 toml = "0.5.9"
 tonic = { version = "0.8.3", features = [
-    "tls-roots",
-    "transport",
-    "prost",
-    "gzip",
-    "codegen",
+  "tls-roots",
+  "transport",
+  "prost",
+  "gzip",
+  "codegen",
 ] }
 tonic-reflection = "0.6.0"
 ureq = { version = "1.5.4", features = [
-    "json",
-    "native-tls",
+  "json",
+  "native-tls",
 ], default_features = false }
 url = { version = "2.2.2", features = ["serde"] }
 uuid = { version = "1.0.0", features = ["v4", "serde"] }
@@ -315,7 +315,7 @@ serde_with = "^3"
 # move-binary-format = { path = "third_party/move/move-binary-format" }
 # ... see full list in Aptos repo
 move-binary-format = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-move-core-types = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release"}
+move-core-types = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 move-command-line-common = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 move-model = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 

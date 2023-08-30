@@ -11,8 +11,8 @@ use serde_json::{self, Value};
 use std::time::SystemTime;
 use std::{str::FromStr, time::UNIX_EPOCH};
 use url::Url;
-use zapatos::common::types::{CliConfig, ConfigSearchMode, DEFAULT_PROFILE};
-use zapatos_sdk::{
+use diem::common::types::{CliConfig, ConfigSearchMode, DEFAULT_PROFILE};
+use diem_sdk::{
     move_types::{
         language_storage::{ModuleId, TypeTag},
         move_resource::MoveStructType,

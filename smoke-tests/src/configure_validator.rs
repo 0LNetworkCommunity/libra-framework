@@ -2,9 +2,9 @@ use libra_types::legacy_types::network_playlist::NetworkPlaylist;
 use libra_types::{exports::AuthenticationKey, legacy_types::app_cfg::AppCfg};
 use std::path::PathBuf;
 use url::Url;
-use zapatos_forge::{LocalSwarm, Swarm};
-use zapatos_sdk::crypto::PrivateKey;
-use zapatos_sdk::types::LocalAccount;
+use diem_forge::{LocalSwarm, Swarm};
+use diem_sdk::crypto::PrivateKey;
+use diem_sdk::types::LocalAccount;
 
 /// Set up the 0L local files, and get an AppCfg back after initializing in a temp dir, that will drop at the end of the test.
 pub async fn init_val_config_files(

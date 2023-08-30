@@ -16,10 +16,10 @@ use serde::Serialize;
 
 use anyhow::anyhow;
 use std::path::{Path, PathBuf};
-use zapatos_config::{config::IdentityBlob, keys::ConfigKey};
-use zapatos_crypto::{bls12381, ed25519::Ed25519PrivateKey, traits::PrivateKey, x25519};
-use zapatos_genesis::keys::{PrivateIdentity, PublicIdentity};
-// use zapatos_types::transaction::authenticator::AuthenticationKey;
+use diem_config::{config::IdentityBlob, keys::ConfigKey};
+use diem_crypto::{bls12381, ed25519::Ed25519PrivateKey, traits::PrivateKey, x25519};
+use diem_genesis::keys::{PrivateIdentity, PublicIdentity};
+// use diem_types::transaction::authenticator::AuthenticationKey;
 
 // These are consistent with Vendor
 const PRIVATE_KEYS_FILE: &str = "private-keys.yaml";
@@ -41,7 +41,7 @@ pub fn user_keygen(output_opt: Option<PathBuf>) -> anyhow::Result<()> {
     Ok(())
 }
 
-// NOTE: Devs: this is copied from zapatos_genesis::keys::generate_key_objects()  and modified to use our legacy keygen process.
+// NOTE: Devs: this is copied from diem_genesis::keys::generate_key_objects()  and modified to use our legacy keygen process.
 pub fn validator_keygen(
     output_opt: Option<PathBuf>,
 ) -> anyhow::Result<(IdentityBlob, IdentityBlob, PrivateIdentity, PublicIdentity)> {
@@ -204,7 +204,7 @@ fn deterministic_bls_from_seed() {
     // use ol_keys::wallet::get_account_from_mnem;
     use crate::account_keys::get_keys_from_mnem;
     use crate::load_keys::get_account_from_mnem;
-    use zapatos_crypto::ValidCryptoMaterialStringExt;
+    use diem_crypto::ValidCryptoMaterialStringExt;
 
     let alice_mnem = "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse";
     let (_auth_key, _account, wallet) = get_account_from_mnem(alice_mnem.to_owned()).unwrap();
