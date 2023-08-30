@@ -56,6 +56,8 @@ module ol_framework::ancestry {
       };
     }
 
+    /// Getter for user's unfiltered tree
+    #[view]
     public fun get_tree(addr: address): vector<address> acquires Ancestry {
       if (exists<Ancestry>(addr)) {
         *&borrow_global<Ancestry>(addr).tree
