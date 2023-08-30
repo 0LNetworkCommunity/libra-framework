@@ -11,6 +11,7 @@ use move_core_types::value::{serialize_values, MoveValue};
 use zapatos_types::account_config::CORE_CODE_ADDRESS;
 use zapatos_vm::move_vm_ext::SessionExt;
 use zapatos_vm_genesis::exec_function;
+use zapatos_vm_genesis::Validator;
 
 pub fn genesis_migrate_all_users(
     session: &mut SessionExt,
@@ -317,3 +318,27 @@ pub fn rounding_mint(session: &mut SessionExt, supply_settings: &SupplySettings)
         serialized_values,
     );
 }
+
+/// For testnet scenarios we may want to mint a minimal coin to the validators
+// this is only enabled for chain_id wich is not mainnet, OR if LIBRA_CI is set in the environment.
+// the reason we don't do this in MOVE is to be able to set this based on environments.
+// and in the move code, we want the validators to start with zero balances, for
+// maximum control of the test cases.
+pub fn mint_genesis_bootstrap_coin(session: &mut SessionExt, validators: &[Validator]) {
+        validators.iter().for_each(|v| {
+          let serialized_values = serialize_values(&vec![
+          MoveValue::Signer(CORE_CODE_ADDRESS),
+          MoveValue::Address(v.owner_address),
+          MoveValue::U64(1_000_000),
+      ]);
+
+        exec_function(
+            session,
+            "gas_coin",
+            "mint_to_impl",
+            vec![],
+            serialized_values,
+        );
+      });
+}
+

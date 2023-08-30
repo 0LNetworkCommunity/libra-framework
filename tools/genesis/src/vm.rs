@@ -25,7 +25,7 @@ use zapatos_vm_genesis::{
     verify_genesis_write_set, GenesisConfiguration, Validator, GENESIS_KEYPAIR,
 };
 
-use crate::{genesis_functions::rounding_mint, supply::SupplySettings};
+use crate::{genesis_functions::{mint_genesis_bootstrap_coin, rounding_mint}, supply::SupplySettings};
 
 /// set the genesis parameters
 /// NOTE: many of the parameters are ignored in libra_framework
@@ -141,6 +141,14 @@ pub fn encode_genesis_change_set(
     // moved this to happen after legacy account migration, since the validators need to have their accounts migrated as well, including the mapping of legacy address to the authkey (which no longer derives to the previous same address).
     // Note: the operator accounts at genesis will be different.
     create_and_initialize_validators(&mut session, validators);
+
+    // TODO: make this only run in test scenarios.
+    // add some coins in each validator account.
+    if chain_id != ChainId::new(1) || option_env!("LIBRA_CI").is_some() {
+      mint_genesis_bootstrap_coin(&mut session, validators);
+    }
+
+
     OLProgress::complete("initialized genesis validators");
 
     let spin = OLProgress::spin_steady(100, "publishing framework".to_string());
