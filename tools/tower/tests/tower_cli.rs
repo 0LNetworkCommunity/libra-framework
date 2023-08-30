@@ -34,7 +34,7 @@ async fn tower_cli_e2e() {
     // 1. have the validator reate a zeroth proof locally
     let profile = app_cfg.get_profile(None).unwrap();
     let pri_key_string = profile
-        .test_private_key
+        .borrow_private_key()
         .unwrap()
         .to_encoded_string()
         .unwrap();
