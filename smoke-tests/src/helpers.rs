@@ -1,8 +1,8 @@
 
 use libra_cached_packages::libra_stdlib;
-use zapatos_forge::DiemPublicInfo;
-use zapatos_sdk::rest_client::Client;
-use zapatos_types::account_address::AccountAddress;
+use diem_forge::DiemPublicInfo;
+use diem_sdk::rest_client::Client;
+use diem_types::account_address::AccountAddress;
 use libra_types::type_extensions::client_ext::ClientExt;
 
 // /// Get the balance of the 0L coin. Client methods are hardcoded for vendor

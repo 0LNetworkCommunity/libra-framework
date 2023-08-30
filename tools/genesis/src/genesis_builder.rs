@@ -19,24 +19,24 @@ use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use libra_types::ol_progress::OLProgress;
 use libra_wallet::utils::{check_if_file_exists, from_yaml, write_to_user_only_file};
 
-use zapatos_crypto::ed25519::ED25519_PUBLIC_KEY_LENGTH;
-use zapatos_crypto::ValidCryptoMaterialStringExt;
-use zapatos_crypto::{bls12381, ed25519::Ed25519PublicKey, ValidCryptoMaterial};
-use zapatos_framework::ReleaseBundle;
-use zapatos_genesis::{
+use diem_crypto::ed25519::ED25519_PUBLIC_KEY_LENGTH;
+use diem_crypto::ValidCryptoMaterialStringExt;
+use diem_crypto::{bls12381, ed25519::Ed25519PublicKey, ValidCryptoMaterial};
+use diem_framework::ReleaseBundle;
+use diem_genesis::{
     builder::GenesisConfiguration,
     config::{
         Layout, StringOperatorConfiguration, StringOwnerConfiguration, ValidatorConfiguration,
     },
     GenesisInfo,
 };
-use zapatos_github_client::Client;
-use zapatos_types::account_address::AccountAddress;
-use zapatos_types::{
+use diem_github_client::Client;
+use diem_types::account_address::AccountAddress;
+use diem_types::{
     account_address::AccountAddressWithChecks,
     on_chain_config::{OnChainConsensusConfig, OnChainExecutionConfig},
 };
-use zapatos_vm_genesis::default_gas_schedule;
+use diem_vm_genesis::default_gas_schedule;
 
 pub const LAYOUT_FILE: &str = "layout.yaml";
 pub const OPERATOR_FILE: &str = "operator.yaml";

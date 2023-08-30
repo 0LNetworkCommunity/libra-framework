@@ -2,17 +2,16 @@
 
 echo -e "\n0L: running smoke tests"
 
-if [[ ! -v ZAPATOS ]]
+if [[ ! -v DIEM_FORGE_NODE_BIN_PATH ]]
 then
-    echo $ZAPATOS
-    echo "0L: '\$ZAPATOS' source path does not exist,"
+    echo $DIEM_FORGE_NODE_BIN_PATH
+    echo "0L: '\$DIEM_FORGE_NODE_BIN_PATH' source path does not exist,"
     return
 fi
 
-export ZAPATOS_BIN_PATH=$ZAPATOS/target/release
 
 unset MRB_PATH
 export MRB_PATH=$(cd ./framework/releases/ && pwd -P | xargs -I {} echo "{}/head.mrb")
 
-(cd smoke-tests && ZAPATOS_BIN_PATH=$ZAPATOS/target/release cargo test -- --nocapture)
+(cd smoke-tests && cargo test -- --nocapture)
 

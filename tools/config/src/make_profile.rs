@@ -2,7 +2,7 @@ use anyhow::{bail, Result};
 use libra_types::type_extensions::cli_config_ext::CliConfigExt;
 use std::{collections::BTreeMap, env, str::FromStr};
 use url::Url;
-use zapatos::{
+use diem::{
     account::key_rotation::lookup_address,
     common::{
         init::Network,
@@ -13,13 +13,13 @@ use zapatos::{
         utils::{prompt_yes_with_override, read_line},
     },
 };
-use zapatos_crypto::{ed25519::Ed25519PublicKey, ValidCryptoMaterialStringExt};
-use zapatos_rest_client::{
+use diem_crypto::{ed25519::Ed25519PublicKey, ValidCryptoMaterialStringExt};
+use diem_rest_client::{
     diem_api_types::{DiemError, DiemErrorCode},
     error::{DiemErrorResponse, RestError},
     Client,
 };
-use zapatos_types::account_address::AccountAddress;
+use diem_types::account_address::AccountAddress;
 
 pub async fn run(public_key: &str, profile: Option<&str>, workspace: bool) -> Result<()> {
     // init_workspace
