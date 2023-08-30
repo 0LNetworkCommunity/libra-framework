@@ -67,7 +67,7 @@ test-genesis:
 	LIBRA_CI=1 cargo r -- \
 	-c ${CHAIN} testnet \
 	-m ${PERSONA} \
-	-i ${ALICE} \
+	-i ${ALICE_IP} \
 	-i ${BOB_IP} \
 	-i ${CAROL_IP} \
 	--target-supply ${TARGET_SUPPLY} \
