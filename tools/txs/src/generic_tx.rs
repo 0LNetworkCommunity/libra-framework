@@ -1,12 +1,12 @@
 use anyhow::Context;
-use zapatos_sdk::move_types::{
+use diem_sdk::move_types::{
     language_storage::{ModuleId, TypeTag},
     parser::{parse_transaction_arguments, parse_type_tags},
     transaction_argument::convert_txn_args,
 };
 
 use libra_types::util::parse_function_id;
-use zapatos_types::transaction::{EntryFunction, TransactionArgument, TransactionPayload};
+use diem_types::transaction::{EntryFunction, TransactionArgument, TransactionPayload};
 
 use super::submit_transaction::Sender;
 

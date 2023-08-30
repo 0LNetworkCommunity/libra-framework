@@ -23,8 +23,8 @@ use std::{
 
 use libra_types::legacy_types::app_cfg::AppCfg;
 use libra_wallet::keys::VALIDATOR_FILE;
-use zapatos_config::config::IdentityBlob;
-use zapatos_github_client::Client;
+use diem_config::config::IdentityBlob;
+use diem_github_client::Client;
 
 use libra_config::host::initialize_validator_configs;
 

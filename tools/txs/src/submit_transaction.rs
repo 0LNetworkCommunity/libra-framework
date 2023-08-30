@@ -1,10 +1,10 @@
 use anyhow::{bail, Context};
-use zapatos::{
+use diem::{
     // account::key_rotation::lookup_address,
     common::types::{CliConfig, ConfigSearchMode},
 };
-use zapatos_logger::prelude::*;
-use zapatos_sdk::{
+use diem_logger::prelude::*;
+use diem_sdk::{
     crypto::{HashValue, PrivateKey},
     rest_client::{diem_api_types::TransactionOnChainData, Client},
     transaction_builder::TransactionBuilder,

@@ -4,7 +4,7 @@ use libra_types::exports::AccountAddress;
 use libra_types::exports::AuthenticationKey;
 use libra_types::legacy_types::mode_ol::MODE_0L;
 use std::{env, process::exit};
-use zapatos_types::chain_id::NamedChain;
+use diem_types::chain_id::NamedChain;
 
 /// Get authkey and account from mnemonic
 pub fn get_account_from_mnem(

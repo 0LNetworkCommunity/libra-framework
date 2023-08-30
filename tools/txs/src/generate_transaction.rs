@@ -1,8 +1,8 @@
 use super::constants::{DEFAULT_GAS_UNIT_PRICE, DEFAULT_MAX_GAS_AMOUNT};
 use anyhow::Result;
-use zapatos_sdk::crypto::ed25519::Ed25519PrivateKey;
-use zapatos_sdk::rest_client::Client;
-use zapatos_types::transaction::SignedTransaction;
+use diem_sdk::crypto::ed25519::Ed25519PrivateKey;
+use diem_sdk::rest_client::Client;
+use diem_types::transaction::SignedTransaction;
 
 use libra_types::type_extensions::{
   client_ext::{ClientExt,TransactionOptions, DEFAULT_TIMEOUT_SECS},

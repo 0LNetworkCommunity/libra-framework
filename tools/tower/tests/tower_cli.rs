@@ -17,7 +17,7 @@ use libra_types::exports::ValidCryptoMaterialStringExt;
 /// Testing that we can get a swarm up with the current head.mrb
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn tower_cli_e2e() {
-    let d = zapatos_temppath::TempPath::new();
+    let d = diem_temppath::TempPath::new();
 
     let mut ls = LibraSmoke::new(Some(1))
         .await

@@ -24,7 +24,7 @@ libra-txs = { workspace = true }
 libra-wallet = { workspace = true }
 vdf = { workspace = true }
 
-zapatos-sdk = { workspace = true }
+diem-sdk = { workspace = true }
 
 [dev-dependencies]
 toml = { workspace = true }
@@ -33,7 +33,7 @@ url = { workspace = true }
 libra-framework = { workspace = true }
 libra-smoke-tests = { workspace = true }
 
-zapatos-forge = { workspace = true }
-zapatos-smoke-test = { workspace = true }
-zapatos-temppath = { workspace = true }
+diem-forge = { workspace = true }
+smoke-test = { workspace = true }
+diem-temppath = { workspace = true }
 
