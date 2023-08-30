@@ -8,7 +8,7 @@ use std::io::Write;
 use std::path::PathBuf;
 use diem_framework::ReleaseBundle;
 use diem_types::{
-    chain_id::{ChainId, NamedChain},
+    chain_id::ChainId,
     transaction::{Transaction, WriteSetPayload},
 };
 use diem_vm_genesis::{GenesisConfiguration, Validator};

@@ -3,7 +3,7 @@
 use crate::exports::AuthenticationKey;
 
 use crate::legacy_types::{
-    ancestry::AncestryResource,
+    ancestry_legacy::LegacyAncestryResource,
     cumulative_deposits::{CumulativeDepositResource, LegacyBalanceResource},
     legacy_address::LegacyAddress,
     legacy_currency_info::CurrencyInfoResource,
@@ -69,7 +69,7 @@ pub struct LegacyRecovery {
 
     pub currency_info: Option<CurrencyInfoResource>,
     ///
-    pub ancestry: Option<AncestryResource>,
+    pub ancestry: Option<LegacyAncestryResource>,
     ///
     pub make_whole: Option<MakeWholeResource>,
     ///
