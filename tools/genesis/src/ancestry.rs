@@ -1,6 +1,6 @@
 //! helper functions for parsing Ancestry data and fixing recovery files.
 
-use libra_types::legacy_types::ancestry_legacy::AncestryLegacyResource;
+use libra_types::legacy_types::ancestry_legacy::LegacyAncestryResource;
 use libra_types::legacy_types::{legacy_address::LegacyAddress, legacy_recovery::LegacyRecovery};
 use serde::Deserialize;
 use std::path::PathBuf;
@@ -79,7 +79,7 @@ pub fn fix_legacy_recovery_data(legacy: &mut [LegacyRecovery], ancestry: &[Ances
             }
         });
         if let Some(l) = legacy_data {
-            let resource_type = AncestryLegacyResource {
+            let resource_type = LegacyAncestryResource {
                 tree: a.tree.clone(),
             };
             l.ancestry = Some(resource_type);

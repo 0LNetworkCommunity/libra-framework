@@ -7,7 +7,7 @@ use libra_genesis_tools::vm::libra_genesis_default;
 use libra_genesis_tools::{compare, genesis::make_recovery_genesis_from_vec_legacy_recovery};
 use libra_types::exports::AccountAddress;
 use libra_types::exports::ChainId;
-use libra_types::legacy_types::ancestry_legacy::AncestryLegacyResource;
+use libra_types::legacy_types::ancestry_legacy::LegacyAncestryResource;
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use std::fs;
 use support::{path_utils::json_path, test_vals};
@@ -130,7 +130,7 @@ fn test_check_ancestry() {
     let acc = AccountAddress::from_hex_literal("0x6bbf853aa6521db445e5cbdf3c85e8a0").unwrap();
     let acc_state = db_state_view.as_account_with_state_view(&acc);
     // let ancestry =
-    match acc_state.get_resource::<AncestryLegacyResource>() {
+    match acc_state.get_resource::<LegacyAncestryResource>() {
         Ok(a) => {dbg!(&a);},
         Err(e) => {dbg!(&e);},
     };

@@ -17,18 +17,18 @@ use super::legacy_address::LegacyAddress;
 
 /// Struct that represents a AutoPay resource
 #[derive(Debug, Serialize, Deserialize)]
-pub struct AncestryLegacyResource {
+pub struct LegacyAncestryResource {
     ///
     pub tree: Vec<LegacyAddress>,
 }
 
-impl MoveStructType for AncestryLegacyResource {
+impl MoveStructType for LegacyAncestryResource {
     const MODULE_NAME: &'static IdentStr = ident_str!("ancestry");
     const STRUCT_NAME: &'static IdentStr = ident_str!("Ancestry");
 }
-impl MoveResource for AncestryLegacyResource {}
+impl MoveResource for LegacyAncestryResource {}
 
-impl AncestryLegacyResource {
+impl LegacyAncestryResource {
     // // ///
     // pub fn struct_tag() -> StructTag {
     //     StructTag {
