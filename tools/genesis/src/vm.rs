@@ -142,6 +142,10 @@ pub fn encode_genesis_change_set(
     // Note: the operator accounts at genesis will be different.
     create_and_initialize_validators(&mut session, validators);
 
+    //////// 0L ////////
+    // need to ajust for rounding issues from target supply
+    rounding_mint(&mut session, supply_settings);
+
     // TODO: make this only run in test scenarios.
     // add some coins in each validator account.
     if chain_id != ChainId::new(1) || option_env!("LIBRA_CI").is_some() {
@@ -152,10 +156,6 @@ pub fn encode_genesis_change_set(
     OLProgress::complete("initialized genesis validators");
 
     let spin = OLProgress::spin_steady(100, "publishing framework".to_string());
-
-    //////// 0L ////////
-    // need to ajust for rounding issues from target supply
-    rounding_mint(&mut session, supply_settings);
 
     set_genesis_end(&mut session);
 
