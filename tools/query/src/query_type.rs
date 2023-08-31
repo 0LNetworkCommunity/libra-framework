@@ -3,11 +3,11 @@ use crate::{
     query_view::get_view,
 };
 use anyhow::{bail, Result};
+use diem_sdk::{rest_client::Client, types::account_address::AccountAddress};
 use indoc::indoc;
 use libra_types::exports::AuthenticationKey;
 use libra_types::type_extensions::client_ext::ClientExt;
 use serde_json::json;
-use diem_sdk::{rest_client::Client, types::account_address::AccountAddress};
 
 #[derive(Debug, clap::Subcommand)]
 pub enum QueryType {

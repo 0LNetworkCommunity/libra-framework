@@ -190,11 +190,11 @@ fn test_helper_clear_block_dir(blocks_dir: &PathBuf) {
 // }
 
 #[cfg(test)]
-use libra_types::legacy_types::vdf_difficulty::VDFDifficulty;
-#[cfg(test)]
 use diem_sdk::crypto::HashValue;
 #[cfg(test)]
 use diem_temppath::TempPath;
+#[cfg(test)]
+use libra_types::legacy_types::vdf_difficulty::VDFDifficulty;
 
 // use libra_types::legacy_types::{
 //   block::VDFProof,
@@ -352,9 +352,9 @@ fn test_parse_one_file() {
 
 #[tokio::test]
 async fn test_get_next() {
-    use libra_types::exports::AuthenticationKey;
     use diem_sdk::crypto::HashValue;
     use diem_temppath::TempPath;
+    use libra_types::exports::AuthenticationKey;
 
     let d = TempPath::new();
     let a = AuthenticationKey::random();

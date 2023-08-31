@@ -5,6 +5,7 @@
 pub mod ancestry_legacy;
 pub mod app_cfg;
 pub mod block;
+pub mod fixtures;
 pub mod legacy_address;
 pub mod legacy_currency_info;
 pub mod legacy_recovery;
@@ -14,7 +15,6 @@ pub mod network_playlist;
 pub mod tower;
 pub mod tx_error;
 pub mod vdf_difficulty;
-pub mod fixtures;
 // pub mod config;
 // pub mod dialogue;
 // pub mod epoch_timer;

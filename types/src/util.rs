@@ -1,9 +1,9 @@
 use anyhow::{bail, Context, Result};
-use std::fmt::{Debug, Display};
 use diem_sdk::{
     move_types::identifier::Identifier,
     types::{account_address::AccountAddress, transaction::SignedTransaction},
 };
+use std::fmt::{Debug, Display};
 
 pub fn format_signed_transaction(signed_trans: &SignedTransaction) -> String {
     let mut raw_trans = signed_trans

@@ -1,16 +1,13 @@
+use crate::exports::AuthenticationKey;
 use crate::legacy_types::app_cfg::AppCfg;
 use crate::type_extensions::cli_config_ext::CliConfigExt;
 use crate::util::parse_function_id;
-use crate::exports::AuthenticationKey;
 
 use anyhow::{anyhow, Context};
 use async_trait::async_trait;
 use serde::de::DeserializeOwned;
 use serde_json::{self, Value};
 // use std::time::Duration;
-use std::time::SystemTime;
-use std::{str::FromStr, time::UNIX_EPOCH};
-use url::Url;
 use diem::common::types::{CliConfig, ConfigSearchMode, DEFAULT_PROFILE};
 use diem_sdk::{
     move_types::{
@@ -31,6 +28,9 @@ use diem_sdk::{
         LocalAccount,
     },
 };
+use std::time::SystemTime;
+use std::{str::FromStr, time::UNIX_EPOCH};
+use url::Url;
 
 pub const DEFAULT_TIMEOUT_SECS: u64 = 10;
 pub const USER_AGENT: &str = concat!("libra-config/", env!("CARGO_PKG_VERSION"));
@@ -48,7 +48,9 @@ pub trait ClientExt {
 
     fn from_vendor_config() -> anyhow::Result<Client>;
 
-    async fn lookup_originating_address(&self, authentication_key: AuthenticationKey,
+    async fn lookup_originating_address(
+        &self,
+        authentication_key: AuthenticationKey,
     ) -> anyhow::Result<AccountAddress>;
 
     async fn get_move_resource<T: MoveStructType + DeserializeOwned>(

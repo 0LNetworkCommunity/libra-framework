@@ -143,13 +143,16 @@ fn main() -> anyhow::Result<()> {
                 Some(supply_settings),
             )?;
         }
-        Some(Sub::Testnet { me, ip_list , supply_settings}) => testnet_setup::setup(
+        Some(Sub::Testnet {
+            me,
+            ip_list,
+            supply_settings,
+        }) => testnet_setup::setup(
             &me,
             &ip_list,
             cli.chain.unwrap_or(NamedChain::TESTING),
             cli.home_dir.unwrap_or_else(global_config_dir),
             &supply_settings,
-
         )?,
         _ => {
             println!("\nIf you're looking for trouble \nYou came to the right place");

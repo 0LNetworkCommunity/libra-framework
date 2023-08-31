@@ -1,8 +1,7 @@
-
-use libra_cached_packages::libra_stdlib;
 use diem_forge::DiemPublicInfo;
 use diem_sdk::rest_client::Client;
 use diem_types::account_address::AccountAddress;
+use libra_cached_packages::libra_stdlib;
 use libra_types::type_extensions::client_ext::ClientExt;
 
 // /// Get the balance of the 0L coin. Client methods are hardcoded for vendor
@@ -29,21 +28,16 @@ pub async fn get_libra_balance(
     address: AccountAddress,
 ) -> anyhow::Result<Vec<u64>> {
     let res = client
-        .view_ext(
-          "0x1::slow_wallet::balance",
-          None,
-          Some(address.to_string()),
-        )
+        .view_ext("0x1::slow_wallet::balance", None, Some(address.to_string()))
         .await?;
     let mut move_tuple = serde_json::from_value::<Vec<String>>(res)?;
 
     let parsed = move_tuple
-      .iter_mut()
-      .filter_map(|e| { e.parse::<u64>().ok() })
-      .collect::<Vec<u64>>();
+        .iter_mut()
+        .filter_map(|e| e.parse::<u64>().ok())
+        .collect::<Vec<u64>>();
     Ok(parsed)
 }
-
 
 pub async fn mint_libra(
     public_info: &mut DiemPublicInfo<'_>,

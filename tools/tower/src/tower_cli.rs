@@ -3,8 +3,8 @@ use clap::{Parser, Subcommand};
 use libra_types::exports::Client;
 use libra_types::exports::{Ed25519PrivateKey, ValidCryptoMaterialStringExt};
 use libra_types::legacy_types::app_cfg::AppCfg;
-use libra_types::type_extensions::client_ext::ClientExt;
 use libra_types::legacy_types::app_cfg::Profile;
+use libra_types::type_extensions::client_ext::ClientExt;
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -45,7 +45,6 @@ pub enum TowerSub {
 
 impl TowerCli {
     pub async fn run(&self) -> anyhow::Result<()> {
-
         let mut app_cfg = AppCfg::load(self.config_file.clone())?;
 
         let profile = app_cfg.get_profile_mut(self.profile.clone())?;
@@ -82,8 +81,8 @@ impl TowerCli {
 }
 
 // for any long running operations requiring the private key in memory.
-fn prompt_private_key(cfg: &mut Profile) -> anyhow::Result<()>{
-  let leg_keys = libra_wallet::account_keys::get_keys_from_prompt()?;
-  cfg.set_private_key(&leg_keys.child_0_owner.pri_key);
-  Ok(())
+fn prompt_private_key(cfg: &mut Profile) -> anyhow::Result<()> {
+    let leg_keys = libra_wallet::account_keys::get_keys_from_prompt()?;
+    cfg.set_private_key(&leg_keys.child_0_owner.pri_key);
+    Ok(())
 }

@@ -186,12 +186,15 @@ impl AppCfg {
             return Ok(());
         }
 
-       let maybe_here = self.user_profiles.iter_mut().find(|e| e.account == profile.account);
+        let maybe_here = self
+            .user_profiles
+            .iter_mut()
+            .find(|e| e.account == profile.account);
 
         if let Some(p) = maybe_here {
             *p = profile; // replace it
         } else {
-          self.user_profiles.push(profile);
+            self.user_profiles.push(profile);
         }
 
         Ok(())
@@ -199,9 +202,9 @@ impl AppCfg {
 
     /// remove a profile
     pub fn try_remove_profile(&mut self, nickname: &str) -> anyhow::Result<()> {
-      let idx = self.get_profile_idx(Some(nickname.to_owned()))?;
-      self.user_profiles.remove(idx);
-      Ok(())
+        let idx = self.get_profile_idx(Some(nickname.to_owned()))?;
+        self.user_profiles.remove(idx);
+        Ok(())
     }
 
     /// Get where node key_store.json stored.
@@ -234,7 +237,6 @@ impl AppCfg {
     }
 
     pub fn init_for_tests(path: PathBuf) -> anyhow::Result<AppCfg> {
-
         use diem_crypto::ValidCryptoMaterialStringExt;
         let mut cfg = Self::init_app_configs(
             "87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5".parse()?,
@@ -261,7 +263,6 @@ impl AppCfg {
         chain_id: Option<NamedChain>,
         playlist_url: Option<Url>,
     ) -> anyhow::Result<NetworkPlaylist> {
-
         let url = playlist_url.unwrap_or(network_playlist::find_default_playlist(chain_id)?);
 
         let np = NetworkPlaylist::from_url(url, chain_id)?;
@@ -284,7 +285,7 @@ impl AppCfg {
         profile.context("could not find a network profile")
     }
 
-      pub fn get_network_profile_mut(
+    pub fn get_network_profile_mut(
         &mut self,
         chain_id: Option<NamedChain>,
     ) -> anyhow::Result<&mut NetworkPlaylist> {
@@ -292,7 +293,10 @@ impl AppCfg {
         let np = &mut self.network_playlist;
 
         let chain_id = chain_id.unwrap_or(self.workspace.default_chain_id);
-        let profile = np.iter_mut().find(|each| each.chain_id == chain_id).context("cannot get network profile")?;
+        let profile = np
+            .iter_mut()
+            .find(|each| each.chain_id == chain_id)
+            .context("cannot get network profile")?;
 
         Ok(profile)
     }
@@ -378,10 +382,10 @@ impl Default for Workspace {
 }
 
 impl Workspace {
-  /// set a profile as the default one
-  pub fn set_default(&mut self, profile: String) {
-    self.default_profile = Some(profile);
-  }
+    /// set a profile as the default one
+    pub fn set_default(&mut self, profile: String) {
+        self.default_profile = Some(profile);
+    }
 }
 
 /// Information about the Chain to mined for
@@ -475,13 +479,16 @@ impl Profile {
 
     // sets the private key and consumes it.
     pub fn set_private_key(&mut self, key: &Ed25519PrivateKey) {
-      self.test_private_key = Some(key.to_owned())
+        self.test_private_key = Some(key.to_owned())
     }
 
     // sets the private key and consumes it.
     pub fn borrow_private_key(&self) -> anyhow::Result<&Ed25519PrivateKey> {
-      let key = self.test_private_key.as_ref().context("no private key found")?;
-      Ok(key)
+        let key = self
+            .test_private_key
+            .as_ref()
+            .context("no private key found")?;
+        Ok(key)
     }
 }
 

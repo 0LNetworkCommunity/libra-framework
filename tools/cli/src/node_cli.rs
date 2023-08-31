@@ -1,8 +1,8 @@
 use anyhow::anyhow;
 use clap::Parser;
+use diem_config::config::NodeConfig;
 use libra_types::global_config_dir;
 use std::path::PathBuf;
-use diem_config::config::NodeConfig;
 
 #[derive(Parser)]
 /// Start a libra node

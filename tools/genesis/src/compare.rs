@@ -8,21 +8,21 @@ use crate::supply::Supply;
 
 use anyhow;
 // use libra_types::move_resource::coin_info::GasCoinInfoResource;
+use diem_storage_interface::state_view::LatestDbStateCheckpointView;
+use diem_types::transaction::Transaction;
 use libra_types::exports::AccountAddress;
 use libra_types::legacy_types::legacy_address::LegacyAddress;
 use libra_types::legacy_types::legacy_recovery::{read_from_recovery_file, LegacyRecovery};
 use libra_types::move_resource::gas_coin::{GasCoinStoreResource, SlowWalletBalance};
 use libra_types::ol_progress::OLProgress;
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
-use diem_storage_interface::state_view::LatestDbStateCheckpointView;
-use diem_types::transaction::Transaction;
 
-use indicatif::{ProgressBar, ProgressIterator};
-use std::path::PathBuf;
-use std::sync::Arc;
 use diem_state_view::account_with_state_view::AsAccountWithStateView;
 use diem_storage_interface::DbReader;
 use diem_types::account_view::AccountView;
+use indicatif::{ProgressBar, ProgressIterator};
+use std::path::PathBuf;
+use std::sync::Arc;
 
 #[derive(Debug)]
 /// struct for holding the results of a comparison
@@ -170,9 +170,9 @@ pub fn check_val_set(
 pub fn check_supply(
     expected_supply: u64,
     // genesis_transaction: &Transaction,
-    db_reader: &Arc<dyn DbReader>
+    db_reader: &Arc<dyn DbReader>,
 ) -> Result<(), anyhow::Error> {
-      let pb = ProgressBar::new(1000)
+    let pb = ProgressBar::new(1000)
         .with_style(OLProgress::spinner())
         .with_message("checking coin migration");
     pb.enable_steady_tick(core::time::Duration::from_millis(500));

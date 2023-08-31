@@ -1,6 +1,10 @@
 //! ol functions to run at genesis e.g. migration.
 use crate::supply::{populate_supply_stats_from_legacy, SupplySettings};
 use anyhow::Context;
+use diem_types::account_config::CORE_CODE_ADDRESS;
+use diem_vm::move_vm_ext::SessionExt;
+use diem_vm_genesis::exec_function;
+use diem_vm_genesis::Validator;
 use indicatif::ProgressIterator;
 use libra_types::{
     exports::AccountAddress,
@@ -8,10 +12,6 @@ use libra_types::{
     ol_progress::OLProgress,
 };
 use move_core_types::value::{serialize_values, MoveValue};
-use diem_types::account_config::CORE_CODE_ADDRESS;
-use diem_vm::move_vm_ext::SessionExt;
-use diem_vm_genesis::exec_function;
-use diem_vm_genesis::Validator;
 
 pub fn genesis_migrate_all_users(
     session: &mut SessionExt,
@@ -325,20 +325,18 @@ pub fn rounding_mint(session: &mut SessionExt, supply_settings: &SupplySettings)
 // and in the move code, we want the validators to start with zero balances, for
 // maximum control of the test cases.
 pub fn mint_genesis_bootstrap_coin(session: &mut SessionExt, validators: &[Validator]) {
-        validators.iter().for_each(|v| {
-          let serialized_values = serialize_values(&vec![
-          MoveValue::Signer(CORE_CODE_ADDRESS),
-          MoveValue::Address(v.owner_address),
-          MoveValue::U64(1_000_000),
-      ]);
+    validators.iter().for_each(|v| {
+        let serialized_values = serialize_values(&vec![
+            MoveValue::Signer(CORE_CODE_ADDRESS),
+            MoveValue::Address(v.owner_address),
+        ]);
 
         exec_function(
             session,
-            "gas_coin",
-            "mint_to_impl",
+            "infra_escrow",
+            "genesis_coin_validator",
             vec![],
             serialized_values,
         );
-      });
+    });
 }
-

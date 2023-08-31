@@ -46,7 +46,7 @@ enum ConfigSub {
         #[clap(long)]
         playlist_url: Option<Url>,
     },
-
+    // TODO: add WhoAmI to show libra.yaml profile info.
     /// try to add for fix the libra.yaml file
     #[clap(arg_required_else_help(true))]
     Fix {

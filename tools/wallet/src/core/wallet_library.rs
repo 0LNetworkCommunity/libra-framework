@@ -18,12 +18,10 @@ use super::{
     mnemonic::Mnemonic,
 };
 use anyhow::{bail, Result};
+use diem_crypto::ed25519::Ed25519PrivateKey;
+use diem_types::{account_address::AccountAddress, transaction::authenticator::AuthenticationKey};
 use rand::{rngs::OsRng, Rng};
 use std::collections::HashMap;
-use diem_crypto::ed25519::Ed25519PrivateKey;
-use diem_types::{
-    account_address::AccountAddress, transaction::authenticator::AuthenticationKey,
-};
 
 /// WalletLibrary contains all the information needed to recreate a particular wallet
 pub struct WalletLibrary {
