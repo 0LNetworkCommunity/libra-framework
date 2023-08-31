@@ -1,6 +1,8 @@
 use crate::node_yaml;
 use anyhow::Context;
 use dialoguer::{Confirm, Input};
+use diem_genesis::config::HostAndPort;
+use diem_types::chain_id::NamedChain;
 use libra_types::legacy_types::app_cfg::AppCfg;
 use libra_types::legacy_types::mode_ol::MODE_0L;
 use libra_types::legacy_types::network_playlist::NetworkPlaylist;
@@ -8,8 +10,6 @@ use libra_types::ol_progress::OLProgress;
 use libra_wallet::validator_files::SetValidatorConfiguration;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
-use diem_genesis::config::HostAndPort;
-use diem_types::chain_id::NamedChain;
 
 pub fn initialize_host(
     home_path: Option<PathBuf>,
@@ -31,10 +31,16 @@ pub fn initialize_host(
     node_yaml::save_validator_yaml(home_path.clone())?;
     OLProgress::complete("Saved validator node yaml file locally");
 
-        // TODO: nice to have
+    // TODO: nice to have
     // also for convenience create a local user libra.yaml file so the
     // validator can make transactions against the localhost
-    let cfg = AppCfg::init_app_configs(keys.child_0_owner.auth_key, keys.child_0_owner.account, home_path.clone(), None, Some(NetworkPlaylist::localhost(None)))?;
+    let cfg = AppCfg::init_app_configs(
+        keys.child_0_owner.auth_key,
+        keys.child_0_owner.account,
+        home_path,
+        None,
+        Some(NetworkPlaylist::localhost(None)),
+    )?;
 
     cfg.save_file().context(format!(
         "could not initialize configs at {}",

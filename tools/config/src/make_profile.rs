@@ -1,7 +1,4 @@
 use anyhow::{bail, Result};
-use libra_types::type_extensions::cli_config_ext::CliConfigExt;
-use std::{collections::BTreeMap, env, str::FromStr};
-use url::Url;
 use diem::{
     account::key_rotation::lookup_address,
     common::{
@@ -20,6 +17,9 @@ use diem_rest_client::{
     Client,
 };
 use diem_types::account_address::AccountAddress;
+use libra_types::type_extensions::cli_config_ext::CliConfigExt;
+use std::{collections::BTreeMap, env, str::FromStr};
+use url::Url;
 
 pub async fn run(public_key: &str, profile: Option<&str>, workspace: bool) -> Result<()> {
     // init_workspace

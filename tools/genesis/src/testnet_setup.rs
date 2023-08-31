@@ -1,15 +1,15 @@
 use crate::{genesis_builder, parse_json, supply::SupplySettings};
+use diem_genesis::config::{HostAndPort, ValidatorConfiguration};
 use libra_config::host;
 use libra_types::{exports::NamedChain, legacy_types::fixtures::TestPersona};
 use std::{fs, net::Ipv4Addr, path::PathBuf, thread, time};
-use diem_genesis::config::{HostAndPort, ValidatorConfiguration};
 
 pub fn setup(
     me: &TestPersona,
     ip_list: &[Ipv4Addr],
     chain: NamedChain,
     data_path: PathBuf,
-    supply_settings: &Option<SupplySettings>
+    supply_settings: &Option<SupplySettings>,
 ) -> anyhow::Result<()> {
     let db_path = data_path.join("data");
     if db_path.exists() {

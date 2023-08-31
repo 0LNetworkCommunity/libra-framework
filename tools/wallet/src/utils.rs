@@ -4,6 +4,7 @@
 
 use anyhow::{anyhow, bail};
 use dialoguer::Confirm;
+use diem_genesis::keys::PublicIdentity;
 use serde::{de::DeserializeOwned, Serialize};
 #[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
@@ -14,7 +15,6 @@ use std::{
     // os::unix::fs::OpenOptionsExt,
     path::{Path, PathBuf},
 };
-use diem_genesis::keys::PublicIdentity;
 
 /// A common result to be returned to users
 pub type CliResult = Result<String, String>;

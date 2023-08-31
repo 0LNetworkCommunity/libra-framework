@@ -4,14 +4,12 @@ use std::{fs, path::PathBuf, str::FromStr};
 
 use anyhow::bail;
 
-
-
 #[derive(Clone, Debug)]
 pub enum TestPersona {
-  Alice,
-  Bob,
-  Carol,
-  Dave
+    Alice,
+    Bob,
+    Carol,
+    Dave,
 }
 
 impl FromStr for TestPersona {
@@ -30,13 +28,13 @@ impl FromStr for TestPersona {
 
 impl fmt::Display for TestPersona {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      let s = match self {
-          TestPersona::Alice => "alice",
-          TestPersona::Bob => "bob",
-          TestPersona::Carol => "carol",
-          TestPersona::Dave => "dave",
-      };
-       write!(f, "{}", s)
+        let s = match self {
+            TestPersona::Alice => "alice",
+            TestPersona::Bob => "bob",
+            TestPersona::Carol => "carol",
+            TestPersona::Dave => "dave",
+        };
+        write!(f, "{}", s)
     }
 }
 
@@ -48,18 +46,18 @@ impl TestPersona {
             1 => Ok(TestPersona::Bob),
             2 => Ok(TestPersona::Carol),
             3 => Ok(TestPersona::Dave),
-            _ => bail!("no default persona at this index")
+            _ => bail!("no default persona at this index"),
         }
     }
 
     /// get persona from index. Used for testnet to assign persona to validator seat
     pub fn idx(&self) -> usize {
-         match self {
-          TestPersona::Alice => 0,
-          TestPersona::Bob => 1,
-          TestPersona::Carol => 2,
-          TestPersona::Dave => 3
-      }
+        match self {
+            TestPersona::Alice => 0,
+            TestPersona::Bob => 1,
+            TestPersona::Carol => 2,
+            TestPersona::Dave => 3,
+        }
     }
     /// get mnemonic
     pub fn get_persona_mnem(&self) -> String {
@@ -74,8 +72,6 @@ impl TestPersona {
         fs::read_to_string(buf).expect("could not find mnemonic file")
     }
 }
-
-
 
 // /// get account json
 // pub fn get_persona_account_json(persona: &str) -> (String, PathBuf) {

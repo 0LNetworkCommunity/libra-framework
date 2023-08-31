@@ -42,7 +42,7 @@ module diem_framework::genesis {
     use ol_framework::fee_maker;
     use ol_framework::oracle;
 
-    const TESTNET_GENESIS_BOOTSTRAP_COIN: u64 = 10000000000; //10,000 coins with 6 digits precision: 10B coins.
+    // const TESTNET_GENESIS_BOOTSTRAP_COIN: u64 = 10000000000; //10,000 coins with 6 digits precision: 10B coins.
     //////// end 0L ////////
 
 
