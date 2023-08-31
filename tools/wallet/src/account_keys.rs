@@ -6,13 +6,13 @@ use crate::{
 };
 
 use anyhow::Result;
-use serde::Serialize;
-use std::path::Path;
-use std::str::FromStr;
 use diem_crypto::ed25519::Ed25519PrivateKey;
 use diem_crypto::PrivateKey;
 use diem_types::account_address::AccountAddress;
 use diem_types::transaction::authenticator::AuthenticationKey;
+use serde::Serialize;
+use std::path::Path;
+use std::str::FromStr;
 
 #[derive(Serialize)]
 /// A Struct to store ALL the legacy keys for storage.

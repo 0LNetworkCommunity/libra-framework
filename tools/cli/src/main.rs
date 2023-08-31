@@ -2,12 +2,12 @@ mod node_cli;
 
 use anyhow::anyhow;
 use clap::{Parser, Subcommand};
+use diem::move_tool::MoveTool;
 use libra_config::config_cli::ConfigCli;
 use libra_query::query_cli::QueryCli;
 use libra_tower::tower_cli::TowerCli;
 use libra_txs::txs_cli::TxsCli;
 use libra_wallet::wallet_cli::WalletCli;
-use diem::move_tool::MoveTool;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]

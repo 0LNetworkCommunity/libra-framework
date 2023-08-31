@@ -2,11 +2,11 @@
 
 use crate::submit_transaction::Sender;
 use anyhow::bail;
+use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib::EntryFunctionCall::{
     JailUnjailByVoucher, ProofOfFeePofRetractBid, ProofOfFeePofUpdateBid, VouchRevoke,
     VouchVouchFor,
 };
-use diem_types::account_address::AccountAddress;
 
 #[derive(clap::Subcommand)]
 pub enum ValidatorTxs {

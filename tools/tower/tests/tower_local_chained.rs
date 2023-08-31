@@ -1,8 +1,8 @@
 //! test tower proof chaining
+use diem_temppath::TempPath;
 use libra_smoke_tests::configure_validator;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_tower::core::{backlog, next_proof, proof};
-use diem_temppath::TempPath;
 
 /// Testing that we can get a swarm up with the current head.mrb
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]

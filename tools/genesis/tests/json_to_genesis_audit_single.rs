@@ -1,5 +1,9 @@
 //! Tests for the `make_genesis` binary.
 mod support;
+use diem_state_view::account_with_state_view::AsAccountWithStateView;
+use diem_storage_interface::state_view::LatestDbStateCheckpointView;
+use diem_types::account_view::AccountView;
+use diem_types::chain_id::NamedChain;
 use libra_framework::head_release_bundle;
 use libra_genesis_tools::genesis_reader;
 use libra_genesis_tools::supply::{self, SupplySettings};
@@ -7,14 +11,10 @@ use libra_genesis_tools::vm::libra_genesis_default;
 use libra_genesis_tools::{compare, genesis::make_recovery_genesis_from_vec_legacy_recovery};
 use libra_types::exports::AccountAddress;
 use libra_types::exports::ChainId;
-use libra_types::move_resource::ancestry::AncestryResource;
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
+use libra_types::move_resource::ancestry::AncestryResource;
 use std::fs;
 use support::{path_utils::json_path, test_vals};
-use zapatos_types::chain_id::NamedChain;
-use zapatos_storage_interface::state_view::LatestDbStateCheckpointView;
-use zapatos_state_view::account_with_state_view::AsAccountWithStateView;
-use zapatos_types::account_view::AccountView;
 #[test]
 // test that a genesis blob created from struct, will actually contain the data
 fn test_correct_supply_arithmetic_single() {
@@ -96,7 +96,6 @@ fn test_check_genesis_validators() {
     }
 }
 
-
 #[test]
 // test that a genesis blob created from struct, will actually contain the data
 fn test_check_ancestry() {
@@ -121,16 +120,23 @@ fn test_check_ancestry() {
     )
     .unwrap();
 
-
     let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&gen_tx).unwrap();
     let db_state_view = db_rw.reader.latest_state_checkpoint_view().unwrap();
 
     let acc = AccountAddress::from_hex_literal("0x6bbf853aa6521db445e5cbdf3c85e8a0").unwrap();
     let acc_state = db_state_view.as_account_with_state_view(&acc);
-    let ancestry = acc_state.get_resource::<AncestryResource>().unwrap().unwrap();
+    let ancestry = acc_state
+        .get_resource::<AncestryResource>()
+        .unwrap()
+        .unwrap();
     assert!(ancestry.tree.len() == 2);
     dbg!(&ancestry.tree);
-    assert!(ancestry.tree.get(0).unwrap().to_string().contains("bdb8ad37341c"));
+    assert!(ancestry
+        .tree
+        .get(0)
+        .unwrap()
+        .to_string()
+        .contains("bdb8ad37341c"));
 
     // dbg!(&ancestry);
     // let vals_list: Vec<AccountAddress> =

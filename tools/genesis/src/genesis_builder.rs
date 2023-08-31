@@ -16,16 +16,6 @@ use std::{
 use anyhow::{anyhow, bail, Context, Result};
 use indicatif::ProgressBar;
 
-use libra_framework::release;
-use libra_types::exports::ChainId;
-use libra_types::exports::NamedChain;
-use libra_types::legacy_types::fixtures::TestPersona;
-use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
-use libra_types::ol_progress::OLProgress;
-use libra_wallet::account_keys::get_keys_from_mnem;
-use libra_wallet::keys::generate_key_objects_from_legacy;
-use libra_wallet::utils::{check_if_file_exists, from_yaml, write_to_user_only_file};
-use serde::{Deserialize, Serialize};
 use diem_crypto::ed25519::ED25519_PUBLIC_KEY_LENGTH;
 use diem_crypto::ValidCryptoMaterialStringExt;
 use diem_crypto::{bls12381, ed25519::Ed25519PublicKey, ValidCryptoMaterial};
@@ -46,6 +36,16 @@ use diem_vm_genesis::{
     default_gas_schedule,
     GenesisConfiguration as VmGenesisGenesisConfiguration, // in vendor codethere are two structs separately called the same name with nearly identical fields
 };
+use libra_framework::release;
+use libra_types::exports::ChainId;
+use libra_types::exports::NamedChain;
+use libra_types::legacy_types::fixtures::TestPersona;
+use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
+use libra_types::ol_progress::OLProgress;
+use libra_wallet::account_keys::get_keys_from_mnem;
+use libra_wallet::keys::generate_key_objects_from_legacy;
+use libra_wallet::utils::{check_if_file_exists, from_yaml, write_to_user_only_file};
+use serde::{Deserialize, Serialize};
 
 pub const LAYOUT_FILE: &str = "layout.yaml";
 pub const OPERATOR_FILE: &str = "operator.yaml";
@@ -162,7 +162,7 @@ pub fn build(
 
         s.set_ratios_from_settings(&settings)?;
 
-        compare::compare_recovery_vec_to_genesis_tx(recovery, &db_rw.reader, &s, )?;
+        compare::compare_recovery_vec_to_genesis_tx(recovery, &db_rw.reader, &s)?;
         OLProgress::complete("account balances as expected");
 
         compare::check_supply(settings.scale_supply() as u64, &db_rw.reader)?;

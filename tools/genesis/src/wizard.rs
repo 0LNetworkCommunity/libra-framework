@@ -6,8 +6,8 @@ use crate::{genesis_builder, parse_json, supply::SupplySettings};
 ///////
 // TODO: import from libra
 use crate::genesis_registration;
-use libra_types::ol_progress::OLProgress;
 use diem_types::chain_id::NamedChain;
+use libra_types::ol_progress::OLProgress;
 //////
 use crate::github_extensions::LibraGithubClient;
 use anyhow::{bail, Context};
@@ -22,10 +22,10 @@ use std::{
     time::Duration,
 };
 
-use libra_types::legacy_types::app_cfg::AppCfg;
-use libra_wallet::keys::VALIDATOR_FILE;
 use diem_config::config::IdentityBlob;
 use diem_github_client::Client;
+use libra_types::legacy_types::app_cfg::AppCfg;
+use libra_wallet::keys::VALIDATOR_FILE;
 
 use libra_config::host::initialize_validator_configs;
 

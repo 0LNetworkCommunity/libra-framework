@@ -2,10 +2,10 @@
 //! see vendor diem-move/framework/src/release_bundle.rs
 
 use anyhow::{ensure, Context, Result};
-use std::path::{Path, PathBuf};
 use diem_crypto::HashValue;
 use diem_framework::{BuildOptions, BuiltPackage, ReleasePackage};
 use diem_types::account_address::AccountAddress;
+use std::path::{Path, PathBuf};
 // use serde::{Serialize, Deserialize};
 use crate::builder::framework_release_bundle::libra_author_script_file;
 

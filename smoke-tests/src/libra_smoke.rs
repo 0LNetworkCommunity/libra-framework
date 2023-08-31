@@ -1,14 +1,14 @@
 //! The smoke tests should be located in each module (not in the test harness folder), e.g. (tools/txs). This provides wrapper for other modules to import as a dev_dependency. It produces a default swarm with libra configurations and returns the needed types to run tests.
 
 use anyhow::Context;
-use libra_framework::release::ReleaseTarget;
-use libra_types::exports::AccountAddress;
-use libra_types::exports::Client;
-use url::Url;
 use diem_crypto::traits::ValidCryptoMaterialStringExt;
 use diem_forge::{LocalSwarm, Node, Swarm};
 use diem_sdk::types::LocalAccount;
-use diem_smoke_test::smoke_test_environment;
+use libra_framework::release::ReleaseTarget;
+use libra_types::exports::AccountAddress;
+use libra_types::exports::Client;
+use smoke_test::smoke_test_environment;
+use url::Url;
 
 use crate::helpers;
 

@@ -9,8 +9,8 @@ use move_core_types::identifier::IdentStr;
 use move_core_types::language_storage::TypeTag;
 use serde::{Deserialize, Serialize};
 
-use once_cell::sync::Lazy;
 use diem_types::{account_address::AccountAddress, event::EventHandle};
+use once_cell::sync::Lazy;
 
 use crate::ONCHAIN_DECIMAL_PRECISION;
 

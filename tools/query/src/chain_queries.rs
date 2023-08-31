@@ -2,8 +2,8 @@
 use crate::query_view;
 
 use anyhow::Context;
-use libra_types::type_extensions::client_ext::entry_function_id;
 use diem_sdk::rest_client::{diem_api_types::ViewRequest, Client};
+use libra_types::type_extensions::client_ext::entry_function_id;
 
 /// helper to get libra balance at a SlowWalletBalance type which shows
 /// total balance and the unlocked balance.

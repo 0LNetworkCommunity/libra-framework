@@ -7,12 +7,12 @@ use libra_types::{
     legacy_types::{app_cfg::AppCfg, block::VDFProof},
 };
 
+use diem_sdk::crypto::HashValue;
 use std::{
     fs,
     path::{Path, PathBuf},
     time::SystemTime,
 };
-use diem_sdk::crypto::HashValue;
 /// Start the GC for a proof that is known bad
 pub fn gc_failed_proof(app_cfg: &AppCfg, bad_proof_path: PathBuf) -> anyhow::Result<()> {
     println!(

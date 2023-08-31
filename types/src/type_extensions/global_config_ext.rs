@@ -1,5 +1,4 @@
 use crate::GLOBAL_CONFIG_DIRECTORY_0L;
-use std::path::PathBuf;
 use diem::{
     common::{
         types::{CliError, CliTypedResult, ConfigSearchMode},
@@ -8,6 +7,7 @@ use diem::{
     config::{ConfigType, GlobalConfig},
     genesis::git::from_yaml,
 };
+use std::path::PathBuf;
 
 const GLOBAL_CONFIG_FILE: &str = "global_config.yaml";
 

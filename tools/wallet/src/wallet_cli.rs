@@ -26,7 +26,9 @@ enum WalletSub {
         output_dir: Option<String>,
     },
     /// Use the legacy key derivation scheme
+    // TODO: call this 'WalletArgs'
     Legacy(LegArgs),
+    // TODO: add WhoAmI to display the wallet info.
 }
 
 #[derive(Args, Debug)]
@@ -34,6 +36,7 @@ struct LegArgs {
     ///  display private keys and authentication keys
     #[clap(short, long)]
     display: bool,
+
     #[clap(short, long)]
     /// save legacy keyscheme private keys to file
     output_path: Option<PathBuf>,

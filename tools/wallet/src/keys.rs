@@ -15,10 +15,10 @@ use crate::utils::{
 use serde::Serialize;
 
 use anyhow::anyhow;
-use std::path::{Path, PathBuf};
 use diem_config::{config::IdentityBlob, keys::ConfigKey};
 use diem_crypto::{bls12381, ed25519::Ed25519PrivateKey, traits::PrivateKey, x25519};
 use diem_genesis::keys::{PrivateIdentity, PublicIdentity};
+use std::path::{Path, PathBuf};
 // use diem_types::transaction::authenticator::AuthenticationKey;
 
 // These are consistent with Vendor
@@ -66,7 +66,13 @@ pub fn refresh_validator_files(
     mnem: Option<String>,
     output_opt: Option<PathBuf>,
     keep_legacy_addr: bool,
-) -> anyhow::Result<(IdentityBlob, IdentityBlob, PrivateIdentity, PublicIdentity, KeyChain)> {
+) -> anyhow::Result<(
+    IdentityBlob,
+    IdentityBlob,
+    PrivateIdentity,
+    PublicIdentity,
+    KeyChain,
+)> {
     let mut legacy_keys = if let Some(m) = mnem {
         get_keys_from_mnem(m)?
     } else {
@@ -89,7 +95,13 @@ pub fn refresh_validator_files(
         &public_identity,
     )?;
 
-    Ok((validator_blob, vfn_blob, private_identity, public_identity, legacy_keys))
+    Ok((
+        validator_blob,
+        vfn_blob,
+        private_identity,
+        public_identity,
+        legacy_keys,
+    ))
 }
 
 fn write_key_file<T: Serialize>(output_dir: &Path, filename: &str, data: T) -> anyhow::Result<()> {
@@ -134,7 +146,8 @@ pub fn generate_key_objects_from_legacy(
     let vnk = network_keys_x25519_from_ed25519(legacy_keys.child_2_val_network.pri_key.to_owned())?;
     let validator_network_key = ConfigKey::new(vnk);
 
-    let fnk = network_keys_x25519_from_ed25519(legacy_keys.child_3_fullnode_network.pri_key.to_owned())?;
+    let fnk =
+        network_keys_x25519_from_ed25519(legacy_keys.child_3_fullnode_network.pri_key.to_owned())?;
 
     let full_node_network_key = ConfigKey::new(fnk);
 

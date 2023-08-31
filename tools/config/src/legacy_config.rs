@@ -1,4 +1,6 @@
 use anyhow::Context;
+use diem_crypto::{ed25519::Ed25519PrivateKey, ValidCryptoMaterialStringExt};
+use diem_types::chain_id::NamedChain;
 use libra_types::exports::Client;
 use libra_types::type_extensions::client_ext::ClientExt;
 use libra_types::{
@@ -8,8 +10,6 @@ use libra_types::{
 use libra_wallet::account_keys::{get_ol_legacy_address, AccountKeys};
 use std::path::PathBuf;
 use url::Url;
-use diem_crypto::{ed25519::Ed25519PrivateKey, ValidCryptoMaterialStringExt};
-use diem_types::chain_id::NamedChain;
 
 pub async fn wizard(
     force_authkey: Option<AuthenticationKey>,
@@ -36,12 +36,12 @@ pub async fn wizard(
     let mut np = match network_playlist {
         Some(a) => a,
         None => {
-          if let Some(u) = playlist_url {
-            NetworkPlaylist::from_url(u, chain_name)
-        } else {
-            NetworkPlaylist::default_for_network(chain_name)
-        }?
-      }
+            if let Some(u) = playlist_url {
+                NetworkPlaylist::from_url(u, chain_name)
+            } else {
+                NetworkPlaylist::default_for_network(chain_name)
+            }?
+        }
     };
 
     np.refresh_sync_status().await?;

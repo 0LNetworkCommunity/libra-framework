@@ -3,17 +3,17 @@
 use crate::helpers::mint_libra;
 use crate::upgrade_fixtures::fixtures_path;
 
-use libra_framework::release::ReleaseTarget;
-use std::path::PathBuf;
 use diem_forge::Swarm;
-use diem_smoke_test::smoke_test_environment::new_local_swarm_with_release;
 use diem_types::transaction::Script;
+use libra_framework::release::ReleaseTarget;
+use smoke_test::smoke_test_environment::new_local_swarm_with_release;
+use std::path::PathBuf;
 
+use diem_sdk::types::LocalAccount;
 use libra_cached_packages::libra_stdlib::{
     diem_governance_assert_can_resolve, diem_governance_ol_create_proposal_v2,
     diem_governance_ol_vote,
 };
-use diem_sdk::types::LocalAccount;
 
 // NOTE: These tests are deprecated in favor of the TXS tests for upgrades.
 // These tests should be kept here in case we need to debug the actual sending mechanisms outside of txs.
