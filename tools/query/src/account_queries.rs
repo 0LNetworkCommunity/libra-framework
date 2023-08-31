@@ -1,12 +1,11 @@
-
+use diem_sdk::{
+    rest_client::{diem_api_types::ViewRequest, Client},
+    types::account_address::AccountAddress,
+};
 use libra_types::{
     legacy_types::tower::TowerProofHistoryView,
     move_resource::gas_coin::SlowWalletBalance,
     type_extensions::client_ext::{entry_function_id, ClientExt},
-};
-use diem_sdk::{
-    rest_client::{diem_api_types::ViewRequest, Client},
-    types::account_address::AccountAddress,
 };
 /// helper to get libra balance at a SlowWalletBalance type which shows
 /// total balance and the unlocked balance.

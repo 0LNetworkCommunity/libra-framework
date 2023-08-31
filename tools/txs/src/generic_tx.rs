@@ -5,8 +5,8 @@ use diem_sdk::move_types::{
     transaction_argument::convert_txn_args,
 };
 
-use libra_types::util::parse_function_id;
 use diem_types::transaction::{EntryFunction, TransactionArgument, TransactionPayload};
+use libra_types::util::parse_function_id;
 
 use super::submit_transaction::Sender;
 

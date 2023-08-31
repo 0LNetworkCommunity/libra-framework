@@ -1,11 +1,11 @@
 use anyhow::Result;
+use diem_github_client::Client;
 use libra_wallet::{
     utils::to_yaml,
     validator_files::SetValidatorConfiguration,
     validator_files::{OPERATOR_FILE, OWNER_FILE},
 };
 use std::path::PathBuf;
-use diem_github_client::Client;
 
 // TODO: duplicate with libra-wallet and crate/aptos/src/genesis/keys
 pub const PUBLIC_KEYS_FILE: &str = "public-keys.yaml";

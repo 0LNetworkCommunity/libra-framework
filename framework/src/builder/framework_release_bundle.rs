@@ -1,8 +1,8 @@
 #![allow(clippy::needless_range_loop)]
-use move_model::{code_writer::CodeWriter, emit, emitln, model::Loc};
-use std::path::PathBuf;
 use diem_framework::ReleasePackage;
 use diem_types::account_address::AccountAddress;
+use move_model::{code_writer::CodeWriter, emit, emitln, model::Loc};
+use std::path::PathBuf;
 // /// A release bundle consists of a list of release packages.
 // #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 // pub struct ReleaseBundle {

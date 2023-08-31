@@ -1,5 +1,6 @@
 use std::{fs, path::PathBuf};
 
+use diem_types::chain_id::NamedChain;
 use libra_query::query_view;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_smoke_tests::upgrade_fixtures::fixtures_path;
@@ -7,7 +8,6 @@ use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Upgrade},
     txs_cli_upgrade::UpgradeTxs::{Propose, Resolve, Vote},
 };
-use diem_types::chain_id::NamedChain;
 
 /// Testing that we can upgrade the chain framework using txs tools.
 /// Note: We have another upgrade meta test in ./smoke-tests

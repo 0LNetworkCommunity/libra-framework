@@ -9,10 +9,10 @@ use anyhow::Context;
 use diem_types::transaction::Script;
 use diem_types::transaction::TransactionPayload;
 
+use diem_sdk::types::transaction::TransactionArgument;
 use libra_cached_packages::libra_stdlib::{
     diem_governance_ol_create_proposal_v2, diem_governance_ol_vote,
 };
-use diem_sdk::types::transaction::TransactionArgument;
 
 #[derive(clap::Subcommand)]
 pub enum UpgradeTxs {

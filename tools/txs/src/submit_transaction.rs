@@ -1,8 +1,5 @@
 use anyhow::{bail, Context};
-use diem::{
-    // account::key_rotation::lookup_address,
-    common::types::{CliConfig, ConfigSearchMode},
-};
+use diem::common::types::{CliConfig, ConfigSearchMode};
 use diem_logger::prelude::*;
 use diem_sdk::{
     crypto::{HashValue, PrivateKey},
@@ -22,7 +19,7 @@ use std::{
 use url::Url;
 
 use libra_types::{
-    exports::{Ed25519PrivateKey, AuthenticationKey},
+    exports::{AuthenticationKey, Ed25519PrivateKey},
     legacy_types::app_cfg::AppCfg,
     ol_progress::OLProgress,
     type_extensions::{
@@ -93,8 +90,9 @@ impl Sender {
             None => Client::default().await?,
         };
 
-        let address = client.lookup_originating_address(account_key.authentication_key())
-        .await?;
+        let address = client
+            .lookup_originating_address(account_key.authentication_key())
+            .await?;
         info!("using address {}", &address);
 
         let seq = client.get_sequence_number(address).await?;
@@ -112,7 +110,6 @@ impl Sender {
     pub async fn from_app_cfg(app_cfg: &AppCfg, profile: Option<String>) -> anyhow::Result<Self> {
         let profile = app_cfg.get_profile(profile)?;
 
-
         let key = match profile.borrow_private_key() {
             Ok(k) => k.to_owned(),
             _ => {
@@ -121,16 +118,15 @@ impl Sender {
             }
         };
 
-
         let temp_seq_num = 0;
 
         let auth_key = AuthenticationKey::ed25519(&key.public_key());
         let url = &app_cfg.pick_url(None)?;
         let client = Client::new(url.clone());
-        let address = client.lookup_originating_address(auth_key)
-          .await
-          .unwrap_or(profile.account);
-
+        let address = client
+            .lookup_originating_address(auth_key)
+            .await
+            .unwrap_or(profile.account);
 
         let mut local_account = LocalAccount::new(address, key, temp_seq_num);
         let seq_num = local_account.sequence_number_mut();
@@ -139,8 +135,10 @@ impl Sender {
         let chain_id = match client.get_index().await {
             Ok(metadata) => {
                 // update sequence number
-                *seq_num = client.get_sequence_number(address).await
-                  .context("failed to get sequence number")?;
+                *seq_num = client
+                    .get_sequence_number(address)
+                    .await
+                    .context("failed to get sequence number")?;
                 ChainId::new(metadata.into_inner().chain_id)
             }
             Err(_) => bail!("cannot connect to client at {:?}", &url),

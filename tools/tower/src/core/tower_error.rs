@@ -1,8 +1,8 @@
 //! TowerError
 
+use diem_sdk::types::transaction::ExecutionStatus;
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use diem_sdk::types::transaction::ExecutionStatus;
 
 /// Common errors in Tower transaction submission
 #[derive(Debug, Serialize, Deserialize)]

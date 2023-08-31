@@ -1,7 +1,6 @@
 use crate::GLOBAL_CONFIG_DIRECTORY_0L;
 // use super::global_config_ext::GlobalConfigExt;
 use anyhow::{anyhow, bail, Result};
-use std::path::PathBuf;
 use diem::{
     common::{
         types::{
@@ -12,6 +11,7 @@ use diem::{
     // config::GlobalConfig,
     genesis::git::from_yaml,
 };
+use std::path::PathBuf;
 
 const CONFIG_FILE: &str = "config.yaml";
 const LEGACY_CONFIG_FILE: &str = "config.yml";
