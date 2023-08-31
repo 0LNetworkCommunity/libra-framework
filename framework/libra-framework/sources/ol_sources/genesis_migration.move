@@ -50,7 +50,8 @@ module ol_framework::genesis_migration {
       return
     };
 
-    // Genesis validators receive a minimal bootstrap mint, to do network operations. If the user has a balance to migrate, then the balance is net of this amount.
+    // Genesis validators should not receive ANY coins from MINT during testing, testnet, nor mainnet up to this point.
+    // they will receive some from the infra escrow.
     let genesis_balance = coin::balance<GasCoin>(user_addr);
 
     assert!(expected_initial_balance >= genesis_balance, error::invalid_state(EGENESIS_BALANCE_TOO_HIGH));
@@ -62,6 +63,8 @@ module ol_framework::genesis_migration {
     let new_balance = coin::balance<GasCoin>(user_addr);
 
     assert!(new_balance == expected_initial_balance, error::invalid_state(EBALANCE_MISMATCH));
+
+    // ok now we can withdraw from infra_escrow for validator
   }
 
   fun is_genesis_val(addr: address): bool {
