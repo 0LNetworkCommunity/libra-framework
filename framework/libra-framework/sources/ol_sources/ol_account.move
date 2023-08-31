@@ -41,10 +41,6 @@ module ol_framework::ol_account {
     const ECANT_MATCH_ADDRESS_IN_LOOKUP: u64 = 7;
 
 
-    // const BOOTSTRAP_GAS_COIN_AMOUNT: u64 = 1000000;
-
-
-
 
     /// Configuration for whether an account can receive direct transfers of coins that they have not registered.
     ///
@@ -59,26 +55,6 @@ module ol_framework::ol_account {
         new_allow_direct_transfers: bool,
     }
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Basic account creation methods.
-    ///////////////////////////////////////////////////////////////////////////
-
-    // /// Users with existsing accounts can onboard new accounts.
-    // // TODO: they must deposit 1 gas coin.
-    // public entry fun user_create_account(sender: &signer, auth_key: address) {
-    //     let sender_addr = signer::address_of(sender);
-    //     assert!(
-    //         !account::exists_at(auth_key),
-    //         error::invalid_argument(EACCOUNT_NOT_FOUND),
-    //     );
-
-    //     assert!(
-    //         (coin::balance<GasCoin>(sender_addr) > 2 * BOOTSTRAP_GAS_COIN_AMOUNT),
-    //         error::invalid_state(EINSUFFICIENT_BALANCE),
-    //     );
-
-    //     coin::transfer<GasCoin>(sender, auth_key, BOOTSTRAP_GAS_COIN_AMOUNT);
-    // }
 
     /// A wrapper to create a resource account and register it to receive GAS.
     public fun ol_create_resource_account(user: &signer, seed: vector<u8>): (signer, account::SignerCapability) {

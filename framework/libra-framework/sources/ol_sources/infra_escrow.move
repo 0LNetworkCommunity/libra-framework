@@ -21,6 +21,9 @@ module ol_framework::infra_escrow{
     use std::signer;
     // use diem_std::debug::print;
 
+    friend diem_framework::genesis_migration;
+    friend ol_framework::epoch_boundary;
+
     /// for use on genesis, creates the infra escrow pledge policy struct
     public fun initialize(vm: &signer) {
         system_addresses::assert_ol(vm);
@@ -34,14 +37,14 @@ module ol_framework::infra_escrow{
     }
 
     /// VM can call down pledged funds.
-    public fun infra_pledge_withdraw(vm: &signer, amount: u64): Option<coin::Coin<GasCoin>> {
+    fun infra_pledge_withdraw(vm: &signer, amount: u64): Option<coin::Coin<GasCoin>> {
         system_addresses::assert_ol(vm);
         pledge_accounts::withdraw_from_all_pledge_accounts(vm, amount)
     }
 
     /// Helper for epoch boundaries.
     /// Collects funds from pledge and places temporarily in network account (TransactionFee account)
-    public fun epoch_boundary_collection(root: &signer, amount: u64) {
+    public(friend) fun epoch_boundary_collection(root: &signer, amount: u64) {
         system_addresses::assert_ol(root);
         let opt = pledge_accounts::withdraw_from_all_pledge_accounts(root, amount);
 
@@ -93,6 +96,14 @@ module ol_framework::infra_escrow{
     /// gets the amount a user has pledged to infra escrow
     public fun infra_escrow_balance(): u64 {
       pledge_accounts::get_available_to_beneficiary(@ol_framework)
+    }
+
+    //////// TESTNET HELPERS ////////
+    public(friend) fun genesis_coin_validator(root: &signer, to: address) {
+      let c_opt = infra_pledge_withdraw(root, 1000000);
+      let coin = option::extract(&mut c_opt);
+      coin::deposit(to, coin);
+      option::destroy_none(c_opt);
     }
 
 }
