@@ -35,13 +35,9 @@ use diem_genesis::{
     config::{StringOperatorConfiguration, StringOwnerConfiguration, ValidatorConfiguration},
     GenesisInfo,
 };
-use diem_vm_genesis::{default_gas_schedule,
-  GenesisConfiguration as VmGenesisGenesisConfiguration // in vendor codethere are two structs separately called the same name with nearly identical fields
-};
 use diem_github_client::Client;
 use diem_types::account_address::AccountAddress;
 use diem_types::{
-    transaction::Transaction,
     account_address::AccountAddressWithChecks,
     on_chain_config::{OnChainConsensusConfig, OnChainExecutionConfig},
 };
@@ -170,42 +166,6 @@ pub fn build(
 
     OLProgress::complete("LFG, ready for genesis");
     Ok(vec![genesis_file, waypoint_file])
-}
-
-
-/// make genesis transaction from Github
-fn make_genesis_tx(
-  github_owner: String,
-  github_repository: String,
-  github_token: String,
-  use_local_framework: bool,
-  legacy_recovery: Option<&[LegacyRecovery]>,
-  // genesis_vals: &[Validator],
-  // framework_release: &ReleaseBundle,
-  chain_name: NamedChain,
-  supply_settings: &Option<SupplySettings>,
-  genesis_config: &VmGenesisGenesisConfiguration
-) -> anyhow::Result<Transaction>{
-    println!("\nfetching genesis info from github");
-    let gen_info = fetch_genesis_info(
-        github_owner,
-        github_repository,
-        github_token,
-        use_local_framework,
-        genesis_config,
-        &chain_name,
-    )?;
-
-    println!("building genesis block");
-        let tx = make_recovery_genesis_from_vec_legacy_recovery(
-            legacy_recovery,
-            &gen_info.validators,
-            &gen_info.framework,
-            gen_info.chain_id,
-            supply_settings.to_owned(),
-            &genesis_config,
-        )?;
-    Ok(tx)
 }
 
  /// there are two structs called GenesisConfiguration in Vendor code, sigh.
