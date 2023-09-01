@@ -2,7 +2,7 @@
 /// to synchronize configuration changes for the validators.
 module diem_framework::reconfiguration {
     use std::error;
-    use std::features;
+    // use std::features;
     use std::signer;
 
     use diem_framework::account;
@@ -12,8 +12,10 @@ module diem_framework::reconfiguration {
     use diem_framework::timestamp;
     use diem_framework::chain_status;
     use diem_framework::storage_gas;
-    use diem_framework::transaction_fee;
+    // use diem_framework::transaction_fee;
     use ol_framework::epoch_helper;
+
+    // use diem_std::debug::print;
 
     friend diem_framework::diem_governance;
     friend diem_framework::block;
@@ -105,11 +107,9 @@ module diem_framework::reconfiguration {
     /// Signal validators to start using new configuration. Must be called from friend config modules.
     public(friend) fun reconfigure() acquires Configuration {
         // Do not do anything if genesis has not finished.
-
         if (chain_status::is_genesis() || timestamp::now_microseconds() == 0 || !reconfiguration_enabled()) {
             return
         };
-
 
         let config_ref = borrow_global_mut<Configuration>(@diem_framework);
         let current_time = timestamp::now_microseconds();
@@ -133,17 +133,7 @@ module diem_framework::reconfiguration {
 
         // Reconfiguration "forces the block" to end, as mentioned above. Therefore, we must process the collected fees
         // explicitly so that staking can distribute them.
-        //
-        // This also handles the case when a validator is removed due to the governance proposal. In particular, removing
-        // the validator causes a reconfiguration. We explicitly process fees, i.e. we drain aggregatable coin and populate
-        // the fees table, prior to calling `on_new_epoch()`. That call, in turn, distributes transaction fees for all active
-        // and pending_inactive validators, which include any validator that is to be removed.
-        if (features::collect_and_distribute_gas_fees()) {
-            // All transactions after reconfiguration are Retry. Therefore, when the next
-            // block starts and tries to assign/burn collected fees it will be just 0 and
-            // nothing will be assigned.
-            transaction_fee::process_collected_fees();
-        };
+        // transaction_fee::process_collected_fees();
 
         // Call stake to compute the new validator set and distribute rewards and transaction fees.
         stake::on_new_epoch();
@@ -211,7 +201,7 @@ module diem_framework::reconfiguration {
     // This is used together with stake::end_epoch() for testing with last_reconfiguration_time
     // It must be called each time an epoch changes
     #[test_only]
-    public fun reconfigure_for_test_custom() acquires Configuration {
+    public fun test_helper_increment_epoch_dont_reconfigure() acquires Configuration {
         let config_ref = borrow_global_mut<Configuration>(@diem_framework);
         let current_time = timestamp::now_microseconds();
         if (current_time == config_ref.last_reconfiguration_time) {

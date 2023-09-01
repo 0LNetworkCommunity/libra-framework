@@ -190,7 +190,7 @@ module diem_framework::transaction_fee {
         pay_fee_impl(fee);
     }
 
-    /// root account will pay a fee on behalf of someone.
+    /// root account will pay a fee on behalf of a user account.
     // if VM is not going to track the tx it will just add a system address here
     public fun vm_pay_fee(sender: &signer, account: address, fee: Coin<GasCoin>) acquires CollectedFeesPerBlock {
       // Need to track who is making payments to Fee Maker

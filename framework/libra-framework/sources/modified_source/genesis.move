@@ -40,6 +40,7 @@ module diem_framework::genesis {
     use ol_framework::epoch_helper;
     use ol_framework::burn;
     use ol_framework::fee_maker;
+    use ol_framework::oracle;
 
     const TESTNET_GENESIS_BOOTSTRAP_COIN: u64 = 10000000000; //10,000 coins with 6 digits precision: 10B coins.
     //////// end 0L ////////
@@ -292,6 +293,7 @@ module diem_framework::genesis {
             i = i + 1;
         };
 
+        musical_chairs::initialize(diem_framework, num_validators);
 
 
         // Destroy the diem framework account's ability to mint coins now that we're done with setting up the initial
@@ -323,6 +325,8 @@ module diem_framework::genesis {
 
             i = i + 1;
         };
+
+        musical_chairs::initialize(diem_framework, num_validators);
 
         stake::on_new_epoch();
 

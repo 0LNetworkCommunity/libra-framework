@@ -18,8 +18,15 @@ module ol_framework::mock {
   use ol_framework::gas_coin::{Self, GasCoin};
   use diem_framework::transaction_fee;
   use ol_framework::ol_account;
-  // #[test_only]
+  use ol_framework::tower_state;
+  use ol_framework::vdf_fixtures;
+  use ol_framework::epoch_helper;
+  use ol_framework::musical_chairs;
+  // use diem_framework::chain_status;
   // use diem_std::debug::print;
+
+  // const ENO_GENESIS_END_MARKER: u64 = 1;
+  const EDID_NOT_ADVANCE_EPOCH: u64 = 1;
 
   #[test_only]
   public fun reset_val_perf_one(vm: &signer, addr: address) {
@@ -71,6 +78,26 @@ module ol_framework::mock {
 
     }
 
+    //////// TOWER ///////
+    #[test_only]
+    public fun tower_default() {
+      let vals = stake::get_current_validators();
+
+      let i = 0;
+      while (i < vector::length(&vals)) {
+
+        let addr = vector::borrow(&vals, i);
+        tower_state::test_helper_init_val(
+            &account::create_signer_for_test(*addr),
+            vdf_fixtures::weso_alice_0_easy_chal(),
+            vdf_fixtures::weso_alice_0_easy_sol(),
+            vdf_fixtures::easy_difficulty(),
+            vdf_fixtures::security_weso(),
+        );
+        i = i + 1;
+      };
+    }
+
     //////// PROOF OF FEE ////////
     #[test_only]
     public fun pof_default(): (vector<address>, vector<u64>, vector<u64>){
@@ -120,6 +147,7 @@ module ol_framework::mock {
     public fun ol_test_genesis(root: &signer) {
       system_addresses::assert_ol(root);
       genesis::setup();
+      genesis::test_end_genesis(root);
     }
 
     #[test_only]
@@ -191,6 +219,10 @@ module ol_framework::mock {
       system_addresses::assert_ol(root);
       let framework_sig = account::create_signer_for_test(@diem_framework);
       ol_test_genesis(&framework_sig);
+      // need to initialize musical chairs separate from genesis.
+      let musical_chairs_default_seats = 10;
+      musical_chairs::initialize(root, musical_chairs_default_seats);
+
 
       let val_addr = personas();
       let i = 0;
@@ -212,9 +244,6 @@ module ol_framework::mock {
         i = i + 1;
       };
 
-
-      genesis::test_end_genesis(&framework_sig);
-
       stake::get_current_validators()
     }
 
@@ -228,9 +257,11 @@ module ol_framework::mock {
     // the reconfiguration module must run last, since no other
     // transactions or operations can happen after the reconfig.
     public fun trigger_epoch(root: &signer) {
+        let old_epoch = epoch_helper::get_current_epoch();
         epoch_boundary::ol_reconfigure_for_test(root, reconfiguration::get_current_epoch());
         timestamp::fast_forward_seconds(EPOCH_DURATION);
-        reconfiguration::reconfigure_for_test_custom();
+        reconfiguration::reconfigure_for_test();
+        assert!(epoch_helper::get_current_epoch() > old_epoch, EDID_NOT_ADVANCE_EPOCH);
     }
 
   //   // function to deposit into network fee account
@@ -248,6 +279,7 @@ module ol_framework::mock {
   /// test we can trigger an epoch reconfiguration.
   public fun meta_epoch(root: signer) {
     ol_test_genesis(&root);
+    musical_chairs::initialize(&root, 10);
     ol_initialize_coin(&root);
     let epoch = reconfiguration::current_epoch();
     trigger_epoch(&root);

@@ -119,7 +119,7 @@ module ol_framework::jail {
       error::invalid_state(EVALIDATOR_CONFIG),
     );
     let voucher = signer::address_of(sender);
-    let buddies = vouch::buddies_in_set(addr);
+    let buddies = vouch::buddies_in_validator_set(addr);
     let (is_found, _idx) = vector::index_of(&buddies, &voucher);
     assert!(is_found, 100103);
 
