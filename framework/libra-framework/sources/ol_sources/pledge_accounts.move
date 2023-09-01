@@ -235,7 +235,7 @@
 
 
 
-            if (amount_available < 1) {
+            if (amount_available == 0 || amount == 0) {
               return option::none<coin::Coin<GasCoin>>()
             };
 
@@ -336,10 +336,13 @@
 
               let pledge_account = vector::borrow_mut(&mut pledge_state.list, idx);
 
+              if (pledge_account.amount == 0) {
+                return option::none<coin::Coin<GasCoin>>()
+              };
+
               let amount_withdraw = fixed_point32::multiply_u64(pledge_account.amount, *pct);
 
               if (
-                pledge_account.amount > 0 &&
                 pledge_account.amount >= amount_withdraw
 
                 ) {
