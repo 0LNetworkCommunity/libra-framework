@@ -7,7 +7,7 @@ use libra_types::type_extensions::client_ext::ClientExt;
 
 use std::path::PathBuf;
 use std::str::FromStr;
-use zapatos::common::types::MovePackageDir;
+use diem::common::types::MovePackageDir;
 /// Testing that a smart contract can be published. It should be possible for:
 /// 1) the genesis validator to build and publish a fixture Move module ("tests/fixtures/test_publish").
 /// 2) any account should be able to change state on that contract.

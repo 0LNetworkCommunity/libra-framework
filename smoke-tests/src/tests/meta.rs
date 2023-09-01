@@ -1,6 +1,6 @@
 use libra_framework::release::ReleaseTarget;
-use zapatos_forge::Swarm;
-use zapatos_smoke_test::smoke_test_environment::new_local_swarm_with_release;
+use diem_forge::Swarm;
+use diem_smoke_test::smoke_test_environment::new_local_swarm_with_release;
 
 use crate::libra_smoke::LibraSmoke;
 

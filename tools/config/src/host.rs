@@ -1,12 +1,13 @@
-use crate::node_yaml;
+use crate::{legacy_config, node_yaml};
 use dialoguer::{Confirm, Input};
 use libra_types::legacy_types::mode_ol::MODE_0L;
+use libra_types::legacy_types::network_playlist::NetworkPlaylist;
 use libra_types::ol_progress::OLProgress;
 use libra_wallet::validator_files::SetValidatorConfiguration;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
-use zapatos_genesis::config::HostAndPort;
-use zapatos_types::chain_id::NamedChain;
+use diem_genesis::config::HostAndPort;
+use diem_types::chain_id::NamedChain;
 
 pub fn initialize_host(
     home_path: Option<PathBuf>,
@@ -15,17 +16,34 @@ pub fn initialize_host(
     mnem: Option<String>,
     keep_legacy_address: bool,
 ) -> anyhow::Result<()> {
-    libra_wallet::keys::refresh_validator_files(mnem, home_path.clone(), keep_legacy_address)?;
+    let (.., keys) =
+        libra_wallet::keys::refresh_validator_files(mnem, home_path.clone(), keep_legacy_address)?;
     OLProgress::complete("Initialized validator key files");
 
+    // TODO: set validator fullnode configs. Not NONE
     let effective_username = username.unwrap_or("default_username"); // Use default if None
-                                                                     // TODO: set validator fullnode configs. Not NONE
     SetValidatorConfiguration::new(home_path.clone(), effective_username.to_owned(), host, None)
         .set_config_files()?;
     OLProgress::complete("Saved genesis registration files locally");
 
-    node_yaml::save_validator_yaml(home_path)?;
+    node_yaml::save_validator_yaml(home_path.clone())?;
     OLProgress::complete("Saved validator node yaml file locally");
+
+    // also for convenience create a local user libra.yaml file so the
+    // validator can make transactions against the localhost
+    tokio::task::spawn_blocking(move || {
+        legacy_config::wizard(
+            Some(keys.child_0_owner.auth_key),
+            Some(keys.child_0_owner.account),
+            home_path,
+            None,
+            None,
+            None,
+            Some(NetworkPlaylist::localhost(None))
+        )
+    });
+    OLProgress::complete("Saved a user libra.yaml file locally");
+
     Ok(())
 }
 

@@ -9,10 +9,10 @@ use anyhow::Result;
 use serde::Serialize;
 use std::path::Path;
 use std::str::FromStr;
-use zapatos_crypto::ed25519::Ed25519PrivateKey;
-use zapatos_crypto::PrivateKey;
-use zapatos_types::account_address::AccountAddress;
-use zapatos_types::transaction::authenticator::AuthenticationKey;
+use diem_crypto::ed25519::Ed25519PrivateKey;
+use diem_crypto::PrivateKey;
+use diem_types::account_address::AccountAddress;
+use diem_types::transaction::authenticator::AuthenticationKey;
 
 #[derive(Serialize)]
 /// A Struct to store ALL the legacy keys for storage.
@@ -35,7 +35,7 @@ pub struct KeyChain {
     pub child_5_executor: AccountKeys,
 }
 
-/// The AccountAddress and AuthenticationKey are zapatos structs, they have the same NAME in the diem_types crate. So we need to cast them into usuable structs.
+/// The AccountAddress and AuthenticationKey are diem structs, they have the same NAME in the diem_types crate. So we need to cast them into usuable structs.
 #[derive(Serialize)]
 pub struct AccountKeys {
     // TODO: change this to use vendor AccountKey
@@ -171,8 +171,8 @@ fn type_conversion_give_same_auth_and_address() {
     assert!(auth_key.to_string() == l.child_0_owner.auth_key.to_string());
 
     // Check the vendor ConfigKey struct is the same.
-    use zapatos_config::keys::ConfigKey;
-    use zapatos_crypto::ed25519::Ed25519PrivateKey;
+    use diem_config::keys::ConfigKey;
+    use diem_crypto::ed25519::Ed25519PrivateKey;
 
     let cfg_key: ConfigKey<Ed25519PrivateKey> = ConfigKey::new(l.child_0_owner.pri_key);
     let auth_key_from_cfg = AuthenticationKey::ed25519(&cfg_key.public_key()).derived_address();

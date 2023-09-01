@@ -4,13 +4,13 @@ use libra_types::exports::AccountAddress;
 use libra_types::exports::AuthenticationKey;
 use libra_types::legacy_types::mode_ol::MODE_0L;
 use std::{env, process::exit};
-use zapatos_types::chain_id::NamedChain;
+use diem_types::chain_id::NamedChain;
 
 /// Get authkey and account from mnemonic
 pub fn get_account_from_mnem(
     mnemonic_string: String,
 ) -> Result<(AuthenticationKey, AccountAddress, WalletLibrary), anyhow::Error> {
-    let mut wallet = WalletLibrary::new_from_mnemonic(Mnemonic::from(&mnemonic_string)?);
+    let mut wallet = WalletLibrary::new_from_mnemonic(Mnemonic::from(&mnemonic_string.trim())?);
     let (auth_key, _) = wallet.new_address()?;
     let account = auth_key.derived_address();
     Ok((auth_key, account, wallet))

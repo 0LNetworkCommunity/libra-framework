@@ -23,6 +23,6 @@ libra-txs = { workspace = true }
 libra-types = { workspace = true }
 libra-wallet = { workspace = true }
 
-zapatos = { workspace = true }
-zapatos-config = { workspace = true }
-zapatos-node = { workspace = true }
+diem = { workspace = true }
+diem-config = { workspace = true }
+diem-node = { workspace = true }

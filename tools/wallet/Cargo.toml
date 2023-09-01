@@ -33,10 +33,10 @@ tokio = { workspace = true }
 
 libra-types = { workspace = true }
 
-zapatos-types = { workspace = true }
-zapatos-crypto = { workspace = true }
-zapatos-genesis = { workspace = true }
-zapatos-config = { workspace = true }
+diem-types = { workspace = true }
+diem-crypto = { workspace = true }
+diem-genesis = { workspace = true }
+diem-config = { workspace = true }
 
 
 

@@ -1,6 +1,6 @@
 use crate::GLOBAL_CONFIG_DIRECTORY_0L;
 use std::path::PathBuf;
-use zapatos::{
+use diem::{
     common::{
         types::{CliError, CliTypedResult, ConfigSearchMode},
         utils::{current_dir, read_from_file},

@@ -2,7 +2,7 @@ use crate::GLOBAL_CONFIG_DIRECTORY_0L;
 // use super::global_config_ext::GlobalConfigExt;
 use anyhow::{anyhow, bail, Result};
 use std::path::PathBuf;
-use zapatos::{
+use diem::{
     common::{
         types::{
             CliConfig, CliError, CliTypedResult, ConfigSearchMode, ProfileConfig, DEFAULT_PROFILE,
