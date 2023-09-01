@@ -35,6 +35,9 @@ use diem_genesis::{
     config::{StringOperatorConfiguration, StringOwnerConfiguration, ValidatorConfiguration},
     GenesisInfo,
 };
+use diem_vm_genesis::{default_gas_schedule,
+  GenesisConfiguration as VmGenesisGenesisConfiguration // in vendor codethere are two structs separately called the same name with nearly identical fields
+};
 use diem_github_client::Client;
 use diem_types::account_address::AccountAddress;
 use diem_types::{
