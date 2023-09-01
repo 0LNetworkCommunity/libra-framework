@@ -8,9 +8,9 @@ use libra_types::{
     ol_progress::OLProgress,
 };
 use move_core_types::value::{serialize_values, MoveValue};
-use diem_types::account_config::CORE_CODE_ADDRESS;
-use diem_vm::move_vm_ext::SessionExt;
-use diem_vm_genesis::exec_function;
+use zapatos_types::account_config::CORE_CODE_ADDRESS;
+use zapatos_vm::move_vm_ext::SessionExt;
+use zapatos_vm_genesis::exec_function;
 
 pub fn genesis_migrate_all_users(
     session: &mut SessionExt,

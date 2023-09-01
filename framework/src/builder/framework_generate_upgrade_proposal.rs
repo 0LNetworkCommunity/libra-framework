@@ -3,9 +3,9 @@
 
 use anyhow::{ensure, Context, Result};
 use std::path::{Path, PathBuf};
-use diem_crypto::HashValue;
-use diem_framework::{BuildOptions, BuiltPackage, ReleasePackage};
-use diem_types::account_address::AccountAddress;
+use zapatos_crypto::HashValue;
+use zapatos_framework::{BuildOptions, BuiltPackage, ReleasePackage};
+use zapatos_types::account_address::AccountAddress;
 // use serde::{Serialize, Deserialize};
 use crate::builder::framework_release_bundle::libra_author_script_file;
 
@@ -47,7 +47,7 @@ pub fn make_framework_upgrade_artifacts(
     // TODO: we are not using these formatted files now that we are saving them directly
     let mut formatted_scripts: Vec<(String, String)> = vec![];
 
-    // let commit_info = diem_build_info::get_git_hash();
+    // let commit_info = zapatos_build_info::get_git_hash();
 
     // For generating multi-step proposal files, we need to generate them in the reverse order since
     // we need the hash of the next script.
@@ -150,6 +150,7 @@ pub fn write_to_file(result: Vec<(String, String)>, proposal_dir: PathBuf) -> an
     }
     Ok(())
 }
+// /Users/lucas/code/rust/zapatos/crates/diem/src/move_tool/mod.rs
 /// Need to create a dummy package so that we can build the script into bytecode
 /// so that we can then get the hash of the script.
 /// ... so that we can then submit it as part of a proposal framework/libra-framework/sources/modified_source/diem_governance.move
@@ -162,7 +163,7 @@ pub fn init_move_dir_wrapper(
     framework_local_dir: PathBuf,
 ) -> anyhow::Result<()> {
     println!("creating package directory for .move scripts");
-    diem::move_tool::init_move_dir_generic(
+    zapatos::move_tool::init_move_dir_generic(
         &package_dir,
         script_name,
         "LibraFramework".to_string(),
