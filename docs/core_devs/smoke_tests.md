@@ -14,7 +14,7 @@ Don't add functionality tests in this module. The tests here are meta tests to s
 ## How to run tests
 
 ### Node Binary
-Any tests that depend on `libra-smoke-tests` will require that there is a compiled version of `zapatos-node` locally.
+Any tests that depend on `libra-smoke-tests` will require that there is a compiled version of `diem-node` locally.
 
 For the tests to find the binary's path an environment variable must be set `ZAPATOS_BIN_PATH`
 
