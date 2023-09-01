@@ -101,7 +101,7 @@ module ol_framework::infra_escrow{
     //////// TESTNET HELPERS ////////
     public(friend) fun genesis_coin_validator(root: &signer, to: address) {
       let bootstrap_amount = 1000000;
-        if (infra_escrow_balance() > bootstrap_amount) {
+      if (infra_escrow_balance() > bootstrap_amount) {
         let c_opt = infra_pledge_withdraw(root, bootstrap_amount);
         let coin = option::extract(&mut c_opt);
         coin::deposit(to, coin);
