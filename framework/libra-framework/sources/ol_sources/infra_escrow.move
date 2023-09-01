@@ -103,8 +103,13 @@ module ol_framework::infra_escrow{
       if (infra_escrow_balance() > bootstrap_amount) {
         let c_opt = infra_pledge_withdraw(root, bootstrap_amount);
         let coin = option::extract(&mut c_opt);
-        coin::deposit(to, coin);
+        if (coin::value(&coin) > 0) {
+          coin::deposit(to, coin);
+        } else {
+          coin::destroy_zero(coin);
+        };
         option::destroy_none(c_opt);
+
       }
     }
 
