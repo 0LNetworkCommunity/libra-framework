@@ -60,12 +60,12 @@ module ol_framework::infra_escrow{
     /// for an uprade using an escrow percent. Only to be called at genesis
     // escrow percent has 6 decimal precision (1m);
     public fun fork_escrow_init(vm: &signer, user_sig: &signer, escrow_pct: u64) {
-        system_addresses::assert_ol(vm);
-        let user_addr = signer::address_of(user_sig);
-      // // establish the infrastructure escrow pledge
-      // if (is_validator) {
-        let escrow_pct = fixed_point32::create_from_rational(escrow_pct, 1000000);
-      //   // TODO: get locked amount
+      system_addresses::assert_ol(vm);
+      let user_addr = signer::address_of(user_sig);
+      // establish the infrastructure escrow pledge
+
+      let escrow_pct = fixed_point32::create_from_rational(escrow_pct, 1000000);
+
       let (unlocked, total) = slow_wallet::balance(user_addr);
 
       let locked = 0;
