@@ -8,7 +8,7 @@ use url::Url;
 use diem_crypto::traits::ValidCryptoMaterialStringExt;
 use diem_forge::{LocalSwarm, Node, Swarm};
 use diem_sdk::types::LocalAccount;
-use diem_smoke_test::smoke_test_environment;
+use smoke_test::smoke_test_environment;
 
 use crate::helpers;
 
