@@ -329,13 +329,12 @@ pub fn mint_genesis_bootstrap_coin(session: &mut SessionExt, validators: &[Valid
           let serialized_values = serialize_values(&vec![
           MoveValue::Signer(CORE_CODE_ADDRESS),
           MoveValue::Address(v.owner_address),
-          MoveValue::U64(1_000_000),
       ]);
 
         exec_function(
             session,
-            "gas_coin",
-            "mint_to_impl",
+            "infra_escrow",
+            "genesis_coin_validator",
             vec![],
             serialized_values,
         );

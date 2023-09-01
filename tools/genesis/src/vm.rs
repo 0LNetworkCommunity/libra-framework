@@ -146,11 +146,10 @@ pub fn encode_genesis_change_set(
     // need to ajust for rounding issues from target supply
     rounding_mint(&mut session, supply_settings);
 
-    // // TODO: make this only run in test scenarios.
-    // // add some coins in each validator account.
-    // if chain_id != ChainId::new(1) || option_env!("LIBRA_CI").is_some() {
-    //   mint_genesis_bootstrap_coin(&mut session, validators);
-    // }
+    // add some coins in each validator account.
+    if chain_id != ChainId::new(1) || option_env!("LIBRA_CI").is_some() {
+      mint_genesis_bootstrap_coin(&mut session, validators);
+    }
 
 
     OLProgress::complete("initialized genesis validators");
