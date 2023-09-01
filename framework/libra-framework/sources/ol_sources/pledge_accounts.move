@@ -43,12 +43,14 @@
         use std::signer;
         use std::error;
         use std::option::{Self, Option};
-        use std::fixed_point32;
+        use std::fixed_point64;
         use ol_framework::gas_coin::GasCoin;
         use ol_framework::ol_account;
         use diem_framework::reconfiguration;
         use diem_framework::system_addresses;
         use diem_framework::coin;
+
+        // use diem_std::debug::print;
 
         /// no policy at this address
         const ENO_BENEFICIARY_POLICY: u64 = 1;
@@ -230,38 +232,34 @@
         // withdraw an amount from all pledge accounts. Check first that there are remaining funds before attempting to withdraw.
         public fun withdraw_from_all_pledge_accounts(sig_beneficiary: &signer, amount: u64): option::Option<coin::Coin<GasCoin>> acquires MyPledges, BeneficiaryPolicy {
             let pledgers = *&borrow_global<BeneficiaryPolicy>(signer::address_of(sig_beneficiary)).pledgers;
-
             let amount_available = *&borrow_global<BeneficiaryPolicy>(signer::address_of(sig_beneficiary)).amount_available;
 
-
-
-            if (amount_available < 1) {
+            if (amount_available == 0 || amount == 0) {
               return option::none<coin::Coin<GasCoin>>()
             };
 
-            let pct_withdraw = fixed_point32::create_from_rational(amount, amount_available);
+            let pct_withdraw = fixed_point64::create_from_rational((amount as u128), (amount_available as u128));
 
             let address_of_beneficiary = signer::address_of(sig_beneficiary);
 
+
             let i = 0;
             let all_coins = option::none<coin::Coin<GasCoin>>();
-
             while (i < vector::length(&pledgers)) {
                 let pledge_account = *vector::borrow(&pledgers, i);
-
                 // DANGER: this is a private function that changes balances.
                 let c = withdraw_pct_from_one_pledge_account(&address_of_beneficiary, &pledge_account, &pct_withdraw);
-
-
-
                 // GROSS: dealing with options in Move.
                 // TODO: find a better way.
                 if (option::is_none(&all_coins) && option::is_some(&c)) {
+
                   let coin =  option::extract(&mut c);
                   option::fill(&mut all_coins, coin);
                   option::destroy_none(c);
                   // option::destroy_none(c);
+
                 } else if (option::is_some(&c)) {
+
                   let temp = option::extract(&mut all_coins);
                   let coin =  option::extract(&mut c);
                   coin::merge(&mut temp, coin);
@@ -327,39 +325,41 @@
         // this is to be used for funding,
         // but also for revoking a pledge
         // WARN: we must know there is a coin at this account before calling it.
-        fun withdraw_pct_from_one_pledge_account(address_of_beneficiary: &address, payer: &address, pct: &fixed_point32::FixedPoint32):Option<coin::Coin<GasCoin>> acquires MyPledges, BeneficiaryPolicy {
+        fun withdraw_pct_from_one_pledge_account(address_of_beneficiary: &address, payer: &address, pct: &fixed_point64::FixedPoint64):Option<coin::Coin<GasCoin>> acquires MyPledges, BeneficiaryPolicy {
 
             let (found, idx) = pledge_at_idx(payer, address_of_beneficiary);
+            if (!found) return option::none<coin::Coin<GasCoin>>(); // don't error on functions called by VM.
 
-            if (found) {
-              let pledge_state = borrow_global_mut<MyPledges>(*payer);
+            let pledge_state = borrow_global_mut<MyPledges>(*payer);
 
-              let pledge_account = vector::borrow_mut(&mut pledge_state.list, idx);
+            let pledge_account = vector::borrow_mut(&mut pledge_state.list, idx);
 
-              let amount_withdraw = fixed_point32::multiply_u64(pledge_account.amount, *pct);
+            let user_pledged_balance = (pledge_account.amount as u128);
 
-              if (
-                pledge_account.amount > 0 &&
-                pledge_account.amount >= amount_withdraw
-
-                ) {
-                  pledge_account.amount = pledge_account.amount - amount_withdraw;
-                  pledge_account.lifetime_withdrawn = pledge_account.lifetime_withdrawn + amount_withdraw;
-
-                  let coin = coin::extract(&mut pledge_account.pledge, amount_withdraw);
-
-                  // update the beneficiaries state too
-
-                  let bp = borrow_global_mut<BeneficiaryPolicy>(*address_of_beneficiary);
-
-                  bp.amount_available = bp.amount_available - amount_withdraw;
-
-                  bp.lifetime_withdrawn = bp.lifetime_withdrawn + amount_withdraw;
-
-                  return option::some(coin)
-                };
+            if (user_pledged_balance == 0) {
+              return option::none<coin::Coin<GasCoin>>()
             };
 
+
+            let amount_withdraw = fixed_point64::multiply_u128(user_pledged_balance, *pct);
+            if (user_pledged_balance >= amount_withdraw) {
+
+                let downcast_withdraw = (amount_withdraw as u64);
+                // update user pledge state
+                pledge_account.amount = pledge_account.amount - downcast_withdraw;
+                pledge_account.lifetime_withdrawn = pledge_account.lifetime_withdrawn + downcast_withdraw;
+
+                // update the beneficiaries state too
+
+                let bp = borrow_global_mut<BeneficiaryPolicy>(*address_of_beneficiary);
+
+                bp.amount_available = bp.amount_available - downcast_withdraw;
+
+                bp.lifetime_withdrawn = bp.lifetime_withdrawn + downcast_withdraw;
+
+                let coin = coin::extract(&mut pledge_account.pledge, downcast_withdraw);
+                return option::some(coin)
+              };
             option::none()
         }
 
@@ -428,13 +428,13 @@
         // does not change any state.
         fun tally_vote(address_of_beneficiary: address): bool acquires BeneficiaryPolicy {
             let bp = borrow_global<BeneficiaryPolicy>(address_of_beneficiary);
-            let amount_available = bp.amount_available;
-            let total_revoke_vote = bp.total_revoke_vote;
+            let amount_available = (bp.amount_available as u128);
+            let total_revoke_vote = (bp.total_revoke_vote as u128);
 
             // TODO: use FixedPoint here.
-            let ratio = fixed_point32::create_from_rational(total_revoke_vote, amount_available);
-            let pct = fixed_point32::multiply_u64(100, ratio);
-            if (pct > bp.vote_threshold_to_revoke) {
+            let ratio = fixed_point64::create_from_rational(total_revoke_vote, amount_available);
+            let pct = fixed_point64::multiply_u128(100, ratio);
+            if (pct > (bp.vote_threshold_to_revoke as u128)) {
                 return true
             };
             false
@@ -597,8 +597,8 @@
 
       #[view]
       /// list the revocation votes for a beneficiary
-      public fun get_revoke_vote(bene: address): (bool, fixed_point32::FixedPoint32) acquires BeneficiaryPolicy {
-        let null = fixed_point32::create_from_raw_value(0);
+      public fun get_revoke_vote(bene: address): (bool, fixed_point64::FixedPoint64) acquires BeneficiaryPolicy {
+        let null = fixed_point64::create_from_raw_value(0);
         if (exists<BeneficiaryPolicy>(bene)) {
           let bp = borrow_global<BeneficiaryPolicy>(bene);
           if (bp.revoked) {
@@ -609,7 +609,7 @@
           ) {
             return (
               false,
-              fixed_point32::create_from_rational(bp.total_revoke_vote, bp.amount_available)
+              fixed_point64::create_from_rational((bp.total_revoke_vote as u128), (bp.amount_available as u128))
             )
           }
         };
