@@ -150,8 +150,6 @@ module diem_framework::genesis {
         //////// 0L ////////
 
         validator_universe::initialize(&diem_framework_account);
-        //TODO!: genesis seats
-
         proof_of_fee::init_genesis_baseline_reward(&diem_framework_account);
         slow_wallet::initialize(&diem_framework_account);
         infra_escrow::initialize(&diem_framework_account);

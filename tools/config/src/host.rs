@@ -1,4 +1,5 @@
-use crate::node_yaml;
+
+use crate::{legacy_config, node_yaml};
 use anyhow::Context;
 use dialoguer::{Confirm, Input};
 use libra_types::legacy_types::app_cfg::AppCfg;
