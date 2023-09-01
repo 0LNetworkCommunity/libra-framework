@@ -36,3 +36,27 @@ stdlib:
 testnet: stdlib
 	LIBRA_CI=1 cargo r -- --c mainnet testnet -m ${PERSONA} -i 134.209.32.159 -i 174.138.92.116 -i 174.138.92.121
 	cargo r -p libra -- node
+
+ifndef ALICE_IP
+ALICE_IP = 134.209.32.159
+endif
+
+ifndef BOB_IP
+BOB_IP = 174.138.92.116
+endif
+
+ifndef CAROL_IP
+CAROL_IP = 174.138.92.121
+endif
+
+test-genesis:
+	LIBRA_CI=1 cargo r -- \
+	-c ${CHAIN} testnet \
+	-m ${PERSONA} \
+	-i ${ALICE_IP} \
+	-i ${BOB_IP} \
+	-i ${CAROL_IP} \
+	--target-supply ${TARGET_SUPPLY} \
+	--target-future-uses ${FUTURE_USES} \
+	--map-dd-to-slow 3A6C51A0B786D644590E8A21591FA8E2 \
+	--map-dd-to-slow 2B0E8325DEA5BE93D856CFDE2D0CBA12
