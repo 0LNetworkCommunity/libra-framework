@@ -151,8 +151,6 @@ module diem_framework::genesis {
 
         validator_universe::initialize(&diem_framework_account);
         //TODO!: genesis seats
-        let genesis_seats = 10;
-        musical_chairs::initialize(&diem_framework_account, genesis_seats);
         proof_of_fee::init_genesis_baseline_reward(&diem_framework_account);
         slow_wallet::initialize(&diem_framework_account);
         infra_escrow::initialize(&diem_framework_account);
@@ -163,6 +161,7 @@ module diem_framework::genesis {
         burn::initialize(&diem_framework_account);
         match_index::initialize(&diem_framework_account);
         fee_maker::initialize(&diem_framework_account);
+        oracle::initialize(&diem_framework_account);
 
         // end 0L
 
@@ -294,6 +293,8 @@ module diem_framework::genesis {
         };
 
         musical_chairs::initialize(diem_framework, num_validators);
+
+
 
 
         // Destroy the diem framework account's ability to mint coins now that we're done with setting up the initial
