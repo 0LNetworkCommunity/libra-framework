@@ -13,8 +13,8 @@ use libra_types::{
 use libra_wallet::account_keys::{get_keys_from_mnem, get_keys_from_prompt};
 use url::Url;
 
-use zapatos::common::types::MovePackageDir;
-use zapatos_sdk::{
+use diem::common::types::MovePackageDir;
+use diem_sdk::{
     // chain_id::{ChainId, NamedChain},
     crypto::{ed25519::Ed25519PrivateKey, ValidCryptoMaterialStringExt},
     rest_client::Client,

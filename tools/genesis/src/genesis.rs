@@ -6,12 +6,12 @@ use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use zapatos_framework::ReleaseBundle;
-use zapatos_types::{
+use diem_framework::ReleaseBundle;
+use diem_types::{
     chain_id::ChainId,
     transaction::{Transaction, WriteSetPayload},
 };
-use zapatos_vm_genesis::Validator;
+use diem_vm_genesis::Validator;
 /// Make a recovery genesis blob
 pub fn make_recovery_genesis_from_vec_legacy_recovery(
     recovery: Option<&[LegacyRecovery]>,
@@ -50,7 +50,7 @@ pub fn save_genesis(gen_tx: &Transaction, output_path: &PathBuf) -> Result<(), E
 
 fn test_basic_genesis() {
     use libra_framework::head_release_bundle;
-    use zapatos_vm_genesis::TestValidator;
+    use diem_vm_genesis::TestValidator;
     let test_validators = TestValidator::new_test_set(Some(4), Some(100_000_000));
     let validators: Vec<Validator> = test_validators.iter().map(|t| t.data.clone()).collect();
     make_recovery_genesis_from_vec_legacy_recovery(
@@ -67,11 +67,11 @@ fn test_basic_genesis() {
 fn test_recovery_genesis() {
     use crate::parse_json;
     use libra_framework::head_release_bundle;
-    use zapatos_types::{
+    use diem_types::{
         on_chain_config::OnChainConfig, on_chain_config::ValidatorSet,
         state_store::state_key::StateKey, write_set::TransactionWrite,
     };
-    use zapatos_vm_genesis::TestValidator;
+    use diem_vm_genesis::TestValidator;
 
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_end_user_single.json");

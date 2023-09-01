@@ -1,5 +1,5 @@
 use anyhow;
-use zapatos_api_types::TransactionOnChainData;
+use diem_api_types::TransactionOnChainData;
 
 #[derive(Debug)]
 /// a transaction error type specific to ol txs
