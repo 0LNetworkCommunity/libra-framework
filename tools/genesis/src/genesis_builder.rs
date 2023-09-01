@@ -1,6 +1,7 @@
 //! build the genesis file
 use crate::genesis::make_recovery_genesis_from_vec_legacy_recovery;
 use crate::supply::SupplySettings;
+
 use crate::wizard::DEFAULT_GIT_BRANCH;
 use crate::{compare, supply, vm};
 
@@ -15,31 +16,34 @@ use anyhow::{anyhow, bail, Context, Result};
 use indicatif::ProgressBar;
 
 use libra_framework::release;
+use libra_types::exports::ChainId;
 use libra_types::exports::NamedChain;
+use libra_types::legacy_types::fixtures::TestPersona;
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use libra_types::ol_progress::OLProgress;
-use libra_types::exports::ChainId;
+use libra_wallet::account_keys::get_keys_from_mnem;
+use libra_wallet::keys::generate_key_objects_from_legacy;
 use libra_wallet::utils::{check_if_file_exists, from_yaml, write_to_user_only_file};
 use serde::{Deserialize, Serialize};
 use diem_crypto::ed25519::ED25519_PUBLIC_KEY_LENGTH;
 use diem_crypto::ValidCryptoMaterialStringExt;
 use diem_crypto::{bls12381, ed25519::Ed25519PublicKey, ValidCryptoMaterial};
 use diem_framework::ReleaseBundle;
+use diem_genesis::config::HostAndPort;
 use diem_genesis::{
     builder::GenesisConfiguration,
-    config::{
-        StringOperatorConfiguration, StringOwnerConfiguration, ValidatorConfiguration,
-    },
+    config::{StringOperatorConfiguration, StringOwnerConfiguration, ValidatorConfiguration},
     GenesisInfo,
-};
-use diem_vm_genesis::{default_gas_schedule,
-  GenesisConfiguration as VmGenesisGenesisConfiguration // in vendor codethere are two structs separately called the same name with nearly identical fields
 };
 use diem_github_client::Client;
 use diem_types::account_address::AccountAddress;
 use diem_types::{
     account_address::AccountAddressWithChecks,
     on_chain_config::{OnChainConsensusConfig, OnChainExecutionConfig},
+};
+use diem_vm_genesis::{
+    default_gas_schedule,
+    GenesisConfiguration as VmGenesisGenesisConfiguration, // in vendor codethere are two structs separately called the same name with nearly identical fields
 };
 
 pub const LAYOUT_FILE: &str = "layout.yaml";
@@ -54,10 +58,11 @@ const GENESIS_FILE: &str = "genesis.blob";
 #[derive(Debug, Deserialize, Serialize)]
 struct LibraSimpleLayout {
     /// List of usernames or identifiers
-    pub users: Vec<String>
-
+    pub users: Vec<String>,
 }
 
+// TODO: too many arguments, minor infraction
+#[allow(clippy::too_many_arguments)]
 pub fn build(
     github_owner: String,
     github_repository: String,
@@ -66,7 +71,8 @@ pub fn build(
     use_local_framework: bool,
     legacy_recovery: Option<&[LegacyRecovery]>,
     supply_settings: Option<SupplySettings>,
-    chain_id: NamedChain,
+    chain_name: NamedChain,
+    testnet_vals: Option<Vec<ValidatorConfiguration>>,
 ) -> Result<Vec<PathBuf>> {
     let output_dir = home_path.join("genesis");
     std::fs::create_dir_all(&output_dir)?;
@@ -75,60 +81,74 @@ pub fn build(
     let waypoint_file = output_dir.join(WAYPOINT_FILE);
 
     // NOTE: export env LIBRA_CI=1 to avoid y/n prompt
-    check_if_file_exists(genesis_file.as_path())?;
-    check_if_file_exists(waypoint_file.as_path())?;
+    if testnet_vals.is_none() {
+        check_if_file_exists(genesis_file.as_path())?;
+        check_if_file_exists(waypoint_file.as_path())?;
+    }
 
-    let genesis_config = vm::libra_genesis_default(chain_id);
-    println!("\nfetching genesis info from github");
-    let mut gen_info = fetch_genesis_info(
-        github_owner,
-        github_repository,
-        github_token,
-        use_local_framework,
+    let genesis_config = vm::libra_genesis_default(chain_name);
+
+    let mut gen_info = if let Some(vals) = testnet_vals {
+        let dummy_root = Ed25519PublicKey::from_encoded_string(
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+        )
+        .expect("could not parse dummy root");
+
+        GenesisInfo::new(
+            ChainId::new(chain_name.id()),
+            dummy_root,
+            vals,
+            libra_framework::head_release_bundle(),
+            &silly_config(&genesis_config),
+        )?
+    } else {
+        fetch_genesis_info(
+            github_owner,
+            github_repository,
+            github_token,
+            use_local_framework,
+            &genesis_config,
+            &chain_name,
+        )?
+    };
+    println!("building genesis block");
+    let tx = make_recovery_genesis_from_vec_legacy_recovery(
+        legacy_recovery,
+        &gen_info.validators,
+        &gen_info.framework,
+        gen_info.chain_id,
+        supply_settings.clone(),
         &genesis_config,
-        &chain_id,
     )?;
 
-    // Generate genesis and waypoint files
-    {
-        println!("building genesis block");
-        let tx = make_recovery_genesis_from_vec_legacy_recovery(
-            legacy_recovery,
-            &gen_info.validators,
-            &gen_info.framework,
-            gen_info.chain_id,
-            supply_settings.clone(),
-            &genesis_config,
-        )?;
-        gen_info.genesis = Some(tx);
-        OLProgress::complete("genesis transaction encoded");
+    // NOTE: if genesis TX is not set, then it will run the vendor's release workflow, which we do not want.
+    gen_info.genesis = Some(tx);
+    OLProgress::complete("genesis transaction encoded");
 
-        // NOTE: if genesis TX is not set, then it will run the vendor's release workflow, which we do not want.
+    let pb = ProgressBar::new(1000)
+        .with_style(OLProgress::spinner())
+        .with_message("saving files");
+    pb.enable_steady_tick(Duration::from_millis(100));
 
-        let pb = ProgressBar::new(1000)
-            .with_style(OLProgress::spinner())
-            .with_message("saving files");
-        pb.enable_steady_tick(Duration::from_millis(100));
+    write_to_user_only_file(
+        genesis_file.as_path(),
+        GENESIS_FILE,
+        bcs::to_bytes(gen_info.get_genesis())?.as_slice(),
+    )?;
 
-        write_to_user_only_file(
-            genesis_file.as_path(),
-            GENESIS_FILE,
-            bcs::to_bytes(gen_info.get_genesis())?.as_slice(),
-        )?;
+    write_to_user_only_file(
+        waypoint_file.as_path(),
+        WAYPOINT_FILE,
+        gen_info.generate_waypoint()?.to_string().as_bytes(),
+    )?;
+    pb.finish_and_clear();
+    OLProgress::complete(&format!(
+        "genesis file saved to {}",
+        output_dir.to_str().unwrap()
+    ));
 
-        write_to_user_only_file(
-            waypoint_file.as_path(),
-            WAYPOINT_FILE,
-            gen_info.generate_waypoint()?.to_string().as_bytes(),
-        )?;
-        pb.finish_and_clear();
-        OLProgress::complete(&format!(
-            "genesis file saved to {}",
-            output_dir.to_str().unwrap()
-        ));
-
-        // (bcs::to_bytes(gen_info.get_genesis())?, gen_info.generate_waypoint()?, tx)
-    };
+    // (bcs::to_bytes(gen_info.get_genesis())?, gen_info.generate_waypoint()?, tx)
+    // };
 
     // Audits the generated genesis.blob comparing to the JSON input.
     if let Some(recovery) = legacy_recovery {
@@ -146,6 +166,28 @@ pub fn build(
 
     OLProgress::complete("LFG, ready for genesis");
     Ok(vec![genesis_file, waypoint_file])
+}
+
+ /// there are two structs called GenesisConfiguration in Vendor code, sigh.
+fn silly_config(cfg: &VmGenesisGenesisConfiguration) -> GenesisConfiguration {
+    GenesisConfiguration {
+        allow_new_validators: cfg.allow_new_validators,
+        epoch_duration_secs: cfg.epoch_duration_secs,
+        is_test: cfg.is_test,
+        min_stake: cfg.min_stake,
+        min_voting_threshold: cfg.min_voting_threshold,
+        max_stake: cfg.max_stake,
+        recurring_lockup_duration_secs: cfg.recurring_lockup_duration_secs,
+        required_proposer_stake: cfg.required_proposer_stake,
+        rewards_apy_percentage: cfg.rewards_apy_percentage,
+        voting_duration_secs: cfg.voting_duration_secs,
+        voting_power_increase_limit: cfg.voting_power_increase_limit,
+        employee_vesting_start: None,
+        employee_vesting_period_duration: None,
+        consensus_config: OnChainConsensusConfig::default(),
+        execution_config: OnChainExecutionConfig::default(),
+        gas_schedule: default_gas_schedule(),
+    }
 }
 
 /// Retrieves all information for mainnet genesis from the Git repository
@@ -196,24 +238,7 @@ pub fn fetch_genesis_info(
         dummy_root, // NOTE: neutered in caller and in Move code
         validators,
         framework,
-        &GenesisConfiguration { // TODO: there are two structs called GenesisConfiguration in Vendor code, sigh.
-            allow_new_validators: genesis_config.allow_new_validators,
-            epoch_duration_secs: genesis_config.epoch_duration_secs,
-            is_test: genesis_config.is_test,
-            min_stake: genesis_config.min_stake,
-            min_voting_threshold: genesis_config.min_voting_threshold,
-            max_stake: genesis_config.max_stake,
-            recurring_lockup_duration_secs: genesis_config.recurring_lockup_duration_secs,
-            required_proposer_stake: genesis_config.required_proposer_stake,
-            rewards_apy_percentage: genesis_config.rewards_apy_percentage,
-            voting_duration_secs: genesis_config.voting_duration_secs,
-            voting_power_increase_limit: genesis_config.voting_power_increase_limit,
-            employee_vesting_start: None,
-            employee_vesting_period_duration: None,
-            consensus_config: OnChainConsensusConfig::default(),
-            execution_config: OnChainExecutionConfig::default(),
-            gas_schedule: default_gas_schedule(),
-        },
+        &silly_config(genesis_config),
     )
 }
 
@@ -321,35 +346,12 @@ fn get_config(client: &Client, user: &str, _is_mainnet: bool) -> Result<Validato
     )?
     .unwrap_or(true);
 
-    // We don't require the operator file if the validator is not joining during genesis.
-    // if is_mainnet && !join_during_genesis {
-    //     return Ok(ValidatorConfiguration {
-    //         owner_account_address: owner_account_address.into(),
-    //         owner_account_public_key,
-    //         operator_account_address: operator_account_address.into(),
-    //         operator_account_public_key,
-    //         voter_account_address: voter_account_address.into(),
-    //         voter_account_public_key,
-    //         consensus_public_key: None,
-    //         proof_of_possession: None,
-    //         validator_network_public_key: None,
-    //         validator_host: None,
-    //         full_node_network_public_key: None,
-    //         full_node_host: None,
-    //         stake_amount,
-    //         commission_percentage,
-    //         join_during_genesis,
-    //     });
-    // };
-
     let operator_file = dir.join(OPERATOR_FILE);
     let operator_file = operator_file.as_path();
 
     let file = client.get_file(&Path::new(operator_file).display().to_string())?;
     let operator_config: StringOperatorConfiguration =
         from_yaml(&String::from_utf8(base64::decode(file)?)?)?;
-
-    // let operator_config = client.get::<StringOperatorConfiguration>(operator_file)?;
 
     // Check and convert fields in operator file
     let operator_account_address_from_file: AccountAddress = parse_required_option(
@@ -430,6 +432,33 @@ fn get_config(client: &Client, user: &str, _is_mainnet: bool) -> Result<Validato
     })
 }
 
+/// create validator configs from fixture mnemonics
+pub fn testnet_validator_config(
+    persona: &TestPersona,
+    host: &HostAndPort,
+) -> anyhow::Result<ValidatorConfiguration> {
+    let mnem = persona.get_persona_mnem();
+    let key_chain = get_keys_from_mnem(mnem)?;
+    let (_, _, _, public_identity) = generate_key_objects_from_legacy(&key_chain)?;
+
+    Ok(ValidatorConfiguration {
+        owner_account_address: public_identity.account_address.into(),
+        owner_account_public_key: public_identity.account_public_key.clone(),
+        operator_account_address: public_identity.account_address.into(),
+        operator_account_public_key: public_identity.account_public_key.clone(),
+        voter_account_address: public_identity.account_address.into(),
+        voter_account_public_key: public_identity.account_public_key,
+        consensus_public_key: public_identity.consensus_public_key,
+        proof_of_possession: public_identity.consensus_proof_of_possession,
+        validator_network_public_key: public_identity.validator_network_public_key,
+        validator_host: Some(host.to_owned()),
+        full_node_network_public_key: public_identity.full_node_network_public_key,
+        full_node_host: Some(host.to_owned()),
+        stake_amount: 1,
+        commission_percentage: 1,
+        join_during_genesis: true,
+    })
+}
 // TODO: Move into the Crypto libraries
 fn parse_key<T: ValidCryptoMaterial>(num_bytes: usize, str: &str) -> Result<T> {
     let num_chars: usize = num_bytes * 2;
@@ -512,6 +541,7 @@ fn parse_optional_option<F: Fn(&str) -> Result<T, E>, T, E: std::fmt::Display>(
 #[test]
 #[ignore] //dev helper
 fn test_github_info() {
+    use crate::vm::libra_genesis_default;
     let gh_token_path = libra_types::global_config_dir().join("github_token.txt");
     let token = std::fs::read_to_string(gh_token_path).unwrap();
 
@@ -520,6 +550,8 @@ fn test_github_info() {
         "a-genesis".to_string(),
         token,
         true,
+        &libra_genesis_default(NamedChain::TESTING),
+        &NamedChain::TESTING,
     )
     .unwrap();
 }
@@ -537,6 +569,8 @@ fn test_build() {
         home,
         true,
         None,
+        None,
+        NamedChain::TESTING,
         None,
     )
     .unwrap();

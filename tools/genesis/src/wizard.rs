@@ -140,7 +140,7 @@ impl GenesisWizard {
         if ready {
             // Get Legacy Recovery from file
             let legacy_recovery = if let Some(p) = legacy_recovery_path {
-                parse_json::parse(p)?
+                parse_json::recovery_file_parse(p)?
             } else {
                 vec![]
             };
@@ -153,7 +153,8 @@ impl GenesisWizard {
                 use_local_framework,
                 Some(&legacy_recovery),
                 supply_settings,
-                self.chain.clone(),
+                self.chain,
+                None,
             )?;
 
             for _ in (0..10)
@@ -415,6 +416,7 @@ fn test_wizard() {
         "0LNetworkCommunity".to_string(),
         "test_genesis".to_string(),
         None,
+        NamedChain::TESTING,
     );
     wizard.start_wizard(false, None, false, None).unwrap();
 }
@@ -426,6 +428,7 @@ fn test_register() {
         "0LNetworkCommunity".to_string(),
         "test_genesis".to_string(),
         None,
+        NamedChain::TESTING,
     );
     g.validator_address = "0xTEST".to_string();
     g.git_token_check().unwrap();

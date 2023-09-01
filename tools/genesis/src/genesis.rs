@@ -12,6 +12,12 @@ use diem_types::{
     transaction::{Transaction, WriteSetPayload},
 };
 use diem_vm_genesis::{GenesisConfiguration, Validator};
+
+#[cfg(test)]
+use crate::vm::libra_genesis_default;
+#[cfg(test)]
+use zapatos_types::chain_id::NamedChain;
+
 /// Make a recovery genesis blob
 pub fn make_recovery_genesis_from_vec_legacy_recovery(
     recovery: Option<&[LegacyRecovery]>,
@@ -60,6 +66,7 @@ fn test_basic_genesis() {
         &head_release_bundle(),
         ChainId::test(),
         None,
+        &libra_genesis_default(NamedChain::TESTING),
     )
     .unwrap();
 }
@@ -77,7 +84,7 @@ fn test_recovery_genesis() {
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_end_user_single.json");
 
-    let recovery = parse_json::parse(p).unwrap();
+    let recovery = parse_json::recovery_file_parse(p).unwrap();
 
     let test_validators = TestValidator::new_test_set(Some(4), Some(100_000_000));
     let validators: Vec<Validator> = test_validators.iter().map(|t| t.data.clone()).collect();
@@ -87,6 +94,7 @@ fn test_recovery_genesis() {
         &head_release_bundle(),
         ChainId::test(),
         None,
+        &libra_genesis_default(NamedChain::TESTING),
     )
     .unwrap();
 
