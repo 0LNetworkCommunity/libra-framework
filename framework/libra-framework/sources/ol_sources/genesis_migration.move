@@ -15,7 +15,7 @@ module ol_framework::genesis_migration {
   use ol_framework::gas_coin::GasCoin;
   use ol_framework::transaction_fee;
   use diem_framework::system_addresses;
-  use ol_framework::infra_escrow;
+  // use ol_framework::infra_escrow;
   // use diem_std::debug::print;
 
   /// the unexpected value of a converted balance
@@ -64,11 +64,6 @@ module ol_framework::genesis_migration {
     let new_balance = coin::balance<GasCoin>(user_addr);
 
     assert!(new_balance == expected_initial_balance, error::invalid_state(EBALANCE_MISMATCH));
-
-    // ok now we can withdraw from infra_escrow for validator
-    if (is_genesis_val(user_addr)) {
-      infra_escrow::genesis_coin_validator(vm,  user_addr);
-    }
 
   }
 
