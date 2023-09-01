@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use diem_sdk::types::transaction::ExecutionStatus;
+use zapatos_sdk::types::transaction::ExecutionStatus;
 
 /// Common errors in Tower transaction submission
 #[derive(Debug, Serialize, Deserialize)]
@@ -25,7 +25,7 @@ pub enum TowerError {
     OutOfGas,
     /// 130102 defined in TowerState.move
     WrongDifficulty,
-    /// 130108 defined in TowerState.move
+    /// 130108 defined in TowerState.move   
     TooManyProofs,
     /// 130109 defined in TowerState.move
     Discontinuity,

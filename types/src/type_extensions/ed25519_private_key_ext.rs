@@ -2,7 +2,7 @@ use super::client_ext::ClientExt;
 use anyhow::Result;
 use async_trait::async_trait;
 // use crate::type_extensions::client_ext::ClientExt;
-use diem_sdk::{
+use zapatos_sdk::{
     crypto::ed25519::Ed25519PrivateKey,
     rest_client::Client,
     types::{AccountKey, LocalAccount},
@@ -37,7 +37,7 @@ impl Ed25519PrivateKeyExt for Ed25519PrivateKey {
 #[cfg(test)]
 mod tests {
     use crate::type_extensions::ed25519_private_key_ext::Ed25519PrivateKeyExt;
-    use diem_sdk::crypto::{ed25519::Ed25519PrivateKey, ValidCryptoMaterialStringExt};
+    use zapatos_sdk::crypto::{ed25519::Ed25519PrivateKey, ValidCryptoMaterialStringExt};
 
     #[tokio::test]
     async fn create_local_account_from_private_key() {

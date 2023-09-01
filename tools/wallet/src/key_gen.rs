@@ -8,7 +8,7 @@ use indoc::formatdoc;
 // use ol_keys::wallet::get_account_from_mnem;
 use libra_types::exports::{AccountAddress, AuthenticationKey};
 use std::path::PathBuf;
-use diem_crypto::ed25519::{Ed25519PrivateKey, Ed25519PublicKey};
+use zapatos_crypto::ed25519::{Ed25519PrivateKey, Ed25519PublicKey};
 
 /// Genereates keys from WalletLibrary, updates a MinerConfig
 pub fn keygen() -> (AuthenticationKey, AccountAddress, WalletLibrary, String) {

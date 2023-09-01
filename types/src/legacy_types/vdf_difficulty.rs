@@ -15,7 +15,7 @@ use move_core_types::{
 
 use serde::{Deserialize, Serialize};
 
-use diem_types::account_config::CORE_CODE_ADDRESS;
+use zapatos_types::account_config::CORE_CODE_ADDRESS;
 
 /// difficulty of the VDF proof, for use as on-chain representation and in `tower`
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

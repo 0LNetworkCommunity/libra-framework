@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use clap::Parser;
 use libra_types::global_config_dir;
 use std::path::PathBuf;
-use diem_config::config::NodeConfig;
+use zapatos_config::config::NodeConfig;
 
 #[derive(Parser)]
 /// Start a libra node
@@ -28,7 +28,7 @@ impl NodeCli {
         })?;
 
         // Start the node
-        diem_node::start(config, None, true).expect("Node should start correctly");
+        zapatos_node::start(config, None, true).expect("Node should start correctly");
 
         Ok(())
     }

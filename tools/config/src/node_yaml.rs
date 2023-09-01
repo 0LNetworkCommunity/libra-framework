@@ -72,7 +72,7 @@ api:
 #[ignore] // TODO: not sure why this parsing is failing, when node can start with this file.
 fn test_yaml() {
     use libra_wallet::utils::from_yaml;
-    use diem_config::config::NodeConfig;
+    use zapatos_config::config::NodeConfig;
 
     let path = global_config_dir().join("test_yaml");
 

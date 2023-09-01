@@ -5,10 +5,10 @@ use libra_framework::release::ReleaseTarget;
 use libra_types::exports::AccountAddress;
 use libra_types::exports::Client;
 use url::Url;
-use diem_crypto::traits::ValidCryptoMaterialStringExt;
-use diem_forge::{LocalSwarm, Node, Swarm};
-use diem_sdk::types::LocalAccount;
-use diem_smoke_test::smoke_test_environment;
+use zapatos_crypto::traits::ValidCryptoMaterialStringExt;
+use zapatos_forge::{LocalSwarm, Node, Swarm};
+use zapatos_sdk::types::LocalAccount;
+use zapatos_smoke_test::smoke_test_environment;
 
 use crate::helpers;
 

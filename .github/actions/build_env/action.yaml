@@ -1,11 +1,6 @@
 runs:
   using: composite
   steps:
-    - name: unset sccache
-      shell: bash
-      # may be set by the calling script, but nothing will build
-      run: unset RUSTC_WRAPPER
-
     - name: free disk space
       uses: jlumbroso/free-disk-space@main
       with:
@@ -37,10 +32,6 @@ runs:
       shell: bash
       run: rustup component add rustfmt clippy
 
-    - name: install sccache
-      uses: baptiste0928/cargo-install@v2
-      with:
-        crate: sccache
 
     - name: checkout sources
       uses: actions/checkout@v3

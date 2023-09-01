@@ -17,11 +17,11 @@ libra-framework = { workspace = true }
 libra-types = { workspace = true }
 
 
-diem-forge = { workspace = true }
-diem-sdk = { workspace = true }
-smoke-test = { workspace = true }
-diem-types = { workspace = true }
-diem-crypto = { workspace = true }
+zapatos-forge = { workspace = true }
+zapatos-sdk = { workspace = true }
+zapatos-smoke-test = { workspace = true }
+zapatos-types = { workspace = true }
+zapatos-crypto = { workspace = true }
 
 [dev-dependencies]
 

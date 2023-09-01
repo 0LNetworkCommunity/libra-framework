@@ -6,7 +6,7 @@ use libra_cached_packages::libra_stdlib::EntryFunctionCall::{
     JailUnjailByVoucher, ProofOfFeePofRetractBid, ProofOfFeePofUpdateBid, VouchRevoke,
     VouchVouchFor,
 };
-use diem_types::account_address::AccountAddress;
+use zapatos_types::account_address::AccountAddress;
 
 #[derive(clap::Subcommand)]
 pub enum ValidatorTxs {

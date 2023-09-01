@@ -1,8 +1,8 @@
 #![allow(clippy::needless_range_loop)]
 use move_model::{code_writer::CodeWriter, emit, emitln, model::Loc};
 use std::path::PathBuf;
-use diem_framework::ReleasePackage;
-use diem_types::account_address::AccountAddress;
+use zapatos_framework::ReleasePackage;
+use zapatos_types::account_address::AccountAddress;
 // /// A release bundle consists of a list of release packages.
 // #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 // pub struct ReleaseBundle {
@@ -446,8 +446,8 @@ pub fn libra_author_script_file(
     emitln!(
         writer,
         "// Framework commit hash: {}\n// Builder commit hash: {}\n",
-        diem_build_info::get_git_hash(),
-        diem_build_info::get_git_hash(),
+        zapatos_build_info::get_git_hash(),
+        zapatos_build_info::get_git_hash(),
     );
     emitln!(
         writer,

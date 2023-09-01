@@ -1,14 +1,14 @@
 //! tools for publishing move package
 //!
 use anyhow::bail;
-use diem::{common::types::MovePackageDir, move_tool::MAX_PUBLISH_PACKAGE_SIZE};
-// use diem::common::types::CliError;
-// use diem::common::types::TransactionSummary;
-use diem_framework::{BuildOptions, BuiltPackage};
-// use diem::move_tool::PublishPackage;
+use zapatos::{common::types::MovePackageDir, move_tool::MAX_PUBLISH_PACKAGE_SIZE};
+// use zapatos::common::types::CliError;
+// use zapatos::common::types::TransactionSummary;
+use zapatos_framework::{BuildOptions, BuiltPackage};
+// use zapatos::move_tool::PublishPackage;
 // use libra_types::type_extensions::client_ext::TransactionOptions;
 
-use diem_types::transaction::TransactionPayload;
+use zapatos_types::transaction::TransactionPayload;
 
 /// build the move package and create a transaction payload.
 pub fn encode_publish_payload(move_options: &MovePackageDir) -> anyhow::Result<TransactionPayload> {

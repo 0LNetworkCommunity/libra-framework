@@ -1,10 +1,10 @@
-pub use diem_crypto::{
+pub use zapatos_crypto::{
     ed25519::{Ed25519PrivateKey, Ed25519PublicKey},
     test_utils::KeyPair,
     ValidCryptoMaterialStringExt,
 };
 
-pub use diem_types::{
+pub use zapatos_types::{
     account_address::AccountAddress,
     chain_id::{ChainId, NamedChain},
     event::EventKey,
@@ -12,13 +12,13 @@ pub use diem_types::{
     waypoint::Waypoint,
 };
 
-pub use diem_sdk::{
+pub use zapatos_sdk::{
     move_types::account_address::AccountAddressParseError,
     // bcs,
     rest_client::error::RestError,
     types::AccountKey,
 };
 
-pub use diem_rest_client::Client;
+pub use zapatos_rest_client::Client;
 
-pub use diem_api_types::IndexResponse;
+pub use zapatos_api_types::IndexResponse;

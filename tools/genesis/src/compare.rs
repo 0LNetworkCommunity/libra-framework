@@ -14,15 +14,15 @@ use libra_types::legacy_types::legacy_recovery::{read_from_recovery_file, Legacy
 use libra_types::move_resource::gas_coin::{GasCoinStoreResource, SlowWalletBalance};
 use libra_types::ol_progress::OLProgress;
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
-use diem_storage_interface::state_view::LatestDbStateCheckpointView;
-use diem_types::transaction::Transaction;
+use zapatos_storage_interface::state_view::LatestDbStateCheckpointView;
+use zapatos_types::transaction::Transaction;
 
 use indicatif::{ProgressBar, ProgressIterator};
 use std::path::PathBuf;
 use std::sync::Arc;
-use diem_state_view::account_with_state_view::AsAccountWithStateView;
-use diem_storage_interface::DbReader;
-use diem_types::account_view::AccountView;
+use zapatos_state_view::account_with_state_view::AsAccountWithStateView;
+use zapatos_storage_interface::DbReader;
+use zapatos_types::account_view::AccountView;
 
 #[derive(Debug)]
 /// struct for holding the results of a comparison

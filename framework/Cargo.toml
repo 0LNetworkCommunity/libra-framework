@@ -19,16 +19,16 @@ clap = { workspace = true }
 hex = { workspace = true }
 once_cell = { workspace = true }
 
-diem = { workspace = true }
-diem-build-info = { workspace = true }
-diem-crypto = { workspace = true }
-diem-framework = { workspace = true }
-diem-types = { workspace = true }
+zapatos = { workspace = true }
+zapatos-build-info = { workspace = true }
+zapatos-crypto = { workspace = true }
+zapatos-framework = { workspace = true }
+zapatos-types = { workspace = true }
 move-command-line-common = { workspace = true }
 move-model = { workspace = true }
 
 [build-dependencies]
-diem-framework = { workspace = true }
+zapatos-framework = { workspace = true }
 
 
 

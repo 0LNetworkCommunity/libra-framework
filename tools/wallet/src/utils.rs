@@ -14,7 +14,7 @@ use std::{
     // os::unix::fs::OpenOptionsExt,
     path::{Path, PathBuf},
 };
-use diem_genesis::keys::PublicIdentity;
+use zapatos_genesis::keys::PublicIdentity;
 
 /// A common result to be returned to users
 pub type CliResult = Result<String, String>;

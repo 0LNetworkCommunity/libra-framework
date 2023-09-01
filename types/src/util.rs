@@ -1,6 +1,6 @@
 use anyhow::{bail, Context, Result};
 use std::fmt::{Debug, Display};
-use diem_sdk::{
+use zapatos_sdk::{
     move_types::identifier::Identifier,
     types::{account_address::AccountAddress, transaction::SignedTransaction},
 };

@@ -3,7 +3,7 @@
 
 #![forbid(unsafe_code)]
 
-use diem_framework::{
+use zapatos_framework::{
     docgen::DocgenOptions, BuildOptions, ReleaseBundle, ReleaseOptions, RELEASE_BUNDLE_EXTENSION,
 };
 // use clap::Args;

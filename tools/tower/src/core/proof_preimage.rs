@@ -62,7 +62,7 @@ pub fn genesis_preimage(cfg: &AppCfg) -> anyhow::Result<Vec<u8>> {
     preimage.append(&mut padded_tower_link_bytes);
 
     // STATEMENT
-    let mut padded_statements_bytes = padding(profile.statement.clone().into_bytes(), STATEMENT_BYTES);
+    let mut padded_statements_bytes = padding(profile.statement.into_bytes(), STATEMENT_BYTES);
     preimage.append(&mut padded_statements_bytes);
 
     assert_eq!(

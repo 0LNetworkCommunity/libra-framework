@@ -12,7 +12,7 @@ use std::{
     path::{Path, PathBuf},
     time::SystemTime,
 };
-use diem_sdk::crypto::HashValue;
+use zapatos_sdk::crypto::HashValue;
 /// Start the GC for a proof that is known bad
 pub fn gc_failed_proof(app_cfg: &AppCfg, bad_proof_path: PathBuf) -> anyhow::Result<()> {
     println!(

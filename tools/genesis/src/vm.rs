@@ -1,24 +1,24 @@
 #![allow(clippy::too_many_arguments)]
 
 use libra_types::{legacy_types::legacy_recovery::LegacyRecovery, ol_progress::OLProgress};
-use diem_crypto::{ed25519::Ed25519PublicKey, HashValue};
-use diem_framework::{self, ReleaseBundle};
-use diem_gas::{
+use zapatos_crypto::{ed25519::Ed25519PublicKey, HashValue};
+use zapatos_framework::{self, ReleaseBundle};
+use zapatos_gas::{
     AbstractValueSizeGasParameters, ChangeSetConfigs, NativeGasParameters,
     LATEST_GAS_FEATURE_VERSION,
 };
-use diem_types::{
+use zapatos_types::{
     chain_id::ChainId,
     on_chain_config::{
         Features, GasScheduleV2, OnChainConsensusConfig, OnChainExecutionConfig, TimedFeatures,
     },
     transaction::ChangeSet,
 };
-use diem_vm::{
+use zapatos_vm::{
     data_cache::AsMoveResolver,
     move_vm_ext::{MoveVmExt, SessionId},
 };
-use diem_vm_genesis::{
+use zapatos_vm_genesis::{
     create_and_initialize_validators, default_gas_schedule, emit_new_block_and_epoch_event,
     genesis_context::GenesisStateView, initialize, initialize_diem_coin, initialize_features,
     initialize_on_chain_governance, mainnet_genesis_config, publish_framework, set_genesis_end,

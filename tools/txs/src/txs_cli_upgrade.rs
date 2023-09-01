@@ -6,13 +6,13 @@ use std::path::PathBuf;
 
 use anyhow::bail;
 use anyhow::Context;
-use diem_types::transaction::Script;
-use diem_types::transaction::TransactionPayload;
+use zapatos_types::transaction::Script;
+use zapatos_types::transaction::TransactionPayload;
 
 use libra_cached_packages::libra_stdlib::{
     diem_governance_ol_create_proposal_v2, diem_governance_ol_vote,
 };
-use diem_sdk::types::transaction::TransactionArgument;
+use zapatos_sdk::types::transaction::TransactionArgument;
 
 #[derive(clap::Subcommand)]
 pub enum UpgradeTxs {

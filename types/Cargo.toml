@@ -26,10 +26,9 @@ serde_yaml = { workspace = true }
 tokio = { workspace = true }
 toml = { workspace = true }
 url = { workspace = true }
-
-diem = { workspace = true }
-diem-api-types = { workspace = true }
-diem-crypto = { workspace = true }
-diem-rest-client = { workspace = true }
-diem-sdk = { workspace = true }
-diem-types = { workspace = true }
+zapatos = { workspace = true }
+zapatos-api-types = { workspace = true }
+zapatos-crypto = { workspace = true }
+zapatos-rest-client = { workspace = true }
+zapatos-sdk = { workspace = true }
+zapatos-types = { workspace = true }
