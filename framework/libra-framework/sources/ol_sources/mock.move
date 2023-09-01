@@ -25,7 +25,7 @@ module ol_framework::mock {
   // use diem_framework::chain_status;
   // use diem_std::debug::print;
 
-  const ENO_GENESIS_END_MARKER: u64 = 1;
+  // const ENO_GENESIS_END_MARKER: u64 = 1;
   const EDID_NOT_ADVANCE_EPOCH: u64 = 1;
 
   #[test_only]

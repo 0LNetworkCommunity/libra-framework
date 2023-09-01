@@ -42,7 +42,6 @@ use diem_types::{
     on_chain_config::{OnChainConsensusConfig, OnChainExecutionConfig},
 };
 
-
 pub const LAYOUT_FILE: &str = "layout.yaml";
 pub const OPERATOR_FILE: &str = "operator.yaml";
 pub const OWNER_FILE: &str = "owner.yaml";
