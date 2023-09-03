@@ -10,8 +10,8 @@ on:
       - 'release**'
       - 'main'
 env:
-  SCCACHE_BUCKET: sccache-libra
-  SCCACHE_ENDPOINT: https://afcdb03dd0764818ac9aec7fe0c0b8b5.r2.cloudflarestorage.com/sccache-libra
+  SCCACHE_BUCKET: ubuntu-libra
+  SCCACHE_ENDPOINT: https://afcdb03dd0764818ac9aec7fe0c0b8b5.r2.cloudflarestorage.com/ubuntu-libra
   AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
   AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
   SCCACHE_REGION: auto
