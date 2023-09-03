@@ -53,7 +53,6 @@ runs:
     - name: cache rust
       uses: Swatinem/rust-cache@v2
       with:
-        prefix-key: "v3"
         shared-key: "libra" # to share across CI builds, so it is not job-id specific
         cache-on-failure: true
 

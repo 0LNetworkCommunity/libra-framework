@@ -37,9 +37,9 @@ jobs:
         detached: true
       timeout-minutes: 15
 
-
+    - uses: actions/checkout@v3
     - name: setup env
-      uses: 0o-de-lally/libra-v7/.github/actions/build_env@ci
+      uses: ./.github/actions/build_env
 
     - name: install diem-node (for smoke tests)
       run: >
