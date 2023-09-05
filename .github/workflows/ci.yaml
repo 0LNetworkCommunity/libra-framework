@@ -51,6 +51,16 @@ jobs:
     # fail fast if types doesnt compile, everything else will fail.
     - name: types
       working-directory: ./types
+      run: cargo test --no-fail-fast --target x86_64-unknown-linux-gnu
+
+    - name: wallet
+      if: always()
+      working-directory: ./tools/wallet
+      run: cargo test --no-fail-fast
+
+    - name: query
+      if: always()
+      working-directory: ./tools/query
       run: cargo test --no-fail-fast
 
     # # Check test suite meta tests
@@ -65,15 +75,9 @@ jobs:
     #   working-directory: ./tools/genesis
     #   run: cargo test --no-fail-fast
 
-    # - name: wallet
-    #   if: always()
-    #   working-directory: ./tools/wallet
-    #   run: cargo test --no-fail-fast
 
-    # - name: query
-    #   if: always()
-    #   working-directory: ./tools/query
-    #   run: cargo test --no-fail-fast
+
+
 
     # - name: tower
     #   if: always()
