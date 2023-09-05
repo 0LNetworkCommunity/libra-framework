@@ -50,7 +50,7 @@ jobs:
 
     # fail fast if types doesnt compile, everything else will fail.
     - name: types
-      working-directory: ./tools/types
+      working-directory: ./types
       run: cargo test --no-fail-fast
 
     # # Check test suite meta tests
