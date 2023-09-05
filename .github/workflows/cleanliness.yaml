@@ -26,8 +26,8 @@ jobs:
 
       - name: set sccache
         # don't do this before test because rust tools may not build inluding sccache itself.
-        shell: bash
-        run: export RUSTC_WRAPPER=sccache
+        # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
+        run: echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
 
       - name: format
         uses: actions-rs/cargo@v1

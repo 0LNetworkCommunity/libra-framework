@@ -50,8 +50,9 @@ jobs:
 
     - name: set sccache
       # don't do this before test because rust tools may not build inluding sccache itself.
+      # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
       shell: bash
-      run: export RUSTC_WRAPPER=sccache
+      run: echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
 
     # fail fast if types doesnt compile, everything else will fail.
     - name: types
