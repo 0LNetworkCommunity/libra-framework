@@ -6,7 +6,7 @@
 // Original Commit:
 // https://github.com/diem/diem/commit/782b31cb08eeb717ea2b6f3edbf616b13fd4cae8
 
-module 0x0::LibraCoin {
+module 0x1::LibraCoin {
     use std::signer;
 
     // A representing the Libra coin
