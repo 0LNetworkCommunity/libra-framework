@@ -33,10 +33,18 @@ runs:
       shell: bash
       run: rustup component add rustfmt clippy
 
-    - name: install sccache
-      uses: baptiste0928/cargo-install@v2
-      with:
-        crate: sccache
+    # - name: install sccache
+    #   uses: baptiste0928/cargo-install@v2
+    #   with:
+    #     crate: sccache
+
+    - name: install rustfmt clippy
+      shell: bash
+      run: >
+        rustup component add rustfmt clippy
+        tar -xvf sccache-dist-v0.5.4-x86_64-unknown-linux-musl.tar.gz
+        cp sccache-dist-v0.5.4-x86_64-unknown-linux-musl/sccache-dist /usr/local/bin/sccache
+        chmod 744 /usr/local/bin/sccache
 
     - name: checkout sources
       uses: actions/checkout@v3
