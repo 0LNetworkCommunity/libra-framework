@@ -37,10 +37,3 @@ diem-types = { workspace = true }
 diem-crypto = { workspace = true }
 diem-genesis = { workspace = true }
 diem-config = { workspace = true }
-
-
-
-
-# TODO remove these
-# ol-keys = { workspace = true }
-# diem-wallet = { workspace = true }
