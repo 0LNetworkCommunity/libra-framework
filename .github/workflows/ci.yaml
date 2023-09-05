@@ -1,4 +1,4 @@
-name: ci
+name: rust ci
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
       - 'ci*'
     branches:
       - 'main'
-      # - 'ci'
+      - 'ci'
   pull_request:
     types:
       - opened
@@ -17,50 +17,52 @@ on:
       - 'release**'
       - 'main'
 env:
-  DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
+  # DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
-  SCCACHE_BUCKET: sccache-libra
-  SCCACHE_ENDPOINT: https://afcdb03dd0764818ac9aec7fe0c0b8b5.r2.cloudflarestorage.com/sccache-libra
+  SCCACHE_BUCKET: ubuntu-libra
+  SCCACHE_ENDPOINT: https://afcdb03dd0764818ac9aec7fe0c0b8b5.r2.cloudflarestorage.com/ubuntu-libra
   AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
   AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
   SCCACHE_REGION: auto
 
 jobs:
-  test:
-    runs-on: ubuntu-20.04
+  rust-tests:
+    runs-on: ubuntu-latest
     steps:
     # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
     - name: Setup tmate session
       uses: mxschmitt/action-tmate@v3
       with:
         detached: true
-      timeout-minutes: 15
+      # timeout-minutes: 15
 
-
+    - uses: actions/checkout@v3
     - name: setup env
-      uses: 0o-de-lally/libra-v7/.github/actions/build_env@ci
+      uses: ./.github/actions/build_env
 
-    - name: install diem-node (for smoke tests)
-      run: >
-        wget -O $DIEM_FORGE_NODE_BIN_PATH https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem-node &&
-        sudo chmod 755 $DIEM_FORGE_NODE_BIN_PATH &&
-        echo $DIEM_FORGE_NODE_BIN_PATH &&
-        ls -l $DIEM_FORGE_NODE_BIN_PATH
-
-    - name: install diem (for move tests)
-      run: >
-        wget -O ${{github.workspace}}/diem https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem &&
-        sudo chmod 755 ${{github.workspace}}/diem
+    # - name: install diem-node (for smoke tests)
+    #   run: >
+    #     wget -O $DIEM_FORGE_NODE_BIN_PATH https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem-node &&
+    #     sudo chmod 755 $DIEM_FORGE_NODE_BIN_PATH &&
+    #     echo $DIEM_FORGE_NODE_BIN_PATH &&
+    #     ls -l $DIEM_FORGE_NODE_BIN_PATH
 
     - name: set sccache
-    # don't do this before because somethings may not build inluding sccache itself.
-      run: export RUSTC_WRAPPER=sccache
-    # Move framework tests
-    - name: move framework
+      # don't do this before test because rust tools may not build inluding sccache itself.
+      # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
+      shell: bash
+      run: echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+
+    # fail fast if types doesnt compile, everything else will fail.
+    - name: types
+      working-directory: ./types
+      run: cargo test --no-fail-fast --target x86_64-unknown-linux-gnu
+
+    - name: wallet
       if: always()
-      working-directory: ./framework/libra-framework
-      run: ${{github.workspace}}/diem move test
+      working-directory: ./tools/wallet
+      run: cargo test --no-fail-fast
 
     # Check test suite meta tests
     - name: smoke-tests # NOTE: needs working DIEM_FORGE_NODE_BIN_PATH
@@ -68,20 +70,15 @@ jobs:
       working-directory: ./smoke-tests
       run: cargo test --no-fail-fast
 
-    # Tools tests
-    - name: genesis
-      if: always()
-      working-directory: ./tools/genesis
-      run: cargo test --no-fail-fast
-
-    - name: wallet
-      if: always()
-      working-directory: ./tools/wallet
-      run: cargo test --no-fail-fast
-
+    # Tools tests (some use smoke-tests)
     - name: query
       if: always()
       working-directory: ./tools/query
+      run: cargo test --no-fail-fast
+
+    - name: genesis
+      if: always()
+      working-directory: ./tools/genesis
       run: cargo test --no-fail-fast
 
     - name: tower

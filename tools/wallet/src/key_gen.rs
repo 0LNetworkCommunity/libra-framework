@@ -128,7 +128,7 @@ mod tests {
         }
 
         // Clean up
-        // fs::remove_dir_all(output_dir).ok();
+        fs::remove_dir_all(output_dir).ok();
         Ok(())
     }
 

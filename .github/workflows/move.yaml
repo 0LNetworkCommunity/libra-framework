@@ -1,0 +1,41 @@
+name: move framework tests
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
+      - 'ci*'
+    branches:
+      - 'main'
+      - 'ci'
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    branches:
+      - 'release**'
+      - 'main'
+
+jobs:
+  functional-tests:
+    runs-on: ubuntu-20.04
+    steps:
+    # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
+    # - name: Setup tmate session
+    #   uses: mxschmitt/action-tmate@v3
+    #   with:
+    #     detached: true
+    #   timeout-minutes: 15
+
+    - uses: actions/checkout@v3
+
+    - name: install diem (for move tests)
+      run: >
+        wget -O ${{github.workspace}}/diem https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem &&
+        sudo chmod 755 ${{github.workspace}}/diem
+
+    # Move framework tests
+    - name: move framework
+      working-directory: ./framework/libra-framework
+      run: ${{github.workspace}}/diem move test
