@@ -1,4 +1,4 @@
-name: ci
+name: rust ci
 
 on:
   push:
@@ -27,7 +27,7 @@ env:
   SCCACHE_REGION: auto
 
 jobs:
-  test:
+  rust-tests:
     runs-on: ubuntu-20.04
     steps:
     # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
@@ -48,19 +48,19 @@ jobs:
         echo $DIEM_FORGE_NODE_BIN_PATH &&
         ls -l $DIEM_FORGE_NODE_BIN_PATH
 
-    - name: install diem (for move tests)
-      run: >
-        wget -O ${{github.workspace}}/diem https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem &&
-        sudo chmod 755 ${{github.workspace}}/diem
+    # - name: install diem (for move tests)
+    #   run: >
+    #     wget -O ${{github.workspace}}/diem https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem &&
+    #     sudo chmod 755 ${{github.workspace}}/diem
 
     - name: set sccache
     # don't do this before because somethings may not build inluding sccache itself.
       run: export RUSTC_WRAPPER=sccache
     # Move framework tests
-    - name: move framework
-      if: always()
-      working-directory: ./framework/libra-framework
-      run: ${{github.workspace}}/diem move test
+    # - name: move framework
+    #   if: always()
+    #   working-directory: ./framework/libra-framework
+    #   run: ${{github.workspace}}/diem move test
 
     # Check test suite meta tests
     - name: smoke-tests # NOTE: needs working DIEM_FORGE_NODE_BIN_PATH
