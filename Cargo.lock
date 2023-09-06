@@ -5999,6 +5999,7 @@ dependencies = [
  "diem-framework",
  "diem-logger",
  "diem-sdk",
+ "diem-temppath",
  "diem-types",
  "hex",
  "indoc",
