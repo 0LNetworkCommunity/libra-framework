@@ -1,8 +1,8 @@
 //! test framework upgrades with multiple steps
 use diem_types::chain_id::NamedChain;
 use libra_query::query_view;
-use libra_smoke_tests::{libra_smoke::LibraSmoke, configure_validator};
 use libra_smoke_tests::upgrade_fixtures::fixtures_path;
+use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Upgrade},
     txs_cli_upgrade::UpgradeTxs::{Propose, Resolve, Vote},
