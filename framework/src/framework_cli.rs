@@ -92,17 +92,18 @@ impl GovernanceScript {
         let package_dir = self.output_dir.join(script_name);
 
         if !package_dir.exists() || self.only_make_template {
-            if !self.only_make_template { println!("ERROR: nothing to compile.")}
-            println!("A governance script dir does not exist here.\n");
+            if !self.only_make_template {
+                println!("ERROR: nothing to compile.")
+            }
+            println!("A governance script dir does not exist here.");
             if dialoguer::Confirm::new()
-                .with_prompt(&format!("create a script template at {:?}", package_dir.display()))
+                .with_prompt(&format!(
+                    "create a script template at {:?}",
+                    package_dir.display()
+                ))
                 .interact()?
             {
-                make_template_files(
-                    &package_dir,
-                    &self.framework_local_dir,
-                    &package_dir.to_str().context("cannot read package dir name")?,
-                )?;
+                make_template_files(&package_dir, &self.framework_local_dir, script_name)?;
             }
             return Ok(());
         }
@@ -119,6 +120,7 @@ fn make_template_files(
     framework_local_dir: &Path,
     script_name: &str,
 ) -> anyhow::Result<()> {
+    dbg!(&package_dir);
     std::fs::create_dir_all(package_dir)
         .context("could not create the output directory {new_path:?}")?;
     // TODO: rename this. init_move_package_with_local_framework
@@ -130,6 +132,7 @@ fn make_template_files(
     let t = r#"
 script {
   // THIS IS A TEMPLATE GOVERNANCE SCRIPT
+  // you can generate this file with commandline tools: `libra-framework governance --output-dir --framework-local-dir`
   use diem_framework::diem_governance;
   use std::vector;
 
@@ -139,9 +142,14 @@ script {
   }
 }
 "#;
+
+    dbg!(&package_dir);
+    dbg!(&script_name);
     let filename = package_dir
+        // .join(script_name)
         .join("sources")
         .join(format!("{}.move", script_name));
+    dbg!(&filename);
     std::fs::write(filename, t)?;
     println!("success: governance template created");
 
