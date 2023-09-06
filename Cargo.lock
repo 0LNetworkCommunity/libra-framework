@@ -5883,6 +5883,7 @@ dependencies = [
  "anyhow",
  "bcs 0.1.4",
  "clap 4.3.23",
+ "dialoguer",
  "diem",
  "diem-build-info",
  "diem-crypto",
