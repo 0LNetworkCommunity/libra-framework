@@ -1,7 +1,7 @@
 //! test framework upgrades with multiple steps
 use diem_types::chain_id::NamedChain;
 use libra_query::query_view;
-use libra_smoke_tests::libra_smoke::LibraSmoke;
+use libra_smoke_tests::{libra_smoke::LibraSmoke, configure_validator};
 use libra_smoke_tests::upgrade_fixtures::fixtures_path;
 use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Upgrade},
@@ -18,7 +18,16 @@ use libra_txs::{
 /// 5. Check that the new function all_your_base can be called
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn smoke_upgrade_multiple_steps() {
-    let mut s = LibraSmoke::new(Some(1)).await.expect("can't start swarm");
+    let d = diem_temppath::TempPath::new();
+
+    let mut s = LibraSmoke::new(Some(1))
+        .await
+        .expect("could not start libra smoke");
+
+    let (_, _app_cfg) =
+        configure_validator::init_val_config_files(&mut s.swarm, 0, d.path().to_owned())
+            .await
+            .expect("could not init validator config");
 
     ///// NOTE THERE ARE MULTIPLE STEPS, we are getting the artifacts for the first step.
     let script_dir = fixtures_path()
@@ -40,7 +49,7 @@ async fn smoke_upgrade_multiple_steps() {
         mnemonic: None,
         test_private_key: Some(s.encoded_pri_key.clone()),
         chain_id: Some(NamedChain::TESTING),
-        config_path: None,
+        config_path: Some(d.path().to_owned().join("libra.yaml")),
         url: Some(s.api_endpoint.clone()),
         gas_max: None,
         gas_unit_price: None,

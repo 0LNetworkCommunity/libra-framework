@@ -10,29 +10,29 @@ use libra_txs::txs_cli::{TxsCli, TxsSub::Transfer};
 async fn smoke_transfer_exists() {
     let d = diem_temppath::TempPath::new();
 
-    let mut ls = LibraSmoke::new(Some(2))
+    let mut s = LibraSmoke::new(Some(2))
         .await
         .expect("could not start libra smoke");
 
     let (_, _app_cfg) =
-        configure_validator::init_val_config_files(&mut ls.swarm, 0, d.path().to_owned())
+        configure_validator::init_val_config_files(&mut s.swarm, 0, d.path().to_owned())
             .await
             .expect("could not init validator config");
 
     // let s = LibraSmoke::new(Some(2)).await.expect("can't start swarm");
 
     // 1. simple case: account already exitsts
-    let recipient = ls.swarm.validators().nth(1).unwrap().peer_id(); // sending to second genesis node.
+    let recipient = s.swarm.validators().nth(1).unwrap().peer_id(); // sending to second genesis node.
     let cli = TxsCli {
         subcommand: Some(Transfer {
             to_account: recipient,
             amount: 1,
         }),
         mnemonic: None,
-        test_private_key: Some(ls.encoded_pri_key.clone()),
+        test_private_key: Some(s.encoded_pri_key.clone()),
         chain_id: None,
         config_path: Some(d.path().to_owned().join("libra.yaml")),
-        url: Some(ls.api_endpoint.clone()),
+        url: Some(s.api_endpoint.clone()),
         gas_max: None,
         gas_unit_price: None,
     };
