@@ -9,7 +9,7 @@ use crate::{
 
 use anyhow::Context;
 use clap::Parser;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Parser)]
 /// Creates a framework release used for test genesis (as well as production genesis).
@@ -80,40 +80,30 @@ pub struct GovernanceScript {
     /// directory of the framework source code. Usually `./framework/lbra-framework`
     #[clap(short, long)]
     pub framework_local_dir: PathBuf,
+
+    #[clap(long)]
+    /// option to only make a template governance script
+    pub only_make_template: bool,
 }
 
 impl GovernanceScript {
     pub fn execute(&self) -> anyhow::Result<()> {
-        let script_name = "framework_upgrade";
+        let script_name = "governance_script_template";
         let package_dir = self.output_dir.join(script_name);
-        if !package_dir.exists() {
-            println!(
-                "script dir does not exist, will create one now at {:?} ",
-                &package_dir.to_str()
-            );
 
-            std::fs::create_dir_all(&package_dir)
-                .context("could not create the output directory {new_path:?}")?;
-            // TODO: rename this. init_move_package_with_local_framework
-            init_move_dir_wrapper(
-                package_dir.clone(),
-                script_name,
-                self.framework_local_dir.clone(),
-            )?;
-            let t = r#"
-script {
-  use aptos_framework::aptos_governance;
-
-  fun main(proposal_id: u64){
-    let _framework_signer = aptos_governance::resolve(proposal_id, @0000000000000000000000000000000000000000000000000000000000000001);
-  }
-}
-"#;
-            let filename = package_dir
-                .join("sources")
-                .join(format!("{}.move", script_name));
-            std::fs::write(filename, t)?;
-            println!("governance template created");
+        if !package_dir.exists() || self.only_make_template {
+            if !self.only_make_template { println!("ERROR: nothing to compile.")}
+            println!("A governance script dir does not exist here.\n");
+            if dialoguer::Confirm::new()
+                .with_prompt(&format!("create a script template at {:?}", package_dir.display()))
+                .interact()?
+            {
+                make_template_files(
+                    &package_dir,
+                    &self.framework_local_dir,
+                    &package_dir.to_str().context("cannot read package dir name")?,
+                )?;
+            }
             return Ok(());
         }
 
@@ -122,4 +112,40 @@ script {
 
         Ok(())
     }
+}
+
+fn make_template_files(
+    package_dir: &Path,
+    framework_local_dir: &Path,
+    script_name: &str,
+) -> anyhow::Result<()> {
+    std::fs::create_dir_all(package_dir)
+        .context("could not create the output directory {new_path:?}")?;
+    // TODO: rename this. init_move_package_with_local_framework
+    init_move_dir_wrapper(
+        package_dir.to_owned(),
+        script_name,
+        framework_local_dir.to_owned(),
+    )?;
+    let t = r#"
+script {
+  // THIS IS A TEMPLATE GOVERNANCE SCRIPT
+  use diem_framework::diem_governance;
+  use std::vector;
+
+  fun main(proposal_id: u64){
+      let next_hash = vector::empty();
+      let _framework_signer = diem_governance::resolve_multi_step_proposal(proposal_id, @0000000000000000000000000000000000000000000000000000000000000001, next_hash);
+  }
+}
+"#;
+    let filename = package_dir
+        .join("sources")
+        .join(format!("{}.move", script_name));
+    std::fs::write(filename, t)?;
+    println!("success: governance template created");
+
+    println!("\nBefore submitting the governance action you must compile the script. Simply run this command again.");
+
+    Ok(())
 }

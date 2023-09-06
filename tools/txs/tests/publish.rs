@@ -1,4 +1,4 @@
-use libra_smoke_tests::{libra_smoke::LibraSmoke, configure_validator};
+use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::txs_cli::{
     TxsCli,
     TxsSub::{GenerateTransaction, Publish},

@@ -1,4 +1,4 @@
-use libra_smoke_tests::{libra_smoke::LibraSmoke, configure_validator};
+use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::txs_cli::{TxsCli, TxsSub::Transfer};
 
 // Testing that we can send the minimal transaction: a transfer from one existing validator to another.
@@ -40,9 +40,7 @@ async fn smoke_transfer_exists() {
     cli.run()
         .await
         .expect("cli could not send to existing account");
-
 }
-
 
 /// Case 2: send to an account which does not yet exist, and the account gets created on chain.
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
@@ -61,8 +59,8 @@ async fn smoke_transfer_create() {
     // case 2. Account does not yet exist.
     let cli = TxsCli {
         subcommand: Some(Transfer {
-          to_account: s.marlon_rando().address(),
-          amount: 1,
+            to_account: s.marlon_rando().address(),
+            amount: 1,
         }),
         mnemonic: None,
         test_private_key: Some(s.encoded_pri_key.clone()),

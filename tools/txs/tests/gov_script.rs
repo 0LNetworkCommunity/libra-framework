@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 // use libra_types::exports::ValidCryptoMaterialStringExt;
 use libra_query::query_view;
-use libra_smoke_tests::libra_smoke::LibraSmoke;
+use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Upgrade},
     txs_cli_upgrade::UpgradeTxs::{Propose, Resolve, Vote},
@@ -18,7 +18,17 @@ use libra_txs::{
 /// 4. resolve a propsosal by sending the upgrade payload.
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn smoke_gov_script() {
-    let mut s = LibraSmoke::new(Some(1)).await.expect("can't start swarm");
+    let d = diem_temppath::TempPath::new();
+
+    let mut s = LibraSmoke::new(Some(2))
+        .await
+        .expect("could not start libra smoke");
+
+    let (_, _app_cfg) =
+        configure_validator::init_val_config_files(&mut s.swarm, 0, d.path().to_owned())
+            .await
+            .expect("could not init validator config");
+
     let this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
     let script_dir = this_path.join("tests/fixtures/noop_gov_script");
     assert!(script_dir.exists(), "can't find upgrade fixtures");
@@ -31,7 +41,7 @@ async fn smoke_gov_script() {
         mnemonic: None,
         test_private_key: Some(s.encoded_pri_key.clone()),
         chain_id: None,
-        config_path: None,
+        config_path: Some(d.path().to_owned().join("libra.yaml")),
         url: Some(s.api_endpoint.clone()),
         gas_max: None,
         gas_unit_price: None,
