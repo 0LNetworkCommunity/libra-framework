@@ -30,7 +30,7 @@ async fn smoke_gov_script() {
             .expect("could not init validator config");
 
     let this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
-    let script_dir = this_path.join("tests/fixtures/noop_gov_script");
+    let script_dir = this_path.join("tests/fixtures/governance_script_template");
     assert!(script_dir.exists(), "can't find upgrade fixtures");
 
     let mut cli = TxsCli {
