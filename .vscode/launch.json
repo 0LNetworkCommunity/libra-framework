@@ -50,10 +50,10 @@
       "cwd": "${workspaceFolder}"
     },
     {
-      "name": "aptos-node",
+      "name": "diem-node",
       "type": "lldb",
       "request": "launch",
-      "program": "${workspaceFolder}/target/debug/aptos-node",
+      "program": "${workspaceFolder}/target/debug/diem-node",
       "args": [
         "test"
       ],
