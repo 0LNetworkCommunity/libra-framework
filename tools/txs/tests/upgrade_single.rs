@@ -91,7 +91,7 @@ async fn smoke_upgrade_single_step() {
 
     // Note, if there isn't a pause here, the next request might happen on the same on-chain clock seconds as the previous.
     // this will intentionally cause a failure since it's designed to prevent "atomic" transactions which can manipulate governance (flash loans)
-    std::thread::sleep(std::time::Duration::from_secs(2));
+    std::thread::sleep(std::time::Duration::from_secs(4));
 
     let query_res = query_view::get_view(
         &s.client(),
