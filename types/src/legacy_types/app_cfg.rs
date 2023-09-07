@@ -560,12 +560,15 @@ impl TxConfigs {
 pub struct TxCost {
     /// Max gas units to pay per transaction
     #[clap(long)]
+    #[clap(required = false)]
     pub max_gas_unit_for_tx: u64, // gas UNITS of computation
     /// Max coin price per unit of gas
     #[clap(long)]
+    #[clap(required = false)]
     pub coin_price_per_unit: u64, // price in micro GAS
     /// Time in seconds to timeout, from now
     #[clap(long)]
+    #[clap(required = false)]
     pub user_tx_timeout: u64, // seconds,
 }
 
