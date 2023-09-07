@@ -20,11 +20,11 @@ env:
   DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
-  # SCCACHE_BUCKET: ubuntu-libra
-  # SCCACHE_ENDPOINT: https://afcdb03dd0764818ac9aec7fe0c0b8b5.r2.cloudflarestorage.com/ubuntu-libra
-  # AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
-  # AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
-  # SCCACHE_REGION: auto
+  SCCACHE_BUCKET: ubuntu-libra
+  SCCACHE_ENDPOINT: https://afcdb03dd0764818ac9aec7fe0c0b8b5.r2.cloudflarestorage.com/ubuntu-libra
+  AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+  AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+  SCCACHE_REGION: auto
 
 jobs:
   rust-tests:
@@ -48,45 +48,12 @@ jobs:
         echo $DIEM_FORGE_NODE_BIN_PATH &&
         ls -l $DIEM_FORGE_NODE_BIN_PATH
 
-    # - name: set sccache
-    #   # don't do this before test because rust tools may not build inluding sccache itself.
-    #   # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
-    #   shell: bash
-    #   run: echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+    - name: set sccache
+      # don't do this before test because rust tools may not build inluding sccache itself.
+      # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
+      shell: bash
+      run: echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
 
     # fail fast if types doesnt compile, everything else will fail.
-    - name: types
-      working-directory: ./types
-      run: cargo test --no-fail-fast
-
-    - name: wallet
-      if: always()
-      working-directory: ./tools/wallet
-      run: cargo test --no-fail-fast
-
-    # Check test suite meta tests
-    - name: smoke-tests # NOTE: needs working DIEM_FORGE_NODE_BIN_PATH
-      if: always()
-      working-directory: ./smoke-tests
-      run: cargo test --no-fail-fast
-
-    # Tools tests (some use smoke-tests)
-    - name: query
-      if: always()
-      working-directory: ./tools/query
-      run: cargo test --no-fail-fast
-
-    - name: genesis
-      if: always()
-      working-directory: ./tools/genesis
-      run: cargo test --no-fail-fast
-
-    - name: tower
-      if: always()
-      working-directory: ./tools/tower
-      run: cargo test --no-fail-fast
-
-    - name: txs
-      if: always()
-      working-directory: ./tools/txs
+    - name: all tests
       run: cargo test --no-fail-fast
