@@ -3,7 +3,7 @@ use diem::common::types::{CliConfig, ConfigSearchMode};
 use diem_logger::prelude::*;
 use diem_sdk::{
     crypto::{HashValue, PrivateKey},
-    rest_client::{diem_api_types::TransactionOnChainData, Client},
+    rest_client::{diem_api_types::{TransactionOnChainData, UserTransaction}, Client},
     transaction_builder::TransactionBuilder,
     types::{
         chain_id::ChainId,
@@ -277,6 +277,16 @@ impl Sender {
         }
     }
 
+    /// estimate the transaction gas cost.
+    pub async fn estimate(&mut self, payload: TransactionPayload) -> anyhow::Result<Vec<UserTransaction>>{
+
+      let signed = self.sign_payload(payload);
+
+      let res = self.client.simulate_with_gas_estimation(&signed, true, true).await?.into_inner();
+      Ok(res)
+    }
+
+    /// get the transactions hash, for use with governance scripts.
     pub fn tx_hash(&self) -> Option<HashValue> {
         if let Some(r) = &self.response {
             return Some(r.info.transaction_hash());
