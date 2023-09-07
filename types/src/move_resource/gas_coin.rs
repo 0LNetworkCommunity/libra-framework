@@ -23,6 +23,17 @@ pub static GAS_COIN_TYPE: Lazy<TypeTag> = Lazy::new(|| {
     }))
 });
 
+/// utility to scale a number to the coin's decimal precision.
+pub fn cast_coin_to_decimal(onchain_coin_value: u64) -> f64 {
+  onchain_coin_value as f64 / 10f64.powf(ONCHAIN_DECIMAL_PRECISION as f64)
+}
+
+/// utility to cast a decimal to the onchain coin representation
+pub fn cast_decimal_to_coin(decimal: f64) -> u64 {
+  let int = decimal * 10f64.powf(ONCHAIN_DECIMAL_PRECISION as f64);
+  int as u64
+}
+
 /// The balance resource held under an account.
 #[derive(Debug, Serialize, Deserialize)]
 // #[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
@@ -83,42 +94,6 @@ pub struct GasCoin {
     pub value: u64,
 }
 
-// impl GasCoin {
-//   pub fn struct_tag() -> StructTag {
-//     let type_tag: TypeTag = StructTag {
-//         address: CORE_CODE_ADDRESS,
-//         module: Identifier::new("gas_coin").unwrap(),
-//         name: Identifier::new("GasCoin").unwrap(),
-//         type_params: vec![],
-//     }.into();
-
-//     StructTag {
-//         address: CORE_CODE_ADDRESS,
-//         module: Identifier::new("coin").unwrap(),
-//         name: Identifier::new("Coin").unwrap(),
-//         type_params: vec![type_tag],
-//     }
-//   }
-
-// }
-
-// #[derive(Debug, Serialize, Deserialize)]
-// pub struct Balance {
-//     pub coin: GasCoin,
-// }
-
-// impl Balance {
-//     pub fn new(value: u64) -> Self {
-//       Balance {
-//         coin: GasCoin {
-//           value,
-//         }
-//       }
-//     }
-//     pub fn get(&self) -> u64 {
-//         self.coin.value
-//     }
-// }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SlowWalletBalance {
@@ -147,8 +122,8 @@ impl SlowWalletBalance {
     // scale it to include decimals
     pub fn scaled(&self) -> LibraBalanceDisplay {
         LibraBalanceDisplay {
-            unlocked: self.unlocked as f64 / 10f64.powf(ONCHAIN_DECIMAL_PRECISION as f64),
-            total: self.total as f64 / 10f64.powf(ONCHAIN_DECIMAL_PRECISION as f64),
+            unlocked: cast_coin_to_decimal(self.unlocked),
+            total: cast_coin_to_decimal(self.total),
         }
     }
 }
