@@ -12,7 +12,7 @@ impl Sender {
 
         if estimate {
           let res = self.estimate(payload).await?;
-          println!("{:?}", &res);
+          println!("{:#?}", &res);
         } else {
           self.sign_submit_wait(payload).await?;
         }
