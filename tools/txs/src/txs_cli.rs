@@ -60,12 +60,9 @@ pub struct TxsCli {
     #[clap(short, long)]
     pub url: Option<Url>,
 
-
-
     // /// optional, the amount of coins to pay for 1 gas unit. The higher the price is, the higher priority your transaction will be executed with
     // #[clap(short = 'p', long)]
     // pub gas_unit_price: Option<u64>,
-
     /// optional, only estimate the gas fees
     #[clap(long)]
     pub estimate_only: bool,
@@ -174,13 +171,12 @@ impl TxsCli {
         )
         .await?;
 
-        let tx_cost = self.tx_cost.clone().unwrap_or_else(|| {
-           app_cfg.tx_configs.get_cost(self.tx_profile.clone())
-        });
+        let tx_cost = self
+            .tx_cost
+            .clone()
+            .unwrap_or_else(|| app_cfg.tx_configs.get_cost(self.tx_profile.clone()));
 
         send.set_tx_cost(&tx_cost);
-
-
 
         match &self.subcommand {
             Some(TxsSub::Transfer { to_account, amount }) => {

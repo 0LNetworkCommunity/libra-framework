@@ -5,10 +5,10 @@ use crate::{
     global_config_dir,
 };
 use anyhow::{bail, Context};
+use diem_crypto::ed25519::Ed25519PrivateKey;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use url::Url;
-use diem_crypto::ed25519::Ed25519PrivateKey;
 
 use std::{fs, io::Write, path::PathBuf, str::FromStr};
 
@@ -600,7 +600,6 @@ impl Default for TxCost {
         Self::default_baseline_cost()
     }
 }
-
 
 impl Default for TxConfigs {
     fn default() -> Self {
