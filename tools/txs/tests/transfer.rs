@@ -35,6 +35,7 @@ async fn smoke_transfer_exists() {
         url: Some(s.api_endpoint.clone()),
         gas_max: None,
         gas_unit_price: None,
+        estimate_only: false,
     };
 
     cli.run()
@@ -69,6 +70,7 @@ async fn smoke_transfer_create() {
         url: Some(s.api_endpoint.clone()),
         gas_max: None,
         gas_unit_price: None,
+        estimate_only: false,
     };
 
     cli.run()
