@@ -19,7 +19,7 @@ on:
 
 jobs:
   functional-tests:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
     # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
     # - name: Setup tmate session
