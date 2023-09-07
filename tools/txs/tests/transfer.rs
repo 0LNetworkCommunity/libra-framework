@@ -26,7 +26,7 @@ async fn smoke_transfer_exists() {
     let cli = TxsCli {
         subcommand: Some(Transfer {
             to_account: recipient,
-            amount: 1,
+            amount: 1.0,
         }),
         mnemonic: None,
         test_private_key: Some(s.encoded_pri_key.clone()),
@@ -60,7 +60,7 @@ async fn smoke_transfer_create() {
     let cli = TxsCli {
         subcommand: Some(Transfer {
             to_account: s.marlon_rando().address(),
-            amount: 1,
+            amount: 1.0,
         }),
         mnemonic: None,
         test_private_key: Some(s.encoded_pri_key.clone()),
