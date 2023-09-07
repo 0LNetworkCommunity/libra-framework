@@ -23,9 +23,9 @@ env:
   SCCACHE_BUCKET: ubuntu-libra
   SCCACHE_ENDPOINT: https://afcdb03dd0764818ac9aec7fe0c0b8b5.r2.cloudflarestorage.com/ubuntu-libra
   # in public repo it uses read-only sccache
-  AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID || env.AWS_ACCESS_KEY_ID}}
+  AWS_ACCESS_KEY_ID: ${{ (vars.AWS_ACCESS_KEY_ID != 0 && vars.AWS_ACCESS_KEY_ID ) ||  secrets.AWS_ACCESS_KEY_ID }}
   # in public repo it uses read-only sccache
-  AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY || env.AWS_SECRET_ACCESS_KEY}}
+  AWS_SECRET_ACCESS_KEY: ${{(vars.AWS_SECRET_ACCESS_KEY != 0 && vars.AWS_SECRET_ACCESS_KEY) || secrets.AWS_SECRET_ACCESS_KEY }}
   SCCACHE_REGION: auto
 
 jobs:
