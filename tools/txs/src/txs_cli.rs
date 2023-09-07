@@ -60,6 +60,10 @@ pub struct TxsCli {
     /// optional, the amount of coins to pay for 1 gas unit. The higher the price is, the higher priority your transaction will be executed with
     #[clap(short = 'p', long)]
     pub gas_unit_price: Option<u64>,
+
+    /// optional, only estimate the gas fees
+    #[clap(long)]
+    pub estimate_only: bool,
 }
 
 #[derive(clap::Subcommand)]
@@ -167,8 +171,7 @@ impl TxsCli {
 
         match &self.subcommand {
             Some(TxsSub::Transfer { to_account, amount }) => {
-                send.transfer(to_account.to_owned(), amount.to_owned())
-                    .await
+                send.transfer(to_account.to_owned(), amount.to_owned(), self.estimate_only).await
             }
             Some(TxsSub::Publish(move_opts)) => {
                 let payload = encode_publish_payload(move_opts)?;

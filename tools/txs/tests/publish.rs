@@ -42,6 +42,7 @@ async fn smoke_publish() {
         url: Some(s.api_endpoint.clone()),
         gas_max: None,
         gas_unit_price: None,
+        estimate_only: false,
     };
 
     cli.run().await.expect("cli could not publish contract");

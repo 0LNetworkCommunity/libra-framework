@@ -53,6 +53,7 @@ async fn smoke_upgrade_multiple_steps() {
         url: Some(s.api_endpoint.clone()),
         gas_max: None,
         gas_unit_price: None,
+        estimate_only: false,
     };
 
     cli.run()

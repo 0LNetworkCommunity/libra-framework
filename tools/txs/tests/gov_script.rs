@@ -45,6 +45,7 @@ async fn smoke_gov_script() {
         url: Some(s.api_endpoint.clone()),
         gas_max: None,
         gas_unit_price: None,
+        estimate_only: false,
     };
 
     cli.run()
