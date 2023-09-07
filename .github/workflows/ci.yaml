@@ -20,13 +20,6 @@ env:
   DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
-  SCCACHE_BUCKET: ubuntu-libra
-  SCCACHE_ENDPOINT: https://afcdb03dd0764818ac9aec7fe0c0b8b5.r2.cloudflarestorage.com/ubuntu-libra
-  # in public repo it uses read-only sccache
-  AWS_ACCESS_KEY_ID: 96f1f3ac10bb6d5fac520afeb05d9acd
-  # in public repo it uses read-only sccache
-  AWS_SECRET_ACCESS_KEY: d6901886043f52102af7cf4b24014aebc84a120a30f19f664df1993ee64d634c
-  SCCACHE_REGION: auto
 
 jobs:
   rust-tests:
@@ -49,13 +42,6 @@ jobs:
         sudo chmod 755 $DIEM_FORGE_NODE_BIN_PATH &&
         echo $DIEM_FORGE_NODE_BIN_PATH &&
         ls -l $DIEM_FORGE_NODE_BIN_PATH
-
-    - name: set sccache
-      # don't do this before test because rust tools may not build inluding sccache itself.
-      # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
-      shell: bash
-      run: echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
-
 
     # fail fast if types doesnt compile, everything else will fail.
     - name: types

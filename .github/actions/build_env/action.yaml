@@ -35,18 +35,14 @@ runs:
       shell: bash
       run: rustup component add rustfmt clippy
 
-    # - name: install sccache
-    #   uses: baptiste0928/cargo-install@v2
-    #   with:
-    #     crate: sccache
 
-    - name: download sccache bin
-      shell: bash
-      run: >
-        wget https://github.com/mozilla/sccache/releases/download/v0.5.4/sccache-v0.5.4-x86_64-unknown-linux-musl.tar.gz &&
-        tar -xvf sccache-v0.5.4-x86_64-unknown-linux-musl.tar.gz &&
-        cp sccache-v0.5.4-x86_64-unknown-linux-musl/sccache /usr/local/bin/sccache &&
-        chmod 744 /usr/local/bin/sccache
+    # - name: download sccache bin
+    #   shell: bash
+    #   run: >
+    #     wget https://github.com/mozilla/sccache/releases/download/v0.5.4/sccache-v0.5.4-x86_64-unknown-linux-musl.tar.gz &&
+    #     tar -xvf sccache-v0.5.4-x86_64-unknown-linux-musl.tar.gz &&
+    #     cp sccache-v0.5.4-x86_64-unknown-linux-musl/sccache /usr/local/bin/sccache &&
+    #     chmod 744 /usr/local/bin/sccache
 
     # - name: checkout sources
     #   uses: actions/checkout@v3
