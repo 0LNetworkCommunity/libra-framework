@@ -20,7 +20,7 @@ env:
   DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
-  HAS_SCCACHE_SECRET: ${{secrets.AWS_ACCESS_KEY_ID != 0 && github.event_name != "pull_request"}}
+  HAS_SCCACHE_SECRET: ${{secrets.AWS_ACCESS_KEY_ID != 0 && !contains(github.event_name, "pull_request")}}
 
 jobs:
   rust-tests:
