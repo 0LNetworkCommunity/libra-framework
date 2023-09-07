@@ -13,6 +13,12 @@ impl Sender {
         if estimate {
           let res = self.estimate(payload).await?;
           println!("{:#?}", &res);
+
+          let success = res[0].info.success;
+          println!("will succeed: {success}");
+          let gas = res[0].info.gas_used;
+          println!("gas used: {gas}");
+
         } else {
           self.sign_submit_wait(payload).await?;
         }
