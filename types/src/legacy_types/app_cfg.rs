@@ -554,7 +554,6 @@ impl TxConfigs {
 
 /// Transaction preferences for a given type of transaction
 #[derive(Clone, Debug, Deserialize, Serialize, clap::Args)]
-#[clap(arg_required_else_help = true)]
 pub struct TxCost {
     /// Max gas units to pay per transaction
     #[clap(long)]
