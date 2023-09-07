@@ -45,8 +45,8 @@ pub struct TxsCli {
     pub tx_profile: Option<TxType>,
 
     /// optional, maximum number of gas units to be used to send this transaction
-    #[clap(flatten)]
-    pub tx_cost: Option<TxCost>,
+    // #[clap(flatten)]
+    // pub tx_cost: Option<TxCost>,
     // TODO
     // /// optional, pick name (substring of address or nickname) of a user profile, if there are multiple. Will choose the default one set..
     // #[clap(short, long)]
@@ -171,10 +171,12 @@ impl TxsCli {
         )
         .await?;
 
-        let tx_cost = self
-            .tx_cost
-            .clone()
-            .unwrap_or_else(|| app_cfg.tx_configs.get_cost(self.tx_profile.clone()));
+        // let tx_cost = self
+        //     .tx_cost
+        //     .clone()
+        //     .unwrap_or_else(|| app_cfg.tx_configs.get_cost(self.tx_profile.clone()));
+
+        let tx_cost = app_cfg.tx_configs.get_cost(self.tx_profile.clone());
 
         send.set_tx_cost(&tx_cost);
 
