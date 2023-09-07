@@ -76,7 +76,7 @@ pub enum TxsSub {
 
         /// The amount of coins to transfer
         #[clap(short, long)]
-        amount: u64,
+        amount: f64,
     },
     Publish(MovePackageDir),
     /// Generate a transaction that executes an Entry function on-chain
