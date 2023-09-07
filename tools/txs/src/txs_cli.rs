@@ -8,7 +8,7 @@ use clap::Parser;
 use indoc::indoc;
 use libra_types::{
     exports::{ChainId, NamedChain},
-    legacy_types::app_cfg::AppCfg,
+    legacy_types::app_cfg::{AppCfg, TxCost, TxType},
 };
 use libra_wallet::account_keys::{get_keys_from_mnem, get_keys_from_prompt};
 use url::Url;
@@ -40,6 +40,13 @@ pub struct TxsCli {
     #[clap(short, long)]
     pub test_private_key: Option<String>,
 
+    /// optional, use a transaction profile used in libra.yaml
+    #[clap(long)]
+    pub tx_profile: Option<TxType>,
+
+    /// optional, maximum number of gas units to be used to send this transaction
+    #[clap(flatten)]
+    pub tx_cost: Option<TxCost>,
     // TODO
     // /// optional, pick name (substring of address or nickname) of a user profile, if there are multiple. Will choose the default one set..
     // #[clap(short, long)]
@@ -53,13 +60,11 @@ pub struct TxsCli {
     #[clap(short, long)]
     pub url: Option<Url>,
 
-    /// optional, maximum number of gas units to be used to send this transaction
-    #[clap(short, long)]
-    pub gas_max: Option<u64>,
 
-    /// optional, the amount of coins to pay for 1 gas unit. The higher the price is, the higher priority your transaction will be executed with
-    #[clap(short = 'p', long)]
-    pub gas_unit_price: Option<u64>,
+
+    // /// optional, the amount of coins to pay for 1 gas unit. The higher the price is, the higher priority your transaction will be executed with
+    // #[clap(short = 'p', long)]
+    // pub gas_unit_price: Option<u64>,
 
     /// optional, only estimate the gas fees
     #[clap(long)]
@@ -169,9 +174,18 @@ impl TxsCli {
         )
         .await?;
 
+        let tx_cost = self.tx_cost.clone().unwrap_or_else(|| {
+           app_cfg.tx_configs.get_cost(self.tx_profile.clone())
+        });
+
+        send.set_tx_cost(&tx_cost);
+
+
+
         match &self.subcommand {
             Some(TxsSub::Transfer { to_account, amount }) => {
-                send.transfer(to_account.to_owned(), amount.to_owned(), self.estimate_only).await
+                send.transfer(to_account.to_owned(), amount.to_owned(), self.estimate_only)
+                    .await
             }
             Some(TxsSub::Publish(move_opts)) => {
                 let payload = encode_publish_payload(move_opts)?;

@@ -9,6 +9,7 @@ edition = "2021"
 anyhow = { workspace = true }
 async-trait = { workspace = true }
 bcs = { workspace = true }
+clap = { workspace = true }
 console = { workspace = true }
 dirs = { workspace = true }
 futures = { workspace  = true }

@@ -6021,6 +6021,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "bcs 0.1.4",
+ "clap 4.3.23",
  "console",
  "diem",
  "diem-api-types",

@@ -1,5 +1,6 @@
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::txs_cli::{TxsCli, TxsSub::Transfer};
+use libra_types::legacy_types::app_cfg::TxCost;
 
 // Testing that we can send the minimal transaction: a transfer from one existing validator to another.
 // Case 1: send to an existing account: another genesis validator
@@ -33,8 +34,8 @@ async fn smoke_transfer_exists() {
         chain_id: None,
         config_path: Some(d.path().to_owned().join("libra.yaml")),
         url: Some(s.api_endpoint.clone()),
-        gas_max: None,
-        gas_unit_price: None,
+        tx_profile: None,
+        tx_cost: Some(TxCost::default_baseline_cost()),
         estimate_only: false,
     };
 
@@ -68,8 +69,8 @@ async fn smoke_transfer_create() {
         chain_id: None,
         config_path: Some(d.path().to_owned().join("libra.yaml")),
         url: Some(s.api_endpoint.clone()),
-        gas_max: None,
-        gas_unit_price: None,
+        tx_profile: None,
+        tx_cost: Some(TxCost::default_baseline_cost()),
         estimate_only: false,
     };
 

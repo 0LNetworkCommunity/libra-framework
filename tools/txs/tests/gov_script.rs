@@ -8,6 +8,7 @@ use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Upgrade},
     txs_cli_upgrade::UpgradeTxs::{Propose, Resolve, Vote},
 };
+use libra_types::legacy_types::app_cfg::TxCost;
 
 /// Testing that we can upgrade the chain framework using txs tools.
 /// Note: We have another upgrade meta test in ./smoke-tests
@@ -43,8 +44,8 @@ async fn smoke_gov_script() {
         chain_id: None,
         config_path: Some(d.path().to_owned().join("libra.yaml")),
         url: Some(s.api_endpoint.clone()),
-        gas_max: None,
-        gas_unit_price: None,
+        tx_profile: None,
+        tx_cost: Some(TxCost::default_baseline_cost()),
         estimate_only: false,
     };
 

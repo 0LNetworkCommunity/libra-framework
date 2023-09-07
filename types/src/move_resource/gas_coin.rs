@@ -25,13 +25,13 @@ pub static GAS_COIN_TYPE: Lazy<TypeTag> = Lazy::new(|| {
 
 /// utility to scale a number to the coin's decimal precision.
 pub fn cast_coin_to_decimal(onchain_coin_value: u64) -> f64 {
-  onchain_coin_value as f64 / 10f64.powf(ONCHAIN_DECIMAL_PRECISION as f64)
+    onchain_coin_value as f64 / 10f64.powf(ONCHAIN_DECIMAL_PRECISION as f64)
 }
 
 /// utility to cast a decimal to the onchain coin representation
 pub fn cast_decimal_to_coin(decimal: f64) -> u64 {
-  let int = decimal * 10f64.powf(ONCHAIN_DECIMAL_PRECISION as f64);
-  int as u64
+    let int = decimal * 10f64.powf(ONCHAIN_DECIMAL_PRECISION as f64);
+    int as u64
 }
 
 /// The balance resource held under an account.
@@ -93,7 +93,6 @@ impl MoveResource for GasCoinStoreResource {}
 pub struct GasCoin {
     pub value: u64,
 }
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SlowWalletBalance {
