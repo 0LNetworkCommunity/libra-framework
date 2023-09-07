@@ -554,13 +554,16 @@ impl TxConfigs {
 
 /// Transaction preferences for a given type of transaction
 #[derive(Clone, Debug, Deserialize, Serialize, clap::Args)]
-// #[serde(deny_unknown_fields)]
+#[clap(arg_required_else_help = true)]
 pub struct TxCost {
     /// Max gas units to pay per transaction
+    #[clap(long)]
     pub max_gas_unit_for_tx: u64, // gas UNITS of computation
     /// Max coin price per unit of gas
+    #[clap(long)]
     pub coin_price_per_unit: u64, // price in micro GAS
     /// Time in seconds to timeout, from now
+    #[clap(long)]
     pub user_tx_timeout: u64, // seconds,
 }
 
