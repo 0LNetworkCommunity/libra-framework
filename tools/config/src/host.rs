@@ -39,8 +39,8 @@ pub fn initialize_host(
         keys.child_0_owner.auth_key,
         keys.child_0_owner.account,
         home_path,
-        chain_name,
-        Some(NetworkPlaylist::localhost(None)),
+        None,
+        Some(NetworkPlaylist::localhost(chain_name)),
     )?;
 
     cfg.save_file().context(format!(
