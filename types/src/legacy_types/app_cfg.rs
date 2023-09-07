@@ -14,6 +14,9 @@ use std::{fs, io::Write, path::PathBuf, str::FromStr};
 
 use super::network_playlist::{self, HostProfile, NetworkPlaylist};
 
+// NOTE: this is exported by diem/config/global-constants/src/lib.rs
+pub const MIN_GAS_UNIT_PRICE: u64 = 100;
+
 pub const CONFIG_FILE_NAME: &str = "libra.yaml";
 /// MinerApp Configuration
 #[derive(Debug, Deserialize, Serialize)]
@@ -257,14 +260,14 @@ impl AppCfg {
         self.workspace.default_chain_id = chain_id;
     }
 
-    pub fn update_network_playlist(
+    pub async fn update_network_playlist(
         &mut self,
         chain_id: Option<NamedChain>,
         playlist_url: Option<Url>,
     ) -> anyhow::Result<NetworkPlaylist> {
         let url = playlist_url.unwrap_or(network_playlist::find_default_playlist(chain_id)?);
 
-        let np = NetworkPlaylist::from_url(url, chain_id)?;
+        let np = NetworkPlaylist::from_url(url, chain_id).await?;
 
         self.maybe_add_custom_playlist(&np);
         Ok(np)
@@ -568,10 +571,10 @@ pub struct TxCost {
 
 impl TxCost {
     /// create new cost object
-    pub fn new(cost: u64) -> Self {
+    pub fn new(units: u64) -> Self {
         TxCost {
-            max_gas_unit_for_tx: cost, // oracle upgrade transaction is expensive.
-            coin_price_per_unit: 1,
+            max_gas_unit_for_tx: units, // oracle upgrade transaction is expensive.
+            coin_price_per_unit: MIN_GAS_UNIT_PRICE, // this is the minimum price
             user_tx_timeout: 5_000,
         }
     }
