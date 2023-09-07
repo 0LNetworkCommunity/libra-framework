@@ -3,7 +3,7 @@ use libra_txs::txs_cli::{
     TxsCli,
     TxsSub::{GenerateTransaction, Publish},
 };
-use libra_types::{type_extensions::client_ext::ClientExt, legacy_types::app_cfg::TxCost};
+use libra_types::{legacy_types::app_cfg::TxCost, type_extensions::client_ext::ClientExt};
 
 use diem::common::types::MovePackageDir;
 use std::path::PathBuf;
