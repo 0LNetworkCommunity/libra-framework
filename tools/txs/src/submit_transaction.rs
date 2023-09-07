@@ -20,7 +20,7 @@ use url::Url;
 
 use libra_types::{
     exports::{AuthenticationKey, Ed25519PrivateKey},
-    legacy_types::app_cfg::AppCfg,
+    legacy_types::app_cfg::{AppCfg, TxCost},
     ol_progress::OLProgress,
     type_extensions::{
         cli_config_ext::CliConfigExt,
@@ -74,6 +74,7 @@ use libra_types::{
 /// Struct to organize all the TXS sending, so we're not creating new Client on every TX, if there are multiple.
 pub struct Sender {
     pub local_account: LocalAccount,
+    pub tx_cost: TxCost,
     client: Client,
     chain_id: ChainId,
     pub response: Option<TransactionOnChainData>,
@@ -100,10 +101,15 @@ impl Sender {
 
         Ok(Self {
             client,
+            tx_cost: TxCost::default_baseline_cost(),
             local_account,
             chain_id,
             response: None,
         })
+    }
+
+    pub fn set_tx_cost(&mut self, cost: &TxCost) {
+      self.tx_cost = cost.to_owned();
     }
 
     ///
@@ -146,6 +152,7 @@ impl Sender {
 
         let s = Sender {
             client,
+            tx_cost: app_cfg.tx_configs.get_cost(None),
             local_account,
             chain_id,
             response: None,
@@ -201,6 +208,7 @@ impl Sender {
 
             let s = Sender {
                 client,
+                tx_cost: TxCost::default_baseline_cost(),
                 local_account,
                 chain_id,
                 response: None,

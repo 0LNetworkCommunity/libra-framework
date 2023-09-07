@@ -3,7 +3,7 @@ use libra_txs::txs_cli::{
     TxsCli,
     TxsSub::{GenerateTransaction, Publish},
 };
-use libra_types::type_extensions::client_ext::ClientExt;
+use libra_types::{type_extensions::client_ext::ClientExt, legacy_types::app_cfg::TxCost};
 
 use diem::common::types::MovePackageDir;
 use std::path::PathBuf;
@@ -40,8 +40,8 @@ async fn smoke_publish() {
         chain_id: None,
         config_path: Some(d.path().to_owned().join("libra.yaml")),
         url: Some(s.api_endpoint.clone()),
-        gas_max: None,
-        gas_unit_price: None,
+        tx_profile: None,
+        tx_cost: Some(TxCost::default_baseline_cost()),
         estimate_only: false,
     };
 
