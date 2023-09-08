@@ -14,12 +14,6 @@ env:
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
 
-  SCCACHE_BUCKET: sccache-libra
-  SCCACHE_ENDPOINT: https://afcdb03dd0764818ac9aec7fe0c0b8b5.r2.cloudflarestorage.com/sccache-libra
-  AWS_ACCESS_KEY_ID: 96f1f3ac10bb6d5fac520afeb05d9acd
-  AWS_SECRET_ACCESS_KEY: d6901886043f52102af7cf4b24014aebc84a120a30f19f664df1993ee64d634c
-  SCCACHE_REGION: auto
-
 jobs:
   clippy:
     runs-on: self-hosted
