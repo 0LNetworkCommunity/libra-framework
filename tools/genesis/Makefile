@@ -65,6 +65,7 @@ endif
 
 test-genesis:
 	LIBRA_CI=1 cargo r -- \
+	--json-legacy ./tests/fixtures/${RECOVERY_FILE}.json \
 	-c ${CHAIN} testnet \
 	-m ${PERSONA} \
 	-i ${ALICE_IP} \
