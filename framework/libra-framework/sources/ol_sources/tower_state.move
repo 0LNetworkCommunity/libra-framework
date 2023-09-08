@@ -618,7 +618,7 @@ module ol_framework::tower_state {
         // double check
         print(&this_miner_index);
 
-        if (count_miners <= this_miner_index) return 0;
+        if (count_miners < this_miner_index) return 0;
 
         let miner_addr = vector::borrow<address>(&all_miners, this_miner_index);
         print(miner_addr);
