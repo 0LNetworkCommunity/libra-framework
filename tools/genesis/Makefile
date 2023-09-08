@@ -46,10 +46,13 @@ stdlib:
 	cargo r -p libra-framework -- release
 
 
-testnet: stdlib test-genesis test-node
+testnet: stdlib test-genesis node
 
 test-node:
 	cargo r -p libra -- node
+
+node:
+	diem-node -f ~/.libra/validator.yaml
 
 ifndef ALICE_IP
 ALICE_IP = 134.209.32.159
@@ -66,7 +69,6 @@ endif
 test-genesis:
 	LIBRA_CI=1 cargo r -- \
 	-c ${CHAIN} testnet \
-	--json-legacy ./tests/fixtures/${RECOVERY_FILE}.json \
 	-m ${PERSONA} \
 	-i ${ALICE_IP} \
 	-i ${BOB_IP} \
