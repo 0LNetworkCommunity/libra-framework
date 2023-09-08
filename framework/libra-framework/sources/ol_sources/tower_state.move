@@ -10,7 +10,7 @@ module ol_framework::tower_state {
     use diem_framework::testnet;
     use diem_framework::ol_native_vdf;
 
-    // use diem_std::debug::print;
+    use diem_std::debug::print;
 
     /// The current solution does not solve to previous hash, the delay proofs are not chained
     const EDELAY_NOT_CHAINED: u64 = 1;
@@ -43,14 +43,6 @@ module ol_framework::tower_state {
     struct TowerList has key {
       list: vector<address>
     }
-
-    /// To use in migration, and in future upgrade to deprecate.
-    struct TowerStats has key {
-      proofs_in_epoch: u64,
-      validator_proofs: u64,
-      fullnode_proofs: u64,
-    }
-
     /// The struct to store the global count of proofs in ol_framework
     struct TowerCounter has key {
       lifetime_proofs: u64,
@@ -468,7 +460,7 @@ module ol_framework::tower_state {
       get_count_in_epoch(miner_addr) >= globals::get_epoch_mining_thres_lower()
     }
 
-    fun epoch_param_reset(vm: &signer) acquires VDFDifficulty, TowerList, TowerProofHistory  {
+    fun epoch_param_reset(vm: &signer) acquires VDFDifficulty, TowerList, TowerProofHistory, TowerCounter  {
       system_addresses::assert_ol(vm);
 
       let diff = borrow_global_mut<VDFDifficulty>(@ol_framework );
@@ -477,7 +469,8 @@ module ol_framework::tower_state {
       diff.prev_sec = diff.security;
 
       // VDF proofs must be even numbers.
-      let rando = toy_rng(3, 2);
+      let rando = if (testnet::is_not_mainnet()) { toy_rng(0, 1, 0) }
+      else { toy_rng(3, 2, 10) };
       if (rando > 0) {
         rando = rando * 2;
       };
@@ -620,8 +613,10 @@ module ol_framework::tower_state {
     // }
 
     fun increment_stats(miner_addr: address) acquires TowerProofHistory, TowerCounter {
+      print(&333);
       // safety. Don't cause VM to halt
       if (!exists<TowerCounter>(@ol_framework)) return;
+      print(&3330001);
 
       let above = node_above_thresh(miner_addr);
 
@@ -634,6 +629,7 @@ module ol_framework::tower_state {
       if (above) { state.validator_proofs_in_epoch_above_thresh = state.validator_proofs_in_epoch_above_thresh + 1; };
 
       state.proofs_in_epoch = state.proofs_in_epoch + 1;
+      print(&state.proofs_in_epoch);
       state.lifetime_proofs = state.lifetime_proofs + 1;
     }
 
@@ -661,32 +657,42 @@ module ol_framework::tower_state {
     // the first use case is to change the VDF difficulty parameter by tiny margins, in order to make it difficult to stockpile VDFs in a previous epoch, but not change the security properties.
     // the goal is to push all the RNG work to all the tower miners in the network, and minimize compute on the Move side
 
-    public fun toy_rng(seed: u64, iters: u64): u64 acquires TowerList, TowerProofHistory {
+    public fun toy_rng(start_at_miner_n: u64, roll_dice: u64, minimum_proofs: u64): u64 acquires TowerList, TowerProofHistory, TowerCounter {
+      let n = 0;
+
+      // Do nothing if there is not enough randomness.
+      if (!exists<TowerCounter>(@ol_framework)) return 0;
+      let state = borrow_global<TowerCounter>(@ol_framework);
+      print(state);
+      if (state.lifetime_proofs < minimum_proofs) return 0;
+
+
       // Get the list of all miners L
       // Pick a tower miner  (M) from the seed position 1/(N) of the list of miners.
 
-      let l = get_miner_list();
+      let all_miners = get_miner_list();
       // the length will keep incrementing through the epoch. The last miner can know what the starting position will be. There could be a race to be the last validator to augment the set and bias the initial shuffle.
-      let len = vector::length(&l);
-      if (len == 0) return 0;
+      let count_miners = vector::length(&all_miners);
+      if (count_miners == 0) return 0;
 
-      // start n with the seed index
-      let n = seed;
-
+      // start n with the seed index;
+      let this_miner_index = start_at_miner_n;
       let i = 0;
-      while (i < iters) {
-        // make sure we get an n smaller than list of validators
-        // abort if loops too much
-        let k = 0;
-        while (n > len) {
+      // roll the dice roll_dice times
+      while (i < roll_dice) {
+        // pick the next miner
+        // make sure we get an n smaller than list of miners
+
+        let k = 0; // k keeps track of this loop, abort if loops too much
+        while (this_miner_index > count_miners) {
           if (k > 1000) return 0;
-          n = n / len;
+          this_miner_index = this_miner_index / count_miners;
           k = k + 1;
         };
         // double check
-        if (len <= n) return 0;
+        if (count_miners <= this_miner_index) return 0;
 
-        let miner_addr = vector::borrow<address>(&l, n);
+        let miner_addr = vector::borrow<address>(&all_miners, this_miner_index);
 
         let vec = if (exists<TowerProofHistory>(*miner_addr)) {
           *&borrow_global<TowerProofHistory>(*miner_addr).previous_proof_hash
@@ -800,14 +806,6 @@ module ol_framework::tower_state {
       let s = borrow_global<TowerCounter>(@ol_framework);
       s.lifetime_proofs
     }
-
-    // public fun danger_migrate_get_lifetime_proof_count(): (u64, u64, u64) acquires TowerStats{
-    //   if (exists<TowerStats>(@ol_framework)) {
-    //     let s = borrow_global<TowerStats>(@ol_framework);
-    //     return (s.proofs_in_epoch, s.validator_proofs, s.fullnode_proofs)
-    //   };
-    //   (0,0,0)
-    // }
 
     #[view]
     /// returns the current difficulty and security in a tuple (difficulty, security)
@@ -1048,16 +1046,16 @@ module ol_framework::tower_state {
       state.verified_tower_height = weight;
     }
 
-    #[test_only]
-    public fun test_mock_depr_tower_stats(vm: &signer) {
-      assert!(testnet::is_testnet(), error::invalid_state(130113));
-      system_addresses::assert_vm(vm);
-      move_to<TowerStats>(vm, TowerStats{
-        proofs_in_epoch: 111,
-        validator_proofs: 222,
-        fullnode_proofs: 333,
-      });
-    }
+    // #[test_only]
+    // public fun test_mock_depr_tower_stats(vm: &signer) {
+    //   assert!(testnet::is_testnet(), error::invalid_state(130113));
+    //   system_addresses::assert_vm(vm);
+    //   move_to<TowerStats>(vm, TowerStats{
+    //     proofs_in_epoch: 111,
+    //     validator_proofs: 222,
+    //     fullnode_proofs: 333,
+    //   });
+    // }
 
     #[test_only]
     public fun test_get_liftime_proofs(): u64 acquires TowerCounter {
