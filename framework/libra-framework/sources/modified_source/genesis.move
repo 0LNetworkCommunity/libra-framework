@@ -154,7 +154,6 @@ module diem_framework::genesis {
 
         proof_of_fee::init_genesis_baseline_reward(&diem_framework_account);
         slow_wallet::initialize(&diem_framework_account);
-        infra_escrow::initialize(&diem_framework_account);
         tower_state::initialize(&diem_framework_account);
         safe::initialize(&diem_framework_account);
         donor_directed::initialize(&diem_framework_account);
@@ -163,6 +162,11 @@ module diem_framework::genesis {
         match_index::initialize(&diem_framework_account);
         fee_maker::initialize(&diem_framework_account);
         oracle::initialize(&diem_framework_account);
+
+        // since the infra_escrow requires a VM signature, we need to initialized it as 0x0 and not 0x1, as the others.
+        let vm_sig = create_signer(@vm_reserved);
+        infra_escrow::initialize(&vm_sig);
+
 
         // end 0L
 
@@ -211,6 +215,9 @@ module diem_framework::genesis {
         // give coins to the 'core_resources' account, which has sudo
         // core_resources is a temporary account, not the same as framework account.
         gas_coin::configure_accounts_for_test(diem_framework, &core_resources, mint_cap_two);
+
+        // NOTE: smoke tests will fail without initializing tx fees as in genesis
+        transaction_fee::initialize_fee_collection_and_distribution(diem_framework, 0);
 
         // NOTE: 0L: the commented code below shows that we are destroying
         // there capabilities elsewhere, at gas_coin::initialize

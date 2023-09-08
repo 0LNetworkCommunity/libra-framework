@@ -198,7 +198,7 @@ pub fn genesis_migrate_infra_escrow(
     let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
 
     let serialized_values = serialize_values(&vec![
-        MoveValue::Signer(CORE_CODE_ADDRESS),
+        MoveValue::Signer(AccountAddress::ZERO), // is sent by the 0x0 address
         MoveValue::Signer(new_addr_type),
         MoveValue::U64((escrow_pct * 1_000_000.0) as u64),
     ]);
@@ -327,7 +327,7 @@ pub fn rounding_mint(session: &mut SessionExt, supply_settings: &SupplySettings)
 pub fn mint_genesis_bootstrap_coin(session: &mut SessionExt, validators: &[Validator]) {
     validators.iter().for_each(|v| {
         let serialized_values = serialize_values(&vec![
-            MoveValue::Signer(CORE_CODE_ADDRESS),
+            MoveValue::Signer(AccountAddress::ZERO), // must be called by 0x0
             MoveValue::Address(v.owner_address),
         ]);
 

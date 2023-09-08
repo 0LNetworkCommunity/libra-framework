@@ -95,7 +95,8 @@ module diem_framework::system_addresses {
     // }
 
     public fun assert_ol(sig: &signer) {
-        assert!(is_ol_framework_address(signer::address_of(sig)),
+      let addr = signer::address_of(sig);
+        assert!(is_ol_framework_address(addr) || is_reserved_address(addr),
         error::permission_denied(ENOT_OL_ROOT_ADDRESS))
     }
 }

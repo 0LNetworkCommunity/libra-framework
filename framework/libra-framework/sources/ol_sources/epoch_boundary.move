@@ -1,7 +1,5 @@
 
 module diem_framework::epoch_boundary {
-
-    use std::signer;
     use ol_framework::slow_wallet;
     use ol_framework::musical_chairs;
     use ol_framework::proof_of_fee;
@@ -21,22 +19,24 @@ module diem_framework::epoch_boundary {
     use diem_framework::system_addresses;
     use diem_framework::coin::{Self, Coin};
     use std::vector;
+    use std::error;
 
     // use diem_std::debug::print;
+    friend diem_framework::block;
 
     /// how many PoF baseline rewards to we set aside for the miners.
     /// equivalent reward of one seats of the validator set
     const ORACLE_PROVIDERS_SEATS: u64 = 1;
 
-    friend diem_framework::block;
+    /// The transaction fee coin has not been initialized
+    const ETX_FEES_NOT_INITIALIZED: u64 = 0;
+
 
     // Contains all of 0L's business logic for end of epoch.
     // This removed business logic from reconfiguration.move
     // and prevents dependency cycling.
     public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64) {
-        if (signer::address_of(root) != @ol_framework) { // should never abort
-            return
-        };
+        system_addresses::assert_ol(root);
         // bill root service fees;
         root_service_billing(root);
         // run the transactions of donor directed accounts
@@ -46,33 +46,35 @@ module diem_framework::epoch_boundary {
         // randomize the Tower/Oracle difficulty
         tower_state::reconfig(root);
 
+        assert!(transaction_fee::is_fees_collection_enabled(), error::invalid_state(ETX_FEES_NOT_INITIALIZED));
 
-        let all_fees = transaction_fee::root_withdraw_all(root);
+        if (transaction_fee::system_fees_collected() > 0) {
+          let all_fees = transaction_fee::root_withdraw_all(root);
 
-        // Nominal fee set by the PoF thermostat
-        let (nominal_reward_to_vals, clearning_price_to_oracle, _ ) = proof_of_fee::get_consensus_reward();
+          // Nominal fee set by the PoF thermostat
+          let (nominal_reward_to_vals, clearning_price_to_oracle, _ ) = proof_of_fee::get_consensus_reward();
 
-        // validators get the gross amount of the reward, since they already paid to enter. This results in a net payment equivalidant to the
-        // clearing_price.
-        process_outgoing_validators(root, &mut all_fees, nominal_reward_to_vals);
+          // validators get the gross amount of the reward, since they already paid to enter. This results in a net payment equivalidant to the
+          // clearing_price.
+          process_outgoing_validators(root, &mut all_fees, nominal_reward_to_vals);
 
-        // since we reserved some fees to go to the oracle miners
-        // we take the clearing_price, since it is the equivalent of what a
-        // validator would earn net of entry fee.
-        let oracle_budget = coin::extract(&mut all_fees, clearning_price_to_oracle);
-        oracle::epoch_boundary(root, &mut oracle_budget);
-        // in case there is any dust left
-        coin::merge(&mut all_fees, oracle_budget);
+          // since we reserved some fees to go to the oracle miners
+          // we take the clearing_price, since it is the equivalent of what a
+          // validator would earn net of entry fee.
+          let oracle_budget = coin::extract(&mut all_fees, clearning_price_to_oracle);
+          oracle::epoch_boundary(root, &mut oracle_budget);
+          // in case there is any dust left
+          coin::merge(&mut all_fees, oracle_budget);
+
+          // remainder gets burnt according to fee maker preferences
+          burn::epoch_burn_fees(root, &mut all_fees);
+          // there might be some dust, that should get burned
+          coin::user_burn(all_fees);
+        };
 
         process_incoming_validators(root);
 
-        // remainder gets burnt according to fee maker preferences
-        burn::epoch_burn_fees(root, &mut all_fees);
-        // there might be some dust, that should get burned
-        coin::user_burn(all_fees);
-
         subsidize_from_infra_escrow(root);
-
     }
 
   /// process the payments for performant validators
@@ -80,9 +82,8 @@ module diem_framework::epoch_boundary {
   /// NOTE: receives from reconfiguration.move a mutable borrow of a coin to pay reward
   /// NOTE: burn remaining fees from transaction fee account happens in reconfiguration.move (it's not a validator_universe concern)
   fun process_outgoing_validators(root: &signer, reward_budget: &mut Coin<GasCoin>, reward_per: u64): vector<address> {
-    if (signer::address_of(root) != @ol_framework) { // should never abort
-      return vector::empty<address>()
-    };
+    system_addresses::assert_ol(root);
+
 
     let vals = stake::get_current_validators();
 
@@ -109,9 +110,8 @@ module diem_framework::epoch_boundary {
   }
 
   fun process_incoming_validators(root: &signer) {
-    if (signer::address_of(root) != @ol_framework) { // should never abort
-        return
-    };
+    system_addresses::assert_ol(root);
+
 
     // TODO: this needs to be a friend function, but it's in a different namespace, so we are gating it with vm signer, which is what was done previously. Which means hacking block.move
     slow_wallet::on_new_epoch(root);
