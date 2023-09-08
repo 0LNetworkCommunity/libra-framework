@@ -1,22 +1,24 @@
+name: setup
+description: initialize ubuntu environment
 runs:
   using: composite
   steps:
 
-    - name: free disk space
-      uses: jlumbroso/free-disk-space@main
-      with:
-        # this might remove tools that are actually needed,
-        # if set to "true" but frees about 6 GB
-        tool-cache: false
+    # - name: free disk space
+    #   uses: jlumbroso/free-disk-space@main
+    #   with:
+    #     # this might remove tools that are actually needed,
+    #     # if set to "true" but frees about 6 GB
+    #     tool-cache: false
 
-        # all of these default to true, but feel free to set to
-        # "false" if necessary for your workflow
-        android: true
-        dotnet: true
-        haskell: true
-        large-packages: false
-        docker-images: true
-        swap-storage: true
+    #     # all of these default to true, but feel free to set to
+    #     # "false" if necessary for your workflow
+    #     android: true
+    #     dotnet: true
+    #     haskell: true
+    #     large-packages: false
+    #     docker-images: true
+    #     swap-storage: true
 
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
@@ -38,27 +40,27 @@ runs:
     #   with:
     #     crate: sccache
 
-    - name: download sccache bin
-      shell: bash
-      run: >
-        wget https://github.com/mozilla/sccache/releases/download/v0.5.4/sccache-v0.5.4-x86_64-unknown-linux-musl.tar.gz &&
-        tar -xvf sccache-v0.5.4-x86_64-unknown-linux-musl.tar.gz &&
-        cp sccache-v0.5.4-x86_64-unknown-linux-musl/sccache /usr/local/bin/sccache &&
-        chmod 744 /usr/local/bin/sccache
+    # - name: download sccache bin
+    #   shell: bash
+    #   run: >
+    #     wget https://github.com/mozilla/sccache/releases/download/v0.5.4/sccache-v0.5.4-x86_64-unknown-linux-musl.tar.gz &&
+    #     tar -xvf sccache-v0.5.4-x86_64-unknown-linux-musl.tar.gz &&
+    #     cp sccache-v0.5.4-x86_64-unknown-linux-musl/sccache /usr/local/bin/sccache &&
+    #     chmod 744 /usr/local/bin/sccache
 
-    - name: checkout sources
-      uses: actions/checkout@v3
-      with:
-        # git-restore-mtime-bare uses the ref log to find the correct timestamp
-        # for each file. This requires a full git history. The default value (1)
-        # creates a shallow checkout.
-        fetch-depth: 0
+    # - name: checkout sources
+    #   uses: actions/checkout@v3
+    #   with:
+    #     # git-restore-mtime-bare uses the ref log to find the correct timestamp
+    #     # for each file. This requires a full git history. The default value (1)
+    #     # creates a shallow checkout.
+    #     fetch-depth: 0
 
-    - name: cache rust
-      uses: Swatinem/rust-cache@v2
-      with:
-        shared-key: "libra" # to share across CI builds, so it is not job-id specific
-        cache-on-failure: true
+    # - name: cache rust
+    #   uses: Swatinem/rust-cache@v2
+    #   with:
+    #     shared-key: "libra" # to share across CI builds, so it is not job-id specific
+    #     cache-on-failure: true
 
-    - name: cargo mtime reset
-      uses: chetan/git-restore-mtime-action@v2
+    # - name: cargo mtime reset
+    #   uses: chetan/git-restore-mtime-action@v2

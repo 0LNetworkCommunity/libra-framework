@@ -31,8 +31,8 @@ module ol_framework::test_migration {
   }
 
   // test for infra escrow contribution
-  #[test(root = @ol_framework, marlon_rando = @0x123456)]
-  fun test_migration_balance_validators(root: signer, marlon_rando: signer) {
+  #[test(root = @ol_framework, vm = @vm_reserved, marlon_rando = @0x123456)]
+  fun test_migration_balance_validators(root: signer, vm: signer, marlon_rando: signer) {
 
     let _vals = mock::genesis_n_vals(&root, 4);
     // mock::ol_initialize_coin_and_fund_vals(&root, 1000000);
@@ -70,7 +70,7 @@ module ol_framework::test_migration {
 
 
     // after the slow wallets have been calculated we check the infra escrow pledges
-    infra_escrow::fork_escrow_init(&root, &marlon_rando, escrow_pct * 10000);
+    infra_escrow::fork_escrow_init(&vm, &marlon_rando, escrow_pct * 10000);
 
     let user_pledge = infra_escrow::user_infra_pledge_balance(addr);
     let all_pledge_balance = infra_escrow::infra_escrow_balance();
