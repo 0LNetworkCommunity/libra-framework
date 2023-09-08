@@ -212,6 +212,9 @@ module diem_framework::genesis {
         // core_resources is a temporary account, not the same as framework account.
         gas_coin::configure_accounts_for_test(diem_framework, &core_resources, mint_cap_two);
 
+        // NOTE: smoke tests will fail without initializing tx fees as in genesis
+        transaction_fee::initialize_fee_collection_and_distribution(diem_framework, 0);
+
         // NOTE: 0L: the commented code below shows that we are destroying
         // there capabilities elsewhere, at gas_coin::initialize
         coin::destroy_mint_cap(mint_cap_two);
