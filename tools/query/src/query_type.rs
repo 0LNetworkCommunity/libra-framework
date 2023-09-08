@@ -1,16 +1,16 @@
 use crate::{
     account_queries::{get_account_balance_libra, get_tower_state},
-    query_view::fetch_and_display,
     query_move_value::get_account_move_value,
+    query_view::fetch_and_display,
 };
 use anyhow::Result;
 use diem_sdk::{rest_client::Client, types::account_address::AccountAddress};
 use indoc::indoc;
-use serde_json::json;
 use libra_types::exports::AuthenticationKey;
+use libra_types::global_config_dir;
 use libra_types::legacy_types::app_cfg::AppCfg;
 use libra_types::type_extensions::client_ext::ClientExt;
-use libra_types::global_config_dir;
+use serde_json::json;
 
 pub enum OutputType {
     Json(String),
@@ -221,7 +221,9 @@ impl QueryType {
                 Ok(OutputType::Json(serde_json::to_string_pretty(&res)?))
             }
             QueryType::LookupAddress { auth_key } => {
-                let addr = client.lookup_originating_address(auth_key.to_owned()).await?;
+                let addr = client
+                    .lookup_originating_address(auth_key.to_owned())
+                    .await?;
 
                 Ok(OutputType::Json(serde_json::to_string(&json!({
                     "address": addr
@@ -233,7 +235,8 @@ impl QueryType {
                 struct_name,
                 key_name,
             } => {
-                get_account_move_value(&client, &account, &module_name, &struct_name, &key_name).await
+                get_account_move_value(&client, account, module_name, struct_name, key_name)
+                    .await
             }
             QueryType::SyncDelay {} => {
                 let config_path = global_config_dir();
@@ -256,7 +259,9 @@ impl QueryType {
                     };
 
                 // Get the block height from the working upstream
-                app_cfg.refresh_network_profile_and_save(Some(app_cfg.workspace.default_chain_id)).await?;
+                app_cfg
+                    .refresh_network_profile_and_save(Some(app_cfg.workspace.default_chain_id))
+                    .await?;
                 let upstream_client_url = app_cfg.pick_url()?;
                 let upstream_client = Client::new(upstream_client_url);
                 let upstream_client_res = upstream_client

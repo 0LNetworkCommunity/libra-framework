@@ -1,7 +1,6 @@
-
+use crate::query_type::OutputType;
 use anyhow::{anyhow, Result};
 use diem_sdk::{rest_client::Client, types::account_address::AccountAddress};
-use crate::query_type::OutputType; 
 
 pub async fn get_account_move_value(
     client: &Client,
@@ -10,18 +9,17 @@ pub async fn get_account_move_value(
     struct_name: &str,
     key_name: &str,
 ) -> Result<OutputType> {
-
     let res = &client
-    .get_account_resources(*account)
-    .await?
-    .into_inner()
-    .into_iter()
-    .map(|resource| {
-        let mut map = serde_json::Map::new();
-        map.insert(resource.resource_type.to_string(), resource.data);
-        serde_json::Value::Object(map)
-    })
-    .collect::<Vec<serde_json::Value>>();
+        .get_account_resources(*account)
+        .await?
+        .into_inner()
+        .into_iter()
+        .map(|resource| {
+            let mut map = serde_json::Map::new();
+            map.insert(resource.resource_type.to_string(), resource.data);
+            serde_json::Value::Object(map)
+        })
+        .collect::<Vec<serde_json::Value>>();
 
     let module_search_pattern = format!("::{}::", module_name);
 

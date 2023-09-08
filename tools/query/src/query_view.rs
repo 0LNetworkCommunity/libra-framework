@@ -1,7 +1,7 @@
 use anyhow::Result;
 use diem_sdk::rest_client::Client;
 use libra_types::type_extensions::client_ext::ClientExt;
-use serde_json::{Value,json};
+use serde_json::{json, Value};
 
 pub async fn get_view(
     client: &Client,

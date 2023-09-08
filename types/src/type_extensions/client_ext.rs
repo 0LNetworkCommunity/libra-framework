@@ -36,7 +36,6 @@ pub const DEFAULT_TIMEOUT_SECS: u64 = 10;
 pub const USER_AGENT: &str = concat!("libra-config/", env!("CARGO_PKG_VERSION"));
 pub const LOCAL_NODE_URL: &str = "http://localhost:8080";
 
-
 #[async_trait]
 pub trait ClientExt {
     async fn default() -> anyhow::Result<Client>;
@@ -47,7 +46,6 @@ pub trait ClientExt {
         app_cfg: &AppCfg,
         chain_id_opt: Option<NamedChain>,
     ) -> anyhow::Result<(Client, ChainId)>;
-
 
     fn from_vendor_config() -> anyhow::Result<Client>;
 
