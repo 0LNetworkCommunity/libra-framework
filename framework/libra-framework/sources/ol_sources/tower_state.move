@@ -6,7 +6,7 @@ module ol_framework::tower_state {
     use std::hash;
     use ol_framework::globals;
     use diem_framework::system_addresses;
-    use diem_framework::reconfiguration;
+    use ol_framework::epoch_helper;
     use diem_framework::testnet;
     use diem_framework::ol_native_vdf;
 
@@ -342,7 +342,7 @@ module ol_framework::tower_state {
         miner_history.count_proofs_in_epoch = 1
       };
 
-      miner_history.latest_epoch_mining = reconfiguration::get_current_epoch();
+      miner_history.latest_epoch_mining = epoch_helper::get_current_epoch();
 
       increment_stats(miner_addr);
     }
@@ -673,7 +673,7 @@ module ol_framework::tower_state {
     public fun get_count_in_epoch(miner_addr: address): u64 acquires TowerProofHistory {
       if (exists<TowerProofHistory>(miner_addr)) {
         let s = borrow_global<TowerProofHistory>(miner_addr);
-        if (s.latest_epoch_mining == reconfiguration::get_current_epoch()) {
+        if (s.latest_epoch_mining == epoch_helper::get_current_epoch()) {
           return s.count_proofs_in_epoch
         };
       };
@@ -694,7 +694,7 @@ module ol_framework::tower_state {
     // danger: this is a private function. Do not make public.
     fun lazy_reset_count_in_epoch(miner_addr: address) acquires TowerProofHistory {
       let s = borrow_global_mut<TowerProofHistory>(miner_addr);
-      if (s.latest_epoch_mining < reconfiguration::get_current_epoch()) {
+      if (s.latest_epoch_mining < epoch_helper::get_current_epoch()) {
         s.count_proofs_in_epoch = 0;
       };
     }
@@ -786,7 +786,7 @@ module ol_framework::tower_state {
         // FullnodeState::init(miner_sig);
     }
 
-    // Note: Used only in tests
+    #[test_only]
     public fun test_epoch_reset_counter(vm: &signer) acquires TowerCounter {
       assert!(testnet::is_testnet(), error::invalid_state(ENOT_TESTNET));
       system_addresses::assert_ol(vm);
@@ -831,7 +831,7 @@ module ol_framework::tower_state {
 
       let state = borrow_global_mut<TowerProofHistory>(addr);
       state.count_proofs_in_epoch = count;
-      state.latest_epoch_mining = reconfiguration::get_current_epoch();
+      state.latest_epoch_mining = epoch_helper::get_current_epoch();
     }
 
     #[test_only]
@@ -893,16 +893,6 @@ module ol_framework::tower_state {
     }
 
 
-    // #[test_only]
-    // // Sets the epochs since last account creation variable to allow `account`
-    // // to create a new account
-    // public fun test_helper_set_rate_limit(account: &signer, value: u64) acquires TowerProofHistory {
-    //   assert!(testnet::is_testnet(), error::invalid_state(130126));
-    //   let addr = signer::address_of(account);
-    //   let state = borrow_global_mut<TowerProofHistory>(addr);
-    //   state.epochs_since_last_account_creation = value;
-    // }
-
     #[test_only]
     public fun test_helper_set_epochs_mining(node_addr: address, value: u64) acquires TowerProofHistory {
       assert!(testnet::is_testnet(), error::invalid_state(130126));
@@ -944,25 +934,6 @@ module ol_framework::tower_state {
       let addr = signer::address_of(account);
       let state = borrow_global_mut<TowerProofHistory>(addr);
       state.verified_tower_height = weight;
-    }
-
-    // #[test_only]
-    // public fun test_mock_depr_tower_stats(vm: &signer) {
-    //   assert!(testnet::is_testnet(), error::invalid_state(130113));
-    //   system_addresses::assert_vm(vm);
-    //   move_to<TowerStats>(vm, TowerStats{
-    //     proofs_in_epoch: 111,
-    //     validator_proofs: 222,
-    //     fullnode_proofs: 333,
-    //   });
-    // }
-
-    #[test_only]
-    public fun test_get_liftime_proofs(): u64 acquires TowerCounter {
-      assert!(testnet::is_testnet(), error::invalid_state(130113));
-
-      let s = borrow_global<TowerCounter>(@ol_framework);
-      s.lifetime_proofs
     }
 
     #[test_only]

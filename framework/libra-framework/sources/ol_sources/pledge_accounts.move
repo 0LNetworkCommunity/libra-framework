@@ -46,7 +46,7 @@
         use std::fixed_point64;
         use ol_framework::gas_coin::GasCoin;
         use ol_framework::ol_account;
-        use diem_framework::reconfiguration;
+        use ol_framework::epoch_helper;
         use diem_framework::system_addresses;
         use diem_framework::coin;
 
@@ -188,7 +188,7 @@
                 address_of_beneficiary: address_of_beneficiary,
                 amount: value,
                 pledge: init_pledge,
-                epoch_of_last_deposit: reconfiguration::get_current_epoch(),
+                epoch_of_last_deposit: epoch_helper::get_current_epoch(),
                 lifetime_pledged: value,
                 lifetime_withdrawn: 0
             };
@@ -211,7 +211,7 @@
           let pledge_account = vector::borrow_mut(&mut my_pledges.list, idx);
 
           pledge_account.amount = pledge_account.amount + amount;
-          pledge_account.epoch_of_last_deposit = reconfiguration::get_current_epoch();
+          pledge_account.epoch_of_last_deposit = epoch_helper::get_current_epoch();
           pledge_account.lifetime_pledged = pledge_account.lifetime_pledged + amount;
 
           // merge the coins in the account
