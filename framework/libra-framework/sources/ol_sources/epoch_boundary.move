@@ -1,7 +1,5 @@
 
 module diem_framework::epoch_boundary {
-
-    // use std::signer;
     use ol_framework::slow_wallet;
     use ol_framework::musical_chairs;
     use ol_framework::proof_of_fee;
@@ -11,12 +9,12 @@ module diem_framework::epoch_boundary {
     use ol_framework::jail;
     use ol_framework::cases;
     use ol_framework::safe;
-    // use ol_framework::burn;
+    use ol_framework::burn;
     use ol_framework::donor_directed;
     use ol_framework::fee_maker;
     use ol_framework::tower_state;
     use ol_framework::infra_escrow;
-    // use ol_framework::oracle;
+    use ol_framework::oracle;
     use diem_framework::transaction_fee;
     use diem_framework::system_addresses;
     use diem_framework::coin::{Self, Coin};
@@ -48,35 +46,35 @@ module diem_framework::epoch_boundary {
         // randomize the Tower/Oracle difficulty
         tower_state::reconfig(root);
 
-
-        // // Nominal fee set by the PoF thermostat
-        let (_nominal_reward_to_vals, _clearning_price_to_oracle, _ ) = proof_of_fee::get_consensus_reward();
-
         assert!(transaction_fee::is_fees_collection_enabled(), error::invalid_state(ETX_FEES_NOT_INITIALIZED));
-        if (transaction_fee::system_fees_collected() == 0) return;
-        let all_fees = transaction_fee::root_withdraw_all(root);
 
-        // // validators get the gross amount of the reward, since they already paid to enter. This results in a net payment equivalidant to the
-        // // clearing_price.
-        // process_outgoing_validators(root, &mut all_fees, nominal_reward_to_vals);
+        if (transaction_fee::system_fees_collected() > 0) {
+          let all_fees = transaction_fee::root_withdraw_all(root);
 
-        // // since we reserved some fees to go to the oracle miners
-        // // we take the clearing_price, since it is the equivalent of what a
-        // // validator would earn net of entry fee.
-        // let oracle_budget = coin::extract(&mut all_fees, clearning_price_to_oracle);
-        // oracle::epoch_boundary(root, &mut oracle_budget);
-        // // in case there is any dust left
-        // coin::merge(&mut all_fees, oracle_budget);
+          // Nominal fee set by the PoF thermostat
+          let (nominal_reward_to_vals, clearning_price_to_oracle, _ ) = proof_of_fee::get_consensus_reward();
 
+          // validators get the gross amount of the reward, since they already paid to enter. This results in a net payment equivalidant to the
+          // clearing_price.
+          process_outgoing_validators(root, &mut all_fees, nominal_reward_to_vals);
 
-        // // remainder gets burnt according to fee maker preferences
-        // burn::epoch_burn_fees(root, &mut all_fees);
-        // // there might be some dust, that should get burned
-        coin::user_burn(all_fees);
+          // since we reserved some fees to go to the oracle miners
+          // we take the clearing_price, since it is the equivalent of what a
+          // validator would earn net of entry fee.
+          let oracle_budget = coin::extract(&mut all_fees, clearning_price_to_oracle);
+          oracle::epoch_boundary(root, &mut oracle_budget);
+          // in case there is any dust left
+          coin::merge(&mut all_fees, oracle_budget);
+
+          // remainder gets burnt according to fee maker preferences
+          burn::epoch_burn_fees(root, &mut all_fees);
+          // there might be some dust, that should get burned
+          coin::user_burn(all_fees);
+        };
+
         process_incoming_validators(root);
 
-        // subsidize_from_infra_escrow(root);
-
+        subsidize_from_infra_escrow(root);
     }
 
   /// process the payments for performant validators

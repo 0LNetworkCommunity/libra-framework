@@ -231,8 +231,14 @@
 
         // withdraw an amount from all pledge accounts. Check first that there are remaining funds before attempting to withdraw.
         public fun withdraw_from_all_pledge_accounts(sig_beneficiary: &signer, amount: u64): option::Option<coin::Coin<GasCoin>> acquires MyPledges, BeneficiaryPolicy {
-            let pledgers = *&borrow_global<BeneficiaryPolicy>(signer::address_of(sig_beneficiary)).pledgers;
-            let amount_available = *&borrow_global<BeneficiaryPolicy>(signer::address_of(sig_beneficiary)).amount_available;
+
+            let address_of_beneficiary = signer::address_of(sig_beneficiary);
+            if (!exists<BeneficiaryPolicy>(address_of_beneficiary)) {
+              return option::none<coin::Coin<GasCoin>>()
+            };
+
+            let pledgers = *&borrow_global<BeneficiaryPolicy>(address_of_beneficiary).pledgers;
+            let amount_available = *&borrow_global<BeneficiaryPolicy>(address_of_beneficiary).amount_available;
 
             if (amount_available == 0 || amount == 0) {
               return option::none<coin::Coin<GasCoin>>()
@@ -240,14 +246,13 @@
 
             let pct_withdraw = fixed_point64::create_from_rational((amount as u128), (amount_available as u128));
 
-            let address_of_beneficiary = signer::address_of(sig_beneficiary);
-
-
             let i = 0;
             let all_coins = option::none<coin::Coin<GasCoin>>();
             while (i < vector::length(&pledgers)) {
                 let pledge_account = *vector::borrow(&pledgers, i);
                 // DANGER: this is a private function that changes balances.
+                if (!exists<MyPledges>(pledge_account)) continue;
+
                 let c = withdraw_pct_from_one_pledge_account(&address_of_beneficiary, &pledge_account, &pct_withdraw);
                 // GROSS: dealing with options in Move.
                 // TODO: find a better way.
@@ -342,6 +347,11 @@
 
 
             let amount_withdraw = fixed_point64::multiply_u128(user_pledged_balance, *pct);
+
+            if (amount_withdraw == 0) {
+              return option::none<coin::Coin<GasCoin>>()
+            };
+
             if (user_pledged_balance >= amount_withdraw) {
 
                 let downcast_withdraw = (amount_withdraw as u64);

@@ -36,6 +36,7 @@ module ol_framework::infra_escrow{
     }
 
     /// VM can call down pledged funds.
+    // NOTE: the signer MUST_BE 0x0 address
     fun infra_pledge_withdraw(vm: &signer, amount: u64): Option<coin::Coin<GasCoin>> {
         system_addresses::assert_ol(vm);
         pledge_accounts::withdraw_from_all_pledge_accounts(vm, amount)
