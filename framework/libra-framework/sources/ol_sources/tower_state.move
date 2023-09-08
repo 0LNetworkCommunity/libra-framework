@@ -111,23 +111,13 @@ module ol_framework::tower_state {
     public fun init_difficulty(vm: &signer) {
       system_addresses::assert_ol(vm);
       if (!exists<VDFDifficulty>(@ol_framework )) {
-        if (testnet::is_testnet()) {
           move_to<VDFDifficulty>(vm, VDFDifficulty {
-            difficulty: 100,
-            security: 512,
-            prev_diff: 100,
-            prev_sec: 512,
-          });
-        } else {
-          move_to<VDFDifficulty>(vm, VDFDifficulty {
-            difficulty: 3000000000,
-            security: 350,
-            prev_diff: 120000000,
-            prev_sec: 350,
+            difficulty: globals::get_vdf_difficulty_baseline(),
+            security: globals::get_vdf_security_baseline(),
+            prev_diff: globals::get_vdf_difficulty_baseline(),
+            prev_sec: globals::get_vdf_security_baseline(),
           });
         }
-
-      }
     }
 
     /// Create an empty list of miners
@@ -259,29 +249,6 @@ module ol_framework::tower_state {
         return
       };
 
-
-
-      // // Skip this check on local tests, we need tests to send different difficulties.
-      // if (!testnet::is_testnet()){
-      //   // Get vdf difficulty constant. Will be different in tests than in production.
-
-      //   // need to also give allowance for user's first proof in epoch to be in the last proof.
-      //   if (get_count_in_epoch(miner_addr) == 0) {
-      //     // first proof in this epoch, can be either the previous difficulty or the current one
-      //     let is_diff = &proof.difficulty == &diff.difficulty ||
-      //                   &proof.difficulty == &diff.prev_diff;
-
-      //     let is_sec = &proof.security == &diff.security ||
-      //                  &proof.security == &diff.prev_sec;
-
-      //     assert!(is_diff, error::invalid_argument(130102));
-      //     assert!(is_sec, error::invalid_argument(13010202));
-      //   } else {
-      //     assert!(&proof.difficulty == &diff.difficulty, error::invalid_argument(130102));
-      //     assert!(&proof.security == &diff.security, error::invalid_argument(13010202));
-      //   };
-      // };
-
       // Process the proof
       verify_and_update_state(miner_addr, proof, true);
     }
@@ -303,34 +270,6 @@ module ol_framework::tower_state {
 
         commit_state(&sender, proof);
     }
-
-
-    // // This function is called by the OPERATOR associated with node,
-    // // it verifies the proof and commits to chain.
-    // // Function index: 02
-    // // Permissions: PUBLIC, ANYONE
-    // public fun commit_state_by_operator(
-    //   operator_sig: &signer,
-    //   miner_addr: address,
-    //   proof: Proof
-    // ) acquires TowerProofHistory, TowerList, TowerCounter, VDFDifficulty {
-
-    //   // Check the signer is in fact an operator delegated by the owner.
-
-    //   // Get address, assumes the sender is the signer.
-    //   assert!(ValidatorConfig::get_operator(miner_addr) == signer::address_of(operator_sig), error::requires_role(130103));
-    //   // Abort if not initialized. Assumes the validator Owner account
-    //   // already has submitted the 0th miner proof in onboarding.
-    //   assert!(exists<TowerProofHistory>(miner_addr), error::not_published(130104));
-
-    //   // Return early if difficulty and security are not correct.
-    //   // Check vdf difficulty constant. Will be different in tests than in production.
-    //   // Skip this check on local tests, we need tests to send differentdifficulties.
-    //   check_difficulty(miner_addr, &proof);
-
-    //   // Process the proof
-    //   verify_and_update_state(miner_addr, proof, true);
-    // }
 
     fun check_difficulty(miner_addr: address, proof: &Proof) acquires TowerProofHistory, VDFDifficulty {
       if (!testnet::is_testnet()){
@@ -458,7 +397,7 @@ module ol_framework::tower_state {
       let diff = borrow_global_mut<VDFDifficulty>(@ol_framework );
 
       diff.prev_diff = diff.difficulty;
-      diff.prev_sec = diff.security;
+      diff.prev_sec = diff.security; // NOTE: this shouldn't change unless in testing
 
       // VDF proofs must be even numbers.
       let rando = if (testnet::is_not_mainnet()) { toy_rng(0, 1, 0) }
@@ -508,7 +447,6 @@ module ol_framework::tower_state {
 
     // Function to initialize miner state
     // Permissions: PUBLIC, signer, Validator only
-    // Function code: 07
     public fun init_miner_state(
       miner_sig: &signer,
       challenge: &vector<u8>,
@@ -797,8 +735,8 @@ module ol_framework::tower_state {
         let v = borrow_global_mut<VDFDifficulty>(@ol_framework );
         return (v.difficulty, v.security)
       } else {
-        // we are probably in the middle of a migration
-        (5000000, 512)
+        // we are probably at genesis
+        (globals::get_vdf_difficulty_baseline(), globals::get_vdf_security_baseline())
       }
     }
 
@@ -886,6 +824,19 @@ module ol_framework::tower_state {
       let state = borrow_global_mut<TowerProofHistory>(addr);
       state.count_proofs_in_epoch = count;
       state.latest_epoch_mining = reconfiguration::get_current_epoch();
+    }
+
+    #[test_only]
+    public fun set_difficulty(vm: &signer, diff: u64, sec: u64) acquires VDFDifficulty {
+      system_addresses::assert_ol(vm);
+
+      let state = borrow_global_mut<VDFDifficulty>(@ol_framework );
+
+      state.prev_diff = state.difficulty;
+      state.prev_sec = state.security; // NOTE: this shouldn't change unless in testing
+
+      state.difficulty = diff;
+      state.security = sec;
     }
 
     #[test_only]

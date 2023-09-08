@@ -13,7 +13,7 @@ module ol_framework::test_tower {
     mock::genesis_n_vals(&root, 4);
     mock::ol_initialize_coin(&root);
 
-    mock::tower_default(); // make all the validators initialize towers
+    mock::tower_default(&root); // make all the validators initialize towers
     // because we need randomness for the toy rng
 
     let (diff, sec) = tower_state::get_difficulty();
@@ -49,7 +49,7 @@ module ol_framework::test_tower {
     mock::genesis_n_vals(&root, 4);
     mock::ol_initialize_coin(&root);
 
-    mock::tower_default(); // make all the validators initialize towers
+    mock::tower_default(&root); // make all the validators initialize towers
     // because we need randomness for the toy rng
 
     let num = tower_state::toy_rng(1, 3, 0);
