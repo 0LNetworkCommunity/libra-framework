@@ -25,7 +25,8 @@ module ol_framework::infra_escrow{
 
     /// for use on genesis, creates the infra escrow pledge policy struct
     public fun initialize(vm: &signer) {
-        system_addresses::assert_ol(vm);
+        // NOTE: THIS MUST BE THE 0x0 address, because on epoch boundary it is that address @vm_reserved which will be calling the functions.
+        system_addresses::assert_vm(vm);
         // TODO: perhaps this policy needs to be published to a different address?
         pledge_accounts::publish_beneficiary_policy(
           vm, // only VM calls at genesis
@@ -55,13 +56,13 @@ module ol_framework::infra_escrow{
         let c = option::extract(&mut opt);
         option::destroy_none(opt);
 
-        transaction_fee::vm_pay_fee(root, @ol_framework, c); // don't attribute to the user
+        transaction_fee::vm_pay_fee(root, @vm_reserved, c); // don't attribute to the user
     }
 
     /// for an uprade using an escrow percent. Only to be called at genesis
     // escrow percent has 6 decimal precision (1m);
     public fun fork_escrow_init(vm: &signer, user_sig: &signer, escrow_pct: u64) {
-      system_addresses::assert_ol(vm);
+      system_addresses::assert_vm(vm);
       let user_addr = signer::address_of(user_sig);
       // establish the infrastructure escrow pledge
 
@@ -83,19 +84,19 @@ module ol_framework::infra_escrow{
     // Transaction script for user to pledge to infra escrow.
     public fun user_pledge_infra(user_sig: &signer, amount: u64){
 
-      pledge_accounts::user_pledge(user_sig, @ol_framework, amount);
+      pledge_accounts::user_pledge(user_sig, @vm_reserved, amount);
     }
 
     #[view]
     /// gets the amount a user has pledged to infra escrow
     public fun user_infra_pledge_balance(addr: address): u64 {
-      pledge_accounts::get_user_pledge_amount(addr, @ol_framework)
+      pledge_accounts::get_user_pledge_amount(addr, @vm_reserved)
     }
 
     #[view]
     /// gets the amount a user has pledged to infra escrow
     public fun infra_escrow_balance(): u64 {
-      pledge_accounts::get_available_to_beneficiary(@ol_framework)
+      pledge_accounts::get_available_to_beneficiary(@vm_reserved)
     }
 
     //////// TESTNET HELPERS ////////

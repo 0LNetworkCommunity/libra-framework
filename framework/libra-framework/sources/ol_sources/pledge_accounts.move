@@ -498,15 +498,15 @@
         //// Genesis helper
         // private function only to be used at genesis for infra escrow
         // TODO! is this only for testing?
-        public fun genesis_infra_escrow_pledge(vm: &signer, account: &signer, amount: u64) acquires MyPledges, BeneficiaryPolicy {
+        public fun genesis_infra_escrow_pledge(root: &signer, account: &signer, amount: u64) acquires MyPledges, BeneficiaryPolicy {
           // TODO: add genesis time here, once the timestamp genesis issue is fixed.
           // chain_status::assert_genesis();
-          system_addresses::assert_ol(vm);
+          system_addresses::assert_ol(root);
 
           // let addr = signer::address_of(account);
 
           let coin = coin::withdraw<GasCoin>(account, amount);
-          save_pledge(account, @ol_framework, coin);
+          save_pledge(account, @vm_reserved, coin);
         }
 
         ////////// TX  //////////
