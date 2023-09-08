@@ -10,6 +10,7 @@ pub fn setup(
     chain: NamedChain,
     data_path: PathBuf,
     supply_settings: &Option<SupplySettings>,
+    legacy_data_path: Option<PathBuf>,
 ) -> anyhow::Result<()> {
     let db_path = data_path.join("data");
     if db_path.exists() {
@@ -56,8 +57,8 @@ pub fn setup(
         })
         .collect();
 
-    let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/fixtures/sample_export_recovery.json");
+    let p = legacy_data_path.unwrap_or(PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/sample_export_recovery.json"));
 
     let recovery = parse_json::recovery_file_parse(p)?;
 
