@@ -4,7 +4,8 @@ use crate::libra_smoke::LibraSmoke;
 
 /// testing epoch changes after 2 mins
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn meta_create_libra_smoke() -> anyhow::Result<()> {
+#[ignore]
+async fn meta_epoch() -> anyhow::Result<()> {
     let mut s = LibraSmoke::new(None)
         .await
         .expect("cannot start libra swarm");
