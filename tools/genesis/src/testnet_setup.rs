@@ -57,8 +57,10 @@ pub fn setup(
         })
         .collect();
 
-    let p = legacy_data_path.unwrap_or(PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/fixtures/sample_export_recovery.json"));
+    let p = legacy_data_path.unwrap_or(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/sample_export_recovery.json"),
+    );
 
     let recovery = parse_json::recovery_file_parse(p)?;
 
