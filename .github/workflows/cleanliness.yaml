@@ -1,14 +1,7 @@
-name: rust ci
-
+name: cleanliness
 on:
   push:
-    tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
-      - '[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
-    branches:
-      - 'release**'
-      - 'main'
-      - 'ci'
+    branches: ["*"]
   pull_request:
     types:
       - opened
@@ -16,92 +9,29 @@ on:
     branches:
       - 'release**'
       - 'main'
+      - 'ci'
 env:
-  DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
 
 jobs:
-  tooling:
-    runs-on: ubuntu-latest
+  clippy:
+    runs-on: self-hosted
     steps:
-    # # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
-    # - name: Setup tmate session
-    #   uses: mxschmitt/action-tmate@v3
-    #   with:
-    #     detached: true
-    #   # timeout-minutes: 15
 
-    - uses: actions/checkout@v3
-    - name: setup env
-      uses: ./.github/actions/build_env
+      - uses: actions/checkout@v3
 
-    - name: install diem-node (for smoke tests)
-      run: >
-        wget -O $DIEM_FORGE_NODE_BIN_PATH https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem-node &&
-        sudo chmod 755 $DIEM_FORGE_NODE_BIN_PATH &&
-        echo $DIEM_FORGE_NODE_BIN_PATH &&
-        ls -l $DIEM_FORGE_NODE_BIN_PATH
+      - name: setup env
+        uses: ./.github/actions/build_env
 
-    # fail fast if types doesnt compile, everything else will fail.
-    - name: types
-      working-directory: ./types
-      run: cargo test --no-fail-fast --target x86_64-unknown-linux-gnu
+      - name: format
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
 
-    - name: wallet
-      if: always()
-      working-directory: ./tools/wallet
-      run: cargo test --no-fail-fast
-
-    - name: config
-      if: always()
-      working-directory: ./tools/config
-      run: cargo test --no-fail-fast
-
-    - name: genesis
-      if: always()
-      working-directory: ./tools/genesis
-      run: cargo test --no-fail-fast
-
-  smoke:
-    runs-on: ubuntu-latest
-    steps:
-    # # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
-    # - name: Setup tmate session
-    #   uses: mxschmitt/action-tmate@v3
-    #   with:
-    #     detached: true
-    #   # timeout-minutes: 15
-
-    - uses: actions/checkout@v3
-    - name: setup env
-      uses: ./.github/actions/build_env
-
-    - name: install diem-node (for smoke tests)
-      run: >
-        wget -O $DIEM_FORGE_NODE_BIN_PATH https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem-node &&
-        sudo chmod 755 $DIEM_FORGE_NODE_BIN_PATH &&
-        echo $DIEM_FORGE_NODE_BIN_PATH &&
-        ls -l $DIEM_FORGE_NODE_BIN_PATH
-
-    # Check test suite meta tests
-    - name: smoke-tests # NOTE: needs working DIEM_FORGE_NODE_BIN_PATH
-      if: always()
-      working-directory: ./smoke-tests
-      run: cargo test --no-fail-fast
-
-    # Tools tests (some use smoke-tests)
-    - name: query
-      if: always()
-      working-directory: ./tools/query
-      run: cargo test --no-fail-fast
-
-    - name: txs
-      if: always()
-      working-directory: ./tools/txs
-      run: cargo test --no-fail-fast
-
-    - name: tower
-      if: always()
-      working-directory: ./tools/tower
-      run: cargo test --no-fail-fast
+      - name: clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --workspace --tests -- -D warnings
