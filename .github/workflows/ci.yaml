@@ -84,6 +84,12 @@ jobs:
         echo $DIEM_FORGE_NODE_BIN_PATH &&
         ls -l $DIEM_FORGE_NODE_BIN_PATH
 
+    # build framework
+    - name: framework # NOTE: needs working DIEM_FORGE_NODE_BIN_PATH
+      if: always()
+      working-directory: ./framework
+      run: cargo run release
+
     # Check test suite meta tests
     - name: smoke-tests # NOTE: needs working DIEM_FORGE_NODE_BIN_PATH
       if: always()
