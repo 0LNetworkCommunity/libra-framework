@@ -280,7 +280,6 @@ impl Sender {
         let status = self.response.as_ref().unwrap().info.status();
         match status.is_success() {
             true => {
-                println!("transaction success!");
                 Ok(status.to_owned())
             }
             false => {
