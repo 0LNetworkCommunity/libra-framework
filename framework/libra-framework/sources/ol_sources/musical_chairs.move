@@ -64,34 +64,30 @@ module ol_framework::musical_chairs {
     // get the number of seats in the game
     // TODO: make this a (friend)
     public fun stop_the_music( // sorry, had to.
-      vm: &signer,
-      // height_start: u64,
-      // height_end: u64
+        vm: &signer,
+        // height_start: u64,
+        // height_end: u64
     ): (vector<address>, u64) acquires Chairs {
         system_addresses::assert_ol(vm);
 
         let validators = stake::get_current_validators();
-
-
         let (compliant, _non, ratio) = eval_compliance_impl(validators);
-
-
-
         let chairs = borrow_global_mut<Chairs>(@ol_framework);
 
-        // if the ratio of non-compliant nodes is between 0 and 5%
-        // we can increase the number of chairs by 1.
-        // otherwise (if more than 5% are failing) we wall back to the size of ther performant set.
-        if (fixed_point32::is_zero(*&ratio)) { // catch zeros
-          chairs.current_seats = chairs.current_seats + 1;
-        } else if (fixed_point32::multiply_u64(100, *&ratio) <= 5){
-          chairs.current_seats = chairs.current_seats + 1;
-        } else if (fixed_point32::multiply_u64(100, *&ratio) > 5) {
-          // remove chairs
-          // reduce the validator set to the size of the compliant set.
-          chairs.current_seats = vector::length(&compliant);
+        let num_compliant_nodes = vector::length(&compliant);
+        let compliance_ratio = fixed_point32::multiply_u64(100, *&ratio);
+
+        // Conditions under which seats should be one more than the number of compliant nodes
+        if fixed_point32::is_zero(*&ratio) || (compliance_ratio <= 5) {
+            // Correct the number of seats if it is not one more than the number of compliant nodes
+            if chairs.current_seats != num_compliant_nodes + 1 {
+                chairs.current_seats = num_compliant_nodes + 1;
+            }
+        }
+        // Condition under which the number of seats should be equal to the number of compliant nodes
+        else if compliance_ratio > 5 {
+            chairs.current_seats = num_compliant_nodes;
         };
-        // otherwise do nothing, the validator set is within a tolerable range.
 
         (compliant, chairs.current_seats)
     }
