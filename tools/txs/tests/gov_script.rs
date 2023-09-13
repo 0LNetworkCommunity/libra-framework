@@ -60,7 +60,7 @@ async fn smoke_gov_script() {
     }));
     cli.run().await.unwrap();
 
-    let query_res = query_view::get_view(
+    let _query_res = query_view::get_view(
         &s.client(),
         "0x1::diem_governance::get_proposal_state",
         None,
@@ -69,7 +69,7 @@ async fn smoke_gov_script() {
     .await
     .unwrap();
 
-    let query_res = query_view::get_view(
+    let _query_res = query_view::get_view(
         &s.client(),
         "0x1::voting::is_voting_closed",
         Some("0x1::governance_proposal::GovernanceProposal".to_string()),
@@ -78,7 +78,7 @@ async fn smoke_gov_script() {
     .await
     .unwrap();
 
-    let query_res = query_view::get_view(
+    let _query_res = query_view::get_view(
         &s.client(),
         "0x1::diem_governance::get_can_resolve",
         None,
@@ -87,7 +87,7 @@ async fn smoke_gov_script() {
     .await
     .unwrap();
 
-    let query_res = query_view::get_view(
+    let _query_res = query_view::get_view(
         &s.client(),
         "0x1::diem_governance::get_approved_hash",
         None,

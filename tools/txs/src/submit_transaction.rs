@@ -15,7 +15,6 @@ use diem_sdk::{
     },
 };
 
-use diem_global_constants::MAX_GAS_AMOUNT;
 use std::{
     path::PathBuf,
     time::{SystemTime, UNIX_EPOCH},
