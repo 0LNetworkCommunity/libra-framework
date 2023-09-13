@@ -31,6 +31,7 @@ url = { workspace = true }
 diem = { workspace = true }
 diem-api-types = { workspace = true }
 diem-crypto = { workspace = true }
+diem-global-constants = { workspace = true }
 diem-rest-client = { workspace = true }
 diem-sdk = { workspace = true }
 diem-types = { workspace = true }

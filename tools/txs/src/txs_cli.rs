@@ -41,10 +41,13 @@ pub struct TxsCli {
     pub test_private_key: Option<String>,
 
     /// optional, use a transaction profile used in libra.yaml
+    /// is mutually exclusive with --tx-cost
     #[clap(long)]
     pub tx_profile: Option<TxType>,
 
     /// optional, maximum number of gas units to be used to send this transaction
+    /// is mutually exclusive with --tx-profile
+
     #[clap(flatten)]
     pub tx_cost: Option<TxCost>,
     // TODO
@@ -171,12 +174,15 @@ impl TxsCli {
         )
         .await?;
 
-        // let tx_cost = self
-        //     .tx_cost
-        //     .clone()
-        //     .unwrap_or_else(|| app_cfg.tx_configs.get_cost(self.tx_profile.clone()));
+        if self.tx_cost.is_some() && self.tx_profile.is_some() {
+          println!("ERROR: --tx-cost and --txs-profile are mutually exclusive. Either set the costs explicitly or choose a profile in libra.yaml, exiting");
+        }
+        let tx_cost = self
+            .tx_cost
+            .clone()
+            .unwrap_or_else(|| app_cfg.tx_configs.get_cost(self.tx_profile.clone()));
 
-        let tx_cost = app_cfg.tx_configs.get_cost(self.tx_profile.clone());
+        // let tx_cost = app_cfg.tx_configs.get_cost(self.tx_profile.clone());
 
         send.set_tx_cost(&tx_cost);
 

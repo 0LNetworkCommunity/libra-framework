@@ -53,7 +53,7 @@ async fn smoke_upgrade_multiple_steps() {
         config_path: Some(d.path().to_owned().join("libra.yaml")),
         url: Some(s.api_endpoint.clone()),
         tx_profile: None,
-        tx_cost: Some(TxCost::default_baseline_cost()),
+        tx_cost: Some(TxCost::default_critical_txs_cost()),
         estimate_only: false,
     };
 
@@ -66,7 +66,7 @@ async fn smoke_upgrade_multiple_steps() {
         proposal_id: 0,
         should_fail: false,
     }));
-    cli.run().await.unwrap();
+    cli.run().await.expect("alice votes on prop 0");
 
     let query_res = query_view::get_view(
         &s.client(),
@@ -131,7 +131,7 @@ async fn smoke_upgrade_multiple_steps() {
         proposal_id: 0,
         proposal_script_dir: script_dir,
     }));
-    cli.run().await.unwrap();
+    cli.run().await.expect("cannot resolve proposal at step 1");
     //////////////////////////////
 
     let script_dir = fixtures_path()
@@ -144,7 +144,7 @@ async fn smoke_upgrade_multiple_steps() {
         proposal_id: 0,
         proposal_script_dir: script_dir,
     }));
-    cli.run().await.unwrap();
+    cli.run().await.expect("cannot resolve proposal at step 2");
     //////////////////////////////
 
     let query_res =

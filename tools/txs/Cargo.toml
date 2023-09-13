@@ -27,6 +27,7 @@ libra-wallet = { workspace = true }
 
 diem = { workspace = true }
 diem-framework = { workspace = true }
+diem-global-constants = { workspace = true }
 diem-logger = { workspace = true }
 diem-sdk = { workspace = true }
 diem-types = { workspace = true }

@@ -69,8 +69,6 @@ async fn smoke_gov_script() {
     .await
     .unwrap();
 
-    dbg!(&query_res[0]);
-
     let query_res = query_view::get_view(
         &s.client(),
         "0x1::voting::is_voting_closed",
@@ -79,7 +77,6 @@ async fn smoke_gov_script() {
     )
     .await
     .unwrap();
-    dbg!(&query_res[0]);
 
     let query_res = query_view::get_view(
         &s.client(),
@@ -90,8 +87,6 @@ async fn smoke_gov_script() {
     .await
     .unwrap();
 
-    dbg!(&query_res[0]);
-
     let query_res = query_view::get_view(
         &s.client(),
         "0x1::diem_governance::get_approved_hash",
@@ -100,8 +95,6 @@ async fn smoke_gov_script() {
     )
     .await
     .unwrap();
-
-    dbg!(&query_res[0]);
 
     // Now try to resolve upgrade
     cli.subcommand = Some(Upgrade(Resolve {
