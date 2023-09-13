@@ -249,7 +249,8 @@ impl Sender {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs();
-        let time = t + DEFAULT_TIMEOUT_SECS * 10;
+        let time = t + (DEFAULT_TIMEOUT_SECS * 10);
+
         let tb = TransactionBuilder::new(payload, time, self.chain_id)
             .gas_unit_price(self.tx_cost.coin_price_per_unit)
             .max_gas_amount(self.tx_cost.max_gas_unit_for_tx);

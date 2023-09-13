@@ -574,29 +574,28 @@ pub struct TxCost {
 
 impl TxCost {
     /// create new cost object
-    pub fn new(units: u64) -> Self {
+    pub fn new(units: u64, price_multiplier: f64) -> Self {
         TxCost {
             max_gas_unit_for_tx: units, // oracle upgrade transaction is expensive.
-            coin_price_per_unit: MIN_GAS_UNIT_PRICE, // this is the minimum price
+            coin_price_per_unit: (MIN_GAS_UNIT_PRICE as f64 * price_multiplier) as u64, // this is the minimum price
             user_tx_timeout: 5_000,
         }
     }
 
     pub fn default_baseline_cost() -> Self {
-        TxCost::new(1_000)
+        TxCost::new(10_000, 2.0)
     }
     pub fn default_critical_txs_cost() -> Self {
-        TxCost::new(1_000_000)
+        TxCost::new(10_000_000, 5.0)
     }
     pub fn default_management_txs_cost() -> Self {
-        TxCost::new(100_000)
+        TxCost::new(1_000_000, 4.0)
     }
     pub fn default_miner_txs_cost() -> Self {
-        TxCost::new(10_000)
+        TxCost::new(100_000, 3.0)
     }
-
     pub fn default_cheap_txs_cost() -> Self {
-        TxCost::new(100)
+        TxCost::new(1_000, 1.0)
     }
 }
 
