@@ -77,11 +77,11 @@ module ol_framework::musical_chairs {
         let num_compliant_nodes = vector::length(&compliant);
         let compliance_ratio = fixed_point32::multiply_u64(100, *&ratio);
 
-        // Conditions under which seats should be one more than the number of compliant nodes
+        // Conditions under which seats should be one more than the number of compliant nodes(<= 5%)
         if fixed_point32::is_zero(*&ratio) || (compliance_ratio <= 5) {
             // Correct the number of seats if it is not one more than the number of compliant nodes
-            if chairs.current_seats != num_compliant_nodes + 1 {
-                chairs.current_seats = num_compliant_nodes + 1;
+            if chairs.current_seats != chairs.current_seats + 1 {
+                chairs.current_seats = chairs.current_seats + 1;
             }
         }
         // Condition under which the number of seats should be equal to the number of compliant nodes
@@ -90,6 +90,15 @@ module ol_framework::musical_chairs {
         };
 
         (compliant, chairs.current_seats)
+    }
+
+    // Update seat count to match filled seats post-PoF auction.
+    public fun set_current_seats(filled_seats: u64): u64{
+      system_addresses::assert_ol(vm);
+      let chairs = borrow_global_mut<Chairs>(@ol_framework);
+      chairs.current_seats = filled_seats;
+      chairs.current_seats
+
     }
 
     #[test_only]

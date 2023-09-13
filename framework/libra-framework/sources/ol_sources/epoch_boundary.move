@@ -120,6 +120,9 @@ module diem_framework::epoch_boundary {
 
     let validators = proof_of_fee::end_epoch(root, &compliant, n_seats);
 
+    let filled_seats = vector::length(&validators);
+    musical_chairs::set_current_seats(filled_seats)
+
     stake::ol_on_new_epoch(root, validators);
 
   }
