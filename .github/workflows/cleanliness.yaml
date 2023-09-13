@@ -2,6 +2,9 @@ name: cleanliness
 on:
   push:
     branches: ["*"]
+    tags:
+    - '[0-9]+.[0-9]+.[0-9]+'
+    - '[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
   pull_request:
     types:
       - opened
@@ -9,18 +12,16 @@ on:
     branches:
       - 'release**'
       - 'main'
-      - 'ci'
 env:
+  DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
 
 jobs:
   clippy:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
-
       - uses: actions/checkout@v3
-
       - name: setup env
         uses: ./.github/actions/build_env
 
