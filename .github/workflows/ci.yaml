@@ -3,105 +3,118 @@ name: rust ci
 on:
   push:
     tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
-      - '[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
     branches:
-      - 'release**'
-      - 'main'
-      - 'ci'
+      - "release**"
+      - "main"
+      - "ci"
   pull_request:
     types:
       - opened
       - synchronize
     branches:
-      - 'release**'
-      - 'main'
+      - "release**"
+      - "main"
 env:
   DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
 
 jobs:
-  tooling:
+  build-framework:
     runs-on: ubuntu-latest
     steps:
-    # # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
-    # - name: Setup tmate session
-    #   uses: mxschmitt/action-tmate@v3
-    #   with:
-    #     detached: true
-    #   # timeout-minutes: 15
+      - uses: actions/checkout@v3
+      - name: setup env
+        uses: ./.github/actions/build_env
+      - name: build framework
+        working-directory: ./framework
+        run: cargo r release
 
-    - uses: actions/checkout@v3
-    - name: setup env
-      uses: ./.github/actions/build_env
+  types:
+    needs: [build-framework]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup env
+        uses: ./.github/actions/build_env
 
-    - name: install diem-node (for smoke tests)
-      run: >
-        wget -O $DIEM_FORGE_NODE_BIN_PATH https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem-node &&
-        sudo chmod 755 $DIEM_FORGE_NODE_BIN_PATH &&
-        echo $DIEM_FORGE_NODE_BIN_PATH &&
-        ls -l $DIEM_FORGE_NODE_BIN_PATH
-
-    # fail fast if types doesnt compile, everything else will fail.
-    - name: types
-      working-directory: ./types
-      run: cargo test --no-fail-fast --target x86_64-unknown-linux-gnu
-
-    - name: wallet
-      if: always()
-      working-directory: ./tools/wallet
-      run: cargo test --no-fail-fast
-
-    - name: config
-      if: always()
-      working-directory: ./tools/config
-      run: cargo test --no-fail-fast
-
-    - name: genesis
-      if: always()
-      working-directory: ./tools/genesis
-      run: cargo test --no-fail-fast
+      # fail fast if types doesnt compile, everything else will fail.
+      - name: types
+        working-directory: ./types
+        run: cargo test --no-fail-fast
+  wallet:
+    needs: [build-framework]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup env
+        uses: ./.github/actions/build_env
+      - name: wallet
+        if: always()
+        working-directory: ./tools/wallet
+        run: cargo test --no-fail-fast
 
   smoke:
+    needs: [build-framework]
     runs-on: ubuntu-latest
     steps:
-    # # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
-    # - name: Setup tmate session
-    #   uses: mxschmitt/action-tmate@v3
-    #   with:
-    #     detached: true
-    #   # timeout-minutes: 15
+      - uses: actions/checkout@v3
+      - name: setup env
+        uses: ./.github/actions/build_env
+      # Check test suite meta tests
+      - name: smoke-tests # NOTE: needs working DIEM_FORGE_NODE_BIN_PATH
+        if: always()
+        working-directory: ./smoke-tests
+        run: cargo test --no-fail-fast
 
-    - uses: actions/checkout@v3
-    - name: setup env
-      uses: ./.github/actions/build_env
+  query:
+    needs: [build-framework]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup env
+        uses: ./.github/actions/build_env
 
-    - name: install diem-node (for smoke tests)
-      run: >
-        wget -O $DIEM_FORGE_NODE_BIN_PATH https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem-node &&
-        sudo chmod 755 $DIEM_FORGE_NODE_BIN_PATH &&
-        echo $DIEM_FORGE_NODE_BIN_PATH &&
-        ls -l $DIEM_FORGE_NODE_BIN_PATH
+      # Tools tests (some use smoke-tests)
+      - name: query
+        if: always()
+        working-directory: ./tools/query
+        run: cargo test --no-fail-fast
 
-    # Check test suite meta tests
-    - name: smoke-tests # NOTE: needs working DIEM_FORGE_NODE_BIN_PATH
-      if: always()
-      working-directory: ./smoke-tests
-      run: cargo test --no-fail-fast
+  genesis:
+    needs: [build-framework]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup env
+        uses: ./.github/actions/build_env
+      - name: genesis
+        if: always()
+        working-directory: ./tools/genesis
+        run: cargo test --no-fail-fast
 
-    # Tools tests (some use smoke-tests)
-    - name: query
-      if: always()
-      working-directory: ./tools/query
-      run: cargo test --no-fail-fast
+  tower:
+    needs: [build-framework]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup env
+        uses: ./.github/actions/build_env
+      - name: tower
+        if: always()
+        working-directory: ./tools/tower
+        run: cargo test --no-fail-fast
 
-    - name: txs
-      if: always()
-      working-directory: ./tools/txs
-      run: cargo test --no-fail-fast
-
-    - name: tower
-      if: always()
-      working-directory: ./tools/tower
-      run: cargo test --no-fail-fast
+  txs:
+    needs: [build-framework]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup env
+        uses: ./.github/actions/build_env
+      - name: txs
+        if: always()
+        working-directory: ./tools/txs
+        run: cargo test --no-fail-fast
