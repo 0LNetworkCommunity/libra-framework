@@ -15,8 +15,8 @@ async fn libra_query_test() {
         Ok(v) => {
             println!("v: {:?}", v);
             let b: LibraBalanceDisplay = serde_json::from_value(v).unwrap();
-            assert!(b.unlocked == 10000.0);
-            assert!(b.total == 10000.0);
+            assert!(b.unlocked == 100000.0);
+            assert!(b.total == 100000.0);
         }
         Err(e) => {
             println!("e: {:?}", e);
