@@ -4,9 +4,9 @@ use crate::{
     exports::{AccountAddress, AuthenticationKey, NamedChain},
     global_config_dir,
 };
-use diem_global_constants::{GAS_UNIT_PRICE, MAX_GAS_AMOUNT};
 use anyhow::{bail, Context};
 use diem_crypto::ed25519::Ed25519PrivateKey;
+use diem_global_constants::{GAS_UNIT_PRICE, MAX_GAS_AMOUNT};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use url::Url;
@@ -580,25 +580,26 @@ impl TxCost {
             max_gas_unit_for_tx: units, // oracle upgrade transaction is expensive.
             // TODO: the GAS_UNIT_PRICE is set in DIEM. IT IS ALSO THE MINIMUM GAS PRICE This is arbitrary and needs to be reviewed.
             // It is also 0 in tests, so we need to increase to at least 1.
-            coin_price_per_unit: (MINUMUM_GAS_PRICE_IN_DIEM.min(1) as f64 * price_multiplier) as u64, // this is the minimum price
+            coin_price_per_unit: (MINUMUM_GAS_PRICE_IN_DIEM.min(1) as f64 * price_multiplier)
+                as u64, // this is the minimum price
             user_tx_timeout: 5_000,
         }
     }
 
     pub fn default_baseline_cost() -> Self {
-        TxCost::new(MAX_GAS_AMOUNT/50, 2.0)
+        TxCost::new(MAX_GAS_AMOUNT / 50, 2.0)
     }
     pub fn default_critical_txs_cost() -> Self {
-        TxCost::new(MAX_GAS_AMOUNT/6, 5.0)
+        TxCost::new(MAX_GAS_AMOUNT / 6, 5.0)
     }
     pub fn default_management_txs_cost() -> Self {
-        TxCost::new(MAX_GAS_AMOUNT/12, 4.0)
+        TxCost::new(MAX_GAS_AMOUNT / 12, 4.0)
     }
     pub fn default_miner_txs_cost() -> Self {
-        TxCost::new(MAX_GAS_AMOUNT/25, 3.0)
+        TxCost::new(MAX_GAS_AMOUNT / 25, 3.0)
     }
     pub fn default_cheap_txs_cost() -> Self {
-        TxCost::new(MAX_GAS_AMOUNT/100, 1.0)
+        TxCost::new(MAX_GAS_AMOUNT / 100, 1.0)
     }
 }
 

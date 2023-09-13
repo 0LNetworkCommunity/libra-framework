@@ -123,7 +123,6 @@ async fn smoke_upgrade_single_step() {
         "expected this script hash, did you change the fixtures?"
     );
 
-
     ///////// SHOWTIME ////////
     // Now try to resolve upgrade
     cli.subcommand = Some(Upgrade(Resolve {
