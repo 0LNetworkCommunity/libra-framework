@@ -7,7 +7,7 @@ use libra_wallet::{
 };
 use std::path::PathBuf;
 
-// TODO: duplicate with libra-wallet and crate/aptos/src/genesis/keys
+// TODO: duplicate with libra-wallet and diem/crate/diem/src/genesis/keys
 pub const PUBLIC_KEYS_FILE: &str = "public-keys.yaml";
 
 /// Function to publish the validator configuration files to github

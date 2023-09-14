@@ -1,9 +1,9 @@
-use libra_smoke_tests::libra_smoke::LibraSmoke;
+use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::txs_cli::{
     TxsCli,
     TxsSub::{GenerateTransaction, Publish},
 };
-use libra_types::type_extensions::client_ext::ClientExt;
+use libra_types::{legacy_types::app_cfg::TxCost, type_extensions::client_ext::ClientExt};
 
 use diem::common::types::MovePackageDir;
 use std::path::PathBuf;
@@ -14,7 +14,16 @@ use std::str::FromStr;
 /// 3) any client should be able to call a view function on that contract.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn smoke_publish() {
-    let mut s = LibraSmoke::new(None).await.expect("can't start swarm");
+    let d = diem_temppath::TempPath::new();
+
+    let mut s = LibraSmoke::new(Some(2))
+        .await
+        .expect("could not start libra smoke");
+
+    let (_, _app_cfg) =
+        configure_validator::init_val_config_files(&mut s.swarm, 0, d.path().to_owned())
+            .await
+            .expect("could not init validator config");
 
     // 1) the genesis validator to build and publish a fixture Move module ("tests/fixtures/test_publish").
 
@@ -29,10 +38,11 @@ async fn smoke_publish() {
         mnemonic: None,
         test_private_key: Some(s.encoded_pri_key.clone()),
         chain_id: None,
-        config_path: None,
+        config_path: Some(d.path().to_owned().join("libra.yaml")),
         url: Some(s.api_endpoint.clone()),
-        gas_max: None,
-        gas_unit_price: None,
+        tx_profile: None,
+        tx_cost: Some(TxCost::default_baseline_cost()),
+        estimate_only: false,
     };
 
     cli.run().await.expect("cli could not publish contract");
