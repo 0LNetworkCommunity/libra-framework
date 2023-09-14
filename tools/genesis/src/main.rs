@@ -80,6 +80,9 @@ enum Sub {
         /// optional, settings for supply.
         #[clap(flatten)]
         supply_settings: Option<SupplySettings>,
+        /// path to file for legacy migration file
+        #[clap(short, long)]
+        json_legacy: Option<PathBuf>,
     },
 }
 
@@ -147,12 +150,14 @@ fn main() -> anyhow::Result<()> {
             me,
             ip_list,
             supply_settings,
+            json_legacy,
         }) => testnet_setup::setup(
             &me,
             &ip_list,
             cli.chain.unwrap_or(NamedChain::TESTING),
             cli.home_dir.unwrap_or_else(global_config_dir),
             &supply_settings,
+            json_legacy,
         )?,
         _ => {
             println!("\nIf you're looking for trouble \nYou came to the right place");

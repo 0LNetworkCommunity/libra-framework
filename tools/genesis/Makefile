@@ -46,10 +46,13 @@ stdlib:
 	cargo r -p libra-framework -- release
 
 
-testnet: stdlib test-genesis test-node
+testnet: stdlib test-genesis node
 
 test-node:
 	cargo r -p libra -- node
+
+node:
+	diem-node -f ~/.libra/validator.yaml
 
 ifndef ALICE_IP
 ALICE_IP = 134.209.32.159
