@@ -80,9 +80,9 @@ module ol_framework::mock {
 
     //////// TOWER ///////
     #[test_only]
-    public fun tower_default() {
+    public fun tower_default(root: &signer) {
       let vals = stake::get_current_validators();
-
+      tower_state::set_difficulty(root, 100, 512); // original fixtures pre-wesolowski change.
       let i = 0;
       while (i < vector::length(&vals)) {
 

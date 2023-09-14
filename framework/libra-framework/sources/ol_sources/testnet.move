@@ -16,6 +16,10 @@ module ol_framework::testnet {
         chain_id::get() == 4
     }
 
+    public fun is_not_mainnet(): bool {
+        chain_id::get() != 1
+    }
+
     public fun assert_testnet(vm: &signer): bool {
       assert!(
           signer::address_of(vm) == @ol_framework,

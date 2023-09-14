@@ -21,7 +21,7 @@ module ol_framework::donor_directed_governance {
     use ol_framework::ballot::{Self, BallotTracker};
     use ol_framework::cumulative_deposits;
     use diem_framework::account;
-    use diem_framework::reconfiguration;
+    use ol_framework::epoch_helper;
     use std::vector;
     // use ol_framework::debug::print;
 
@@ -196,7 +196,7 @@ module ol_framework::donor_directed_governance {
         epochs_duration = 7;
       };
 
-      let deadline = reconfiguration::get_current_epoch() + epochs_duration;
+      let deadline = epoch_helper::get_current_epoch() + epochs_duration;
       let max_extensions = 0; // infinite
 
       let t = turnout_tally::new_tally_struct(
