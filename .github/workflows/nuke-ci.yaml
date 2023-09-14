@@ -1,0 +1,29 @@
+name: nuke the CI
+on:
+  push:
+    tags:
+      - "nuke-ci*"
+jobs:
+  delete_all_runs:
+    name: delete all workflow runs
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: 0 #${{ github.event.inputs.days }}
+          keep_minimum_runs: 0 # ${{ github.event.inputs.minimum_runs }}
+          # delete_workflow_pattern: ${{ github.event.inputs.delete_workflow_pattern }}
+          # delete_workflow_by_state_pattern: disabled_manually
+          # delete_run_by_conclusion_pattern: ${{ github.event.inputs.delete_run_by_conclusion_pattern }}
+          # dry_run: true
+  wipe_caches:
+    name: delete all caches
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - name: clear caches
+        uses: easimon/wipe-cache@main
