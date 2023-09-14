@@ -31,7 +31,7 @@ const USER_FILE: &str = "danger-user-private-keys.yaml";
 
 // new keys for user
 pub fn user_keygen(output_opt: Option<PathBuf>) -> anyhow::Result<()> {
-    let user_keys = legacy_keygen()?;
+    let user_keys = legacy_keygen(true)?;
 
     if let Some(dir) = output_opt {
         if prompt_yes("Saving keys locally is VERY DANGEROUS, do you know what you are doing?") {
@@ -45,7 +45,8 @@ pub fn user_keygen(output_opt: Option<PathBuf>) -> anyhow::Result<()> {
 pub fn validator_keygen(
     output_opt: Option<PathBuf>,
 ) -> anyhow::Result<(IdentityBlob, IdentityBlob, PrivateIdentity, PublicIdentity)> {
-    let legacy_keys = legacy_keygen()?;
+    // this is the only moment the validators will see the mnemonic
+    let legacy_keys = legacy_keygen(true)?;
 
     let (validator_blob, vfn_blob, private_identity, public_identity) =
         generate_key_objects_from_legacy(&legacy_keys)?;
