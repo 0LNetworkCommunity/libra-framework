@@ -17,6 +17,7 @@ pub fn initialize_host(
     host: HostAndPort,
     mnem: Option<String>,
     keep_legacy_address: bool,
+    chain_name: Option<NamedChain>,
 ) -> anyhow::Result<()> {
     let (.., keys) =
         libra_wallet::keys::refresh_validator_files(mnem, home_path.clone(), keep_legacy_address)?;
@@ -38,8 +39,8 @@ pub fn initialize_host(
         keys.child_0_owner.auth_key,
         keys.child_0_owner.account,
         home_path,
-        None,
-        Some(NetworkPlaylist::localhost(None)),
+        chain_name,
+        Some(NetworkPlaylist::localhost(chain_name)),
     )?;
 
     cfg.save_file().context(format!(
@@ -112,6 +113,7 @@ pub fn initialize_validator_configs(
             host,
             None,
             keep_legacy_address,
+            None,
         )?;
     }
 
@@ -134,6 +136,7 @@ fn test_validator_files_config() {
         h,
         Some(alice_mnem),
         false,
+        None,
     )
     .unwrap();
 

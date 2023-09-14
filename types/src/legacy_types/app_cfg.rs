@@ -5,15 +5,18 @@ use crate::{
     global_config_dir,
 };
 use anyhow::{bail, Context};
+use diem_crypto::ed25519::Ed25519PrivateKey;
+use diem_global_constants::{GAS_UNIT_PRICE, MAX_GAS_AMOUNT};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use url::Url;
 
-use diem_crypto::ed25519::Ed25519PrivateKey;
-
 use std::{fs, io::Write, path::PathBuf, str::FromStr};
 
 use super::network_playlist::{self, HostProfile, NetworkPlaylist};
+
+// TODO: the GAS_UNIT_PRICE is set in DIEM. IT IS ALSO THE MINIMUM GAS PRICE This is arbitrary and needs to be reviewed.
+pub const MINUMUM_GAS_PRICE_IN_DIEM: u64 = GAS_UNIT_PRICE;
 
 pub const CONFIG_FILE_NAME: &str = "libra.yaml";
 /// MinerApp Configuration
@@ -258,14 +261,14 @@ impl AppCfg {
         self.workspace.default_chain_id = chain_id;
     }
 
-    pub fn update_network_playlist(
+    pub async fn update_network_playlist(
         &mut self,
         chain_id: Option<NamedChain>,
         playlist_url: Option<Url>,
     ) -> anyhow::Result<NetworkPlaylist> {
         let url = playlist_url.unwrap_or(network_playlist::find_default_playlist(chain_id)?);
 
-        let np = NetworkPlaylist::from_url(url, chain_id)?;
+        let np = NetworkPlaylist::from_url(url, chain_id).await?;
 
         self.maybe_add_custom_playlist(&np);
         Ok(np)
@@ -501,7 +504,12 @@ pub fn get_nickname(acc: AccountAddress) -> String {
     acc.to_string()[..3].to_owned()
 }
 /// Transaction types
+#[derive(Debug, Clone, Serialize, Deserialize, clap::ValueEnum)]
+#[clap(rename_all = "kebab_case")]
+
 pub enum TxType {
+    /// critical txs
+    Baseline,
     /// critical txs
     Critical,
     /// management txs
@@ -517,84 +525,100 @@ pub enum TxType {
 // #[serde(deny_unknown_fields)]
 pub struct TxConfigs {
     /// baseline cost
-    #[serde(default = "default_baseline_cost")]
+    #[serde(default = "TxCost::default_baseline_cost")]
     pub baseline_cost: TxCost,
     /// critical transactions cost
-    #[serde(default = "default_critical_txs_cost")]
+    // #[serde(default = "None")]
     pub critical_txs_cost: Option<TxCost>,
     /// management transactions cost
-    #[serde(default = "default_management_txs_cost")]
+    // #[serde(default = "TxCost::default_management_txs_cost")]
     pub management_txs_cost: Option<TxCost>,
     /// Miner transactions cost
-    #[serde(default = "default_miner_txs_cost")]
+    // #[serde(default = "TxCost::default_miner_txs_cost")]
     pub miner_txs_cost: Option<TxCost>,
     /// Cheap or test transation costs
-    #[serde(default = "default_cheap_txs_cost")]
+    // #[serde(default = "TxCost::default_cheap_txs_cost")]
     pub cheap_txs_cost: Option<TxCost>,
 }
 
 impl TxConfigs {
     /// get the user txs cost preferences for given transaction type
-    pub fn get_cost(&self, tx_type: TxType) -> TxCost {
-        let baseline = &self.baseline_cost.clone();
+    pub fn get_cost(&self, tx_type: Option<TxType>) -> TxCost {
         let cost = match tx_type {
-            TxType::Critical => self.critical_txs_cost.as_ref().unwrap_or(baseline),
-            TxType::Mgmt => self.management_txs_cost.as_ref().unwrap_or(baseline),
-            TxType::Miner => self.miner_txs_cost.as_ref().unwrap_or(baseline),
-            TxType::Cheap => self.cheap_txs_cost.as_ref().unwrap_or(baseline),
+            Some(TxType::Critical) => self.critical_txs_cost.clone(),
+            Some(TxType::Mgmt) => self.management_txs_cost.clone(),
+            Some(TxType::Miner) => self.miner_txs_cost.clone(),
+            Some(TxType::Cheap) => self.cheap_txs_cost.clone(),
+            _ => Some(self.baseline_cost.clone()),
         };
-        cost.to_owned()
+
+        cost.unwrap_or_default()
     }
 }
 
 /// Transaction preferences for a given type of transaction
-#[derive(Clone, Debug, Deserialize, Serialize)]
-// #[serde(deny_unknown_fields)]
+#[derive(Clone, Debug, Deserialize, Serialize, clap::Args)]
 pub struct TxCost {
     /// Max gas units to pay per transaction
+    #[clap(long)]
+    #[clap(required = false)]
     pub max_gas_unit_for_tx: u64, // gas UNITS of computation
     /// Max coin price per unit of gas
+    #[clap(long)]
+    #[clap(required = false)]
     pub coin_price_per_unit: u64, // price in micro GAS
     /// Time in seconds to timeout, from now
+    #[clap(long)]
+    #[clap(required = false)]
     pub user_tx_timeout: u64, // seconds,
 }
 
 impl TxCost {
     /// create new cost object
-    pub fn new(cost: u64) -> Self {
+    pub fn new(units: u64, price_multiplier: f64) -> Self {
         TxCost {
-            max_gas_unit_for_tx: cost, // oracle upgrade transaction is expensive.
-            coin_price_per_unit: 1,
+            max_gas_unit_for_tx: units, // oracle upgrade transaction is expensive.
+            // TODO: the GAS_UNIT_PRICE is set in DIEM. IT IS ALSO THE MINIMUM GAS PRICE This is arbitrary and needs to be reviewed.
+            // It is also 0 in tests, so we need to increase to at least 1.
+            coin_price_per_unit: (MINUMUM_GAS_PRICE_IN_DIEM.min(1) as f64 * price_multiplier)
+                as u64, // this is the minimum price
             user_tx_timeout: 5_000,
         }
     }
-}
-impl Default for TxConfigs {
-    fn default() -> Self {
-        Self {
-            baseline_cost: default_baseline_cost(),
-            critical_txs_cost: default_critical_txs_cost(),
-            management_txs_cost: default_management_txs_cost(),
-            miner_txs_cost: default_miner_txs_cost(),
-            cheap_txs_cost: default_cheap_txs_cost(),
-        }
+
+    pub fn default_baseline_cost() -> Self {
+        TxCost::new(MAX_GAS_AMOUNT / 50, 2.0)
+    }
+    pub fn default_critical_txs_cost() -> Self {
+        TxCost::new(MAX_GAS_AMOUNT / 6, 5.0)
+    }
+    pub fn default_management_txs_cost() -> Self {
+        TxCost::new(MAX_GAS_AMOUNT / 12, 4.0)
+    }
+    pub fn default_miner_txs_cost() -> Self {
+        TxCost::new(MAX_GAS_AMOUNT / 25, 3.0)
+    }
+    pub fn default_cheap_txs_cost() -> Self {
+        TxCost::new(MAX_GAS_AMOUNT / 100, 1.0)
     }
 }
 
-fn default_baseline_cost() -> TxCost {
-    TxCost::new(10_000)
+impl Default for TxCost {
+    fn default() -> Self {
+        Self::default_baseline_cost()
+    }
 }
-fn default_critical_txs_cost() -> Option<TxCost> {
-    Some(TxCost::new(1_000_000))
-}
-fn default_management_txs_cost() -> Option<TxCost> {
-    Some(TxCost::new(100_000))
-}
-fn default_miner_txs_cost() -> Option<TxCost> {
-    Some(TxCost::new(10_000))
-}
-fn default_cheap_txs_cost() -> Option<TxCost> {
-    Some(TxCost::new(1_000))
+
+impl Default for TxConfigs {
+    fn default() -> Self {
+        Self {
+            baseline_cost: TxCost::default_baseline_cost(),
+            critical_txs_cost: Some(TxCost::default_critical_txs_cost()),
+            management_txs_cost: Some(TxCost::default_management_txs_cost()),
+            miner_txs_cost: Some(TxCost::default_miner_txs_cost()),
+            cheap_txs_cost: Some(TxCost::default_cheap_txs_cost()),
+        }
+    }
 }
 
 #[tokio::test]

@@ -2,12 +2,13 @@ use std::{fs, path::PathBuf};
 
 use diem_types::chain_id::NamedChain;
 use libra_query::query_view;
-use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_smoke_tests::upgrade_fixtures::fixtures_path;
+use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Upgrade},
     txs_cli_upgrade::UpgradeTxs::{Propose, Resolve, Vote},
 };
+use libra_types::legacy_types::app_cfg::TxCost;
 
 /// Testing that we can upgrade the chain framework using txs tools.
 /// Note: We have another upgrade meta test in ./smoke-tests
@@ -19,7 +20,16 @@ use libra_txs::{
 /// 5. Check that the new function all_your_base can be called
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn smoke_upgrade_single_step() {
-    let mut s = LibraSmoke::new(Some(1)).await.expect("can't start swarm");
+    let d = diem_temppath::TempPath::new();
+
+    let mut s = LibraSmoke::new(Some(1))
+        .await
+        .expect("could not start libra smoke");
+
+    let (_, _app_cfg) =
+        configure_validator::init_val_config_files(&mut s.swarm, 0, d.path().to_owned())
+            .await
+            .expect("could not init validator config");
     // let this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
     let script_dir = get_package_path();
     assert!(script_dir.exists(), "can't find upgrade fixtures");
@@ -38,10 +48,11 @@ async fn smoke_upgrade_single_step() {
         mnemonic: None,
         test_private_key: Some(s.encoded_pri_key.clone()),
         chain_id: Some(NamedChain::TESTING),
-        config_path: None,
+        config_path: Some(d.path().to_owned().join("libra.yaml")),
         url: Some(s.api_endpoint.clone()),
-        gas_max: None,
-        gas_unit_price: None,
+        tx_profile: None,
+        tx_cost: Some(TxCost::default_critical_txs_cost()),
+        estimate_only: false,
     };
 
     cli.run()
@@ -53,7 +64,7 @@ async fn smoke_upgrade_single_step() {
         proposal_id: 0,
         should_fail: false,
     }));
-    cli.run().await.unwrap();
+    cli.run().await.expect("alice votes on prop 0");
 
     let query_res = query_view::get_view(
         &s.client(),
@@ -82,7 +93,7 @@ async fn smoke_upgrade_single_step() {
 
     // Note, if there isn't a pause here, the next request might happen on the same on-chain clock seconds as the previous.
     // this will intentionally cause a failure since it's designed to prevent "atomic" transactions which can manipulate governance (flash loans)
-    std::thread::sleep(std::time::Duration::from_secs(2));
+    std::thread::sleep(std::time::Duration::from_secs(4));
 
     let query_res = query_view::get_view(
         &s.client(),
@@ -112,13 +123,13 @@ async fn smoke_upgrade_single_step() {
         "expected this script hash, did you change the fixtures?"
     );
 
-    ///////// SHOW TIME ////////
+    ///////// SHOWTIME ////////
     // Now try to resolve upgrade
     cli.subcommand = Some(Upgrade(Resolve {
         proposal_id: 0,
         proposal_script_dir: script_dir,
     }));
-    cli.run().await.unwrap();
+    cli.run().await.expect("alice cannot resolve proposal");
     //////////////////////////////
 
     let query_res =

@@ -1,4 +1,6 @@
+
 script {
+  // THIS IS A TEMPLATE GOVERNANCE SCRIPT
   use diem_framework::diem_governance;
   use std::vector;
 
