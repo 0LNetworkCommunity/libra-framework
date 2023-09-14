@@ -39,8 +39,6 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup env
         uses: ./.github/actions/build_env
-
-      # fail fast if types doesnt compile, everything else will fail.
       - name: types
         working-directory: ./types
         run: cargo test --no-fail-fast
@@ -114,7 +112,9 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup env
         uses: ./.github/actions/build_env
+
       - name: txs
         if: always()
         working-directory: ./tools/txs
-        run: cargo test --no-fail-fast
+        # NOTE: upgrade tests which compile Move code, and then submit in the same thread will cause a stack overflow with the default rust stack size.
+        run: RUST_MIN_STACK=104857600 cargo test --no-fail-fast

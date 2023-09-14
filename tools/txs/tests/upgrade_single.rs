@@ -51,7 +51,7 @@ async fn smoke_upgrade_single_step() {
         config_path: Some(d.path().to_owned().join("libra.yaml")),
         url: Some(s.api_endpoint.clone()),
         tx_profile: None,
-        tx_cost: Some(TxCost::default_baseline_cost()),
+        tx_cost: Some(TxCost::default_critical_txs_cost()),
         estimate_only: false,
     };
 
@@ -64,7 +64,7 @@ async fn smoke_upgrade_single_step() {
         proposal_id: 0,
         should_fail: false,
     }));
-    cli.run().await.unwrap();
+    cli.run().await.expect("alice votes on prop 0");
 
     let query_res = query_view::get_view(
         &s.client(),
@@ -123,13 +123,13 @@ async fn smoke_upgrade_single_step() {
         "expected this script hash, did you change the fixtures?"
     );
 
-    ///////// SHOW TIME ////////
+    ///////// SHOWTIME ////////
     // Now try to resolve upgrade
     cli.subcommand = Some(Upgrade(Resolve {
         proposal_id: 0,
         proposal_script_dir: script_dir,
     }));
-    cli.run().await.unwrap();
+    cli.run().await.expect("alice cannot resolve proposal");
     //////////////////////////////
 
     let query_res =

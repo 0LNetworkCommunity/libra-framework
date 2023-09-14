@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 
-// use libra_types::exports::ValidCryptoMaterialStringExt;
 use libra_query::query_view;
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::{
@@ -60,7 +59,7 @@ async fn smoke_gov_script() {
     }));
     cli.run().await.unwrap();
 
-    let query_res = query_view::get_view(
+    let _query_res = query_view::get_view(
         &s.client(),
         "0x1::diem_governance::get_proposal_state",
         None,
@@ -69,9 +68,7 @@ async fn smoke_gov_script() {
     .await
     .unwrap();
 
-    dbg!(&query_res[0]);
-
-    let query_res = query_view::get_view(
+    let _query_res = query_view::get_view(
         &s.client(),
         "0x1::voting::is_voting_closed",
         Some("0x1::governance_proposal::GovernanceProposal".to_string()),
@@ -79,9 +76,8 @@ async fn smoke_gov_script() {
     )
     .await
     .unwrap();
-    dbg!(&query_res[0]);
 
-    let query_res = query_view::get_view(
+    let _query_res = query_view::get_view(
         &s.client(),
         "0x1::diem_governance::get_can_resolve",
         None,
@@ -90,9 +86,7 @@ async fn smoke_gov_script() {
     .await
     .unwrap();
 
-    dbg!(&query_res[0]);
-
-    let query_res = query_view::get_view(
+    let _query_res = query_view::get_view(
         &s.client(),
         "0x1::diem_governance::get_approved_hash",
         None,
@@ -100,8 +94,6 @@ async fn smoke_gov_script() {
     )
     .await
     .unwrap();
-
-    dbg!(&query_res[0]);
 
     // Now try to resolve upgrade
     cli.subcommand = Some(Upgrade(Resolve {

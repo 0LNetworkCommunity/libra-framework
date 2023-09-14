@@ -8,10 +8,10 @@ use libra_types::legacy_types::app_cfg::TxCost;
 
 /// Case 1: send to an existing account: another genesis validator
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn smoke_transfer_exists() {
+async fn smoke_transfer_existing_account() {
     let d = diem_temppath::TempPath::new();
 
-    let mut s = LibraSmoke::new(Some(2))
+    let mut s = LibraSmoke::new(Some(2)) // going to transfer from validator #0 to validator #1
         .await
         .expect("could not start libra smoke");
 
@@ -46,10 +46,10 @@ async fn smoke_transfer_exists() {
 
 /// Case 2: send to an account which does not yet exist, and the account gets created on chain.
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn smoke_transfer_create() {
+async fn smoke_transfer_create_account() {
     let d = diem_temppath::TempPath::new();
 
-    let mut s = LibraSmoke::new(Some(2))
+    let mut s = LibraSmoke::new(None)
         .await
         .expect("could not start libra smoke");
 

@@ -6,6 +6,7 @@ use crate::{
 };
 use anyhow::{bail, Context};
 use diem_crypto::ed25519::Ed25519PrivateKey;
+use diem_global_constants::{GAS_UNIT_PRICE, MAX_GAS_AMOUNT};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use url::Url;
@@ -14,8 +15,8 @@ use std::{fs, io::Write, path::PathBuf, str::FromStr};
 
 use super::network_playlist::{self, HostProfile, NetworkPlaylist};
 
-// NOTE: this is exported by diem/config/global-constants/src/lib.rs
-pub const MIN_GAS_UNIT_PRICE: u64 = 100;
+// TODO: the GAS_UNIT_PRICE is set in DIEM. IT IS ALSO THE MINIMUM GAS PRICE This is arbitrary and needs to be reviewed.
+pub const MINUMUM_GAS_PRICE_IN_DIEM: u64 = GAS_UNIT_PRICE;
 
 pub const CONFIG_FILE_NAME: &str = "libra.yaml";
 /// MinerApp Configuration
@@ -574,29 +575,31 @@ pub struct TxCost {
 
 impl TxCost {
     /// create new cost object
-    pub fn new(units: u64) -> Self {
+    pub fn new(units: u64, price_multiplier: f64) -> Self {
         TxCost {
             max_gas_unit_for_tx: units, // oracle upgrade transaction is expensive.
-            coin_price_per_unit: MIN_GAS_UNIT_PRICE, // this is the minimum price
+            // TODO: the GAS_UNIT_PRICE is set in DIEM. IT IS ALSO THE MINIMUM GAS PRICE This is arbitrary and needs to be reviewed.
+            // It is also 0 in tests, so we need to increase to at least 1.
+            coin_price_per_unit: (MINUMUM_GAS_PRICE_IN_DIEM.min(1) as f64 * price_multiplier)
+                as u64, // this is the minimum price
             user_tx_timeout: 5_000,
         }
     }
 
     pub fn default_baseline_cost() -> Self {
-        TxCost::new(1_000)
+        TxCost::new(MAX_GAS_AMOUNT / 50, 2.0)
     }
     pub fn default_critical_txs_cost() -> Self {
-        TxCost::new(1_000_000)
+        TxCost::new(MAX_GAS_AMOUNT / 6, 5.0)
     }
     pub fn default_management_txs_cost() -> Self {
-        TxCost::new(100_000)
+        TxCost::new(MAX_GAS_AMOUNT / 12, 4.0)
     }
     pub fn default_miner_txs_cost() -> Self {
-        TxCost::new(10_000)
+        TxCost::new(MAX_GAS_AMOUNT / 25, 3.0)
     }
-
     pub fn default_cheap_txs_cost() -> Self {
-        TxCost::new(100)
+        TxCost::new(MAX_GAS_AMOUNT / 100, 1.0)
     }
 }
 
