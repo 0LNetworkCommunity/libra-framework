@@ -8,7 +8,7 @@ use libra_types::legacy_types::app_cfg::TxCost;
 
 /// Case 1: send to an existing account: another genesis validator
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn smoke_transfer_existing_accout() {
+async fn smoke_transfer_existing_account() {
     let d = diem_temppath::TempPath::new();
 
     let mut s = LibraSmoke::new(Some(2)) // going to transfer from validator #0 to validator #1

@@ -12,7 +12,6 @@ module diem_framework::reconfiguration {
     use diem_framework::timestamp;
     use diem_framework::chain_status;
     use diem_framework::storage_gas;
-    // use diem_framework::transaction_fee;
     use ol_framework::epoch_helper;
 
     // use diem_std::debug::print;

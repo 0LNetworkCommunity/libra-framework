@@ -6,11 +6,11 @@ module ol_framework::tower_state {
     use std::hash;
     use ol_framework::globals;
     use diem_framework::system_addresses;
-    use diem_framework::reconfiguration;
+    use ol_framework::epoch_helper;
     use diem_framework::testnet;
     use diem_framework::ol_native_vdf;
 
-    // use diem_std::debug::print;
+    use diem_std::debug::print;
 
     /// The current solution does not solve to previous hash, the delay proofs are not chained
     const EDELAY_NOT_CHAINED: u64 = 1;
@@ -43,24 +43,14 @@ module ol_framework::tower_state {
     struct TowerList has key {
       list: vector<address>
     }
-
-    /// To use in migration, and in future upgrade to deprecate.
-    struct TowerStats has key {
-      proofs_in_epoch: u64,
-      validator_proofs: u64,
-      fullnode_proofs: u64,
-    }
-
     /// The struct to store the global count of proofs in ol_framework
     struct TowerCounter has key {
       lifetime_proofs: u64,
-      lifetime_validator_proofs: u64,
-      lifetime_fullnode_proofs: u64,
       proofs_in_epoch: u64,
-      validator_proofs_in_epoch: u64,
-      fullnode_proofs_in_epoch: u64,
-      validator_proofs_in_epoch_above_thresh: u64,
-      fullnode_proofs_in_epoch_above_thresh: u64,
+      // validator_proofs_in_epoch: u64,
+      // fullnode_proofs_in_epoch: u64,
+      // validator_proofs_in_epoch_above_thresh: u64,
+      miners_above_thresh: u64,
     }
 
 
@@ -115,29 +105,19 @@ module ol_framework::tower_state {
     public fun initialize(root: &signer) {
       init_difficulty(root);
       init_miner_list(root);
-      init_tower_counter(root, 0, 0, 0);
+      init_tower_counter(root, 0);
     }
     // Create the difficulty struct
     public fun init_difficulty(vm: &signer) {
       system_addresses::assert_ol(vm);
       if (!exists<VDFDifficulty>(@ol_framework )) {
-        if (testnet::is_testnet()) {
           move_to<VDFDifficulty>(vm, VDFDifficulty {
-            difficulty: 100,
-            security: 512,
-            prev_diff: 100,
-            prev_sec: 512,
-          });
-        } else {
-          move_to<VDFDifficulty>(vm, VDFDifficulty {
-            difficulty: 3000000000,
-            security: 350,
-            prev_diff: 120000000,
-            prev_sec: 350,
+            difficulty: globals::get_vdf_difficulty_baseline(),
+            security: globals::get_vdf_security_baseline(),
+            prev_diff: globals::get_vdf_difficulty_baseline(),
+            prev_sec: globals::get_vdf_security_baseline(),
           });
         }
-
-      }
     }
 
     /// Create an empty list of miners
@@ -152,19 +132,17 @@ module ol_framework::tower_state {
     public fun init_tower_counter(
       vm: &signer,
       lifetime_proofs: u64,
-      lifetime_validator_proofs: u64,
-      lifetime_fullnode_proofs: u64,
     ) {
       if (!exists<TowerCounter>(@ol_framework)) {
         move_to<TowerCounter>(vm, TowerCounter {
           lifetime_proofs,
-          lifetime_validator_proofs,
-          lifetime_fullnode_proofs,
+          // lifetime_validator_proofs,
+          // lifetime_fullnode_proofs,
           proofs_in_epoch: 0,
-          validator_proofs_in_epoch: 0,
-          fullnode_proofs_in_epoch: 0,
-          validator_proofs_in_epoch_above_thresh: 0,
-          fullnode_proofs_in_epoch_above_thresh: 0,
+          // validator_proofs_in_epoch: 0,
+          // fullnode_proofs_in_epoch: 0,
+          // validator_proofs_in_epoch_above_thresh: 0,
+          miners_above_thresh: 0,
         });
       }
 
@@ -183,14 +161,10 @@ module ol_framework::tower_state {
     public fun vm_migrate_tower_counter(
       vm: &signer,
       lifetime_proofs: u64,
-      lifetime_validator_proofs: u64,
-      lifetime_fullnode_proofs: u64,
     ) acquires TowerCounter {
       system_addresses::assert_ol(vm);
       let counter = borrow_global_mut<TowerCounter>(@ol_framework);
       counter.lifetime_proofs = lifetime_proofs;
-      counter.lifetime_validator_proofs = lifetime_validator_proofs;
-      counter.lifetime_fullnode_proofs = lifetime_fullnode_proofs;
     }
 
     /// returns true if miner at `addr` has been initialized
@@ -275,29 +249,6 @@ module ol_framework::tower_state {
         return
       };
 
-
-
-      // // Skip this check on local tests, we need tests to send different difficulties.
-      // if (!testnet::is_testnet()){
-      //   // Get vdf difficulty constant. Will be different in tests than in production.
-
-      //   // need to also give allowance for user's first proof in epoch to be in the last proof.
-      //   if (get_count_in_epoch(miner_addr) == 0) {
-      //     // first proof in this epoch, can be either the previous difficulty or the current one
-      //     let is_diff = &proof.difficulty == &diff.difficulty ||
-      //                   &proof.difficulty == &diff.prev_diff;
-
-      //     let is_sec = &proof.security == &diff.security ||
-      //                  &proof.security == &diff.prev_sec;
-
-      //     assert!(is_diff, error::invalid_argument(130102));
-      //     assert!(is_sec, error::invalid_argument(13010202));
-      //   } else {
-      //     assert!(&proof.difficulty == &diff.difficulty, error::invalid_argument(130102));
-      //     assert!(&proof.security == &diff.security, error::invalid_argument(13010202));
-      //   };
-      // };
-
       // Process the proof
       verify_and_update_state(miner_addr, proof, true);
     }
@@ -319,34 +270,6 @@ module ol_framework::tower_state {
 
         commit_state(&sender, proof);
     }
-
-
-    // // This function is called by the OPERATOR associated with node,
-    // // it verifies the proof and commits to chain.
-    // // Function index: 02
-    // // Permissions: PUBLIC, ANYONE
-    // public fun commit_state_by_operator(
-    //   operator_sig: &signer,
-    //   miner_addr: address,
-    //   proof: Proof
-    // ) acquires TowerProofHistory, TowerList, TowerCounter, VDFDifficulty {
-
-    //   // Check the signer is in fact an operator delegated by the owner.
-
-    //   // Get address, assumes the sender is the signer.
-    //   assert!(ValidatorConfig::get_operator(miner_addr) == signer::address_of(operator_sig), error::requires_role(130103));
-    //   // Abort if not initialized. Assumes the validator Owner account
-    //   // already has submitted the 0th miner proof in onboarding.
-    //   assert!(exists<TowerProofHistory>(miner_addr), error::not_published(130104));
-
-    //   // Return early if difficulty and security are not correct.
-    //   // Check vdf difficulty constant. Will be different in tests than in production.
-    //   // Skip this check on local tests, we need tests to send differentdifficulties.
-    //   check_difficulty(miner_addr, &proof);
-
-    //   // Process the proof
-    //   verify_and_update_state(miner_addr, proof, true);
-    // }
 
     fun check_difficulty(miner_addr: address, proof: &Proof) acquires TowerProofHistory, VDFDifficulty {
       if (!testnet::is_testnet()){
@@ -419,7 +342,7 @@ module ol_framework::tower_state {
         miner_history.count_proofs_in_epoch = 1
       };
 
-      miner_history.latest_epoch_mining = reconfiguration::get_current_epoch();
+      miner_history.latest_epoch_mining = epoch_helper::get_current_epoch();
 
       increment_stats(miner_addr);
     }
@@ -468,16 +391,17 @@ module ol_framework::tower_state {
       get_count_in_epoch(miner_addr) >= globals::get_epoch_mining_thres_lower()
     }
 
-    fun epoch_param_reset(vm: &signer) acquires VDFDifficulty, TowerList, TowerProofHistory  {
+    fun epoch_param_reset(vm: &signer) acquires VDFDifficulty, TowerList, TowerProofHistory, TowerCounter  {
       system_addresses::assert_ol(vm);
 
       let diff = borrow_global_mut<VDFDifficulty>(@ol_framework );
 
       diff.prev_diff = diff.difficulty;
-      diff.prev_sec = diff.security;
+      diff.prev_sec = diff.security; // NOTE: this shouldn't change unless in testing
 
       // VDF proofs must be even numbers.
-      let rando = toy_rng(3, 2);
+      let rando = if (testnet::is_not_mainnet()) { toy_rng(0, 1, 0) }
+      else { toy_rng(3, 2, 10) };
       if (rando > 0) {
         rando = rando * 2;
       };
@@ -523,7 +447,6 @@ module ol_framework::tower_state {
 
     // Function to initialize miner state
     // Permissions: PUBLIC, signer, Validator only
-    // Function code: 07
     public fun init_miner_state(
       miner_sig: &signer,
       challenge: &vector<u8>,
@@ -627,13 +550,11 @@ module ol_framework::tower_state {
 
       let state = borrow_global_mut<TowerCounter>(@ol_framework);
 
-      // if (ValidatorConfig::is_valid(miner_addr)) {
-      //   state.validator_proofs_in_epoch = state.validator_proofs_in_epoch + 1;
-      //   state.lifetime_validator_proofs = state.lifetime_validator_proofs + 1;
-      //   // only proofs above threshold are counted here. The preceding proofs are not counted;
-      if (above) { state.validator_proofs_in_epoch_above_thresh = state.validator_proofs_in_epoch_above_thresh + 1; };
+      // only proofs above threshold are counted here. The preceding proofs are not counted;
+      if (above) { state.miners_above_thresh = state.miners_above_thresh + 1; };
 
       state.proofs_in_epoch = state.proofs_in_epoch + 1;
+
       state.lifetime_proofs = state.lifetime_proofs + 1;
     }
 
@@ -644,10 +565,7 @@ module ol_framework::tower_state {
 
       let state = borrow_global_mut<TowerCounter>(@ol_framework);
       state.proofs_in_epoch = 0;
-      state.validator_proofs_in_epoch = 0;
-      state.fullnode_proofs_in_epoch = 0;
-      state.validator_proofs_in_epoch_above_thresh = 0;
-      state.fullnode_proofs_in_epoch_above_thresh = 0;
+      state.miners_above_thresh = 0;
     }
 
     //////////////////////
@@ -661,33 +579,49 @@ module ol_framework::tower_state {
     // the first use case is to change the VDF difficulty parameter by tiny margins, in order to make it difficult to stockpile VDFs in a previous epoch, but not change the security properties.
     // the goal is to push all the RNG work to all the tower miners in the network, and minimize compute on the Move side
 
-    public fun toy_rng(seed: u64, iters: u64): u64 acquires TowerList, TowerProofHistory {
+    public fun toy_rng(start_at_miner_n: u64, roll_dice: u64, minimum_proofs: u64): u64 acquires TowerList, TowerProofHistory, TowerCounter {
+      let n = 0;
+
+      print(&77777777777777777);
+      // Do nothing if there is not enough randomness.
+      if (!exists<TowerCounter>(@ol_framework)) return 0;
+      let state = borrow_global<TowerCounter>(@ol_framework);
+      print(state);
+      if (state.lifetime_proofs < minimum_proofs) return 0;
+
+      print(&state.lifetime_proofs);
       // Get the list of all miners L
       // Pick a tower miner  (M) from the seed position 1/(N) of the list of miners.
 
-      let l = get_miner_list();
+      let all_miners = get_miner_list();
+      print(&all_miners);
       // the length will keep incrementing through the epoch. The last miner can know what the starting position will be. There could be a race to be the last validator to augment the set and bias the initial shuffle.
-      let len = vector::length(&l);
-      if (len == 0) return 0;
+      let count_miners = vector::length(&all_miners);
+      print(&count_miners);
+      if (count_miners == 0) return 0;
 
-      // start n with the seed index
-      let n = seed;
-
+      // start n with the seed index;
+      let this_miner_index = start_at_miner_n;
       let i = 0;
-      while (i < iters) {
-        // make sure we get an n smaller than list of validators
-        // abort if loops too much
-        let k = 0;
-        while (n > len) {
+      // roll the dice roll_dice times
+      while (i < roll_dice) {
+        // pick the next miner
+        // make sure we get an n smaller than list of miners
+
+        let k = 0; // k keeps track of this loop, abort if loops too much
+        while (this_miner_index > count_miners) {
+          print(&k);
           if (k > 1000) return 0;
-          n = n / len;
+          this_miner_index = this_miner_index / count_miners;
           k = k + 1;
         };
         // double check
-        if (len <= n) return 0;
+        print(&this_miner_index);
 
-        let miner_addr = vector::borrow<address>(&l, n);
+        if (count_miners < this_miner_index) return 0;
 
+        let miner_addr = vector::borrow<address>(&all_miners, this_miner_index);
+        print(miner_addr);
         let vec = if (exists<TowerProofHistory>(*miner_addr)) {
           *&borrow_global<TowerProofHistory>(*miner_addr).previous_proof_hash
         } else { return 0 };
@@ -695,6 +629,7 @@ module ol_framework::tower_state {
         // take the last bit (B) from their last proof hash.
 
         n = (vector::pop_back(&mut vec) as u64);
+        this_miner_index = n; // randomize selection of next validator
         i = i + 1;
       };
 
@@ -738,7 +673,7 @@ module ol_framework::tower_state {
     public fun get_count_in_epoch(miner_addr: address): u64 acquires TowerProofHistory {
       if (exists<TowerProofHistory>(miner_addr)) {
         let s = borrow_global<TowerProofHistory>(miner_addr);
-        if (s.latest_epoch_mining == reconfiguration::get_current_epoch()) {
+        if (s.latest_epoch_mining == epoch_helper::get_current_epoch()) {
           return s.count_proofs_in_epoch
         };
       };
@@ -759,7 +694,7 @@ module ol_framework::tower_state {
     // danger: this is a private function. Do not make public.
     fun lazy_reset_count_in_epoch(miner_addr: address) acquires TowerProofHistory {
       let s = borrow_global_mut<TowerProofHistory>(miner_addr);
-      if (s.latest_epoch_mining < reconfiguration::get_current_epoch()) {
+      if (s.latest_epoch_mining < epoch_helper::get_current_epoch()) {
         s.count_proofs_in_epoch = 0;
       };
     }
@@ -801,14 +736,6 @@ module ol_framework::tower_state {
       s.lifetime_proofs
     }
 
-    // public fun danger_migrate_get_lifetime_proof_count(): (u64, u64, u64) acquires TowerStats{
-    //   if (exists<TowerStats>(@ol_framework)) {
-    //     let s = borrow_global<TowerStats>(@ol_framework);
-    //     return (s.proofs_in_epoch, s.validator_proofs, s.fullnode_proofs)
-    //   };
-    //   (0,0,0)
-    // }
-
     #[view]
     /// returns the current difficulty and security in a tuple (difficulty, security)
     public fun get_difficulty(): (u64, u64) acquires VDFDifficulty {
@@ -816,8 +743,8 @@ module ol_framework::tower_state {
         let v = borrow_global_mut<VDFDifficulty>(@ol_framework );
         return (v.difficulty, v.security)
       } else {
-        // we are probably in the middle of a migration
-        (5000000, 512)
+        // we are probably at genesis
+        (globals::get_vdf_difficulty_baseline(), globals::get_vdf_security_baseline())
       }
     }
 
@@ -859,57 +786,15 @@ module ol_framework::tower_state {
         // FullnodeState::init(miner_sig);
     }
 
-    // Note: Used only in tests
+    #[test_only]
     public fun test_epoch_reset_counter(vm: &signer) acquires TowerCounter {
       assert!(testnet::is_testnet(), error::invalid_state(ENOT_TESTNET));
       system_addresses::assert_ol(vm);
       let state = borrow_global_mut<TowerCounter>(@ol_framework);
       state.lifetime_proofs = 0;
-      state.lifetime_validator_proofs = 0;
-      state.lifetime_fullnode_proofs = 0;
       state.proofs_in_epoch = 0;
-      state.validator_proofs_in_epoch = 0;
-      state.fullnode_proofs_in_epoch = 0;
-      state.validator_proofs_in_epoch_above_thresh = 0;
-      state.fullnode_proofs_in_epoch_above_thresh = 0;
+      state.miners_above_thresh = 0;
     }
-
-    // // Function index: 11
-    // // provides a different method to submit from the operator for use in tests
-    // // where the operator cannot sign a transaction
-    // // Permissions: PUBLIC, SIGNER, TEST ONLY
-    // public fun test_helper_operator_submits(
-    //   operator_addr: address, // Testrunner does not allow arbitrary accounts
-    //                           // to submit txs, need to use address, so this will
-    //                           // differ slightly from api
-    //   miner_addr: address,
-    //   proof: Proof
-    // ) acquires TowerProofHistory, TowerList, TowerCounter {
-      // assert!(testnet::is_testnet(), 130102014010);
-      //
-    //   // Get address, assumes the sender is the signer.
-    //   assert!(
-    //     ValidatorConfig::get_operator(miner_addr) == operator_addr,
-    //     error::requires_address(130119)
-    //   );
-    //   // Abort if not initialized.
-    //   assert!(exists<TowerProofHistory>(miner_addr), error::not_published(130116));
-
-    //   // Check vdf difficulty constant. Will be different in tests than in production.
-    //   // Skip this check on local tests, we need tests to send different difficulties.
-    //   if (!testnet::is_testnet()){ // todo: remove?
-    //     assert!(&proof.difficulty
-    //       == &globals::get_vdf_difficulty_baseline(), error::invalid_state(130117));
-    //   };
-
-    //   verify_and_update_state(miner_addr, proof, true);
-
-    //   // TODO: The operator mining needs its own struct to count mining.
-    //   // For now it is implicit there is only 1 operator per validator,
-    //   // and that the fullnode state is the place to count.
-    //   // This will require a breaking change to TowerState
-    //   // FullnodeState::inc_proof_by_operator(operator_sig, miner_addr);
-    // }
 
     #[test_only]
     // Use in testing to mock mining without producing proofs
@@ -946,7 +831,20 @@ module ol_framework::tower_state {
 
       let state = borrow_global_mut<TowerProofHistory>(addr);
       state.count_proofs_in_epoch = count;
-      state.latest_epoch_mining = reconfiguration::get_current_epoch();
+      state.latest_epoch_mining = epoch_helper::get_current_epoch();
+    }
+
+    #[test_only]
+    public fun set_difficulty(vm: &signer, diff: u64, sec: u64) acquires VDFDifficulty {
+      system_addresses::assert_ol(vm);
+
+      let state = borrow_global_mut<VDFDifficulty>(@ol_framework );
+
+      state.prev_diff = state.difficulty;
+      state.prev_sec = state.security; // NOTE: this shouldn't change unless in testing
+
+      state.difficulty = diff;
+      state.security = sec;
     }
 
     #[test_only]
@@ -995,16 +893,6 @@ module ol_framework::tower_state {
     }
 
 
-    // #[test_only]
-    // // Sets the epochs since last account creation variable to allow `account`
-    // // to create a new account
-    // public fun test_helper_set_rate_limit(account: &signer, value: u64) acquires TowerProofHistory {
-    //   assert!(testnet::is_testnet(), error::invalid_state(130126));
-    //   let addr = signer::address_of(account);
-    //   let state = borrow_global_mut<TowerProofHistory>(addr);
-    //   state.epochs_since_last_account_creation = value;
-    // }
-
     #[test_only]
     public fun test_helper_set_epochs_mining(node_addr: address, value: u64) acquires TowerProofHistory {
       assert!(testnet::is_testnet(), error::invalid_state(130126));
@@ -1049,25 +937,6 @@ module ol_framework::tower_state {
     }
 
     #[test_only]
-    public fun test_mock_depr_tower_stats(vm: &signer) {
-      assert!(testnet::is_testnet(), error::invalid_state(130113));
-      system_addresses::assert_vm(vm);
-      move_to<TowerStats>(vm, TowerStats{
-        proofs_in_epoch: 111,
-        validator_proofs: 222,
-        fullnode_proofs: 333,
-      });
-    }
-
-    #[test_only]
-    public fun test_get_liftime_proofs(): u64 acquires TowerCounter {
-      assert!(testnet::is_testnet(), error::invalid_state(130113));
-
-      let s = borrow_global<TowerCounter>(@ol_framework);
-      s.lifetime_proofs
-    }
-
-    #[test_only]
     public fun test_set_vdf_difficulty(vm: &signer, diff: u64, sec: u64) acquires VDFDifficulty {
       assert!(testnet::is_testnet(), error::invalid_state(130113));
       system_addresses::assert_vm(vm);
@@ -1088,13 +957,8 @@ module ol_framework::tower_state {
 
         let TowerCounter {
           lifetime_proofs: _,
-          lifetime_validator_proofs: _,
-          lifetime_fullnode_proofs: _,
           proofs_in_epoch: _,
-          validator_proofs_in_epoch: _,
-          fullnode_proofs_in_epoch: _,
-          validator_proofs_in_epoch_above_thresh: _,
-          fullnode_proofs_in_epoch_above_thresh: _,
+          miners_above_thresh: _,
        } = move_from<TowerCounter>(@ol_framework);
     }
 

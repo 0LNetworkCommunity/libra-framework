@@ -31,7 +31,7 @@ module ol_framework::multi_action {
   use diem_framework::account::{Self, WithdrawCapability};
   use diem_framework::resource_account;
   use ol_framework::ballot::{Self, BallotTracker};
-  use diem_framework::reconfiguration;
+  use ol_framework::epoch_helper;
   // use DiemFramework::Debug::print;
 
   const EGOV_NOT_INITIALIZED: u64 = 1;
@@ -124,7 +124,7 @@ module ol_framework::multi_action {
       proposal_data,
       votes: vector::empty<address>(),
       approved: false,
-      expiration_epoch: reconfiguration::get_current_epoch() + duration_epochs,
+      expiration_epoch: epoch_helper::get_current_epoch() + duration_epochs,
     }
   }
 
@@ -380,7 +380,7 @@ module ol_framework::multi_action {
 
 
   fun find_expired<ProposalData: store + drop>(a: & Action<ProposalData>): vector<guid::ID>{
-    let epoch = reconfiguration::get_current_epoch();
+    let epoch = epoch_helper::get_current_epoch();
     let b_vec = ballot::get_list_ballots_by_enum(&a.vote, ballot::get_pending_enum());
     let id_vec = vector::empty();
     let i = 0;
@@ -413,7 +413,7 @@ module ol_framework::multi_action {
   }
 
   fun check_expired<ProposalData: store>(prop: &Proposal<ProposalData>): bool {
-    let epoch_now = reconfiguration::get_current_epoch();
+    let epoch_now = epoch_helper::get_current_epoch();
     epoch_now > prop.expiration_epoch
   }
 

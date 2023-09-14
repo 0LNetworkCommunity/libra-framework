@@ -18,7 +18,7 @@ module ol_framework::proof_of_fee {
   use ol_framework::slow_wallet;
   use ol_framework::vouch;
   use diem_framework::transaction_fee;
-  use diem_framework::reconfiguration;
+  use ol_framework::epoch_helper;
   use diem_framework::stake;
   use diem_framework::system_addresses;
   use ol_framework::globals;
@@ -316,7 +316,7 @@ module ol_framework::proof_of_fee {
 
 
 
-      if (reconfiguration::get_current_epoch() > expire) return false;
+      if (epoch_helper::get_current_epoch() > expire) return false;
       // skip the user if they don't have sufficient UNLOCKED funds
       // or if the bid expired.
       let unlocked_coins = slow_wallet::unlocked_amount(*val);
@@ -487,7 +487,7 @@ module ol_framework::proof_of_fee {
   public fun current_bid(node_addr: address): (u64, u64) acquires ProofOfFeeAuction {
     if (exists<ProofOfFeeAuction>(node_addr)) {
       let pof = borrow_global<ProofOfFeeAuction>(node_addr);
-      let e = reconfiguration::get_current_epoch();
+      let e = epoch_helper::get_current_epoch();
       // check the expiration of the bid
       // the bid is zero if it expires.
       // The expiration epoch number is inclusive of the epoch.
@@ -504,7 +504,7 @@ module ol_framework::proof_of_fee {
   public fun is_already_retracted(node_addr: address): (bool, u64) acquires ProofOfFeeAuction {
     if (exists<ProofOfFeeAuction>(node_addr)) {
       let when_retract = *&borrow_global<ProofOfFeeAuction>(node_addr).last_epoch_retracted;
-      return (reconfiguration::get_current_epoch() >= when_retract,  when_retract)
+      return (epoch_helper::get_current_epoch() >= when_retract,  when_retract)
     };
     return (false, 0)
   }
@@ -561,7 +561,7 @@ module ol_framework::proof_of_fee {
 
 
     let pof = borrow_global_mut<ProofOfFeeAuction>(acc);
-    let this_epoch = reconfiguration::get_current_epoch();
+    let this_epoch = epoch_helper::get_current_epoch();
 
     //////// LEAVE COMMENTED. Code for a potential upgrade. ////////
     // See above discussion for retracting of bids.
