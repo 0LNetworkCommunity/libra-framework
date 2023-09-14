@@ -3,7 +3,10 @@ use diem::common::types::{CliConfig, ConfigSearchMode};
 use diem_logger::prelude::*;
 use diem_sdk::{
     crypto::{HashValue, PrivateKey},
-    rest_client::{diem_api_types::TransactionOnChainData, Client},
+    rest_client::{
+        diem_api_types::{TransactionOnChainData, UserTransaction},
+        Client,
+    },
     transaction_builder::TransactionBuilder,
     types::{
         chain_id::ChainId,
@@ -20,7 +23,7 @@ use url::Url;
 
 use libra_types::{
     exports::{AuthenticationKey, Ed25519PrivateKey},
-    legacy_types::app_cfg::AppCfg,
+    legacy_types::app_cfg::{AppCfg, TxCost},
     ol_progress::OLProgress,
     type_extensions::{
         cli_config_ext::CliConfigExt,
@@ -74,6 +77,7 @@ use libra_types::{
 /// Struct to organize all the TXS sending, so we're not creating new Client on every TX, if there are multiple.
 pub struct Sender {
     pub local_account: LocalAccount,
+    pub tx_cost: TxCost,
     client: Client,
     chain_id: ChainId,
     pub response: Option<TransactionOnChainData>,
@@ -100,10 +104,15 @@ impl Sender {
 
         Ok(Self {
             client,
+            tx_cost: TxCost::default_baseline_cost(),
             local_account,
             chain_id,
             response: None,
         })
+    }
+
+    pub fn set_tx_cost(&mut self, cost: &TxCost) {
+        self.tx_cost = cost.to_owned();
     }
 
     ///
@@ -146,6 +155,7 @@ impl Sender {
 
         let s = Sender {
             client,
+            tx_cost: app_cfg.tx_configs.get_cost(None),
             local_account,
             chain_id,
             response: None,
@@ -201,6 +211,7 @@ impl Sender {
 
             let s = Sender {
                 client,
+                tx_cost: TxCost::default_baseline_cost(),
                 local_account,
                 chain_id,
                 response: None,
@@ -238,8 +249,12 @@ impl Sender {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs();
-        let time = t + DEFAULT_TIMEOUT_SECS * 10;
-        let tb = TransactionBuilder::new(payload, time, self.chain_id);
+        let time = t + (DEFAULT_TIMEOUT_SECS * 10);
+
+        let tb = TransactionBuilder::new(payload, time, self.chain_id)
+            .gas_unit_price(self.tx_cost.coin_price_per_unit)
+            .max_gas_amount(self.tx_cost.max_gas_unit_for_tx);
+
         self.local_account.sign_with_transaction_builder(tb)
     }
 
@@ -277,6 +292,22 @@ impl Sender {
         }
     }
 
+    /// estimate the transaction gas cost.
+    pub async fn estimate(
+        &mut self,
+        payload: TransactionPayload,
+    ) -> anyhow::Result<Vec<UserTransaction>> {
+        let signed = self.sign_payload(payload);
+
+        let res = self
+            .client
+            .simulate_with_gas_estimation(&signed, true, true)
+            .await?
+            .into_inner();
+        Ok(res)
+    }
+
+    /// get the transactions hash, for use with governance scripts.
     pub fn tx_hash(&self) -> Option<HashValue> {
         if let Some(r) = &self.response {
             return Some(r.info.transaction_hash());

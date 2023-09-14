@@ -59,12 +59,17 @@ impl TowerCli {
                 if show {
                     backlog::show_backlog(&app_cfg).await?;
                 } else {
-                    prompt_private_key(profile)?;
+                    if profile.borrow_private_key().is_err() {
+                        prompt_private_key(profile)?;
+                    }
+
                     backlog::process_backlog(&app_cfg).await?;
                 }
             }
             TowerSub::Start => {
-                prompt_private_key(profile)?;
+                if profile.borrow_private_key().is_err() {
+                    prompt_private_key(profile)?;
+                }
                 proof::mine_and_submit(&mut app_cfg, self.local_mode).await?;
             }
             TowerSub::Once => {

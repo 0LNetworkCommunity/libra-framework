@@ -1,4 +1,4 @@
-spec aptos_framework::staking_proxy {
+spec diem_framework::staking_proxy {
     spec module {
         pragma verify = true;
         pragma aborts_if_is_strict;
@@ -25,8 +25,8 @@ spec aptos_framework::staking_proxy {
     }
 
     spec set_staking_contract_operator(owner: &signer, old_operator: address, new_operator: address) {
-        use aptos_framework::staking_contract::{Store};
-        use aptos_framework::simple_map;
+        use diem_framework::staking_contract::{Store};
+        use diem_framework::simple_map;
         // TODO: Verify timeout and can't verify `staking_contract::switch_operator`.
         pragma aborts_if_is_partial;
 
@@ -63,8 +63,8 @@ spec aptos_framework::staking_proxy {
     /// Make sure staking_contract_exists first
     /// Then abort if the resource is not exist
     spec schema SetStakingContractVoter {
-        use aptos_std::simple_map;
-        use aptos_framework::staking_contract::{Store};
+        use diem_std::simple_map;
+        use diem_framework::staking_contract::{Store};
 
         owner: &signer;
         operator: address;

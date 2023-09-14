@@ -2,20 +2,20 @@
 // Error Code: 0500
 /////////////////////////////////////////////////////////////////////////
 
-/// # Summary 
-/// This module allows the root to determine epoch boundaries, triggering 
+/// # Summary
+/// This module allows the root to determine epoch boundaries, triggering
 /// epoch change operations (e.g. updating the validator set)
 module ol_framework::epoch {
-  use aptos_framework::timestamp;
+  use diem_framework::timestamp;
   use ol_framework::globals;
-  use aptos_framework::reconfiguration;
+  use diem_framework::reconfiguration;
 //   use DiemFramework::Roles; // todo v7
 
   /// Contains timing info for the current epoch
   /// epoch: the epoch number
   /// height_start: the block height the epoch started at
   /// seconds_start: the start time of the epoch
-  struct Timer has key { 
+  struct Timer has key {
       epoch: u64,
       height_start: u64,
       seconds_start: u64
@@ -24,10 +24,10 @@ module ol_framework::epoch {
   // Function code:01
   /// Called in genesis to initialize timer
   public fun initialize(vm: &signer) {
-    // todo v7: check Aptos role.move, but fns there are not used in aptos, why?
+    // todo v7: check Aptos role.move, but fns there are not used in diem, why?
     //   Roles::assert_diem_root(vm);
       move_to<Timer>(
-          vm, 
+          vm,
           Timer {
               epoch: 0,
               height_start: 0,
@@ -46,11 +46,11 @@ module ol_framework::epoch {
   //     time.seconds_start = timestamp::now_seconds();
   // }
 
-  /// Check to see if epoch is finished 
-  /// 
-  /// 
-  /// 
-  /// Simply checks if the elapsed time is greater than the epoch time 
+  /// Check to see if epoch is finished
+  ///
+  ///
+  ///
+  /// Simply checks if the elapsed time is greater than the epoch time
   public fun epoch_finished(height_now: u64): bool acquires Timer {
       let time = borrow_global<Timer>(@ol_root);
       // we target 24hrs for block production.
@@ -67,12 +67,12 @@ module ol_framework::epoch {
   }
 
   // Function code:02
-  /// Reset the timer to start the next epoch 
+  /// Reset the timer to start the next epoch
   /// Called by root in the reconfiguration process
   public fun reset_timer(_vm: &signer, height: u64) acquires Timer {
     //   Roles::assert_diem_root(vm); // todo v7
       let time = borrow_global_mut<Timer>(@ol_root);
-      // todo v7: current_epoch() gives @aptos_framework's epoch, 
+      // todo v7: current_epoch() gives @diem_framework's epoch,
       //       should we patch/use @ol_framework ?
       time.epoch = reconfiguration::current_epoch() + 1;
       time.height_start = height;

@@ -1,4 +1,4 @@
-spec aptos_framework::managed_coin {
+spec diem_framework::managed_coin {
     spec module {
         pragma verify = true;
         pragma aborts_if_is_strict;
@@ -8,7 +8,7 @@ spec aptos_framework::managed_coin {
         account: &signer,
         amount: u64,
     ) {
-        use aptos_std::type_info;
+        use diem_std::type_info;
         // TODO: Unspecified 'optional_aggregator::sub()' used in 'coin::burn()'.
         pragma aborts_if_is_partial;
         let account_addr = signer::address_of(account);
@@ -64,8 +64,8 @@ spec aptos_framework::managed_coin {
     /// An account can only be registered once.
     /// Updating `Account.guid_creation_num` will not overflow.
     spec register<CoinType>(account: &signer) {
-        use aptos_framework::account;
-        use aptos_std::type_info;
+        use diem_framework::account;
+        use diem_std::type_info;
 
         let account_addr = signer::address_of(account);
         let acc = global<account::Account>(account_addr);

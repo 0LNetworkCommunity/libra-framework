@@ -38,6 +38,7 @@ pub fn setup(
         my_host,
         Some(me.get_persona_mnem()),
         false,
+        Some(chain),
     )?;
 
     // create validator configurations from fixtures

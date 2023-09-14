@@ -1,4 +1,4 @@
-spec aptos_framework::vesting {
+spec diem_framework::vesting {
     spec module {
         pragma verify = true;
         pragma aborts_if_is_strict;
@@ -92,7 +92,7 @@ spec aptos_framework::vesting {
     ): VestingSchedule {
         aborts_if !(len(schedule) > 0);
         aborts_if !(period_duration > 0);
-        aborts_if !exists<timestamp::CurrentTimeMicroseconds>(@aptos_framework);
+        aborts_if !exists<timestamp::CurrentTimeMicroseconds>(@diem_framework);
         aborts_if !(start_timestamp_secs >= timestamp::now_seconds());
     }
 

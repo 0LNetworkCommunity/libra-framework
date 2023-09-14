@@ -1,13 +1,13 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 
-// use libra_types::exports::ValidCryptoMaterialStringExt;
 use libra_query::query_view;
-use libra_smoke_tests::libra_smoke::LibraSmoke;
+use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Upgrade},
     txs_cli_upgrade::UpgradeTxs::{Propose, Resolve, Vote},
 };
+use libra_types::legacy_types::app_cfg::TxCost;
 
 /// Testing that we can upgrade the chain framework using txs tools.
 /// Note: We have another upgrade meta test in ./smoke-tests
@@ -18,9 +18,19 @@ use libra_txs::{
 /// 4. resolve a propsosal by sending the upgrade payload.
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn smoke_gov_script() {
-    let mut s = LibraSmoke::new(Some(1)).await.expect("can't start swarm");
+    let d = diem_temppath::TempPath::new();
+
+    let mut s = LibraSmoke::new(Some(2))
+        .await
+        .expect("could not start libra smoke");
+
+    let (_, _app_cfg) =
+        configure_validator::init_val_config_files(&mut s.swarm, 0, d.path().to_owned())
+            .await
+            .expect("could not init validator config");
+
     let this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
-    let script_dir = this_path.join("tests/fixtures/noop_gov_script");
+    let script_dir = this_path.join("tests/fixtures/governance_script_template");
     assert!(script_dir.exists(), "can't find upgrade fixtures");
 
     let mut cli = TxsCli {
@@ -31,10 +41,11 @@ async fn smoke_gov_script() {
         mnemonic: None,
         test_private_key: Some(s.encoded_pri_key.clone()),
         chain_id: None,
-        config_path: None,
+        config_path: Some(d.path().to_owned().join("libra.yaml")),
         url: Some(s.api_endpoint.clone()),
-        gas_max: None,
-        gas_unit_price: None,
+        tx_profile: None,
+        tx_cost: Some(TxCost::default_baseline_cost()),
+        estimate_only: false,
     };
 
     cli.run()
@@ -48,7 +59,7 @@ async fn smoke_gov_script() {
     }));
     cli.run().await.unwrap();
 
-    let query_res = query_view::get_view(
+    let _query_res = query_view::get_view(
         &s.client(),
         "0x1::diem_governance::get_proposal_state",
         None,
@@ -57,9 +68,7 @@ async fn smoke_gov_script() {
     .await
     .unwrap();
 
-    dbg!(&query_res[0]);
-
-    let query_res = query_view::get_view(
+    let _query_res = query_view::get_view(
         &s.client(),
         "0x1::voting::is_voting_closed",
         Some("0x1::governance_proposal::GovernanceProposal".to_string()),
@@ -67,9 +76,8 @@ async fn smoke_gov_script() {
     )
     .await
     .unwrap();
-    dbg!(&query_res[0]);
 
-    let query_res = query_view::get_view(
+    let _query_res = query_view::get_view(
         &s.client(),
         "0x1::diem_governance::get_can_resolve",
         None,
@@ -78,9 +86,7 @@ async fn smoke_gov_script() {
     .await
     .unwrap();
 
-    dbg!(&query_res[0]);
-
-    let query_res = query_view::get_view(
+    let _query_res = query_view::get_view(
         &s.client(),
         "0x1::diem_governance::get_approved_hash",
         None,
@@ -88,8 +94,6 @@ async fn smoke_gov_script() {
     )
     .await
     .unwrap();
-
-    dbg!(&query_res[0]);
 
     // Now try to resolve upgrade
     cli.subcommand = Some(Upgrade(Resolve {
