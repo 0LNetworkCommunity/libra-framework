@@ -18,36 +18,6 @@ pub fn keygen() -> (AuthenticationKey, AccountAddress, WalletLibrary, String) {
     // NOTE: Authkey uses the child number 0 by default
     let (auth_key, _) = wallet.new_address().expect("Could not generate address");
     let account = auth_key.derived_address();
-    //////////////// Info ////////////////
-
-    println!(
-        "0L Account Address:\n\
-        ...........................\n\
-        {}\n",
-        &account.to_string()
-    );
-
-    println!(
-        "Authentication Key (for key rotation):\n\
-        ...........................\n\
-        {}\n",
-        &auth_key.to_string()
-    );
-
-    println!(
-        "0L mnemonic:\n\
-        ..........................."
-    );
-
-    //use same styles as abscissa_info
-    println!("\x1b[1;36m{}\n\x1b[0m", &mnemonic_string.as_str());
-
-    println!(
-        "WRITE THIS DOWN NOW. This is the last time you will see \
-                  this mnemonic. It is not saved anywhere. Nobody can help \
-                  you if you lose it.\n\n"
-    );
-
     (auth_key, account, wallet, mnemonic_string)
 }
 

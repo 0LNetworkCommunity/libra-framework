@@ -55,7 +55,7 @@ impl WalletCli {
                 }
 
                 let l = if args.keygen {
-                    account_keys::legacy_keygen()?
+                    account_keys::legacy_keygen(true)?
                 } else {
                     get_keys_from_prompt()?
                 };

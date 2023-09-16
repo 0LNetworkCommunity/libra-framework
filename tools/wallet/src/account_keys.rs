@@ -59,9 +59,43 @@ pub fn get_ol_legacy_address(addr: AccountAddress) -> anyhow::Result<AccountAddr
     Ok(AccountAddress::from_hex_literal(literal)?)
 }
 
-/// Legacy Keygen. These note these keys are not sufficient to create a validator from V7 onwards. Besides the Mnemonic the keypair for 0th derivation (owner key) is reusable.
-pub fn legacy_keygen() -> Result<KeyChain> {
-    let (_auth_key, _account, wallet, _mnem) = keygen();
+/// Derive keys from a mnemonic in the 0L scheme
+// NOTE: these keys are not sufficient to create a validator from V7 onwards. There are BLS keys needed in additiont o Ed25519
+pub fn legacy_keygen(danger_print: bool) -> Result<KeyChain> {
+    let (auth_key, account, wallet, mnem) = keygen();
+
+    //////////////// Info ////////////////
+
+    if danger_print {
+        println!(
+            "0L Account Address:\n\
+          ...........................\n\
+          {}\n",
+            &account.to_string()
+        );
+
+        println!(
+            "Authentication Key (for key rotation):\n\
+          ...........................\n\
+          {}\n",
+            &auth_key.to_string()
+        );
+
+        println!(
+            "0L mnemonic:\n\
+          ..........................."
+        );
+
+        //use same styles as abscissa_info
+        println!("\x1b[1;36m{}\n\x1b[0m", mnem.as_str());
+
+        println!(
+            "WRITE THIS DOWN NOW. This is the last time you will see \
+                    this mnemonic. It is not saved anywhere. Nobody can help \
+                    you if you lose it.\n\n"
+        );
+    }
+
     KeyChain::new(&wallet)
 }
 
