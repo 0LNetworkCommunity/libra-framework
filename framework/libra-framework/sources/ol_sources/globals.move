@@ -102,7 +102,7 @@ module ol_framework::globals {
         return GlobalConstants {
           epoch_length: 60, // seconds
           val_set_at_genesis: 10,
-          subsidy_ceiling_gas: 296 * get_coin_scaling_gifactor(),
+          subsidy_ceiling_gas: 296 * get_coin_scaling_factor(),
           vdf_difficulty_baseline: 100,
           vdf_security_baseline: 350,
           epoch_mining_thres_lower: 2, // many tests depend on two proofs because

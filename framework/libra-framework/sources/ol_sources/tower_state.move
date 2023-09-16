@@ -10,7 +10,7 @@ module ol_framework::tower_state {
     use diem_framework::testnet;
     use diem_framework::ol_native_vdf;
 
-    use diem_std::debug::print;
+    // use diem_std::debug::print;
 
     /// The current solution does not solve to previous hash, the delay proofs are not chained
     const EDELAY_NOT_CHAINED: u64 = 1;
@@ -47,9 +47,6 @@ module ol_framework::tower_state {
     struct TowerCounter has key {
       lifetime_proofs: u64,
       proofs_in_epoch: u64,
-      // validator_proofs_in_epoch: u64,
-      // fullnode_proofs_in_epoch: u64,
-      // validator_proofs_in_epoch_above_thresh: u64,
       miners_above_thresh: u64,
     }
 
@@ -581,23 +578,17 @@ module ol_framework::tower_state {
 
     public fun toy_rng(start_at_miner_n: u64, roll_dice: u64, minimum_proofs: u64): u64 acquires TowerList, TowerProofHistory, TowerCounter {
       let n = 0;
-
-      print(&77777777777777777);
       // Do nothing if there is not enough randomness.
       if (!exists<TowerCounter>(@ol_framework)) return 0;
       let state = borrow_global<TowerCounter>(@ol_framework);
-      print(state);
       if (state.lifetime_proofs < minimum_proofs) return 0;
 
-      print(&state.lifetime_proofs);
       // Get the list of all miners L
       // Pick a tower miner  (M) from the seed position 1/(N) of the list of miners.
 
       let all_miners = get_miner_list();
-      print(&all_miners);
       // the length will keep incrementing through the epoch. The last miner can know what the starting position will be. There could be a race to be the last validator to augment the set and bias the initial shuffle.
       let count_miners = vector::length(&all_miners);
-      print(&count_miners);
       if (count_miners == 0) return 0;
 
       // start n with the seed index;
@@ -610,18 +601,14 @@ module ol_framework::tower_state {
 
         let k = 0; // k keeps track of this loop, abort if loops too much
         while (this_miner_index > count_miners) {
-          print(&k);
           if (k > 1000) return 0;
           this_miner_index = this_miner_index / count_miners;
           k = k + 1;
         };
         // double check
-        print(&this_miner_index);
-
         if (count_miners < this_miner_index) return 0;
 
         let miner_addr = vector::borrow<address>(&all_miners, this_miner_index);
-        print(miner_addr);
         let vec = if (exists<TowerProofHistory>(*miner_addr)) {
           *&borrow_global<TowerProofHistory>(*miner_addr).previous_proof_hash
         } else { return 0 };

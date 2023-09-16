@@ -6,7 +6,7 @@ use crate::genesis_reader;
 use crate::genesis_reader::total_supply;
 use crate::supply::Supply;
 
-use anyhow;
+use anyhow::{self, Context};
 // use libra_types::move_resource::coin_info::GasCoinInfoResource;
 use diem_storage_interface::state_view::LatestDbStateCheckpointView;
 use diem_types::transaction::Transaction;
@@ -21,6 +21,7 @@ use diem_state_view::account_with_state_view::AsAccountWithStateView;
 use diem_storage_interface::DbReader;
 use diem_types::account_view::AccountView;
 use indicatif::{ProgressBar, ProgressIterator};
+use move_core_types::move_resource::MoveResource;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -142,9 +143,25 @@ fn get_val_set(db_reader: &Arc<dyn DbReader>) -> anyhow::Result<Vec<AccountAddre
 
     let val_set = root_account_state_view
         .get_validator_set()
-        .unwrap()
-        .unwrap();
+        .context("error calling get_validator_set")?
+        .context("db returns None for validator set struct")?;
     Ok(val_set.payload().map(|v| *v.account_address()).collect())
+}
+
+/// get a resource type from the genesis DB
+pub fn get_struct<T: MoveResource>(
+    db_reader: &Arc<dyn DbReader>,
+    address: Option<AccountAddress>,
+) -> anyhow::Result<T> {
+    let db_state_view = db_reader.latest_state_checkpoint_view().unwrap();
+    let address = address.unwrap_or(CORE_CODE_ADDRESS);
+    let state_view = db_state_view.as_account_with_state_view(&address);
+
+    let resource = state_view
+        .get_move_resource::<T>()
+        .context("error calling get_move_resource")?
+        .context("db returns None for resource struct")?;
+    Ok(resource)
 }
 
 pub fn check_val_set(
