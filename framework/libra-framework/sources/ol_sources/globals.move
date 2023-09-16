@@ -1,26 +1,16 @@
 ///////////////////////////////////////////////////////////////////
 // 0L Module
 // Globals
-// Error code: 0700
 ///////////////////////////////////////////////////////////////////
 
 /// # Summary
-/// This module provides global variables and constants that have no specific owner
+/// This module provides global constants
 module ol_framework::globals {
     use ol_framework::testnet;
     use diem_std::math64;
-    // use ol_framework::staging_net;
-    // todo v7
-    // use DiemFramework::Diem;
-    // use DiemFramework::GAS;
 
     /// Global constants determining validator settings & requirements
     /// Some constants need to be changed based on environment; dev, testing, prod.
-    /// epoch_length: The length of an epoch in seconds (~1 day for prod.)
-    /// val_set_at_genesis: The maximum number of validators that can participate
-    /// subsidy_ceiling_gas: TODO I don't really know what this is
-    /// vdf_difficulty: The difficulty required for VDF proofs submitting by miners
-    /// epoch_mining_thres_lower: The number of proofs that must be submitted each
     /// epoch by a miner to remain compliant
     struct GlobalConstants has drop {
       // For validator set.
@@ -105,26 +95,14 @@ module ol_framework::globals {
       get_constants().signing_threshold_pct
     }
 
-    // /// get the V6 coin split factor
-    // public fun get_coin_split_factor(): u64 {
-    //   5 // TODO: get exact factor from a genesis variable.
-    // }
-
     /// Get the constants for the current network
     fun get_constants(): GlobalConstants {
-      // let coin_scale = 1000000; // Diem::scaling_factor<GAS::T>();
-
-      // todo v7
-      // assert!(
-      //   COIN_SCALING_FACTOR == Diem::scaling_factor<GAS::GAS>(),
-      //   error::invalid_argument(070001)
-      // );
 
       if (testnet::is_testnet()) {
         return GlobalConstants {
           epoch_length: 60, // seconds
           val_set_at_genesis: 10,
-          subsidy_ceiling_gas: 296 * get_coin_scaling_factor(),
+          subsidy_ceiling_gas: 296 * get_coin_scaling_gifactor(),
           vdf_difficulty_baseline: 100,
           vdf_security_baseline: 350,
           epoch_mining_thres_lower: 2, // many tests depend on two proofs because
@@ -163,7 +141,7 @@ module ol_framework::globals {
           // target transaction per sec max gas: 20
           // uses "scaled representation", since there are no decimals.
           subsidy_ceiling_gas: 8640000 * get_coin_scaling_factor(), // subsidy amount assumes 24 hour epoch lengths. Also needs to be adjusted for coin_scale the onchain representation of human readable value.
-          vdf_difficulty_baseline: 100, //3000000000, // wesolowski proof, new parameters. Benchmark available in docs/delay_tower/benchmarking
+          vdf_difficulty_baseline: 3000000000, // wesolowski proof, new parameters. Benchmark available in docs/delay_tower/benchmarking
           vdf_security_baseline: 350,
           epoch_mining_thres_lower: 1, // NOTE: bootstrapping, allowance for operator error.
           epoch_mining_thres_upper: 6, // upper bound 6 * 6hrs
