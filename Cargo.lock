@@ -5892,6 +5892,7 @@ dependencies = [
  "diem-sdk",
  "diem-temppath",
  "hex",
+ "indicatif",
  "libra-framework",
  "libra-query",
  "libra-smoke-tests",

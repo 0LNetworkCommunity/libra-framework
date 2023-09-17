@@ -8,10 +8,10 @@ use crate::core::{
 };
 
 use anyhow::Error;
-
-use libra_types::legacy_types::block::{
+use indicatif::ProgressBar;
+use libra_types::{legacy_types::block::{
     VDFProof, GENESIS_VDF_ITERATIONS, GENESIS_VDF_SECURITY_PARAM,
-};
+}, ol_progress::OLProgress};
 use libra_types::{
     exports::Client, legacy_types::app_cfg::AppCfg, type_extensions::client_ext::ClientExt,
 };
@@ -24,7 +24,13 @@ fn mine_genesis(config: &AppCfg, difficulty: u64, security: u64) -> anyhow::Resu
     let preimage = genesis_preimage(config)?;
     let now = Instant::now();
 
-    let proof = do_delay(&preimage, difficulty, security).unwrap(); // Todo: make mine_genesis return a result.
+    let pb = ProgressBar::new(6*60*60) //6hrs
+      .with_style(OLProgress::bar())
+      .with_message("killing time");
+    pb.enable_steady_tick(core::time::Duration::from_secs(1));
+    let proof = do_delay(&preimage, difficulty, security)?; // Todo: make mine_genesis return a result.
+    pb.finish_and_clear();
+
     let elapsed_secs = now.elapsed().as_secs();
     println!("Delay: {:?} seconds", elapsed_secs);
     let block = VDFProof {
@@ -54,7 +60,13 @@ pub fn write_genesis(config: &AppCfg) -> anyhow::Result<VDFProof> {
 /// Mine one block
 pub fn mine_once(config: &AppCfg, next: NextProof) -> Result<VDFProof, Error> {
     let now = Instant::now();
+    let pb = ProgressBar::new(6*60*60) //6hrs
+      .with_style(OLProgress::bar())
+      .with_message("killing time");
+    pb.enable_steady_tick(core::time::Duration::from_secs(1));
     let data = do_delay(&next.preimage, next.diff.difficulty, next.diff.security)?;
+    pb.finish_and_clear();
+
     let elapsed_secs = now.elapsed().as_secs();
     println!("Delay: {:?} seconds", elapsed_secs);
 
@@ -155,9 +167,9 @@ fn test_helper_clear_block_dir(blocks_dir: &PathBuf) {
         fs::remove_dir_all(blocks_dir).unwrap();
     }
 }
-// #[test]
-// #[ignore]
-// //Not really a test, just a way to generate fixtures.
+#[test]
+#[ignore]
+//Not really a test, just a way to generate fixtures.
 // fn create_fixtures() {
 //     use std::io::Write;
 //     use toml;
@@ -196,9 +208,6 @@ use diem_temppath::TempPath;
 #[cfg(test)]
 use libra_types::legacy_types::vdf_difficulty::VDFDifficulty;
 
-// use libra_types::legacy_types::{
-//   block::VDFProof,
-// };
 
 #[test]
 fn test_mine_once() {
@@ -328,27 +337,6 @@ fn test_parse_one_file() {
 
     test_helper_clear_block_dir(&blocks_dir)
 }
-
-// #[cfg(test)]
-// /// make fixtures for file
-// pub fn test_make_configs_fixture(path_name: &str) -> AppCfg {
-//     // use libra_types::exports::NamedChain;
-//     use libra_types::test_drop_helper::DropTemp;
-
-//     let drop = DropTemp::new_in_crate(path_name);
-
-//     let mut cfg: AppCfg = AppCfg::default();
-//     cfg.workspace.node_home = drop.dir();
-//     let mut profile = cfg.get_profile(None).unwrap();
-
-//     // cfg.workspace.node_home = PathBuf::from(".");
-//     // cfg.workspace.block_dir = "test_blocks_temp_1".to_owned();
-//     // cfg.chain_info.chain_id = NamedChain::TESTNET;
-//     profile.auth_key = "3e4629ba1e63114b59a161e89ad4a083b3a31b5fd59e39757c493e96398e4df2"
-//         .parse()
-//         .unwrap();
-//     cfg
-// }
 
 #[tokio::test]
 async fn test_get_next() {
