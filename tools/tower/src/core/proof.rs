@@ -9,11 +9,12 @@ use crate::core::{
 
 use anyhow::Error;
 use indicatif::ProgressBar;
-use libra_types::{legacy_types::block::{
-    VDFProof, GENESIS_VDF_ITERATIONS, GENESIS_VDF_SECURITY_PARAM,
-}, ol_progress::OLProgress};
 use libra_types::{
     exports::Client, legacy_types::app_cfg::AppCfg, type_extensions::client_ext::ClientExt,
+};
+use libra_types::{
+    legacy_types::block::{VDFProof, GENESIS_VDF_ITERATIONS, GENESIS_VDF_SECURITY_PARAM},
+    ol_progress::OLProgress,
 };
 
 use std::{fs, path::PathBuf, time::Instant};
@@ -24,9 +25,9 @@ fn mine_genesis(config: &AppCfg, difficulty: u64, security: u64) -> anyhow::Resu
     let preimage = genesis_preimage(config)?;
     let now = Instant::now();
 
-    let pb = ProgressBar::new(6*60*60) //6hrs
-      .with_style(OLProgress::bar())
-      .with_message("killing time");
+    let pb = ProgressBar::new(6 * 60 * 60) //6hrs
+        .with_style(OLProgress::bar())
+        .with_message("killing time");
     pb.enable_steady_tick(core::time::Duration::from_secs(1));
     let proof = do_delay(&preimage, difficulty, security)?; // Todo: make mine_genesis return a result.
     pb.finish_and_clear();
@@ -60,9 +61,9 @@ pub fn write_genesis(config: &AppCfg) -> anyhow::Result<VDFProof> {
 /// Mine one block
 pub fn mine_once(config: &AppCfg, next: NextProof) -> Result<VDFProof, Error> {
     let now = Instant::now();
-    let pb = ProgressBar::new(6*60*60) //6hrs
-      .with_style(OLProgress::bar())
-      .with_message("killing time");
+    let pb = ProgressBar::new(6 * 60 * 60) //6hrs
+        .with_style(OLProgress::bar())
+        .with_message("killing time");
     pb.enable_steady_tick(core::time::Duration::from_secs(1));
     let data = do_delay(&next.preimage, next.diff.difficulty, next.diff.security)?;
     pb.finish_and_clear();
@@ -207,7 +208,6 @@ use diem_sdk::crypto::HashValue;
 use diem_temppath::TempPath;
 #[cfg(test)]
 use libra_types::legacy_types::vdf_difficulty::VDFDifficulty;
-
 
 #[test]
 fn test_mine_once() {

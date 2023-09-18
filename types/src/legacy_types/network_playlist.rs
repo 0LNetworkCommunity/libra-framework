@@ -99,14 +99,14 @@ pub fn find_default_playlist(chain_id: Option<NamedChain>) -> anyhow::Result<Url
 }
 
 impl NetworkPlaylist {
-      pub fn new(url: Option<Url>, chain_name: Option<NamedChain>) -> Self {
+    pub fn new(url: Option<Url>, chain_name: Option<NamedChain>) -> Self {
         let mut np = NetworkPlaylist::default();
         if let Some(u) = url {
-          np.replace_all_urls(u)
+            np.replace_all_urls(u)
         }
 
         if let Some(n) = chain_name {
-          np.chain_name = n;
+            np.chain_name = n;
         }
         np
     }

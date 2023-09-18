@@ -99,21 +99,24 @@ impl LibraSmoke {
     }
 
     pub fn first_account_app_cfg(&mut self) -> anyhow::Result<AppCfg> {
-      let config_path = TempPath::new();
-      config_path.create_as_dir()?;
+        let config_path = TempPath::new();
+        config_path.create_as_dir()?;
 
-      let info = self.swarm.chain_info();
-      let chain_name = NamedChain::from_chain_id(&info.chain_id).ok();
-      let np = NetworkPlaylist::new(Some(info.rest_api().parse()?), chain_name);
-      let mut a = AppCfg::init_app_configs(
-        self.first_account.authentication_key(),
-        self.first_account.address(),
-        Some(config_path.path().into()),
-        chain_name,
-        Some(np)
-      )?;
-      let net = a.get_network_profile_mut(None)?;
-      net.replace_all_urls(info.rest_api().parse()?);
-      Ok(a)
+        let info = self.swarm.chain_info();
+        let chain_name = NamedChain::from_chain_id(&info.chain_id).ok();
+        let np = NetworkPlaylist::new(Some(info.rest_api().parse()?), chain_name);
+        let mut a = AppCfg::init_app_configs(
+            self.first_account.authentication_key(),
+            self.first_account.address(),
+            Some(config_path.path().into()),
+            chain_name,
+            Some(np),
+        )?;
+        let net = a.get_network_profile_mut(None)?;
+        net.replace_all_urls(info.rest_api().parse()?);
+
+        let prof = a.get_profile_mut(None)?;
+        prof.set_private_key(self.first_account.private_key());
+        Ok(a)
     }
 }

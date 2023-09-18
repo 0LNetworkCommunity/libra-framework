@@ -61,7 +61,7 @@ pub fn default_file_path() -> PathBuf {
 }
 
 impl AppCfg {
-      /// Constructor for the AppCfg
+    /// Constructor for the AppCfg
     pub fn init_app_configs(
         authkey: AuthenticationKey,
         account: AccountAddress,
@@ -201,7 +201,7 @@ impl AppCfg {
 
         if let Some(n) = nickname {
             let found = self.user_profiles.iter().enumerate().find_map(|(i, e)| {
-                if e.nickname.contains(&n) || e.account.to_string().contains(&n) {
+                if e.nickname.contains(&n) || e.account.to_hex_literal().contains(&n) {
                     Some(i)
                 } else {
                     None
@@ -257,7 +257,6 @@ impl AppCfg {
         Ok(())
     }
 
-
     pub fn set_chain_id(&mut self, chain_id: NamedChain) {
         self.workspace.default_chain_id = chain_id;
     }
@@ -297,7 +296,7 @@ impl AppCfg {
         let np = &mut self.network_playlist;
 
         let chain_id = chain_id.unwrap_or(self.workspace.default_chain_id);
-        anyhow::ensure!(np.len() > 0, "no network profiles found");
+        anyhow::ensure!(!np.is_empty(), "no network profiles found");
         let profile = np
             .iter_mut()
             .find(|each| each.chain_name == chain_id)
@@ -500,10 +499,10 @@ impl Profile {
 pub fn get_nickname(acc: AccountAddress) -> String {
     // let's check if this is a legacy/founder key, it will have 16 zeros at the start, and that's not a useful nickname
     if acc.to_string()[..32] == *"00000000000000000000000000000000" {
-        return acc.to_string()[33..36].to_owned();
+        return acc.to_string()[33..37].to_owned();
     }
 
-    acc.to_string()[..3].to_owned()
+    acc.to_string()[..4].to_owned()
 }
 /// Transaction types
 #[derive(Debug, Clone, Serialize, Deserialize, clap::ValueEnum)]

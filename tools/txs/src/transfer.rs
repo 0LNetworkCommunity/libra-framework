@@ -1,6 +1,8 @@
 //! form a transfer payload and execute transaction
 use super::submit_transaction::Sender;
-use diem_sdk::{types::account_address::AccountAddress, rest_client::diem_api_types::TransactionOnChainData};
+use diem_sdk::{
+    rest_client::diem_api_types::TransactionOnChainData, types::account_address::AccountAddress,
+};
 use libra_cached_packages::libra_framework_sdk_builder::EntryFunctionCall::OlAccountTransfer;
 use libra_types::move_resource::gas_coin;
 
