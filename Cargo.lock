@@ -5871,6 +5871,7 @@ dependencies = [
  "diem-crypto",
  "diem-forge",
  "diem-sdk",
+ "diem-temppath",
  "diem-types",
  "libra-cached-packages",
  "libra-framework",

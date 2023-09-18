@@ -61,6 +61,53 @@ pub fn default_file_path() -> PathBuf {
 }
 
 impl AppCfg {
+      /// Constructor for the AppCfg
+    pub fn init_app_configs(
+        authkey: AuthenticationKey,
+        account: AccountAddress,
+        config_path: Option<PathBuf>,
+        network_id: Option<NamedChain>,
+        network_playlist: Option<NetworkPlaylist>,
+    ) -> anyhow::Result<Self> {
+        // TODO: Check if configs exist and warn on overwrite.
+        let mut default_config = AppCfg::default();
+
+        let profile = Profile::new(authkey, account);
+        default_config.user_profiles = vec![profile];
+
+        default_config.workspace.node_home = config_path.unwrap_or_else(global_config_dir);
+
+        if let Some(id) = network_id {
+            default_config.workspace.default_chain_id = id.to_owned();
+        };
+
+        if let Some(np) = network_playlist {
+            default_config.network_playlist.push(np)
+        }
+
+        default_config.save_file()?;
+
+        Ok(default_config)
+    }
+
+    /// constructor for tests
+    pub fn init_for_tests(path: PathBuf) -> anyhow::Result<AppCfg> {
+        use diem_crypto::ValidCryptoMaterialStringExt;
+        let mut cfg = Self::init_app_configs(
+            "87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5".parse()?,
+            "0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5".parse()?,
+            Some(path),
+            Some(NamedChain::TESTING),
+            None,
+        )?;
+
+        let mut profile = cfg.get_profile_mut(None)?;
+        profile.test_private_key = Some(Ed25519PrivateKey::from_encoded_string(
+            "0x74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b",
+        )?);
+
+        Ok(cfg)
+    }
     /// load from default path
     pub fn load(file: Option<PathBuf>) -> anyhow::Result<Self> {
         let path = file.unwrap_or_else(default_file_path);
@@ -210,52 +257,6 @@ impl AppCfg {
         Ok(())
     }
 
-    /// Get where node key_store.json stored.
-    pub fn init_app_configs(
-        authkey: AuthenticationKey,
-        account: AccountAddress,
-        config_path: Option<PathBuf>,
-        network_id: Option<NamedChain>,
-        network_playlist: Option<NetworkPlaylist>,
-    ) -> anyhow::Result<Self> {
-        // TODO: Check if configs exist and warn on overwrite.
-        let mut default_config = AppCfg::default();
-
-        let profile = Profile::new(authkey, account);
-        default_config.user_profiles = vec![profile];
-
-        default_config.workspace.node_home = config_path.unwrap_or_else(global_config_dir);
-
-        if let Some(id) = network_id {
-            default_config.workspace.default_chain_id = id.to_owned();
-        };
-
-        if let Some(np) = network_playlist {
-            default_config.network_playlist.push(np)
-        }
-
-        default_config.save_file()?;
-
-        Ok(default_config)
-    }
-
-    pub fn init_for_tests(path: PathBuf) -> anyhow::Result<AppCfg> {
-        use diem_crypto::ValidCryptoMaterialStringExt;
-        let mut cfg = Self::init_app_configs(
-            "87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5".parse()?,
-            "0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5".parse()?,
-            Some(path),
-            Some(NamedChain::TESTING),
-            None,
-        )?;
-
-        let mut profile = cfg.get_profile_mut(None)?;
-        profile.test_private_key = Some(Ed25519PrivateKey::from_encoded_string(
-            "0x74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b",
-        )?);
-
-        Ok(cfg)
-    }
 
     pub fn set_chain_id(&mut self, chain_id: NamedChain) {
         self.workspace.default_chain_id = chain_id;
@@ -268,7 +269,7 @@ impl AppCfg {
     ) -> anyhow::Result<NetworkPlaylist> {
         let url = playlist_url.unwrap_or(network_playlist::find_default_playlist(chain_id)?);
 
-        let np = NetworkPlaylist::from_url(url, chain_id).await?;
+        let np = NetworkPlaylist::from_playlist_url(url, chain_id).await?;
 
         self.maybe_add_custom_playlist(&np);
         Ok(np)

@@ -167,8 +167,8 @@ fn test_helper_clear_block_dir(blocks_dir: &PathBuf) {
         fs::remove_dir_all(blocks_dir).unwrap();
     }
 }
-#[test]
-#[ignore]
+// #[test]
+// #[ignore]
 //Not really a test, just a way to generate fixtures.
 // fn create_fixtures() {
 //     use std::io::Write;

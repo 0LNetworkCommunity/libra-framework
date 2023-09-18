@@ -37,7 +37,7 @@ pub async fn wizard(
         Some(a) => a,
         None => {
             if let Some(u) = playlist_url {
-                NetworkPlaylist::from_url(u, chain_name).await
+                NetworkPlaylist::from_playlist_url(u, chain_name).await
             } else {
                 NetworkPlaylist::default_for_network(chain_name).await
             }?

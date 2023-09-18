@@ -117,10 +117,10 @@ impl NetworkPlaylist {
         }
         let url = find_default_playlist(chain_id)?;
 
-        Self::from_url(url, chain_id).await
+        Self::from_playlist_url(url, chain_id).await
     }
 
-    pub async fn from_url(
+    pub async fn from_playlist_url(
         playlist_url: Url,
         chain_id: Option<NamedChain>,
     ) -> anyhow::Result<NetworkPlaylist> {
@@ -150,6 +150,11 @@ impl NetworkPlaylist {
     pub fn add_url(&mut self, url: Url) {
         let h = HostProfile::new(url);
         self.nodes.push(h);
+    }
+
+    pub fn replace_all_urls(&mut self, url: Url) {
+        let h = HostProfile::new(url);
+        self.nodes = vec![h];
     }
 
     pub fn shuffle_order(&mut self) {

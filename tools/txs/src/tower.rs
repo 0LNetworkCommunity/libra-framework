@@ -4,6 +4,7 @@ use libra_cached_packages::libra_framework_sdk_builder::EntryFunctionCall::Tower
 use libra_types::legacy_types::block::VDFProof;
 
 impl Sender {
+    // TODO: should return a UserTransaction as does transfer.rs
     pub async fn commit_proof(&mut self, proof: VDFProof) -> anyhow::Result<()> {
         if proof.difficulty.is_none() || proof.security.is_none() {
             bail!("no difficulty or security parameter found");
