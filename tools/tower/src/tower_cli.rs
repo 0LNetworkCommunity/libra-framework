@@ -1,3 +1,4 @@
+use crate::core::delay::verify;
 use crate::core::next_proof::NextProof;
 use crate::core::{backlog, proof};
 use clap::{Parser, Subcommand};
@@ -5,6 +6,7 @@ use libra_types::exports::Client;
 use libra_types::exports::{Ed25519PrivateKey, ValidCryptoMaterialStringExt};
 use libra_types::legacy_types::app_cfg::AppCfg;
 use libra_types::legacy_types::app_cfg::Profile;
+use libra_types::legacy_types::block::VDFProof;
 use libra_types::legacy_types::vdf_difficulty::VDFDifficulty;
 use libra_types::type_extensions::client_ext::ClientExt;
 use std::path::PathBuf;
@@ -43,6 +45,9 @@ pub enum TowerSub {
     Start,
     Once,
     Zero,
+    Verify {
+      file: PathBuf,
+    },
     #[clap(hide(true))]
     Debug {
         #[clap(long)]
@@ -93,6 +98,13 @@ impl TowerCli {
             }
             TowerSub::Zero => {
                 proof::write_genesis(&app_cfg)?;
+            }
+            TowerSub::Verify { file } => {
+              let block = VDFProof::parse_block_file(&file, false)?;
+              match verify(&block.preimage, &block.proof, block.difficulty(), block.security() as u16, true) {
+                true => println!("SUCCESS: valid proof"),
+                false => println!("FAIL: proof is invalid"),
+              };
             }
             TowerSub::Debug {
                 height,
