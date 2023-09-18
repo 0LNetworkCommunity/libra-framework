@@ -54,7 +54,7 @@ pub enum TowerSub {
         #[clap(long)]
         security: u64,
         #[clap(long)]
-        path: PathBuf,
+        dir: PathBuf,
     },
 }
 
@@ -99,7 +99,7 @@ impl TowerCli {
                 difficulty,
                 security,
                 preimage,
-                path: dir,
+                dir,
             } => {
                 let params = NextProof {
                     preimage: hex::decode(preimage)?,
