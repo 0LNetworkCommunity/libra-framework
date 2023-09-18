@@ -10,6 +10,7 @@ use libra_framework::release::ReleaseTarget;
 use libra_types::exports::AccountAddress;
 use libra_types::exports::Client;
 use libra_types::legacy_types::app_cfg::AppCfg;
+use libra_types::legacy_types::network_playlist::NetworkPlaylist;
 use smoke_test::smoke_test_environment;
 use url::Url;
 
@@ -102,13 +103,14 @@ impl LibraSmoke {
       config_path.create_as_dir()?;
 
       let info = self.swarm.chain_info();
-
+      let chain_name = NamedChain::from_chain_id(&info.chain_id).ok();
+      let np = NetworkPlaylist::new(Some(info.rest_api().parse()?), chain_name);
       let mut a = AppCfg::init_app_configs(
         self.first_account.authentication_key(),
         self.first_account.address(),
         Some(config_path.path().into()),
-        NamedChain::from_chain_id(&info.chain_id).ok(),
-        None
+        chain_name,
+        Some(np)
       )?;
       let net = a.get_network_profile_mut(None)?;
       net.replace_all_urls(info.rest_api().parse()?);

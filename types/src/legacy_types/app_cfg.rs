@@ -66,7 +66,7 @@ impl AppCfg {
         authkey: AuthenticationKey,
         account: AccountAddress,
         config_path: Option<PathBuf>,
-        network_id: Option<NamedChain>,
+        chain_name: Option<NamedChain>,
         network_playlist: Option<NetworkPlaylist>,
     ) -> anyhow::Result<Self> {
         // TODO: Check if configs exist and warn on overwrite.
@@ -77,7 +77,7 @@ impl AppCfg {
 
         default_config.workspace.node_home = config_path.unwrap_or_else(global_config_dir);
 
-        if let Some(id) = network_id {
+        if let Some(id) = chain_name {
             default_config.workspace.default_chain_id = id.to_owned();
         };
 
@@ -153,7 +153,7 @@ impl AppCfg {
             vec![]
         };
         let np = NetworkPlaylist {
-            chain_id: l.chain_info.chain_id,
+            chain_name: l.chain_info.chain_id,
             nodes,
         };
         let app_cfg = AppCfg {
@@ -284,7 +284,7 @@ impl AppCfg {
         let np = self.network_playlist.clone();
 
         let chain_id = chain_id.unwrap_or(self.workspace.default_chain_id);
-        let profile = np.into_iter().find(|each| each.chain_id == chain_id);
+        let profile = np.into_iter().find(|each| each.chain_name == chain_id);
 
         profile.context("could not find a network profile")
     }
@@ -297,9 +297,10 @@ impl AppCfg {
         let np = &mut self.network_playlist;
 
         let chain_id = chain_id.unwrap_or(self.workspace.default_chain_id);
+        anyhow::ensure!(np.len() > 0, "no network profiles found");
         let profile = np
             .iter_mut()
-            .find(|each| each.chain_id == chain_id)
+            .find(|each| each.chain_name == chain_id)
             .context("cannot get network profile")?;
 
         Ok(profile)
@@ -319,7 +320,7 @@ impl AppCfg {
     pub fn maybe_add_custom_playlist(&mut self, new_playlist: &NetworkPlaylist) {
         let mut found = false;
         self.network_playlist.iter_mut().for_each(|play| {
-            if play.chain_id == new_playlist.chain_id {
+            if play.chain_name == new_playlist.chain_name {
                 found = true;
                 *play = new_playlist.to_owned();
             }
@@ -709,10 +710,10 @@ tx_configs:
     assert!(cfg.workspace.default_chain_id == NamedChain::TESTING);
 
     let np = cfg.get_network_profile(None).unwrap();
-    assert!(np.chain_id == NamedChain::TESTING);
+    assert!(np.chain_name == NamedChain::TESTING);
 
     let np = cfg.get_network_profile(Some(NamedChain::MAINNET)).unwrap();
-    assert!(np.chain_id == NamedChain::MAINNET);
+    assert!(np.chain_name == NamedChain::MAINNET);
 
     assert!(np.the_good_ones().is_err());
     assert!(np.the_best_one().is_err());
