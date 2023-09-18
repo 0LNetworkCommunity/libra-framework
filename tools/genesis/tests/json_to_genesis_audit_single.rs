@@ -12,6 +12,7 @@ use libra_genesis_tools::{compare, genesis::make_recovery_genesis_from_vec_legac
 use libra_types::exports::AccountAddress;
 use libra_types::exports::ChainId;
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
+use libra_types::legacy_types::vdf_difficulty::VDFDifficulty;
 use libra_types::move_resource::ancestry::AncestryResource;
 use std::fs;
 use support::{path_utils::json_path, test_vals};
@@ -150,4 +151,37 @@ fn test_check_ancestry() {
     //         panic!("validator set not correct");
     //     }
     // }
+}
+
+#[test]
+/// check the mainnet constants are actually being returned
+/// VDF difficulty is a good check
+fn test_check_mainnet_constants() -> anyhow::Result<()> {
+    // let path = DropTemp::new_in_crate("db_rw").dir();
+    let genesis_vals = test_vals::get_test_valset(4);
+
+    let json = json_path()
+        .parent()
+        .unwrap()
+        .join("sample_end_user_single.json");
+
+    let json_str = fs::read_to_string(json).unwrap();
+    let user_accounts: Vec<LegacyRecovery> = serde_json::from_str(&json_str).unwrap();
+
+    let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
+        Some(&user_accounts),
+        &genesis_vals,
+        &head_release_bundle(),
+        ChainId::mainnet(),
+        None,
+        &libra_genesis_default(NamedChain::TESTING),
+    )
+    .unwrap();
+
+    let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&gen_tx).unwrap();
+    let res = compare::get_struct::<VDFDifficulty>(&db_rw.reader, None)?;
+
+    assert!(res.difficulty == 3000000000);
+
+    Ok(())
 }

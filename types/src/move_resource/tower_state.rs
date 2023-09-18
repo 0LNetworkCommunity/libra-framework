@@ -3,8 +3,6 @@ use move_core_types::{
     language_storage::StructTag,
     move_resource::{MoveResource, MoveStructType},
 };
-// use move_core_types::language_storage::StructTag;
-// use diem_api_types::U64;
 use move_core_types::identifier::IdentStr;
 use move_core_types::language_storage::TypeTag;
 use serde::{Deserialize, Serialize};
@@ -13,26 +11,6 @@ use diem_types::{account_address::AccountAddress, event::EventHandle};
 use once_cell::sync::Lazy;
 
 use crate::ONCHAIN_DECIMAL_PRECISION;
-
-pub static GAS_COIN_TYPE: Lazy<TypeTag> = Lazy::new(|| {
-    TypeTag::Struct(Box::new(StructTag {
-        address: AccountAddress::ONE,
-        module: ident_str!("gas_coin").to_owned(),
-        name: ident_str!("GasCoin").to_owned(),
-        type_params: vec![],
-    }))
-});
-
-/// utility to scale a number to the coin's decimal precision.
-pub fn cast_coin_to_decimal(onchain_coin_value: u64) -> f64 {
-    onchain_coin_value as f64 / 10f64.powf(ONCHAIN_DECIMAL_PRECISION as f64)
-}
-
-/// utility to cast a decimal to the onchain coin representation
-pub fn cast_decimal_to_coin(decimal: f64) -> u64 {
-    let int = decimal * 10f64.powf(ONCHAIN_DECIMAL_PRECISION as f64);
-    int as u64
-}
 
 /// The balance resource held under an account.
 #[derive(Debug, Serialize, Deserialize)]

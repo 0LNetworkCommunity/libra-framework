@@ -14,15 +14,15 @@ use crate::{
 pub const OPERATOR_FILE: &str = "operator.yaml";
 pub const OWNER_FILE: &str = "owner.yaml";
 
-// copied from crate/aptos/src/genesis/keys.rs
+// copied from crate/diem/src/genesis/keys.rs
 pub struct SetValidatorConfiguration {
     /// Name of the validator
     pub username: String,
 
-    /// Host and port pair for the validator e.g. 127.0.0.1:6180 or aptoslabs.com:6180
+    /// Host and port pair for the validator e.g. 127.0.0.1:6180 or domain.com:6180
     pub validator_host: HostAndPort,
 
-    /// Host and port pair for the fullnode e.g. 127.0.0.1:6180 or aptoslabs.com:6180
+    /// Host and port pair for the fullnode e.g. 127.0.0.1:6180 or domain.com:6180
     pub full_node_host: Option<HostAndPort>,
 
     /// Path to private identity generated from GenerateKeys

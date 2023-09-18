@@ -2,6 +2,9 @@ name: cleanliness
 on:
   push:
     branches: ["*"]
+    tags:
+    - '[0-9]+.[0-9]+.[0-9]+'
+    - '[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
   pull_request:
     types:
       - opened
@@ -9,26 +12,18 @@ on:
     branches:
       - 'release**'
       - 'main'
-# env:
-#   SCCACHE_BUCKET: ubuntu-libra
-#   SCCACHE_ENDPOINT: https://afcdb03dd0764818ac9aec7fe0c0b8b5.r2.cloudflarestorage.com/ubuntu-libra
-#   AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
-#   AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
-#   SCCACHE_REGION: auto
+env:
+  DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
+  LIBRA_CI: 1
+  MODE_0L: "TESTNET"
 
 jobs:
   clippy:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
       - name: setup env
         uses: ./.github/actions/build_env
-
-      # - name: set sccache
-      #   # don't do this before test because rust tools may not build inluding sccache itself.
-      #   # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
-      #   run: echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
 
       - name: format
         uses: actions-rs/cargo@v1

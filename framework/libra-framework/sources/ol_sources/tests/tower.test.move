@@ -4,7 +4,7 @@ module ol_framework::test_tower {
   use ol_framework::mock;
   use ol_framework::tower_state;
   use ol_framework::vdf_fixtures;
-  use ol_framework::testnet;
+  // use ol_framework::testnet;
 
   // use std::debug::print;
 
@@ -13,7 +13,7 @@ module ol_framework::test_tower {
     mock::genesis_n_vals(&root, 4);
     mock::ol_initialize_coin(&root);
 
-    mock::tower_default(); // make all the validators initialize towers
+    mock::tower_default(&root); // make all the validators initialize towers
     // because we need randomness for the toy rng
 
     let (diff, sec) = tower_state::get_difficulty();
@@ -21,10 +21,6 @@ module ol_framework::test_tower {
     // check the state started with the testnet defaults
     assert!(diff==100, 735701);
     assert!(sec==512, 735702);
-
-    // need to unset testnet for the epoch adjustment to run (ignored on testnet, or id==4)
-    // dont'do this before because tower_default uses testnet difficulty
-    testnet::unset(&root);
 
     mock::trigger_epoch(&root);
 
@@ -45,12 +41,6 @@ module ol_framework::test_tower {
           350, // wesolowski
       );
 
-      // assert!(TowerState::get_tower_height(@Alice) == 0, 735701);
-      // assert!(TowerState::get_epochs_compliant(@Alice) == 0, 735702);
-      // assert!(TowerState::get_count_in_epoch(@Alice) == 1, 735703);
-
-      // assert!(Vector::length<address>(&TowerState::get_miner_list()) == 2, 735704);
-          // includes the dummy validator from genesis
     }
 
 
@@ -59,10 +49,25 @@ module ol_framework::test_tower {
     mock::genesis_n_vals(&root, 4);
     mock::ol_initialize_coin(&root);
 
-    mock::tower_default(); // make all the validators initialize towers
+    mock::tower_default(&root); // make all the validators initialize towers
     // because we need randomness for the toy rng
 
-    let num = tower_state::toy_rng(1, 3);
+    let num = tower_state::toy_rng(1, 3, 0);
+
+    assert!(num == 184, 7357001);
+
+  }
+
+  #[test(root = @ol_framework)]
+  fun toy_rng_minimal(root: signer) {
+    // use diem_std::debug::print;
+    mock::genesis_n_vals(&root, 1);
+    mock::ol_initialize_coin(&root);
+
+    mock::tower_default(&root); // make all the validators initialize towers
+    // because we need randomness for the toy rng
+
+    let num = tower_state::toy_rng(0, 1, 0);
 
     assert!(num == 184, 7357001);
 

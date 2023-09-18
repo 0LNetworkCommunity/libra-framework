@@ -41,7 +41,7 @@
     use std::guid;
     use std::error;
     use std::option::{Self, Option};
-    use diem_framework::reconfiguration;
+    use ol_framework::epoch_helper;
     use ol_framework::vote_receipt;
 
     // use diem_std::debug::print;
@@ -174,7 +174,7 @@
       assert!(!is_found, error::invalid_state(EALREADY_VOTED));
 
       // if we are in a new epoch than the previous last voter, then update that state (for purposes of extending competitive votes, if that option is set).
-      let epoch_now = reconfiguration::get_current_epoch();
+      let epoch_now = epoch_helper::get_current_epoch();
       if (epoch_now > ballot.last_epoch_voted) {
         ballot.last_epoch_approve = ballot.votes_approve;
         ballot.last_epoch_reject = ballot.votes_reject;
@@ -200,7 +200,7 @@
     }
 
     fun maybe_complete<Data: drop + store>(ballot: &mut TurnoutTally<Data>): bool {
-      let epoch = reconfiguration::get_current_epoch();
+      let epoch = epoch_helper::get_current_epoch();
       // if completed, exit early
       if (ballot.completed) { return true }; // this should be checked above anyways.
 
@@ -255,7 +255,7 @@
 
     public fun maybe_auto_competitive_extend<Data: drop + store>(ballot: &mut TurnoutTally<Data>):u64  {
 
-      let epoch = reconfiguration::get_current_epoch();
+      let epoch = epoch_helper::get_current_epoch();
 
       // TODO: The exension window below of 1 day is not sufficient to make
       // much difference in practice (the threshold is most likely reached at that point).
@@ -327,7 +327,7 @@
         // before marking it pass, make sure the minimum quorum was met
         // by default 12.50%
         if (ballot.tally_turnout_pct > ballot.cfg_min_turnout) {
-          let epoch = reconfiguration::get_current_epoch();
+          let epoch = epoch_helper::get_current_epoch();
 
           // cool off period, to next epoch.
           if (ballot.provisional_pass_epoch == 0) {

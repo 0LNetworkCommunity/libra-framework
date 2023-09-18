@@ -2,12 +2,35 @@
 use super::submit_transaction::Sender;
 use diem_sdk::types::account_address::AccountAddress;
 use libra_cached_packages::libra_framework_sdk_builder::EntryFunctionCall::OlAccountTransfer;
+use libra_types::move_resource::gas_coin;
 
 impl Sender {
-    pub async fn transfer(&mut self, to: AccountAddress, amount: u64) -> anyhow::Result<()> {
-        let payload = OlAccountTransfer { to, amount }.encode();
+    pub async fn transfer(
+        &mut self,
+        to: AccountAddress,
+        amount: f64,
+        estimate: bool,
+    ) -> anyhow::Result<()> {
+        // must scale the coin from decimal to onchain representation
+        let coin_scaled = gas_coin::cast_decimal_to_coin(amount);
+        let payload = OlAccountTransfer {
+            to,
+            amount: coin_scaled,
+        }
+        .encode();
 
-        self.sign_submit_wait(payload).await?;
+        if estimate {
+            let res = self.estimate(payload).await?;
+            println!("{:#?}", &res);
+
+            let success = res[0].info.success;
+            println!("will succeed: {success}");
+            let gas = res[0].info.gas_used;
+            println!("gas used: {gas}");
+        } else {
+            self.sign_submit_wait(payload).await?;
+        }
+
         Ok(())
     }
 }

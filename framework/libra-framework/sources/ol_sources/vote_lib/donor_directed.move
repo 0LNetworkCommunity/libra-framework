@@ -32,7 +32,7 @@ module ol_framework::donor_directed {
     use std::error;
     use std::guid;
     use std::fixed_point32;
-    use diem_framework::reconfiguration;
+    use ol_framework::epoch_helper;
     use std::option::{Self, Option};
     use ol_framework::gas_coin::GasCoin;
     use ol_framework::ol_account;
@@ -297,7 +297,7 @@ module ol_framework::donor_directed {
       let multisig_address = account::get_withdraw_cap_address(withdraw_capability);
       let transfers = borrow_global_mut<TxSchedule>(multisig_address);
 
-      let deadline = reconfiguration::get_current_epoch() + DEFAULT_PAYMENT_DURATION;
+      let deadline = epoch_helper::get_current_epoch() + DEFAULT_PAYMENT_DURATION;
 
       let t = TimedTransfer {
         uid: *uid,
@@ -434,7 +434,7 @@ module ol_framework::donor_directed {
       // Add another day for each veto
       let state = borrow_global_mut<TxSchedule>(multisig_address);
       let tx_mut = get_pending_timed_transfer_mut(state, tx_uid);
-      if (tx_mut.epoch_latest_veto_received < reconfiguration::get_current_epoch()) {
+      if (tx_mut.epoch_latest_veto_received < epoch_helper::get_current_epoch()) {
         tx_mut.deadline = tx_mut.deadline + 1;
 
         // check that the expiration of the payment
