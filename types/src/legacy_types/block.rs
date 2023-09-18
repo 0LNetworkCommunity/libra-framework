@@ -74,13 +74,6 @@ impl VDFProof {
         Ok((block.preimage, block.proof))
     }
 
-    // /// new object deserialized from file
-    // pub fn parse_block_file(path: PathBuf) -> Result<VDFProof, anyhow::Error> {
-    //     let file = fs::File::open(&path)?;
-    //     let reader = BufReader::new(file);
-    //     Ok(serde_json::from_reader(reader)?)
-    // }
-
     /// get the difficulty/iterations of the block, or assume legacy
     pub fn difficulty(&self) -> u64 {
         self.difficulty.unwrap() // if the block doesn't have this info, assume it's legacy block.
@@ -91,18 +84,17 @@ impl VDFProof {
         self.security.unwrap() // if the block doesn't have this info, assume it's legacy block.
     }
 
-    pub fn write_json(&self, blocks_dir: &PathBuf) -> Result<PathBuf, std::io::Error> {
-        if !&blocks_dir.exists() {
+    pub fn write_json(&self, blocks_dir: &Path) -> Result<PathBuf, std::io::Error> {
+        if !blocks_dir.exists() {
             // first run, create the directory if there is none, or if the user changed the configs.
             // note: user may have blocks but they are in a different directory than what AppCfg says.
             fs::create_dir_all(blocks_dir)?;
         };
         // Write the file.
-        let mut latest_block_path = blocks_dir.clone();
-        latest_block_path.push(format!("{}_{}.json", FILENAME, self.height));
-        let mut file = fs::File::create(&latest_block_path)?;
+        let path = blocks_dir.join(format!("{}_{}.json", FILENAME, self.height));
+        let mut file = fs::File::create(&path)?;
         file.write_all(serde_json::to_string(&self)?.as_bytes())?;
-        Ok(latest_block_path)
+        Ok(path)
     }
 
     /// Parse a proof_x.json file and return a VDFProof

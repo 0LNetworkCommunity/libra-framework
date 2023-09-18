@@ -17,7 +17,11 @@ use libra_types::{
     ol_progress::OLProgress,
 };
 
-use std::{fs, path::PathBuf, time::Instant};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    time::Instant,
+};
 
 // writes a JSON file with the first vdf proof
 fn mine_genesis(config: &AppCfg, difficulty: u64, security: u64) -> anyhow::Result<VDFProof> {
@@ -59,14 +63,24 @@ pub fn write_genesis(config: &AppCfg) -> anyhow::Result<VDFProof> {
     Ok(block)
 }
 /// Mine one block
-pub fn mine_once(config: &AppCfg, next: NextProof) -> Result<VDFProof, Error> {
+pub fn mine_once(path: &Path, next: &NextProof) -> Result<VDFProof, Error> {
     let now = Instant::now();
     let pb = ProgressBar::new(6 * 60 * 60) //6hrs
         .with_style(OLProgress::bar())
         .with_message("killing time");
     pb.enable_steady_tick(core::time::Duration::from_secs(1));
-    let data = do_delay(&next.preimage, next.diff.difficulty, next.diff.security)?;
+    let proof = do_delay(&next.preimage, next.diff.difficulty, next.diff.security)?;
     pb.finish_and_clear();
+
+    // check the proof verifies before saving or committing to chain
+
+    verify(
+        &next.preimage,
+        &proof,
+        next.diff.difficulty,
+        next.diff.security as u16,
+        true,
+    );
 
     let elapsed_secs = now.elapsed().as_secs();
     println!("Delay: {:?} seconds", elapsed_secs);
@@ -74,13 +88,13 @@ pub fn mine_once(config: &AppCfg, next: NextProof) -> Result<VDFProof, Error> {
     let block = VDFProof {
         height: next.next_height,
         elapsed_secs,
-        preimage: next.preimage,
-        proof: data,
+        preimage: next.preimage.to_owned(),
+        proof,
         difficulty: Some(next.diff.difficulty),
         security: Some(next.diff.security),
     };
 
-    block.write_json(&config.get_block_dir(None)?)?;
+    block.write_json(path)?;
     Ok(block)
 }
 
@@ -148,7 +162,8 @@ pub async fn get_next_and_mine(
         next.diff.difficulty, next.diff.security
     );
 
-    let block = mine_once(config, next)?;
+    let path = config.get_block_dir(None)?;
+    let block = mine_once(&path, &next)?;
 
     println!("Proof mined: proof_{}.json created.", block.height);
 
@@ -243,8 +258,9 @@ fn test_mine_once() {
             prev_sec: 512,
         },
     };
+    let path = configs_fixture.get_block_dir(None).unwrap();
 
-    mine_once(&configs_fixture, next).unwrap();
+    mine_once(&path, &next).unwrap();
     // confirm this file was written to disk.
     let block_file =
         fs::read_to_string(block_dir.join("proof_1.json")).expect("Could not read latest block");

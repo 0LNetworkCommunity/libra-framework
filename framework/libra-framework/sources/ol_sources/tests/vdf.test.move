@@ -49,13 +49,40 @@ module ol_framework::test_vdf{
         weso
       ), 7357001);
 
-    let challenge = vdf_fixtures::alice_0_hard_chal();
-    // Generate solutions with:
-    // cd ./verfiable_delay/vdf-cli && cargo run --release -- -l=512 aa 100 -tpietrzak
-    // NOTE: the -l=512 is important because this is the security paramater of 0L miner.
-    let proof = vdf_fixtures::alice_0_hard_sol();
+    // let challenge = vdf_fixtures::alice_0_hard_chal();
+    // // Generate solutions with:
+    // // cd ./verfiable_delay/vdf-cli && cargo run --release -- -l=512 aa 100 -tpietrzak
+    // // NOTE: the -l=512 is important because this is the security paramater of 0L miner.
+    // let proof = vdf_fixtures::alice_0_hard_sol();
 
-    assert!(ol_native_vdf::verify(&challenge, &proof, vdf_fixtures::hard_difficulty(), vdf_fixtures::security(), false), 1);
+    // assert!(ol_native_vdf::verify(&challenge, &proof, vdf_fixtures::hard_difficulty(), vdf_fixtures::security(), false), 1);
+  }
+
+  #[test]
+  fun verify_valid_weso_proof_hard() {
+    // this tests the happy case, that a proof is submitted with all three correct parameters.
+    let challenge = vdf_fixtures::weso_alice_0_hard_chal();
+      // Generate solutions with:
+      // cd ./verfiable_delay/vdf-cli && cargo run --release -- -l=512 aa 100 -tpietrzak
+      // NOTE: the -l=512 is important because this is the security paramater of 0L miner.
+    let proof = vdf_fixtures::weso_alice_0_hard_sol();
+    // let weso = true;
+    assert!(
+      ol_native_vdf::verify(
+        &challenge,
+        &proof,
+        3000000000,
+        350,
+        true
+      ), 7357001);
+
+    // let challenge = vdf_fixtures::alice_0_hard_chal();
+    // // Generate solutions with:
+    // // cd ./verfiable_delay/vdf-cli && cargo run --release -- -l=512 aa 100 -tpietrzak
+    // // NOTE: the -l=512 is important because this is the security paramater of 0L miner.
+    // let proof = vdf_fixtures::alice_0_hard_sol();
+
+    // assert!(ol_native_vdf::verify(&challenge, &proof, vdf_fixtures::hard_difficulty(), vdf_fixtures::security(), false), 1);
   }
 
   #[test]

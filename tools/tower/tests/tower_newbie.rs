@@ -57,9 +57,6 @@ async fn tower_newbie() -> anyhow::Result<()> {
 
     assert!(alice_acct == &alice_sender.local_account.address());
 
-    // sanity check
-    // let res = alice_sender.transfer(ls.first_account.address(), 10.0, false).await?;
-    // dbg!(&res);
     let res = alice_sender.commit_proof(proof).await?;
     assert!(res.info.status().is_success());
 
