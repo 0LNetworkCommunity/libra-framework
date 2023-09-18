@@ -2,7 +2,7 @@
 
 use crate::{
     exports::{AccountAddress, AuthenticationKey, NamedChain},
-    global_config_dir,
+    global_config_dir, move_resource::gas_coin::SlowWalletBalance,
 };
 use anyhow::{bail, Context};
 use diem_crypto::ed25519::Ed25519PrivateKey;
@@ -417,12 +417,10 @@ pub struct Profile {
     pub account: AccountAddress,
     /// Miner Authorization Key for 0L Blockchain. Note: not the same as public key, nor account.
     pub auth_key: AuthenticationKey,
-
     /// Private key only for use with testing
     /// Note: skip_serializing so that it is never saved to disk.
     #[serde(skip_serializing)]
     test_private_key: Option<Ed25519PrivateKey>,
-
     /// nickname for this profile
     pub nickname: String,
     #[serde(default)]
@@ -430,27 +428,18 @@ pub struct Profile {
     pub on_chain: bool,
     #[serde(default)]
     /// what the last balance checked
-    pub balance: u64,
+    pub balance: SlowWalletBalance,
     /// Language settings, for use with Carpe
     pub locale: Option<String>,
     /// An opportunity for the Miner to write a message on their genesis block.
     pub statement: String,
 
-    // NOTE: V7: deprecated fields from 0L.toml
-    // should have no effect on reading legacy files
-
-    // /// ip address of this node. May be different from transaction URL.
+    // NOTE: V7: deprecated
+    // Deprecation: : /// ip address of this node. May be different from transaction URL.
     // pub ip: Ipv4Addr,
 
-    // /// ip address of the validator fullnodee
-    // pub vfn_ip: Option<Ipv4Addr>,
-    /// Deprecation: Other nodes to connect for fallback connections
+    // Deprecation: /// Other nodes to connect for fallback connections
     pub upstream_nodes: Option<Vec<Url>>,
-    // /// fullnode playlist URL to override default
-    // pub override_playlist: Option<Url>,
-
-    // /// Link to another delay tower.
-    // pub tower_link: Option<String>,
 }
 
 impl Default for Profile {
@@ -466,7 +455,7 @@ impl Default for Profile {
             locale: None,
             nickname: "default".to_string(),
             on_chain: false,
-            balance: 0,
+            balance: SlowWalletBalance::default(),
             upstream_nodes: None, // Note: deprecated, here for migration
         }
     }
@@ -644,7 +633,9 @@ user_profiles:
   test_private_key: null
   nickname: '636'
   on_chain: false
-  balance: 0
+  balance:
+    unlocked: 0
+    total: 0
   locale: null
   statement: Protests rage across the nation
   upstream_nodes: null
@@ -653,7 +644,9 @@ user_profiles:
   test_private_key: null
   nickname: 4cc
   on_chain: false
-  balance: 0
+  balance:
+    unlocked: 0
+    total: 0
   locale: null
   statement: Protests rage across the nation
   upstream_nodes: null
@@ -662,7 +655,9 @@ user_profiles:
   test_private_key: null
   nickname: '771'
   on_chain: false
-  balance: 0
+  balance:
+    unlocked: 0
+    total: 0
   locale: null
   statement: Protests rage across the nation
   upstream_nodes: null
