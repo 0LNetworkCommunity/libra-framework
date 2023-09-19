@@ -11,7 +11,7 @@ use libra_cached_packages::libra_stdlib::EntryFunctionCall::{
     ValidatorUniverseRegisterValidator, VouchRevoke, VouchVouchFor,
 };
 
-use libra_types::legacy_types::app_cfg::default_file_path;
+use libra_types::global_config_dir;
 use libra_wallet::validator_files::OPERATOR_FILE;
 
 #[derive(clap::Subcommand)]
@@ -87,7 +87,7 @@ impl ValidatorTxs {
             }
             ValidatorTxs::Register { operator_file } => {
                 let file = operator_file.to_owned().unwrap_or_else(|| {
-                    let a = default_file_path();
+                    let a = global_config_dir();
                     a.join(OPERATOR_FILE)
                 });
 
