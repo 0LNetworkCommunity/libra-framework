@@ -66,8 +66,8 @@ pub fn write_genesis(config: &AppCfg) -> anyhow::Result<VDFProof> {
 pub fn mine_once(path: &Path, next: &NextProof) -> Result<VDFProof, Error> {
     let now = Instant::now();
     let pb = ProgressBar::new(6 * 60 * 60) //6hrs
-        .with_style(OLProgress::bar())
-        .with_message("killing time");
+        .with_style(OLProgress::spinner())
+        .with_message("living is waiting");
     pb.enable_steady_tick(core::time::Duration::from_secs(1));
     let proof = do_delay(&next.preimage, next.diff.difficulty, next.diff.security)?;
     pb.finish_and_clear();
@@ -79,7 +79,7 @@ pub fn mine_once(path: &Path, next: &NextProof) -> Result<VDFProof, Error> {
         &proof,
         next.diff.difficulty,
         next.diff.security as u16,
-        true,
+        false,
     );
 
     let elapsed_secs = now.elapsed().as_secs();
@@ -270,7 +270,7 @@ fn test_mine_once() {
     assert_eq!(latest_block.height, 1, "Not the droid you are looking for.");
 
     // Test the expected proof is writtent to file correctly.
-    let correct_proof = "006036397bd5c35644e2b20f2334a5343911de7cf29588654c322c0fc063c1a2c50000bc9923bdb96a97beaf67f3530ad00f735b7a795ea651f6a88cfd4deeb5aa29000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000001";
+    let correct_proof = "006036397bd5c35644e2b20f2334a5343911de7cf29588654c322c0fc063c1a2c50000bc9923bdb96a97beaf67f3530ad00f735b7a795ea651f6a88cfd4deeb5aa29";
     assert_eq!(
         hex::encode(&latest_block.proof),
         correct_proof,
@@ -306,7 +306,7 @@ fn test_mine_genesis() {
     assert_eq!(latest_block.height, 0, "test");
 
     // Test the expected proof is writtent to file correctly.
-    let correct_proof = "261581f8cbcdb643fb0d92bb90ed31abd45a0705b246097d79f3b2e790f2a0dcb659221dad7484d2c60811fb0000000000000000000000000000000000000000000100000000000000000000000000000000000000000001";
+    let correct_proof = "261581f8cbcdb643fb0d92bb90ed31abd45a0705b246097d79f3b2e790f2a0dcb659221dad7484d2c60811fb";
     assert_eq!(hex::encode(&latest_block.proof), correct_proof, "test");
 
     test_helper_clear_block_dir(&configs_fixture.get_block_dir(None).unwrap());

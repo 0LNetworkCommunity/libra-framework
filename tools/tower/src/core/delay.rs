@@ -7,7 +7,7 @@ use vdf::{PietrzakVDFParams, VDFParams, WesolowskiVDFParams, VDF};
 /// Runs the VDF
 // NOTE from V7 the algorithm switched to Wesolowski
 pub fn do_delay(preimage: &[u8], difficulty: u64, security: u64) -> Result<Vec<u8>, Error> {
-    let params = WesolowskiVDFParams(security as u16).new();
+    let params = PietrzakVDFParams(security as u16).new();
     let vdf = params.solve(preimage, difficulty);
 
     vdf.map_err(|e| anyhow!("ERROR: cannot solve VDF, message: {:?}", &e))
