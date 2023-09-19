@@ -35,13 +35,13 @@ pub enum ValidatorTxs {
     Vouch {
         #[clap(short, long)]
         /// This is an account that you are vouching for. They may not be a validator account.
-        vouch_acct: AccountAddress,
+        vouch_for: AccountAddress,
         #[clap(short, long)]
         /// If you are revoking the vouch for the account specified here.
         revoke: bool,
     },
     Register {
-        #[clap(short, long)]
+        #[clap(short('f'), long)]
         /// optional, Path to files with registration files
         operator_file: Option<PathBuf>,
     },
@@ -74,7 +74,7 @@ impl ValidatorTxs {
             ValidatorTxs::Jail { unjail_acct } => JailUnjailByVoucher {
                 addr: unjail_acct.to_owned(),
             },
-            ValidatorTxs::Vouch { vouch_acct, revoke } => {
+            ValidatorTxs::Vouch { vouch_for: vouch_acct, revoke } => {
                 if *revoke {
                     VouchRevoke {
                         its_not_me_its_you: *vouch_acct,
