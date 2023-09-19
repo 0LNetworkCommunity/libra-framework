@@ -64,36 +64,53 @@ module ol_framework::musical_chairs {
     // get the number of seats in the game
     // TODO: make this a (friend)
     public fun stop_the_music( // sorry, had to.
-      vm: &signer,
-      // height_start: u64,
-      // height_end: u64
+        vm: &signer,
     ): (vector<address>, u64) acquires Chairs {
         system_addresses::assert_ol(vm);
 
         let validators = stake::get_current_validators();
-
-
         let (compliant, _non, ratio) = eval_compliance_impl(validators);
-
-
 
         let chairs = borrow_global_mut<Chairs>(@ol_framework);
 
-        // if the ratio of non-compliant nodes is between 0 and 5%
-        // we can increase the number of chairs by 1.
-        // otherwise (if more than 5% are failing) we wall back to the size of ther performant set.
-        if (fixed_point32::is_zero(*&ratio)) { // catch zeros
-          chairs.current_seats = chairs.current_seats + 1;
-        } else if (fixed_point32::multiply_u64(100, *&ratio) <= 5){
-          chairs.current_seats = chairs.current_seats + 1;
-        } else if (fixed_point32::multiply_u64(100, *&ratio) > 5) {
-          // remove chairs
-          // reduce the validator set to the size of the compliant set.
-          chairs.current_seats = vector::length(&compliant);
+        let num_compliant_nodes = vector::length(&compliant);
+
+        // failover, there should not be more compliant nodes than seats that were offered.
+        // return with no changes
+        if (num_compliant_nodes > chairs.current_seats) {
+          return (compliant, chairs.current_seats)
         };
-        // otherwise do nothing, the validator set is within a tolerable range.
+
+        // The happiest case. All filled seats performed well in the last epoch
+        if (fixed_point32::is_zero(*&ratio)) { // handle this here to prevent multiplication error below
+          chairs.current_seats = chairs.current_seats + 1;
+          return (compliant, chairs.current_seats)
+        };
+
+
+        let non_compliance_pct = fixed_point32::multiply_u64(100, *&ratio);
+
+        // Conditions under which seats should be one more than the number of compliant nodes(<= 5%)
+        // Sad case. If we are not getting compliance, need to ratchet down the offer of seats in next epoch.
+        if (non_compliance_pct > 5) {
+            chairs.current_seats = num_compliant_nodes;
+        } else {
+            // Ok case. If it's between 0 and 5% then we accept that margin as if it was fully compliant
+            chairs.current_seats = chairs.current_seats + 1;
+        };
 
         (compliant, chairs.current_seats)
+    }
+
+    // Update seat count to match filled seats post-PoF auction.
+    // in case we were not able to fill all the seats offered
+    // we don't want to keep incrementing from a baseline which we cannot fill
+    // it can spiral out of range.
+    public fun set_current_seats(vm: &signer, filled_seats: u64): u64 acquires Chairs{
+      system_addresses::assert_ol(vm);
+      let chairs = borrow_global_mut<Chairs>(@ol_framework);
+      chairs.current_seats = filled_seats;
+      chairs.current_seats
     }
 
     #[test_only]
