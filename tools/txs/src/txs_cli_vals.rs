@@ -3,7 +3,7 @@
 use std::{fs, path::PathBuf};
 
 use crate::submit_transaction::Sender;
-use anyhow::{bail, Context};
+use anyhow::bail;
 use diem_genesis::config::OperatorConfiguration;
 use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib::EntryFunctionCall::{
@@ -98,17 +98,17 @@ impl ValidatorTxs {
                     .validator_host
                     .as_network_address(oc.validator_network_public_key)?;
 
-                let fullnode_host = oc.full_node_host.context("cannot find fullnode host")?;
-                let fullnode_addr = fullnode_host.as_network_address(
-                    oc.full_node_network_public_key
-                        .context("cannot find fullnode network public key")?,
-                )?;
+                // let fullnode_host = oc.full_node_host.context("cannot find fullnode host")?;
+                // let fullnode_addr = fullnode_host.as_network_address(
+                // oc.full_node_network_public_key
+                // .context("cannot find fullnode network public key")?,
+                // )?;
 
                 ValidatorUniverseRegisterValidator {
                     consensus_pubkey: oc.consensus_public_key.to_bytes().to_vec(),
                     proof_of_possession: oc.consensus_proof_of_possession.to_bytes().to_vec(),
                     network_addresses: bcs::to_bytes(&validator_address)?,
-                    fullnode_addresses: bcs::to_bytes(&fullnode_addr)?,
+                    fullnode_addresses: vec![], // TODO
                 }
             }
         };

@@ -1,18 +1,16 @@
 use crate::node_yaml;
-use anyhow::{Context, bail};
+use anyhow::{bail, Context};
 use dialoguer::{Confirm, Input};
 use diem_genesis::config::HostAndPort;
 use diem_types::chain_id::NamedChain;
 use libra_types::legacy_types::app_cfg::AppCfg;
-use libra_types::legacy_types::mode_ol::MODE_0L;
 use libra_types::legacy_types::network_playlist::NetworkPlaylist;
 use libra_types::ol_progress::OLProgress;
 use libra_wallet::validator_files::SetValidatorConfiguration;
-use reqwest::Request;
-use tokio::runtime::Handle;
-use tokio::task::{block_in_place, self};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use tokio::runtime::Handle;
+use tokio::task;
 
 pub fn initialize_validator(
     home_path: Option<PathBuf>,
@@ -56,21 +54,17 @@ pub fn initialize_validator(
     Ok(())
 }
 
-async fn get_ip() -> anyhow::Result<HostAndPort>{
-  let res = reqwest::get("https://ifconfig.me").await?;
+async fn get_ip() -> anyhow::Result<HostAndPort> {
+    let res = reqwest::get("https://ifconfig.me").await?;
     match res.text().await {
-      Ok(ip_str) => {
-          HostAndPort::from_str(&format!("{}:6180", ip_str))
-      }
-      _ => bail!("can't get this host's external ip"),
-  }
+        Ok(ip_str) => HostAndPort::from_str(&format!("{}:6180", ip_str)),
+        _ => bail!("can't get this host's external ip"),
+    }
 }
 /// interact with user to get ip address
 pub fn what_host() -> Result<HostAndPort, anyhow::Error> {
     // get from external source since many cloud providers show different interfaces for `machine_ip`
-    let host = task::block_in_place(move || {
-      Handle::current().block_on(get_ip())
-    }).ok();
+    let host = task::block_in_place(move || Handle::current().block_on(get_ip())).ok();
 
     if let Some(h) = host {
         let txt = &format!(
