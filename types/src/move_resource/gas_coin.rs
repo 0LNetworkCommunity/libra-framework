@@ -94,7 +94,7 @@ pub struct GasCoin {
     pub value: u64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct SlowWalletBalance {
     pub unlocked: u64,
     pub total: u64,

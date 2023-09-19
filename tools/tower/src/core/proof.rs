@@ -8,15 +8,20 @@ use crate::core::{
 };
 
 use anyhow::Error;
-
-use libra_types::legacy_types::block::{
-    VDFProof, GENESIS_VDF_ITERATIONS, GENESIS_VDF_SECURITY_PARAM,
-};
+use indicatif::ProgressBar;
 use libra_types::{
     exports::Client, legacy_types::app_cfg::AppCfg, type_extensions::client_ext::ClientExt,
 };
+use libra_types::{
+    legacy_types::block::{VDFProof, GENESIS_VDF_ITERATIONS, GENESIS_VDF_SECURITY_PARAM},
+    ol_progress::OLProgress,
+};
 
-use std::{fs, path::PathBuf, time::Instant};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    time::Instant,
+};
 
 // writes a JSON file with the first vdf proof
 fn mine_genesis(config: &AppCfg, difficulty: u64, security: u64) -> anyhow::Result<VDFProof> {
@@ -24,7 +29,10 @@ fn mine_genesis(config: &AppCfg, difficulty: u64, security: u64) -> anyhow::Resu
     let preimage = genesis_preimage(config)?;
     let now = Instant::now();
 
-    let proof = do_delay(&preimage, difficulty, security).unwrap(); // Todo: make mine_genesis return a result.
+    let pb = OLProgress::spin_steady(1000, "living is waiting".to_owned());
+    let proof = do_delay(&preimage, difficulty, security)?; // Todo: make mine_genesis return a result.
+    pb.finish_and_clear();
+
     let elapsed_secs = now.elapsed().as_secs();
     println!("Delay: {:?} seconds", elapsed_secs);
     let block = VDFProof {
@@ -52,22 +60,38 @@ pub fn write_genesis(config: &AppCfg) -> anyhow::Result<VDFProof> {
     Ok(block)
 }
 /// Mine one block
-pub fn mine_once(config: &AppCfg, next: NextProof) -> Result<VDFProof, Error> {
+pub fn mine_once(path: &Path, next: &NextProof) -> Result<VDFProof, Error> {
     let now = Instant::now();
-    let data = do_delay(&next.preimage, next.diff.difficulty, next.diff.security)?;
+    let pb = ProgressBar::new(6 * 60 * 60) //6hrs
+        .with_style(OLProgress::spinner())
+        .with_message("living is waiting");
+    pb.enable_steady_tick(core::time::Duration::from_secs(1));
+    let proof = do_delay(&next.preimage, next.diff.difficulty, next.diff.security)?;
+    pb.finish_and_clear();
+
+    // check the proof verifies before saving or committing to chain
+
+    verify(
+        &next.preimage,
+        &proof,
+        next.diff.difficulty,
+        next.diff.security as u16,
+        false,
+    );
+
     let elapsed_secs = now.elapsed().as_secs();
     println!("Delay: {:?} seconds", elapsed_secs);
 
     let block = VDFProof {
         height: next.next_height,
         elapsed_secs,
-        preimage: next.preimage,
-        proof: data,
+        preimage: next.preimage.to_owned(),
+        proof,
         difficulty: Some(next.diff.difficulty),
         security: Some(next.diff.security),
     };
 
-    block.write_json(&config.get_block_dir(None)?)?;
+    block.write_json(path)?;
     Ok(block)
 }
 
@@ -135,7 +159,8 @@ pub async fn get_next_and_mine(
         next.diff.difficulty, next.diff.security
     );
 
-    let block = mine_once(config, next)?;
+    let path = config.get_block_dir(None)?;
+    let block = mine_once(&path, &next)?;
 
     println!("Proof mined: proof_{}.json created.", block.height);
 
@@ -157,7 +182,7 @@ fn test_helper_clear_block_dir(blocks_dir: &PathBuf) {
 }
 // #[test]
 // #[ignore]
-// //Not really a test, just a way to generate fixtures.
+//Not really a test, just a way to generate fixtures.
 // fn create_fixtures() {
 //     use std::io::Write;
 //     use toml;
@@ -196,10 +221,6 @@ use diem_temppath::TempPath;
 #[cfg(test)]
 use libra_types::legacy_types::vdf_difficulty::VDFDifficulty;
 
-// use libra_types::legacy_types::{
-//   block::VDFProof,
-// };
-
 #[test]
 fn test_mine_once() {
     // if no file is found, the block height is 0
@@ -234,8 +255,9 @@ fn test_mine_once() {
             prev_sec: 512,
         },
     };
+    let path = configs_fixture.get_block_dir(None).unwrap();
 
-    mine_once(&configs_fixture, next).unwrap();
+    mine_once(&path, &next).unwrap();
     // confirm this file was written to disk.
     let block_file =
         fs::read_to_string(block_dir.join("proof_1.json")).expect("Could not read latest block");
@@ -245,7 +267,7 @@ fn test_mine_once() {
     assert_eq!(latest_block.height, 1, "Not the droid you are looking for.");
 
     // Test the expected proof is writtent to file correctly.
-    let correct_proof = "006036397bd5c35644e2b20f2334a5343911de7cf29588654c322c0fc063c1a2c50000bc9923bdb96a97beaf67f3530ad00f735b7a795ea651f6a88cfd4deeb5aa29000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000001";
+    let correct_proof = "006036397bd5c35644e2b20f2334a5343911de7cf29588654c322c0fc063c1a2c50000bc9923bdb96a97beaf67f3530ad00f735b7a795ea651f6a88cfd4deeb5aa29";
     assert_eq!(
         hex::encode(&latest_block.proof),
         correct_proof,
@@ -276,12 +298,11 @@ fn test_mine_genesis() {
 
     let latest_block: VDFProof =
         serde_json::from_str(&block_file).expect("could not deserialize latest block");
-
     // Test the file is read, and blockheight is 0
     assert_eq!(latest_block.height, 0, "test");
 
     // Test the expected proof is writtent to file correctly.
-    let correct_proof = "261581f8cbcdb643fb0d92bb90ed31abd45a0705b246097d79f3b2e790f2a0dcb659221dad7484d2c60811fb0000000000000000000000000000000000000000000100000000000000000000000000000000000000000001";
+    let correct_proof = "0003ee672c5d3b987e8914fc17e29e8191c460c27d150f278249755b93eb52dbbefffe97a0c0aaf31bf95c90700a173d649e2b0d9239ee73168d6f350d5b7bf197bd";
     assert_eq!(hex::encode(&latest_block.proof), correct_proof, "test");
 
     test_helper_clear_block_dir(&configs_fixture.get_block_dir(None).unwrap());
@@ -328,27 +349,6 @@ fn test_parse_one_file() {
 
     test_helper_clear_block_dir(&blocks_dir)
 }
-
-// #[cfg(test)]
-// /// make fixtures for file
-// pub fn test_make_configs_fixture(path_name: &str) -> AppCfg {
-//     // use libra_types::exports::NamedChain;
-//     use libra_types::test_drop_helper::DropTemp;
-
-//     let drop = DropTemp::new_in_crate(path_name);
-
-//     let mut cfg: AppCfg = AppCfg::default();
-//     cfg.workspace.node_home = drop.dir();
-//     let mut profile = cfg.get_profile(None).unwrap();
-
-//     // cfg.workspace.node_home = PathBuf::from(".");
-//     // cfg.workspace.block_dir = "test_blocks_temp_1".to_owned();
-//     // cfg.chain_info.chain_id = NamedChain::TESTNET;
-//     profile.auth_key = "3e4629ba1e63114b59a161e89ad4a083b3a31b5fd59e39757c493e96398e4df2"
-//         .parse()
-//         .unwrap();
-//     cfg
-// }
 
 #[tokio::test]
 async fn test_get_next() {

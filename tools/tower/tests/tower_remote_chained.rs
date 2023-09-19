@@ -38,7 +38,8 @@ async fn tower_remote_chained() {
         .await
         .expect("could not get proof from chain");
 
-    proof::mine_once(&app_cfg, next).unwrap();
+    let path = app_cfg.get_block_dir(None).unwrap();
+    proof::mine_once(&path, &next).unwrap();
 
     backlog::process_backlog(&app_cfg).await.unwrap();
 
@@ -50,7 +51,8 @@ async fn tower_remote_chained() {
         .await
         .expect("could not get proof from chain");
 
-    proof::mine_once(&app_cfg, next).unwrap();
+    let path = app_cfg.get_block_dir(None).unwrap();
+    proof::mine_once(&path, &next).unwrap();
 
     backlog::process_backlog(&app_cfg).await.unwrap();
 

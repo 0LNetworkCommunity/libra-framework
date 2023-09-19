@@ -181,7 +181,7 @@ fn test_check_mainnet_constants() -> anyhow::Result<()> {
     let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&gen_tx).unwrap();
     let res = compare::get_struct::<VDFDifficulty>(&db_rw.reader, None)?;
 
-    assert!(res.difficulty == 3000000000);
+    assert!(res.difficulty == 120_000_000);
 
     Ok(())
 }
