@@ -74,7 +74,10 @@ impl ValidatorTxs {
             ValidatorTxs::Jail { unjail_acct } => JailUnjailByVoucher {
                 addr: unjail_acct.to_owned(),
             },
-            ValidatorTxs::Vouch { vouch_for: vouch_acct, revoke } => {
+            ValidatorTxs::Vouch {
+                vouch_for: vouch_acct,
+                revoke,
+            } => {
                 if *revoke {
                     VouchRevoke {
                         its_not_me_its_you: *vouch_acct,
