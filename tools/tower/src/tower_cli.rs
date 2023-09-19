@@ -46,7 +46,7 @@ pub enum TowerSub {
     Once,
     Zero,
     Verify {
-      file: PathBuf,
+        file: PathBuf,
     },
     #[clap(hide(true))]
     Debug {
@@ -100,11 +100,17 @@ impl TowerCli {
                 proof::write_genesis(&app_cfg)?;
             }
             TowerSub::Verify { file } => {
-              let block = VDFProof::parse_block_file(&file, false)?;
-              match verify(&block.preimage, &block.proof, block.difficulty(), block.security() as u16, true) {
-                true => println!("SUCCESS: valid proof"),
-                false => println!("FAIL: proof is invalid"),
-              };
+                let block = VDFProof::parse_block_file(file, false)?;
+                match verify(
+                    &block.preimage,
+                    &block.proof,
+                    block.difficulty(),
+                    block.security() as u16,
+                    true,
+                ) {
+                    true => println!("SUCCESS: valid proof"),
+                    false => println!("FAIL: proof is invalid"),
+                };
             }
             TowerSub::Debug {
                 height,

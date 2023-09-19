@@ -50,7 +50,7 @@ async fn tower_cli_e2e() {
 
     let p = next_proof::get_next_proof_params_from_local(&app_cfg)
         .expect("could not find a proof locally");
-      dbg!(&p);
+    dbg!(&p);
     assert!(p.next_height == 1, "not the droid");
 
     // // 2. Submit that proof to chain.

@@ -2,7 +2,8 @@
 
 use crate::{
     exports::{AccountAddress, AuthenticationKey, NamedChain},
-    global_config_dir, move_resource::gas_coin::SlowWalletBalance,
+    global_config_dir,
+    move_resource::gas_coin::SlowWalletBalance,
 };
 use anyhow::{bail, Context};
 use diem_crypto::ed25519::Ed25519PrivateKey;
@@ -283,7 +284,7 @@ impl AppCfg {
         let np = self.network_playlist.clone();
 
         let chain_id = chain_id.unwrap_or(self.workspace.default_chain_id);
-        anyhow::ensure!(np.len() > 0, "no network profiles available");
+        anyhow::ensure!(!np.is_empty(), "no network profiles available");
         let profile = np.into_iter().find(|each| each.chain_name == chain_id);
 
         profile.context("could not find a network profile")
