@@ -1,12 +1,21 @@
 //! Validator subcommands
 
+use std::{path::PathBuf, fs};
+
 use crate::submit_transaction::Sender;
-use anyhow::bail;
+use anyhow::{bail, Context};
 use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib::EntryFunctionCall::{
-    JailUnjailByVoucher, ProofOfFeePofRetractBid, ProofOfFeePofUpdateBid, VouchRevoke,
+    JailUnjailByVoucher, ProofOfFeePofRetractBid, ProofOfFeePofUpdateBid,
+    ValidatorUniverseRegisterValidator,
+    VouchRevoke,
     VouchVouchFor,
+
 };
+use diem_genesis::config::OperatorConfiguration;
+
+use libra_types::legacy_types::app_cfg::default_file_path;
+use libra_wallet::validator_files::OPERATOR_FILE;
 
 #[derive(clap::Subcommand)]
 pub enum ValidatorTxs {
@@ -34,6 +43,11 @@ pub enum ValidatorTxs {
         /// If you are revoking the vouch for the account specified here.
         revoke: bool,
     },
+    Register {
+        #[clap(short, long)]
+        /// optional, Path to files with registration files
+        operator_file: Option<PathBuf>,
+    }
 }
 
 impl ValidatorTxs {
@@ -73,6 +87,28 @@ impl ValidatorTxs {
                         wanna_be_my_friend: *vouch_acct,
                     }
                 }
+            },
+            ValidatorTxs::Register { operator_file } => {
+
+              let file = operator_file.to_owned().unwrap_or_else(|| {
+                let a = default_file_path();
+                a.join(OPERATOR_FILE)
+            });
+
+              let yaml_str = fs::read_to_string(file)?;
+              let oc: OperatorConfiguration = serde_yaml::from_str(&yaml_str)?;
+
+              let validator_address = oc.validator_host.as_network_address(oc.validator_network_public_key)?;
+
+              let fullnode_host = oc.full_node_host.context("cannot find fullnode host")?;
+              let fullnode_addr =fullnode_host.as_network_address(oc.full_node_network_public_key.context("cannot find fullnode network public key")?)?;
+
+              ValidatorUniverseRegisterValidator {
+                consensus_pubkey: oc.consensus_public_key.to_bytes().to_vec(),
+                proof_of_possession: oc.consensus_proof_of_possession.to_bytes().to_vec(),
+                network_addresses: bcs::to_bytes(&validator_address)?,
+                fullnode_addresses: bcs::to_bytes(&fullnode_addr)?,
+              }
             }
         };
 

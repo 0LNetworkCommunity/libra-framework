@@ -609,6 +609,16 @@ pub enum EntryFunctionCall {
         security: u64,
     },
 
+    /// This is the entrypoint for a validator joining the network.
+    /// Separates the logic of registration from validator election etc. (in stake.move).
+    /// This prevents dependency cycling issues, since stake.move is a large module.
+    ValidatorUniverseRegisterValidator {
+        consensus_pubkey: Vec<u8>,
+        proof_of_possession: Vec<u8>,
+        network_addresses: Vec<u8>,
+        fullnode_addresses: Vec<u8>,
+    },
+
     /// Updates the major version to a larger version.
     /// This can be called by on chain governance.
     VersionSetVersion {
@@ -974,6 +984,17 @@ impl EntryFunctionCall {
                 difficulty,
                 security,
             } => tower_state_minerstate_commit(challenge, solution, difficulty, security),
+            ValidatorUniverseRegisterValidator {
+                consensus_pubkey,
+                proof_of_possession,
+                network_addresses,
+                fullnode_addresses,
+            } => validator_universe_register_validator(
+                consensus_pubkey,
+                proof_of_possession,
+                network_addresses,
+                fullnode_addresses,
+            ),
             VersionSetVersion { major } => version_set_version(major),
             VouchInsistVouchFor { wanna_be_my_friend } => {
                 vouch_insist_vouch_for(wanna_be_my_friend)
@@ -2670,6 +2691,34 @@ pub fn tower_state_minerstate_commit(
     ))
 }
 
+/// This is the entrypoint for a validator joining the network.
+/// Separates the logic of registration from validator election etc. (in stake.move).
+/// This prevents dependency cycling issues, since stake.move is a large module.
+pub fn validator_universe_register_validator(
+    consensus_pubkey: Vec<u8>,
+    proof_of_possession: Vec<u8>,
+    network_addresses: Vec<u8>,
+    fullnode_addresses: Vec<u8>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("validator_universe").to_owned(),
+        ),
+        ident_str!("register_validator").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&consensus_pubkey).unwrap(),
+            bcs::to_bytes(&proof_of_possession).unwrap(),
+            bcs::to_bytes(&network_addresses).unwrap(),
+            bcs::to_bytes(&fullnode_addresses).unwrap(),
+        ],
+    ))
+}
+
 /// Updates the major version to a larger version.
 /// This can be called by on chain governance.
 pub fn version_set_version(major: u64) -> TransactionPayload {
@@ -3695,6 +3744,21 @@ mod decoder {
         }
     }
 
+    pub fn validator_universe_register_validator(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::ValidatorUniverseRegisterValidator {
+                consensus_pubkey: bcs::from_bytes(script.args().get(0)?).ok()?,
+                proof_of_possession: bcs::from_bytes(script.args().get(1)?).ok()?,
+                network_addresses: bcs::from_bytes(script.args().get(2)?).ok()?,
+                fullnode_addresses: bcs::from_bytes(script.args().get(3)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn version_set_version(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::VersionSetVersion {
@@ -4059,6 +4123,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "tower_state_minerstate_commit".to_string(),
             Box::new(decoder::tower_state_minerstate_commit),
+        );
+        map.insert(
+            "validator_universe_register_validator".to_string(),
+            Box::new(decoder::validator_universe_register_validator),
         );
         map.insert(
             "version_set_version".to_string(),
