@@ -283,6 +283,8 @@ impl AppCfg {
         let np = self.network_playlist.clone();
 
         let chain_id = chain_id.unwrap_or(self.workspace.default_chain_id);
+        dbg!(&np);
+        anyhow::ensure!(np.len() > 0, "no network profiles available");
         let profile = np.into_iter().find(|each| each.chain_name == chain_id);
 
         profile.context("could not find a network profile")
@@ -662,14 +664,14 @@ user_profiles:
   statement: Protests rage across the nation
   upstream_nodes: null
 network_playlist:
-- chain_id: MAINNET
+- chain_name: MAINNET
   nodes:
   - url: http://204.186.74.42:8080/
     note: w
     version: 0
     is_api: false
     is_sync: false
-- chain_id: TESTING
+- chain_name: TESTING
   nodes:
   - url: http://localhost:8080/
     note: default
