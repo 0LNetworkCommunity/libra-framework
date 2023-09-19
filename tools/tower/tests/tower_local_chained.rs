@@ -34,7 +34,8 @@ async fn tower_local_chained() {
 
     let next = next_proof::get_next_proof_params_from_local(&app_cfg).unwrap();
 
-    proof::mine_once(&app_cfg, next).unwrap();
+    let path = app_cfg.get_block_dir(None).unwrap();
+    proof::mine_once(&path, &next).unwrap();
 
     backlog::process_backlog(&app_cfg).await.unwrap();
 
@@ -44,7 +45,8 @@ async fn tower_local_chained() {
 
     let next = next_proof::get_next_proof_params_from_local(&app_cfg).unwrap();
 
-    proof::mine_once(&app_cfg, next).unwrap();
+    let path = app_cfg.get_block_dir(None).unwrap();
+    proof::mine_once(&path, &next).unwrap();
 
     backlog::process_backlog(&app_cfg).await.unwrap();
 

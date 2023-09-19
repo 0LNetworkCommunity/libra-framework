@@ -3,6 +3,7 @@
 use crate::{
     exports::{AccountAddress, AuthenticationKey, NamedChain},
     global_config_dir,
+    move_resource::gas_coin::SlowWalletBalance,
 };
 use anyhow::{bail, Context};
 use diem_crypto::ed25519::Ed25519PrivateKey;
@@ -61,6 +62,53 @@ pub fn default_file_path() -> PathBuf {
 }
 
 impl AppCfg {
+    /// Constructor for the AppCfg
+    pub fn init_app_configs(
+        authkey: AuthenticationKey,
+        account: AccountAddress,
+        config_path: Option<PathBuf>,
+        chain_name: Option<NamedChain>,
+        network_playlist: Option<NetworkPlaylist>,
+    ) -> anyhow::Result<Self> {
+        // TODO: Check if configs exist and warn on overwrite.
+        let mut default_config = AppCfg::default();
+
+        let profile = Profile::new(authkey, account);
+        default_config.user_profiles = vec![profile];
+
+        default_config.workspace.node_home = config_path.unwrap_or_else(global_config_dir);
+
+        if let Some(id) = chain_name {
+            default_config.workspace.default_chain_id = id.to_owned();
+        };
+
+        if let Some(np) = network_playlist {
+            default_config.network_playlist.push(np)
+        }
+
+        default_config.save_file()?;
+
+        Ok(default_config)
+    }
+
+    /// constructor for tests
+    pub fn init_for_tests(path: PathBuf) -> anyhow::Result<AppCfg> {
+        use diem_crypto::ValidCryptoMaterialStringExt;
+        let mut cfg = Self::init_app_configs(
+            "87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5".parse()?,
+            "0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5".parse()?,
+            Some(path),
+            Some(NamedChain::TESTING),
+            None,
+        )?;
+
+        let mut profile = cfg.get_profile_mut(None)?;
+        profile.test_private_key = Some(Ed25519PrivateKey::from_encoded_string(
+            "0x74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b",
+        )?);
+
+        Ok(cfg)
+    }
     /// load from default path
     pub fn load(file: Option<PathBuf>) -> anyhow::Result<Self> {
         let path = file.unwrap_or_else(default_file_path);
@@ -106,7 +154,7 @@ impl AppCfg {
             vec![]
         };
         let np = NetworkPlaylist {
-            chain_id: l.chain_info.chain_id,
+            chain_name: l.chain_info.chain_id,
             nodes,
         };
         let app_cfg = AppCfg {
@@ -154,7 +202,7 @@ impl AppCfg {
 
         if let Some(n) = nickname {
             let found = self.user_profiles.iter().enumerate().find_map(|(i, e)| {
-                if e.nickname.contains(&n) || e.account.to_string().contains(&n) {
+                if e.nickname.contains(&n) || e.account.to_hex_literal().contains(&n) {
                     Some(i)
                 } else {
                     None
@@ -210,53 +258,6 @@ impl AppCfg {
         Ok(())
     }
 
-    /// Get where node key_store.json stored.
-    pub fn init_app_configs(
-        authkey: AuthenticationKey,
-        account: AccountAddress,
-        config_path: Option<PathBuf>,
-        network_id: Option<NamedChain>,
-        network_playlist: Option<NetworkPlaylist>,
-    ) -> anyhow::Result<Self> {
-        // TODO: Check if configs exist and warn on overwrite.
-        let mut default_config = AppCfg::default();
-
-        let profile = Profile::new(authkey, account);
-        default_config.user_profiles = vec![profile];
-
-        default_config.workspace.node_home = config_path.unwrap_or_else(global_config_dir);
-
-        if let Some(id) = network_id {
-            default_config.workspace.default_chain_id = id.to_owned();
-        };
-
-        if let Some(np) = network_playlist {
-            default_config.network_playlist.push(np)
-        }
-
-        default_config.save_file()?;
-
-        Ok(default_config)
-    }
-
-    pub fn init_for_tests(path: PathBuf) -> anyhow::Result<AppCfg> {
-        use diem_crypto::ValidCryptoMaterialStringExt;
-        let mut cfg = Self::init_app_configs(
-            "87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5".parse()?,
-            "0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5".parse()?,
-            Some(path),
-            Some(NamedChain::TESTING),
-            None,
-        )?;
-
-        let mut profile = cfg.get_profile_mut(None)?;
-        profile.test_private_key = Some(Ed25519PrivateKey::from_encoded_string(
-            "0x74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b",
-        )?);
-
-        Ok(cfg)
-    }
-
     pub fn set_chain_id(&mut self, chain_id: NamedChain) {
         self.workspace.default_chain_id = chain_id;
     }
@@ -268,7 +269,7 @@ impl AppCfg {
     ) -> anyhow::Result<NetworkPlaylist> {
         let url = playlist_url.unwrap_or(network_playlist::find_default_playlist(chain_id)?);
 
-        let np = NetworkPlaylist::from_url(url, chain_id).await?;
+        let np = NetworkPlaylist::from_playlist_url(url, chain_id).await?;
 
         self.maybe_add_custom_playlist(&np);
         Ok(np)
@@ -283,7 +284,8 @@ impl AppCfg {
         let np = self.network_playlist.clone();
 
         let chain_id = chain_id.unwrap_or(self.workspace.default_chain_id);
-        let profile = np.into_iter().find(|each| each.chain_id == chain_id);
+        anyhow::ensure!(!np.is_empty(), "no network profiles available");
+        let profile = np.into_iter().find(|each| each.chain_name == chain_id);
 
         profile.context("could not find a network profile")
     }
@@ -296,9 +298,10 @@ impl AppCfg {
         let np = &mut self.network_playlist;
 
         let chain_id = chain_id.unwrap_or(self.workspace.default_chain_id);
+        anyhow::ensure!(!np.is_empty(), "no network profiles found");
         let profile = np
             .iter_mut()
-            .find(|each| each.chain_id == chain_id)
+            .find(|each| each.chain_name == chain_id)
             .context("cannot get network profile")?;
 
         Ok(profile)
@@ -318,7 +321,7 @@ impl AppCfg {
     pub fn maybe_add_custom_playlist(&mut self, new_playlist: &NetworkPlaylist) {
         let mut found = false;
         self.network_playlist.iter_mut().for_each(|play| {
-            if play.chain_id == new_playlist.chain_id {
+            if play.chain_name == new_playlist.chain_name {
                 found = true;
                 *play = new_playlist.to_owned();
             }
@@ -416,12 +419,10 @@ pub struct Profile {
     pub account: AccountAddress,
     /// Miner Authorization Key for 0L Blockchain. Note: not the same as public key, nor account.
     pub auth_key: AuthenticationKey,
-
     /// Private key only for use with testing
     /// Note: skip_serializing so that it is never saved to disk.
     #[serde(skip_serializing)]
     test_private_key: Option<Ed25519PrivateKey>,
-
     /// nickname for this profile
     pub nickname: String,
     #[serde(default)]
@@ -429,27 +430,18 @@ pub struct Profile {
     pub on_chain: bool,
     #[serde(default)]
     /// what the last balance checked
-    pub balance: u64,
+    pub balance: SlowWalletBalance,
     /// Language settings, for use with Carpe
     pub locale: Option<String>,
     /// An opportunity for the Miner to write a message on their genesis block.
     pub statement: String,
 
-    // NOTE: V7: deprecated fields from 0L.toml
-    // should have no effect on reading legacy files
-
-    // /// ip address of this node. May be different from transaction URL.
+    // NOTE: V7: deprecated
+    // Deprecation: : /// ip address of this node. May be different from transaction URL.
     // pub ip: Ipv4Addr,
 
-    // /// ip address of the validator fullnodee
-    // pub vfn_ip: Option<Ipv4Addr>,
-    /// Deprecation: Other nodes to connect for fallback connections
+    // Deprecation: /// Other nodes to connect for fallback connections
     pub upstream_nodes: Option<Vec<Url>>,
-    // /// fullnode playlist URL to override default
-    // pub override_playlist: Option<Url>,
-
-    // /// Link to another delay tower.
-    // pub tower_link: Option<String>,
 }
 
 impl Default for Profile {
@@ -465,7 +457,7 @@ impl Default for Profile {
             locale: None,
             nickname: "default".to_string(),
             on_chain: false,
-            balance: 0,
+            balance: SlowWalletBalance::default(),
             upstream_nodes: None, // Note: deprecated, here for migration
         }
     }
@@ -498,10 +490,10 @@ impl Profile {
 pub fn get_nickname(acc: AccountAddress) -> String {
     // let's check if this is a legacy/founder key, it will have 16 zeros at the start, and that's not a useful nickname
     if acc.to_string()[..32] == *"00000000000000000000000000000000" {
-        return acc.to_string()[33..36].to_owned();
+        return acc.to_string()[33..37].to_owned();
     }
 
-    acc.to_string()[..3].to_owned()
+    acc.to_string()[..4].to_owned()
 }
 /// Transaction types
 #[derive(Debug, Clone, Serialize, Deserialize, clap::ValueEnum)]
@@ -643,7 +635,9 @@ user_profiles:
   test_private_key: null
   nickname: '636'
   on_chain: false
-  balance: 0
+  balance:
+    unlocked: 0
+    total: 0
   locale: null
   statement: Protests rage across the nation
   upstream_nodes: null
@@ -652,7 +646,9 @@ user_profiles:
   test_private_key: null
   nickname: 4cc
   on_chain: false
-  balance: 0
+  balance:
+    unlocked: 0
+    total: 0
   locale: null
   statement: Protests rage across the nation
   upstream_nodes: null
@@ -661,19 +657,21 @@ user_profiles:
   test_private_key: null
   nickname: '771'
   on_chain: false
-  balance: 0
+  balance:
+    unlocked: 0
+    total: 0
   locale: null
   statement: Protests rage across the nation
   upstream_nodes: null
 network_playlist:
-- chain_id: MAINNET
+- chain_name: MAINNET
   nodes:
   - url: http://204.186.74.42:8080/
     note: w
     version: 0
     is_api: false
     is_sync: false
-- chain_id: TESTING
+- chain_name: TESTING
   nodes:
   - url: http://localhost:8080/
     note: default
@@ -708,10 +706,10 @@ tx_configs:
     assert!(cfg.workspace.default_chain_id == NamedChain::TESTING);
 
     let np = cfg.get_network_profile(None).unwrap();
-    assert!(np.chain_id == NamedChain::TESTING);
+    assert!(np.chain_name == NamedChain::TESTING);
 
     let np = cfg.get_network_profile(Some(NamedChain::MAINNET)).unwrap();
-    assert!(np.chain_id == NamedChain::MAINNET);
+    assert!(np.chain_name == NamedChain::MAINNET);
 
     assert!(np.the_good_ones().is_err());
     assert!(np.the_best_one().is_err());

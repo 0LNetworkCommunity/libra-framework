@@ -28,6 +28,12 @@ module ol_framework::oracle {
     /// previous epoch.
     const ENEED_THREE_FRIENDS_IN_MINER_COMMUNITY: u64 = 2;
 
+    /// somehow your submission is behind the blockchains's time
+    const ETIME_IS_IN_PAST_WHAAAT: u64 = 3;
+
+    /// not enough time has passed between proofs.
+    const ETOO_SOON_SUBMITTED: u64 = 4;
+
     /// A list of all miners' addresses
     // reset at epoch boundary
     struct ProviderList has key {
@@ -140,9 +146,9 @@ module ol_framework::oracle {
       let time = timestamp::now_microseconds();
       let tower = borrow_global_mut<Tower>(provider_addr);
       // can't send multiple in same tx
-      assert!(time > tower.last_commit_timestamp, 77); // TODO: fill out error
+      assert!(time > tower.last_commit_timestamp, ETIME_IS_IN_PAST_WHAAAT); // TODO: fill out error
       // the sufficient time has passed
-      assert!(time > tower.last_commit_timestamp + proof_interval_seconds() , 77);
+      assert!(time > tower.last_commit_timestamp + proof_interval_seconds() , ETOO_SOON_SUBMITTED);
 
       // assert the public key used matched the auth key on account.
       let checked_pk = ed25519::new_validated_public_key_from_bytes(public_key_bytes);

@@ -15,7 +15,7 @@ impl OLProgress {
     }
     /// who knows how long this will take
     pub fn spinner() -> ProgressStyle {
-        ProgressStyle::with_template("{msg} {spinner:.blue}")
+        ProgressStyle::with_template("[{elapsed_precise}] {msg} {spinner:.blue}")
             .unwrap()
             // For more spinners check out the cli-spinners project:
             // https://github.com/sindresorhus/cli-spinners/blob/master/spinners.json

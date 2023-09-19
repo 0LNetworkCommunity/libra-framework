@@ -16,12 +16,12 @@ pub async fn init_val_config_files(
     let url: Url = info.url().parse().unwrap();
 
     let node = swarm.validators().next().unwrap();
-    let np = NetworkPlaylist::testing(Some(url));
+    let np = NetworkPlaylist::new(Some(url), Some(diem_types::chain_id::NamedChain::TESTING));
     let mut app_cfg = AppCfg::init_app_configs(
         AuthenticationKey::ed25519(&node.account_private_key().as_ref().unwrap().public_key()),
         node.peer_id(),
         Some(dir),
-        Some(np.chain_id),
+        Some(np.chain_name),
         Some(np),
     )
     .unwrap();

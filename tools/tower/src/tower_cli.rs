@@ -1,9 +1,13 @@
+use crate::core::delay::verify;
+use crate::core::next_proof::NextProof;
 use crate::core::{backlog, proof};
 use clap::{Parser, Subcommand};
 use libra_types::exports::Client;
 use libra_types::exports::{Ed25519PrivateKey, ValidCryptoMaterialStringExt};
 use libra_types::legacy_types::app_cfg::AppCfg;
 use libra_types::legacy_types::app_cfg::Profile;
+use libra_types::legacy_types::block::VDFProof;
+use libra_types::legacy_types::vdf_difficulty::VDFDifficulty;
 use libra_types::type_extensions::client_ext::ClientExt;
 use std::path::PathBuf;
 
@@ -41,6 +45,22 @@ pub enum TowerSub {
     Start,
     Once,
     Zero,
+    Verify {
+        file: PathBuf,
+    },
+    #[clap(hide(true))]
+    Debug {
+        #[clap(long)]
+        height: u64,
+        #[clap(long)]
+        preimage: String,
+        #[clap(long)]
+        difficulty: u64,
+        #[clap(long)]
+        security: u64,
+        #[clap(long)]
+        dir: PathBuf,
+    },
 }
 
 impl TowerCli {
@@ -53,10 +73,10 @@ impl TowerCli {
             profile.set_private_key(&Ed25519PrivateKey::from_encoded_string(pk)?);
         };
 
-        match self.command {
+        match &self.command {
             TowerSub::Backlog { show } => {
                 println!("backlog");
-                if show {
+                if *show {
                     backlog::show_backlog(&app_cfg).await?;
                 } else {
                     if profile.borrow_private_key().is_err() {
@@ -78,6 +98,38 @@ impl TowerCli {
             }
             TowerSub::Zero => {
                 proof::write_genesis(&app_cfg)?;
+            }
+            TowerSub::Verify { file } => {
+                let block = VDFProof::parse_block_file(file, false)?;
+                match verify(
+                    &block.preimage,
+                    &block.proof,
+                    block.difficulty(),
+                    block.security() as u16,
+                    true,
+                ) {
+                    true => println!("SUCCESS: valid proof"),
+                    false => println!("FAIL: proof is invalid"),
+                };
+            }
+            TowerSub::Debug {
+                height,
+                difficulty,
+                security,
+                preimage,
+                dir,
+            } => {
+                let params = NextProof {
+                    preimage: hex::decode(preimage)?,
+                    next_height: *height,
+                    diff: VDFDifficulty {
+                        difficulty: *difficulty,
+                        security: *security,
+                        prev_diff: 0,
+                        prev_sec: 0,
+                    },
+                };
+                proof::mine_once(dir, &params)?;
             }
         }
 

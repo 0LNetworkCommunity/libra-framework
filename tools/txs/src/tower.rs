@@ -1,10 +1,15 @@
 use super::submit_transaction::Sender;
 use anyhow::bail;
+use diem_sdk::rest_client::diem_api_types::TransactionOnChainData;
 use libra_cached_packages::libra_framework_sdk_builder::EntryFunctionCall::TowerStateMinerstateCommit;
 use libra_types::legacy_types::block::VDFProof;
 
 impl Sender {
-    pub async fn commit_proof(&mut self, proof: VDFProof) -> anyhow::Result<()> {
+    // TODO: should return a UserTransaction as does transfer.rs
+    pub async fn commit_proof(
+        &mut self,
+        proof: VDFProof,
+    ) -> anyhow::Result<TransactionOnChainData> {
         if proof.difficulty.is_none() || proof.security.is_none() {
             bail!("no difficulty or security parameter found");
         };
@@ -17,7 +22,6 @@ impl Sender {
         }
         .encode();
 
-        self.sign_submit_wait(payload).await?;
-        Ok(())
+        self.sign_submit_wait(payload).await
     }
 }

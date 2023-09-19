@@ -22,11 +22,12 @@ use diem_sdk::crypto::HashValue;
 #[derive(Clone, Debug, Deserialize, Serialize)]
 
 pub struct NextProof {
-    ///
+    /// VDF difficulty and security params
     pub diff: VDFDifficulty,
-    ///
+    /// height of next proof
     pub next_height: u64,
-    ///
+    /// preimage to solve
+    #[serde(with = "hex")]
     pub preimage: Vec<u8>,
 }
 

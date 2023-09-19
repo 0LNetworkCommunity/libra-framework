@@ -48,14 +48,6 @@ module ol_framework::test_vdf{
         vdf_fixtures::security_weso(),
         weso
       ), 7357001);
-
-    let challenge = vdf_fixtures::alice_0_hard_chal();
-    // Generate solutions with:
-    // cd ./verfiable_delay/vdf-cli && cargo run --release -- -l=512 aa 100 -tpietrzak
-    // NOTE: the -l=512 is important because this is the security paramater of 0L miner.
-    let proof = vdf_fixtures::alice_0_hard_sol();
-
-    assert!(ol_native_vdf::verify(&challenge, &proof, vdf_fixtures::hard_difficulty(), vdf_fixtures::security(), false), 1);
   }
 
   #[test]

@@ -4,7 +4,6 @@ module ol_framework::test_tower {
   use ol_framework::mock;
   use ol_framework::tower_state;
   use ol_framework::vdf_fixtures;
-  // use ol_framework::testnet;
 
   // use std::debug::print;
 
@@ -35,10 +34,10 @@ module ol_framework::test_tower {
 
     tower_state::init_miner_state(
           &alice,
-          &vdf_fixtures::weso_alice_0_easy_chal(),
-          &vdf_fixtures::weso_alice_0_easy_sol(),
+          &vdf_fixtures::alice_0_easy_chal(),
+          &vdf_fixtures::alice_0_easy_sol(),
           vdf_fixtures::easy_difficulty(),
-          350, // wesolowski
+          vdf_fixtures::security(),
       );
 
     }
@@ -54,7 +53,7 @@ module ol_framework::test_tower {
 
     let num = tower_state::toy_rng(1, 3, 0);
 
-    assert!(num == 184, 7357001);
+    assert!(num == 116, 7357001);
 
   }
 
@@ -68,8 +67,7 @@ module ol_framework::test_tower {
     // because we need randomness for the toy rng
 
     let num = tower_state::toy_rng(0, 1, 0);
-
-    assert!(num == 184, 7357001);
+    assert!(num == 116, 7357001);
 
   }
 

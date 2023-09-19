@@ -18,6 +18,8 @@ impl Sender {
         ty_args: &Option<String>,
         args: &Option<String>,
     ) -> anyhow::Result<()> {
+        // TODO: should return a UserTransaction as does transfer.rs
+
         let payload =
             TransactionPayload::EntryFunction(build_entry_function(function_id, ty_args, args)?);
 
