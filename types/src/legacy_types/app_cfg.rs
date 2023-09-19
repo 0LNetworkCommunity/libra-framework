@@ -283,7 +283,6 @@ impl AppCfg {
         let np = self.network_playlist.clone();
 
         let chain_id = chain_id.unwrap_or(self.workspace.default_chain_id);
-        dbg!(&np);
         anyhow::ensure!(np.len() > 0, "no network profiles available");
         let profile = np.into_iter().find(|each| each.chain_name == chain_id);
 

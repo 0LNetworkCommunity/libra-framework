@@ -25,9 +25,9 @@ use std::{
 /// The VDF security parameter.
 pub static GENESIS_VDF_SECURITY_PARAM: Lazy<u64> = Lazy::new(|| {
     match *MODE_0L {
-        NamedChain::MAINNET => 350,
-        NamedChain::TESTNET => 350, // TODO: Do we want a different one?
-        _ => 350,
+        NamedChain::MAINNET => 512,
+        NamedChain::TESTNET => 512, // TODO: Do we want a different one?
+        _ => 512,
     }
 });
 
@@ -39,7 +39,7 @@ pub static GENESIS_VDF_ITERATIONS: Lazy<u64> = Lazy::new(|| {
     match *MODE_0L {
         // Difficulty updated in V6
         // see ol/documentation/tower/difficulty_benchmarking.md
-        NamedChain::MAINNET => 3_000_000_000, // 3 billion, ol/documentation/tower/difficulty_benchmarking.md
+        NamedChain::MAINNET => 120_000_000, // 120M iterations, same as v5
         NamedChain::TESTNET => 100,
         _ => 100,
     }

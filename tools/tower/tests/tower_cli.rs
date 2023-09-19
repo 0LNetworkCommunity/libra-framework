@@ -50,11 +50,12 @@ async fn tower_cli_e2e() {
 
     let p = next_proof::get_next_proof_params_from_local(&app_cfg)
         .expect("could not find a proof locally");
+      dbg!(&p);
     assert!(p.next_height == 1, "not the droid");
 
-    // 2. Submit that proof to chain.
+    // // 2. Submit that proof to chain.
     cli.command = TowerSub::Backlog { show: false };
-    cli.run().await.expect("could not run cli");
+    cli.run().await.expect("could not submit proof zero");
 
     let (_total_height, submitted_in_epoch) = backlog::get_remote_tower_height(&app_cfg)
         .await

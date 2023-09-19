@@ -29,10 +29,7 @@ fn mine_genesis(config: &AppCfg, difficulty: u64, security: u64) -> anyhow::Resu
     let preimage = genesis_preimage(config)?;
     let now = Instant::now();
 
-    let pb = ProgressBar::new(6 * 60 * 60) //6hrs
-        .with_style(OLProgress::bar())
-        .with_message("killing time");
-    pb.enable_steady_tick(core::time::Duration::from_secs(1));
+    let pb = OLProgress::spin_steady(1000, "living is waiting".to_owned());
     let proof = do_delay(&preimage, difficulty, security)?; // Todo: make mine_genesis return a result.
     pb.finish_and_clear();
 
@@ -301,12 +298,11 @@ fn test_mine_genesis() {
 
     let latest_block: VDFProof =
         serde_json::from_str(&block_file).expect("could not deserialize latest block");
-
     // Test the file is read, and blockheight is 0
     assert_eq!(latest_block.height, 0, "test");
 
     // Test the expected proof is writtent to file correctly.
-    let correct_proof = "261581f8cbcdb643fb0d92bb90ed31abd45a0705b246097d79f3b2e790f2a0dcb659221dad7484d2c60811fb";
+    let correct_proof = "0003ee672c5d3b987e8914fc17e29e8191c460c27d150f278249755b93eb52dbbefffe97a0c0aaf31bf95c90700a173d649e2b0d9239ee73168d6f350d5b7bf197bd";
     assert_eq!(hex::encode(&latest_block.proof), correct_proof, "test");
 
     test_helper_clear_block_dir(&configs_fixture.get_block_dir(None).unwrap());
