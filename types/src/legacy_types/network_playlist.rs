@@ -68,7 +68,7 @@ impl HostProfile {
 pub struct NetworkPlaylist {
     #[serde(default = "default_chain")]
     #[serde_as(as = "DisplayFromStr")]
-    pub chain_id: NamedChain,
+    pub chain_name: NamedChain,
     pub nodes: Vec<HostProfile>,
 }
 fn default_chain() -> NamedChain {
@@ -78,7 +78,7 @@ fn default_chain() -> NamedChain {
 impl Default for NetworkPlaylist {
     fn default() -> Self {
         NetworkPlaylist {
-            chain_id: NamedChain::MAINNET,
+            chain_name: NamedChain::MAINNET,
             nodes: vec![HostProfile::default()],
         }
     }
@@ -99,9 +99,21 @@ pub fn find_default_playlist(chain_id: Option<NamedChain>) -> anyhow::Result<Url
 }
 
 impl NetworkPlaylist {
+    pub fn new(url: Option<Url>, chain_name: Option<NamedChain>) -> Self {
+        let mut np = NetworkPlaylist::default();
+        if let Some(u) = url {
+            np.replace_all_urls(u)
+        }
+
+        if let Some(n) = chain_name {
+            np.chain_name = n;
+        }
+        np
+    }
+
     pub fn localhost(chain_name: Option<NamedChain>) -> Self {
         Self {
-            chain_id: chain_name.unwrap_or(NamedChain::MAINNET),
+            chain_name: chain_name.unwrap_or(NamedChain::MAINNET),
             nodes: vec![HostProfile {
                 url: "http://localhost:8080".parse().unwrap(),
                 note: "localhost".to_owned(),
@@ -113,14 +125,14 @@ impl NetworkPlaylist {
     }
     pub async fn default_for_network(chain_id: Option<NamedChain>) -> anyhow::Result<Self> {
         if let Some(NamedChain::TESTING) = chain_id {
-            return Ok(Self::testing(None));
+            return Ok(Self::new(None, Some(NamedChain::TESTING)));
         }
         let url = find_default_playlist(chain_id)?;
 
-        Self::from_url(url, chain_id).await
+        Self::from_playlist_url(url, chain_id).await
     }
 
-    pub async fn from_url(
+    pub async fn from_playlist_url(
         playlist_url: Url,
         chain_id: Option<NamedChain>,
     ) -> anyhow::Result<NetworkPlaylist> {
@@ -128,28 +140,19 @@ impl NetworkPlaylist {
         let out = res.text().await?;
         let mut play: NetworkPlaylist = serde_json::from_str(&out)?;
         if let Some(c) = chain_id {
-            play.chain_id = c;
+            play.chain_name = c;
         }
         Ok(play)
-    }
-
-    pub fn testing(url: Option<Url>) -> Self {
-        let mut np = NetworkPlaylist::default();
-        if let Some(u) = url {
-            let h = np
-                .nodes
-                .iter_mut()
-                .next()
-                .expect("didn't find a hostprofile");
-            h.url = u;
-        }
-        np.chain_id = NamedChain::TESTING;
-        np
     }
 
     pub fn add_url(&mut self, url: Url) {
         let h = HostProfile::new(url);
         self.nodes.push(h);
+    }
+
+    pub fn replace_all_urls(&mut self, url: Url) {
+        let h = HostProfile::new(url);
+        self.nodes = vec![h];
     }
 
     pub fn shuffle_order(&mut self) {

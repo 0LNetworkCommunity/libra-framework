@@ -25,9 +25,9 @@ use std::{
 /// The VDF security parameter.
 pub static GENESIS_VDF_SECURITY_PARAM: Lazy<u64> = Lazy::new(|| {
     match *MODE_0L {
-        NamedChain::MAINNET => 350,
-        NamedChain::TESTNET => 350, // TODO: Do we want a different one?
-        _ => 350,
+        NamedChain::MAINNET => 512,
+        NamedChain::TESTNET => 512, // TODO: Do we want a different one?
+        _ => 512,
     }
 });
 
@@ -39,7 +39,7 @@ pub static GENESIS_VDF_ITERATIONS: Lazy<u64> = Lazy::new(|| {
     match *MODE_0L {
         // Difficulty updated in V6
         // see ol/documentation/tower/difficulty_benchmarking.md
-        NamedChain::MAINNET => 3_000_000_000, // 3 billion, ol/documentation/tower/difficulty_benchmarking.md
+        NamedChain::MAINNET => 120_000_000, // 120M iterations, same as v5
         NamedChain::TESTNET => 100,
         _ => 100,
     }
@@ -74,13 +74,6 @@ impl VDFProof {
         Ok((block.preimage, block.proof))
     }
 
-    // /// new object deserialized from file
-    // pub fn parse_block_file(path: PathBuf) -> Result<VDFProof, anyhow::Error> {
-    //     let file = fs::File::open(&path)?;
-    //     let reader = BufReader::new(file);
-    //     Ok(serde_json::from_reader(reader)?)
-    // }
-
     /// get the difficulty/iterations of the block, or assume legacy
     pub fn difficulty(&self) -> u64 {
         self.difficulty.unwrap() // if the block doesn't have this info, assume it's legacy block.
@@ -91,18 +84,17 @@ impl VDFProof {
         self.security.unwrap() // if the block doesn't have this info, assume it's legacy block.
     }
 
-    pub fn write_json(&self, blocks_dir: &PathBuf) -> Result<PathBuf, std::io::Error> {
-        if !&blocks_dir.exists() {
+    pub fn write_json(&self, blocks_dir: &Path) -> Result<PathBuf, std::io::Error> {
+        if !blocks_dir.exists() {
             // first run, create the directory if there is none, or if the user changed the configs.
             // note: user may have blocks but they are in a different directory than what AppCfg says.
             fs::create_dir_all(blocks_dir)?;
         };
         // Write the file.
-        let mut latest_block_path = blocks_dir.clone();
-        latest_block_path.push(format!("{}_{}.json", FILENAME, self.height));
-        let mut file = fs::File::create(&latest_block_path)?;
+        let path = blocks_dir.join(format!("{}_{}.json", FILENAME, self.height));
+        let mut file = fs::File::create(&path)?;
         file.write_all(serde_json::to_string(&self)?.as_bytes())?;
-        Ok(latest_block_path)
+        Ok(path)
     }
 
     /// Parse a proof_x.json file and return a VDFProof

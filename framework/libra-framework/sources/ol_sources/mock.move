@@ -22,6 +22,7 @@ module ol_framework::mock {
   use ol_framework::vdf_fixtures;
   use ol_framework::epoch_helper;
   use ol_framework::musical_chairs;
+  use ol_framework::globals;
   // use diem_framework::chain_status;
   // use diem_std::debug::print;
 
@@ -82,17 +83,17 @@ module ol_framework::mock {
     #[test_only]
     public fun tower_default(root: &signer) {
       let vals = stake::get_current_validators();
-      tower_state::set_difficulty(root, 100, 512); // original fixtures pre-wesolowski change.
+      tower_state::set_difficulty(root, globals::get_vdf_difficulty_baseline(), globals::get_vdf_security_baseline()); // original fixtures pre-wesolowski change.
       let i = 0;
       while (i < vector::length(&vals)) {
 
         let addr = vector::borrow(&vals, i);
         tower_state::test_helper_init_val(
             &account::create_signer_for_test(*addr),
-            vdf_fixtures::weso_alice_0_easy_chal(),
-            vdf_fixtures::weso_alice_0_easy_sol(),
+            vdf_fixtures::alice_0_easy_chal(),
+            vdf_fixtures::alice_0_easy_sol(),
             vdf_fixtures::easy_difficulty(),
-            vdf_fixtures::security_weso(),
+            vdf_fixtures::security(),
         );
         i = i + 1;
       };

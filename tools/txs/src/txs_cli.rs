@@ -169,7 +169,8 @@ impl TxsCli {
         match &self.subcommand {
             Some(TxsSub::Transfer { to_account, amount }) => {
                 send.transfer(to_account.to_owned(), amount.to_owned(), self.estimate_only)
-                    .await
+                    .await?;
+                Ok(())
             }
             Some(TxsSub::Publish(move_opts)) => {
                 let payload = encode_publish_payload(move_opts)?;

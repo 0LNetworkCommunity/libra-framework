@@ -104,7 +104,7 @@ module ol_framework::globals {
           val_set_at_genesis: 10,
           subsidy_ceiling_gas: 296 * get_coin_scaling_factor(),
           vdf_difficulty_baseline: 100,
-          vdf_security_baseline: 350,
+          vdf_security_baseline: 512,
           epoch_mining_thres_lower: 2, // many tests depend on two proofs because
                                        // the test harness already gives one at
                                        // genesis to validators
@@ -122,7 +122,7 @@ module ol_framework::globals {
           val_set_at_genesis: 100,
           subsidy_ceiling_gas: 8640000 * get_coin_scaling_factor(),
           vdf_difficulty_baseline: 100, //3000000000,
-          vdf_security_baseline: 350,
+          vdf_security_baseline: 512,
           epoch_mining_thres_lower: 1, // in testnet, staging, we don't want
                                        // to wait too long between proofs.
           epoch_mining_thres_upper: 72, // upper bound enforced at 20 mins per proof.
@@ -141,8 +141,8 @@ module ol_framework::globals {
           // target transaction per sec max gas: 20
           // uses "scaled representation", since there are no decimals.
           subsidy_ceiling_gas: 8640000 * get_coin_scaling_factor(), // subsidy amount assumes 24 hour epoch lengths. Also needs to be adjusted for coin_scale the onchain representation of human readable value.
-          vdf_difficulty_baseline: 3000000000, // wesolowski proof, new parameters. Benchmark available in docs/delay_tower/benchmarking
-          vdf_security_baseline: 350,
+          vdf_difficulty_baseline: 120000000, // wesolowski proof, new parameters. Benchmark available in docs/delay_tower/benchmarking
+          vdf_security_baseline: 512,
           epoch_mining_thres_lower: 1, // NOTE: bootstrapping, allowance for operator error.
           epoch_mining_thres_upper: 6, // upper bound 6 * 6hrs
           epoch_slow_wallet_unlock: 1000 * get_coin_scaling_factor(), // approx 10 years for largest accounts in genesis.

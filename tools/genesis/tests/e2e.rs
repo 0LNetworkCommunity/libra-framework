@@ -1,3 +1,4 @@
+use diem_temppath::TempPath;
 use diem_types::{
     chain_id::{ChainId, NamedChain},
     on_chain_config::OnChainConfig,
@@ -21,7 +22,9 @@ use std::fs;
 
 #[test]
 fn end_to_end_single() {
-    let blob = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/genesis.blob");
+    let temp_dir = TempPath::new();
+    temp_dir.create_as_dir().unwrap();
+    let blob = temp_dir.path().join("genesis.blob");
 
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_end_user_single.json");
@@ -81,8 +84,6 @@ fn end_to_end_single() {
         }
         _ => panic!("not a genesis transaction"),
     }
-
-    // drop.maybe_cleanup();
 }
 
 #[test]

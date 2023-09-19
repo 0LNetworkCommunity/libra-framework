@@ -317,7 +317,7 @@ module ol_framework::tower_state {
         error::invalid_state(EDELAY_NOT_CHAINED));
       };
 
-      let wesolowski_algo = true;
+      let wesolowski_algo = false;
       let valid = ol_native_vdf::verify(&proof.challenge, &proof.solution, proof.difficulty, proof.security, wesolowski_algo);
       assert!(valid, error::out_of_range(EPROOF_NOT_VALID));
 
