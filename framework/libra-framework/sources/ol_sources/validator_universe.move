@@ -12,7 +12,7 @@ module diem_framework::validator_universe {
   use diem_framework::system_addresses;
   use ol_framework::jail;
   use ol_framework::cases;
-  // use diem_framework::coin;
+  use ol_framework::vouch;
   use diem_framework::stake;
 
   // use diem_framework::coin::Coin;
@@ -58,6 +58,7 @@ module diem_framework::validator_universe {
     fullnode_addresses: vector<u8>,
   ) acquires ValidatorUniverse {
       stake::initialize_validator(account, consensus_pubkey, proof_of_possession, network_addresses, fullnode_addresses);
+      vouch::init(account);
       // 0L specific,
       add(account);
       jail::init(account);

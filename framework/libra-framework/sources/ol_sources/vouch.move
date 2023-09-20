@@ -34,6 +34,7 @@ module ol_framework::vouch {
       }
     }
 
+    #[view]
     public fun is_init(acc: address ):bool {
       exists<MyVouches>(acc)
     }
