@@ -97,8 +97,8 @@ module ol_framework::proof_of_fee {
   ): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
       system_addresses::assert_ol(vm);
 
-      let sorted_bids = get_sorted_vals(false);
-      let (auction_winners, price) = fill_seats_and_get_price(vm, n_musical_chairs, &sorted_bids, outgoing_compliant_set);
+      let sorted_bidders = get_bidders(false);
+      let (auction_winners, price) = fill_seats_and_get_price(vm, n_musical_chairs, &sorted_bidders, outgoing_compliant_set);
 
       transaction_fee::vm_multi_pay_fee(vm, &auction_winners, price);
 
@@ -114,19 +114,31 @@ module ol_framework::proof_of_fee {
   // By default this will return a FILTERED list of validators
   // which excludes validators which cannot pass the audit.
   // Leaving the unfiltered option for testing purposes, and any future use.
+  // The function returns the ordered bidders and their bids
   // TODO: there's a known issue when many validators have the exact same
   // bid, the preferred node  will be the one LAST included in the validator universe.
-  public fun get_sorted_vals(remove_unqualified: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
+
+
+  #[view]
+  public fun get_bidders(remove_unqualified: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
+    let eligible_validators = validator_universe::get_eligible_validators();
+    let (bidders, _) = sort_vals_impl(eligible_validators, remove_unqualified);
+    bidders
+  }
+
+  #[view]
+  // same as get bidders, but returns the bid
+  public fun get_bidders_and_bids(remove_unqualified: bool): (vector<address>, vector<u64>) acquires ProofOfFeeAuction, ConsensusReward {
     let eligible_validators = validator_universe::get_eligible_validators();
     sort_vals_impl(eligible_validators, remove_unqualified)
   }
-
-  fun sort_vals_impl(eligible_validators: vector<address>, remove_unqualified: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
+  // returns two lists odrdered bidder addresss and the bid
+  fun sort_vals_impl(eligible_validators: vector<address>, remove_unqualified: bool): (vector<address>, vector<u64>) acquires ProofOfFeeAuction, ConsensusReward {
     // let eligible_validators = validator_universe::get_eligible_validators();
     let length = vector::length<address>(&eligible_validators);
 
     // vector to store each address's node_weight
-    let weights = vector::empty<u64>();
+    let bids = vector::empty<u64>();
     let filtered_vals = vector::empty<address>();
     let k = 0;
     while (k < length) {
@@ -138,7 +150,7 @@ module ol_framework::proof_of_fee {
         k = k + 1;
         continue
       };
-      vector::push_back<u64>(&mut weights, bid);
+      vector::push_back<u64>(&mut bids, bid);
       vector::push_back<address>(&mut filtered_vals, cur_address);
       k = k + 1;
     };
@@ -146,18 +158,19 @@ module ol_framework::proof_of_fee {
     // Sorting the accounts vector based on value (weights).
     // Bubble sort algorithm
     let len_filtered = vector::length<address>(&filtered_vals);
-    if (len_filtered < 2) return filtered_vals;
+    // if there's only one person (testing)
+    if (len_filtered < 2) return (filtered_vals, bids);
     let i = 0;
     while (i < len_filtered){
       let j = 0;
       while(j < len_filtered-i-1){
 
-        let value_j = *(vector::borrow<u64>(&weights, j));
+        let value_j = *(vector::borrow<u64>(&bids, j));
 
-        let value_jp1 = *(vector::borrow<u64>(&weights, j+1));
+        let value_jp1 = *(vector::borrow<u64>(&bids, j+1));
         if(value_j > value_jp1){
 
-          vector::swap<u64>(&mut weights, j, j+1);
+          vector::swap<u64>(&mut bids, j, j+1);
 
           vector::swap<address>(&mut filtered_vals, j, j+1);
         };
@@ -170,9 +183,10 @@ module ol_framework::proof_of_fee {
 
 
     // Reverse to have sorted order - high to low.
-    vector::reverse<address>(&mut filtered_vals);
+    vector::reverse(&mut filtered_vals);
+    vector::reverse(&mut bids);
 
-    return filtered_vals
+    return (filtered_vals, bids)
   }
 
   // Here we place the bidders into their seats.
@@ -513,7 +527,7 @@ module ol_framework::proof_of_fee {
   public fun top_n_accounts(account: &signer, n: u64, unfiltered: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
       system_addresses::assert_vm(account);
 
-      let eligible_validators = get_sorted_vals(unfiltered);
+      let eligible_validators = get_bidders(unfiltered);
       let len = vector::length<address>(&eligible_validators);
       if(len <= n) return eligible_validators;
 

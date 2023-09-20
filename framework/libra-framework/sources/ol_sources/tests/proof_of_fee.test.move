@@ -199,13 +199,13 @@ module ol_framework::test_pof {
     };
     // mock_good_bid(&root, alice);
     let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
-    let sorted = proof_of_fee::get_sorted_vals(false);
+    let sorted = proof_of_fee::get_bidders(false);
 
     let len = vector::length(&sorted);
     assert!(len == vector::length(&val_universe), 1000);
     assert!(vector::length(&sorted) == vector::length(&val_universe), 1002);
 
-    let sorted_two = proof_of_fee::get_sorted_vals(true);
+    let sorted_two = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted_two) == vector::length(&val_universe), 1003);
   }
 
@@ -214,13 +214,13 @@ module ol_framework::test_pof {
   fun sorted_vals_none_qualify(root: signer) {
     let _set = mock::genesis_n_vals(&root, 4);
     let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
-    let sorted = proof_of_fee::get_sorted_vals(false);
+    let sorted = proof_of_fee::get_bidders(false);
 
     let len = vector::length(&sorted);
     assert!(len == vector::length(&val_universe), 1000);
     assert!(vector::length(&sorted) == vector::length(&val_universe), 1002);
 
-    let sorted = proof_of_fee::get_sorted_vals(true);
+    let sorted = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted) != vector::length(&val_universe), 1003);
     assert!(vector::length(&sorted) == 0, 1004);
   }
@@ -244,13 +244,13 @@ module ol_framework::test_pof {
 
 
     // let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
-    let sorted = proof_of_fee::get_sorted_vals(false);
+    let sorted = proof_of_fee::get_bidders(false);
     let len = vector::length(&sorted);
     assert!(len == vector::length(&val_universe), 1000);
     assert!(vector::length(&sorted) == vector::length(&val_universe), 1002);
 
 
-    let sorted_two = proof_of_fee::get_sorted_vals(true);
+    let sorted_two = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted_two) != vector::length(&val_universe), 1004);
     assert!(vector::length(&sorted_two) == vector::length(&val_universe) - 1, 1005);
 
@@ -285,13 +285,13 @@ module ol_framework::test_pof {
     mock::trigger_epoch(&root);
 
     // Get all vals but don't filter the ones that have passing bids
-    let sorted = proof_of_fee::get_sorted_vals(false);
+    let sorted = proof_of_fee::get_bidders(false);
     let len = vector::length(&sorted);
     assert!(len == vector::length(&val_universe), 1000);
     assert!(vector::length(&sorted) == vector::length(&val_universe), 1002);
 
 
-    let sorted_two = proof_of_fee::get_sorted_vals(true);
+    let sorted_two = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted_two) != vector::length(&val_universe), 1004);
 
     assert!(vector::length(&sorted_two) == vector::length(&val_universe) - 1, 1005);
@@ -308,7 +308,7 @@ module ol_framework::test_pof {
 
     slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
-    let sorted = proof_of_fee::get_sorted_vals(true);
+    let sorted = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted) == vector::length(&set), 1003);
 
     let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&root, len, &sorted, &sorted);
@@ -332,7 +332,7 @@ module ol_framework::test_pof {
 
     slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
-    let sorted = proof_of_fee::get_sorted_vals(true);
+    let sorted = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted) == vector::length(&set), 1003);
 
     let len = vector::length(&set);
@@ -376,7 +376,7 @@ module ol_framework::test_pof {
 
     slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
-    let sorted = proof_of_fee::get_sorted_vals(true);
+    let sorted = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted) != vector::length(&set), 1003);
 
     // let len = vector::length(&set);
@@ -415,7 +415,7 @@ module ol_framework::test_pof {
 
     slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
-    let sorted = proof_of_fee::get_sorted_vals(true);
+    let sorted = proof_of_fee::get_bidders(true);
 
 
 
@@ -473,7 +473,7 @@ module ol_framework::test_pof {
 
     slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
-    let sorted = proof_of_fee::get_sorted_vals(true);
+    let sorted = proof_of_fee::get_bidders(true);
 
     let set_size = 6;
 
@@ -533,7 +533,7 @@ module ol_framework::test_pof {
 
     slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
-    let sorted = proof_of_fee::get_sorted_vals(true);
+    let sorted = proof_of_fee::get_bidders(true);
 
     let set_size = 4;
 
