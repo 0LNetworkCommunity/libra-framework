@@ -5846,6 +5846,7 @@ dependencies = [
  "move-core-types",
  "serde 1.0.163",
  "serde_json",
+ "tokio",
  "ureq",
 ]
 

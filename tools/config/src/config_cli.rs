@@ -170,7 +170,7 @@ impl ConfigCli {
                     );
                     std::fs::create_dir_all(&data_path)?;
                 }
-                initialize_validator_configs(&data_path, None)?;
+                initialize_validator_configs(&data_path, None).await?;
                 println!("Validators' config initialized.");
                 Ok(())
             }

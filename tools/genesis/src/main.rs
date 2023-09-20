@@ -9,7 +9,6 @@ use libra_genesis_tools::{
 };
 use libra_types::{exports::NamedChain, global_config_dir, legacy_types::fixtures::TestPersona};
 use std::{net::Ipv4Addr, path::PathBuf};
-
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 struct GenesisCliArgs {
@@ -85,8 +84,8 @@ enum Sub {
         json_legacy: Option<PathBuf>,
     },
 }
-
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     let cli = GenesisCliArgs::parse();
     match cli.command {
         Some(Sub::Genesis {
@@ -127,7 +126,7 @@ fn main() -> anyhow::Result<()> {
                 cli.home_dir,
                 cli.chain.unwrap_or(NamedChain::TESTING),
             )
-            .start_wizard(github.local_framework, github.json_legacy, false, None)?;
+            .start_wizard(github.local_framework, github.json_legacy, false, None).await?;
         }
         Some(Sub::Wizard {
             github,
@@ -144,7 +143,7 @@ fn main() -> anyhow::Result<()> {
                 github.json_legacy,
                 true,
                 Some(supply_settings),
-            )?;
+            ).await?;
         }
         Some(Sub::Testnet {
             me,

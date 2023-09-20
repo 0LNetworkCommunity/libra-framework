@@ -9,8 +9,6 @@ use libra_types::ol_progress::OLProgress;
 use libra_wallet::validator_files::SetValidatorConfiguration;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
-use tokio::runtime::Handle;
-use tokio::task;
 
 pub fn initialize_validator(
     home_path: Option<PathBuf>,
@@ -62,14 +60,12 @@ async fn get_ip() -> anyhow::Result<HostAndPort> {
     }
 }
 /// interact with user to get ip address
-pub fn what_host() -> Result<HostAndPort, anyhow::Error> {
+pub async fn what_host() -> Result<HostAndPort, anyhow::Error> {
     // get from external source since many cloud providers show different interfaces for `machine_ip`
-    let host = task::block_in_place(move || Handle::current().block_on(get_ip())).ok();
-
-    if let Some(h) = host {
+    if let Some(h) = get_ip().await.ok() {
         let txt = &format!(
             "Will you use this host, and this IP address {:?}, for your node?",
-            h
+            h.host.to_string()
         );
         if Confirm::new().with_prompt(txt).interact().unwrap() {
             return Ok(h);
@@ -87,7 +83,7 @@ pub fn what_host() -> Result<HostAndPort, anyhow::Error> {
     Ok(ip)
 }
 
-pub fn initialize_validator_configs(
+pub async fn initialize_validator_configs(
     data_path: &Path,
     github_username: Option<&str>,
 ) -> Result<(), anyhow::Error> {
@@ -98,7 +94,7 @@ pub fn initialize_validator_configs(
         ))
         .interact()?;
     if to_init {
-        let host = what_host()?;
+        let host = what_host().await?;
 
         let keep_legacy_address = Confirm::new()
             .with_prompt("Is this a legacy V5 address you wish to keep?")
