@@ -152,12 +152,14 @@ module ol_framework::ol_account {
         assert!(coin::is_account_registered<GasCoin>(to), error::invalid_argument(EACCOUNT_NOT_REGISTERED_FOR_GAS));
 
         coin::transfer<GasCoin>(sender, to, amount);
+        // TODO: UPDATE SLOW WALLET TRACKER HERE
 
         cumulative_deposits::maybe_update_deposit(signer::address_of(sender), to, amount);
     }
 
     /// Withdraw funds while respecting the transfer limits
     public fun withdraw(sender: &signer, amount: u64): Coin<GasCoin> {
+        // TODO: UPDATE SLOW WALLET TRACKER HERE
 
         let limit = get_slow_limit(signer::address_of(sender));
         assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
@@ -194,6 +196,7 @@ module ol_framework::ol_account {
       slow_wallet::balance(addr)
     }
 
+    // TODO: this is redundant
     fun get_slow_limit(addr: address): u64 {
       let full_balance = coin::balance<GasCoin>(addr);
       // TODO: check if recipient is a donor directed account.
@@ -231,6 +234,9 @@ module ol_framework::ol_account {
 
     /// Convenient function to deposit a custom CoinType into a recipient account that might not exist.
     /// This would create the recipient account first and register it to receive the CoinType, before transferring.
+
+    //////// TODO //////
+    // SLOW WALLET CONTROLS HERE?
     public fun deposit_coins(to: address, coins: Coin<GasCoin>) {
         // if (!account::exists_at(to)) {
         //     create_account(to);
@@ -243,6 +249,7 @@ module ol_framework::ol_account {
         //     );
         //     coin::register<CoinType>(&create_signer(to));
         // };
+
         coin::deposit<GasCoin>(to, coins)
     }
 

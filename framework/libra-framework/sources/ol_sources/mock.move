@@ -8,7 +8,7 @@ module ol_framework::mock {
   use std::vector;
   use diem_framework::genesis;
   use diem_framework::account;
-  use ol_framework::slow_wallet;
+  // use ol_framework::slow_wallet;
   use ol_framework::proof_of_fee;
   use ol_framework::validator_universe;
   use diem_framework::timestamp;
@@ -24,7 +24,7 @@ module ol_framework::mock {
   use ol_framework::musical_chairs;
   use ol_framework::globals;
   // use diem_framework::chain_status;
-  // use diem_std::debug::print;
+  use diem_std::debug::print;
 
   const ENO_GENESIS_END_MARKER: u64 = 1;
   const EDID_NOT_ADVANCE_EPOCH: u64 = 1;
@@ -174,10 +174,16 @@ module ol_framework::mock {
         let addr = vector::borrow(&vals, i);
         let c = coin::mint(amount, &mint_cap);
         ol_account::deposit_coins(*addr, c);
+
+        let b = coin::balance<GasCoin>(*addr);
+        print(&b);
+        assert!(b == amount, 0001);
+
+
         i = i + 1;
       };
 
-      slow_wallet::slow_wallet_epoch_drip(root, amount);
+      // slow_wallet::slow_wallet_epoch_drip(root, amount);
       gas_coin::restore_mint_cap(root, mint_cap);
     }
 
@@ -238,10 +244,6 @@ module ol_framework::mock {
 
         vouch::init(&sig);
         vouch::test_set_buddies(*val, val_addr);
-
-        // TODO: validators should have a balance
-        // in Mock, we should use the same validator creation path as genesis.move
-        let _b = coin::balance<GasCoin>(*val);
 
         i = i + 1;
       };

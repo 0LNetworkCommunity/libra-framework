@@ -12,6 +12,7 @@ module ol_framework::test_slow_wallet {
   use diem_framework::reconfiguration;
   use diem_framework::coin;
   use std::vector;
+  // use diem_std::debug::print;
 
   #[test(root = @ol_framework)]
   // we are testing that genesis creates the needed struct
@@ -35,11 +36,12 @@ module ol_framework::test_slow_wallet {
   #[test(root = @ol_framework)]
   fun test_epoch_drip(root: signer) {
     let set = mock::genesis_n_vals(&root, 4);
+    mock::ol_initialize_coin_and_fund_vals(&root, 100);
     let a = vector::borrow(&set, 0);
-    let a_sig = account::create_signer_for_test(*a);
 
-    slow_wallet::set_slow(&a_sig);
+    assert!(slow_wallet::is_slow(*a), 7357000);
     assert!(slow_wallet::unlocked_amount(*a) == 0, 735701);
+
 
     slow_wallet::slow_wallet_epoch_drip(&root, 100);
     assert!(slow_wallet::unlocked_amount(*a) == 100, 735702);

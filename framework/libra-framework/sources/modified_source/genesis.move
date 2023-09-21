@@ -42,8 +42,6 @@ module diem_framework::genesis {
     use ol_framework::fee_maker;
     use ol_framework::oracle;
     use ol_framework::vouch;
-
-    // const TESTNET_GENESIS_BOOTSTRAP_COIN: u64 = 10000000000; //10,000 coins with 6 digits precision: 10B coins.
     //////// end 0L ////////
 
 
@@ -300,6 +298,7 @@ module diem_framework::genesis {
             let validator = vector::borrow(&validators, i);
             register_one_genesis_validator(diem_framework, validator, false);
             vector::push_back(&mut val_addr_list, *&validator.validator_config.owner_address);
+            infra_escrow::genesis_coin_validator(diem_framework, *&validator.validator_config.owner_address);
 
             i = i + 1;
         };

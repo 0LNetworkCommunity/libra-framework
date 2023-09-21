@@ -106,8 +106,10 @@ module ol_framework::slow_wallet {
       let i = 0;
       while (i < vector::length<address>(&list)) {
         let addr = vector::borrow<address>(&list, i);
-        let s = borrow_global_mut<SlowWallet>(*addr);
-        s.unlocked = s.unlocked + amount;
+        let total = coin::balance<GasCoin>(*addr);
+        let state = borrow_global_mut<SlowWallet>(*addr);
+        let next_unlock = state.unlocked + amount;
+        state.unlocked = if (next_unlock > total) { total } else { next_unlock };
         i = i + 1;
       }
     }
@@ -115,15 +117,22 @@ module ol_framework::slow_wallet {
     /// if a user spends/transfers unlocked coins we need to track that spend
     public(friend) fun track_unlocked_spent(payer: address, amount: u64) acquires SlowWallet {
       let s = borrow_global_mut<SlowWallet>(payer);
+
       s.transferred = s.transferred + amount;
       s.unlocked = s.unlocked - amount;
     }
 
     /// when a user receives unlocked coins from another user, those coins
     /// always remain unlocked.
-    public(friend) fun track_unlocked_received(payer: address, amount: u64) acquires SlowWallet {
-      let s = borrow_global_mut<SlowWallet>(payer);
-      s.unlocked = s.unlocked + amount;
+    public(friend) fun track_unlocked_received(recipient: address, amount: u64) acquires SlowWallet {
+      let state = borrow_global_mut<SlowWallet>(recipient);
+      let total = coin::balance<GasCoin>(recipient);
+
+      let next_unlock = state.unlocked + amount;
+      // unlocked amount cannot be greater than total
+      // this will not halt, since it's the VM that may call this.
+      // but downstream code needs to check this
+      state.unlocked = if (next_unlock > total) { total } else { next_unlock };
     }
 
     public fun on_new_epoch(vm: &signer) acquires SlowWallet, SlowWalletList {

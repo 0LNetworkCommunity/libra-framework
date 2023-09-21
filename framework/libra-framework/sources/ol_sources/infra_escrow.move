@@ -22,6 +22,7 @@ module ol_framework::infra_escrow{
     // use diem_std::debug::print;
 
     friend ol_framework::epoch_boundary;
+    friend diem_framework::genesis;
 
     /// for use on genesis, creates the infra escrow pledge policy struct
     public fun initialize(vm: &signer) {
@@ -100,7 +101,8 @@ module ol_framework::infra_escrow{
     }
 
     //////// TESTNET HELPERS ////////
-    fun genesis_coin_validator(root: &signer, to: address) {
+    public fun genesis_coin_validator(root: &signer, to: address) {
+      system_addresses::assert_ol(root);
       let bootstrap_amount = 10000000;
       if (infra_escrow_balance() > bootstrap_amount) {
         let c_opt = infra_pledge_withdraw(root, bootstrap_amount);
