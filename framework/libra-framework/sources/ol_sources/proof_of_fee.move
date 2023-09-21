@@ -325,7 +325,8 @@ module ol_framework::proof_of_fee {
     return (seats_to_fill, lowest_bid_pct)
   }
 
-  // consolidate all the checks for a validator to be seated
+  #[view]
+  /// consolidate all the checks for a validator to be seated
   public fun audit_qualification(val: &address): (vector<u64>, bool) acquires ProofOfFeeAuction, ConsensusReward {
 
       let errors = vector::empty<u64>();
