@@ -53,7 +53,7 @@ pub fn initialize_validator(
 }
 
 async fn get_ip() -> anyhow::Result<HostAndPort> {
-    let res = reqwest::get("https://ifconfig.me").await?;
+    let res = reqwest::get("https://ipinfo.io/ip").await?;
     match res.text().await {
         Ok(ip_str) => HostAndPort::from_str(&format!("{}:6180", ip_str)),
         _ => bail!("can't get this host's external ip"),
