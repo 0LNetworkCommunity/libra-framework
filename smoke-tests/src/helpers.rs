@@ -3,7 +3,9 @@ use diem_forge::DiemPublicInfo;
 use diem_sdk::rest_client::Client;
 use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib;
-use libra_types::{type_extensions::client_ext::ClientExt, move_resource::gas_coin::SlowWalletBalance};
+use libra_types::{
+    move_resource::gas_coin::SlowWalletBalance, type_extensions::client_ext::ClientExt,
+};
 
 /// Get the balance of the 0L coin
 pub async fn get_libra_balance(
@@ -13,13 +15,12 @@ pub async fn get_libra_balance(
     let res = client
         .view_ext("0x1::slow_wallet::balance", None, Some(address.to_string()))
         .await?;
-    dbg!(&res);
 
     let move_tuple = serde_json::from_value::<Vec<String>>(res)?;
 
     let b = SlowWalletBalance {
-      unlocked: move_tuple[0].parse().context("no value found")?,
-      total: move_tuple[1].parse().context("no value found")?,
+        unlocked: move_tuple[0].parse().context("no value found")?,
+        total: move_tuple[1].parse().context("no value found")?,
     };
 
     Ok(b)

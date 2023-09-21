@@ -4,7 +4,6 @@ use anyhow::Context;
 use diem_types::account_config::CORE_CODE_ADDRESS;
 use diem_vm::move_vm_ext::SessionExt;
 use diem_vm_genesis::exec_function;
-use diem_vm_genesis::Validator;
 use indicatif::ProgressIterator;
 use libra_types::{
     exports::AccountAddress,
@@ -318,7 +317,6 @@ pub fn rounding_mint(session: &mut SessionExt, supply_settings: &SupplySettings)
         serialized_values,
     );
 }
-
 
 // pub fn mint_genesis_bootstrap_coin(session: &mut SessionExt, validators: &[Validator]) {
 //     validators.iter().for_each(|v| {
