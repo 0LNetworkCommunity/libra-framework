@@ -10,6 +10,8 @@ module ol_framework::vouch {
     use diem_framework::stake;
     use diem_framework::transaction_fee;
 
+    friend diem_framework::genesis;
+
     /// trying to vouch for yourself?
     const ETRY_SELF_VOUCH_REALLY: u64 = 1;
 
@@ -92,10 +94,9 @@ module ol_framework::vouch {
       };
     }
 
-    public fun vm_migrate(vm: &signer, val: address, buddy_list: vector<address>) acquires MyVouches {
-      system_addresses::assert_vm(vm);
+    public(friend) fun vm_migrate(vm: &signer, val: address, buddy_list: vector<address>) acquires MyVouches {
+      system_addresses::assert_ol(vm);
       bulk_set(val, buddy_list);
-
     }
 
     fun bulk_set(val: address, buddy_list: vector<address>) acquires MyVouches {
@@ -112,6 +113,9 @@ module ol_framework::vouch {
       };
 
       v.my_buddies = buddy_list;
+
+      let epoch_data: vector<u64> = vector::map_ref(&buddy_list, |_e| { 0u64 } );
+      v.epoch_vouched = epoch_data;
     }
 
     #[view]

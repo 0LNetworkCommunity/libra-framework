@@ -41,6 +41,7 @@ module diem_framework::genesis {
     use ol_framework::burn;
     use ol_framework::fee_maker;
     use ol_framework::oracle;
+    use ol_framework::vouch;
 
     // const TESTNET_GENESIS_BOOTSTRAP_COIN: u64 = 10000000000; //10,000 coins with 6 digits precision: 10B coins.
     //////// end 0L ////////
@@ -286,24 +287,29 @@ module diem_framework::genesis {
 
     fun create_initialize_validators_with_commission(
         diem_framework: &signer,
-        use_staking_contract: bool,
+        _depr_use_staking_contract: bool,
         validators: vector<ValidatorConfigurationWithCommission>,
     ) {
         let i = 0;
         let num_validators = vector::length(&validators);
 
+        let val_addr_list = vector::empty();
+
         while (i < num_validators) {
 
             let validator = vector::borrow(&validators, i);
-            create_validator_accounts(diem_framework, validator, use_staking_contract);
+            register_one_genesis_validator(diem_framework, validator, false);
+            vector::push_back(&mut val_addr_list, *&validator.validator_config.owner_address);
 
             i = i + 1;
         };
 
+        vector::for_each(val_addr_list, |one_val| {
+          vouch::vm_migrate(diem_framework, one_val, val_addr_list);
+        });
+
+
         musical_chairs::initialize(diem_framework, num_validators);
-
-
-
 
         // Destroy the diem framework account's ability to mint coins now that we're done with setting up the initial
         // validators.
@@ -404,7 +410,7 @@ module diem_framework::genesis {
     //     // };
     // }
 
-    fun create_validator_accounts(
+    fun register_one_genesis_validator(
         diem_framework: &signer,
         commission_config: &ValidatorConfigurationWithCommission,
         _use_staking_contract: bool,
