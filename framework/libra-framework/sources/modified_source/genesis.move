@@ -445,6 +445,7 @@ module diem_framework::genesis {
 
         if (commission_config.join_during_genesis) { // TODO: remove this check
             initialize_validator(pool_address, validator);
+            validator_universe::genesis_helper_add_validator(diem_framework, owner)
         };
     }
 
