@@ -21,7 +21,7 @@ module ol_framework::test_burn {
 
   fun burn_reduces_supply(root: &signer, alice: &signer) {
     mock::genesis_n_vals(root, 1);
-    mock::ol_initialize_coin_and_fund_vals(root, 10000);
+    mock::ol_initialize_coin_and_fund_vals(root, 10000, true);
     let supply_pre = gas_coin::supply();
 
     let alice_burn = 5;
@@ -42,7 +42,7 @@ module ol_framework::test_burn {
       // The Match Index, should reflect that.
 
       let vals = mock::genesis_n_vals(root, 5); // need to include eve to init funds
-      mock::ol_initialize_coin_and_fund_vals(root, 100000);
+      mock::ol_initialize_coin_and_fund_vals(root, 1000000, true);
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
       mock::trigger_epoch(root);
 
@@ -105,7 +105,7 @@ module ol_framework::test_burn {
       // The Match Index, should reflect that.
 
       let vals = mock::genesis_n_vals(root, 5); // need to include eve to init funds
-      mock::ol_initialize_coin_and_fund_vals(root, 100000);
+      mock::ol_initialize_coin_and_fund_vals(root, 1000000, true);
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
       mock::trigger_epoch(root);
 
@@ -169,12 +169,13 @@ module ol_framework::test_burn {
 
       let n_vals = 5;
       let _vals = mock::genesis_n_vals(root, n_vals); // need to include eve to init funds
-      mock::ol_initialize_coin_and_fund_vals(root, 100000);
+      let genesis_mint = 1000000;
+      mock::ol_initialize_coin_and_fund_vals(root, genesis_mint, true);
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
       mock::trigger_epoch(root);
 
       let supply_pre = gas_coin::supply();
-      assert!(supply_pre == (n_vals * 100000), 73570000);
+      assert!(supply_pre == (n_vals * genesis_mint), 73570000);
 
       // put some fees in the system fee account
       let alice_fee = 100000;
@@ -202,7 +203,7 @@ module ol_framework::test_burn {
       // The Match Index, should reflect that.
 
       let vals = mock::genesis_n_vals(root, 5); // need to include eve to init funds
-      mock::ol_initialize_coin_and_fund_vals(root, 100000);
+      mock::ol_initialize_coin_and_fund_vals(root, 1000000, true);
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
       mock::trigger_epoch(root);
 
@@ -273,7 +274,7 @@ module ol_framework::test_burn {
     fun track_fees(root: &signer, alice: &signer) {
       // use ol_framework::gas_coin;
       let _vals = mock::genesis_n_vals(root, 1); // need to include eve to init funds
-      mock::ol_initialize_coin_and_fund_vals(root, 10000);
+      mock::ol_initialize_coin_and_fund_vals(root, 10000, true);
 
       let alice_burn = 5;
       let coin = ol_account::withdraw(alice, alice_burn);

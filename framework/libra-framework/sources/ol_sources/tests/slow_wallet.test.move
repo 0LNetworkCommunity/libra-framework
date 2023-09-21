@@ -36,7 +36,7 @@ module ol_framework::test_slow_wallet {
   #[test(root = @ol_framework)]
   fun test_epoch_drip(root: signer) {
     let set = mock::genesis_n_vals(&root, 4);
-    mock::ol_initialize_coin_and_fund_vals(&root, 100);
+    mock::ol_initialize_coin_and_fund_vals(&root, 100, false);
     let a = vector::borrow(&set, 0);
 
     assert!(slow_wallet::is_slow(*a), 7357000);

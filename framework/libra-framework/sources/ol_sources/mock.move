@@ -8,7 +8,7 @@ module ol_framework::mock {
   use std::vector;
   use diem_framework::genesis;
   use diem_framework::account;
-  // use ol_framework::slow_wallet;
+  use ol_framework::slow_wallet;
   use ol_framework::proof_of_fee;
   use ol_framework::validator_universe;
   use diem_framework::timestamp;
@@ -24,7 +24,7 @@ module ol_framework::mock {
   use ol_framework::musical_chairs;
   use ol_framework::globals;
   // use diem_framework::chain_status;
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   const ENO_GENESIS_END_MARKER: u64 = 1;
   const EDID_NOT_ADVANCE_EPOCH: u64 = 1;
@@ -162,7 +162,7 @@ module ol_framework::mock {
     }
 
     #[test_only]
-    public fun ol_initialize_coin_and_fund_vals(root: &signer, amount: u64) {
+    public fun ol_initialize_coin_and_fund_vals(root: &signer, amount: u64, drip: bool) {
       system_addresses::assert_ol(root);
 
       let mint_cap = init_coin_impl(root);
@@ -176,14 +176,13 @@ module ol_framework::mock {
         ol_account::deposit_coins(*addr, c);
 
         let b = coin::balance<GasCoin>(*addr);
-        print(&b);
         assert!(b == amount, 0001);
 
 
         i = i + 1;
       };
 
-      // slow_wallet::slow_wallet_epoch_drip(root, amount);
+      if (drip) slow_wallet::slow_wallet_epoch_drip(root, amount);
       gas_coin::restore_mint_cap(root, mint_cap);
     }
 

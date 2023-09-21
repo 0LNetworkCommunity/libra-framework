@@ -101,7 +101,7 @@ module ol_framework::test_donor_directed {
       // Dave and Eve make a donation and so are able to have some voting on that account. The veto can only happen after Alice Bob and Carol are able to schedule a tx.
 
       let vals = mock::genesis_n_vals(root, 5); // need to include eve to init funds
-      mock::ol_initialize_coin_and_fund_vals(root, 100000);
+      mock::ol_initialize_coin_and_fund_vals(root, 100000, true);
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
       mock::trigger_epoch(root);
 
@@ -182,7 +182,7 @@ module ol_framework::test_donor_directed {
       // only bob, carol, and dave with be authorities
 
       let vals = mock::genesis_n_vals(root, 4);
-      mock::ol_initialize_coin_and_fund_vals(root, 10000000);
+      mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
 
       let (_, bob_balance_pre) = ol_account::balance(@0x1000b);
       assert!(bob_balance_pre == 10000000, 7357001);
@@ -238,7 +238,7 @@ module ol_framework::test_donor_directed {
       // only bob, carol, and dave with be authorities
 
       let vals = mock::genesis_n_vals(root, 4);
-      mock::ol_initialize_coin_and_fund_vals(root, 10000000);
+      mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
 
       let (_, bob_balance_pre) = ol_account::balance(@0x1000b);
       assert!(bob_balance_pre == 10000000, 7357001);
@@ -302,7 +302,7 @@ module ol_framework::test_donor_directed {
       // Dave and Eve are unhappy, and vote to liquidate the account.
 
       let vals = mock::genesis_n_vals(root, 5); // need to include eve to init funds
-      mock::ol_initialize_coin_and_fund_vals(root, 100000);
+      mock::ol_initialize_coin_and_fund_vals(root, 100000, true);
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
       mock::trigger_epoch(root);
 
@@ -383,7 +383,7 @@ module ol_framework::test_donor_directed {
       // Dave and Eve are unhappy, and vote to liquidate the account.
 
       let vals = mock::genesis_n_vals(root, 5); // need to include eve to init funds
-      mock::ol_initialize_coin_and_fund_vals(root, 100000);
+      mock::ol_initialize_coin_and_fund_vals(root, 100000, true);
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
       mock::trigger_epoch(root);
 
