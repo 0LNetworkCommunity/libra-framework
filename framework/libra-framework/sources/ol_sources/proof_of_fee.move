@@ -29,7 +29,7 @@ module ol_framework::proof_of_fee {
   const GENESIS_BASELINE_REWARD: u64 = 1000000;
 
   //////// ERRORS /////////
-  /// Not and active validator
+  /// Not an active validator
   const ENOT_AN_ACTIVE_VALIDATOR: u64 = 1;
   /// Bid is above the maximum percentage of the total reward
   const EBID_ABOVE_MAX_PCT: u64 = 2;
