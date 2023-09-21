@@ -5,6 +5,7 @@ module ol_framework::vouch {
     use ol_framework::ancestry;
     use ol_framework::testnet;
     use ol_framework::ol_account;
+    use ol_framework::epoch_helper;
 
     use diem_framework::system_addresses;
     use diem_framework::stake;
@@ -147,9 +148,8 @@ module ol_framework::vouch {
     fun is_not_expired(voucher: address, state: &MyVouches): bool {
       let (found, i) = vector::index_of(&state.my_buddies, &voucher);
       if (found) {
-        let epoch = 0; // TODO get epoch
-        let e = vector::borrow(&state.epoch_vouched, i);
-        return epoch > *e + EXPIRATION_ELAPSED_EPOCHS
+        let when_vouched = vector::borrow(&state.epoch_vouched, i);
+        return  (*when_vouched + EXPIRATION_ELAPSED_EPOCHS) > epoch_helper::get_current_epoch()
       };
       false
     }
