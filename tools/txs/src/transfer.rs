@@ -35,8 +35,11 @@ impl Sender {
             match self.sign_submit_wait(payload).await {
                 Ok(tx) => Ok(Some(tx)),
                 Err(e) => {
-                  bail!("ERROR: transaction could not complete, message: {}", e.to_string())
-                },
+                    bail!(
+                        "ERROR: transaction could not complete, message: {}",
+                        e.to_string()
+                    )
+                }
             }
         }
     }

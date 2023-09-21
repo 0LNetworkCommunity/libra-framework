@@ -126,7 +126,8 @@ async fn main() -> anyhow::Result<()> {
                 cli.home_dir,
                 cli.chain.unwrap_or(NamedChain::TESTING),
             )
-            .start_wizard(github.local_framework, github.json_legacy, false, None).await?;
+            .start_wizard(github.local_framework, github.json_legacy, false, None)
+            .await?;
         }
         Some(Sub::Wizard {
             github,
@@ -143,7 +144,8 @@ async fn main() -> anyhow::Result<()> {
                 github.json_legacy,
                 true,
                 Some(supply_settings),
-            ).await?;
+            )
+            .await?;
         }
         Some(Sub::Testnet {
             me,

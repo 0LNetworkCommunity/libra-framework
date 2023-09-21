@@ -62,7 +62,7 @@ async fn get_ip() -> anyhow::Result<HostAndPort> {
 /// interact with user to get ip address
 pub async fn what_host() -> Result<HostAndPort, anyhow::Error> {
     // get from external source since many cloud providers show different interfaces for `machine_ip`
-    if let Some(h) = get_ip().await.ok() {
+    if let Ok(h) = get_ip().await {
         let txt = &format!(
             "Will you use this host, and this IP address {:?}, for your node?",
             h.host.to_string()
