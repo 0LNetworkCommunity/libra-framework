@@ -88,9 +88,8 @@ module ol_framework::test_pof {
 
     mock_good_bid(&root, alice);
 
-
-    // // should NOTE pass audit.
-    assert!(proof_of_fee::audit_qualification(alice), 1006);
+    let (_, pass) = proof_of_fee::audit_qualification(alice);
+    assert!(pass, 1006);
   }
 
   #[test(root = @ol_framework)]
@@ -106,12 +105,14 @@ module ol_framework::test_pof {
 
     testnet::unset(&root);
 
-    assert!(vouch::unrelated_buddies_above_thresh(*alice, globals::get_validator_vouch_threshold()), 1006);
-    assert!(proof_of_fee::audit_qualification(alice), 1008);
+    assert!(vouch::unrelated_buddies_above_thresh(*alice, globals::get_validator_vouch_threshold()), 1001);
+    let (_, pass) = proof_of_fee::audit_qualification(alice);
+    assert!(pass, 1003);
 
     vouch::test_set_buddies(*alice, vector::empty());
-    assert!(!vouch::unrelated_buddies_above_thresh(*alice, globals::get_validator_vouch_threshold()), 1006);
-    assert!(!proof_of_fee::audit_qualification(alice), 1008);
+    assert!(!vouch::unrelated_buddies_above_thresh(*alice, globals::get_validator_vouch_threshold()), 1004);
+    let (_, pass) = proof_of_fee::audit_qualification(alice);
+    assert!(!pass, 1005);
   }
 
   #[test(root = @ol_framework)]
@@ -134,8 +135,9 @@ module ol_framework::test_pof {
     let bid_cost = (bid * r) / 1000;
     assert!(coin < bid_cost, 1005);
 
-    // should NOTE pass audit.
-    assert!(!proof_of_fee::audit_qualification(alice), 1006);
+    // should NOT pass audit.
+    let (_, pass) = proof_of_fee::audit_qualification(alice);
+    assert!(!pass, 1006);
   }
 
   #[test(root = @ol_framework)]
@@ -170,11 +172,13 @@ module ol_framework::test_pof {
     assert!(bid == 1, 1006);
     assert!(expires == 0, 1007);
     // should NOT pass audit.
-    assert!(!proof_of_fee::audit_qualification(alice), 1008);
+    let (_, pass) = proof_of_fee::audit_qualification(alice);
+    assert!(!pass, 1008);
 
     // fix it
     proof_of_fee::set_bid(&a_sig, 1, 1000);
-    assert!(proof_of_fee::audit_qualification(alice), 1009);
+    let (_, pass) = proof_of_fee::audit_qualification(alice);
+    assert!(pass, 1009);
   }
 
   #[test(root = @ol_framework)]
@@ -193,7 +197,8 @@ module ol_framework::test_pof {
     jail::jail(&root, *alice);
     assert!(jail::is_jailed(*alice), 1006);
     // won't pass audit
-    assert!(!proof_of_fee::audit_qualification(&*alice), 1007);
+    let (_, pass) = proof_of_fee::audit_qualification(&*alice);
+    assert!(!pass, 1007);
 
   }
 
