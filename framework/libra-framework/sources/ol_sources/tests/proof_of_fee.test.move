@@ -81,12 +81,12 @@ module ol_framework::test_pof {
     let set = mock::genesis_n_vals(&root, 4);
     mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
 
-    let alice = vector::borrow(&set, 0);
+    let alice = *vector::borrow(&set, 0);
 
-    assert!(stake::is_valid(*alice), 1000);
-    assert!(!jail::is_jailed(*alice), 1001);
+    assert!(stake::is_valid(alice), 1000);
+    assert!(!jail::is_jailed(alice), 1001);
 
-    mock_good_bid(&root, alice);
+    mock_good_bid(&root, &alice);
 
     let (_, pass) = proof_of_fee::audit_qualification(alice);
     assert!(pass, 1006);
@@ -97,20 +97,20 @@ module ol_framework::test_pof {
     let set = mock::genesis_n_vals(&root, 4);
     mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
 
-    let alice = vector::borrow(&set, 0);
+    let alice = *vector::borrow(&set, 0);
 
-    assert!(!jail::is_jailed(*alice), 1001);
+    assert!(!jail::is_jailed(alice), 1001);
 
-    mock_good_bid(&root, alice);
+    mock_good_bid(&root, &alice);
 
     testnet::unset(&root);
 
-    assert!(vouch::unrelated_buddies_above_thresh(*alice, globals::get_validator_vouch_threshold()), 1001);
+    assert!(vouch::unrelated_buddies_above_thresh(alice, globals::get_validator_vouch_threshold()), 1001);
     let (_, pass) = proof_of_fee::audit_qualification(alice);
     assert!(pass, 1003);
 
-    vouch::test_set_buddies(*alice, vector::empty());
-    assert!(!vouch::unrelated_buddies_above_thresh(*alice, globals::get_validator_vouch_threshold()), 1004);
+    vouch::test_set_buddies(alice, vector::empty());
+    assert!(!vouch::unrelated_buddies_above_thresh(alice, globals::get_validator_vouch_threshold()), 1004);
     let (_, pass) = proof_of_fee::audit_qualification(alice);
     assert!(!pass, 1005);
   }
@@ -118,19 +118,19 @@ module ol_framework::test_pof {
   #[test(root = @ol_framework)]
   fun audit_no_funds (root: signer) {
     let set = mock::genesis_n_vals(&root, 4);
-    let alice = vector::borrow(&set, 0);
+    let alice = *vector::borrow(&set, 0);
 
-    assert!(!jail::is_jailed(*alice), 1001);
-    let a_sig = account::create_signer_for_test(*alice);
+    assert!(!jail::is_jailed(alice), 1001);
+    let a_sig = account::create_signer_for_test(alice);
 
     proof_of_fee::set_bid(&a_sig, 100, 10000); // 10 pct
-    let (bid, expires) = proof_of_fee::current_bid(*alice);
+    let (bid, expires) = proof_of_fee::current_bid(alice);
     assert!(bid == 100, 1001);
     assert!(expires == 10000, 1002);
 
     // NOT ENOUGH FUNDS WERE UNLOCKED
     slow_wallet::slow_wallet_epoch_drip(&root, 500);
-    let coin = slow_wallet::unlocked_amount(*alice);
+    let coin = slow_wallet::unlocked_amount(alice);
     let (r, _, _) = proof_of_fee::get_consensus_reward();
     let bid_cost = (bid * r) / 1000;
     assert!(coin < bid_cost, 1005);
@@ -144,18 +144,18 @@ module ol_framework::test_pof {
   fun audit_expired(root: signer) {
     let set = mock::genesis_n_vals(&root, 4);
     mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
-    let alice = vector::borrow(&set, 0);
+    let alice = *vector::borrow(&set, 0);
 
-    assert!(!jail::is_jailed(*alice), 1001);
+    assert!(!jail::is_jailed(alice), 1001);
 
     // initially set a good bid
-    mock_good_bid(&root, alice);
+    mock_good_bid(&root, &alice);
 
 
     // has a bid which IS expired
     // test runner is at epoch 1, they put expiry at 0.
     // TODO: Improve this test by doing more advanced epochs
-    let a_sig = account::create_signer_for_test(*alice);
+    let a_sig = account::create_signer_for_test(alice);
 
     // let this_epoch = reconfiguration::get_current_epoch();
 
@@ -168,7 +168,7 @@ module ol_framework::test_pof {
 
 
     proof_of_fee::set_bid(&a_sig, 1, 0);
-    let (bid, expires) = proof_of_fee::current_bid(*alice);
+    let (bid, expires) = proof_of_fee::current_bid(alice);
     assert!(bid == 1, 1006);
     assert!(expires == 0, 1007);
     // should NOT pass audit.
@@ -186,18 +186,18 @@ module ol_framework::test_pof {
     let set = mock::genesis_n_vals(&root, 4);
     mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
 
-    let alice = vector::borrow(&set, 0);
+    let alice = *vector::borrow(&set, 0);
 
-    assert!(!jail::is_jailed(*alice), 1001);
+    assert!(!jail::is_jailed(alice), 1001);
 
-    mock_good_bid(&root, alice);
+    mock_good_bid(&root, &alice);
 
     // EVERYTHING ABOVE HERE IS PASSING.
     // is now jailed.
-    jail::jail(&root, *alice);
-    assert!(jail::is_jailed(*alice), 1006);
+    jail::jail(&root, alice);
+    assert!(jail::is_jailed(alice), 1006);
     // won't pass audit
-    let (_, pass) = proof_of_fee::audit_qualification(&*alice);
+    let (_, pass) = proof_of_fee::audit_qualification(alice);
     assert!(!pass, 1007);
 
   }
