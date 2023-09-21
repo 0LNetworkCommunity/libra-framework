@@ -319,24 +319,20 @@ pub fn rounding_mint(session: &mut SessionExt, supply_settings: &SupplySettings)
     );
 }
 
-/// For testnet scenarios we may want to mint a minimal coin to the validators
-// this is only enabled for chain_id wich is not mainnet, OR if LIBRA_CI is set in the environment.
-// the reason we don't do this in MOVE is to be able to set this based on environments.
-// and in the move code, we want the validators to start with zero balances, for
-// maximum control of the test cases.
-pub fn mint_genesis_bootstrap_coin(session: &mut SessionExt, validators: &[Validator]) {
-    validators.iter().for_each(|v| {
-        let serialized_values = serialize_values(&vec![
-            MoveValue::Signer(AccountAddress::ZERO), // must be called by 0x0
-            MoveValue::Address(v.owner_address),
-        ]);
 
-        exec_function(
-            session,
-            "infra_escrow",
-            "genesis_coin_validator",
-            vec![],
-            serialized_values,
-        );
-    });
-}
+// pub fn mint_genesis_bootstrap_coin(session: &mut SessionExt, validators: &[Validator]) {
+//     validators.iter().for_each(|v| {
+//         let serialized_values = serialize_values(&vec![
+//             MoveValue::Signer(AccountAddress::ZERO), // must be called by 0x0
+//             MoveValue::Address(v.owner_address),
+//         ]);
+
+//         exec_function(
+//             session,
+//             "infra_escrow",
+//             "genesis_coin_validator",
+//             vec![],
+//             serialized_values,
+//         );
+//     });
+// }

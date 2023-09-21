@@ -101,13 +101,19 @@ module ol_framework::infra_escrow{
     }
 
     //////// TESTNET HELPERS ////////
+    /// For testnet scenarios we may want to mint a minimal coin to the validators
+    // this is only called through genesis when using the production rust libra-genesis-tool
+    // and in the move code, we want the validators to start with zero balances
+    // and add them with mock.move when we need it.
     public fun genesis_coin_validator(root: &signer, to: address) {
       system_addresses::assert_ol(root);
       let bootstrap_amount = 10000000;
       if (infra_escrow_balance() > bootstrap_amount) {
         let c_opt = infra_pledge_withdraw(root, bootstrap_amount);
-        let coin = option::extract(&mut c_opt);
-        coin::deposit(to, coin);
+        if (option::is_some(&c_opt)) {
+          let coin = option::extract(&mut c_opt);
+          coin::deposit(to, coin);
+        };
         option::destroy_none(c_opt);
       }
     }
