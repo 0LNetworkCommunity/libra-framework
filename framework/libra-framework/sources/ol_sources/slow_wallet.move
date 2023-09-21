@@ -13,6 +13,8 @@ module ol_framework::slow_wallet {
   use ol_framework::gas_coin::GasCoin;
   use std::error;
 
+  friend ol_framework::ol_account;
+
   /// genesis failed to initialized the slow wallet registry
   const EGENESIS_ERROR: u64 = 1;
 
@@ -110,17 +112,17 @@ module ol_framework::slow_wallet {
       }
     }
 
-    /////// 0L /////////
-    // NOTE: danger, this is a private function that should only be called with account capability or VM.
-    fun decrease_unlocked_tracker(payer: address, amount: u64) acquires SlowWallet {
+    /// if a user spends/transfers unlocked coins we need to track that spend
+    public(friend) fun track_unlocked_spent(payer: address, amount: u64) acquires SlowWallet {
       let s = borrow_global_mut<SlowWallet>(payer);
       s.transferred = s.transferred + amount;
       s.unlocked = s.unlocked - amount;
     }
 
-    /////// 0L /////////
-    fun increase_unlocked_tracker(recipient: address, amount: u64) acquires SlowWallet {
-      let s = borrow_global_mut<SlowWallet>(recipient);
+    /// when a user receives unlocked coins from another user, those coins
+    /// always remain unlocked.
+    public(friend) fun track_unlocked_received(payer: address, amount: u64) acquires SlowWallet {
+      let s = borrow_global_mut<SlowWallet>(payer);
       s.unlocked = s.unlocked + amount;
     }
 

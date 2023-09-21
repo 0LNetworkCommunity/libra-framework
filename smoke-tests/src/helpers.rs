@@ -1,42 +1,28 @@
+use anyhow::Context;
 use diem_forge::DiemPublicInfo;
 use diem_sdk::rest_client::Client;
 use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib;
-use libra_types::type_extensions::client_ext::ClientExt;
+use libra_types::{type_extensions::client_ext::ClientExt, move_resource::gas_coin::SlowWalletBalance};
 
-// /// Get the balance of the 0L coin. Client methods are hardcoded for vendor
-// pub async fn get_libra_balance(
-//     client: &Client,
-//     address: AccountAddress,
-// ) -> anyhow::Result<Response<Balance>> {
-//     let resp = client
-//         .get_account_resource(address, "0x1::coin::CoinStore<0x1::gas_coin::GasCoin>")
-//         .await?;
-//     resp.and_then(|resource| {
-//         if let Some(res) = resource {
-//             let b = serde_json::from_value::<Balance>(res.data)?;
-//             Ok(b)
-//         } else {
-//             bail!("No data returned")
-//         }
-//     })
-//     // bail!("No data returned");
-// }
-
+/// Get the balance of the 0L coin
 pub async fn get_libra_balance(
     client: &Client,
     address: AccountAddress,
-) -> anyhow::Result<Vec<u64>> {
+) -> anyhow::Result<SlowWalletBalance> {
     let res = client
         .view_ext("0x1::slow_wallet::balance", None, Some(address.to_string()))
         .await?;
-    let mut move_tuple = serde_json::from_value::<Vec<String>>(res)?;
+    dbg!(&res);
 
-    let parsed = move_tuple
-        .iter_mut()
-        .filter_map(|e| e.parse::<u64>().ok())
-        .collect::<Vec<u64>>();
-    Ok(parsed)
+    let move_tuple = serde_json::from_value::<Vec<String>>(res)?;
+
+    let b = SlowWalletBalance {
+      unlocked: move_tuple[0].parse().context("no value found")?,
+      total: move_tuple[1].parse().context("no value found")?,
+    };
+
+    Ok(b)
 }
 
 pub async fn mint_libra(
