@@ -232,16 +232,18 @@ module ol_framework::test_donor_directed {
       assert!(bob_balance == 10000100, 7357006);
     }
 
-    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
-    fun dd_process_epoch_boundary(root: &signer, alice: &signer, bob: &signer, carol: &signer) {
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, marlon_rando = @0x123456)]
+    fun dd_process_epoch_boundary(root: &signer, alice: &signer, bob: &signer, carol: &signer, marlon_rando: &signer) {
       // Scenario: Alice creates a resource_account which will be a donor directed account. She will not be one of the authorities of the account.
       // only bob, carol, and dave with be authorities
 
       let vals = mock::genesis_n_vals(root, 4);
       mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
 
-      let (_, bob_balance_pre) = ol_account::balance(@0x1000b);
-      assert!(bob_balance_pre == 10000000, 7357001);
+      ol_account::create_account(root, signer::address_of(marlon_rando));
+      let (_bal, marlon_rando_balance_pre) = ol_account::balance(signer::address_of(marlon_rando));
+      assert!(marlon_rando_balance_pre == 0, 7357000);
+
 
       let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
       let donor_directed_address = signer::address_of(&resource_sig);
@@ -255,7 +257,7 @@ module ol_framework::test_donor_directed {
       // the account needs basic donor directed structs
       donor_directed::make_donor_directed(&resource_sig, vals, 2);
 
-      let uid = donor_directed::propose_payment(bob, donor_directed_address, @0x1000b, 100, b"thanks bob");
+      let uid = donor_directed::propose_payment(bob, donor_directed_address, signer::address_of(marlon_rando), 100, b"thanks marlon");
       let (found, idx, status_enum, completed) = donor_directed::get_multisig_proposal_state(donor_directed_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
@@ -265,7 +267,7 @@ module ol_framework::test_donor_directed {
       // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_directed::is_scheduled(donor_directed_address, &uid), 7357008);
 
-      let uid = donor_directed::propose_payment(carol, donor_directed_address, @0x1000b, 100, b"thanks bob");
+      let uid = donor_directed::propose_payment(carol, donor_directed_address, signer::address_of(marlon_rando), 100, b"thanks marlon");
       let (found, idx, status_enum, completed) = donor_directed::get_multisig_proposal_state(donor_directed_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
@@ -287,10 +289,9 @@ module ol_framework::test_donor_directed {
       mock::trigger_epoch(root); // into epoch 3, processes at the end of this epoch.
       mock::trigger_epoch(root); // epoch 4 should include the payment
 
+      let (_bal, marlon_rando_balance_post) = ol_account::balance(signer::address_of(marlon_rando));
 
-      let (_, bob_balance) = ol_account::balance(@0x1000b);
-      assert!(bob_balance > bob_balance_pre, 7357005);
-      assert!(bob_balance == 10000100, 7357006);
+      assert!(marlon_rando_balance_post == marlon_rando_balance_pre + 100, 7357006);
     }
 
 

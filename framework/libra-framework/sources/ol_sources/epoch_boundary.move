@@ -21,7 +21,8 @@ module diem_framework::epoch_boundary {
     use std::vector;
     use std::error;
 
-    use diem_std::debug::print;
+    // use diem_std::debug::print;
+
     friend diem_framework::block;
 
     /// how many PoF baseline rewards to we set aside for the miners.
@@ -91,11 +92,7 @@ module diem_framework::epoch_boundary {
     let i = 0;
     while (i < vector::length(&vals)) {
       let addr = vector::borrow(&vals, i);
-      print(addr);
       let (performed, _, _, _) = cases::get_validator_grade(*addr);
-      print(&performed);
-      print(&closing_epoch);
-      print(&(closing_epoch > 1));
 
       if (!performed && closing_epoch > 1) { // issues around genesis
         jail::jail(root, *addr);

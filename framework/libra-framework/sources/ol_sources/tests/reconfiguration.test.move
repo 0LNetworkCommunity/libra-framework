@@ -11,7 +11,7 @@ module ol_framework::test_reconfiguration {
   use ol_framework::proof_of_fee;
   use diem_framework::reconfiguration;
   use ol_framework::epoch_helper;
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   // Scenario: all genesis validators make it to next epoch
   #[test(root = @ol_framework)]
@@ -81,8 +81,6 @@ module ol_framework::test_reconfiguration {
       let (_, entry_fee, _ ) = proof_of_fee::get_consensus_reward();
 
       // alice doesn't get paid
-      print(&coin::balance<GasCoin>(@0x1000a) );
-      print(&coin::balance<GasCoin>(@0x1000b) );
 
       assert!(coin::balance<GasCoin>(@0x1000a) == 0, 7357005);
       // bob does
