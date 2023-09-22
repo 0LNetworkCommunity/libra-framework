@@ -42,6 +42,7 @@ module diem_framework::genesis {
     use ol_framework::fee_maker;
     use ol_framework::oracle;
     use ol_framework::vouch;
+    use ol_framework::testnet;
     //////// end 0L ////////
 
 
@@ -299,6 +300,10 @@ module diem_framework::genesis {
             register_one_genesis_validator(diem_framework, validator, false);
             vector::push_back(&mut val_addr_list, *&validator.validator_config.owner_address);
             infra_escrow::genesis_coin_validator(diem_framework, *&validator.validator_config.owner_address);
+            if (testnet::is_not_mainnet()) {
+              let sig = create_signer(validator.validator_config.owner_address);
+              proof_of_fee::set_bid(&sig, 900, 1000);
+            };
 
             i = i + 1;
         };
@@ -307,13 +312,12 @@ module diem_framework::genesis {
           vouch::vm_migrate(diem_framework, one_val, val_addr_list);
         });
 
+        if (testnet::is_not_mainnet()) {
+          let bootstrap_amount = 10000000;
+          slow_wallet::slow_wallet_epoch_drip(diem_framework, bootstrap_amount);
+        };
 
         musical_chairs::initialize(diem_framework, num_validators);
-
-        // Destroy the diem framework account's ability to mint coins now that we're done with setting up the initial
-        // validators.
-        // diem_coin::destroy_mint_cap(diem_framework);
-
         stake::on_new_epoch();
 
     }

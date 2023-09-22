@@ -117,5 +117,4 @@ module ol_framework::infra_escrow{
         option::destroy_none(c_opt);
       }
     }
-
 }
