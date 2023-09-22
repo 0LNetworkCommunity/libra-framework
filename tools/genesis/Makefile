@@ -51,8 +51,11 @@ wizard:
 stdlib:
 	cargo r -p libra-framework -- release
 
+git-fetch:
+	@echo WILL RESET GIT AND PULL LATEST COMMIT
+	git reset --hard && git pull -f
 
-testnet: stdlib test-genesis node
+testnet: git-fetch stdlib test-genesis node
 
 test-node:
 	cargo r -p libra -- node
