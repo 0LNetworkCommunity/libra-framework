@@ -56,7 +56,7 @@ module diem_framework::epoch_boundary {
 
           // validators get the gross amount of the reward, since they already paid to enter. This results in a net payment equivalidant to the
           // clearing_price.
-          process_outgoing_validators(root, &mut all_fees, nominal_reward_to_vals);
+          process_outgoing_validators(root, &mut all_fees, nominal_reward_to_vals, closing_epoch);
 
           // since we reserved some fees to go to the oracle miners
           // we take the clearing_price, since it is the equivalent of what a
@@ -81,7 +81,7 @@ module diem_framework::epoch_boundary {
   /// jail the non performant
   /// NOTE: receives from reconfiguration.move a mutable borrow of a coin to pay reward
   /// NOTE: burn remaining fees from transaction fee account happens in reconfiguration.move (it's not a validator_universe concern)
-  fun process_outgoing_validators(root: &signer, reward_budget: &mut Coin<GasCoin>, reward_per: u64): vector<address> {
+  fun process_outgoing_validators(root: &signer, reward_budget: &mut Coin<GasCoin>, reward_per: u64, closing_epoch: u64): vector<address> {
     system_addresses::assert_ol(root);
 
 
@@ -93,7 +93,7 @@ module diem_framework::epoch_boundary {
       let addr = vector::borrow(&vals, i);
       let (performed, _, _, _) = cases::get_validator_grade(*addr);
 
-      if (!performed) {
+      if (!performed && closing_epoch > 1) { // issues around genesis
         jail::jail(root, *addr);
       } else {
         vector::push_back(&mut compliant_vals, *addr);

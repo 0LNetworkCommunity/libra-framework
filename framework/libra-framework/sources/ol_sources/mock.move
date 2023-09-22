@@ -165,6 +165,7 @@ module ol_framework::mock {
     public fun ol_initialize_coin_and_fund_vals(root: &signer, amount: u64, drip: bool) {
       system_addresses::assert_ol(root);
 
+
       let mint_cap = init_coin_impl(root);
 
       let vals = stake::get_current_validators();
@@ -196,9 +197,11 @@ module ol_framework::mock {
 
       transaction_fee::initialize_fee_collection_and_distribution(root, 0);
 
-      let initial_fees = 1000000 * 100;
+      let initial_fees = 1000000 * 100; // coin scaling * 100 coins
       let tx_fees = coin::mint(initial_fees, &mint_cap);
       transaction_fee::vm_pay_fee(root, @ol_framework, tx_fees);
+      let supply_pre = gas_coin::supply();
+      assert!(supply_pre == initial_fees, 666);
 
       mint_cap
     }
@@ -310,6 +313,22 @@ module ol_framework::mock {
     reset_val_perf_all(&root);
 
     mock_all_vals_good_performance(&root);
+  }
+
+  #[test(root = @ol_framework)]
+  fun test_initial_supply(root: &signer) {
+    // Scenario:
+    // There are two community wallets. Alice and Bob's
+    // EVE donates to both. But mostly to Alice.
+    // The Match Index, should reflect that.
+
+    let n_vals = 5;
+    let _vals = genesis_n_vals(root, n_vals); // need to include eve to init funds
+    let genesis_mint = 1000000;
+    ol_initialize_coin_and_fund_vals(root, genesis_mint, true);
+    let supply_pre = gas_coin::supply();
+    let mocked_tx_fees = 1000000 * 100;
+    assert!(supply_pre == mocked_tx_fees + (n_vals * genesis_mint), 73570001);
   }
 
 

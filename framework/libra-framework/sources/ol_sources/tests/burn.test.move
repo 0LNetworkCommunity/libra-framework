@@ -160,38 +160,50 @@ module ol_framework::test_burn {
     }
 
 
-    #[test(root = @ol_framework, alice = @0x1000a)]
-    fun epoch_fees_burn(root: &signer, alice: &signer) {
+    #[test(root = @ol_framework)]
+    fun epoch_fees_burn(root: &signer) {
       // Scenario:
-      // There are two community wallets. Alice and Bob's
-      // EVE donates to both. But mostly to Alice.
-      // The Match Index, should reflect that.
+      // the network starts.
+      // we mock some tx fees going into the collection
+      // the epoch turns and the fee account should be empty
+      // and the supply should be lower
 
       let n_vals = 5;
       let _vals = mock::genesis_n_vals(root, n_vals); // need to include eve to init funds
-      let genesis_mint = 1000000;
+      let genesis_mint = 1000000; // 1 coin per
+      let epoch_reward = genesis_mint; // just to be explicit
       mock::ol_initialize_coin_and_fund_vals(root, genesis_mint, true);
-      // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
-      mock::trigger_epoch(root);
-
       let supply_pre = gas_coin::supply();
-      assert!(supply_pre == (n_vals * genesis_mint), 73570000);
+      let mocked_tx_fees = 1000000 * 100; // 100 coins in tx fee account
+      // 105 coins total
+      assert!(supply_pre == mocked_tx_fees + (n_vals * genesis_mint), 73570001);
 
-      // put some fees in the system fee account
-      let alice_fee = 100000;
-      let c = ol_account::withdraw(alice, alice_fee);
-      transaction_fee::user_pay_fee(alice, c);
 
       let fees = transaction_fee::system_fees_collected();
-      assert!(fees == alice_fee, 73570001);
-
+      assert!(fees == mocked_tx_fees, 73570002);
+      // start at epoch 1. NOTE Validators WILL GET PAID FOR EPOCH 1
       mock::trigger_epoch(root);
-
       let fees = transaction_fee::system_fees_collected();
-      assert!(fees == 0, 73570002);
+      // There should be no fees left in tx fee wallet
+      assert!(fees == 0, 73570003);
 
-      let supply = gas_coin::supply();
-      assert!(supply == (supply_pre-alice_fee), 73570003);
+      let validator_rewards = epoch_reward * n_vals;
+
+      // of the initial supply,
+      // we expect to burn everything which was in the TX FEEs AFTER PAYING VALIDATOR REWARDS
+      let amount_burned_excess_tx_account = mocked_tx_fees - validator_rewards;
+
+      // So the current supply should be lower,
+      // The the old supply was reduced by what was burned (the excess in tx bucket)
+
+      let supply_post = gas_coin::supply();
+
+      assert!(supply_post == supply_pre - amount_burned_excess_tx_account, 73570003);
+
+      // this ALSO means that the only supply left in this example
+      // is the rewards to validators from genesis, and from epoch 1
+      assert!(supply_post == validator_rewards + (n_vals * genesis_mint), 73570003);
+
     }
 
 
