@@ -118,8 +118,6 @@ module diem_framework::epoch_boundary {
   fun process_incoming_validators(root: &signer) {
     system_addresses::assert_ol(root);
 
-
-    // TODO: this needs to be a friend function, but it's in a different namespace, so we are gating it with vm signer, which is what was done previously. Which means hacking block.move
     slow_wallet::on_new_epoch(root);
 
     let (compliant, n_seats) = musical_chairs::stop_the_music(root);
@@ -128,9 +126,6 @@ module diem_framework::epoch_boundary {
     let validators = proof_of_fee::end_epoch(root, &compliant, n_seats);
     // make sure musical chairs doesn't keep incrementing if we are persistently
     // offering more seats than can be filled
-    let filled_seats = vector::length(&validators);
-    musical_chairs::set_current_seats(root, filled_seats);
-
     let filled_seats = vector::length(&validators);
     musical_chairs::set_current_seats(root, filled_seats);
 
