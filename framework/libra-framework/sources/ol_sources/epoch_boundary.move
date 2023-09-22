@@ -74,6 +74,10 @@ module diem_framework::epoch_boundary {
           coin::user_burn(all_fees);
         };
 
+        // drip coins
+        slow_wallet::on_new_epoch(root);
+
+        // ======= THIS IS APPROXIMATELY THE BOUNDARY =====
         process_incoming_validators(root);
 
         subsidize_from_infra_escrow(root);
@@ -117,8 +121,6 @@ module diem_framework::epoch_boundary {
 
   fun process_incoming_validators(root: &signer) {
     system_addresses::assert_ol(root);
-
-    slow_wallet::on_new_epoch(root);
 
     let (compliant, n_seats) = musical_chairs::stop_the_music(root);
 

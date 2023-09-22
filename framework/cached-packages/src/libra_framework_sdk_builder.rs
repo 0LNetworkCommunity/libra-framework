@@ -486,12 +486,6 @@ pub enum EntryFunctionCall {
         auth_key: AccountAddress,
     },
 
-    /// Creates an account by sending an initial amount of GAS to it.
-    OlAccountCreateUserAccountByCoin {
-        auth_key: AccountAddress,
-        amount: u64,
-    },
-
     /// Set whether `account` can receive direct transfers of coins that they have not explicitly registered to receive.
     OlAccountSetAllowDirectCoinTransfers {
         allow: bool,
@@ -908,9 +902,6 @@ impl EntryFunctionCall {
             } => multisig_account_vote_transanction(multisig_account, sequence_number, approved),
             ObjectTransferCall { object, to } => object_transfer_call(object, to),
             OlAccountCreateAccount { auth_key } => ol_account_create_account(auth_key),
-            OlAccountCreateUserAccountByCoin { auth_key, amount } => {
-                ol_account_create_user_account_by_coin(auth_key, amount)
-            }
             OlAccountSetAllowDirectCoinTransfers { allow } => {
                 ol_account_set_allow_direct_coin_transfers(allow)
             }
@@ -2309,28 +2300,6 @@ pub fn ol_account_create_account(auth_key: AccountAddress) -> TransactionPayload
     ))
 }
 
-/// Creates an account by sending an initial amount of GAS to it.
-pub fn ol_account_create_user_account_by_coin(
-    auth_key: AccountAddress,
-    amount: u64,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("ol_account").to_owned(),
-        ),
-        ident_str!("create_user_account_by_coin").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&auth_key).unwrap(),
-            bcs::to_bytes(&amount).unwrap(),
-        ],
-    ))
-}
-
 /// Set whether `account` can receive direct transfers of coins that they have not explicitly registered to receive.
 pub fn ol_account_set_allow_direct_coin_transfers(allow: bool) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
@@ -3532,19 +3501,6 @@ mod decoder {
         }
     }
 
-    pub fn ol_account_create_user_account_by_coin(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::OlAccountCreateUserAccountByCoin {
-                auth_key: bcs::from_bytes(script.args().get(0)?).ok()?,
-                amount: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
     pub fn ol_account_set_allow_direct_coin_transfers(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -4051,10 +4007,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "ol_account_create_account".to_string(),
             Box::new(decoder::ol_account_create_account),
-        );
-        map.insert(
-            "ol_account_create_user_account_by_coin".to_string(),
-            Box::new(decoder::ol_account_create_user_account_by_coin),
         );
         map.insert(
             "ol_account_set_allow_direct_coin_transfers".to_string(),
