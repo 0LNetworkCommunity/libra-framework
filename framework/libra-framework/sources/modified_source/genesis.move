@@ -313,11 +313,6 @@ module diem_framework::genesis {
           vouch::vm_migrate(diem_framework, one_val, val_addr_list);
         });
 
-        if (testnet::is_not_mainnet()) {
-          let bootstrap_amount = 10000000;
-          slow_wallet::slow_wallet_epoch_drip(diem_framework, bootstrap_amount);
-        };
-
         musical_chairs::initialize(diem_framework, num_validators);
         stake::on_new_epoch();
 

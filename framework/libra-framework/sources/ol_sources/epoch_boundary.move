@@ -122,7 +122,6 @@ module diem_framework::epoch_boundary {
 
     let (compliant, n_seats) = musical_chairs::stop_the_music(root);
 
-
     let validators = proof_of_fee::end_epoch(root, &compliant, n_seats);
     // make sure musical chairs doesn't keep incrementing if we are persistently
     // offering more seats than can be filled
