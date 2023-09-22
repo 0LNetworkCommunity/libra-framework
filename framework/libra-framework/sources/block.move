@@ -155,7 +155,11 @@ module diem_framework::block {
         state_storage::on_new_block(reconfiguration::current_epoch());
 
         if (timestamp - reconfiguration::last_reconfiguration_time() >= block_metadata_ref.epoch_interval) {
-            epoch_boundary::epoch_boundary(&vm, reconfiguration::get_current_epoch(), get_current_block_height());
+            epoch_boundary::epoch_boundary(
+              &vm,
+              reconfiguration::get_current_epoch(),
+              round
+            );
             // TODO check this order
             reconfiguration::reconfigure();
 
