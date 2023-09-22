@@ -299,10 +299,11 @@ module diem_framework::genesis {
             let validator = vector::borrow(&validators, i);
             register_one_genesis_validator(diem_framework, validator, false);
             vector::push_back(&mut val_addr_list, *&validator.validator_config.owner_address);
-            infra_escrow::genesis_coin_validator(diem_framework, *&validator.validator_config.owner_address);
+            // 0x1 code account is calling this contract but the 0x0 VM address is authorized for infra escrow.
+            infra_escrow::genesis_coin_validator(&create_signer(@0x0), *&validator.validator_config.owner_address);
             if (testnet::is_not_mainnet()) {
               let sig = create_signer(validator.validator_config.owner_address);
-              proof_of_fee::set_bid(&sig, 900, 1000);
+              proof_of_fee::set_bid(&sig, 05, 1000);
             };
 
             i = i + 1;

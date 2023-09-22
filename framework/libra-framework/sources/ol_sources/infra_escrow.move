@@ -19,11 +19,13 @@ module ol_framework::infra_escrow{
     use diem_framework::transaction_fee;
     use std::fixed_point32;
     use std::signer;
+    use std::error;
     // use diem_std::debug::print;
 
     friend ol_framework::epoch_boundary;
     friend diem_framework::genesis;
 
+    const EGENESIS_REWARD: u64 = 0;
     /// for use on genesis, creates the infra escrow pledge policy struct
     public fun initialize(vm: &signer) {
         // NOTE: THIS MUST BE THE 0x0 address, because on epoch boundary it is that address @vm_reserved which will be calling the functions.
@@ -110,10 +112,11 @@ module ol_framework::infra_escrow{
       let bootstrap_amount = 10000000;
       if (infra_escrow_balance() > bootstrap_amount) {
         let c_opt = infra_pledge_withdraw(root, bootstrap_amount);
-        if (option::is_some(&c_opt)) {
+        assert!(option::is_some(&c_opt), error::invalid_state(EGENESIS_REWARD));
+        // if (option::is_some(&c_opt)) {
           let coin = option::extract(&mut c_opt);
           coin::deposit(to, coin);
-        };
+        // };
         option::destroy_none(c_opt);
       }
     }
