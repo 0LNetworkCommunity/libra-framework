@@ -23,6 +23,7 @@ module ol_framework::mock {
   use ol_framework::epoch_helper;
   use ol_framework::musical_chairs;
   use ol_framework::globals;
+  use diem_framework::block;
   // use diem_framework::chain_status;
   // use diem_std::debug::print;
 
@@ -264,7 +265,7 @@ module ol_framework::mock {
     // transactions or operations can happen after the reconfig.
     public fun trigger_epoch(root: &signer) {
         let old_epoch = epoch_helper::get_current_epoch();
-        epoch_boundary::ol_reconfigure_for_test(root, reconfiguration::get_current_epoch());
+        epoch_boundary::ol_reconfigure_for_test(root, reconfiguration::get_current_epoch(), block::get_current_block_height());
         timestamp::fast_forward_seconds(EPOCH_DURATION);
         reconfiguration::reconfigure_for_test();
         assert!(epoch_helper::get_current_epoch() > old_epoch, EDID_NOT_ADVANCE_EPOCH);

@@ -11,6 +11,7 @@ module ol_framework::test_slow_wallet {
   use ol_framework::epoch_boundary;
   use diem_framework::reconfiguration;
   use diem_framework::coin;
+  use diem_framework::block;
   use std::vector;
   // use diem_std::debug::print;
 
@@ -113,7 +114,7 @@ module ol_framework::test_slow_wallet {
     mock::ol_initialize_coin(&root);
     let a = vector::borrow(&set, 0);
     assert!(slow_wallet::unlocked_amount(*a) == 0, 735701);
-    epoch_boundary::ol_reconfigure_for_test(&root, reconfiguration::get_current_epoch())
+    epoch_boundary::ol_reconfigure_for_test(&root, reconfiguration::get_current_epoch(), block::get_current_block_height())
 
   }
 

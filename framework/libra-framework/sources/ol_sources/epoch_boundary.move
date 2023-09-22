@@ -15,6 +15,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::tower_state;
     use ol_framework::infra_escrow;
     use ol_framework::oracle;
+    use ol_framework::testnet;
     use diem_framework::transaction_fee;
     use diem_framework::system_addresses;
     use diem_framework::coin::{Self, Coin};
@@ -36,7 +37,7 @@ module diem_framework::epoch_boundary {
     // Contains all of 0L's business logic for end of epoch.
     // This removed business logic from reconfiguration.move
     // and prevents dependency cycling.
-    public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64) {
+    public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64, block_height: u64) {
         system_addresses::assert_ol(root);
         // bill root service fees;
         root_service_billing(root);
@@ -57,7 +58,7 @@ module diem_framework::epoch_boundary {
 
           // validators get the gross amount of the reward, since they already paid to enter. This results in a net payment equivalidant to the
           // clearing_price.
-          process_outgoing_validators(root, &mut all_fees, nominal_reward_to_vals, closing_epoch);
+          process_outgoing_validators(root, &mut all_fees, nominal_reward_to_vals, closing_epoch, block_height);
 
           // since we reserved some fees to go to the oracle miners
           // we take the clearing_price, since it is the equivalent of what a
@@ -82,7 +83,7 @@ module diem_framework::epoch_boundary {
   /// jail the non performant
   /// NOTE: receives from reconfiguration.move a mutable borrow of a coin to pay reward
   /// NOTE: burn remaining fees from transaction fee account happens in reconfiguration.move (it's not a validator_universe concern)
-  fun process_outgoing_validators(root: &signer, reward_budget: &mut Coin<GasCoin>, reward_per: u64, closing_epoch: u64): vector<address> {
+  fun process_outgoing_validators(root: &signer, reward_budget: &mut Coin<GasCoin>, reward_per: u64, closing_epoch: u64, block_height: u64): vector<address> {
     system_addresses::assert_ol(root);
 
 
@@ -92,7 +93,11 @@ module diem_framework::epoch_boundary {
     let i = 0;
     while (i < vector::length(&vals)) {
       let addr = vector::borrow(&vals, i);
+
       let (performed, _, _, _) = cases::get_validator_grade(*addr);
+      // Failover. if we had too few blocks in an epoch, everyone should pass
+      // except for testing
+      if (!testnet::is_testnet() && (block_height < 1000)) performed = true;
 
       if (!performed && closing_epoch > 1) { // issues around genesis
         jail::jail(root, *addr);
@@ -151,11 +156,11 @@ module diem_framework::epoch_boundary {
 
 
   #[test_only]
-  public fun ol_reconfigure_for_test(vm: &signer, closing_epoch: u64) {
+  public fun ol_reconfigure_for_test(vm: &signer, closing_epoch: u64, block_height: u64) {
       use diem_framework::system_addresses;
 
       system_addresses::assert_ol(vm);
-      epoch_boundary(vm, closing_epoch);
+      epoch_boundary(vm, closing_epoch, block_height);
   }
 
 }
