@@ -114,8 +114,18 @@ module ol_framework::slow_wallet {
       }
     }
 
+    /// wrapper to both attempt to adjust the slow wallet tracker
+    /// on the sender and recipient.
+    /// if either account is not a slow wallet no tracking
+    /// will happen on that account.
+    /// Sould never abort.
+    public(friend) fun maybe_track_slow_transfer(payer: address, recipient: address, amount: u64) acquires SlowWallet {
+      maybe_track_unlocked_spent(payer, amount);
+      maybe_track_unlocked_spent(recipient, amount);
+    }
     /// if a user spends/transfers unlocked coins we need to track that spend
-    public(friend) fun track_unlocked_spent(payer: address, amount: u64) acquires SlowWallet {
+    fun maybe_track_unlocked_spent(payer: address, amount: u64) acquires SlowWallet {
+      if (!exists<SlowWallet>(payer)) return;
       let s = borrow_global_mut<SlowWallet>(payer);
 
       s.transferred = s.transferred + amount;
@@ -124,7 +134,8 @@ module ol_framework::slow_wallet {
 
     /// when a user receives unlocked coins from another user, those coins
     /// always remain unlocked.
-    public(friend) fun track_unlocked_received(recipient: address, amount: u64) acquires SlowWallet {
+    fun maybe_track_unlocked_received(recipient: address, amount: u64) acquires SlowWallet {
+      if (!exists<SlowWallet>(recipient)) return;
       let state = borrow_global_mut<SlowWallet>(recipient);
       let total = coin::balance<GasCoin>(recipient);
 

@@ -153,7 +153,9 @@ module ol_framework::ol_account {
         assert!(coin::is_account_registered<GasCoin>(to), error::invalid_argument(EACCOUNT_NOT_REGISTERED_FOR_GAS));
 
         coin::transfer<GasCoin>(sender, to, amount);
-        // TODO: UPDATE SLOW WALLET TRACKER HERE
+
+        // must track the slow wallet on both sides of the transfer
+        slow_wallet::maybe_track_slow_transfer(signer::address_of(sender), to, amount);
 
         cumulative_deposits::maybe_update_deposit(signer::address_of(sender), to, amount);
     }
