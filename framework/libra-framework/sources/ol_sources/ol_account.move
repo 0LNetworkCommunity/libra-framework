@@ -66,7 +66,7 @@ module ol_framework::ol_account {
 
     /// Creates an account by sending an initial amount of GAS to it.
     public entry fun create_user_account_by_coin(sender: &signer, auth_key: address, amount: u64) {
-        let limit = get_slow_limit(signer::address_of(sender));
+        let limit = slow_wallet::unlocked_amount(signer::address_of(sender));
         assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
 
         create_impl(auth_key);
@@ -145,7 +145,7 @@ module ol_framework::ol_account {
             return
         };
 
-        let limit = get_slow_limit(signer::address_of(sender));
+        let limit = slow_wallet::unlocked_amount(signer::address_of(sender));
         assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
 
         // Resource accounts can be created without registering them to receive GAS.
@@ -164,7 +164,7 @@ module ol_framework::ol_account {
     public fun withdraw(sender: &signer, amount: u64): Coin<GasCoin> {
         // TODO: UPDATE SLOW WALLET TRACKER HERE
 
-        let limit = get_slow_limit(signer::address_of(sender));
+        let limit = slow_wallet::unlocked_amount(signer::address_of(sender));
         assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
 
         coin::withdraw<GasCoin>(sender, amount)
@@ -198,16 +198,6 @@ module ol_framework::ol_account {
     public fun balance(addr: address): (u64, u64) {
       slow_wallet::balance(addr)
     }
-
-    // TODO: this is redundant
-    fun get_slow_limit(addr: address): u64 {
-      let full_balance = coin::balance<GasCoin>(addr);
-      // TODO: check if recipient is a donor directed account.
-      if (false) { return full_balance };
-      let unlocked = slow_wallet::unlocked_amount(addr);
-      unlocked
-    }
-
 
     // #[test_only]
     // /// Batch version of transfer_coins.
