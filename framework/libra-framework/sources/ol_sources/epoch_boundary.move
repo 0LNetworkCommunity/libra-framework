@@ -34,6 +34,29 @@ module diem_framework::epoch_boundary {
     const ETX_FEES_NOT_INITIALIZED: u64 = 0;
 
 
+    // I just checked in, to see what condition my condition was in.
+    struct BoundaryStatus {
+      billing_success: bool,
+      process_dd_accounts_success: bool,
+      set_fee_makers_success: bool,
+      tower_state_success: bool,
+      system_fees_collected: u64,
+      nominal_reward_to_vals: u64,
+      clearing_price: u64,
+      // Process Outgoing
+      process_outgoing_success: bool,
+      outgoing_vals: vector<address>,
+      oracle_budget: u64,
+      oracle_pay_success: bool,
+      epoch_burn_fees: u64,
+      epoch_burn_success: bool,
+      slow_wallet_drip: bool,
+      // Process Incoming
+      process_incoming_success: bool,
+      infra_subsize_amount: u64,
+      infra_subsizize_success: bool,
+    }
+
     // Contains all of 0L's business logic for end of epoch.
     // This removed business logic from reconfiguration.move
     // and prevents dependency cycling.
