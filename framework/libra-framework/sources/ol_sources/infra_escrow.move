@@ -109,7 +109,7 @@ module ol_framework::infra_escrow{
     // and add them with mock.move when we need it.
     public fun genesis_coin_validator(root: &signer, to: address) {
       system_addresses::assert_ol(root);
-      let bootstrap_amount = 10000000;
+      let bootstrap_amount = 1000000000;
       if (infra_escrow_balance() > bootstrap_amount) {
         let c_opt = infra_pledge_withdraw(root, bootstrap_amount);
         assert!(option::is_some(&c_opt), error::invalid_state(EGENESIS_REWARD));
