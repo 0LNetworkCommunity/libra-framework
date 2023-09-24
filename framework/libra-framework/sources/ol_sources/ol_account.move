@@ -196,15 +196,22 @@ module ol_framework::ol_account {
         coin::withdraw<GasCoin>(sender, amount)
     }
 
-    public(friend) fun vm_transfer(vm: &signer, from: address, to: address, amount: u64) {
+    /// vm can transfer between account to settle.
+    /// this is used at epoch boundary operations when the vm signer is available.
+    /// returns the actual amount transferred, and whether that amount was the
+    /// whole amount expected to transfer.
+    /// (amount_transferred, success)
+    public(friend) fun vm_transfer(vm: &signer, from: address, to: address, amount: u64): (u64, bool) {
       system_addresses::assert_ol(vm);
+      let amount_transferred = 0;
       // should not halt
-      if (!coin::is_account_registered<GasCoin>(to)) return;
-      if(amount > coin::balance<GasCoin>(from)) return;
+      if (!coin::is_account_registered<GasCoin>(to)) return (0, false);
+      if(amount > coin::balance<GasCoin>(from)) return (0, false);
 
       let coin_option = coin::vm_withdraw<GasCoin>(vm, from, amount);
       if (option::is_some(&coin_option)) {
         let c = option::extract(&mut coin_option);
+        amount_transferred = coin::value(&c);
         coin::deposit(to, c);
       };
 
@@ -212,8 +219,10 @@ module ol_framework::ol_account {
 
       // transfers which use VM authority (e.g. donor directed accounts)
       // should also track the recipient's slow wallet unlock counter.
-      slow_wallet::maybe_track_slow_transfer(from, to, amount);
+      slow_wallet::maybe_track_slow_transfer(from, to, amount_transferred);
 
+      // how much was actually extracted, and was that equal to the amount expected
+      (amount_transferred, amount_transferred == amount)
     }
 
     // public fun withdraw_with_capability(cap: &WithdrawCapability, amount: u64): Coin<GasCoin> {

@@ -40,7 +40,10 @@ module diem_framework::epoch_boundary {
       security_bill_amount: u64,
       security_bill_success: bool,
 
-      process_dd_accounts_success: bool,
+      dd_accounts_count: u64,
+      dd_accounts_amount: u64,
+      dd_accounts_success: bool,
+
       set_fee_makers_success: bool,
       tower_state_success: bool,
       system_fees_collected: u64,
@@ -66,7 +69,11 @@ module diem_framework::epoch_boundary {
           security_bill_count: 0,
           security_bill_amount: 0,
           security_bill_success: false,
-          process_dd_accounts_success: false,
+
+          dd_accounts_count: 0,
+          dd_accounts_amount: 0,
+          dd_accounts_success: false,
+
           set_fee_makers_success: false,
           tower_state_success: false,
           system_fees_collected: 0,
@@ -98,7 +105,11 @@ module diem_framework::epoch_boundary {
         // bill root service fees;
         root_service_billing(root, status);
         // run the transactions of donor directed accounts
-        donor_directed::process_donor_directed_accounts(root, closing_epoch);
+        let (count, amount, success) = donor_directed::process_donor_directed_accounts(root, closing_epoch);
+        status.dd_accounts_count = count;
+        status.dd_accounts_amount = amount;
+        status.dd_accounts_success = success;
+
         // reset fee makers tracking
         fee_maker::epoch_reset_fee_maker(root);
         // randomize the Tower/Oracle difficulty
