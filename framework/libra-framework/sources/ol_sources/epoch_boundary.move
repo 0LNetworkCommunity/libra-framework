@@ -59,16 +59,19 @@ module diem_framework::epoch_boundary {
       slow_wallet_drip: bool,
       // Process Incoming
       outgoing_compliant_count: u64,
+
       incoming_seats_offered: u64,
       incoming_filled_seats: u64,
-      incoming_expected_vals: vector<address>,
-      incoming_post_failover_check: vector<address>,
-      incoming_actual_vals: vector<address>,
-      incoming_reconfig_success: bool,
-
+      incoming_proposed_new_validators: vector<address>,
+      incoming_all_bidders: vector<address>,
+      incoming_only_qualified_bidders: vector<address>,
       incoming_fees: u64,
       incoming_fees_success: bool,
 
+
+      incoming_post_failover_check: vector<address>,
+      incoming_actual_vals: vector<address>,
+      incoming_reconfig_success: bool,
 
       infra_subsize_amount: u64,
       infra_subsizize_success: bool,
@@ -100,16 +103,18 @@ module diem_framework::epoch_boundary {
           slow_wallet_drip: false,
           // Process Incoming
           outgoing_compliant_count: 0,
+
           incoming_seats_offered: 0,
           incoming_filled_seats: 0,
-          incoming_expected_vals: vector::empty(),
-          incoming_post_failover_check: vector::empty(),
-          incoming_actual_vals: vector::empty(),
-          incoming_reconfig_success: false,
-
+          incoming_proposed_new_validators: vector::empty(),
+          incoming_all_bidders: vector::empty(),
+          incoming_only_qualified_bidders: vector::empty(),
           incoming_fees: 0,
           incoming_fees_success: false,
 
+          incoming_post_failover_check: vector::empty(),
+          incoming_actual_vals: vector::empty(),
+          incoming_reconfig_success: false,
 
           infra_subsize_amount: 0,
           infra_subsizize_success: false,
@@ -222,8 +227,12 @@ module diem_framework::epoch_boundary {
     status.outgoing_compliant_count = vector::length(&compliant);
     status.incoming_seats_offered = n_seats;
     // check amount of fees expected
-    let proposed_new_validators = proof_of_fee::end_epoch(root, &compliant, n_seats);
-    status.incoming_expected_vals = proposed_new_validators;
+    let (proposed_new_validators, all_bidders, only_qualified_bidders, actually_paid, fee_success) = proof_of_fee::end_epoch(root, &compliant, n_seats);
+    status.incoming_proposed_new_validators = proposed_new_validators;
+    status.incoming_all_bidders = all_bidders;
+    status.incoming_only_qualified_bidders = only_qualified_bidders;
+    status.incoming_fees = actually_paid;
+    status.incoming_fees_success = fee_success;
 
     // showtime! try to reconfigure
     let (actual_set, post_failover_check, success) = stake::maybe_reconfigure(root, proposed_new_validators);

@@ -101,22 +101,29 @@ module ol_framework::proof_of_fee {
   }
 
   /// consolidates all the logic for the epoch boundary
-  // includes getting the sorted bids
-  // filling the seats (determined by MusicalChairs), and getting a price.
-  // and finally charging the validators for their bid (everyone pays the lowest)
+  /// includes getting the sorted bids
+  /// filling the seats (determined by MusicalChairs), and getting a price.
+  /// and finally charging the validators for their bid (everyone pays the lowest)
+  /// for audit instrumentation returns: auction winners,  all the bidders, (including not-qualified), and all qualified bidders.
+  /// we also return actual fees charged, and if the fees billed the expected price
+  /// (auction_winners, all_bidders, only_qualified_bidders, actually_paid, fee_success)
   public fun end_epoch(
     vm: &signer,
     outgoing_compliant_set: &vector<address>,
     n_musical_chairs: u64
-  ): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
+  ): (vector<address>, vector<address>, vector<address>, u64, bool) acquires ProofOfFeeAuction, ConsensusReward {
       system_addresses::assert_ol(vm);
 
-      let sorted_bidders = get_bidders(false);
-      let (auction_winners, price) = fill_seats_and_get_price(vm, n_musical_chairs, &sorted_bidders, outgoing_compliant_set);
+      let all_bidders = get_bidders(false);
+      let only_qualified_bidders = get_bidders(true);
+      let (auction_winners, price) = fill_seats_and_get_price(vm, n_musical_chairs, &all_bidders, outgoing_compliant_set);
 
-      transaction_fee::vm_multi_pay_fee(vm, &auction_winners, price);
+      let actually_paid = transaction_fee::vm_multi_pay_fee(vm, &auction_winners, price);
 
-      auction_winners
+      let expected_fees = vector::length(&auction_winners) * price;
+
+      let fee_success = actually_paid == expected_fees;
+      (auction_winners, all_bidders, only_qualified_bidders, actually_paid, fee_success )
   }
 
 
