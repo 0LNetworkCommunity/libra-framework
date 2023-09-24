@@ -26,6 +26,7 @@ module diem_framework::stake {
     use std::vector;
     use diem_std::bls12381;
     use diem_std::table::Table;
+    use diem_std::comparator;
 
     use diem_framework::diem_coin::DiemCoin;
     use diem_framework::account;
@@ -35,12 +36,8 @@ module diem_framework::stake {
     use diem_framework::system_addresses;
     use diem_framework::chain_status;
 
-
     use ol_framework::slow_wallet;
     use ol_framework::testnet;
-    // use std::fixed_point32::{Self, FixedPoint32};
-    // use ol_framework::ol_account;
-    // use diem_std::debug::print;
 
     friend diem_framework::block;
     friend diem_framework::genesis;
@@ -1212,24 +1209,25 @@ module diem_framework::stake {
         // };
     }
 
-    public(friend) fun ol_on_new_epoch(root: &signer, list: vector<address>) acquires StakePool, ValidatorConfig, ValidatorPerformance, ValidatorSet {
+    /// DANGER: belt and suspenders critical mutations
+    /// Called on epoch boundary to reconfigure
+    /// No change may happen due to failover rules.
+    /// Returns instrumentation for audits: if what the validator set was, which validators qualified after failover rules, if the new list sucessfully matches the actual validators after reconfiguration(actual_validator_set, qualified_on_failover, success)
+    public(friend) fun maybe_reconfigure(root: &signer, proposed_validators: vector<address>): (vector<address>, vector<address>, bool) acquires StakePool, ValidatorConfig, ValidatorPerformance, ValidatorSet {
 
 
-        // will update the stake of active validators.
         // NOTE: ol does not use the pending, and pending inactive lists.
-        // critical mutation, belt and suspenders
-        try_bulk_update(root, list);
+        // DANGER: critical mutation: belt and suspenders
+        //////// RECONFIGURE ////////
+        let (qualified_on_failover, _success) = try_bulk_update(root, proposed_validators);
 
         let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
         let validator_perf = borrow_global_mut<ValidatorPerformance>(@diem_framework);
 
+        let validator_set_sanity = vector::empty<address>();
 
-        // Officially deactivate all pending_inactive validators. They will now no longer receive rewards.
-        // validator_set.pending_inactive = vector::empty();
-        // validator_set.total_joining_power = 0;
+        ///// UPDATE VALIDATOR PERFORMANCE
 
-
-        // Update validator indices, reset performance scores, and renew lockups.
         validator_perf.validators = vector::empty();
 
 
@@ -1253,6 +1251,8 @@ module diem_framework::stake {
             let validator_info = vector::borrow_mut(&mut validator_set.active_validators, validator_index);
             validator_info.config.validator_index = validator_index;
             let validator_config = borrow_global_mut<ValidatorConfig>(validator_info.addr);
+
+            vector::push_back(&mut validator_set_sanity, validator_info.addr);
             validator_config.validator_index = validator_index;
 
             // reset performance scores.
@@ -1264,19 +1264,38 @@ module diem_framework::stake {
             validator_index = validator_index + 1;
         };
 
+      let finally_the_validators = get_current_validators();
+      let success_sanity = comparator::is_equal(
+          &comparator::compare(&proposed_validators, &validator_set_sanity)
+      );
+      let success_current = comparator::is_equal(
+        &comparator::compare(&proposed_validators, &finally_the_validators)
+      );
+
+      (finally_the_validators, qualified_on_failover, success_sanity && success_current)
     }
 
     /////// 0L ///////
-    // Critical mutation. Using belt and suspenders
-    fun try_bulk_update(root: &signer, list: vector<address>) acquires StakePool, ValidatorConfig, ValidatorSet, ValidatorPerformance {
-      if (signer::address_of(root) != @ol_framework) return;
+    /// we attempt to change the validator set
+    /// it is no guaranteed that it will change
+    /// we check our "failover rules" here
+    /// which establishes minimum amount of vals for a viable network
+    /// Critical mutation. Using belt and suspenders
+    /// returns for audit instrumentation: what was the qualified list
+    /// of validators, and if our configurations available matched the
+    /// the list (qualified list, successs)
+    fun try_bulk_update(root: &signer, list: vector<address>): (vector<address>, bool) acquires StakePool, ValidatorConfig, ValidatorSet, ValidatorPerformance {
+      system_addresses::assert_ol(root);
 
-      let list = check_failover_rules(list);
+      let qualified_list = check_failover_rules(list);
 
-      let (list_info, _voting_power) = make_validator_set_config(&list);
+      let (list_info, _voting_power) = make_validator_set_config(&qualified_list);
 
       // mutations happen in private function
-      maybe_set_next_validators(root, list_info);
+      bulk_set_next_validators(root, list_info);
+
+      let success = vector::length(&qualified_list) == vector::length(&list_info);
+      (qualified_list, success)
     }
 
     #[test_only]
@@ -1337,12 +1356,12 @@ module diem_framework::stake {
     #[test_only]
     public fun test_set_next_vals(root: &signer, list: vector<ValidatorInfo>) acquires ValidatorSet {
       system_addresses::assert_ol(root);
-      maybe_set_next_validators(root, list);
+      bulk_set_next_validators(root, list);
     }
 
     /// sets the global state for the next epoch validators
     /// belt and suspenders, private function is authorized. Test functions also authorized.
-    fun maybe_set_next_validators(root: &signer, list: vector<ValidatorInfo>) acquires ValidatorSet {
+    fun bulk_set_next_validators(root: &signer, list: vector<ValidatorInfo>) acquires ValidatorSet {
       if (signer::address_of(root) != @ol_framework) return;
 
       let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);

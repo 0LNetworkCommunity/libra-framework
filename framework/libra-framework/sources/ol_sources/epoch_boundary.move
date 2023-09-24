@@ -60,10 +60,15 @@ module diem_framework::epoch_boundary {
       // Process Incoming
       outgoing_compliant_count: u64,
       incoming_seats_offered: u64,
-      incoming_vals: vector<address>,
+      incoming_filled_seats: u64,
+      incoming_expected_vals: vector<address>,
+      incoming_post_failover_check: vector<address>,
+      incoming_actual_vals: vector<address>,
+      incoming_reconfig_success: bool,
+
       incoming_fees: u64,
       incoming_fees_success: bool,
-      reconfig_success: bool,
+
 
       infra_subsize_amount: u64,
       infra_subsizize_success: bool,
@@ -96,10 +101,15 @@ module diem_framework::epoch_boundary {
           // Process Incoming
           outgoing_compliant_count: 0,
           incoming_seats_offered: 0,
-          incoming_vals: vector::empty(),
+          incoming_filled_seats: 0,
+          incoming_expected_vals: vector::empty(),
+          incoming_post_failover_check: vector::empty(),
+          incoming_actual_vals: vector::empty(),
+          incoming_reconfig_success: false,
+
           incoming_fees: 0,
           incoming_fees_success: false,
-          reconfig_success: false,
+
 
           infra_subsize_amount: 0,
           infra_subsizize_success: false,
@@ -212,14 +222,19 @@ module diem_framework::epoch_boundary {
     status.outgoing_compliant_count = vector::length(&compliant);
     status.incoming_seats_offered = n_seats;
     // check amount of fees expected
-    let validators = proof_of_fee::end_epoch(root, &compliant, n_seats);
+    let proposed_new_validators = proof_of_fee::end_epoch(root, &compliant, n_seats);
+    status.incoming_expected_vals = proposed_new_validators;
+
+    // showtime! try to reconfigure
+    let (actual_set, post_failover_check, success) = stake::maybe_reconfigure(root, proposed_new_validators);
+    status.incoming_post_failover_check = post_failover_check;
+    status.incoming_reconfig_success = success;
+
     // make sure musical chairs doesn't keep incrementing if we are persistently
     // offering more seats than can be filled
-    let filled_seats = vector::length(&validators);
+    let filled_seats = vector::length(&actual_set);
+    status.incoming_filled_seats = filled_seats;
     musical_chairs::set_current_seats(root, filled_seats);
-
-    // check for reconfiguration success
-    stake::ol_on_new_epoch(root, validators);
 
   }
 
