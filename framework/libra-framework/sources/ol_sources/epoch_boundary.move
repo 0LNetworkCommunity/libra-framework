@@ -35,8 +35,11 @@ module diem_framework::epoch_boundary {
 
 
     // I just checked in, to see what condition my condition was in.
-    struct BoundaryStatus {
-      billing_success: bool,
+    struct BoundaryStatus has key {
+      security_bill_count: u64,
+      security_bill_amount: u64,
+      security_bill_success: bool,
+
       process_dd_accounts_success: bool,
       set_fee_makers_success: bool,
       tower_state_success: bool,
@@ -57,13 +60,43 @@ module diem_framework::epoch_boundary {
       infra_subsizize_success: bool,
     }
 
+    public fun initialize(framework: &signer) {
+      if (!exists<BoundaryStatus>(@ol_framework)){
+        move_to(framework, BoundaryStatus {
+          security_bill_count: 0,
+          security_bill_amount: 0,
+          security_bill_success: false,
+          process_dd_accounts_success: false,
+          set_fee_makers_success: false,
+          tower_state_success: false,
+          system_fees_collected: 0,
+          nominal_reward_to_vals: 0,
+          clearing_price: 0,
+          // Process Outgoing
+          process_outgoing_success: false,
+          outgoing_vals: vector::empty(),
+          oracle_budget: 0,
+          oracle_pay_success: false,
+          epoch_burn_fees: 0,
+          epoch_burn_success: false,
+          slow_wallet_drip: false,
+          // Process Incoming
+          process_incoming_success: false,
+          infra_subsize_amount: 0,
+          infra_subsizize_success: false,
+        });
+      }
+    }
+
     // Contains all of 0L's business logic for end of epoch.
     // This removed business logic from reconfiguration.move
     // and prevents dependency cycling.
-    public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64, epoch_round: u64) {
+    public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64, epoch_round: u64) acquires BoundaryStatus {
         system_addresses::assert_ol(root);
+
+        let status = borrow_global_mut<BoundaryStatus>(@ol_framework);
         // bill root service fees;
-        root_service_billing(root);
+        root_service_billing(root, status);
         // run the transactions of donor directed accounts
         donor_directed::process_donor_directed_accounts(root, closing_epoch);
         // reset fee makers tracking
@@ -169,13 +202,16 @@ module diem_framework::epoch_boundary {
   }
 
   // all services the root collective security is billing for
-  fun root_service_billing(vm: &signer) {
-    safe::root_security_fee_billing(vm);
+  fun root_service_billing(vm: &signer, status: &mut BoundaryStatus) {
+    let (security_bill_count, security_bill_amount, security_bill_success) = safe::root_security_fee_billing(vm);
+    status.security_bill_count = security_bill_count;
+    status.security_bill_amount = security_bill_amount;
+    status.security_bill_success = security_bill_success;
   }
 
 
   #[test_only]
-  public fun ol_reconfigure_for_test(vm: &signer, closing_epoch: u64, epoch_round: u64) {
+  public fun ol_reconfigure_for_test(vm: &signer, closing_epoch: u64, epoch_round: u64) acquires BoundaryStatus {
       use diem_framework::system_addresses;
 
       system_addresses::assert_ol(vm);

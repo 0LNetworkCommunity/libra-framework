@@ -43,6 +43,7 @@ module diem_framework::genesis {
     use ol_framework::oracle;
     use ol_framework::vouch;
     use ol_framework::testnet;
+    use ol_framework::epoch_boundary;
     //////// end 0L ////////
 
 
@@ -158,6 +159,7 @@ module diem_framework::genesis {
         safe::initialize(&diem_framework_account);
         donor_directed::initialize(&diem_framework_account);
         epoch_helper::initialize(&diem_framework_account);
+        epoch_boundary::initialize(&diem_framework_account);
         burn::initialize(&diem_framework_account);
         match_index::initialize(&diem_framework_account);
         fee_maker::initialize(&diem_framework_account);
