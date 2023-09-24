@@ -58,7 +58,13 @@ module diem_framework::epoch_boundary {
       epoch_burn_success: bool,
       slow_wallet_drip: bool,
       // Process Incoming
-      process_incoming_success: bool,
+      outgoing_compliant_count: u64,
+      incoming_seats_offered: u64,
+      incoming_vals: vector<address>,
+      incoming_fees: u64,
+      incoming_fees_success: bool,
+      reconfig_success: bool,
+
       infra_subsize_amount: u64,
       infra_subsizize_success: bool,
     }
@@ -88,7 +94,13 @@ module diem_framework::epoch_boundary {
           epoch_burn_success: false,
           slow_wallet_drip: false,
           // Process Incoming
-          process_incoming_success: false,
+          outgoing_compliant_count: 0,
+          incoming_seats_offered: 0,
+          incoming_vals: vector::empty(),
+          incoming_fees: 0,
+          incoming_fees_success: false,
+          reconfig_success: false,
+
           infra_subsize_amount: 0,
           infra_subsizize_success: false,
         });
@@ -115,6 +127,20 @@ module diem_framework::epoch_boundary {
         // randomize the Tower/Oracle difficulty
         tower_state::reconfig(root);
 
+        settle_accounts(root, closing_epoch, epoch_round, status);
+
+        // drip coins
+        slow_wallet::on_new_epoch(root);
+
+        // ======= THIS IS APPROXIMATELY THE BOUNDARY =====
+        process_incoming_validators(root, status);
+
+        subsidize_from_infra_escrow(root);
+  }
+
+  // TODO: instrument all of this
+  /// withdraw coins and settle accounts for validators and oracles
+  fun settle_accounts(root: &signer, closing_epoch: u64, epoch_round: u64, _status: &mut BoundaryStatus) {
         assert!(transaction_fee::is_fees_collection_enabled(), error::invalid_state(ETX_FEES_NOT_INITIALIZED));
 
         if (transaction_fee::system_fees_collected() > 0) {
@@ -140,15 +166,8 @@ module diem_framework::epoch_boundary {
           // there might be some dust, that should get burned
           coin::user_burn(all_fees);
         };
+  }
 
-        // drip coins
-        slow_wallet::on_new_epoch(root);
-
-        // ======= THIS IS APPROXIMATELY THE BOUNDARY =====
-        process_incoming_validators(root);
-
-        subsidize_from_infra_escrow(root);
-    }
 
   /// process the payments for performant validators
   /// jail the non performant
@@ -186,17 +205,20 @@ module diem_framework::epoch_boundary {
     return compliant_vals
   }
 
-  fun process_incoming_validators(root: &signer) {
+  fun process_incoming_validators(root: &signer, status: &mut BoundaryStatus) {
     system_addresses::assert_ol(root);
 
     let (compliant, n_seats) = musical_chairs::stop_the_music(root);
-
+    status.outgoing_compliant_count = vector::length(&compliant);
+    status.incoming_seats_offered = n_seats;
+    // check amount of fees expected
     let validators = proof_of_fee::end_epoch(root, &compliant, n_seats);
     // make sure musical chairs doesn't keep incrementing if we are persistently
     // offering more seats than can be filled
     let filled_seats = vector::length(&validators);
     musical_chairs::set_current_seats(root, filled_seats);
 
+    // check for reconfiguration success
     stake::ol_on_new_epoch(root, validators);
 
   }
