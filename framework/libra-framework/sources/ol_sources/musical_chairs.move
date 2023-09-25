@@ -94,12 +94,15 @@ module ol_framework::musical_chairs {
 
         // Conditions under which seats should be one more than the number of compliant nodes(<= 5%)
         // Sad case. If we are not getting compliance, need to ratchet down the offer of seats in next epoch.
+        // See below find_safe_set_size, how we determine what that number should be
         if (non_compliance_pct > 5) {
             chairs.seats_offered = num_compliant_nodes;
         } else {
             // Ok case. If it's between 0 and 5% then we accept that margin as if it was fully compliant
             chairs.seats_offered = chairs.seats_offered + 1;
         };
+
+
 
         (compliant_vals, chairs.seats_offered)
     }
@@ -171,6 +174,7 @@ module ol_framework::musical_chairs {
 
         (compliant_nodes, non_compliant_nodes, ratio)
     }
+
 
     //////// GETTERS ////////
 

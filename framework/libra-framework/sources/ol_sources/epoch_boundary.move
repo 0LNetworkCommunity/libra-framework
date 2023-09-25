@@ -233,8 +233,8 @@ module diem_framework::epoch_boundary {
     status.incoming_compliant = compliant;
     status.incoming_seats_offered = n_seats;
     // check amount of fees expected
-    let (seated_vals, auction_winners, all_bidders, only_qualified_bidders, fees_paid, fee_success) = proof_of_fee::end_epoch(root, &compliant, n_seats);
-    status.incoming_filled_seats = seated_vals;
+    let (auction_winners, all_bidders, only_qualified_bidders, fees_paid, fee_success) = proof_of_fee::end_epoch(root, &compliant, n_seats);
+    status.incoming_filled_seats = vector::length(&auction_winners);
     status.incoming_all_bidders = all_bidders;
     status.incoming_only_qualified_bidders = only_qualified_bidders;
     status.incoming_auction_winners = auction_winners;

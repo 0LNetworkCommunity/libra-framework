@@ -107,8 +107,8 @@ module ol_framework::proof_of_fee {
   public fun end_epoch(
     vm: &signer,
     outgoing_compliant_set: &vector<address>,
-    n_musical_chairs: u64
-  ): (u64, vector<address>, vector<address>, vector<address>, u64, bool) acquires ProofOfFeeAuction, ConsensusReward {
+    final_set_size: u64
+  ): (vector<address>, vector<address>, vector<address>, u64, bool) acquires ProofOfFeeAuction, ConsensusReward {
       system_addresses::assert_ol(vm);
 
       let all_bidders = get_bidders(false);
@@ -116,7 +116,6 @@ module ol_framework::proof_of_fee {
       // The set size as determined by musical chairs is a target size
       // but the actual final size depends on how much can we expand the set
       // without adding too many unproven nodes (which we don't know if they are prepared to validate, and risk halting th network).
-      let final_set_size = find_safe_set_size(n_musical_chairs, &all_bidders);
 
       // This is the core of the mechanism, the uniform price auction
       // the winners of the auction will be the validator set.
@@ -128,7 +127,7 @@ module ol_framework::proof_of_fee {
       let expected_fees = vector::length(&auction_winners) * price;
 
       let fee_success = actually_paid == expected_fees;
-      (final_set_size, auction_winners, all_bidders, only_qualified_bidders, actually_paid, fee_success )
+      (auction_winners, all_bidders, only_qualified_bidders, actually_paid, fee_success )
   }
 
 
@@ -251,28 +250,7 @@ module ol_framework::proof_of_fee {
   // After more experience in the wild, the network may decide to
   // limit bid retracting.
 
-
   // The Validator must qualify on a number of metrics: have funds in their Unlocked account to cover bid, have miniumum viable vouches, and not have been jailed in the previous round.
-
-  fun find_safe_set_size(target_set_size: u64, proven_nodes: &vector<address>): u64 {
-
-    // check the max size of the validator set.
-    // there may be too few "proven" validators to fill the set with 2/3rds proven nodes of the stated set_size.
-    let proven_len = vector::length(proven_nodes);
-
-    // The happy case is that there are more bidding validators than there are seats.
-    // it also means that there are more bidding validators, than there are "proven" validatos from the previous set.
-    // So,  check if the proven len plus unproven quota will
-    // be greater than the set size.
-    // Otherwise the set will need to be SMALLER THAN MUSICAL CHAIRS ESTABLISHED. We don't want simply fill the seats that the musical chairs alogrithm decided on, if those seats are not proven to be ready to validate.
-
-    let expand_by_one_third = proven_len / 2;
-    let safe_set_size = proven_len + expand_by_one_third;
-
-    let final_set_size = if (safe_set_size < target_set_size) safe_set_size else target_set_size;
-
-    final_set_size
-  }
 
   /// Showtime.
   /// This is where we take all the bidders and seat them.

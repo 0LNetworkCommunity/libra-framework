@@ -11,6 +11,7 @@ module ol_framework::test_reconfiguration {
   use ol_framework::proof_of_fee;
   use diem_framework::reconfiguration;
   use ol_framework::epoch_helper;
+
   // use diem_std::debug::print;
 
   // Scenario: all genesis validators make it to next epoch
