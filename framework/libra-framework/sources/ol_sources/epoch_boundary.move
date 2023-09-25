@@ -233,16 +233,16 @@ module diem_framework::epoch_boundary {
     status.incoming_compliant = compliant;
     status.incoming_seats_offered = n_seats;
     // check amount of fees expected
-    let (seated_vals, proposed_new_validators, all_bidders, only_qualified_bidders, fees_paid, fee_success) = proof_of_fee::end_epoch(root, &compliant, n_seats);
+    let (seated_vals, auction_winners, all_bidders, only_qualified_bidders, fees_paid, fee_success) = proof_of_fee::end_epoch(root, &compliant, n_seats);
     status.incoming_filled_seats = seated_vals;
     status.incoming_all_bidders = all_bidders;
     status.incoming_only_qualified_bidders = only_qualified_bidders;
-    status.incoming_auction_winners = proposed_new_validators;
+    status.incoming_auction_winners = auction_winners;
     status.incoming_fees = fees_paid;
     status.incoming_fees_success = fee_success;
 
     // showtime! try to reconfigure
-    let (actual_set, post_failover_check, success) = stake::maybe_reconfigure(root, proposed_new_validators);
+    let (actual_set, post_failover_check, success) = stake::maybe_reconfigure(root, auction_winners);
     status.incoming_post_failover_check = post_failover_check;
     status.incoming_actual_vals = actual_set;
     status.incoming_reconfig_success = success;
