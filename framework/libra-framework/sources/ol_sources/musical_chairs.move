@@ -77,6 +77,13 @@ module ol_framework::musical_chairs {
 
         let num_compliant_nodes = vector::length(&compliant_vals);
 
+        // catch failure mode
+        // mostly for testnets
+        if (chairs.seats_offered < 4) {
+          chairs.seats_offered = 4;
+          return (compliant_vals, chairs.seats_offered)
+        };
+
         // failover, there should not be more compliant nodes than seats that were offered.
         // return with no changes
         if (num_compliant_nodes > chairs.seats_offered) {
@@ -101,7 +108,6 @@ module ol_framework::musical_chairs {
             // Ok case. If it's between 0 and 5% then we accept that margin as if it was fully compliant
             chairs.seats_offered = chairs.seats_offered + 1;
         };
-
 
 
         (compliant_vals, chairs.seats_offered)
