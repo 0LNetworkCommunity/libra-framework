@@ -29,7 +29,7 @@ module ol_framework::test_stake {
       i = i + 1;
     };
 
-    let (cfg_list, _weight) = stake::test_make_val_cfg(&new_list);
+    let (cfg_list, _weight, _) = stake::test_make_val_cfg(&new_list);
 
 
     stake::test_set_next_vals(&root, cfg_list);

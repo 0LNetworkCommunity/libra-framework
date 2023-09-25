@@ -1212,26 +1212,38 @@ module diem_framework::stake {
     /// DANGER: belt and suspenders critical mutations
     /// Called on epoch boundary to reconfigure
     /// No change may happen due to failover rules.
-    /// Returns instrumentation for audits: if what the validator set was, which validators qualified after failover rules, if the new list sucessfully matches the actual validators after reconfiguration(actual_validator_set, qualified_on_failover, success)
-    public(friend) fun maybe_reconfigure(root: &signer, proposed_validators: vector<address>): (vector<address>, vector<address>, bool) acquires StakePool, ValidatorConfig, ValidatorPerformance, ValidatorSet {
+    /// Returns instrumentation for audits: if what the validator set was, which validators qualified after failover rules, a list of validators which had missing configs and were excluded, if the new list sucessfully matches the actual validators after reconfiguration(actual_validator_set, qualified_on_failover, missing_configs, success)
+    public(friend) fun maybe_reconfigure(root: &signer, proposed_validators: vector<address>): (vector<address>, vector<address>, vector<address>, bool) acquires StakePool, ValidatorConfig, ValidatorPerformance, ValidatorSet {
 
 
         // NOTE: ol does not use the pending, and pending inactive lists.
         // DANGER: critical mutation: belt and suspenders
+
+        /// we attempt to change the validator set
+        /// it is no guaranteed that it will change
+        /// we check our "failover rules" here
+        /// which establishes minimum amount of vals for a viable network
+
         //////// RECONFIGURE ////////
-        let (qualified_on_failover, _success) = try_bulk_update(root, proposed_validators);
+
+        let qualified_on_failover = check_failover_rules(proposed_validators);
+
+        let (list_info, _voting_power, missing_configs) = make_validator_set_config(&qualified_on_failover);
+        // mutations happen in private function
+        bulk_set_next_validators(root, list_info);
 
         let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
         let validator_perf = borrow_global_mut<ValidatorPerformance>(@diem_framework);
 
         let validator_set_sanity = vector::empty<address>();
 
+
         ///// UPDATE VALIDATOR PERFORMANCE
 
         validator_perf.validators = vector::empty();
 
 
-        let vlen = vector::length(&validator_set.active_validators);
+        let vlen = vector::length(&proposed_validators);
         let validator_index = 0;
         while ({
             spec {
@@ -1272,7 +1284,7 @@ module diem_framework::stake {
         &comparator::compare(&proposed_validators, &finally_the_validators)
       );
 
-      (finally_the_validators, qualified_on_failover, success_sanity && success_current)
+      (finally_the_validators, qualified_on_failover, missing_configs, success_sanity && success_current)
     }
 
     /////// 0L ///////
@@ -1282,31 +1294,35 @@ module diem_framework::stake {
     /// which establishes minimum amount of vals for a viable network
     /// Critical mutation. Using belt and suspenders
     /// returns for audit instrumentation: what was the qualified list
-    /// of validators, and if our configurations available matched the
+    /// of validators, list of validators that had missing configurations, and if our configurations available matched the
     /// the list (qualified list, successs)
-    fun try_bulk_update(root: &signer, list: vector<address>): (vector<address>, bool) acquires StakePool, ValidatorConfig, ValidatorSet, ValidatorPerformance {
-      system_addresses::assert_ol(root);
+    // fun try_bulk_update(root: &signer, list: vector<address>): (vector<address>, vector<address>, bool) acquires StakePool, ValidatorConfig, ValidatorSet, ValidatorPerformance {
+    //   system_addresses::assert_ol(root);
 
-      let qualified_list = check_failover_rules(list);
+    //   let qualified_list = check_failover_rules(list);
 
-      let (list_info, _voting_power) = make_validator_set_config(&qualified_list);
+    //   let (list_info, _voting_power, missing_configs) = make_validator_set_config(&qualified_list);
 
-      // mutations happen in private function
-      bulk_set_next_validators(root, list_info);
+    //   // mutations happen in private function
+    //   bulk_set_next_validators(root, list_info);
 
-      let success = vector::length(&qualified_list) == vector::length(&list_info);
-      (qualified_list, success)
-    }
+    //   let success = vector::length(&qualified_list) == vector::length(&list_info);
+    //   (qualified_list, missing_configs, success)
+    // }
 
     #[test_only]
-    public fun test_make_val_cfg(list: &vector<address>): (vector<ValidatorInfo>, u128) acquires StakePool, ValidatorConfig {
+    public fun test_make_val_cfg(list: &vector<address>): (vector<ValidatorInfo>, u128, vector<address>) acquires StakePool, ValidatorConfig {
       make_validator_set_config(list)
     }
 
-    fun make_validator_set_config(list: &vector<address>): (vector<ValidatorInfo>, u128) acquires StakePool, ValidatorConfig  {
+    /// Make the active valiators list
+    /// returns: the list of validators, and the total voting power (1 per validator), and also the list of validators that did not have valid configs
+    fun make_validator_set_config(list: &vector<address>): (vector<ValidatorInfo>, u128, vector<address>) acquires StakePool, ValidatorConfig  {
 
       let next_epoch_validators = vector::empty();
       let vlen = vector::length(list);
+
+      let missing_configs = vector::empty();
 
       let total_voting_power = 0;
       let i = 0;
@@ -1322,6 +1338,7 @@ module diem_framework::stake {
 
 
           if (!exists<ValidatorConfig>(pool_address)) {
+            vector::push_back(&mut missing_configs, pool_address);
             i = i + 1;
             continue
           }; // belt and suspenders
@@ -1329,6 +1346,7 @@ module diem_framework::stake {
           let validator_config = borrow_global_mut<ValidatorConfig>(pool_address);
 
           if (!exists<StakePool>(pool_address)) {
+            vector::push_back(&mut missing_configs, pool_address);
             i = i + 1;
             continue
           }; // belt and suspenders
@@ -1350,7 +1368,7 @@ module diem_framework::stake {
           i = i + 1;
       };
 
-      (next_epoch_validators, total_voting_power)
+      (next_epoch_validators, total_voting_power, missing_configs)
     }
 
     #[test_only]
@@ -1362,7 +1380,7 @@ module diem_framework::stake {
     /// sets the global state for the next epoch validators
     /// belt and suspenders, private function is authorized. Test functions also authorized.
     fun bulk_set_next_validators(root: &signer, list: vector<ValidatorInfo>) acquires ValidatorSet {
-      if (signer::address_of(root) != @ol_framework) return;
+      system_addresses::assert_ol(root);
 
       let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
       validator_set.active_validators = list;
