@@ -65,6 +65,7 @@ module diem_framework::epoch_boundary {
       incoming_proposed_new_validators: vector<address>,
       incoming_all_bidders: vector<address>,
       incoming_only_qualified_bidders: vector<address>,
+      incoming_final_set_size: u64,
       incoming_fees: u64,
       incoming_fees_success: bool,
 
@@ -109,6 +110,7 @@ module diem_framework::epoch_boundary {
           incoming_proposed_new_validators: vector::empty(),
           incoming_all_bidders: vector::empty(),
           incoming_only_qualified_bidders: vector::empty(),
+          incoming_final_set_size: 0,
           incoming_fees: 0,
           incoming_fees_success: false,
 
@@ -227,7 +229,8 @@ module diem_framework::epoch_boundary {
     status.outgoing_compliant_count = vector::length(&compliant);
     status.incoming_seats_offered = n_seats;
     // check amount of fees expected
-    let (proposed_new_validators, all_bidders, only_qualified_bidders, actually_paid, fee_success) = proof_of_fee::end_epoch(root, &compliant, n_seats);
+    let (final_set_size, proposed_new_validators, all_bidders, only_qualified_bidders, actually_paid, fee_success) = proof_of_fee::end_epoch(root, &compliant, n_seats);
+    status.incoming_final_set_size = final_set_size;
     status.incoming_proposed_new_validators = proposed_new_validators;
     status.incoming_all_bidders = all_bidders;
     status.incoming_only_qualified_bidders = only_qualified_bidders;

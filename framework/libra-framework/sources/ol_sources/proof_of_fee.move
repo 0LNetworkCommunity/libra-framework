@@ -101,14 +101,14 @@ module ol_framework::proof_of_fee {
   /// Includes: getting the sorted bids,
   /// filling the seats (determined by MusicalChairs), and getting a price.
   /// and finally charging the validators for their bid (everyone pays the lowest)
-  /// for audit instrumentation returns: auction winners,  all the bidders, (including not-qualified), and all qualified bidders.
+  /// for audit instrumentation returns: final set size, auction winners, all the bidders, (including not-qualified), and all qualified bidders.
   /// we also return actual fees charged, and if the fees billed the expected price
-  /// (auction_winners, all_bidders, only_qualified_bidders, actually_paid, fee_success)
+  /// (final_set_size, auction_winners, all_bidders, only_qualified_bidders, actually_paid, fee_success)
   public fun end_epoch(
     vm: &signer,
     outgoing_compliant_set: &vector<address>,
     n_musical_chairs: u64
-  ): (vector<address>, vector<address>, vector<address>, u64, bool) acquires ProofOfFeeAuction, ConsensusReward {
+  ): (u64, vector<address>, vector<address>, vector<address>, u64, bool) acquires ProofOfFeeAuction, ConsensusReward {
       system_addresses::assert_ol(vm);
 
       let all_bidders = get_bidders(false);
@@ -121,14 +121,14 @@ module ol_framework::proof_of_fee {
       // This is the core of the mechanism, the uniform price auction
       // the winners of the auction will be the validator set.
       // other lists are created for audit purposes of the BoundaryStatus
-      let (auction_winners, price) = fill_seats_and_get_price(vm, final_set_size, &all_bidders, outgoing_compliant_set);
+      let (auction_winners, price, _proven, _unproven) = fill_seats_and_get_price(vm, final_set_size, &all_bidders, outgoing_compliant_set);
 
       let actually_paid = transaction_fee::vm_multi_pay_fee(vm, &auction_winners, price);
 
       let expected_fees = vector::length(&auction_winners) * price;
 
       let fee_success = actually_paid == expected_fees;
-      (auction_winners, all_bidders, only_qualified_bidders, actually_paid, fee_success )
+      (final_set_size, auction_winners, all_bidders, only_qualified_bidders, actually_paid, fee_success )
   }
 
 
@@ -279,13 +279,18 @@ module ol_framework::proof_of_fee {
   /// We also need to check here for the safe size of the validator set.
   /// This function assumes we have already filtered out ineligible validators.
   /// but we will check again here.
+  /// we return:
+  // a. the list of winning validators (the validator set)
+  // b. the clearing price paid
+  // c. the list of proven nodes added, for audit and instrumentation
+  // d. the list of unproven, for audit and instrumentation
   public fun fill_seats_and_get_price(
     vm: &signer,
     final_set_size: u64,
     sorted_vals_by_bid: &vector<address>,
     proven_nodes: &vector<address>
-  ): (vector<address>, u64) acquires ProofOfFeeAuction, ConsensusReward {
-    if (signer::address_of(vm) != @ol_framework) return (vector::empty<address>(), 0);
+  ): (vector<address>, u64, vector<address>, vector<address>) acquires ProofOfFeeAuction, ConsensusReward {
+    system_addresses::assert_ol(vm);
 
     // Now we can seat the validators based on the algo:
     // A. seat the highest bidding 2/3 proven nodes of previous epoch
@@ -333,7 +338,7 @@ module ol_framework::proof_of_fee {
 
     // We failed to seat anyone.
     // let epoch_boundary.move deal with this.
-    if (vector::is_empty(&proposed_validators)) return (proposed_validators, 0);
+    if (vector::is_empty(&proposed_validators)) return (proposed_validators, 0, audit_add_proven_vals, audit_add_unproven_vals);
 
     // Find the clearing price which all validators will pay
     let lowest_bidder = vector::borrow(&proposed_validators, vector::length(&proposed_validators) - 1);
@@ -344,7 +349,7 @@ module ol_framework::proof_of_fee {
     let cr = borrow_global_mut<ConsensusReward>(@ol_framework);
     cr.clearing_price = lowest_bid_pct;
 
-    return (proposed_validators, lowest_bid_pct)
+    return (proposed_validators, lowest_bid_pct, audit_add_proven_vals, audit_add_unproven_vals)
   }
 
   #[view]

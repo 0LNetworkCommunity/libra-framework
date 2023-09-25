@@ -333,7 +333,7 @@ module ol_framework::test_pof {
     let sorted = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted) == vector::length(&set), 1003);
 
-    let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&root, len, &sorted, &sorted);
+    let (seats, _p, _, _) = proof_of_fee::fill_seats_and_get_price(&root, len, &sorted, &sorted);
 
     assert!(vector::contains(&seats, vector::borrow(&set, 0)), 1004);
 
@@ -359,7 +359,7 @@ module ol_framework::test_pof {
     assert!(vector::length(&sorted) == vector::length(&set), 1003);
 
     let len = vector::length(&set);
-    let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&root, len, &sorted, &sorted);
+    let (seats, _p, _, _) = proof_of_fee::fill_seats_and_get_price(&root, len, &sorted, &sorted);
 
     assert!(vector::contains(&seats, vector::borrow(&set, 0)), 1004);
 
@@ -407,7 +407,7 @@ module ol_framework::test_pof {
     assert!(vector::length(&set) == 5, 1004);
     assert!(vector::length(&sorted) == 4, 1005);
 
-    let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&root, vector::length(&set), &sorted, &sorted);
+    let (seats, _p, _, _) = proof_of_fee::fill_seats_and_get_price(&root, vector::length(&set), &sorted, &sorted);
 
     // EVE is not in the seats
     assert!(!vector::contains(&seats, vector::borrow(&set, 4)), 1004);
@@ -444,7 +444,7 @@ module ol_framework::test_pof {
 
 
     let set_size = 3;
-    let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &sorted);
+    let (seats, _p, _, _) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &sorted);
 
     assert!(vector::length(&set) == 5, 1004);
     assert!(vector::length(&seats) == 3, 1005);
@@ -507,7 +507,7 @@ module ol_framework::test_pof {
     vector::push_back(&mut proven_vals, *vector::borrow(&set, 4));
     vector::push_back(&mut proven_vals, *vector::borrow(&set, 5));
 
-    let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &proven_vals);
+    let (seats, _p, _, _) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &proven_vals);
 
     assert!(vector::length(&set) == 6, 1004);
     assert!(vector::length(&seats) == 6, 1005);
@@ -571,7 +571,7 @@ module ol_framework::test_pof {
     let (frank_bid, _) = proof_of_fee::current_bid(Frank);
     assert!(alice_bid < frank_bid, 1002);
 
-    let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &proven_vals);
+    let (seats, _p, _, _) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &proven_vals);
 
     assert!(vector::length(&set) == 6, 1003);
     assert!(vector::length(&seats) == 4, 1004);
