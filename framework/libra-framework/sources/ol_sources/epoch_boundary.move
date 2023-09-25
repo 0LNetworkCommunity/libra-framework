@@ -7,7 +7,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::gas_coin::GasCoin;
     use ol_framework::rewards;
     use ol_framework::jail;
-    use ol_framework::cases;
+    use ol_framework::grade;
     use ol_framework::safe;
     use ol_framework::burn;
     use ol_framework::donor_directed;
@@ -201,7 +201,7 @@ module diem_framework::epoch_boundary {
     while (i < vector::length(&vals)) {
       let addr = vector::borrow(&vals, i);
 
-      let (performed, _, _, _) = cases::get_validator_grade(*addr);
+      let (performed, _, _, _) = grade::get_validator_grade(*addr);
       // Failover. if we had too few blocks in an epoch, everyone should pass
       // except for testing
       if (!testnet::is_testnet() && (epoch_round < 1000)) performed = true;

@@ -2,7 +2,7 @@ module ol_framework::musical_chairs {
     use diem_framework::chain_status;
     use diem_framework::system_addresses;
     use diem_framework::stake;
-    use ol_framework::cases;
+    use ol_framework::grade;
     use std::fixed_point32;
     use std::vector;
     // use diem_std::debug::print;
@@ -135,7 +135,9 @@ module ol_framework::musical_chairs {
         let i = 0;
         while (i < val_set_len) {
             let addr = *vector::borrow(&validators, i);
-            if (cases::get_case(addr) == 1) {
+            let (compliant, _, _, _) = grade::get_validator_grade(addr);
+
+            if (compliant) {
                 vector::push_back(&mut compliant_nodes, addr);
             } else {
                 vector::push_back(&mut non_compliant_nodes, addr);

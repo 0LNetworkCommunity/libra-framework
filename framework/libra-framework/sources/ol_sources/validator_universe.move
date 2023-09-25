@@ -11,7 +11,7 @@ module diem_framework::validator_universe {
   use std::vector;
   use diem_framework::system_addresses;
   use ol_framework::jail;
-  use ol_framework::cases;
+  use ol_framework::grade;
   use ol_framework::vouch;
   use diem_framework::stake;
 
@@ -88,11 +88,10 @@ module diem_framework::validator_universe {
   fun maybe_jail_impl(root: &signer, validator: address): bool {
     system_addresses::assert_ol(root);
 
-    if (
+    let (compliant, _, _, _) = grade::get_validator_grade(validator);
       // TODO check if there are issues with config. belt and suspenders
-      cases::get_case(validator) == 4
 
-    ) {
+    if (compliant) {
       jail::jail(root, validator);
       return true
     };
