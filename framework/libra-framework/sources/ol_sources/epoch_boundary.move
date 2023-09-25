@@ -73,7 +73,7 @@ module diem_framework::epoch_boundary {
 
       // reconfiguration
       incoming_post_failover_check: vector<address>,
-      incomeing_vals_missing_configs: vector<address>,
+      incoming_vals_missing_configs: vector<address>,
       incoming_actual_vals: vector<address>,
       incoming_final_set_size: u64,
       incoming_reconfig_success: bool,
@@ -119,7 +119,7 @@ module diem_framework::epoch_boundary {
           incoming_fees_success: false,
 
           incoming_post_failover_check: vector::empty(),
-          incomeing_vals_missing_configs: vector::empty(),
+          incoming_vals_missing_configs: vector::empty(),
           incoming_actual_vals: vector::empty(),
           incoming_reconfig_success: false,
 
@@ -246,7 +246,7 @@ module diem_framework::epoch_boundary {
     // showtime! try to reconfigure
     let (actual_set, post_failover_check, vals_missing_configs, success) = stake::maybe_reconfigure(root, auction_winners);
     status.incoming_post_failover_check = post_failover_check;
-    status.incomeing_vals_missing_configs = vals_missing_configs;
+    status.incoming_vals_missing_configs = vals_missing_configs;
     status.incoming_actual_vals = actual_set;
     status.incoming_reconfig_success = success;
 
