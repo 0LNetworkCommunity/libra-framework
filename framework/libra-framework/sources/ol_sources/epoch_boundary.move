@@ -241,14 +241,14 @@ module diem_framework::epoch_boundary {
     // showtime! try to reconfigure
     let (actual_set, post_failover_check, success) = stake::maybe_reconfigure(root, proposed_new_validators);
     status.incoming_post_failover_check = post_failover_check;
+    status.incoming_actual_vals = actual_set;
     status.incoming_reconfig_success = success;
 
     // make sure musical chairs doesn't keep incrementing if we are persistently
     // offering more seats than can be filled
     let filled_seats = vector::length(&actual_set);
-    status.incoming_filled_seats = filled_seats;
     musical_chairs::set_current_seats(root, filled_seats);
-
+    status.incoming_filled_seats = filled_seats;
   }
 
   // set up rewards subsidy for coming epoch
