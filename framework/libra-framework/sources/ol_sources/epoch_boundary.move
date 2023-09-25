@@ -58,8 +58,8 @@ module diem_framework::epoch_boundary {
       epoch_burn_success: bool,
       slow_wallet_drip: bool,
       // Process Incoming
-      outgoing_compliant_count: u64,
-
+      incoming_compliant: vector<address>,
+      incoming_compliant_count: u64,
       incoming_seats_offered: u64,
       incoming_filled_seats: u64,
       incoming_proposed_new_validators: vector<address>,
@@ -103,8 +103,8 @@ module diem_framework::epoch_boundary {
           epoch_burn_success: false,
           slow_wallet_drip: false,
           // Process Incoming
-          outgoing_compliant_count: 0,
-
+          incoming_compliant: vector::empty(),
+          incoming_compliant_count: 0,
           incoming_seats_offered: 0,
           incoming_filled_seats: 0,
           incoming_proposed_new_validators: vector::empty(),
@@ -226,15 +226,16 @@ module diem_framework::epoch_boundary {
     system_addresses::assert_ol(root);
 
     let (compliant, n_seats) = musical_chairs::stop_the_music(root);
-    status.outgoing_compliant_count = vector::length(&compliant);
+    status.incoming_compliant_count = vector::length(&compliant);
+    status.incoming_compliant = compliant;
     status.incoming_seats_offered = n_seats;
     // check amount of fees expected
-    let (final_set_size, proposed_new_validators, all_bidders, only_qualified_bidders, actually_paid, fee_success) = proof_of_fee::end_epoch(root, &compliant, n_seats);
+    let (final_set_size, proposed_new_validators, all_bidders, only_qualified_bidders, fees_paid, fee_success) = proof_of_fee::end_epoch(root, &compliant, n_seats);
     status.incoming_final_set_size = final_set_size;
-    status.incoming_proposed_new_validators = proposed_new_validators;
     status.incoming_all_bidders = all_bidders;
     status.incoming_only_qualified_bidders = only_qualified_bidders;
-    status.incoming_fees = actually_paid;
+    status.incoming_proposed_new_validators = proposed_new_validators;
+    status.incoming_fees = fees_paid;
     status.incoming_fees_success = fee_success;
 
     // showtime! try to reconfigure

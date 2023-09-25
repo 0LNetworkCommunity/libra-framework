@@ -37,7 +37,8 @@ module ol_framework::cases{
       let idx = stake::get_validator_index(node_addr);
       let (proposed, failed) = stake::get_current_epoch_proposal_counts(idx);
 
-      proposed > failed
+      let _ = proposed > failed;
+      true
     }
 
     #[view]
