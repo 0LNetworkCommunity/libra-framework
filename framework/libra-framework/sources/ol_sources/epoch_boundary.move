@@ -230,8 +230,8 @@ module diem_framework::epoch_boundary {
     status.incoming_compliant = compliant;
     status.incoming_seats_offered = n_seats;
     // check amount of fees expected
-    let (final_set_size, proposed_new_validators, all_bidders, only_qualified_bidders, fees_paid, fee_success) = proof_of_fee::end_epoch(root, &compliant, n_seats);
-    status.incoming_final_set_size = final_set_size;
+    let (seated_vals, proposed_new_validators, all_bidders, only_qualified_bidders, fees_paid, fee_success) = proof_of_fee::end_epoch(root, &compliant, n_seats);
+    status.incoming_filled_seats = seated_vals;
     status.incoming_all_bidders = all_bidders;
     status.incoming_only_qualified_bidders = only_qualified_bidders;
     status.incoming_proposed_new_validators = proposed_new_validators;
@@ -246,9 +246,9 @@ module diem_framework::epoch_boundary {
 
     // make sure musical chairs doesn't keep incrementing if we are persistently
     // offering more seats than can be filled
-    let filled_seats = vector::length(&actual_set);
-    musical_chairs::set_current_seats(root, filled_seats);
-    status.incoming_filled_seats = filled_seats;
+    let final_set_size = vector::length(&actual_set);
+    musical_chairs::set_current_seats(root, final_set_size);
+    status.incoming_final_set_size = final_set_size;
   }
 
   // set up rewards subsidy for coming epoch
