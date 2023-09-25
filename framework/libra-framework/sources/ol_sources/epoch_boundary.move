@@ -58,20 +58,23 @@ module diem_framework::epoch_boundary {
       epoch_burn_success: bool,
       slow_wallet_drip: bool,
       // Process Incoming
+      // musical chairs
       incoming_compliant: vector<address>,
       incoming_compliant_count: u64,
       incoming_seats_offered: u64,
-      incoming_filled_seats: u64,
-      incoming_proposed_new_validators: vector<address>,
+
+      // proof of fee
       incoming_all_bidders: vector<address>,
       incoming_only_qualified_bidders: vector<address>,
-      incoming_final_set_size: u64,
+      incoming_auction_winners: vector<address>,
+      incoming_filled_seats: u64,
       incoming_fees: u64,
       incoming_fees_success: bool,
 
-
+      // reconfiguration
       incoming_post_failover_check: vector<address>,
       incoming_actual_vals: vector<address>,
+      incoming_final_set_size: u64,
       incoming_reconfig_success: bool,
 
       infra_subsize_amount: u64,
@@ -107,7 +110,7 @@ module diem_framework::epoch_boundary {
           incoming_compliant_count: 0,
           incoming_seats_offered: 0,
           incoming_filled_seats: 0,
-          incoming_proposed_new_validators: vector::empty(),
+          incoming_auction_winners: vector::empty(),
           incoming_all_bidders: vector::empty(),
           incoming_only_qualified_bidders: vector::empty(),
           incoming_final_set_size: 0,
@@ -234,7 +237,7 @@ module diem_framework::epoch_boundary {
     status.incoming_filled_seats = seated_vals;
     status.incoming_all_bidders = all_bidders;
     status.incoming_only_qualified_bidders = only_qualified_bidders;
-    status.incoming_proposed_new_validators = proposed_new_validators;
+    status.incoming_auction_winners = proposed_new_validators;
     status.incoming_fees = fees_paid;
     status.incoming_fees_success = fee_success;
 
