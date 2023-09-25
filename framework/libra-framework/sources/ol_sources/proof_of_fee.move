@@ -23,6 +23,7 @@ module ol_framework::proof_of_fee {
   use diem_framework::system_addresses;
   use ol_framework::globals;
 
+  friend ol_framework::epoch_boundary;
   // use diem_std::debug::print;
 
   /// The nominal reward for each validator in each epoch.
@@ -102,13 +103,13 @@ module ol_framework::proof_of_fee {
   /// filling the seats (determined by MusicalChairs), and getting a price.
   /// and finally charging the validators for their bid (everyone pays the lowest)
   /// for audit instrumentation returns: final set size, auction winners, all the bidders, (including not-qualified), and all qualified bidders.
-  /// we also return actual fees charged, and if the fees billed the expected price
-  /// (final_set_size, auction_winners, all_bidders, only_qualified_bidders, actually_paid, fee_success)
-  public fun end_epoch(
+  /// we also return the auction entry price (clearing price)
+  /// (final_set_size, auction_winners, all_bidders, only_qualified_bidders, actually_paid, entry_price)
+  public(friend) fun end_epoch(
     vm: &signer,
     outgoing_compliant_set: &vector<address>,
     final_set_size: u64
-  ): (vector<address>, vector<address>, vector<address>, u64, bool) acquires ProofOfFeeAuction, ConsensusReward {
+  ): (vector<address>, vector<address>, vector<address>, u64) acquires ProofOfFeeAuction, ConsensusReward {
       system_addresses::assert_ol(vm);
 
       let all_bidders = get_bidders(false);
@@ -120,14 +121,23 @@ module ol_framework::proof_of_fee {
       // This is the core of the mechanism, the uniform price auction
       // the winners of the auction will be the validator set.
       // other lists are created for audit purposes of the BoundaryStatus
-      let (auction_winners, price, _proven, _unproven) = fill_seats_and_get_price(vm, final_set_size, &all_bidders, outgoing_compliant_set);
+      let (auction_winners, entry_price, _proven, _unproven) = fill_seats_and_get_price(vm, final_set_size, &all_bidders, outgoing_compliant_set);
+
+
+      (auction_winners, all_bidders, only_qualified_bidders, entry_price)
+  }
+
+  /// The fees are charged seperate from the auction and seating loop
+  /// this is because there are edge conditions in which the winners
+  /// may not be the ones seated (once we consider failover rules).
+  /// returns the expected amount of fees, the fees that were actually able to be withdrawn, and success, if the expected and withdrawn are the same.
+  public(friend) fun charge_epoch_fees(vm: &signer, auction_winners: vector<address>, price: u64): (u64, u64, bool) {
+      let expected_fees = vector::length(&auction_winners) * price;
 
       let actually_paid = transaction_fee::vm_multi_pay_fee(vm, &auction_winners, price);
 
-      let expected_fees = vector::length(&auction_winners) * price;
-
       let fee_success = actually_paid == expected_fees;
-      (auction_winners, all_bidders, only_qualified_bidders, actually_paid, fee_success )
+      (expected_fees, actually_paid, fee_success)
   }
 
 

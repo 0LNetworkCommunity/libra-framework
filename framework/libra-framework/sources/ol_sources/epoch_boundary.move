@@ -235,13 +235,12 @@ module diem_framework::epoch_boundary {
     status.incoming_compliant = compliant;
     status.incoming_seats_offered = n_seats;
     // check amount of fees expected
-    let (auction_winners, all_bidders, only_qualified_bidders, fees_paid, fee_success) = proof_of_fee::end_epoch(root, &compliant, n_seats);
+    let (auction_winners, all_bidders, only_qualified_bidders, entry_price) = proof_of_fee::end_epoch(root, &compliant, n_seats);
     status.incoming_filled_seats = vector::length(&auction_winners);
     status.incoming_all_bidders = all_bidders;
     status.incoming_only_qualified_bidders = only_qualified_bidders;
     status.incoming_auction_winners = auction_winners;
-    status.incoming_fees = fees_paid;
-    status.incoming_fees_success = fee_success;
+
 
     // showtime! try to reconfigure
     let (actual_set, post_failover_check, vals_missing_configs, success) = stake::maybe_reconfigure(root, auction_winners);
@@ -250,6 +249,9 @@ module diem_framework::epoch_boundary {
     status.incoming_actual_vals = actual_set;
     status.incoming_reconfig_success = success;
 
+    let (_expected_fees, fees_paid, fee_success) = proof_of_fee::charge_epoch_fees(root, actual_set, entry_price);
+    status.incoming_fees = fees_paid;
+    status.incoming_fees_success = fee_success;
     // make sure musical chairs doesn't keep incrementing if we are persistently
     // offering more seats than can be filled
     let final_set_size = vector::length(&actual_set);
