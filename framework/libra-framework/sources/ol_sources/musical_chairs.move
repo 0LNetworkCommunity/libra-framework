@@ -135,8 +135,8 @@ module ol_framework::musical_chairs {
         let i = 0;
         while (i < val_set_len) {
             let addr = *vector::borrow(&validators, i);
-            let (_compliant, _, _, _) = grade::get_validator_grade(addr);
-            let compliant = true;
+            let (compliant, _, _, _) = grade::get_validator_grade(addr);
+            // let compliant = true;
             if (compliant) {
                 vector::push_back(&mut compliant_nodes, addr);
             } else {
