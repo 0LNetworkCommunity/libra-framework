@@ -1219,10 +1219,10 @@ module diem_framework::stake {
         // NOTE: ol does not use the pending, and pending inactive lists.
         // DANGER: critical mutation: belt and suspenders
 
-        /// we attempt to change the validator set
-        /// it is no guaranteed that it will change
-        /// we check our "failover rules" here
-        /// which establishes minimum amount of vals for a viable network
+        // we attempt to change the validator set
+        // it is no guaranteed that it will change
+        // we check our "failover rules" here
+        // which establishes minimum amount of vals for a viable network
 
         //////// RECONFIGURE ////////
 
@@ -1286,29 +1286,6 @@ module diem_framework::stake {
 
       (finally_the_validators, qualified_on_failover, missing_configs, success_sanity && success_current)
     }
-
-    /////// 0L ///////
-    /// we attempt to change the validator set
-    /// it is no guaranteed that it will change
-    /// we check our "failover rules" here
-    /// which establishes minimum amount of vals for a viable network
-    /// Critical mutation. Using belt and suspenders
-    /// returns for audit instrumentation: what was the qualified list
-    /// of validators, list of validators that had missing configurations, and if our configurations available matched the
-    /// the list (qualified list, successs)
-    // fun try_bulk_update(root: &signer, list: vector<address>): (vector<address>, vector<address>, bool) acquires StakePool, ValidatorConfig, ValidatorSet, ValidatorPerformance {
-    //   system_addresses::assert_ol(root);
-
-    //   let qualified_list = check_failover_rules(list);
-
-    //   let (list_info, _voting_power, missing_configs) = make_validator_set_config(&qualified_list);
-
-    //   // mutations happen in private function
-    //   bulk_set_next_validators(root, list_info);
-
-    //   let success = vector::length(&qualified_list) == vector::length(&list_info);
-    //   (qualified_list, missing_configs, success)
-    // }
 
     #[test_only]
     public fun test_make_val_cfg(list: &vector<address>): (vector<ValidatorInfo>, u128, vector<address>) acquires StakePool, ValidatorConfig {
