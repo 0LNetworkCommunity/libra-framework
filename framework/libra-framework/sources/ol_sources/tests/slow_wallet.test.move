@@ -49,60 +49,58 @@ module ol_framework::test_slow_wallet {
   }
 
   #[test(root = @ol_framework, alice = @0x123, bob = @0x456)]
-  fun test_transfer_happy(root: signer, alice: signer) {
+  fun test_transfer_unlocked_happy(root: signer, alice: signer) {
     slow_wallet::initialize(&root);
+
+
+    // create alice account
     ol_account::create_account(&root, @0x123);
 
-
-    // let _vm = vm;
-    // let set = mock::genesis_n_vals(&root, 4);
-
-    // let a_sig = account::create_signer_for_test(*a);
-
     slow_wallet::set_slow(&alice);
+
     assert!(slow_wallet::is_slow(@0x123), 7357000);
     assert!(slow_wallet::unlocked_amount(@0x123) == 0, 735701);
+
+    // add some coins to alice
     let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&root);
     ol_account::deposit_coins(@0x123, coin::mint(10000, &mint_cap));
-
     coin::destroy_burn_cap(burn_cap);
     coin::destroy_mint_cap(mint_cap);
+    // the transfer was of already unlocked coins, so they will post as unlocked on alice
+    assert!(slow_wallet::unlocked_amount(@0x123) == 10000, 735703);
 
-    ol_account::create_account(&root, @0x456);
-    slow_wallet::slow_wallet_epoch_drip(&root, 100);
-
-    assert!(slow_wallet::unlocked_amount(@0x123) == 100, 735703);
+    // transferring funds will create Bob's account
+    // the coins are also unlocked
     ol_account::transfer(&alice, @0x456, 10);
     let b_balance = coin::balance<gas_coin::GasCoin>(@0x456);
     assert!(b_balance == 10, 735704);
+    assert!(slow_wallet::unlocked_amount(@0x456) == 10, 735705);
   }
 
+  // scenario: testing trying send more funds than are unlocked
   #[test(root = @ol_framework, alice = @0x123, bob = @0x456)]
   #[expected_failure(abort_code = 196614, location = 0x1::ol_account)]
-
   fun test_transfer_sad(root: signer, alice: signer) {
     slow_wallet::initialize(&root);
     ol_account::create_account(&root, @0x123);
-
     slow_wallet::set_slow(&alice);
     assert!(slow_wallet::is_slow(@0x123), 7357000);
     assert!(slow_wallet::unlocked_amount(@0x123) == 0, 735701);
-    let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&root);
-    ol_account::deposit_coins(@0x123, coin::mint(10000, &mint_cap));
 
+    // fund alice
+    let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&root);
+    ol_account::deposit_coins(@0x123, coin::mint(100, &mint_cap));
     coin::destroy_burn_cap(burn_cap);
     coin::destroy_mint_cap(mint_cap);
-    ol_account::create_account(&root, @0x456);
+
+    // alice will transfer and create bob's account
     ol_account::transfer(&alice, @0x456, 99);
 
     let b_balance = coin::balance<gas_coin::GasCoin>(@0x456);
-    assert!(b_balance == 0, 735702);
-    slow_wallet::slow_wallet_epoch_drip(&root, 100);
+    assert!(b_balance == 99, 735702);
+    assert!(slow_wallet::unlocked_amount(@0x123) == 01, 735703);
 
-    assert!(slow_wallet::unlocked_amount(@0x123) == 100, 735703);
-    ol_account::transfer(&alice, @0x456, 200); // TOO MUCH
-    let b_balance = coin::balance<gas_coin::GasCoin>(@0x456);
-    assert!(b_balance == 10, 735704);
+    ol_account::transfer(&alice, @0x456, 200); // TOO MUCH, should fail
   }
 
 
