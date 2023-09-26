@@ -121,7 +121,7 @@ module ol_framework::proof_of_fee {
       // This is the core of the mechanism, the uniform price auction
       // the winners of the auction will be the validator set.
       // other lists are created for audit purposes of the BoundaryStatus
-      let (auction_winners, entry_price, _proven, _unproven) = fill_seats_and_get_price(vm, final_set_size, &all_bidders, outgoing_compliant_set);
+      let (auction_winners, entry_price, _proven, _unproven) = fill_seats_and_get_price(vm, final_set_size, &only_qualified_bidders, outgoing_compliant_set);
 
 
       (auction_winners, all_bidders, only_qualified_bidders, entry_price)
