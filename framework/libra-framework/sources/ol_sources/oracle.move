@@ -135,7 +135,7 @@ module ol_framework::oracle {
         assert!(vouch::unrelated_buddies_above_thresh(provider_addr, 2), error::invalid_state(ENOT_THREE_UNRELATED_VOUCHERS));
         // in the previous epoch of successful miners, you'll need to have 3 unrelated vouchers there as well.
         let previous_epoch_list = &borrow_global<ProviderList>(@ol_framework).previous_epoch_list;
-        let (_, count_buddies) = vouch::buddies_in_list(provider_addr, previous_epoch_list);
+        let (_, count_buddies) = vouch::true_friends_in_list(provider_addr, previous_epoch_list);
         assert!(count_buddies > 2, error::invalid_state(ENEED_THREE_FRIENDS_IN_MINER_COMMUNITY));
 
       };

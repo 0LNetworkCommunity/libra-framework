@@ -8,7 +8,7 @@ module ol_framework::vouch {
     use ol_framework::epoch_helper;
 
     use diem_framework::system_addresses;
-    use diem_framework::stake;
+    // use diem_framework::stake;
     use diem_framework::transaction_fee;
 
     friend diem_framework::genesis;
@@ -119,7 +119,7 @@ module ol_framework::vouch {
 
     #[view]
     /// gets all buddies, including expired ones
-    public fun get_buddies(val: address): vector<address> acquires MyVouches{
+    public fun all_vouchers(val: address): vector<address> acquires MyVouches{
 
       if (!exists<MyVouches>(val)) return vector::empty<address>();
       let state = borrow_global<MyVouches>(val);
@@ -128,10 +128,10 @@ module ol_framework::vouch {
 
     #[view]
     /// gets the buddies and checks if they are expired
-    public fun get_buddies_valid(val: address): vector<address> acquires MyVouches{
+    public fun all_not_expired(addr: address): vector<address> acquires MyVouches{
       let valid_vouches = vector::empty<address>();
-      if (is_init(val)) {
-        let state = borrow_global<MyVouches>(val);
+      if (is_init(addr)) {
+        let state = borrow_global<MyVouches>(addr);
         vector::for_each(state.my_buddies, |buddy_acc| {
           if (is_not_expired(buddy_acc, state)) {
             vector::push_back(&mut valid_vouches, buddy_acc)
@@ -140,6 +140,17 @@ module ol_framework::vouch {
       };
       valid_vouches
     }
+
+    #[view]
+    /// filter expired vouches, and do ancestry check
+    public fun true_friends(addr: address): vector<address> acquires MyVouches{
+
+      if (!exists<MyVouches>(addr)) return vector::empty<address>();
+      let not_expired = all_not_expired(addr);
+      let filtered_ancestry = ancestry::list_unrelated(not_expired);
+      filtered_ancestry
+    }
+
 
     fun is_not_expired(voucher: address, state: &MyVouches): bool {
       let (found, i) = vector::index_of(&state.my_buddies, &voucher);
@@ -150,23 +161,24 @@ module ol_framework::vouch {
       false
     }
 
-    #[view]
-    public fun buddies_in_validator_set(val: address): vector<address> acquires MyVouches {
-      let current_set = stake::get_current_validators();
-      let (list, _) = buddies_in_list(val, &current_set);
-      list
-    }
+    // #[view]
+    // public fun buddies_in_validator_set(val: address): vector<address> acquires MyVouches {
+    //   let current_set = stake::get_current_validators();
+    //   let (list, _) = buddies_in_list(val, &current_set);
+    //   list
+    // }
 
-    public fun buddies_in_list(addr: address, list: &vector<address>): (vector<address>, u64) acquires MyVouches {
+    /// for a given list find and count any of my vouchers
+    public fun true_friends_in_list(addr: address, list: &vector<address>): (vector<address>, u64) acquires MyVouches {
 
-      if (!exists<MyVouches>(addr)) return (vector::empty<address>(), 0);
+      if (!exists<MyVouches>(addr)) return (vector::empty(), 0);
 
-      let v = borrow_global<MyVouches>(addr);
+      let tf = true_friends(addr);
 
-      let buddies_in_list = vector::empty<address>();
+      let buddies_in_list = vector::empty();
       let  i = 0;
-      while (i < vector::length(&v.my_buddies)) {
-        let addr = vector::borrow(&v.my_buddies, i);
+      while (i < vector::length(&tf)) {
+        let addr = vector::borrow(&tf, i);
 
         if (vector::contains(list, addr)) {
           vector::push_back(&mut buddies_in_list, *addr);

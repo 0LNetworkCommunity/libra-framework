@@ -348,29 +348,28 @@ module ol_framework::proof_of_fee {
       // Safety check: node has valid configs
       if (!stake::stake_pool_exists(val)) vector::push_back(&mut errors, EVALIDATOR_NOT_CONFIGURED); // 11
       // is a slow wallet
-      if (!slow_wallet::is_slow(val)) vector::push_back(&mut errors, EWALLET_NOT_SLOW); // 2
+      if (!slow_wallet::is_slow(val)) vector::push_back(&mut errors, EWALLET_NOT_SLOW); // 12
       // we can't seat validators that were just jailed
       // NOTE: epoch reconfigure needs to reset the jail
       // before calling the proof of fee.
-      if (jail::is_jailed(val)) vector::push_back(&mut errors, EIS_JAILED); // 3
+      if (jail::is_jailed(val)) vector::push_back(&mut errors, EIS_JAILED); // 33
       // we can't seat validators who don't have minimum viable vouches
 
-      if (!vouch::unrelated_buddies_above_thresh(val, globals::get_validator_vouch_threshold())) vector::push_back(&mut errors, ETOO_FEW_VOUCHES); // 4
+      if (!vouch::unrelated_buddies_above_thresh(val, globals::get_validator_vouch_threshold())) vector::push_back(&mut errors, ETOO_FEW_VOUCHES); // 14
+
       let (bid_pct, expire) = current_bid(val);
-      if (bid_pct == 0) vector::push_back(&mut errors, EBID_IS_ZERO); // 5
+      if (bid_pct == 0) vector::push_back(&mut errors, EBID_IS_ZERO); // 15
       // Skip if the bid expired. belt and suspenders, this should have been checked in the sorting above.
       // TODO: make this it's own function so it can be publicly callable, it's useful generally, and for debugging.
 
-
-
-      if (epoch_helper::get_current_epoch() > expire) vector::push_back(&mut errors, EBID_EXPIRED); // 6
+      if (epoch_helper::get_current_epoch() > expire) vector::push_back(&mut errors, EBID_EXPIRED); // 16
       // skip the user if they don't have sufficient UNLOCKED funds
       // or if the bid expired.
       let unlocked_coins = slow_wallet::unlocked_amount(val);
       let (baseline_reward, _, _) = get_consensus_reward();
       let coin_required = fixed_point32::multiply_u64(baseline_reward, fixed_point32::create_from_rational(bid_pct, 1000));
 
-      if (unlocked_coins < coin_required) vector::push_back(&mut errors, ELOW_UNLOCKED_COIN_BALANCE); // 7
+      if (unlocked_coins < coin_required) vector::push_back(&mut errors, ELOW_UNLOCKED_COIN_BALANCE); // 17
 
       (errors, vector::length(&errors) == 0) // friend of ours
   }
