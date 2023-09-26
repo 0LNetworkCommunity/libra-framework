@@ -11,7 +11,7 @@ module ol_framework::test_boundary {
   use ol_framework::jail;
   use ol_framework::slow_wallet;
   use ol_framework::vouch;
-  // use ol_framework::testnet;
+  use ol_framework::testnet;
   use ol_framework::validator_universe;
   use diem_framework::stake;
   use ol_framework::epoch_boundary;
@@ -104,7 +104,8 @@ module ol_framework::test_boundary {
   #[test(root = @ol_framework, alice = @0x1000a,  marlon_rando = @0x12345)]
   fun e2e_add_validator_sad_vouches(root: signer, alice: signer, marlon_rando: signer) {
     let _vals = common_test_setup(&root);
-
+    // this test requires prod settings, since we don't check vouches on testing
+    testnet::unset(&root);
     // generate credentials for validator registration
     // ol_account::create_account(&root, @0x12345);
     ol_account::transfer(&alice, @0x12345, 200000);

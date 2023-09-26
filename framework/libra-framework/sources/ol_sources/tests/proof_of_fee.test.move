@@ -186,6 +186,12 @@ module ol_framework::test_pof {
     let (_err, pass) = proof_of_fee::audit_qualification(alice);
     assert!(!pass, 1008);
 
+    // fix it
+    proof_of_fee::set_bid(&a_sig, 1, 1000);
+
+    let (_err, pass) = proof_of_fee::audit_qualification(alice);
+    assert!(pass, 1009);
+
   }
 
   #[test(root = @ol_framework)]
