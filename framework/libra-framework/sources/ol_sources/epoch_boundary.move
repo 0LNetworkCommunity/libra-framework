@@ -22,8 +22,6 @@ module diem_framework::epoch_boundary {
     use std::vector;
     use std::error;
 
-    // use diem_std::debug::print;
-
     friend diem_framework::block;
 
     /// how many PoF baseline rewards to we set aside for the miners.
@@ -242,9 +240,11 @@ module diem_framework::epoch_boundary {
     status.incoming_auction_winners = auction_winners;
 
 
-    // showtime! try to reconfigure
-    let (actual_set, post_failover_check, vals_missing_configs, success) = stake::maybe_reconfigure(root, auction_winners);
+    let post_failover_check = stake::check_failover_rules(auction_winners, compliant);
     status.incoming_post_failover_check = post_failover_check;
+
+    // showtime! try to reconfigure
+    let (actual_set, vals_missing_configs, success) = stake::maybe_reconfigure(root, post_failover_check);
     status.incoming_vals_missing_configs = vals_missing_configs;
     status.incoming_actual_vals = actual_set;
     status.incoming_reconfig_success = success;

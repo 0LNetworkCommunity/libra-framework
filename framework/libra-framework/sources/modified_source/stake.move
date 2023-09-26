@@ -20,7 +20,6 @@
 */
 module diem_framework::stake {
     use std::error;
-    // use std::features;
     use std::option::{Self, Option};
     use std::signer;
     use std::vector;
@@ -38,6 +37,8 @@ module diem_framework::stake {
 
     use ol_framework::slow_wallet;
     use ol_framework::testnet;
+
+    // use diem_std::debug::print;
 
     friend diem_framework::block;
     friend diem_framework::genesis;
@@ -1213,7 +1214,7 @@ module diem_framework::stake {
     /// Called on epoch boundary to reconfigure
     /// No change may happen due to failover rules.
     /// Returns instrumentation for audits: if what the validator set was, which validators qualified after failover rules, a list of validators which had missing configs and were excluded, if the new list sucessfully matches the actual validators after reconfiguration(actual_validator_set, qualified_on_failover, missing_configs, success)
-    public(friend) fun maybe_reconfigure(root: &signer, proposed_validators: vector<address>): (vector<address>, vector<address>, vector<address>, bool) acquires StakePool, ValidatorConfig, ValidatorPerformance, ValidatorSet {
+    public(friend) fun maybe_reconfigure(root: &signer, proposed_validators: vector<address>): (vector<address>, vector<address>, bool) acquires StakePool, ValidatorConfig, ValidatorPerformance, ValidatorSet {
 
 
         // NOTE: ol does not use the pending, and pending inactive lists.
@@ -1226,9 +1227,7 @@ module diem_framework::stake {
 
         //////// RECONFIGURE ////////
 
-        let qualified_on_failover = check_failover_rules(proposed_validators);
-
-        let (list_info, _voting_power, missing_configs) = make_validator_set_config(&qualified_on_failover);
+        let (list_info, _voting_power, missing_configs) = make_validator_set_config(&proposed_validators);
         // mutations happen in private function
         bulk_set_next_validators(root, list_info);
 
@@ -1284,7 +1283,7 @@ module diem_framework::stake {
         &comparator::compare(&proposed_validators, &finally_the_validators)
       );
 
-      (finally_the_validators, qualified_on_failover, missing_configs, success_sanity && success_current)
+      (finally_the_validators, missing_configs, success_sanity && success_current)
     }
 
     #[test_only]
@@ -1368,8 +1367,9 @@ module diem_framework::stake {
     // If the cardinality of validator_set in the next epoch is less than 4,
     // if we are failing to qualify anyone. Pick top 1/2 of outgoing compliant validator set
     // by proposals. They are probably online.
-    public fun check_failover_rules(proposed: vector<address>): vector<address> acquires ValidatorSet, ValidatorConfig, ValidatorPerformance  {
-        let min = 4;
+    public fun check_failover_rules(proposed: vector<address>, performant: vector<address>): vector<address> acquires ValidatorSet {
+
+        let min_f = 3;
 
         // check if this is not test. Failover doesn't apply here
         if (testnet::is_testnet()) {
@@ -1379,21 +1379,40 @@ module diem_framework::stake {
 
         let current_vals = get_current_validators();
 
-        if (vector::length(&proposed) <= min) {
 
-            proposed = get_sorted_vals_by_props(vector::length(&current_vals) / 2);
+        let is_performant_below_f_4 = vector::length(&performant) <= ( 2 * (min_f+1) + 1);
 
-        };
+        let is_proposed_below_f_3 = vector::length(&proposed) <= ( 2 * min_f + 1);
 
-
-        // It's not clear that there could be another failure, but fully backstop it by having the same validtor set.
-        if (vector::length(&proposed) <= min) {
-
+        // hail mary.
+        // there may be something wrong with performance metrics or evaluation
+        // do nothing
+        if (is_proposed_below_f_3 && is_performant_below_f_4) {
           return current_vals
         };
 
-        // return proposed by default
-        proposed
+        // happy case, not near failure
+        if (!is_proposed_below_f_3 && !is_performant_below_f_4) return proposed;
+        // the proposed validators per the algo is to low.
+        // and the performant validators from previous epoch are at a healthy
+        // number, just failover to the performant validators
+        if (is_proposed_below_f_3 && !is_performant_below_f_4) {
+          return performant
+        };
+
+        // The proposed number of validators is not near failure
+        // but the previous epoch's performing nodes is below healthy
+        // pick whichever one has the most number
+        if (!is_proposed_below_f_3 && is_performant_below_f_4) {
+          if (vector::length(&performant) > vector::length(&proposed)) {
+            return performant
+          };
+          return proposed
+        };
+
+
+        // this is unreachable but as a backstop for dev fingers
+        current_vals
     }
 
     /// Bubble sort the validators by their proposal counts.

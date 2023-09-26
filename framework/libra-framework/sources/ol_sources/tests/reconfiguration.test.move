@@ -97,7 +97,6 @@ module ol_framework::test_reconfiguration {
   fun reconfig_failover(root: signer) {
       let vals = mock::genesis_n_vals(&root, 5);
       mock::ol_initialize_coin(&root);
-      testnet::unset(&root); // note: needs to happen after genesis.
 
       mock::pof_default();
 
@@ -107,6 +106,8 @@ module ol_framework::test_reconfiguration {
         mock::mock_case_4(&root, *vector::borrow(&vals, i));
         i = i + 1;
       };
+
+      testnet::unset(&root); // note: needs to happen after genesis.
 
       // run ol reconfiguration
       mock::trigger_epoch(&root);
