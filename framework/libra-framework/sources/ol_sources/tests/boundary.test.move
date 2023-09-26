@@ -8,7 +8,7 @@ module ol_framework::test_boundary {
   // use ol_framework::account;
   // use ol_framework::proof_of_fee;
   // use ol_framework::reconfiguration;
-  // use ol_framework::jail;
+  use ol_framework::jail;
   use ol_framework::slow_wallet;
   // use ol_framework::vouch;
   // use ol_framework::testnet;
@@ -96,5 +96,32 @@ module ol_framework::test_boundary {
     assert!(epoch_boundary::get_seats_offered() == 12, 7357005);
     assert!(vector::length(&epoch_boundary::get_actual_vals()) == 11, 7357006);
 
+  }
+
+  #[test(root = @ol_framework)]
+  fun e2e_boundary_excludes_jail(root: signer) {
+    let vals = common_test_setup(&root);
+    let alice_addr = *vector::borrow(&vals, 0);
+    jail::jail(&root, alice_addr);
+    assert!(jail::is_jailed(alice_addr), 7357000);
+    mock::trigger_epoch(&root);
+
+    let qualified_bidders = epoch_boundary::get_qualified_bidders();
+    assert!(vector::length(&qualified_bidders) == (vector::length(&vals) - 1), 7357003);
+
+        // all vals had winning bids, but it was less than the seats on offer
+    assert!(vector::length(&epoch_boundary::get_auction_winners()) == vector::length(&qualified_bidders) , 7357003);
+
+
+    // let _vals_post = stake::get_current_validators();
+
+    assert!(epoch_boundary::get_reconfig_success(), 7357001);
+
+    // // all validators were compliant, should be +1 of the 10 vals
+    // assert!(epoch_boundary::get_seats_offered() == 11, 7357002);
+
+
+    // // all of the auction winners became the validators ulitmately
+    // assert!(vector::length(&epoch_boundary::get_actual_vals()) == 10, 7357004);
   }
 }

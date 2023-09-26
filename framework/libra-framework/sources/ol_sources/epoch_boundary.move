@@ -292,6 +292,12 @@ module diem_framework::epoch_boundary {
   public fun get_actual_vals(): vector<address> acquires BoundaryStatus {
     borrow_global<BoundaryStatus>(@ol_framework).incoming_actual_vals
   }
+
+  #[view]
+  public fun get_qualified_bidders(): vector<address> acquires BoundaryStatus {
+    borrow_global<BoundaryStatus>(@ol_framework).incoming_only_qualified_bidders
+  }
+
   #[view]
   public fun get_auction_winners(): vector<address> acquires BoundaryStatus {
     borrow_global<BoundaryStatus>(@ol_framework).incoming_auction_winners

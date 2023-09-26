@@ -81,6 +81,7 @@ module ol_framework::jail {
   }
 
 
+  #[view]
   public fun is_jailed(validator: address): bool acquires Jail {
     if (!exists<Jail>(validator)) {
       return false
