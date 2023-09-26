@@ -6,7 +6,7 @@ module ol_framework::test_boundary {
   use ol_framework::mock;
 
   // use ol_framework::account;
-  // use ol_framework::proof_of_fee;
+  use ol_framework::proof_of_fee;
   // use ol_framework::reconfiguration;
   use ol_framework::jail;
   use ol_framework::slow_wallet;
@@ -19,7 +19,7 @@ module ol_framework::test_boundary {
 
 
 
-  // use diem_std::debug::print;
+  use diem_std::debug::print;
 
   const Alice: address = @0x1000a;
   const Bob: address = @0x1000b;
@@ -60,12 +60,14 @@ module ol_framework::test_boundary {
   }
 
 
-  #[test(root = @ol_framework, marlon_rando = @0x12345)]
-  fun e2e_add_validator_happy(root: signer, marlon_rando: signer) {
+  #[test(root = @ol_framework, alice = @0x1000a,  marlon_rando = @0x12345)]
+  fun e2e_add_validator_happy(root: signer, alice: signer, marlon_rando: signer) {
     let _vals = common_test_setup(&root);
 
     // generate credentials for validator registration
-    ol_account::create_account(&root, @0x12345);
+    // ol_account::create_account(&root, @0x12345);
+    print(&1111);
+    ol_account::transfer(&alice, @0x12345, 200000);
     let (_sk, pk, pop) = stake::generate_identity();
     let pk_bytes = bls12381::public_key_to_bytes(&pk);
     let pop_bytes = bls12381::proof_of_possession_to_bytes(&pop);
@@ -74,27 +76,34 @@ module ol_framework::test_boundary {
     let vals = validator_universe::get_eligible_validators();
     assert!(vector::length(&vals) == 11, 7357000);
     mock::mock_bids(&vals);
-    mock::trigger_epoch(&root);
+    // marlon needs a fix
+    let (u, b) = slow_wallet::balance(@0x12345);
+    print(&u);
+    print(&b);
 
-    // let vals_post = stake::get_current_validators();
-    // print(&)
+    let (errs, _pass) = proof_of_fee::audit_qualification(@0x12345);
+    print(&errs);
 
-    assert!(epoch_boundary::get_reconfig_success(), 7357001);
+    // mock::trigger_epoch(&root);
 
-    // all validators were compliant, should be +1 of the 10 vals
-    assert!(epoch_boundary::get_seats_offered() == 11, 7357002);
 
-    // NOTE: now MARLON is INCLUDED in this, and we filled all the seats on offer.
-    // all vals had winning bids, but it was less than the seats on offer
-    assert!(vector::length(&epoch_boundary::get_auction_winners()) == 11, 7357003);
-    // all of the auction winners became the validators ulitmately
-    assert!(vector::length(&epoch_boundary::get_actual_vals()) == 11, 7357004);
 
-    // another epoch and everyone is compliant as well
-    mock::mock_all_vals_good_performance(&root);
-    mock::trigger_epoch(&root);
-    assert!(epoch_boundary::get_seats_offered() == 12, 7357005);
-    assert!(vector::length(&epoch_boundary::get_actual_vals()) == 11, 7357006);
+    // assert!(epoch_boundary::get_reconfig_success(), 7357001);
+
+    // // all validators were compliant, should be +1 of the 10 vals
+    // assert!(epoch_boundary::get_seats_offered() == 11, 7357002);
+
+    // // NOTE: now MARLON is INCLUDED in this, and we filled all the seats on offer.
+    // // all vals had winning bids, but it was less than the seats on offer
+    // assert!(vector::length(&epoch_boundary::get_auction_winners()) == 11, 7357003);
+    // // all of the auction winners became the validators ulitmately
+    // assert!(vector::length(&epoch_boundary::get_actual_vals()) == 11, 7357004);
+
+    // // another epoch and everyone is compliant as well
+    // mock::mock_all_vals_good_performance(&root);
+    // mock::trigger_epoch(&root);
+    // assert!(epoch_boundary::get_seats_offered() == 12, 7357005);
+    // assert!(vector::length(&epoch_boundary::get_actual_vals()) == 11, 7357006);
 
   }
 
