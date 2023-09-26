@@ -22,7 +22,7 @@ module ol_framework::proof_of_fee {
   use diem_framework::stake;
   use diem_framework::system_addresses;
   use ol_framework::globals;
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   friend ol_framework::epoch_boundary;
 
@@ -369,9 +369,7 @@ module ol_framework::proof_of_fee {
       let unlocked_coins = slow_wallet::unlocked_amount(val);
       let (baseline_reward, _, _) = get_consensus_reward();
       let coin_required = fixed_point32::multiply_u64(baseline_reward, fixed_point32::create_from_rational(bid_pct, 1000));
-      print(&55555);
-      print(&unlocked_coins);
-      print(&coin_required);
+
       if (unlocked_coins < coin_required) vector::push_back(&mut errors, ELOW_UNLOCKED_COIN_BALANCE); // 7
 
       (errors, vector::length(&errors) == 0) // friend of ours

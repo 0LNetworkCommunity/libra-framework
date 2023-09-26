@@ -14,7 +14,7 @@ module ol_framework::ol_account {
     use ol_framework::receipts;
     use ol_framework::cumulative_deposits;
 
-    use diem_std::debug::print;
+    // use diem_std::debug::print;
 
     #[test_only]
     use std::vector;
@@ -140,7 +140,6 @@ module ol_framework::ol_account {
     /// Convenient function to transfer GAS to a recipient account that might not exist.
     /// This would create the recipient account first, which also registers it to receive GAS, before transferring.
     public entry fun transfer(sender: &signer, to: address, amount: u64) {
-      print(&15151515);
       transfer_checks(signer::address_of(sender), to, amount);
       coin::transfer<GasCoin>(sender, to, amount);
     }
@@ -180,7 +179,6 @@ module ol_framework::ol_account {
         // may be created without any coin registration.
         assert!(coin::is_account_registered<GasCoin>(recipient), error::invalid_argument(EACCOUNT_NOT_REGISTERED_FOR_GAS));
 
-        print(&2222);
         // must track the slow wallet on both sides of the transfer
         slow_wallet::maybe_track_slow_transfer(payer, recipient, amount);
 
