@@ -22,6 +22,8 @@ module diem_framework::epoch_boundary {
     use std::vector;
     use std::error;
 
+    use diem_std::debug::print;
+
     friend diem_framework::block;
 
     /// how many PoF baseline rewards to we set aside for the miners.
@@ -127,6 +129,7 @@ module diem_framework::epoch_boundary {
       }
     }
 
+
     // Contains all of 0L's business logic for end of epoch.
     // This removed business logic from reconfiguration.move
     // and prevents dependency cycling.
@@ -156,6 +159,8 @@ module diem_framework::epoch_boundary {
         process_incoming_validators(root, status);
 
         subsidize_from_infra_escrow(root);
+
+        print(borrow_global<BoundaryStatus>(@ol_framework))
   }
 
   // TODO: instrument all of this
@@ -278,6 +283,24 @@ module diem_framework::epoch_boundary {
     status.security_bill_success = security_bill_success;
   }
 
+  //////// GETTERS ////////
+  #[view]
+  public fun get_reconfig_success(): bool acquires BoundaryStatus {
+    borrow_global<BoundaryStatus>(@ol_framework).incoming_reconfig_success
+  }
+  #[view]
+  public fun get_actual_vals(): vector<address> acquires BoundaryStatus {
+    borrow_global<BoundaryStatus>(@ol_framework).incoming_actual_vals
+  }
+  #[view]
+  public fun get_auction_winners(): vector<address> acquires BoundaryStatus {
+    borrow_global<BoundaryStatus>(@ol_framework).incoming_auction_winners
+  }
+
+  #[view]
+  public fun get_seats_offered():u64 acquires BoundaryStatus {
+    borrow_global<BoundaryStatus>(@ol_framework).incoming_seats_offered
+  }
 
   #[test_only]
   public fun ol_reconfigure_for_test(vm: &signer, closing_epoch: u64, epoch_round: u64) acquires BoundaryStatus {

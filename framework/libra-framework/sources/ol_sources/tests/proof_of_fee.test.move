@@ -151,21 +151,11 @@ module ol_framework::test_pof {
     // initially set a good bid
     mock_good_bid(&root, &alice);
 
-
     // has a bid which IS expired
     // test runner is at epoch 1, they put expiry at 0.
     // TODO: Improve this test by doing more advanced epochs
     let a_sig = account::create_signer_for_test(alice);
-
-    // let this_epoch = reconfiguration::get_current_epoch();
-
-
-
-    reconfiguration::reconfigure_for_test();
-    stake::end_epoch();
-
-    // let this_epoch = reconfiguration::get_current_epoch();
-
+    mock::trigger_epoch(&root);
 
     proof_of_fee::set_bid(&a_sig, 1, 0);
     let (bid, expires) = proof_of_fee::current_bid(alice);
