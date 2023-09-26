@@ -355,7 +355,10 @@ module ol_framework::proof_of_fee {
       if (jail::is_jailed(val)) vector::push_back(&mut errors, EIS_JAILED); // 33
       // we can't seat validators who don't have minimum viable vouches
 
-      if (!vouch::unrelated_buddies_above_thresh(val, globals::get_validator_vouch_threshold())) vector::push_back(&mut errors, ETOO_FEW_VOUCHES); // 14
+      let val_set = stake::get_current_validators();
+      let (frens_in_val_set, _found) = vouch::true_friends_in_list(val, &val_set);
+      let threshold = globals::get_validator_vouch_threshold();
+      if (vector::length(&frens_in_val_set) < threshold) vector::push_back(&mut errors, ETOO_FEW_VOUCHES); // 14
 
       let (bid_pct, expire) = current_bid(val);
       if (bid_pct == 0) vector::push_back(&mut errors, EBID_IS_ZERO); // 15

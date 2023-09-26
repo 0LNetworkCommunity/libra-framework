@@ -132,7 +132,8 @@ module ol_framework::oracle {
       // Don't populate the oracle miner list wit accounts that don't have vouches.
       {
         // must have 3 accounts who are unrelated vouching for you.
-        assert!(vouch::unrelated_buddies_above_thresh(provider_addr, 2), error::invalid_state(ENOT_THREE_UNRELATED_VOUCHERS));
+        let frens = vouch::true_friends(provider_addr);
+        assert!(vector::length(&frens) > 2, error::invalid_state(ENOT_THREE_UNRELATED_VOUCHERS));
         // in the previous epoch of successful miners, you'll need to have 3 unrelated vouchers there as well.
         let previous_epoch_list = &borrow_global<ProviderList>(@ol_framework).previous_epoch_list;
         let (_, count_buddies) = vouch::true_friends_in_list(provider_addr, previous_epoch_list);

@@ -3,7 +3,6 @@ module ol_framework::vouch {
     use std::signer;
     use std::vector;
     use ol_framework::ancestry;
-    use ol_framework::testnet;
     use ol_framework::ol_account;
     use ol_framework::epoch_helper;
 
@@ -190,16 +189,14 @@ module ol_framework::vouch {
     }
 
 
-    #[view]
-    public fun unrelated_buddies_above_thresh(val: address, threshold: u64): bool acquires MyVouches{
-      if (!exists<MyVouches>(val)) return false;
+    // #[view]
+    // public fun true_friends_above_thresh(addr: address, list: &vector<address>, threshold: u64): bool acquires MyVouches{
+    //   if (!exists<MyVouches>(addr)) return false;
 
-      if (testnet::is_testnet()) return true;
-      let vouches = borrow_global<MyVouches>(val);
+    //   let (found_in_list, _found) = true_friends_in_list(addr, list);
 
-      let len = vector::length(&ancestry::list_unrelated(vouches.my_buddies));
-      (len >= threshold)
-    }
+    //   return vector::length(&found_in_list) > threshold
+    // }
 
     // the cost to verify a vouch. Coins are burned.
     fun vouch_cost_microlibra(): u64 {
