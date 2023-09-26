@@ -268,6 +268,12 @@ module diem_framework::transaction_fee {
     }
 
     #[test_only]
+    public fun test_root_withdraw_all(root: &signer): Coin<GasCoin> acquires CollectedFeesPerBlock {
+      system_addresses::assert_ol(root);
+      withdraw_all_impl(root)
+    }
+
+    #[test_only]
     use diem_framework::aggregator_factory;
 
     #[test(diem_framework = @diem_framework)]

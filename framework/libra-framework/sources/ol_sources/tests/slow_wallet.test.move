@@ -12,7 +12,10 @@ module ol_framework::test_slow_wallet {
   use diem_framework::reconfiguration;
   use diem_framework::coin;
   use diem_framework::block;
+  use ol_framework::transaction_fee;
+  use ol_framework::rewards;
   use std::vector;
+
   // use diem_std::debug::print;
 
   #[test(root = @ol_framework)]
@@ -41,11 +44,19 @@ module ol_framework::test_slow_wallet {
     let a = vector::borrow(&set, 0);
 
     assert!(slow_wallet::is_slow(*a), 7357000);
-    assert!(slow_wallet::unlocked_amount(*a) == 0, 735701);
+    assert!(slow_wallet::unlocked_amount(*a) == 100, 735701);
 
+    let coin = transaction_fee::test_root_withdraw_all(&root);
+    rewards::test_helper_pay_reward(&root, *a, coin, 0);
 
-    slow_wallet::slow_wallet_epoch_drip(&root, 100);
-    assert!(slow_wallet::unlocked_amount(*a) == 100, 735702);
+    let (u, b) = slow_wallet::balance(*a);
+    assert!(b==100000100, 735702);
+    assert!(u==100, 735703);
+
+    slow_wallet::slow_wallet_epoch_drip(&root, 233);
+    let (u, b) = slow_wallet::balance(*a);
+    assert!(b==100000100, 735704);
+    assert!(u==333, 735705);
   }
 
   #[test(root = @ol_framework, alice = @0x123, bob = @0x456)]

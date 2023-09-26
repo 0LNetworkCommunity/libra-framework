@@ -14,7 +14,7 @@ module ol_framework::slow_wallet {
   use ol_framework::testnet;
   use std::error;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   friend ol_framework::ol_account;
 
@@ -138,11 +138,8 @@ module ol_framework::slow_wallet {
     /// when a user receives unlocked coins from another user, those coins
     /// always remain unlocked.
     public(friend) fun maybe_track_unlocked_deposit(recipient: address, amount: u64) acquires SlowWallet {
-      print(&4444);
       if (!exists<SlowWallet>(recipient)) return;
       let state = borrow_global_mut<SlowWallet>(recipient);
-      // let total = coin::balance<GasCoin>(recipient);
-      print(&4141414141);
 
       // TODO:
       // unlocked amount cannot be greater than total
