@@ -471,38 +471,38 @@ module diem_framework::coin {
     //     coin_store.frozen = false;
     // }
 
-    /// Upgrade total supply to use a parallelizable implementation if it is
-    /// available.
-    public entry fun upgrade_supply<CoinType>(account: &signer) acquires CoinInfo, SupplyConfig {
-        let account_addr = signer::address_of(account);
+    // /// Upgrade total supply to use a parallelizable implementation if it is
+    // /// available.
+    // public entry fun upgrade_supply<CoinType>(account: &signer) acquires CoinInfo, SupplyConfig {
+    //     let account_addr = signer::address_of(account);
 
-        // Only coin creators can upgrade total supply.
-        assert!(
-            coin_address<CoinType>() == account_addr,
-            error::invalid_argument(ECOIN_INFO_ADDRESS_MISMATCH),
-        );
+    //     // Only coin creators can upgrade total supply.
+    //     assert!(
+    //         coin_address<CoinType>() == account_addr,
+    //         error::invalid_argument(ECOIN_INFO_ADDRESS_MISMATCH),
+    //     );
 
-        // Can only succeed once on-chain governance agreed on the upgrade.
-        assert!(
-            borrow_global_mut<SupplyConfig>(@diem_framework).allow_upgrades,
-            error::permission_denied(ECOIN_SUPPLY_UPGRADE_NOT_SUPPORTED)
-        );
+    //     // Can only succeed once on-chain governance agreed on the upgrade.
+    //     assert!(
+    //         borrow_global_mut<SupplyConfig>(@diem_framework).allow_upgrades,
+    //         error::permission_denied(ECOIN_SUPPLY_UPGRADE_NOT_SUPPORTED)
+    //     );
 
-        let maybe_supply = &mut borrow_global_mut<CoinInfo<CoinType>>(account_addr).supply;
-        if (option::is_some(maybe_supply)) {
-            let supply = option::borrow_mut(maybe_supply);
+    //     let maybe_supply = &mut borrow_global_mut<CoinInfo<CoinType>>(account_addr).supply;
+    //     if (option::is_some(maybe_supply)) {
+    //         let supply = option::borrow_mut(maybe_supply);
 
-            // If supply is tracked and the current implementation uses an integer - upgrade.
-            if (!optional_aggregator::is_parallelizable(supply)) {
-                optional_aggregator::switch(supply);
-            }
-        }
-    }
+    //         // If supply is tracked and the current implementation uses an integer - upgrade.
+    //         if (!optional_aggregator::is_parallelizable(supply)) {
+    //             optional_aggregator::switch(supply);
+    //         }
+    //     }
+    // }
 
     /// Creates a new Coin with given `CoinType` and returns minting/freezing/burning capabilities.
     /// The given signer also becomes the account hosting the information  about the coin
     /// (name, supply, etc.). Supply is initialized as non-parallelizable integer.
-    public fun initialize<CoinType>(
+    public(friend) fun initialize<CoinType>(
         account: &signer,
         name: string::String,
         symbol: string::String,
@@ -612,6 +612,8 @@ module diem_framework::coin {
         Coin<CoinType> { value: amount }
     }
 
+    // regsister a user to receive a coin type.
+    // NOTE: does not need to be a friend, and may be needed for third party applications.
     public fun register<CoinType>(account: &signer) {
         let account_addr = signer::address_of(account);
         // Short-circuit and do nothing if account is already registered for CoinType.
@@ -1165,26 +1167,26 @@ module diem_framework::coin {
         optional_aggregator::sub(supply, 1);
     }
 
-    #[test(framework = @diem_framework)]
-    #[expected_failure(abort_code = 0x5000B, location = diem_framework::coin)]
-    fun test_supply_upgrade_fails(framework: signer) acquires CoinInfo, SupplyConfig {
-        initialize_supply_config(&framework);
-        aggregator_factory::initialize_aggregator_factory_for_test(&framework);
-        initialize_with_integer(&framework);
+    // #[test(framework = @diem_framework)]
+    // #[expected_failure(abort_code = 0x5000B, location = diem_framework::coin)]
+    // fun test_supply_upgrade_fails(framework: signer) acquires CoinInfo, SupplyConfig {
+    //     initialize_supply_config(&framework);
+    //     aggregator_factory::initialize_aggregator_factory_for_test(&framework);
+    //     initialize_with_integer(&framework);
 
-        let maybe_supply = &mut borrow_global_mut<CoinInfo<FakeMoney>>(coin_address<FakeMoney>()).supply;
-        let supply = option::borrow_mut(maybe_supply);
+    //     let maybe_supply = &mut borrow_global_mut<CoinInfo<FakeMoney>>(coin_address<FakeMoney>()).supply;
+    //     let supply = option::borrow_mut(maybe_supply);
 
-        // Supply should be non-parallelizable.
-        assert!(!optional_aggregator::is_parallelizable(supply), 0);
+    //     // Supply should be non-parallelizable.
+    //     assert!(!optional_aggregator::is_parallelizable(supply), 0);
 
-        optional_aggregator::add(supply, 100);
-        optional_aggregator::sub(supply, 50);
-        optional_aggregator::add(supply, 950);
-        assert!(optional_aggregator::read(supply) == 1000, 0);
+    //     optional_aggregator::add(supply, 100);
+    //     optional_aggregator::sub(supply, 50);
+    //     optional_aggregator::add(supply, 950);
+    //     assert!(optional_aggregator::read(supply) == 1000, 0);
 
-        upgrade_supply<FakeMoney>(&framework);
-    }
+    //     upgrade_supply<FakeMoney>(&framework);
+    // }
 
     // #[test(framework = @diem_framework)]
     // fun test_supply_upgrade(framework: signer) acquires CoinInfo, SupplyConfig {
