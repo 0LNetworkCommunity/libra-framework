@@ -7,7 +7,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::gas_coin::GasCoin;
     use ol_framework::rewards;
     use ol_framework::jail;
-    use ol_framework::cases;
+    use ol_framework::grade;
     use ol_framework::safe;
     use ol_framework::burn;
     use ol_framework::donor_directed;
@@ -22,7 +22,7 @@ module diem_framework::epoch_boundary {
     use std::vector;
     use std::error;
 
-    // use diem_std::debug::print;
+    use diem_std::debug::print;
 
     friend diem_framework::block;
 
@@ -34,20 +34,138 @@ module diem_framework::epoch_boundary {
     const ETX_FEES_NOT_INITIALIZED: u64 = 0;
 
 
+    // I just checked in, to see what condition my condition was in.
+    struct BoundaryStatus has key {
+      security_bill_count: u64,
+      security_bill_amount: u64,
+      security_bill_success: bool,
+
+      dd_accounts_count: u64,
+      dd_accounts_amount: u64,
+      dd_accounts_success: bool,
+
+      set_fee_makers_success: bool,
+      tower_state_success: bool,
+      system_fees_collected: u64,
+      nominal_reward_to_vals: u64,
+      clearing_price: u64,
+      // Process Outgoing
+      process_outgoing_success: bool,
+      outgoing_vals: vector<address>,
+      oracle_budget: u64,
+      oracle_pay_success: bool,
+      epoch_burn_fees: u64,
+      epoch_burn_success: bool,
+      slow_wallet_drip: bool,
+      // Process Incoming
+      // musical chairs
+      incoming_compliant: vector<address>,
+      incoming_compliant_count: u64,
+      incoming_seats_offered: u64,
+
+      // proof of fee
+      incoming_all_bidders: vector<address>,
+      incoming_only_qualified_bidders: vector<address>,
+      incoming_auction_winners: vector<address>,
+      incoming_filled_seats: u64,
+      incoming_fees: u64,
+      incoming_fees_success: bool,
+
+      // reconfiguration
+      incoming_post_failover_check: vector<address>,
+      incoming_vals_missing_configs: vector<address>,
+      incoming_actual_vals: vector<address>,
+      incoming_final_set_size: u64,
+      incoming_reconfig_success: bool,
+
+      infra_subsize_amount: u64,
+      infra_subsizize_success: bool,
+    }
+
+    public fun initialize(framework: &signer) {
+      if (!exists<BoundaryStatus>(@ol_framework)){
+        move_to(framework, BoundaryStatus {
+          security_bill_count: 0,
+          security_bill_amount: 0,
+          security_bill_success: false,
+
+          dd_accounts_count: 0,
+          dd_accounts_amount: 0,
+          dd_accounts_success: false,
+
+          set_fee_makers_success: false,
+          tower_state_success: false,
+          system_fees_collected: 0,
+          nominal_reward_to_vals: 0,
+          clearing_price: 0,
+          // Process Outgoing
+          process_outgoing_success: false,
+          outgoing_vals: vector::empty(),
+          oracle_budget: 0,
+          oracle_pay_success: false,
+          epoch_burn_fees: 0,
+          epoch_burn_success: false,
+          slow_wallet_drip: false,
+          // Process Incoming
+          incoming_compliant: vector::empty(),
+          incoming_compliant_count: 0,
+          incoming_seats_offered: 0,
+          incoming_filled_seats: 0,
+          incoming_auction_winners: vector::empty(),
+          incoming_all_bidders: vector::empty(),
+          incoming_only_qualified_bidders: vector::empty(),
+          incoming_final_set_size: 0,
+          incoming_fees: 0,
+          incoming_fees_success: false,
+
+          incoming_post_failover_check: vector::empty(),
+          incoming_vals_missing_configs: vector::empty(),
+          incoming_actual_vals: vector::empty(),
+          incoming_reconfig_success: false,
+
+          infra_subsize_amount: 0,
+          infra_subsizize_success: false,
+        });
+      }
+    }
+
+
     // Contains all of 0L's business logic for end of epoch.
     // This removed business logic from reconfiguration.move
     // and prevents dependency cycling.
-    public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64, epoch_round: u64) {
+    public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64, epoch_round: u64) acquires BoundaryStatus {
         system_addresses::assert_ol(root);
+
+        let status = borrow_global_mut<BoundaryStatus>(@ol_framework);
         // bill root service fees;
-        root_service_billing(root);
+        root_service_billing(root, status);
         // run the transactions of donor directed accounts
-        donor_directed::process_donor_directed_accounts(root, closing_epoch);
+        let (count, amount, success) = donor_directed::process_donor_directed_accounts(root, closing_epoch);
+        status.dd_accounts_count = count;
+        status.dd_accounts_amount = amount;
+        status.dd_accounts_success = success;
+
         // reset fee makers tracking
         fee_maker::epoch_reset_fee_maker(root);
         // randomize the Tower/Oracle difficulty
         tower_state::reconfig(root);
 
+        settle_accounts(root, closing_epoch, epoch_round, status);
+
+        // drip coins
+        slow_wallet::on_new_epoch(root);
+
+        // ======= THIS IS APPROXIMATELY THE BOUNDARY =====
+        process_incoming_validators(root, status);
+
+        subsidize_from_infra_escrow(root);
+
+        print(borrow_global<BoundaryStatus>(@ol_framework))
+  }
+
+  // TODO: instrument all of this
+  /// withdraw coins and settle accounts for validators and oracles
+  fun settle_accounts(root: &signer, closing_epoch: u64, epoch_round: u64, _status: &mut BoundaryStatus) {
         assert!(transaction_fee::is_fees_collection_enabled(), error::invalid_state(ETX_FEES_NOT_INITIALIZED));
 
         if (transaction_fee::system_fees_collected() > 0) {
@@ -73,15 +191,8 @@ module diem_framework::epoch_boundary {
           // there might be some dust, that should get burned
           coin::user_burn(all_fees);
         };
+  }
 
-        // drip coins
-        slow_wallet::on_new_epoch(root);
-
-        // ======= THIS IS APPROXIMATELY THE BOUNDARY =====
-        process_incoming_validators(root);
-
-        subsidize_from_infra_escrow(root);
-    }
 
   /// process the payments for performant validators
   /// jail the non performant
@@ -98,7 +209,7 @@ module diem_framework::epoch_boundary {
     while (i < vector::length(&vals)) {
       let addr = vector::borrow(&vals, i);
 
-      let (performed, _, _, _) = cases::get_validator_grade(*addr);
+      let (performed, _, _, _) = grade::get_validator_grade(*addr);
       // Failover. if we had too few blocks in an epoch, everyone should pass
       // except for testing
       if (!testnet::is_testnet() && (epoch_round < 1000)) performed = true;
@@ -119,19 +230,38 @@ module diem_framework::epoch_boundary {
     return compliant_vals
   }
 
-  fun process_incoming_validators(root: &signer) {
+  fun process_incoming_validators(root: &signer, status: &mut BoundaryStatus) {
     system_addresses::assert_ol(root);
 
     let (compliant, n_seats) = musical_chairs::stop_the_music(root);
+    status.incoming_compliant_count = vector::length(&compliant);
+    status.incoming_compliant = compliant;
+    status.incoming_seats_offered = n_seats;
+    // check amount of fees expected
+    let (auction_winners, all_bidders, only_qualified_bidders, entry_price) = proof_of_fee::end_epoch(root, &compliant, n_seats);
+    status.incoming_filled_seats = vector::length(&auction_winners);
+    status.incoming_all_bidders = all_bidders;
+    status.incoming_only_qualified_bidders = only_qualified_bidders;
+    status.incoming_auction_winners = auction_winners;
 
-    let validators = proof_of_fee::end_epoch(root, &compliant, n_seats);
+
+    let post_failover_check = stake::check_failover_rules(auction_winners, compliant);
+    status.incoming_post_failover_check = post_failover_check;
+
+    // showtime! try to reconfigure
+    let (actual_set, vals_missing_configs, success) = stake::maybe_reconfigure(root, post_failover_check);
+    status.incoming_vals_missing_configs = vals_missing_configs;
+    status.incoming_actual_vals = actual_set;
+    status.incoming_reconfig_success = success;
+
+    let (_expected_fees, fees_paid, fee_success) = proof_of_fee::charge_epoch_fees(root, actual_set, entry_price);
+    status.incoming_fees = fees_paid;
+    status.incoming_fees_success = fee_success;
     // make sure musical chairs doesn't keep incrementing if we are persistently
     // offering more seats than can be filled
-    let filled_seats = vector::length(&validators);
-    musical_chairs::set_current_seats(root, filled_seats);
-
-    stake::ol_on_new_epoch(root, validators);
-
+    let final_set_size = vector::length(&actual_set);
+    musical_chairs::set_current_seats(root, final_set_size);
+    status.incoming_final_set_size = final_set_size;
   }
 
   // set up rewards subsidy for coming epoch
@@ -146,13 +276,40 @@ module diem_framework::epoch_boundary {
   }
 
   // all services the root collective security is billing for
-  fun root_service_billing(vm: &signer) {
-    safe::root_security_fee_billing(vm);
+  fun root_service_billing(vm: &signer, status: &mut BoundaryStatus) {
+    let (security_bill_count, security_bill_amount, security_bill_success) = safe::root_security_fee_billing(vm);
+    status.security_bill_count = security_bill_count;
+    status.security_bill_amount = security_bill_amount;
+    status.security_bill_success = security_bill_success;
   }
 
+  //////// GETTERS ////////
+  #[view]
+  public fun get_reconfig_success(): bool acquires BoundaryStatus {
+    borrow_global<BoundaryStatus>(@ol_framework).incoming_reconfig_success
+  }
+  #[view]
+  public fun get_actual_vals(): vector<address> acquires BoundaryStatus {
+    borrow_global<BoundaryStatus>(@ol_framework).incoming_actual_vals
+  }
+
+  #[view]
+  public fun get_qualified_bidders(): vector<address> acquires BoundaryStatus {
+    borrow_global<BoundaryStatus>(@ol_framework).incoming_only_qualified_bidders
+  }
+
+  #[view]
+  public fun get_auction_winners(): vector<address> acquires BoundaryStatus {
+    borrow_global<BoundaryStatus>(@ol_framework).incoming_auction_winners
+  }
+
+  #[view]
+  public fun get_seats_offered():u64 acquires BoundaryStatus {
+    borrow_global<BoundaryStatus>(@ol_framework).incoming_seats_offered
+  }
 
   #[test_only]
-  public fun ol_reconfigure_for_test(vm: &signer, closing_epoch: u64, epoch_round: u64) {
+  public fun ol_reconfigure_for_test(vm: &signer, closing_epoch: u64, epoch_round: u64) acquires BoundaryStatus {
       use diem_framework::system_addresses;
 
       system_addresses::assert_ol(vm);

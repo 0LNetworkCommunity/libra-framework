@@ -135,7 +135,7 @@ module diem_framework::reconfiguration {
         // transaction_fee::process_collected_fees();
 
         // Call stake to compute the new validator set and distribute rewards and transaction fees.
-        stake::on_new_epoch();
+        // stake::on_new_epoch();
         storage_gas::on_reconfig();
 
         assert!(current_time > config_ref.last_reconfiguration_time, error::invalid_state(EINVALID_BLOCK_TIME));

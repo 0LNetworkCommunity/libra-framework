@@ -22,8 +22,9 @@ module ol_framework::proof_of_fee {
   use diem_framework::stake;
   use diem_framework::system_addresses;
   use ol_framework::globals;
-
   // use diem_std::debug::print;
+
+  friend ol_framework::epoch_boundary;
 
   /// The nominal reward for each validator in each epoch.
   const GENESIS_BASELINE_REWARD: u64 = 1000000;
@@ -85,9 +86,6 @@ module ol_framework::proof_of_fee {
 
     let acc = signer::address_of(account_sig);
 
-    // TODO: V7
-    // assert!(validator_universe::is_in_universe(acc), error::permission_denied(ENOT_AN_ACTIVE_VALIDATOR));
-
     if (!exists<ProofOfFeeAuction>(acc)) {
       move_to<ProofOfFeeAuction>(
       account_sig,
@@ -100,23 +98,46 @@ module ol_framework::proof_of_fee {
     }
   }
 
-  /// consolidates all the logic for the epoch boundary
-  // includes getting the sorted bids
-  // filling the seats (determined by MusicalChairs), and getting a price.
-  // and finally charging the validators for their bid (everyone pays the lowest)
-  public fun end_epoch(
+  /// Consolidates all the logic for the epoch boundary/
+  /// Includes: getting the sorted bids,
+  /// filling the seats (determined by MusicalChairs), and getting a price.
+  /// and finally charging the validators for their bid (everyone pays the lowest)
+  /// for audit instrumentation returns: final set size, auction winners, all the bidders, (including not-qualified), and all qualified bidders.
+  /// we also return the auction entry price (clearing price)
+  /// (final_set_size, auction_winners, all_bidders, only_qualified_bidders, actually_paid, entry_price)
+  public(friend) fun end_epoch(
     vm: &signer,
     outgoing_compliant_set: &vector<address>,
-    n_musical_chairs: u64
-  ): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
+    final_set_size: u64
+  ): (vector<address>, vector<address>, vector<address>, u64) acquires ProofOfFeeAuction, ConsensusReward {
       system_addresses::assert_ol(vm);
 
-      let sorted_bidders = get_bidders(false);
-      let (auction_winners, price) = fill_seats_and_get_price(vm, n_musical_chairs, &sorted_bidders, outgoing_compliant_set);
+      let all_bidders = get_bidders(false);
+      let only_qualified_bidders = get_bidders(true);
+      // The set size as determined by musical chairs is a target size
+      // but the actual final size depends on how much can we expand the set
+      // without adding too many unproven nodes (which we don't know if they are prepared to validate, and risk halting th network).
 
-      transaction_fee::vm_multi_pay_fee(vm, &auction_winners, price);
+      // This is the core of the mechanism, the uniform price auction
+      // the winners of the auction will be the validator set.
+      // other lists are created for audit purposes of the BoundaryStatus
+      let (auction_winners, entry_price, _proven, _unproven) = fill_seats_and_get_price(vm, final_set_size, &only_qualified_bidders, outgoing_compliant_set);
 
-      auction_winners
+
+      (auction_winners, all_bidders, only_qualified_bidders, entry_price)
+  }
+
+  /// The fees are charged seperate from the auction and seating loop
+  /// this is because there are edge conditions in which the winners
+  /// may not be the ones seated (once we consider failover rules).
+  /// returns the expected amount of fees, the fees that were actually able to be withdrawn, and success, if the expected and withdrawn are the same.
+  public(friend) fun charge_epoch_fees(vm: &signer, auction_winners: vector<address>, price: u64): (u64, u64, bool) {
+      let expected_fees = vector::length(&auction_winners) * price;
+
+      let actually_paid = transaction_fee::vm_multi_pay_fee(vm, &auction_winners, price);
+
+      let fee_success = actually_paid == expected_fees;
+      (expected_fees, actually_paid, fee_success)
   }
 
 
@@ -239,90 +260,84 @@ module ol_framework::proof_of_fee {
   // After more experience in the wild, the network may decide to
   // limit bid retracting.
 
-
   // The Validator must qualify on a number of metrics: have funds in their Unlocked account to cover bid, have miniumum viable vouches, and not have been jailed in the previous round.
 
-
-  // This function assumes we have already filtered out ineligible validators.
-  // but we will check again here.
+  /// Showtime.
+  /// This is where we take all the bidders and seat them.
+  /// We also need to check here for the safe size of the validator set.
+  /// This function assumes we have already filtered out ineligible validators.
+  /// but we will check again here.
+  /// we return:
+  // a. the list of winning validators (the validator set)
+  // b. the clearing price paid
+  // c. the list of proven nodes added, for audit and instrumentation
+  // d. the list of unproven, for audit and instrumentation
   public fun fill_seats_and_get_price(
     vm: &signer,
-    set_size: u64,
+    final_set_size: u64,
     sorted_vals_by_bid: &vector<address>,
     proven_nodes: &vector<address>
-  ): (vector<address>, u64) acquires ProofOfFeeAuction, ConsensusReward {
-    if (signer::address_of(vm) != @ol_framework) return (vector::empty<address>(), 0);
+  ): (vector<address>, u64, vector<address>, vector<address>) acquires ProofOfFeeAuction, ConsensusReward {
+    system_addresses::assert_ol(vm);
 
-    let seats_to_fill = vector::empty<address>();
+    // Now we can seat the validators based on the algo:
+    // A. seat the highest bidding 2/3 proven nodes of previous epoch
+    // B. seat the remainder 1/3 of highest bidding validators which may or MA NOT have participated in the previous epoch. Note: We assume jailed validators are not in qualified bidder list anyways, but we should check again
+    // The way to achieve this with minimal looping, is by going through the list and adding every bidder, but once the quota of unproven nodes is full, only proven nodes can be added.
 
-    // check the max size of the validator set.
-    // there may be too few "proven" validators to fill the set with 2/3rds proven nodes of the stated set_size.
-    let proven_len = vector::length(proven_nodes);
+    // TODO: include jail reputation
+    // B1. first, seat any vals with jail reputation < 2.
+    // B2. then, if there are still seats, seat the remainder of the unproven vals with any jail reputation.
+    let unproven_quota = final_set_size / 3;
+    let proposed_validators = vector::empty<address>();
 
-    // check if the proven len plus unproven quota will
-    // be greater than the set size. Which is the expected.
-    // Otherwise the set will need to be smaller than the
-    // declared size, because we will have to fill with more unproven nodes.
-    let one_third_of_max = proven_len/2;
-    let safe_set_size = proven_len + one_third_of_max;
-
-    let (set_size, max_unproven) = if (safe_set_size < set_size) {
-      (safe_set_size, safe_set_size/3)
-    } else {
-      // happy case, unproven bidders are a smaller minority
-      (set_size, set_size/3)
-    };
-
-    // Now we can seat the validators based on the algo above:
-    // 1. seat the proven nodes of previous epoch
-    // 2. seat validators who did not participate in the previous epoch:
-    // 2a. seat the vals with jail reputation < 2
-    // 2b. seat the remainder of the unproven vals with any jail reputation.
+    let audit_add_proven_vals = vector::empty<address>();
+    let audit_add_unproven_vals = vector::empty<address>();
 
     let num_unproven_added = 0;
     let i = 0u64;
     while (
-      (vector::length(&seats_to_fill) < set_size) &&
+      (vector::length(&proposed_validators) < final_set_size) && // until seats full
       (i < vector::length(sorted_vals_by_bid))
     ) {
       let val = vector::borrow(sorted_vals_by_bid, i);
       // check if a proven node
+      // NOTE: if the top bidders all all "proven" nodes, then there will
+      // be no reason to add an unproven. Unproven nodes will only
+      // be picked if they have bids higher than the bottom 1/3 bids of the proven nodes
       if (vector::contains(proven_nodes, val)) {
-        vector::push_back(&mut seats_to_fill, *val);
+        vector::push_back(&mut proposed_validators, *val);
+        vector::push_back(&mut audit_add_proven_vals, *val);
       } else {
         // for unproven nodes, push it to list if we haven't hit limit
-        if (num_unproven_added < max_unproven ) {
+        if (num_unproven_added < unproven_quota ) {
           // TODO: check jail reputation
-          vector::push_back(&mut seats_to_fill, *val);
+          vector::push_back(&mut proposed_validators, *val);
+          vector::push_back(&mut audit_add_unproven_vals, *val);
+
           num_unproven_added = num_unproven_added + 1;
         };
       };
       i = i + 1;
     };
 
-    // Set history
-    set_history(vm, &seats_to_fill);
+    // Save history
+    set_history(vm, &proposed_validators);
 
-    // we failed to seat anyone.
-    // let EpochBoundary deal with this.
-    if (vector::is_empty(&seats_to_fill)) {
-
-
-      return (seats_to_fill, 0)
-    };
+    // We failed to seat anyone.
+    // let epoch_boundary.move deal with this.
+    if (vector::is_empty(&proposed_validators)) return (proposed_validators, 0, audit_add_proven_vals, audit_add_unproven_vals);
 
     // Find the clearing price which all validators will pay
-    let lowest_bidder = vector::borrow(&seats_to_fill, vector::length(&seats_to_fill) - 1);
+    let lowest_bidder = vector::borrow(&proposed_validators, vector::length(&proposed_validators) - 1);
 
     let (lowest_bid_pct, _) = current_bid(*lowest_bidder);
-
-
 
     // update the clearing price
     let cr = borrow_global_mut<ConsensusReward>(@ol_framework);
     cr.clearing_price = lowest_bid_pct;
 
-    return (seats_to_fill, lowest_bid_pct)
+    return (proposed_validators, lowest_bid_pct, audit_add_proven_vals, audit_add_unproven_vals)
   }
 
   #[view]
@@ -333,28 +348,31 @@ module ol_framework::proof_of_fee {
       // Safety check: node has valid configs
       if (!stake::stake_pool_exists(val)) vector::push_back(&mut errors, EVALIDATOR_NOT_CONFIGURED); // 11
       // is a slow wallet
-      if (!slow_wallet::is_slow(val)) vector::push_back(&mut errors, EWALLET_NOT_SLOW); // 2
+      if (!slow_wallet::is_slow(val)) vector::push_back(&mut errors, EWALLET_NOT_SLOW); // 12
       // we can't seat validators that were just jailed
       // NOTE: epoch reconfigure needs to reset the jail
       // before calling the proof of fee.
-      if (jail::is_jailed(val)) vector::push_back(&mut errors, EIS_JAILED); // 3
+      if (jail::is_jailed(val)) vector::push_back(&mut errors, EIS_JAILED); // 33
       // we can't seat validators who don't have minimum viable vouches
 
-      if (!vouch::unrelated_buddies_above_thresh(val, globals::get_validator_vouch_threshold())) vector::push_back(&mut errors, ETOO_FEW_VOUCHES); // 4
+      let val_set = stake::get_current_validators();
+      let (frens_in_val_set, _found) = vouch::true_friends_in_list(val, &val_set);
+      let threshold = globals::get_validator_vouch_threshold();
+      if (vector::length(&frens_in_val_set) < threshold) vector::push_back(&mut errors, ETOO_FEW_VOUCHES); // 14
+
       let (bid_pct, expire) = current_bid(val);
-      if (bid_pct == 0) vector::push_back(&mut errors, EBID_IS_ZERO); // 5
+      if (bid_pct == 0) vector::push_back(&mut errors, EBID_IS_ZERO); // 15
       // Skip if the bid expired. belt and suspenders, this should have been checked in the sorting above.
       // TODO: make this it's own function so it can be publicly callable, it's useful generally, and for debugging.
 
-
-
-      if (epoch_helper::get_current_epoch() > expire) vector::push_back(&mut errors, EBID_EXPIRED); // 6
+      if (epoch_helper::get_current_epoch() > expire) vector::push_back(&mut errors, EBID_EXPIRED); // 16
       // skip the user if they don't have sufficient UNLOCKED funds
       // or if the bid expired.
       let unlocked_coins = slow_wallet::unlocked_amount(val);
       let (baseline_reward, _, _) = get_consensus_reward();
       let coin_required = fixed_point32::multiply_u64(baseline_reward, fixed_point32::create_from_rational(bid_pct, 1000));
-      if (unlocked_coins < coin_required) vector::push_back(&mut errors, ELOW_UNLOCKED_COIN_BALANCE); // 7
+
+      if (unlocked_coins < coin_required) vector::push_back(&mut errors, ELOW_UNLOCKED_COIN_BALANCE); // 17
 
       (errors, vector::length(&errors) == 0) // friend of ours
   }
@@ -464,13 +482,13 @@ module ol_framework::proof_of_fee {
 
   /// find the median bid to push to history
   // this is needed for reward_thermostat
-  public fun set_history(vm: &signer, seats_to_fill: &vector<address>) acquires ProofOfFeeAuction, ConsensusReward {
+  public fun set_history(vm: &signer, proposed_validators: &vector<address>) acquires ProofOfFeeAuction, ConsensusReward {
     if (signer::address_of(vm) != @ol_framework) {
       return
     };
 
 
-    let median_bid = get_median(seats_to_fill);
+    let median_bid = get_median(proposed_validators);
     // push to history
     let cr = borrow_global_mut<ConsensusReward>(@ol_framework);
     cr.median_win_bid = median_bid;
@@ -484,17 +502,17 @@ module ol_framework::proof_of_fee {
     };
   }
 
-  fun get_median(seats_to_fill: &vector<address>):u64 acquires ProofOfFeeAuction {
+  fun get_median(proposed_validators: &vector<address>):u64 acquires ProofOfFeeAuction {
     // TODO: the list is sorted above, so
     // we assume the median is the middle element
-    let len = vector::length(seats_to_fill);
+    let len = vector::length(proposed_validators);
     if (len == 0) {
       return 0
     };
     let median_bidder = if (len > 2) {
-      vector::borrow(seats_to_fill, len/2)
+      vector::borrow(proposed_validators, len/2)
     } else {
-      vector::borrow(seats_to_fill, 0)
+      vector::borrow(proposed_validators, 0)
     };
     let (median_bid, _) = current_bid(*median_bidder);
     return median_bid

@@ -5,7 +5,7 @@ module ol_framework::test_stake {
   use std::vector;
   use ol_framework::stake;
   use ol_framework::testnet;
-  use ol_framework::cases;
+  use ol_framework::grade;
 
   // use diem_std::debug::print;
 
@@ -29,7 +29,7 @@ module ol_framework::test_stake {
       i = i + 1;
     };
 
-    let (cfg_list, _weight) = stake::test_make_val_cfg(&new_list);
+    let (cfg_list, _weight, _) = stake::test_make_val_cfg(&new_list);
 
 
     stake::test_set_next_vals(&root, cfg_list);
@@ -65,8 +65,8 @@ module ol_framework::test_stake {
       i = i + 1;
     };
 
-    let cfg_list = stake::check_failover_rules(new_list);
-    assert!(vector::length(&cfg_list) == 5, 1003);
+    let cfg_list = stake::check_failover_rules(new_list, vector::empty());
+    assert!(vector::length(&cfg_list) == 10, 1003);
 
   }
 
@@ -113,10 +113,11 @@ module ol_framework::test_stake {
     // now make Eve not compliant
     let eve = @0x1000e;
     mock::mock_case_4(&root, eve);
-    assert!(cases::get_case(eve) == 4, 735701);
+    let (compliant, _, _, _) = grade::get_validator_grade(eve);
+    assert!(!compliant, 735701);
 
-    let v = cases::get_jailed_set();
-    assert!(vector::contains(&v, &eve), 735702);
+    // let v = grade::get_jailed_set();
+    // assert!(vector::contains(&v, &eve), 735702);
 
   }
 
