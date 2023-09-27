@@ -8,12 +8,16 @@
 module ol_framework::genesis_migration {
   use std::signer;
   use std::error;
+  use std::fixed_point32;
+  use std::option;
   use diem_framework::coin;
   use ol_framework::ol_account;
   use ol_framework::validator_universe;
   use ol_framework::gas_coin;
   use ol_framework::gas_coin::GasCoin;
   use ol_framework::transaction_fee;
+  use ol_framework::slow_wallet;
+  use ol_framework::pledge_accounts;
   use diem_framework::system_addresses;
   // use diem_std::debug::print;
 
@@ -81,4 +85,31 @@ module ol_framework::genesis_migration {
 
     }
   }
+
+    /// for an uprade using an escrow percent. Only to be called at genesis
+    // escrow percent has 6 decimal precision (1m);
+    public fun fork_escrow_init(vm: &signer, user_sig: &signer, escrow_pct: u64) {
+      system_addresses::assert_vm(vm);
+      let user_addr = signer::address_of(user_sig);
+      // establish the infrastructure escrow pledge
+
+      let escrow_pct = fixed_point32::create_from_rational(escrow_pct, 1000000);
+
+      let (unlocked, total) = slow_wallet::balance(user_addr);
+
+      let locked = 0;
+      if ((total > unlocked) && (total > 0)) {
+        locked = (total - unlocked);
+      };
+
+      if (locked > 0) {
+        let to_escrow = fixed_point32::multiply_u64(locked, escrow_pct);
+        let coin_opt = coin::vm_withdraw(vm, user_addr, to_escrow);
+        if (option::is_some(&coin_opt)) {
+          let c = option::extract(&mut coin_opt);
+          pledge_accounts::genesis_infra_escrow_pledge(vm, user_sig, c);
+        };
+        option::destroy_none(coin_opt);
+      };
+    }
 }

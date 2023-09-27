@@ -22,7 +22,7 @@ module diem_framework::coin {
     friend ol_framework::safe;
     friend ol_framework::rewards;
     friend ol_framework::donor_directed;
-    friend ol_framework::pledge_accounts;
+    // friend ol_framework::pledge_accounts;
     friend diem_framework::genesis;
     friend diem_framework::transaction_fee;
     friend diem_framework::resource_account;
@@ -505,7 +505,8 @@ module diem_framework::coin {
 
     /// "Merges" the two given coins.  The coin passed in as `dst_coin` will have a value equal
     /// to the sum of the two tokens (`dst_coin` and `source_coin`).
-    public(friend) fun merge<CoinType>(dst_coin: &mut Coin<CoinType>, source_coin: Coin<CoinType>) {
+    // NOTE: ok to not be a friend function, since these coins had to be withdrawn through the ol_account pathway
+    public fun merge<CoinType>(dst_coin: &mut Coin<CoinType>, source_coin: Coin<CoinType>) {
         spec {
             assume dst_coin.value + source_coin.value <= MAX_U64;
         };
@@ -516,7 +517,7 @@ module diem_framework::coin {
     /// Mint new `Coin` with capability.
     /// The capability `_cap` should be passed as reference to `MintCapability<CoinType>`.
     /// Returns minted `Coin`.
-    public fun mint<CoinType>(
+    public(friend) fun mint<CoinType>(
         amount: u64,
         _cap: &MintCapability<CoinType>,
     ): Coin<CoinType> acquires CoinInfo {
@@ -533,6 +534,13 @@ module diem_framework::coin {
         Coin<CoinType> { value: amount }
     }
 
+    #[test_only]
+    public fun test_mint<CoinType>(
+      amount: u64,
+      cap: &MintCapability<CoinType>,
+    ): Coin<CoinType> acquires CoinInfo {
+      mint<CoinType>(amount, cap)
+    }
     //////// 0L ////////
     // the VM needs to mint only once in 0L for genesis.
     // in gas_coin there are some helpers for test suite minting.
