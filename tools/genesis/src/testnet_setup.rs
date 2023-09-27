@@ -33,7 +33,7 @@ pub fn setup(
     let my_host: HostAndPort = format_host_str
         .parse()
         .expect("could not parse IP address for host");
-    host::initialize_host(
+    host::initialize_validator(
         Some(data_path.clone()),
         Some(&me.to_string()),
         my_host,

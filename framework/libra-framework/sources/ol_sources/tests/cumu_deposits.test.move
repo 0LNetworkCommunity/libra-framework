@@ -24,7 +24,7 @@ module ol_framework::test_cumu_deposits {
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
     fun cumu_deposits_track(root: &signer, alice: &signer, bob: &signer) {
       mock::genesis_n_vals(root, 2);
-      mock::ol_initialize_coin_and_fund_vals(root, 10000);
+      mock::ol_initialize_coin_and_fund_vals(root, 10000, true);
       cumulative_deposits::vm_migrate_cumulative_deposits(root, alice, 0);
 
       assert!(cumulative_deposits::is_init_cumu_tracking(@0x1000a), 7357001);

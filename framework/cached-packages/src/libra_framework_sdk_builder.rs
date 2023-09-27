@@ -486,12 +486,6 @@ pub enum EntryFunctionCall {
         auth_key: AccountAddress,
     },
 
-    /// Creates an account by sending an initial amount of GAS to it.
-    OlAccountCreateUserAccountByCoin {
-        auth_key: AccountAddress,
-        amount: u64,
-    },
-
     /// Set whether `account` can receive direct transfers of coins that they have not explicitly registered to receive.
     OlAccountSetAllowDirectCoinTransfers {
         allow: bool,
@@ -542,6 +536,12 @@ pub enum EntryFunctionCall {
         seed: Vec<u8>,
         metadata_serialized: Vec<u8>,
         code: Vec<Vec<u8>>,
+    },
+
+    SlowWalletSmokeTestVmUnlock {
+        user_addr: AccountAddress,
+        unlocked: u64,
+        transferred: u64,
     },
 
     /// Initialize the validator account and give ownership to the signing account
@@ -607,6 +607,16 @@ pub enum EntryFunctionCall {
         solution: Vec<u8>,
         difficulty: u64,
         security: u64,
+    },
+
+    /// This is the entrypoint for a validator joining the network.
+    /// Separates the logic of registration from validator election etc. (in stake.move).
+    /// This prevents dependency cycling issues, since stake.move is a large module.
+    ValidatorUniverseRegisterValidator {
+        consensus_pubkey: Vec<u8>,
+        proof_of_possession: Vec<u8>,
+        network_addresses: Vec<u8>,
+        fullnode_addresses: Vec<u8>,
     },
 
     /// Updates the major version to a larger version.
@@ -898,9 +908,6 @@ impl EntryFunctionCall {
             } => multisig_account_vote_transanction(multisig_account, sequence_number, approved),
             ObjectTransferCall { object, to } => object_transfer_call(object, to),
             OlAccountCreateAccount { auth_key } => ol_account_create_account(auth_key),
-            OlAccountCreateUserAccountByCoin { auth_key, amount } => {
-                ol_account_create_user_account_by_coin(auth_key, amount)
-            }
             OlAccountSetAllowDirectCoinTransfers { allow } => {
                 ol_account_set_allow_direct_coin_transfers(allow)
             }
@@ -933,6 +940,11 @@ impl EntryFunctionCall {
                 metadata_serialized,
                 code,
             ),
+            SlowWalletSmokeTestVmUnlock {
+                user_addr,
+                unlocked,
+                transferred,
+            } => slow_wallet_smoke_test_vm_unlock(user_addr, unlocked, transferred),
             StakeInitializeStakeOwner {
                 initial_stake_amount,
                 operator,
@@ -974,6 +986,17 @@ impl EntryFunctionCall {
                 difficulty,
                 security,
             } => tower_state_minerstate_commit(challenge, solution, difficulty, security),
+            ValidatorUniverseRegisterValidator {
+                consensus_pubkey,
+                proof_of_possession,
+                network_addresses,
+                fullnode_addresses,
+            } => validator_universe_register_validator(
+                consensus_pubkey,
+                proof_of_possession,
+                network_addresses,
+                fullnode_addresses,
+            ),
             VersionSetVersion { major } => version_set_version(major),
             VouchInsistVouchFor { wanna_be_my_friend } => {
                 vouch_insist_vouch_for(wanna_be_my_friend)
@@ -2288,28 +2311,6 @@ pub fn ol_account_create_account(auth_key: AccountAddress) -> TransactionPayload
     ))
 }
 
-/// Creates an account by sending an initial amount of GAS to it.
-pub fn ol_account_create_user_account_by_coin(
-    auth_key: AccountAddress,
-    amount: u64,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("ol_account").to_owned(),
-        ),
-        ident_str!("create_user_account_by_coin").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&auth_key).unwrap(),
-            bcs::to_bytes(&amount).unwrap(),
-        ],
-    ))
-}
-
 /// Set whether `account` can receive direct transfers of coins that they have not explicitly registered to receive.
 pub fn ol_account_set_allow_direct_coin_transfers(allow: bool) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
@@ -2481,6 +2482,29 @@ pub fn resource_account_create_resource_account_and_publish_package(
             bcs::to_bytes(&seed).unwrap(),
             bcs::to_bytes(&metadata_serialized).unwrap(),
             bcs::to_bytes(&code).unwrap(),
+        ],
+    ))
+}
+
+pub fn slow_wallet_smoke_test_vm_unlock(
+    user_addr: AccountAddress,
+    unlocked: u64,
+    transferred: u64,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("slow_wallet").to_owned(),
+        ),
+        ident_str!("smoke_test_vm_unlock").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&user_addr).unwrap(),
+            bcs::to_bytes(&unlocked).unwrap(),
+            bcs::to_bytes(&transferred).unwrap(),
         ],
     ))
 }
@@ -2666,6 +2690,34 @@ pub fn tower_state_minerstate_commit(
             bcs::to_bytes(&solution).unwrap(),
             bcs::to_bytes(&difficulty).unwrap(),
             bcs::to_bytes(&security).unwrap(),
+        ],
+    ))
+}
+
+/// This is the entrypoint for a validator joining the network.
+/// Separates the logic of registration from validator election etc. (in stake.move).
+/// This prevents dependency cycling issues, since stake.move is a large module.
+pub fn validator_universe_register_validator(
+    consensus_pubkey: Vec<u8>,
+    proof_of_possession: Vec<u8>,
+    network_addresses: Vec<u8>,
+    fullnode_addresses: Vec<u8>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("validator_universe").to_owned(),
+        ),
+        ident_str!("register_validator").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&consensus_pubkey).unwrap(),
+            bcs::to_bytes(&proof_of_possession).unwrap(),
+            bcs::to_bytes(&network_addresses).unwrap(),
+            bcs::to_bytes(&fullnode_addresses).unwrap(),
         ],
     ))
 }
@@ -3483,19 +3535,6 @@ mod decoder {
         }
     }
 
-    pub fn ol_account_create_user_account_by_coin(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::OlAccountCreateUserAccountByCoin {
-                auth_key: bcs::from_bytes(script.args().get(0)?).ok()?,
-                amount: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
     pub fn ol_account_set_allow_direct_coin_transfers(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -3599,6 +3638,20 @@ mod decoder {
         }
     }
 
+    pub fn slow_wallet_smoke_test_vm_unlock(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::SlowWalletSmokeTestVmUnlock {
+                user_addr: bcs::from_bytes(script.args().get(0)?).ok()?,
+                unlocked: bcs::from_bytes(script.args().get(1)?).ok()?,
+                transferred: bcs::from_bytes(script.args().get(2)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn stake_initialize_stake_owner(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::StakeInitializeStakeOwner {
@@ -3689,6 +3742,21 @@ mod decoder {
                 solution: bcs::from_bytes(script.args().get(1)?).ok()?,
                 difficulty: bcs::from_bytes(script.args().get(2)?).ok()?,
                 security: bcs::from_bytes(script.args().get(3)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn validator_universe_register_validator(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::ValidatorUniverseRegisterValidator {
+                consensus_pubkey: bcs::from_bytes(script.args().get(0)?).ok()?,
+                proof_of_possession: bcs::from_bytes(script.args().get(1)?).ok()?,
+                network_addresses: bcs::from_bytes(script.args().get(2)?).ok()?,
+                fullnode_addresses: bcs::from_bytes(script.args().get(3)?).ok()?,
             })
         } else {
             None
@@ -3989,10 +4057,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::ol_account_create_account),
         );
         map.insert(
-            "ol_account_create_user_account_by_coin".to_string(),
-            Box::new(decoder::ol_account_create_user_account_by_coin),
-        );
-        map.insert(
             "ol_account_set_allow_direct_coin_transfers".to_string(),
             Box::new(decoder::ol_account_set_allow_direct_coin_transfers),
         );
@@ -4029,6 +4093,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::resource_account_create_resource_account_and_publish_package),
         );
         map.insert(
+            "slow_wallet_smoke_test_vm_unlock".to_string(),
+            Box::new(decoder::slow_wallet_smoke_test_vm_unlock),
+        );
+        map.insert(
             "stake_initialize_stake_owner".to_string(),
             Box::new(decoder::stake_initialize_stake_owner),
         );
@@ -4059,6 +4127,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "tower_state_minerstate_commit".to_string(),
             Box::new(decoder::tower_state_minerstate_commit),
+        );
+        map.insert(
+            "validator_universe_register_validator".to_string(),
+            Box::new(decoder::validator_universe_register_validator),
         );
         map.insert(
             "version_set_version".to_string(),

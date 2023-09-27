@@ -16,7 +16,7 @@ module ol_framework::test_safe {
     use ol_framework::slow_wallet;
 
     let vals = mock::genesis_n_vals(root, 2);
-    mock::ol_initialize_coin_and_fund_vals(root, 10000000);
+    mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
     // Dave creates the resource account. HE is not one of the validators, and is not an authority in the multisig.
     let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
@@ -45,7 +45,7 @@ module ol_framework::test_safe {
     use ol_framework::slow_wallet;
 
     let vals = mock::genesis_n_vals(root, 4);
-    mock::ol_initialize_coin_and_fund_vals(root, 10000000);
+    mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
     // Eve creates the resource account, is not one of the validators, and is not an authority in the multisig.
     let (resource_sig, _cap) = ol_account::ol_create_resource_account(eve, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
@@ -74,7 +74,7 @@ module ol_framework::test_safe {
   fun safe_root_security_fee(root: &signer, alice: &signer, dave: &signer, ) {
 
     let vals = mock::genesis_n_vals(root, 2);
-    mock::ol_initialize_coin_and_fund_vals(root, 1000000000000);
+    mock::ol_initialize_coin_and_fund_vals(root, 1000000000000, true);
     // Dave creates the resource account. HE is not one of the validators, and is not an authority in the multisig.
     let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
