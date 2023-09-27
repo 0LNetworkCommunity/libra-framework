@@ -1,12 +1,18 @@
 //! Validator subcommands
 
+use std::{fs, path::PathBuf};
+
 use crate::submit_transaction::Sender;
 use anyhow::bail;
+use diem_genesis::config::OperatorConfiguration;
 use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib::EntryFunctionCall::{
-    JailUnjailByVoucher, ProofOfFeePofRetractBid, ProofOfFeePofUpdateBid, VouchRevoke,
-    VouchVouchFor,
+    JailUnjailByVoucher, ProofOfFeePofRetractBid, ProofOfFeePofUpdateBid,
+    ValidatorUniverseRegisterValidator, VouchRevoke, VouchVouchFor,
 };
+
+use libra_types::global_config_dir;
+use libra_wallet::validator_files::OPERATOR_FILE;
 
 #[derive(clap::Subcommand)]
 pub enum ValidatorTxs {
@@ -29,10 +35,15 @@ pub enum ValidatorTxs {
     Vouch {
         #[clap(short, long)]
         /// This is an account that you are vouching for. They may not be a validator account.
-        vouch_acct: AccountAddress,
+        vouch_for: AccountAddress,
         #[clap(short, long)]
         /// If you are revoking the vouch for the account specified here.
         revoke: bool,
+    },
+    Register {
+        #[clap(short('f'), long)]
+        /// optional, Path to files with registration files
+        operator_file: Option<PathBuf>,
     },
 }
 
@@ -63,7 +74,10 @@ impl ValidatorTxs {
             ValidatorTxs::Jail { unjail_acct } => JailUnjailByVoucher {
                 addr: unjail_acct.to_owned(),
             },
-            ValidatorTxs::Vouch { vouch_acct, revoke } => {
+            ValidatorTxs::Vouch {
+                vouch_for: vouch_acct,
+                revoke,
+            } => {
                 if *revoke {
                     VouchRevoke {
                         its_not_me_its_you: *vouch_acct,
@@ -72,6 +86,32 @@ impl ValidatorTxs {
                     VouchVouchFor {
                         wanna_be_my_friend: *vouch_acct,
                     }
+                }
+            }
+            ValidatorTxs::Register { operator_file } => {
+                let file = operator_file.to_owned().unwrap_or_else(|| {
+                    let a = global_config_dir();
+                    a.join(OPERATOR_FILE)
+                });
+
+                let yaml_str = fs::read_to_string(file)?;
+                let oc: OperatorConfiguration = serde_yaml::from_str(&yaml_str)?;
+
+                let validator_address = oc
+                    .validator_host
+                    .as_network_address(oc.validator_network_public_key)?;
+
+                // let fullnode_host = oc.full_node_host.context("cannot find fullnode host")?;
+                // let fullnode_addr = fullnode_host.as_network_address(
+                // oc.full_node_network_public_key
+                // .context("cannot find fullnode network public key")?,
+                // )?;
+
+                ValidatorUniverseRegisterValidator {
+                    consensus_pubkey: oc.consensus_public_key.to_bytes().to_vec(),
+                    proof_of_possession: oc.consensus_proof_of_possession.to_bytes().to_vec(),
+                    network_addresses: bcs::to_bytes(&validator_address)?,
+                    fullnode_addresses: vec![], // TODO
                 }
             }
         };

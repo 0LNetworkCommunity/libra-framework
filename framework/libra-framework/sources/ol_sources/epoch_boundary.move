@@ -15,6 +15,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::tower_state;
     use ol_framework::infra_escrow;
     use ol_framework::oracle;
+    use ol_framework::testnet;
     use diem_framework::transaction_fee;
     use diem_framework::system_addresses;
     use diem_framework::coin::{Self, Coin};
@@ -22,6 +23,7 @@ module diem_framework::epoch_boundary {
     use std::error;
 
     // use diem_std::debug::print;
+
     friend diem_framework::block;
 
     /// how many PoF baseline rewards to we set aside for the miners.
@@ -35,7 +37,7 @@ module diem_framework::epoch_boundary {
     // Contains all of 0L's business logic for end of epoch.
     // This removed business logic from reconfiguration.move
     // and prevents dependency cycling.
-    public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64) {
+    public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64, epoch_round: u64) {
         system_addresses::assert_ol(root);
         // bill root service fees;
         root_service_billing(root);
@@ -56,7 +58,7 @@ module diem_framework::epoch_boundary {
 
           // validators get the gross amount of the reward, since they already paid to enter. This results in a net payment equivalidant to the
           // clearing_price.
-          process_outgoing_validators(root, &mut all_fees, nominal_reward_to_vals);
+          process_outgoing_validators(root, &mut all_fees, nominal_reward_to_vals, closing_epoch, epoch_round);
 
           // since we reserved some fees to go to the oracle miners
           // we take the clearing_price, since it is the equivalent of what a
@@ -72,6 +74,10 @@ module diem_framework::epoch_boundary {
           coin::user_burn(all_fees);
         };
 
+        // drip coins
+        slow_wallet::on_new_epoch(root);
+
+        // ======= THIS IS APPROXIMATELY THE BOUNDARY =====
         process_incoming_validators(root);
 
         subsidize_from_infra_escrow(root);
@@ -81,7 +87,7 @@ module diem_framework::epoch_boundary {
   /// jail the non performant
   /// NOTE: receives from reconfiguration.move a mutable borrow of a coin to pay reward
   /// NOTE: burn remaining fees from transaction fee account happens in reconfiguration.move (it's not a validator_universe concern)
-  fun process_outgoing_validators(root: &signer, reward_budget: &mut Coin<GasCoin>, reward_per: u64): vector<address> {
+  fun process_outgoing_validators(root: &signer, reward_budget: &mut Coin<GasCoin>, reward_per: u64, closing_epoch: u64, epoch_round: u64): vector<address> {
     system_addresses::assert_ol(root);
 
 
@@ -91,9 +97,13 @@ module diem_framework::epoch_boundary {
     let i = 0;
     while (i < vector::length(&vals)) {
       let addr = vector::borrow(&vals, i);
-      let (performed, _, _, _) = cases::get_validator_grade(*addr);
 
-      if (!performed) {
+      let (performed, _, _, _) = cases::get_validator_grade(*addr);
+      // Failover. if we had too few blocks in an epoch, everyone should pass
+      // except for testing
+      if (!testnet::is_testnet() && (epoch_round < 1000)) performed = true;
+
+      if (!performed && closing_epoch > 1) { // issues around genesis
         jail::jail(root, *addr);
       } else {
         vector::push_back(&mut compliant_vals, *addr);
@@ -112,19 +122,11 @@ module diem_framework::epoch_boundary {
   fun process_incoming_validators(root: &signer) {
     system_addresses::assert_ol(root);
 
-
-    // TODO: this needs to be a friend function, but it's in a different namespace, so we are gating it with vm signer, which is what was done previously. Which means hacking block.move
-    slow_wallet::on_new_epoch(root);
-
     let (compliant, n_seats) = musical_chairs::stop_the_music(root);
-
 
     let validators = proof_of_fee::end_epoch(root, &compliant, n_seats);
     // make sure musical chairs doesn't keep incrementing if we are persistently
     // offering more seats than can be filled
-    let filled_seats = vector::length(&validators);
-    musical_chairs::set_current_seats(root, filled_seats);
-
     let filled_seats = vector::length(&validators);
     musical_chairs::set_current_seats(root, filled_seats);
 
@@ -150,11 +152,11 @@ module diem_framework::epoch_boundary {
 
 
   #[test_only]
-  public fun ol_reconfigure_for_test(vm: &signer, closing_epoch: u64) {
+  public fun ol_reconfigure_for_test(vm: &signer, closing_epoch: u64, epoch_round: u64) {
       use diem_framework::system_addresses;
 
       system_addresses::assert_ol(vm);
-      epoch_boundary(vm, closing_epoch);
+      epoch_boundary(vm, closing_epoch, epoch_round);
   }
 
 }

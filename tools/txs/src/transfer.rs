@@ -1,5 +1,6 @@
 //! form a transfer payload and execute transaction
 use super::submit_transaction::Sender;
+use anyhow::bail;
 use diem_sdk::{
     rest_client::diem_api_types::TransactionOnChainData, types::account_address::AccountAddress,
 };
@@ -31,9 +32,15 @@ impl Sender {
             println!("gas used: {gas}");
             Ok(None)
         } else {
-            Ok(self.sign_submit_wait(payload).await.ok())
+            match self.sign_submit_wait(payload).await {
+                Ok(tx) => Ok(Some(tx)),
+                Err(e) => {
+                    bail!(
+                        "ERROR: transaction could not complete, message: {}",
+                        e.to_string()
+                    )
+                }
+            }
         }
-
-        // Ok(())
     }
 }

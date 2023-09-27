@@ -203,10 +203,13 @@ module diem_framework::reconfiguration {
     public fun test_helper_increment_epoch_dont_reconfigure() acquires Configuration {
         let config_ref = borrow_global_mut<Configuration>(@diem_framework);
         let current_time = timestamp::now_microseconds();
-        if (current_time == config_ref.last_reconfiguration_time) {
-            return
-        };
+        // if (current_time == config_ref.last_reconfiguration_time) {
+        //     return
+        // };
         config_ref.last_reconfiguration_time = current_time;
         config_ref.epoch = config_ref.epoch + 1;
+
+        epoch_helper::set_epoch(config_ref.epoch);
+
     }
 }

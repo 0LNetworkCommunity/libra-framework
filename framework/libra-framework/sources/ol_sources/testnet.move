@@ -4,8 +4,8 @@ module ol_framework::testnet {
     // File Prefix for errors: 2002
     ///////////////////////////////////////////////////////////////////////////
     use std::error;
-    use std::signer;
     use std::chain_id;
+    use diem_framework::system_addresses;
 
     /// trying something that should only be done on testnet, out satan!
     const ENOT_TESTNET: u64 = 1;
@@ -20,11 +20,8 @@ module ol_framework::testnet {
         chain_id::get() != 1
     }
 
-    public fun assert_testnet(vm: &signer): bool {
-      assert!(
-          signer::address_of(vm) == @ol_framework,
-          error::permission_denied(EWHY_U_NO_ROOT)
-      );
+    public fun assert_testnet(root: &signer): bool {
+      system_addresses::assert_ol(root);
       assert!(is_testnet(), error::invalid_state(ENOT_TESTNET));
       true
     }

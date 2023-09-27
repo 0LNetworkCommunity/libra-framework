@@ -15,6 +15,7 @@ module ol_framework::ol_account {
     use ol_framework::cumulative_deposits;
 
     // use diem_std::debug::print;
+
     #[test_only]
     use std::vector;
 
@@ -34,7 +35,7 @@ module ol_framework::ol_account {
     /// The lengths of the recipients and amounts lists don't match.
     const EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH: u64 = 5;
 
-    /// for 0L the account which does onboarding needs to have at least 2 gas coins
+    /// not enough unlocked coins to transfer
     const EINSUFFICIENT_BALANCE: u64 = 6;
 
     /// On legacy account migration we need to check if we rotated auth keys correctly and can find the user address.
@@ -63,14 +64,16 @@ module ol_framework::ol_account {
       (resource_account_sig, cap)
     }
 
-    /// Creates an account by sending an initial amount of GAS to it.
-    public entry fun create_user_account_by_coin(sender: &signer, auth_key: address, amount: u64) {
-        let limit = get_slow_limit(signer::address_of(sender));
-        assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
+    // /// Creates an account by sending an initial amount of GAS to it.
+    // public entry fun create_user_account_by_coin(sender: &signer, auth_key: address, amount: u64) {
+    //     // warn early before attempting to creat the account.
+    //     let limit = slow_wallet::unlocked_amount(signer::address_of(sender));
+    //     assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
 
-        create_impl(auth_key);
-        coin::transfer<GasCoin>(sender, auth_key, amount);
-    }
+    //     create_impl(auth_key);
+    //     // use the proper tracking
+    //     transfer(sender, auth_key, amount);
+    // }
 
     fun create_impl(auth_key: address) {
         let new_signer = account::create_account(auth_key);
@@ -137,31 +140,59 @@ module ol_framework::ol_account {
     /// Convenient function to transfer GAS to a recipient account that might not exist.
     /// This would create the recipient account first, which also registers it to receive GAS, before transferring.
     public entry fun transfer(sender: &signer, to: address, amount: u64) {
+      transfer_checks(signer::address_of(sender), to, amount);
+      coin::transfer<GasCoin>(sender, to, amount);
+    }
 
-        if (!account::exists_at(to)) {
-            // NOTE: is also an entry function as is checking the slow limit there too.
-            create_user_account_by_coin(sender, to, amount);
+    // transfer with capability, and do appropriate checks on both sides, and track the slow wallet
+    public fun transfer_with_capability(cap: &WithdrawCapability, recipient: address, amount: u64) {
+      let payer = account::get_withdraw_cap_address(cap);
+      transfer_checks(payer, recipient, amount);
+      let c = coin::withdraw_with_capability<GasCoin>(cap, amount);
+      coin::deposit<GasCoin>(recipient, c);
+      slow_wallet::maybe_track_slow_transfer(payer, recipient, amount);
+    }
+
+    /// Withdraw a coin while tracking the unlocked withdraw
+    public fun withdraw_with_capability(cap: &WithdrawCapability, amount: u64): Coin<GasCoin> {
+      let payer = account::get_withdraw_cap_address(cap);
+      let limit = slow_wallet::unlocked_amount(payer);
+      assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
+
+      slow_wallet::maybe_track_unlocked_withdraw(payer, amount);
+      coin::withdraw_with_capability(cap, amount)
+    }
+
+    // actual implementation to allow for capability
+    fun transfer_checks(payer: address, recipient: address, amount: u64) {
+        let limit = slow_wallet::unlocked_amount(payer);
+        assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
+
+        if (!account::exists_at(recipient)) {
+            // creates the account address (with the same bytes as the authentication key).
+            create_impl(recipient);
             return
         };
 
-        let limit = get_slow_limit(signer::address_of(sender));
-        assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
 
-        // Resource accounts can be created without registering them to receive GAS.
-        // This conveniently does the registration if necessary.
-        assert!(coin::is_account_registered<GasCoin>(to), error::invalid_argument(EACCOUNT_NOT_REGISTERED_FOR_GAS));
+        // TODO: Check if Resource Accounts can register here, since they
+        // may be created without any coin registration.
+        assert!(coin::is_account_registered<GasCoin>(recipient), error::invalid_argument(EACCOUNT_NOT_REGISTERED_FOR_GAS));
 
-        coin::transfer<GasCoin>(sender, to, amount);
 
-        cumulative_deposits::maybe_update_deposit(signer::address_of(sender), to, amount);
+        // must track the slow wallet on both sides of the transfer
+        slow_wallet::maybe_track_slow_transfer(payer, recipient, amount);
+
+        // maybe track cumulative deposits if this is a donor directed wallet
+        // or other wallet which tracks cumulative payments.
+        cumulative_deposits::maybe_update_deposit(payer, recipient, amount);
     }
 
     /// Withdraw funds while respecting the transfer limits
     public fun withdraw(sender: &signer, amount: u64): Coin<GasCoin> {
-
-        let limit = get_slow_limit(signer::address_of(sender));
+        let limit = slow_wallet::unlocked_amount(signer::address_of(sender));
         assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
-
+        slow_wallet::maybe_track_unlocked_withdraw(signer::address_of(sender), amount);
         coin::withdraw<GasCoin>(sender, amount)
     }
 
@@ -179,11 +210,15 @@ module ol_framework::ol_account {
 
       option::destroy_none(coin_option);
 
+      // transfers which use VM authority (e.g. donor directed accounts)
+      // should also track the recipient's slow wallet unlock counter.
+      slow_wallet::maybe_track_slow_transfer(from, to, amount);
+
     }
 
-    public fun withdraw_with_capability(cap: &WithdrawCapability, amount: u64): Coin<GasCoin> {
-      coin::withdraw_with_capability(cap, amount)
-    }
+    // public fun withdraw_with_capability(cap: &WithdrawCapability, amount: u64): Coin<GasCoin> {
+    //   coin::withdraw_with_capability(cap, amount)
+    // }
 
     //////// 0L ////////
 
@@ -193,15 +228,6 @@ module ol_framework::ol_account {
     public fun balance(addr: address): (u64, u64) {
       slow_wallet::balance(addr)
     }
-
-    fun get_slow_limit(addr: address): u64 {
-      let full_balance = coin::balance<GasCoin>(addr);
-      // TODO: check if recipient is a donor directed account.
-      if (false) { return full_balance };
-      let unlocked = slow_wallet::unlocked_amount(addr);
-      unlocked
-    }
-
 
     // #[test_only]
     // /// Batch version of transfer_coins.
@@ -229,21 +255,12 @@ module ol_framework::ol_account {
     //     deposit_coins(to, coin::withdraw<CoinType>(from, amount));
     // }
 
-    /// Convenient function to deposit a custom CoinType into a recipient account that might not exist.
-    /// This would create the recipient account first and register it to receive the CoinType, before transferring.
+    /// A coin which is split or extracted can be sent to an account without a sender signing.
+    /// TODO: cumulative tracker will not work here.
     public fun deposit_coins(to: address, coins: Coin<GasCoin>) {
-        // if (!account::exists_at(to)) {
-        //     create_account(to);
-        // };
         assert!(coin::is_account_registered<GasCoin>(to), error::invalid_state(EACCOUNT_NOT_REGISTERED_FOR_GAS));
-        // if (!coin::is_account_registered<CoinType>(to)) {
-        //     assert!(
-        //         can_receive_direct_coin_transfers(to),
-        //         error::permission_denied(EACCOUNT_DOES_NOT_ACCEPT_DIRECT_COIN_TRANSFERS),
-        //     );
-        //     coin::register<CoinType>(&create_signer(to));
-        // };
-        coin::deposit<GasCoin>(to, coins)
+        slow_wallet::maybe_track_unlocked_deposit(to, coin::value(&coins));
+        coin::deposit<GasCoin>(to, coins);
     }
 
     public fun assert_account_exists(addr: address) {

@@ -24,14 +24,15 @@ module ol_framework::test_pof {
 
 
   #[test_only]
-  fun mock_good_bid(root: &signer, alice: &address) {
+  fun mock_good_bid(_root: &signer, alice: &address) {
     let a_sig = account::create_signer_for_test(*alice);
+    // mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
+
     proof_of_fee::set_bid(&a_sig, 1, 10000);
     let (bid, expires) = proof_of_fee::current_bid(*alice);
     assert!(bid == 1, 1001);
     assert!(expires == 10000, 1002);
 
-    slow_wallet::slow_wallet_epoch_drip(root, 500000);
     let coin = slow_wallet::unlocked_amount(*alice);
     let (r, _, _) = proof_of_fee::get_consensus_reward();
     let bid_cost = (bid * r) / 1000;
@@ -43,6 +44,8 @@ module ol_framework::test_pof {
     // genesis();
 
     let set = mock::genesis_n_vals(&root, 4);
+    mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
+
     let alice = vector::borrow(&set, 0);
     stake::is_valid(*alice);
 
@@ -76,76 +79,83 @@ module ol_framework::test_pof {
   #[test(root = @ol_framework)]
   fun audit_happy (root: signer) {
     let set = mock::genesis_n_vals(&root, 4);
-    let alice = vector::borrow(&set, 0);
+    mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
 
-    assert!(stake::is_valid(*alice), 1000);
-    assert!(!jail::is_jailed(*alice), 1001);
+    let alice = *vector::borrow(&set, 0);
 
-    mock_good_bid(&root, alice);
+    assert!(stake::is_valid(alice), 1000);
+    assert!(!jail::is_jailed(alice), 1001);
 
+    mock_good_bid(&root, &alice);
 
-    // // should NOTE pass audit.
-    assert!(proof_of_fee::audit_qualification(alice), 1006);
+    let (_, pass) = proof_of_fee::audit_qualification(alice);
+    assert!(pass, 1006);
   }
 
   #[test(root = @ol_framework)]
   fun audit_vouch (root: signer) {
     let set = mock::genesis_n_vals(&root, 4);
-    let alice = vector::borrow(&set, 0);
+    mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
 
-    assert!(!jail::is_jailed(*alice), 1001);
+    let alice = *vector::borrow(&set, 0);
 
-    mock_good_bid(&root, alice);
+    assert!(!jail::is_jailed(alice), 1001);
+
+    mock_good_bid(&root, &alice);
 
     testnet::unset(&root);
 
-    assert!(vouch::unrelated_buddies_above_thresh(*alice, globals::get_validator_vouch_threshold()), 1006);
-    assert!(proof_of_fee::audit_qualification(alice), 1008);
+    assert!(vouch::unrelated_buddies_above_thresh(alice, globals::get_validator_vouch_threshold()), 1001);
+    let (_, pass) = proof_of_fee::audit_qualification(alice);
+    assert!(pass, 1003);
 
-    vouch::test_set_buddies(*alice, vector::empty());
-    assert!(!vouch::unrelated_buddies_above_thresh(*alice, globals::get_validator_vouch_threshold()), 1006);
-    assert!(!proof_of_fee::audit_qualification(alice), 1008);
+    vouch::test_set_buddies(alice, vector::empty());
+    assert!(!vouch::unrelated_buddies_above_thresh(alice, globals::get_validator_vouch_threshold()), 1004);
+    let (_, pass) = proof_of_fee::audit_qualification(alice);
+    assert!(!pass, 1005);
   }
 
   #[test(root = @ol_framework)]
   fun audit_no_funds (root: signer) {
     let set = mock::genesis_n_vals(&root, 4);
-    let alice = vector::borrow(&set, 0);
+    let alice = *vector::borrow(&set, 0);
 
-    assert!(!jail::is_jailed(*alice), 1001);
-    let a_sig = account::create_signer_for_test(*alice);
+    assert!(!jail::is_jailed(alice), 1001);
+    let a_sig = account::create_signer_for_test(alice);
 
     proof_of_fee::set_bid(&a_sig, 100, 10000); // 10 pct
-    let (bid, expires) = proof_of_fee::current_bid(*alice);
+    let (bid, expires) = proof_of_fee::current_bid(alice);
     assert!(bid == 100, 1001);
     assert!(expires == 10000, 1002);
 
     // NOT ENOUGH FUNDS WERE UNLOCKED
     slow_wallet::slow_wallet_epoch_drip(&root, 500);
-    let coin = slow_wallet::unlocked_amount(*alice);
+    let coin = slow_wallet::unlocked_amount(alice);
     let (r, _, _) = proof_of_fee::get_consensus_reward();
     let bid_cost = (bid * r) / 1000;
     assert!(coin < bid_cost, 1005);
 
-    // should NOTE pass audit.
-    assert!(!proof_of_fee::audit_qualification(alice), 1006);
+    // should NOT pass audit.
+    let (_, pass) = proof_of_fee::audit_qualification(alice);
+    assert!(!pass, 1006);
   }
 
   #[test(root = @ol_framework)]
   fun audit_expired(root: signer) {
     let set = mock::genesis_n_vals(&root, 4);
-    let alice = vector::borrow(&set, 0);
+    mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
+    let alice = *vector::borrow(&set, 0);
 
-    assert!(!jail::is_jailed(*alice), 1001);
+    assert!(!jail::is_jailed(alice), 1001);
 
     // initially set a good bid
-    mock_good_bid(&root, alice);
+    mock_good_bid(&root, &alice);
 
 
     // has a bid which IS expired
     // test runner is at epoch 1, they put expiry at 0.
     // TODO: Improve this test by doing more advanced epochs
-    let a_sig = account::create_signer_for_test(*alice);
+    let a_sig = account::create_signer_for_test(alice);
 
     // let this_epoch = reconfiguration::get_current_epoch();
 
@@ -158,38 +168,45 @@ module ol_framework::test_pof {
 
 
     proof_of_fee::set_bid(&a_sig, 1, 0);
-    let (bid, expires) = proof_of_fee::current_bid(*alice);
+    let (bid, expires) = proof_of_fee::current_bid(alice);
     assert!(bid == 1, 1006);
     assert!(expires == 0, 1007);
     // should NOT pass audit.
-    assert!(!proof_of_fee::audit_qualification(alice), 1008);
+    let (_, pass) = proof_of_fee::audit_qualification(alice);
+    assert!(!pass, 1008);
 
     // fix it
     proof_of_fee::set_bid(&a_sig, 1, 1000);
-    assert!(proof_of_fee::audit_qualification(alice), 1009);
+    let (_, pass) = proof_of_fee::audit_qualification(alice);
+    assert!(pass, 1009);
   }
 
   #[test(root = @ol_framework)]
   fun audit_jail (root: signer) {
     let set = mock::genesis_n_vals(&root, 4);
-    let alice = vector::borrow(&set, 0);
+    mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
 
-    assert!(!jail::is_jailed(*alice), 1001);
+    let alice = *vector::borrow(&set, 0);
 
-    mock_good_bid(&root, alice);
+    assert!(!jail::is_jailed(alice), 1001);
+
+    mock_good_bid(&root, &alice);
 
     // EVERYTHING ABOVE HERE IS PASSING.
     // is now jailed.
-    jail::jail(&root, *alice);
-    assert!(jail::is_jailed(*alice), 1006);
+    jail::jail(&root, alice);
+    assert!(jail::is_jailed(alice), 1006);
     // won't pass audit
-    assert!(!proof_of_fee::audit_qualification(&*alice), 1007);
+    let (_, pass) = proof_of_fee::audit_qualification(alice);
+    assert!(!pass, 1007);
 
   }
 
   #[test(root = @ol_framework)]
   fun sorted_vals_happy(root: signer) {
     let set = mock::genesis_n_vals(&root, 4);
+    mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
+
     let len = vector::length(&set);
     let i = 0;
     while (i < len) {
@@ -199,13 +216,13 @@ module ol_framework::test_pof {
     };
     // mock_good_bid(&root, alice);
     let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
-    let sorted = proof_of_fee::get_sorted_vals(false);
+    let sorted = proof_of_fee::get_bidders(false);
 
     let len = vector::length(&sorted);
     assert!(len == vector::length(&val_universe), 1000);
     assert!(vector::length(&sorted) == vector::length(&val_universe), 1002);
 
-    let sorted_two = proof_of_fee::get_sorted_vals(true);
+    let sorted_two = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted_two) == vector::length(&val_universe), 1003);
   }
 
@@ -214,13 +231,13 @@ module ol_framework::test_pof {
   fun sorted_vals_none_qualify(root: signer) {
     let _set = mock::genesis_n_vals(&root, 4);
     let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
-    let sorted = proof_of_fee::get_sorted_vals(false);
+    let sorted = proof_of_fee::get_bidders(false);
 
     let len = vector::length(&sorted);
     assert!(len == vector::length(&val_universe), 1000);
     assert!(vector::length(&sorted) == vector::length(&val_universe), 1002);
 
-    let sorted = proof_of_fee::get_sorted_vals(true);
+    let sorted = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted) != vector::length(&val_universe), 1003);
     assert!(vector::length(&sorted) == 0, 1004);
   }
@@ -228,6 +245,8 @@ module ol_framework::test_pof {
   #[test(root = @ol_framework)]
   fun sorted_vals_jail(root: signer) {
     let set = mock::genesis_n_vals(&root, 4);
+    mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
+
     let len = vector::length(&set);
     let i = 0;
     while (i < len) {
@@ -244,13 +263,13 @@ module ol_framework::test_pof {
 
 
     // let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
-    let sorted = proof_of_fee::get_sorted_vals(false);
+    let sorted = proof_of_fee::get_bidders(false);
     let len = vector::length(&sorted);
     assert!(len == vector::length(&val_universe), 1000);
     assert!(vector::length(&sorted) == vector::length(&val_universe), 1002);
 
 
-    let sorted_two = proof_of_fee::get_sorted_vals(true);
+    let sorted_two = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted_two) != vector::length(&val_universe), 1004);
     assert!(vector::length(&sorted_two) == vector::length(&val_universe) - 1, 1005);
 
@@ -262,7 +281,9 @@ module ol_framework::test_pof {
   #[test(root = @ol_framework)]
   fun sorted_vals_expired_bid(root: signer) {
     let set = mock::genesis_n_vals(&root, 4);
-    mock::ol_initialize_coin(&root);
+    mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
+
+    // mock::ol_initialize_coin(&root);
     let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
 
     let len = vector::length(&set);
@@ -285,13 +306,13 @@ module ol_framework::test_pof {
     mock::trigger_epoch(&root);
 
     // Get all vals but don't filter the ones that have passing bids
-    let sorted = proof_of_fee::get_sorted_vals(false);
+    let sorted = proof_of_fee::get_bidders(false);
     let len = vector::length(&sorted);
     assert!(len == vector::length(&val_universe), 1000);
     assert!(vector::length(&sorted) == vector::length(&val_universe), 1002);
 
 
-    let sorted_two = proof_of_fee::get_sorted_vals(true);
+    let sorted_two = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted_two) != vector::length(&val_universe), 1004);
 
     assert!(vector::length(&sorted_two) == vector::length(&val_universe) - 1, 1005);
@@ -302,13 +323,14 @@ module ol_framework::test_pof {
   #[test(root = @ol_framework)]
   fun fill_seats_happy(root: signer) {
     let set = mock::genesis_n_vals(&root, 5);
+    mock::ol_initialize_coin_and_fund_vals(&root, 500000, true);
     let len = vector::length(&set);
 
     mock::pof_default();
 
     slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
-    let sorted = proof_of_fee::get_sorted_vals(true);
+    let sorted = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted) == vector::length(&set), 1003);
 
     let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&root, len, &sorted, &sorted);
@@ -328,11 +350,12 @@ module ol_framework::test_pof {
   #[test(root = @ol_framework)]
   fun fill_seats_happy_and_noop_thermostat(root: signer) {
     let set = mock::genesis_n_vals(&root, 5);
+    mock::ol_initialize_coin_and_fund_vals(&root, 500000, true);
     mock::pof_default();
 
     slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
-    let sorted = proof_of_fee::get_sorted_vals(true);
+    let sorted = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted) == vector::length(&set), 1003);
 
     let len = vector::length(&set);
@@ -367,6 +390,7 @@ module ol_framework::test_pof {
   #[test(root = @ol_framework)]
   fun fill_seats_few_bidders(root: signer) {
     let set = mock::genesis_n_vals(&root, 5);
+    mock::ol_initialize_coin_and_fund_vals(&root, 500000, true);
     mock::pof_default();
 
 
@@ -376,7 +400,7 @@ module ol_framework::test_pof {
 
     slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
-    let sorted = proof_of_fee::get_sorted_vals(true);
+    let sorted = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted) != vector::length(&set), 1003);
 
     // let len = vector::length(&set);
@@ -412,10 +436,10 @@ module ol_framework::test_pof {
     let set = mock::genesis_n_vals(&root, 5);
     mock::pof_default();
 
+    mock::ol_initialize_coin_and_fund_vals(&root, 500000, true);
 
-    slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
-    let sorted = proof_of_fee::get_sorted_vals(true);
+    let sorted = proof_of_fee::get_bidders(true);
 
 
 
@@ -469,11 +493,11 @@ module ol_framework::test_pof {
   fun fill_seats_unproven_happy(root: signer) {
     // we need 6 seats so that we can have 4 proven, and 2 unproven slots
     let set = mock::genesis_n_vals(&root, 6);
+    mock::ol_initialize_coin_and_fund_vals(&root, 500000, true);
     mock::pof_default();
 
-    slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
-    let sorted = proof_of_fee::get_sorted_vals(true);
+    let sorted = proof_of_fee::get_bidders(true);
 
     let set_size = 6;
 
@@ -529,11 +553,10 @@ module ol_framework::test_pof {
 
     // we need 6 seats so that we can have 4 proven, and 2 unproven slots
     let set = mock::genesis_n_vals(&root, 6);
+    mock::ol_initialize_coin_and_fund_vals(&root, 500000, true);
     mock::pof_default();
 
-    slow_wallet::slow_wallet_epoch_drip(&root, 500000);
-
-    let sorted = proof_of_fee::get_sorted_vals(true);
+    let sorted = proof_of_fee::get_bidders(true);
 
     let set_size = 4;
 

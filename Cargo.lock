@@ -5846,6 +5846,7 @@ dependencies = [
  "move-core-types",
  "serde 1.0.163",
  "serde_json",
+ "tokio",
  "ureq",
 ]
 
@@ -5918,6 +5919,7 @@ dependencies = [
  "clap 4.4.2",
  "diem",
  "diem-framework",
+ "diem-genesis",
  "diem-global-constants",
  "diem-logger",
  "diem-sdk",
@@ -5931,6 +5933,7 @@ dependencies = [
  "libra-types",
  "libra-wallet",
  "serde_json",
+ "serde_yaml 0.8.26",
  "tokio",
  "url",
 ]
