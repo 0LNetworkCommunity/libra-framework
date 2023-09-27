@@ -81,6 +81,7 @@ module ol_framework::jail {
   }
 
 
+  #[view]
   public fun is_jailed(validator: address): bool acquires Jail {
     if (!exists<Jail>(validator)) {
       return false
@@ -119,8 +120,11 @@ module ol_framework::jail {
       error::invalid_state(EVALIDATOR_CONFIG),
     );
     let voucher = signer::address_of(sender);
-    let buddies = vouch::buddies_in_validator_set(addr);
-    let (is_found, _idx) = vector::index_of(&buddies, &voucher);
+
+    let current_set = stake::get_current_validators();
+    let (vouchers_in_set, _) = vouch::true_friends_in_list(addr, &current_set);
+
+    let (is_found, _idx) = vector::index_of(&vouchers_in_set, &voucher);
     assert!(is_found, 100103);
 
     unjail(addr);
@@ -165,7 +169,7 @@ module ol_framework::jail {
   /// will get a reputation mark. This is informational currently not used
   /// for any consensus admission or weight etc.
   fun inc_voucher_jail(addr: address) acquires Jail {
-    let buddies = vouch::get_buddies(addr);
+    let buddies = vouch::true_friends(addr);
     let i = 0;
     while (i < vector::length(&buddies)) {
       let voucher = *vector::borrow(&buddies, i);

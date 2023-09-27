@@ -4,23 +4,11 @@
 // Error code for File: 0300
 /////////////////////////////////////////////////////////////////////////
 
-// TODO: v7: this is legacy, since we only now have two cases: performing and non-performing.
-
-/// # Summary
-/// This module can be used by root to determine whether a validator is compliant
-/// Validators who are no longer compliant may be kicked out of the validator
-/// set and/or jailed. To be compliant, validators must be BOTH validating and mining.
-module ol_framework::cases{
-    // use DiemFramework::TowerState;
+// Validator performance rank
+module ol_framework::rank{
     use diem_framework::stake;
     use std::vector;
     use std::fixed_point32::{Self, FixedPoint32};
-    // use DiemFramework::Roles; // todo v7
-
-    const VALIDATOR_COMPLIANT: u64 = 1;
-    // const VALIDATOR_HALF_COMPLIANT: u64 = 2;
-    // const VALIDATOR_NOT_COMPLIANT: u64 = 3;
-    const VALIDATOR_DOUBLY_NOT_COMPLIANT: u64 = 4;
 
     const INVALID_DATA: u64 = 0;
 
@@ -30,70 +18,6 @@ module ol_framework::cases{
       rank: u64,
       ratio: FixedPoint32,
       compliant: bool,
-    }
-
-    // TODO: temp just to get a build
-    fun node_above_thresh(node_addr: address): bool {
-      let idx = stake::get_validator_index(node_addr);
-      let (proposed, failed) = stake::get_current_epoch_proposal_counts(idx);
-
-      proposed > failed
-    }
-
-    #[view]
-    /// returns if the validator passed or failed, and the number of proposals
-    /// and failures, and the ratio.
-    public fun get_validator_grade(node_addr: address): (bool, u64, u64, FixedPoint32) {
-      let idx = stake::get_validator_index(node_addr);
-      let (proposed, failed) = stake::get_current_epoch_proposal_counts(idx);
-
-      let compliant = proposed > failed;
-      // make failed at leat 1 to avoid division by zero
-      (compliant, proposed, failed, fixed_point32::create_from_rational(proposed, (failed + 1)))
-    }
-
-    // Determine the consensus case for the validator.
-    // This happens at an epoch prologue, and labels the validator based on
-    // performance in the outgoing epoch.
-    // The consensus case determines if the validator receives transaction
-    // fees or subsidy for performance, inclusion in following epoch, and
-    // at what voting power.
-    // Permissions: Public, VM Only
-    public fun get_case(
-        node_addr: address): u64 {
-
-        // this is a failure mode. Only usually seen in rescue missions,
-        // where epoch counters are reconfigured by writeset offline.
-        // if (height_end < height_start) return INVALID_DATA;
-
-        // Roles::assert_diem_root(vm); // todo v7
-        // did the validator sign blocks above threshold?
-        let signs = node_above_thresh(node_addr);
-
-        // let mines = TowerState::node_above_thresh(node_addr);
-
-        if (signs) {
-            // compliant: in next set, gets paid, weight increments
-            VALIDATOR_COMPLIANT
-        }
-        // V6: Simplify compliance cases by removing mining.
-
-        // }
-        // else if (signs && !mines) {
-        //     // half compliant: not in next set, does not get paid, weight
-        //     // does not increment.
-        //     VALIDATOR_HALF_COMPLIANT
-        // }
-        // else if (!signs && mines) {
-        //     // not compliant: jailed, not in next set, does not get paid,
-        //     // weight increments.
-        //     VALIDATOR_NOT_COMPLIANT
-        // }
-        else {
-            // not compliant: jailed, not in next set, does not get paid,
-            // weight does not increment.
-            VALIDATOR_DOUBLY_NOT_COMPLIANT
-        }
     }
 
     #[view]
@@ -113,6 +37,7 @@ module ol_framework::cases{
       jailed_set
     }
 
+    // TODO
     /// returns a list of PerformanceRank, of an individual validator's performance
     /// only_perf, returns only the performant
     /// only_jail, return only the jailed

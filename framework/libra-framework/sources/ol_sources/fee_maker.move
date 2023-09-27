@@ -24,23 +24,28 @@ module ol_framework::fee_maker {
     }
 
     /// Initialize the registry at the VM address.
-    public fun initialize(vm: &signer) {
-      system_addresses::assert_ol(vm);
-      let registry = EpochFeeMakerRegistry {
-        fee_makers: vector::empty(),
-        epoch_fees_made: 0,
-      };
-      move_to(vm, registry);
+    public fun initialize(ol_framework: &signer) {
+      system_addresses::assert_ol(ol_framework);
+      if (!exists<EpochFeeMakerRegistry>(@ol_framework)) {
+        let registry = EpochFeeMakerRegistry {
+          fee_makers: vector::empty(),
+          epoch_fees_made: 0,
+        };
+        move_to(ol_framework, registry);
+      }
     }
 
     /// FeeMaker is initialized when the account is created
     /// Lazy initialization since very few accouts will need this struct
     fun maybe_initialize_fee_maker(sig: &signer, account: address) {
-      if (!exists<FeeMaker>(account)) {
-        // fee_maker is a friend of create_signer for root to user
 
-        if (system_addresses::is_ol_framework_address(signer::address_of(sig))) {
-          sig = &create_signer::create_signer(account)
+      if (system_addresses::is_reserved_address(account) || system_addresses::is_framework_reserved_address(account)) return;
+
+      if (!exists<FeeMaker>(account)) {
+        // sometimes the VM needs to initialize an account.
+        if (system_addresses::is_reserved_address(signer::address_of(sig))) {
+          // fee_maker is a friend of create_signer for root to user
+            sig = &create_signer::create_signer(account);
         };
 
         move_to(sig, FeeMaker {
@@ -77,6 +82,9 @@ module ol_framework::fee_maker {
     // lazy initialize structs
     // should only be called by
     public(friend) fun track_user_fee(user_sig: &signer, amount: u64) acquires FeeMaker, EpochFeeMakerRegistry {
+      let account = signer::address_of(user_sig);
+      if (system_addresses::is_reserved_address(account) || system_addresses::is_framework_reserved_address(account)) return;
+
       maybe_initialize_fee_maker(user_sig, signer::address_of(user_sig));
       track_user_fee_impl(signer::address_of(user_sig), amount);
     }

@@ -26,7 +26,7 @@ module ol_framework::test_musical_chairs {
       assert!(fixed_point32::is_zero(ratio), 7357004);
 
 
-      let (outgoing_compliant_set, new_set_size) = musical_chairs::stop_the_music(&root);
+      let (outgoing_compliant_set, new_set_size) = musical_chairs::test_stop(&root);
 
 
       assert!(vector::length(&outgoing_compliant_set) == 5, 7357005);
@@ -50,7 +50,7 @@ module ol_framework::test_musical_chairs {
       assert!(fixed_point32::create_from_rational(4, 5) == bad_ratio, 7357005);
 
 
-      let (_outgoing_compliant_set, _new_set_size) = musical_chairs::stop_the_music(&root);
+      let (_outgoing_compliant_set, _new_set_size) = musical_chairs::test_stop(&root);
 
     }
 }

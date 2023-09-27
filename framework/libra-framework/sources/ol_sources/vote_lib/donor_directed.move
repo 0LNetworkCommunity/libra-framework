@@ -328,28 +328,45 @@ module ol_framework::donor_directed {
     ///////// PROCESS PAYMENTS /////////
     /// The VM on epoch boundaries will execute the payments without the users
     /// needing to intervene.
+    /// Returns (accounts_processed, amount_processed, success)
+    // TODO: add to the return the tuple of sender/recipient that failed
     public fun process_donor_directed_accounts(
       vm: &signer,
       epoch: u64,
-    ) acquires Registry, TxSchedule, Freeze {
+    ): (u64, u64, bool) acquires Registry, TxSchedule, Freeze {
       // while we are here let's liquidate any expired accounts.
       vm_liquidate(vm);
+
+      let accounts_processed = 0;
+      let amount_processed = 0;
+      let expected_amount = 0;
 
       let list = get_root_registry();
 
       let i = 0;
+
       while (i < vector::length(&list)) {
         let multisig_address = vector::borrow(&list, i);
         if (exists<TxSchedule>(*multisig_address)) {
           let state = borrow_global_mut<TxSchedule>(*multisig_address);
-          maybe_pay_deadline(vm, state, epoch);
+          let (processed, expected, _success) = maybe_pay_deadline(vm, state, epoch);
+          amount_processed = amount_processed + processed;
+          expected_amount = expected_amount + expected;
+          accounts_processed = accounts_processed + 1;
         };
         i = i + 1;
-      }
+      };
+
+      let success = vector::length(&list) == accounts_processed && amount_processed == expected_amount;
+      (accounts_processed, amount_processed, success)
     }
 
-    fun maybe_pay_deadline(vm: &signer, state: &mut TxSchedule, epoch: u64) acquires Freeze {
-      // let epoch = reconfiguration::get_current_epoch();
+    /// tries to settle any amounts that have been scheduled for payment
+    /// for audit instrumentation returns how much was actually transferred
+    /// and if that amount was equal to the expected amount transferred (amount_processed, expected_amount, succcess)
+    fun maybe_pay_deadline(vm: &signer, state: &mut TxSchedule, epoch: u64): (u64, u64, bool) acquires Freeze {
+      let expected_amount = 0;
+      let amount_processed = 0;
       let i = 0;
 
       while (i < vector::length(&state.scheduled)) {
@@ -360,9 +377,9 @@ module ol_framework::donor_directed {
           let multisig_address = guid::id_creator_address(&t.uid);
 
           // Note the VM can do this without the WithdrawCapability
-
-          // let coin = account::vm_withdraw<GasCoin>(vm, multisig_address, t.tx.value);
-          ol_account::vm_transfer(vm, multisig_address, t.tx.payee, t.tx.value);
+          expected_amount = expected_amount + t.tx.value;
+          let (amount_transferred, _success) = ol_account::vm_transfer(vm, multisig_address, t.tx.payee, t.tx.value);
+          amount_processed = amount_processed + amount_transferred;
 
 
           // update the records
@@ -375,6 +392,7 @@ module ol_framework::donor_directed {
         i = i + 1;
       };
 
+      (amount_processed, expected_amount, expected_amount == amount_processed)
     }
 
     public fun find_by_deadline(multisig_address: address, epoch: u64): vector<guid::ID> acquires TxSchedule {

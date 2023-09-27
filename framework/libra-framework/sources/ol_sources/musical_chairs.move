@@ -2,16 +2,16 @@ module ol_framework::musical_chairs {
     use diem_framework::chain_status;
     use diem_framework::system_addresses;
     use diem_framework::stake;
-    use ol_framework::cases;
-    // use ol_framework::globals;
+    use ol_framework::grade;
     use std::fixed_point32;
     use std::vector;
-
     // use diem_std::debug::print;
+
+    friend ol_framework::epoch_boundary;
 
     struct Chairs has key {
         // The number of chairs in the game
-        current_seats: u64,
+        seats_offered: u64,
         // A small history, for future use.
         history: vector<u64>,
     }
@@ -56,35 +56,44 @@ module ol_framework::musical_chairs {
         };
 
         move_to(vm, Chairs {
-            current_seats: genesis_seats,
+            seats_offered: genesis_seats,
             history: vector::empty<u64>(),
         });
     }
 
-    // get the number of seats in the game
-    // TODO: make this a (friend)
-    public fun stop_the_music( // sorry, had to.
+    /// get the number of seats in the game
+    /// returns the list of compliant validators and the number of seats
+    /// we should offer in the next epoch
+    /// (compliant_vals, seats_offered)
+    public(friend) fun stop_the_music( // sorry, had to.
         vm: &signer,
     ): (vector<address>, u64) acquires Chairs {
         system_addresses::assert_ol(vm);
 
         let validators = stake::get_current_validators();
-        let (compliant, _non, ratio) = eval_compliance_impl(validators);
+        let (compliant_vals, _non, ratio) = eval_compliance_impl(validators);
 
         let chairs = borrow_global_mut<Chairs>(@ol_framework);
 
-        let num_compliant_nodes = vector::length(&compliant);
+        let num_compliant_nodes = vector::length(&compliant_vals);
+
+        // catch failure mode
+        // mostly for testnets
+        if (chairs.seats_offered < 4) {
+          chairs.seats_offered = 4;
+          return (compliant_vals, chairs.seats_offered)
+        };
 
         // failover, there should not be more compliant nodes than seats that were offered.
         // return with no changes
-        if (num_compliant_nodes > chairs.current_seats) {
-          return (compliant, chairs.current_seats)
+        if (num_compliant_nodes > chairs.seats_offered) {
+          return (compliant_vals, chairs.seats_offered)
         };
 
         // The happiest case. All filled seats performed well in the last epoch
         if (fixed_point32::is_zero(*&ratio)) { // handle this here to prevent multiplication error below
-          chairs.current_seats = chairs.current_seats + 1;
-          return (compliant, chairs.current_seats)
+          chairs.seats_offered = chairs.seats_offered + 1;
+          return (compliant_vals, chairs.seats_offered)
         };
 
 
@@ -92,14 +101,16 @@ module ol_framework::musical_chairs {
 
         // Conditions under which seats should be one more than the number of compliant nodes(<= 5%)
         // Sad case. If we are not getting compliance, need to ratchet down the offer of seats in next epoch.
+        // See below find_safe_set_size, how we determine what that number should be
         if (non_compliance_pct > 5) {
-            chairs.current_seats = num_compliant_nodes;
+            chairs.seats_offered = num_compliant_nodes;
         } else {
             // Ok case. If it's between 0 and 5% then we accept that margin as if it was fully compliant
-            chairs.current_seats = chairs.current_seats + 1;
+            chairs.seats_offered = chairs.seats_offered + 1;
         };
 
-        (compliant, chairs.current_seats)
+
+        (compliant_vals, chairs.seats_offered)
     }
 
     // Update seat count to match filled seats post-PoF auction.
@@ -109,8 +120,8 @@ module ol_framework::musical_chairs {
     public fun set_current_seats(vm: &signer, filled_seats: u64): u64 acquires Chairs{
       system_addresses::assert_ol(vm);
       let chairs = borrow_global_mut<Chairs>(@ol_framework);
-      chairs.current_seats = filled_seats;
-      chairs.current_seats
+      chairs.seats_offered = filled_seats;
+      chairs.seats_offered
     }
 
     #[test_only]
@@ -133,7 +144,9 @@ module ol_framework::musical_chairs {
         let i = 0;
         while (i < val_set_len) {
             let addr = *vector::borrow(&validators, i);
-            if (cases::get_case(addr) == 1) {
+            let (compliant, _, _, _) = grade::get_validator_grade(addr);
+            // let compliant = true;
+            if (compliant) {
                 vector::push_back(&mut compliant_nodes, addr);
             } else {
                 vector::push_back(&mut non_compliant_nodes, addr);
@@ -168,14 +181,20 @@ module ol_framework::musical_chairs {
         (compliant_nodes, non_compliant_nodes, ratio)
     }
 
+
     //////// GETTERS ////////
 
     public fun get_current_seats(): u64 acquires Chairs {
-        borrow_global<Chairs>(@ol_framework).current_seats
+        borrow_global<Chairs>(@ol_framework).seats_offered
     }
 
     #[test_only]
     use diem_framework::chain_id;
+
+    #[test_only]
+    public fun test_stop(vm: &signer): (vector<address>, u64) acquires Chairs {
+      stop_the_music(vm)
+    }
 
     //////// TESTS ////////
 

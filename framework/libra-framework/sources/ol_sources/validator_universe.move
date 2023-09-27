@@ -11,7 +11,7 @@ module diem_framework::validator_universe {
   use std::vector;
   use diem_framework::system_addresses;
   use ol_framework::jail;
-  use ol_framework::cases;
+  // use ol_framework::grade;
   use ol_framework::vouch;
   use diem_framework::stake;
 
@@ -77,28 +77,27 @@ module diem_framework::validator_universe {
     jail::init(sender);
   }
 
-  /// Used at epoch boundaries to evaluate the performance of the validator.
-  /// only root can call this, and only by friend modules (reconfiguration). Belt and suspenders.
-  public(friend) fun maybe_jail(root: &signer, validator: address): bool {
-    system_addresses::assert_ol(root);
-    maybe_jail_impl(root, validator)
-  }
+  // /// Used at epoch boundaries to evaluate the performance of the validator.
+  // /// only root can call this, and only by friend modules (reconfiguration). Belt and suspenders.
+  // public(friend) fun maybe_jail(root: &signer, validator: address): bool {
+  //   system_addresses::assert_ol(root);
+  //   maybe_jail_impl(root, validator)
+  // }
 
-  /// Common implementation for maybe_jail.
-  fun maybe_jail_impl(root: &signer, validator: address): bool {
-    system_addresses::assert_ol(root);
+  // /// Common implementation for maybe_jail.
+  // fun maybe_jail_impl(root: &signer, validator: address): bool {
+  //   system_addresses::assert_ol(root);
 
-    if (
-      // TODO check if there are issues with config. belt and suspenders
-      cases::get_case(validator) == 4
+  //   let (compliant, _, _, _) = grade::get_validator_grade(validator);
+  //     // TODO check if there are issues with config. belt and suspenders
 
-    ) {
-      jail::jail(root, validator);
-      return true
-    };
+  //   if (compliant) {
+  //     jail::jail(root, validator);
+  //     return true
+  //   };
 
-    false
-  }
+  //   false
+  // }
 
 
   // /// performs the business logic for admitting new validators
@@ -153,11 +152,11 @@ module diem_framework::validator_universe {
     add(validator);
   }
 
-  #[test_only]
-  /// test helper for maybe_jail
-  public fun test_maybe_jail(root: &signer, validator: address): bool {
-    maybe_jail_impl(root, validator)
-  }
+  // #[test_only]
+  // /// test helper for maybe_jail
+  // public fun test_maybe_jail(root: &signer, validator: address): bool {
+  //   maybe_jail_impl(root, validator)
+  // }
 
   #[test_only]
   public fun test_helper_add_self_onboard(vm: &signer, addr:address) acquires ValidatorUniverse {

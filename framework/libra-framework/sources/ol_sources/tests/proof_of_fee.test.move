@@ -105,12 +105,24 @@ module ol_framework::test_pof {
 
     testnet::unset(&root);
 
-    assert!(vouch::unrelated_buddies_above_thresh(alice, globals::get_validator_vouch_threshold()), 1001);
+    let val_set = stake::get_current_validators();
+    let (frens_in_val_set, _found) = vouch::true_friends_in_list(alice, &val_set);
+    let threshold = globals::get_validator_vouch_threshold();
+    // ENOUGH VOUCHES
+    assert!(vector::length(&frens_in_val_set) > threshold, 1001);
+
+    // assert!(vouch::unrelated_buddies_above_thresh(alice, globals::get_validator_vouch_threshold()), 1001);
     let (_, pass) = proof_of_fee::audit_qualification(alice);
     assert!(pass, 1003);
 
     vouch::test_set_buddies(alice, vector::empty());
-    assert!(!vouch::unrelated_buddies_above_thresh(alice, globals::get_validator_vouch_threshold()), 1004);
+
+    let val_set = stake::get_current_validators();
+    let (frens_in_val_set, _found) = vouch::true_friends_in_list(alice, &val_set);
+    let threshold = globals::get_validator_vouch_threshold();
+    // TOO few vouches
+    assert!(vector::length(&frens_in_val_set) < threshold, 1001);
+
     let (_, pass) = proof_of_fee::audit_qualification(alice);
     assert!(!pass, 1005);
   }
@@ -136,13 +148,14 @@ module ol_framework::test_pof {
     assert!(coin < bid_cost, 1005);
 
     // should NOT pass audit.
-    let (_, pass) = proof_of_fee::audit_qualification(alice);
-    assert!(!pass, 1006);
+    let (err, pass) = proof_of_fee::audit_qualification(alice);
+    assert!(*vector::borrow(&err, 0) == 17, 1006);
+    assert!(!pass, 1007);
   }
 
   #[test(root = @ol_framework)]
   fun audit_expired(root: signer) {
-    let set = mock::genesis_n_vals(&root, 4);
+    let set = mock::genesis_n_vals(&root, 7);
     mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
     let alice = *vector::borrow(&set, 0);
 
@@ -151,34 +164,34 @@ module ol_framework::test_pof {
     // initially set a good bid
     mock_good_bid(&root, &alice);
 
+    // needs friends
+    // vouch::test_set_buddies(alice, set);
+    let (_err, pass) = proof_of_fee::audit_qualification(alice);
+    assert!(pass, 1002);
 
     // has a bid which IS expired
     // test runner is at epoch 1, they put expiry at 0.
     // TODO: Improve this test by doing more advanced epochs
+    mock::mock_all_vals_good_performance(&root);
+    mock::trigger_epoch(&root);
+
     let a_sig = account::create_signer_for_test(alice);
 
-    // let this_epoch = reconfiguration::get_current_epoch();
-
-
-
-    reconfiguration::reconfigure_for_test();
-    stake::end_epoch();
-
-    // let this_epoch = reconfiguration::get_current_epoch();
-
-
+    // set a bid in the past
     proof_of_fee::set_bid(&a_sig, 1, 0);
     let (bid, expires) = proof_of_fee::current_bid(alice);
     assert!(bid == 1, 1006);
     assert!(expires == 0, 1007);
     // should NOT pass audit.
-    let (_, pass) = proof_of_fee::audit_qualification(alice);
+    let (_err, pass) = proof_of_fee::audit_qualification(alice);
     assert!(!pass, 1008);
 
     // fix it
     proof_of_fee::set_bid(&a_sig, 1, 1000);
-    let (_, pass) = proof_of_fee::audit_qualification(alice);
+
+    let (_err, pass) = proof_of_fee::audit_qualification(alice);
     assert!(pass, 1009);
+
   }
 
   #[test(root = @ol_framework)]
@@ -333,7 +346,7 @@ module ol_framework::test_pof {
     let sorted = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted) == vector::length(&set), 1003);
 
-    let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&root, len, &sorted, &sorted);
+    let (seats, _p, _, _) = proof_of_fee::fill_seats_and_get_price(&root, len, &sorted, &sorted);
 
     assert!(vector::contains(&seats, vector::borrow(&set, 0)), 1004);
 
@@ -359,7 +372,7 @@ module ol_framework::test_pof {
     assert!(vector::length(&sorted) == vector::length(&set), 1003);
 
     let len = vector::length(&set);
-    let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&root, len, &sorted, &sorted);
+    let (seats, _p, _, _) = proof_of_fee::fill_seats_and_get_price(&root, len, &sorted, &sorted);
 
     assert!(vector::contains(&seats, vector::borrow(&set, 0)), 1004);
 
@@ -407,7 +420,7 @@ module ol_framework::test_pof {
     assert!(vector::length(&set) == 5, 1004);
     assert!(vector::length(&sorted) == 4, 1005);
 
-    let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&root, vector::length(&set), &sorted, &sorted);
+    let (seats, _p, _, _) = proof_of_fee::fill_seats_and_get_price(&root, vector::length(&set), &sorted, &sorted);
 
     // EVE is not in the seats
     assert!(!vector::contains(&seats, vector::borrow(&set, 4)), 1004);
@@ -444,7 +457,7 @@ module ol_framework::test_pof {
 
 
     let set_size = 3;
-    let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &sorted);
+    let (seats, _p, _, _) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &sorted);
 
     assert!(vector::length(&set) == 5, 1004);
     assert!(vector::length(&seats) == 3, 1005);
@@ -507,7 +520,7 @@ module ol_framework::test_pof {
     vector::push_back(&mut proven_vals, *vector::borrow(&set, 4));
     vector::push_back(&mut proven_vals, *vector::borrow(&set, 5));
 
-    let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &proven_vals);
+    let (seats, _p, _, _) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &proven_vals);
 
     assert!(vector::length(&set) == 6, 1004);
     assert!(vector::length(&seats) == 6, 1005);
@@ -571,7 +584,7 @@ module ol_framework::test_pof {
     let (frank_bid, _) = proof_of_fee::current_bid(Frank);
     assert!(alice_bid < frank_bid, 1002);
 
-    let (seats, _p) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &proven_vals);
+    let (seats, _p, _, _) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &proven_vals);
 
     assert!(vector::length(&set) == 6, 1003);
     assert!(vector::length(&seats) == 4, 1004);

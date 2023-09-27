@@ -57,6 +57,8 @@ module ol_framework::safe {
 
   // use diem_std::debug::print;
 
+  friend ol_framework::epoch_boundary;
+
   /// a multi action safe is not initialized on this account
   const ESAFE_NOT_INITIALIZED: u64 = 1;
 
@@ -176,9 +178,15 @@ module ol_framework::safe {
   }
 
 
-  public fun root_security_fee_billing(vm: &signer) acquires RootMultiSigRegistry {
+  /// charges the fee for shared security
+  /// returns (security_bill_count, security_bill_amount, success) so that epoch_boundary can
+  /// audit the result
+  public(friend) fun root_security_fee_billing(vm: &signer): (u64, u64, bool) acquires RootMultiSigRegistry {
     system_addresses::assert_ol(vm);
     let reg = borrow_global<RootMultiSigRegistry>(@ol_framework);
+    let security_bill_count = 0;
+    let security_bill_amount = 0;
+    let expected_fees = 0;
     let i = 0;
     while (i < vector::length(&reg.list)) {
 
@@ -187,17 +195,21 @@ module ol_framework::safe {
       let pct = fixed_point32::create_from_rational(reg.fee, PERCENT_SCALE);
 
       let fee = fixed_point32::multiply_u64(coin::balance<GasCoin>(*multi_sig_addr), pct);
+      expected_fees = expected_fees + fee;
 
       let coin_opt = coin::vm_withdraw<GasCoin>(vm, *multi_sig_addr, fee);
       if (option::is_some(&coin_opt)) {
         let c = option::extract(&mut coin_opt);
+        security_bill_amount = security_bill_amount + coin::value(&c);
+        security_bill_count = security_bill_count + 1;
         transaction_fee::vm_pay_fee(vm, *multi_sig_addr, c);
       };
       option::destroy_none(coin_opt);
 
       i = i + 1;
     };
-
+    let success = security_bill_count == 1 && security_bill_amount == expected_fees;
+    (security_bill_count, security_bill_amount, success)
   }
 }
 

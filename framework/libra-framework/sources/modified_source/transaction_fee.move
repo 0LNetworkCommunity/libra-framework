@@ -221,8 +221,11 @@ module diem_framework::transaction_fee {
     }
 
     /// root account can use system fees to pay multiple accounts, e.g. for Proof of Fee reward.
-    public fun vm_multi_pay_fee(vm: &signer, list: &vector<address>, amount: u64) acquires CollectedFeesPerBlock {
+    /// returns the actual amount that was transferred
+    public fun vm_multi_pay_fee(vm: &signer, list: &vector<address>, amount: u64): u64  acquires CollectedFeesPerBlock {
       system_addresses::assert_ol(vm);
+      let actual_transferred = 0;
+
       let i = 0;
 
       while (i < vector::length(list)) {
@@ -230,12 +233,14 @@ module diem_framework::transaction_fee {
         let coin_option = coin::vm_withdraw<GasCoin>(vm, *from, amount);
         if (option::is_some(&coin_option)) {
           let c = option::extract(&mut coin_option);
+          actual_transferred = actual_transferred + coin::value(&c);
           vm_pay_fee(vm, *from, c)
         };
         option::destroy_none(coin_option);
 
         i = i + 1;
-      }
+      };
+      actual_transferred
     }
 
     /////// 0L ////////
@@ -260,6 +265,12 @@ module diem_framework::transaction_fee {
     public(friend) fun store_diem_coin_burn_cap(diem_framework: &signer, burn_cap: BurnCapability<GasCoin>) {
         system_addresses::assert_diem_framework(diem_framework);
         move_to(diem_framework, GasCoinCapabilities { burn_cap })
+    }
+
+    #[test_only]
+    public fun test_root_withdraw_all(root: &signer): Coin<GasCoin> acquires CollectedFeesPerBlock {
+      system_addresses::assert_ol(root);
+      withdraw_all_impl(root)
     }
 
     #[test_only]
