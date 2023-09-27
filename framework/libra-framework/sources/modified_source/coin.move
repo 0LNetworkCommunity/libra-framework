@@ -15,27 +15,22 @@ module diem_framework::coin {
 
     use diem_std::type_info;
     use diem_std::math64;
-
-    // use diem_framework::chain_status;
     // use diem_std::debug::print;
 
     friend ol_framework::gas_coin;
-    friend ol_framework::burn;
     friend ol_framework::ol_account;
     friend ol_framework::safe;
     friend ol_framework::rewards;
     friend ol_framework::donor_directed;
     friend ol_framework::pledge_accounts;
-    friend diem_framework::diem_coin;
     friend diem_framework::genesis;
     friend diem_framework::transaction_fee;
-    friend diem_framework::diem_account;
     friend diem_framework::resource_account;
     friend diem_framework::genesis_migration;
-    friend diem_framework::epoch_boundary;
-    friend diem_framework::match_index;
-    friend diem_framework::oracle;
 
+    // TODO: remove these
+    friend diem_framework::diem_coin;
+    friend diem_framework::diem_account;
 
 
     //
@@ -168,13 +163,7 @@ module diem_framework::coin {
         move_to(diem_framework, SupplyConfig { allow_upgrades: false });
     }
 
-    // /// This should be called by on-chain governance to update the config and allow
-    // // or disallow upgradability of total supply.
-    // public fun allow_supply_upgrades(diem_framework: &signer, allowed: bool) acquires SupplyConfig {
-    //     system_addresses::assert_diem_framework(diem_framework);
-    //     let allow_upgrades = &mut borrow_global_mut<SupplyConfig>(@diem_framework).allow_upgrades;
-    //     *allow_upgrades = allowed;
-    // }
+    //NOTE(deprecated): no need to upgrade current supply
 
     //
     //  Aggregatable coin functions
@@ -437,66 +426,23 @@ module diem_framework::coin {
     }
 
     /// Extracts `amount` from the passed-in `coin`, where the original token is modified in place.
-    public(friend) fun extract<CoinType>(coin: &mut Coin<CoinType>, amount: u64): Coin<CoinType> {
+    // NOTE: does not need to be friend only, since it is a method (requires a mutable coin already be out of an account);
+    public fun extract<CoinType>(coin: &mut Coin<CoinType>, amount: u64): Coin<CoinType> {
         assert!(coin.value >= amount, error::invalid_argument(EINSUFFICIENT_BALANCE));
         coin.value = coin.value - amount;
         Coin { value: amount }
     }
 
     /// Extracts the entire amount from the passed-in `coin`, where the original token is modified in place.
-    public(friend) fun extract_all<CoinType>(coin: &mut Coin<CoinType>): Coin<CoinType> {
+    // NOTE: does not need to be friend only, since it is a method (requires a mutable coin already be out of an account);
+
+    public fun extract_all<CoinType>(coin: &mut Coin<CoinType>): Coin<CoinType> {
         let total_value = coin.value;
         coin.value = 0;
         Coin { value: total_value }
     }
 
-    // #[legacy_entry_fun]
-    // /// Freeze a CoinStore to prevent transfers
-    // public entry fun freeze_coin_store<CoinType>(
-    //     account_addr: address,
-    //     _freeze_cap: &FreezeCapability<CoinType>,
-    // ) acquires CoinStore {
-    //     let coin_store = borrow_global_mut<CoinStore<CoinType>>(account_addr);
-    //     coin_store.frozen = true;
-    // }
-
-    // #[legacy_entry_fun]
-    // /// Unfreeze a CoinStore to allow transfers
-    // public entry fun unfreeze_coin_store<CoinType>(
-    //     account_addr: address,
-    //     _freeze_cap: &FreezeCapability<CoinType>,
-    // ) acquires CoinStore {
-    //     let coin_store = borrow_global_mut<CoinStore<CoinType>>(account_addr);
-    //     coin_store.frozen = false;
-    // }
-
-    // /// Upgrade total supply to use a parallelizable implementation if it is
-    // /// available.
-    // public entry fun upgrade_supply<CoinType>(account: &signer) acquires CoinInfo, SupplyConfig {
-    //     let account_addr = signer::address_of(account);
-
-    //     // Only coin creators can upgrade total supply.
-    //     assert!(
-    //         coin_address<CoinType>() == account_addr,
-    //         error::invalid_argument(ECOIN_INFO_ADDRESS_MISMATCH),
-    //     );
-
-    //     // Can only succeed once on-chain governance agreed on the upgrade.
-    //     assert!(
-    //         borrow_global_mut<SupplyConfig>(@diem_framework).allow_upgrades,
-    //         error::permission_denied(ECOIN_SUPPLY_UPGRADE_NOT_SUPPORTED)
-    //     );
-
-    //     let maybe_supply = &mut borrow_global_mut<CoinInfo<CoinType>>(account_addr).supply;
-    //     if (option::is_some(maybe_supply)) {
-    //         let supply = option::borrow_mut(maybe_supply);
-
-    //         // If supply is tracked and the current implementation uses an integer - upgrade.
-    //         if (!optional_aggregator::is_parallelizable(supply)) {
-    //             optional_aggregator::switch(supply);
-    //         }
-    //     }
-    // }
+    // NOTE(deprecated): SILLY RABBIT, TRICKS ARE FOR KIDS
 
     /// Creates a new Coin with given `CoinType` and returns minting/freezing/burning capabilities.
     /// The given signer also becomes the account hosting the information  about the coin
