@@ -28,7 +28,7 @@ module diem_framework::genesis {
 
     //////// 0L ////////
     use diem_framework::validator_universe;
-    use ol_framework::ol_account;
+    // use ol_framework::ol_account;
     use ol_framework::musical_chairs;
     use ol_framework::proof_of_fee;
     use ol_framework::slow_wallet;
@@ -41,8 +41,8 @@ module diem_framework::genesis {
     use ol_framework::burn;
     use ol_framework::fee_maker;
     use ol_framework::oracle;
-
-    // const TESTNET_GENESIS_BOOTSTRAP_COIN: u64 = 10000000000; //10,000 coins with 6 digits precision: 10B coins.
+    use ol_framework::vouch;
+    use ol_framework::testnet;
     //////// end 0L ////////
 
 
@@ -266,49 +266,54 @@ module diem_framework::genesis {
         }
     }
 
-    // This creates an funds an account if it doesn't exist.
-    /// If it exists, it just returns the signer.
-    fun ol_create_account(root: &signer, account_address: address): signer {
-        // assert!(!account::exists_at(account_address), error::already_exists(EDUPLICATE_ACCOUNT));
-        if (!account::exists_at(account_address)) {
-            ol_account::create_account(root, account_address);
-            // gas_coin::mint_to(root, account_address, 10000);
+    // // This creates an funds an account if it doesn't exist.
+    // /// If it exists, it just returns the signer.
+    // fun depr_ol_create_account(root: &signer, account_address: address): signer {
+    //     // assert!(!account::exists_at(account_address), error::already_exists(EDUPLICATE_ACCOUNT));
+    //     if (!account::exists_at(account_address)) {
+    //         ol_account::create_account(root, account_address);
+    //         // gas_coin::mint_to(root, account_address, 10000);
 
-        };
-        // NOTE: after the inital genesis set up, the validators can rotate their auth keys.
-        // let new_signer = account::create_account(account_address);
-        // coin::register<GasCoin>(&new_signer);
-        // mint genesis bootstrap coins
+    //     };
+    //     // NOTE: after the inital genesis set up, the validators can rotate their auth keys.
+    //     // let new_signer = account::create_account(account_address);
+    //     // coin::register<GasCoin>(&new_signer);
+    //     // mint genesis bootstrap coins
 
 
-        create_signer(account_address)
-    }
+    //     create_signer(account_address)
+    // }
 
     fun create_initialize_validators_with_commission(
         diem_framework: &signer,
-        use_staking_contract: bool,
+        _depr_use_staking_contract: bool,
         validators: vector<ValidatorConfigurationWithCommission>,
     ) {
         let i = 0;
         let num_validators = vector::length(&validators);
 
+        let val_addr_list = vector::empty();
+
         while (i < num_validators) {
 
             let validator = vector::borrow(&validators, i);
-            create_validator_accounts(diem_framework, validator, use_staking_contract);
+            register_one_genesis_validator(diem_framework, validator, false);
+            vector::push_back(&mut val_addr_list, *&validator.validator_config.owner_address);
+            // 0x1 code account is calling this contract but the 0x0 VM address is authorized for infra escrow.
+            infra_escrow::genesis_coin_validator(&create_signer(@0x0), *&validator.validator_config.owner_address);
+            if (testnet::is_not_mainnet()) {
+              let sig = create_signer(validator.validator_config.owner_address);
+              proof_of_fee::set_bid(&sig, 05, 1000);
+            };
 
             i = i + 1;
         };
 
+        vector::for_each(val_addr_list, |one_val| {
+          vouch::vm_migrate(diem_framework, one_val, val_addr_list);
+        });
+
         musical_chairs::initialize(diem_framework, num_validators);
-
-
-
-
-        // Destroy the diem framework account's ability to mint coins now that we're done with setting up the initial
-        // validators.
-        // diem_coin::destroy_mint_cap(diem_framework);
-
         stake::on_new_epoch();
 
     }
@@ -323,24 +328,24 @@ module diem_framework::genesis {
     ///
     /// Network address fields are a vector per account, where each entry is a vector of addresses
     /// encoded in a single BCS byte array.
-    fun ol_create_initialize_validators(diem_framework: &signer, validators: vector<ValidatorConfiguration>) {
-        let i = 0;
-        let num_validators = vector::length(&validators);
+    // fun ol_create_initialize_validators(diem_framework: &signer, validators: vector<ValidatorConfiguration>) {
+    //     let i = 0;
+    //     let num_validators = vector::length(&validators);
 
-        // let validators_with_commission = vector::empty();
+    //     // let validators_with_commission = vector::empty();
 
-        while (i < num_validators) {
-            ol_create_validator_accounts(diem_framework, vector::borrow(&validators, i));
+    //     while (i < num_validators) {
+    //         ol_create_validator_accounts(diem_framework, vector::borrow(&validators, i));
 
-            i = i + 1;
-        };
+    //         i = i + 1;
+    //     };
 
-        musical_chairs::initialize(diem_framework, num_validators);
+    //     musical_chairs::initialize(diem_framework, num_validators);
 
-        stake::on_new_epoch();
+    //     stake::on_new_epoch();
 
-        // create_initialize_validators_with_commission(diem_framework, false, validators_with_commission);
-    }
+    //     // create_initialize_validators_with_commission(diem_framework, false, validators_with_commission);
+    // }
 
     fun create_initialize_validators(diem_framework: &signer, validators: vector<ValidatorConfiguration>) {
         let i = 0;
@@ -362,49 +367,74 @@ module diem_framework::genesis {
       create_initialize_validators_with_commission(diem_framework, false, validators_with_commission);
     }
 
-    fun ol_create_validator_accounts(
+    // fun depr_ol_create_validator_accounts(
+    //     diem_framework: &signer,
+    //     validator: &ValidatorConfiguration,
+    //     // _use_staking_contract: bool,
+    // ) { // NOTE: after the accounts are created, the migration will restore the previous authentication keys.
+    //     let owner = &ol_create_account(diem_framework, validator.owner_address);
+    //     // TODO: we probably don't need either of these accounts.
+    //     ol_create_account(diem_framework, validator.operator_address);
+    //     ol_create_account(diem_framework, validator.voter_address);
+
+    //     // Initialize the stake pool and join the validator set.
+    //     // let pool_address = if (use_staking_contract) {
+
+    //     //     staking_contract::create_staking_contract(
+    //     //         owner,
+    //     //         validator.operator_address,
+    //     //         validator.voter_address,
+    //     //         validator.stake_amount,
+    //     //         commission_config.commission_percentage,
+    //     //         x"",
+    //     //     );
+    //     //     staking_contract::stake_pool_address(validator.owner_address, validator.operator_address)
+    //     // } else
+    //     let pool_address = {
+
+
+    //         stake::initialize_stake_owner(
+    //             owner,
+    //             validator.stake_amount,
+    //             validator.operator_address,
+    //             validator.voter_address,
+    //         );
+
+    //         validator.owner_address
+    //     };
+
+
+    //     // if (commission_config.join_during_genesis) { // TODO: remove this check
+    //         initialize_validator(pool_address, validator);
+    //     // };
+    // }
+
+    fun register_one_genesis_validator(
         diem_framework: &signer,
-        validator: &ValidatorConfiguration,
-        // _use_staking_contract: bool,
-    ) { // NOTE: after the accounts are created, the migration will restore the previous authentication keys.
-        let owner = &ol_create_account(diem_framework, validator.owner_address);
-        // TODO: we probably don't need either of these accounts.
-        ol_create_account(diem_framework, validator.operator_address);
-        ol_create_account(diem_framework, validator.voter_address);
+        commission_config: &ValidatorConfigurationWithCommission,
+        _use_staking_contract: bool,
+    ) {
+      let validator = &commission_config.validator_config;
 
-        // Initialize the stake pool and join the validator set.
-        // let pool_address = if (use_staking_contract) {
+      let owner = &create_account(diem_framework, validator.owner_address, validator.stake_amount);
 
-        //     staking_contract::create_staking_contract(
-        //         owner,
-        //         validator.operator_address,
-        //         validator.voter_address,
-        //         validator.stake_amount,
-        //         commission_config.commission_percentage,
-        //         x"",
-        //     );
-        //     staking_contract::stake_pool_address(validator.owner_address, validator.operator_address)
-        // } else
-        let pool_address = {
+    // account: &signer,
+    // consensus_pubkey: vector<u8>,
+    // proof_of_possession: vector<u8>,
+    // network_addresses: vector<u8>,
+    // fullnode_addresses: vector<u8>,
+      validator_universe::register_validator(
+        owner,
+        validator.consensus_pubkey,
+        validator.proof_of_possession,
+        validator.network_addresses,
+        validator.full_node_network_addresses,
+      );
 
-
-            stake::initialize_stake_owner(
-                owner,
-                validator.stake_amount,
-                validator.operator_address,
-                validator.voter_address,
-            );
-
-            validator.owner_address
-        };
-
-
-        // if (commission_config.join_during_genesis) { // TODO: remove this check
-            initialize_validator(pool_address, validator);
-        // };
+      stake::join_validator_set_internal(owner, validator.owner_address);
     }
 
-    fun create_validator_accounts(
+    fun test_create_validator_accounts(
         diem_framework: &signer,
         commission_config: &ValidatorConfigurationWithCommission,
         _use_staking_contract: bool,
@@ -445,6 +475,7 @@ module diem_framework::genesis {
 
         if (commission_config.join_during_genesis) { // TODO: remove this check
             initialize_validator(pool_address, validator);
+            validator_universe::genesis_helper_add_validator(diem_framework, owner)
         };
     }
 

@@ -5,10 +5,13 @@ module ol_framework::vouch {
     use ol_framework::ancestry;
     use ol_framework::testnet;
     use ol_framework::ol_account;
+    use ol_framework::epoch_helper;
 
     use diem_framework::system_addresses;
     use diem_framework::stake;
     use diem_framework::transaction_fee;
+
+    friend diem_framework::genesis;
 
     /// trying to vouch for yourself?
     const ETRY_SELF_VOUCH_REALLY: u64 = 1;
@@ -34,6 +37,7 @@ module ol_framework::vouch {
       }
     }
 
+    #[view]
     public fun is_init(acc: address ):bool {
       exists<MyVouches>(acc)
     }
@@ -43,23 +47,21 @@ module ol_framework::vouch {
       assert!(buddy_acc != wanna_be_my_friend, ETRY_SELF_VOUCH_REALLY);
 
       if (!exists<MyVouches>(wanna_be_my_friend)) return;
-
+      let epoch = epoch_helper::get_current_epoch();
       // this fee is paid to the system, cannot be reclaimed
-      let c = ol_account::withdraw(ill_be_your_friend, vouch_cost());
+      let c = ol_account::withdraw(ill_be_your_friend, vouch_cost_microlibra());
       transaction_fee::user_pay_fee(ill_be_your_friend, c);
 
       let v = borrow_global_mut<MyVouches>(wanna_be_my_friend);
 
-      // let (found, i) = find_vouch(buddy_acc, wanna_be_my_friend);
       let (found, i) = vector::index_of(&v.my_buddies, &buddy_acc);
       if (found) { // prevent duplicates
         // update date
-        let epoch = 0; // TODO get epoch
         let e = vector::borrow_mut(&mut v.epoch_vouched, i);
         *e = epoch;
       } else {
         vector::push_back(&mut v.my_buddies, buddy_acc);
-        vector::push_back(&mut v.epoch_vouched, 0); // TODO get epoch
+        vector::push_back(&mut v.epoch_vouched, epoch);
       }
     }
 
@@ -91,10 +93,9 @@ module ol_framework::vouch {
       };
     }
 
-    public fun vm_migrate(vm: &signer, val: address, buddy_list: vector<address>) acquires MyVouches {
-      system_addresses::assert_vm(vm);
+    public(friend) fun vm_migrate(vm: &signer, val: address, buddy_list: vector<address>) acquires MyVouches {
+      system_addresses::assert_ol(vm);
       bulk_set(val, buddy_list);
-
     }
 
     fun bulk_set(val: address, buddy_list: vector<address>) acquires MyVouches {
@@ -111,6 +112,9 @@ module ol_framework::vouch {
       };
 
       v.my_buddies = buddy_list;
+
+      let epoch_data: vector<u64> = vector::map_ref(&buddy_list, |_e| { 0u64 } );
+      v.epoch_vouched = epoch_data;
     }
 
     #[view]
@@ -125,14 +129,12 @@ module ol_framework::vouch {
     #[view]
     /// gets the buddies and checks if they are expired
     public fun get_buddies_valid(val: address): vector<address> acquires MyVouches{
-      if (!exists<MyVouches>(val)) return vector::empty<address>();
-
       let valid_vouches = vector::empty<address>();
       if (is_init(val)) {
         let state = borrow_global<MyVouches>(val);
-        vector::for_each(state.my_buddies, |b| {
-          if (is_not_expired(b, state)) {
-            vector::push_back(&mut valid_vouches, b)
+        vector::for_each(state.my_buddies, |buddy_acc| {
+          if (is_not_expired(buddy_acc, state)) {
+            vector::push_back(&mut valid_vouches, buddy_acc)
           }
         })
       };
@@ -142,9 +144,8 @@ module ol_framework::vouch {
     fun is_not_expired(voucher: address, state: &MyVouches): bool {
       let (found, i) = vector::index_of(&state.my_buddies, &voucher);
       if (found) {
-        let epoch = 0; // TODO get epoch
-        let e = vector::borrow(&state.epoch_vouched, i);
-        return epoch > *e + EXPIRATION_ELAPSED_EPOCHS
+        let when_vouched = vector::borrow(&state.epoch_vouched, i);
+        return  (*when_vouched + EXPIRATION_ELAPSED_EPOCHS) > epoch_helper::get_current_epoch()
       };
       false
     }
@@ -177,6 +178,7 @@ module ol_framework::vouch {
     }
 
 
+    #[view]
     public fun unrelated_buddies_above_thresh(val: address, threshold: u64): bool acquires MyVouches{
       if (!exists<MyVouches>(val)) return false;
 
@@ -188,8 +190,8 @@ module ol_framework::vouch {
     }
 
     // the cost to verify a vouch. Coins are burned.
-    fun vouch_cost(): u64 {
-      100
+    fun vouch_cost_microlibra(): u64 {
+      1000
     }
 
     #[test_only]

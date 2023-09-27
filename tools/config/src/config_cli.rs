@@ -57,9 +57,9 @@ enum ConfigSub {
         #[clap(short, long)]
         remove_profile: Option<String>,
 
-        /// optional a network profile
-        #[clap(short, long)]
-        upstream_url: Option<Url>,
+        /// optional, force overwrite of all urls in current network profile to this url
+        #[clap(short('u'), long)]
+        force_url: Option<Url>,
     },
     /// For core developers. Generates a config.yaml in the vendor format. This is a hidden command in the CLI.
     #[clap(hide(true))]
@@ -97,7 +97,7 @@ impl ConfigCli {
             Some(ConfigSub::Fix {
                 address,
                 remove_profile,
-                upstream_url,
+                force_url,
             }) => {
                 let mut cfg = AppCfg::load(self.path.clone())?;
 
@@ -133,8 +133,9 @@ impl ConfigCli {
                     }
                 }
 
-                if let Some(u) = upstream_url {
+                if let Some(u) = force_url {
                     let np = cfg.get_network_profile_mut(self.chain_name)?;
+                    np.nodes = vec![];
                     np.add_url(u.to_owned());
                 }
                 dbg!(&cfg);
@@ -169,7 +170,7 @@ impl ConfigCli {
                     );
                     std::fs::create_dir_all(&data_path)?;
                 }
-                initialize_validator_configs(&data_path, None)?;
+                initialize_validator_configs(&data_path, None).await?;
                 println!("Validators' config initialized.");
                 Ok(())
             }

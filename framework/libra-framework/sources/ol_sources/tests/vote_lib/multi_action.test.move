@@ -110,7 +110,7 @@ module ol_framework::test_multi_action {
     // Scenario: a simple MultiAction where we don't need any capabilities. Only need to know if the result was successful on the vote that crossed the threshold.
 
     let vals = mock::genesis_n_vals(root, 2);
-    mock::ol_initialize_coin_and_fund_vals(root, 10000000);
+    mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
 
     let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
@@ -145,7 +145,7 @@ module ol_framework::test_multi_action {
     // Scenario: testing that a payment type multisig could be created with this module: that the WithdrawCapability can be used here.
 
     let vals = mock::genesis_n_vals(root, 2);
-    mock::ol_initialize_coin_and_fund_vals(root, 10000000);
+    mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
 
     let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
@@ -195,7 +195,7 @@ module ol_framework::test_multi_action {
     // Scenario: Testing that if an action expires voting cannot be done.
 
     let vals = mock::genesis_n_vals(root, 2);
-    mock::ol_initialize_coin_and_fund_vals(root, 10000000);
+    mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
     // make this epoch 1
     // mock::trigger_epoch(root);
 
@@ -234,7 +234,7 @@ module ol_framework::test_multi_action {
     // Rando and Bob, then remove alice so it becomes 2-of-2 again
 
     let vals = mock::genesis_n_vals(root, 2);
-    mock::ol_initialize_coin_and_fund_vals(root, 10000000);
+    mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
     // Dave creates the resource account. HE is not one of the validators, and is not an authority in the multisig.
     let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
@@ -280,7 +280,7 @@ module ol_framework::test_multi_action {
     // They decide next only 1-of-2 will be needed.
 
     let vals = mock::genesis_n_vals(root, 2);
-    mock::ol_initialize_coin_and_fund_vals(root, 10000000);
+    mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
     // Dave creates the resource account. HE is not one of the validators, and is not an authority in the multisig.
     let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);

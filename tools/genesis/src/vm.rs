@@ -25,10 +25,7 @@ use diem_vm_genesis::{
 };
 use libra_types::{legacy_types::legacy_recovery::LegacyRecovery, ol_progress::OLProgress};
 
-use crate::{
-    genesis_functions::{mint_genesis_bootstrap_coin, rounding_mint},
-    supply::SupplySettings,
-};
+use crate::{genesis_functions::rounding_mint, supply::SupplySettings};
 
 /// set the genesis parameters
 /// NOTE: many of the parameters are ignored in libra_framework
@@ -149,10 +146,10 @@ pub fn encode_genesis_change_set(
     // need to ajust for rounding issues from target supply
     rounding_mint(&mut session, supply_settings);
 
-    // add some coins in each validator account.
-    if chain_id != ChainId::new(1) || option_env!("LIBRA_CI").is_some() {
-        mint_genesis_bootstrap_coin(&mut session, validators);
-    }
+    // // add some coins in each validator account.
+    // if chain_id != ChainId::new(1) || option_env!("LIBRA_CI").is_some() {
+    //     mint_genesis_bootstrap_coin(&mut session, validators);
+    // }
 
     OLProgress::complete("initialized genesis validators");
 

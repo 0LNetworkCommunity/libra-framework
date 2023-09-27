@@ -75,6 +75,8 @@ impl LibraSmoke {
         let mut pub_info = swarm.diem_public_info();
         helpers::mint_libra(&mut pub_info, addr, 100_000_000_000).await?;
 
+        helpers::unlock_libra(&mut pub_info, addr, 100_000_000_000).await?;
+
         Ok(Self {
             swarm,
             first_account,
@@ -83,10 +85,16 @@ impl LibraSmoke {
         })
     }
 
-    pub async fn mint(&mut self, addr: AccountAddress, amount: u64) -> anyhow::Result<()> {
+    pub async fn mint_and_unlock(
+        &mut self,
+        addr: AccountAddress,
+        amount: u64,
+    ) -> anyhow::Result<()> {
         let mut pub_info = self.swarm.diem_public_info();
 
         helpers::mint_libra(&mut pub_info, addr, amount).await?;
+        helpers::unlock_libra(&mut pub_info, addr, amount).await?;
+
         Ok(())
     }
 

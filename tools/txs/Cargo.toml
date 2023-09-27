@@ -16,6 +16,7 @@ clap = { workspace = true }
 hex = { workspace = true }
 indoc = { workspace = true }
 serde_json = { workspace = true }
+serde_yaml = { workspace = true }
 tokio = { workspace = true }
 url = { workspace = true }
 
@@ -27,6 +28,7 @@ libra-wallet = { workspace = true }
 
 diem = { workspace = true }
 diem-framework = { workspace = true }
+diem-genesis = { workspace = true }
 diem-global-constants = { workspace = true }
 diem-logger = { workspace = true }
 diem-sdk = { workspace = true }

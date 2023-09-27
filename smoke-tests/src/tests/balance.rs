@@ -16,18 +16,14 @@ async fn sanity_balances() -> anyhow::Result<()> {
     let mut public_info: diem_forge::DiemPublicInfo = swarm.diem_public_info();
 
     let bal_vec = get_libra_balance(public_info.client(), address).await?;
-    assert!(
-        bal_vec.first().unwrap() == &0,
-        "expected zero balance at genesis"
-    );
+    dbg!(&bal_vec);
+    assert!(bal_vec.unlocked == 0, "expected zero balance at genesis");
+    assert!(bal_vec.total == 0, "expected zero balance at genesis");
 
     let _ = mint_libra(&mut public_info, address, 12345).await;
 
     let bal_vec = get_libra_balance(public_info.client(), address).await?;
-    assert!(
-        bal_vec.first().unwrap() == &12345,
-        "expected balance of 12345"
-    );
+    assert!(bal_vec.total == 12345u64, "expected balance of 12345");
 
     Ok(())
 }

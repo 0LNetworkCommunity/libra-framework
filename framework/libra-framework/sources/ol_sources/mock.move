@@ -23,6 +23,7 @@ module ol_framework::mock {
   use ol_framework::epoch_helper;
   use ol_framework::musical_chairs;
   use ol_framework::globals;
+  use diem_framework::block;
   // use diem_framework::chain_status;
   // use diem_std::debug::print;
 
@@ -162,8 +163,9 @@ module ol_framework::mock {
     }
 
     #[test_only]
-    public fun ol_initialize_coin_and_fund_vals(root: &signer, amount: u64) {
+    public fun ol_initialize_coin_and_fund_vals(root: &signer, amount: u64, drip: bool) {
       system_addresses::assert_ol(root);
+
 
       let mint_cap = init_coin_impl(root);
 
@@ -174,10 +176,15 @@ module ol_framework::mock {
         let addr = vector::borrow(&vals, i);
         let c = coin::mint(amount, &mint_cap);
         ol_account::deposit_coins(*addr, c);
+
+        let b = coin::balance<GasCoin>(*addr);
+        assert!(b == amount, 0001);
+
+
         i = i + 1;
       };
 
-      slow_wallet::slow_wallet_epoch_drip(root, amount);
+      if (drip) slow_wallet::slow_wallet_epoch_drip(root, amount);
       gas_coin::restore_mint_cap(root, mint_cap);
     }
 
@@ -191,9 +198,11 @@ module ol_framework::mock {
 
       transaction_fee::initialize_fee_collection_and_distribution(root, 0);
 
-      let initial_fees = 1000000 * 100;
+      let initial_fees = 1000000 * 100; // coin scaling * 100 coins
       let tx_fees = coin::mint(initial_fees, &mint_cap);
       transaction_fee::vm_pay_fee(root, @ol_framework, tx_fees);
+      let supply_pre = gas_coin::supply();
+      assert!(supply_pre == initial_fees, 666);
 
       mint_cap
     }
@@ -239,10 +248,6 @@ module ol_framework::mock {
         vouch::init(&sig);
         vouch::test_set_buddies(*val, val_addr);
 
-        // TODO: validators should have a balance
-        // in Mock, we should use the same validator creation path as genesis.move
-        let _b = coin::balance<GasCoin>(*val);
-
         i = i + 1;
       };
 
@@ -260,7 +265,7 @@ module ol_framework::mock {
     // transactions or operations can happen after the reconfig.
     public fun trigger_epoch(root: &signer) {
         let old_epoch = epoch_helper::get_current_epoch();
-        epoch_boundary::ol_reconfigure_for_test(root, reconfiguration::get_current_epoch());
+        epoch_boundary::ol_reconfigure_for_test(root, reconfiguration::get_current_epoch(), block::get_current_block_height());
         timestamp::fast_forward_seconds(EPOCH_DURATION);
         reconfiguration::reconfigure_for_test();
         assert!(epoch_helper::get_current_epoch() > old_epoch, EDID_NOT_ADVANCE_EPOCH);
@@ -309,6 +314,22 @@ module ol_framework::mock {
     reset_val_perf_all(&root);
 
     mock_all_vals_good_performance(&root);
+  }
+
+  #[test(root = @ol_framework)]
+  fun test_initial_supply(root: &signer) {
+    // Scenario:
+    // There are two community wallets. Alice and Bob's
+    // EVE donates to both. But mostly to Alice.
+    // The Match Index, should reflect that.
+
+    let n_vals = 5;
+    let _vals = genesis_n_vals(root, n_vals); // need to include eve to init funds
+    let genesis_mint = 1000000;
+    ol_initialize_coin_and_fund_vals(root, genesis_mint, true);
+    let supply_pre = gas_coin::supply();
+    let mocked_tx_fees = 1000000 * 100;
+    assert!(supply_pre == mocked_tx_fees + (n_vals * genesis_mint), 73570001);
   }
 
 

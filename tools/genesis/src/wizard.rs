@@ -14,7 +14,6 @@ use anyhow::{bail, Context};
 use dialoguer::{Confirm, Input};
 use indicatif::{ProgressBar, ProgressIterator};
 use libra_types::global_config_dir;
-
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -76,7 +75,7 @@ impl GenesisWizard {
     }
 
     /// start wizard for end-to-end genesis
-    pub fn start_wizard(
+    pub async fn start_wizard(
         &mut self,
         use_local_framework: bool,
         legacy_recovery_path: Option<PathBuf>,
@@ -93,7 +92,7 @@ impl GenesisWizard {
         // check the git token is as expected, and set it.
         self.git_token_check()?;
 
-        match initialize_validator_configs(&self.data_path, Some(&self.github_username)) {
+        match initialize_validator_configs(&self.data_path, Some(&self.github_username)).await {
             Ok(_) => {
                 println!("Validators' config initialized!");
             }
@@ -408,17 +407,17 @@ impl GenesisWizard {
     }
 }
 
-#[test]
+#[tokio::test]
 #[ignore]
 
-fn test_wizard() {
+async fn test_wizard() {
     let mut wizard = GenesisWizard::new(
         "0LNetworkCommunity".to_string(),
         "test_genesis".to_string(),
         None,
         NamedChain::TESTING,
     );
-    wizard.start_wizard(false, None, false, None).unwrap();
+    wizard.start_wizard(false, None, false, None).await.unwrap();
 }
 
 #[test]

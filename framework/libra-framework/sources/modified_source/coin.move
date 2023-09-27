@@ -403,6 +403,7 @@ module diem_framework::coin {
     }
 
     /// Deposit the coin balance into the recipient's account and emit an event.
+    /// TODO: do the slow wallet tracker checks happen here?
     public fun deposit<CoinType>(account_addr: address, coin: Coin<CoinType>) acquires CoinStore {
         assert!(
             is_account_registered<CoinType>(account_addr),

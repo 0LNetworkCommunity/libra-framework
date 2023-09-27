@@ -9,6 +9,8 @@ module ol_framework::test_reconfiguration {
   use ol_framework::testnet;
   use ol_framework::gas_coin::GasCoin;
   use ol_framework::proof_of_fee;
+  use diem_framework::reconfiguration;
+  use ol_framework::epoch_helper;
   // use diem_std::debug::print;
 
   // Scenario: all genesis validators make it to next epoch
@@ -44,10 +46,17 @@ module ol_framework::test_reconfiguration {
 
   #[test(root = @ol_framework)]
   fun drop_non_performing(root: signer) {
-      let vals = mock::genesis_n_vals(&root, 5);
+      let _vals = mock::genesis_n_vals(&root, 5);
       mock::ol_initialize_coin(&root);
       mock::pof_default();
-      assert!(vector::length(&vals) == 5, 7357001);
+      assert!(coin::balance<GasCoin>(@0x1000a) == 0, 7357000);
+
+      // NOTE: epoch 0 and 1 are a special case, we don't run performance grades on that one. Need to move two epochs ahead
+      reconfiguration::test_helper_increment_epoch_dont_reconfigure();
+      reconfiguration::test_helper_increment_epoch_dont_reconfigure();
+
+      assert!(epoch_helper::get_current_epoch() == 2, 7357001);
+
       let vals = stake::get_current_validators();
       assert!(vector::length(&vals) == 5, 7357002);
 
@@ -61,6 +70,7 @@ module ol_framework::test_reconfiguration {
 
       // run ol reconfiguration
       mock::trigger_epoch(&root);
+      // mock::trigger_epoch(&root);
 
       let vals = stake::get_current_validators();
 
@@ -71,9 +81,10 @@ module ol_framework::test_reconfiguration {
       let (_, entry_fee, _ ) = proof_of_fee::get_consensus_reward();
 
       // alice doesn't get paid
+
       assert!(coin::balance<GasCoin>(@0x1000a) == 0, 7357005);
       // bob does
-      assert!(coin::balance<GasCoin>(@0x1000b) == reward-entry_fee, 7357006);
+      assert!(coin::balance<GasCoin>(@0x1000b) == (reward - entry_fee), 7357006);
 
 
   }
