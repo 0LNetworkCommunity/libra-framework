@@ -37,6 +37,7 @@ module diem_framework::stake {
 
     use ol_framework::slow_wallet;
     use ol_framework::testnet;
+    // use ol_framework::ol_account;
 
     // use diem_std::debug::print;
 
@@ -1486,6 +1487,8 @@ module diem_framework::stake {
 
     }
 
+    // TODO: this is deprecated
+
     /// Update individual validator's stake pool
     /// 1. distribute transaction fees to active/pending_inactive delegations
     /// 2. distribute rewards to active/pending_inactive delegations
@@ -1495,31 +1498,31 @@ module diem_framework::stake {
         validator_perf: &ValidatorPerformance,
         pool_address: address,
         // _staking_config: &StakingConfig,
-    ) acquires StakePool, DiemCoinCapabilities, ValidatorConfig {
+    ) acquires StakePool, ValidatorConfig {
         let stake_pool = borrow_global_mut<StakePool>(pool_address);
         let validator_config = borrow_global<ValidatorConfig>(pool_address);
         let cur_validator_perf = vector::borrow(&validator_perf.validators, validator_config.validator_index);
-        let num_successful_proposals = cur_validator_perf.successful_proposals;
+        let _num_successful_proposals = cur_validator_perf.successful_proposals;
         spec {
             // The following addition should not overflow because `num_total_proposals` cannot be larger than 86400,
             // the maximum number of proposals in a day (1 proposal per second).
             assume cur_validator_perf.successful_proposals + cur_validator_perf.failed_proposals <= MAX_U64;
         };
-        let num_total_proposals = cur_validator_perf.successful_proposals + cur_validator_perf.failed_proposals;
+        let _num_total_proposals = cur_validator_perf.successful_proposals + cur_validator_perf.failed_proposals;
 
         // let (rewards_rate, rewards_rate_denominator) = staking_config::get_reward_rate(staking_config);
 
 
-        let rewards_rate = 1;
-        let rewards_rate_denominator = 1;
+        let _rewards_rate = 1;
+        let _rewards_rate_denominator = 1;
 
-        let rewards_amount = distribute_rewards(
-            &mut stake_pool.active,
-            num_successful_proposals,
-            num_total_proposals,
-            rewards_rate,
-            rewards_rate_denominator
-        );
+        // let rewards_amount = distribute_rewards(
+        //     &mut stake_pool.active,
+        //     num_successful_proposals,
+        //     num_total_proposals,
+        //     rewards_rate,
+        //     rewards_rate_denominator
+        // );
 
         // // Pending active stake can now be active.
         // coin::merge(&mut stake_pool.active, coin::extract_all(&mut stake_pool.pending_active));
@@ -1546,7 +1549,7 @@ module diem_framework::stake {
             &mut stake_pool.distribute_rewards_events,
             DistributeRewardsEvent {
                 pool_address,
-                rewards_amount,
+                rewards_amount: 0,
             },
         );
     }
@@ -1583,23 +1586,23 @@ module diem_framework::stake {
 
     /// Mint rewards corresponding to current epoch's `stake` and `num_successful_votes`.
 
-    // TODO: v7 - change this
-    fun distribute_rewards(
-        stake: &mut Coin<DiemCoin>,
-        _num_successful_proposals: u64,
-        _num_total_proposals: u64,
-        _rewards_rate: u64,
-        _rewards_rate_denominator: u64,
-    ): u64 acquires DiemCoinCapabilities {
-        // let _stake_amount = coin::value(stake);
-        let rewards_amount = 0;
-        if (rewards_amount > 0) {
-            let mint_cap = &borrow_global<DiemCoinCapabilities>(@diem_framework).mint_cap;
-            let rewards = coin::mint(rewards_amount, mint_cap);
-            coin::merge(stake, rewards);
-        };
-        rewards_amount
-    }
+    // // TODO: v7 - change this
+    // fun distribute_rewards(
+    //     stake: &mut Coin<GasCoin>,
+    //     _num_successful_proposals: u64,
+    //     _num_total_proposals: u64,
+    //     _rewards_rate: u64,
+    //     _rewards_rate_denominator: u64,
+    // ): u64 acquires DiemCoinCapabilities {
+    //     // let _stake_amount = coin::value(stake);
+    //     let rewards_amount = 0;
+    //     if (rewards_amount > 0) {
+    //         let mint_cap = &borrow_global<DiemCoinCapabilities>(@diem_framework).mint_cap;
+    //         let rewards = coin::mint(rewards_amount, mint_cap);
+    //         ol_account::merge_coins(stake, rewards);
+    //     };
+    //     rewards_amount
+    // }
 
     fun append<T>(v1: &mut vector<T>, v2: &mut vector<T>) {
         while (!vector::is_empty(v2)) {

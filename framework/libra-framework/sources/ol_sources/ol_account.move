@@ -287,6 +287,14 @@ module ol_framework::ol_account {
         coin::deposit<GasCoin>(to, coins);
     }
 
+    // pass through function to guard the use of Coin
+    public fun merge_coins(dst_coin: &mut Coin<GasCoin>, source_coin: Coin<GasCoin>) {
+        // TODO: check it this is true: no tracking on merged coins since they are always withdrawn, and are a hot potato that might deposit later.
+        // slow_wallet::maybe_track_unlocked_deposit(to, coin::value(&coins));
+        coin::merge<GasCoin>(dst_coin, source_coin);
+    }
+
+
     public fun assert_account_exists(addr: address) {
         assert!(account::exists_at(addr), error::not_found(EACCOUNT_NOT_FOUND));
     }

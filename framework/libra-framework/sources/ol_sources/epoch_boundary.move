@@ -16,6 +16,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::infra_escrow;
     use ol_framework::oracle;
     use ol_framework::testnet;
+    use ol_framework::ol_account;
     use diem_framework::transaction_fee;
     use diem_framework::system_addresses;
     use diem_framework::coin::{Self, Coin};
@@ -184,7 +185,7 @@ module diem_framework::epoch_boundary {
           let oracle_budget = coin::extract(&mut all_fees, clearning_price_to_oracle);
           oracle::epoch_boundary(root, &mut oracle_budget);
           // in case there is any dust left
-          coin::merge(&mut all_fees, oracle_budget);
+          ol_account::merge_coins(&mut all_fees, oracle_budget);
 
           // remainder gets burnt according to fee maker preferences
           burn::epoch_burn_fees(root, &mut all_fees);

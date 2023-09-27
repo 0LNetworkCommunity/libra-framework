@@ -408,8 +408,7 @@ module diem_framework::coin {
     }
 
     /// Deposit the coin balance into the recipient's account and emit an event.
-    /// TODO: do the slow wallet tracker checks happen here?
-    public fun deposit<CoinType>(account_addr: address, coin: Coin<CoinType>) acquires CoinStore {
+    public(friend) fun deposit<CoinType>(account_addr: address, coin: Coin<CoinType>) acquires CoinStore {
         assert!(
             is_account_registered<CoinType>(account_addr),
             error::not_found(ECOIN_STORE_NOT_PUBLISHED),
@@ -560,7 +559,7 @@ module diem_framework::coin {
 
     /// "Merges" the two given coins.  The coin passed in as `dst_coin` will have a value equal
     /// to the sum of the two tokens (`dst_coin` and `source_coin`).
-    public fun merge<CoinType>(dst_coin: &mut Coin<CoinType>, source_coin: Coin<CoinType>) {
+    public(friend) fun merge<CoinType>(dst_coin: &mut Coin<CoinType>, source_coin: Coin<CoinType>) {
         spec {
             assume dst_coin.value + source_coin.value <= MAX_U64;
         };

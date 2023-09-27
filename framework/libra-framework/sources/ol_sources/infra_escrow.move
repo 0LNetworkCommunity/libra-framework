@@ -15,6 +15,7 @@ module ol_framework::infra_escrow{
     use ol_framework::gas_coin::GasCoin;
     use ol_framework::pledge_accounts;
     use ol_framework::slow_wallet;
+    use ol_framework::ol_account;
     use diem_framework::coin;
     use diem_framework::transaction_fee;
     use std::fixed_point32;
@@ -115,7 +116,7 @@ module ol_framework::infra_escrow{
         assert!(option::is_some(&c_opt), error::invalid_state(EGENESIS_REWARD));
         // if (option::is_some(&c_opt)) {
           let coin = option::extract(&mut c_opt);
-          coin::deposit(to, coin);
+          ol_account::deposit_coins(to, coin);
         // };
         option::destroy_none(c_opt);
       }

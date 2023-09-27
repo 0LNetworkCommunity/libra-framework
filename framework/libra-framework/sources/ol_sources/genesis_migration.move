@@ -58,7 +58,7 @@ module ol_framework::genesis_migration {
 
     let coins_to_mint = expected_initial_balance - genesis_balance;
     let c = coin::vm_mint<GasCoin>(vm, coins_to_mint);
-    coin::deposit<GasCoin>(user_addr, c);
+    ol_account::deposit_coins(user_addr, c);
 
     let new_balance = coin::balance<GasCoin>(user_addr);
 
