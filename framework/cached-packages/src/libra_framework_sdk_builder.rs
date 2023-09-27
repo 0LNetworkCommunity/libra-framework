@@ -538,6 +538,12 @@ pub enum EntryFunctionCall {
         code: Vec<Vec<u8>>,
     },
 
+    SlowWalletSmokeTestVmUnlock {
+        user_addr: AccountAddress,
+        unlocked: u64,
+        transferred: u64,
+    },
+
     /// Initialize the validator account and give ownership to the signing account
     /// except it leaves the ValidatorConfig to be set by another entity.
     /// Note: this triggers setting the operator and owner, set it to the account's address
@@ -934,6 +940,11 @@ impl EntryFunctionCall {
                 metadata_serialized,
                 code,
             ),
+            SlowWalletSmokeTestVmUnlock {
+                user_addr,
+                unlocked,
+                transferred,
+            } => slow_wallet_smoke_test_vm_unlock(user_addr, unlocked, transferred),
             StakeInitializeStakeOwner {
                 initial_stake_amount,
                 operator,
@@ -2475,6 +2486,29 @@ pub fn resource_account_create_resource_account_and_publish_package(
     ))
 }
 
+pub fn slow_wallet_smoke_test_vm_unlock(
+    user_addr: AccountAddress,
+    unlocked: u64,
+    transferred: u64,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("slow_wallet").to_owned(),
+        ),
+        ident_str!("smoke_test_vm_unlock").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&user_addr).unwrap(),
+            bcs::to_bytes(&unlocked).unwrap(),
+            bcs::to_bytes(&transferred).unwrap(),
+        ],
+    ))
+}
+
 /// Initialize the validator account and give ownership to the signing account
 /// except it leaves the ValidatorConfig to be set by another entity.
 /// Note: this triggers setting the operator and owner, set it to the account's address
@@ -3604,6 +3638,20 @@ mod decoder {
         }
     }
 
+    pub fn slow_wallet_smoke_test_vm_unlock(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::SlowWalletSmokeTestVmUnlock {
+                user_addr: bcs::from_bytes(script.args().get(0)?).ok()?,
+                unlocked: bcs::from_bytes(script.args().get(1)?).ok()?,
+                transferred: bcs::from_bytes(script.args().get(2)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn stake_initialize_stake_owner(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::StakeInitializeStakeOwner {
@@ -4043,6 +4091,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "resource_account_create_resource_account_and_publish_package".to_string(),
             Box::new(decoder::resource_account_create_resource_account_and_publish_package),
+        );
+        map.insert(
+            "slow_wallet_smoke_test_vm_unlock".to_string(),
+            Box::new(decoder::slow_wallet_smoke_test_vm_unlock),
         );
         map.insert(
             "stake_initialize_stake_owner".to_string(),

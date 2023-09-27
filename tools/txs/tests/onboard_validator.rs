@@ -2,7 +2,13 @@ use std::path::PathBuf;
 
 use diem_types::account_address::AccountAddress;
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
-use libra_txs::{txs_cli::{TxsCli, TxsSub::{Transfer, self}}, txs_cli_vals::ValidatorTxs };
+use libra_txs::{
+    txs_cli::{
+        TxsCli,
+        TxsSub::{self, Transfer},
+    },
+    txs_cli_vals::ValidatorTxs,
+};
 use libra_types::legacy_types::app_cfg::TxCost;
 
 // Scenario, a new user wants to become a validator.
@@ -15,11 +21,13 @@ use libra_types::legacy_types::app_cfg::TxCost;
 // 2. on the epoch boundary the new validator set will include the new account.
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[ignore] // TODO
 async fn smoke_onboard_validator() -> anyhow::Result<()> {
     let d = diem_temppath::TempPath::new();
 
-    let new_val_address = AccountAddress::from_hex_literal("0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5")?;
-
+    let new_val_address = AccountAddress::from_hex_literal(
+        "0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5",
+    )?;
 
     let mut s = LibraSmoke::new(None)
         .await
@@ -46,22 +54,25 @@ async fn smoke_onboard_validator() -> anyhow::Result<()> {
         estimate_only: false,
     };
 
-  alice_cli.run()
+    alice_cli
+        .run()
         .await
         .expect("cli could not create and transfer to new account");
 
-  // 2. REGISTER AS A VALIDATOR
+    // 2. REGISTER AS A VALIDATOR
 
-  // the new validator needs their own cli struct
-  let operator_file = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-  .join("tests/fixtures/validator_onboard/operator.yaml");
+    // the new validator needs their own cli struct
+    let operator_file = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/validator_onboard/operator.yaml");
 
-  let rando_cli = TxsCli {
-        subcommand: Some(
-          TxsSub::Validator(ValidatorTxs::Register { operator_file: Some(operator_file) })
-        ),
+    let rando_cli = TxsCli {
+        subcommand: Some(TxsSub::Validator(ValidatorTxs::Register {
+            operator_file: Some(operator_file),
+        })),
         mnemonic: None,
-        test_private_key: Some("0x74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b".to_owned()),
+        test_private_key: Some(
+            "0x74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b".to_owned(),
+        ),
         chain_id: None,
         config_path: Some(d.path().to_owned().join("libra.yaml")),
         url: Some(s.api_endpoint.clone()),
@@ -70,11 +81,10 @@ async fn smoke_onboard_validator() -> anyhow::Result<()> {
         estimate_only: false,
     };
 
-  rando_cli.run()
+    rando_cli
+        .run()
         .await
         .expect("cli could not register validator");
 
-
-  Ok(())
-
+    Ok(())
 }

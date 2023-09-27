@@ -18,7 +18,7 @@ async fn tower_remote_chained() {
             .await
             .expect("could not init validator config");
 
-    ls.mint(app_cfg.get_profile(None).unwrap().account, 10_000_000)
+    ls.mint_and_unlock(app_cfg.get_profile(None).unwrap().account, 10_000_000)
         .await
         .unwrap();
 

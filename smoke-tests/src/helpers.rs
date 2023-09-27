@@ -42,3 +42,22 @@ pub async fn mint_libra(
     public_info.client().submit_and_wait(&mint_txn).await?;
     Ok(())
 }
+
+
+pub async fn unlock_libra(
+    public_info: &mut DiemPublicInfo<'_>,
+    addr: AccountAddress,
+    amount: u64,
+) -> anyhow::Result<()> {
+    // NOTE: assumes the account already has a slow wallet struct
+    let unlock_payload = public_info
+        .transaction_factory()
+        .payload(libra_stdlib::slow_wallet_smoke_test_vm_unlock(addr, amount, amount));
+
+    let unlock_txn = public_info
+        .root_account()
+        .sign_with_transaction_builder(unlock_payload);
+
+    public_info.client().submit_and_wait(&unlock_txn).await?;
+    Ok(())
+}

@@ -11,6 +11,7 @@ module ol_framework::slow_wallet {
   use std::vector;
   use std::signer;
   use ol_framework::gas_coin::GasCoin;
+  use ol_framework::testnet;
   use std::error;
 
   friend ol_framework::ol_account;
@@ -57,7 +58,7 @@ module ol_framework::slow_wallet {
           transferred,
         });
 
-        fork_migrate_slow_list(vm, user);
+        update_slow_list(vm, user);
       } else {
         let state = borrow_global_mut<SlowWallet>(user_addr);
         state.unlocked = unlocked;
@@ -67,7 +68,7 @@ module ol_framework::slow_wallet {
 
     /// private function which can only be called at genesis
     /// sets the list of accounts that are slow wallets.
-    fun fork_migrate_slow_list(
+    fun update_slow_list(
       vm: &signer,
       user: &signer,
     ) acquires SlowWalletList{
@@ -194,5 +195,21 @@ module ol_framework::slow_wallet {
       } else {
         return vector::empty<address>()
       }
+    }
+
+    ////////// SMOKE TEST HELPERS //////////
+    // cannot use the #[test_only] attribute
+    public entry fun smoke_test_vm_unlock(
+      smoke_test_core_resource: &signer,
+      user_addr: address,
+      unlocked: u64,
+      transferred: u64,
+    ) acquires SlowWallet {
+
+      system_addresses::assert_core_resource(smoke_test_core_resource);
+      testnet::assert_testnet(smoke_test_core_resource);
+      let state = borrow_global_mut<SlowWallet>(user_addr);
+      state.unlocked = unlocked;
+      state.transferred = transferred;
     }
 }
