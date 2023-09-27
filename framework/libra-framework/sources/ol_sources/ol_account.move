@@ -6,7 +6,7 @@ module ol_framework::ol_account {
     // use diem_framework::chain_status;
     use std::error;
     use std::signer;
-    use std::option;
+    use std::option::{Self, Option};
     use diem_std::from_bcs;
 
     use ol_framework::gas_coin::GasCoin;
@@ -21,6 +21,7 @@ module ol_framework::ol_account {
 
     friend ol_framework::donor_directed;
     friend ol_framework::burn;
+    friend ol_framework::safe;
     friend diem_framework::genesis;
     friend diem_framework::resource_account;
 
@@ -196,6 +197,7 @@ module ol_framework::ol_account {
     }
 
     /// vm can transfer between account to settle.
+    /// THIS FUNCTION CAN BYPASS SLOW WALLET WITHDRAW RESTRICTIONS
     /// this is used at epoch boundary operations when the vm signer is available.
     /// returns the actual amount transferred, and whether that amount was the
     /// whole amount expected to transfer.
@@ -226,10 +228,6 @@ module ol_framework::ol_account {
       (amount_transferred, amount_transferred == amount)
     }
 
-
-    #[test_only]
-    use std::option::Option;
-
     #[test_only]
     public fun test_vm_withdraw(vm: &signer, from: address, amount: u64): Option<Coin<GasCoin>> {
       system_addresses::assert_ol(vm);
@@ -238,6 +236,21 @@ module ol_framework::ol_account {
       if(amount > coin::balance<GasCoin>(from)) return option::none();
 
       coin::vm_withdraw<GasCoin>(vm, from, amount)
+    }
+    /// vm can transfer between account to settle.
+    /// THIS FUNCTION CAN BYPASS SLOW WALLET WITHDRAW RESTRICTIONS
+    /// used to withdraw and track the withdrawal
+    public(friend) fun vm_withdraw_unlimited(vm: &signer, from: address, amount: u64): Option<Coin<GasCoin>>{
+      system_addresses::assert_ol(vm);
+      // should not halt
+      if(amount > coin::balance<GasCoin>(from)) return option::none();
+
+      // since the VM can withdraw more than what is unlocked
+      // it needs to adjust the unlocked amount, which may end up zero
+      // if it goes over the limit
+      slow_wallet::maybe_track_unlocked_withdraw(from, amount);
+      coin::vm_withdraw<GasCoin>(vm, from, amount)
+
     }
 
     // public fun withdraw_with_capability(cap: &WithdrawCapability, amount: u64): Coin<GasCoin> {
