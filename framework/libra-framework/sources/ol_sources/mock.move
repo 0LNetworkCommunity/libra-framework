@@ -3,7 +3,7 @@
 module ol_framework::mock {
   use diem_framework::stake;
   use diem_framework::reconfiguration;
-  use ol_framework::cases;
+  use ol_framework::grade;
   use ol_framework::vouch;
   use std::vector;
   use diem_framework::genesis;
@@ -51,7 +51,8 @@ module ol_framework::mock {
   public fun mock_case_1(vm: &signer, addr: address){
       assert!(stake::is_valid(addr), 01);
       stake::mock_performance(vm, addr, 1, 0);
-      assert!(cases::get_case(addr) == 1, 777703);
+      let (compliant, _, _, _) = grade::get_validator_grade(addr);
+      assert!(compliant, 777703);
     }
 
 
@@ -60,8 +61,8 @@ module ol_framework::mock {
     public fun mock_case_4(vm: &signer, addr: address){
       assert!(stake::is_valid(addr), 01);
       stake::mock_performance(vm, addr, 0, 100); // 100 failing proposals
-
-      assert!(cases::get_case(addr) == 4, 777703);
+      let (compliant, _, _, _) = grade::get_validator_grade(addr);
+      assert!(!compliant, 777703);
     }
 
     // Mock all nodes being compliant case 1
