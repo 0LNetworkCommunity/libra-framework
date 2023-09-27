@@ -49,7 +49,7 @@ async fn smoke_transfer_existing_account() {
 async fn smoke_transfer_create_account() {
     let d = diem_temppath::TempPath::new();
 
-  let mut s = LibraSmoke::new(None)
+    let mut s = LibraSmoke::new(None)
         .await
         .expect("could not start libra smoke");
 
