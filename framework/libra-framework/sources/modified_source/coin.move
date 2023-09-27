@@ -19,18 +19,19 @@ module diem_framework::coin {
 
     friend ol_framework::gas_coin;
     friend ol_framework::ol_account;
-    friend ol_framework::safe;
-    friend ol_framework::rewards;
-    friend ol_framework::donor_directed;
-    // friend ol_framework::pledge_accounts;
     friend diem_framework::genesis;
-    friend diem_framework::transaction_fee;
-    friend diem_framework::resource_account;
     friend diem_framework::genesis_migration;
+    friend ol_framework::rewards;
+    friend diem_framework::transaction_fee;
+
+    friend ol_framework::safe;
+    friend ol_framework::donor_directed;
 
     // TODO: remove these
     friend diem_framework::diem_coin;
     friend diem_framework::diem_account;
+    #[test_only]
+    friend diem_framework::resource_account;
 
 
     //
