@@ -33,15 +33,15 @@ spec diem_framework::coin {
         ensures exists<SupplyConfig>(diem_addr);
     }
 
-    /// Can only be updated by `@diem_framework`.
-    spec allow_supply_upgrades(diem_framework: &signer, allowed: bool) {
-        modifies global<SupplyConfig>(@diem_framework);
-        let diem_addr = signer::address_of(diem_framework);
-        aborts_if !system_addresses::is_diem_framework_address(diem_addr);
-        aborts_if !exists<SupplyConfig>(diem_addr);
-        let post allow_upgrades_post = global<SupplyConfig>(@diem_framework);
-        ensures allow_upgrades_post.allow_upgrades == allowed;
-    }
+    // /// Can only be updated by `@diem_framework`.
+    // spec allow_supply_upgrades(diem_framework: &signer, allowed: bool) {
+    //     modifies global<SupplyConfig>(@diem_framework);
+    //     let diem_addr = signer::address_of(diem_framework);
+    //     aborts_if !system_addresses::is_diem_framework_address(diem_addr);
+    //     aborts_if !exists<SupplyConfig>(diem_addr);
+    //     let post allow_upgrades_post = global<SupplyConfig>(@diem_framework);
+    //     ensures allow_upgrades_post.allow_upgrades == allowed;
+    // }
 
     spec balance<CoinType>(owner: address): u64 {
         aborts_if !exists<CoinStore<CoinType>>(owner);
@@ -150,27 +150,27 @@ spec diem_framework::coin {
         ensures coin.value == 0;
     }
 
-    spec freeze_coin_store<CoinType>(
-        account_addr: address,
-        _freeze_cap: &FreezeCapability<CoinType>,
-    ) {
-        pragma opaque;
-        modifies global<CoinStore<CoinType>>(account_addr);
-        aborts_if !exists<CoinStore<CoinType>>(account_addr);
-        let post coin_store = global<CoinStore<CoinType>>(account_addr);
-        ensures coin_store.frozen;
-    }
+    // spec freeze_coin_store<CoinType>(
+    //     account_addr: address,
+    //     _freeze_cap: &FreezeCapability<CoinType>,
+    // ) {
+    //     pragma opaque;
+    //     modifies global<CoinStore<CoinType>>(account_addr);
+    //     aborts_if !exists<CoinStore<CoinType>>(account_addr);
+    //     let post coin_store = global<CoinStore<CoinType>>(account_addr);
+    //     ensures coin_store.frozen;
+    // }
 
-    spec unfreeze_coin_store<CoinType>(
-        account_addr: address,
-        _freeze_cap: &FreezeCapability<CoinType>,
-    ) {
-        pragma opaque;
-        modifies global<CoinStore<CoinType>>(account_addr);
-        aborts_if !exists<CoinStore<CoinType>>(account_addr);
-        let post coin_store = global<CoinStore<CoinType>>(account_addr);
-        ensures !coin_store.frozen;
-    }
+    // spec unfreeze_coin_store<CoinType>(
+    //     account_addr: address,
+    //     _freeze_cap: &FreezeCapability<CoinType>,
+    // ) {
+    //     pragma opaque;
+    //     modifies global<CoinStore<CoinType>>(account_addr);
+    //     aborts_if !exists<CoinStore<CoinType>>(account_addr);
+    //     let post coin_store = global<CoinStore<CoinType>>(account_addr);
+    //     ensures !coin_store.frozen;
+    // }
 
     /// The creator of `CoinType` must be `@diem_framework`.
     /// `SupplyConfig` allow upgrade.
