@@ -27,7 +27,7 @@ module diem_framework::stake {
     use diem_std::table::Table;
     use diem_std::comparator;
 
-    use diem_framework::diem_coin::DiemCoin;
+    use diem_framework::gas_coin::GasCoin;
     use diem_framework::account;
     use diem_framework::coin::{Self, Coin, MintCapability};
     use diem_framework::event::{Self, EventHandle};
@@ -124,13 +124,13 @@ module diem_framework::stake {
     /// 3. When the next epoch starts, the validator can be activated if their active stake is more than the minimum.
     struct StakePool has key {
         // active stake
-        active: Coin<DiemCoin>,
+        active: Coin<GasCoin>,
         // inactive stake, can be withdrawn
-        inactive: Coin<DiemCoin>,
+        inactive: Coin<GasCoin>,
         // pending activation for next epoch
-        pending_active: Coin<DiemCoin>,
+        pending_active: Coin<GasCoin>,
         // pending deactivation for next epoch
-        pending_inactive: Coin<DiemCoin>,
+        pending_inactive: Coin<GasCoin>,
         locked_until_secs: u64,
         // Track the current operator of the validator node.
         // This allows the operator to be different from the original account and allow for separation of
@@ -192,10 +192,10 @@ module diem_framework::stake {
         total_joining_power: u128,
     }
 
-    /// DiemCoin capabilities, set during genesis and stored in @CoreResource account.
+    /// GasCoin capabilities, set during genesis and stored in @CoreResource account.
     /// This allows the Stake module to mint rewards to stakers.
-    struct DiemCoinCapabilities has key {
-        mint_cap: MintCapability<DiemCoin>,
+    struct GasCoinCapabilities has key {
+        mint_cap: MintCapability<GasCoin>,
     }
 
     struct IndividualValidatorPerformance has store, drop {
@@ -273,7 +273,7 @@ module diem_framework::stake {
     /// Stores transaction fees assigned to validators. All fees are distributed to validators
     /// at the end of the epoch.
     struct ValidatorFees has key {
-        fees_table: Table<address, Coin<DiemCoin>>,
+        fees_table: Table<address, Coin<GasCoin>>,
     }
 
     // /// Initializes the resource storing information about collected transaction fees per validator.
@@ -288,7 +288,7 @@ module diem_framework::stake {
     // }
 
     // /// Stores the transaction fee collected to the specified validator address.
-    // public(friend) fun add_transaction_fee(validator_addr: address, fee: Coin<DiemCoin>) acquires ValidatorFees {
+    // public(friend) fun add_transaction_fee(validator_addr: address, fee: Coin<GasCoin>) acquires ValidatorFees {
     //     let fees_table = &mut borrow_global_mut<ValidatorFees>(@diem_framework).fees_table;
     //     if (table::contains(fees_table, validator_addr)) {
     //         let collected_fee = table::borrow_mut(fees_table, validator_addr);
@@ -460,13 +460,13 @@ module diem_framework::stake {
         });
     }
 
-    /// This is only called during Genesis, which is where MintCapability<DiemCoin> can be created.
-    /// Beyond genesis, no one can create DiemCoin mint/burn capabilities.
+    /// This is only called during Genesis, which is where MintCapability<GasCoin> can be created.
+    /// Beyond genesis, no one can create GasCoin mint/burn capabilities.
 
     // TODO: v7 - remove this
-    // public(friend) fun store_diem_coin_mint_cap(diem_framework: &signer, mint_cap: MintCapability<DiemCoin>) {
+    // public(friend) fun store_diem_coin_mint_cap(diem_framework: &signer, mint_cap: MintCapability<GasCoin>) {
     //     system_addresses::assert_diem_framework(diem_framework);
-    //     move_to(diem_framework, DiemCoinCapabilities { mint_cap })
+    //     move_to(diem_framework, GasCoinCapabilities { mint_cap })
     // }
 
     /// Allow on chain governance to remove validators from the validator set.
@@ -567,10 +567,10 @@ module diem_framework::stake {
         assert!(!stake_pool_exists(owner_address), error::already_exists(EALREADY_REGISTERED));
 
         move_to(owner, StakePool {
-            active: coin::zero<DiemCoin>(),
-            pending_active: coin::zero<DiemCoin>(),
-            pending_inactive: coin::zero<DiemCoin>(),
-            inactive: coin::zero<DiemCoin>(),
+            active: coin::zero<GasCoin>(),
+            pending_active: coin::zero<GasCoin>(),
+            pending_inactive: coin::zero<GasCoin>(),
+            inactive: coin::zero<GasCoin>(),
             locked_until_secs: 0,
             operator_address: owner_address,
             delegated_voter: owner_address,
@@ -660,13 +660,13 @@ module diem_framework::stake {
     //     let owner_address = signer::address_of(owner);
     //     assert_owner_cap_exists(owner_address);
     //     let ownership_cap = borrow_global<OwnerCapability>(owner_address);
-    //     add_stake_with_cap(ownership_cap, coin::withdraw<DiemCoin>(owner, amount));
+    //     add_stake_with_cap(ownership_cap, coin::withdraw<GasCoin>(owner, amount));
     // }
 
     // TODO: v7 - remove this
 
     // /// Add `coins` into `pool_address`. this requires the corresponding `owner_cap` to be passed in.
-    // public fun add_stake_with_cap(owner_cap: &OwnerCapability, coins: Coin<DiemCoin>) acquires StakePool, ValidatorSet {
+    // public fun add_stake_with_cap(owner_cap: &OwnerCapability, coins: Coin<GasCoin>) acquires StakePool, ValidatorSet {
     //     let pool_address = owner_cap.pool_address;
     //     assert_stake_pool_exists(pool_address);
 
@@ -690,9 +690,9 @@ module diem_framework::stake {
     //     // Otherwise, the delegation can be added to active directly as the validator is also activated in the epoch.
     //     let stake_pool = borrow_global_mut<StakePool>(pool_address);
     //     if (is_current_epoch_validator(pool_address)) {
-    //         coin::merge<DiemCoin>(&mut stake_pool.pending_active, coins);
+    //         coin::merge<GasCoin>(&mut stake_pool.pending_active, coins);
     //     } else {
-    //         coin::merge<DiemCoin>(&mut stake_pool.active, coins);
+    //         coin::merge<GasCoin>(&mut stake_pool.active, coins);
     //     };
 
     //     // let (_, maximum_stake) = staking_config::get_required_stake(&staking_config::get());
@@ -920,7 +920,7 @@ module diem_framework::stake {
     //     // Cap amount to unlock by maximum active stake.
     //     let amount = min(amount, coin::value(&stake_pool.active));
     //     let unlocked_stake = coin::extract(&mut stake_pool.active, amount);
-    //     coin::merge<DiemCoin>(&mut stake_pool.pending_inactive, unlocked_stake);
+    //     coin::merge<GasCoin>(&mut stake_pool.pending_inactive, unlocked_stake);
 
     //     event::emit_event(
     //         &mut stake_pool.unlock_stake_events,
@@ -940,14 +940,14 @@ module diem_framework::stake {
     //     assert_owner_cap_exists(owner_address);
     //     let ownership_cap = borrow_global<OwnerCapability>(owner_address);
     //     let coins = withdraw_with_cap(ownership_cap, withdraw_amount);
-    //     coin::deposit<DiemCoin>(owner_address, coins);
+    //     coin::deposit<GasCoin>(owner_address, coins);
     // }
 
     // /// Withdraw from `pool_address`'s inactive stake with the corresponding `owner_cap`.
     // public fun withdraw_with_cap(
     //     owner_cap: &OwnerCapability,
     //     withdraw_amount: u64
-    // ): Coin<DiemCoin> acquires StakePool, ValidatorSet {
+    // ): Coin<GasCoin> acquires StakePool, ValidatorSet {
     //     let pool_address = owner_cap.pool_address;
     //     assert_stake_pool_exists(pool_address);
     //     let stake_pool = borrow_global_mut<StakePool>(pool_address);
@@ -962,7 +962,7 @@ module diem_framework::stake {
 
     //     // Cap withdraw amount by total ianctive coins.
     //     withdraw_amount = min(withdraw_amount, coin::value(&stake_pool.inactive));
-    //     if (withdraw_amount == 0) return coin::zero<DiemCoin>();
+    //     if (withdraw_amount == 0) return coin::zero<GasCoin>();
 
     //     event::emit_event(
     //         &mut stake_pool.withdraw_stake_events,
@@ -1593,11 +1593,11 @@ module diem_framework::stake {
     //     _num_total_proposals: u64,
     //     _rewards_rate: u64,
     //     _rewards_rate_denominator: u64,
-    // ): u64 acquires DiemCoinCapabilities {
+    // ): u64 acquires GasCoinCapabilities {
     //     // let _stake_amount = coin::value(stake);
     //     let rewards_amount = 0;
     //     if (rewards_amount > 0) {
-    //         let mint_cap = &borrow_global<DiemCoinCapabilities>(@diem_framework).mint_cap;
+    //         let mint_cap = &borrow_global<GasCoinCapabilities>(@diem_framework).mint_cap;
     //         let rewards = coin::mint(rewards_amount, mint_cap);
     //         ol_account::merge_coins(stake, rewards);
     //     };

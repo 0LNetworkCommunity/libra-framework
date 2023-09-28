@@ -24,11 +24,12 @@ module diem_framework::coin {
     friend ol_framework::rewards;
     friend diem_framework::transaction_fee;
 
-    // friend ol_framework::safe;
-    friend ol_framework::donor_directed;
 
-    // TODO: remove these
+    // NOTE: these vendor structs are left here for tests
+    // which use those structs
+    #[test_only]
     friend diem_framework::diem_coin;
+    #[test_only]
     friend diem_framework::diem_account;
     #[test_only]
     friend diem_framework::resource_account;

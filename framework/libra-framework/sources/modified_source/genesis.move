@@ -6,7 +6,7 @@ module diem_framework::genesis {
 
     use diem_framework::account;
     use diem_framework::aggregator_factory;
-    use diem_framework::diem_coin::{Self, DiemCoin};
+    // use diem_framework::diem_coin::{Self, GasCoin};
     use diem_framework::diem_governance;
     use diem_framework::block;
     use diem_framework::chain_id;
@@ -181,17 +181,17 @@ module diem_framework::genesis {
     /// Genesis step 2: Initialize Diem coin.
     fun initialize_diem_coin(diem_framework: &signer) {
 
-        let (burn_cap, mint_cap) = diem_coin::initialize(diem_framework);
-        // Give stake module MintCapability<DiemCoin> so it can mint rewards.
+        // let (burn_cap, mint_cap) = diem_coin::initialize(diem_framework);
+        // Give stake module MintCapability<GasCoin> so it can mint rewards.
         // stake::store_diem_coin_mint_cap(diem_framework, mint_cap);
-        coin::destroy_mint_cap(mint_cap);
-        // Give transaction_fee module BurnCapability<DiemCoin> so it can burn gas.
+        // coin::destroy_mint_cap(mint_cap);
+        // Give transaction_fee module BurnCapability<GasCoin> so it can burn gas.
         // transaction_fee::store_diem_coin_burn_cap(diem_framework, burn_cap);
-        coin::destroy_burn_cap(burn_cap);
+        // coin::destroy_burn_cap(burn_cap);
 
         // 0L: genesis ceremony is calling this
         gas_coin::initialize(diem_framework);
-        // Give stake module MintCapability<DiemCoin> so it can mint rewards.
+        // Give stake module MintCapability<GasCoin> so it can mint rewards.
         // stake::store_diem_coin_mint_cap(diem_framework, mint_cap);
         // gas_coin::restore_mint_cap(diem_framework, mint_cap);
         // coin::destroy_burn_cap(burn_cap);
@@ -204,13 +204,13 @@ module diem_framework::genesis {
         diem_framework: &signer,
         core_resources_auth_key: vector<u8>,
     ) {
-        let (burn_cap, mint_cap) = diem_coin::initialize(diem_framework);
+        // let (burn_cap, mint_cap) = diem_coin::initialize(diem_framework);
 
         let core_resources = account::create_account(@core_resources);
         account::rotate_authentication_key_internal(&core_resources, core_resources_auth_key);
-        diem_coin::configure_accounts_for_test(diem_framework, &core_resources, mint_cap);
-        coin::destroy_mint_cap(mint_cap);
-        coin::destroy_burn_cap(burn_cap);
+        // diem_coin::configure_accounts_for_test(diem_framework, &core_resources, mint_cap);
+        // coin::destroy_mint_cap(mint_cap);
+        // coin::destroy_burn_cap(burn_cap);
 
         // initialize gas
         let (burn_cap_two, mint_cap_two) = gas_coin::initialize_for_core(diem_framework);
@@ -258,7 +258,7 @@ module diem_framework::genesis {
             create_signer(account_address)
         } else {
             let account = account::create_account(account_address);
-            coin::register<DiemCoin>(&account);
+            // coin::register<GasCoin>(&account);
             coin::register<GasCoin>(&account);
 
             // NO COINS MINTED AT GENESIS, NO PREMINE FOR TEST OR PROD.
@@ -621,7 +621,7 @@ module diem_framework::genesis {
         let test_signer_before = create_account(diem_framework, addr, 15);
         let test_signer_after = create_account(diem_framework, addr, 500);
         assert!(test_signer_before == test_signer_after, 0);
-        assert!(coin::balance<DiemCoin>(addr) == 0, 1); //////// 0L ////////
+        assert!(coin::balance<GasCoin>(addr) == 0, 1); //////// 0L ////////
     }
 
     #[test(diem_framework = @0x1)]
@@ -645,10 +645,10 @@ module diem_framework::genesis {
         ];
 
         create_accounts(diem_framework, accounts);
-        assert!(coin::balance<DiemCoin>(addr0) == 0, 0); //////// 0L //////// no coins minted at genesis
-        assert!(coin::balance<DiemCoin>(addr1) == 0, 1); //////// 0L ////////
+        assert!(coin::balance<GasCoin>(addr0) == 0, 0); //////// 0L //////// no coins minted at genesis
+        assert!(coin::balance<GasCoin>(addr1) == 0, 1); //////// 0L ////////
 
         create_account(diem_framework, addr0, 23456);
-        assert!(coin::balance<DiemCoin>(addr0) == 0, 2); //////// 0L ////////
+        assert!(coin::balance<GasCoin>(addr0) == 0, 2); //////// 0L ////////
     }
 }
