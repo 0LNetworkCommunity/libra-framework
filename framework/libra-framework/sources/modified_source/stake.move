@@ -1407,9 +1407,13 @@ module diem_framework::stake {
           if (vector::length(&performant) > vector::length(&proposed)) {
             return performant
           };
+          // vector::for_each(performant, |v| {
+          //   if (!vector::contains(&proposed, &v)) {
+          //     vector::push_back(&mut proposed, v);
+          //   }
+          // });
           return proposed
         };
-
 
         // this is unreachable but as a backstop for dev fingers
         current_vals

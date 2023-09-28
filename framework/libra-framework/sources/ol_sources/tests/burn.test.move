@@ -13,9 +13,10 @@ module ol_framework::test_burn {
   use diem_framework::coin;
   use std::signer;
   use std::vector;
+  use std::option;
   use std::fixed_point32;
 
-  // use diem_std::debug::print;
+  use diem_std::debug::print;
 
   #[test(root = @ol_framework, alice = @0x1000a)]
 
@@ -283,37 +284,51 @@ module ol_framework::test_burn {
     // }
 
      #[test(root=@ol_framework, alice=@0x1000a)]
-    fun track_fees(root: &signer, alice: &signer) {
+    fun track_fees(root: &signer, alice: address) {
       // use ol_framework::gas_coin;
       let _vals = mock::genesis_n_vals(root, 1); // need to include eve to init funds
       mock::ol_initialize_coin_and_fund_vals(root, 10000, true);
 
-      let alice_burn = 5;
-      let coin = ol_account::withdraw(alice, alice_burn);
+      let marlon_rando = @0x12345;
+      ol_account::create_account(root, marlon_rando);
 
-      transaction_fee::user_pay_fee(alice, coin);
+
+      let rando_money = 5;
+      let coin_option = ol_account::test_vm_withdraw(root, alice, rando_money);
+
+      if (option::is_some(&coin_option)) {
+        let c = option::extract(&mut coin_option);
+        // shortcut: we have the VM use alices money to pay a fee for marlon.
+        transaction_fee::vm_pay_fee(root, marlon_rando, c);
+      };
+      option::destroy_none(coin_option);
+
 
       let fees = transaction_fee::system_fees_collected();
       // Fees will include the initialization by MOCK. ol_initialize_coin_and_fund_vals
+      print(&fees);
       assert!(fees == 100000005, 7357001);
 
+      // marlon is the only fee maker (since genesis)
       let fee_makers = fee_maker::get_fee_makers();
+      print(&fee_makers);
       // includes 0x1 which makes a deposit on
       assert!(vector::length(&fee_makers)==1, 735702);
 
-      let alice_fees_made = fee_maker::get_user_fees_made(@0x1000a);
-      assert!(alice_fees_made == 5, 735703);
+      let marlon_fees_made = fee_maker::get_user_fees_made(marlon_rando);
+      assert!(marlon_fees_made == 5, 735703);
 
       mock::trigger_epoch(root);
+      // should reset the fee counter on everything.
+      // TODO: no proof of fee was charged on alice. But this is changed in
+      // feature branch `coin-methods-hygiene`
+
+      let marlon_fees_made = fee_maker::get_user_fees_made(marlon_rando);
+      assert!(marlon_fees_made == 0, 735704);
       let fee_makers = fee_maker::get_fee_makers();
-      assert!(vector::length(&fee_makers)==0, 735704);
-
+      assert!(vector::length(&fee_makers)==0, 735705);
       let fees = transaction_fee::system_fees_collected();
-      assert!(fees == 0, 7357005);
-
-      let alice_fees_made = fee_maker::get_user_fees_made(@0x1000a);
-      assert!(alice_fees_made == 0, 735706);
-
+      assert!(fees == 0, 7357008);
 
     }
 }
