@@ -161,7 +161,7 @@ module ol_framework::proof_of_fee {
   #[view]
   public fun get_bidders(remove_unqualified: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
     let eligible_validators = validator_universe::get_eligible_validators();
-    let (bidders, _) = sort_vals_impl(eligible_validators, remove_unqualified);
+    let (bidders, _) = sort_vals_impl(&eligible_validators, remove_unqualified);
     bidders
   }
 
@@ -169,12 +169,12 @@ module ol_framework::proof_of_fee {
   // same as get bidders, but returns the bid
   public fun get_bidders_and_bids(remove_unqualified: bool): (vector<address>, vector<u64>) acquires ProofOfFeeAuction, ConsensusReward {
     let eligible_validators = validator_universe::get_eligible_validators();
-    sort_vals_impl(eligible_validators, remove_unqualified)
+    sort_vals_impl(&eligible_validators, remove_unqualified)
   }
-  // returns two lists odrdered bidder addresss and the bid
-  fun sort_vals_impl(eligible_validators: vector<address>, remove_unqualified: bool): (vector<address>, vector<u64>) acquires ProofOfFeeAuction, ConsensusReward {
+  // returns two lists: ordered bidder addresss and the list of bids bid
+  fun sort_vals_impl(eligible_validators: &vector<address>, remove_unqualified: bool): (vector<address>, vector<u64>) acquires ProofOfFeeAuction, ConsensusReward {
     // let eligible_validators = validator_universe::get_eligible_validators();
-    let length = vector::length<address>(&eligible_validators);
+    let length = vector::length<address>(eligible_validators);
 
     // vector to store each address's node_weight
     let bids = vector::empty<u64>();
@@ -183,7 +183,7 @@ module ol_framework::proof_of_fee {
     while (k < length) {
       // TODO: Ensure that this address is an active validator
 
-      let cur_address = *vector::borrow<address>(&eligible_validators, k);
+      let cur_address = *vector::borrow<address>(eligible_validators, k);
       let (bid, _expire) = current_bid(cur_address);
 
       let (_, qualified) = audit_qualification(cur_address);
@@ -284,6 +284,9 @@ module ol_framework::proof_of_fee {
   ): (vector<address>, u64, vector<address>, vector<address>) acquires ProofOfFeeAuction, ConsensusReward {
     system_addresses::assert_ol(vm);
 
+    // NOTE: this is duplicate work, but we are double checking we are getting a proper sort.
+    let (sorted_vals_by_bid, _) = sort_vals_impl(sorted_vals_by_bid, true);
+
     // Now we can seat the validators based on the algo:
     // A. seat the highest bidding 2/3 proven nodes of previous epoch
     // B. seat the remainder 1/3 of highest bidding validators which may or MA NOT have participated in the previous epoch. Note: We assume jailed validators are not in qualified bidder list anyways, but we should check again
@@ -302,9 +305,9 @@ module ol_framework::proof_of_fee {
     let i = 0u64;
     while (
       (vector::length(&proposed_validators) < final_set_size) && // until seats full
-      (i < vector::length(sorted_vals_by_bid))
+      (i < vector::length(&sorted_vals_by_bid))
     ) {
-      let val = vector::borrow(sorted_vals_by_bid, i);
+      let val = vector::borrow(&sorted_vals_by_bid, i);
       // check if a proven node
       // NOTE: if the top bidders all all "proven" nodes, then there will
       // be no reason to add an unproven. Unproven nodes will only
@@ -340,6 +343,7 @@ module ol_framework::proof_of_fee {
     // update the clearing price
     let cr = borrow_global_mut<ConsensusReward>(@ol_framework);
     cr.clearing_percent = lowest_bid_pct;
+
     if (lowest_bid_pct > 0) {
       cr.entry_fee = fixed_point32::multiply_u64(cr.nominal_reward, bid_as_fixedpoint(lowest_bid_pct));
 

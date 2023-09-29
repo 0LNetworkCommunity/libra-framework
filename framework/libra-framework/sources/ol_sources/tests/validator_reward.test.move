@@ -28,9 +28,11 @@ module ol_framework::test_reconfiguration {
 
       assert!(coin::balance<GasCoin>(@0x1000a) == 0, 7357003);
 
-      let (reward_one, _, _, _ ) = proof_of_fee::get_consensus_reward();
+      let (reward_one, entry_fee, _, _ ) = proof_of_fee::get_consensus_reward();
       // The epoch's reward BEFORE reconfiguration
       assert!(reward_one == 1000000, 7357004);
+      print(&8888);
+      print(&entry_fee);
       // run ol reconfiguration
       mock::trigger_epoch(&root);
 
