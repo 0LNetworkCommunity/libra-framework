@@ -1,5 +1,6 @@
-/// This module defines a minimal and generic Coin and Balance.
-/// modified from https://github.com/move-language/move/tree/main/language/documentation/tutorial
+// This module defines a minimal and generic Coin and Balance.
+// modified from https://github.com/move-language/move/tree/main/language/documentation/tutorial
+#[test_only]
 module diem_framework::diem_coin {
     use std::string;
     use std::error;

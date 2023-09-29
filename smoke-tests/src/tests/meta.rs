@@ -1,6 +1,7 @@
 use crate::libra_smoke::LibraSmoke;
 
 use diem_forge::Swarm;
+use libra_cached_packages::libra_stdlib;
 use libra_framework::release::ReleaseTarget;
 use smoke_test::smoke_test_environment::new_local_swarm_with_release;
 
@@ -9,12 +10,17 @@ use smoke_test::smoke_test_environment::new_local_swarm_with_release;
 async fn meta_can_start_swarm() {
     let release = ReleaseTarget::Head.load_bundle().unwrap();
     let mut swarm = new_local_swarm_with_release(4, release).await;
-    let mut info = swarm.diem_public_info();
+    let mut public_info = swarm.diem_public_info();
 
-    let a = info.random_account();
-    info.create_user_account(a.public_key())
-        .await
-        .expect("cannot create account");
+    let payload = public_info
+        .transaction_factory()
+        .payload(libra_stdlib::demo_print_this());
+
+    let demo_txn = public_info
+        .root_account()
+        .sign_with_transaction_builder(payload);
+
+    public_info.client().submit_and_wait(&demo_txn).await.expect("could not send demo tx");
 }
 
 /// testing the LibraSmoke abstraction can load

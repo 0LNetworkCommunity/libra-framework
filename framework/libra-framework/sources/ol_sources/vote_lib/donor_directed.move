@@ -34,7 +34,6 @@ module ol_framework::donor_directed {
     use std::fixed_point32;
     use ol_framework::epoch_helper;
     use std::option::{Self, Option};
-    use ol_framework::gas_coin::GasCoin;
     use ol_framework::ol_account;
     use ol_framework::receipts;
     use ol_framework::multi_action;
@@ -44,9 +43,6 @@ module ol_framework::donor_directed {
     use ol_framework::cumulative_deposits;
     use ol_framework::transaction_fee;
     use ol_framework::match_index;
-
-    use diem_framework::coin;
-    // use ol_framework::transaction_fee;
     // use diem_std::debug::print;
 
     /// Not initialized as a donor directed account.
@@ -619,7 +615,7 @@ module ol_framework::donor_directed {
               let addr = vector::borrow(&pro_rata_addresses, k);
               let amount = vector::borrow(&pro_rata_amounts, k);
               if (is_liquidate_to_match_index(multisig_address)) {
-                let coin_opt = coin::vm_withdraw<GasCoin>(vm, multisig_address, *amount);
+                let coin_opt = ol_account::vm_withdraw_unlimited(vm, multisig_address, *amount);
                 if (option::is_some(&coin_opt)) {
                   let c = option::extract(&mut coin_opt);
 
@@ -637,7 +633,7 @@ module ol_framework::donor_directed {
 
         // there may be some superman 3 funds left from rounding issues
         let (_, balance) = ol_account::balance(multisig_address);
-        let coin_opt = coin::vm_withdraw<GasCoin>(vm, multisig_address, balance);
+        let coin_opt = ol_account::vm_withdraw_unlimited(vm, multisig_address, balance);
         if (option::is_some(&coin_opt)) {
           let c = option::extract(&mut coin_opt);
           transaction_fee::vm_pay_fee(vm, @ol_framework, c);

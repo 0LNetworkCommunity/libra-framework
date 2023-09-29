@@ -10,6 +10,7 @@
 /// on account to have access to this.
 module diem_framework::create_signer {
     friend diem_framework::account;
+    #[test_only]
     friend diem_framework::diem_account;
     friend diem_framework::genesis;
     friend diem_framework::multisig_account;

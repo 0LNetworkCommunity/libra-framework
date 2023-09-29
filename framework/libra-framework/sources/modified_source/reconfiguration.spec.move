@@ -63,14 +63,14 @@ spec diem_framework::reconfiguration {
 
     spec reconfigure {
         use diem_framework::coin::CoinInfo;
-        use diem_framework::diem_coin::DiemCoin;
+        use diem_framework::gas_coin::GasCoin;
         use diem_framework::transaction_fee;
         // use diem_framework::staking_config;
 
         pragma verify_duration_estimate = 120; // TODO: set because of timeout (property proved)
 
         requires exists<stake::ValidatorFees>(@diem_framework);
-        requires exists<CoinInfo<DiemCoin>>(@diem_framework);
+        requires exists<CoinInfo<GasCoin>>(@diem_framework);
 
         include transaction_fee::RequiresCollectedFeesPerValueLeqBlockDiemSupply;
         // include staking_config::StakingRewardsConfigRequirement;
