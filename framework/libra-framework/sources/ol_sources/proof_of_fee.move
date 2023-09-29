@@ -62,7 +62,8 @@ module ol_framework::proof_of_fee {
 
   struct ConsensusReward has key {
     nominal_reward: u64,
-    clearing_price: u64,
+    net_reward: u64,
+    entry_fee: u64,
     clearing_percent: u64,
     median_win_bid: u64,
     median_history: vector<u64>,
@@ -75,7 +76,8 @@ module ol_framework::proof_of_fee {
         vm,
         ConsensusReward {
           nominal_reward: GENESIS_BASELINE_REWARD,
-          clearing_price: GENESIS_BASELINE_REWARD,
+          net_reward: GENESIS_BASELINE_REWARD,
+          entry_fee: 0,
           clearing_percent: 0,
           median_win_bid: 0,
           median_history: vector::empty<u64>(),
@@ -338,6 +340,20 @@ module ol_framework::proof_of_fee {
     // update the clearing price
     let cr = borrow_global_mut<ConsensusReward>(@ol_framework);
     cr.clearing_percent = lowest_bid_pct;
+    if (lowest_bid_pct > 0) {
+      cr.entry_fee = fixed_point32::multiply_u64(cr.nominal_reward, bid_as_fixedpoint(lowest_bid_pct));
+
+      if (cr.nominal_reward > cr.entry_fee)  {
+        cr.net_reward = cr.nominal_reward - cr.entry_fee;
+      } else {
+        // shoudn't be reachable, but here for completion
+        cr.net_reward = cr.nominal_reward
+      };
+    } else {
+      cr.entry_fee = 0;
+      cr.net_reward = cr.nominal_reward;
+    };
+
 
     return (proposed_validators, lowest_bid_pct, audit_add_proven_vals, audit_add_unproven_vals)
   }
@@ -371,12 +387,16 @@ module ol_framework::proof_of_fee {
       // skip the user if they don't have sufficient UNLOCKED funds
       // or if the bid expired.
       let unlocked_coins = slow_wallet::unlocked_amount(val);
-      let (baseline_reward,_,  _, _) = get_consensus_reward();
-      let coin_required = fixed_point32::multiply_u64(baseline_reward, fixed_point32::create_from_rational(bid_pct, 1000));
+      let (_, entry_fee,  _, _) = get_consensus_reward();
+      // let coin_required = fixed_point32::multiply_u64(baseline_reward, bid_as_fixedpoint(bid_pct));
 
-      if (unlocked_coins < coin_required) vector::push_back(&mut errors, ELOW_UNLOCKED_COIN_BALANCE); // 17
+      if (unlocked_coins < entry_fee) vector::push_back(&mut errors, ELOW_UNLOCKED_COIN_BALANCE); // 17
 
       (errors, vector::length(&errors) == 0) // friend of ours
+  }
+
+  fun bid_as_fixedpoint(bid_pct: u64): fixed_point32::FixedPoint32 {
+    fixed_point32::create_from_rational(bid_pct, 1000)
   }
   // Adjust the reward at the end of the epoch
   // as described in the paper, the epoch reward needs to be adjustable
@@ -525,10 +545,10 @@ module ol_framework::proof_of_fee {
 
 
   /// get the baseline reward from ConsensusReward
-  /// returns (reward, clearing_price, clearing_percent, median_win_bid)
+  /// returns (reward, entry_fee, clearing_percent, median_win_bid)
   public fun get_consensus_reward(): (u64, u64, u64, u64) acquires ConsensusReward {
     let b = borrow_global<ConsensusReward>(@ol_framework);
-    return (b.nominal_reward, b.clearing_price, b.clearing_percent, b.median_win_bid)
+    return (b.nominal_reward, b.entry_fee, b.clearing_percent, b.median_win_bid)
   }
 
   // CONSENSUS CRITICAL

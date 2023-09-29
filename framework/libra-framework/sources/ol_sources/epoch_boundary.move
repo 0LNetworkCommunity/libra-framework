@@ -51,7 +51,7 @@ module diem_framework::epoch_boundary {
       outgoing_vals_paid: vector<address>,
       outgoing_total_reward: u64,
       outgoing_nominal_reward_to_vals: u64,
-      outgoing_clearing_price: u64,
+      outgoing_entry_fee: u64,
       outgoing_clearing_percent: u64,
       outgoing_vals_success: bool, // TODO
 
@@ -109,7 +109,7 @@ module diem_framework::epoch_boundary {
           outgoing_total_reward: 0,
           outgoing_vals_success: false,
           outgoing_nominal_reward_to_vals: 0,
-          outgoing_clearing_price: 0,
+          outgoing_entry_fee: 0,
           outgoing_clearing_percent: 0,
 
           // Oracle / Tower
@@ -188,13 +188,14 @@ module diem_framework::epoch_boundary {
           status.system_fees_collected = coin::value(&all_fees);
 
           // Nominal fee set by the PoF thermostat
-          let (nominal_reward_to_vals, clearing_price, clearing_percent, _ ) = proof_of_fee::get_consensus_reward();
+          let (nominal_reward_to_vals, entry_fee, clearing_percent, _ ) = proof_of_fee::get_consensus_reward();
           status.outgoing_nominal_reward_to_vals = nominal_reward_to_vals;
+          status.outgoing_entry_fee = entry_fee;
           status.outgoing_clearing_percent = clearing_percent;
 
-          // validators get the gross amount of the reward, since they already paid to enter. This results in a net payment equivalidant to the
-          // clearing_price.
-          let (compliant_vals, total_reward) = process_outgoing_validators(root, &mut all_fees, clearing_price, closing_epoch, epoch_round);
+          // validators get the gross amount of the reward, since they already paid to enter. This results in a net payment equivalent to:
+          // nominal_reward_to_vals - entry_fee.
+          let (compliant_vals, total_reward) = process_outgoing_validators(root, &mut all_fees, nominal_reward_to_vals, closing_epoch, epoch_round);
 
           status.outgoing_vals_paid = compliant_vals;
           status.outgoing_total_reward = total_reward;
@@ -202,14 +203,14 @@ module diem_framework::epoch_boundary {
           // check that the sustem fees collect were greater than reward
           status.outgoing_vals_success = (status.system_fees_collected >= total_reward);
           // check the the total actually deposited/paid is the expected amount
-          if (clearing_price > 0) { // check for zero
-            status.outgoing_vals_success = total_reward == (vector::length(&compliant_vals) * clearing_price)
+          if (nominal_reward_to_vals > 0) { // check for zero
+            status.outgoing_vals_success = total_reward == (vector::length(&compliant_vals) * nominal_reward_to_vals)
           };
 
           // since we reserved some fees to go to the oracle miners
-          // we take the clearing_price, since it is the equivalent of what a
-          // validator would earn net of entry fee.
-          let oracle_budget = coin::extract(&mut all_fees, clearing_price);
+          // we take the NET REWARD of the validators, since it is the equivalent of what the validator would earn net of entry fee.
+          let net_val_reward = nominal_reward_to_vals - entry_fee;
+          let oracle_budget = coin::extract(&mut all_fees, net_val_reward);
           let (count, amount) = oracle::epoch_boundary(root, &mut oracle_budget);
           status.oracle_budget = coin::value(&oracle_budget);
           status.oracle_pay_count = count;
