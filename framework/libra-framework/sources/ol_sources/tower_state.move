@@ -252,7 +252,7 @@ module ol_framework::tower_state {
 
     /// The entry point to commit miner state.
     public entry fun minerstate_commit(
-        sender: signer,
+        sender: &signer,
         challenge: vector<u8>,
         solution: vector<u8>,
         difficulty: u64,
@@ -265,7 +265,7 @@ module ol_framework::tower_state {
             security,
         );
 
-        commit_state(&sender, proof);
+        commit_state(sender, proof);
     }
 
     fun check_difficulty(miner_addr: address, proof: &Proof) acquires TowerProofHistory, VDFDifficulty {

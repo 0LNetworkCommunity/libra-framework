@@ -1,11 +1,16 @@
 #[test_only]
 /// tests for external apis, and where a dependency cycle with genesis is created.
+
+// NOTE: Cousin Alice: we have the Move Alice account 1000a, but in the VDF fixtures we
+// have RUST alice 0x8751. The VDF fixture uses this one.
 module ol_framework::test_tower {
   use ol_framework::mock;
   use ol_framework::tower_state;
   use ol_framework::vdf_fixtures;
+  use std::signer;
+  // use ol_framework::ol_account;
 
-  // use std::debug::print;
+  use std::debug::print;
 
   #[test(root = @ol_framework)]
   fun epoch_changes_difficulty(root: signer) {
@@ -27,13 +32,13 @@ module ol_framework::test_tower {
     assert!(diff!=100, 735703);
   }
 
-  #[test(root = @ol_framework, alice = @0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5)]
-  fun init_tower_state(root: signer, alice: signer){
+  #[test(root = @ol_framework, cousin_alice = @0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5)]
+  fun init_tower_state(root: signer, cousin_alice: signer){
     mock::ol_test_genesis(&root);
     mock::ol_initialize_coin(&root);
 
     tower_state::init_miner_state(
-          &alice,
+          &cousin_alice,
           &vdf_fixtures::alice_0_easy_chal(),
           &vdf_fixtures::alice_0_easy_sol(),
           vdf_fixtures::easy_difficulty(),
@@ -69,6 +74,29 @@ module ol_framework::test_tower {
     let num = tower_state::toy_rng(0, 1, 0);
     assert!(num == 116, 7357001);
 
+  }
+
+
+  #[test(root = @ol_framework, cousin_alice = @0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5)]
+  fun miner_receives_reward(root: signer, cousin_alice: signer) {
+    mock::genesis_n_vals(&root, 4);
+    mock::ol_initialize_coin(&root);
+
+    tower_state::minerstate_commit(
+        &cousin_alice,
+        vdf_fixtures::alice_0_easy_chal(),
+        vdf_fixtures::alice_0_easy_sol(),
+        vdf_fixtures::easy_difficulty(),
+        vdf_fixtures::security(),
+    );
+
+    let count = tower_state::get_count_in_epoch(signer::address_of(&cousin_alice));
+    print(&count);
+    mock::trigger_epoch(&root);
+    let count = tower_state::get_count_in_epoch(signer::address_of(&cousin_alice));
+    print(&count);
+    // let (diff, _sec) = tower_state::get_difficulty();
+    // assert!(diff!=100, 735703);
   }
 
 }

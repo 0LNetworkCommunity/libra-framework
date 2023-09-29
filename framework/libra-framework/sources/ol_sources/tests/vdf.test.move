@@ -34,18 +34,18 @@ module ol_framework::test_vdf{
   #[test]
   fun verify_valid_weso_proof() {
     // this tests the happy case, that a proof is submitted with all three correct parameters.
-    let challenge = vdf_fixtures::weso_alice_0_easy_chal();
+    let challenge = vdf_fixtures::alice_0_easy_chal();
       // Generate solutions with:
       // cd ./verfiable_delay/vdf-cli && cargo run --release -- -l=512 aa 100 -tpietrzak
       // NOTE: the -l=512 is important because this is the security paramater of 0L miner.
-    let proof = vdf_fixtures::weso_alice_0_easy_sol();
-    let weso = true;
+    let proof = vdf_fixtures::alice_0_easy_sol();
+    let weso = false;
     assert!(
       ol_native_vdf::verify(
         &challenge,
         &proof,
         vdf_fixtures::easy_difficulty(),
-        vdf_fixtures::security_weso(),
+        vdf_fixtures::security(),
         weso
       ), 7357001);
   }
