@@ -224,6 +224,7 @@ module diem_framework::transaction_fee {
     /// returns the actual amount that was transferred
     public fun vm_multi_pay_fee(vm: &signer, list: &vector<address>, amount: u64): u64  acquires CollectedFeesPerBlock {
       system_addresses::assert_ol(vm);
+      if (amount == 0) return 0;
       let actual_transferred = 0;
 
       let i = 0;

@@ -40,9 +40,9 @@ fn test_correct_supply_arithmetic_single() {
         Some(&user_accounts),
         &genesis_vals,
         &head_release_bundle(),
-        ChainId::test(),
+        ChainId::mainnet(),
         Some(supply_settings.clone()),
-        &libra_genesis_default(NamedChain::TESTING),
+        &libra_genesis_default(NamedChain::MAINNET),
     )
     .unwrap();
 
