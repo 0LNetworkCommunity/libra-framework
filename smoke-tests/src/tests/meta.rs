@@ -20,7 +20,11 @@ async fn meta_can_start_swarm() {
         .root_account()
         .sign_with_transaction_builder(payload);
 
-    public_info.client().submit_and_wait(&demo_txn).await.expect("could not send demo tx");
+    public_info
+        .client()
+        .submit_and_wait(&demo_txn)
+        .await
+        .expect("could not send demo tx");
 }
 
 /// testing the LibraSmoke abstraction can load
