@@ -17,9 +17,10 @@ module ol_framework::oracle {
     use ol_framework::epoch_helper;
     use std::error;
 
-    // use diem_std::debug::print;
+    use diem_std::debug::print;
 
     friend ol_framework::epoch_boundary;
+    friend ol_framework::tower_state;
 
     /// You need a minimum of three Vouches on your account, and of unrelated
     /// buddies. Meaning: they don't come from the same ancestry of accounts.
@@ -87,17 +88,18 @@ module ol_framework::oracle {
 
     // init a new provider account, if they are not migrating a tower.
     public entry fun init_provider(provider: &signer) {
-      move_to(provider, Tower {
-        last_commit_timestamp: 0,
-        previous_proof_hash: vector::empty(),
-        verified_tower_height: 0,
-        latest_epoch_mining: 0,
-        count_proofs_in_epoch: 0,
-        epochs_mining: 0,
-        contiguous_epochs_mining: 0,
-        distribute_rewards_events: account::new_event_handle<DistributeRewardsEvent>(provider)
-      });
-
+      if (!exists<Tower>(signer::address_of(provider))) {
+        move_to(provider, Tower {
+          last_commit_timestamp: 0,
+          previous_proof_hash: vector::empty(),
+          verified_tower_height: 0,
+          latest_epoch_mining: 0,
+          count_proofs_in_epoch: 0,
+          epochs_mining: 0,
+          contiguous_epochs_mining: 0,
+          distribute_rewards_events: account::new_event_handle<DistributeRewardsEvent>(provider)
+        });
+      }
     }
 
     /// At genesis this can be called once to migrate towers
@@ -131,7 +133,7 @@ module ol_framework::oracle {
       ) acquires GlobalCounter, Tower, ProviderList {
       let provider_addr = signer::address_of(provider);
 
-      // Don't populate the oracle miner list wit accounts that don't have vouches.
+      // Don't populate the oracle miner list with accounts that don't have vouches.
       {
         // must have 3 accounts who are unrelated vouching for you.
         let frens = vouch::true_friends(provider_addr);
@@ -173,8 +175,14 @@ module ol_framework::oracle {
       assert!(ed25519::signature_verify_strict(&sig, &pk, tower.previous_proof_hash), 77);
 
       // the proof is valid, update the tower state.
+      increment_stats(provider_addr, tower, time, signature_bytes);
 
-      // update the global state
+    }
+
+    fun increment_stats(provider_addr: address, tower: &mut Tower, time: u64, signature_bytes: vector<u8>,) acquires GlobalCounter, ProviderList {
+      print(&333);
+
+            // update the global state
       let global = borrow_global_mut<GlobalCounter>(@ol_framework);
       global.lifetime_proofs = global.lifetime_proofs + 1;
       global.proofs_in_epoch = global.proofs_in_epoch + 1;
@@ -188,20 +196,43 @@ module ol_framework::oracle {
 
       // also check if the tower is now above the threshold
        if (tower.count_proofs_in_epoch > threshold_of_signatures()) {
+        print(&333001);
         global.proofs_in_epoch_above_thresh = global.proofs_in_epoch_above_thresh + 1;
         // also add to the provider list which would be elegible for rewards
         let provider_list = borrow_global_mut<ProviderList>(@ol_framework);
         vector::push_back(&mut provider_list.current_above_threshold, provider_addr);
+        print(provider_list);
       };
 
 
       let current_epoch = epoch_helper::get_current_epoch();
-      if (current_epoch == (tower.latest_epoch_mining - 1)) {
+      if (current_epoch > 0  && (current_epoch -1) == tower.latest_epoch_mining) {
         tower.contiguous_epochs_mining = tower.contiguous_epochs_mining + 1;
 
       };
       tower.epochs_mining = tower.epochs_mining + 1;
       tower.latest_epoch_mining = epoch_helper::get_current_epoch();
+
+    }
+
+    // while transitioning to oracle, allow vdf proofs from miners.
+    // can only be called by tower
+    public(friend) fun count_vdf_proof(
+      provider_addr: address,
+      signature_bytes: vector<u8>
+      ) acquires GlobalCounter, Tower, ProviderList {
+      // let provider_addr = signer::address_of(provider);
+      // the message needs to be exactly the hash of the previous proof.
+      // first check if enough time has passed.
+      let time = timestamp::now_microseconds();
+      let tower = borrow_global_mut<Tower>(provider_addr);
+      // can't send multiple in same tx
+      assert!(time > tower.last_commit_timestamp, ETIME_IS_IN_PAST_WHAAAT); // TODO: fill out error
+      // the sufficient time has passed
+      assert!(time > tower.last_commit_timestamp + proof_interval_seconds() , ETOO_SOON_SUBMITTED);
+
+      increment_stats(provider_addr, tower, time, signature_bytes);
+
 
     }
 
@@ -219,15 +250,16 @@ module ol_framework::oracle {
     // how many proofs needed in an epoch to be considered active
     fun threshold_of_signatures(): u64 {
       if (testnet::is_testnet()) {
-        1
+        0
       } else {
         12
       }
     }
 
     public(friend) fun epoch_boundary(root: &signer, budget: &mut Coin<GasCoin>): (u64, u64) acquires GlobalCounter, ProviderList, Tower {
+      let (provider_count, paid_amount ) = epoch_reward(root, budget);
       reset_counters(root);
-      epoch_reward(root, budget)
+      (provider_count, paid_amount)
     }
 
     fun reset_counters(root: &signer) acquires ProviderList, GlobalCounter{
@@ -254,7 +286,7 @@ module ol_framework::oracle {
       // print(&coin_value);
 
       let provider_list = borrow_global_mut<ProviderList>(@ol_framework).current_above_threshold;
-      // print(&provider_list);
+      print(&provider_list);
       let len = vector::length(&provider_list);
 
       if (len == 0) return (0, 0);

@@ -9,8 +9,9 @@ module ol_framework::test_tower {
   use ol_framework::vdf_fixtures;
   use std::signer;
   use ol_framework::ol_account;
-  // use ol_framework::proof_of_fee;
+  use ol_framework::proof_of_fee;
   use ol_framework::stake;
+  use diem_framework::timestamp;
   // use diem_framework::coin;
   // use ol_framework::gas_coin::GasCoin;
   use std::vector;
@@ -41,6 +42,8 @@ module ol_framework::test_tower {
   fun init_tower_state(root: signer, cousin_alice: signer){
     mock::ol_test_genesis(&root);
     mock::ol_initialize_coin(&root);
+    timestamp::fast_forward_seconds(1);
+    ol_account::create_account(&root, signer::address_of(&cousin_alice));
 
     tower_state::init_miner_state(
           &cousin_alice,
@@ -84,10 +87,13 @@ module ol_framework::test_tower {
 
   #[test(root = @ol_framework, cousin_alice = @0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5)]
   fun miner_receives_reward(root: signer, cousin_alice: signer) {
-
+    let a_addr = signer::address_of(&cousin_alice);
     let vals = mock::genesis_n_vals(&root, 5);
     mock::ol_initialize_coin(&root);
     mock::pof_default();
+    ol_account::create_account(&root, a_addr);
+    proof_of_fee::fill_seats_and_get_price(&root, 5, &vals, &vals);
+
     assert!(vector::length(&vals) == 5, 7357001);
     let vals = stake::get_current_validators();
     assert!(vector::length(&vals) == 5, 7357002);
@@ -100,7 +106,7 @@ module ol_framework::test_tower {
       vdf_fixtures::security(),
     );
 
-    let count_pre = tower_state::get_count_in_epoch(signer::address_of(&cousin_alice));
+    let count_pre = tower_state::get_count_in_epoch(a_addr);
     print(&count_pre);
 
     // all vals compliant

@@ -213,8 +213,9 @@ module diem_framework::epoch_boundary {
 
           if (coin::value(&all_fees) > net_val_reward) {
             let oracle_budget = coin::extract(&mut all_fees, net_val_reward);
-            let (count, amount) = oracle::epoch_boundary(root, &mut oracle_budget);
             status.oracle_budget = coin::value(&oracle_budget);
+
+            let (count, amount) = oracle::epoch_boundary(root, &mut oracle_budget);
             status.oracle_pay_count = count;
             status.oracle_pay_amount = amount;
             status.oracle_pay_success = status.oracle_budget == amount;
