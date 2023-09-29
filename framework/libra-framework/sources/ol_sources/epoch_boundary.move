@@ -146,7 +146,7 @@ module diem_framework::epoch_boundary {
         status.dd_accounts_success = success;
 
         // reset fee makers tracking
-        fee_maker::epoch_reset_fee_maker(root);
+        status.set_fee_makers_success = fee_maker::epoch_reset_fee_maker(root);
         // randomize the Tower/Oracle difficulty
         tower_state::reconfig(root);
 

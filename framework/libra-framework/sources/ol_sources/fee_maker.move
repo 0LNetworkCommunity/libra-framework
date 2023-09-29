@@ -6,6 +6,8 @@ module ol_framework::fee_maker {
     use std::vector;
     use std::signer;
 
+    use diem_std::debug::print;
+
     friend diem_framework::transaction_fee;
 
     /// FeeMaker struct lives on an individual's account
@@ -55,10 +57,12 @@ module ol_framework::fee_maker {
       };
     }
 
-    public fun epoch_reset_fee_maker(vm: &signer) acquires EpochFeeMakerRegistry, FeeMaker {
+    public fun epoch_reset_fee_maker(vm: &signer): bool acquires EpochFeeMakerRegistry, FeeMaker {
       system_addresses::assert_ol(vm);
       let registry = borrow_global_mut<EpochFeeMakerRegistry>(@ol_framework);
       let fee_makers = &registry.fee_makers;
+      print(&11111);
+      print(fee_makers);
 
       let i = 0;
       while (i < vector::length(fee_makers)) {
@@ -68,6 +72,8 @@ module ol_framework::fee_maker {
       };
       registry.fee_makers = vector::empty();
       registry.epoch_fees_made = 0;
+
+      vector::length(&registry.fee_makers) == 0
     }
 
     /// FeeMaker is reset at the epoch boundary, and the lifetime is updated.
@@ -85,6 +91,7 @@ module ol_framework::fee_maker {
       let account = signer::address_of(user_sig);
       if (system_addresses::is_reserved_address(account) || system_addresses::is_framework_reserved_address(account)) return;
 
+      if (amount == 0) return;
       maybe_initialize_fee_maker(user_sig, signer::address_of(user_sig));
       track_user_fee_impl(signer::address_of(user_sig), amount);
     }
