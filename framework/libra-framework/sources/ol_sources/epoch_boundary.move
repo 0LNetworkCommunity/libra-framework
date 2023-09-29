@@ -23,7 +23,7 @@ module diem_framework::epoch_boundary {
     use std::vector;
     use std::error;
 
-    // use diem_std::debug::print;
+    use diem_std::debug::print;
 
     friend diem_framework::block;
 
@@ -46,18 +46,24 @@ module diem_framework::epoch_boundary {
       dd_accounts_success: bool,
 
       set_fee_makers_success: bool,
-      tower_state_success: bool,
       system_fees_collected: u64,
-      nominal_reward_to_vals: u64,
-      clearing_price: u64,
       // Process Outgoing
-      process_outgoing_success: bool,
-      outgoing_vals: vector<address>,
+      outgoing_vals_paid: vector<address>,
+      outgoing_total_reward: u64,
+      outgoing_nominal_reward_to_vals: u64,
+      outgoing_clearing_price: u64,
+      outgoing_vals_success: bool, // TODO
+
+      // Oracle / Tower
+      tower_state_success: bool, // TODO
       oracle_budget: u64,
+      oracle_pay_count: u64,
+      oracle_pay_amount: u64,
       oracle_pay_success: bool,
-      epoch_burn_fees: u64,
-      epoch_burn_success: bool,
-      slow_wallet_drip: bool,
+
+      epoch_burn_fees: u64, // TODO
+      epoch_burn_success: bool, // TODO
+      slow_wallet_drip: bool, // TODO
       // Process Incoming
       // musical chairs
       incoming_compliant: vector<address>,
@@ -79,8 +85,8 @@ module diem_framework::epoch_boundary {
       incoming_final_set_size: u64,
       incoming_reconfig_success: bool,
 
-      infra_subsize_amount: u64,
-      infra_subsizize_success: bool,
+      infra_subsize_amount: u64, // TODO
+      infra_subsizize_success: bool, // TODO
     }
 
     public fun initialize(framework: &signer) {
@@ -95,14 +101,20 @@ module diem_framework::epoch_boundary {
           dd_accounts_success: false,
 
           set_fee_makers_success: false,
-          tower_state_success: false,
           system_fees_collected: 0,
-          nominal_reward_to_vals: 0,
-          clearing_price: 0,
+
           // Process Outgoing
-          process_outgoing_success: false,
-          outgoing_vals: vector::empty(),
+          outgoing_vals_paid: vector::empty(),
+          outgoing_total_reward: 0,
+          outgoing_vals_success: false,
+          outgoing_nominal_reward_to_vals: 0,
+          outgoing_clearing_price: 0,
+
+          // Oracle / Tower
+          tower_state_success: false,
           oracle_budget: 0,
+          oracle_pay_count: 0,
+          oracle_pay_amount: 0,
           oracle_pay_success: false,
           epoch_burn_fees: 0,
           epoch_burn_success: false,
@@ -161,29 +173,47 @@ module diem_framework::epoch_boundary {
 
         subsidize_from_infra_escrow(root);
 
-        // print(borrow_global<BoundaryStatus>(@ol_framework))
+        print(borrow_global<BoundaryStatus>(@ol_framework))
   }
 
   // TODO: instrument all of this
   /// withdraw coins and settle accounts for validators and oracles
-  fun settle_accounts(root: &signer, closing_epoch: u64, epoch_round: u64, _status: &mut BoundaryStatus) {
+  fun settle_accounts(root: &signer, closing_epoch: u64, epoch_round: u64, status: &mut BoundaryStatus) {
         assert!(transaction_fee::is_fees_collection_enabled(), error::invalid_state(ETX_FEES_NOT_INITIALIZED));
 
         if (transaction_fee::system_fees_collected() > 0) {
           let all_fees = transaction_fee::root_withdraw_all(root);
+          status.system_fees_collected = coin::value(&all_fees);
 
           // Nominal fee set by the PoF thermostat
-          let (nominal_reward_to_vals, clearning_price_to_oracle, _ ) = proof_of_fee::get_consensus_reward();
+          let (nominal_reward_to_vals, clearing_price, _ ) = proof_of_fee::get_consensus_reward();
+          status.outgoing_nominal_reward_to_vals = nominal_reward_to_vals;
+          status.outgoing_clearing_price = clearing_price;
 
           // validators get the gross amount of the reward, since they already paid to enter. This results in a net payment equivalidant to the
           // clearing_price.
-          process_outgoing_validators(root, &mut all_fees, nominal_reward_to_vals, closing_epoch, epoch_round);
+          let (compliant_vals, total_reward) = process_outgoing_validators(root, &mut all_fees, nominal_reward_to_vals, closing_epoch, epoch_round);
+
+          status.outgoing_vals_paid = compliant_vals;
+          status.outgoing_total_reward = total_reward;
+
+          // check that the sustem fees collect were greater than reward
+          status.outgoing_vals_success = (status.system_fees_collected >= total_reward);
+          // check the the total actually deposited/paid is the expected amount
+          if (clearing_price > 0) { // check for zero
+            status.outgoing_vals_success = total_reward == (vector::length(&compliant_vals) * clearing_price)
+          };
 
           // since we reserved some fees to go to the oracle miners
           // we take the clearing_price, since it is the equivalent of what a
           // validator would earn net of entry fee.
-          let oracle_budget = coin::extract(&mut all_fees, clearning_price_to_oracle);
-          oracle::epoch_boundary(root, &mut oracle_budget);
+          let oracle_budget = coin::extract(&mut all_fees, clearing_price);
+          let (count, amount) = oracle::epoch_boundary(root, &mut oracle_budget);
+          status.oracle_budget = coin::value(&oracle_budget);
+          status.oracle_pay_count = count;
+          status.oracle_pay_amount = amount;
+          status.oracle_pay_success = status.oracle_budget == amount;
+
           // in case there is any dust left
           ol_account::merge_coins(&mut all_fees, oracle_budget);
 
@@ -199,13 +229,15 @@ module diem_framework::epoch_boundary {
   /// jail the non performant
   /// NOTE: receives from reconfiguration.move a mutable borrow of a coin to pay reward
   /// NOTE: burn remaining fees from transaction fee account happens in reconfiguration.move (it's not a validator_universe concern)
-  fun process_outgoing_validators(root: &signer, reward_budget: &mut Coin<GasCoin>, reward_per: u64, closing_epoch: u64, epoch_round: u64): vector<address> {
+  // Returns (compliant_vals, reward_deposited)
+  fun process_outgoing_validators(root: &signer, reward_budget: &mut Coin<GasCoin>, reward_per: u64, closing_epoch: u64, epoch_round: u64): (vector<address>, u64){
     system_addresses::assert_ol(root);
 
 
     let vals = stake::get_current_validators();
 
     let compliant_vals = vector::empty<address>();
+    let reward_deposited = 0;
     let i = 0;
     while (i < vector::length(&vals)) {
       let addr = vector::borrow(&vals, i);
@@ -221,6 +253,7 @@ module diem_framework::epoch_boundary {
         vector::push_back(&mut compliant_vals, *addr);
         if (coin::value(reward_budget) > reward_per) {
           let user_coin = coin::extract(reward_budget, reward_per);
+          reward_deposited = reward_deposited + coin::value(&user_coin);
           rewards::process_single(root, *addr, user_coin, 1);
         }
       };
@@ -228,7 +261,7 @@ module diem_framework::epoch_boundary {
       i = i + 1;
     };
 
-    return compliant_vals
+    return (compliant_vals, reward_deposited)
   }
 
   fun process_incoming_validators(root: &signer, status: &mut BoundaryStatus) {

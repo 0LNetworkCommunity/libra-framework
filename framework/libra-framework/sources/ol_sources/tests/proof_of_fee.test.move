@@ -562,8 +562,6 @@ module ol_framework::test_pof {
 
   #[test(root = @ol_framework)]
   fun fill_seats_unproven_sad(root: signer) {
-
-
     // we need 6 seats so that we can have 4 proven, and 2 unproven slots
     let set = mock::genesis_n_vals(&root, 6);
     mock::ol_initialize_coin_and_fund_vals(&root, 500000, true);

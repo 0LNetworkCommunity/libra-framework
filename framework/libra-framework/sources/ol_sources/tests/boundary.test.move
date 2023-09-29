@@ -4,10 +4,7 @@ module ol_framework::test_boundary {
   use std::vector;
   use diem_std::bls12381;
   use ol_framework::mock;
-
-  // use ol_framework::account;
   use ol_framework::proof_of_fee;
-  // use ol_framework::reconfiguration;
   use ol_framework::jail;
   use ol_framework::slow_wallet;
   use ol_framework::vouch;
@@ -143,19 +140,8 @@ module ol_framework::test_boundary {
     let qualified_bidders = epoch_boundary::get_qualified_bidders();
     assert!(vector::length(&qualified_bidders) == (vector::length(&vals) - 1), 7357003);
 
-        // all vals had winning bids, but it was less than the seats on offer
+    // all vals had winning bids, but it was less than the seats on offer
     assert!(vector::length(&epoch_boundary::get_auction_winners()) == vector::length(&qualified_bidders) , 7357003);
-
-
-    // let _vals_post = stake::get_current_validators();
-
     assert!(epoch_boundary::get_reconfig_success(), 7357001);
-
-    // // all validators were compliant, should be +1 of the 10 vals
-    // assert!(epoch_boundary::get_seats_offered() == 11, 7357002);
-
-
-    // // all of the auction winners became the validators ulitmately
-    // assert!(vector::length(&epoch_boundary::get_actual_vals()) == 10, 7357004);
   }
 }

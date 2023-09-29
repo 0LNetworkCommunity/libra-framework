@@ -8,7 +8,12 @@ module ol_framework::test_tower {
   use ol_framework::tower_state;
   use ol_framework::vdf_fixtures;
   use std::signer;
-  // use ol_framework::ol_account;
+  use ol_framework::ol_account;
+  // use ol_framework::proof_of_fee;
+  use ol_framework::stake;
+  // use diem_framework::coin;
+  // use ol_framework::gas_coin::GasCoin;
+  use std::vector;
 
   use std::debug::print;
 
@@ -79,24 +84,36 @@ module ol_framework::test_tower {
 
   #[test(root = @ol_framework, cousin_alice = @0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5)]
   fun miner_receives_reward(root: signer, cousin_alice: signer) {
-    mock::genesis_n_vals(&root, 4);
+
+    let vals = mock::genesis_n_vals(&root, 5);
     mock::ol_initialize_coin(&root);
+    mock::pof_default();
+    assert!(vector::length(&vals) == 5, 7357001);
+    let vals = stake::get_current_validators();
+    assert!(vector::length(&vals) == 5, 7357002);
 
     tower_state::minerstate_commit(
-        &cousin_alice,
-        vdf_fixtures::alice_0_easy_chal(),
-        vdf_fixtures::alice_0_easy_sol(),
-        vdf_fixtures::easy_difficulty(),
-        vdf_fixtures::security(),
+      &cousin_alice,
+      vdf_fixtures::alice_0_easy_chal(),
+      vdf_fixtures::alice_0_easy_sol(),
+      vdf_fixtures::easy_difficulty(),
+      vdf_fixtures::security(),
     );
 
-    let count = tower_state::get_count_in_epoch(signer::address_of(&cousin_alice));
-    print(&count);
+    let count_pre = tower_state::get_count_in_epoch(signer::address_of(&cousin_alice));
+    print(&count_pre);
+
+    // all vals compliant
+    mock::mock_all_vals_good_performance(&root);
+
+    let (_, alice_bal_pre) = ol_account::balance(@0x1000a);
+    assert!(alice_bal_pre == 0, 73570003);
+
     mock::trigger_epoch(&root);
-    let count = tower_state::get_count_in_epoch(signer::address_of(&cousin_alice));
-    print(&count);
-    // let (diff, _sec) = tower_state::get_difficulty();
-    // assert!(diff!=100, 735703);
+
+    let (_, alice_bal) = ol_account::balance(@0x1000a);
+
+    assert!(alice_bal_pre < alice_bal, 73570003);
   }
 
 }

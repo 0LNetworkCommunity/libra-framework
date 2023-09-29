@@ -17,6 +17,8 @@ module ol_framework::oracle {
     use ol_framework::epoch_helper;
     use std::error;
 
+    use diem_std::debug::print;
+
     friend ol_framework::epoch_boundary;
 
     /// You need a minimum of three Vouches on your account, and of unrelated
@@ -223,7 +225,7 @@ module ol_framework::oracle {
       }
     }
 
-    public(friend) fun epoch_boundary(root: &signer, budget: &mut Coin<GasCoin>) acquires GlobalCounter, ProviderList, Tower {
+    public(friend) fun epoch_boundary(root: &signer, budget: &mut Coin<GasCoin>): (u64, u64) acquires GlobalCounter, ProviderList, Tower {
       reset_counters(root);
       epoch_reward(root, budget)
     }
@@ -242,23 +244,30 @@ module ol_framework::oracle {
 
     /// from the total reward, available to the miners, divide equally among
     /// successful miners.
-    fun epoch_reward(root: &signer, budget: &mut Coin<GasCoin>) acquires ProviderList, Tower {
+    /// returns: provider_list_len total_deposited
+    ///
+    fun epoch_reward(root: &signer, budget: &mut Coin<GasCoin>): (u64, u64) acquires ProviderList, Tower {
       system_addresses::assert_ol(root);
+      print(&666666);
 
       let coin_value = coin::value(budget);
 
-      let provider_list = &borrow_global_mut<ProviderList>(@ol_framework).current_above_threshold;
-      let len = vector::length(provider_list);
+      let provider_list = borrow_global_mut<ProviderList>(@ol_framework).current_above_threshold;
+      print(&provider_list);
+      let len = vector::length(&provider_list);
 
-      if (len == 0) return;
-
+      if (len == 0) return (0, 0);
+      let total_deposited = 0;
       let per_user = coin_value / len;
-      vector::for_each_ref(provider_list, |addr| {
+      vector::for_each_ref(&provider_list, |addr| {
         emit_distribute_reward(root, addr, per_user);
         let split = coin::extract(budget, per_user);
+        let value = coin::value(&split);
+        total_deposited = total_deposited + value;
         ol_account::deposit_coins(*addr, split);
-
       });
+
+      (len, total_deposited)
     }
 
     // since rewards are handled externally to stake.move we need an api to emit the event
