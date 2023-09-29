@@ -12,7 +12,7 @@ module ol_framework::test_reconfiguration {
   use diem_framework::reconfiguration;
   use ol_framework::epoch_helper;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   // Scenario: all genesis validators make it to next epoch
   #[test(root = @ol_framework)]
@@ -28,11 +28,10 @@ module ol_framework::test_reconfiguration {
 
       assert!(coin::balance<GasCoin>(@0x1000a) == 0, 7357003);
 
-      let (reward_one, entry_fee, _, _ ) = proof_of_fee::get_consensus_reward();
+
+      let (reward_one, _entry_fee, _, _ ) = proof_of_fee::get_consensus_reward();
       // The epoch's reward BEFORE reconfiguration
       assert!(reward_one == 1000000, 7357004);
-      print(&8888);
-      print(&entry_fee);
       // run ol reconfiguration
       mock::trigger_epoch(&root);
 
@@ -43,10 +42,6 @@ module ol_framework::test_reconfiguration {
       let (_, entry_fee, _,  _ ) = proof_of_fee::get_consensus_reward();
       // need to check that the user paid an PoF entry fee for next epoch.
       // which means the balance will be the nominal reward, net of the PoF clearing price bid
-      print(&reward_one);
-      print(&entry_fee);
-
-      print(&alice_bal);
       assert!(alice_bal == (reward_one-entry_fee), 7357006)
 
   }

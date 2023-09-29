@@ -210,15 +210,17 @@ module diem_framework::epoch_boundary {
           // since we reserved some fees to go to the oracle miners
           // we take the NET REWARD of the validators, since it is the equivalent of what the validator would earn net of entry fee.
           let net_val_reward = nominal_reward_to_vals - entry_fee;
-          let oracle_budget = coin::extract(&mut all_fees, net_val_reward);
-          let (count, amount) = oracle::epoch_boundary(root, &mut oracle_budget);
-          status.oracle_budget = coin::value(&oracle_budget);
-          status.oracle_pay_count = count;
-          status.oracle_pay_amount = amount;
-          status.oracle_pay_success = status.oracle_budget == amount;
 
-          // in case there is any dust left
-          ol_account::merge_coins(&mut all_fees, oracle_budget);
+          if (coin::value(&all_fees) > net_val_reward) {
+            let oracle_budget = coin::extract(&mut all_fees, net_val_reward);
+            let (count, amount) = oracle::epoch_boundary(root, &mut oracle_budget);
+            status.oracle_budget = coin::value(&oracle_budget);
+            status.oracle_pay_count = count;
+            status.oracle_pay_amount = amount;
+            status.oracle_pay_success = status.oracle_budget == amount;
+            // in case there is any dust left
+            ol_account::merge_coins(&mut all_fees, oracle_budget);
+          };
 
           // remainder gets burnt according to fee maker preferences
           burn::epoch_burn_fees(root, &mut all_fees);
@@ -273,7 +275,7 @@ module diem_framework::epoch_boundary {
     status.incoming_compliant = compliant;
     status.incoming_seats_offered = n_seats;
     // check amount of fees expected
-    let (auction_winners, all_bidders, only_qualified_bidders, entry_price) = proof_of_fee::end_epoch(root, &compliant, n_seats);
+    let (auction_winners, all_bidders, only_qualified_bidders, entry_fee) = proof_of_fee::end_epoch(root, &compliant, n_seats);
     status.incoming_filled_seats = vector::length(&auction_winners);
     status.incoming_all_bidders = all_bidders;
     status.incoming_only_qualified_bidders = only_qualified_bidders;
@@ -289,7 +291,7 @@ module diem_framework::epoch_boundary {
     status.incoming_actual_vals = actual_set;
     status.incoming_reconfig_success = success;
 
-    let (_expected_fees, fees_paid, fee_success) = proof_of_fee::charge_epoch_fees(root, actual_set, entry_price);
+    let (_expected_fees, fees_paid, fee_success) = proof_of_fee::charge_epoch_fees(root, actual_set, entry_fee);
     status.incoming_fees = fees_paid;
     status.incoming_fees_success = fee_success;
     // make sure musical chairs doesn't keep incrementing if we are persistently

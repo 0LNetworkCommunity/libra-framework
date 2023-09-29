@@ -64,7 +64,7 @@ module ol_framework::proof_of_fee {
     nominal_reward: u64,
     net_reward: u64,
     entry_fee: u64,
-    clearing_percent: u64,
+    clearing_bid: u64,
     median_win_bid: u64,
     median_history: vector<u64>,
   }
@@ -78,7 +78,7 @@ module ol_framework::proof_of_fee {
           nominal_reward: GENESIS_BASELINE_REWARD,
           net_reward: GENESIS_BASELINE_REWARD,
           entry_fee: 0,
-          clearing_percent: 0,
+          clearing_bid: 0,
           median_win_bid: 0,
           median_history: vector::empty<u64>(),
         }
@@ -108,7 +108,7 @@ module ol_framework::proof_of_fee {
   /// and finally charging the validators for their bid (everyone pays the lowest)
   /// for audit instrumentation returns: final set size, auction winners, all the bidders, (including not-qualified), and all qualified bidders.
   /// we also return the auction entry price (clearing price)
-  /// (final_set_size, auction_winners, all_bidders, only_qualified_bidders, actually_paid, entry_price)
+  /// (final_set_size, auction_winners, all_bidders, only_qualified_bidders, actually_paid, entry_fee)
   public(friend) fun end_epoch(
     vm: &signer,
     outgoing_compliant_set: &vector<address>,
@@ -125,10 +125,10 @@ module ol_framework::proof_of_fee {
       // This is the core of the mechanism, the uniform price auction
       // the winners of the auction will be the validator set.
       // other lists are created for audit purposes of the BoundaryStatus
-      let (auction_winners, entry_price, _proven, _unproven) = fill_seats_and_get_price(vm, final_set_size, &only_qualified_bidders, outgoing_compliant_set);
+      let (auction_winners, entry_fee, _clearing_bid, _proven, _unproven) = fill_seats_and_get_price(vm, final_set_size, &only_qualified_bidders, outgoing_compliant_set);
 
 
-      (auction_winners, all_bidders, only_qualified_bidders, entry_price)
+      (auction_winners, all_bidders, only_qualified_bidders, entry_fee)
   }
 
   /// The fees are charged seperate from the auction and seating loop
@@ -273,15 +273,16 @@ module ol_framework::proof_of_fee {
   /// but we will check again here.
   /// we return:
   // a. the list of winning validators (the validator set)
-  // b. the clearing price paid
-  // c. the list of proven nodes added, for audit and instrumentation
-  // d. the list of unproven, for audit and instrumentation
+  // b. the entry fee paid
+  // c. the clearing bid (percentage paid)
+  // d. the list of proven nodes added, for audit and instrumentation
+  // e. the list of unproven, for audit and instrumentation
   public fun fill_seats_and_get_price(
     vm: &signer,
     final_set_size: u64,
     sorted_vals_by_bid: &vector<address>,
     proven_nodes: &vector<address>
-  ): (vector<address>, u64, vector<address>, vector<address>) acquires ProofOfFeeAuction, ConsensusReward {
+  ): (vector<address>, u64, u64, vector<address>, vector<address>) acquires ProofOfFeeAuction, ConsensusReward {
     system_addresses::assert_ol(vm);
 
     // NOTE: this is duplicate work, but we are double checking we are getting a proper sort.
@@ -333,7 +334,7 @@ module ol_framework::proof_of_fee {
 
     // We failed to seat anyone.
     // let epoch_boundary.move deal with this.
-    if (vector::is_empty(&proposed_validators)) return (proposed_validators, 0, audit_add_proven_vals, audit_add_unproven_vals);
+    if (vector::is_empty(&proposed_validators)) return (proposed_validators, 0, 0, audit_add_proven_vals, audit_add_unproven_vals);
 
     // Find the clearing price which all validators will pay
     let lowest_bidder = vector::borrow(&proposed_validators, vector::length(&proposed_validators) - 1);
@@ -342,7 +343,7 @@ module ol_framework::proof_of_fee {
 
     // update the clearing price
     let cr = borrow_global_mut<ConsensusReward>(@ol_framework);
-    cr.clearing_percent = lowest_bid_pct;
+    cr.clearing_bid = lowest_bid_pct;
 
     if (lowest_bid_pct > 0) {
       cr.entry_fee = fixed_point32::multiply_u64(cr.nominal_reward, bid_as_fixedpoint(lowest_bid_pct));
@@ -359,7 +360,7 @@ module ol_framework::proof_of_fee {
     };
 
 
-    return (proposed_validators, lowest_bid_pct, audit_add_proven_vals, audit_add_unproven_vals)
+    return (proposed_validators, cr.entry_fee, cr.clearing_bid, audit_add_proven_vals, audit_add_unproven_vals)
   }
 
   #[view]
@@ -549,10 +550,10 @@ module ol_framework::proof_of_fee {
 
 
   /// get the baseline reward from ConsensusReward
-  /// returns (reward, entry_fee, clearing_percent, median_win_bid)
+  /// returns (reward, entry_fee, clearing_bid, median_win_bid)
   public fun get_consensus_reward(): (u64, u64, u64, u64) acquires ConsensusReward {
     let b = borrow_global<ConsensusReward>(@ol_framework);
-    return (b.nominal_reward, b.entry_fee, b.clearing_percent, b.median_win_bid)
+    return (b.nominal_reward, b.entry_fee, b.clearing_bid, b.median_win_bid)
   }
 
   // CONSENSUS CRITICAL
@@ -701,7 +702,7 @@ module ol_framework::proof_of_fee {
   public fun test_mock_reward(
     vm: &signer,
     nominal_reward: u64,
-    clearing_percent: u64,
+    clearing_bid: u64,
     median_win_bid: u64,
     median_history: vector<u64>,
   ) acquires ConsensusReward {
@@ -709,7 +710,7 @@ module ol_framework::proof_of_fee {
 
     let cr = borrow_global_mut<ConsensusReward>(@ol_framework );
     cr.nominal_reward = nominal_reward;
-    cr.clearing_percent = clearing_percent;
+    cr.clearing_bid = clearing_bid;
     cr.median_win_bid = median_win_bid;
     cr.median_history = median_history;
 

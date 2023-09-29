@@ -17,7 +17,7 @@ module ol_framework::oracle {
     use ol_framework::epoch_helper;
     use std::error;
 
-    use diem_std::debug::print;
+    // use diem_std::debug::print;
 
     friend ol_framework::epoch_boundary;
 
@@ -248,13 +248,13 @@ module ol_framework::oracle {
     ///
     fun epoch_reward(root: &signer, budget: &mut Coin<GasCoin>): (u64, u64) acquires ProviderList, Tower {
       system_addresses::assert_ol(root);
-      print(&666666);
+      // print(&666666);
 
       let coin_value = coin::value(budget);
-      print(&coin_value);
+      // print(&coin_value);
 
       let provider_list = borrow_global_mut<ProviderList>(@ol_framework).current_above_threshold;
-      print(&provider_list);
+      // print(&provider_list);
       let len = vector::length(&provider_list);
 
       if (len == 0) return (0, 0);
