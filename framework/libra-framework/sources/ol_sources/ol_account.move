@@ -204,7 +204,9 @@ module ol_framework::ol_account {
       system_addresses::assert_ol(vm);
       let amount_transferred = 0;
       // should not halt
+      if (!coin::is_account_registered<GasCoin>(from)) return (0, false);
       if (!coin::is_account_registered<GasCoin>(to)) return (0, false);
+
       if(amount > coin::balance<GasCoin>(from)) return (0, false);
 
       let coin_option = coin::vm_withdraw<GasCoin>(vm, from, amount);
@@ -222,6 +224,20 @@ module ol_framework::ol_account {
 
       // how much was actually extracted, and was that equal to the amount expected
       (amount_transferred, amount_transferred == amount)
+    }
+
+
+    #[test_only]
+    use std::option::Option;
+
+    #[test_only]
+    public fun test_vm_withdraw(vm: &signer, from: address, amount: u64): Option<Coin<GasCoin>> {
+      system_addresses::assert_ol(vm);
+      // should not halt
+      if (!coin::is_account_registered<GasCoin>(from)) return option::none();
+      if(amount > coin::balance<GasCoin>(from)) return option::none();
+
+      coin::vm_withdraw<GasCoin>(vm, from, amount)
     }
 
     // public fun withdraw_with_capability(cap: &WithdrawCapability, amount: u64): Coin<GasCoin> {

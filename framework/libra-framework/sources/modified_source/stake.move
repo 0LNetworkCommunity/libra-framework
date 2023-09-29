@@ -1370,15 +1370,15 @@ module diem_framework::stake {
     public fun check_failover_rules(proposed: vector<address>, performant: vector<address>): vector<address> acquires ValidatorSet {
 
         let min_f = 3;
+        let current_vals = get_current_validators();
 
         // check if this is not test. Failover doesn't apply here
         if (testnet::is_testnet()) {
-
+          if (vector::length(&proposed) == 0) {
+            return current_vals
+          };
           return proposed
         };
-
-        let current_vals = get_current_validators();
-
 
         let is_performant_below_f_4 = vector::length(&performant) <= ( 2 * (min_f+1) + 1);
 
@@ -1407,9 +1407,13 @@ module diem_framework::stake {
           if (vector::length(&performant) > vector::length(&proposed)) {
             return performant
           };
+          // vector::for_each(performant, |v| {
+          //   if (!vector::contains(&proposed, &v)) {
+          //     vector::push_back(&mut proposed, v);
+          //   }
+          // });
           return proposed
         };
-
 
         // this is unreachable but as a backstop for dev fingers
         current_vals
