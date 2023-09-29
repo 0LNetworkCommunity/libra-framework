@@ -34,7 +34,7 @@ module ol_framework::test_pof {
     assert!(expires == 10000, 1002);
 
     let coin = slow_wallet::unlocked_amount(*alice);
-    let (r, _, _) = proof_of_fee::get_consensus_reward();
+    let (r, _, _, _) = proof_of_fee::get_consensus_reward();
     let bid_cost = (bid * r) / 1000;
     assert!(coin > bid_cost, 1005);
   }
@@ -143,7 +143,7 @@ module ol_framework::test_pof {
     // NOT ENOUGH FUNDS WERE UNLOCKED
     slow_wallet::slow_wallet_epoch_drip(&root, 500);
     let coin = slow_wallet::unlocked_amount(alice);
-    let (r, _, _) = proof_of_fee::get_consensus_reward();
+    let (r, _, _, _) = proof_of_fee::get_consensus_reward();
     let bid_cost = (bid * r) / 1000;
     assert!(coin < bid_cost, 1005);
 
@@ -351,9 +351,9 @@ module ol_framework::test_pof {
     assert!(vector::contains(&seats, vector::borrow(&set, 0)), 1004);
 
     // filling the seat updated the computation of the consensu reward.
-    let (reward, clear_price, median_bid) = proof_of_fee::get_consensus_reward();
+    let (reward, _, clear_percent, median_bid) = proof_of_fee::get_consensus_reward();
     assert!(reward == 1000000, 1005);
-    assert!(clear_price == 1, 1006);
+    assert!(clear_percent == 1, 1006);
     assert!(median_bid == 3, 1007);
 
   }
@@ -377,17 +377,17 @@ module ol_framework::test_pof {
     assert!(vector::contains(&seats, vector::borrow(&set, 0)), 1004);
 
     // filling the seat updated the computation of the consensu reward.
-    let (reward, clear_price, median_bid) = proof_of_fee::get_consensus_reward();
+    let (reward, _, clear_percent, median_bid) = proof_of_fee::get_consensus_reward();
     assert!(reward == 1000000, 1005);
-    assert!(clear_price == 1, 1006);
+    assert!(clear_percent == 1, 1006);
     assert!(median_bid == 3, 1007);
 
     // we expect no change in the reward_thermostat because there haven't been 5 epochs or more of historical data.
     proof_of_fee::reward_thermostat(&root);
 
-    let (reward, win_bid, median_bid) = proof_of_fee::get_consensus_reward();
+    let (reward, _, clearing_percent, median_bid) = proof_of_fee::get_consensus_reward();
     assert!(reward == 1000000, 1008);
-    assert!(win_bid == 1, 1009);
+    assert!(clearing_percent == 1, 1009);
     assert!(median_bid == 3, 1010);
   }
 
@@ -428,9 +428,9 @@ module ol_framework::test_pof {
     assert!(vector::contains(&seats, vector::borrow(&set, 0)), 1005);
 
     // filling the seat updated the computation of the consensu reward.
-    let (reward, clear_price, median_bid) = proof_of_fee::get_consensus_reward();
+    let (reward, _, clear_percent, median_bid) = proof_of_fee::get_consensus_reward();
     assert!(reward == 1000000, 1006);
-    assert!(clear_price == 1, 1007);
+    assert!(clear_percent == 1, 1007);
     assert!(median_bid == 2, 1008);
 
   }
@@ -473,9 +473,9 @@ module ol_framework::test_pof {
 
     // filling the seat updated the computation of the consensu reward.
     // Median bids and clearing prices will be different than the happy path test.
-    let (reward, clear_price, median_bid) = proof_of_fee::get_consensus_reward();
+    let (reward, _, clear_percent, median_bid) = proof_of_fee::get_consensus_reward();
     assert!(reward == 1000000, 1004);
-    assert!(clear_price == 3, 1005);
+    assert!(clear_percent == 3, 1005);
     assert!(median_bid == 5, 1006);
   }
 
@@ -533,10 +533,10 @@ module ol_framework::test_pof {
 
     // filling the seat updated the computation of the consensu reward.
     // Median bids and clearing prices will be different than the happy path test.
-    let (reward, clear_price, median_bid) = proof_of_fee::get_consensus_reward();
+    let (reward, _, clear_percent, median_bid) = proof_of_fee::get_consensus_reward();
     assert!(reward == 1000000, 1004);
     // The clearing price is 1, Alice's lowest bid. Even though she was not "proven"
-    assert!(clear_price == 1, 1005);
+    assert!(clear_percent == 1, 1005);
     assert!(median_bid == 3, 1006);
   }
 
@@ -600,9 +600,9 @@ module ol_framework::test_pof {
 
     // filling the seat updated the computation of the consensu reward.
     // Median bids and clearing prices will be different than the happy path test.
-    let (reward, clear_price, median_bid) = proof_of_fee::get_consensus_reward();
+    let (reward, _, clear_percent, median_bid) = proof_of_fee::get_consensus_reward();
     assert!(reward == 1000000, 10012);
-    assert!(clear_price == 2, 10013);
+    assert!(clear_percent == 2, 10013);
     assert!(median_bid == 3, 10014);
   }
 

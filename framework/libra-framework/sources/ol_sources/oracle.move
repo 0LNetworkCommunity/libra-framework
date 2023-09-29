@@ -251,6 +251,7 @@ module ol_framework::oracle {
       print(&666666);
 
       let coin_value = coin::value(budget);
+      print(&coin_value);
 
       let provider_list = borrow_global_mut<ProviderList>(@ol_framework).current_above_threshold;
       print(&provider_list);

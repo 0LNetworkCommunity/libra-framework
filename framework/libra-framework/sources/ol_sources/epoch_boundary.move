@@ -52,6 +52,7 @@ module diem_framework::epoch_boundary {
       outgoing_total_reward: u64,
       outgoing_nominal_reward_to_vals: u64,
       outgoing_clearing_price: u64,
+      outgoing_clearing_percent: u64,
       outgoing_vals_success: bool, // TODO
 
       // Oracle / Tower
@@ -109,6 +110,7 @@ module diem_framework::epoch_boundary {
           outgoing_vals_success: false,
           outgoing_nominal_reward_to_vals: 0,
           outgoing_clearing_price: 0,
+          outgoing_clearing_percent: 0,
 
           // Oracle / Tower
           tower_state_success: false,
@@ -186,13 +188,13 @@ module diem_framework::epoch_boundary {
           status.system_fees_collected = coin::value(&all_fees);
 
           // Nominal fee set by the PoF thermostat
-          let (nominal_reward_to_vals, clearing_price, _ ) = proof_of_fee::get_consensus_reward();
+          let (nominal_reward_to_vals, clearing_price, clearing_percent, _ ) = proof_of_fee::get_consensus_reward();
           status.outgoing_nominal_reward_to_vals = nominal_reward_to_vals;
-          status.outgoing_clearing_price = clearing_price;
+          status.outgoing_clearing_percent = clearing_percent;
 
           // validators get the gross amount of the reward, since they already paid to enter. This results in a net payment equivalidant to the
           // clearing_price.
-          let (compliant_vals, total_reward) = process_outgoing_validators(root, &mut all_fees, nominal_reward_to_vals, closing_epoch, epoch_round);
+          let (compliant_vals, total_reward) = process_outgoing_validators(root, &mut all_fees, clearing_price, closing_epoch, epoch_round);
 
           status.outgoing_vals_paid = compliant_vals;
           status.outgoing_total_reward = total_reward;
@@ -232,10 +234,7 @@ module diem_framework::epoch_boundary {
   // Returns (compliant_vals, reward_deposited)
   fun process_outgoing_validators(root: &signer, reward_budget: &mut Coin<GasCoin>, reward_per: u64, closing_epoch: u64, epoch_round: u64): (vector<address>, u64){
     system_addresses::assert_ol(root);
-
-
     let vals = stake::get_current_validators();
-
     let compliant_vals = vector::empty<address>();
     let reward_deposited = 0;
     let i = 0;
@@ -301,7 +300,7 @@ module diem_framework::epoch_boundary {
   // set up rewards subsidy for coming epoch
   fun subsidize_from_infra_escrow(root: &signer) {
       system_addresses::assert_ol(root);
-      let (reward_per, _, _ ) = proof_of_fee::get_consensus_reward();
+      let (reward_per, _, _, _ ) = proof_of_fee::get_consensus_reward();
       let vals = stake::get_current_validators();
       let count_vals = vector::length(&vals);
       count_vals = count_vals + ORACLE_PROVIDERS_SEATS;
