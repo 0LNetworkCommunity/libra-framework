@@ -1,3 +1,4 @@
+#[test_only]
 module diem_framework::diem_account {
     use diem_framework::account::{Self, new_event_handle};
     use diem_framework::diem_coin::DiemCoin;

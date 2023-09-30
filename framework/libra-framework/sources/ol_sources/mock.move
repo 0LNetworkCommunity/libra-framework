@@ -175,7 +175,7 @@ module ol_framework::mock {
 
       while (i < vector::length(&vals)) {
         let addr = vector::borrow(&vals, i);
-        let c = coin::mint(amount, &mint_cap);
+        let c = coin::test_mint(amount, &mint_cap);
         ol_account::deposit_coins(*addr, c);
 
         let b = coin::balance<GasCoin>(*addr);
@@ -200,7 +200,7 @@ module ol_framework::mock {
       transaction_fee::initialize_fee_collection_and_distribution(root, 0);
 
       let initial_fees = 1000000 * 100; // coin scaling * 100 coins
-      let tx_fees = coin::mint(initial_fees, &mint_cap);
+      let tx_fees = coin::test_mint(initial_fees, &mint_cap);
       transaction_fee::vm_pay_fee(root, @ol_framework, tx_fees);
       let supply_pre = gas_coin::supply();
       assert!(supply_pre == initial_fees, 666);

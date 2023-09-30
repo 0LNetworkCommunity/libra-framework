@@ -63,9 +63,13 @@ module diem_framework::resource_account {
     use std::signer;
     use std::vector;
     use diem_framework::account;
-    use diem_framework::diem_coin::DiemCoin;
-    use diem_framework::coin;
     use diem_std::simple_map::{Self, SimpleMap};
+
+    #[test_only]
+    use diem_framework::diem_coin::DiemCoin;
+    #[test_only]
+    use diem_framework::coin;
+
 
     /// Container resource not found in account
     const ECONTAINER_NOT_PUBLISHED: u64 = 1;
@@ -95,27 +99,27 @@ module diem_framework::resource_account {
         );
     }
 
-    /// Creates a new resource account, transfer the amount of coins from the origin to the resource
-    /// account, and rotates the authentication key to either the optional auth key if it is
-    /// non-empty (though auth keys are 32-bytes) or the source accounts current auth key. Note,
-    /// this function adds additional resource ownership to the resource account and should only be
-    /// used for resource accounts that need access to `Coin<DiemCoin>`.
-    public entry fun create_resource_account_and_fund(
-        origin: &signer,
-        seed: vector<u8>,
-        optional_auth_key: vector<u8>,
-        fund_amount: u64,
-    ) acquires Container {
-        let (resource, resource_signer_cap) = account::create_resource_account(origin, seed);
-        coin::register<DiemCoin>(&resource);
-        coin::transfer<DiemCoin>(origin, signer::address_of(&resource), fund_amount);
-        rotate_account_authentication_key_and_store_capability(
-            origin,
-            resource,
-            resource_signer_cap,
-            optional_auth_key,
-        );
-    }
+    // /// Creates a new resource account, transfer the amount of coins from the origin to the resource
+    // /// account, and rotates the authentication key to either the optional auth key if it is
+    // /// non-empty (though auth keys are 32-bytes) or the source accounts current auth key. Note,
+    // /// this function adds additional resource ownership to the resource account and should only be
+    // /// used for resource accounts that need access to `Coin<DiemCoin>`.
+    // public entry fun depr_create_resource_account_and_fund(
+    //     origin: &signer,
+    //     seed: vector<u8>,
+    //     optional_auth_key: vector<u8>,
+    //     fund_amount: u64,
+    // ) acquires Container {
+    //     let (resource, resource_signer_cap) = account::create_resource_account(origin, seed);
+    //     coin::register<DiemCoin>(&resource);
+    //     coin::transfer<DiemCoin>(origin, signer::address_of(&resource), fund_amount);
+    //     rotate_account_authentication_key_and_store_capability(
+    //         origin,
+    //         resource,
+    //         resource_signer_cap,
+    //         optional_auth_key,
+    //     );
+    // }
 
     /// Creates a new resource account, publishes the package under this account transaction under
     /// this account and leaves the signer cap readily available for pickup.
@@ -228,24 +232,24 @@ module diem_framework::resource_account {
         let _resource_cap = retrieve_resource_account_cap(&resource, user_addr);
     }
 
-    #[test(framework = @0x1, user = @0x1234)]
-    public entry fun with_coin(framework: signer, user: signer) acquires Container {
-        let user_addr = signer::address_of(&user);
-        diem_framework::diem_account::create_account(copy user_addr);
+    // #[test(framework = @0x1, user = @0x1234)]
+    // public entry fun with_coin(framework: signer, user: signer) acquires Container {
+    //     let user_addr = signer::address_of(&user);
+    //     diem_framework::diem_account::create_account(copy user_addr);
 
-        let (burn, mint) = diem_framework::diem_coin::initialize_for_test(&framework);
-        let coin = coin::mint<DiemCoin>(100, &mint);
-        coin::deposit(copy user_addr, coin);
+    //     let (burn, mint) = diem_framework::diem_coin::initialize_for_test(&framework);
+    //     let coin = coin::mint<DiemCoin>(100, &mint);
+    //     coin::deposit(copy user_addr, coin);
 
-        let seed = x"01";
-        create_resource_account_and_fund(&user, copy seed, vector::empty(), 10);
+    //     let seed = x"01";
+    //     create_resource_account_and_fund(&user, copy seed, vector::empty(), 10);
 
-        let resource_addr = diem_framework::account::create_resource_address(&user_addr, seed);
-        coin::transfer<DiemCoin>(&user, resource_addr, 10);
+    //     let resource_addr = diem_framework::account::create_resource_address(&user_addr, seed);
+    //     coin::transfer<DiemCoin>(&user, resource_addr, 10);
 
-        coin::destroy_burn_cap(burn);
-        coin::destroy_mint_cap(mint);
-    }
+    //     coin::destroy_burn_cap(burn);
+    //     coin::destroy_mint_cap(mint);
+    // }
 
     #[test(framework = @0x1, user = @0x2345)]
     #[expected_failure(abort_code = 0x60005, location = diem_framework::coin)]

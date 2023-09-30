@@ -132,7 +132,15 @@ module ol_framework::slow_wallet {
       let s = borrow_global_mut<SlowWallet>(payer);
 
       s.transferred = s.transferred + amount;
-      s.unlocked = s.unlocked - amount;
+
+      // THE VM is able to overdraw an account's unlocked amount.
+      // in that case we need to check for zero.
+      if (s.unlocked > amount) {
+        s.unlocked = s.unlocked - amount;
+      } else {
+        s.unlocked = 0;
+      }
+
     }
 
     /// when a user receives unlocked coins from another user, those coins

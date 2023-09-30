@@ -150,12 +150,6 @@ pub enum EntryFunctionCall {
         amount: u64,
     },
 
-    /// Upgrade total supply to use a parallelizable implementation if it is
-    /// available.
-    CoinUpgradeSupply {
-        coin_type: TypeTag,
-    },
-
     /// add signer to multisig, and check if they may be related in ancestry tree
     CommunityWalletAddSignerCommunityMultisig {
         multisig_address: AccountAddress,
@@ -172,61 +166,6 @@ pub enum EntryFunctionCall {
 
     DemoSetMessage {
         message: Vec<u8>,
-    },
-
-    /// Batch version of APT transfer.
-    DiemAccountBatchTransfer {
-        recipients: Vec<AccountAddress>,
-        amounts: Vec<u64>,
-    },
-
-    /// Batch version of transfer_coins.
-    DiemAccountBatchTransferCoins {
-        coin_type: TypeTag,
-        recipients: Vec<AccountAddress>,
-        amounts: Vec<u64>,
-    },
-
-    /// Basic account creation methods.
-    DiemAccountCreateAccount {
-        auth_key: AccountAddress,
-    },
-
-    /// Set whether `account` can receive direct transfers of coins that they have not explicitly registered to receive.
-    DiemAccountSetAllowDirectCoinTransfers {
-        allow: bool,
-    },
-
-    /// Convenient function to transfer APT to a recipient account that might not exist.
-    /// This would create the recipient account first, which also registers it to receive APT, before transferring.
-    DiemAccountTransfer {
-        to: AccountAddress,
-        amount: u64,
-    },
-
-    /// Convenient function to transfer a custom CoinType to a recipient account that might not exist.
-    /// This would create the recipient account first and register it to receive the CoinType, before transferring.
-    DiemAccountTransferCoins {
-        coin_type: TypeTag,
-        to: AccountAddress,
-        amount: u64,
-    },
-
-    /// Only callable in tests and testnets where the core resources account exists.
-    /// Claim the delegated mint capability and destroy the delegated token.
-    DiemCoinClaimMintCapability {},
-
-    /// Only callable in tests and testnets where the core resources account exists.
-    /// Create delegated token for the address so the account could claim MintCapability later.
-    DiemCoinDelegateMintCapability {
-        to: AccountAddress,
-    },
-
-    /// Only callable in tests and testnets where the core resources account exists.
-    /// Create new coins and deposit them into dst_addr's account.
-    DiemCoinMint {
-        dst_addr: AccountAddress,
-        amount: u64,
     },
 
     DiemGovernanceAddApprovedScriptHashScript {
@@ -519,17 +458,6 @@ pub enum EntryFunctionCall {
         optional_auth_key: Vec<u8>,
     },
 
-    /// Creates a new resource account, transfer the amount of coins from the origin to the resource
-    /// account, and rotates the authentication key to either the optional auth key if it is
-    /// non-empty (though auth keys are 32-bytes) or the source accounts current auth key. Note,
-    /// this function adds additional resource ownership to the resource account and should only be
-    /// used for resource accounts that need access to `Coin<DiemCoin>`.
-    ResourceAccountCreateResourceAccountAndFund {
-        seed: Vec<u8>,
-        optional_auth_key: Vec<u8>,
-        fund_amount: u64,
-    },
-
     /// Creates a new resource account, publishes the package under this account transaction under
     /// this account and leaves the signer cap readily available for pickup.
     ResourceAccountCreateResourceAccountAndPublishPackage {
@@ -713,7 +641,6 @@ impl EntryFunctionCall {
                 to,
                 amount,
             } => coin_transfer(coin_type, to, amount),
-            CoinUpgradeSupply { coin_type } => coin_upgrade_supply(coin_type),
             CommunityWalletAddSignerCommunityMultisig {
                 multisig_address,
                 new_signer,
@@ -730,28 +657,6 @@ impl EntryFunctionCall {
             }
             DemoPrintThis {} => demo_print_this(),
             DemoSetMessage { message } => demo_set_message(message),
-            DiemAccountBatchTransfer {
-                recipients,
-                amounts,
-            } => diem_account_batch_transfer(recipients, amounts),
-            DiemAccountBatchTransferCoins {
-                coin_type,
-                recipients,
-                amounts,
-            } => diem_account_batch_transfer_coins(coin_type, recipients, amounts),
-            DiemAccountCreateAccount { auth_key } => diem_account_create_account(auth_key),
-            DiemAccountSetAllowDirectCoinTransfers { allow } => {
-                diem_account_set_allow_direct_coin_transfers(allow)
-            }
-            DiemAccountTransfer { to, amount } => diem_account_transfer(to, amount),
-            DiemAccountTransferCoins {
-                coin_type,
-                to,
-                amount,
-            } => diem_account_transfer_coins(coin_type, to, amount),
-            DiemCoinClaimMintCapability {} => diem_coin_claim_mint_capability(),
-            DiemCoinDelegateMintCapability { to } => diem_coin_delegate_mint_capability(to),
-            DiemCoinMint { dst_addr, amount } => diem_coin_mint(dst_addr, amount),
             DiemGovernanceAddApprovedScriptHashScript { proposal_id } => {
                 diem_governance_add_approved_script_hash_script(proposal_id)
             }
@@ -922,15 +827,6 @@ impl EntryFunctionCall {
                 seed,
                 optional_auth_key,
             } => resource_account_create_resource_account(seed, optional_auth_key),
-            ResourceAccountCreateResourceAccountAndFund {
-                seed,
-                optional_auth_key,
-                fund_amount,
-            } => resource_account_create_resource_account_and_fund(
-                seed,
-                optional_auth_key,
-                fund_amount,
-            ),
             ResourceAccountCreateResourceAccountAndPublishPackage {
                 seed,
                 metadata_serialized,
@@ -1289,23 +1185,6 @@ pub fn coin_transfer(coin_type: TypeTag, to: AccountAddress, amount: u64) -> Tra
     ))
 }
 
-/// Upgrade total supply to use a parallelizable implementation if it is
-/// available.
-pub fn coin_upgrade_supply(coin_type: TypeTag) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("coin").to_owned(),
-        ),
-        ident_str!("upgrade_supply").to_owned(),
-        vec![coin_type],
-        vec![],
-    ))
-}
-
 /// add signer to multisig, and check if they may be related in ancestry tree
 pub fn community_wallet_add_signer_community_multisig(
     multisig_address: AccountAddress,
@@ -1374,175 +1253,6 @@ pub fn demo_set_message(message: Vec<u8>) -> TransactionPayload {
         ident_str!("set_message").to_owned(),
         vec![],
         vec![bcs::to_bytes(&message).unwrap()],
-    ))
-}
-
-/// Batch version of APT transfer.
-pub fn diem_account_batch_transfer(
-    recipients: Vec<AccountAddress>,
-    amounts: Vec<u64>,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("diem_account").to_owned(),
-        ),
-        ident_str!("batch_transfer").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&recipients).unwrap(),
-            bcs::to_bytes(&amounts).unwrap(),
-        ],
-    ))
-}
-
-/// Batch version of transfer_coins.
-pub fn diem_account_batch_transfer_coins(
-    coin_type: TypeTag,
-    recipients: Vec<AccountAddress>,
-    amounts: Vec<u64>,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("diem_account").to_owned(),
-        ),
-        ident_str!("batch_transfer_coins").to_owned(),
-        vec![coin_type],
-        vec![
-            bcs::to_bytes(&recipients).unwrap(),
-            bcs::to_bytes(&amounts).unwrap(),
-        ],
-    ))
-}
-
-/// Basic account creation methods.
-pub fn diem_account_create_account(auth_key: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("diem_account").to_owned(),
-        ),
-        ident_str!("create_account").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&auth_key).unwrap()],
-    ))
-}
-
-/// Set whether `account` can receive direct transfers of coins that they have not explicitly registered to receive.
-pub fn diem_account_set_allow_direct_coin_transfers(allow: bool) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("diem_account").to_owned(),
-        ),
-        ident_str!("set_allow_direct_coin_transfers").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&allow).unwrap()],
-    ))
-}
-
-/// Convenient function to transfer APT to a recipient account that might not exist.
-/// This would create the recipient account first, which also registers it to receive APT, before transferring.
-pub fn diem_account_transfer(to: AccountAddress, amount: u64) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("diem_account").to_owned(),
-        ),
-        ident_str!("transfer").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&to).unwrap(), bcs::to_bytes(&amount).unwrap()],
-    ))
-}
-
-/// Convenient function to transfer a custom CoinType to a recipient account that might not exist.
-/// This would create the recipient account first and register it to receive the CoinType, before transferring.
-pub fn diem_account_transfer_coins(
-    coin_type: TypeTag,
-    to: AccountAddress,
-    amount: u64,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("diem_account").to_owned(),
-        ),
-        ident_str!("transfer_coins").to_owned(),
-        vec![coin_type],
-        vec![bcs::to_bytes(&to).unwrap(), bcs::to_bytes(&amount).unwrap()],
-    ))
-}
-
-/// Only callable in tests and testnets where the core resources account exists.
-/// Claim the delegated mint capability and destroy the delegated token.
-pub fn diem_coin_claim_mint_capability() -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("diem_coin").to_owned(),
-        ),
-        ident_str!("claim_mint_capability").to_owned(),
-        vec![],
-        vec![],
-    ))
-}
-
-/// Only callable in tests and testnets where the core resources account exists.
-/// Create delegated token for the address so the account could claim MintCapability later.
-pub fn diem_coin_delegate_mint_capability(to: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("diem_coin").to_owned(),
-        ),
-        ident_str!("delegate_mint_capability").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&to).unwrap()],
-    ))
-}
-
-/// Only callable in tests and testnets where the core resources account exists.
-/// Create new coins and deposit them into dst_addr's account.
-pub fn diem_coin_mint(dst_addr: AccountAddress, amount: u64) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("diem_coin").to_owned(),
-        ),
-        ident_str!("mint").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&dst_addr).unwrap(),
-            bcs::to_bytes(&amount).unwrap(),
-        ],
     ))
 }
 
@@ -2433,34 +2143,6 @@ pub fn resource_account_create_resource_account(
     ))
 }
 
-/// Creates a new resource account, transfer the amount of coins from the origin to the resource
-/// account, and rotates the authentication key to either the optional auth key if it is
-/// non-empty (though auth keys are 32-bytes) or the source accounts current auth key. Note,
-/// this function adds additional resource ownership to the resource account and should only be
-/// used for resource accounts that need access to `Coin<DiemCoin>`.
-pub fn resource_account_create_resource_account_and_fund(
-    seed: Vec<u8>,
-    optional_auth_key: Vec<u8>,
-    fund_amount: u64,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("resource_account").to_owned(),
-        ),
-        ident_str!("create_resource_account_and_fund").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&seed).unwrap(),
-            bcs::to_bytes(&optional_auth_key).unwrap(),
-            bcs::to_bytes(&fund_amount).unwrap(),
-        ],
-    ))
-}
-
 /// Creates a new resource account, publishes the package under this account transaction under
 /// this account and leaves the signer cap readily available for pickup.
 pub fn resource_account_create_resource_account_and_publish_package(
@@ -2921,16 +2603,6 @@ mod decoder {
         }
     }
 
-    pub fn coin_upgrade_supply(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::CoinUpgradeSupply {
-                coin_type: script.ty_args().get(0)?.clone(),
-            })
-        } else {
-            None
-        }
-    }
-
     pub fn community_wallet_add_signer_community_multisig(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -2972,109 +2644,6 @@ mod decoder {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DemoSetMessage {
                 message: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn diem_account_batch_transfer(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DiemAccountBatchTransfer {
-                recipients: bcs::from_bytes(script.args().get(0)?).ok()?,
-                amounts: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn diem_account_batch_transfer_coins(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DiemAccountBatchTransferCoins {
-                coin_type: script.ty_args().get(0)?.clone(),
-                recipients: bcs::from_bytes(script.args().get(0)?).ok()?,
-                amounts: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn diem_account_create_account(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DiemAccountCreateAccount {
-                auth_key: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn diem_account_set_allow_direct_coin_transfers(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DiemAccountSetAllowDirectCoinTransfers {
-                allow: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn diem_account_transfer(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DiemAccountTransfer {
-                to: bcs::from_bytes(script.args().get(0)?).ok()?,
-                amount: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn diem_account_transfer_coins(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DiemAccountTransferCoins {
-                coin_type: script.ty_args().get(0)?.clone(),
-                to: bcs::from_bytes(script.args().get(0)?).ok()?,
-                amount: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn diem_coin_claim_mint_capability(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(_script) = payload {
-            Some(EntryFunctionCall::DiemCoinClaimMintCapability {})
-        } else {
-            None
-        }
-    }
-
-    pub fn diem_coin_delegate_mint_capability(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DiemCoinDelegateMintCapability {
-                to: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn diem_coin_mint(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DiemCoinMint {
-                dst_addr: bcs::from_bytes(script.args().get(0)?).ok()?,
-                amount: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
             None
@@ -3606,22 +3175,6 @@ mod decoder {
         }
     }
 
-    pub fn resource_account_create_resource_account_and_fund(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(
-                EntryFunctionCall::ResourceAccountCreateResourceAccountAndFund {
-                    seed: bcs::from_bytes(script.args().get(0)?).ok()?,
-                    optional_auth_key: bcs::from_bytes(script.args().get(1)?).ok()?,
-                    fund_amount: bcs::from_bytes(script.args().get(2)?).ok()?,
-                },
-            )
-        } else {
-            None
-        }
-    }
-
     pub fn resource_account_create_resource_account_and_publish_package(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -3857,10 +3410,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::coin_transfer),
         );
         map.insert(
-            "coin_upgrade_supply".to_string(),
-            Box::new(decoder::coin_upgrade_supply),
-        );
-        map.insert(
             "community_wallet_add_signer_community_multisig".to_string(),
             Box::new(decoder::community_wallet_add_signer_community_multisig),
         );
@@ -3875,42 +3424,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "demo_set_message".to_string(),
             Box::new(decoder::demo_set_message),
-        );
-        map.insert(
-            "diem_account_batch_transfer".to_string(),
-            Box::new(decoder::diem_account_batch_transfer),
-        );
-        map.insert(
-            "diem_account_batch_transfer_coins".to_string(),
-            Box::new(decoder::diem_account_batch_transfer_coins),
-        );
-        map.insert(
-            "diem_account_create_account".to_string(),
-            Box::new(decoder::diem_account_create_account),
-        );
-        map.insert(
-            "diem_account_set_allow_direct_coin_transfers".to_string(),
-            Box::new(decoder::diem_account_set_allow_direct_coin_transfers),
-        );
-        map.insert(
-            "diem_account_transfer".to_string(),
-            Box::new(decoder::diem_account_transfer),
-        );
-        map.insert(
-            "diem_account_transfer_coins".to_string(),
-            Box::new(decoder::diem_account_transfer_coins),
-        );
-        map.insert(
-            "diem_coin_claim_mint_capability".to_string(),
-            Box::new(decoder::diem_coin_claim_mint_capability),
-        );
-        map.insert(
-            "diem_coin_delegate_mint_capability".to_string(),
-            Box::new(decoder::diem_coin_delegate_mint_capability),
-        );
-        map.insert(
-            "diem_coin_mint".to_string(),
-            Box::new(decoder::diem_coin_mint),
         );
         map.insert(
             "diem_governance_add_approved_script_hash_script".to_string(),
@@ -4083,10 +3596,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "resource_account_create_resource_account".to_string(),
             Box::new(decoder::resource_account_create_resource_account),
-        );
-        map.insert(
-            "resource_account_create_resource_account_and_fund".to_string(),
-            Box::new(decoder::resource_account_create_resource_account_and_fund),
         );
         map.insert(
             "resource_account_create_resource_account_and_publish_package".to_string(),
