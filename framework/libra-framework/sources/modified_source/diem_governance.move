@@ -28,13 +28,12 @@ module diem_framework::diem_governance {
     use diem_framework::reconfiguration;
     use diem_framework::stake;
     use diem_framework::system_addresses;
-    use diem_framework::diem_coin; // TODO: remove, testnet only
     use diem_framework::timestamp;
     use diem_framework::voting;
 
     use ol_framework::gas_coin::GasCoin;
     // use diem_std::debug::print;
-    // use ol_framework::testnet;
+
 
     #[test_only]
     use ol_framework::gas_coin;
@@ -588,14 +587,14 @@ module diem_framework::diem_governance {
         reconfiguration::reconfigure();
     }
 
-    /// Only called in testnet where the core resources account exists and has been granted power to mint Diem coins.
-    public fun get_signer_testnet_only(
-        core_resources: &signer, signer_address: address): signer acquires GovernanceResponsbility {
-        system_addresses::assert_core_resource(core_resources);
-        // Core resources account only has mint capability in tests/testnets.
-        assert!(diem_coin::has_mint_capability(core_resources), error::unauthenticated(EUNAUTHORIZED));
-        get_signer(signer_address)
-    }
+    // /// Only called in testnet where the core resources account exists and has been granted power to mint Diem coins.
+    // public fun get_signer_testnet_only(
+    //     core_resources: &signer, signer_address: address): signer acquires GovernanceResponsbility {
+    //     system_addresses::assert_core_resource(core_resources);
+    //     // Core resources account only has mint capability in tests/testnets.
+    //     assert!(gas_Coin::has_mint_capability(core_resources), error::unauthenticated(EUNAUTHORIZED));
+    //     get_signer(signer_address)
+    // }
 
     /// Return the voting power a stake pool has with respect to governance proposals.
     fun get_voting_power(_pool_address: address): u64 {

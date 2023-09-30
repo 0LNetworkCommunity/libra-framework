@@ -246,7 +246,7 @@ spec diem_framework::diem_governance {
     spec reconfigure(diem_framework: &signer) {
         use diem_framework::chain_status;
         use diem_framework::coin::CoinInfo;
-        use diem_framework::diem_coin::DiemCoin;
+        use diem_framework::gas_coin::GasCoin;
         use diem_framework::transaction_fee;
         // use diem_framework::staking_config;
 
@@ -259,17 +259,17 @@ spec diem_framework::diem_governance {
         requires chain_status::is_operating();
         requires timestamp::spec_now_microseconds() >= reconfiguration::last_reconfiguration_time();
         requires exists<stake::ValidatorFees>(@diem_framework);
-        requires exists<CoinInfo<DiemCoin>>(@diem_framework);
+        requires exists<CoinInfo<GasCoin>>(@diem_framework);
     }
 
-    /// Signer address must be @core_resources.
-    /// signer must exist in MintCapStore.
-    /// Address @diem_framework must exist GovernanceResponsbility.
-    spec get_signer_testnet_only(core_resources: &signer, signer_address: address): signer {
-        aborts_if signer::address_of(core_resources) != @core_resources;
-        aborts_if !exists<diem_coin::MintCapStore>(signer::address_of(core_resources));
-        include GetSignerAbortsIf;
-    }
+    // /// Signer address must be @core_resources.
+    // /// signer must exist in MintCapStore.
+    // /// Address @diem_framework must exist GovernanceResponsbility.
+    // spec get_signer_testnet_only(core_resources: &signer, signer_address: address): signer {
+    //     aborts_if signer::address_of(core_resources) != @core_resources;
+    //     aborts_if !exists<gas_coin::MintCapStore>(signer::address_of(core_resources));
+    //     include GetSignerAbortsIf;
+    // }
 
     /// Address @diem_framework must exist StakingConfig.
     /// limit addition overflow.

@@ -6,7 +6,7 @@ module ol_framework::fee_maker {
     use std::vector;
     use std::signer;
 
-    use diem_std::debug::print;
+    // use diem_std::debug::print;
 
     friend diem_framework::transaction_fee;
 
@@ -61,9 +61,6 @@ module ol_framework::fee_maker {
       system_addresses::assert_ol(vm);
       let registry = borrow_global_mut<EpochFeeMakerRegistry>(@ol_framework);
       let fee_makers = &registry.fee_makers;
-      print(&11111);
-      print(fee_makers);
-
       let i = 0;
       while (i < vector::length(fee_makers)) {
         let account = *vector::borrow(fee_makers, i);

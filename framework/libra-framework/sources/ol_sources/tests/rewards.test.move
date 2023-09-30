@@ -31,7 +31,7 @@ module ol_framework::test_rewards {
     let uid_before = stake::get_reward_event_guid(alice);
 
     let (burn_cap, mint_cap) = gas_coin::initialize_for_test_without_aggregator_factory(&root);
-    let new_coin = coin::mint(10000, &mint_cap);
+    let new_coin = coin::test_mint(10000, &mint_cap);
     coin::destroy_burn_cap(burn_cap);
     coin::destroy_mint_cap(mint_cap);
 
@@ -54,7 +54,7 @@ module ol_framework::test_rewards {
     assert!(uid_before == 0, 7357000);
 
     let (burn_cap, mint_cap) = gas_coin::initialize_for_test_without_aggregator_factory(root);
-    let new_coin = coin::mint(10000, &mint_cap);
+    let new_coin = coin::test_mint(10000, &mint_cap);
     coin::destroy_burn_cap(burn_cap);
     coin::destroy_mint_cap(mint_cap);
 

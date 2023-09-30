@@ -16,7 +16,7 @@ module ol_framework::test_burn {
   use std::option;
   use std::fixed_point32;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   #[test(root = @ol_framework, alice = @0x1000a)]
 
@@ -305,13 +305,11 @@ module ol_framework::test_burn {
 
 
       let fees = transaction_fee::system_fees_collected();
+      assert!(fees == 100000005, 735701);
       // Fees will include the initialization by MOCK. ol_initialize_coin_and_fund_vals
-      print(&fees);
-      assert!(fees == 100000005, 7357001);
 
       // marlon is the only fee maker (since genesis)
       let fee_makers = fee_maker::get_fee_makers();
-      print(&fee_makers);
       // includes 0x1 which makes a deposit on
       assert!(vector::length(&fee_makers)==1, 735702);
 

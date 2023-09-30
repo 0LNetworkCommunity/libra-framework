@@ -18,12 +18,12 @@ spec diem_framework::gas_schedule {
         use diem_framework::util;
         use diem_framework::stake;
         use diem_framework::coin::CoinInfo;
-        use diem_framework::diem_coin::DiemCoin;
+        use diem_framework::gas_coin::GasCoin;
         use diem_framework::transaction_fee;
         // use diem_framework::staking_config;
 
         requires exists<stake::ValidatorFees>(@diem_framework);
-        requires exists<CoinInfo<DiemCoin>>(@diem_framework);
+        requires exists<CoinInfo<GasCoin>>(@diem_framework);
         include transaction_fee::RequiresCollectedFeesPerValueLeqBlockDiemSupply;
         // include staking_config::StakingRewardsConfigRequirement;
 
@@ -38,14 +38,14 @@ spec diem_framework::gas_schedule {
     spec set_storage_gas_config(diem_framework: &signer, config: StorageGasConfig) {
         use diem_framework::stake;
         use diem_framework::coin::CoinInfo;
-        use diem_framework::diem_coin::DiemCoin;
+        use diem_framework::gas_coin::GasCoin;
         use diem_framework::transaction_fee;
         // use diem_framework::staking_config;
 
         pragma timeout = 100;
 
         requires exists<stake::ValidatorFees>(@diem_framework);
-        requires exists<CoinInfo<DiemCoin>>(@diem_framework);
+        requires exists<CoinInfo<GasCoin>>(@diem_framework);
         include system_addresses::AbortsIfNotDiemFramework{ account: diem_framework };
         include transaction_fee::RequiresCollectedFeesPerValueLeqBlockDiemSupply;
         // include staking_config::StakingRewardsConfigRequirement;

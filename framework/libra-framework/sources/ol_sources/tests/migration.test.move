@@ -5,7 +5,6 @@ module ol_framework::test_migration {
   use ol_framework::slow_wallet;
   use diem_framework::genesis;
   use std::fixed_point32;
-  // use std::vector;
   use ol_framework::mock;
   use diem_framework::coin;
   use ol_framework::gas_coin::GasCoin;
@@ -70,7 +69,7 @@ module ol_framework::test_migration {
 
 
     // after the slow wallets have been calculated we check the infra escrow pledges
-    infra_escrow::fork_escrow_init(&vm, &marlon_rando, escrow_pct * 10000);
+    genesis_migration::fork_escrow_init(&vm, &marlon_rando, escrow_pct * 10000);
 
     let user_pledge = infra_escrow::user_infra_pledge_balance(addr);
     let all_pledge_balance = infra_escrow::infra_escrow_balance();

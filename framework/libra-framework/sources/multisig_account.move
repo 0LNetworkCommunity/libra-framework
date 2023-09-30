@@ -37,7 +37,7 @@
 /// and implement the governance voting logic on top.
 module diem_framework::multisig_account {
     use diem_framework::account::{Self, SignerCapability, new_event_handle, create_resource_address};
-    use diem_framework::diem_coin::DiemCoin;
+    use diem_framework::gas_coin::GasCoin;
     use diem_framework::chain_id;
     use diem_framework::create_signer::create_signer;
     use diem_framework::coin;
@@ -889,8 +889,8 @@ module diem_framework::multisig_account {
             account::create_resource_account(owner, create_multisig_account_seed(to_bytes(&owner_nonce)));
         // Register the account to receive APT as this is not done by default as part of the resource account creation
         // flow.
-        if (!coin::is_account_registered<DiemCoin>(address_of(&multisig_signer))) {
-            coin::register<DiemCoin>(&multisig_signer);
+        if (!coin::is_account_registered<GasCoin>(address_of(&multisig_signer))) {
+            coin::register<GasCoin>(&multisig_signer);
         };
 
         (multisig_signer, multisig_signer_cap)

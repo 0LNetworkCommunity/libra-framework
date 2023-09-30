@@ -74,7 +74,7 @@ module ol_framework::test_slow_wallet {
 
     // add some coins to alice
     let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&root);
-    ol_account::deposit_coins(@0x123, coin::mint(10000, &mint_cap));
+    ol_account::deposit_coins(@0x123, coin::test_mint(10000, &mint_cap));
     coin::destroy_burn_cap(burn_cap);
     coin::destroy_mint_cap(mint_cap);
     // the transfer was of already unlocked coins, so they will post as unlocked on alice
@@ -100,7 +100,7 @@ module ol_framework::test_slow_wallet {
 
     // fund alice
     let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&root);
-    ol_account::deposit_coins(@0x123, coin::mint(100, &mint_cap));
+    ol_account::deposit_coins(@0x123, coin::test_mint(100, &mint_cap));
     coin::destroy_burn_cap(burn_cap);
     coin::destroy_mint_cap(mint_cap);
 

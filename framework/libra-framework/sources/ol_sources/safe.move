@@ -145,7 +145,7 @@ module ol_framework::safe {
       cap,
       p.amount,
     );
-    coin::deposit(p.destination, c);
+    ol_account::deposit_coins(p.destination, c);
   }
 
   //////// ROOT SERVICE FEE BILLING ////////
@@ -197,7 +197,7 @@ module ol_framework::safe {
       let fee = fixed_point32::multiply_u64(coin::balance<GasCoin>(*multi_sig_addr), pct);
       expected_fees = expected_fees + fee;
 
-      let coin_opt = coin::vm_withdraw<GasCoin>(vm, *multi_sig_addr, fee);
+      let coin_opt = ol_account::vm_withdraw_unlimited(vm, *multi_sig_addr, fee);
       if (option::is_some(&coin_opt)) {
         let c = option::extract(&mut coin_opt);
         security_bill_amount = security_bill_amount + coin::value(&c);

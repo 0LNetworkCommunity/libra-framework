@@ -13,15 +13,15 @@ spec diem_framework::resource_account {
         pragma verify = false;
     }
 
-    spec create_resource_account_and_fund(
-        origin: &signer,
-        seed: vector<u8>,
-        optional_auth_key: vector<u8>,
-        fund_amount: u64,
-    ) {
-        // TODO: Could not verify `rotate_account_authentication_key_and_store_capability` because can't get `resource` and `resource_signer_cap`.
-        pragma verify = false;
-    }
+    // spec create_resource_account_and_fund(
+    //     origin: &signer,
+    //     seed: vector<u8>,
+    //     optional_auth_key: vector<u8>,
+    //     fund_amount: u64,
+    // ) {
+    //     // TODO: Could not verify `rotate_account_authentication_key_and_store_capability` because can't get `resource` and `resource_signer_cap`.
+    //     pragma verify = false;
+    // }
 
     spec create_resource_account_and_publish_package(
         origin: &signer,

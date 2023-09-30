@@ -14,11 +14,12 @@ module ol_framework::infra_escrow{
     use diem_framework::system_addresses;
     use ol_framework::gas_coin::GasCoin;
     use ol_framework::pledge_accounts;
-    use ol_framework::slow_wallet;
+    // use ol_framework::slow_wallet;
+    use ol_framework::ol_account;
     use diem_framework::coin;
     use diem_framework::transaction_fee;
-    use std::fixed_point32;
-    use std::signer;
+    // use std::fixed_point32;
+    // use std::signer;
     use std::error;
     // use diem_std::debug::print;
 
@@ -62,27 +63,7 @@ module ol_framework::infra_escrow{
         transaction_fee::vm_pay_fee(root, @vm_reserved, c); // don't attribute to the user
     }
 
-    /// for an uprade using an escrow percent. Only to be called at genesis
-    // escrow percent has 6 decimal precision (1m);
-    public fun fork_escrow_init(vm: &signer, user_sig: &signer, escrow_pct: u64) {
-      system_addresses::assert_vm(vm);
-      let user_addr = signer::address_of(user_sig);
-      // establish the infrastructure escrow pledge
 
-      let escrow_pct = fixed_point32::create_from_rational(escrow_pct, 1000000);
-
-      let (unlocked, total) = slow_wallet::balance(user_addr);
-
-      let locked = 0;
-      if ((total > unlocked) && (total > 0)) {
-        locked = (total - unlocked);
-      };
-
-      if (locked > 0) {
-        let to_escrow = fixed_point32::multiply_u64(locked, escrow_pct);
-        pledge_accounts::genesis_infra_escrow_pledge(vm, user_sig, to_escrow)
-      };
-    }
 
     // Transaction script for user to pledge to infra escrow.
     public fun user_pledge_infra(user_sig: &signer, amount: u64){
@@ -115,7 +96,7 @@ module ol_framework::infra_escrow{
         assert!(option::is_some(&c_opt), error::invalid_state(EGENESIS_REWARD));
         // if (option::is_some(&c_opt)) {
           let coin = option::extract(&mut c_opt);
-          coin::deposit(to, coin);
+          ol_account::deposit_coins(to, coin);
         // };
         option::destroy_none(c_opt);
       }

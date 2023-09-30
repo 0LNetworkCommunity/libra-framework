@@ -15,21 +15,23 @@ module diem_framework::coin {
 
     use diem_std::type_info;
     use diem_std::math64;
-
-    // use diem_framework::chain_status;
     // use diem_std::debug::print;
 
     friend ol_framework::gas_coin;
-    friend ol_framework::burn;
     friend ol_framework::ol_account;
-    friend ol_framework::safe;
-    friend ol_framework::rewards;
-    friend ol_framework::donor_directed;
-    friend ol_framework::pledge_accounts;
-    friend diem_framework::diem_coin;
     friend diem_framework::genesis;
+    friend diem_framework::genesis_migration;
+    friend ol_framework::rewards;
     friend diem_framework::transaction_fee;
+
+
+    // NOTE: these vendor structs are left here for tests
+    // which use those structs
+    #[test_only]
+    friend diem_framework::diem_coin;
+    #[test_only]
     friend diem_framework::diem_account;
+    #[test_only]
     friend diem_framework::resource_account;
 
 
@@ -163,13 +165,7 @@ module diem_framework::coin {
         move_to(diem_framework, SupplyConfig { allow_upgrades: false });
     }
 
-    /// This should be called by on-chain governance to update the config and allow
-    // or disallow upgradability of total supply.
-    public fun allow_supply_upgrades(diem_framework: &signer, allowed: bool) acquires SupplyConfig {
-        system_addresses::assert_diem_framework(diem_framework);
-        let allow_upgrades = &mut borrow_global_mut<SupplyConfig>(@diem_framework).allow_upgrades;
-        *allow_upgrades = allowed;
-    }
+    //NOTE(deprecated): no need to upgrade current supply
 
     //
     //  Aggregatable coin functions
@@ -183,7 +179,6 @@ module diem_framework::coin {
             value: aggregator,
         }
     }
-
 
     //////// 0L ////////
     /// the value of the aggregated coin
@@ -349,7 +344,7 @@ module diem_framework::coin {
     // Public functions
     /// Burn `coin` with capability.
     /// The capability `_cap` should be passed as a reference to `BurnCapability<CoinType>`.
-    public fun burn<CoinType>(
+    public(friend) fun burn<CoinType>(
         coin: Coin<CoinType>,
         _cap: &BurnCapability<CoinType>,
     ) acquires CoinInfo {
@@ -365,6 +360,7 @@ module diem_framework::coin {
 
     //////// 0L ////////
     /// user can burn own coin they are holding.
+    /// TODO: evaluate if this should be a `friend` method
     public fun user_burn<CoinType>(
         coin: Coin<CoinType>,
     ) acquires CoinInfo { // cannot abort
@@ -387,7 +383,7 @@ module diem_framework::coin {
     /// This function shouldn't fail as it's called as part of transaction fee burning.
     ///
     /// Note: This bypasses CoinStore::frozen -- coins within a frozen CoinStore can be burned.
-    public fun burn_from<CoinType>(
+    public(friend) fun burn_from<CoinType>(
         account_addr: address,
         amount: u64,
         burn_cap: &BurnCapability<CoinType>,
@@ -403,8 +399,7 @@ module diem_framework::coin {
     }
 
     /// Deposit the coin balance into the recipient's account and emit an event.
-    /// TODO: do the slow wallet tracker checks happen here?
-    public fun deposit<CoinType>(account_addr: address, coin: Coin<CoinType>) acquires CoinStore {
+    public(friend) fun deposit<CoinType>(account_addr: address, coin: Coin<CoinType>) acquires CoinStore {
         assert!(
             is_account_registered<CoinType>(account_addr),
             error::not_found(ECOIN_STORE_NOT_PUBLISHED),
@@ -433,6 +428,7 @@ module diem_framework::coin {
     }
 
     /// Extracts `amount` from the passed-in `coin`, where the original token is modified in place.
+    // NOTE: does not need to be friend only, since it is a method (requires a mutable coin already be out of an account);
     public fun extract<CoinType>(coin: &mut Coin<CoinType>, amount: u64): Coin<CoinType> {
         assert!(coin.value >= amount, error::invalid_argument(EINSUFFICIENT_BALANCE));
         coin.value = coin.value - amount;
@@ -440,64 +436,20 @@ module diem_framework::coin {
     }
 
     /// Extracts the entire amount from the passed-in `coin`, where the original token is modified in place.
+    // NOTE: does not need to be friend only, since it is a method (requires a mutable coin already be out of an account);
+
     public fun extract_all<CoinType>(coin: &mut Coin<CoinType>): Coin<CoinType> {
         let total_value = coin.value;
         coin.value = 0;
         Coin { value: total_value }
     }
 
-    #[legacy_entry_fun]
-    /// Freeze a CoinStore to prevent transfers
-    public entry fun freeze_coin_store<CoinType>(
-        account_addr: address,
-        _freeze_cap: &FreezeCapability<CoinType>,
-    ) acquires CoinStore {
-        let coin_store = borrow_global_mut<CoinStore<CoinType>>(account_addr);
-        coin_store.frozen = true;
-    }
-
-    #[legacy_entry_fun]
-    /// Unfreeze a CoinStore to allow transfers
-    public entry fun unfreeze_coin_store<CoinType>(
-        account_addr: address,
-        _freeze_cap: &FreezeCapability<CoinType>,
-    ) acquires CoinStore {
-        let coin_store = borrow_global_mut<CoinStore<CoinType>>(account_addr);
-        coin_store.frozen = false;
-    }
-
-    /// Upgrade total supply to use a parallelizable implementation if it is
-    /// available.
-    public entry fun upgrade_supply<CoinType>(account: &signer) acquires CoinInfo, SupplyConfig {
-        let account_addr = signer::address_of(account);
-
-        // Only coin creators can upgrade total supply.
-        assert!(
-            coin_address<CoinType>() == account_addr,
-            error::invalid_argument(ECOIN_INFO_ADDRESS_MISMATCH),
-        );
-
-        // Can only succeed once on-chain governance agreed on the upgrade.
-        assert!(
-            borrow_global_mut<SupplyConfig>(@diem_framework).allow_upgrades,
-            error::permission_denied(ECOIN_SUPPLY_UPGRADE_NOT_SUPPORTED)
-        );
-
-        let maybe_supply = &mut borrow_global_mut<CoinInfo<CoinType>>(account_addr).supply;
-        if (option::is_some(maybe_supply)) {
-            let supply = option::borrow_mut(maybe_supply);
-
-            // If supply is tracked and the current implementation uses an integer - upgrade.
-            if (!optional_aggregator::is_parallelizable(supply)) {
-                optional_aggregator::switch(supply);
-            }
-        }
-    }
+    // NOTE(deprecated): SILLY RABBIT, TRICKS ARE FOR KIDS
 
     /// Creates a new Coin with given `CoinType` and returns minting/freezing/burning capabilities.
     /// The given signer also becomes the account hosting the information  about the coin
     /// (name, supply, etc.). Supply is initialized as non-parallelizable integer.
-    public fun initialize<CoinType>(
+    public(friend) fun initialize<CoinType>(
         account: &signer,
         name: string::String,
         symbol: string::String,
@@ -555,6 +507,7 @@ module diem_framework::coin {
 
     /// "Merges" the two given coins.  The coin passed in as `dst_coin` will have a value equal
     /// to the sum of the two tokens (`dst_coin` and `source_coin`).
+    // NOTE: ok to not be a friend function, since these coins had to be withdrawn through the ol_account pathway
     public fun merge<CoinType>(dst_coin: &mut Coin<CoinType>, source_coin: Coin<CoinType>) {
         spec {
             assume dst_coin.value + source_coin.value <= MAX_U64;
@@ -566,7 +519,7 @@ module diem_framework::coin {
     /// Mint new `Coin` with capability.
     /// The capability `_cap` should be passed as reference to `MintCapability<CoinType>`.
     /// Returns minted `Coin`.
-    public fun mint<CoinType>(
+    public(friend) fun mint<CoinType>(
         amount: u64,
         _cap: &MintCapability<CoinType>,
     ): Coin<CoinType> acquires CoinInfo {
@@ -583,11 +536,18 @@ module diem_framework::coin {
         Coin<CoinType> { value: amount }
     }
 
+    #[test_only]
+    public fun test_mint<CoinType>(
+      amount: u64,
+      cap: &MintCapability<CoinType>,
+    ): Coin<CoinType> acquires CoinInfo {
+      mint<CoinType>(amount, cap)
+    }
     //////// 0L ////////
     // the VM needs to mint only once in 0L for genesis.
     // in gas_coin there are some helpers for test suite minting.
     // otherwise there is no ongoing minting except at genesis
-    public fun vm_mint<CoinType>(
+    public(friend) fun vm_mint<CoinType>(
         root: &signer,
         amount: u64,
     ): Coin<CoinType> acquires CoinInfo {
@@ -607,6 +567,8 @@ module diem_framework::coin {
         Coin<CoinType> { value: amount }
     }
 
+    // regsister a user to receive a coin type.
+    // NOTE: does not need to be a friend, and may be needed for third party applications.
     public fun register<CoinType>(account: &signer) {
         let account_addr = signer::address_of(account);
         // Short-circuit and do nothing if account is already registered for CoinType.
@@ -722,6 +684,7 @@ module diem_framework::coin {
         }
     }
 
+    /// SILLY RABBIT, TRICKS ARE FOR KIDS
     /// Destroy a freeze capability. Freeze capability is dangerous and therefore should be destroyed if not used.
     public fun destroy_freeze_cap<CoinType>(freeze_cap: FreezeCapability<CoinType>) {
         let FreezeCapability<CoinType> {} = freeze_cap;
@@ -1011,83 +974,83 @@ module diem_framework::coin {
         destroy_zero(zero);
     }
 
-    #[test(account = @0x1)]
-    public entry fun burn_frozen(account: signer) acquires CoinInfo, CoinStore {
-        let account_addr = signer::address_of(&account);
-        account::create_account_for_test(account_addr);
-        let (burn_cap, freeze_cap, mint_cap) = initialize_and_register_fake_money(&account, 18, true);
+    // #[test(account = @0x1)]
+    // public entry fun burn_frozen(account: signer) acquires CoinInfo, CoinStore {
+    //     let account_addr = signer::address_of(&account);
+    //     account::create_account_for_test(account_addr);
+    //     let (burn_cap, freeze_cap, mint_cap) = initialize_and_register_fake_money(&account, 18, true);
 
-        let coins_minted = mint<FakeMoney>(100, &mint_cap);
-        deposit(account_addr, coins_minted);
+    //     let coins_minted = mint<FakeMoney>(100, &mint_cap);
+    //     deposit(account_addr, coins_minted);
 
-        freeze_coin_store(account_addr, &freeze_cap);
-        burn_from(account_addr, 100, &burn_cap);
+    //     freeze_coin_store(account_addr, &freeze_cap);
+    //     burn_from(account_addr, 100, &burn_cap);
 
-        move_to(&account, FakeMoneyCapabilities {
-            burn_cap,
-            freeze_cap,
-            mint_cap,
-        });
-    }
+    //     move_to(&account, FakeMoneyCapabilities {
+    //         burn_cap,
+    //         freeze_cap,
+    //         mint_cap,
+    //     });
+    // }
 
-    #[test(account = @0x1)]
-    #[expected_failure(abort_code = 0x5000A, location = Self)]
-    public entry fun withdraw_frozen(account: signer) acquires CoinInfo, CoinStore {
-        let account_addr = signer::address_of(&account);
-        account::create_account_for_test(account_addr);
-        let (burn_cap, freeze_cap, mint_cap) = initialize_and_register_fake_money(&account, 18, true);
+    // #[test(account = @0x1)]
+    // #[expected_failure(abort_code = 0x5000A, location = Self)]
+    // public entry fun withdraw_frozen(account: signer) acquires CoinInfo, CoinStore {
+    //     let account_addr = signer::address_of(&account);
+    //     account::create_account_for_test(account_addr);
+    //     let (burn_cap, freeze_cap, mint_cap) = initialize_and_register_fake_money(&account, 18, true);
 
-        freeze_coin_store(account_addr, &freeze_cap);
-        let coin = withdraw<FakeMoney>(&account, 10);
-        burn(coin, &burn_cap);
+    //     freeze_coin_store(account_addr, &freeze_cap);
+    //     let coin = withdraw<FakeMoney>(&account, 10);
+    //     burn(coin, &burn_cap);
 
-        move_to(&account, FakeMoneyCapabilities {
-            burn_cap,
-            freeze_cap,
-            mint_cap,
-        });
-    }
+    //     move_to(&account, FakeMoneyCapabilities {
+    //         burn_cap,
+    //         freeze_cap,
+    //         mint_cap,
+    //     });
+    // }
 
-    #[test(account = @0x1)]
-    #[expected_failure(abort_code = 0x5000A, location = Self)]
-    public entry fun deposit_frozen(account: signer) acquires CoinInfo, CoinStore {
-        let account_addr = signer::address_of(&account);
-        account::create_account_for_test(account_addr);
-        let (burn_cap, freeze_cap, mint_cap) = initialize_and_register_fake_money(&account, 18, true);
+    // #[test(account = @0x1)]
+    // #[expected_failure(abort_code = 0x5000A, location = Self)]
+    // public entry fun deposit_frozen(account: signer) acquires CoinInfo, CoinStore {
+    //     let account_addr = signer::address_of(&account);
+    //     account::create_account_for_test(account_addr);
+    //     let (burn_cap, freeze_cap, mint_cap) = initialize_and_register_fake_money(&account, 18, true);
 
-        let coins_minted = mint<FakeMoney>(100, &mint_cap);
-        freeze_coin_store(account_addr, &freeze_cap);
-        deposit(account_addr, coins_minted);
+    //     let coins_minted = mint<FakeMoney>(100, &mint_cap);
+    //     freeze_coin_store(account_addr, &freeze_cap);
+    //     deposit(account_addr, coins_minted);
 
-        move_to(&account, FakeMoneyCapabilities {
-            burn_cap,
-            freeze_cap,
-            mint_cap,
-        });
-    }
+    //     move_to(&account, FakeMoneyCapabilities {
+    //         burn_cap,
+    //         freeze_cap,
+    //         mint_cap,
+    //     });
+    // }
 
-    #[test(account = @0x1)]
-    public entry fun deposit_widthdraw_unfrozen(account: signer) acquires CoinInfo, CoinStore {
-        let account_addr = signer::address_of(&account);
-        account::create_account_for_test(account_addr);
-        let (burn_cap, freeze_cap, mint_cap) = initialize_and_register_fake_money(&account, 18, true);
+    // #[test(account = @0x1)]
+    // public entry fun deposit_widthdraw_unfrozen(account: signer) acquires CoinInfo, CoinStore {
+    //     let account_addr = signer::address_of(&account);
+    //     account::create_account_for_test(account_addr);
+    //     let (burn_cap, freeze_cap, mint_cap) = initialize_and_register_fake_money(&account, 18, true);
 
-        let coins_minted = mint<FakeMoney>(100, &mint_cap);
-        freeze_coin_store(account_addr, &freeze_cap);
-        unfreeze_coin_store(account_addr, &freeze_cap);
-        deposit(account_addr, coins_minted);
+    //     let coins_minted = mint<FakeMoney>(100, &mint_cap);
+    //     freeze_coin_store(account_addr, &freeze_cap);
+    //     unfreeze_coin_store(account_addr, &freeze_cap);
+    //     deposit(account_addr, coins_minted);
 
-        freeze_coin_store(account_addr, &freeze_cap);
-        unfreeze_coin_store(account_addr, &freeze_cap);
-        let coin = withdraw<FakeMoney>(&account, 10);
-        burn(coin, &burn_cap);
+    //     freeze_coin_store(account_addr, &freeze_cap);
+    //     unfreeze_coin_store(account_addr, &freeze_cap);
+    //     let coin = withdraw<FakeMoney>(&account, 10);
+    //     burn(coin, &burn_cap);
 
-        move_to(&account, FakeMoneyCapabilities {
-            burn_cap,
-            freeze_cap,
-            mint_cap,
-        });
-    }
+    //     move_to(&account, FakeMoneyCapabilities {
+    //         burn_cap,
+    //         freeze_cap,
+    //         mint_cap,
+    //     });
+    // }
 
     #[test_only]
     fun initialize_with_aggregator(account: &signer) {
@@ -1159,49 +1122,49 @@ module diem_framework::coin {
         optional_aggregator::sub(supply, 1);
     }
 
-    #[test(framework = @diem_framework)]
-    #[expected_failure(abort_code = 0x5000B, location = diem_framework::coin)]
-    fun test_supply_upgrade_fails(framework: signer) acquires CoinInfo, SupplyConfig {
-        initialize_supply_config(&framework);
-        aggregator_factory::initialize_aggregator_factory_for_test(&framework);
-        initialize_with_integer(&framework);
+    // #[test(framework = @diem_framework)]
+    // #[expected_failure(abort_code = 0x5000B, location = diem_framework::coin)]
+    // fun test_supply_upgrade_fails(framework: signer) acquires CoinInfo, SupplyConfig {
+    //     initialize_supply_config(&framework);
+    //     aggregator_factory::initialize_aggregator_factory_for_test(&framework);
+    //     initialize_with_integer(&framework);
 
-        let maybe_supply = &mut borrow_global_mut<CoinInfo<FakeMoney>>(coin_address<FakeMoney>()).supply;
-        let supply = option::borrow_mut(maybe_supply);
+    //     let maybe_supply = &mut borrow_global_mut<CoinInfo<FakeMoney>>(coin_address<FakeMoney>()).supply;
+    //     let supply = option::borrow_mut(maybe_supply);
 
-        // Supply should be non-parallelizable.
-        assert!(!optional_aggregator::is_parallelizable(supply), 0);
+    //     // Supply should be non-parallelizable.
+    //     assert!(!optional_aggregator::is_parallelizable(supply), 0);
 
-        optional_aggregator::add(supply, 100);
-        optional_aggregator::sub(supply, 50);
-        optional_aggregator::add(supply, 950);
-        assert!(optional_aggregator::read(supply) == 1000, 0);
+    //     optional_aggregator::add(supply, 100);
+    //     optional_aggregator::sub(supply, 50);
+    //     optional_aggregator::add(supply, 950);
+    //     assert!(optional_aggregator::read(supply) == 1000, 0);
 
-        upgrade_supply<FakeMoney>(&framework);
-    }
+    //     upgrade_supply<FakeMoney>(&framework);
+    // }
 
-    #[test(framework = @diem_framework)]
-    fun test_supply_upgrade(framework: signer) acquires CoinInfo, SupplyConfig {
-        initialize_supply_config(&framework);
-        aggregator_factory::initialize_aggregator_factory_for_test(&framework);
-        initialize_with_integer(&framework);
+    // #[test(framework = @diem_framework)]
+    // fun test_supply_upgrade(framework: signer) acquires CoinInfo, SupplyConfig {
+    //     initialize_supply_config(&framework);
+    //     aggregator_factory::initialize_aggregator_factory_for_test(&framework);
+    //     initialize_with_integer(&framework);
 
-        // Ensure we have a non-parellelizable non-zero supply.
-        let maybe_supply = &mut borrow_global_mut<CoinInfo<FakeMoney>>(coin_address<FakeMoney>()).supply;
-        let supply = option::borrow_mut(maybe_supply);
-        assert!(!optional_aggregator::is_parallelizable(supply), 0);
-        optional_aggregator::add(supply, 100);
+    //     // Ensure we have a non-parellelizable non-zero supply.
+    //     let maybe_supply = &mut borrow_global_mut<CoinInfo<FakeMoney>>(coin_address<FakeMoney>()).supply;
+    //     let supply = option::borrow_mut(maybe_supply);
+    //     assert!(!optional_aggregator::is_parallelizable(supply), 0);
+    //     optional_aggregator::add(supply, 100);
 
-        // Upgrade.
-        allow_supply_upgrades(&framework, true);
-        upgrade_supply<FakeMoney>(&framework);
+    //     // Upgrade.
+    //     allow_supply_upgrades(&framework, true);
+    //     upgrade_supply<FakeMoney>(&framework);
 
-        // Check supply again.
-        let maybe_supply = &mut borrow_global_mut<CoinInfo<FakeMoney>>(coin_address<FakeMoney>()).supply;
-        let supply = option::borrow_mut(maybe_supply);
-        assert!(optional_aggregator::is_parallelizable(supply), 0);
-        assert!(optional_aggregator::read(supply) == 100, 0);
-    }
+    //     // Check supply again.
+    //     let maybe_supply = &mut borrow_global_mut<CoinInfo<FakeMoney>>(coin_address<FakeMoney>()).supply;
+    //     let supply = option::borrow_mut(maybe_supply);
+    //     assert!(optional_aggregator::is_parallelizable(supply), 0);
+    //     assert!(optional_aggregator::read(supply) == 100, 0);
+    // }
 
     #[test_only]
     fun destroy_aggregatable_coin_for_test<CoinType>(aggregatable_coin: AggregatableCoin<CoinType>) {

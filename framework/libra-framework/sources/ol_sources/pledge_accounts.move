@@ -48,7 +48,7 @@
         use ol_framework::ol_account;
         use ol_framework::epoch_helper;
         use diem_framework::system_addresses;
-        use diem_framework::coin;
+        use diem_framework::coin::{Self, Coin};
 
         // use diem_std::debug::print;
 
@@ -464,20 +464,15 @@
                 let user_pledge_balance = get_user_pledge_amount(*pledge_account, address_of_beneficiary);
                 let c = withdraw_from_one_pledge_account(&address_of_beneficiary, pledge_account, user_pledge_balance);
 
-                // TODO: if burn case.
                 if (is_burn && option::is_some(&c)) {
                   let burn_this = option::extract(&mut c);
                   coin::user_burn(burn_this);
                   option::destroy_none(c);
                 } else if (option::is_some(&c)) {
                   let refund_coin = option::extract(&mut c);
-                  coin::deposit(
+                  ol_account::deposit_coins(
                     address_of_beneficiary,
-                    // *pledge_account,
                     refund_coin,
-                    // b"revoke pledge",
-                    // b"", // TODO: clean this up in ol_account.
-                    // false, // TODO: clean this up in ol_account.
                   );
                   option::destroy_none(c);
                 } else {
@@ -497,15 +492,11 @@
 
         //// Genesis helper
         // private function only to be used at genesis for infra escrow
-        // TODO! is this only for testing?
-        public fun genesis_infra_escrow_pledge(root: &signer, account: &signer, amount: u64) acquires MyPledges, BeneficiaryPolicy {
+        // This used only at genesis, and CAN BYPASS THE WITHDRAW LIMITS
+        public fun genesis_infra_escrow_pledge(root: &signer, account: &signer, coin: Coin<GasCoin>) acquires MyPledges, BeneficiaryPolicy {
           // TODO: add genesis time here, once the timestamp genesis issue is fixed.
           // chain_status::assert_genesis();
           system_addresses::assert_ol(root);
-
-          // let addr = signer::address_of(account);
-
-          let coin = coin::withdraw<GasCoin>(account, amount);
           save_pledge(account, @vm_reserved, coin);
         }
 

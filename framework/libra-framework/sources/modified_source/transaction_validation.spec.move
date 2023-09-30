@@ -117,7 +117,7 @@ spec diem_framework::transaction_validation {
     }
 
     /// Abort according to the conditions.
-    /// `DiemCoinCapabilities` and `CoinInfo` should exists.
+    /// `GasCoinCapabilities` and `CoinInfo` should exists.
     /// Skip transaction_fee::burn_fee verification.
     spec epilogue(
         account: signer,
@@ -128,7 +128,7 @@ spec diem_framework::transaction_validation {
     ) {
         use diem_framework::coin::{CoinStore};
         use diem_framework::account::{Account};
-        use diem_framework::diem_coin::{DiemCoin};
+        use diem_framework::gas_coin::GasCoin;
         // TODO: Can't verify `burn_fee`, complex aborts conditions.
         pragma aborts_if_is_partial;
 
@@ -139,14 +139,14 @@ spec diem_framework::transaction_validation {
         let transaction_fee_amount = txn_gas_price * gas_used;
 
         let addr = signer::address_of(account);
-        aborts_if !exists<CoinStore<DiemCoin>>(addr);
-        aborts_if !(global<CoinStore<DiemCoin>>(addr).coin.value >= transaction_fee_amount);
+        aborts_if !exists<CoinStore<GasCoin>>(addr);
+        aborts_if !(global<CoinStore<GasCoin>>(addr).coin.value >= transaction_fee_amount);
 
         aborts_if !exists<Account>(addr);
         aborts_if !(global<Account>(addr).sequence_number < MAX_U64);
 
-        let pre_balance = global<coin::CoinStore<DiemCoin>>(addr).coin.value;
-        let post balance = global<coin::CoinStore<DiemCoin>>(addr).coin.value;
+        let pre_balance = global<coin::CoinStore<GasCoin>>(addr).coin.value;
+        let post balance = global<coin::CoinStore<GasCoin>>(addr).coin.value;
         let pre_account = global<account::Account>(addr);
         let post account = global<account::Account>(addr);
         ensures balance == pre_balance - transaction_fee_amount;

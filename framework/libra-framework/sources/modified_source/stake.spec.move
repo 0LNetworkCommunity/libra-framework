@@ -7,7 +7,7 @@ spec diem_framework::stake {
         // The validator set should satisfy its desired invariant.
         invariant [suspendable] exists<ValidatorSet>(@diem_framework) ==> validator_set_is_valid();
         // After genesis, `DiemCoinCapabilities`, `ValidatorPerformance` and `ValidatorSet` exist.
-        invariant [suspendable] chain_status::is_operating() ==> exists<DiemCoinCapabilities>(@diem_framework);
+        // invariant [suspendable] chain_status::is_operating() ==> exists<DiemCoinCapabilities>(@diem_framework);
         invariant [suspendable] chain_status::is_operating() ==> exists<ValidatorPerformance>(@diem_framework);
         invariant [suspendable] chain_status::is_operating() ==> exists<ValidatorSet>(@diem_framework);
     }
@@ -344,7 +344,7 @@ spec diem_framework::stake {
     // These resources are required to successfully execute `on_new_epoch`, which cannot
     // be discharged by the global invariants because `on_new_epoch` is called in genesis.
     spec schema ResourceRequirement {
-        requires exists<DiemCoinCapabilities>(@diem_framework);
+        // requires exists<DiemCoinCapabilities>(@diem_framework);
         requires exists<ValidatorPerformance>(@diem_framework);
         requires exists<ValidatorSet>(@diem_framework);
         // requires exists<StakingConfig>(@diem_framework);

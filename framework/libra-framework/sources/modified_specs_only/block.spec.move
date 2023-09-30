@@ -8,7 +8,7 @@ spec diem_framework::block {
     spec block_prologue {
         use diem_framework::chain_status;
         use diem_framework::coin::CoinInfo;
-        use diem_framework::diem_coin::DiemCoin;
+        use diem_framework::gas_coin::GasCoin;
         use diem_framework::transaction_fee;
         // use diem_framework::staking_config;
 
@@ -21,7 +21,7 @@ spec diem_framework::block {
         requires (proposer == @vm_reserved) ==> (timestamp::spec_now_microseconds() == timestamp);
         requires (proposer != @vm_reserved) ==> (timestamp::spec_now_microseconds() < timestamp);
         requires exists<stake::ValidatorFees>(@diem_framework);
-        requires exists<CoinInfo<DiemCoin>>(@diem_framework);
+        requires exists<CoinInfo<GasCoin>>(@diem_framework);
         include transaction_fee::RequiresCollectedFeesPerValueLeqBlockDiemSupply;
         // include staking_config::StakingRewardsConfigRequirement;
 
