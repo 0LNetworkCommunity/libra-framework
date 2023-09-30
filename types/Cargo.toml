@@ -2,7 +2,6 @@
 name = "libra-types"
 version = "0.1.0"
 edition = "2021"
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -11,8 +10,15 @@ async-trait = { workspace = true }
 bcs = { workspace = true }
 clap = { workspace = true }
 console = { workspace = true }
+diem = { workspace = true }
+diem-api-types = { workspace = true }
+diem-crypto = { workspace = true }
+diem-global-constants = { workspace = true }
+diem-rest-client = { workspace = true }
+diem-sdk = { workspace = true }
+diem-types = { workspace = true }
 dirs = { workspace = true }
-futures = { workspace  = true }
+futures = { workspace = true }
 glob = { workspace = true }
 hex = { workspace = true }
 indicatif = { workspace = true }
@@ -27,11 +33,3 @@ serde_yaml = { workspace = true }
 tokio = { workspace = true }
 toml = { workspace = true }
 url = { workspace = true }
-
-diem = { workspace = true }
-diem-api-types = { workspace = true }
-diem-crypto = { workspace = true }
-diem-global-constants = { workspace = true }
-diem-rest-client = { workspace = true }
-diem-sdk = { workspace = true }
-diem-types = { workspace = true }
