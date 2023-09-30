@@ -17,16 +17,16 @@ anyhow = { workspace = true }
 bcs = { workspace = true }
 clap = { workspace = true }
 dialoguer = { workspace = true }
-hex = { workspace = true }
-once_cell = { workspace = true }
 
 diem = { workspace = true }
 diem-build-info = { workspace = true }
 diem-crypto = { workspace = true }
 diem-framework = { workspace = true }
 diem-types = { workspace = true }
+hex = { workspace = true }
 move-command-line-common = { workspace = true }
 move-model = { workspace = true }
+once_cell = { workspace = true }
 
 [build-dependencies]
 diem-framework = { workspace = true }

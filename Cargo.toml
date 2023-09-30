@@ -72,7 +72,6 @@ diem-state-view = { git = "https://github.com/0LNetworkCommunity/diem.git", bran
 diem-storage-interface = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 diem-temppath = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 
-
 ### External crate dependencies.
 # 0L NOTE: most of these are not used. But we leave the entire block here
 # so when there is an import we use one compatible with vendor.
@@ -310,7 +309,6 @@ pbkdf2 = "0.7.3"
 rpassword = "5.0"
 serde_with = "^3"
 
-
 ######## MOVE DEPENDENCIES ########
 # move-abigen = { path = "third_party/move/move-prover/move-abigen" }
 # move-binary-format = { path = "third_party/move/move-binary-format" }
@@ -340,7 +338,6 @@ debug = true
 split-debuginfo = "unpacked"
 lto = false
 incremental = true
-
 
 # # This is a temporary workaround to avoid multiple library
 # # definitions for LZ4 (caused by rust-rocksdb).

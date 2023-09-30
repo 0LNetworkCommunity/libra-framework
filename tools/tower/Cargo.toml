@@ -13,28 +13,18 @@ repository = { workspace = true }
 anyhow = { workspace = true }
 byteorder = { workspace = true }
 clap = { workspace = true }
+diem-sdk = { workspace = true }
 hex = { workspace = true }
 indicatif = { workspace = true }
+libra-query = { workspace = true }
+libra-txs = { workspace = true }
+libra-types = { workspace = true }
+libra-wallet = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
-
-libra-query = { workspace = true }
-libra-types = { workspace = true }
-libra-txs = { workspace = true }
-libra-wallet = { workspace = true }
 vdf = { workspace = true }
 
-diem-sdk = { workspace = true }
-
 [dev-dependencies]
-toml = { workspace = true }
-url = { workspace = true }
-
-libra-framework = { workspace = true }
-libra-smoke-tests = { workspace = true }
-
-diem-forge = { workspace = true }
-smoke-test = { workspace = true }
 diem-temppath = { workspace = true }
-
+libra-smoke-tests = { workspace = true }

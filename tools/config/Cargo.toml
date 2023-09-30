@@ -12,19 +12,17 @@ repository = { workspace = true }
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true }
-tokio = { workspace = true }
-url = { workspace = true }
-reqwest = { workspace = true }
 dialoguer = { workspace = true }
-
+diem = { workspace = true }
+diem-config = { workspace = true }
+diem-crypto = { workspace = true }
+diem-genesis = { workspace = true }
+diem-rest-client = { workspace = true }
+diem-types = { workspace = true }
 libra-types = { workspace = true }
 libra-wallet = { workspace = true }
-
-diem = { workspace = true }
-diem-rest-client = { workspace = true }
-diem-crypto = { workspace = true }
-diem-types = { workspace = true }
-diem-genesis = { workspace = true }
-diem-config = { workspace = true }
+reqwest = { workspace = true }
+tokio = { workspace = true }
+url = { workspace = true }
 
 

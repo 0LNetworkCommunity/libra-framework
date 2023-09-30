@@ -17,23 +17,20 @@ blst = { workspace = true }
 byteorder = { workspace = true }
 clap = { workspace = true }
 dialoguer = { workspace = true }
-# dirs = { workspace = true }
+diem-config = { workspace = true }
+diem-crypto = { workspace = true }
+diem-genesis = { workspace = true }
+diem-types = { workspace = true }
 hex = { workspace = true }
 hmac = { workspace = true }
 indoc = { workspace = true }
+libra-types = { workspace = true }
 mirai-annotations = { workspace = true }
-rand = { workspace = true }
 pbkdf2 = { workspace = true }
+rand = { workspace = true }
 rpassword = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
 sha2 = { workspace = true }
 tokio = { workspace = true }
-
-libra-types = { workspace = true }
-
-diem-types = { workspace = true }
-diem-crypto = { workspace = true }
-diem-genesis = { workspace = true }
-diem-config = { workspace = true }
