@@ -32,9 +32,9 @@ module ol_framework::demo {
         *&borrow_global<MessageHolder>(addr).message
     }
 
-    public entry fun print_this(account: signer) {
+    public entry fun print_this(account: &signer) {
       print(&11111111);
-      print(&account);
+      print(&signer::address_of(account));
     }
 
     public entry fun set_message(account: &signer, message: string::String)

@@ -18,7 +18,7 @@ module diem_framework::account {
 
     // use diem_std::debug::print;
 
-
+    #[test_only]
     friend diem_framework::diem_account;
     friend diem_framework::coin;
     friend diem_framework::genesis;
