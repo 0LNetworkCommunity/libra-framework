@@ -12,14 +12,11 @@ repository = { workspace = true }
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true }
+diem-sdk = { workspace = true }
 indoc = { workspace = true }
+libra-types = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
-
-libra-types = { workspace = true }
-
-diem-sdk = { workspace = true }
-
 
 [dev-dependencies]
 libra-smoke-tests = { workspace = true }
