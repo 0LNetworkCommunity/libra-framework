@@ -130,7 +130,6 @@ pub fn total_supply(db_reader: &Arc<dyn DbReader>) -> Option<u128> {
                     .get_state_value_by_version(&state_key, version)
                     .expect("aggregator value must exist in data store")
                     .expect("supply value exists");
-                // dbg!(&value);
                 // todo!()
                 bcs::from_bytes(value.bytes()).unwrap()
             }
@@ -164,6 +163,4 @@ fn test_db_rw() {
         .reader
         .get_state_value_by_version(&StateKey::access_path(ap), version)
         .unwrap();
-
-    dbg!(&bytes);
 }
