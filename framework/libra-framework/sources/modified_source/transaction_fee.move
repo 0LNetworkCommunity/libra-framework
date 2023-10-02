@@ -5,7 +5,7 @@ module diem_framework::transaction_fee {
     use std::error;
     use std::vector;
     use std::option::{Self, Option};
-    use ol_framework::gas_coin::GasCoin;
+    use ol_framework::gas_coin::LibraCoin as GasCoin;
     use ol_framework::fee_maker;
 
     // use diem_std::debug::print;

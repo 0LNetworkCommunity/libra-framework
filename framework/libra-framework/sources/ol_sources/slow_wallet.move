@@ -10,7 +10,7 @@ module ol_framework::slow_wallet {
   use diem_framework::coin;
   use std::vector;
   use std::signer;
-  use ol_framework::gas_coin::GasCoin;
+  use ol_framework::gas_coin::LibraCoin as GasCoin;
   use ol_framework::testnet;
   use std::error;
 

@@ -10,7 +10,7 @@ spec diem_framework::version {
         use diem_framework::timestamp;
         use diem_framework::stake;
         use diem_framework::coin::CoinInfo;
-        use diem_framework::gas_coin::GasCoin;
+        use diem_framework::gas_coin::LibraCoin as GasCoin;
         use diem_framework::transaction_fee;
         // use diem_framework::staking_config;
         // Not verified when verify_duration_estimate > vc_timeout
