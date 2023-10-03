@@ -138,7 +138,6 @@ impl ConfigCli {
                     np.nodes = vec![];
                     np.add_url(u.to_owned());
                 }
-                dbg!(&cfg);
                 cfg.save_file()?;
                 Ok(())
             }

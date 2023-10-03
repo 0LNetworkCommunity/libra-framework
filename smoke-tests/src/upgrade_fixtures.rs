@@ -21,7 +21,7 @@ pub fn insert_test_file(core_module_name: &str, remove: bool) -> anyhow::Result<
         .join("framework")
         .join(core_module_name)
         .join("sources");
-    dbg!(&core_module_sources);
+
     let away_file_path = core_module_sources.join("all_your_base.move");
     if remove {
         std::fs::remove_file(away_file_path)?;
@@ -33,7 +33,6 @@ pub fn insert_test_file(core_module_name: &str, remove: bool) -> anyhow::Result<
         .join("tests")
         .join("fixtures")
         .join("all_your_base.move");
-    dbg!(&file_path);
 
     std::fs::copy(file_path, away_file_path)?;
 
@@ -46,13 +45,9 @@ pub fn generate_fixtures(output_path: PathBuf, modules: Vec<String>) -> anyhow::
     insert_test_file(&destination_module, false)?;
 
     let this_crate = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
-    dbg!(&this_crate);
     let libra_framework_sources = this_crate.parent().unwrap().join("framework");
 
     make_framework_upgrade_artifacts(&output_path, &libra_framework_sources, &Some(modules))?;
-
-    dbg!("ok");
-
     // ok, cleanup
     insert_test_file(&destination_module, true)?;
 
@@ -67,7 +62,6 @@ fn make_the_upgrade_fixtures() -> anyhow::Result<()> {
 
     let p = fixture_path.join("upgrade_single_step");
     std::fs::create_dir_all(&p)?;
-    dbg!(&p);
     let modules = vec!["move-stdlib".to_string()];
 
     generate_fixtures(p, modules)?;
