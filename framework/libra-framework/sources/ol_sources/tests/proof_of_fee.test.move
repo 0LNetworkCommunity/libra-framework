@@ -34,7 +34,7 @@ module ol_framework::test_pof {
     assert!(expires == 10000, 1002);
 
     let coin = slow_wallet::unlocked_amount(*alice);
-    let (r, _, _) = proof_of_fee::get_consensus_reward();
+    let (r, _, _, _) = proof_of_fee::get_consensus_reward();
     let bid_cost = (bid * r) / 1000;
     assert!(coin > bid_cost, 1005);
   }
@@ -132,25 +132,29 @@ module ol_framework::test_pof {
     let set = mock::genesis_n_vals(&root, 4);
     let alice = *vector::borrow(&set, 0);
 
-    assert!(!jail::is_jailed(alice), 1001);
+    assert!(!jail::is_jailed(alice), 7357001);
     let a_sig = account::create_signer_for_test(alice);
 
     proof_of_fee::set_bid(&a_sig, 100, 10000); // 10 pct
     let (bid, expires) = proof_of_fee::current_bid(alice);
-    assert!(bid == 100, 1001);
-    assert!(expires == 10000, 1002);
+    assert!(bid == 100, 7357001);
+    assert!(expires == 10000, 7357002);
 
     // NOT ENOUGH FUNDS WERE UNLOCKED
     slow_wallet::slow_wallet_epoch_drip(&root, 500);
     let coin = slow_wallet::unlocked_amount(alice);
-    let (r, _, _) = proof_of_fee::get_consensus_reward();
+
+    // calculate consensus reward
+    proof_of_fee::fill_seats_and_get_price(&root, 4, &set, &set);
+
+    let (r, _, _, _) = proof_of_fee::get_consensus_reward();
     let bid_cost = (bid * r) / 1000;
-    assert!(coin < bid_cost, 1005);
+    assert!(coin < bid_cost, 7357005);
 
     // should NOT pass audit.
     let (err, pass) = proof_of_fee::audit_qualification(alice);
-    assert!(*vector::borrow(&err, 0) == 17, 1006);
-    assert!(!pass, 1007);
+    assert!(*vector::borrow(&err, 0) == 17, 7357006);
+    assert!(!pass, 7357007);
   }
 
   #[test(root = @ol_framework)]
@@ -242,8 +246,11 @@ module ol_framework::test_pof {
 
   #[test(root= @ol_framework)]
   fun sorted_vals_none_qualify(root: signer) {
-    let _set = mock::genesis_n_vals(&root, 4);
+    let vals = mock::genesis_n_vals(&root, 4);
     let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
+    // calculate the auction
+    proof_of_fee::fill_seats_and_get_price(&root, 4, &vals, &vals);
+
     let sorted = proof_of_fee::get_bidders(false);
 
     let len = vector::length(&sorted);
@@ -296,7 +303,6 @@ module ol_framework::test_pof {
     let set = mock::genesis_n_vals(&root, 4);
     mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
 
-    // mock::ol_initialize_coin(&root);
     let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
 
     let len = vector::length(&set);
@@ -346,14 +352,14 @@ module ol_framework::test_pof {
     let sorted = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted) == vector::length(&set), 1003);
 
-    let (seats, _p, _, _) = proof_of_fee::fill_seats_and_get_price(&root, len, &sorted, &sorted);
+    let (seats, _, _, _, _) = proof_of_fee::fill_seats_and_get_price(&root, len, &sorted, &sorted);
 
     assert!(vector::contains(&seats, vector::borrow(&set, 0)), 1004);
 
     // filling the seat updated the computation of the consensu reward.
-    let (reward, clear_price, median_bid) = proof_of_fee::get_consensus_reward();
+    let (reward, _, clear_percent, median_bid) = proof_of_fee::get_consensus_reward();
     assert!(reward == 1000000, 1005);
-    assert!(clear_price == 1, 1006);
+    assert!(clear_percent == 1, 1006);
     assert!(median_bid == 3, 1007);
 
   }
@@ -372,22 +378,22 @@ module ol_framework::test_pof {
     assert!(vector::length(&sorted) == vector::length(&set), 1003);
 
     let len = vector::length(&set);
-    let (seats, _p, _, _) = proof_of_fee::fill_seats_and_get_price(&root, len, &sorted, &sorted);
+    let (seats, _, _, _, _) = proof_of_fee::fill_seats_and_get_price(&root, len, &sorted, &sorted);
 
     assert!(vector::contains(&seats, vector::borrow(&set, 0)), 1004);
 
     // filling the seat updated the computation of the consensu reward.
-    let (reward, clear_price, median_bid) = proof_of_fee::get_consensus_reward();
+    let (reward, _, clear_percent, median_bid) = proof_of_fee::get_consensus_reward();
     assert!(reward == 1000000, 1005);
-    assert!(clear_price == 1, 1006);
+    assert!(clear_percent == 1, 1006);
     assert!(median_bid == 3, 1007);
 
     // we expect no change in the reward_thermostat because there haven't been 5 epochs or more of historical data.
     proof_of_fee::reward_thermostat(&root);
 
-    let (reward, win_bid, median_bid) = proof_of_fee::get_consensus_reward();
+    let (reward, _, clearing_percent, median_bid) = proof_of_fee::get_consensus_reward();
     assert!(reward == 1000000, 1008);
-    assert!(win_bid == 1, 1009);
+    assert!(clearing_percent == 1, 1009);
     assert!(median_bid == 3, 1010);
   }
 
@@ -420,7 +426,7 @@ module ol_framework::test_pof {
     assert!(vector::length(&set) == 5, 1004);
     assert!(vector::length(&sorted) == 4, 1005);
 
-    let (seats, _p, _, _) = proof_of_fee::fill_seats_and_get_price(&root, vector::length(&set), &sorted, &sorted);
+    let (seats, _, _, _, _) = proof_of_fee::fill_seats_and_get_price(&root, vector::length(&set), &sorted, &sorted);
 
     // EVE is not in the seats
     assert!(!vector::contains(&seats, vector::borrow(&set, 4)), 1004);
@@ -428,9 +434,9 @@ module ol_framework::test_pof {
     assert!(vector::contains(&seats, vector::borrow(&set, 0)), 1005);
 
     // filling the seat updated the computation of the consensu reward.
-    let (reward, clear_price, median_bid) = proof_of_fee::get_consensus_reward();
+    let (reward, _, clear_percent, median_bid) = proof_of_fee::get_consensus_reward();
     assert!(reward == 1000000, 1006);
-    assert!(clear_price == 1, 1007);
+    assert!(clear_percent == 1, 1007);
     assert!(median_bid == 2, 1008);
 
   }
@@ -457,7 +463,7 @@ module ol_framework::test_pof {
 
 
     let set_size = 3;
-    let (seats, _p, _, _) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &sorted);
+    let (seats, _, _, _, _) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &sorted);
 
     assert!(vector::length(&set) == 5, 1004);
     assert!(vector::length(&seats) == 3, 1005);
@@ -473,9 +479,9 @@ module ol_framework::test_pof {
 
     // filling the seat updated the computation of the consensu reward.
     // Median bids and clearing prices will be different than the happy path test.
-    let (reward, clear_price, median_bid) = proof_of_fee::get_consensus_reward();
+    let (reward, _, clear_percent, median_bid) = proof_of_fee::get_consensus_reward();
     assert!(reward == 1000000, 1004);
-    assert!(clear_price == 3, 1005);
+    assert!(clear_percent == 3, 1005);
     assert!(median_bid == 5, 1006);
   }
 
@@ -520,7 +526,7 @@ module ol_framework::test_pof {
     vector::push_back(&mut proven_vals, *vector::borrow(&set, 4));
     vector::push_back(&mut proven_vals, *vector::borrow(&set, 5));
 
-    let (seats, _p, _, _) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &proven_vals);
+    let (seats, _, _, _, _) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &proven_vals);
 
     assert!(vector::length(&set) == 6, 1004);
     assert!(vector::length(&seats) == 6, 1005);
@@ -533,10 +539,10 @@ module ol_framework::test_pof {
 
     // filling the seat updated the computation of the consensu reward.
     // Median bids and clearing prices will be different than the happy path test.
-    let (reward, clear_price, median_bid) = proof_of_fee::get_consensus_reward();
+    let (reward, _, clear_percent, median_bid) = proof_of_fee::get_consensus_reward();
     assert!(reward == 1000000, 1004);
     // The clearing price is 1, Alice's lowest bid. Even though she was not "proven"
-    assert!(clear_price == 1, 1005);
+    assert!(clear_percent == 1, 1005);
     assert!(median_bid == 3, 1006);
   }
 
@@ -562,8 +568,6 @@ module ol_framework::test_pof {
 
   #[test(root = @ol_framework)]
   fun fill_seats_unproven_sad(root: signer) {
-
-
     // we need 6 seats so that we can have 4 proven, and 2 unproven slots
     let set = mock::genesis_n_vals(&root, 6);
     mock::ol_initialize_coin_and_fund_vals(&root, 500000, true);
@@ -584,7 +588,7 @@ module ol_framework::test_pof {
     let (frank_bid, _) = proof_of_fee::current_bid(Frank);
     assert!(alice_bid < frank_bid, 1002);
 
-    let (seats, _p, _, _) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &proven_vals);
+    let (seats, _, _, _, _) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &proven_vals);
 
     assert!(vector::length(&set) == 6, 1003);
     assert!(vector::length(&seats) == 4, 1004);
@@ -602,9 +606,9 @@ module ol_framework::test_pof {
 
     // filling the seat updated the computation of the consensu reward.
     // Median bids and clearing prices will be different than the happy path test.
-    let (reward, clear_price, median_bid) = proof_of_fee::get_consensus_reward();
+    let (reward, _, clear_percent, median_bid) = proof_of_fee::get_consensus_reward();
     assert!(reward == 1000000, 10012);
-    assert!(clear_price == 2, 10013);
+    assert!(clear_percent == 2, 10013);
     assert!(median_bid == 3, 10014);
   }
 

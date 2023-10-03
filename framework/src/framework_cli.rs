@@ -120,7 +120,6 @@ fn make_template_files(
     framework_local_dir: &Path,
     script_name: &str,
 ) -> anyhow::Result<()> {
-    dbg!(&package_dir);
     std::fs::create_dir_all(package_dir)
         .context("could not create the output directory {new_path:?}")?;
     // TODO: rename this. init_move_package_with_local_framework
@@ -143,13 +142,11 @@ script {
 }
 "#;
 
-    dbg!(&package_dir);
-    dbg!(&script_name);
     let filename = package_dir
         // .join(script_name)
         .join("sources")
         .join(format!("{}.move", script_name));
-    dbg!(&filename);
+
     std::fs::write(filename, t)?;
     println!("success: governance template created");
 

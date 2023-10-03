@@ -76,7 +76,6 @@ fn end_to_end_single() {
                 .extract_raw_bytes()
                 .unwrap();
             let validator_set: ValidatorSet = bcs::from_bytes(&bytes).unwrap();
-            // dbg!(&validator_set.active_validators().len());
             assert!(
                 validator_set.active_validators().len() == num_vals,
                 "validator set count does not match"
@@ -140,7 +139,6 @@ fn end_to_end_all() {
                 .extract_raw_bytes()
                 .unwrap();
             let validator_set: ValidatorSet = bcs::from_bytes(&bytes).unwrap();
-            // dbg!(&validator_set.active_validators().len());
             assert!(
                 validator_set.active_validators().len() == num_vals,
                 "validator set count does not match"

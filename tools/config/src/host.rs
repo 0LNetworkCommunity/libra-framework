@@ -18,7 +18,6 @@ pub fn initialize_validator(
     keep_legacy_address: bool,
     chain_name: Option<NamedChain>,
 ) -> anyhow::Result<()> {
-    dbg!("init validator");
     let (.., keys) =
         libra_wallet::keys::refresh_validator_files(mnem, home_path.clone(), keep_legacy_address)?;
     OLProgress::complete("Initialized validator key files");

@@ -32,6 +32,9 @@ pub enum QueryType {
         #[clap(short, long)]
         /// account to query txs of
         account: AccountAddress,
+        #[clap(short, long)]
+        /// the path of the resource, such as 0x1::slow_wallet::SlowWallet
+        resource_path_string: String,
     },
     /// Execute a View function on-chain
     View {
@@ -169,9 +172,18 @@ impl QueryType {
             "address": addr
           }))
         },
-        _ => { bail!("Not implemented for type: {:?}", self) }
+        QueryType::Resources { account , resource_path_string} => {
+          let res = client.get_account_resource(*account, resource_path_string).await?;
+
+          if let Some(r) = res.inner() {
+             Ok(r.data.clone())
+          } else {
+            bail!("no resource {resource_path_string}, found at address {account}");
+          }
+        },
+
+        _ => { bail!("Not implemented for type: {:?}\n Ground control to major tom.", self) }
         // QueryType::BlockHeight => todo!(),
-        // QueryType::Resources { account } => todo!(),
         // QueryType::MoveValue { account, module_name, struct_name, key_name } => todo!(),
 
     }

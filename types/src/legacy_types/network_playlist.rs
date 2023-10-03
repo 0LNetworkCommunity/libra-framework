@@ -46,7 +46,6 @@ impl HostProfile {
     }
 
     async fn check_sync(mut self) -> anyhow::Result<HostProfile> {
-        // dbg!("check_sync", &self.url);
         let client = Client::new(self.url.clone());
 
         match client.get_index().await {
@@ -272,10 +271,3 @@ impl NetworkPlaylist {
         Ok(self)
     }
 }
-
-// #[tokio::test]
-// async fn test_parse_from_url() {
-//   let url = find_default_playlist(NamedChain::MAINNET).unwrap();
-//   let pl = NetworkPlaylist::from_url(url, N).await.unwrap();
-//   dbg!(&pl);
-// }

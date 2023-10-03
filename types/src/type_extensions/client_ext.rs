@@ -325,14 +325,3 @@ struct Person {
     x: f64,
     y: f64,
 }
-
-#[test]
-fn serde_test() {
-    let s = r#"{"x": 1.0, "y": 2.0}"#;
-    let value: serde_json::Value = serde_json::from_str(s).unwrap();
-    // value.
-    dbg!(&value);
-
-    let p: Person = serde_json::from_value(value).unwrap();
-    dbg!(&p);
-}

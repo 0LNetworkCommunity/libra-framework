@@ -16,7 +16,6 @@ async fn sanity_balances() -> anyhow::Result<()> {
     let mut public_info: diem_forge::DiemPublicInfo = swarm.diem_public_info();
 
     let bal_vec = get_libra_balance(public_info.client(), address).await?;
-    dbg!(&bal_vec);
     assert!(bal_vec.unlocked == 0, "expected zero balance at genesis");
     assert!(bal_vec.total == 0, "expected zero balance at genesis");
 

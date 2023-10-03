@@ -61,8 +61,10 @@ module ol_framework::proof_of_fee {
   }
 
   struct ConsensusReward has key {
-    value: u64,
-    clearing_price: u64,
+    nominal_reward: u64,
+    net_reward: u64,
+    entry_fee: u64,
+    clearing_bid: u64,
     median_win_bid: u64,
     median_history: vector<u64>,
   }
@@ -73,8 +75,10 @@ module ol_framework::proof_of_fee {
       move_to<ConsensusReward>(
         vm,
         ConsensusReward {
-          value: GENESIS_BASELINE_REWARD,
-          clearing_price: 0,
+          nominal_reward: GENESIS_BASELINE_REWARD,
+          net_reward: GENESIS_BASELINE_REWARD,
+          entry_fee: 0,
+          clearing_bid: 0,
           median_win_bid: 0,
           median_history: vector::empty<u64>(),
         }
@@ -104,7 +108,7 @@ module ol_framework::proof_of_fee {
   /// and finally charging the validators for their bid (everyone pays the lowest)
   /// for audit instrumentation returns: final set size, auction winners, all the bidders, (including not-qualified), and all qualified bidders.
   /// we also return the auction entry price (clearing price)
-  /// (final_set_size, auction_winners, all_bidders, only_qualified_bidders, actually_paid, entry_price)
+  /// (final_set_size, auction_winners, all_bidders, only_qualified_bidders, actually_paid, entry_fee)
   public(friend) fun end_epoch(
     vm: &signer,
     outgoing_compliant_set: &vector<address>,
@@ -121,10 +125,10 @@ module ol_framework::proof_of_fee {
       // This is the core of the mechanism, the uniform price auction
       // the winners of the auction will be the validator set.
       // other lists are created for audit purposes of the BoundaryStatus
-      let (auction_winners, entry_price, _proven, _unproven) = fill_seats_and_get_price(vm, final_set_size, &only_qualified_bidders, outgoing_compliant_set);
+      let (auction_winners, entry_fee, _clearing_bid, _proven, _unproven) = fill_seats_and_get_price(vm, final_set_size, &only_qualified_bidders, outgoing_compliant_set);
 
 
-      (auction_winners, all_bidders, only_qualified_bidders, entry_price)
+      (auction_winners, all_bidders, only_qualified_bidders, entry_fee)
   }
 
   /// The fees are charged seperate from the auction and seating loop
@@ -157,7 +161,7 @@ module ol_framework::proof_of_fee {
   #[view]
   public fun get_bidders(remove_unqualified: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
     let eligible_validators = validator_universe::get_eligible_validators();
-    let (bidders, _) = sort_vals_impl(eligible_validators, remove_unqualified);
+    let (bidders, _) = sort_vals_impl(&eligible_validators, remove_unqualified);
     bidders
   }
 
@@ -165,12 +169,12 @@ module ol_framework::proof_of_fee {
   // same as get bidders, but returns the bid
   public fun get_bidders_and_bids(remove_unqualified: bool): (vector<address>, vector<u64>) acquires ProofOfFeeAuction, ConsensusReward {
     let eligible_validators = validator_universe::get_eligible_validators();
-    sort_vals_impl(eligible_validators, remove_unqualified)
+    sort_vals_impl(&eligible_validators, remove_unqualified)
   }
-  // returns two lists odrdered bidder addresss and the bid
-  fun sort_vals_impl(eligible_validators: vector<address>, remove_unqualified: bool): (vector<address>, vector<u64>) acquires ProofOfFeeAuction, ConsensusReward {
+  // returns two lists: ordered bidder addresss and the list of bids bid
+  fun sort_vals_impl(eligible_validators: &vector<address>, remove_unqualified: bool): (vector<address>, vector<u64>) acquires ProofOfFeeAuction, ConsensusReward {
     // let eligible_validators = validator_universe::get_eligible_validators();
-    let length = vector::length<address>(&eligible_validators);
+    let length = vector::length<address>(eligible_validators);
 
     // vector to store each address's node_weight
     let bids = vector::empty<u64>();
@@ -179,7 +183,7 @@ module ol_framework::proof_of_fee {
     while (k < length) {
       // TODO: Ensure that this address is an active validator
 
-      let cur_address = *vector::borrow<address>(&eligible_validators, k);
+      let cur_address = *vector::borrow<address>(eligible_validators, k);
       let (bid, _expire) = current_bid(cur_address);
 
       let (_, qualified) = audit_qualification(cur_address);
@@ -269,16 +273,20 @@ module ol_framework::proof_of_fee {
   /// but we will check again here.
   /// we return:
   // a. the list of winning validators (the validator set)
-  // b. the clearing price paid
-  // c. the list of proven nodes added, for audit and instrumentation
-  // d. the list of unproven, for audit and instrumentation
+  // b. the entry fee paid
+  // c. the clearing bid (percentage paid)
+  // d. the list of proven nodes added, for audit and instrumentation
+  // e. the list of unproven, for audit and instrumentation
   public fun fill_seats_and_get_price(
     vm: &signer,
     final_set_size: u64,
     sorted_vals_by_bid: &vector<address>,
     proven_nodes: &vector<address>
-  ): (vector<address>, u64, vector<address>, vector<address>) acquires ProofOfFeeAuction, ConsensusReward {
+  ): (vector<address>, u64, u64, vector<address>, vector<address>) acquires ProofOfFeeAuction, ConsensusReward {
     system_addresses::assert_ol(vm);
+
+    // NOTE: this is duplicate work, but we are double checking we are getting a proper sort.
+    let (sorted_vals_by_bid, _) = sort_vals_impl(sorted_vals_by_bid, true);
 
     // Now we can seat the validators based on the algo:
     // A. seat the highest bidding 2/3 proven nodes of previous epoch
@@ -298,9 +306,9 @@ module ol_framework::proof_of_fee {
     let i = 0u64;
     while (
       (vector::length(&proposed_validators) < final_set_size) && // until seats full
-      (i < vector::length(sorted_vals_by_bid))
+      (i < vector::length(&sorted_vals_by_bid))
     ) {
-      let val = vector::borrow(sorted_vals_by_bid, i);
+      let val = vector::borrow(&sorted_vals_by_bid, i);
       // check if a proven node
       // NOTE: if the top bidders all all "proven" nodes, then there will
       // be no reason to add an unproven. Unproven nodes will only
@@ -326,7 +334,7 @@ module ol_framework::proof_of_fee {
 
     // We failed to seat anyone.
     // let epoch_boundary.move deal with this.
-    if (vector::is_empty(&proposed_validators)) return (proposed_validators, 0, audit_add_proven_vals, audit_add_unproven_vals);
+    if (vector::is_empty(&proposed_validators)) return (proposed_validators, 0, 0, audit_add_proven_vals, audit_add_unproven_vals);
 
     // Find the clearing price which all validators will pay
     let lowest_bidder = vector::borrow(&proposed_validators, vector::length(&proposed_validators) - 1);
@@ -335,9 +343,24 @@ module ol_framework::proof_of_fee {
 
     // update the clearing price
     let cr = borrow_global_mut<ConsensusReward>(@ol_framework);
-    cr.clearing_price = lowest_bid_pct;
+    cr.clearing_bid = lowest_bid_pct;
 
-    return (proposed_validators, lowest_bid_pct, audit_add_proven_vals, audit_add_unproven_vals)
+    if (lowest_bid_pct > 0) {
+      cr.entry_fee = fixed_point32::multiply_u64(cr.nominal_reward, bid_as_fixedpoint(lowest_bid_pct));
+
+      if (cr.nominal_reward > cr.entry_fee)  {
+        cr.net_reward = cr.nominal_reward - cr.entry_fee;
+      } else {
+        // shoudn't be reachable, but here for completion
+        cr.net_reward = cr.nominal_reward
+      };
+    } else {
+      cr.entry_fee = 0;
+      cr.net_reward = cr.nominal_reward;
+    };
+
+
+    return (proposed_validators, cr.entry_fee, cr.clearing_bid, audit_add_proven_vals, audit_add_unproven_vals)
   }
 
   #[view]
@@ -369,12 +392,16 @@ module ol_framework::proof_of_fee {
       // skip the user if they don't have sufficient UNLOCKED funds
       // or if the bid expired.
       let unlocked_coins = slow_wallet::unlocked_amount(val);
-      let (baseline_reward, _, _) = get_consensus_reward();
-      let coin_required = fixed_point32::multiply_u64(baseline_reward, fixed_point32::create_from_rational(bid_pct, 1000));
+      let (_, entry_fee,  _, _) = get_consensus_reward();
+      // let coin_required = fixed_point32::multiply_u64(baseline_reward, bid_as_fixedpoint(bid_pct));
 
-      if (unlocked_coins < coin_required) vector::push_back(&mut errors, ELOW_UNLOCKED_COIN_BALANCE); // 17
+      if (unlocked_coins < entry_fee) vector::push_back(&mut errors, ELOW_UNLOCKED_COIN_BALANCE); // 17
 
       (errors, vector::length(&errors) == 0) // friend of ours
+  }
+
+  fun bid_as_fixedpoint(bid_pct: u64): fixed_point32::FixedPoint32 {
+    fixed_point32::create_from_rational(bid_pct, 1000)
   }
   // Adjust the reward at the end of the epoch
   // as described in the paper, the epoch reward needs to be adjustable
@@ -417,7 +444,7 @@ module ol_framework::proof_of_fee {
     };
 
 
-    if (cr.value > 0) {
+    if (cr.nominal_reward > 0) {
 
 
       // TODO: this is an initial implementation, we need to
@@ -442,12 +469,12 @@ module ol_framework::proof_of_fee {
 
           // decrease the reward by 10%
 
-          cr.value = cr.value - (cr.value / 10);
+          cr.nominal_reward = cr.nominal_reward - (cr.nominal_reward / 10);
           return // return early since we can't increase and decrease simultaneously
         } else if (epochs_above > short_window) {
           // decrease the reward by 5%
 
-          cr.value = cr.value - (cr.value / 20);
+          cr.nominal_reward = cr.nominal_reward - (cr.nominal_reward / 20);
 
 
           return // return early since we can't increase and decrease simultaneously
@@ -469,12 +496,12 @@ module ol_framework::proof_of_fee {
 
 
           // increase the reward by 10%
-          cr.value = cr.value + (cr.value / 10);
+          cr.nominal_reward = cr.nominal_reward + (cr.nominal_reward / 10);
         } else if (epochs_below > short_window) {
 
 
           // increase the reward by 5%
-          cr.value = cr.value + (cr.value / 20);
+          cr.nominal_reward = cr.nominal_reward + (cr.nominal_reward / 20);
         };
       // };
     };
@@ -523,10 +550,10 @@ module ol_framework::proof_of_fee {
 
 
   /// get the baseline reward from ConsensusReward
-  /// returns (reward, clearing_price, median_win_bid)
-  public fun get_consensus_reward(): (u64, u64, u64) acquires ConsensusReward {
+  /// returns (reward, entry_fee, clearing_bid, median_win_bid)
+  public fun get_consensus_reward(): (u64, u64, u64, u64) acquires ConsensusReward {
     let b = borrow_global<ConsensusReward>(@ol_framework);
-    return (b.value, b.clearing_price, b.median_win_bid)
+    return (b.nominal_reward, b.entry_fee, b.clearing_bid, b.median_win_bid)
   }
 
   // CONSENSUS CRITICAL
@@ -674,16 +701,16 @@ module ol_framework::proof_of_fee {
   #[test_only]
   public fun test_mock_reward(
     vm: &signer,
-    value: u64,
-    clearing_price: u64,
+    nominal_reward: u64,
+    clearing_bid: u64,
     median_win_bid: u64,
     median_history: vector<u64>,
   ) acquires ConsensusReward {
     testnet::assert_testnet(vm);
 
     let cr = borrow_global_mut<ConsensusReward>(@ol_framework );
-    cr.value = value;
-    cr.clearing_price = clearing_price;
+    cr.nominal_reward = nominal_reward;
+    cr.clearing_bid = clearing_bid;
     cr.median_win_bid = median_win_bid;
     cr.median_history = median_history;
 
@@ -705,10 +732,10 @@ module ol_framework::proof_of_fee {
       vector::singleton(33),
     );
 
-    let (value, clearing, median) = get_consensus_reward();
-    assert!(value == 100, 1000);
-    assert!(clearing == 50, 1001);
-    assert!(median == 33, 1002);
+    let(reward, _, clear_percent, median_bid)  = get_consensus_reward();
+    assert!(reward == 100, 1000);
+    assert!(clear_percent == 50, 1001);
+    assert!(median_bid == 33, 1002);
 
   }
 
@@ -743,19 +770,19 @@ module ol_framework::proof_of_fee {
     );
 
     // no changes until we run the thermostat.
-    let (value, clearing, median) = get_consensus_reward();
-    assert!(value == 100, 1000);
-    assert!(clearing == 50, 1001);
-    assert!(median == 33, 1002);
+    let(reward, _, clear_percent, median_bid)  = get_consensus_reward();
+    assert!(reward == 100, 1000);
+    assert!(clear_percent == 50, 1001);
+    assert!(median_bid == 33, 1002);
 
     reward_thermostat(&vm);
 
     // This is the happy case. No changes since the rewards were within range
     // the whole time.
-    let (value, clearing, median) = get_consensus_reward();
-    assert!(value == 100, 1000);
-    assert!(clearing == 50, 1001);
-    assert!(median == 33, 1002);
+    let(reward, _, clear_percent, median_bid)  = get_consensus_reward();
+    assert!(reward == 100, 1000);
+    assert!(clear_percent == 50, 1001);
+    assert!(median_bid == 33, 1002);
 
   }
 
@@ -787,19 +814,19 @@ module ol_framework::proof_of_fee {
     );
 
     // no changes until we run the thermostat.
-    let (value, clearing, median) = get_consensus_reward();
-    assert!(value == 100, 1000);
-    assert!(clearing == 50, 1001);
-    assert!(median == 33, 1002);
+    let(reward, _, clear_percent, median_bid)  = get_consensus_reward();
+    assert!(reward == 100, 1000);
+    assert!(clear_percent == 50, 1001);
+    assert!(median_bid == 33, 1002);
 
     reward_thermostat(&vm);
 
     // In the decrease case during a short period, we decrease by 5%
     // No other parameters of consensus reward should change on calling this function.
-    let (value, clearing, median) = get_consensus_reward();
-    assert!(value == 105, 1003);
-    assert!(clearing == 50, 1004);
-    assert!(median == 33, 1005);
+    let(reward, _, clear_percent, median_bid)  = get_consensus_reward();
+    assert!(reward == 105, 1003);
+    assert!(clear_percent == 50, 1004);
+    assert!(median_bid == 33, 1005);
 
   }
 
@@ -835,19 +862,19 @@ module ol_framework::proof_of_fee {
     );
 
     // no changes until we run the thermostat.
-    let (value, clearing, median) = get_consensus_reward();
-    assert!(value == 100, 1000);
-    assert!(clearing == 50, 1001);
-    assert!(median == 33, 1002);
+    let(reward, _, clear_percent, median_bid)  = get_consensus_reward();
+    assert!(reward == 100, 1000);
+    assert!(clear_percent == 50, 1001);
+    assert!(median_bid == 33, 1002);
 
     reward_thermostat(&vm);
 
     // In the decrease case during a short period, we decrease by 5%
     // No other parameters of consensus reward should change on calling this function.
-    let (value, clearing, median) = get_consensus_reward();
-    assert!(value == 110, 1003);
-    assert!(clearing == 50, 1004);
-    assert!(median == 33, 1005);
+    let(reward, _, clear_percent, median_bid)  = get_consensus_reward();
+    assert!(reward == 110, 1003);
+    assert!(clear_percent == 50, 1004);
+    assert!(median_bid == 33, 1005);
 
   }
 
@@ -882,19 +909,19 @@ module ol_framework::proof_of_fee {
     );
 
     // no changes until we run the thermostat.
-    let (value, clearing, median) = get_consensus_reward();
-    assert!(value == 100, 1000);
-    assert!(clearing == 50, 1001);
-    assert!(median == 33, 1002);
+    let(reward, _, clear_percent, median_bid)  = get_consensus_reward();
+    assert!(reward == 100, 1000);
+    assert!(clear_percent == 50, 1001);
+    assert!(median_bid == 33, 1002);
 
     reward_thermostat(&vm);
 
     // In the decrease case during a short period, we decrease by 5%
     // No other parameters of consensus reward should change on calling this function.
-    let (value, clearing, median) = get_consensus_reward();
-    assert!(value == 95, 1000);
-    assert!(clearing == 50, 1004);
-    assert!(median == 33, 1005);
+    let(reward, _, clear_percent, median_bid)  = get_consensus_reward();
+    assert!(reward == 95, 1000);
+    assert!(clear_percent == 50, 1004);
+    assert!(median_bid == 33, 1005);
 
   }
 
@@ -929,19 +956,19 @@ module ol_framework::proof_of_fee {
     );
 
     // no changes until we run the thermostat.
-    let (value, clearing, median) = get_consensus_reward();
-    assert!(value == 100, 1000);
-    assert!(clearing == 50, 1001);
-    assert!(median == 33, 1002);
+    let(reward, _, clear_percent, median_bid)  = get_consensus_reward();
+    assert!(reward == 100, 1000);
+    assert!(clear_percent == 50, 1001);
+    assert!(median_bid == 33, 1002);
 
     reward_thermostat(&vm);
 
     // In the decrease case during a short period, we decrease by 5%
     // No other parameters of consensus reward should change on calling this function.
-    let (value, clearing, median) = get_consensus_reward();
-    assert!(value == 90, 1003);
-    assert!(clearing == 50, 1004);
-    assert!(median == 33, 1005);
+    let(reward, _, clear_percent, median_bid)  = get_consensus_reward();
+    assert!(reward == 90, 1003);
+    assert!(clear_percent == 50, 1004);
+    assert!(median_bid == 33, 1005);
 
   }
 

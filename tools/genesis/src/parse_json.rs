@@ -17,9 +17,8 @@ fn parse_json_single() {
         assert!(&acc.to_string() == "6BBF853AA6521DB445E5CBDF3C85E8A0");
     }
 
-    let has_root = r
+    let _has_root = r
         .iter()
         .find(|el| el.comm_wallet.is_some())
         .expect("could not find 0x0 state in recovery file");
-    dbg!(&has_root);
 }

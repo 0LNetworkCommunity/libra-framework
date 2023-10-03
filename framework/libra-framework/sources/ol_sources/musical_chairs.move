@@ -3,6 +3,7 @@ module ol_framework::musical_chairs {
     use diem_framework::system_addresses;
     use diem_framework::stake;
     use ol_framework::grade;
+    // use ol_framework::testnet;
     use std::fixed_point32;
     use std::vector;
     // use diem_std::debug::print;
@@ -67,22 +68,16 @@ module ol_framework::musical_chairs {
     /// (compliant_vals, seats_offered)
     public(friend) fun stop_the_music( // sorry, had to.
         vm: &signer,
+        epoch_round: u64,
     ): (vector<address>, u64) acquires Chairs {
         system_addresses::assert_ol(vm);
 
         let validators = stake::get_current_validators();
-        let (compliant_vals, _non, ratio) = eval_compliance_impl(validators);
+        let (compliant_vals, _non, ratio) = eval_compliance_impl(validators, epoch_round);
 
         let chairs = borrow_global_mut<Chairs>(@ol_framework);
 
         let num_compliant_nodes = vector::length(&compliant_vals);
-
-        // catch failure mode
-        // mostly for testnets
-        if (chairs.seats_offered < 4) {
-          chairs.seats_offered = 4;
-          return (compliant_vals, chairs.seats_offered)
-        };
 
         // failover, there should not be more compliant nodes than seats that were offered.
         // return with no changes
@@ -109,6 +104,11 @@ module ol_framework::musical_chairs {
             chairs.seats_offered = chairs.seats_offered + 1;
         };
 
+        // catch failure mode
+        // mostly for genesis, or testnets
+        if (chairs.seats_offered < 4) {
+          chairs.seats_offered = 4;
+        };
 
         (compliant_vals, chairs.seats_offered)
     }
@@ -125,21 +125,28 @@ module ol_framework::musical_chairs {
     }
 
     #[test_only]
-    public fun test_eval_compliance(root: &signer, validators: vector<address>): (vector<address>, vector<address>, fixed_point32::FixedPoint32) {
+    public fun test_eval_compliance(root: &signer, validators: vector<address>, epoch_round: u64): (vector<address>, vector<address>, fixed_point32::FixedPoint32) {
       system_addresses::assert_ol(root);
-      eval_compliance_impl(validators)
+      eval_compliance_impl(validators, epoch_round)
 
     }
     // use the Case statistic to determine what proportion of the network is compliant.
     // private function prevent list DoS.
     fun eval_compliance_impl(
       validators: vector<address>,
+      epoch: u64,
     ) : (vector<address>, vector<address>, fixed_point32::FixedPoint32) {
 
         let val_set_len = vector::length(&validators);
 
         let compliant_nodes = vector::empty<address>();
         let non_compliant_nodes = vector::empty<address>();
+
+        // if we are at genesis or otherwise at start of an epoch, we don't
+        // want to brick the validator set
+        // TODO: use status.move is_operating
+        if (epoch < 2) return (validators, non_compliant_nodes, fixed_point32::create_from_rational(1, 1));
+
 
         let i = 0;
         while (i < val_set_len) {
@@ -192,8 +199,8 @@ module ol_framework::musical_chairs {
     use diem_framework::chain_id;
 
     #[test_only]
-    public fun test_stop(vm: &signer): (vector<address>, u64) acquires Chairs {
-      stop_the_music(vm)
+    public fun test_stop(vm: &signer, epoch_round: u64): (vector<address>, u64) acquires Chairs {
+      stop_the_music(vm, epoch_round)
     }
 
     //////// TESTS ////////
