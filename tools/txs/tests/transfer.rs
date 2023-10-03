@@ -80,3 +80,41 @@ async fn smoke_transfer_create_account() {
 
     // TODO: check the balance
 }
+
+
+/// Estimate only. Esitmates will fail if the coin name is not set in the diem-node compiled binary.
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn smoke_transfer_estimate() {
+    let d = diem_temppath::TempPath::new();
+
+    let mut s = LibraSmoke::new(None)
+        .await
+        .expect("could not start libra smoke");
+
+    let (_, _app_cfg) =
+        configure_validator::init_val_config_files(&mut s.swarm, 0, d.path().to_owned())
+            .await
+            .expect("could not init validator config");
+
+    // case 2. Account does not yet exist.
+    let cli = TxsCli {
+        subcommand: Some(Transfer {
+            to_account: s.marlon_rando().address(),
+            amount: 1.0,
+        }),
+        mnemonic: None,
+        test_private_key: Some(s.encoded_pri_key.clone()),
+        chain_id: None,
+        config_path: Some(d.path().to_owned().join("libra.yaml")),
+        url: Some(s.api_endpoint.clone()),
+        tx_profile: None,
+        tx_cost: Some(TxCost::default_baseline_cost()),
+        estimate_only: true,
+    };
+
+    cli.run()
+        .await
+        .expect("cli could not create and transfer to new account");
+
+    // NOTE: This should not fail
+}
