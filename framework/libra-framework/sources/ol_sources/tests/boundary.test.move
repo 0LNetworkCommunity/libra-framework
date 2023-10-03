@@ -13,6 +13,7 @@ module ol_framework::test_boundary {
   use diem_framework::stake;
   use ol_framework::epoch_boundary;
   use ol_framework::ol_account;
+  use diem_framework::reconfiguration;
 
   // use diem_std::debug::print;
 
@@ -31,6 +32,10 @@ module ol_framework::test_boundary {
     mock::pof_default();
     slow_wallet::slow_wallet_epoch_drip(root, 500000);
 
+    // NOTE: for e2e epoch tests, we need to go into an operating epoch (not 0 or 1). Advance to epoch #2
+    reconfiguration::test_helper_increment_epoch_dont_reconfigure();
+    reconfiguration::test_helper_increment_epoch_dont_reconfigure();
+
     set
   }
 
@@ -39,7 +44,9 @@ module ol_framework::test_boundary {
   fun e2e_boundary_happy(root: signer) {
     let _vals = common_test_setup(&root);
 
+
     mock::trigger_epoch(&root);
+
 
     let _vals_post = stake::get_current_validators();
 
