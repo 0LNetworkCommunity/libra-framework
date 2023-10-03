@@ -248,26 +248,14 @@ module diem_framework::epoch_boundary {
     let vals = stake::get_current_validators();
     let reward_deposited = 0;
 
-    // corner case around genesis
-    // do nothing until first real epoch, `2`
-    // if (!testnet::is_testnet() && closing_epoch < 2) return (vals, reward_deposited);
-
-
     let i = 0;
     while (i < vector::length(&vals)) {
       let addr = vector::borrow(&vals, i);
-
-      // let (performed, _, _, _) = grade::get_validator_grade(*addr);
       let performed = vector::contains(&compliant_vals, addr);
-      // Failover. if we had too few blocks in an epoch, everyone should pass
-      // except for testing
-      // TODO: this is possibly duplicated with musical_chairs::eval_compliance_impl
-      // if (!testnet::is_testnet() && (epoch_round < 10)) performed = true;
-
       if (!performed) {
         jail::jail(root, *addr);
       } else {
-        vector::push_back(&mut compliant_vals, *addr);
+        // vector::push_back(&mut compliant_vals, *addr);
         if (coin::value(reward_budget) > reward_per) {
           let user_coin = coin::extract(reward_budget, reward_per);
           reward_deposited = reward_deposited + coin::value(&user_coin);
