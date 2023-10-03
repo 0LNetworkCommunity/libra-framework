@@ -5,11 +5,11 @@ use libra_cached_packages::libra_stdlib;
 use libra_framework::release::ReleaseTarget;
 use smoke_test::smoke_test_environment::new_local_swarm_with_release;
 
-/// Testing that we can get a swarm up with the current head.mrb
+/// testing that we can get a swarm up of 1 node with the current head.mrb
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn meta_can_start_swarm() {
     let release = ReleaseTarget::Head.load_bundle().unwrap();
-    let mut swarm = new_local_swarm_with_release(4, release).await;
+    let mut swarm = new_local_swarm_with_release(1, release).await;
     let mut public_info = swarm.diem_public_info();
 
     let payload = public_info
@@ -29,8 +29,23 @@ async fn meta_can_start_swarm() {
 
 /// testing the LibraSmoke abstraction can load
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn meta_create_libra_smoke() {
-    let _s = LibraSmoke::new(Some(3))
+async fn meta_create_libra_smoke_single() {
+    let _s = LibraSmoke::new(Some(1))
         .await
         .expect("cannot start libra swarm");
+}
+
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 5)]
+async fn meta_create_libra_smoke_multi() {
+    let mut s = LibraSmoke::new(Some(4))
+        .await
+        .expect("cannot start libra swarm");
+
+  let c = s.client();
+  // let c = c.get_resource::<_>(address, resource_type).awa
+  let res = c.get_account_resource("0x1".parse().unwrap(), "0x1::epoch_boundary::BoundaryStatus").await.unwrap();
+  dbg!(&res);
+
+
 }

@@ -39,7 +39,7 @@ module diem_framework::stake {
     use ol_framework::testnet;
     // use ol_framework::ol_account;
 
-    // use diem_std::debug::print;
+    use diem_std::debug::print;
 
     friend diem_framework::block;
     friend diem_framework::genesis;
@@ -1373,6 +1373,8 @@ module diem_framework::stake {
         let min_f = 3;
         let current_vals = get_current_validators();
 
+        print(&123412341234);
+        print(&proposed);
         // check if this is not test. Failover doesn't apply here
         if (testnet::is_testnet()) {
           if (vector::length(&proposed) == 0) {

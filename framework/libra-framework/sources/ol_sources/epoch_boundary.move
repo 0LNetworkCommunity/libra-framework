@@ -171,7 +171,7 @@ module diem_framework::epoch_boundary {
         slow_wallet::on_new_epoch(root);
 
         // ======= THIS IS APPROXIMATELY THE BOUNDARY =====
-        process_incoming_validators(root, status);
+        process_incoming_validators(root, status, epoch_round);
 
         subsidize_from_infra_escrow(root);
 
@@ -245,7 +245,8 @@ module diem_framework::epoch_boundary {
       let (performed, _, _, _) = grade::get_validator_grade(*addr);
       // Failover. if we had too few blocks in an epoch, everyone should pass
       // except for testing
-      if (!testnet::is_testnet() && (epoch_round < 1000)) performed = true;
+      // TODO: this is possibly duplicated with musical_chairs::eval_compliance_impl
+      if (!testnet::is_testnet() && (epoch_round < 10)) performed = true;
 
       if (!performed && closing_epoch > 1) { // issues around genesis
         jail::jail(root, *addr);
@@ -264,10 +265,10 @@ module diem_framework::epoch_boundary {
     return (compliant_vals, reward_deposited)
   }
 
-  fun process_incoming_validators(root: &signer, status: &mut BoundaryStatus) {
+  fun process_incoming_validators(root: &signer, status: &mut BoundaryStatus, epoch_round: u64) {
     system_addresses::assert_ol(root);
 
-    let (compliant, n_seats) = musical_chairs::stop_the_music(root);
+    let (compliant, n_seats) = musical_chairs::stop_the_music(root, epoch_round);
     status.incoming_compliant_count = vector::length(&compliant);
     status.incoming_compliant = compliant;
     status.incoming_seats_offered = n_seats;
