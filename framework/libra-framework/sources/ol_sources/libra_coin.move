@@ -158,8 +158,8 @@ module ol_framework::gas_coin {
 
         let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<LibraCoin>(
             diem_framework,
-            string::utf8(b"Gas Coin"),
-            string::utf8(b"GAS"),
+            string::utf8(b"LibraCoin"),
+            string::utf8(b"LIBRA"),
             globals::get_coin_decimal_places(), /* decimals  MATCHES LEGACY 0L */
             true, /* monitor_supply */
         );
@@ -180,8 +180,8 @@ module ol_framework::gas_coin {
 
         let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<LibraCoin>(
             diem_framework,
-            string::utf8(b"Gas Coin"),
-            string::utf8(b"GAS"),
+            string::utf8(b"LibraCoin"),
+            string::utf8(b"LIBRA"),
             globals::get_coin_decimal_places(), /* decimals  MATCHES LEGACY 0L */
             true, /* monitor_supply */
         );
@@ -353,8 +353,8 @@ module ol_framework::gas_coin {
         aggregator_factory::initialize_aggregator_factory_for_test(diem_framework);
         let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<LibraCoin>(
             diem_framework,
-            string::utf8(b"Gas Coin"),
-            string::utf8(b"GAS"),
+            string::utf8(b"LibraCoin"),
+            string::utf8(b"LIBRA"),
             8, /* decimals */
             true, /* monitor_supply */
         );
@@ -369,8 +369,8 @@ module ol_framework::gas_coin {
     public fun initialize_for_test_without_aggregator_factory(diem_framework: &signer): (BurnCapability<LibraCoin>, MintCapability<LibraCoin>) {
                 let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<LibraCoin>(
             diem_framework,
-            string::utf8(b"Gas Coin"),
-            string::utf8(b"GAS"),
+            string::utf8(b"LibraCoin"),
+            string::utf8(b"LIBRA"),
             8, /* decimals */
             true, /* monitor_supply */
         );
