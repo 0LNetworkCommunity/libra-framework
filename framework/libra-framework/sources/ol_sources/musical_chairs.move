@@ -3,7 +3,7 @@ module ol_framework::musical_chairs {
     use diem_framework::system_addresses;
     use diem_framework::stake;
     use ol_framework::grade;
-    use ol_framework::testnet;
+    // use ol_framework::testnet;
     use std::fixed_point32;
     use std::vector;
     // use diem_std::debug::print;
@@ -134,7 +134,7 @@ module ol_framework::musical_chairs {
     // private function prevent list DoS.
     fun eval_compliance_impl(
       validators: vector<address>,
-      epoch_round: u64,
+      epoch: u64,
     ) : (vector<address>, vector<address>, fixed_point32::FixedPoint32) {
 
         let val_set_len = vector::length(&validators);
@@ -144,7 +144,8 @@ module ol_framework::musical_chairs {
 
         // if we are at genesis or otherwise at start of an epoch, we don't
         // want to brick the validator set
-        if (!testnet::is_testnet() && (epoch_round < 10)) return (validators, non_compliant_nodes, fixed_point32::create_from_rational(1, 1));
+        // TODO: use status.move is_operating
+        if (epoch < 2) return (validators, non_compliant_nodes, fixed_point32::create_from_rational(1, 1));
 
 
         let i = 0;

@@ -147,7 +147,7 @@ module diem_framework::epoch_boundary {
     // Contains all of 0L's business logic for end of epoch.
     // This removed business logic from reconfiguration.move
     // and prevents dependency cycling.
-    public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64, epoch_round: u64) acquires BoundaryStatus {
+    public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64, _epoch_round: u64) acquires BoundaryStatus {
         system_addresses::assert_ol(root);
 
         let status = borrow_global_mut<BoundaryStatus>(@ol_framework);
@@ -164,7 +164,7 @@ module diem_framework::epoch_boundary {
         // randomize the Tower/Oracle difficulty
         tower_state::reconfig(root);
 
-        let (compliant_vals, n_seats) = musical_chairs::stop_the_music(root, epoch_round);
+        let (compliant_vals, n_seats) = musical_chairs::stop_the_music(root, closing_epoch);
         status.incoming_compliant_count = vector::length(&compliant_vals);
         status.incoming_compliant = compliant_vals;
         status.incoming_seats_offered = n_seats;
