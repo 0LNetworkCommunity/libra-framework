@@ -35,7 +35,6 @@ pub enum QueryType {
         #[clap(short, long)]
         /// the path of the resource, such as 0x1::slow_wallet::SlowWallet
         resource_path_string: String,
-
     },
     /// Execute a View function on-chain
     View {

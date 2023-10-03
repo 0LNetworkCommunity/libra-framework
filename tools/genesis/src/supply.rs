@@ -177,7 +177,7 @@ fn test_genesis_math() {
     // confirm the supply of normal, slow, and donor directed will add up to 100%``
 
     let mut supply = populate_supply_stats_from_legacy(&r, &settings.map_dd_to_slow).unwrap();
-    println!(&supply);
+    dbg!(&supply);
 
     println!("before");
     let pct_normal = supply.normal / supply.total;
@@ -186,7 +186,7 @@ fn test_genesis_math() {
 
     let pct_slow = supply.slow_total / supply.total;
 
-    let pct_val_locked = supply.slow_validator_locked / supply.total;
+    let _pct_val_locked = supply.slow_validator_locked / supply.total;
 
     let sum_all_pct = pct_normal + pct_slow + pct_dd;
     assert!(sum_all_pct == 1.0);
@@ -194,16 +194,16 @@ fn test_genesis_math() {
 
     // genesis infra escrow math
     // future uses is intended to equal 70% in this scenario.
-    println!("after");
+    dbg!("after");
     supply.set_ratios_from_settings(&settings).unwrap();
 
     // escrow comes out of validator locked only
     let to_escrow = supply.escrow_pct * supply.slow_validator_locked;
     let new_slow = supply.slow_total - to_escrow;
-    println!(&pct_normal);
-    println!(&pct_dd);
-    println!(new_slow / supply.total);
-    println!(to_escrow / supply.total);
+    dbg!(&pct_normal);
+    dbg!(&pct_dd);
+    dbg!(new_slow / supply.total);
+    dbg!(to_escrow / supply.total);
 
     let sum_all = to_escrow + new_slow + supply.normal + supply.donor_directed;
     assert!(supply.total == sum_all);

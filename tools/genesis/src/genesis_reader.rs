@@ -159,7 +159,7 @@ fn test_db_rw() {
 
     let ap = make_access_path(AccountAddress::ZERO, "slow_wallet", "SlowWalletList").unwrap();
     let version = db_rw.reader.get_latest_version().unwrap();
-    let bytes = db_rw
+    let _bytes = db_rw
         .reader
         .get_state_value_by_version(&StateKey::access_path(ap), version)
         .unwrap();

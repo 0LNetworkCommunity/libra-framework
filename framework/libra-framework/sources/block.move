@@ -13,7 +13,7 @@ module diem_framework::block {
     use diem_framework::system_addresses;
     use diem_framework::timestamp;
     use diem_framework::transaction_fee;
-    use diem_std::debug::print;
+    // use diem_std::debug::print;
 
     //////// 0L ////////
     use ol_framework::epoch_boundary;
@@ -114,7 +114,6 @@ module diem_framework::block {
     ) acquires BlockResource {
         // Operational constraint: can only be invoked by the VM.
         system_addresses::assert_vm(&vm);
-        print(&123412341234);
 
         // Blocks can only be produced by a valid proposer or by the VM itself for Nil blocks (no user txs).
         assert!(
