@@ -116,9 +116,6 @@ module ol_framework::test_stake {
     let (compliant, _, _, _) = grade::get_validator_grade(eve);
     assert!(!compliant, 735701);
 
-    // let v = grade::get_jailed_set();
-    // assert!(vector::contains(&v, &eve), 735702);
-
   }
 
 

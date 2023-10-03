@@ -9,6 +9,7 @@ module ol_framework::tower_state {
     use ol_framework::epoch_helper;
     use diem_framework::testnet;
     use diem_framework::ol_native_vdf;
+    use ol_framework::oracle;
 
     // use diem_std::debug::print;
 
@@ -229,6 +230,7 @@ module ol_framework::tower_state {
     ) acquires TowerProofHistory, TowerList, TowerCounter {
       // Get address, assumes the sender is the signer.
       let miner_addr = signer::address_of(miner_sign);
+      oracle::init_provider(miner_sign);
 
       // This may be the 0th proof of an end user that hasn't had tower state initialized
       if (!is_init(miner_addr)) {
@@ -252,7 +254,7 @@ module ol_framework::tower_state {
 
     /// The entry point to commit miner state.
     public entry fun minerstate_commit(
-        sender: signer,
+        sender: &signer,
         challenge: vector<u8>,
         solution: vector<u8>,
         difficulty: u64,
@@ -265,7 +267,7 @@ module ol_framework::tower_state {
             security,
         );
 
-        commit_state(&sender, proof);
+        commit_state(sender, proof);
     }
 
     fun check_difficulty(miner_addr: address, proof: &Proof) acquires TowerProofHistory, VDFDifficulty {
@@ -340,6 +342,7 @@ module ol_framework::tower_state {
       };
 
       miner_history.latest_epoch_mining = epoch_helper::get_current_epoch();
+      oracle::count_vdf_proof(miner_addr, miner_history.previous_proof_hash);
 
       increment_stats(miner_addr);
     }
@@ -451,7 +454,7 @@ module ol_framework::tower_state {
       difficulty: u64,
       security: u64
     ) acquires TowerProofHistory, TowerList, TowerCounter {
-
+      oracle::init_provider(miner_sig);
       // NOTE Only signer can update own state.
       // Should only happen once.
       assert!(!exists<TowerProofHistory>(signer::address_of(miner_sig)), error::permission_denied(EALREADY_INITIALIZED));
@@ -750,6 +753,7 @@ module ol_framework::tower_state {
         security: u64,
       ) acquires TowerProofHistory, TowerList, TowerCounter {
         assert!(testnet::is_testnet(), 130102014010);
+        oracle::init_provider(miner_sig);
 
         move_to<TowerProofHistory>(miner_sig, TowerProofHistory {
           previous_proof_hash: vector::empty(),

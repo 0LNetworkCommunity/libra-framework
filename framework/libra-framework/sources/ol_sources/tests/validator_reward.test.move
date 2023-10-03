@@ -16,7 +16,7 @@ module ol_framework::test_reconfiguration {
 
   // Scenario: all genesis validators make it to next epoch
   #[test(root = @ol_framework)]
-  fun reconfig_happy_case(root: signer) {
+  fun reconfig_reward_happy_case(root: signer) {
       let vals = mock::genesis_n_vals(&root, 5);
       mock::ol_initialize_coin(&root);
       mock::pof_default();
@@ -28,7 +28,8 @@ module ol_framework::test_reconfiguration {
 
       assert!(coin::balance<GasCoin>(@0x1000a) == 0, 7357003);
 
-      let (reward_one, _, _ ) = proof_of_fee::get_consensus_reward();
+
+      let (reward_one, _entry_fee, _, _ ) = proof_of_fee::get_consensus_reward();
       // The epoch's reward BEFORE reconfiguration
       assert!(reward_one == 1000000, 7357004);
       // run ol reconfiguration
@@ -38,7 +39,7 @@ module ol_framework::test_reconfiguration {
 
       assert!(vector::length(&vals) == 5, 7357005);
       let alice_bal = coin::balance<GasCoin>(@0x1000a);
-      let (_, entry_fee, _ ) = proof_of_fee::get_consensus_reward();
+      let (_, entry_fee, _,  _ ) = proof_of_fee::get_consensus_reward();
       // need to check that the user paid an PoF entry fee for next epoch.
       // which means the balance will be the nominal reward, net of the PoF clearing price bid
       assert!(alice_bal == (reward_one-entry_fee), 7357006)
@@ -67,7 +68,7 @@ module ol_framework::test_reconfiguration {
       // make alice non performant
       mock::mock_case_4(&root, *vector::borrow(&vals, 0));
 
-      let (reward, _, _ ) = proof_of_fee::get_consensus_reward();
+      let (reward, _, _, _ ) = proof_of_fee::get_consensus_reward();
 
       // run ol reconfiguration
       mock::trigger_epoch(&root);
@@ -79,7 +80,7 @@ module ol_framework::test_reconfiguration {
       assert!(vector::length(&vals) == 4, 7357003);
       assert!(!vector::contains(&vals, &@0x1000a), 7357004);
 
-      let (_, entry_fee, _ ) = proof_of_fee::get_consensus_reward();
+      let (_, entry_fee, _, _ ) = proof_of_fee::get_consensus_reward();
 
       // alice doesn't get paid
 

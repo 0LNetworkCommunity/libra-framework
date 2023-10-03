@@ -1372,7 +1372,6 @@ module diem_framework::stake {
 
         let min_f = 3;
         let current_vals = get_current_validators();
-
         // check if this is not test. Failover doesn't apply here
         if (testnet::is_testnet()) {
           if (vector::length(&proposed) == 0) {

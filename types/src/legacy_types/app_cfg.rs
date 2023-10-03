@@ -702,7 +702,7 @@ tx_configs:
 ";
 
     let cfg: AppCfg = serde_yaml::from_str(raw_yaml).unwrap();
-    // dbg!(&cfg);
+
     assert!(cfg.workspace.default_chain_id == NamedChain::TESTING);
 
     let np = cfg.get_network_profile(None).unwrap();

@@ -105,12 +105,9 @@ module ol_framework::mock {
     #[test_only]
     public fun pof_default(): (vector<address>, vector<u64>, vector<u64>){
 
-      // system_addresses::assert_ol(vm);
       let vals = stake::get_current_validators();
 
       let (bids, expiry) = mock_bids(&vals);
-
-      // DiemAccount::slow_wallet_epoch_drip(vm, 100000); // unlock some coins for the validators
 
       // make all validators pay auction fee
       // the clearing price in the fibonacci sequence is is 1
@@ -333,5 +330,22 @@ module ol_framework::mock {
     assert!(supply_pre == mocked_tx_fees + (n_vals * genesis_mint), 73570001);
   }
 
+
+  #[test(root = @ol_framework)]
+  fun test_setting_pof(root: &signer) {
+    // Scenario: unit testing that pof_default results in a usable auction
+    let n_vals = 5;
+    let vals = genesis_n_vals(root, n_vals); // need to include eve to init funds
+    pof_default();
+
+    proof_of_fee::fill_seats_and_get_price(root, n_vals, &vals, &vals);
+
+    let (nominal_reward, entry_fee, clearing_percent, median_bid ) = proof_of_fee::get_consensus_reward();
+
+    assert!(nominal_reward == 1000000, 73570001);
+    assert!(clearing_percent == 1, 73570002);
+    assert!(entry_fee == 999, 73570003);
+    assert!(median_bid == 3, 73570004);
+  }
 
 }

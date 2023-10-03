@@ -181,13 +181,12 @@ fn test_genesis_math() {
 
     println!("before");
     let pct_normal = supply.normal / supply.total;
-    dbg!(&pct_normal);
+
     let pct_dd = supply.donor_directed / supply.total;
-    dbg!(&pct_dd);
+
     let pct_slow = supply.slow_total / supply.total;
-    dbg!(&pct_slow);
-    let pct_val_locked = supply.slow_validator_locked / supply.total;
-    dbg!(&pct_val_locked);
+
+    let _pct_val_locked = supply.slow_validator_locked / supply.total;
 
     let sum_all_pct = pct_normal + pct_slow + pct_dd;
     assert!(sum_all_pct == 1.0);
@@ -195,7 +194,7 @@ fn test_genesis_math() {
 
     // genesis infra escrow math
     // future uses is intended to equal 70% in this scenario.
-    println!("after");
+    dbg!("after");
     supply.set_ratios_from_settings(&settings).unwrap();
 
     // escrow comes out of validator locked only

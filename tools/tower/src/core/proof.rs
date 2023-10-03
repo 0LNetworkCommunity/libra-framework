@@ -374,8 +374,6 @@ async fn test_get_next() {
     let vdf = get_next_and_mine(&app_cfg, &dummy_client, true)
         .await
         .unwrap();
-    // dbg!(&hex::encode(&vdf.preimage));
     let next_preimage = &hex::encode(vdf.preimage);
     assert!(proof_hash_str == next_preimage);
-    // dbg!(&vdf);
 }

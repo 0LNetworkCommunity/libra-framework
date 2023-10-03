@@ -4,10 +4,7 @@ module ol_framework::test_boundary {
   use std::vector;
   use diem_std::bls12381;
   use ol_framework::mock;
-
-  // use ol_framework::account;
   use ol_framework::proof_of_fee;
-  // use ol_framework::reconfiguration;
   use ol_framework::jail;
   use ol_framework::slow_wallet;
   use ol_framework::vouch;
@@ -16,6 +13,7 @@ module ol_framework::test_boundary {
   use diem_framework::stake;
   use ol_framework::epoch_boundary;
   use ol_framework::ol_account;
+  use diem_framework::reconfiguration;
 
   // use diem_std::debug::print;
 
@@ -34,6 +32,10 @@ module ol_framework::test_boundary {
     mock::pof_default();
     slow_wallet::slow_wallet_epoch_drip(root, 500000);
 
+    // NOTE: for e2e epoch tests, we need to go into an operating epoch (not 0 or 1). Advance to epoch #2
+    reconfiguration::test_helper_increment_epoch_dont_reconfigure();
+    reconfiguration::test_helper_increment_epoch_dont_reconfigure();
+
     set
   }
 
@@ -42,7 +44,9 @@ module ol_framework::test_boundary {
   fun e2e_boundary_happy(root: signer) {
     let _vals = common_test_setup(&root);
 
+
     mock::trigger_epoch(&root);
+
 
     let _vals_post = stake::get_current_validators();
 
@@ -143,19 +147,8 @@ module ol_framework::test_boundary {
     let qualified_bidders = epoch_boundary::get_qualified_bidders();
     assert!(vector::length(&qualified_bidders) == (vector::length(&vals) - 1), 7357003);
 
-        // all vals had winning bids, but it was less than the seats on offer
+    // all vals had winning bids, but it was less than the seats on offer
     assert!(vector::length(&epoch_boundary::get_auction_winners()) == vector::length(&qualified_bidders) , 7357003);
-
-
-    // let _vals_post = stake::get_current_validators();
-
     assert!(epoch_boundary::get_reconfig_success(), 7357001);
-
-    // // all validators were compliant, should be +1 of the 10 vals
-    // assert!(epoch_boundary::get_seats_offered() == 11, 7357002);
-
-
-    // // all of the auction winners became the validators ulitmately
-    // assert!(vector::length(&epoch_boundary::get_actual_vals()) == 10, 7357004);
   }
 }

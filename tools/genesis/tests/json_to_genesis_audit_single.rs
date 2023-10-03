@@ -131,7 +131,7 @@ fn test_check_ancestry() {
         .unwrap()
         .unwrap();
     assert!(ancestry.tree.len() == 2);
-    dbg!(&ancestry.tree);
+
     assert!(ancestry
         .tree
         .get(0)
@@ -139,7 +139,6 @@ fn test_check_ancestry() {
         .to_string()
         .contains("bdb8ad37341c"));
 
-    // dbg!(&ancestry);
     // let vals_list: Vec<AccountAddress> =
     //     genesis_vals.into_iter().map(|v| v.owner_address).collect();
 

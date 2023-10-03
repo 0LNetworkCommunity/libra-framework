@@ -62,7 +62,6 @@ impl TestPersona {
     /// get mnemonic
     pub fn get_persona_mnem(&self) -> String {
         let path = env!("CARGO_MANIFEST_DIR");
-        // dbg!(&self.to_string());
         let buf = PathBuf::from_str(path)
             .unwrap()
             .parent()
