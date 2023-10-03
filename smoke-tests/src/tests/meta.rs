@@ -38,7 +38,7 @@ async fn meta_create_libra_smoke_single() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 5)]
 async fn meta_create_libra_smoke_multi() {
-    let mut s = LibraSmoke::new(Some(4))
+    let mut s = LibraSmoke::new(Some(3))
         .await
         .expect("cannot start libra swarm");
 

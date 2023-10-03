@@ -7,7 +7,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::gas_coin::GasCoin;
     use ol_framework::rewards;
     use ol_framework::jail;
-    use ol_framework::grade;
+    // use ol_framework::grade;
     use ol_framework::safe;
     use ol_framework::burn;
     use ol_framework::donor_directed;
@@ -15,7 +15,6 @@ module diem_framework::epoch_boundary {
     use ol_framework::tower_state;
     use ol_framework::infra_escrow;
     use ol_framework::oracle;
-    use ol_framework::testnet;
     use ol_framework::ol_account;
     use diem_framework::transaction_fee;
     use diem_framework::system_addresses;
@@ -165,13 +164,18 @@ module diem_framework::epoch_boundary {
         // randomize the Tower/Oracle difficulty
         tower_state::reconfig(root);
 
-        settle_accounts(root, closing_epoch, epoch_round, status);
+        let (compliant_vals, n_seats) = musical_chairs::stop_the_music(root, epoch_round);
+        status.incoming_compliant_count = vector::length(&compliant_vals);
+        status.incoming_compliant = compliant_vals;
+        status.incoming_seats_offered = n_seats;
+
+        settle_accounts(root, compliant_vals, status);
 
         // drip coins
         slow_wallet::on_new_epoch(root);
 
         // ======= THIS IS APPROXIMATELY THE BOUNDARY =====
-        process_incoming_validators(root, status, epoch_round);
+        process_incoming_validators(root, status, compliant_vals, n_seats);
 
         subsidize_from_infra_escrow(root);
 
@@ -180,7 +184,8 @@ module diem_framework::epoch_boundary {
 
   // TODO: instrument all of this
   /// withdraw coins and settle accounts for validators and oracles
-  fun settle_accounts(root: &signer, closing_epoch: u64, epoch_round: u64, status: &mut BoundaryStatus) {
+  /// returns the list of compliant_vals
+  fun settle_accounts(root: &signer, compliant_vals: vector<address>, status: &mut BoundaryStatus): vector<address> {
         assert!(transaction_fee::is_fees_collection_enabled(), error::invalid_state(ETX_FEES_NOT_INITIALIZED));
 
         if (transaction_fee::system_fees_collected() > 0) {
@@ -195,7 +200,7 @@ module diem_framework::epoch_boundary {
 
           // validators get the gross amount of the reward, since they already paid to enter. This results in a net payment equivalent to:
           // nominal_reward_to_vals - entry_fee.
-          let (compliant_vals, total_reward) = process_outgoing_validators(root, &mut all_fees, nominal_reward_to_vals, closing_epoch, epoch_round);
+          let (compliant_vals, total_reward) = process_outgoing_validators(root, &mut all_fees, nominal_reward_to_vals, compliant_vals);
 
           status.outgoing_vals_paid = compliant_vals;
           status.outgoing_total_reward = total_reward;
@@ -228,6 +233,8 @@ module diem_framework::epoch_boundary {
           // there might be some dust, that should get burned
           coin::user_burn(all_fees);
         };
+
+        compliant_vals
   }
 
 
@@ -236,22 +243,28 @@ module diem_framework::epoch_boundary {
   /// NOTE: receives from reconfiguration.move a mutable borrow of a coin to pay reward
   /// NOTE: burn remaining fees from transaction fee account happens in reconfiguration.move (it's not a validator_universe concern)
   // Returns (compliant_vals, reward_deposited)
-  fun process_outgoing_validators(root: &signer, reward_budget: &mut Coin<GasCoin>, reward_per: u64, closing_epoch: u64, epoch_round: u64): (vector<address>, u64){
+  fun process_outgoing_validators(root: &signer, reward_budget: &mut Coin<GasCoin>, reward_per: u64, compliant_vals: vector<address>): (vector<address>, u64){
     system_addresses::assert_ol(root);
     let vals = stake::get_current_validators();
-    let compliant_vals = vector::empty<address>();
     let reward_deposited = 0;
+
+    // corner case around genesis
+    // do nothing until first real epoch, `2`
+    // if (!testnet::is_testnet() && closing_epoch < 2) return (vals, reward_deposited);
+
+
     let i = 0;
     while (i < vector::length(&vals)) {
       let addr = vector::borrow(&vals, i);
 
-      let (performed, _, _, _) = grade::get_validator_grade(*addr);
+      // let (performed, _, _, _) = grade::get_validator_grade(*addr);
+      let performed = vector::contains(&compliant_vals, addr);
       // Failover. if we had too few blocks in an epoch, everyone should pass
       // except for testing
       // TODO: this is possibly duplicated with musical_chairs::eval_compliance_impl
-      if (!testnet::is_testnet() && (epoch_round < 10)) performed = true;
+      // if (!testnet::is_testnet() && (epoch_round < 10)) performed = true;
 
-      if (!performed && closing_epoch > 1) { // issues around genesis
+      if (!performed) {
         jail::jail(root, *addr);
       } else {
         vector::push_back(&mut compliant_vals, *addr);
@@ -268,22 +281,19 @@ module diem_framework::epoch_boundary {
     return (compliant_vals, reward_deposited)
   }
 
-  fun process_incoming_validators(root: &signer, status: &mut BoundaryStatus, epoch_round: u64) {
+  fun process_incoming_validators(root: &signer, status: &mut BoundaryStatus, compliant_vals: vector<address>, n_seats: u64) {
     system_addresses::assert_ol(root);
 
-    let (compliant, n_seats) = musical_chairs::stop_the_music(root, epoch_round);
-    status.incoming_compliant_count = vector::length(&compliant);
-    status.incoming_compliant = compliant;
-    status.incoming_seats_offered = n_seats;
+
     // check amount of fees expected
-    let (auction_winners, all_bidders, only_qualified_bidders, entry_fee) = proof_of_fee::end_epoch(root, &compliant, n_seats);
+    let (auction_winners, all_bidders, only_qualified_bidders, entry_fee) = proof_of_fee::end_epoch(root, &compliant_vals, n_seats);
     status.incoming_filled_seats = vector::length(&auction_winners);
     status.incoming_all_bidders = all_bidders;
     status.incoming_only_qualified_bidders = only_qualified_bidders;
     status.incoming_auction_winners = auction_winners;
 
 
-    let post_failover_check = stake::check_failover_rules(auction_winners, compliant);
+    let post_failover_check = stake::check_failover_rules(auction_winners, compliant_vals);
     status.incoming_post_failover_check = post_failover_check;
 
     // showtime! try to reconfigure
