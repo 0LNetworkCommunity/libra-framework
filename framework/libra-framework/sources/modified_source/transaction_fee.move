@@ -7,6 +7,7 @@ module diem_framework::transaction_fee {
     use std::option::{Self, Option};
     use ol_framework::gas_coin::LibraCoin as GasCoin;
     use ol_framework::fee_maker;
+    use ol_framework::slow_wallet;
 
     // use diem_std::debug::print;
 
@@ -180,6 +181,8 @@ module diem_framework::transaction_fee {
         // we burn them all at once. This way we avoid having a check for every transaction epilogue.
         let collected_amount = &mut collected_fees.amount;
         coin::collect_into_aggregatable_coin<GasCoin>(account, fee, collected_amount);
+        // must adjust slow wallet tracker for all transactions
+        slow_wallet::maybe_track_unlocked_withdraw(account, fee);
     }
 
     //////// 0L ////////

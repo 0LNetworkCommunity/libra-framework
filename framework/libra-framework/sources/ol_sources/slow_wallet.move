@@ -17,6 +17,7 @@ module ol_framework::slow_wallet {
   // use diem_std::debug::print;
 
   friend ol_framework::ol_account;
+  friend ol_framework::transaction_fee;
 
   /// genesis failed to initialized the slow wallet registry
   const EGENESIS_ERROR: u64 = 1;

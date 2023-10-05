@@ -81,7 +81,6 @@ async fn smoke_transfer_create_account() {
     // TODO: check the balance
 }
 
-
 /// Estimate only. Esitmates will fail if the coin name is not set in the diem-node compiled binary.
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn smoke_transfer_estimate() {
