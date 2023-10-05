@@ -353,12 +353,12 @@ module diem_framework::validators {
     }
 
 
-    #[view]
-    /// Return the voting power of the validator in the current epoch.
-    /// This is the same as the validator's total active and pending_inactive stake.
-    public fun get_current_epoch_voting_power(_pool_address: address): u64  {
-        1
-    }
+    // #[view]
+    // /// Return the voting power of the validator in the current epoch.
+    // /// This is the same as the validator's total active and pending_inactive stake.
+    // public fun get_current_epoch_voting_power(_pool_address: address): u64  {
+    //     1
+    // }
 
     // #[view]
     // /// Return the delegated voter of the validator at `pool_address`.
@@ -770,57 +770,16 @@ module diem_framework::validators {
         );
     }
 
-    // /// Similar to increase_lockup_with_cap but will use ownership capability from the signing account.
-    // public entry fun increase_lockup(owner: &signer) acquires OwnerCapability,  {
-    //     let owner_address = signer::address_of(owner);
-    //     assert_owner_cap_exists(owner_address);
-    //     let _ownership_cap = borrow_global<OwnerCapability>(owner_address);
-    //     // increase_lockup_with_cap(ownership_cap);
-    // }
 
-    /// Unlock from active delegation, it's moved to pending_inactive if locked_until_secs < current_time or
-    /// directly inactive if it's not from an active validator.
-    // public fun increase_lockup_with_cap(owner_cap: &OwnerCapability) acquires ValidatorState {
-    //     let pool_address = owner_cap.pool_address;
-    //     assert_stake_pool_exists(pool_address);
-    //     let config = staking_config::get();
-
-    //     let stake_pool = borrow_global_mut<ValidatorState>(pool_address);
-    //     let old_locked_until_secs = stake_pool.locked_until_secs;
-    //     let new_locked_until_secs = timestamp::now_seconds() + staking_config::get_recurring_lockup_duration(&config);
-    //     assert!(old_locked_until_secs < new_locked_until_secs, error::invalid_argument(EINVALID_LOCKUP));
-    //     stake_pool.locked_until_secs = new_locked_until_secs;
-
-    //     event::emit_event(
-    //         &mut stake_pool.increase_lockup_events,
-    //         IncreaseLockupEvent {
-    //             pool_address,
-    //             old_locked_until_secs,
-    //             new_locked_until_secs,
-    //         },
-    //     );
-    // }
-
-    /// This can only called by the operator of the validator/staking pool.
-    public entry fun join_validator_set(
-        operator: &signer,
-        pool_address: address
-    ) acquires ValidatorState, ValidatorConfig, ValidatorSet {
-        // assert!(
-        //     staking_config::get_allow_validator_set_change(&staking_config::get()),
-        //     error::invalid_argument(ENO_POST_GENESIS_VALIDATOR_SET_CHANGE_ALLOWED),
-        // );
-
-        join_validator_set_internal(operator, pool_address);
-    }
-
+    #[test_only]
     /// Request to have `pool_address` join the validator set. Can only be called after calling `initialize_validator`.
     /// If the validator has the required stake (more than minimum and less than maximum allowed), they will be
     /// added to the pending_active queue. All validators in this queue will be added to the active set when the next
     /// epoch starts (eligibility will be rechecked).
     ///
-    /// This internal version can only be called by the Genesis module during Genesis.
-    public(friend) fun join_validator_set_internal(
+    /// This internal version can only be called by the Genesis module during
+    /// Genesis.
+    public fun join_validator_set(
         operator: &signer,
         pool_address: address
     ) acquires ValidatorState, ValidatorConfig, ValidatorSet {
@@ -1041,126 +1000,128 @@ module diem_framework::validators {
     /// pending inactive validators so they no longer can vote.
     /// 4. The validator's voting power in the validator set is updated to be the corresponding staking pool's voting
     /// power.
-    public(friend) fun on_new_epoch() acquires ValidatorState, ValidatorConfig, ValidatorPerformance, ValidatorSet {
-        let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
-        // let config = staking_config::get();
-        let validator_perf = borrow_global_mut<ValidatorPerformance>(@diem_framework);
+    // public(friend) fun on_new_epoch() acquires ValidatorState, ValidatorConfig, ValidatorPerformance, ValidatorSet {
+    //     let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
+    //     // let config = staking_config::get();
+    //     let validator_perf = borrow_global_mut<ValidatorPerformance>(@diem_framework);
 
-        // Process pending stake and distribute transaction fees and rewards for each currently active validator.
-        // let i = 0;
-        // let len = vector::length(&validator_set.active_validators);
-        // while (i < len) {
-        //     let validator = vector::borrow(&validator_set.active_validators, i);
-        //     update_stake_pool(validator_perf, validator.addr);
-        //     i = i + 1;
-        // };
+    //     // Process pending stake and distribute transaction fees and rewards for each currently active validator.
+    //     // let i = 0;
+    //     // let len = vector::length(&validator_set.active_validators);
+    //     // while (i < len) {
+    //     //     let validator = vector::borrow(&validator_set.active_validators, i);
+    //     //     update_stake_pool(validator_perf, validator.addr);
+    //     //     i = i + 1;
+    //     // };
 
-        // Activate currently pending_active validators.
-        // append(&mut validator_set.active_validators, &mut validator_set.pending_active);
+    //     // Activate currently pending_active validators.
+    //     // append(&mut validator_set.active_validators, &mut validator_set.pending_active);
 
-        // Officially deactivate all pending_inactive validators. They will now no longer receive rewards.
-        // validator_set.pending_inactive = vector::empty();
+    //     // Officially deactivate all pending_inactive validators. They will now no longer receive rewards.
+    //     // validator_set.pending_inactive = vector::empty();
 
-        // Update active validator set so that network address/public key change takes effect.
-        // Moreover, recalculate the total voting power, and deactivate the validator whose
-        // voting power is less than the minimum required stake.
-        let next_epoch_validators = vector::empty();
-        // let (minimum_stake, _) = staking_config::get_required_stake(&config);
-        let minimum_stake = 0;
-
-
-        let vlen = vector::length(&validator_set.active_validators);
-        let total_voting_power = 0;
-        let i = 0;
-        while ({
-            spec {
-                invariant spec_validators_are_initialized(next_epoch_validators);
-            };
-            i < vlen
-        }) {
-            let old_validator_info = vector::borrow_mut(&mut validator_set.active_validators, i);
-            let pool_address = old_validator_info.addr;
-            let validator_config = borrow_global_mut<ValidatorConfig>(pool_address);
-            let stake_pool = borrow_global_mut<ValidatorState>(pool_address);
-            let new_validator_info = generate_validator_info(pool_address, stake_pool, *validator_config);
-
-            // A validator needs at least the min stake required to join the validator set.
-            if (new_validator_info.voting_power >= minimum_stake) {
-                spec {
-                    assume total_voting_power + new_validator_info.voting_power <= MAX_U128;
-                };
-                total_voting_power = total_voting_power + (new_validator_info.voting_power as u128);
-                vector::push_back(&mut next_epoch_validators, new_validator_info);
-            };
-            i = i + 1;
-        };
+    //     // Update active validator set so that network address/public key change takes effect.
+    //     // Moreover, recalculate the total voting power, and deactivate the validator whose
+    //     // voting power is less than the minimum required stake.
+    //     let next_epoch_validators = vector::empty();
+    //     // let (minimum_stake, _) = staking_config::get_required_stake(&config);
+    //     let minimum_stake = 0;
 
 
-        validator_set.active_validators = next_epoch_validators;
-        validator_set.total_voting_power = total_voting_power;
+    //     let vlen = vector::length(&validator_set.active_validators);
+    //     let total_voting_power = 0;
+    //     let i = 0;
+    //     while ({
+    //         spec {
+    //             invariant spec_validators_are_initialized(next_epoch_validators);
+    //         };
+    //         i < vlen
+    //     }) {
+    //         let old_validator_info = vector::borrow_mut(&mut validator_set.active_validators, i);
+    //         let pool_address = old_validator_info.addr;
+    //         let validator_config = borrow_global_mut<ValidatorConfig>(pool_address);
+    //         let stake_pool = borrow_global_mut<ValidatorState>(pool_address);
+    //         let new_validator_info = generate_validator_info(pool_address, stake_pool, *validator_config);
+
+    //         // A validator needs at least the min stake required to join the validator set.
+    //         if (new_validator_info.voting_power >= minimum_stake) {
+    //             spec {
+    //                 assume total_voting_power + new_validator_info.voting_power <= MAX_U128;
+    //             };
+    //             total_voting_power = total_voting_power + (new_validator_info.voting_power as u128);
+    //             vector::push_back(&mut next_epoch_validators, new_validator_info);
+    //         };
+    //         i = i + 1;
+    //     };
 
 
-        validator_set.total_joining_power = 0;
-
-        // Update validator indices, reset performance scores, and renew lockups.
-        validator_perf.validators = vector::empty();
-        // let recurring_lockup_duration_secs = 0;
-        //staking_config::get_recurring_lockup_duration(&config);
+    //     validator_set.active_validators = next_epoch_validators;
+    //     validator_set.total_voting_power = total_voting_power;
 
 
-        let vlen = vector::length(&validator_set.active_validators);
-        let validator_index = 0;
-        while ({
-            spec {
-                invariant spec_validators_are_initialized(validator_set.active_validators);
-                // invariant len(validator_set.pending_active) == 0;
-                // invariant len(validator_set.pending_inactive) == 0;
-                invariant 0 <= validator_index && validator_index <= vlen;
-                invariant vlen == len(validator_set.active_validators);
-                invariant forall i in 0..validator_index:
-                    global<ValidatorConfig>(validator_set.active_validators[i].addr).validator_index < validator_index;
-                invariant len(validator_perf.validators) == validator_index;
-            };
-            validator_index < vlen
-        }) {
+    //     validator_set.total_joining_power = 0;
 
-            // Update validator index.
-            let validator_info = vector::borrow_mut(&mut validator_set.active_validators, validator_index);
-            validator_info.config.validator_index = validator_index;
-            let validator_config = borrow_global_mut<ValidatorConfig>(validator_info.addr);
-            validator_config.validator_index = validator_index;
+    //     // Update validator indices, reset performance scores, and renew lockups.
+    //     validator_perf.validators = vector::empty();
+    //     // let recurring_lockup_duration_secs = 0;
+    //     //staking_config::get_recurring_lockup_duration(&config);
 
-            // reset performance scores.
-            vector::push_back(&mut validator_perf.validators, IndividualValidatorPerformance {
-                successful_proposals: 0,
-                failed_proposals: 0,
-            });
 
-            // // Automatically renew a validator's lockup for validators that will still be in the validator set in the
-            // // next epoch.
-            // let stake_pool = borrow_global_mut<ValidatorState>(validator_info.addr);
-            // if (stake_pool.locked_until_secs <= timestamp::now_seconds()) {
-            //     spec {
-            //         assume timestamp::spec_now_seconds() + recurring_lockup_duration_secs <= MAX_U64;
-            //     };
-            //     stake_pool.locked_until_secs =
-            //         timestamp::now_seconds() + recurring_lockup_duration_secs;
-            // };
+    //     let vlen = vector::length(&validator_set.active_validators);
+    //     let validator_index = 0;
+    //     while ({
+    //         spec {
+    //             invariant spec_validators_are_initialized(validator_set.active_validators);
+    //             // invariant len(validator_set.pending_active) == 0;
+    //             // invariant len(validator_set.pending_inactive) == 0;
+    //             invariant 0 <= validator_index && validator_index <= vlen;
+    //             invariant vlen == len(validator_set.active_validators);
+    //             invariant forall i in 0..validator_index:
+    //                 global<ValidatorConfig>(validator_set.active_validators[i].addr).validator_index < validator_index;
+    //             invariant len(validator_perf.validators) == validator_index;
+    //         };
+    //         validator_index < vlen
+    //     }) {
 
-            validator_index = validator_index + 1;
-        };
+    //         // Update validator index.
+    //         let validator_info = vector::borrow_mut(&mut validator_set.active_validators, validator_index);
+    //         validator_info.config.validator_index = validator_index;
+    //         let validator_config = borrow_global_mut<ValidatorConfig>(validator_info.addr);
+    //         validator_config.validator_index = validator_index;
 
-        // if (features::periodical_reward_rate_decrease_enabled()) {
-        //     // Update rewards rate after reward distribution.
-        //     staking_config::calculate_and_save_latest_epoch_rewards_rate();
-        // };
-    }
+    //         // reset performance scores.
+    //         vector::push_back(&mut validator_perf.validators, IndividualValidatorPerformance {
+    //             successful_proposals: 0,
+    //             failed_proposals: 0,
+    //         });
+
+    //         // // Automatically renew a validator's lockup for validators that will still be in the validator set in the
+    //         // // next epoch.
+    //         // let stake_pool = borrow_global_mut<ValidatorState>(validator_info.addr);
+    //         // if (stake_pool.locked_until_secs <= timestamp::now_seconds()) {
+    //         //     spec {
+    //         //         assume timestamp::spec_now_seconds() + recurring_lockup_duration_secs <= MAX_U64;
+    //         //     };
+    //         //     stake_pool.locked_until_secs =
+    //         //         timestamp::now_seconds() + recurring_lockup_duration_secs;
+    //         // };
+
+    //         validator_index = validator_index + 1;
+    //     };
+
+    //     // if (features::periodical_reward_rate_decrease_enabled()) {
+    //     //     // Update rewards rate after reward distribution.
+    //     //     staking_config::calculate_and_save_latest_epoch_rewards_rate();
+    //     // };
+    // }
 
     /// DANGER: belt and suspenders critical mutations
     /// Called on epoch boundary to reconfigure
     /// No change may happen due to failover rules.
     /// Returns instrumentation for audits: if what the validator set was, which validators qualified after failover rules, a list of validators which had missing configs and were excluded, if the new list sucessfully matches the actual validators after reconfiguration(actual_validator_set, qualified_on_failover, missing_configs, success)
-    public(friend) fun maybe_reconfigure(root: &signer, proposed_validators: vector<address>): (vector<address>, vector<address>, bool) acquires ValidatorState, ValidatorConfig, ValidatorPerformance, ValidatorSet {
+    public(friend) fun maybe_reconfigure(root: &signer, proposed_validators:
+    vector<address>): (vector<address>, vector<address>, bool) acquires
+    ValidatorConfig, ValidatorPerformance, ValidatorSet {
 
 
         // NOTE: ol does not use the pending, and pending inactive lists.
@@ -1233,13 +1194,13 @@ module diem_framework::validators {
     }
 
     #[test_only]
-    public fun test_make_val_cfg(list: &vector<address>): (vector<ValidatorInfo>, u128, vector<address>) acquires ValidatorState, ValidatorConfig {
+    public fun test_make_val_cfg(list: &vector<address>): (vector<ValidatorInfo>, u128, vector<address>) acquires ValidatorConfig {
       make_validator_set_config(list)
     }
 
-    /// Make the active valiators list
+    /// Make the active validators list
     /// returns: the list of validators, and the total voting power (1 per validator), and also the list of validators that did not have valid configs
-    fun make_validator_set_config(list: &vector<address>): (vector<ValidatorInfo>, u128, vector<address>) acquires ValidatorState, ValidatorConfig  {
+    fun make_validator_set_config(list: &vector<address>): (vector<ValidatorInfo>, u128, vector<address>) acquires ValidatorConfig  {
 
       let next_epoch_validators = vector::empty();
       let vlen = vector::length(list);
@@ -1272,10 +1233,9 @@ module diem_framework::validators {
             i = i + 1;
             continue
           }; // belt and suspenders
-          let stake_pool = borrow_global_mut<ValidatorState>(pool_address);
 
 
-          let new_validator_info = generate_validator_info(pool_address, stake_pool, *validator_config);
+          let new_validator_info = generate_validator_info(pool_address, *validator_config);
 
           // all validators have same weight
           total_voting_power = total_voting_power + 1;
@@ -1512,47 +1472,12 @@ module diem_framework::validators {
       );
     }
 
-    // /// Calculate the rewards amount.
-    // // TODO: v7 - remove this
-    // fun calculate_rewards_amount(
-    //     stake_amount: u64,
-    //     num_successful_proposals: u64,
-    //     num_total_proposals: u64,
-    //     rewards_rate: u64,
-    //     rewards_rate_denominator: u64,
-    // ): u64 {
 
-    //     0
+    // fun append<T>(v1: &mut vector<T>, v2: &mut vector<T>) {
+    //     while (!vector::is_empty(v2)) {
+    //         vector::push_back(v1, vector::pop_back(v2));
+    //     }
     // }
-
-
-
-
-    /// Mint rewards corresponding to current epoch's `stake` and `num_successful_votes`.
-
-    // // TODO: v7 - change this
-    // fun distribute_rewards(
-    //     stake: &mut Coin<GasCoin>,
-    //     _num_successful_proposals: u64,
-    //     _num_total_proposals: u64,
-    //     _rewards_rate: u64,
-    //     _rewards_rate_denominator: u64,
-    // ): u64 acquires GasCoinCapabilities {
-    //     // let _stake_amount = coin::value(stake);
-    //     let rewards_amount = 0;
-    //     if (rewards_amount > 0) {
-    //         let mint_cap = &borrow_global<GasCoinCapabilities>(@diem_framework).mint_cap;
-    //         let rewards = coin::mint(rewards_amount, mint_cap);
-    //         ol_account::merge_coins(stake, rewards);
-    //     };
-    //     rewards_amount
-    // }
-
-    fun append<T>(v1: &mut vector<T>, v2: &mut vector<T>) {
-        while (!vector::is_empty(v2)) {
-            vector::push_back(v1, vector::pop_back(v2));
-        }
-    }
 
     fun find_validator(v: &vector<ValidatorInfo>, addr: address): Option<u64> {
         let i = 0;
@@ -1571,11 +1496,10 @@ module diem_framework::validators {
         option::none()
     }
 
-    fun generate_validator_info(addr: address, stake_pool: &ValidatorState, config: ValidatorConfig): ValidatorInfo {
-        let voting_power = get_next_epoch_voting_power(stake_pool);
+    fun generate_validator_info(addr: address, config: ValidatorConfig): ValidatorInfo {
         ValidatorInfo {
             addr,
-            voting_power,
+            voting_power: 1,
             config,
         }
     }
@@ -1584,16 +1508,16 @@ module diem_framework::validators {
 
     // TODO: v7 - remove this
 
-    fun get_next_epoch_voting_power(_stake_pool: &ValidatorState): u64 {
-        // let value_pending_active = coin::value(&stake_pool.pending_active);
-        // let value_active = coin::value(&stake_pool.active);
-        // let value_pending_inactive = coin::value(&stake_pool.pending_inactive);
-        // spec {
-        //     assume value_pending_active + value_active + value_pending_inactive <= MAX_U64;
-        // };
-        // // value_pending_active + value_active + value_pending_inactive;
-        1
-    }
+    // fun get_next_epoch_voting_power(_stake_pool: &ValidatorState): u64 {
+    //     // let value_pending_active = coin::value(&stake_pool.pending_active);
+    //     // let value_active = coin::value(&stake_pool.active);
+    //     // let value_pending_inactive = coin::value(&stake_pool.pending_inactive);
+    //     // spec {
+    //     //     assume value_pending_active + value_active + value_pending_inactive <= MAX_U64;
+    //     // };
+    //     // // value_pending_active + value_active + value_pending_inactive;
+    //     1
+    // }
 
     fun update_voting_power_increase(increase_amount: u64) acquires ValidatorSet {
         let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
@@ -1674,13 +1598,13 @@ module diem_framework::validators {
         (sk, unvalidated_pk, pop)
     }
 
-    #[test_only]
-    public fun end_epoch() acquires ValidatorState, ValidatorConfig, ValidatorPerformance, ValidatorSet {
-        // Set the number of blocks to 1, to give out rewards to non-failing validators.
-        set_validator_perf_at_least_one_block();
-        timestamp::fast_forward_seconds(EPOCH_DURATION);
-        on_new_epoch();
-    }
+    // #[test_only]
+    // public fun end_epoch() acquires ValidatorState, ValidatorConfig, ValidatorPerformance, ValidatorSet {
+    //     // Set the number of blocks to 1, to give out rewards to non-failing validators.
+    //     set_validator_perf_at_least_one_block();
+    //     timestamp::fast_forward_seconds(EPOCH_DURATION);
+    //     // maybe_reconfigure();
+    // }
 
 
 
@@ -1708,7 +1632,7 @@ module diem_framework::validators {
         _amount: u64,
         should_join_validator_set: bool,
         should_end_epoch: bool,
-    ) acquires AllowedValidators, ValidatorState, ValidatorConfig, ValidatorPerformance, ValidatorSet {
+    ) acquires AllowedValidators, ValidatorState, ValidatorConfig, ValidatorSet {
         use ol_framework::ol_account;
         system_addresses::assert_ol(root);
         let validator_address = signer::address_of(validator);
@@ -1729,13 +1653,13 @@ module diem_framework::validators {
             join_validator_set(validator, validator_address);
         };
         if (should_end_epoch) {
-            end_epoch();
+            // end_epoch();
         };
     }
 
     #[test_only]
     /// One step setup for tests
-    public fun quick_init(root: &signer, val_sig: &signer) acquires ValidatorPerformance, ValidatorSet, ValidatorState, ValidatorConfig, AllowedValidators {
+    public fun quick_init(root: &signer, val_sig: &signer) acquires  ValidatorSet, ValidatorState, ValidatorConfig, AllowedValidators {
       system_addresses::assert_ol(root);
       let (_sk, pk, pop) = generate_identity();
       initialize_test_validator(root, &pk, &pop, val_sig, 100, true, true);

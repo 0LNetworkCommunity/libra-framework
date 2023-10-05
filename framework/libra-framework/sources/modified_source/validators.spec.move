@@ -134,15 +134,15 @@ spec diem_framework::validators {
     //     ensures stake_pool.delegated_voter == new_voter;
     // }
 
-    spec on_new_epoch {
-        pragma disable_invariants_in_body;
-        // The following resource requirement cannot be discharged by the global
-        // invariants because this function is called during genesis.
-        include ResourceRequirement;
-        // include staking_config::StakingRewardsConfigRequirement;
-        // This function should never abort.
-        aborts_if false;
-    }
+    // spec on_new_epoch {
+    //     pragma disable_invariants_in_body;
+    //     // The following resource requirement cannot be discharged by the global
+    //     // invariants because this function is called during genesis.
+    //     include ResourceRequirement;
+    //     // include staking_config::StakingRewardsConfigRequirement;
+    //     // This function should never abort.
+    //     aborts_if false;
+    // }
 
     spec update_performance_statistics {
         // This function is expected to be used after genesis.
@@ -216,16 +216,16 @@ spec diem_framework::validators {
         ensures option::is_some(result) ==> spec_contains(v, addr);
     }
 
-    spec append {
-        pragma opaque, verify = false;
-        aborts_if false;
-        ensures len(v1) == old(len(v1) + len(v2));
-        ensures len(v2) == 0;
-        // The prefix of the new `v1` is the same as the old `v1`.
-        ensures (forall i in 0..old(len(v1)): v1[i] == old(v1[i]));
-        // The suffix of the new `v1` is the same as the reverse of the old `v2`.
-        ensures (forall i in old(len(v1))..len(v1): v1[i] == old(v2[len(v2) - (i - len(v1)) - 1]));
-    }
+    // spec append {
+    //     pragma opaque, verify = false;
+    //     aborts_if false;
+    //     ensures len(v1) == old(len(v1) + len(v2));
+    //     ensures len(v2) == 0;
+    //     // The prefix of the new `v1` is the same as the old `v1`.
+    //     ensures (forall i in 0..old(len(v1)): v1[i] == old(v1[i]));
+    //     // The suffix of the new `v1` is the same as the reverse of the old `v2`.
+    //     ensures (forall i in old(len(v1))..len(v1): v1[i] == old(v2[len(v2) - (i - len(v1)) - 1]));
+    // }
 
     // spec remove_validators {
     //     requires chain_status::is_operating();
