@@ -154,7 +154,7 @@ module diem_framework::validators {
 
     /// Full ValidatorSet, stored in @diem_framework.
     /// 1. join_validator_set adds to pending_active queue.
-    /// 2. leave_valdiator_set moves from active to pending_inactive queue.
+    /// 2. leave_validator_set moves from active to pending_inactive queue.
     /// 3. on_new_epoch processes two pending queues and refresh ValidatorInfo from the owner's address.
     struct ValidatorSet has key {
         consensus_scheme: u8,
@@ -167,7 +167,7 @@ module diem_framework::validators {
         // Current total voting power.
         total_voting_power: u128,
         // Total voting power waiting to join in the next epoch.
-        total_joining_power: u128,
+        // total_joining_power: u128,
     }
 
     // /// GasCoin capabilities, set during genesis and stored in @CoreResource account.
@@ -416,8 +416,8 @@ module diem_framework::validators {
             active_validators: vector::empty(),
             // pending_active: vector::empty(),
             // pending_inactive: vector::empty(),
-            total_voting_power: 0,
-            total_joining_power: 0,
+            total_voting_power: 1,
+            // total_joining_power: 0,
         });
 
         move_to(diem_framework, ValidatorPerformance {
@@ -801,7 +801,7 @@ module diem_framework::validators {
         assert!(voting_power >= minimum_stake, error::invalid_argument(ESTAKE_TOO_LOW));
         assert!(voting_power <= maximum_stake, error::invalid_argument(ESTAKE_TOO_HIGH));
         // Track and validate voting power increase.
-        update_voting_power_increase(voting_power);
+        // update_voting_power_increase(voting_power);
 
 
         // Add validator to pending_active, to be activated in the next epoch.
@@ -1519,21 +1519,21 @@ module diem_framework::validators {
     //     1
     // }
 
-    fun update_voting_power_increase(increase_amount: u64) acquires ValidatorSet {
-        let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
-        // let voting_power_increase_limit =
-        //     (staking_config::get_voting_power_increase_limit(&staking_config::get()) as u128);
-        let voting_power_increase_limit = 1000;
-        validator_set.total_joining_power = validator_set.total_joining_power + (increase_amount as u128);
+    // fun update_voting_power_increase(increase_amount: u64) acquires ValidatorSet {
+    //     let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
+    //     // let voting_power_increase_limit =
+    //     //     (staking_config::get_voting_power_increase_limit(&staking_config::get()) as u128);
+    //     let voting_power_increase_limit = 1000;
+    //     validator_set.total_joining_power = validator_set.total_joining_power + (increase_amount as u128);
 
-        // Only validator voting power increase if the current validator set's voting power > 0.
-        if (validator_set.total_voting_power > 0) {
-            assert!(
-                validator_set.total_joining_power <= validator_set.total_voting_power * voting_power_increase_limit / 100,
-                error::invalid_argument(EVOTING_POWER_INCREASE_EXCEEDS_LIMIT),
-            );
-        }
-    }
+    //     // Only validator voting power increase if the current validator set's voting power > 0.
+    //     if (validator_set.total_voting_power > 0) {
+    //         assert!(
+    //             validator_set.total_joining_power <= validator_set.total_voting_power * voting_power_increase_limit / 100,
+    //             error::invalid_argument(EVOTING_POWER_INCREASE_EXCEEDS_LIMIT),
+    //         );
+    //     }
+    // }
 
     fun assert_stake_pool_exists(pool_address: address) {
         assert!(stake_pool_exists(pool_address), error::invalid_argument(ESTAKE_POOL_DOES_NOT_EXIST));

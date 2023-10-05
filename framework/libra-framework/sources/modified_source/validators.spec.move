@@ -265,17 +265,17 @@ spec diem_framework::validators {
     //     aborts_if !exists<ValidatorFees>(@diem_framework);
     // }
 
-    spec update_voting_power_increase(increase_amount: u64) {
-        let diem = @diem_framework;
-        let pre_validator_set = global<ValidatorSet>(diem);
-        let post validator_set = global<ValidatorSet>(diem);
-        // let staking_config = global<staking_config::StakingConfig>(diem);
-        // let voting_power_increase_limit = staking_config.voting_power_increase_limit;
+    // spec update_voting_power_increase(increase_amount: u64) {
+    //     let diem = @diem_framework;
+    //     let pre_validator_set = global<ValidatorSet>(diem);
+    //     let post validator_set = global<ValidatorSet>(diem);
+    //     // let staking_config = global<staking_config::StakingConfig>(diem);
+    //     // let voting_power_increase_limit = staking_config.voting_power_increase_limit;
 
-        // Correctly modified total_joining_power and the value of total_voting_power is legal.
-        // ensures validator_set.total_voting_power > 0 ==> validator_set.total_joining_power <= validator_set.total_voting_power * voting_power_increase_limit / 100;
-        ensures validator_set.total_joining_power == pre_validator_set.total_joining_power + increase_amount;
-    }
+    //     // Correctly modified total_joining_power and the value of total_voting_power is legal.
+    //     // ensures validator_set.total_voting_power > 0 ==> validator_set.total_joining_power <= validator_set.total_voting_power * voting_power_increase_limit / 100;
+    //     ensures validator_set.total_joining_power == pre_validator_set.total_joining_power + increase_amount;
+    // }
 
     spec assert_stake_pool_exists(pool_address: address) {
         aborts_if !stake_pool_exists(pool_address);
