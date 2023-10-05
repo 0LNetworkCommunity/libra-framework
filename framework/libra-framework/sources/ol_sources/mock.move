@@ -143,12 +143,14 @@ module ol_framework::mock {
 
     }
 
+    use diem_framework::chain_status;
     #[test_only]
     public fun ol_test_genesis(root: &signer) {
       system_addresses::assert_ol(root);
       genesis::setup();
       genesis::test_end_genesis(root);
-      // assert!(!chain_status::is_genesis(), error::invalid_state(ENO_GENESIS_END_MARKER));
+
+      assert!(!chain_status::is_genesis(), 0);
     }
 
     #[test_only]

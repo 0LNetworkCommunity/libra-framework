@@ -12,6 +12,7 @@ module ol_framework::oracle {
     use diem_framework::event::{Self, EventHandle};
     use diem_framework::coin::{Self, Coin};
     use ol_framework::ol_account;
+    use ol_framework::globals;
     use ol_framework::gas_coin::GasCoin;
     use ol_framework::vouch;
     use ol_framework::epoch_helper;
@@ -36,6 +37,9 @@ module ol_framework::oracle {
 
     /// not enough time has passed between proofs.
     const ETOO_SOON_SUBMITTED: u64 = 4;
+
+    /// Trying to submit too many proofs in period
+    const EABOVE_SUBMISSION_THRESH: u64 = 5;
 
     /// A list of all miners' addresses
     // reset at epoch boundary
@@ -194,8 +198,13 @@ module ol_framework::oracle {
       tower.verified_tower_height = tower.verified_tower_height + 1;
       tower.count_proofs_in_epoch = tower.count_proofs_in_epoch + 1;
 
+      assert!(
+        tower.count_proofs_in_epoch  < globals::get_epoch_mining_thres_upper(),
+        error::invalid_state(EABOVE_SUBMISSION_THRESH)
+      );
+
       // also check if the tower is now above the threshold
-       if (tower.count_proofs_in_epoch > threshold_of_signatures()) {
+       if (tower.count_proofs_in_epoch > globals::get_epoch_mining_thres_lower()) {
         print(&333001);
         global.proofs_in_epoch_above_thresh = global.proofs_in_epoch_above_thresh + 1;
         // also add to the provider list which would be elegible for rewards
@@ -233,10 +242,9 @@ module ol_framework::oracle {
 
       increment_stats(provider_addr, tower, time, signature_bytes);
 
-
     }
 
-    // how long should the delay be.
+    // how long should the oracle delay be (except for VDF proofs)
     // in testnet it should be 30 seconds.
     // in production its 1 hour.
     fun proof_interval_seconds(): u64 {
@@ -244,15 +252,6 @@ module ol_framework::oracle {
         30
       } else {
         60 * 60 // 1 hr
-      }
-    }
-
-    // how many proofs needed in an epoch to be considered active
-    fun threshold_of_signatures(): u64 {
-      if (testnet::is_testnet()) {
-        0
-      } else {
-        12
       }
     }
 
