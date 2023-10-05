@@ -23,21 +23,14 @@ module ol_framework::tower_state {
     const EADDRESS_NOT_IN_CHALLENGE: u64 = 4;
     /// Proof is not valid. The verification failed for solution at the expected difficulty and security parameter.
     const EPROOF_NOT_VALID: u64 = 5;
-
     /// Not the expected user sending the transaction
     const EUNAUTHORIZED: u64 = 6;
-
     /// Challenge in genesis proof is not the right size
     const ECHALLENGE_WRONG_SIZE: u64 = 7;
-
-    /// Trying to submit too many proofs in period
-    const EABOVE_SUBMISSION_THRESH: u64 = 8;
-
     /// Already initialized this account
-    const EALREADY_INITIALIZED: u64 = 9;
-
+    const EALREADY_INITIALIZED: u64 = 8;
     /// Not testnet
-    const ENOT_TESTNET: u64 = 10;
+    const ENOT_TESTNET: u64 = 9;
 
     /// A list of all miners' addresses
     // reset at epoch boundary
@@ -301,14 +294,11 @@ module ol_framework::tower_state {
       proof: Proof,
       steady_state: bool
     ) acquires TowerProofHistory, TowerList, TowerCounter {
-      // instead of looping through all miners at end of epcoh the stats are
+      // instead of looping through all miners at end of epoch the stats are
       // only reset when the miner submits a new proof.
       lazy_reset_count_in_epoch(miner_addr);
 
-      assert!(
-        get_count_in_epoch(miner_addr) < globals::get_epoch_mining_thres_upper(),
-        error::invalid_state(EABOVE_SUBMISSION_THRESH)
-      );
+      // COMMIT NOTE: moved this check to oracle.move
 
       let miner_history = borrow_global<TowerProofHistory>(miner_addr);
 

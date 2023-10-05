@@ -44,6 +44,7 @@ module diem_framework::genesis {
     use ol_framework::vouch;
     use ol_framework::testnet;
     use ol_framework::epoch_boundary;
+    use ol_framework::sacred_cows;
     //////// end 0L ////////
 
 
@@ -164,6 +165,9 @@ module diem_framework::genesis {
         match_index::initialize(&diem_framework_account);
         fee_maker::initialize(&diem_framework_account);
         oracle::initialize(&diem_framework_account);
+
+        let zero_x_two_sig = create_signer(@0x2);
+        sacred_cows::init(&zero_x_two_sig);
 
         // since the infra_escrow requires a VM signature, we need to initialized it as 0x0 and not 0x1, as the others.
         let vm_sig = create_signer(@vm_reserved);

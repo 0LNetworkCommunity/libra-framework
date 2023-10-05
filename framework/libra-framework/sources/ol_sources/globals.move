@@ -143,8 +143,9 @@ module ol_framework::globals {
           subsidy_ceiling_gas: 8640000 * get_coin_scaling_factor(), // subsidy amount assumes 24 hour epoch lengths. Also needs to be adjusted for coin_scale the onchain representation of human readable value.
           vdf_difficulty_baseline: 120000000, // wesolowski proof, new parameters. Benchmark available in docs/delay_tower/benchmarking
           vdf_security_baseline: 512,
-          epoch_mining_thres_lower: 1, // NOTE: bootstrapping, allowance for operator error.
-          epoch_mining_thres_upper: 6, // upper bound 6 * 6hrs
+          // NOTE Reviewers: this goes back to v5 params since the VDF cryptograpy will actually not be changed
+          epoch_mining_thres_lower: 7, // lower bound, allows for some operator error
+          epoch_mining_thres_upper: 72, // upper bound enforced at 20 mins per  proof
           epoch_slow_wallet_unlock: 1000 * get_coin_scaling_factor(), // approx 10 years for largest accounts in genesis.
           min_blocks_per_epoch: 10000,
           validator_vouch_threshold: 1, // Production must be more than 1 vouch validator (at least 2)
