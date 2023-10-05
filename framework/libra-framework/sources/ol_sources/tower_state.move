@@ -294,14 +294,11 @@ module ol_framework::tower_state {
       proof: Proof,
       steady_state: bool
     ) acquires TowerProofHistory, TowerList, TowerCounter {
-      // instead of looping through all miners at end of epcoh the stats are
+      // instead of looping through all miners at end of epoch the stats are
       // only reset when the miner submits a new proof.
       lazy_reset_count_in_epoch(miner_addr);
 
-      // assert!(
-      //   get_count_in_epoch(miner_addr) < globals::get_epoch_mining_thres_upper(),
-      //   error::invalid_state(EABOVE_SUBMISSION_THRESH)
-      // );
+      // COMMIT NOTE: moved this check to oracle.move
 
       let miner_history = borrow_global<TowerProofHistory>(miner_addr);
 
