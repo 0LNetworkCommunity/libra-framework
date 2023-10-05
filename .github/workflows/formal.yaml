@@ -1,0 +1,34 @@
+name: formal verification
+on:
+  push:
+    branches: ["*"]
+    tags:
+    - '[0-9]+.[0-9]+.[0-9]+'
+    - '[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    branches:
+      - 'release**'
+      - 'main'
+
+jobs:
+  formal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup env
+        uses: ./.github/actions/build_env
+
+      - name: install prover dependencies
+        run: ./scripts/dev_setup.sh -ypb
+
+      - name: install diem (for move tests)
+        run: >
+          wget -O ${{github.workspace}}/diem https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem &&
+          sudo chmod 755 ${{github.workspace}}/diem
+
+      - name: prove
+        run: diem move prove -f version
+        working-directory: ./framework/libra-framework
