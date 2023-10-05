@@ -30,24 +30,24 @@ module diem_framework::validators {
 
     /// Validator Config not published.
     const EVALIDATOR_CONFIG: u64 = 1;
-    /// Not enough stake to join validator set.
-    const ESTAKE_TOO_LOW: u64 = 2;
-    /// Too much stake to join validator set.
-    const ESTAKE_TOO_HIGH: u64 = 3;
-    /// Account is already a validator or pending validator.
-    const EALREADY_ACTIVE_VALIDATOR: u64 = 4;
-    /// Account is not a validator.
-    const ENOT_VALIDATOR: u64 = 5;
-    /// Can't remove last validator.
-    const ELAST_VALIDATOR: u64 = 6;
-    /// Total stake exceeds maximum allowed.
-    const ESTAKE_EXCEEDS_MAX: u64 = 7;
+    // /// Not enough stake to join validator set.
+    // const ESTAKE_TOO_LOW: u64 = 2;
+    // /// Too much stake to join validator set.
+    // const ESTAKE_TOO_HIGH: u64 = 3;
+    // /// Account is already a validator or pending validator.
+    // const EALREADY_ACTIVE_VALIDATOR: u64 = 4;
+    // /// Account is not a validator.
+    // const ENOT_VALIDATOR: u64 = 5;
+    // /// Can't remove last validator.
+    // const ELAST_VALIDATOR: u64 = 6;
+    // /// Total stake exceeds maximum allowed.
+    // const ESTAKE_EXCEEDS_MAX: u64 = 7;
     /// Account is already registered as a validator candidate.
     const EALREADY_REGISTERED: u64 = 8;
     /// Account does not have the right operator capability.
     const ENOT_OPERATOR: u64 = 9;
-    /// Validators cannot join or leave post genesis on this test network.
-    const ENO_POST_GENESIS_VALIDATOR_SET_CHANGE_ALLOWED: u64 = 10;
+    // /// Validators cannot join or leave post genesis on this test network.
+    // const ENO_POST_GENESIS_VALIDATOR_SET_CHANGE_ALLOWED: u64 = 10;
     /// Invalid consensus public key
     const EINVALID_PUBLIC_KEY: u64 = 11;
     /// Validator set exceeds the limit
@@ -58,19 +58,19 @@ module diem_framework::validators {
     const ESTAKE_POOL_DOES_NOT_EXIST: u64 = 14;
     /// Owner capability does not exist at the provided account.
     const EOWNER_CAP_NOT_FOUND: u64 = 15;
-    /// An account cannot own more than one owner capability.
-    const EOWNER_CAP_ALREADY_EXISTS: u64 = 16;
+
+    // const EOWNER_CAP_ALREADY_EXISTS: u64 = 16;
     /// Validator is not defined in the ACL of entities allowed to be validators
     const EINELIGIBLE_VALIDATOR: u64 = 17;
     /// Cannot update stake pool's lockup to earlier than current lockup.
-    const EINVALID_LOCKUP: u64 = 18;
+    // const EINVALID_LOCKUP: u64 = 18;
     /// Table to store collected transaction fees for each validator already exists.
     const EFEES_TABLE_ALREADY_EXISTS: u64 = 19;
 
     /// Validator status enum. We can switch to proper enum later once Move supports it.
-    const VALIDATOR_STATUS_PENDING_ACTIVE: u64 = 1;
+    // const VALIDATOR_STATUS_PENDING_ACTIVE: u64 = 1;
     const VALIDATOR_STATUS_ACTIVE: u64 = 2;
-    const VALIDATOR_STATUS_PENDING_INACTIVE: u64 = 3;
+    // const VALIDATOR_STATUS_PENDING_INACTIVE: u64 = 3;
     const VALIDATOR_STATUS_INACTIVE: u64 = 4;
 
     /// Limit the maximum size to u16::max, it's the current limit of the bitvec
@@ -795,11 +795,11 @@ module diem_framework::validators {
 
         // let config = staking_config::get();
         // let (minimum_stake, maximum_stake) = staking_config::get_required_stake(&config);
-        let minimum_stake = 1;
-        let maximum_stake = 100;
-        let voting_power = 1; // voting power is always 1 in Libra
-        assert!(voting_power >= minimum_stake, error::invalid_argument(ESTAKE_TOO_LOW));
-        assert!(voting_power <= maximum_stake, error::invalid_argument(ESTAKE_TOO_HIGH));
+        // let minimum_stake = 1;
+        // let maximum_stake = 100;
+        // let voting_power = 1; // voting power is always 1 in Libra
+        // assert!(voting_power >= minimum_stake, error::invalid_argument(ESTAKE_TOO_LOW));
+        // assert!(voting_power <= maximum_stake, error::invalid_argument(ESTAKE_TOO_HIGH));
         // Track and validate voting power increase.
         // update_voting_power_increase(voting_power);
 
