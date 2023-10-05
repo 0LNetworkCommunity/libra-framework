@@ -17,3 +17,6 @@ Cargo.lock
 sccache.log
 
 .idea
+
+# formal verification files
+*.bpl
