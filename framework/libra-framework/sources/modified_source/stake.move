@@ -18,7 +18,7 @@
  * 9. An owner can always switch operators by calling stake::set_operator.
  * 10. An owner can always switch designated voter by calling stake::set_designated_voter.
 */
-module diem_framework::stake {
+module diem_framework::stake_old {
     use std::error;
     use std::option::{Self, Option};
     use std::signer;

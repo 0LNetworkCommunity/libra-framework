@@ -1,4 +1,4 @@
-spec diem_framework::stake {
+spec diem_framework::stake_old {
     // -----------------
     // Global invariants
     // -----------------

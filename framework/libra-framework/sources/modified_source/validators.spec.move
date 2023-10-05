@@ -1,4 +1,4 @@
-spec diem_framework::validators {
+spec diem_framework::stake {
     // -----------------
     // Global invariants
     // -----------------

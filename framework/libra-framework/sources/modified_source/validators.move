@@ -1,5 +1,5 @@
 
-module diem_framework::validators {
+module diem_framework::stake {
     use std::error;
     use std::option::{Self, Option};
     use std::signer;

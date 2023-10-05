@@ -321,7 +321,7 @@ module diem_framework::genesis {
         });
 
         musical_chairs::initialize(diem_framework, num_validators);
-        stake::on_new_epoch();
+        // stake::on_new_epoch();
 
     }
 
@@ -438,74 +438,74 @@ module diem_framework::genesis {
         validator.full_node_network_addresses,
       );
 
-      stake::join_validator_set_internal(owner, validator.owner_address);
+      // stake::join_validator_set_internal(owner, validator.owner_address);
     }
 
-    fun test_create_validator_accounts(
-        diem_framework: &signer,
-        commission_config: &ValidatorConfigurationWithCommission,
-        _use_staking_contract: bool,
-    ) {
-        let validator = &commission_config.validator_config;
+    // fun test_create_validator_accounts(
+    //     diem_framework: &signer,
+    //     commission_config: &ValidatorConfigurationWithCommission,
+    //     _use_staking_contract: bool,
+    // ) {
+    //     let validator = &commission_config.validator_config;
 
-        let owner = &create_account(diem_framework, validator.owner_address, validator.stake_amount);
-        // TODO: we probably don't need either of these accounts.
-        create_account(diem_framework, validator.operator_address, 0);
-        create_account(diem_framework, validator.voter_address, 0);
+    //     let owner = &create_account(diem_framework, validator.owner_address, validator.stake_amount);
+    //     // TODO: we probably don't need either of these accounts.
+    //     create_account(diem_framework, validator.operator_address, 0);
+    //     create_account(diem_framework, validator.voter_address, 0);
 
-        // Initialize the stake pool and join the validator set.
-        // let pool_address = if (use_staking_contract) {
+    //     // Initialize the stake pool and join the validator set.
+    //     // let pool_address = if (use_staking_contract) {
 
-        //     staking_contract::create_staking_contract(
-        //         owner,
-        //         validator.operator_address,
-        //         validator.voter_address,
-        //         validator.stake_amount,
-        //         commission_config.commission_percentage,
-        //         x"",
-        //     );
-        //     staking_contract::stake_pool_address(validator.owner_address, validator.operator_address)
-        // } else
-        let pool_address = {
-
-
-            stake::initialize_stake_owner(
-                owner,
-                validator.stake_amount,
-                validator.operator_address,
-                validator.voter_address,
-            );
-
-            validator.owner_address
-        };
+    //     //     staking_contract::create_staking_contract(
+    //     //         owner,
+    //     //         validator.operator_address,
+    //     //         validator.voter_address,
+    //     //         validator.stake_amount,
+    //     //         commission_config.commission_percentage,
+    //     //         x"",
+    //     //     );
+    //     //     staking_contract::stake_pool_address(validator.owner_address, validator.operator_address)
+    //     // } else
+    //     let pool_address = {
 
 
-        if (commission_config.join_during_genesis) { // TODO: remove this check
-            initialize_validator(pool_address, validator);
-            validator_universe::genesis_helper_add_validator(diem_framework, owner)
-        };
-    }
+    //         stake::initialize_stake_owner(
+    //             owner,
+    //             validator.stake_amount,
+    //             validator.operator_address,
+    //             validator.voter_address,
+    //         );
 
-    fun initialize_validator(pool_address: address, validator: &ValidatorConfiguration) {
-        let operator = &create_signer(validator.operator_address);
+    //         validator.owner_address
+    //     };
 
-        stake::rotate_consensus_key(
-            operator,
-            pool_address,
-            validator.consensus_pubkey,
-            validator.proof_of_possession,
-        );
 
-        stake::update_network_and_fullnode_addresses(
-            operator,
-            pool_address,
-            validator.network_addresses,
-            validator.full_node_network_addresses,
-        );
+    //     if (commission_config.join_during_genesis) { // TODO: remove this check
+    //         initialize_validator(pool_address, validator);
+    //         validator_universe::genesis_helper_add_validator(diem_framework, owner)
+    //     };
+    // }
 
-        stake::join_validator_set_internal(operator, pool_address);
+    // fun initialize_validator(pool_address: address, validator: &ValidatorConfiguration) {
+    //     let operator = &create_signer(validator.operator_address);
 
-    }
+    //     stake::rotate_consensus_key(
+    //         operator,
+    //         pool_address,
+    //         validator.consensus_pubkey,
+    //         validator.proof_of_possession,
+    //     );
+
+    //     stake::update_network_and_fullnode_addresses(
+    //         operator,
+    //         pool_address,
+    //         validator.network_addresses,
+    //         validator.full_node_network_addresses,
+    //     );
+
+    //     stake::join_validator_set_internal(operator, pool_address);
+
+    // }
 
     /// The last step of genesis.
     fun set_genesis_end(diem_framework: &signer) {
