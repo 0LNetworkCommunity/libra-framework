@@ -1,23 +1,4 @@
-/**
- * Validator lifecycle:
- * 1. Prepare a validator node set up and call stake::initialize_validator
- * 2. Once ready to deposit stake (or have funds assigned by a staking service in exchange for ownership capability),
- * call stake::add_stake (or *_with_cap versions if called from the staking service)
- * 3. Call stake::join_validator_set (or _with_cap version) to join the active validator set. Changes are effective in
- * the next epoch.
- * 4. Validate and gain rewards. The stake will automatically be locked up for a fixed duration (set by governance) and
- * automatically renewed at expiration.
- * 5. At any point, if the validator operator wants to update the consensus key or network/fullnode addresses, they can
- * call stake::rotate_consensus_key and stake::update_network_and_fullnode_addresses. Similar to changes to stake, the
- * changes to consensus key/network/fullnode addresses are only effective in the next epoch.
- * 6. Validator can request to unlock their stake at any time. However, their stake will only become withdrawable when
- * their current lockup expires. This can be at most as long as the fixed lockup duration.
- * 7. After exiting, the validator can either explicitly leave the validator set by calling stake::leave_validator_set
- * or if their stake drops below the min required, they would get removed at the end of the epoch.
- * 8. Validator can always rejoin the validator set by going through steps 2-3 again.
- * 9. An owner can always switch operators by calling stake::set_operator.
- * 10. An owner can always switch designated voter by calling stake::set_designated_voter.
-*/
+
 module diem_framework::validators {
     use std::error;
     use std::option::{Self, Option};
@@ -29,15 +10,12 @@ module diem_framework::validators {
 
     use diem_framework::gas_coin::GasCoin;
     use diem_framework::account;
-    use diem_framework::coin::{Self, Coin, MintCapability};
+    use diem_framework::coin::{Coin};
     use diem_framework::event::{Self, EventHandle};
-    // use diem_framework::timestamp;
     use diem_framework::system_addresses;
-    // use diem_framework::chain_status;
 
     use ol_framework::slow_wallet;
     use ol_framework::testnet;
-    // use ol_framework::ol_account;
 
     // use diem_std::debug::print;
 
@@ -111,7 +89,7 @@ module diem_framework::validators {
         pool_address: address,
     }
 
-    /// Each validator has a separate StakePool resource and can provide a stake.
+    /// Each validator has a separate ValidatorState resource and can provide a stake.
     /// Changes in stake for an active validator:
     /// 1. If a validator calls add_stake, the newly added stake is moved to pending_active.
     /// 2. If validator calls unlock, their stake is moved to pending_inactive.
@@ -122,38 +100,38 @@ module diem_framework::validators {
     /// 1. If a validator calls add_stake, the newly added stake is moved directly to active.
     /// 2. If validator calls unlock, their stake is moved directly to inactive.
     /// 3. When the next epoch starts, the validator can be activated if their active stake is more than the minimum.
-    struct StakePool has key {
+    struct ValidatorState has key {
         // active stake
-        active: Coin<GasCoin>,
+        // active: Coin<GasCoin>,
         // inactive stake, can be withdrawn
-        inactive: Coin<GasCoin>,
+        // inactive: Coin<GasCoin>,
         // pending activation for next epoch
-        pending_active: Coin<GasCoin>,
+        // pending_active: Coin<GasCoin>,
         // pending deactivation for next epoch
-        pending_inactive: Coin<GasCoin>,
-        locked_until_secs: u64,
+        // pending_inactive: Coin<GasCoin>,
+        // locked_until_secs: u64,
         // Track the current operator of the validator node.
         // This allows the operator to be different from the original account and allow for separation of
         // the validator operations and ownership.
         // Only the account holding OwnerCapability of the staking pool can update this.
         operator_address: address,
 
-        // Track the current vote delegator of the staking pool.
-        // Only the account holding OwnerCapability of the staking pool can update this.
-        delegated_voter: address,
+        // // Track the current vote delegator of the staking pool.
+        // // Only the account holding OwnerCapability of the staking pool can update this.
+        // delegated_voter: address,
 
-        // The events emitted for the entire StakePool's lifecycle.
+        // The events emitted for the entire ValidatorState's lifecycle.
         initialize_validator_events: EventHandle<RegisterValidatorCandidateEvent>,
         set_operator_events: EventHandle<SetOperatorEvent>,
-        add_stake_events: EventHandle<AddStakeEvent>,
-        reactivate_stake_events: EventHandle<ReactivateStakeEvent>,
+        // add_stake_events: EventHandle<AddStakeEvent>,
+        // reactivate_stake_events: EventHandle<ReactivateStakeEvent>,
         rotate_consensus_key_events: EventHandle<RotateConsensusKeyEvent>,
         update_network_and_fullnode_addresses_events: EventHandle<UpdateNetworkAndFullnodeAddressesEvent>,
-        increase_lockup_events: EventHandle<IncreaseLockupEvent>,
+        // increase_lockup_events: EventHandle<IncreaseLockupEvent>,
         join_validator_set_events: EventHandle<JoinValidatorSetEvent>,
         distribute_rewards_events: EventHandle<DistributeRewardsEvent>,
-        unlock_stake_events: EventHandle<UnlockStakeEvent>,
-        withdraw_stake_events: EventHandle<WithdrawStakeEvent>,
+        // unlock_stake_events: EventHandle<UnlockStakeEvent>,
+        // withdraw_stake_events: EventHandle<WithdrawStakeEvent>,
         leave_validator_set_events: EventHandle<LeaveValidatorSetEvent>,
     }
 
@@ -183,20 +161,20 @@ module diem_framework::validators {
         // Active validators for the current epoch.
         active_validators: vector<ValidatorInfo>,
         // Pending validators to leave in next epoch (still active).
-        pending_inactive: vector<ValidatorInfo>,
+        // pending_inactive: vector<ValidatorInfo>,
         // Pending validators to join in next epoch.
-        pending_active: vector<ValidatorInfo>,
+        // pending_active: vector<ValidatorInfo>,
         // Current total voting power.
         total_voting_power: u128,
         // Total voting power waiting to join in the next epoch.
         total_joining_power: u128,
     }
 
-    /// GasCoin capabilities, set during genesis and stored in @CoreResource account.
-    /// This allows the Stake module to mint rewards to stakers.
-    struct GasCoinCapabilities has key {
-        mint_cap: MintCapability<GasCoin>,
-    }
+    // /// GasCoin capabilities, set during genesis and stored in @CoreResource account.
+    // /// This allows the Stake module to mint rewards to stakers.
+    // struct GasCoinCapabilities has key {
+    //     mint_cap: MintCapability<GasCoin>,
+    // }
 
     struct IndividualValidatorPerformance has store, drop {
         successful_proposals: u64,
@@ -217,15 +195,15 @@ module diem_framework::validators {
         new_operator: address,
     }
 
-    struct AddStakeEvent has drop, store {
-        pool_address: address,
-        amount_added: u64,
-    }
+    // struct AddStakeEvent has drop, store {
+    //     pool_address: address,
+    //     amount_added: u64,
+    // }
 
-    struct ReactivateStakeEvent has drop, store {
-        pool_address: address,
-        amount: u64,
-    }
+    // struct ReactivateStakeEvent has drop, store {
+    //     pool_address: address,
+    //     amount: u64,
+    // }
 
     struct RotateConsensusKeyEvent has drop, store {
         pool_address: address,
@@ -241,11 +219,11 @@ module diem_framework::validators {
         new_fullnode_addresses: vector<u8>,
     }
 
-    struct IncreaseLockupEvent has drop, store {
-        pool_address: address,
-        old_locked_until_secs: u64,
-        new_locked_until_secs: u64,
-    }
+    // struct IncreaseLockupEvent has drop, store {
+    //     pool_address: address,
+    //     old_locked_until_secs: u64,
+    //     new_locked_until_secs: u64,
+    // }
 
     struct JoinValidatorSetEvent has drop, store {
         pool_address: address,
@@ -256,15 +234,15 @@ module diem_framework::validators {
         rewards_amount: u64,
     }
 
-    struct UnlockStakeEvent has drop, store {
-        pool_address: address,
-        amount_unlocked: u64,
-    }
+    // struct UnlockStakeEvent has drop, store {
+    //     pool_address: address,
+    //     amount_unlocked: u64,
+    // }
 
-    struct WithdrawStakeEvent has drop, store {
-        pool_address: address,
-        amount_withdrawn: u64,
-    }
+    // struct WithdrawStakeEvent has drop, store {
+    //     pool_address: address,
+    //     amount_withdrawn: u64,
+    // }
 
     struct LeaveValidatorSetEvent has drop, store {
         pool_address: address,
@@ -301,17 +279,17 @@ module diem_framework::validators {
     // #[view]
     // /// Return the lockup expiration of the stake pool at `pool_address`.
     // /// This will throw an error if there's no stake pool at `pool_address`.
-    // public fun get_lockup_secs(pool_address: address): u64 acquires StakePool {
+    // public fun get_lockup_secs(pool_address: address): u64 acquires ValidatorState {
     //     assert_stake_pool_exists(pool_address);
-    //     borrow_global<StakePool>(pool_address).locked_until_secs
+    //     borrow_global<ValidatorState>(pool_address).locked_until_secs
     // }
 
     // #[view]
     // /// Return the remaining lockup of the stake pool at `pool_address`.
     // /// This will throw an error if there's no stake pool at `pool_address`.
-    // public fun get_remaining_lockup_secs(pool_address: address): u64 acquires StakePool {
+    // public fun get_remaining_lockup_secs(pool_address: address): u64 acquires ValidatorState {
     //     assert_stake_pool_exists(pool_address);
-    //     let lockup_time = borrow_global<StakePool>(pool_address).locked_until_secs;
+    //     let lockup_time = borrow_global<ValidatorState>(pool_address).locked_until_secs;
     //     if (lockup_time <= timestamp::now_seconds()) {
     //         0
     //     } else {
@@ -322,9 +300,9 @@ module diem_framework::validators {
     // #[view]
     // /// Return the different stake amounts for `pool_address` (whether the validator is active or not).
     // /// The returned amounts are for (active, inactive, pending_active, pending_inactive) stake respectively.
-    // public fun get_stake(pool_address: address): (u64, u64, u64, u64) acquires StakePool {
+    // public fun get_stake(pool_address: address): (u64, u64, u64, u64) acquires ValidatorState {
     //     assert_stake_pool_exists(pool_address);
-    //     let stake_pool = borrow_global<StakePool>(pool_address);
+    //     let stake_pool = borrow_global<ValidatorState>(pool_address);
     //     (
     //         coin::value(&stake_pool.active),
     //         coin::value(&stake_pool.inactive),
@@ -358,12 +336,8 @@ module diem_framework::validators {
     /// Returns the validator's state.
     public fun get_validator_state(pool_address: address): u64 acquires ValidatorSet {
         let validator_set = borrow_global<ValidatorSet>(@diem_framework);
-        if (option::is_some(&find_validator(&validator_set.pending_active, pool_address))) {
-            VALIDATOR_STATUS_PENDING_ACTIVE
-        } else if (option::is_some(&find_validator(&validator_set.active_validators, pool_address))) {
+        if (option::is_some(&find_validator(&validator_set.active_validators, pool_address))) {
             VALIDATOR_STATUS_ACTIVE
-        } else if (option::is_some(&find_validator(&validator_set.pending_inactive, pool_address))) {
-            VALIDATOR_STATUS_PENDING_INACTIVE
         } else {
             VALIDATOR_STATUS_INACTIVE
         }
@@ -374,39 +348,30 @@ module diem_framework::validators {
     // TODO: v7
     #[view]
     /// Returns the validator's state.
-    public fun is_valid(pool_address: address): bool acquires ValidatorSet {
-        get_validator_state(pool_address) < VALIDATOR_STATUS_INACTIVE
+    public fun is_valid(addr: address): bool acquires ValidatorSet{
+      get_validator_state(addr) == VALIDATOR_STATUS_ACTIVE
     }
 
 
     #[view]
     /// Return the voting power of the validator in the current epoch.
     /// This is the same as the validator's total active and pending_inactive stake.
-    public fun get_current_epoch_voting_power(pool_address: address): u64 acquires StakePool, ValidatorSet {
-        assert_stake_pool_exists(pool_address);
-        let validator_state = get_validator_state(pool_address);
-        // Both active and pending inactive validators can still vote in the current epoch.
-        if (validator_state == VALIDATOR_STATUS_ACTIVE || validator_state == VALIDATOR_STATUS_PENDING_INACTIVE) {
-            let active_stake = coin::value(&borrow_global<StakePool>(pool_address).active);
-            let pending_inactive_stake = coin::value(&borrow_global<StakePool>(pool_address).pending_inactive);
-            active_stake + pending_inactive_stake
-        } else {
-            0
-        }
+    public fun get_current_epoch_voting_power(_pool_address: address): u64  {
+        1
     }
 
     // #[view]
     // /// Return the delegated voter of the validator at `pool_address`.
-    // public fun get_delegated_voter(pool_address: address): address acquires StakePool {
+    // public fun get_delegated_voter(pool_address: address): address acquires ValidatorState {
     //     assert_stake_pool_exists(pool_address);
-    //     borrow_global<StakePool>(pool_address).delegated_voter
+    //     borrow_global<ValidatorState>(pool_address).delegated_voter
     // }
 
     #[view]
     /// Return the operator of the validator at `pool_address`.
-    public fun get_operator(pool_address: address): address acquires StakePool {
+    public fun get_operator(pool_address: address): address acquires ValidatorState {
         assert_stake_pool_exists(pool_address);
-        borrow_global<StakePool>(pool_address).operator_address
+        borrow_global<ValidatorState>(pool_address).operator_address
     }
 
     /// Return the pool address in `owner_cap`.
@@ -439,7 +404,7 @@ module diem_framework::validators {
 
     #[view]
     public fun stake_pool_exists(addr: address): bool {
-        exists<StakePool>(addr)
+        exists<ValidatorState>(addr)
     }
 
     /// Initialize validator set to the core resource account.
@@ -449,8 +414,8 @@ module diem_framework::validators {
         move_to(diem_framework, ValidatorSet {
             consensus_scheme: 0,
             active_validators: vector::empty(),
-            pending_active: vector::empty(),
-            pending_inactive: vector::empty(),
+            // pending_active: vector::empty(),
+            // pending_inactive: vector::empty(),
             total_voting_power: 0,
             total_joining_power: 0,
         });
@@ -472,36 +437,36 @@ module diem_framework::validators {
     /// Allow on chain governance to remove validators from the validator set.
     // TODO: v7 - remove this
 
-    public fun remove_validators(
-        diem_framework: &signer,
-        validators: &vector<address>,
-    ) acquires ValidatorSet {
-        system_addresses::assert_diem_framework(diem_framework);
+    // public fun remove_validators(
+    //     diem_framework: &signer,
+    //     validators: &vector<address>,
+    // ) acquires ValidatorSet {
+    //     system_addresses::assert_diem_framework(diem_framework);
 
-        let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
-        let active_validators = &mut validator_set.active_validators;
-        let pending_inactive = &mut validator_set.pending_inactive;
-        let len = vector::length(validators);
-        let i = 0;
-        // Remove each validator from the validator set.
-        while ({
-            spec {
-                invariant spec_validators_are_initialized(active_validators);
-                invariant spec_validator_indices_are_valid(active_validators);
-                invariant spec_validators_are_initialized(pending_inactive);
-                invariant spec_validator_indices_are_valid(pending_inactive);
-            };
-            i < len
-        }) {
-            let validator = *vector::borrow(validators, i);
-            let validator_index = find_validator(active_validators, validator);
-            if (option::is_some(&validator_index)) {
-                let validator_info = vector::swap_remove(active_validators, *option::borrow(&validator_index));
-                vector::push_back(pending_inactive, validator_info);
-            };
-            i = i + 1;
-        };
-    }
+    //     let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
+    //     let active_validators = &mut validator_set.active_validators;
+    //     // let pending_inactive = &mut validator_set.pending_inactive;
+    //     let len = vector::length(validators);
+    //     let i = 0;
+    //     // Remove each validator from the validator set.
+    //     while ({
+    //         spec {
+    //             invariant spec_validators_are_initialized(active_validators);
+    //             invariant spec_validator_indices_are_valid(active_validators);
+    //             // invariant spec_validators_are_initialized(pending_inactive);
+    //             // invariant spec_validator_indices_are_valid(pending_inactive);
+    //         };
+    //         i < len
+    //     }) {
+    //         let validator = *vector::borrow(validators, i);
+    //         let validator_index = find_validator(active_validators, validator);
+    //         if (option::is_some(&validator_index)) {
+    //             let validator_info = vector::swap_remove(active_validators, *option::borrow(&validator_index));
+    //             // vector::push_back(pending_inactive, validator_info);
+    //         };
+    //         i = i + 1;
+    //     };
+    // }
 
     /// Initialize the validator account and give ownership to the signing account
     /// except it leaves the ValidatorConfig to be set by another entity.
@@ -512,7 +477,7 @@ module diem_framework::validators {
         initial_stake_amount: u64,
         operator: address,
         _voter: address,
-    ) acquires AllowedValidators, OwnerCapability, StakePool {
+    ) acquires AllowedValidators, OwnerCapability, ValidatorState {
         initialize_owner(owner);
         move_to(owner, ValidatorConfig {
             consensus_pubkey: vector::empty(),
@@ -566,26 +531,26 @@ module diem_framework::validators {
         assert!(is_allowed(owner_address), error::not_found(EINELIGIBLE_VALIDATOR));
         assert!(!stake_pool_exists(owner_address), error::already_exists(EALREADY_REGISTERED));
 
-        move_to(owner, StakePool {
-            active: coin::zero<GasCoin>(),
-            pending_active: coin::zero<GasCoin>(),
-            pending_inactive: coin::zero<GasCoin>(),
-            inactive: coin::zero<GasCoin>(),
-            locked_until_secs: 0,
+        move_to(owner, ValidatorState {
+            // active: coin::zero<GasCoin>(),
+            // pending_active: coin::zero<GasCoin>(),
+            // pending_inactive: coin::zero<GasCoin>(),
+            // inactive: coin::zero<GasCoin>(),
+            // locked_until_secs: 0,
             operator_address: owner_address,
-            delegated_voter: owner_address,
+            // delegated_voter: owner_address,
             // Events.
             initialize_validator_events: account::new_event_handle<RegisterValidatorCandidateEvent>(owner),
             set_operator_events: account::new_event_handle<SetOperatorEvent>(owner),
-            add_stake_events: account::new_event_handle<AddStakeEvent>(owner),
-            reactivate_stake_events: account::new_event_handle<ReactivateStakeEvent>(owner),
+            // add_stake_events: account::new_event_handle<AddStakeEvent>(owner),
+            // reactivate_stake_events: account::new_event_handle<ReactivateStakeEvent>(owner),
             rotate_consensus_key_events: account::new_event_handle<RotateConsensusKeyEvent>(owner),
             update_network_and_fullnode_addresses_events: account::new_event_handle<UpdateNetworkAndFullnodeAddressesEvent>(owner),
-            increase_lockup_events: account::new_event_handle<IncreaseLockupEvent>(owner),
+            // increase_lockup_events: account::new_event_handle<IncreaseLockupEvent>(owner),
             join_validator_set_events: account::new_event_handle<JoinValidatorSetEvent>(owner),
             distribute_rewards_events: account::new_event_handle<DistributeRewardsEvent>(owner),
-            unlock_stake_events: account::new_event_handle<UnlockStakeEvent>(owner),
-            withdraw_stake_events: account::new_event_handle<WithdrawStakeEvent>(owner),
+            // unlock_stake_events: account::new_event_handle<UnlockStakeEvent>(owner),
+            // withdraw_stake_events: account::new_event_handle<WithdrawStakeEvent>(owner),
             leave_validator_set_events: account::new_event_handle<LeaveValidatorSetEvent>(owner),
         });
 
@@ -612,7 +577,7 @@ module diem_framework::validators {
     // }
 
     /// Allows an owner to change the operator of the stake pool.
-    public entry fun set_operator(owner: &signer, new_operator: address) acquires OwnerCapability, StakePool {
+    public entry fun set_operator(owner: &signer, new_operator: address) acquires OwnerCapability, ValidatorState {
         let owner_address = signer::address_of(owner);
         assert_owner_cap_exists(owner_address);
         let ownership_cap = borrow_global<OwnerCapability>(owner_address);
@@ -620,10 +585,10 @@ module diem_framework::validators {
     }
 
     /// Allows an account with ownership capability to change the operator of the stake pool.
-    public fun set_operator_with_cap(owner_cap: &OwnerCapability, new_operator: address) acquires StakePool {
+    public fun set_operator_with_cap(owner_cap: &OwnerCapability, new_operator: address) acquires ValidatorState {
         let pool_address = owner_cap.pool_address;
         assert_stake_pool_exists(pool_address);
-        let stake_pool = borrow_global_mut<StakePool>(pool_address);
+        let stake_pool = borrow_global_mut<ValidatorState>(pool_address);
         let old_operator = stake_pool.operator_address;
         stake_pool.operator_address = new_operator;
 
@@ -638,7 +603,7 @@ module diem_framework::validators {
     }
 
     // /// Allows an owner to change the delegated voter of the stake pool.
-    // public entry fun set_delegated_voter(owner: &signer, new_voter: address) acquires OwnerCapability, StakePool {
+    // public entry fun set_delegated_voter(owner: &signer, new_voter: address) acquires OwnerCapability, ValidatorState {
     //     let owner_address = signer::address_of(owner);
     //     assert_owner_cap_exists(owner_address);
     //     let ownership_cap = borrow_global<OwnerCapability>(owner_address);
@@ -646,17 +611,17 @@ module diem_framework::validators {
     // }
 
     // /// Allows an owner to change the delegated voter of the stake pool.
-    // public fun set_delegated_voter_with_cap(owner_cap: &OwnerCapability, new_voter: address) acquires StakePool {
+    // public fun set_delegated_voter_with_cap(owner_cap: &OwnerCapability, new_voter: address) acquires ValidatorState {
     //     let pool_address = owner_cap.pool_address;
     //     assert_stake_pool_exists(pool_address);
-    //     let stake_pool = borrow_global_mut<StakePool>(pool_address);
+    //     let stake_pool = borrow_global_mut<ValidatorState>(pool_address);
     //     stake_pool.delegated_voter = new_voter;
     // }
 
-    /// Add `amount` of coins from the `account` owning the StakePool.
+    /// Add `amount` of coins from the `account` owning the ValidatorState.
 
     // TODO: v7 - remove this
-    // public entry fun add_stake(owner: &signer, amount: u64) acquires OwnerCapability, StakePool, ValidatorSet {
+    // public entry fun add_stake(owner: &signer, amount: u64) acquires OwnerCapability, ValidatorState, ValidatorSet {
     //     let owner_address = signer::address_of(owner);
     //     assert_owner_cap_exists(owner_address);
     //     let ownership_cap = borrow_global<OwnerCapability>(owner_address);
@@ -666,7 +631,7 @@ module diem_framework::validators {
     // TODO: v7 - remove this
 
     // /// Add `coins` into `pool_address`. this requires the corresponding `owner_cap` to be passed in.
-    // public fun add_stake_with_cap(owner_cap: &OwnerCapability, coins: Coin<GasCoin>) acquires StakePool, ValidatorSet {
+    // public fun add_stake_with_cap(owner_cap: &OwnerCapability, coins: Coin<GasCoin>) acquires ValidatorState, ValidatorSet {
     //     let pool_address = owner_cap.pool_address;
     //     assert_stake_pool_exists(pool_address);
 
@@ -688,7 +653,7 @@ module diem_framework::validators {
 
     //     // Add to pending_active if it's a current validator because the stake is not counted until the next epoch.
     //     // Otherwise, the delegation can be added to active directly as the validator is also activated in the epoch.
-    //     let stake_pool = borrow_global_mut<StakePool>(pool_address);
+    //     let stake_pool = borrow_global_mut<ValidatorState>(pool_address);
     //     if (is_current_epoch_validator(pool_address)) {
     //         coin::merge<GasCoin>(&mut stake_pool.pending_active, coins);
     //     } else {
@@ -712,19 +677,19 @@ module diem_framework::validators {
     // }
 
     // /// Move `amount` of coins from pending_inactive to active.
-    // public entry fun reactivate_stake(owner: &signer, amount: u64) acquires OwnerCapability, StakePool {
+    // public entry fun reactivate_stake(owner: &signer, amount: u64) acquires OwnerCapability, ValidatorState {
     //     let owner_address = signer::address_of(owner);
     //     assert_owner_cap_exists(owner_address);
     //     let ownership_cap = borrow_global<OwnerCapability>(owner_address);
     //     reactivate_stake_with_cap(ownership_cap, amount);
     // }
 
-    // public fun reactivate_stake_with_cap(owner_cap: &OwnerCapability, amount: u64) acquires StakePool {
+    // public fun reactivate_stake_with_cap(owner_cap: &OwnerCapability, amount: u64) acquires ValidatorState {
     //     let pool_address = owner_cap.pool_address;
     //     assert_stake_pool_exists(pool_address);
 
     //     // Cap the amount to reactivate by the amount in pending_inactive.
-    //     let stake_pool = borrow_global_mut<StakePool>(pool_address);
+    //     let stake_pool = borrow_global_mut<ValidatorState>(pool_address);
     //     let total_pending_inactive = coin::value(&stake_pool.pending_inactive);
     //     amount = min(amount, total_pending_inactive);
 
@@ -749,9 +714,9 @@ module diem_framework::validators {
         pool_address: address,
         new_consensus_pubkey: vector<u8>,
         proof_of_possession: vector<u8>,
-    ) acquires StakePool, ValidatorConfig {
+    ) acquires ValidatorState, ValidatorConfig {
         assert_stake_pool_exists(pool_address);
-        let stake_pool = borrow_global_mut<StakePool>(pool_address);
+        let stake_pool = borrow_global_mut<ValidatorState>(pool_address);
         assert!(signer::address_of(operator) == stake_pool.operator_address, error::unauthenticated(ENOT_OPERATOR));
 
         assert!(exists<ValidatorConfig>(pool_address), error::not_found(EVALIDATOR_CONFIG));
@@ -781,9 +746,9 @@ module diem_framework::validators {
         pool_address: address,
         new_network_addresses: vector<u8>,
         new_fullnode_addresses: vector<u8>,
-    ) acquires StakePool, ValidatorConfig {
+    ) acquires ValidatorState, ValidatorConfig {
         assert_stake_pool_exists(pool_address);
-        let stake_pool = borrow_global_mut<StakePool>(pool_address);
+        let stake_pool = borrow_global_mut<ValidatorState>(pool_address);
         assert!(signer::address_of(operator) == stake_pool.operator_address, error::unauthenticated(ENOT_OPERATOR));
 
         assert!(exists<ValidatorConfig>(pool_address), error::not_found(EVALIDATOR_CONFIG));
@@ -815,12 +780,12 @@ module diem_framework::validators {
 
     /// Unlock from active delegation, it's moved to pending_inactive if locked_until_secs < current_time or
     /// directly inactive if it's not from an active validator.
-    // public fun increase_lockup_with_cap(owner_cap: &OwnerCapability) acquires StakePool {
+    // public fun increase_lockup_with_cap(owner_cap: &OwnerCapability) acquires ValidatorState {
     //     let pool_address = owner_cap.pool_address;
     //     assert_stake_pool_exists(pool_address);
     //     let config = staking_config::get();
 
-    //     let stake_pool = borrow_global_mut<StakePool>(pool_address);
+    //     let stake_pool = borrow_global_mut<ValidatorState>(pool_address);
     //     let old_locked_until_secs = stake_pool.locked_until_secs;
     //     let new_locked_until_secs = timestamp::now_seconds() + staking_config::get_recurring_lockup_duration(&config);
     //     assert!(old_locked_until_secs < new_locked_until_secs, error::invalid_argument(EINVALID_LOCKUP));
@@ -840,7 +805,7 @@ module diem_framework::validators {
     public entry fun join_validator_set(
         operator: &signer,
         pool_address: address
-    ) acquires StakePool, ValidatorConfig, ValidatorSet {
+    ) acquires ValidatorState, ValidatorConfig, ValidatorSet {
         // assert!(
         //     staking_config::get_allow_validator_set_change(&staking_config::get()),
         //     error::invalid_argument(ENO_POST_GENESIS_VALIDATOR_SET_CHANGE_ALLOWED),
@@ -858,16 +823,16 @@ module diem_framework::validators {
     public(friend) fun join_validator_set_internal(
         operator: &signer,
         pool_address: address
-    ) acquires StakePool, ValidatorConfig, ValidatorSet {
+    ) acquires ValidatorState, ValidatorConfig, ValidatorSet {
 
         assert_stake_pool_exists(pool_address);
-        let stake_pool = borrow_global_mut<StakePool>(pool_address);
+        let stake_pool = borrow_global_mut<ValidatorState>(pool_address);
         assert!(signer::address_of(operator) == stake_pool.operator_address, error::unauthenticated(ENOT_OPERATOR));
 
-        assert!(
-            get_validator_state(pool_address) == VALIDATOR_STATUS_INACTIVE,
-            error::invalid_state(EALREADY_ACTIVE_VALIDATOR),
-        );
+        // assert!(
+        //     get_validator_state(pool_address) == VALIDATOR_STATUS_INACTIVE,
+        //     error::invalid_state(EALREADY_ACTIVE_VALIDATOR),
+        // );
 
         // let config = staking_config::get();
         // let (minimum_stake, maximum_stake) = staking_config::get_required_stake(&config);
@@ -886,9 +851,9 @@ module diem_framework::validators {
 
         // Validate the current validator set size has not exceeded the limit.
         let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
-        vector::push_back(&mut validator_set.pending_active, generate_validator_info(pool_address, stake_pool, *validator_config));
 
-        let validator_set_size = vector::length(&validator_set.active_validators) + vector::length(&validator_set.pending_active);
+
+        let validator_set_size = vector::length(&validator_set.active_validators);
         assert!(validator_set_size <= MAX_VALIDATOR_SET_SIZE, error::invalid_argument(EVALIDATOR_SET_TOO_LARGE));
 
         event::emit_event(
@@ -898,7 +863,7 @@ module diem_framework::validators {
     }
 
     /// Similar to unlock_with_cap but will use ownership capability from the signing account.
-    // public entry fun unlock(owner: &signer, amount: u64) acquires OwnerCapability, StakePool {
+    // public entry fun unlock(owner: &signer, amount: u64) acquires OwnerCapability, ValidatorState {
     //     let owner_address = signer::address_of(owner);
     //     assert_owner_cap_exists(owner_address);
     //     let ownership_cap = borrow_global<OwnerCapability>(owner_address);
@@ -906,7 +871,7 @@ module diem_framework::validators {
     // }
 
     /// Unlock `amount` from the active stake. Only possible if the lockup has expired.
-    // public fun unlock_with_cap(amount: u64, owner_cap: &OwnerCapability) acquires StakePool {
+    // public fun unlock_with_cap(amount: u64, owner_cap: &OwnerCapability) acquires ValidatorState {
     //     // Short-circuit if amount to unlock is 0 so we don't emit events.
     //     if (amount == 0) {
     //         return
@@ -916,7 +881,7 @@ module diem_framework::validators {
     //     // inactive in the earliest possible epoch transition.
     //     let pool_address = owner_cap.pool_address;
     //     assert_stake_pool_exists(pool_address);
-    //     let stake_pool = borrow_global_mut<StakePool>(pool_address);
+    //     let stake_pool = borrow_global_mut<ValidatorState>(pool_address);
     //     // Cap amount to unlock by maximum active stake.
     //     let amount = min(amount, coin::value(&stake_pool.active));
     //     let unlocked_stake = coin::extract(&mut stake_pool.active, amount);
@@ -935,7 +900,7 @@ module diem_framework::validators {
     // public entry fun withdraw(
     //     owner: &signer,
     //     withdraw_amount: u64
-    // ) acquires OwnerCapability, StakePool, ValidatorSet {
+    // ) acquires OwnerCapability, ValidatorState, ValidatorSet {
     //     let owner_address = signer::address_of(owner);
     //     assert_owner_cap_exists(owner_address);
     //     let ownership_cap = borrow_global<OwnerCapability>(owner_address);
@@ -947,10 +912,10 @@ module diem_framework::validators {
     // public fun withdraw_with_cap(
     //     owner_cap: &OwnerCapability,
     //     withdraw_amount: u64
-    // ): Coin<GasCoin> acquires StakePool, ValidatorSet {
+    // ): Coin<GasCoin> acquires ValidatorState, ValidatorSet {
     //     let pool_address = owner_cap.pool_address;
     //     assert_stake_pool_exists(pool_address);
-    //     let stake_pool = borrow_global_mut<StakePool>(pool_address);
+    //     let stake_pool = borrow_global_mut<ValidatorState>(pool_address);
     //     // There's an edge case where a validator unlocks their stake and leaves the validator set before
     //     // the stake is fully unlocked (the current lockup cycle has not expired yet).
     //     // This can leave their stake stuck in pending_inactive even after the current lockup cycle expires.
@@ -982,66 +947,46 @@ module diem_framework::validators {
     ///
     /// Can only be called by the operator of the validator/staking pool.
 
-    // TODO: V7 change this
-    public entry fun leave_validator_set(
-        operator: &signer,
-        pool_address: address
-    ) acquires StakePool, ValidatorSet {
-        // let config = staking_config::get();
-        // assert!(
-        //     staking_config::get_allow_validator_set_change(&config),
-        //     error::invalid_argument(ENO_POST_GENESIS_VALIDATOR_SET_CHANGE_ALLOWED),
-        // );
+//     // TODO: V7 change this
+//     public entry fun leave_validator_set(
+//         operator: &signer,
+//         pool_address: address
+//     ) acquires ValidatorState, ValidatorSet {
+//         // let config = staking_config::get();
+//         // assert!(
+//         //     staking_config::get_allow_validator_set_change(&config),
+//         //     error::invalid_argument(ENO_POST_GENESIS_VALIDATOR_SET_CHANGE_ALLOWED),
+//         // );
 
-        assert_stake_pool_exists(pool_address);
-        let stake_pool = borrow_global_mut<StakePool>(pool_address);
-        // Account has to be the operator.
-        assert!(signer::address_of(operator) == stake_pool.operator_address, error::unauthenticated(ENOT_OPERATOR));
+//         assert_stake_pool_exists(pool_address);
+//         let stake_pool = borrow_global_mut<ValidatorState>(pool_address);
+//         // Account has to be the operator.
+//         assert!(signer::address_of(operator) == stake_pool.operator_address, error::unauthenticated(ENOT_OPERATOR));
 
-        let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
-        // If the validator is still pending_active, directly kick the validator out.
-        let maybe_pending_active_index = find_validator(&validator_set.pending_active, pool_address);
-        if (option::is_some(&maybe_pending_active_index)) {
-            vector::swap_remove(
-                &mut validator_set.pending_active, option::extract(&mut maybe_pending_active_index));
+//         let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
+//  {
+//             // Validate that the validator is already part of the validator set.
+//             let maybe_active_index = find_validator(&validator_set.active_validators, pool_address);
+//             assert!(option::is_some(&maybe_active_index), error::invalid_state(ENOT_VALIDATOR));
+//             let validator_info = vector::swap_remove(
+//                 &mut validator_set.active_validators, option::extract(&mut maybe_active_index));
+//             assert!(vector::length(&validator_set.active_validators) > 0, error::invalid_state(ELAST_VALIDATOR));
+//             // vector::push_back(&mut validator_set.pending_inactive, validator_info);
 
-            // Decrease the voting power increase as the pending validator's voting power was added when they requested
-            // to join. Now that they changed their mind, their voting power should not affect the joining limit of this
-            // epoch.
-            let validator_stake = 1; // NOTE: voting power is always 1 in Libra
-            // total_joining_power should be larger than validator_stake but just in case there has been a small
-            // rounding error somewhere that can lead to an underflow, we still want to allow this transaction to
-            // succeed.
-            if (validator_set.total_joining_power > validator_stake) {
-                validator_set.total_joining_power = validator_set.total_joining_power - validator_stake;
-            } else {
-                validator_set.total_joining_power = 0;
-            };
-        } else {
-            // Validate that the validator is already part of the validator set.
-            let maybe_active_index = find_validator(&validator_set.active_validators, pool_address);
-            assert!(option::is_some(&maybe_active_index), error::invalid_state(ENOT_VALIDATOR));
-            let validator_info = vector::swap_remove(
-                &mut validator_set.active_validators, option::extract(&mut maybe_active_index));
-            assert!(vector::length(&validator_set.active_validators) > 0, error::invalid_state(ELAST_VALIDATOR));
-            vector::push_back(&mut validator_set.pending_inactive, validator_info);
-
-            event::emit_event(
-                &mut stake_pool.leave_validator_set_events,
-                LeaveValidatorSetEvent {
-                    pool_address,
-                },
-            );
-        };
-    }
+//             event::emit_event(
+//                 &mut stake_pool.leave_validator_set_events,
+//                 LeaveValidatorSetEvent {
+//                     pool_address,
+//                 },
+//             );
+//         };
+//     }
 
     /// Returns true if the current validator can still vote in the current epoch.
     /// This includes validators that requested to leave but are still in the pending_inactive queue and will be removed
     /// when the epoch starts.
-    public fun is_current_epoch_validator(pool_address: address): bool acquires ValidatorSet {
-        assert_stake_pool_exists(pool_address);
-        let validator_state = get_validator_state(pool_address);
-        validator_state == VALIDATOR_STATUS_ACTIVE || validator_state == VALIDATOR_STATUS_PENDING_INACTIVE
+    public fun is_current_epoch_validator(addr: address): bool  acquires ValidatorSet{
+      get_validator_state(addr) == VALIDATOR_STATUS_ACTIVE
     }
 
     /// Update the validator performance (proposal statistics). This is only called by block::prologue().
@@ -1096,7 +1041,7 @@ module diem_framework::validators {
     /// pending inactive validators so they no longer can vote.
     /// 4. The validator's voting power in the validator set is updated to be the corresponding staking pool's voting
     /// power.
-    public(friend) fun on_new_epoch() acquires StakePool, ValidatorConfig, ValidatorPerformance, ValidatorSet {
+    public(friend) fun on_new_epoch() acquires ValidatorState, ValidatorConfig, ValidatorPerformance, ValidatorSet {
         let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
         // let config = staking_config::get();
         let validator_perf = borrow_global_mut<ValidatorPerformance>(@diem_framework);
@@ -1111,10 +1056,10 @@ module diem_framework::validators {
         // };
 
         // Activate currently pending_active validators.
-        append(&mut validator_set.active_validators, &mut validator_set.pending_active);
+        // append(&mut validator_set.active_validators, &mut validator_set.pending_active);
 
         // Officially deactivate all pending_inactive validators. They will now no longer receive rewards.
-        validator_set.pending_inactive = vector::empty();
+        // validator_set.pending_inactive = vector::empty();
 
         // Update active validator set so that network address/public key change takes effect.
         // Moreover, recalculate the total voting power, and deactivate the validator whose
@@ -1136,7 +1081,7 @@ module diem_framework::validators {
             let old_validator_info = vector::borrow_mut(&mut validator_set.active_validators, i);
             let pool_address = old_validator_info.addr;
             let validator_config = borrow_global_mut<ValidatorConfig>(pool_address);
-            let stake_pool = borrow_global_mut<StakePool>(pool_address);
+            let stake_pool = borrow_global_mut<ValidatorState>(pool_address);
             let new_validator_info = generate_validator_info(pool_address, stake_pool, *validator_config);
 
             // A validator needs at least the min stake required to join the validator set.
@@ -1168,8 +1113,8 @@ module diem_framework::validators {
         while ({
             spec {
                 invariant spec_validators_are_initialized(validator_set.active_validators);
-                invariant len(validator_set.pending_active) == 0;
-                invariant len(validator_set.pending_inactive) == 0;
+                // invariant len(validator_set.pending_active) == 0;
+                // invariant len(validator_set.pending_inactive) == 0;
                 invariant 0 <= validator_index && validator_index <= vlen;
                 invariant vlen == len(validator_set.active_validators);
                 invariant forall i in 0..validator_index:
@@ -1193,7 +1138,7 @@ module diem_framework::validators {
 
             // // Automatically renew a validator's lockup for validators that will still be in the validator set in the
             // // next epoch.
-            // let stake_pool = borrow_global_mut<StakePool>(validator_info.addr);
+            // let stake_pool = borrow_global_mut<ValidatorState>(validator_info.addr);
             // if (stake_pool.locked_until_secs <= timestamp::now_seconds()) {
             //     spec {
             //         assume timestamp::spec_now_seconds() + recurring_lockup_duration_secs <= MAX_U64;
@@ -1215,7 +1160,7 @@ module diem_framework::validators {
     /// Called on epoch boundary to reconfigure
     /// No change may happen due to failover rules.
     /// Returns instrumentation for audits: if what the validator set was, which validators qualified after failover rules, a list of validators which had missing configs and were excluded, if the new list sucessfully matches the actual validators after reconfiguration(actual_validator_set, qualified_on_failover, missing_configs, success)
-    public(friend) fun maybe_reconfigure(root: &signer, proposed_validators: vector<address>): (vector<address>, vector<address>, bool) acquires StakePool, ValidatorConfig, ValidatorPerformance, ValidatorSet {
+    public(friend) fun maybe_reconfigure(root: &signer, proposed_validators: vector<address>): (vector<address>, vector<address>, bool) acquires ValidatorState, ValidatorConfig, ValidatorPerformance, ValidatorSet {
 
 
         // NOTE: ol does not use the pending, and pending inactive lists.
@@ -1248,8 +1193,8 @@ module diem_framework::validators {
         while ({
             spec {
                 invariant spec_validators_are_initialized(validator_set.active_validators);
-                invariant len(validator_set.pending_active) == 0;
-                invariant len(validator_set.pending_inactive) == 0;
+                // invariant len(validator_set.pending_active) == 0;
+                // invariant len(validator_set.pending_inactive) == 0;
                 invariant 0 <= validator_index && validator_index <= vlen;
                 invariant vlen == len(validator_set.active_validators);
                 invariant forall i in 0..validator_index:
@@ -1288,13 +1233,13 @@ module diem_framework::validators {
     }
 
     #[test_only]
-    public fun test_make_val_cfg(list: &vector<address>): (vector<ValidatorInfo>, u128, vector<address>) acquires StakePool, ValidatorConfig {
+    public fun test_make_val_cfg(list: &vector<address>): (vector<ValidatorInfo>, u128, vector<address>) acquires ValidatorState, ValidatorConfig {
       make_validator_set_config(list)
     }
 
     /// Make the active valiators list
     /// returns: the list of validators, and the total voting power (1 per validator), and also the list of validators that did not have valid configs
-    fun make_validator_set_config(list: &vector<address>): (vector<ValidatorInfo>, u128, vector<address>) acquires StakePool, ValidatorConfig  {
+    fun make_validator_set_config(list: &vector<address>): (vector<ValidatorInfo>, u128, vector<address>) acquires ValidatorState, ValidatorConfig  {
 
       let next_epoch_validators = vector::empty();
       let vlen = vector::length(list);
@@ -1322,12 +1267,12 @@ module diem_framework::validators {
 
           let validator_config = borrow_global_mut<ValidatorConfig>(pool_address);
 
-          if (!exists<StakePool>(pool_address)) {
+          if (!exists<ValidatorState>(pool_address)) {
             vector::push_back(&mut missing_configs, pool_address);
             i = i + 1;
             continue
           }; // belt and suspenders
-          let stake_pool = borrow_global_mut<StakePool>(pool_address);
+          let stake_pool = borrow_global_mut<ValidatorState>(pool_address);
 
 
           let new_validator_info = generate_validator_info(pool_address, stake_pool, *validator_config);
@@ -1497,8 +1442,8 @@ module diem_framework::validators {
         validator_perf: &ValidatorPerformance,
         pool_address: address,
         // _staking_config: &StakingConfig,
-    ) acquires StakePool, ValidatorConfig {
-        let stake_pool = borrow_global_mut<StakePool>(pool_address);
+    ) acquires ValidatorState, ValidatorConfig {
+        let stake_pool = borrow_global_mut<ValidatorState>(pool_address);
         let validator_config = borrow_global<ValidatorConfig>(pool_address);
         let cur_validator_perf = vector::borrow(&validator_perf.validators, validator_config.validator_index);
         let _num_successful_proposals = cur_validator_perf.successful_proposals;
@@ -1555,9 +1500,9 @@ module diem_framework::validators {
 
     //////// 0L ////////
     // since rewards are handled externally to stake.move we need an api to emit the event
-    public(friend) fun emit_distribute_reward(root: &signer, pool_address: address, rewards_amount: u64) acquires StakePool {
+    public(friend) fun emit_distribute_reward(root: &signer, pool_address: address, rewards_amount: u64) acquires ValidatorState {
         system_addresses::assert_ol(root);
-        let stake_pool = borrow_global_mut<StakePool>(pool_address);
+        let stake_pool = borrow_global_mut<ValidatorState>(pool_address);
         event::emit_event(
           &mut stake_pool.distribute_rewards_events,
           DistributeRewardsEvent {
@@ -1626,7 +1571,7 @@ module diem_framework::validators {
         option::none()
     }
 
-    fun generate_validator_info(addr: address, stake_pool: &StakePool, config: ValidatorConfig): ValidatorInfo {
+    fun generate_validator_info(addr: address, stake_pool: &ValidatorState, config: ValidatorConfig): ValidatorInfo {
         let voting_power = get_next_epoch_voting_power(stake_pool);
         ValidatorInfo {
             addr,
@@ -1639,7 +1584,7 @@ module diem_framework::validators {
 
     // TODO: v7 - remove this
 
-    fun get_next_epoch_voting_power(_stake_pool: &StakePool): u64 {
+    fun get_next_epoch_voting_power(_stake_pool: &ValidatorState): u64 {
         // let value_pending_active = coin::value(&stake_pool.pending_active);
         // let value_active = coin::value(&stake_pool.active);
         // let value_pending_inactive = coin::value(&stake_pool.pending_inactive);
@@ -1730,7 +1675,7 @@ module diem_framework::validators {
     }
 
     #[test_only]
-    public fun end_epoch() acquires StakePool, ValidatorConfig, ValidatorPerformance, ValidatorSet {
+    public fun end_epoch() acquires ValidatorState, ValidatorConfig, ValidatorPerformance, ValidatorSet {
         // Set the number of blocks to 1, to give out rewards to non-failing validators.
         set_validator_perf_at_least_one_block();
         timestamp::fast_forward_seconds(EPOCH_DURATION);
@@ -1763,7 +1708,7 @@ module diem_framework::validators {
         _amount: u64,
         should_join_validator_set: bool,
         should_end_epoch: bool,
-    ) acquires AllowedValidators, StakePool, ValidatorConfig, ValidatorPerformance, ValidatorSet {
+    ) acquires AllowedValidators, ValidatorState, ValidatorConfig, ValidatorPerformance, ValidatorSet {
         use ol_framework::ol_account;
         system_addresses::assert_ol(root);
         let validator_address = signer::address_of(validator);
@@ -1790,15 +1735,15 @@ module diem_framework::validators {
 
     #[test_only]
     /// One step setup for tests
-    public fun quick_init(root: &signer, val_sig: &signer) acquires ValidatorPerformance, ValidatorSet, StakePool, ValidatorConfig, AllowedValidators {
+    public fun quick_init(root: &signer, val_sig: &signer) acquires ValidatorPerformance, ValidatorSet, ValidatorState, ValidatorConfig, AllowedValidators {
       system_addresses::assert_ol(root);
       let (_sk, pk, pop) = generate_identity();
       initialize_test_validator(root, &pk, &pop, val_sig, 100, true, true);
     }
 
     #[test_only]
-    public fun get_reward_event_guid(val: address): u64 acquires StakePool{
-      let sp = borrow_global<StakePool>(val);
+    public fun get_reward_event_guid(val: address): u64 acquires ValidatorState{
+      let sp = borrow_global<ValidatorState>(val);
       event::counter(&sp.distribute_rewards_events)
     }
 }
