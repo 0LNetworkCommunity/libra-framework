@@ -110,7 +110,8 @@ fn test_recovery_genesis() {
                 .unwrap()
                 .extract_raw_bytes()
                 .unwrap();
-            let validator_set: ValidatorSet = bcs::from_bytes(&bytes).unwrap();
+            let validator_set: ValidatorSet =
+                bcs::from_bytes(&bytes).expect("no validator set found in bytes");
             assert!(
                 validator_set.active_validators().len() == 4,
                 "validator set is empty"

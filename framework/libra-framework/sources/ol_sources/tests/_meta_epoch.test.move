@@ -3,7 +3,7 @@
 /// tests for external apis, and where a dependency cycle with genesis is created.
 module ol_framework::test_meta {
   use diem_framework::reconfiguration;
-  // use diem_framework::stake;
+  // use diem_framework::timestamp;
 
   use ol_framework::mock;
 
@@ -37,7 +37,6 @@ module ol_framework::test_meta {
   fun test_reconfigure_ol_setup(root: signer) {
     // NOTE: genesis_n_vals, DOES trigger a genesis END event.
     mock::genesis_n_vals(&root, 4);
-
 
     let a = reconfiguration::get_current_epoch();
 

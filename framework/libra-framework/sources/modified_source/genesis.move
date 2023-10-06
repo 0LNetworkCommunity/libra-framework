@@ -321,8 +321,11 @@ module diem_framework::genesis {
         });
 
         musical_chairs::initialize(diem_framework, num_validators);
-        // stake::on_new_epoch();
 
+        // for smoke tests
+        // stake::maybe_reconfigure(diem_framework,
+        // validator_universe::get_eligible_validators());
+        stake::on_new_epoch()
     }
 
     /// Sets up the initial validator set for the network.
@@ -438,7 +441,7 @@ module diem_framework::genesis {
         validator.full_node_network_addresses,
       );
 
-      // stake::join_validator_set_internal(owner, validator.owner_address);
+      stake::join_validator_set(owner, validator.owner_address);
     }
 
     // fun test_create_validator_accounts(
