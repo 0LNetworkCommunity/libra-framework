@@ -9,6 +9,7 @@ members = [
   "tools/config",
   "tools/genesis",
   "tools/query",
+  "tools/rescue",
   "tools/tower",
   "tools/txs",
   "tools/wallet",
