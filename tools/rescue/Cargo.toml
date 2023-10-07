@@ -13,6 +13,7 @@ rust-version = { workspace = true }
 
 [dependencies]
 anyhow = { workspace = true }
+bcs = { workspace = true }
 clap = { workspace = true }
 diem-types = { workspace = true }
 #diem-framework = { workspace = true }
@@ -20,5 +21,4 @@ handlebars = { workspace = true }
 libra-framework = { workspace = true }
 move-compiler = { workspace = true }
 serde = { workspace = true }
-tempfile = { workspace = true }
 tokio = { workspace = true }
