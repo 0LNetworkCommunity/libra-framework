@@ -317,6 +317,7 @@ serde_with = "^3"
 move-binary-format = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 move-core-types = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 move-command-line-common = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+move-compiler = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 move-model = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 
 # uses a profile similar to `cli` in Diem/Cargo.toml

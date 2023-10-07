@@ -8424,6 +8424,12 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap 4.4.2",
+ "diem-types",
+ "handlebars",
+ "libra-framework",
+ "move-compiler",
+ "serde 1.0.163",
+ "tempfile",
  "tokio",
 ]
 
