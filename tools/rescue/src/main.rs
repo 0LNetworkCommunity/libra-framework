@@ -1,5 +1,6 @@
 mod admin_script_builder;
 mod rescue_cli;
+mod stdlib;
 
 // use anyhow::anyhow;
 use clap::{Parser, Subcommand};

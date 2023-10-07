@@ -1,6 +1,8 @@
-pub fn ol_fresh_stlib_changeset(path: PathBuf) -> Result<ChangeSet> {
-    println!("\nencode stdlib changeset");
+use anyhow;
+use diem_types::transaction::ChangeSet;
+use std::path::PathBuf;
 
+pub fn stlib_changeset(path: PathBuf) -> anyhow::Result<ChangeSet> {
     let db = DiemDebugger::db(path)?;
 
     // publish the agreed stdlib
