@@ -8430,6 +8430,7 @@ dependencies = [
  "handlebars",
  "libra-framework",
  "move-compiler",
+ "move-vm-test-utils",
  "serde 1.0.163",
  "tokio",
 ]

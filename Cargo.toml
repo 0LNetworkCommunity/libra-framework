@@ -319,6 +319,7 @@ move-core-types = { git = "https://github.com/0LNetworkCommunity/diem.git", bran
 move-command-line-common = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 move-compiler = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 move-model = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+move-vm-test-utils = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 
 # uses a profile similar to `cli` in Diem/Cargo.toml
 # optimized for performance and size

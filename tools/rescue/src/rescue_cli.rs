@@ -1,4 +1,4 @@
-use crate::admin_script_builder::custom_script;
+use crate::{admin_script_builder::custom_script, stdlib};
 use clap::Parser;
 use diem_types::transaction::Transaction;
 use std::path::PathBuf;
@@ -17,7 +17,7 @@ pub struct MissionOpts {
     script_path: Option<PathBuf>,
     #[clap(long)]
     /// directory to read/write or the rescue.blob
-    framework_path: Option<PathBuf>,
+    framework_upgrade: bool,
 }
 
 impl MissionOpts {
@@ -29,20 +29,23 @@ impl MissionOpts {
         // 2. the framework in DB is usable, and we need to execute an admin
         //    transaction from a .move source
 
-        if self.script_path.is_none() && self.framework_path.is_none() {
-            anyhow::bail!("no options provided, need a --framework-path or a --script-path");
-        }
-
-        if let Some(p) = &self.script_path {
+        let gen_tx = if let Some(p) = &self.script_path {
             let payload = custom_script(p, None, None);
 
-            let gen_tx = bcs::to_bytes(&Transaction::GenesisTransaction(payload))?;
+            Transaction::GenesisTransaction(payload)
+        } else if self.framework_upgrade {
+            let payload = stdlib::stlib_payload(db_path.clone()).await?;
+            Transaction::GenesisTransaction(payload)
+        } else {
+            anyhow::bail!("no options provided, need a --framework-upgrade or a --script-path");
+        };
 
-            let mut output = self.blob_path.clone().unwrap_or(db_path);
-            output.push("rescue.blob");
+        let mut output = self.blob_path.clone().unwrap_or(db_path);
 
-            std::fs::write(&output, gen_tx.as_slice())?;
-        }
+        output.push("rescue.blob");
+
+        let bytes = bcs::to_bytes(&gen_tx)?;
+        std::fs::write(&output, bytes.as_slice())?;
 
         Ok(())
     }
