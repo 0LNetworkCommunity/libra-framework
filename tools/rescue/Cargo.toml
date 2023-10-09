@@ -32,3 +32,6 @@ move-compiler = { workspace = true }
 move-vm-test-utils = { workspace = true }
 serde = { workspace = true }
 tokio = { workspace = true }
+
+[dev-dependencies]
+diem-temppath = { workspace = true }

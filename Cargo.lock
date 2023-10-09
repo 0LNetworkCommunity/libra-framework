@@ -8430,6 +8430,7 @@ dependencies = [
  "diem-debugger",
  "diem-executor",
  "diem-storage-interface",
+ "diem-temppath",
  "diem-types",
  "diem-vm",
  "handlebars",

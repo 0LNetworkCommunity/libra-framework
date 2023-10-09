@@ -49,3 +49,38 @@ impl RescueTxOpts {
         Ok(output)
     }
 }
+
+#[tokio::test]
+async fn test_create_blob() -> anyhow::Result<()>{
+  use std::path::Path;
+  use diem_temppath;
+
+  let script_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+  .join("src")
+  .join("templates")
+  .join("test_noop.move");
+  dbg!(&script_path);
+  assert!(script_path.exists());
+  let db_root_path = diem_temppath::TempPath::new();
+  db_root_path.create_as_dir()?;
+  let _db  = diem_db::DiemDB::new_for_test(db_root_path.path());
+
+  let blob_path = diem_temppath::TempPath::new();
+  blob_path.create_as_dir()?;
+
+  let r = RescueTxOpts {
+      data_path: db_root_path.path().to_owned(),
+      blob_path: Some(blob_path.path().to_owned()),
+      script_path: Some(script_path),
+      framework_upgrade: false,
+  };
+  r.run().await?;
+
+  assert!(blob_path.path().join("rescue.blob").exists());
+
+
+  // db_root_path.path()
+
+  Ok(())
+
+}
