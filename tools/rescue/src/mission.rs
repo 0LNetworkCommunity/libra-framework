@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 #[derive(Parser)]
 /// Start a libra node
-pub struct MissionOpts {
+pub struct RescueTxOpts {
     #[clap(short, long)]
     /// directory enclosing the `/db` folder of the node
     data_path: PathBuf,
@@ -18,9 +18,12 @@ pub struct MissionOpts {
     #[clap(long)]
     /// directory to read/write or the rescue.blob
     framework_upgrade: bool,
+    #[clap(long)]
+    /// apply to db in one step.
+    apply_to_db: bool,
 }
 
-impl MissionOpts {
+impl RescueTxOpts {
     pub async fn run(&self) -> anyhow::Result<()> {
         let db_path = self.data_path.clone();
 
