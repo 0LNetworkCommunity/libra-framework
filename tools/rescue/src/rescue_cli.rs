@@ -1,4 +1,4 @@
-use crate::{admin_script_builder::custom_script, stdlib};
+use crate::{admin_script_builder::custom_script, framework_payload};
 use clap::Parser;
 use diem_types::transaction::Transaction;
 use std::path::PathBuf;
@@ -34,7 +34,7 @@ impl MissionOpts {
 
             Transaction::GenesisTransaction(payload)
         } else if self.framework_upgrade {
-            let payload = stdlib::stlib_payload(db_path.clone()).await?;
+            let payload = framework_payload::stlib_payload(db_path.clone()).await?;
             Transaction::GenesisTransaction(payload)
         } else {
             anyhow::bail!("no options provided, need a --framework-upgrade or a --script-path");

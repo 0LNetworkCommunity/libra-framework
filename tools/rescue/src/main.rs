@@ -1,10 +1,6 @@
-mod admin_script_builder;
-mod rescue_cli;
-mod stdlib;
 
-// use anyhow::anyhow;
 use clap::{Parser, Subcommand};
-use rescue_cli::MissionOpts;
+use rescue::rescue_cli::MissionOpts;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
