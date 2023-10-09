@@ -1,6 +1,6 @@
 script {
-    use ol_framework::ol_account;
+    use diem_framework::reconfiguration;
     fun main (diem_root: signer) {
-      ol_account::create_account(&diem_root, @0x1234);
+      reconfiguration::reconfigure_for_rescue(&diem_root);
     }
 }

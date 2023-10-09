@@ -192,6 +192,12 @@ module diem_framework::reconfiguration {
         );
     }
 
+    /// For rescue missions
+    public fun reconfigure_for_rescue() acquires Configuration {
+        // system_addresses::assert_ol(vm);
+        reconfigure();
+    }
+
     #[test_only]
     public fun reconfigure_for_test() acquires Configuration {
         reconfigure();
