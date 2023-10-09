@@ -32,7 +32,6 @@ async fn test_create_blob() -> anyhow::Result<()>{
   .join("src")
   .join("templates")
   .join("test_init.move");
-  dbg!(&script_path);
   assert!(script_path.exists());
 
   let r = RescueTxOpts {

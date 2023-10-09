@@ -8,9 +8,9 @@ use std::path::Path;
 
 /// compiles a script for execution on the db offline.
 // TODO: not sure if this is duplicated with the framework upgrade code in ./framework
-pub fn compile_script(source_file_str: String, bytecode_version: Option<u32>) -> Vec<u8> {
+pub fn compile_script(source_file_str: &Path, bytecode_version: Option<u32>) -> Vec<u8> {
     let (_files, mut compiled_program) = Compiler::from_files(
-        vec![source_file_str],
+        vec![source_file_str.to_str().unwrap().to_owned()],
         libra_framework::head_release_bundle().files().unwrap(),
         libra_framework::release::named_addresses().clone(),
     )
@@ -34,7 +34,7 @@ pub fn custom_script(
 ) -> WriteSetPayload {
     WriteSetPayload::Script {
         script: Script::new(
-            compile_script(script_path.to_str().unwrap().to_owned(), bytecode_version),
+            compile_script(script_path, bytecode_version),
             vec![],
             vec![],
         ),

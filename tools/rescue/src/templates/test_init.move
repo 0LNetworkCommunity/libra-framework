@@ -1,6 +1,6 @@
 script {
-    use ol_framework::slow_wallet;
+    use ol_framework::ol_account;
     fun main (diem_root: signer) {
-      slow_wallet::initialize(&diem_root);
+      ol_account::create_account(&diem_root, @0x1234);
     }
 }

@@ -29,6 +29,7 @@ diem-vm = { workspace = true }
 handlebars = { workspace = true }
 libra-framework = { workspace = true }
 move-compiler = { workspace = true }
+move-core-types = { workspace = true }
 move-vm-test-utils = { workspace = true }
 serde = { workspace = true }
 tokio = { workspace = true }
