@@ -1,6 +1,6 @@
 
 use clap::{Parser, Subcommand};
-use rescue::{mission::RescueTxOpts, diem_db_bootstrapper::BootstrapOpts};
+use rescue::{rescue_tx::RescueTxOpts, diem_db_bootstrapper::BootstrapOpts};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
