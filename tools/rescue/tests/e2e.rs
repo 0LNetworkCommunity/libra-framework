@@ -3,7 +3,7 @@ use diem_temppath;
 use rescue::{rescue_tx::RescueTxOpts, diem_db_bootstrapper::BootstrapOpts};
 
 #[tokio::test]
-async fn test_create_blob() -> anyhow::Result<()>{
+async fn test_e2e() -> anyhow::Result<()>{
   let blob_path = Path::new(env!("CARGO_MANIFEST_DIR"))
   .join("fixtures")
   .join("basic_genesis.blob");

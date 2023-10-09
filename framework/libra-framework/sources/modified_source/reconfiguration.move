@@ -193,9 +193,23 @@ module diem_framework::reconfiguration {
     }
 
     /// For rescue missions
-    public fun reconfigure_for_rescue() acquires Configuration {
-        // system_addresses::assert_ol(vm);
-        reconfigure();
+    public fun reconfigure_for_rescue(vm: &signer) acquires Configuration {
+        system_addresses::assert_ol(vm);
+
+        let config_ref = borrow_global_mut<Configuration>(@diem_framework);
+
+        storage_gas::on_reconfig();
+
+        config_ref.epoch = config_ref.epoch + 1;
+
+        epoch_helper::set_epoch(config_ref.epoch);
+
+        event::emit_event<NewEpochEvent>(
+            &mut config_ref.events,
+            NewEpochEvent {
+                epoch: config_ref.epoch,
+            },
+        );
     }
 
     #[test_only]

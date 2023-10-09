@@ -1,6 +1,6 @@
 script {
-    use diem_framework::reconfiguration;
-    fun main (diem_root: signer) {
-      reconfiguration::reconfigure_for_rescue(&diem_root);
+    use diem_framework::block;
+    fun main (vm: &signer) {
+      block::emit_writeset_block_event(vm, @0x1234);
     }
 }

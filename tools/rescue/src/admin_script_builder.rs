@@ -1,6 +1,6 @@
 use diem_types::{
     account_address::AccountAddress,
-    account_config::diem_test_root_address,
+    account_config::reserved_vm_address,
     transaction::{Script, WriteSetPayload},
 };
 use move_compiler::{compiled_unit::AnnotatedCompiledUnit, Compiler, Flags};
@@ -39,6 +39,6 @@ pub fn custom_script(
             vec![],
             vec![],
         ),
-        execute_as: execute_as.unwrap_or_else(diem_test_root_address),
+        execute_as: execute_as.unwrap_or_else(reserved_vm_address),
     }
 }
