@@ -8,23 +8,20 @@ use std::path::PathBuf;
 pub struct RescueTxOpts {
     #[clap(short, long)]
     /// directory enclosing the `/db` folder of the node
-    data_path: PathBuf,
+    pub data_path: PathBuf,
     #[clap(short, long)]
     /// directory to read/write or the rescue.blob. Will default to db_path/rescue.blob
-    blob_path: Option<PathBuf>,
+    pub blob_path: Option<PathBuf>,
     #[clap(short, long)]
     /// directory to read/write or the rescue.blob
-    script_path: Option<PathBuf>,
+    pub script_path: Option<PathBuf>,
     #[clap(long)]
     /// directory to read/write or the rescue.blob
-    framework_upgrade: bool,
-    #[clap(long)]
-    /// apply to db in one step.
-    apply_to_db: bool,
+    pub framework_upgrade: bool,
 }
 
 impl RescueTxOpts {
-    pub async fn run(&self) -> anyhow::Result<()> {
+    pub async fn run(&self) -> anyhow::Result<PathBuf> {
         let db_path = self.data_path.clone();
 
         // There are two options:
@@ -34,7 +31,6 @@ impl RescueTxOpts {
 
         let gen_tx = if let Some(p) = &self.script_path {
             let payload = custom_script(p, None, None);
-
             Transaction::GenesisTransaction(payload)
         } else if self.framework_upgrade {
             let payload = framework_payload::stlib_payload(db_path.clone()).await?;
@@ -50,6 +46,6 @@ impl RescueTxOpts {
         let bytes = bcs::to_bytes(&gen_tx)?;
         std::fs::write(&output, bytes.as_slice())?;
 
-        Ok(())
+        Ok(output)
     }
 }
