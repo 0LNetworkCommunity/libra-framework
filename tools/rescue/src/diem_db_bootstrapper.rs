@@ -93,12 +93,14 @@ impl BootstrapOpts {
             );
             println!("Waypoint verified.");
 
-            if self.commit {
-                committer
-                    .commit()
-                    .with_context(|| format_err!("Committing genesis to DB."))?;
-                println!("Successfully committed genesis.")
-            }
+
+        }
+
+        if self.commit {
+            committer
+                .commit()
+                .with_context(|| format_err!("Committing genesis to DB."))?;
+            println!("Successfully committed genesis.")
         }
 
         Ok(())
@@ -121,12 +123,13 @@ fn test_bootstrap_db() -> anyhow::Result<()>{
 
   let blob_path = Path::new(env!("CARGO_MANIFEST_DIR"))
   .join("fixtures")
-  .join("genesis.blob");
+  .join("basic_genesis.blob");
 
   assert!(blob_path.exists());
   let db_root_path = diem_temppath::TempPath::new();
   db_root_path.create_as_dir()?;
   let db  = diem_db::DiemDB::new_for_test(db_root_path.path());
+  // creates db and disconnects
   drop(db);
 
 
@@ -138,8 +141,11 @@ fn test_bootstrap_db() -> anyhow::Result<()>{
   };
 
   r.run()?;
-
   assert!(db_root_path.path().exists());
+
+  // cannot run a second time
+  assert!(r.run().is_err());
+
 
   Ok(())
 

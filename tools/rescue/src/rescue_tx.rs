@@ -30,7 +30,7 @@ impl RescueTxOpts {
         //    transaction from a .move source
 
         let gen_tx = if let Some(p) = &self.script_path {
-            let payload = custom_script(p, None, None);
+            let payload = custom_script(p, None, Some(5));
             Transaction::GenesisTransaction(payload)
         } else if self.framework_upgrade {
             let payload = framework_payload::stlib_payload(db_path.clone()).await?;
@@ -58,9 +58,9 @@ async fn test_create_blob() -> anyhow::Result<()>{
   let script_path = Path::new(env!("CARGO_MANIFEST_DIR"))
   .join("src")
   .join("templates")
-  .join("test_noop.move");
-  dbg!(&script_path);
+  .join("test_init.move");
   assert!(script_path.exists());
+
   let db_root_path = diem_temppath::TempPath::new();
   db_root_path.create_as_dir()?;
   let _db  = diem_db::DiemDB::new_for_test(db_root_path.path());

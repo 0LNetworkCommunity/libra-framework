@@ -9,6 +9,7 @@ use std::path::Path;
 /// compiles a script for execution on the db offline.
 // TODO: not sure if this is duplicated with the framework upgrade code in ./framework
 pub fn compile_script(source_file_str: &Path, bytecode_version: Option<u32>) -> Vec<u8> {
+
     let (_files, mut compiled_program) = Compiler::from_files(
         vec![source_file_str.to_str().unwrap().to_owned()],
         libra_framework::head_release_bundle().files().unwrap(),

@@ -6,7 +6,7 @@ use rescue::{rescue_tx::RescueTxOpts, diem_db_bootstrapper::BootstrapOpts};
 async fn test_create_blob() -> anyhow::Result<()>{
   let blob_path = Path::new(env!("CARGO_MANIFEST_DIR"))
   .join("fixtures")
-  .join("genesis.blob");
+  .join("basic_genesis.blob");
 
   let db_root_path = diem_temppath::TempPath::new();
   db_root_path.create_as_dir()?;
