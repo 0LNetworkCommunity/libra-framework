@@ -112,3 +112,35 @@ fn load_genesis_txn(path: &Path) -> Result<Transaction> {
 
     Ok(bcs::from_bytes(&buffer)?)
 }
+
+
+#[test]
+fn test_bootstrap_db() -> anyhow::Result<()>{
+  use std::path::Path;
+  use diem_temppath;
+
+  let blob_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+  .join("fixtures")
+  .join("genesis.blob");
+
+  assert!(blob_path.exists());
+  let db_root_path = diem_temppath::TempPath::new();
+  db_root_path.create_as_dir()?;
+  let db  = diem_db::DiemDB::new_for_test(db_root_path.path());
+  drop(db);
+
+
+  let r = BootstrapOpts {
+    db_dir: db_root_path.path().to_owned(),
+    genesis_txn_file: blob_path,
+    waypoint_to_verify: None,
+    commit: true
+  };
+
+  r.run()?;
+
+  assert!(db_root_path.path().exists());
+
+  Ok(())
+
+}
