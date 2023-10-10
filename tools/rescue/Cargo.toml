@@ -32,7 +32,14 @@ move-compiler = { workspace = true }
 move-core-types = { workspace = true }
 move-vm-test-utils = { workspace = true }
 serde = { workspace = true }
+
+
 tokio = { workspace = true }
 
 [dev-dependencies]
 diem-temppath = { workspace = true }
+diem-forge = { workspace = true }
+diem-logger = { workspace = true }
+regex = { workspace = true }
+smoke-test = { workspace = true }
+

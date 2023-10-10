@@ -1,6 +1,6 @@
-use crate::{admin_script_builder::custom_script, framework_payload};
+use crate::framework_payload;
 use clap::Parser;
-use diem_types::transaction::{Script, Transaction, TransactionPayload, WriteSetPayload};
+use diem_types::transaction::{Script, Transaction, WriteSetPayload};
 use libra_framework::builder::framework_generate_upgrade_proposal::libra_compile_script;
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
 use std::path::PathBuf;
