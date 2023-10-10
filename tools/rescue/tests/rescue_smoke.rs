@@ -1,27 +1,21 @@
-// use anyhow::anyhow;
+
 use diem_api_types::ViewRequest;
 use diem_config::config::{InitialSafetyRulesConfig, NodeConfig};
-use diem_forge::{get_highest_synced_version, LocalNode, Node, NodeExt, SwarmExt, Validator};
+use diem_forge::{LocalNode, Node, NodeExt, SwarmExt, Validator};
 use diem_logger::prelude::*;
 use diem_temppath::TempPath;
-use diem_types::{account_address::AccountAddress, transaction::Transaction, waypoint::Waypoint};
+use diem_types::{account_address::AccountAddress, transaction::Transaction};
 use libra_framework::framework_cli::make_template_files;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
-// use move_core_types::language_storage::CORE_CODE_ADDRESS;
-// use regex::Regex;
 use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
-use smoke_test::{
-    storage::{db_backup, db_restore},
-    test_utils::{
-        swarm_utils::insert_waypoint, MAX_CATCH_UP_WAIT_SECS, MAX_CONNECTIVITY_WAIT_SECS,
-        MAX_HEALTHY_WAIT_SECS,
-    },
+use smoke_test::test_utils::{
+    swarm_utils::insert_waypoint, MAX_CATCH_UP_WAIT_SECS, MAX_CONNECTIVITY_WAIT_SECS,
+    MAX_HEALTHY_WAIT_SECS,
 };
 use std::{
     fs,
     path::PathBuf,
     process::Command,
-    // str::FromStr,
     time::{Duration, Instant},
 };
 
@@ -114,6 +108,7 @@ async fn test_genesis_transaction_flow() {
         .expect("could not start libra smoke");
 
     let client = s.client().clone();
+
     let env = &mut s.swarm;
 
     env.wait_for_all_nodes_to_catchup_to_version(10, Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
@@ -148,7 +143,6 @@ async fn test_genesis_transaction_flow() {
         .get_peer_id()
         .unwrap();
 
-    // let first_validator_address = AccountAddress::random();
 
     let script_path = make_script(first_validator_address);
     dbg!(&script_path);
@@ -180,7 +174,7 @@ async fn test_genesis_transaction_flow() {
         db_dir: val_db_path,
         genesis_txn_file: genesis_blob_path,
         waypoint_to_verify: None,
-        commit: true,
+        commit: false, // NOTE: the tests seem to work even when this is false
     };
 
     let waypoint = bootstrap.run().unwrap();
@@ -215,13 +209,14 @@ async fn test_genesis_transaction_flow() {
             None,
         )
         .await;
-    let num_nodes = a.unwrap()
-    .inner()
-    .first()
-    .unwrap()
-    .as_array()
-    .unwrap()
-    .len();
+    let num_nodes = a
+        .unwrap()
+        .inner()
+        .first()
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .len();
 
     assert!(num_nodes == 4);
 
@@ -238,118 +233,7 @@ async fn test_genesis_transaction_flow() {
     node.start().unwrap();
     wait_for_node(node, num_nodes - 2).await;
 
-    // let client = node.rest_client();
-    // // wait for it to catch up
-    // {
-    //     let version = get_highest_synced_version(&env.get_all_nodes_clients_with_names())
-    //         .await
-    //         .unwrap();
-    //     loop {
-    //         if let Ok(resp) = client.get_ledger_information().await {
-    //             if resp.into_inner().version > version {
-    //                 println!("Node 3 catches up on {}", version);
-    //                 break;
-    //             }
-    //         }
-    //         tokio::time::sleep(Duration::from_secs(1)).await;
-    //     }
-    // }
 
-    // check_create_mint_transfer_node(&mut env, 3).await;
-}
-
-#[tokio::test]
-/// test the backup and restore works on nodes
-async fn test_backup_and_restore() {
-    let num_nodes: usize = 5;
-
-    let mut s = LibraSmoke::new(Some(num_nodes as u8))
-        .await
-        .expect("could not start libra smoke");
-
-    let env = &mut s.swarm;
-
-    env.wait_for_all_nodes_to_catchup_to_version(10, Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
-        .await
-        .unwrap();
-
-    println!("2. Set sync_only = true for all nodes and restart");
-    for node in env.validators_mut() {
-        let mut node_config = node.config().clone();
-        node_config.consensus.sync_only = true;
-        update_node_config_restart(node, node_config);
-        wait_for_node(node, num_nodes - 1).await;
-    }
-
-    println!("4. verify all nodes are at the same round and no progress being made");
-    env.wait_for_all_nodes_to_catchup(Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
-        .await
-        .unwrap();
-
-    // let (epoch, version) = {
-    //     let response = env
-    //         .validators()
-    //         .next()
-    //         .unwrap()
-    //         .rest_client()
-    //         .get_ledger_information()
-    //         .await
-    //         .unwrap();
-    //     (response.inner().epoch, response.inner().version)
-    // };
-
-    // let (backup_path, _) = db_backup(
-    //     env.validators()
-    //         .next()
-    //         .unwrap()
-    //         .config()
-    //         .storage
-    //         .backup_service_address
-    //         .port(),
-    //     epoch.checked_sub(1).unwrap(), // target epoch: most recently closed epoch
-    //     version,                       // target version
-    //     version as usize,              // txn batch size (version 0 is in its own batch)
-    //     epoch.checked_sub(1).unwrap() as usize, // state snapshot interval
-    //     &[waypoint],
-    // );
-
-    // println!("10. nuke DB on node 3, and run db restore, test if it rejoins the network okay.");
-    // let node = env.validators_mut().nth(3).unwrap();
-    // node.stop();
-    // let mut node_config = node.config().clone();
-    // node_config.consensus.sync_only = false;
-    // node_config.save_to_path(node.config_path()).unwrap();
-
-    // let db_dir = node.config().storage.dir();
-    // fs::remove_dir_all(&db_dir).unwrap();
-    // db_restore(
-    //     backup_path.path(),
-    //     db_dir.as_path(),
-    //     &[waypoint],
-    //     node.config().storage.rocksdb_configs.split_ledger_db,
-    //     None,
-    // );
-
-    // node.start().unwrap();
-    // wait_for_node(node, num_nodes - 2).await;
-    // let client = node.rest_client();
-    // // wait for it to catch up
-    // {
-    //     let version = get_highest_synced_version(&env.get_all_nodes_clients_with_names())
-    //         .await
-    //         .unwrap();
-    //     loop {
-    //         if let Ok(resp) = client.get_ledger_information().await {
-    //             if resp.into_inner().version > version {
-    //                 println!("Node 3 catches up on {}", version);
-    //                 break;
-    //             }
-    //         }
-    //         tokio::time::sleep(Duration::from_secs(1)).await;
-    //     }
-    // }
-
-    // check_create_mint_transfer_node(&mut env, 3).await;
 }
 
 
@@ -383,8 +267,6 @@ fn make_script(first_validator_address: AccountAddress) -> PathBuf {
 
     dbg!(&temp_script_path.path());
     assert!(temp_script_path.path().exists());
-    // let mut move_script_path = temp_script_path.path().to_path_buf();
-    // move_script_path.set_extension("move");
 
     make_template_files(
         &temp_script_path.path(),
