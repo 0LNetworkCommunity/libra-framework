@@ -1,4 +1,4 @@
-use crate::helpers::{get_libra_balance, mint_libra};
+use libra_smoke_tests::helpers::{get_libra_balance, mint_libra};
 use diem_forge::Swarm;
 use diem_sdk::types::LocalAccount;
 use libra_framework::release::ReleaseTarget;

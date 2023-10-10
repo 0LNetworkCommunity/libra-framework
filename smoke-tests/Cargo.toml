@@ -21,6 +21,10 @@ smoke-test = { workspace = true }
 tokio = { workspace = true }
 url = { workspace = true }
 
+[dev-dependencies]
+diem-config = { workspace = true }
+diem-logger = { workspace = true }
+
 [features]
 #default = ["testing"]
 testing = []

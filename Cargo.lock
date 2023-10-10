@@ -5868,8 +5868,10 @@ name = "libra-smoke-tests"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "diem-config",
  "diem-crypto",
  "diem-forge",
+ "diem-logger",
  "diem-sdk",
  "diem-temppath",
  "diem-types",
@@ -8425,6 +8427,7 @@ dependencies = [
  "anyhow",
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 4.4.2",
+ "diem-api-types",
  "diem-config",
  "diem-db",
  "diem-debugger",

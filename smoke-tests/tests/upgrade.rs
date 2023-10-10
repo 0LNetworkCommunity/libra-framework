@@ -1,7 +1,9 @@
 //! testing the upgrade infrastructure, separate from the txs cli tool for upgrading. Some overlap.
 
-use crate::helpers::mint_libra;
-use crate::upgrade_fixtures::fixtures_path;
+use libra_smoke_tests::{
+  helpers::mint_libra,
+  upgrade_fixtures::fixtures_path
+};
 
 use diem_forge::Swarm;
 use diem_types::transaction::Script;

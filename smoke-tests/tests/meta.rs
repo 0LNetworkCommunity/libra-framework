@@ -1,4 +1,4 @@
-use crate::libra_smoke::LibraSmoke;
+use libra_smoke_tests::libra_smoke::LibraSmoke;
 
 use diem_forge::Swarm;
 use libra_cached_packages::libra_stdlib;

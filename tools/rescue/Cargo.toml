@@ -37,6 +37,7 @@ serde = { workspace = true }
 tokio = { workspace = true }
 
 [dev-dependencies]
+diem-api-types = { workspace = true }
 diem-temppath = { workspace = true }
 diem-forge = { workspace = true }
 diem-logger = { workspace = true }
