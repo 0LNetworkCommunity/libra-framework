@@ -31,7 +31,7 @@ async fn test_e2e() -> anyhow::Result<()>{
   let script_path = Path::new(env!("CARGO_MANIFEST_DIR"))
   .join("src")
   .join("templates")
-  .join("test_init.move");
+  .join("governance_script_template");
   assert!(script_path.exists());
 
   let r = RescueTxOpts {
