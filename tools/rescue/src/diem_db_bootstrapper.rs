@@ -41,7 +41,7 @@ pub struct BootstrapOpts {
 }
 
 impl BootstrapOpts {
-    pub fn run(&self) -> Result<()> {
+    pub fn run(&self) -> Result<Waypoint> {
         let genesis_txn = load_genesis_txn(&self.genesis_txn_file)
             .with_context(|| format_err!("Failed loading genesis txn."))?;
         assert!(
@@ -84,16 +84,16 @@ impl BootstrapOpts {
             committer.waypoint()
         );
 
+        let output_waypoint = committer.waypoint();
+
         if let Some(waypoint) = self.waypoint_to_verify {
             ensure!(
-                waypoint == committer.waypoint(),
+                waypoint == output_waypoint,
                 "Waypoint verification failed. Expected {:?}, got {:?}.",
                 waypoint,
-                committer.waypoint(),
+                output_waypoint,
             );
             println!("Waypoint verified.");
-
-
         }
 
         if self.commit {
@@ -103,7 +103,7 @@ impl BootstrapOpts {
             println!("Successfully committed genesis.")
         }
 
-        Ok(())
+        Ok(output_waypoint)
     }
 }
 
