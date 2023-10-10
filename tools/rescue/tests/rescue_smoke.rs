@@ -113,6 +113,7 @@ async fn test_genesis_transaction_flow() {
         .await
         .expect("could not start libra smoke");
 
+    let client = s.client().clone();
     let env = &mut s.swarm;
 
     env.wait_for_all_nodes_to_catchup_to_version(10, Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
@@ -204,8 +205,7 @@ async fn test_genesis_transaction_flow() {
     // check_create_mint_transfer_node(&mut env, 0).await;
 
     println!("9. verify node 4 is out from the validator set");
-    let a = s
-        .client()
+    let a = client
         .view(
             &ViewRequest {
                 function: "0x1::stake::get_current_validators".parse().unwrap(),

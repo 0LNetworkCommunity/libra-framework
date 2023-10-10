@@ -2,8 +2,7 @@
 use diem_config::config::NodeConfig;
 use diem_forge::{LocalNode, Node, NodeExt, SwarmExt, Validator};
 use diem_temppath::TempPath;
-use diem_types::{account_address::AccountAddress,
-};
+use diem_types::account_address::AccountAddress;
 use diem_logger::prelude::*;
 use libra_framework::framework_cli::make_template_files;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
