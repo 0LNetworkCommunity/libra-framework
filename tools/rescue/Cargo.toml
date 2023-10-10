@@ -40,6 +40,10 @@ tokio = { workspace = true }
 diem-temppath = { workspace = true }
 diem-forge = { workspace = true }
 diem-logger = { workspace = true }
+
+libra-smoke-tests = { workspace = true }
+
+
 regex = { workspace = true }
 smoke-test = { workspace = true }
 
