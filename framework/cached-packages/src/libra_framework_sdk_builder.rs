@@ -250,12 +250,6 @@ pub enum EntryFunctionCall {
         id: u64,
     },
 
-    DummyUseFnFromDiemFramework {},
-
-    DummyUseFnFromDiemStd {
-        account_public_key_bytes: Vec<u8>,
-    },
-
     /// Only a Voucher of the validator can flip the unjail bit.
     /// This is a way to make sure the validator is ready to rejoin.
     JailUnjailByVoucher {
@@ -730,10 +724,6 @@ impl EntryFunctionCall {
                 multisig_address,
                 id,
             } => donor_directed_vote_veto_tx(multisig_address, id),
-            DummyUseFnFromDiemFramework {} => dummy_use_fn_from_diem_framework(),
-            DummyUseFnFromDiemStd {
-                account_public_key_bytes,
-            } => dummy_use_fn_from_diem_std(account_public_key_bytes),
             JailUnjailByVoucher { addr } => jail_unjail_by_voucher(addr),
             GasCoinClaimMintCapability {} => gas_coin_claim_mint_capability(),
             GasCoinDelegateMintCapability { to } => gas_coin_delegate_mint_capability(to),
@@ -1526,36 +1516,6 @@ pub fn donor_directed_vote_veto_tx(
             bcs::to_bytes(&multisig_address).unwrap(),
             bcs::to_bytes(&id).unwrap(),
         ],
-    ))
-}
-
-pub fn dummy_use_fn_from_diem_framework() -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("dummy").to_owned(),
-        ),
-        ident_str!("use_fn_from_diem_framework").to_owned(),
-        vec![],
-        vec![],
-    ))
-}
-
-pub fn dummy_use_fn_from_diem_std(account_public_key_bytes: Vec<u8>) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("dummy").to_owned(),
-        ),
-        ident_str!("use_fn_from_diem_std").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&account_public_key_bytes).unwrap()],
     ))
 }
 
@@ -2820,26 +2780,6 @@ mod decoder {
         }
     }
 
-    pub fn dummy_use_fn_from_diem_framework(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(_script) = payload {
-            Some(EntryFunctionCall::DummyUseFnFromDiemFramework {})
-        } else {
-            None
-        }
-    }
-
-    pub fn dummy_use_fn_from_diem_std(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DummyUseFnFromDiemStd {
-                account_public_key_bytes: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
     pub fn jail_unjail_by_voucher(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::JailUnjailByVoucher {
@@ -3476,14 +3416,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "donor_directed_vote_veto_tx".to_string(),
             Box::new(decoder::donor_directed_vote_veto_tx),
-        );
-        map.insert(
-            "dummy_use_fn_from_diem_framework".to_string(),
-            Box::new(decoder::dummy_use_fn_from_diem_framework),
-        );
-        map.insert(
-            "dummy_use_fn_from_diem_std".to_string(),
-            Box::new(decoder::dummy_use_fn_from_diem_std),
         );
         map.insert(
             "jail_unjail_by_voucher".to_string(),
