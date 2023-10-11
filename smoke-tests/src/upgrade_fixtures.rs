@@ -9,7 +9,7 @@ use libra_framework::builder::framework_generate_upgrade_proposal::make_framewor
 
 pub fn fixtures_path() -> PathBuf {
     let this_crate = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
-    this_crate.join("src").join("tests").join("fixtures")
+    this_crate.join("tests").join("fixtures")
 }
 
 pub fn insert_test_file(core_module_name: &str, remove: bool) -> anyhow::Result<()> {

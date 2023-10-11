@@ -1,0 +1,13 @@
+[package]
+name = 'upgrade_scripts'
+version = '1.0.0'
+authors = []
+license = ''
+
+[addresses]
+
+[dev-addresses]
+[dependencies.LibraFramework]
+local = '/home/oodelally/libra-framework/framework/libra-framework'
+
+[dev-dependencies]

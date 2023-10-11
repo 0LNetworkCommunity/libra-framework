@@ -11,6 +11,8 @@ use move_command_line_common::address::NumericalAddress;
 use once_cell::sync::Lazy;
 use std::{collections::BTreeMap, fmt::Display, path::PathBuf, str::FromStr};
 
+use crate::BYTECODE_VERSION;
+
 // ===============================================================================================
 // Release Targets
 
@@ -119,7 +121,7 @@ impl ReleaseTarget {
                     references_file: Some("doc_template/references.md".to_string()),
                 }),
                 skip_fetch_latest_git_deps: false,
-                bytecode_version: None,
+                bytecode_version: Some(BYTECODE_VERSION),
             },
             packages: packages.iter().map(|(path, _)| path.to_owned()).collect(),
             rust_bindings: packages
@@ -185,7 +187,7 @@ static NAMED_ADDRESSES: Lazy<BTreeMap<String, NumericalAddress>> = Lazy::new(|| 
     result.insert("diem_token_objects".to_owned(), four);
     result.insert("core_resources".to_owned(), resources);
     result.insert("vm_reserved".to_owned(), zero);
-    result.insert("ol_framework".to_owned(), four); /////// 0L /////////
+    result.insert("ol_framework".to_owned(), one); /////// 0L /////////
     result
 });
 

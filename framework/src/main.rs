@@ -9,7 +9,7 @@ use libra_framework::framework_cli::{FrameworkUpgrade, GenesisRelease, Governanc
 enum Commands {
     /// Creates a .mrb move framework release
     Release(GenesisRelease),
-    /// Creates all artifacts for a network governance upgrade
+    /// Creates the script payload for a governance script
     Governance(GovernanceScript),
     /// Creates all artifacts for a network governance upgrade
     Upgrade(FrameworkUpgrade),

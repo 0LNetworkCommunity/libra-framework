@@ -7,7 +7,7 @@ use diem_framework::{BuildOptions, BuiltPackage, ReleasePackage};
 use diem_types::account_address::AccountAddress;
 use std::path::{Path, PathBuf};
 // use serde::{Serialize, Deserialize};
-use crate::builder::framework_release_bundle::libra_author_script_file;
+use crate::{builder::framework_release_bundle::libra_author_script_file, BYTECODE_VERSION};
 
 /// Core modules address to deploy to
 // NOTE: we are always usin 0x1 here. So if that ever changes in the future then this can't be hard coded.
@@ -74,7 +74,7 @@ pub fn make_framework_upgrade_artifacts(
             with_source_maps: false,
             with_error_map: true,
             skip_fetch_latest_git_deps: false,
-            bytecode_version: Some(6),
+            bytecode_version: Some(BYTECODE_VERSION),
             ..BuildOptions::default()
         };
 
@@ -172,10 +172,8 @@ pub fn init_move_dir_wrapper(
 }
 
 pub fn libra_compile_script(
-    // skip_fetch_latest_git_deps: bool,
     script_package_dir: &Path,
     _is_module: bool,
-    // bytecode_version: Option<u32>,
 ) -> Result<(Vec<u8>, HashValue)> {
     println!("compiling governance script...");
     // these are the options only for the upgrade SCRIPT
@@ -187,7 +185,7 @@ pub fn libra_compile_script(
         with_source_maps: false,
         with_error_map: false,
         skip_fetch_latest_git_deps: true,
-        bytecode_version: Some(6),
+        bytecode_version: Some(BYTECODE_VERSION),
 
         ..BuildOptions::default()
     };

@@ -103,7 +103,7 @@ impl GovernanceScript {
                 ))
                 .interact()?
             {
-                make_template_files(&package_dir, &self.framework_local_dir, script_name)?;
+                make_template_files(&package_dir, &self.framework_local_dir, script_name, None)?;
             }
             return Ok(());
         }
@@ -115,10 +115,12 @@ impl GovernanceScript {
     }
 }
 
-fn make_template_files(
+/// make governance script template package
+pub fn make_template_files(
     package_dir: &Path,
     framework_local_dir: &Path,
     script_name: &str,
+    script_source: Option<String>,
 ) -> anyhow::Result<()> {
     std::fs::create_dir_all(package_dir)
         .context("could not create the output directory {new_path:?}")?;
@@ -128,6 +130,7 @@ fn make_template_files(
         script_name,
         framework_local_dir.to_owned(),
     )?;
+
     let t = r#"
 script {
   // THIS IS A TEMPLATE GOVERNANCE SCRIPT
@@ -147,7 +150,7 @@ script {
         .join("sources")
         .join(format!("{}.move", script_name));
 
-    std::fs::write(filename, t)?;
+    std::fs::write(filename, script_source.unwrap_or(t.to_string()))?;
     println!("success: governance template created");
 
     println!("\nBefore submitting the governance action you must compile the script. Simply run this command again.");
