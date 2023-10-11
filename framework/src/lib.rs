@@ -8,3 +8,5 @@ pub fn head_release_bundle() -> diem_framework::ReleaseBundle {
         .load_bundle()
         .expect("release build failed")
 }
+
+const BYTECODE_VERSION: u32 = 6;

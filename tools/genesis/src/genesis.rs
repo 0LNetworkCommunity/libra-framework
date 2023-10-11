@@ -60,7 +60,7 @@ fn test_basic_genesis() {
     use libra_framework::head_release_bundle;
     let test_validators = TestValidator::new_test_set(Some(4), Some(100_000_000));
     let validators: Vec<Validator> = test_validators.iter().map(|t| t.data.clone()).collect();
-    make_recovery_genesis_from_vec_legacy_recovery(
+    let _tx = make_recovery_genesis_from_vec_legacy_recovery(
         None,
         &validators,
         &head_release_bundle(),
@@ -69,6 +69,8 @@ fn test_basic_genesis() {
         &libra_genesis_default(NamedChain::TESTING),
     )
     .unwrap();
+
+    // std::fs::write(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("test_genesis.blob"), bcs::to_bytes(&tx).unwrap());
 }
 
 #[test]
