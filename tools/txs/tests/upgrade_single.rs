@@ -1,8 +1,8 @@
+use std::str::FromStr;
 use std::{fs, path::PathBuf};
 
 use diem_types::chain_id::NamedChain;
 use libra_query::query_view;
-use libra_smoke_tests::upgrade_fixtures::fixtures_path;
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Upgrade},
@@ -143,7 +143,11 @@ async fn smoke_upgrade_single_step() {
 }
 
 fn get_package_path() -> PathBuf {
-    fixtures_path()
-        .join("upgrade_single_step")
-        .join("1-move-stdlib")
+    let this_crate = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
+    this_crate
+    .join("tests")
+    .join("fixtures")
+    .join("upgrade-single-lib")
+    .join("1-move-stdlib")
 }
+

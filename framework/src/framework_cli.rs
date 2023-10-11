@@ -75,7 +75,7 @@ impl FrameworkUpgrade {
 pub struct GovernanceScript {
     /// dir to save all the artifacts for the release.
     #[clap(short, long)]
-    pub output_dir: PathBuf,
+    pub script_dir: PathBuf,
 
     /// directory of the framework source code. Usually `./framework/lbra-framework`
     #[clap(short, long)]
@@ -89,7 +89,7 @@ pub struct GovernanceScript {
 impl GovernanceScript {
     pub fn execute(&self) -> anyhow::Result<()> {
         let script_name = "governance_script_template";
-        let package_dir = self.output_dir.join(script_name);
+        let package_dir = self.script_dir.join(script_name);
 
         if !package_dir.exists() || self.only_make_template {
             if !self.only_make_template {

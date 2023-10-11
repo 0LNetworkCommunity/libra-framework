@@ -1,7 +1,8 @@
 //! test framework upgrades with multiple steps
+use std::{path::PathBuf, str::FromStr};
+
 use diem_types::chain_id::NamedChain;
 use libra_query::query_view;
-use libra_smoke_tests::upgrade_fixtures::fixtures_path;
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Upgrade},
@@ -31,8 +32,7 @@ async fn smoke_upgrade_multiple_steps() {
             .expect("could not init validator config");
 
     ///// NOTE THERE ARE MULTIPLE STEPS, we are getting the artifacts for the first step.
-    let script_dir = fixtures_path()
-        .join("upgrade_multi_step")
+    let script_dir = get_package_path()
         .join("1-move-stdlib");
     assert!(script_dir.exists(), "can't find upgrade fixtures");
 
@@ -134,8 +134,7 @@ async fn smoke_upgrade_multiple_steps() {
     cli.run().await.expect("cannot resolve proposal at step 1");
     //////////////////////////////
 
-    let script_dir = fixtures_path()
-        .join("upgrade_multi_step")
+    let script_dir = get_package_path()
         .join("2-vendor-stdlib");
 
     ///////// SHOW TIME LAST STEP ////////
@@ -155,4 +154,13 @@ async fn smoke_upgrade_multiple_steps() {
         .as_str()
         .unwrap()
         .contains("7573"));
+}
+
+
+fn get_package_path() -> PathBuf {
+    let this_crate = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
+    this_crate
+    .join("tests")
+    .join("fixtures")
+    .join("upgrade-multi-lib")
 }
