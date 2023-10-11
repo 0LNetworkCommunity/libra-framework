@@ -145,9 +145,8 @@ async fn smoke_upgrade_single_step() {
 fn get_package_path() -> PathBuf {
     let this_crate = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
     this_crate
-    .join("tests")
-    .join("fixtures")
-    .join("upgrade-single-lib")
-    .join("1-move-stdlib")
+        .join("tests")
+        .join("fixtures")
+        .join("upgrade-single-lib")
+        .join("1-move-stdlib")
 }
-
