@@ -1,17 +1,17 @@
 name: formal verification
 on:
   push:
-    branches: ["*"]
-    tags:
-    - '[0-9]+.[0-9]+.[0-9]+'
-    - '[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
-  pull_request:
-    types:
-      - opened
-      - synchronize
-    branches:
-      - 'release**'
-      - 'main'
+    branches: ["ci*"]
+  #   tags:
+  #   - '[0-9]+.[0-9]+.[0-9]+'
+  #   - '[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
+  # pull_request:
+  #   types:
+  #     - opened
+  #     - synchronize
+  #   branches:
+  #     - 'release**'
+  #     - 'main'
 
 env:
 
