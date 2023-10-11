@@ -1,65 +1,58 @@
+
+use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
 use std::path::Path;
-use diem_temppath;
-use rescue::{rescue_tx::RescueTxOpts, diem_db_bootstrapper::BootstrapOpts};
 
 #[tokio::test]
-async fn test_e2e() -> anyhow::Result<()>{
-  let blob_path = Path::new(env!("CARGO_MANIFEST_DIR"))
-  .join("fixtures")
-  .join("basic_genesis.blob");
+async fn test_e2e() -> anyhow::Result<()> {
+    let blob_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("fixtures")
+        .join("basic_genesis.blob");
 
-  let db_root_path = diem_temppath::TempPath::new();
-  db_root_path.create_as_dir()?;
-  let db  = diem_db::DiemDB::new_for_test(db_root_path.path());
-  drop(db);
+    let db_root_path = diem_temppath::TempPath::new();
+    db_root_path.create_as_dir()?;
+    let db = diem_db::DiemDB::new_for_test(db_root_path.path());
+    drop(db);
 
+    let boot = BootstrapOpts {
+        db_dir: db_root_path.path().to_owned(),
+        genesis_txn_file: blob_path,
+        waypoint_to_verify: None,
+        commit: true,
+    };
 
-  let boot = BootstrapOpts {
-    db_dir: db_root_path.path().to_owned(),
-    genesis_txn_file: blob_path,
-    waypoint_to_verify: None,
-    commit: true
-  };
+    boot.run()?;
 
-  boot.run()?;
+    let blob_path = diem_temppath::TempPath::new();
+    blob_path.create_as_dir()?;
 
+    let script_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("src")
+        .join("templates")
+        .join("governance_script_template");
+    assert!(script_path.exists());
 
-  let blob_path = diem_temppath::TempPath::new();
-  blob_path.create_as_dir()?;
+    let r = RescueTxOpts {
+        data_path: db_root_path.path().to_owned(),
+        blob_path: Some(blob_path.path().to_owned()),
+        script_path: Some(script_path),
+        framework_upgrade: false,
+    };
+    r.run().await?;
 
+    let file = blob_path.path().join("rescue.blob");
+    assert!(file.exists());
 
-  let script_path = Path::new(env!("CARGO_MANIFEST_DIR"))
-  .join("src")
-  .join("templates")
-  .join("governance_script_template");
-  assert!(script_path.exists());
+    let boot = BootstrapOpts {
+        db_dir: db_root_path.path().to_owned(),
+        genesis_txn_file: file,
+        waypoint_to_verify: None,
+        commit: true,
+    };
 
-  let r = RescueTxOpts {
-      data_path: db_root_path.path().to_owned(),
-      blob_path: Some(blob_path.path().to_owned()),
-      script_path: Some(script_path),
-      framework_upgrade: false,
-  };
-  r.run().await?;
+    boot.run()?;
 
-  let file = blob_path.path().join("rescue.blob");
-  assert!(file.exists());
-
-
-  let boot = BootstrapOpts {
-    db_dir: db_root_path.path().to_owned(),
-    genesis_txn_file: file,
-    waypoint_to_verify: None,
-    commit: true
-  };
-
-  boot.run()?;
-
-  Ok(())
-
+    Ok(())
 }
-
-
 
 // #[test]
 // fn test_rescue_db() -> anyhow::Result<()>{
@@ -76,7 +69,6 @@ async fn test_e2e() -> anyhow::Result<()>{
 //   let db  = diem_db::DiemDB::new_for_test(db_root_path.path());
 //   drop(db);
 
-
 //   let r = BootstrapOpts {
 //     db_dir: db_root_path.path().to_owned(),
 //     genesis_txn_file: blob_path,
@@ -87,7 +79,6 @@ async fn test_e2e() -> anyhow::Result<()>{
 //   r.run()?;
 
 //   assert!(db_root_path.path().exists());
-
 
 //   // run again
 

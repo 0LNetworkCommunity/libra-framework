@@ -1,4 +1,3 @@
-
 use diem_api_types::ViewRequest;
 use diem_config::config::{InitialSafetyRulesConfig, NodeConfig};
 use diem_forge::{LocalNode, Node, NodeExt, SwarmExt, Validator};
@@ -143,7 +142,6 @@ async fn test_genesis_transaction_flow() {
         .get_peer_id()
         .unwrap();
 
-
     let script_path = make_script(first_validator_address);
     dbg!(&script_path);
     assert!(script_path.exists());
@@ -232,10 +230,7 @@ async fn test_genesis_transaction_flow() {
 
     node.start().unwrap();
     wait_for_node(node, num_nodes - 2).await;
-
-
 }
-
 
 fn make_script(first_validator_address: AccountAddress) -> PathBuf {
     let script = format!(
@@ -269,7 +264,7 @@ fn make_script(first_validator_address: AccountAddress) -> PathBuf {
     assert!(temp_script_path.path().exists());
 
     make_template_files(
-        &temp_script_path.path(),
+        temp_script_path.path(),
         &framework_path,
         "rescue",
         Some(script),

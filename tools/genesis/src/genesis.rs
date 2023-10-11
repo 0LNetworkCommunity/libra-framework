@@ -70,8 +70,7 @@ fn test_basic_genesis() {
     )
     .unwrap();
 
-  // std::fs::write(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("test_genesis.blob"), bcs::to_bytes(&tx).unwrap());
-
+    // std::fs::write(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("test_genesis.blob"), bcs::to_bytes(&tx).unwrap());
 }
 
 #[test]

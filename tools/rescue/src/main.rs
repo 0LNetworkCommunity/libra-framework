@@ -1,6 +1,5 @@
-
 use clap::{Parser, Subcommand};
-use rescue::{rescue_tx::RescueTxOpts, diem_db_bootstrapper::BootstrapOpts};
+use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -16,7 +15,7 @@ struct RescueCli {
 #[derive(Subcommand)]
 enum Sub {
     RescueTx(RescueTxOpts),
-    Bootstrap(BootstrapOpts)
+    Bootstrap(BootstrapOpts),
 }
 
 #[tokio::main]
@@ -27,16 +26,16 @@ async fn main() -> anyhow::Result<()> {
             let blob_path = mission.run().await?;
 
             if cli.apply_to_db {
-              let b = BootstrapOpts {
-                db_dir: mission.data_path,
-                genesis_txn_file: blob_path,
-                waypoint_to_verify: None,
-                commit: true
-              };
-              b.run()?;
+                let b = BootstrapOpts {
+                    db_dir: mission.data_path,
+                    genesis_txn_file: blob_path,
+                    waypoint_to_verify: None,
+                    commit: true,
+                };
+                b.run()?;
             };
             println!("SUCCESS: rescue mission complete.");
-        },
+        }
         Some(Sub::Bootstrap(bootstrap)) => {
             bootstrap.run()?;
             println!("SUCCESS: db boostrapped with writeset (genesis tx)");

@@ -1,12 +1,9 @@
-
 use diem_config::config::NodeConfig;
 use diem_forge::{LocalNode, Node, NodeExt, SwarmExt, Validator};
 use diem_logger::prelude::*;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use smoke_test::test_utils::{
-    MAX_CATCH_UP_WAIT_SECS,
-    MAX_CONNECTIVITY_WAIT_SECS,
-    MAX_HEALTHY_WAIT_SECS,
+    MAX_CATCH_UP_WAIT_SECS, MAX_CONNECTIVITY_WAIT_SECS, MAX_HEALTHY_WAIT_SECS,
 };
 use std::{
     process::Command,
