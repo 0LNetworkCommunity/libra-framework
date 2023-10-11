@@ -13,6 +13,7 @@ module ol_framework::slow_wallet {
   use ol_framework::gas_coin::LibraCoin as GasCoin;
   use ol_framework::testnet;
   use std::error;
+  use ol_framework::sacred_cows;
 
   // use diem_std::debug::print;
 
@@ -22,7 +23,6 @@ module ol_framework::slow_wallet {
   /// genesis failed to initialized the slow wallet registry
   const EGENESIS_ERROR: u64 = 1;
 
-  const EPOCH_DRIP_CONST: u64 = 100000;
 
     struct SlowWallet has key {
         unlocked: u64,
@@ -159,7 +159,7 @@ module ol_framework::slow_wallet {
 
     public fun on_new_epoch(vm: &signer) acquires SlowWallet, SlowWalletList {
       system_addresses::assert_ol(vm);
-      slow_wallet_epoch_drip(vm, EPOCH_DRIP_CONST);
+      slow_wallet_epoch_drip(vm, sacred_cows::get_slow_drip_const());
     }
 
     ///////// SLOW GETTERS ////////
