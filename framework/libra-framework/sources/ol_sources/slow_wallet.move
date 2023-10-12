@@ -10,7 +10,7 @@ module ol_framework::slow_wallet {
   use diem_framework::coin;
   use std::vector;
   use std::signer;
-  use ol_framework::gas_coin::GasCoin;
+  use ol_framework::gas_coin::LibraCoin as GasCoin;
   use ol_framework::testnet;
   use std::error;
   use ol_framework::sacred_cows;
@@ -18,6 +18,7 @@ module ol_framework::slow_wallet {
   // use diem_std::debug::print;
 
   friend ol_framework::ol_account;
+  friend ol_framework::transaction_fee;
 
   /// genesis failed to initialized the slow wallet registry
   const EGENESIS_ERROR: u64 = 1;

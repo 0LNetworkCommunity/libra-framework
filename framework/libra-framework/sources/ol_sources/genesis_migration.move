@@ -14,7 +14,7 @@ module ol_framework::genesis_migration {
   use ol_framework::ol_account;
   use ol_framework::validator_universe;
   use ol_framework::gas_coin;
-  use ol_framework::gas_coin::GasCoin;
+  use ol_framework::gas_coin::LibraCoin as GasCoin;
   use ol_framework::transaction_fee;
   use ol_framework::slow_wallet;
   use ol_framework::pledge_accounts;
