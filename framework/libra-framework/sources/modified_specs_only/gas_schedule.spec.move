@@ -18,7 +18,7 @@ spec diem_framework::gas_schedule {
         use diem_framework::util;
         use diem_framework::stake;
         use diem_framework::coin::CoinInfo;
-        use diem_framework::gas_coin::GasCoin;
+        use diem_framework::gas_coin::LibraCoin as GasCoin;
         use diem_framework::transaction_fee;
         // use diem_framework::staking_config;
 
@@ -38,7 +38,7 @@ spec diem_framework::gas_schedule {
     spec set_storage_gas_config(diem_framework: &signer, config: StorageGasConfig) {
         use diem_framework::stake;
         use diem_framework::coin::CoinInfo;
-        use diem_framework::gas_coin::GasCoin;
+        use diem_framework::gas_coin::LibraCoin as GasCoin;
         use diem_framework::transaction_fee;
         // use diem_framework::staking_config;
 

@@ -1,7 +1,7 @@
 
 module ol_framework::rewards {
   use diem_framework::system_addresses;
-  use ol_framework::gas_coin::GasCoin;
+  use ol_framework::gas_coin::LibraCoin as GasCoin;
   use diem_framework::coin::{Self, Coin};
   use std::vector;
   use diem_framework::stake;

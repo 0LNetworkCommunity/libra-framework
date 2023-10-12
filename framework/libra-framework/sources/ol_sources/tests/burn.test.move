@@ -2,7 +2,7 @@
 #[test_only]
 module ol_framework::test_burn {
   use ol_framework::mock;
-  use ol_framework::gas_coin::{Self, GasCoin};
+  use ol_framework::gas_coin::{Self, LibraCoin as GasCoin};
   use ol_framework::ol_account;
   use ol_framework::match_index;
   use ol_framework::burn;

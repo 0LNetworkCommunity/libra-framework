@@ -7,14 +7,14 @@ module ol_framework::test_rewards {
   // #[test_only]
   // use ol_framework::ol_account;
   #[test_only]
-  use ol_framework::gas_coin::{Self, GasCoin};
+  use ol_framework::gas_coin::{Self, LibraCoin as GasCoin};
   #[test_only]
   use diem_framework::coin;
   #[test_only]
   use ol_framework::mock;
 
   // #[test_only]
-  // use ol_framework::gas_coin::GasCoin;
+  // use ol_framework::gas_coin::LibraCoin as GasCoin;
   #[test_only]
   use diem_framework::stake;
 

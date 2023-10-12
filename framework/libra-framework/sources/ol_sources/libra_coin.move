@@ -136,10 +136,10 @@ module ol_framework::gas_coin {
     /// Cannot find delegation of mint capability to this account
     const EDELEGATION_NOT_FOUND: u64 = 3;
 
-    struct GasCoin has key {}
+    struct LibraCoin has key {}
 
     struct MintCapStore has key {
-        mint_cap: MintCapability<GasCoin>,
+        mint_cap: MintCapability<LibraCoin>,
     }
 
     /// Delegation token created by delegator and can be claimed by the delegatee as MintCapability.
@@ -156,10 +156,10 @@ module ol_framework::gas_coin {
     public(friend) fun initialize(diem_framework: &signer) {
         system_addresses::assert_diem_framework(diem_framework);
 
-        let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<GasCoin>(
+        let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<LibraCoin>(
             diem_framework,
-            string::utf8(b"Gas Coin"),
-            string::utf8(b"GAS"),
+            string::utf8(b"LibraCoin"),
+            string::utf8(b"LIBRA"),
             globals::get_coin_decimal_places(), /* decimals  MATCHES LEGACY 0L */
             true, /* monitor_supply */
         );
@@ -175,13 +175,13 @@ module ol_framework::gas_coin {
 
     /// FOR TESTS ONLY
     /// Can only called during genesis to initialize the Diem coin.
-    public(friend) fun initialize_for_core(diem_framework: &signer): (BurnCapability<GasCoin>, MintCapability<GasCoin>)  {
+    public(friend) fun initialize_for_core(diem_framework: &signer): (BurnCapability<LibraCoin>, MintCapability<LibraCoin>)  {
         system_addresses::assert_diem_framework(diem_framework);
 
-        let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<GasCoin>(
+        let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<LibraCoin>(
             diem_framework,
-            string::utf8(b"Gas Coin"),
-            string::utf8(b"GAS"),
+            string::utf8(b"LibraCoin"),
+            string::utf8(b"LIBRA"),
             globals::get_coin_decimal_places(), /* decimals  MATCHES LEGACY 0L */
             true, /* monitor_supply */
         );
@@ -212,7 +212,7 @@ module ol_framework::gas_coin {
     /// get the gas coin supply. Helper which wraps coin::supply and extracts option type
     // NOTE: there is casting between u128 and u64, but 0L has final supply below the u64.
     public fun supply(): u64 {
-      let supply_opt = coin::supply<GasCoin>();
+      let supply_opt = coin::supply<LibraCoin>();
       if (option::is_some(&supply_opt)) {
         return (*option::borrow(&supply_opt) as u64)
       };
@@ -221,7 +221,7 @@ module ol_framework::gas_coin {
 
 
     #[test_only]
-    public fun restore_mint_cap(diem_framework: &signer, mint_cap: MintCapability<GasCoin>) {
+    public fun restore_mint_cap(diem_framework: &signer, mint_cap: MintCapability<LibraCoin>) {
         system_addresses::assert_diem_framework(diem_framework);
         move_to(diem_framework, MintCapStore { mint_cap });
     }
@@ -233,18 +233,18 @@ module ol_framework::gas_coin {
     public(friend) fun configure_accounts_for_test(
         diem_framework: &signer,
         core_resources: &signer,
-        mint_cap: MintCapability<GasCoin>,
+        mint_cap: MintCapability<LibraCoin>,
     ){
         system_addresses::assert_diem_framework(diem_framework);
 
-        // Mint the core resource account GasCoin for gas so it can execute system transactions.
-        coin::register<GasCoin>(core_resources);
+        // Mint the core resource account LibraCoin for gas so it can execute system transactions.
+        coin::register<LibraCoin>(core_resources);
 
-        let coins = coin::mint<GasCoin>(
+        let coins = coin::mint<LibraCoin>(
             18446744073709551615,
             &mint_cap,
         );
-        coin::deposit<GasCoin>(signer::address_of(core_resources), coins);
+        coin::deposit<LibraCoin>(signer::address_of(core_resources), coins);
 
         move_to(core_resources, MintCapStore { mint_cap });
         move_to(core_resources, Delegations { inner: vector::empty() });
@@ -255,11 +255,11 @@ module ol_framework::gas_coin {
     // mint_impl(
     //     root: &signer,
     //     amount: u64,
-    // ): Coin<GasCoin> acquires MintCapStore {
+    // ): Coin<LibraCoin> acquires MintCapStore {
     //     system_addresses::assert_ol(root);
 
     //     let mint_cap = &borrow_global<MintCapStore>(signer::address_of(root)).mint_cap;
-    //     coin::mint<GasCoin>(amount, mint_cap)
+    //     coin::mint<LibraCoin>(amount, mint_cap)
     // }
 
     // NOTE: needed for smoke tests
@@ -280,8 +280,8 @@ module ol_framework::gas_coin {
         );
 
         let mint_cap = &borrow_global<MintCapStore>(account_addr).mint_cap;
-        let coins_minted = coin::mint<GasCoin>(amount, mint_cap);
-        coin::deposit<GasCoin>(dst_addr, coins_minted);
+        let coins_minted = coin::mint<LibraCoin>(amount, mint_cap);
+        coin::deposit<LibraCoin>(dst_addr, coins_minted);
     }
 
     #[test_only]
@@ -341,7 +341,7 @@ module ol_framework::gas_coin {
     #[view]
     /// helper to get balance in gas coin
     public fun get_balance(account: address): u64 {
-        coin::balance<GasCoin>(account)
+        coin::balance<LibraCoin>(account)
     }
 
 
@@ -349,12 +349,12 @@ module ol_framework::gas_coin {
     use diem_framework::aggregator_factory;
 
     #[test_only]
-    public fun initialize_for_test(diem_framework: &signer): (BurnCapability<GasCoin>, MintCapability<GasCoin>) {
+    public fun initialize_for_test(diem_framework: &signer): (BurnCapability<LibraCoin>, MintCapability<LibraCoin>) {
         aggregator_factory::initialize_aggregator_factory_for_test(diem_framework);
-        let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<GasCoin>(
+        let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<LibraCoin>(
             diem_framework,
-            string::utf8(b"Gas Coin"),
-            string::utf8(b"GAS"),
+            string::utf8(b"LibraCoin"),
+            string::utf8(b"LIBRA"),
             8, /* decimals */
             true, /* monitor_supply */
         );
@@ -366,11 +366,11 @@ module ol_framework::gas_coin {
 
     // This is particularly useful if the aggregator_factory is already initialized via another call path.
     #[test_only]
-    public fun initialize_for_test_without_aggregator_factory(diem_framework: &signer): (BurnCapability<GasCoin>, MintCapability<GasCoin>) {
-                let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<GasCoin>(
+    public fun initialize_for_test_without_aggregator_factory(diem_framework: &signer): (BurnCapability<LibraCoin>, MintCapability<LibraCoin>) {
+                let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<LibraCoin>(
             diem_framework,
-            string::utf8(b"Gas Coin"),
-            string::utf8(b"GAS"),
+            string::utf8(b"LibraCoin"),
+            string::utf8(b"LIBRA"),
             8, /* decimals */
             true, /* monitor_supply */
         );

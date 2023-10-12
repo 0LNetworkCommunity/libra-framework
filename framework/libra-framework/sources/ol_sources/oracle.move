@@ -12,8 +12,8 @@ module ol_framework::oracle {
     use diem_framework::event::{Self, EventHandle};
     use diem_framework::coin::{Self, Coin};
     use ol_framework::ol_account;
+    use ol_framework::gas_coin::LibraCoin as GasCoin;
     use ol_framework::globals;
-    use ol_framework::gas_coin::GasCoin;
     use ol_framework::vouch;
     use ol_framework::epoch_helper;
     use std::error;

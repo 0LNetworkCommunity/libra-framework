@@ -50,7 +50,7 @@ module ol_framework::safe {
   use diem_framework::account::WithdrawCapability;
   use diem_framework::coin;
   use ol_framework::ol_account;
-  use ol_framework::gas_coin::GasCoin;
+  use ol_framework::gas_coin::LibraCoin as GasCoin;
   use ol_framework::multi_action;
   use ol_framework::system_addresses;
   use ol_framework::transaction_fee;

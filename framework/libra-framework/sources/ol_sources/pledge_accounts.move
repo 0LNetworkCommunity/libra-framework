@@ -44,7 +44,7 @@
         use std::error;
         use std::option::{Self, Option};
         use std::fixed_point64;
-        use ol_framework::gas_coin::GasCoin;
+        use ol_framework::gas_coin::LibraCoin as GasCoin;
         use ol_framework::ol_account;
         use ol_framework::epoch_helper;
         use diem_framework::system_addresses;
