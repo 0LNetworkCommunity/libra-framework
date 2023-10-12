@@ -141,7 +141,7 @@ impl ValidatorTxs {
                 )?;
 
                 StakeUpdateNetworkAndFullnodeAddresses {
-                    validator_address: oc.operator_account_address.into(),
+                    pool_address: oc.operator_account_address.into(),
                     new_network_addresses: bcs::to_bytes(&val_net_protocol)?,
                     new_fullnode_addresses: bcs::to_bytes(&vfn_fullnode_protocol)?,
                 }
