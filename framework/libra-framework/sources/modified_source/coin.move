@@ -243,10 +243,8 @@ module diem_framework::coin {
     #[view]
     /// Returns the balance of `owner` for provided `CoinType`.
     public fun balance<CoinType>(owner: address): u64 acquires CoinStore {
-        assert!(
-            is_account_registered<CoinType>(owner),
-            error::not_found(ECOIN_STORE_NOT_PUBLISHED),
-        );
+        // should not abort if the VM might call this
+        if (!is_account_registered<CoinType>(owner)) return 0;
         borrow_global<CoinStore<CoinType>>(owner).coin.value
     }
 
