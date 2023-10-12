@@ -1,32 +1,31 @@
 /// Defines feature flags for Diem. Those are used in Diem specific implementations of features in
 /// the Move stdlib, the Diem stdlib, and the Diem framework.
+///
+/// ============================================================================================
+/// Feature Flag Definitions
+///
+/// Each feature flag should come with documentation which justifies the need of the flag.
+/// Introduction of a new feature flag requires approval of framework owners. Be frugal when
+/// introducing new feature flags, as too many can make it hard to understand the code.
+///
+/// Each feature flag should come with a specification of a lifetime:
+///
+/// - a *transient* feature flag is only needed until a related code rollout has happened. This
+///   is typically associated with the introduction of new native Move functions, and is only used
+///   from Move code. The owner of this feature is obliged to remove it once this can be done.
+///
+/// - a *permanent* feature flag is required to stay around forever. Typically, those flags guard
+///   behavior in native code, and the behavior with or without the feature need to be preserved
+///   for playback.
+///
+/// Note that removing a feature flag still requires the function which tests for the feature
+/// (like `code_dependency_check_enabled` below) to stay around for compatibility reasons, as it
+/// is a public function. However, once the feature flag is disabled, those functions can constantly
+/// return true.
 module std::features {
     use std::error;
     use std::signer;
     use std::vector;
-
-    // ============================================================================================
-    // Feature Flag Definitions
-
-    // Each feature flag should come with documentation which justifies the need of the flag.
-    // Introduction of a new feature flag requires approval of framework owners. Be frugal when
-    // introducing new feature flags, as too many can make it hard to understand the code.
-    //
-    // Each feature flag should come with a specification of a lifetime:
-    //
-    // - a *transient* feature flag is only needed until a related code rollout has happened. This
-    //   is typically associated with the introduction of new native Move functions, and is only used
-    //   from Move code. The owner of this feature is obliged to remove it once this can be done.
-    //
-    // - an *permanent* feature flag is required to stay around forever. Typically, those flags guard
-    //   behavior in native code, and the behavior with or without the feature need to be preserved
-    //   for playback.
-    //
-    // Note that removing a feature flag still requires the function which tests for the feature
-    // (like `code_dependency_check_enabled` below) to stay around for compatibility reasons, as it
-    // is a public function. However, once the feature flag is disabled, those functions can constantly
-    // return true.
-
 
     // --------------------------------------------------------------------------------------------
     // Code Publishing
@@ -61,12 +60,12 @@ module std::features {
     /// Whether the new `diem_stdlib::type_info::chain_id()` native for fetching the chain ID is enabled.
     /// This is needed because of the introduction of a new native function.
     /// Lifetime: transient
-    const APTOS_STD_CHAIN_ID_NATIVES: u64 = 4;
+    const DIEM_STD_CHAIN_ID_NATIVES: u64 = 4;
 
-    public fun get_diem_stdlib_chain_id_feature(): u64 { APTOS_STD_CHAIN_ID_NATIVES }
+    public fun get_diem_stdlib_chain_id_feature(): u64 { DIEM_STD_CHAIN_ID_NATIVES }
 
     public fun diem_stdlib_chain_id_enabled(): bool acquires Features {
-        is_enabled(APTOS_STD_CHAIN_ID_NATIVES)
+        is_enabled(DIEM_STD_CHAIN_ID_NATIVES)
     }
 
     /// Whether to allow the use of binary format version v6.
@@ -175,12 +174,39 @@ module std::features {
         is_enabled(PERIODICAL_REWARD_RATE_DECREASE)
     }
 
-    /// Whether enable paritial governance voting.
+    /// Whether enable paritial governance voting on diem_governance.
     /// Lifetime: transient
     const PARTIAL_GOVERNANCE_VOTING: u64 = 17;
     public fun get_partial_governance_voting(): u64 { PARTIAL_GOVERNANCE_VOTING }
     public fun partial_governance_voting_enabled(): bool acquires Features {
         is_enabled(PARTIAL_GOVERNANCE_VOTING)
+    }
+
+    /// Charge invariant violation error.
+    /// Lifetime: transient
+    const CHARGE_INVARIANT_VIOLATION: u64 = 20;
+
+    /// Whether enable paritial governance voting on delegation_pool.
+    /// Lifetime: transient
+    const DELEGATION_POOL_PARTIAL_GOVERNANCE_VOTING: u64 = 21;
+    public fun get_delegation_pool_partial_governance_voting(): u64 { DELEGATION_POOL_PARTIAL_GOVERNANCE_VOTING }
+    public fun delegation_pool_partial_governance_voting_enabled(): bool acquires Features {
+        is_enabled(DELEGATION_POOL_PARTIAL_GOVERNANCE_VOTING)
+    }
+
+    /// Whether alternate gas payer is supported
+    /// Lifetime: transient
+    const FEE_PAYER_ENABLED: u64 = 22;
+    public fun fee_payer_enabled(): bool acquires Features {
+        is_enabled(FEE_PAYER_ENABLED)
+    }
+
+    /// Whether enable MOVE functions to call create_auid method to create AUIDs.
+    /// Lifetime: transient
+    const DIEM_UNIQUE_IDENTIFIERS: u64 = 23;
+    public fun get_auids(): u64 { DIEM_UNIQUE_IDENTIFIERS }
+    public fun auids_enabled(): bool acquires Features {
+        is_enabled(DIEM_UNIQUE_IDENTIFIERS)
     }
 
     // ============================================================================================
@@ -202,18 +228,12 @@ module std::features {
             move_to<Features>(framework, Features{features: vector[]})
         };
         let features = &mut borrow_global_mut<Features>(@std).features;
-        let i = 0;
-        let n = vector::length(&enable);
-        while (i < n) {
-            set(features, *vector::borrow(&enable, i), true);
-            i = i + 1
-        };
-        let i = 0;
-        let n = vector::length(&disable);
-        while (i < n) {
-            set(features, *vector::borrow(&disable, i), false);
-            i = i + 1
-        };
+        vector::for_each_ref(&enable, |feature| {
+            set(features, *feature, true);
+        });
+        vector::for_each_ref(&disable, |feature| {
+            set(features, *feature, false);
+        });
     }
 
     /// Check whether the feature is enabled.

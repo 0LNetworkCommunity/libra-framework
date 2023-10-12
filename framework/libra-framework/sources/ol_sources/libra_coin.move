@@ -67,7 +67,7 @@ module 0x1::LibraCoin {
 
     // Public accessor for the value of a coin
     public fun value(coin: &LibraCoin): u64 {
-        value(coin)
+        coin.value
     }
 
     // Splits the given coin into two and returns them both

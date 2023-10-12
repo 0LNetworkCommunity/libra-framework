@@ -120,8 +120,13 @@ module diem_std::big_vector {
         let cur_bucket_index = i / v.bucket_size + 1;
         let cur_bucket = table_with_length::borrow_mut(&mut v.buckets, cur_bucket_index - 1);
         let res = vector::remove(cur_bucket, i % v.bucket_size);
+        v.end_index = v.end_index - 1;
         move cur_bucket;
-        while (cur_bucket_index < num_buckets) {
+        while ({spec {
+            invariant cur_bucket_index <= num_buckets;
+            invariant table_with_length::spec_len(v.buckets) == num_buckets;
+        };
+            (cur_bucket_index < num_buckets)}) {
             // remove one element from the start of current vector
             let cur_bucket = table_with_length::borrow_mut(&mut v.buckets, cur_bucket_index);
             let t = vector::remove(cur_bucket, 0);
@@ -131,6 +136,9 @@ module diem_std::big_vector {
             vector::push_back(prev_bucket, t);
             cur_bucket_index = cur_bucket_index + 1;
         };
+        spec {
+            assert cur_bucket_index == num_buckets;
+        };
 
         // Shrink the table if the last vector is empty.
         let last_bucket = table_with_length::borrow_mut(&mut v.buckets, num_buckets - 1);
@@ -138,7 +146,6 @@ module diem_std::big_vector {
             move last_bucket;
             vector::destroy_empty(table_with_length::remove(&mut v.buckets, num_buckets - 1));
         };
-        v.end_index = v.end_index - 1;
 
         res
     }
@@ -204,17 +211,13 @@ module diem_std::big_vector {
 
         while (num_buckets_left > 0) {
             let pop_bucket = table_with_length::remove(&mut v.buckets, num_buckets_left - 1);
-            let pop_bucket_length = vector::length(&pop_bucket);
-            let i = 0;
-            while(i < pop_bucket_length){
-                vector::push_back(&mut push_bucket, vector::pop_back(&mut pop_bucket));
+            vector::for_each_reverse(pop_bucket, |val| {
+                vector::push_back(&mut push_bucket, val);
                 if (vector::length(&push_bucket) == v.bucket_size) {
                     vector::push_back(&mut new_buckets, push_bucket);
                     push_bucket = vector[];
                 };
-                i = i + 1;
-            };
-            vector::destroy_empty(pop_bucket);
+            });
             num_buckets_left = num_buckets_left - 1;
         };
 
