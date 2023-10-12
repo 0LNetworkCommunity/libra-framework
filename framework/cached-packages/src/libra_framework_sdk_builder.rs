@@ -466,9 +466,6 @@ pub enum EntryFunctionCall {
         transferred: u64,
     },
 
-    /// This is only called during Genesis, which is where MintCapability<GasCoin> can be created.
-    /// Beyond genesis, no one can create GasCoin mint/burn capabilities.
-    /// Allow on chain governance to remove validators from the validator set.
     /// Initialize the validator account and give ownership to the signing account
     /// except it leaves the ValidatorConfig to be set by another entity.
     /// Note: this triggers setting the operator and owner, set it to the account's address
@@ -487,7 +484,6 @@ pub enum EntryFunctionCall {
         fullnode_addresses: Vec<u8>,
     },
 
-    /// Add `amount` of coins from the `account` owning the ValidatorState.
     /// Rotate the consensus key of the validator, it'll take effect in next epoch.
     StakeRotateConsensusKey {
         validator_address: AccountAddress,
@@ -2135,9 +2131,6 @@ pub fn slow_wallet_smoke_test_vm_unlock(
     ))
 }
 
-/// This is only called during Genesis, which is where MintCapability<GasCoin> can be created.
-/// Beyond genesis, no one can create GasCoin mint/burn capabilities.
-/// Allow on chain governance to remove validators from the validator set.
 /// Initialize the validator account and give ownership to the signing account
 /// except it leaves the ValidatorConfig to be set by another entity.
 /// Note: this triggers setting the operator and owner, set it to the account's address
@@ -2191,7 +2184,6 @@ pub fn stake_initialize_validator(
     ))
 }
 
-/// Add `amount` of coins from the `account` owning the ValidatorState.
 /// Rotate the consensus key of the validator, it'll take effect in next epoch.
 pub fn stake_rotate_consensus_key(
     validator_address: AccountAddress,

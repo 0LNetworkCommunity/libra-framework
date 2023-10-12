@@ -1,3 +1,5 @@
+// TODO: rename this to validator.move if
+// diem-platform allows
 spec diem_framework::stake {
     // -----------------
     // Global invariants
@@ -36,45 +38,6 @@ spec diem_framework::stake {
         aborts_if exists<ValidatorSet>(diem_addr);
         aborts_if exists<ValidatorPerformance>(diem_addr);
     }
-
-    // spec extract_owner_cap(owner: &signer): OwnerCapability {
-    //     let owner_address = signer::address_of(owner);
-    //     aborts_if !exists<OwnerCapability>(owner_address);
-    // }
-
-    // spec deposit_owner_cap(owner: &signer, owner_cap: OwnerCapability) {
-    //     let owner_address = signer::address_of(owner);
-    //     aborts_if exists<OwnerCapability>(owner_address);
-    // }
-
-    // spec unlock_with_cap(amount: u64, owner_cap: &OwnerCapability) {
-    //     let validator_address = owner_cap.validator_address;
-    //     let pre_stake_pool = global<ValidatorState>(validator_address);
-    //     let post stake_pool = global<ValidatorState>(validator_address);
-    //     modifies global<ValidatorState>(validator_address);
-    //     let min_amount = diem_std::math64::min(amount,pre_stake_pool.active.value);
-
-    //     ensures stake_pool.pending_inactive.value == pre_stake_pool.pending_inactive.value + min_amount;
-    // }
-
-    // Only active validator can update locked_until_secs.
-    // spec increase_lockup_with_cap(owner_cap: &OwnerCapability) {
-    //     let config = global<staking_config::StakingConfig>(@diem_framework);
-    //     let validator_address = owner_cap.validator_address;
-    //     let pre_stake_pool = global<ValidatorState>(validator_address);
-    //     let post stake_pool = global<ValidatorState>(validator_address);
-    //     let now_seconds = timestamp::spec_now_seconds();
-    //     let lockup = config.recurring_lockup_duration_secs;
-    //     modifies global<ValidatorState>(validator_address);
-
-    //     aborts_if !exists<ValidatorState>(validator_address);
-    //     aborts_if pre_stake_pool.locked_until_secs >= lockup + now_seconds;
-    //     aborts_if lockup + now_seconds > MAX_U64;
-    //     aborts_if !exists<timestamp::CurrentTimeMicroseconds>(@diem_framework);
-    //     aborts_if !exists<staking_config::StakingConfig>(@diem_framework);
-
-    //     ensures stake_pool.locked_until_secs == lockup + now_seconds;
-    // }
 
     spec update_network_and_fullnode_addresses(
         operator: &signer,
@@ -151,62 +114,6 @@ spec diem_framework::stake {
         aborts_if false;
     }
 
-    spec update_stake_pool {
-        include ResourceRequirement;
-        // include staking_config::StakingRewardsConfigRequirement;
-        aborts_if !exists<ValidatorState>(validator_address);
-        aborts_if !exists<ValidatorConfig>(validator_address);
-        aborts_if global<ValidatorConfig>(validator_address).validator_index >= len(validator_perf.validators);
-    }
-
-    // spec distribute_rewards {
-    //     include ResourceRequirement;
-    //     requires rewards_rate <= MAX_REWARDS_RATE;
-    //     requires rewards_rate_denominator > 0;
-    //     requires rewards_rate <= rewards_rate_denominator;
-    //     requires num_successful_proposals <= num_total_proposals;
-    //     aborts_if false;
-    //     ensures old(stake.value) > 0 ==>
-    //         result == spec_rewards_amount(
-    //             old(stake.value),
-    //             num_successful_proposals,
-    //             num_total_proposals,
-    //             rewards_rate,
-    //             rewards_rate_denominator);
-    //     ensures old(stake.value) > 0 ==>
-    //         stake.value == old(stake.value) + spec_rewards_amount(
-    //             old(stake.value),
-    //             num_successful_proposals,
-    //             num_total_proposals,
-    //             rewards_rate,
-    //             rewards_rate_denominator);
-    //     ensures old(stake.value) == 0 ==> result == 0;
-    //     ensures old(stake.value) == 0 ==> stake.value == old(stake.value);
-    // }
-
-    // spec calculate_rewards_amount {
-    //     pragma opaque;
-    //     requires rewards_rate <= MAX_REWARDS_RATE;
-    //     requires rewards_rate_denominator > 0;
-    //     requires rewards_rate <= rewards_rate_denominator;
-    //     requires num_successful_proposals <= num_total_proposals;
-    //     ensures [concrete] (rewards_rate_denominator * num_total_proposals == 0) ==> result == 0;
-    //     ensures [concrete] (rewards_rate_denominator * num_total_proposals > 0) ==> {
-    //         let amount = ((stake_amount * rewards_rate * num_successful_proposals) /
-    //             (rewards_rate_denominator * num_total_proposals));
-    //         result == amount
-    //     };
-    //     aborts_if false;
-
-    //     // Used an uninterpreted spec function to avoid dealing with the arithmetic overflow and non-linear arithmetic.
-    //     ensures [abstract] result == spec_rewards_amount(
-    //         stake_amount,
-    //         num_successful_proposals,
-    //         num_total_proposals,
-    //         rewards_rate,
-    //         rewards_rate_denominator);
-    // }
-
     spec find_validator {
         pragma opaque;
         aborts_if false;
@@ -216,20 +123,6 @@ spec diem_framework::stake {
         ensures option::is_some(result) ==> spec_contains(v, addr);
     }
 
-    // spec append {
-    //     pragma opaque, verify = false;
-    //     aborts_if false;
-    //     ensures len(v1) == old(len(v1) + len(v2));
-    //     ensures len(v2) == 0;
-    //     // The prefix of the new `v1` is the same as the old `v1`.
-    //     ensures (forall i in 0..old(len(v1)): v1[i] == old(v1[i]));
-    //     // The suffix of the new `v1` is the same as the reverse of the old `v2`.
-    //     ensures (forall i in old(len(v1))..len(v1): v1[i] == old(v2[len(v2) - (i - len(v1)) - 1]));
-    // }
-
-    // spec remove_validators {
-    //     requires chain_status::is_operating();
-    // }
 
     spec is_current_epoch_validator {
         include ResourceRequirement;
@@ -237,45 +130,9 @@ spec diem_framework::stake {
         ensures result == spec_is_current_epoch_validator(addr);
     }
 
-    // spec get_validator_state {
-    //     let validator_set = global<ValidatorSet>(@diem_framework);
-    //     ensures result == VALIDATOR_STATUS_PENDING_ACTIVE ==> spec_contains(validator_set.pending_active, validator_address);
-    //     ensures result == VALIDATOR_STATUS_ACTIVE ==> spec_contains(validator_set.active_validators, validator_address);
-    //     ensures result == VALIDATOR_STATUS_PENDING_INACTIVE ==> spec_contains(validator_set.pending_inactive, validator_address);
-    //     ensures result == VALIDATOR_STATUS_INACTIVE ==> (
-    //         !spec_contains(validator_set.pending_active, validator_address)
-    //             && !spec_contains(validator_set.active_validators, validator_address)
-    //             && !spec_contains(validator_set.pending_inactive, validator_address)
-    //     );
-    // }
-
-    // spec add_stake_with_cap {
-    //     include ResourceRequirement;
-    // }
-
-    // spec add_stake {
-    //     include ResourceRequirement;
-    // }
-
     spec initialize_stake_owner {
         include ResourceRequirement;
     }
-
-    // spec add_transaction_fee(validator_addr: address, fee: Coin<DiemCoin>) {
-    //     aborts_if !exists<ValidatorFees>(@diem_framework);
-    // }
-
-    // spec update_voting_power_increase(increase_amount: u64) {
-    //     let diem = @diem_framework;
-    //     let pre_validator_set = global<ValidatorSet>(diem);
-    //     let post validator_set = global<ValidatorSet>(diem);
-    //     // let staking_config = global<staking_config::StakingConfig>(diem);
-    //     // let voting_power_increase_limit = staking_config.voting_power_increase_limit;
-
-    //     // Correctly modified total_joining_power and the value of total_voting_power is legal.
-    //     // ensures validator_set.total_voting_power > 0 ==> validator_set.total_joining_power <= validator_set.total_voting_power * voting_power_increase_limit / 100;
-    //     ensures validator_set.total_joining_power == pre_validator_set.total_joining_power + increase_amount;
-    // }
 
     spec assert_stake_pool_exists(validator_address: address) {
         aborts_if !stake_pool_exists(validator_address);
