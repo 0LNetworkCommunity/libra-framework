@@ -12,7 +12,7 @@
 module ol_framework::infra_escrow{
     use std::option::{Self, Option};
     use diem_framework::system_addresses;
-    use ol_framework::gas_coin::GasCoin;
+    use ol_framework::gas_coin::LibraCoin as GasCoin;
     use ol_framework::pledge_accounts;
     // use ol_framework::slow_wallet;
     use ol_framework::ol_account;

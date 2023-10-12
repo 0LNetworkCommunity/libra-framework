@@ -16,7 +16,7 @@ module diem_framework::validator_universe {
   use diem_framework::stake;
 
   // use diem_framework::coin::Coin;
-  // use ol_framework::gas_coin::GasCoin;
+  // use ol_framework::gas_coin::LibraCoin as GasCoin;
   // use ol_framework::rewards;
 
   #[test_only]

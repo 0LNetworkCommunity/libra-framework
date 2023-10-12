@@ -2,7 +2,7 @@
 module ol_framework::match_index {
   use diem_framework::system_addresses;
   use ol_framework::cumulative_deposits;
-  use ol_framework::gas_coin::GasCoin;
+  use ol_framework::gas_coin::LibraCoin as GasCoin;
   use ol_framework::ol_account;
   use diem_framework::coin::{Self, Coin};
   use diem_framework::transaction_fee;

@@ -9,7 +9,7 @@ module ol_framework::ol_account {
     use std::option::{Self, Option};
     use diem_std::from_bcs;
 
-    use ol_framework::gas_coin::GasCoin;
+    use ol_framework::gas_coin::LibraCoin as GasCoin;
     use ol_framework::slow_wallet;
     use ol_framework::receipts;
     use ol_framework::cumulative_deposits;

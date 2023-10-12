@@ -128,7 +128,7 @@ spec diem_framework::transaction_validation {
     ) {
         use diem_framework::coin::{CoinStore};
         use diem_framework::account::{Account};
-        use diem_framework::gas_coin::GasCoin;
+        use diem_framework::gas_coin::LibraCoin as GasCoin;
         // TODO: Can't verify `burn_fee`, complex aborts conditions.
         pragma aborts_if_is_partial;
 

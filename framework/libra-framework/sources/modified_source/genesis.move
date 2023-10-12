@@ -32,7 +32,7 @@ module diem_framework::genesis {
     use ol_framework::musical_chairs;
     use ol_framework::proof_of_fee;
     use ol_framework::slow_wallet;
-    use ol_framework::gas_coin::{Self, GasCoin};
+    use ol_framework::gas_coin::{Self, LibraCoin as GasCoin};
     use ol_framework::infra_escrow;
     use ol_framework::tower_state;
     use ol_framework::safe;

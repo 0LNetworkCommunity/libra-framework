@@ -37,7 +37,7 @@
 /// and implement the governance voting logic on top.
 module diem_framework::multisig_account {
     use diem_framework::account::{Self, SignerCapability, new_event_handle, create_resource_address};
-    use diem_framework::gas_coin::GasCoin;
+    use diem_framework::gas_coin::LibraCoin as GasCoin;
     use diem_framework::chain_id;
     use diem_framework::create_signer::create_signer;
     use diem_framework::coin;

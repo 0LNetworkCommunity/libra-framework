@@ -4,7 +4,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::musical_chairs;
     use ol_framework::proof_of_fee;
     use ol_framework::stake;
-    use ol_framework::gas_coin::GasCoin;
+    use ol_framework::gas_coin::LibraCoin as GasCoin;
     use ol_framework::rewards;
     use ol_framework::jail;
     // use ol_framework::grade;

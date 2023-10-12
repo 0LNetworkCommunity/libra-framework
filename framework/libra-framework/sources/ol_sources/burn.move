@@ -17,7 +17,7 @@ module ol_framework::burn {
   use std::vector;
   // use ol_framework::ol_account;
   use ol_framework::system_addresses;
-  use ol_framework::gas_coin::GasCoin;
+  use ol_framework::gas_coin::LibraCoin as GasCoin;
   // use ol_framework::transaction_fee;
   use ol_framework::coin::{Self, Coin};
   use ol_framework::match_index;

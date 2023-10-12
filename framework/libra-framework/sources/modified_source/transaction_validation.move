@@ -6,7 +6,7 @@ module diem_framework::transaction_validation {
 
     use diem_framework::account;
     // use diem_framework::diem_coin::DiemCoin;
-    use ol_framework::gas_coin::GasCoin;
+    use ol_framework::gas_coin::LibraCoin as GasCoin;
     use diem_framework::chain_id;
     use diem_framework::coin;
     use diem_framework::system_addresses;

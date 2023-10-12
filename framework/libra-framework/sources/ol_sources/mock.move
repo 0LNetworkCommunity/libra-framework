@@ -15,7 +15,7 @@ module ol_framework::mock {
   use diem_framework::system_addresses;
   use ol_framework::epoch_boundary;
   use diem_framework::coin;
-  use ol_framework::gas_coin::{Self, GasCoin};
+  use ol_framework::gas_coin::{Self, LibraCoin as GasCoin};
   use diem_framework::transaction_fee;
   use ol_framework::ol_account;
   use ol_framework::tower_state;

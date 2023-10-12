@@ -7,7 +7,7 @@ module ol_framework::test_slow_wallet {
   use ol_framework::slow_wallet;
   use ol_framework::mock;
   use ol_framework::ol_account;
-  use ol_framework::gas_coin;
+  use ol_framework::gas_coin::{Self, LibraCoin as GasCoin};
   use ol_framework::epoch_boundary;
   use diem_framework::reconfiguration;
   use diem_framework::coin;
@@ -83,7 +83,7 @@ module ol_framework::test_slow_wallet {
     // transferring funds will create Bob's account
     // the coins are also unlocked
     ol_account::transfer(&alice, @0x456, 10);
-    let b_balance = coin::balance<gas_coin::GasCoin>(@0x456);
+    let b_balance = coin::balance<GasCoin>(@0x456);
     assert!(b_balance == 10, 735704);
     assert!(slow_wallet::unlocked_amount(@0x456) == 10, 735705);
   }
@@ -107,7 +107,7 @@ module ol_framework::test_slow_wallet {
     // alice will transfer and create bob's account
     ol_account::transfer(&alice, @0x456, 99);
 
-    let b_balance = coin::balance<gas_coin::GasCoin>(@0x456);
+    let b_balance = coin::balance<GasCoin>(@0x456);
     assert!(b_balance == 99, 735702);
     assert!(slow_wallet::unlocked_amount(@0x123) == 01, 735703);
 

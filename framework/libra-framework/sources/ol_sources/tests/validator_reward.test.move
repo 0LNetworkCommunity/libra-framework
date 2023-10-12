@@ -7,7 +7,7 @@ module ol_framework::test_reconfiguration {
   use diem_framework::coin;
   use ol_framework::mock;
   use ol_framework::testnet;
-  use ol_framework::gas_coin::GasCoin;
+  use ol_framework::gas_coin::LibraCoin as GasCoin;
   use ol_framework::proof_of_fee;
   use diem_framework::reconfiguration;
   use ol_framework::epoch_helper;

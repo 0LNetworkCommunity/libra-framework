@@ -31,7 +31,7 @@ spec diem_framework::transaction_fee {
         use diem_framework::optional_aggregator;
         use diem_framework::aggregator;
         use diem_framework::coin::CoinInfo;
-        use ol_framework::gas_coin::GasCoin;
+        use ol_framework::gas_coin::LibraCoin as GasCoin;
         requires burn_percentage <= 100;
         requires exists<GasCoinCapabilities>(@diem_framework);
         requires exists<CoinInfo<GasCoin>>(@diem_framework);
@@ -62,7 +62,7 @@ spec diem_framework::transaction_fee {
 
     spec process_collected_fees() {
         use diem_framework::coin::CoinInfo;
-        use ol_framework::gas_coin::GasCoin;
+        use ol_framework::gas_coin::LibraCoin as GasCoin;
         requires exists<GasCoinCapabilities>(@diem_framework);
         // requires exists<stake::ValidatorFees>(@diem_framework);
         requires exists<CoinInfo<GasCoin>>(@diem_framework);

@@ -27,7 +27,7 @@ module diem_framework::stake {
     use diem_std::table::Table;
     use diem_std::comparator;
 
-    use diem_framework::gas_coin::GasCoin;
+    use diem_framework::gas_coin::LibraCoin as GasCoin;
     use diem_framework::account;
     use diem_framework::coin::{Self, Coin, MintCapability};
     use diem_framework::event::{Self, EventHandle};

@@ -7,7 +7,7 @@ module ol_framework::test_migration {
   use std::fixed_point32;
   use ol_framework::mock;
   use diem_framework::coin;
-  use ol_framework::gas_coin::GasCoin;
+  use ol_framework::gas_coin::LibraCoin as GasCoin;
   use std::signer;
   use std::bcs;
 

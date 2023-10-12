@@ -13,7 +13,7 @@ module ol_framework::test_tower {
   use ol_framework::stake;
   use diem_framework::timestamp;
   // use diem_framework::coin;
-  // use ol_framework::gas_coin::GasCoin;
+  // use ol_framework::gas_coin::LibraCoin as GasCoin;
   use std::vector;
 
   use std::debug::print;

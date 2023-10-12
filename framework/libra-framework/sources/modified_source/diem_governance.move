@@ -31,7 +31,7 @@ module diem_framework::diem_governance {
     use diem_framework::timestamp;
     use diem_framework::voting;
 
-    use ol_framework::gas_coin::GasCoin;
+    use ol_framework::gas_coin::LibraCoin as GasCoin;
     // use diem_std::debug::print;
 
 
