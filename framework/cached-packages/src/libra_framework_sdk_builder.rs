@@ -490,7 +490,7 @@ pub enum EntryFunctionCall {
     /// Add `amount` of coins from the `account` owning the ValidatorState.
     /// Rotate the consensus key of the validator, it'll take effect in next epoch.
     StakeRotateConsensusKey {
-        pool_address: AccountAddress,
+        validator_address: AccountAddress,
         new_consensus_pubkey: Vec<u8>,
         proof_of_possession: Vec<u8>,
     },
@@ -502,7 +502,7 @@ pub enum EntryFunctionCall {
 
     /// Update the network and full node addresses of the validator. This only takes effect in the next epoch.
     StakeUpdateNetworkAndFullnodeAddresses {
-        pool_address: AccountAddress,
+        validator_address: AccountAddress,
         new_network_addresses: Vec<u8>,
         new_fullnode_addresses: Vec<u8>,
     },
@@ -832,19 +832,21 @@ impl EntryFunctionCall {
                 fullnode_addresses,
             ),
             StakeRotateConsensusKey {
-                pool_address,
+                validator_address,
                 new_consensus_pubkey,
                 proof_of_possession,
-            } => {
-                stake_rotate_consensus_key(pool_address, new_consensus_pubkey, proof_of_possession)
-            }
+            } => stake_rotate_consensus_key(
+                validator_address,
+                new_consensus_pubkey,
+                proof_of_possession,
+            ),
             StakeSetOperator { new_operator } => stake_set_operator(new_operator),
             StakeUpdateNetworkAndFullnodeAddresses {
-                pool_address,
+                validator_address,
                 new_network_addresses,
                 new_fullnode_addresses,
             } => stake_update_network_and_fullnode_addresses(
-                pool_address,
+                validator_address,
                 new_network_addresses,
                 new_fullnode_addresses,
             ),
@@ -2192,7 +2194,7 @@ pub fn stake_initialize_validator(
 /// Add `amount` of coins from the `account` owning the ValidatorState.
 /// Rotate the consensus key of the validator, it'll take effect in next epoch.
 pub fn stake_rotate_consensus_key(
-    pool_address: AccountAddress,
+    validator_address: AccountAddress,
     new_consensus_pubkey: Vec<u8>,
     proof_of_possession: Vec<u8>,
 ) -> TransactionPayload {
@@ -2207,7 +2209,7 @@ pub fn stake_rotate_consensus_key(
         ident_str!("rotate_consensus_key").to_owned(),
         vec![],
         vec![
-            bcs::to_bytes(&pool_address).unwrap(),
+            bcs::to_bytes(&validator_address).unwrap(),
             bcs::to_bytes(&new_consensus_pubkey).unwrap(),
             bcs::to_bytes(&proof_of_possession).unwrap(),
         ],
@@ -2232,7 +2234,7 @@ pub fn stake_set_operator(new_operator: AccountAddress) -> TransactionPayload {
 
 /// Update the network and full node addresses of the validator. This only takes effect in the next epoch.
 pub fn stake_update_network_and_fullnode_addresses(
-    pool_address: AccountAddress,
+    validator_address: AccountAddress,
     new_network_addresses: Vec<u8>,
     new_fullnode_addresses: Vec<u8>,
 ) -> TransactionPayload {
@@ -2247,7 +2249,7 @@ pub fn stake_update_network_and_fullnode_addresses(
         ident_str!("update_network_and_fullnode_addresses").to_owned(),
         vec![],
         vec![
-            bcs::to_bytes(&pool_address).unwrap(),
+            bcs::to_bytes(&validator_address).unwrap(),
             bcs::to_bytes(&new_network_addresses).unwrap(),
             bcs::to_bytes(&new_fullnode_addresses).unwrap(),
         ],
@@ -3117,7 +3119,7 @@ mod decoder {
     pub fn stake_rotate_consensus_key(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::StakeRotateConsensusKey {
-                pool_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+                validator_address: bcs::from_bytes(script.args().get(0)?).ok()?,
                 new_consensus_pubkey: bcs::from_bytes(script.args().get(1)?).ok()?,
                 proof_of_possession: bcs::from_bytes(script.args().get(2)?).ok()?,
             })
@@ -3141,7 +3143,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::StakeUpdateNetworkAndFullnodeAddresses {
-                pool_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+                validator_address: bcs::from_bytes(script.args().get(0)?).ok()?,
                 new_network_addresses: bcs::from_bytes(script.args().get(1)?).ok()?,
                 new_fullnode_addresses: bcs::from_bytes(script.args().get(2)?).ok()?,
             })

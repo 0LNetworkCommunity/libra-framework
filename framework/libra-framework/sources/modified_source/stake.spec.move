@@ -48,10 +48,10 @@ spec diem_framework::stake {
     // }
 
     // spec unlock_with_cap(amount: u64, owner_cap: &OwnerCapability) {
-    //     let pool_address = owner_cap.pool_address;
-    //     let pre_stake_pool = global<ValidatorState>(pool_address);
-    //     let post stake_pool = global<ValidatorState>(pool_address);
-    //     modifies global<ValidatorState>(pool_address);
+    //     let validator_address = owner_cap.validator_address;
+    //     let pre_stake_pool = global<ValidatorState>(validator_address);
+    //     let post stake_pool = global<ValidatorState>(validator_address);
+    //     modifies global<ValidatorState>(validator_address);
     //     let min_amount = diem_std::math64::min(amount,pre_stake_pool.active.value);
 
     //     ensures stake_pool.pending_inactive.value == pre_stake_pool.pending_inactive.value + min_amount;
@@ -60,14 +60,14 @@ spec diem_framework::stake {
     // Only active validator can update locked_until_secs.
     // spec increase_lockup_with_cap(owner_cap: &OwnerCapability) {
     //     let config = global<staking_config::StakingConfig>(@diem_framework);
-    //     let pool_address = owner_cap.pool_address;
-    //     let pre_stake_pool = global<ValidatorState>(pool_address);
-    //     let post stake_pool = global<ValidatorState>(pool_address);
+    //     let validator_address = owner_cap.validator_address;
+    //     let pre_stake_pool = global<ValidatorState>(validator_address);
+    //     let post stake_pool = global<ValidatorState>(validator_address);
     //     let now_seconds = timestamp::spec_now_seconds();
     //     let lockup = config.recurring_lockup_duration_secs;
-    //     modifies global<ValidatorState>(pool_address);
+    //     modifies global<ValidatorState>(validator_address);
 
-    //     aborts_if !exists<ValidatorState>(pool_address);
+    //     aborts_if !exists<ValidatorState>(validator_address);
     //     aborts_if pre_stake_pool.locked_until_secs >= lockup + now_seconds;
     //     aborts_if lockup + now_seconds > MAX_U64;
     //     aborts_if !exists<timestamp::CurrentTimeMicroseconds>(@diem_framework);
@@ -78,17 +78,17 @@ spec diem_framework::stake {
 
     spec update_network_and_fullnode_addresses(
         operator: &signer,
-        pool_address: address,
+        validator_address: address,
         new_network_addresses: vector<u8>,
         new_fullnode_addresses: vector<u8>,
     ) {
-        let pre_stake_pool = global<ValidatorState>(pool_address);
-        let post validator_info = global<ValidatorConfig>(pool_address);
-        modifies global<ValidatorConfig>(pool_address);
+        let pre_stake_pool = global<ValidatorState>(validator_address);
+        let post validator_info = global<ValidatorConfig>(validator_address);
+        modifies global<ValidatorConfig>(validator_address);
 
         // Only the true operator address can update the network and full node addresses of the validator.
-        aborts_if !exists<ValidatorState>(pool_address);
-        aborts_if !exists<ValidatorConfig>(pool_address);
+        aborts_if !exists<ValidatorState>(validator_address);
+        aborts_if !exists<ValidatorConfig>(validator_address);
         aborts_if signer::address_of(operator) != pre_stake_pool.operator_address;
 
         ensures validator_info.network_addresses == new_network_addresses;
@@ -96,19 +96,19 @@ spec diem_framework::stake {
     }
 
     spec set_operator_with_cap(owner_cap: &OwnerCapability, new_operator: address) {
-        let pool_address = owner_cap.pool_address;
-        let post stake_pool = global<ValidatorState>(pool_address);
-        modifies global<ValidatorState>(pool_address);
+        let validator_address = owner_cap.validator_address;
+        let post stake_pool = global<ValidatorState>(validator_address);
+        modifies global<ValidatorState>(validator_address);
         ensures stake_pool.operator_address == new_operator;
     }
 
     // spec reactivate_stake_with_cap(owner_cap: &OwnerCapability, amount: u64) {
-    //     let pool_address = owner_cap.pool_address;
-    //     aborts_if !stake_pool_exists(pool_address);
+    //     let validator_address = owner_cap.validator_address;
+    //     aborts_if !stake_pool_exists(validator_address);
 
-    //     let pre_stake_pool = global<ValidatorState>(pool_address);
-    //     let post stake_pool = global<ValidatorState>(pool_address);
-    //     modifies global<ValidatorState>(pool_address);
+    //     let pre_stake_pool = global<ValidatorState>(validator_address);
+    //     let post stake_pool = global<ValidatorState>(validator_address);
+    //     modifies global<ValidatorState>(validator_address);
     //     let min_amount = diem_std::math64::min(amount,pre_stake_pool.pending_inactive.value);
 
     //     ensures stake_pool.active.value == pre_stake_pool.active.value + min_amount;
@@ -116,21 +116,21 @@ spec diem_framework::stake {
 
     spec rotate_consensus_key(
         operator: &signer,
-        pool_address: address,
+        validator_address: address,
         new_consensus_pubkey: vector<u8>,
         proof_of_possession: vector<u8>,
     ) {
-        let pre_stake_pool = global<ValidatorState>(pool_address);
-        let post validator_info = global<ValidatorConfig>(pool_address);
-        modifies global<ValidatorConfig>(pool_address);
+        let pre_stake_pool = global<ValidatorState>(validator_address);
+        let post validator_info = global<ValidatorConfig>(validator_address);
+        modifies global<ValidatorConfig>(validator_address);
 
         ensures validator_info.consensus_pubkey == new_consensus_pubkey;
     }
 
     // spec set_delegated_voter_with_cap(owner_cap: &OwnerCapability, new_voter: address) {
-    //     let pool_address = owner_cap.pool_address;
-    //     let post stake_pool = global<ValidatorState>(pool_address);
-    //     modifies global<ValidatorState>(pool_address);
+    //     let validator_address = owner_cap.validator_address;
+    //     let post stake_pool = global<ValidatorState>(validator_address);
+    //     modifies global<ValidatorState>(validator_address);
     //     ensures stake_pool.delegated_voter == new_voter;
     // }
 
@@ -154,9 +154,9 @@ spec diem_framework::stake {
     spec update_stake_pool {
         include ResourceRequirement;
         // include staking_config::StakingRewardsConfigRequirement;
-        aborts_if !exists<ValidatorState>(pool_address);
-        aborts_if !exists<ValidatorConfig>(pool_address);
-        aborts_if global<ValidatorConfig>(pool_address).validator_index >= len(validator_perf.validators);
+        aborts_if !exists<ValidatorState>(validator_address);
+        aborts_if !exists<ValidatorConfig>(validator_address);
+        aborts_if global<ValidatorConfig>(validator_address).validator_index >= len(validator_perf.validators);
     }
 
     // spec distribute_rewards {
@@ -239,13 +239,13 @@ spec diem_framework::stake {
 
     // spec get_validator_state {
     //     let validator_set = global<ValidatorSet>(@diem_framework);
-    //     ensures result == VALIDATOR_STATUS_PENDING_ACTIVE ==> spec_contains(validator_set.pending_active, pool_address);
-    //     ensures result == VALIDATOR_STATUS_ACTIVE ==> spec_contains(validator_set.active_validators, pool_address);
-    //     ensures result == VALIDATOR_STATUS_PENDING_INACTIVE ==> spec_contains(validator_set.pending_inactive, pool_address);
+    //     ensures result == VALIDATOR_STATUS_PENDING_ACTIVE ==> spec_contains(validator_set.pending_active, validator_address);
+    //     ensures result == VALIDATOR_STATUS_ACTIVE ==> spec_contains(validator_set.active_validators, validator_address);
+    //     ensures result == VALIDATOR_STATUS_PENDING_INACTIVE ==> spec_contains(validator_set.pending_inactive, validator_address);
     //     ensures result == VALIDATOR_STATUS_INACTIVE ==> (
-    //         !spec_contains(validator_set.pending_active, pool_address)
-    //             && !spec_contains(validator_set.active_validators, pool_address)
-    //             && !spec_contains(validator_set.pending_inactive, pool_address)
+    //         !spec_contains(validator_set.pending_active, validator_address)
+    //             && !spec_contains(validator_set.active_validators, validator_address)
+    //             && !spec_contains(validator_set.pending_inactive, validator_address)
     //     );
     // }
 
@@ -277,8 +277,8 @@ spec diem_framework::stake {
     //     ensures validator_set.total_joining_power == pre_validator_set.total_joining_power + increase_amount;
     // }
 
-    spec assert_stake_pool_exists(pool_address: address) {
-        aborts_if !stake_pool_exists(pool_address);
+    spec assert_stake_pool_exists(validator_address: address) {
+        aborts_if !stake_pool_exists(validator_address);
     }
 
     spec configure_allowed_validators(diem_framework: &signer, accounts: vector<address>) {
@@ -336,9 +336,9 @@ spec diem_framework::stake {
         exists i in 0..len(validators): validators[i].addr == addr
     }
 
-    spec fun spec_is_current_epoch_validator(pool_address: address): bool {
+    spec fun spec_is_current_epoch_validator(validator_address: address): bool {
         let validator_set = global<ValidatorSet>(@diem_framework);
-        spec_contains(validator_set.active_validators, pool_address)
+        spec_contains(validator_set.active_validators, validator_address)
     }
 
     // These resources are required to successfully execute `on_new_epoch`, which cannot
