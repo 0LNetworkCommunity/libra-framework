@@ -140,7 +140,7 @@ spec diem_framework::diem_governance {
     /// The delegated voter under the resource StakePool of the stake_pool must be the proposer address.
     /// Address @diem_framework must exist GovernanceEvents.
     spec schema CreateProposalAbortsIf {
-        use diem_framework::stake;
+        // use diem_framework::stake;
 
         proposer: &signer;
         stake_pool: address;
@@ -150,14 +150,14 @@ spec diem_framework::diem_governance {
 
         let proposer_address = signer::address_of(proposer);
         let governance_config = global<GovernanceConfig>(@diem_framework);
-        let stake_pool_res = global<stake::StakePool>(stake_pool);
+        // let stake_pool_res = global<stake::StakePool>(stake_pool);
         // aborts_if !exists<staking_config::StakingConfig>(@diem_framework);
-        aborts_if !exists<stake::StakePool>(stake_pool);
-        aborts_if global<stake::StakePool>(stake_pool).delegated_voter != proposer_address;
+        // aborts_if !exists<stake::StakePool>(stake_pool);
+        // aborts_if global<stake::StakePool>(stake_pool).delegated_voter != proposer_address;
         include AbortsIfNotGovernanceConfig;
         let current_time = timestamp::now_seconds();
         let proposal_expiration = current_time + governance_config.voting_duration_secs;
-        aborts_if stake_pool_res.locked_until_secs < proposal_expiration;
+        // aborts_if stake_pool_res.locked_until_secs < proposal_expiration;
         aborts_if !exists<GovernanceEvents>(@diem_framework);
         // let allow_validator_set_change = global<staking_config::StakingConfig>(@diem_framework).allow_validator_set_change;
         // aborts_if !allow_validator_set_change && !exists<stake::ValidatorSet>(@diem_framework);

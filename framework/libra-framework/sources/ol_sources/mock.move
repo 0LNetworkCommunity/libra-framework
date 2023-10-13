@@ -25,7 +25,7 @@ module ol_framework::mock {
   use ol_framework::globals;
   use diem_framework::block;
   // use diem_framework::chain_status;
-  // use diem_std::debug::print;
+  use diem_std::debug::print;
 
   const ENO_GENESIS_END_MARKER: u64 = 1;
   const EDID_NOT_ADVANCE_EPOCH: u64 = 1;
@@ -251,6 +251,9 @@ module ol_framework::mock {
         i = i + 1;
       };
 
+      timestamp::fast_forward_seconds(2); // or else reconfigure wont happen
+      stake::test_reconfigure(root, validator_universe::get_eligible_validators());
+
       stake::get_current_validators()
     }
 
@@ -299,6 +302,7 @@ module ol_framework::mock {
     // genesis();
 
     let set = genesis_n_vals(&root, 4);
+    print(&set);
     assert!(vector::length(&set) == 4, 7357001);
 
     let addr = vector::borrow(&set, 0);
