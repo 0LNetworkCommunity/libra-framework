@@ -179,6 +179,7 @@ pub fn genesis_migrate_infra_escrow(
     user_recovery: &LegacyRecovery,
     escrow_pct: f64,
 ) -> anyhow::Result<()> {
+    dbg!("infra");
     if user_recovery.account.is_none()
         || user_recovery.auth_key.is_none()
         || user_recovery.balance.is_none()
