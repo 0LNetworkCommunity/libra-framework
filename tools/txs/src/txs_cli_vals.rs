@@ -3,12 +3,13 @@
 use std::{fs, path::PathBuf};
 
 use crate::submit_transaction::Sender;
-use anyhow::bail;
+use anyhow::{bail, Context};
 use diem_genesis::config::OperatorConfiguration;
 use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib::EntryFunctionCall::{
     JailUnjailByVoucher, ProofOfFeePofRetractBid, ProofOfFeePofUpdateBid,
-    ValidatorUniverseRegisterValidator, VouchRevoke, VouchVouchFor,
+    StakeUpdateNetworkAndFullnodeAddresses, ValidatorUniverseRegisterValidator, VouchRevoke,
+    VouchVouchFor,
 };
 
 use libra_types::global_config_dir;
@@ -41,6 +42,11 @@ pub enum ValidatorTxs {
         revoke: bool,
     },
     Register {
+        #[clap(short('f'), long)]
+        /// optional, Path to files with registration files
+        operator_file: Option<PathBuf>,
+    },
+    Update {
         #[clap(short('f'), long)]
         /// optional, Path to files with registration files
         operator_file: Option<PathBuf>,
@@ -97,21 +103,47 @@ impl ValidatorTxs {
                 let yaml_str = fs::read_to_string(file)?;
                 let oc: OperatorConfiguration = serde_yaml::from_str(&yaml_str)?;
 
-                let validator_address = oc
+                let val_net_protocol = oc
                     .validator_host
                     .as_network_address(oc.validator_network_public_key)?;
 
-                // let fullnode_host = oc.full_node_host.context("cannot find fullnode host")?;
-                // let fullnode_addr = fullnode_host.as_network_address(
-                // oc.full_node_network_public_key
-                // .context("cannot find fullnode network public key")?,
-                // )?;
+                let fullnode_host = oc.full_node_host.context("cannot find fullnode host")?;
+                let vfn_fullnode_protocol = fullnode_host.as_network_address(
+                    oc.full_node_network_public_key
+                        .context("cannot find fullnode network public key")?,
+                )?;
 
                 ValidatorUniverseRegisterValidator {
                     consensus_pubkey: oc.consensus_public_key.to_bytes().to_vec(),
                     proof_of_possession: oc.consensus_proof_of_possession.to_bytes().to_vec(),
-                    network_addresses: bcs::to_bytes(&validator_address)?,
-                    fullnode_addresses: vec![], // TODO
+                    network_addresses: bcs::to_bytes(&val_net_protocol)?,
+                    fullnode_addresses: bcs::to_bytes(&vfn_fullnode_protocol)?,
+                }
+            }
+            ValidatorTxs::Update { operator_file } => {
+                let file = operator_file.to_owned().unwrap_or_else(|| {
+                    let a = global_config_dir();
+                    a.join(OPERATOR_FILE)
+                });
+
+                let yaml_str = fs::read_to_string(file)?;
+
+                let oc: OperatorConfiguration = serde_yaml::from_str(&yaml_str)?;
+
+                let val_net_protocol = oc
+                    .validator_host
+                    .as_network_address(oc.validator_network_public_key)?;
+
+                let fullnode_host = oc.full_node_host.context("cannot find fullnode host")?;
+                let vfn_fullnode_protocol = fullnode_host.as_network_address(
+                    oc.full_node_network_public_key
+                        .context("cannot find fullnode network public key")?,
+                )?;
+
+                StakeUpdateNetworkAndFullnodeAddresses {
+                    validator_address: oc.operator_account_address.into(),
+                    new_network_addresses: bcs::to_bytes(&val_net_protocol)?,
+                    new_fullnode_addresses: bcs::to_bytes(&vfn_fullnode_protocol)?,
                 }
             }
         };

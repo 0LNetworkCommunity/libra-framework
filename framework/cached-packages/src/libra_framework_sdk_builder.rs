@@ -484,29 +484,9 @@ pub enum EntryFunctionCall {
         fullnode_addresses: Vec<u8>,
     },
 
-    /// Unlock from active delegation, it's moved to pending_inactive if locked_until_secs < current_time or
-    /// directly inactive if it's not from an active validator.
-    /// This can only called by the operator of the validator/staking pool.
-    StakeJoinValidatorSet {
-        pool_address: AccountAddress,
-    },
-
-    /// Similar to unlock_with_cap but will use ownership capability from the signing account.
-    /// Unlock `amount` from the active stake. Only possible if the lockup has expired.
-    /// Request to have `pool_address` leave the validator set. The validator is only actually removed from the set when
-    /// the next epoch starts.
-    /// The last validator in the set cannot leave. This is an edge case that should never happen as long as the network
-    /// is still operational.
-    ///
-    /// Can only be called by the operator of the validator/staking pool.
-    StakeLeaveValidatorSet {
-        pool_address: AccountAddress,
-    },
-
-    /// Add `amount` of coins from the `account` owning the StakePool.
     /// Rotate the consensus key of the validator, it'll take effect in next epoch.
     StakeRotateConsensusKey {
-        pool_address: AccountAddress,
+        validator_address: AccountAddress,
         new_consensus_pubkey: Vec<u8>,
         proof_of_possession: Vec<u8>,
     },
@@ -518,7 +498,7 @@ pub enum EntryFunctionCall {
 
     /// Update the network and full node addresses of the validator. This only takes effect in the next epoch.
     StakeUpdateNetworkAndFullnodeAddresses {
-        pool_address: AccountAddress,
+        validator_address: AccountAddress,
         new_network_addresses: Vec<u8>,
         new_fullnode_addresses: Vec<u8>,
     },
@@ -847,22 +827,22 @@ impl EntryFunctionCall {
                 network_addresses,
                 fullnode_addresses,
             ),
-            StakeJoinValidatorSet { pool_address } => stake_join_validator_set(pool_address),
-            StakeLeaveValidatorSet { pool_address } => stake_leave_validator_set(pool_address),
             StakeRotateConsensusKey {
-                pool_address,
+                validator_address,
                 new_consensus_pubkey,
                 proof_of_possession,
-            } => {
-                stake_rotate_consensus_key(pool_address, new_consensus_pubkey, proof_of_possession)
-            }
+            } => stake_rotate_consensus_key(
+                validator_address,
+                new_consensus_pubkey,
+                proof_of_possession,
+            ),
             StakeSetOperator { new_operator } => stake_set_operator(new_operator),
             StakeUpdateNetworkAndFullnodeAddresses {
-                pool_address,
+                validator_address,
                 new_network_addresses,
                 new_fullnode_addresses,
             } => stake_update_network_and_fullnode_addresses(
-                pool_address,
+                validator_address,
                 new_network_addresses,
                 new_fullnode_addresses,
             ),
@@ -2204,51 +2184,9 @@ pub fn stake_initialize_validator(
     ))
 }
 
-/// Unlock from active delegation, it's moved to pending_inactive if locked_until_secs < current_time or
-/// directly inactive if it's not from an active validator.
-/// This can only called by the operator of the validator/staking pool.
-pub fn stake_join_validator_set(pool_address: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("stake").to_owned(),
-        ),
-        ident_str!("join_validator_set").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&pool_address).unwrap()],
-    ))
-}
-
-/// Similar to unlock_with_cap but will use ownership capability from the signing account.
-/// Unlock `amount` from the active stake. Only possible if the lockup has expired.
-/// Request to have `pool_address` leave the validator set. The validator is only actually removed from the set when
-/// the next epoch starts.
-/// The last validator in the set cannot leave. This is an edge case that should never happen as long as the network
-/// is still operational.
-///
-/// Can only be called by the operator of the validator/staking pool.
-pub fn stake_leave_validator_set(pool_address: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("stake").to_owned(),
-        ),
-        ident_str!("leave_validator_set").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&pool_address).unwrap()],
-    ))
-}
-
-/// Add `amount` of coins from the `account` owning the StakePool.
 /// Rotate the consensus key of the validator, it'll take effect in next epoch.
 pub fn stake_rotate_consensus_key(
-    pool_address: AccountAddress,
+    validator_address: AccountAddress,
     new_consensus_pubkey: Vec<u8>,
     proof_of_possession: Vec<u8>,
 ) -> TransactionPayload {
@@ -2263,7 +2201,7 @@ pub fn stake_rotate_consensus_key(
         ident_str!("rotate_consensus_key").to_owned(),
         vec![],
         vec![
-            bcs::to_bytes(&pool_address).unwrap(),
+            bcs::to_bytes(&validator_address).unwrap(),
             bcs::to_bytes(&new_consensus_pubkey).unwrap(),
             bcs::to_bytes(&proof_of_possession).unwrap(),
         ],
@@ -2288,7 +2226,7 @@ pub fn stake_set_operator(new_operator: AccountAddress) -> TransactionPayload {
 
 /// Update the network and full node addresses of the validator. This only takes effect in the next epoch.
 pub fn stake_update_network_and_fullnode_addresses(
-    pool_address: AccountAddress,
+    validator_address: AccountAddress,
     new_network_addresses: Vec<u8>,
     new_fullnode_addresses: Vec<u8>,
 ) -> TransactionPayload {
@@ -2303,7 +2241,7 @@ pub fn stake_update_network_and_fullnode_addresses(
         ident_str!("update_network_and_fullnode_addresses").to_owned(),
         vec![],
         vec![
-            bcs::to_bytes(&pool_address).unwrap(),
+            bcs::to_bytes(&validator_address).unwrap(),
             bcs::to_bytes(&new_network_addresses).unwrap(),
             bcs::to_bytes(&new_fullnode_addresses).unwrap(),
         ],
@@ -3170,30 +3108,10 @@ mod decoder {
         }
     }
 
-    pub fn stake_join_validator_set(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakeJoinValidatorSet {
-                pool_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn stake_leave_validator_set(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakeLeaveValidatorSet {
-                pool_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
     pub fn stake_rotate_consensus_key(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::StakeRotateConsensusKey {
-                pool_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+                validator_address: bcs::from_bytes(script.args().get(0)?).ok()?,
                 new_consensus_pubkey: bcs::from_bytes(script.args().get(1)?).ok()?,
                 proof_of_possession: bcs::from_bytes(script.args().get(2)?).ok()?,
             })
@@ -3217,7 +3135,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::StakeUpdateNetworkAndFullnodeAddresses {
-                pool_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+                validator_address: bcs::from_bytes(script.args().get(0)?).ok()?,
                 new_network_addresses: bcs::from_bytes(script.args().get(1)?).ok()?,
                 new_fullnode_addresses: bcs::from_bytes(script.args().get(2)?).ok()?,
             })
@@ -3544,14 +3462,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "stake_initialize_validator".to_string(),
             Box::new(decoder::stake_initialize_validator),
-        );
-        map.insert(
-            "stake_join_validator_set".to_string(),
-            Box::new(decoder::stake_join_validator_set),
-        );
-        map.insert(
-            "stake_leave_validator_set".to_string(),
-            Box::new(decoder::stake_leave_validator_set),
         );
         map.insert(
             "stake_rotate_consensus_key".to_string(),
