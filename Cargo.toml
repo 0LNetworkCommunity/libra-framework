@@ -347,3 +347,8 @@ incremental = true
 # # This will be removed once our pull requests land.
 [patch.crates-io]
 serde-reflection = { git = "https://github.com/aptos-labs/serde-reflection", rev = "839aed62a20ddccf043c08961cfe74875741ccba" }
+
+[env]
+# set coin name for diem dependencies
+RUST_DIEM_COIN_MODULE = "gas_coin"
+RUST_DIEM_COIN_NAME = "LibraCoin"
