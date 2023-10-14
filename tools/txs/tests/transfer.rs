@@ -83,7 +83,7 @@ async fn smoke_transfer_create_account() {
 
 /// Estimate only. Esitmates will fail if the coin name is not set in the diem-node compiled binary.
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-#[ignore] // TODO: ignore this test until diem-platform 1.6.3 final lands
+// #[ignore] // TODO: ignore this test until diem-platform 1.6.3 final lands
 async fn smoke_transfer_estimate() {
     let d = diem_temppath::TempPath::new();
 
