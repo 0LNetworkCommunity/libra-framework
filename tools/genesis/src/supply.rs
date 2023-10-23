@@ -17,6 +17,9 @@ pub struct SupplySettings {
     /// for calculating escrow, what's the desired percent to future uses
     pub target_future_uses: f64,
     #[clap(long)]
+    /// for calculating base case validator reward
+    pub years_escrow: u8,
+    #[clap(long)]
     /// for future uses calc, are there any donor directed wallets which require mapping to slow wallets
     pub map_dd_to_slow: Vec<LegacyAddress>,
 }
@@ -50,6 +53,7 @@ pub struct Supply {
     // which will compute later
     pub split_factor: f64,
     pub escrow_pct: f64,
+    pub epoch_reward_base_case: f64
 }
 
 impl Supply {
@@ -61,6 +65,8 @@ impl Supply {
         let target_future_uses = settings.target_future_uses * self.total;
         let remaining_to_fund = target_future_uses - self.donor_directed;
         self.escrow_pct = remaining_to_fund / self.slow_validator_locked;
+        self.epoch_reward_base_case = remaining_to_fund / (365 * 100 * 7) // one hundred validators over 7 years everyday. Note: discussed elsewhere: if this is an over estimate, the capital gets returned to community by the daily excess burn.
+
         Ok(())
     }
 }
@@ -127,6 +133,7 @@ pub fn populate_supply_stats_from_legacy(
         donor_directed: 0.0,
         split_factor: 0.0,
         escrow_pct: 0.0,
+        epoch_reward_base_case: 0.0,
     };
 
     let dd_wallets = rec
