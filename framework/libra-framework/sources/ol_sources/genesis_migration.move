@@ -78,11 +78,10 @@ module ol_framework::genesis_migration {
   fun rounding_mint(root: &signer, target_supply: u64) {
     let existing_supply = gas_coin::supply();
 
-    assert!(target_supply >= existing_supply, error::invalid_state(EMINTED_OVER_TARGET));
+    assert!(target_supply <= existing_supply, error::invalid_state(EMINTED_OVER_TARGET));
     if (target_supply > existing_supply) {
         let coin = coin::vm_mint<GasCoin>(root, target_supply - existing_supply);
         transaction_fee::vm_pay_fee(root, @ol_framework, coin);
-
     };
 
     let final_supply = gas_coin::supply();
