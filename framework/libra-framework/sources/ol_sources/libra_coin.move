@@ -128,6 +128,8 @@ module ol_framework::gas_coin {
 
     friend diem_framework::genesis;
     friend ol_framework::genesis_migration;
+    #[test_only]
+    friend ol_framework::mock;
 
     /// Account does not have mint capability
     const ENO_CAPABILITIES: u64 = 1;
@@ -174,12 +176,12 @@ module ol_framework::gas_coin {
 
         coin::destroy_freeze_cap(freeze_cap);
         coin::destroy_burn_cap(burn_cap);
-        // (burn_cap, mint_cap)
     }
 
     /// FOR TESTS ONLY
     /// Can only called during genesis to initialize the Diem coin.
-    public(friend) fun initialize_for_core(diem_framework: &signer): (BurnCapability<LibraCoin>, MintCapability<LibraCoin>)  {
+    public(friend) fun initialize_for_core(diem_framework: &signer):
+    (BurnCapability<LibraCoin>, MintCapability<LibraCoin>) {
         system_addresses::assert_diem_framework(diem_framework);
 
         let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<LibraCoin>(
@@ -214,11 +216,14 @@ module ol_framework::gas_coin {
     // at genesis we need to init the final supply
     // done at genesis_migration
     public(friend) fun genesis_set_final_supply(diem_framework: &signer,
-    final_supply: u64) {
+    final_supply: u64) acquires FinalSupply {
       if (!exists<FinalSupply>(@ol_framework)) {
         move_to(diem_framework, FinalSupply {
           value: final_supply
         });
+      } else {
+        let state = borrow_global_mut<FinalSupply>(@ol_framework);
+        state.value = final_supply
       }
     }
 
@@ -247,6 +252,14 @@ module ol_framework::gas_coin {
         move_to(diem_framework, MintCapStore { mint_cap });
     }
 
+    #[test_only]
+    public fun borrow_mint_cap(diem_framework: &signer):
+    MintCapability<LibraCoin> acquires MintCapStore {
+        system_addresses::assert_diem_framework(diem_framework);
+        // move_to(diem_framework, MintCapStore { mint_cap });
+        let state = borrow_global_mut<MintCapStore>(@diem_framework);
+        state.mint_cap
+    }
     /// FOR TESTS ONLY
     /// The `core addresses` sudo account is used to execute system transactions for testing
     /// Can only be called during genesis for tests to grant mint capability to diem framework and core resources

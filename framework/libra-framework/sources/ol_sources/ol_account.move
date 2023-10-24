@@ -89,6 +89,7 @@ module ol_framework::ol_account {
         let new_signer = account::create_account(auth_key);
         coin::register<GasCoin>(&new_signer);
         receipts::user_init(&new_signer);
+        init_burn_tracker(&new_signer);
     }
 
     // #[test_only]
@@ -123,6 +124,7 @@ module ol_framework::ol_account {
         );
 
         coin::register<GasCoin>(&new_signer);
+        init_burn_tracker(&new_signer);
         new_signer
     }
 
@@ -131,7 +133,8 @@ module ol_framework::ol_account {
 
     #[test_only]
     /// Batch version of GAS transfer.
-    public entry fun batch_transfer(source: &signer, recipients: vector<address>, amounts: vector<u64>) {
+    public entry fun batch_transfer(source: &signer, recipients:
+    vector<address>, amounts: vector<u64>) acquires BurnTracker {
         let recipients_len = vector::length(&recipients);
         assert!(
             recipients_len == vector::length(&amounts),
@@ -149,9 +152,14 @@ module ol_framework::ol_account {
 
     /// Convenient function to transfer GAS to a recipient account that might not exist.
     /// This would create the recipient account first, which also registers it to receive GAS, before transferring.
-    public entry fun transfer(sender: &signer, to: address, amount: u64) {
-      transfer_checks(signer::address_of(sender), to, amount);
-      coin::transfer<GasCoin>(sender, to, amount);
+    public entry fun transfer(sender: &signer, to: address, amount: u64)
+    acquires BurnTracker {
+      let payer = signer::address_of(sender);
+      transfer_checks(payer, to, amount);
+      // both update burn tracker
+      let c = withdraw(sender, amount);
+      deposit_coins(to, c);
+      slow_wallet::maybe_track_slow_transfer(payer, to, amount);
     }
 
     // transfer with capability, and do appropriate checks on both sides, and track the slow wallet
@@ -310,15 +318,21 @@ module ol_framework::ol_account {
     }
 
     // on new account creation we need the burn tracker created
-    public fun init_burn_tracker(sig: &signer) acquires BurnTracker {
+    // note return quietly if it's already initialized, so we can use it
+    // in the creation and tx flow
+    public fun init_burn_tracker(sig: &signer) {
       let addr = signer::address_of(sig);
-      let state = borrow_global_mut<BurnTracker>(addr);
+      if (exists<BurnTracker>(addr)) return;
+
       let (_, total_balance) = balance(addr);
-      state.prev_supply = gas_coin::supply();
-      state.prev_balance = total_balance;
-      state.burn_at_last_calc = 0;
-      state.cumu_burn = 0;
+      move_to(sig, BurnTracker {
+        prev_supply: gas_coin::supply(),
+        prev_balance: total_balance,
+        burn_at_last_calc: 0,
+        cumu_burn: 0,
+      })
     }
+
 
   /// TODO: the user may update the tracker outside of transactions
   public fun user_update_burn_tracker() {}
@@ -442,7 +456,8 @@ module ol_framework::ol_account {
     struct FakeCoin {}
 
     #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
-    public fun test_transfer(root: &signer, alice: &signer, core: &signer) {
+    public fun test_transfer(root: &signer, alice: &signer, core: &signer)
+    acquires BurnTracker {
         let bob = from_bcs::to_address(x"0000000000000000000000000000000000000000000000000000000000000b0b");
         let carol = from_bcs::to_address(x"00000000000000000000000000000000000000000000000000000000000ca501");
 
@@ -463,7 +478,8 @@ module ol_framework::ol_account {
     }
 
     #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
-    public fun test_transfer_to_resource_account(root: &signer, alice: &signer, core: &signer) {
+    public fun test_transfer_to_resource_account(root: &signer, alice: &signer,
+    core: &signer) acquires BurnTracker{
         let (resource_account, _) = ol_create_resource_account(alice, vector[]);
         let resource_acc_addr = signer::address_of(&resource_account);
         // assert!(!coin::is_account_registered<GasCoin>(resource_acc_addr), 0);
@@ -479,7 +495,8 @@ module ol_framework::ol_account {
     }
 
     #[test(root = @ol_framework, from = @0x123, core = @0x1, recipient_1 = @0x124, recipient_2 = @0x125)]
-    public fun test_batch_transfer(root: &signer, from: &signer, core: &signer, recipient_1: &signer, recipient_2: &signer) {
+    public fun test_batch_transfer(root: &signer, from: &signer, core: &signer,
+    recipient_1: &signer, recipient_2: &signer) acquires BurnTracker{
         let (burn_cap, mint_cap) = diem_framework::gas_coin::initialize_for_test(core);
         create_account(root, signer::address_of(from));
         let recipient_1_addr = signer::address_of(recipient_1);
@@ -550,7 +567,8 @@ module ol_framework::ol_account {
     // }
 
     #[test(root = @ol_framework, user = @0x123)]
-    public fun test_set_allow_direct_coin_transfers(root: &signer, user: &signer) acquires DirectTransferConfig {
+    public fun test_set_allow_direct_coin_transfers(root: &signer, user:
+    &signer) acquires DirectTransferConfig {
         let addr = signer::address_of(user);
         create_account(root, addr);
         set_allow_direct_coin_transfers(user, true);
