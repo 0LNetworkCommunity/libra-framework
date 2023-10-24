@@ -171,25 +171,12 @@ module diem_framework::genesis {
     // we are leaving vendor's coin in place.
     /// Genesis step 2: Initialize Diem coin.
     fun initialize_diem_coin(diem_framework: &signer) {
-
-        // let (burn_cap, mint_cap) = diem_coin::initialize(diem_framework);
-        // Give stake module MintCapability<GasCoin> so it can mint rewards.
-        // stake::store_diem_coin_mint_cap(diem_framework, mint_cap);
-        // coin::destroy_mint_cap(mint_cap);
-        // Give transaction_fee module BurnCapability<GasCoin> so it can burn gas.
-        // transaction_fee::store_diem_coin_burn_cap(diem_framework, burn_cap);
-        // coin::destroy_burn_cap(burn_cap);
-
-        // 0L: genesis ceremony is calling this
+        // NOTE 0L: genesis ceremony is calling this
         gas_coin::initialize(diem_framework);
-        // Give stake module MintCapability<GasCoin> so it can mint rewards.
-        // stake::store_diem_coin_mint_cap(diem_framework, mint_cap);
-        // gas_coin::restore_mint_cap(diem_framework, mint_cap);
-        // coin::destroy_burn_cap(burn_cap);
+
         transaction_fee::initialize_fee_collection_and_distribution(diem_framework, 0);
     }
 
-    // TODO: 0L: replace this with gas coin. using vendor's to preserve tests while WIP.
     /// Only called for testnets and e2e tests.
     fun initialize_core_resources_and_diem_coin(
         diem_framework: &signer,
@@ -199,9 +186,6 @@ module diem_framework::genesis {
 
         let core_resources = account::create_account(@core_resources);
         account::rotate_authentication_key_internal(&core_resources, core_resources_auth_key);
-        // diem_coin::configure_accounts_for_test(diem_framework, &core_resources, mint_cap);
-        // coin::destroy_mint_cap(mint_cap);
-        // coin::destroy_burn_cap(burn_cap);
 
         // initialize gas
         let (burn_cap_two, mint_cap_two) = gas_coin::initialize_for_core(diem_framework);
