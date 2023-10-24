@@ -9,7 +9,7 @@ module ol_framework::ol_account {
     use std::option::{Self, Option};
     use diem_std::from_bcs;
 
-    use ol_framework::gas_coin::LibraCoin as GasCoin;
+    use ol_framework::gas_coin::{Self, LibraCoin as GasCoin};
     use ol_framework::slow_wallet;
     use ol_framework::receipts;
     use ol_framework::cumulative_deposits;
@@ -42,6 +42,15 @@ module ol_framework::ol_account {
     /// On legacy account migration we need to check if we rotated auth keys correctly and can find the user address.
     const ECANT_MATCH_ADDRESS_IN_LOOKUP: u64 = 7;
 
+
+    struct BurnTracker has key {
+      prev_supply: u64,
+      prev_balance: u64,
+      burn_at_last_calc: u64,
+      cumu_burn: u64,
+      // percent: u64,
+      // percent_increase: u64,
+    }
 
 
     /// Configuration for whether an account can receive direct transfers of coins that they have not registered.
@@ -146,22 +155,39 @@ module ol_framework::ol_account {
     }
 
     // transfer with capability, and do appropriate checks on both sides, and track the slow wallet
-    public fun transfer_with_capability(cap: &WithdrawCapability, recipient: address, amount: u64) {
+    public fun transfer_with_capability(cap: &WithdrawCapability, recipient:
+    address, amount: u64) acquires BurnTracker {
       let payer = account::get_withdraw_cap_address(cap);
       transfer_checks(payer, recipient, amount);
-      let c = coin::withdraw_with_capability<GasCoin>(cap, amount);
-      coin::deposit<GasCoin>(recipient, c);
+      // NOTE: these shoud update BurnTracker
+      let c = withdraw_with_capability(cap, amount);
+      deposit_coins(recipient, c);
       slow_wallet::maybe_track_slow_transfer(payer, recipient, amount);
     }
 
     /// Withdraw a coin while tracking the unlocked withdraw
-    public fun withdraw_with_capability(cap: &WithdrawCapability, amount: u64): Coin<GasCoin> {
+    public fun withdraw_with_capability(cap: &WithdrawCapability, amount: u64):
+    Coin<GasCoin> acquires BurnTracker {
       let payer = account::get_withdraw_cap_address(cap);
       let limit = slow_wallet::unlocked_amount(payer);
       assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
 
       slow_wallet::maybe_track_unlocked_withdraw(payer, amount);
+      // the outgoing coins should trigger an update on this account
+      maybe_update_burn_tracker_impl(payer);
       coin::withdraw_with_capability(cap, amount)
+    }
+
+    /// Withdraw funds while respecting the transfer limits
+    public fun withdraw(sender: &signer, amount: u64): Coin<GasCoin> acquires
+    BurnTracker {
+        let addr = signer::address_of(sender);
+        let limit = slow_wallet::unlocked_amount(addr);
+        assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
+        slow_wallet::maybe_track_unlocked_withdraw(addr, amount);
+        // the outgoing coins should trigger an update on this account
+        maybe_update_burn_tracker_impl(addr);
+        coin::withdraw<GasCoin>(sender, amount)
     }
 
     // actual implementation to allow for capability
@@ -188,13 +214,7 @@ module ol_framework::ol_account {
         cumulative_deposits::maybe_update_deposit(payer, recipient, amount);
     }
 
-    /// Withdraw funds while respecting the transfer limits
-    public fun withdraw(sender: &signer, amount: u64): Coin<GasCoin> {
-        let limit = slow_wallet::unlocked_amount(signer::address_of(sender));
-        assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
-        slow_wallet::maybe_track_unlocked_withdraw(signer::address_of(sender), amount);
-        coin::withdraw<GasCoin>(sender, amount)
-    }
+
 
     /// vm can transfer between account to settle.
     /// THIS FUNCTION CAN BYPASS SLOW WALLET WITHDRAW RESTRICTIONS
@@ -202,7 +222,8 @@ module ol_framework::ol_account {
     /// returns the actual amount transferred, and whether that amount was the
     /// whole amount expected to transfer.
     /// (amount_transferred, success)
-    public(friend) fun vm_transfer(vm: &signer, from: address, to: address, amount: u64): (u64, bool) {
+    public(friend) fun vm_transfer(vm: &signer, from: address, to: address, amount: u64): (u64, bool) acquires
+    BurnTracker {
       system_addresses::assert_ol(vm);
       let amount_transferred = 0;
       // should not halt
@@ -212,10 +233,16 @@ module ol_framework::ol_account {
       if(amount > coin::balance<GasCoin>(from)) return (0, false);
 
       let coin_option = coin::vm_withdraw<GasCoin>(vm, from, amount);
+
       if (option::is_some(&coin_option)) {
         let c = option::extract(&mut coin_option);
         amount_transferred = coin::value(&c);
-        coin::deposit(to, c);
+        coin::deposit(to, c); // TODO: this should use internal functions to
+        // deduplicate what follows
+        // update both accounts
+        maybe_update_burn_tracker_impl(from);
+        maybe_update_burn_tracker_impl(to);
+
       };
 
       option::destroy_none(coin_option);
@@ -229,18 +256,23 @@ module ol_framework::ol_account {
     }
 
     #[test_only]
-    public fun test_vm_withdraw(vm: &signer, from: address, amount: u64): Option<Coin<GasCoin>> {
+    public fun test_vm_withdraw(vm: &signer, from: address, amount: u64):
+    Option<Coin<GasCoin>> acquires BurnTracker {
       system_addresses::assert_ol(vm);
       // should not halt
       if (!coin::is_account_registered<GasCoin>(from)) return option::none();
       if(amount > coin::balance<GasCoin>(from)) return option::none();
 
+      maybe_update_burn_tracker_impl(from);
       coin::vm_withdraw<GasCoin>(vm, from, amount)
+
     }
     /// vm can transfer between account to settle.
     /// THIS FUNCTION CAN BYPASS SLOW WALLET WITHDRAW RESTRICTIONS
     /// used to withdraw and track the withdrawal
-    public(friend) fun vm_withdraw_unlimited(vm: &signer, from: address, amount: u64): Option<Coin<GasCoin>>{
+    public(friend) fun vm_withdraw_unlimited(vm: &signer, from: address, amount:
+    u64): Option<Coin<GasCoin>> acquires
+    BurnTracker {
       system_addresses::assert_ol(vm);
       // should not halt
       if(amount > coin::balance<GasCoin>(from)) return option::none();
@@ -248,8 +280,19 @@ module ol_framework::ol_account {
       // since the VM can withdraw more than what is unlocked
       // it needs to adjust the unlocked amount, which may end up zero
       // if it goes over the limit
-      slow_wallet::maybe_track_unlocked_withdraw(from, amount);
-      coin::vm_withdraw<GasCoin>(vm, from, amount)
+      let c_opt = coin::vm_withdraw<GasCoin>(vm, from, amount);
+
+      // we're not always sure what's in the option
+      if (option::is_some(&c_opt)) {
+        let coin = option::borrow(&c_opt);
+        let value = coin::value<GasCoin>(coin);
+        if (value > 0) {
+          maybe_update_burn_tracker_impl(from);
+          slow_wallet::maybe_track_unlocked_withdraw(from, value);
+        }
+      };
+
+      return c_opt
 
     }
 
@@ -266,6 +309,54 @@ module ol_framework::ol_account {
       slow_wallet::balance(addr)
     }
 
+    // on new account creation we need the burn tracker created
+    public fun init_burn_tracker(sig: &signer) acquires BurnTracker {
+      let addr = signer::address_of(sig);
+      let state = borrow_global_mut<BurnTracker>(addr);
+      let (_, total_balance) = balance(addr);
+      state.prev_supply = gas_coin::supply();
+      state.prev_balance = total_balance;
+      state.burn_at_last_calc = 0;
+      state.cumu_burn = 0;
+    }
+
+  /// TODO: the user may update the tracker outside of transactions
+  public fun user_update_burn_tracker() {}
+
+  // NOTE: this must be called before immediately after any coins are deposited or withrdrawn.
+  fun maybe_update_burn_tracker_impl(addr: address) acquires BurnTracker {
+    if (!exists<BurnTracker>(addr)) return;// return quietly as the VM may call this
+
+    let state = borrow_global_mut<BurnTracker>(addr);
+    // 1. how much burn happened in between
+    // this must be true but we
+    // don't abort since the VM may be calling this
+    let current_supply = gas_coin::supply();
+    let original_supply = gas_coin::get_final_supply();
+    if (original_supply > current_supply) {
+      let burn_in_period = original_supply - current_supply;
+
+      if (burn_in_period> 0 && burn_in_period > state.prev_balance ) {
+        let attributed_burn = burn_in_period / state.prev_balance;
+        // attributed burn may be zero because of rounding effects
+        // in that case we should skip the updating altogether and
+        // only track when the attributable is > 1. Otherwise the
+        // whole chain of updates will be incorrect
+        if (attributed_burn > 0) {
+          state.cumu_burn = state.burn_at_last_calc + attributed_burn;
+          // now change last calc
+          state.burn_at_last_calc = attributed_burn;
+          // reset trackers for next tx
+          state.prev_supply = current_supply;
+
+          let (_, total_balance) = balance(addr);
+          state.prev_balance = total_balance;
+        }
+      }
+    }
+  }
+
+    // TODO:
     // #[test_only]
     // /// Batch version of transfer_coins.
     // public entry fun batch_transfer<CoinType>(
@@ -276,28 +367,16 @@ module ol_framework::ol_account {
     //         error::invalid_argument(EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH),
     //     );
 
-    //     let i = 0;
-    //     while (i < recipients_len) {
-    //         let to = *vector::borrow(&recipients, i);
-    //         let amount = *vector::borrow(&amounts, i);
-    //         transfer_coins<CoinType>(from, to, amount);
-    //         i = i + 1;
-    //     };
-    // }
-
-    // #[test_only]
-    // /// Convenient function to transfer a custom CoinType to a recipient account that might not exist.
-    // /// This would create the recipient account first and register it to receive the CoinType, before transferring.
-    // public entry fun transfer_coins<CoinType>(from: &signer, to: address, amount: u64) {
-    //     deposit_coins(to, coin::withdraw<CoinType>(from, amount));
-    // }
 
     /// A coin which is split or extracted can be sent to an account without a sender signing.
     /// TODO: cumulative tracker will not work here.
-    public fun deposit_coins(to: address, coins: Coin<GasCoin>) {
+    public fun deposit_coins(to: address, coins: Coin<GasCoin>) acquires
+    BurnTracker {
         assert!(coin::is_account_registered<GasCoin>(to), error::invalid_state(EACCOUNT_NOT_REGISTERED_FOR_GAS));
         slow_wallet::maybe_track_unlocked_deposit(to, coin::value(&coins));
         coin::deposit<GasCoin>(to, coins);
+        // the incoming coins should trigger an update in tracker
+        maybe_update_burn_tracker_impl(to);
     }
 
     // pass through function to guard the use of Coin

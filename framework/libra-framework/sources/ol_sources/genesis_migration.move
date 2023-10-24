@@ -83,7 +83,10 @@ module ol_framework::genesis_migration {
         let coin = coin::vm_mint<GasCoin>(root, target_supply - existing_supply);
         transaction_fee::vm_pay_fee(root, @ol_framework, coin);
 
-    }
+    };
+
+    let final_supply = gas_coin::supply();
+    gas_coin::genesis_set_final_supply(root, final_supply);
   }
 
     /// for an uprade using an escrow percent. Only to be called at genesis

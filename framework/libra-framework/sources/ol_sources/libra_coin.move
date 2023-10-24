@@ -138,6 +138,10 @@ module ol_framework::gas_coin {
 
     struct LibraCoin has key {}
 
+    struct FinalSupply has key {
+      value: u64,
+    }
+
     struct MintCapStore has key {
         mint_cap: MintCapability<LibraCoin>,
     }
@@ -205,6 +209,23 @@ module ol_framework::gas_coin {
         system_addresses::assert_diem_framework(diem_framework);
         let MintCapStore { mint_cap } = move_from<MintCapStore>(@diem_framework);
         coin::destroy_mint_cap(mint_cap);
+    }
+
+    // at genesis we need to init the final supply
+    // done at genesis_migration
+    public(friend) fun genesis_set_final_supply(diem_framework: &signer,
+    final_supply: u64) {
+      if (!exists<FinalSupply>(@ol_framework)) {
+        move_to(diem_framework, FinalSupply {
+          value: final_supply
+        });
+      }
+    }
+
+    #[view]
+    /// get the original final supply from genesis
+    public fun get_final_supply(): u64 acquires FinalSupply{
+      borrow_global<FinalSupply>(@ol_framework).value
     }
 
 
