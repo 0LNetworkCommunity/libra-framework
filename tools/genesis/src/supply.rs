@@ -66,7 +66,8 @@ impl Supply {
         let target_future_uses = settings.target_future_uses * self.total;
         let remaining_to_fund = target_future_uses - self.donor_directed;
         self.escrow_pct = remaining_to_fund / self.slow_validator_locked;
-        self.epoch_reward_base_case = remaining_to_fund / (365 * 100 * settings.years_escrow) as f64; // one hundred validators over 7 years every day. Note: discussed elsewhere: if this is an over estimate, the capital gets returned to community by the daily excess burn.
+        self.epoch_reward_base_case =
+            remaining_to_fund / (365 * 100 * settings.years_escrow) as f64; // one hundred validators over 7 years every day. Note: discussed elsewhere: if this is an over estimate, the capital gets returned to community by the daily excess burn.
 
         Ok(())
     }

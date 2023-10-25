@@ -134,11 +134,11 @@ pub fn encode_genesis_change_set(
 
     if let Some(r) = recovery {
         if !r.is_empty() {
-            let mut supply = populate_supply_stats_from_legacy(&r, &supply_settings.map_dd_to_slow)
+            let mut supply = populate_supply_stats_from_legacy(r, &supply_settings.map_dd_to_slow)
                 .expect("could not parse supply from legacy file");
 
             supply
-                .set_ratios_from_settings(&supply_settings)
+                .set_ratios_from_settings(supply_settings)
                 .expect("could not set supply ratios from settings");
 
             crate::genesis_functions::genesis_migrate_all_users(&mut session, r, &supply)
