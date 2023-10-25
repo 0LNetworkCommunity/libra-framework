@@ -150,6 +150,9 @@ module ol_framework::mock {
       genesis::setup();
       genesis::test_end_genesis(root);
 
+      let mint_cap = init_coin_impl(root);
+      gas_coin::restore_mint_cap(root, mint_cap);
+
       assert!(!chain_status::is_genesis(), 0);
     }
 
@@ -159,15 +162,20 @@ module ol_framework::mock {
 
       let mint_cap = init_coin_impl(root);
 
-      coin::destroy_mint_cap(mint_cap);
+      gas_coin::restore_mint_cap(root, mint_cap);
     }
 
     #[test_only]
-    public fun ol_initialize_coin_and_fund_vals(root: &signer, amount: u64, drip: bool) {
+    public fun ol_initialize_coin_and_fund_vals(root: &signer, amount: u64,
+    drip: bool) {
       system_addresses::assert_ol(root);
 
 
-      let mint_cap = init_coin_impl(root);
+      let mint_cap = if (coin::is_coin_initialized<GasCoin>()) {
+         gas_coin::extract_mint_cap(root)
+      } else {
+        init_coin_impl(root)
+      };
 
       let vals = stake::get_current_validators();
       let i = 0;
@@ -203,6 +211,7 @@ module ol_framework::mock {
       transaction_fee::vm_pay_fee(root, @ol_framework, tx_fees);
       let supply_pre = gas_coin::supply();
       assert!(supply_pre == initial_fees, 666);
+      gas_coin::test_set_final_supply(root, initial_fees);
 
       mint_cap
     }
@@ -290,7 +299,7 @@ module ol_framework::mock {
   public fun meta_epoch(root: signer) {
     ol_test_genesis(&root);
     musical_chairs::initialize(&root, 10);
-    ol_initialize_coin(&root);
+    // ol_initialize_coin(&root);
     let epoch = reconfiguration::current_epoch();
     trigger_epoch(&root);
     let new_epoch = reconfiguration::current_epoch();

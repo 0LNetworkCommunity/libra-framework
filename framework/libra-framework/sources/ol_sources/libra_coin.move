@@ -128,8 +128,6 @@ module ol_framework::gas_coin {
 
     friend diem_framework::genesis;
     friend ol_framework::genesis_migration;
-    #[test_only]
-    friend ol_framework::mock;
 
     /// Account does not have mint capability
     const ENO_CAPABILITIES: u64 = 1;
@@ -141,7 +139,7 @@ module ol_framework::gas_coin {
     struct LibraCoin has key {}
 
     struct FinalSupply has key {
-      value: u64,
+        value: u64,
     }
 
     struct MintCapStore has key {
@@ -217,6 +215,22 @@ module ol_framework::gas_coin {
     // done at genesis_migration
     public(friend) fun genesis_set_final_supply(diem_framework: &signer,
     final_supply: u64) acquires FinalSupply {
+      system_addresses::assert_ol(diem_framework);
+
+      if (!exists<FinalSupply>(@ol_framework)) {
+        move_to(diem_framework, FinalSupply {
+          value: final_supply
+        });
+      } else {
+        let state = borrow_global_mut<FinalSupply>(@ol_framework);
+        state.value = final_supply
+      }
+    }
+    #[test_only]
+    public fun test_set_final_supply(diem_framework: &signer,
+    final_supply: u64) acquires FinalSupply {
+      system_addresses::assert_ol(diem_framework);
+
       if (!exists<FinalSupply>(@ol_framework)) {
         move_to(diem_framework, FinalSupply {
           value: final_supply
@@ -253,13 +267,13 @@ module ol_framework::gas_coin {
     }
 
     #[test_only]
-    public fun borrow_mint_cap(diem_framework: &signer):
+    public fun extract_mint_cap(diem_framework: &signer):
     MintCapability<LibraCoin> acquires MintCapStore {
         system_addresses::assert_diem_framework(diem_framework);
-        // move_to(diem_framework, MintCapStore { mint_cap });
-        let state = borrow_global_mut<MintCapStore>(@diem_framework);
-        state.mint_cap
+        let MintCapStore { mint_cap } = move_from<MintCapStore>(@diem_framework);
+        mint_cap
     }
+
     /// FOR TESTS ONLY
     /// The `core addresses` sudo account is used to execute system transactions for testing
     /// Can only be called during genesis for tests to grant mint capability to diem framework and core resources

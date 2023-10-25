@@ -3,7 +3,6 @@ module ol_framework::ol_account {
     use diem_framework::coin::{Self, Coin};
     use diem_framework::event::{EventHandle, emit_event};
     use diem_framework::system_addresses;
-    // use diem_framework::chain_status;
     use std::error;
     use std::signer;
     use std::option::{Self, Option};
@@ -350,7 +349,8 @@ module ol_framework::ol_account {
     if (original_supply > current_supply) {
       let burn_in_period = original_supply - current_supply;
 
-      if (burn_in_period> 0 && burn_in_period > state.prev_balance ) {
+      if (burn_in_period > 0 && burn_in_period > state.prev_balance &&
+      state.prev_balance > 0 ) {
         let attributed_burn = burn_in_period / state.prev_balance;
         // attributed burn may be zero because of rounding effects
         // in that case we should skip the updating altogether and
@@ -456,12 +456,14 @@ module ol_framework::ol_account {
     struct FakeCoin {}
 
     #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
-    public fun test_transfer(root: &signer, alice: &signer, core: &signer)
+    public fun test_transfer_ol(root: &signer, alice: &signer, core: &signer)
     acquires BurnTracker {
         let bob = from_bcs::to_address(x"0000000000000000000000000000000000000000000000000000000000000b0b");
         let carol = from_bcs::to_address(x"00000000000000000000000000000000000000000000000000000000000ca501");
 
-        let (burn_cap, mint_cap) = ol_framework::gas_coin::initialize_for_test(core);
+        let (burn_cap, mint_cap) =
+        ol_framework::gas_coin::initialize_for_test(core);
+        gas_coin::test_set_final_supply(root, 1000); // dummy to prevent fail
         create_account(root, signer::address_of(alice));
         create_account(root, bob);
         create_account(root, carol);
@@ -478,13 +480,15 @@ module ol_framework::ol_account {
     }
 
     #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
-    public fun test_transfer_to_resource_account(root: &signer, alice: &signer,
+    public fun test_transfer_to_resource_account_ol(root: &signer, alice: &signer,
     core: &signer) acquires BurnTracker{
         let (resource_account, _) = ol_create_resource_account(alice, vector[]);
         let resource_acc_addr = signer::address_of(&resource_account);
-        // assert!(!coin::is_account_registered<GasCoin>(resource_acc_addr), 0);
 
-        let (burn_cap, mint_cap) = ol_framework::gas_coin::initialize_for_test(core);
+        let (burn_cap, mint_cap) =
+        ol_framework::gas_coin::initialize_for_test(core);
+        gas_coin::test_set_final_supply(root, 1000); // dummy to prevent fail
+
         create_account(root, signer::address_of(alice));
         coin::deposit(signer::address_of(alice), coin::mint(10000, &mint_cap));
         transfer(alice, resource_acc_addr, 500);
@@ -497,7 +501,10 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, from = @0x123, core = @0x1, recipient_1 = @0x124, recipient_2 = @0x125)]
     public fun test_batch_transfer(root: &signer, from: &signer, core: &signer,
     recipient_1: &signer, recipient_2: &signer) acquires BurnTracker{
-        let (burn_cap, mint_cap) = diem_framework::gas_coin::initialize_for_test(core);
+        let (burn_cap, mint_cap) =
+        diem_framework::gas_coin::initialize_for_test(core);
+        gas_coin::test_set_final_supply(root, 1000); // dummy to prevent fail
+
         create_account(root, signer::address_of(from));
         let recipient_1_addr = signer::address_of(recipient_1);
         let recipient_2_addr = signer::address_of(recipient_2);
@@ -570,6 +577,11 @@ module ol_framework::ol_account {
     public fun test_set_allow_direct_coin_transfers(root: &signer, user:
     &signer) acquires DirectTransferConfig {
         let addr = signer::address_of(user);
+        let (b, m) = gas_coin::initialize_for_test(root);
+        coin::destroy_burn_cap(b);
+        coin::destroy_mint_cap(m);
+        gas_coin::test_set_final_supply(root, 1000); // dummy to prevent fail
+
         create_account(root, addr);
         set_allow_direct_coin_transfers(user, true);
         assert!(can_receive_direct_coin_transfers(addr), 0);
@@ -578,51 +590,4 @@ module ol_framework::ol_account {
         set_allow_direct_coin_transfers(user, true);
         assert!(can_receive_direct_coin_transfers(addr), 2);
     }
-
-    // #[test(root = @ol_framework, from = @0x1, to = @0x12)]
-    // public fun test_direct_coin_transfers_with_explicit_direct_coin_transfer_config(
-    //     root: &signer, from: &signer, to: &signer) acquires DirectTransferConfig {
-    //     let (burn_cap, freeze_cap, mint_cap) = coin::initialize<FakeCoin>(
-    //         from,
-    //         utf8(b"FC"),
-    //         utf8(b"FC"),
-    //         10,
-    //         true,
-    //     );
-    //     create_account(root, signer::address_of(from));
-    //     create_account(root, signer::address_of(to));
-    //     set_allow_direct_coin_transfers(from, true);
-    //     deposit_coins(signer::address_of(from), coin::mint(1000, &mint_cap));
-    //     // Recipient account did not explicit register for the coin.
-    //     let to_addr = signer::address_of(to);
-    //     transfer_coins<FakeCoin>(from, to_addr, 500);
-    //     assert!(coin::balance<FakeCoin>(to_addr) == 500, 0);
-
-    //     coin::destroy_burn_cap(burn_cap);
-    //     coin::destroy_mint_cap(mint_cap);
-    //     coin::destroy_freeze_cap(freeze_cap);
-    // }
-
-    // #[test(root = @ol_framework, from = @0x1, to = @0x12)]
-    // #[expected_failure(abort_code = 0x50003, location = Self)]
-    // public fun test_direct_coin_transfers_fail_if_recipient_opted_out(
-    //     root: &signer, from: &signer, to: &signer) acquires DirectTransferConfig {
-    //     let (burn_cap, freeze_cap, mint_cap) = coin::initialize<FakeCoin>(
-    //         from,
-    //         utf8(b"FC"),
-    //         utf8(b"FC"),
-    //         10,
-    //         true,
-    //     );
-    //     create_account(root, signer::address_of(from));
-    //     create_account(root, signer::address_of(to));
-    //     set_allow_direct_coin_transfers(from, false);
-    //     deposit_coins(signer::address_of(from), coin::mint(1000, &mint_cap));
-    //     // This should fail as the to account has explicitly opted out of receiving arbitrary coins.
-    //     transfer_coins<FakeCoin>(from, signer::address_of(to), 500);
-
-    //     coin::destroy_burn_cap(burn_cap);
-    //     coin::destroy_mint_cap(mint_cap);
-    //     coin::destroy_freeze_cap(freeze_cap);
-    // }
 }
