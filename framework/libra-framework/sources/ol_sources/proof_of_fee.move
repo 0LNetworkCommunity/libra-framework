@@ -86,6 +86,18 @@ module ol_framework::proof_of_fee {
     }
   }
 
+  // on a migration genesis for mainnet the genesis reward needs to be calculated
+  // from supply data.
+  public fun genesis_migrate_reward(vm: &signer, nominal_reward: u64) acquires
+  ConsensusReward {
+    if (signer::address_of(vm) != @ol_framework) return;
+
+    let state = borrow_global_mut<ConsensusReward>(@ol_framework);
+    state.nominal_reward = nominal_reward;
+    state.net_reward = nominal_reward; // just for info purposes. It gets calculated
+    // on first epoch change.
+  }
+
   public fun init(account_sig: &signer) {
 
     let acc = signer::address_of(account_sig);

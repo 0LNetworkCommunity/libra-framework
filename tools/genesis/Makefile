@@ -14,6 +14,10 @@ RECOVERY_FILE = sample_end_user_single
 # RECOVERY_FILE = sample_rotated_auth
 endif
 
+ifndef YEARS
+YEARS = 7
+endif
+
 ifndef CHAIN
 CHAIN = testing
 endif
@@ -34,6 +38,7 @@ genesis:
 	--json-legacy ./tests/fixtures/${RECOVERY_FILE}.json \
 	--target-supply ${TARGET_SUPPLY} \
 	--target-future-uses ${FUTURE_USES} \
+	--years-escrow ${YEARS} \
 	--map-dd-to-slow 3A6C51A0B786D644590E8A21591FA8E2 \
 	--map-dd-to-slow  2B0E8325DEA5BE93D856CFDE2D0CBA12
 
@@ -45,6 +50,7 @@ wizard:
 	--json-legacy ./tests/fixtures/${RECOVERY_FILE}.json \
 	--target-supply ${TARGET_SUPPLY} \
 	--target-future-uses ${FUTURE_USES} \
+	--years-escrow ${YEARS} \
 	--map-dd-to-slow 3A6C51A0B786D644590E8A21591FA8E2 \
 	--map-dd-to-slow  2B0E8325DEA5BE93D856CFDE2D0CBA12
 
@@ -84,5 +90,6 @@ test-genesis:
 	-i ${CAROL_IP} \
 	--target-supply ${TARGET_SUPPLY} \
 	--target-future-uses ${FUTURE_USES} \
+	--years-escrow ${YEARS} \
 	--map-dd-to-slow 3A6C51A0B786D644590E8A21591FA8E2 \
 	--map-dd-to-slow 2B0E8325DEA5BE93D856CFDE2D0CBA12
