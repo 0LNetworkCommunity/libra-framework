@@ -26,8 +26,8 @@ use diem_vm_genesis::{
 use libra_types::{legacy_types::legacy_recovery::LegacyRecovery, ol_progress::OLProgress};
 
 use crate::{
-    genesis_functions::{rounding_mint, set_final_supply},
-    supply::SupplySettings,
+    genesis_functions::{rounding_mint, set_validator_baseline_reward, set_final_supply},
+    supply::{populate_supply_stats_from_legacy, SupplySettings},
 };
 
 /// set the genesis parameters
@@ -138,8 +138,18 @@ pub fn encode_genesis_change_set(
 
     if let Some(r) = recovery {
         if !r.is_empty() {
-            crate::genesis_functions::genesis_migrate_all_users(&mut session, r, supply_settings)
+            let mut supply = populate_supply_stats_from_legacy(r, &supply_settings.map_dd_to_slow)
+                .expect("could not parse supply from legacy file");
+
+            supply
+                .set_ratios_from_settings(supply_settings)
+                .expect("could not set supply ratios from settings");
+
+            crate::genesis_functions::genesis_migrate_all_users(&mut session, r, &supply)
                 .expect("could not migrate users");
+
+            // need to set the baseline reward based on supply settings
+            set_validator_baseline_reward(&mut session, supply.epoch_reward_base_case as u64);
         }
     }
     OLProgress::complete("user migration complete");

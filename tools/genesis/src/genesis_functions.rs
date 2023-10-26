@@ -1,5 +1,5 @@
 //! ol functions to run at genesis e.g. migration.
-use crate::supply::{populate_supply_stats_from_legacy, SupplySettings};
+use crate::supply::{Supply, SupplySettings};
 use anyhow::Context;
 use diem_types::account_config::CORE_CODE_ADDRESS;
 use diem_vm::move_vm_ext::SessionExt;
@@ -15,13 +15,8 @@ use move_core_types::value::{serialize_values, MoveValue};
 pub fn genesis_migrate_all_users(
     session: &mut SessionExt,
     user_recovery: &[LegacyRecovery],
-    supply_settings: &SupplySettings,
+    supply: &Supply,
 ) -> anyhow::Result<()> {
-    let mut supply =
-        populate_supply_stats_from_legacy(user_recovery, &supply_settings.map_dd_to_slow)?;
-
-    supply.set_ratios_from_settings(supply_settings)?;
-
     user_recovery
         .iter()
         .progress_with_style(OLProgress::bar())
@@ -179,7 +174,6 @@ pub fn genesis_migrate_infra_escrow(
     user_recovery: &LegacyRecovery,
     escrow_pct: f64,
 ) -> anyhow::Result<()> {
-    dbg!("infra");
     if user_recovery.account.is_none()
         || user_recovery.auth_key.is_none()
         || user_recovery.balance.is_none()
@@ -340,13 +334,17 @@ pub fn set_final_supply(session: &mut SessionExt, supply_settings: &SupplySettin
 //             MoveValue::Signer(AccountAddress::ZERO), // must be called by 0x0
 //             MoveValue::Address(v.owner_address),
 //         ]);
+pub fn set_validator_baseline_reward(session: &mut SessionExt, nominal_reward: u64) {
+    let serialized_values = serialize_values(&vec![
+        MoveValue::Signer(AccountAddress::ZERO), // must be called by 0x0
+        MoveValue::U64(nominal_reward),
+    ]);
 
-//         exec_function(
-//             session,
-//             "infra_escrow",
-//             "genesis_coin_validator",
-//             vec![],
-//             serialized_values,
-//         );
-//     });
-// }
+    exec_function(
+        session,
+        "proof_of_fee",
+        "genesis_migrate_reward",
+        vec![],
+        serialized_values,
+    );
+}
