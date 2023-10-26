@@ -179,7 +179,7 @@ module ol_framework::gas_coin {
     /// FOR TESTS ONLY
     /// Can only called during genesis to initialize the Diem coin.
     public(friend) fun initialize_for_core(diem_framework: &signer):
-    (BurnCapability<LibraCoin>, MintCapability<LibraCoin>) {
+    (BurnCapability<LibraCoin>, MintCapability<LibraCoin>) acquires FinalMint {
         system_addresses::assert_diem_framework(diem_framework);
 
         let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<LibraCoin>(
@@ -195,6 +195,9 @@ module ol_framework::gas_coin {
         move_to(diem_framework, MintCapStore { mint_cap });
 
         coin::destroy_freeze_cap(freeze_cap);
+
+        genesis_set_final_supply(diem_framework, 100); // TODO: set this number
+        // in testnets
 
         (burn_cap, mint_cap)
     }
@@ -254,7 +257,17 @@ module ol_framework::gas_coin {
     public fun supply(): u64 {
       let supply_opt = coin::supply<LibraCoin>();
       if (option::is_some(&supply_opt)) {
-        return (*option::borrow(&supply_opt) as u64)
+        let value = *option::borrow(&supply_opt);
+        if (value == 0) return 0u64;
+        return (value as u64)
+      };
+      0
+    }
+
+    public fun supply_128(): u128 {
+      let supply_opt = coin::supply<LibraCoin>();
+      if (option::is_some(&supply_opt)) {
+        return *option::borrow(&supply_opt)
       };
       0
     }
@@ -330,6 +343,9 @@ module ol_framework::gas_coin {
         let mint_cap = &borrow_global<MintCapStore>(account_addr).mint_cap;
         let coins_minted = coin::mint<LibraCoin>(amount, mint_cap);
         coin::deposit<LibraCoin>(dst_addr, coins_minted);
+
+        // TODO: update the final supply for tests
+        // genesis_set_final_supply(root, supply());
     }
 
     #[test_only]
