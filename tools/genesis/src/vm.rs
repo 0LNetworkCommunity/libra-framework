@@ -25,7 +25,10 @@ use diem_vm_genesis::{
 };
 use libra_types::{legacy_types::legacy_recovery::LegacyRecovery, ol_progress::OLProgress};
 
-use crate::{genesis_functions::{rounding_mint, set_final_supply}, supply::SupplySettings};
+use crate::{
+    genesis_functions::{rounding_mint, set_final_supply},
+    supply::SupplySettings,
+};
 
 /// set the genesis parameters
 /// NOTE: many of the parameters are ignored in libra_framework
