@@ -63,6 +63,7 @@ module ol_framework::test_turnout_tally {
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
     fun tally_vote_retract(root: &signer, alice: &signer, bob: &signer) {
       let _vals = mock::genesis_n_vals(root, 1);
+      // mock::ol_initialize_coin_and_fund_vals(root, 100, true);
       turnout_tally_demo::init(alice);
       // ZERO HERE MEANS IT NEVER EXPIRES
       let uid = turnout_tally_demo::propose_ballot_by_owner(alice, 100, 0);
@@ -101,7 +102,7 @@ module ol_framework::test_turnout_tally {
 
     fun tally_vote_expired(root: &signer, alice: &signer, bob: &signer) {
       let _vals = mock::genesis_n_vals(root, 1);
-      mock::ol_initialize_coin(root);
+      // mock::ol_initialize_coin(root);
       // for this test let's start at epoch 1
       mock::trigger_epoch(root);
 
@@ -127,7 +128,7 @@ module ol_framework::test_turnout_tally {
       // The election will close before then once threshold is reached.
 
       let _vals = mock::genesis_n_vals(root, 1);
-      mock::ol_initialize_coin(root);
+      // mock::ol_initialize_coin(root);
       // for this test let's start at epoch 1
       mock::trigger_epoch(root);
 
@@ -162,7 +163,7 @@ module ol_framework::test_turnout_tally {
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
     fun tally_never_expires(root: &signer, alice: &signer, bob: &signer) {
       let _vals = mock::genesis_n_vals(root, 1);
-      mock::ol_initialize_coin(root);
+      // mock::ol_initialize_coin(root);
 
       turnout_tally_demo::init(alice);
 

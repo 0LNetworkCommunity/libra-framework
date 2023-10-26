@@ -120,6 +120,7 @@ module ol_framework::gas_coin {
     use std::signer;
     use std::vector;
     use std::option::{Self, Option};
+    // use diem_std::debug::print;
 
     use diem_framework::coin::{Self, MintCapability, BurnCapability};
     use diem_framework::system_addresses;
@@ -129,14 +130,22 @@ module ol_framework::gas_coin {
     friend diem_framework::genesis;
     friend ol_framework::genesis_migration;
 
+    const MAX_U64: u128 = 18446744073709551615;
+
     /// Account does not have mint capability
     const ENO_CAPABILITIES: u64 = 1;
     /// Mint capability has already been delegated to this specified address
     const EALREADY_DELEGATED: u64 = 2;
     /// Cannot find delegation of mint capability to this account
     const EDELEGATION_NOT_FOUND: u64 = 3;
+    /// Supply somehow above MAX_U64
+    const ESUPPLY_OVERFLOW: u64 = 4;
 
     struct LibraCoin has key {}
+
+    struct FinalMint has key {
+        value: u64,
+    }
 
     struct MintCapStore has key {
         mint_cap: MintCapability<LibraCoin>,
@@ -170,12 +179,12 @@ module ol_framework::gas_coin {
 
         coin::destroy_freeze_cap(freeze_cap);
         coin::destroy_burn_cap(burn_cap);
-        // (burn_cap, mint_cap)
     }
 
     /// FOR TESTS ONLY
     /// Can only called during genesis to initialize the Diem coin.
-    public(friend) fun initialize_for_core(diem_framework: &signer): (BurnCapability<LibraCoin>, MintCapability<LibraCoin>)  {
+    public(friend) fun initialize_for_core(diem_framework: &signer):
+    (BurnCapability<LibraCoin>, MintCapability<LibraCoin>) acquires FinalMint {
         system_addresses::assert_diem_framework(diem_framework);
 
         let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<LibraCoin>(
@@ -192,6 +201,9 @@ module ol_framework::gas_coin {
 
         coin::destroy_freeze_cap(freeze_cap);
 
+        genesis_set_final_supply(diem_framework, 100); // TODO: set this number
+        // in testnets
+
         (burn_cap, mint_cap)
     }
 
@@ -207,6 +219,42 @@ module ol_framework::gas_coin {
         coin::destroy_mint_cap(mint_cap);
     }
 
+    // at genesis we need to init the final supply
+    // done at genesis_migration
+    fun genesis_set_final_supply(diem_framework: &signer,
+    final_supply: u64) acquires FinalMint {
+      system_addresses::assert_ol(diem_framework);
+
+      if (!exists<FinalMint>(@ol_framework)) {
+        move_to(diem_framework, FinalMint {
+          value: final_supply
+        });
+      } else {
+        let state = borrow_global_mut<FinalMint>(@ol_framework);
+        state.value = final_supply
+      }
+    }
+    #[test_only]
+    public fun test_set_final_supply(diem_framework: &signer,
+    final_supply: u64) acquires FinalMint {
+      system_addresses::assert_ol(diem_framework);
+
+      if (!exists<FinalMint>(@ol_framework)) {
+        move_to(diem_framework, FinalMint {
+          value: final_supply
+        });
+      } else {
+        let state = borrow_global_mut<FinalMint>(@ol_framework);
+        state.value = final_supply
+      }
+    }
+
+    #[view]
+    /// get the original final supply from genesis
+    public fun get_final_supply(): u64 acquires FinalMint{
+      borrow_global<FinalMint>(@ol_framework).value
+    }
+
 
     #[view]
     /// get the gas coin supply. Helper which wraps coin::supply and extracts option type
@@ -214,7 +262,18 @@ module ol_framework::gas_coin {
     public fun supply(): u64 {
       let supply_opt = coin::supply<LibraCoin>();
       if (option::is_some(&supply_opt)) {
-        return (*option::borrow(&supply_opt) as u64)
+        let value = *option::borrow(&supply_opt);
+        assert!(value <= MAX_U64, ESUPPLY_OVERFLOW);
+        return (value as u64)
+      };
+      0
+    }
+    #[view]
+    /// debugging view
+    public fun supply_128(): u128 {
+      let supply_opt = coin::supply<LibraCoin>();
+      if (option::is_some(&supply_opt)) {
+        return *option::borrow(&supply_opt)
       };
       0
     }
@@ -224,6 +283,14 @@ module ol_framework::gas_coin {
     public fun restore_mint_cap(diem_framework: &signer, mint_cap: MintCapability<LibraCoin>) {
         system_addresses::assert_diem_framework(diem_framework);
         move_to(diem_framework, MintCapStore { mint_cap });
+    }
+
+    #[test_only]
+    public fun extract_mint_cap(diem_framework: &signer):
+    MintCapability<LibraCoin> acquires MintCapStore {
+        system_addresses::assert_diem_framework(diem_framework);
+        let MintCapStore { mint_cap } = move_from<MintCapStore>(@diem_framework);
+        mint_cap
     }
 
     /// FOR TESTS ONLY
@@ -241,7 +308,8 @@ module ol_framework::gas_coin {
         coin::register<LibraCoin>(core_resources);
 
         let coins = coin::mint<LibraCoin>(
-            18446744073709551615,
+            1000000 * 1000000, // core resources can have 1M coins, MAX_U64 was
+            // causing arthmetic errors calling supply() on downcast
             &mint_cap,
         );
         coin::deposit<LibraCoin>(signer::address_of(core_resources), coins);
@@ -271,6 +339,7 @@ module ol_framework::gas_coin {
         dst_addr: address,
         amount: u64,
     ) acquires MintCapStore {
+        let _s = supply(); // check we didn't overflow supply
 
         let account_addr = signer::address_of(root);
 
@@ -282,6 +351,9 @@ module ol_framework::gas_coin {
         let mint_cap = &borrow_global<MintCapStore>(account_addr).mint_cap;
         let coins_minted = coin::mint<LibraCoin>(amount, mint_cap);
         coin::deposit<LibraCoin>(dst_addr, coins_minted);
+
+        // TODO: update the final supply for tests
+        // genesis_set_final_supply(root, supply());
     }
 
     #[test_only]

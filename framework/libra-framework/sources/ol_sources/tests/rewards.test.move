@@ -1,26 +1,15 @@
 #[test_only]
 module ol_framework::test_rewards {
-  // #[test_only]
-  // use std::vector;
   #[test_only]
   use ol_framework::rewards;
-  // #[test_only]
-  // use ol_framework::ol_account;
   #[test_only]
   use ol_framework::gas_coin::{Self, LibraCoin as GasCoin};
   #[test_only]
   use diem_framework::coin;
   #[test_only]
   use ol_framework::mock;
-
-  // #[test_only]
-  // use ol_framework::gas_coin::LibraCoin as GasCoin;
   #[test_only]
   use diem_framework::stake;
-
-
-  // #[test_only]
-  // use diem_std::debug::print;
 
   #[test(root = @ol_framework)]
   fun test_pay_reward_single(root: signer) {
@@ -28,11 +17,12 @@ module ol_framework::test_rewards {
     let alice = @0x1000a;
 
     mock::genesis_n_vals(&root, 1);
+    let mint_cap = gas_coin::extract_mint_cap(&root);
+
     let uid_before = stake::get_reward_event_guid(alice);
 
-    let (burn_cap, mint_cap) = gas_coin::initialize_for_test_without_aggregator_factory(&root);
     let new_coin = coin::test_mint(10000, &mint_cap);
-    coin::destroy_burn_cap(burn_cap);
+
     coin::destroy_mint_cap(mint_cap);
 
     rewards::test_helper_pay_reward(&root, alice, new_coin, 1);
@@ -50,12 +40,11 @@ module ol_framework::test_rewards {
     let dave = @0x1000d;
 
     let vals = mock::genesis_n_vals(root, 4);
+    let mint_cap = gas_coin::extract_mint_cap(root);
     let uid_before = stake::get_reward_event_guid(dave);
     assert!(uid_before == 0, 7357000);
-
-    let (burn_cap, mint_cap) = gas_coin::initialize_for_test_without_aggregator_factory(root);
     let new_coin = coin::test_mint(10000, &mint_cap);
-    coin::destroy_burn_cap(burn_cap);
+
     coin::destroy_mint_cap(mint_cap);
 
     rewards::test_process_recipients(root, vals, 1000, &mut new_coin, 1);

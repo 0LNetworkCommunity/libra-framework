@@ -24,11 +24,13 @@ module ol_framework::mock {
   use ol_framework::musical_chairs;
   use ol_framework::globals;
   use diem_framework::block;
-  // use diem_framework::chain_status;
-  use diem_std::debug::print;
+
+  // use diem_std::debug::print;
 
   const ENO_GENESIS_END_MARKER: u64 = 1;
-  const EDID_NOT_ADVANCE_EPOCH: u64 = 1;
+  const EDID_NOT_ADVANCE_EPOCH: u64 = 2;
+  /// coin supply does not match expected
+  const ESUPPLY_MISMATCH: u64 = 3;
 
   #[test_only]
   public fun reset_val_perf_one(vm: &signer, addr: address) {
@@ -150,6 +152,9 @@ module ol_framework::mock {
       genesis::setup();
       genesis::test_end_genesis(root);
 
+      let mint_cap = init_coin_impl(root);
+      gas_coin::restore_mint_cap(root, mint_cap);
+
       assert!(!chain_status::is_genesis(), 0);
     }
 
@@ -159,15 +164,20 @@ module ol_framework::mock {
 
       let mint_cap = init_coin_impl(root);
 
-      coin::destroy_mint_cap(mint_cap);
+      gas_coin::restore_mint_cap(root, mint_cap);
     }
 
     #[test_only]
-    public fun ol_initialize_coin_and_fund_vals(root: &signer, amount: u64, drip: bool) {
+    public fun ol_initialize_coin_and_fund_vals(root: &signer, amount: u64,
+    drip: bool) {
       system_addresses::assert_ol(root);
 
 
-      let mint_cap = init_coin_impl(root);
+      let mint_cap = if (coin::is_coin_initialized<GasCoin>()) {
+         gas_coin::extract_mint_cap(root)
+      } else {
+        init_coin_impl(root)
+      };
 
       let vals = stake::get_current_validators();
       let i = 0;
@@ -195,14 +205,14 @@ module ol_framework::mock {
       let (burn_cap, mint_cap) = gas_coin::initialize_for_test_without_aggregator_factory(root);
       coin::destroy_burn_cap(burn_cap);
 
-
       transaction_fee::initialize_fee_collection_and_distribution(root, 0);
 
       let initial_fees = 1000000 * 100; // coin scaling * 100 coins
       let tx_fees = coin::test_mint(initial_fees, &mint_cap);
       transaction_fee::vm_pay_fee(root, @ol_framework, tx_fees);
       let supply_pre = gas_coin::supply();
-      assert!(supply_pre == initial_fees, 666);
+      assert!(supply_pre == initial_fees, ESUPPLY_MISMATCH);
+      gas_coin::test_set_final_supply(root, initial_fees);
 
       mint_cap
     }
@@ -290,7 +300,7 @@ module ol_framework::mock {
   public fun meta_epoch(root: signer) {
     ol_test_genesis(&root);
     musical_chairs::initialize(&root, 10);
-    ol_initialize_coin(&root);
+    // ol_initialize_coin(&root);
     let epoch = reconfiguration::current_epoch();
     trigger_epoch(&root);
     let new_epoch = reconfiguration::current_epoch();
@@ -302,7 +312,6 @@ module ol_framework::mock {
     // genesis();
 
     let set = genesis_n_vals(&root, 4);
-    print(&set);
     assert!(vector::length(&set) == 4, 7357001);
 
     let addr = vector::borrow(&set, 0);
@@ -353,5 +362,4 @@ module ol_framework::mock {
     assert!(entry_fee == 999, 73570003);
     assert!(median_bid == 3, 73570004);
   }
-
 }

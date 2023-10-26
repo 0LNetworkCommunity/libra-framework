@@ -3,7 +3,6 @@ module ol_framework::test_migration {
   use ol_framework::genesis_migration;
   use ol_framework::infra_escrow;
   use ol_framework::slow_wallet;
-  use diem_framework::genesis;
   use std::fixed_point32;
   use ol_framework::mock;
   use diem_framework::coin;
@@ -11,21 +10,17 @@ module ol_framework::test_migration {
   use std::signer;
   use std::bcs;
 
-  // use diem_std::debug::print;
-
   #[test(root = @ol_framework, user = @0xaaaaaa)]
   fun test_migration_balance_end_user(root: signer, user: signer) {
     let temp_auth_key = bcs::to_bytes(&signer::address_of(&user));
 
     mock::genesis_n_vals(&root, 4);
-    genesis::test_initalize_coins(&root);
 
     genesis_migration::migrate_legacy_user(
       &root,
       &user,
       temp_auth_key,
       20000,
-      // 5,
     )
   }
 
@@ -34,10 +29,7 @@ module ol_framework::test_migration {
   fun test_migration_balance_validators(root: signer, vm: signer, marlon_rando: signer) {
 
     let _vals = mock::genesis_n_vals(&root, 4);
-    // mock::ol_initialize_coin_and_fund_vals(&root, 1000000);
-    genesis::test_initalize_coins(&root);
 
-    // let alice = vector::borrow(&vals, 0);
     let addr = signer::address_of(&marlon_rando);
     let temp_auth_key =  bcs::to_bytes(&addr);
 
@@ -49,9 +41,6 @@ module ol_framework::test_migration {
       &marlon_rando,
       temp_auth_key,
       init_balance,
-      // true, // is_validator
-      // scale_integer * 1000000,// of 1m
-      // escrow_pct * 10000, // of 1m
     );
 
     let user_balance = coin::balance<GasCoin>(addr);

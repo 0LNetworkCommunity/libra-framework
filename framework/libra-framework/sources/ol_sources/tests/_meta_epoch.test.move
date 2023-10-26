@@ -52,7 +52,7 @@ module ol_framework::test_meta {
   // #[test(root = @ol_framework)]
   // fun test_reconfigure_mock_trigger(root: signer) {
   //   mock::ol_test_genesis(&root);
-  //   mock::ol_initialize_coin(&root);
+  //   // mock::ol_initialize_coin(&root);
   //   let a = reconfiguration::get_current_epoch();
 
   //   mock::trigger_epoch(&root);

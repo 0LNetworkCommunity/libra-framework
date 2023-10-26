@@ -23,7 +23,7 @@ module ol_framework::test_multi_action {
 
 
     let vals = mock::genesis_n_vals(root, 2);
-    mock::ol_initialize_coin(root);
+    // mock::ol_initialize_coin(root);
 
 
     let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
@@ -40,7 +40,7 @@ module ol_framework::test_multi_action {
   fun propose_action(root: &signer, dave: &signer, alice: &signer) {
 
     let vals = mock::genesis_n_vals(root, 2);
-    mock::ol_initialize_coin(root);
+    // mock::ol_initialize_coin(root);
 
     let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
@@ -64,7 +64,7 @@ module ol_framework::test_multi_action {
   fun propose_action_prevent_duplicated(root: &signer, dave: &signer, alice: &signer, bob: &signer) {
     // Scenario: alice and bob are authorities. They try to send the same proposal
     let vals = mock::genesis_n_vals(root, 2);
-    mock::ol_initialize_coin(root);
+    // mock::ol_initialize_coin(root);
 
     let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
