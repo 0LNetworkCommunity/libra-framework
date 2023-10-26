@@ -1,3 +1,8 @@
+[env]
+# set coin name for diem dependencies
+RUST_DIEM_COIN_MODULE = "gas_coin"
+RUST_DIEM_COIN_NAME = "LibraCoin"
+
 [target.'cfg(target_os = "linux")']
 # Dramatically increases the link performance for the eventbus
 rustflags = ["-C", "link-arg=-fuse-ld=lld"] # sudo apt -y install lld
