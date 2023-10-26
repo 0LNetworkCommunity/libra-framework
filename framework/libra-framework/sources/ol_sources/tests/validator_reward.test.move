@@ -18,7 +18,7 @@ module ol_framework::test_reconfiguration {
   #[test(root = @ol_framework)]
   fun reconfig_reward_happy_case(root: signer) {
       let vals = mock::genesis_n_vals(&root, 5);
-      mock::ol_initialize_coin(&root);
+      // mock::ol_initialize_coin(&root);
       mock::pof_default();
       assert!(vector::length(&vals) == 5, 7357001);
       let vals = stake::get_current_validators();
@@ -49,7 +49,7 @@ module ol_framework::test_reconfiguration {
   #[test(root = @ol_framework)]
   fun drop_non_performing(root: signer) {
       let _vals = mock::genesis_n_vals(&root, 5);
-      mock::ol_initialize_coin(&root);
+      // mock::ol_initialize_coin(&root);
       mock::pof_default();
       assert!(coin::balance<GasCoin>(@0x1000a) == 0, 7357000);
 
@@ -97,7 +97,7 @@ module ol_framework::test_reconfiguration {
   #[test(root = @ol_framework)]
   fun reconfig_failover(root: signer) {
       let vals = mock::genesis_n_vals(&root, 5);
-      mock::ol_initialize_coin(&root);
+      // mock::ol_initialize_coin(&root);
 
       mock::pof_default();
 

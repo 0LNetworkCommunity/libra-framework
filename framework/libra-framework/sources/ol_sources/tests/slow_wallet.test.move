@@ -61,6 +61,9 @@ module ol_framework::test_slow_wallet {
 
   #[test(root = @ol_framework, alice = @0x123, bob = @0x456)]
   fun test_transfer_unlocked_happy(root: signer, alice: signer) {
+    mock::ol_test_genesis(&root);
+    let mint_cap = gas_coin::extract_mint_cap(&root);
+
     slow_wallet::initialize(&root);
 
 
@@ -73,9 +76,7 @@ module ol_framework::test_slow_wallet {
     assert!(slow_wallet::unlocked_amount(@0x123) == 0, 735701);
 
     // add some coins to alice
-    let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&root);
     ol_account::deposit_coins(@0x123, coin::test_mint(10000, &mint_cap));
-    coin::destroy_burn_cap(burn_cap);
     coin::destroy_mint_cap(mint_cap);
     // the transfer was of already unlocked coins, so they will post as unlocked on alice
     assert!(slow_wallet::unlocked_amount(@0x123) == 10000, 735703);
@@ -92,6 +93,8 @@ module ol_framework::test_slow_wallet {
   #[test(root = @ol_framework, alice = @0x123, bob = @0x456)]
   #[expected_failure(abort_code = 196614, location = 0x1::ol_account)]
   fun test_transfer_sad(root: signer, alice: signer) {
+    mock::ol_test_genesis(&root);
+    let mint_cap = gas_coin::extract_mint_cap(&root);
     slow_wallet::initialize(&root);
     ol_account::create_account(&root, @0x123);
     slow_wallet::set_slow(&alice);
@@ -99,9 +102,9 @@ module ol_framework::test_slow_wallet {
     assert!(slow_wallet::unlocked_amount(@0x123) == 0, 735701);
 
     // fund alice
-    let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&root);
+    // let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&root);
     ol_account::deposit_coins(@0x123, coin::test_mint(100, &mint_cap));
-    coin::destroy_burn_cap(burn_cap);
+    // coin::destroy_burn_cap(burn_cap);
     coin::destroy_mint_cap(mint_cap);
 
     // alice will transfer and create bob's account
@@ -120,7 +123,7 @@ module ol_framework::test_slow_wallet {
   // and a validator creation sets the users account to slow.
   fun slow_wallet_reconfigure (root: signer) {
     let set = mock::genesis_n_vals(&root, 4);
-    mock::ol_initialize_coin(&root);
+    // mock::ol_initialize_coin(&root);
     let a = vector::borrow(&set, 0);
     assert!(slow_wallet::unlocked_amount(*a) == 0, 735701);
     epoch_boundary::ol_reconfigure_for_test(&root, reconfiguration::get_current_epoch(), block::get_current_block_height())

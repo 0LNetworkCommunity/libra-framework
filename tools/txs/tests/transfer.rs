@@ -108,7 +108,7 @@ async fn smoke_transfer_estimate() {
         config_path: Some(d.path().to_owned().join("libra.yaml")),
         url: Some(s.api_endpoint.clone()),
         tx_profile: None,
-        tx_cost: Some(TxCost::default_baseline_cost()),
+        tx_cost: Some(TxCost::default_cheap_txs_cost()),
         estimate_only: true,
     };
 
