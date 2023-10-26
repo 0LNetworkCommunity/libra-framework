@@ -1,3 +1,4 @@
+use anyhow::Context;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 
 use libra_txs::submit_transaction::Sender;
@@ -25,7 +26,8 @@ async fn tower_newbie() -> anyhow::Result<()> {
     let mut s = Sender::from_app_cfg(&val_app_cfg, None).await?;
     let res = s
         .transfer(alice.child_0_owner.account, 10_000.0, false)
-        .await?
+        .await
+        .context("could not create account")?
         .unwrap();
     assert!(res.info.status().is_success());
 

@@ -26,7 +26,7 @@ use diem_vm_genesis::{
 use libra_types::{legacy_types::legacy_recovery::LegacyRecovery, ol_progress::OLProgress};
 
 use crate::{
-    genesis_functions::{rounding_mint, set_validator_baseline_reward, set_final_supply},
+    genesis_functions::{rounding_mint, set_final_supply, set_validator_baseline_reward},
     supply::{populate_supply_stats_from_legacy, SupplySettings},
 };
 

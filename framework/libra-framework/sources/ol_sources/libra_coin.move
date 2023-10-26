@@ -120,6 +120,7 @@ module ol_framework::gas_coin {
     use std::signer;
     use std::vector;
     use std::option::{Self, Option};
+    // use diem_std::debug::print;
 
     use diem_framework::coin::{Self, MintCapability, BurnCapability};
     use diem_framework::system_addresses;
@@ -129,12 +130,16 @@ module ol_framework::gas_coin {
     friend diem_framework::genesis;
     friend ol_framework::genesis_migration;
 
+    const MAX_U64: u128 = 18446744073709551615;
+
     /// Account does not have mint capability
     const ENO_CAPABILITIES: u64 = 1;
     /// Mint capability has already been delegated to this specified address
     const EALREADY_DELEGATED: u64 = 2;
     /// Cannot find delegation of mint capability to this account
     const EDELEGATION_NOT_FOUND: u64 = 3;
+    /// Supply somehow above MAX_U64
+    const ESUPPLY_OVERFLOW: u64 = 4;
 
     struct LibraCoin has key {}
 
@@ -258,12 +263,13 @@ module ol_framework::gas_coin {
       let supply_opt = coin::supply<LibraCoin>();
       if (option::is_some(&supply_opt)) {
         let value = *option::borrow(&supply_opt);
-        if (value == 0) return 0u64;
+        assert!(value <= MAX_U64, ESUPPLY_OVERFLOW);
         return (value as u64)
       };
       0
     }
-
+    #[view]
+    /// debugging view
     public fun supply_128(): u128 {
       let supply_opt = coin::supply<LibraCoin>();
       if (option::is_some(&supply_opt)) {
@@ -302,7 +308,8 @@ module ol_framework::gas_coin {
         coin::register<LibraCoin>(core_resources);
 
         let coins = coin::mint<LibraCoin>(
-            18446744073709551615,
+            1000000 * 1000000, // core resources can have 1M coins, MAX_U64 was
+            // causing arthmetic errors calling supply() on downcast
             &mint_cap,
         );
         coin::deposit<LibraCoin>(signer::address_of(core_resources), coins);
@@ -332,6 +339,7 @@ module ol_framework::gas_coin {
         dst_addr: address,
         amount: u64,
     ) acquires MintCapStore {
+        let _s = supply(); // check we didn't overflow supply
 
         let account_addr = signer::address_of(root);
 

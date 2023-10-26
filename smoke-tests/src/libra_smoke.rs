@@ -73,9 +73,13 @@ impl LibraSmoke {
         // the genesis does NOT mint by default to genesis validators
         // 10,000 coins with 6 decimals precision
         let mut pub_info = swarm.diem_public_info();
-        helpers::mint_libra(&mut pub_info, addr, 100_000_000_000).await.context("could not mint to account")?;
+        helpers::mint_libra(&mut pub_info, addr, 1000 * 1000_000)
+            .await
+            .context("could not mint to account")?;
 
-        helpers::unlock_libra(&mut pub_info, addr, 100_000_000_000).await.context("could not unlock coins")?;
+        helpers::unlock_libra(&mut pub_info, addr, 1000 * 1000_000)
+            .await
+            .context("could not unlock coins")?;
 
         Ok(Self {
             swarm,

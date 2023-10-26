@@ -324,6 +324,7 @@ module ol_framework::ol_account {
       if (exists<BurnTracker>(addr)) return;
 
       let (_, total_balance) = balance(addr);
+
       move_to(sig, BurnTracker {
         prev_supply: gas_coin::supply(),
         prev_balance: total_balance,
