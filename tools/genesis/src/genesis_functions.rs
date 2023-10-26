@@ -317,6 +317,24 @@ pub fn rounding_mint(session: &mut SessionExt, supply_settings: &SupplySettings)
     );
 }
 
+
+// before any accounts are created we need to have a FinalSupply in place
+// It should also happen immediately after LibraCoin gets initialized
+pub fn set_final_supply(session: &mut SessionExt, supply_settings: &SupplySettings) {
+    let serialized_values = serialize_values(&vec![
+        MoveValue::Signer(CORE_CODE_ADDRESS),
+        MoveValue::U64(supply_settings.scale_supply() as u64),
+    ]);
+
+    exec_function(
+        session,
+        "gas_coin",
+        "genesis_set_final_supply",
+        vec![],
+        serialized_values,
+    );
+}
+
 // pub fn mint_genesis_bootstrap_coin(session: &mut SessionExt, validators: &[Validator]) {
 //     validators.iter().for_each(|v| {
 //         let serialized_values = serialize_values(&vec![

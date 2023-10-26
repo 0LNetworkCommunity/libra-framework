@@ -213,7 +213,7 @@ module ol_framework::gas_coin {
 
     // at genesis we need to init the final supply
     // done at genesis_migration
-    public(friend) fun genesis_set_final_supply(diem_framework: &signer,
+    fun genesis_set_final_supply(diem_framework: &signer,
     final_supply: u64) acquires FinalSupply {
       system_addresses::assert_ol(diem_framework);
 
