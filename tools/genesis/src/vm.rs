@@ -26,7 +26,7 @@ use diem_vm_genesis::{
 use libra_types::{legacy_types::legacy_recovery::LegacyRecovery, ol_progress::OLProgress};
 
 use crate::{
-    genesis_functions::{rounding_mint, set_validator_baseline_reward},
+    genesis_functions::{rounding_mint, set_final_supply, set_validator_baseline_reward},
     supply::{populate_supply_stats_from_legacy, SupplySettings},
 };
 
@@ -127,8 +127,12 @@ pub fn encode_genesis_change_set(
 
     initialize_features(&mut session);
 
-    // TODO: replace this
+    // TODO: consolidate with set_final_supply
     initialize_diem_coin(&mut session);
+
+    // final supply must be set after coin is initialized, but before any
+    // accounts are created
+    set_final_supply(&mut session, supply_settings);
 
     initialize_on_chain_governance(&mut session, genesis_config);
 

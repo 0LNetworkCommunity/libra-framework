@@ -78,12 +78,15 @@ module ol_framework::genesis_migration {
   fun rounding_mint(root: &signer, target_supply: u64) {
     let existing_supply = gas_coin::supply();
 
-    assert!(target_supply >= existing_supply, error::invalid_state(EMINTED_OVER_TARGET));
+    // we should not ever have migrated more coins than expected
+    // this should abort the genesis process
+    assert!(existing_supply <= target_supply,
+    error::invalid_state(EMINTED_OVER_TARGET));
+
     if (target_supply > existing_supply) {
         let coin = coin::vm_mint<GasCoin>(root, target_supply - existing_supply);
         transaction_fee::vm_pay_fee(root, @ol_framework, coin);
-
-    }
+    };
   }
 
     /// for an uprade using an escrow percent. Only to be called at genesis
