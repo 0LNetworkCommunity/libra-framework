@@ -25,7 +25,7 @@ async fn tower_newbie() -> anyhow::Result<()> {
     // create an account for alice by transferring funds
     let mut s = Sender::from_app_cfg(&val_app_cfg, None).await?;
     let res = s
-        .transfer(alice.child_0_owner.account, 10_000.0, false)
+        .transfer(alice.child_0_owner.account, 100.0, false)
         .await
         .context("could not create account")?
         .unwrap();
