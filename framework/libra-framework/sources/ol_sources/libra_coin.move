@@ -138,7 +138,7 @@ module ol_framework::gas_coin {
 
     struct LibraCoin has key {}
 
-    struct FinalSupply has key {
+    struct FinalMint has key {
         value: u64,
     }
 
@@ -214,37 +214,37 @@ module ol_framework::gas_coin {
     // at genesis we need to init the final supply
     // done at genesis_migration
     fun genesis_set_final_supply(diem_framework: &signer,
-    final_supply: u64) acquires FinalSupply {
+    final_supply: u64) acquires FinalMint {
       system_addresses::assert_ol(diem_framework);
 
-      if (!exists<FinalSupply>(@ol_framework)) {
-        move_to(diem_framework, FinalSupply {
+      if (!exists<FinalMint>(@ol_framework)) {
+        move_to(diem_framework, FinalMint {
           value: final_supply
         });
       } else {
-        let state = borrow_global_mut<FinalSupply>(@ol_framework);
+        let state = borrow_global_mut<FinalMint>(@ol_framework);
         state.value = final_supply
       }
     }
     #[test_only]
     public fun test_set_final_supply(diem_framework: &signer,
-    final_supply: u64) acquires FinalSupply {
+    final_supply: u64) acquires FinalMint {
       system_addresses::assert_ol(diem_framework);
 
-      if (!exists<FinalSupply>(@ol_framework)) {
-        move_to(diem_framework, FinalSupply {
+      if (!exists<FinalMint>(@ol_framework)) {
+        move_to(diem_framework, FinalMint {
           value: final_supply
         });
       } else {
-        let state = borrow_global_mut<FinalSupply>(@ol_framework);
+        let state = borrow_global_mut<FinalMint>(@ol_framework);
         state.value = final_supply
       }
     }
 
     #[view]
     /// get the original final supply from genesis
-    public fun get_final_supply(): u64 acquires FinalSupply{
-      borrow_global<FinalSupply>(@ol_framework).value
+    public fun get_final_supply(): u64 acquires FinalMint{
+      borrow_global<FinalMint>(@ol_framework).value
     }
 
 

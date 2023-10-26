@@ -317,7 +317,7 @@ pub fn rounding_mint(session: &mut SessionExt, supply_settings: &SupplySettings)
     );
 }
 
-// before any accounts are created we need to have a FinalSupply in place
+// before any accounts are created we need to have a FinalMint in place
 // It should also happen immediately after LibraCoin gets initialized
 pub fn set_final_supply(session: &mut SessionExt, supply_settings: &SupplySettings) {
     let serialized_values = serialize_values(&vec![
