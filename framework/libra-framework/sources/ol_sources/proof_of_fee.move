@@ -401,13 +401,12 @@ module ol_framework::proof_of_fee {
       // we can't seat validators that were just jailed
       // NOTE: epoch reconfigure needs to reset the jail
       // before calling the proof of fee.
-      if (jail::is_jailed(val)) vector::push_back(&mut errors, EIS_JAILED); //
-      33
+      if (jail::is_jailed(val)) vector::push_back(&mut errors, EIS_JAILED); //13
 
       // we can't seat validators who don't have minimum viable vouches
-      let val_set = stake::get_current_validators();
-      let (frens_in_val_set, _found) = vouch::true_friends_in_list(val, &val_set);
-      let threshold = globals::get_validator_vouch_threshold();
+      // let val_set = stake::get_current_validators();
+      // let (frens_in_val_set, _found) = vouch::true_friends_in_list(val, &val_set);
+      // let threshold = globals::get_validator_vouch_threshold();
       let (is_above_thresh, _count) = get_valid_vouchers_in_set(val);
       if (!is_above_thresh) vector::push_back(&mut errors, ETOO_FEW_VOUCHES); // 14
 
