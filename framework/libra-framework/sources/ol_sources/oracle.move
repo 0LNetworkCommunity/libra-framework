@@ -23,14 +23,15 @@ module ol_framework::oracle {
     friend ol_framework::epoch_boundary;
     friend ol_framework::tower_state;
 
-    /// You need a minimum of three Vouches on your account, and of unrelated
-    /// buddies. Meaning: they don't come from the same ancestry of accounts.
+    /// You need a minimum of Vouches on your account for this task.
+    /// They also must be of unrelated buddies.
+    /// Meaning: they don't come from the same ancestry of accounts.
     /// Go meet more people!
-    const ENOT_THREE_UNRELATED_VOUCHERS: u64 = 1;
+    const ENOT_ENOUGH_UNRELATED_VOUCHERS: u64 = 1;
     /// You'll need to have some vouches by accounts in the miner community.
-    /// We check if you had any vouchers (buddies) among the successful miners of the
-    /// previous epoch.
-    const ENEED_THREE_FRIENDS_IN_MINER_COMMUNITY: u64 = 2;
+    /// We check if you had any vouchers (buddies) among the successful
+    /// miners of the previous epoch.
+    const ENEED_MORE_FRIENDS_IN_MINER_COMMUNITY: u64 = 2;
 
     /// somehow your submission is behind the blockchains's time
     const ETIME_IS_IN_PAST_WHAAAT: u64 = 3;
@@ -141,11 +142,11 @@ module ol_framework::oracle {
       {
         // must have 3 accounts who are unrelated vouching for you.
         let frens = vouch::true_friends(provider_addr);
-        assert!(vector::length(&frens) > 2, error::invalid_state(ENOT_THREE_UNRELATED_VOUCHERS));
+        assert!(vector::length(&frens) > 2, error::invalid_state(ENOT_ENOUGH_UNRELATED_VOUCHERS));
         // in the previous epoch of successful miners, you'll need to have 3 unrelated vouchers there as well.
         let previous_epoch_list = &borrow_global<ProviderList>(@ol_framework).previous_epoch_list;
         let (_, count_buddies) = vouch::true_friends_in_list(provider_addr, previous_epoch_list);
-        assert!(count_buddies > 2, error::invalid_state(ENEED_THREE_FRIENDS_IN_MINER_COMMUNITY));
+        assert!(count_buddies > 2, error::invalid_state(ENEED_MORE_FRIENDS_IN_MINER_COMMUNITY));
 
       };
 
