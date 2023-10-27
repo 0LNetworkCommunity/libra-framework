@@ -20,16 +20,16 @@ pub fn initialize_validator(
 ) -> anyhow::Result<()> {
     let (.., keys) =
         libra_wallet::keys::refresh_validator_files(mnem, home_path.clone(), keep_legacy_address)?;
-    OLProgress::complete("Initialized validator key files");
+    OLProgress::complete("initialized validator key files");
 
     // TODO: set validator fullnode configs. Not NONE
     let effective_username = username.unwrap_or("default_username"); // Use default if None
     SetValidatorConfiguration::new(home_path.clone(), effective_username.to_owned(), host, None)
         .set_config_files()?;
-    OLProgress::complete("Saved validator registration files locally");
+    OLProgress::complete("saved validator registration files locally");
 
     node_yaml::save_validator_yaml(home_path.clone())?;
-    OLProgress::complete("Saved validator node yaml file locally");
+    OLProgress::complete("saved validator node yaml file locally");
 
     // TODO: nice to have
     // also for convenience create a local user libra.yaml file so the
@@ -46,7 +46,7 @@ pub fn initialize_validator(
         "could not initialize configs at {}",
         cfg.workspace.node_home.to_str().unwrap()
     ))?;
-    OLProgress::complete("Saved a user libra.yaml file locally");
+    OLProgress::complete("saved a user libra.yaml file locally");
 
     Ok(())
 }
