@@ -252,7 +252,7 @@ module ol_framework::proof_of_fee {
       let threshold = globals::get_validator_vouch_threshold();
       let count_in_set = vector::length(&frens_in_val_set);
 
-      (count_in_set > threshold, count_in_set)
+      (count_in_set >= threshold, count_in_set)
   }
 
 
@@ -404,9 +404,6 @@ module ol_framework::proof_of_fee {
       if (jail::is_jailed(val)) vector::push_back(&mut errors, EIS_JAILED); //13
 
       // we can't seat validators who don't have minimum viable vouches
-      // let val_set = stake::get_current_validators();
-      // let (frens_in_val_set, _found) = vouch::true_friends_in_list(val, &val_set);
-      // let threshold = globals::get_validator_vouch_threshold();
       let (is_above_thresh, _count) = get_valid_vouchers_in_set(val);
       if (!is_above_thresh) vector::push_back(&mut errors, ETOO_FEW_VOUCHES); // 14
 
