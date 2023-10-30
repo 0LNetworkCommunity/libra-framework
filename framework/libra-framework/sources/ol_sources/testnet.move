@@ -27,7 +27,7 @@ module ol_framework::testnet {
     }
 
     public fun is_staging_net(): bool {
-        chain_id::get() == 2
+        chain_id::get() == 2 // TESTNET named chain
     }
 
     #[test_only]

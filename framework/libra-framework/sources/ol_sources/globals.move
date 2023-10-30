@@ -117,18 +117,25 @@ module ol_framework::globals {
       };
 
       if (testnet::is_staging_net()) {
+        // All numbers like MAINNET except shorter epochs of 30 mins
+        // and minimum mining of 1 proof
         return GlobalConstants {
-          epoch_length: 60 * 40, // 40 mins, enough for a hard miner proof.
-          val_set_at_genesis: 100,
-          subsidy_ceiling_gas: 8640000 * get_coin_scaling_factor(),
-          vdf_difficulty_baseline: 100, //3000000000,
+          epoch_length: 60 * 30, // 30 mins, enough for a hard miner proof.
+          val_set_at_genesis: 100, // max expected for BFT limits.
+          // See DiemVMConfig for gas constants:
+          // Target max gas units per transaction 100000000
+          // target max block time: 2 secs
+          // target transaction per sec max gas: 20
+          // uses "scaled representation", since there are no decimals.
+          subsidy_ceiling_gas: 8640000 * get_coin_scaling_factor(), // subsidy amount assumes 24 hour epoch lengths. Also needs to be adjusted for coin_scale the onchain representation of human readable value.
+          vdf_difficulty_baseline: 120000000, // wesolowski proof, new parameters. Benchmark available in docs/delay_tower/benchmarking
           vdf_security_baseline: 512,
-          epoch_mining_thres_lower: 1, // in testnet, staging, we don't want
-                                       // to wait too long between proofs.
-          epoch_mining_thres_upper: 72, // upper bound enforced at 20 mins per proof.
-          epoch_slow_wallet_unlock: 1000  * get_coin_scaling_factor(),
-          min_blocks_per_epoch: 1000,
-          validator_vouch_threshold: 0,
+          // NOTE Reviewers: this goes back to v5 params since the VDF cryptograpy will actually not be changed
+          epoch_mining_thres_lower: 1, // lower bound, allows for some operator error
+          epoch_mining_thres_upper: 72, // upper bound enforced at 20 mins per  proof
+          epoch_slow_wallet_unlock: 1000 * get_coin_scaling_factor(), // approx 10 years for largest accounts in genesis.
+          min_blocks_per_epoch: 10000,
+          validator_vouch_threshold: 2, // Production must be more than 1 vouch validator (at least 2)
           signing_threshold_pct: 3,
         }
       } else {
@@ -148,7 +155,7 @@ module ol_framework::globals {
           epoch_mining_thres_upper: 72, // upper bound enforced at 20 mins per  proof
           epoch_slow_wallet_unlock: 1000 * get_coin_scaling_factor(), // approx 10 years for largest accounts in genesis.
           min_blocks_per_epoch: 10000,
-          validator_vouch_threshold: 1, // Production must be more than 1 vouch validator (at least 2)
+          validator_vouch_threshold: 2, // Production must be more than 1 vouch validator (at least 2)
           signing_threshold_pct: 3,
         }
       }

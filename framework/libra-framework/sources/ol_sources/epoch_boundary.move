@@ -22,7 +22,7 @@ module diem_framework::epoch_boundary {
     use std::vector;
     use std::error;
 
-    use diem_std::debug::print;
+    // use diem_std::debug::print;
 
     friend diem_framework::block;
 
@@ -179,7 +179,7 @@ module diem_framework::epoch_boundary {
 
         subsidize_from_infra_escrow(root);
 
-        print(borrow_global<BoundaryStatus>(@ol_framework))
+        // print(borrow_global<BoundaryStatus>(@ol_framework))
   }
 
   // TODO: instrument all of this
