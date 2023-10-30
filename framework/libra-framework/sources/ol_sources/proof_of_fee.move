@@ -242,6 +242,20 @@ module ol_framework::proof_of_fee {
     return (filtered_vals, bids)
   }
 
+  #[view]
+  /// checks if the validator has enough vouchers in the current set (prior to entry)
+  /// @params incoming address to be evaluated
+  /// @returns (above_threshold, count_validators) if
+  public fun get_valid_vouchers_in_set(incoming_addr: address): (bool, u64) {
+      let val_set = stake::get_current_validators();
+      let (frens_in_val_set, _found) = vouch::true_friends_in_list(incoming_addr, &val_set);
+      let threshold = globals::get_validator_vouch_threshold();
+      let count_in_set = vector::length(&frens_in_val_set);
+
+      (count_in_set >= threshold, count_in_set)
+  }
+
+
   // Here we place the bidders into their seats.
   // The order of the bids will determine placement.
   // One important aspect of picking the next validator set:
@@ -387,14 +401,13 @@ module ol_framework::proof_of_fee {
       // we can't seat validators that were just jailed
       // NOTE: epoch reconfigure needs to reset the jail
       // before calling the proof of fee.
-      if (jail::is_jailed(val)) vector::push_back(&mut errors, EIS_JAILED); // 33
+      if (jail::is_jailed(val)) vector::push_back(&mut errors, EIS_JAILED); //13
+
       // we can't seat validators who don't have minimum viable vouches
+      let (is_above_thresh, _count) = get_valid_vouchers_in_set(val);
+      if (!is_above_thresh) vector::push_back(&mut errors, ETOO_FEW_VOUCHES); // 14
 
-      let val_set = stake::get_current_validators();
-      let (frens_in_val_set, _found) = vouch::true_friends_in_list(val, &val_set);
-      let threshold = globals::get_validator_vouch_threshold();
-      if (vector::length(&frens_in_val_set) < threshold) vector::push_back(&mut errors, ETOO_FEW_VOUCHES); // 14
-
+      // check if current BIDS are valid
       let (bid_pct, expire) = current_bid(val);
       if (bid_pct == 0) vector::push_back(&mut errors, EBID_IS_ZERO); // 15
       // Skip if the bid expired. belt and suspenders, this should have been checked in the sorting above.
@@ -405,7 +418,6 @@ module ol_framework::proof_of_fee {
       // or if the bid expired.
       let unlocked_coins = slow_wallet::unlocked_amount(val);
       let (_, entry_fee,  _, _) = get_consensus_reward();
-      // let coin_required = fixed_point32::multiply_u64(baseline_reward, bid_as_fixedpoint(bid_pct));
 
       if (unlocked_coins < entry_fee) vector::push_back(&mut errors, ELOW_UNLOCKED_COIN_BALANCE); // 17
 

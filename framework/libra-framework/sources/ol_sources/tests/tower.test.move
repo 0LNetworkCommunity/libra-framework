@@ -12,11 +12,9 @@ module ol_framework::test_tower {
   use ol_framework::proof_of_fee;
   use ol_framework::stake;
   use diem_framework::timestamp;
-  // use diem_framework::coin;
-  // use ol_framework::gas_coin::LibraCoin as GasCoin;
   use std::vector;
 
-  use std::debug::print;
+  // use std::debug::print;
 
   #[test(root = @ol_framework)]
   fun epoch_changes_difficulty(root: signer) {
@@ -106,8 +104,8 @@ module ol_framework::test_tower {
       vdf_fixtures::security(),
     );
 
-    let count_pre = tower_state::get_count_in_epoch(a_addr);
-    print(&count_pre);
+    // let count_pre = tower_state::get_count_in_epoch(a_addr);
+    // print(&count_pre);
 
     // all vals compliant
     mock::mock_all_vals_good_performance(&root);

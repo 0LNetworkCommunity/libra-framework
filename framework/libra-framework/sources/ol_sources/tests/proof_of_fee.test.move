@@ -103,6 +103,7 @@ module ol_framework::test_pof {
 
     mock_good_bid(&root, &alice);
 
+    // need to unset testnet for vouch to be tested
     testnet::unset(&root);
 
     let val_set = stake::get_current_validators();
@@ -169,15 +170,12 @@ module ol_framework::test_pof {
     mock_good_bid(&root, &alice);
 
     // needs friends
-    // vouch::test_set_buddies(alice, set);
     let (_err, pass) = proof_of_fee::audit_qualification(alice);
     assert!(pass, 1002);
 
-    // has a bid which IS expired
-    // test runner is at epoch 1, they put expiry at 0.
-    // TODO: Improve this test by doing more advanced epochs
-    mock::mock_all_vals_good_performance(&root);
-    mock::trigger_epoch(&root);
+    // we just need to increment for testing expiry
+    reconfiguration::test_helper_increment_epoch_dont_reconfigure();
+
 
     let a_sig = account::create_signer_for_test(alice);
 

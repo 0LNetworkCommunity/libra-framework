@@ -7,7 +7,6 @@ module ol_framework::vouch {
     use ol_framework::epoch_helper;
 
     use diem_framework::system_addresses;
-    // use diem_framework::stake;
     use diem_framework::transaction_fee;
 
     friend diem_framework::genesis;
@@ -160,13 +159,6 @@ module ol_framework::vouch {
       false
     }
 
-    // #[view]
-    // public fun buddies_in_validator_set(val: address): vector<address> acquires MyVouches {
-    //   let current_set = stake::get_current_validators();
-    //   let (list, _) = buddies_in_list(val, &current_set);
-    //   list
-    // }
-
     /// for a given list find and count any of my vouchers
     public fun true_friends_in_list(addr: address, list: &vector<address>): (vector<address>, u64) acquires MyVouches {
 
@@ -189,15 +181,7 @@ module ol_framework::vouch {
     }
 
 
-    // #[view]
-    // public fun true_friends_above_thresh(addr: address, list: &vector<address>, threshold: u64): bool acquires MyVouches{
-    //   if (!exists<MyVouches>(addr)) return false;
-
-    //   let (found_in_list, _found) = true_friends_in_list(addr, list);
-
-    //   return vector::length(&found_in_list) > threshold
-    // }
-
+    // TODO: move to globals
     // the cost to verify a vouch. Coins are burned.
     fun vouch_cost_microlibra(): u64 {
       1000
