@@ -219,11 +219,10 @@ module diem_framework::stake {
 
 
     //////// 0L ////////
-    // TODO: v7
     #[view]
     /// Returns the validator's state.
-    public fun is_valid(addr: address): bool acquires ValidatorSet{
-      get_validator_state(addr) == VALIDATOR_STATUS_ACTIVE
+    public fun is_valid(addr: address): bool {
+      exists<ValidatorConfig>(addr)
     }
 
 

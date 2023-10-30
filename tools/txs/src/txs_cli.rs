@@ -155,7 +155,7 @@ impl TxsCli {
         .await?;
 
         if self.tx_cost.is_some() && self.tx_profile.is_some() {
-            println!("ERROR: --tx-cost and --txs-profile are mutually exclusive. Either set the costs explicitly or choose a profile in libra.yaml, exiting");
+            println!("ERROR: --tx-cost and --tx-profile are mutually exclusive. Either set the costs explicitly or choose a profile in libra.yaml, exiting");
         }
         let tx_cost = self
             .tx_cost
