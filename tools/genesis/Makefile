@@ -9,9 +9,9 @@ FUTURE_USES = 0.70
 endif
 
 ifndef RECOVERY_FILE
-RECOVERY_FILE = sample_end_user_single
+RECOVERY_FILE = v5_recovery
 # RECOVERY_FILE = sample_export_recovery
-# RECOVERY_FILE = sample_rotated_auth
+
 endif
 
 ifndef YEARS
@@ -32,7 +32,8 @@ endif
 
 
 genesis:
-	cargo r -- genesis --org-github ${GIT_ORG} \
+	cargo r --	-c ${CHAIN} \
+	genesis --org-github ${GIT_ORG} \
 	--name-github ${GIT_REPO} \
 	--local-framework \
 	--json-legacy ./tests/fixtures/${RECOVERY_FILE}.json \
@@ -44,7 +45,8 @@ genesis:
 
 
 wizard:
-	cargo r -- wizard --org-github ${GIT_ORG} \
+	cargo r -- 	-c ${CHAIN} \
+	wizard --org-github ${GIT_ORG} \
 	--name-github ${GIT_REPO} \
 	--local-framework \
 	--json-legacy ./tests/fixtures/${RECOVERY_FILE}.json \
