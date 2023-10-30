@@ -19,7 +19,7 @@ YEARS = 7
 endif
 
 ifndef CHAIN
-CHAIN = testing
+CHAIN = testnet
 endif
 
 ifndef GIT_ORG
