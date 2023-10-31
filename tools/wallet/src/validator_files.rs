@@ -45,7 +45,6 @@ impl SetValidatorConfiguration {
         }
     }
 
-
     pub fn set_config_files(self) -> Result<(OperatorConfiguration, OwnerConfiguration)> {
         let home_dir = self.home_dir.unwrap_or_else(global_config_dir);
 

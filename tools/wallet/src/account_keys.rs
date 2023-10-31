@@ -169,11 +169,11 @@ impl KeyChain {
 
     pub fn display(&self, display_private: bool) {
         if display_private {
-          eprintln!("{}", serde_json::to_string_pretty(&self).unwrap());
+            eprintln!("{}", serde_json::to_string_pretty(&self).unwrap());
         } else {
-          let owner = &self.child_0_owner;
-          println!("owner account: {}", owner.account);
-          // TODO: include more keys to derive
+            let owner = &self.child_0_owner;
+            println!("owner account: {}", owner.account);
+            // TODO: include more keys to derive
         }
     }
 }

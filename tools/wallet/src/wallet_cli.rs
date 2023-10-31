@@ -28,13 +28,13 @@ enum WalletSub {
     /// Use the legacy key derivation scheme
     Legacy,
     /// use mnemonic to see what account keys are generated
-    Whoami(WhoamiOpts)
+    Whoami(WhoamiOpts),
 }
 
 #[derive(Args, Debug)]
 struct WhoamiOpts {
     ///  show the validator configurations
-    #[clap(short('v'), long, default_value="false")]
+    #[clap(short('v'), long, default_value = "false")]
     show_validator: bool,
 }
 
@@ -42,14 +42,12 @@ impl WalletCli {
     pub async fn run(&self) -> Result<()> {
         match &self.command {
             WalletSub::Whoami(args) => {
-
                 who_am_i(args.show_validator)?;
             }
             WalletSub::Legacy => {
-              println!("this command will generate legacy keys and addresses from v5 addresses. You should only be using this for testing or debugging purposes");
+                println!("this command will generate legacy keys and addresses from v5 addresses. You should only be using this for testing or debugging purposes");
 
-              account_keys::legacy_keygen(true)?;
-
+                account_keys::legacy_keygen(true)?;
             }
             WalletSub::Keygen {
                 mnemonic,

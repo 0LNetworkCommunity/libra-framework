@@ -74,7 +74,6 @@ pub fn refresh_validator_files(
     PublicIdentity,
     KeyChain,
 )> {
-
     let (validator_blob, vfn_blob, private_identity, public_identity, legacy_keys) =
         make_validator_keys(mnem, keep_legacy_addr)?;
 

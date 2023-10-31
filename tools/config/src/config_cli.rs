@@ -1,6 +1,6 @@
 use crate::host::initialize_validator_configs;
 use crate::{legacy_config, make_profile};
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
 use clap::Parser;
 use libra_types::exports::AccountAddress;
 use libra_types::exports::AuthenticationKey;
@@ -174,22 +174,38 @@ impl ConfigCli {
 
                     let public_identity = read_operator_file(public_keys_file.as_path())?;
                     println!("validator public credentials:");
-                    println!("{}", serde_json::to_string_pretty(&public_identity).unwrap());
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&public_identity).unwrap()
+                    );
 
                     println!("network addresses:");
                     let validator_net = public_identity.validator_host;
-                    let net_addr = validator_net.as_network_address(public_identity.validator_network_public_key)?;
-                    println!("validator: {}", serde_json::to_string_pretty(&net_addr).unwrap());
+                    let net_addr = validator_net
+                        .as_network_address(public_identity.validator_network_public_key)?;
+                    println!(
+                        "validator: {}",
+                        serde_json::to_string_pretty(&net_addr).unwrap()
+                    );
 
                     if let Some(fn_host) = public_identity.full_node_host {
-                      let net_addr_fn = fn_host.as_network_address(public_identity.full_node_network_public_key.context("expected a full_node_network_public_key in operator.yaml")?)?;
+                        let net_addr_fn = fn_host.as_network_address(
+                            public_identity.full_node_network_public_key.context(
+                                "expected a full_node_network_public_key in operator.yaml",
+                            )?,
+                        )?;
 
-                      println!("vfn: {}", serde_json::to_string_pretty(&net_addr_fn).unwrap());
+                        println!(
+                            "vfn: {}",
+                            serde_json::to_string_pretty(&net_addr_fn).unwrap()
+                        );
                     } else {
-                      println!("no config information found for Validator Full Node (VFN)")
+                        println!("WARN: no config information found for Validator Full Node (VFN)")
                     }
 
-                    println!("\nNOTE: to check if this matches your mnemonic try `libra wallet whoami`");
+                    println!(
+                        "\nNOTE: to check if this matches your mnemonic try `libra wallet whoami`"
+                    );
 
                     return Ok(());
                 }
