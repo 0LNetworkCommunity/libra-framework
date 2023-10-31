@@ -1,4 +1,4 @@
-use crate::account_keys::{self, get_keys_from_prompt};
+use crate::{account_keys, whoami::who_am_i};
 
 use anyhow::Result;
 use clap::{Args, Parser, Subcommand};
@@ -27,18 +27,15 @@ enum WalletSub {
     },
     /// Use the legacy key derivation scheme
     Legacy,
+    /// use mnemonic to see what account keys are generated
     Whoami(WhoamiOpts)
 }
 
 #[derive(Args, Debug)]
 struct WhoamiOpts {
-    ///  display private keys
-    #[clap(short('p'), long)]
-    display_private: bool,
-
-    #[clap(short, long)]
-    /// save keyscheme private keys to file
-    output_path: Option<PathBuf>,
+    ///  show the validator configurations
+    #[clap(short('v'), long, default_value="false")]
+    show_validator: bool,
 }
 
 impl WalletCli {
@@ -46,13 +43,7 @@ impl WalletCli {
         match &self.command {
             WalletSub::Whoami(args) => {
 
-                let l = get_keys_from_prompt()?;
-
-                if let Some(dir) = &args.output_path {
-                    l.save_keys(dir)?;
-                }
-
-                l.display(args.display_private);
+                who_am_i(args.show_validator)?;
             }
             WalletSub::Legacy => {
               println!("this command will generate legacy keys and addresses from v5 addresses. You should only be using this for testing or debugging purposes");

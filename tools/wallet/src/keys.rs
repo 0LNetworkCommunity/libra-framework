@@ -74,6 +74,38 @@ pub fn refresh_validator_files(
     PublicIdentity,
     KeyChain,
 )> {
+
+    let (validator_blob, vfn_blob, private_identity, public_identity, legacy_keys) =
+        make_validator_keys(mnem, keep_legacy_addr)?;
+
+    save_val_files(
+        output_opt,
+        &validator_blob,
+        &vfn_blob,
+        &private_identity,
+        &public_identity,
+    )?;
+
+    Ok((
+        validator_blob,
+        vfn_blob,
+        private_identity,
+        public_identity,
+        legacy_keys,
+    ))
+}
+
+/// create all the validator key structs from mnemonic
+pub fn make_validator_keys(
+    mnem: Option<String>,
+    keep_legacy_addr: bool,
+) -> anyhow::Result<(
+    IdentityBlob,
+    IdentityBlob,
+    PrivateIdentity,
+    PublicIdentity,
+    KeyChain,
+)> {
     let mut legacy_keys = if let Some(m) = mnem {
         get_keys_from_mnem(m)?
     } else {
@@ -87,14 +119,6 @@ pub fn refresh_validator_files(
 
     let (validator_blob, vfn_blob, private_identity, public_identity) =
         generate_key_objects_from_legacy(&legacy_keys)?;
-
-    save_val_files(
-        output_opt,
-        &validator_blob,
-        &vfn_blob,
-        &private_identity,
-        &public_identity,
-    )?;
 
     Ok((
         validator_blob,

@@ -5,7 +5,7 @@ use diem_genesis::config::{HostAndPort, OperatorConfiguration, OwnerConfiguratio
 use libra_types::global_config_dir;
 
 use crate::{
-    keys::PUBLIC_KEYS_FILE,
+    keys::{PUBLIC_KEYS_FILE},
     utils::{
         from_yaml, read_from_file, read_public_identity_file, to_yaml, write_to_user_only_file,
     },
@@ -13,6 +13,7 @@ use crate::{
 
 pub const OPERATOR_FILE: &str = "operator.yaml";
 pub const OWNER_FILE: &str = "owner.yaml";
+pub const VALIDATOR_IDENTITY_FILE: &str = "validator-identity.yaml";
 
 // copied from crate/diem/src/genesis/keys.rs
 pub struct SetValidatorConfiguration {
@@ -43,6 +44,7 @@ impl SetValidatorConfiguration {
             home_dir,
         }
     }
+
 
     pub fn set_config_files(self) -> Result<(OperatorConfiguration, OwnerConfiguration)> {
         let home_dir = self.home_dir.unwrap_or_else(global_config_dir);
