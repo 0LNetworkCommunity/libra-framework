@@ -1,5 +1,5 @@
 use crate::{
-    account_queries::{get_account_balance_libra, get_tower_state},
+    account_queries::{get_account_balance_libra, get_tower_state, get_val_config},
     query_view::get_view,
 };
 use anyhow::{bail, Result};
@@ -19,6 +19,12 @@ pub enum QueryType {
     },
     /// User's Tower state
     Tower {
+        #[clap(short, long)]
+        /// account to query txs of
+        account: AccountAddress,
+    },
+    /// A validator's on-chain configuration
+    ValConfig {
         #[clap(short, long)]
         /// account to query txs of
         account: AccountAddress,
@@ -143,7 +149,6 @@ impl QueryType {
         QueryType::Tower { account } => {
           let res = get_tower_state(&client, *account).await?;
           Ok(json!(res))
-
         },
         QueryType::View {
             function_id,
@@ -181,6 +186,17 @@ impl QueryType {
             bail!("no resource {resource_path_string}, found at address {account}");
           }
         },
+        QueryType::ValConfig { account } => {
+          let res = get_val_config(&client, *account).await?;
+
+          // make this readable, turn the network address into a string
+          Ok(json!({
+            "consensus_public_key": res.consensus_public_key,
+            "validator_network_addresses": res.validator_network_addresses().unwrap(),
+            "fullnode_network_addresses": res.fullnode_network_addresses().unwrap(),
+            "validator_index": res.validator_index,
+          }))
+        }
 
         _ => { bail!("Not implemented for type: {:?}\n Ground control to major tom.", self) }
         // QueryType::BlockHeight => todo!(),
