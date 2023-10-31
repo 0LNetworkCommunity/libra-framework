@@ -38,7 +38,5 @@ pub async fn get_val_config(
     client: &Client,
     account: AccountAddress,
 ) -> anyhow::Result<ValidatorConfig> {
-    client
-        .get_move_resource::<ValidatorConfig>(account)
-        .await
+    client.get_move_resource::<ValidatorConfig>(account).await
 }
