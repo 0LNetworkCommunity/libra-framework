@@ -107,11 +107,13 @@ impl ValidatorTxs {
                     .validator_host
                     .as_network_address(oc.validator_network_public_key)?;
 
-                let fullnode_host = oc.full_node_host.context("cannot find fullnode host")?;
-                let vfn_fullnode_protocol = fullnode_host.as_network_address(
-                    oc.full_node_network_public_key
-                        .context("cannot find fullnode network public key")?,
-                )?;
+                let fullnode_host = oc
+                    .full_node_host
+                    .context("cannot find fullnode host in operator config file")?;
+                let vfn_fullnode_protocol =
+                    fullnode_host.as_network_address(oc.full_node_network_public_key.context(
+                        "cannot find fullnode network public key in operator config file",
+                    )?)?;
 
                 ValidatorUniverseRegisterValidator {
                     consensus_pubkey: oc.consensus_public_key.to_bytes().to_vec(),
@@ -134,11 +136,13 @@ impl ValidatorTxs {
                     .validator_host
                     .as_network_address(oc.validator_network_public_key)?;
 
-                let fullnode_host = oc.full_node_host.context("cannot find fullnode host")?;
-                let vfn_fullnode_protocol = fullnode_host.as_network_address(
-                    oc.full_node_network_public_key
-                        .context("cannot find fullnode network public key")?,
-                )?;
+                let fullnode_host = oc
+                    .full_node_host
+                    .context("cannot find fullnode host in operator config file")?;
+                let vfn_fullnode_protocol = fullnode_host
+                    .as_network_address(oc.full_node_network_public_key.context(
+                        "cannot find fullnode network public key operator config file",
+                    )?)?;
 
                 StakeUpdateNetworkAndFullnodeAddresses {
                     validator_address: oc.operator_account_address.into(),

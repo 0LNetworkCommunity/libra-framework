@@ -1,6 +1,6 @@
 use diem_sdk::{
     rest_client::{diem_api_types::ViewRequest, Client},
-    types::account_address::AccountAddress,
+    types::{account_address::AccountAddress, validator_config::ValidatorConfig},
 };
 use libra_types::{
     legacy_types::tower::TowerProofHistoryView,
@@ -32,4 +32,11 @@ pub async fn get_tower_state(
     client
         .get_move_resource::<TowerProofHistoryView>(account)
         .await
+}
+
+pub async fn get_val_config(
+    client: &Client,
+    account: AccountAddress,
+) -> anyhow::Result<ValidatorConfig> {
+    client.get_move_resource::<ValidatorConfig>(account).await
 }
