@@ -4,7 +4,7 @@
 
 use anyhow::{anyhow, bail};
 use dialoguer::Confirm;
-use diem_genesis::keys::PublicIdentity;
+use diem_genesis::{keys::PublicIdentity, config::OperatorConfiguration};
 use serde::{de::DeserializeOwned, Serialize};
 #[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
@@ -117,3 +117,9 @@ pub fn read_public_identity_file(public_identity_file: &Path) -> CliTypedResult<
     let bytes = read_from_file(public_identity_file)?;
     from_yaml(&String::from_utf8(bytes).map_err(|e| anyhow!(e))?)
 }
+
+pub fn read_operator_file(public_identity_file: &Path) -> CliTypedResult<OperatorConfiguration> {
+    let bytes = read_from_file(public_identity_file)?;
+    from_yaml(&String::from_utf8(bytes).map_err(|e| anyhow!(e))?)
+}
+

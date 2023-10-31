@@ -5791,6 +5791,7 @@ dependencies = [
  "libra-types",
  "libra-wallet",
  "reqwest",
+ "serde_json",
  "tokio",
  "url",
 ]

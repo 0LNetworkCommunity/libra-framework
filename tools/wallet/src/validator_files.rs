@@ -5,7 +5,7 @@ use diem_genesis::config::{HostAndPort, OperatorConfiguration, OwnerConfiguratio
 use libra_types::global_config_dir;
 
 use crate::{
-    keys::{PUBLIC_KEYS_FILE},
+    keys::PUBLIC_KEYS_FILE,
     utils::{
         from_yaml, read_from_file, read_public_identity_file, to_yaml, write_to_user_only_file,
     },

@@ -1,6 +1,6 @@
 use crate::host::initialize_validator_configs;
 use crate::{legacy_config, make_profile};
-use anyhow::Result;
+use anyhow::{Result, Context};
 use clap::Parser;
 use libra_types::exports::AccountAddress;
 use libra_types::exports::AuthenticationKey;
@@ -9,6 +9,8 @@ use libra_types::exports::NamedChain;
 use libra_types::global_config_dir;
 use libra_types::legacy_types::app_cfg::{self, AppCfg};
 use libra_types::type_extensions::client_ext::ClientExt;
+use libra_wallet::utils::read_operator_file;
+use libra_wallet::validator_files::OPERATOR_FILE;
 use std::path::PathBuf;
 use url::Url;
 
@@ -83,7 +85,11 @@ enum ConfigSub {
         workspace: bool,
     },
     /// Generate validators' config file
-    ValidatorInit {},
+    ValidatorInit {
+        /// check the files generated
+        #[clap(short, long, default_value = "false")]
+        check: bool,
+    },
 }
 
 impl ConfigCli {
@@ -160,7 +166,34 @@ impl ConfigCli {
 
                 Ok(())
             }
-            Some(ConfigSub::ValidatorInit {}) => {
+            Some(ConfigSub::ValidatorInit { check }) => {
+                if *check {
+                    let home_dir = self.path.clone().unwrap_or_else(global_config_dir);
+
+                    let public_keys_file = home_dir.join(OPERATOR_FILE);
+
+                    let public_identity = read_operator_file(public_keys_file.as_path())?;
+                    println!("validator public credentials:");
+                    println!("{}", serde_json::to_string_pretty(&public_identity).unwrap());
+
+                    println!("network addresses:");
+                    let validator_net = public_identity.validator_host;
+                    let net_addr = validator_net.as_network_address(public_identity.validator_network_public_key)?;
+                    println!("validator: {}", serde_json::to_string_pretty(&net_addr).unwrap());
+
+                    if let Some(fn_host) = public_identity.full_node_host {
+                      let net_addr_fn = fn_host.as_network_address(public_identity.full_node_network_public_key.context("expected a full_node_network_public_key in operator.yaml")?)?;
+
+                      println!("vfn: {}", serde_json::to_string_pretty(&net_addr_fn).unwrap());
+                    } else {
+                      println!("no config information found for Validator Full Node (VFN)")
+                    }
+
+                    println!("\nNOTE: to check if this matches your mnemonic try `libra wallet whoami`");
+
+                    return Ok(());
+                }
+
                 let data_path = global_config_dir();
                 if !&data_path.exists() {
                     println!(
