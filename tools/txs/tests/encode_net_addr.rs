@@ -4,7 +4,7 @@ use diem_genesis::config::OperatorConfiguration;
 use diem_types::network_address::NetworkAddress;
 
 #[test]
-fn encode_net_addr() -> anyhow::Result<()>{
+fn encode_net_addr() -> anyhow::Result<()> {
     let file = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/operator.yaml");
 
     let yaml_str = std::fs::read_to_string(file)?;

@@ -2,7 +2,7 @@ use crate::{
     account_queries::{get_account_balance_libra, get_tower_state, get_val_config},
     query_view::get_view,
 };
-use anyhow::{bail, Result, Context};
+use anyhow::{bail, Context, Result};
 use diem_sdk::{rest_client::Client, types::account_address::AccountAddress};
 use indoc::indoc;
 use libra_types::exports::AuthenticationKey;
