@@ -123,8 +123,8 @@ impl ValidatorTxs {
                 ValidatorUniverseRegisterValidator {
                     consensus_pubkey: oc.consensus_public_key.to_bytes().to_vec(),
                     proof_of_possession: oc.consensus_proof_of_possession.to_bytes().to_vec(),
-                    network_addresses: bcs::to_bytes(&val_net_protocol)?,
-                    fullnode_addresses: bcs::to_bytes(&vfn_fullnode_protocol)?,
+                    network_addresses: bcs::to_bytes(&vec![val_net_protocol])?,
+                    fullnode_addresses: bcs::to_bytes(&vec![vfn_fullnode_protocol])?,
                 }
             }
             ValidatorTxs::Update { operator_file } => {
@@ -151,8 +151,8 @@ impl ValidatorTxs {
 
                 StakeUpdateNetworkAndFullnodeAddresses {
                     validator_address: oc.operator_account_address.into(),
-                    new_network_addresses: bcs::to_bytes(&[val_net_protocol])?,
-                    new_fullnode_addresses: bcs::to_bytes(&[vfn_fullnode_protocol])?,
+                    new_network_addresses: bcs::to_bytes(&vec![val_net_protocol])?,
+                    new_fullnode_addresses: bcs::to_bytes(&vec![vfn_fullnode_protocol])?,
                 }
             }
         };
