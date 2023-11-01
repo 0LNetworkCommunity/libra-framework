@@ -3,7 +3,7 @@ use crate::{
     query_view::get_view,
 };
 use anyhow::{bail, Result, Context};
-use diem_sdk::{rest_client::Client, types::{account_address::AccountAddress, validator_config::ValidatorConfig}, crypto::{bls12381, ValidCryptoMaterialStringExt}};
+use diem_sdk::{rest_client::Client, types::account_address::AccountAddress};
 use indoc::indoc;
 use libra_types::exports::AuthenticationKey;
 use libra_types::type_extensions::client_ext::ClientExt;
@@ -199,20 +199,4 @@ impl QueryType {
 
     }
     }
-}
-
-
-#[test]
-
-fn decode() {
-  let v = ValidatorConfig {
-    consensus_public_key: bls12381::PublicKey::from_encoded_string("0xb0d9d43e8f0e0d8939f11529d91a3acf39b5bbfd09e102491696f804c69bd786f7865939b326b94c3131b6666acc70eb").unwrap(),
-    /// This is an bcs serialized `Vec<NetworkAddress>`
-    validator_network_addresses: hex::decode("2d040086d1209f0526180720737f357ddc2d6fa10a4020846898083bc18a3cb5ea80ba08db8bb0095509c9730800").unwrap(),
-    /// This is an bcs serialized `Vec<NetworkAddress>`
-    fullnode_network_addresses: hex::decode("2d040086d1209f052418072064d495a02294e7a7a4f3e6c3be8c9a9f813dfd1e86a2127a2a43ddc9313bc2630800").unwrap(),
-    validator_index: 0,
-  };
-
-  dbg!(&v.fullnode_network_addresses());
 }
