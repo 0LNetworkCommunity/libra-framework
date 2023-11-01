@@ -49,6 +49,8 @@ module ol_framework::jail {
 
   /// Validator is misconfigured cannot unjail.
   const EVALIDATOR_CONFIG: u64 = 1;
+  /// Vour voucher is not a validator in the current set, they can't unjail you
+  const EVOUCHER_NOT_IN_SET: u64 = 2;
 
   struct Jail has key {
       is_jailed: bool,
@@ -125,7 +127,7 @@ module ol_framework::jail {
     let (vouchers_in_set, _) = vouch::true_friends_in_list(addr, &current_set);
 
     let (is_found, _idx) = vector::index_of(&vouchers_in_set, &voucher);
-    assert!(is_found, 100103);
+    assert!(is_found, EVOUCHER_NOT_IN_SET);
 
     unjail(addr);
   }
