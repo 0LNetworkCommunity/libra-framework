@@ -2,7 +2,7 @@ use crate::{
     account_queries::{get_account_balance_libra, get_tower_state, get_val_config},
     query_view::get_view,
 };
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use diem_sdk::{rest_client::Client, types::account_address::AccountAddress};
 use indoc::indoc;
 use libra_types::exports::AuthenticationKey;
@@ -127,11 +127,6 @@ pub enum QueryType {
     //     /// what event sequence number to start querying from, if DB does not have all.
     //     seq_start: Option<u64>,
     // },
-    // /// get the validator's on-chain configuration, including network discovery addresses
-    // ValConfig {
-    //     /// the account of the validator
-    //     account: AccountAddress,
-    // },
 }
 
 impl QueryType {
@@ -192,8 +187,8 @@ impl QueryType {
           // make this readable, turn the network address into a string
           Ok(json!({
             "consensus_public_key": res.consensus_public_key,
-            "validator_network_addresses": res.validator_network_addresses().unwrap(),
-            "fullnode_network_addresses": res.fullnode_network_addresses().unwrap(),
+            "validator_network_addresses": res.validator_network_addresses().context("can't BCS decode the validator network address")?,
+            "fullnode_network_addresses": res.validator_network_addresses().context("can't BCS decode the fullnode network address")?,
             "validator_index": res.validator_index,
           }))
         }

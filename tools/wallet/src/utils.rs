@@ -4,7 +4,7 @@
 
 use anyhow::{anyhow, bail};
 use dialoguer::Confirm;
-use diem_genesis::keys::PublicIdentity;
+use diem_genesis::{config::OperatorConfiguration, keys::PublicIdentity};
 use serde::{de::DeserializeOwned, Serialize};
 #[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
@@ -25,11 +25,12 @@ pub type CliTypedResult<T> = Result<T, anyhow::Error>;
 /// Checks if a file exists, being overridden by `PromptOptions`
 pub fn check_if_file_exists(file: &Path) -> CliTypedResult<()> {
     if file.exists() {
-        let o: Option<&str> = option_env!("LIBRA_CI");
-        if o.is_some() {
-            // TODO: how to make tests always overwrite?
-            println!("LIBRA_CI is set, overwriting {:?}", file.as_os_str());
-            return Ok(());
+        if let Some(env) = option_env!("LIBRA_CI") {
+            if !env.is_empty() {
+                // TODO: how to make tests always overwrite?
+                println!("LIBRA_CI is set, overwriting {:?}", file.as_os_str());
+                return Ok(());
+            }
         }
 
         prompt_yes_with_override(&format!(
@@ -114,6 +115,11 @@ pub fn read_from_file(path: &Path) -> CliTypedResult<Vec<u8>> {
 }
 
 pub fn read_public_identity_file(public_identity_file: &Path) -> CliTypedResult<PublicIdentity> {
+    let bytes = read_from_file(public_identity_file)?;
+    from_yaml(&String::from_utf8(bytes).map_err(|e| anyhow!(e))?)
+}
+
+pub fn read_operator_file(public_identity_file: &Path) -> CliTypedResult<OperatorConfiguration> {
     let bytes = read_from_file(public_identity_file)?;
     from_yaml(&String::from_utf8(bytes).map_err(|e| anyhow!(e))?)
 }
