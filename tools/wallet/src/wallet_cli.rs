@@ -1,4 +1,4 @@
-use crate::account_keys::{self, get_keys_from_prompt};
+use crate::{account_keys, whoami::who_am_i};
 
 use anyhow::Result;
 use clap::{Args, Parser, Subcommand};
@@ -26,47 +26,28 @@ enum WalletSub {
         output_dir: Option<String>,
     },
     /// Use the legacy key derivation scheme
-    // TODO: call this 'WalletArgs'
-    Legacy(LegArgs),
-    // TODO: add WhoAmI to display the wallet info.
+    Legacy,
+    /// use mnemonic to see what account keys are generated
+    Whoami(WhoamiOpts),
 }
 
 #[derive(Args, Debug)]
-struct LegArgs {
-    ///  display private keys and authentication keys
-    #[clap(short, long)]
-    display: bool,
-
-    #[clap(short, long)]
-    /// save legacy keyscheme private keys to file
-    output_path: Option<PathBuf>,
-    /// generate new keys and mnemonic in legacy format. It's not clear why you need this besides for testing. Note: these are not useful for creating a validator.
-    #[clap(short, long)]
-    keygen: bool,
+struct WhoamiOpts {
+    ///  show the validator configurations
+    #[clap(short('v'), long, default_value = "false")]
+    show_validator: bool,
 }
 
 impl WalletCli {
     pub async fn run(&self) -> Result<()> {
         match &self.command {
-            WalletSub::Legacy(args) => {
-                if !args.display && args.output_path.is_none() {
-                    println!("pass --display to show keys and/or --output-path to save keys");
-                    return Ok(());
-                }
+            WalletSub::Whoami(args) => {
+                who_am_i(args.show_validator)?;
+            }
+            WalletSub::Legacy => {
+                println!("this command will generate legacy keys and addresses from v5 addresses. You should only be using this for testing or debugging purposes");
 
-                let l = if args.keygen {
-                    account_keys::legacy_keygen(true)?
-                } else {
-                    get_keys_from_prompt()?
-                };
-
-                if let Some(dir) = &args.output_path {
-                    l.save_keys(dir)?;
-                }
-
-                if args.display {
-                    l.display();
-                }
+                account_keys::legacy_keygen(true)?;
             }
             WalletSub::Keygen {
                 mnemonic,
