@@ -31,10 +31,8 @@ pub enum QueryType {
     },
     /// Epoch and waypoint
     Epoch,
-    /// Network block height
-    BlockHeight,
     /// All account resources
-    Resources {
+    Resource {
         #[clap(short, long)]
         /// account to query txs of
         account: AccountAddress,
@@ -85,39 +83,27 @@ pub enum QueryType {
         #[clap(short, long)]
         auth_key: AuthenticationKey, // we use account address to parse, because that's the format needed to lookup users. AuthKeys and AccountAddress are the same formats.
     },
-
-    /// get a move value from account blob
-    MoveValue {
-        #[clap(short, long)]
-        /// account to query txs of
-        account: AccountAddress,
-        #[clap(long)]
-        /// move module name
-        module_name: String,
-        #[clap(long)]
-        /// move struct name
-        struct_name: String,
-        #[clap(long)]
-        /// move key name
-        key_name: String,
-    },
     /// How far behind the local is from the upstream nodes
     SyncDelay,
-    /// Get transaction history
-    Txs {
-        #[clap(short, long)]
-        /// account to query txs of
-        account: AccountAddress,
-        #[clap(long)]
-        /// get transactions after this height
-        txs_height: Option<u64>,
-        #[clap(long)]
-        /// limit how many txs
-        txs_count: Option<u64>,
-        #[clap(long)]
-        /// filter by type
-        txs_type: Option<String>,
-    },
+
+    // TODO:
+    // /// Network block height
+    // BlockHeight,
+    // /// Get transaction history
+    // Txs {
+    //     #[clap(short, long)]
+    //     /// account to query txs of
+    //     account: AccountAddress,
+    //     #[clap(long)]
+    //     /// get transactions after this height
+    //     txs_height: Option<u64>,
+    //     #[clap(long)]
+    //     /// limit how many txs
+    //     txs_count: Option<u64>,
+    //     #[clap(long)]
+    //     /// filter by type
+    //     txs_type: Option<String>,
+    // },
     // /// Get events
     // Events {
     //     /// account to query events
@@ -172,7 +158,7 @@ impl QueryType {
             "address": addr
           }))
         },
-        QueryType::Resources { account , resource_path_string} => {
+        QueryType::Resource { account , resource_path_string} => {
           let res = client.get_account_resource(*account, resource_path_string).await?;
 
           if let Some(r) = res.inner() {
@@ -192,11 +178,7 @@ impl QueryType {
             "validator_index": res.validator_index,
           }))
         }
-
         _ => { bail!("Not implemented for type: {:?}\n Ground control to major tom.", self) }
-        // QueryType::BlockHeight => todo!(),
-        // QueryType::MoveValue { account, module_name, struct_name, key_name } => todo!(),
-
     }
     }
 }
