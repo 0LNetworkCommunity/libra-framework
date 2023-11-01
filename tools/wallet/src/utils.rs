@@ -26,7 +26,7 @@ pub type CliTypedResult<T> = Result<T, anyhow::Error>;
 pub fn check_if_file_exists(file: &Path) -> CliTypedResult<()> {
     if file.exists() {
         if let Some(env) = option_env!("LIBRA_CI") {
-            if env.len() > 0 {
+            if !env.is_empty() {
                 // TODO: how to make tests always overwrite?
                 println!("LIBRA_CI is set, overwriting {:?}", file.as_os_str());
                 return Ok(());
