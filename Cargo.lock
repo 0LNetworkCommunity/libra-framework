@@ -5858,6 +5858,7 @@ dependencies = [
  "anyhow",
  "clap 4.4.2",
  "diem-sdk",
+ "hex",
  "indoc",
  "libra-smoke-tests",
  "libra-types",
