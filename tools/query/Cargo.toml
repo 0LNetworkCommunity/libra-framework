@@ -20,3 +20,4 @@ tokio = { workspace = true }
 
 [dev-dependencies]
 libra-smoke-tests = { workspace = true }
+hex = { workspace = true }

@@ -17,6 +17,7 @@ use libra_wallet::validator_files::OPERATOR_FILE;
 
 #[derive(clap::Subcommand)]
 pub enum ValidatorTxs {
+    /// txs proof-of-fee settings
     Pof {
         #[clap(short, long)]
         /// the percentage of the nominal reward you will bid to join the validator set. Numbers can include three decimal places: 1.234 is 123.4%. Note this is the maximum precision allowed in the bid (i.e. one decimal of a percent). Numbers with more decimals will be truncated (not rounded)
@@ -28,11 +29,13 @@ pub enum ValidatorTxs {
         /// eliminates the bid. There are only a limited amount of retractions that can happen in an epoch.
         retract: bool,
     },
+    /// jail and unjail transactions
     Jail {
         #[clap(short, long)]
         /// you are a voucher for a validator which is jailed. you are un-jailing this validator after checking that they are able to join again.
         unjail_acct: AccountAddress,
     },
+    /// vouch transactions
     Vouch {
         #[clap(short, long)]
         /// This is an account that you are vouching for. They may not be a validator account.
@@ -41,11 +44,13 @@ pub enum ValidatorTxs {
         /// If you are revoking the vouch for the account specified here.
         revoke: bool,
     },
+    /// register as a validator
     Register {
         #[clap(short('f'), long)]
         /// optional, Path to files with registration files
         operator_file: Option<PathBuf>,
     },
+    /// update validator configurations
     Update {
         #[clap(short('f'), long)]
         /// optional, Path to files with registration files
@@ -118,8 +123,8 @@ impl ValidatorTxs {
                 ValidatorUniverseRegisterValidator {
                     consensus_pubkey: oc.consensus_public_key.to_bytes().to_vec(),
                     proof_of_possession: oc.consensus_proof_of_possession.to_bytes().to_vec(),
-                    network_addresses: bcs::to_bytes(&val_net_protocol)?,
-                    fullnode_addresses: bcs::to_bytes(&vfn_fullnode_protocol)?,
+                    network_addresses: bcs::to_bytes(&vec![val_net_protocol])?,
+                    fullnode_addresses: bcs::to_bytes(&vec![vfn_fullnode_protocol])?,
                 }
             }
             ValidatorTxs::Update { operator_file } => {
@@ -146,8 +151,8 @@ impl ValidatorTxs {
 
                 StakeUpdateNetworkAndFullnodeAddresses {
                     validator_address: oc.operator_account_address.into(),
-                    new_network_addresses: bcs::to_bytes(&val_net_protocol)?,
-                    new_fullnode_addresses: bcs::to_bytes(&vfn_fullnode_protocol)?,
+                    new_network_addresses: bcs::to_bytes(&vec![val_net_protocol])?,
+                    new_fullnode_addresses: bcs::to_bytes(&vec![vfn_fullnode_protocol])?,
                 }
             }
         };

@@ -149,6 +149,14 @@ module ol_framework::vouch {
       filtered_ancestry
     }
 
+    #[view]
+    /// check if the user is in fact a valid voucher
+    public fun is_valid_voucher_for(voucher: address, recipient: address):bool
+    acquires MyVouches {
+      let list = true_friends(recipient);
+      vector::contains(&list, &voucher)
+    }
+
 
     fun is_not_expired(voucher: address, state: &MyVouches): bool {
       let (found, i) = vector::index_of(&state.my_buddies, &voucher);

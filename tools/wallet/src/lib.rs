@@ -10,3 +10,4 @@ pub mod load_keys;
 pub mod utils;
 pub mod validator_files;
 pub mod wallet_cli;
+pub mod whoami;

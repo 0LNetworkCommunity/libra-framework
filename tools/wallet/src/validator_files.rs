@@ -13,6 +13,7 @@ use crate::{
 
 pub const OPERATOR_FILE: &str = "operator.yaml";
 pub const OWNER_FILE: &str = "owner.yaml";
+pub const VALIDATOR_IDENTITY_FILE: &str = "validator-identity.yaml";
 
 // copied from crate/diem/src/genesis/keys.rs
 pub struct SetValidatorConfiguration {
