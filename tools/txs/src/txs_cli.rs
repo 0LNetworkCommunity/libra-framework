@@ -69,8 +69,10 @@ pub struct TxsCli {
 #[derive(clap::Subcommand)]
 pub enum TxsSub {
     #[clap(subcommand)]
+    /// Validator configuration transactions
     Validator(ValidatorTxs),
     #[clap(subcommand)]
+    /// Network upgrade transactions
     Upgrade(UpgradeTxs),
     /// Transfer coins between accounts. Transferring can also be used to create accounts.
     Transfer {
