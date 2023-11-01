@@ -49,8 +49,11 @@ module ol_framework::jail {
 
   /// Validator is misconfigured cannot unjail.
   const EVALIDATOR_CONFIG: u64 = 1;
-  /// Vour voucher is not a validator in the current set, they can't unjail you
+  /// You are not a validator in the current set, you can't unjail anyone.
   const EVOUCHER_NOT_IN_SET: u64 = 2;
+
+  /// You not actually a valid voucher for this user. Did it expire?
+  const EU_NO_VOUCHER: u64 = 3;
 
   struct Jail has key {
       is_jailed: bool,
@@ -122,6 +125,7 @@ module ol_framework::jail {
       error::invalid_state(EVALIDATOR_CONFIG),
     );
     let voucher = signer::address_of(sender);
+    assert!(vouch::is_valid_voucher_for(voucher, addr), EU_NO_VOUCHER);
 
     let current_set = stake::get_current_validators();
     let (vouchers_in_set, _) = vouch::true_friends_in_list(addr, &current_set);
