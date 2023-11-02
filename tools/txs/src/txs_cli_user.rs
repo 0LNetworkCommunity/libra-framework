@@ -1,7 +1,6 @@
 //! Validator subcommands
 
 use crate::submit_transaction::Sender;
-// use anyhow::{bail, Context};
 use diem::common::types::RotationProofChallenge;
 use diem_sdk::crypto::{PrivateKey, SigningKey, ValidCryptoMaterialStringExt};
 use diem_types::{
@@ -21,7 +20,7 @@ pub enum UserTxs {
 }
 
 #[derive(clap::Args)]
-struct RotateKeyTx {
+pub struct RotateKeyTx {
     #[clap(short, long)]
     /// The new authkey to be used
     new_private_key: Option<String>, // Dev NOTE: account address has the same bytes as AuthKey
@@ -33,10 +32,7 @@ impl UserTxs {
             UserTxs::RotateKey(tx) => match tx.run(sender).await {
                 Ok(_) => println!("SUCCESS: privated key rotated"),
                 Err(e) => {
-                    println!(
-                        "ERROR: could not rotate private key, message: {}",
-                        e.to_string()
-                    );
+                    println!("ERROR: could not rotate private key, message: {}", e);
                 }
             },
         }
@@ -50,7 +46,7 @@ impl RotateKeyTx {
         let user_account: AccountAddress = sender.local_account.address();
 
         let new_private_key = if let Some(pk) = &self.new_private_key {
-            Ed25519PrivateKey::from_encoded_string(&pk)?
+            Ed25519PrivateKey::from_encoded_string(pk)?
         } else {
             let legacy = get_keys_from_prompt()?;
             legacy.child_0_owner.pri_key
@@ -94,7 +90,7 @@ pub fn rotate_key(
 
     // Signs the struct using both the current private key and the next private key
     let rotation_proof_signed_by_current_private_key =
-        current_private_key.sign_arbitrary_message(&rotation_msg.clone());
+        current_private_key.sign_arbitrary_message(&rotation_msg);
     let rotation_proof_signed_by_new_private_key =
         new_private_key.sign_arbitrary_message(&rotation_msg);
 
