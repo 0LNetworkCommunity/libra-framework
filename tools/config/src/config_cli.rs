@@ -90,6 +90,13 @@ enum ConfigSub {
         #[clap(short, long, default_value = "false")]
         check: bool,
     },
+
+    /// Generate a fullnode dir and add fullnode.yaml from template
+    FullnodeInit {
+      /// path to libra config and data files defaults to $HOME/.libra
+      #[clap(short, long)]
+      home_path: Option<PathBuf>,
+    },
 }
 
 impl ConfigCli {
@@ -221,6 +228,10 @@ impl ConfigCli {
                 initialize_validator_configs(&data_path, None).await?;
                 println!("Validators' config initialized.");
                 Ok(())
+            }
+            Some(ConfigSub::FullnodeInit { home_path }) => {
+
+              Ok(())
             }
             _ => {
                 println!("Sometimes I'm right and I can be wrong. My own beliefs are in my song. The butcher, the banker, the drummer and then. Makes no difference what group I'm in.");
