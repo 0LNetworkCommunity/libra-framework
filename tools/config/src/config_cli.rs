@@ -1,3 +1,4 @@
+use crate::fullnode_config::{download_genesis, init_fullnode_yaml};
 use crate::host::initialize_validator_configs;
 use crate::{legacy_config, make_profile};
 use anyhow::{Context, Result};
@@ -93,9 +94,9 @@ enum ConfigSub {
 
     /// Generate a fullnode dir and add fullnode.yaml from template
     FullnodeInit {
-      /// path to libra config and data files defaults to $HOME/.libra
-      #[clap(short, long)]
-      home_path: Option<PathBuf>,
+        /// path to libra config and data files defaults to $HOME/.libra
+        #[clap(short, long)]
+        home_path: Option<PathBuf>,
     },
 }
 
@@ -230,8 +231,11 @@ impl ConfigCli {
                 Ok(())
             }
             Some(ConfigSub::FullnodeInit { home_path }) => {
+                download_genesis(home_path.to_owned()).await?;
 
-              Ok(())
+                init_fullnode_yaml(home_path.to_owned()).await?;
+
+                Ok(())
             }
             _ => {
                 println!("Sometimes I'm right and I can be wrong. My own beliefs are in my song. The butcher, the banker, the drummer and then. Makes no difference what group I'm in.");
