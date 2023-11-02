@@ -1,6 +1,7 @@
 use std::{collections::HashMap, path::{PathBuf, Path}};
 use diem_config::config::NodeConfig;
 use diem_types::{PeerId, network_address::NetworkAddress, waypoint::Waypoint};
+use libra_types::legacy_types::app_cfg::default_file_path;
 
 
 pub fn add_peers_to_yaml(path: &Path, peers: HashMap<PeerId, Vec<NetworkAddress>> ) -> anyhow::Result<()> {
@@ -20,8 +21,19 @@ pub fn add_peers_to_yaml(path: &Path, peers: HashMap<PeerId, Vec<NetworkAddress>
 }
 
 /// download genesis blob
-///
-pub fn download_genesis(_home_dir: Option<PathBuf>) {
+pub async fn download_genesis(home_dir: Option<PathBuf>) -> anyhow::Result<()>{
+
+  let bytes = reqwest::get("https://github.com/0xzoz/blob/raw/main/genesis.blob")
+  .await?
+  .bytes()
+  .await?;
+
+  let home = home_dir.unwrap_or_else(default_file_path);
+  let p = home.join("genesis.blob");
+
+  std::fs::write(p, bytes)?;
+
+  Ok(())
 
 }
 
@@ -104,3 +116,20 @@ async fn get_yaml() {
   dbg!(&text);
 }
 
+#[tokio::test]
+async fn persist_genesis() {
+  let mut p = diem_temppath::TempPath::new();
+  p.create_as_dir().unwrap();
+  p.persist();
+
+  let path = p.path().to_owned();
+
+  download_genesis(Some(path)).await.unwrap();
+  let l = std::fs::read_dir(p.path())
+    .unwrap()
+    .nth(0)
+    .unwrap()
+    .unwrap();
+  assert!(l.file_name().to_str().unwrap().contains("genesis.blob"));
+  // dbg!(&l);
+}
