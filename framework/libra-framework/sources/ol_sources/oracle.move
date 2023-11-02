@@ -188,6 +188,22 @@ module ol_framework::oracle {
 
             // update the global state
       let global = borrow_global_mut<GlobalCounter>(@ol_framework);
+            // is this a proof in a new epoch?
+      let current_epoch = epoch_helper::get_current_epoch();
+
+      // if this is the first proof this epoch;
+      if (current_epoch > tower.latest_epoch_mining ) {
+        // we lazily reset this counter
+        global.proofs_in_epoch = 0;
+        // and if this first proof is exaclty in a contiguous epoch
+        // it qualifies as a streak
+        if (tower.latest_epoch_mining + 1 == current_epoch) {
+          tower.contiguous_epochs_mining = tower.contiguous_epochs_mining + 1;
+        } else if (tower.latest_epoch_mining + 1 < current_epoch) { // reset it
+          tower.contiguous_epochs_mining = 0;
+        }
+      };
+
       global.lifetime_proofs = global.lifetime_proofs + 1;
       global.proofs_in_epoch = global.proofs_in_epoch + 1;
 
@@ -214,11 +230,6 @@ module ol_framework::oracle {
       };
 
 
-      let current_epoch = epoch_helper::get_current_epoch();
-      if (current_epoch > 0  && (current_epoch -1) == tower.latest_epoch_mining) {
-        tower.contiguous_epochs_mining = tower.contiguous_epochs_mining + 1;
-
-      };
       tower.epochs_mining = tower.epochs_mining + 1;
       tower.latest_epoch_mining = epoch_helper::get_current_epoch();
 
