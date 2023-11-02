@@ -51,7 +51,12 @@ pub async fn wizard(
     let client = Client::new(url);
 
     if client.get_index().await.is_ok() {
-        address = client.lookup_originating_address(authkey).await?;
+        // look for actual address (i.e. may have rotated key or be an OG account)
+        // Should not abort if account cannot be found.
+        match client.lookup_originating_address(authkey).await {
+            Ok(a) => address = a,
+            Err(_) => println!("INFO: could not find this address or authkey on chain. Maybe it has never been initialized? Have someone send a transaction to it."),
+        };
     }
 
     let cfg = AppCfg::init_app_configs(authkey, address, config_dir, chain_name, Some(np))?;

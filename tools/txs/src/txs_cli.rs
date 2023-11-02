@@ -1,4 +1,5 @@
 use crate::txs_cli_upgrade::UpgradeTxs;
+use crate::txs_cli_user::UserTxs;
 use crate::txs_cli_vals::ValidatorTxs;
 use crate::{publish::encode_publish_payload, submit_transaction::Sender};
 use std::path::PathBuf;
@@ -68,6 +69,9 @@ pub struct TxsCli {
 
 #[derive(clap::Subcommand)]
 pub enum TxsSub {
+    #[clap(subcommand)]
+    /// User account utils
+    User(UserTxs),
     #[clap(subcommand)]
     /// Validator configuration transactions
     Validator(ValidatorTxs),
@@ -187,6 +191,7 @@ impl TxsCli {
             }) => send.generic(function_id, ty_args, args).await,
             Some(TxsSub::Validator(val_txs)) => val_txs.run(&mut send).await,
             Some(TxsSub::Upgrade(upgrade_txs)) => upgrade_txs.run(&mut send).await,
+            Some(TxsSub::User(user_txs)) => user_txs.run(&mut send).await,
             _ => {
                 println!(
                     "\nI'm searching, though I don't succeed\n
