@@ -5787,6 +5787,7 @@ dependencies = [
  "diem-crypto",
  "diem-genesis",
  "diem-rest-client",
+ "diem-temppath",
  "diem-types",
  "libra-types",
  "libra-wallet",
