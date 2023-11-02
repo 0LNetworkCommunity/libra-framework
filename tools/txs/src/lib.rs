@@ -7,4 +7,4 @@ pub mod transfer;
 pub mod txs_cli;
 pub mod txs_cli_upgrade;
 pub mod txs_cli_vals;
-// pub mod generate_transaction;
+pub mod txs_cli_user;
