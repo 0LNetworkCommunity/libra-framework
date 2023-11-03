@@ -5787,11 +5787,13 @@ dependencies = [
  "diem-crypto",
  "diem-genesis",
  "diem-rest-client",
+ "diem-temppath",
  "diem-types",
  "libra-types",
  "libra-wallet",
  "reqwest",
  "serde_json",
+ "serde_yaml 0.8.26",
  "tokio",
  "url",
 ]
