@@ -16,7 +16,7 @@ module ol_framework::test_burn {
   use std::option;
   use std::fixed_point32;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   #[test(root = @ol_framework, alice = @0x1000a)]
 
@@ -338,11 +338,54 @@ module ol_framework::test_burn {
     mock::ol_initialize_coin_and_fund_vals(root, genesis_mint, true);
 
     let (prev_supply, prev_balance, burn_at_last_calc, cumu_burn) = ol_account::get_burn_tracker(@0x1000a);
-    print(&prev_supply);
-    print(&prev_balance);
-    assert!(prev_balance == 12345, 7357001);
-    print(&burn_at_last_calc);
-    print(&cumu_burn);
+    // everything initialized correctly
+    assert!(prev_supply == 100000000, 7357001);
+    assert!(prev_balance == 12345, 7357002);
+    assert!(burn_at_last_calc == 0, 7357003);
+    assert!(cumu_burn == 0, 7357004);
+
+  }
+
+  #[test(root = @ol_framework, alice=@0x1000a)]
+  fun burn_tracker_increment(root: &signer, alice: &signer) {
+    mock::genesis_n_vals(root, 2);
+    let genesis_mint = 12345;
+    mock::ol_initialize_coin_and_fund_vals(root, genesis_mint, true);
+
+    // check init
+    let (prev_supply, prev_balance, burn_at_last_calc, cumu_burn) =
+    ol_account::get_burn_tracker(@0x1000a);
+    // everything initialized correctly
+    assert!(prev_supply == 100000000, 7357001);
+    assert!(prev_balance == 12345, 7357002);
+    assert!(burn_at_last_calc == 0, 7357003);
+    assert!(cumu_burn == 0, 7357004);
+
+    // simulate epoch boundary burn
+    let all_fees = transaction_fee::test_root_withdraw_all(root);
+    burn::epoch_burn_fees(root, &mut all_fees);
+    coin::destroy_zero(all_fees); // destroy the hot potato
+
+    // there should be no change at this point
+    let (prev_supply_1, prev_balance_1, burn_at_last_calc, cumu_burn) =
+    ol_account::get_burn_tracker(@0x1000a);
+    assert!(prev_supply == prev_supply_1, 7357005);
+    assert!(prev_balance == prev_balance_1, 7357006);
+
+    ol_account::transfer(alice, @0x1000b, 100);
+
+    // burn tracker will change on each transaction
+    let (prev_supply_2, prev_balance_2, burn_at_last_calc_2, cumu_burn_2) =
+    ol_account::get_burn_tracker(@0x1000a);
+
+    // supply must go down
+    assert!(prev_supply_2 < prev_supply, 7357007);
+    // alice balance must go down after alice sent to bob
+    assert!(prev_balance_2 < prev_balance, 7357008);
+    // the last burn should be higher than 0 at init
+    assert!(burn_at_last_calc_2 > burn_at_last_calc, 7357009);
+    // the cumu burn should be higher
+    assert!(cumu_burn_2 > cumu_burn, 7357010);
 
   }
 }

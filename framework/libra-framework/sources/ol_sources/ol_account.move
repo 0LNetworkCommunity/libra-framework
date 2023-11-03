@@ -178,9 +178,12 @@ module ol_framework::ol_account {
       assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
 
       slow_wallet::maybe_track_unlocked_withdraw(payer, amount);
+      let coin = coin::withdraw_with_capability(cap, amount);
       // the outgoing coins should trigger an update on this account
+      // order matters here
       maybe_update_burn_tracker_impl(payer);
-      coin::withdraw_with_capability(cap, amount)
+
+      coin
     }
 
     /// Withdraw funds while respecting the transfer limits
@@ -190,9 +193,11 @@ module ol_framework::ol_account {
         let limit = slow_wallet::unlocked_amount(addr);
         assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
         slow_wallet::maybe_track_unlocked_withdraw(addr, amount);
+        let coin = coin::withdraw<GasCoin>(sender, amount);
         // the outgoing coins should trigger an update on this account
+        // order matters here
         maybe_update_burn_tracker_impl(addr);
-        coin::withdraw<GasCoin>(sender, amount)
+        coin
     }
 
     // actual implementation to allow for capability
