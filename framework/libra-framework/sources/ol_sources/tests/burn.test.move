@@ -16,7 +16,7 @@ module ol_framework::test_burn {
   use std::option;
   use std::fixed_point32;
 
-  // use diem_std::debug::print;
+  use diem_std::debug::print;
 
   #[test(root = @ol_framework, alice = @0x1000a)]
 
@@ -329,4 +329,20 @@ module ol_framework::test_burn {
       assert!(fees == 0, 7357008);
 
     }
+
+
+  #[test(root = @ol_framework)]
+  fun init_burn_tracker(root: &signer) {
+    mock::genesis_n_vals(root, 1);
+    let genesis_mint = 12345;
+    mock::ol_initialize_coin_and_fund_vals(root, genesis_mint, true);
+
+    let (prev_supply, prev_balance, burn_at_last_calc, cumu_burn) = ol_account::get_burn_tracker(@0x1000a);
+    print(&prev_supply);
+    print(&prev_balance);
+    assert!(prev_balance == 12345, 7357001);
+    print(&burn_at_last_calc);
+    print(&cumu_burn);
+
+  }
 }
