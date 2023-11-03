@@ -320,4 +320,36 @@ module ol_framework::oracle {
           },
       );
     }
+
+    //////// GETTERS ////////
+
+    #[view]
+    /// returns the number of proofs for a miner in the current epoch
+    public fun get_count_in_epoch(miner_addr: address): u64 acquires Tower {
+      if (exists<Tower>(miner_addr)) {
+        let s = borrow_global<Tower>(miner_addr);
+        if (s.latest_epoch_mining == epoch_helper::get_current_epoch()) {
+          return s.count_proofs_in_epoch
+        };
+      };
+      0
+    }
+
+    //////// TEST HELPERS ////////
+    #[test_only]
+    public fun set_tower(root: &signer, addr: address, count_proofs_in_epoch:
+    u64, latest_epoch_mining: u64) acquires Tower {
+      system_addresses::assert_ol(root);
+      let state = borrow_global_mut<Tower>(addr);
+      state.count_proofs_in_epoch = count_proofs_in_epoch;
+      state.latest_epoch_mining = latest_epoch_mining
+    }
+
+    #[test_only]
+    /// returns the number of proofs for a miner in the current epoch
+    public fun get_exact_count(miner_addr: address): u64 acquires Tower {
+      let s = borrow_global<Tower>(miner_addr);
+      return s.count_proofs_in_epoch
+    }
+
 }
