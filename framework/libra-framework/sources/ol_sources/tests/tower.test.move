@@ -13,6 +13,7 @@ module ol_framework::test_tower {
   use ol_framework::stake;
   use diem_framework::timestamp;
   use std::vector;
+  use ol_framework::oracle;
 
   // use std::debug::print;
 
@@ -118,6 +119,47 @@ module ol_framework::test_tower {
     let (_, alice_bal) = ol_account::balance(@0x1000a);
 
     assert!(alice_bal_pre < alice_bal, 73570003);
+  }
+
+  #[test(root = @ol_framework, cousin_alice = @0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5)]
+  fun counters_lazy_reset(root: signer, cousin_alice: signer) {
+    let a_addr = signer::address_of(&cousin_alice);
+    let _vals = mock::genesis_n_vals(&root, 1);
+
+    ol_account::create_account(&root, a_addr);
+
+    tower_state::minerstate_commit(
+      &cousin_alice,
+      vdf_fixtures::alice_0_easy_chal(),
+      vdf_fixtures::alice_0_easy_sol(),
+      vdf_fixtures::easy_difficulty(),
+      vdf_fixtures::security(),
+    );
+
+    let count_pre = oracle::get_exact_count(a_addr);
+    assert!(count_pre==1, 7347001);
+
+    oracle::set_tower(&root, a_addr, 73, 0);
+
+    let count_more = oracle::get_exact_count(a_addr);
+    assert!(count_more==73, 7347002);
+
+    mock::trigger_epoch(&root);
+
+    let count_pre_reset = oracle::get_exact_count(a_addr);
+    assert!(count_pre_reset==73, 7347003);
+
+    tower_state::minerstate_commit(
+      &cousin_alice,
+      vdf_fixtures::alice_1_easy_chal(),
+      vdf_fixtures::alice_1_easy_sol(),
+      vdf_fixtures::easy_difficulty(),
+      vdf_fixtures::security(),
+    );
+
+    let count_post_reset = oracle::get_exact_count(a_addr);
+    assert!(count_post_reset==1, 7347004);
+
   }
 
 }
