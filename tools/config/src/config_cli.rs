@@ -7,7 +7,7 @@ use libra_types::exports::AccountAddress;
 use libra_types::exports::AuthenticationKey;
 use libra_types::exports::Client;
 use libra_types::exports::NamedChain;
-use libra_types::global_config_dir;
+use libra_types::{global_config_dir, ol_progress};
 use libra_types::legacy_types::app_cfg::{self, AppCfg};
 use libra_types::type_extensions::client_ext::ClientExt;
 use libra_wallet::utils::read_operator_file;
@@ -95,7 +95,7 @@ enum ConfigSub {
     /// Generate a fullnode dir and add fullnode.yaml from template
     FullnodeInit {
         /// path to libra config and data files defaults to $HOME/.libra
-        #[clap(short, long)]
+        #[clap(long)]
         home_path: Option<PathBuf>,
     },
 }
@@ -232,8 +232,12 @@ impl ConfigCli {
             }
             Some(ConfigSub::FullnodeInit { home_path }) => {
                 download_genesis(home_path.to_owned()).await?;
+                println!("downloaded genesis block");
 
-                init_fullnode_yaml(home_path.to_owned()).await?;
+                let p = init_fullnode_yaml(home_path.to_owned()).await?;
+                println!("config created at {}", p.display());
+
+                ol_progress::OLProgress::complete("fullnode configs initialized");
 
                 Ok(())
             }

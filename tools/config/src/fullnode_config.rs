@@ -7,7 +7,7 @@ use std::{
 };
 
 /// fetch seed peers and make a yaml file from template
-pub async fn init_fullnode_yaml(home_dir: Option<PathBuf>) -> anyhow::Result<()> {
+pub async fn init_fullnode_yaml(home_dir: Option<PathBuf>) -> anyhow::Result<PathBuf> {
     let waypoint = get_genesis_waypoint(home_dir.clone()).await?;
 
     let yaml = make_fullnode_yaml(home_dir.clone(), waypoint)?;
@@ -20,7 +20,7 @@ pub async fn init_fullnode_yaml(home_dir: Option<PathBuf>) -> anyhow::Result<()>
 
     add_peers_to_yaml(&p, peers)?;
 
-    Ok(())
+    Ok(p)
 }
 
 pub fn add_peers_to_yaml(
@@ -97,6 +97,7 @@ pub async fn download_genesis(home_dir: Option<PathBuf>) -> anyhow::Result<()> {
         .await?;
 
     let home = home_dir.unwrap_or_else(default_file_path);
+    std::fs::create_dir_all(&home)?;
     let p = home.join("genesis.blob");
 
     std::fs::write(p, bytes)?;
