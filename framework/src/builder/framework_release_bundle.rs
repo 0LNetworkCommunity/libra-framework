@@ -55,14 +55,8 @@ pub fn libra_author_script_file(
     emitln!(writer, "use std::vector;");
     emitln!(writer, "use diem_framework::diem_governance;");
     emitln!(writer, "use diem_framework::code;\n");
+    emitln!(writer, "use diem_framework::version;\n");
 
-    // emitln!(writer, "fun main(proposal_id: u64){");
-    // writer.indent();
-    // emitln!(
-    //     writer,
-    //     "let framework_signer = diem_governance::resolve(proposal_id, @{});",
-    //     for_address
-    // );
     emitln!(writer, "fun main(proposal_id: u64){");
     writer.indent();
     // This is the multi step proposal, needs a next hash even if it a single step and thus an empty vec.
@@ -104,8 +98,15 @@ pub fn libra_author_script_file(
 
     emitln!(
         writer,
-        "code::publish_package_txn(&framework_signer, chunk1, code)"
+        "code::publish_package_txn(&framework_signer, chunk1, code);"
     );
+
+    emitln!(
+        writer,
+        "version::upgrade_set_git(&framework_signer, x\"{}\")",
+        diem_build_info::get_git_hash()
+    );
+
     writer.unindent();
     emitln!(writer, "}");
     writer.unindent();
