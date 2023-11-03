@@ -106,6 +106,14 @@ pub fn libra_author_script_file(
         writer,
         "code::publish_package_txn(&framework_signer, chunk1, code)"
     );
+
+    emitln!(
+        writer,
+        "version::upgrade_set_git(&framework_signer, {})",
+        diem_build_info::get_git_hash()
+    );
+
+
     writer.unindent();
     emitln!(writer, "}");
     writer.unindent();

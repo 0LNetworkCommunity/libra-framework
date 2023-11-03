@@ -12,6 +12,10 @@ module diem_framework::version {
         major: u64,
     }
 
+    struct Git has key {
+      hash: vector<u8>
+    }
+
     struct SetVersionCapability has key {}
 
     /// Specified major version number must be greater than current version number.
@@ -24,7 +28,7 @@ module diem_framework::version {
     public(friend) fun initialize(diem_framework: &signer, initial_version: u64) {
         system_addresses::assert_diem_framework(diem_framework);
 
-        move_to(diem_framework, Version { major: initial_version });
+        move_to(diem_framework, Version { major: initial_version});
         // Give diem framework account capability to call set version. This allows on chain governance to do it through
         // control of the diem framework account.
         move_to(diem_framework, SetVersionCapability {});
@@ -43,6 +47,19 @@ module diem_framework::version {
 
         // Need to trigger reconfiguration so validator nodes can sync on the updated version.
         reconfiguration::reconfigure();
+    }
+
+    /// set the git commit of a current upgrade.
+    // NOTE: easier to troublshoot than the code.move manifests
+    public fun upgrade_set_git(framework: &signer, hash: vector<u8>) acquires Git {
+      if (!exists<Git>(@ol_framework)) {
+        move_to(framework, Git {
+          hash,
+        })
+      } else {
+        let state = borrow_global_mut<Git>(@ol_framework);
+        state.hash = hash;
+      }
     }
 
     /// Only called in tests and testnets. This allows the core resources account, which only exists in tests/testnets,
