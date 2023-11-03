@@ -20,7 +20,6 @@ impl NodeCli {
             std::env::set_var("RUST_LOG", "warn")
         }
 
-
         let path = self
             .config_path
             .clone()
@@ -41,26 +40,32 @@ impl NodeCli {
     }
 }
 
-
 /// helper to find a default config
-fn find_a_config() -> anyhow::Result<PathBuf>{
-  let d = global_config_dir();
-  let val_file = d.join("validator.yaml");
+fn find_a_config() -> anyhow::Result<PathBuf> {
+    let d = global_config_dir();
+    let val_file = d.join("validator.yaml");
 
-  let help = "If this is not what you expected explicitly set it with --config-file <path>";
+    let help = "If this is not what you expected explicitly set it with --config-file <path>";
 
-  // we assume if this is set up as a validator that's the preferred profile
-  if val_file.exists() {
-      println!("\nUsing validator profile at {}.\n{}", val_file.display(), help);
-    return Ok(val_file)
-  }
+    // we assume if this is set up as a validator that's the preferred profile
+    if val_file.exists() {
+        println!(
+            "\nUsing validator profile at {}.\n{}",
+            val_file.display(),
+            help
+        );
+        return Ok(val_file);
+    }
 
-  let fn_file = d.join("fullnode.yaml");
-  if fn_file.exists() {
-      println!("\nUsing fullnode profile at {}.\n{}", fn_file.display(), help);
-    return Ok(fn_file)
-  }
+    let fn_file = d.join("fullnode.yaml");
+    if fn_file.exists() {
+        println!(
+            "\nUsing fullnode profile at {}.\n{}",
+            fn_file.display(),
+            help
+        );
+        return Ok(fn_file);
+    }
 
-  bail!("ERROR: you have no node *.yaml configured in the default directory $HOME/.libra/");
-
+    bail!("ERROR: you have no node *.yaml configured in the default directory $HOME/.libra/");
 }
