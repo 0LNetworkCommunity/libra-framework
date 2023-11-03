@@ -184,7 +184,7 @@ module ol_framework::oracle {
 
     }
 
-    fun increment_stats(provider_addr: address, tower: &mut Tower, time: u64, signature_bytes: vector<u8>,) acquires GlobalCounter, ProviderList {
+    fun increment_stats(provider_addr: address, tower: &mut Tower, time: u64, signature_bytes: vector<u8>) acquires GlobalCounter, ProviderList {
 
             // update the global state
       let global = borrow_global_mut<GlobalCounter>(@ol_framework);
@@ -192,47 +192,42 @@ module ol_framework::oracle {
       let current_epoch = epoch_helper::get_current_epoch();
 
       // if this is the first proof this epoch;
-      if (current_epoch > tower.latest_epoch_mining ) {
+
+      if (current_epoch > tower.latest_epoch_mining) { // 370 , 10 = true
         // we lazily reset this counter
-        global.proofs_in_epoch = 0;
+        tower.count_proofs_in_epoch = 0;
         // and if this first proof is exaclty in a contiguous epoch
         // it qualifies as a streak
-        if (tower.latest_epoch_mining + 1 == current_epoch) {
+        if (tower.latest_epoch_mining + 1 == current_epoch) { // 11, 370, false
           tower.contiguous_epochs_mining = tower.contiguous_epochs_mining + 1;
         } else if (tower.latest_epoch_mining + 1 < current_epoch) { // reset it
+        // 11, 370, true
           tower.contiguous_epochs_mining = 0;
         }
       };
-
-      global.lifetime_proofs = global.lifetime_proofs + 1;
-      global.proofs_in_epoch = global.proofs_in_epoch + 1;
-
-
+      // exit early if above threshold
+      assert!(
+        tower.count_proofs_in_epoch  < globals::get_epoch_mining_thres_upper(),
+        error::invalid_state(EABOVE_SUBMISSION_THRESH)
+      );
       // update providers state
       tower.last_commit_timestamp = time;
       tower.previous_proof_hash = signature_bytes;
       tower.verified_tower_height = tower.verified_tower_height + 1;
       tower.count_proofs_in_epoch = tower.count_proofs_in_epoch + 1;
+      tower.epochs_mining = tower.epochs_mining + 1;
+      tower.latest_epoch_mining = epoch_helper::get_current_epoch();
 
-      assert!(
-        tower.count_proofs_in_epoch  < globals::get_epoch_mining_thres_upper(),
-        error::invalid_state(EABOVE_SUBMISSION_THRESH)
-      );
-
+      // update globals
+      global.lifetime_proofs = global.lifetime_proofs + 1;
+      global.proofs_in_epoch = global.proofs_in_epoch + 1;
       // also check if the tower is now above the threshold
-       if (tower.count_proofs_in_epoch > globals::get_epoch_mining_thres_lower()) {
-        // print(&333001);
+      if (tower.count_proofs_in_epoch > globals::get_epoch_mining_thres_lower()) {
         global.proofs_in_epoch_above_thresh = global.proofs_in_epoch_above_thresh + 1;
         // also add to the provider list which would be elegible for rewards
         let provider_list = borrow_global_mut<ProviderList>(@ol_framework);
         vector::push_back(&mut provider_list.current_above_threshold, provider_addr);
-        // print(provider_list);
       };
-
-
-      tower.epochs_mining = tower.epochs_mining + 1;
-      tower.latest_epoch_mining = epoch_helper::get_current_epoch();
-
     }
 
     // while transitioning to oracle, allow vdf proofs from miners.
