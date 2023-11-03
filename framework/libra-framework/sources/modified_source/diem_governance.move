@@ -520,12 +520,10 @@ module diem_framework::diem_governance {
     }
 
     #[view]
-    // what is the state of the proposal
+    /// what is the state of the proposal
     public fun get_proposal_state(proposal_id: u64):u64  {
       voting::get_proposal_state<GovernanceProposal>(@diem_framework, proposal_id)
     }
-
-
 
 
     //////// 0L ////////

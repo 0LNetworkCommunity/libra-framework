@@ -3,6 +3,7 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 
+use anyhow::Context;
 use libra_framework::builder::framework_generate_upgrade_proposal::make_framework_upgrade_artifacts;
 
 // TODO: This could be generated dynamically at the start of the test suites. using `Once`. Though if the tools aren't compiled it will take approximately forever to do so. Hence fixtures, though not ideal.
@@ -29,7 +30,7 @@ pub fn insert_test_file(core_module_name: &str, remove: bool) -> anyhow::Result<
     }
 
     let file_path = this_crate
-        .join("src")
+        // .join("src")
         .join("tests")
         .join("fixtures")
         .join("all_your_base.move");
@@ -42,10 +43,13 @@ pub fn insert_test_file(core_module_name: &str, remove: bool) -> anyhow::Result<
 pub fn generate_fixtures(output_path: PathBuf, modules: Vec<String>) -> anyhow::Result<()> {
     println!("generating files, this will take some time, go do some laundry");
     let destination_module = modules.last().unwrap().clone();
-    insert_test_file(&destination_module, false)?;
+    insert_test_file(&destination_module, false).context("could not insert test file")?;
 
-    let this_crate = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
-    let libra_framework_sources = this_crate.parent().unwrap().join("framework");
+    let this_crate = PathBuf::from_str(env!("CARGO_MANIFEST_DIR"))?;
+    let libra_framework_sources = this_crate
+        .parent()
+        .context("no parent dir")?
+        .join("framework");
 
     make_framework_upgrade_artifacts(&output_path, &libra_framework_sources, &Some(modules))?;
     // ok, cleanup
