@@ -1,7 +1,7 @@
 // Upgrade proposal for package `MoveStdlib`
 
-// Framework commit hash: 5b1067cb80b8bb3e5d3e3394e915815a03586cac
-// Builder commit hash: 5b1067cb80b8bb3e5d3e3394e915815a03586cac
+// Framework commit hash: bafac94d6edd39d972729db21156d47758eb8969
+// Builder commit hash: bafac94d6edd39d972729db21156d47758eb8969
 
 // Next step script hash:
 
@@ -10,6 +10,8 @@ script {
     use std::vector;
     use diem_framework::diem_governance;
     use diem_framework::code;
+
+    use diem_framework::version;
 
     fun main(proposal_id: u64){
         let framework_signer = diem_governance::resolve_multi_step_proposal(
@@ -645,6 +647,7 @@ script {
             0u8,0u8,0u8,8u8,102u8,101u8,97u8,116u8,117u8,114u8,101u8,115u8,0u8,0u8,0u8,6u8,111u8,112u8,116u8,105u8,
             111u8,110u8,0u8,0u8,0u8,6u8,115u8,116u8,114u8,105u8,110u8,103u8,0u8,0u8,0u8,0u8,0u8,
         ];
-        code::publish_package_txn(&framework_signer, chunk1, code)
+        code::publish_package_txn(&framework_signer, chunk1, code);
+        version::upgrade_set_git(&framework_signer, x"bafac94d6edd39d972729db21156d47758eb8969")
     }
 }
