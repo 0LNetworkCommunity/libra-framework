@@ -1,13 +1,12 @@
 //! generate framework upgrade proposal scripts
 //! see vendor diem-move/framework/src/release_bundle.rs
 
+use crate::{builder::framework_release_bundle::libra_author_script_file, BYTECODE_VERSION};
 use anyhow::{ensure, Context, Result};
 use diem_crypto::HashValue;
 use diem_framework::{BuildOptions, BuiltPackage, ReleasePackage};
 use diem_types::account_address::AccountAddress;
 use std::path::{Path, PathBuf};
-// use serde::{Serialize, Deserialize};
-use crate::{builder::framework_release_bundle::libra_author_script_file, BYTECODE_VERSION};
 
 /// Core modules address to deploy to
 // NOTE: we are always usin 0x1 here. So if that ever changes in the future then this can't be hard coded.
@@ -35,19 +34,9 @@ pub fn make_framework_upgrade_artifacts(
     let mut next_execution_hash = vec![];
 
     let mut core_modules = core_modules.to_owned().unwrap_or_else(default_core_modules);
-    // 0L TODO: don't make this hard coded
-    // let mut core_modules = vec![
-    //     ("0x1", "move-stdlib"),
-    //     // ("0x1", "vendor-stdlib"),
-    //     // ("0x1", "libra-framework"),
-    //     // ("0x3", "diem-move/framework/diem-token"),
-    //     // ("0x4", "diem-move/framework/diem-token-objects"),
-    // ];
 
     // TODO: we are not using these formatted files now that we are saving them directly
     let mut formatted_scripts: Vec<(String, String)> = vec![];
-
-    // let commit_info = diem_build_info::get_git_hash();
 
     // For generating multi-step proposal files, we need to generate them in the reverse order since
     // we need the hash of the next script.
@@ -62,9 +51,6 @@ pub fn make_framework_upgrade_artifacts(
         // the core module we are upgrading e.g. LibraFramework
         let mut core_module_dir = framework_local_dir.to_owned().canonicalize()?;
         core_module_dir.push(core_module_name);
-
-        // the governance script name
-        // let core_module_name = core_module_dir.file_name().unwrap().to_str().unwrap();
 
         // We first need to compile and build each CORE MODULE we are upgrading (e.g. MoveStdlib, LibraFramework)
 
