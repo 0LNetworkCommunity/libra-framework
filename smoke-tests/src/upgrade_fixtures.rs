@@ -46,7 +46,10 @@ pub fn generate_fixtures(output_path: PathBuf, modules: Vec<String>) -> anyhow::
     insert_test_file(&destination_module, false).context("could not insert test file")?;
 
     let this_crate = PathBuf::from_str(env!("CARGO_MANIFEST_DIR"))?;
-    let libra_framework_sources = this_crate.parent().context("no parent dir")?.join("framework");
+    let libra_framework_sources = this_crate
+        .parent()
+        .context("no parent dir")?
+        .join("framework");
 
     make_framework_upgrade_artifacts(&output_path, &libra_framework_sources, &Some(modules))?;
     // ok, cleanup

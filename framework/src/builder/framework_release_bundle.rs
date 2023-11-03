@@ -57,7 +57,6 @@ pub fn libra_author_script_file(
     emitln!(writer, "use diem_framework::code;\n");
     emitln!(writer, "use diem_framework::version;\n");
 
-
     emitln!(writer, "fun main(proposal_id: u64){");
     writer.indent();
     // This is the multi step proposal, needs a next hash even if it a single step and thus an empty vec.
@@ -107,7 +106,6 @@ pub fn libra_author_script_file(
         "version::upgrade_set_git(&framework_signer, x\"{}\")",
         diem_build_info::get_git_hash()
     );
-
 
     writer.unindent();
     emitln!(writer, "}");
