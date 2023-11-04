@@ -13,7 +13,7 @@ module ol_framework::test_donor_directed {
   use std::vector;
   use std::signer;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
     #[test(root = @ol_framework, alice = @0x1000a)]
     fun dd_init(root: &signer, alice: &signer) {
@@ -304,8 +304,11 @@ module ol_framework::test_donor_directed {
 
       let vals = mock::genesis_n_vals(root, 5); // need to include eve to init funds
       mock::ol_initialize_coin_and_fund_vals(root, 100000, true);
-      // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
+      // start at epoch 1, since turnout tally needs epoch info, and 0 may cause
+      // issues
       mock::trigger_epoch(root);
+      // a burn happend in the epoch above, so let's compare it to end of epoch
+      let (lifetime_burn_pre, _) = burn::get_lifetime_tracker();
 
       let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
       let donor_directed_address = signer::address_of(&resource_sig);
@@ -322,8 +325,9 @@ module ol_framework::test_donor_directed {
       let is_donor = donor_directed_governance::check_is_donor(donor_directed_address, signer::address_of(eve));
       assert!(is_donor, 7357002);
 
-      // Dave will also be a donor, with half the amount of what Eve sends
-      ol_account::transfer(dave, donor_directed_address, 21);
+      // Dave will also be a donor, with half the amount of what Eve
+      let dave_donation = 21;
+      ol_account::transfer(dave, donor_directed_address, dave_donation);
       let is_donor = donor_directed_governance::check_is_donor(donor_directed_address, signer::address_of(dave));
       assert!(is_donor, 7357003);
 
@@ -352,9 +356,9 @@ module ol_framework::test_donor_directed {
       let superman_3 = 1; // rounding from fixed_point32
       assert!((*eve_donation_pro_rata + superman_3) == eve_donation, 7357008);
 
-      let eve_donation_pro_rata = vector::borrow(&refunds, 1);
+      let dave_donation_pro_rata = vector::borrow(&refunds, 1);
       let superman_3 = 1; // rounding from fixed_point32
-      assert!((*eve_donation_pro_rata + superman_3) == 21, 7357009);
+      assert!((*dave_donation_pro_rata + superman_3) == dave_donation, 7357009);
 
 
       let (_, program_balance_pre) = ol_account::balance(donor_directed_address);
@@ -368,11 +372,12 @@ module ol_framework::test_donor_directed {
       assert!(program_balance < program_balance_pre, 7357010);
       assert!(program_balance == 0, 7357011);
 
+      // eve shoul have received funds back
       assert!(eve_balance > eve_balance_pre, 7357010);
 
-      let (lifetime_burn, _lifetime_match) = burn::get_lifetime_tracker();
+      let (lifetime_burn_now, _) = burn::get_lifetime_tracker();
       // nothing should have been burned, it was a refund
-      assert!(lifetime_burn == 0, 7357011);
+      assert!(lifetime_burn_now == lifetime_burn_pre, 7357011);
 
     }
 
@@ -387,6 +392,8 @@ module ol_framework::test_donor_directed {
       mock::ol_initialize_coin_and_fund_vals(root, 100000, true);
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
       mock::trigger_epoch(root);
+      // a burn happend in the epoch above, so let's compare it to end of epoch
+      let (lifetime_burn_pre, _) = burn::get_lifetime_tracker();
 
       let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
       let donor_directed_address = signer::address_of(&resource_sig);
@@ -456,11 +463,10 @@ module ol_framework::test_donor_directed {
       // program says it goes to the matching index.
       assert!(eve_balance == eve_balance_pre, 7357010);
 
-      let (lifetime_burn, _lifetime_match) = burn::get_lifetime_tracker();
-      print(&lifetime_burn);
-      // print(&lifetime_match);
+      let (lifetime_burn_now, _lifetime_match) = burn::get_lifetime_tracker();
+
       // nothing should have been burned, it was a refund
-      assert!(lifetime_burn == 0, 7357011);
+      assert!(lifetime_burn_now == lifetime_burn_pre, 7357011);
     }
 }
 
