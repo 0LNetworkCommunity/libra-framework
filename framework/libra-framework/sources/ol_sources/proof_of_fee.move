@@ -51,6 +51,7 @@ module ol_framework::proof_of_fee {
   /// not enough coin balance
   const ELOW_UNLOCKED_COIN_BALANCE: u64 = 17;
 
+
   // A struct on the validators account which indicates their
   // latest bid (and epoch)
   struct ProofOfFeeAuction has key {
@@ -69,7 +70,7 @@ module ol_framework::proof_of_fee {
     median_history: vector<u64>,
   }
   public fun init_genesis_baseline_reward(vm: &signer) {
-    if (signer::address_of(vm) != @ol_framework) return;
+    system_addresses::assert_ol(vm);
 
     if (!exists<ConsensusReward>(@ol_framework)) {
       move_to<ConsensusReward>(
@@ -90,7 +91,7 @@ module ol_framework::proof_of_fee {
   // from supply data.
   public fun genesis_migrate_reward(vm: &signer, nominal_reward: u64) acquires
   ConsensusReward {
-    if (signer::address_of(vm) != @ol_framework) return;
+    system_addresses::assert_ol(vm);
 
     let state = borrow_global_mut<ConsensusReward>(@ol_framework);
     state.nominal_reward = nominal_reward;
@@ -427,13 +428,16 @@ module ol_framework::proof_of_fee {
   fun bid_as_fixedpoint(bid_pct: u64): fixed_point32::FixedPoint32 {
     fixed_point32::create_from_rational(bid_pct, 1000)
   }
-  // Adjust the reward at the end of the epoch
-  // as described in the paper, the epoch reward needs to be adjustable
-  // given that the implicit bond needs to be sufficient, eg 5-10x the reward.
-  public fun reward_thermostat(vm: &signer) acquires ConsensusReward {
-    if (signer::address_of(vm) != @ol_framework) {
-      return
-    };
+  /// Adjust the reward at the end of the epoch
+  /// as described in the paper, the epoch reward needs to be adjustable
+  /// given that the implicit bond needs to be sufficient, eg 5-10x the reward.
+  /// @return Tuple (bool, bool, u64)
+  /// 0: did the thermostat run,
+  /// 1: did it increment, or decrease, bool
+  /// 2: how much
+  /// if the thermostat returns (false, false, 0), it means there was an error running
+  public fun reward_thermostat(vm: &signer): (bool, bool, u64) acquires ConsensusReward {
+    system_addresses::assert_ol(vm);
     // check the bid history
     // if there are 5 days above 95% adjust the reward up by 5%
     // adjust by more if it has been 10 days then, 10%
@@ -492,18 +496,19 @@ module ol_framework::proof_of_fee {
         if (epochs_above > long_window) {
 
           // decrease the reward by 10%
+          let less_ten_pct = (cr.nominal_reward / 10);
+          cr.nominal_reward = cr.nominal_reward - less_ten_pct;
+          return (true, false, less_ten_pct)
 
-          cr.nominal_reward = cr.nominal_reward - (cr.nominal_reward / 10);
-          return // return early since we can't increase and decrease simultaneously
         } else if (epochs_above > short_window) {
           // decrease the reward by 5%
+          let less_five_pct = (cr.nominal_reward / 20);
+          cr.nominal_reward = cr.nominal_reward - less_five_pct;
 
-          cr.nominal_reward = cr.nominal_reward - (cr.nominal_reward / 20);
-
-
-          return // return early since we can't increase and decrease simultaneously
+          return (true, false, less_five_pct)
         }
       };
+      // return early since we can't increase and decrease simultaneously
 
 
         // if validators are bidding low percentages
@@ -517,27 +522,31 @@ module ol_framework::proof_of_fee {
 
 
         if (epochs_below > long_window) {
-
-
           // increase the reward by 10%
-          cr.nominal_reward = cr.nominal_reward + (cr.nominal_reward / 10);
+          let increase_ten_pct = (cr.nominal_reward / 10);
+          cr.nominal_reward = cr.nominal_reward + increase_ten_pct;
+          return (true, true, increase_ten_pct)
         } else if (epochs_below > short_window) {
 
 
           // increase the reward by 5%
-          cr.nominal_reward = cr.nominal_reward + (cr.nominal_reward / 20);
+          let increase_five_pct = (cr.nominal_reward / 20);
+          cr.nominal_reward = cr.nominal_reward + increase_five_pct;
+          return (true, true, increase_five_pct)
         };
-      // };
+
+        // we ran the thermostat but no change was made.
+        return (true, false, 0)
     };
+
+    // nominal reward is zero, there's a problem
+    return (false, false, 0)
   }
 
   /// find the median bid to push to history
   // this is needed for reward_thermostat
   public fun set_history(vm: &signer, proposed_validators: &vector<address>) acquires ProofOfFeeAuction, ConsensusReward {
-    if (signer::address_of(vm) != @ol_framework) {
-      return
-    };
-
+    system_addresses::assert_ol(vm);
 
     let median_bid = get_median(proposed_validators);
     // push to history
