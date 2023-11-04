@@ -20,14 +20,12 @@ fn generate_blob(writer: &CodeWriter, data: &[u8]) {
 }
 
 pub fn libra_author_script_file(
-    //////// 0L //////// turn an MRB into a script proposal
+    //////// 0L //////// turn a compiled framework package into a script proposal
     release_package: &ReleasePackage,
     for_address: AccountAddress,
     out: PathBuf,
-    next_execution_hash: Vec<u8>, // metadata: Option<PackageMetadata>,
-                                  // is_testnet: bool,
-                                  // is_multi_step: bool,
-                                  // next_execution_hash: Vec<u8>,
+    next_execution_hash: Vec<u8>,
+    framework_git_hash: &str,
 ) -> anyhow::Result<()> {
     println!("autogenerating .move governance script file");
     let metadata = &release_package.metadata;
@@ -41,7 +39,7 @@ pub fn libra_author_script_file(
     emitln!(
         writer,
         "// Framework commit hash: {}\n// Builder commit hash: {}\n",
-        diem_build_info::get_git_hash(),
+        framework_git_hash,
         diem_build_info::get_git_hash(),
     );
     emitln!(
@@ -104,7 +102,7 @@ pub fn libra_author_script_file(
     emitln!(
         writer,
         "version::upgrade_set_git(&framework_signer, x\"{}\")",
-        diem_build_info::get_git_hash()
+        framework_git_hash
     );
 
     writer.unindent();

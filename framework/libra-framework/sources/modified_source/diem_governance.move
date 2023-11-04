@@ -45,7 +45,7 @@ module diem_framework::diem_governance {
     const ENOT_DELEGATED_VOTER: u64 = 2;
     /// The specified stake pool does not have long enough remaining lockup to create a proposal or vote
     const EINSUFFICIENT_STAKE_LOCKUP: u64 = 3;
-    /// The specified stake pool has already been used to vote on the same proposal
+    /// The specified address already been used to vote on the same proposal
     const EALREADY_VOTED: u64 = 4;
     /// The specified stake pool must be part of the validator set
     const ENO_VOTING_POWER: u64 = 5;
