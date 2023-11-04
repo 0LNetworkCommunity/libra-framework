@@ -22,6 +22,7 @@ diem-build-info = { workspace = true }
 diem-crypto = { workspace = true }
 diem-framework = { workspace = true }
 diem-types = { workspace = true }
+git2 = { workspace = true }
 hex = { workspace = true }
 move-command-line-common = { workspace = true }
 move-model = { workspace = true }
