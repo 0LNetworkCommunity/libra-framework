@@ -13,7 +13,7 @@ module ol_framework::test_donor_directed {
   use std::vector;
   use std::signer;
 
-  // use diem_std::debug::print;
+  use diem_std::debug::print;
 
     #[test(root = @ol_framework, alice = @0x1000a)]
     fun dd_init(root: &signer, alice: &signer) {
@@ -377,7 +377,7 @@ module ol_framework::test_donor_directed {
     }
 
     #[test(root = @ol_framework, alice = @0x1000a, dave = @0x1000d, eve = @0x1000e)]
-    fun dd_liquidate_to_community(root: &signer, alice: &signer, dave: &signer, eve: &signer) {
+    fun dd_liquidate_to_match_index(root: &signer, alice: &signer, dave: &signer, eve: &signer) {
       // Scenario:
       // Alice creates a donor directed account where Alice, Bob and Carol, are admins.
       // Dave and Eve make a donation and so are able to have some voting on that account.
@@ -404,7 +404,8 @@ module ol_framework::test_donor_directed {
       assert!(is_donor, 7357002);
 
       // Dave will also be a donor, with half the amount of what Eve sends
-      ol_account::transfer(dave, donor_directed_address, 21);
+      let dave_donation = 21;
+      ol_account::transfer(dave, donor_directed_address, dave_donation);
       let is_donor = donor_directed_governance::check_is_donor(donor_directed_address, signer::address_of(dave));
       assert!(is_donor, 7357003);
 
@@ -423,18 +424,21 @@ module ol_framework::test_donor_directed {
       let list = donor_directed::get_liquidation_queue();
       assert!(vector::length(&list) > 0, 7357005);
 
+      // check the table of refunds
+      // dave and eve should be receiving
       let (addrs, refunds) = donor_directed::get_pro_rata(donor_directed_address);
 
       assert!(*vector::borrow(&addrs, 0) == @0x1000e, 7357006);
       assert!(*vector::borrow(&addrs, 1) == @0x1000d, 7357007);
 
+      // for the first refund,
       let eve_donation_pro_rata = vector::borrow(&refunds, 0);
       let superman_3 = 1; // rounding from fixed_point32
       assert!((*eve_donation_pro_rata + superman_3) == eve_donation, 7357008);
 
-      let eve_donation_pro_rata = vector::borrow(&refunds, 1);
+      let dave_donation_pro_rata = vector::borrow(&refunds, 1);
       let superman_3 = 1; // rounding from fixed_point32
-      assert!((*eve_donation_pro_rata + superman_3) == 21, 7357009);
+      assert!((*dave_donation_pro_rata + superman_3) == dave_donation, 7357009);
 
       let (_, program_balance_pre) = ol_account::balance(donor_directed_address);
       let (_, eve_balance_pre) = ol_account::balance(@0x1000e);
@@ -447,9 +451,14 @@ module ol_framework::test_donor_directed {
       assert!(program_balance < program_balance_pre, 7357010);
       assert!(program_balance == 0, 7357011);
 
+      // eve's account should not have changed.
+      // she does not get a refund, and the policy of the
+      // program says it goes to the matching index.
       assert!(eve_balance == eve_balance_pre, 7357010);
 
       let (lifetime_burn, _lifetime_match) = burn::get_lifetime_tracker();
+      print(&lifetime_burn);
+      // print(&lifetime_match);
       // nothing should have been burned, it was a refund
       assert!(lifetime_burn == 0, 7357011);
     }
