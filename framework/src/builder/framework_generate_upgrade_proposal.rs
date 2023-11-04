@@ -29,6 +29,8 @@ pub fn make_framework_upgrade_artifacts(
     framework_local_dir: &Path,
     core_modules: &Option<Vec<String>>,
 ) -> Result<Vec<(String, String)>> {
+    let framework_git_hash = &get_framework_git_head(framework_local_dir).unwrap_or("none".to_owned());
+
     let deploy_to_account = AccountAddress::from_hex_literal(CORE_MODULE_ADDRESS)?;
 
     let mut next_execution_hash = vec![];
@@ -99,6 +101,7 @@ pub fn make_framework_upgrade_artifacts(
             deploy_to_account,
             this_mod_gov_script_path.clone(),
             next_execution_hash,
+            framework_git_hash,
         )?;
 
         // We need transaction execution hashes OF THE GOVERNANCE SCRIPT for the governance ceremony.
@@ -211,6 +214,16 @@ pub fn save_build(
         "success: governance script built at: {:?}",
         script_package_dir
     );
-    println!("hash: {:?}", hash.to_hex_literal());
+    println!("tx script hash: {:?}", hash.to_hex_literal());
     Ok(())
+}
+
+
+fn get_framework_git_head(path: &Path) -> anyhow::Result<String> {
+  let r = git2::Repository::discover(path).unwrap();
+  let id = r.head()?
+  .peel_to_commit()?
+  .id();
+
+  Ok(id.to_string())
 }
