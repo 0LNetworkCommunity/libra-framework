@@ -276,11 +276,12 @@ module diem_framework::genesis {
         });
 
         musical_chairs::initialize(diem_framework, num_validators);
-
+        ////////
         // TODO: maybe consolidate reconfig methods in one place
         // for smoke tests
         // stake::maybe_reconfigure(diem_framework,
         // validator_universe::get_eligible_validators());
+        ///////
         stake::on_new_epoch()
     }
 
