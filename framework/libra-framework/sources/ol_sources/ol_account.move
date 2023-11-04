@@ -47,8 +47,6 @@ module ol_framework::ol_account {
       prev_balance: u64,
       burn_at_last_calc: u64,
       cumu_burn: u64,
-      // percent: u64,
-      // percent_increase: u64,
     }
 
 
@@ -180,9 +178,12 @@ module ol_framework::ol_account {
       assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
 
       slow_wallet::maybe_track_unlocked_withdraw(payer, amount);
+      let coin = coin::withdraw_with_capability(cap, amount);
       // the outgoing coins should trigger an update on this account
+      // order matters here
       maybe_update_burn_tracker_impl(payer);
-      coin::withdraw_with_capability(cap, amount)
+
+      coin
     }
 
     /// Withdraw funds while respecting the transfer limits
@@ -192,9 +193,11 @@ module ol_framework::ol_account {
         let limit = slow_wallet::unlocked_amount(addr);
         assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
         slow_wallet::maybe_track_unlocked_withdraw(addr, amount);
+        let coin = coin::withdraw<GasCoin>(sender, amount);
         // the outgoing coins should trigger an update on this account
+        // order matters here
         maybe_update_burn_tracker_impl(addr);
-        coin::withdraw<GasCoin>(sender, amount)
+        coin
     }
 
     // actual implementation to allow for capability
@@ -323,11 +326,11 @@ module ol_framework::ol_account {
       let addr = signer::address_of(sig);
       if (exists<BurnTracker>(addr)) return;
 
-      let (_, total_balance) = balance(addr);
+      let (_, current_user_balance) = balance(addr);
 
       move_to(sig, BurnTracker {
         prev_supply: gas_coin::supply(),
-        prev_balance: total_balance,
+        prev_balance: current_user_balance,
         burn_at_last_calc: 0,
         cumu_burn: 0,
       })
@@ -342,16 +345,20 @@ module ol_framework::ol_account {
     if (!exists<BurnTracker>(addr)) return;// return quietly as the VM may call this
 
     let state = borrow_global_mut<BurnTracker>(addr);
+    let (_, current_user_balance) = balance(addr);
     // 1. how much burn happened in between
     // this must be true but we
     // don't abort since the VM may be calling this
     let current_supply = gas_coin::supply();
     let original_supply = gas_coin::get_final_supply();
-    if (original_supply > current_supply) {
+    if (original_supply > current_supply) { // update if there was a change in supply
       let burn_in_period = original_supply - current_supply;
 
-      if (burn_in_period > 0 && burn_in_period > state.prev_balance &&
-      state.prev_balance > 0 ) {
+      if (
+        state.prev_balance > 0 &&// if there was a user balance
+        burn_in_period > 0 && // there were system burns
+        burn_in_period > state.prev_balance // this is divisible
+      ) {
         let attributed_burn = burn_in_period / state.prev_balance;
         // attributed burn may be zero because of rounding effects
         // in that case we should skip the updating altogether and
@@ -364,10 +371,14 @@ module ol_framework::ol_account {
           // reset trackers for next tx
           state.prev_supply = current_supply;
 
-          let (_, total_balance) = balance(addr);
-          state.prev_balance = total_balance;
+          state.prev_balance = current_user_balance;
         }
       }
+    } else if ( // maybe we are initializing this account
+      state.prev_balance == 0 &&
+      current_user_balance > 0
+    ){
+      state.prev_balance = current_user_balance;
     }
   }
 
@@ -448,10 +459,21 @@ module ol_framework::ol_account {
             borrow_global<DirectTransferConfig>(account).allow_arbitrary_coin_transfers
     }
 
-    // #[test_only]
-    // use diem_std::from_bcs;
-    // // #[test_only]
-    // // use std::string::utf8;
+    #[view]
+    /// gets the burn tracker state
+    /// @param the account address
+    /// @return (previous supply, account previous balance, last burn calculated
+    /// at the time of a tx, the cumulative burn)
+    public fun get_burn_tracker(account: address): (u64, u64, u64, u64) acquires
+    BurnTracker {
+      let state = borrow_global<BurnTracker>(account);
+      return (
+        state.prev_supply,
+        state.prev_balance,
+        state.burn_at_last_calc,
+        state.cumu_burn,
+      )
+    }
 
     #[test_only]
     struct FakeCoin {}

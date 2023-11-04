@@ -98,7 +98,10 @@ module ol_framework::burn {
     // // Transaction fee account should be empty at the end of the epoch
     // // Superman 3 decimal errors. https://www.youtube.com/watch?v=N7JBXGkBoFc
     // // anything that is remaining should be burned
-    // coin::user_burn(coins);
+    let remainder = coin::value(coins);
+    let leftover = coin::extract(coins, remainder);
+    coin::user_burn(leftover);
+    // Note: we are still retruning an empty coin to be destroyed by the caller
   }
 
 
