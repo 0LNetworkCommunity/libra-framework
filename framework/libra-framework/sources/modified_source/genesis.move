@@ -258,7 +258,13 @@ module diem_framework::genesis {
             infra_escrow::genesis_coin_validator(&create_signer(@0x0), *&validator.validator_config.owner_address);
             if (testnet::is_not_mainnet()) {
               let sig = create_signer(validator.validator_config.owner_address);
-              proof_of_fee::set_bid(&sig, 05, 1000);
+              proof_of_fee::set_bid(&sig, 0900, 1000); // make the genesis
+              // default 90% to align with thermostatic rule in the PoF paper.
+              // otherwise the thermostatic rule starts kicking-in immediately
+
+              // TODO: this is for testnet purposes only
+              // unlock some of the genesis validators coins so they can issue
+              // transactions from epoch 0 in test runners.
               slow_wallet::slow_wallet_epoch_drip(diem_framework, 100000000);
             };
 
