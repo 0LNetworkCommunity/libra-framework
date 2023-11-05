@@ -10,7 +10,7 @@ module diem_framework::epoch_boundary {
     // use ol_framework::grade;
     use ol_framework::safe;
     use ol_framework::burn;
-    use ol_framework::donor_directed;
+    use ol_framework::donor_voice;
     use ol_framework::fee_maker;
     use ol_framework::tower_state;
     use ol_framework::infra_escrow;
@@ -162,7 +162,7 @@ module diem_framework::epoch_boundary {
         // bill root service fees;
         root_service_billing(root, status);
         // run the transactions of donor directed accounts
-        let (count, amount, success) = donor_directed::process_donor_directed_accounts(root, closing_epoch);
+        let (count, amount, success) = donor_voice::process_donor_directed_accounts(root, closing_epoch);
         status.dd_accounts_count = count;
         status.dd_accounts_amount = amount;
         status.dd_accounts_success = success;

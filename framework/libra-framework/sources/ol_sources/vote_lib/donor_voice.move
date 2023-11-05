@@ -1,9 +1,9 @@
 
 /// Donor directed wallets is a service of the chain.
-/// Any address can voluntarily turn their account into a donor directed account.
+/// Any address can voluntarily turn their account into a Donor Voice account.
 
-/// The DonorDirected payment workflow is:
-/// Managers use a MultiSig to schedule ->
+/// The DonorVoiceAccount payment workflow is:
+/// Authorities use a MultiSig to schedule ->
 /// Once scheduled the Donors use a TurnoutTally to Veto ->
 /// Epoch boundary: transaction executes when the VM reads the Schedule struct at the epoch boundary, and issues payment.
 
@@ -21,11 +21,9 @@
 
 /// 6. The donors can vote to liquidate a frozen TxSchedule account. The result will depend on the configuration of the TxSchedule account from when it was initialized: the funds by default return to the end user who was the donor.
 
-/// 7. Third party contracts can wrap the Donor Directed wallet. The outcomes of the votes can be returned to a handler in a third party contract For example, liquidiation of a frozen account is programmable: a handler can be coded to determine the outcome of the donor directed wallet. See in CommunityWallets the funds return to the InfrastructureEscrow side-account of the user.
+/// 7. Third party contracts can wrap the Donor Voice wallet. The outcomes of the votes can be returned to a handler in a third party contract For example, liquidiation of a frozen account is programmable: a handler can be coded to determine the outcome of the Donor Voice wallet. See in CommunityWallets the funds return to the InfrastructureEscrow side-account of the user.
 
-module ol_framework::donor_directed {
-    // friend ol_framework::reconfiguration;
-
+module ol_framework::donor_voice {
     use diem_framework::system_addresses;
     use std::vector;
     use std::signer;
@@ -38,15 +36,15 @@ module ol_framework::donor_directed {
     use ol_framework::receipts;
     use ol_framework::multi_action;
     use ol_framework::account::{Self, WithdrawCapability};
-    use ol_framework::donor_directed_governance;
+    use ol_framework::donor_voice_governance;
     use ol_framework::ballot;
     use ol_framework::cumulative_deposits;
     use ol_framework::transaction_fee;
     use ol_framework::match_index;
     // use diem_std::debug::print;
 
-    /// Not initialized as a donor directed account.
-    const ENOT_INIT_DONOR_DIRECTED: u64 = 1;
+    /// Not initialized as a Donor Voiceaccount.
+    const ENOT_INIT_DONOR_VOICE: u64 = 1;
     /// User is not a donor and cannot vote on this account
     const ENOT_AUTHORIZED_TO_VOTE: u64 = 2;
     /// Could not find a pending transaction by this GUID
@@ -70,7 +68,7 @@ module ol_framework::donor_directed {
     const DEFAULT_VETO_DURATION: u64 = 7;
 
 
-    // root registry for the donor directed accounts
+    // root registry for the Donor Voiceaccounts
     struct Registry has key {
       list: vector<address>,
       liquidation_queue: vector<address>,
@@ -85,7 +83,7 @@ module ol_framework::donor_directed {
     }
 
     /// This is the basic payment information.
-    /// This is used initially in a MultiSig, for the managers
+    /// This is used initially in a MultiSig, for the Authorities
     /// initially to schedule.
     struct Payment has copy, drop, store {
       payee: address,
@@ -116,9 +114,9 @@ module ol_framework::donor_directed {
     // struct CommunityWallet has key { }
 
 
-    //////// INIT REGISRTY OF DONOR DIRECTED ACCOUNTS  ////////
+    //////// INIT REGISRTY OF DONOR VOICE ACCOUNTS  ////////
 
-    // Donor Directed Accounts are a root security service. So the root account needs to keep a registry of all donor directed accounts, using this service.
+    // Donor Voice Accounts are a root security service. So the root account needs to keep a registry of all Donor Voice accounts, using this service.
 
     // Utility used at genesis (and on upgrade) to initialize the system state.
     public fun initialize(vm: &signer) {
@@ -147,10 +145,10 @@ module ol_framework::donor_directed {
       };
     }
 
-    //////// DONOR DIRECTED INITIALIZATION ////////
+    //////// DONOR VOICE INITIALIZATION ////////
     // There are three steps in initializing an account. These steps can be combined in a single transaction, or done in separate transactions. The "bricking" of the sponsor key should be done in a separate transaction, in case there are any errors in the initialization.
 
-    // 1. The basic structs for a donor directed account need to be initialized, and the account needs to be added to the Registry at root.
+    // 1. The basic structs for a Donor Voice account need to be initialized, and the account needs to be added to the Registry at root.
 
     // 2. A MultiSig action structs need to be initialized.
 
@@ -192,7 +190,7 @@ module ol_framework::donor_directed {
           guid_capability,
         });
 
-      donor_directed_governance::init_donor_governance(sig);
+      donor_voice_governance::init_donor_governance(sig);
     }
 
     // add to root registry
@@ -218,7 +216,7 @@ module ol_framework::donor_directed {
     }
 
 
-    /// Check if the account is a donor directed account, and initialized properly.
+    /// Check if the account is a Donor Voice account, and initialized properly.
     public fun is_donor_directed(multisig_address: address):bool {
       multi_action::is_multi_action(multisig_address) &&
       multi_action::has_action<Payment>(multisig_address) &&
@@ -239,7 +237,7 @@ module ol_framework::donor_directed {
     ///////// MULTISIG ACTIONS TO SCHEDULE A TIMED TRANSFER /////////
     /// As in any MultiSig instance, the transaction which proposes the action (the scheduled transfer) must be signed by an authority on the MultiSig.
     /// The same function is the handler for the approval case of the MultiSig action.
-    /// Since Donor Directed accounts are involved with sensitive assets, we have moved the WithdrawCapability to the MultiSig instance. Even though we don't need it for any account functions for paying, we use it to ensure no private functions related to assets can be called. Belt and suspenders.
+    /// Since Donor Voice accounts are involved with sensitive assets, we have moved the WithdrawCapability to the MultiSig instance. Even though we don't need it for any account functions for paying, we use it to ensure no private functions related to assets can be called. Belt and suspenders.
 
     /// Returns the GUID of the transfer.
     public fun propose_payment(
@@ -413,7 +411,7 @@ module ol_framework::donor_directed {
 
   //////// GOVERNANCE HANDLERS ////////
 
-  // Governance logic is defined in donor_directed_governance.move
+  // Governance logic is defined in donor_voice_governance.move
   // Below are functions to handle the cases for rejecting and freezing accounts based on governance outcomes.
 
   //////// VETO ////////
@@ -429,9 +427,9 @@ module ol_framework::donor_directed {
     tx_uid: &guid::ID,
   ) acquires TxSchedule, Freeze {
     let multisig_address = guid::id_creator_address(tx_uid);
-    donor_directed_governance::assert_authorized(sender, multisig_address);
+    donor_voice_governance::assert_authorized(sender, multisig_address);
 
-    let veto_is_approved = donor_directed_governance::veto_by_id(sender, veto_uid);
+    let veto_is_approved = donor_voice_governance::veto_by_id(sender, veto_uid);
     if (option::is_none(&veto_is_approved)) return;
 
     let (_found, _idx, state) = get_schedule_state(multisig_address, tx_uid);
@@ -455,7 +453,7 @@ module ol_framework::donor_directed {
         // is the same as the end of the veto ballot
         // This is because the ballot expiration can be
         // extended based on the threshold of votes.
-        donor_directed_governance::sync_ballot_and_tx_expiration(sender, veto_uid, tx_mut.deadline)
+        donor_voice_governance::sync_ballot_and_tx_expiration(sender, veto_uid, tx_mut.deadline)
       }
 
     }
@@ -494,7 +492,7 @@ module ol_framework::donor_directed {
   /// The transaction must first have been scheduled, otherwise this proposal will abort.
   public fun propose_veto(donor: &signer, uid_of_tx: &guid::ID): Option<guid::ID>  acquires TxSchedule {
     let multisig_address = guid::id_creator_address(uid_of_tx);
-    donor_directed_governance::assert_authorized(donor, multisig_address);
+    donor_voice_governance::assert_authorized(donor, multisig_address);
     let state = borrow_global<TxSchedule>(multisig_address);
     // need to check if the tx is already schdules.
 
@@ -502,7 +500,7 @@ module ol_framework::donor_directed {
     if (found && status == SCHEDULED) {
       let epochs_duration = DEFAULT_VETO_DURATION;
 
-      let uid = donor_directed_governance::propose_veto(&state.guid_capability, uid_of_tx,  epochs_duration);
+      let uid = donor_voice_governance::propose_veto(&state.guid_capability, uid_of_tx,  epochs_duration);
       return option::some(uid)
     };
     option::none()
@@ -555,16 +553,16 @@ module ol_framework::donor_directed {
     //////// LIQUIDATION ////////
     /// propose and vote on the liquidation of this wallet
     public fun propose_liquidation(donor: &signer, multisig_address: address)  acquires TxSchedule {
-      donor_directed_governance::assert_authorized(donor, multisig_address);
+      donor_voice_governance::assert_authorized(donor, multisig_address);
       let state = borrow_global<TxSchedule>(multisig_address);
       let epochs_duration = 365; // liquidation vote can take a whole year
-      donor_directed_governance::propose_liquidate(&state.guid_capability, epochs_duration);
+      donor_voice_governance::propose_liquidate(&state.guid_capability, epochs_duration);
     }
 
     /// Once a liquidation has been proposed, other donors can vote on it.
     fun liquidation_handler(donor: &signer, multisig_address: address) acquires Freeze, Registry {
-      donor_directed_governance::assert_authorized(donor, multisig_address);
-      let res = donor_directed_governance::vote_liquidation(donor, multisig_address);
+      donor_voice_governance::assert_authorized(donor, multisig_address);
+      let res = donor_voice_governance::vote_liquidation(donor, multisig_address);
 
       if (option::is_some(&res) && *option::borrow(&res)) {
         // The VM will call this function to liquidate the wallet.
@@ -586,7 +584,7 @@ module ol_framework::donor_directed {
     *&f.liquidation_queue
   }
 
-  /// The VM will call this function to liquidate all donor directed
+  /// The VM will call this function to liquidate all Donor Voice
   /// wallets in the queue.
    public(friend) fun vm_liquidate(vm: &signer) acquires Freeze, Registry {
       system_addresses::assert_ol(vm);
@@ -755,12 +753,12 @@ module ol_framework::donor_directed {
 
     //   assert!(multi_action::has_action<Payment>(multisig_address), error::invalid_state(EMULTISIG_NOT_INIT));
 
-    //   assert!(exists<Freeze>(multisig_address), error::invalid_state(ENOT_INIT_DONOR_DIRECTED));
+    //   assert!(exists<Freeze>(multisig_address), error::invalid_state(ENOT_INIT_DONOR_VOICE));
 
-    //   assert!(exists<TxSchedule>(multisig_address), error::invalid_state(ENOT_INIT_DONOR_DIRECTED));
+    //   assert!(exists<TxSchedule>(multisig_address), error::invalid_state(ENOT_INIT_DONOR_VOICE));
 
     //   // multi_action::finalize_and_brick(sponsor);
-    //   assert!(is_donor_directed(multisig_address), error::invalid_state(ENOT_INIT_DONOR_DIRECTED));
+    //   assert!(is_donor_directed(multisig_address), error::invalid_state(ENOT_INIT_DONOR_VOICE));
 
     //   // only add to registry if INIT is successful.
     //   add_to_registry(sponsor);
@@ -770,7 +768,7 @@ module ol_framework::donor_directed {
 
     //////// TX HELPER ////////
 
-    // transaction helper to wrap donor directed init
+    // transaction helper to wrap Donor Voice init
     public entry fun make_donor_directed_tx(sponsor: &signer, init_signers: vector<address>, cfg_n_signers: u64) acquires Registry {
       make_donor_directed(sponsor, init_signers, cfg_n_signers);
     }
@@ -798,7 +796,7 @@ module ol_framework::donor_directed {
     /// Entry functiont to vote the veto.
     public entry fun vote_veto_tx(donor: &signer, multisig_address: address, id: u64)  acquires TxSchedule, Freeze {
       let tx_uid = guid::create_id(multisig_address, id);
-      let (found, veto_uid) = donor_directed_governance::find_tx_veto_id(tx_uid);
+      let (found, veto_uid) = donor_voice_governance::find_tx_veto_id(tx_uid);
       assert!(found, error::invalid_argument(ENO_VETO_ID_FOUND));
       veto_handler(donor, &veto_uid, &tx_uid);
     }
@@ -810,6 +808,4 @@ module ol_framework::donor_directed {
     public entry fun vote_liquidation_tx(donor: &signer, multisig_address: address) acquires Freeze, Registry {
       liquidation_handler(donor, multisig_address);
     }
-
-
 }
