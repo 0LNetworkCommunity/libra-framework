@@ -31,7 +31,7 @@ GIT_REPO = genesis-smoke
 endif
 
 
-genesis:
+genesis: stdlib
 	cargo r --	-c ${CHAIN} \
 	genesis --org-github ${GIT_ORG} \
 	--name-github ${GIT_REPO} \
