@@ -29,7 +29,8 @@ pub fn make_framework_upgrade_artifacts(
     framework_local_dir: &Path,
     core_modules: &Option<Vec<String>>,
 ) -> Result<Vec<(String, String)>> {
-    let framework_git_hash = &get_framework_git_head(framework_local_dir).unwrap_or("none".to_owned());
+    let framework_git_hash =
+        &get_framework_git_head(framework_local_dir).unwrap_or("none".to_owned());
 
     let deploy_to_account = AccountAddress::from_hex_literal(CORE_MODULE_ADDRESS)?;
 
@@ -218,12 +219,9 @@ pub fn save_build(
     Ok(())
 }
 
-
 fn get_framework_git_head(path: &Path) -> anyhow::Result<String> {
-  let r = git2::Repository::discover(path).unwrap();
-  let id = r.head()?
-  .peel_to_commit()?
-  .id();
+    let r = git2::Repository::discover(path).unwrap();
+    let id = r.head()?.peel_to_commit()?.id();
 
-  Ok(id.to_string())
+    Ok(id.to_string())
 }
