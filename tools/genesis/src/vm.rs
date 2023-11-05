@@ -127,7 +127,7 @@ pub fn encode_genesis_change_set(
 
     initialize_features(&mut session);
 
-    // TODO: consolidate with set_final_supply
+    // TODO: consolidate with set_final_supply below
     initialize_diem_coin(&mut session);
 
     // final supply must be set after coin is initialized, but before any
