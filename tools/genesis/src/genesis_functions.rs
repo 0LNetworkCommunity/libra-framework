@@ -34,6 +34,7 @@ pub fn genesis_migrate_all_users(
 
             // migrating slow wallets
             if a.slow_wallet.is_some() {
+                // TODO: this should not happen on a community wallet
                 match genesis_migrate_slow_wallet(session, a, supply.split_factor) {
                     Ok(_) => {}
                     Err(e) => {

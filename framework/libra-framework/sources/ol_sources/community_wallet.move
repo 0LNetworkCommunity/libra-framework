@@ -73,7 +73,7 @@ module ol_framework::community_wallet {
     &signer) {
       system_addresses::assert_ol(vm);
       donor_voice::migrate_community_wallet_account(vm, dv_account);
-      set_comm_wallet(dv_account);
+      move_to(dv_account, CommunityWallet{});
     }
 
     /// Dynamic check to see if CommunityWallet is qualifying.

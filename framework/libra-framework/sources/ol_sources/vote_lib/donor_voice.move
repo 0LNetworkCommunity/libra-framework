@@ -150,10 +150,12 @@ module ol_framework::donor_voice {
 
     // can only be called by genesis
     public(friend) fun migrate_community_wallet_account(vm: &signer, dv_account:
-    &signer) acquires Freeze, Registry {
+    &signer) acquires Registry {
       system_addresses::assert_ol(vm);
-      make_donor_voice(dv_account, vector::singleton(signer::address_of(dv_account)), 1);
-      set_liquidate_to_match_index(dv_account, true)
+      let liquidate_to_match_index = true;
+      // skip setting up the multisig
+      structs_init(dv_account, liquidate_to_match_index);
+      add_to_registry(dv_account);
     }
 
     //////// DONOR VOICE INITIALIZATION ////////
