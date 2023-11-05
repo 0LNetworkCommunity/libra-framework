@@ -56,13 +56,26 @@ module ol_framework::receipts {
   ) acquires UserReceipts {
     system_addresses::assert_ol(vm);
     let addr = signer::address_of(account);
-    assert!(is_init(addr), 0);
+    if (!exists<UserReceipts>(addr)) {
+      move_to<UserReceipts>(
+        account,
+        UserReceipts {
+          destination,
+          last_payment_timestamp,
+          last_payment_value,
+          cumulative,
+        }
+      )
+    } else {
     let state = borrow_global_mut<UserReceipts>(addr);
     state.destination = destination;
     state.cumulative = cumulative;
     state.last_payment_timestamp = last_payment_timestamp;
     state.last_payment_value = last_payment_value;
+    }
   }
+
+
 
   public fun is_init(addr: address):bool {
     exists<UserReceipts>(addr)
