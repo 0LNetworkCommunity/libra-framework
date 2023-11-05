@@ -87,6 +87,10 @@ module diem_framework::epoch_boundary {
 
       infra_subsize_amount: u64, // TODO
       infra_subsizize_success: bool, // TODO
+
+      pof_thermo_success: bool,
+      pof_thermo_increase: bool,
+      pof_thermo_amount: u64,
     }
 
     public fun initialize(framework: &signer) {
@@ -139,6 +143,10 @@ module diem_framework::epoch_boundary {
 
           infra_subsize_amount: 0,
           infra_subsizize_success: false,
+
+          pof_thermo_success: false,
+          pof_thermo_increase: false,
+          pof_thermo_amount: 0,
         });
       }
     }
@@ -178,6 +186,12 @@ module diem_framework::epoch_boundary {
         process_incoming_validators(root, status, compliant_vals, n_seats);
 
         subsidize_from_infra_escrow(root);
+
+        let (t_success, t_increase, t_amount) =
+        proof_of_fee::reward_thermostat(root);
+        status.pof_thermo_success = t_success;
+        status.pof_thermo_increase = t_increase;
+        status.pof_thermo_amount = t_amount;
 
         // print(borrow_global<BoundaryStatus>(@ol_framework))
   }
