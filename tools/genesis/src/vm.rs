@@ -26,7 +26,7 @@ use diem_vm_genesis::{
 use libra_types::{legacy_types::legacy_recovery::LegacyRecovery, ol_progress::OLProgress};
 
 use crate::{
-    genesis_functions::{rounding_mint, set_final_supply, set_validator_baseline_reward},
+    genesis_functions::{rounding_mint, set_final_supply, set_validator_baseline_reward, genesis_migrate_community_wallet},
     supply::{populate_supply_stats_from_legacy, SupplySettings},
 };
 
@@ -150,6 +150,10 @@ pub fn encode_genesis_change_set(
 
             // need to set the baseline reward based on supply settings
             set_validator_baseline_reward(&mut session, supply.epoch_reward_base_case as u64);
+
+            // migrate community wallets
+            genesis_migrate_community_wallet(&mut session, r)
+            .expect("could not migrate community wallets");
         }
     }
     OLProgress::complete("user migration complete");
