@@ -1074,7 +1074,6 @@ module diem_framework::stake {
         system_addresses::assert_ol(root);
         let validator_address = signer::address_of(validator);
         if (!account::exists_at(signer::address_of(validator))) {
-            // account::create_account_for_test(validator_address);
             ol_account::create_account(root, validator_address);
         };
 
