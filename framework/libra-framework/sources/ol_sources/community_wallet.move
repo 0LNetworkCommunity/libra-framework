@@ -69,6 +69,13 @@ module ol_framework::community_wallet {
       }
     }
 
+    public fun migrate_community_wallet_account(vm: &signer, dv_account:
+    &signer) {
+      system_addresses::assert_ol(vm);
+      donor_voice::migrate_community_wallet_account(vm, dv_account);
+      set_comm_wallet(dv_account);
+    }
+
     /// Dynamic check to see if CommunityWallet is qualifying.
     /// if it is not qualifying it wont be part of the burn funds matching.
     public fun qualifies(addr: address): bool {
@@ -109,7 +116,6 @@ module ol_framework::community_wallet {
 
       fam
     }
-
 
     /// check qualifications of community wallets
     /// need to check every epoch so that wallets who no longer qualify are not biasing the Match algorithm.

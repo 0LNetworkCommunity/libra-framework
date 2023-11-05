@@ -43,6 +43,8 @@ module ol_framework::donor_voice {
     use ol_framework::match_index;
     // use diem_std::debug::print;
 
+    friend ol_framework::community_wallet;
+
     /// Not initialized as a Donor Voice account.
     const ENOT_INIT_DONOR_VOICE: u64 = 1;
     /// User is not a donor and cannot vote on this account
@@ -98,6 +100,7 @@ module ol_framework::donor_voice {
       epoch_latest_veto_received: u64, // This is to check if we need to extend the deadline
     }
 
+    // account's freeze policy which donor's have a "voice" in
     struct Freeze has key {
       is_frozen: bool,
       consecutive_rejections: u64,
@@ -145,6 +148,14 @@ module ol_framework::donor_voice {
       };
     }
 
+    // can only be called by genesis
+    public(friend) fun migrate_community_wallet_account(vm: &signer, dv_account:
+    &signer) acquires Freeze, Registry {
+      system_addresses::assert_ol(vm);
+      make_donor_voice(dv_account, vector::singleton(signer::address_of(dv_account)), 1);
+      set_liquidate_to_match_index(dv_account, true)
+    }
+
     //////// DONOR VOICE INITIALIZATION ////////
     // There are three steps in initializing an account. These steps can be combined in a single transaction, or done in separate transactions. The "bricking" of the sponsor key should be done in a separate transaction, in case there are any errors in the initialization.
 
@@ -157,7 +168,7 @@ module ol_framework::donor_voice {
     public fun make_donor_voice(sponsor: &signer, init_signers: vector<address>, cfg_n_signers: u64) acquires Registry {
       cumulative_deposits::init_cumulative_deposits(sponsor);
 
-      // we are setting liquidation to infra escrow as false by default
+      // we are setting liquidation to match_index as false by default
       // the user can send another transacton to change this.
       let liquidate_to_match_index = false;
       structs_init(sponsor, liquidate_to_match_index);

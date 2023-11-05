@@ -382,36 +382,35 @@ pub fn genesis_migrate_ancestry(
 /// migrate the registry of Donor Voice Accounts
 /// Also mark them Community Wallets if they have chosen that designation.
 
-pub fn genesis_migrate_donor_voice(
+pub fn genesis_migrate_community_wallet(
     session: &mut SessionExt,
     user_recovery: &[LegacyRecovery],
 ) -> anyhow::Result<()> {
     if let Some(root) = user_recovery.iter().find(|e| e.role == AccountRole::System) {
-        let mapped_addr: Vec<AccountAddress> = root
-            .comm_wallet
+        root.comm_wallet
             .as_ref()
             .context("no comm_wallet struct")?
             .list
             .iter()
-            .map(|el| {
+            .for_each(|el| {
                 let acc_str = el.to_string();
 
-                AccountAddress::from_hex_literal(&format!("0x{}", acc_str)).unwrap()
-            })
-            .collect();
+                let new_address = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))
+                    .expect("could not parse address");
 
-        let serialized_values = serialize_values(&vec![
-            MoveValue::Signer(CORE_CODE_ADDRESS),
-            MoveValue::vector_address(mapped_addr),
-        ]);
+                let serialized_values = serialize_values(&vec![
+                    MoveValue::Signer(CORE_CODE_ADDRESS),
+                    MoveValue::Signer(new_address),
+                ]);
 
-        exec_function(
-            session,
-            "donor_voice",
-            "migrate_root_registry",
-            vec![],
-            serialized_values,
-        );
+                exec_function(
+                    session,
+                    "community_wallet",
+                    "migrate_community_wallet_account",
+                    vec![],
+                    serialized_values,
+                );
+            });
     }
 
     Ok(())
