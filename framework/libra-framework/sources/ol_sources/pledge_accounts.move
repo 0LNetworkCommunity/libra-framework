@@ -47,6 +47,7 @@
         use ol_framework::gas_coin::LibraCoin as GasCoin;
         use ol_framework::ol_account;
         use ol_framework::epoch_helper;
+        use ol_framework::burn;
         use diem_framework::system_addresses;
         use diem_framework::coin::{Self, Coin};
 
@@ -466,7 +467,7 @@
 
                 if (is_burn && option::is_some(&c)) {
                   let burn_this = option::extract(&mut c);
-                  coin::user_burn(burn_this);
+                  burn::burn_and_track(burn_this);
                   option::destroy_none(c);
                 } else if (option::is_some(&c)) {
                   let refund_coin = option::extract(&mut c);
