@@ -2,7 +2,7 @@
 #[test_only]
 module ol_framework::test_burn {
   use ol_framework::mock;
-  use ol_framework::gas_coin::{Self, LibraCoin as GasCoin};
+  use ol_framework::gas_coin;
   use ol_framework::ol_account;
   use ol_framework::match_index;
   use ol_framework::burn;
@@ -27,7 +27,7 @@ module ol_framework::test_burn {
 
     let alice_burn = 5;
     let c = ol_account::withdraw(alice, alice_burn);
-    coin::user_burn<GasCoin>(c);
+    burn::burn_and_track(c);
     let supply = gas_coin::supply();
     assert!(supply == (supply_pre - alice_burn), 7357001);
 

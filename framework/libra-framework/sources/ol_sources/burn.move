@@ -95,12 +95,12 @@ module ol_framework::burn {
           i = i + 1;
       };
 
-    // // Transaction fee account should be empty at the end of the epoch
-    // // Superman 3 decimal errors. https://www.youtube.com/watch?v=N7JBXGkBoFc
-    // // anything that is remaining should be burned
+    // Transaction fee account should be empty at the end of the epoch
+    // Superman 3 decimal errors. https://www.youtube.com/watch?v=N7JBXGkBoFc
+    // anything that is remaining should be burned
     let remainder = coin::value(coins);
     let leftover = coin::extract(coins, remainder);
-    coin::user_burn(leftover);
+    burn_and_track(leftover);
     // Note: we are still retruning an empty coin to be destroyed by the caller
   }
 
@@ -122,6 +122,18 @@ module ol_framework::burn {
   }
 
 
+  /// performs a burn and increments the tracker
+  /// NOTE: this is unchecked, any user can perform this.
+  /// the user should call this function and not burn methods on coin.move
+  /// since those methods do not track the lifetime_burned
+  public fun burn_and_track(coin: Coin<GasCoin>) acquires BurnCounter {
+    let value_sent = coin::value(&coin);
+    let state = borrow_global_mut<BurnCounter>(@ol_framework);
+    coin::user_burn(coin);
+    state.lifetime_burned = state.lifetime_burned + value_sent;
+  }
+
+  /// performs a burn or recycle according to the attributed user's preference
   public fun burn_with_user_preference(
     vm: &signer, payer: address, user_share: Coin<GasCoin>
   ) acquires BurnCounter, UserBurnPreference {
@@ -135,16 +147,13 @@ module ol_framework::burn {
          // update the root state tracker
         let state = borrow_global_mut<BurnCounter>(@ol_framework);
         state.lifetime_recycled = state.lifetime_recycled + value_sent;
-
-        coin::user_burn(user_share);
-        return
       }
     };
 
-    // Superman 3
-    let state = borrow_global_mut<BurnCounter>(@ol_framework);
-    state.lifetime_burned = state.lifetime_burned + value_sent;
-    coin::user_burn(user_share);
+    // do a default burn which is not attributed
+    // also checks for Superman 3
+    burn_and_track(user_share);
+
   }
 
 
