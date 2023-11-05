@@ -379,6 +379,42 @@ pub fn genesis_migrate_ancestry(
     Ok(())
 }
 
+/// migrate the registry of Donor Voice Accounts
+/// Also mark them Community Wallets if they have chosen that designation.
+
+pub fn genesis_migrate_donor_voice(
+    session: &mut SessionExt,
+    user_recovery: &[LegacyRecovery],
+) -> anyhow::Result<()> {
+    if let Some(root) = user_recovery.iter().find(|e| e.role == AccountRole::System) {
+        let mapped_addr: Vec<AccountAddress> = root.comm_wallet.as_ref().context("no comm_wallet struct")?.list
+            .iter()
+            .map(|el| {
+                let acc_str = el.to_string();
+
+                AccountAddress::from_hex_literal(&format!("0x{}", acc_str)).unwrap()
+            })
+            .collect();
+
+        let serialized_values = serialize_values(&vec![
+            MoveValue::Signer(CORE_CODE_ADDRESS),
+            MoveValue::vector_address(mapped_addr),
+        ]);
+
+        exec_function(
+            session,
+            "donor_voice",
+            "migrate_root_registry",
+            vec![],
+            serialized_values,
+        );
+    }
+
+    Ok(())
+}
+
+/// TODO: migrate the Match Index weights.
+
 /// Since we are minting for each account to convert account balances there may be a rounding difference from target. Add those micro cents into the transaction fee account.
 /// Note: we could have minted one giant coin and then split it, however there's no place to store in on chain without repurposing accounts (ie. system accounts by design do no hold any funds, only the transaction_fee contract can temporarily hold an aggregatable coin which by design can only be fully withdrawn (not split)). So the rounding mint is less elegant, but practical.
 pub fn rounding_mint(session: &mut SessionExt, supply_settings: &SupplySettings) {
@@ -413,12 +449,6 @@ pub fn set_final_supply(session: &mut SessionExt, supply_settings: &SupplySettin
     );
 }
 
-// pub fn mint_genesis_bootstrap_coin(session: &mut SessionExt, validators: &[Validator]) {
-//     validators.iter().for_each(|v| {
-//         let serialized_values = serialize_values(&vec![
-//             MoveValue::Signer(AccountAddress::ZERO), // must be called by 0x0
-//             MoveValue::Address(v.owner_address),
-//         ]);
 pub fn set_validator_baseline_reward(session: &mut SessionExt, nominal_reward: u64) {
     let serialized_values = serialize_values(&vec![
         MoveValue::Signer(AccountAddress::ZERO), // must be called by 0x0

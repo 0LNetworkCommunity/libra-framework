@@ -39,7 +39,7 @@ module ol_framework::community_wallet {
     /// does not meet criteria for community wallet
     const ENOT_QUALIFY_COMMUNITY_WALLET: u64 = 2;
     /// This account needs to be donor directed.
-    const ENOT_DONOR_DIRECTED: u64 = 3;
+    const ENOT_donor_voice: u64 = 3;
     /// This account needs a multisig enabled
     const ENOT_MULTISIG: u64 = 4;
     /// The multisig does not have minimum 5 signers and 3 approvals in config
@@ -54,7 +54,7 @@ module ol_framework::community_wallet {
     const ETOO_FEW_SIGNERS: u64 = 9;
 
 
-    // A flag on the account that it wants to be considered a community walley
+    // A flag on the account that it wants to be considered a community wallet
     struct CommunityWallet has key { }
 
     public fun is_init(addr: address):bool {
@@ -62,7 +62,7 @@ module ol_framework::community_wallet {
     }
     public fun set_comm_wallet(sender: &signer) {
       let addr = signer::address_of(sender);
-      assert!(donor_voice::is_donor_directed(addr), error::invalid_state(ENOT_DONOR_DIRECTED));
+      assert!(donor_voice::is_donor_voice(addr), error::invalid_state(ENOT_donor_voice));
 
       if (is_init(addr)) {
         move_to(sender, CommunityWallet{});
@@ -75,7 +75,7 @@ module ol_framework::community_wallet {
       // The CommunityWallet flag is set
       is_init(addr) &&
       // has donor_voice instantiated properly
-      donor_voice::is_donor_directed(addr) &&
+      donor_voice::is_donor_voice(addr) &&
       donor_voice::is_liquidate_to_match_index(addr) &&
       // has multi_action instantialized
       multi_action::is_multi_action(addr) &&
@@ -151,7 +151,7 @@ module ol_framework::community_wallet {
 
       // set as donor directed with any liquidation going to existing matching index
 
-      donor_voice::make_donor_directed(sig, init_signers, n);
+      donor_voice::make_donor_voice(sig, init_signers, n);
       donor_voice::set_liquidate_to_match_index(sig, true);
       match_index::opt_into_match_index(sig);
     }
