@@ -91,7 +91,7 @@ module ol_framework::proof_of_fee {
   // from supply data.
   public fun genesis_migrate_reward(vm: &signer, nominal_reward: u64) acquires
   ConsensusReward {
-    system_addresses::assert_ol(vm);
+    system_addresses::assert_ol(vm); // either 0x1 or 0x0
 
     let state = borrow_global_mut<ConsensusReward>(@ol_framework);
     state.nominal_reward = nominal_reward;

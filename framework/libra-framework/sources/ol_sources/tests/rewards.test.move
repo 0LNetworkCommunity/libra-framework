@@ -1,15 +1,11 @@
 #[test_only]
 module ol_framework::test_rewards {
-  #[test_only]
   use ol_framework::rewards;
-  #[test_only]
   use ol_framework::gas_coin::{Self, LibraCoin as GasCoin};
-  #[test_only]
   use diem_framework::coin;
-  #[test_only]
   use ol_framework::mock;
-  #[test_only]
   use diem_framework::stake;
+  use ol_framework::burn;
 
   #[test(root = @ol_framework)]
   fun test_pay_reward_single(root: signer) {
@@ -58,6 +54,6 @@ module ol_framework::test_rewards {
     let b = coin::balance<GasCoin>(dave);
     assert!(b == 1000, 7357002);
 
-    coin::user_burn(new_coin);
+    burn::burn_and_track(new_coin);
   }
 }
