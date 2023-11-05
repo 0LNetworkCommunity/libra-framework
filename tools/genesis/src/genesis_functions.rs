@@ -79,6 +79,18 @@ pub fn genesis_migrate_all_users(
                     }
                 }
             }
+
+            // migrating tower
+            if a.receipts.is_some() {
+                match genesis_migrate_receipts(session, a, supply) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        if a.role != AccountRole::System {
+                            println!("Error migrating user: {:?}", e);
+                        }
+                    }
+                }
+            }
         });
     Ok(())
 }
@@ -202,6 +214,80 @@ pub fn genesis_migrate_infra_escrow(
         vec![],
         serialized_values,
     );
+    Ok(())
+}
+
+pub fn genesis_migrate_receipts(
+    session: &mut SessionExt,
+    user_recovery: &LegacyRecovery,
+    supply: &Supply,
+) -> anyhow::Result<()> {
+    if user_recovery.account.is_none()
+        || user_recovery.auth_key.is_none()
+        || user_recovery.balance.is_none()
+    {
+        anyhow::bail!("no user account found {:?}", user_recovery);
+    }
+
+    // convert between different types from ol_types in diem, to current
+    let acc_str = user_recovery
+        .account
+        .context("could not parse account")?
+        .to_string();
+    let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
+
+    if let Some(receipts_vec) = user_recovery.receipts.as_ref() {
+        let dest_map: Vec<AccountAddress> = receipts_vec
+            .destination
+            .iter()
+            .map(|leg_addr| {
+                AccountAddress::from_hex_literal(&format!("0x{}", leg_addr.to_string()))
+                    .expect("could not parse account address")
+            })
+            .collect();
+
+        let cumu_map: Vec<MoveValue> = receipts_vec
+            .cumulative
+            .iter()
+            .map(|e| {
+                let scaled = (*e as f64) * supply.split_factor;
+                MoveValue::U64(scaled as u64)
+            })
+            .collect();
+
+        let timestamp_map: Vec<MoveValue> = receipts_vec
+            .last_payment_timestamp
+            .iter()
+            .map(|e|  MoveValue::U64(*e))
+            .collect();
+
+        let payment_map: Vec<MoveValue> = receipts_vec
+            .last_payment_value
+            .iter()
+            .map(|e| {
+                let scaled = (*e as f64) * supply.split_factor;
+                MoveValue::U64(scaled as u64)
+            })
+            .collect();
+
+        let serialized_values = serialize_values(&vec![
+            MoveValue::Signer(AccountAddress::ZERO), // is sent by the 0x0 address
+            MoveValue::Signer(new_addr_type),
+            MoveValue::vector_address(dest_map),
+            MoveValue::Vector(cumu_map),
+            MoveValue::Vector(timestamp_map),
+            MoveValue::Vector(payment_map),
+        ]);
+
+        exec_function(
+            session,
+            "receipts",
+            "genesis_migrate_user",
+            vec![],
+            serialized_values,
+        );
+    }
+
     Ok(())
 }
 
