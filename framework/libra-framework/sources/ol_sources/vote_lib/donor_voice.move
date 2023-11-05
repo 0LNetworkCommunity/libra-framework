@@ -155,10 +155,6 @@ module ol_framework::donor_voice {
     // 3. Once the MultiSig is initialized, the account needs to be bricked, before the MultiSig can be used.
 
     public fun make_donor_voice(sponsor: &signer, init_signers: vector<address>, cfg_n_signers: u64) acquires Registry {
-      // let init_signers = vector::singleton(signer_one);
-      // vector::push_back(&mut init_signers, signer_two);
-      // vector::push_back(&mut init_signers, signer_three);
-
       cumulative_deposits::init_cumulative_deposits(sponsor);
 
       // we are setting liquidation to infra escrow as false by default

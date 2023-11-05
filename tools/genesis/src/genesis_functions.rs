@@ -387,7 +387,11 @@ pub fn genesis_migrate_donor_voice(
     user_recovery: &[LegacyRecovery],
 ) -> anyhow::Result<()> {
     if let Some(root) = user_recovery.iter().find(|e| e.role == AccountRole::System) {
-        let mapped_addr: Vec<AccountAddress> = root.comm_wallet.as_ref().context("no comm_wallet struct")?.list
+        let mapped_addr: Vec<AccountAddress> = root
+            .comm_wallet
+            .as_ref()
+            .context("no comm_wallet struct")?
+            .list
             .iter()
             .map(|el| {
                 let acc_str = el.to_string();
