@@ -230,8 +230,10 @@ module diem_framework::epoch_boundary {
 
           // remainder gets burnt according to fee maker preferences
           burn::epoch_burn_fees(root, &mut all_fees);
-          // there might be some dust, that should get burned
-          coin::user_burn(all_fees);
+
+          // coin can finally be destroyed. Up to here we have been extracting from a mutable.
+          // It's possible there might be some dust, that should get burned
+          burn::burn_and_track(all_fees);
         };
 
         compliant_vals

@@ -18,6 +18,7 @@ module diem_framework::coin {
     // use diem_std::debug::print;
 
     friend ol_framework::gas_coin;
+    friend ol_framework::burn;
     friend ol_framework::ol_account;
     friend diem_framework::genesis;
     friend diem_framework::genesis_migration;
@@ -341,7 +342,10 @@ module diem_framework::coin {
 
     // Public functions
     /// Burn `coin` with capability.
-    /// The capability `_cap` should be passed as a reference to `BurnCapability<CoinType>`.
+    /// The capability `_cap` should be passed as a reference to
+    /// `BurnCapability<CoinType>`.
+
+    // 0L: TODO: isn't this deprecated?
     public(friend) fun burn<CoinType>(
         coin: Coin<CoinType>,
         _cap: &BurnCapability<CoinType>,
@@ -358,8 +362,9 @@ module diem_framework::coin {
 
     //////// 0L ////////
     /// user can burn own coin they are holding.
-    /// TODO: evaluate if this should be a `friend` method
-    public fun user_burn<CoinType>(
+    /// must be a Friend function, because the relevant tracking
+    /// happens in Burn.move
+    public(friend) fun user_burn<CoinType>(
         coin: Coin<CoinType>,
     ) acquires CoinInfo { // cannot abort
         if (value(&coin) == 0) {
@@ -380,7 +385,10 @@ module diem_framework::coin {
     /// The capability `burn_cap` should be passed as a reference to `BurnCapability<CoinType>`.
     /// This function shouldn't fail as it's called as part of transaction fee burning.
     ///
-    /// Note: This bypasses CoinStore::frozen -- coins within a frozen CoinStore can be burned.
+    /// Note: This bypasses CoinStore::frozen -- coins within a frozen CoinStore
+    /// can be burned.
+
+    // 0L: is this deprecated?
     public(friend) fun burn_from<CoinType>(
         account_addr: address,
         amount: u64,
