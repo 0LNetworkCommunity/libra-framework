@@ -107,13 +107,13 @@ module ol_framework::donor_directed {
       liquidate_to_match_index: bool,
     }
 
-    struct Donors has key {
-      list: vector<address>,
-    }
+    // struct Donors has key {
+    //   list: vector<address>,
+    // }
 
 
-    // A flag on the account that it wants to be considered a community walley
-    struct CommunityWallet has key { }
+    // // A flag on the account that it wants to be considered a community walley
+    // struct CommunityWallet has key { }
 
 
     //////// INIT REGISRTY OF DONOR DIRECTED ACCOUNTS  ////////

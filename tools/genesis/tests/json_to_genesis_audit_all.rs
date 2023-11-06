@@ -32,6 +32,7 @@ fn test_correct_supply_arithmetic_all() {
         .set_ratios_from_settings(&supply_settings)
         .unwrap();
 
+    dbg!(&supply_stats);
     let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
         Some(&user_accounts),
         &genesis_vals,

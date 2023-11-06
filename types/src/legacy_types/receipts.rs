@@ -1,7 +1,6 @@
 //! fullnode counter for system address
 
 use anyhow::Result;
-// use move_core_types::account_address::LegacyAddress;
 use super::legacy_address::LegacyAddress;
 use move_core_types::{ident_str, identifier::IdentStr, move_resource::MoveStructType};
 use serde::{Deserialize, Serialize};

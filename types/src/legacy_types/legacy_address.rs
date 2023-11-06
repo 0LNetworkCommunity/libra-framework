@@ -6,6 +6,7 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use diem_types::account_address::{AccountAddress, self}; // NOTE: this is the new we want to cast into
 use hex::FromHex;
 use rand::{rngs::OsRng, Rng};
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize, Serializer};
@@ -248,6 +249,17 @@ impl Serialize for LegacyAddress {
             // See comment in deserialize.
             serializer.serialize_newtype_struct("LegacyAddress", &self.0)
         }
+    }
+}
+
+impl TryFrom<LegacyAddress> for AccountAddress {
+    type Error = anyhow::Error; // Note: two types from legacy and next
+
+    /// Tries to convert legacy address by using string representation hack
+    fn try_from(legacy: LegacyAddress) -> Result<AccountAddress, anyhow::Error> {
+        let acc_str = legacy.to_string();
+        let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
+        Ok(new_addr_type)
     }
 }
 
