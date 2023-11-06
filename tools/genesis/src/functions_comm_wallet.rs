@@ -14,7 +14,10 @@ pub struct WalletState {
 }
 
 #[derive(Debug)]
-pub struct DonorReceipts(HashMap<AccountAddress, ReceiptsResourceV7>);
+pub struct DonorReceipts {
+  list: HashMap<AccountAddress, ReceiptsResourceV7>,
+  total_cumu: u64
+}
 
 #[derive(Debug)]
 pub struct ReceiptsResourceV7 {
@@ -25,6 +28,7 @@ pub struct ReceiptsResourceV7 {
 }
 
 pub fn rebuild_donor_receipts(recovery: &[LegacyRecovery]) -> anyhow::Result<DonorReceipts> {
+    let mut total_cumu = 0;
     let mut list = HashMap::new();
 
     recovery
@@ -44,6 +48,9 @@ pub fn rebuild_donor_receipts(recovery: &[LegacyRecovery]) -> anyhow::Result<Don
                 last_payment_value: receipts.clone().last_payment_value,
             };
 
+            total_cumu = receipts.clone().cumulative.iter()
+            .fold(0u64, |sum, e| { return sum.checked_add(*e).unwrap()  });
+
             let user: AccountAddress = e
                 .account
                 .expect("no legacy_account")
@@ -53,7 +60,7 @@ pub fn rebuild_donor_receipts(recovery: &[LegacyRecovery]) -> anyhow::Result<Don
             list.insert(user, cast_receipts);
         });
 
-    Ok(DonorReceipts(list))
+    Ok(DonorReceipts{list, total_cumu})
 }
 
 pub fn rebuild_cw_cumu_deposits(recovery: &[LegacyRecovery]) -> anyhow::Result<AllCommWallets> {
@@ -114,5 +121,7 @@ fn test_receipt_recovery() {
         .parse::<AccountAddress>()
         .unwrap();
 
-    dbg!(&t.0.get(&test_addr));
+    dbg!(&t.list.get(&test_addr));
+    dbg!(&t.total_cumu);
+
 }
