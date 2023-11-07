@@ -21,11 +21,7 @@ module ol_framework::cumulative_deposits {
         // this is the wrong place.
     }
 
-
-    //////// 0L ////////
     // init struct for storing cumulative deposits, for community wallets
-    // TODO: set true or false, that the account gets current balance or
-    // starts at zero.
     public(friend) fun init_cumulative_deposits(sender: &signer) {
       let addr = signer::address_of(sender);
       if (!exists<CumulativeDeposits>(addr)) {
@@ -134,6 +130,11 @@ module ol_framework::cumulative_deposits {
       if (!exists<CumulativeDeposits>(addr)) return 0;
 
       borrow_global<CumulativeDeposits>(addr).index
+    }
+
+    #[test_only]
+    public fun test_init_cumulative_deposits(sig: &signer) {
+      init_cumulative_deposits(sig)
     }
 
 }
