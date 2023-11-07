@@ -18,69 +18,68 @@ module ol_framework::receipts {
   use std::signer;
   use diem_framework::system_addresses;
   use diem_framework::timestamp;
-  use std::fixed_point32;
 
   // use diem_std::debug::print;
-  // use ol_framework::epoch_helper;
 
-    struct UserReceipts has key {
-      destination: vector<address>,
-      cumulative: vector<u64>,
-      last_payment_timestamp: vector<u64>,
-      last_payment_value: vector<u64>,
+  struct UserReceipts has key {
+    destination: vector<address>,
+    cumulative: vector<u64>,
+    last_payment_timestamp: vector<u64>,
+    last_payment_value: vector<u64>,
+  }
+
+  // Utility used at genesis (and on upgrade) to initialize the system state.
+  public fun user_init(account: &signer) {
+    let addr = signer::address_of(account);
+    if (!exists<UserReceipts>(addr)) {
+      move_to<UserReceipts>(
+        account,
+        UserReceipts {
+          destination: vector::empty<address>(),
+          last_payment_timestamp: vector::empty<u64>(),
+          last_payment_value: vector::empty<u64>(),
+          cumulative: vector::empty<u64>(),
+        }
+      )
+    };
+  }
+
+  // should only be called from the genesis script.
+  fun genesis_migrate_user(
+    vm: &signer,
+    account: &signer,
+    destination: vector<address>,
+    cumulative: vector<u64>,
+    last_payment_timestamp: vector<u64>,
+    last_payment_value: vector<u64>,
+    // assume split factor done in rust
+  ) acquires UserReceipts {
+    system_addresses::assert_ol(vm);
+    let addr = signer::address_of(account);
+    if (!exists<UserReceipts>(addr)) {
+      move_to<UserReceipts>(
+        account,
+        UserReceipts {
+          destination,
+          last_payment_timestamp,
+          last_payment_value,
+          cumulative,
+        }
+      )
+    } else {
+    let state = borrow_global_mut<UserReceipts>(addr);
+    state.destination = destination;
+    state.cumulative = cumulative;
+    state.last_payment_timestamp = last_payment_timestamp;
+    state.last_payment_value = last_payment_value;
     }
+  }
 
-    // Utility used at genesis (and on upgrade) to initialize the system state.
-    public fun user_init(account: &signer) {
-      let addr = signer::address_of(account);
-      if (!exists<UserReceipts>(addr)) {
-        move_to<UserReceipts>(
-          account,
-          UserReceipts {
-            destination: vector::empty<address>(),
-            last_payment_timestamp: vector::empty<u64>(),
-            last_payment_value: vector::empty<u64>(),
-            cumulative: vector::empty<u64>(),
-          }
-        )
-      };
-    }
 
-    // should only be called from the genesis script.
-    fun fork_migrate(
-      vm: &signer,
-      account: &signer,
-      destination: address,
-      cumulative: u64,
-      last_payment_timestamp: u64,
-      last_payment_value: u64,
-      split_factor: u64, // 6 decimals, or 1m
-    ) acquires UserReceipts {
 
-      let split_factor = fixed_point32::create_from_rational(split_factor, 1000000);
-      let cumulative = if (cumulative > 0) {
-        fixed_point32::multiply_u64(cumulative, split_factor)
-      } else { 0 };
-      let last_payment_value = if (last_payment_value > 0) {
-        fixed_point32::multiply_u64(last_payment_value, split_factor)
-      } else { 0 };
-
-      system_addresses::assert_vm(vm);
-      let addr = signer::address_of(account);
-      assert!(is_init(addr), 0);
-      let state = borrow_global_mut<UserReceipts>(addr);
-      vector::push_back(&mut state.destination, destination);
-      vector::push_back(&mut state.cumulative, cumulative);
-      vector::push_back(&mut state.last_payment_timestamp, last_payment_timestamp);
-      vector::push_back(
-        &mut state.last_payment_value,
-        last_payment_value
-      );
-    }
-
-    public fun is_init(addr: address):bool {
-      exists<UserReceipts>(addr)
-    }
+  public fun is_init(addr: address):bool {
+    exists<UserReceipts>(addr)
+  }
 
   public fun write_receipt_vm(
     sender: &signer,
