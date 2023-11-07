@@ -57,18 +57,28 @@ pub fn rebuild_donor_receipts(
         .iter()
         .filter(|e| e.receipts.is_some())
         .for_each(|e| {
-            let receipts = e.receipts.as_ref().expect("no receipts field");
-            let destinations_cast: Vec<AccountAddress> = receipts
+            // NOTE this is not mutable because we don't want to change
+            // the underlying LegacyRecovery. So it will be intentionally
+            // less efficient
+            let temp_receipts = e.receipts.as_ref().expect("no receipts field");
+            let destinations_cast: Vec<AccountAddress> = temp_receipts
                 .destination
                 .iter()
                 .map(|&a| a.try_into().expect("could not cast LegacyAdresss"))
                 .collect();
-
+                      // this resource should now show the split numbers
+            let mut cast_receipts = ReceiptsResourceV7 {
+                destination: destinations_cast,
+                cumulative: temp_receipts.clone().cumulative,
+                last_payment_timestamp: temp_receipts.clone().last_payment_timestamp,
+                last_payment_value: temp_receipts.clone().last_payment_value,
+                audit_not_found: vec![],
+            };
 
             // iterate through the list of payments and split
             // then with the new split value reduce/fold into the total
             // user payments.
-            let user_cumu = receipts
+            let user_cumu = cast_receipts
                 .cumulative
                 .iter_mut()
                 .map(|el| {
@@ -81,25 +91,15 @@ pub fn rebuild_donor_receipts(
             total_cumu += user_cumu;
 
             // same for the last_payment. Just no need to fold
-            receipts.last_payment_value.iter_mut().for_each(|el| {
+            cast_receipts.last_payment_value.iter_mut().for_each(|el| {
                 *el = (split_factor * (*el as f64)) as u64;
             });
-
 
             let user: AccountAddress = e
                 .account
                 .expect("no legacy_account")
                 .try_into()
                 .expect("could not cast LegacyAddress");
-
-            // this resource should now show the split numbers
-            let cast_receipts = ReceiptsResourceV7 {
-                destination: destinations_cast,
-                cumulative: receipts.clone().cumulative,
-                last_payment_timestamp: receipts.clone().last_payment_timestamp,
-                last_payment_value: receipts.clone().last_payment_value,
-                audit_not_found: vec![],
-            };
 
             list.insert(user, cast_receipts);
         });
@@ -217,18 +217,32 @@ fn test_receipt_recovery() {
     let p = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_export_recovery.json");
 
-    let recovery = parse_json::recovery_file_parse(p).unwrap();
+    let recovery = parse_json::recovery_file_parse(p.clone()).unwrap();
 
     // first, test with no split
     let split_factor = 1.0;
 
-    let t = rebuild_donor_receipts(&recovery, split).unwrap();
+    let t = rebuild_donor_receipts(&recovery, split_factor).unwrap();
     let test_addr = "00000000000000000000000000000000123c6ca26a6ed35ad00868b33b4a98d1"
         .parse::<AccountAddress>()
         .unwrap();
 
-    dbg!(&t.list.get(&test_addr));
+    assert!(&t.list.get(&test_addr).is_some());
+    let old_cumu = t.total_cumu;
+    assert!(old_cumu == 1326600512204564, "cumu not equal");
+
+    // Do it again with a split factor
+    let recovery = parse_json::recovery_file_parse(p).unwrap();
+    let split_factor = 2.0;
+
+    let t = rebuild_donor_receipts(&recovery, split_factor).unwrap();
+    let test_addr = "00000000000000000000000000000000123c6ca26a6ed35ad00868b33b4a98d1"
+        .parse::<AccountAddress>()
+        .unwrap();
+
+    assert!(&t.list.get(&test_addr).is_some());
     dbg!(&t.total_cumu);
+    assert!(t.total_cumu == (split_factor * old_cumu as f64) as u64, "cumu not equal");
 }
 
 #[test]
@@ -248,9 +262,30 @@ fn test_update_cw_from_receipts() {
         .get(&AccountAddress::from_hex_literal("0x7209c13e1253ad8fb2d96a30552052aa").unwrap())
         .unwrap();
 
-    assert!(v.cumulative_value == 162900862, "cumu value not equal");
+    let original_value = 162900862;
+    assert!(v.cumulative_value == original_value, "cumu value not equal");
     assert!(
         v.audit_deposits_with_receipts == 116726512,
         "receipts value not equal"
     );
+
+
+    let recovery = parse_json::recovery_file_parse(p.clone()).unwrap();
+
+    // now add the split
+    let split_factor = 2.0;
+
+    let (_dr, cw) = prepare_cw_and_receipts(&recovery, split_factor).unwrap();
+
+    let v = cw
+        .list
+        .get(&AccountAddress::from_hex_literal("0x7209c13e1253ad8fb2d96a30552052aa").unwrap())
+        .unwrap();
+
+    assert!(v.cumulative_value == (original_value as f64 * split_factor) as u64, "cumu value not equal");
+
+    // assert!(
+    //     v.audit_deposits_with_receipts == 116726512,
+    //     "receipts value not equal"
+    // );
 }
