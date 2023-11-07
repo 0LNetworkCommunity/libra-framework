@@ -40,13 +40,14 @@ module ol_framework::cumulative_deposits {
     /// private function for the genesis fork migration
     /// adjust for the coin split factor.
     // NOTE: doing split factor on rust side
-    fun genesis_migrate_cumulative_deposits(vm: &signer, sender: &signer, value: u64, index: u64) {
+    fun genesis_migrate_cumulative_deposits(vm: &signer, sender: &signer, value:
+    u64, index: u64, depositors: vector<address>) {
       system_addresses::assert_ol(vm);
       if (!exists<CumulativeDeposits>(signer::address_of(sender))) {
         move_to<CumulativeDeposits>(sender, CumulativeDeposits {
           value,
           index,
-          depositors: vector::empty<address>(),
+          depositors,
         })
       };
     }

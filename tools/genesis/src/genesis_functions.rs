@@ -1,5 +1,8 @@
 //! ol functions to run at genesis e.g. migration.
-use crate::supply::{Supply, SupplySettings};
+use crate::{
+    process_comm_wallet,
+    supply::{Supply, SupplySettings},
+};
 use anyhow::Context;
 use diem_types::account_config::CORE_CODE_ADDRESS;
 use diem_vm::move_vm_ext::SessionExt;
@@ -419,8 +422,34 @@ pub fn genesis_migrate_community_wallet(
     Ok(())
 }
 
-/// TODO: migrate the Match Index weights.
+/// migrate the Cumulative Deposits Structs (for the Match Index weights).
+pub fn genesis_migrate_cumu_deposits(
+    session: &mut SessionExt,
+    user_recovery: &[LegacyRecovery],
+    split_factor: f64,
+) -> anyhow::Result<()> {
+    let (_dr, cw) = process_comm_wallet::prepare_cw_and_receipts(user_recovery, split_factor)?;
 
+    cw.list.iter().for_each(|(addr, wallet)| {
+        let serialized_values = serialize_values(&vec![
+            MoveValue::Signer(CORE_CODE_ADDRESS),
+            MoveValue::Signer(addr.to_owned()),
+            MoveValue::U64(wallet.cumulative_value),
+            MoveValue::U64(wallet.cumulative_index),
+            MoveValue::vector_address(wallet.depositors.clone()),
+        ]);
+
+        exec_function(
+            session,
+            "cuulative_deposits",
+            "genesis_migrate_cumulative_deposits",
+            vec![],
+            serialized_values,
+        );
+    });
+
+    Ok(())
+}
 /// Since we are minting for each account to convert account balances there may be a rounding difference from target. Add those micro cents into the transaction fee account.
 /// Note: we could have minted one giant coin and then split it, however there's no place to store in on chain without repurposing accounts (ie. system accounts by design do no hold any funds, only the transaction_fee contract can temporarily hold an aggregatable coin which by design can only be fully withdrawn (not split)). So the rounding mint is less elegant, but practical.
 pub fn rounding_mint(session: &mut SessionExt, supply_settings: &SupplySettings) {

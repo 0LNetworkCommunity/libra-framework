@@ -402,6 +402,6 @@ mod tests {
         let old_str = address.to_hex_literal();
         let parsed = AccountAddress::from_hex_literal(&old_str).unwrap();
         let p: AccountAddress = address.try_into().unwrap();
-        assert!(&parsed == &p, "not equal");
+        assert!(parsed == p, "not equal");
     }
 }
