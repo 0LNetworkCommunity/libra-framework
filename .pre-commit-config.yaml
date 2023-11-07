@@ -1,12 +1,12 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.2.0
+    rev: v4.5.0
     hooks:
       - id: trailing-whitespace
         files: \.(rs|move)$
       - id: end-of-file-fixer
         files: \.(rs|move)$
   -   repo: https://github.com/doublify/pre-commit-rust
-      rev: master
+      rev: v1.0
       hooks:
       -   id: fmt

@@ -6,6 +6,24 @@
     "balance": {
       "coin": 623727004
     },
+    "receipts": {
+      "destination": [
+        "a52ae72d3c444fd3691bc8bd25e38b97",
+        "bca50d10041fa111d1b44181a264a599"
+      ],
+      "cumulative": [
+        200000000000,
+        115581799092
+      ],
+      "last_payment_timestamp": [
+        1652312818,
+        1680837133
+      ],
+      "last_payment_value": [
+        200000000000,
+        115581799092
+      ]
+    },
     "miner_state": {
       "previous_proof_hash": [
         233,
