@@ -12,4 +12,4 @@ pub mod supply;
 pub mod testnet_setup;
 pub mod vm;
 pub mod wizard;
-pub mod functions_comm_wallet;
+pub mod process_comm_wallet;
