@@ -388,30 +388,32 @@ pub fn genesis_migrate_community_wallet(
     user_recovery: &[LegacyRecovery],
 ) -> anyhow::Result<()> {
     if let Some(root) = user_recovery.iter().find(|e| e.role == AccountRole::System) {
-        root.comm_wallet
+        let cw_list = &root
+            .comm_wallet
             .as_ref()
             .context("no comm_wallet struct")?
-            .list
-            .iter()
-            .for_each(|el| {
-                let acc_str = el.to_string();
+            .list;
+        dbg!("cw list len {}", &cw_list.len());
 
-                let new_address = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))
-                    .expect("could not parse address");
+        cw_list.iter().for_each(|el| {
+            let acc_str = el.to_string();
 
-                let serialized_values = serialize_values(&vec![
-                    MoveValue::Signer(CORE_CODE_ADDRESS),
-                    MoveValue::Signer(new_address),
-                ]);
+            let new_address = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))
+                .expect("could not parse address");
 
-                exec_function(
-                    session,
-                    "community_wallet",
-                    "migrate_community_wallet_account",
-                    vec![],
-                    serialized_values,
-                );
-            });
+            let serialized_values = serialize_values(&vec![
+                MoveValue::Signer(CORE_CODE_ADDRESS),
+                MoveValue::Signer(new_address),
+            ]);
+
+            exec_function(
+                session,
+                "community_wallet",
+                "migrate_community_wallet_account",
+                vec![],
+                serialized_values,
+            );
+        });
     }
 
     Ok(())
