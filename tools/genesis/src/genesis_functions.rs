@@ -241,7 +241,7 @@ pub fn genesis_migrate_receipts(
             .destination
             .iter()
             .map(|leg_addr| {
-                AccountAddress::from_hex_literal(&format!("0x{}", leg_addr.to_string()))
+                AccountAddress::from_hex_literal(&format!("0x{}", leg_addr))
                     .expect("could not parse account address")
             })
             .collect();
@@ -258,7 +258,7 @@ pub fn genesis_migrate_receipts(
         let timestamp_map: Vec<MoveValue> = receipts_vec
             .last_payment_timestamp
             .iter()
-            .map(|e|  MoveValue::U64(*e))
+            .map(|e| MoveValue::U64(*e))
             .collect();
 
         let payment_map: Vec<MoveValue> = receipts_vec
