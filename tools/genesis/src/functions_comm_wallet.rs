@@ -6,15 +6,14 @@ use serde::Serialize;
 
 pub struct AllCommWallets {
     pub list: HashMap<AccountAddress, WalletState>,
-    pub total_cumu: u64,
+    pub total_deposits: u64,
 }
 #[derive(Debug, Serialize)]
 pub struct WalletState {
     pub cumulative_value: u64,
     pub cumulative_index: u64,
     pub depositors: Vec<AccountAddress>,
-    pub audit_cumu_value: u64,
-    pub audit_passes: bool,
+    pub audit_deposits_with_receipts: u64,
 }
 
 #[derive(Debug)]
@@ -32,6 +31,15 @@ pub struct ReceiptsResourceV7 {
     pub last_payment_value: Vec<u64>,
     pub audit_not_found: Vec<AccountAddress>,
 
+}
+
+pub fn prepare_cw_and_receipts(recovery: &[LegacyRecovery]) -> anyhow::Result<(DonorReceipts, AllCommWallets)> {
+
+  let mut dr = rebuild_donor_receipts(recovery)?;
+  let mut cw = rebuild_cw_cumu_deposits(recovery)?;
+  update_cw_with_donor(&mut cw, &mut dr);
+
+  Ok((dr, cw))
 }
 
 pub fn rebuild_donor_receipts(recovery: &[LegacyRecovery]) -> anyhow::Result<DonorReceipts> {
@@ -88,9 +96,7 @@ pub fn rebuild_cw_cumu_deposits(recovery: &[LegacyRecovery]) -> anyhow::Result<A
                 cumulative_value: cd.value.clone(),
                 cumulative_index: cd.index.clone(),
                 depositors: vec![],
-                audit_cumu_value: 0,
-                audit_passes: false,
-
+                audit_deposits_with_receipts: 0,
             };
 
             let user: AccountAddress = e
@@ -102,7 +108,7 @@ pub fn rebuild_cw_cumu_deposits(recovery: &[LegacyRecovery]) -> anyhow::Result<A
             list.insert(user, cast_receipts);
         });
 
-    Ok(AllCommWallets { list, total_cumu })
+    Ok(AllCommWallets { list, total_deposits: total_cumu })
 }
 
 
@@ -113,7 +119,7 @@ pub fn update_cw_with_donor(cw: &mut AllCommWallets, donors: &mut  DonorReceipts
 
         if let Some(w) = cw.list.get_mut(&maybe_cw) {
             // get the cumulative value from the cumu Vec.
-            w.audit_cumu_value += receipt.cumulative.get(i).expect("cant parse value");
+            w.audit_deposits_with_receipts += receipt.cumulative.get(i).expect("cant parse value");
 
             // populate the list of depositors to that CW
             if !w.depositors.contains(donor) { w.depositors.push(donor.clone())}
@@ -125,8 +131,6 @@ pub fn update_cw_with_donor(cw: &mut AllCommWallets, donors: &mut  DonorReceipts
         }
         None
     }).collect();
-
-
   });
 
 }
@@ -143,8 +147,12 @@ fn test_cw_recovery() {
 
     let t = rebuild_cw_cumu_deposits(&recovery).unwrap();
 
-    dbg!(&t.total_cumu);
-    assert!(t.total_cumu == 1208569282086623,"not equal");
+    dbg!(&t.total_deposits);
+    assert!(t.total_deposits == 1208569282086623,"cumu not equal");
+
+    dbg!(&t.list.len());
+    assert!(t.list.len() == 134,"len not equal");
+
 }
 
 #[test]
@@ -168,24 +176,16 @@ fn test_receipt_recovery() {
 
 
 #[test]
-fn test_audit() {
+fn test_update_cw_from_receipts() {
     use crate::parse_json;
     let p = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_export_recovery.json");
     let recovery = parse_json::recovery_file_parse(p.clone()).unwrap();
 
-    let mut dr = rebuild_donor_receipts(&recovery).unwrap();
-    let mut cw = rebuild_cw_cumu_deposits(&recovery).unwrap();
-    dbg!(&cw.list.values().len());
+    let (_dr, cw) = prepare_cw_and_receipts(&recovery).unwrap();
 
-    update_cw_with_donor(&mut cw, &mut dr);
+    let v = cw.list.get(&AccountAddress::from_hex_literal("0x7209c13e1253ad8fb2d96a30552052aa").unwrap()).unwrap();
 
-    dbg!(&dr.audit_not_cw.len());
-
-    // let key = cw.list.keys().nth(1).unwrap();
-    // dbg!(cw.list.get(key));
-
-    std::fs::write(p.parent().unwrap().join("CW.json"), serde_json::to_string(&cw.list).unwrap()).unwrap();
-
-
+    assert!(v.cumulative_value == 162900862, "cumu value not equal");
+    assert!(v.audit_deposits_with_receipts == 116726512, "receipts value not equal");
 }
