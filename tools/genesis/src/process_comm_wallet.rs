@@ -39,7 +39,7 @@ pub fn prepare_cw_and_receipts(
     split_factor: f64,
 ) -> anyhow::Result<(DonorReceipts, AllCommWallets)> {
     let mut dr = rebuild_donor_receipts(recovery, split_factor)?;
-    let mut cw = rebuild_cw_cumu_deposits(recovery,split_factor)?;
+    let mut cw = rebuild_cw_cumu_deposits(recovery, split_factor)?;
     update_cw_with_donor(&mut cw, &mut dr, split_factor);
 
     Ok((dr, cw))
@@ -66,7 +66,7 @@ pub fn rebuild_donor_receipts(
                 .iter()
                 .map(|&a| a.try_into().expect("could not cast LegacyAdresss"))
                 .collect();
-                      // this resource should now show the split numbers
+            // this resource should now show the split numbers
             let mut cast_receipts = ReceiptsResourceV7 {
                 destination: destinations_cast,
                 cumulative: temp_receipts.clone().cumulative,
@@ -83,9 +83,9 @@ pub fn rebuild_donor_receipts(
                 .iter_mut()
                 .map(|el| {
                     *el = (split_factor * (*el as f64)) as u64;
-                    return el;
+                    el
                 })
-                .fold(0u64, |sum, e| return sum.checked_add(*e).unwrap());
+                .fold(0u64, |sum, e| sum.checked_add(*e).unwrap());
 
             // add to totals for comparison purposes
             total_cumu += user_cumu;
@@ -172,13 +172,13 @@ pub fn update_cw_with_donor(
 
                     // populate the list of depositors to that CW
                     if !w.depositors.contains(donor) {
-                        w.depositors.push(donor.clone())
+                        w.depositors.push(*donor)
                     }
                 } else {
                     // does this community wallet exist
                     // say we can't find it in cw list
                     if !donors.audit_not_cw.contains(&maybe_cw) {
-                        donors.audit_not_cw.push(maybe_cw.clone())
+                        donors.audit_not_cw.push(maybe_cw)
                     }
 
                     return Some(maybe_cw);
@@ -242,7 +242,10 @@ fn test_receipt_recovery() {
 
     assert!(&t.list.get(&test_addr).is_some());
     dbg!(&t.total_cumu);
-    assert!(t.total_cumu == (split_factor * old_cumu as f64) as u64, "cumu not equal");
+    assert!(
+        t.total_cumu == (split_factor * old_cumu as f64) as u64,
+        "cumu not equal"
+    );
 }
 
 #[test]
@@ -269,8 +272,7 @@ fn test_update_cw_from_receipts() {
         "receipts value not equal"
     );
 
-
-    let recovery = parse_json::recovery_file_parse(p.clone()).unwrap();
+    let recovery = parse_json::recovery_file_parse(p).unwrap();
 
     // now add the split
     let split_factor = 2.0;
@@ -282,7 +284,10 @@ fn test_update_cw_from_receipts() {
         .get(&AccountAddress::from_hex_literal("0x7209c13e1253ad8fb2d96a30552052aa").unwrap())
         .unwrap();
 
-    assert!(v.cumulative_value == (original_value as f64 * split_factor) as u64, "cumu value not equal");
+    assert!(
+        v.cumulative_value == (original_value as f64 * split_factor) as u64,
+        "cumu value not equal"
+    );
 
     // assert!(
     //     v.audit_deposits_with_receipts == 116726512,

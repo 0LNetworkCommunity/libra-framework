@@ -403,6 +403,5 @@ mod tests {
         let parsed = AccountAddress::from_hex_literal(&old_str).unwrap();
         let p: AccountAddress = address.try_into().unwrap();
         assert!(&parsed == &p, "not equal");
-
     }
 }
