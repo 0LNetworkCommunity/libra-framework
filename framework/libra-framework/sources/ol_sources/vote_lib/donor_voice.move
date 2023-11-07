@@ -2,8 +2,18 @@
 /// Donor Voice wallets is a service of the chain.
 /// Any address can voluntarily turn their account into a Donor Voice account.
 
-/// The DonorVoice Account payment workflow is:
-/// Authorities use a MultiSig to schedule ->
+/// Definitions
+/// Unless otherwise specified the assumption of the Donor Voice app is
+/// that there is an Owner of the account and property.
+/// The Owner can assign Proxy Authorities, who acting as custodians can issue
+/// transactions on behalf of Owner
+/// Depositors are called Donors, and the app gives depositors
+/// visibility of the transactions, and also limited authority over
+/// specific actions: alterting the Owner and Depositors from
+/// unauthorized transaction.
+
+/// The DonorVoice Account Lifecycle:
+/// Proxy Authorities use a MultiSig to schedule ->
 /// Once scheduled the Donors use a TurnoutTally to Veto ->
 /// Epoch boundary: transaction executes when the VM reads the Schedule struct at the epoch boundary, and issues payment.
 
