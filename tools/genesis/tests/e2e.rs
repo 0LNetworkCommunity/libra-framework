@@ -88,7 +88,9 @@ fn end_to_end_single() {
 
 #[test]
 fn end_to_end_all() {
-    let blob = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/genesis.blob");
+    let temp_dir = TempPath::new();
+    temp_dir.create_as_dir().unwrap();
+    let blob = temp_dir.path().join("temp_genesis.blob");
 
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_export_recovery.json");
@@ -146,9 +148,5 @@ fn end_to_end_all() {
             );
         }
         _ => panic!("not a genesis transaction"),
-    }
-
-    if blob.exists() {
-        fs::remove_file(blob).unwrap()
     }
 }

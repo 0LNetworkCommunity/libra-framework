@@ -99,6 +99,7 @@ module ol_framework::community_wallet {
       // can't have less than three signatures
       if (n < 3) return false;
       // can't have less than five authorities
+      // pentapedal locomotion https://www.youtube.com/watch?v=bgWJ9DN1Qak
       if (m < 5) return false;
 
       let r = fixed_point32::create_from_rational(3, 5);
