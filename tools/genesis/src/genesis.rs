@@ -88,14 +88,21 @@ fn test_recovery_genesis() {
 
     let recovery = parse_json::recovery_file_parse(p).unwrap();
 
-    let test_validators = TestValidator::new_test_set(Some(4), Some(100_000_000));
+    let test_validators = TestValidator::new_test_set(Some(4), Some(100_000));
     let validators: Vec<Validator> = test_validators.iter().map(|t| t.data.clone()).collect();
+
+    let supply = SupplySettings {
+      target_supply: 10_000.0, // because we overflow the u64
+      ..Default::default()
+    };
+
+
     let tx = make_recovery_genesis_from_vec_legacy_recovery(
         Some(&recovery),
         &validators,
         &head_release_bundle(),
         ChainId::test(),
-        None,
+        Some(supply),
         &libra_genesis_default(NamedChain::TESTING),
     )
     .unwrap();

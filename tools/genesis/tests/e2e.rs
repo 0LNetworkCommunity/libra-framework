@@ -36,6 +36,7 @@ fn end_to_end_single() {
     let validators: Vec<Validator> = test_validators.iter().map(|t| t.data.clone()).collect();
 
     let supply_settings = SupplySettings {
+        // target_supply: 10_000_000.0,
         target_future_uses: 0.70,
         map_dd_to_slow: vec![
             // FTW
