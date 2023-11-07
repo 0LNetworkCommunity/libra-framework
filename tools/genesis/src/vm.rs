@@ -28,7 +28,7 @@ use libra_types::{legacy_types::legacy_recovery::LegacyRecovery, ol_progress::OL
 use crate::{
     genesis_functions::{
         genesis_migrate_community_wallet, rounding_mint, set_final_supply,
-        set_validator_baseline_reward,
+        set_validator_baseline_reward, genesis_migrate_cumu_deposits,
     },
     supply::{populate_supply_stats_from_legacy, SupplySettings},
 };
@@ -157,6 +157,10 @@ pub fn encode_genesis_change_set(
             // migrate community wallets
             genesis_migrate_community_wallet(&mut session, r)
                 .expect("could not migrate community wallets");
+            // cumulative deposits (for match index) also need separate
+            // migration for CW
+            genesis_migrate_cumu_deposits(&mut session, r, supply.split_factor)
+              .expect("could not migrate cumu deposits of cw");
         }
     }
     OLProgress::complete("user migration complete");

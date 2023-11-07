@@ -126,7 +126,7 @@ fn end_to_end_all() {
     save_genesis(&tx, &blob).unwrap();
     assert!(blob.exists(), "genesis.blob does not exist");
 
-    let gen_bytes = fs::read(blob).unwrap();
+    let gen_bytes = fs::read(&blob).unwrap();
 
     match bcs::from_bytes(&gen_bytes).unwrap() {
         Transaction::GenesisTransaction(WriteSetPayload::Direct(recovery_changeset)) => {
@@ -147,5 +147,5 @@ fn end_to_end_all() {
         _ => panic!("not a genesis transaction"),
     }
 
-    // drop.maybe_cleanup();
+    if blob.exists() { fs::remove_file(blob).unwrap() }
 }
