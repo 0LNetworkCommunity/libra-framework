@@ -22,7 +22,7 @@ pub fn genesis_migrate_all_users(
         .progress_with_style(OLProgress::bar())
         .for_each(|a| {
             // do basic account creation and coin scaling
-            match genesis_migrate_one_user(session, a, supply.split_factor, supply.escrow_pct) {
+            match genesis_migrate_one_user(session, a, supply.split_factor) {
                 Ok(_) => {}
                 Err(e) => {
                     // TODO: compile a list of errors.
@@ -99,7 +99,6 @@ pub fn genesis_migrate_one_user(
     session: &mut SessionExt,
     user_recovery: &LegacyRecovery,
     split_factor: f64,
-    _escrow_pct: f64,
 ) -> anyhow::Result<()> {
     if user_recovery.account.is_none()
         || user_recovery.auth_key.is_none()
