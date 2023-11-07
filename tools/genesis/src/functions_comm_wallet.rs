@@ -18,9 +18,9 @@ pub struct WalletState {
 
 #[derive(Debug)]
 pub struct DonorReceipts {
-  pub list: HashMap<AccountAddress, ReceiptsResourceV7>,
-  pub total_cumu: u64,
-  pub audit_not_cw: Vec<AccountAddress>,
+    pub list: HashMap<AccountAddress, ReceiptsResourceV7>,
+    pub total_cumu: u64,
+    pub audit_not_cw: Vec<AccountAddress>,
 }
 
 #[derive(Debug)]
@@ -30,18 +30,21 @@ pub struct ReceiptsResourceV7 {
     pub last_payment_timestamp: Vec<u64>,
     pub last_payment_value: Vec<u64>,
     pub audit_not_found: Vec<AccountAddress>,
-
 }
 
-pub fn prepare_cw_and_receipts(recovery: &[LegacyRecovery]) -> anyhow::Result<(DonorReceipts, AllCommWallets)> {
+/// do the entire workflow of processing community wallet accounts
+/// and inserting the donor information based on receipts
+pub fn prepare_cw_and_receipts(
+    recovery: &[LegacyRecovery],
+) -> anyhow::Result<(DonorReceipts, AllCommWallets)> {
+    let mut dr = rebuild_donor_receipts(recovery)?;
+    let mut cw = rebuild_cw_cumu_deposits(recovery)?;
+    update_cw_with_donor(&mut cw, &mut dr);
 
-  let mut dr = rebuild_donor_receipts(recovery)?;
-  let mut cw = rebuild_cw_cumu_deposits(recovery)?;
-  update_cw_with_donor(&mut cw, &mut dr);
-
-  Ok((dr, cw))
+    Ok((dr, cw))
 }
 
+/// process donor receipts
 pub fn rebuild_donor_receipts(recovery: &[LegacyRecovery]) -> anyhow::Result<DonorReceipts> {
     let mut total_cumu = 0;
     let mut list = HashMap::new();
@@ -61,11 +64,14 @@ pub fn rebuild_donor_receipts(recovery: &[LegacyRecovery]) -> anyhow::Result<Don
                 cumulative: receipts.clone().cumulative,
                 last_payment_timestamp: receipts.clone().last_payment_timestamp,
                 last_payment_value: receipts.clone().last_payment_value,
-                audit_not_found: vec![]
+                audit_not_found: vec![],
             };
 
-            let user_cumu = receipts.clone().cumulative.iter()
-            .fold(0u64, |sum, e| { return sum.checked_add(*e).unwrap()  });
+            let user_cumu = receipts
+                .clone()
+                .cumulative
+                .iter()
+                .fold(0u64, |sum, e| return sum.checked_add(*e).unwrap());
 
             total_cumu += user_cumu;
 
@@ -78,7 +84,11 @@ pub fn rebuild_donor_receipts(recovery: &[LegacyRecovery]) -> anyhow::Result<Don
             list.insert(user, cast_receipts);
         });
 
-    Ok(DonorReceipts{list, total_cumu, audit_not_cw: vec![]})
+    Ok(DonorReceipts {
+        list,
+        total_cumu,
+        audit_not_cw: vec![],
+    })
 }
 
 pub fn rebuild_cw_cumu_deposits(recovery: &[LegacyRecovery]) -> anyhow::Result<AllCommWallets> {
@@ -108,33 +118,44 @@ pub fn rebuild_cw_cumu_deposits(recovery: &[LegacyRecovery]) -> anyhow::Result<A
             list.insert(user, cast_receipts);
         });
 
-    Ok(AllCommWallets { list, total_deposits: total_cumu })
+    Ok(AllCommWallets {
+        list,
+        total_deposits: total_cumu,
+    })
 }
 
+/// extract donor addresses from receipts and place into new
+/// communit wallet struct
+pub fn update_cw_with_donor(cw: &mut AllCommWallets, donors: &mut DonorReceipts) {
+    donors.list.iter_mut().for_each(|(donor, receipt)| {
+        receipt.audit_not_found = receipt
+            .destination
+            .iter()
+            .enumerate()
+            .filter_map(|(i, &maybe_cw)| {
+                if let Some(w) = cw.list.get_mut(&maybe_cw) {
+                    // get the cumulative value from the cumu Vec.
+                    w.audit_deposits_with_receipts +=
+                        receipt.cumulative.get(i).expect("cant parse value");
 
-pub fn update_cw_with_donor(cw: &mut AllCommWallets, donors: &mut  DonorReceipts) {
-  donors.list.iter_mut().for_each(|(donor, receipt)| {
-    receipt.audit_not_found = receipt.destination.iter().enumerate()
-    .filter_map(|(i, &maybe_cw)| {
+                    // populate the list of depositors to that CW
+                    if !w.depositors.contains(donor) {
+                        w.depositors.push(donor.clone())
+                    }
+                } else {
+                    // does this community wallet exist
+                    // say we can't find it in cw list
+                    if !donors.audit_not_cw.contains(&maybe_cw) {
+                        donors.audit_not_cw.push(maybe_cw.clone())
+                    }
 
-        if let Some(w) = cw.list.get_mut(&maybe_cw) {
-            // get the cumulative value from the cumu Vec.
-            w.audit_deposits_with_receipts += receipt.cumulative.get(i).expect("cant parse value");
-
-            // populate the list of depositors to that CW
-            if !w.depositors.contains(donor) { w.depositors.push(donor.clone())}
-          } else  { // does this community wallet exist
-          // say we can't find it in cw list
-          if !donors.audit_not_cw.contains(&maybe_cw) {donors.audit_not_cw.push(maybe_cw.clone()) }
-
-          return Some(maybe_cw)
-        }
-        None
-    }).collect();
-  });
-
+                    return Some(maybe_cw);
+                }
+                None
+            })
+            .collect();
+    });
 }
-
 
 #[test]
 fn test_cw_recovery() {
@@ -148,11 +169,10 @@ fn test_cw_recovery() {
     let t = rebuild_cw_cumu_deposits(&recovery).unwrap();
 
     dbg!(&t.total_deposits);
-    assert!(t.total_deposits == 1208569282086623,"cumu not equal");
+    assert!(t.total_deposits == 1208569282086623, "cumu not equal");
 
     dbg!(&t.list.len());
-    assert!(t.list.len() == 134,"len not equal");
-
+    assert!(t.list.len() == 134, "len not equal");
 }
 
 #[test]
@@ -171,9 +191,7 @@ fn test_receipt_recovery() {
 
     dbg!(&t.list.get(&test_addr));
     dbg!(&t.total_cumu);
-
 }
-
 
 #[test]
 fn test_update_cw_from_receipts() {
@@ -184,8 +202,14 @@ fn test_update_cw_from_receipts() {
 
     let (_dr, cw) = prepare_cw_and_receipts(&recovery).unwrap();
 
-    let v = cw.list.get(&AccountAddress::from_hex_literal("0x7209c13e1253ad8fb2d96a30552052aa").unwrap()).unwrap();
+    let v = cw
+        .list
+        .get(&AccountAddress::from_hex_literal("0x7209c13e1253ad8fb2d96a30552052aa").unwrap())
+        .unwrap();
 
     assert!(v.cumulative_value == 162900862, "cumu value not equal");
-    assert!(v.audit_deposits_with_receipts == 116726512, "receipts value not equal");
+    assert!(
+        v.audit_deposits_with_receipts == 116726512,
+        "receipts value not equal"
+    );
 }
