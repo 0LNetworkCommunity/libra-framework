@@ -396,7 +396,6 @@ pub fn genesis_migrate_community_wallet(
             .as_ref()
             .context("no comm_wallet struct")?
             .list;
-        dbg!(&format!("cw list len {}", &cw_list.len()));
 
         cw_list.iter().for_each(|el| {
             let acc_str = el.to_string();

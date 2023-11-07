@@ -92,10 +92,9 @@ fn test_recovery_genesis() {
     let validators: Vec<Validator> = test_validators.iter().map(|t| t.data.clone()).collect();
 
     let supply = SupplySettings {
-      target_supply: 10_000.0, // because we overflow the u64
-      ..Default::default()
+        target_supply: 10_000.0, // because we overflow the u64
+        ..Default::default()
     };
-
 
     let tx = make_recovery_genesis_from_vec_legacy_recovery(
         Some(&recovery),

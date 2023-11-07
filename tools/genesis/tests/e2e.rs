@@ -148,5 +148,7 @@ fn end_to_end_all() {
         _ => panic!("not a genesis transaction"),
     }
 
-    if blob.exists() { fs::remove_file(blob).unwrap() }
+    if blob.exists() {
+        fs::remove_file(blob).unwrap()
+    }
 }
