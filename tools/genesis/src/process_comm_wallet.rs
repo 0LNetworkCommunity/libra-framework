@@ -1,11 +1,11 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use diem_types::account_address::AccountAddress;
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use serde::Serialize;
 
 pub struct AllCommWallets {
-    pub list: HashMap<AccountAddress, WalletState>,
+    pub list: BTreeMap<AccountAddress, WalletState>,
     pub total_deposits: u64,
 }
 #[derive(Debug, Serialize)]
@@ -18,7 +18,7 @@ pub struct WalletState {
 
 #[derive(Debug)]
 pub struct DonorReceipts {
-    pub list: HashMap<AccountAddress, ReceiptsResourceV7>,
+    pub list: BTreeMap<AccountAddress, ReceiptsResourceV7>,
     pub total_cumu: u64,
     pub audit_not_cw: Vec<AccountAddress>,
 }
@@ -51,7 +51,7 @@ pub fn rebuild_donor_receipts(
     split_factor: f64,
 ) -> anyhow::Result<DonorReceipts> {
     let total_cumu = 0;
-    let mut list = HashMap::new();
+    let mut list = BTreeMap::new();
 
     recovery
         .iter()
@@ -118,7 +118,7 @@ pub fn rebuild_cw_cumu_deposits(
     split_factor: f64,
 ) -> anyhow::Result<AllCommWallets> {
     let mut total_cumu = 0;
-    let mut list = HashMap::new();
+    let mut list = BTreeMap::new();
 
     recovery
         .iter()
