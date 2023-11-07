@@ -441,7 +441,7 @@ pub fn genesis_migrate_cumu_deposits(
 
         exec_function(
             session,
-            "cuulative_deposits",
+            "cumulative_deposits",
             "genesis_migrate_cumulative_deposits",
             vec![],
             serialized_values,
