@@ -107,7 +107,7 @@ module ol_framework::sacred_cows {
   /// how much each slow wallet gets unlocked at every epoch. Read below.
   ///////////////////////////////////////////
   /// TODO: v7: THIS NEEDS TO BE RECALCULATED WITH THE NEW SUPPLY!
-  const SLOW_WALLET_EPOCH_DRIP: u64 = 100000;
+  const SLOW_WALLET_EPOCH_DRIP: u64 = 30000 * 100000; // COINS * SCALING FACTOR
   ///////////////////////////////////////////
   /// [SLOW_WALLET_EPOCH_DRIP] This is a principal economic innovation from 0L.
   /// How to reward the highest level of work with more benefits,
