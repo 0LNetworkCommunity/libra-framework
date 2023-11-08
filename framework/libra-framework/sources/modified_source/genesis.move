@@ -35,7 +35,7 @@ module diem_framework::genesis {
     use ol_framework::infra_escrow;
     use ol_framework::tower_state;
     use ol_framework::safe;
-    use ol_framework::donor_directed;
+    use ol_framework::donor_voice;
     use ol_framework::epoch_helper;
     use ol_framework::burn;
     use ol_framework::fee_maker;
@@ -145,7 +145,7 @@ module diem_framework::genesis {
         slow_wallet::initialize(&diem_framework_account);
         tower_state::initialize(&diem_framework_account);
         safe::initialize(&diem_framework_account);
-        donor_directed::initialize(&diem_framework_account);
+        donor_voice::initialize(&diem_framework_account);
         epoch_helper::initialize(&diem_framework_account);
         epoch_boundary::initialize(&diem_framework_account);
         burn::initialize(&diem_framework_account);

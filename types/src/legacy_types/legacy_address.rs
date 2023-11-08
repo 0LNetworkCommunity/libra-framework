@@ -6,6 +6,7 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use diem_types::account_address::AccountAddress; // NOTE: this is the new type we want to cast into
 use hex::FromHex;
 use rand::{rngs::OsRng, Rng};
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize, Serializer};
@@ -251,6 +252,17 @@ impl Serialize for LegacyAddress {
     }
 }
 
+impl TryFrom<LegacyAddress> for AccountAddress {
+    type Error = anyhow::Error; // Note: two types from legacy and next
+
+    /// Tries to convert legacy address by using string representation hack
+    fn try_from(legacy: LegacyAddress) -> Result<AccountAddress, anyhow::Error> {
+        let acc_str = legacy.to_hex_literal();
+        let new_addr_type = AccountAddress::from_hex_literal(&acc_str)?;
+        Ok(new_addr_type)
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct AccountAddressParseError;
 
@@ -366,7 +378,7 @@ mod tests {
         let hex = "ca843279e3427144cead5e4d5999a3d0";
         let json_hex = "\"ca843279e3427144cead5e4d5999a3d0\"";
 
-        let address = LegacyAddress::from_hex(hex).unwrap();
+        let address: LegacyAddress = LegacyAddress::from_hex(hex).unwrap();
 
         let json = serde_json::to_string(&address).unwrap();
         let json_address: LegacyAddress = serde_json::from_str(json_hex).unwrap();
@@ -379,5 +391,17 @@ mod tests {
     fn test_address_from_empty_string() {
         assert!(LegacyAddress::try_from("".to_string()).is_err());
         assert!(LegacyAddress::from_str("").is_err());
+    }
+
+    //////// 0L ////////
+    #[test]
+    fn cast_between_legacy() {
+        use diem_types::account_address::AccountAddress;
+        let hex = "ca843279e3427144cead5e4d5999a3d0";
+        let address: LegacyAddress = LegacyAddress::from_hex(hex).unwrap();
+        let old_str = address.to_hex_literal();
+        let parsed = AccountAddress::from_hex_literal(&old_str).unwrap();
+        let p: AccountAddress = address.try_into().unwrap();
+        assert!(parsed == p, "not equal");
     }
 }

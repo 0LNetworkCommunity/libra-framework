@@ -5,9 +5,9 @@ module ol_framework::cumulative_deposits {
   use ol_framework::epoch_helper;
   use diem_framework::system_addresses;
   use ol_framework::receipts;
-  // use ol_framework::ol_account;
+
   friend ol_framework::ol_account;
-  friend ol_framework::donor_directed;
+  friend ol_framework::donor_voice;
 
   use std::fixed_point32::{Self, FixedPoint32};
       /// Separate struct to track cumulative deposits
@@ -16,14 +16,12 @@ module ol_framework::cumulative_deposits {
         /// not all accounts will have this enabled.
         value: u64, // the cumulative deposits with no adjustments.
         index: u64, // The index is a time-weighted cumulative sum of the deposits made to this account. This favors most recent donations.
-        depositors: vector<address>, // donor directed wallets need a place to reference all the donors in the case of liquidation.
+        depositors: vector<address>, // TODO: donor directed wallets need a
+        // place to reference all the donors in the case of liquidation, maybe
+        // this is the wrong place.
     }
 
-
-    //////// 0L ////////
     // init struct for storing cumulative deposits, for community wallets
-    // TODO: set true or false, that the account gets current balance or
-    // starts at zero.
     public(friend) fun init_cumulative_deposits(sender: &signer) {
       let addr = signer::address_of(sender);
       if (!exists<CumulativeDeposits>(addr)) {
@@ -35,28 +33,17 @@ module ol_framework::cumulative_deposits {
       };
     }
 
-    public fun vm_migrate_cumulative_deposits(vm: &signer, sender: &signer, starting_balance: u64) {
-      system_addresses::assert_ol(vm);
-      let addr = signer::address_of(sender);
-      if (!exists<CumulativeDeposits>(addr)) {
-        move_to<CumulativeDeposits>(sender, CumulativeDeposits {
-          value: starting_balance,
-          index: starting_balance,
-          depositors: vector::empty<address>(),
-        })
-      };
-    }
-
     /// private function for the genesis fork migration
     /// adjust for the coin split factor.
-    // TODO! split factor wil likely have fractions
-    fun fork_migrate_cumulative_deposits(vm: &signer, sender: &signer, value: u64, index: u64, coin_split_factor: u64) {
+    // NOTE: doing split factor on rust side
+    fun genesis_migrate_cumulative_deposits(vm: &signer, sender: &signer, value:
+    u64, index: u64, depositors: vector<address>) {
       system_addresses::assert_ol(vm);
       if (!exists<CumulativeDeposits>(signer::address_of(sender))) {
         move_to<CumulativeDeposits>(sender, CumulativeDeposits {
-          value: value * coin_split_factor,
-          index: index * coin_split_factor,
-          depositors: vector::empty<address>(),
+          value,
+          index,
+          depositors,
         })
       };
     }
@@ -143,6 +130,11 @@ module ol_framework::cumulative_deposits {
       if (!exists<CumulativeDeposits>(addr)) return 0;
 
       borrow_global<CumulativeDeposits>(addr).index
+    }
+
+    #[test_only]
+    public fun test_init_cumulative_deposits(sig: &signer) {
+      init_cumulative_deposits(sig)
     }
 
 }

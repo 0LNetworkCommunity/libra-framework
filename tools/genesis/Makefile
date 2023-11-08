@@ -9,8 +9,8 @@ FUTURE_USES = 0.70
 endif
 
 ifndef RECOVERY_FILE
-RECOVERY_FILE = v5_recovery
-# RECOVERY_FILE = sample_export_recovery
+# RECOVERY_FILE = v5_recovery
+RECOVERY_FILE = sample_export_recovery
 
 endif
 
@@ -32,7 +32,8 @@ endif
 
 
 genesis: stdlib
-	cargo r --	-c ${CHAIN} \
+	cargo r -- \
+	-c ${CHAIN} \
 	genesis --org-github ${GIT_ORG} \
 	--name-github ${GIT_REPO} \
 	--local-framework \
@@ -76,11 +77,11 @@ ALICE_IP = 134.209.32.159
 endif
 
 ifndef BOB_IP
-BOB_IP = 174.138.92.116
+BOB_IP = 165.22.44.147
 endif
 
 ifndef CAROL_IP
-CAROL_IP = 174.138.92.121
+CAROL_IP = 165.22.34.98
 endif
 
 test-genesis:

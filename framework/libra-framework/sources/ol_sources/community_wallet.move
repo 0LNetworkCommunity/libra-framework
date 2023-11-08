@@ -11,7 +11,7 @@
 /// The CommunityWallets will have the following properties enabled by their owners.
 
 
-/// 0. This wallet is initialized as a donor_directed account. This means that it observes the policies of those accounts: namely, that the donors have Veto rights over the transactions which are proposed by the Owners of the account. Repeated rejections or an outright freeze poll, will prevent the Owners from transferring funds, and may ultimately revert the funds to a different community account (or burn).
+/// 0. This wallet is initialized as a donor_voice account. This means that it observes the policies of those accounts: namely, that the donors have Veto rights over the transactions which are proposed by the Owners of the account. Repeated rejections or an outright freeze poll, will prevent the Owners from transferring funds, and may ultimately revert the funds to a different community account (or burn).
 
 /// !. They have instantiated a multi_action controller, which means that actions on this wallet can only be done by an n-of-m consensus by the authorities of the account. Plus, the nominal credentials which created the account cannot be used, since the keys will no longer be valid.
 
@@ -28,7 +28,7 @@ module ol_framework::community_wallet {
     use std::signer;
     use std::option;
     use std::fixed_point32;
-    use ol_framework::donor_directed;
+    use ol_framework::donor_voice;
     use ol_framework::multi_action;
     use ol_framework::ancestry;
     use ol_framework::match_index;
@@ -39,7 +39,7 @@ module ol_framework::community_wallet {
     /// does not meet criteria for community wallet
     const ENOT_QUALIFY_COMMUNITY_WALLET: u64 = 2;
     /// This account needs to be donor directed.
-    const ENOT_DONOR_DIRECTED: u64 = 3;
+    const ENOT_donor_voice: u64 = 3;
     /// This account needs a multisig enabled
     const ENOT_MULTISIG: u64 = 4;
     /// The multisig does not have minimum 5 signers and 3 approvals in config
@@ -54,7 +54,7 @@ module ol_framework::community_wallet {
     const ETOO_FEW_SIGNERS: u64 = 9;
 
 
-    // A flag on the account that it wants to be considered a community walley
+    // A flag on the account that it wants to be considered a community wallet
     struct CommunityWallet has key { }
 
     public fun is_init(addr: address):bool {
@@ -62,11 +62,18 @@ module ol_framework::community_wallet {
     }
     public fun set_comm_wallet(sender: &signer) {
       let addr = signer::address_of(sender);
-      assert!(donor_directed::is_donor_directed(addr), error::invalid_state(ENOT_DONOR_DIRECTED));
+      assert!(donor_voice::is_donor_voice(addr), error::invalid_state(ENOT_donor_voice));
 
       if (is_init(addr)) {
         move_to(sender, CommunityWallet{});
       }
+    }
+
+    public fun migrate_community_wallet_account(vm: &signer, dv_account:
+    &signer) {
+      system_addresses::assert_ol(vm);
+      donor_voice::migrate_community_wallet_account(vm, dv_account);
+      move_to(dv_account, CommunityWallet{});
     }
 
     /// Dynamic check to see if CommunityWallet is qualifying.
@@ -74,9 +81,9 @@ module ol_framework::community_wallet {
     public fun qualifies(addr: address): bool {
       // The CommunityWallet flag is set
       is_init(addr) &&
-      // has donor_directed instantiated properly
-      donor_directed::is_donor_directed(addr) &&
-      donor_directed::is_liquidate_to_match_index(addr) &&
+      // has donor_voice instantiated properly
+      donor_voice::is_donor_voice(addr) &&
+      donor_voice::is_liquidate_to_match_index(addr) &&
       // has multi_action instantialized
       multi_action::is_multi_action(addr) &&
       // multisig has minimum requirement of 3 signatures, and minimum list of 5 signers, and a minimum of 3/5 threshold. I.e. OK to have 4/5 signatures.
@@ -92,6 +99,7 @@ module ol_framework::community_wallet {
       // can't have less than three signatures
       if (n < 3) return false;
       // can't have less than five authorities
+      // pentapedal locomotion https://www.youtube.com/watch?v=bgWJ9DN1Qak
       if (m < 5) return false;
 
       let r = fixed_point32::create_from_rational(3, 5);
@@ -109,7 +117,6 @@ module ol_framework::community_wallet {
 
       fam
     }
-
 
     /// check qualifications of community wallets
     /// need to check every epoch so that wallets who no longer qualify are not biasing the Match algorithm.
@@ -132,7 +139,7 @@ module ol_framework::community_wallet {
     //////// MULTISIG TX HELPERS ////////
 
     // Helper to initialize the PaymentMultiAction but also while confirming that the signers are not related family
-    // These transactions can be sent directly to donor_directed, but this is a helper to make it easier to initialize the multisig with the acestry requirements.
+    // These transactions can be sent directly to donor_voice, but this is a helper to make it easier to initialize the multisig with the acestry requirements.
 
     public entry fun init_community(
       sig: &signer,
@@ -151,8 +158,8 @@ module ol_framework::community_wallet {
 
       // set as donor directed with any liquidation going to existing matching index
 
-      donor_directed::make_donor_directed(sig, init_signers, n);
-      donor_directed::set_liquidate_to_match_index(sig, true);
+      donor_voice::make_donor_voice(sig, init_signers, n);
+      donor_voice::set_liquidate_to_match_index(sig, true);
       match_index::opt_into_match_index(sig);
     }
 

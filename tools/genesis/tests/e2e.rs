@@ -36,6 +36,7 @@ fn end_to_end_single() {
     let validators: Vec<Validator> = test_validators.iter().map(|t| t.data.clone()).collect();
 
     let supply_settings = SupplySettings {
+        // target_supply: 10_000_000.0,
         target_future_uses: 0.70,
         map_dd_to_slow: vec![
             // FTW
@@ -87,7 +88,9 @@ fn end_to_end_single() {
 
 #[test]
 fn end_to_end_all() {
-    let blob = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/genesis.blob");
+    let temp_dir = TempPath::new();
+    temp_dir.create_as_dir().unwrap();
+    let blob = temp_dir.path().join("temp_genesis.blob");
 
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_export_recovery.json");
@@ -126,7 +129,7 @@ fn end_to_end_all() {
     save_genesis(&tx, &blob).unwrap();
     assert!(blob.exists(), "genesis.blob does not exist");
 
-    let gen_bytes = fs::read(blob).unwrap();
+    let gen_bytes = fs::read(&blob).unwrap();
 
     match bcs::from_bytes(&gen_bytes).unwrap() {
         Transaction::GenesisTransaction(WriteSetPayload::Direct(recovery_changeset)) => {
@@ -146,6 +149,4 @@ fn end_to_end_all() {
         }
         _ => panic!("not a genesis transaction"),
     }
-
-    // drop.maybe_cleanup();
 }
