@@ -13,8 +13,6 @@ on:
   #     - 'release**'
   #     - 'main'
 
-env:
-
 jobs:
   formal:
     runs-on: ubuntu-latest
