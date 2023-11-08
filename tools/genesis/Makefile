@@ -53,7 +53,7 @@ legacy:
 	md5sum ~/libra-framework/tools/genesis/tests/fixtures/v5_recovery.json"
 
 genesis: stdlib
-	libra-genesis-tools -- \
+	libra-genesis-tools \
 	-c ${CHAIN} \
 	genesis --org-github ${GIT_ORG} \
 	--name-github ${GIT_REPO} \
