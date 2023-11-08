@@ -31,7 +31,7 @@ endif
 
 install:
 	cargo build --release -p libra -p libra-genesis-tools -p libra-framework
-	cp ./target/release/libra* ~/.cargo/bin/
+	cp ../../target/release/libra* ~/.cargo/bin/
 
 register:
 	libra-genesis-tools register --org-github ${GIT_ORG} --name-github ${GIT_REPO}
