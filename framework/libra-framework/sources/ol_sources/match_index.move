@@ -18,7 +18,8 @@ module ol_framework::match_index {
   /// The Match index keeps accounts that have opted-in.
   struct MatchIndex has key {
     addr: vector<address>,
-    index: vector<u64>, // the index of cumulative deposits: weighted in favor of most recent deposits.
+    index: vector<u64>, // the index of cumulative deposits: weighted in favor
+    // of most recent deposits, per cumulative_deposits.move
     ratio: vector<fixed_point32::FixedPoint32>,
   }
   /// initialize, usually for testnet.
