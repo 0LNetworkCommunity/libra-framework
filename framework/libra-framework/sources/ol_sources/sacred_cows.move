@@ -230,6 +230,8 @@ module ol_framework::sacred_cows {
   // only called by genesis which can spoof a signer for 0x2.
   public(friend) fun init(zero_x_two_sig: &signer) {
     chain_status::assert_genesis();
+    let addr = signer::address_of(zero_x_two_sig);
+    assert!( addr == @0x2, error::invalid_state(ENOT_OX2));
     bless_this_cow<SlowDrip>(zero_x_two_sig, SLOW_WALLET_EPOCH_DRIP);
   }
 
@@ -243,6 +245,8 @@ module ol_framework::sacred_cows {
   /// initialize the state
   /// DEVS: this should not be a public function. It should only be callable from genesis
   fun bless_this_cow<T>(zero_x_two_sig: &signer, value: u64) {
+    chain_status::assert_genesis();
+
     let addr = signer::address_of(zero_x_two_sig);
     assert!( addr == @0x2, error::invalid_state(ENOT_OX2));
     assert!(!exists<SacredCow<T>>(addr), error::invalid_state(EALREADY_INITIALIZED));
