@@ -14,32 +14,38 @@ on:
     branches:
       - 'release**'
       - 'main'
+env:
+  DOTNET_ROOT: "/home/runner/.dotnet"
+  Z3_EXE: "/home/runner/bin/z3"
+  CVC5_EXE: "/home/runner/bin/cvc5"
+  BOOGIE_EXE: "/home/runner/.dotnet/tools/boogie"
+  SOLC_EXE: "/home/runner/bin/solc"
 
 jobs:
   formal:
     runs-on: ubuntu-latest
     steps:
-        # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        with:
-          detached: true
-        timeout-minutes: 15
+      #   # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
+      #   with:
+      #     detached: true
+      #   timeout-minutes: 15
 
       - uses: actions/checkout@v3
 
-      # - name: setup env
-      #   uses: ./.github/actions/build_env
 
       - name: install prover dependencies
-        run: >
-            bash util/dev_setup.sh -by
+        run: |
+            bash util/dev_setup.sh -byp
 
       - name: install diem (for move tests)
-        run: >
+        run: |
           wget -O ${{github.workspace}}/diem https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem &&
-          sudo chmod 755 ${{github.workspace}}/diem
+          chmod +x ${{github.workspace}}/diem
 
-      - name: prove
-        run: diem move prove -f version
+      # Move framework tests
+      # TODO:
+      - name: move framework
         working-directory: ./framework/libra-framework
+        run: ${{github.workspace}}/diem move prove -f guid

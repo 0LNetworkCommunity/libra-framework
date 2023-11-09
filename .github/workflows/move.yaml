@@ -5,8 +5,8 @@ on:
     tags:
       - '[0-9]+.[0-9]+.[0-9]+'
       - '[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
-    branches:
-      - '*'
+    # branches: // TODO
+      # - '*'
   pull_request:
     types:
       - opened
@@ -31,7 +31,7 @@ jobs:
     - name: install diem (for move tests)
       run: >
         wget -O ${{github.workspace}}/diem https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem &&
-        sudo chmod 755 ${{github.workspace}}/diem
+        sudo +x ${{github.workspace}}/diem
 
     # Move framework tests
     - name: move framework
