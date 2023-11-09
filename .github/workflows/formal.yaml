@@ -1,12 +1,10 @@
 name: formal verification
 on:
   push:
-    branches:
-      - "ci*"
-      - "prover*"
-  #   tags:
-  #   - '[0-9]+.[0-9]+.[0-9]+'
-  #   - '[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
+    branches: ["*"]
   pull_request:
     types:
       - opened
