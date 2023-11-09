@@ -36,7 +36,7 @@ cd "$SCRIPT_PATH/.." || exit
 
 function usage {
   echo "Usage:"
-  echo "Installs or updates necessary dev tools for libra."
+  echo "Installs or updates necessary dev tools for Libra."
   echo "-b batch mode, no user interactions and minimal output"
   echo "-p update ${HOME}/.profile"
   echo "-r install protoc and related tools"
@@ -724,6 +724,7 @@ Build tools (since -t or no option was provided):
   * libssl-dev
   * protoc (and related tools)
   * lld (only for Linux)
+  * libgmp-dev
 EOF
   fi
 
@@ -965,6 +966,8 @@ if [[ "$INSTALL_BUILD_TOOLS" == "true" ]]; then
   install_pkg cmake "$PACKAGE_MANAGER"
   install_pkg clang "$PACKAGE_MANAGER"
   install_pkg llvm "$PACKAGE_MANAGER"
+  # 0L for VDF
+  install_pkg libgmp-dev "$PACKAGE_MANAGER"
 
   install_openssl_dev "$PACKAGE_MANAGER"
   install_pkg_config "$PACKAGE_MANAGER"
