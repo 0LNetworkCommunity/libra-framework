@@ -1,7 +1,9 @@
 name: formal verification
 on:
   push:
-    branches: ["ci*"]
+    branches:
+      - "ci*"
+      - "formal"
   #   tags:
   #   - '[0-9]+.[0-9]+.[0-9]+'
   #   - '[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
@@ -31,10 +33,7 @@ jobs:
 
       - name: install prover dependencies
         run: >
-            cd .. &&
-            git clone https://github.com/0LNetworkCommunity/diem.git &&
-            cd diem &&
-            ./scripts/dev_setup.sh -ypb
+            bash util/dev_setup.sh -by
 
       - name: install diem (for move tests)
         run: >
