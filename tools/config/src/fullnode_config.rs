@@ -9,7 +9,7 @@ use std::{
 /// fetch seed peers and make a yaml file from template
 pub async fn init_fullnode_yaml(home_dir: Option<PathBuf>) -> anyhow::Result<PathBuf> {
     let waypoint = get_genesis_waypoint(home_dir.clone()).await?;
-    
+
     let yaml = make_fullnode_yaml(home_dir.clone(), waypoint)?;
 
     let home = home_dir.unwrap_or_else(global_config_dir);
