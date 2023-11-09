@@ -3,17 +3,17 @@ on:
   push:
     branches:
       - "ci*"
-      - "formal"
+      - "prover*"
   #   tags:
   #   - '[0-9]+.[0-9]+.[0-9]+'
   #   - '[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
-  # pull_request:
-  #   types:
-  #     - opened
-  #     - synchronize
-  #   branches:
-  #     - 'release**'
-  #     - 'main'
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    branches:
+      - 'release**'
+      - 'main'
 
 jobs:
   formal:
