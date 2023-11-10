@@ -40,7 +40,8 @@ jobs:
       - name: install diem (for move tests)
         run: |
           wget -O ${{github.workspace}}/diem https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem &&
-          chmod +x ${{github.workspace}}/diem
+          chmod +x ${{github.workspace}}/diem &&
+          cp ${{github.workspace}}/diem ~/.cargo/bin
 
       # Move framework tests
       # TODO:
