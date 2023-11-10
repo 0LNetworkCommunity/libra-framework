@@ -48,19 +48,26 @@ module ol_framework::infra_escrow{
     }
 
     /// Helper for epoch boundaries.
-    /// Collects funds from pledge and places temporarily in network account (TransactionFee account)
-    public(friend) fun epoch_boundary_collection(root: &signer, amount: u64) {
+    /// Collects funds from pledge and places temporarily in network account
+    // (the TransactionFee account)
+    /// @return tuple of 2
+    /// 0: if collection succeeded
+    /// 1: how much was collected
+    public(friend) fun epoch_boundary_collection(root: &signer, amount: u64):
+    (bool, u64) {
         system_addresses::assert_ol(root);
         let opt = pledge_accounts::withdraw_from_all_pledge_accounts(root, amount);
 
         if (option::is_none(&opt)) {
           option::destroy_none(opt);
-          return
+          return (false, 0)
         };
         let c = option::extract(&mut opt);
         option::destroy_none(opt);
-
-        transaction_fee::vm_pay_fee(root, @vm_reserved, c); // don't attribute to the user
+        let value = coin::value(&c);
+        transaction_fee::vm_pay_fee(root, @vm_reserved, c); // don't attribute
+        // to the user
+        return(true, value)
     }
 
 

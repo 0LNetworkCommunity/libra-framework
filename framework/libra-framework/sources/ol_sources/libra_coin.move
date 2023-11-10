@@ -177,6 +177,7 @@ module ol_framework::gas_coin {
         // have been initialized.
         move_to(diem_framework, MintCapStore { mint_cap });
 
+
         coin::destroy_freeze_cap(freeze_cap);
         coin::destroy_burn_cap(burn_cap);
 

@@ -52,10 +52,13 @@ module ol_framework::burn {
   /// is much larger than the amount of fees available burn.
   /// So we need to find the proportion of the fees that each Fee Maker has
   /// produced, and then do a weighted burn/recycle.
+  /// @return a tuple of 2
+  /// 0: BOOL, if epoch burn ran correctly
+  /// 1: U64, how many coins burned
   public fun epoch_burn_fees(
       vm: &signer,
       coins: &mut Coin<GasCoin>,
-  )  acquires UserBurnPreference, BurnCounter {
+  ): (bool, u64)  acquires UserBurnPreference, BurnCounter {
       system_addresses::assert_ol(vm);
 
       // get the total fees made. This will likely be different than
@@ -63,12 +66,10 @@ module ol_framework::burn {
       let total_fees_made = fee_maker::get_all_fees_made();
 
       // extract fees
-      // let coins = transaction_fee::root_withdraw_all(vm);
-
       let available_to_burn = coin::value(coins);
       if (available_to_burn == 0) {
         // don't destroy, let the caller handle empty coins
-        return
+        return (false, 0)
       };
 
       // get the list of fee makers
@@ -102,6 +103,7 @@ module ol_framework::burn {
     let leftover = coin::extract(coins, remainder);
     burn_and_track(leftover);
     // Note: we are still retruning an empty coin to be destroyed by the caller
+    (true, total_fees_made)
   }
 
 
