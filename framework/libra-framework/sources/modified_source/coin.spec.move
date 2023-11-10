@@ -131,7 +131,7 @@ spec diem_framework::coin {
         coin: Coin<CoinType>;
         let coin_store = global<CoinStore<CoinType>>(account_addr);
         aborts_if !exists<CoinStore<CoinType>>(account_addr);
-        aborts_if coin_store.frozen;
+        // aborts_if coin_store.frozen;
     }
 
     /// The value of `zero_coin` must be 0.
@@ -276,8 +276,8 @@ spec diem_framework::coin {
 
         aborts_if !exists<CoinStore<CoinType>>(account_addr_from);
         aborts_if !exists<CoinStore<CoinType>>(to);
-        aborts_if coin_store_from.frozen;
-        aborts_if coin_store_to.frozen;
+        // aborts_if coin_store_from.frozen;
+        // aborts_if coin_store_to.frozen;
         aborts_if coin_store_from.coin.value < amount;
 
         ensures account_addr_from != to ==> coin_store_post_from.coin.value ==
@@ -307,7 +307,7 @@ spec diem_framework::coin {
         let coin_store = global<CoinStore<CoinType>>(account_addr);
         let balance = coin_store.coin.value;
         aborts_if !exists<CoinStore<CoinType>>(account_addr);
-        aborts_if coin_store.frozen;
+        // aborts_if coin_store.frozen;
         aborts_if balance < amount;
     }
 

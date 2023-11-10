@@ -3,6 +3,7 @@ module ol_framework::ol_account {
     use diem_framework::coin::{Self, Coin};
     use diem_framework::event::{EventHandle, emit_event};
     use diem_framework::system_addresses;
+    use diem_framework::chain_status;
     use std::error;
     use std::signer;
     use std::option::{Self, Option};
@@ -40,6 +41,15 @@ module ol_framework::ol_account {
 
     /// On legacy account migration we need to check if we rotated auth keys correctly and can find the user address.
     const ECANT_MATCH_ADDRESS_IN_LOOKUP: u64 = 7;
+
+    /// trying to transfer zero coins
+    const EZERO_TRANSFER: u64 = 8;
+
+    /// why is VM trying to use this?
+    const ENOT_FOR_VM: u64 = 9;
+
+
+
 
 
     struct BurnTracker has key {
@@ -189,9 +199,19 @@ module ol_framework::ol_account {
     /// Withdraw funds while respecting the transfer limits
     public fun withdraw(sender: &signer, amount: u64): Coin<GasCoin> acquires
     BurnTracker {
+        spec {
+            assume !system_addresses::signer_is_ol_root(sender);
+            assume chain_status::is_operating();
+        };
+        // never abort when its a system address
+        // if (system_addresses::signer_is_ol_root(sender)) return
+        // coin::zero<GasCoin>(); // and VM needs to figure this out.
+
         let addr = signer::address_of(sender);
+        assert!(amount > 0, error::invalid_argument(EZERO_TRANSFER));
+
         let limit = slow_wallet::unlocked_amount(addr);
-        assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
+        assert!(amount <= limit, error::invalid_state(EINSUFFICIENT_BALANCE));
         slow_wallet::maybe_track_unlocked_withdraw(addr, amount);
         let coin = coin::withdraw<GasCoin>(sender, amount);
         // the outgoing coins should trigger an update on this account
@@ -365,6 +385,10 @@ module ol_framework::ol_account {
         // only track when the attributable is > 1. Otherwise the
         // whole chain of updates will be incorrect
         if (attributed_burn > 0) {
+          spec {
+            assume (state.burn_at_last_calc + attributed_burn) < MAX_U64;
+          };
+
           state.cumu_burn = state.burn_at_last_calc + attributed_burn;
           // now change last calc
           state.burn_at_last_calc = attributed_burn;

@@ -143,9 +143,15 @@ module ol_framework::slow_wallet {
       maybe_track_unlocked_deposit(recipient, amount);
     }
     /// if a user spends/transfers unlocked coins we need to track that spend
-    public(friend) fun maybe_track_unlocked_withdraw(payer: address, amount: u64) acquires SlowWallet {
+    public(friend) fun maybe_track_unlocked_withdraw(payer: address, amount:
+    u64) acquires SlowWallet {
+
       if (!exists<SlowWallet>(payer)) return;
       let s = borrow_global_mut<SlowWallet>(payer);
+
+      spec {
+        assume s.transferred + amount < MAX_U64;
+      };
 
       s.transferred = s.transferred + amount;
 

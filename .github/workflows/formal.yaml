@@ -44,6 +44,6 @@ jobs:
 
       # Move framework tests
       # TODO:
-      - name: move framework
-        working-directory: ./framework/libra-framework
-        run: ${{github.workspace}}/diem move prove -f guid
+      - name: prover tests
+        working-directory: ./framework
+        run: make prove
