@@ -254,13 +254,15 @@ module diem_framework::genesis {
             register_one_genesis_validator(diem_framework, validator, false);
             vector::push_back(&mut val_addr_list, *&validator.validator_config.owner_address);
             // 0x1 code account is calling this contract but the 0x0 VM address is authorized for infra escrow.
-            infra_escrow::genesis_coin_validator(&create_signer(@0x0), *&validator.validator_config.owner_address);
-            if (testnet::is_not_mainnet()) {
-              let sig = create_signer(validator.validator_config.owner_address);
-              proof_of_fee::set_bid(&sig, 0900, 1000); // make the genesis
-              // default 90% to align with thermostatic rule in the PoF paper.
-              // otherwise the thermostatic rule starts kicking-in immediately
+            infra_escrow::genesis_coin_validator(&create_signer(@0x0),
+            *&validator.validator_config.owner_address);
 
+            // default 90% to align with thermostatic rule in the PoF paper.
+            // otherwise the thermostatic rule starts kicking-in immediately
+            let sig = create_signer(validator.validator_config.owner_address);
+            proof_of_fee::set_bid(&sig, 0900, 1000); // make the genesis
+
+            if (testnet::is_not_mainnet()) {
               // TODO: this is for testnet purposes only
               // unlock some of the genesis validators coins so they can issue
               // transactions from epoch 0 in test runners.
