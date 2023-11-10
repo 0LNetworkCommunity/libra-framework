@@ -35,7 +35,7 @@ module diem_framework::epoch_boundary {
 
 
     // I just checked in, to see what condition my condition was in.
-    struct BoundaryStatus has key {
+    struct BoundaryStatus has key, drop {
       security_bill_count: u64,
       security_bill_amount: u64,
       security_bill_success: bool,
@@ -61,9 +61,10 @@ module diem_framework::epoch_boundary {
       oracle_pay_amount: u64,
       oracle_pay_success: bool,
 
-      epoch_burn_fees: u64, // TODO
-      epoch_burn_success: bool, // TODO
-      slow_wallet_drip: bool, // TODO
+      epoch_burn_fees: u64,
+      epoch_burn_success: bool,
+
+      slow_wallet_drip_success: bool,
       // Process Incoming
       // musical chairs
       incoming_compliant: vector<address>,
@@ -95,7 +96,12 @@ module diem_framework::epoch_boundary {
 
     public fun initialize(framework: &signer) {
       if (!exists<BoundaryStatus>(@ol_framework)){
-        move_to(framework, BoundaryStatus {
+        move_to(framework, reset());
+      }
+    }
+
+    fun reset(): BoundaryStatus {
+      BoundaryStatus {
           security_bill_count: 0,
           security_bill_amount: 0,
           security_bill_success: false,
@@ -123,7 +129,7 @@ module diem_framework::epoch_boundary {
           oracle_pay_success: false,
           epoch_burn_fees: 0,
           epoch_burn_success: false,
-          slow_wallet_drip: false,
+          slow_wallet_drip_success: false,
           // Process Incoming
           incoming_compliant: vector::empty(),
           incoming_compliant_count: 0,
@@ -147,8 +153,7 @@ module diem_framework::epoch_boundary {
           pof_thermo_success: false,
           pof_thermo_increase: false,
           pof_thermo_amount: 0,
-        });
-      }
+        }
     }
 
 
@@ -159,6 +164,7 @@ module diem_framework::epoch_boundary {
         system_addresses::assert_ol(root);
 
         let status = borrow_global_mut<BoundaryStatus>(@ol_framework);
+        *status = reset();
         // bill root service fees;
         root_service_billing(root, status);
         // run the transactions of donor directed accounts
@@ -239,7 +245,7 @@ module diem_framework::epoch_boundary {
             let (count, amount) = oracle::epoch_boundary(root, &mut oracle_budget);
             status.oracle_pay_count = count;
             status.oracle_pay_amount = amount;
-            status.oracle_pay_success = status.oracle_budget == amount;
+            status.oracle_pay_success = (amount > 0);
             // in case there is any dust left
             ol_account::merge_coins(&mut all_fees, oracle_budget);
           };
