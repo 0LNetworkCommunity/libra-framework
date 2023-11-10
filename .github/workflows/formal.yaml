@@ -41,7 +41,8 @@ jobs:
       - name: install diem (for move tests)
         run: >
           wget -O ${{github.workspace}}/diem https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem &&
-          sudo chmod 755 ${{github.workspace}}/diem
+          sudo chmod 755 ${{github.workspace}}/diem &&
+          cp ${{github.workspace}}/diem ~/.cargo/bin
 
       - name: prove
         run: diem move prove -f version
