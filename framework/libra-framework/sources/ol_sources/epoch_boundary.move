@@ -180,6 +180,7 @@ module diem_framework::epoch_boundary {
         status.set_fee_makers_success = fee_maker::epoch_reset_fee_maker(root);
         // randomize the Tower/Oracle difficulty
         tower_state::reconfig(root);
+        status.tower_state_success = true; // TODO: there isn't much to check here.
 
         let (compliant_vals, n_seats) = musical_chairs::stop_the_music(root, closing_epoch);
         status.incoming_compliant_count = vector::length(&compliant_vals);
