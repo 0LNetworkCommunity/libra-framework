@@ -64,6 +64,7 @@ module diem_framework::epoch_boundary {
       epoch_burn_fees: u64,
       epoch_burn_success: bool,
 
+      slow_wallet_drip_amount: u64,
       slow_wallet_drip_success: bool,
       // Process Incoming
       // musical chairs
@@ -129,6 +130,8 @@ module diem_framework::epoch_boundary {
           oracle_pay_success: false,
           epoch_burn_fees: 0,
           epoch_burn_success: false,
+
+          slow_wallet_drip_amount: 0,
           slow_wallet_drip_success: false,
           // Process Incoming
           incoming_compliant: vector::empty(),
@@ -186,7 +189,9 @@ module diem_framework::epoch_boundary {
         settle_accounts(root, compliant_vals, status);
 
         // drip coins
-        slow_wallet::on_new_epoch(root);
+        let (s_success, s_amount) = slow_wallet::on_new_epoch(root);
+        status.slow_wallet_drip_amount = s_amount;
+        status.slow_wallet_drip_success = s_success;
 
         // ======= THIS IS APPROXIMATELY THE BOUNDARY =====
         process_incoming_validators(root, status, compliant_vals, n_seats);

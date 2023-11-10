@@ -12,7 +12,7 @@ spec ol_framework::slow_wallet {
 
     // at epoch boundaries the slow wallet drip should never abort
     // if genesis is initialized properly
-    spec on_new_epoch(vm: &signer) {
+    spec on_new_epoch(vm: &signer): (bool, u64) {
         use ol_framework::sacred_cows::{SacredCow, SlowDrip};
 
         aborts_if !system_addresses::signer_is_ol_root(vm);
