@@ -85,8 +85,8 @@ module diem_framework::epoch_boundary {
       incoming_final_set_size: u64,
       incoming_reconfig_success: bool,
 
-      infra_subsize_amount: u64, // TODO
-      infra_subsizize_success: bool, // TODO
+      infra_subsidize_amount: u64, // TODO
+      infra_subsidize_success: bool, // TODO
 
       pof_thermo_success: bool,
       pof_thermo_increase: bool,
@@ -141,8 +141,8 @@ module diem_framework::epoch_boundary {
           incoming_actual_vals: vector::empty(),
           incoming_reconfig_success: false,
 
-          infra_subsize_amount: 0,
-          infra_subsizize_success: false,
+          infra_subsidize_amount: 0,
+          infra_subsidize_success: false,
 
           pof_thermo_success: false,
           pof_thermo_increase: false,
@@ -185,7 +185,9 @@ module diem_framework::epoch_boundary {
         // ======= THIS IS APPROXIMATELY THE BOUNDARY =====
         process_incoming_validators(root, status, compliant_vals, n_seats);
 
-        subsidize_from_infra_escrow(root);
+        let (i_success, i_fee) = subsidize_from_infra_escrow(root);
+        status.infra_subsidize_amount = i_fee;
+        status.infra_subsidize_success = i_success;
 
         let (t_success, t_increase, t_amount) =
         proof_of_fee::reward_thermostat(root);
@@ -319,14 +321,15 @@ module diem_framework::epoch_boundary {
   }
 
   // set up rewards subsidy for coming epoch
-  fun subsidize_from_infra_escrow(root: &signer) {
+  fun subsidize_from_infra_escrow(root: &signer): (bool, u64) {
       system_addresses::assert_ol(root);
       let (reward_per, _, _, _ ) = proof_of_fee::get_consensus_reward();
       let vals = stake::get_current_validators();
       let count_vals = vector::length(&vals);
       count_vals = count_vals + ORACLE_PROVIDERS_SEATS;
       let total_epoch_budget = count_vals * reward_per;
-      infra_escrow::epoch_boundary_collection(root, total_epoch_budget);
+      infra_escrow::epoch_boundary_collection(root,
+      total_epoch_budget)
   }
 
   // all services the root collective security is billing for
