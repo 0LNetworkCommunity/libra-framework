@@ -70,7 +70,7 @@ base:
     from_config: '{waypoint}'
 
 execution:
-  genesis_file_location: '{path}/genesis.blob'
+  genesis_file_location: '{path}/genesis/genesis.blob'
 
 state_sync:
      state_sync_driver:
