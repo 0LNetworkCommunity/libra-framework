@@ -162,7 +162,7 @@ module ol_framework::gas_coin {
     }
 
     /// Can only called during genesis to initialize the Diem coin.
-    public(friend) fun initialize(diem_framework: &signer) {
+    public(friend) fun initialize(diem_framework: &signer) acquires FinalMint {
         system_addresses::assert_diem_framework(diem_framework);
 
         let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<LibraCoin>(
@@ -177,8 +177,11 @@ module ol_framework::gas_coin {
         // have been initialized.
         move_to(diem_framework, MintCapStore { mint_cap });
 
+
         coin::destroy_freeze_cap(freeze_cap);
         coin::destroy_burn_cap(burn_cap);
+
+        genesis_set_final_supply(diem_framework, 100);
     }
 
     /// FOR TESTS ONLY

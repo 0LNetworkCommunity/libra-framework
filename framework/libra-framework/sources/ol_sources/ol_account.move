@@ -3,6 +3,7 @@ module ol_framework::ol_account {
     use diem_framework::coin::{Self, Coin};
     use diem_framework::event::{EventHandle, emit_event};
     use diem_framework::system_addresses;
+    use diem_framework::chain_status;
     use std::error;
     use std::signer;
     use std::option::{Self, Option};
@@ -314,10 +315,16 @@ module ol_framework::ol_account {
       let addr = signer::address_of(sig);
       if (exists<BurnTracker>(addr)) return;
 
+      let prev_supply = if (chain_status::is_genesis()) {
+        gas_coin::get_final_supply()
+      } else {
+        gas_coin::supply()
+      };
+
       let (_, current_user_balance) = balance(addr);
 
       move_to(sig, BurnTracker {
-        prev_supply: gas_coin::supply(),
+        prev_supply,
         prev_balance: current_user_balance,
         burn_at_last_calc: 0,
         cumu_burn: 0,
