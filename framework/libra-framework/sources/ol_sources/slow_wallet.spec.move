@@ -4,8 +4,21 @@ spec ol_framework::slow_wallet {
         // pragma aborts_if_is_strict;
     }
 
+    // setting a slow wallet should abort only if there is no SlowWalletList
+    // present in the 0x1 address
     spec set_slow(sig: &signer) {
-        // use diem_framework::
         aborts_if !exists<SlowWalletList>(@ol_framework);
+    }
+
+    // at epoch boundaries the slow wallet drip should never abort
+    // if genesis is initialized properly
+    spec on_new_epoch(vm: &signer) {
+        use ol_framework::sacred_cows::{SacredCow, SlowDrip};
+
+        aborts_if !system_addresses::signer_is_ol_root(vm);
+
+        aborts_if !exists<SacredCow<SlowDrip>>(@0x2);
+
+        aborts_if borrow_global<SacredCow<SlowDrip>>(@0x2).value != 100000;
     }
 }

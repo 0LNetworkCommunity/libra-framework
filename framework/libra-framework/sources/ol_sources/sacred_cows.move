@@ -252,7 +252,8 @@ module ol_framework::sacred_cows {
   }
 
   // get the stored value
-  fun get_stored<T>(): u64 acquires SacredCow {
+  public fun get_stored<T>(): u64 acquires SacredCow {
+    if (!exists<SacredCow<T>>(@0x2)) return 0;
     let stored = borrow_global_mut<SacredCow<T>>(@0x2);
     stored.value
   }

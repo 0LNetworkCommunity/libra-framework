@@ -1,0 +1,82 @@
+name: publish bin
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
+    branches:
+      - 'ci'
+      - 'publish' # TODO: temp until this gets merged to main
+jobs:
+  publish:
+    permissions: write-all
+      # contents: write
+    name: publish
+    runs-on: ubuntu-latest
+    steps:
+      # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
+      #   with:
+      #     detached: true
+      #   timeout-minutes: 15
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: false
+
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: true
+
+      - uses: dtolnay/rust-toolchain@1.70.0
+        with:
+          components: rustfmt
+
+######## CACHE ########
+      - name: system packages
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: build-essential ca-certificates clang curl git libpq-dev libssl-dev pkg-config lsof lld libgmp-dev
+          version: 1.0
+
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: sccache
+        uses: 0o-de-lally/sccache-action@local
+
+      # note: building in the same cargo command will lead to "feature unification", which leads to a `diem-node` binary which fails.
+      - name: libra release build
+      # size and performance optimized binary with profile.cli
+        run: cargo b --release -p libra
+
+      - name: libra publish
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/release/libra
+          tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true
+
+      # TODO
+      # - name: libra-framework release build
+      # # size and performance optimized binary with profile.cli
+      #   run: cargo b --release -p libra-framework
+
+      # - name: CLI publish
+      #   uses: svenstaro/upload-release-action@v2
+      #   with:
+      #     repo_token: ${{ secrets.GITHUB_TOKEN }}
+      #     file: target/release/libra-framework
+      #     tag: ${{ github.ref }}
+      #     overwrite: true
+      #     file_glob: true

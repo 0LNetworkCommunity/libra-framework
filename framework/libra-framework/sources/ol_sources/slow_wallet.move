@@ -24,6 +24,10 @@ module ol_framework::slow_wallet {
   const EGENESIS_ERROR: u64 = 1;
 
 
+
+  /// Maximum possible aggregatable coin value.
+  const MAX_U64: u128 = 18446744073709551615;
+
     struct SlowWallet has key {
         unlocked: u64,
         transferred: u64,
@@ -104,14 +108,25 @@ module ol_framework::slow_wallet {
         }
     }
 
-    public fun slow_wallet_epoch_drip(vm: &signer, amount: u64) acquires SlowWallet, SlowWalletList{
+    public fun slow_wallet_epoch_drip(vm: &signer, amount: u64) acquires
+    SlowWallet, SlowWalletList{
+
       system_addresses::assert_ol(vm);
       let list = get_slow_list();
+      let len = vector::length<address>(&list);
+      if (len == 0) return;
       let i = 0;
-      while (i < vector::length<address>(&list)) {
+      while (i < len) {
         let addr = vector::borrow<address>(&list, i);
         let total = coin::balance<GasCoin>(*addr);
+        if (!exists<SlowWallet>(*addr)) continue; // NOTE: formal verifiction caught
+        // this, not sure how it's possible
+
         let state = borrow_global_mut<SlowWallet>(*addr);
+
+        // TODO implement this as a `spec`
+        if ((state.unlocked as u128) + (amount as u128) >= MAX_U64) continue;
+
         let next_unlock = state.unlocked + amount;
         state.unlocked = if (next_unlock > total) { total } else { next_unlock };
         i = i + 1;
