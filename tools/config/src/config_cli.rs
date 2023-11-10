@@ -121,9 +121,17 @@ impl ConfigCli {
                     let client = Client::new(cfg.pick_url(self.chain_name)?);
 
                     if client.get_index().await.is_ok() {
-                        account_keys.account = client
+                        account_keys.account = match client
                             .lookup_originating_address(account_keys.auth_key)
-                            .await?;
+                            .await
+                        {
+                            Ok(r) => r,
+                            _ => {
+                                println!("This looks like a new account, and it's not yet on chain. If this is not what you expected, are you sure you are using the correct recovery mnemonic?");
+                                // do nothing
+                                account_keys.account
+                            }
+                        };
                     };
 
                     let profile =

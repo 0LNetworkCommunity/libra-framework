@@ -71,17 +71,6 @@ module ol_framework::ol_account {
       (resource_account_sig, cap)
     }
 
-    // /// Creates an account by sending an initial amount of GAS to it.
-    // public entry fun create_user_account_by_coin(sender: &signer, auth_key: address, amount: u64) {
-    //     // warn early before attempting to creat the account.
-    //     let limit = slow_wallet::unlocked_amount(signer::address_of(sender));
-    //     assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
-
-    //     create_impl(auth_key);
-    //     // use the proper tracking
-    //     transfer(sender, auth_key, amount);
-    // }
-
     fun create_impl(auth_key: address) {
         let new_signer = account::create_account(auth_key);
         coin::register<GasCoin>(&new_signer);
@@ -208,7 +197,6 @@ module ol_framework::ol_account {
         if (!account::exists_at(recipient)) {
             // creates the account address (with the same bytes as the authentication key).
             create_impl(recipient);
-            // return
         };
 
 
