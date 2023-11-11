@@ -469,4 +469,3 @@ module ol_framework::test_donor_voice {
       assert!(lifetime_burn_now == lifetime_burn_pre, 7357011);
     }
 }
-

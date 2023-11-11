@@ -107,7 +107,7 @@ module ol_framework::sacred_cows {
   /// how much each slow wallet gets unlocked at every epoch. Read below.
   ///////////////////////////////////////////
   /// TODO: v7: THIS NEEDS TO BE RECALCULATED WITH THE NEW SUPPLY!
-  const SLOW_WALLET_EPOCH_DRIP: u64 = 100000;
+  const SLOW_WALLET_EPOCH_DRIP: u64 = 30000 * 1000000; // COINS * SCALING FACTOR
   ///////////////////////////////////////////
   /// [SLOW_WALLET_EPOCH_DRIP] This is a principal economic innovation from 0L.
   /// How to reward the highest level of work with more benefits,
@@ -230,6 +230,8 @@ module ol_framework::sacred_cows {
   // only called by genesis which can spoof a signer for 0x2.
   public(friend) fun init(zero_x_two_sig: &signer) {
     chain_status::assert_genesis();
+    let addr = signer::address_of(zero_x_two_sig);
+    assert!( addr == @0x2, error::invalid_state(ENOT_OX2));
     bless_this_cow<SlowDrip>(zero_x_two_sig, SLOW_WALLET_EPOCH_DRIP);
   }
 
@@ -243,6 +245,8 @@ module ol_framework::sacred_cows {
   /// initialize the state
   /// DEVS: this should not be a public function. It should only be callable from genesis
   fun bless_this_cow<T>(zero_x_two_sig: &signer, value: u64) {
+    chain_status::assert_genesis();
+
     let addr = signer::address_of(zero_x_two_sig);
     assert!( addr == @0x2, error::invalid_state(ENOT_OX2));
     assert!(!exists<SacredCow<T>>(addr), error::invalid_state(EALREADY_INITIALIZED));
@@ -252,7 +256,8 @@ module ol_framework::sacred_cows {
   }
 
   // get the stored value
-  fun get_stored<T>(): u64 acquires SacredCow {
+  public fun get_stored<T>(): u64 acquires SacredCow {
+    if (!exists<SacredCow<T>>(@0x2)) return 0;
     let stored = borrow_global_mut<SacredCow<T>>(@0x2);
     stored.value
   }

@@ -35,7 +35,7 @@ module diem_framework::epoch_boundary {
 
 
     // I just checked in, to see what condition my condition was in.
-    struct BoundaryStatus has key {
+    struct BoundaryStatus has key, drop {
       security_bill_count: u64,
       security_bill_amount: u64,
       security_bill_success: bool,
@@ -61,9 +61,11 @@ module diem_framework::epoch_boundary {
       oracle_pay_amount: u64,
       oracle_pay_success: bool,
 
-      epoch_burn_fees: u64, // TODO
-      epoch_burn_success: bool, // TODO
-      slow_wallet_drip: bool, // TODO
+      epoch_burn_fees: u64,
+      epoch_burn_success: bool,
+
+      slow_wallet_drip_amount: u64,
+      slow_wallet_drip_success: bool,
       // Process Incoming
       // musical chairs
       incoming_compliant: vector<address>,
@@ -85,8 +87,8 @@ module diem_framework::epoch_boundary {
       incoming_final_set_size: u64,
       incoming_reconfig_success: bool,
 
-      infra_subsize_amount: u64, // TODO
-      infra_subsizize_success: bool, // TODO
+      infra_subsidize_amount: u64, // TODO
+      infra_subsidize_success: bool, // TODO
 
       pof_thermo_success: bool,
       pof_thermo_increase: bool,
@@ -95,7 +97,12 @@ module diem_framework::epoch_boundary {
 
     public fun initialize(framework: &signer) {
       if (!exists<BoundaryStatus>(@ol_framework)){
-        move_to(framework, BoundaryStatus {
+        move_to(framework, reset());
+      }
+    }
+
+    fun reset(): BoundaryStatus {
+      BoundaryStatus {
           security_bill_count: 0,
           security_bill_amount: 0,
           security_bill_success: false,
@@ -123,7 +130,9 @@ module diem_framework::epoch_boundary {
           oracle_pay_success: false,
           epoch_burn_fees: 0,
           epoch_burn_success: false,
-          slow_wallet_drip: false,
+
+          slow_wallet_drip_amount: 0,
+          slow_wallet_drip_success: false,
           // Process Incoming
           incoming_compliant: vector::empty(),
           incoming_compliant_count: 0,
@@ -141,14 +150,13 @@ module diem_framework::epoch_boundary {
           incoming_actual_vals: vector::empty(),
           incoming_reconfig_success: false,
 
-          infra_subsize_amount: 0,
-          infra_subsizize_success: false,
+          infra_subsidize_amount: 0,
+          infra_subsidize_success: false,
 
           pof_thermo_success: false,
           pof_thermo_increase: false,
           pof_thermo_amount: 0,
-        });
-      }
+        }
     }
 
 
@@ -159,6 +167,7 @@ module diem_framework::epoch_boundary {
         system_addresses::assert_ol(root);
 
         let status = borrow_global_mut<BoundaryStatus>(@ol_framework);
+        *status = reset();
         // bill root service fees;
         root_service_billing(root, status);
         // run the transactions of donor directed accounts
@@ -171,6 +180,7 @@ module diem_framework::epoch_boundary {
         status.set_fee_makers_success = fee_maker::epoch_reset_fee_maker(root);
         // randomize the Tower/Oracle difficulty
         tower_state::reconfig(root);
+        status.tower_state_success = true; // TODO: there isn't much to check here.
 
         let (compliant_vals, n_seats) = musical_chairs::stop_the_music(root, closing_epoch);
         status.incoming_compliant_count = vector::length(&compliant_vals);
@@ -180,12 +190,16 @@ module diem_framework::epoch_boundary {
         settle_accounts(root, compliant_vals, status);
 
         // drip coins
-        slow_wallet::on_new_epoch(root);
+        let (s_success, s_amount) = slow_wallet::on_new_epoch(root);
+        status.slow_wallet_drip_amount = s_amount;
+        status.slow_wallet_drip_success = s_success;
 
         // ======= THIS IS APPROXIMATELY THE BOUNDARY =====
         process_incoming_validators(root, status, compliant_vals, n_seats);
 
-        subsidize_from_infra_escrow(root);
+        let (i_success, i_fee) = subsidize_from_infra_escrow(root);
+        status.infra_subsidize_amount = i_fee;
+        status.infra_subsidize_success = i_success;
 
         let (t_success, t_increase, t_amount) =
         proof_of_fee::reward_thermostat(root);
@@ -237,13 +251,15 @@ module diem_framework::epoch_boundary {
             let (count, amount) = oracle::epoch_boundary(root, &mut oracle_budget);
             status.oracle_pay_count = count;
             status.oracle_pay_amount = amount;
-            status.oracle_pay_success = status.oracle_budget == amount;
+            status.oracle_pay_success = (amount > 0);
             // in case there is any dust left
             ol_account::merge_coins(&mut all_fees, oracle_budget);
           };
 
           // remainder gets burnt according to fee maker preferences
-          burn::epoch_burn_fees(root, &mut all_fees);
+          let (b_success, b_fees) = burn::epoch_burn_fees(root, &mut all_fees);
+          status.epoch_burn_success = b_success;
+          status.epoch_burn_fees = b_fees;
 
           // coin can finally be destroyed. Up to here we have been extracting from a mutable.
           // It's possible there might be some dust, that should get burned
@@ -317,14 +333,15 @@ module diem_framework::epoch_boundary {
   }
 
   // set up rewards subsidy for coming epoch
-  fun subsidize_from_infra_escrow(root: &signer) {
+  fun subsidize_from_infra_escrow(root: &signer): (bool, u64) {
       system_addresses::assert_ol(root);
       let (reward_per, _, _, _ ) = proof_of_fee::get_consensus_reward();
       let vals = stake::get_current_validators();
       let count_vals = vector::length(&vals);
       count_vals = count_vals + ORACLE_PROVIDERS_SEATS;
       let total_epoch_budget = count_vals * reward_per;
-      infra_escrow::epoch_boundary_collection(root, total_epoch_budget);
+      infra_escrow::epoch_boundary_collection(root,
+      total_epoch_budget)
   }
 
   // all services the root collective security is billing for

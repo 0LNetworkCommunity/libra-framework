@@ -25,34 +25,30 @@ libra move prove -h
 
 2) Install the Boogie dependencies
 
-The most straightforward way is to use the `diem-platform` environment setup.
 The `dev_setup.sh` can be run with these options:
 
 > -y install or update Move Prover tools: z3, cvc5, dotnet, boogie
 
-> -b batch mode, no user interactions and minimal output
-
-> -p update ${HOME}/.profile
+> -p update ${HOME}/.profile or ./bashrc
 
 ```
-# clone diem
-git clone https://github.com/0LNetworkCommunity/diem.git
-cd diem
-
 # run the installer
-./scripts/dev_setup.sh -ypb
+bash util/dev_setup.sh -yp
 
 # you may need to restart your shell, after env variables are set
-source ~/.profile
+# or .bashrc, or .zshrc
+
+bash ~/.profile
+
 ```
 
-You should expect to see some changes in your bash profile
+Whatever terminal shell (or .zshrc) you are using you should check that these variable are exported:
 ```
-export DOTNET_ROOT="/Users/you/.dotnet"
-export Z3_EXE="/Users/you/bin/z3"
-export CVC5_EXE="/Users/you/bin/cvc5"
-export BOOGIE_EXE="/Users/you/.dotnet/tools/boogie"
-export SOLC_EXE="/Users/you/bin/solc"
+export DOTNET_ROOT="$HOME/.dotnet"
+export Z3_EXE="$HOME/bin/z3"
+export CVC5_EXE="$HOME/bin/cvc5"
+export BOOGIE_EXE="$HOME/.dotnet/tools/boogie"
+export SOLC_EXE="$HOME/bin/solc"
 ```
 
 3) check it all works
@@ -63,11 +59,15 @@ So test it on something we know to work
 ```
 cd framework/libra-framework
 
-# test the version.move module
-libra move prove -f version
+# test the guid.move module
+libra move prove -f guid
 ```
 
-If you get a response with `Success` you are ready to start.
+If you get a response without errors similar to the message below you are ready to
+start.
+```
+[INFO] 0.903s build, 2.585s trafo, 0.019s gen, 1.313s verify, total 4.820s
+```
 
 ## Troubleshooting
 

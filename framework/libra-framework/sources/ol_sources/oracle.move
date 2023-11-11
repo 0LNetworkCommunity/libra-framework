@@ -226,7 +226,9 @@ module ol_framework::oracle {
         global.proofs_in_epoch_above_thresh = global.proofs_in_epoch_above_thresh + 1;
         // also add to the provider list which would be elegible for rewards
         let provider_list = borrow_global_mut<ProviderList>(@ol_framework);
-        vector::push_back(&mut provider_list.current_above_threshold, provider_addr);
+        if (!vector::contains(&provider_list.current_above_threshold, &provider_addr)) {
+          vector::push_back(&mut provider_list.current_above_threshold, provider_addr);
+        }
       };
     }
 

@@ -27,11 +27,11 @@ module diem_framework::genesis {
 
     //////// 0L ////////
     use diem_framework::validator_universe;
-    // use ol_framework::ol_account;
+    use ol_framework::ol_account;
     use ol_framework::musical_chairs;
     use ol_framework::proof_of_fee;
     use ol_framework::slow_wallet;
-    use ol_framework::gas_coin::{Self, LibraCoin as GasCoin};
+    use ol_framework::gas_coin;
     use ol_framework::infra_escrow;
     use ol_framework::tower_state;
     use ol_framework::safe;
@@ -44,6 +44,8 @@ module diem_framework::genesis {
     use ol_framework::testnet;
     use ol_framework::epoch_boundary;
     use ol_framework::sacred_cows;
+    #[test_only]
+    use ol_framework::gas_coin::LibraCoin as GasCoin;
     //////// end 0L ////////
 
 
@@ -228,15 +230,12 @@ module diem_framework::genesis {
 
     /// This creates an funds an account if it doesn't exist.
     /// If it exists, it just returns the signer.
-    fun create_account(_diem_framework: &signer, account_address: address, _balance: u64): signer {
-        if (account::exists_at(account_address)) {
-            create_signer(account_address)
-        } else {
-            let account = account::create_account(account_address);
-            // coin::register<GasCoin>(&account);
-            coin::register<GasCoin>(&account);
-            account
-        }
+    fun create_account(diem_framework: &signer, account_address: address, _balance: u64): signer {
+        if (!account::exists_at(account_address)) {
+            ol_account::create_account(diem_framework, account_address);
+        };
+
+        create_signer(account_address)
     }
 
     fun create_initialize_validators_with_commission(
@@ -255,13 +254,15 @@ module diem_framework::genesis {
             register_one_genesis_validator(diem_framework, validator, false);
             vector::push_back(&mut val_addr_list, *&validator.validator_config.owner_address);
             // 0x1 code account is calling this contract but the 0x0 VM address is authorized for infra escrow.
-            infra_escrow::genesis_coin_validator(&create_signer(@0x0), *&validator.validator_config.owner_address);
-            if (testnet::is_not_mainnet()) {
-              let sig = create_signer(validator.validator_config.owner_address);
-              proof_of_fee::set_bid(&sig, 0900, 1000); // make the genesis
-              // default 90% to align with thermostatic rule in the PoF paper.
-              // otherwise the thermostatic rule starts kicking-in immediately
+            infra_escrow::genesis_coin_validator(&create_signer(@0x0),
+            *&validator.validator_config.owner_address);
 
+            // default 90% to align with thermostatic rule in the PoF paper.
+            // otherwise the thermostatic rule starts kicking-in immediately
+            let sig = create_signer(validator.validator_config.owner_address);
+            proof_of_fee::set_bid(&sig, 0900, 1000); // make the genesis
+
+            if (testnet::is_not_mainnet()) {
               // TODO: this is for testnet purposes only
               // unlock some of the genesis validators coins so they can issue
               // transactions from epoch 0 in test runners.

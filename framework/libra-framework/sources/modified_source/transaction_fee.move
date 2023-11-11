@@ -348,6 +348,7 @@ module diem_framework::transaction_fee {
 
         // Initialization.
         let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&root);
+        gas_coin::test_set_final_supply(&root, 100);
         store_diem_coin_burn_cap(&root, burn_cap);
         initialize_fee_collection_and_distribution(&root, 10);
 

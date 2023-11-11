@@ -24,6 +24,10 @@ module ol_framework::slow_wallet {
   const EGENESIS_ERROR: u64 = 1;
 
 
+
+  /// Maximum possible aggregatable coin value.
+  const MAX_U64: u128 = 18446744073709551615;
+
     struct SlowWallet has key {
         unlocked: u64,
         transferred: u64,
@@ -104,18 +108,48 @@ module ol_framework::slow_wallet {
         }
     }
 
-    public fun slow_wallet_epoch_drip(vm: &signer, amount: u64) acquires SlowWallet, SlowWalletList{
+    /// VM causes the slow wallet to unlock by X amount
+    /// @return tuple of 2
+    /// 0: bool, was this successful
+    // 1: u64, how much was dripped
+    public fun slow_wallet_epoch_drip(vm: &signer, amount: u64): (bool, u64) acquires
+    SlowWallet, SlowWalletList{
+
       system_addresses::assert_ol(vm);
       let list = get_slow_list();
+      let len = vector::length<address>(&list);
+      if (len == 0) return (false, 0);
+      let accounts_updated = 0;
       let i = 0;
-      while (i < vector::length<address>(&list)) {
+      while (i < len) {
         let addr = vector::borrow<address>(&list, i);
-        let total = coin::balance<GasCoin>(*addr);
+        let user_balance = coin::balance<GasCoin>(*addr);
+        if (!exists<SlowWallet>(*addr)) continue; // NOTE: formal verifiction caught
+        // this, not sure how it's possible
+
         let state = borrow_global_mut<SlowWallet>(*addr);
+
+        // TODO implement this as a `spec`
+        if ((state.unlocked as u128) + (amount as u128) >= MAX_U64) continue;
+
         let next_unlock = state.unlocked + amount;
-        state.unlocked = if (next_unlock > total) { total } else { next_unlock };
+        state.unlocked = if (next_unlock > user_balance) {
+          // the user might have reached the end of the unlock period, and all
+          // is unlocked
+          user_balance
+        } else {
+          next_unlock
+        };
+
+        // it may be that some accounts were not updated, so we can't report
+        // success unless that was the case.
+        accounts_updated = accounts_updated + 1;
+
+
         i = i + 1;
-      }
+      };
+
+      (accounts_updated==len, amount)
     }
 
     /// wrapper to both attempt to adjust the slow wallet tracker
@@ -128,9 +162,15 @@ module ol_framework::slow_wallet {
       maybe_track_unlocked_deposit(recipient, amount);
     }
     /// if a user spends/transfers unlocked coins we need to track that spend
-    public(friend) fun maybe_track_unlocked_withdraw(payer: address, amount: u64) acquires SlowWallet {
+    public(friend) fun maybe_track_unlocked_withdraw(payer: address, amount:
+    u64) acquires SlowWallet {
+
       if (!exists<SlowWallet>(payer)) return;
       let s = borrow_global_mut<SlowWallet>(payer);
+
+      spec {
+        assume s.transferred + amount < MAX_U64;
+      };
 
       s.transferred = s.transferred + amount;
 
@@ -157,9 +197,13 @@ module ol_framework::slow_wallet {
       state.unlocked = state.unlocked + amount;
     }
 
-    public fun on_new_epoch(vm: &signer) acquires SlowWallet, SlowWalletList {
+    /// Every epoch the system will drip a fixed amount
+    /// @return tuple of 2
+    /// 0: bool, was this successful
+    // 1: u64, how much was dripped
+    public fun on_new_epoch(vm: &signer): (bool, u64) acquires SlowWallet, SlowWalletList {
       system_addresses::assert_ol(vm);
-      slow_wallet_epoch_drip(vm, sacred_cows::get_slow_drip_const());
+      slow_wallet_epoch_drip(vm, sacred_cows::get_slow_drip_const())
     }
 
     ///////// SLOW GETTERS ////////
