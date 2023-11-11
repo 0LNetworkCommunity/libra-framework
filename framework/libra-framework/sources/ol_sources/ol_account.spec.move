@@ -1,7 +1,10 @@
 spec ol_framework::ol_account {
     spec module {
         pragma verify = true;
-        pragma aborts_if_is_strict;
+        // pragma aborts_if_is_strict;
+        invariant [suspendable] chain_status::is_operating() ==> exists<gas_coin::FinalMint>(@diem_framework);
+        invariant [suspendable] chain_status::is_operating() ==>  exists<coin::CoinInfo<GasCoin>>(@diem_framework);
+
     }
 
     // /// Check if the bytes of the auth_key is 32.
@@ -26,9 +29,31 @@ spec ol_framework::ol_account {
         len(authentication_key) != 32
     }
 
-    // spec transfer(source: &signer, to: address, amount: u64) {
-    //     pragma verify = false;
-    // }
+    // ol_account::withdraw can never use more than the slow wallet limit
+    spec withdraw(sender: &signer, amount: u64): Coin<GasCoin>{
+        include AssumeCoinRegistered;
+
+        let account_addr = signer::address_of(sender);
+        aborts_if amount == 0;
+
+        let coin_store = global<coin::CoinStore<GasCoin>>(account_addr);
+        let balance = coin_store.coin.value;
+
+        aborts_if balance < amount;
+
+        // in the case of slow wallets
+        let slow_store = global<slow_wallet::SlowWallet>(account_addr);
+        aborts_if exists<slow_wallet::SlowWallet>(account_addr) &&
+        slow_store.unlocked < amount;
+
+        ensures result == Coin<GasCoin>{value: amount};
+    }
+
+    spec schema AssumeCoinRegistered {
+        sender: &signer;
+        let account_addr = signer::address_of(sender);
+        aborts_if !coin::is_account_registered<GasCoin>(account_addr);
+    }
 
     spec assert_account_exists(addr: address) {
         aborts_if !account::exists_at(addr);

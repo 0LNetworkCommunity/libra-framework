@@ -22,10 +22,10 @@ members = [
 authors = ["libra contributors"]
 edition = "2021"
 homepage = "https://0l.network/"
-license = "Apache-2.0"
+license = "NOASSERTION"
 publish = false
 repository = "https://github.com/0LNetworkCommunity/libra-v7"
-rust-version = "1.66.1"
+rust-version = "1.70.0"
 
 [workspace.dependencies]
 ######## Internal crate dependencies ########

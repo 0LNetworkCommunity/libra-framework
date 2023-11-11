@@ -1,6 +1,6 @@
 use diem_config::config::NodeConfig;
 use diem_types::{network_address::NetworkAddress, waypoint::Waypoint, PeerId};
-use libra_types::legacy_types::app_cfg::default_file_path;
+use libra_types::global_config_dir;
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
@@ -12,10 +12,10 @@ pub async fn init_fullnode_yaml(home_dir: Option<PathBuf>) -> anyhow::Result<Pat
 
     let yaml = make_fullnode_yaml(home_dir.clone(), waypoint)?;
 
-    let home = home_dir.unwrap_or_else(default_file_path);
+    let home = home_dir.unwrap_or_else(global_config_dir);
     let p = home.join("fullnode.yaml");
-
     std::fs::write(&p, yaml)?;
+
     let peers = fetch_seed_addresses(None).await?;
 
     add_peers_to_yaml(&p, peers)?;
@@ -58,7 +58,7 @@ pub async fn fetch_seed_addresses(
 
 /// Create a fullnode yaml to bootstrap node
 pub fn make_fullnode_yaml(home_dir: Option<PathBuf>, waypoint: Waypoint) -> anyhow::Result<String> {
-    let home_dir = home_dir.unwrap_or_else(libra_types::global_config_dir);
+    let home_dir = home_dir.unwrap_or_else(global_config_dir);
     let path = home_dir.display().to_string();
 
     let template = format!(
@@ -70,7 +70,7 @@ base:
     from_config: '{waypoint}'
 
 execution:
-  genesis_file_location: '{path}/genesis.blob'
+  genesis_file_location: '{path}/genesis/genesis.blob'
 
 state_sync:
      state_sync_driver:
@@ -91,14 +91,17 @@ api:
 
 /// download genesis blob
 pub async fn download_genesis(home_dir: Option<PathBuf>) -> anyhow::Result<()> {
-    let bytes = reqwest::get("https://github.com/0xzoz/blob/raw/main/genesis.blob")
-        .await?
-        .bytes()
-        .await?;
+    let bytes = reqwest::get(
+        "https://github.com/0LNetworkCommunity/epoch-archive-testnet/raw/main/genesis/genesis.blob",
+    )
+    .await?
+    .bytes()
+    .await?;
 
-    let home = home_dir.unwrap_or_else(default_file_path);
-    std::fs::create_dir_all(&home)?;
-    let p = home.join("genesis.blob");
+    let home = home_dir.unwrap_or_else(global_config_dir);
+    let genesis_dir = home.join("genesis/");
+    std::fs::create_dir_all(&genesis_dir)?;
+    let p = genesis_dir.join("genesis.blob");
 
     std::fs::write(p, bytes)?;
 
@@ -106,13 +109,16 @@ pub async fn download_genesis(home_dir: Option<PathBuf>) -> anyhow::Result<()> {
 }
 
 pub async fn get_genesis_waypoint(home_dir: Option<PathBuf>) -> anyhow::Result<Waypoint> {
-    let wp_string = reqwest::get("https://raw.githubusercontent.com/0xzoz/blob/main/waypoint.txt")
-        .await?
-        .text()
-        .await?;
+    let wp_string = reqwest::get(
+        "https://github.com/0LNetworkCommunity/epoch-archive-testnet/raw/main/genesis/waypoint.txt",
+    )
+    .await?
+    .text()
+    .await?;
 
-    let home = home_dir.unwrap_or_else(default_file_path);
-    let p = home.join("waypoint.txt");
+    let home = home_dir.unwrap_or_else(libra_types::global_config_dir);
+    let genesis_dir = home.join("genesis/");
+    let p = genesis_dir.join("waypoint.txt");
 
     std::fs::write(p, &wp_string)?;
 

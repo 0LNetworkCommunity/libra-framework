@@ -109,12 +109,10 @@ async fn smoke_transfer_estimate() {
         url: Some(s.api_endpoint.clone()),
         tx_profile: None,
         tx_cost: Some(TxCost::default_cheap_txs_cost()),
-        estimate_only: true,
+        estimate_only: true, // THIS IS THE TEST
     };
 
-    cli.run()
-        .await
-        .expect("cli could not create and transfer to new account");
+    cli.run().await.expect("could not get estimate");
 
     // NOTE: This should not fail
 }
