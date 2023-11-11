@@ -109,7 +109,7 @@ module diem_framework::coin {
     /// These are kept in a single resource to ensure locality of data.
     struct CoinStore<phantom CoinType> has key {
         coin: Coin<CoinType>,
-        frozen: bool,
+        // frozen: bool,
         deposit_events: EventHandle<DepositEvent>,
         withdraw_events: EventHandle<WithdrawEvent>,
     }
@@ -412,10 +412,10 @@ module diem_framework::coin {
         );
 
         let coin_store = borrow_global_mut<CoinStore<CoinType>>(account_addr);
-        assert!(
-            !coin_store.frozen,
-            error::permission_denied(EFROZEN),
-        );
+        // assert!(
+        //     !coin_store.frozen,
+        //     error::permission_denied(EFROZEN),
+        // );
 
         event::emit_event<DepositEvent>(
             &mut coin_store.deposit_events,
@@ -585,7 +585,7 @@ module diem_framework::coin {
         account::register_coin<CoinType>(account_addr);
         let coin_store = CoinStore<CoinType> {
             coin: Coin { value: 0 },
-            frozen: false,
+            // frozen: false,
             deposit_events: account::new_event_handle<DepositEvent>(account),
             withdraw_events: account::new_event_handle<WithdrawEvent>(account),
         };
@@ -621,10 +621,10 @@ module diem_framework::coin {
         );
 
         let coin_store = borrow_global_mut<CoinStore<CoinType>>(account_addr);
-        assert!(
-            !coin_store.frozen,
-            error::permission_denied(EFROZEN),
-        );
+        // assert!(
+        //     !coin_store.frozen,
+        //     error::permission_denied(EFROZEN),
+        // );
 
         event::emit_event<WithdrawEvent>(
             &mut coin_store.withdraw_events,

@@ -3,7 +3,6 @@ module ol_framework::musical_chairs {
     use diem_framework::system_addresses;
     use diem_framework::stake;
     use ol_framework::grade;
-    // use ol_framework::testnet;
     use std::fixed_point32;
     use std::vector;
     // use diem_std::debug::print;
@@ -13,7 +12,7 @@ module ol_framework::musical_chairs {
     struct Chairs has key {
         // The number of chairs in the game
         seats_offered: u64,
-        // A small history, for future use.
+        // TODO: A small history, for future use.
         history: vector<u64>,
     }
 
@@ -79,7 +78,9 @@ module ol_framework::musical_chairs {
 
         let num_compliant_nodes = vector::length(&compliant_vals);
 
-        // failover, there should not be more compliant nodes than seats that were offered.
+        // failover, there should not be more compliant nodes than seats that
+        // were offered.
+
         // return with no changes
         if (num_compliant_nodes > chairs.seats_offered) {
           return (compliant_vals, chairs.seats_offered)
