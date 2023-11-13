@@ -1,5 +1,5 @@
-use crate::fullnode_config::{download_genesis, init_fullnode_yaml};
-use crate::host::initialize_validator_configs;
+use crate::make_yaml_public_fullnode::{download_genesis, init_fullnode_yaml};
+use crate::validator_config::initialize_validator_configs;
 use crate::{legacy_config, make_profile};
 use anyhow::{Context, Result};
 use clap::Parser;

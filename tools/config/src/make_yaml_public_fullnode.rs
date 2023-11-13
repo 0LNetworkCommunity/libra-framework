@@ -74,8 +74,8 @@ execution:
 
 state_sync:
      state_sync_driver:
-        bootstrapping_mode: DownloadLatestStates
-        continuous_syncing_mode: ExecuteTransactionsOrApplyOutputs
+        bootstrapping_mode: ApplyTransactionOutputsFromGenesis
+        continuous_syncing_mode: ApplyTransactionOutputs
 
 full_node_networks:
 - network_id: 'public'
@@ -177,5 +177,4 @@ async fn persist_genesis() {
         .unwrap()
         .unwrap();
     assert!(l.file_name().to_str().unwrap().contains("genesis.blob"));
-    // dbg!(&l);
 }
