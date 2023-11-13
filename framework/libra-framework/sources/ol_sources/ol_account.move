@@ -423,6 +423,16 @@ module ol_framework::ol_account {
         maybe_update_burn_tracker_impl(to);
     }
 
+    public fun vm_deposit_coins_locked(vm: &signer, to: address, coins: Coin<GasCoin>) acquires
+    BurnTracker {
+        system_addresses::assert_ol(vm);
+        assert!(coin::is_account_registered<GasCoin>(to), error::invalid_state(EACCOUNT_NOT_REGISTERED_FOR_GAS));
+        // slow_wallet::maybe_track_unlocked_deposit(to, coin::value(&coins));
+        coin::deposit<GasCoin>(to, coins);
+        // the incoming coins should trigger an update in tracker
+        maybe_update_burn_tracker_impl(to);
+    }
+
     // pass through function to guard the use of Coin
     public fun merge_coins(dst_coin: &mut Coin<GasCoin>, source_coin: Coin<GasCoin>) {
         // TODO: check it this is true: no tracking on merged coins since they are always withdrawn, and are a hot potato that might deposit later.
