@@ -74,7 +74,7 @@ execution:
 
 state_sync:
      state_sync_driver:
-        bootstrapping_mode: ApplyTransactionOutputsFromGenesis
+        bootstrapping_mode: DownloadLatestStates
         continuous_syncing_mode: ApplyTransactionOutputs
 
 full_node_networks:
@@ -83,6 +83,49 @@ full_node_networks:
 
 api:
   enabled: true
+  address: '0.0.0.0:8080'
+"
+    );
+    Ok(template)
+}
+
+/// Create a VFN file to for validators to seed the public network
+pub fn make_private_vfn_yaml(
+    home_dir: Option<PathBuf>,
+    waypoint: Waypoint,
+) -> anyhow::Result<String> {
+    let home_dir = home_dir.unwrap_or_else(global_config_dir);
+    let path = home_dir.display().to_string();
+
+    let template = format!(
+        "
+base:
+  role: 'full_node'
+  data_dir: '{path}/data'
+  waypoint:
+    from_config: '{waypoint}'
+
+execution:
+  genesis_file_location: '{path}/genesis/genesis.blob'
+
+state_sync:
+     state_sync_driver:
+        bootstrapping_mode: ApplyTransactionOutputsFromGenesis
+        continuous_syncing_mode: ApplyTransactionOutputs
+
+full_node_networks:
+- network_id: 'public'
+  listen_address: '/ip4/0.0.0.0/tcp/6182'
+- network_id:
+    private: 'vfn'
+  #mutual_authentication: true
+  listen_address: '/ip4/0.0.0.0/tcp/6181'
+  identity:
+    type: 'from_file'
+    path: {path}/validator-full-node-identity.yaml
+
+api:
+  enabled: false
   address: '0.0.0.0:8080'
 "
     );
