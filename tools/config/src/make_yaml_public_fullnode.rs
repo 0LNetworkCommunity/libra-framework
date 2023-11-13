@@ -7,18 +7,29 @@ use std::{
 };
 
 /// fetch seed peers and make a yaml file from template
-pub async fn init_fullnode_yaml(home_dir: Option<PathBuf>) -> anyhow::Result<PathBuf> {
+pub async fn init_fullnode_yaml(
+    home_dir: Option<PathBuf>,
+    overwrite_peers: bool,
+    vfn: bool,
+) -> anyhow::Result<PathBuf> {
     let waypoint = get_genesis_waypoint(home_dir.clone()).await?;
 
-    let yaml = make_fullnode_yaml(home_dir.clone(), waypoint)?;
+    let yaml = if vfn {
+        make_private_vfn_yaml(home_dir.clone(), waypoint)?
+    } else {
+        make_fullnode_yaml(home_dir.clone(), waypoint)?
+    };
+
+    let filename = if vfn { "vfn.yaml" } else { "fullnode.yaml" };
 
     let home = home_dir.unwrap_or_else(global_config_dir);
-    let p = home.join("fullnode.yaml");
+    let p = home.join(filename);
     std::fs::write(&p, yaml)?;
 
-    let peers = fetch_seed_addresses(None).await?;
-
-    add_peers_to_yaml(&p, peers)?;
+    if overwrite_peers {
+        let peers = fetch_seed_addresses(None).await?;
+        add_peers_to_yaml(&p, peers)?;
+    }
 
     Ok(p)
 }
