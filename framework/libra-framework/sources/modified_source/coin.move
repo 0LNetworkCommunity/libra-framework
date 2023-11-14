@@ -20,7 +20,6 @@ module diem_framework::coin {
     friend ol_framework::ol_account;
     friend diem_framework::genesis;
     friend diem_framework::genesis_migration;
-    // friend ol_framework::rewards;
     friend diem_framework::transaction_fee;
 
 

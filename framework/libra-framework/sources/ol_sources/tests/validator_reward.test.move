@@ -11,14 +11,17 @@ module ol_framework::test_reconfiguration {
   use ol_framework::proof_of_fee;
   use diem_framework::reconfiguration;
   use ol_framework::epoch_helper;
+  use ol_framework::ol_account;
 
-  // use diem_std::debug::print;
+  use diem_std::debug::print;
 
   // Scenario: all genesis validators make it to next epoch
   #[test(root = @ol_framework)]
   fun reconfig_reward_happy_case(root: signer) {
       let vals = mock::genesis_n_vals(&root, 5);
-      // mock::ol_initialize_coin(&root);
+
+
+
       mock::pof_default();
       assert!(vector::length(&vals) == 5, 7357001);
       let vals = stake::get_current_validators();
@@ -26,8 +29,11 @@ module ol_framework::test_reconfiguration {
       // all vals compliant
       mock::mock_all_vals_good_performance(&root);
 
-      assert!(coin::balance<GasCoin>(@0x1000a) == 0, 7357003);
-
+      let (unlocked, alice_bal) = ol_account::balance(@0x1000a);
+      assert!(unlocked==0, 7367001);
+      assert!(alice_bal==0, 7357002);
+      print(&unlocked);
+      print(&alice_bal);
 
       let (reward_one, _entry_fee, _, _ ) = proof_of_fee::get_consensus_reward();
       // The epoch's reward BEFORE reconfiguration
@@ -38,11 +44,16 @@ module ol_framework::test_reconfiguration {
       let vals = stake::get_current_validators();
 
       assert!(vector::length(&vals) == 5, 7357005);
-      let alice_bal = coin::balance<GasCoin>(@0x1000a);
+      // let alice_bal = coin::balance<GasCoin>(@0x1000a);
+      let (unlocked, alice_bal) = ol_account::balance(@0x1000a);
+      print(&unlocked);
+      print(&alice_bal);
+
       let (_, entry_fee, _,  _ ) = proof_of_fee::get_consensus_reward();
       // need to check that the user paid an PoF entry fee for next epoch.
       // which means the balance will be the nominal reward, net of the PoF clearing price bid
       assert!(alice_bal == (reward_one-entry_fee), 7357006)
+
 
   }
 
