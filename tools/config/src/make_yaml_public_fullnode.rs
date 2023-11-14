@@ -7,18 +7,29 @@ use std::{
 };
 
 /// fetch seed peers and make a yaml file from template
-pub async fn init_fullnode_yaml(home_dir: Option<PathBuf>) -> anyhow::Result<PathBuf> {
+pub async fn init_fullnode_yaml(
+    home_dir: Option<PathBuf>,
+    overwrite_peers: bool,
+    vfn: bool,
+) -> anyhow::Result<PathBuf> {
     let waypoint = get_genesis_waypoint(home_dir.clone()).await?;
 
-    let yaml = make_fullnode_yaml(home_dir.clone(), waypoint)?;
+    let yaml = if vfn {
+        make_private_vfn_yaml(home_dir.clone(), waypoint)?
+    } else {
+        make_fullnode_yaml(home_dir.clone(), waypoint)?
+    };
+
+    let filename = if vfn { "vfn.yaml" } else { "fullnode.yaml" };
 
     let home = home_dir.unwrap_or_else(global_config_dir);
-    let p = home.join("fullnode.yaml");
+    let p = home.join(filename);
     std::fs::write(&p, yaml)?;
 
-    let peers = fetch_seed_addresses(None).await?;
-
-    add_peers_to_yaml(&p, peers)?;
+    if overwrite_peers {
+        let peers = fetch_seed_addresses(None).await?;
+        add_peers_to_yaml(&p, peers)?;
+    }
 
     Ok(p)
 }
@@ -75,7 +86,7 @@ execution:
 state_sync:
      state_sync_driver:
         bootstrapping_mode: DownloadLatestStates
-        continuous_syncing_mode: ExecuteTransactionsOrApplyOutputs
+        continuous_syncing_mode: ApplyTransactionOutputs
 
 full_node_networks:
 - network_id: 'public'
@@ -83,6 +94,53 @@ full_node_networks:
 
 api:
   enabled: true
+  address: '0.0.0.0:8080'
+"
+    );
+    Ok(template)
+}
+
+/// Create a VFN file to for validators to seed the public network
+pub fn make_private_vfn_yaml(
+    home_dir: Option<PathBuf>,
+    waypoint: Waypoint,
+) -> anyhow::Result<String> {
+    let home_dir = home_dir.unwrap_or_else(global_config_dir);
+    let path = home_dir.display().to_string();
+
+    let template = format!(
+        "
+base:
+  role: 'full_node'
+  data_dir: '{path}/data'
+  waypoint:
+    from_config: '{waypoint}'
+
+execution:
+  genesis_file_location: '{path}/genesis/genesis.blob'
+
+state_sync:
+     state_sync_driver:
+        bootstrapping_mode: ApplyTransactionOutputsFromGenesis
+        continuous_syncing_mode: ApplyTransactionOutputs
+
+full_node_networks:
+- network_id: 'public'
+  listen_address: '/ip4/0.0.0.0/tcp/6182'
+  identity:
+    type: 'from_file'
+    path: {path}/validator-full-node-identity.yaml
+
+- network_id:
+    private: 'vfn'
+  # mutual_authentication: true
+  listen_address: '/ip4/0.0.0.0/tcp/6181'
+  identity:
+    type: 'from_file'
+    path: {path}/validator-full-node-identity.yaml
+
+api:
+  enabled: false
   address: '0.0.0.0:8080'
 "
     );
@@ -177,5 +235,4 @@ async fn persist_genesis() {
         .unwrap()
         .unwrap();
     assert!(l.file_name().to_str().unwrap().contains("genesis.blob"));
-    // dbg!(&l);
 }
