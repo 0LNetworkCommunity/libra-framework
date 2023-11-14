@@ -32,8 +32,6 @@ module ol_framework::test_reconfiguration {
       let (unlocked, alice_bal) = ol_account::balance(@0x1000a);
       assert!(unlocked==0, 7367001);
       assert!(alice_bal==0, 7357002);
-      print(&unlocked);
-      print(&alice_bal);
 
       let (reward_one, _entry_fee, _, _ ) = proof_of_fee::get_consensus_reward();
       // The epoch's reward BEFORE reconfiguration

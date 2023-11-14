@@ -153,9 +153,9 @@ module ol_framework::slow_wallet {
         // success unless that was the case.
         accounts_updated = accounts_updated + 1;
 
-
         i = i + 1;
       };
+
       emit_drip_event(vm, amount, accounts_updated);
       (accounts_updated==len, amount)
     }

@@ -444,11 +444,12 @@ module ol_framework::ol_account {
         maybe_update_burn_tracker_impl(to);
     }
 
+    /// for validator rewards and community wallet transfers,
+    /// the SlowWallet.unlocked DOES NOT get updated.
     public fun vm_deposit_coins_locked(vm: &signer, to: address, coins: Coin<GasCoin>) acquires
     BurnTracker {
         system_addresses::assert_ol(vm);
         assert!(coin::is_account_registered<GasCoin>(to), error::invalid_state(EACCOUNT_NOT_REGISTERED_FOR_GAS));
-        // slow_wallet::maybe_track_unlocked_deposit(to, coin::value(&coins));
         coin::deposit<GasCoin>(to, coins);
         // the incoming coins should trigger an update in tracker
         maybe_update_burn_tracker_impl(to);

@@ -6,9 +6,8 @@ module ol_framework::test_rewards {
   use ol_framework::gas_coin::{Self, LibraCoin as GasCoin};
   use ol_framework::mock;
   use ol_framework::rewards;
-  use ol_framework::ol_account;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   #[test(root = @ol_framework)]
   fun test_pay_reward_single(root: signer) {
@@ -27,10 +26,6 @@ module ol_framework::test_rewards {
     rewards::test_helper_pay_reward(&root, alice, new_coin, 1);
     let uid_after = stake::get_reward_event_guid(alice);
     assert!(uid_after > uid_before, 7357001);
-
-    let (a, b) = ol_account::balance(alice);
-    print(&a);
-    print(&b);
 
     let b = coin::balance<GasCoin>(alice);
     assert!(b == 10000, 7357002);
