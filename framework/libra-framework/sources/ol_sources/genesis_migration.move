@@ -16,7 +16,6 @@ module ol_framework::genesis_migration {
   use ol_framework::gas_coin;
   use ol_framework::gas_coin::LibraCoin as GasCoin;
   use ol_framework::transaction_fee;
-  use ol_framework::slow_wallet;
   use ol_framework::pledge_accounts;
   use diem_framework::system_addresses;
   // use diem_std::debug::print;
@@ -98,7 +97,7 @@ module ol_framework::genesis_migration {
 
       let escrow_pct = fixed_point32::create_from_rational(escrow_pct, 1000000);
 
-      let (unlocked, total) = slow_wallet::balance(user_addr);
+      let (unlocked, total) = ol_account::balance(user_addr);
 
       let locked = 0;
       if ((total > unlocked) && (total > 0)) {
