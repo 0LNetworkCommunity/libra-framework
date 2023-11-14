@@ -1,5 +1,6 @@
 use crate::{
     account_queries::{get_account_balance_libra, get_tower_state, get_val_config},
+    chain_queries::get_epoch,
     query_view::get_view,
 };
 use anyhow::{bail, Context, Result};
@@ -141,17 +142,9 @@ impl QueryType {
                 Ok(json)
             }
             QueryType::Epoch => {
-                let res = get_view(
-                    &client,
-                    "0x1::reconfiguration::get_current_epoch",
-                    None,
-                    None,
-                )
-                .await?;
-
-                let num: Vec<String> = serde_json::from_value(res)?;
+                let num = get_epoch(&client).await?;
                 let json = json!({
-                  "epoch": num.first().unwrap().parse::<u64>()?,
+                  "epoch": num,
                 });
                 Ok(json)
             }

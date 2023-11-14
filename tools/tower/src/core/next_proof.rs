@@ -96,32 +96,4 @@ pub async fn get_next_proof_from_chain(
     };
 
     Ok(p)
-
-    // n.refresh_onchain_state();
-    // // TODO: we are picking Client twice
-    // let diff = get_difficulty_from_chain(&n)?;
-
-    // // get the user's tower state from chain.
-    // let ts = n.client
-    //   .get_account_state(config.profile.account)?
-    //   .get_miner_state()?;
-
-    //   if let Some(t) = tower_view {
-    //     Ok()
-    //   } else {
-    //     bail!("cannot get tower resource for account")
-    // }
 }
-
-// /// Get the VDF difficulty from chain.
-// pub fn get_difficulty_from_chain(n: &Node) -> anyhow::Result<VDFDifficulty> {
-
-//     if let Some(a) = &n.chain_state {
-
-//         if let Some(diff) = a.get_tower_params()? {
-//             return Ok(diff);
-//         }
-//         bail!("could not get this epoch's VDF params from chain.")
-//     }
-//     bail!("could not get account state for 0x0")
-// }

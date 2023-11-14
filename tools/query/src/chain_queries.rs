@@ -1,10 +1,24 @@
 //! chain queries
-use crate::query_view;
+use crate::query_view::{self, get_view};
 
 use anyhow::Context;
 use diem_sdk::rest_client::{diem_api_types::ViewRequest, Client};
 use libra_types::type_extensions::client_ext::entry_function_id;
 
+pub async fn get_epoch(client: &Client) -> anyhow::Result<u64> {
+    let res = get_view(
+        client,
+        "0x1::reconfiguration::get_current_epoch",
+        None,
+        None,
+    )
+    .await?;
+
+    let value: Vec<String> = serde_json::from_value(res)?;
+    let num = value.first().unwrap().parse::<u64>()?;
+
+    Ok(num)
+}
 /// helper to get libra balance at a SlowWalletBalance type which shows
 /// total balance and the unlocked balance.
 pub async fn get_tower_difficulty(client: &Client) -> anyhow::Result<(u64, u64)> {
