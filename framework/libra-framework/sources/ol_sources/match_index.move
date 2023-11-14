@@ -2,7 +2,7 @@
 module ol_framework::match_index {
   use diem_framework::system_addresses;
   use ol_framework::cumulative_deposits;
-  use ol_framework::gas_coin::LibraCoin as GasCoin;
+  use ol_framework::libra_coin::LibraCoin;
   use ol_framework::ol_account;
   use diem_framework::coin::{Self, Coin};
   use diem_framework::transaction_fee;
@@ -93,7 +93,7 @@ module ol_framework::match_index {
     /// the root account can take a user coin, and match with accounts in index.
   // Note, this leave NO REMAINDER, and burns any rounding.
   // TODO: When the coin is sent, an attribution is also made to the payer.
-  public fun match_and_recycle(vm: &signer, coin: &mut Coin<GasCoin>) acquires MatchIndex {
+  public fun match_and_recycle(vm: &signer, coin: &mut Coin<LibraCoin>) acquires MatchIndex {
 
     match_impl(vm, coin);
     // if there is anything remaining it's a superman 3 issue
@@ -110,7 +110,7 @@ module ol_framework::match_index {
 
     /// the root account can take a user coin, and match with accounts in index.
   // TODO: When the coin is sent, an attribution is also made to the payer.
-  fun match_impl(vm: &signer, coin: &mut Coin<GasCoin>) acquires MatchIndex {
+  fun match_impl(vm: &signer, coin: &mut Coin<LibraCoin>) acquires MatchIndex {
     system_addresses::assert_ol(vm);
     let list = { get_address_list() }; // NOTE devs, the added scope drops the borrow which is used below.
     let len = vector::length<address>(&list);

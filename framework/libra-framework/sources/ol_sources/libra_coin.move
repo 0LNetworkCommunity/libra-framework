@@ -7,7 +7,7 @@
 // https://github.com/diem/diem/commit/782b31cb08eeb717ea2b6f3edbf616b13fd4cae8
 
 
-module ol_framework::gas_coin {
+module ol_framework::libra_coin {
     use std::string;
     use std::error;
     use std::signer;

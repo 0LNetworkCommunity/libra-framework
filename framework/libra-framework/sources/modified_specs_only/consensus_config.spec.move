@@ -22,7 +22,7 @@ spec diem_framework::consensus_config {
         use std::signer;
         use diem_framework::stake;
         use diem_framework::coin::CoinInfo;
-        use diem_framework::gas_coin::LibraCoin as GasCoin;
+        use diem_framework::libra_coin::LibraCoin;
         use diem_framework::transaction_fee;
         // use diem_framework::staking_config;
 
@@ -38,6 +38,6 @@ spec diem_framework::consensus_config {
         requires chain_status::is_operating();
         requires timestamp::spec_now_microseconds() >= reconfiguration::last_reconfiguration_time();
         requires exists<stake::ValidatorFees>(@diem_framework);
-        requires exists<CoinInfo<GasCoin>>(@diem_framework);
+        requires exists<CoinInfo<LibraCoin>>(@diem_framework);
     }
 }

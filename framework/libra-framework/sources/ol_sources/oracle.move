@@ -12,7 +12,7 @@ module ol_framework::oracle {
     use diem_framework::event::{Self, EventHandle};
     use diem_framework::coin::{Self, Coin};
     use ol_framework::ol_account;
-    use ol_framework::gas_coin::LibraCoin as GasCoin;
+    use ol_framework::libra_coin::LibraCoin;
     use ol_framework::globals;
     use ol_framework::vouch;
     use ol_framework::epoch_helper;
@@ -263,7 +263,7 @@ module ol_framework::oracle {
       }
     }
 
-    public(friend) fun epoch_boundary(root: &signer, budget: &mut Coin<GasCoin>): (u64, u64) acquires GlobalCounter, ProviderList, Tower {
+    public(friend) fun epoch_boundary(root: &signer, budget: &mut Coin<LibraCoin>): (u64, u64) acquires GlobalCounter, ProviderList, Tower {
       let (provider_count, paid_amount ) = epoch_reward(root, budget);
       reset_counters(root);
       (provider_count, paid_amount)
@@ -285,7 +285,7 @@ module ol_framework::oracle {
     /// successful miners.
     /// returns: provider_list_len total_deposited
     ///
-    fun epoch_reward(root: &signer, budget: &mut Coin<GasCoin>): (u64, u64) acquires ProviderList, Tower {
+    fun epoch_reward(root: &signer, budget: &mut Coin<LibraCoin>): (u64, u64) acquires ProviderList, Tower {
       system_addresses::assert_ol(root);
 
       let coin_value = coin::value(budget);
