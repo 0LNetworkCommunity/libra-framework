@@ -6,13 +6,15 @@
 // the unlocked amount.
 
 module ol_framework::slow_wallet {
-  use diem_framework::system_addresses;
-  use diem_framework::coin;
+  use std::error;
+  use std::event;
   use std::vector;
   use std::signer;
+  use diem_framework::system_addresses;
+  use diem_framework::coin;
+  use diem_framework::account;
   use ol_framework::gas_coin::LibraCoin as GasCoin;
   use ol_framework::testnet;
-  use std::error;
   use ol_framework::sacred_cows;
 
   // use diem_std::debug::print;
@@ -23,8 +25,6 @@ module ol_framework::slow_wallet {
   /// genesis failed to initialized the slow wallet registry
   const EGENESIS_ERROR: u64 = 1;
 
-
-
   /// Maximum possible aggregatable coin value.
   const MAX_U64: u128 = 18446744073709551615;
 
@@ -33,15 +33,23 @@ module ol_framework::slow_wallet {
         transferred: u64,
     }
 
-    struct SlowWalletList has key {
-        list: vector<address>
+    // the drip event at end of epoch
+    struct DripEvent has drop, store {
+      value: u64,
+      users: u64,
     }
 
-    public fun initialize(vm: &signer){
-      system_addresses::assert_ol(vm);
+    struct SlowWalletList has key {
+        list: vector<address>,
+        drip_events: event::EventHandle<DripEvent>,
+    }
+
+    public fun initialize(framework: &signer){
+      system_addresses::assert_ol(framework);
       if (!exists<SlowWalletList>(@ol_framework)) {
-        move_to<SlowWalletList>(vm, SlowWalletList {
-          list: vector::empty<address>()
+        move_to<SlowWalletList>(framework, SlowWalletList {
+          list: vector::empty<address>(),
+          drip_events: account::new_event_handle<DripEvent>(framework)
         });
       }
     }
@@ -148,8 +156,22 @@ module ol_framework::slow_wallet {
 
         i = i + 1;
       };
-
+      emit_drip_event(vm, amount, accounts_updated);
       (accounts_updated==len, amount)
+    }
+
+
+    /// send a drip event notification with the totals of epoch
+    fun emit_drip_event(root: &signer, value: u64, users: u64) acquires SlowWalletList {
+        system_addresses::assert_ol(root);
+        let state = borrow_global_mut<SlowWalletList>(@ol_framework);
+        event::emit_event(
+          &mut state.drip_events,
+          DripEvent {
+              value,
+              users,
+          },
+      );
     }
 
     /// wrapper to both attempt to adjust the slow wallet tracker
