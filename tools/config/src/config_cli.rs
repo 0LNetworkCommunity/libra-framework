@@ -248,7 +248,7 @@ impl ConfigCli {
                 let p = if *vfn {
                     // no need for seed peers, will be identified
                     // to validator node
-                    init_fullnode_yaml(home_path.to_owned(), false, true).await?
+                    init_fullnode_yaml(home_path.to_owned(), true, true).await?
                 } else {
                     // we want seed peers, and will not have an identity
                     init_fullnode_yaml(home_path.to_owned(), true, false).await?
