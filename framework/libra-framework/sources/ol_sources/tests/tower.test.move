@@ -105,9 +105,6 @@ module ol_framework::test_tower {
       vdf_fixtures::security(),
     );
 
-    // let count_pre = tower_state::get_count_in_epoch(a_addr);
-    // print(&count_pre);
-
     // all vals compliant
     mock::mock_all_vals_good_performance(&root);
 

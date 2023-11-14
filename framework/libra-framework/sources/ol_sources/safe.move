@@ -50,7 +50,7 @@ module ol_framework::safe {
   use diem_framework::account::WithdrawCapability;
   use diem_framework::coin;
   use ol_framework::ol_account;
-  use ol_framework::gas_coin::LibraCoin as GasCoin;
+  use ol_framework::libra_coin::LibraCoin;
   use ol_framework::multi_action;
   use ol_framework::system_addresses;
   use ol_framework::transaction_fee;
@@ -194,7 +194,7 @@ module ol_framework::safe {
 
       let pct = fixed_point32::create_from_rational(reg.fee, PERCENT_SCALE);
 
-      let fee = fixed_point32::multiply_u64(coin::balance<GasCoin>(*multi_sig_addr), pct);
+      let fee = fixed_point32::multiply_u64(coin::balance<LibraCoin>(*multi_sig_addr), pct);
       expected_fees = expected_fees + fee;
 
       let coin_opt = ol_account::vm_withdraw_unlimited(vm, *multi_sig_addr, fee);
@@ -212,5 +212,3 @@ module ol_framework::safe {
     (security_bill_count, security_bill_amount, success)
   }
 }
-
-

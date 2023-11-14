@@ -4,7 +4,7 @@ module ol_framework::rewards {
   use diem_framework::coin::{Self, Coin};
   use diem_framework::stake;
   use diem_framework::system_addresses;
-  use ol_framework::gas_coin::LibraCoin as GasCoin;
+  use ol_framework::libra_coin::LibraCoin;
   use ol_framework::ol_account;
 
   // use diem_std::debug::print;
@@ -17,7 +17,7 @@ module ol_framework::rewards {
 
   /// process a single reward
   /// root needs to have an owned coin already extracted. Not a mutable borrow.
-  public(friend) fun process_single(root: &signer, addr: address, coin: Coin<GasCoin>, reward_type: u8) {
+  public(friend) fun process_single(root: &signer, addr: address, coin: Coin<LibraCoin>, reward_type: u8) {
     system_addresses::assert_ol(root);
     pay_reward(root, addr, coin, reward_type);
   }
@@ -26,7 +26,7 @@ module ol_framework::rewards {
   /// convenience function to process payment for multiple recipients
   /// when the reward is the same for all recipients.
   // belt and suspenders pattern: guarded by friend, authorized by root, and public function separated from authorized private function. yes, it's redundant, see ol_move_coding_conventions.md
-  public(friend) fun process_multiple(root: &signer, list: vector<address>, reward_per: u64, reward_budget: &mut Coin<GasCoin>, reward_type: u8) {
+  public(friend) fun process_multiple(root: &signer, list: vector<address>, reward_per: u64, reward_budget: &mut Coin<LibraCoin>, reward_type: u8) {
     // note the mutable coin will be retuned to caller for them to do what
     // is necessary, including destroying if it is zero.
 
@@ -38,7 +38,7 @@ module ol_framework::rewards {
 
   /// process all the validators
   // belt and suspenders
-  fun process_recipients_impl(root: &signer, list: vector<address>, reward_per: u64, reward_budget: &mut Coin<GasCoin>, reward_type: u8) {
+  fun process_recipients_impl(root: &signer, list: vector<address>, reward_per: u64, reward_budget: &mut Coin<LibraCoin>, reward_type: u8) {
     // note the mutable coin will be retuned to caller for them to do what
     // is necessary, including destroying if it is zero.
     system_addresses::assert_ol(root);
@@ -55,7 +55,7 @@ module ol_framework::rewards {
 
   /// Pay one validator their reward
   /// belt and suspenders
-  fun pay_reward(root: &signer, addr: address, coin: Coin<GasCoin>, reward_type: u8) {
+  fun pay_reward(root: &signer, addr: address, coin: Coin<LibraCoin>, reward_type: u8) {
     // draw from transaction fees account
     // transaction fees account should have a subsidy from infra escrow
     // from start of epoch.
@@ -81,14 +81,14 @@ module ol_framework::rewards {
   #[test_only]
   /// helps create a payment to a validator
   // belt and suspenders too
-  public fun test_helper_pay_reward(root: &signer, addr: address, coin: Coin<GasCoin>, reward_type: u8) {
+  public fun test_helper_pay_reward(root: &signer, addr: address, coin: Coin<LibraCoin>, reward_type: u8) {
     use ol_framework::testnet;
     testnet::assert_testnet(root);
     pay_reward(root, addr, coin, reward_type);
   }
 
   #[test_only]
-  public fun test_process_recipients(root: &signer, list: vector<address>, reward_per: u64, coin: &mut Coin<GasCoin>, reward_type: u8) {
+  public fun test_process_recipients(root: &signer, list: vector<address>, reward_per: u64, coin: &mut Coin<LibraCoin>, reward_type: u8) {
 
     system_addresses::assert_ol(root);
     process_multiple(root, list, reward_per, coin, reward_type);

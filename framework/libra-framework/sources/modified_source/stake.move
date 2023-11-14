@@ -7,7 +7,7 @@ module diem_framework::stake {
     use diem_std::bls12381;
     use diem_std::table::Table;
     use diem_std::comparator;
-    use diem_framework::gas_coin::LibraCoin as GasCoin;
+    use diem_framework::libra_coin::LibraCoin;
     use diem_framework::account;
     use diem_framework::coin::{Coin};
     use diem_framework::event::{Self, EventHandle};
@@ -181,7 +181,7 @@ module diem_framework::stake {
     /// Stores transaction fees assigned to validators. All fees are distributed to validators
     /// at the end of the epoch.
     struct ValidatorFees has key {
-        fees_table: Table<address, Coin<GasCoin>>,
+        fees_table: Table<address, Coin<LibraCoin>>,
     }
 
 

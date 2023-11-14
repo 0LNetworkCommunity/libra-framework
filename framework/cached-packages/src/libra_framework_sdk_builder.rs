@@ -258,17 +258,17 @@ pub enum EntryFunctionCall {
 
     /// Only callable in tests and testnets where the core resources account exists.
     /// Claim the delegated mint capability and destroy the delegated token.
-    GasCoinClaimMintCapability {},
+    LibraCoinClaimMintCapability {},
 
     /// Only callable in tests and testnets where the core resources account exists.
     /// Create delegated token for the address so the account could claim MintCapability later.
-    GasCoinDelegateMintCapability {
+    LibraCoinDelegateMintCapability {
         to: AccountAddress,
     },
 
     /// Root account can mint to an address. Only used for genesis and tests.
     /// The "root" account in smoke tests has some privileges.
-    GasCoinMintToImpl {
+    LibraCoinMintToImpl {
         dst_addr: AccountAddress,
         amount: u64,
     },
@@ -705,9 +705,9 @@ impl EntryFunctionCall {
                 id,
             } => donor_voice_vote_veto_tx(multisig_address, id),
             JailUnjailByVoucher { addr } => jail_unjail_by_voucher(addr),
-            GasCoinClaimMintCapability {} => gas_coin_claim_mint_capability(),
-            GasCoinDelegateMintCapability { to } => gas_coin_delegate_mint_capability(to),
-            GasCoinMintToImpl { dst_addr, amount } => gas_coin_mint_to_impl(dst_addr, amount),
+            LibraCoinClaimMintCapability {} => libra_coin_claim_mint_capability(),
+            LibraCoinDelegateMintCapability { to } => libra_coin_delegate_mint_capability(to),
+            LibraCoinMintToImpl { dst_addr, amount } => libra_coin_mint_to_impl(dst_addr, amount),
             MultisigAccountAddOwner { new_owner } => multisig_account_add_owner(new_owner),
             MultisigAccountAddOwners { new_owners } => multisig_account_add_owners(new_owners),
             MultisigAccountApproveTransaction {
@@ -1515,14 +1515,14 @@ pub fn jail_unjail_by_voucher(addr: AccountAddress) -> TransactionPayload {
 
 /// Only callable in tests and testnets where the core resources account exists.
 /// Claim the delegated mint capability and destroy the delegated token.
-pub fn gas_coin_claim_mint_capability() -> TransactionPayload {
+pub fn libra_coin_claim_mint_capability() -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("gas_coin").to_owned(),
+            ident_str!("libra_coin").to_owned(),
         ),
         ident_str!("claim_mint_capability").to_owned(),
         vec![],
@@ -1532,14 +1532,14 @@ pub fn gas_coin_claim_mint_capability() -> TransactionPayload {
 
 /// Only callable in tests and testnets where the core resources account exists.
 /// Create delegated token for the address so the account could claim MintCapability later.
-pub fn gas_coin_delegate_mint_capability(to: AccountAddress) -> TransactionPayload {
+pub fn libra_coin_delegate_mint_capability(to: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("gas_coin").to_owned(),
+            ident_str!("libra_coin").to_owned(),
         ),
         ident_str!("delegate_mint_capability").to_owned(),
         vec![],
@@ -1549,14 +1549,14 @@ pub fn gas_coin_delegate_mint_capability(to: AccountAddress) -> TransactionPaylo
 
 /// Root account can mint to an address. Only used for genesis and tests.
 /// The "root" account in smoke tests has some privileges.
-pub fn gas_coin_mint_to_impl(dst_addr: AccountAddress, amount: u64) -> TransactionPayload {
+pub fn libra_coin_mint_to_impl(dst_addr: AccountAddress, amount: u64) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("gas_coin").to_owned(),
+            ident_str!("libra_coin").to_owned(),
         ),
         ident_str!("mint_to_impl").to_owned(),
         vec![],
@@ -2723,21 +2723,21 @@ mod decoder {
         }
     }
 
-    pub fn gas_coin_claim_mint_capability(
+    pub fn libra_coin_claim_mint_capability(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(_script) = payload {
-            Some(EntryFunctionCall::GasCoinClaimMintCapability {})
+            Some(EntryFunctionCall::LibraCoinClaimMintCapability {})
         } else {
             None
         }
     }
 
-    pub fn gas_coin_delegate_mint_capability(
+    pub fn libra_coin_delegate_mint_capability(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::GasCoinDelegateMintCapability {
+            Some(EntryFunctionCall::LibraCoinDelegateMintCapability {
                 to: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
@@ -2745,9 +2745,9 @@ mod decoder {
         }
     }
 
-    pub fn gas_coin_mint_to_impl(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+    pub fn libra_coin_mint_to_impl(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::GasCoinMintToImpl {
+            Some(EntryFunctionCall::LibraCoinMintToImpl {
                 dst_addr: bcs::from_bytes(script.args().get(0)?).ok()?,
                 amount: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
@@ -3335,16 +3335,16 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::jail_unjail_by_voucher),
         );
         map.insert(
-            "gas_coin_claim_mint_capability".to_string(),
-            Box::new(decoder::gas_coin_claim_mint_capability),
+            "libra_coin_claim_mint_capability".to_string(),
+            Box::new(decoder::libra_coin_claim_mint_capability),
         );
         map.insert(
-            "gas_coin_delegate_mint_capability".to_string(),
-            Box::new(decoder::gas_coin_delegate_mint_capability),
+            "libra_coin_delegate_mint_capability".to_string(),
+            Box::new(decoder::libra_coin_delegate_mint_capability),
         );
         map.insert(
-            "gas_coin_mint_to_impl".to_string(),
-            Box::new(decoder::gas_coin_mint_to_impl),
+            "libra_coin_mint_to_impl".to_string(),
+            Box::new(decoder::libra_coin_mint_to_impl),
         );
         map.insert(
             "multisig_account_add_owner".to_string(),

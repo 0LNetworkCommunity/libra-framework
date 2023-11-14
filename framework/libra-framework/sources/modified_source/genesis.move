@@ -31,7 +31,7 @@ module diem_framework::genesis {
     use ol_framework::musical_chairs;
     use ol_framework::proof_of_fee;
     use ol_framework::slow_wallet;
-    use ol_framework::gas_coin;
+    use ol_framework::libra_coin;
     use ol_framework::infra_escrow;
     use ol_framework::tower_state;
     use ol_framework::safe;
@@ -45,7 +45,7 @@ module diem_framework::genesis {
     use ol_framework::epoch_boundary;
     use ol_framework::sacred_cows;
     #[test_only]
-    use ol_framework::gas_coin::LibraCoin as GasCoin;
+    use ol_framework::libra_coin::LibraCoin;
     //////// end 0L ////////
 
 
@@ -174,7 +174,7 @@ module diem_framework::genesis {
     /// Genesis step 2: Initialize Diem coin.
     fun initialize_diem_coin(diem_framework: &signer) {
         // NOTE 0L: genesis ceremony is calling this
-        gas_coin::initialize(diem_framework);
+        libra_coin::initialize(diem_framework);
 
         transaction_fee::initialize_fee_collection_and_distribution(diem_framework, 0);
     }
@@ -190,16 +190,16 @@ module diem_framework::genesis {
         account::rotate_authentication_key_internal(&core_resources, core_resources_auth_key);
 
         // initialize gas
-        let (burn_cap_two, mint_cap_two) = gas_coin::initialize_for_core(diem_framework);
+        let (burn_cap_two, mint_cap_two) = libra_coin::initialize_for_core(diem_framework);
         // give coins to the 'core_resources' account, which has sudo
         // core_resources is a temporary account, not the same as framework account.
-        gas_coin::configure_accounts_for_test(diem_framework, &core_resources, mint_cap_two);
+        libra_coin::configure_accounts_for_test(diem_framework, &core_resources, mint_cap_two);
 
         // NOTE: smoke tests will fail without initializing tx fees as in genesis
         transaction_fee::initialize_fee_collection_and_distribution(diem_framework, 0);
 
         // NOTE: 0L: the commented code below shows that we are destroying
-        // there capabilities elsewhere, at gas_coin::initialize
+        // there capabilities elsewhere, at libra_coin::initialize
         coin::destroy_mint_cap(mint_cap_two);
         coin::destroy_burn_cap(burn_cap_two);
 
@@ -444,7 +444,7 @@ module diem_framework::genesis {
         let test_signer_before = create_account(diem_framework, addr, 15);
         let test_signer_after = create_account(diem_framework, addr, 500);
         assert!(test_signer_before == test_signer_after, 0);
-        assert!(coin::balance<GasCoin>(addr) == 0, 1); //////// 0L ////////
+        assert!(coin::balance<LibraCoin>(addr) == 0, 1); //////// 0L ////////
     }
 
     #[test(diem_framework = @0x1)]
@@ -468,10 +468,10 @@ module diem_framework::genesis {
         ];
 
         create_accounts(diem_framework, accounts);
-        assert!(coin::balance<GasCoin>(addr0) == 0, 0); //////// 0L //////// no coins minted at genesis
-        assert!(coin::balance<GasCoin>(addr1) == 0, 1); //////// 0L ////////
+        assert!(coin::balance<LibraCoin>(addr0) == 0, 0); //////// 0L //////// no coins minted at genesis
+        assert!(coin::balance<LibraCoin>(addr1) == 0, 1); //////// 0L ////////
 
         create_account(diem_framework, addr0, 23456);
-        assert!(coin::balance<GasCoin>(addr0) == 0, 2); //////// 0L ////////
+        assert!(coin::balance<LibraCoin>(addr0) == 0, 2); //////// 0L ////////
     }
 }
