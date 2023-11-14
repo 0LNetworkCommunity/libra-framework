@@ -243,9 +243,16 @@ impl GenesisWizard {
                 .interact()
             {
                 Ok(true) => {
-                    gh_client.fork_genesis_repo(&self.genesis_repo_org, &self.repo_name)?;
-                    // give it a few seconds after submitting. Otherwise will get a 500 error while the repo is being created
-                    thread::sleep(Duration::from_secs(5));
+                    match gh_client.fork_genesis_repo(&self.genesis_repo_org, &self.repo_name) {
+                        Ok(r) => {
+                            println!("SUCCESS: repo fork in progress, message: {:?}", r);
+                            // give it a few seconds after submitting. Otherwise will get a 500 error while the repo is being created
+                            thread::sleep(Duration::from_secs(5));
+                        }
+                        Err(e) => {
+                            bail!("Failed to fork repo. We need to fork the genesis repo. Are you sure it's not already forked. {}", e);
+                        }
+                    };
                 }
                 _ => bail!("no forked repo on your account, we need it to continue"),
             }

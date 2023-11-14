@@ -1,5 +1,17 @@
 # Makefile for testnet
 
+ifndef BINS_PATH
+BINS_PATH = $$HOME/.cargo/bin/
+endif
+
+ifndef SOURCE_PATH
+SOURCE_PATH = $$HOME/libra-framework/
+endif
+
+ifndef DATA_PATH
+DATA_PATH = $$HOME/.libra/
+endif
+
 ifndef TARGET_SUPPLY
 TARGET_SUPPLY = 100000000000 # 100 billion
 endif
@@ -9,8 +21,7 @@ FUTURE_USES = 0.70
 endif
 
 ifndef RECOVERY_FILE
-# RECOVERY_FILE =
-RECOVERY_FILE = ./tests/fixtures/v5_recovery.json
+RECOVERY_FILE = ${DATA_PATH}/libra-recovery/v5_recovery.json
 endif
 
 ifndef YEARS
@@ -26,31 +37,44 @@ GIT_ORG = 0LNetworkCommunity
 endif
 
 ifndef GIT_REPO
-GIT_REPO = release-v6.9.0-rc.0-genesis-7
+GIT_REPO=release-v6.9.0-rc.9-genesis
+
 endif
 
+ifndef EPOCH
+$(error EPOCH is not set)
+endif
+
+check:
+	@echo SOURCE_PATH: ${SOURCE_PATH}
+	@echo BINS_PATH: ${BINS_PATH}
+	@echo EPOCH: ${EPOCH}
+
 install:
-	cargo build --release -p libra -p libra-genesis-tools -p libra-framework
-	cp ../../target/release/libra* ~/.cargo/bin/
+	cd ${SOURCE_PATH} && cargo build --release -p libra -p libra-genesis-tools -p libra-framework
+# legacy source
+	cd ${DATA_PATH} && git clone -b v6 https://github.com/0LNetworkCommunity/libra-legacy-v6
+	cp ${SOURCE_PATH}/target/release/libra* ${BINS_PATH}
 
 register:
 	libra-genesis-tools register --org-github ${GIT_ORG} --name-github ${GIT_REPO}
 # have cli tools use localhost
 	libra config fix --force-url http://localhost:8080
 
-legacy:
-### Fetch Ancestry Data, Snapshot, and Use v5.2 codebase and snapshot to generate recovery.json for seeding v6.9.x state
-	sudo rm -Rf ~/libra-recovery && mkdir -p ~/libra-recovery
-	wget https://github.com/0LNetworkCommunity/epoch-archive/raw/main/670.tar.gz -O ~/libra-recovery/670.tar.gz
-	cd ~/libra-recovery && tar -xvzf 670.tar.gz
-	wget https://raw.githubusercontent.com/sirouk/ol-data-extraction/v-6.9.x-ready/assets/data.json -O ~/libra-recovery/v5_ancestry.json
+legacy: get-legacy recovery
 
-	sudo rm -Rf ~/libra-legacy-v6
-	cd ~ && git clone -b v6 https://github.com/0LNetworkCommunity/libra-legacy-v6
-	cd ~/libra-legacy-v6/ol/genesis-tools
-	cargo r -p ol-genesis-tools -- --export-json ~/libra-recovery/v5_recovery.json --snapshot-path ~/libra-recovery/670/state_ver* --ancestry-file ~/libra-recovery/v5_ancestry.json
-	cp -f ~/libra-recovery/v5_recovery.json ~/libra-framework/tools/genesis/tests/fixtures/v5_recovery.json
-	md5sum ~/libra-framework/tools/genesis/tests/fixtures/v5_recovery.json"
+get-legacy:
+### Fetch Ancestry Data, Snapshot, and Use v5.2 codebase and snapshot to generate recovery.json for seeding v6.9.x state
+	mkdir -p ${DATA_PATH}/libra-recovery | true
+	wget https://github.com/0LNetworkCommunity/epoch-archive/raw/main/${EPOCH}.tar.gz -O ${DATA_PATH}/libra-recovery/${EPOCH}.tar.gz
+	cd ${DATA_PATH}/libra-recovery && tar -xvzf ${EPOCH}.tar.gz
+	wget https://raw.githubusercontent.com/sirouk/ol-data-extraction/v-6.9.x-ready/assets/data.json -O ${DATA_PATH}/libra-recovery/v5_ancestry.json
+
+recovery:
+	cd ${DATA_PATH}/libra-legacy-v6/ol/genesis-tools && \
+	cargo r -p ol-genesis-tools -- --export-json ${DATA_PATH}/libra-recovery/v5_recovery.json --snapshot-path ${DATA_PATH}/libra-recovery/${EPOCH}/state_ver* --ancestry-file ${DATA_PATH}/libra-recovery/v5_ancestry.json
+
+	md5sum ${RECOVERY_FILE}
 
 genesis: stdlib
 	libra-genesis-tools \
