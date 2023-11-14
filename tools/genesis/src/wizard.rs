@@ -26,7 +26,7 @@ use diem_github_client::Client;
 use libra_types::legacy_types::app_cfg::AppCfg;
 use libra_wallet::keys::VALIDATOR_FILE;
 
-use libra_config::host::initialize_validator_configs;
+use libra_config::validator_config::initialize_validator_configs;
 
 pub const DEFAULT_GIT_BRANCH: &str = "main";
 pub const GITHUB_TOKEN_FILENAME: &str = "github_token.txt";
