@@ -16,10 +16,10 @@ spec diem_framework::transaction_fee {
         pragma verify=false;
     }
 
-    spec upgrade_burn_percentage(diem_framework: &signer, new_burn_percentage: u8) {
-        // TODO: missing aborts_if spec
-        pragma verify=false;
-    }
+    // spec upgrade_burn_percentage(diem_framework: &signer, new_burn_percentage: u8) {
+    //     // TODO: missing aborts_if spec
+    //     pragma verify=false;
+    // }
 
     spec register_proposer_for_fee_collection(proposer_addr: address) {
         aborts_if false;
@@ -27,24 +27,24 @@ spec diem_framework::transaction_fee {
             option::spec_borrow(global<CollectedFeesPerBlock>(@diem_framework).proposer) == proposer_addr;
     }
 
-    spec burn_coin_fraction(coin: &mut Coin<GasCoin>, burn_percentage: u8) {
-        use diem_framework::optional_aggregator;
-        use diem_framework::aggregator;
-        use diem_framework::coin::CoinInfo;
-        use ol_framework::gas_coin::LibraCoin as GasCoin;
-        requires burn_percentage <= 100;
-        requires exists<GasCoinCapabilities>(@diem_framework);
-        requires exists<CoinInfo<GasCoin>>(@diem_framework);
-        let amount_to_burn = (burn_percentage * coin::value(coin)) / 100;
-        let maybe_supply = coin::get_coin_supply_opt<GasCoin>();
-        aborts_if amount_to_burn > 0 && option::is_some(maybe_supply) && optional_aggregator::is_parallelizable(option::borrow(maybe_supply))
-            && aggregator::spec_aggregator_get_val(option::borrow(option::borrow(maybe_supply).aggregator)) <
-            amount_to_burn;
-        aborts_if option::is_some(maybe_supply) && !optional_aggregator::is_parallelizable(option::borrow(maybe_supply))
-            && option::borrow(option::borrow(maybe_supply).integer).value <
-            amount_to_burn;
-        include (amount_to_burn > 0) ==> coin::AbortsIfNotExistCoinInfo<GasCoin>;
-    }
+    // spec burn_coin_fraction(coin: &mut Coin<GasCoin>, burn_percentage: u8) {
+    //     use diem_framework::optional_aggregator;
+    //     use diem_framework::aggregator;
+    //     use diem_framework::coin::CoinInfo;
+    //     use ol_framework::gas_coin::LibraCoin as GasCoin;
+    //     requires burn_percentage <= 100;
+    //     requires exists<GasCoinCapabilities>(@diem_framework);
+    //     requires exists<CoinInfo<GasCoin>>(@diem_framework);
+    //     let amount_to_burn = (burn_percentage * coin::value(coin)) / 100;
+    //     let maybe_supply = coin::get_coin_supply_opt<GasCoin>();
+    //     aborts_if amount_to_burn > 0 && option::is_some(maybe_supply) && optional_aggregator::is_parallelizable(option::borrow(maybe_supply))
+    //         && aggregator::spec_aggregator_get_val(option::borrow(option::borrow(maybe_supply).aggregator)) <
+    //         amount_to_burn;
+    //     aborts_if option::is_some(maybe_supply) && !optional_aggregator::is_parallelizable(option::borrow(maybe_supply))
+    //         && option::borrow(option::borrow(maybe_supply).integer).value <
+    //         amount_to_burn;
+    //     include (amount_to_burn > 0) ==> coin::AbortsIfNotExistCoinInfo<GasCoin>;
+    // }
 
     spec fun collectedFeesAggregator(): AggregatableCoin<GasCoin> {
         global<CollectedFeesPerBlock>(@diem_framework).amount
@@ -60,21 +60,21 @@ spec diem_framework::transaction_fee {
                     optional_aggregator::optional_aggregator_value(option::spec_borrow(coin::get_coin_supply_opt<GasCoin>())));
     }
 
-    spec process_collected_fees() {
-        use diem_framework::coin::CoinInfo;
-        use ol_framework::gas_coin::LibraCoin as GasCoin;
-        requires exists<GasCoinCapabilities>(@diem_framework);
-        // requires exists<stake::ValidatorFees>(@diem_framework);
-        requires exists<CoinInfo<GasCoin>>(@diem_framework);
-        include RequiresCollectedFeesPerValueLeqBlockDiemSupply;
-    }
+    // spec process_collected_fees() {
+    //     use diem_framework::coin::CoinInfo;
+    //     use ol_framework::gas_coin::LibraCoin as GasCoin;
+    //     requires exists<GasCoinCapabilities>(@diem_framework);
+    //     // requires exists<stake::ValidatorFees>(@diem_framework);
+    //     requires exists<CoinInfo<GasCoin>>(@diem_framework);
+    //     include RequiresCollectedFeesPerValueLeqBlockDiemSupply;
+    // }
 
-    /// `GasCoinCapabilities` should be exists.
-    spec burn_fee(account: address, fee: u64) {
-        // TODO: complex aborts conditions in `burn_from`
-        pragma aborts_if_is_partial;
-        aborts_if !exists<GasCoinCapabilities>(@diem_framework);
-    }
+    // /// `GasCoinCapabilities` should be exists.
+    // spec burn_fee(account: address, fee: u64) {
+    //     // TODO: complex aborts conditions in `burn_from`
+    //     pragma aborts_if_is_partial;
+    //     aborts_if !exists<GasCoinCapabilities>(@diem_framework);
+    // }
 
     spec collect_fee(account: address, fee: u64) {
         use diem_framework::aggregator;

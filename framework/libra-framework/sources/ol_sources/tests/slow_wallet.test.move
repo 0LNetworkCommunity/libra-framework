@@ -49,12 +49,12 @@ module ol_framework::test_slow_wallet {
     let coin = transaction_fee::test_root_withdraw_all(&root);
     rewards::test_helper_pay_reward(&root, *a, coin, 0);
 
-    let (u, b) = slow_wallet::balance(*a);
+    let (u, b) = ol_account::balance(*a);
     assert!(b==100000100, 735702);
     assert!(u==100, 735703);
 
     slow_wallet::slow_wallet_epoch_drip(&root, 233);
-    let (u, b) = slow_wallet::balance(*a);
+    let (u, b) = ol_account::balance(*a);
     assert!(b==100000100, 735704);
     assert!(u==333, 735705);
   }
@@ -130,5 +130,20 @@ module ol_framework::test_slow_wallet {
 
   }
 
+
+    #[test(root = @0x1)]
+    public entry fun test_human_read(
+        root: signer,
+    ) {
+        let _set = mock::genesis_n_vals(&root, 4);
+    mock::ol_initialize_coin_and_fund_vals(&root, 1234567890, false);
+
+
+        let (integer, decimal) = ol_account::balance_human(@0x1000a);
+
+        assert!(integer == 12, 7357001);
+        assert!(decimal == 34567890, 7357002);
+
+    }
 
 }
