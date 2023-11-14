@@ -90,7 +90,6 @@ enum ConfigSub {
         /// check the files generated
         #[clap(short, long)]
         check: bool,
-
     },
 
     /// Generate a fullnode dir and add fullnode.yaml from template
@@ -100,7 +99,7 @@ enum ConfigSub {
         home_path: Option<PathBuf>,
         /// private VFN (only for validators)
         #[clap(short, long)]
-        vfn: bool
+        vfn: bool,
     },
 }
 
@@ -247,12 +246,12 @@ impl ConfigCli {
                 println!("downloaded genesis block");
 
                 let p = if *vfn {
-                  // no need for seed peers, will be identified
-                  // to validator node
-                  init_fullnode_yaml(home_path.to_owned(), false, true).await?
+                    // no need for seed peers, will be identified
+                    // to validator node
+                    init_fullnode_yaml(home_path.to_owned(), false, true).await?
                 } else {
-                  // we want seed peers, and will not have an identity
-                  init_fullnode_yaml(home_path.to_owned(), true, false).await?
+                    // we want seed peers, and will not have an identity
+                    init_fullnode_yaml(home_path.to_owned(), true, false).await?
                 };
 
                 println!("config created at {}", p.display());
