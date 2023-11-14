@@ -13,7 +13,7 @@ module ol_framework::test_reconfiguration {
   use ol_framework::epoch_helper;
   use ol_framework::ol_account;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   // Scenario: all genesis validators make it to next epoch
   #[test(root = @ol_framework)]
@@ -43,9 +43,7 @@ module ol_framework::test_reconfiguration {
 
       assert!(vector::length(&vals) == 5, 7357005);
       // let alice_bal = coin::balance<GasCoin>(@0x1000a);
-      let (unlocked, alice_bal) = ol_account::balance(@0x1000a);
-      print(&unlocked);
-      print(&alice_bal);
+      let (_unlocked, alice_bal) = ol_account::balance(@0x1000a);
 
       let (_, entry_fee, _,  _ ) = proof_of_fee::get_consensus_reward();
       // need to check that the user paid an PoF entry fee for next epoch.
