@@ -44,7 +44,7 @@
         use std::error;
         use std::option::{Self, Option};
         use std::fixed_point64;
-        use ol_framework::gas_coin::LibraCoin as GasCoin;
+        use ol_framework::libra_coin::LibraCoin;
         use ol_framework::ol_account;
         use ol_framework::epoch_helper;
         use ol_framework::burn;
@@ -69,7 +69,7 @@
             // project_id: vector<u8>, // a string that identifies the project
             address_of_beneficiary: address, // the address of the project, also where the BeneficiaryPolicy is stored for reference.
             amount: u64,
-            pledge: coin::Coin<GasCoin>,
+            pledge: coin::Coin<LibraCoin>,
             epoch_of_last_deposit: u64,
             lifetime_pledged: u64,
             lifetime_withdrawn: u64
@@ -142,7 +142,7 @@
         public fun save_pledge(
           sig: &signer,
           address_of_beneficiary: address,
-          pledge: coin::Coin<GasCoin>
+          pledge: coin::Coin<LibraCoin>
           ) acquires MyPledges, BeneficiaryPolicy {
           maybe_initialize_my_pledges(sig);
           assert!(exists<BeneficiaryPolicy>(address_of_beneficiary), error::invalid_state(ENO_BENEFICIARY_POLICY));
@@ -159,7 +159,7 @@
           vm: &signer,
           pledger: address,
           address_of_beneficiary: address,
-          pledge: &mut coin::Coin<GasCoin>
+          pledge: &mut coin::Coin<LibraCoin>
         ) acquires MyPledges, BeneficiaryPolicy {
           system_addresses::assert_ol(vm);
           assert!(exists<BeneficiaryPolicy>(address_of_beneficiary), error::invalid_state(ENO_BENEFICIARY_POLICY));
@@ -178,7 +178,7 @@
           sig: &signer,
           // project_id: vector<u8>,
           address_of_beneficiary: address,
-          init_pledge: coin::Coin<GasCoin>,
+          init_pledge: coin::Coin<LibraCoin>,
         ) acquires MyPledges, BeneficiaryPolicy {
             let account = signer::address_of(sig);
             maybe_initialize_my_pledges(sig);
@@ -204,7 +204,7 @@
 
         // add funds to an existing pledge account
         // Note: only funds that are Unlocked and otherwise unrestricted can be used in pledge account.
-        fun add_coin_to_pledge_account(sender_addr: address, idx: u64, coin: coin::Coin<GasCoin>) acquires MyPledges, BeneficiaryPolicy {
+        fun add_coin_to_pledge_account(sender_addr: address, idx: u64, coin: coin::Coin<LibraCoin>) acquires MyPledges, BeneficiaryPolicy {
           // let sender_addr = signer::address_of(sender);
           // let (found, _idx) = pledge_at_idx(&sender_addr, &address_of_beneficiary);
           let amount = coin::value(&coin);
@@ -231,24 +231,24 @@
         }
 
         // withdraw an amount from all pledge accounts. Check first that there are remaining funds before attempting to withdraw.
-        public fun withdraw_from_all_pledge_accounts(sig_beneficiary: &signer, amount: u64): option::Option<coin::Coin<GasCoin>> acquires MyPledges, BeneficiaryPolicy {
+        public fun withdraw_from_all_pledge_accounts(sig_beneficiary: &signer, amount: u64): option::Option<coin::Coin<LibraCoin>> acquires MyPledges, BeneficiaryPolicy {
 
             let address_of_beneficiary = signer::address_of(sig_beneficiary);
             if (!exists<BeneficiaryPolicy>(address_of_beneficiary)) {
-              return option::none<coin::Coin<GasCoin>>()
+              return option::none<coin::Coin<LibraCoin>>()
             };
 
             let pledgers = *&borrow_global<BeneficiaryPolicy>(address_of_beneficiary).pledgers;
             let amount_available = *&borrow_global<BeneficiaryPolicy>(address_of_beneficiary).amount_available;
 
             if (amount_available == 0 || amount == 0) {
-              return option::none<coin::Coin<GasCoin>>()
+              return option::none<coin::Coin<LibraCoin>>()
             };
 
             let pct_withdraw = fixed_point64::create_from_rational((amount as u128), (amount_available as u128));
 
             let i = 0;
-            let all_coins = option::none<coin::Coin<GasCoin>>();
+            let all_coins = option::none<coin::Coin<LibraCoin>>();
             while (i < vector::length(&pledgers)) {
                 let pledge_account = *vector::borrow(&pledgers, i);
                 // DANGER: this is a private function that changes balances.
@@ -288,7 +288,7 @@
         // this is to be used for funding,
         // but also for revoking a pledge
         // WARN: we must know there is a coin at this account before calling it.
-        fun withdraw_from_one_pledge_account(address_of_beneficiary: &address, payer: &address, amount: u64): option::Option<coin::Coin<GasCoin>> acquires MyPledges, BeneficiaryPolicy {
+        fun withdraw_from_one_pledge_account(address_of_beneficiary: &address, payer: &address, amount: u64): option::Option<coin::Coin<LibraCoin>> acquires MyPledges, BeneficiaryPolicy {
 
             let (found, idx) = pledge_at_idx(payer, address_of_beneficiary);
 
@@ -331,10 +331,10 @@
         // this is to be used for funding,
         // but also for revoking a pledge
         // WARN: we must know there is a coin at this account before calling it.
-        fun withdraw_pct_from_one_pledge_account(address_of_beneficiary: &address, payer: &address, pct: &fixed_point64::FixedPoint64):Option<coin::Coin<GasCoin>> acquires MyPledges, BeneficiaryPolicy {
+        fun withdraw_pct_from_one_pledge_account(address_of_beneficiary: &address, payer: &address, pct: &fixed_point64::FixedPoint64):Option<coin::Coin<LibraCoin>> acquires MyPledges, BeneficiaryPolicy {
 
             let (found, idx) = pledge_at_idx(payer, address_of_beneficiary);
-            if (!found) return option::none<coin::Coin<GasCoin>>(); // don't error on functions called by VM.
+            if (!found) return option::none<coin::Coin<LibraCoin>>(); // don't error on functions called by VM.
 
             let pledge_state = borrow_global_mut<MyPledges>(*payer);
 
@@ -343,14 +343,14 @@
             let user_pledged_balance = (pledge_account.amount as u128);
 
             if (user_pledged_balance == 0) {
-              return option::none<coin::Coin<GasCoin>>()
+              return option::none<coin::Coin<LibraCoin>>()
             };
 
 
             let amount_withdraw = fixed_point64::multiply_u128(user_pledged_balance, *pct);
 
             if (amount_withdraw == 0) {
-              return option::none<coin::Coin<GasCoin>>()
+              return option::none<coin::Coin<LibraCoin>>()
             };
 
             if (user_pledged_balance >= amount_withdraw) {
@@ -494,7 +494,7 @@
         //// Genesis helper
         // private function only to be used at genesis for infra escrow
         // This used only at genesis, and CAN BYPASS THE WITHDRAW LIMITS
-        public fun genesis_infra_escrow_pledge(root: &signer, account: &signer, coin: Coin<GasCoin>) acquires MyPledges, BeneficiaryPolicy {
+        public fun genesis_infra_escrow_pledge(root: &signer, account: &signer, coin: Coin<LibraCoin>) acquires MyPledges, BeneficiaryPolicy {
           // TODO: add genesis time here, once the timestamp genesis issue is fixed.
           // chain_status::assert_genesis();
           system_addresses::assert_ol(root);
@@ -514,7 +514,7 @@
         // Danger: If the VM calls this and there is an error there will be a halt.
         // always call pledge_at_idx() first.
         // NOTE: cannot wrap in option witout changing the struct abilities to copy, drop.
-        // can't do that because Diem<GasCoin> cannot be copy, or drop.
+        // can't do that because Diem<LibraCoin> cannot be copy, or drop.
         // public fun maybe_find_a_pledge(account: &address, address_of_beneficiary: &address): &mut PledgeAccount acquires MyPledges {
         //   let (found, idx) = pledge_at_idx(account, address_of_beneficiary);
         //   assert!(found, error::invalid_state(ENO_PLEDGE_INIT));
@@ -623,10 +623,9 @@
       //////// TEST HELPERS ///////
       #[test_only]
       // Danger! withdraws from an account.
-      public fun test_single_withdrawal(vm: &signer, bene: &address, donor: &address, amount: u64): option::Option<coin::Coin<GasCoin>> acquires MyPledges, BeneficiaryPolicy{
+      public fun test_single_withdrawal(vm: &signer, bene: &address, donor: &address, amount: u64): option::Option<coin::Coin<LibraCoin>> acquires MyPledges, BeneficiaryPolicy{
         system_addresses::assert_ol(vm);
         // testnet::assert_testnet(vm);
         withdraw_from_one_pledge_account(bene, donor, amount)
       }
 }
-

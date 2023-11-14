@@ -3,7 +3,7 @@ module ol_framework::test_rewards {
   use diem_framework::coin;
   use diem_framework::stake;
   use ol_framework::burn;
-  use ol_framework::gas_coin::{Self, LibraCoin as GasCoin};
+  use ol_framework::libra_coin::{Self, LibraCoin};
   use ol_framework::mock;
   use ol_framework::rewards;
 
@@ -15,7 +15,7 @@ module ol_framework::test_rewards {
     let alice = @0x1000a;
 
     mock::genesis_n_vals(&root, 1);
-    let mint_cap = gas_coin::extract_mint_cap(&root);
+    let mint_cap = libra_coin::extract_mint_cap(&root);
 
     let uid_before = stake::get_reward_event_guid(alice);
 
@@ -27,7 +27,7 @@ module ol_framework::test_rewards {
     let uid_after = stake::get_reward_event_guid(alice);
     assert!(uid_after > uid_before, 7357001);
 
-    let b = coin::balance<GasCoin>(alice);
+    let b = coin::balance<LibraCoin>(alice);
     assert!(b == 10000, 7357002);
   }
 
@@ -38,7 +38,7 @@ module ol_framework::test_rewards {
     let dave = @0x1000d;
 
     let vals = mock::genesis_n_vals(root, 4);
-    let mint_cap = gas_coin::extract_mint_cap(root);
+    let mint_cap = libra_coin::extract_mint_cap(root);
     let uid_before = stake::get_reward_event_guid(dave);
     assert!(uid_before == 0, 7357000);
     let new_coin = coin::test_mint(10000, &mint_cap);
@@ -50,10 +50,10 @@ module ol_framework::test_rewards {
     let uid_after = stake::get_reward_event_guid(dave);
     assert!(uid_after > uid_before, 7357001);
 
-    let b = coin::balance<GasCoin>(alice);
+    let b = coin::balance<LibraCoin>(alice);
     assert!(b == 1000, 7357002);
 
-    let b = coin::balance<GasCoin>(dave);
+    let b = coin::balance<LibraCoin>(dave);
     assert!(b == 1000, 7357002);
 
     burn::burn_and_track(new_coin);
