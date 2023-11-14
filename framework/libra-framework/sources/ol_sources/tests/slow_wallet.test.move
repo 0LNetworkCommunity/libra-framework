@@ -49,12 +49,12 @@ module ol_framework::test_slow_wallet {
     let coin = transaction_fee::test_root_withdraw_all(&root);
     rewards::test_helper_pay_reward(&root, *a, coin, 0);
 
-    let (u, b) = slow_wallet::balance(*a);
+    let (u, b) = ol_account::balance(*a);
     assert!(b==100000100, 735702);
     assert!(u==100, 735703);
 
     slow_wallet::slow_wallet_epoch_drip(&root, 233);
-    let (u, b) = slow_wallet::balance(*a);
+    let (u, b) = ol_account::balance(*a);
     assert!(b==100000100, 735704);
     assert!(u==333, 735705);
   }
@@ -130,5 +130,28 @@ module ol_framework::test_slow_wallet {
 
   }
 
+
+    // #[test(source = @0x1)]
+    // public entry fun test_human_read(
+    //     source: signer,
+    // ) {
+    //     let source_addr = signer::address_of(&source);
+    //     account::create_account_for_test(source_addr);
+    //     let (burn_cap, freeze_cap, mint_cap) = initialize_and_register_fake_money(&source, 8, true);
+
+    //     let coins_minted = mint<FakeMoney>(1234567890, &mint_cap);
+    //     deposit(source_addr, coins_minted);
+    //     // assert!(balance<FakeMoney>(source_addr) == 100, 0);
+
+    //     let (integer, decimal) = balance_human<FakeMoney>(source_addr);
+    //     assert!(integer == 12, 7357001);
+    //     assert!(decimal == 34567890, 7357002);
+
+    //     move_to(&source, FakeMoneyCapabilities {
+    //         burn_cap,
+    //         freeze_cap,
+    //         mint_cap,
+    //     });
+    // }
 
 }

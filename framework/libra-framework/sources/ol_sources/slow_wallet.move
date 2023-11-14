@@ -235,9 +235,9 @@ module ol_framework::slow_wallet {
       exists<SlowWallet>(addr)
     }
 
-    #[view]
+    // #[view]
     /// helper to get the unlocked and total balance. (unlocked, total)
-    public fun balance(addr: address): (u64, u64) acquires SlowWallet{
+    public(friend) fun balance(addr: address): (u64, u64) acquires SlowWallet{
       // this is a normal account, so return the normal balance
       let total = coin::balance<GasCoin>(addr);
       if (exists<SlowWallet>(addr)) {

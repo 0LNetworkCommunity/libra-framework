@@ -4,7 +4,6 @@ module diem_framework::coin {
     use std::error;
     use std::option::{Self, Option};
     use std::signer;
-    use std::fixed_point32;
 
     use diem_framework::account::{Self, WithdrawCapability};
     use diem_framework::aggregator_factory;
@@ -14,7 +13,6 @@ module diem_framework::coin {
     use diem_framework::system_addresses;
 
     use diem_std::type_info;
-    use diem_std::math64;
     // use diem_std::debug::print;
 
     friend ol_framework::gas_coin;
@@ -241,7 +239,7 @@ module diem_framework::coin {
         type_info::account_address(&type_info)
     }
 
-    #[view]
+    // #[view]
     /// Returns the balance of `owner` for provided `CoinType`.
     public fun balance<CoinType>(owner: address): u64 acquires CoinStore {
         // should not abort if the VM might call this
@@ -249,50 +247,7 @@ module diem_framework::coin {
         borrow_global<CoinStore<CoinType>>(owner).coin.value
     }
 
-    #[view]
-    /// Returns a human readable version of the balance with (integer, decimal_part)
-    public fun balance_human<CoinType>(owner: address): (u64, u64) acquires CoinStore, CoinInfo {
-        assert!(
-            is_account_registered<CoinType>(owner),
-            error::not_found(ECOIN_STORE_NOT_PUBLISHED),
-        );
 
-        let unscaled_value = borrow_global<CoinStore<CoinType>>(owner).coin.value;
-        assert!(unscaled_value > 0, error::out_of_range(EZERO_COIN_AMOUNT));
-
-        let decimal_places = decimals<CoinType>();
-        let scaling = math64::pow(10, (decimal_places as u64));
-        let value = fixed_point32::create_from_rational(unscaled_value, scaling);
-        // multply will TRUNCATE.
-        let integer_part = fixed_point32::multiply_u64(1, value);
-
-        let decimal_part = unscaled_value - (integer_part * scaling);
-
-        (integer_part, decimal_part)
-    }
-
-    #[test(source = @0x1)]
-    public entry fun test_human_read(
-        source: signer,
-    ) acquires CoinInfo, CoinStore {
-        let source_addr = signer::address_of(&source);
-        account::create_account_for_test(source_addr);
-        let (burn_cap, freeze_cap, mint_cap) = initialize_and_register_fake_money(&source, 8, true);
-
-        let coins_minted = mint<FakeMoney>(1234567890, &mint_cap);
-        deposit(source_addr, coins_minted);
-        // assert!(balance<FakeMoney>(source_addr) == 100, 0);
-
-        let (integer, decimal) = balance_human<FakeMoney>(source_addr);
-        assert!(integer == 12, 7357001);
-        assert!(decimal == 34567890, 7357002);
-
-        move_to(&source, FakeMoneyCapabilities {
-            burn_cap,
-            freeze_cap,
-            mint_cap,
-        });
-    }
 
     #[view]
     /// Returns `true` if the type `CoinType` is an initialized coin.

@@ -1,11 +1,11 @@
 #[test_only]
 module ol_framework::test_rewards {
-  use ol_framework::rewards;
-  use ol_framework::gas_coin::{Self, LibraCoin as GasCoin};
   use diem_framework::coin;
-  use ol_framework::mock;
   use diem_framework::stake;
   use ol_framework::burn;
+  use ol_framework::gas_coin::{Self, LibraCoin as GasCoin};
+  use ol_framework::mock;
+  use ol_framework::rewards;
 
   #[test(root = @ol_framework)]
   fun test_pay_reward_single(root: signer) {

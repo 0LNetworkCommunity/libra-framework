@@ -8,6 +8,9 @@ module ol_framework::ol_account {
     use std::signer;
     use std::option::{Self, Option};
     use diem_std::from_bcs;
+    use diem_std::fixed_point32;
+    use diem_std::math64;
+
 
     use ol_framework::gas_coin::{Self, LibraCoin as GasCoin};
     use ol_framework::slow_wallet;
@@ -327,6 +330,23 @@ module ol_framework::ol_account {
       slow_wallet::balance(addr)
     }
 
+    #[view]
+    /// Returns a human readable version of the balance with (integer, decimal_part)
+    public fun balance_human(owner: address): (u64, u64) {
+
+        let (_, unscaled_value) = balance(owner);
+        if (unscaled_value == 0) return (0,0);
+
+        let decimal_places = coin::decimals<GasCoin>();
+        let scaling = math64::pow(10, (decimal_places as u64));
+        let value = fixed_point32::create_from_rational(unscaled_value, scaling);
+        // multply will TRUNCATE.
+        let integer_part = fixed_point32::multiply_u64(1, value);
+
+        let decimal_part = unscaled_value - (integer_part * scaling);
+
+        (integer_part, decimal_part)
+    }
     // on new account creation we need the burn tracker created
     // note return quietly if it's already initialized, so we can use it
     // in the creation and tx flow
