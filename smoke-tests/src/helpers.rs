@@ -33,7 +33,7 @@ pub async fn mint_libra(
 ) -> anyhow::Result<()> {
     let payload = public_info
         .transaction_factory()
-        .payload(libra_stdlib::gas_coin_mint_to_impl(addr, amount));
+        .payload(libra_stdlib::libra_coin_mint_to_impl(addr, amount));
 
     let mint_txn = public_info
         .root_account()

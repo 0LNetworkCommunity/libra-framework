@@ -17,7 +17,7 @@ use crate::ONCHAIN_DECIMAL_PRECISION;
 pub static GAS_COIN_TYPE: Lazy<TypeTag> = Lazy::new(|| {
     TypeTag::Struct(Box::new(StructTag {
         address: AccountAddress::ONE,
-        module: ident_str!("gas_coin").to_owned(),
+        module: ident_str!("libra_coin").to_owned(),
         name: ident_str!("LibraCoin").to_owned(),
         type_params: vec![],
     }))

@@ -13,8 +13,8 @@ module ol_framework::genesis_migration {
   use diem_framework::coin;
   use ol_framework::ol_account;
   use ol_framework::validator_universe;
-  use ol_framework::gas_coin;
-  use ol_framework::gas_coin::LibraCoin as GasCoin;
+  use ol_framework::libra_coin;
+  use ol_framework::libra_coin::LibraCoin;
   use ol_framework::transaction_fee;
   use ol_framework::pledge_accounts;
   use diem_framework::system_addresses;
@@ -55,15 +55,15 @@ module ol_framework::genesis_migration {
 
     // Genesis validators should not receive ANY coins from MINT during testing, testnet, nor mainnet up to this point.
     // they will receive some from the infra escrow.
-    let genesis_balance = coin::balance<GasCoin>(user_addr);
+    let genesis_balance = coin::balance<LibraCoin>(user_addr);
 
     assert!(expected_initial_balance >= genesis_balance, error::invalid_state(EGENESIS_BALANCE_TOO_HIGH));
 
     let coins_to_mint = expected_initial_balance - genesis_balance;
-    let c = coin::vm_mint<GasCoin>(vm, coins_to_mint);
+    let c = coin::vm_mint<LibraCoin>(vm, coins_to_mint);
     ol_account::deposit_coins(user_addr, c);
 
-    let new_balance = coin::balance<GasCoin>(user_addr);
+    let new_balance = coin::balance<LibraCoin>(user_addr);
 
     assert!(new_balance == expected_initial_balance, error::invalid_state(EBALANCE_MISMATCH));
 
@@ -75,7 +75,7 @@ module ol_framework::genesis_migration {
   }
 
   fun rounding_mint(root: &signer, target_supply: u64) {
-    let existing_supply = gas_coin::supply();
+    let existing_supply = libra_coin::supply();
 
     // we should not ever have migrated more coins than expected
     // this should abort the genesis process
@@ -83,7 +83,7 @@ module ol_framework::genesis_migration {
     error::invalid_state(EMINTED_OVER_TARGET));
 
     if (target_supply > existing_supply) {
-        let coin = coin::vm_mint<GasCoin>(root, target_supply - existing_supply);
+        let coin = coin::vm_mint<LibraCoin>(root, target_supply - existing_supply);
         transaction_fee::vm_pay_fee(root, @ol_framework, coin);
     };
   }

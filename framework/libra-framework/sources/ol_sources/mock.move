@@ -15,7 +15,7 @@ module ol_framework::mock {
   use diem_framework::system_addresses;
   use ol_framework::epoch_boundary;
   use diem_framework::coin;
-  use ol_framework::gas_coin::{Self, LibraCoin as GasCoin};
+  use ol_framework::libra_coin::{Self, LibraCoin};
   use diem_framework::transaction_fee;
   use ol_framework::ol_account;
   use ol_framework::tower_state;
@@ -153,7 +153,7 @@ module ol_framework::mock {
       genesis::test_end_genesis(root);
 
       let mint_cap = init_coin_impl(root);
-      gas_coin::restore_mint_cap(root, mint_cap);
+      libra_coin::restore_mint_cap(root, mint_cap);
 
       assert!(!chain_status::is_genesis(), 0);
     }
@@ -164,7 +164,7 @@ module ol_framework::mock {
 
       let mint_cap = init_coin_impl(root);
 
-      gas_coin::restore_mint_cap(root, mint_cap);
+      libra_coin::restore_mint_cap(root, mint_cap);
     }
 
     #[test_only]
@@ -173,8 +173,8 @@ module ol_framework::mock {
       system_addresses::assert_ol(root);
 
 
-      let mint_cap = if (coin::is_coin_initialized<GasCoin>()) {
-         gas_coin::extract_mint_cap(root)
+      let mint_cap = if (coin::is_coin_initialized<LibraCoin>()) {
+         libra_coin::extract_mint_cap(root)
       } else {
         init_coin_impl(root)
       };
@@ -187,7 +187,7 @@ module ol_framework::mock {
         let c = coin::test_mint(amount, &mint_cap);
         ol_account::deposit_coins(*addr, c);
 
-        let b = coin::balance<GasCoin>(*addr);
+        let b = coin::balance<LibraCoin>(*addr);
         assert!(b == amount, 0001);
 
 
@@ -197,14 +197,14 @@ module ol_framework::mock {
       if (drip) {
         slow_wallet::slow_wallet_epoch_drip(root, amount);
       };
-      gas_coin::restore_mint_cap(root, mint_cap);
+      libra_coin::restore_mint_cap(root, mint_cap);
     }
 
     #[test_only]
-    fun init_coin_impl(root: &signer): coin::MintCapability<GasCoin> {
+    fun init_coin_impl(root: &signer): coin::MintCapability<LibraCoin> {
       system_addresses::assert_ol(root);
 
-      let (burn_cap, mint_cap) = gas_coin::initialize_for_test_without_aggregator_factory(root);
+      let (burn_cap, mint_cap) = libra_coin::initialize_for_test_without_aggregator_factory(root);
       coin::destroy_burn_cap(burn_cap);
 
       transaction_fee::initialize_fee_collection_and_distribution(root, 0);
@@ -212,9 +212,9 @@ module ol_framework::mock {
       let initial_fees = 1000000 * 100; // coin scaling * 100 coins
       let tx_fees = coin::test_mint(initial_fees, &mint_cap);
       transaction_fee::vm_pay_fee(root, @ol_framework, tx_fees);
-      let supply_pre = gas_coin::supply();
+      let supply_pre = libra_coin::supply();
       assert!(supply_pre == initial_fees, ESUPPLY_MISMATCH);
-      gas_coin::test_set_final_supply(root, initial_fees);
+      libra_coin::test_set_final_supply(root, initial_fees);
 
       mint_cap
     }
@@ -342,7 +342,7 @@ module ol_framework::mock {
     let _vals = genesis_n_vals(root, n_vals); // need to include eve to init funds
     let genesis_mint = 1000000;
     ol_initialize_coin_and_fund_vals(root, genesis_mint, true);
-    let supply_pre = gas_coin::supply();
+    let supply_pre = libra_coin::supply();
     let mocked_tx_fees = 1000000 * 100;
     assert!(supply_pre == mocked_tx_fees + (n_vals * genesis_mint), 73570001);
   }

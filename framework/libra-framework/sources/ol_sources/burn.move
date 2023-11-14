@@ -17,7 +17,7 @@ module ol_framework::burn {
   use std::vector;
   // use ol_framework::ol_account;
   use ol_framework::system_addresses;
-  use ol_framework::gas_coin::LibraCoin as GasCoin;
+  use ol_framework::libra_coin::LibraCoin;
   // use ol_framework::transaction_fee;
   use ol_framework::coin::{Self, Coin};
   use ol_framework::match_index;
@@ -57,7 +57,7 @@ module ol_framework::burn {
   /// 1: U64, how many coins burned
   public fun epoch_burn_fees(
       vm: &signer,
-      coins: &mut Coin<GasCoin>,
+      coins: &mut Coin<LibraCoin>,
   ): (bool, u64)  acquires UserBurnPreference, BurnCounter {
       system_addresses::assert_ol(vm);
 
@@ -128,7 +128,7 @@ module ol_framework::burn {
   /// NOTE: this is unchecked, any user can perform this.
   /// the user should call this function and not burn methods on coin.move
   /// since those methods do not track the lifetime_burned
-  public fun burn_and_track(coin: Coin<GasCoin>) acquires BurnCounter {
+  public fun burn_and_track(coin: Coin<LibraCoin>) acquires BurnCounter {
     let value_sent = coin::value(&coin);
     let state = borrow_global_mut<BurnCounter>(@ol_framework);
     coin::user_burn(coin);
@@ -137,7 +137,7 @@ module ol_framework::burn {
 
   /// performs a burn or recycle according to the attributed user's preference
   public fun burn_with_user_preference(
-    vm: &signer, payer: address, user_share: Coin<GasCoin>
+    vm: &signer, payer: address, user_share: Coin<LibraCoin>
   ) acquires BurnCounter, UserBurnPreference {
     system_addresses::assert_ol(vm);
     let value_sent = coin::value(&user_share);

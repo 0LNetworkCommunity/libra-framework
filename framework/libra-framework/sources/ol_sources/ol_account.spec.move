@@ -2,8 +2,8 @@ spec ol_framework::ol_account {
     spec module {
         pragma verify = true;
         // pragma aborts_if_is_strict;
-        invariant [suspendable] chain_status::is_operating() ==> exists<gas_coin::FinalMint>(@diem_framework);
-        invariant [suspendable] chain_status::is_operating() ==>  exists<coin::CoinInfo<GasCoin>>(@diem_framework);
+        invariant [suspendable] chain_status::is_operating() ==> exists<libra_coin::FinalMint>(@diem_framework);
+        invariant [suspendable] chain_status::is_operating() ==>  exists<coin::CoinInfo<LibraCoin>>(@diem_framework);
 
     }
 
@@ -13,7 +13,7 @@ spec ol_framework::ol_account {
     // spec create_account(auth_key: address) {
     //     include CreateAccountAbortsIf;
     //     ensures exists<account::Account>(auth_key);
-    //     ensures exists<coin::CoinStore<GasCoin>>(auth_key);
+    //     ensures exists<coin::CoinStore<LibraCoin>>(auth_key);
     // }
     spec schema CreateAccountAbortsIf {
         auth_key: address;
@@ -30,13 +30,13 @@ spec ol_framework::ol_account {
     }
 
     // ol_account::withdraw can never use more than the slow wallet limit
-    spec withdraw(sender: &signer, amount: u64): Coin<GasCoin>{
+    spec withdraw(sender: &signer, amount: u64): Coin<LibraCoin>{
         include AssumeCoinRegistered;
 
         let account_addr = signer::address_of(sender);
         aborts_if amount == 0;
 
-        let coin_store = global<coin::CoinStore<GasCoin>>(account_addr);
+        let coin_store = global<coin::CoinStore<LibraCoin>>(account_addr);
         let balance = coin_store.coin.value;
 
         aborts_if balance < amount;
@@ -46,13 +46,13 @@ spec ol_framework::ol_account {
         aborts_if exists<slow_wallet::SlowWallet>(account_addr) &&
         slow_store.unlocked < amount;
 
-        ensures result == Coin<GasCoin>{value: amount};
+        ensures result == Coin<LibraCoin>{value: amount};
     }
 
     spec schema AssumeCoinRegistered {
         sender: &signer;
         let account_addr = signer::address_of(sender);
-        aborts_if !coin::is_account_registered<GasCoin>(account_addr);
+        aborts_if !coin::is_account_registered<LibraCoin>(account_addr);
     }
 
     spec assert_account_exists(addr: address) {
@@ -60,10 +60,10 @@ spec ol_framework::ol_account {
     }
 
     /// Check if the address existed.
-    /// Check if the GasCoin under the address existed.
+    /// Check if the LibraCoin under the address existed.
     spec assert_account_is_registered_for_gas(addr: address) {
         aborts_if !account::exists_at(addr);
-        aborts_if !coin::is_account_registered<GasCoin>(addr);
+        aborts_if !coin::is_account_registered<LibraCoin>(addr);
     }
 
     spec set_allow_direct_coin_transfers(account: &signer, allow: bool) {

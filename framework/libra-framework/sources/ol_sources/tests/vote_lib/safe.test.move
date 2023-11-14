@@ -27,7 +27,7 @@ module ol_framework::test_safe {
     // SO ALICE and DAVE ARE AUTHORIZED
     safe::init_payment_multisig(&resource_sig, vals, 2); // both need to sign
 
-    // first make sure dave is initialized to receive GasCoin
+    // first make sure dave is initialized to receive LibraCoin
     ol_account::create_account(root, @0x1000d);
     // when alice proposes, she also votes in a single step
     let prop_id = safe::propose_payment(alice, new_resource_address, @0x1000d, 42, b"cheers", option::none());
@@ -57,7 +57,7 @@ module ol_framework::test_safe {
     // not enough voters
     safe::init_payment_multisig(&resource_sig, vals, 3); // requires 3
 
-    // first make sure EVE is initialized to receive GasCoin
+    // first make sure EVE is initialized to receive LibraCoin
     ol_account::create_account(root, @0x1000e);
     // when alice proposes, she also votes in a single step
     let prop_id = safe::propose_payment(alice, new_resource_address, @0x1000e, 42, b"cheers", option::none());

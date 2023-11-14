@@ -476,7 +476,7 @@ pub fn set_final_supply(session: &mut SessionExt, supply_settings: &SupplySettin
 
     exec_function(
         session,
-        "gas_coin",
+        "libra_coin",
         "genesis_set_final_supply",
         vec![],
         serialized_values,

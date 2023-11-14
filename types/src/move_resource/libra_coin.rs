@@ -15,14 +15,13 @@ use crate::ONCHAIN_DECIMAL_PRECISION;
 /// The balance resource held under an account.
 #[derive(Debug, Serialize, Deserialize)]
 // #[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
-pub struct GasCoinStoreResource {
+pub struct LibraCoinStoreResource {
     coin: u64,
-    frozen: bool,
     deposit_events: EventHandle,
     withdraw_events: EventHandle,
 }
 
-impl GasCoinStoreResource {
+impl LibraCoinStoreResource {
     pub fn new(
         coin: u64,
         frozen: bool,
@@ -54,7 +53,7 @@ impl GasCoinStoreResource {
     }
 }
 
-impl MoveStructType for GasCoinStoreResource {
+impl MoveStructType for LibraCoinStoreResource {
     const MODULE_NAME: &'static IdentStr = ident_str!("coin");
     const STRUCT_NAME: &'static IdentStr = ident_str!("CoinStore");
 
@@ -63,12 +62,12 @@ impl MoveStructType for GasCoinStoreResource {
     }
 }
 
-impl MoveResource for GasCoinStoreResource {}
+impl MoveResource for LibraCoinStoreResource {}
 
 // TODO: This might break reading from API maybe it must be diem_api_types::U64;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct GasCoin {
+pub struct LibraCoin {
     pub value: u64,
 }
 
@@ -106,7 +105,7 @@ impl SlowWalletBalance {
 }
 
 /// This is the same shape as Slow Wallet balance, except that it is scaled.
-/// The slow wallet struct contains the coin value as it exists in the database which is without decimals. The decimal precision for GasCoin is 6. So we need to scale it for human consumption.
+/// The slow wallet struct contains the coin value as it exists in the database which is without decimals. The decimal precision for LibraCoin is 6. So we need to scale it for human consumption.
 #[derive(Debug, Serialize, Deserialize)]
 
 pub struct LibraBalanceDisplay {

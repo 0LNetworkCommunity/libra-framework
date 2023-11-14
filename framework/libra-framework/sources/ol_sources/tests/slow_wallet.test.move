@@ -7,7 +7,7 @@ module ol_framework::test_slow_wallet {
   use ol_framework::slow_wallet;
   use ol_framework::mock;
   use ol_framework::ol_account;
-  use ol_framework::gas_coin::{Self, LibraCoin as GasCoin};
+  use ol_framework::libra_coin::{Self, LibraCoin};
   use ol_framework::epoch_boundary;
   use diem_framework::reconfiguration;
   use diem_framework::coin;
@@ -62,7 +62,7 @@ module ol_framework::test_slow_wallet {
   #[test(root = @ol_framework, alice = @0x123, bob = @0x456)]
   fun test_transfer_unlocked_happy(root: signer, alice: signer) {
     mock::ol_test_genesis(&root);
-    let mint_cap = gas_coin::extract_mint_cap(&root);
+    let mint_cap = libra_coin::extract_mint_cap(&root);
 
     slow_wallet::initialize(&root);
 
@@ -84,7 +84,7 @@ module ol_framework::test_slow_wallet {
     // transferring funds will create Bob's account
     // the coins are also unlocked
     ol_account::transfer(&alice, @0x456, 10);
-    let b_balance = coin::balance<GasCoin>(@0x456);
+    let b_balance = coin::balance<LibraCoin>(@0x456);
     assert!(b_balance == 10, 735704);
     assert!(slow_wallet::unlocked_amount(@0x456) == 10, 735705);
   }
@@ -94,7 +94,7 @@ module ol_framework::test_slow_wallet {
   #[expected_failure(abort_code = 196614, location = 0x1::ol_account)]
   fun test_transfer_sad(root: signer, alice: signer) {
     mock::ol_test_genesis(&root);
-    let mint_cap = gas_coin::extract_mint_cap(&root);
+    let mint_cap = libra_coin::extract_mint_cap(&root);
     slow_wallet::initialize(&root);
     ol_account::create_account(&root, @0x123);
     slow_wallet::set_slow(&alice);
@@ -102,7 +102,7 @@ module ol_framework::test_slow_wallet {
     assert!(slow_wallet::unlocked_amount(@0x123) == 0, 735701);
 
     // fund alice
-    // let (burn_cap, mint_cap) = gas_coin::initialize_for_test(&root);
+    // let (burn_cap, mint_cap) = libra_coin::initialize_for_test(&root);
     ol_account::deposit_coins(@0x123, coin::test_mint(100, &mint_cap));
     // coin::destroy_burn_cap(burn_cap);
     coin::destroy_mint_cap(mint_cap);
@@ -110,7 +110,7 @@ module ol_framework::test_slow_wallet {
     // alice will transfer and create bob's account
     ol_account::transfer(&alice, @0x456, 99);
 
-    let b_balance = coin::balance<GasCoin>(@0x456);
+    let b_balance = coin::balance<LibraCoin>(@0x456);
     assert!(b_balance == 99, 735702);
     assert!(slow_wallet::unlocked_amount(@0x123) == 01, 735703);
 

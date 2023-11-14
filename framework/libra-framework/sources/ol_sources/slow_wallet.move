@@ -13,7 +13,7 @@ module ol_framework::slow_wallet {
   use diem_framework::system_addresses;
   use diem_framework::coin;
   use diem_framework::account;
-  use ol_framework::gas_coin::LibraCoin as GasCoin;
+  use ol_framework::libra_coin::LibraCoin;
   use ol_framework::testnet;
   use ol_framework::sacred_cows;
 
@@ -110,7 +110,7 @@ module ol_framework::slow_wallet {
 
         if (!exists<SlowWallet>(signer::address_of(sig))) {
           move_to<SlowWallet>(sig, SlowWallet {
-            unlocked: coin::balance<GasCoin>(addr),
+            unlocked: coin::balance<LibraCoin>(addr),
             transferred: 0,
           });
         }
@@ -131,7 +131,7 @@ module ol_framework::slow_wallet {
       let i = 0;
       while (i < len) {
         let addr = vector::borrow<address>(&list, i);
-        let user_balance = coin::balance<GasCoin>(*addr);
+        let user_balance = coin::balance<LibraCoin>(*addr);
         if (!exists<SlowWallet>(*addr)) continue; // NOTE: formal verifiction caught
         // this, not sure how it's possible
 
@@ -239,7 +239,7 @@ module ol_framework::slow_wallet {
     /// helper to get the unlocked and total balance. (unlocked, total)
     public(friend) fun balance(addr: address): (u64, u64) acquires SlowWallet{
       // this is a normal account, so return the normal balance
-      let total = coin::balance<GasCoin>(addr);
+      let total = coin::balance<LibraCoin>(addr);
       if (exists<SlowWallet>(addr)) {
         let s = borrow_global<SlowWallet>(addr);
         return (s.unlocked, total)
@@ -259,7 +259,7 @@ module ol_framework::slow_wallet {
         return s.unlocked
       };
 
-      coin::balance<GasCoin>(addr)
+      coin::balance<LibraCoin>(addr)
     }
 
     #[view]

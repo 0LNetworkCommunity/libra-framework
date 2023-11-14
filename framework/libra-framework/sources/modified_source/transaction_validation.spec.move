@@ -48,8 +48,8 @@ spec diem_framework::transaction_validation {
         let max_transaction_fee = txn_gas_price * txn_max_gas_units;
         aborts_if max_transaction_fee > MAX_U64;
         aborts_if !(txn_sequence_number == global<Account>(transaction_sender).sequence_number);
-        aborts_if !exists<CoinStore<GasCoin>>(transaction_sender);
-        aborts_if !(global<CoinStore<GasCoin>>(transaction_sender).coin.value >= max_transaction_fee);
+        aborts_if !exists<CoinStore<LibraCoin>>(transaction_sender);
+        aborts_if !(global<CoinStore<LibraCoin>>(transaction_sender).coin.value >= max_transaction_fee);
     }
 
     spec prologue_common(
@@ -128,7 +128,7 @@ spec diem_framework::transaction_validation {
     ) {
         use diem_framework::coin::{CoinStore};
         use diem_framework::account::{Account};
-        use diem_framework::gas_coin::LibraCoin as GasCoin;
+        use diem_framework::libra_coin::LibraCoin;
         // TODO: Can't verify `burn_fee`, complex aborts conditions.
         pragma aborts_if_is_partial;
 
@@ -139,14 +139,14 @@ spec diem_framework::transaction_validation {
         let transaction_fee_amount = txn_gas_price * gas_used;
 
         let addr = signer::address_of(account);
-        aborts_if !exists<CoinStore<GasCoin>>(addr);
-        aborts_if !(global<CoinStore<GasCoin>>(addr).coin.value >= transaction_fee_amount);
+        aborts_if !exists<CoinStore<LibraCoin>>(addr);
+        aborts_if !(global<CoinStore<LibraCoin>>(addr).coin.value >= transaction_fee_amount);
 
         aborts_if !exists<Account>(addr);
         aborts_if !(global<Account>(addr).sequence_number < MAX_U64);
 
-        let pre_balance = global<coin::CoinStore<GasCoin>>(addr).coin.value;
-        let post balance = global<coin::CoinStore<GasCoin>>(addr).coin.value;
+        let pre_balance = global<coin::CoinStore<LibraCoin>>(addr).coin.value;
+        let post balance = global<coin::CoinStore<LibraCoin>>(addr).coin.value;
         let pre_account = global<account::Account>(addr);
         let post account = global<account::Account>(addr);
         ensures balance == pre_balance - transaction_fee_amount;
