@@ -3,7 +3,7 @@
 
 use crate::core::{garbage_collection::gc_failed_proof, tower_error};
 
-use anyhow::{anyhow, bail, Error, Result};
+use anyhow::{bail, Error, Result};
 use std::path::PathBuf;
 
 use libra_query::account_queries;
@@ -18,9 +18,14 @@ use libra_types::{
 };
 
 const EPOCH_MINING_THRES_UPPER: u64 = 72;
+
+pub enum BacklogResult {
+    Success,
+    AboveLimit,
+}
 /// Submit a backlog of blocks that may have been mined while network is offline.
 /// Likely not more than 1.
-pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
+pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<BacklogResult> {
     // Getting local state height
     let mut blocks_dir = config.workspace.node_home.clone();
     blocks_dir.push(&config.get_block_dir(None)?);
@@ -32,7 +37,8 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
     println!("Local tower height: {:?}", current_proof_number);
     if current_proof_number == 0 {
         // if we are at genesis
-        return submit_or_delete(config, current_local_proof, current_block_path).await;
+        submit_or_delete(config, current_local_proof, current_block_path).await?;
+        return Ok(BacklogResult::Success);
     }
 
     let mut i = 0;
@@ -50,12 +56,10 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
             // use i64 for safety
             if proofs_in_epoch >= EPOCH_MINING_THRES_UPPER {
                 println!(
-                    "Backlog: Maximum number of proofs sent this epoch {}, exiting.",
+                    "Backlog: Maximum number of proofs already sent this epoch {}",
                     EPOCH_MINING_THRES_UPPER
                 );
-                return Err(anyhow!(
-                    "cannot submit more proofs than allowed in epoch, aborting backlog."
-                ));
+                return Ok(BacklogResult::AboveLimit);
             }
 
             if proofs_in_epoch > 0 {
@@ -78,7 +82,7 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<()> {
         i += 1;
         submitted_now += 1;
     }
-    Ok(())
+    Ok(BacklogResult::Success)
 }
 
 pub async fn submit_or_delete(config: &AppCfg, block: VDFProof, path: PathBuf) -> Result<()> {
