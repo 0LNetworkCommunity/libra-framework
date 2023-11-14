@@ -1,6 +1,6 @@
 pub mod config_cli;
-pub mod fullnode_config;
-pub mod host;
 pub mod legacy_config;
 pub mod make_profile;
-pub mod node_yaml;
+pub mod make_yaml_public_fullnode;
+pub mod make_yaml_validator;
+pub mod validator_config;

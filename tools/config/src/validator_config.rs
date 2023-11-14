@@ -1,4 +1,4 @@
-use crate::node_yaml;
+use crate::make_yaml_validator;
 use anyhow::{bail, Context};
 use dialoguer::{Confirm, Input};
 use diem_genesis::config::HostAndPort;
@@ -28,7 +28,7 @@ pub fn initialize_validator(
         .set_config_files()?;
     OLProgress::complete("saved validator registration files locally");
 
-    node_yaml::save_validator_yaml(home_path.clone())?;
+    make_yaml_validator::save_validator_yaml(home_path.clone())?;
     OLProgress::complete("saved validator node yaml file locally");
 
     // TODO: nice to have

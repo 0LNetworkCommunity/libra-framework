@@ -1,5 +1,5 @@
-use crate::fullnode_config::{download_genesis, init_fullnode_yaml};
-use crate::host::initialize_validator_configs;
+use crate::make_yaml_public_fullnode::{download_genesis, init_fullnode_yaml};
+use crate::validator_config::initialize_validator_configs;
 use crate::{legacy_config, make_profile};
 use anyhow::{Context, Result};
 use clap::Parser;
@@ -88,7 +88,7 @@ enum ConfigSub {
     /// Generate validators' config file
     ValidatorInit {
         /// check the files generated
-        #[clap(short, long, default_value = "false")]
+        #[clap(short, long)]
         check: bool,
     },
 
@@ -97,6 +97,9 @@ enum ConfigSub {
         /// path to libra config and data files defaults to $HOME/.libra
         #[clap(long)]
         home_path: Option<PathBuf>,
+        /// private VFN (only for validators)
+        #[clap(short, long)]
+        vfn: bool,
     },
 }
 
@@ -238,11 +241,19 @@ impl ConfigCli {
                 println!("Validators' config initialized.");
                 Ok(())
             }
-            Some(ConfigSub::FullnodeInit { home_path }) => {
+            Some(ConfigSub::FullnodeInit { home_path, vfn }) => {
                 download_genesis(home_path.to_owned()).await?;
                 println!("downloaded genesis block");
 
-                let p = init_fullnode_yaml(home_path.to_owned()).await?;
+                let p = if *vfn {
+                    // no need for seed peers, will be identified
+                    // to validator node
+                    init_fullnode_yaml(home_path.to_owned(), true, true).await?
+                } else {
+                    // we want seed peers, and will not have an identity
+                    init_fullnode_yaml(home_path.to_owned(), true, false).await?
+                };
+
                 println!("config created at {}", p.display());
 
                 ol_progress::OLProgress::complete("fullnode configs initialized");

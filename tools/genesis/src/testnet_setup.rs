@@ -1,6 +1,6 @@
 use crate::{genesis_builder, parse_json, supply::SupplySettings};
 use diem_genesis::config::{HostAndPort, ValidatorConfiguration};
-use libra_config::host;
+use libra_config::validator_config;
 use libra_types::{exports::NamedChain, legacy_types::fixtures::TestPersona};
 use std::{fs, net::Ipv4Addr, path::PathBuf, thread, time};
 
@@ -33,7 +33,7 @@ pub fn setup(
     let my_host: HostAndPort = format_host_str
         .parse()
         .expect("could not parse IP address for host");
-    host::initialize_validator(
+    validator_config::initialize_validator(
         Some(data_path.clone()),
         Some(&me.to_string()),
         my_host,
