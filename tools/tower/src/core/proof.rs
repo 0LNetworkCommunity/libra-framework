@@ -9,6 +9,7 @@ use crate::core::{
 
 use anyhow::Error;
 use indicatif::ProgressBar;
+use libra_query::chain_queries;
 use libra_types::{
     exports::Client, legacy_types::app_cfg::AppCfg, type_extensions::client_ext::ClientExt,
 };
@@ -20,7 +21,7 @@ use libra_types::{
 use std::{
     fs,
     path::{Path, PathBuf},
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 // writes a JSON file with the first vdf proof
@@ -111,7 +112,32 @@ pub async fn mine_and_submit(
         get_next_and_mine(config, &client, local_mode).await?;
         // submits backlog to client
         match backlog::process_backlog(config).await {
-            Ok(()) => println!("Success: Proof committed to chain"),
+            Ok(BacklogResult::Success) => {
+                println!("Success: Proof committed to chain");
+            }
+            Ok(BacklogResult::AboveLimit) => {
+                // Speed demon, you're the very same one
+                // Who said the future's in your hands
+                // The life you save could be your own
+                // You're preachin' 'bout my life like you're the law
+                // Gonna live each day and hour like
+                // For me there's no tomorrow
+                println!(
+                    "Speed demon, let's hang out here until the next epoch. Exit with ctrl+c."
+                );
+
+                // check the current epoch every 5 minutes.
+                // When we get to next epoch
+                let full_epoch = chain_queries::get_epoch(&client).await?;
+                let mut next_epoch = full_epoch;
+                while full_epoch >= next_epoch {
+                    // in case next epoch returns 0
+                    let lets_wait = Duration::from_secs(5 * 60); // 5 mins
+                    std::thread::sleep(lets_wait);
+                    next_epoch = chain_queries::get_epoch(&client).await.unwrap_or(0);
+                    // don't fail on intermittent API
+                }
+            }
             Err(e) => {
                 // don't stop on tx errors
                 println!("ERROR: Failed processing backlog, message: {:?}", e);
@@ -220,6 +246,8 @@ use diem_sdk::crypto::HashValue;
 use diem_temppath::TempPath;
 #[cfg(test)]
 use libra_types::legacy_types::vdf_difficulty::VDFDifficulty;
+
+use super::backlog::BacklogResult;
 
 #[test]
 fn test_mine_once() {
