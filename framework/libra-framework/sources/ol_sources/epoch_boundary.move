@@ -22,7 +22,7 @@ module diem_framework::epoch_boundary {
     use std::vector;
     use std::error;
 
-    // use diem_std::debug::print;
+    use diem_std::debug::print;
 
     friend diem_framework::block;
 
@@ -191,6 +191,10 @@ module diem_framework::epoch_boundary {
 
         // drip coins
         let (s_success, s_amount) = slow_wallet::on_new_epoch(root);
+        print(&33333);
+        print(&s_success);
+        print(&s_amount);
+
         status.slow_wallet_drip_amount = s_amount;
         status.slow_wallet_drip_success = s_success;
 

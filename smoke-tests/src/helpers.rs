@@ -13,7 +13,7 @@ pub async fn get_libra_balance(
     address: AccountAddress,
 ) -> anyhow::Result<SlowWalletBalance> {
     let res = client
-        .view_ext("0x1::slow_wallet::balance", None, Some(address.to_string()))
+        .view_ext("0x1::ol_account::balance", None, Some(address.to_string()))
         .await?;
 
     let move_tuple = serde_json::from_value::<Vec<String>>(res)?;

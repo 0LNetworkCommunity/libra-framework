@@ -416,11 +416,11 @@ module ol_framework::gas_coin {
         index
     }
 
-    #[view]
-    /// helper to get balance in gas coin
-    public fun get_balance(account: address): u64 {
-        coin::balance<LibraCoin>(account)
-    }
+    // #[view]
+    // /// helper to get balance in gas coin
+    // public fun get_balance(account: address): u64 {
+    //     coin::balance<LibraCoin>(account)
+    // }
 
 
     #[test_only]

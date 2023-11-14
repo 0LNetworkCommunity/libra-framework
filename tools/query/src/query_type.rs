@@ -50,7 +50,7 @@ pub enum QueryType {
                 Function identifier has the form <ADDRESS>::<MODULE_ID>::<FUNCTION_NAME>
 
                 Example:
-                0x1::coin::balance
+                0x1::ol_account::balance
             "#}
         )]
         function_id: String,

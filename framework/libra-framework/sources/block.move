@@ -1,7 +1,6 @@
 /// This module defines a struct storing the metadata of the block and new block events.
 module diem_framework::block {
     use std::error;
-    use std::features;
     use std::vector;
     use std::option;
 
@@ -12,7 +11,6 @@ module diem_framework::block {
     use diem_framework::state_storage;
     use diem_framework::system_addresses;
     use diem_framework::timestamp;
-    use diem_framework::transaction_fee;
     // use diem_std::debug::print;
 
     //////// 0L ////////
@@ -141,14 +139,14 @@ module diem_framework::block {
         };
         emit_new_block_event(&vm, &mut block_metadata_ref.new_block_events, new_block_event);
 
-        if (features::collect_and_distribute_gas_fees()) {
-            // Assign the fees collected from the previous block to the previous block proposer.
-            // If for any reason the fees cannot be assigned, this function burns the collected coins.
-            transaction_fee::process_collected_fees();
-            // Set the proposer of this block as the receiver of the fees, so that the fees for this
-            // block are assigned to the right account.
-            transaction_fee::register_proposer_for_fee_collection(proposer);
-        };
+        // if (features::collect_and_distribute_gas_fees()) {
+        //     // Assign the fees collected from the previous block to the previous block proposer.
+        //     // If for any reason the fees cannot be assigned, this function burns the collected coins.
+        //     transaction_fee::process_collected_fees();
+        //     // Set the proposer of this block as the receiver of the fees, so that the fees for this
+        //     // block are assigned to the right account.
+        //     transaction_fee::register_proposer_for_fee_collection(proposer);
+        // };
 
         // Performance scores have to be updated before the epoch transition as the transaction that triggers the
         // transition is the last block in the previous epoch.

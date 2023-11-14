@@ -34,14 +34,15 @@
 /// 7. Third party contracts can wrap the Donor Voice wallet. The outcomes of the votes can be returned to a handler in a third party contract For example, liquidiation of a frozen account is programmable: a handler can be coded to determine the outcome of the Donor Voice wallet. See in CommunityWallets the funds return to the InfrastructureEscrow side-account of the user.
 
 module ol_framework::donor_voice {
-    use diem_framework::system_addresses;
     use std::vector;
     use std::signer;
     use std::error;
     use std::guid;
     use std::fixed_point32;
-    use ol_framework::epoch_helper;
     use std::option::{Self, Option};
+    use diem_framework::system_addresses;
+    use diem_framework::coin;
+    use ol_framework::epoch_helper;
     use ol_framework::ol_account;
     use ol_framework::receipts;
     use ol_framework::multi_action;
@@ -51,6 +52,7 @@ module ol_framework::donor_voice {
     use ol_framework::cumulative_deposits;
     use ol_framework::transaction_fee;
     use ol_framework::match_index;
+
     // use diem_std::debug::print;
 
     friend ol_framework::community_wallet;
@@ -391,9 +393,23 @@ module ol_framework::donor_voice {
 
           // Note the VM can do this without the WithdrawCapability
           expected_amount = expected_amount + t.tx.value;
-          let (amount_transferred, _success) = ol_account::vm_transfer(vm, multisig_address, t.tx.payee, t.tx.value);
-          amount_processed = amount_processed + amount_transferred;
 
+          // if the account is a community wallet, then we assume
+          // the transfers will be locked.
+          let coin_opt = ol_account::vm_withdraw_unlimited(vm, multisig_address,
+          t.tx.value);
+          let amount_transferred = 0;
+          // TBD: transfers from DV which are not CW
+          // There's a circular dependency with CW which
+          // prevents from making a switch case here.
+          if (option::is_some(&coin_opt)) {
+            let c = option::extract(&mut coin_opt);
+            amount_transferred = coin::value(&c);
+            ol_account::vm_deposit_coins_locked(vm, t.tx.payee, c);
+          };
+          option::destroy_none(coin_opt);
+
+          amount_processed = amount_processed + amount_transferred;
 
           // update the records
           vector::push_back(&mut state.paid, t);
@@ -631,19 +647,21 @@ module ol_framework::donor_voice {
           while (k < len) {
               let addr = vector::borrow(&pro_rata_addresses, k);
               let amount = vector::borrow(&pro_rata_amounts, k);
-              if (is_liquidate_to_match_index(multisig_address)) {
-                let coin_opt = ol_account::vm_withdraw_unlimited(vm, multisig_address, *amount);
-                if (option::is_some(&coin_opt)) {
-                  let c = option::extract(&mut coin_opt);
+              // in the case of community wallets where it gets
+              // liquidated to the matching index
+              let coin_opt = ol_account::vm_withdraw_unlimited(vm, multisig_address, *amount);
+              if (option::is_some(&coin_opt)) {
+                let c = option::extract(&mut coin_opt);
 
+                if (is_liquidate_to_match_index(multisig_address)) {
                   match_index::match_and_recycle(vm, &mut c);
                   option::fill(&mut coin_opt, c);
+                } else {
+                  // in the ordinary case, where it goes back to the donors
+                  ol_account::vm_deposit_coins_locked(vm, *addr, c);
                 };
-                option::destroy_none(coin_opt);
-
-              } else {
-                ol_account::vm_transfer(vm, multisig_address, *addr, *amount);
               };
+              option::destroy_none(coin_opt);
               k = k + 1;
           };
         };

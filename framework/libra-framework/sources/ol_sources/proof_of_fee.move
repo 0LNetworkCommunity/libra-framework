@@ -151,7 +151,7 @@ module ol_framework::proof_of_fee {
   public(friend) fun charge_epoch_fees(vm: &signer, auction_winners: vector<address>, price: u64): (u64, u64, bool) {
       let expected_fees = vector::length(&auction_winners) * price;
 
-      let actually_paid = transaction_fee::vm_multi_pay_fee(vm, &auction_winners, price);
+      let actually_paid = transaction_fee::vm_multi_collect(vm, &auction_winners, price);
 
       let fee_success = actually_paid == expected_fees;
       (expected_fees, actually_paid, fee_success)

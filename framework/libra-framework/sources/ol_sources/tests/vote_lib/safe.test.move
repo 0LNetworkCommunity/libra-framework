@@ -7,13 +7,12 @@ module ol_framework::test_safe {
   use std::option;
   use ol_framework::ol_account;
   use diem_framework::resource_account;
-  use ol_framework::gas_coin;
 
   // NOTE: Most of the save.move features are tested in multi_action (e.g. governance). Here we are testing for specific APIs.
 
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, dave = @0x1000d )]
   fun propose_payment_happy(root: &signer, alice: &signer, bob: &signer, dave: &signer, ) {
-    use ol_framework::slow_wallet;
+    use ol_framework::ol_account;
 
     let vals = mock::genesis_n_vals(root, 2);
     mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
@@ -36,13 +35,13 @@ module ol_framework::test_safe {
     // vote should pass after bob also votes
     let passed = safe::vote_payment(bob, new_resource_address, &prop_id);
     assert!(passed, 1);
-    let (_, total_dave) = slow_wallet::balance(@0x1000d);
+    let (_, total_dave) = ol_account::balance(@0x1000d);
     assert!(total_dave == 42, 2);
   }
 
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, eve = @0x1000e)]
   fun propose_payment_should_fail(root: &signer, alice: &signer, bob: &signer, eve: &signer) {
-    use ol_framework::slow_wallet;
+    use ol_framework::ol_account;
 
     let vals = mock::genesis_n_vals(root, 4);
     mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
@@ -66,7 +65,7 @@ module ol_framework::test_safe {
     // vote should pass after bob also votes
     let passed = safe::vote_payment(bob, new_resource_address, &prop_id);
     assert!(!passed, 1);
-    let (_, total_dave) = slow_wallet::balance(@0x1000e);
+    let (_, total_dave) = ol_account::balance(@0x1000e);
     assert!(total_dave == 0, 2);
   }
 
@@ -83,9 +82,9 @@ module ol_framework::test_safe {
 
     // fund the account
     ol_account::transfer(alice, new_resource_address, 1000000);
-    let bal = gas_coin::get_balance(new_resource_address);
+    let (_, bal) = ol_account::balance(new_resource_address);
     mock::trigger_epoch(root);
-    let new_bal = gas_coin::get_balance(new_resource_address);
+    let (_, new_bal) = ol_account::balance(new_resource_address);
     assert!(new_bal < bal, 735701);
   }
 }

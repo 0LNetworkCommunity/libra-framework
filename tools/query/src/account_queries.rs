@@ -13,7 +13,7 @@ pub async fn get_account_balance_libra(
     client: &Client,
     account: AccountAddress,
 ) -> anyhow::Result<SlowWalletBalance> {
-    let slow_balance_id = entry_function_id("slow_wallet", "balance")?;
+    let slow_balance_id = entry_function_id("ol_account", "balance")?;
     let request = ViewRequest {
         function: slow_balance_id,
         type_arguments: vec![],

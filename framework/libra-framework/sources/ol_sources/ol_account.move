@@ -8,6 +8,9 @@ module ol_framework::ol_account {
     use std::signer;
     use std::option::{Self, Option};
     use diem_std::from_bcs;
+    use diem_std::fixed_point32;
+    use diem_std::math64;
+
 
     use ol_framework::gas_coin::{Self, LibraCoin as GasCoin};
     use ol_framework::slow_wallet;
@@ -24,6 +27,7 @@ module ol_framework::ol_account {
     friend ol_framework::safe;
     friend diem_framework::genesis;
     friend diem_framework::resource_account;
+    friend diem_framework::transaction_fee;
 
     /// Account does not exist.
     const EACCOUNT_NOT_FOUND: u64 = 1;
@@ -327,6 +331,23 @@ module ol_framework::ol_account {
       slow_wallet::balance(addr)
     }
 
+    #[view]
+    /// Returns a human readable version of the balance with (integer, decimal_part)
+    public fun balance_human(owner: address): (u64, u64) {
+
+        let (_, unscaled_value) = balance(owner);
+        if (unscaled_value == 0) return (0,0);
+
+        let decimal_places = coin::decimals<GasCoin>();
+        let scaling = math64::pow(10, (decimal_places as u64));
+        let value = fixed_point32::create_from_rational(unscaled_value, scaling);
+        // multply will TRUNCATE.
+        let integer_part = fixed_point32::multiply_u64(1, value);
+
+        let decimal_part = unscaled_value - (integer_part * scaling);
+
+        (integer_part, decimal_part)
+    }
     // on new account creation we need the burn tracker created
     // note return quietly if it's already initialized, so we can use it
     // in the creation and tx flow
@@ -418,6 +439,17 @@ module ol_framework::ol_account {
     BurnTracker {
         assert!(coin::is_account_registered<GasCoin>(to), error::invalid_state(EACCOUNT_NOT_REGISTERED_FOR_GAS));
         slow_wallet::maybe_track_unlocked_deposit(to, coin::value(&coins));
+        coin::deposit<GasCoin>(to, coins);
+        // the incoming coins should trigger an update in tracker
+        maybe_update_burn_tracker_impl(to);
+    }
+
+    /// for validator rewards and community wallet transfers,
+    /// the SlowWallet.unlocked DOES NOT get updated.
+    public fun vm_deposit_coins_locked(vm: &signer, to: address, coins: Coin<GasCoin>) acquires
+    BurnTracker {
+        system_addresses::assert_ol(vm);
+        assert!(coin::is_account_registered<GasCoin>(to), error::invalid_state(EACCOUNT_NOT_REGISTERED_FOR_GAS));
         coin::deposit<GasCoin>(to, coins);
         // the incoming coins should trigger an update in tracker
         maybe_update_burn_tracker_impl(to);

@@ -1,14 +1,15 @@
 
 module ol_framework::rewards {
+  use std::vector;
+  use diem_framework::coin::{Self, Coin};
+  use diem_framework::stake;
   use diem_framework::system_addresses;
   use ol_framework::gas_coin::LibraCoin as GasCoin;
-  use diem_framework::coin::{Self, Coin};
-  use std::vector;
-  use diem_framework::stake;
+  use ol_framework::ol_account;
+
   // use diem_std::debug::print;
 
   friend diem_framework::epoch_boundary;
-  // friend diem_framework::stake;
 
   const REWARD_VALIDATOR: u8 = 1;
   const REWARD_ORACLE: u8 = 2;
@@ -63,7 +64,7 @@ module ol_framework::rewards {
     // if we don't have enough funds, we should exit without abort.
     system_addresses::assert_ol(root);
     let amount = coin::value(&coin);
-    coin::deposit(addr, coin);
+    ol_account::vm_deposit_coins_locked(root, addr, coin);
 
     if (reward_type == REWARD_VALIDATOR) {
       stake::emit_distribute_reward(root, addr, amount);
