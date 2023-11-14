@@ -4,7 +4,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::musical_chairs;
     use ol_framework::proof_of_fee;
     use ol_framework::stake;
-    use ol_framework::gas_coin::LibraCoin as GasCoin;
+    use ol_framework::libra_coin::LibraCoin;
     use ol_framework::rewards;
     use ol_framework::jail;
     // use ol_framework::grade;
@@ -22,7 +22,7 @@ module diem_framework::epoch_boundary {
     use std::vector;
     use std::error;
 
-    use diem_std::debug::print;
+    // use diem_std::debug::print;
 
     friend diem_framework::block;
 
@@ -191,9 +191,6 @@ module diem_framework::epoch_boundary {
 
         // drip coins
         let (s_success, s_amount) = slow_wallet::on_new_epoch(root);
-        print(&33333);
-        print(&s_success);
-        print(&s_amount);
 
         status.slow_wallet_drip_amount = s_amount;
         status.slow_wallet_drip_success = s_success;
@@ -279,7 +276,7 @@ module diem_framework::epoch_boundary {
   /// NOTE: receives from reconfiguration.move a mutable borrow of a coin to pay reward
   /// NOTE: burn remaining fees from transaction fee account happens in reconfiguration.move (it's not a validator_universe concern)
   // Returns (compliant_vals, reward_deposited)
-  fun process_outgoing_validators(root: &signer, reward_budget: &mut Coin<GasCoin>, reward_per: u64, compliant_vals: vector<address>): (vector<address>, u64){
+  fun process_outgoing_validators(root: &signer, reward_budget: &mut Coin<LibraCoin>, reward_per: u64, compliant_vals: vector<address>): (vector<address>, u64){
     system_addresses::assert_ol(root);
     let vals = stake::get_current_validators();
     let reward_deposited = 0;

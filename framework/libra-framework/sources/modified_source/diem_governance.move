@@ -31,12 +31,12 @@ module diem_framework::diem_governance {
     use diem_framework::timestamp;
     use diem_framework::voting;
 
-    use ol_framework::gas_coin::LibraCoin as GasCoin;
+    use ol_framework::libra_coin::LibraCoin;
     // use diem_std::debug::print;
 
 
     #[test_only]
-    use ol_framework::gas_coin;
+    use ol_framework::libra_coin;
 
 
     /// The specified stake pool does not have sufficient stake to create a proposal
@@ -267,7 +267,7 @@ module diem_framework::diem_governance {
         // has voted. This doesn't take into subsequent inflation/deflation (rewards are issued every epoch and gas fees
         // are burnt after every transaction), but inflation/delation is very unlikely to have a major impact on total
         // supply during the voting period.
-        let total_voting_token_supply = coin::supply<GasCoin>(); //////// 0L ////////
+        let total_voting_token_supply = coin::supply<LibraCoin>(); //////// 0L ////////
         let early_resolution_vote_threshold = option::none<u128>();
         if (option::is_some(&total_voting_token_supply)) {
             let total_supply = *option::borrow(&total_voting_token_supply);
@@ -440,7 +440,7 @@ module diem_framework::diem_governance {
         //     stake::get_lockup_secs(stake_pool) >= proposal_expiration,
         //     error::invalid_argument(EINSUFFICIENT_STAKE_LOCKUP),
         // );
-        let voting_power = coin::balance<GasCoin>(voter_address);
+        let voting_power = coin::balance<LibraCoin>(voter_address);
         voting::vote<GovernanceProposal>(
             &governance_proposal::create_empty_proposal(),
             @diem_framework,
@@ -590,7 +590,7 @@ module diem_framework::diem_governance {
     //     core_resources: &signer, signer_address: address): signer acquires GovernanceResponsbility {
     //     system_addresses::assert_core_resource(core_resources);
     //     // Core resources account only has mint capability in tests/testnets.
-    //     assert!(gas_Coin::has_mint_capability(core_resources), error::unauthenticated(EUNAUTHORIZED));
+    //     assert!(libra_coin::has_mint_capability(core_resources), error::unauthenticated(EUNAUTHORIZED));
     //     get_signer(signer_address)
     // }
 
@@ -909,21 +909,21 @@ module diem_framework::diem_governance {
         // let pks = vector[pk_1, pk_2, pk_3];
         // stake::create_validator_set(diem_framework, active_validators, pks);
 
-        let (burn_cap, mint_cap) = gas_coin::initialize_for_test(diem_framework);
-        coin::register<GasCoin>(proposer);
-        coin::register<GasCoin>(yes_voter);
-        coin::register<GasCoin>(no_voter);
+        let (burn_cap, mint_cap) = libra_coin::initialize_for_test(diem_framework);
+        coin::register<LibraCoin>(proposer);
+        coin::register<LibraCoin>(yes_voter);
+        coin::register<LibraCoin>(no_voter);
 
-        gas_coin::test_mint_to(diem_framework, signer::address_of(proposer), 50);
-        gas_coin::test_mint_to(diem_framework, signer::address_of(yes_voter), 10);
-        gas_coin::test_mint_to(diem_framework, signer::address_of(no_voter), 5);
+        libra_coin::test_mint_to(diem_framework, signer::address_of(proposer), 50);
+        libra_coin::test_mint_to(diem_framework, signer::address_of(yes_voter), 10);
+        libra_coin::test_mint_to(diem_framework, signer::address_of(no_voter), 5);
         // // Spread stake among active and pending_inactive because both need to be accounted for when computing voting
         // // power.
         // stake::create_stake_pool(proposer, coin::mint(50, &mint_cap), coin::mint(50, &mint_cap), 10000);
         // stake::create_stake_pool(yes_voter, coin::mint(10, &mint_cap), coin::mint(10, &mint_cap), 10000);
         // stake::create_stake_pool(no_voter, coin::mint(5, &mint_cap), coin::mint(5, &mint_cap), 10000);
-        coin::destroy_mint_cap<GasCoin>(mint_cap);
-        coin::destroy_burn_cap<GasCoin>(burn_cap);
+        coin::destroy_mint_cap<LibraCoin>(mint_cap);
+        coin::destroy_burn_cap<LibraCoin>(burn_cap);
     }
 
     // #[test(diem_framework = @diem_framework)]
