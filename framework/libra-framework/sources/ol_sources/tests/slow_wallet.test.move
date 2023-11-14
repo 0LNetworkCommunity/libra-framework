@@ -131,27 +131,19 @@ module ol_framework::test_slow_wallet {
   }
 
 
-    // #[test(source = @0x1)]
-    // public entry fun test_human_read(
-    //     source: signer,
-    // ) {
-    //     let source_addr = signer::address_of(&source);
-    //     account::create_account_for_test(source_addr);
-    //     let (burn_cap, freeze_cap, mint_cap) = initialize_and_register_fake_money(&source, 8, true);
+    #[test(root = @0x1)]
+    public entry fun test_human_read(
+        root: signer,
+    ) {
+        let _set = mock::genesis_n_vals(&root, 4);
+    mock::ol_initialize_coin_and_fund_vals(&root, 1234567890, false);
 
-    //     let coins_minted = mint<FakeMoney>(1234567890, &mint_cap);
-    //     deposit(source_addr, coins_minted);
-    //     // assert!(balance<FakeMoney>(source_addr) == 100, 0);
 
-    //     let (integer, decimal) = balance_human<FakeMoney>(source_addr);
-    //     assert!(integer == 12, 7357001);
-    //     assert!(decimal == 34567890, 7357002);
+        let (integer, decimal) = ol_account::balance_human(@0x1000a);
 
-    //     move_to(&source, FakeMoneyCapabilities {
-    //         burn_cap,
-    //         freeze_cap,
-    //         mint_cap,
-    //     });
-    // }
+        assert!(integer == 12, 7357001);
+        assert!(decimal == 34567890, 7357002);
+
+    }
 
 }
