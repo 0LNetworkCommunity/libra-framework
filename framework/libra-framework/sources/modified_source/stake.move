@@ -808,9 +808,9 @@ module diem_framework::stake {
     // If the cardinality of validator_set in the next epoch is less than 4,
     // if we are failing to qualify anyone. Pick top 1/2 of outgoing compliant validator set
     // by proposals. They are probably online.
-    public fun check_failover_rules(proposed: vector<address>, performant:
-    vector<address>, seats_offered: u64): vector<address> acquires ValidatorSet {
-
+    public fun check_failover_rules(proposed: vector<address>, seats_offered: u64): vector<address> acquires ValidatorSet,
+   ValidatorConfig, ValidatorPerformance {
+        let healthy_threshold = 9;
         let minimum_seats = 4;
 
         if (seats_offered < minimum_seats) { seats_offered = minimum_seats };
@@ -826,41 +826,54 @@ module diem_framework::stake {
 
         let count_proposed = vector::length(&proposed);
         // did we get at lest 9 qualified validators to join set?
-        let enough_qualified = count_proposed > 9;
+        let enough_qualified = count_proposed > healthy_threshold;
 
-        // do we have 10 or more performant validators (whether or not they
-        // qualified for next epoch)?
-        let sufficient_performance = vector::length(&performant) > 9;
+        // expand the least amount, otherwise we could halt again
+        // with unprepared validtors.
+        let new_target = if (seats_offered > healthy_threshold)
+        healthy_threshold else seats_offered;
+        // // do we have 10 or more performant validators (whether or not they
+        // // qualified for next epoch)?
+        // let sufficient_performance = vector::length(&performant) > 9;
 
-        // happy case, not near failure
+        // Scenario A) Happy Case
+        // not near failure
         if (enough_qualified) {
           return proposed
         } else {
-
+          // Scenario B) Sick Patient
           // always fill seats with proposed/qualified if possible.
           // if not, go to hail mary
-          if count_proposed >= seats_offered { // should not be higher, most
+          if (count_proposed >= new_target) { // should not be higher, most
           // likely equal
             return proposed
-          } else {// hail mary
+          } else {
+          // Scenario C) Defibrillator
+          // we are below threshold, and neither can get to the number
+          // of seats offered. If we don't expand the set, we will likely fail
+          // lets expand the set even with people that did not win the auction
+          // or otherwise qualify, but may have been performant in the last epoch
+
+
             // fill remaining seats with
             // take the most performant validators from previous epoch.
-            let remainder = seats_offered - count_proposed;
-            let ranked = get_sorted_vals_by_net_props(0);
+            let remainder = new_target - count_proposed;
+            let ranked = get_sorted_vals_by_net_props();
             let i = 0;
-            while i < remainder {
+            while (i < remainder) {
               let best_val = vector::borrow(&ranked, i);
-              if (!vector::contains(&proposed, &best_val)) {
-                vector::push_back(best_val)
+              if (!vector::contains(&proposed, best_val)) {
+                vector::push_back(&mut proposed, *best_val)
               };
               i = i + 1;
             }
           }
-        }
+        };
 
+        // Scenario D) Hail Mary
         // if at the end of all this we still don't have 4 validators
         // then just return the same validator set.
-        if vector::length(&proposed) > 3 {
+        if (vector::length(&proposed) > 3) {
           return proposed
         };
         // this is unreachable but as a backstop for dev finge
@@ -868,7 +881,7 @@ module diem_framework::stake {
     }
 
     /// Bubble sort the validators by their proposal counts.
-    public fun get_sorted_vals_by_net_props(_n: u64): vector<address> acquires ValidatorSet, ValidatorConfig, ValidatorPerformance {
+    public fun get_sorted_vals_by_net_props(): vector<address> acquires ValidatorSet, ValidatorConfig, ValidatorPerformance {
       let eligible_validators = get_current_validators();
       let length = vector::length<address>(&eligible_validators);
 
