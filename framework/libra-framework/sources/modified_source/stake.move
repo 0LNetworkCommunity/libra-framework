@@ -805,9 +805,28 @@ module diem_framework::stake {
     }
 
     //////// Failover Rules ////////
-    // If the cardinality of validator_set in the next epoch is less than 4,
-    // if we are failing to qualify anyone. Pick top 1/2 of outgoing compliant validator set
-    // by proposals. They are probably online.
+    // If the cardinality of proposed validators set (as chosen by Musical
+    // Chairs and Proof of Fee) in the upcoming is less than a
+    // healthy threshold (9) we should proactively increase the validator set.
+    // The best and the worse case are fairly straightforward to address.
+    // A) The Happy Case. simply returns the proposed set, since it is above
+    // the healthy threshold.
+    // B) Sick Patient. The proposed qualifying set is below the threshold (9).
+    // We should expand the set. IF the algorithm prior is returning a
+    // list of the size (or, unlikely, larger) than the Musical Chairs choice,
+    // use all of the proposed validtors.
+    // C) Defibrillator. The proposed qualifying set is both below healthy, and
+    // belowr what MusicalChairs thought was appropriate. We should expand the
+    // set conservatively since adding any validator who did not qualify or win
+    // the auction can be in an unknown state (most likely unresponsive, rather
+    // than malicious). Arguably adding unreponsive nodes is better than adding
+    // none at this stage. But we can minimize those chances by taking the
+    // highest performing validators (by net approved proposals), and filling it
+    // only as much as needed to either get to the MusicalChairs number or healthy threshold.
+    // After both of the attempts (B, C) above, in the case of certain death,
+    // where the proposed set is still less than 4 (D: Hail Mary), we should
+    // not change the validator set.
+
     public fun check_failover_rules(proposed: vector<address>, seats_offered: u64): vector<address> acquires ValidatorSet,
    ValidatorConfig, ValidatorPerformance {
         let healthy_threshold = 9;
@@ -840,7 +859,8 @@ module diem_framework::stake {
         // not near failure
         if (enough_qualified) {
           return proposed
-        } else {
+        } else if (new_target >= 4) {
+          // we won't dig out of the hole if we target less than 4
           // Scenario B) Sick Patient
           // always fill seats with proposed/qualified if possible.
           // if not, go to hail mary
