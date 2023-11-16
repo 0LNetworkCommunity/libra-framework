@@ -808,11 +808,15 @@ module diem_framework::stake {
     // If the cardinality of validator_set in the next epoch is less than 4,
     // if we are failing to qualify anyone. Pick top 1/2 of outgoing compliant validator set
     // by proposals. They are probably online.
-    public fun check_failover_rules(proposed: vector<address>, performant: vector<address>): vector<address> acquires ValidatorSet {
+    public fun check_failover_rules(proposed: vector<address>, performant:
+    vector<address>, seats_offered: u64): vector<address> acquires ValidatorSet {
 
-        let min_f = 3;
+        let minimum_seats = 4;
+
+        if (seats_offered < minimum_seats) { seats_offered = minimum_seats };
+        // let min_f = 3;
         let current_vals = get_current_validators();
-        // check if this is not test. Failover doesn't apply here
+        // check if this is not test. Failover only when there are no validators proposed
         if (testnet::is_testnet()) {
           if (vector::length(&proposed) == 0) {
             return current_vals
@@ -820,47 +824,51 @@ module diem_framework::stake {
           return proposed
         };
 
-        let is_performant_below_f_4 = vector::length(&performant) <= ( 2 * (min_f+1) + 1);
+        let count_proposed = vector::length(&proposed);
+        // did we get at lest 9 qualified validators to join set?
+        let enough_qualified = count_proposed > 9;
 
-        let is_proposed_below_f_3 = vector::length(&proposed) <= ( 2 * min_f + 1);
-
-        // hail mary.
-        // there may be something wrong with performance metrics or evaluation
-        // do nothing
-        if (is_proposed_below_f_3 && is_performant_below_f_4) {
-          return current_vals
-        };
+        // do we have 10 or more performant validators (whether or not they
+        // qualified for next epoch)?
+        let sufficient_performance = vector::length(&performant) > 9;
 
         // happy case, not near failure
-        if (!is_proposed_below_f_3 && !is_performant_below_f_4) return proposed;
-        // the proposed validators per the algo is to low.
-        // and the performant validators from previous epoch are at a healthy
-        // number, just failover to the performant validators
-        if (is_proposed_below_f_3 && !is_performant_below_f_4) {
-          return performant
-        };
+        if (enough_qualified) {
+          return proposed
+        } else {
 
-        // The proposed number of validators is not near failure
-        // but the previous epoch's performing nodes is below healthy
-        // pick whichever one has the most number
-        if (!is_proposed_below_f_3 && is_performant_below_f_4) {
-          if (vector::length(&performant) > vector::length(&proposed)) {
-            return performant
-          };
-          // vector::for_each(performant, |v| {
-          //   if (!vector::contains(&proposed, &v)) {
-          //     vector::push_back(&mut proposed, v);
-          //   }
-          // });
+          // always fill seats with proposed/qualified if possible.
+          // if not, go to hail mary
+          if count_proposed >= seats_offered { // should not be higher, most
+          // likely equal
+            return proposed
+          } else {// hail mary
+            // fill remaining seats with
+            // take the most performant validators from previous epoch.
+            let remainder = seats_offered - count_proposed;
+            let ranked = get_sorted_vals_by_net_props(0);
+            let i = 0;
+            while i < remainder {
+              let best_val = vector::borrow(&ranked, i);
+              if (!vector::contains(&proposed, &best_val)) {
+                vector::push_back(best_val)
+              };
+              i = i + 1;
+            }
+          }
+        }
+
+        // if at the end of all this we still don't have 4 validators
+        // then just return the same validator set.
+        if vector::length(&proposed) > 3 {
           return proposed
         };
-
-        // this is unreachable but as a backstop for dev fingers
+        // this is unreachable but as a backstop for dev finge
         current_vals
     }
 
     /// Bubble sort the validators by their proposal counts.
-    public fun get_sorted_vals_by_props(n: u64): vector<address> acquires ValidatorSet, ValidatorConfig, ValidatorPerformance {
+    public fun get_sorted_vals_by_net_props(_n: u64): vector<address> acquires ValidatorSet, ValidatorConfig, ValidatorPerformance {
       let eligible_validators = get_current_validators();
       let length = vector::length<address>(&eligible_validators);
 
@@ -914,15 +922,15 @@ module diem_framework::stake {
       // Reverse to have sorted order - high to low.
       vector::reverse<address>(&mut filtered_vals);
 
-      // Return the top n validators
-      let final = vector::empty<address>();
-      let m = 0;
-      while ( m < n) {
-         vector::push_back(&mut final, *vector::borrow(&filtered_vals, m));
-         m = m + 1;
-      };
+      // // Return the top n validators
+      // let final = vector::empty<address>();
+      // let m = 0;
+      // while ( m < n) {
+      //    vector::push_back(&mut final, *vector::borrow(&filtered_vals, m));
+      //    m = m + 1;
+      // };
 
-      return final
+      return filtered_vals
 
     }
 
