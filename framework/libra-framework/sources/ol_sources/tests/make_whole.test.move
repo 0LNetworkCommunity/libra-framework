@@ -6,7 +6,7 @@ module ol_framework::test_make_whole {
 
   use ol_framework::libra_coin;
   use ol_framework::ol_account;
-  // use ol_framework::match_index;
+  use diem_framework::reconfiguration;
   // use ol_framework::burn;
   // use ol_framework::receipts;
   // use ol_framework::community_wallet;
@@ -30,8 +30,8 @@ module ol_framework::test_make_whole {
     mock::ol_initialize_coin_and_fund_vals(root, 10000, true);
     let supply_pre = libra_coin::supply();
 
-    let alice_burn = 5;
-    let coin = ol_account::withdraw(alice, alice_burn);
+    let alice_oops_amount = 5;
+    let coin = ol_account::withdraw(alice, alice_oops_amount);
 
     make_whole::init_incident<TestOops>(alice, coin, false);
 
@@ -46,8 +46,8 @@ module ol_framework::test_make_whole {
     mock::ol_initialize_coin_and_fund_vals(root, 10000, true);
     let supply_pre = libra_coin::supply();
 
-    let alice_burn = 555;
-    let coin = ol_account::withdraw(alice, alice_burn);
+    let alice_oops_amount = 555;
+    let coin = ol_account::withdraw(alice, alice_oops_amount);
 
     make_whole::init_incident<TestOops>(alice, coin, false);
     make_whole::create_each_user_credit<TestOops>(alice, @0x1000b, 55);
@@ -63,8 +63,8 @@ module ol_framework::test_make_whole {
     let supply_pre = libra_coin::supply();
     let (_, bob_balance_pre) = ol_account::balance(@0x1000b);
 
-    let alice_burn = 555;
-    let coin = ol_account::withdraw(alice, alice_burn);
+    let alice_oops_amount = 555;
+    let coin = ol_account::withdraw(alice, alice_oops_amount);
 
     make_whole::init_incident<TestOops>(alice, coin, false);
     make_whole::create_each_user_credit<TestOops>(alice, @0x1000b, 55);
@@ -88,8 +88,8 @@ module ol_framework::test_make_whole {
     let supply_pre = libra_coin::supply();
     // let (_, bob_balance_pre) = ol_account::balance(@0x1000b);
 
-    let alice_burn = 555;
-    let coin = ol_account::withdraw(alice, alice_burn);
+    let alice_oops_amount = 555;
+    let coin = ol_account::withdraw(alice, alice_oops_amount);
 
     make_whole::init_incident<TestOops>(alice, coin, false);
     make_whole::create_each_user_credit<TestOops>(alice, @0x1000b, 55);
@@ -109,8 +109,8 @@ module ol_framework::test_make_whole {
     let supply_pre = libra_coin::supply();
     let (_, bob_balance_pre) = ol_account::balance(@0x1000b);
 
-    let alice_burn = 555;
-    let coin = ol_account::withdraw(alice, alice_burn);
+    let alice_oops_amount = 555;
+    let coin = ol_account::withdraw(alice, alice_oops_amount);
 
     make_whole::init_incident<TestOops>(alice, coin, false);
     make_whole::create_each_user_credit<TestOops>(alice, @0x1000b, 55);
@@ -126,5 +126,57 @@ module ol_framework::test_make_whole {
     assert!(supply == supply_pre, 7357002);
   }
 
+
+  #[test(root = @ol_framework, alice = @0x1000a)]
+  fun test_expires_with_burn(root: &signer, alice: &signer) {
+    mock::genesis_n_vals(root, 2);
+    mock::ol_initialize_coin_and_fund_vals(root, 10000, true);
+    let supply_pre = libra_coin::supply();
+
+    let alice_oops_amount = 555;
+    let coin = ol_account::withdraw(alice, alice_oops_amount);
+
+    let will_burn = true;
+    make_whole::init_incident<TestOops>(alice, coin, will_burn);
+    make_whole::create_each_user_credit<TestOops>(alice, @0x1000b, 55);
+
+    reconfiguration::test_helper_increment_epoch_dont_reconfigure(100);
+
+    make_whole::lazy_expire<TestOops>(@0x1000a);
+
+    let supply = libra_coin::supply();
+    assert!(supply != supply_pre, 7357002);
+  }
+
+
+  #[test(root = @ol_framework, alice = @0x1000a)]
+  fun test_expires_returns_to_sponsor(root: &signer, alice: &signer) {
+    mock::genesis_n_vals(root, 2);
+    mock::ol_initialize_coin_and_fund_vals(root, 10000, true);
+    let supply_pre = libra_coin::supply();
+    let (_, alice_pre_balance) = ol_account::balance(@0x1000a);
+
+    let alice_oops_amount = 555;
+    let coin = ol_account::withdraw(alice, alice_oops_amount);
+
+    let will_burn = false;
+    make_whole::init_incident<TestOops>(alice, coin, will_burn);
+    make_whole::create_each_user_credit<TestOops>(alice, @0x1000b, 55);
+
+    let (_, alice_during_balance) = ol_account::balance(@0x1000a);
+
+    assert!(alice_during_balance < alice_pre_balance, 7357001);
+
+    reconfiguration::test_helper_increment_epoch_dont_reconfigure(100);
+
+    make_whole::lazy_expire<TestOops>(@0x1000a);
+
+    let supply = libra_coin::supply();
+    assert!(supply == supply_pre, 7357002);
+
+    let (_, alice_post_balance) = ol_account::balance(@0x1000a);
+
+    assert!(alice_post_balance == alice_pre_balance, 7357003);
+  }
 
 }
