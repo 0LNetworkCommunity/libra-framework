@@ -20,6 +20,7 @@ module ol_framework::test_make_whole {
 
   // use diem_std::debug::print;
 
+  struct TestOops has key {}
   #[test(root = @ol_framework, alice = @0x1000a)]
   fun test_incident_init(root: &signer, alice: &signer) {
     mock::genesis_n_vals(root, 1);
@@ -29,9 +30,7 @@ module ol_framework::test_make_whole {
     let alice_burn = 5;
     let coin = ol_account::withdraw(alice, alice_burn);
 
-    let i = make_whole::ctr_incident_type(alice, b"is it too late to say sorry?");
-
-    make_whole::init_incident<i>(alice, coin, false);
+    make_whole::init_incident<TestOops>(alice, coin, false);
 
     let supply = libra_coin::supply();
     assert!(supply == supply_pre, 7357001);

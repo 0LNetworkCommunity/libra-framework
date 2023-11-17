@@ -25,15 +25,7 @@ module ol_framework::make_whole {
   /// Dude what's up with that? you already claimed this one
   const EALREADY_CLAIMED: u64 = 2;
 
-  struct Incident has key {
-    // name of the event that needs to be remedied
-    // TODO: use string
-    incident_name: vector<u8>,
-    // sponsor:
-    sponsor: address,
-  }
-
-  struct MakeWhole<phantom Incident> has key {
+  struct MakeWhole<phantom IncidentId> has key {
      // holds loose coins in escrow
     escrow: Coin<LibraCoin>,
     // when the escrow finishes, coins burned
