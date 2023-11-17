@@ -39,14 +39,11 @@ module ol_framework::test_stake {
 
   }
 
-  // Scenario: in production mode, we can't have fewer than 4 validators.
-  // when that happens, the first failover is to get the validators with the most successful proposals.
-  // we start with 10 validators.
-  // we assume only 3 are performant. That's under the threshold of 4.
-  // we expect the failover to get 10/2 = 5 validators, sorted by performance.
+  // Scenario: in production mode, we can't have fewer than 4 validators,
+  // and we also want to target a minimum of 9 validators
+  // within these ranges we have different rules to recover.
   #[test(root = @ol_framework)]
-  fun minimum_four_failover(root: signer) {
-
+  fun failover_scenarios(root: signer) {
     let set = mock::genesis_n_vals(&root, 10);
     testnet::unset(&root); // set to production mode
 
@@ -56,17 +53,69 @@ module ol_framework::test_stake {
     let vals = stake::get_current_validators();
     assert!(vector::length(&vals) == 10, 1001);
 
-    let all_vals = mock::personas();
-
-    let new_list = vector::empty<address>();
-    let i = 0;
-    while (i < 4) {
-      vector::push_back(&mut new_list, *vector::borrow(&all_vals, i));
-      i = i + 1;
-    };
-
-    let cfg_list = stake::check_failover_rules(new_list, vector::empty());
+    // A) Happy cases:
+    // we are proposing more than the minimum (9) for failover rules
+    // first case:
+    // there are more seats (11) offered than qualified validators (10)
+    // should return 10
+    let proposed = vals;
+    let cfg_list = stake::check_failover_rules(proposed, 11);
     assert!(vector::length(&cfg_list) == 10, 1003);
+    // second case:
+    // number of seats has no effect, as long as proposed in above mininum for
+    // happy case(9).
+    let cfg_list = stake::check_failover_rules(proposed, 2);
+    assert!(vector::length(&cfg_list) == 10, 1003);
+
+    // B) Sick Patient cases (less than 9 total proposed)
+    vector::pop_back(&mut proposed);
+    vector::pop_back(&mut proposed);
+    vector::pop_back(&mut proposed);
+    assert!(vector::length(&proposed) == 7, 1004);
+
+    // First case: We qualified fewer vals (7) than our theshhold (10). The
+    // number of seats (7) is same as qualifying (the typical case)
+    let cfg_list = stake::check_failover_rules(proposed, 7);
+    assert!(vector::length(&cfg_list) == 7, 1004);
+
+    // Second case: we have more qualified vals (7) than we intended to seat (6)
+    // but it's all below our minimum (9). Take everyone that qualified.
+    // This case is likely a bug
+    let cfg_list = stake::check_failover_rules(proposed, 6);
+    assert!(vector::length(&cfg_list) == 7, 1004);
+
+    // C) Defibrillator
+    // First case: we are not qualifying enough validators to stay alive
+    // let's check we can get at least up to the number of seats offered
+    let cfg_list = stake::check_failover_rules(proposed, 8);
+    assert!(vector::length(&cfg_list) == 8, 1004);
+
+    // Second case : we are not qualifying enough validators to stay alive
+    // but the seats proposed is unrealistic. Let's just get back to a healthy
+    let cfg_list = stake::check_failover_rules(proposed, 50);
+    assert!(vector::length(&cfg_list) == 9, 1004);
+
+    // even an empty list, but with seats to fill will work
+    let cfg_list = stake::check_failover_rules(vector::empty(), 8);
+    assert!(vector::length(&cfg_list) == 8, 1004);
+
+    // If we are below threshold, we will only grow the set the minimum to stay
+    // health (9), even if musical chairs picked more (12). (Though this case should
+    // never happen)
+    let cfg_list = stake::check_failover_rules(vector::empty(), 12);
+    assert!(vector::length(&cfg_list) == 9, 1004);
+
+    // D) Hail Mary. If nothing we've done gets us above 4 proposed validators,
+    // then don't change anything.
+    let cfg_list = stake::check_failover_rules(vector::empty(), 0);
+    assert!(vector::length(&cfg_list) == 4, 1004);
+
+    // Other corner cases
+    // musical chairs fails, but we have a list of qualifying validators
+    // above threshold
+    let cfg_list = stake::check_failover_rules(vals, 2);
+    assert!(vector::length(&cfg_list) == 10, 1004);
+
 
   }
 
@@ -92,11 +141,15 @@ module ol_framework::test_stake {
       i = i + 1;
     };
 
-    let cfg_list = stake::get_sorted_vals_by_props(3);
+    let cfg_list = stake::get_sorted_vals_by_net_props();
 
-    assert!(vector::length(&cfg_list) == 3, 1002);
-    assert!(vector::contains(&cfg_list, &@0x10011), 1003); // take the last persona
-    assert!(!vector::contains(&cfg_list, &@0x1000a), 1004); // alice should not be here.
+    // assert!(vector::length(&cfg_list) == 3, 1002);
+    let (_, idx_best) = vector::index_of(&cfg_list, &@0x10011);
+    let (_, idx_alice) = vector::index_of(&cfg_list, &@0x1000a);
+
+
+    assert!(idx_best < idx_alice, 1002); // alice has lower performance, should
+    // come later in the list
   }
 
 

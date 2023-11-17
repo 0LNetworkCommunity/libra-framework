@@ -805,14 +805,37 @@ module diem_framework::stake {
     }
 
     //////// Failover Rules ////////
-    // If the cardinality of validator_set in the next epoch is less than 4,
-    // if we are failing to qualify anyone. Pick top 1/2 of outgoing compliant validator set
-    // by proposals. They are probably online.
-    public fun check_failover_rules(proposed: vector<address>, performant: vector<address>): vector<address> acquires ValidatorSet {
+    // If the cardinality of proposed validators set (as chosen by Musical
+    // Chairs and Proof of Fee) in the upcoming is less than a
+    // healthy threshold (9) we should proactively increase the validator set.
+    // The best and the worse case are fairly straightforward to address.
+    // A) The Happy Case. simply returns the proposed set, since it is above
+    // the healthy threshold.
+    // B) Sick Patient. The proposed qualifying set is below the threshold (9).
+    // We should expand the set. IF the algorithm prior is returning a
+    // list of the size (or, unlikely, larger) than the Musical Chairs choice,
+    // use all of the proposed validtors.
+    // C) Defibrillator. The proposed qualifying set is both below healthy, and
+    // belowr what MusicalChairs thought was appropriate. We should expand the
+    // set conservatively since adding any validator who did not qualify or win
+    // the auction can be in an unknown state (most likely unresponsive, rather
+    // than malicious). Arguably adding unreponsive nodes is better than adding
+    // none at this stage. But we can minimize those chances by taking the
+    // highest performing validators (by net approved proposals), and filling it
+    // only as much as needed to either get to the MusicalChairs number or healthy threshold.
+    // After both of the attempts (B, C) above, in the case of certain death,
+    // where the proposed set is still less than 4 (D: Hail Mary), we should
+    // not change the validator set.
 
-        let min_f = 3;
+    public fun check_failover_rules(proposed: vector<address>, seats_offered: u64): vector<address> acquires ValidatorSet,
+   ValidatorConfig, ValidatorPerformance {
+        let healthy_threshold = 9;
+        let minimum_seats = 4;
+
+        if (seats_offered < minimum_seats) { seats_offered = minimum_seats };
+        // let min_f = 3;
         let current_vals = get_current_validators();
-        // check if this is not test. Failover doesn't apply here
+        // check if this is not test. Failover only when there are no validators proposed
         if (testnet::is_testnet()) {
           if (vector::length(&proposed) == 0) {
             return current_vals
@@ -820,47 +843,65 @@ module diem_framework::stake {
           return proposed
         };
 
-        let is_performant_below_f_4 = vector::length(&performant) <= ( 2 * (min_f+1) + 1);
+        let count_proposed = vector::length(&proposed);
+        // did we get at lest 9 qualified validators to join set?
+        let enough_qualified = count_proposed > healthy_threshold;
 
-        let is_proposed_below_f_3 = vector::length(&proposed) <= ( 2 * min_f + 1);
+        // expand the least amount, otherwise we could halt again
+        // with unprepared validtors.
+        let new_target = if (seats_offered > healthy_threshold)
+        healthy_threshold else seats_offered;
+        // // do we have 10 or more performant validators (whether or not they
+        // // qualified for next epoch)?
+        // let sufficient_performance = vector::length(&performant) > 9;
 
-        // hail mary.
-        // there may be something wrong with performance metrics or evaluation
-        // do nothing
-        if (is_proposed_below_f_3 && is_performant_below_f_4) {
-          return current_vals
+        // Scenario A) Happy Case
+        // not near failure
+        if (enough_qualified) {
+          return proposed
+        } else if (new_target >= 4) {
+          // we won't dig out of the hole if we target less than 4
+          // Scenario B) Sick Patient
+          // always fill seats with proposed/qualified if possible.
+          // if not, go to hail mary
+          if (count_proposed >= new_target) { // should not be higher, most
+          // likely equal
+            return proposed
+          } else {
+          // Scenario C) Defibrillator
+          // we are below threshold, and neither can get to the number
+          // of seats offered. If we don't expand the set, we will likely fail
+          // lets expand the set even with people that did not win the auction
+          // or otherwise qualify, but may have been performant in the last epoch
+
+
+            // fill remaining seats with
+            // take the most performant validators from previous epoch.
+            let remainder = new_target - count_proposed;
+            let ranked = get_sorted_vals_by_net_props();
+            let i = 0;
+            while (i < remainder) {
+              let best_val = vector::borrow(&ranked, i);
+              if (!vector::contains(&proposed, best_val)) {
+                vector::push_back(&mut proposed, *best_val)
+              };
+              i = i + 1;
+            }
+          }
         };
 
-        // happy case, not near failure
-        if (!is_proposed_below_f_3 && !is_performant_below_f_4) return proposed;
-        // the proposed validators per the algo is to low.
-        // and the performant validators from previous epoch are at a healthy
-        // number, just failover to the performant validators
-        if (is_proposed_below_f_3 && !is_performant_below_f_4) {
-          return performant
-        };
-
-        // The proposed number of validators is not near failure
-        // but the previous epoch's performing nodes is below healthy
-        // pick whichever one has the most number
-        if (!is_proposed_below_f_3 && is_performant_below_f_4) {
-          if (vector::length(&performant) > vector::length(&proposed)) {
-            return performant
-          };
-          // vector::for_each(performant, |v| {
-          //   if (!vector::contains(&proposed, &v)) {
-          //     vector::push_back(&mut proposed, v);
-          //   }
-          // });
+        // Scenario D) Hail Mary
+        // if at the end of all this we still don't have 4 validators
+        // then just return the same validator set.
+        if (vector::length(&proposed) > 3) {
           return proposed
         };
-
-        // this is unreachable but as a backstop for dev fingers
+        // this is unreachable but as a backstop for dev finge
         current_vals
     }
 
     /// Bubble sort the validators by their proposal counts.
-    public fun get_sorted_vals_by_props(n: u64): vector<address> acquires ValidatorSet, ValidatorConfig, ValidatorPerformance {
+    public fun get_sorted_vals_by_net_props(): vector<address> acquires ValidatorSet, ValidatorConfig, ValidatorPerformance {
       let eligible_validators = get_current_validators();
       let length = vector::length<address>(&eligible_validators);
 
@@ -914,15 +955,15 @@ module diem_framework::stake {
       // Reverse to have sorted order - high to low.
       vector::reverse<address>(&mut filtered_vals);
 
-      // Return the top n validators
-      let final = vector::empty<address>();
-      let m = 0;
-      while ( m < n) {
-         vector::push_back(&mut final, *vector::borrow(&filtered_vals, m));
-         m = m + 1;
-      };
+      // // Return the top n validators
+      // let final = vector::empty<address>();
+      // let m = 0;
+      // while ( m < n) {
+      //    vector::push_back(&mut final, *vector::borrow(&filtered_vals, m));
+      //    m = m + 1;
+      // };
 
-      return final
+      return filtered_vals
 
     }
 
