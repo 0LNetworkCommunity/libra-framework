@@ -27,8 +27,9 @@ use libra_types::{legacy_types::legacy_recovery::LegacyRecovery, ol_progress::OL
 
 use crate::{
     genesis_functions::{
-        genesis_migrate_community_wallet, genesis_migrate_cumu_deposits, rounding_mint,
-        set_final_supply, set_validator_baseline_reward,
+        create_make_whole_incident, genesis_migrate_community_wallet,
+        genesis_migrate_cumu_deposits, rounding_mint, set_final_supply,
+        set_validator_baseline_reward,
     },
     supply::{populate_supply_stats_from_legacy, SupplySettings},
 };
@@ -161,6 +162,9 @@ pub fn encode_genesis_change_set(
             // migration for CW
             genesis_migrate_cumu_deposits(&mut session, r, supply.split_factor)
                 .expect("could not migrate cumu deposits of cw");
+
+            create_make_whole_incident(&mut session, r, supply.make_whole as u64)
+                .expect("could not create make whole credits");
         }
     }
     OLProgress::complete("user migration complete");

@@ -118,6 +118,7 @@ module ol_framework::genesis_migration {
 
   struct MinerMathError has key {}
 
+  /// initializes the Miner Math Error incident make-whole
   fun init_make_whole(vm: &signer, make_whole_budget: u64) {
     system_addresses::assert_ol(vm);
     // withdraw from infraescrow
@@ -131,6 +132,7 @@ module ol_framework::genesis_migration {
 
   }
 
+  /// creates an individual claim for a user
   fun vm_create_credit_user(vm: &signer, user: address, value: u64) {
     system_addresses::assert_ol(vm);
 

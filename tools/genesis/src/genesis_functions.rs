@@ -497,3 +497,55 @@ pub fn set_validator_baseline_reward(session: &mut SessionExt, nominal_reward: u
         serialized_values,
     );
 }
+
+pub fn create_make_whole_incident(
+    session: &mut SessionExt,
+    user_recovery: &[LegacyRecovery],
+    make_whole_budget: u64,
+) -> anyhow::Result<()> {
+    let serialized_values = serialize_values(&vec![
+        MoveValue::Signer(AccountAddress::ZERO), // must be called by 0x0
+        MoveValue::U64(make_whole_budget),
+    ]);
+
+    exec_function(
+        session,
+        "genesis_migration",
+        "init_make_whole",
+        vec![],
+        serialized_values,
+    );
+
+    user_recovery
+        .iter()
+        .progress_with_style(OLProgress::bar())
+        .for_each(|a| {
+            if let Some(mk) = &a.make_whole {
+                create_make_whole_each_user_credit(
+                    session,
+                    a.account
+                        .expect("could not find accout")
+                        .try_into()
+                        .unwrap(),
+                    mk.credits.iter().fold(0, |sum, i| i.coins.value + sum),
+                )
+            }
+        });
+    Ok(())
+}
+
+fn create_make_whole_each_user_credit(session: &mut SessionExt, user: AccountAddress, value: u64) {
+    let serialized_values = serialize_values(&vec![
+        MoveValue::Signer(AccountAddress::ZERO), // must be called by 0x0
+        MoveValue::Address(user),
+        MoveValue::U64(value),
+    ]);
+
+    exec_function(
+        session,
+        "genesis_migration",
+        "vm_create_credit_user",
+        vec![],
+        serialized_values,
+    );
+}
