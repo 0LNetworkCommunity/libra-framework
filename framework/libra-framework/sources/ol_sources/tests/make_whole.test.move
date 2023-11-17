@@ -3,26 +3,13 @@
 module ol_framework::test_make_whole {
   use ol_framework::mock;
   use ol_framework::make_whole;
-
   use ol_framework::libra_coin;
   use ol_framework::ol_account;
   use diem_framework::reconfiguration;
-  // use ol_framework::burn;
-  // use ol_framework::receipts;
-  // use ol_framework::community_wallet;
-  // use ol_framework::transaction_fee;
-  // use ol_framework::fee_maker;
-  // use diem_framework::coin;
-  // use std::signer;
-  // use std::vector;
-  // use std::option;
-  // use std::fixed_point32;
-
   // use diem_std::debug::print;
 
   // just a unique identifier for the MakeWhole
   struct TestOops has key {}
-
 
   #[test(root = @ol_framework, alice = @0x1000a)]
   fun test_incident_init(root: &signer, alice: &signer) {
