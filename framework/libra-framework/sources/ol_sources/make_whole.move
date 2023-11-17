@@ -1,4 +1,5 @@
-// Oop someone made a mistake.
+// Make Whole
+// Oops someone made a mistake.
 // when there's a mistake made by code, or otherwise
 // someone can sponsor the fix
 // with make whole.
@@ -17,6 +18,10 @@ module ol_framework::make_whole {
 
   /// This incident budget already exists
   const EINCIDENT_BUDGET_EXISTS: u64 = 0;
+  /// hey bro, I don't owe you nothing
+  const EU_NO_OWED: u64 = 1;
+  /// Dude what's up with that? you already claimed this one
+  const EALREADY_CLAIMED: u64 = 2;
 
   struct Incident has key {
     // name of the event that needs to be remedied
@@ -43,8 +48,11 @@ module ol_framework::make_whole {
 
   }
 
+  /// a sponsor can initiate an incident
+  ///
   public fun init_incident<T: key>(sponsor: &signer, coins: Coin<LibraCoin>,
   burn_unclaimed: bool) {
+    // Don't let your mouth write no check that your tail can't cash.
     let sponsor_addr = signer::address_of(sponsor);
     assert!(!exists<MakeWhole<T>>(sponsor_addr), EINCIDENT_BUDGET_EXISTS);
     move_to<MakeWhole<T>>(sponsor, MakeWhole{
@@ -67,6 +75,23 @@ module ol_framework::make_whole {
     table::upsert(&mut state.unclaimed, user, value);
   }
 
+  /// user claims credit
+  public fun claim_credit<T>(user_sig: &signer, sponsor: address)
+  acquires MakeWhole {
+    let user_addr = signer::address_of(user_sig);
+
+    let state = borrow_global_mut<MakeWhole<T>>(sponsor);
+    assert!(table::contains(&state.unclaimed, user_addr), EU_NO_OWED);
+    assert!(!table::contains(&state.claimed, user_addr), EALREADY_CLAIMED);
+
+    let value = table::remove(&mut state.unclaimed, user_addr);
+    let owed_coins = coin::extract(&mut state.escrow, value);
+
+    ol_account::deposit_coins(user_addr, owed_coins);
+
+    table::upsert(&mut state.claimed, user_addr, value);
+  }
+
   /// anyone can call the method after expiry and the coins will be burned.
   public fun lazy_expire<T>(sponsor_addr: address) acquires MakeWhole {
     // funds go back to sponsor or burned
@@ -76,6 +101,7 @@ module ol_framework::make_whole {
 
       if (state.burn_unclaimed) {
         burn::burn_and_track(unused_coins);
+        // Some debts are fun when you are acquiring them, but none are fun when you set about retiring them
       }
       else {
         ol_account::deposit_coins(sponsor_addr, unused_coins);
