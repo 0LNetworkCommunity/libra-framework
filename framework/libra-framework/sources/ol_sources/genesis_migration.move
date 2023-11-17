@@ -124,12 +124,15 @@ module ol_framework::genesis_migration {
     // withdraw from infraescrow
     let opt = pledge_accounts::withdraw_from_all_pledge_accounts(vm,
     make_whole_budget);
-    let coin = option::extract(&mut opt);
-    option::destroy_none(opt);
+    if (option::is_some(&opt)) { // only in testing cases is it none
+      let coin = option::extract(&mut opt);
+      option::destroy_none(opt);
 
-    let burns_unclaimed = true;
-    make_whole::init_incident<MinerMathError>(vm, coin, burns_unclaimed);
-
+      let burns_unclaimed = true;
+      make_whole::init_incident<MinerMathError>(vm, coin, burns_unclaimed);
+    } else {
+      option::destroy_none(opt);
+    }
   }
 
   /// creates an individual claim for a user
