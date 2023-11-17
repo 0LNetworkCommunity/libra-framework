@@ -92,7 +92,7 @@ fn inc_supply(
             if !e.claimed {
                 return sum + e.coins.value;
             }
-            return sum;
+            sum
         }) as f64;
 
         acc.total += user_credits;
