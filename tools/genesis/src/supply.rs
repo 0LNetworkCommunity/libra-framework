@@ -88,15 +88,15 @@ fn inc_supply(
 
     // get loose coins in make_whole
     if let Some(mk) = &r.make_whole {
-      let user_credits = mk.credits.iter().fold(0, |sum, e| {
-        if (!e.claimed) {
-          return sum + e.coins.value
-        }
-        return sum
-      }) as f64;
+        let user_credits = mk.credits.iter().fold(0, |sum, e| {
+            if !e.claimed {
+                return sum + e.coins.value;
+            }
+            return sum;
+        }) as f64;
 
-      acc.total += user_credits;
-      acc.make_whole += user_credits;
+        acc.total += user_credits;
+        acc.make_whole += user_credits;
     }
 
     // get donor directed
