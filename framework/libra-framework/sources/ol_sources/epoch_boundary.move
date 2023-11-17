@@ -314,7 +314,7 @@ module diem_framework::epoch_boundary {
     status.incoming_auction_winners = auction_winners;
 
 
-    let post_failover_check = stake::check_failover_rules(auction_winners, compliant_vals);
+    let post_failover_check = stake::check_failover_rules(auction_winners, n_seats);
     status.incoming_post_failover_check = post_failover_check;
 
     // showtime! try to reconfigure
