@@ -51,6 +51,7 @@ pub struct Supply {
     pub slow_validator_locked: f64,
     pub slow_unlocked: f64,
     pub donor_directed: f64,
+    pub make_whole: f64,
     // which will compute later
     pub split_factor: f64,
     pub escrow_pct: f64,
@@ -84,6 +85,19 @@ fn inc_supply(
         None => 0.0,
     };
     acc.total += amount;
+
+    // get loose coins in make_whole
+    if let Some(mk) = &r.make_whole {
+      let user_credits = mk.credits.iter().fold(0, |sum, e| {
+        if (!e.claimed) {
+          return sum + e.coins.value
+        }
+        return sum
+      }) as f64;
+
+      acc.total += user_credits;
+      acc.make_whole += user_credits;
+    }
 
     // get donor directed
     if dd_wallet_list.contains(&r.account.unwrap()) {
@@ -133,6 +147,7 @@ pub fn populate_supply_stats_from_legacy(
         slow_validator_locked: 0.0,
         slow_unlocked: 0.0,
         donor_directed: 0.0,
+        make_whole: 0.0,
         split_factor: 0.0,
         escrow_pct: 0.0,
         epoch_reward_base_case: 0.0,
