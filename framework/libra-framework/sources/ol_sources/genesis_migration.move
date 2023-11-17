@@ -130,4 +130,11 @@ module ol_framework::genesis_migration {
     make_whole::init_incident<MinerMathError>(vm, coin, burns_unclaimed);
 
   }
+
+  fun vm_create_credit_user(vm: &signer, user: address, value: u64) {
+    system_addresses::assert_ol(vm);
+
+    make_whole::create_each_user_credit<MinerMathError>(vm, user, value);
+
+  }
 }
