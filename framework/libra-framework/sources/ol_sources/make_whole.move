@@ -1,11 +1,13 @@
 // Make Whole
 // Oops someone made a mistake.
-// when there's a mistake made by code, or otherwise
-// someone can sponsor the fix
-// with make whole.
-// As per 0L practices, the root addresses of protocol  0x0, 0x1
-// do not ever hold any balances, except temporarily as
-// transaction fees.
+// when there's a mistake made by code, or otherwise,
+// someone can sponsor the fix with Make Whole.
+// Note on design of this module, and indetended use:
+// As per 0L historical practices, the root addresses of protocol (0x0, 0x1,
+// etc.) do not ever hold any balances, except temporarily during an epoch in
+// the case of system fees (no "protocol treasuries").
+// So any Make Whole is done peer-to-peer with sponsors
+// and the code and database only provide coordination guarantees.
 
 module ol_framework::make_whole {
   use std::signer;
