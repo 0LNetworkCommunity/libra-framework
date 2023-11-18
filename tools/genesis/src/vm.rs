@@ -6,6 +6,7 @@ use diem_gas::{
     AbstractValueSizeGasParameters, ChangeSetConfigs, NativeGasParameters,
     LATEST_GAS_FEATURE_VERSION,
 };
+use diem_logger::prelude::*;
 use diem_types::{
     chain_id::{ChainId, NamedChain},
     on_chain_config::{
@@ -27,8 +28,9 @@ use libra_types::{legacy_types::legacy_recovery::LegacyRecovery, ol_progress::OL
 
 use crate::{
     genesis_functions::{
-        genesis_migrate_community_wallet, genesis_migrate_cumu_deposits, rounding_mint,
-        set_final_supply, set_validator_baseline_reward,
+        create_make_whole_incident, genesis_migrate_community_wallet,
+        genesis_migrate_cumu_deposits, rounding_mint, set_final_supply,
+        set_validator_baseline_reward,
     },
     supply::{populate_supply_stats_from_legacy, SupplySettings},
 };
@@ -132,6 +134,8 @@ pub fn encode_genesis_change_set(
 
     // TODO: consolidate with set_final_supply below
     initialize_diem_coin(&mut session);
+    warn!("initialize_diem_coin");
+    println!("initialize_diem_coin");
 
     // final supply must be set after coin is initialized, but before any
     // accounts are created
@@ -148,8 +152,11 @@ pub fn encode_genesis_change_set(
                 .set_ratios_from_settings(supply_settings)
                 .expect("could not set supply ratios from settings");
 
+            println!("set_ratios_from_settings");
+
             crate::genesis_functions::genesis_migrate_all_users(&mut session, r, &supply)
                 .expect("could not migrate users");
+            println!("genesis_migrate_all_users");
 
             // need to set the baseline reward based on supply settings
             set_validator_baseline_reward(&mut session, supply.epoch_reward_base_case as u64);
@@ -161,6 +168,10 @@ pub fn encode_genesis_change_set(
             // migration for CW
             genesis_migrate_cumu_deposits(&mut session, r, supply.split_factor)
                 .expect("could not migrate cumu deposits of cw");
+
+            println!("genesis_migrate_cumu_deposits");
+            create_make_whole_incident(&mut session, r, supply.make_whole, supply.split_factor)
+                .expect("could not create make whole credits");
         }
     }
     OLProgress::complete("user migration complete");

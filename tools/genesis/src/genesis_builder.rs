@@ -148,9 +148,6 @@ pub fn build(
         output_dir.to_str().unwrap()
     ));
 
-    // (bcs::to_bytes(gen_info.get_genesis())?, gen_info.generate_waypoint()?, tx)
-    // };
-
     // Audits the generated genesis.blob comparing to the JSON input.
     if let Some(recovery) = legacy_recovery {
         // get a boostrapped DB to do audits

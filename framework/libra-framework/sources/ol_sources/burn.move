@@ -89,7 +89,7 @@ module ol_framework::burn {
           if (to_withdraw > 0 && to_withdraw <= available_to_burn) {
             let user_share = coin::extract(coins, to_withdraw);
 
-            burn_with_user_preference(vm, *user, user_share);
+            vm_burn_with_user_preference(vm, *user, user_share);
           };
 
 
@@ -135,8 +135,30 @@ module ol_framework::burn {
     state.lifetime_burned = state.lifetime_burned + value_sent;
   }
 
+  // /// performs a burn or recycle according to the signer's preference
+  // public fun burn_with_my_preference(
+  //   sig: &signer, user_share: Coin<LibraCoin>
+  // ) acquires BurnCounter, UserBurnPreference {
+  //   let payer = signer::address_of(sig);
+  //   let value_sent = coin::value(&user_share);
+  //   if (exists<UserBurnPreference>(payer)) {
+  //     if (borrow_global<UserBurnPreference>(payer).send_community) {
+  //       match_index::match_and_recycle(vm, &mut user_share);
+
+  //        // update the root state tracker
+  //       let state = borrow_global_mut<BurnCounter>(@ol_framework);
+  //       state.lifetime_recycled = state.lifetime_recycled + value_sent;
+  //     }
+  //   };
+
+  //   // do a default burn which is not attributed
+  //   // also checks for Superman 3
+  //   burn_and_track(user_share);
+
+  // }
+
   /// performs a burn or recycle according to the attributed user's preference
-  public fun burn_with_user_preference(
+  public fun vm_burn_with_user_preference(
     vm: &signer, payer: address, user_share: Coin<LibraCoin>
   ) acquires BurnCounter, UserBurnPreference {
     system_addresses::assert_ol(vm);

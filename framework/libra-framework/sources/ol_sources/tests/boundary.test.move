@@ -33,8 +33,8 @@ module ol_framework::test_boundary {
     slow_wallet::slow_wallet_epoch_drip(root, 500000);
 
     // NOTE: for e2e epoch tests, we need to go into an operating epoch (not 0 or 1). Advance to epoch #2
-    reconfiguration::test_helper_increment_epoch_dont_reconfigure();
-    reconfiguration::test_helper_increment_epoch_dont_reconfigure();
+    reconfiguration::test_helper_increment_epoch_dont_reconfigure(1);
+    reconfiguration::test_helper_increment_epoch_dont_reconfigure(1);
 
     set
   }

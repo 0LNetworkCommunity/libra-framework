@@ -174,7 +174,7 @@ module ol_framework::test_pof {
     assert!(pass, 1002);
 
     // we just need to increment for testing expiry
-    reconfiguration::test_helper_increment_epoch_dont_reconfigure();
+    reconfiguration::test_helper_increment_epoch_dont_reconfigure(1);
 
 
     let a_sig = account::create_signer_for_test(alice);
