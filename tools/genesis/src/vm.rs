@@ -170,7 +170,7 @@ pub fn encode_genesis_change_set(
                 .expect("could not migrate cumu deposits of cw");
 
             println!("genesis_migrate_cumu_deposits");
-            create_make_whole_incident(&mut session, r, supply.make_whole as u64)
+            create_make_whole_incident(&mut session, r, supply.make_whole, supply.split_factor)
                 .expect("could not create make whole credits");
         }
     }

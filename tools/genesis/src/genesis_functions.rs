@@ -207,7 +207,6 @@ pub fn genesis_migrate_infra_escrow(
         .to_string();
     let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
 
-    dbg!(&escrow_pct);
     let serialized_values = serialize_values(&vec![
         MoveValue::Signer(AccountAddress::ZERO), // is sent by the 0x0 address
         MoveValue::Signer(new_addr_type),
@@ -505,11 +504,13 @@ pub fn set_validator_baseline_reward(session: &mut SessionExt, nominal_reward: u
 pub fn create_make_whole_incident(
     session: &mut SessionExt,
     user_recovery: &[LegacyRecovery],
-    make_whole_budget: u64,
+    make_whole_budget: f64,
+    split_factor: f64,
 ) -> anyhow::Result<()> {
+    let scaled_budget = (make_whole_budget * split_factor) as u64;
     let serialized_values = serialize_values(&vec![
         MoveValue::Signer(AccountAddress::ZERO), // must be called by 0x0
-        MoveValue::U64(make_whole_budget),
+        MoveValue::U64(scaled_budget),
     ]);
 
     exec_function(
@@ -525,14 +526,14 @@ pub fn create_make_whole_incident(
         .progress_with_style(OLProgress::bar())
         .for_each(|a| {
             if let Some(mk) = &a.make_whole {
-                println!("user {:?}", a.account);
+                let user_coins = mk.credits.iter().fold(0, |sum, i| i.coins.value + sum);
                 create_make_whole_each_user_credit(
                     session,
                     a.account
                         .expect("could not find accout")
                         .try_into()
                         .unwrap(),
-                    mk.credits.iter().fold(0, |sum, i| i.coins.value + sum),
+                    (user_coins as f64 * split_factor) as u64,
                 )
             }
         });
