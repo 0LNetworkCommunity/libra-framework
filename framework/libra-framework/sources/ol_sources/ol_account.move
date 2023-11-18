@@ -28,6 +28,7 @@ module ol_framework::ol_account {
     friend diem_framework::genesis;
     friend diem_framework::resource_account;
     friend diem_framework::transaction_fee;
+    friend ol_framework::genesis_migration;
 
     /// Account does not exist.
     const EACCOUNT_NOT_FOUND: u64 = 1;

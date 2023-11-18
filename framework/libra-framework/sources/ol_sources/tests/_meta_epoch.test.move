@@ -22,7 +22,7 @@ module ol_framework::test_meta {
   //   // create a new epoch
   //   stake::end_epoch();
 
-  //   reconfiguration::test_helper_increment_epoch_dont_reconfigure();
+  //   reconfiguration::test_helper_increment_epoch_dont_reconfigure(1);
 
   //   let b = reconfiguration::get_current_epoch();
 
