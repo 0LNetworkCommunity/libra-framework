@@ -17,6 +17,7 @@ module ol_framework::genesis_migration {
   use ol_framework::libra_coin::LibraCoin;
   use ol_framework::transaction_fee;
   use ol_framework::pledge_accounts;
+  use ol_framework::make_whole;
   use diem_framework::system_addresses;
   // use diem_std::debug::print;
 
@@ -26,6 +27,10 @@ module ol_framework::genesis_migration {
   const EGENESIS_BALANCE_TOO_HIGH: u64 = 1;
   /// balances converted incorrectly, more coins created than the target
   const EMINTED_OVER_TARGET: u64 = 2;
+  /// not sufficient infra escrow balance
+  const ENO_INFRA_BALANCE: u64 = 3;
+  /// makewhole is not initialized
+  const EMAKEWHOLE_NOT_INIT: u64 = 4;
 
   /// Called by root in genesis to initialize the GAS coin
   public fun migrate_legacy_user(
@@ -88,30 +93,63 @@ module ol_framework::genesis_migration {
     };
   }
 
-    /// for an uprade using an escrow percent. Only to be called at genesis
-    // escrow percent has 6 decimal precision (1m);
-    public fun fork_escrow_init(vm: &signer, user_sig: &signer, escrow_pct: u64) {
-      system_addresses::assert_vm(vm);
-      let user_addr = signer::address_of(user_sig);
-      // establish the infrastructure escrow pledge
+  /// for an uprade using an escrow percent. Only to be called at genesis
+  // escrow percent has 6 decimal precision (1m);
+  public fun fork_escrow_init(vm: &signer, user_sig: &signer, escrow_pct: u64) {
+    system_addresses::assert_vm(vm);
+    let user_addr = signer::address_of(user_sig);
+    // establish the infrastructure escrow pledge
 
-      let escrow_pct = fixed_point32::create_from_rational(escrow_pct, 1000000);
+    let escrow_pct = fixed_point32::create_from_rational(escrow_pct, 1000000);
 
-      let (unlocked, total) = ol_account::balance(user_addr);
+    let (unlocked, total) = ol_account::balance(user_addr);
 
-      let locked = 0;
-      if ((total > unlocked) && (total > 0)) {
-        locked = (total - unlocked);
+    let locked = 0;
+    if ((total > unlocked) && (total > 0)) {
+      locked = (total - unlocked);
+    };
+
+    if (locked > 0) {
+      let to_escrow = fixed_point32::multiply_u64(locked, escrow_pct);
+      let coin_opt = ol_account::vm_withdraw_unlimited(vm, user_addr, to_escrow);
+      if (option::is_some(&coin_opt)) {
+        let c = option::extract(&mut coin_opt);
+        pledge_accounts::save_pledge(user_sig, @0x0, c);
       };
+      option::destroy_none(coin_opt);
+    };
+  }
 
-      if (locked > 0) {
-        let to_escrow = fixed_point32::multiply_u64(locked, escrow_pct);
-        let coin_opt = coin::vm_withdraw(vm, user_addr, to_escrow);
-        if (option::is_some(&coin_opt)) {
-          let c = option::extract(&mut coin_opt);
-          pledge_accounts::genesis_infra_escrow_pledge(vm, user_sig, c);
-        };
-        option::destroy_none(coin_opt);
-      };
+  //////// MAKE WHOLE INIT ////////
+  struct MinerMathError has key {}
+
+  /// initializes the Miner Math Error incident make-whole
+  // note: this exits silently when there's no infra_escrow, since some tests
+  // don't need it
+  fun init_make_whole(vm: &signer, make_whole_budget: u64) {
+    system_addresses::assert_ol(vm);
+    // withdraw from infraescrow
+    let opt = pledge_accounts::withdraw_from_all_pledge_accounts(vm,
+    make_whole_budget);
+    if (option::is_none(&opt)) {
+      option::destroy_none(opt);
+        return // exit quietly
+    } else {
+      let coin = option::extract(&mut opt);
+      option::destroy_none(opt);
+
+      let burns_unclaimed = true;
+      make_whole::init_incident<MinerMathError>(vm, coin, burns_unclaimed);
     }
+  }
+
+  /// creates an individual claim for a user
+  // note: this exits silently when there's no infra_escrow, since some tests
+  // don't need it
+  fun vm_create_credit_user(vm: &signer, user: address, value: u64) {
+    system_addresses::assert_ol(vm);
+    if (!make_whole::is_init<MinerMathError>(signer::address_of(vm))) return;
+    make_whole::create_each_user_credit<MinerMathError>(vm, user, value);
+
+  }
 }
