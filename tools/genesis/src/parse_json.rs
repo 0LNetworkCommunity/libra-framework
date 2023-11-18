@@ -34,7 +34,7 @@ fn parse_json_single() {
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_end_user_single.json");
 
-    let mut r = recovery_file_parse(p).unwrap();
+    let r = recovery_file_parse(p).unwrap();
     if let Some(acc) = r[0].account {
         assert!(&acc.to_string() == "6BBF853AA6521DB445E5CBDF3C85E8A0");
     }

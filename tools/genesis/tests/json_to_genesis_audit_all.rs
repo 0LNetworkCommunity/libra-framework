@@ -3,13 +3,12 @@ mod support;
 use diem_types::chain_id::NamedChain;
 use libra_framework::head_release_bundle;
 use libra_genesis_tools::genesis_reader;
+use libra_genesis_tools::parse_json::recovery_file_parse;
 use libra_genesis_tools::supply::{self, SupplySettings};
 use libra_genesis_tools::vm::libra_genesis_default;
 use libra_genesis_tools::{compare, genesis::make_recovery_genesis_from_vec_legacy_recovery};
 use libra_types::exports::ChainId;
 use libra_types::legacy_types::legacy_address::LegacyAddress;
-use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
-use std::fs;
 use support::{path_utils::json_path, test_vals};
 
 #[test]
@@ -17,13 +16,12 @@ use support::{path_utils::json_path, test_vals};
 fn test_correct_supply_arithmetic_all() {
     let genesis_vals = test_vals::get_test_valset(4);
 
-    let json = json_path()
+    let path = json_path()
         .parent()
         .unwrap()
         .join("sample_export_recovery.json");
 
-    let json_str = fs::read_to_string(json).unwrap();
-    let user_accounts: Vec<LegacyRecovery> = serde_json::from_str(&json_str).unwrap();
+    let user_accounts = recovery_file_parse(path).unwrap();
 
     // get the supply arithmetic so that we can compare outputs
     let mut supply_stats = supply::populate_supply_stats_from_legacy(&user_accounts, &[]).unwrap();
