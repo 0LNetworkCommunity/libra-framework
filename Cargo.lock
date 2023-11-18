@@ -5689,6 +5689,7 @@ dependencies = [
  "diem-gas",
  "diem-genesis",
  "diem-github-client",
+ "diem-logger",
  "diem-state-view",
  "diem-storage-interface",
  "diem-temppath",

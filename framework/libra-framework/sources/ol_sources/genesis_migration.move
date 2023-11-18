@@ -27,6 +27,10 @@ module ol_framework::genesis_migration {
   const EGENESIS_BALANCE_TOO_HIGH: u64 = 1;
   /// balances converted incorrectly, more coins created than the target
   const EMINTED_OVER_TARGET: u64 = 2;
+  /// not sufficient infra escrow balance
+  const ENO_INFRA_BALANCE: u64 = 3;
+  /// makewhole is not initialized
+  const EMAKEWHOLE_NOT_INIT: u64 = 4;
 
   /// Called by root in genesis to initialize the GAS coin
   public fun migrate_legacy_user(
@@ -107,15 +111,16 @@ module ol_framework::genesis_migration {
 
     if (locked > 0) {
       let to_escrow = fixed_point32::multiply_u64(locked, escrow_pct);
-      let coin_opt = coin::vm_withdraw(vm, user_addr, to_escrow);
+      let coin_opt = ol_account::vm_withdraw_unlimited(vm, user_addr, to_escrow);
       if (option::is_some(&coin_opt)) {
         let c = option::extract(&mut coin_opt);
-        pledge_accounts::genesis_infra_escrow_pledge(vm, user_sig, c);
+        pledge_accounts::save_pledge(user_sig, @0x0, c);
       };
       option::destroy_none(coin_opt);
     };
   }
 
+  //////// MAKE WHOLE INIT ////////
   struct MinerMathError has key {}
 
   /// initializes the Miner Math Error incident make-whole
@@ -124,21 +129,18 @@ module ol_framework::genesis_migration {
     // withdraw from infraescrow
     let opt = pledge_accounts::withdraw_from_all_pledge_accounts(vm,
     make_whole_budget);
-    if (option::is_some(&opt)) { // only in testing cases is it none
-      let coin = option::extract(&mut opt);
-      option::destroy_none(opt);
+    assert!(option::is_some(&opt), ENO_INFRA_BALANCE);
+    let coin = option::extract(&mut opt);
+    option::destroy_none(opt);
 
-      let burns_unclaimed = true;
-      make_whole::init_incident<MinerMathError>(vm, coin, burns_unclaimed);
-    } else {
-      option::destroy_none(opt);
-    }
+    let burns_unclaimed = true;
+    make_whole::init_incident<MinerMathError>(vm, coin, burns_unclaimed);
   }
 
   /// creates an individual claim for a user
   fun vm_create_credit_user(vm: &signer, user: address, value: u64) {
     system_addresses::assert_ol(vm);
-
+    assert!(make_whole::is_init<MinerMathError>(signer::address_of(vm)), EMAKEWHOLE_NOT_INIT);
     make_whole::create_each_user_credit<MinerMathError>(vm, user, value);
 
   }

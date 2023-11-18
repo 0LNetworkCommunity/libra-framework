@@ -60,6 +60,10 @@ module ol_framework::make_whole {
     })
   }
 
+  public fun is_init<T>(sponsor: address): bool {
+    exists<MakeWhole<T>>(sponsor)
+  }
+
   /// creates a credit for incident T
   public fun create_each_user_credit<T>(sponsor: &signer, user: address, value: u64)
   acquires MakeWhole {

@@ -3,7 +3,9 @@ use crate::{
     process_comm_wallet,
     supply::{Supply, SupplySettings},
 };
+
 use anyhow::Context;
+use diem_logger::prelude::*;
 use diem_types::account_config::CORE_CODE_ADDRESS;
 use diem_vm::move_vm_ext::SessionExt;
 use diem_vm_genesis::exec_function;
@@ -143,6 +145,7 @@ pub fn genesis_migrate_one_user(
         vec![],
         serialized_values,
     );
+    trace!("migrate_legacy_user {}", new_addr_type);
     Ok(())
 }
 
@@ -521,6 +524,7 @@ pub fn create_make_whole_incident(
         .progress_with_style(OLProgress::bar())
         .for_each(|a| {
             if let Some(mk) = &a.make_whole {
+                println!("user {:?}", a.account);
                 create_make_whole_each_user_credit(
                     session,
                     a.account
