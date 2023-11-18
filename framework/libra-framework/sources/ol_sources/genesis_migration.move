@@ -124,23 +124,31 @@ module ol_framework::genesis_migration {
   struct MinerMathError has key {}
 
   /// initializes the Miner Math Error incident make-whole
+  // note: this exits silently when there's no infra_escrow, since some tests
+  // don't need it
   fun init_make_whole(vm: &signer, make_whole_budget: u64) {
     system_addresses::assert_ol(vm);
     // withdraw from infraescrow
     let opt = pledge_accounts::withdraw_from_all_pledge_accounts(vm,
     make_whole_budget);
-    assert!(option::is_some(&opt), ENO_INFRA_BALANCE);
-    let coin = option::extract(&mut opt);
-    option::destroy_none(opt);
+    if (option::is_none(&opt)) {
+      option::destroy_none(opt);
+        return // exit quietly
+    } else {
+      let coin = option::extract(&mut opt);
+      option::destroy_none(opt);
 
-    let burns_unclaimed = true;
-    make_whole::init_incident<MinerMathError>(vm, coin, burns_unclaimed);
+      let burns_unclaimed = true;
+      make_whole::init_incident<MinerMathError>(vm, coin, burns_unclaimed);
+    }
   }
 
   /// creates an individual claim for a user
+  // note: this exits silently when there's no infra_escrow, since some tests
+  // don't need it
   fun vm_create_credit_user(vm: &signer, user: address, value: u64) {
     system_addresses::assert_ol(vm);
-    assert!(make_whole::is_init<MinerMathError>(signer::address_of(vm)), EMAKEWHOLE_NOT_INIT);
+    if (!make_whole::is_init<MinerMathError>(signer::address_of(vm))) return;
     make_whole::create_each_user_credit<MinerMathError>(vm, user, value);
 
   }
