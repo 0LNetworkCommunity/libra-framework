@@ -28,6 +28,7 @@ diem-framework = { workspace = true }
 diem-gas = { workspace = true }
 diem-genesis = { workspace = true }
 diem-github-client = { workspace = true }
+diem-logger = { workspace = true }
 diem-state-view = { workspace = true }
 diem-storage-interface = { workspace = true }
 diem-temppath = { workspace = true }
