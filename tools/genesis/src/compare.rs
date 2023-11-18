@@ -22,10 +22,11 @@ use diem_storage_interface::DbReader;
 use diem_types::account_view::AccountView;
 use indicatif::{ProgressBar, ProgressIterator};
 use move_core_types::move_resource::MoveResource;
+use serde::{Serialize, Deserialize};
 use std::path::PathBuf;
 use std::sync::Arc;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 /// struct for holding the results of a comparison
 pub struct CompareError {
     /// index of LegacyRecover
@@ -43,6 +44,7 @@ pub fn compare_recovery_vec_to_genesis_tx(
     db_reader: &Arc<dyn DbReader>,
     supply: &Supply,
 ) -> Result<Vec<CompareError>, anyhow::Error> {
+    dbg!(&supply);
     // start an empty btree map
     let mut err_list: Vec<CompareError> = vec![];
 
@@ -106,38 +108,40 @@ pub fn compare_recovery_vec_to_genesis_tx(
                     .expect("should have move resource")
                     .expect("should have a GasCoinStoreResource for balance");
                 if let Some(s) = &v.slow_wallet {
+                    let unlocked = s.unlocked;
 
-                  let unlocked = s.unlocked;
-
-                  if unlocked > balance_legacy.coin {
-                    err_list.push(CompareError {
-                        index: i as u64,
-                        account: v.account,
-                        bal_diff: unlocked as i64 - balance_legacy.coin as i64,
-                        message: "unlocked greater than balance".to_string(),
-                    });
-                  }
+                    if unlocked > balance_legacy.coin {
+                        err_list.push(CompareError {
+                            index: i as u64,
+                            account: v.account,
+                            bal_diff: unlocked as i64 - balance_legacy.coin as i64,
+                            message: "unlocked greater than balance".to_string(),
+                        });
+                    }
                 }
 
                 let expected_balance = if v.val_cfg.is_some() && v.slow_wallet.is_some() {
-                  let unlocked = v.slow_wallet.as_ref().unwrap().unlocked;
+                    let unlocked = v.slow_wallet.as_ref().unwrap().unlocked;
 
-                  let val_locked = balance_legacy.coin - unlocked;
+                    let val_locked = if unlocked > balance_legacy.coin {
+                        0
+                    } else {
+                        balance_legacy.coin - unlocked
+                    };
 
-                  let val_pledge = (val_locked as f64) * supply.escrow_pct;
+                    let val_pledge = (val_locked as f64) * supply.escrow_pct;
 
-                  let total_balance = (val_locked as f64 - val_pledge) + unlocked as f64;
+                    let total_balance = (val_locked as f64 - val_pledge) + unlocked as f64;
 
-                  // scale it
-                  total_balance * supply.split_factor
-
+                    // scale it
+                    total_balance * supply.split_factor
                 } else {
-                  supply.split_factor * balance_legacy.coin as f64
+                    balance_legacy.coin as f64 * supply.split_factor
                 };
 
                 if on_chain_balance.coin() != expected_balance as u64 {
-
-                    dbg!(&on_chain_balance.coin(), &expected_balance);
+                    // dbg!(v.account);
+                    // dbg!(&on_chain_balance.coin(), &expected_balance);
                     err_list.push(CompareError {
                         index: i as u64,
                         account: v.account,

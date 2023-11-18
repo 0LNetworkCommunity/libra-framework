@@ -64,7 +64,9 @@ fn test_correct_supply_arithmetic_all() {
         Ok(list) => {
             if !list.is_empty() {
                 let len = list.len();
-                panic!("audit list is not empty: {len}");
+                let out = json_path().parent().unwrap().join("audit.json");
+                std::fs::write(out, serde_json::to_string_pretty(&list).unwrap()).unwrap();
+                panic!("audit list is not empty, errs: {len}");
             }
         }
         Err(_e) => panic!("error creating comparison"),
