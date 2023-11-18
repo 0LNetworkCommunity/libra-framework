@@ -7,6 +7,7 @@ use libra_genesis_tools::supply::{self, SupplySettings};
 use libra_genesis_tools::vm::libra_genesis_default;
 use libra_genesis_tools::{compare, genesis::make_recovery_genesis_from_vec_legacy_recovery};
 use libra_types::exports::ChainId;
+use libra_types::legacy_types::legacy_address::LegacyAddress;
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use std::fs;
 use support::{path_utils::json_path, test_vals};
@@ -26,7 +27,22 @@ fn test_correct_supply_arithmetic_all() {
 
     // get the supply arithmetic so that we can compare outputs
     let mut supply_stats = supply::populate_supply_stats_from_legacy(&user_accounts, &[]).unwrap();
-    let supply_settings = SupplySettings::default();
+    let supply_settings = SupplySettings {
+        target_supply: 100_000_000_000.0,
+        target_future_uses: 0.70,
+        years_escrow: 7,
+        map_dd_to_slow: vec![
+            // FTW
+            "3A6C51A0B786D644590E8A21591FA8E2"
+                .parse::<LegacyAddress>()
+                .unwrap(),
+            // tip jar
+            "2B0E8325DEA5BE93D856CFDE2D0CBA12"
+                .parse::<LegacyAddress>()
+                .unwrap(),
+        ],
+        ..Default::default()
+    };
     supply_stats
         .set_ratios_from_settings(&supply_settings)
         .unwrap();

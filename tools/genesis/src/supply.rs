@@ -27,8 +27,8 @@ pub struct SupplySettings {
 impl Default for SupplySettings {
     fn default() -> Self {
         Self {
-            target_supply: 100_000.0 * 1_000_000.0, // 100B times scaling factor.
-            target_future_uses: 0.70,
+            target_supply: 100_000_000_000.0,
+            target_future_uses: 0.0,
             years_escrow: 10,
             map_dd_to_slow: vec![],
         }
