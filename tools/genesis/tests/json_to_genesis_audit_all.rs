@@ -42,7 +42,6 @@ fn test_correct_supply_arithmetic_all() {
                 .parse::<LegacyAddress>()
                 .unwrap(),
         ],
-        ..Default::default()
     };
     supply_stats
         .set_ratios_from_settings(&supply_settings)
