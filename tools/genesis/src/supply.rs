@@ -27,7 +27,7 @@ pub struct SupplySettings {
 impl Default for SupplySettings {
     fn default() -> Self {
         Self {
-            target_supply: 100_000_000_000.0,
+            target_supply: 100_000_000_000_000.0,
             target_future_uses: 0.0,
             years_escrow: 10,
             map_dd_to_slow: vec![],
@@ -184,9 +184,9 @@ fn test_genesis_math() {
     let r = crate::parse_json::recovery_file_parse(p).unwrap();
 
     let settings = SupplySettings {
-        target_supply: 10_000_000_000.0,
+        target_supply: 100_000_000_000.0 * 1_000_000.0, // 100B times scaling factor
         target_future_uses: 0.70,
-        years_escrow: 10,
+        years_escrow: 7,
         map_dd_to_slow: vec![
             // FTW
             "3A6C51A0B786D644590E8A21591FA8E2"
@@ -206,30 +206,29 @@ fn test_genesis_math() {
 
     println!("before");
     let pct_normal = supply.normal / supply.total;
-
     let pct_dd = supply.donor_directed / supply.total;
-
     let pct_slow = supply.slow_total / supply.total;
-
+    let pct_mk_whole = supply.make_whole / supply.total;
     let _pct_val_locked = supply.slow_validator_locked / supply.total;
 
-    let sum_all_pct = pct_normal + pct_slow + pct_dd;
+    let sum_all_pct = pct_normal + pct_slow + pct_dd + pct_mk_whole;
     assert!(sum_all_pct == 1.0);
-    assert!(supply.total == 2397436809784621.0);
+    assert!(supply.total == 2401575768999244.0);
 
     // genesis infra escrow math
     // future uses is intended to equal 70% in this scenario.
-    dbg!("after");
+
     supply.set_ratios_from_settings(&settings).unwrap();
+    dbg!(&supply);
 
     // escrow comes out of validator locked only
     let to_escrow = supply.escrow_pct * supply.slow_validator_locked;
     let new_slow = supply.slow_total - to_escrow;
-    dbg!(&pct_normal);
-    dbg!(&pct_dd);
-    dbg!(new_slow / supply.total);
-    dbg!(to_escrow / supply.total);
+    // dbg!(&pct_normal);
+    // dbg!(&pct_dd);
+    // dbg!(new_slow / supply.total);
+    // dbg!(to_escrow / supply.total);
 
-    let sum_all = to_escrow + new_slow + supply.normal + supply.donor_directed;
+    let sum_all = to_escrow + new_slow + supply.normal + supply.donor_directed + supply.make_whole;
     assert!(supply.total == sum_all);
 }
