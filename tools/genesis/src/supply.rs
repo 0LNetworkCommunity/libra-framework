@@ -51,6 +51,7 @@ pub struct Supply {
     pub slow_validator_locked: f64,
     pub slow_unlocked: f64,
     pub donor_directed: f64,
+    pub make_whole: f64,
     // which will compute later
     pub split_factor: f64,
     pub escrow_pct: f64,
@@ -84,6 +85,19 @@ fn inc_supply(
         None => 0.0,
     };
     acc.total += amount;
+
+    // get loose coins in make_whole
+    if let Some(mk) = &r.make_whole {
+        let user_credits = mk.credits.iter().fold(0, |sum, e| {
+            if !e.claimed {
+                return sum + e.coins.value;
+            }
+            sum
+        }) as f64;
+
+        acc.total += user_credits;
+        acc.make_whole += user_credits;
+    }
 
     // get donor directed
     if dd_wallet_list.contains(&r.account.unwrap()) {
@@ -133,6 +147,7 @@ pub fn populate_supply_stats_from_legacy(
         slow_validator_locked: 0.0,
         slow_unlocked: 0.0,
         donor_directed: 0.0,
+        make_whole: 0.0,
         split_factor: 0.0,
         escrow_pct: 0.0,
         epoch_reward_base_case: 0.0,
@@ -169,9 +184,9 @@ fn test_genesis_math() {
     let r = crate::parse_json::recovery_file_parse(p).unwrap();
 
     let settings = SupplySettings {
-        target_supply: 10_000_000_000.0,
+        target_supply: 100_000_000_000.0 * 1_000_000.0, // 100B times scaling factor
         target_future_uses: 0.70,
-        years_escrow: 10,
+        years_escrow: 7,
         map_dd_to_slow: vec![
             // FTW
             "3A6C51A0B786D644590E8A21591FA8E2"
@@ -191,30 +206,29 @@ fn test_genesis_math() {
 
     println!("before");
     let pct_normal = supply.normal / supply.total;
-
     let pct_dd = supply.donor_directed / supply.total;
-
     let pct_slow = supply.slow_total / supply.total;
-
+    let pct_mk_whole = supply.make_whole / supply.total;
     let _pct_val_locked = supply.slow_validator_locked / supply.total;
 
-    let sum_all_pct = pct_normal + pct_slow + pct_dd;
+    let sum_all_pct = pct_normal + pct_slow + pct_dd + pct_mk_whole;
     assert!(sum_all_pct == 1.0);
-    assert!(supply.total == 2397436809784621.0);
+    assert!(supply.total == 2401575768999244.0);
 
     // genesis infra escrow math
     // future uses is intended to equal 70% in this scenario.
-    dbg!("after");
+
     supply.set_ratios_from_settings(&settings).unwrap();
+    dbg!(&supply);
 
     // escrow comes out of validator locked only
     let to_escrow = supply.escrow_pct * supply.slow_validator_locked;
     let new_slow = supply.slow_total - to_escrow;
-    dbg!(&pct_normal);
-    dbg!(&pct_dd);
-    dbg!(new_slow / supply.total);
-    dbg!(to_escrow / supply.total);
+    // dbg!(&pct_normal);
+    // dbg!(&pct_dd);
+    // dbg!(new_slow / supply.total);
+    // dbg!(to_escrow / supply.total);
 
-    let sum_all = to_escrow + new_slow + supply.normal + supply.donor_directed;
+    let sum_all = to_escrow + new_slow + supply.normal + supply.donor_directed + supply.make_whole;
     assert!(supply.total == sum_all);
 }

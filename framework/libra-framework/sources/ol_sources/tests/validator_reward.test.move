@@ -61,8 +61,8 @@ module ol_framework::test_reconfiguration {
       assert!(coin::balance<LibraCoin>(@0x1000a) == 0, 7357000);
 
       // NOTE: epoch 0 and 1 are a special case, we don't run performance grades on that one. Need to move two epochs ahead
-      reconfiguration::test_helper_increment_epoch_dont_reconfigure();
-      reconfiguration::test_helper_increment_epoch_dont_reconfigure();
+      reconfiguration::test_helper_increment_epoch_dont_reconfigure(1);
+      reconfiguration::test_helper_increment_epoch_dont_reconfigure(1);
 
       assert!(epoch_helper::get_current_epoch() == 2, 7357001);
 

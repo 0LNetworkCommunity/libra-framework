@@ -49,7 +49,7 @@
         use ol_framework::epoch_helper;
         use ol_framework::burn;
         use diem_framework::system_addresses;
-        use diem_framework::coin::{Self, Coin};
+        use diem_framework::coin;
 
         // use diem_std::debug::print;
 
@@ -138,7 +138,7 @@
             }
         }
 
-
+        /// saves a pledge if it exists
         public fun save_pledge(
           sig: &signer,
           address_of_beneficiary: address,
@@ -205,8 +205,7 @@
         // add funds to an existing pledge account
         // Note: only funds that are Unlocked and otherwise unrestricted can be used in pledge account.
         fun add_coin_to_pledge_account(sender_addr: address, idx: u64, coin: coin::Coin<LibraCoin>) acquires MyPledges, BeneficiaryPolicy {
-          // let sender_addr = signer::address_of(sender);
-          // let (found, _idx) = pledge_at_idx(&sender_addr, &address_of_beneficiary);
+
           let amount = coin::value(&coin);
           let my_pledges = borrow_global_mut<MyPledges>(sender_addr);
           let pledge_account = vector::borrow_mut(&mut my_pledges.list, idx);
@@ -491,15 +490,7 @@
         }
 
 
-        //// Genesis helper
-        // private function only to be used at genesis for infra escrow
-        // This used only at genesis, and CAN BYPASS THE WITHDRAW LIMITS
-        public fun genesis_infra_escrow_pledge(root: &signer, account: &signer, coin: Coin<LibraCoin>) acquires MyPledges, BeneficiaryPolicy {
-          // TODO: add genesis time here, once the timestamp genesis issue is fixed.
-          // chain_status::assert_genesis();
-          system_addresses::assert_ol(root);
-          save_pledge(account, @vm_reserved, coin);
-        }
+        //NOTE: deprecated with refactor
 
         ////////// TX  //////////
         // for general pledge accounts
@@ -510,19 +501,6 @@
 
 
         ////////// GETTERS //////////
-
-        // Danger: If the VM calls this and there is an error there will be a halt.
-        // always call pledge_at_idx() first.
-        // NOTE: cannot wrap in option witout changing the struct abilities to copy, drop.
-        // can't do that because Diem<LibraCoin> cannot be copy, or drop.
-        // public fun maybe_find_a_pledge(account: &address, address_of_beneficiary: &address): &mut PledgeAccount acquires MyPledges {
-        //   let (found, idx) = pledge_at_idx(account, address_of_beneficiary);
-        //   assert!(found, error::invalid_state(ENO_PLEDGE_INIT));
-
-        //   let my_pledges = borrow_global_mut<MyPledges>(*account).list;
-        //   let p = vector::borrow_mut(&mut my_pledges, idx);
-        //   p
-        // }
 
         fun pledge_at_idx(account: &address, address_of_beneficiary: &address): (bool, u64) acquires MyPledges {
           if (exists<MyPledges>(*account)) {
