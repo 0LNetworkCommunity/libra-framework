@@ -169,21 +169,30 @@ pub fn genesis_migrate_slow_wallet(
         .to_string();
     let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
 
-    let slow = user_recovery.slow_wallet.as_ref().unwrap();
-    let serialized_values = serialize_values(&vec![
-        MoveValue::Signer(CORE_CODE_ADDRESS),
-        MoveValue::Signer(new_addr_type),
-        MoveValue::U64((slow.unlocked as f64 * split_factor) as u64),
-        MoveValue::U64((slow.transferred as f64 * split_factor) as u64),
-    ]);
+    if let Some(slow) = &user_recovery.slow_wallet {
+        // patch issue with a slow wallet having a larger unlock than the balance
+        let total_balance = user_recovery.balance.as_ref().unwrap().coin;
+        let unlocked = if slow.unlocked > total_balance {
+            total_balance
+        } else {
+            slow.unlocked
+        };
+        let serialized_values = serialize_values(&vec![
+            MoveValue::Signer(CORE_CODE_ADDRESS),
+            MoveValue::Signer(new_addr_type),
+            MoveValue::U64((unlocked as f64 * split_factor) as u64),
+            MoveValue::U64((slow.transferred as f64 * split_factor) as u64),
+        ]);
 
-    exec_function(
-        session,
-        "slow_wallet",
-        "fork_migrate_slow_wallet",
-        vec![],
-        serialized_values,
-    );
+        exec_function(
+            session,
+            "slow_wallet",
+            "fork_migrate_slow_wallet",
+            vec![],
+            serialized_values,
+        );
+    }
+
     Ok(())
 }
 
