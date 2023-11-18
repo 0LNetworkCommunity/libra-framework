@@ -106,9 +106,24 @@ pub fn compare_recovery_vec_to_genesis_tx(
                     .expect("should have move resource")
                     .expect("should have a GasCoinStoreResource for balance");
 
-                let expected_balance = supply.split_factor * balance_legacy.coin as f64;
+                let expected_balance = if v.val_cfg.is_some() && v.slow_wallet.is_some() {
+                  let unlocked = v.slow_wallet.as_ref().unwrap().unlocked;
+                  let val_locked = balance_legacy.coin - unlocked;
+
+                  let val_pledge = (val_locked as f64) * supply.escrow_pct;
+
+                  let total_balance = (val_locked as f64 - val_pledge) + unlocked as f64;
+
+                  // scale it
+                  total_balance * supply.split_factor
+
+                } else {
+                  supply.split_factor * balance_legacy.coin as f64
+                };
 
                 if on_chain_balance.coin() != expected_balance as u64 {
+
+                    dbg!(&on_chain_balance.coin(), &expected_balance);
                     err_list.push(CompareError {
                         index: i as u64,
                         account: v.account,

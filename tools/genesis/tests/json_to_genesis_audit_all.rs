@@ -63,7 +63,8 @@ fn test_correct_supply_arithmetic_all() {
     {
         Ok(list) => {
             if !list.is_empty() {
-                panic!("list is not empty: {list:#?}");
+                let len = list.len();
+                panic!("audit list is not empty: {len}");
             }
         }
         Err(_e) => panic!("error creating comparison"),
