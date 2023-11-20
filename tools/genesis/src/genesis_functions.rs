@@ -278,7 +278,8 @@ pub fn genesis_migrate_infra_escrow_alt(
     Ok(())
 }
 
-fn util_simulate_new_val_balance(
+/// helper to adjust the expected balance of a validator
+pub fn util_simulate_new_val_balance(
     user_recovery: &mut LegacyRecovery,
     supply: &Supply,
 ) -> anyhow::Result<()> {
@@ -295,7 +296,9 @@ fn util_simulate_new_val_balance(
     Ok(())
 }
 
-fn util_scale_all_coins(user_recovery: &mut LegacyRecovery, supply: &Supply) -> anyhow::Result<()> {
+/// single place to scale all coins in a legacy recovery
+// TODO: move to own module
+pub fn util_scale_all_coins(user_recovery: &mut LegacyRecovery, supply: &Supply) -> anyhow::Result<()> {
     let split = supply.split_factor;
 
     if let Some(b) = &mut user_recovery.balance {
