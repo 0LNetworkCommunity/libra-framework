@@ -242,6 +242,49 @@ pub fn genesis_migrate_infra_escrow(
     Ok(())
 }
 
+
+pub fn genesis_migrate_infra_escrow_alt(
+    session: &mut SessionExt,
+    user_recovery: &LegacyRecovery,
+    escrow_pct: f64,
+) -> anyhow::Result<()> {
+    if user_recovery.account.is_none()
+        || user_recovery.auth_key.is_none()
+        || user_recovery.balance.is_none()
+        || user_recovery.slow_wallet.is_none()
+    {
+        anyhow::bail!("no user account found {:?}", user_recovery);
+    }
+
+    // convert between different types from ol_types in diem, to current
+    let acc_str = user_recovery
+        .account
+        .context("could not parse account")?
+        .to_string();
+    let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
+
+    let total_balance = user_recovery.balance.as_ref().expect("no balance struct").coin;
+    let unlocked = user_recovery.slow_wallet.as_ref().expect("no slow wallet struct").unlocked;
+    assert!(total_balance > unlocked, "there should be no unlocked amount above balance, this should have been cleaned by now."); // we shouldn't have got this far if the data is bad
+    let validator_locked = total_balance - unlocked;
+    let pledge_coins_amount = escrow_pct * validator_locked as f64;
+
+    let serialized_values = serialize_values(&vec![
+        MoveValue::Signer(AccountAddress::ZERO), // is sent by the 0x0 address
+        MoveValue::Signer(new_addr_type),
+        MoveValue::U64(pledge_coins_amount as u64),
+    ]);
+
+    exec_function(
+        session,
+        "genesis_migration",
+        "fork_escrow_init_alt",
+        vec![],
+        serialized_values,
+    );
+    Ok(())
+}
+
 pub fn genesis_migrate_receipts(
     session: &mut SessionExt,
     user_recovery: &LegacyRecovery,
