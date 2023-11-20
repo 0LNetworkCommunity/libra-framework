@@ -13,7 +13,7 @@ use diem_storage_interface::state_view::LatestDbStateCheckpointView;
 use diem_types::transaction::Transaction;
 use libra_types::exports::AccountAddress;
 use libra_types::legacy_types::legacy_address::LegacyAddress;
-use libra_types::legacy_types::legacy_recovery::{read_from_recovery_file, LegacyRecovery};
+use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use libra_types::move_resource::gas_coin::{GasCoinStoreResource, SlowWalletBalance};
 use libra_types::ol_progress::OLProgress;
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
@@ -195,10 +195,10 @@ pub fn compare_recovery_vec_to_genesis_tx(
                 return;
             };
 
-            let old_balance = old.balance.as_ref().expect("should have a balance struct");
+
 
             let convert_address =
-                AccountAddress::from_hex_literal(&old.account.unwrap().to_hex_literal())
+                AccountAddress::from_hex_literal(&old.account.as_ref().unwrap().to_hex_literal())
                     .expect("could not convert address types");
 
             // scale all coin values per record consistently
@@ -217,6 +217,7 @@ pub fn compare_recovery_vec_to_genesis_tx(
 
             // CHECK: we should have scaled the balance correctly, including
             // adjusting for validators
+            let old_balance = old.balance.as_ref().expect("should have a balance struct");
             if on_chain_balance.coin() != old_balance.coin {
                 err_list.push(CompareError {
                     index: i as u64,

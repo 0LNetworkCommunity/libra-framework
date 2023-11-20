@@ -46,7 +46,7 @@ fn test_correct_supply_arithmetic_all() {
 
     dbg!(&supply_stats);
     let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
-        Some(&user_accounts),
+        &mut user_accounts,
         &genesis_vals,
         &head_release_bundle(),
         ChainId::mainnet(),
