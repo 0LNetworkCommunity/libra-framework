@@ -22,7 +22,7 @@ use diem_storage_interface::DbReader;
 use diem_types::account_view::AccountView;
 use indicatif::{ProgressBar, ProgressIterator};
 use move_core_types::move_resource::MoveResource;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -141,14 +141,14 @@ pub fn compare_recovery_vec_to_genesis_tx(
                     let total_balance = (val_locked as f64 - val_pledge) + unlocked as f64;
 
                     // scale it
-                    total_balance * supply.split_factor
+                    let scaled = total_balance * supply.split_factor;
+
+                    scaled.floor()
                 } else {
                     balance_legacy.coin as f64 * supply.split_factor
                 };
 
                 if on_chain_balance.coin() != expected_balance as u64 {
-                    // dbg!(v.account);
-                    // dbg!(&on_chain_balance.coin(), &expected_balance);
                     err_list.push(CompareError {
                         index: i as u64,
                         account: v.account,

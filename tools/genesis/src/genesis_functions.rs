@@ -1,4 +1,6 @@
 //! ol functions to run at genesis e.g. migration.
+use std::ops::Mul;
+
 use crate::{
     process_comm_wallet,
     supply::{Supply, SupplySettings},
@@ -52,7 +54,7 @@ pub fn genesis_migrate_all_users(
 
             // migrating infra escrow, check if this has historically been a validator and has a slow wallet
             if a.val_cfg.is_some() && a.slow_wallet.is_some() {
-                match genesis_migrate_infra_escrow_alt(session, a, supply.escrow_pct, supply.split_factor) {
+                match genesis_migrate_infra_escrow_alt(session, a, supply) {
                     Ok(_) => {}
                     Err(e) => {
                         if a.role != AccountRole::System {
@@ -129,7 +131,7 @@ pub fn genesis_migrate_one_user(
         .expect("no balance found")
         .coin;
 
-    let rescaled_balance = (split_factor * legacy_balance as f64) as u64;
+    let rescaled_balance = (split_factor * legacy_balance as f64).floor() as u64;
 
     let serialized_values = serialize_values(&vec![
         MoveValue::Signer(CORE_CODE_ADDRESS),
@@ -180,18 +182,13 @@ pub fn genesis_migrate_slow_wallet(
             slow.unlocked
         };
 
-        let migrate_unlock = (unlocked as f64 * split_factor) as u64;
-
-        if user_recovery.val_cfg.is_some() {
-            dbg!(&acc_str);
-            dbg!(&migrate_unlock);
-        }
+        let migrate_unlock = (unlocked as f64 * split_factor).floor() as u64;
 
         let serialized_values = serialize_values(&vec![
             MoveValue::Signer(CORE_CODE_ADDRESS),
             MoveValue::Signer(new_addr_type),
             MoveValue::U64(migrate_unlock),
-            MoveValue::U64((slow.transferred as f64 * split_factor) as u64),
+            MoveValue::U64((slow.transferred as f64 * split_factor).floor() as u64),
         ]);
 
         exec_function(
@@ -242,12 +239,10 @@ pub fn genesis_migrate_infra_escrow(
     Ok(())
 }
 
-
 pub fn genesis_migrate_infra_escrow_alt(
     session: &mut SessionExt,
     user_recovery: &LegacyRecovery,
-    escrow_pct: f64,
-    split_factor: f64,
+    supply: &Supply,
 ) -> anyhow::Result<()> {
     if user_recovery.account.is_none()
         || user_recovery.auth_key.is_none()
@@ -264,17 +259,13 @@ pub fn genesis_migrate_infra_escrow_alt(
         .to_string();
     let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
 
-    let total_balance = user_recovery.balance.as_ref().expect("no balance struct").coin;
-    let unlocked = user_recovery.slow_wallet.as_ref().expect("no slow wallet struct").unlocked;
-    assert!(total_balance >= unlocked, "there should be no unlocked amount above balance, this should have been cleaned by now."); // we shouldn't have got this far if the data is bad
-    let validator_locked = total_balance - unlocked;
-    let pledge_coins_amount = escrow_pct * validator_locked as f64;
-    let scaled_pledge = pledge_coins_amount * split_factor;
+    let unscaled_pledge = util_calculate_infra_escrow(user_recovery, &supply)?;
+    let scaled_pledge = (unscaled_pledge as f64 * supply.split_factor).floor() as u64;
 
     let serialized_values = serialize_values(&vec![
         MoveValue::Signer(AccountAddress::ZERO), // is sent by the 0x0 address
         MoveValue::Signer(new_addr_type),
-        MoveValue::U64(scaled_pledge as u64), // TODO: superman 3?
+        MoveValue::U64(scaled_pledge),
     ]);
 
     exec_function(
@@ -285,6 +276,91 @@ pub fn genesis_migrate_infra_escrow_alt(
         serialized_values,
     );
     Ok(())
+}
+
+fn util_simulate_new_val_balance(
+    user_recovery: &mut LegacyRecovery,
+    supply: &Supply,
+) -> anyhow::Result<()> {
+    if user_recovery.balance.is_some()
+        && user_recovery.val_cfg.is_some()
+        && user_recovery.slow_wallet.is_some()
+    {
+        let contrib = util_calculate_infra_escrow(user_recovery, supply)?;
+        if let Some(b) = &mut user_recovery.balance {
+          b.coin = b.coin - contrib;
+        }
+    }
+
+    Ok(())
+}
+
+fn util_scale_all_coins(user_recovery: &mut LegacyRecovery, supply: &Supply) -> anyhow::Result<()> {
+    let split = supply.split_factor;
+
+    if let Some(b) = &mut user_recovery.balance {
+        b.coin = (b.coin as f64).mul(split).floor() as u64;
+    }
+
+    if let Some(b) = &mut user_recovery.slow_wallet {
+        b.unlocked = (b.unlocked as f64).mul(split).floor() as u64;
+        b.transferred = (b.transferred as f64).mul(split).floor() as u64;
+    }
+
+    if let Some(mk) = &mut user_recovery.make_whole {
+        mk.credits
+            .iter_mut()
+            .for_each(|el| el.coins.value = (el.coins.value as f64).mul(split).floor() as u64);
+    }
+
+    if let Some(rec) = &mut user_recovery.receipts {
+        rec.cumulative
+            .iter_mut()
+            .for_each(|el| *el = (el.to_owned() as f64).mul(split).floor() as u64);
+        rec.last_payment_value
+            .iter_mut()
+            .for_each(|el| *el = (el.to_owned() as f64).mul(split).floor() as u64);
+    }
+
+    if let Some(cumu) = &mut user_recovery.cumulative_deposits {
+        cumu.value = (cumu.value as f64 * split).floor() as u64;
+        cumu.index = (cumu.value as f64 * split).floor() as u64;
+    }
+
+    Ok(())
+}
+
+// helper for genesis and tests to calculate infra escrow the same
+pub fn util_calculate_infra_escrow(
+    user_recovery: &LegacyRecovery,
+    supply: &Supply,
+) -> anyhow::Result<u64> {
+    if user_recovery.account.is_none()
+        || user_recovery.auth_key.is_none()
+        || user_recovery.balance.is_none()
+        || user_recovery.slow_wallet.is_none()
+        || user_recovery.val_cfg.is_none()
+    {
+        anyhow::bail!("no validator account found {:?}", user_recovery);
+    }
+
+    let total_balance = user_recovery
+        .balance
+        .as_ref()
+        .expect("no balance struct")
+        .coin;
+    let unlocked = user_recovery
+        .slow_wallet
+        .as_ref()
+        .expect("no slow wallet struct")
+        .unlocked;
+    assert!(
+        total_balance >= unlocked,
+        "there should be no unlocked amount above balance, this should have been cleaned by now."
+    ); // we shouldn't have got this far if the data is bad
+    let validator_locked = total_balance - unlocked;
+    let pledge_coins_amount = supply.escrow_pct * validator_locked as f64;
+    Ok(pledge_coins_amount.floor() as u64)
 }
 
 pub fn genesis_migrate_receipts(
@@ -321,7 +397,7 @@ pub fn genesis_migrate_receipts(
             .iter()
             .map(|e| {
                 let scaled = (*e as f64) * supply.split_factor;
-                MoveValue::U64(scaled as u64)
+                MoveValue::U64(scaled.floor() as u64)
             })
             .collect();
 
@@ -336,7 +412,7 @@ pub fn genesis_migrate_receipts(
             .iter()
             .map(|e| {
                 let scaled = (*e as f64) * supply.split_factor;
-                MoveValue::U64(scaled as u64)
+                MoveValue::U64(scaled.floor() as u64)
             })
             .collect();
 
@@ -571,7 +647,7 @@ pub fn create_make_whole_incident(
     make_whole_budget: f64,
     split_factor: f64,
 ) -> anyhow::Result<()> {
-    let scaled_budget = (make_whole_budget * split_factor) as u64;
+    let scaled_budget = (make_whole_budget * split_factor).floor() as u64;
     let serialized_values = serialize_values(&vec![
         MoveValue::Signer(AccountAddress::ZERO), // must be called by 0x0
         MoveValue::U64(scaled_budget),
@@ -597,7 +673,7 @@ pub fn create_make_whole_incident(
                         .expect("could not find accout")
                         .try_into()
                         .unwrap(),
-                    (user_coins as f64 * split_factor) as u64,
+                    (user_coins as f64 * split_factor).floor() as u64,
                 )
             }
         });
