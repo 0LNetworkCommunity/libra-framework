@@ -22,14 +22,7 @@ fn test_correct_supply_arithmetic_all() {
         .join("sample_export_recovery.json");
 
     let user_accounts = recovery_file_parse(path).unwrap();
-
-    // get the supply arithmetic so that we can compare outputs
-    let mut supply_stats = supply::populate_supply_stats_from_legacy(&user_accounts, &[]).unwrap();
-    let supply_settings = SupplySettings {
-        target_supply: 100_000_000_000.0,
-        target_future_uses: 0.70,
-        years_escrow: 7,
-        map_dd_to_slow: vec![
+    let map_dd_to_slow = vec![
             // FTW
             "3A6C51A0B786D644590E8A21591FA8E2"
                 .parse::<LegacyAddress>()
@@ -38,7 +31,14 @@ fn test_correct_supply_arithmetic_all() {
             "2B0E8325DEA5BE93D856CFDE2D0CBA12"
                 .parse::<LegacyAddress>()
                 .unwrap(),
-        ],
+        ];
+    // get the supply arithmetic so that we can compare outputs
+    let mut supply_stats = supply::populate_supply_stats_from_legacy(&user_accounts, &map_dd_to_slow).unwrap();
+    let supply_settings = SupplySettings {
+        target_supply: 100_000_000_000.0,
+        target_future_uses: 0.70,
+        years_escrow: 7,
+        map_dd_to_slow,
     };
     supply_stats
         .set_ratios_from_settings(&supply_settings)
