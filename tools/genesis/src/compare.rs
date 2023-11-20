@@ -96,7 +96,7 @@ pub fn compare_recovery_vec_to_genesis_tx(
 
                 let expected_unlocked = supply.split_factor * slow_legacy.unlocked as f64;
 
-                if on_chain_slow_wallet.unlocked != expected_unlocked.ceil() as u64 {
+                if on_chain_slow_wallet.unlocked != expected_unlocked as u64 {
                     err_list.push(CompareError {
                         index: i as u64,
                         account: v.account,
@@ -146,7 +146,7 @@ pub fn compare_recovery_vec_to_genesis_tx(
                     balance_legacy.coin as f64 * supply.split_factor
                 };
 
-                if on_chain_balance.coin() != expected_balance.ceil() as u64 {
+                if on_chain_balance.coin() != expected_balance as u64 {
                     // dbg!(v.account);
                     // dbg!(&on_chain_balance.coin(), &expected_balance);
                     err_list.push(CompareError {

@@ -274,7 +274,7 @@ pub fn genesis_migrate_infra_escrow_alt(
     let serialized_values = serialize_values(&vec![
         MoveValue::Signer(AccountAddress::ZERO), // is sent by the 0x0 address
         MoveValue::Signer(new_addr_type),
-        MoveValue::U64(scaled_pledge as u64),
+        MoveValue::U64(scaled_pledge as u64), // TODO: superman 3?
     ]);
 
     exec_function(
