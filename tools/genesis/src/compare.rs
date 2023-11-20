@@ -34,7 +34,9 @@ pub struct CompareError {
     /// user account
     pub account: Option<LegacyAddress>,
     /// balance difference [LegacyRecover]- [genesis blob]
-    pub bal_diff: i64,
+    // pub bal_diff: i64,
+    pub expected: f64,
+    pub migrated: f64,
     /// error message
     pub message: String,
 }
@@ -58,7 +60,8 @@ pub fn compare_recovery_vec_to_genesis_tx(
                 err_list.push(CompareError {
                     index: i as u64,
                     account: None,
-                    bal_diff: 0,
+                    expected: 0f64,
+                    migrated: 0f64,
                     message: "account is None".to_string(),
                 }); // instead of balance, if there is an account that is None, we insert the index of the recovery file
                 return;
@@ -71,7 +74,8 @@ pub fn compare_recovery_vec_to_genesis_tx(
                 err_list.push(CompareError {
                     index: i as u64,
                     account: v.account,
-                    bal_diff: 0,
+                    expected: 0f64,
+                    migrated: 0f64,
                     message: "recovery file balance is None".to_string(),
                 });
                 return;
@@ -96,7 +100,9 @@ pub fn compare_recovery_vec_to_genesis_tx(
                     err_list.push(CompareError {
                         index: i as u64,
                         account: v.account,
-                        bal_diff: on_chain_slow_wallet.unlocked as i64 - expected_unlocked as i64,
+                        expected: expected_unlocked,
+                        migrated: on_chain_slow_wallet.unlocked as f64,
+                        // bal_diff: on_chain_slow_wallet.unlocked as i64 - expected_unlocked as i64,
                         message: "unexpected slow wallet unlocked".to_string(),
                     });
                 }
@@ -114,7 +120,8 @@ pub fn compare_recovery_vec_to_genesis_tx(
                         err_list.push(CompareError {
                             index: i as u64,
                             account: v.account,
-                            bal_diff: unlocked as i64 - balance_legacy.coin as i64,
+                            expected: s.unlocked as f64,
+                            migrated: balance_legacy.coin as f64,
                             message: "unlocked greater than balance".to_string(),
                         });
                     }
@@ -145,7 +152,8 @@ pub fn compare_recovery_vec_to_genesis_tx(
                     err_list.push(CompareError {
                         index: i as u64,
                         account: v.account,
-                        bal_diff: on_chain_balance.coin() as i64 - expected_balance as i64,
+                        expected: expected_balance,
+                        migrated: on_chain_balance.coin() as f64,
                         message: "unexpected balance".to_string(),
                     });
                 }

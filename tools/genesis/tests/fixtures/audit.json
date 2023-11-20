@@ -2,1669 +2,1947 @@
   {
     "index": 195,
     "account": "adcb1d42a46292ae89e938bd982f2867",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 195,
     "account": "adcb1d42a46292ae89e938bd982f2867",
-    "bal_diff": -10875887768295,
+    "expected": 22652814928684.09,
+    "migrated": 22652845045238.0,
     "message": "unexpected balance"
   },
   {
     "index": 337,
     "account": "db971ba7467a10e8fb9f9b660f09f50d",
-    "bal_diff": -1415778774873,
+    "expected": 1415778774873.6526,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 337,
     "account": "db971ba7467a10e8fb9f9b660f09f50d",
-    "bal_diff": -56609891793952,
+    "expected": 33281303022354.66,
+    "migrated": 33281459781500.0,
     "message": "unexpected balance"
   },
   {
     "index": 546,
     "account": "e8a1bf5e60fa00c2b792098b12fde964",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 546,
     "account": "e8a1bf5e60fa00c2b792098b12fde964",
-    "bal_diff": -54204965887930,
+    "expected": 47042612288969.836,
+    "migrated": 47042762388605.0,
     "message": "unexpected balance"
   },
   {
     "index": 552,
     "account": "4ef2d7fd0ba37849fb94799c13084b16",
-    "bal_diff": -1707670460761,
+    "expected": 1707670460761.2532,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 552,
     "account": "4ef2d7fd0ba37849fb94799c13084b16",
-    "bal_diff": -46712170638059,
+    "expected": 28001799612913.453,
+    "migrated": 28001928964158.0,
     "message": "unexpected balance"
   },
   {
     "index": 749,
     "account": "845e52c3ccdc7e725fa8c037b995e442",
-    "bal_diff": -3747997509048,
+    "expected": 3747997509048.3325,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 749,
     "account": "845e52c3ccdc7e725fa8c037b995e442",
-    "bal_diff": -19025338150944,
+    "expected": 14457298568518.14,
+    "migrated": 14457351251815.0,
     "message": "unexpected balance"
   },
   {
     "index": 1113,
     "account": "7e56b29cb23a49368be593e5cfc9712e",
-    "bal_diff": -16530729745221,
+    "expected": 16530729745221.916,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 1113,
     "account": "7e56b29cb23a49368be593e5cfc9712e",
-    "bal_diff": -216367679857303,
+    "expected": 138323394072493.06,
+    "migrated": 138323993218886.0,
     "message": "unexpected balance"
   },
   {
     "index": 1265,
     "account": "3e169c31b0ddfed4f464e1756a90dfb5",
-    "bal_diff": -170721242815,
+    "expected": 170721242815.85767,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 1265,
     "account": "3e169c31b0ddfed4f464e1756a90dfb5",
-    "bal_diff": -193369452948632,
+    "expected": 109017758331039.62,
+    "migrated": 109018293792761.0,
     "message": "unexpected balance"
   },
   {
     "index": 1290,
     "account": "4c95e7b998b4e66ef666fe12930a4d5c",
-    "bal_diff": -1207582137293,
+    "expected": 1207582137293.3384,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 1290,
     "account": "4c95e7b998b4e66ef666fe12930a4d5c",
-    "bal_diff": -293056188624487,
+    "expected": 166167959000006.97,
+    "migrated": 166168770505490.0,
     "message": "unexpected balance"
   },
   {
     "index": 1341,
     "account": "e39e5ef9f3a51e8aeed47539c9915931",
-    "bal_diff": -707910207100,
+    "expected": 707910207100.5844,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 1341,
     "account": "e39e5ef9f3a51e8aeed47539c9915931",
-    "bal_diff": -10187090028751,
+    "expected": 6442190101222.188,
+    "migrated": 6442218310418.0,
     "message": "unexpected balance"
   },
   {
     "index": 1389,
     "account": "f87f7e60a019f509eb6573018cd0d8b8",
-    "bal_diff": -7885905680957,
+    "expected": 7885905680957.077,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 1389,
     "account": "f87f7e60a019f509eb6573018cd0d8b8",
-    "bal_diff": -35614034228613,
+    "expected": 27932929889961.47,
+    "migrated": 27933028509220.0,
     "message": "unexpected balance"
   },
   {
     "index": 1584,
     "account": "756d518db499a22c1dad0e2ee353c21d",
-    "bal_diff": -6957765070624,
+    "expected": 6957765070624.037,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 1584,
     "account": "756d518db499a22c1dad0e2ee353c21d",
-    "bal_diff": -159046519658670,
+    "expected": 96484534475298.81,
+    "migrated": 96484974892966.0,
     "message": "unexpected balance"
   },
   {
     "index": 1634,
     "account": "6da2b828f3018637379203940c639a95",
-    "bal_diff": -6495984928470,
+    "expected": 6495984928470.899,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 1634,
     "account": "6da2b828f3018637379203940c639a95",
-    "bal_diff": -7727749335709,
+    "expected": 10845909933305.76,
+    "migrated": 10845931332311.0,
     "message": "unexpected balance"
   },
   {
     "index": 1662,
     "account": "46a7a744b5d33c47f6b20766f8088b10",
-    "bal_diff": -16438373716791,
+    "expected": 16438373716791.29,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 1662,
     "account": "46a7a744b5d33c47f6b20766f8088b10",
-    "bal_diff": -148328591570646,
+    "expected": 99932056207702.28,
+    "migrated": 99932466946223.0,
     "message": "unexpected balance"
   },
   {
     "index": 1803,
     "account": "1c03e956dd7afc612e4efe240c23365d",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 1803,
     "account": "1c03e956dd7afc612e4efe240c23365d",
-    "bal_diff": -109414086928228,
+    "expected": 78119647228287.88,
+    "migrated": 78119950208176.0,
     "message": "unexpected balance"
   },
   {
     "index": 1827,
     "account": "1e0f82ed044ad1b1e927f58da129a630",
-    "bal_diff": -124501589273,
+    "expected": 124501589273.0279,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 1827,
     "account": "1e0f82ed044ad1b1e927f58da129a630",
-    "bal_diff": -140173942309800,
+    "expected": 79027958493868.08,
+    "migrated": 79028346651250.0,
     "message": "unexpected balance"
   },
   {
     "index": 1890,
     "account": "6a9f0fa0b6bd687f4343d8880b40f697",
-    "bal_diff": -1332500119841,
+    "expected": 1332500119841.527,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 1890,
     "account": "6a9f0fa0b6bd687f4343d8880b40f697",
-    "bal_diff": -322352777120778,
+    "expected": 182783831505042.88,
+    "migrated": 182784724136068.0,
     "message": "unexpected balance"
   },
   {
     "index": 1999,
     "account": "012345062ce76e68f1ac6d5506527aa1",
-    "bal_diff": -3580982166381,
+    "expected": 3580982166381.4043,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 1999,
     "account": "012345062ce76e68f1ac6d5506527aa1",
-    "bal_diff": -279765144411897,
+    "expected": 161059873405130.72,
+    "migrated": 161060648106220.0,
     "message": "unexpected balance"
   },
   {
     "index": 2172,
     "account": "048ccb33bf48a0f333023e0e8ecce568",
-    "bal_diff": -6957931627934,
+    "expected": 6957931627934.101,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 2172,
     "account": "048ccb33bf48a0f333023e0e8ecce568",
-    "bal_diff": -134280536505122,
+    "expected": 82544009544192.89,
+    "migrated": 82544381382072.0,
     "message": "unexpected balance"
   },
   {
     "index": 2181,
     "account": "2023c65e5323feb2671eb690d5649ae3",
-    "bal_diff": -833202943596,
+    "expected": 833202943596.4175,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 2181,
     "account": "2023c65e5323feb2671eb690d5649ae3",
-    "bal_diff": -160379119034081,
+    "expected": 91110088209009.53,
+    "migrated": 91110532316793.0,
     "message": "unexpected balance"
   },
   {
     "index": 2374,
     "account": "779fd01dfe608a4288b4b514d17da48b",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 2374,
     "account": "779fd01dfe608a4288b4b514d17da48b",
-    "bal_diff": -158437057744210,
+    "expected": 105714518296158.48,
+    "migrated": 105714957026156.0,
     "message": "unexpected balance"
   },
   {
     "index": 2418,
     "account": "c60aa211476fa7b451fb77ee9df81594",
-    "bal_diff": -9243930708565,
+    "expected": 9243930708565.951,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 2418,
     "account": "c60aa211476fa7b451fb77ee9df81594",
-    "bal_diff": -86328247922134,
+    "expected": 57837821108814.664,
+    "migrated": 57838060161423.0,
     "message": "unexpected balance"
   },
   {
     "index": 2449,
     "account": "69a385e1744e33fbb24a42ecbd1603e3",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 2449,
     "account": "69a385e1744e33fbb24a42ecbd1603e3",
-    "bal_diff": -55690115935961,
+    "expected": 47878598427910.164,
+    "migrated": 47878752640092.0,
     "message": "unexpected balance"
   },
   {
     "index": 2549,
     "account": "56641e58aba97fa6b7ea833f83444392",
-    "bal_diff": -4711448269114,
+    "expected": 4711448269114.994,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 2549,
     "account": "56641e58aba97fa6b7ea833f83444392",
-    "bal_diff": -292489040558335,
+    "expected": 169352579327231.38,
+    "migrated": 169353389262217.0,
     "message": "unexpected balance"
   },
   {
     "index": 2555,
     "account": "e264023342b41accdbb61a190b6cb2a7",
-    "bal_diff": -1956257246032,
+    "expected": 1956257246032.1484,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 2555,
     "account": "e264023342b41accdbb61a190b6cb2a7",
-    "bal_diff": -145460975251703,
+    "expected": 83835767823731.03,
+    "migrated": 83836170621500.0,
     "message": "unexpected balance"
   },
   {
     "index": 2562,
     "account": "7756310e875636763d16f080bb236cab",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 2562,
     "account": "7756310e875636763d16f080bb236cab",
-    "bal_diff": -30959243376811,
+    "expected": 33957670579058.203,
+    "migrated": 33957756308678.0,
     "message": "unexpected balance"
   },
   {
     "index": 2647,
     "account": "b2c091a8b0514e64ea42d80328db2729",
-    "bal_diff": -4248127471843,
+    "expected": 4248127471843.763,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 2647,
     "account": "b2c091a8b0514e64ea42d80328db2729",
-    "bal_diff": -3652540633900,
+    "expected": 6304130732865.812,
+    "migrated": 6304140847161.0,
     "message": "unexpected balance"
   },
   {
     "index": 2665,
     "account": "52d79701968e2ab8d34ddd77ad11e87f",
-    "bal_diff": -1465704328565,
+    "expected": 1465704328565.412,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 2665,
     "account": "52d79701968e2ab8d34ddd77ad11e87f",
-    "bal_diff": -7225128774664,
+    "expected": 5532705851871.81,
+    "migrated": 5532725859064.0,
     "message": "unexpected balance"
   },
   {
     "index": 2685,
     "account": "a35ae41a5f1701fcb67f4e4cad59d259",
-    "bal_diff": -83695048307,
+    "expected": 83695048307.28632,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 2685,
     "account": "a35ae41a5f1701fcb67f4e4cad59d259",
-    "bal_diff": -62368671182362,
+    "expected": 35190817511611.54,
+    "migrated": 35190990217463.0,
     "message": "unexpected balance"
   },
   {
     "index": 2796,
     "account": "9f1d8c66883768f167a097ff4c58de88",
-    "bal_diff": -1051501757609,
+    "expected": 3872457458993.844,
+    "migrated": 2820955701384.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 2796,
     "account": "9f1d8c66883768f167a097ff4c58de88",
-    "bal_diff": -361491287982,
+    "expected": 4075939731038.8687,
+    "migrated": 4075940732049.0,
     "message": "unexpected balance"
   },
   {
     "index": 2942,
     "account": "b295da228c6808199d92dc813975755c",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 2942,
     "account": "b295da228c6808199d92dc813975755c",
-    "bal_diff": -211981455616157,
+    "expected": 135854485970280.77,
+    "migrated": 135855072970727.0,
     "message": "unexpected balance"
   },
   {
     "index": 3007,
     "account": "d1281de242839fc939745996882c5fc2",
-    "bal_diff": -1957256589892,
+    "expected": 1957256589892.534,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 3007,
     "account": "d1281de242839fc939745996882c5fc2",
-    "bal_diff": -143295348814490,
+    "expected": 82617743079059.64,
+    "migrated": 82618139879966.0,
     "message": "unexpected balance"
   },
   {
     "index": 3055,
     "account": "79da3cf5f8d2376e4f7dc21a04b86fd6",
-    "bal_diff": -12033765652142,
+    "expected": 12033765652142.162,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 3055,
     "account": "79da3cf5f8d2376e4f7dc21a04b86fd6",
-    "bal_diff": -17717032580352,
+    "expected": 22006625754711.18,
+    "migrated": 22006674815164.0,
     "message": "unexpected balance"
   },
   {
     "index": 3073,
     "account": "0df25b43a49bab2f313eeb6f12af098a",
-    "bal_diff": -417017865073,
+    "expected": 417017865073.3694,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 3073,
     "account": "0df25b43a49bab2f313eeb6f12af098a",
-    "bal_diff": -3197930298567,
+    "expected": 2217122444705.2695,
+    "migrated": 2217131300133.0,
     "message": "unexpected balance"
   },
   {
     "index": 3388,
     "account": "c0a1f4d49658cf2fe5402e10f496bb80",
-    "bal_diff": -10451471206531,
+    "expected": 10451471206531.773,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 3388,
     "account": "c0a1f4d49658cf2fe5402e10f496bb80",
-    "bal_diff": -160891946054735,
+    "expected": 101017025136440.27,
+    "migrated": 101017470664299.0,
     "message": "unexpected balance"
   },
   {
     "index": 3595,
     "account": "71cd7dac2332c0200059af45818b95f8",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 3595,
     "account": "71cd7dac2332c0200059af45818b95f8",
-    "bal_diff": -54158886432056,
+    "expected": 47016674312903.41,
+    "migrated": 47016824284939.0,
     "message": "unexpected balance"
   },
   {
     "index": 3738,
     "account": "311f36c5aafdfaa265564284fdb124b4",
-    "bal_diff": -1415737135546,
+    "expected": 1415737135546.1367,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 3738,
     "account": "311f36c5aafdfaa265564284fdb124b4",
-    "bal_diff": -46484001423111,
+    "expected": 27581430577594.203,
+    "migrated": 27581559297012.0,
     "message": "unexpected balance"
   },
   {
     "index": 3789,
     "account": "c5162c65fde8c9d9ca9b564e41a54003",
-    "bal_diff": -1340474429219,
+    "expected": 6241318801382.659,
+    "migrated": 4900844372163.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 3789,
     "account": "c5162c65fde8c9d9ca9b564e41a54003",
-    "bal_diff": -460835965721,
+    "expected": 6500721869900.602,
+    "migrated": 6500723146007.0,
     "message": "unexpected balance"
   },
   {
     "index": 3815,
     "account": "d54e2c10b1810c2654184569b8ba2e96",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 3815,
     "account": "d54e2c10b1810c2654184569b8ba2e96",
-    "bal_diff": -25067220121349,
+    "expected": 30641069823186.586,
+    "migrated": 30641139237133.0,
     "message": "unexpected balance"
   },
   {
     "index": 4129,
     "account": "64b21681ce1c34854498ed92d76432a2",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 4129,
     "account": "64b21681ce1c34854498ed92d76432a2",
-    "bal_diff": -98491261987457,
+    "expected": 71971224541525.4,
+    "migrated": 71971497274886.0,
     "message": "unexpected balance"
   },
   {
     "index": 4154,
     "account": "9909f6edb2a0684adecd7b448b989e4f",
-    "bal_diff": -1120972336059,
+    "expected": 1120972336059.9277,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 4154,
     "account": "9909f6edb2a0684adecd7b448b989e4f",
-    "bal_diff": -178091862650361,
+    "expected": 101368303460093.28,
+    "migrated": 101368796616452.0,
     "message": "unexpected balance"
   },
   {
     "index": 4292,
     "account": "092f2d0b0e098a69d329c11671eab24d",
-    "bal_diff": -44122440728,
+    "expected": 4664021075074.199,
+    "migrated": 4619898634346.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 4292,
     "account": "092f2d0b0e098a69d329c11671eab24d",
-    "bal_diff": -15168665019,
+    "expected": 4672559467352.38,
+    "migrated": 4672559509356.0,
     "message": "unexpected balance"
   },
   {
     "index": 4709,
     "account": "8421cb22e56f687395f5973bbf0cbdfb",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 4709,
     "account": "8421cb22e56f687395f5973bbf0cbdfb",
-    "bal_diff": -113914590365733,
+    "expected": 80652965997658.73,
+    "migrated": 80653281439946.0,
     "message": "unexpected balance"
   },
   {
     "index": 4731,
     "account": "b5b5ba58b8e9916fe449d1f989383834",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 4731,
     "account": "b5b5ba58b8e9916fe449d1f989383834",
-    "bal_diff": -156766893933990,
+    "expected": 104774388511322.58,
+    "migrated": 104774822616449.0,
     "message": "unexpected balance"
   },
   {
     "index": 4908,
     "account": "7d299bf3d624e937c23302d8b5e3a1b2",
-    "bal_diff": -1904997606187,
+    "expected": 5579669887152.421,
+    "migrated": 3674672280965.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 4908,
     "account": "7d299bf3d624e937c23302d8b5e3a1b2",
-    "bal_diff": -654910972122,
+    "expected": 5948317146505.16,
+    "migrated": 5948318960027.0,
     "message": "unexpected balance"
   },
   {
     "index": 4924,
     "account": "c051bd516ca491cdf88c0a0656a552b0",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 4924,
     "account": "c051bd516ca491cdf88c0a0656a552b0",
-    "bal_diff": -21177832522154,
+    "expected": 28451746174571.4,
+    "migrated": 28451804818366.0,
     "message": "unexpected balance"
   },
   {
     "index": 4958,
     "account": "c0ffee1a3393516d27b72b28464eaa5f",
-    "bal_diff": -1002208130941,
+    "expected": 6654797323617.163,
+    "migrated": 5652589192676.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 4958,
     "account": "c0ffee1a3393516d27b72b28464eaa5f",
-    "bal_diff": -344544843086,
+    "expected": 6848740496864.553,
+    "migrated": 6848741450948.0,
     "message": "unexpected balance"
   },
   {
     "index": 4962,
     "account": "647a19215edcb0a18e6aff3d24e3a4d8",
-    "bal_diff": -1415737135546,
+    "expected": 1415737135546.1367,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 4962,
     "account": "647a19215edcb0a18e6aff3d24e3a4d8",
-    "bal_diff": -12140125922499,
+    "expected": 8249374591680.799,
+    "migrated": 8249408209053.0,
     "message": "unexpected balance"
   },
   {
     "index": 4984,
     "account": "8186f4d8fdd09dfe02963b0b4c385105",
-    "bal_diff": -16364089156502,
+    "expected": 16364089156502.633,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 4984,
     "account": "8186f4d8fdd09dfe02963b0b4c385105",
-    "bal_diff": -122223867272617,
+    "expected": 85163507116395.03,
+    "migrated": 85163845568003.0,
     "message": "unexpected balance"
   },
   {
     "index": 5008,
     "account": "44c7d1c88561bb3df6b39a4096fc3f32",
-    "bal_diff": -2457136716722,
+    "expected": 2457136716722.868,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 5008,
     "account": "44c7d1c88561bb3df6b39a4096fc3f32",
-    "bal_diff": -23765477193275,
+    "expected": 15834646649291.877,
+    "migrated": 15834712458566.0,
     "message": "unexpected balance"
   },
   {
     "index": 5015,
     "account": "8211f452baa248cbab103474f6f47a43",
-    "bal_diff": -478269315849,
+    "expected": 478269315849.4978,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 5015,
     "account": "8211f452baa248cbab103474f6f47a43",
-    "bal_diff": -56077858330512,
+    "expected": 32044313654563.832,
+    "migrated": 32044468940448.0,
     "message": "unexpected balance"
   },
   {
     "index": 5065,
     "account": "b8ba6c084fa504add5f23ae51e41f23d",
-    "bal_diff": -83237015704,
+    "expected": 83237015704.60962,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 5065,
     "account": "b8ba6c084fa504add5f23ae51e41f23d",
-    "bal_diff": -46863195130672,
+    "expected": 26462377364288.973,
+    "migrated": 26462507133737.0,
     "message": "unexpected balance"
   },
   {
     "index": 5278,
     "account": "aa7905a5066255298c5d0f53945c65b9",
-    "bal_diff": -417017865073,
+    "expected": 417017865073.3694,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 5278,
     "account": "aa7905a5066255298c5d0f53945c65b9",
-    "bal_diff": -3197936707258,
+    "expected": 2217126052136.3843,
+    "migrated": 2217134907582.0,
     "message": "unexpected balance"
   },
   {
     "index": 5649,
     "account": "4b08c148f5e80962be1e5755f0d2ed29",
-    "bal_diff": -3706274902877,
+    "expected": 3706274902877.2373,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 5649,
     "account": "4b08c148f5e80962be1e5755f0d2ed29",
-    "bal_diff": -297119098879864,
+    "expected": 170953650753847.06,
+    "migrated": 170954473509985.0,
     "message": "unexpected balance"
   },
   {
     "index": 5743,
     "account": "b1baaa259104fbb80d38a8ac6f584ada",
-    "bal_diff": -1374139447357,
+    "expected": 1374139447357.5898,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 5743,
     "account": "b1baaa259104fbb80d38a8ac6f584ada",
-    "bal_diff": -150245757186861,
+    "expected": 85946988237548.36,
+    "migrated": 85947404284916.0,
     "message": "unexpected balance"
   },
   {
     "index": 5870,
     "account": "32f24e0488a4e189d38fccd1f2a94b53",
-    "bal_diff": -8228972100361,
+    "expected": 8228972100361.919,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 5870,
     "account": "32f24e0488a4e189d38fccd1f2a94b53",
-    "bal_diff": -46275326721847,
+    "expected": 34277203230749.445,
+    "migrated": 34277331372323.0,
     "message": "unexpected balance"
   },
   {
     "index": 6033,
     "account": "4152478106c9080141da1a7176292b8c",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 6033,
     "account": "4152478106c9080141da1a7176292b8c",
-    "bal_diff": -19906731974938,
+    "expected": 27736247804504.047,
+    "migrated": 27736302928479.0,
     "message": "unexpected balance"
   },
   {
     "index": 6335,
     "account": "84417cef5647097127e1bc24fd1002c6",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 6335,
     "account": "84417cef5647097127e1bc24fd1002c6",
-    "bal_diff": -37614371742021,
+    "expected": 37703820722986.76,
+    "migrated": 37703924881404.0,
     "message": "unexpected balance"
   },
   {
     "index": 6422,
     "account": "304a03c0b4acdfdce54bfaf39d4e0448",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 6422,
     "account": "304a03c0b4acdfdce54bfaf39d4e0448",
-    "bal_diff": -193067404462801,
+    "expected": 125207828000343.1,
+    "migrated": 125208362625658.0,
     "message": "unexpected balance"
   },
   {
     "index": 6568,
     "account": "5abedec612ea01b9f6f2eaad7187bfef",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 6568,
     "account": "5abedec612ea01b9f6f2eaad7187bfef",
-    "bal_diff": -122392949797498,
+    "expected": 85425406987921.19,
+    "migrated": 85425745907738.0,
     "message": "unexpected balance"
   },
   {
     "index": 6860,
     "account": "9a710919b1a1e67eda335269c0085c91",
-    "bal_diff": -87442587783,
+    "expected": 87442587783.73196,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 6860,
     "account": "9a710919b1a1e67eda335269c0085c91",
-    "bal_diff": -162553718638678,
+    "expected": 91588402908508.0,
+    "migrated": 91588853038002.0,
     "message": "unexpected balance"
   },
   {
     "index": 7271,
     "account": "99e4ee712e2a57f694344d288a0fc27a",
-    "bal_diff": -2040327048287,
+    "expected": 2040327048287.0793,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 7271,
     "account": "99e4ee712e2a57f694344d288a0fc27a",
-    "bal_diff": -1763626825721,
+    "expected": 3033066861023.5,
+    "migrated": 3033071744705.0,
     "message": "unexpected balance"
   },
   {
     "index": 7408,
     "account": "d3dba952a851ff15a841c339b426e1ea",
-    "bal_diff": -57628829282,
+    "expected": 57628829282.23097,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 7408,
     "account": "d3dba952a851ff15a841c339b426e1ea",
-    "bal_diff": -39448484335291,
+    "expected": 22263052550775.566,
+    "migrated": 22263161788057.0,
     "message": "unexpected balance"
   },
   {
     "index": 7623,
     "account": "d85c69af1b7fad9ac8e591ac6a172c11",
-    "bal_diff": -7080392890158,
+    "expected": 7080392890158.842,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 7623,
     "account": "d85c69af1b7fad9ac8e591ac6a172c11",
-    "bal_diff": -44079273160005,
+    "expected": 31892472602374.316,
+    "migrated": 31892594662829.0,
     "message": "unexpected balance"
   },
   {
     "index": 7781,
     "account": "59c6262930e3ebb3398d5b88790c090c",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 7781,
     "account": "59c6262930e3ebb3398d5b88790c090c",
-    "bal_diff": -15676294912624,
+    "expected": 25354948520674.4,
+    "migrated": 25354991930094.0,
     "message": "unexpected balance"
   },
   {
     "index": 7893,
     "account": "5dc8c3878e99e9fd12ebdefa1803d332",
-    "bal_diff": -1995637038093,
+    "expected": 5458499444080.678,
+    "migrated": 3462862405987.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 7893,
     "account": "5dc8c3878e99e9fd12ebdefa1803d332",
-    "bal_diff": -686071514408,
+    "expected": 5844686871491.008,
+    "migrated": 5844688771300.0,
     "message": "unexpected balance"
   },
   {
     "index": 8100,
     "account": "49d3c58668e4accc43b8a77a9f2835fa",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 8100,
     "account": "49d3c58668e4accc43b8a77a9f2835fa",
-    "bal_diff": -45709967082415,
+    "expected": 42260805049260.75,
+    "migrated": 42260931625290.0,
     "message": "unexpected balance"
   },
   {
     "index": 8130,
     "account": "401a9629c18beee8ceca48cd23c70333",
-    "bal_diff": -250085801061,
+    "expected": 250085801061.47342,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 8130,
     "account": "401a9629c18beee8ceca48cd23c70333",
-    "bal_diff": -36023976415054,
+    "expected": 20527865135506.5,
+    "migrated": 20527964889941.0,
     "message": "unexpected balance"
   },
   {
     "index": 8142,
     "account": "3983317328ea613e8de12725f560f683",
-    "bal_diff": -1458209249612,
+    "expected": 1458209249612.5208,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 8142,
     "account": "3983317328ea613e8de12725f560f683",
-    "bal_diff": -81382885980344,
+    "expected": 47268371473128.13,
+    "migrated": 47268596831475.0,
     "message": "unexpected balance"
   },
   {
     "index": 8304,
     "account": "e4e9fb27d7a8150162614ebdd282e195",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 8304,
     "account": "e4e9fb27d7a8150162614ebdd282e195",
-    "bal_diff": -102776085837297,
+    "expected": 74383137971429.67,
+    "migrated": 74383422569948.0,
     "message": "unexpected balance"
   },
   {
     "index": 8494,
     "account": "749ff1a8b711605e5421cfd00bd3385f",
-    "bal_diff": -1666031133245,
+    "expected": 1666031133245.1904,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 8494,
     "account": "749ff1a8b711605e5421cfd00bd3385f",
-    "bal_diff": -154924717034279,
+    "expected": 88872651226401.62,
+    "migrated": 88873080230334.0,
     "message": "unexpected balance"
   },
   {
     "index": 8528,
     "account": "fdd67bb9d91c0e2b278a4c1537651e30",
-    "bal_diff": -6158373260970,
+    "expected": 6158373260970.662,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 8528,
     "account": "fdd67bb9d91c0e2b278a4c1537651e30",
-    "bal_diff": -16810937206432,
+    "expected": 15621195220147.22,
+    "migrated": 15621241771519.0,
     "message": "unexpected balance"
   },
   {
     "index": 8757,
     "account": "9401af0f29d2afd49b8e48a0c361f661",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 8757,
     "account": "9401af0f29d2afd49b8e48a0c361f661",
-    "bal_diff": -20975450365750,
+    "expected": 28337825915977.9,
+    "migrated": 28337883999354.0,
     "message": "unexpected balance"
   },
   {
     "index": 8859,
     "account": "16b3da73e53d17bfeb6b542f1ac33444",
-    "bal_diff": -208196637580,
+    "expected": 208196637580.3142,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 8859,
     "account": "16b3da73e53d17bfeb6b542f1ac33444",
-    "bal_diff": -21830154499658,
+    "expected": 12496319710965.828,
+    "migrated": 12496380161114.0,
     "message": "unexpected balance"
   },
   {
     "index": 8946,
     "account": "d871c61a37f26ee71e3f156e5f201118",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 8946,
     "account": "d871c61a37f26ee71e3f156e5f201118",
-    "bal_diff": -9149422874886,
+    "expected": 21680993446961.33,
+    "migrated": 21681018782740.0,
     "message": "unexpected balance"
   },
   {
     "index": 9004,
     "account": "c067823aa108fb83f9f1015b429c0865",
-    "bal_diff": -13988315685746,
+    "expected": 13988315685746.15,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 9004,
     "account": "c067823aa108fb83f9f1015b429c0865",
-    "bal_diff": -13095561710519,
+    "expected": 21359764844133.96,
+    "migrated": 21359801107215.0,
     "message": "unexpected balance"
   },
   {
     "index": 9008,
     "account": "c8198aefbe0ab5375185ab3207f806a0",
-    "bal_diff": -124126835325,
+    "expected": 124126835325.38333,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 9008,
     "account": "c8198aefbe0ab5375185ab3207f806a0",
-    "bal_diff": -20643452360014,
+    "expected": 11744259128177.115,
+    "migrated": 11744316292214.0,
     "message": "unexpected balance"
   },
   {
     "index": 9326,
     "account": "79d2a77b01e5cde1a5fb123119424acb",
-    "bal_diff": -42097360118,
+    "expected": 42097360118.73953,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 9326,
     "account": "79d2a77b01e5cde1a5fb123119424acb",
-    "bal_diff": -204599323987712,
+    "expected": 115210392386696.36,
+    "migrated": 115210958945191.0,
     "message": "unexpected balance"
   },
   {
     "index": 9405,
     "account": "c846b6a1f74cd459de2b547e0d6ece41",
-    "bal_diff": -15364079066876,
+    "expected": 15364079066876.867,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 9405,
     "account": "c846b6a1f74cd459de2b547e0d6ece41",
-    "bal_diff": -126496938127862,
+    "expected": 86568794734184.28,
+    "migrated": 86569145018405.0,
     "message": "unexpected balance"
   },
   {
     "index": 9557,
     "account": "987d7486a6db70993eeab79124bc6606",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 9557,
     "account": "987d7486a6db70993eeab79124bc6606",
-    "bal_diff": -327135181181909,
+    "expected": 200674144124002.66,
+    "migrated": 200675049998041.0,
     "message": "unexpected balance"
   },
   {
     "index": 9639,
     "account": "e57cf27b3381574151b4fcea65bda0d2",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 9639,
     "account": "e57cf27b3381574151b4fcea65bda0d2",
-    "bal_diff": -48927510387653,
+    "expected": 44071949726653.15,
+    "migrated": 44072085212421.0,
     "message": "unexpected balance"
   },
   {
     "index": 9654,
     "account": "012338b54ba4625adcc313394d87819c",
-    "bal_diff": -3414424856317,
+    "expected": 3414424856317.153,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 9654,
     "account": "012338b54ba4625adcc313394d87819c",
-    "bal_diff": -353428119705941,
+    "expected": 202357965664043.4,
+    "migrated": 202358944346181.0,
     "message": "unexpected balance"
   },
   {
     "index": 9760,
     "account": "92b2b4e3388403067d8382a33584390a",
-    "bal_diff": -1208414923843,
+    "expected": 1208414923843.6597,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 9760,
     "account": "92b2b4e3388403067d8382a33584390a",
-    "bal_diff": -24846048442116,
+    "expected": 15194174903178.496,
+    "migrated": 15194243704676.0,
     "message": "unexpected balance"
   },
   {
     "index": 9960,
     "account": "7ec16859c24200d8e074809d252ac740",
-    "bal_diff": -16530396630601,
+    "expected": 16530396630601.787,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 9960,
     "account": "7ec16859c24200d8e074809d252ac740",
-    "bal_diff": -160652222175098,
+    "expected": 106961010767177.33,
+    "migrated": 106961455631214.0,
     "message": "unexpected balance"
   },
   {
     "index": 10113,
     "account": "0a5d5b9384f0e825cd1eb8ca9459e012",
-    "bal_diff": -1459458429438,
+    "expected": 1459458429438.0027,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 10113,
     "account": "0a5d5b9384f0e825cd1eb8ca9459e012",
-    "bal_diff": -112928334513499,
+    "expected": 65026451186911.07,
+    "migrated": 65026763898146.0,
     "message": "unexpected balance"
   },
   {
     "index": 10138,
     "account": "bcb79d7c813062f41b221e58b21203b4",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 10138,
     "account": "bcb79d7c813062f41b221e58b21203b4",
-    "bal_diff": -46750152139416,
+    "expected": 42846321839795.95,
+    "migrated": 42846451296215.0,
     "message": "unexpected balance"
   },
   {
     "index": 10236,
     "account": "44bffceb6ac69d098959e4f463fb7005",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 10236,
     "account": "44bffceb6ac69d098959e4f463fb7005",
-    "bal_diff": -107647887798555,
+    "expected": 77125459474011.56,
+    "migrated": 77125757563096.0,
     "message": "unexpected balance"
   },
   {
     "index": 10327,
     "account": "34b5d5e56ec27d954ac5d40b24d11422",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 10327,
     "account": "34b5d5e56ec27d954ac5d40b24d11422",
-    "bal_diff": -54654589344023,
+    "expected": 47295703872230.38,
+    "migrated": 47295855216923.0,
     "message": "unexpected balance"
   },
   {
     "index": 10666,
     "account": "b1471dc5764695abb4cadf16e26bd4c7",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 10666,
     "account": "b1471dc5764695abb4cadf16e26bd4c7",
-    "bal_diff": -114221732381375,
+    "expected": 80825855240805.8,
+    "migrated": 80826171533604.0,
     "message": "unexpected balance"
   },
   {
     "index": 10847,
     "account": "d67f3ff22bd719eb5be2df6577c9b42d",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 10847,
     "account": "d67f3ff22bd719eb5be2df6577c9b42d",
-    "bal_diff": -238248412504675,
+    "expected": 150640070699626.78,
+    "migrated": 150640730436225.0,
     "message": "unexpected balance"
   },
   {
     "index": 10991,
     "account": "d340c54f3a05c06835b1401c3575b70d",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 10991,
     "account": "d340c54f3a05c06835b1401c3575b70d",
-    "bal_diff": -42484731649752,
+    "expected": 40445330498321.49,
+    "migrated": 40445448143312.0,
     "message": "unexpected balance"
   },
   {
     "index": 11087,
     "account": "987be6e871faeedfe255b4305b4c6d02",
-    "bal_diff": -208238276907,
+    "expected": 208238276907.83026,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 11087,
     "account": "987be6e871faeedfe255b4305b4c6d02",
-    "bal_diff": -332850982881595,
+    "expected": 187568975591446.97,
+    "migrated": 187569897293182.0,
     "message": "unexpected balance"
   },
   {
     "index": 11173,
     "account": "351f3c360630f790de10570c0a224b06",
-    "bal_diff": -42097360118,
+    "expected": 42097360118.73953,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 11173,
     "account": "351f3c360630f790de10570c0a224b06",
-    "bal_diff": -186141684659235,
+    "expected": 104820647150764.52,
+    "migrated": 104821162597984.0,
     "message": "unexpected balance"
   },
   {
     "index": 11270,
     "account": "86ea91e266287d11011f5c0b3963d2ea",
-    "bal_diff": -207363851029,
+    "expected": 207363851029.99295,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 11270,
     "account": "86ea91e266287d11011f5c0b3963d2ea",
-    "bal_diff": -213150315204590,
+    "expected": 120188984063835.31,
+    "migrated": 120189574300985.0,
     "message": "unexpected balance"
   },
   {
     "index": 11421,
     "account": "04d3dd09c797f5962bbd0afbc19e22b9",
-    "bal_diff": -83320294359,
+    "expected": 83320294359.64175,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 11421,
     "account": "04d3dd09c797f5962bbd0afbc19e22b9",
-    "bal_diff": -9638308945373,
+    "expected": 5508693098839.975,
+    "migrated": 5508719788399.0,
     "message": "unexpected balance"
   },
   {
     "index": 11558,
     "account": "50040b551a28645e5c684a646db8e646",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 11558,
     "account": "50040b551a28645e5c684a646db8e646",
-    "bal_diff": -45957676699010,
+    "expected": 42400239987993.15,
+    "migrated": 42400367249958.0,
     "message": "unexpected balance"
   },
   {
     "index": 11586,
     "account": "949ea6affb7a4b43f157158319b5d51c",
-    "bal_diff": -707910207100,
+    "expected": 707910207100.5844,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 11586,
     "account": "949ea6affb7a4b43f157158319b5d51c",
-    "bal_diff": -42655664810364,
+    "expected": 24718645402540.01,
+    "migrated": 24718763520864.0,
     "message": "unexpected balance"
   },
   {
     "index": 11589,
     "account": "e202aa9b2cfdb96627531af17832f2ca",
-    "bal_diff": -124543228600,
+    "expected": 124543228600.54396,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 11589,
     "account": "e202aa9b2cfdb96627531af17832f2ca",
-    "bal_diff": -56027542656522,
+    "expected": 31662265037828.46,
+    "migrated": 31662420184383.0,
     "message": "unexpected balance"
   },
   {
     "index": 11852,
     "account": "d96e89e270a5273d94bc8ab7953754f9",
-    "bal_diff": -1936228729496,
+    "expected": 1936228729496.922,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 11852,
     "account": "d96e89e270a5273d94bc8ab7953754f9",
-    "bal_diff": -221392782526461,
+    "expected": 126557507029975.33,
+    "migrated": 126558120091442.0,
     "message": "unexpected balance"
   },
   {
     "index": 11856,
     "account": "f26fa56d696b2e085dd10793d235de9b",
-    "bal_diff": -15697943194900,
+    "expected": 15697943194900.66,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 11856,
     "account": "f26fa56d696b2e085dd10793d235de9b",
-    "bal_diff": -15571991618213,
+    "expected": 24463366706004.125,
+    "migrated": 24463409826597.0,
     "message": "unexpected balance"
   },
   {
     "index": 12096,
     "account": "2bfd96d8a674a360b733d16c65728d72",
-    "bal_diff": -1086370054894,
+    "expected": 1086370054894.0796,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 12096,
     "account": "2bfd96d8a674a360b733d16c65728d72",
-    "bal_diff": -56774932283121,
+    "expected": 33044795057751.223,
+    "migrated": 33044952273912.0,
     "message": "unexpected balance"
   },
   {
     "index": 12222,
     "account": "63bb637e57bf088b129bcf1bfd93ebf4",
-    "bal_diff": -42097360118,
+    "expected": 42097360118.73953,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 12222,
     "account": "63bb637e57bf088b129bcf1bfd93ebf4",
-    "bal_diff": -201278445866803,
+    "expected": 113341080877147.58,
+    "migrated": 113341638239758.0,
     "message": "unexpected balance"
   },
   {
     "index": 12640,
     "account": "0d785eb2412263beb0dbbb6468f35a1a",
-    "bal_diff": -124751425238,
+    "expected": 124751425238.12427,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 12640,
     "account": "0d785eb2412263beb0dbbb6468f35a1a",
-    "bal_diff": -145887665592149,
+    "expected": 82244444609877.16,
+    "migrated": 82244848589200.0,
     "message": "unexpected balance"
   },
   {
     "index": 12649,
     "account": "b3aabfb1689a54c2cac2437182ced906",
-    "bal_diff": -707910207100,
+    "expected": 707910207100.5844,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 12649,
     "account": "b3aabfb1689a54c2cac2437182ced906",
-    "bal_diff": -21340043534431,
+    "expected": 12720151409818.387,
+    "migrated": 12720210502794.0,
     "message": "unexpected balance"
   },
   {
     "index": 12697,
     "account": "ba28f081de02fc6cc3bf9879d6033911",
-    "bal_diff": -274278250348,
+    "expected": 274278250348.30594,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 12697,
     "account": "ba28f081de02fc6cc3bf9879d6033911",
-    "bal_diff": -184747212048613,
+    "expected": 104267883937092.11,
+    "migrated": 104268395522861.0,
     "message": "unexpected balance"
   },
   {
     "index": 12715,
     "account": "fb7273aa4f2c5d48f7c6abeb915f4051",
-    "bal_diff": -4248127471843,
+    "expected": 4248127471843.763,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 12715,
     "account": "fb7273aa4f2c5d48f7c6abeb915f4051",
-    "bal_diff": -3652534896368,
+    "expected": 6304127503227.712,
+    "migrated": 6304137617507.0,
     "message": "unexpected balance"
   },
   {
     "index": 12740,
     "account": "355ae7b5f391782006ef88580bbeaf22",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 12740,
     "account": "355ae7b5f391782006ef88580bbeaf22",
-    "bal_diff": -37736435102154,
+    "expected": 37772529791998.9,
+    "migrated": 37772634288423.0,
     "message": "unexpected balance"
   },
   {
     "index": 12812,
     "account": "599a107393062c98a584817bda5b354b",
-    "bal_diff": -624631552068,
+    "expected": 624631552068.4587,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 12812,
     "account": "599a107393062c98a584817bda5b354b",
-    "bal_diff": -38770090579266,
+    "expected": 22448189631411.69,
+    "migrated": 22448296990145.0,
     "message": "unexpected balance"
   },
   {
     "index": 12834,
     "account": "5d1de3da6351f8ee592139cfd461ae10",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 12834,
     "account": "5d1de3da6351f8ee592139cfd461ae10",
-    "bal_diff": -9665322114692,
+    "expected": 21971391453640.58,
+    "migrated": 21971418218002.0,
     "message": "unexpected balance"
   },
   {
     "index": 12985,
     "account": "ea10ea06c0fdab689da9dcf78fc90f4e",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 12985,
     "account": "ea10ea06c0fdab689da9dcf78fc90f4e",
-    "bal_diff": -75964665648444,
+    "expected": 59291076618495.586,
+    "migrated": 59291286973182.0,
     "message": "unexpected balance"
   },
   {
     "index": 13106,
     "account": "a6be3ad55806f2f65cd1776322aede1a",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 13106,
     "account": "a6be3ad55806f2f65cd1776322aede1a",
-    "bal_diff": -24420646129928,
+    "expected": 30277115423195.1,
+    "migrated": 30277183046705.0,
     "message": "unexpected balance"
   },
   {
     "index": 13373,
     "account": "ec96dec1be938e14dc148be9bc5ed7f3",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 13373,
     "account": "ec96dec1be938e14dc148be9bc5ed7f3",
-    "bal_diff": -29746180771140,
+    "expected": 33274841577805.207,
+    "migrated": 33274923948319.0,
     "message": "unexpected balance"
   },
   {
     "index": 13457,
     "account": "ccb020e30b1c014f45664761f0b740c7",
-    "bal_diff": -15902059178384,
+    "expected": 15902059178384.398,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 13457,
     "account": "ccb020e30b1c014f45664761f0b740c7",
-    "bal_diff": -123466763560851,
+    "expected": 85401099422558.5,
+    "migrated": 85401441315886.0,
     "message": "unexpected balance"
   },
   {
     "index": 13468,
     "account": "c44a50622c2d465e6c15982b8e127349",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 13468,
     "account": "c44a50622c2d465e6c15982b8e127349",
-    "bal_diff": -12881805027779,
+    "expected": 23781939239735.117,
+    "migrated": 23781974910899.0,
     "message": "unexpected balance"
   },
   {
     "index": 13855,
     "account": "78233906ce0643d1852a7d4899a7666f",
-    "bal_diff": -16526649091125,
+    "expected": 16526649091125.342,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 13855,
     "account": "78233906ce0643d1852a7d4899a7666f",
-    "bal_diff": -67811492645616,
+    "expected": 54697518080271.92,
+    "migrated": 54697705857907.0,
     "message": "unexpected balance"
   },
   {
     "index": 14016,
     "account": "a453c89d37bef4613de96cdb50f41a66",
-    "bal_diff": -41680966843,
+    "expected": 41680966843.5789,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 14016,
     "account": "a453c89d37bef4613de96cdb50f41a66",
-    "bal_diff": -46795732695,
+    "expected": 68022132806.46417,
+    "migrated": 68022262389.0,
     "message": "unexpected balance"
   },
   {
     "index": 14081,
     "account": "cf18bf38fe71080c3c199868ed167693",
-    "bal_diff": -408065409657,
+    "expected": 408065409657.41583,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 14081,
     "account": "cf18bf38fe71080c3c199868ed167693",
-    "bal_diff": -3153745013876,
+    "expected": 2183298236030.6177,
+    "migrated": 2183306969105.0,
     "message": "unexpected balance"
   },
   {
     "index": 14226,
     "account": "bdb8ad37341cec0817fd8e2474e25031",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 14226,
     "account": "bdb8ad37341cec0817fd8e2474e25031",
-    "bal_diff": -175749722412681,
+    "expected": 115459761014332.89,
+    "migrated": 115460247685042.0,
     "message": "unexpected balance"
   },
   {
     "index": 14283,
     "account": "aa7b724a51a8bd8e55208fef969209b3",
-    "bal_diff": -14005387810027,
+    "expected": 14005387810027.736,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 14283,
     "account": "aa7b724a51a8bd8e55208fef969209b3",
-    "bal_diff": -88585146849864,
+    "expected": 63869679287308.59,
+    "migrated": 63869924589524.0,
     "message": "unexpected balance"
   },
   {
     "index": 14430,
     "account": "e77ddb76c9afcb3d5511e46cbc89023d",
-    "bal_diff": -1623933773126,
+    "expected": 1623933773126.451,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 14430,
     "account": "e77ddb76c9afcb3d5511e46cbc89023d",
-    "bal_diff": -278776559391115,
+    "expected": 158546353714154.56,
+    "migrated": 158547125677741.0,
     "message": "unexpected balance"
   },
   {
     "index": 14593,
     "account": "79784b5981cc5407ba3bf9f7526f3f54",
-    "bal_diff": -83695048307,
+    "expected": 83695048307.28632,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 14593,
     "account": "79784b5981cc5407ba3bf9f7526f3f54",
-    "bal_diff": -105299848796182,
+    "expected": 59356637969375.586,
+    "migrated": 59356929556477.0,
     "message": "unexpected balance"
   },
   {
     "index": 14782,
     "account": "70a016df0643121bfc80ef1c87e4c189",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 14782,
     "account": "70a016df0643121bfc80ef1c87e4c189",
-    "bal_diff": -185248125046339,
+    "expected": 120806381010301.4,
+    "migrated": 120806893983154.0,
     "message": "unexpected balance"
   },
   {
     "index": 14857,
     "account": "d0d62ae27a4e84b559da089a1b15a79f",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 14857,
     "account": "d0d62ae27a4e84b559da089a1b15a79f",
-    "bal_diff": -117749230171684,
+    "expected": 82811472291252.34,
+    "migrated": 82811798352088.0,
     "message": "unexpected balance"
   },
   {
     "index": 15393,
     "account": "556be5778be23ddba95957a157124b82",
-    "bal_diff": -1041399581176,
+    "expected": 1041399581176.7317,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 15393,
     "account": "556be5778be23ddba95957a157124b82",
-    "bal_diff": -65236340418082,
+    "expected": 37762723744374.805,
+    "migrated": 37762904391124.0,
     "message": "unexpected balance"
   },
   {
     "index": 15445,
     "account": "d1c9ce9308b0bdc6dc2ba6a7b5da8c2b",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 15445,
     "account": "d1c9ce9308b0bdc6dc2ba6a7b5da8c2b",
-    "bal_diff": -179422354657135,
+    "expected": 117527073777686.81,
+    "migrated": 117527570618327.0,
     "message": "unexpected balance"
   },
   {
     "index": 15501,
     "account": "5a8fc2f30445ad0f5f4dd0e7e8ae0271",
-    "bal_diff": -7153553188604,
+    "expected": 7153553188604.564,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 15501,
     "account": "5a8fc2f30445ad0f5f4dd0e7e8ae0271",
-    "bal_diff": -104356449222957,
+    "expected": 65895459553639.28,
+    "migrated": 65895748528361.0,
     "message": "unexpected balance"
   },
   {
     "index": 15716,
     "account": "75e6c399717bc76d0c0006b011d38889",
-    "bal_diff": -3914554819112,
+    "expected": 3914554819112.584,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 15716,
     "account": "75e6c399717bc76d0c0006b011d38889",
-    "bal_diff": -24663272712683,
+    "expected": 17797430933922.324,
+    "migrated": 17797499229293.0,
     "message": "unexpected balance"
   },
   {
     "index": 15828,
     "account": "34e5addec49ded4cc638dad8cd992858",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 15828,
     "account": "34e5addec49ded4cc638dad8cd992858",
-    "bal_diff": -167830945149292,
+    "expected": 111002307009380.19,
+    "migrated": 111002771752107.0,
     "message": "unexpected balance"
   },
   {
     "index": 15954,
     "account": "79bd34e0664db9c8b004dd3042020848",
-    "bal_diff": -83320294359,
+    "expected": 83320294359.64175,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 15954,
     "account": "79bd34e0664db9c8b004dd3042020848",
-    "bal_diff": -5188350390758,
+    "expected": 3003825879901.4136,
+    "migrated": 3003840247026.0,
     "message": "unexpected balance"
   },
   {
     "index": 16000,
     "account": "05f0c6691a9f77c379f5ea2769fdeeac",
-    "bal_diff": -3456522216435,
+    "expected": 3456522216435.8926,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 16000,
     "account": "05f0c6691a9f77c379f5ea2769fdeeac",
-    "bal_diff": -6247896331959,
+    "expected": 6973442771353.231,
+    "migrated": 6973460072479.0,
     "message": "unexpected balance"
   },
   {
     "index": 16230,
     "account": "23acb548f2cc8254199b1c7301296968",
-    "bal_diff": -83403573014,
+    "expected": 83403573014.67387,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 16230,
     "account": "23acb548f2cc8254199b1c7301296968",
-    "bal_diff": -8942047076045,
+    "expected": 5116852832394.684,
+    "migrated": 5116877593927.0,
     "message": "unexpected balance"
   },
   {
     "index": 16283,
     "account": "8fba55a8622d93e8e8bfbfb2c86460d1",
-    "bal_diff": -14282289338009,
+    "expected": 14282289338009.555,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 16283,
     "account": "8fba55a8622d93e8e8bfbfb2c86460d1",
-    "bal_diff": -133486309726951,
+    "expected": 89421299580125.3,
+    "migrated": 89421669218701.0,
     "message": "unexpected balance"
   },
   {
     "index": 16442,
     "account": "ecaf65add1b785b0495e3099f4045ec0",
-    "bal_diff": -16529563844051,
+    "expected": 16529563844051.467,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 16442,
     "account": "ecaf65add1b785b0495e3099f4045ec0",
-    "bal_diff": -153213880940327,
+    "expected": 102773159855944.62,
+    "migrated": 102773584122380.0,
     "message": "unexpected balance"
   },
   {
     "index": 16494,
     "account": "252f0b551c80cd9e951d82c6f70792ae",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 16494,
     "account": "252f0b551c80cd9e951d82c6f70792ae",
-    "bal_diff": -119044487703045,
+    "expected": 83540568549244.62,
+    "migrated": 83540898196794.0,
     "message": "unexpected balance"
   },
   {
     "index": 16501,
     "account": "15b291ffca97895d726e8aa9a5be6a2a",
-    "bal_diff": -1541487904644,
+    "expected": 1541487904644.6465,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 16501,
     "account": "15b291ffca97895d726e8aa9a5be6a2a",
-    "bal_diff": -1793939072756,
+    "expected": 2551290382796.125,
+    "migrated": 2551295350415.0,
     "message": "unexpected balance"
   },
   {
     "index": 16651,
     "account": "851a3baf866951b36a3fe0da92ba38fc",
-    "bal_diff": -207821883632,
+    "expected": 207821883632.66965,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 16651,
     "account": "851a3baf866951b36a3fe0da92ba38fc",
-    "bal_diff": -124634545800621,
+    "expected": 70364202958144.52,
+    "migrated": 70364548085192.0,
     "message": "unexpected balance"
   },
   {
     "index": 16755,
     "account": "754903132f75c0b1f5e5be29fb0ca6cd",
-    "bal_diff": -16530813023876,
+    "expected": 16530813023876.95,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 16755,
     "account": "754903132f75c0b1f5e5be29fb0ca6cd",
-    "bal_diff": -195053800584143,
+    "expected": 126325963926130.23,
+    "migrated": 126326504051999.0,
     "message": "unexpected balance"
   },
   {
     "index": 16770,
     "account": "59852115f2d8f091769c03777d656d9c",
-    "bal_diff": -6247689618492,
+    "expected": 6247689618492.617,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 16770,
     "account": "59852115f2d8f091769c03777d656d9c",
-    "bal_diff": -9204053906582,
+    "expected": 11428621671902.326,
+    "migrated": 11428647158961.0,
     "message": "unexpected balance"
   },
   {
     "index": 16902,
     "account": "71e5be86b41516743ac8594bc90ee2fc",
-    "bal_diff": -2002851653522,
+    "expected": 2002851653522.6228,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 16902,
     "account": "71e5be86b41516743ac8594bc90ee2fc",
-    "bal_diff": -97621179419936,
+    "expected": 56953496519548.71,
+    "migrated": 56953766843553.0,
     "message": "unexpected balance"
   },
   {
     "index": 17066,
     "account": "c31bf1f6f46f8e74503763fb9a563221",
-    "bal_diff": -1748851755674,
+    "expected": 1748851755674.6394,
+    "migrated": 0.0,
     "message": "unexpected slow wallet unlocked"
   },
   {
     "index": 17066,
     "account": "c31bf1f6f46f8e74503763fb9a563221",
-    "bal_diff": -13429550395692,
+    "expected": 9308302060301.455,
+    "migrated": 9308339248234.0,
     "message": "unexpected balance"
   }
 ]
