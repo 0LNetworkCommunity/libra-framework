@@ -52,7 +52,7 @@ pub fn genesis_migrate_all_users(
 
             // migrating infra escrow, check if this has historically been a validator and has a slow wallet
             if a.val_cfg.is_some() && a.slow_wallet.is_some() {
-                match genesis_migrate_infra_escrow(session, a, supply.escrow_pct) {
+                match genesis_migrate_infra_escrow_alt(session, a, supply.escrow_pct) {
                     Ok(_) => {}
                     Err(e) => {
                         if a.role != AccountRole::System {
