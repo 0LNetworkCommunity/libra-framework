@@ -201,7 +201,7 @@ module ol_framework::slow_wallet {
       if (s.unlocked > amount) {
         s.unlocked = s.unlocked - amount;
       } else {
-        s.unlocked = 0;
+        s.unlocked = coin::balance<LibraCoin>(payer);
       }
 
     }
