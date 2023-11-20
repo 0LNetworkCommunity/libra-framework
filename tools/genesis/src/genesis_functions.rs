@@ -52,7 +52,7 @@ pub fn genesis_migrate_all_users(
 
             // migrating infra escrow, check if this has historically been a validator and has a slow wallet
             if a.val_cfg.is_some() && a.slow_wallet.is_some() {
-                match genesis_migrate_infra_escrow_alt(session, a, supply.escrow_pct) {
+                match genesis_migrate_infra_escrow_alt(session, a, supply.escrow_pct, supply.split_factor) {
                     Ok(_) => {}
                     Err(e) => {
                         if a.role != AccountRole::System {
@@ -247,6 +247,7 @@ pub fn genesis_migrate_infra_escrow_alt(
     session: &mut SessionExt,
     user_recovery: &LegacyRecovery,
     escrow_pct: f64,
+    split_factor: f64,
 ) -> anyhow::Result<()> {
     if user_recovery.account.is_none()
         || user_recovery.auth_key.is_none()
@@ -268,11 +269,12 @@ pub fn genesis_migrate_infra_escrow_alt(
     assert!(total_balance >= unlocked, "there should be no unlocked amount above balance, this should have been cleaned by now."); // we shouldn't have got this far if the data is bad
     let validator_locked = total_balance - unlocked;
     let pledge_coins_amount = escrow_pct * validator_locked as f64;
+    let scaled_pledge = pledge_coins_amount * split_factor;
 
     let serialized_values = serialize_values(&vec![
         MoveValue::Signer(AccountAddress::ZERO), // is sent by the 0x0 address
         MoveValue::Signer(new_addr_type),
-        MoveValue::U64(pledge_coins_amount as u64),
+        MoveValue::U64(scaled_pledge as u64),
     ]);
 
     exec_function(
