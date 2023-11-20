@@ -21,7 +21,7 @@ fn test_correct_supply_arithmetic_all() {
         .unwrap()
         .join("sample_export_recovery.json");
 
-    let user_accounts = recovery_file_parse(path).unwrap();
+    let mut user_accounts = recovery_file_parse(path).unwrap();
     let map_dd_to_slow = vec![
             // FTW
             "3A6C51A0B786D644590E8A21591FA8E2"
@@ -57,7 +57,7 @@ fn test_correct_supply_arithmetic_all() {
 
     // NOTE: in the case of a single account being migrated, that account balance will equal the total supply as set in: SupplySettings. i.e. 10B
     let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&gen_tx).unwrap();
-    match compare::compare_recovery_vec_to_genesis_tx(&user_accounts, &db_rw.reader, &supply_stats)
+    match compare::compare_recovery_vec_to_genesis_tx(&mut user_accounts, &db_rw.reader, &supply_stats)
     {
         Ok(list) => {
             if !list.is_empty() {
