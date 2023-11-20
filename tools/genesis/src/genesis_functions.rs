@@ -21,13 +21,18 @@ use move_core_types::value::{serialize_values, MoveValue};
 
 pub fn genesis_migrate_all_users(
     session: &mut SessionExt,
-    user_recovery: &[LegacyRecovery],
+    user_recovery: &mut [LegacyRecovery],
     supply: &Supply,
 ) -> anyhow::Result<()> {
     user_recovery
-        .iter()
+        .iter_mut()
         .progress_with_style(OLProgress::bar())
         .for_each(|a| {
+            ///////// IMPORTANT //////
+            // we are scaling all the coins here in RUST
+            // before any transactions occur
+            util_scale_all_coins(a, supply).expect("could not scale coins");
+            ///////////////////////////
             // do basic account creation and coin scaling
             match genesis_migrate_one_user(session, a, supply.split_factor) {
                 Ok(_) => {}
@@ -54,7 +59,7 @@ pub fn genesis_migrate_all_users(
 
             // migrating infra escrow, check if this has historically been a validator and has a slow wallet
             if a.val_cfg.is_some() && a.slow_wallet.is_some() {
-                match genesis_migrate_infra_escrow_alt(session, a, supply) {
+                match genesis_migrate_infra_escrow(session, a, supply) {
                     Ok(_) => {}
                     Err(e) => {
                         if a.role != AccountRole::System {
@@ -131,13 +136,13 @@ pub fn genesis_migrate_one_user(
         .expect("no balance found")
         .coin;
 
-    let rescaled_balance = (split_factor * legacy_balance as f64).floor() as u64;
+    // let rescaled_balance = (split_factor * legacy_balance as f64).floor() as u64;
 
     let serialized_values = serialize_values(&vec![
         MoveValue::Signer(CORE_CODE_ADDRESS),
         MoveValue::Signer(new_addr_type),
         MoveValue::vector_u8(auth_key.to_vec()),
-        MoveValue::U64(rescaled_balance),
+        MoveValue::U64(legacy_balance),
     ]);
 
     exec_function(
@@ -172,23 +177,12 @@ pub fn genesis_migrate_slow_wallet(
     let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
 
     if let Some(slow) = &user_recovery.slow_wallet {
-        // patch issue with a slow wallet having a larger unlock than the
-        // balance
-
-        let total_balance = user_recovery.balance.as_ref().unwrap().coin;
-        let unlocked = if slow.unlocked > total_balance {
-            total_balance
-        } else {
-            slow.unlocked
-        };
-
-        let migrate_unlock = (unlocked as f64 * split_factor).floor() as u64;
 
         let serialized_values = serialize_values(&vec![
             MoveValue::Signer(CORE_CODE_ADDRESS),
             MoveValue::Signer(new_addr_type),
-            MoveValue::U64(migrate_unlock),
-            MoveValue::U64((slow.transferred as f64 * split_factor).floor() as u64),
+            MoveValue::U64(slow.unlocked),
+            MoveValue::U64(slow.transferred),
         ]);
 
         exec_function(
@@ -203,43 +197,43 @@ pub fn genesis_migrate_slow_wallet(
     Ok(())
 }
 
+// pub fn genesis_migrate_infra_escrow_depr(
+//     session: &mut SessionExt,
+//     user_recovery: &LegacyRecovery,
+//     escrow_pct: f64,
+// ) -> anyhow::Result<()> {
+//     if user_recovery.account.is_none()
+//         || user_recovery.auth_key.is_none()
+//         || user_recovery.balance.is_none()
+//         || user_recovery.slow_wallet.is_none()
+//     {
+//         anyhow::bail!("no user account found {:?}", user_recovery);
+//     }
+
+//     // convert between different types from ol_types in diem, to current
+//     let acc_str = user_recovery
+//         .account
+//         .context("could not parse account")?
+//         .to_string();
+//     let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
+
+//     let serialized_values = serialize_values(&vec![
+//         MoveValue::Signer(AccountAddress::ZERO), // is sent by the 0x0 address
+//         MoveValue::Signer(new_addr_type),
+//         MoveValue::U64((escrow_pct * 1_000_000.0) as u64),
+//     ]);
+
+//     exec_function(
+//         session,
+//         "genesis_migration",
+//         "fork_escrow_init",
+//         vec![],
+//         serialized_values,
+//     );
+//     Ok(())
+// }
+
 pub fn genesis_migrate_infra_escrow(
-    session: &mut SessionExt,
-    user_recovery: &LegacyRecovery,
-    escrow_pct: f64,
-) -> anyhow::Result<()> {
-    if user_recovery.account.is_none()
-        || user_recovery.auth_key.is_none()
-        || user_recovery.balance.is_none()
-        || user_recovery.slow_wallet.is_none()
-    {
-        anyhow::bail!("no user account found {:?}", user_recovery);
-    }
-
-    // convert between different types from ol_types in diem, to current
-    let acc_str = user_recovery
-        .account
-        .context("could not parse account")?
-        .to_string();
-    let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
-
-    let serialized_values = serialize_values(&vec![
-        MoveValue::Signer(AccountAddress::ZERO), // is sent by the 0x0 address
-        MoveValue::Signer(new_addr_type),
-        MoveValue::U64((escrow_pct * 1_000_000.0) as u64),
-    ]);
-
-    exec_function(
-        session,
-        "genesis_migration",
-        "fork_escrow_init",
-        vec![],
-        serialized_values,
-    );
-    Ok(())
-}
-
-pub fn genesis_migrate_infra_escrow_alt(
     session: &mut SessionExt,
     user_recovery: &LegacyRecovery,
     supply: &Supply,
@@ -259,13 +253,12 @@ pub fn genesis_migrate_infra_escrow_alt(
         .to_string();
     let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
 
-    let unscaled_pledge = util_calculate_infra_escrow(user_recovery, &supply)?;
-    let scaled_pledge = (unscaled_pledge as f64 * supply.split_factor).floor() as u64;
+    let pledge = util_calculate_infra_escrow(user_recovery, &supply)?;
 
     let serialized_values = serialize_values(&vec![
         MoveValue::Signer(AccountAddress::ZERO), // is sent by the 0x0 address
         MoveValue::Signer(new_addr_type),
-        MoveValue::U64(scaled_pledge),
+        MoveValue::U64(pledge),
     ]);
 
     exec_function(
@@ -398,25 +391,19 @@ pub fn genesis_migrate_receipts(
         let cumu_map: Vec<MoveValue> = receipts_vec
             .cumulative
             .iter()
-            .map(|e| {
-                let scaled = (*e as f64) * supply.split_factor;
-                MoveValue::U64(scaled.floor() as u64)
-            })
+            .map(|e: &u64| MoveValue::U64(*e))
             .collect();
 
         let timestamp_map: Vec<MoveValue> = receipts_vec
             .last_payment_timestamp
             .iter()
-            .map(|e| MoveValue::U64(*e))
+            .map(|e: &u64| MoveValue::U64(*e))
             .collect();
 
         let payment_map: Vec<MoveValue> = receipts_vec
             .last_payment_value
             .iter()
-            .map(|e| {
-                let scaled = (*e as f64) * supply.split_factor;
-                MoveValue::U64(scaled.floor() as u64)
-            })
+            .map(|e: &u64| MoveValue::U64(*e))
             .collect();
 
         let serialized_values = serialize_values(&vec![
@@ -573,7 +560,7 @@ pub fn genesis_migrate_cumu_deposits(
     user_recovery: &[LegacyRecovery],
     split_factor: f64,
 ) -> anyhow::Result<()> {
-    let (_dr, cw) = process_comm_wallet::prepare_cw_and_receipts(user_recovery, split_factor)?;
+    let (_dr, cw) = process_comm_wallet::prepare_cw_and_receipts(user_recovery)?;
 
     cw.list.iter().for_each(|(addr, wallet)| {
         let serialized_values = serialize_values(&vec![
