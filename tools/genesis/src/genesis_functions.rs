@@ -265,7 +265,7 @@ pub fn genesis_migrate_infra_escrow_alt(
 
     let total_balance = user_recovery.balance.as_ref().expect("no balance struct").coin;
     let unlocked = user_recovery.slow_wallet.as_ref().expect("no slow wallet struct").unlocked;
-    assert!(total_balance > unlocked, "there should be no unlocked amount above balance, this should have been cleaned by now."); // we shouldn't have got this far if the data is bad
+    assert!(total_balance >= unlocked, "there should be no unlocked amount above balance, this should have been cleaned by now."); // we shouldn't have got this far if the data is bad
     let validator_locked = total_balance - unlocked;
     let pledge_coins_amount = escrow_pct * validator_locked as f64;
 

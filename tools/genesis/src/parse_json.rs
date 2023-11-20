@@ -58,7 +58,12 @@ fn parse_json_all() {
         .find(|el| el.comm_wallet.is_some())
         .expect("could not find 0x0 state in recovery file");
 
+  // parse again to see if we got any errors back.
   let res = fix_slow_wallet(&mut r).unwrap();
-
   assert!(res.len() == 0);
+
+  // this is a case of an account that had to be patched.
+  let a = r.iter().find(|e| e.account.unwrap().to_hex_literal() == "0x7f10901425237ee607afa9cc80e5df3e").expect("should have account");
+  assert!(a.balance.as_ref().unwrap().coin == a.slow_wallet.as_ref().unwrap().unlocked, "unlocked should equal balance");
+  // dbg!(&a);
 }
