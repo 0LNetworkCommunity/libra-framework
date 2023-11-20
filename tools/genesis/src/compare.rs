@@ -201,10 +201,10 @@ pub fn compare_recovery_vec_to_genesis_tx(
                 AccountAddress::from_hex_literal(&old.account.as_ref().unwrap().to_hex_literal())
                     .expect("could not convert address types");
 
-            // scale all coin values per record consistently
-            util_scale_all_coins(old, supply).expect("could not scale coins");
-            util_simulate_new_val_balance(old, supply)
-                .expect("could not simulate infra escrow validators");
+            // // scale all coin values per record consistently
+            // util_scale_all_coins(old, supply).expect("could not scale coins");
+            // util_simulate_new_val_balance(old, supply)
+            //     .expect("could not simulate infra escrow validators");
 
             // Ok now let's compare to what's on chain
             let db_state_view = db_reader.latest_state_checkpoint_view().unwrap();

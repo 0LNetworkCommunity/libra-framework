@@ -34,7 +34,7 @@ pub fn genesis_migrate_all_users(
             util_scale_all_coins(a, supply).expect("could not scale coins");
             ///////////////////////////
             // do basic account creation and coin scaling
-            match genesis_migrate_one_user(session, a, supply.split_factor) {
+            match genesis_migrate_one_user(session, a) {
                 Ok(_) => {}
                 Err(e) => {
                     // TODO: compile a list of errors.
@@ -47,7 +47,7 @@ pub fn genesis_migrate_all_users(
             // migrating slow wallets
             if a.slow_wallet.is_some() {
                 // TODO: this should not happen on a community wallet
-                match genesis_migrate_slow_wallet(session, a, supply.split_factor) {
+                match genesis_migrate_slow_wallet(session, a) {
                     Ok(_) => {}
                     Err(e) => {
                         if a.role != AccountRole::System {
@@ -111,7 +111,7 @@ pub fn genesis_migrate_all_users(
 pub fn genesis_migrate_one_user(
     session: &mut SessionExt,
     user_recovery: &LegacyRecovery,
-    split_factor: f64,
+    // split_factor: f64,
 ) -> anyhow::Result<()> {
     if user_recovery.account.is_none()
         || user_recovery.auth_key.is_none()
@@ -159,7 +159,7 @@ pub fn genesis_migrate_one_user(
 pub fn genesis_migrate_slow_wallet(
     session: &mut SessionExt,
     user_recovery: &LegacyRecovery,
-    split_factor: f64,
+    // split_factor: f64,
 ) -> anyhow::Result<()> {
     if user_recovery.account.is_none()
         || user_recovery.auth_key.is_none()
