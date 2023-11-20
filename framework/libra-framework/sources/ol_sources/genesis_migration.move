@@ -138,7 +138,10 @@ module ol_framework::genesis_migration {
 
     // if (locked > 0) {
       // let to_escrow = fixed_point32::multiply_u64(locked, escrow_pct);
-      let coin_opt = ol_account::vm_withdraw_unlimited(vm, user_addr, to_escrow);
+      // let coin_opt = ol_account::vm_withdraw_unlimited(vm, user_addr,
+      // to_escrow);
+      // shouldn't be tracking slow wallets at this point, do a direct withdraw
+      let coin_opt = coin::vm_withdraw<LibraCoin>(vm, user_addr, to_escrow);
       if (option::is_some(&coin_opt)) {
         let c = option::extract(&mut coin_opt);
         pledge_accounts::save_pledge(user_sig, @0x0, c);
