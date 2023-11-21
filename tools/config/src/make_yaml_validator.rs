@@ -50,6 +50,7 @@ validator_network:
 full_node_networks:
 - network_id:
     private: 'vfn'
+  #mutual_authentication: true
   listen_address: '/ip4/0.0.0.0/tcp/6181'
   identity:
     type: 'from_file'

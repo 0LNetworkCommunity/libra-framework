@@ -20,7 +20,13 @@ pub async fn init_fullnode_yaml(
 ) -> anyhow::Result<PathBuf> {
     let waypoint = get_genesis_waypoint(home_dir.clone()).await?;
 
-    let yaml = make_fullnode_yaml(home_dir.clone(), waypoint)?;
+    let yaml = if vfn {
+        make_private_vfn_yaml(home_dir.clone(), waypoint)?
+    } else {
+        make_fullnode_yaml(home_dir.clone(), waypoint)?
+    };
+
+    let filename = if vfn { "vfn.yaml" } else { "fullnode.yaml" };
 
     let home = home_dir.unwrap_or_else(global_config_dir);
     let p = home.join(FN_FILENAME);
