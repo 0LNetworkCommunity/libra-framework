@@ -6,6 +6,7 @@ use diem_gas::{
     AbstractValueSizeGasParameters, ChangeSetConfigs, NativeGasParameters,
     LATEST_GAS_FEATURE_VERSION,
 };
+use diem_logger::prelude::*;
 use diem_types::{
     chain_id::{ChainId, NamedChain},
     on_chain_config::{
@@ -133,6 +134,8 @@ pub fn encode_genesis_change_set(
 
     // TODO: consolidate with set_final_supply below
     initialize_diem_coin(&mut session);
+    warn!("initialize_diem_coin");
+    println!("initialize_diem_coin");
 
     // final supply must be set after coin is initialized, but before any
     // accounts are created
