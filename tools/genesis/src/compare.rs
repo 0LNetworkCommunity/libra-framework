@@ -2,7 +2,7 @@
 //!
 //! every day is like sunday
 //! -- morrissey via github copilot
-use crate::genesis_functions::{util_scale_all_coins, util_simulate_new_val_balance};
+use crate::genesis_functions::util_simulate_new_val_balance;
 use crate::{genesis_reader, parse_json};
 use crate::genesis_reader::total_supply;
 use crate::supply::Supply;
@@ -170,7 +170,6 @@ pub fn compare_recovery_vec_to_genesis_tx(
     db_reader: &Arc<dyn DbReader>,
     supply: &Supply,
 ) -> Result<Vec<CompareError>, anyhow::Error> {
-    dbg!(&supply);
     // start an empty btree map
     let mut err_list: Vec<CompareError> = vec![];
 
@@ -203,8 +202,8 @@ pub fn compare_recovery_vec_to_genesis_tx(
 
             // // scale all coin values per record consistently
             // util_scale_all_coins(old, supply).expect("could not scale coins");
-            // util_simulate_new_val_balance(old, supply)
-            //     .expect("could not simulate infra escrow validators");
+            util_simulate_new_val_balance(old, supply)
+                .expect("could not simulate infra escrow validators");
 
             // Ok now let's compare to what's on chain
             let db_state_view = db_reader.latest_state_checkpoint_view().unwrap();
