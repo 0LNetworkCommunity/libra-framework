@@ -102,18 +102,15 @@ api:
 
 /// Create a VFN file to for validators to seed the public network
 pub fn make_private_vfn_yaml(
-    home_dir: Option<PathBuf>,
-    // waypoint: Waypoint,
+    home_dir: &Path,
     val_net_pubkey: x25519::PublicKey,
     val_host_addr: DnsName,
 ) -> anyhow::Result<String> {
-    let home_dir = home_dir.unwrap_or_else(global_config_dir);
     let path = home_dir.display().to_string();
     let val_net_pubkey = val_net_pubkey.to_string();
     let val_host_addr = val_host_addr.to_string();
 
-    let template = format!(
-        "
+    let template = format!("
 base:
   role: 'full_node'
   data_dir: '{path}/data'
@@ -150,8 +147,7 @@ full_node_networks:
 api:
   enabled: true
   address: '0.0.0.0:8080'
-"
-    );
+");
 
     let p = home_dir.join(VFN_FILENAME);
     std::fs::write(p, &template)?;

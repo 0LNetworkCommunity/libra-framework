@@ -1,5 +1,5 @@
 use crate::make_yaml_public_fullnode::{download_genesis, init_fullnode_yaml};
-use crate::validator_config::initialize_validator_configs;
+use crate::validator_config::{validator_dialogue, vfn_dialogue};
 use crate::{legacy_config, make_profile};
 use anyhow::{Context, Result};
 use clap::Parser;
@@ -90,9 +90,9 @@ enum ConfigSub {
         /// check the files generated
         #[clap(short, long)]
         check: bool,
-        // TODO: just the VFN file
-        // #[clap(short, long)]
-        // vfn: bool,
+        // just make the VFN file
+        #[clap(short, long)]
+        vfn: bool,
     },
 
     /// Generate a fullnode dir and add fullnode.yaml from template
@@ -188,10 +188,13 @@ impl ConfigCli {
 
                 Ok(())
             }
-            Some(ConfigSub::ValidatorInit { check}) => {
+            Some(ConfigSub::ValidatorInit { check, vfn }) => {
+                let home_dir = self.path.clone().unwrap_or_else(global_config_dir);
+                if *vfn {
+                    vfn_dialogue(&home_dir, None, None).await?;
+                    return Ok(());
+                }
                 if *check {
-                    let home_dir = self.path.clone().unwrap_or_else(global_config_dir);
-
                     let public_keys_file = home_dir.join(OPERATOR_FILE);
 
                     let public_identity = read_operator_file(public_keys_file.as_path())?;
@@ -240,7 +243,7 @@ impl ConfigCli {
                     );
                     std::fs::create_dir_all(&data_path)?;
                 }
-                initialize_validator_configs(&data_path, None).await?;
+                validator_dialogue(&data_path, None).await?;
                 println!("Validators' config initialized.");
                 Ok(())
             }
