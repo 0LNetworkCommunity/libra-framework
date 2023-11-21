@@ -152,7 +152,6 @@ fn test_check_ancestry() {
 /// check the mainnet constants are actually being returned
 /// VDF difficulty is a good check
 fn test_check_mainnet_constants() -> anyhow::Result<()> {
-    // let path = DropTemp::new_in_crate("db_rw").dir();
     let genesis_vals = test_vals::get_test_valset(4);
 
     let json = json_path()
