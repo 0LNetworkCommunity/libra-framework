@@ -322,7 +322,7 @@ pub fn util_scale_all_coins(
 
     if let Some(cumu) = &mut user_recovery.cumulative_deposits {
         cumu.value = (cumu.value as f64 * split).floor() as u64;
-        cumu.index = (cumu.value as f64 * split).floor() as u64;
+        cumu.index = (cumu.index as f64 * split).floor() as u64;
     }
 
     Ok(())

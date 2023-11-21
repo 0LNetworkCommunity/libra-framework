@@ -4,6 +4,7 @@ use diem_types::account_address::AccountAddress;
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use serde::Serialize;
 
+
 pub struct AllCommWallets {
     pub list: BTreeMap<AccountAddress, WalletState>,
     pub total_deposits: u64,
@@ -40,6 +41,7 @@ pub fn prepare_cw_and_receipts(
 ) -> anyhow::Result<(DonorReceipts, AllCommWallets)> {
     let mut dr = rebuild_donor_receipts(recovery)?;
     let mut cw = rebuild_cw_cumu_deposits(recovery)?;
+    // update the donor list in cw
     update_cw_with_donor(&mut cw, &mut dr);
 
     Ok((dr, cw))
@@ -101,8 +103,7 @@ pub fn rebuild_cw_cumu_deposits(
         .filter(|e| e.cumulative_deposits.is_some())
         .for_each(|e| {
             let cd = e.cumulative_deposits.as_ref().expect("no cumulative deposits field");
-            // cd.
-            // let split_value = split_factor * (cd.value as f64);
+            // dbg!(&cd.value);
             total_cumu += cd.value;
 
             let cast_receipts = WalletState {
@@ -132,7 +133,6 @@ pub fn rebuild_cw_cumu_deposits(
 pub fn update_cw_with_donor(
     cw: &mut AllCommWallets,
     donors: &mut DonorReceipts,
-    // split_factor: f64,
 ) {
     donors.list.iter_mut().for_each(|(donor, receipt)| {
         receipt.audit_not_found = receipt
@@ -167,20 +167,47 @@ pub fn update_cw_with_donor(
 
 #[test]
 fn test_cw_recovery() {
-    use crate::parse_json;
+    use crate::{parse_json, genesis_functions};
+    use crate::supply::populate_supply_stats_from_legacy;
+    use libra_types::legacy_types::legacy_address::LegacyAddress;
+    use crate::supply::SupplySettings;
 
     let p = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_export_recovery.json");
 
-    let recovery = parse_json::recovery_file_parse(p).unwrap();
+    let mut recovery = parse_json::recovery_file_parse(p).unwrap();
 
+    // test splitting the coin and get scale factor
+    let settings = SupplySettings {
+        target_supply: 100_000_000_000.0, // 100B times scaling factor
+        target_future_uses: 0.70,
+        years_escrow: 7,
+        map_dd_to_slow: vec![
+            // FTW
+            "3A6C51A0B786D644590E8A21591FA8E2"
+                .parse::<LegacyAddress>()
+                .unwrap(),
+            // tip jar
+            "2B0E8325DEA5BE93D856CFDE2D0CBA12"
+                .parse::<LegacyAddress>()
+                .unwrap(),
+        ],
+    };
+    let mut supply = populate_supply_stats_from_legacy(&recovery, &settings.map_dd_to_slow).unwrap();
+    supply.set_ratios_from_settings(&settings).unwrap();
+    dbg!(&supply);
 
-    // TODO:
-
-
+    // Check calcs with no supply scaling
     let t = rebuild_cw_cumu_deposits(&recovery).unwrap();
-
     assert!(t.total_deposits == 1208569282086623, "cumu not equal");
+
+    recovery.iter_mut().for_each(|e| {
+      genesis_functions::util_scale_all_coins(e, &supply).unwrap();
+    });
+
+    // scaled
+    let t = rebuild_cw_cumu_deposits(&recovery).unwrap();
+    assert!(t.total_deposits == 50324012162657770, "cumu not equal");
 
     assert!(t.list.len() == 134, "len not equal");
 }
