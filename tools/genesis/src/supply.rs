@@ -107,7 +107,7 @@ fn inc_supply(
         // is this categorized as a donor voice account?
         acc.donor_directed += user_total;
     } else if let Some(sl) = &r.slow_wallet {
-      // is it a slow wallet?
+        // is it a slow wallet?
         acc.slow_total += user_total;
         if sl.unlocked > 0 {
             // safety check, the unlocked should always be lower than total balance
@@ -122,9 +122,8 @@ fn inc_supply(
                     acc.slow_validator_locked += locked;
                 }
             } else {
-              // we shouldn't have more unlocked coins than the actual balance
-              acc.slow_unlocked += user_total;
-
+                // we shouldn't have more unlocked coins than the actual balance
+                acc.slow_unlocked += user_total;
             }
         }
     } else if r.cumulative_deposits.is_some() {

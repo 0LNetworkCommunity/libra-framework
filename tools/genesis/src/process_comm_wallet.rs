@@ -4,7 +4,6 @@ use diem_types::account_address::AccountAddress;
 use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
 use serde::Serialize;
 
-
 pub struct AllCommWallets {
     pub list: BTreeMap<AccountAddress, WalletState>,
     pub total_deposits: u64,
@@ -48,9 +47,7 @@ pub fn prepare_cw_and_receipts(
 }
 
 /// process donor receipts
-pub fn rebuild_donor_receipts(
-    recovery: &[LegacyRecovery],
-) -> anyhow::Result<DonorReceipts> {
+pub fn rebuild_donor_receipts(recovery: &[LegacyRecovery]) -> anyhow::Result<DonorReceipts> {
     let total_cumu = 0;
     let mut list = BTreeMap::new();
 
@@ -92,9 +89,7 @@ pub fn rebuild_donor_receipts(
     })
 }
 
-pub fn rebuild_cw_cumu_deposits(
-    recovery: &[LegacyRecovery],
-) -> anyhow::Result<AllCommWallets> {
+pub fn rebuild_cw_cumu_deposits(recovery: &[LegacyRecovery]) -> anyhow::Result<AllCommWallets> {
     let mut total_cumu = 0;
     let mut list = BTreeMap::new();
 
@@ -102,7 +97,10 @@ pub fn rebuild_cw_cumu_deposits(
         .iter()
         .filter(|e| e.cumulative_deposits.is_some())
         .for_each(|e| {
-            let cd = e.cumulative_deposits.as_ref().expect("no cumulative deposits field");
+            let cd = e
+                .cumulative_deposits
+                .as_ref()
+                .expect("no cumulative deposits field");
             // dbg!(&cd.value);
             total_cumu += cd.value;
 
@@ -130,10 +128,7 @@ pub fn rebuild_cw_cumu_deposits(
 
 /// extract donor addresses from receipts and place into new
 /// communit wallet struct
-pub fn update_cw_with_donor(
-    cw: &mut AllCommWallets,
-    donors: &mut DonorReceipts,
-) {
+pub fn update_cw_with_donor(cw: &mut AllCommWallets, donors: &mut DonorReceipts) {
     donors.list.iter_mut().for_each(|(donor, receipt)| {
         receipt.audit_not_found = receipt
             .destination
@@ -167,10 +162,10 @@ pub fn update_cw_with_donor(
 
 #[test]
 fn test_cw_recovery() {
-    use crate::{parse_json, genesis_functions};
     use crate::supply::populate_supply_stats_from_legacy;
-    use libra_types::legacy_types::legacy_address::LegacyAddress;
     use crate::supply::SupplySettings;
+    use crate::{genesis_functions, parse_json};
+    use libra_types::legacy_types::legacy_address::LegacyAddress;
 
     let p = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_export_recovery.json");
@@ -193,7 +188,8 @@ fn test_cw_recovery() {
                 .unwrap(),
         ],
     };
-    let mut supply = populate_supply_stats_from_legacy(&recovery, &settings.map_dd_to_slow).unwrap();
+    let mut supply =
+        populate_supply_stats_from_legacy(&recovery, &settings.map_dd_to_slow).unwrap();
     supply.set_ratios_from_settings(&settings).unwrap();
     dbg!(&supply);
 
@@ -202,7 +198,7 @@ fn test_cw_recovery() {
     assert!(t.total_deposits == 1208569282086623, "cumu not equal");
 
     recovery.iter_mut().for_each(|e| {
-      genesis_functions::util_scale_all_coins(e, &supply).unwrap();
+        genesis_functions::util_scale_all_coins(e, &supply).unwrap();
     });
 
     // scaled
@@ -245,10 +241,7 @@ fn test_receipt_recovery() {
         .unwrap();
 
     if let Some(t) = t.list.get(&test_addr) {
-        assert!(
-            t.cumulative[0] == 6555272577,
-            "cumu does not match"
-        );
+        assert!(t.cumulative[0] == 6555272577, "cumu does not match");
     }
 }
 
@@ -275,7 +268,6 @@ fn test_update_cw_from_receipts() {
 
     let recovery = parse_json::recovery_file_parse(p).unwrap();
 
-
     let (_dr, cw) = prepare_cw_and_receipts(&recovery).unwrap();
 
     let v = cw
@@ -283,10 +275,7 @@ fn test_update_cw_from_receipts() {
         .get(&AccountAddress::from_hex_literal("0x7209c13e1253ad8fb2d96a30552052aa").unwrap())
         .unwrap();
 
-    assert!(
-        v.cumulative_value == original_value,
-        "cumu value not equal"
-    );
+    assert!(v.cumulative_value == original_value, "cumu value not equal");
 
     // assert!(
     //     v.audit_deposits_with_receipts == 116726512,

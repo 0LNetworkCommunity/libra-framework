@@ -61,7 +61,7 @@ fn test_basic_genesis() {
     let test_validators = TestValidator::new_test_set(Some(4), Some(100_000_000));
     let validators: Vec<Validator> = test_validators.iter().map(|t| t.data.clone()).collect();
     let _tx = make_recovery_genesis_from_vec_legacy_recovery(
-        &mut vec![],
+        &mut [],
         &validators,
         &head_release_bundle(),
         ChainId::test(),

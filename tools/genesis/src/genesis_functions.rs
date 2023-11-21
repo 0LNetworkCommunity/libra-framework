@@ -252,7 +252,7 @@ pub fn genesis_migrate_infra_escrow(
         .to_string();
     let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
 
-    let pledge = util_calculate_infra_escrow(user_recovery, &supply)?;
+    let pledge = util_calculate_infra_escrow(user_recovery, supply)?;
 
     let serialized_values = serialize_values(&vec![
         MoveValue::Signer(AccountAddress::ZERO), // is sent by the 0x0 address
@@ -281,7 +281,7 @@ pub fn util_simulate_new_val_balance(
     {
         let contrib = util_calculate_infra_escrow(user_recovery, supply)?;
         if let Some(b) = &mut user_recovery.balance {
-            b.coin = b.coin - contrib;
+            b.coin -= contrib;
         }
     }
 

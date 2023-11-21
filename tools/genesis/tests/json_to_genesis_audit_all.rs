@@ -23,17 +23,18 @@ fn test_correct_supply_arithmetic_all() {
 
     let mut user_accounts = recovery_file_parse(path).unwrap();
     let map_dd_to_slow = vec![
-            // FTW
-            "3A6C51A0B786D644590E8A21591FA8E2"
-                .parse::<LegacyAddress>()
-                .unwrap(),
-            // tip jar
-            "2B0E8325DEA5BE93D856CFDE2D0CBA12"
-                .parse::<LegacyAddress>()
-                .unwrap(),
-        ];
+        // FTW
+        "3A6C51A0B786D644590E8A21591FA8E2"
+            .parse::<LegacyAddress>()
+            .unwrap(),
+        // tip jar
+        "2B0E8325DEA5BE93D856CFDE2D0CBA12"
+            .parse::<LegacyAddress>()
+            .unwrap(),
+    ];
     // get the supply arithmetic so that we can compare outputs
-    let mut supply_stats = supply::populate_supply_stats_from_legacy(&user_accounts, &map_dd_to_slow).unwrap();
+    let mut supply_stats =
+        supply::populate_supply_stats_from_legacy(&user_accounts, &map_dd_to_slow).unwrap();
     let supply_settings = SupplySettings {
         target_supply: 100_000_000_000.0,
         target_future_uses: 0.70,
@@ -57,8 +58,11 @@ fn test_correct_supply_arithmetic_all() {
 
     // NOTE: in the case of a single account being migrated, that account balance will equal the total supply as set in: SupplySettings. i.e. 10B
     let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&gen_tx).unwrap();
-    match compare::compare_recovery_vec_to_genesis_tx(&mut user_accounts, &db_rw.reader, &supply_stats)
-    {
+    match compare::compare_recovery_vec_to_genesis_tx(
+        &mut user_accounts,
+        &db_rw.reader,
+        &supply_stats,
+    ) {
         Ok(list) => {
             if !list.is_empty() {
                 let len = list.len();

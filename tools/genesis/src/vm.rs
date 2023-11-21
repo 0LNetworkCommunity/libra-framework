@@ -142,8 +142,9 @@ pub fn encode_genesis_change_set(
     initialize_on_chain_governance(&mut session, genesis_config);
 
     if !recovery.is_empty() {
-        let mut supply = populate_supply_stats_from_legacy(recovery, &supply_settings.map_dd_to_slow)
-            .expect("could not parse supply from legacy file");
+        let mut supply =
+            populate_supply_stats_from_legacy(recovery, &supply_settings.map_dd_to_slow)
+                .expect("could not parse supply from legacy file");
 
         supply
             .set_ratios_from_settings(supply_settings)
@@ -163,8 +164,13 @@ pub fn encode_genesis_change_set(
         genesis_migrate_cumu_deposits(&mut session, recovery)
             .expect("could not migrate cumu deposits of cw");
 
-        create_make_whole_incident(&mut session, recovery, supply.make_whole, supply.split_factor)
-            .expect("could not create make whole credits");
+        create_make_whole_incident(
+            &mut session,
+            recovery,
+            supply.make_whole,
+            supply.split_factor,
+        )
+        .expect("could not create make whole credits");
     }
 
     OLProgress::complete("user migration complete");

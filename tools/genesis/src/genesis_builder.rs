@@ -155,7 +155,8 @@ pub fn build(
 
         let settings = supply_settings.context("no supply settings provided")?;
 
-        let mut s = supply::populate_supply_stats_from_legacy(legacy_recovery, &settings.map_dd_to_slow)?;
+        let mut s =
+            supply::populate_supply_stats_from_legacy(legacy_recovery, &settings.map_dd_to_slow)?;
 
         s.set_ratios_from_settings(&settings)?;
 
@@ -570,7 +571,7 @@ fn test_build() {
         token,
         home,
         true,
-        &mut vec![],
+        &mut [],
         None,
         NamedChain::TESTING,
         None,

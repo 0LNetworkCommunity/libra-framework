@@ -3,9 +3,9 @@
 //! every day is like sunday
 //! -- morrissey via github copilot
 use crate::genesis_functions::util_simulate_new_val_balance;
-use crate::{genesis_reader, parse_json};
 use crate::genesis_reader::total_supply;
 use crate::supply::Supply;
+use crate::{genesis_reader, parse_json};
 
 use anyhow::{self, Context};
 // use libra_types::move_resource::coin_info::GasCoinInfoResource;
@@ -194,8 +194,6 @@ pub fn compare_recovery_vec_to_genesis_tx(
                 return;
             };
 
-
-
             let convert_address =
                 AccountAddress::from_hex_literal(&old.account.as_ref().unwrap().to_hex_literal())
                     .expect("could not convert address types");
@@ -234,7 +232,7 @@ pub fn compare_recovery_vec_to_genesis_tx(
                     .expect("should have a slow wallet struct")
                     .unwrap();
 
-                if new_slow.unlocked != old_slow.unlocked as u64 {
+                if new_slow.unlocked != old_slow.unlocked {
                     err_list.push(CompareError {
                         index: i as u64,
                         account: old.account,
