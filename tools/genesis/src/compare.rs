@@ -22,7 +22,7 @@ use libra_types::ol_progress::OLProgress;
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
 use move_core_types::move_resource::MoveResource;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 use std::sync::Arc;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -131,6 +131,57 @@ pub fn compare_recovery_vec_to_genesis_tx(
         });
 
     Ok(err_list)
+}
+
+#[derive(Serialize, Deserialize)]
+struct JsonDump {
+    balance: GasCoinStoreResource,
+    slow: SlowWalletBalance,
+}
+/// Compare the balances in a recovery file to the balances in a genesis blob.
+pub fn export_account_balances(
+    recovery: &mut [LegacyRecovery],
+    db_reader: &Arc<dyn DbReader>,
+    output: &Path,
+) -> anyhow::Result<()> {
+    let mut list: Vec<JsonDump> = vec![];
+
+    recovery
+        .iter_mut()
+        .progress_with_style(OLProgress::bar())
+        .with_message("auditing migration")
+        .for_each(|old| {
+            if old.account.is_none() {
+                return;
+            };
+
+            let convert_address =
+                AccountAddress::from_hex_literal(&old.account.as_ref().unwrap().to_hex_literal())
+                    .expect("could not convert address types");
+
+            // Ok now let's compare to what's on chain
+            let db_state_view = db_reader.latest_state_checkpoint_view().unwrap();
+            let account_state_view = db_state_view.as_account_with_state_view(&convert_address);
+
+            let slow = account_state_view
+                .get_move_resource::<SlowWalletBalance>()
+                .expect("should have a slow wallet struct")
+                .unwrap();
+
+            let balance = account_state_view
+                .get_move_resource::<GasCoinStoreResource>()
+                .expect("should have move resource")
+                .expect("should have a GasCoinStoreResource for balance");
+
+            list.push(JsonDump { balance, slow });
+        });
+
+    std::fs::write(
+        output.join("genesis_balances.json"),
+        serde_json::to_string_pretty(&list).unwrap(),
+    )
+    .unwrap();
+    Ok(())
 }
 
 /// Compare the balances in a recovery file to the balances in a genesis blob.

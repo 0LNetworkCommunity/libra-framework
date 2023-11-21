@@ -163,6 +163,10 @@ pub fn build(
         compare::compare_recovery_vec_to_genesis_tx(legacy_recovery, &db_rw.reader, &s)?;
         OLProgress::complete("account balances as expected");
 
+        compare::export_account_balances(legacy_recovery, &db_rw.reader, &output_dir)?;
+        OLProgress::complete("exported balances to genesis_balances.json");
+
+
         compare::check_supply(settings.scale_supply() as u64, &db_rw.reader)?;
         OLProgress::complete("final supply as expected");
     }
