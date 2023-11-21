@@ -110,7 +110,8 @@ pub fn make_private_vfn_yaml(
     let val_net_pubkey = val_net_pubkey.to_string();
     let val_host_addr = val_host_addr.to_string();
 
-    let template = format!("
+    let template = format!(
+        "
 base:
   role: 'full_node'
   data_dir: '{path}/data'
@@ -147,7 +148,8 @@ full_node_networks:
 api:
   enabled: true
   address: '0.0.0.0:8080'
-");
+"
+    );
 
     let p = home_dir.join(VFN_FILENAME);
     std::fs::write(p, &template)?;

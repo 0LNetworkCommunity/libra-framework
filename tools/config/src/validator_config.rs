@@ -114,7 +114,12 @@ pub async fn validator_dialogue(
         )?;
 
         // now set up the vfn.yaml on the same host for convenience
-        vfn_dialogue(data_path, Some(host.host), pub_id.validator_network_public_key).await?;
+        vfn_dialogue(
+            data_path,
+            Some(host.host),
+            pub_id.validator_network_public_key,
+        )
+        .await?;
     }
 
     Ok(())
@@ -132,30 +137,28 @@ pub async fn vfn_dialogue(
     host: Option<DnsName>,
     net_pubkey: Option<x25519::PublicKey>,
 ) -> anyhow::Result<()> {
-
     let dns = match host {
         Some(d) => d,
         None => {
-          println!("Let's get the network address of your VALIDATOR host");
+            println!("Let's get the network address of your VALIDATOR host");
 
-          what_host().await?.host
-        },
+            what_host().await?.host
+        }
     };
 
     let pk = match net_pubkey {
         Some(r) => r,
         // maybe they already have the public-keys.yamlhere
-        None => get_local_vfn_id(&home).map_err(|e| {
+        None => get_local_vfn_id(home).map_err(|e| {
               anyhow!("ERROR: cannot make vfn.yaml, make sure you have the public-keys.yaml on this host before starting, message: {}", e)
         })?,
     };
 
     make_private_vfn_yaml(
-        &home,
+        home,
         // NOTE: the VFN needs to identify the validator node, which uses the
         // same validator_network public ID
-        pk,
-        dns,
+        pk, dns,
     )?;
 
     println!("SUCCESS: on your VFN you should have vfn.yaml, validator-full-node.yaml files before starting node.");
