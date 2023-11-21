@@ -67,9 +67,8 @@
 /// elsewhere in the Move framework. That is: it cannot be updated by a simple
 /// diem_governance call, which only has @framework or 0x1 privilege. A
 /// function to create a 0x2 signer have to be written and deployed in
-/// an upgrade. This is
-
-/// trivial, but obvious to detect. NOTE: devs, helpers using create_signer for
+/// an upgrade. This is  trivial, but obvious to detect. NOTE: devs, helpers //
+/// using create_signer for
 /// 0x2, should never be made available in Move outside of genesis.move
 /// #[test_only].
 /// 4. Each `struct` is instantiated by a phantom struct type, which makes it unique,
@@ -106,10 +105,11 @@ module ol_framework::sacred_cows {
   //////// SACRED COW HARD CODING ////////
   /// how much each slow wallet gets unlocked at every epoch. Read below.
   ///////////////////////////////////////////
-  /// TODO: v7: THIS NEEDS TO BE RECALCULATED WITH THE NEW SUPPLY!
-  const SLOW_WALLET_EPOCH_DRIP: u64 = 30000 * 1000000; // COINS * SCALING FACTOR
+  /// READ ABOVE RE V7 MIGRATION AND SETTING THIS PARAM
+  const SLOW_WALLET_EPOCH_DRIP: u64 = 35000 * 1000000; // COINS * SCALING FACTOR
   ///////////////////////////////////////////
-  /// [SLOW_WALLET_EPOCH_DRIP] This is a principal economic innovation from 0L.
+  /// [SLOW_WALLET_EPOCH_DRIP] Slow Wallets are one of the principal
+  ///economic innovations from 0L.
   /// How to reward the highest level of work with more benefits,
   /// while keeping the games fun for all in the immature days of the network:
   /// i.e. not allowing the whales to sweep every game.
@@ -175,7 +175,16 @@ module ol_framework::sacred_cows {
   /// us to that number. As may be expected the distributions of accounts follow
   /// a power law distribution.
 
-  /// TODO: [what is decided for V7].
+  /// What Was Decided for V7
+  /// The decision was simply to scale proportionately the
+  /// existing drip. After some analysis it seemed like
+  /// a) the coin split would be approximately 35X
+  /// b) that the canonical goal of the epoch drip is to have
+  /// all the largest major accounts completely unlock after 10 years
+  /// and this was in the 30,000 to 50,000 daily depoch drip.
+  /// Thus the the V5 epoch drip of 1,000 daily would simply scale
+  /// up, and then that would be within the acceptable range for the
+  /// community goals.
 
   /// Naive Changes
   /// There are some changes which are tempting, but would ultimately
