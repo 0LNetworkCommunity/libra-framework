@@ -136,7 +136,7 @@ pub fn compare_recovery_vec_to_genesis_tx(
 #[derive(Serialize, Deserialize)]
 struct JsonDump {
     balance: GasCoinStoreResource,
-    slow: SlowWalletBalance,
+    slow: Option<SlowWalletBalance>,
 }
 /// Compare the balances in a recovery file to the balances in a genesis blob.
 pub fn export_account_balances(
@@ -165,8 +165,7 @@ pub fn export_account_balances(
 
             let slow = account_state_view
                 .get_move_resource::<SlowWalletBalance>()
-                .expect("should have a slow wallet struct")
-                .unwrap();
+                .expect("should have a slow wallet struct");
 
             let balance = account_state_view
                 .get_move_resource::<GasCoinStoreResource>()
