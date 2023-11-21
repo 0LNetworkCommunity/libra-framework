@@ -90,6 +90,9 @@ enum ConfigSub {
         /// check the files generated
         #[clap(short, long)]
         check: bool,
+        /// just the VFN file
+        #[clap(short, long)]
+        vfn: bool,
     },
 
     /// Generate a fullnode dir and add fullnode.yaml from template
@@ -97,9 +100,9 @@ enum ConfigSub {
         /// path to libra config and data files defaults to $HOME/.libra
         #[clap(long)]
         home_path: Option<PathBuf>,
-        /// private VFN (only for validators)
-        #[clap(short, long)]
-        vfn: bool,
+        // /// private VFN (only for validators)
+        // #[clap(short, long)]
+        // vfn_address: Option<AccountAddress,
     },
 }
 
@@ -185,7 +188,7 @@ impl ConfigCli {
 
                 Ok(())
             }
-            Some(ConfigSub::ValidatorInit { check }) => {
+            Some(ConfigSub::ValidatorInit { check, vfn: _ }) => {
                 if *check {
                     let home_dir = self.path.clone().unwrap_or_else(global_config_dir);
 
@@ -241,18 +244,11 @@ impl ConfigCli {
                 println!("Validators' config initialized.");
                 Ok(())
             }
-            Some(ConfigSub::FullnodeInit { home_path, vfn }) => {
+            Some(ConfigSub::FullnodeInit { home_path }) => {
                 download_genesis(home_path.to_owned()).await?;
                 println!("downloaded genesis block");
 
-                let p = if *vfn {
-                    // no need for seed peers, will be identified
-                    // to validator node
-                    init_fullnode_yaml(home_path.to_owned(), true, true).await?
-                } else {
-                    // we want seed peers, and will not have an identity
-                    init_fullnode_yaml(home_path.to_owned(), true, false).await?
-                };
+                let p = init_fullnode_yaml(home_path.to_owned(), true).await?;
 
                 println!("config created at {}", p.display());
 

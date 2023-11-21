@@ -1,7 +1,9 @@
+use crate::make_yaml_public_fullnode::make_private_vfn_yaml;
 use crate::make_yaml_validator;
 use anyhow::{bail, Context};
 use dialoguer::{Confirm, Input};
 use diem_genesis::config::HostAndPort;
+use diem_genesis::keys::PublicIdentity;
 use diem_types::chain_id::NamedChain;
 use libra_types::legacy_types::app_cfg::AppCfg;
 use libra_types::legacy_types::network_playlist::NetworkPlaylist;
@@ -17,8 +19,8 @@ pub fn initialize_validator(
     mnem: Option<String>,
     keep_legacy_address: bool,
     chain_name: Option<NamedChain>,
-) -> anyhow::Result<()> {
-    let (.., keys) =
+) -> anyhow::Result<PublicIdentity> {
+    let (.., pub_id, keys) =
         libra_wallet::keys::refresh_validator_files(mnem, home_path.clone(), keep_legacy_address)?;
     OLProgress::complete("initialized validator key files");
 
@@ -48,7 +50,7 @@ pub fn initialize_validator(
     ))?;
     OLProgress::complete("saved a user libra.yaml file locally");
 
-    Ok(())
+    Ok(pub_id)
 }
 
 async fn get_ip() -> anyhow::Result<HostAndPort> {
@@ -99,13 +101,21 @@ pub async fn initialize_validator_configs(
             .with_prompt("Is this a legacy V5 address you wish to keep?")
             .interact()?;
 
-        initialize_validator(
+        let pub_id = initialize_validator(
             Some(data_path.to_path_buf()),
             github_username,
-            host,
+            host.clone(),
             None,
             keep_legacy_address,
             None,
+        )?;
+
+        make_private_vfn_yaml(
+            Some(data_path.to_path_buf()),
+            // NOTE: the VFN needs to identify the validator node, which uses the
+            // same validator_network public ID
+            pub_id.validator_network_public_key.unwrap(),
+            host.host,
         )?;
     }
 

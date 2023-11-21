@@ -1,29 +1,29 @@
 use diem_config::config::NodeConfig;
-use diem_types::{network_address::NetworkAddress, waypoint::Waypoint, PeerId};
+use diem_crypto::x25519;
+use diem_types::{
+    network_address::{DnsName, NetworkAddress},
+    waypoint::Waypoint,
+    PeerId,
+};
 use libra_types::global_config_dir;
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
 };
 
+const FN_FILENAME: &str = "fullnode.yaml";
+const VFN_FILENAME: &str = "vfn.yaml";
 /// fetch seed peers and make a yaml file from template
 pub async fn init_fullnode_yaml(
     home_dir: Option<PathBuf>,
     overwrite_peers: bool,
-    vfn: bool,
 ) -> anyhow::Result<PathBuf> {
     let waypoint = get_genesis_waypoint(home_dir.clone()).await?;
 
-    let yaml = if vfn {
-        make_private_vfn_yaml(home_dir.clone(), waypoint)?
-    } else {
-        make_fullnode_yaml(home_dir.clone(), waypoint)?
-    };
-
-    let filename = if vfn { "vfn.yaml" } else { "fullnode.yaml" };
+    let yaml = make_fullnode_yaml(home_dir.clone(), waypoint)?;
 
     let home = home_dir.unwrap_or_else(global_config_dir);
-    let p = home.join(filename);
+    let p = home.join(FN_FILENAME);
     std::fs::write(&p, yaml)?;
 
     if overwrite_peers {
@@ -103,10 +103,14 @@ api:
 /// Create a VFN file to for validators to seed the public network
 pub fn make_private_vfn_yaml(
     home_dir: Option<PathBuf>,
-    waypoint: Waypoint,
+    // waypoint: Waypoint,
+    val_net_pubkey: x25519::PublicKey,
+    val_host_addr: DnsName,
 ) -> anyhow::Result<String> {
     let home_dir = home_dir.unwrap_or_else(global_config_dir);
     let path = home_dir.display().to_string();
+    let val_net_pubkey = val_net_pubkey.to_string();
+    let val_host_addr = val_host_addr.to_string();
 
     let template = format!(
         "
@@ -114,7 +118,7 @@ base:
   role: 'full_node'
   data_dir: '{path}/data'
   waypoint:
-    from_config: '{waypoint}'
+    from_file: '{path}/genesis/waypoint.txt'
 
 execution:
   genesis_file_location: '{path}/genesis/genesis.blob'
@@ -133,17 +137,25 @@ full_node_networks:
 
 - network_id:
     private: 'vfn'
-  # mutual_authentication: true
   listen_address: '/ip4/0.0.0.0/tcp/6181'
   identity:
     type: 'from_file'
     path: {path}/validator-full-node-identity.yaml
+  seeds:
+    {val_net_pubkey}:
+      addresses:
+      - '/ip4/{val_host_addr}/tcp/6181/noise-ik/0x{val_net_pubkey}/handshake/0'
+      role: 'Validator'
 
 api:
-  enabled: false
+  enabled: true
   address: '0.0.0.0:8080'
 "
     );
+
+    let p = home_dir.join(VFN_FILENAME);
+    std::fs::write(p, &template)?;
+
     Ok(template)
 }
 
