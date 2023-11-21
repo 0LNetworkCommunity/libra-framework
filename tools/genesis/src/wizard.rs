@@ -26,7 +26,7 @@ use diem_github_client::Client;
 use libra_types::legacy_types::app_cfg::AppCfg;
 use libra_wallet::keys::VALIDATOR_FILE;
 
-use libra_config::validator_config::initialize_validator_configs;
+use libra_config::validator_config::validator_dialogue;
 
 pub const DEFAULT_GIT_BRANCH: &str = "main";
 pub const GITHUB_TOKEN_FILENAME: &str = "github_token.txt";
@@ -92,7 +92,7 @@ impl GenesisWizard {
         // check the git token is as expected, and set it.
         self.git_token_check()?;
 
-        match initialize_validator_configs(&self.data_path, Some(&self.github_username)).await {
+        match validator_dialogue(&self.data_path, Some(&self.github_username)).await {
             Ok(_) => {
                 println!("Validators' config initialized!");
             }
