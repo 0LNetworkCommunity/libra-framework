@@ -205,7 +205,6 @@
         // add funds to an existing pledge account
         // Note: only funds that are Unlocked and otherwise unrestricted can be used in pledge account.
         fun add_coin_to_pledge_account(sender_addr: address, idx: u64, coin: coin::Coin<LibraCoin>) acquires MyPledges, BeneficiaryPolicy {
-
           let amount = coin::value(&coin);
           let my_pledges = borrow_global_mut<MyPledges>(sender_addr);
           let pledge_account = vector::borrow_mut(&mut my_pledges.list, idx);

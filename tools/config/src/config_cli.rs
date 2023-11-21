@@ -100,6 +100,9 @@ enum ConfigSub {
         /// path to libra config and data files defaults to $HOME/.libra
         #[clap(long)]
         home_path: Option<PathBuf>,
+        /// private VFN (only for validators)
+        #[clap(short, long)]
+        vfn: bool,
     },
 }
 
@@ -244,7 +247,7 @@ impl ConfigCli {
                 println!("Validators' config initialized.");
                 Ok(())
             }
-            Some(ConfigSub::FullnodeInit { home_path }) => {
+            Some(ConfigSub::FullnodeInit { home_path, vfn }) => {
                 download_genesis(home_path.to_owned()).await?;
                 println!("downloaded genesis block");
 
