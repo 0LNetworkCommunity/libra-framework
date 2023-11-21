@@ -5,7 +5,7 @@ use move_core_types::{ident_str, identifier::IdentStr, move_resource::MoveStruct
 use serde::{Deserialize, Serialize};
 
 /// Struct that represents a CurrencyInfo resource
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TowerStateResource {
     ///
     pub previous_proof_hash: Vec<u8>,
