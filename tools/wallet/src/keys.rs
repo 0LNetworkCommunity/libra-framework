@@ -185,7 +185,10 @@ pub fn generate_key_objects_from_legacy(
         network_private_key: validator_network_key.private_key(),
     };
     let vfn_blob = IdentityBlob {
-        account_address: Some(account_address),
+        // the VFN needs a different address than the validator
+        // otherwise it will think it is dialing itself, and
+        // will show a "self dial" error on the validator logs
+        account_address: Some(full_node_network_key.public_key().to_string().parse()?),
         account_private_key: None,
         consensus_private_key: None,
         network_private_key: full_node_network_key.private_key(),
