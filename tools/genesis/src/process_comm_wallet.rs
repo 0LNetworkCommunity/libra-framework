@@ -48,7 +48,6 @@ pub fn prepare_cw_and_receipts(
 /// process donor receipts
 pub fn rebuild_donor_receipts(
     recovery: &[LegacyRecovery],
-    // split_factor: f64,
 ) -> anyhow::Result<DonorReceipts> {
     let total_cumu = 0;
     let mut list = BTreeMap::new();
@@ -75,28 +74,6 @@ pub fn rebuild_donor_receipts(
                 audit_not_found: vec![],
             };
 
-            // // iterate through the list of payments and split
-            // // then with the new split value reduce/fold into the total
-            // // user payments.
-            // // let user_cumu =
-            // cast_receipts.cumulative.iter_mut().for_each(|this_cumu| {
-            //     // mutate it
-            //     *this_cumu = (split_factor * (*this_cumu as f64)) as u64;
-            //     // return to next step in iter
-            //     // this_cumu
-            // });
-            // //     .fold(0u64, |sum,  next| {
-            // //          sum.checked_add(*next).expect("overflow summing cumu payments after split applied")
-            // //     });
-
-            // // // add to totals for comparison purposes
-            // // total_cumu += user_cumu;
-
-            // // same for the last_payment. Just no need to fold
-            // cast_receipts.last_payment_value.iter_mut().for_each(|el| {
-            //     *el = (split_factor * (*el as f64)) as u64;
-            // });
-
             let user: AccountAddress = e
                 .account
                 .expect("no legacy_account")
@@ -115,7 +92,6 @@ pub fn rebuild_donor_receipts(
 
 pub fn rebuild_cw_cumu_deposits(
     recovery: &[LegacyRecovery],
-    // split_factor: f64,
 ) -> anyhow::Result<AllCommWallets> {
     let mut total_cumu = 0;
     let mut list = BTreeMap::new();
@@ -124,7 +100,8 @@ pub fn rebuild_cw_cumu_deposits(
         .iter()
         .filter(|e| e.cumulative_deposits.is_some())
         .for_each(|e| {
-            let cd = e.cumulative_deposits.as_ref().expect("no receipts field");
+            let cd = e.cumulative_deposits.as_ref().expect("no cumulative deposits field");
+            // cd.
             // let split_value = split_factor * (cd.value as f64);
             total_cumu += cd.value;
 
@@ -255,9 +232,6 @@ fn test_update_cw_from_receipts() {
         .join("tests/fixtures/sample_export_recovery.json");
     let recovery = parse_json::recovery_file_parse(p.clone()).unwrap();
 
-    // first, test with no split
-    // let split_factor = 1.0;
-
     let (_dr, cw) = prepare_cw_and_receipts(&recovery).unwrap();
 
     let v = cw
@@ -274,8 +248,6 @@ fn test_update_cw_from_receipts() {
 
     let recovery = parse_json::recovery_file_parse(p).unwrap();
 
-    // now add the split
-    let split_factor = 2.0;
 
     let (_dr, cw) = prepare_cw_and_receipts(&recovery).unwrap();
 
@@ -285,7 +257,7 @@ fn test_update_cw_from_receipts() {
         .unwrap();
 
     assert!(
-        v.cumulative_value == (original_value as f64 * split_factor) as u64,
+        v.cumulative_value == original_value,
         "cumu value not equal"
     );
 

@@ -160,7 +160,7 @@ pub fn encode_genesis_change_set(
             .expect("could not migrate community wallets");
         // cumulative deposits (for match index) also need separate
         // migration for CW
-        genesis_migrate_cumu_deposits(&mut session, recovery, supply.split_factor)
+        genesis_migrate_cumu_deposits(&mut session, recovery)
             .expect("could not migrate cumu deposits of cw");
 
         create_make_whole_incident(&mut session, recovery, supply.make_whole, supply.split_factor)

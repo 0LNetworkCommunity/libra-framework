@@ -177,7 +177,6 @@ pub fn genesis_migrate_slow_wallet(
     let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
 
     if let Some(slow) = &user_recovery.slow_wallet {
-
         let serialized_values = serialize_values(&vec![
             MoveValue::Signer(CORE_CODE_ADDRESS),
             MoveValue::Signer(new_addr_type),
@@ -282,7 +281,7 @@ pub fn util_simulate_new_val_balance(
     {
         let contrib = util_calculate_infra_escrow(user_recovery, supply)?;
         if let Some(b) = &mut user_recovery.balance {
-          b.coin = b.coin - contrib;
+            b.coin = b.coin - contrib;
         }
     }
 
@@ -291,7 +290,10 @@ pub fn util_simulate_new_val_balance(
 
 /// single place to scale all coins in a legacy recovery
 // TODO: move to own module
-pub fn util_scale_all_coins(user_recovery: &mut LegacyRecovery, supply: &Supply) -> anyhow::Result<()> {
+pub fn util_scale_all_coins(
+    user_recovery: &mut LegacyRecovery,
+    supply: &Supply,
+) -> anyhow::Result<()> {
     let split = supply.split_factor;
 
     if let Some(b) = &mut user_recovery.balance {
@@ -557,7 +559,6 @@ pub fn genesis_migrate_community_wallet(
 pub fn genesis_migrate_cumu_deposits(
     session: &mut SessionExt,
     user_recovery: &[LegacyRecovery],
-    split_factor: f64,
 ) -> anyhow::Result<()> {
     let (_dr, cw) = process_comm_wallet::prepare_cw_and_receipts(user_recovery)?;
 
