@@ -193,7 +193,7 @@ fn test_genesis_math() {
     let r = crate::parse_json::recovery_file_parse(p).unwrap();
 
     let settings = SupplySettings {
-        target_supply: 100_000_000_000.0, // 100B times scaling factor
+        target_supply: 100_000_000_000.0, // 100B
         target_future_uses: 0.70,
         years_escrow: 7,
         map_dd_to_slow: vec![

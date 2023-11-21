@@ -263,7 +263,7 @@ pub fn genesis_migrate_infra_escrow(
     exec_function(
         session,
         "genesis_migration",
-        "fork_escrow_init_alt",
+        "fork_escrow_init",
         vec![],
         serialized_values,
     );

@@ -6,7 +6,6 @@ use diem_gas::{
     AbstractValueSizeGasParameters, ChangeSetConfigs, NativeGasParameters,
     LATEST_GAS_FEATURE_VERSION,
 };
-
 use diem_types::{
     chain_id::{ChainId, NamedChain},
     on_chain_config::{

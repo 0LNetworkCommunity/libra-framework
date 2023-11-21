@@ -4,7 +4,6 @@ module ol_framework::test_migration {
   use ol_framework::infra_escrow;
   use ol_framework::slow_wallet;
   use ol_framework::ol_account;
-  use std::fixed_point32;
   use ol_framework::mock;
   use diem_framework::coin;
   use ol_framework::libra_coin::LibraCoin;
@@ -35,7 +34,6 @@ module ol_framework::test_migration {
     let temp_auth_key =  bcs::to_bytes(&addr);
 
     let init_balance = 100000; // note: the scaling happens on RUST side.
-    let escrow_pct = 80;
 
     genesis_migration::migrate_legacy_user(
       &root,
@@ -58,15 +56,15 @@ module ol_framework::test_migration {
     assert!(total == user_balance, 73570002);
 
 
-    // after the slow wallets have been calculated we check the infra escrow pledges
-    genesis_migration::fork_escrow_init(&vm, &marlon_rando, escrow_pct * 10000);
+    // after the slow wallets have been calculated we check the infra escrow / pledges
+    // coins to take to escrow
+    let expected_pledge = 10000;
+
+    genesis_migration::fork_escrow_init(&vm, &marlon_rando, expected_pledge);
 
     let user_pledge = infra_escrow::user_infra_pledge_balance(addr);
     let all_pledge_balance = infra_escrow::infra_escrow_balance();
 
-    let pct = fixed_point32::create_from_rational(escrow_pct, 100);
-    let locked = total-unlocked;
-    let expected_pledge = fixed_point32::multiply_u64(locked, pct);
     assert!(user_pledge == expected_pledge, 73570003);
 
 
