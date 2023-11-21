@@ -135,19 +135,20 @@ pub fn compare_recovery_vec_to_genesis_tx(
 
 #[derive(Serialize, Deserialize)]
 struct JsonDump {
-    balance: GasCoinStoreResource,
+    account: AccountAddress,
+    balance: Option<GasCoinStoreResource>,
     slow: Option<SlowWalletBalance>,
 }
 /// Compare the balances in a recovery file to the balances in a genesis blob.
 pub fn export_account_balances(
-    recovery: &mut [LegacyRecovery],
+    recovery: &[LegacyRecovery],
     db_reader: &Arc<dyn DbReader>,
     output: &Path,
 ) -> anyhow::Result<()> {
     let mut list: Vec<JsonDump> = vec![];
 
     recovery
-        .iter_mut()
+        .iter()
         .progress_with_style(OLProgress::bar())
         .with_message("auditing migration")
         .for_each(|old| {
@@ -155,13 +156,13 @@ pub fn export_account_balances(
                 return;
             };
 
-            let convert_address =
+            let account =
                 AccountAddress::from_hex_literal(&old.account.as_ref().unwrap().to_hex_literal())
                     .expect("could not convert address types");
 
             // Ok now let's compare to what's on chain
             let db_state_view = db_reader.latest_state_checkpoint_view().unwrap();
-            let account_state_view = db_state_view.as_account_with_state_view(&convert_address);
+            let account_state_view = db_state_view.as_account_with_state_view(&account);
 
             let slow = account_state_view
                 .get_move_resource::<SlowWalletBalance>()
@@ -169,10 +170,9 @@ pub fn export_account_balances(
 
             let balance = account_state_view
                 .get_move_resource::<GasCoinStoreResource>()
-                .expect("should have move resource")
-                .expect("should have a GasCoinStoreResource for balance");
+                .expect("should have move resource");
 
-            list.push(JsonDump { balance, slow });
+            list.push(JsonDump { account, balance, slow });
         });
 
     std::fs::write(
