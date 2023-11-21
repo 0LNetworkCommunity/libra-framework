@@ -22,7 +22,7 @@ use libra_types::ol_progress::OLProgress;
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
 use move_core_types::move_resource::MoveResource;
 use serde::{Deserialize, Serialize};
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 #[derive(Debug, Serialize, Deserialize)]
