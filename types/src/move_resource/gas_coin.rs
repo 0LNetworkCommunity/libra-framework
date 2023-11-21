@@ -89,7 +89,7 @@ impl MoveResource for GasCoinStoreResource {}
 
 // TODO: This might break reading from API maybe it must be diem_api_types::U64;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GasCoin {
     pub value: u64,
 }

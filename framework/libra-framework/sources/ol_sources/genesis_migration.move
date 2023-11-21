@@ -8,7 +8,6 @@
 module ol_framework::genesis_migration {
   use std::signer;
   use std::error;
-  use std::fixed_point32;
   use std::option;
   use diem_framework::coin;
   use ol_framework::ol_account;
@@ -93,31 +92,45 @@ module ol_framework::genesis_migration {
     };
   }
 
-  /// for an uprade using an escrow percent. Only to be called at genesis
+  // /// for an uprade using an escrow percent. Only to be called at genesis
+  // // escrow percent has 6 decimal precision (1m);
+  // public fun fork_escrow_init(vm: &signer, user_sig: &signer, escrow_pct: u64) {
+  //   system_addresses::assert_vm(vm);
+  //   let user_addr = signer::address_of(user_sig);
+  //   // establish the infrastructure escrow pledge
+
+  //   let escrow_pct = fixed_point32::create_from_rational(escrow_pct, 1000000);
+
+  //   let (unlocked, total) = ol_account::balance(user_addr);
+
+  //   let locked = 0;
+  //   if ((total > unlocked) && (total > 0)) {
+  //     locked = (total - unlocked);
+  //   };
+
+  //   if (locked > 0) {
+  //     let to_escrow = fixed_point32::multiply_u64(locked, escrow_pct);
+  //     let coin_opt = ol_account::vm_withdraw_unlimited(vm, user_addr, to_escrow);
+  //     if (option::is_some(&coin_opt)) {
+  //       let c = option::extract(&mut coin_opt);
+  //       pledge_accounts::save_pledge(user_sig, @0x0, c);
+  //     };
+  //     option::destroy_none(coin_opt);
+  //   };
+  // }
+
+    /// for an uprade using an escrow percent. Only to be called at genesis
   // escrow percent has 6 decimal precision (1m);
-  public fun fork_escrow_init(vm: &signer, user_sig: &signer, escrow_pct: u64) {
+  public fun fork_escrow_init(vm: &signer, user_sig: &signer, to_escrow: u64) {
     system_addresses::assert_vm(vm);
     let user_addr = signer::address_of(user_sig);
-    // establish the infrastructure escrow pledge
-
-    let escrow_pct = fixed_point32::create_from_rational(escrow_pct, 1000000);
-
-    let (unlocked, total) = ol_account::balance(user_addr);
-
-    let locked = 0;
-    if ((total > unlocked) && (total > 0)) {
-      locked = (total - unlocked);
+    // shouldn't be tracking slow wallets at this point, do a direct withdraw
+    let coin_opt = coin::vm_withdraw<LibraCoin>(vm, user_addr, to_escrow);
+    if (option::is_some(&coin_opt)) {
+      let c = option::extract(&mut coin_opt);
+      pledge_accounts::save_pledge(user_sig, @0x0, c);
     };
-
-    if (locked > 0) {
-      let to_escrow = fixed_point32::multiply_u64(locked, escrow_pct);
-      let coin_opt = ol_account::vm_withdraw_unlimited(vm, user_addr, to_escrow);
-      if (option::is_some(&coin_opt)) {
-        let c = option::extract(&mut coin_opt);
-        pledge_accounts::save_pledge(user_sig, @0x0, c);
-      };
-      option::destroy_none(coin_opt);
-    };
+    option::destroy_none(coin_opt);
   }
 
   //////// MAKE WHOLE INIT ////////
