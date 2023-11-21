@@ -60,7 +60,12 @@ fn test_correct_supply_arithmetic_all() {
     let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&gen_tx).unwrap();
 
     // test dump balances
-    compare::export_account_balances(&user_accounts, &db_rw.reader, &json_path().parent().unwrap()).unwrap();
+    compare::export_account_balances(
+        &user_accounts,
+        &db_rw.reader,
+        json_path().parent().unwrap(),
+    )
+    .unwrap();
 
     // audit
     match compare::compare_recovery_vec_to_genesis_tx(

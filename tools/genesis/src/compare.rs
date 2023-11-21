@@ -172,7 +172,11 @@ pub fn export_account_balances(
                 .get_move_resource::<GasCoinStoreResource>()
                 .expect("should have move resource");
 
-            list.push(JsonDump { account, balance, slow });
+            list.push(JsonDump {
+                account,
+                balance,
+                slow,
+            });
         });
 
     std::fs::write(
