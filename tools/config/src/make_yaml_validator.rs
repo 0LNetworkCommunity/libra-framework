@@ -54,7 +54,7 @@ full_node_networks:
   listen_address: '/ip4/0.0.0.0/tcp/6181'
   identity:
     type: 'from_file'
-    path: {path}/validator-full-node-identity.yaml
+    path: {path}/validator-identity.yaml
 
 api:
   enabled: true

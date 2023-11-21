@@ -1,11 +1,16 @@
+use crate::make_yaml_public_fullnode::make_private_vfn_yaml;
 use crate::make_yaml_validator;
-use anyhow::{bail, Context};
+use anyhow::{anyhow, bail, Context};
 use dialoguer::{Confirm, Input};
+use diem_crypto::x25519;
 use diem_genesis::config::HostAndPort;
+use diem_genesis::keys::PublicIdentity;
 use diem_types::chain_id::NamedChain;
+use diem_types::network_address::DnsName;
 use libra_types::legacy_types::app_cfg::AppCfg;
 use libra_types::legacy_types::network_playlist::NetworkPlaylist;
 use libra_types::ol_progress::OLProgress;
+use libra_wallet::utils::read_public_identity_file;
 use libra_wallet::validator_files::SetValidatorConfiguration;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -17,8 +22,8 @@ pub fn initialize_validator(
     mnem: Option<String>,
     keep_legacy_address: bool,
     chain_name: Option<NamedChain>,
-) -> anyhow::Result<()> {
-    let (.., keys) =
+) -> anyhow::Result<PublicIdentity> {
+    let (.., pub_id, keys) =
         libra_wallet::keys::refresh_validator_files(mnem, home_path.clone(), keep_legacy_address)?;
     OLProgress::complete("initialized validator key files");
 
@@ -48,7 +53,7 @@ pub fn initialize_validator(
     ))?;
     OLProgress::complete("saved a user libra.yaml file locally");
 
-    Ok(())
+    Ok(pub_id)
 }
 
 async fn get_ip() -> anyhow::Result<HostAndPort> {
@@ -72,7 +77,7 @@ pub async fn what_host() -> Result<HostAndPort, anyhow::Error> {
     };
 
     let input: String = Input::new()
-        .with_prompt("Enter the DNS or IP address, with port 6180")
+        .with_prompt("Enter the DNS or IP address, with port. Use validator: 6180, VFN: 6181, fullnode: 6182")
         .interact_text()
         .unwrap();
     let ip = input
@@ -82,7 +87,7 @@ pub async fn what_host() -> Result<HostAndPort, anyhow::Error> {
     Ok(ip)
 }
 
-pub async fn initialize_validator_configs(
+pub async fn validator_dialogue(
     data_path: &Path,
     github_username: Option<&str>,
 ) -> Result<(), anyhow::Error> {
@@ -99,15 +104,64 @@ pub async fn initialize_validator_configs(
             .with_prompt("Is this a legacy V5 address you wish to keep?")
             .interact()?;
 
-        initialize_validator(
+        let pub_id = initialize_validator(
             Some(data_path.to_path_buf()),
             github_username,
-            host,
+            host.clone(),
             None,
             keep_legacy_address,
             None,
         )?;
+
+        // now set up the vfn.yaml on the same host for convenience
+        vfn_dialogue(
+            data_path,
+            Some(host.host),
+            pub_id.validator_network_public_key,
+        )
+        .await?;
     }
+
+    Ok(())
+}
+
+fn get_local_vfn_id(home: &Path) -> anyhow::Result<x25519::PublicKey> {
+    let id = read_public_identity_file(&home.join("public-keys.yaml"))?;
+
+    id.validator_network_public_key
+        .context("no validator public key found in public-keys.yaml")
+}
+
+pub async fn vfn_dialogue(
+    home: &Path,
+    host: Option<DnsName>,
+    net_pubkey: Option<x25519::PublicKey>,
+) -> anyhow::Result<()> {
+    let dns = match host {
+        Some(d) => d,
+        None => {
+            println!("Let's get the network address of your VALIDATOR host");
+
+            what_host().await?.host
+        }
+    };
+
+    let pk = match net_pubkey {
+        Some(r) => r,
+        // maybe they already have the public-keys.yamlhere
+        None => get_local_vfn_id(home).map_err(|e| {
+              anyhow!("ERROR: cannot make vfn.yaml, make sure you have the public-keys.yaml on this host before starting, message: {}", e)
+        })?,
+    };
+
+    make_private_vfn_yaml(
+        home,
+        // NOTE: the VFN needs to identify the validator node, which uses the
+        // same validator_network public ID
+        pk, dns,
+    )?;
+
+    println!("SUCCESS: on your VFN you should have vfn.yaml, validator-full-node.yaml files before starting node.");
 
     Ok(())
 }
