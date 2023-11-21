@@ -50,7 +50,7 @@ impl Default for AccountRole {
 /// This is necessary for catastrophic recoveries, when the source code changes too much.
 /// Like what is going to happen between v4 and v5, where the source code of v5
 /// will not be able to work with objects from v4. We need an intermediary file.
-#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct LegacyRecovery {
     ///
     pub account: Option<LegacyAddress>,

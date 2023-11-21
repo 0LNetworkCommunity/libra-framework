@@ -101,7 +101,7 @@ async fn main() -> anyhow::Result<()> {
                     .to_string(),
             );
 
-            let mut recovery = if let Some(p) = github.json_legacy {
+            let recovery = if let Some(p) = github.json_legacy {
                 parse_json::recovery_file_parse(p)?
             } else {
                 vec![]
@@ -113,7 +113,7 @@ async fn main() -> anyhow::Result<()> {
                 github_token,
                 data_path,
                 github.local_framework,
-                &mut recovery,
+                Some(&recovery),
                 Some(supply_settings),
                 cli.chain.unwrap_or(NamedChain::TESTING),
                 None,

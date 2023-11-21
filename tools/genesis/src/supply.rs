@@ -64,11 +64,8 @@ impl Supply {
         // NOTE IMPORTANT: the CLI receives an unscaled integer number. And it should be scaled up to the Movevm decimal precision being used: 10^6
         self.split_factor = settings.scale_supply() / self.total;
 
-        // get the coin amount of chosen future uses
         let target_future_uses = settings.target_future_uses * self.total;
-        // excluding donor directed, how many coins are remaining to fund
         let remaining_to_fund = target_future_uses - self.donor_directed;
-        // what the ratio of remaining to fund, compared to validator_slow_locked
         self.escrow_pct = remaining_to_fund / self.slow_validator_locked;
         self.epoch_reward_base_case =
             remaining_to_fund / (365 * 100 * settings.years_escrow) as f64; // one hundred validators over 7 years every day. Note: discussed elsewhere: if this is an over estimate, the capital gets returned to community by the daily excess burn.
@@ -83,11 +80,11 @@ fn inc_supply(
     dd_wallet_list: &[LegacyAddress],
 ) -> anyhow::Result<Supply> {
     // get balances
-    let user_total: f64 = match &r.balance {
+    let amount: f64 = match &r.balance {
         Some(b) => b.coin as f64,
         None => 0.0,
     };
-    acc.total += user_total;
+    acc.total += amount;
 
     // get loose coins in make_whole
     if let Some(mk) = &r.make_whole {
@@ -102,36 +99,30 @@ fn inc_supply(
         acc.make_whole += user_credits;
     }
 
-    // sum all accounts
+    // get donor directed
     if dd_wallet_list.contains(&r.account.unwrap()) {
-        // is this categorized as a donor voice account?
-        acc.donor_directed += user_total;
+        acc.donor_directed += amount;
     } else if let Some(sl) = &r.slow_wallet {
-        // is it a slow wallet?
-        acc.slow_total += user_total;
+        acc.slow_total += amount;
         if sl.unlocked > 0 {
-            // safety check, the unlocked should always be lower than total balance
-            if user_total > sl.unlocked as f64 {
-                acc.slow_unlocked += sl.unlocked as f64;
+            acc.slow_unlocked += amount;
+            if amount > sl.unlocked as f64 {
                 // Note: the validator may have transferred everything out, and the unlocked may not have changed
-                let locked = user_total - sl.unlocked as f64;
+                let locked = amount - sl.unlocked as f64;
                 acc.slow_locked += locked;
                 // if this is the special case of a validator account with slow locked balance
                 if r.val_cfg.is_some() {
-                    acc.validator += user_total;
+                    acc.validator += amount;
                     acc.slow_validator_locked += locked;
                 }
-            } else {
-                // we shouldn't have more unlocked coins than the actual balance
-                acc.slow_unlocked += user_total;
             }
         }
     } else if r.cumulative_deposits.is_some() {
         // catches the cases of any dd wallets that were mapped to slow wallets
-        acc.slow_locked += user_total;
-        acc.slow_total += user_total;
+        acc.slow_locked += amount;
+        acc.slow_total += amount;
     } else {
-        acc.normal += user_total;
+        acc.normal += amount;
     }
     Ok(acc)
 }
@@ -193,7 +184,7 @@ fn test_genesis_math() {
     let r = crate::parse_json::recovery_file_parse(p).unwrap();
 
     let settings = SupplySettings {
-        target_supply: 100_000_000_000.0, // 100B
+        target_supply: 100_000_000_000.0 * 1_000_000.0, // 100B times scaling factor
         target_future_uses: 0.70,
         years_escrow: 7,
         map_dd_to_slow: vec![

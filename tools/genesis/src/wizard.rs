@@ -138,7 +138,7 @@ impl GenesisWizard {
 
         if ready {
             // Get Legacy Recovery from file
-            let mut legacy_recovery = if let Some(p) = legacy_recovery_path {
+            let legacy_recovery = if let Some(p) = legacy_recovery_path {
                 parse_json::recovery_file_parse(p)?
             } else {
                 vec![]
@@ -150,7 +150,7 @@ impl GenesisWizard {
                 self.github_token.clone(),
                 self.data_path.clone(),
                 use_local_framework,
-                &mut legacy_recovery,
+                Some(&legacy_recovery),
                 supply_settings,
                 self.chain,
                 None,

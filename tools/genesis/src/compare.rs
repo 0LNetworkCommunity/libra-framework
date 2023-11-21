@@ -2,129 +2,118 @@
 //!
 //! every day is like sunday
 //! -- morrissey via github copilot
-use crate::genesis_functions::util_simulate_new_val_balance;
+use crate::genesis_reader;
 use crate::genesis_reader::total_supply;
 use crate::supply::Supply;
-use crate::{genesis_reader, parse_json};
 
 use anyhow::{self, Context};
-use diem_state_view::account_with_state_view::AsAccountWithStateView;
+// use libra_types::move_resource::coin_info::GasCoinInfoResource;
 use diem_storage_interface::state_view::LatestDbStateCheckpointView;
-use diem_storage_interface::DbReader;
-use diem_types::account_view::AccountView;
 use diem_types::transaction::Transaction;
-use indicatif::{ProgressBar, ProgressIterator};
 use libra_types::exports::AccountAddress;
 use libra_types::legacy_types::legacy_address::LegacyAddress;
-use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
+use libra_types::legacy_types::legacy_recovery::{read_from_recovery_file, LegacyRecovery};
 use libra_types::move_resource::gas_coin::{GasCoinStoreResource, SlowWalletBalance};
 use libra_types::ol_progress::OLProgress;
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
+
+use diem_state_view::account_with_state_view::AsAccountWithStateView;
+use diem_storage_interface::DbReader;
+use diem_types::account_view::AccountView;
+use indicatif::{ProgressBar, ProgressIterator};
 use move_core_types::move_resource::MoveResource;
-use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 /// struct for holding the results of a comparison
 pub struct CompareError {
     /// index of LegacyRecover
     pub index: u64,
     /// user account
     pub account: Option<LegacyAddress>,
-    /// value expected
-    pub expected: u64,
-    /// value on chain after migration
-    pub migrated: u64,
+    /// balance difference [LegacyRecover]- [genesis blob]
+    pub bal_diff: i64,
     /// error message
     pub message: String,
 }
-
 /// Compare the balances in a recovery file to the balances in a genesis blob.
 pub fn compare_recovery_vec_to_genesis_tx(
-    recovery: &mut [LegacyRecovery],
+    recovery: &[LegacyRecovery],
     db_reader: &Arc<dyn DbReader>,
     supply: &Supply,
 ) -> Result<Vec<CompareError>, anyhow::Error> {
+    // start an empty btree map
     let mut err_list: Vec<CompareError> = vec![];
 
     recovery
-        .iter_mut()
+        .iter()
         .progress_with_style(OLProgress::bar())
         .with_message("auditing migration")
         .enumerate()
-        .for_each(|(i, old)| {
-            if old.account.is_none() {
+        .for_each(|(i, v)| {
+            if v.account.is_none() {
                 err_list.push(CompareError {
                     index: i as u64,
                     account: None,
-                    expected: 0,
-                    migrated: 0,
+                    bal_diff: 0,
                     message: "account is None".to_string(),
                 }); // instead of balance, if there is an account that is None, we insert the index of the recovery file
                 return;
             };
 
-            if old.account.unwrap() == LegacyAddress::ZERO {
+            if v.account.unwrap() == LegacyAddress::ZERO {
                 return;
             };
+            if v.balance.is_none() {
+                err_list.push(CompareError {
+                    index: i as u64,
+                    account: v.account,
+                    bal_diff: 0,
+                    message: "recovery file balance is None".to_string(),
+                });
+                return;
+            }
 
             let convert_address =
-                AccountAddress::from_hex_literal(&old.account.as_ref().unwrap().to_hex_literal())
+                AccountAddress::from_hex_literal(&v.account.unwrap().to_hex_literal())
                     .expect("could not convert address types");
 
-            // // scale all coin values per record consistently
-            // util_scale_all_coins(old, supply).expect("could not scale coins");
-            util_simulate_new_val_balance(old, supply)
-                .expect("could not simulate infra escrow validators");
-
-            // Ok now let's compare to what's on chain
             let db_state_view = db_reader.latest_state_checkpoint_view().unwrap();
             let account_state_view = db_state_view.as_account_with_state_view(&convert_address);
 
-            let on_chain_balance = account_state_view
-                .get_move_resource::<GasCoinStoreResource>()
-                .expect("should have move resource")
-                .expect("should have a GasCoinStoreResource for balance");
-
-            // CHECK: we should have scaled the balance correctly, including
-            // adjusting for validators
-            let old_balance = old.balance.as_ref().expect("should have a balance struct");
-            if on_chain_balance.coin() != old_balance.coin {
-                err_list.push(CompareError {
-                    index: i as u64,
-                    account: old.account,
-                    expected: old_balance.coin,
-                    migrated: on_chain_balance.coin(),
-                    message: "unexpected balance".to_string(),
-                });
-            }
-
-            // Check Slow Wallet Balance was migrated as expected
-            if let Some(old_slow) = &old.slow_wallet {
-                let new_slow = account_state_view
+            if let Some(slow_legacy) = &v.slow_wallet {
+                let on_chain_slow_wallet = account_state_view
                     .get_move_resource::<SlowWalletBalance>()
                     .expect("should have a slow wallet struct")
                     .unwrap();
 
-                if new_slow.unlocked != old_slow.unlocked {
+                let expected_unlocked = supply.split_factor * slow_legacy.unlocked as f64;
+
+                if on_chain_slow_wallet.unlocked != expected_unlocked as u64 {
                     err_list.push(CompareError {
                         index: i as u64,
-                        account: old.account,
-                        expected: old_slow.unlocked,
-                        migrated: new_slow.unlocked,
-                        // bal_diff: on_chain_slow_wallet.unlocked as i64 - expected_unlocked as i64,
+                        account: v.account,
+                        bal_diff: on_chain_slow_wallet.unlocked as i64 - expected_unlocked as i64,
                         message: "unexpected slow wallet unlocked".to_string(),
                     });
                 }
-                // CHECK: the unlocked amount should never be greater than balance
-                if new_slow.unlocked > on_chain_balance.coin() {
+            }
+
+            if let Some(balance_legacy) = &v.balance {
+                let on_chain_balance = account_state_view
+                    .get_move_resource::<GasCoinStoreResource>()
+                    .expect("should have move resource")
+                    .expect("should have a GasCoinStoreResource for balance");
+
+                let expected_balance = supply.split_factor * balance_legacy.coin as f64;
+
+                if on_chain_balance.coin() != expected_balance as u64 {
                     err_list.push(CompareError {
                         index: i as u64,
-                        account: old.account,
-                        expected: new_slow.unlocked,
-                        migrated: on_chain_balance.coin(),
-                        message: "unlocked greater than balance".to_string(),
+                        account: v.account,
+                        bal_diff: on_chain_balance.coin() as i64 - expected_balance as i64,
+                        message: "unexpected balance".to_string(),
                     });
                 }
             }
@@ -133,71 +122,17 @@ pub fn compare_recovery_vec_to_genesis_tx(
     Ok(err_list)
 }
 
-#[derive(Serialize, Deserialize)]
-struct JsonDump {
-    account: AccountAddress,
-    balance: Option<GasCoinStoreResource>,
-    slow: Option<SlowWalletBalance>,
-}
-/// Compare the balances in a recovery file to the balances in a genesis blob.
-pub fn export_account_balances(
-    recovery: &[LegacyRecovery],
-    db_reader: &Arc<dyn DbReader>,
-    output: &Path,
-) -> anyhow::Result<()> {
-    let mut list: Vec<JsonDump> = vec![];
-
-    recovery
-        .iter()
-        .progress_with_style(OLProgress::bar())
-        .with_message("auditing migration")
-        .for_each(|old| {
-            if old.account.is_none() {
-                return;
-            };
-
-            let account =
-                AccountAddress::from_hex_literal(&old.account.as_ref().unwrap().to_hex_literal())
-                    .expect("could not convert address types");
-
-            // Ok now let's compare to what's on chain
-            let db_state_view = db_reader.latest_state_checkpoint_view().unwrap();
-            let account_state_view = db_state_view.as_account_with_state_view(&account);
-
-            let slow = account_state_view
-                .get_move_resource::<SlowWalletBalance>()
-                .expect("should have a slow wallet struct");
-
-            let balance = account_state_view
-                .get_move_resource::<GasCoinStoreResource>()
-                .expect("should have move resource");
-
-            list.push(JsonDump {
-                account,
-                balance,
-                slow,
-            });
-        });
-
-    std::fs::write(
-        output.join("genesis_balances.json"),
-        serde_json::to_string_pretty(&list).unwrap(),
-    )
-    .unwrap();
-    Ok(())
-}
-
 /// Compare the balances in a recovery file to the balances in a genesis blob.
 pub fn compare_json_to_genesis_blob(
     json_path: PathBuf,
     genesis_path: PathBuf,
     supply: &Supply,
 ) -> Result<Vec<CompareError>, anyhow::Error> {
-    let mut recovery = parse_json::recovery_file_parse(json_path)?;
+    let recovery = read_from_recovery_file(&json_path);
 
     let gen_tx = genesis_reader::read_blob_to_tx(genesis_path)?;
     let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&gen_tx)?;
-    compare_recovery_vec_to_genesis_tx(&mut recovery, &db_rw.reader, supply)
+    compare_recovery_vec_to_genesis_tx(&recovery, &db_rw.reader, supply)
 }
 
 // Check that the genesis validators are present in the genesis blob file, once we read the db.

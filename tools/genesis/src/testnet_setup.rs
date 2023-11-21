@@ -62,7 +62,7 @@ pub fn setup(
             .join("tests/fixtures/sample_export_recovery.json"),
     );
 
-    let mut recovery = parse_json::recovery_file_parse(p)?;
+    let recovery = parse_json::recovery_file_parse(p)?;
 
     genesis_builder::build(
         "none".to_string(), // when is testnet is ignored
@@ -70,7 +70,7 @@ pub fn setup(
         "none".to_string(),
         data_path,
         true,
-        &mut recovery,
+        Some(&recovery),
         supply_settings.to_owned(),
         chain,
         Some(val_cfg),

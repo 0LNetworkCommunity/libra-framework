@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use super::legacy_address::LegacyAddress;
 
 /// Struct that represents a AutoPay resource
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct LegacyAncestryResource {
     ///
     pub tree: Vec<LegacyAddress>,

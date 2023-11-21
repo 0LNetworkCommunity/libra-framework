@@ -6,7 +6,7 @@ use move_core_types::{ident_str, identifier::IdentStr, move_resource::MoveStruct
 use serde::{Deserialize, Serialize};
 
 /// The balance resource held under an account.
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct MakeWholeResource {
     ///
     pub credits: Vec<CreditResource>,
@@ -24,7 +24,7 @@ impl MoveStructType for MakeWholeResource {
     const STRUCT_NAME: &'static IdentStr = ident_str!("Balance");
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize)]
 /// the makewhole credit resource
 pub struct CreditResource {
     ///

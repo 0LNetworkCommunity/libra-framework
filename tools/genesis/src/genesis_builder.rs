@@ -70,7 +70,7 @@ pub fn build(
     github_token: String,
     home_path: PathBuf,
     use_local_framework: bool,
-    legacy_recovery: &mut [LegacyRecovery],
+    legacy_recovery: Option<&[LegacyRecovery]>,
     supply_settings: Option<SupplySettings>,
     chain_name: NamedChain,
     testnet_vals: Option<Vec<ValidatorConfiguration>>,
@@ -149,22 +149,18 @@ pub fn build(
     ));
 
     // Audits the generated genesis.blob comparing to the JSON input.
-    if !legacy_recovery.is_empty() {
+    if let Some(recovery) = legacy_recovery {
         // get a boostrapped DB to do audits
         let (db_rw, _) = bootstrap_db_reader_from_gen_tx(gen_info.get_genesis())?;
 
         let settings = supply_settings.context("no supply settings provided")?;
 
-        let mut s =
-            supply::populate_supply_stats_from_legacy(legacy_recovery, &settings.map_dd_to_slow)?;
+        let mut s = supply::populate_supply_stats_from_legacy(recovery, &settings.map_dd_to_slow)?;
 
         s.set_ratios_from_settings(&settings)?;
 
-        compare::compare_recovery_vec_to_genesis_tx(legacy_recovery, &db_rw.reader, &s)?;
+        compare::compare_recovery_vec_to_genesis_tx(recovery, &db_rw.reader, &s)?;
         OLProgress::complete("account balances as expected");
-
-        compare::export_account_balances(legacy_recovery, &db_rw.reader, &output_dir)?;
-        OLProgress::complete("exported balances to genesis_balances.json");
 
         compare::check_supply(settings.scale_supply() as u64, &db_rw.reader)?;
         OLProgress::complete("final supply as expected");
@@ -574,7 +570,7 @@ fn test_build() {
         token,
         home,
         true,
-        &mut [],
+        None,
         None,
         NamedChain::TESTING,
         None,

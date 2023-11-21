@@ -26,7 +26,7 @@ impl CommunityWalletsResourceLegacy {
 }
 
 /// Struct that represents a SlowWallet resource
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SlowWalletResource {
     ///
     pub unlocked: u64,
@@ -47,7 +47,7 @@ impl SlowWalletResource {
 }
 
 /// Struct that represents a SlowWallet resource
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SlowWalletListResource {
     ///
     pub list: Vec<LegacyAddress>,
