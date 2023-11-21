@@ -20,7 +20,7 @@ use diem_types::chain_id::NamedChain;
 
 /// Make a recovery genesis blob
 pub fn make_recovery_genesis_from_vec_legacy_recovery(
-    recovery: Option<&[LegacyRecovery]>,
+    recovery: &mut [LegacyRecovery],
     genesis_vals: &[Validator],
     framework_release: &ReleaseBundle,
     chain_id: ChainId,
@@ -61,7 +61,7 @@ fn test_basic_genesis() {
     let test_validators = TestValidator::new_test_set(Some(4), Some(100_000_000));
     let validators: Vec<Validator> = test_validators.iter().map(|t| t.data.clone()).collect();
     let _tx = make_recovery_genesis_from_vec_legacy_recovery(
-        None,
+        &mut [],
         &validators,
         &head_release_bundle(),
         ChainId::test(),
@@ -86,7 +86,7 @@ fn test_recovery_genesis() {
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_end_user_single.json");
 
-    let recovery = parse_json::recovery_file_parse(p).unwrap();
+    let mut recovery = parse_json::recovery_file_parse(p).unwrap();
 
     let test_validators = TestValidator::new_test_set(Some(4), Some(100_000));
     let validators: Vec<Validator> = test_validators.iter().map(|t| t.data.clone()).collect();
@@ -97,7 +97,7 @@ fn test_recovery_genesis() {
     };
 
     let tx = make_recovery_genesis_from_vec_legacy_recovery(
-        Some(&recovery),
+        &mut recovery,
         &validators,
         &head_release_bundle(),
         ChainId::test(),
