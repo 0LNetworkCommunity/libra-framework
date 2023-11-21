@@ -247,7 +247,7 @@ impl ConfigCli {
                 println!("Validators' config initialized.");
                 Ok(())
             }
-            Some(ConfigSub::FullnodeInit { home_path, vfn }) => {
+            Some(ConfigSub::FullnodeInit { home_path, vfn: _ }) => {
                 download_genesis(home_path.to_owned()).await?;
                 println!("downloaded genesis block");
 
