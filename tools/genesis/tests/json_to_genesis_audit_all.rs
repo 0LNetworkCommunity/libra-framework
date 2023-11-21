@@ -19,7 +19,7 @@ fn test_correct_supply_arithmetic_all() {
     let path = json_path()
         .parent()
         .unwrap()
-        .join("sample_export_recovery.json");
+        .join("v5_recovery_epoch_690.json");
 
     let mut user_accounts = recovery_file_parse(path).unwrap();
     let map_dd_to_slow = vec![
