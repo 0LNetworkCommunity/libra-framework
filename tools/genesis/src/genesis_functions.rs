@@ -95,7 +95,7 @@ pub fn genesis_migrate_all_users(
 
             // migrating tower
             if a.receipts.is_some() {
-                match genesis_migrate_receipts(session, a, supply) {
+                match genesis_migrate_receipts(session, a) {
                     Ok(_) => {}
                     Err(e) => {
                         if a.role != AccountRole::System {
@@ -362,7 +362,6 @@ pub fn util_calculate_infra_escrow(
 pub fn genesis_migrate_receipts(
     session: &mut SessionExt,
     user_recovery: &LegacyRecovery,
-    supply: &Supply,
 ) -> anyhow::Result<()> {
     if user_recovery.account.is_none()
         || user_recovery.auth_key.is_none()

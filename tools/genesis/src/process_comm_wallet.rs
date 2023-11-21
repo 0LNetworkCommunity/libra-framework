@@ -67,7 +67,7 @@ pub fn rebuild_donor_receipts(
                 .map(|&a| a.try_into().expect("could not cast LegacyAdresss"))
                 .collect();
             // this resource should now show the split numbers
-            let mut cast_receipts = ReceiptsResourceV7 {
+            let cast_receipts = ReceiptsResourceV7 {
                 destination: destinations_cast,
                 cumulative: temp_receipts.clone().cumulative,
                 last_payment_timestamp: temp_receipts.clone().last_payment_timestamp,
