@@ -90,9 +90,9 @@ enum ConfigSub {
         /// check the files generated
         #[clap(short, long)]
         check: bool,
-        /// just the VFN file
-        #[clap(short, long)]
-        vfn: bool,
+        // TODO: just the VFN file
+        // #[clap(short, long)]
+        // vfn: bool,
     },
 
     /// Generate a fullnode dir and add fullnode.yaml from template
@@ -188,7 +188,7 @@ impl ConfigCli {
 
                 Ok(())
             }
-            Some(ConfigSub::ValidatorInit { check, vfn: _ }) => {
+            Some(ConfigSub::ValidatorInit { check}) => {
                 if *check {
                     let home_dir = self.path.clone().unwrap_or_else(global_config_dir);
 
