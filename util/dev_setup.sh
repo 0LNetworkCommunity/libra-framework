@@ -203,7 +203,7 @@ function install_rustup {
       echo "Rustup is already installed, version: $VERSION"
     fi
   else
-	  curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+    curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y
     if [[ -n "${CARGO_HOME}" ]]; then
       PATH="${CARGO_HOME}/bin:${PATH}"
     else
