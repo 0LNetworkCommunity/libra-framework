@@ -1,15 +1,15 @@
 # Makefile for testnet
 
 ifndef BINS_PATH
-BINS_PATH = $$HOME/.cargo/bin/
+BINS_PATH = $$HOME/.cargo/bin
 endif
 
 ifndef SOURCE_PATH
-SOURCE_PATH = $$HOME/libra-framework/
+SOURCE_PATH = $$HOME/libra-framework
 endif
 
 ifndef DATA_PATH
-DATA_PATH = $$HOME/.libra/
+DATA_PATH = $$HOME/.libra
 endif
 
 ifndef TARGET_SUPPLY
@@ -54,7 +54,7 @@ install:
 	cd ${SOURCE_PATH} && bash ./util/dev_setup.sh -bt && cargo build --release -p libra -p libra-genesis-tools -p libra-framework
 # legacy source
 	cd ${DATA_PATH} && git clone -b v6 https://github.com/0LNetworkCommunity/libra-legacy-v6
-	cp -f ${SOURCE_PATH}/target/release/libra* ${BINS_PATH}
+	cp -f ${SOURCE_PATH}/target/release/libra* ${BINS_PATH}/
 
 register:
 	libra-genesis-tools register --org-github ${GIT_ORG} --name-github ${GIT_REPO}
@@ -71,7 +71,7 @@ get-legacy:
 	wget https://raw.githubusercontent.com/sirouk/ol-data-extraction/v-6.9.x-ready/assets/data.json -O ${DATA_PATH}/libra-recovery/v5_ancestry.json
 
 recovery:
-	cd ${DATA_PATH}libra-legacy-v6/ol/genesis-tools && \
+	cd ${DATA_PATH}/libra-legacy-v6/ol/genesis-tools && \
 	cargo r -p ol-genesis-tools -- --export-json ${DATA_PATH}/libra-recovery/v5_recovery.json --snapshot-path ${DATA_PATH}/libra-recovery/${EPOCH}/state_ver* --ancestry-file ${DATA_PATH}/libra-recovery/v5_ancestry.json
 
 	md5sum ${RECOVERY_FILE}
