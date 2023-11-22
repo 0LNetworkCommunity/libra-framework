@@ -71,7 +71,7 @@ get-legacy:
 	wget https://raw.githubusercontent.com/sirouk/ol-data-extraction/v-6.9.x-ready/assets/data.json -O ${DATA_PATH}/libra-recovery/v5_ancestry.json
 
 recovery:
-	cd ${DATA_PATH}/libra-legacy-v6/ol/genesis-tools && \
+	cd ${DATA_PATH}libra-legacy-v6/ol/genesis-tools && \
 	cargo r -p ol-genesis-tools -- --export-json ${DATA_PATH}/libra-recovery/v5_recovery.json --snapshot-path ${DATA_PATH}/libra-recovery/${EPOCH}/state_ver* --ancestry-file ${DATA_PATH}/libra-recovery/v5_ancestry.json
 
 	md5sum ${RECOVERY_FILE}
