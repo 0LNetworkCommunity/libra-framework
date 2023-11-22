@@ -51,10 +51,10 @@ check:
 	@echo EPOCH: ${EPOCH}
 
 install:
-	cd ${SOURCE_PATH} && bash ./util/dev_setup.sh -t && cargo build --release -p libra -p libra-genesis-tools -p libra-framework
+	cd ${SOURCE_PATH} && bash ./util/dev_setup.sh -bt && cargo build --release -p libra -p libra-genesis-tools -p libra-framework
 # legacy source
 	cd ${DATA_PATH} && git clone -b v6 https://github.com/0LNetworkCommunity/libra-legacy-v6
-	cp ${SOURCE_PATH}/target/release/libra* ${BINS_PATH}
+	cp -f ${SOURCE_PATH}/target/release/libra* ${BINS_PATH}
 
 register:
 	libra-genesis-tools register --org-github ${GIT_ORG} --name-github ${GIT_REPO}
