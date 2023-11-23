@@ -1,15 +1,15 @@
 # Makefile for testnet
 
 ifndef BINS_PATH
-BINS_PATH = $$HOME/.cargo/bin/
+BINS_PATH = $$HOME/.cargo/bin
 endif
 
 ifndef SOURCE_PATH
-SOURCE_PATH = $$HOME/libra-framework/
+SOURCE_PATH = $$HOME/libra-framework
 endif
 
 ifndef DATA_PATH
-DATA_PATH = $$HOME/.libra/
+DATA_PATH = $$HOME/.libra
 endif
 
 ifndef TARGET_SUPPLY
@@ -54,7 +54,7 @@ install:
 	cd ${SOURCE_PATH} && bash ./util/dev_setup.sh -bt && cargo build --release -p libra -p libra-genesis-tools -p libra-framework
 # legacy source
 	cd ${DATA_PATH} && git clone -b v6 https://github.com/0LNetworkCommunity/libra-legacy-v6
-	cp -f ${SOURCE_PATH}/target/release/libra* ${BINS_PATH}
+	cp -f ${SOURCE_PATH}/target/release/libra* ${BINS_PATH}/
 
 register:
 	libra-genesis-tools register --org-github ${GIT_ORG} --name-github ${GIT_REPO}
