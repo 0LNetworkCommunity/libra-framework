@@ -30,6 +30,10 @@ ALLURE_VERSION=2.15.pr1135
 # this is 3.21.4; the "3" is silent
 PROTOC_VERSION=21.4
 SOLC_VERSION="v0.8.11+commit.d7f03943"
+PRE_COMMAND=()
+if [ "$(whoami)" != 'root' ]; then
+  PRE_COMMAND=(sudo)
+fi
 
 SCRIPT_PATH="$( cd "$( dirname "$0" )" >/dev/null 2>&1 && pwd )"
 cd "$SCRIPT_PATH/.." || exit
@@ -165,9 +169,9 @@ function install_protoc {
   (
     cd "$TMPFILE" || exit
     curl -LOs "https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOC_VERSION/$PROTOC_PKG.zip" --retry 3
-    sudo unzip -o "$PROTOC_PKG.zip" -d /usr/local bin/protoc
-    sudo unzip -o "$PROTOC_PKG.zip" -d /usr/local 'include/*'
-    sudo chmod +x "/usr/local/bin/protoc"
+    "${PRE_COMMAND[@]}" unzip -o "$PROTOC_PKG.zip" -d /usr/local bin/protoc
+    "${PRE_COMMAND[@]}" unzip -o "$PROTOC_PKG.zip" -d /usr/local 'include/*'
+    "${PRE_COMMAND[@]}" chmod +x "/usr/local/bin/protoc"
   )
   rm -rf "$TMPFILE"
 
@@ -318,10 +322,6 @@ function install_awscli {
 function install_pkg {
   package=$1
   PACKAGE_MANAGER=$2
-  PRE_COMMAND=()
-  if [ "$(whoami)" != 'root' ]; then
-    PRE_COMMAND=(sudo)
-  fi
   if command -v "$package" &>/dev/null; then
     echo "$package is already installed"
   else
