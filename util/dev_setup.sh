@@ -159,15 +159,19 @@ function install_protoc {
     return
   fi
 
+  PRE_COMMAND=()
+  if [ "$(whoami)" != 'root' ]; then
+    PRE_COMMAND=(sudo)
+  fi
   TMPFILE=$(mktemp)
   rm "$TMPFILE"
   mkdir -p "$TMPFILE"/
   (
     cd "$TMPFILE" || exit
     curl -LOs "https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOC_VERSION/$PROTOC_PKG.zip" --retry 3
-    sudo unzip -o "$PROTOC_PKG.zip" -d /usr/local bin/protoc
-    sudo unzip -o "$PROTOC_PKG.zip" -d /usr/local 'include/*'
-    sudo chmod +x "/usr/local/bin/protoc"
+    "${PRE_COMMAND[@]}" unzip -o "$PROTOC_PKG.zip" -d /usr/local bin/protoc
+    "${PRE_COMMAND[@]}" unzip -o "$PROTOC_PKG.zip" -d /usr/local 'include/*'
+    "${PRE_COMMAND[@]}" chmod +x "/usr/local/bin/protoc"
   )
   rm -rf "$TMPFILE"
 
