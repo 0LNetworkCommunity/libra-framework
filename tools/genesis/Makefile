@@ -38,7 +38,6 @@ endif
 
 ifndef GIT_REPO
 GIT_REPO=release-v6.9.0-rc.9-genesis
-
 endif
 
 ifndef EPOCH
