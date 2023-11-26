@@ -1,4 +1,4 @@
-# Makefile for testnet
+SHELL=/usr/bin/env bash
 
 ifndef BINS_PATH
 BINS_PATH = $$HOME/.cargo/bin
