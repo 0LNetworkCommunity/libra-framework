@@ -50,7 +50,7 @@ check:
 	@echo EPOCH: ${EPOCH}
 
 install:
-	cd ${SOURCE_PATH} && bash ./util/dev_setup.sh -bt && ${BINS_PATH}/cargo build --release -p libra -p libra-genesis-tools -p libra-framework
+	cd ${SOURCE_PATH} && bash ./util/dev_setup.sh -bt && . ~/.bashrc && ${BINS_PATH}/cargo build --release -p libra -p libra-genesis-tools -p libra-framework
 # legacy source
 	mkdir -p ${DATA_PATH}
 	cd ${DATA_PATH} && git clone -b v6 https://github.com/0LNetworkCommunity/libra-legacy-v6
