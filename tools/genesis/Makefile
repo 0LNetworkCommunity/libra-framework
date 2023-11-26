@@ -1,4 +1,4 @@
-# Makefile for testnet
+SHELL=/usr/bin/env bash
 
 ifndef BINS_PATH
 BINS_PATH = $$HOME/.cargo/bin
@@ -55,6 +55,7 @@ install:
 	mkdir -p ${DATA_PATH}
 	cd ${DATA_PATH} && git clone -b v6 https://github.com/0LNetworkCommunity/libra-legacy-v6
 	cp -f ${SOURCE_PATH}/target/release/libra* ${BINS_PATH}/
+	@echo "Please run 'source ~/.bashrc' to update your environment."
 
 register:
 	libra-genesis-tools register --org-github ${GIT_ORG} --name-github ${GIT_REPO}
