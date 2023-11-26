@@ -201,7 +201,7 @@ function install_rustup {
   if [[ "${BATCH_MODE}" == "false" ]]; then
     echo "Installing Rust......"
   fi
-  VERSION="$(rustup --version || true)"
+  VERSION="$(rustup --version 2>/dev/null || true)"
   if [ -n "$VERSION" ]; then
 	  if [[ "${BATCH_MODE}" == "false" ]]; then
       echo "Rustup is already installed, version: $VERSION"
@@ -438,7 +438,7 @@ function install_toolchain {
   fi
 }
 
-function install_rustup_components_and_nightly {
+function install_rustup_components_and_stable {
     echo "Printing the rustup version and toolchain list"
     rustup --version
     rustup show
@@ -449,26 +449,17 @@ function install_rustup_components_and_nightly {
     rustup component add rustfmt
     rustup component add clippy
 
-    # We require nightly for strict rust formatting
-    echo "Installing the nightly toolchain and rustfmt nightly"
-    if ! rustup toolchain install nightly
+    # Back to stable
+    echo "Installing the stable toolchain and rustfmt stable"
+    if ! rustup toolchain install stable
     then
-      if [[ "$(uname)" == "Linux" ]]; then
-        # TODO: remove this once we have an answer: https://github.com/rust-lang/rustup/issues/3390
-        echo "Failed to install the nightly toolchain using rustup! Falling back to an older linux build at 2023-06-01."
-        rustup toolchain install nightly-2023-06-01 # Fix the date to avoid flakiness
-
-        # Rename the toolchain to nightly (crazy... see: https://github.com/rust-lang/rustup/issues/1299).
-        # Note: this only works for linux. The primary purpose is to unblock CI/CD on flakes.
-        mv ~/.rustup/toolchains/nightly-2023-06-01-x86_64-unknown-linux-gnu ~/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu
-      else
-        echo "Failed to install the nightly toolchain using rustup! Manual installation is required!"
-      fi
+        echo "Failed to install the stable toolchain using rustup! Manual installation is required!"
+	sleep 5
     fi
 
-    if ! rustup component add rustfmt --toolchain nightly
+    if ! rustup component add rustfmt --toolchain stable
     then
-      echo "Failed to install rustfmt nightly using rustup."
+      echo "Failed to install rustfmt stable using rustup."
     fi
 }
 
@@ -981,7 +972,7 @@ if [[ "$INSTALL_BUILD_TOOLS" == "true" ]]; then
 
   install_rustup "$BATCH_MODE"
   install_toolchain "$(cat ./rust-toolchain)"
-  install_rustup_components_and_nightly
+  install_rustup_components_and_stable
 
   install_cargo_sort
   install_cargo_nextest
