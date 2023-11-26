@@ -213,6 +213,7 @@ function install_rustup {
     else
       PATH="${HOME}/.cargo/bin:${PATH}"
     fi
+    source ${HOME}/.cargo/env
   fi
 }
 
