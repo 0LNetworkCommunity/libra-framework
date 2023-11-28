@@ -136,9 +136,6 @@ full_node_networks:
 - network_id:
     private: 'vfn'
   listen_address: '/ip4/0.0.0.0/tcp/6181'
-  identity:
-    type: 'from_file'
-    path: {path}/validator-full-node-identity.yaml
   seeds:
     {val_net_pubkey}:
       addresses:
