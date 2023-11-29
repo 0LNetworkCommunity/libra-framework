@@ -37,7 +37,7 @@ GIT_ORG = 0LNetworkCommunity
 endif
 
 ifndef GIT_REPO
-GIT_REPO=release-v6.9.0-rc.9-genesis
+GIT_REPO=release-v6.9.0-genesis-registration
 endif
 
 ifndef EPOCH
