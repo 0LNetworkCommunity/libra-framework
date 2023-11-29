@@ -48,6 +48,10 @@ module diem_framework::stake {
     /// Table to store collected transaction fees for each validator already exists.
     const EFEES_TABLE_ALREADY_EXISTS: u64 = 19;
 
+
+    /// ALL VALIDATORS HAVE UNIFORM VOTING POWER.
+    const UNIFORM_VOTE_POWER: u64 = 1000000;
+
     /// Validator status enum. We can switch to proper enum later once Move supports it.
     // const VALIDATOR_STATUS_PENDING_ACTIVE: u64 = 1;
     const VALIDATOR_STATUS_ACTIVE: u64 = 2;
@@ -468,22 +472,6 @@ module diem_framework::stake {
         assert_stake_pool_exists(validator_address);
         let stake_pool = borrow_global_mut<ValidatorState>(validator_address);
         assert!(signer::address_of(operator) == stake_pool.operator_address, error::unauthenticated(ENOT_OPERATOR));
-
-        // assert!(
-        //     get_validator_state(validator_address) == VALIDATOR_STATUS_INACTIVE,
-        //     error::invalid_state(EALREADY_ACTIVE_VALIDATOR),
-        // );
-
-        // let config = staking_config::get();
-        // let (minimum_stake, maximum_stake) = staking_config::get_required_stake(&config);
-        // let minimum_stake = 1;
-        // let maximum_stake = 100;
-        // let voting_power = 1; // voting power is always 1 in Libra
-        // assert!(voting_power >= minimum_stake, error::invalid_argument(ESTAKE_TOO_LOW));
-        // assert!(voting_power <= maximum_stake, error::invalid_argument(ESTAKE_TOO_HIGH));
-        // Track and validate voting power increase.
-        // update_voting_power_increase(voting_power);
-
 
         // Add validator to pending_active, to be activated in the next epoch.
         let validator_config = borrow_global_mut<ValidatorConfig>(validator_address);
@@ -1001,7 +989,7 @@ module diem_framework::stake {
     fun generate_validator_info(addr: address, config: ValidatorConfig): ValidatorInfo {
         ValidatorInfo {
             addr,
-            voting_power: 1,
+            voting_power: UNIFORM_VOTE_POWER,
             config,
         }
     }
