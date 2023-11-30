@@ -160,7 +160,7 @@ api:
 /// download genesis blob
 pub async fn download_genesis(home_dir: Option<PathBuf>) -> anyhow::Result<()> {
     let bytes = reqwest::get(
-        "https://raw.githubusercontent.com/0LNetworkCommunity/epoch-archive-mainnet/main/upgrades/v7/genesis.blob",
+        "https://raw.githubusercontent.com/0LNetworkCommunity/epoch-archive-mainnet/main/upgrades/v6.9.0/genesis.blob",
     )
     .await?
     .bytes()
@@ -178,7 +178,7 @@ pub async fn download_genesis(home_dir: Option<PathBuf>) -> anyhow::Result<()> {
 
 pub async fn get_genesis_waypoint(home_dir: Option<PathBuf>) -> anyhow::Result<Waypoint> {
     let wp_string = reqwest::get(
-        "https://raw.githubusercontent.com/0LNetworkCommunity/epoch-archive-mainnet/main/upgrades/v7/waypoint.txt",
+        "https://raw.githubusercontent.com/0LNetworkCommunity/epoch-archive-mainnet/main/upgrades/v6.9.0/waypoint.txt",
     )
     .await?
     .text()
