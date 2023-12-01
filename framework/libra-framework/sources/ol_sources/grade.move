@@ -11,7 +11,7 @@ module ol_framework::grade {
     use diem_framework::stake;
     use std::fixed_point32::{Self, FixedPoint32};
 
-    use diem_std::debug::print;
+    // use diem_std::debug::print;
     /// what threshold of failed props should the network allow
     /// one validator before jailing?
     const FAILED_PROPS_THRESHOLD_PCT: u64 = 20;
@@ -35,9 +35,6 @@ module ol_framework::grade {
         return (false, proposed, failed, fixed_point32::create_from_raw_value(0))
       };
 
-      print(&has_good_success_ratio(proposed, failed));
-      print(&does_not_trail(proposed, failed, highest_net_props));
-
       let compliant = has_good_success_ratio(proposed, failed) &&
       does_not_trail(proposed, failed, highest_net_props);
 
@@ -53,7 +50,8 @@ module ol_framework::grade {
     fun has_good_success_ratio(proposed: u64, failed: u64): bool {
 
       let fail_ratio = if (proposed >= failed) {
-        fixed_point32::create_from_rational(failed, proposed)
+        // +1 to prevent denomiator zero error
+        fixed_point32::create_from_rational(failed, (proposed + 1))
       } else { return false };
 
       // failure ratio shoul dbe BELOW FAILED_PROPS_THRESHOLD_PCT
@@ -83,9 +81,10 @@ module ol_framework::grade {
     // validators to be a kind of "vanguard" rider ("forerider"?) which sets the
     // pace for the lowest performer.
     fun does_not_trail(proposed: u64, failed: u64, highest_net_props: u64): bool {
-      if (proposed > failed) {
+      if ((proposed > failed) && (highest_net_props > 0)) {
         let net = proposed - failed;
-        let net_props_vs_leader= fixed_point32::create_from_rational(net, highest_net_props);
+        let net_props_vs_leader= fixed_point32::create_from_rational(net,
+        highest_net_props);
         fixed_point32::multiply_u64(100, net_props_vs_leader) > FAILED_PROPS_THRESHOLD_PCT
       } else { false }
     }
