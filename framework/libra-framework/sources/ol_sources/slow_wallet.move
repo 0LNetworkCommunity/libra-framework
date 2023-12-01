@@ -235,7 +235,6 @@ module ol_framework::slow_wallet {
       exists<SlowWallet>(addr)
     }
 
-    // #[view]
     /// helper to get the unlocked and total balance. (unlocked, total)
     public(friend) fun balance(addr: address): (u64, u64) acquires SlowWallet{
       // this is a normal account, so return the normal balance
@@ -249,8 +248,6 @@ module ol_framework::slow_wallet {
       (total, total)
     }
 
-    #[view]
-    // TODO: Deprecate this function in favor of `balance`
     /// Returns the amount of unlocked funds for a slow wallet.
     public fun unlocked_amount(addr: address): u64 acquires SlowWallet{
       // this is a normal account, so return the normal balance
@@ -260,6 +257,17 @@ module ol_framework::slow_wallet {
       };
 
       coin::balance<LibraCoin>(addr)
+    }
+
+    #[view]
+    /// Returns the amount of slow wallet transfers tracked
+    public fun transferred_amount(addr: address): u64 acquires SlowWallet{
+      // this is a normal account, so return the normal balance
+      if (exists<SlowWallet>(addr)) {
+        let s = borrow_global<SlowWallet>(addr);
+        return s.transferred
+      };
+      0
     }
 
     #[view]

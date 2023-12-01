@@ -60,6 +60,33 @@ module ol_framework::test_slow_wallet {
   }
 
   #[test(root = @ol_framework, alice = @0x123, bob = @0x456)]
+  fun test_deposit_unlocked_happy(root: signer, alice: signer) {
+    mock::ol_test_genesis(&root);
+    let mint_cap = libra_coin::extract_mint_cap(&root);
+
+    slow_wallet::initialize(&root);
+
+
+    // create alice account
+    ol_account::create_account(&root, @0x123);
+
+    slow_wallet::set_slow(&alice);
+
+    assert!(slow_wallet::is_slow(@0x123), 7357000);
+    assert!(slow_wallet::unlocked_amount(@0x123) == 0, 735701);
+
+    // add some coins to alice
+    let alice_init_balance = 10000;
+    ol_account::deposit_coins(@0x123, coin::test_mint(alice_init_balance, &mint_cap));
+    coin::destroy_mint_cap(mint_cap);
+    // the transfer was of already unlocked coins, so they will post as unlocked on alice
+    assert!(slow_wallet::unlocked_amount(@0x123) == alice_init_balance, 735703);
+    assert!(slow_wallet::transferred_amount(@0x123) == 0, 735704);
+
+  }
+
+
+  #[test(root = @ol_framework, alice = @0x123, bob = @0x456)]
   fun test_transfer_unlocked_happy(root: signer, alice: signer) {
     mock::ol_test_genesis(&root);
     let mint_cap = libra_coin::extract_mint_cap(&root);
@@ -76,17 +103,29 @@ module ol_framework::test_slow_wallet {
     assert!(slow_wallet::unlocked_amount(@0x123) == 0, 735701);
 
     // add some coins to alice
-    ol_account::deposit_coins(@0x123, coin::test_mint(10000, &mint_cap));
+    let alice_init_balance = 10000;
+    ol_account::deposit_coins(@0x123, coin::test_mint(alice_init_balance, &mint_cap));
     coin::destroy_mint_cap(mint_cap);
     // the transfer was of already unlocked coins, so they will post as unlocked on alice
-    assert!(slow_wallet::unlocked_amount(@0x123) == 10000, 735703);
+    assert!(slow_wallet::unlocked_amount(@0x123) == alice_init_balance, 735703);
+    assert!(slow_wallet::transferred_amount(@0x123) == 0, 735704);
+
 
     // transferring funds will create Bob's account
     // the coins are also unlocked
-    ol_account::transfer(&alice, @0x456, 10);
+    let transfer_amount = 10;
+    ol_account::transfer(&alice, @0x456, transfer_amount);
+    // slow transfer
     let b_balance = coin::balance<LibraCoin>(@0x456);
-    assert!(b_balance == 10, 735704);
-    assert!(slow_wallet::unlocked_amount(@0x456) == 10, 735705);
+    assert!(b_balance == transfer_amount, 735704);
+    assert!(slow_wallet::unlocked_amount(@0x123) == (alice_init_balance - transfer_amount), 735705);
+    assert!(slow_wallet::unlocked_amount(@0x456) == transfer_amount, 735706);
+
+    // alice should show a slow wallet transfer amount equal to sent;
+    assert!(slow_wallet::transferred_amount(@0x123) == transfer_amount, 735707);
+    // bob should show no change
+    assert!(slow_wallet::transferred_amount(@0x456) == 0, 735708);
+
   }
 
   // scenario: testing trying send more funds than are unlocked
@@ -131,8 +170,8 @@ module ol_framework::test_slow_wallet {
   }
 
 
-    #[test(root = @0x1)]
-    public entry fun test_human_read(
+  #[test(root = @0x1)]
+  public entry fun test_human_read(
         root: signer,
     ) {
         let _set = mock::genesis_n_vals(&root, 4);

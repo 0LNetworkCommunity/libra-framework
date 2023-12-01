@@ -160,7 +160,6 @@ module ol_framework::ol_account {
       // both update burn tracker
       let c = withdraw(sender, amount);
       deposit_coins(to, c);
-      slow_wallet::maybe_track_slow_transfer(payer, to, amount);
     }
 
     // transfer with capability, and do appropriate checks on both sides, and track the slow wallet
@@ -171,7 +170,6 @@ module ol_framework::ol_account {
       // NOTE: these shoud update BurnTracker
       let c = withdraw_with_capability(cap, amount);
       deposit_coins(recipient, c);
-      slow_wallet::maybe_track_slow_transfer(payer, recipient, amount);
     }
 
     /// Withdraw a coin while tracking the unlocked withdraw
@@ -181,7 +179,6 @@ module ol_framework::ol_account {
       let limit = slow_wallet::unlocked_amount(payer);
       assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
 
-      slow_wallet::maybe_track_unlocked_withdraw(payer, amount);
       let coin = coin::withdraw_with_capability(cap, amount);
       // the outgoing coins should trigger an update on this account
       // order matters here
@@ -206,7 +203,6 @@ module ol_framework::ol_account {
 
         let limit = slow_wallet::unlocked_amount(addr);
         assert!(amount <= limit, error::invalid_state(EINSUFFICIENT_BALANCE));
-        slow_wallet::maybe_track_unlocked_withdraw(addr, amount);
         let coin = coin::withdraw<LibraCoin>(sender, amount);
         // the outgoing coins should trigger an update on this account
         // order matters here
