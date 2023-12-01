@@ -541,18 +541,9 @@ module diem_framework::stake {
     }
 
     /// Triggers at epoch boundary. This function shouldn't abort.
-    ///
-    /// 1. Distribute transaction fees and rewards to stake pools of active and pending inactive validators (requested
-    /// to leave but not yet removed).
-    /// 2. Officially move pending active stake to active and move pending inactive stake to inactive.
-    /// The staking pool's voting power in this new epoch will be updated to the total active stake.
-    /// 3. Add pending active validators to the active set if they satisfy requirements so they can vote and remove
-    /// pending inactive validators so they no longer can vote.
-    /// 4. The validator's voting power in the validator set is updated to be the corresponding staking pool's voting
-    // / power.
+    /// NOTE: THIS ONLY EXISTS FOR VENDOR TESTS
     public(friend) fun on_new_epoch() acquires ValidatorConfig, ValidatorPerformance, ValidatorSet {
         let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
-        // let config = staking_config::get();
         let validator_perf = borrow_global_mut<ValidatorPerformance>(@diem_framework);
 
 
@@ -560,9 +551,7 @@ module diem_framework::stake {
         // Moreover, recalculate the total voting power, and deactivate the validator whose
         // voting power is less than the minimum required stake.
         let next_epoch_validators = vector::empty();
-        // let (minimum_stake, _) = staking_config::get_required_stake(&config);
         let minimum_stake = 0;
-
 
         let vlen = vector::length(&validator_set.active_validators);
         let total_voting_power = 0;
@@ -595,13 +584,8 @@ module diem_framework::stake {
         validator_set.total_voting_power = total_voting_power;
 
 
-        // validator_set.total_joining_power = 0;
-
         // Update validator indices, reset performance scores, and renew lockups.
         validator_perf.validators = vector::empty();
-        // let recurring_lockup_duration_secs = 0;
-        //staking_config::get_recurring_lockup_duration(&config);
-
 
         let vlen = vector::length(&validator_set.active_validators);
         let validator_index = 0;
