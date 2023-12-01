@@ -52,9 +52,9 @@ module ol_framework::mock {
   #[test_only]
   public fun mock_case_1(vm: &signer, addr: address){
       assert!(stake::is_valid(addr), 01);
-      stake::mock_performance(vm, addr, 1, 0);
-      let (compliant, _, _, _) = grade::get_validator_grade(addr, 0);
-      assert!(compliant, 777703);
+      stake::mock_performance(vm, addr, 100, 10);
+      let (compliant, _, _, _) = grade::get_validator_grade(addr, 100);
+      assert!(compliant, 01);
     }
 
 
@@ -64,7 +64,7 @@ module ol_framework::mock {
       assert!(stake::is_valid(addr), 01);
       stake::mock_performance(vm, addr, 0, 100); // 100 failing proposals
       let (compliant, _, _, _) = grade::get_validator_grade(addr, 0);
-      assert!(!compliant, 777703);
+      assert!(!compliant, 02);
     }
 
     // Mock all nodes being compliant case 1
@@ -114,7 +114,7 @@ module ol_framework::mock {
       // make all validators pay auction fee
       // the clearing price in the fibonacci sequence is is 1
       let (alice_bid, _) = proof_of_fee::current_bid(*vector::borrow(&vals, 0));
-      assert!(alice_bid == 1, 777703);
+      assert!(alice_bid == 1, 03);
       (vals, bids, expiry)
     }
 
@@ -311,8 +311,6 @@ module ol_framework::mock {
 
   #[test(root = @ol_framework)]
   public entry fun meta_val_perf(root: signer) {
-    // genesis();
-
     let set = genesis_n_vals(&root, 4);
     assert!(vector::length(&set) == 4, 7357001);
 
