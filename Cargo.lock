@@ -5808,6 +5808,7 @@ dependencies = [
  "diem-global-constants",
  "diem-rest-client",
  "diem-sdk",
+ "diem-temppath",
  "diem-types",
  "dirs",
  "futures",

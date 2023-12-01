@@ -202,7 +202,7 @@ impl AppCfg {
 
         if let Some(n) = nickname {
             let found = self.user_profiles.iter().enumerate().find_map(|(i, e)| {
-                if e.nickname.contains(&n) || e.account.to_hex_literal().contains(&n) {
+                if e.nickname.contains(&n) || e.account.to_string().contains(&n) {
                     Some(i)
                 } else {
                     None
@@ -620,6 +620,28 @@ async fn test_create() {
         ..Default::default()
     };
     a.save_file().unwrap();
+}
+
+#[tokio::test]
+async fn test_init() {
+    use diem_temppath::TempPath;
+    let d = TempPath::new();
+    let a = AuthenticationKey::from_str("8603ba96e87b810cebbec1a0fd7ea06285f9eb352a3eabde992a5594fe80af40").unwrap();
+
+    let b = AuthenticationKey::from_str("052dea65ac80cd4b2b1318a9420dc1568819882769346d9acffdc0d731504c66").unwrap();
+
+    let mut app_cfg: AppCfg = AppCfg::init_app_configs(
+        a,
+        a.derived_address(),
+        Some(d.path().to_owned()),
+        None,
+        None,
+    ).unwrap();
+
+    app_cfg.maybe_add_profile(Profile::new(b, b.derived_address())).unwrap();
+    assert!(app_cfg.user_profiles.len() > 1);
+    let p = app_cfg.get_profile(Some("052dea65ac80".to_string())).unwrap();
+    assert!(p.auth_key == b);
 }
 
 #[test]
