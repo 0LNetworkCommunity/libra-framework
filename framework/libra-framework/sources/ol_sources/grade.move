@@ -12,14 +12,21 @@ module ol_framework::grade {
     use std::fixed_point32::{Self, FixedPoint32};
 
 
+    /// what threshold of failed props should the network allow
+    /// one validator before jailing?
     const FAILED_PROPS_THRESHOLD_PCT: u64 = 20;
+
+    /// how far behind the leading validator by net proposals
+    /// should the trailing validator be allowed
+    const TRAILING_VALIDATOR_THRESHOLD: u64 = 5;
+
 
     #[view]
     /// returns if the validator passed or failed, and the number of proposals
     /// and failures, and the ratio.
     /// returns: is the validator compliant, proposed blocks, failed blocks, and the ratio of proposed to failed.
 
-    public fun get_validator_grade(node_addr: address): (bool, u64, u64, FixedPoint32) {
+    public fun get_validator_grade(node_addr: address, highest_net_props: u64): (bool, u64, u64, FixedPoint32) {
       let idx = stake::get_validator_index(node_addr);
       let (proposed, failed) = stake::get_current_epoch_proposal_counts(idx);
 
@@ -29,7 +36,7 @@ module ol_framework::grade {
       };
 
       let compliant = has_good_success_ratio(proposed, failed) &&
-      does_not_trail(proposed);
+      does_not_trail(proposed, failed, highest_net_props);
 
       // make failed at leat 1 to avoid division by zero
       (compliant, proposed, failed, fixed_point32::create_from_rational(proposed, (failed + 1)))
@@ -71,7 +78,11 @@ module ol_framework::grade {
     /// This has an additional quality, which allows for the highest performing
     // validators to be a kind of "vanguard" rider ("forerider"?) which sets the
     // pace for the lowest performer.
-    fun does_not_trail(proposed: u64): bool {
-      proposed > 0
+    fun does_not_trail(proposed: u64, failed: u64, highest_net_props: u64): bool {
+      if (proposed > failed) {
+        let net = proposed - failed;
+        let net_props_vs_leader= fixed_point32::create_from_rational(net, highest_net_props);
+        fixed_point32::multiply_u64(100, net_props_vs_leader) > FAILED_PROPS_THRESHOLD_PCT
+      } else { false }
     }
 }
