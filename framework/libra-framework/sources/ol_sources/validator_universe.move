@@ -1,5 +1,3 @@
-///////////////////////////////////////////////////////////////////////////
-// 0L Module
 // ValidatorUniverse
 ///////////////////////////////////////////////////////////////////////////
 
@@ -10,7 +8,6 @@ module diem_framework::validator_universe {
   use ol_framework::jail;
   use ol_framework::vouch;
   use diem_framework::stake;
-
 
   #[test_only]
   use ol_framework::testnet;
@@ -26,8 +23,6 @@ module diem_framework::validator_universe {
   struct ValidatorUniverse has key {
       validators: vector<address>
   }
-
-  // * DEPRECATED JailBit struct, now in jail.move * //
 
   // Genesis function to initialize ValidatorUniverse struct in 0x0.
   // This is triggered in new epoch by Configuration in Genesis.move
