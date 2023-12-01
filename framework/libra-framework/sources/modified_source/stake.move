@@ -188,6 +188,31 @@ module diem_framework::stake {
         fees_table: Table<address, Coin<LibraCoin>>,
     }
 
+    #[view]
+    /// @return: tuple
+    /// - u64: number of proposals
+    /// - address: the validator
+    public fun get_highest_net_proposer(): (u64, address) acquires ValidatorSet,
+    ValidatorPerformance, ValidatorConfig
+    {
+      let vals = get_current_validators();
+      let highest_net_proposals = 0;
+      let highest_addr = @0x0;
+      vector::for_each(vals, |v| {
+        let idx = get_validator_index(v);
+        let (success, fail) = get_current_epoch_proposal_counts(idx);
+        if (success > fail) {
+          let net = success - fail;
+
+          if (net > highest_net_proposals) {
+            highest_net_proposals = net;
+            highest_addr = v;
+          }
+        }
+      });
+      (highest_net_proposals, highest_addr)
+    }
+
 
     #[view]
     /// Returns the list of active validators
@@ -250,7 +275,9 @@ module diem_framework::stake {
     }
 
     #[view]
-    /// Return the number of successful and failed proposals for the proposal at the given validator index.
+    /// @return: tuple
+    /// - u64:  the number of successful
+    /// - u64: and failed proposals for the proposal at the given validator index.
     public fun get_current_epoch_proposal_counts(validator_index: u64): (u64, u64) acquires ValidatorPerformance {
         let validator_performances = &borrow_global<ValidatorPerformance>(@diem_framework).validators;
         let validator_performance = vector::borrow(validator_performances, validator_index);
