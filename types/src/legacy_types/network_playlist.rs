@@ -86,11 +86,11 @@ impl Default for NetworkPlaylist {
 pub fn find_default_playlist(chain_id: Option<NamedChain>) -> anyhow::Result<Url> {
     let url: Url = match chain_id {
       Some(NamedChain::TESTNET) => {
-      "https://raw.githubusercontent.com/0o-de-lally/seed-peers/main/fullnode_seed_playlist.json"
+      "https://raw.githubusercontent.com/0LNetworkCommunity/seed-peers/main/fullnode_seed_playlist_testnet.json"
       .parse()?
     },
       _ => { // MAINNET and everything else
-          "https://raw.githubusercontent.com/0o-de-lally/seed-peers/main/fullnode_seed_playlist.json"
+          "https://raw.githubusercontent.com/0LNetworkCommunity/seed-peers/main/fullnode_seed_playlist.json"
           .parse()?
       },
     };
