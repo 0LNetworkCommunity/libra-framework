@@ -166,7 +166,7 @@ module ol_framework::test_stake {
     // now make Eve not compliant
     let eve = @0x1000e;
     mock::mock_case_4(&root, eve);
-    let (compliant, _, _, _) = grade::get_validator_grade(eve);
+    let (compliant, _, _, _) = grade::get_validator_grade(eve, 0);
     assert!(!compliant, 735701);
 
   }
