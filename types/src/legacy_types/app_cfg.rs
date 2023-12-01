@@ -626,9 +626,15 @@ async fn test_create() {
 async fn test_init() {
     use diem_temppath::TempPath;
     let d = TempPath::new();
-    let a = AuthenticationKey::from_str("8603ba96e87b810cebbec1a0fd7ea06285f9eb352a3eabde992a5594fe80af40").unwrap();
+    let a = AuthenticationKey::from_str(
+        "8603ba96e87b810cebbec1a0fd7ea06285f9eb352a3eabde992a5594fe80af40",
+    )
+    .unwrap();
 
-    let b = AuthenticationKey::from_str("052dea65ac80cd4b2b1318a9420dc1568819882769346d9acffdc0d731504c66").unwrap();
+    let b = AuthenticationKey::from_str(
+        "052dea65ac80cd4b2b1318a9420dc1568819882769346d9acffdc0d731504c66",
+    )
+    .unwrap();
 
     let mut app_cfg: AppCfg = AppCfg::init_app_configs(
         a,
@@ -636,11 +642,16 @@ async fn test_init() {
         Some(d.path().to_owned()),
         None,
         None,
-    ).unwrap();
+    )
+    .unwrap();
 
-    app_cfg.maybe_add_profile(Profile::new(b, b.derived_address())).unwrap();
+    app_cfg
+        .maybe_add_profile(Profile::new(b, b.derived_address()))
+        .unwrap();
     assert!(app_cfg.user_profiles.len() > 1);
-    let p = app_cfg.get_profile(Some("052dea65ac80".to_string())).unwrap();
+    let p = app_cfg
+        .get_profile(Some("052dea65ac80".to_string()))
+        .unwrap();
     assert!(p.auth_key == b);
 }
 
