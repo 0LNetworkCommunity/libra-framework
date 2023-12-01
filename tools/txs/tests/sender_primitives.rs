@@ -41,7 +41,7 @@ async fn sender_back_and_forth() -> anyhow::Result<()> {
     // also checking we can get a Sender type with a second profile
     let mut alice_sender = Sender::from_app_cfg(
         &val_app_cfg,
-        Some(alice.child_0_owner.account.to_hex_literal()),
+        Some(alice.child_0_owner.account.to_string()),
     )
     .await?;
 
