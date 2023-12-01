@@ -53,7 +53,7 @@ async fn tower_newbie() -> anyhow::Result<()> {
 
     let mut alice_sender = Sender::from_app_cfg(
         &val_app_cfg,
-        Some(alice.child_0_owner.account.to_hex_literal()),
+        Some(alice.child_0_owner.account.to_string()),
     )
     .await?;
 
