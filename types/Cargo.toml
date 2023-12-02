@@ -33,3 +33,6 @@ serde_yaml = { workspace = true }
 tokio = { workspace = true }
 toml = { workspace = true }
 url = { workspace = true }
+
+[dev-dependencies]
+diem-temppath = { workspace = true }
