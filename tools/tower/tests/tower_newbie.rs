@@ -51,11 +51,8 @@ async fn tower_newbie() -> anyhow::Result<()> {
 
     val_app_cfg.maybe_add_profile(p)?;
 
-    let mut alice_sender = Sender::from_app_cfg(
-        &val_app_cfg,
-        Some(alice.child_0_owner.account.to_hex_literal()),
-    )
-    .await?;
+    let mut alice_sender =
+        Sender::from_app_cfg(&val_app_cfg, Some(alice.child_0_owner.account.to_string())).await?;
 
     assert!(alice_acct == &alice_sender.local_account.address());
 
