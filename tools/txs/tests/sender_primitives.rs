@@ -39,11 +39,8 @@ async fn sender_back_and_forth() -> anyhow::Result<()> {
     val_app_cfg.maybe_add_profile(p)?;
 
     // also checking we can get a Sender type with a second profile
-    let mut alice_sender = Sender::from_app_cfg(
-        &val_app_cfg,
-        Some(alice.child_0_owner.account.to_string()),
-    )
-    .await?;
+    let mut alice_sender =
+        Sender::from_app_cfg(&val_app_cfg, Some(alice.child_0_owner.account.to_string())).await?;
 
     assert!(alice_acct == &alice_sender.local_account.address());
 
