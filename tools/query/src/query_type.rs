@@ -176,7 +176,7 @@ impl QueryType {
                 Ok(json!({
                   "consensus_public_key": res.consensus_public_key,
                   "validator_network_addresses": res.validator_network_addresses().context("can't BCS decode the validator network address")?,
-                  "fullnode_network_addresses": res.validator_network_addresses().context("can't BCS decode the fullnode network address")?,
+                  "fullnode_network_addresses": res.fullnode_network_addresses().context("can't BCS decode the fullnode network address")?,
                   "validator_index": res.validator_index,
                 }))
             }
