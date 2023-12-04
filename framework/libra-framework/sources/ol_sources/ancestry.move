@@ -4,10 +4,10 @@ module ol_framework::ancestry {
     use std::vector;
     use std::error;
     use std::option::{Self, Option};
-    // use std::debug::print;
     use diem_framework::system_addresses;
 
     friend ol_framework::vouch;
+    friend ol_framework::ol_account;
 
     /// two accounts are related by ancestry and should not be.
     const EACCOUNTS_ARE_FAMILY: u64 = 1;
@@ -19,8 +19,8 @@ module ol_framework::ancestry {
 
     // this is limited to onboarding.
     // TODO: limit this with `friend` of DiemAccount module.
-    public fun init(new_account_sig: &signer, onboarder_sig: &signer ) acquires Ancestry{
-        let parent = signer::address_of(onboarder_sig);
+    public(friend) fun adopt_this_child(parent_sig: &signer, new_account_sig: &signer) acquires Ancestry{
+        let parent = signer::address_of(parent_sig);
         set_tree(new_account_sig, parent);
     }
 
