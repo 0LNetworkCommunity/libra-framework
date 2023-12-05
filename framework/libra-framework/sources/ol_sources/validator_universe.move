@@ -2,28 +2,21 @@
 // 0L Module
 // ValidatorUniverse
 ///////////////////////////////////////////////////////////////////////////
-// Stores all the validators who submitted a vdf proof.
-// File Prefix for errors: 2201
-///////////////////////////////////////////////////////////////////////////
 
 module diem_framework::validator_universe {
   use std::signer;
   use std::vector;
   use diem_framework::system_addresses;
   use ol_framework::jail;
-  // use ol_framework::grade;
   use ol_framework::vouch;
   use diem_framework::stake;
 
-  // use diem_framework::coin::Coin;
-  // use ol_framework::libra_coin::LibraCoin;
-  // use ol_framework::rewards;
 
   #[test_only]
   use ol_framework::testnet;
   #[test_only]
   use diem_std::bls12381;
-  // use diem_framework::account;
+
   // use diem_std::debug::print;
 
   friend diem_framework::reconfiguration;
@@ -64,7 +57,6 @@ module diem_framework::validator_universe {
       jail::init(account);
   }
 
-
   /// This function is called to add validator to the validator universe.
   fun add(sender: &signer) acquires ValidatorUniverse {
     let addr = signer::address_of(sender);
@@ -76,36 +68,6 @@ module diem_framework::validator_universe {
     };
     jail::init(sender);
   }
-
-  // /// Used at epoch boundaries to evaluate the performance of the validator.
-  // /// only root can call this, and only by friend modules (reconfiguration). Belt and suspenders.
-  // public(friend) fun maybe_jail(root: &signer, validator: address): bool {
-  //   system_addresses::assert_ol(root);
-  //   maybe_jail_impl(root, validator)
-  // }
-
-  // /// Common implementation for maybe_jail.
-  // fun maybe_jail_impl(root: &signer, validator: address): bool {
-  //   system_addresses::assert_ol(root);
-
-  //   let (compliant, _, _, _) = grade::get_validator_grade(validator);
-  //     // TODO check if there are issues with config. belt and suspenders
-
-  //   if (compliant) {
-  //     jail::jail(root, validator);
-  //     return true
-  //   };
-
-  //   false
-  // }
-
-
-  // /// performs the business logic for admitting new validators
-  // /// includes proof-of-fee auction and collecting payment
-  // /// includes drawing from infrastructure escrow into transaction fee account
-  // public(friend) fun end_epoch_process_incoming() {
-
-  // }
 
   //////// GENESIS ////////
   /// For 0L genesis, initialize and add the validators
@@ -152,12 +114,6 @@ module diem_framework::validator_universe {
     add(validator);
   }
 
-  // #[test_only]
-  // /// test helper for maybe_jail
-  // public fun test_maybe_jail(root: &signer, validator: address): bool {
-  //   maybe_jail_impl(root, validator)
-  // }
-
   #[test_only]
   public fun test_helper_add_self_onboard(vm: &signer, addr:address) acquires ValidatorUniverse {
     assert!(testnet::is_testnet(), 220101014014);
@@ -178,6 +134,4 @@ module diem_framework::validator_universe {
       vector::remove<address>(&mut state.validators, index);
     }
   }
-
-
 }
