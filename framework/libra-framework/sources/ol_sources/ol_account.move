@@ -12,6 +12,7 @@ module ol_framework::ol_account {
     use diem_std::math64;
 
 
+    use ol_framework::ancestry;
     use ol_framework::libra_coin::{Self, LibraCoin};
     use ol_framework::slow_wallet;
     use ol_framework::receipts;
@@ -84,13 +85,15 @@ module ol_framework::ol_account {
       let (resource_account_sig, cap) = account::create_resource_account(user, seed);
       coin::register<LibraCoin>(&resource_account_sig);
       (resource_account_sig, cap)
+      // adopt_this_child(user, resource_account_sig);
     }
 
-    fun create_impl(auth_key: address) {
-        let new_signer = account::create_account(auth_key);
+    fun create_impl(sender: &signer, maybe_new_user: address) {
+        let new_signer = account::create_account(maybe_new_user);
         coin::register<LibraCoin>(&new_signer);
         receipts::user_init(&new_signer);
         init_burn_tracker(&new_signer);
+        ancestry::adopt_this_child(sender, &new_signer);
     }
 
     // #[test_only]
@@ -98,7 +101,7 @@ module ol_framework::ol_account {
     /// Belt and suspenders
     public entry fun create_account(root: &signer, auth_key: address) {
         system_addresses::assert_ol(root);
-        create_impl(auth_key);
+        create_impl(root, auth_key);
     }
 
     /// For migrating accounts from a legacy system
@@ -156,15 +159,20 @@ module ol_framework::ol_account {
     public entry fun transfer(sender: &signer, to: address, amount: u64)
     acquires BurnTracker {
       let payer = signer::address_of(sender);
+      maybe_sender_creates_account(sender, to);
       transfer_checks(payer, to, amount);
       // both update burn tracker
       let c = withdraw(sender, amount);
       deposit_coins(to, c);
     }
 
-    // transfer with capability, and do appropriate checks on both sides, and track the slow wallet
-    public fun transfer_with_capability(cap: &WithdrawCapability, recipient:
+    // transfer with capability, and do appropriate checks on both sides, and
+    // track the slow wallet
+    // NOTE: this requires that the account exists, since the SENDER signature is not used
+    fun transfer_with_capability(cap: &WithdrawCapability, recipient:
     address, amount: u64) acquires BurnTracker {
+      if(!account::exists_at(recipient)) return; // exit without abort,
+      // since this might be called by the 0x0 at an epoch boundary.
       let payer = account::get_withdraw_cap_address(cap);
       transfer_checks(payer, recipient, amount);
       // NOTE: these shoud update BurnTracker
@@ -210,16 +218,17 @@ module ol_framework::ol_account {
         coin
     }
 
+    fun maybe_sender_creates_account(sender: &signer, maybe_new_user: address) {
+      if (!account::exists_at(maybe_new_user)) {
+          // creates the account address (with the same bytes as the authentication key).
+          create_impl(sender, maybe_new_user);
+      };
+    }
+
     // actual implementation to allow for capability
     fun transfer_checks(payer: address, recipient: address, amount: u64) {
         let limit = slow_wallet::unlocked_amount(payer);
         assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
-
-        if (!account::exists_at(recipient)) {
-            // creates the account address (with the same bytes as the authentication key).
-            create_impl(recipient);
-        };
-
 
         // TODO: Check if Resource Accounts can register here, since they
         // may be created without any coin registration.

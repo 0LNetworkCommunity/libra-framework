@@ -246,7 +246,6 @@ module ol_framework::mock {
       let musical_chairs_default_seats = 10;
       musical_chairs::initialize(root, musical_chairs_default_seats);
 
-
       let val_addr = personas();
       let i = 0;
       while (i < num) {
@@ -255,7 +254,8 @@ module ol_framework::mock {
 
         let (_sk, pk, pop) = stake::generate_identity();
         // stake::initialize_test_validator(&pk, &pop, &sig, 100, true, true);
-        validator_universe::test_register_validator(root, &pk, &pop, &sig, 100, true, true);
+        validator_universe::test_register_validator(root, &pk, &pop, &sig, 100,
+        true, true);
 
         vouch::init(&sig);
         vouch::test_set_buddies(*val, val_addr);

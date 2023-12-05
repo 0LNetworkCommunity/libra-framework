@@ -22,7 +22,6 @@
 /// 4. CommunityWallets have a high threshold for sybils: all multisig authorities must be unrelated in their permission trees, per ancestry.
 
 module ol_framework::community_wallet {
-
     use std::error;
     use std::vector;
     use std::signer;
@@ -33,6 +32,8 @@ module ol_framework::community_wallet {
     use ol_framework::ancestry;
     use ol_framework::match_index;
     use diem_framework::system_addresses;
+
+    // use diem_std::debug::print;
 
     /// not authorized to operate on this account
     const ENOT_AUTHORIZED: u64 = 1;
@@ -153,7 +154,6 @@ module ol_framework::community_wallet {
       let n = (3 * len) / 5;
 
       let (fam, _, _) = ancestry::any_family_in_list(*&init_signers);
-
       assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
 
       // set as donor directed with any liquidation going to existing matching index
