@@ -24,7 +24,11 @@ module ol_framework::grade {
     #[view]
     /// returns if the validator passed or failed, and the number of proposals
     /// and failures, and the ratio.
-    /// returns: is the validator compliant, proposed blocks, failed blocks, and the ratio of proposed to failed.
+    /// @return: tuple
+    /// bool: is the validator compliant,
+    /// u64: proposed blocks,
+    /// u64: failed blocks, and
+    /// FixedPoint32: the ratio of proposed to failed.
 
     public fun get_validator_grade(node_addr: address, highest_net_props: u64): (bool, u64, u64, FixedPoint32) {
       let idx = stake::get_validator_index(node_addr);

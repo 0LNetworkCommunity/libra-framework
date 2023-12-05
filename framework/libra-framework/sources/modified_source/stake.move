@@ -285,6 +285,20 @@ module diem_framework::stake {
     }
 
     #[view]
+    /// Get net proposals from address
+    /// @return:  u64:  the number of net proposals (success - fail)
+    public fun get_val_net_proposals(val: address): u64 acquires
+    ValidatorPerformance, ValidatorConfig {
+        let idx = get_validator_index(val);
+        let (proposed, failed) = get_current_epoch_proposal_counts(idx);
+        if (proposed > failed) {
+          proposed - failed
+        } else {
+          0
+        }
+    }
+
+    #[view]
     /// Return the validator's config.
     public fun get_validator_config(validator_address: address): (vector<u8>, vector<u8>, vector<u8>) acquires ValidatorConfig {
         assert_stake_pool_exists(validator_address);
@@ -341,9 +355,6 @@ module diem_framework::stake {
         if (account_address != operator) {
             set_operator(owner, operator)
         };
-        // if (account_address != voter) {
-        //     set_delegated_voter(owner, voter)
-        // };
     }
 
     /// Initialize the validator account and give ownership to the signing account.
