@@ -282,7 +282,7 @@ module ol_framework::test_burn {
     //   assert!(TransactionFee::get_fees_collected()==1, 735703);
     // }
 
-     #[test(root=@ol_framework, alice=@0x1000a)]
+    #[test(root=@ol_framework, alice=@0x1000a)]
     fun track_fees(root: &signer, alice: address) {
       // use ol_framework::libra_coin;
       let _vals = mock::genesis_n_vals(root, 1); // need to include eve to init funds

@@ -11,6 +11,8 @@ module ol_framework::ancestry {
 
     /// two accounts are related by ancestry and should not be.
     const EACCOUNTS_ARE_FAMILY: u64 = 1;
+    /// no ancestry tree state on chain, this is probably a migration bug.
+    const ENO_ANCESTRY_TREE: u64 = 2;
 
     struct Ancestry has key {
       // the full tree back to genesis set
@@ -58,16 +60,18 @@ module ol_framework::ancestry {
 
     #[view]
     /// Getter for user's unfiltered tree
+    /// @return vector of addresses if there is an ancestry struct
+    // Commit NOTE: any transitive function that the VM calls needs to check
+    // this struct exists.
     public fun get_tree(addr: address): vector<address> acquires Ancestry {
-      if (exists<Ancestry>(addr)) {
-        *&borrow_global<Ancestry>(addr).tree
-      } else {
-        vector::empty()
-      }
+      assert!(exists<Ancestry>(addr), ENO_ANCESTRY_TREE);
 
+      *&borrow_global<Ancestry>(addr).tree
     }
+
     /// helper function to check on transactions (e.g. vouch) if accounts are related
-    public fun assert_unrelated(left: address, right: address) acquires Ancestry{
+    public fun assert_unrelated(left: address, right: address) acquires
+    Ancestry{
       let (is, _) = is_family(left, right);
       assert!(!is, error::invalid_state(EACCOUNTS_ARE_FAMILY));
     }
@@ -79,27 +83,33 @@ module ol_framework::ancestry {
       let is_family = false;
       let common_ancestor = @0x0;
 
-        let left_tree = get_tree(left);
-        let right_tree = get_tree(right);
+      // if there is no ancestry info this is a bug, assume related
+      // NOTE: we don't want to error here, since the VM calls this
+      // on epoch boundary
+      if (!exists<Ancestry>(left)) return (true, @0x666);
+      if (!exists<Ancestry>(right)) return (true, @0x666);
 
-        // check for direct relationship.
-        if (vector::contains(&left_tree, &right)) return (true, right);
-        if (vector::contains(&right_tree, &left)) return (true, left);
+      let left_tree = get_tree(left);
+      let right_tree = get_tree(right);
+
+      // check for direct relationship.
+      if (vector::contains(&left_tree, &right)) return (true, right);
+      if (vector::contains(&right_tree, &left)) return (true, left);
 
 
-        let i = 0;
-        // check every address on the list if there are overlaps.
-        while (i < vector::length<address>(&left_tree)) {
+      let i = 0;
+      // check every address on the list if there are overlaps.
+      while (i < vector::length<address>(&left_tree)) {
 
-          let family_addr = vector::borrow(&left_tree, i);
-          if (vector::contains(&right_tree, family_addr)) {
-            is_family = true;
-            common_ancestor = *family_addr;
+        let family_addr = vector::borrow(&left_tree, i);
+        if (vector::contains(&right_tree, family_addr)) {
+          is_family = true;
+          common_ancestor = *family_addr;
 
-            break
-          };
-          i = i + 1;
+          break
         };
+        i = i + 1;
+      };
 
       (is_family, common_ancestor)
     }
