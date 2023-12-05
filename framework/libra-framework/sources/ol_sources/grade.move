@@ -12,9 +12,10 @@ module ol_framework::grade {
     use std::fixed_point32::{Self, FixedPoint32};
 
     // use diem_std::debug::print;
+
     /// what threshold of failed props should the network allow
     /// one validator before jailing?
-    const FAILED_PROPS_THRESHOLD_PCT: u64 = 20;
+    const FAILED_PROPS_THRESHOLD_PCT: u64 =20;
 
     /// how far behind the leading validator by net proposals
     /// should the trailing validator be allowed

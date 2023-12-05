@@ -219,6 +219,45 @@ module ol_framework::test_stake {
 
   }
 
+  // Scenario: one validator has too many failing
+  // proposals as a ratio to successful ones.
+  #[test(root = @ol_framework)]
+  fun drop_low_performance_ratio(root: signer) {
+
+    let set = mock::genesis_n_vals(&root, 8);
+    testnet::unset(&root); // set to production mode
+
+    let default_valid_props = 500;
+    // populate some performance
+    let i = 0;
+    while (i < vector::length(&set)) {
+      let addr = vector::borrow(&set, i);
+
+      let valid_props =  default_valid_props; // make all validators have
+      let invalid_props = 1;
+
+      stake::mock_performance(&root, *addr, valid_props, invalid_props); //
+      // increasing performance for each
+      i = i + 1;
+    };
+
+    // alice is NOT trailing in proposals
+    // but the percent of failed proposals are too high
+    // above 10%
+    // in this example 40% failing proposals
+    stake::mock_performance(&root, @0x1000a, 500, 200);
+
+    let (highest_score, _addr) = stake::get_highest_net_proposer();
+
+    // Lots of failing proposals will make you drop out
+    let (a, _, _, _) = grade::get_validator_grade(@0x1000a, highest_score);
+    assert!(a == false, 73570002);
+
+    // Other accounts are ok
+    let (b, _, _, _) = grade::get_validator_grade(@0x1000c, highest_score);
+    assert!(b == true, 73570003);
+
+  }
 
 
 }
