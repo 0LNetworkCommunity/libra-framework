@@ -19,8 +19,7 @@ module ol_framework::ancestry {
       tree: vector<address>,
     }
 
-    // this is limited to onboarding.
-    // TODO: limit this with `friend` of DiemAccount module.
+    // this is limited to onboarding of users
     public(friend) fun adopt_this_child(parent_sig: &signer, new_account_sig: &signer) acquires Ancestry{
         let parent = signer::address_of(parent_sig);
         set_tree(new_account_sig, parent);
@@ -78,7 +77,6 @@ module ol_framework::ancestry {
 
     // checks if two addresses have an intersecting permission tree
     // will return true, and the common ancestor at the intersection.
-    // TODO: test if tree is empty does it abort.
     public fun is_family(left: address, right: address): (bool, address) acquires Ancestry {
       let is_family = false;
       let common_ancestor = @0x0;
@@ -96,7 +94,6 @@ module ol_framework::ancestry {
       if (vector::contains(&left_tree, &right)) return (true, right);
       if (vector::contains(&right_tree, &left)) return (true, left);
 
-
       let i = 0;
       // check every address on the list if there are overlaps.
       while (i < vector::length<address>(&left_tree)) {
@@ -111,6 +108,11 @@ module ol_framework::ancestry {
         i = i + 1;
       };
 
+      // for TEST compatibility, either no ancestor is found
+      // or the Vm or Framework created accounts at genesis
+      if (system_addresses::is_reserved_address(common_ancestor)) {
+        is_family = false;
+      };
       (is_family, common_ancestor)
     }
 
