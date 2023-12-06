@@ -406,16 +406,18 @@ module ol_framework::tower_state {
       // that had proofs this epoch
       let outgoing_miners = get_miner_list();
       let vals_len = vector::length(&outgoing_miners);
-      let i = 0;
-      while (i < vals_len) {
-          let val = vector::borrow(&outgoing_miners, i);
+      if (vals_len > 0) {
+        let i = 0;
+        while (i < vals_len) {
+            let val = vector::borrow(&outgoing_miners, i);
 
-          // For testing: don't call update_metrics unless there is account state for the address.
-          if (exists<TowerProofHistory>(*val)){
-              update_epoch_metrics_vals(vm, *val);
-          };
-          i = i + 1;
-      };
+            // For testing: don't call update_metrics unless there is account state for the address.
+            if (exists<TowerProofHistory>(*val)){
+                update_epoch_metrics_vals(vm, *val);
+            };
+            i = i + 1;
+        };
+      }
 
       epoch_reset(vm);
       // safety
@@ -589,15 +591,15 @@ module ol_framework::tower_state {
           this_miner_index = this_miner_index / count_miners;
           k = k + 1;
         };
-        // double check
-        if (count_miners < this_miner_index) return 0;
+        // double check length of vector
+        if (this_miner_index >= count_miners ) return 0;
 
         let miner_addr = vector::borrow<address>(&all_miners, this_miner_index);
         let vec = if (exists<TowerProofHistory>(*miner_addr)) {
           *&borrow_global<TowerProofHistory>(*miner_addr).previous_proof_hash
         } else { return 0 };
 
-        if (vector::is_empty(&vec)) { return 0};
+        if (vector::is_empty(&vec)) { return 0 };
         // take the last bit (B) from their last proof hash.
         n = (vector::pop_back(&mut vec) as u64);
         this_miner_index = n; // randomize selection of next validator
