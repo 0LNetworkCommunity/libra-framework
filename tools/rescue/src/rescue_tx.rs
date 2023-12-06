@@ -12,10 +12,10 @@ pub struct RescueTxOpts {
     /// directory enclosing the `/db` folder of the node
     pub data_path: PathBuf,
     #[clap(short, long)]
-    /// directory to read/write or the rescue.blob. Will default to db_path/rescue.blob
+    /// directory to read/write for the rescue.blob. Will default to db_path/rescue.blob
     pub blob_path: Option<PathBuf>,
     #[clap(short, long)]
-    /// directory to read/write or the rescue.blob
+    /// directory for the script to be executed
     pub script_path: Option<PathBuf>,
     #[clap(long)]
     /// directory to read/write or the rescue.blob
