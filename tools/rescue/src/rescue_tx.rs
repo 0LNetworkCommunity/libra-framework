@@ -6,7 +6,7 @@ use move_core_types::language_storage::CORE_CODE_ADDRESS;
 use std::path::PathBuf;
 
 #[derive(Parser)]
-/// Start a libra node
+/// Create a rescue transaction using the path of the node db
 pub struct RescueTxOpts {
     #[clap(short, long)]
     /// directory enclosing the `/db` folder of the node

@@ -417,7 +417,7 @@ module ol_framework::tower_state {
             };
             i = i + 1;
         };
-      }
+      };
 
       epoch_reset(vm);
       // safety
