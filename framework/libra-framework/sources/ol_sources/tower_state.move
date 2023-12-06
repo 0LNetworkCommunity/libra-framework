@@ -163,15 +163,6 @@ module ol_framework::tower_state {
       exists<TowerProofHistory>(addr)
     }
 
-    // /// is onboarding
-    // public fun is_onboarding(addr: address): bool acquires TowerProofHistory {
-    //   let count = get_count_in_epoch(addr);
-    //   let state = borrow_global<TowerProofHistory>(addr);
-
-    //   count < 2 &&
-    //   state.epochs_since_last_account_creation < 2
-    // }
-
     // Creates proof blob object from input parameters
     // Permissions: PUBLIC, ANYONE can call this function.
     public fun create_proof_blob(
@@ -606,8 +597,8 @@ module ol_framework::tower_state {
           *&borrow_global<TowerProofHistory>(*miner_addr).previous_proof_hash
         } else { return 0 };
 
+        if (vector::is_empty(&vec)) { return 0};
         // take the last bit (B) from their last proof hash.
-
         n = (vector::pop_back(&mut vec) as u64);
         this_miner_index = n; // randomize selection of next validator
         i = i + 1;
