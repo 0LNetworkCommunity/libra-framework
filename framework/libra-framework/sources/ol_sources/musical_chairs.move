@@ -148,11 +148,11 @@ module ol_framework::musical_chairs {
         // TODO: use status.move is_operating
         if (epoch < 2) return (validators, non_compliant_nodes, fixed_point32::create_from_rational(1, 1));
 
-
+        let (highest_net_props, _val) = stake::get_highest_net_proposer();
         let i = 0;
         while (i < val_set_len) {
             let addr = *vector::borrow(&validators, i);
-            let (compliant, _, _, _) = grade::get_validator_grade(addr);
+            let (compliant, _, _, _) = grade::get_validator_grade(addr, highest_net_props);
             // let compliant = true;
             if (compliant) {
                 vector::push_back(&mut compliant_nodes, addr);
