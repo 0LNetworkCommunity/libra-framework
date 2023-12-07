@@ -4,12 +4,12 @@ use diem_config::config::InitialSafetyRulesConfig;
 use diem_forge::SwarmExt;
 use diem_temppath::TempPath;
 use diem_types::transaction::Transaction;
-use libra_smoke_tests::{libra_smoke::LibraSmoke, helpers::get_libra_balance};
+use libra_smoke_tests::{helpers::get_libra_balance, libra_smoke::LibraSmoke};
 use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
 use smoke_test::test_utils::{swarm_utils::insert_waypoint, MAX_CATCH_UP_WAIT_SECS};
-use std::{fs, time::{Duration, Instant}};
+use std::{fs, time::Duration};
 
-use crate::support::{update_node_config_restart, wait_for_node, deadline_secs};
+use crate::support::{deadline_secs, update_node_config_restart, wait_for_node};
 
 // #[ignore]
 #[tokio::test]
@@ -117,23 +117,21 @@ async fn test_can_restart() -> anyhow::Result<()> {
         wait_for_node(node, expected_to_connect).await?;
     }
 
-    // wait_for_node(env.validators().nth(0).unwrap(), expected_to_connect).await?;
-
     println!("8. wait for startup and progress");
     env.wait_for_startup().await?;
-    // assert!(env.fork_check().is_ok(), "fork detected");
 
-    // assert!(env.liveness_check(deadline_secs(5)).await.is_ok(), "network did not restart");
-    // env.validators.iter().for_each(|(addr, _node)| {
-    //   env.liveness_check(format_deadline(1))
-    // });
-    // // todo show progress
-    // println!("9. verify trasnsactions work");
+    assert!(
+        env.liveness_check(deadline_secs(10)).await.is_ok(),
+        "network did not restart"
+    );
 
-    // let rando = s.marlon_rando();
+    // todo show progress
+    println!("9. verify transactions work");
+
+    let rando = s.marlon_rando();
     // s.mint_and_unlock(rando.address(), 123456).await?;
-
     // let b = get_libra_balance(&client, rando.address()).await?;
     // dbg!(&b);
+    std::thread::sleep(Duration::from_secs(30));
     Ok(())
 }

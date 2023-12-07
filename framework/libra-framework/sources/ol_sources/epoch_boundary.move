@@ -7,7 +7,6 @@ module diem_framework::epoch_boundary {
     use ol_framework::libra_coin::LibraCoin;
     use ol_framework::rewards;
     use ol_framework::jail;
-    // use ol_framework::grade;
     use ol_framework::safe;
     use ol_framework::burn;
     use ol_framework::donor_voice;
@@ -21,8 +20,9 @@ module diem_framework::epoch_boundary {
     use diem_framework::coin::{Self, Coin};
     use std::vector;
     use std::error;
+    use std::string;
 
-    // use diem_std::debug::print;
+    use diem_std::debug::print;
 
     friend diem_framework::block;
 
@@ -163,52 +163,77 @@ module diem_framework::epoch_boundary {
     // Contains all of 0L's business logic for end of epoch.
     // This removed business logic from reconfiguration.move
     // and prevents dependency cycling.
-    public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64, _epoch_round: u64) acquires BoundaryStatus {
+    public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64,
+    _epoch_round: u64) acquires BoundaryStatus {
+        print(&string::utf8(b"EPOCH BOUNDARY BEGINS"));
         system_addresses::assert_ol(root);
 
         let status = borrow_global_mut<BoundaryStatus>(@ol_framework);
+
+        print(&string::utf8(b"status reset"));
         *status = reset();
         // bill root service fees;
+
+        print(&string::utf8(b"root_service_billing"));
         root_service_billing(root, status);
+
+        print(&string::utf8(b"process_donor_voice_accounts"));
         // run the transactions of donor directed accounts
         let (count, amount, success) = donor_voice::process_donor_voice_accounts(root, closing_epoch);
         status.dd_accounts_count = count;
         status.dd_accounts_amount = amount;
         status.dd_accounts_success = success;
 
+        print(&string::utf8(b"tower_state::reconfig"));
         // reset fee makers tracking
         status.set_fee_makers_success = fee_maker::epoch_reset_fee_maker(root);
+
+
+        print(&string::utf8(b"tower_state::reconfig"));
         // randomize the Tower/Oracle difficulty
         tower_state::reconfig(root);
-        status.tower_state_success = true; // TODO: there isn't much to check here.
+        // TODO: there isn't much to checkhere.
+        status.tower_state_success = true;
 
+        print(&string::utf8(b"musical_chairs::stop_the_music"));
         let (compliant_vals, n_seats) = musical_chairs::stop_the_music(root, closing_epoch);
         status.incoming_compliant_count = vector::length(&compliant_vals);
         status.incoming_compliant = compliant_vals;
         status.incoming_seats_offered = n_seats;
 
+        print(&string::utf8(b"settle_accounts"));
+
         settle_accounts(root, compliant_vals, status);
 
+        print(&string::utf8(b"slow_wallet::on_new_epoch"));
         // drip coins
         let (s_success, s_amount) = slow_wallet::on_new_epoch(root);
 
         status.slow_wallet_drip_amount = s_amount;
         status.slow_wallet_drip_success = s_success;
 
-        // ======= THIS IS APPROXIMATELY THE BOUNDARY =====
+        // ======= THE BOUNDARY =======
+        // And to know yourself
+        // is to be yourself
+        // keeps you walking through these tears.
+
+        print(&string::utf8(b"process_incoming_validators"));
         process_incoming_validators(root, status, compliant_vals, n_seats);
 
+        print(&string::utf8(b"subsidize_from_infra_escrow"));
         let (i_success, i_fee) = subsidize_from_infra_escrow(root);
         status.infra_subsidize_amount = i_fee;
         status.infra_subsidize_success = i_success;
 
+        print(&string::utf8(b"reward_thermostat"));
         let (t_success, t_increase, t_amount) =
         proof_of_fee::reward_thermostat(root);
         status.pof_thermo_success = t_success;
         status.pof_thermo_increase = t_increase;
         status.pof_thermo_amount = t_amount;
 
-        // print(borrow_global<BoundaryStatus>(@ol_framework))
+        print(&string::utf8(b"EPOCH BOUNDARY END"));
+        print(status);
   }
 
   // TODO: instrument all of this
