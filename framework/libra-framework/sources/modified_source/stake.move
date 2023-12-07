@@ -737,6 +737,41 @@ module diem_framework::stake {
       (finally_the_validators, missing_configs, success_sanity && success_current)
     }
 
+    /// governance can remove validators
+    /// may be necessary for rescue operations
+    // NOTE: this is only used for smoke tests
+    // TODO: Evaluate if this belongs in production
+    public fun remove_validators(
+        diem_framework: &signer,
+        validators: &vector<address>,
+    ) acquires ValidatorSet {
+        system_addresses::assert_diem_framework(diem_framework);
+
+        let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
+        let active_validators = &mut validator_set.active_validators;
+        let pending_inactive = &mut validator_set.pending_inactive;
+        let len = vector::length(validators);
+        let i = 0;
+        // Remove each validator from the validator set.
+        while ({
+            spec {
+                invariant spec_validators_are_initialized(active_validators);
+                invariant spec_validator_indices_are_valid(active_validators);
+                invariant spec_validators_are_initialized(pending_inactive);
+                invariant spec_validator_indices_are_valid(pending_inactive);
+            };
+            i < len
+        }) {
+            let validator = *vector::borrow(validators, i);
+            let validator_index = find_validator(active_validators, validator);
+            if (option::is_some(&validator_index)) {
+                let validator_info = vector::swap_remove(active_validators, *option::borrow(&validator_index));
+                vector::push_back(pending_inactive, validator_info);
+            };
+            i = i + 1;
+        };
+    }
+
     #[test_only]
     public fun test_make_val_cfg(list: &vector<address>): (vector<ValidatorInfo>, u128, vector<address>) acquires ValidatorConfig {
       make_validator_set_config(list)
