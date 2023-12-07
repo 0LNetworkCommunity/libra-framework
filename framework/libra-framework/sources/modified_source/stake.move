@@ -743,33 +743,25 @@ module diem_framework::stake {
     // TODO: Evaluate if this belongs in production
     public fun remove_validators(
         diem_framework: &signer,
-        validators: &vector<address>,
-    ) acquires ValidatorSet {
+        remove_these: &vector<address>,
+    ) acquires ValidatorSet, ValidatorConfig, ValidatorPerformance{
         system_addresses::assert_diem_framework(diem_framework);
 
-        let validator_set = borrow_global_mut<ValidatorSet>(@diem_framework);
-        let active_validators = &mut validator_set.active_validators;
-        let pending_inactive = &mut validator_set.pending_inactive;
-        let len = vector::length(validators);
+        let validator_set = get_current_validators();
+        let len_dead = vector::length(remove_these);
         let i = 0;
         // Remove each validator from the validator set.
-        while ({
-            spec {
-                invariant spec_validators_are_initialized(active_validators);
-                invariant spec_validator_indices_are_valid(active_validators);
-                invariant spec_validators_are_initialized(pending_inactive);
-                invariant spec_validator_indices_are_valid(pending_inactive);
-            };
-            i < len
-        }) {
-            let validator = *vector::borrow(validators, i);
-            let validator_index = find_validator(active_validators, validator);
-            if (option::is_some(&validator_index)) {
-                let validator_info = vector::swap_remove(active_validators, *option::borrow(&validator_index));
-                vector::push_back(pending_inactive, validator_info);
+        while (i < len_dead) {
+            let dead_val = vector::borrow(remove_these, i);
+            let (is_found, idx) = vector::index_of(&validator_set, dead_val);
+
+            if (is_found) {
+                vector::swap_remove(&mut validator_set, idx);
             };
             i = i + 1;
         };
+
+        maybe_reconfigure(diem_framework, validator_set);
     }
 
     #[test_only]
