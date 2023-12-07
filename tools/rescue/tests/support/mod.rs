@@ -55,8 +55,8 @@ pub fn make_script(first_validator_address: AccountAddress) -> PathBuf {
     temp_script_path.path().to_owned()
 }
 
-pub fn deadline_secs(secs: u64) -> Instant{
-  Instant::now()
+pub fn deadline_secs(secs: u64) -> Instant {
+    Instant::now()
         .checked_add(Duration::from_secs(secs))
         .expect("no deadline")
 }
