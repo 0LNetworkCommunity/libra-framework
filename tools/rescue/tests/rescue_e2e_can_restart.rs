@@ -1,21 +1,24 @@
 mod support;
+use crate::support::{deadline_secs, update_node_config_restart, wait_for_node};
 
+use diem_api_types::ViewRequest;
 use diem_config::config::InitialSafetyRulesConfig;
-use diem_forge::SwarmExt;
+use diem_forge::{SwarmExt, NodeExt};
 use diem_temppath::TempPath;
 use diem_types::transaction::Transaction;
 use libra_smoke_tests::{helpers::get_libra_balance, libra_smoke::LibraSmoke};
 use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
 use smoke_test::test_utils::{swarm_utils::insert_waypoint, MAX_CATCH_UP_WAIT_SECS};
 use std::{fs, time::Duration};
-
-use crate::support::{deadline_secs, update_node_config_restart, wait_for_node};
+use futures_util::future::try_join_all;
 
 // #[ignore]
 #[tokio::test]
 /// This test verifies the flow of a genesis transaction after the chain starts.
 /// NOTE: much of this is duplicated in rescue_cli_creates_blob and e2e but we
 /// do want the granularity.
+/// NOTE: You should `tail` the logs from the advertised logs location. It
+/// looks something like this `/tmp/.tmpM9dF7w/0/log`
 async fn test_can_restart() -> anyhow::Result<()> {
     let num_nodes: usize = 5;
 
@@ -52,8 +55,8 @@ async fn test_can_restart() -> anyhow::Result<()> {
 
     println!("6. prepare a genesis txn to remove the first validator");
 
-    let remove_last = env.validators().last().unwrap();
-    let script_path = support::make_script(remove_last.peer_id());
+    let remove_last = env.validators().last().unwrap().peer_id().clone();
+    let script_path = support::make_script(remove_last.clone());
     assert!(script_path.exists());
 
     let data_path = TempPath::new();
@@ -89,6 +92,8 @@ async fn test_can_restart() -> anyhow::Result<()> {
 
     println!("7. apply genesis transaction to all validators");
     for (expected_to_connect, node) in env.validators_mut().enumerate() {
+        // skip the dead validator
+        if node.peer_id() == remove_last { continue }
         let mut node_config = node.config().clone();
 
         let val_db_path = node.config().storage.dir();
@@ -118,20 +123,51 @@ async fn test_can_restart() -> anyhow::Result<()> {
     }
 
     println!("8. wait for startup and progress");
-    env.wait_for_startup().await?;
 
-    assert!(
-        env.liveness_check(deadline_secs(10)).await.is_ok(),
-        "network did not restart"
+    assert!( // NOTE: liveness check fails because the test tool doesn't
+    // have a way of removing a validator from the test suite. I tried...
+        env.liveness_check(deadline_secs(1)).await.is_err(),
+        "test suite thinks dead node is live"
     );
 
-    // todo show progress
-    println!("9. verify transactions work");
 
-    let rando = s.marlon_rando();
-    // s.mint_and_unlock(rando.address(), 123456).await?;
-    // let b = get_libra_balance(&client, rando.address()).await?;
-    // dbg!(&b);
-    std::thread::sleep(Duration::from_secs(30));
+    // check some nodes to see if alive, since the test suite doesn't
+    // allow us to drop a node
+    let _res = try_join_all(
+      env.validators().take(3) // check first three
+        .map(|node| node.liveness_check(10))
+    ).await?;
+
+    println!("9. verify node 4 is out from the validator set");
+    let a = client
+        .view(
+            &ViewRequest {
+                function: "0x1::stake::get_current_validators".parse().unwrap(),
+                type_arguments: vec![],
+                arguments: vec![],
+            },
+            None,
+        )
+        .await;
+    let num_nodes = a
+        .unwrap()
+        .inner()
+        .first()
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .len();
+
+    assert!(num_nodes == 4);
+
+    // show progress
+    println!("10. verify transactions work");
+    std::thread::sleep(Duration::from_secs(5));
+    let second_val = env.validators().nth(1).unwrap().peer_id();
+    let old_bal = get_libra_balance(&client, second_val.clone()).await?;
+    s.mint_and_unlock(second_val.clone(), 123456).await?;
+    let bal = get_libra_balance(&client, second_val).await?;
+    assert!(bal.total > old_bal.total, "transaction did not post");
+
     Ok(())
 }

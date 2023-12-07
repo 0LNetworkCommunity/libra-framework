@@ -8279,6 +8279,7 @@ dependencies = [
  "diem-temppath",
  "diem-types",
  "diem-vm",
+ "futures-util",
  "handlebars",
  "libra-framework",
  "libra-smoke-tests",

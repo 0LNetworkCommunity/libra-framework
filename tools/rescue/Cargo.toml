@@ -25,6 +25,7 @@ diem-storage-interface = { workspace = true }
 diem-types = { workspace = true }
 
 diem-vm = { workspace = true }
+futures-util = { workspace = true }
 
 handlebars = { workspace = true }
 libra-framework = { workspace = true }
