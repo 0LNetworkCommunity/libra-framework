@@ -172,7 +172,7 @@ async fn test_valid_waypoint() -> anyhow::Result<()> {
 
     let boot = BootstrapOpts {
         db_dir: val_db_path.clone(),
-        genesis_txn_file: file.clone(),
+        genesis_txn_file: file,
         waypoint_to_verify: None,
         commit: false,
     };

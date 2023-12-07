@@ -1,19 +1,12 @@
 mod support;
-
-use diem_api_types::ViewRequest;
-use diem_config::config::{InitialSafetyRulesConfig, NodeConfig};
+use diem_config::config::NodeConfig;
 use diem_forge::{LocalNode, NodeExt, SwarmExt, Validator};
 use diem_logger::prelude::*;
-use diem_temppath::TempPath;
-use diem_types::transaction::Transaction;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
-use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
 use smoke_test::test_utils::{
-    swarm_utils::insert_waypoint, MAX_CATCH_UP_WAIT_SECS, MAX_CONNECTIVITY_WAIT_SECS,
-    MAX_HEALTHY_WAIT_SECS,
+    MAX_CATCH_UP_WAIT_SECS, MAX_CONNECTIVITY_WAIT_SECS, MAX_HEALTHY_WAIT_SECS,
 };
 use std::{
-    fs,
     process::Command,
     time::{Duration, Instant},
 };

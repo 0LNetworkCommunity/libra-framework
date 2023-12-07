@@ -1,64 +1,25 @@
 mod support;
 
 use diem_api_types::ViewRequest;
-use diem_config::config::{InitialSafetyRulesConfig, NodeConfig};
-use diem_forge::{LocalNode, NodeExt, SwarmExt, Validator};
-use diem_logger::prelude::*;
+use diem_config::config::InitialSafetyRulesConfig;
+use diem_forge::SwarmExt;
 use diem_temppath::TempPath;
 use diem_types::transaction::Transaction;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
-use smoke_test::test_utils::{
-    swarm_utils::insert_waypoint, MAX_CATCH_UP_WAIT_SECS, MAX_CONNECTIVITY_WAIT_SECS,
-    MAX_HEALTHY_WAIT_SECS,
-};
-use std::{
-    fs,
-    process::Command,
-    time::{Duration, Instant},
-};
+use smoke_test::test_utils::{swarm_utils::insert_waypoint, MAX_CATCH_UP_WAIT_SECS};
+use std::{fs, time::Duration};
 
-fn update_node_config_restart(validator: &mut LocalNode, mut config: NodeConfig) {
-    validator.stop();
-    let node_path = validator.config_path();
-    config.save_to_path(node_path).unwrap();
-    validator.start().unwrap();
-}
+use crate::support::{update_node_config_restart, wait_for_node};
 
-async fn wait_for_node(validator: &mut dyn Validator, expected_to_connect: usize) {
-    let healthy_deadline = Instant::now()
-        .checked_add(Duration::from_secs(MAX_HEALTHY_WAIT_SECS))
-        .unwrap();
-    validator
-        .wait_until_healthy(healthy_deadline)
-        .await
-        .unwrap_or_else(|err| {
-            let lsof_output = Command::new("lsof").arg("-i").output().unwrap();
-            panic!(
-                "wait_until_healthy failed. lsof -i: {:?}: {}",
-                lsof_output, err
-            );
-        });
-    info!("Validator restart health check passed");
-
-    let connectivity_deadline = Instant::now()
-        .checked_add(Duration::from_secs(MAX_CONNECTIVITY_WAIT_SECS))
-        .unwrap();
-    validator
-        .wait_for_connectivity(expected_to_connect, connectivity_deadline)
-        .await
-        .unwrap();
-    info!("Validator restart connectivity check passed");
-}
-
-#[ignore]
+// #[ignore]
 #[tokio::test]
 /// This test verifies the flow of a genesis transaction after the chain starts.
 /// 1. Test the consensus sync_only mode, every node should stop at the same version.
 /// 2. Test the db-bootstrapper applying a manual genesis transaction (remove validator 0) on diemdb directly
 /// 3. Test the nodes and clients resume working after updating waypoint
 /// 4. Test a node lagging behind can sync to the waypoint
-async fn test_genesis_transaction_flow() {
+async fn test_genesis_transaction_flow() -> anyhow::Result<()> {
     let num_nodes: usize = 5;
 
     let mut s = LibraSmoke::new(Some(num_nodes as u8))
@@ -77,8 +38,8 @@ async fn test_genesis_transaction_flow() {
     for node in env.validators_mut() {
         let mut node_config = node.config().clone();
         node_config.consensus.sync_only = true;
-        update_node_config_restart(node, node_config);
-        wait_for_node(node, num_nodes - 1).await;
+        update_node_config_restart(node, node_config)?;
+        wait_for_node(node, num_nodes - 1).await?;
     }
 
     println!("4. verify all nodes are at the same round and no progress being made");
@@ -147,8 +108,8 @@ async fn test_genesis_transaction_flow() {
         node_config.execution.genesis = Some(genesis_transaction.clone());
         // reset the sync_only flag to false
         node_config.consensus.sync_only = false;
-        update_node_config_restart(node, node_config);
-        wait_for_node(node, expected_to_connect).await;
+        update_node_config_restart(node, node_config)?;
+        wait_for_node(node, expected_to_connect).await?;
     }
 
     println!("8. verify it's able to mint after the waypoint");
@@ -188,5 +149,6 @@ async fn test_genesis_transaction_flow() {
     fs::remove_dir_all(&db_dir).unwrap();
 
     node.start().unwrap();
-    wait_for_node(node, num_nodes - 2).await;
+    wait_for_node(node, num_nodes - 2).await?;
+    Ok(())
 }
