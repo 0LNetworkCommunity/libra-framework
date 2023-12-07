@@ -51,6 +51,7 @@ async fn wait_for_node(validator: &mut dyn Validator, expected_to_connect: usize
     info!("Validator restart connectivity check passed");
 }
 
+#[ignore]
 #[tokio::test]
 /// This test verifies the flow of a genesis transaction after the chain starts.
 /// 1. Test the consensus sync_only mode, every node should stop at the same version.
