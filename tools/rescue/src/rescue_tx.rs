@@ -6,16 +6,16 @@ use move_core_types::language_storage::CORE_CODE_ADDRESS;
 use std::path::PathBuf;
 
 #[derive(Parser)]
-/// Start a libra node
+/// Create a rescue transaction using the path of the node db
 pub struct RescueTxOpts {
     #[clap(short, long)]
     /// directory enclosing the `/db` folder of the node
     pub data_path: PathBuf,
     #[clap(short, long)]
-    /// directory to read/write or the rescue.blob. Will default to db_path/rescue.blob
+    /// directory to read/write for the rescue.blob. Will default to db_path/rescue.blob
     pub blob_path: Option<PathBuf>,
     #[clap(short, long)]
-    /// directory to read/write or the rescue.blob
+    /// directory for the script to be executed
     pub script_path: Option<PathBuf>,
     #[clap(long)]
     /// directory to read/write or the rescue.blob
