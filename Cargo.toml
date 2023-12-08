@@ -332,16 +332,6 @@ panic = 'abort'   # Abort on panic
 debug = false     # remove debug on compile
 strip = true      # strip debug and symbols for size
 
-# [profile.bench]
-# debug = true
-
-# [profile.dev]
-# opt-level = 0
-# debug = true
-# split-debuginfo = "unpacked"
-# lto = false
-# incremental = true
-
 
 # This is a temporary workaround to avoid multiple library
 # definitions for LZ4 (caused by rust-rocksdb).

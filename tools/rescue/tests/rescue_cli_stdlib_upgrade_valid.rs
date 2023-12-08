@@ -1,6 +1,9 @@
 mod support;
 
 use libra_smoke_tests::libra_smoke::LibraSmoke;
+use rescue::rescue_tx::RescueTxOpts;
+use std::path::PathBuf;
+use rescue::diem_db_bootstrapper::BootstrapOpts;
 
 #[tokio::test]
 async fn test_framwork_upgrade_writeset() -> anyhow::Result<()> {
@@ -23,14 +26,14 @@ async fn test_framwork_upgrade_writeset() -> anyhow::Result<()> {
     blob_path.create_as_dir()?;
 
     let rescue_script = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    rescue_script
+    let p = rescue_script
     .join("fixtures")
     .join("rescue_framework_script");
 
     let r = RescueTxOpts {
         data_path: val_db_path.clone(),
         blob_path: Some(blob_path.path().to_owned()),
-        script_path: Some(rescue_script),
+        script_path: Some(p),
         framework_upgrade: false,
     };
     r.run().await?;
