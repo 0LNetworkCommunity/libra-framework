@@ -33,7 +33,10 @@ impl RescueTxOpts {
         //    transaction from a .move source
 
         let gen_tx = if let Some(p) = &self.script_path {
-            println!("attempting to compile governance script at: {}", p.display());
+            println!(
+                "attempting to compile governance script at: {}",
+                p.display()
+            );
             // let payload = custom_script(p, None, Some(5));
             let (code, _hash) = libra_compile_script(p, false)?;
 
@@ -58,12 +61,17 @@ impl RescueTxOpts {
         let mut output = self.blob_path.clone().unwrap_or(db_path);
         output.push("rescue.blob");
         std::fs::write(&output, bytes.as_slice())?;
-        println!("SUCCESS: rescue transaction written to: {}", output.display());
+        println!(
+            "SUCCESS: rescue transaction written to: {}",
+            output.display()
+        );
 
         Ok(output)
     }
 }
 
+#[ignore]
+// duplicated test
 #[tokio::test]
 async fn test_create_blob() -> anyhow::Result<()> {
     use diem_temppath;
@@ -91,8 +99,6 @@ async fn test_create_blob() -> anyhow::Result<()> {
     r.run().await?;
 
     assert!(blob_path.path().join("rescue.blob").exists());
-
-    // db_root_path.path()
 
     Ok(())
 }

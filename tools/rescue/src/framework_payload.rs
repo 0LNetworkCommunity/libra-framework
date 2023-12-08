@@ -1,9 +1,14 @@
 use diem_debugger::DiemDebugger;
 use diem_types::{
+    account_address::AccountAddress,
     account_config::CORE_CODE_ADDRESS,
-    transaction::{ChangeSet, WriteSetPayload}, account_address::AccountAddress,
+    transaction::{ChangeSet, WriteSetPayload},
 };
-use move_core_types::{value::MoveValue, language_storage::ModuleId, identifier::{IdentStr, Identifier}};
+use move_core_types::{
+    identifier::{IdentStr, Identifier},
+    language_storage::ModuleId,
+    value::MoveValue,
+};
 use move_vm_test_utils::gas_schedule::GasStatus;
 use std::path::PathBuf;
 
@@ -17,22 +22,26 @@ pub async fn stlib_payload(db_path: PathBuf) -> anyhow::Result<WriteSetPayload> 
     let v = db.get_latest_version().await?;
     let cs = db.run_session_at_version(v, |session| {
         let mut gas_status = GasStatus::new_unmetered();
-        session.publish_module_bundle(new_stdlib, CORE_CODE_ADDRESS, &mut gas_status)
-        .expect("could not publish framework");
+        session
+            .publish_module_bundle(new_stdlib, CORE_CODE_ADDRESS, &mut gas_status)
+            .expect("could not publish framework");
 
-        let vm_signer = MoveValue::Signer(AccountAddress::ONE).simple_serialize()
-        .expect("get the 0x1 signer bytes");
-        session.execute_function_bypass_visibility(
-        &ModuleId::new(
-          "0x1".parse().unwrap(),
-          Identifier::new("reconfiguration").unwrap()
-        ),
-        &IdentStr::new("reconfigure_for_rescue").unwrap(),
-        vec![],
-        vec![vm_signer],
-        &mut gas_status
-      ).expect("could not bump rescue epoch");
-      Ok(())
+        let vm_signer = MoveValue::Signer(AccountAddress::ONE)
+            .simple_serialize()
+            .expect("get the 0x1 signer bytes");
+        session
+            .execute_function_bypass_visibility(
+                &ModuleId::new(
+                    "0x1".parse().unwrap(),
+                    Identifier::new("reconfiguration").unwrap(),
+                ),
+                IdentStr::new("reconfigure_for_rescue").unwrap(),
+                vec![],
+                vec![vm_signer],
+                &mut gas_status,
+            )
+            .expect("could not bump rescue epoch");
+        Ok(())
     })?;
 
     let (ws, _, events) = cs.unpack();

@@ -55,20 +55,17 @@ pub fn make_script(remove_validator: AccountAddress) -> PathBuf {
     temp_script_path.path().to_owned()
 }
 
-
 pub fn make_script_exp() -> PathBuf {
-    let script = format!(
-        r#"
-        script {{
+    let script = r#"
+        script {
             use diem_framework::reconfiguration;
 
-            fun main(vm_signer: &signer, _framework_signer: &signer) {{
+            fun main(vm_signer: &signer, _framework_signer: &signer) {
                 reconfiguration::emit_epoch(vm_signer);
-            }}
-        }}
-    "#,
-        // remove_validator
-    );
+            }
+        }
+    "#
+    .to_string();
 
     let framework_path: PathBuf = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("..")

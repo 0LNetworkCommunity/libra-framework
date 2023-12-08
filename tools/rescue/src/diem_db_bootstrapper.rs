@@ -70,7 +70,10 @@ impl BootstrapOpts {
             .reader
             .get_latest_executed_trees()
             .with_context(|| format_err!("Failed to get latest tree state."))?;
-        println!("{} transactions found in DB", executed_trees.num_transactions());
+        println!(
+            "{} transactions found in DB",
+            executed_trees.num_transactions()
+        );
 
         if let Some(waypoint) = self.waypoint_to_verify {
             ensure!(
