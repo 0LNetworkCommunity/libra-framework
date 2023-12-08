@@ -76,7 +76,7 @@ jobs:
       - name: smoke-tests # NOTE: needs working DIEM_FORGE_NODE_BIN_PATH
         if: always()
         working-directory: ./smoke-tests
-        run: cargo test --no-fail-fast
+        run: cargo test --no-fail-fast --test-threads=1
 
   query:
     needs: [build-framework]
@@ -126,7 +126,7 @@ jobs:
       - name: rescue
         if: always()
         working-directory: ./tools/rescue
-        run: cargo test --no-fail-fast
+        run: RUST_MIN_STACK=104857600 cargo test --no-fail-fast --test-threads=1
   tower:
     needs: [build-framework]
     runs-on: ubuntu-latest

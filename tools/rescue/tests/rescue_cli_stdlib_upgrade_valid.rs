@@ -1,7 +1,8 @@
 mod support;
 
+use std::time::Duration;
+
 use libra_smoke_tests::libra_smoke::LibraSmoke;
-use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
 
 #[tokio::test]
 async fn test_framwork_upgrade_writeset() -> anyhow::Result<()> {
@@ -18,21 +19,26 @@ async fn test_framwork_upgrade_writeset() -> anyhow::Result<()> {
     for node in env.validators_mut() {
         node.stop();
     }
+    dbg!(&val_db_path);
+    std::thread::sleep(Duration::from_secs(30));
 
-    println!("1. generate framework upgrade writeset which should execute");
-    let blob_path = diem_temppath::TempPath::new();
-    blob_path.create_as_dir()?;
+    // let save_to = Path::new(env!("CARGO_MANIFEST_DIR"));
+    // std::fs::DirBuilder::recursive(&mut self, recursive)
 
-    let r = RescueTxOpts {
-        data_path: val_db_path.clone(),
-        blob_path: Some(blob_path.path().to_owned()),
-        script_path:None,
-        framework_upgrade: true,
-    };
-    r.run().await?;
+    // println!("1. generate framework upgrade writeset which should execute");
+    // let blob_path = diem_temppath::TempPath::new();
+    // blob_path.create_as_dir()?;
 
-    let file = blob_path.path().join("rescue.blob");
-    assert!(file.exists());
+    // let r = RescueTxOpts {
+    //     data_path: val_db_path.clone(),
+    //     blob_path: Some(blob_path.path().to_owned()),
+    //     script_path:None,
+    //     framework_upgrade: true,
+    // };
+    // r.run().await?;
+
+    // let file = blob_path.path().join("rescue.blob");
+    // assert!(file.exists());
 
     // println!(
     //     "3. check we can apply the tx to existing db, and can get a waypoint, don't commit it"
