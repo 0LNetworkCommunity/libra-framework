@@ -14,7 +14,7 @@ use diem_types::account_address::AccountAddress;
 use libra_framework::framework_cli::make_template_files;
 use smoke_test::test_utils::{MAX_CONNECTIVITY_WAIT_SECS, MAX_HEALTHY_WAIT_SECS};
 
-pub fn make_script(first_validator_address: AccountAddress) -> PathBuf {
+pub fn make_script(remove_validator: AccountAddress) -> PathBuf {
     let script = format!(
         r#"
         script {{
@@ -29,7 +29,45 @@ pub fn make_script(first_validator_address: AccountAddress) -> PathBuf {
             }}
     }}
     "#,
-        first_validator_address
+        remove_validator
+    );
+
+    let framework_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..")
+        .join("framework")
+        .join("libra-framework");
+
+    let mut temp_script_path = TempPath::new();
+    temp_script_path.create_as_dir().unwrap();
+    temp_script_path.persist();
+
+    assert!(temp_script_path.path().exists());
+
+    make_template_files(
+        temp_script_path.path(),
+        &framework_path,
+        "rescue",
+        Some(script),
+    )
+    .unwrap();
+
+    temp_script_path.path().to_owned()
+}
+
+
+pub fn make_script_exp() -> PathBuf {
+    let script = format!(
+        r#"
+        script {{
+            use diem_framework::reconfiguration;
+
+            fun main(vm_signer: &signer, _framework_signer: &signer) {{
+                reconfiguration::emit_epoch(vm_signer);
+            }}
+        }}
+    "#,
+        remove_validator
     );
 
     let framework_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))

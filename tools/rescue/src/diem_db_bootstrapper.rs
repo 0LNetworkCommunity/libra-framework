@@ -90,7 +90,6 @@ impl BootstrapOpts {
         );
 
         let output_waypoint = committer.waypoint();
-        println!("received waypoint {}", output_waypoint);
 
         if let Some(waypoint) = self.waypoint_to_verify {
             ensure!(

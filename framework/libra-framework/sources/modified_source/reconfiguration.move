@@ -155,6 +155,19 @@ module diem_framework::reconfiguration {
         );
     }
 
+    /// Signal validators to start using new configuration. Must be called from friend config modules.
+    public fun emit_epoch(vm: &signer) acquires Configuration {
+        system_addresses::assert_ol(vm);
+        let config_ref = borrow_global_mut<Configuration>(@diem_framework);
+        config_ref.epoch = config_ref.epoch + 1;
+        event::emit_event<NewEpochEvent>(
+            &mut config_ref.events,
+            NewEpochEvent {
+                epoch: config_ref.epoch,
+            },
+        );
+    }
+
     public fun last_reconfiguration_time(): u64 acquires Configuration {
         borrow_global<Configuration>(@diem_framework).last_reconfiguration_time
     }
