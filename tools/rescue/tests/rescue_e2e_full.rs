@@ -169,7 +169,6 @@ async fn test_rescue_e2e_with_sync() -> anyhow::Result<()> {
 
     assert!(num_nodes == 4);
 
-
     // have a node sync from the beginning
     // TODO: the order of sync, and tx below, might be inverted
     println!("11. Nuke node 3 and sync from last rescue, test if it rejoins the network okay.");
