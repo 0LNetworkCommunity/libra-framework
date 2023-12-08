@@ -19,11 +19,6 @@ async fn test_framwork_upgrade_writeset() -> anyhow::Result<()> {
     for node in env.validators_mut() {
         node.stop();
     }
-    dbg!(&val_db_path);
-    std::thread::sleep(Duration::from_secs(30));
-
-    // let save_to = Path::new(env!("CARGO_MANIFEST_DIR"));
-    // std::fs::DirBuilder::recursive(&mut self, recursive)
 
     // println!("1. generate framework upgrade writeset which should execute");
     // let blob_path = diem_temppath::TempPath::new();

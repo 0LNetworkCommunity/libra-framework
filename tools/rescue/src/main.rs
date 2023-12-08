@@ -25,20 +25,18 @@ async fn main() -> anyhow::Result<()> {
         Some(Sub::RescueTx(mission)) => {
             let blob_path = mission.run().await?;
 
-            if cli.apply_to_db {
-                let b = BootstrapOpts {
-                    db_dir: mission.data_path,
-                    genesis_txn_file: blob_path,
-                    waypoint_to_verify: None,
-                    commit: true,
-                };
-                b.run()?;
+            let b = BootstrapOpts {
+                db_dir: mission.data_path,
+                genesis_txn_file: blob_path,
+                waypoint_to_verify: None,
+                commit: cli.apply_to_db,
             };
-            println!("SUCCESS: rescue mission complete.");
+            b.run()?;
+            println!("done");
         }
         Some(Sub::Bootstrap(bootstrap)) => {
             bootstrap.run()?;
-            println!("SUCCESS: db boostrapped with writeset (genesis tx)");
+            println!("done");
         }
         _ => {
             println!("\nI'll be there")

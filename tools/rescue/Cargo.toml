@@ -20,6 +20,7 @@ diem-config = { workspace = true }
 diem-db = { workspace = true }
 diem-debugger = { workspace = true }
 diem-executor = { workspace = true }
+diem-logger = { workspace = true }
 diem-storage-interface = { workspace = true }
 diem-types = { workspace = true }
 diem-vm = { workspace = true }
@@ -37,7 +38,6 @@ tokio = { workspace = true }
 diem-api-types = { workspace = true }
 diem-temppath = { workspace = true }
 diem-forge = { workspace = true }
-diem-logger = { workspace = true }
 libra-smoke-tests = { workspace = true }
 regex = { workspace = true }
 smoke-test = { workspace = true }

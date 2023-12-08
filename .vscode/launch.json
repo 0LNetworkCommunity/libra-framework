@@ -6,6 +6,21 @@
   // target/debug/ol-genesis-tools --fork --output-path /opt/genesis_from_snapshot.blob --snapshot-path /Users/gsimsek/code/libra-main/ol/devnet/snapshot/state_ver_267.54ab`
   "configurations": [
     {
+      "name": "rescue-stdlib",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": [
+          "build",
+          "-p",
+          "rescue"
+        ],
+        "args": [
+          "rescue-tx",
+          "--data-path /root/test-db/db",
+          "--framework-upgrade",
+        ],
+      },
       "name": "framework-upgrade",
       "type": "lldb",
       "request": "launch",
@@ -21,7 +36,8 @@
         "upgrade",
         "-o",
         "${workspaceFolder}/framework/releases/framework_upgrade",
-        "--core-modules", "move-stdlib",
+        "--core-modules",
+        "move-stdlib",
         "-f",
         "${workspaceFolder}/framework",
       ],

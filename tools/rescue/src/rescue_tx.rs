@@ -1,5 +1,6 @@
 use crate::framework_payload;
 use clap::Parser;
+// use diem_logger::prelude::info;
 use diem_types::transaction::{Script, Transaction, WriteSetPayload};
 use libra_framework::builder::framework_generate_upgrade_proposal::libra_compile_script;
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
@@ -32,6 +33,7 @@ impl RescueTxOpts {
         //    transaction from a .move source
 
         let gen_tx = if let Some(p) = &self.script_path {
+            println!("attempting to compile governance script at: {}", p.display());
             // let payload = custom_script(p, None, Some(5));
             let (code, _hash) = libra_compile_script(p, false)?;
 
@@ -39,21 +41,24 @@ impl RescueTxOpts {
                 execute_as: CORE_CODE_ADDRESS,
                 script: Script::new(code, vec![], vec![]),
             };
-
+            // info!("governance script encoded");
             Transaction::GenesisTransaction(wp)
         } else if self.framework_upgrade {
             let payload = framework_payload::stlib_payload(db_path.clone()).await?;
+            // warn!("stdlib writeset encoded");
+            println!("stdlib writeset encoded");
             Transaction::GenesisTransaction(payload)
         } else {
             anyhow::bail!("no options provided, need a --framework-upgrade or a --script-path");
         };
 
-        let mut output = self.blob_path.clone().unwrap_or(db_path);
-
-        output.push("rescue.blob");
-
         let bytes = bcs::to_bytes(&gen_tx)?;
+        println!("transaction bytes encoded");
+
+        let mut output = self.blob_path.clone().unwrap_or(db_path);
+        output.push("rescue.blob");
         std::fs::write(&output, bytes.as_slice())?;
+        println!("SUCCESS: rescue transaction written to: {}", output.display());
 
         Ok(output)
     }

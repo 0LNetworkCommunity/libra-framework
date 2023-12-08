@@ -49,6 +49,8 @@ impl BootstrapOpts {
             "Not a GenesisTransaction"
         );
 
+          println!("Reading DB ...");
+
         // Opening the DB exclusively, it's not allowed to run this tool alongside a running node which
         // operates on the same DB.
         let db = DiemDB::open(
@@ -61,13 +63,15 @@ impl BootstrapOpts {
             DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
         )
         .expect("Failed to open DB.");
+
         let db = DbReaderWriter::new(db);
 
         let executed_trees = db
             .reader
             .get_latest_executed_trees()
             .with_context(|| format_err!("Failed to get latest tree state."))?;
-        println!("Db has {} transactions", executed_trees.num_transactions());
+        println!("{} transactions found in DB", executed_trees.num_transactions());
+
         if let Some(waypoint) = self.waypoint_to_verify {
             ensure!(
                 waypoint.version() == executed_trees.num_transactions(),
@@ -79,12 +83,14 @@ impl BootstrapOpts {
 
         let committer = calculate_genesis::<DiemVM>(&db, executed_trees, &genesis_txn)
             .with_context(|| format_err!("Failed to calculate genesis."))?;
+
         println!(
             "Successfully calculated genesis. Got waypoint: {}",
             committer.waypoint()
         );
 
         let output_waypoint = committer.waypoint();
+        println!("received waypoint {}", output_waypoint);
 
         if let Some(waypoint) = self.waypoint_to_verify {
             ensure!(
