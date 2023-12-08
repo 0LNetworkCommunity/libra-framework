@@ -15,12 +15,36 @@
           "-p",
           "rescue"
         ],
+      },
+      "args": [
+        "rescue-tx",
+        "--data-path",
+        "/root/test-db/db",
+        "--framework-upgrade",
+      ],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "rescue-script",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
         "args": [
-          "rescue-tx",
-          "--data-path /root/test-db/db",
-          "--framework-upgrade",
+          "build",
+          "-p",
+          "rescue"
         ],
       },
+      "args": [
+        "rescue-tx",
+        "--data-path",
+        "/root/test-db/db",
+        "--script-path",
+        "/root/script-template/governance_script_template"
+      ],
+      "cwd": "${workspaceFolder}"
+    },
+    {
       "name": "framework-upgrade",
       "type": "lldb",
       "request": "launch",
@@ -36,8 +60,6 @@
         "upgrade",
         "-o",
         "${workspaceFolder}/framework/releases/framework_upgrade",
-        "--core-modules",
-        "move-stdlib",
         "-f",
         "${workspaceFolder}/framework",
       ],
