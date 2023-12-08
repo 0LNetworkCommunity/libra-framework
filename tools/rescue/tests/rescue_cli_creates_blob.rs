@@ -140,7 +140,7 @@ async fn test_valid_waypoint() -> anyhow::Result<()> {
 
     println!("1. generate a transaction script which should execute");
 
-    let first_validator_address = env
+    let _first_validator_address = env
         .validators()
         .next()
         .unwrap()
@@ -151,7 +151,7 @@ async fn test_valid_waypoint() -> anyhow::Result<()> {
     let blob_path = diem_temppath::TempPath::new();
     blob_path.create_as_dir()?;
 
-    let script_path = support::make_script(first_validator_address);
+    let script_path = support::make_script_exp();
 
     println!("2. compile the script");
 

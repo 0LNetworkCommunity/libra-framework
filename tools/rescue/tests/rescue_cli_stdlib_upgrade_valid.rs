@@ -1,7 +1,5 @@
 mod support;
 
-use std::time::Duration;
-
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 
 #[tokio::test]
@@ -20,45 +18,50 @@ async fn test_framwork_upgrade_writeset() -> anyhow::Result<()> {
         node.stop();
     }
 
-    // println!("1. generate framework upgrade writeset which should execute");
-    // let blob_path = diem_temppath::TempPath::new();
-    // blob_path.create_as_dir()?;
+    println!("1. generate framework upgrade writeset which should execute");
+    let blob_path = diem_temppath::TempPath::new();
+    blob_path.create_as_dir()?;
 
-    // let r = RescueTxOpts {
-    //     data_path: val_db_path.clone(),
-    //     blob_path: Some(blob_path.path().to_owned()),
-    //     script_path:None,
-    //     framework_upgrade: true,
-    // };
-    // r.run().await?;
+    let rescue_script = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    rescue_script
+    .join("fixtures")
+    .join("rescue_framework_script");
 
-    // let file = blob_path.path().join("rescue.blob");
-    // assert!(file.exists());
+    let r = RescueTxOpts {
+        data_path: val_db_path.clone(),
+        blob_path: Some(blob_path.path().to_owned()),
+        script_path: Some(rescue_script),
+        framework_upgrade: false,
+    };
+    r.run().await?;
 
-    // println!(
-    //     "3. check we can apply the tx to existing db, and can get a waypoint, don't commit it"
-    // );
+    let file = blob_path.path().join("rescue.blob");
+    assert!(file.exists());
 
-    // let boot = BootstrapOpts {
-    //     db_dir: val_db_path.clone(),
-    //     genesis_txn_file: file.clone(),
-    //     waypoint_to_verify: None,
-    //     commit: false,
-    // };
+    println!(
+        "3. check we can apply the tx to existing db, and can get a waypoint, don't commit it"
+    );
 
-    // let wp = boot.run()?;
+    let boot = BootstrapOpts {
+        db_dir: val_db_path.clone(),
+        genesis_txn_file: file.clone(),
+        waypoint_to_verify: None,
+        commit: false,
+    };
 
-    // println!("4. with the known waypoint confirm it, and apply the tx");
-    // let boot = BootstrapOpts {
-    //     db_dir: val_db_path.clone(),
-    //     genesis_txn_file: file,
-    //     waypoint_to_verify: Some(wp),
-    //     commit: true,
-    // };
+    let wp = boot.run()?;
 
-    // let new_w = boot.run()?;
+    println!("4. with the known waypoint confirm it, and apply the tx");
+    let boot = BootstrapOpts {
+        db_dir: val_db_path.clone(),
+        genesis_txn_file: file,
+        waypoint_to_verify: Some(wp),
+        commit: true,
+    };
 
-    // assert!(wp == new_w, "waypoint mismatch");
+    let new_w = boot.run()?;
+
+    assert!(wp == new_w, "waypoint mismatch");
 
     Ok(())
 }

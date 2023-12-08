@@ -67,10 +67,10 @@ pub fn make_script_exp() -> PathBuf {
             }}
         }}
     "#,
-        remove_validator
+        // remove_validator
     );
 
-    let framework_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+    let framework_path: PathBuf = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("..")
         .join("..")
         .join("framework")
