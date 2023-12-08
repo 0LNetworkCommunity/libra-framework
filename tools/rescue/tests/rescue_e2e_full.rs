@@ -24,7 +24,7 @@ use std::{fs, time::Duration};
 /// 2. Test the db-bootstrapper applying a manual genesis transaction (remove validator 0) on diemdb directly
 /// 3. Test the nodes and clients resume working after updating waypoint
 /// 4. Test a node lagging behind can sync to the waypoint
-async fn test_full_rescue() -> anyhow::Result<()> {
+async fn test_rescue_e2e_with_sync() -> anyhow::Result<()> {
     let num_nodes: usize = 5;
 
     let mut s = LibraSmoke::new(Some(num_nodes as u8))
@@ -34,7 +34,7 @@ async fn test_full_rescue() -> anyhow::Result<()> {
     // clone here to prevent borrow issues
     let client = s.client().clone();
 
-    let env: &mut diem_forge::LocalSwarm = &mut s.swarm;
+    let env = &mut s.swarm;
 
     env.wait_for_all_nodes_to_catchup_to_version(10, Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
         .await
@@ -169,10 +169,13 @@ async fn test_full_rescue() -> anyhow::Result<()> {
 
     assert!(num_nodes == 4);
 
+
     // have a node sync from the beginning
-    println!("11. nuke DB on node 3, and run db restore, test if it rejoins the network okay.");
+    // TODO: the order of sync, and tx below, might be inverted
+    println!("11. Nuke node 3 and sync from last rescue, test if it rejoins the network okay.");
     let node = env.validators_mut().nth(3).unwrap();
     node.stop();
+
     let mut node_config = node.config().clone();
     node_config.consensus.sync_only = false;
     node_config.save_to_path(node.config_path()).unwrap();
@@ -183,11 +186,13 @@ async fn test_full_rescue() -> anyhow::Result<()> {
     node.start().unwrap();
     wait_for_node(node, num_nodes - 2).await?;
 
+    // send a transaction while node 3 is down
     // show progress
     println!("10. verify transactions work");
     std::thread::sleep(Duration::from_secs(5));
     let second_val = env.validators().nth(1).unwrap().peer_id();
     let old_bal = get_libra_balance(&client, second_val).await?;
+
     s.mint_and_unlock(second_val, 123456).await?;
     let bal = get_libra_balance(&client, second_val).await?;
     assert!(bal.total > old_bal.total, "transaction did not post");

@@ -17,6 +17,7 @@ env:
   DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
+  RUST_MIN_STACK: 104857600
 
 jobs:
   build-framework:
