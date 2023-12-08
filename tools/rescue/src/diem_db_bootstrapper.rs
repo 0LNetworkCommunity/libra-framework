@@ -49,7 +49,7 @@ impl BootstrapOpts {
             "Not a GenesisTransaction"
         );
 
-          println!("Reading DB ...");
+        println!("Reading DB ...");
 
         // Opening the DB exclusively, it's not allowed to run this tool alongside a running node which
         // operates on the same DB.

@@ -444,6 +444,9 @@ pub enum EntryFunctionCall {
         epoch_expiry: u64,
     },
 
+    /// For rescue missions
+    ReconfigurationReconfigureForRescue {},
+
     /// Creates a new resource account and rotates the authentication key to either
     /// the optional auth key if it is non-empty (though auth keys are 32-bytes)
     /// or the source accounts current auth key.
@@ -793,6 +796,7 @@ impl EntryFunctionCall {
             ProofOfFeePofUpdateBid { bid, epoch_expiry } => {
                 proof_of_fee_pof_update_bid(bid, epoch_expiry)
             }
+            ReconfigurationReconfigureForRescue {} => reconfiguration_reconfigure_for_rescue(),
             ResourceAccountCreateResourceAccount {
                 seed,
                 optional_auth_key,
@@ -2056,6 +2060,22 @@ pub fn proof_of_fee_pof_update_bid(bid: u64, epoch_expiry: u64) -> TransactionPa
     ))
 }
 
+/// For rescue missions
+pub fn reconfiguration_reconfigure_for_rescue() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("reconfiguration").to_owned(),
+        ),
+        ident_str!("reconfigure_for_rescue").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
 /// Creates a new resource account and rotates the authentication key to either
 /// the optional auth key if it is non-empty (though auth keys are 32-bytes)
 /// or the source accounts current auth key.
@@ -3035,6 +3055,16 @@ mod decoder {
         }
     }
 
+    pub fn reconfiguration_reconfigure_for_rescue(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::ReconfigurationReconfigureForRescue {})
+        } else {
+            None
+        }
+    }
+
     pub fn resource_account_create_resource_account(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -3437,6 +3467,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "proof_of_fee_pof_update_bid".to_string(),
             Box::new(decoder::proof_of_fee_pof_update_bid),
+        );
+        map.insert(
+            "reconfiguration_reconfigure_for_rescue".to_string(),
+            Box::new(decoder::reconfiguration_reconfigure_for_rescue),
         );
         map.insert(
             "resource_account_create_resource_account".to_string(),

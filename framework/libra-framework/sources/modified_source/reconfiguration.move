@@ -193,7 +193,7 @@ module diem_framework::reconfiguration {
     }
 
     /// For rescue missions
-    public fun reconfigure_for_rescue(vm: &signer) acquires Configuration {
+    public entry fun reconfigure_for_rescue(vm: &signer) acquires Configuration {
         system_addresses::assert_ol(vm);
 
         let config_ref = borrow_global_mut<Configuration>(@diem_framework);
