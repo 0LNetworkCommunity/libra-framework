@@ -17,7 +17,6 @@ env:
   DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
-  RUST_MIN_STACK: 104857600
 
 jobs:
   build-framework:
@@ -111,22 +110,6 @@ jobs:
         if: always()
         working-directory: ./tools/genesis
         run: cargo test --no-fail-fast
-
-  rescue:
-    needs: [build-framework]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: setup env
-        uses: ./.github/actions/build_env
-      - uses: actions/download-artifact@master
-        with:
-          name: framework-build
-          path: framework/
-      - name: rescue
-        if: always()
-        working-directory: ./tools/rescue
-        run: RUST_MIN_STACK=104857600 cargo test --no-fail-fast -- --test-threads=1
   tower:
     needs: [build-framework]
     runs-on: ubuntu-latest
@@ -159,3 +142,19 @@ jobs:
         working-directory: ./tools/txs
         # NOTE: upgrade tests which compile Move code, and then submit in the same thread will cause a stack overflow with the default rust stack size.
         run: RUST_MIN_STACK=104857600 cargo test --no-fail-fast
+
+  rescue:
+    needs: [build-framework]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup env
+        uses: ./.github/actions/build_env
+      - uses: actions/download-artifact@master
+        with:
+          name: framework-build
+          path: framework/
+      - name: rescue
+        if: always()
+        working-directory: ./tools/rescue
+        run: RUST_MIN_STACK=104857600 cargo test --no-fail-fast -- --test-threads=1
