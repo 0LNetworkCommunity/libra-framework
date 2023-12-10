@@ -1,7 +1,8 @@
 mod support;
 use crate::support::{deadline_secs, update_node_config_restart, wait_for_node};
 use std::path::PathBuf;
-use diem_api_types::ViewRequest;
+use std::str::FromStr;
+use diem_api_types::{EntryFunctionId, ViewRequest};
 use diem_config::config::InitialSafetyRulesConfig;
 use diem_forge::{NodeExt, SwarmExt};
 use diem_temppath::TempPath;
@@ -9,9 +10,8 @@ use diem_types::transaction::Transaction;
 use futures_util::future::try_join_all;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
-use smoke_test::test_utils::{swarm_utils::insert_waypoint, MAX_CATCH_UP_WAIT_SECS};
+use smoke_test::test_utils::{self, MAX_CATCH_UP_WAIT_SECS, swarm_utils::insert_waypoint};
 use std::{fs, time::Duration};
-
 // #[ignore]
 #[tokio::test]
 /// This test verifies the flow of a genesis transaction after the chain starts.
@@ -129,20 +129,27 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
     println!("8. wait for startup and progress");
 
     assert!(
-        // NOTE: liveness check fails because the test tool doesn't
-        // have a way of removing a validator from the test suite. I tried...
-        env.liveness_check(deadline_secs(1)).await.is_err(),
-        "test suite thinks dead node is live"
+        env.liveness_check(deadline_secs(1)).await.is_ok(),
+        "not all nodes connected after restart"
     );
 
-    // check some nodes to see if alive, since the test suite doesn't
-    // allow us to drop a node
-    let _res = try_join_all(
-        env.validators()
-            .take(3) // check first three
-            .map(|node| node.liveness_check(10)),
-    )
-    .await?;
+    let v = client.view(&ViewRequest {
+      function: EntryFunctionId::from_str("0x1::all_your_base::are_belong_to")?,
+      type_arguments: vec![],
+      arguments: vec![],
+    }, None
+  ).await?;
+
+  dbg!(&v);
+
+    // // check some nodes to see if alive, since the test suite doesn't
+    // // allow us to drop a node
+    // let _res = try_join_all(
+    //     env.validators()
+    //         .take(3) // check first three
+    //         .map(|node| node.liveness_check(10)),
+    // )
+    // .await?;
 
     // println!("9. verify node 4 is out from the validator set");
     // let a = client
