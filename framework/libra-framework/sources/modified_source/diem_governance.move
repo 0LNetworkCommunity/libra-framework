@@ -585,6 +585,15 @@ module diem_framework::diem_governance {
         reconfiguration::reconfigure();
     }
 
+    /// Force reconfigure and ignore epoch timestamp checking. This is in
+    /// and extreme edge condition where an offchain rescue needs to happen
+    /// at round 0 of a new epoch, and we have no way to break out of the
+    /// reconfiguration timestamp checking
+    public fun danger_reconfigure_on_rescue(diem_framework: &signer) {
+        system_addresses::assert_diem_framework(diem_framework);
+        reconfiguration::danger_reconfigure_ignore_timestamp(diem_framework);
+    }
+
     // /// Only called in testnet where the core resources account exists and has been granted power to mint Diem coins.
     // public fun get_signer_testnet_only(
     //     core_resources: &signer, signer_address: address): signer acquires GovernanceResponsbility {

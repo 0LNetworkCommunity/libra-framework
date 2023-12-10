@@ -6,7 +6,7 @@ use rescue::rescue_tx::RescueTxOpts;
 use std::path::PathBuf;
 
 #[tokio::test]
-async fn test_framwork_upgrade_writeset() -> anyhow::Result<()> {
+async fn test_framework_upgrade_writeset() -> anyhow::Result<()> {
     println!("0. create a valid test database from smoke-tests");
     let mut s = LibraSmoke::new(Some(3))
         .await

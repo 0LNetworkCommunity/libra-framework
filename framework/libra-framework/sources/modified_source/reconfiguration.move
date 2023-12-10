@@ -110,10 +110,6 @@ module diem_framework::reconfiguration {
             return
         };
 
-        let config_ref = borrow_global_mut<Configuration>(@diem_framework);
-        let current_time = timestamp::now_microseconds();
-
-
         // Do not do anything if a reconfiguration event is already emitted within this transaction.
         //
         // This is OK because:
@@ -126,40 +122,45 @@ module diem_framework::reconfiguration {
         // Thus, this check ensures that a transaction that does multiple "reconfiguration required" actions emits only
         // one reconfiguration event.
         //
-        if (current_time == config_ref.last_reconfiguration_time) {
-            return
-        };
 
         // Reconfiguration "forces the block" to end, as mentioned above. Therefore, we must process the collected fees
         // explicitly so that staking can distribute them.
         // transaction_fee::process_collected_fees();
 
-        // Call stake to compute the new validator set and distribute rewards and transaction fees.
-        // stake::on_new_epoch();
-        storage_gas::on_reconfig();
+        // On ordinary production cases we e want to check time
+        // Note: we don't want to check the time at times on off chain
+        // governance (rescue misssions, that produce a fork)
+        let check_timestamp = true;
 
-        assert!(current_time > config_ref.last_reconfiguration_time, error::invalid_state(EINVALID_BLOCK_TIME));
-        config_ref.last_reconfiguration_time = current_time;
-        spec {
-            assume config_ref.epoch + 1 <= MAX_U64;
+        if(maybe_bump_epoch(check_timestamp)) {
+          // recompute the gas costs if there have been module publish/updates
+          storage_gas::on_reconfig();
+          emit_epoch_event()
+        }
+    }
+
+    fun maybe_bump_epoch(check_time: bool): bool acquires Configuration {
+        let config_ref = borrow_global_mut<Configuration>(@diem_framework);
+
+        let current_time = timestamp::now_microseconds();
+        if (check_time) { // sometimes we don't want to check the time, e.g. on
+        // offchain governance (fork) where the blockchain failed at the epoch boundary
+        if (current_time == config_ref.last_reconfiguration_time) {
+            // do nothing
+            return false
+          };
         };
+
+        config_ref.last_reconfiguration_time = current_time;
         config_ref.epoch = config_ref.epoch + 1;
 
         epoch_helper::set_epoch(config_ref.epoch);
-
-        event::emit_event<NewEpochEvent>(
-            &mut config_ref.events,
-            NewEpochEvent {
-                epoch: config_ref.epoch,
-            },
-        );
+        return true
     }
-
-    /// Signal validators to start using new configuration. Must be called from friend config modules.
-    public fun emit_epoch(vm: &signer) acquires Configuration {
-        system_addresses::assert_ol(vm);
+     /// Signal validators to start using new configuration. Must be called from friend config modules.
+    fun emit_epoch_event() acquires Configuration {
         let config_ref = borrow_global_mut<Configuration>(@diem_framework);
-        config_ref.epoch = config_ref.epoch + 1;
+
         event::emit_event<NewEpochEvent>(
             &mut config_ref.events,
             NewEpochEvent {
@@ -205,24 +206,18 @@ module diem_framework::reconfiguration {
         );
     }
 
-    /// For rescue missions
-    public entry fun reconfigure_for_rescue(vm: &signer) acquires Configuration {
+    /// Danger: use for extreme edge case where we don't want to check
+    /// timestamp.
+    /// For rescue missions we want to ignore timestamps since we may be at an
+    /// epoch boundary and may be stuck because of the timestamp checking.
+    public(friend) fun danger_reconfigure_ignore_timestamp(vm: &signer) acquires Configuration {
         system_addresses::assert_ol(vm);
 
-        let config_ref = borrow_global_mut<Configuration>(@diem_framework);
-
-        storage_gas::on_reconfig();
-
-        config_ref.epoch = config_ref.epoch + 1;
-
-        epoch_helper::set_epoch(config_ref.epoch);
-
-        event::emit_event<NewEpochEvent>(
-            &mut config_ref.events,
-            NewEpochEvent {
-                epoch: config_ref.epoch,
-            },
-        );
+        let check_timestamp = false;
+        if(maybe_bump_epoch(check_timestamp)) {
+          storage_gas::on_reconfig();
+          emit_epoch_event()
+        }
     }
 
     #[test_only]
