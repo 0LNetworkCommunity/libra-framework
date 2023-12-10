@@ -4,18 +4,13 @@ use diem_types::{
     account_config::CORE_CODE_ADDRESS,
     transaction::{ChangeSet, WriteSetPayload},
 };
-use move_core_types::{
-    identifier::Identifier,
-    language_storage::ModuleId,
-    value::MoveValue,
-};
+use move_core_types::{identifier::Identifier, language_storage::ModuleId, value::MoveValue};
 use move_vm_test_utils::gas_schedule::GasStatus;
 use std::path::PathBuf;
 
-
 use diem_vm::move_vm_ext::SessionExt;
 use move_core_types::language_storage::TypeTag;
- use move_core_types::value::serialize_values;
+use move_core_types::value::serialize_values;
 
 /// generate the writeset of changes from publishing all a framework bundle
 pub async fn stlib_payload(db_path: PathBuf) -> anyhow::Result<WriteSetPayload> {
@@ -25,31 +20,23 @@ pub async fn stlib_payload(db_path: PathBuf) -> anyhow::Result<WriteSetPayload> 
     let new_stdlib = libra_framework::head_release_bundle().legacy_copy_code();
 
     let v = db.get_latest_version().await?;
+    dbg!(&v);
 
     let cs = db.run_session_at_version(v, |session| {
         let mut gas_status = GasStatus::new_unmetered();
-
+        dbg!("disable reconfig");
+        // this is a hack.
+        // diem-node doesn't accept reconfigurations where the
+        // validator set has not changed.
+        // BUT writesets would oridinary require reconfigurations
+        // to be valid. Unless we disable the reconfiguration feature
         disable_reconfiguration(session);
+
         session
             .publish_module_bundle(new_stdlib, CORE_CODE_ADDRESS, &mut gas_status)
             .expect("could not publish framework");
+        // turn it back on to resume normal production mode
         enable_reconfiguration(session);
-        // let vm_signer = MoveValue::Signer(AccountAddress::ONE)
-        //     .simple_serialize()
-        //     .expect("get the 0x1 signer bytes");
-
-        // session
-        //     .execute_function_bypass_visibility(
-        //         &ModuleId::new(
-        //             "0x1".parse().unwrap(),
-        //             Identifier::new("reconfiguration").unwrap(),
-        //         ),
-        //         IdentStr::new("reconfigure_for_rescue").unwrap(),
-        //         vec![],
-        //         vec![vm_signer],
-        //         &mut gas_status,
-        //     )
-        //     .expect("could not bump rescue epoch");
         Ok(())
     })?;
 
@@ -96,10 +83,7 @@ pub fn exec_function_helper(
 ) {
     session
         .execute_function_bypass_visibility(
-            &ModuleId::new(
-                AccountAddress::ONE,
-                Identifier::new(module_name).unwrap(),
-            ),
+            &ModuleId::new(AccountAddress::ONE, Identifier::new(module_name).unwrap()),
             &Identifier::new(function_name).unwrap(),
             ty_args,
             args,
@@ -123,8 +107,7 @@ fn disable_reconfiguration(session: &mut SessionExt) {
         vec![],
         serialize_values(&vec![MoveValue::Signer(AccountAddress::ONE)]),
     );
-  }
-
+}
 
 fn enable_reconfiguration(session: &mut SessionExt) {
     exec_function_helper(

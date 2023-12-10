@@ -1,9 +1,8 @@
 mod support;
 
 use libra_smoke_tests::libra_smoke::LibraSmoke;
-use rescue::diem_db_bootstrapper::BootstrapOpts;
+
 use rescue::rescue_tx::RescueTxOpts;
-use std::path::PathBuf;
 
 #[tokio::test]
 async fn test_framework_direct() -> anyhow::Result<()> {
