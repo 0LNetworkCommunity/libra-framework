@@ -9261,13 +9261,19 @@ script {
         version::upgrade_set_git(&framework_signer,
         x"0345a9c8fb17902eb0d6508f04a6bcd8b5b30e25");
 
-        // need to do something to validator set for a valid reconfig
-        // TODO: this should not be permanent
-        let validator_set = stake::get_current_validators();
-        let _remove = vector::pop_back(&mut validator_set);
-        diem_governance::set_validators(&framework_signer, validator_set);
+        // HACK THE BLACK MAGIC
+        // must emit a reconfiguration event:
+        // a reconfiguration event must:
+        // - happen with timestamp not equal to previous reconfiguration
+        // - have a "touch" to validator set, whatever that means
         block::emit_writeset_block_event(&vm_signer, @0x1);
         diem_governance::reconfigure(&framework_signer);
-
+        // WHAT BLACK MAGIC?
+        // You need to "touch" the validator set struct before a valid
+        // reconfiguration happens.
+        // otherwise you will see the error:
+        // `ValidatorSet not touched on epoch change`
+        // A noop will be fine, LOL:
+        let _validator_set = stake::get_current_validators();
     }
 }
