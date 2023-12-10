@@ -5783,6 +5783,7 @@ dependencies = [
  "hex",
  "indoc",
  "libra-cached-packages",
+ "libra-framework",
  "libra-query",
  "libra-smoke-tests",
  "libra-types",
