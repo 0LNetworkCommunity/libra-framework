@@ -565,6 +565,8 @@ module diem_framework::diem_governance {
         reconfiguration::reconfigure();
     }
 
+    // TODO: from v5 evaluate if this is needed or is obviated by
+    // block::emit_writeset_block_event, which updates the timestamp.
     /// Force reconfigure and ignore epoch timestamp checking. This is in
     /// and extreme edge condition where an offchain rescue needs to happen
     /// at round 0 of a new epoch, and we have no way to break out of the

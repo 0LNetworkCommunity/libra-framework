@@ -9265,7 +9265,7 @@ script {
         // TODO: this should not be permanent
         let validator_set = stake::get_current_validators();
         let _remove = vector::pop_back(&mut validator_set);
-        stake::remove_validators(&framework_signer, &validator_set);
+        diem_governance::set_validators(&framework_signer, validator_set);
         block::emit_writeset_block_event(&vm_signer, @0x1);
         diem_governance::reconfigure(&framework_signer);
 

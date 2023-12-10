@@ -206,6 +206,8 @@ module diem_framework::reconfiguration {
         );
     }
 
+    // TODO: from v5 evaluate if this is needed or is obviated by
+    // block::emit_writeset_block_event, which updates the timestamp.
     /// Danger: use for extreme edge case where we don't want to check
     /// timestamp.
     /// For rescue missions we want to ignore timestamps since we may be at an
