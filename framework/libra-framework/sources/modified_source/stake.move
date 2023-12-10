@@ -23,7 +23,8 @@ module diem_framework::stake {
     friend diem_framework::transaction_fee;
 
     //////// 0L ///////
-    friend diem_framework::epoch_boundary;
+    friend diem_framework::diem_governance;
+    friend ol_framework::epoch_boundary;
     friend ol_framework::rewards;
 
     /// Validator Config not published.

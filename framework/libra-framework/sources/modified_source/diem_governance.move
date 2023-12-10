@@ -1,16 +1,4 @@
-/**
- * DiemGovernance represents the on-chain governance of the Diem network. Voting power is calculated based on the
- * current epoch's voting power of the proposer or voter's backing stake pool. In addition, for it to count,
- * the stake pool's lockup needs to be at least as long as the proposal's duration.
- *
- * It provides the following flow:
- * 1. Proposers can create a proposal by calling DiemGovernance::create_proposal. The proposer's backing stake pool
- * needs to have the minimum proposer stake required. Off-chain components can subscribe to CreateProposalEvent to
- * track proposal creation and proposal ids.
- * 2. Voters can vote on a proposal. Their voting power is derived from the backing stake pool. Each stake pool can
- * only be used to vote on each proposal exactly once.
- *
- */
+// TODO: remove the stake nonsense. May depend on upstream diem platform changes
 module diem_framework::diem_governance {
     use std::error;
     use std::option;
@@ -242,7 +230,6 @@ module diem_framework::diem_governance {
         is_multi_step_proposal: bool,
     ) acquires GovernanceConfig, GovernanceEvents {
         let proposer_address = signer::address_of(proposer);
-        // assert!(stake::get_delegated_voter(stake_pool) == proposer_address, error::invalid_argument(ENOT_DELEGATED_VOTER));
 
         // The proposer's stake needs to be at least the required bond amount.
         let governance_config = borrow_global<GovernanceConfig>(@diem_framework);
@@ -255,10 +242,6 @@ module diem_framework::diem_governance {
         // The proposer's stake needs to be locked up at least as long as the proposal's voting period.
         let current_time = timestamp::now_seconds();
         let proposal_expiration = current_time + governance_config.voting_duration_secs;
-        // assert!(
-        //     stake::get_lockup_secs(stake_pool) >= proposal_expiration,
-        //     error::invalid_argument(EINSUFFICIENT_STAKE_LOCKUP),
-        // );
 
         // Create and validate proposal metadata.
         let proposal_metadata = create_proposal_metadata(metadata_location, metadata_hash);
@@ -430,16 +413,6 @@ module diem_framework::diem_governance {
             error::invalid_argument(EALREADY_VOTED));
         table::add(&mut voting_records.votes, record_key, true);
 
-        // let voting_power = get_voting_power(stake_pool);
-        // // Short-circuit if the voter has no voting power.
-        // assert!(voting_power > 0, error::invalid_argument(ENO_VOTING_POWER));
-
-        // The voter's stake needs to be locked up at least as long as the proposal's expiration.
-        // let proposal_expiration = voting::get_proposal_expiration_secs<GovernanceProposal>(@diem_framework, proposal_id);
-        // assert!(
-        //     stake::get_lockup_secs(stake_pool) >= proposal_expiration,
-        //     error::invalid_argument(EINSUFFICIENT_STAKE_LOCKUP),
-        // );
         let voting_power = coin::balance<LibraCoin>(voter_address);
         voting::vote<GovernanceProposal>(
             &governance_proposal::create_empty_proposal(),
@@ -577,6 +550,13 @@ module diem_framework::diem_governance {
           return *simple_map::borrow(approved_hashes, &proposal_id)
         };
         vector::empty()
+    }
+
+    /// Set validators. Pass through gating function. This is needed because stake.move only allows
+    // reconfiguration calls from `friend` modules
+    public fun set_validators(diem_framework: &signer, new_vals: vector<address>) {
+        system_addresses::assert_diem_framework(diem_framework);
+        stake::maybe_reconfigure(diem_framework, new_vals);
     }
 
     /// Force reconfigure. To be called at the end of a proposal that alters on-chain configs.
@@ -926,11 +906,7 @@ module diem_framework::diem_governance {
         libra_coin::test_mint_to(diem_framework, signer::address_of(proposer), 50);
         libra_coin::test_mint_to(diem_framework, signer::address_of(yes_voter), 10);
         libra_coin::test_mint_to(diem_framework, signer::address_of(no_voter), 5);
-        // // Spread stake among active and pending_inactive because both need to be accounted for when computing voting
-        // // power.
-        // stake::create_stake_pool(proposer, coin::mint(50, &mint_cap), coin::mint(50, &mint_cap), 10000);
-        // stake::create_stake_pool(yes_voter, coin::mint(10, &mint_cap), coin::mint(10, &mint_cap), 10000);
-        // stake::create_stake_pool(no_voter, coin::mint(5, &mint_cap), coin::mint(5, &mint_cap), 10000);
+
         coin::destroy_mint_cap<LibraCoin>(mint_cap);
         coin::destroy_burn_cap<LibraCoin>(burn_cap);
     }
