@@ -25,6 +25,7 @@ pub fn insert_test_file(core_module_name: &str, remove: bool) -> anyhow::Result<
         .join("framework")
         .join(core_module_name)
         .join("sources");
+    assert!(core_module_sources.exists(), "cannot find sources for: {}", core_module_name);
 
     let away_file_path = core_module_sources.join("all_your_base.move");
     if remove {
@@ -34,7 +35,8 @@ pub fn insert_test_file(core_module_name: &str, remove: bool) -> anyhow::Result<
 
     let file_path = this_crate
         // .join("src")
-        .join("tests")
+        .join("src")
+        .join("upgrade_fixtures")
         .join("fixtures")
         .join("all_your_base.move");
 
@@ -67,15 +69,18 @@ pub fn generate_fixtures(output_path: PathBuf, modules: Vec<String>) -> anyhow::
 fn make_the_upgrade_fixtures() -> anyhow::Result<()> {
     let fixture_path = fixtures_path();
 
-    let p = fixture_path.join("upgrade_single_step");
+    // for single step upgrades
+    // places the all_your_base in the move-stdlib dir
+    let p = fixture_path.join("upgrade-single-lib");
     std::fs::create_dir_all(&p)?;
     let modules = vec!["move-stdlib".to_string()];
-
     generate_fixtures(p, modules)?;
 
-    let p = fixture_path.join("upgrade_multi_step");
+    // for multi step upgrades
+    // places the all_your_base in the libra_framework dir
+    let p = fixture_path.join("upgrade-multi-lib");
     std::fs::create_dir_all(&p)?;
-    let modules = vec!["move-stdlib".to_string(), "vendor-stdlib".to_string()];
+    let modules = vec!["move-stdlib".to_string(), "vendor-stdlib".to_string(), "libra-framework".to_string()];
 
     generate_fixtures(p, modules)?;
     Ok(())

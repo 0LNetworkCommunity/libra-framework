@@ -1,15 +1,17 @@
 // Upgrade proposal for package `MoveStdlib`
 
-// Framework commit hash: 5b1067cb80b8bb3e5d3e3394e915815a03586cac
-// Builder commit hash: 5b1067cb80b8bb3e5d3e3394e915815a03586cac
+// Framework commit hash: 08633e4610c1ec204f8cc40ef9df06bd3b37e6d0
+// Builder commit hash: db1137ba1f8e7301e325021f71f740063daaf76e
 
 // Next step script hash:
 
-// source digest: 2AF60A23AF8A40E5623FB219D4AF51B0EB4BA891454512C8F0467777E623F1ED
+// source digest: 124DCD6198A29D3D56514A17C09CF57B2391D67E0206F90D3671698D2FDFC274
 script {
     use std::vector;
     use diem_framework::diem_governance;
     use diem_framework::code;
+
+    use diem_framework::version;
 
     fun main(proposal_id: u64){
         let framework_signer = diem_governance::resolve_multi_step_proposal(
@@ -629,10 +631,10 @@ script {
         vector::push_back(&mut code, chunk11);
         let chunk1 = vector[
             10u8,77u8,111u8,118u8,101u8,83u8,116u8,100u8,108u8,105u8,98u8,1u8,0u8,0u8,0u8,0u8,0u8,0u8,0u8,
-            0u8,64u8,50u8,65u8,70u8,54u8,48u8,65u8,50u8,51u8,65u8,70u8,56u8,65u8,52u8,48u8,69u8,53u8,54u8,50u8,
-            51u8,70u8,66u8,50u8,49u8,57u8,68u8,52u8,65u8,70u8,53u8,49u8,66u8,48u8,69u8,66u8,52u8,66u8,65u8,56u8,
-            57u8,49u8,52u8,53u8,52u8,53u8,49u8,50u8,67u8,56u8,70u8,48u8,52u8,54u8,55u8,55u8,55u8,55u8,69u8,54u8,
-            50u8,51u8,70u8,49u8,69u8,68u8,96u8,31u8,139u8,8u8,0u8,0u8,0u8,0u8,0u8,2u8,255u8,1u8,73u8,0u8,
+            0u8,64u8,49u8,50u8,52u8,68u8,67u8,68u8,54u8,49u8,57u8,56u8,65u8,50u8,57u8,68u8,51u8,68u8,53u8,54u8,
+            53u8,49u8,52u8,65u8,49u8,55u8,67u8,48u8,57u8,67u8,70u8,53u8,55u8,66u8,50u8,51u8,57u8,49u8,68u8,54u8,
+            55u8,69u8,48u8,50u8,48u8,54u8,70u8,57u8,48u8,68u8,51u8,54u8,55u8,49u8,54u8,57u8,56u8,68u8,50u8,70u8,
+            68u8,70u8,67u8,50u8,55u8,52u8,96u8,31u8,139u8,8u8,0u8,0u8,0u8,0u8,0u8,2u8,255u8,1u8,73u8,0u8,
             182u8,255u8,91u8,112u8,97u8,99u8,107u8,97u8,103u8,101u8,93u8,10u8,110u8,97u8,109u8,101u8,32u8,61u8,32u8,34u8,
             77u8,111u8,118u8,101u8,83u8,116u8,100u8,108u8,105u8,98u8,34u8,10u8,118u8,101u8,114u8,115u8,105u8,111u8,110u8,32u8,
             61u8,32u8,34u8,49u8,46u8,53u8,46u8,48u8,34u8,10u8,10u8,91u8,97u8,100u8,100u8,114u8,101u8,115u8,115u8,101u8,
@@ -645,6 +647,7 @@ script {
             0u8,0u8,0u8,8u8,102u8,101u8,97u8,116u8,117u8,114u8,101u8,115u8,0u8,0u8,0u8,6u8,111u8,112u8,116u8,105u8,
             111u8,110u8,0u8,0u8,0u8,6u8,115u8,116u8,114u8,105u8,110u8,103u8,0u8,0u8,0u8,0u8,0u8,
         ];
-        code::publish_package_txn(&framework_signer, chunk1, code)
+        code::publish_package_txn(&framework_signer, chunk1, code);
+        version::upgrade_set_git(&framework_signer, x"08633e4610c1ec204f8cc40ef9df06bd3b37e6d0")
     }
 }
