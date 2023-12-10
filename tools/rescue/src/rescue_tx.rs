@@ -1,4 +1,4 @@
-use crate::framework_payload;
+
 use clap::Parser;
 // use diem_logger::prelude::info;
 use diem_types::transaction::{Script, Transaction, WriteSetPayload};
@@ -16,44 +16,60 @@ pub struct RescueTxOpts {
     /// directory to read/write for the rescue.blob. Will default to db_path/rescue.blob
     pub blob_path: Option<PathBuf>,
     #[clap(short, long)]
-    /// directory for the script to be executed
-    pub script_path: Option<PathBuf>,
-    #[clap(long)]
-    /// directory to read/write or the rescue.blob
-    pub framework_upgrade: bool,
+    /// directory for the governance script to be executed
+    pub script_path: PathBuf,
 }
 
 impl RescueTxOpts {
     pub async fn run(&self) -> anyhow::Result<PathBuf> {
         let db_path = self.data_path.clone();
+        // Deprecation Notice: although still possible, we no longer will try to
+        // open a Db with debugger, and create a writeset from a move vm
+        // session.
 
-        // There are two options:
-        // 1. upgrade the framework because the source in db is a brick.
-        // 2. the framework in DB is usable, and we need to execute an admin
+        // There are off chain governance scenarios (fork) for rescuing from halt
+        // 1. the framework in DB is usable, and we need to execute an admin
         //    transaction from a .move source
+        // 2. we must upgrade the framework because the source in db is a brick.
+        // 3. we must execute a transaction that does not exist on the bricked
+        // db, but only exists on the upgrade we are executing now.
 
-        let gen_tx = if let Some(p) = &self.script_path {
-            println!(
-                "attempting to compile governance script at: {}",
-                p.display()
-            );
-            // let payload = custom_script(p, None, Some(5));
-            let (code, _hash) = libra_compile_script(p, false)?;
+        // In all cases we want to use the same governance workflow as with
+        // onchain governance: craft an admin script.
+        // Scenario 1 is easiest. Create a goverance script with the usual
+        // process at ./framework/
+        // Scenario 2 also uses the same workflow, however the generated code
+        // must be adapted so that it is not using the auto-generated
+        // diem_governance proposal workflow, and instead is a transaction send
+        // by the vm and diem_framework (dual signers)
+        // Scenario 3: is most complex. It requires the framework be upgraded
+        // first in a separate script. Then a second admin script can be
+        // applied. This is because the VM does not have an updated version of
+        // the published stdlib until there is a reconfiguration (which issues a
+        // number of updates including to cache).
 
-            let wp = WriteSetPayload::Script {
-                execute_as: CORE_CODE_ADDRESS,
-                script: Script::new(code, vec![], vec![]),
-            };
-            // info!("governance script encoded");
-            Transaction::GenesisTransaction(wp)
-        } else if self.framework_upgrade {
-            let payload = framework_payload::stlib_payload(db_path.clone()).await?;
-            // warn!("stdlib writeset encoded");
-            println!("stdlib writeset encoded");
-            Transaction::GenesisTransaction(payload)
-        } else {
-            anyhow::bail!("no options provided, need a --framework-upgrade or a --script-path");
+        // Note that if the network is halted at an epoch boundary, there may
+        // be additional complications, such as the timestamp of the upgrade
+        // taht is being applied is the same as the timestamp of the epoch
+        // boundary. This is an intentional check by the reconfiguration.move
+        // module. The easiest way out is to advance the TIME by a certain
+        // amount.
+        // TBD a more straightforward solution.
+
+        println!(
+            "attempting to compile governance script at: {}",
+            &self.script_path.display()
+        );
+        // let payload = custom_script(p, None, Some(5));
+        let (code, _hash) = libra_compile_script(&self.script_path, false)?;
+
+        let payload = WriteSetPayload::Script {
+            execute_as: CORE_CODE_ADDRESS,
+            script: Script::new(code, vec![], vec![]),
         };
+
+        println!("governance script encoded");
+        let gen_tx = Transaction::GenesisTransaction(payload);
 
         let bytes = bcs::to_bytes(&gen_tx)?;
         println!("transaction bytes encoded");
@@ -62,7 +78,7 @@ impl RescueTxOpts {
         output.push("rescue.blob");
         std::fs::write(&output, bytes.as_slice())?;
         println!(
-            "SUCCESS: rescue transaction written to: {}",
+            "success: rescue transaction written to: {}",
             output.display()
         );
 
@@ -93,8 +109,7 @@ async fn test_create_blob() -> anyhow::Result<()> {
     let r = RescueTxOpts {
         data_path: db_root_path.path().to_owned(),
         blob_path: Some(blob_path.path().to_owned()),
-        script_path: Some(script_path),
-        framework_upgrade: false,
+        script_path: script_path,
     };
     r.run().await?;
 

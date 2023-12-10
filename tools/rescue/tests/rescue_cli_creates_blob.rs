@@ -39,8 +39,7 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
     let r = RescueTxOpts {
         data_path: val_db_path.clone(),
         blob_path: Some(blob_path.path().to_owned()),
-        script_path: Some(script_path),
-        framework_upgrade: false,
+        script_path,
     };
     r.run().await?;
 
@@ -111,8 +110,7 @@ async fn test_can_build_gov_rescue_script() -> anyhow::Result<()> {
     let r = RescueTxOpts {
         data_path: val_db_path.clone(),
         blob_path: Some(blob_path.path().to_owned()),
-        script_path: Some(script_path),
-        framework_upgrade: false,
+        script_path,
     };
     r.run().await?;
 
@@ -158,8 +156,7 @@ async fn test_valid_waypoint() -> anyhow::Result<()> {
     let r = RescueTxOpts {
         data_path: val_db_path.clone(),
         blob_path: Some(blob_path.path().to_owned()),
-        script_path: Some(script_path),
-        framework_upgrade: false,
+        script_path,
     };
     r.run().await?;
 

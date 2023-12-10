@@ -26,15 +26,14 @@ async fn test_framwork_upgrade_writeset() -> anyhow::Result<()> {
     blob_path.create_as_dir()?;
 
     let rescue_script = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let p = rescue_script
+    let script_path = rescue_script
         .join("fixtures")
         .join("rescue_framework_script");
 
     let r = RescueTxOpts {
         data_path: val_db_path.clone(),
         blob_path: Some(blob_path.path().to_owned()),
-        script_path: Some(p),
-        framework_upgrade: false,
+        script_path,
     };
     r.run().await?;
 
