@@ -1,7 +1,5 @@
 mod support;
 use crate::support::{deadline_secs, update_node_config_restart, wait_for_node};
-use std::path::PathBuf;
-use std::str::FromStr;
 use diem_api_types::{EntryFunctionId, ViewRequest};
 use diem_config::config::InitialSafetyRulesConfig;
 use diem_forge::{NodeExt, SwarmExt};
@@ -9,9 +7,16 @@ use diem_temppath::TempPath;
 use diem_types::transaction::Transaction;
 use futures_util::future::try_join_all;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
+use move_core_types::value::MoveValue;
 use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
-use smoke_test::test_utils::{self, MAX_CATCH_UP_WAIT_SECS, swarm_utils::insert_waypoint};
+use serde_json::json;
+use smoke_test::test_utils::{self, swarm_utils::insert_waypoint, MAX_CATCH_UP_WAIT_SECS};
+use std::f32::consts::E;
+use std::path::PathBuf;
+use std::str::FromStr;
 use std::{fs, time::Duration};
+use libra_smoke_tests::helpers::get_libra_balance;
+use move_core_types::language_storage::CORE_CODE_ADDRESS;
 // #[ignore]
 #[tokio::test]
 /// This test verifies the flow of a genesis transaction after the chain starts.
@@ -31,6 +36,20 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
 
     let env: &mut diem_forge::LocalSwarm = &mut s.swarm;
 
+    // this should produce an error
+    let v = client
+        .view(
+            &ViewRequest {
+                function: EntryFunctionId::from_str("0x1::all_your_base::are_belong_to")?,
+                type_arguments: vec![],
+                arguments: vec![],
+            },
+            None,
+        )
+        .await;
+    assert!(v.is_err(), "cannot call function");
+    dbg!(&v);
+
     env.wait_for_all_nodes_to_catchup_to_version(10, Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
         .await
         .unwrap();
@@ -47,6 +66,18 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
     env.wait_for_all_nodes_to_catchup(Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
         .await
         .unwrap();
+    let res = client
+        .view(
+            &ViewRequest {
+                function: EntryFunctionId::from_str("0x1::epoch_helper::get_current_epoch")?,
+                type_arguments: vec![],
+                arguments: vec![],
+            },
+            None,
+        )
+        .await;
+
+    dbg!(&res);
 
     println!("5. kill nodes");
     for node in env.validators_mut() {
@@ -54,10 +85,6 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
     }
 
     println!("6. prepare a fork with the new FRAMEWORK");
-
-    // let remove_last = env.validators().last().unwrap().peer_id();
-    // let script_path = support::make_script(remove_last);
-    // assert!(script_path.exists());
 
     let data_path = TempPath::new();
     data_path.create_as_dir().unwrap();
@@ -93,11 +120,10 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
         commit: false, // NOT APPLYING THE TX
     };
 
-    let _waypoint = bootstrap.run()?;
+    let waypoint = bootstrap.run()?;
 
     println!("7. apply genesis transaction to all validators");
-    for (expected_to_connect, node) in env.validators_mut().enumerate() {
-
+    for (_expected_to_connect, node) in env.validators_mut().enumerate() {
         let mut node_config = node.config().clone();
 
         let val_db_path = node.config().storage.dir();
@@ -108,7 +134,7 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
         let bootstrap = BootstrapOpts {
             db_dir: val_db_path,
             genesis_txn_file: genesis_blob_path.clone(),
-            waypoint_to_verify: None,
+            waypoint_to_verify: Some(waypoint),
             commit: true, // APPLY THE TX
         };
 
@@ -129,49 +155,14 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
     println!("8. wait for startup and progress");
 
     assert!(
-        env.liveness_check(deadline_secs(1)).await.is_ok(),
+        env.liveness_check(deadline_secs(30)).await.is_ok(),
         "not all nodes connected after restart"
     );
 
-    let v = client.view(&ViewRequest {
-      function: EntryFunctionId::from_str("0x1::all_your_base::are_belong_to")?,
-      type_arguments: vec![],
-      arguments: vec![],
-    }, None
-  ).await?;
+    // let git_v = client.get_account_resource(CORE_CODE_ADDRESS, "0x1::version::Git").await?;
+    // dbg!(&git_v);
 
-  dbg!(&v);
 
-    // // check some nodes to see if alive, since the test suite doesn't
-    // // allow us to drop a node
-    // let _res = try_join_all(
-    //     env.validators()
-    //         .take(3) // check first three
-    //         .map(|node| node.liveness_check(10)),
-    // )
-    // .await?;
-
-    // println!("9. verify node 4 is out from the validator set");
-    // let a = client
-    //     .view(
-    //         &ViewRequest {
-    //             function: "0x1::stake::get_current_validators".parse().unwrap(),
-    //             type_arguments: vec![],
-    //             arguments: vec![],
-    //         },
-    //         None,
-    //     )
-    //     .await;
-    // let num_nodes = a
-    //     .unwrap()
-    //     .inner()
-    //     .first()
-    //     .unwrap()
-    //     .as_array()
-    //     .unwrap()
-    //     .len();
-
-    // assert!(num_nodes == 4);
 
     // // show progress
     // println!("10. verify transactions work");
@@ -181,6 +172,51 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
     // s.mint_and_unlock(second_val, 123456).await?;
     // let bal = get_libra_balance(&client, second_val).await?;
     // assert!(bal.total > old_bal.total, "transaction did not post");
+
+    // let res = client
+    //     .view(
+    //         &ViewRequest {
+    //             function: EntryFunctionId::from_str("0x1::code::get_module_names_for_package_index")?,
+    //             type_arguments: vec![],
+    //             arguments: vec![
+    //               json!(CORE_CODE_ADDRESS.to_string()),
+    //               json!("0"),
+    //             ],
+    //         },
+    //         None,
+    //     )
+    //     .await;
+
+    // dbg!(&v);
+
+    let res = client
+        .view(
+            &ViewRequest {
+                function: EntryFunctionId::from_str("0x1::epoch_helper::get_current_epoch")?,
+                type_arguments: vec![],
+                arguments: vec![],
+            },
+            None,
+        )
+        .await;
+
+    dbg!(&res);
+
+    // let (_val, rest) = s.swarm.get_all_nodes_clients_with_names().iter().nth(0).unwrap();
+
+
+    let v = client
+        .view(
+            &ViewRequest {
+                function: EntryFunctionId::from_str("0x1::all_your_base::are_belong_to")?,
+                type_arguments: vec![],
+                arguments: vec![],
+            },
+            None,
+        )
+        .await;
+
+    dbg!(&v);
 
     Ok(())
 }

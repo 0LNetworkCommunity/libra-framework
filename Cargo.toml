@@ -342,6 +342,9 @@ split-debuginfo = "unpacked"
 lto = false
 incremental = true
 
+[profile.test]
+inherits = "dev"
+
 # # This is a temporary workaround to avoid multiple library
 # # definitions for LZ4 (caused by rust-rocksdb).
 # # This will be removed once our pull requests land.

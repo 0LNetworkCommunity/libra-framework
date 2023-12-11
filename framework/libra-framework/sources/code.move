@@ -12,6 +12,8 @@ module diem_framework::code {
     use std::option::Option;
     use std::string;
 
+    use diem_std::debug::print;
+
     // ----------------------------------------------------------------------
     // Code Publishing
 
@@ -67,28 +69,28 @@ module diem_framework::code {
     }
 
     /// Package contains duplicate module names with existing modules publised in other packages on this address
-    const EMODULE_NAME_CLASH: u64 = 0x1;
+    const EMODULE_NAME_CLASH: u64 = 01;
 
     /// Cannot upgrade an immutable package
-    const EUPGRADE_IMMUTABLE: u64 = 0x2;
+    const EUPGRADE_IMMUTABLE: u64 = 02;
 
     /// Cannot downgrade a package's upgradability policy
-    const EUPGRADE_WEAKER_POLICY: u64 = 0x3;
+    const EUPGRADE_WEAKER_POLICY: u64 = 03;
 
     /// Cannot delete a module that was published in the same package
-    const EMODULE_MISSING: u64 = 0x4;
+    const EMODULE_MISSING: u64 = 04;
 
     /// Dependency could not be resolved to any published package.
-    const EPACKAGE_DEP_MISSING: u64 = 0x5;
+    const EPACKAGE_DEP_MISSING: u64 = 05;
 
     /// A dependency cannot have a weaker upgrade policy.
-    const EDEP_WEAKER_POLICY: u64 = 0x6;
+    const EDEP_WEAKER_POLICY: u64 = 06;
 
     /// A dependency to an `arbitrary` package must be on the same address.
-    const EDEP_ARBITRARY_NOT_SAME_ADDRESS: u64 = 0x7;
+    const EDEP_ARBITRARY_NOT_SAME_ADDRESS: u64 = 07;
 
     /// Creating a package with incompatible upgrade policy is disabled.
-    const EINCOMPATIBLE_POLICY_DISABLED: u64 = 0x8;
+    const EINCOMPATIBLE_POLICY_DISABLED: u64 = 08;
 
     /// Whether unconditional code upgrade with no compatibility check is allowed. This
     /// publication mode should only be used for modules which aren't shared with user others.
@@ -130,7 +132,9 @@ module diem_framework::code {
     /// Publishes a package at the given signer's address. The caller must provide package metadata describing the
     /// package.
     public fun publish_package(owner: &signer, pack: PackageMetadata, code: vector<vector<u8>>) acquires PackageRegistry {
-        // Disallow incompatible upgrade mode. Governance can decide later if this should be reconsidered.
+        // Disallow incompatible upgrade mode. Governance can decide later if
+        // this should be reconsidered.
+        print(&01);
         assert!(
             pack.upgrade_policy.policy > upgrade_policy_arbitrary().policy,
             error::invalid_argument(EINCOMPATIBLE_POLICY_DISABLED),
@@ -140,47 +144,81 @@ module diem_framework::code {
         if (!exists<PackageRegistry>(addr)) {
             move_to(owner, PackageRegistry { packages: vector::empty() })
         };
+        print(&02);
 
         // Checks for valid dependencies to other packages
         let allowed_deps = check_dependencies(addr, &pack);
 
         // Check package against conflicts
         let module_names = get_module_names(&pack);
-        let packages = &mut borrow_global_mut<PackageRegistry>(addr).packages;
-        let len = vector::length(packages);
-        let index = len;
+        print(&module_names);
+        // E.g (stdlib, diem-stdlib, libra-framework)
+        let current_packages = &mut borrow_global_mut<PackageRegistry>(addr).packages;
+        let current_package_len = vector::length(current_packages);
+        print(&current_package_len);
+        let index = current_package_len;
         let i = 0;
         let upgrade_number = 0;
-        while (i < len) {
-            let old = vector::borrow(packages, i);
+        // for every package (e.g. stdlib, libra-framework) we have installed (old)
+        // let's check to see if the package can either:
+        // a) be upgraded to new using same namespace
+        // b) can coexist with new existing installation
+        while (i < current_package_len) {
+            let old = vector::borrow(current_packages, i);
             if (old.name == pack.name) {
+                print(&021);
                 upgrade_number = old.upgrade_number + 1;
+                print(&old.upgrade_number);
+
                 check_upgradability(old, &pack, &module_names);
                 index = i;
             } else {
+                print(&022);
                 check_coexistence(old, &module_names)
             };
             i = i + 1;
         };
+        print(&03);
 
         // Assign the upgrade counter.
         pack.upgrade_number = upgrade_number;
 
         // Update registry
         let policy = pack.upgrade_policy;
-        if (index < len) {
-            *vector::borrow_mut(packages, index) = pack
+        if (index < current_package_len) {
+            print(&031);
+
+            *vector::borrow_mut(current_packages, index) = pack
         } else {
-            vector::push_back(packages, pack)
+            print(&032);
+
+            vector::push_back(current_packages, pack)
         };
+        print(&04);
 
         // Request publish
-        if (features::code_dependency_check_enabled())
-            request_publish_with_allowed_deps(addr, module_names, allowed_deps, code, policy.policy)
-        else
-        // The new `request_publish_with_allowed_deps` has not yet rolled out, so call downwards
-        // compatible code.
-            request_publish(addr, module_names, code, policy.policy)
+        if (features::code_dependency_check_enabled()) {
+
+            print(&05);
+            request_publish_with_allowed_deps(addr, module_names, allowed_deps,
+            code, policy.policy);
+        } else {
+          print(&06);
+          // The new `request_publish_with_allowed_deps` has not yet rolled out, so call downwards
+          // compatible code.
+          request_publish(addr, module_names, code, policy.policy);
+        };
+        let current_packages =
+        &borrow_global<PackageRegistry>(addr).packages;
+        let first = vector::borrow(current_packages, 0);
+        // print(&first.upgrade_policy.policy);
+        print(&first.upgrade_number);
+
+        let post_upgrade_names = get_module_names(first);
+        // let current_package_len = vector::length(current_packages);
+
+        print(&post_upgrade_names);
+
     }
 
     /// Same as `publish_package` but as an entry function which can be called as a transaction. Because
@@ -195,7 +233,9 @@ module diem_framework::code {
 
     /// Checks whether the given package is upgradable, and returns true if a compatibility check is needed.
     fun check_upgradability(
-        old_pack: &PackageMetadata, new_pack: &PackageMetadata, new_modules: &vector<String>) {
+        old_pack: &PackageMetadata, new_pack: &PackageMetadata, new_modules:
+        &vector<String>) {
+
         assert!(old_pack.upgrade_policy.policy < upgrade_policy_immutable().policy,
             error::invalid_argument(EUPGRADE_IMMUTABLE));
         assert!(can_change_upgrade_policy_to(old_pack.upgrade_policy, new_pack.upgrade_policy),
@@ -302,6 +342,15 @@ module diem_framework::code {
             i = i + 1
         };
         module_names
+    }
+
+    #[view]
+    public fun get_module_names_for_package_index(addr: address, idx: u64): vector<String>
+    acquires PackageRegistry {
+      let current_packages =
+        &borrow_global<PackageRegistry>(addr).packages;
+      let pack = vector::borrow(current_packages, idx);
+      get_module_names(pack)
     }
 
     /// Native function to initiate module loading

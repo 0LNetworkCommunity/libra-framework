@@ -55,41 +55,6 @@ pub fn make_script(remove_validator: AccountAddress) -> PathBuf {
     temp_script_path.path().to_owned()
 }
 
-pub fn make_script_exp() -> PathBuf {
-    let script = r#"
-        script {
-            use diem_framework::reconfiguration;
-
-            fun main(vm_signer: &signer, _framework_signer: &signer) {
-                reconfiguration::emit_epoch(vm_signer);
-            }
-        }
-    "#
-    .to_string();
-
-    let framework_path: PathBuf = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..")
-        .join("framework")
-        .join("libra-framework");
-
-    let mut temp_script_path = TempPath::new();
-    temp_script_path.create_as_dir().unwrap();
-    temp_script_path.persist();
-
-    assert!(temp_script_path.path().exists());
-
-    make_template_files(
-        temp_script_path.path(),
-        &framework_path,
-        "rescue",
-        Some(script),
-    )
-    .unwrap();
-
-    temp_script_path.path().to_owned()
-}
-
 pub fn deadline_secs(secs: u64) -> Instant {
     Instant::now()
         .checked_add(Duration::from_secs(secs))

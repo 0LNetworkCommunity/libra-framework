@@ -40,4 +40,5 @@ diem-temppath = { workspace = true }
 diem-forge = { workspace = true }
 libra-smoke-tests = { workspace = true }
 regex = { workspace = true }
+serde_json = { workspace = true }
 smoke-test = { workspace = true }

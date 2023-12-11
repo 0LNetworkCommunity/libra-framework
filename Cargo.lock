@@ -8289,6 +8289,7 @@ dependencies = [
  "move-vm-test-utils",
  "regex",
  "serde 1.0.163",
+ "serde_json",
  "smoke-test",
  "tokio",
 ]

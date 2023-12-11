@@ -138,7 +138,7 @@ async fn smoke_upgrade_single_step() {
     let query_res =
         query_view::get_view(&s.client(), "0x1::all_your_base::are_belong_to", None, None)
             .await
-            .unwrap();
+            .expect("no all_your_base module found");
     assert!(&query_res.as_array().unwrap()[0]
         .as_str()
         .unwrap()
