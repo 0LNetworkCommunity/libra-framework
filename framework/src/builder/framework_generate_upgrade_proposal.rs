@@ -198,7 +198,13 @@ pub fn libra_compile_script(
 
     let hash = HashValue::sha3_256_of(bytes.as_slice());
 
-    save_build(script_package_dir.to_path_buf(), &bytes, &hash)?;
+    // we should send the parent directory, not the file path!
+    let parent_dir = script_package_dir.parent().ok_or(anyhow::anyhow!(
+        "could not get parent dir of {:?}",
+        script_package_dir
+    ))?;
+
+    save_build(parent_dir.to_path_buf(), &bytes, &hash)?;
 
     Ok((bytes, hash))
 }
