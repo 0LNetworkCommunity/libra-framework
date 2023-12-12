@@ -143,4 +143,5 @@ async fn smoke_upgrade_single_step() {
         .as_str()
         .unwrap()
         .contains("7573"));
+
 }

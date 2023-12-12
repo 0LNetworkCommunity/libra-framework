@@ -60,8 +60,16 @@ impl RescueTxOpts {
             "attempting to compile governance script at: {}",
             &self.script_path.display()
         );
-        // let payload = custom_script(p, None, Some(5));
-        let (code, _hash) = libra_compile_script(&self.script_path, false)?;
+
+        // check if we've already compiled this
+        let maybe_compiled_path = &self.script_path.join("script.mv");
+        let code = if maybe_compiled_path.exists() {
+          std::fs::read(maybe_compiled_path)?
+        } else {
+          let (bytes, _hash) = libra_compile_script(&self.script_path, false)?;
+          bytes
+        };
+
 
         let payload = WriteSetPayload::Script {
             execute_as: CORE_CODE_ADDRESS,

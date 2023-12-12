@@ -183,19 +183,6 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
 
     dbg!(&v);
 
-    let v = s.client()
-        .view(
-            &ViewRequest {
-                function: EntryFunctionId::from_str("0x1::tower_state::get_miner_list")?,
-                type_arguments: vec![],
-                arguments: vec![],
-            },
-            None,
-        )
-        .await;
-
-    dbg!(&v);
-
     std::thread::sleep(Duration::from_secs(100));
     Ok(())
 }
