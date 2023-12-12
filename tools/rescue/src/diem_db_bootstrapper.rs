@@ -64,9 +64,9 @@ impl BootstrapOpts {
         )
         .expect("Failed to open DB.");
 
-        let db = DbReaderWriter::new(db);
+        let db_rw = DbReaderWriter::new(db);
 
-        let executed_trees = db
+        let executed_trees = db_rw
             .reader
             .get_latest_executed_trees()
             .with_context(|| format_err!("Failed to get latest tree state."))?;
@@ -84,7 +84,7 @@ impl BootstrapOpts {
             )
         }
 
-        let committer = calculate_genesis::<DiemVM>(&db, executed_trees, &genesis_txn)
+        let committer = calculate_genesis::<DiemVM>(&db_rw, executed_trees, &genesis_txn)
             .with_context(|| format_err!("Failed to calculate genesis."))?;
 
         println!(

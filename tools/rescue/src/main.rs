@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use clap::{Parser, Subcommand};
 use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
 
@@ -7,9 +9,6 @@ use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
 struct RescueCli {
     #[clap(subcommand)]
     command: Option<Sub>,
-    #[clap(long)]
-    /// apply to db in one step.
-    apply_to_db: bool,
 }
 
 #[derive(Subcommand)]
@@ -29,19 +28,20 @@ async fn main() -> anyhow::Result<()> {
                 db_dir: mission.data_path,
                 genesis_txn_file: blob_path,
                 waypoint_to_verify: None,
-                commit: cli.apply_to_db,
+                commit: false,
             };
-            b.run()?;
-            println!("done");
+            let _ = b.run()?;
         }
         Some(Sub::Bootstrap(bootstrap)) => {
             bootstrap.run()?;
-            println!("done");
-        }
-        _ => {
-            println!("\nI'll be there")
-        }
-    }
 
+
+        }
+        _ => {} // prints help
+    }
+    println!("done");
+    // hack. let the DB close before exiting
+    // TODO: fix in Diem or place in thread
+    std::thread::sleep(Duration::from_millis(10));
     Ok(())
 }
