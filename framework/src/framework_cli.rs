@@ -88,10 +88,9 @@ pub struct GovernanceScript {
 
 impl GovernanceScript {
     pub fn execute(&self) -> anyhow::Result<()> {
-        let script_name = "governance_script_template";
-        let package_dir = self.script_dir.join(script_name);
 
-        if !package_dir.exists() || self.only_make_template {
+        // TODO: glob search for a .move file
+        if !&self.script_dir.exists() || self.only_make_template {
             if !self.only_make_template {
                 println!("ERROR: nothing to compile.")
             }
@@ -99,17 +98,19 @@ impl GovernanceScript {
             if dialoguer::Confirm::new()
                 .with_prompt(&format!(
                     "create a script template at {:?}",
-                    package_dir.display()
+                    &self.script_dir.display()
                 ))
                 .interact()?
             {
+                let script_name = "governance_script_template";
+                let package_dir = self.script_dir.join(script_name);
                 make_template_files(&package_dir, &self.framework_local_dir, script_name, None)?;
             }
             return Ok(());
         }
 
-        let (bytes, hash) = libra_compile_script(&package_dir, false)?;
-        save_build(package_dir, &bytes, &hash)?;
+        let (bytes, hash) = libra_compile_script(&self.script_dir, false)?;
+        save_build(self.script_dir.to_owned(), &bytes, &hash)?;
 
         Ok(())
     }

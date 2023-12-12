@@ -19,12 +19,8 @@ script {
     use diem_framework::stake;
     use diem_framework::block;
     use diem_framework::version;
-    // use diem_std::debug::print;
 
     fun main(vm_signer: signer, framework_signer: signer){
-        //print(&vm_signer);
-        //print(&framework_signer);
-
         let code = vector::empty();
         let code_chunk0 =
         vector[
