@@ -64,6 +64,7 @@ impl RescueTxOpts {
         // check if we've already compiled this
         let maybe_compiled_path = &self.script_path.join("script.mv");
         let code = if maybe_compiled_path.exists() {
+          println!("WARN: we found a script.mv here, we will use that instead of re-compiling. If you have changed your rescue.blob, you should delete this file.");
           std::fs::read(maybe_compiled_path)?
         } else {
           let (bytes, _hash) = libra_compile_script(&self.script_path, false)?;
