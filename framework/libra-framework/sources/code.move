@@ -4,7 +4,7 @@ module diem_framework::code {
     use std::error;
     use std::signer;
     use std::vector;
-    use std::features;
+    // use std::features;
 
     use diem_framework::util;
     use diem_framework::system_addresses;
@@ -196,28 +196,9 @@ module diem_framework::code {
         };
         print(&04);
 
-        // Request publish
-        if (features::code_dependency_check_enabled()) {
+        vector::for_each(code, |el| assert!(!vector::is_empty(&el), 6666));
 
-            print(&05);
-            request_publish_with_allowed_deps(addr, module_names, allowed_deps,
-            code, policy.policy);
-        } else {
-          print(&06);
-          // The new `request_publish_with_allowed_deps` has not yet rolled out, so call downwards
-          // compatible code.
-          request_publish(addr, module_names, code, policy.policy);
-        };
-        let current_packages =
-        &borrow_global<PackageRegistry>(addr).packages;
-        let first = vector::borrow(current_packages, 0);
-        // print(&first.upgrade_policy.policy);
-        print(&first.upgrade_number);
-
-        let post_upgrade_names = get_module_names(first);
-        // let current_package_len = vector::length(current_packages);
-
-        print(&post_upgrade_names);
+        request_publish_with_allowed_deps(addr, module_names, allowed_deps,code, policy.policy);
 
     }
 

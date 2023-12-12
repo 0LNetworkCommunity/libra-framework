@@ -41,8 +41,7 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
             None,
         )
         .await;
-    assert!(v.is_err(), "cannot call function");
-    dbg!(&v);
+    assert!(v.is_err(), "all_your_base::are_belong_to is found when it shouldn't be published yet");
 
     s.swarm.wait_for_all_nodes_to_catchup_to_version(10, Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
         .await
@@ -142,8 +141,8 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
     //     "not all nodes connected after restart"
     // );
 
-    // s.swarm.wait_for_all_nodes_to_catchup_to_version(100, Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
-    // .await?;
+    s.swarm.wait_for_all_nodes_to_catchup_to_version(100, Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
+    .await?;
 
 
     // show progress
@@ -156,36 +155,20 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
     let bal = get_libra_balance(&client, second_val).await?;
     assert!(bal.total > old_bal.total, "transaction did not post");
 
-    // let res = client
-    //     .view(
-    //         &ViewRequest {
-    //             function: EntryFunctionId::from_str("0x1::code::get_module_names_for_package_index")?,
-    //             type_arguments: vec![],
-    //             arguments: vec![
-    //               json!(CORE_CODE_ADDRESS.to_string()),
-    //               json!("0"),
-    //             ],
-    //         },
-    //         None,
-    //     )
-    //     .await;
-
-    // dbg!(&v);
-
-    // let res = client
-    //     .view(
-    //         &ViewRequest {
-    //             function: EntryFunctionId::from_str("0x1::epoch_helper::get_current_epoch")?,
-    //             type_arguments: vec![],
-    //             arguments: vec![],
-    //         },
-    //         None,
-    //     )
-    //     .await;
-
-    // dbg!(&res);
-
-    // // let (_val, rest) = s.swarm.get_all_nodes_clients_with_names().iter().nth(0).unwrap();
+    let res = client
+        .view(
+            &ViewRequest {
+                function: EntryFunctionId::from_str("0x1::code::get_module_names_for_package_index")?,
+                type_arguments: vec![],
+                arguments: vec![
+                  json!(CORE_CODE_ADDRESS.to_string()),
+                  json!("0"),
+                ],
+            },
+            None,
+        )
+        .await?;
+    assert!(res.inner()[0].as_array().unwrap()[0].as_str().unwrap() == "all_your_base", "all_your_base.move not included in package metadata");
 
     let v = s.client()
         .view(
@@ -200,6 +183,19 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
 
     dbg!(&v);
 
+    let v = s.client()
+        .view(
+            &ViewRequest {
+                function: EntryFunctionId::from_str("0x1::tower_state::get_miner_list")?,
+                type_arguments: vec![],
+                arguments: vec![],
+            },
+            None,
+        )
+        .await;
 
+    dbg!(&v);
+
+    std::thread::sleep(Duration::from_secs(100));
     Ok(())
 }
