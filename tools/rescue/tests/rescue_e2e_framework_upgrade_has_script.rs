@@ -2,7 +2,7 @@ mod support;
 use crate::support::{deadline_secs, update_node_config_restart, wait_for_node};
 use diem_api_types::{EntryFunctionId, ViewRequest};
 use diem_config::config::InitialSafetyRulesConfig;
-use diem_forge::{NodeExt, SwarmExt, Swarm};
+use diem_forge::{NodeExt, Swarm, SwarmExt};
 use diem_temppath::TempPath;
 use diem_types::transaction::Transaction;
 use libra_smoke_tests::helpers::get_libra_balance;
@@ -13,6 +13,7 @@ use serde_json::json;
 use smoke_test::test_utils::{swarm_utils::insert_waypoint, MAX_CATCH_UP_WAIT_SECS};
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::time::Instant;
 use std::{fs, time::Duration};
 
 // #[ignore]
@@ -29,9 +30,9 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
         .await
         .expect("could not start libra smoke");
 
-
     // this should produce an error
-    let v = s.client()
+    let v = s
+        .client()
         .view(
             &ViewRequest {
                 function: EntryFunctionId::from_str("0x1::all_your_base::are_belong_to")?,
@@ -41,9 +42,13 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
             None,
         )
         .await;
-    assert!(v.is_err(), "all_your_base::are_belong_to is found when it shouldn't be published yet");
+    assert!(
+        v.is_err(),
+        "all_your_base::are_belong_to is found when it shouldn't be published yet"
+    );
 
-    s.swarm.wait_for_all_nodes_to_catchup_to_version(10, Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
+    s.swarm
+        .wait_for_all_nodes_to_catchup_to_version(10, Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
         .await
         .unwrap();
 
@@ -56,7 +61,9 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
     }
 
     println!("4. verify all nodes are at the same round and no progress being made");
-    s.swarm.wait_for_all_nodes_to_catchup(Duration::from_secs(MAX_CATCH_UP_WAIT_SECS)).await?;
+    s.swarm
+        .wait_for_all_nodes_to_catchup(Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
+        .await?;
 
     println!("5. kill nodes");
     for node in s.swarm.validators_mut() {
@@ -118,8 +125,7 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
         };
 
         let waypoint = bootstrap.run().unwrap();
-        assert!(waypoint_check==waypoint, "waypoint mismatch");
-
+        assert!(waypoint_check == waypoint, "waypoint mismatch");
 
         insert_waypoint(&mut node_config, waypoint);
         node_config
@@ -141,9 +147,9 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
     //     "not all nodes connected after restart"
     // );
 
-    s.swarm.wait_for_all_nodes_to_catchup_to_version(100, Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
-    .await?;
-
+    s.swarm
+        .wait_for_all_nodes_to_catchup_to_version(100, Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
+        .await?;
 
     // show progress
     println!("10. verify transactions work");
@@ -158,19 +164,22 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
     let res = client
         .view(
             &ViewRequest {
-                function: EntryFunctionId::from_str("0x1::code::get_module_names_for_package_index")?,
+                function: EntryFunctionId::from_str(
+                    "0x1::code::get_module_names_for_package_index",
+                )?,
                 type_arguments: vec![],
-                arguments: vec![
-                  json!(CORE_CODE_ADDRESS.to_string()),
-                  json!("0"),
-                ],
+                arguments: vec![json!(CORE_CODE_ADDRESS.to_string()), json!("0")],
             },
             None,
         )
         .await?;
-    assert!(res.inner()[0].as_array().unwrap()[0].as_str().unwrap() == "all_your_base", "all_your_base.move not included in package metadata");
+    assert!(
+        res.inner()[0].as_array().unwrap()[0].as_str().unwrap() == "all_your_base",
+        "all_your_base.move not included in package metadata"
+    );
 
-    let v = s.client()
+    let v = s
+        .client()
         .view(
             &ViewRequest {
                 function: EntryFunctionId::from_str("0x1::all_your_base::are_belong_to")?,
@@ -182,6 +191,21 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
         .await;
 
     dbg!(&v);
+
+    let val = s.swarm.validators_mut().nth(0).unwrap();
+    val.restart().await?;
+    val.wait_until_healthy(deadline_secs(10)).await?;
+    let rc = val.rest_client();
+
+    let res = rc.view(
+        &ViewRequest {
+            function: EntryFunctionId::from_str("0x1::all_your_base::are_belong_to")?,
+            type_arguments: vec![],
+            arguments: vec![],
+        },
+        None,
+    ).await;
+    dbg!(&res);
 
     std::thread::sleep(Duration::from_secs(100));
     Ok(())

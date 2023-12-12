@@ -1565,8 +1565,7 @@ script {
 
 
         //////// THE HACK ////////
-        block::emit_writeset_block_event(&vm_signer, @0x1);
-        diem_governance::reconfigure(&framework_signer);
+
         // WHAT BLACK MAGIC?
         // You need to "touch" the validator set struct before a valid
         // reconfiguration happens.
@@ -1574,6 +1573,9 @@ script {
         // `ValidatorSet not touched on epoch change`
         // A noop will be fine, LOL:
         let _validator_set = stake::get_current_validators();
+        diem_governance::reconfigure(&framework_signer);
+        block::emit_writeset_block_event(&vm_signer, @0x1);
+
         // diem_governance::set_validators(&framework_signer, validator_set);
         //////// END HACK ////////
 
