@@ -4,15 +4,11 @@ module diem_framework::code {
     use std::error;
     use std::signer;
     use std::vector;
-    // use std::features;
-
     use diem_framework::util;
     use diem_framework::system_addresses;
     use diem_std::copyable_any::Any;
     use std::option::Option;
     use std::string;
-
-    use diem_std::debug::print;
 
     // ----------------------------------------------------------------------
     // Code Publishing
@@ -134,7 +130,6 @@ module diem_framework::code {
     public fun publish_package(owner: &signer, pack: PackageMetadata, code: vector<vector<u8>>) acquires PackageRegistry {
         // Disallow incompatible upgrade mode. Governance can decide later if
         // this should be reconsidered.
-        print(&01);
         assert!(
             pack.upgrade_policy.policy > upgrade_policy_arbitrary().policy,
             error::invalid_argument(EINCOMPATIBLE_POLICY_DISABLED),
@@ -144,18 +139,17 @@ module diem_framework::code {
         if (!exists<PackageRegistry>(addr)) {
             move_to(owner, PackageRegistry { packages: vector::empty() })
         };
-        print(&02);
 
         // Checks for valid dependencies to other packages
         let allowed_deps = check_dependencies(addr, &pack);
 
         // Check package against conflicts
         let module_names = get_module_names(&pack);
-        print(&module_names);
+
         // E.g (stdlib, diem-stdlib, libra-framework)
         let current_packages = &mut borrow_global_mut<PackageRegistry>(addr).packages;
         let current_package_len = vector::length(current_packages);
-        print(&current_package_len);
+
         let index = current_package_len;
         let i = 0;
         let upgrade_number = 0;
@@ -166,19 +160,16 @@ module diem_framework::code {
         while (i < current_package_len) {
             let old = vector::borrow(current_packages, i);
             if (old.name == pack.name) {
-                print(&021);
+
                 upgrade_number = old.upgrade_number + 1;
-                print(&old.upgrade_number);
 
                 check_upgradability(old, &pack, &module_names);
                 index = i;
             } else {
-                print(&022);
                 check_coexistence(old, &module_names)
             };
             i = i + 1;
         };
-        print(&03);
 
         // Assign the upgrade counter.
         pack.upgrade_number = upgrade_number;
@@ -186,20 +177,14 @@ module diem_framework::code {
         // Update registry
         let policy = pack.upgrade_policy;
         if (index < current_package_len) {
-            print(&031);
-
             *vector::borrow_mut(current_packages, index) = pack
         } else {
-            print(&032);
-
             vector::push_back(current_packages, pack)
         };
-        print(&04);
 
-        vector::for_each(code, |el| assert!(!vector::is_empty(&el), 6666));
-
+        // Commit note: there is only this option since other `request_publish`
+        // is deprecated
         request_publish_with_allowed_deps(addr, module_names, allowed_deps,code, policy.policy);
-
     }
 
     /// Same as `publish_package` but as an entry function which can be called as a transaction. Because
