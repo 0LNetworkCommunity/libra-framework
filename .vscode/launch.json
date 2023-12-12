@@ -6,25 +6,6 @@
   // target/debug/ol-genesis-tools --fork --output-path /opt/genesis_from_snapshot.blob --snapshot-path /Users/gsimsek/code/libra-main/ol/devnet/snapshot/state_ver_267.54ab`
   "configurations": [
     {
-      "name": "rescue-stdlib",
-      "type": "lldb",
-      "request": "launch",
-      "cargo": {
-        "args": [
-          "build",
-          "-p",
-          "rescue"
-        ],
-      },
-      "args": [
-        "rescue-tx",
-        "--data-path",
-        "/root/test-db/db",
-        "--framework-upgrade",
-      ],
-      "cwd": "${workspaceFolder}"
-    },
-    {
       "name": "rescue-script",
       "type": "lldb",
       "request": "launch",
@@ -40,7 +21,33 @@
         "--data-path",
         "/root/test-db/db",
         "--script-path",
-        "/root/script-template/governance_script_template"
+        "${workspaceFolder}/tools/rescue/fixtures/rescue_framework_script"
+      ],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "rescue-apply",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": [
+          "build",
+          "-p",
+          "rescue"
+        ],
+      },
+      "args": [
+        "bootstrap",
+        "/root/test-db/db",
+        "--genesis-txn-file",
+        "/root/test-db/db/rescue.blob",
+        // "--commit",
+        "--waypoint-to-verify",
+        "30:6239861623e340e87e79fce3afcd6356478378ef65f976909ad3142f3664d19e"
+        // "--db-dir",
+        // "/root/test-db/db",
+        // "--script-path",
+        // "${workspaceFolder}/tools/rescue/fixtures/rescue_framework_script"
       ],
       "cwd": "${workspaceFolder}"
     },
