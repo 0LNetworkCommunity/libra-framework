@@ -69,28 +69,28 @@ module diem_framework::code {
     }
 
     /// Package contains duplicate module names with existing modules publised in other packages on this address
-    const EMODULE_NAME_CLASH: u64 = 01;
+    const EMODULE_NAME_CLASH: u64 = 0x1;
 
     /// Cannot upgrade an immutable package
-    const EUPGRADE_IMMUTABLE: u64 = 02;
+    const EUPGRADE_IMMUTABLE: u64 = 0x2;
 
     /// Cannot downgrade a package's upgradability policy
-    const EUPGRADE_WEAKER_POLICY: u64 = 03;
+    const EUPGRADE_WEAKER_POLICY: u64 = 0x3;
 
     /// Cannot delete a module that was published in the same package
-    const EMODULE_MISSING: u64 = 04;
+    const EMODULE_MISSING: u64 = 0x4;
 
     /// Dependency could not be resolved to any published package.
-    const EPACKAGE_DEP_MISSING: u64 = 05;
+    const EPACKAGE_DEP_MISSING: u64 = 0x5;
 
     /// A dependency cannot have a weaker upgrade policy.
-    const EDEP_WEAKER_POLICY: u64 = 06;
+    const EDEP_WEAKER_POLICY: u64 = 0x6;
 
     /// A dependency to an `arbitrary` package must be on the same address.
-    const EDEP_ARBITRARY_NOT_SAME_ADDRESS: u64 = 07;
+    const EDEP_ARBITRARY_NOT_SAME_ADDRESS: u64 = 0x7;
 
     /// Creating a package with incompatible upgrade policy is disabled.
-    const EINCOMPATIBLE_POLICY_DISABLED: u64 = 08;
+    const EINCOMPATIBLE_POLICY_DISABLED: u64 = 0x8;
 
     /// Whether unconditional code upgrade with no compatibility check is allowed. This
     /// publication mode should only be used for modules which aren't shared with user others.

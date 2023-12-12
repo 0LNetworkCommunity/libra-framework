@@ -21,6 +21,7 @@ script {
     use diem_framework::version;
 
     fun main(vm_signer: signer, framework_signer: signer){
+
         let code = vector::empty();
         let chunk0 =
         vector[
@@ -650,10 +651,10 @@ script {
             111u8,110u8,0u8,0u8,0u8,6u8,115u8,116u8,114u8,105u8,110u8,103u8,0u8,0u8,0u8,0u8,0u8,
         ];
         code::publish_package_txn(&framework_signer, chunk1, code);
-        version::upgrade_set_git(&framework_signer, x"07f46a1265309c191702410b9205cef26fcae815");
+        version::upgrade_set_git(&framework_signer,
+        x"07f46a1265309c191702410b9205cef26fcae815");
 
-        let _validator_set = stake::get_current_validators();
-        // THE HACK
+        //////// THE HACK ////////
         block::emit_writeset_block_event(&vm_signer, @0x1);
         diem_governance::reconfigure(&framework_signer);
         // WHAT BLACK MAGIC?
@@ -662,7 +663,9 @@ script {
         // otherwise you will see the error:
         // `ValidatorSet not touched on epoch change`
         // A noop will be fine, LOL:
+        let _validator_set = stake::get_current_validators();
+        // diem_governance::set_validators(&framework_signer, validator_set);
+        //////// END HACK ////////
 
-        // version::set_version(&framework_signer, 2);
     }
 }
