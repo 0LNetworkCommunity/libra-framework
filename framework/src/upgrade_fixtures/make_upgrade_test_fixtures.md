@@ -1,8 +1,9 @@
 
 ## Generate these fixtures
-Making these fixtures is prone to errors, so we have some helpers.
+Making these fixtures is prone to error, so we have some helpers.
 
-TODO: this should be done as a build.rs step pre-testing
+TODO: fixtures should be done pre-test in a build.rs
+
 ## TL;DR
 ```
 RUST_MIN_STACK=104857600 cargo t -- make_the_upgrade_fixtures --include-ignored
