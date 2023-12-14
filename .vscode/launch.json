@@ -20,9 +20,31 @@
         "rescue-tx",
         "--data-path",
         // "/root/test-db/db",
-        "/root/dbarchive/data_bak_2023-12-11",
+        "/root/dbarchive/data_bak_2023-12-11/db",
         "--script-path",
         "${workspaceFolder}/tools/rescue/fixtures/rescue_framework_script",
+      ],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "rescue-verify",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": [
+          "build",
+          "-p",
+          "rescue"
+        ],
+      },
+      "args": [
+        "bootstrap",
+        // "/root/test-db/db",
+        "/root/dbarchive/data_bak_2023-12-11/db",
+        "--genesis-txn-file",
+        "/root/dbarchive/data_bak_2023-12-11/db/rescue.blob",
+        "--waypoint-to-verify",
+        "2471146:3d54561e00f0dccaf696467ec2ea47f9bf6149536e9e4e66f4bf742742f5a0cc"
       ],
       "cwd": "${workspaceFolder}"
     },
@@ -37,15 +59,15 @@
           "rescue"
         ],
       },
-
       "args": [
         "bootstrap",
         // "/root/test-db/db",
         "/root/dbarchive/data_bak_2023-12-11/db",
         "--genesis-txn-file",
-        "/root/dbarchive/data_bak_2023-12-11/rescue.blob",
+        "/root/dbarchive/data_bak_2023-12-11/db/rescue.blob",
         "--waypoint-to-verify",
-        "2471145:01de50d19e52e7b589fcc3ed5c408163c2b621f0f62d2b1eb2d46facc77b87c0",
+        "2471146:3d54561e00f0dccaf696467ec2ea47f9bf6149536e9e4e66f4bf742742f5a0cc",
+        "--commit",
       ],
       "cwd": "${workspaceFolder}"
     },

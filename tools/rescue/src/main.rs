@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use clap::{Parser, Subcommand};
 use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
 
@@ -25,15 +27,13 @@ async fn main() -> anyhow::Result<()> {
         Some(Sub::RescueTx(mission)) => {
             let blob_path = mission.run().await?;
 
-            if cli.apply_to_db {
-                let b = BootstrapOpts {
-                    db_dir: mission.data_path,
-                    genesis_txn_file: blob_path,
-                    waypoint_to_verify: None,
-                    commit: true,
-                };
-                b.run()?;
+            let b = BootstrapOpts {
+                db_dir: mission.data_path,
+                genesis_txn_file: blob_path,
+                waypoint_to_verify: None,
+                commit: false,
             };
+            b.run()?;
             // println!("SUCCESS: rescue mission complete.");
         }
         Some(Sub::Bootstrap(bootstrap)) => {
@@ -42,7 +42,7 @@ async fn main() -> anyhow::Result<()> {
         }
         _ => {} // will print --help
     }
-        std::thread::sleep(Duration::from_millis(10));
+    std::thread::sleep(Duration::from_millis(10));
 
     Ok(())
 }
