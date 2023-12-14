@@ -74,3 +74,51 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+
+#[tokio::test]
+async fn test_framework() -> anyhow::Result<()> {
+    println!("0. create a valid test database from smoke-tests");
+    let mut s = LibraSmoke::new(Some(1))
+        .await
+        .expect("could not start libra smoke");
+
+    let env = &mut s.swarm;
+
+    let val_db_path = env.validators().next().unwrap().config().storage.dir();
+    assert!(val_db_path.exists());
+
+    for node in env.validators_mut() {
+        node.stop();
+    }
+
+    println!("1. generate a transaction script which should execute");
+
+    // let first_validator_address = env
+    //     .validators()
+    //     .next()
+    //     .unwrap()
+    //     .config()
+    //     .get_peer_id()
+    //     .unwrap();
+
+    let blob_path = diem_temppath::TempPath::new();
+    blob_path.create_as_dir()?;
+
+    // let script_path = support::make_script(first_validator_address);
+
+    println!("2. compile the script");
+
+    let r = RescueTxOpts {
+        data_path: val_db_path.clone(),
+        blob_path: Some(blob_path.path().to_owned()),
+        script_path: None,
+        framework_upgrade: true,
+    };
+    r.run().await?;
+
+    let file = blob_path.path().join("rescue.blob");
+    assert!(file.exists());
+
+ Ok(())
+}

@@ -34,16 +34,15 @@ async fn main() -> anyhow::Result<()> {
                 };
                 b.run()?;
             };
-            println!("SUCCESS: rescue mission complete.");
+            // println!("SUCCESS: rescue mission complete.");
         }
         Some(Sub::Bootstrap(bootstrap)) => {
             bootstrap.run()?;
-            println!("SUCCESS: db boostrapped with writeset (genesis tx)");
+            // println!("SUCCESS: db boostrapped with writeset (genesis tx)");
         }
-        _ => {
-            println!("\nI'll be there")
-        }
+        _ => {} // will print --help
     }
+        std::thread::sleep(Duration::from_millis(10));
 
     Ok(())
 }
