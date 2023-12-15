@@ -13,7 +13,6 @@ use serde_json::json;
 use smoke_test::test_utils::{swarm_utils::insert_waypoint, MAX_CATCH_UP_WAIT_SECS};
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::time::Instant;
 use std::{fs, time::Duration};
 
 // #[ignore]
@@ -95,7 +94,7 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
         bcs::from_bytes::<Transaction>(&buf).unwrap()
     };
 
-    let val_db_path = s.swarm.validators().nth(0).unwrap().config().storage.dir();
+    let val_db_path = s.swarm.validators().next().unwrap().config().storage.dir();
     assert!(val_db_path.exists());
 
     // replace with rescue cli
@@ -193,7 +192,7 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
 
     dbg!(&v);
 
-    let val = s.swarm.validators_mut().nth(0).unwrap();
+    let val = s.swarm.validators_mut().next().unwrap();
     val.restart().await?;
     val.wait_until_healthy(deadline_secs(10)).await?;
     let rc = val.rest_client();

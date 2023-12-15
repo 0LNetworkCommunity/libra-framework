@@ -62,7 +62,7 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
 
     println!("4. with the known waypoint confirm it, and apply the tx");
     let boot = BootstrapOpts {
-        db_dir: val_db_path.clone(),
+        db_dir: val_db_path,
         genesis_txn_file: file,
         waypoint_to_verify: Some(wp),
         commit: true,
@@ -109,7 +109,7 @@ async fn test_can_build_gov_rescue_script() -> anyhow::Result<()> {
     println!("2. compile the script");
 
     let r = RescueTxOpts {
-        data_path: val_db_path.clone(),
+        data_path: val_db_path,
         blob_path: Some(blob_path.path().to_owned()),
         script_path: Some(script_path),
         framework_upgrade: false,
@@ -171,7 +171,7 @@ async fn test_valid_waypoint() -> anyhow::Result<()> {
     );
 
     let boot = BootstrapOpts {
-        db_dir: val_db_path.clone(),
+        db_dir: val_db_path,
         genesis_txn_file: file,
         waypoint_to_verify: None,
         commit: false,
