@@ -21,87 +21,16 @@ use diem_vm_types::change_set::VMChangeSet;
 use libra_framework::head_release_bundle;
 use move_core_types::{
     ident_str,
-    language_storage::{ModuleId, StructTag, CORE_CODE_ADDRESS},
+    language_storage::{StructTag, CORE_CODE_ADDRESS},
     value::{serialize_values, MoveValue},
 };
 
 use move_vm_types::gas::UnmeteredGasMeter;
 
-// pub fn publish_current_framework(dir: &Path) -> anyhow::Result<ChangeSet> {
-//     // let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-//     let db = DiemDB::open(
-//         dir,
-//         true,
-//         NO_OP_STORAGE_PRUNER_CONFIG, /* pruner */
-//         RocksdbConfigs::default(),
-//         false, /* indexer */
-//         BUFFERED_STATE_TARGET_ITEMS,
-//         DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
-//     )
-//     .context("Failed to open DB.")?;
-
-//     let db_rw = DbReaderWriter::new(db);
-
-//     let v = db_rw.reader.get_latest_version().unwrap();
-//     dbg!(&v);
-
-//     let view = db_rw.reader.state_view_at_version(Some(v)).unwrap();
-
-//     let dvm = diem_vm::DiemVM::new(&view);
-//     let adapter = dvm.as_move_resolver(&view);
-
-//     let s_id = SessionId::genesis(diem_crypto::HashValue::zero());
-
-//     let mvm = dvm.internals().move_vm();
-
-//     let mut gas_context = UnmeteredGasMeter;
-//     let mut session = mvm.new_session(&adapter, s_id, false);
-
-//     let new_module_id: ModuleId =
-//         ModuleId::new(CORE_CODE_ADDRESS, "all_your_base".parse().unwrap());
-
-//     let res = session.execute_function_bypass_visibility(
-//         &new_module_id,
-//         ident_str!("are_belong_to"),
-//         vec![],
-//         serialize_values(vec![]),
-//         &mut gas_context,
-//     );
-//     assert!(res.is_err());
-
-//     let new_modules = head_release_bundle();
-//     println!("publish");
-//     session.publish_module_bundle_relax_compatibility(
-//         new_modules.legacy_copy_code(),
-//         CORE_CODE_ADDRESS,
-//         &mut gas_context,
-//     )?;
-
-//     let new_module_id: ModuleId =
-//         ModuleId::new(CORE_CODE_ADDRESS, "all_your_base".parse().unwrap());
-
-//     let res = session.execute_function_bypass_visibility(
-//         &new_module_id,
-//         ident_str!("are_belong_to"),
-//         vec![],
-//         serialize_values(vec![]),
-//         &mut gas_context,
-//     );
-//     dbg!(&res);
-
-//     // let (a, b, ..) = session.finish()?;
-//     let change_set = session
-//         .finish(
-//             &mut (),
-//             &ChangeSetConfigs::unlimited_at_gas_feature_version(LATEST_GAS_FEATURE_VERSION),
-//         )
-//         .context("Failed to generate txn effects")?;
-//     // TODO: Support deltas in fake executor.
-//     let (write_set, _delta_change_set, events) = change_set.unpack();
-//     let change_set = ChangeSet::new(write_set, events);
-//     Ok(change_set)
-// }
-
+// Run a VM session with a dirty database
+// NOTE: there are several implementations of this elsewhere in Diem
+// Some are buggy, some don't have exports or APIs needed (DiemDbBootstrapper). Some have issues with async and db locks (DiemDbDebugger).
+// so we had to rewrite it.
 pub fn libra_run_session<F>(dir: &Path, f: F) -> anyhow::Result<VMChangeSet>
 where
     F: FnOnce(&mut SessionExt) -> anyhow::Result<()>,
@@ -121,7 +50,6 @@ where
     let db_rw = DbReaderWriter::new(db);
 
     let v = db_rw.reader.get_latest_version().unwrap();
-    dbg!(&v);
 
     let view = db_rw.reader.state_view_at_version(Some(v)).unwrap();
     let dvm = diem_vm::DiemVM::new(&view);
@@ -129,7 +57,6 @@ where
     let s_id = SessionId::genesis(diem_crypto::HashValue::zero());
     let mvm: &MoveVmExt = dvm.internals().move_vm();
 
-    // let mut gas_context = UnmeteredGasMeter;
     let mut session = mvm.new_session(&adapter, s_id, false);
 
     ////// FUNCTIONS RUN HERE
@@ -146,24 +73,36 @@ where
     Ok(change_set)
 }
 
+// BLACK MAGIC
+// there's a bunch of branch magic that happens for a writeset.
+// these are the ceremonial dance steps
+// don't upset the gods
 pub fn writeset_voodoo_events(session: &mut SessionExt) -> anyhow::Result<()> {
     libra_execute_session_function(session, "0x1::stake::on_new_epoch", vec![])?;
 
     let vm_signer = MoveValue::Signer(AccountAddress::ZERO);
 
-    libra_execute_session_function(session, "0x1::block::emit_writeset_block_event", vec![
-      &vm_signer,
-      // note: any address would work below
-      &MoveValue::Address(CORE_CODE_ADDRESS)
-    ])?;
+    libra_execute_session_function(
+        session,
+        "0x1::block::emit_writeset_block_event",
+        vec![
+            &vm_signer,
+            // note: any address would work below
+            &MoveValue::Address(CORE_CODE_ADDRESS),
+        ],
+    )?;
 
-    libra_execute_session_function(session, "0x1::reconfiguration::reconfigure_for_rescue", vec![&vm_signer])?;
+    libra_execute_session_function(
+        session,
+        "0x1::reconfiguration::reconfigure_for_rescue",
+        vec![&vm_signer],
+    )?;
 
     // block::emit_writeset_block_event(&vm_signer, @0x1);
     Ok(())
-
 }
 
+// wrapper to publish the latest head framework release
 pub fn upgrade_framework(session: &mut SessionExt) -> anyhow::Result<()> {
     let new_modules = head_release_bundle();
 
@@ -174,6 +113,10 @@ pub fn upgrade_framework(session: &mut SessionExt) -> anyhow::Result<()> {
     )?;
     Ok(())
 }
+
+// wrapper to exectute a function
+// call anythign you want, except #[test] functions
+// note this ignores the `public` and `friend` visibility
 pub fn libra_execute_session_function(
     session: &mut SessionExt,
     function_str: &str,
@@ -192,19 +135,9 @@ pub fn libra_execute_session_function(
     Ok(())
 }
 
-// pub fn libra_finish_session(session: &mut SessionExt) -> anyhow::Result<ChangeSet> {
-//     let change_set = session
-//         .finish(
-//             &mut (),
-//             &ChangeSetConfigs::unlimited_at_gas_feature_version(LATEST_GAS_FEATURE_VERSION),
-//         )
-//         .context("Failed to generate txn effects")?;
-//     let (write_set, _delta_change_set, events) = change_set.unpack();
-
-//     Ok(ChangeSet::new(write_set, events))
-// }
-
-fn get_account_state_by_version(
+// TODO: helper to print out the account state of a DB at rest.
+// this could have a CLI entrypoint
+fn _get_account_state_by_version(
     db: &Arc<dyn DbReader>,
     account: AccountAddress,
     version: Version,
@@ -241,52 +174,71 @@ fn combined_steps(session: &mut SessionExt) -> anyhow::Result<()> {
 }
 
 #[test]
+// test we can publish a db to a fixture
 fn test_publish() {
     let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
 
     publish_current_framework(dir).unwrap();
 }
 
-// fn update_resource_in_session(session: &mut SessionExt) {
-//     let s = StructTag {
-//         address: CORE_CODE_ADDRESS,
-//         module: ident_str!("chain_id").into(),
-//         name: ident_str!("ChainId").into(),
-//         type_params: vec![],
-//     };
-//     let this_type = session.load_type(&s.clone().into()).unwrap();
-//     let layout = session.get_type_layout(&s.into()).unwrap();
-//     let (resource, _) = session
-//         .load_resource(CORE_CODE_ADDRESS, &this_type)
-//         .unwrap();
-//     let mut a = resource.move_from().unwrap();
-// }
-// #[tokio::test]
-// async fn test_debugger() -> anyhow::Result<()> {
-//     let dir: &Path = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
+// TODO: ability to mutate some state without calling a function
+fn _update_resource_in_session(session: &mut SessionExt) {
+    let s = StructTag {
+        address: CORE_CODE_ADDRESS,
+        module: ident_str!("chain_id").into(),
+        name: ident_str!("ChainId").into(),
+        type_params: vec![],
+    };
+    let this_type = session.load_type(&s.clone().into()).unwrap();
+    let _layout = session.get_type_layout(&s.into()).unwrap();
+    let (resource, _) = session
+        .load_resource(CORE_CODE_ADDRESS, &this_type)
+        .unwrap();
+    let _a = resource.move_from().unwrap();
+}
+#[tokio::test]
+async fn test_debugger() -> anyhow::Result<()> {
+    let dir: &Path = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
 
-//     let db = DiemDebugger::db(dir)?;
+    let db = DiemDebugger::db(dir)?;
 
-//     let v = db.get_latest_version().await?;
-//     // dbg!(&v);
-//     // let c = db.get_version_by_account_sequence(CORE_CODE_ADDRESS, 0).await?;
-//     // dbg!(&c);
-//     // db.
+    let v = db.get_latest_version().await?;
+    // dbg!(&v);
+    // let c = db.get_version_by_account_sequence(CORE_CODE_ADDRESS, 0).await?;
+    // dbg!(&c);
+    // db.
 
-//     let state = db
-//         .annotate_account_state_at_version(CORE_CODE_ADDRESS, v)
-//         .await?;
-//     dbg!(&state);
-//     Ok(())
-// }
+    let state = db
+        .annotate_account_state_at_version(CORE_CODE_ADDRESS, v)
+        .await?;
+    dbg!(&state);
+    Ok(())
+}
 
 #[test]
-fn test_open() -> anyhow::Result<()> {
-    use move_core_types::identifier::IdentStr;
-    use move_vm_test_utils::gas_schedule::GasStatus;
-    // let module_id = ModuleId::new(CORE_CODE_ADDRESS, "account".parse().unwrap());
-    // let function_name: &IdentStr = IdentStr::new("get_authentication_key").unwrap();
+// the writeset voodoo needs to be perfect
+fn test_voodoo() {
+    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
+    libra_run_session(dir, writeset_voodoo_events).unwrap();
+}
 
+#[ignore]
+#[test]
+// helper to see if an upgraded function is found in the DB
+fn test_base() {
+    fn check_base(session: &mut SessionExt) -> anyhow::Result<()> {
+        libra_execute_session_function(session, "0x1::all_your_base::are_belong_to", vec![])?;
+        Ok(())
+    }
+
+    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
+
+    libra_run_session(dir, check_base).unwrap();
+}
+
+#[test]
+// testing we can open a database from fixtures, and produce a VM session
+fn meta_test_open_db_sync() -> anyhow::Result<()> {
     let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
     let db = DiemDB::open(
         dir,
@@ -302,7 +254,6 @@ fn test_open() -> anyhow::Result<()> {
     let db_rw = DbReaderWriter::new(db);
 
     let v = db_rw.reader.get_latest_version().unwrap();
-    dbg!(&v);
 
     let view = db_rw.reader.state_view_at_version(Some(v)).unwrap();
 
@@ -317,73 +268,6 @@ fn test_open() -> anyhow::Result<()> {
     let s_id = SessionId::genesis(diem_crypto::HashValue::zero());
 
     let mvm = dvm.internals().move_vm();
-    let mut gas_context = GasStatus::new_unmetered();
-    let mut session = mvm.new_session(&adapter, s_id, false);
-
-    let a = vec![MoveValue::Signer(CORE_CODE_ADDRESS)];
-    let _args = serialize_values(&a);
-
-    let _module_id: ModuleId = ModuleId::new(CORE_CODE_ADDRESS, "tower_state".parse().unwrap());
-    let _function_name: &IdentStr = IdentStr::new("epoch_param_reset").unwrap();
-
-    let new_modules = head_release_bundle();
-    println!("publish");
-    session.publish_module_bundle_relax_compatibility(
-        new_modules.legacy_copy_code(),
-        CORE_CODE_ADDRESS,
-        &mut gas_context,
-    )?;
-    // session.
-
-    // let tag = session.get_type_tag(&this_type).unwrap();
-    // tag
-    // tag.
-
-    // if let Some(pr) = session.extract_publish_request() {
-    //     dbg!(pr.expected_modules.len());
-    // }
-
-    let new_module_id: ModuleId =
-        ModuleId::new(CORE_CODE_ADDRESS, "all_your_base".parse().unwrap());
-
-    let res = session.execute_function_bypass_visibility(
-        &new_module_id,
-        ident_str!("are_belong_to"),
-        vec![],
-        serialize_values(vec![]),
-        &mut gas_context,
-    );
-    dbg!(&res);
-    // dbg!(&session.exists_module(&new_module_id));
-
-    // session.exists_module(&);
-
-    // let e = session.exists_module(&module_id).unwrap();
-    // dbg!(&p_r.destination);
-    // let converter = adapter.as_converter(db_rw.reader);
-
-    // let move_vm = d.internals().move_vm();
-
-    // move_vm.new_session(&view, session_id, aggregator_enabled)
-    // dbg!(&cache_invalid);
+    let _session = mvm.new_session(&adapter, s_id, false);
     Ok(())
-}
-
-#[test]
-fn test_voodoo() {
-    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-    libra_run_session(dir, writeset_voodoo_events).unwrap();
-}
-
-#[test]
-
-fn test_base() {
-  fn check_base(session: &mut SessionExt) -> anyhow::Result<()> {
-      libra_execute_session_function(session, "0x1::all_your_base::are_belong_to", vec![])?;
-      Ok(())
-  }
-
-  let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-
-  libra_run_session(dir, check_base).unwrap();
 }
