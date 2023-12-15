@@ -1,13 +1,12 @@
 use std::{collections::HashMap, path::Path, sync::Arc};
 
-use anyhow::{bail, Context};
+use anyhow::{bail, format_err, Context};
 
 use diem_config::config::{
     RocksdbConfigs, BUFFERED_STATE_TARGET_ITEMS, DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
     NO_OP_STORAGE_PRUNER_CONFIG,
 };
 use diem_db::DiemDB;
-use diem_debugger::DiemDebugger;
 use diem_gas::{ChangeSetConfigs, LATEST_GAS_FEATURE_VERSION};
 use diem_storage_interface::{
     state_view::DbStateViewAtVersion, DbReader, DbReaderWriter, MAX_REQUEST_LIMIT,
@@ -15,17 +14,18 @@ use diem_storage_interface::{
 use diem_types::{
     account_address::AccountAddress,
     state_store::{state_key::StateKey, state_key_prefix::StateKeyPrefix, state_value::StateValue},
-    transaction::{ChangeSet, Version}, write_set::WriteSet,
+    transaction::{ChangeSet, Version},
 };
-use diem_vm::move_vm_ext::{SessionExt, SessionId};
+use diem_vm::move_vm_ext::{MoveVmExt, SessionExt, SessionId};
+use diem_vm_types::change_set::VMChangeSet;
 use libra_framework::head_release_bundle;
 use move_core_types::{
     ident_str,
-    identifier::IdentStr,
-    language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS},
+    language_storage::{ModuleId, StructTag, CORE_CODE_ADDRESS},
     value::{serialize_values, MoveValue},
 };
-use move_vm_test_utils::gas_schedule::GasStatus;
+
+use move_vm_types::gas::UnmeteredGasMeter;
 
 pub fn publish_current_framework(dir: &Path) -> anyhow::Result<ChangeSet> {
     // let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
@@ -54,7 +54,7 @@ pub fn publish_current_framework(dir: &Path) -> anyhow::Result<ChangeSet> {
 
     let mvm = dvm.internals().move_vm();
 
-    let mut gas_context = GasStatus::new_unmetered();
+    let mut gas_context = UnmeteredGasMeter;
     let mut session = mvm.new_session(&adapter, s_id, false);
 
     let new_module_id: ModuleId =
@@ -62,7 +62,7 @@ pub fn publish_current_framework(dir: &Path) -> anyhow::Result<ChangeSet> {
 
     let res = session.execute_function_bypass_visibility(
         &new_module_id,
-        ident_str!("are_belong_to").into(),
+        ident_str!("are_belong_to"),
         vec![],
         serialize_values(vec![]),
         &mut gas_context,
@@ -82,7 +82,7 @@ pub fn publish_current_framework(dir: &Path) -> anyhow::Result<ChangeSet> {
 
     let res = session.execute_function_bypass_visibility(
         &new_module_id,
-        ident_str!("are_belong_to").into(),
+        ident_str!("are_belong_to"),
         vec![],
         serialize_values(vec![]),
         &mut gas_context,
@@ -103,44 +103,135 @@ pub fn publish_current_framework(dir: &Path) -> anyhow::Result<ChangeSet> {
 }
 
 #[test]
+fn test_voodoo() {
+    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
+    libra_run_session(dir, writeset_voodoo_events).unwrap();
+}
+
+pub fn libra_run_session<F>(dir: &Path, f: F) -> anyhow::Result<VMChangeSet>
+where
+    F: FnOnce(&mut SessionExt) -> anyhow::Result<()>,
+{
+    let db = DiemDB::open(
+        dir,
+        true,
+        NO_OP_STORAGE_PRUNER_CONFIG, /* pruner */
+        RocksdbConfigs::default(),
+        false, /* indexer */
+        BUFFERED_STATE_TARGET_ITEMS,
+        DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
+    )
+    .context("Failed to open DB.")
+    .unwrap();
+
+    let db_rw = DbReaderWriter::new(db);
+
+    let v = db_rw.reader.get_latest_version().unwrap();
+    dbg!(&v);
+
+    let view = db_rw.reader.state_view_at_version(Some(v)).unwrap();
+    let dvm = diem_vm::DiemVM::new(&view);
+    let adapter = dvm.as_move_resolver(&view);
+    let s_id = SessionId::genesis(diem_crypto::HashValue::zero());
+    let mvm: &MoveVmExt = dvm.internals().move_vm();
+
+    // let mut gas_context = UnmeteredGasMeter;
+    let mut session = mvm.new_session(&adapter, s_id, false);
+
+    ////// FUNCTIONS RUN HERE
+    f(&mut session)
+        .map_err(|err| format_err!("Unexpected VM Error Running Rescue VM Session: {:?}", err))?;
+    //////
+
+    let change_set = session.finish(
+        &mut (),
+        &ChangeSetConfigs::unlimited_at_gas_feature_version(LATEST_GAS_FEATURE_VERSION),
+    )?;
+    Ok(change_set)
+}
+
+pub fn writeset_voodoo_events(session: &mut SessionExt) -> anyhow::Result<()> {
+    libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])
+}
+
+pub fn upgrade_framework(session: &mut SessionExt) -> anyhow::Result<()> {
+    let new_modules = head_release_bundle();
+
+    session.publish_module_bundle_relax_compatibility(
+        new_modules.legacy_copy_code(),
+        CORE_CODE_ADDRESS,
+        &mut UnmeteredGasMeter,
+    )?;
+    Ok(())
+}
+pub fn libra_execute_session_function(
+    session: &mut SessionExt,
+    function_str: &str,
+    args: Vec<&MoveValue>,
+) -> anyhow::Result<()> {
+    let function_tag: StructTag = function_str.parse()?;
+
+    let _res = session.execute_function_bypass_visibility(
+        &function_tag.module_id(),
+        function_tag.name.as_ident_str(),
+        function_tag.type_params,
+        serialize_values(args),
+        &mut UnmeteredGasMeter,
+    );
+
+    Ok(())
+}
+
+// pub fn libra_finish_session(session: &mut SessionExt) -> anyhow::Result<ChangeSet> {
+//     let change_set = session
+//         .finish(
+//             &mut (),
+//             &ChangeSetConfigs::unlimited_at_gas_feature_version(LATEST_GAS_FEATURE_VERSION),
+//         )
+//         .context("Failed to generate txn effects")?;
+//     let (write_set, _delta_change_set, events) = change_set.unpack();
+
+//     Ok(ChangeSet::new(write_set, events))
+// }
+
+#[test]
 fn test_publish() {
     let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
     let ws = publish_current_framework(dir).unwrap();
-
 }
 
-fn update_resource_in_session(session: &mut SessionExt) {
-    let s = StructTag {
-        address: CORE_CODE_ADDRESS,
-        module: ident_str!("chain_id").into(),
-        name: ident_str!("ChainId").into(),
-        type_params: vec![],
-    };
-    let this_type = session.load_type(&s.clone().into()).unwrap();
-    let layout = session.get_type_layout(&s.into()).unwrap();
-    let (resource, _) = session
-        .load_resource(CORE_CODE_ADDRESS, &this_type)
-        .unwrap();
-    let mut a = resource.move_from().unwrap();
-}
-#[tokio::test]
-async fn test_debugger() -> anyhow::Result<()> {
-    let dir: &Path = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
+// fn update_resource_in_session(session: &mut SessionExt) {
+//     let s = StructTag {
+//         address: CORE_CODE_ADDRESS,
+//         module: ident_str!("chain_id").into(),
+//         name: ident_str!("ChainId").into(),
+//         type_params: vec![],
+//     };
+//     let this_type = session.load_type(&s.clone().into()).unwrap();
+//     let layout = session.get_type_layout(&s.into()).unwrap();
+//     let (resource, _) = session
+//         .load_resource(CORE_CODE_ADDRESS, &this_type)
+//         .unwrap();
+//     let mut a = resource.move_from().unwrap();
+// }
+// #[tokio::test]
+// async fn test_debugger() -> anyhow::Result<()> {
+//     let dir: &Path = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
 
-    let db = DiemDebugger::db(dir)?;
+//     let db = DiemDebugger::db(dir)?;
 
-    let v = db.get_latest_version().await?;
-    // dbg!(&v);
-    // let c = db.get_version_by_account_sequence(CORE_CODE_ADDRESS, 0).await?;
-    // dbg!(&c);
-    // db.
+//     let v = db.get_latest_version().await?;
+//     // dbg!(&v);
+//     // let c = db.get_version_by_account_sequence(CORE_CODE_ADDRESS, 0).await?;
+//     // dbg!(&c);
+//     // db.
 
-    let state = db
-        .annotate_account_state_at_version(CORE_CODE_ADDRESS, v)
-        .await?;
-    dbg!(&state);
-    Ok(())
-}
+//     let state = db
+//         .annotate_account_state_at_version(CORE_CODE_ADDRESS, v)
+//         .await?;
+//     dbg!(&state);
+//     Ok(())
+// }
 
 #[test]
 fn test_open() -> anyhow::Result<()> {

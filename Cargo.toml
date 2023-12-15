@@ -63,6 +63,7 @@ diem-types = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "83
 diem-gas = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "839afb1"  }
 diem-vm = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "839afb1"  }
 diem-vm-genesis = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "839afb1"  }
+diem-vm-types = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "839afb1"  }
 diem-executor = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "839afb1"  }
 diem-framework = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "839afb1"  }
 diem-cached-packages = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "839afb1"  }
@@ -320,6 +321,7 @@ move-command-line-common = { git = "https://github.com/0LNetworkCommunity/diem.g
 move-compiler = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "839afb1"  }
 move-model = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "839afb1"  }
 move-vm-test-utils = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "839afb1"  }
+move-vm-types  = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "839afb1"  }
 
 # uses a profile similar to `cli` in Diem/Cargo.toml
 # optimized for performance and size

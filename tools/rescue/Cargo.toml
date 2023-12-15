@@ -26,12 +26,14 @@ diem-storage-interface = { workspace = true }
 diem-types = { workspace = true }
 
 diem-vm = { workspace = true }
+diem-vm-types = { workspace = true }
 
 handlebars = { workspace = true }
 libra-framework = { workspace = true }
 move-compiler = { workspace = true }
 move-core-types = { workspace = true }
 move-vm-test-utils = { workspace = true }
+move-vm-types = { workspace = true }
 serde = { workspace = true }
 
 

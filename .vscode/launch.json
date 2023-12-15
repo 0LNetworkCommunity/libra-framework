@@ -21,8 +21,9 @@
         "--data-path",
         // "/root/test-db/db",
         "/root/dbarchive/data_bak_2023-12-11/db",
-        "--script-path",
-        "${workspaceFolder}/tools/rescue/fixtures/rescue_framework_script",
+        // "--script-path",
+        // "${workspaceFolder}/tools/rescue/fixtures/rescue_framework_script",
+        "--framework-upgrade"
       ],
       "cwd": "${workspaceFolder}"
     },

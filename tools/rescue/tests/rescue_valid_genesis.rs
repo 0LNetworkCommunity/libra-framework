@@ -75,7 +75,6 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
     Ok(())
 }
 
-
 #[tokio::test]
 async fn test_framework() -> anyhow::Result<()> {
     println!("0. create a valid test database from smoke-tests");
@@ -112,5 +111,5 @@ async fn test_framework() -> anyhow::Result<()> {
     let file = blob_path.path().join("rescue.blob");
     assert!(file.exists());
 
- Ok(())
+    Ok(())
 }
