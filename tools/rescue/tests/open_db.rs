@@ -8,14 +8,14 @@ use diem_config::config::{
 };
 use diem_db::DiemDB;
 use diem_debugger::DiemDebugger;
-use diem_gas::{transaction::storage, LATEST_GAS_FEATURE_VERSION};
+use diem_gas::{ChangeSetConfigs, LATEST_GAS_FEATURE_VERSION};
 use diem_storage_interface::{
     state_view::DbStateViewAtVersion, DbReader, DbReaderWriter, MAX_REQUEST_LIMIT,
 };
 use diem_types::{
     account_address::AccountAddress,
     state_store::{state_key::StateKey, state_key_prefix::StateKeyPrefix, state_value::StateValue},
-    transaction::{ChangeSet, Version},
+    transaction::{ChangeSet, Version}, write_set::WriteSet,
 };
 use diem_vm::move_vm_ext::{SessionExt, SessionId};
 use libra_framework::head_release_bundle;
@@ -27,7 +27,7 @@ use move_core_types::{
 };
 use move_vm_test_utils::gas_schedule::GasStatus;
 
-pub fn publish_current_framework(dir: &Path) -> anyhow::Result<Writeset> {
+pub fn publish_current_framework(dir: &Path) -> anyhow::Result<WriteSet> {
     // let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
     let db = DiemDB::open(
         dir,
@@ -99,7 +99,7 @@ pub fn publish_current_framework(dir: &Path) -> anyhow::Result<Writeset> {
     // TODO: Support deltas in fake executor.
     let (write_set, _delta_change_set, _events) = change_set.unpack();
 
-    Ok(WriteSet)
+    Ok(write_set)
 }
 
 #[test]
