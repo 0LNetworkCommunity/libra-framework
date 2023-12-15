@@ -17,7 +17,6 @@ use crate::support::{update_node_config_restart, wait_for_node};
 /// NOTE: much of this is duplicated in rescue_cli_creates_blob and e2e but we
 /// do want the granularity.
 async fn test_create_e2e_rescue_tx() -> anyhow::Result<()> {
-
     let num_nodes: usize = 5;
     let mut s = LibraSmoke::new(Some(num_nodes as u8))
         .await

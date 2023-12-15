@@ -91,7 +91,11 @@ pub fn libra_author_script_file(
     }
 
     for i in 2..num_of_chunks + 1 {
-        emitln!(writer, "vector::append(&mut metadata_chunk1, metadata_chunk{});", i);
+        emitln!(
+            writer,
+            "vector::append(&mut metadata_chunk1, metadata_chunk{});",
+            i
+        );
     }
 
     emitln!(

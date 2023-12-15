@@ -88,7 +88,6 @@ pub struct GovernanceScript {
 
 impl GovernanceScript {
     pub fn execute(&self) -> anyhow::Result<()> {
-
         // TODO: glob search for a .move file
         if !&self.script_dir.exists() || self.only_make_template {
             if !self.only_make_template {

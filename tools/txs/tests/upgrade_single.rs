@@ -1,4 +1,3 @@
-
 use std::fs;
 
 use diem_types::chain_id::NamedChain;
@@ -143,5 +142,4 @@ async fn smoke_upgrade_single_step() {
         .as_str()
         .unwrap()
         .contains("7573"));
-
 }

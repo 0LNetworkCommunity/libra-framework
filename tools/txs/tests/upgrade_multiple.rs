@@ -31,7 +31,6 @@ async fn smoke_upgrade_multiple_steps() {
             .await
             .expect("could not init validator config");
 
-
     // This step should fail. The view function does not yet exist in the system address.
     // we will upgrade a new binary which will include this function.
     let query_res =
@@ -43,7 +42,6 @@ async fn smoke_upgrade_multiple_steps() {
         .join("upgrade-multi-lib")
         .join("1-move-stdlib");
     assert!(script_dir.exists(), "can't find upgrade fixtures");
-
 
     let mut cli = TxsCli {
         subcommand: Some(Upgrade(Propose {
@@ -137,7 +135,6 @@ async fn smoke_upgrade_multiple_steps() {
     cli.run().await.expect("cannot resolve proposal at step 1");
     //////////////////////////////
 
-
     ///////// SHOW TIME, RESOLVE SECOND STEP 2/3 ////////
     // Now try to resolve upgrade
     let script_dir = upgrade_fixtures::fixtures_path()
@@ -149,7 +146,6 @@ async fn smoke_upgrade_multiple_steps() {
     }));
     cli.run().await.expect("cannot resolve proposal at step 2");
     //////////////////////////////
-
 
     ///////// SHOW TIME, RESOLVE THIRD STEP 3/3 ////////
     // THIS IS THE STEP THAT CONTAINS THE CHANGED MODULE all_your_base

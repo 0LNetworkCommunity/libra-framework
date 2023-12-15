@@ -101,7 +101,7 @@ impl BootstrapOpts {
                 waypoint,
                 output_waypoint,
             );
-            println!("Waypoint verified.");
+            println!("waypoint verified");
         }
 
         if self.commit {

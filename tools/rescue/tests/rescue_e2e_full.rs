@@ -71,7 +71,7 @@ async fn test_rescue_e2e_with_sync() -> anyhow::Result<()> {
         blob_path: None, // defaults to data_path/rescue.blob
         script_path,
     };
-    let genesis_blob_path = rescue.run().await.unwrap();
+    let genesis_blob_path = rescue.run().unwrap();
 
     assert!(genesis_blob_path.exists());
 

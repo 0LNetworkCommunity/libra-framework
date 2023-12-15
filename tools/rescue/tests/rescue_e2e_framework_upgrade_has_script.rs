@@ -197,14 +197,16 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
     val.wait_until_healthy(deadline_secs(10)).await?;
     let rc = val.rest_client();
 
-    let res = rc.view(
-        &ViewRequest {
-            function: EntryFunctionId::from_str("0x1::all_your_base::are_belong_to")?,
-            type_arguments: vec![],
-            arguments: vec![],
-        },
-        None,
-    ).await;
+    let res = rc
+        .view(
+            &ViewRequest {
+                function: EntryFunctionId::from_str("0x1::all_your_base::are_belong_to")?,
+                type_arguments: vec![],
+                arguments: vec![],
+            },
+            None,
+        )
+        .await;
     dbg!(&res);
 
     std::thread::sleep(Duration::from_secs(100));

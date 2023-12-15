@@ -3,17 +3,17 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 
-use anyhow::Context;
 use crate::builder::framework_generate_upgrade_proposal::make_framework_upgrade_artifacts;
+use anyhow::Context;
 
 // TODO: This could be generated dynamically at the start of the test suites. using `Once`. Though if the tools aren't compiled it will take approximately forever to do so. Hence fixtures, though not ideal.
 
 pub fn fixtures_path() -> PathBuf {
     let this_crate = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
     this_crate
-    .join("src")
-    .join("upgrade_fixtures")
-    .join("fixtures")
+        .join("src")
+        .join("upgrade_fixtures")
+        .join("fixtures")
 }
 
 pub fn insert_test_file(core_module_name: &str, remove: bool) -> anyhow::Result<()> {
@@ -25,7 +25,11 @@ pub fn insert_test_file(core_module_name: &str, remove: bool) -> anyhow::Result<
         .join("framework")
         .join(core_module_name)
         .join("sources");
-    assert!(core_module_sources.exists(), "cannot find sources for: {}", core_module_name);
+    assert!(
+        core_module_sources.exists(),
+        "cannot find sources for: {}",
+        core_module_name
+    );
 
     let away_file_path = core_module_sources.join("all_your_base.move");
     if remove {
@@ -80,7 +84,11 @@ fn make_the_upgrade_fixtures() -> anyhow::Result<()> {
     // places the all_your_base in the libra_framework dir
     let p = fixture_path.join("upgrade-multi-lib");
     std::fs::create_dir_all(&p)?;
-    let modules = vec!["move-stdlib".to_string(), "vendor-stdlib".to_string(), "libra-framework".to_string()];
+    let modules = vec![
+        "move-stdlib".to_string(),
+        "vendor-stdlib".to_string(),
+        "libra-framework".to_string(),
+    ];
 
     generate_fixtures(p, modules)?;
     Ok(())

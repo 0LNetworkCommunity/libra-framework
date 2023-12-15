@@ -17,12 +17,11 @@ enum Sub {
     Bootstrap(BootstrapOpts),
 }
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<()> {
     let cli = RescueCli::parse();
     match cli.command {
         Some(Sub::RescueTx(mission)) => {
-            let blob_path = mission.run().await?;
+            let blob_path = mission.run()?;
 
             let b = BootstrapOpts {
                 db_dir: mission.data_path,
@@ -34,8 +33,6 @@ async fn main() -> anyhow::Result<()> {
         }
         Some(Sub::Bootstrap(bootstrap)) => {
             bootstrap.run()?;
-
-
         }
         _ => {} // prints help
     }
