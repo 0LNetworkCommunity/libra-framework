@@ -23,7 +23,7 @@ pub struct RescueTxOpts {
 }
 
 impl RescueTxOpts {
-    pub async fn run(&self) -> anyhow::Result<PathBuf> {
+    pub fn run(&self) -> anyhow::Result<PathBuf> {
         let db_path = self.data_path.clone();
 
         // There are two options:
@@ -59,8 +59,8 @@ impl RescueTxOpts {
     }
 }
 
-#[tokio::test]
-async fn test_create_blob() -> anyhow::Result<()> {
+#[test]
+fn test_create_blob() -> anyhow::Result<()> {
     use diem_temppath;
     use std::path::Path;
 
@@ -83,7 +83,7 @@ async fn test_create_blob() -> anyhow::Result<()> {
         script_path: Some(script_path),
         framework_upgrade: false,
     };
-    r.run().await?;
+    r.run()?;
 
     assert!(blob_path.path().join("rescue.blob").exists());
 

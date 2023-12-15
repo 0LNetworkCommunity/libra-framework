@@ -228,7 +228,7 @@ fn combined_steps(session: &mut SessionExt) -> anyhow::Result<()> {
 fn test_publish() {
     let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
 
-    libra_run_session(dir, combined_steps).unwrap();
+    publish_current_framework(dir).unwrap();
 }
 
 // fn update_resource_in_session(session: &mut SessionExt) {

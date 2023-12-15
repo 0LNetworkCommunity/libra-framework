@@ -42,7 +42,7 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
         script_path: Some(script_path),
         framework_upgrade: false,
     };
-    r.run().await?;
+    r.run()?;
 
     let file = blob_path.path().join("rescue.blob");
     assert!(file.exists());
@@ -106,7 +106,7 @@ async fn test_framework() -> anyhow::Result<()> {
         script_path: None,
         framework_upgrade: true,
     };
-    r.run().await?;
+    r.run()?;
 
     let file = blob_path.path().join("rescue.blob");
     assert!(file.exists());

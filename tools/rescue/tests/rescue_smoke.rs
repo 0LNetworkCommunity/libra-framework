@@ -112,7 +112,7 @@ async fn test_genesis_transaction_flow() {
         script_path: Some(script_path),
         framework_upgrade: false,
     };
-    let genesis_blob_path = rescue.run().await.unwrap();
+    let genesis_blob_path = rescue.run().unwrap();
 
     assert!(genesis_blob_path.exists());
 
