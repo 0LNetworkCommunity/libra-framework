@@ -8,18 +8,16 @@ use diem_config::config::{
 };
 use diem_db::DiemDB;
 use diem_debugger::DiemDebugger;
-use diem_gas::{LATEST_GAS_FEATURE_VERSION, transaction::storage};
+use diem_gas::{transaction::storage, LATEST_GAS_FEATURE_VERSION};
 use diem_storage_interface::{
-    state_view::{DbStateViewAtVersion},
-    DbReader, DbReaderWriter, MAX_REQUEST_LIMIT,
+    state_view::DbStateViewAtVersion, DbReader, DbReaderWriter, MAX_REQUEST_LIMIT,
 };
 use diem_types::{
-
     account_address::AccountAddress,
     state_store::{state_key::StateKey, state_key_prefix::StateKeyPrefix, state_value::StateValue},
     transaction::{ChangeSet, Version},
 };
-use diem_vm::move_vm_ext::{SessionId, SessionExt};
+use diem_vm::move_vm_ext::{SessionExt, SessionId};
 use libra_framework::head_release_bundle;
 use move_core_types::{
     ident_str,
@@ -59,9 +57,16 @@ pub fn publish_current_framework(dir: &Path) -> anyhow::Result<Writeset> {
     let mut gas_context = GasStatus::new_unmetered();
     let mut session = mvm.new_session(&adapter, s_id, false);
 
-    let new_module_id: ModuleId = ModuleId::new(CORE_CODE_ADDRESS, "all_your_base".parse().unwrap());
+    let new_module_id: ModuleId =
+        ModuleId::new(CORE_CODE_ADDRESS, "all_your_base".parse().unwrap());
 
-    let res = session.execute_function_bypass_visibility(&new_module_id, ident_str!("are_belong_to").into(), vec![], serialize_values(vec![]), &mut gas_context);
+    let res = session.execute_function_bypass_visibility(
+        &new_module_id,
+        ident_str!("are_belong_to").into(),
+        vec![],
+        serialize_values(vec![]),
+        &mut gas_context,
+    );
     assert!(res.is_err());
 
     let new_modules = head_release_bundle();
@@ -72,25 +77,30 @@ pub fn publish_current_framework(dir: &Path) -> anyhow::Result<Writeset> {
         &mut gas_context,
     )?;
 
-    let new_module_id: ModuleId = ModuleId::new(CORE_CODE_ADDRESS, "all_your_base".parse().unwrap());
+    let new_module_id: ModuleId =
+        ModuleId::new(CORE_CODE_ADDRESS, "all_your_base".parse().unwrap());
 
-    let res = session.execute_function_bypass_visibility(&new_module_id, ident_str!("are_belong_to").into(), vec![], serialize_values(vec![]), &mut gas_context);
+    let res = session.execute_function_bypass_visibility(
+        &new_module_id,
+        ident_str!("are_belong_to").into(),
+        vec![],
+        serialize_values(vec![]),
+        &mut gas_context,
+    );
     dbg!(&res);
 
     // let (a, b, ..) = session.finish()?;
     let change_set = session
-      .finish(
-          &mut (),
-          &ChangeSetConfigs::unlimited_at_gas_feature_version(LATEST_GAS_FEATURE_VERSION),
-      )
-      .context("Failed to generate txn effects")?;
+        .finish(
+            &mut (),
+            &ChangeSetConfigs::unlimited_at_gas_feature_version(LATEST_GAS_FEATURE_VERSION),
+        )
+        .context("Failed to generate txn effects")?;
     // TODO: Support deltas in fake executor.
     let (write_set, _delta_change_set, _events) = change_set.unpack();
 
     Ok(WriteSet)
 }
-
-
 
 #[test]
 fn test_publish() {
@@ -99,7 +109,7 @@ fn test_publish() {
 }
 
 fn update_resource_in_session(session: &mut SessionExt) {
-      let s = StructTag {
+    let s = StructTag {
         address: CORE_CODE_ADDRESS,
         module: ident_str!("chain_id").into(),
         name: ident_str!("ChainId").into(),
@@ -175,7 +185,6 @@ fn test_open() -> anyhow::Result<()> {
     let module_id: ModuleId = ModuleId::new(CORE_CODE_ADDRESS, "tower_state".parse().unwrap());
     let function_name: &IdentStr = IdentStr::new("epoch_param_reset").unwrap();
 
-
     let new_modules = head_release_bundle();
     println!("publish");
     session.publish_module_bundle_relax_compatibility(
@@ -189,15 +198,20 @@ fn test_open() -> anyhow::Result<()> {
     // tag
     // tag.
 
-
-
     // if let Some(pr) = session.extract_publish_request() {
     //     dbg!(pr.expected_modules.len());
     // }
 
-    let new_module_id: ModuleId = ModuleId::new(CORE_CODE_ADDRESS, "all_your_base".parse().unwrap());
+    let new_module_id: ModuleId =
+        ModuleId::new(CORE_CODE_ADDRESS, "all_your_base".parse().unwrap());
 
-    let res = session.execute_function_bypass_visibility(&new_module_id, ident_str!("are_belong_to").into(), vec![], serialize_values(vec![]), &mut gas_context);
+    let res = session.execute_function_bypass_visibility(
+        &new_module_id,
+        ident_str!("are_belong_to").into(),
+        vec![],
+        serialize_values(vec![]),
+        &mut gas_context,
+    );
     dbg!(&res);
     // dbg!(&session.exists_module(&new_module_id));
 
