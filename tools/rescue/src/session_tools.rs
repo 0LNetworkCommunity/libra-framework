@@ -196,24 +196,6 @@ fn _update_resource_in_session(session: &mut SessionExt) {
         .unwrap();
     let _a = resource.move_from().unwrap();
 }
-#[tokio::test]
-async fn test_debugger() -> anyhow::Result<()> {
-    let dir: &Path = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-
-    let db = DiemDebugger::db(dir)?;
-
-    let v = db.get_latest_version().await?;
-    // dbg!(&v);
-    // let c = db.get_version_by_account_sequence(CORE_CODE_ADDRESS, 0).await?;
-    // dbg!(&c);
-    // db.
-
-    let state = db
-        .annotate_account_state_at_version(CORE_CODE_ADDRESS, v)
-        .await?;
-    dbg!(&state);
-    Ok(())
-}
 
 #[test]
 // the writeset voodoo needs to be perfect
