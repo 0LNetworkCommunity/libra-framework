@@ -1,4 +1,4 @@
-use crate::framework_payload;
+use crate::open_db;
 use clap::Parser;
 use diem_types::transaction::{Script, Transaction, WriteSetPayload};
 use libra_framework::builder::framework_generate_upgrade_proposal::libra_compile_script;
@@ -42,8 +42,8 @@ impl RescueTxOpts {
 
             Transaction::GenesisTransaction(wp)
         } else if self.framework_upgrade {
-            let payload = framework_payload::stlib_payload(db_path.clone()).await?;
-            Transaction::GenesisTransaction(payload)
+            let cs = open_db::publish_current_framework(&db_path)?;
+            Transaction::GenesisTransaction(WriteSetPayload::Direct(cs))
         } else {
             anyhow::bail!("no options provided, need a --framework-upgrade or a --script-path");
         };

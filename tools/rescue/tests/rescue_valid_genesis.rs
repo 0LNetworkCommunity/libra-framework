@@ -94,14 +94,6 @@ async fn test_framework() -> anyhow::Result<()> {
 
     println!("1. generate a transaction script which should execute");
 
-    // let first_validator_address = env
-    //     .validators()
-    //     .next()
-    //     .unwrap()
-    //     .config()
-    //     .get_peer_id()
-    //     .unwrap();
-
     let blob_path = diem_temppath::TempPath::new();
     blob_path.create_as_dir()?;
 

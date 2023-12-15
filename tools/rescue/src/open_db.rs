@@ -27,7 +27,7 @@ use move_core_types::{
 };
 use move_vm_test_utils::gas_schedule::GasStatus;
 
-pub fn publish_current_framework(dir: &Path) -> anyhow::Result<WriteSet> {
+pub fn publish_current_framework(dir: &Path) -> anyhow::Result<ChangeSet> {
     // let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
     let db = DiemDB::open(
         dir,
@@ -97,15 +97,16 @@ pub fn publish_current_framework(dir: &Path) -> anyhow::Result<WriteSet> {
         )
         .context("Failed to generate txn effects")?;
     // TODO: Support deltas in fake executor.
-    let (write_set, _delta_change_set, _events) = change_set.unpack();
-
-    Ok(write_set)
+    let (write_set, _delta_change_set, events) = change_set.unpack();
+    let change_set = ChangeSet::new(write_set, events);
+    Ok(change_set)
 }
 
 #[test]
 fn test_publish() {
     let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-    publish_current_framework(dir).unwrap();
+    let ws = publish_current_framework(dir).unwrap();
+
 }
 
 fn update_resource_in_session(session: &mut SessionExt) {
