@@ -17,7 +17,7 @@ bcs = { workspace = true }
 clap = { workspace = true }
 diem-config = { workspace = true }
 diem-db = { workspace = true }
-
+diem-gas = { workspace = true }
 diem-debugger = { workspace = true }
 diem-executor = { workspace = true }
 
@@ -38,6 +38,7 @@ tokio = { workspace = true }
 
 [dev-dependencies]
 diem-api-types = { workspace = true }
+diem-crypto = { workspace = true }
 diem-temppath = { workspace = true }
 diem-forge = { workspace = true }
 diem-logger = { workspace = true }
