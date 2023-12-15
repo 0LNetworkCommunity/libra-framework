@@ -64,9 +64,10 @@ async fn test_can_restart() -> anyhow::Result<()> {
     let rescue = RescueTxOpts {
         data_path: data_path.path().to_owned(),
         blob_path: None, // defaults to data_path/rescue.blob
-        script_path,
+        script_path: Some(script_path),
+        framework_upgrade: false,
     };
-    let genesis_blob_path = rescue.run().await.unwrap();
+    let genesis_blob_path = rescue.run().unwrap();
 
     assert!(genesis_blob_path.exists());
 

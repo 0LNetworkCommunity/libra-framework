@@ -33,7 +33,8 @@ async fn test_framework_upgrade_writeset() -> anyhow::Result<()> {
     let r = RescueTxOpts {
         data_path: val_db_path.clone(),
         blob_path: Some(blob_path.path().to_owned()),
-        script_path,
+        script_path: Some(script_path),
+        framework_upgrade: false,
     };
     r.run()?;
 

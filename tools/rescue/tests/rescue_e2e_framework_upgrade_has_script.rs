@@ -2,7 +2,7 @@ mod support;
 use crate::support::{deadline_secs, update_node_config_restart, wait_for_node};
 use diem_api_types::{EntryFunctionId, ViewRequest};
 use diem_config::config::InitialSafetyRulesConfig;
-use diem_forge::{NodeExt, Swarm, SwarmExt};
+use diem_forge::{NodeExt, SwarmExt};
 use diem_temppath::TempPath;
 use diem_types::transaction::Transaction;
 use libra_smoke_tests::helpers::get_libra_balance;
@@ -83,9 +83,10 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
     let rescue = RescueTxOpts {
         data_path: data_path.path().to_owned(),
         blob_path: None, // defaults to data_path/rescue.blob
-        script_path,
+        script_path: Some(script_path),
+        framework_upgrade: false,
     };
-    let genesis_blob_path = rescue.run().await.unwrap();
+    let genesis_blob_path = rescue.run().unwrap();
 
     assert!(genesis_blob_path.exists());
 
