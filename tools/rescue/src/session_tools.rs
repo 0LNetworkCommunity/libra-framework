@@ -27,86 +27,80 @@ use move_core_types::{
 
 use move_vm_types::gas::UnmeteredGasMeter;
 
-pub fn publish_current_framework(dir: &Path) -> anyhow::Result<ChangeSet> {
-    // let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-    let db = DiemDB::open(
-        dir,
-        true,
-        NO_OP_STORAGE_PRUNER_CONFIG, /* pruner */
-        RocksdbConfigs::default(),
-        false, /* indexer */
-        BUFFERED_STATE_TARGET_ITEMS,
-        DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
-    )
-    .context("Failed to open DB.")?;
+// pub fn publish_current_framework(dir: &Path) -> anyhow::Result<ChangeSet> {
+//     // let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
+//     let db = DiemDB::open(
+//         dir,
+//         true,
+//         NO_OP_STORAGE_PRUNER_CONFIG, /* pruner */
+//         RocksdbConfigs::default(),
+//         false, /* indexer */
+//         BUFFERED_STATE_TARGET_ITEMS,
+//         DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
+//     )
+//     .context("Failed to open DB.")?;
 
-    let db_rw = DbReaderWriter::new(db);
+//     let db_rw = DbReaderWriter::new(db);
 
-    let v = db_rw.reader.get_latest_version().unwrap();
-    dbg!(&v);
+//     let v = db_rw.reader.get_latest_version().unwrap();
+//     dbg!(&v);
 
-    let view = db_rw.reader.state_view_at_version(Some(v)).unwrap();
+//     let view = db_rw.reader.state_view_at_version(Some(v)).unwrap();
 
-    let dvm = diem_vm::DiemVM::new(&view);
-    let adapter = dvm.as_move_resolver(&view);
+//     let dvm = diem_vm::DiemVM::new(&view);
+//     let adapter = dvm.as_move_resolver(&view);
 
-    let s_id = SessionId::genesis(diem_crypto::HashValue::zero());
+//     let s_id = SessionId::genesis(diem_crypto::HashValue::zero());
 
-    let mvm = dvm.internals().move_vm();
+//     let mvm = dvm.internals().move_vm();
 
-    let mut gas_context = UnmeteredGasMeter;
-    let mut session = mvm.new_session(&adapter, s_id, false);
+//     let mut gas_context = UnmeteredGasMeter;
+//     let mut session = mvm.new_session(&adapter, s_id, false);
 
-    let new_module_id: ModuleId =
-        ModuleId::new(CORE_CODE_ADDRESS, "all_your_base".parse().unwrap());
+//     let new_module_id: ModuleId =
+//         ModuleId::new(CORE_CODE_ADDRESS, "all_your_base".parse().unwrap());
 
-    let res = session.execute_function_bypass_visibility(
-        &new_module_id,
-        ident_str!("are_belong_to"),
-        vec![],
-        serialize_values(vec![]),
-        &mut gas_context,
-    );
-    assert!(res.is_err());
+//     let res = session.execute_function_bypass_visibility(
+//         &new_module_id,
+//         ident_str!("are_belong_to"),
+//         vec![],
+//         serialize_values(vec![]),
+//         &mut gas_context,
+//     );
+//     assert!(res.is_err());
 
-    let new_modules = head_release_bundle();
-    println!("publish");
-    session.publish_module_bundle_relax_compatibility(
-        new_modules.legacy_copy_code(),
-        CORE_CODE_ADDRESS,
-        &mut gas_context,
-    )?;
+//     let new_modules = head_release_bundle();
+//     println!("publish");
+//     session.publish_module_bundle_relax_compatibility(
+//         new_modules.legacy_copy_code(),
+//         CORE_CODE_ADDRESS,
+//         &mut gas_context,
+//     )?;
 
-    let new_module_id: ModuleId =
-        ModuleId::new(CORE_CODE_ADDRESS, "all_your_base".parse().unwrap());
+//     let new_module_id: ModuleId =
+//         ModuleId::new(CORE_CODE_ADDRESS, "all_your_base".parse().unwrap());
 
-    let res = session.execute_function_bypass_visibility(
-        &new_module_id,
-        ident_str!("are_belong_to"),
-        vec![],
-        serialize_values(vec![]),
-        &mut gas_context,
-    );
-    dbg!(&res);
+//     let res = session.execute_function_bypass_visibility(
+//         &new_module_id,
+//         ident_str!("are_belong_to"),
+//         vec![],
+//         serialize_values(vec![]),
+//         &mut gas_context,
+//     );
+//     dbg!(&res);
 
-    // let (a, b, ..) = session.finish()?;
-    let change_set = session
-        .finish(
-            &mut (),
-            &ChangeSetConfigs::unlimited_at_gas_feature_version(LATEST_GAS_FEATURE_VERSION),
-        )
-        .context("Failed to generate txn effects")?;
-    // TODO: Support deltas in fake executor.
-    let (write_set, _delta_change_set, events) = change_set.unpack();
-    let change_set = ChangeSet::new(write_set, events);
-    Ok(change_set)
-}
-
-#[test]
-fn test_voodoo() {
-    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-    libra_run_session(dir, writeset_voodoo_events).unwrap();
-}
+//     // let (a, b, ..) = session.finish()?;
+//     let change_set = session
+//         .finish(
+//             &mut (),
+//             &ChangeSetConfigs::unlimited_at_gas_feature_version(LATEST_GAS_FEATURE_VERSION),
+//         )
+//         .context("Failed to generate txn effects")?;
+//     // TODO: Support deltas in fake executor.
+//     let (write_set, _delta_change_set, events) = change_set.unpack();
+//     let change_set = ChangeSet::new(write_set, events);
+//     Ok(change_set)
+// }
 
 pub fn libra_run_session<F>(dir: &Path, f: F) -> anyhow::Result<VMChangeSet>
 where
@@ -194,10 +188,47 @@ pub fn libra_execute_session_function(
 //     Ok(ChangeSet::new(write_set, events))
 // }
 
+fn get_account_state_by_version(
+    db: &Arc<dyn DbReader>,
+    account: AccountAddress,
+    version: Version,
+) -> anyhow::Result<HashMap<StateKey, StateValue>> {
+    let key_prefix = StateKeyPrefix::from(account);
+    let mut iter = db.get_prefixed_state_value_iterator(&key_prefix, None, version)?;
+    // dbg!(&iter.by_ref().count());
+    let kvs = iter
+        .by_ref()
+        .take(MAX_REQUEST_LIMIT as usize)
+        .collect::<anyhow::Result<_>>()?;
+    if iter.next().is_some() {
+        bail!(
+            "Too many state items under state key prefix {:?}.",
+            key_prefix
+        );
+    }
+    Ok(kvs)
+}
+pub fn unpack_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
+    let (write_set, _delta_change_set, events) = vmc.unpack();
+
+    Ok(ChangeSet::new(write_set, events))
+}
+pub fn publish_current_framework(dir: &Path) -> anyhow::Result<ChangeSet> {
+    let vmc = libra_run_session(dir, combined_steps)?;
+    unpack_changeset(vmc)
+}
+
+fn combined_steps(session: &mut SessionExt) -> anyhow::Result<()> {
+    upgrade_framework(session)?;
+    writeset_voodoo_events(session)?;
+    Ok(())
+}
+
 #[test]
 fn test_publish() {
     let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-    let _ws = publish_current_framework(dir).unwrap();
+
+    libra_run_session(dir, combined_steps).unwrap();
 }
 
 // fn update_resource_in_session(session: &mut SessionExt) {
@@ -322,23 +353,8 @@ fn test_open() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn get_account_state_by_version(
-    db: &Arc<dyn DbReader>,
-    account: AccountAddress,
-    version: Version,
-) -> anyhow::Result<HashMap<StateKey, StateValue>> {
-    let key_prefix = StateKeyPrefix::from(account);
-    let mut iter = db.get_prefixed_state_value_iterator(&key_prefix, None, version)?;
-    // dbg!(&iter.by_ref().count());
-    let kvs = iter
-        .by_ref()
-        .take(MAX_REQUEST_LIMIT as usize)
-        .collect::<anyhow::Result<_>>()?;
-    if iter.next().is_some() {
-        bail!(
-            "Too many state items under state key prefix {:?}.",
-            key_prefix
-        );
-    }
-    Ok(kvs)
+#[test]
+fn test_voodoo() {
+    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
+    libra_run_session(dir, writeset_voodoo_events).unwrap();
 }
