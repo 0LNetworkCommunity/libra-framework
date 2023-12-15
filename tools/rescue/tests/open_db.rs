@@ -1,6 +1,6 @@
-use std::{collections::HashMap, ops::Deref, path::Path, sync::Arc};
+use std::{collections::HashMap, path::Path, sync::Arc};
 
-use anyhow::bail;
+use anyhow::{bail, Context};
 
 use diem_config::config::{
     RocksdbConfigs, BUFFERED_STATE_TARGET_ITEMS, DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
@@ -9,33 +9,27 @@ use diem_config::config::{
 use diem_db::DiemDB;
 use diem_debugger::DiemDebugger;
 use diem_storage_interface::{
-    cached_state_view::CachedDbStateView,
-    state_view::{DbStateView, DbStateViewAtVersion},
+    state_view::{DbStateViewAtVersion},
     DbReader, DbReaderWriter, MAX_REQUEST_LIMIT,
 };
 use diem_types::{
-    // access_path::AccessPath, account_config::ChainIdResource, account_view::AccountView,
-    // move_resource::MoveStorage,
+
     account_address::AccountAddress,
-    account_state::AccountState,
     state_store::{state_key::StateKey, state_key_prefix::StateKeyPrefix, state_value::StateValue},
     transaction::{ChangeSet, Version},
 };
-use diem_vm::move_vm_ext::SessionId;
+use diem_vm::move_vm_ext::{SessionId, SessionExt};
 use libra_framework::head_release_bundle;
-// use diem_vm::move_vm_ext::SessionId;
 use move_core_types::{
     ident_str,
-    // move_resource::MoveStructType,
     identifier::IdentStr,
     language_storage::{ModuleId, StructTag, TypeTag, CORE_CODE_ADDRESS},
     value::{serialize_values, MoveValue},
 };
 use move_vm_test_utils::gas_schedule::GasStatus;
-// use move_vm_test_utils::gas_schedule::GasStatus;
 
-pub fn open_db(db_dir: &Path) -> anyhow::Result<ChangeSet> {
-    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
+pub fn publish_current_framework(dir: &Path) -> anyhow::Result<()> {
+    // let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
     let db = DiemDB::open(
         dir,
         true,
@@ -45,7 +39,7 @@ pub fn open_db(db_dir: &Path) -> anyhow::Result<ChangeSet> {
         BUFFERED_STATE_TARGET_ITEMS,
         DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
     )
-    .expect("Failed to open DB.");
+    .context("Failed to open DB.")?;
 
     let db_rw = DbReaderWriter::new(db);
 
@@ -57,16 +51,17 @@ pub fn open_db(db_dir: &Path) -> anyhow::Result<ChangeSet> {
     let dvm = diem_vm::DiemVM::new(&view);
     let adapter = dvm.as_move_resolver(&view);
 
-    let s_id = SessionId::Txn {
-        sender: CORE_CODE_ADDRESS,
-        sequence_number: 0,
-        script_hash: b"none".to_vec(),
-    };
+    let s_id = SessionId::genesis(diem_crypto::HashValue::zero());
 
     let mvm = dvm.internals().move_vm();
 
     let mut gas_context = GasStatus::new_unmetered();
     let mut session = mvm.new_session(&adapter, s_id, false);
+
+    let new_module_id: ModuleId = ModuleId::new(CORE_CODE_ADDRESS, "all_your_base".parse().unwrap());
+
+    let res = session.execute_function_bypass_visibility(&new_module_id, ident_str!("are_belong_to").into(), vec![], serialize_values(vec![]), &mut gas_context);
+    assert!(res.is_err());
 
     let new_modules = head_release_bundle();
     println!("publish");
@@ -76,37 +71,42 @@ pub fn open_db(db_dir: &Path) -> anyhow::Result<ChangeSet> {
         &mut gas_context,
     )?;
 
-    if let Some(pr) = session.extract_publish_request() {
-        dbg!(pr.expected_modules.len());
-    }
+    let new_module_id: ModuleId = ModuleId::new(CORE_CODE_ADDRESS, "all_your_base".parse().unwrap());
 
-    let module_id: ModuleId = ModuleId::new(CORE_CODE_ADDRESS, "all_your_base".parse().unwrap());
-    dbg!(&session.exists_module(&module_id));
-
-    let res = session
-        .execute_function_bypass_visibility(
-            &module_id,
-            ident_str!("are_belong_to").into(),
-            vec![],
-            serialize_values(vec![]),
-            &mut GasStatus::new_unmetered(),
-        )?;
+    let res = session.execute_function_bypass_visibility(&new_module_id, ident_str!("are_belong_to").into(), vec![], serialize_values(vec![]), &mut gas_context);
     dbg!(&res);
 
-    // let e = session.exists_module(&module_id).unwrap();
-    // dbg!(&p_r.destination);
-    // let converter = adapter.as_converter(db_rw.reader);
+    let (a, b, ..) = session.finish()?;
 
-    // let move_vm = d.internals().move_vm();
 
-    // move_vm.new_session(&view, session_id, aggregator_enabled)
-    // dbg!(&cache_invalid);
-    Ok(session.)
+    Ok(())
 }
 
+
+
+#[test]
+fn test_publish() {
+    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
+    publish_current_framework(dir).unwrap();
+}
+
+fn update_resource_in_session(session: &mut SessionExt) {
+      let s = StructTag {
+        address: CORE_CODE_ADDRESS,
+        module: ident_str!("chain_id").into(),
+        name: ident_str!("ChainId").into(),
+        type_params: vec![],
+    };
+    let this_type = session.load_type(&s.clone().into()).unwrap();
+    let layout = session.get_type_layout(&s.into()).unwrap();
+    let (resource, _) = session
+        .load_resource(CORE_CODE_ADDRESS, &this_type)
+        .unwrap();
+    let mut a = resource.move_from().unwrap();
+}
 #[tokio::test]
 async fn test_debugger() -> anyhow::Result<()> {
-    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
+    let dir: &Path = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
 
     let db = DiemDebugger::db(dir)?;
 
@@ -125,8 +125,8 @@ async fn test_debugger() -> anyhow::Result<()> {
 
 #[test]
 fn test_open() -> anyhow::Result<()> {
-    let module_id = ModuleId::new(CORE_CODE_ADDRESS, "account".parse().unwrap());
-    let function_name: &IdentStr = IdentStr::new("get_authentication_key").unwrap();
+    // let module_id = ModuleId::new(CORE_CODE_ADDRESS, "account".parse().unwrap());
+    // let function_name: &IdentStr = IdentStr::new("get_authentication_key").unwrap();
 
     let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
     let db = DiemDB::open(
@@ -145,42 +145,8 @@ fn test_open() -> anyhow::Result<()> {
     let v = db_rw.reader.get_latest_version().unwrap();
     dbg!(&v);
 
-    // let state  = get_account_state_by_version(&db_rw.reader, CORE_CODE_ADDRESS, v).unwrap();
-    // state.iter().for_each(|(k,v)| {
-    //   // dbg!(&k);
-    //   match k.inner() {
-    //     diem_types::state_store::state_key::StateKeyInner::AccessPath(a) => {
-    //       dbg!(&a.get_struct_tag());
-    //     },
-    //     diem_types::state_store::state_key::StateKeyInner::TableItem { handle, key } => todo!(),
-    //     diem_types::state_store::state_key::StateKeyInner::Raw(_) => todo!(),
-    // }
-
-    //   // bcs::from_bytes(k.)
-    // });
-    // state. for_each(|e| {
-    // })
-    // dbg!(&state);
-
     let view = db_rw.reader.state_view_at_version(Some(v)).unwrap();
 
-    // // let path = AccessPath::resource_access_path(CORE_CODE_ADDRESS, ChainIdResource::struct_tag()).unwrap();
-
-    // let r = db_rw.reader.as_ref().fetch_resource_by_version(
-    //   path,
-    //   v
-    // ).unwrap();
-    // dbg!(&r);
-
-    // let _frozen_state = db_rw
-    //     .reader
-    //     .get_latest_executed_trees()
-    //     .expect("could not get executed state");
-
-    // // let view: CachedDbStateView = DbStateView {
-    // //     db: db_rw.reader,
-    // //     version: None,
-    // // }.into();
     let dvm = diem_vm::DiemVM::new(&view);
     let adapter = dvm.as_move_resolver(&view);
 
@@ -189,48 +155,18 @@ fn test_open() -> anyhow::Result<()> {
         sequence_number: 0,
         script_hash: b"none".to_vec(),
     };
+    let s_id = SessionId::genesis(diem_crypto::HashValue::zero());
 
     let mvm = dvm.internals().move_vm();
-    // mvm.new_session(remote, session_id, aggregator_enabled)
-
-    let r = mvm.load_module(&module_id, &adapter).is_ok();
-
-    // dbg!(&r);
     let mut gas_context = GasStatus::new_unmetered();
     let mut session = mvm.new_session(&adapter, s_id, false);
-    mvm.mark_loader_cache_as_invalid();
-    mvm.flush_loader_cache_if_invalidated();
 
-    let r = mvm.load_module(&module_id, &adapter).is_ok();
-    // dbg!(&r);;
     let a = vec![MoveValue::Signer(CORE_CODE_ADDRESS)];
     let args = serialize_values(&a);
-    // let num = session.execute_entry_function(
-    //     &module_id,
-    //     &function_name,
-    //     vec![],
-    //     args,
-    //     &mut GasStatus::new_unmetered(),
-    // );
 
     let module_id: ModuleId = ModuleId::new(CORE_CODE_ADDRESS, "tower_state".parse().unwrap());
     let function_name: &IdentStr = IdentStr::new("epoch_param_reset").unwrap();
 
-    let s = StructTag {
-        address: CORE_CODE_ADDRESS,
-        module: ident_str!("chain_id").into(),
-        name: ident_str!("ChainId").into(),
-        type_params: vec![],
-    };
-    // let t = TypeTag::Struct();
-    let this_type = session.load_type(&s.clone().into()).unwrap();
-    let layout = session.get_type_layout(&s.into()).unwrap();
-    let (resource, _) = session
-        .load_resource(CORE_CODE_ADDRESS, &this_type)
-        .unwrap();
-    let mut a = resource.move_from().unwrap();
-    // *a = Value::
-    // dbg!(&);
 
     let new_modules = head_release_bundle();
     println!("publish");
@@ -239,20 +175,23 @@ fn test_open() -> anyhow::Result<()> {
         CORE_CODE_ADDRESS,
         &mut gas_context,
     )?;
+    // session.
 
     // let tag = session.get_type_tag(&this_type).unwrap();
     // tag
     // tag.
 
-    // let res = session.execute_function_bypass_visibility(&module_id, function_name, vec![], args, &mut GasStatus::new_unmetered()).unwrap();
-    // dbg!(&res);
 
-    if let Some(pr) = session.extract_publish_request() {
-        dbg!(pr.expected_modules.len());
-    }
 
-    let module_id: ModuleId = ModuleId::new(CORE_CODE_ADDRESS, "all_your_base".parse().unwrap());
-    dbg!(&session.exists_module(&module_id));
+    // if let Some(pr) = session.extract_publish_request() {
+    //     dbg!(pr.expected_modules.len());
+    // }
+
+    let new_module_id: ModuleId = ModuleId::new(CORE_CODE_ADDRESS, "all_your_base".parse().unwrap());
+
+    let res = session.execute_function_bypass_visibility(&new_module_id, ident_str!("are_belong_to").into(), vec![], serialize_values(vec![]), &mut gas_context);
+    dbg!(&res);
+    // dbg!(&session.exists_module(&new_module_id));
 
     // session.exists_module(&);
 
