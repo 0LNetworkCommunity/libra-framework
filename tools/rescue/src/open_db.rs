@@ -197,7 +197,7 @@ pub fn libra_execute_session_function(
 #[test]
 fn test_publish() {
     let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-    let ws = publish_current_framework(dir).unwrap();
+    let _ws = publish_current_framework(dir).unwrap();
 }
 
 // fn update_resource_in_session(session: &mut SessionExt) {
@@ -235,6 +235,8 @@ fn test_publish() {
 
 #[test]
 fn test_open() -> anyhow::Result<()> {
+    use move_core_types::identifier::IdentStr;
+    use move_vm_test_utils::gas_schedule::GasStatus;
     // let module_id = ModuleId::new(CORE_CODE_ADDRESS, "account".parse().unwrap());
     // let function_name: &IdentStr = IdentStr::new("get_authentication_key").unwrap();
 
@@ -260,7 +262,7 @@ fn test_open() -> anyhow::Result<()> {
     let dvm = diem_vm::DiemVM::new(&view);
     let adapter = dvm.as_move_resolver(&view);
 
-    let s_id = SessionId::Txn {
+    let _s_id = SessionId::Txn {
         sender: CORE_CODE_ADDRESS,
         sequence_number: 0,
         script_hash: b"none".to_vec(),
@@ -272,10 +274,10 @@ fn test_open() -> anyhow::Result<()> {
     let mut session = mvm.new_session(&adapter, s_id, false);
 
     let a = vec![MoveValue::Signer(CORE_CODE_ADDRESS)];
-    let args = serialize_values(&a);
+    let _args = serialize_values(&a);
 
-    let module_id: ModuleId = ModuleId::new(CORE_CODE_ADDRESS, "tower_state".parse().unwrap());
-    let function_name: &IdentStr = IdentStr::new("epoch_param_reset").unwrap();
+    let _module_id: ModuleId = ModuleId::new(CORE_CODE_ADDRESS, "tower_state".parse().unwrap());
+    let _function_name: &IdentStr = IdentStr::new("epoch_param_reset").unwrap();
 
     let new_modules = head_release_bundle();
     println!("publish");
@@ -299,7 +301,7 @@ fn test_open() -> anyhow::Result<()> {
 
     let res = session.execute_function_bypass_visibility(
         &new_module_id,
-        ident_str!("are_belong_to").into(),
+        ident_str!("are_belong_to"),
         vec![],
         serialize_values(vec![]),
         &mut gas_context,
