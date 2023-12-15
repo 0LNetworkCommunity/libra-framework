@@ -8,6 +8,7 @@ use diem_config::config::{
 };
 use diem_db::DiemDB;
 use diem_debugger::DiemDebugger;
+use diem_gas::{LATEST_GAS_FEATURE_VERSION, transaction::storage};
 use diem_storage_interface::{
     state_view::{DbStateViewAtVersion},
     DbReader, DbReaderWriter, MAX_REQUEST_LIMIT,
@@ -28,7 +29,7 @@ use move_core_types::{
 };
 use move_vm_test_utils::gas_schedule::GasStatus;
 
-pub fn publish_current_framework(dir: &Path) -> anyhow::Result<()> {
+pub fn publish_current_framework(dir: &Path) -> anyhow::Result<Writeset> {
     // let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
     let db = DiemDB::open(
         dir,
@@ -76,10 +77,17 @@ pub fn publish_current_framework(dir: &Path) -> anyhow::Result<()> {
     let res = session.execute_function_bypass_visibility(&new_module_id, ident_str!("are_belong_to").into(), vec![], serialize_values(vec![]), &mut gas_context);
     dbg!(&res);
 
-    let (a, b, ..) = session.finish()?;
+    // let (a, b, ..) = session.finish()?;
+    let change_set = session
+      .finish(
+          &mut (),
+          &ChangeSetConfigs::unlimited_at_gas_feature_version(LATEST_GAS_FEATURE_VERSION),
+      )
+      .context("Failed to generate txn effects")?;
+    // TODO: Support deltas in fake executor.
+    let (write_set, _delta_change_set, _events) = change_set.unpack();
 
-
-    Ok(())
+    Ok(WriteSet)
 }
 
 
