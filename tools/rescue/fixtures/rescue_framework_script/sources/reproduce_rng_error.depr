@@ -17,8 +17,8 @@ script {
       print(&string::utf8(b"breaks on second loop"));
       print(&n);
       // params tower state reconfig() is using via epoch_param_reset
-      let n = tower_state::toy_rng(3,2,10);
-      print(&n);
+      // let n = tower_state::toy_rng(3,2,10);
+      // print(&n);
 
       ////// standard operations needed for successful writeset //////
       let t = timestamp::now_microseconds();

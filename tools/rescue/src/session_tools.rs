@@ -141,11 +141,27 @@ where
         &mut (),
         &ChangeSetConfigs::unlimited_at_gas_feature_version(LATEST_GAS_FEATURE_VERSION),
     )?;
+
+    println!("session run sucessfully");
     Ok(change_set)
 }
 
 pub fn writeset_voodoo_events(session: &mut SessionExt) -> anyhow::Result<()> {
-    libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])
+    libra_execute_session_function(session, "0x1::stake::on_new_epoch", vec![])?;
+
+    let vm_signer = MoveValue::Signer(AccountAddress::ZERO);
+
+    libra_execute_session_function(session, "0x1::block::emit_writeset_block_event", vec![
+      &vm_signer,
+      // note: any address would work below
+      &MoveValue::Address(CORE_CODE_ADDRESS)
+    ])?;
+
+    libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
+
+    // block::emit_writeset_block_event(&vm_signer, @0x1);
+    Ok(())
+
 }
 
 pub fn upgrade_framework(session: &mut SessionExt) -> anyhow::Result<()> {
@@ -165,14 +181,14 @@ pub fn libra_execute_session_function(
 ) -> anyhow::Result<()> {
     let function_tag: StructTag = function_str.parse()?;
 
+    // TODO: return Serialized Values
     let _res = session.execute_function_bypass_visibility(
         &function_tag.module_id(),
         function_tag.name.as_ident_str(),
         function_tag.type_params,
         serialize_values(args),
         &mut UnmeteredGasMeter,
-    );
-
+    )?;
     Ok(())
 }
 
@@ -210,7 +226,7 @@ fn get_account_state_by_version(
 }
 pub fn unpack_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
     let (write_set, _delta_change_set, events) = vmc.unpack();
-
+    dbg!(&events);
     Ok(ChangeSet::new(write_set, events))
 }
 pub fn publish_current_framework(dir: &Path) -> anyhow::Result<ChangeSet> {
@@ -219,7 +235,7 @@ pub fn publish_current_framework(dir: &Path) -> anyhow::Result<ChangeSet> {
 }
 
 fn combined_steps(session: &mut SessionExt) -> anyhow::Result<()> {
-    upgrade_framework(session)?;
+    // upgrade_framework(session)?;
     writeset_voodoo_events(session)?;
     Ok(())
 }
