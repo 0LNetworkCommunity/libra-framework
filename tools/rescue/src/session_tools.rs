@@ -157,7 +157,7 @@ pub fn writeset_voodoo_events(session: &mut SessionExt) -> anyhow::Result<()> {
       &MoveValue::Address(CORE_CODE_ADDRESS)
     ])?;
 
-    libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
+    libra_execute_session_function(session, "0x1::reconfiguration::reconfigure_for_rescue", vec![&vm_signer])?;
 
     // block::emit_writeset_block_event(&vm_signer, @0x1);
     Ok(())
@@ -235,7 +235,7 @@ pub fn publish_current_framework(dir: &Path) -> anyhow::Result<ChangeSet> {
 }
 
 fn combined_steps(session: &mut SessionExt) -> anyhow::Result<()> {
-    // upgrade_framework(session)?;
+    upgrade_framework(session)?;
     writeset_voodoo_events(session)?;
     Ok(())
 }
@@ -373,4 +373,17 @@ fn test_open() -> anyhow::Result<()> {
 fn test_voodoo() {
     let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
     libra_run_session(dir, writeset_voodoo_events).unwrap();
+}
+
+#[test]
+
+fn test_base() {
+  fn check_base(session: &mut SessionExt) -> anyhow::Result<()> {
+      libra_execute_session_function(session, "0x1::all_your_base::are_belong_to", vec![])?;
+      Ok(())
+  }
+
+  let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
+
+  libra_run_session(dir, check_base).unwrap();
 }
