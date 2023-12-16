@@ -1,8 +1,8 @@
 //! Validator subcommands
+use crate::submit_transaction::Sender;
 
 use std::{fs, path::PathBuf};
 
-use crate::submit_transaction::Sender;
 use anyhow::{bail, Context};
 use diem_genesis::config::OperatorConfiguration;
 use diem_types::account_address::AccountAddress;
@@ -11,7 +11,6 @@ use libra_cached_packages::libra_stdlib::EntryFunctionCall::{
     StakeUpdateNetworkAndFullnodeAddresses, ValidatorUniverseRegisterValidator, VouchRevoke,
     VouchVouchFor,
 };
-
 use libra_types::global_config_dir;
 use libra_wallet::validator_files::OPERATOR_FILE;
 
