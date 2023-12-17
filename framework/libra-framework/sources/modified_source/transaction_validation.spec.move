@@ -191,7 +191,7 @@ spec diem_framework::transaction_validation {
         use diem_std::type_info;
         use diem_framework::account::{Account};
         use diem_framework::aggregator;
-        use ol_framework::gas_coin::{GasCoin}; ///////// 0L ////////
+        use ol_framework::libra_coin::LibraCoin as GasCoin; ///////// 0L ////////
         use diem_framework::coin::{CoinStore, CoinInfo};
         use diem_framework::optional_aggregator;
         use diem_framework::transaction_fee::CollectedFeesPerBlock;
@@ -264,7 +264,7 @@ spec diem_framework::transaction_validation {
         use diem_std::type_info;
         use diem_framework::account::{Account};
         use diem_framework::aggregator;
-        use ol_framework::gas_coin::{GasCoin}; ///////// 0L ////////
+        use ol_framework::libra_coin::LibraCoin as GasCoin; ///////// 0L ////////
         use diem_framework::coin::{CoinStore, CoinInfo};
         use diem_framework::optional_aggregator;
         use diem_framework::transaction_fee::CollectedFeesPerBlock;
