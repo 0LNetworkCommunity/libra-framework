@@ -34,6 +34,12 @@ module diem_framework::epoch_boundary {
     const ETX_FEES_NOT_INITIALIZED: u64 = 0;
 
 
+    // the VM can set the boundary bit to allow reconfiguration
+    struct BoundaryBit has key {
+      ready: bool,
+      closing: u64,
+    }
+
     // I just checked in, to see what condition my condition was in.
     struct BoundaryStatus has key, drop {
       security_bill_count: u64,
@@ -160,6 +166,33 @@ module diem_framework::epoch_boundary {
     }
 
 
+    public (friend) fun enable_epoch_trigger(root: &signer, closing_epoch: u64)
+    {
+
+      if (!exists<BoundaryBit>(@ol_framework)) {
+        move_to(@ol_framework, BoundaryBit {
+          closing_epoch: closing_epoch,
+          ready: true,
+        })
+      } else {
+        let state = borrow_global_mut<BoundaryBit>(@ol_framework);
+        state.closing_epoch =  closing_epoch;
+        state.ready = true;
+      }
+    }
+    /// once epoch boundary has passed any user can trigger the epoch boundary.
+    /// Why do this? It's preferrable that the VM never trigger any function.
+    /// An abort by the VM will cause a network halt. The same abort, if called
+    /// by a user, would not cause a halt.
+    public (friend) fun epoch_trigger (root: &signer) {
+      let state = borrow_global_mut<BoundaryBit>(@ol_framework);
+
+      if (state.ready) {
+        epoch_boundary(root, state.closing_epoch, 0);
+      }
+      state.ready = false;
+    }
+
     // Contains all of 0L's business logic for end of epoch.
     // This removed business logic from reconfiguration.move
     // and prevents dependency cycling.
@@ -234,9 +267,9 @@ module diem_framework::epoch_boundary {
 
         print(&string::utf8(b"EPOCH BOUNDARY END"));
         print(status);
+        reconfiguration::reconfigure();
   }
 
-  // TODO: instrument all of this
   /// withdraw coins and settle accounts for validators and oracles
   /// returns the list of compliant_vals
   fun settle_accounts(root: &signer, compliant_vals: vector<address>, status: &mut BoundaryStatus): vector<address> {

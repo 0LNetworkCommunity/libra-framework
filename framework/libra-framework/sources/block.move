@@ -12,6 +12,7 @@ module diem_framework::block {
     use diem_framework::system_addresses;
     use diem_framework::timestamp;
     // use diem_std::debug::print;
+    use ol_framework::testnet;
 
     //////// 0L ////////
     use ol_framework::epoch_boundary;
@@ -153,14 +154,21 @@ module diem_framework::block {
         stake::update_performance_statistics(proposer_index, failed_proposer_indices);
         state_storage::on_new_block(reconfiguration::current_epoch());
 
-        if (timestamp - reconfiguration::last_reconfiguration_time() >= block_metadata_ref.epoch_interval) {
-            epoch_boundary::epoch_boundary(
-              &vm,
-              reconfiguration::get_current_epoch(),
-              round
-            );
-            // TODO check this order
-            reconfiguration::reconfigure();
+        if (timestamp - reconfiguration::last_reconfiguration_time() >=
+        block_metadata_ref.epoch_interval) {
+            // if we are in test mode, have the VM do the reconfiguration
+            if testnet::is_not_mainnet() {
+              epoch_boundary::epoch_boundary(
+                &vm,
+                reconfiguration::get_current_epoch(),
+                round
+              );
+              // TODO check this order
+              // reconfiguration::reconfigure();
+            } else {
+
+            }
+
 
         };
     }
