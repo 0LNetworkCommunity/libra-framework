@@ -216,7 +216,7 @@ module diem_framework::transaction_validation {
         txn_expiration_time: u64,
         chain_id: u8,
     ) {
-        // assert!(features::fee_payer_enabled(), error::invalid_state(PROLOGUE_EFEE_PAYER_NOT_ENABLED));
+        // Commit note: feature is enabled
         prologue_common(
             sender,
             fee_payer_address,

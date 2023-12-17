@@ -315,9 +315,9 @@ spec diem_framework::transaction_validation {
             // Existence of CoinStore in `addr` is checked above.
             // Sufficiency of funds is checked above.
             !exists<CollectedFeesPerBlock>(@diem_framework) ||
-                // Existence of APT's CoinInfo
+                // Existence of COIN's CoinInfo
                 transaction_fee_amount > 0 && !exists<CoinInfo<GasCoin>>(aptos_addr) ||
-                // Sufficiency of APT's supply
+                // Sufficiency of COIN's supply
                 option::spec_is_some(maybe_apt_supply) && apt_supply_value < transaction_fee_amount
         };
     }
