@@ -17,8 +17,9 @@ module diem_framework::reconfiguration {
     // use diem_std::debug::print;
 
     friend diem_framework::diem_governance;
-    friend diem_framework::block;
+    friend diem_framework::epoch_boundary;
     friend diem_framework::consensus_config;
+    // TODO: check if these are necessary
     friend diem_framework::execution_config;
     friend diem_framework::gas_schedule;
     friend diem_framework::genesis;

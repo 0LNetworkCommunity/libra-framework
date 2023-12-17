@@ -38,7 +38,7 @@ module diem_framework::epoch_boundary {
     // the VM can set the boundary bit to allow reconfiguration
     struct BoundaryBit has key {
       ready: bool,
-      closing: u64,
+      closing_epoch: u64,
     }
 
     // I just checked in, to see what condition my condition was in.
@@ -105,6 +105,13 @@ module diem_framework::epoch_boundary {
     public fun initialize(framework: &signer) {
       if (!exists<BoundaryStatus>(@ol_framework)){
         move_to(framework, reset());
+      };
+
+      if (!exists<BoundaryBit>(@ol_framework)) {
+        move_to(framework, BoundaryBit {
+          ready: false,
+          closing_epoch: 0,
+        });
       }
     }
 
@@ -167,25 +174,26 @@ module diem_framework::epoch_boundary {
     }
 
 
-    public (friend) fun enable_epoch_trigger(root: &signer, closing_epoch: u64)
-    {
+    /// flip the bit to allow the epoch to be reconfigured on any transaction
+    public(friend) fun enable_epoch_trigger(vm_signer: &signer, closing_epoch: u64)
+    acquires BoundaryBit {
 
       if (!exists<BoundaryBit>(@ol_framework)) {
-        move_to(@ol_framework, BoundaryBit {
+        move_to(vm_signer, BoundaryBit {
           closing_epoch: closing_epoch,
           ready: true,
         })
       } else {
         let state = borrow_global_mut<BoundaryBit>(@ol_framework);
-        state.closing_epoch =  closing_epoch;
+        state.closing_epoch = closing_epoch;
         state.ready = true;
       }
     }
     /// once epoch boundary has passed any user can trigger the epoch boundary.
-    /// Why do this? It's preferrable that the VM never trigger any function.
+    /// Why do this? It's preferable that the VM never trigger any function.
     /// An abort by the VM will cause a network halt. The same abort, if called
     /// by a user, would not cause a halt.
-    public (friend) fun epoch_trigger (root: &signer) {
+    public(friend) fun epoch_trigger (root: &signer) acquires BoundaryBit, BoundaryStatus {
       let state = borrow_global_mut<BoundaryBit>(@ol_framework);
 
       if (state.ready) {
@@ -440,11 +448,11 @@ module diem_framework::epoch_boundary {
   }
 
   #[test_only]
-  public fun ol_reconfigure_for_test(vm: &signer, closing_epoch: u64, epoch_round: u64) acquires BoundaryStatus {
+  public fun ol_reconfigure_for_test(vm: &signer, closing_epoch: u64,
+  epoch_round: u64) acquires BoundaryStatus {
       use diem_framework::system_addresses;
 
       system_addresses::assert_ol(vm);
       epoch_boundary(vm, closing_epoch, epoch_round);
   }
-
 }

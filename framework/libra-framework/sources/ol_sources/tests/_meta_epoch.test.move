@@ -3,34 +3,33 @@
 /// tests for external apis, and where a dependency cycle with genesis is created.
 module ol_framework::test_meta {
   use diem_framework::reconfiguration;
-  // use diem_framework::timestamp;
-
   use ol_framework::mock;
+    use diem_std::debug::print;
 
-  // can we trigger a reconfiguration and get to a new epoch?
-  // see also mock::trigger_epoch()  and meta_epoch() test
+  #[test(root = @ol_framework)]
+  fun mock_epochs_advance(root: &signer) {
+    // Scenario: Testing that if an action expires voting cannot be done.
 
-  // #[test(root = @ol_framework)]
-  // fun test_reconfigure_custom(root: signer) {
+    let _vals = mock::genesis_n_vals(root, 2);
+    // we are at epoch 0
+    let epoch = reconfiguration::get_current_epoch();
+    assert!(epoch == 0, 7357001);
+    mock::trigger_epoch(root); // epoch 1
+    let epoch = reconfiguration::get_current_epoch();
+    print(&epoch);
 
-  //   mock::ol_test_genesis(&root);
-  //   // NOTE: There was no genesis END event here.
-  //   // Which means we need to use test_helper_increment_epoch_dont_reconfigure
+    assert!(epoch == 1, 7357002);
 
-  //   let a = reconfiguration::get_current_epoch();
+    mock::trigger_epoch(root); // epoch 2
+    mock::trigger_epoch(root); // epoch 3 -- voting ended here
+    mock::trigger_epoch(root); // epoch 4 -- now expired
 
-  //   // create a new epoch
-  //   stake::end_epoch();
+    let epoch = reconfiguration::get_current_epoch();
+    print(&epoch);
+    assert!(epoch == 4, 7357003);
 
-  //   reconfiguration::test_helper_increment_epoch_dont_reconfigure(1);
+  }
 
-  //   let b = reconfiguration::get_current_epoch();
-
-
-  //   assert!(a == 0, 10001);
-  //   assert!(b == 1, 10002);
-
-  // }
 
   #[test(root = @ol_framework)]
   // can we trigger a reconfiguration and get to a new epoch?

@@ -163,13 +163,11 @@ module diem_framework::block {
                 reconfiguration::get_current_epoch(),
                 round
               );
-              // TODO check this order
-              // reconfiguration::reconfigure();
             } else {
-
+              // flip the epoch bit, so that the epoch
+              // boundary can be called by any transaction
+              epoch_boundary::enable_epoch_trigger(&vm, reconfiguration::get_current_epoch());
             }
-
-
         };
     }
 
