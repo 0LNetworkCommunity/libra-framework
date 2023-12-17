@@ -15,6 +15,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::infra_escrow;
     use ol_framework::oracle;
     use ol_framework::ol_account;
+    use diem_framework::reconfiguration;
     use diem_framework::transaction_fee;
     use diem_framework::system_addresses;
     use diem_framework::coin::{Self, Coin};
@@ -189,7 +190,7 @@ module diem_framework::epoch_boundary {
 
       if (state.ready) {
         epoch_boundary(root, state.closing_epoch, 0);
-      }
+      };
       state.ready = false;
     }
 

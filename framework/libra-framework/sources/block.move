@@ -157,7 +157,7 @@ module diem_framework::block {
         if (timestamp - reconfiguration::last_reconfiguration_time() >=
         block_metadata_ref.epoch_interval) {
             // if we are in test mode, have the VM do the reconfiguration
-            if testnet::is_not_mainnet() {
+            if (testnet::is_not_mainnet()) {
               epoch_boundary::epoch_boundary(
                 &vm,
                 reconfiguration::get_current_epoch(),
