@@ -92,13 +92,20 @@ pub fn writeset_voodoo_events(session: &mut SessionExt) -> anyhow::Result<()> {
         ],
     )?;
 
+    ////// TODO: revert this once rescue is complete
+    // libra_execute_session_function(
+    //     session,
+    //     "0x1::reconfiguration::reconfigure_for_rescue",
+    //     vec![&vm_signer],
+    // )?;
+    //////
+
     libra_execute_session_function(
         session,
-        "0x1::reconfiguration::reconfigure_for_rescue",
-        vec![&vm_signer],
+        "0x1::reconfiguration::reconfigure",
+        vec![],
     )?;
 
-    // block::emit_writeset_block_event(&vm_signer, @0x1);
     Ok(())
 }
 
