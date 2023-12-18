@@ -8287,6 +8287,7 @@ dependencies = [
  "handlebars",
  "libra-cached-packages",
  "libra-framework",
+ "libra-genesis-tools",
  "libra-smoke-tests",
  "libra-txs",
  "move-compiler",

@@ -31,7 +31,11 @@ use move_vm_types::gas::UnmeteredGasMeter;
 // NOTE: there are several implementations of this elsewhere in Diem
 // Some are buggy, some don't have exports or APIs needed (DiemDbBootstrapper). Some have issues with async and db locks (DiemDbDebugger).
 // so we had to rewrite it.
-pub fn libra_run_session<F>(dir: &Path, f: F, debug_vals: Option<Vec<AccountAddress>>) -> anyhow::Result<VMChangeSet>
+pub fn libra_run_session<F>(
+    dir: &Path,
+    f: F,
+    debug_vals: Option<Vec<AccountAddress>>,
+) -> anyhow::Result<VMChangeSet>
 where
     F: FnOnce(&mut SessionExt) -> anyhow::Result<()>,
 {
@@ -67,10 +71,10 @@ where
     // if we want to replace the vals, or otherwise use swarm
     // to drive the db state
     if let Some(vals) = debug_vals {
-      let vm_signer = MoveValue::Signer(AccountAddress::ZERO);
-      let vals_cast = MoveValue::vector_address(vals);
-      let args = vec![&vm_signer, &vals_cast];
-      libra_execute_session_function(&mut session, "0x1::stake::maybe_reconfigure", args)?;
+        let vm_signer = MoveValue::Signer(AccountAddress::ZERO);
+        let vals_cast = MoveValue::vector_address(vals);
+        let args = vec![&vm_signer, &vals_cast];
+        libra_execute_session_function(&mut session, "0x1::stake::maybe_reconfigure", args)?;
     }
 
     let change_set = session.finish(
@@ -178,7 +182,10 @@ pub fn unpack_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
     dbg!(&events);
     Ok(ChangeSet::new(write_set, events))
 }
-pub fn publish_current_framework(dir: &Path, debug_vals: Option<Vec<AccountAddress>>) -> anyhow::Result<ChangeSet> {
+pub fn publish_current_framework(
+    dir: &Path,
+    debug_vals: Option<Vec<AccountAddress>>,
+) -> anyhow::Result<ChangeSet> {
     let vmc = libra_run_session(dir, combined_steps, debug_vals)?;
     unpack_changeset(vmc)
 }

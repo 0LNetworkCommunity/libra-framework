@@ -1,9 +1,9 @@
 use std::{path::PathBuf, time::Duration};
 
 use clap::Parser;
+use libra_cached_packages::libra_framework_sdk_builder::EntryFunctionCall;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_txs::txs_cli_vals::ValidatorTxs;
-use libra_cached_packages::libra_framework_sdk_builder::EntryFunctionCall;
 
 #[derive(Parser)]
 
@@ -40,17 +40,15 @@ impl TwinOpts {
 
     /// create the validator registration entry function payload
     /// needs the file operator.yaml
-    fn register_marlon_tx(file: PathBuf) -> anyhow::Result<EntryFunctionCall>{
-      let tx = ValidatorTxs::Register {
-          operator_file: Some(file),
-      };
-      tx.make_payload()
+    fn register_marlon_tx(file: PathBuf) -> anyhow::Result<EntryFunctionCall> {
+        let tx = ValidatorTxs::Register {
+            operator_file: Some(file),
+        };
+        tx.make_payload()
     }
 
     /// create the rescue blob which has one validator
-    fn recue_blob_with_one_val() {
-
-    }
+    fn recue_blob_with_one_val() {}
 
     // end to end with rando
     fn apply_with_rando_e2e() {}

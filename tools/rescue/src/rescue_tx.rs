@@ -49,7 +49,8 @@ impl RescueTxOpts {
 
             Transaction::GenesisTransaction(wp)
         } else if self.framework_upgrade {
-            let cs = session_tools::publish_current_framework(&db_path, self.debug_vals.to_owned())?;
+            let cs =
+                session_tools::publish_current_framework(&db_path, self.debug_vals.to_owned())?;
             Transaction::GenesisTransaction(WriteSetPayload::Direct(cs))
         } else {
             anyhow::bail!("no options provided, need a --framework-upgrade or a --script-path");
