@@ -178,8 +178,8 @@ pub fn unpack_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
     dbg!(&events);
     Ok(ChangeSet::new(write_set, events))
 }
-pub fn publish_current_framework(dir: &Path) -> anyhow::Result<ChangeSet> {
-    let vmc = libra_run_session(dir, combined_steps, None)?;
+pub fn publish_current_framework(dir: &Path, debug_vals: Option<Vec<AccountAddress>>) -> anyhow::Result<ChangeSet> {
+    let vmc = libra_run_session(dir, combined_steps, debug_vals)?;
     unpack_changeset(vmc)
 }
 
@@ -194,7 +194,7 @@ fn combined_steps(session: &mut SessionExt) -> anyhow::Result<()> {
 fn test_publish() {
     let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
 
-    publish_current_framework(dir).unwrap();
+    publish_current_framework(dir, None).unwrap();
 }
 
 // TODO: ability to mutate some state without calling a function

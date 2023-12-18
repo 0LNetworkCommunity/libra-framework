@@ -84,6 +84,7 @@ async fn test_framework_upgrade_has_new_module() -> anyhow::Result<()> {
         blob_path: None, // defaults to data_path/rescue.blob
         script_path: Some(script_path),
         framework_upgrade: false,
+        debug_vals: None,
     };
     let genesis_blob_path = rescue.run().unwrap();
 
