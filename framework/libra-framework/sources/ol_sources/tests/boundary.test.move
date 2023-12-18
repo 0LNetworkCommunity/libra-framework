@@ -14,6 +14,8 @@ module ol_framework::test_boundary {
   use ol_framework::epoch_boundary;
   use ol_framework::ol_account;
   use diem_framework::reconfiguration;
+  use diem_framework::timestamp;
+  use diem_framework::diem_governance;
 
   // use diem_std::debug::print;
 
@@ -44,9 +46,7 @@ module ol_framework::test_boundary {
   fun e2e_boundary_happy(root: signer) {
     let _vals = common_test_setup(&root);
 
-
     mock::trigger_epoch(&root);
-
 
     let _vals_post = stake::get_current_validators();
 
@@ -151,4 +151,44 @@ module ol_framework::test_boundary {
     assert!(vector::length(&epoch_boundary::get_auction_winners()) == vector::length(&qualified_bidders) , 7357003);
     assert!(epoch_boundary::get_reconfig_success(), 7357001);
   }
+
+  #[test(root = @ol_framework, marlon = @0x12345)]
+  fun epoch_trigger_any_address(root: &signer, marlon: &signer) {
+    common_test_setup(root);
+    // testing mainnet, so change the chainid
+    testnet::unset(root);
+    // test setup advances to epoch #2
+    let epoch = reconfiguration::get_current_epoch();
+    assert!(epoch == 2, 7357001);
+    epoch_boundary::test_set_boundary_ready(root, epoch);
+
+    // test the APIs as root
+    timestamp::fast_forward_seconds(1); // needed for reconfig
+    epoch_boundary::test_trigger(root);
+    let epoch = reconfiguration::get_current_epoch();
+    assert!(epoch == 3, 7357002);
+
+    // scenario: marlon has no privileges
+    // but he can still trigger an epoch if it is enabled
+
+    epoch_boundary::test_set_boundary_ready(root, epoch);
+    timestamp::fast_forward_seconds(1); // needed for reconfig
+    diem_governance::trigger_epoch(marlon);
+
+    // epoch_boundary::test_set_boudary_ready(root, epoch);
+
+
+    // mock::trigger_epoch(root); // epoch 1
+    // let epoch = reconfiguration::get_current_epoch();
+    // assert!(epoch == 1, 7357002);
+
+    // mock::trigger_epoch(root); // epoch 2
+    // mock::trigger_epoch(root); // epoch 3
+    // mock::trigger_epoch(root); // epoch 4
+
+    // let epoch = reconfiguration::get_current_epoch();
+    // assert!(epoch == 4, 7357003);
+
+  }
+
 }

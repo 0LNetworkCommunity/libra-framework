@@ -15,6 +15,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::infra_escrow;
     use ol_framework::oracle;
     use ol_framework::ol_account;
+    use ol_framework::testnet;
     use diem_framework::reconfiguration;
     use diem_framework::transaction_fee;
     use diem_framework::system_addresses;
@@ -25,15 +26,20 @@ module diem_framework::epoch_boundary {
 
     use diem_std::debug::print;
 
-    friend diem_framework::block;
+    friend diem_framework::diem_governance;
+    friend diem_framework::block; // for testnet only
 
-    /// how many PoF baseline rewards to we set aside for the miners.
-    /// equivalent reward of one seats of the validator set
-    const ORACLE_PROVIDERS_SEATS: u64 = 1;
-
+    //////// ERRORS ////////
     /// The transaction fee coin has not been initialized
     const ETX_FEES_NOT_INITIALIZED: u64 = 0;
 
+    /// Epoch trigger only implemented on mainnet
+    const ETRIGGER_EPOCH_NOT_ALLOWED: u64 = 1;
+
+    /////// Constants ////////
+    /// how many PoF baseline rewards to we set aside for the miners.
+    /// equivalent reward of one seats of the validator set
+    const ORACLE_PROVIDERS_SEATS: u64 = 1;
 
     // the VM can set the boundary bit to allow reconfiguration
     struct BoundaryBit has key {
@@ -193,12 +199,20 @@ module diem_framework::epoch_boundary {
     /// Why do this? It's preferable that the VM never trigger any function.
     /// An abort by the VM will cause a network halt. The same abort, if called
     /// by a user, would not cause a halt.
-    public(friend) fun epoch_trigger (root: &signer) acquires BoundaryBit, BoundaryStatus {
-      let state = borrow_global_mut<BoundaryBit>(@ol_framework);
+    public(friend) fun trigger_epoch (root: &signer) acquires BoundaryBit,
+    BoundaryStatus {
+      // must be mainnet
+      assert!(!testnet::is_not_mainnet(), ETRIGGER_EPOCH_NOT_ALLOWED);
+      // must get root permission from governance.move
+      system_addresses::assert_ol(root);
 
+      // update the state
+      let state = borrow_global_mut<BoundaryBit>(@ol_framework);
+      // trigger epoch
       if (state.ready) {
         epoch_boundary(root, state.closing_epoch, 0);
       };
+      // reset
       state.ready = false;
     }
 
@@ -454,5 +468,18 @@ module diem_framework::epoch_boundary {
 
       system_addresses::assert_ol(vm);
       epoch_boundary(vm, closing_epoch, epoch_round);
+  }
+
+  #[test_only]
+  public fun test_set_boundary_ready(vm: &signer, closing_epoch: u64) acquires
+  BoundaryBit {
+      // don't check for "testnet" here, otherwise we can't test the production settings
+      enable_epoch_trigger(vm, closing_epoch);
+  }
+
+  #[test_only]
+  public fun test_trigger(vm: &signer) acquires BoundaryStatus, BoundaryBit {
+      // don't check for "testnet" here, otherwise we can't test the production settings
+      trigger_epoch(vm);
   }
 }

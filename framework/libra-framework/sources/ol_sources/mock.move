@@ -285,10 +285,13 @@ module ol_framework::mock {
         epoch_boundary::ol_reconfigure_for_test(root, old_epoch,
         block::get_current_block_height());
 
-        // reconfiguration::reconfigure_for_test();
+        // always advance
+        assert!(reconfiguration::get_current_epoch() > old_epoch,
+        EDID_NOT_ADVANCE_EPOCH);
+
+        // epoch helper should always be in sync
         assert!(reconfiguration::get_current_epoch() ==
         epoch_helper::get_current_epoch(), 666);
-        assert!(reconfiguration::get_current_epoch() > old_epoch, EDID_NOT_ADVANCE_EPOCH);
     }
 
   //   // function to deposit into network fee account

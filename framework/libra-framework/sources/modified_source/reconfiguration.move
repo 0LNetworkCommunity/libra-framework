@@ -106,6 +106,7 @@ module diem_framework::reconfiguration {
 
     /// Signal validators to start using new configuration. Must be called from friend config modules.
     public(friend) fun reconfigure() acquires Configuration {
+
         // Do not do anything if genesis has not finished.
         if (chain_status::is_genesis() || timestamp::now_microseconds() == 0) {
             return
