@@ -31,7 +31,7 @@ use move_vm_types::gas::UnmeteredGasMeter;
 // NOTE: there are several implementations of this elsewhere in Diem
 // Some are buggy, some don't have exports or APIs needed (DiemDbBootstrapper). Some have issues with async and db locks (DiemDbDebugger).
 // so we had to rewrite it.
-pub fn libra_run_session<F>(dir: &Path, f: F) -> anyhow::Result<VMChangeSet>
+pub fn libra_run_session<F>(dir: &Path, f: F, debug_vals: Option<Vec<AccountAddress>>) -> anyhow::Result<VMChangeSet>
 where
     F: FnOnce(&mut SessionExt) -> anyhow::Result<()>,
 {
@@ -63,6 +63,15 @@ where
     f(&mut session)
         .map_err(|err| format_err!("Unexpected VM Error Running Rescue VM Session: {:?}", err))?;
     //////
+
+    // if we want to replace the vals, or otherwise use swarm
+    // to drive the db state
+    if let Some(vals) = debug_vals {
+      let vm_signer = MoveValue::Signer(AccountAddress::ZERO);
+      let vals_cast = MoveValue::vector_address(vals);
+      let args = vec![&vm_signer, &vals_cast];
+      libra_execute_session_function(&mut session, "0x1::stake::maybe_reconfigure", args)?;
+    }
 
     let change_set = session.finish(
         &mut (),
@@ -170,7 +179,7 @@ pub fn unpack_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
     Ok(ChangeSet::new(write_set, events))
 }
 pub fn publish_current_framework(dir: &Path) -> anyhow::Result<ChangeSet> {
-    let vmc = libra_run_session(dir, combined_steps)?;
+    let vmc = libra_run_session(dir, combined_steps, None)?;
     unpack_changeset(vmc)
 }
 
@@ -208,7 +217,7 @@ fn _update_resource_in_session(session: &mut SessionExt) {
 // the writeset voodoo needs to be perfect
 fn test_voodoo() {
     let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-    libra_run_session(dir, writeset_voodoo_events).unwrap();
+    libra_run_session(dir, writeset_voodoo_events, None).unwrap();
 }
 
 #[ignore]
@@ -222,7 +231,7 @@ fn test_base() {
 
     let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
 
-    libra_run_session(dir, check_base).unwrap();
+    libra_run_session(dir, check_base, None).unwrap();
 }
 
 #[test]
