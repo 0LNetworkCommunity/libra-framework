@@ -34,7 +34,13 @@ module diem_framework::epoch_boundary {
     const ETX_FEES_NOT_INITIALIZED: u64 = 0;
 
     /// Epoch trigger only implemented on mainnet
-    const ETRIGGER_EPOCH_NOT_ALLOWED: u64 = 1;
+    const ETRIGGER_EPOCH_MAINNET: u64 = 1;
+
+    /// Epoch is not ready for reconfiguration
+    const ETRIGGER_NOT_READY: u64 = 2;
+
+    /// Epoch number mismat
+    const ENOT_SAME_EPOCH: u64 = 3;
 
     /////// Constants ////////
     /// how many PoF baseline rewards to we set aside for the miners.
@@ -199,21 +205,29 @@ module diem_framework::epoch_boundary {
     /// Why do this? It's preferable that the VM never trigger any function.
     /// An abort by the VM will cause a network halt. The same abort, if called
     /// by a user, would not cause a halt.
-    public(friend) fun trigger_epoch (root: &signer) acquires BoundaryBit,
+    public(friend) fun trigger_epoch(root: &signer) acquires BoundaryBit,
     BoundaryStatus {
       // must be mainnet
-      assert!(!testnet::is_not_mainnet(), ETRIGGER_EPOCH_NOT_ALLOWED);
+      assert!(!testnet::is_not_mainnet(), ETRIGGER_EPOCH_MAINNET);
       // must get root permission from governance.move
       system_addresses::assert_ol(root);
+      let _ = can_trigger(); // will abort if false
 
-      // update the state
+      // update the state and flip the Bit
       let state = borrow_global_mut<BoundaryBit>(@ol_framework);
-      // trigger epoch
-      if (state.ready) {
-        epoch_boundary(root, state.closing_epoch, 0);
-      };
-      // reset
       state.ready = false;
+
+      epoch_boundary(root, state.closing_epoch, 0);
+    }
+
+    #[view]
+    /// check to see if the epoch Boundary Bit is true
+    public fun can_trigger(): bool acquires BoundaryBit {
+      let state = borrow_global_mut<BoundaryBit>(@ol_framework);
+      assert!(state.ready, ETRIGGER_NOT_READY);
+      assert!(state.closing_epoch == reconfiguration::get_current_epoch(),
+      ENOT_SAME_EPOCH);
+      true
     }
 
     // Contains all of 0L's business logic for end of epoch.

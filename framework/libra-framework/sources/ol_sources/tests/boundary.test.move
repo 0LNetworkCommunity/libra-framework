@@ -153,7 +153,7 @@ module ol_framework::test_boundary {
   }
 
   #[test(root = @ol_framework, marlon = @0x12345)]
-  fun epoch_trigger_any_address(root: &signer, marlon: &signer) {
+  fun epoch_any_address_trigger(root: &signer, marlon: &signer) {
     common_test_setup(root);
     // testing mainnet, so change the chainid
     testnet::unset(root);
@@ -174,21 +174,40 @@ module ol_framework::test_boundary {
     epoch_boundary::test_set_boundary_ready(root, epoch);
     timestamp::fast_forward_seconds(1); // needed for reconfig
     diem_governance::trigger_epoch(marlon);
+    let epoch = reconfiguration::get_current_epoch();
+    assert!(epoch == 4, 7357003);
+  }
 
-    // epoch_boundary::test_set_boudary_ready(root, epoch);
 
+  #[test(root = @ol_framework, marlon = @0x12345)]
+  #[expected_failure(abort_code = 2, location = 0x1::epoch_boundary)]
+  fun epoch_any_address_aborts(root: &signer, marlon: &signer) {
+    common_test_setup(root);
+    // testing mainnet, so change the chainid
+    testnet::unset(root);
+    // test setup advances to epoch #2
+    let epoch = reconfiguration::get_current_epoch();
+    assert!(epoch == 2, 7357001);
+    epoch_boundary::test_set_boundary_ready(root, epoch);
 
-    // mock::trigger_epoch(root); // epoch 1
-    // let epoch = reconfiguration::get_current_epoch();
-    // assert!(epoch == 1, 7357002);
+    // test the APIs as root
+    timestamp::fast_forward_seconds(1); // needed for reconfig
+    epoch_boundary::test_trigger(root);
+    let epoch = reconfiguration::get_current_epoch();
+    assert!(epoch == 3, 7357002);
 
-    // mock::trigger_epoch(root); // epoch 2
-    // mock::trigger_epoch(root); // epoch 3
-    // mock::trigger_epoch(root); // epoch 4
+    // scenario: marlon has no privileges
+    // if the epoch Boundary Bit is not set, then abort
+    // Note: the Epoch will not change, but we can't assert
+    // in the test
 
-    // let epoch = reconfiguration::get_current_epoch();
-    // assert!(epoch == 4, 7357003);
+    ////// NOTE: not calling this`test_set_boundary_ready`
+    // epoch_boundary::test_set_boundary_ready(root, epoch);
+    //////
 
+    timestamp::fast_forward_seconds(1);
+    diem_governance::trigger_epoch(marlon);
+    // aborts
   }
 
 }
