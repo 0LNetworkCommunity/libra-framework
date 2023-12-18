@@ -578,7 +578,7 @@ module diem_framework::diem_governance {
     }
 
     /// Any end user can triger epoch/boundary and reconfiguration
-    /// as long as the VM set the BoundaryBit to true
+    /// as long as the VM set the BoundaryBit to true.
     /// We do this because we don't want the VM calling complex
     /// logic itself. Any abort would cause a halt.
     /// On the other hand, a user can call the function once the VM

@@ -201,7 +201,8 @@ module diem_framework::epoch_boundary {
         state.ready = true;
       }
     }
-    /// once epoch boundary has passed any user can trigger the epoch boundary.
+    /// Once epoch boundary time has passed, and the BoundaryBit set to true
+    /// any user can trigger the epoch boundary.
     /// Why do this? It's preferable that the VM never trigger any function.
     /// An abort by the VM will cause a network halt. The same abort, if called
     /// by a user, would not cause a halt.
