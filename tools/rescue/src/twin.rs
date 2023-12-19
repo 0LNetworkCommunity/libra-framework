@@ -1,7 +1,9 @@
 use std::{path::PathBuf, time::Duration};
 
+use anyhow::bail;
 use clap::Parser;
-use libra_cached_packages::libra_framework_sdk_builder::EntryFunctionCall;
+use diem_types::transaction::Script;
+
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_txs::txs_cli_vals::ValidatorTxs;
 
@@ -40,11 +42,16 @@ impl TwinOpts {
 
     /// create the validator registration entry function payload
     /// needs the file operator.yaml
-    fn register_marlon_tx(file: PathBuf) -> anyhow::Result<EntryFunctionCall> {
+    fn register_marlon_tx(file: PathBuf) -> anyhow::Result<Script> {
         let tx = ValidatorTxs::Register {
             operator_file: Some(file),
-        };
-        tx.make_payload()
+        }
+        .make_payload()?
+        .encode();
+        if let diem_types::transaction::TransactionPayload::Script(s) = tx {
+            return Ok(s);
+        }
+        bail!("function did not return a script")
     }
 
     /// create the rescue blob which has one validator
