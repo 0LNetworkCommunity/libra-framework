@@ -1,6 +1,6 @@
-use std::{collections::HashMap, path::Path, sync::Arc};
+use std::path::Path;
 
-use anyhow::{bail, format_err, Context};
+use anyhow::{format_err, Context};
 
 use diem_config::config::{
     RocksdbConfigs, BUFFERED_STATE_TARGET_ITEMS, DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
@@ -8,14 +8,8 @@ use diem_config::config::{
 };
 use diem_db::DiemDB;
 use diem_gas::{ChangeSetConfigs, LATEST_GAS_FEATURE_VERSION};
-use diem_storage_interface::{
-    state_view::DbStateViewAtVersion, DbReader, DbReaderWriter, MAX_REQUEST_LIMIT,
-};
-use diem_types::{
-    account_address::AccountAddress,
-    state_store::{state_key::StateKey, state_key_prefix::StateKeyPrefix, state_value::StateValue},
-    transaction::{ChangeSet, Version},
-};
+use diem_storage_interface::{state_view::DbStateViewAtVersion, DbReaderWriter};
+use diem_types::{account_address::AccountAddress, transaction::ChangeSet};
 use diem_vm::move_vm_ext::{MoveVmExt, SessionExt, SessionId};
 use diem_vm_types::change_set::VMChangeSet;
 use libra_framework::head_release_bundle;
@@ -151,28 +145,29 @@ pub fn libra_execute_session_function(
     Ok(())
 }
 
-// TODO: helper to print out the account state of a DB at rest.
-// this could have a CLI entrypoint
-fn _get_account_state_by_version(
-    db: &Arc<dyn DbReader>,
-    account: AccountAddress,
-    version: Version,
-) -> anyhow::Result<HashMap<StateKey, StateValue>> {
-    let key_prefix = StateKeyPrefix::from(account);
-    let mut iter = db.get_prefixed_state_value_iterator(&key_prefix, None, version)?;
-    // dbg!(&iter.by_ref().count());
-    let kvs = iter
-        .by_ref()
-        .take(MAX_REQUEST_LIMIT as usize)
-        .collect::<anyhow::Result<_>>()?;
-    if iter.next().is_some() {
-        bail!(
-            "Too many state items under state key prefix {:?}.",
-            key_prefix
-        );
-    }
-    Ok(kvs)
-}
+// // TODO: helper to print out the account state of a DB at rest.
+// // this could have a CLI entrypoint
+// fn _get_account_state_by_version(
+//     db: &Arc<dyn DbReader>,
+//     account: AccountAddress,
+//     version: Version,
+// ) -> anyhow::Result<HashMap<StateKey, StateValue>> {
+//     let key_prefix = StateKeyPrefix::from(account);
+//     let mut iter = db.get_prefixed_state_value_iterator(&key_prefix, None, version)?;
+//     // dbg!(&iter.by_ref().count());
+//     let kvs = iter
+//         .by_ref()
+//         .take(MAX_REQUEST_LIMIT as usize)
+//         .collect::<anyhow::Result<_>>()?;
+//     if iter.next().is_some() {
+//         bail!(
+//             "Too many state items under state key prefix {:?}.",
+//             key_prefix
+//         );
+//     }
+//     Ok(kvs)
+// }
+
 pub fn unpack_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
     let (write_set, _delta_change_set, events) = vmc.unpack();
     dbg!(&events);

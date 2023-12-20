@@ -1,3 +1,4 @@
+#![allow(unused)]
 use std::{path::PathBuf, time::Duration};
 
 use anyhow::bail;
