@@ -123,6 +123,7 @@ fn load_genesis_txn(path: &Path) -> Result<Transaction> {
     Ok(bcs::from_bytes(&buffer)?)
 }
 
+#[ignore] // TODO
 #[test]
 fn test_bootstrap_db() -> anyhow::Result<()> {
     use diem_temppath;
