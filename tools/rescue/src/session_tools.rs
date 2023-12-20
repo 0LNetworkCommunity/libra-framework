@@ -113,11 +113,7 @@ pub fn writeset_voodoo_events(session: &mut SessionExt) -> anyhow::Result<()> {
     // )?;
     //////
 
-    libra_execute_session_function(
-        session,
-        "0x1::reconfiguration::reconfigure",
-        vec![],
-    )?;
+    libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
 
     Ok(())
 }
