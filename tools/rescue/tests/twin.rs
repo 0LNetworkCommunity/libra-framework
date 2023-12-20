@@ -1,13 +1,13 @@
 mod support;
 
-use crate::support::{update_node_config_restart, deadline_secs};
+use crate::support::{deadline_secs, update_node_config_restart};
 
 use diem_config::config::InitialSafetyRulesConfig;
+use diem_forge::SwarmExt;
 use diem_types::transaction::Transaction;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
 use smoke_test::test_utils::swarm_utils::insert_waypoint;
-use diem_forge::SwarmExt;
 
 #[tokio::test]
 
@@ -33,7 +33,7 @@ async fn test_twin() -> anyhow::Result<()> {
     }
 
     println!("1. start new swarm configs, and stop the network");
-    let mut s = LibraSmoke::new(Some(1))
+    let _s = LibraSmoke::new(Some(1))
         .await
         .expect("could not start libra smoke");
 
@@ -81,7 +81,7 @@ async fn test_twin() -> anyhow::Result<()> {
     //////////
 
     println!("4. apply genesis transaction to all validators");
-    for (expected_to_connect, node) in env.validators_mut().enumerate() {
+    for (_expected_to_connect, node) in env.validators_mut().enumerate() {
         let mut node_config = node.config().clone();
 
         let val_db_path = node.config().storage.dir();
@@ -98,7 +98,7 @@ async fn test_twin() -> anyhow::Result<()> {
 
         let waypoint = bootstrap.run().unwrap();
 
-        insert_waypoint(&mut node_config, waypoint.clone());
+        insert_waypoint(&mut node_config, waypoint);
         node_config
             .consensus
             .safety_rules
