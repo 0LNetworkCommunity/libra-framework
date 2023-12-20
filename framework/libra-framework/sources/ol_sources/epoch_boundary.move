@@ -187,8 +187,8 @@ module diem_framework::epoch_boundary {
 
 
     /// flip the bit to allow the epoch to be reconfigured on any transaction
-    public(friend) fun enable_epoch_trigger(vm_signer: &signer, closing_epoch: u64)
-    acquires BoundaryBit {
+    public(friend) fun enable_epoch_trigger(vm_signer: &signer, closing_epoch:
+    u64) acquires BoundaryBit {
 
       if (!exists<BoundaryBit>(@ol_framework)) {
         move_to(vm_signer, BoundaryBit {
