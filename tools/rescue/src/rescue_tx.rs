@@ -73,9 +73,8 @@ fn test_create_blob() -> anyhow::Result<()> {
     use std::path::Path;
 
     let script_path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("src")
-        .join("templates")
-        .join("governance_script_template");
+        .join("fixtures")
+        .join("rescue_framework_script");
     assert!(script_path.exists());
 
     let db_root_path = diem_temppath::TempPath::new();

@@ -7,7 +7,7 @@ script {
     use diem_std::debug::print;
     use std::string;
 
-    fun main(_vm_signer: signer, framework_signer: signer){
+    fun main(vm_signer: signer, framework_signer: signer){
       ///////// add governance operations here /////////
       print(&string::utf8(b"plz halp"));
       ///////// end governance operations /////////

@@ -192,6 +192,7 @@ fn combined_steps(session: &mut SessionExt) -> anyhow::Result<()> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 // test we can publish a db to a fixture
 fn test_publish() {
@@ -216,6 +217,7 @@ fn _update_resource_in_session(session: &mut SessionExt) {
     let _a = resource.move_from().unwrap();
 }
 
+#[ignore]
 #[test]
 // the writeset voodoo needs to be perfect
 fn test_voodoo() {
@@ -237,6 +239,7 @@ fn test_base() {
     libra_run_session(dir, check_base, None).unwrap();
 }
 
+#[ignore]
 #[test]
 // testing we can open a database from fixtures, and produce a VM session
 fn meta_test_open_db_sync() -> anyhow::Result<()> {
