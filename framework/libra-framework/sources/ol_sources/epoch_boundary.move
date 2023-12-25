@@ -243,19 +243,21 @@ module diem_framework::epoch_boundary {
 
           // since we reserved some fees to go to the oracle miners
           // we take the NET REWARD of the validators, since it is the equivalent of what the validator would earn net of entry fee.
-          let net_val_reward = nominal_reward_to_vals - entry_fee;
+            if (nominal_reward_to_vals > entry_fee) {
+                let net_val_reward = nominal_reward_to_vals - entry_fee;
 
-          if (coin::value(&all_fees) > net_val_reward) {
-            let oracle_budget = coin::extract(&mut all_fees, net_val_reward);
-            status.oracle_budget = coin::value(&oracle_budget);
+                if (coin::value(&all_fees) > net_val_reward) {
+                    let oracle_budget = coin::extract(&mut all_fees, net_val_reward);
+                    status.oracle_budget = coin::value(&oracle_budget);
 
-            let (count, amount) = oracle::epoch_boundary(root, &mut oracle_budget);
-            status.oracle_pay_count = count;
-            status.oracle_pay_amount = amount;
-            status.oracle_pay_success = (amount > 0);
-            // in case there is any dust left
-            ol_account::merge_coins(&mut all_fees, oracle_budget);
-          };
+                    let (count, amount) = oracle::epoch_boundary(root, &mut oracle_budget);
+                    status.oracle_pay_count = count;
+                    status.oracle_pay_amount = amount;
+                    status.oracle_pay_success = (amount > 0);
+                    // in case there is any dust left
+                    ol_account::merge_coins(&mut all_fees, oracle_budget);
+                };
+            };
 
           // remainder gets burnt according to fee maker preferences
           let (b_success, b_fees) = burn::epoch_burn_fees(root, &mut all_fees);
