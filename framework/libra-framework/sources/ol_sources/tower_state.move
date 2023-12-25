@@ -585,14 +585,20 @@ module ol_framework::tower_state {
         // pick the next miner
         // make sure we get an n smaller than list of miners
 
-        let k = 0; // k keeps track of this loop, abort if loops too much
-        while (this_miner_index > count_miners) {
-          if (k > 1000) return 0;
-          this_miner_index = this_miner_index / count_miners;
-          k = k + 1;
-        };
+        // Current case: if miner_index = count_miners could lead to overflow 
+
+        // let k = 0; // k keeps track of this loop, abort if loops too much
+        // while (this_miner_index >= count_miners) {
+        //   if (k > 1000) return 0;
+        //   this_miner_index = this_miner_index / count_miners;
+        //   k = k + 1;
+        // };
+
         // double check length of vector
-        if (this_miner_index >= count_miners ) return 0;
+        // if (this_miner_index >= count_miners ) return 0;
+
+        // We could use modulo arthemetic on integers
+        this_miner_index = this_miner_index % count_miners;
 
         let miner_addr = vector::borrow<address>(&all_miners, this_miner_index);
         let vec = if (exists<TowerProofHistory>(*miner_addr)) {

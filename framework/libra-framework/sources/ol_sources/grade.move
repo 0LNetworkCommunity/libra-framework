@@ -90,7 +90,7 @@ module ol_framework::grade {
         let net = proposed - failed;
         let net_props_vs_leader= fixed_point32::create_from_rational(net,
         highest_net_props);
-        fixed_point32::multiply_u64(100, net_props_vs_leader) > FAILED_PROPS_THRESHOLD_PCT
+        fixed_point32::multiply_u64(100, net_props_vs_leader) > TRAILING_VALIDATOR_THRESHOLD
       } else { false }
     }
 }
