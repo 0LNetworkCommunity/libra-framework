@@ -98,7 +98,10 @@ module ol_framework::slow_wallet {
       }
     }
 
-    public fun set_slow(sig: &signer) acquires SlowWalletList {
+    /// Users can change their account to slow, by calling the entry function
+    /// Warning: this is permanent for the account. There's no way to
+    /// reverse a "slow wallet".
+    public entry fun set_slow(sig: &signer) acquires SlowWalletList {
       assert!(exists<SlowWalletList>(@ol_framework), error::invalid_argument(EGENESIS_ERROR));
 
         let addr = signer::address_of(sig);
