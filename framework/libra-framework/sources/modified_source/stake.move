@@ -23,7 +23,8 @@ module diem_framework::stake {
     friend diem_framework::transaction_fee;
 
     //////// 0L ///////
-    friend diem_framework::epoch_boundary;
+    friend diem_framework::diem_governance;
+    friend ol_framework::epoch_boundary;
     friend ol_framework::rewards;
 
     /// Validator Config not published.
@@ -735,6 +736,33 @@ module diem_framework::stake {
       );
 
       (finally_the_validators, missing_configs, success_sanity && success_current)
+    }
+
+    /// governance can remove validators
+    /// may be necessary for rescue operations
+    // NOTE: this is only used for smoke tests
+    // TODO: Evaluate if this belongs in production
+    public fun remove_validators(
+        diem_framework: &signer,
+        remove_these: &vector<address>,
+    ) acquires ValidatorSet, ValidatorConfig, ValidatorPerformance{
+        system_addresses::assert_diem_framework(diem_framework);
+
+        let validator_set = get_current_validators();
+        let len_dead = vector::length(remove_these);
+        let i = 0;
+        // Remove each validator from the validator set.
+        while (i < len_dead) {
+            let dead_val = vector::borrow(remove_these, i);
+            let (is_found, idx) = vector::index_of(&validator_set, dead_val);
+
+            if (is_found) {
+                vector::swap_remove(&mut validator_set, idx);
+            };
+            i = i + 1;
+        };
+
+        maybe_reconfigure(diem_framework, validator_set);
     }
 
     #[test_only]
