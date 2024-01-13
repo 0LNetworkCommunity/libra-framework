@@ -1,7 +1,7 @@
 //! test framework upgrades with multiple steps
-use std::{path::PathBuf, str::FromStr};
 
 use diem_types::chain_id::NamedChain;
+use libra_framework::upgrade_fixtures;
 use libra_query::query_view;
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::{
@@ -31,15 +31,17 @@ async fn smoke_upgrade_multiple_steps() {
             .await
             .expect("could not init validator config");
 
-    ///// NOTE THERE ARE MULTIPLE STEPS, we are getting the artifacts for the first step.
-    let script_dir = get_package_path().join("1-move-stdlib");
-    assert!(script_dir.exists(), "can't find upgrade fixtures");
-
     // This step should fail. The view function does not yet exist in the system address.
     // we will upgrade a new binary which will include this function.
     let query_res =
         query_view::get_view(&s.client(), "0x1::all_your_base::are_belong_to", None, None).await;
     assert!(query_res.is_err(), "expected all_your_base to fail");
+
+    ///// NOTE THERE ARE MULTIPLE STEPS, we are getting the artifacts for the first step.
+    let script_dir = upgrade_fixtures::fixtures_path()
+        .join("upgrade-multi-lib")
+        .join("1-move-stdlib");
+    assert!(script_dir.exists(), "can't find upgrade fixtures");
 
     let mut cli = TxsCli {
         subcommand: Some(Upgrade(Propose {
@@ -124,7 +126,7 @@ async fn smoke_upgrade_multiple_steps() {
         "expected this script hash, did you change the fixtures?"
     );
 
-    ///////// SHOW TIME FIRST STEP ////////
+    ///////// SHOW TIME, RESOLVE FIRST STEP 1/3////////
     // Now try to resolve upgrade
     cli.subcommand = Some(Upgrade(Resolve {
         proposal_id: 0,
@@ -133,10 +135,11 @@ async fn smoke_upgrade_multiple_steps() {
     cli.run().await.expect("cannot resolve proposal at step 1");
     //////////////////////////////
 
-    let script_dir = get_package_path().join("2-vendor-stdlib");
-
-    ///////// SHOW TIME LAST STEP ////////
+    ///////// SHOW TIME, RESOLVE SECOND STEP 2/3 ////////
     // Now try to resolve upgrade
+    let script_dir = upgrade_fixtures::fixtures_path()
+        .join("upgrade-multi-lib")
+        .join("2-vendor-stdlib");
     cli.subcommand = Some(Upgrade(Resolve {
         proposal_id: 0,
         proposal_script_dir: script_dir,
@@ -144,20 +147,25 @@ async fn smoke_upgrade_multiple_steps() {
     cli.run().await.expect("cannot resolve proposal at step 2");
     //////////////////////////////
 
+    ///////// SHOW TIME, RESOLVE THIRD STEP 3/3 ////////
+    // THIS IS THE STEP THAT CONTAINS THE CHANGED MODULE all_your_base
+    // Now try to resolve upgrade
+    let script_dir = upgrade_fixtures::fixtures_path()
+        .join("upgrade-multi-lib")
+        .join("3-libra-framework");
+    cli.subcommand = Some(Upgrade(Resolve {
+        proposal_id: 0,
+        proposal_script_dir: script_dir,
+    }));
+    cli.run().await.expect("cannot resolve proposal at step 3");
+    //////////////////////////////
+
     let query_res =
         query_view::get_view(&s.client(), "0x1::all_your_base::are_belong_to", None, None)
             .await
-            .unwrap();
+            .expect("no all_your_base module found");
     assert!(&query_res.as_array().unwrap()[0]
         .as_str()
         .unwrap()
         .contains("7573"));
-}
-
-fn get_package_path() -> PathBuf {
-    let this_crate = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
-    this_crate
-        .join("tests")
-        .join("fixtures")
-        .join("upgrade-multi-lib")
 }
