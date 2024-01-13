@@ -42,7 +42,6 @@ async fn meta_create_libra_smoke_multi() -> anyhow::Result<()> {
         .expect("cannot start libra swarm");
 
     let c = s.client();
-    // let c = c.get_resource::<_>(address, resource_type).awa
     let res = c
         .get_account_resource(
             "0x1".parse().unwrap(),

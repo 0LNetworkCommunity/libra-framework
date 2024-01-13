@@ -1,7 +1,7 @@
-use std::str::FromStr;
-use std::{fs, path::PathBuf};
+use std::fs;
 
 use diem_types::chain_id::NamedChain;
+use libra_framework::upgrade_fixtures;
 use libra_query::query_view;
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::{
@@ -30,8 +30,10 @@ async fn smoke_upgrade_single_step() {
         configure_validator::init_val_config_files(&mut s.swarm, 0, d.path().to_owned())
             .await
             .expect("could not init validator config");
-    // let this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
-    let script_dir = get_package_path();
+
+    let script_dir = upgrade_fixtures::fixtures_path()
+        .join("upgrade-single-lib")
+        .join("1-move-stdlib");
     assert!(script_dir.exists(), "can't find upgrade fixtures");
 
     // This step should fail. The view function does not yet exist in the system address.
@@ -135,18 +137,9 @@ async fn smoke_upgrade_single_step() {
     let query_res =
         query_view::get_view(&s.client(), "0x1::all_your_base::are_belong_to", None, None)
             .await
-            .unwrap();
+            .expect("no all_your_base module found");
     assert!(&query_res.as_array().unwrap()[0]
         .as_str()
         .unwrap()
         .contains("7573"));
-}
-
-fn get_package_path() -> PathBuf {
-    let this_crate = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
-    this_crate
-        .join("tests")
-        .join("fixtures")
-        .join("upgrade-single-lib")
-        .join("1-move-stdlib")
 }
