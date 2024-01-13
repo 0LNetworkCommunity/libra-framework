@@ -460,6 +460,11 @@ pub enum EntryFunctionCall {
         code: Vec<Vec<u8>>,
     },
 
+    /// Users can change their account to slow, by calling the entry function
+    /// Warning: this is permanent for the account. There's no way to
+    /// reverse a "slow wallet".
+    SlowWalletSetSlow {},
+
     SlowWalletSmokeTestVmUnlock {
         user_addr: AccountAddress,
         unlocked: u64,
@@ -806,6 +811,7 @@ impl EntryFunctionCall {
                 metadata_serialized,
                 code,
             ),
+            SlowWalletSetSlow {} => slow_wallet_set_slow(),
             SlowWalletSmokeTestVmUnlock {
                 user_addr,
                 unlocked,
@@ -2105,6 +2111,24 @@ pub fn resource_account_create_resource_account_and_publish_package(
     ))
 }
 
+/// Users can change their account to slow, by calling the entry function
+/// Warning: this is permanent for the account. There's no way to
+/// reverse a "slow wallet".
+pub fn slow_wallet_set_slow() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("slow_wallet").to_owned(),
+        ),
+        ident_str!("set_slow").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
 pub fn slow_wallet_smoke_test_vm_unlock(
     user_addr: AccountAddress,
     unlocked: u64,
@@ -3064,6 +3088,14 @@ mod decoder {
         }
     }
 
+    pub fn slow_wallet_set_slow(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::SlowWalletSetSlow {})
+        } else {
+            None
+        }
+    }
+
     pub fn slow_wallet_smoke_test_vm_unlock(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -3445,6 +3477,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "resource_account_create_resource_account_and_publish_package".to_string(),
             Box::new(decoder::resource_account_create_resource_account_and_publish_package),
+        );
+        map.insert(
+            "slow_wallet_set_slow".to_string(),
+            Box::new(decoder::slow_wallet_set_slow),
         );
         map.insert(
             "slow_wallet_smoke_test_vm_unlock".to_string(),

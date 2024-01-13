@@ -7,7 +7,7 @@ use diem_types::{
     account_address::AccountAddress, account_config::CORE_CODE_ADDRESS,
     transaction::TransactionPayload,
 };
-use libra_cached_packages::libra_stdlib::account_rotate_authentication_key;
+use libra_cached_packages::libra_stdlib;
 use libra_types::{
     exports::{AuthenticationKey, Ed25519PrivateKey},
     type_extensions::client_ext::ClientExt,
@@ -17,7 +17,41 @@ use libra_wallet::account_keys::get_keys_from_prompt;
 #[derive(clap::Subcommand)]
 pub enum UserTxs {
     RotateKey(RotateKeyTx),
+    SetSlow(SetSlowTx),
 }
+
+
+impl UserTxs {
+    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        match &self {
+            UserTxs::RotateKey(rotate) => match rotate.run(sender).await {
+                Ok(_) => println!("SUCCESS: privated key rotated"),
+                Err(e) => {
+                    println!("ERROR: could not rotate private key, message: {}", e);
+                }
+            },
+            SetSlow => {
+
+            }
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(clap::Args)]
+pub struct SetSlowTx {
+  // TODO: any arguments needed? Confirmation?
+}
+
+impl SetSlowTx {
+    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        let payload = libra_stdlib::slow_wallet_set_slow();
+        sender.sign_submit_wait(payload).await?;
+        Ok(())
+    }
+}
+
 
 #[derive(clap::Args)]
 pub struct RotateKeyTx {
@@ -26,20 +60,6 @@ pub struct RotateKeyTx {
     new_private_key: Option<String>, // Dev NOTE: account address has the same bytes as AuthKey
 }
 
-impl UserTxs {
-    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        match &self {
-            UserTxs::RotateKey(tx) => match tx.run(sender).await {
-                Ok(_) => println!("SUCCESS: privated key rotated"),
-                Err(e) => {
-                    println!("ERROR: could not rotate private key, message: {}", e);
-                }
-            },
-        }
-
-        Ok(())
-    }
-}
 
 impl RotateKeyTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
@@ -94,7 +114,7 @@ pub fn rotate_key(
     let rotation_proof_signed_by_new_private_key =
         new_private_key.sign_arbitrary_message(&rotation_msg);
 
-    let payload = account_rotate_authentication_key(
+    let payload = libra_stdlib::account_rotate_authentication_key(
         0,
         // Existing public key
         current_private_key.public_key().to_bytes().to_vec(),
