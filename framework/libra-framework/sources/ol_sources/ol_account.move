@@ -444,7 +444,6 @@ module ol_framework::ol_account {
     public fun deposit_coins(to: address, coins: Coin<LibraCoin>) acquires
     BurnTracker {
         assert!(coin::is_account_registered<LibraCoin>(to), error::invalid_state(EACCOUNT_NOT_REGISTERED_FOR_GAS));
-        slow_wallet::maybe_track_unlocked_deposit(to, coin::value(&coins));
         coin::deposit<LibraCoin>(to, coins);
         // the incoming coins should trigger an update in tracker
         maybe_update_burn_tracker_impl(to);

@@ -20,7 +20,6 @@ pub enum UserTxs {
     SetSlow(SetSlowTx),
 }
 
-
 impl UserTxs {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         match &self {
@@ -33,9 +32,12 @@ impl UserTxs {
             UserTxs::SetSlow(slow) => match slow.run(sender).await {
                 Ok(_) => println!("SUCCESS: account set to Slow Wallet"),
                 Err(e) => {
-                    println!("ERROR: could set the account to Slow Wallet, message: {}", e);
+                    println!(
+                        "ERROR: could set the account to Slow Wallet, message: {}",
+                        e
+                    );
                 }
-            }
+            },
         }
 
         Ok(())
@@ -44,7 +46,7 @@ impl UserTxs {
 
 #[derive(clap::Args)]
 pub struct SetSlowTx {
-  // TODO: any arguments needed? Confirmation?
+    // TODO: any arguments needed? Confirmation?
 }
 
 impl SetSlowTx {
@@ -55,14 +57,12 @@ impl SetSlowTx {
     }
 }
 
-
 #[derive(clap::Args)]
 pub struct RotateKeyTx {
     #[clap(short, long)]
     /// The new authkey to be used
     new_private_key: Option<String>, // Dev NOTE: account address has the same bytes as AuthKey
 }
-
 
 impl RotateKeyTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {

@@ -228,6 +228,8 @@ fn test_genesis_math() {
     // future uses is intended to equal 70% in this scenario.
 
     supply.set_ratios_from_settings(&settings).unwrap();
+
+    println!("after");
     dbg!(&supply);
 
     // escrow comes out of validator locked only
@@ -240,4 +242,20 @@ fn test_genesis_math() {
 
     let sum_all = to_escrow + new_slow + supply.normal + supply.donor_directed + supply.make_whole;
     assert!(supply.total == sum_all);
+
+    dbg!(supply.normal / supply.total);
+    dbg!(supply.donor_directed / supply.total);
+    dbg!(supply.slow_total / supply.total);
+    dbg!(supply.slow_unlocked / supply.total);
+    dbg!(supply.make_whole / supply.total);
+
+    let out_of_play = supply.donor_directed + (supply.slow_total - supply.slow_unlocked);
+    let in_play_a = supply.total - out_of_play;
+
+    dbg!(in_play_a / supply.total);
+
+    let in_play_b = supply.make_whole + supply.normal + supply.slow_unlocked;
+    dbg!(in_play_b / supply.total);
+
+    assert!(in_play_a == in_play_b);
 }
