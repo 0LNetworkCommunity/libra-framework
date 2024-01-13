@@ -64,10 +64,10 @@ pub fn libra_author_script_file(
 
     let code = release_package.code();
     for i in 0..code.len() {
-        emitln!(writer, "let chunk{} = ", i);
+        emitln!(writer, "let code_chunk{} = ", i);
         generate_blob(&writer, code[i]);
         emitln!(writer, ";");
-        emitln!(writer, "vector::push_back(&mut code, chunk{});", i);
+        emitln!(writer, "vector::push_back(&mut code, code_chunk{});", i);
     }
 
     // The package metadata can be larger than 64k, which is the max for Move constants.
@@ -85,18 +85,22 @@ pub fn libra_author_script_file(
             chunk_size
         };
         let chunk = metadata.drain(0..to_drain).collect::<Vec<_>>();
-        emit!(writer, "let chunk{} = ", i);
+        emit!(writer, "let metadata_chunk{} = ", i);
         generate_blob(&writer, &chunk);
         emitln!(writer, ";")
     }
 
     for i in 2..num_of_chunks + 1 {
-        emitln!(writer, "vector::append(&mut chunk1, chunk{});", i);
+        emitln!(
+            writer,
+            "vector::append(&mut metadata_chunk1, metadata_chunk{});",
+            i
+        );
     }
 
     emitln!(
         writer,
-        "code::publish_package_txn(&framework_signer, chunk1, code);"
+        "code::publish_package_txn(&framework_signer, metadata_chunk1, code);"
     );
 
     emitln!(

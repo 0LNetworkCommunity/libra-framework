@@ -1,17 +1,16 @@
 //! Validator subcommands
+use crate::submit_transaction::Sender;
 
 use std::{fs, path::PathBuf};
 
-use crate::submit_transaction::Sender;
 use anyhow::{bail, Context};
 use diem_genesis::config::OperatorConfiguration;
 use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib::EntryFunctionCall::{
-    JailUnjailByVoucher, ProofOfFeePofRetractBid, ProofOfFeePofUpdateBid,
+    self, JailUnjailByVoucher, ProofOfFeePofRetractBid, ProofOfFeePofUpdateBid,
     StakeUpdateNetworkAndFullnodeAddresses, ValidatorUniverseRegisterValidator, VouchRevoke,
     VouchVouchFor,
 };
-
 use libra_types::global_config_dir;
 use libra_wallet::validator_files::OPERATOR_FILE;
 
@@ -60,7 +59,14 @@ pub enum ValidatorTxs {
 
 impl ValidatorTxs {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload = match self {
+        let payload = self.make_payload()?;
+        sender.sign_submit_wait(payload.encode()).await?;
+        Ok(())
+    }
+
+    //  Create the Entry function which the txs will run.
+    pub fn make_payload(&self) -> anyhow::Result<EntryFunctionCall> {
+        let p = match self {
             ValidatorTxs::Pof {
                 bid_pct,
                 expiry: epoch_expiry,
@@ -157,7 +163,6 @@ impl ValidatorTxs {
             }
         };
 
-        sender.sign_submit_wait(payload.encode()).await?;
-        Ok(())
+        Ok(p)
     }
 }

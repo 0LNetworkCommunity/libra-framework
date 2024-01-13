@@ -56,7 +56,7 @@ impl UpgradeTxs {
                 let hash_path = proposal_script_dir.join("script_sha3");
                 if !proposal_script_dir.exists() || !hash_path.exists() {
                     bail!(
-                        "cannot find upgrade script pacage at {:?}",
+                        "cannot find upgrade script package at {:?}",
                         proposal_script_dir
                     );
                 }

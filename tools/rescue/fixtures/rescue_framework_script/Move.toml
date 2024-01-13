@@ -1,0 +1,13 @@
+[package]
+name = 'rescue_framework_script'
+version = '1.0.0'
+authors = []
+license = ''
+
+[addresses]
+
+[dev-addresses]
+[dependencies.LibraFramework]
+local = '../../../../framework/libra-framework'
+
+[dev-dependencies]

@@ -33,6 +33,7 @@ rust-version = "1.70.0"
 libra-cached-packages = { path = "framework/cached-packages" }
 libra-config = { path = "tools/config" }
 libra-framework = { path = "framework" }
+libra-genesis-tools = { path = "tools/genesis" }
 libra-query = { path = "tools/query" }
 libra-smoke-tests = { path = "smoke-tests" }
 libra-tower = { path = "tools/tower" }
@@ -63,6 +64,7 @@ diem-types = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "db
 diem-gas = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "db1137ba1" }
 diem-vm = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "db1137ba1" }
 diem-vm-genesis = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "db1137ba1" }
+diem-vm-types = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "db1137ba1" }
 diem-executor = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "db1137ba1" }
 diem-framework = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "db1137ba1" }
 diem-cached-packages = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "db1137ba1" }
@@ -320,6 +322,7 @@ move-command-line-common = { git = "https://github.com/0LNetworkCommunity/diem.g
 move-compiler = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "db1137ba1" }
 move-model = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "db1137ba1" }
 move-vm-test-utils = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "db1137ba1" }
+move-vm-types = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "db1137ba1" }
 
 # uses a profile similar to `cli` in Diem/Cargo.toml
 # optimized for performance and size
@@ -341,6 +344,9 @@ debug = true
 split-debuginfo = "unpacked"
 lto = false
 incremental = true
+
+[profile.test]
+inherits = "dev"
 
 # # This is a temporary workaround to avoid multiple library
 # # definitions for LZ4 (caused by rust-rocksdb).

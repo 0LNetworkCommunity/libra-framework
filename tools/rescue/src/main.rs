@@ -1,5 +1,7 @@
+use std::time::Duration;
+
 use clap::{Parser, Subcommand};
-use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
+use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts, twin::TwinOpts};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -7,43 +9,40 @@ use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
 struct RescueCli {
     #[clap(subcommand)]
     command: Option<Sub>,
-    #[clap(long)]
-    /// apply to db in one step.
-    apply_to_db: bool,
 }
 
 #[derive(Subcommand)]
 enum Sub {
     RescueTx(RescueTxOpts),
     Bootstrap(BootstrapOpts),
+    Debug(TwinOpts),
 }
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<()> {
     let cli = RescueCli::parse();
     match cli.command {
         Some(Sub::RescueTx(mission)) => {
-            let blob_path = mission.run().await?;
+            let blob_path = mission.run()?;
 
-            if cli.apply_to_db {
-                let b = BootstrapOpts {
-                    db_dir: mission.data_path,
-                    genesis_txn_file: blob_path,
-                    waypoint_to_verify: None,
-                    commit: true,
-                };
-                b.run()?;
+            let b = BootstrapOpts {
+                db_dir: mission.data_path,
+                genesis_txn_file: blob_path,
+                waypoint_to_verify: None,
+                commit: false,
             };
-            println!("SUCCESS: rescue mission complete.");
+            let _ = b.run()?;
         }
         Some(Sub::Bootstrap(bootstrap)) => {
             bootstrap.run()?;
-            println!("SUCCESS: db boostrapped with writeset (genesis tx)");
         }
-        _ => {
-            println!("\nI'll be there")
+        Some(Sub::Debug(twin)) => {
+            twin.run()?;
         }
+        _ => {} // prints help
     }
-
+    println!("done");
+    // hack. let the DB close before exiting
+    // TODO: fix in Diem or place in thread
+    std::thread::sleep(Duration::from_millis(10));
     Ok(())
 }
