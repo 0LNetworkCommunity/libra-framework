@@ -25,13 +25,16 @@ impl UserTxs {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         match &self {
             UserTxs::RotateKey(rotate) => match rotate.run(sender).await {
-                Ok(_) => println!("SUCCESS: privated key rotated"),
+                Ok(_) => println!("SUCCESS: private key rotated"),
                 Err(e) => {
                     println!("ERROR: could not rotate private key, message: {}", e);
                 }
             },
-            SetSlow => {
-
+            UserTxs::SetSlow(slow) => match slow.run(sender).await {
+                Ok(_) => println!("SUCCESS: account set to Slow Wallet"),
+                Err(e) => {
+                    println!("ERROR: could set the account to Slow Wallet, message: {}", e);
+                }
             }
         }
 
