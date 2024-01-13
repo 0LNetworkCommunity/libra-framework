@@ -1,29 +1,36 @@
-use crate::framework_payload;
+use crate::session_tools;
 use clap::Parser;
-use diem_types::transaction::{Script, Transaction, WriteSetPayload};
+use diem_types::{
+    account_address::AccountAddress,
+    transaction::{Script, Transaction, WriteSetPayload},
+};
 use libra_framework::builder::framework_generate_upgrade_proposal::libra_compile_script;
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
 use std::path::PathBuf;
 
 #[derive(Parser)]
-/// Create a rescue transaction using the path of the node db
+/// Start a libra node
 pub struct RescueTxOpts {
     #[clap(short, long)]
     /// directory enclosing the `/db` folder of the node
     pub data_path: PathBuf,
     #[clap(short, long)]
-    /// directory to read/write for the rescue.blob. Will default to db_path/rescue.blob
+    /// directory to read/write or the rescue.blob. Will default to db_path/rescue.blob
     pub blob_path: Option<PathBuf>,
     #[clap(short, long)]
-    /// directory for the script to be executed
+    /// directory to read/write or the rescue.blob
     pub script_path: Option<PathBuf>,
     #[clap(long)]
     /// directory to read/write or the rescue.blob
     pub framework_upgrade: bool,
+    #[clap(long)]
+    /// Replace validator set with these addresses. They must
+    /// already have valid configurations on chain.
+    pub debug_vals: Option<Vec<AccountAddress>>,
 }
 
 impl RescueTxOpts {
-    pub async fn run(&self) -> anyhow::Result<PathBuf> {
+    pub fn run(&self) -> anyhow::Result<PathBuf> {
         let db_path = self.data_path.clone();
 
         // There are two options:
@@ -42,8 +49,9 @@ impl RescueTxOpts {
 
             Transaction::GenesisTransaction(wp)
         } else if self.framework_upgrade {
-            let payload = framework_payload::stlib_payload(db_path.clone()).await?;
-            Transaction::GenesisTransaction(payload)
+            let cs =
+                session_tools::publish_current_framework(&db_path, self.debug_vals.to_owned())?;
+            Transaction::GenesisTransaction(WriteSetPayload::Direct(cs))
         } else {
             anyhow::bail!("no options provided, need a --framework-upgrade or a --script-path");
         };
@@ -59,15 +67,14 @@ impl RescueTxOpts {
     }
 }
 
-#[tokio::test]
-async fn test_create_blob() -> anyhow::Result<()> {
+#[test]
+fn test_create_blob() -> anyhow::Result<()> {
     use diem_temppath;
     use std::path::Path;
 
     let script_path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("src")
-        .join("templates")
-        .join("governance_script_template");
+        .join("fixtures")
+        .join("rescue_framework_script");
     assert!(script_path.exists());
 
     let db_root_path = diem_temppath::TempPath::new();
@@ -82,8 +89,9 @@ async fn test_create_blob() -> anyhow::Result<()> {
         blob_path: Some(blob_path.path().to_owned()),
         script_path: Some(script_path),
         framework_upgrade: false,
+        debug_vals: None,
     };
-    r.run().await?;
+    r.run()?;
 
     assert!(blob_path.path().join("rescue.blob").exists());
 

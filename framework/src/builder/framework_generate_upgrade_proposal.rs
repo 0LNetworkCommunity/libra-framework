@@ -49,7 +49,6 @@ pub fn make_framework_upgrade_artifacts(
     let len = core_modules.len();
     for (idx, core_module_name) in core_modules.iter().enumerate() {
         let deploy_order = len - idx; // we are compiling the last module to deploy first. This is because we need to know it's hash, ahead of the earlier modules. That is LibraFramework will compile first, although it will be 3rd to deploy. We need its execution hash known when we deploy the 2nd package: VendorStdlib, which needs that has IN THE GOVERNANCE SCRIPT.
-                                      // let relative_package_path = one_core_module;
 
         // the core module we are upgrading e.g. LibraFramework
         let mut core_module_dir = framework_local_dir.to_owned().canonicalize()?;
@@ -58,11 +57,11 @@ pub fn make_framework_upgrade_artifacts(
         // We first need to compile and build each CORE MODULE we are upgrading (e.g. MoveStdlib, LibraFramework)
 
         let options = BuildOptions {
-            with_srcs: false, // TODO: which is needed in production for?
+            with_srcs: true, // this will store the source bytes on chain, as in genesis
             with_abis: false,
             with_source_maps: false,
             with_error_map: true,
-            skip_fetch_latest_git_deps: false,
+            skip_fetch_latest_git_deps: true,
             bytecode_version: Some(BYTECODE_VERSION),
             ..BuildOptions::default()
         };
