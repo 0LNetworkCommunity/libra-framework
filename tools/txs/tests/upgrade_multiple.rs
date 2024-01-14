@@ -136,7 +136,6 @@ async fn smoke_upgrade_multiple_steps() {
     //////////////////////////////
 
     ///////// SHOW TIME, RESOLVE SECOND STEP 2/3 ////////
-    // Now try to resolve upgrade
 
     let script_dir = upgrade_fixtures::fixtures_path()
         .join("upgrade-multi-lib")

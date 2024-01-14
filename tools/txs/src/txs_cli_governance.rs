@@ -45,7 +45,7 @@ pub enum GovernanceTxs {
         /// Path to the directory of the compiled proposal script
         proposal_script_dir: PathBuf,
     },
-    EpochBoundary
+    EpochBoundary,
 }
 
 impl GovernanceTxs {
@@ -115,9 +115,7 @@ impl GovernanceTxs {
 
                 TransactionPayload::Script(proposal_script)
             }
-            GovernanceTxs::EpochBoundary => {
-              libra_stdlib::diem_governance_trigger_epoch()
-            },
+            GovernanceTxs::EpochBoundary => libra_stdlib::diem_governance_trigger_epoch(),
         };
 
         sender.sign_submit_wait(payload).await?;
