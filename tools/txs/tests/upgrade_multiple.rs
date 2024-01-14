@@ -3,10 +3,10 @@
 use diem_types::chain_id::NamedChain;
 use libra_framework::upgrade_fixtures;
 use libra_query::query_view;
-use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
+use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke, upgrade_fixtures};
 use libra_txs::{
-    txs_cli::{TxsCli, TxsSub::Upgrade},
-    txs_cli_upgrade::UpgradeTxs::{Propose, Resolve, Vote},
+    txs_cli::{TxsCli, TxsSub::Governance},
+    txs_cli_governance::GovernanceTxs::{Propose, Resolve, Vote},
 };
 use libra_types::legacy_types::app_cfg::TxCost;
 
@@ -44,7 +44,7 @@ async fn smoke_upgrade_multiple_steps() {
     assert!(script_dir.exists(), "can't find upgrade fixtures");
 
     let mut cli = TxsCli {
-        subcommand: Some(Upgrade(Propose {
+        subcommand: Some(Governance(Propose {
             proposal_script_dir: script_dir.clone(),
             metadata_url: "http://allyourbase.com".to_string(),
         })),
@@ -63,7 +63,7 @@ async fn smoke_upgrade_multiple_steps() {
         .expect("cli could not send upgrade proposal");
 
     // ALICE VOTES
-    cli.subcommand = Some(Upgrade(Vote {
+    cli.subcommand = Some(Governance(Vote {
         proposal_id: 0,
         should_fail: false,
     }));
@@ -128,7 +128,7 @@ async fn smoke_upgrade_multiple_steps() {
 
     ///////// SHOW TIME, RESOLVE FIRST STEP 1/3////////
     // Now try to resolve upgrade
-    cli.subcommand = Some(Upgrade(Resolve {
+    cli.subcommand = Some(Governance(Resolve {
         proposal_id: 0,
         proposal_script_dir: script_dir,
     }));
@@ -137,10 +137,11 @@ async fn smoke_upgrade_multiple_steps() {
 
     ///////// SHOW TIME, RESOLVE SECOND STEP 2/3 ////////
     // Now try to resolve upgrade
+
     let script_dir = upgrade_fixtures::fixtures_path()
         .join("upgrade-multi-lib")
         .join("2-vendor-stdlib");
-    cli.subcommand = Some(Upgrade(Resolve {
+    cli.subcommand = Some(Governance(Resolve {
         proposal_id: 0,
         proposal_script_dir: script_dir,
     }));
@@ -153,7 +154,7 @@ async fn smoke_upgrade_multiple_steps() {
     let script_dir = upgrade_fixtures::fixtures_path()
         .join("upgrade-multi-lib")
         .join("3-libra-framework");
-    cli.subcommand = Some(Upgrade(Resolve {
+    cli.subcommand = Some(Governance(Resolve {
         proposal_id: 0,
         proposal_script_dir: script_dir,
     }));
