@@ -5,7 +5,9 @@ on:
     tags:
       - "[0-9]+.[0-9]+.[0-9]+"
       - "[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
-    branches: ["*"]
+    branches:
+      - "release**"
+      - "main**"
   pull_request:
     types:
       - opened
