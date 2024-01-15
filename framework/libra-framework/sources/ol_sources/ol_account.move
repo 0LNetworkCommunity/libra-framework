@@ -188,6 +188,8 @@ module ol_framework::ol_account {
       assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
 
       let coin = coin::withdraw_with_capability(cap, amount);
+      slow_wallet::maybe_track_unlocked_withdraw(payer, amount);
+
       // the outgoing coins should trigger an update on this account
       // order matters here
       maybe_update_burn_tracker_impl(payer);
@@ -202,9 +204,6 @@ module ol_framework::ol_account {
             assume !system_addresses::signer_is_ol_root(sender);
             assume chain_status::is_operating();
         };
-        // never abort when its a system address
-        // if (system_addresses::signer_is_ol_root(sender)) return
-        // coin::zero<LibraCoin>(); // and VM needs to figure this out.
 
         let addr = signer::address_of(sender);
         assert!(amount > 0, error::invalid_argument(EZERO_TRANSFER));
@@ -212,6 +211,8 @@ module ol_framework::ol_account {
         let limit = slow_wallet::unlocked_amount(addr);
         assert!(amount <= limit, error::invalid_state(EINSUFFICIENT_BALANCE));
         let coin = coin::withdraw<LibraCoin>(sender, amount);
+        slow_wallet::maybe_track_unlocked_withdraw(addr, amount);
+
         // the outgoing coins should trigger an update on this account
         // order matters here
         maybe_update_burn_tracker_impl(addr);
@@ -235,7 +236,7 @@ module ol_framework::ol_account {
         assert!(coin::is_account_registered<LibraCoin>(recipient), error::invalid_argument(EACCOUNT_NOT_REGISTERED_FOR_GAS));
 
         // must track the slow wallet on both sides of the transfer
-        slow_wallet::maybe_track_slow_transfer(payer, recipient, amount);
+        // slow_wallet::maybe_track_slow_transfer(payer, recipient, amount);
 
         // maybe track cumulative deposits if this is a donor directed wallet
         // or other wallet which tracks cumulative payments.
@@ -323,10 +324,6 @@ module ol_framework::ol_account {
       return c_opt
 
     }
-
-    // public fun withdraw_with_capability(cap: &WithdrawCapability, amount: u64): Coin<LibraCoin> {
-    //   coin::withdraw_with_capability(cap, amount)
-    // }
 
     //////// 0L ////////
 

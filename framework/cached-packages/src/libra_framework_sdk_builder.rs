@@ -466,6 +466,11 @@ pub enum EntryFunctionCall {
         transferred: u64,
     },
 
+    /// Users can change their account to slow, by calling the entry function
+    /// Warning: this is permanent for the account. There's no way to
+    /// reverse a "slow wallet".
+    SlowWalletUserSetSlow {},
+
     /// Initialize the validator account and give ownership to the signing account
     /// except it leaves the ValidatorConfig to be set by another entity.
     /// Note: this triggers setting the operator and owner, set it to the account's address
@@ -811,6 +816,7 @@ impl EntryFunctionCall {
                 unlocked,
                 transferred,
             } => slow_wallet_smoke_test_vm_unlock(user_addr, unlocked, transferred),
+            SlowWalletUserSetSlow {} => slow_wallet_user_set_slow(),
             StakeInitializeStakeOwner {
                 initial_stake_amount,
                 operator,
@@ -2128,6 +2134,24 @@ pub fn slow_wallet_smoke_test_vm_unlock(
     ))
 }
 
+/// Users can change their account to slow, by calling the entry function
+/// Warning: this is permanent for the account. There's no way to
+/// reverse a "slow wallet".
+pub fn slow_wallet_user_set_slow() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("slow_wallet").to_owned(),
+        ),
+        ident_str!("user_set_slow").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
 /// Initialize the validator account and give ownership to the signing account
 /// except it leaves the ValidatorConfig to be set by another entity.
 /// Note: this triggers setting the operator and owner, set it to the account's address
@@ -3078,6 +3102,14 @@ mod decoder {
         }
     }
 
+    pub fn slow_wallet_user_set_slow(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::SlowWalletUserSetSlow {})
+        } else {
+            None
+        }
+    }
+
     pub fn stake_initialize_stake_owner(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::StakeInitializeStakeOwner {
@@ -3449,6 +3481,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "slow_wallet_smoke_test_vm_unlock".to_string(),
             Box::new(decoder::slow_wallet_smoke_test_vm_unlock),
+        );
+        map.insert(
+            "slow_wallet_user_set_slow".to_string(),
+            Box::new(decoder::slow_wallet_user_set_slow),
         );
         map.insert(
             "stake_initialize_stake_owner".to_string(),

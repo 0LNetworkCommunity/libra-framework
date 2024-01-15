@@ -12,7 +12,7 @@ on:
       - synchronize
     branches:
       - 'release**'
-      - 'main'
+      - 'main**'
 
 jobs:
   functional-tests:

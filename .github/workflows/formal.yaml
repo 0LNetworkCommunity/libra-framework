@@ -11,7 +11,7 @@ on:
       - synchronize
     branches:
       - 'release**'
-      - 'main'
+      - 'main**'
 env:
   DOTNET_ROOT: "/home/runner/.dotnet"
   Z3_EXE: "/home/runner/bin/z3"
