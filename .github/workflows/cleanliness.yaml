@@ -11,7 +11,7 @@ on:
       - synchronize
     branches:
       - 'release**'
-      - 'main'
+      - 'main**'
 env:
   DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
