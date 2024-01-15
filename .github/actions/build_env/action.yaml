@@ -3,7 +3,6 @@ description: initialize ubuntu environment
 runs:
   using: composite
   steps:
-
     - name: free disk space
       uses: jlumbroso/free-disk-space@main
       with:
