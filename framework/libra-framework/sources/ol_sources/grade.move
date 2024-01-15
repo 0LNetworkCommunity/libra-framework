@@ -17,7 +17,8 @@ module ol_framework::grade {
     /// one validator before jailing?
     const FAILED_PROPS_THRESHOLD_PCT: u64 =20;
 
-    /// how far behind the leading validator by net proposals
+    /// percent of net proposals vs. leading val
+    /// i.e. how far behind the leading validator by net proposals
     /// should the trailing validator be allowed
     const TRAILING_VALIDATOR_THRESHOLD: u64 = 5;
 
@@ -90,7 +91,7 @@ module ol_framework::grade {
         let net = proposed - failed;
         let net_props_vs_leader= fixed_point32::create_from_rational(net,
         highest_net_props);
-        fixed_point32::multiply_u64(100, net_props_vs_leader) > FAILED_PROPS_THRESHOLD_PCT
+        fixed_point32::multiply_u64(100, net_props_vs_leader) > TRAILING_VALIDATOR_THRESHOLD
       } else { false }
     }
 }
