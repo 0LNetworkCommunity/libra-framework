@@ -3,7 +3,7 @@
 use diem_types::chain_id::NamedChain;
 use libra_framework::upgrade_fixtures;
 use libra_query::query_view;
-use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke, upgrade_fixtures};
+use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Governance},
     txs_cli_governance::GovernanceTxs::{Propose, Resolve, Vote},
