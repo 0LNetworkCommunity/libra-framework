@@ -14,7 +14,7 @@ module ol_framework::test_multi_action {
   use diem_framework::reconfiguration;
   // use diem_framework::coin;
 
-  // use diem_std::debug::print;
+  use diem_std::debug::print;
 
   struct DummyType has drop, store {}
 
@@ -196,13 +196,13 @@ module ol_framework::test_multi_action {
 
     let vals = mock::genesis_n_vals(root, 2);
     mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
-    // make this epoch 1
-    // mock::trigger_epoch(root);
-
+    // we are at epoch 0
+    let epoch = reconfiguration::get_current_epoch();
+    assert!(epoch == 0, 7357001);
     // Dave creates the resource account. He is not one of the validators, and is not an authority in the multisig.
     let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
-    assert!(resource_account::is_resource_account(new_resource_address), 7357001);
+    assert!(resource_account::is_resource_account(new_resource_address), 7357002);
 
     // fund the account
     ol_account::transfer(alice, new_resource_address, 100);
@@ -219,7 +219,8 @@ module ol_framework::test_multi_action {
     mock::trigger_epoch(root); // epoch 4 -- now expired
 
     let epoch = reconfiguration::get_current_epoch();
-    assert!(epoch == 4, 7357004);
+    print(&epoch);
+    assert!(epoch == 4, 7357003);
 
     // trying to vote on a closed ballot will error
     let _passed = multi_action::vote_governance(bob, new_resource_address, &id);

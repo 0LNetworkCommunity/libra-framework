@@ -279,11 +279,19 @@ module ol_framework::mock {
     // the reconfiguration module must run last, since no other
     // transactions or operations can happen after the reconfig.
     public fun trigger_epoch(root: &signer) {
-        let old_epoch = epoch_helper::get_current_epoch();
-        epoch_boundary::ol_reconfigure_for_test(root, reconfiguration::get_current_epoch(), block::get_current_block_height());
+        let old_epoch = reconfiguration::get_current_epoch();
         timestamp::fast_forward_seconds(EPOCH_DURATION);
-        reconfiguration::reconfigure_for_test();
-        assert!(epoch_helper::get_current_epoch() > old_epoch, EDID_NOT_ADVANCE_EPOCH);
+
+        epoch_boundary::ol_reconfigure_for_test(root, old_epoch,
+        block::get_current_block_height());
+
+        // always advance
+        assert!(reconfiguration::get_current_epoch() > old_epoch,
+        EDID_NOT_ADVANCE_EPOCH);
+
+        // epoch helper should always be in sync
+        assert!(reconfiguration::get_current_epoch() ==
+        epoch_helper::get_current_epoch(), 666);
     }
 
   //   // function to deposit into network fee account

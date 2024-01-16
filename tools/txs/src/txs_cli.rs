@@ -1,4 +1,4 @@
-use crate::txs_cli_upgrade::UpgradeTxs;
+use crate::txs_cli_governance::GovernanceTxs;
 use crate::txs_cli_user::UserTxs;
 use crate::txs_cli_vals::ValidatorTxs;
 use crate::{publish::encode_publish_payload, submit_transaction::Sender};
@@ -77,7 +77,7 @@ pub enum TxsSub {
     Validator(ValidatorTxs),
     #[clap(subcommand)]
     /// Network upgrade transactions
-    Upgrade(UpgradeTxs),
+    Governance(GovernanceTxs),
     /// Transfer coins between accounts. Transferring can also be used to create accounts.
     Transfer {
         /// Address of the recipient
@@ -190,7 +190,7 @@ impl TxsCli {
                 args,
             }) => send.generic(function_id, ty_args, args).await,
             Some(TxsSub::Validator(val_txs)) => val_txs.run(&mut send).await,
-            Some(TxsSub::Upgrade(upgrade_txs)) => upgrade_txs.run(&mut send).await,
+            Some(TxsSub::Governance(upgrade_txs)) => upgrade_txs.run(&mut send).await,
             Some(TxsSub::User(user_txs)) => user_txs.run(&mut send).await,
             _ => {
                 println!(

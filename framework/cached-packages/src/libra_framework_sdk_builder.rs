@@ -213,6 +213,16 @@ pub enum EntryFunctionCall {
         should_pass: bool,
     },
 
+    /// Any end user can triger epoch/boundary and reconfiguration
+    /// as long as the VM set the BoundaryBit to true.
+    /// We do this because we don't want the VM calling complex
+    /// logic itself. Any abort would cause a halt.
+    /// On the other hand, a user can call the function once the VM
+    /// decides the epoch can change. Any error will just cause the
+    /// user's transaction to abort, but the chain will continue.
+    /// Whatever fix is needed can be done online with on-chain governance.
+    DiemGovernanceTriggerEpoch {},
+
     /// Vote on proposal with `proposal_id` and voting power from `stake_pool`.
     DiemGovernanceVote {
         proposal_id: u64,
@@ -681,6 +691,7 @@ impl EntryFunctionCall {
                 proposal_id,
                 should_pass,
             } => diem_governance_ol_vote(proposal_id, should_pass),
+            DiemGovernanceTriggerEpoch {} => diem_governance_trigger_epoch(),
             DiemGovernanceVote {
                 proposal_id,
                 should_pass,
@@ -1364,6 +1375,29 @@ pub fn diem_governance_ol_vote(proposal_id: u64, should_pass: bool) -> Transacti
             bcs::to_bytes(&proposal_id).unwrap(),
             bcs::to_bytes(&should_pass).unwrap(),
         ],
+    ))
+}
+
+/// Any end user can triger epoch/boundary and reconfiguration
+/// as long as the VM set the BoundaryBit to true.
+/// We do this because we don't want the VM calling complex
+/// logic itself. Any abort would cause a halt.
+/// On the other hand, a user can call the function once the VM
+/// decides the epoch can change. Any error will just cause the
+/// user's transaction to abort, but the chain will continue.
+/// Whatever fix is needed can be done online with on-chain governance.
+pub fn diem_governance_trigger_epoch() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("diem_governance").to_owned(),
+        ),
+        ident_str!("trigger_epoch").to_owned(),
+        vec![],
+        vec![],
     ))
 }
 
@@ -2652,6 +2686,16 @@ mod decoder {
         }
     }
 
+    pub fn diem_governance_trigger_epoch(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::DiemGovernanceTriggerEpoch {})
+        } else {
+            None
+        }
+    }
+
     pub fn diem_governance_vote(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DiemGovernanceVote {
@@ -3333,6 +3377,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "diem_governance_ol_vote".to_string(),
             Box::new(decoder::diem_governance_ol_vote),
+        );
+        map.insert(
+            "diem_governance_trigger_epoch".to_string(),
+            Box::new(decoder::diem_governance_trigger_epoch),
         );
         map.insert(
             "diem_governance_vote".to_string(),
