@@ -17,8 +17,9 @@ module diem_framework::reconfiguration {
     // use diem_std::debug::print;
 
     friend diem_framework::diem_governance;
-    friend diem_framework::block;
+    friend diem_framework::epoch_boundary;
     friend diem_framework::consensus_config;
+    // TODO: check if these are necessary
     friend diem_framework::execution_config;
     friend diem_framework::gas_schedule;
     friend diem_framework::genesis;
@@ -105,6 +106,7 @@ module diem_framework::reconfiguration {
 
     /// Signal validators to start using new configuration. Must be called from friend config modules.
     public(friend) fun reconfigure() acquires Configuration {
+
         // Do not do anything if genesis has not finished.
         if (chain_status::is_genesis() || timestamp::now_microseconds() == 0) {
             return

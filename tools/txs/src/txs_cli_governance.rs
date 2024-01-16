@@ -10,12 +10,13 @@ use diem_types::transaction::Script;
 use diem_types::transaction::TransactionPayload;
 
 use diem_sdk::types::transaction::TransactionArgument;
+use libra_cached_packages::libra_stdlib;
 use libra_cached_packages::libra_stdlib::{
     diem_governance_ol_create_proposal_v2, diem_governance_ol_vote,
 };
 
 #[derive(clap::Subcommand)]
-pub enum UpgradeTxs {
+pub enum GovernanceTxs {
     /// after compiling a proposal script with `libra-framework upgrade` any authorized voter can create a proposal.
     Propose {
         #[clap(short = 'd', long)]
@@ -44,12 +45,13 @@ pub enum UpgradeTxs {
         /// Path to the directory of the compiled proposal script
         proposal_script_dir: PathBuf,
     },
+    EpochBoundary,
 }
 
-impl UpgradeTxs {
+impl GovernanceTxs {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         let payload = match self {
-            UpgradeTxs::Propose {
+            GovernanceTxs::Propose {
                 proposal_script_dir,
                 metadata_url,
             } => {
@@ -65,18 +67,6 @@ impl UpgradeTxs {
                 let num =
                     libra_query::chain_queries::get_next_governance_proposal_id(sender.client())
                         .await?;
-                // let query_res = libra_query::query_view::run(
-                //     "0x1::diem_governance::get_next_governance_proposal_id",
-                //     None,
-                //     None,
-                // )
-                // .await?;
-                // // let id: Vec<String> = serde_json::from_value(query_res)?;
-                // let num: u64 = serde_json::from_value::<Vec<String>>(query_res)?
-                //   .iter()
-                //   .next()
-                //   .context("could not get a response from view function get_next_governance_proposal_id")?
-                //   .parse()?;
 
                 println!(
                     "next proposal id is: {}. Save this and use it for voting.",
@@ -90,11 +80,11 @@ impl UpgradeTxs {
                     true,
                 )
             }
-            UpgradeTxs::Vote {
+            GovernanceTxs::Vote {
                 proposal_id,
                 should_fail,
             } => diem_governance_ol_vote(*proposal_id, !*should_fail), // NOTE: we are inverting the BOOL here.
-            UpgradeTxs::Resolve {
+            GovernanceTxs::Resolve {
                 proposal_id,
                 proposal_script_dir,
             } => {
@@ -108,15 +98,11 @@ impl UpgradeTxs {
                     bail!("proposal {} has already been resolved", proposal_id);
                 }
 
-                // if !libra_query::chain_queries::can_gov_proposal_resolve(sender.client(), *proposal_id).await.context("error calling view")?{
-                //   bail!("proposal {} is not resolvable", proposal_id);
-                // }
                 assert!(
                     &proposal_script_dir.exists(),
                     "proposal script cannot be found at {proposal_script_dir:?}"
                 );
 
-                // TODO: get the compiled script
                 let proposal_bytes = std::fs::read(proposal_script_dir.join("script.mv")).unwrap();
 
                 let proposal_script = Script::new(
@@ -129,6 +115,7 @@ impl UpgradeTxs {
 
                 TransactionPayload::Script(proposal_script)
             }
+            GovernanceTxs::EpochBoundary => libra_stdlib::diem_governance_trigger_epoch(),
         };
 
         sender.sign_submit_wait(payload).await?;

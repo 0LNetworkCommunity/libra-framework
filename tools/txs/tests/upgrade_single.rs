@@ -5,8 +5,8 @@ use libra_framework::upgrade_fixtures;
 use libra_query::query_view;
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::{
-    txs_cli::{TxsCli, TxsSub::Upgrade},
-    txs_cli_upgrade::UpgradeTxs::{Propose, Resolve, Vote},
+    txs_cli::{TxsCli, TxsSub::Governance},
+    txs_cli_governance::GovernanceTxs::{Propose, Resolve, Vote},
 };
 use libra_types::legacy_types::app_cfg::TxCost;
 
@@ -43,7 +43,7 @@ async fn smoke_upgrade_single_step() {
     assert!(query_res.is_err(), "expected all_your_base to fail");
 
     let mut cli = TxsCli {
-        subcommand: Some(Upgrade(Propose {
+        subcommand: Some(Governance(Propose {
             proposal_script_dir: script_dir.clone(),
             metadata_url: "http://allyourbase.com".to_string(),
         })),
@@ -62,7 +62,7 @@ async fn smoke_upgrade_single_step() {
         .expect("cli could not send upgrade proposal");
 
     // ALICE VOTES
-    cli.subcommand = Some(Upgrade(Vote {
+    cli.subcommand = Some(Governance(Vote {
         proposal_id: 0,
         should_fail: false,
     }));
@@ -127,7 +127,7 @@ async fn smoke_upgrade_single_step() {
 
     ///////// SHOWTIME ////////
     // Now try to resolve upgrade
-    cli.subcommand = Some(Upgrade(Resolve {
+    cli.subcommand = Some(Governance(Resolve {
         proposal_id: 0,
         proposal_script_dir: script_dir,
     }));
