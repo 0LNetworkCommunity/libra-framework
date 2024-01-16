@@ -15,6 +15,8 @@ module diem_framework::epoch_boundary {
     use ol_framework::infra_escrow;
     use ol_framework::oracle;
     use ol_framework::ol_account;
+    use ol_framework::testnet;
+    use diem_framework::reconfiguration;
     use diem_framework::transaction_fee;
     use diem_framework::system_addresses;
     use diem_framework::coin::{Self, Coin};
@@ -24,15 +26,32 @@ module diem_framework::epoch_boundary {
 
     use diem_std::debug::print;
 
-    friend diem_framework::block;
+    friend diem_framework::diem_governance;
+    friend diem_framework::block; // for testnet only
 
+    //////// ERRORS ////////
+    /// The transaction fee coin has not been initialized
+    const ETX_FEES_NOT_INITIALIZED: u64 = 0;
+
+    /// Epoch trigger only implemented on mainnet
+    const ETRIGGER_EPOCH_MAINNET: u64 = 1;
+
+    /// Epoch is not ready for reconfiguration
+    const ETRIGGER_NOT_READY: u64 = 2;
+
+    /// Epoch number mismat
+    const ENOT_SAME_EPOCH: u64 = 3;
+
+    /////// Constants ////////
     /// how many PoF baseline rewards to we set aside for the miners.
     /// equivalent reward of one seats of the validator set
     const ORACLE_PROVIDERS_SEATS: u64 = 1;
 
-    /// The transaction fee coin has not been initialized
-    const ETX_FEES_NOT_INITIALIZED: u64 = 0;
-
+    // the VM can set the boundary bit to allow reconfiguration
+    struct BoundaryBit has key {
+      ready: bool,
+      closing_epoch: u64,
+    }
 
     // I just checked in, to see what condition my condition was in.
     struct BoundaryStatus has key, drop {
@@ -98,6 +117,13 @@ module diem_framework::epoch_boundary {
     public fun initialize(framework: &signer) {
       if (!exists<BoundaryStatus>(@ol_framework)){
         move_to(framework, reset());
+      };
+
+      if (!exists<BoundaryBit>(@ol_framework)) {
+        move_to(framework, BoundaryBit {
+          ready: false,
+          closing_epoch: 0,
+        });
       }
     }
 
@@ -159,6 +185,51 @@ module diem_framework::epoch_boundary {
         }
     }
 
+
+    /// flip the bit to allow the epoch to be reconfigured on any transaction
+    public(friend) fun enable_epoch_trigger(vm_signer: &signer, closing_epoch:
+    u64) acquires BoundaryBit {
+
+      if (!exists<BoundaryBit>(@ol_framework)) {
+        move_to(vm_signer, BoundaryBit {
+          closing_epoch: closing_epoch,
+          ready: true,
+        })
+      } else {
+        let state = borrow_global_mut<BoundaryBit>(@ol_framework);
+        state.closing_epoch = closing_epoch;
+        state.ready = true;
+      }
+    }
+    /// Once epoch boundary time has passed, and the BoundaryBit set to true
+    /// any user can trigger the epoch boundary.
+    /// Why do this? It's preferable that the VM never trigger any function.
+    /// An abort by the VM will cause a network halt. The same abort, if called
+    /// by a user, would not cause a halt.
+    public(friend) fun trigger_epoch(root: &signer) acquires BoundaryBit,
+    BoundaryStatus {
+      // must be mainnet
+      assert!(!testnet::is_not_mainnet(), ETRIGGER_EPOCH_MAINNET);
+      // must get root permission from governance.move
+      system_addresses::assert_ol(root);
+      let _ = can_trigger(); // will abort if false
+
+      // update the state and flip the Bit
+      let state = borrow_global_mut<BoundaryBit>(@ol_framework);
+      state.ready = false;
+
+      epoch_boundary(root, state.closing_epoch, 0);
+    }
+
+    #[view]
+    /// check to see if the epoch Boundary Bit is true
+    public fun can_trigger(): bool acquires BoundaryBit {
+      let state = borrow_global_mut<BoundaryBit>(@ol_framework);
+      assert!(state.ready, ETRIGGER_NOT_READY);
+      assert!(state.closing_epoch == reconfiguration::get_current_epoch(),
+      ENOT_SAME_EPOCH);
+      true
+    }
 
     // Contains all of 0L's business logic for end of epoch.
     // This removed business logic from reconfiguration.move
@@ -234,9 +305,9 @@ module diem_framework::epoch_boundary {
 
         print(&string::utf8(b"EPOCH BOUNDARY END"));
         print(status);
+        reconfiguration::reconfigure();
   }
 
-  // TODO: instrument all of this
   /// withdraw coins and settle accounts for validators and oracles
   /// returns the list of compliant_vals
   fun settle_accounts(root: &signer, compliant_vals: vector<address>, status: &mut BoundaryStatus): vector<address> {
@@ -406,11 +477,24 @@ module diem_framework::epoch_boundary {
   }
 
   #[test_only]
-  public fun ol_reconfigure_for_test(vm: &signer, closing_epoch: u64, epoch_round: u64) acquires BoundaryStatus {
+  public fun ol_reconfigure_for_test(vm: &signer, closing_epoch: u64,
+  epoch_round: u64) acquires BoundaryStatus {
       use diem_framework::system_addresses;
 
       system_addresses::assert_ol(vm);
       epoch_boundary(vm, closing_epoch, epoch_round);
   }
 
+  #[test_only]
+  public fun test_set_boundary_ready(vm: &signer, closing_epoch: u64) acquires
+  BoundaryBit {
+      // don't check for "testnet" here, otherwise we can't test the production settings
+      enable_epoch_trigger(vm, closing_epoch);
+  }
+
+  #[test_only]
+  public fun test_trigger(vm: &signer) acquires BoundaryStatus, BoundaryBit {
+      // don't check for "testnet" here, otherwise we can't test the production settings
+      trigger_epoch(vm);
+  }
 }

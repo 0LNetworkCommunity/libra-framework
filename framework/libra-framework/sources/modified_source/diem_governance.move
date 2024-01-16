@@ -20,6 +20,7 @@ module diem_framework::diem_governance {
     use diem_framework::voting;
 
     use ol_framework::libra_coin::LibraCoin;
+    use ol_framework::epoch_boundary;
     // use diem_std::debug::print;
 
 
@@ -576,27 +577,23 @@ module diem_framework::diem_governance {
         reconfiguration::danger_reconfigure_ignore_timestamp(diem_framework);
     }
 
-    // /// Only called in testnet where the core resources account exists and has been granted power to mint Diem coins.
-    // public fun get_signer_testnet_only(
-    //     core_resources: &signer, signer_address: address): signer acquires GovernanceResponsbility {
-    //     system_addresses::assert_core_resource(core_resources);
-    //     // Core resources account only has mint capability in tests/testnets.
-    //     assert!(libra_coin::has_mint_capability(core_resources), error::unauthenticated(EUNAUTHORIZED));
-    //     get_signer(signer_address)
-    // }
+    /// Any end user can triger epoch/boundary and reconfiguration
+    /// as long as the VM set the BoundaryBit to true.
+    /// We do this because we don't want the VM calling complex
+    /// logic itself. Any abort would cause a halt.
+    /// On the other hand, a user can call the function once the VM
+    /// decides the epoch can change. Any error will just cause the
+    /// user's transaction to abort, but the chain will continue.
+    /// Whatever fix is needed can be done online with on-chain governance.
+    public entry fun trigger_epoch(_sig: &signer) acquires GovernanceResponsbility { // doesn't need a signer
+      let framework_signer = get_signer(@0x1);
+      let _ = epoch_boundary::can_trigger(); // will abort if false
+      epoch_boundary::trigger_epoch(&framework_signer);
+    }
+
 
     /// Return the voting power a stake pool has with respect to governance proposals.
     fun get_voting_power(_pool_address: address): u64 {
-        // let allow_validator_set_change = staking_config::get_allow_validator_set_change(&staking_config::get());
-        // if (allow_validator_set_change) {
-        //     let (active, _, pending_active, pending_inactive) = stake::get_stake(pool_address);
-        //     // We calculate the voting power as total non-inactive stakes of the pool. Even if the validator is not in the
-        //     // active validator set, as long as they have a lockup (separately checked in create_proposal and voting), their
-        //     // stake would still count in their voting power for governance proposals.
-        //     active + pending_active + pending_inactive
-        // } else {
-        //     stake::get_current_epoch_voting_power(pool_address)
-        // }
         1
     }
 
