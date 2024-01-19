@@ -22,7 +22,6 @@ diem-types = { workspace = true }
 hex = { workspace = true }
 indoc = { workspace = true }
 libra-cached-packages = { workspace = true }
-libra-framework = { workspace = true }
 libra-query = { workspace = true }
 libra-types = { workspace = true }
 libra-wallet = { workspace = true }
@@ -33,4 +32,5 @@ url = { workspace = true }
 
 [dev-dependencies]
 diem-temppath = { workspace = true }
+libra-framework = { workspace = true }
 libra-smoke-tests = { workspace = true }
