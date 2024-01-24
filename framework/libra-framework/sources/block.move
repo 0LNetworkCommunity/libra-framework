@@ -1,6 +1,6 @@
 /// This module defines a struct storing the metadata of the block and new block events.
 module diem_framework::block {
-    use std::error;
+    use std::error; 
     use std::vector;
     use std::option;
 
