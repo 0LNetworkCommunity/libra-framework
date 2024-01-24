@@ -16,5 +16,5 @@ prove:
 	@cd libra-framework && \
 	echo "Testing libra-framework" && \
 	find . -type f -name "*.move" ! -name "*.spec.move" -print0 | \
-	sed 's|^\./||' | \
+	awk -v RS='\0' -v ORS='\0' '{sub(/^\.\//,""); print}' | \
 	xargs -0 -I {} sh -c 'echo "Testing file: {}"; diem move prove -f {} || echo "Error in file: {}"'
