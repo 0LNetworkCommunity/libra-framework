@@ -19,3 +19,4 @@ prove:
 	awk -v RS='\0' -v ORS='\0' '{sub(/^\.\//,""); print}' | \
 	sort -uz | \
 	xargs -0 -I {} sh -c 'echo "Testing file: {}"; if ! diem move prove -f {} | grep -q "\"Result\": \"Success\""; then echo "Error in file: {}"; exit 1; fi'
+	
