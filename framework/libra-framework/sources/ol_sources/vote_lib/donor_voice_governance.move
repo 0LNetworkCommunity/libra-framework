@@ -48,21 +48,25 @@ module ol_framework::donor_voice_governance {
     /// this is a GovAction type for liquidation
     struct Liquidate has drop, store {}
 
-
-
     public fun init_donor_governance(dv_account: &signer) {
+      let addr = signer::address_of(dv_account);
 
-      let veto = Governance<TurnoutTally<Veto>> {
-          tracker: ballot::new_tracker()
+      if (!exists<Governance<TurnoutTally<Veto>>>(addr)) {
+        let veto = Governance<TurnoutTally<Veto>> {
+            tracker: ballot::new_tracker()
+        };
+
+        move_to(dv_account, veto);
       };
 
-      move_to(dv_account, veto);
+      if (!exists<Governance<TurnoutTally<Liquidate>>>(addr)) {
 
-      let liquidate = Governance<TurnoutTally<Liquidate>> {
-          tracker: ballot::new_tracker()
-      };
+        let liquidate = Governance<TurnoutTally<Liquidate>> {
+            tracker: ballot::new_tracker()
+        };
 
-      move_to(dv_account, liquidate);
+        move_to(dv_account, liquidate);
+      }
     }
 
     /// For a Donor Voice account get the total number of votes enrolled from reading the Cumulative tracker.

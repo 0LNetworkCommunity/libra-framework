@@ -116,6 +116,7 @@ pub struct InitTx {
 impl InitTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         let payload = if let Some(n) = self.migrate_n {
+            println!("trying to migrate");
             libra_stdlib::donor_voice_make_donor_voice_tx(self.admins.clone(), n)
         } else {
             libra_stdlib::community_wallet_init_community(self.admins.clone())
