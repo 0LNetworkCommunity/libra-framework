@@ -1,4 +1,4 @@
-spec diem_framework::chain_id {
+spec diem_framework::chain_id { 
     spec module {
         pragma verify = true;
         pragma aborts_if_is_strict;
