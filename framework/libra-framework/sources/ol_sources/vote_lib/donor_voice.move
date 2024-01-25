@@ -745,6 +745,7 @@ module ol_framework::donor_voice {
       f.is_frozen
     }
 
+    #[view]
     public fun is_liquidate_to_match_index(addr: address): bool acquires Freeze{
       let f = borrow_global<Freeze>(addr);
       f.liquidate_to_match_index
