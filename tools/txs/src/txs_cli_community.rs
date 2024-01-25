@@ -107,11 +107,19 @@ pub struct InitTx {
     /// The initial admins of the Multisig. Note: the signer of this TX
     /// (sponsor) cannot add self.
     admins: Vec<AccountAddress>,
+
+    #[clap(short, long)]
+    /// migrate a legacy v5 community wallet, with N being the n-of-m
+    migrate_n: Option<u64>,
 }
 
 impl InitTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload = libra_stdlib::community_wallet_init_community(self.admins.clone());
+        let payload = if let Some(n) = self.migrate_n {
+            libra_stdlib::donor_voice_make_donor_voice_tx(self.admins.clone(), n)
+        } else {
+            libra_stdlib::community_wallet_init_community(self.admins.clone())
+        };
         sender.sign_submit_wait(payload).await?;
         Ok(())
     }
