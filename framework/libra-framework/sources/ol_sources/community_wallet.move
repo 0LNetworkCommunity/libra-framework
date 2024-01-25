@@ -58,6 +58,7 @@ module ol_framework::community_wallet {
     // A flag on the account that it wants to be considered a community wallet
     struct CommunityWallet has key { }
 
+    #[view]
     public fun is_init(addr: address):bool {
       exists<CommunityWallet>(addr)
     }
@@ -76,6 +77,8 @@ module ol_framework::community_wallet {
       donor_voice::migrate_community_wallet_account(vm, dv_account);
       move_to(dv_account, CommunityWallet{});
     }
+
+    #[view]
 
     /// Dynamic check to see if CommunityWallet is qualifying.
     /// if it is not qualifying it wont be part of the burn funds matching.
