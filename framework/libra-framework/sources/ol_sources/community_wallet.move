@@ -159,10 +159,13 @@ module ol_framework::community_wallet {
       let (fam, _, _) = ancestry::any_family_in_list(*&init_signers);
       assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
 
-      // set as donor directed with any liquidation going to existing matching index
+      // set as donor directed with any liquidation going to contemporary
+      // matching index (not liquidated to historical community wallets)
 
       donor_voice::make_donor_voice(sig, init_signers, n);
-      donor_voice::set_liquidate_to_match_index(sig, true);
+      if (!donor_voice::is_liquidate_to_match_index(signer::address_of(sig))) {
+        donor_voice::set_liquidate_to_match_index(sig, true);
+      };
       match_index::opt_into_match_index(sig);
     }
 
