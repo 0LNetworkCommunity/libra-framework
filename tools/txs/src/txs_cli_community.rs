@@ -20,19 +20,19 @@ pub enum CommunityTxs {
 impl CommunityTxs {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         match &self {
-            CommunityTxs::Propose(rotate) => match rotate.run(sender).await {
+            CommunityTxs::Propose(propose) => match propose.run(sender).await {
                 Ok(_) => println!("SUCCESS: community wallet transfer proposed"),
                 Err(e) => {
                     println!("ERROR: community wallet transfer rejected, message: {}", e);
                 }
             },
-            CommunityTxs::Veto(rotate) => match rotate.run(sender).await {
+            CommunityTxs::Veto(veto) => match veto.run(sender).await {
                 Ok(_) => println!("SUCCESS: veto vote submitted"),
                 Err(e) => {
                     println!("ERROR: veto vote rejected, message: {}", e);
                 }
             },
-            CommunityTxs::GovInit(slow) => match slow.run(sender).await {
+            CommunityTxs::GovInit(init) => match init.run(sender).await {
                 Ok(_) => println!("SUCCESS: community wallet initialized"),
                 Err(e) => {
                     println!(
@@ -41,7 +41,7 @@ impl CommunityTxs {
                     );
                 }
             },
-            CommunityTxs::GovAdmins(slow) => match slow.run(sender).await {
+            CommunityTxs::GovAdmins(admin) => match admin.run(sender).await {
                 Ok(_) => println!("SUCCESS: community wallet admin added"),
                 Err(e) => {
                     println!("ERROR: could not add admin, message: {}", e);
@@ -56,15 +56,27 @@ impl CommunityTxs {
 #[derive(clap::Args)]
 pub struct ProposeTx {
     #[clap(short, long)]
+    /// The Community Wallet you are a admin for
+    community_wallet: AccountAddress,
+    #[clap(short, long)]
     /// The SlowWallet recipient of funds
     recipient: AccountAddress,
+    #[clap(short, long)]
     /// amount of coins (units) to transfer
     amount: u64,
+    #[clap(short, long)]
+    /// description of payment for memo
+    description: String,
 }
 
 impl ProposeTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload = libra_stdlib::slow_wallet_user_set_slow();
+        let payload = libra_stdlib::donor_voice_propose_payment_tx(
+            self.community_wallet,
+            self.recipient,
+            self.amount,
+            self.description.clone().into_bytes(),
+        );
         sender.sign_submit_wait(payload).await?;
         Ok(())
     }
@@ -75,13 +87,15 @@ pub struct VetoTx {
     #[clap(short, long)]
     /// The SlowWallet recipient of funds
     community_wallet: AccountAddress,
+    #[clap(short, long)]
     /// Proposal number
     proposal_id: u64,
 }
 
 impl VetoTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload = libra_stdlib::slow_wallet_user_set_slow();
+        let payload =
+            libra_stdlib::donor_voice_propose_veto_tx(self.community_wallet, self.proposal_id);
         sender.sign_submit_wait(payload).await?;
         Ok(())
     }
