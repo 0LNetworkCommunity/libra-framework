@@ -171,7 +171,9 @@ module ol_framework::donor_voice {
 
     // 3. Once the MultiSig is initialized, the account needs to be bricked, before the MultiSig can be used.
 
-    public fun make_donor_voice(sponsor: &signer, init_signers: vector<address>, cfg_n_signers: u64) acquires Registry {
+    public fun make_donor_voice(sponsor: &signer, init_signers: vector<address>,
+    cfg_n_signers: u64) acquires Registry {
+      // will not create if already exists (for migration)
       cumulative_deposits::init_cumulative_deposits(sponsor);
 
       // we are setting liquidation to match_index as false by default
@@ -223,7 +225,7 @@ module ol_framework::donor_voice {
     /// Like any MultiSig instance, a sponsor which is the original owner of the account, needs to initialize the account.
     /// The account must be "bricked" by the owner before MultiSig actions can be taken.
     /// Note, as with any multisig, the new_authorities cannot include the sponsor, since that account will no longer be able to sign transactions.
-    public fun make_multi_action(sponsor: &signer, cfg_default_n_sigs: u64, new_authorities: vector<address>) {
+    public entry fun make_multi_action(sponsor: &signer, cfg_default_n_sigs: u64, new_authorities: vector<address>) {
       multi_action::init_gov(sponsor, cfg_default_n_sigs, &new_authorities);
       multi_action::init_type<Payment>(sponsor, true); // "true": We make this multisig instance hold the WithdrawCapability. Even though we don't need it for any account pay functions, we can use it to make sure the entire pipeline of private functions scheduling a payment are authorized. Belt and suspenders.
     }
@@ -750,21 +752,6 @@ module ol_framework::donor_voice {
 
 
     //////// TRANSACTION SCRIPTS ////////
-
-    // public fun init_donor_voice(sponsor: &signer, init_signers: vector<address>, cfg_n_signers: u64) acquires Registry {
-    //   // let init_signers = vector::singleton(signer_one);
-    //   // vector::push_back(&mut init_signers, signer_two);
-    //   // vector::push_back(&mut init_signers, signer_three);
-
-    //   cumulative_deposits::init_cumulative_deposits(sponsor);
-
-    //   // we are setting liquidation to infra escrow as false by default
-    //   // the user can send another transacton to change this.
-    //   let liquidate_to_match_index = false;
-    //   set_donor_voice(sponsor, liquidate_to_match_index);
-    //   make_multi_action(sponsor, cfg_n_signers, init_signers);
-    //   add_to_registry(sponsor);
-    // }
 
     /// option to set the liquidation destination to infrastructure escrow
     /// must be done before the multisig is finalized and the sponsor cannot control the account.

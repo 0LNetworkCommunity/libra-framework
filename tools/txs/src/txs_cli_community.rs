@@ -14,7 +14,7 @@ pub enum CommunityTxs {
     /// initialize a DonorVoice multisig with the initial admins.
     GovInit(InitTx),
     /// propose a change to the authorities of the DonorVoice multisig
-    GovAdmins(AdminsTx),
+    GovAdmin(AdminTx),
 }
 
 impl CommunityTxs {
@@ -41,7 +41,7 @@ impl CommunityTxs {
                     );
                 }
             },
-            CommunityTxs::GovAdmins(admin) => match admin.run(sender).await {
+            CommunityTxs::GovAdmin(admin) => match admin.run(sender).await {
                 Ok(_) => println!("SUCCESS: community wallet admin added"),
                 Err(e) => {
                     println!("ERROR: could not add admin, message: {}", e);
@@ -111,14 +111,14 @@ pub struct InitTx {
 
 impl InitTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload = libra_stdlib::community_wallet_init_community(self.admins);
+        let payload = libra_stdlib::community_wallet_init_community(self.admins.clone());
         sender.sign_submit_wait(payload).await?;
         Ok(())
     }
 }
 
 #[derive(clap::Args)]
-pub struct AdminsTx {
+pub struct AdminTx {
     #[clap(short, long)]
     /// The SlowWallet recipient of funds
     community_wallet: AccountAddress,
@@ -136,7 +136,7 @@ pub struct AdminsTx {
     epochs: Option<u64>,
 }
 
-impl AdminsTx {
+impl AdminTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         let payload = libra_stdlib::community_wallet_add_signer_community_multisig(
             self.community_wallet,
