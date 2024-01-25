@@ -120,14 +120,6 @@ module ol_framework::donor_voice {
       liquidate_to_match_index: bool,
     }
 
-    // struct Donors has key {
-    //   list: vector<address>,
-    // }
-
-
-    // // A flag on the account that it wants to be considered a community walley
-    // struct CommunityWallet has key { }
-
 
     //////// INIT REGISRTY OF DONOR VOICE ACCOUNTS  ////////
 
@@ -321,9 +313,7 @@ module ol_framework::donor_voice {
         epoch_latest_veto_received: 0,
       };
 
-      // let id = guid::id(&t.uid);
       vector::push_back<TimedTransfer>(&mut transfers.scheduled, t);
-      // return id
     }
 
     /// saerch for a transction ID in the queues. Returns (is found, index, status enum)
@@ -782,24 +772,6 @@ module ol_framework::donor_voice {
       let f = borrow_global_mut<Freeze>(signer::address_of(sponsor));
       f.liquidate_to_match_index = liquidate_to_match_index;
     }
-
-    // /// the sponsor must finalize the initialization, this is a separate step so that the user can optionally check everything is in order before bricking the account key.
-    // public fun finalize_init(sponsor: &signer) acquires Registry {
-    //   let multisig_address = signer::address_of(sponsor);
-    //   assert!(multi_action::is_multi_action(multisig_address), error::invalid_state(EMULTISIG_NOT_INIT));
-
-    //   assert!(multi_action::has_action<Payment>(multisig_address), error::invalid_state(EMULTISIG_NOT_INIT));
-
-    //   assert!(exists<Freeze>(multisig_address), error::invalid_state(ENOT_INIT_DONOR_VOICE));
-
-    //   assert!(exists<TxSchedule>(multisig_address), error::invalid_state(ENOT_INIT_DONOR_VOICE));
-
-    //   // multi_action::finalize_and_brick(sponsor);
-    //   assert!(is_donor_voice(multisig_address), error::invalid_state(ENOT_INIT_DONOR_VOICE));
-
-    //   // only add to registry if INIT is successful.
-    //   add_to_registry(sponsor);
-    // }
 
 
 

@@ -1,3 +1,4 @@
+use crate::txs_cli_community::CommunityTxs;
 use crate::txs_cli_governance::GovernanceTxs;
 use crate::txs_cli_user::UserTxs;
 use crate::txs_cli_vals::ValidatorTxs;
@@ -78,6 +79,9 @@ pub enum TxsSub {
     #[clap(subcommand)]
     /// Network upgrade transactions
     Governance(GovernanceTxs),
+    #[clap(subcommand)]
+    /// Perform transactions for addresses with Community Wallet settings
+    Community(CommunityTxs),
     /// Transfer coins between accounts. Transferring can also be used to create accounts.
     Transfer {
         /// Address of the recipient
@@ -88,6 +92,8 @@ pub enum TxsSub {
         #[clap(short, long)]
         amount: f64,
     },
+    #[clap(hide(true))]
+    /// Warn: publishing contracts is for testing purposes only on Testnet.
     Publish(MovePackageDir),
     /// Generate a transaction that executes an Entry function on-chain
     GenerateTransaction {
