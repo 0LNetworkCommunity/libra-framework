@@ -187,6 +187,10 @@ module ol_framework::donor_voice {
     fun structs_init(sig: &signer, liquidate_to_match_index: bool) {
       if (!exists<Registry>(@ol_framework)) return;
 
+      // exit gracefully in migration cases
+      // if Freeze exists everthing else is likely created
+      if (exists<Freeze>(signer::address_of(sig))) return;
+
       move_to<Freeze>(
         sig,
         Freeze {
@@ -205,6 +209,7 @@ module ol_framework::donor_voice {
           guid_capability,
         });
 
+      // Commit note: this should now failover gracefully
       donor_voice_governance::init_donor_governance(sig);
     }
 
