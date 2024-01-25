@@ -104,13 +104,14 @@ impl VetoTx {
 #[derive(clap::Args)]
 pub struct InitTx {
     #[clap(short, long)]
-    /// The initial admins of the Multisig
-    init_admins: Vec<AccountAddress>, // Dev NOTE: account address has the same bytes as AuthKey
+    /// The initial admins of the Multisig. Note: the signer of this TX
+    /// (sponsor) cannot add self.
+    admins: Vec<AccountAddress>,
 }
 
 impl InitTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload = libra_stdlib::slow_wallet_user_set_slow();
+        let payload = libra_stdlib::community_wallet_init_community(self.admins);
         sender.sign_submit_wait(payload).await?;
         Ok(())
     }
@@ -119,13 +120,30 @@ impl InitTx {
 #[derive(clap::Args)]
 pub struct AdminsTx {
     #[clap(short, long)]
-    /// The initial admins of the Multisig
-    init_admins: Vec<AccountAddress>, // Dev NOTE: account address has the same bytes as AuthKey
+    /// The SlowWallet recipient of funds
+    community_wallet: AccountAddress,
+    #[clap(short, long)]
+    /// Admin to add (or remove) from the multisig
+    admin: AccountAddress,
+    #[clap(short, long)]
+    /// Drops this admin from the multisig
+    drop: bool,
+    #[clap(short, long)]
+    /// Number of sigs required for action (must be greater than 3-of-5)
+    n: u64,
+    #[clap(short, long)]
+    /// Proposal duration (in epochs)
+    epochs: Option<u64>,
 }
 
 impl AdminsTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload = libra_stdlib::slow_wallet_user_set_slow();
+        let payload = libra_stdlib::community_wallet_add_signer_community_multisig(
+            self.community_wallet,
+            self.admin,
+            self.n,
+            self.epochs.unwrap_or(10), // todo: remo
+        );
         sender.sign_submit_wait(payload).await?;
         Ok(())
     }
