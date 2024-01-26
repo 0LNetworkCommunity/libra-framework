@@ -5,9 +5,12 @@ module ol_framework::test_donor_voice {
   use ol_framework::donor_voice;
   use ol_framework::mock;
   use ol_framework::ol_account;
+  use ol_framework::ancestry;
   use diem_framework::resource_account;
   use ol_framework::receipts;
+  use ol_framework::match_index;
   use ol_framework::donor_voice_governance;
+  use ol_framework::community_wallet;
   use ol_framework::burn;
   use std::guid;
   use std::vector;
@@ -467,5 +470,37 @@ module ol_framework::test_donor_voice {
 
       // nothing should have been burned, it was a refund
       assert!(lifetime_burn_now == lifetime_burn_pre, 7357011);
+    }
+
+    #[test(root = @ol_framework, community = @0x10011, alice = @0x1000a, bob =
+    @0x1000b, carol = @0x1000c, dave = @0x1000d, eve = @0x1000e)]
+    fun migrate_cw_bug(root: &signer, community: &signer, alice: &signer, bob:
+    &signer, carol: &signer, dave: &signer, eve: &signer) {
+      donor_voice::initialize(root);
+      match_index::initialize(root);
+      community_wallet::migrate_community_wallet_account(root, community);
+
+      let _b = donor_voice::is_liquidate_to_match_index(signer::address_of(community));
+
+      let alice_addr = signer::address_of(alice);
+      let bob_addr = signer::address_of(bob);
+      let carol_addr = signer::address_of(carol);
+      let dave_addr = signer::address_of(dave);
+      let eve_addr = signer::address_of(eve);
+
+      let addrs = vector::singleton(alice_addr);
+      vector::push_back(&mut addrs, bob_addr);
+      vector::push_back(&mut addrs, carol_addr);
+      vector::push_back(&mut addrs, dave_addr);
+      vector::push_back(&mut addrs, eve_addr);
+
+      ancestry::fork_migrate(root, alice, vector::singleton(alice_addr));
+      ancestry::fork_migrate(root, bob, vector::singleton(bob_addr));
+      ancestry::fork_migrate(root, carol, vector::singleton(carol_addr));
+      ancestry::fork_migrate(root, dave, vector::singleton(dave_addr));
+      ancestry::fork_migrate(root, eve, vector::singleton(eve_addr));
+
+      community_wallet::init_community(community, addrs);
+
     }
 }
