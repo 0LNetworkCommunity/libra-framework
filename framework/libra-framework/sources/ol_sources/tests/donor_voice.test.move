@@ -8,7 +8,6 @@ module ol_framework::test_donor_voice {
   use ol_framework::ancestry;
   use diem_framework::resource_account;
   use ol_framework::receipts;
-  use ol_framework::match_index;
   use ol_framework::donor_voice_governance;
   use ol_framework::community_wallet;
   use ol_framework::burn;
@@ -16,7 +15,7 @@ module ol_framework::test_donor_voice {
   use std::vector;
   use std::signer;
 
-  // use diem_std::debug::print;
+  use diem_std::debug::print;
 
     #[test(root = @ol_framework, alice = @0x1000a)]
     fun dd_init(root: &signer, alice: &signer) {
@@ -473,15 +472,31 @@ module ol_framework::test_donor_voice {
     }
 
     #[test(root = @ol_framework, community = @0x10011, alice = @0x1000a, bob =
-    @0x1000b, carol = @0x1000c, dave = @0x1000d, eve = @0x1000e)]
+    @0x1000b, carol = @0x1000c, dave = @0x1000d, eve = @0x1000e, joan = @0x1000f)]
     fun migrate_cw_bug(root: &signer, community: &signer, alice: &signer, bob:
     &signer, carol: &signer, dave: &signer, eve: &signer) {
-      donor_voice::initialize(root);
-      match_index::initialize(root);
+      mock::genesis_n_vals(root, 5);
+
+      // create resource account for community wallet
+      let (comm_resource_sig, _cap) = ol_account::ol_create_resource_account(community, b"senior sword vocal target latin rug ship summer bar suit cake derive pluck sunset can scorpion tornado hungry erosion heart away suggest glad seek");
+      let community_wallet_resource_address = signer::address_of(&comm_resource_sig);
+
+      let community_wallet_address = signer::address_of(community);
+      
+      // verify resource account was created succesfully for the community wallet
+      assert!(resource_account::is_resource_account(community_wallet_resource_address), 7357003);
+      assert!(!community_wallet::is_init(community_wallet_address), 100); //TODO: find appropriate error codes
+
+      // migrate community wallet
       community_wallet::migrate_community_wallet_account(root, community);
 
-      let _b = donor_voice::is_liquidate_to_match_index(signer::address_of(community));
+      // verify correct migration of community wallet
+      assert!(community_wallet::is_init(community_wallet_address), 101); //TODO: find appropriate error codes
 
+
+      let _b = donor_voice::is_liquidate_to_match_index(community_wallet_address);
+
+      // create vectors of multi signers for the community wallet and set to different ancestrys
       let alice_addr = signer::address_of(alice);
       let bob_addr = signer::address_of(bob);
       let carol_addr = signer::address_of(carol);
@@ -500,7 +515,41 @@ module ol_framework::test_donor_voice {
       ancestry::fork_migrate(root, dave, vector::singleton(dave_addr));
       ancestry::fork_migrate(root, eve, vector::singleton(eve_addr));
 
-      community_wallet::init_community(community, addrs);
+      // wake up and initialize community wallet as a multi sig, donor voice account 
+      community_wallet::init_community(&comm_resource_sig, addrs);
+
+      // verify wallet is a initialized correctly
+      assert!(donor_voice::is_donor_voice(signer::address_of(&comm_resource_sig)), 102);
+
+
+      // make a transaction and have signers execute  
+      mock::trigger_epoch(root); // into epoch 1
+
+      let uid = donor_voice::propose_payment(bob, community_wallet_resource_address, @0x1000b, 100, b"thanks bob");
+      let (found, idx, status_enum, completed) = donor_voice::get_multisig_proposal_state(community_wallet_resource_address, &uid);
+      assert!(found, 7357004);
+      assert!(idx == 0, 7357005);
+      assert!(status_enum == 1, 7357006);
+      assert!(!completed, 7357007);
+
+      // it is not yet scheduled, it's still only a proposal by an admin
+      assert!(!donor_voice::is_scheduled(community_wallet_resource_address, &uid), 7357008);
+
+      donor_voice::propose_payment(carol, community_wallet_resource_address, @0x1000b, 100, b"thanks bob");
+      let uid = donor_voice::propose_payment(alice, community_wallet_resource_address, @0x1000b, 100, b"thanks bob");
+      let (found, idx, status_enum, completed) = donor_voice::get_multisig_proposal_state(community_wallet_resource_address, &uid);
+      assert!(found, 7357004);
+      assert!(idx == 0, 7357005);
+      assert!(status_enum == 1, 7357006);
+      assert!(completed, 7357007); // now completed
+
+      // confirm it is scheduled
+      assert!(donor_voice::is_scheduled(community_wallet_resource_address, &uid), 7357008);
+
+      // the default timed payment is 4 epochs, we are in epoch 2
+      let list = donor_voice::find_by_deadline(community_wallet_resource_address, 4);
+      assert!(vector::contains(&list, &uid), 7357009);
+
 
     }
 }
