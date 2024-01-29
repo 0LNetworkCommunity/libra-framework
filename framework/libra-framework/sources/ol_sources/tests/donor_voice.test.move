@@ -8,6 +8,7 @@ module ol_framework::test_donor_voice {
   use ol_framework::ancestry;
   use diem_framework::resource_account;
   use ol_framework::receipts;
+  use ol_framework::match_index;
   use ol_framework::donor_voice_governance;
   use ol_framework::community_wallet;
   use ol_framework::burn;
@@ -472,7 +473,7 @@ module ol_framework::test_donor_voice {
     }
 
     #[test(root = @ol_framework, community = @0x10011, alice = @0x1000a, bob =
-    @0x1000b, carol = @0x1000c, dave = @0x1000d, eve = @0x1000e, joan = @0x1000f)]
+    @0x1000b, carol = @0x1000c, dave = @0x1000d, eve = @0x1000e)]
     fun migrate_cw_bug(root: &signer, community: &signer, alice: &signer, bob:
     &signer, carol: &signer, dave: &signer, eve: &signer) {
       mock::genesis_n_vals(root, 5);
@@ -550,6 +551,7 @@ module ol_framework::test_donor_voice {
       let list = donor_voice::find_by_deadline(community_wallet_resource_address, 4);
       assert!(vector::contains(&list, &uid), 7357009);
 
+      community_wallet::init_community(community, addrs);
 
     }
 }
