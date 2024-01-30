@@ -8,15 +8,15 @@ module ol_framework::test_donor_voice {
   use ol_framework::ancestry;
   use diem_framework::resource_account;
   use ol_framework::receipts;
-  use ol_framework::match_index;
   use ol_framework::donor_voice_governance;
   use ol_framework::community_wallet;
+  use ol_framework::cumulative_deposits;
   use ol_framework::burn;
   use std::guid;
   use std::vector;
   use std::signer;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
     #[test(root = @ol_framework, alice = @0x1000a)]
     fun dd_init(root: &signer, alice: &signer) {
@@ -476,7 +476,11 @@ module ol_framework::test_donor_voice {
     @0x1000b, carol = @0x1000c, dave = @0x1000d, eve = @0x1000e)]
     fun migrate_cw_bug(root: &signer, community: &signer, alice: &signer, bob:
     &signer, carol: &signer, dave: &signer, eve: &signer) {
+
+      // create genesis and fund accounts
       mock::genesis_n_vals(root, 5);
+      mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
+      
 
       // create resource account for community wallet
       let (comm_resource_sig, _cap) = ol_account::ol_create_resource_account(community, b"senior sword vocal target latin rug ship summer bar suit cake derive pluck sunset can scorpion tornado hungry erosion heart away suggest glad seek");
@@ -487,6 +491,18 @@ module ol_framework::test_donor_voice {
       // verify resource account was created succesfully for the community wallet
       assert!(resource_account::is_resource_account(community_wallet_resource_address), 7357003);
       assert!(!community_wallet::is_init(community_wallet_address), 100); //TODO: find appropriate error codes
+
+
+      //Check balances and fund community wallet
+      let (_, bob_balance_pre) = ol_account::balance(@0x1000b);
+      assert!(bob_balance_pre == 10000000, 7357001);
+      let bob_donation = 42;
+      ol_account::transfer(bob, community_wallet_resource_address, bob_donation);
+      let (_, bob_balance) = ol_account::balance(@0x1000b);
+
+      assert!(bob_balance == 9999958, 7357001);
+      let (_, community_wallet_balance) = ol_account::balance(community_wallet_resource_address);
+      assert!(community_wallet_balance == 42, 7357001);
 
       // migrate community wallet
       community_wallet::migrate_community_wallet_account(root, community);
@@ -521,12 +537,12 @@ module ol_framework::test_donor_voice {
 
       // verify wallet is a initialized correctly
       assert!(donor_voice::is_donor_voice(signer::address_of(&comm_resource_sig)), 102);
-
+      assert!(cumulative_deposits::is_init_cumu_tracking(community_wallet_resource_address), 100);
 
       // make a transaction and have signers execute  
       mock::trigger_epoch(root); // into epoch 1
 
-      let uid = donor_voice::propose_payment(bob, community_wallet_resource_address, @0x1000b, 100, b"thanks bob");
+      let uid = donor_voice::propose_payment(bob, community_wallet_resource_address, @0x1000b, 42, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_voice::get_multisig_proposal_state(community_wallet_resource_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
@@ -536,8 +552,10 @@ module ol_framework::test_donor_voice {
       // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_voice::is_scheduled(community_wallet_resource_address, &uid), 7357008);
 
-      donor_voice::propose_payment(carol, community_wallet_resource_address, @0x1000b, 100, b"thanks bob");
-      let uid = donor_voice::propose_payment(alice, community_wallet_resource_address, @0x1000b, 100, b"thanks bob");
+
+      // have another 2 signers sign the proposal
+      donor_voice::propose_payment(carol, community_wallet_resource_address, @0x1000b, 42, b"thanks bob");
+      let uid = donor_voice::propose_payment(alice, community_wallet_resource_address, @0x1000b, 42, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_voice::get_multisig_proposal_state(community_wallet_resource_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
@@ -551,7 +569,24 @@ module ol_framework::test_donor_voice {
       let list = donor_voice::find_by_deadline(community_wallet_resource_address, 4);
       assert!(vector::contains(&list, &uid), 7357009);
 
-      community_wallet::init_community(community, addrs);
+      // simulate another 2 epochs, we are in epoxh 4
+      mock::trigger_epoch(root);
+      mock::trigger_epoch(root);
+
+      // verify payment has not been processed
+      let (_, bob_balance_pre_scheduled_epoch) = ol_account::balance(@0x1000b);
+      assert!(bob_balance_pre_scheduled_epoch == 10999958, 7357001); //increase by 1000000 due to amount recieved in epoch 1
+      let (_, community_wallet_balance_pre_scheduled_epoch) = ol_account::balance(community_wallet_resource_address);
+      assert!(community_wallet_balance_pre_scheduled_epoch == 42, 7357001);
+
+      // simulate another 2 epochs, we are in epoch 6
+      mock::trigger_epoch(root);
+      mock::trigger_epoch(root);
+
+      let (_, bob_balance_processed_payment) = ol_account::balance(@0x1000b);
+      assert!(bob_balance_processed_payment == 11000000, 7357001);
+      let (_, community_wallet_balance_processed_payment) = ol_account::balance(community_wallet_resource_address);
+      assert!(community_wallet_balance_processed_payment == 0, 7357001);
 
     }
 }
