@@ -75,6 +75,7 @@ module ol_framework::ancestry {
       assert!(!is, error::invalid_state(EACCOUNTS_ARE_FAMILY));
     }
 
+    #[view]
     // checks if two addresses have an intersecting permission tree
     // will return true, and the common ancestor at the intersection.
     public fun is_family(left: address, right: address): (bool, address) acquires Ancestry {

@@ -1,3 +1,4 @@
+use crate::txs_cli_community::CommunityTxs;
 use crate::txs_cli_governance::GovernanceTxs;
 use crate::txs_cli_user::UserTxs;
 use crate::txs_cli_vals::ValidatorTxs;
@@ -78,6 +79,9 @@ pub enum TxsSub {
     #[clap(subcommand)]
     /// Network upgrade transactions
     Governance(GovernanceTxs),
+    #[clap(subcommand)]
+    /// Perform transactions for addresses with Community Wallet settings
+    Community(CommunityTxs),
     /// Transfer coins between accounts. Transferring can also be used to create accounts.
     Transfer {
         /// Address of the recipient
@@ -88,6 +92,8 @@ pub enum TxsSub {
         #[clap(short, long)]
         amount: f64,
     },
+    #[clap(hide(true))]
+    /// Warn: publishing contracts is for testing purposes only on Testnet.
     Publish(MovePackageDir),
     /// Generate a transaction that executes an Entry function on-chain
     GenerateTransaction {
@@ -192,12 +198,14 @@ impl TxsCli {
             Some(TxsSub::Validator(val_txs)) => val_txs.run(&mut send).await,
             Some(TxsSub::Governance(upgrade_txs)) => upgrade_txs.run(&mut send).await,
             Some(TxsSub::User(user_txs)) => user_txs.run(&mut send).await,
+            Some(TxsSub::Community(comm_txs)) => comm_txs.run(&mut send).await,
             _ => {
                 println!(
-                    "\nI'm searching, though I don't succeed\n
-But someone look, there's a growing need\n
-Oh, he is lost, there's no place for beginning\n
-All that's left is an unhappy ending"
+                    "\n\"I'm searching, though I don't succeed
+But someone look, there's a growing need
+Oh, he is lost, there's no place for beginning
+All that's left is an unhappy ending\"
+\n... did you forget a subcommand?"
                 );
                 Ok(())
             }

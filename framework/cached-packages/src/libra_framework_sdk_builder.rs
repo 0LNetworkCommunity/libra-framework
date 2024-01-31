@@ -234,6 +234,14 @@ pub enum EntryFunctionCall {
         cfg_n_signers: u64,
     },
 
+    /// Like any MultiSig instance, a sponsor which is the original owner of the account, needs to initialize the account.
+    /// The account must be "bricked" by the owner before MultiSig actions can be taken.
+    /// Note, as with any multisig, the new_authorities cannot include the sponsor, since that account will no longer be able to sign transactions.
+    DonorVoiceMakeMultiAction {
+        cfg_default_n_sigs: u64,
+        new_authorities: Vec<AccountAddress>,
+    },
+
     DonorVoiceProposeLiquidateTx {
         multisig_address: AccountAddress,
     },
@@ -700,6 +708,10 @@ impl EntryFunctionCall {
                 init_signers,
                 cfg_n_signers,
             } => donor_voice_make_donor_voice_tx(init_signers, cfg_n_signers),
+            DonorVoiceMakeMultiAction {
+                cfg_default_n_sigs,
+                new_authorities,
+            } => donor_voice_make_multi_action(cfg_default_n_sigs, new_authorities),
             DonorVoiceProposeLiquidateTx { multisig_address } => {
                 donor_voice_propose_liquidate_tx(multisig_address)
             }
@@ -1437,6 +1449,30 @@ pub fn donor_voice_make_donor_voice_tx(
         vec![
             bcs::to_bytes(&init_signers).unwrap(),
             bcs::to_bytes(&cfg_n_signers).unwrap(),
+        ],
+    ))
+}
+
+/// Like any MultiSig instance, a sponsor which is the original owner of the account, needs to initialize the account.
+/// The account must be "bricked" by the owner before MultiSig actions can be taken.
+/// Note, as with any multisig, the new_authorities cannot include the sponsor, since that account will no longer be able to sign transactions.
+pub fn donor_voice_make_multi_action(
+    cfg_default_n_sigs: u64,
+    new_authorities: Vec<AccountAddress>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("donor_voice").to_owned(),
+        ),
+        ident_str!("make_multi_action").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&cfg_default_n_sigs).unwrap(),
+            bcs::to_bytes(&new_authorities).unwrap(),
         ],
     ))
 }
@@ -2720,6 +2756,19 @@ mod decoder {
         }
     }
 
+    pub fn donor_voice_make_multi_action(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::DonorVoiceMakeMultiAction {
+                cfg_default_n_sigs: bcs::from_bytes(script.args().get(0)?).ok()?,
+                new_authorities: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn donor_voice_propose_liquidate_tx(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -3389,6 +3438,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "donor_voice_make_donor_voice_tx".to_string(),
             Box::new(decoder::donor_voice_make_donor_voice_tx),
+        );
+        map.insert(
+            "donor_voice_make_multi_action".to_string(),
+            Box::new(decoder::donor_voice_make_multi_action),
         );
         map.insert(
             "donor_voice_propose_liquidate_tx".to_string(),
