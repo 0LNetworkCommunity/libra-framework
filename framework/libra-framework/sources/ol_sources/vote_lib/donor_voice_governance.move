@@ -48,22 +48,25 @@ module ol_framework::donor_voice_governance {
     /// this is a GovAction type for liquidation
     struct Liquidate has drop, store {}
 
-
-
     public fun init_donor_governance(dv_account: &signer) {
+      let addr = signer::address_of(dv_account);
 
-      // let t = turnout_tally::new_tally_struct();
-      let veto = Governance<TurnoutTally<Veto>> {
-          tracker: ballot::new_tracker()
+      if (!exists<Governance<TurnoutTally<Veto>>>(addr)) {
+        let veto = Governance<TurnoutTally<Veto>> {
+            tracker: ballot::new_tracker()
+        };
+
+        move_to(dv_account, veto);
       };
 
-      move_to(dv_account, veto);
+      if (!exists<Governance<TurnoutTally<Liquidate>>>(addr)) {
 
-      let liquidate = Governance<TurnoutTally<Liquidate>> {
-          tracker: ballot::new_tracker()
-      };
+        let liquidate = Governance<TurnoutTally<Liquidate>> {
+            tracker: ballot::new_tracker()
+        };
 
-      move_to(dv_account, liquidate);
+        move_to(dv_account, liquidate);
+      }
     }
 
     /// For a Donor Voice account get the total number of votes enrolled from reading the Cumulative tracker.
@@ -96,8 +99,6 @@ module ol_framework::donor_voice_governance {
 
 
     //////// VETO FUNCTIONS ////////
-
-
     /// private function to vote on a ballot based on a Donor's voting power.
     fun vote_veto(user: &signer, ballot: &mut TurnoutTally<Veto>, uid: &guid::ID, multisig_address: address): Option<bool> {
       let user_votes = get_user_donations(multisig_address, signer::address_of(user));
