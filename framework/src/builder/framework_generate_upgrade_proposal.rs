@@ -58,8 +58,8 @@ pub fn make_framework_upgrade_artifacts(
 
         let options = BuildOptions {
             with_srcs: true, // this will store the source bytes on chain, as in genesis
-            with_abis: false,
-            with_source_maps: false,
+            with_abis: false, // NOTE: this is set to false in vendor
+            with_source_maps: false, // NOTE: this is set to false in vendor
             with_error_map: true,
             skip_fetch_latest_git_deps: true,
             bytecode_version: Some(BYTECODE_VERSION),

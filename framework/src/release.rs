@@ -64,16 +64,7 @@ impl ReleaseTarget {
                 "libra-framework",
                 Some("cached-packages/src/libra_framework_sdk_builder.rs"),
             ),
-            // (
-            //     "diem-token",
-            //     Some("cached-packages/src/diem_token_sdk_builder.rs"),
-            // ),
-            // (
-            //     "diem-token-objects",
-            //     Some("cached-packages/src/diem_token_objects_sdk_builder.rs"),
-            // ),
         ];
-        // Currently we don't have experimental packages only included in particular targets.
         result
     }
 
@@ -106,9 +97,9 @@ impl ReleaseTarget {
                 dev: false,
                 with_srcs,
                 with_abis: true,
-                with_source_maps: false,
+                with_source_maps: true,
                 with_error_map: true,
-                named_addresses: Default::default(),
+                named_addresses: Default::default(), // TODO: should this be NAMED_ADDRESSES
                 install_dir: None,
                 with_docs: true,
                 docgen_options: Some(DocgenOptions {
