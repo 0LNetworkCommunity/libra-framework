@@ -87,6 +87,14 @@ impl BootstrapOpts {
           return Ok(None)
         }
 
+        if self.info {
+          println!("num txs: {:?}", executed_trees.num_transactions());
+          println!("version: {:?}", executed_trees.version());
+          println!("root hash: {:?}", executed_trees.txn_accumulator().root_hash);
+
+          return Ok(None)
+        }
+
         if let Some(waypoint) = self.waypoint_to_verify {
             ensure!(
                 waypoint.version() == executed_trees.num_transactions(),
