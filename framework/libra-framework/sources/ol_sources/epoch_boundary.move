@@ -195,6 +195,10 @@ module diem_framework::epoch_boundary {
     u64) acquires BoundaryBit {
 
       if (!exists<BoundaryBit>(@vm_reserved)) {
+        // Just like a prayer, your voice can take me there
+        // Just like a muse to me, you are a mystery
+        // Just like a dream, you are not what you seem
+        // Just like a prayer, no choice your voice can take me there...
         move_to(vm_signer, BoundaryBit {
           closing_epoch: closing_epoch,
           ready: true,
