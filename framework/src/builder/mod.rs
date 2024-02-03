@@ -10,3 +10,5 @@
 // pub mod release_config_ext; // a trait to extend the release config struct see diem-move/diem-release-builder/src/components/mod.rs
 pub mod framework_generate_upgrade_proposal; // see diem-move/diem-release-builder/src/components/framework.rs
 pub mod framework_release_bundle; // note this lives in a different module in vendor. see diem-move/framework/src/release_bundle.rs
+pub mod named_addresses; // OL uses different names for addresses
+pub mod release; // OL uses different names for addresses

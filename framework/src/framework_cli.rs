@@ -1,7 +1,7 @@
 //! framework cli entry points
 
-use crate::{
-    builder::framework_generate_upgrade_proposal::{
+use crate::builder::{
+    framework_generate_upgrade_proposal::{
         init_move_dir_wrapper, libra_compile_script, make_framework_upgrade_artifacts, save_build,
     },
     release::ReleaseTarget,

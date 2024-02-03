@@ -2,7 +2,7 @@ use libra_smoke_tests::libra_smoke::LibraSmoke;
 
 use diem_forge::Swarm;
 use libra_cached_packages::libra_stdlib;
-use libra_framework::release::ReleaseTarget;
+use libra_framework::builder::release::ReleaseTarget;
 use smoke_test::smoke_test_environment::new_local_swarm_with_release;
 
 /// testing that we can get a swarm up of 1 node with the current head.mrb

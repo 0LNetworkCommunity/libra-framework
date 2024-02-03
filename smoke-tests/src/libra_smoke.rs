@@ -6,7 +6,7 @@ use diem_forge::{LocalSwarm, Node, Swarm};
 use diem_sdk::types::LocalAccount;
 use diem_temppath::TempPath;
 use diem_types::chain_id::NamedChain;
-use libra_framework::release::ReleaseTarget;
+use libra_framework::builder::release::ReleaseTarget;
 use libra_types::exports::AccountAddress;
 use libra_types::exports::Client;
 use libra_types::legacy_types::app_cfg::AppCfg;

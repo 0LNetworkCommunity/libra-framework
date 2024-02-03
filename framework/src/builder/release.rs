@@ -6,12 +6,32 @@
 use diem_framework::{
     docgen::DocgenOptions, BuildOptions, ReleaseBundle, ReleaseOptions, RELEASE_BUNDLE_EXTENSION,
 };
-// use clap::Args;
-use move_command_line_common::address::NumericalAddress;
-use once_cell::sync::Lazy;
-use std::{collections::BTreeMap, fmt::Display, path::PathBuf, str::FromStr};
+
+use std::{fmt::Display, path::PathBuf, str::FromStr};
 
 use crate::BYTECODE_VERSION;
+
+use super::named_addresses::NAMED_ADDRESSES;
+
+// BuilderOptions Helper
+
+/// The default build profile for the compiled move
+/// framework bytecode (.mrb file)
+pub fn ol_release_default() -> BuildOptions {
+    BuildOptions {
+        dev: false,
+        with_srcs: true,
+        with_abis: true,
+        with_source_maps: true,
+        with_error_map: true,
+        named_addresses: NAMED_ADDRESSES.to_owned(),
+        install_dir: None,
+        with_docs: false,
+        docgen_options: None,
+        skip_fetch_latest_git_deps: true,
+        bytecode_version: Some(BYTECODE_VERSION),
+    }
+}
 
 // ===============================================================================================
 // Release Targets
@@ -64,16 +84,7 @@ impl ReleaseTarget {
                 "libra-framework",
                 Some("cached-packages/src/libra_framework_sdk_builder.rs"),
             ),
-            // (
-            //     "diem-token",
-            //     Some("cached-packages/src/diem_token_sdk_builder.rs"),
-            // ),
-            // (
-            //     "diem-token-objects",
-            //     Some("cached-packages/src/diem_token_objects_sdk_builder.rs"),
-            // ),
         ];
-        // Currently we don't have experimental packages only included in particular targets.
         result
     }
 
@@ -91,7 +102,7 @@ impl ReleaseTarget {
         ReleaseBundle::read(path)
     }
 
-    pub fn create_release_options(self, with_srcs: bool, out: Option<PathBuf>) -> ReleaseOptions {
+    pub fn create_release_options(self, _with_srcs: bool, out: Option<PathBuf>) -> ReleaseOptions {
         let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         // let crate_dir = crate_dir.parent().unwrap().to_path_buf();
         let packages = self
@@ -103,13 +114,6 @@ impl ReleaseTarget {
             .collect::<Vec<_>>();
         ReleaseOptions {
             build_options: BuildOptions {
-                dev: false,
-                with_srcs,
-                with_abis: true,
-                with_source_maps: false,
-                with_error_map: true,
-                named_addresses: Default::default(),
-                install_dir: None,
                 with_docs: true,
                 docgen_options: Some(DocgenOptions {
                     include_impl: true,
@@ -120,8 +124,7 @@ impl ReleaseTarget {
                     landing_page_template: Some("doc_template/overview.md".to_string()),
                     references_file: Some("doc_template/references.md".to_string()),
                 }),
-                skip_fetch_latest_git_deps: true,
-                bytecode_version: Some(BYTECODE_VERSION),
+                ..ol_release_default()
             },
             packages: packages.iter().map(|(path, _)| path.to_owned()).collect(),
             rust_bindings: packages
@@ -165,32 +168,4 @@ impl ReleaseTarget {
                 .expect("Expected to join release thread")
         }
     }
-}
-
-// ===============================================================================================
-// Legacy Named Addresses
-
-// Some older Move tests work directly on sources, skipping the package system. For those
-// we define the relevant address aliases here.
-
-static NAMED_ADDRESSES: Lazy<BTreeMap<String, NumericalAddress>> = Lazy::new(|| {
-    let mut result = BTreeMap::new();
-    let zero = NumericalAddress::parse_str("0x0").unwrap();
-    let one = NumericalAddress::parse_str("0x1").unwrap();
-    let three = NumericalAddress::parse_str("0x3").unwrap();
-    let four = NumericalAddress::parse_str("0x4").unwrap();
-    let resources = NumericalAddress::parse_str("0xA550C18").unwrap();
-    result.insert("std".to_owned(), one);
-    result.insert("diem_std".to_owned(), one);
-    result.insert("diem_framework".to_owned(), one);
-    result.insert("diem_token".to_owned(), three);
-    result.insert("diem_token_objects".to_owned(), four);
-    result.insert("core_resources".to_owned(), resources);
-    result.insert("vm_reserved".to_owned(), zero);
-    result.insert("ol_framework".to_owned(), one); /////// 0L /////////
-    result
-});
-
-pub fn named_addresses() -> &'static BTreeMap<String, NumericalAddress> {
-    &NAMED_ADDRESSES
 }

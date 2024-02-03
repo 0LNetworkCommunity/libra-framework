@@ -36,7 +36,7 @@ use diem_vm_genesis::{
     default_gas_schedule,
     GenesisConfiguration as VmGenesisGenesisConfiguration, // in vendor codethere are two structs separately called the same name with nearly identical fields
 };
-use libra_framework::release;
+use libra_framework::builder::release;
 use libra_types::exports::ChainId;
 use libra_types::exports::NamedChain;
 use libra_types::legacy_types::fixtures::TestPersona;
