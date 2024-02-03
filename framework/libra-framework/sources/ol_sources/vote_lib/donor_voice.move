@@ -120,14 +120,6 @@ module ol_framework::donor_voice {
       liquidate_to_match_index: bool,
     }
 
-    // struct Donors has key {
-    //   list: vector<address>,
-    // }
-
-
-    // // A flag on the account that it wants to be considered a community walley
-    // struct CommunityWallet has key { }
-
 
     //////// INIT REGISRTY OF DONOR VOICE ACCOUNTS  ////////
 
@@ -179,7 +171,9 @@ module ol_framework::donor_voice {
 
     // 3. Once the MultiSig is initialized, the account needs to be bricked, before the MultiSig can be used.
 
-    public fun make_donor_voice(sponsor: &signer, init_signers: vector<address>, cfg_n_signers: u64) acquires Registry {
+    public fun make_donor_voice(sponsor: &signer, init_signers: vector<address>,
+    cfg_n_signers: u64) acquires Registry {
+      // will not create if already exists (for migration)
       cumulative_deposits::init_cumulative_deposits(sponsor);
 
       // we are setting liquidation to match_index as false by default
@@ -192,6 +186,10 @@ module ol_framework::donor_voice {
 
     fun structs_init(sig: &signer, liquidate_to_match_index: bool) {
       if (!exists<Registry>(@ol_framework)) return;
+
+      // exit gracefully in migration cases
+      // if Freeze exists everthing else is likely created
+      if (exists<Freeze>(signer::address_of(sig))) return;
 
       move_to<Freeze>(
         sig,
@@ -211,6 +209,7 @@ module ol_framework::donor_voice {
           guid_capability,
         });
 
+      // Commit note: this should now failover gracefully
       donor_voice_governance::init_donor_governance(sig);
     }
 
@@ -231,7 +230,7 @@ module ol_framework::donor_voice {
     /// Like any MultiSig instance, a sponsor which is the original owner of the account, needs to initialize the account.
     /// The account must be "bricked" by the owner before MultiSig actions can be taken.
     /// Note, as with any multisig, the new_authorities cannot include the sponsor, since that account will no longer be able to sign transactions.
-    public fun make_multi_action(sponsor: &signer, cfg_default_n_sigs: u64, new_authorities: vector<address>) {
+    public entry fun make_multi_action(sponsor: &signer, cfg_default_n_sigs: u64, new_authorities: vector<address>) {
       multi_action::init_gov(sponsor, cfg_default_n_sigs, &new_authorities);
       multi_action::init_type<Payment>(sponsor, true); // "true": We make this multisig instance hold the WithdrawCapability. Even though we don't need it for any account pay functions, we can use it to make sure the entire pipeline of private functions scheduling a payment are authorized. Belt and suspenders.
     }
@@ -321,9 +320,7 @@ module ol_framework::donor_voice {
         epoch_latest_veto_received: 0,
       };
 
-      // let id = guid::id(&t.uid);
       vector::push_back<TimedTransfer>(&mut transfers.scheduled, t);
-      // return id
     }
 
     /// saerch for a transction ID in the queues. Returns (is found, index, status enum)
@@ -753,6 +750,7 @@ module ol_framework::donor_voice {
       f.is_frozen
     }
 
+    #[view]
     public fun is_liquidate_to_match_index(addr: address): bool acquires Freeze{
       let f = borrow_global<Freeze>(addr);
       f.liquidate_to_match_index
@@ -761,45 +759,12 @@ module ol_framework::donor_voice {
 
     //////// TRANSACTION SCRIPTS ////////
 
-    // public fun init_donor_voice(sponsor: &signer, init_signers: vector<address>, cfg_n_signers: u64) acquires Registry {
-    //   // let init_signers = vector::singleton(signer_one);
-    //   // vector::push_back(&mut init_signers, signer_two);
-    //   // vector::push_back(&mut init_signers, signer_three);
-
-    //   cumulative_deposits::init_cumulative_deposits(sponsor);
-
-    //   // we are setting liquidation to infra escrow as false by default
-    //   // the user can send another transacton to change this.
-    //   let liquidate_to_match_index = false;
-    //   set_donor_voice(sponsor, liquidate_to_match_index);
-    //   make_multi_action(sponsor, cfg_n_signers, init_signers);
-    //   add_to_registry(sponsor);
-    // }
-
     /// option to set the liquidation destination to infrastructure escrow
     /// must be done before the multisig is finalized and the sponsor cannot control the account.
     public fun set_liquidate_to_match_index(sponsor: &signer, liquidate_to_match_index: bool) acquires Freeze {
       let f = borrow_global_mut<Freeze>(signer::address_of(sponsor));
       f.liquidate_to_match_index = liquidate_to_match_index;
     }
-
-    // /// the sponsor must finalize the initialization, this is a separate step so that the user can optionally check everything is in order before bricking the account key.
-    // public fun finalize_init(sponsor: &signer) acquires Registry {
-    //   let multisig_address = signer::address_of(sponsor);
-    //   assert!(multi_action::is_multi_action(multisig_address), error::invalid_state(EMULTISIG_NOT_INIT));
-
-    //   assert!(multi_action::has_action<Payment>(multisig_address), error::invalid_state(EMULTISIG_NOT_INIT));
-
-    //   assert!(exists<Freeze>(multisig_address), error::invalid_state(ENOT_INIT_DONOR_VOICE));
-
-    //   assert!(exists<TxSchedule>(multisig_address), error::invalid_state(ENOT_INIT_DONOR_VOICE));
-
-    //   // multi_action::finalize_and_brick(sponsor);
-    //   assert!(is_donor_voice(multisig_address), error::invalid_state(ENOT_INIT_DONOR_VOICE));
-
-    //   // only add to registry if INIT is successful.
-    //   add_to_registry(sponsor);
-    // }
 
 
 

@@ -165,9 +165,6 @@ module ol_framework::multi_action {
     if (!exists<Action<PropGovSigners>>(multisig_address)) {
       move_to(sig, Action<PropGovSigners> {
         can_withdraw: false,
-        // pending: vector::empty(),
-        // approved: vector::empty(),
-        // rejected: vector::empty(),
         vote: ballot::new_tracker<Proposal<PropGovSigners>>(),
       });
     }
@@ -185,13 +182,6 @@ module ol_framework::multi_action {
     exists<Governance>(addr) &&
     exists<Action<PropGovSigners>>(addr)
   }
-
-  // Deprecation note: is_finalized() is now replaced by the resource_account.move helpers
-  // Deprecated Note, this is how signerless accounts used to work: Once the "sponsor" which is setting up the multisig has created all the multisig types (payment, generic, gov), they need to brick this account so that the signer for this address is rendered useless, and it is a true multisig.
-
-  // public fun is_finalized(addr: address): bool {
-  //   resource_account::is_resource_account(addr)
-  // }
 
   /// Has a multisig struct for a given action been created?
   public fun has_action<ProposalData: store>(addr: address):bool {
@@ -223,9 +213,6 @@ module ol_framework::multi_action {
 
     move_to(sig, Action<ProposalData> {
         can_withdraw,
-        // pending: vector::empty(),
-        // approved: vector::empty(),
-        // rejected: vector::empty(),
         vote: ballot::new_tracker<Proposal<ProposalData>>(),
       });
   }
@@ -247,8 +234,6 @@ module ol_framework::multi_action {
   /// Withdraw cap is a hot-potato and can never be dropped, we can extract and fill it into a struct that holds it.
 
   public fun maybe_restore_withdraw_cap(cap_opt: Option<WithdrawCapability>) acquires Governance {
-    // assert_authorized(sig, multisig_addr);
-    // assert!(exists<Governance>(multisig_addr), error::invalid_argument(ENOT_AUTHORIZED));
     if (option::is_some(&cap_opt)) {
       let cap = option::extract(&mut cap_opt);
       let addr = account::get_withdraw_cap_address(&cap);
@@ -315,14 +300,12 @@ module ol_framework::multi_action {
   public fun vote_with_id<ProposalData: store + drop>(sig: &signer, id: &guid::ID, multisig_address: address): (bool, Option<WithdrawCapability>) acquires Governance, Action {
     assert_authorized(sig, multisig_address);
 
-    // let action = borrow_global_mut<Action<ProposalData>>(multisig_address);
     vote_impl<ProposalData>(sig, multisig_address, id)
 
   }
 
   fun vote_impl<ProposalData: store + drop>(
     sig: &signer,
-    // ms: &mut Governance,
     multisig_address: address,
     id: &guid::ID
   ): (bool, Option<WithdrawCapability>) acquires Governance, Action {
@@ -332,8 +315,6 @@ module ol_framework::multi_action {
     let action = borrow_global_mut<Action<ProposalData>>(multisig_address);
     // always run this to cleanup all missing ballots
     lazy_cleanup_expired(action);
-
-    // if (check_expired(&action.vote)) return (false, option::none());
 
     // does this proposal already exist in the pending list?
     let (found, _idx, status_enum, is_complete) = ballot::find_anywhere<Proposal<ProposalData>>(&action.vote, id);
@@ -549,8 +530,6 @@ module ol_framework::multi_action {
 
 
     let (passed, cap_opt) = {
-      // let ms = borrow_global_mut<Governance>(multisig_address);
-      // let action = borrow_global_mut<Action<PropGovSigners>>(multisig_address);
       vote_impl<PropGovSigners>(sig, multisig_address, id)
     };
     maybe_restore_withdraw_cap(cap_opt); // don't need this and can't drop.
