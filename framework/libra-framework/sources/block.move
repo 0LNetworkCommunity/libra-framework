@@ -3,7 +3,6 @@ module diem_framework::block {
     use std::error;
     use std::vector;
     use std::option;
-
     use diem_framework::account;
     use diem_framework::event::{Self, EventHandle};
     use diem_framework::reconfiguration;
