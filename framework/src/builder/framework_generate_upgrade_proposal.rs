@@ -1,7 +1,12 @@
 //! generate framework upgrade proposal scripts
 //! see vendor diem-move/framework/src/release_bundle.rs
 
-use crate::{builder::framework_release_bundle::libra_author_script_file, BYTECODE_VERSION};
+use crate::{
+    builder::{
+        framework_release_bundle::libra_author_script_file, named_addresses::named_addresses,
+    },
+    BYTECODE_VERSION,
+};
 use anyhow::{ensure, Context, Result};
 use diem_crypto::HashValue;
 use diem_framework::{BuildOptions, BuiltPackage, ReleasePackage};
@@ -57,8 +62,8 @@ pub fn make_framework_upgrade_artifacts(
         // We first need to compile and build each CORE MODULE we are upgrading (e.g. MoveStdlib, LibraFramework)
 
         let options = BuildOptions {
-            with_srcs: true, // this will store the source bytes on chain, as in genesis
-            with_abis: false, // NOTE: this is set to false in vendor
+            with_srcs: true,         // this will store the source bytes on chain, as in genesis
+            with_abis: false,        // NOTE: this is set to false in vendor
             with_source_maps: false, // NOTE: this is set to false in vendor
             with_error_map: true,
             skip_fetch_latest_git_deps: true,
