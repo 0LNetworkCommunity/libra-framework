@@ -1,4 +1,4 @@
-use move_command_line_common::address::NumericalAddress;
+use diem_types::account_address::AccountAddress;
 use once_cell::sync::Lazy;
 use std::collections::BTreeMap;
 
@@ -8,13 +8,13 @@ use std::collections::BTreeMap;
 // Some older Move tests work directly on sources, skipping the package system. For those
 // we define the relevant address aliases here.
 
-static NAMED_ADDRESSES: Lazy<BTreeMap<String, NumericalAddress>> = Lazy::new(|| {
+pub static NAMED_ADDRESSES: Lazy<BTreeMap<String, AccountAddress>> = Lazy::new(|| {
     let mut result = BTreeMap::new();
-    let zero = NumericalAddress::parse_str("0x0").unwrap();
-    let one = NumericalAddress::parse_str("0x1").unwrap();
-    let three = NumericalAddress::parse_str("0x3").unwrap();
-    let four = NumericalAddress::parse_str("0x4").unwrap();
-    let resources = NumericalAddress::parse_str("0xA550C18").unwrap();
+    let zero = AccountAddress::from_hex_literal("0x0").unwrap();
+    let one = AccountAddress::from_hex_literal("0x1").unwrap();
+    let three = AccountAddress::from_hex_literal("0x3").unwrap();
+    let four = AccountAddress::from_hex_literal("0x4").unwrap();
+    let resources = AccountAddress::from_hex_literal("0xA550C18").unwrap();
     result.insert("std".to_owned(), one);
     result.insert("diem_std".to_owned(), one);
     result.insert("diem_framework".to_owned(), one);
@@ -26,6 +26,6 @@ static NAMED_ADDRESSES: Lazy<BTreeMap<String, NumericalAddress>> = Lazy::new(|| 
     result
 });
 
-pub fn named_addresses() -> &'static BTreeMap<String, NumericalAddress> {
+pub fn named_addresses() -> &'static BTreeMap<String, AccountAddress> {
     &NAMED_ADDRESSES
 }

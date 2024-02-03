@@ -11,6 +11,28 @@ use std::{fmt::Display, path::PathBuf, str::FromStr};
 
 use crate::BYTECODE_VERSION;
 
+use super::named_addresses::NAMED_ADDRESSES;
+
+// BuilderOptions Helper
+
+/// The default build profile for the compiled move
+/// framework bytecode (.mrb file)
+pub fn ol_release_default() -> BuildOptions {
+    BuildOptions {
+        dev: false,
+        with_srcs: true,
+        with_abis: true,
+        with_source_maps: true,
+        with_error_map: true,
+        named_addresses: NAMED_ADDRESSES.to_owned(),
+        install_dir: None,
+        with_docs: false,
+        docgen_options: None,
+        skip_fetch_latest_git_deps: true,
+        bytecode_version: Some(BYTECODE_VERSION),
+    }
+}
+
 // ===============================================================================================
 // Release Targets
 
@@ -80,7 +102,7 @@ impl ReleaseTarget {
         ReleaseBundle::read(path)
     }
 
-    pub fn create_release_options(self, with_srcs: bool, out: Option<PathBuf>) -> ReleaseOptions {
+    pub fn create_release_options(self, _with_srcs: bool, out: Option<PathBuf>) -> ReleaseOptions {
         let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         // let crate_dir = crate_dir.parent().unwrap().to_path_buf();
         let packages = self
@@ -92,13 +114,13 @@ impl ReleaseTarget {
             .collect::<Vec<_>>();
         ReleaseOptions {
             build_options: BuildOptions {
-                dev: false,
-                with_srcs,
-                with_abis: true,
-                with_source_maps: true,
-                with_error_map: true,
-                named_addresses: Default::default(), // TODO: should this be NAMED_ADDRESSES
-                install_dir: None,
+                // dev: false,
+                // with_srcs,
+                // with_abis: true,
+                // with_source_maps: true,
+                // with_error_map: true,
+                // named_addresses: Default::default(), // TODO: should this be NAMED_ADDRESSES
+                // install_dir: None,
                 with_docs: true,
                 docgen_options: Some(DocgenOptions {
                     include_impl: true,
@@ -109,8 +131,7 @@ impl ReleaseTarget {
                     landing_page_template: Some("doc_template/overview.md".to_string()),
                     references_file: Some("doc_template/references.md".to_string()),
                 }),
-                skip_fetch_latest_git_deps: true,
-                bytecode_version: Some(BYTECODE_VERSION),
+                ..ol_release_default()
             },
             packages: packages.iter().map(|(path, _)| path.to_owned()).collect(),
             rust_bindings: packages
