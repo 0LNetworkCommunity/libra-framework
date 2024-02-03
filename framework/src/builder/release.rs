@@ -114,13 +114,6 @@ impl ReleaseTarget {
             .collect::<Vec<_>>();
         ReleaseOptions {
             build_options: BuildOptions {
-                // dev: false,
-                // with_srcs,
-                // with_abis: true,
-                // with_source_maps: true,
-                // with_error_map: true,
-                // named_addresses: Default::default(), // TODO: should this be NAMED_ADDRESSES
-                // install_dir: None,
                 with_docs: true,
                 docgen_options: Some(DocgenOptions {
                     include_impl: true,
