@@ -1,4 +1,4 @@
-use libra_framework::release::ReleaseTarget;
+use libra_framework::builder::release::ReleaseTarget;
 use std::{env::current_dir, path::PathBuf};
 
 fn main() {

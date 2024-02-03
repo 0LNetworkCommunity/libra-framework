@@ -22,7 +22,9 @@ module diem_framework::epoch_boundary {
     use diem_framework::coin::{Self, Coin};
     use std::vector;
     use std::error;
+    use std::signer;
     use std::string;
+
 
     use diem_std::debug::print;
 
@@ -115,6 +117,9 @@ module diem_framework::epoch_boundary {
     }
 
     public fun initialize(framework: &signer) {
+      let addr = signer::address_of(framework);
+      if (addr != @ol_framework) return; // don't throw error.
+
       if (!exists<BoundaryStatus>(@ol_framework)){
         move_to(framework, reset());
       };
