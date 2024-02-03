@@ -1,7 +1,10 @@
 //! generate framework upgrade proposal scripts
 //! see vendor diem-move/framework/src/release_bundle.rs
 
-use crate::{builder::{framework_release_bundle::libra_author_script_file, release::ol_release_default}, BYTECODE_VERSION};
+use crate::{
+    builder::{framework_release_bundle::libra_author_script_file, release::ol_release_default},
+    BYTECODE_VERSION,
+};
 use anyhow::{ensure, Context, Result};
 use diem_crypto::HashValue;
 use diem_framework::{BuildOptions, BuiltPackage, ReleasePackage};
