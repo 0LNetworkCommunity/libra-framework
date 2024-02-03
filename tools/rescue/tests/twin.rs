@@ -73,6 +73,7 @@ async fn test_twin() -> anyhow::Result<()> {
         genesis_txn_file: file.clone(),
         waypoint_to_verify: None,
         commit: false, // NOT APPLYING THE TX
+        info: false,
     };
 
     let waypoint = bootstrap.run()?;
@@ -94,9 +95,10 @@ async fn test_twin() -> anyhow::Result<()> {
             genesis_txn_file: file.clone(),
             waypoint_to_verify: None,
             commit: true, // APPLY THE TX
+            info: false,
         };
 
-        let waypoint = bootstrap.run().unwrap();
+        let waypoint = bootstrap.run().unwrap().unwrap();
 
         insert_waypoint(&mut node_config, waypoint);
         node_config

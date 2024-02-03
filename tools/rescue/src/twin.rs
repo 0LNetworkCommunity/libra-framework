@@ -19,12 +19,21 @@ pub struct TwinOpts {
     /// The operator.yaml file which contains registration information
     #[clap(value_parser)]
     pub oper_file: Option<PathBuf>,
+    /// provide info about the DB state, e.g. version
+    #[clap(value_parser)]
+    pub info: bool,
 }
 
 impl TwinOpts {
     /// takes a snapshot db and makes a validator set of ONE from an
     /// existing or NEW marlon rando account
     pub fn run(&self) -> anyhow::Result<()> {
+
+        if self.info {
+
+          return Ok(())
+        }
+
         Ok(())
     }
 
