@@ -22,9 +22,7 @@ module diem_framework::epoch_boundary {
     use diem_framework::coin::{Self, Coin};
     use std::vector;
     use std::error;
-    use std::signer;
     use std::string;
-
 
     use diem_std::debug::print;
 
@@ -116,16 +114,17 @@ module diem_framework::epoch_boundary {
       pof_thermo_amount: u64,
     }
 
-    public fun initialize(framework: &signer) {
-      let addr = signer::address_of(framework);
-      if (addr != @ol_framework) return; // don't throw error.
-
+    /// initialize structs, requires both signers since BoundaryBit can only be
+    // accessed by VM
+    public fun initialize(vm_signer: &signer, framework_signer: &signer) {
+      system_addresses::assert_vm(vm_signer);
       if (!exists<BoundaryStatus>(@ol_framework)){
-        move_to(framework, reset());
+        move_to(framework_signer, reset());
       };
 
-      if (!exists<BoundaryBit>(@ol_framework)) {
-        move_to(framework, BoundaryBit {
+      // boundary bit can only be written by VM
+      if (!exists<BoundaryBit>(@vm_reserved)) {
+        move_to(vm_signer, BoundaryBit {
           ready: false,
           closing_epoch: 0,
         });
@@ -195,13 +194,17 @@ module diem_framework::epoch_boundary {
     public(friend) fun enable_epoch_trigger(vm_signer: &signer, closing_epoch:
     u64) acquires BoundaryBit {
 
-      if (!exists<BoundaryBit>(@ol_framework)) {
+      if (!exists<BoundaryBit>(@vm_reserved)) {
+        // Just like a prayer, your voice can take me there
+        // Just like a muse to me, you are a mystery
+        // Just like a dream, you are not what you seem
+        // Just like a prayer, no choice your voice can take me there...
         move_to(vm_signer, BoundaryBit {
           closing_epoch: closing_epoch,
           ready: true,
         })
       } else {
-        let state = borrow_global_mut<BoundaryBit>(@ol_framework);
+        let state = borrow_global_mut<BoundaryBit>(@vm_reserved);
         state.closing_epoch = closing_epoch;
         state.ready = true;
       }
@@ -220,7 +223,7 @@ module diem_framework::epoch_boundary {
       let _ = can_trigger(); // will abort if false
 
       // update the state and flip the Bit
-      let state = borrow_global_mut<BoundaryBit>(@ol_framework);
+      let state = borrow_global_mut<BoundaryBit>(@vm_reserved);
       state.ready = false;
 
       epoch_boundary(root, state.closing_epoch, 0);
@@ -229,7 +232,7 @@ module diem_framework::epoch_boundary {
     #[view]
     /// check to see if the epoch Boundary Bit is true
     public fun can_trigger(): bool acquires BoundaryBit {
-      let state = borrow_global_mut<BoundaryBit>(@ol_framework);
+      let state = borrow_global_mut<BoundaryBit>(@vm_reserved);
       assert!(state.ready, ETRIGGER_NOT_READY);
       assert!(state.closing_epoch == reconfiguration::get_current_epoch(),
       ENOT_SAME_EPOCH);
@@ -248,8 +251,8 @@ module diem_framework::epoch_boundary {
 
         print(&string::utf8(b"status reset"));
         *status = reset();
-        // bill root service fees;
 
+        // bill root service fees;
         print(&string::utf8(b"root_service_billing"));
         root_service_billing(root, status);
 
