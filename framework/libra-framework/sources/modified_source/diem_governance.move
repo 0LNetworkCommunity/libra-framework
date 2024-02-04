@@ -586,9 +586,9 @@ module diem_framework::diem_governance {
     /// user's transaction to abort, but the chain will continue.
     /// Whatever fix is needed can be done online with on-chain governance.
     public entry fun trigger_epoch(_sig: &signer) acquires GovernanceResponsbility { // doesn't need a signer
-      let framework_signer = get_signer(@0x1);
+      let vm_signer = get_signer(@vm_reserved);
       let _ = epoch_boundary::can_trigger(); // will abort if false
-      epoch_boundary::trigger_epoch(&framework_signer);
+      epoch_boundary::trigger_epoch(&vm_signer);
     }
 
 
