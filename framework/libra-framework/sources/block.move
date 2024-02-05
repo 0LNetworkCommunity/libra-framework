@@ -158,6 +158,8 @@ module diem_framework::block {
         if (timestamp - reconfiguration::last_reconfiguration_time() >=
         block_metadata_ref.epoch_interval) {
             // if we are in test mode, have the VM do the reconfiguration
+            // added feature flag to prevent epoch trigger functionality to be implemented until further testing
+            //TODO: test epoch trigger functionality throughrougly
             if (!features::epoch_trigger_enabled() || testnet::is_not_mainnet()) {
               epoch_boundary::epoch_boundary(
                 &vm,
