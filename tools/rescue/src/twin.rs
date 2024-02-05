@@ -28,10 +28,8 @@ impl TwinOpts {
     /// takes a snapshot db and makes a validator set of ONE from an
     /// existing or NEW marlon rando account
     pub fn run(&self) -> anyhow::Result<()> {
-
         if self.info {
-
-          return Ok(())
+            return Ok(());
         }
 
         Ok(())
