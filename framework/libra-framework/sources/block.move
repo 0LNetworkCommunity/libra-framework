@@ -3,6 +3,7 @@ module diem_framework::block {
     use std::error;
     use std::vector;
     use std::option;
+    use std::features;
     use diem_framework::account;
     use diem_framework::event::{Self, EventHandle};
     use diem_framework::reconfiguration;
@@ -19,6 +20,7 @@ module diem_framework::block {
     friend diem_framework::genesis;
 
     const MAX_U64: u64 = 18446744073709551615;
+    const EPOCH_TRIGGER_ENABLED: u64 = ; 
 
     /// Should be in-sync with BlockResource rust struct in new_block.rs
     struct BlockResource has key {
@@ -156,7 +158,7 @@ module diem_framework::block {
         if (timestamp - reconfiguration::last_reconfiguration_time() >=
         block_metadata_ref.epoch_interval) {
             // if we are in test mode, have the VM do the reconfiguration
-            if (testnet::is_not_mainnet()) {
+            if (!features::epoch_trigger_enabled() || testnet::is_not_mainnet()) {
               epoch_boundary::epoch_boundary(
                 &vm,
                 reconfiguration::get_current_epoch(),
