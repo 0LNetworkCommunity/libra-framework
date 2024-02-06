@@ -20,7 +20,6 @@ module diem_framework::block {
     friend diem_framework::genesis;
 
     const MAX_U64: u64 = 18446744073709551615;
-    const EPOCH_TRIGGER_ENABLED: u64 = ; 
 
     /// Should be in-sync with BlockResource rust struct in new_block.rs
     struct BlockResource has key {
@@ -155,23 +154,10 @@ module diem_framework::block {
         stake::update_performance_statistics(proposer_index, failed_proposer_indices);
         state_storage::on_new_block(reconfiguration::current_epoch());
 
-        if (timestamp - reconfiguration::last_reconfiguration_time() >=
-        block_metadata_ref.epoch_interval) {
-            // if we are in test mode, have the VM do the reconfiguration
-            // added feature flag to prevent epoch trigger functionality to be implemented until further testing
-            //TODO: test epoch trigger functionality throughrougly
-            if (!features::epoch_trigger_enabled() || testnet::is_not_mainnet()) {
-              epoch_boundary::epoch_boundary(
-                &vm,
-                reconfiguration::get_current_epoch(),
-                round
-              );
-            } else {
-              // flip the epoch bit, so that the epoch
-              // boundary can be called by any transaction
-              epoch_boundary::enable_epoch_trigger(&vm, reconfiguration::get_current_epoch());
-            }
-        };
+
+        // seperate logic for epoch advancment to allow for testing
+        maybe_advance_epoch(&vm, timestamp, block_metadata_ref, round);
+
     }
 
     #[view]
@@ -231,6 +217,25 @@ module diem_framework::block {
                 time_microseconds: timestamp::now_microseconds(),
             }
         );
+    }
+
+    fun maybe_advance_epoch(
+        vm: &signer,
+        timestamp: u64,
+        block_metadata_ref: &mut BlockResource,
+        round: u64
+        ) {
+            if (timestamp - reconfiguration::last_reconfiguration_time() >= block_metadata_ref.epoch_interval) {
+                if (!features::epoch_trigger_enabled() || testnet::is_not_mainnet()) {
+                    epoch_boundary::epoch_boundary(
+                        vm,
+                        reconfiguration::get_current_epoch(),
+                        round
+                    );
+                } else {
+                    epoch_boundary::enable_epoch_trigger(vm, reconfiguration::get_current_epoch());
+                }
+            }
     }
 
     #[test_only]
