@@ -19,7 +19,7 @@ impl QueryCli {
         let res = self.subcommand.query_to_json(None).await?;
         match res {
             serde_json::Value::String(a) => println!("{:#}", a.as_str()),
-            _ =>  println!("{:#}", res),
+            _ => println!("{:#}", res),
         }
 
         Ok(())

@@ -1,7 +1,7 @@
 use libra_query::query_type::QueryType;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
+
 use libra_types::move_resource::gas_coin::LibraBalanceDisplay;
-use libra_types::exports::AccountAddress;
 /// Testing the query library
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn libra_query_test() {
@@ -25,7 +25,6 @@ async fn libra_query_test() {
     }
 }
 
-
 /// test account struct annotation
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn account_annotate_test() {
@@ -34,7 +33,7 @@ async fn account_annotate_test() {
 
     let c = s.client();
 
-    let q = QueryType::Annotate{ account: val_acct };
+    let q = QueryType::Annotate { account: val_acct };
     let res = q.query_to_json(Some(c)).await.unwrap();
     println!("{:#}", &res.as_str().unwrap());
     assert!(res.as_str().unwrap().contains("drop"));

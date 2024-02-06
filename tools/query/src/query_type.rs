@@ -191,7 +191,7 @@ impl QueryType {
                     .annotate_account_state_at_version(account.to_owned(), version)
                     .await?;
                 if blob.is_none() {
-                    bail!("cannot find accuont state at {}", account)
+                    bail!("cannot find account state at {}", account)
                 };
                 // dbg!(&blob.unwrap());
                 // blob.unwrap().to_string();
