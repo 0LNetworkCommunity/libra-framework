@@ -19,7 +19,7 @@ impl QueryCli {
 
         let res = self.subcommand.query_to_json(None).await?;
 
-        println!("{}", res);
+        println!("{:#}", res);
 
         Ok(())
     }
