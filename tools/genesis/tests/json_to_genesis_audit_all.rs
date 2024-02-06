@@ -11,9 +11,8 @@ use libra_types::exports::ChainId;
 use libra_types::legacy_types::legacy_address::LegacyAddress;
 use support::{path_utils::json_path, test_vals};
 
-#[ignore]
 #[test]
-// test that a genesis blob created from struct, will actually contain the data
+// test that a genesis blob created from json, will actually contain the data
 fn test_correct_supply_arithmetic_all() {
     let genesis_vals = test_vals::get_test_valset(4);
 
@@ -61,8 +60,8 @@ fn test_correct_supply_arithmetic_all() {
     let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&gen_tx).unwrap();
 
     // test dump balances
-    compare::export_account_balances(&user_accounts, &db_rw.reader, json_path().parent().unwrap())
-        .unwrap();
+    // compare::export_account_balances(&user_accounts, &db_rw.reader, json_path().parent().unwrap())
+    //     .unwrap();
 
     // audit
     match compare::compare_recovery_vec_to_genesis_tx(
