@@ -13,6 +13,8 @@ module ol_framework::make_whole {
   use std::signer;
   use diem_std::table::{Self, Table};
   use diem_framework::coin::{Self, Coin};
+  use diem_framework::system_addresses;
+  use diem_framework::fixed_point32;
   use ol_framework::libra_coin::LibraCoin;
   use ol_framework::epoch_helper;
   use ol_framework::burn;
@@ -24,6 +26,9 @@ module ol_framework::make_whole {
   const EU_NO_OWED: u64 = 1;
   /// Dude what's up with that? you already claimed this one
   const EALREADY_CLAIMED: u64 = 2;
+
+  /// share divisor
+  const SHARE_DIVISOR: u64 = 1000000;
 
   struct MakeWhole<phantom IncidentId> has key {
      // holds loose coins in escrow
@@ -39,7 +44,6 @@ module ol_framework::make_whole {
     total_claimed: u64,
     // burn on expiration
     burn_unclaimed: bool,
-
   }
 
   /// a sponsor can initiate an incident
@@ -53,6 +57,7 @@ module ol_framework::make_whole {
       escrow: coins,
       // TODO: 90 day default
       expiration_epoch: epoch_helper::get_current_epoch() + 90,
+      // table is [address, millionth share of reward (n / 1_000_000)]
       unclaimed: table::new<address, u64>(),
       claimed: table::new<address, u64>(),
       total_claimed: 0,
@@ -82,12 +87,33 @@ module ol_framework::make_whole {
     assert!(table::contains(&state.unclaimed, user_addr), EU_NO_OWED);
     assert!(!table::contains(&state.claimed, user_addr), EALREADY_CLAIMED);
 
-    let value = table::remove(&mut state.unclaimed, user_addr);
+    let share = table::remove(&mut state.unclaimed, user_addr);
+
+    // calculate value based on millionth of share SHARE_DIVISOR
+    let percent = fixed_point32::create_from_rational(share, SHARE_DIVISOR);
+
+    let balance = coin::value(&state.escrow);
+    let value = fixed_point32::multiply_u64(balance, percent);
     let owed_coins = coin::extract(&mut state.escrow, value);
 
     ol_account::deposit_coins(user_addr, owed_coins);
 
     table::upsert(&mut state.claimed, user_addr, value);
+  }
+
+  /// user claims credit
+  public fun root_withdraw_credit<T>(diem_framework: &signer, sponsor: address, amount: u64): Coin<LibraCoin>
+  acquires MakeWhole {
+    system_addresses::assert_ol(diem_framework);
+
+    let state = borrow_global_mut<MakeWhole<T>>(sponsor);
+
+    let balance = coin::value(&state.escrow);
+    if (amount < balance) {
+      coin::extract(&mut state.escrow, amount)
+    } else {
+      coin::extract(&mut state.escrow, 0)
+    }
   }
 
   /// anyone can call the method after expiry and the coins will be burned.

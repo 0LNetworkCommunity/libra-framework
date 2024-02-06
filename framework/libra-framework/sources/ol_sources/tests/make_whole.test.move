@@ -54,7 +54,7 @@ module ol_framework::test_make_whole {
     let coin = ol_account::withdraw(alice, alice_oops_amount);
 
     make_whole::init_incident<TestOops>(alice, coin, false);
-    make_whole::create_each_user_credit<TestOops>(alice, @0x1000b, 55);
+    make_whole::create_each_user_credit<TestOops>(alice, @0x1000b, 500000);
 
     // bob claims it
     make_whole::claim_credit<TestOops>(bob, @0x1000a);
