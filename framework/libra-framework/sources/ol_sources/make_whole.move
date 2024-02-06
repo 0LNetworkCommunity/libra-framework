@@ -20,6 +20,8 @@ module ol_framework::make_whole {
   use ol_framework::burn;
   use ol_framework::ol_account;
 
+  friend ol_framework::epoch_boundary;
+
   /// This incident budget already exists
   const EINCIDENT_BUDGET_EXISTS: u64 = 0;
   /// hey bro, I don't owe you nothing
@@ -101,10 +103,14 @@ module ol_framework::make_whole {
     table::upsert(&mut state.claimed, user_addr, value);
   }
 
-  /// user claims credit
-  public fun root_withdraw_credit<T>(diem_framework: &signer, sponsor: address, amount: u64): Coin<LibraCoin>
+  /// epoch boundary can call this function to withdraw a coin
+  /// used to wind down a root make whole incident
+  public(friend) fun root_withdraw_credit<T>(diem_framework: &signer, sponsor: address, amount: u64): Coin<LibraCoin>
   acquires MakeWhole {
     system_addresses::assert_ol(diem_framework);
+
+    // don't fail here
+    if (!exists<MakeWhole<T>>(sponsor)) return coin::zero<LibraCoin>();
 
     let state = borrow_global_mut<MakeWhole<T>>(sponsor);
 

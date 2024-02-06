@@ -9,6 +9,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::jail;
     use ol_framework::safe;
     use ol_framework::burn;
+    use ol_framework::make_whole;
     use ol_framework::donor_voice;
     use ol_framework::fee_maker;
     use ol_framework::tower_state;
@@ -16,6 +17,8 @@ module diem_framework::epoch_boundary {
     use ol_framework::oracle;
     use ol_framework::ol_account;
     use ol_framework::testnet;
+    use ol_framework::oops_miner_math_jan_22::MinerMathError;
+
     use diem_framework::reconfiguration;
     use diem_framework::transaction_fee;
     use diem_framework::system_addresses;
@@ -25,7 +28,6 @@ module diem_framework::epoch_boundary {
     use std::string;
     use std::signer;
     use diem_framework::create_signer;
-
     use diem_std::debug::print;
 
     friend diem_framework::diem_governance;
@@ -353,22 +355,34 @@ module diem_framework::epoch_boundary {
           };
 
           // since we reserved some fees to go to the oracle miners
-          // we take the NET REWARD of the validators, since it is the equivalent of what the validator would earn net of entry fee.
-            if (nominal_reward_to_vals > entry_fee) {
-                let net_val_reward = nominal_reward_to_vals - entry_fee;
+          // we take the NET REWARD of the validators, since it is the
+          // equivalent of what the validator would earn net of entry fee.
+          // We also may have a bonus from the MakeWhole unclaimed.
 
-                if (coin::value(&all_fees) > net_val_reward) {
-                    let oracle_budget = coin::extract(&mut all_fees, net_val_reward);
-                    status.oracle_budget = coin::value(&oracle_budget);
+          let oracle_budget = coin::zero<LibraCoin>();
+          // add nominal oracle reward here
+          if (nominal_reward_to_vals > entry_fee) {
+              let net_val_reward = nominal_reward_to_vals - entry_fee;
 
-                    let (count, amount) = oracle::epoch_boundary(root, &mut oracle_budget);
-                    status.oracle_pay_count = count;
-                    status.oracle_pay_amount = amount;
-                    status.oracle_pay_success = (amount > 0);
-                    // in case there is any dust left
-                    ol_account::merge_coins(&mut all_fees, oracle_budget);
-                };
-            };
+              if (coin::value(&all_fees) > net_val_reward) {
+                  let nominal_budget = coin::extract(&mut all_fees, net_val_reward);
+                  ol_account::merge_coins(&mut oracle_budget, nominal_budget);
+              };
+          };
+
+          let bonus = make_whole::root_withdraw_credit<MinerMathError>(root, @ol_framework, 10);
+          ol_account::merge_coins(&mut oracle_budget, bonus);
+
+
+          status.oracle_budget = coin::value(&oracle_budget);
+          // Pay Oracles (Tower)
+          let (count, amount) = oracle::epoch_boundary(root, &mut oracle_budget);
+          status.oracle_pay_count = count;
+          status.oracle_pay_amount = amount;
+          status.oracle_pay_success = (amount > 0);
+          // in case there is any dust left
+          ol_account::merge_coins(&mut all_fees, oracle_budget);
+
 
           // remainder gets burnt according to fee maker preferences
           let (b_success, b_fees) = burn::epoch_burn_fees(root, &mut all_fees);
