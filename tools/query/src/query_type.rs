@@ -195,7 +195,8 @@ impl QueryType {
                 };
                 // dbg!(&blob.unwrap());
                 // blob.unwrap().to_string();
-                Ok(json!(blob.unwrap().to_string()))
+                let pretty = format!("{:#}", blob.unwrap().to_string());
+                Ok(json!(pretty))
             }
             _ => {
                 bail!(
