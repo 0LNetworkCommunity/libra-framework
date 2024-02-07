@@ -148,6 +148,7 @@ module diem_framework::genesis {
         tower_state::initialize(&diem_framework_account);
         safe::initialize(&diem_framework_account);
         donor_voice::initialize(&diem_framework_account);
+        epoch_boundary::initialize(&diem_framework_account);
         epoch_helper::initialize(&diem_framework_account);
         burn::initialize(&diem_framework_account);
         match_index::initialize(&diem_framework_account);
@@ -160,7 +161,6 @@ module diem_framework::genesis {
         // since the infra_escrow requires a VM signature, we need to initialized it as 0x0 and not 0x1, as the others.
         let vm_sig = create_signer(@vm_reserved);
         infra_escrow::initialize(&vm_sig);
-        epoch_boundary::initialize(&vm_sig, &diem_framework_account);
 
 
         // end 0L
