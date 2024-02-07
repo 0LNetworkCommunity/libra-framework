@@ -29,6 +29,7 @@ fn main() -> anyhow::Result<()> {
                 genesis_txn_file: blob_path,
                 waypoint_to_verify: None,
                 commit: false,
+                info: false,
             };
             let _ = b.run()?;
         }

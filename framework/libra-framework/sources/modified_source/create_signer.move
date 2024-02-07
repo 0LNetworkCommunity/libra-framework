@@ -18,6 +18,7 @@ module diem_framework::create_signer {
 
     //////// 0L ////////
     friend ol_framework::fee_maker;
+    friend ol_framework::epoch_boundary;
 
     public(friend) native fun create_signer(addr: address): signer;
 }
