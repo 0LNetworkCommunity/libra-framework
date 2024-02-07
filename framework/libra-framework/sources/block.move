@@ -243,6 +243,16 @@ module diem_framework::block {
         initialize(account, epoch_interval_microsecs);
     }
 
+    #[test_only]
+    public fun test_maybe_advance_epoch(
+        vm: &signer,
+        timestamp: u64,
+        round: u64,
+    ) acquires BlockResource {
+        let block_metadata_ref = borrow_global_mut<BlockResource>(@diem_framework);
+        maybe_advance_epoch(vm, timestamp, block_metadata_ref, round);
+    }
+
     #[test(diem_framework = @diem_framework)]
     public entry fun test_update_epoch_interval(diem_framework: signer) acquires BlockResource {
         account::create_account_for_test(@diem_framework);
