@@ -57,6 +57,7 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
         genesis_txn_file: file.clone(),
         waypoint_to_verify: None,
         commit: false,
+        info: false,
     };
 
     let wp = boot.run()?;
@@ -65,8 +66,9 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
     let boot = BootstrapOpts {
         db_dir: val_db_path,
         genesis_txn_file: file,
-        waypoint_to_verify: Some(wp),
+        waypoint_to_verify: wp,
         commit: true,
+        info: false,
     };
 
     let new_w = boot.run()?;
@@ -178,6 +180,7 @@ async fn test_valid_waypoint() -> anyhow::Result<()> {
         genesis_txn_file: file,
         waypoint_to_verify: None,
         commit: false,
+        info: false,
     };
 
     let _wp = boot.run()?;

@@ -28,20 +28,28 @@ use std::{
 )]
 pub struct BootstrapOpts {
     #[clap(value_parser)]
+    /// DB directory
     pub db_dir: PathBuf,
 
     #[clap(short, long, value_parser)]
+    /// path to genesis tx file
     pub genesis_txn_file: PathBuf,
 
     #[clap(short, long)]
+    /// waypoint expected
     pub waypoint_to_verify: Option<Waypoint>,
 
     #[clap(long, requires("waypoint_to_verify"))]
+    /// commit to db (requires --waypoint-to-verify)
     pub commit: bool,
+
+    #[clap(long)]
+    /// get info on DB and exit
+    pub info: bool,
 }
 
 impl BootstrapOpts {
-    pub fn run(&self) -> Result<Waypoint> {
+    pub fn run(&self) -> Result<Option<Waypoint>> {
         let genesis_txn = load_genesis_txn(&self.genesis_txn_file)
             .with_context(|| format_err!("Failed loading genesis txn."))?;
         assert!(
@@ -70,10 +78,28 @@ impl BootstrapOpts {
             .reader
             .get_latest_executed_trees()
             .with_context(|| format_err!("Failed to get latest tree state."))?;
+
+        println!("num txs: {:?}", executed_trees.num_transactions());
+        println!("version: {:?}", executed_trees.version());
         println!(
-            "{} transactions found in DB",
-            executed_trees.num_transactions()
+            "root hash: {:?}",
+            executed_trees.txn_accumulator().root_hash
         );
+
+        if self.info {
+            return Ok(None);
+        }
+
+        if self.info {
+            println!("num txs: {:?}", executed_trees.num_transactions());
+            println!("version: {:?}", executed_trees.version());
+            println!(
+                "root hash: {:?}",
+                executed_trees.txn_accumulator().root_hash
+            );
+
+            return Ok(None);
+        }
 
         if let Some(waypoint) = self.waypoint_to_verify {
             ensure!(
@@ -111,7 +137,7 @@ impl BootstrapOpts {
             println!("Successfully committed genesis.")
         }
 
-        Ok(output_waypoint)
+        Ok(Some(output_waypoint))
     }
 }
 
@@ -145,6 +171,7 @@ fn test_bootstrap_db() -> anyhow::Result<()> {
         genesis_txn_file: blob_path,
         waypoint_to_verify: None,
         commit: true,
+        info: false,
     };
 
     r.run()?;
