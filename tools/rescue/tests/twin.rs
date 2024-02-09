@@ -11,19 +11,23 @@ use smoke_test::test_utils::swarm_utils::insert_waypoint;
 
 #[tokio::test]
 
-// Scenario: create a sample DB from running a swarm of 5. Stop that network,
+// Scenario: create a sample DB from running a swarm of 3. Stop that network,
 // and save the db.
 // create a new network of 1, just so we can use the configurations.
 // change the configurations to point to the old db, after creating a rescue
-// which replaces the 5 validators with 1.
+// which replaces the 3 validators with 1.
 
 async fn test_twin() -> anyhow::Result<()> {
     println!("0. create a valid test database from smoke-tests");
-    let mut s = LibraSmoke::new(Some(5))
+    let num_nodes: usize = 3;
+
+    let mut s = LibraSmoke::new(Some(num_nodes as u8))
         .await
         .expect("could not start libra smoke");
-
+    
     let env = &mut s.swarm;
+    println!("Number of validators in the swarm: {}", env.validators().count());
+
 
     let brick_db = env.validators().next().unwrap().config().storage.dir();
     assert!(brick_db.exists());
