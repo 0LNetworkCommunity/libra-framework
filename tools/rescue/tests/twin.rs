@@ -24,10 +24,12 @@ async fn test_twin() -> anyhow::Result<()> {
     let mut s = LibraSmoke::new(Some(num_nodes as u8))
         .await
         .expect("could not start libra smoke");
-    
-    let env = &mut s.swarm;
-    println!("Number of validators in the swarm: {}", env.validators().count());
 
+    let env = &mut s.swarm;
+    println!(
+        "Number of validators in the swarm: {}",
+        env.validators().count()
+    );
 
     let brick_db = env.validators().next().unwrap().config().storage.dir();
     assert!(brick_db.exists());
