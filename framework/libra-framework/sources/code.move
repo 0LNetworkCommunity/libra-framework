@@ -9,6 +9,7 @@ module diem_framework::code {
     use diem_std::copyable_any::Any;
     use std::option::Option;
     use std::string;
+    use ol_framework::testnet;
 
     // ----------------------------------------------------------------------
     // Code Publishing
@@ -88,6 +89,10 @@ module diem_framework::code {
     /// Creating a package with incompatible upgrade policy is disabled.
     const EINCOMPATIBLE_POLICY_DISABLED: u64 = 0x8;
 
+    //////// 0L ////////
+    /// Third party contracts can be published on testnet and layer 2. Libra, not blockchain.
+    const ENOT_A_COMPUTE_PLATFORM: u64 = 0x9;
+
     /// Whether unconditional code upgrade with no compatibility check is allowed. This
     /// publication mode should only be used for modules which aren't shared with user others.
     /// The developer is responsible for not breaking memory layout of any resources he already
@@ -127,7 +132,35 @@ module diem_framework::code {
 
     /// Publishes a package at the given signer's address. The caller must provide package metadata describing the
     /// package.
-    public fun publish_package(owner: &signer, pack: PackageMetadata, code: vector<vector<u8>>) acquires PackageRegistry {
+    public fun publish_package(owner: &signer, pack: PackageMetadata, code:
+    vector<vector<u8>>) acquires PackageRegistry {
+        // Contract publishing is done by system resource addresses (0x1, 0x2,
+        // etc.)
+        // To defend the throughput and reliability of the chain, the layer 1
+        // optimizes for the intended use of the chain (programming Libra)
+        // versus generalized compute (which does not use Libra).
+        // Despite there being no user deployment of modules, any user can craft
+        // Move "transaction scripts" for custom workflows which use framework
+        // smart contracts. Note that such transaction scripts can also be
+        // executed in multisig and ownerless "resource accounts"
+        // for community execution.
+        // Third party modules are possible on L2 networks, and testnet.
+        // If you need a specific functionality or program on the Layer 1,
+        // submit a pull request for module "Ascension" (for more info see: https://www.youtube.com/watch?v=jDwqPCAw_7k).
+
+        // If it is not a reserved address this must not be chain ID 1 (mainnet)
+        assert!(system_addresses::is_framework_reserved_address(signer::address_of(owner)) ||
+        testnet::is_testnet(),
+        ENOT_A_COMPUTE_PLATFORM
+        // Rise up this mornin',
+        // Smiled with the risin' sun,
+        // Three little birds
+        // Pitch by my doorstep
+        // Singin' sweet songs
+        // Of melodies pure and true,
+        // Sayin', ("This is my message to you-ou-ou:")
+        );
+
         // Disallow incompatible upgrade mode. Governance can decide later if
         // this should be reconsidered.
         assert!(
