@@ -335,6 +335,21 @@ module ol_framework::ol_account {
     }
 
     #[view]
+    /// returns the INDEXED value of the coins.
+    // Note: there is a similar function in coin.move to get the indexed
+    // value of a single coin.
+    public fun real_balance(addr: address): (u64, u64) {
+      let final = libra_coin::get_final_supply();
+      let current = libra_coin::supply();
+      let (unlocked, total) = slow_wallet::balance(addr);
+
+      let unlocked_indexed = math64::mul_div(unlocked, final, current);
+      let total_indexed = math64::mul_div(total, final, current);
+
+      (unlocked_indexed, total_indexed)
+    }
+
+    #[view]
     /// Returns a human readable version of the balance with (integer, decimal_part)
     public fun balance_human(owner: address): (u64, u64) {
 
