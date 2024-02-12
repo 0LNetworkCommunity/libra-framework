@@ -219,6 +219,9 @@ module ol_framework::test_boundary {
     // testing mainnet, so change the chainid
     testnet::unset(root);
 
+    //verify trigger is not enabled 
+    assert!(!features::epoch_trigger_enabled(), 101);
+
     // test setup advances to epoch #2
     let epoch = reconfiguration::get_current_epoch();
     assert!(epoch == 2, 7357001);

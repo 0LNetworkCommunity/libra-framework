@@ -4,6 +4,7 @@ module diem_framework::block {
     use std::vector;
     use std::option;
     use std::features;
+    use std::string;
     use diem_framework::account;
     use diem_framework::event::{Self, EventHandle};
     use diem_framework::reconfiguration;
@@ -11,7 +12,7 @@ module diem_framework::block {
     use diem_framework::state_storage;
     use diem_framework::system_addresses;
     use diem_framework::timestamp;
-    // use diem_std::debug::print;
+    use diem_std::debug::print;
     use ol_framework::testnet;
 
     //////// 0L ////////
@@ -225,6 +226,13 @@ module diem_framework::block {
         block_metadata_ref: &mut BlockResource,
         round: u64
         ) {
+
+            // Check to prevent underflow, return quietly if the check fails
+            if (timestamp < reconfiguration::last_reconfiguration_time()) {
+                print(&string::utf8(b"Timestamp is less than the last reconfiguration time, returning early to prevent underflow. Check block prologue in block.move"));
+                return
+            };
+
             if (timestamp - reconfiguration::last_reconfiguration_time() >= block_metadata_ref.epoch_interval) {
                 if (!features::epoch_trigger_enabled() || testnet::is_not_mainnet()) {
                     epoch_boundary::epoch_boundary(
