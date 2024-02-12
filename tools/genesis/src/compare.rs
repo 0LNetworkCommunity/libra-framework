@@ -47,6 +47,7 @@ pub fn compare_recovery_vec_to_genesis_tx(
     supply: &Supply,
 ) -> Result<Vec<CompareError>, anyhow::Error> {
     let mut err_list: Vec<CompareError> = vec![];
+    let mut user_supply = 0u64;
 
     recovery
         .iter_mut()
@@ -87,6 +88,7 @@ pub fn compare_recovery_vec_to_genesis_tx(
                 .expect("should have move resource")
                 .expect("should have a GasCoinStoreResource for balance");
 
+
             // CHECK: we should have scaled the balance correctly, including
             // adjusting for validators
             let old_balance = old.balance.as_ref().expect("should have a balance struct");
@@ -99,6 +101,8 @@ pub fn compare_recovery_vec_to_genesis_tx(
                     message: "unexpected balance".to_string(),
                 });
             }
+
+            user_supply += on_chain_balance.coin();
 
             // Check Slow Wallet Balance was migrated as expected
             if let Some(old_slow) = &old.slow_wallet {
@@ -129,6 +133,11 @@ pub fn compare_recovery_vec_to_genesis_tx(
                 }
             }
         });
+
+        dbg!(&supply);
+        dbg!(&(supply.total as f64 * supply.split_factor));
+        dbg!(&user_supply);
+
 
     Ok(err_list)
 }

@@ -50,12 +50,15 @@ pub struct Supply {
     pub slow_locked: f64,
     pub slow_validator_locked: f64,
     pub slow_unlocked: f64,
-    pub donor_directed: f64,
+    pub donor_voice: f64,
     pub make_whole: f64,
     // which will compute later
     pub split_factor: f64,
     pub escrow_pct: f64,
     pub epoch_reward_base_case: f64,
+    pub expected_user_balance: f64,
+    pub expected_circulating: f64,
+
 }
 
 impl Supply {
@@ -67,11 +70,25 @@ impl Supply {
         // get the coin amount of chosen future uses
         let target_future_uses = settings.target_future_uses * self.total;
         // excluding donor directed, how many coins are remaining to fund
-        let remaining_to_fund = target_future_uses - self.donor_directed;
+        let remaining_to_fund = target_future_uses - self.donor_voice;
         // what the ratio of remaining to fund, compared to validator_slow_locked
         self.escrow_pct = remaining_to_fund / self.slow_validator_locked;
         self.epoch_reward_base_case =
             remaining_to_fund / (365 * 100 * settings.years_escrow) as f64; // one hundred validators over 7 years every day. Note: discussed elsewhere: if this is an over estimate, the capital gets returned to community by the daily excess burn.
+        self.expected_user_balance = self.split_factor * (
+          self.normal +
+          (self.slow_total - self.slow_validator_locked ) + // remove vals
+          (self.slow_validator_locked * (1.0 - self.escrow_pct)) // add back vals after escrow
+        );
+        let total_scaled = self.total * self.split_factor;
+        dbg!(&total_scaled);
+        dbg!(&(self.expected_user_balance/total_scaled));
+
+        self.expected_circulating = self.split_factor * (
+          self.normal +
+          self.slow_unlocked
+        );
+        dbg!(&(self.expected_circulating/total_scaled));
 
         Ok(())
     }
@@ -105,7 +122,7 @@ fn inc_supply(
     // sum all accounts
     if dd_wallet_list.contains(&r.account.unwrap()) {
         // is this categorized as a donor voice account?
-        acc.donor_directed += user_total;
+        acc.donor_voice += user_total;
     } else if let Some(sl) = &r.slow_wallet {
         // is it a slow wallet?
         acc.slow_total += user_total;
@@ -155,11 +172,13 @@ pub fn populate_supply_stats_from_legacy(
         slow_locked: 0.0,
         slow_validator_locked: 0.0,
         slow_unlocked: 0.0,
-        donor_directed: 0.0,
+        donor_voice: 0.0,
         make_whole: 0.0,
         split_factor: 0.0,
         escrow_pct: 0.0,
         epoch_reward_base_case: 0.0,
+        expected_user_balance: 0.0,
+        expected_circulating: 0.0,
     };
 
     let dd_wallets = rec
@@ -215,7 +234,7 @@ fn test_genesis_math() {
 
     println!("before");
     let pct_normal = supply.normal / supply.total;
-    let pct_dd = supply.donor_directed / supply.total;
+    let pct_dd = supply.donor_voice / supply.total;
     let pct_slow = supply.slow_total / supply.total;
     let pct_mk_whole = supply.make_whole / supply.total;
     let _pct_val_locked = supply.slow_validator_locked / supply.total;
@@ -238,6 +257,6 @@ fn test_genesis_math() {
     // dbg!(new_slow / supply.total);
     // dbg!(to_escrow / supply.total);
 
-    let sum_all = to_escrow + new_slow + supply.normal + supply.donor_directed + supply.make_whole;
+    let sum_all = to_escrow + new_slow + supply.normal + supply.donor_voice + supply.make_whole;
     assert!(supply.total == sum_all);
 }

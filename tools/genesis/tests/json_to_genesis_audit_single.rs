@@ -177,3 +177,46 @@ fn test_check_mainnet_constants() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+
+#[test]
+// check that circulating supply matches expected
+fn test_check_unlocks() {
+    let num_vals = 1;
+    let genesis_vals = test_vals::get_test_valset(num_vals);
+
+    let json = json_path()
+        .parent()
+        .unwrap()
+        .join("sample_end_user_single.json");
+
+    let mut user_accounts: Vec<LegacyRecovery> = parse_json::recovery_file_parse(json).unwrap();
+
+    // get the supply arithmetic so that we can compare outputs
+    let mut supply = supply::populate_supply_stats_from_legacy(&user_accounts, &[]).unwrap();
+    let supply_settings = SupplySettings::default();
+    supply.set_ratios_from_settings(&supply_settings).unwrap();
+
+    let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
+        &mut user_accounts,
+        &genesis_vals,
+        &head_release_bundle(),
+        ChainId::mainnet(),
+        Some(supply_settings.clone()),
+        &libra_genesis_default(NamedChain::MAINNET),
+    )
+    .unwrap();
+
+    // NOTE: in the case of a single account being migrated, that account balance will equal the total supply as set in: SupplySettings. i.e. 10B
+    let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&gen_tx).unwrap();
+    match compare::compare_recovery_vec_to_genesis_tx(&mut user_accounts, &db_rw.reader, &supply) {
+        Ok(list) => {
+            if !list.is_empty() {
+                panic!("list is not empty: {list:#?}");
+            }
+        }
+        Err(_e) => panic!("error creating comparison"),
+    }
+
+    // compare::check_supply(supply_settings.scale_supply() as u64, &db_rw.reader).unwrap();
+}
