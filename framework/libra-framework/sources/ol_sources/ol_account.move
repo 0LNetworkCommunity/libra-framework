@@ -54,10 +54,6 @@ module ol_framework::ol_account {
     /// why is VM trying to use this?
     const ENOT_FOR_VM: u64 = 9;
 
-
-
-
-
     struct BurnTracker has key {
       prev_supply: u64,
       prev_balance: u64,
@@ -347,6 +343,14 @@ module ol_framework::ol_account {
       let total_indexed = math64::mul_div(total, final, current);
 
       (unlocked_indexed, total_indexed)
+      // Going to another place
+      // Another universe, another realm
+      // Sleeping, dreaming, what is real?
+      // Leap and the net will appear
+      // Going to another place
+      // Another universe, another realm
+      // Sleeping, dreaming, what is real?
+      // Leap and the net will appear
     }
 
     #[view]
