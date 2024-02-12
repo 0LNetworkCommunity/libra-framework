@@ -1,9 +1,9 @@
 // Upgrade proposal for package `VendorStdlib`
 
-// Framework commit hash: 6224a24d39fcbec090d0130cf124462e972962d0
+// Framework commit hash: bf5bd0e012f2cc45593b24ff02faf612c470b704
 // Builder commit hash: db1137ba1f8e7301e325021f71f740063daaf76e
 
-// Next step script hash: fe958b73ff42ab4c9b9d99f40fdacef36045284334a5fb452a2427868ec9baae
+// Next step script hash: 4fb21e4efa7652c08912aa00414cf38078c5d344956bcd05d54e2dfe2ed8e606
 
 // source digest: 5E12DDD8987B153D75378183FB77218A1FAB6038899EB9121ECD4BE94EC1D598
 script {
@@ -17,7 +17,7 @@ script {
         let framework_signer = diem_governance::resolve_multi_step_proposal(
             proposal_id,
             @0000000000000000000000000000000000000000000000000000000000000001,
-            vector[254u8,149u8,139u8,115u8,255u8,66u8,171u8,76u8,155u8,157u8,153u8,244u8,15u8,218u8,206u8,243u8,96u8,69u8,40u8,67u8,52u8,165u8,251u8,69u8,42u8,36u8,39u8,134u8,142u8,201u8,186u8,174u8,],
+            vector[79u8,178u8,30u8,78u8,250u8,118u8,82u8,192u8,137u8,18u8,170u8,0u8,65u8,76u8,243u8,128u8,120u8,197u8,211u8,68u8,149u8,107u8,205u8,5u8,213u8,78u8,45u8,254u8,46u8,216u8,230u8,6u8,],
         );
         let code = vector::empty();
         let code_chunk0 =
@@ -7332,6 +7332,6 @@ script {
         vector::append(&mut metadata_chunk1, metadata_chunk2);
         vector::append(&mut metadata_chunk1, metadata_chunk3);
         code::publish_package_txn(&framework_signer, metadata_chunk1, code);
-        version::upgrade_set_git(&framework_signer, x"6224a24d39fcbec090d0130cf124462e972962d0")
+        version::upgrade_set_git(&framework_signer, x"bf5bd0e012f2cc45593b24ff02faf612c470b704")
     }
 }

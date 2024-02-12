@@ -3,6 +3,8 @@ module diem_framework::block {
     use std::error;
     use std::vector;
     use std::option;
+    use std::features;
+    use std::string;
     use diem_framework::account;
     use diem_framework::event::{Self, EventHandle};
     use diem_framework::reconfiguration;
@@ -10,7 +12,7 @@ module diem_framework::block {
     use diem_framework::state_storage;
     use diem_framework::system_addresses;
     use diem_framework::timestamp;
-    // use diem_std::debug::print;
+    use diem_std::debug::print;
     use ol_framework::testnet;
 
     //////// 0L ////////
@@ -153,21 +155,10 @@ module diem_framework::block {
         stake::update_performance_statistics(proposer_index, failed_proposer_indices);
         state_storage::on_new_block(reconfiguration::current_epoch());
 
-        if (timestamp - reconfiguration::last_reconfiguration_time() >=
-        block_metadata_ref.epoch_interval) {
-            // if we are in test mode, have the VM do the reconfiguration
-            if (testnet::is_not_mainnet()) {
-              epoch_boundary::epoch_boundary(
-                &vm,
-                reconfiguration::get_current_epoch(),
-                round
-              );
-            } else {
-              // flip the epoch bit, so that the epoch
-              // boundary can be called by any transaction
-              epoch_boundary::enable_epoch_trigger(&vm, reconfiguration::get_current_epoch());
-            }
-        };
+
+        // seperate logic for epoch advancment to allow for testing
+        maybe_advance_epoch(&vm, timestamp, block_metadata_ref, round);
+
     }
 
     #[view]
@@ -229,9 +220,45 @@ module diem_framework::block {
         );
     }
 
+    fun maybe_advance_epoch(
+        vm: &signer,
+        timestamp: u64,
+        block_metadata_ref: &mut BlockResource,
+        round: u64
+        ) {
+
+            // Check to prevent underflow, return quietly if the check fails
+            if (timestamp < reconfiguration::last_reconfiguration_time()) {
+                print(&string::utf8(b"Timestamp is less than the last reconfiguration time, returning early to prevent underflow. Check block prologue in block.move"));
+                return
+            };
+
+            if (timestamp - reconfiguration::last_reconfiguration_time() >= block_metadata_ref.epoch_interval) {
+                if (!features::epoch_trigger_enabled() || testnet::is_not_mainnet()) {
+                    epoch_boundary::epoch_boundary(
+                        vm,
+                        reconfiguration::get_current_epoch(),
+                        round
+                    );
+                } else {
+                    epoch_boundary::enable_epoch_trigger(vm, reconfiguration::get_current_epoch());
+                }
+            }
+    }
+
     #[test_only]
     public fun initialize_for_test(account: &signer, epoch_interval_microsecs: u64) {
         initialize(account, epoch_interval_microsecs);
+    }
+
+    #[test_only]
+    public fun test_maybe_advance_epoch(
+        vm: &signer,
+        timestamp: u64,
+        round: u64,
+    ) acquires BlockResource {
+        let block_metadata_ref = borrow_global_mut<BlockResource>(@diem_framework);
+        maybe_advance_epoch(vm, timestamp, block_metadata_ref, round);
     }
 
     #[test(diem_framework = @diem_framework)]

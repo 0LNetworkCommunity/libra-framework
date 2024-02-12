@@ -1,4 +1,4 @@
-use libra_framework::builder::release::ReleaseTarget;
+use libra_framework::release::ReleaseTarget;
 use std::{env::current_dir, path::PathBuf};
 
 fn main() {
@@ -20,7 +20,7 @@ fn main() {
 
         ReleaseTarget::Head
             .create_release(
-                true,
+                false,
                 Some(
                     PathBuf::from(std::env::var("OUT_DIR").expect("OUT_DIR defined"))
                         .join("head.mrb"),
