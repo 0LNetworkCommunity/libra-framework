@@ -190,7 +190,8 @@ module diem_framework::epoch_boundary {
         }
     }
 
-
+    ///TODO: epoch trigger is currently disabled and requires further testing.
+    /// refer to block.move and std::features
     /// flip the bit to allow the epoch to be reconfigured on any transaction
     public(friend) fun enable_epoch_trigger(vm_signer: &signer, closing_epoch:
     u64) acquires BoundaryBit {

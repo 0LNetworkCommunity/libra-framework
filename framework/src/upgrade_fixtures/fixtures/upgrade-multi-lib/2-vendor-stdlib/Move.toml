@@ -8,6 +8,6 @@ license = ''
 
 [dev-addresses]
 [dependencies.LibraFramework]
-local = '/root/libra-framework/framework/libra-framework'
+local = '/home/zoz/libra-framework/framework/libra-framework'
 
 [dev-dependencies]
