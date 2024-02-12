@@ -334,7 +334,6 @@ module ol_framework::libra_coin {
         coin::destroy_freeze_cap(freeze_cap);
         (burn_cap, mint_cap)
     }
-
     // This is particularly useful if the aggregator_factory is already initialized via another call path.
     #[test_only]
     public fun initialize_for_test_without_aggregator_factory(diem_framework: &signer): (BurnCapability<LibraCoin>, MintCapability<LibraCoin>) {
