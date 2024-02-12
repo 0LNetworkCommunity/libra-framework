@@ -1,6 +1,6 @@
 // Upgrade proposal for package `MoveStdlib`
 
-// Framework commit hash: 219b1f4ec2e8930fc77b496b1cd7a49c3c53e02a
+// Framework commit hash: 0f75d8e444a4e9e27c6bda08ab37799df83b2d11
 // Builder commit hash: db1137ba1f8e7301e325021f71f740063daaf76e
 
 // Next step script hash:
@@ -1570,6 +1570,6 @@ script {
             1u8,176u8,130u8,161u8,216u8,26u8,13u8,0u8,0u8,0u8,0u8,0u8,0u8,
         ];
         code::publish_package_txn(&framework_signer, metadata_chunk1, code);
-        version::upgrade_set_git(&framework_signer, x"219b1f4ec2e8930fc77b496b1cd7a49c3c53e02a")
+        version::upgrade_set_git(&framework_signer, x"0f75d8e444a4e9e27c6bda08ab37799df83b2d11")
     }
 }
