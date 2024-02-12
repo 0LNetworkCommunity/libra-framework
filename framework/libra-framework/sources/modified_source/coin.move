@@ -13,6 +13,7 @@ module diem_framework::coin {
     use diem_framework::system_addresses;
 
     use diem_std::type_info;
+    use diem_std::math128;
     // use diem_std::debug::print;
 
     friend ol_framework::libra_coin;
@@ -561,6 +562,16 @@ module diem_framework::coin {
     /// Returns the `value` passed in `coin`.
     public fun value<CoinType>(coin: &Coin<CoinType>): u64 {
         coin.value
+    }
+
+    /// Returns an indexed value based on the current supply, compared to the
+    /// final supply
+    public fun index_value<CoinType>(coin: &Coin<CoinType>, index_supply: u128):
+    u128 acquires CoinInfo {
+        let units = (value(coin) as u128);
+        let supply_now_opt = supply<CoinType>();
+        let supply_now = option::borrow(&supply_now_opt);
+        math128::mul_div(units, *supply_now, index_supply)
     }
 
     /// Withdraw specifed `amount` of coin `CoinType` from the signing account.
