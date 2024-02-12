@@ -60,7 +60,6 @@ pub struct Supply {
     pub expected_user_ratio: f64,
     pub expected_circulating: f64,
     pub expected_circulating_ratio: f64,
-
 }
 
 impl Supply {
@@ -77,19 +76,18 @@ impl Supply {
         self.escrow_pct = remaining_to_fund / self.slow_validator_locked;
         self.epoch_reward_base_case =
             remaining_to_fund / (365 * 100 * settings.years_escrow) as f64; // one hundred validators over 7 years every day. Note: discussed elsewhere: if this is an over estimate, the capital gets returned to community by the daily excess burn.
-        self.expected_user_balance = self.split_factor * (
-          self.normal +
+        self.expected_user_balance = self.split_factor
+            * (
+                self.normal +
           (self.slow_total - self.slow_validator_locked ) + // remove vals
-          (self.slow_validator_locked * (1.0 - self.escrow_pct)) // add back vals after escrow
-        );
+          (self.slow_validator_locked * (1.0 - self.escrow_pct))
+                // add back vals after escrow
+            );
         let total_scaled = self.total * self.split_factor;
-        self.expected_user_ratio = self.expected_user_balance/total_scaled;
+        self.expected_user_ratio = self.expected_user_balance / total_scaled;
 
-        self.expected_circulating = self.split_factor * (
-          self.normal +
-          self.slow_unlocked
-        );
-        self.expected_circulating_ratio = self.expected_circulating/total_scaled;
+        self.expected_circulating = self.split_factor * (self.normal + self.slow_unlocked);
+        self.expected_circulating_ratio = self.expected_circulating / total_scaled;
 
         Ok(())
     }
@@ -181,7 +179,7 @@ pub fn populate_supply_stats_from_legacy(
         expected_user_balance: 0.0,
         expected_user_ratio: 0.0,
         expected_circulating: 0.0,
-        expected_circulating_ratio: 0.0
+        expected_circulating_ratio: 0.0,
     };
 
     let dd_wallets = rec

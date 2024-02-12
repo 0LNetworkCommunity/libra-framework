@@ -88,7 +88,6 @@ pub fn compare_recovery_vec_to_genesis_tx(
                 .expect("should have move resource")
                 .expect("should have a GasCoinStoreResource for balance");
 
-
             // CHECK: we should have scaled the balance correctly, including
             // adjusting for validators
             let old_balance = old.balance.as_ref().expect("should have a balance struct");
