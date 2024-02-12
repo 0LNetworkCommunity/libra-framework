@@ -57,7 +57,9 @@ pub struct Supply {
     pub escrow_pct: f64,
     pub epoch_reward_base_case: f64,
     pub expected_user_balance: f64,
+    pub expected_user_ratio: f64,
     pub expected_circulating: f64,
+    pub expected_circulating_ratio: f64,
 
 }
 
@@ -81,14 +83,13 @@ impl Supply {
           (self.slow_validator_locked * (1.0 - self.escrow_pct)) // add back vals after escrow
         );
         let total_scaled = self.total * self.split_factor;
-        dbg!(&total_scaled);
-        dbg!(&(self.expected_user_balance/total_scaled));
+        self.expected_user_ratio = self.expected_user_balance/total_scaled;
 
         self.expected_circulating = self.split_factor * (
           self.normal +
           self.slow_unlocked
         );
-        dbg!(&(self.expected_circulating/total_scaled));
+        self.expected_circulating_ratio = self.expected_circulating/total_scaled;
 
         Ok(())
     }
@@ -178,7 +179,9 @@ pub fn populate_supply_stats_from_legacy(
         escrow_pct: 0.0,
         epoch_reward_base_case: 0.0,
         expected_user_balance: 0.0,
+        expected_user_ratio: 0.0,
         expected_circulating: 0.0,
+        expected_circulating_ratio: 0.0
     };
 
     let dd_wallets = rec

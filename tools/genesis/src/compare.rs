@@ -133,12 +133,6 @@ pub fn compare_recovery_vec_to_genesis_tx(
                 }
             }
         });
-
-        dbg!(&supply);
-        dbg!(&(supply.total as f64 * supply.split_factor));
-        dbg!(&user_supply);
-
-
     Ok(err_list)
 }
 
