@@ -54,10 +54,6 @@ module ol_framework::ol_account {
     /// why is VM trying to use this?
     const ENOT_FOR_VM: u64 = 9;
 
-
-
-
-
     struct BurnTracker has key {
       prev_supply: u64,
       prev_balance: u64,
@@ -332,6 +328,29 @@ module ol_framework::ol_account {
     // TODO v7: consolidate balance checks here, not in account, slow_wallet, or coin
     public fun balance(addr: address): (u64, u64) {
       slow_wallet::balance(addr)
+    }
+
+    #[view]
+    /// returns the INDEXED value of the coins.
+    // Note: there is a similar function in coin.move to get the indexed
+    // value of a single coin.
+    public fun real_balance(addr: address): (u64, u64) {
+      let final = libra_coin::get_final_supply();
+      let current = libra_coin::supply();
+      let (unlocked, total) = slow_wallet::balance(addr);
+
+      let unlocked_indexed = math64::mul_div(unlocked, final, current);
+      let total_indexed = math64::mul_div(total, final, current);
+
+      (unlocked_indexed, total_indexed)
+      // Going to another place
+      // Another universe, another realm
+      // Sleeping, dreaming, what is real?
+      // Leap and the net will appear
+      // Going to another place
+      // Another universe, another realm
+      // Sleeping, dreaming, what is real?
+      // Leap and the net will appear
     }
 
     #[view]
