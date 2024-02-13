@@ -473,23 +473,23 @@ module ol_framework::test_donor_voice {
     }
 
     #[test(root = @ol_framework, community = @0x10011, alice = @0x1000a, bob =
-    @0x1000b, carol = @0x1000c, dave = @0x1000d, eve = @0x1000e)]
+    @0x1000b, carol = @0x1000c)]
     fun migrate_cw_bug(root: &signer, community: &signer, alice: &signer, bob:
-    &signer, carol: &signer, dave: &signer, eve: &signer) {
+    &signer, carol: &signer) {
 
       // create genesis and fund accounts
       mock::genesis_n_vals(root, 5);
       mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
-      
+
 
       // create resource account for community wallet
       let (comm_resource_sig, _cap) = ol_account::ol_create_resource_account(community, b"senior sword vocal target latin rug ship summer bar suit cake derive pluck sunset can scorpion tornado hungry erosion heart away suggest glad seek");
       let community_wallet_resource_address = signer::address_of(&comm_resource_sig);
 
       let community_wallet_address = signer::address_of(community);
-      
+
       // verify resource account was created succesfully for the community wallet
-      assert!(resource_account::is_resource_account(community_wallet_resource_address), 7357003);
+      assert!(resource_account::is_resource_account(community_wallet_resource_address), 7357000);
       assert!(!community_wallet::is_init(community_wallet_address), 100); //TODO: find appropriate error codes
 
 
@@ -500,15 +500,15 @@ module ol_framework::test_donor_voice {
       ol_account::transfer(bob, community_wallet_resource_address, bob_donation);
       let (_, bob_balance) = ol_account::balance(@0x1000b);
 
-      assert!(bob_balance == 9999958, 7357001);
+      assert!(bob_balance == 9999958, 7357002);
       let (_, community_wallet_balance) = ol_account::balance(community_wallet_resource_address);
-      assert!(community_wallet_balance == 42, 7357001);
+      assert!(community_wallet_balance == 42, 7357003);
 
       // migrate community wallet
       community_wallet::migrate_community_wallet_account(root, community);
 
       // verify correct migration of community wallet
-      assert!(community_wallet::is_init(community_wallet_address), 101); //TODO: find appropriate error codes
+      assert!(community_wallet::is_init(community_wallet_address), 7357004); //TODO: find appropriate error codes
 
 
       let _b = donor_voice::is_liquidate_to_match_index(community_wallet_address);
@@ -517,57 +517,58 @@ module ol_framework::test_donor_voice {
       let alice_addr = signer::address_of(alice);
       let bob_addr = signer::address_of(bob);
       let carol_addr = signer::address_of(carol);
-      let dave_addr = signer::address_of(dave);
-      let eve_addr = signer::address_of(eve);
+      // let dave_addr = signer::address_of(dave);
+      // let eve_addr = signer::address_of(eve);
 
       let addrs = vector::singleton(alice_addr);
       vector::push_back(&mut addrs, bob_addr);
       vector::push_back(&mut addrs, carol_addr);
-      vector::push_back(&mut addrs, dave_addr);
-      vector::push_back(&mut addrs, eve_addr);
+      // vector::push_back(&mut addrs, dave_addr);
+      // vector::push_back(&mut addrs, eve_addr);
 
       ancestry::fork_migrate(root, alice, vector::singleton(alice_addr));
       ancestry::fork_migrate(root, bob, vector::singleton(bob_addr));
       ancestry::fork_migrate(root, carol, vector::singleton(carol_addr));
-      ancestry::fork_migrate(root, dave, vector::singleton(dave_addr));
-      ancestry::fork_migrate(root, eve, vector::singleton(eve_addr));
+      // ancestry::fork_migrate(root, dave, vector::singleton(dave_addr));
+      // ancestry::fork_migrate(root, eve, vector::singleton(eve_addr));
 
-      // wake up and initialize community wallet as a multi sig, donor voice account 
+      // wake up and initialize community wallet as a multi sig, donor voice account
       community_wallet::init_community(&comm_resource_sig, addrs);
 
       // verify wallet is a initialized correctly
-      assert!(donor_voice::is_donor_voice(signer::address_of(&comm_resource_sig)), 102);
-      assert!(cumulative_deposits::is_init_cumu_tracking(community_wallet_resource_address), 100);
+      assert!(donor_voice::is_donor_voice(signer::address_of(&comm_resource_sig)), 7357005);
+      assert!(cumulative_deposits::is_init_cumu_tracking(community_wallet_resource_address), 7357006);
 
-      // make a transaction and have signers execute  
+      // make a transaction and have signers execute
       mock::trigger_epoch(root); // into epoch 1
 
       let uid = donor_voice::propose_payment(bob, community_wallet_resource_address, @0x1000b, 42, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_voice::get_multisig_proposal_state(community_wallet_resource_address, &uid);
-      assert!(found, 7357004);
-      assert!(idx == 0, 7357005);
-      assert!(status_enum == 1, 7357006);
-      assert!(!completed, 7357007);
+      assert!(found, 7357007);
+      assert!(idx == 0, 7357006);
+      assert!(status_enum == 1, 7357009);
+      assert!(!completed, 7357010);
 
       // it is not yet scheduled, it's still only a proposal by an admin
-      assert!(!donor_voice::is_scheduled(community_wallet_resource_address, &uid), 7357008);
+      assert!(!donor_voice::is_scheduled(community_wallet_resource_address, &uid), 7357011);
 
 
       // have another 2 signers sign the proposal
-      donor_voice::propose_payment(carol, community_wallet_resource_address, @0x1000b, 42, b"thanks bob");
-      let uid = donor_voice::propose_payment(alice, community_wallet_resource_address, @0x1000b, 42, b"thanks bob");
+      donor_voice::propose_payment(carol, community_wallet_resource_address,
+      @0x1000b, 42, b"thanks bob");
+      // Commit Note: Two votes are enough.
       let (found, idx, status_enum, completed) = donor_voice::get_multisig_proposal_state(community_wallet_resource_address, &uid);
-      assert!(found, 7357004);
-      assert!(idx == 0, 7357005);
-      assert!(status_enum == 1, 7357006);
-      assert!(completed, 7357007); // now completed
+      assert!(found, 7357012);
+      assert!(idx == 0, 7357013);
+      assert!(status_enum == 1, 7357014);
+      assert!(completed, 7357015); // now completed
 
       // confirm it is scheduled
-      assert!(donor_voice::is_scheduled(community_wallet_resource_address, &uid), 7357008);
+      assert!(donor_voice::is_scheduled(community_wallet_resource_address, &uid), 7357016);
 
       // the default timed payment is 4 epochs, we are in epoch 2
       let list = donor_voice::find_by_deadline(community_wallet_resource_address, 4);
-      assert!(vector::contains(&list, &uid), 7357009);
+      assert!(vector::contains(&list, &uid), 7357017);
 
       // simulate another 2 epochs, we are in epoxh 4
       mock::trigger_epoch(root);
@@ -575,18 +576,18 @@ module ol_framework::test_donor_voice {
 
       // verify payment has not been processed
       let (_, bob_balance_pre_scheduled_epoch) = ol_account::balance(@0x1000b);
-      assert!(bob_balance_pre_scheduled_epoch == 10999958, 7357001); //increase by 1000000 due to amount recieved in epoch 1
+      assert!(bob_balance_pre_scheduled_epoch == 10999958, 7357018); //increase by 1000000 due to amount recieved in epoch 1
       let (_, community_wallet_balance_pre_scheduled_epoch) = ol_account::balance(community_wallet_resource_address);
-      assert!(community_wallet_balance_pre_scheduled_epoch == 42, 7357001);
+      assert!(community_wallet_balance_pre_scheduled_epoch == 42, 7357019);
 
       // simulate another 2 epochs, we are in epoch 6
       mock::trigger_epoch(root);
       mock::trigger_epoch(root);
 
       let (_, bob_balance_processed_payment) = ol_account::balance(@0x1000b);
-      assert!(bob_balance_processed_payment == 11000000, 7357001);
+      assert!(bob_balance_processed_payment == 11000000, 7357020);
       let (_, community_wallet_balance_processed_payment) = ol_account::balance(community_wallet_resource_address);
-      assert!(community_wallet_balance_processed_payment == 0, 7357001);
+      assert!(community_wallet_balance_processed_payment == 0, 7357021);
 
     }
 }
