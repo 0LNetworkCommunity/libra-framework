@@ -11,7 +11,7 @@ jobs:
     permissions: write-all
       # contents: write
     name: publish
-    runs-on: ubuntu-latest
+    runs-on: debian-latest
     steps:
       # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
       # - name: Setup tmate session

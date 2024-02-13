@@ -6,7 +6,7 @@ on:
 jobs:
   delete_all_runs:
     name: delete all workflow runs
-    runs-on: ubuntu-latest
+    runs-on: debian-latest
     permissions: write-all
     steps:
       - name: Delete workflow runs
@@ -22,7 +22,7 @@ jobs:
           # dry_run: true
   wipe_caches:
     name: delete all caches
-    runs-on: ubuntu-latest
+    runs-on: debian-latest
     permissions: write-all
     steps:
       - name: clear caches
