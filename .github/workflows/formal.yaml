@@ -31,6 +31,9 @@ jobs:
       #   timeout-minutes: 15
 
       - uses: actions/checkout@v3
+      
+      - name: setup env
+        uses: ./.github/actions/build_env
 
 
       - name: install prover dependencies
