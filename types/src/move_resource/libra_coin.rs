@@ -1,16 +1,15 @@
 use move_core_types::{
     ident_str,
-    language_storage::StructTag,
     move_resource::{MoveResource, MoveStructType},
 };
 use move_core_types::identifier::IdentStr;
 use move_core_types::language_storage::TypeTag;
 use serde::{Deserialize, Serialize};
-
-use diem_types::{account_address::AccountAddress, event::EventHandle};
-use once_cell::sync::Lazy;
+use crate::move_resource::gas_coin::GAS_COIN_TYPE;
+use diem_types::event::EventHandle;
 
 use crate::ONCHAIN_DECIMAL_PRECISION;
+
 
 /// The balance resource held under an account.
 #[derive(Debug, Serialize, Deserialize)]
@@ -24,13 +23,11 @@ pub struct LibraCoinStoreResource {
 impl LibraCoinStoreResource {
     pub fn new(
         coin: u64,
-        frozen: bool,
         deposit_events: EventHandle,
         withdraw_events: EventHandle,
     ) -> Self {
         Self {
             coin,
-            frozen,
             deposit_events,
             withdraw_events,
         }
@@ -38,10 +35,6 @@ impl LibraCoinStoreResource {
 
     pub fn coin(&self) -> u64 {
         self.coin
-    }
-
-    pub fn frozen(&self) -> bool {
-        self.frozen
     }
 
     pub fn deposit_events(&self) -> &EventHandle {
@@ -98,9 +91,13 @@ impl SlowWalletBalance {
     // scale it to include decimals
     pub fn scaled(&self) -> LibraBalanceDisplay {
         LibraBalanceDisplay {
-            unlocked: cast_coin_to_decimal(self.unlocked),
-            total: cast_coin_to_decimal(self.total),
+            unlocked: self.unlocked as f64 / ONCHAIN_DECIMAL_PRECISION as f64,
+            total: self.total as f64 / ONCHAIN_DECIMAL_PRECISION as f64,
         }
+        //LibraBalanceDisplay {
+        //    unlocked: cast_coin_to_decimal(self.unlocked),
+        //    total: cast_coin_to_decimal(self.total),
+        //}
     }
 }
 

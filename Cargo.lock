@@ -5714,11 +5714,14 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap 4.4.2",
+ "diem-api-types",
  "diem-sdk",
+ "diem-types",
  "hex",
  "indoc",
  "libra-smoke-tests",
  "libra-types",
+ "serde 1.0.163",
  "serde_json",
  "tokio",
 ]
