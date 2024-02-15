@@ -233,8 +233,12 @@ module diem_framework::block {
                 return
             };
 
-            if (timestamp - reconfiguration::last_reconfiguration_time() >= block_metadata_ref.epoch_interval) {
-                if (!features::epoch_trigger_enabled() || testnet::is_not_mainnet()) {
+            if (timestamp - reconfiguration::last_reconfiguration_time() >=
+            block_metadata_ref.epoch_interval) {
+                // do automatic epochs in testnet.
+                // in main or stage, check if the feature flag is enabled for
+                // manual epochs
+                if (!features::epoch_trigger_enabled() || testnet::is_testnet()) {
                     epoch_boundary::epoch_boundary(
                         vm,
                         reconfiguration::get_current_epoch(),

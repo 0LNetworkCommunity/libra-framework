@@ -16,9 +16,7 @@ module ol_framework::testnet {
         chain_id::get() == 4
     }
 
-    public fun is_not_mainnet(): bool {
-        chain_id::get() != 1
-    }
+    //commit note: confusing is_not_mainnet
 
     public fun assert_testnet(root: &signer): bool {
       system_addresses::assert_ol(root);
@@ -27,7 +25,8 @@ module ol_framework::testnet {
     }
 
     public fun is_staging_net(): bool {
-        chain_id::get() == 2 // TESTNET named chain
+        // NOTE: confusingly in vendor's rust code chain=2 is called TESTNET
+        chain_id::get() == 2
     }
 
     #[test_only]
