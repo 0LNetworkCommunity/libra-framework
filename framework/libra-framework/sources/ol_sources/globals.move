@@ -15,14 +15,14 @@ module ol_framework::globals {
     struct GlobalConstants has drop {
       // For validator set.
       epoch_length: u64,
-      val_set_at_genesis: u64,
-      subsidy_ceiling_gas: u64,
+      val_set_at_genesis: u64,// deprecated?
+      subsidy_ceiling_gas: u64, // deprecated?
       vdf_difficulty_baseline: u64,
       vdf_security_baseline: u64,
       epoch_mining_thres_lower: u64,
       epoch_mining_thres_upper: u64,
       epoch_slow_wallet_unlock: u64,
-      min_blocks_per_epoch: u64,
+      min_blocks_per_epoch: u64, // deprecated?
       validator_vouch_threshold: u64,
       signing_threshold_pct: u64,
     }
@@ -95,52 +95,9 @@ module ol_framework::globals {
       get_constants().signing_threshold_pct
     }
 
-    /// Get the constants for the current network
-    fun get_constants(): GlobalConstants {
-
-      if (testnet::is_testnet()) {
+    fun get_mainnet(): GlobalConstants {
         return GlobalConstants {
-          epoch_length: 60, // seconds
-          val_set_at_genesis: 10,
-          subsidy_ceiling_gas: 296 * get_coin_scaling_factor(),
-          vdf_difficulty_baseline: 100,
-          vdf_security_baseline: 512,
-          epoch_mining_thres_lower: 2, // many tests depend on two proofs because
-                                       // the test harness already gives one at
-                                       // genesis to validators
-          epoch_mining_thres_upper: 1000, // upper bound unlimited
-          epoch_slow_wallet_unlock: 10,
-          min_blocks_per_epoch: 0,
-          validator_vouch_threshold: 0,
-          signing_threshold_pct: 3,
-        }
-      };
-
-      if (testnet::is_staging_net()) {
-        // All numbers like MAINNET except shorter epochs of 30 mins
-        // and minimum mining of 1 proof
-        return GlobalConstants {
-          epoch_length: 60 * 30, // 30 mins, enough for a hard miner proof.
-          val_set_at_genesis: 100, // max expected for BFT limits.
-          // See DiemVMConfig for gas constants:
-          // Target max gas units per transaction 100000000
-          // target max block time: 2 secs
-          // target transaction per sec max gas: 20
-          // uses "scaled representation", since there are no decimals.
-          subsidy_ceiling_gas: 8640000 * get_coin_scaling_factor(), // subsidy amount assumes 24 hour epoch lengths. Also needs to be adjusted for coin_scale the onchain representation of human readable value.
-          vdf_difficulty_baseline: 120000000, // wesolowski proof, new parameters. Benchmark available in docs/delay_tower/benchmarking
-          vdf_security_baseline: 512,
-          // NOTE Reviewers: this goes back to v5 params since the VDF cryptograpy will actually not be changed
-          epoch_mining_thres_lower: 1, // lower bound, allows for some operator error
-          epoch_mining_thres_upper: 72, // upper bound enforced at 20 mins per  proof
-          epoch_slow_wallet_unlock: 1000 * get_coin_scaling_factor(), // approx 10 years for largest accounts in genesis.
-          min_blocks_per_epoch: 10000,
-          validator_vouch_threshold: 2, // Production must be more than 1 vouch validator (at least 2)
-          signing_threshold_pct: 3,
-        }
-      } else {
-        return GlobalConstants {
-          epoch_length: 60 * 60 * 24, // approx 24 hours at 1.4 vdf_proofs/sec
+          epoch_length: 60 * 60 * 24, // approx 24 hours
           val_set_at_genesis: 100, // max expected for BFT limits.
           // See DiemVMConfig for gas constants:
           // Target max gas units per transaction 100000000
@@ -158,6 +115,39 @@ module ol_framework::globals {
           validator_vouch_threshold: 2, // Production must be more than 1 vouch validator (at least 2)
           signing_threshold_pct: 3,
         }
-      }
+    }
+
+    fun get_testnet(): GlobalConstants {
+        return GlobalConstants {
+          epoch_length: 60, // seconds
+          val_set_at_genesis: 10,
+          subsidy_ceiling_gas: 296 * get_coin_scaling_factor(),
+          vdf_difficulty_baseline: 100,
+          vdf_security_baseline: 512,
+          epoch_mining_thres_lower: 2, // many tests depend on two proofs because
+                                       // the test harness already gives one at
+                                       // genesis to validators
+          epoch_mining_thres_upper: 1000, // upper bound unlimited
+          epoch_slow_wallet_unlock: 10,
+          min_blocks_per_epoch: 0,
+          validator_vouch_threshold: 0,
+          signing_threshold_pct: 3,
+        }
+    }
+
+    /// Get the constants for the current network
+    fun get_constants(): GlobalConstants {
+      if (testnet::is_testnet()) {
+        return get_testnet()
+      };
+      // staging net is for upgrade verification.
+      // we want check epoch boundary behavior without waiting 24h
+      if (testnet::is_staging_net()) {
+        let c = get_mainnet();
+        c.epoch_length = 60 * 15; // 15 mins
+        return c
+      };
+
+      get_mainnet()
     }
 }
