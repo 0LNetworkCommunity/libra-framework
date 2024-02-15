@@ -381,7 +381,7 @@ module ol_framework::tower_state {
       diff.prev_sec = diff.security; // NOTE: this shouldn't change unless in testing
 
       // VDF proofs must be even numbers.
-      let rando = if (testnet::is_not_mainnet()) { toy_rng(0, 1, 0) }
+      let rando = if (testnet::is_testnet()) { toy_rng(0, 1, 0) }
       else { toy_rng(3, 2, 10) };
       if (rando > 0) {
         rando = rando * 2;
@@ -585,7 +585,7 @@ module ol_framework::tower_state {
         // pick the next miner
         // make sure we get an n smaller than list of miners
 
-        // Current case: if miner_index = count_miners could lead to overflow 
+        // Current case: if miner_index = count_miners could lead to overflow
 
         // let k = 0; // k keeps track of this loop, abort if loops too much
         // while (this_miner_index >= count_miners) {
@@ -677,36 +677,6 @@ module ol_framework::tower_state {
         s.count_proofs_in_epoch = 0;
       };
     }
-
-    // // Returns if the miner is above the account creation rate-limit
-    // // Permissions: PUBLIC, ANYONE
-    // public fun can_create_val_account(node_addr: address): bool acquires TowerProofHistory {
-    //   if(testnet::is_testnet() || testnet::is_staging_net()) return true;
-    //   // check if rate limited, needs 7 epochs of validating.
-    //   if (exists<TowerProofHistory>(node_addr)) {
-    //     return
-    //       borrow_global<TowerProofHistory>(node_addr).epochs_since_last_account_creation
-    //       >= EPOCHS_UNTIL_ACCOUNT_CREATION
-    //   };
-    //   false
-    // }
-
-    // #[view]
-    // ///
-    // public fun get_validator_proofs_in_epoch(): u64 acquires TowerCounter{
-    //   let state = borrow_global<TowerCounter>(@ol_framework);
-    //   state.validator_proofs_in_epoch
-    // }
-
-    // public fun get_fullnode_proofs_in_epoch(): u64 acquires TowerCounter{
-    //   let state = borrow_global<TowerCounter>(@ol_framework);
-    //   state.fullnode_proofs_in_epoch
-    // }
-
-    // public fun get_fullnode_proofs_in_epoch_above_thresh(): u64 acquires TowerCounter{
-    //   let state = borrow_global<TowerCounter>(@ol_framework);
-    //   state.fullnode_proofs_in_epoch_above_thresh
-    // }
 
     #[view]
     /// number of proof submitted over lifetime of chain
