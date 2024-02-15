@@ -1,11 +1,14 @@
 use crate::{
-    account_queries::{get_account_balance_libra, get_tower_state, get_val_config, get_events, get_transactions, 
-        is_community_wallet_migrated, community_wallet_signers, community_wallet_pending_transactions},
+    account_queries::{
+        community_wallet_pending_transactions, community_wallet_signers, get_account_balance_libra,
+        get_events, get_tower_state, get_transactions, get_val_config,
+        is_community_wallet_migrated,
+    },
     chain_queries::{get_epoch, get_height},
     query_view::get_view,
 };
-use diem_api_types::Transaction;
 use anyhow::{bail, Context, Result};
+use diem_api_types::Transaction;
 use diem_sdk::{rest_client::Client, types::account_address::AccountAddress};
 use indoc::indoc;
 use libra_types::exports::AuthenticationKey;
@@ -92,7 +95,7 @@ pub enum QueryType {
     SyncDelay,
     /// Get events
     Events {
-        #[clap(short,long)]
+        #[clap(short, long)]
         /// account to query events
         account: AccountAddress,
         #[clap(short, long)]
@@ -104,18 +107,18 @@ pub enum QueryType {
     },
     /// Get transaction history
     Txs {
-         #[clap(short, long)]
-         /// account to query txs of
-         account: AccountAddress,
-         #[clap(long)]
-         /// get transactions after this height
-         txs_height: Option<u64>,
-         #[clap(long)]
-         /// limit how many txs
-         txs_count: Option<u64>,
-         #[clap(long)]
-         /// filter by type
-         txs_type: Option<String>,
+        #[clap(short, long)]
+        /// account to query txs of
+        account: AccountAddress,
+        #[clap(long)]
+        /// get transactions after this height
+        txs_height: Option<u64>,
+        #[clap(long)]
+        /// limit how many txs
+        txs_count: Option<u64>,
+        #[clap(long)]
+        /// filter by type
+        txs_type: Option<String>,
     },
     /// Is the community wallter migrated
     ComWalletMigrated {
@@ -135,9 +138,8 @@ pub enum QueryType {
         /// account to query txs of
         account: AccountAddress,
     },
-
     // TODO:
-    
+
     // /// Get transaction history
     // Txs {
     //     #[clap(short, long)]
@@ -234,11 +236,12 @@ impl QueryType {
                 Ok(json!({ "BlockHeight": height }))
             }
             QueryType::Events {
-                 account,
-                  withdrawn_or_deposited, 
-                  seq_start }
-            => {
-                let res = get_events(&client, *account, *withdrawn_or_deposited, *seq_start).await?;
+                account,
+                withdrawn_or_deposited,
+                seq_start,
+            } => {
+                let res =
+                    get_events(&client, *account, *withdrawn_or_deposited, *seq_start).await?;
                 Ok(json!({ "events": res }))
             }
             QueryType::Txs {
@@ -247,30 +250,36 @@ impl QueryType {
                 txs_count,
                 txs_type,
             } => {
-                let res:Vec<Transaction> = get_transactions(&client, *account, *txs_height, *txs_count, txs_type.to_owned()).await?;
-                let prune_res : Vec<_>= res.iter().map(|tx| {
-                    json!({
-                    "timestamp": tx.timestamp(),
-                    "version" : tx.version(),
-                    "is_pending" : tx.is_pending(),
+                let res: Vec<Transaction> = get_transactions(
+                    &client,
+                    *account,
+                    *txs_height,
+                    *txs_count,
+                    txs_type.to_owned(),
+                )
+                .await?;
+                let prune_res: Vec<_> = res
+                    .iter()
+                    .map(|tx| {
+                        json!({
+                        "timestamp": tx.timestamp(),
+                        "version" : tx.version(),
+                        "is_pending" : tx.is_pending(),
+                        })
                     })
-                }).collect();
-                Ok(json!({ "transactions": prune_res}))
+                    .collect();
+                Ok(json!({ "transactions": prune_res }))
             }
-            QueryType::ComWalletMigrated {
-                 account } => {
+            QueryType::ComWalletMigrated { account } => {
                 let res = is_community_wallet_migrated(&client, *account).await?;
                 Ok(json!({ "migrated": res }))
-            
             }
-            QueryType::ComWalletSigners { 
-                account } => {
+            QueryType::ComWalletSigners { account } => {
                 // Wont work at the moment as there is no community wallet that with governace structure
                 let _res = community_wallet_signers(&client, *account).await?;
                 Ok(json!({ "signers": "None"}))
             }
-            QueryType::ComWalletPendTransactions { 
-                account } => {
+            QueryType::ComWalletPendTransactions { account } => {
                 // Wont work at the moment as there is no community wallet migrated
                 let _res = community_wallet_pending_transactions(&client, *account).await?;
                 Ok(json!({ "pending_transactions": "None" }))

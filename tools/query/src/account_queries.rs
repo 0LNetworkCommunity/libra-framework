@@ -1,8 +1,11 @@
+use diem_api_types::Transaction;
 use diem_sdk::{
-    rest_client::{diem_api_types::{VersionedEvent, ViewRequest}, Client},
+    rest_client::{
+        diem_api_types::{VersionedEvent, ViewRequest},
+        Client,
+    },
     types::{account_address::AccountAddress, validator_config::ValidatorConfig},
 };
-use diem_api_types::Transaction;
 use libra_types::{
     legacy_types::tower::TowerProofHistoryView,
     move_resource::gas_coin::SlowWalletBalance,
@@ -49,26 +52,38 @@ pub async fn get_events(
     client: &Client,
     account: AccountAddress,
     withdrawn_or_deposited: bool,
-    seq_start : Option<u64>
-) -> anyhow::Result<Vec<VersionedEvent>>{
+    seq_start: Option<u64>,
+) -> anyhow::Result<Vec<VersionedEvent>> {
     let direction = if withdrawn_or_deposited {
         "withdraw_events"
     } else {
         "deposit_events"
     };
-    let res = client.get_account_events(account, "0x1::coin::CoinStore<0x1::libra_coin::LibraCoin>",direction, seq_start,  None).await?.into_inner();
+    let res = client
+        .get_account_events(
+            account,
+            "0x1::coin::CoinStore<0x1::libra_coin::LibraCoin>",
+            direction,
+            seq_start,
+            None,
+        )
+        .await?
+        .into_inner();
     Ok(res)
-    }
+}
 
 pub async fn get_transactions(
     client: &Client,
-    account : AccountAddress,
-    txs_height : Option<u64>,
-    txs_count : Option<u64>,
-    _txs_type : Option<String>
+    account: AccountAddress,
+    txs_height: Option<u64>,
+    txs_count: Option<u64>,
+    _txs_type: Option<String>,
 ) -> anyhow::Result<Vec<Transaction>> {
     // TODO: filter by type (what type is it?)
-    let res = client.get_account_transactions(account, txs_height, txs_count).await?.into_inner();
+    let res = client
+        .get_account_transactions(account, txs_height, txs_count)
+        .await?
+        .into_inner();
     Ok(res)
 }
 
@@ -100,7 +115,7 @@ pub async fn community_wallet_signers(
     };
 
     let res = client.view(&request, None).await?.into_inner();
-    Ok(json!(res))  
+    Ok(json!(res))
 }
 
 pub async fn community_wallet_pending_transactions(
