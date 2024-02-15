@@ -238,7 +238,7 @@ module diem_framework::block {
                 // do automatic epochs in testnet.
                 // in main or stage, check if the feature flag is enabled for
                 // manual epochs
-                if (!features::epoch_trigger_enabled() || testnet::is_testnet()) {
+                if (!ol_features::epoch_trigger_enabled() || testnet::is_testnet()) {
                     epoch_boundary::epoch_boundary(
                         vm,
                         reconfiguration::get_current_epoch(),
