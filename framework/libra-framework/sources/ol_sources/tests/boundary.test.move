@@ -2,7 +2,6 @@
 #[test_only]
 module ol_framework::test_boundary {
   use std::vector;
-  use std::features;
   use diem_std::bls12381;
   use ol_framework::mock;
   use ol_framework::proof_of_fee;
@@ -18,9 +17,11 @@ module ol_framework::test_boundary {
   use diem_framework::reconfiguration;
   use diem_framework::timestamp;
   use diem_framework::diem_governance;
+  use ol_framework::ol_features;
 
   // use diem_std::debug::print;
 
+  // TODO: let's make these consts all caps
   const Alice: address = @0x1000a;
   const Bob: address = @0x1000b;
   const Carol: address = @0x1000c;
@@ -220,11 +221,11 @@ module ol_framework::test_boundary {
     testnet::unset(root);
 
     //verify trigger is not enabled
-    assert!(!features::epoch_trigger_enabled(), 101);
+    assert!(!ol_features::epoch_trigger_enabled(), 7357001);
 
     // test setup advances to epoch #2
     let epoch = reconfiguration::get_current_epoch();
-    assert!(epoch == 2, 7357001);
+    assert!(epoch == 2, 7357002);
     epoch_boundary::test_set_boundary_ready(root, epoch);
 
 
@@ -234,7 +235,7 @@ module ol_framework::test_boundary {
 
     // test epoch advances
     let epoch = reconfiguration::get_current_epoch();
-    assert!(epoch == 3, 7357002);
+    assert!(epoch == 3, 7357003);
 
   }
 
@@ -249,7 +250,7 @@ module ol_framework::test_boundary {
     epoch_boundary::test_set_boundary_ready(root, epoch);
 
     // case: epoch trigger set
-    features::change_feature_flags(root, vector[features::get_epoch_trigger()], vector[]);
+    ol_features::change_feature_flags(root, vector[ol_features::get_epoch_trigger()], vector[]);
     timestamp::fast_forward_seconds(1); // needed for reconfig
     block::test_maybe_advance_epoch(root, 603000001, 602000000);
 

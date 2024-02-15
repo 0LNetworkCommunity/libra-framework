@@ -3,7 +3,6 @@ module diem_framework::block {
     use std::error;
     use std::vector;
     use std::option;
-    use std::features;
     use std::string;
     use diem_framework::account;
     use diem_framework::event::{Self, EventHandle};
@@ -17,6 +16,7 @@ module diem_framework::block {
 
     //////// 0L ////////
     use ol_framework::epoch_boundary;
+    use ol_framework::ol_features;
 
     friend diem_framework::genesis;
 
