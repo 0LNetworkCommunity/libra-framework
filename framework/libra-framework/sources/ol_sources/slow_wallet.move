@@ -135,7 +135,7 @@ module ol_framework::slow_wallet {
       let list = get_slow_list();
       let len = vector::length<address>(&list);
       if (len == 0) return (false, 0);
-      let accounts_updated = 0;
+      let accounts_updated: u64 = 0;
       let i = 0;
       while (i < len) {
         let addr = vector::borrow<address>(&list, i);
@@ -159,6 +159,10 @@ module ol_framework::slow_wallet {
 
         // it may be that some accounts were not updated, so we can't report
         // success unless that was the case.
+        spec {
+          assume accounts_updated + 1 < MAX_U64;
+        };
+
         accounts_updated = accounts_updated + 1;
 
         i = i + 1;

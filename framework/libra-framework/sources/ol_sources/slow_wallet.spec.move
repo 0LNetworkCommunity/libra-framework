@@ -19,6 +19,7 @@ spec ol_framework::slow_wallet {
 
         aborts_if !exists<SacredCow<SlowDrip>>(@0x2);
 
-        aborts_if borrow_global<SacredCow<SlowDrip>>(@0x2).value != 30000 * 1000000;
+        aborts_if borrow_global<SacredCow<SlowDrip>>(@0x2).value != 35000 * 1000000;
+
     }
 }
