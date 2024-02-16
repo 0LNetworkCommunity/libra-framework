@@ -37,27 +37,27 @@ spec std::features {
 
     spec fun spec_is_enabled(feature: u64): bool;
 
-    spec fun spec_periodical_reward_rate_decrease_enabled(): bool {
-        spec_is_enabled(PERIODICAL_REWARD_RATE_DECREASE)
-    }
+    // spec fun spec_periodical_reward_rate_decrease_enabled(): bool {
+    //     spec_is_enabled(PERIODICAL_REWARD_RATE_DECREASE)
+    // }
 
-    spec fun spec_fee_payer_enabled(): bool {
-        spec_is_enabled(FEE_PAYER_ENABLED)
-    }
+    // spec fun spec_fee_payer_enabled(): bool {
+    //     spec_is_enabled(FEE_PAYER_ENABLED)
+    // }
 
-    spec periodical_reward_rate_decrease_enabled {
-        pragma opaque;
-        aborts_if [abstract] false;
-        ensures [abstract] result == spec_periodical_reward_rate_decrease_enabled();
-    }
+    // spec periodical_reward_rate_decrease_enabled {
+    //     pragma opaque;
+    //     aborts_if [abstract] false;
+    //     ensures [abstract] result == spec_periodical_reward_rate_decrease_enabled();
+    // }
 
-    spec fun spec_partial_governance_voting_enabled(): bool {
-        spec_is_enabled(PARTIAL_GOVERNANCE_VOTING)
-    }
+    // spec fun spec_partial_governance_voting_enabled(): bool {
+    //     spec_is_enabled(PARTIAL_GOVERNANCE_VOTING)
+    // }
 
-    spec partial_governance_voting_enabled {
-        pragma opaque;
-        aborts_if [abstract] false;
-        ensures [abstract] result == spec_partial_governance_voting_enabled();
-    }
+    // spec partial_governance_voting_enabled {
+    //     pragma opaque;
+    //     aborts_if [abstract] false;
+    //     ensures [abstract] result == spec_partial_governance_voting_enabled();
+    // }
 }
