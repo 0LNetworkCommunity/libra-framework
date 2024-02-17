@@ -54,8 +54,14 @@ module ol_framework::ol_account {
     /// why is VM trying to use this?
     const ENOT_FOR_VM: u64 = 9;
 
+    /// you are trying to send a large coin transfer to an account that does not
+    /// yet exist.  If you are trying to initialize this address send an amount
+    /// below 1,000 coins
+    const ETRANSFER_TOO_HIGH_FOR_INIT: u64 = 10;
 
+    /// what limit should be set for new account creation while using transfer()
     const MAX_COINS_FOR_INITIALIZE: u64 = 1000 * 1000000;
+
 
 
     struct BurnTracker has key {
@@ -222,9 +228,10 @@ module ol_framework::ol_account {
 
     fun maybe_sender_creates_account(sender: &signer, maybe_new_user: address,
     amount: u64) {
-      if (!account::exists_at(maybe_new_user) &&
-        amount <= MAX_COINS_FOR_INITIALIZE // prevent an unhappy day
-      ) {
+      if (!account::exists_at(maybe_new_user)) {
+          // prevents someone's Terrible, Horrible, No Good, Very Bad Day
+          assert!(amount <= MAX_COINS_FOR_INITIALIZE, error::out_of_range(ETRANSFER_TOO_HIGH_FOR_INIT));
+
           // creates the account address (with the same bytes as the authentication key).
           create_impl(sender, maybe_new_user);
       };
