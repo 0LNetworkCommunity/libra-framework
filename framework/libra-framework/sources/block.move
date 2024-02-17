@@ -3,6 +3,7 @@ module diem_framework::block {
     use std::error;
     use std::vector;
     use std::option;
+    use std::features;
     use std::string;
     use diem_framework::account;
     use diem_framework::event::{Self, EventHandle};
@@ -16,7 +17,6 @@ module diem_framework::block {
 
     //////// 0L ////////
     use ol_framework::epoch_boundary;
-    use ol_framework::ol_features;
 
     friend diem_framework::genesis;
 
@@ -233,12 +233,8 @@ module diem_framework::block {
                 return
             };
 
-            if (timestamp - reconfiguration::last_reconfiguration_time() >=
-            block_metadata_ref.epoch_interval) {
-                // do automatic epochs in testnet.
-                // in main or stage, check if the feature flag is enabled for
-                // manual epochs
-                if (!ol_features::epoch_trigger_enabled() || testnet::is_testnet()) {
+            if (timestamp - reconfiguration::last_reconfiguration_time() >= block_metadata_ref.epoch_interval) {
+                if (!features::epoch_trigger_enabled() || testnet::is_not_mainnet()) {
                     epoch_boundary::epoch_boundary(
                         vm,
                         reconfiguration::get_current_epoch(),

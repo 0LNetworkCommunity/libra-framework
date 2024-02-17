@@ -456,7 +456,7 @@ module diem_framework::multisig_account {
         metadata_keys: vector<String>,
         metadata_values: vector<vector<u8>>,
     ) acquires MultisigAccount {
-        // commit note: multisig accounts enabled permanently
+        assert!(features::multisig_accounts_enabled(), error::unavailable(EMULTISIG_ACCOUNTS_NOT_ENABLED_YET));
         assert!(
             num_signatures_required > 0 && num_signatures_required <= vector::length(&owners),
             error::invalid_argument(EINVALID_SIGNATURES_REQUIRED),
@@ -957,7 +957,6 @@ module diem_framework::multisig_account {
     use diem_std::multi_ed25519;
     #[test_only]
     use std::string::utf8;
-    #[test_only]
     use std::features;
 
     #[test_only]
@@ -1097,7 +1096,13 @@ module diem_framework::multisig_account {
             vector[]);
     }
 
-    // commit note: not a relevant test, now that it is enabled permanently
+    #[test(owner = @0x123)]
+    #[expected_failure(abort_code = 0xD000E, location = Self)]
+    public entry fun test_create_with_without_feature_flag_enabled_should_fail(
+        owner: &signer) acquires MultisigAccount {
+        create_account(address_of(owner));
+        create(owner, 2, vector[], vector[]);
+    }
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
     #[expected_failure(abort_code = 0x10001, location = Self)]

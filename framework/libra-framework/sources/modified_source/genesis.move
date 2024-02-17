@@ -262,7 +262,7 @@ module diem_framework::genesis {
             let sig = create_signer(validator.validator_config.owner_address);
             proof_of_fee::set_bid(&sig, 0900, 1000); // make the genesis
 
-            if (testnet::is_testnet()) {
+            if (testnet::is_not_mainnet()) {
               // TODO: this is for testnet purposes only
               // unlock some of the genesis validators coins so they can issue
               // transactions from epoch 0 in test runners.
