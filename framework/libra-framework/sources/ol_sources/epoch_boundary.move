@@ -223,8 +223,8 @@ module diem_framework::epoch_boundary {
     /// by a user, would not cause a halt.
     public(friend) fun trigger_epoch(framework_signer: &signer) acquires BoundaryBit,
     BoundaryStatus {
-      // must be mainnet or stage
-      assert!(!testnet::is_testnet(), ETRIGGER_EPOCH_MAINNET);
+      // must be mainnet
+      assert!(!testnet::is_not_mainnet(), ETRIGGER_EPOCH_MAINNET);
       // must get root permission from governance.move
       system_addresses::assert_ol(framework_signer);
       let _ = can_trigger(); // will abort if false
