@@ -52,7 +52,6 @@ pub fn add_peers_to_yaml(
 
     Ok(())
 }
-
 /// get seed peers from an upstream url
 pub async fn fetch_seed_addresses(
     url: Option<&str>,
@@ -189,8 +188,8 @@ pub async fn get_genesis_waypoint(home_dir: Option<PathBuf>) -> anyhow::Result<W
     let p = genesis_dir.join("waypoint.txt");
 
     std::fs::write(p, &wp_string)?;
-
-    wp_string.parse()
+    wp_string.trim().parse::<Waypoint>().map_err(|e| e.into())
+    //wp_string.parse()
 }
 
 #[tokio::test]
