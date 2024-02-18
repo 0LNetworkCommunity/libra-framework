@@ -1,19 +1,17 @@
 # Libra Dev Quick Start
 ## TL;DR
 
-* You need our fork of diem before working on `libra-framework`
+* You need our fork of `diem-node` before working on `libra-framework`
+* compile `diem-node` to `$HOME/.cargo/bin`
+
 ```
 git clone https://github.com/0LNetworkCommunity/diem -b release --single-branch
+export RUST_DIEM_COIN_MODULE="libra_coin"
+export RUST_DIEM_COIN_NAME="LibraCoin"
+cd diem
+cargo build --profile cli -p diem-node --target-dir ~/.cargo/bin
 
-```
-
-
-* compile `diem` and `diem-node` to `$HOME/.cargo/bin`
-
-```
-cargo build --profile cli -p diem -p diem-node --target-dir ~/.cargo/bin
-# make them executable
-chmod +x ~/.cargo/diem
+# make it executable
 chmod +x ~/.cargo/diem-node
 ```
 * export these env vars in your dev env, `~/.bashrc` or `~/.zshrc`
@@ -36,23 +34,31 @@ git clone https://github.com/0LNetworkCommunity/diem -b release --single-branch
 This assumes that you have a `~/.cargo/bin` which is added to your environment's $PATH.
 
 ### build executables
-You want to create a `diem` executable so you can run the `move` cli with the framework changes.
+You want to build the `diem-node` (for smoke tests only).
 
-You'll want `diem` (cli for move tests), `diem-node` (for smoke tests only).
+There are two environment variables that are needed to use the correct Coin for
+diem-node instead of a generic.
 
-Note that the `--profile cli` compilation profile makes for much smaller binaries (e.g. `diem` goes from about 2GB to 30MB).
+`export RUST_DIEM_COIN_MODULE: "libra_coin"`
+`export RUST_DIEM_COIN_NAME: "LibraCoin"`
+
+Note that the `--profile cli` compilation profile makes for much smaller binaries (e.g. `diem-node` goes from about 2GB to 30MB).
 
 ```
-cargo build --profile cli -p diem -p diem-node --target-dir ~/.cargo/bin
-# see you tomorrow.
+# env variables needed for compilation
+export RUST_DIEM_COIN_MODULE="libra_coin"
+export RUST_DIEM_COIN_NAME="LibraCoin"
 
-# next day, make them executable.
-chmod +x ~/.cargo/diem
+# build it
+cargo build --profile cli -p diem-node --target-dir ~/.cargo/bin
+# see you tomorrow (welcome to rust).
+
+# next day, make it executable.
 chmod +x ~/.cargo/diem-node
 ```
 
 Just check those executables appear in your path.
-`which diem`
+`which diem-node`
 
 Now you can run commands as below.
 ## Running Move unit tests
