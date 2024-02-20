@@ -13,15 +13,15 @@ on:
       - 'release**'
       - 'main**'
 env:
-  DOTNET_ROOT: "/home/runner/.dotnet"
-  Z3_EXE: "/home/runner/bin/z3"
-  CVC5_EXE: "/home/runner/bin/cvc5"
-  BOOGIE_EXE: "/home/runner/.dotnet/tools/boogie"
-  SOLC_EXE: "/home/runner/bin/solc"
+  DOTNET_ROOT: "/home/github-runner/.dotnet"
+  Z3_EXE: "/home/github-runner/bin/z3"
+  CVC5_EXE: "/home/github-runner/bin/cvc5"
+  BOOGIE_EXE: "/home/github-runner/.dotnet/tools/boogie"
+  SOLC_EXE: "/home/github-runner/bin/solc"
 
 jobs:
   formal:
-    runs-on: ubuntu-latest
+    runs-on: debian-latest
     steps:
       #   # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
       # - name: Setup tmate session
@@ -31,6 +31,9 @@ jobs:
       #   timeout-minutes: 15
 
       - uses: actions/checkout@v3
+      
+      - name: setup env
+        uses: ./.github/actions/build_env
 
 
       - name: install prover dependencies
