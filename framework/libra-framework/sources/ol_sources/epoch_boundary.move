@@ -9,7 +9,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::jail;
     use ol_framework::safe;
     use ol_framework::burn;
-    use ol_framework::donor_voice;
+    use ol_framework::donor_voice_txs;
     use ol_framework::fee_maker;
     use ol_framework::tower_state;
     use ol_framework::infra_escrow;
@@ -269,7 +269,7 @@ module diem_framework::epoch_boundary {
 
         print(&string::utf8(b"process_donor_voice_accounts"));
         // run the transactions of donor directed accounts
-        let (count, amount, success) = donor_voice::process_donor_voice_accounts(root, closing_epoch);
+        let (count, amount, success) = donor_voice_txs::process_donor_voice_accounts(root, closing_epoch);
         status.dd_accounts_count = count;
         status.dd_accounts_amount = amount;
         status.dd_accounts_success = success;

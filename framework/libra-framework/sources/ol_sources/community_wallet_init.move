@@ -8,12 +8,12 @@ module ol_framework::community_wallet_init {
     use std::signer;
     use std::option;
     use std::fixed_point32;
-    use ol_framework::donor_voice;
+    // use ol_framework::donor_voice;
+    use ol_framework::donor_voice_txs;
     use ol_framework::multi_action;
     use ol_framework::ancestry;
     use ol_framework::match_index;
     use ol_framework::community_wallet;
-    use diem_framework::system_addresses;
 
     use diem_std::debug::print;
 
@@ -76,9 +76,9 @@ module ol_framework::community_wallet_init {
       // set as donor directed with any liquidation going to contemporary
       // matching index (not liquidated to historical community wallets)
 
-      donor_voice::make_donor_voice(sig, init_signers, n);
-      if (!donor_voice::is_liquidate_to_match_index(signer::address_of(sig))) {
-        donor_voice::set_liquidate_to_match_index(sig, true);
+      donor_voice_txs::make_donor_voice(sig, init_signers, n);
+      if (!donor_voice_txs::is_liquidate_to_match_index(signer::address_of(sig))) {
+        donor_voice_txs::set_liquidate_to_match_index(sig, true);
       };
       match_index::opt_into_match_index(sig);
 
@@ -93,8 +93,8 @@ module ol_framework::community_wallet_init {
       // The CommunityWallet flag is set
       community_wallet::is_init(addr) &&
       // has donor_voice instantiated properly
-      donor_voice::is_donor_voice(addr) &&
-      donor_voice::is_liquidate_to_match_index(addr) &&
+      donor_voice_txs::is_donor_voice(addr) &&
+      donor_voice_txs::is_liquidate_to_match_index(addr) &&
       // has multi_action instantialized
       // multi_action::is_multi_action(addr) &&
 

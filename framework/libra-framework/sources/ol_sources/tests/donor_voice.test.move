@@ -3,15 +3,16 @@
 
 module ol_framework::test_donor_voice {
   use ol_framework::donor_voice;
+  use ol_framework::donor_voice_txs;
   use ol_framework::mock;
   use ol_framework::ol_account;
-  use ol_framework::ancestry;
+  // use ol_framework::ancestry;
   use diem_framework::resource_account;
   use ol_framework::receipts;
   use ol_framework::donor_voice_governance;
-  use ol_framework::community_wallet;
+  // use ol_framework::community_wallet;
   use ol_framework::community_wallet_init;
-  use ol_framework::cumulative_deposits;
+  // use ol_framework::cumulative_deposits;
   use ol_framework::burn;
   use std::guid;
   use std::vector;
@@ -29,26 +30,26 @@ module ol_framework::test_donor_voice {
       assert!(resource_account::is_resource_account(donor_voice_address), 7357003);
 
       // the account needs basic donor directed structs
-      donor_voice::make_donor_voice(&resource_sig, vals, 2);
+      donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
 
 
       let list = donor_voice::get_root_registry();
       assert!(vector::length(&list) == 1, 7357001);
 
-      assert!(donor_voice::is_donor_voice(donor_voice_address), 7357002);
+      assert!(donor_voice_txs::is_donor_voice(donor_voice_address), 7357002);
     }
 
     #[test(root = @ol_framework, alice = @0x1000a)]
     #[expected_failure(abort_code = 196618, location = 0x1::ol_account)]
     fun cant_use_transfer(root: &signer, alice: &signer) {
-      let _vals = mock::genesis_n_vals(root, 4);
+      let vals = mock::genesis_n_vals(root, 4);
       mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
 
       // should not error
       ol_account::transfer(alice, @0x1000b, 100);
 
 
-      community_wallet_init::migrate_community_wallet_account(root, alice);
+      community_wallet_init::init_community(alice, vals);
 
       // must error
       ol_account::transfer(alice, @0x1000b, 100);
@@ -66,17 +67,17 @@ module ol_framework::test_donor_voice {
       let donor_voice_address = signer::address_of(&resource_sig);
 
       // the account needs basic donor directed structs
-      donor_voice::make_donor_voice(&resource_sig, vals, 2);
+      donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
 
-      let uid = donor_voice::propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
-      let (found, idx, status_enum, completed) = donor_voice::get_multisig_proposal_state(donor_voice_address, &uid);
+      let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
+      let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
       assert!(status_enum == 1, 7357006);
       assert!(!completed, 7357007);
 
       // it is not yet scheduled, it's still only a proposal by an admin
-      assert!(!donor_voice::is_scheduled(donor_voice_address, &uid), 7357008);
+      assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
     }
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
@@ -89,30 +90,30 @@ module ol_framework::test_donor_voice {
       let donor_voice_address = signer::address_of(&resource_sig);
 
       // the account needs basic donor directed structs
-      donor_voice::make_donor_voice(&resource_sig, vals, 2);
+      donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
 
-      let uid = donor_voice::propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
-      let (found, idx, status_enum, completed) = donor_voice::get_multisig_proposal_state(donor_voice_address, &uid);
+      let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
+      let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
       assert!(status_enum == 1, 7357006);
       assert!(!completed, 7357007);
 
       // it is not yet scheduled, it's still only a proposal by an admin
-      assert!(!donor_voice::is_scheduled(donor_voice_address, &uid), 7357008);
+      assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
 
-      let uid = donor_voice::propose_payment(carol, donor_voice_address, @0x1000b, 100, b"thanks bob");
-      let (found, idx, status_enum, completed) = donor_voice::get_multisig_proposal_state(donor_voice_address, &uid);
+      let uid = donor_voice_txs::propose_payment(carol, donor_voice_address, @0x1000b, 100, b"thanks bob");
+      let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
       assert!(status_enum == 1, 7357006);
       assert!(completed, 7357007); // now completed
 
       // confirm it is scheduled
-      assert!(donor_voice::is_scheduled(donor_voice_address, &uid), 7357008);
+      assert!(donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
 
       // the default timed payment is 3 epochs, we are in epoch 1
-      let list = donor_voice::find_by_deadline(donor_voice_address, 3);
+      let list = donor_voice_txs::find_by_deadline(donor_voice_address, 3);
       assert!(vector::contains(&list, &uid), 7357009);
     }
 
@@ -131,7 +132,7 @@ module ol_framework::test_donor_voice {
       let donor_voice_address = signer::address_of(&resource_sig);
 
       // the account needs basic donor directed structs
-      donor_voice::make_donor_voice(&resource_sig, vals, 2);
+      donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
 
       // EVE Establishes some governance over the wallet, when donating.
       let eve_donation = 42;
@@ -148,28 +149,28 @@ module ol_framework::test_donor_voice {
 
       // Bob proposes a tx that will come from the donor directed account.
       // It is not yet scheduled because it doesnt have the MultiAuth quorum. Still waiting for Alice or Carol to approve.
-      let uid_of_transfer = donor_voice::propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
+      let uid_of_transfer = donor_voice_txs::propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
 
-      let (_found, _idx, _status_enum, completed) = donor_voice::get_multisig_proposal_state(donor_voice_address, &uid_of_transfer);
+      let (_found, _idx, _status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid_of_transfer);
       assert!(!completed, 7357004);
 
 
       // Eve wants to propose a Veto, but this should fail at this, because
       // the tx is not yet scheduled
-      let _uid_of_veto_prop = donor_voice::propose_veto(eve, &uid_of_transfer);
+      let _uid_of_veto_prop = donor_voice_txs::propose_veto(eve, &uid_of_transfer);
       let has_veto = donor_voice_governance::tx_has_veto(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
       assert!(!has_veto, 7357005); // propose does not cast a vote.
 
 
       // Now Carol, along with Bob, as admins have proposed the payment.
       // Now the payment should be scheduled
-      let uid_of_transfer = donor_voice::propose_payment(carol, donor_voice_address, @0x1000b, 100, b"thanks bob");
-      let (_found, _idx, state) = donor_voice::get_schedule_state(donor_voice_address, &uid_of_transfer);
+      let uid_of_transfer = donor_voice_txs::propose_payment(carol, donor_voice_address, @0x1000b, 100, b"thanks bob");
+      let (_found, _idx, state) = donor_voice_txs::get_schedule_state(donor_voice_address, &uid_of_transfer);
       assert!(state == 1, 7357006); // is scheduled
 
 
       // Eve tries again after it has been scheduled
-      let _uid_of_veto_prop = donor_voice::propose_veto(eve, &uid_of_transfer);
+      let _uid_of_veto_prop = donor_voice_txs::propose_veto(eve, &uid_of_transfer);
       let has_veto = donor_voice_governance::tx_has_veto(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
       assert!(has_veto, 7357007); // propose does not cast a vote.
 
@@ -179,7 +180,7 @@ module ol_framework::test_donor_voice {
 
       // proposing is not same as voting, now eve votes
       // NOTE: there is a tx function that can propose and vote in single step
-      donor_voice::vote_veto_tx(eve, donor_voice_address, id_num);
+      donor_voice_txs::vote_veto_tx(eve, donor_voice_address, id_num);
 
       let (approve_pct, req_threshold) = donor_voice_governance::get_veto_tally(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
 
@@ -188,13 +189,13 @@ module ol_framework::test_donor_voice {
 
       // since Eve is the majority donor, and has almost all the votes, the voting will end early. On the next epoch the vote should end
       mock::trigger_epoch(root);
-      donor_voice::vote_veto_tx(dave, donor_voice_address, id_num);
+      donor_voice_txs::vote_veto_tx(dave, donor_voice_address, id_num);
 
       // it is not yet scheduled, it's still only a proposal by an admin
-      assert!(!donor_voice::is_scheduled(donor_voice_address, &uid_of_transfer), 7357010);
+      assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid_of_transfer), 7357010);
 
       // should not be scheduled
-      let (_found, _idx, state) = donor_voice::get_schedule_state(donor_voice_address, &uid_of_transfer);
+      let (_found, _idx, state) = donor_voice_txs::get_schedule_state(donor_voice_address, &uid_of_transfer);
       assert!(state == 2, 7357006); // is veto
     }
 
@@ -219,35 +220,35 @@ module ol_framework::test_donor_voice {
 
 
       // the account needs basic donor directed structs
-      donor_voice::make_donor_voice(&resource_sig, vals, 2);
+      donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
 
-      let uid = donor_voice::propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
-      let (found, idx, status_enum, completed) = donor_voice::get_multisig_proposal_state(donor_voice_address, &uid);
+      let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
+      let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
       assert!(status_enum == 1, 7357006);
       assert!(!completed, 7357007);
 
       // it is not yet scheduled, it's still only a proposal by an admin
-      assert!(!donor_voice::is_scheduled(donor_voice_address, &uid), 7357008);
+      assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
 
-      let uid = donor_voice::propose_payment(carol, donor_voice_address, @0x1000b, 100, b"thanks bob");
-      let (found, idx, status_enum, completed) = donor_voice::get_multisig_proposal_state(donor_voice_address, &uid);
+      let uid = donor_voice_txs::propose_payment(carol, donor_voice_address, @0x1000b, 100, b"thanks bob");
+      let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
       assert!(status_enum == 1, 7357006);
       assert!(completed, 7357007); // now completed
 
       // confirm it is scheduled
-      assert!(donor_voice::is_scheduled(donor_voice_address, &uid), 7357008);
+      assert!(donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
 
       // PROCESS THE PAYMENT
       // the default timed payment is 3 epochs, we are in epoch 1
-      let list = donor_voice::find_by_deadline(donor_voice_address, 3);
+      let list = donor_voice_txs::find_by_deadline(donor_voice_address, 3);
       assert!(vector::contains(&list, &uid), 7357009);
 
       // process epoch 3 accounts
-      donor_voice::process_donor_voice_accounts(root, 3);
+      donor_voice_txs::process_donor_voice_accounts(root, 3);
 
       let (_, bob_balance) = ol_account::balance(@0x1000b);
       assert!(bob_balance > bob_balance_pre, 7357005);
@@ -277,35 +278,35 @@ module ol_framework::test_donor_voice {
 
 
       // the account needs basic donor directed structs
-      donor_voice::make_donor_voice(&resource_sig, vals, 2);
+      donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
 
-      let uid = donor_voice::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), 100, b"thanks marlon");
-      let (found, idx, status_enum, completed) = donor_voice::get_multisig_proposal_state(donor_voice_address, &uid);
+      let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), 100, b"thanks marlon");
+      let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
       assert!(status_enum == 1, 7357006);
       assert!(!completed, 7357007);
 
       // it is not yet scheduled, it's still only a proposal by an admin
-      assert!(!donor_voice::is_scheduled(donor_voice_address, &uid), 7357008);
+      assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
 
-      let uid = donor_voice::propose_payment(carol, donor_voice_address, signer::address_of(marlon_rando), 100, b"thanks marlon");
-      let (found, idx, status_enum, completed) = donor_voice::get_multisig_proposal_state(donor_voice_address, &uid);
+      let uid = donor_voice_txs::propose_payment(carol, donor_voice_address, signer::address_of(marlon_rando), 100, b"thanks marlon");
+      let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
       assert!(status_enum == 1, 7357006);
       assert!(completed, 7357007); // now completed
 
       // confirm it is scheduled
-      assert!(donor_voice::is_scheduled(donor_voice_address, &uid), 7357008);
+      assert!(donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
 
       // PROCESS THE PAYMENT
       // the default timed payment is 3 epochs, we are in epoch 1
-      let list = donor_voice::find_by_deadline(donor_voice_address, 3);
+      let list = donor_voice_txs::find_by_deadline(donor_voice_address, 3);
       assert!(vector::contains(&list, &uid), 7357009);
 
       // process epoch 3 accounts
-      // donor_voice::process_donor_voice_accounts(root, 3);
+      // donor_voice_txs::process_donor_voice_accounts(root, 3);
       mock::trigger_epoch(root); // into epoch 1
       mock::trigger_epoch(root); // into epoch 2
       mock::trigger_epoch(root); // into epoch 3, processes at the end of this epoch.
@@ -335,8 +336,8 @@ module ol_framework::test_donor_voice {
       let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
       let donor_voice_address = signer::address_of(&resource_sig);
       // the account needs basic donor directed structs
-      donor_voice::make_donor_voice(&resource_sig, vals, 2);
-      // donor_voice::set_liquidate_to_match_index(&resource_sig, true);
+      donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
+      // donor_voice_txs::set_liquidate_to_match_index(&resource_sig, true);
 
       // EVE Establishes some governance over the wallet, when donating.
       let eve_donation = 42;
@@ -354,21 +355,21 @@ module ol_framework::test_donor_voice {
       assert!(is_donor, 7357003);
 
       // Dave proposes to liquidate the account.
-      donor_voice::propose_liquidation(dave, donor_voice_address);
+      donor_voice_txs::propose_liquidation(dave, donor_voice_address);
 
       assert!(donor_voice_governance::is_liquidation_propsed(donor_voice_address), 7357004);
 
       // Dave proposed, now Dave and Eve need to vote
-      donor_voice::vote_liquidation_tx(eve, donor_voice_address);
+      donor_voice_txs::vote_liquidation_tx(eve, donor_voice_address);
 
       mock::trigger_epoch(root);
       // needs a vote on the day after the threshold has passed
-      donor_voice::vote_liquidation_tx(dave, donor_voice_address);
+      donor_voice_txs::vote_liquidation_tx(dave, donor_voice_address);
 
       let list = donor_voice::get_liquidation_queue();
       assert!(vector::length(&list) > 0, 7357005);
 
-      let (addrs, refunds) = donor_voice::get_pro_rata(donor_voice_address);
+      let (addrs, refunds) = donor_voice_txs::get_pro_rata(donor_voice_address);
 
       assert!(*vector::borrow(&addrs, 0) == @0x1000e, 7357006);
       assert!(*vector::borrow(&addrs, 1) == @0x1000d, 7357007);
@@ -386,7 +387,7 @@ module ol_framework::test_donor_voice {
       let (_, program_balance_pre) = ol_account::balance(donor_voice_address);
       let (_, eve_balance_pre) = ol_account::balance(@0x1000e);
 
-      donor_voice::test_helper_vm_liquidate(root);
+      donor_voice_txs::test_helper_vm_liquidate(root);
 
       let (_, program_balance) = ol_account::balance(donor_voice_address);
       let (_, eve_balance) = ol_account::balance(@0x1000e);
@@ -420,8 +421,8 @@ module ol_framework::test_donor_voice {
       let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
       let donor_voice_address = signer::address_of(&resource_sig);
       // the account needs basic donor directed structs
-      donor_voice::make_donor_voice(&resource_sig, vals, 2);
-      donor_voice::set_liquidate_to_match_index(&resource_sig, true);
+      donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
+      donor_voice_txs::set_liquidate_to_match_index(&resource_sig, true);
 
       // EVE Establishes some governance over the wallet, when donating.
       let eve_donation = 42;
@@ -439,23 +440,23 @@ module ol_framework::test_donor_voice {
       assert!(is_donor, 7357003);
 
       // Dave proposes to liquidate the account.
-      donor_voice::propose_liquidation(dave, donor_voice_address);
+      donor_voice_txs::propose_liquidation(dave, donor_voice_address);
 
       assert!(donor_voice_governance::is_liquidation_propsed(donor_voice_address), 7357004);
 
       // Dave proposed, now Dave and Eve need to vote
-      donor_voice::vote_liquidation_tx(eve, donor_voice_address);
+      donor_voice_txs::vote_liquidation_tx(eve, donor_voice_address);
 
       mock::trigger_epoch(root);
       // needs a vote on the day after the threshold has passed
-      donor_voice::vote_liquidation_tx(dave, donor_voice_address);
+      donor_voice_txs::vote_liquidation_tx(dave, donor_voice_address);
 
       let list = donor_voice::get_liquidation_queue();
       assert!(vector::length(&list) > 0, 7357005);
 
       // check the table of refunds
       // dave and eve should be receiving
-      let (addrs, refunds) = donor_voice::get_pro_rata(donor_voice_address);
+      let (addrs, refunds) = donor_voice_txs::get_pro_rata(donor_voice_address);
 
       assert!(*vector::borrow(&addrs, 0) == @0x1000e, 7357006);
       assert!(*vector::borrow(&addrs, 1) == @0x1000d, 7357007);
@@ -472,7 +473,7 @@ module ol_framework::test_donor_voice {
       let (_, program_balance_pre) = ol_account::balance(donor_voice_address);
       let (_, eve_balance_pre) = ol_account::balance(@0x1000e);
 
-      donor_voice::test_helper_vm_liquidate(root);
+      donor_voice_txs::test_helper_vm_liquidate(root);
 
       let (_, program_balance) = ol_account::balance(donor_voice_address);
       let (_, eve_balance) = ol_account::balance(@0x1000e);
@@ -491,145 +492,123 @@ module ol_framework::test_donor_voice {
       assert!(lifetime_burn_now == lifetime_burn_pre, 7357011);
     }
 
-    #[test(root = @ol_framework, community = @0x10011, alice = @0x1000a, bob =
-    @0x1000b, carol = @0x1000c)]
-    fun migrate_cw_bug(root: &signer, community: &signer, alice: &signer, bob:
-    &signer, carol: &signer) {
 
-      // create genesis and fund accounts
-      mock::genesis_n_vals(root, 5);
-      mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
+    // #[test(root = @ol_framework, community = @0x10011, alice = @0x1000a, bob =
+    // @0x1000b, carol = @0x1000c)]
+    // fun migrate_cw_bug(root: &signer, community: &signer, alice: &signer, bob:
+    // &signer, carol: &signer) {
 
-
-      let community_wallet_address = signer::address_of(community);
+    //   // create genesis and fund accounts
+    //   mock::genesis_n_vals(root, 5);
+    //   mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
 
 
+    //   // create resource account for community wallet
+    //   let (comm_resource_sig, _cap) = ol_account::ol_create_resource_account(community, b"senior sword vocal target latin rug ship summer bar suit cake derive pluck sunset can scorpion tornado hungry erosion heart away suggest glad seek");
+    //   let community_wallet_resource_address = signer::address_of(&comm_resource_sig);
 
-      //Check balances and fund community wallet
-      let (_, bob_balance_pre) = ol_account::balance(@0x1000b);
-      assert!(bob_balance_pre == 10000000, 7357001);
-      let bob_donation = 42;
-      ol_account::transfer(bob, community_wallet_address, bob_donation);
-      let (_, bob_balance) = ol_account::balance(@0x1000b);
+    //   let community_wallet_address = signer::address_of(community);
 
-      assert!(bob_balance == 9999958, 7357002);
-      let (_, community_wallet_balance) = ol_account::balance(community_wallet_address);
-      assert!(community_wallet_balance == 42, 7357003);
-
-      // migrate community wallet
-      community_wallet_init::migrate_community_wallet_account(root, community);
-
-      // verify correct migration of community wallet
-      assert!(community_wallet::is_init(community_wallet_address), 7357004); //TODO: find appropriate error codes
+    //   // verify resource account was created succesfully for the community wallet
+    //   assert!(resource_account::is_resource_account(community_wallet_resource_address), 7357000);
+    //   assert!(!community_wallet::is_init(community_wallet_address), 100); //TODO: find appropriate error codes
 
 
-      // verify resource account was created succesfully for the community wallet
-      assert!(resource_account::is_resource_account(community_wallet_address), 7357000);
-      assert!(!community_wallet::is_init(community_wallet_address), 100); //TODO: find appropriate error codes
+    //   //Check balances and fund community wallet
+    //   let (_, bob_balance_pre) = ol_account::balance(@0x1000b);
+    //   assert!(bob_balance_pre == 10000000, 7357001);
+    //   let bob_donation = 42;
+    //   ol_account::transfer(bob, community_wallet_resource_address, bob_donation);
+    //   let (_, bob_balance) = ol_account::balance(@0x1000b);
+
+    //   assert!(bob_balance == 9999958, 7357002);
+    //   let (_, community_wallet_balance) = ol_account::balance(community_wallet_resource_address);
+    //   assert!(community_wallet_balance == 42, 7357003);
+
+    //   // migrate community wallet
+    //   community_wallet_init::migrate_community_wallet_account(root, community);
+
+    //   // verify correct migration of community wallet
+    //   assert!(community_wallet::is_init(community_wallet_address), 7357004); //TODO: find appropriate error codes
 
 
-      let _b = donor_voice::is_liquidate_to_match_index(community_wallet_address);
+    //   let _b = donor_voice_txs::is_liquidate_to_match_index(community_wallet_address);
 
-      // create vectors of multi signers for the community wallet and set to different ancestrys
-      let alice_addr = signer::address_of(alice);
-      let bob_addr = signer::address_of(bob);
-      let carol_addr = signer::address_of(carol);
-      // let dave_addr = signer::address_of(dave);
-      // let eve_addr = signer::address_of(eve);
+    //   // create vectors of multi signers for the community wallet and set to different ancestrys
+    //   let alice_addr = signer::address_of(alice);
+    //   let bob_addr = signer::address_of(bob);
+    //   let carol_addr = signer::address_of(carol);
+    //   // let dave_addr = signer::address_of(dave);
+    //   // let eve_addr = signer::address_of(eve);
 
-      let addrs = vector::singleton(alice_addr);
-      vector::push_back(&mut addrs, bob_addr);
-      vector::push_back(&mut addrs, carol_addr);
-      // vector::push_back(&mut addrs, dave_addr);
-      // vector::push_back(&mut addrs, eve_addr);
+    //   let addrs = vector::singleton(alice_addr);
+    //   vector::push_back(&mut addrs, bob_addr);
+    //   vector::push_back(&mut addrs, carol_addr);
+    //   // vector::push_back(&mut addrs, dave_addr);
+    //   // vector::push_back(&mut addrs, eve_addr);
 
-      ancestry::fork_migrate(root, alice, vector::singleton(alice_addr));
-      ancestry::fork_migrate(root, bob, vector::singleton(bob_addr));
-      ancestry::fork_migrate(root, carol, vector::singleton(carol_addr));
-      // ancestry::fork_migrate(root, dave, vector::singleton(dave_addr));
-      // ancestry::fork_migrate(root, eve, vector::singleton(eve_addr));
+    //   ancestry::fork_migrate(root, alice, vector::singleton(alice_addr));
+    //   ancestry::fork_migrate(root, bob, vector::singleton(bob_addr));
+    //   ancestry::fork_migrate(root, carol, vector::singleton(carol_addr));
+    //   // ancestry::fork_migrate(root, dave, vector::singleton(dave_addr));
+    //   // ancestry::fork_migrate(root, eve, vector::singleton(eve_addr));
 
-      // wake up and initialize community wallet as a multi sig, donor voice account
-      community_wallet_init::init_community(community, addrs);
+    //   // wake up and initialize community wallet as a multi sig, donor voice account
+    //   community_wallet_init::init_community(&comm_resource_sig, addrs);
 
-      // verify wallet is a initialized correctly
-      assert!(donor_voice::is_donor_voice(signer::address_of(community)), 7357005);
-      assert!(cumulative_deposits::is_init_cumu_tracking(community_wallet_address), 7357006);
+    //   // verify wallet is a initialized correctly
+    //   assert!(donor_voice_txs::is_donor_voice(signer::address_of(&comm_resource_sig)), 7357005);
+    //   assert!(cumulative_deposits::is_init_cumu_tracking(community_wallet_resource_address), 7357006);
 
-      // make a transaction and have signers execute
-      mock::trigger_epoch(root); // into epoch 1
+    //   // make a transaction and have signers execute
+    //   mock::trigger_epoch(root); // into epoch 1
 
-      let uid = donor_voice::propose_payment(bob, community_wallet_address, @0x1000b, 42, b"thanks bob");
-      let (found, idx, status_enum, completed) = donor_voice::get_multisig_proposal_state(community_wallet_address, &uid);
-      assert!(found, 7357007);
-      assert!(idx == 0, 7357006);
-      assert!(status_enum == 1, 7357009);
-      assert!(!completed, 7357010);
+    //   let uid = donor_voice_txs::propose_payment(bob, community_wallet_resource_address, @0x1000b, 42, b"thanks bob");
+    //   let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(community_wallet_resource_address, &uid);
+    //   assert!(found, 7357007);
+    //   assert!(idx == 0, 7357006);
+    //   assert!(status_enum == 1, 7357009);
+    //   assert!(!completed, 7357010);
 
-      // it is not yet scheduled, it's still only a proposal by an admin
-      assert!(!donor_voice::is_scheduled(community_wallet_address, &uid), 7357011);
-
-
-      // have another 2 signers sign the proposal
-      donor_voice::propose_payment(carol, community_wallet_address,
-      @0x1000b, 42, b"thanks bob");
-      // Commit Note: Two votes are enough.
-      let (found, idx, status_enum, completed) = donor_voice::get_multisig_proposal_state(community_wallet_address, &uid);
-      assert!(found, 7357012);
-      assert!(idx == 0, 7357013);
-      assert!(status_enum == 1, 7357014);
-      assert!(completed, 7357015); // now completed
-
-      // confirm it is scheduled
-      assert!(donor_voice::is_scheduled(community_wallet_address, &uid), 7357016);
-
-      // the default timed payment is 4 epochs, we are in epoch 2
-      let list = donor_voice::find_by_deadline(community_wallet_address, 4);
-      assert!(vector::contains(&list, &uid), 7357017);
-
-      // simulate another 2 epochs, we are in epoxh 4
-      mock::trigger_epoch(root);
-      mock::trigger_epoch(root);
-
-      // verify payment has not been processed
-      let (_, bob_balance_pre_scheduled_epoch) = ol_account::balance(@0x1000b);
-      assert!(bob_balance_pre_scheduled_epoch == 10999958, 7357018); //increase by 1000000 due to amount recieved in epoch 1
-      let (_, community_wallet_balance_pre_scheduled_epoch) = ol_account::balance(community_wallet_address);
-      assert!(community_wallet_balance_pre_scheduled_epoch == 42, 7357019);
-
-      // simulate another 2 epochs, we are in epoch 6
-      mock::trigger_epoch(root);
-      mock::trigger_epoch(root);
-
-      let (_, bob_balance_processed_payment) = ol_account::balance(@0x1000b);
-      assert!(bob_balance_processed_payment == 11000000, 7357020);
-      let (_, community_wallet_balance_processed_payment) = ol_account::balance(community_wallet_address);
-      assert!(community_wallet_balance_processed_payment == 0, 7357021);
-
-    }
+    //   // it is not yet scheduled, it's still only a proposal by an admin
+    //   assert!(!donor_voice_txs::is_scheduled(community_wallet_resource_address, &uid), 7357011);
 
 
-    #[test(root = @ol_framework, community = @0x10011)]
-    fun migrate_cw_bug_not_resource(root: &signer, community: &signer) {
+    //   // have another 2 signers sign the proposal
+    //   donor_voice_txs::propose_payment(carol, community_wallet_resource_address,
+    //   @0x1000b, 42, b"thanks bob");
+    //   // Commit Note: Two votes are enough.
+    //   let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(community_wallet_resource_address, &uid);
+    //   assert!(found, 7357012);
+    //   assert!(idx == 0, 7357013);
+    //   assert!(status_enum == 1, 7357014);
+    //   assert!(completed, 7357015); // now completed
 
-      // create genesis and fund accounts
-      mock::genesis_n_vals(root, 5);
-      mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
+    //   // confirm it is scheduled
+    //   assert!(donor_voice_txs::is_scheduled(community_wallet_resource_address, &uid), 7357016);
 
+    //   // the default timed payment is 4 epochs, we are in epoch 2
+    //   let list = donor_voice_txs::find_by_deadline(community_wallet_resource_address, 4);
+    //   assert!(vector::contains(&list, &uid), 7357017);
 
-      let community_wallet_address = signer::address_of(community);
+    //   // simulate another 2 epochs, we are in epoxh 4
+    //   mock::trigger_epoch(root);
+    //   mock::trigger_epoch(root);
 
-      // migrate community wallet
-      community_wallet_init::migrate_community_wallet_account(root, community);
+    //   // verify payment has not been processed
+    //   let (_, bob_balance_pre_scheduled_epoch) = ol_account::balance(@0x1000b);
+    //   assert!(bob_balance_pre_scheduled_epoch == 10999958, 7357018); //increase by 1000000 due to amount recieved in epoch 1
+    //   let (_, community_wallet_balance_pre_scheduled_epoch) = ol_account::balance(community_wallet_resource_address);
+    //   assert!(community_wallet_balance_pre_scheduled_epoch == 42, 7357019);
 
-      // verify correct migration of community wallet
-      assert!(community_wallet::is_init(community_wallet_address), 7357004); //TODO: find appropriate error codes
+    //   // simulate another 2 epochs, we are in epoch 6
+    //   mock::trigger_epoch(root);
+    //   mock::trigger_epoch(root);
 
+    //   let (_, bob_balance_processed_payment) = ol_account::balance(@0x1000b);
+    //   assert!(bob_balance_processed_payment == 11000000, 7357020);
+    //   let (_, community_wallet_balance_processed_payment) = ol_account::balance(community_wallet_resource_address);
+    //   assert!(community_wallet_balance_processed_payment == 0, 7357021);
 
-      // verify resource account was created succesfully for the community wallet
-      assert!(resource_account::is_resource_account(community_wallet_address), 7357000);
-      // assert!(!community_wallet::is_init(community_wallet_address), 100); //TODO: find appropriate error codes
-
-
-    }
+    // }
 }
