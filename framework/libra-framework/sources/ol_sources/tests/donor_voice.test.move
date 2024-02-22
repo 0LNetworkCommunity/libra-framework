@@ -6,11 +6,11 @@ module ol_framework::test_donor_voice {
   use ol_framework::donor_voice_txs;
   use ol_framework::mock;
   use ol_framework::ol_account;
-  // use ol_framework::ancestry;
+  use ol_framework::multi_action;
   use diem_framework::resource_account;
   use ol_framework::receipts;
   use ol_framework::donor_voice_governance;
-  // use ol_framework::community_wallet;
+  use ol_framework::community_wallet;
   use ol_framework::community_wallet_init;
   // use ol_framework::cumulative_deposits;
   use ol_framework::burn;
@@ -611,4 +611,34 @@ module ol_framework::test_donor_voice {
     //   assert!(community_wallet_balance_processed_payment == 0, 7357021);
 
     // }
+
+    #[test(root = @ol_framework, community = @0x10011)]
+    fun migrate_cw_bug_not_resource(root: &signer, community: &signer) {
+
+      // create genesis and fund accounts
+      let auths = mock::genesis_n_vals(root, 3);
+      mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
+
+
+      let community_wallet_address = signer::address_of(community);
+      // genesis migration would have created this account.
+      ol_account::create_account(root, community_wallet_address);
+      // migrate community wallet
+      // THIS PUTS THE ACCOUNT IN LIMBO
+      community_wallet_init::migrate_community_wallet_account(root, community);
+
+      // verify correct migration of community wallet
+      assert!(community_wallet::is_init(community_wallet_address), 7357001); //TODO: find appropriate error codes
+
+      // the usual initialization should fix the structs
+      community_wallet_init::init_community(community, auths);
+      // confirm the bug
+      assert!(!ol_account::is_cage(community_wallet_address), 7357002);
+
+      // fix it by calling multi auth:
+      multi_action::finalize_and_cage(community);
+      assert!(ol_account::is_cage(community_wallet_address), 7357003);
+
+      community_wallet_init::assert_qualifies(community_wallet_address);
+    }
 }

@@ -29,7 +29,7 @@ module ol_framework::multi_action {
   use std::error;
   use std::guid;
   use diem_framework::account::{Self, WithdrawCapability};
-  use diem_framework::resource_account;
+  use ol_framework::ol_account;
   use ol_framework::ballot::{Self, BallotTracker};
   use ol_framework::epoch_helper;
   // use DiemFramework::Debug::print;
@@ -128,12 +128,9 @@ module ol_framework::multi_action {
     }
   }
 
-
   fun assert_authorized(sig: &signer, multisig_address: address) acquires Governance {
     // cannot start manipulating contract until the sponsor gave up the auth key
-    assert!(resource_account::is_resource_account(multisig_address), error::invalid_argument(ENOT_FINALIZED_NOT_BRICK));
-
-    assert!(exists<Governance>(multisig_address), error::invalid_argument(ENOT_AUTHORIZED));
+    assert_multi_action(multisig_address);
 
     // check sender is authorized
     let sender_addr = signer::address_of(sig);
@@ -170,13 +167,32 @@ module ol_framework::multi_action {
     }
   }
 
+  /// finalize the account and put in a cage. Will abort if governance has not
+  // been initialized
+  public entry fun finalize_and_cage(sig: &signer) {
+    let addr = signer::address_of(sig);
+    assert!(exists<Governance>(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
+    assert!(exists<Action<PropGovSigners>>(addr),
+    error::invalid_argument(EGOV_NOT_INITIALIZED));
+    ol_account::cage_this_account(sig);
+  }
+
   //////// Helper functions to check initialization //////////
+  #[view]
   /// Is the Multisig Governance initialized?
   public fun is_multi_action(addr: address): bool {
     exists<Governance>(addr) &&
     exists<Action<PropGovSigners>>(addr) &&
-    resource_account::is_resource_account(addr)
+    ol_account::is_cage(addr)
   }
+
+  /// helper to assert if the account is in the right state
+  public fun assert_multi_action(addr: address) {
+    assert!(ol_account::is_cage(addr), error::invalid_argument(ENOT_FINALIZED_NOT_BRICK));
+    assert!(exists<Governance>(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
+    assert!(exists<Action<PropGovSigners>>(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
+  }
+
 
   public fun is_gov_init(addr: address): bool {
     exists<Governance>(addr) &&

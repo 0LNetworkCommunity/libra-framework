@@ -153,15 +153,16 @@ module ol_framework::donor_voice_txs {
     //   };
     // }
 
+    #[test_only]
     // // can only be called by genesis
-    // public(friend) fun migrate_community_wallet_account(vm: &signer, dv_account:
-    // &signer) acquires Registry {
-    //   system_addresses::assert_ol(vm);
-    //   let liquidate_to_match_index = true;
-    //   // skip setting up the multisig
-    //   structs_init(dv_account, liquidate_to_match_index);
-    //   add_to_registry(dv_account);
-    // }
+    public(friend) fun migrate_community_wallet_account(vm: &signer, dv_account:
+    &signer) {
+      system_addresses::assert_ol(vm);
+      let liquidate_to_match_index = true;
+      // skip setting up the multisig
+      structs_init(dv_account, liquidate_to_match_index);
+      donor_voice::add(dv_account);
+    }
 
     //////// DONOR VOICE INITIALIZATION ////////
     // There are three steps in initializing an account. These steps can be combined in a single transaction, or done in separate transactions. The "bricking" of the sponsor key should be done in a separate transaction, in case there are any errors in the initialization.

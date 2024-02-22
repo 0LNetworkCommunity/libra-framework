@@ -26,7 +26,7 @@ module ol_framework::ol_account {
     use std::vector;
 
     friend ol_framework::donor_voice_txs;
-
+    friend ol_framework::multi_action;
     friend ol_framework::burn;
     friend ol_framework::safe;
     friend diem_framework::genesis;
@@ -63,6 +63,11 @@ module ol_framework::ol_account {
     /// donor voice cannot use transfer, they have a dedicated workflow
     const ENOT_FOR_DV: u64 = 11;
 
+    /// to create a "caged" account, where there is no signer that can could
+    // new state, and only the existing state can be modified by modules. This
+    // is useful for multi_action.move
+    const CAGE_AUTH_KEY: vector<u8> = x"00000000000000000000000000000000000000000000000000000000000ca9ed";
+
 
     struct BurnTracker has key {
       prev_supply: u64,
@@ -86,11 +91,23 @@ module ol_framework::ol_account {
     }
 
 
-    /// A wrapper to create a resource account and register it to receive GAS.
+    /// A wrapper to create a NEW account and register it to receive GAS.
     public fun ol_create_resource_account(user: &signer, seed: vector<u8>): (signer, account::SignerCapability) {
       let (resource_account_sig, cap) = account::create_resource_account(user, seed);
       coin::register<LibraCoin>(&resource_account_sig);
       (resource_account_sig, cap)
+    }
+
+    /// Similar to a resource account, except that no SignerCapability is stored
+    // anywhere. State cannot be added, but only mutated by relevant modules
+    public(friend) fun cage_this_account(user: &signer): &signer {
+      account::rotate_authentication_key_internal(user, CAGE_AUTH_KEY);
+      user
+    }
+
+    #[view]
+    public fun is_cage(addr: address): bool {
+      account::get_authentication_key(addr) == CAGE_AUTH_KEY
     }
 
     fun create_impl(sender: &signer, maybe_new_user: address) {
