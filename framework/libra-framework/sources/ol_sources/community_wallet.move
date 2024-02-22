@@ -22,18 +22,7 @@
 /// 4. CommunityWallets have a high threshold for sybils: all multisig authorities must be unrelated in their permission trees, per ancestry.
 
 module ol_framework::community_wallet {
-    // use std::error;
-    // use std::vector;
     use std::signer;
-    // use std::option;
-    // use std::fixed_point32;
-    // use ol_framework::donor_voice;
-    // use ol_framework::multi_action;
-    // use ol_framework::ancestry;
-    // use ol_framework::match_index;
-    // use diem_framework::system_addresses;
-
-    // use diem_std::debug::print;
 
     /// not authorized to operate on this account
     const ENOT_AUTHORIZED: u64 = 1;
@@ -62,6 +51,7 @@ module ol_framework::community_wallet {
     const MINIMUM_AUTH: u64 = 3;
 
     // A flag on the account that it wants to be considered a community wallet
+    // this is PERMANENT
     struct CommunityWallet has key { }
 
     #[view]
@@ -70,19 +60,9 @@ module ol_framework::community_wallet {
     }
     public fun set_comm_wallet(sender: &signer) {
       let addr = signer::address_of(sender);
-      // assert!(donor_voice::is_donor_voice(addr), error::invalid_state(ENOT_DONOR_VOICE));
-
-      if (is_init(addr)) {
+      if (!is_init(addr)) {
         move_to(sender, CommunityWallet{});
       }
     }
-
-    // public fun migrate_community_wallet_account(vm: &signer, dv_account:
-    // &signer) {
-    //   system_addresses::assert_ol(vm);
-    //   donor_voice::migrate_community_wallet_account(vm, dv_account);
-    //   move_to(dv_account, CommunityWallet{});
-    // }
-
 
 }
