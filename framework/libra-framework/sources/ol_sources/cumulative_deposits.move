@@ -8,6 +8,7 @@ module ol_framework::cumulative_deposits {
 
   friend ol_framework::ol_account;
   friend ol_framework::donor_voice;
+  friend ol_framework::donor_voice_txs;
 
   use std::fixed_point32::{Self, FixedPoint32};
       /// Separate struct to track cumulative deposits

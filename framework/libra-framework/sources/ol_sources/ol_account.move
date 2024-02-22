@@ -25,6 +25,8 @@ module ol_framework::ol_account {
     use std::vector;
 
     friend ol_framework::donor_voice;
+    friend ol_framework::donor_voice_txs;
+
     friend ol_framework::burn;
     friend ol_framework::safe;
     friend diem_framework::genesis;

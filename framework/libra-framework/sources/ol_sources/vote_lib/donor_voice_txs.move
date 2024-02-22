@@ -33,7 +33,7 @@
 
 /// 7. Third party contracts can wrap the Donor Voice wallet. The outcomes of the votes can be returned to a handler in a third party contract For example, liquidiation of a frozen account is programmable: a handler can be coded to determine the outcome of the Donor Voice wallet. See in CommunityWallets the funds return to the InfrastructureEscrow side-account of the user.
 
-module ol_framework::donor_voice {
+module ol_framework::donor_voice_txs {
     use std::vector;
     use std::signer;
     use std::error;
@@ -52,11 +52,11 @@ module ol_framework::donor_voice {
     use ol_framework::cumulative_deposits;
     use ol_framework::transaction_fee;
     use ol_framework::match_index;
+    use ol_framework::donor_voice;
 
     // use diem_std::debug::print;
 
     friend ol_framework::community_wallet_init;
-    friend ol_framework::donor_voice_txs;
 
     /// Not initialized as a Donor Voice account.
     const ENOT_INIT_DONOR_VOICE: u64 = 1;
@@ -83,11 +83,11 @@ module ol_framework::donor_voice {
     const DEFAULT_VETO_DURATION: u64 = 7;
 
 
-    // root registry for the Donor Voice accounts
-    struct Registry has key {
-      list: vector<address>,
-      liquidation_queue: vector<address>,
-    }
+    // // root registry for the Donor Voice accounts
+    // struct Registry has key {
+    //   list: vector<address>,
+    //   liquidation_queue: vector<address>,
+    // }
 
     // Timed transfer schedule pipeline
     struct TxSchedule has key {
@@ -127,41 +127,41 @@ module ol_framework::donor_voice {
     // Donor Voice Accounts are a root security service. So the root account needs to keep a registry of all Donor Voice accounts, using this service.
 
     // Utility used at genesis (and on upgrade) to initialize the system state.
-    public fun initialize(vm: &signer) {
-      system_addresses::assert_ol(vm);
+    // public fun initialize(vm: &signer) {
+    //   system_addresses::assert_ol(vm);
 
-      if (!is_root_init()) {
-        move_to<Registry>(vm, Registry {
-          list: vector::empty<address>(),
-          liquidation_queue: vector::empty<address>(),
-        });
-      };
-    }
+    //   if (!is_root_init()) {
+    //     move_to<Registry>(vm, Registry {
+    //       list: vector::empty<address>(),
+    //       liquidation_queue: vector::empty<address>(),
+    //     });
+    //   };
+    // }
 
-    public fun is_root_init():bool {
-      exists<Registry>(@ol_framework)
-    }
+    // public fun is_root_init():bool {
+    //   exists<Registry>(@ol_framework)
+    // }
 
 
-    public fun migrate_root_registry(vm: &signer, list: vector<address>) {
-      system_addresses::assert_ol(vm);
-      if (!is_root_init()) {
-        move_to<Registry>(vm, Registry {
-          list,
-          liquidation_queue: vector::empty<address>(),
-        });
-      };
-    }
+    // public fun migrate_root_registry(vm: &signer, list: vector<address>) {
+    //   system_addresses::assert_ol(vm);
+    //   if (!is_root_init()) {
+    //     move_to<Registry>(vm, Registry {
+    //       list,
+    //       liquidation_queue: vector::empty<address>(),
+    //     });
+    //   };
+    // }
 
-    // can only be called by genesis
-    public(friend) fun migrate_community_wallet_account(vm: &signer, dv_account:
-    &signer) acquires Registry {
-      system_addresses::assert_ol(vm);
-      let liquidate_to_match_index = true;
-      // skip setting up the multisig
-      structs_init(dv_account, liquidate_to_match_index);
-      add_to_registry(dv_account);
-    }
+    // // can only be called by genesis
+    // public(friend) fun migrate_community_wallet_account(vm: &signer, dv_account:
+    // &signer) acquires Registry {
+    //   system_addresses::assert_ol(vm);
+    //   let liquidate_to_match_index = true;
+    //   // skip setting up the multisig
+    //   structs_init(dv_account, liquidate_to_match_index);
+    //   add_to_registry(dv_account);
+    // }
 
     //////// DONOR VOICE INITIALIZATION ////////
     // There are three steps in initializing an account. These steps can be combined in a single transaction, or done in separate transactions. The "bricking" of the sponsor key should be done in a separate transaction, in case there are any errors in the initialization.
@@ -173,7 +173,7 @@ module ol_framework::donor_voice {
     // 3. Once the MultiSig is initialized, the account needs to be bricked, before the MultiSig can be used.
 
     public fun make_donor_voice(sponsor: &signer, init_signers: vector<address>,
-    cfg_n_signers: u64) acquires Registry {
+    cfg_n_signers: u64)  {
       // will not create if already exists (for migration)
       cumulative_deposits::init_cumulative_deposits(sponsor);
 
@@ -182,11 +182,11 @@ module ol_framework::donor_voice {
       let liquidate_to_match_index = false;
       structs_init(sponsor, liquidate_to_match_index);
       make_multi_action(sponsor, cfg_n_signers, init_signers);
-      add_to_registry(sponsor);
+      donor_voice::add(sponsor);
     }
 
     fun structs_init(sig: &signer, liquidate_to_match_index: bool) {
-      if (!exists<Registry>(@ol_framework)) return;
+      if (!donor_voice::is_root_init()) return;
 
       // exit gracefully in migration cases
       // if Freeze exists everthing else is likely created
@@ -214,23 +214,17 @@ module ol_framework::donor_voice {
       donor_voice_governance::init_donor_governance(sig);
     }
 
-    /// public helper to add
-    // commit note: this so we don't break compatibility of add_to_registry
-    public (friend) fun add(sig: &signer) acquires Registry {
-      add_to_registry(sig)
-    }
+    // // add to root registry
+    // fun add_to_registry(sig: &signer) acquires Registry {
+    //   if (!exists<Registry>(@ol_framework)) return;
 
-    // add to root registry
-    fun add_to_registry(sig: &signer) acquires Registry {
-      if (!exists<Registry>(@ol_framework)) return;
-
-      let addr = signer::address_of(sig);
-      let list = get_root_registry();
-      if (!vector::contains<address>(&list, &addr)) {
-        let s = borrow_global_mut<Registry>(@ol_framework);
-        vector::push_back(&mut s.list, addr);
-      };
-    }
+    //   let addr = signer::address_of(sig);
+    //   let list = get_root_registry();
+    //   if (!vector::contains<address>(&list, &addr)) {
+    //     let s = borrow_global_mut<Registry>(@ol_framework);
+    //     vector::push_back(&mut s.list, addr);
+    //   };
+    // }
 
 
 
@@ -251,15 +245,15 @@ module ol_framework::donor_voice {
       exists<TxSchedule>(multisig_address)
     }
 
-    // Getter for retrieving the list of TxSchedule wallets.
-    public fun get_root_registry(): vector<address> acquires Registry{
-      if (exists<Registry>(@ol_framework)) {
-        let s = borrow_global<Registry>(@ol_framework);
-        return *&s.list
-      } else {
-        return vector::empty<address>()
-      }
-    }
+    // // Getter for retrieving the list of TxSchedule wallets.
+    // public fun get_root_registry(): vector<address> acquires Registry{
+    //   if (exists<Registry>(@ol_framework)) {
+    //     let s = borrow_global<Registry>(@ol_framework);
+    //     return *&s.list
+    //   } else {
+    //     return vector::empty<address>()
+    //   }
+    // }
 
     ///////// MULTISIG ACTIONS TO SCHEDULE A TIMED TRANSFER /////////
     /// As in any MultiSig instance, the transaction which proposes the action (the scheduled transfer) must be signed by an authority on the MultiSig.
@@ -352,7 +346,7 @@ module ol_framework::donor_voice {
     public fun process_donor_voice_accounts(
       vm: &signer,
       epoch: u64,
-    ): (u64, u64, bool) acquires Registry, TxSchedule, Freeze {
+    ): (u64, u64, bool) acquires TxSchedule, Freeze {
       // while we are here let's liquidate any expired accounts.
       vm_liquidate(vm);
 
@@ -360,7 +354,7 @@ module ol_framework::donor_voice {
       let amount_processed = 0;
       let expected_amount = 0;
 
-      let list = get_root_registry();
+      let list = donor_voice::get_root_registry();
 
       let i = 0;
 
@@ -599,7 +593,7 @@ module ol_framework::donor_voice {
     }
 
     /// Once a liquidation has been proposed, other donors can vote on it.
-    fun liquidation_handler(donor: &signer, multisig_address: address) acquires Freeze, Registry {
+    fun liquidation_handler(donor: &signer, multisig_address: address) acquires Freeze {
       donor_voice_governance::assert_authorized(donor, multisig_address);
       let res = donor_voice_governance::vote_liquidation(donor, multisig_address);
 
@@ -611,28 +605,29 @@ module ol_framework::donor_voice {
         // first we freeze it so nothing can happen in the interim.
         let f = borrow_global_mut<Freeze>(multisig_address);
         f.is_frozen = true;
-        let f = borrow_global_mut<Registry>(@ol_framework);
-        vector::push_back(&mut f.liquidation_queue, multisig_address);
+        // let f = borrow_global_mut<Registry>(@ol_framework);
+        let f = donor_voice::get_liquidation_queue();
+        vector::push_back(&mut f, multisig_address);
     }
   }
 
-  #[view]
-  // list of accounts that are pending liquidation after a successful vote to liquidate
-  public fun get_liquidation_queue(): vector<address> acquires Registry{
-    let f = borrow_global<Registry>(@ol_framework);
-    *&f.liquidation_queue
-  }
+  // #[view]
+  // // list of accounts that are pending liquidation after a successful vote to liquidate
+  // public fun get_liquidation_queue(): vector<address> {
+  //   let f = donor_voice::get_root_registry(); //borrow_global<Registry>(@ol_framework);
+  //   *&f.liquidation_queue
+  // }
 
   /// The VM will call this function to liquidate all Donor Voice
   /// wallets in the queue.
-   public(friend) fun vm_liquidate(vm: &signer) acquires Freeze, Registry {
+   public(friend) fun vm_liquidate(vm: &signer) acquires Freeze {
       system_addresses::assert_ol(vm);
-      let f = borrow_global_mut<Registry>(@ol_framework);
-      let len = vector::length(&f.liquidation_queue);
+      let liq = donor_voice::get_liquidation_queue(); //borrow_global_mut<Registry>(@ol_framework);
+      let len = vector::length(&liq);
 
       let i = 0;
       while (i < len) {
-        let multisig_address = vector::swap_remove(&mut f.liquidation_queue, i);
+        let multisig_address = vector::swap_remove(&mut liq, i);
 
         // if this account was tagged a community wallet, then the
         // funds get split pro-rata at the current split of the
@@ -684,7 +679,7 @@ module ol_framework::donor_voice {
    }
 
    #[test_only]
-   public fun test_helper_vm_liquidate(vm: &signer) acquires Registry, Freeze {
+   public fun test_helper_vm_liquidate(vm: &signer) acquires Freeze {
     vm_liquidate(vm);
    }
 
@@ -778,7 +773,7 @@ module ol_framework::donor_voice {
     //////// TX HELPER ////////
 
     // transaction helper to wrap Donor Voice init
-    public entry fun make_donor_voice_tx(sponsor: &signer, init_signers: vector<address>, cfg_n_signers: u64) acquires Registry {
+    public entry fun make_donor_voice_tx(sponsor: &signer, init_signers: vector<address>, cfg_n_signers: u64) {
       make_donor_voice(sponsor, init_signers, cfg_n_signers);
     }
 
@@ -814,7 +809,7 @@ module ol_framework::donor_voice {
       propose_liquidation(donor, multisig_address);
     }
 
-    public entry fun vote_liquidation_tx(donor: &signer, multisig_address: address) acquires Freeze, Registry {
+    public entry fun vote_liquidation_tx(donor: &signer, multisig_address: address) acquires Freeze {
       liquidation_handler(donor, multisig_address);
     }
 }
