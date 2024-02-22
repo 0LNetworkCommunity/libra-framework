@@ -38,6 +38,24 @@ module ol_framework::test_donor_voice {
       assert!(donor_voice::is_donor_voice(donor_voice_address), 7357002);
     }
 
+    #[test(root = @ol_framework, alice = @0x1000a)]
+    #[expected_failure(abort_code = 196618, location = 0x1::ol_account)]
+    fun cant_use_transfer(root: &signer, alice: &signer) {
+      let _vals = mock::genesis_n_vals(root, 4);
+      mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
+
+      // should not error
+      ol_account::transfer(alice, @0x1000b, 100);
+
+
+      community_wallet_init::migrate_community_wallet_account(root, alice);
+
+      // must error
+      ol_account::transfer(alice, @0x1000b, 100);
+
+
+    }
+
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
     fun dd_propose_payment(root: &signer, alice: &signer, bob: &signer) {
       // Scenario: Alice creates a resource_account which will be a donor directed account. She will not be one of the authorities of the account.
