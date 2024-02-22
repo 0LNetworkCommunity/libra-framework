@@ -55,7 +55,7 @@ module ol_framework::donor_voice {
 
     // use diem_std::debug::print;
 
-    friend ol_framework::community_wallet;
+    friend ol_framework::community_wallet_init;
 
     /// Not initialized as a Donor Voice account.
     const ENOT_INIT_DONOR_VOICE: u64 = 1;

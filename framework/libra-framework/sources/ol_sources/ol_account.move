@@ -17,6 +17,7 @@ module ol_framework::ol_account {
     use ol_framework::slow_wallet;
     use ol_framework::receipts;
     use ol_framework::cumulative_deposits;
+    use ol_framework::community_wallet;
 
     // use diem_std::debug::print;
 
@@ -226,6 +227,8 @@ module ol_framework::ol_account {
     fun transfer_checks(payer: address, recipient: address, amount: u64) {
         let limit = slow_wallet::unlocked_amount(payer);
         assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
+
+        let _comm = community_wallet::is_init(payer);
 
         // TODO: Check if Resource Accounts can register here, since they
         // may be created without any coin registration.
