@@ -6,7 +6,7 @@ module ol_framework::test_donor_voice {
   use ol_framework::donor_voice_txs;
   use ol_framework::mock;
   use ol_framework::ol_account;
-  use ol_framework::multi_action;
+  // use ol_framework::multi_action;
   use diem_framework::resource_account;
   use ol_framework::receipts;
   use ol_framework::donor_voice_governance;
@@ -636,7 +636,8 @@ module ol_framework::test_donor_voice {
       assert!(!ol_account::is_cage(community_wallet_address), 7357002);
 
       // fix it by calling multi auth:
-      multi_action::finalize_and_cage(community);
+      community_wallet_init::finalize_and_cage(community);
+      // multi_action::finalize_and_cage(community);
       assert!(ol_account::is_cage(community_wallet_address), 7357003);
 
       community_wallet_init::assert_qualifies(community_wallet_address);

@@ -16,7 +16,7 @@ module ol_framework::community_wallet_init {
     use ol_framework::community_wallet;
 
 
-    // use diem_std::debug::print;
+    use diem_std::debug::print;
 
     /// not authorized to operate on this account
     const ENOT_AUTHORIZED: u64 = 1;
@@ -71,7 +71,11 @@ module ol_framework::community_wallet_init {
       assert!(len >= MINIMUM_AUTH, error::invalid_argument(ETOO_FEW_SIGNERS));
 
       // enforce n/m multi auth
-      let n = (MINIMUM_SIGS * len) / MINIMUM_AUTH;
+      let n = if (len == 3) { 2 }
+      else {
+        (MINIMUM_SIGS * len) / MINIMUM_AUTH
+      };
+      print(&n);
 
       let (fam, _, _) = ancestry::any_family_in_list(*&init_signers);
       assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
@@ -86,6 +90,17 @@ module ol_framework::community_wallet_init {
       match_index::opt_into_match_index(sig);
 
       community_wallet::set_comm_wallet(sig);
+    }
+
+    /// convenience function to check if the account can be caged
+    /// after all the structs are in place
+    public entry fun finalize_and_cage(sig: &signer) {
+      let addr = signer::address_of(sig);
+      assert!(community_wallet::is_init(addr), error::invalid_argument(ENO_CW_FLAG));
+      assert!(donor_voice_txs::is_liquidate_to_match_index(addr), error::invalid_argument(ENOT_MATCH_INDEX_LIQ));
+      assert!(multisig_thresh(addr), error::invalid_argument(ESIG_THRESHOLD_RATIO));
+      assert!(!multisig_common_ancestry(addr), error::invalid_argument(ESIGNERS_SYBIL));
+      multi_action::finalize_and_cage(sig);
     }
 
     #[view]
@@ -111,15 +126,17 @@ module ol_framework::community_wallet_init {
     /// if it is not qualifying it wont be part of the burn funds matching.
     public fun assert_qualifies(addr: address) {
       // The CommunityWallet flag is set
-      assert!(community_wallet::is_init(addr), ENO_CW_FLAG);
-      assert!(donor_voice_txs::is_donor_voice(addr), ENOT_DONOR_VOICE);
-      assert!(donor_voice_txs::is_liquidate_to_match_index(addr), ENOT_MATCH_INDEX_LIQ);
-      assert!(multisig_thresh(addr), ESIG_THRESHOLD_RATIO);
-      assert!(!multisig_common_ancestry(addr), ESIGNERS_SYBIL);
+      assert!(community_wallet::is_init(addr), error::invalid_argument(ENO_CW_FLAG));
+      assert!(donor_voice_txs::is_donor_voice(addr), error::invalid_argument(ENOT_DONOR_VOICE));
+      assert!(donor_voice_txs::is_liquidate_to_match_index(addr), error::invalid_argument(ENOT_MATCH_INDEX_LIQ));
+      assert!(multisig_thresh(addr), error::invalid_argument(ESIG_THRESHOLD_RATIO));
+      assert!(!multisig_common_ancestry(addr), error::invalid_argument(ESIGNERS_SYBIL));
     }
 
     fun multisig_thresh(addr: address): bool{
       let (n, m) = multi_action::get_threshold(addr);
+      print(&n);
+      print(&m);
 
       // can't have less than three signatures
       if (n < MINIMUM_SIGS) return false;
@@ -129,10 +146,12 @@ module ol_framework::community_wallet_init {
 
       let r = fixed_point32::create_from_rational(MINIMUM_SIGS, MINIMUM_AUTH);
       let pct_baseline = fixed_point32::multiply_u64(100, r);
+      print(&pct_baseline);
       let r = fixed_point32::create_from_rational(n, m);
       let pct = fixed_point32::multiply_u64(100, r);
+      print(&pct);
 
-      pct > pct_baseline
+      pct >= pct_baseline
     }
 
     fun multisig_common_ancestry(addr: address): bool {
