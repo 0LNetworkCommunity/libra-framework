@@ -10,6 +10,7 @@ module ol_framework::test_donor_voice {
   use ol_framework::receipts;
   use ol_framework::donor_voice_governance;
   use ol_framework::community_wallet;
+  use ol_framework::community_wallet_init;
   use ol_framework::cumulative_deposits;
   use ol_framework::burn;
   use std::guid;
@@ -35,6 +36,24 @@ module ol_framework::test_donor_voice {
       assert!(vector::length(&list) == 1, 7357001);
 
       assert!(donor_voice::is_donor_voice(donor_voice_address), 7357002);
+    }
+
+    #[test(root = @ol_framework, alice = @0x1000a)]
+    #[expected_failure(abort_code = 196618, location = 0x1::ol_account)]
+    fun cant_use_transfer(root: &signer, alice: &signer) {
+      let _vals = mock::genesis_n_vals(root, 4);
+      mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
+
+      // should not error
+      ol_account::transfer(alice, @0x1000b, 100);
+
+
+      community_wallet_init::migrate_community_wallet_account(root, alice);
+
+      // must error
+      ol_account::transfer(alice, @0x1000b, 100);
+
+
     }
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
@@ -505,7 +524,7 @@ module ol_framework::test_donor_voice {
       assert!(community_wallet_balance == 42, 7357003);
 
       // migrate community wallet
-      community_wallet::migrate_community_wallet_account(root, community);
+      community_wallet_init::migrate_community_wallet_account(root, community);
 
       // verify correct migration of community wallet
       assert!(community_wallet::is_init(community_wallet_address), 7357004); //TODO: find appropriate error codes
@@ -533,7 +552,7 @@ module ol_framework::test_donor_voice {
       // ancestry::fork_migrate(root, eve, vector::singleton(eve_addr));
 
       // wake up and initialize community wallet as a multi sig, donor voice account
-      community_wallet::init_community(&comm_resource_sig, addrs);
+      community_wallet_init::init_community(&comm_resource_sig, addrs);
 
       // verify wallet is a initialized correctly
       assert!(donor_voice::is_donor_voice(signer::address_of(&comm_resource_sig)), 7357005);

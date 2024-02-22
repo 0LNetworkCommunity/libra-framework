@@ -11,10 +11,13 @@ module ol_framework::match_index {
   use std::signer;
   use std::error;
 
+  friend ol_framework::community_wallet_init;
+  friend ol_framework::epoch_boundary;
+
   /// matching index is not initialized
   const ENOT_INIT: u64 = 1;
-
-  friend ol_framework::community_wallet;
+//
+  // friend ol_framework::community_wallet;
   /// The Match index keeps accounts that have opted-in.
   struct MatchIndex has key {
     addr: vector<address>,
@@ -108,7 +111,7 @@ module ol_framework::match_index {
     };
   }
 
-    /// the root account can take a user coin, and match with accounts in index.
+  /// the root account can take a user coin, and match with accounts in index.
   // TODO: When the coin is sent, an attribution is also made to the payer.
   fun match_impl(vm: &signer, coin: &mut Coin<LibraCoin>) acquires MatchIndex {
     system_addresses::assert_ol(vm);

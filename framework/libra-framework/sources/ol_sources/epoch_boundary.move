@@ -15,6 +15,9 @@ module diem_framework::epoch_boundary {
     use ol_framework::infra_escrow;
     use ol_framework::oracle;
     use ol_framework::ol_account;
+    use ol_framework::match_index;
+    use ol_framework::community_wallet_init;
+
     use ol_framework::testnet;
     use diem_framework::reconfiguration;
     use diem_framework::transaction_fee;
@@ -458,6 +461,16 @@ module diem_framework::epoch_boundary {
       infra_escrow::epoch_boundary_collection(root,
       total_epoch_budget)
   }
+
+    /// check qualifications of community wallets
+    /// need to check every epoch so that wallets who no longer qualify are not biasing the Match algorithm.
+    public fun reset_match_index_ratios(root: &signer) {
+      system_addresses::assert_ol(root);
+      let list = match_index::get_address_list();
+      let good = community_wallet_init::get_qualifying(list);
+      match_index::calc_ratios(root, good);
+    }
+
 
   // all services the root collective security is billing for
   fun root_service_billing(vm: &signer, status: &mut BoundaryStatus) {

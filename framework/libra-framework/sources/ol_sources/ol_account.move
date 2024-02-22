@@ -17,6 +17,7 @@ module ol_framework::ol_account {
     use ol_framework::slow_wallet;
     use ol_framework::receipts;
     use ol_framework::cumulative_deposits;
+    use ol_framework::community_wallet;
 
     // use diem_std::debug::print;
 
@@ -53,6 +54,9 @@ module ol_framework::ol_account {
 
     /// why is VM trying to use this?
     const ENOT_FOR_VM: u64 = 9;
+
+    /// community wallets cannot use ol_transfer, they have a dedicated workflow
+    const ENOT_FOR_CW: u64 = 10;
 
     struct BurnTracker has key {
       prev_supply: u64,
@@ -226,6 +230,9 @@ module ol_framework::ol_account {
     fun transfer_checks(payer: address, recipient: address, amount: u64) {
         let limit = slow_wallet::unlocked_amount(payer);
         assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
+
+        // community wallets cannot use ol_transfer, they have a dedicated workflow
+        assert!(!community_wallet::is_init(payer), error::invalid_state(ENOT_FOR_CW));
 
         // TODO: Check if Resource Accounts can register here, since they
         // may be created without any coin registration.
