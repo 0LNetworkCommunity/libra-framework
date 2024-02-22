@@ -607,4 +607,29 @@ module ol_framework::test_donor_voice {
       assert!(community_wallet_balance_processed_payment == 0, 7357021);
 
     }
+
+
+    #[test(root = @ol_framework, community = @0x10011)]
+    fun migrate_cw_bub_not_resource(root: &signer, community: &signer) {
+
+      // create genesis and fund accounts
+      mock::genesis_n_vals(root, 5);
+      mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
+
+
+      let community_wallet_address = signer::address_of(community);
+
+      // migrate community wallet
+      community_wallet_init::migrate_community_wallet_account(root, community);
+
+      // verify correct migration of community wallet
+      assert!(community_wallet::is_init(community_wallet_address), 7357004); //TODO: find appropriate error codes
+
+
+      // verify resource account was created succesfully for the community wallet
+      assert!(resource_account::is_resource_account(community_wallet_address), 7357000);
+      // assert!(!community_wallet::is_init(community_wallet_address), 100); //TODO: find appropriate error codes
+
+
+    }
 }
