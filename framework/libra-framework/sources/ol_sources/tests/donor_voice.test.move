@@ -610,7 +610,7 @@ module ol_framework::test_donor_voice {
 
 
     #[test(root = @ol_framework, community = @0x10011)]
-    fun migrate_cw_bub_not_resource(root: &signer, community: &signer) {
+    fun migrate_cw_bug_not_resource(root: &signer, community: &signer) {
 
       // create genesis and fund accounts
       mock::genesis_n_vals(root, 5);

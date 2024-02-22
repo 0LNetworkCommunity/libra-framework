@@ -85,7 +85,6 @@ module ol_framework::ol_account {
       let (resource_account_sig, cap) = account::create_resource_account(user, seed);
       coin::register<LibraCoin>(&resource_account_sig);
       (resource_account_sig, cap)
-      // adopt_this_child(user, resource_account_sig);
     }
 
     fun create_impl(sender: &signer, maybe_new_user: address) {
@@ -584,7 +583,9 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
     public fun test_transfer_to_resource_account_ol(root: &signer, alice: &signer,
     core: &signer) acquires BurnTracker{
+        // use diem_framework::resource_account;
         let (resource_account, _) = ol_create_resource_account(alice, vector[]);
+
         let resource_acc_addr = signer::address_of(&resource_account);
 
         let (burn_cap, mint_cap) =

@@ -49,6 +49,7 @@ module ol_framework::community_wallet_init {
       system_addresses::assert_ol(vm);
       donor_voice::migrate_community_wallet_account(vm, dv_account);
       community_wallet::set_comm_wallet(dv_account);
+      assert!(multi_action::is_multi_action(signer::address_of(dv_account)), ENOT_MULTISIG);
     }
 
     //////// MULTISIG TX HELPERS ////////
@@ -80,6 +81,8 @@ module ol_framework::community_wallet_init {
         donor_voice::set_liquidate_to_match_index(sig, true);
       };
       match_index::opt_into_match_index(sig);
+
+      community_wallet::set_comm_wallet(sig);
     }
 
     #[view]
