@@ -546,8 +546,7 @@ module ol_framework::donor_voice_txs {
         let f = borrow_global_mut<Freeze>(multisig_address);
         f.is_frozen = true;
         // let f = borrow_global_mut<Registry>(@ol_framework);
-        let f = donor_voice::get_liquidation_queue();
-        vector::push_back(&mut f, multisig_address);
+        donor_voice::add_to_liquidation_queue(multisig_address);
     }
   }
 

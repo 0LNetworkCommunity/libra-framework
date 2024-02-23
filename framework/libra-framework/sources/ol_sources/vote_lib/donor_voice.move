@@ -140,11 +140,11 @@ module ol_framework::donor_voice {
       }
     }
 
-    // Function to add an address to the liquidation queue directly
-    public fun add_to_liquidation_queue(addr: address) acquires Registry {
-        let registry = borrow_global_mut<Registry>(@ol_framework);
-        vector::push_back(&mut registry.liquidation_queue, addr);
-    }
+  // Function to add an address to the liquidation queue directly
+  public fun add_to_liquidation_queue(addr: address) acquires Registry {
+      let registry = borrow_global_mut<Registry>(@ol_framework);
+      vector::push_back(&mut registry.liquidation_queue, addr);
+  }
 
 
   #[view]
