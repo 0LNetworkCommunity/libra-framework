@@ -32,7 +32,8 @@ module ol_framework::multi_action {
   use ol_framework::ol_account;
   use ol_framework::ballot::{Self, BallotTracker};
   use ol_framework::epoch_helper;
-  // use DiemFramework::Debug::print;
+
+ // use diem_std::debug::print;
 
   const EGOV_NOT_INITIALIZED: u64 = 1;
   /// The owner of this account can't be an authority, since it will subsequently be bricked. The signer of this account is no longer useful. The account is now controlled by the Governance logic.

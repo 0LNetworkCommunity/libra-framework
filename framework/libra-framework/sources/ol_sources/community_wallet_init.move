@@ -15,7 +15,7 @@ module ol_framework::community_wallet_init {
     use ol_framework::community_wallet;
 
 
-    use diem_std::debug::print;
+    // use diem_std::debug::print;
 
     /// not authorized to operate on this account
     const ENOT_AUTHORIZED: u64 = 1;
@@ -74,7 +74,6 @@ module ol_framework::community_wallet_init {
       else {
         (MINIMUM_SIGS * len) / MINIMUM_AUTH
       };
-      print(&n);
 
       let (fam, _, _) = ancestry::any_family_in_list(*&init_signers);
       assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
@@ -134,8 +133,6 @@ module ol_framework::community_wallet_init {
 
     fun multisig_thresh(addr: address): bool{
       let (n, m) = multi_action::get_threshold(addr);
-      print(&n);
-      print(&m);
 
       // can't have less than three signatures
       if (n < MINIMUM_SIGS) return false;
@@ -145,10 +142,8 @@ module ol_framework::community_wallet_init {
 
       let r = fixed_point32::create_from_rational(MINIMUM_SIGS, MINIMUM_AUTH);
       let pct_baseline = fixed_point32::multiply_u64(100, r);
-      print(&pct_baseline);
       let r = fixed_point32::create_from_rational(n, m);
       let pct = fixed_point32::multiply_u64(100, r);
-      print(&pct);
 
       pct >= pct_baseline
     }
@@ -179,6 +174,12 @@ module ol_framework::community_wallet_init {
       })
     }
 
+    #[view]
+    /// Get authorities resposible for the community wallet
+    public fun get_community_wallet_authorities(multisig_address: address): vector<address> {
+      multi_action::get_authorities(multisig_address)
+    }
+
     /// Add or remove a signer to/from the multisig, and check if they may be related in the ancestry tree
     public entry fun change_signer_community_multisig(
       sig: &signer,
@@ -188,13 +189,20 @@ module ol_framework::community_wallet_init {
       n_of_m: u64,
       vote_duration_epochs: u64
     ) {
+      assert!(n_of_m >= MINIMUM_SIGS , error::invalid_argument(ETOO_FEW_SIGNERS));
+
       let current_signers = multi_action::get_authorities(multisig_address);
 
       // Checking family relations only if adding a new signer
       if (is_add_operation) {
           let (fam, _, _) = ancestry::is_family_one_in_list(new_signer, &current_signers);
           assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
-      }
+      };
+
+      // Verify the signers will not fall below the threshold the signers will fall below threshold
+      if (!is_add_operation) {
+          assert!((vector::length(&current_signers) - 1) >  MINIMUM_AUTH, error::invalid_argument(ESIG_THRESHOLD));
+      };
 
       multi_action::propose_governance(
         sig,
