@@ -8,7 +8,6 @@ module ol_framework::community_wallet_init {
     use std::signer;
     use std::option;
     use std::fixed_point32;
-    // use ol_framework::donor_voice;
     use ol_framework::donor_voice_txs;
     use ol_framework::multi_action;
     use ol_framework::ancestry;
@@ -180,24 +179,29 @@ module ol_framework::community_wallet_init {
       })
     }
 
-    /// add signer to multisig, and check if they may be related in ancestry tree
-    public entry fun add_signer_community_multisig(
+    /// Add or remove a signer to/from the multisig, and check if they may be related in the ancestry tree
+    public entry fun change_signer_community_multisig(
       sig: &signer,
       multisig_address: address,
       new_signer: address,
+      is_add_operation: bool,
       n_of_m: u64,
       vote_duration_epochs: u64
     ) {
       let current_signers = multi_action::get_authorities(multisig_address);
-      let (fam, _, _) = ancestry::is_family_one_in_list(new_signer, &current_signers);
 
-      assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
+      // Checking family relations only if adding a new signer
+      if (is_add_operation) {
+          let (fam, _, _) = ancestry::is_family_one_in_list(new_signer, &current_signers);
+          assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
+      }
 
       multi_action::propose_governance(
         sig,
         multisig_address,
         vector::singleton(new_signer),
-        true, option::some(n_of_m),
+        is_add_operation,
+        option::some(n_of_m),
         option::some(vote_duration_epochs)
       );
     }
