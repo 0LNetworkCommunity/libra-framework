@@ -83,12 +83,6 @@ module ol_framework::donor_voice_txs {
     const DEFAULT_VETO_DURATION: u64 = 7;
 
 
-    // // root registry for the Donor Voice accounts
-    // struct Registry has key {
-    //   list: vector<address>,
-    //   liquidation_queue: vector<address>,
-    // }
-
     // Timed transfer schedule pipeline
     struct TxSchedule has key {
       scheduled: vector<TimedTransfer>,
@@ -122,37 +116,6 @@ module ol_framework::donor_voice_txs {
     }
 
 
-    //////// INIT REGISRTY OF DONOR VOICE ACCOUNTS  ////////
-
-    // Donor Voice Accounts are a root security service. So the root account needs to keep a registry of all Donor Voice accounts, using this service.
-
-    // Utility used at genesis (and on upgrade) to initialize the system state.
-    // public fun initialize(vm: &signer) {
-    //   system_addresses::assert_ol(vm);
-
-    //   if (!is_root_init()) {
-    //     move_to<Registry>(vm, Registry {
-    //       list: vector::empty<address>(),
-    //       liquidation_queue: vector::empty<address>(),
-    //     });
-    //   };
-    // }
-
-    // public fun is_root_init():bool {
-    //   exists<Registry>(@ol_framework)
-    // }
-
-
-    // public fun migrate_root_registry(vm: &signer, list: vector<address>) {
-    //   system_addresses::assert_ol(vm);
-    //   if (!is_root_init()) {
-    //     move_to<Registry>(vm, Registry {
-    //       list,
-    //       liquidation_queue: vector::empty<address>(),
-    //     });
-    //   };
-    // }
-
     #[test_only]
     // // can only be called by genesis
     public(friend) fun migrate_community_wallet_account(vm: &signer, dv_account:
@@ -171,7 +134,7 @@ module ol_framework::donor_voice_txs {
 
     // 2. A MultiSig action structs need to be initialized.
 
-    // 3. Once the MultiSig is initialized, the account needs to be bricked, before the MultiSig can be used.
+    // 3. Once the MultiSig is initialized, the account needs to be caged, before the MultiSig can be used.
 
     public fun make_donor_voice(sponsor: &signer, init_signers: vector<address>,
     cfg_n_signers: u64)  {
@@ -215,20 +178,6 @@ module ol_framework::donor_voice_txs {
       donor_voice_governance::init_donor_governance(sig);
     }
 
-    // // add to root registry
-    // fun add_to_registry(sig: &signer) acquires Registry {
-    //   if (!exists<Registry>(@ol_framework)) return;
-
-    //   let addr = signer::address_of(sig);
-    //   let list = get_root_registry();
-    //   if (!vector::contains<address>(&list, &addr)) {
-    //     let s = borrow_global_mut<Registry>(@ol_framework);
-    //     vector::push_back(&mut s.list, addr);
-    //   };
-    // }
-
-
-
     /// Like any MultiSig instance, a sponsor which is the original owner of the account, needs to initialize the account.
     /// The account must be "bricked" by the owner before MultiSig actions can be taken.
     /// Note, as with any multisig, the new_authorities cannot include the sponsor, since that account will no longer be able to sign transactions.
@@ -245,16 +194,6 @@ module ol_framework::donor_voice_txs {
       exists<Freeze>(multisig_address) &&
       exists<TxSchedule>(multisig_address)
     }
-
-    // // Getter for retrieving the list of TxSchedule wallets.
-    // public fun get_root_registry(): vector<address> acquires Registry{
-    //   if (exists<Registry>(@ol_framework)) {
-    //     let s = borrow_global<Registry>(@ol_framework);
-    //     return *&s.list
-    //   } else {
-    //     return vector::empty<address>()
-    //   }
-    // }
 
     ///////// MULTISIG ACTIONS TO SCHEDULE A TIMED TRANSFER /////////
     /// As in any MultiSig instance, the transaction which proposes the action (the scheduled transfer) must be signed by an authority on the MultiSig.
