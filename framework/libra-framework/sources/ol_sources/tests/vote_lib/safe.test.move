@@ -3,9 +3,10 @@
 module ol_framework::test_safe {
   use ol_framework::mock;
   use ol_framework::safe;
+  use ol_framework::ol_account;
+  use ol_framework::multi_action;
   use std::signer;
   use std::option;
-  use ol_framework::ol_account;
   use diem_framework::resource_account;
 
   // NOTE: Most of the save.move features are tested in multi_action (e.g. governance). Here we are testing for specific APIs.
@@ -26,6 +27,9 @@ module ol_framework::test_safe {
     // make the vals the signers on the safe
     // SO ALICE and DAVE ARE AUTHORIZED
     safe::init_payment_multisig(&resource_sig, vals, 2); // both need to sign
+
+    //need to be caged to finalize multi action workflow and release control of the account
+    multi_action::finalize_and_cage(&resource_sig);
 
     // first make sure dave is initialized to receive LibraCoin
     ol_account::create_account(root, @0x1000d);
@@ -57,6 +61,9 @@ module ol_framework::test_safe {
     // not enough voters
     safe::init_payment_multisig(&resource_sig, vals, 3); // requires 3
 
+    //need to be caged to finalize multi action workflow and release control of the account
+    multi_action::finalize_and_cage(&resource_sig);
+
     // first make sure EVE is initialized to receive LibraCoin
     ol_account::create_account(root, @0x1000e);
     // when alice proposes, she also votes in a single step
@@ -79,6 +86,9 @@ module ol_framework::test_safe {
     let new_resource_address = signer::address_of(&resource_sig);
     assert!(resource_account::is_resource_account(new_resource_address), 0);
     safe::init_payment_multisig(&resource_sig, vals, 3); // requires 3
+
+    //need to be caged to finalize multi action workflow and release control of the account
+    multi_action::finalize_and_cage(&resource_sig);
 
     // fund the account
     ol_account::transfer(alice, new_resource_address, 1000000);

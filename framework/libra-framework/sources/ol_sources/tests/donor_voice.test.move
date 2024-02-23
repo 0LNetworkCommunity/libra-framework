@@ -6,8 +6,7 @@ module ol_framework::test_donor_voice {
   use ol_framework::donor_voice_txs;
   use ol_framework::mock;
   use ol_framework::ol_account;
-  // use ol_framework::multi_action;
-  use diem_framework::resource_account;
+  use ol_framework::multi_action;
   use ol_framework::receipts;
   use ol_framework::donor_voice_governance;
   use ol_framework::community_wallet;
@@ -22,34 +21,39 @@ module ol_framework::test_donor_voice {
 
     #[test(root = @ol_framework, alice = @0x1000a)]
     fun dd_init(root: &signer, alice: &signer) {
-      let vals = mock::genesis_n_vals(root, 4);
+      mock::genesis_n_vals(root, 4);
 
-      // Alice turns this account into a resource account. This can also happen after other donor directed initializations happen (or deposits). But must be complete before the donor directed wallet can be used.
-      let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
-      let donor_voice_address = signer::address_of(&resource_sig);
-      assert!(resource_account::is_resource_account(donor_voice_address), 7357003);
+      let alice_address = signer::address_of(alice);
+
+      let donors = create_friendly_helper_accounts(root);
 
       // the account needs basic donor directed structs
-      donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
-
+      donor_voice_txs::make_donor_voice(alice, donors, 2);
 
       let list = donor_voice::get_root_registry();
       assert!(vector::length(&list) == 1, 7357001);
 
-      assert!(donor_voice_txs::is_donor_voice(donor_voice_address), 7357002);
+      //shouldnt be donor voice yet. Needs to be caged first
+      assert!(!donor_voice_txs::is_donor_voice(alice_address), 7357002);
+
+      //need to be caged to finalize donor directed workflow and release control of the account
+      multi_action::finalize_and_cage(alice);
+
+      assert!(donor_voice_txs::is_donor_voice(alice_address), 7357003);
     }
 
     #[test(root = @ol_framework, alice = @0x1000a)]
     #[expected_failure(abort_code = 196618, location = 0x1::ol_account)]
     fun cant_use_transfer(root: &signer, alice: &signer) {
-      let vals = mock::genesis_n_vals(root, 4);
+      mock::genesis_n_vals(root, 4);
       mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
 
       // should not error
       ol_account::transfer(alice, @0x1000b, 100);
 
+      let donors = create_friendly_helper_accounts(root);
 
-      community_wallet_init::init_community(alice, vals);
+      community_wallet_init::init_community(alice, donors);
 
       // must error
       ol_account::transfer(alice, @0x1000b, 100);
@@ -68,6 +72,9 @@ module ol_framework::test_donor_voice {
 
       // the account needs basic donor directed structs
       donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
+
+      //need to be caged to finalize donor directed workflow and release control of the account
+      multi_action::finalize_and_cage(&resource_sig);
 
       let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
@@ -91,6 +98,9 @@ module ol_framework::test_donor_voice {
 
       // the account needs basic donor directed structs
       donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
+
+      //need to cage to finalize donor directed workflow and release control of the account
+      multi_action::finalize_and_cage(&resource_sig);
 
       let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
@@ -133,6 +143,9 @@ module ol_framework::test_donor_voice {
 
       // the account needs basic donor directed structs
       donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
+
+      //need to be caged to finalize donor directed workflow and release control of the account
+      multi_action::finalize_and_cage(&resource_sig);
 
       // EVE Establishes some governance over the wallet, when donating.
       let eve_donation = 42;
@@ -222,6 +235,10 @@ module ol_framework::test_donor_voice {
       // the account needs basic donor directed structs
       donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
 
+      //need to be caged to finalize donor directed workflow and release control of the account
+      multi_action::finalize_and_cage(&resource_sig);
+
+
       let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
@@ -280,6 +297,10 @@ module ol_framework::test_donor_voice {
       // the account needs basic donor directed structs
       donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
 
+
+      //need to be caged to finalize donor directed workflow and release control of the account
+      multi_action::finalize_and_cage(&resource_sig);
+
       let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), 100, b"thanks marlon");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
@@ -318,8 +339,8 @@ module ol_framework::test_donor_voice {
     }
 
 
-    #[test(root = @ol_framework, alice = @0x1000a, dave = @0x1000d, eve = @0x1000e)]
-    fun dd_liquidate_to_donor(root: &signer, alice: &signer, dave: &signer, eve: &signer) {
+    #[test(root = @ol_framework, _alice = @0x1000a, dave = @0x1000d, eve = @0x1000e, donor_voice = @0x1000f)]
+    fun dd_liquidate_to_donor(root: &signer, _alice: &signer, dave: &signer, eve: &signer, donor_voice: &signer) {
       // Scenario:
       // Alice creates a donor directed account where Alice, Bob and Carol, are admins.
       // Dave and Eve make a donation and so are able to have some voting on that account.
@@ -333,10 +354,9 @@ module ol_framework::test_donor_voice {
       // a burn happend in the epoch above, so let's compare it to end of epoch
       let (lifetime_burn_pre, _) = burn::get_lifetime_tracker();
 
-      let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
-      let donor_voice_address = signer::address_of(&resource_sig);
+      let donor_voice_address = signer::address_of(donor_voice);
       // the account needs basic donor directed structs
-      donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
+      donor_voice_txs::make_donor_voice(donor_voice, vals, 3);
       // donor_voice_txs::set_liquidate_to_match_index(&resource_sig, true);
 
       // EVE Establishes some governance over the wallet, when donating.
@@ -361,7 +381,6 @@ module ol_framework::test_donor_voice {
 
       // Dave proposed, now Dave and Eve need to vote
       donor_voice_txs::vote_liquidation_tx(eve, donor_voice_address);
-
       mock::trigger_epoch(root);
       // needs a vote on the day after the threshold has passed
       donor_voice_txs::vote_liquidation_tx(dave, donor_voice_address);
@@ -370,7 +389,7 @@ module ol_framework::test_donor_voice {
       assert!(vector::length(&list) > 0, 7357005);
 
       let (addrs, refunds) = donor_voice_txs::get_pro_rata(donor_voice_address);
-
+ 
       assert!(*vector::borrow(&addrs, 0) == @0x1000e, 7357006);
       assert!(*vector::borrow(&addrs, 1) == @0x1000d, 7357007);
 
@@ -641,5 +660,23 @@ module ol_framework::test_donor_voice {
       assert!(ol_account::is_cage(community_wallet_address), 7357003);
 
       community_wallet_init::assert_qualifies(community_wallet_address);
+    }
+
+
+    fun create_friendly_helper_accounts(root: &signer): vector<address>{
+
+        // recruit 3 friendly folks to be signers or donors
+        ol_account::create_account(root, @80801);
+        ol_account::create_account(root, @80802);
+        ol_account::create_account(root, @80803);
+
+        let workers = vector::empty<address>();
+
+        // helpers in line to help
+        vector::push_back(&mut workers, @80801);
+        vector::push_back(&mut workers, @80802);
+        vector::push_back(&mut workers, @80803);
+
+        workers
     }
 }

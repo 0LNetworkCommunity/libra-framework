@@ -684,7 +684,7 @@ module ol_framework::donor_voice_txs {
     vm_liquidate(vm);
    }
 
-    /// get the proportion of donoations of all donors to account.
+    /// get the proportion of donations of all donors to account.
    public fun get_pro_rata(multisig_address: address): (vector<address>, vector<u64>) {
     // get total fees
     let (_, current_balance) = ol_account::balance(multisig_address);
