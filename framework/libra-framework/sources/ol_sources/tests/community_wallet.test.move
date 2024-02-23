@@ -47,7 +47,7 @@
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
     #[expected_failure(abort_code = 196618, location = 0x1::ol_account)]
-    fun sponsor_cant_transfer(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer,) {
+    fun cw_sponsor_cant_transfer(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer,) {
         mock::genesis_n_vals(root, 4);
         mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
 
@@ -86,8 +86,9 @@
 
     }
 
-    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, _carol = @0x1000c)]
-    fun cw_init_with_n_below_minimum_sigs(root: &signer, alice: &signer, bob: &signer, _carol: &signer) {
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
+    #[expected_failure(abort_code = 65545, location = 0x1::community_wallet_init)]
+    fun cw_decrease_below_minimum_sigs(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer) {
         // A community wallet by default must be 2/3 multisig.
         // This test verifies that the wallet can not be initialized with less signers
         mock::genesis_n_vals(root, 4);
@@ -97,10 +98,95 @@
 
         // helpers in line to help
         vector::push_back(&mut signers, signer::address_of(bob));
-        // vector::push_back(&mut signers, signer::address_of(carol));
+        vector::push_back(&mut signers, signer::address_of(dave));
 
+        community_wallet_init::init_community(alice, signers);
+
+        let alice_comm_wallet_addr = signer::address_of(alice);
+        let carols_addr = signer::address_of(carol); 
+
+        let uid = donor_voice_txs::propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol");
+        let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid); 
+        assert!(found, 7357004);
+        assert!(idx == 0, 7357005);
+        assert!(status_enum == 1, 7357006);
+        assert!(!completed, 7357007);
+
+        // it is not yet scheduled, it's still only a proposal by an admin
+        assert!(!donor_voice_txs::is_scheduled(alice_comm_wallet_addr, &uid), 7357008);
+
+
+
+    }
+
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
+    #[expected_failure(abort_code = 65542, location = 0x1::community_wallet_init)]
+    fun cw_init_with_n_and_m_below_minimum_sigs(root: &signer, alice: &signer, bob: &signer) {
+        // A community wallet by default must be 2/3 multisig.
+        // This test verifies that the wallet can not be initialized with less signers
+        mock::genesis_n_vals(root, 4);
+        mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
+
+
+        // create signers
+        let signers = vector::empty<address>();
+        vector::push_back(&mut signers, signer::address_of(bob));
+
+
+        community_wallet_init::migrate_community_wallet_account(root, alice);
 
         donor_voice_txs::make_donor_voice(alice, signers, 1);
+
+        // try to cage the address by calling multi auth
+        community_wallet_init::finalize_and_cage(alice);
+
+    }
+
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
+    #[expected_failure(abort_code = 65542, location = 0x1::community_wallet_init)]
+    fun cw_dd_init_with_n_below_minimum_sigs(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer) {
+        // A community wallet by default must be 2/3 multisig.
+        // This test verifies that the wallet can not be decreased below this specification
+        mock::genesis_n_vals(root, 4);
+        mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
+
+
+        // create signers
+        let signers = vector::empty<address>();
+        vector::push_back(&mut signers, signer::address_of(bob));
+        vector::push_back(&mut signers, signer::address_of(carol));
+        vector::push_back(&mut signers, signer::address_of(dave));
+
+        community_wallet_init::migrate_community_wallet_account(root, alice);
+
+        donor_voice_txs::make_donor_voice(alice, signers, 1);
+
+        // try to cage the address by calling multi auth
+        community_wallet_init::finalize_and_cage(alice);
+
+    }
+
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
+    #[expected_failure(abort_code = 65542, location = 0x1::community_wallet_init)]
+    fun cw_dd_decrease_m_below_minimum_sigs(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer) {
+        // A community wallet by default must be 2/3 multisig.
+        // This test verifies that the wallet can not be decreased below this specification
+        mock::genesis_n_vals(root, 4);
+        mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
+
+
+        // create signers
+        let signers = vector::empty<address>();
+        vector::push_back(&mut signers, signer::address_of(bob));
+        vector::push_back(&mut signers, signer::address_of(carol));
+        vector::push_back(&mut signers, signer::address_of(dave));
+
+        community_wallet_init::migrate_community_wallet_account(root, alice);
+
+        donor_voice_txs::make_donor_voice(alice, signers, 1);
+
+        // try to cage the address by calling multi auth
+        community_wallet_init::finalize_and_cage(alice);
 
     }
 
@@ -124,6 +210,19 @@
     //     // After being set as a community wallet, the owner loses control over the wallet
     //     ol_account::transfer(alice, @0x1000b, 100);
     // }
+
+        //      let alice_comm_wallet_addr = signer::address_of(alice);
+    //    let carols_addr = signer::address_of(carol); 
+
+    //     let uid = donor_voice_txs::propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol");
+    //     let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid); 
+    //     assert!(found, 7357004);
+    //     assert!(idx == 0, 7357005);
+    //     assert!(status_enum == 1, 7357006);
+    //     assert!(!completed, 7357007);
+
+    //   // it is not yet scheduled, it's still only a proposal by an admin
+    //   assert!(!donor_voice_txs::is_scheduled(alice_comm_wallet_addr, &uid), 7357008);
 
 
   }

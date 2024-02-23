@@ -1,4 +1,4 @@
-/// For an account to qualify for the Burn or Match recycling of accounts.
+    /// For an account to qualify for the Burn or Match recycling of accounts.
 
 /// This module is used to dynamically check if an account qualifies for the CommunityWallet flag.
 
