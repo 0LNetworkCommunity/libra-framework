@@ -71,7 +71,7 @@ pub struct ProposeTx {
 
 impl ProposeTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload = libra_stdlib::donor_voice_propose_payment_tx(
+        let payload = libra_stdlib::donor_voice_txs_propose_payment_tx(
             self.community_wallet,
             self.recipient,
             self.amount,
@@ -95,7 +95,7 @@ pub struct VetoTx {
 impl VetoTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         let payload =
-            libra_stdlib::donor_voice_propose_veto_tx(self.community_wallet, self.proposal_id);
+            libra_stdlib::donor_voice_txs_propose_veto_tx(self.community_wallet, self.proposal_id);
         sender.sign_submit_wait(payload).await?;
         Ok(())
     }
@@ -117,9 +117,9 @@ impl InitTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         let payload = if let Some(n) = self.migrate_n {
             println!("trying to migrate");
-            libra_stdlib::donor_voice_make_donor_voice_tx(self.admins.clone(), n)
+            libra_stdlib::donor_voice_txs_make_donor_voice_tx(self.admins.clone(), n)
         } else {
-            libra_stdlib::community_wallet_init_community(self.admins.clone())
+            libra_stdlib::community_wallet_init_init_community(self.admins.clone())
         };
         sender.sign_submit_wait(payload).await?;
         Ok(())
@@ -136,7 +136,7 @@ pub struct AdminTx {
     admin: AccountAddress,
     #[clap(short, long)]
     /// Drops this admin from the multisig
-    drop: bool,
+    drop: Option<bool>,
     #[clap(short, long)]
     /// Number of sigs required for action (must be greater than 3-of-5)
     n: u64,
@@ -147,9 +147,13 @@ pub struct AdminTx {
 
 impl AdminTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload = libra_stdlib::community_wallet_add_signer_community_multisig(
+        // Default to adding a signer if the `drop` flag is not provided
+        let is_add_operation = self.drop.unwrap_or(true);
+
+        let payload = libra_stdlib::community_wallet_init_change_signer_community_multisig(
             self.community_wallet,
             self.admin,
+            is_add_operation,
             self.n,
             self.epochs.unwrap_or(10), // todo: remo
         );
