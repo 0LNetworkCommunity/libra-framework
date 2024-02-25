@@ -57,16 +57,16 @@ impl CommunityTxs {
 pub struct ProposeTx {
     #[clap(short, long)]
     /// The Community Wallet you are a admin for
-    community_wallet: AccountAddress,
+    pub community_wallet: AccountAddress,
     #[clap(short, long)]
     /// The SlowWallet recipient of funds
-    recipient: AccountAddress,
+    pub recipient: AccountAddress,
     #[clap(short, long)]
     /// amount of coins (units) to transfer
-    amount: u64,
+    pub amount: u64,
     #[clap(short, long)]
     /// description of payment for memo
-    description: String,
+    pub description: String,
 }
 
 impl ProposeTx {
@@ -106,17 +106,17 @@ pub struct InitTx {
     #[clap(short, long)]
     /// The initial admins of the Multisig. Note: the signer of this TX
     /// (sponsor) cannot add self.
-    admins: Vec<AccountAddress>,
+    pub admins: Vec<AccountAddress>,
 
     #[clap(short, long)]
     /// migrate a legacy v5 community wallet, with N being the n-of-m
-    migrate_n: Option<u64>,
+    pub migrate_n: Option<u64>,
 }
 
 impl InitTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        println!("trying to migrate");
         let payload = if let Some(n) = self.migrate_n {
-            println!("trying to migrate");
             libra_stdlib::donor_voice_txs_make_donor_voice_tx(self.admins.clone(), n)
         } else {
             libra_stdlib::community_wallet_init_init_community(self.admins.clone())
@@ -130,19 +130,19 @@ impl InitTx {
 pub struct AdminTx {
     #[clap(short, long)]
     /// The SlowWallet recipient of funds
-    community_wallet: AccountAddress,
+    pub community_wallet: AccountAddress,
     #[clap(short, long)]
     /// Admin to add (or remove) from the multisig
-    admin: AccountAddress,
+    pub admin: AccountAddress,
     #[clap(short, long)]
     /// Drops this admin from the multisig
-    drop: Option<bool>,
+    pub drop: Option<bool>,
     #[clap(short, long)]
     /// Number of sigs required for action (must be greater than 3-of-5)
-    n: u64,
+    pub n: u64,
     #[clap(short, long)]
     /// Proposal duration (in epochs)
-    epochs: Option<u64>,
+    pub epochs: Option<u64>,
 }
 
 impl AdminTx {
