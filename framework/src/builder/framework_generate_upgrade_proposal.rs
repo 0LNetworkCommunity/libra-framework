@@ -57,7 +57,7 @@ pub fn make_framework_upgrade_artifacts(
         // We first need to compile and build each CORE MODULE we are upgrading (e.g. MoveStdlib, LibraFramework)
 
         let options = BuildOptions {
-            with_srcs: true, // this will store the source bytes on chain, as in genesis
+            with_srcs: false, // this will store the source bytes on chain, as in genesis
             with_abis: false,
             with_source_maps: false,
             with_error_map: true,
