@@ -245,7 +245,7 @@ impl ConfigCli {
                 Ok(())
             }
             Some(ConfigSub::FullnodeInit { home_path }) => {
-                download_genesis(home_path.to_owned()).await?;
+                download_genesis(home_path.to_owned(), None).await?;
                 println!("downloaded genesis block");
 
                 let p = init_fullnode_yaml(home_path.to_owned(), true).await?;

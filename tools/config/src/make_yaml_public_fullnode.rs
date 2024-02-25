@@ -18,7 +18,7 @@ pub async fn init_fullnode_yaml(
     home_dir: Option<PathBuf>,
     overwrite_peers: bool,
 ) -> anyhow::Result<PathBuf> {
-    let waypoint = get_genesis_waypoint(home_dir.clone()).await?;
+    let waypoint = get_genesis_waypoint(home_dir.clone(), None).await?;
 
     let yaml = make_fullnode_yaml(home_dir.clone(), waypoint)?;
 
@@ -157,13 +157,23 @@ api:
 }
 
 /// download genesis blob
-pub async fn download_genesis(home_dir: Option<PathBuf>) -> anyhow::Result<()> {
-    let bytes = reqwest::get(
-        "https://raw.githubusercontent.com/0LNetworkCommunity/epoch-archive-mainnet/main/upgrades/v6.9.0/genesis.blob",
-    )
-    .await?
-    .bytes()
-    .await?;
+pub async fn download_genesis(
+    home_dir: Option<PathBuf>,
+    genesis_path: Option<&str>,
+) -> anyhow::Result<()> {
+    match genesis_path {
+        Some(p) => {
+            let bytes = reqwest::get(p).await?.bytes().await?;
+        }
+        None => {
+            let bytes = reqwest::get(
+                "https://raw.githubusercontent.com/0LNetworkCommunity/epoch-archive-mainnet/main/upgrades/v6.9.0/genesis.blob",
+            )
+            .await?
+            .bytes()
+            .await?;
+        }
+    }
 
     let home = home_dir.unwrap_or_else(global_config_dir);
     let genesis_dir = home.join("genesis/");
@@ -175,21 +185,30 @@ pub async fn download_genesis(home_dir: Option<PathBuf>) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn get_genesis_waypoint(home_dir: Option<PathBuf>) -> anyhow::Result<Waypoint> {
-    let wp_string = reqwest::get(
-        "https://raw.githubusercontent.com/0LNetworkCommunity/epoch-archive-mainnet/main/upgrades/v6.9.0/waypoint.txt",
-    )
-    .await?
-    .text()
-    .await?;
+pub async fn get_genesis_waypoint(
+    home_dir: Option<PathBuf>,
+    waypoint_path: Option<&str>,
+) -> anyhow::Result<Waypoint> {
+    match waypoint_path {
+        Some(p) => {
+            let wp_string = reqwest::get(p).await?.text().await?;
+        }
+        None => {
+            let wp_string = reqwest::get(
+                "https://raw.githubusercontent.com/0LNetworkCommunity/epoch-archive-mainnet/main/upgrades/v6.9.0/waypoint.txt",
+            )
+            .await?
+            .text()
+            .await?;
+        }
+    }
 
     let home = home_dir.unwrap_or_else(libra_types::global_config_dir);
     let genesis_dir = home.join("genesis/");
     let p = genesis_dir.join("waypoint.txt");
 
     std::fs::write(p, &wp_string)?;
-    wp_string.trim().parse::<Waypoint>().map_err(|e| e.into())
-    //wp_string.parse()
+    wp_string.trim().parse::<Waypoint>()
 }
 
 #[tokio::test]
@@ -237,7 +256,7 @@ async fn persist_genesis() {
 
     let path = p.path().to_owned();
 
-    download_genesis(Some(path)).await.unwrap();
+    download_genesis(Some(path), None).await.unwrap();
     let l = std::fs::read_dir(p.path())
         .unwrap()
         .next()
