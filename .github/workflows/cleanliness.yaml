@@ -2,16 +2,16 @@ name: cleanliness
 on:
   push:
     tags:
-    - '[0-9]+.[0-9]+.[0-9]+'
-    - '[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
     branches: ["*"]
   pull_request:
     types:
       - opened
       - synchronize
     branches:
-      - 'release**'
-      - 'main**'
+      - "release**"
+      - "main**"
 env:
   DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
@@ -25,6 +25,11 @@ jobs:
 
       - name: setup env
         uses: ./.github/actions/build_env
+
+      - uses: Swatinem/rust-cache@v2.7.3
+        with:
+          shared-key: "libra-framework"
+          cache-all-crates: true
 
       - name: format
         uses: actions-rs/cargo@v1
