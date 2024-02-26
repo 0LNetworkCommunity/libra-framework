@@ -19,7 +19,6 @@ module ol_framework::test_burn {
   // use diem_std::debug::print;
 
   #[test(root = @ol_framework, alice = @0x1000a)]
-
   fun burn_reduces_supply(root: &signer, alice: &signer) {
     mock::genesis_n_vals(root, 1);
     mock::ol_initialize_coin_and_fund_vals(root, 10000, true);
@@ -30,9 +29,41 @@ module ol_framework::test_burn {
     burn::burn_and_track(c);
     let supply = libra_coin::supply();
     assert!(supply == (supply_pre - alice_burn), 7357001);
-
   }
 
+  // burn changes indexed real_balance
+  #[test(root = @ol_framework, alice = @0x1000a)]
+  fun burn_changes_real_balance(root: &signer, alice: &signer) {
+    mock::genesis_n_vals(root, 1);
+    // the mint to alice will double the supply
+    mock::ol_initialize_coin_and_fund_vals(root, 100000000, true);
+
+    let supply_pre = libra_coin::supply();
+    // need to adjust this since the validator init increased the supply above
+    // the final
+    libra_coin::test_set_final_supply(root, supply_pre);
+    let final = libra_coin::get_final_supply();
+    assert!(supply_pre == final, 7357000);
+    // no change should happen before any burns
+    let (unlocked, total) = ol_account::balance(@0x1000a);
+    let (real_unlocked, real_total) = ol_account::real_balance(@0x1000a);
+    assert!(real_unlocked == unlocked, 7357001);
+    assert!(real_total == total, 7357002);
+
+    // burn half of alices coins, which is 25% of the supply
+    let alice_burn = 50000000;
+
+
+    let c = ol_account::withdraw(alice, alice_burn);
+    burn::burn_and_track(c);
+    let supply = libra_coin::supply();
+    assert!(supply == (supply_pre - alice_burn), 7357003);
+
+    let (unlocked, total) = ol_account::balance(@0x1000a);
+    let (real_unlocked, real_total) = ol_account::real_balance(@0x1000a);
+    assert!(real_unlocked > unlocked, 7357004);
+    assert!(real_total > total, 7357005);
+  }
 
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000d, eve = @0x1000e)]

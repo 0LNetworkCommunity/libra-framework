@@ -2,26 +2,26 @@ name: formal verification
 on:
   push:
     tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
-      - '[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
     branches: ["*"]
   pull_request:
     types:
       - opened
       - synchronize
     branches:
-      - 'release**'
-      - 'main**'
+      - "release**"
+      - "main**"
 env:
-  DOTNET_ROOT: "/home/runner/.dotnet"
-  Z3_EXE: "/home/runner/bin/z3"
-  CVC5_EXE: "/home/runner/bin/cvc5"
-  BOOGIE_EXE: "/home/runner/.dotnet/tools/boogie"
-  SOLC_EXE: "/home/runner/bin/solc"
+  DOTNET_ROOT: "/home/github-runner/.dotnet"
+  Z3_EXE: "/home/github-runner/bin/z3"
+  CVC5_EXE: "/home/github-runner/bin/cvc5"
+  BOOGIE_EXE: "/home/github-runner/.dotnet/tools/boogie"
+  SOLC_EXE: "/home/github-runner/bin/solc"
 
 jobs:
   formal:
-    runs-on: ubuntu-latest
+    runs-on: debian-latest
     steps:
       #   # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
       # - name: Setup tmate session
@@ -32,10 +32,17 @@ jobs:
 
       - uses: actions/checkout@v3
 
+      - name: setup env
+        uses: ./.github/actions/build_env
+
+      - uses: Swatinem/rust-cache@v2.7.3
+        with:
+          shared-key: "libra-framework"
+          cache-all-crates: true        
 
       - name: install prover dependencies
         run: |
-            bash util/dev_setup.sh -byp
+          bash util/dev_setup.sh -byp
 
       - name: install diem (for move tests)
         run: |
