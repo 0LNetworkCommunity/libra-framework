@@ -30,7 +30,7 @@ jobs:
         working-directory: ./framework
         run: cargo r release
 
-      - uses: actions/upload-artifact@master
+      - uses: actions/upload-artifact@v4.3.1
         with:
           name: framework-build
           path: framework/*
@@ -71,7 +71,7 @@ jobs:
         uses: ./.github/actions/build_env
 
       # make sure we have a fresh framework build
-      - uses: actions/download-artifact@master
+      - uses: actions/download-artifact@v4.1.2
         with:
           name: framework-build
           path: framework/
@@ -90,7 +90,7 @@ jobs:
       - name: setup env
         uses: ./.github/actions/build_env
 
-      - uses: actions/download-artifact@master
+      - uses: actions/download-artifact@v4.1.2
         with:
           name: framework-build
           path: framework/
@@ -108,7 +108,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup env
         uses: ./.github/actions/build_env
-      - uses: actions/download-artifact@master
+      - uses: actions/download-artifact@v4.1.2
         with:
           name: framework-build
           path: framework/
@@ -124,7 +124,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup env
         uses: ./.github/actions/build_env
-      - uses: actions/download-artifact@master
+      - uses: actions/download-artifact@v4.1.2
         with:
           name: framework-build
           path: framework/
@@ -141,7 +141,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup env
         uses: ./.github/actions/build_env
-      - uses: actions/download-artifact@master
+      - uses: actions/download-artifact@v4.1.2
         with:
           name: framework-build
           path: framework/
@@ -159,7 +159,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: setup env
         uses: ./.github/actions/build_env
-      - uses: actions/download-artifact@master
+      - uses: actions/download-artifact@v4.1.2
         with:
           name: framework-build
           path: framework/
