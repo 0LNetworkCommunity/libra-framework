@@ -220,11 +220,6 @@ jobs:
       - name: setup env
         uses: ./.github/actions/build_env
 
-      - uses: Swatinem/rust-cache@v2.7.3
-        with:
-          shared-key: "libra-framework"
-          cache-all-crates: true
-
       - uses: actions/download-artifact@v4.1.2
         with:
           name: framework-build
