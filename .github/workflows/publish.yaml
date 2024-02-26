@@ -2,13 +2,14 @@ name: publish bin
 on:
   push:
     tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
-      - '[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
     branches:
-      - 'ci'
+      - "ci"
 jobs:
   publish:
-    permissions: write-all
+    permissions:
+      write-all
       # contents: write
     name: publish
     runs-on: debian-latest
@@ -39,7 +40,7 @@ jobs:
         with:
           components: rustfmt
 
-######## CACHE ########
+      ######## CACHE ########
       - name: system packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
@@ -54,7 +55,7 @@ jobs:
 
       # note: building in the same cargo command will lead to "feature unification", which leads to a `diem-node` binary which fails.
       - name: libra release build
-      # size and performance optimized binary with profile.cli
+        # size and performance optimized binary with profile.cli
         run: cargo b --release -p libra
 
       - name: libra publish
