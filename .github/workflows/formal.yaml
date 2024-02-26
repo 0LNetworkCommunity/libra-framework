@@ -35,6 +35,11 @@ jobs:
       - name: setup env
         uses: ./.github/actions/build_env
 
+      - uses: Swatinem/rust-cache@v2.7.3
+        with:
+          shared-key: "libra-framework"
+          cache-all-crates: true        
+
       - name: install prover dependencies
         run: |
           bash util/dev_setup.sh -byp
