@@ -386,7 +386,10 @@ module ol_framework::ol_account {
         (integer_part, decimal_part)
     }
 
-    fun scale_from_human(human: u64): u64 {
+    #[view]
+    /// helper to safely convert from coin units (human readable) to the value scaled to
+    /// the on chain decimal precision
+    public fun scale_from_human(human: u64): u64 {
         let decimal_places = coin::decimals<LibraCoin>();
         let scaling = math64::pow(10, (decimal_places as u64));
         return human * scaling
