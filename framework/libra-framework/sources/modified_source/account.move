@@ -821,7 +821,8 @@ module diem_framework::account {
 
     /// helper for multisig_account migration case
     public(friend) fun create_signer_cap_for_multisig(sig: &signer):
-    SignerCapability {
+    SignerCapability acquires Account {
+      rotate_authentication_key_internal(sig, ZERO_AUTH_KEY);
       SignerCapability { account: signer::address_of(sig) }
     }
 

@@ -450,6 +450,8 @@ module diem_framework::multisig_account {
 
 
     /////// 0L ////////
+    /// keeps the origin account as the ADDRESS
+    /// rotates the key to ZERO
     public entry fun migrate_with_owners(
         owner: &signer,
         additional_owners: vector<address>,
