@@ -253,7 +253,7 @@
 
         community_wallet_init::migrate_community_wallet_account(root, alice);
 
-        donor_voice_txs::make_donor_voice(alice);
+        donor_voice_txs::test_helper_make_donor_voice(root, alice);
 
         // try to cage the address by calling multi auth
         community_wallet_init::finalize_and_cage(alice, signers, 1);
@@ -277,7 +277,7 @@
 
         community_wallet_init::migrate_community_wallet_account(root, alice);
 
-        donor_voice_txs::make_donor_voice(alice);
+        donor_voice_txs::test_helper_make_donor_voice(root, alice);
 
         // try to cage the address by calling multi auth
         community_wallet_init::finalize_and_cage(alice, signers, 1);
@@ -301,7 +301,7 @@
 
         community_wallet_init::migrate_community_wallet_account(root, alice);
 
-        donor_voice_txs::make_donor_voice(alice);
+        donor_voice_txs::test_helper_make_donor_voice(root, alice);
 
         // try to cage the address by calling multi auth
         community_wallet_init::finalize_and_cage(alice, signers, 1);

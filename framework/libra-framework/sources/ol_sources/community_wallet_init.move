@@ -66,21 +66,6 @@ module ol_framework::community_wallet_init {
       check_threshold: u64,
     ) {
       check_proposed_auths(&check_addresses, check_threshold);
-      // // policy is to have at least m signers as auths on the account.
-      // let len = vector::length(&init_signers);
-      // assert!(len >= MINIMUM_AUTH, error::invalid_argument(ETOO_FEW_SIGNERS));
-
-      // // enforce n/m multi auth
-      // let n = if (len == 3) { 2 }
-      // else {
-      //   (MINIMUM_SIGS * len) / MINIMUM_AUTH
-      // };
-
-      // let (fam, _, _) = ancestry::any_family_in_list(*&init_signers);
-      // assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
-
-      // set as donor directed with any liquidation going to contemporary
-      // matching index (not liquidated to historical community wallets)
 
       donor_voice_txs::make_donor_voice(sig);
       if (!donor_voice_txs::is_liquidate_to_match_index(signer::address_of(sig))) {

@@ -136,7 +136,7 @@ module ol_framework::donor_voice_txs {
 
     // 3. Once the MultiSig is initialized, the account needs to be caged, before the MultiSig can be used.
 
-    public fun make_donor_voice(sponsor: &signer)  {
+    public(friend) fun make_donor_voice(sponsor: &signer)  {
       // will not create if already exists (for migration)
       cumulative_deposits::init_cumulative_deposits(sponsor);
 
@@ -180,7 +180,7 @@ module ol_framework::donor_voice_txs {
     /// Like any MultiSig instance, a sponsor which is the original owner of the account, needs to initialize the account.
     /// The account must be "bricked" by the owner before MultiSig actions can be taken.
     /// Note, as with any multisig, the new_authorities cannot include the sponsor, since that account will no longer be able to sign transactions.
-    public entry fun make_multi_action(sponsor: &signer) {
+    fun make_multi_action(sponsor: &signer) {
       multi_action::init_gov(sponsor,);
       multi_action::init_type<Payment>(sponsor, true); // "true": We make this multisig instance hold the WithdrawCapability. Even though we don't need it for any account pay functions, we can use it to make sure the entire pipeline of private functions scheduling a payment are authorized. Belt and suspenders.
     }
@@ -621,6 +621,13 @@ module ol_framework::donor_voice_txs {
     vm_liquidate(vm);
    }
 
+   #[test_only]
+   public fun test_helper_make_donor_voice(vm: &signer, sig: &signer) {
+    use ol_framework::testnet;
+    testnet::assert_testnet(vm);
+    make_donor_voice(sig);
+   }
+
     /// get the proportion of donations of all donors to account.
    public fun get_pro_rata(multisig_address: address): (vector<address>, vector<u64>) {
     // get total fees
@@ -710,10 +717,10 @@ module ol_framework::donor_voice_txs {
 
     //////// TX HELPER ////////
 
-    // transaction helper to wrap Donor Voice init
-    public entry fun make_donor_voice_tx(sponsor: &signer) {
-      make_donor_voice(sponsor);
-    }
+    // // transaction helper to wrap Donor Voice init
+    // public entry fun make_donor_voice_tx(sponsor: &signer) {
+    //   make_donor_voice(sponsor);
+    // }
 
     public entry fun propose_payment_tx(
       auth: signer,

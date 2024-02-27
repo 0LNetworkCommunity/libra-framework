@@ -29,7 +29,7 @@ module ol_framework::test_donor_voice {
       let auths = mock::personas();
 
       // the account needs basic donor directed structs
-      donor_voice_txs::make_donor_voice(&resource_sig);
+      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig);
 
       let list = donor_voice::get_root_registry();
       assert!(vector::length(&list) == 1, 7357001);
@@ -53,7 +53,7 @@ module ol_framework::test_donor_voice {
       let donor_voice_address = signer::address_of(&resource_sig);
 
       // the account needs basic donor directed structs
-      donor_voice_txs::make_donor_voice(&resource_sig);
+      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig);
 
       //need to be caged to finalize donor directed workflow and release control of the account
       multi_action::finalize_and_cage(&resource_sig, vals, vector::length(&vals));
@@ -79,7 +79,7 @@ module ol_framework::test_donor_voice {
       let donor_voice_address = signer::address_of(&resource_sig);
 
       // the account needs basic donor directed structs
-      donor_voice_txs::make_donor_voice(&resource_sig);
+      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig);
 
       //need to cage to finalize donor directed workflow and release control of the account
       multi_action::finalize_and_cage(&resource_sig, vals, 2);
@@ -124,7 +124,7 @@ module ol_framework::test_donor_voice {
       let donor_voice_address = signer::address_of(&resource_sig);
 
       // the account needs basic donor directed structs
-      donor_voice_txs::make_donor_voice(&resource_sig);
+      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig);
 
       //need to be caged to finalize donor directed workflow and release control of the account
       multi_action::finalize_and_cage(&resource_sig, vals, 2);
@@ -215,7 +215,7 @@ module ol_framework::test_donor_voice {
 
 
       // the account needs basic donor directed structs
-      donor_voice_txs::make_donor_voice(&resource_sig);
+      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig);
 
       //need to be caged to finalize donor directed workflow and release control of the account
       multi_action::finalize_and_cage(&resource_sig, vals, 2);
@@ -277,7 +277,7 @@ module ol_framework::test_donor_voice {
 
 
       // the account needs basic donor directed structs
-      donor_voice_txs::make_donor_voice(&resource_sig);
+      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig);
 
 
       //need to be caged to finalize donor directed workflow and release control of the account
@@ -337,7 +337,7 @@ module ol_framework::test_donor_voice {
 
       let donor_voice_address = signer::address_of(donor_voice);
       // the account needs basic donor directed structs
-      donor_voice_txs::make_donor_voice(donor_voice);
+      donor_voice_txs::test_helper_make_donor_voice(root, donor_voice);
       // donor_voice_txs::set_liquidate_to_match_index(&resource_sig, true);
 
       // EVE Establishes some governance over the wallet, when donating.
@@ -423,7 +423,7 @@ module ol_framework::test_donor_voice {
       let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
       let donor_voice_address = signer::address_of(&resource_sig);
       // the account needs basic donor directed structs
-      donor_voice_txs::make_donor_voice(&resource_sig);
+      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig);
       donor_voice_txs::set_liquidate_to_match_index(&resource_sig, true);
 
       // EVE Establishes some governance over the wallet, when donating.
