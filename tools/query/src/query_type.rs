@@ -165,36 +165,9 @@ pub enum QueryType {
     //     /// what event sequence number to start querying from, if DB does not have all.
     //     seq_start: Option<u64>,
     // },
-
     Annotate {
         account: AccountAddress,
-    }, // TODO:
-       // /// Network block height
-       // BlockHeight,
-       // /// Get transaction history
-       // Txs {
-       //     #[clap(short, long)]
-       //     /// account to query txs of
-       //     account: AccountAddress,
-       //     #[clap(long)]
-       //     /// get transactions after this height
-       //     txs_height: Option<u64>,
-       //     #[clap(long)]
-       //     /// limit how many txs
-       //     txs_count: Option<u64>,
-       //     #[clap(long)]
-       //     /// filter by type
-       //     txs_type: Option<String>,
-       // },
-       // /// Get events
-       // Events {
-       //     /// account to query events
-       //     account: AccountAddress,
-       //     /// switch for sent or received events.
-       //     sent_or_received: bool,
-       //     /// what event sequence number to start querying from, if DB does not have all.
-       //     seq_start: Option<u64>,
-       // },
+    },
 }
 
 impl QueryType {

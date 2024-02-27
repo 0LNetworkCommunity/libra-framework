@@ -5714,6 +5714,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap 4.4.2",
+ "diem-api-types",
  "diem-debugger",
  "diem-sdk",
  "diem-types",
