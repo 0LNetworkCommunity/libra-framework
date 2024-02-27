@@ -4,7 +4,7 @@ use libra_config::validator_config;
 use libra_types::{exports::NamedChain, legacy_types::fixtures::TestPersona};
 use std::{fs, net::Ipv4Addr, path::PathBuf, thread, time};
 
-pub fn setup(
+pub async fn setup(
     me: &TestPersona,
     ip_list: &[Ipv4Addr],
     chain: NamedChain,
@@ -40,7 +40,7 @@ pub fn setup(
         Some(me.get_persona_mnem()),
         false,
         Some(chain),
-    )?;
+    ).await?;
 
     // create validator configurations from fixtures
     // without needing to use a github repo to register and read

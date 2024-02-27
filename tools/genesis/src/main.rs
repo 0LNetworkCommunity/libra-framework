@@ -159,7 +159,7 @@ async fn main() -> anyhow::Result<()> {
             cli.home_dir.unwrap_or_else(global_config_dir),
             &supply_settings,
             json_legacy,
-        )?,
+        ).await?,
         _ => {
             println!("\nIf you're looking for trouble \nYou came to the right place");
         }
