@@ -65,10 +65,13 @@ module diem_framework::resource_account {
     use diem_framework::account;
     use diem_std::simple_map::{Self, SimpleMap};
 
+    friend ol_framework::ol_account;
+
     #[test_only]
     use diem_framework::diem_coin::DiemCoin;
     #[test_only]
     use diem_framework::coin;
+
 
 
     /// Container resource not found in account
@@ -121,24 +124,26 @@ module diem_framework::resource_account {
     //     );
     // }
 
-    /// Creates a new resource account, publishes the package under this account transaction under
-    /// this account and leaves the signer cap readily available for pickup.
-    public entry fun create_resource_account_and_publish_package(
-        origin: &signer,
-        seed: vector<u8>,
-        metadata_serialized: vector<u8>,
-        code: vector<vector<u8>>,
-    ) acquires Container {
-        let (resource, resource_signer_cap) = account::create_resource_account(origin, seed);
-        diem_framework::code::publish_package_txn(&resource, metadata_serialized, code);
-        rotate_account_authentication_key_and_store_capability(
-            origin,
-            resource,
-            resource_signer_cap,
-            ZERO_AUTH_KEY,
-        );
-    }
+    // /// Creates a new resource account, publishes the package under this account transaction under
+    // /// this account and leaves the signer cap readily available for pickup.
+    // public entry fun create_resource_account_and_publish_package(
+    //     origin: &signer,
+    //     seed: vector<u8>,
+    //     metadata_serialized: vector<u8>,
+    //     code: vector<vector<u8>>,
+    // ) acquires Container {
+    //     let (resource, resource_signer_cap) = account::create_resource_account(origin, seed);
+    //     diem_framework::code::publish_package_txn(&resource, metadata_serialized, code);
+    //     rotate_account_authentication_key_and_store_capability(
+    //         origin,
+    //         resource,
+    //         resource_signer_cap,
+    //         ZERO_AUTH_KEY,
+    //     );
+    // }
 
+    /// rotates the account key and stores the signer capability (does not
+    /// change an address)
     fun rotate_account_authentication_key_and_store_capability(
         origin: &signer,
         resource: signer,

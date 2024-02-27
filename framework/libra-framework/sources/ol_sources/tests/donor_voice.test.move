@@ -23,10 +23,10 @@ module ol_framework::test_donor_voice {
       let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
       let donor_voice_address = signer::address_of(&resource_sig);
 
-      let donors = mock::personas();
+      let auths = mock::personas();
 
       // the account needs basic donor directed structs
-      donor_voice_txs::make_donor_voice(&resource_sig, donors, 2);
+      donor_voice_txs::make_donor_voice(&resource_sig, auths, 2);
 
       let list = donor_voice::get_root_registry();
       assert!(vector::length(&list) == 1, 7357001);
@@ -35,7 +35,7 @@ module ol_framework::test_donor_voice {
       assert!(!donor_voice_txs::is_donor_voice(donor_voice_address), 7357002);
 
       //need to be caged to finalize donor directed workflow and release control of the account
-      multi_action::finalize_and_cage(&resource_sig);
+      multi_action::finalize_and_cage(&resource_sig, auths, vector::length(&auths));
 
       assert!(donor_voice_txs::is_donor_voice(donor_voice_address), 7357003);
     }
@@ -53,7 +53,7 @@ module ol_framework::test_donor_voice {
       donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
 
       //need to be caged to finalize donor directed workflow and release control of the account
-      multi_action::finalize_and_cage(&resource_sig);
+      multi_action::finalize_and_cage(&resource_sig, vals, vector::length(&vals));
 
       let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
@@ -79,7 +79,7 @@ module ol_framework::test_donor_voice {
       donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
 
       //need to cage to finalize donor directed workflow and release control of the account
-      multi_action::finalize_and_cage(&resource_sig);
+      multi_action::finalize_and_cage(&resource_sig, vals, 2);
 
       let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
@@ -124,7 +124,7 @@ module ol_framework::test_donor_voice {
       donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
 
       //need to be caged to finalize donor directed workflow and release control of the account
-      multi_action::finalize_and_cage(&resource_sig);
+      multi_action::finalize_and_cage(&resource_sig, vals, 2);
 
       // EVE Establishes some governance over the wallet, when donating.
       let eve_donation = 42;
@@ -215,7 +215,7 @@ module ol_framework::test_donor_voice {
       donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
 
       //need to be caged to finalize donor directed workflow and release control of the account
-      multi_action::finalize_and_cage(&resource_sig);
+      multi_action::finalize_and_cage(&resource_sig, vals, 2);
 
 
       let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
@@ -278,7 +278,7 @@ module ol_framework::test_donor_voice {
 
 
       //need to be caged to finalize donor directed workflow and release control of the account
-      multi_action::finalize_and_cage(&resource_sig);
+      multi_action::finalize_and_cage(&resource_sig, vals, 2);
 
       let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), 100, b"thanks marlon");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
@@ -369,7 +369,7 @@ module ol_framework::test_donor_voice {
       assert!(vector::length(&list) > 0, 7357005);
 
       let (addrs, refunds) = donor_voice_txs::get_pro_rata(donor_voice_address);
- 
+
       assert!(*vector::borrow(&addrs, 0) == @0x1000e, 7357006);
       assert!(*vector::borrow(&addrs, 1) == @0x1000d, 7357007);
 
