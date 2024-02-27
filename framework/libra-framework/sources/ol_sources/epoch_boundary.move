@@ -229,7 +229,7 @@ module diem_framework::epoch_boundary {
       // must be mainnet
       assert!(!testnet::is_not_mainnet(), ETRIGGER_EPOCH_MAINNET);
       // must get root permission from governance.move
-      system_addresses::assert_ol(framework_signer);
+      system_addresses::assert_diem_framework(framework_signer);
       let _ = can_trigger(); // will abort if false
 
       // update the state and flip the Bit
@@ -237,6 +237,18 @@ module diem_framework::epoch_boundary {
       let state = borrow_global_mut<BoundaryBit>(@ol_framework);
       state.ready = false;
 
+      epoch_boundary(framework_signer, state.closing_epoch, 0);
+    }
+
+    // utility to use in smoke tests
+    public fun smoke_trigger_epoch(framework_signer: &signer) acquires BoundaryBit,
+    BoundaryStatus {
+      // cannot call thsi on mainnet
+      // only for smoke testing
+      assert!(testnet::is_not_mainnet(), 666);
+      // must get 0x1 sig from governance.move
+      system_addresses::assert_diem_framework(framework_signer);
+      let state = borrow_global_mut<BoundaryBit>(@ol_framework);
       epoch_boundary(framework_signer, state.closing_epoch, 0);
     }
 

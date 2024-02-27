@@ -116,7 +116,7 @@ module ol_framework::donor_voice_txs {
     }
 
 
-    #[test_only]
+
     // // can only be called by genesis
     public(friend) fun migrate_community_wallet_account(vm: &signer, dv_account:
     &signer) {
@@ -136,8 +136,7 @@ module ol_framework::donor_voice_txs {
 
     // 3. Once the MultiSig is initialized, the account needs to be caged, before the MultiSig can be used.
 
-    public fun make_donor_voice(sponsor: &signer, init_signers: vector<address>,
-    cfg_n_signers: u64)  {
+    public(friend) fun make_donor_voice(sponsor: &signer)  {
       // will not create if already exists (for migration)
       cumulative_deposits::init_cumulative_deposits(sponsor);
 
@@ -145,7 +144,7 @@ module ol_framework::donor_voice_txs {
       // the user can send another transacton to change this.
       let liquidate_to_match_index = false;
       structs_init(sponsor, liquidate_to_match_index);
-      make_multi_action(sponsor, cfg_n_signers, init_signers);
+      make_multi_action(sponsor);
       donor_voice::add(sponsor);
     }
 
@@ -181,8 +180,8 @@ module ol_framework::donor_voice_txs {
     /// Like any MultiSig instance, a sponsor which is the original owner of the account, needs to initialize the account.
     /// The account must be "bricked" by the owner before MultiSig actions can be taken.
     /// Note, as with any multisig, the new_authorities cannot include the sponsor, since that account will no longer be able to sign transactions.
-    public entry fun make_multi_action(sponsor: &signer, cfg_default_n_sigs: u64, new_authorities: vector<address>) {
-      multi_action::init_gov(sponsor, cfg_default_n_sigs, &new_authorities);
+    fun make_multi_action(sponsor: &signer) {
+      multi_action::init_gov(sponsor,);
       multi_action::init_type<Payment>(sponsor, true); // "true": We make this multisig instance hold the WithdrawCapability. Even though we don't need it for any account pay functions, we can use it to make sure the entire pipeline of private functions scheduling a payment are authorized. Belt and suspenders.
     }
 
@@ -622,6 +621,13 @@ module ol_framework::donor_voice_txs {
     vm_liquidate(vm);
    }
 
+   #[test_only]
+   public fun test_helper_make_donor_voice(vm: &signer, sig: &signer) {
+    use ol_framework::testnet;
+    testnet::assert_testnet(vm);
+    make_donor_voice(sig);
+   }
+
     /// get the proportion of donations of all donors to account.
    public fun get_pro_rata(multisig_address: address): (vector<address>, vector<u64>) {
     // get total fees
@@ -711,10 +717,10 @@ module ol_framework::donor_voice_txs {
 
     //////// TX HELPER ////////
 
-    // transaction helper to wrap Donor Voice init
-    public entry fun make_donor_voice_tx(sponsor: &signer, init_signers: vector<address>, cfg_n_signers: u64) {
-      make_donor_voice(sponsor, init_signers, cfg_n_signers);
-    }
+    // // transaction helper to wrap Donor Voice init
+    // public entry fun make_donor_voice_tx(sponsor: &signer) {
+    //   make_donor_voice(sponsor);
+    // }
 
     public entry fun propose_payment_tx(
       auth: signer,

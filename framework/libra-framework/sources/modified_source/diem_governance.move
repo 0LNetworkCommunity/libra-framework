@@ -21,6 +21,7 @@ module diem_framework::diem_governance {
 
     use ol_framework::libra_coin::LibraCoin;
     use ol_framework::epoch_boundary;
+    use ol_framework::testnet;
     // use diem_std::debug::print;
 
 
@@ -590,6 +591,16 @@ module diem_framework::diem_governance {
       let _ = epoch_boundary::can_trigger(); // will abort if false
       epoch_boundary::trigger_epoch(&framework_signer);
     }
+
+    // helper to use on smoke tests only. Will fail on m
+    public entry fun smoke_trigger_epoch(core_resources: &signer) acquires
+    GovernanceResponsbility { // doesn't need a signer
+      assert!(testnet::is_not_mainnet(), 666);
+      system_addresses::assert_ol(core_resources);
+      let framework_signer = get_signer(@ol_framework);
+      epoch_boundary::smoke_trigger_epoch(&framework_signer);
+    }
+
 
 
     /// Return the voting power a stake pool has with respect to governance proposals.

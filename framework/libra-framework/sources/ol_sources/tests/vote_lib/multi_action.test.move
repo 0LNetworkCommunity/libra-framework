@@ -20,8 +20,7 @@ module ol_framework::test_multi_action {
   fun init_multi_action(root: &signer, dave: &signer) {
 
 
-    let vals = mock::genesis_n_vals(root, 2);
-    // mock::ol_initialize_coin(root);
+    mock::genesis_n_vals(root, 2);
 
 
     let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
@@ -29,7 +28,7 @@ module ol_framework::test_multi_action {
     assert!(resource_account::is_resource_account(new_resource_address), 0);
 
     // make the vals the signers on the safe
-    multi_action::init_gov(&resource_sig, 2, &vals);
+    multi_action::init_gov(&resource_sig);
     multi_action::init_type<DummyType>(&resource_sig, true);
 
   }
@@ -46,7 +45,7 @@ module ol_framework::test_multi_action {
 
     // make the vals the signers on the safe
     // SO ALICE IS AUTHORIZED
-    multi_action::init_gov(&resource_sig, 2, &vals);
+    multi_action::init_gov(&resource_sig);
     multi_action::init_type<DummyType>(&resource_sig, true);
 
 
@@ -74,7 +73,7 @@ module ol_framework::test_multi_action {
 
     // make the vals the signers on the safe
     // SO ALICE IS AUTHORIZED
-    multi_action::init_gov(&resource_sig, 2, &vals);
+    multi_action::init_gov(&resource_sig);
     multi_action::init_type<DummyType>(&resource_sig, true);
 
     //need to be caged to finalize multi action workflow and release control of the account
@@ -122,7 +121,7 @@ module ol_framework::test_multi_action {
     assert!(resource_account::is_resource_account(new_resource_address), 0);
 
     // make the vals the signers on the safe, and 2-of-2 need to sign
-    multi_action::init_gov(&resource_sig, 2, &vals);
+    multi_action::init_gov(&resource_sig);
     // Ths is a simple multi_action: there is no capability being stored
     multi_action::init_type<DummyType>(&resource_sig, false);
 
@@ -163,7 +162,7 @@ module ol_framework::test_multi_action {
     ol_account::transfer(alice, new_resource_address, 100);
 
     // make the vals the signers on the safe, and 2-of-2 need to sign
-    multi_action::init_gov(&resource_sig, 2, &vals);
+    multi_action::init_gov(&resource_sig);
     multi_action::init_type<DummyType>(&resource_sig, true);
 
     //need to be caged to finalize multi action workflow and release control of the account
@@ -221,7 +220,7 @@ module ol_framework::test_multi_action {
     ol_account::transfer(alice, new_resource_address, 100);
     // make the vals the signers on the safe
     // SO ALICE and DAVE ARE AUTHORIZED
-    safe::init_payment_multisig(&resource_sig, vals, 2); // both need to sign
+    safe::init_payment_multisig(&resource_sig); // both need to sign
 
     //need to be caged to finalize multi action workflow and release control of the account
     multi_action::finalize_and_cage(&resource_sig, vals, vector::length(&vals));
@@ -261,7 +260,7 @@ module ol_framework::test_multi_action {
     ol_account::transfer(alice, new_resource_address, 100);
     // make the vals the signers on the safe
     // SO ALICE and BOB ARE AUTHORIZED
-    multi_action::init_gov(&resource_sig, 2, &vals);// both need to sign
+    multi_action::init_gov(&resource_sig);// both need to sign
     multi_action::init_type<DummyType>(&resource_sig, true);
 
     //need to be caged to finalize multi action workflow and release control of
@@ -314,7 +313,7 @@ module ol_framework::test_multi_action {
     ol_account::transfer(alice, new_resource_address, 100);
     // make the vals the signers on the safe
     // SO ALICE and BOB ARE AUTHORIZED
-    multi_action::init_gov(&resource_sig, 2, &vals);// both need to sign
+    multi_action::init_gov(&resource_sig);// both need to sign
     multi_action::init_type<DummyType>(&resource_sig, false); // simple type with no capability
 
     //need to be caged to finalize multi action workflow and release control of the account

@@ -544,7 +544,7 @@ pub fn genesis_migrate_community_wallet(
 
             exec_function(
                 session,
-                "community_wallet",
+                "community_wallet_init",
                 "migrate_community_wallet_account",
                 vec![],
                 serialized_values,

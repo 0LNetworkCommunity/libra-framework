@@ -58,6 +58,7 @@ module ol_framework::community_wallet {
     public fun is_init(addr: address):bool {
       exists<CommunityWallet>(addr)
     }
+
     public fun set_comm_wallet(sender: &signer) {
       let addr = signer::address_of(sender);
       if (!is_init(addr)) {

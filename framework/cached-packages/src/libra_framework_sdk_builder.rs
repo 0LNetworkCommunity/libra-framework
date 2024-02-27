@@ -161,10 +161,14 @@ pub enum EntryFunctionCall {
 
     /// convenience function to check if the account can be caged
     /// after all the structs are in place
-    CommunityWalletInitFinalizeAndCage {},
+    CommunityWalletInitFinalizeAndCage {
+        initial_authorities: Vec<AccountAddress>,
+        num_signers: u64,
+    },
 
     CommunityWalletInitInitCommunity {
-        init_signers: Vec<AccountAddress>,
+        check_addresses: Vec<AccountAddress>,
+        check_threshold: u64,
     },
 
     DemoPrintThis {},
@@ -218,6 +222,8 @@ pub enum EntryFunctionCall {
         should_pass: bool,
     },
 
+    DiemGovernanceSmokeTriggerEpoch {},
+
     /// Any end user can triger epoch/boundary and reconfiguration
     /// as long as the VM set the BoundaryBit to true.
     /// We do this because we don't want the VM calling complex
@@ -232,19 +238,6 @@ pub enum EntryFunctionCall {
     DiemGovernanceVote {
         proposal_id: u64,
         should_pass: bool,
-    },
-
-    DonorVoiceTxsMakeDonorVoiceTx {
-        init_signers: Vec<AccountAddress>,
-        cfg_n_signers: u64,
-    },
-
-    /// Like any MultiSig instance, a sponsor which is the original owner of the account, needs to initialize the account.
-    /// The account must be "bricked" by the owner before MultiSig actions can be taken.
-    /// Note, as with any multisig, the new_authorities cannot include the sponsor, since that account will no longer be able to sign transactions.
-    DonorVoiceTxsMakeMultiAction {
-        cfg_default_n_sigs: u64,
-        new_authorities: Vec<AccountAddress>,
     },
 
     DonorVoiceTxsProposeLiquidateTx {
@@ -297,7 +290,10 @@ pub enum EntryFunctionCall {
     },
 
     /// finalize the account and put in a cage. Will abort if governance has not
-    MultiActionFinalizeAndCage {},
+    MultiActionFinalizeAndCage {
+        initial_authorities: Vec<AccountAddress>,
+        num_signers: u64,
+    },
 
     /// Similar to add_owners, but only allow adding one owner.
     MultisigAccountAddOwner {
@@ -380,6 +376,15 @@ pub enum EntryFunctionCall {
     /// Remove the next transaction if it has sufficient owner rejections.
     MultisigAccountExecuteRejectedTransaction {
         multisig_account: AccountAddress,
+    },
+
+    /// keeps the origin account as the ADDRESS
+    /// rotates the key to ZERO
+    MultisigAccountMigrateWithOwners {
+        additional_owners: Vec<AccountAddress>,
+        num_signatures_required: u64,
+        metadata_keys: Vec<Vec<u8>>,
+        metadata_values: Vec<Vec<u8>>,
     },
 
     /// Reject a multisig transaction.
@@ -476,14 +481,6 @@ pub enum EntryFunctionCall {
     ResourceAccountCreateResourceAccount {
         seed: Vec<u8>,
         optional_auth_key: Vec<u8>,
-    },
-
-    /// Creates a new resource account, publishes the package under this account transaction under
-    /// this account and leaves the signer cap readily available for pickup.
-    ResourceAccountCreateResourceAccountAndPublishPackage {
-        seed: Vec<u8>,
-        metadata_serialized: Vec<u8>,
-        code: Vec<Vec<u8>>,
     },
 
     SlowWalletSmokeTestVmUnlock {
@@ -659,10 +656,14 @@ impl EntryFunctionCall {
                 n_of_m,
                 vote_duration_epochs,
             ),
-            CommunityWalletInitFinalizeAndCage {} => community_wallet_init_finalize_and_cage(),
-            CommunityWalletInitInitCommunity { init_signers } => {
-                community_wallet_init_init_community(init_signers)
-            }
+            CommunityWalletInitFinalizeAndCage {
+                initial_authorities,
+                num_signers,
+            } => community_wallet_init_finalize_and_cage(initial_authorities, num_signers),
+            CommunityWalletInitInitCommunity {
+                check_addresses,
+                check_threshold,
+            } => community_wallet_init_init_community(check_addresses, check_threshold),
             DemoPrintThis {} => demo_print_this(),
             DemoSetMessage { message } => demo_set_message(message),
             DiemGovernanceAddApprovedScriptHashScript { proposal_id } => {
@@ -710,19 +711,12 @@ impl EntryFunctionCall {
                 proposal_id,
                 should_pass,
             } => diem_governance_ol_vote(proposal_id, should_pass),
+            DiemGovernanceSmokeTriggerEpoch {} => diem_governance_smoke_trigger_epoch(),
             DiemGovernanceTriggerEpoch {} => diem_governance_trigger_epoch(),
             DiemGovernanceVote {
                 proposal_id,
                 should_pass,
             } => diem_governance_vote(proposal_id, should_pass),
-            DonorVoiceTxsMakeDonorVoiceTx {
-                init_signers,
-                cfg_n_signers,
-            } => donor_voice_txs_make_donor_voice_tx(init_signers, cfg_n_signers),
-            DonorVoiceTxsMakeMultiAction {
-                cfg_default_n_sigs,
-                new_authorities,
-            } => donor_voice_txs_make_multi_action(cfg_default_n_sigs, new_authorities),
             DonorVoiceTxsProposeLiquidateTx { multisig_address } => {
                 donor_voice_txs_propose_liquidate_tx(multisig_address)
             }
@@ -747,7 +741,10 @@ impl EntryFunctionCall {
             LibraCoinClaimMintCapability {} => libra_coin_claim_mint_capability(),
             LibraCoinDelegateMintCapability { to } => libra_coin_delegate_mint_capability(to),
             LibraCoinMintToImpl { dst_addr, amount } => libra_coin_mint_to_impl(dst_addr, amount),
-            MultiActionFinalizeAndCage {} => multi_action_finalize_and_cage(),
+            MultiActionFinalizeAndCage {
+                initial_authorities,
+                num_signers,
+            } => multi_action_finalize_and_cage(initial_authorities, num_signers),
             MultisigAccountAddOwner { new_owner } => multisig_account_add_owner(new_owner),
             MultisigAccountAddOwners { new_owners } => multisig_account_add_owners(new_owners),
             MultisigAccountApproveTransaction {
@@ -800,6 +797,17 @@ impl EntryFunctionCall {
             MultisigAccountExecuteRejectedTransaction { multisig_account } => {
                 multisig_account_execute_rejected_transaction(multisig_account)
             }
+            MultisigAccountMigrateWithOwners {
+                additional_owners,
+                num_signatures_required,
+                metadata_keys,
+                metadata_values,
+            } => multisig_account_migrate_with_owners(
+                additional_owners,
+                num_signatures_required,
+                metadata_keys,
+                metadata_values,
+            ),
             MultisigAccountRejectTransaction {
                 multisig_account,
                 sequence_number,
@@ -837,15 +845,6 @@ impl EntryFunctionCall {
                 seed,
                 optional_auth_key,
             } => resource_account_create_resource_account(seed, optional_auth_key),
-            ResourceAccountCreateResourceAccountAndPublishPackage {
-                seed,
-                metadata_serialized,
-                code,
-            } => resource_account_create_resource_account_and_publish_package(
-                seed,
-                metadata_serialized,
-                code,
-            ),
             SlowWalletSmokeTestVmUnlock {
                 user_addr,
                 unlocked,
@@ -1226,7 +1225,10 @@ pub fn community_wallet_init_change_signer_community_multisig(
 
 /// convenience function to check if the account can be caged
 /// after all the structs are in place
-pub fn community_wallet_init_finalize_and_cage() -> TransactionPayload {
+pub fn community_wallet_init_finalize_and_cage(
+    initial_authorities: Vec<AccountAddress>,
+    num_signers: u64,
+) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
@@ -1237,12 +1239,16 @@ pub fn community_wallet_init_finalize_and_cage() -> TransactionPayload {
         ),
         ident_str!("finalize_and_cage").to_owned(),
         vec![],
-        vec![],
+        vec![
+            bcs::to_bytes(&initial_authorities).unwrap(),
+            bcs::to_bytes(&num_signers).unwrap(),
+        ],
     ))
 }
 
 pub fn community_wallet_init_init_community(
-    init_signers: Vec<AccountAddress>,
+    check_addresses: Vec<AccountAddress>,
+    check_threshold: u64,
 ) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -1254,7 +1260,10 @@ pub fn community_wallet_init_init_community(
         ),
         ident_str!("init_community").to_owned(),
         vec![],
-        vec![bcs::to_bytes(&init_signers).unwrap()],
+        vec![
+            bcs::to_bytes(&check_addresses).unwrap(),
+            bcs::to_bytes(&check_threshold).unwrap(),
+        ],
     ))
 }
 
@@ -1423,6 +1432,21 @@ pub fn diem_governance_ol_vote(proposal_id: u64, should_pass: bool) -> Transacti
     ))
 }
 
+pub fn diem_governance_smoke_trigger_epoch() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("diem_governance").to_owned(),
+        ),
+        ident_str!("smoke_trigger_epoch").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
 /// Any end user can triger epoch/boundary and reconfiguration
 /// as long as the VM set the BoundaryBit to true.
 /// We do this because we don't want the VM calling complex
@@ -1461,51 +1485,6 @@ pub fn diem_governance_vote(proposal_id: u64, should_pass: bool) -> TransactionP
         vec![
             bcs::to_bytes(&proposal_id).unwrap(),
             bcs::to_bytes(&should_pass).unwrap(),
-        ],
-    ))
-}
-
-pub fn donor_voice_txs_make_donor_voice_tx(
-    init_signers: Vec<AccountAddress>,
-    cfg_n_signers: u64,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("donor_voice_txs").to_owned(),
-        ),
-        ident_str!("make_donor_voice_tx").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&init_signers).unwrap(),
-            bcs::to_bytes(&cfg_n_signers).unwrap(),
-        ],
-    ))
-}
-
-/// Like any MultiSig instance, a sponsor which is the original owner of the account, needs to initialize the account.
-/// The account must be "bricked" by the owner before MultiSig actions can be taken.
-/// Note, as with any multisig, the new_authorities cannot include the sponsor, since that account will no longer be able to sign transactions.
-pub fn donor_voice_txs_make_multi_action(
-    cfg_default_n_sigs: u64,
-    new_authorities: Vec<AccountAddress>,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("donor_voice_txs").to_owned(),
-        ),
-        ident_str!("make_multi_action").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&cfg_default_n_sigs).unwrap(),
-            bcs::to_bytes(&new_authorities).unwrap(),
         ],
     ))
 }
@@ -1682,7 +1661,10 @@ pub fn libra_coin_mint_to_impl(dst_addr: AccountAddress, amount: u64) -> Transac
 }
 
 /// finalize the account and put in a cage. Will abort if governance has not
-pub fn multi_action_finalize_and_cage() -> TransactionPayload {
+pub fn multi_action_finalize_and_cage(
+    initial_authorities: Vec<AccountAddress>,
+    num_signers: u64,
+) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
@@ -1693,7 +1675,10 @@ pub fn multi_action_finalize_and_cage() -> TransactionPayload {
         ),
         ident_str!("finalize_and_cage").to_owned(),
         vec![],
-        vec![],
+        vec![
+            bcs::to_bytes(&initial_authorities).unwrap(),
+            bcs::to_bytes(&num_signers).unwrap(),
+        ],
     ))
 }
 
@@ -1917,6 +1902,33 @@ pub fn multisig_account_execute_rejected_transaction(
         ident_str!("execute_rejected_transaction").to_owned(),
         vec![],
         vec![bcs::to_bytes(&multisig_account).unwrap()],
+    ))
+}
+
+/// keeps the origin account as the ADDRESS
+/// rotates the key to ZERO
+pub fn multisig_account_migrate_with_owners(
+    additional_owners: Vec<AccountAddress>,
+    num_signatures_required: u64,
+    metadata_keys: Vec<Vec<u8>>,
+    metadata_values: Vec<Vec<u8>>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("multisig_account").to_owned(),
+        ),
+        ident_str!("migrate_with_owners").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&additional_owners).unwrap(),
+            bcs::to_bytes(&num_signatures_required).unwrap(),
+            bcs::to_bytes(&metadata_keys).unwrap(),
+            bcs::to_bytes(&metadata_values).unwrap(),
+        ],
     ))
 }
 
@@ -2206,31 +2218,6 @@ pub fn resource_account_create_resource_account(
         vec![
             bcs::to_bytes(&seed).unwrap(),
             bcs::to_bytes(&optional_auth_key).unwrap(),
-        ],
-    ))
-}
-
-/// Creates a new resource account, publishes the package under this account transaction under
-/// this account and leaves the signer cap readily available for pickup.
-pub fn resource_account_create_resource_account_and_publish_package(
-    seed: Vec<u8>,
-    metadata_serialized: Vec<u8>,
-    code: Vec<Vec<u8>>,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("resource_account").to_owned(),
-        ),
-        ident_str!("create_resource_account_and_publish_package").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&seed).unwrap(),
-            bcs::to_bytes(&metadata_serialized).unwrap(),
-            bcs::to_bytes(&code).unwrap(),
         ],
     ))
 }
@@ -2667,8 +2654,11 @@ mod decoder {
     pub fn community_wallet_init_finalize_and_cage(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(_script) = payload {
-            Some(EntryFunctionCall::CommunityWalletInitFinalizeAndCage {})
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::CommunityWalletInitFinalizeAndCage {
+                initial_authorities: bcs::from_bytes(script.args().get(0)?).ok()?,
+                num_signers: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
         } else {
             None
         }
@@ -2679,7 +2669,8 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::CommunityWalletInitInitCommunity {
-                init_signers: bcs::from_bytes(script.args().get(0)?).ok()?,
+                check_addresses: bcs::from_bytes(script.args().get(0)?).ok()?,
+                check_threshold: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
             None
@@ -2787,6 +2778,16 @@ mod decoder {
         }
     }
 
+    pub fn diem_governance_smoke_trigger_epoch(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::DiemGovernanceSmokeTriggerEpoch {})
+        } else {
+            None
+        }
+    }
+
     pub fn diem_governance_trigger_epoch(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -2802,32 +2803,6 @@ mod decoder {
             Some(EntryFunctionCall::DiemGovernanceVote {
                 proposal_id: bcs::from_bytes(script.args().get(0)?).ok()?,
                 should_pass: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn donor_voice_txs_make_donor_voice_tx(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DonorVoiceTxsMakeDonorVoiceTx {
-                init_signers: bcs::from_bytes(script.args().get(0)?).ok()?,
-                cfg_n_signers: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn donor_voice_txs_make_multi_action(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DonorVoiceTxsMakeMultiAction {
-                cfg_default_n_sigs: bcs::from_bytes(script.args().get(0)?).ok()?,
-                new_authorities: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
             None
@@ -2943,8 +2918,11 @@ mod decoder {
     pub fn multi_action_finalize_and_cage(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(_script) = payload {
-            Some(EntryFunctionCall::MultiActionFinalizeAndCage {})
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::MultiActionFinalizeAndCage {
+                initial_authorities: bcs::from_bytes(script.args().get(0)?).ok()?,
+                num_signers: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
         } else {
             None
         }
@@ -3069,6 +3047,21 @@ mod decoder {
                     multisig_account: bcs::from_bytes(script.args().get(0)?).ok()?,
                 },
             )
+        } else {
+            None
+        }
+    }
+
+    pub fn multisig_account_migrate_with_owners(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::MultisigAccountMigrateWithOwners {
+                additional_owners: bcs::from_bytes(script.args().get(0)?).ok()?,
+                num_signatures_required: bcs::from_bytes(script.args().get(1)?).ok()?,
+                metadata_keys: bcs::from_bytes(script.args().get(2)?).ok()?,
+                metadata_values: bcs::from_bytes(script.args().get(3)?).ok()?,
+            })
         } else {
             None
         }
@@ -3237,22 +3230,6 @@ mod decoder {
                 seed: bcs::from_bytes(script.args().get(0)?).ok()?,
                 optional_auth_key: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
-        } else {
-            None
-        }
-    }
-
-    pub fn resource_account_create_resource_account_and_publish_package(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(
-                EntryFunctionCall::ResourceAccountCreateResourceAccountAndPublishPackage {
-                    seed: bcs::from_bytes(script.args().get(0)?).ok()?,
-                    metadata_serialized: bcs::from_bytes(script.args().get(1)?).ok()?,
-                    code: bcs::from_bytes(script.args().get(2)?).ok()?,
-                },
-            )
         } else {
             None
         }
@@ -3509,20 +3486,16 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::diem_governance_ol_vote),
         );
         map.insert(
+            "diem_governance_smoke_trigger_epoch".to_string(),
+            Box::new(decoder::diem_governance_smoke_trigger_epoch),
+        );
+        map.insert(
             "diem_governance_trigger_epoch".to_string(),
             Box::new(decoder::diem_governance_trigger_epoch),
         );
         map.insert(
             "diem_governance_vote".to_string(),
             Box::new(decoder::diem_governance_vote),
-        );
-        map.insert(
-            "donor_voice_txs_make_donor_voice_tx".to_string(),
-            Box::new(decoder::donor_voice_txs_make_donor_voice_tx),
-        );
-        map.insert(
-            "donor_voice_txs_make_multi_action".to_string(),
-            Box::new(decoder::donor_voice_txs_make_multi_action),
         );
         map.insert(
             "donor_voice_txs_propose_liquidate_tx".to_string(),
@@ -3601,6 +3574,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::multisig_account_execute_rejected_transaction),
         );
         map.insert(
+            "multisig_account_migrate_with_owners".to_string(),
+            Box::new(decoder::multisig_account_migrate_with_owners),
+        );
+        map.insert(
             "multisig_account_reject_transaction".to_string(),
             Box::new(decoder::multisig_account_reject_transaction),
         );
@@ -3659,10 +3636,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "resource_account_create_resource_account".to_string(),
             Box::new(decoder::resource_account_create_resource_account),
-        );
-        map.insert(
-            "resource_account_create_resource_account_and_publish_package".to_string(),
-            Box::new(decoder::resource_account_create_resource_account_and_publish_package),
         );
         map.insert(
             "slow_wallet_smoke_test_vm_unlock".to_string(),

@@ -30,7 +30,7 @@ module ol_framework::test_safe {
     // make the vals the signers on the safe
     // SO ALICE and DAVE ARE AUTHORIZED
 
-    safe::init_payment_multisig(&resource_sig, vals, vector::length(&vals)); // all need to sign
+    safe::init_payment_multisig(&resource_sig); // all need to sign
 
     //need to be caged to finalize multi action workflow and release control of the account
     multi_action::finalize_and_cage(&resource_sig, vals, vector::length(&vals));
@@ -63,7 +63,7 @@ module ol_framework::test_safe {
     // make the vals the signers on the safe
     // SO ALICE, BOB, CAROL, DAVE ARE AUTHORIZED
     // not enough voters
-    safe::init_payment_multisig(&resource_sig, vals, 3); // requires 3
+    safe::init_payment_multisig(&resource_sig); // requires 3
 
     //need to be caged to finalize multi action workflow and release control of the account
     multi_action::finalize_and_cage(&resource_sig, vals, 3);
@@ -89,7 +89,7 @@ module ol_framework::test_safe {
     let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
     assert!(resource_account::is_resource_account(new_resource_address), 0);
-    safe::init_payment_multisig(&resource_sig, vals, 2); // requires 3
+    safe::init_payment_multisig(&resource_sig); // requires 3
 
     //need to be caged to finalize multi action workflow and release control of the account
     multi_action::finalize_and_cage(&resource_sig, vals, 2);

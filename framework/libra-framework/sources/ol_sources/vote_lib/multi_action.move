@@ -33,7 +33,7 @@ module ol_framework::multi_action {
   use ol_framework::ballot::{Self, BallotTracker};
   use ol_framework::epoch_helper;
 
- use diem_std::debug::print;
+//  use diem_std::debug::print;
 
   const EGOV_NOT_INITIALIZED: u64 = 1;
   /// The owner of this account can't be an authority, since it will subsequently be bricked. The signer of this account is no longer useful. The account is now controlled by the Governance logic.
@@ -143,8 +143,7 @@ module ol_framework::multi_action {
   // Initialize the governance structs for this account.
   // Governance contains the constraints for each Action that are checked on each vote (n_sigs, expiration, signers, etc)
   // Also, an initial Action of type PropGovSigners is created, which is used to govern the signers and threshold for this account.
-  public fun init_gov(sig: &signer, _cfg_default_n_sigs: u64,
-  _m_seed_authorities: &vector<address>) {
+  public fun init_gov(sig: &signer) {
 
     // heals un-initialized state, and does nothing if state already exists.
 
@@ -185,9 +184,6 @@ module ol_framework::multi_action {
     assert!(!multisig_account::is_multisig(addr),
     error::invalid_argument(EGOV_NOT_INITIALIZED));
 
-    // let authorities = get_authorities(addr);
-    // let (n, _m) = get_threshold(addr);
-    print(&initial_authorities);
     multisig_account::migrate_with_owners(sig, initial_authorities, num_signers, vector::empty(), vector::empty());
   }
 
@@ -541,8 +537,6 @@ module ol_framework::multi_action {
     assert_authorized(sig, multisig_address); // Duplicated with propose(), belt
     // and suspenders
 
-    print(&222);
-    print(&addresses);
     let data = PropGovSigners {
       addresses,
       add_remove,
@@ -565,8 +559,6 @@ module ol_framework::multi_action {
     };
     maybe_restore_withdraw_cap(cap_opt); // don't need this but can't drop.
 
-    print(&3333);
-    print(&passed);
     if (passed) {
       let ms = borrow_global_mut<Governance>(multisig_address);
       let data = extract_proposal_data<PropGovSigners>(multisig_address, id);

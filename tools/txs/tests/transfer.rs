@@ -1,4 +1,4 @@
-use libra_smoke_tests::{helpers::get_libra_balance, configure_validator, libra_smoke::LibraSmoke};
+use libra_smoke_tests::{configure_validator, helpers::get_libra_balance, libra_smoke::LibraSmoke};
 use libra_txs::txs_cli::{TxsCli, TxsSub::Transfer};
 use libra_types::legacy_types::app_cfg::TxCost;
 
@@ -82,11 +82,13 @@ async fn smoke_transfer_create_account() -> Result<(), anyhow::Error> {
         .await
         .expect("cli could not create and transfer to new account");
 
-        let bal = get_libra_balance(&client, marlon).await?;
-        assert_eq!(bal.total, 1000000, "Balance of the new account should be 1.0(1000000) after the transfer");
+    let bal = get_libra_balance(&client, marlon).await?;
+    assert_eq!(
+        bal.total, 1000000,
+        "Balance of the new account should be 1.0(1000000) after the transfer"
+    );
 
     Ok(())
-
 }
 
 /// Estimate only. Esitmates will fail if the coin name is not set in the diem-node compiled binary.
