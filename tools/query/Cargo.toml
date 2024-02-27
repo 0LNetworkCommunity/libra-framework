@@ -12,6 +12,7 @@ repository = { workspace = true }
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true }
+diem-debugger = { workspace = true }
 diem-sdk = { workspace = true }
 indoc = { workspace = true }
 libra-types = { workspace = true }
