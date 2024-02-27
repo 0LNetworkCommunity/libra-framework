@@ -178,18 +178,14 @@ impl FinalizeCageTx {
         // Warning message
         println!("\nWARNING: This operation will finalize the account associated with the governance-initialized wallet and make it inaccessible. This action is IRREVERSIBLE and can only be applied to a wallet where governance has been initialized.\n");
 
+        // Assuming the signer's account is already set in the `sender` object
+        // The payload for the finalize and cage operation
+        let payload = libra_stdlib::multi_action_finalize_and_cage(); // This function now does not require an account address
 
-
-            // Assuming the signer's account is already set in the `sender` object
-            // The payload for the finalize and cage operation
-            let payload = libra_stdlib::multi_action_finalize_and_cage(); // This function now does not require an account address
-
-            // Execute the transaction
-            sender.sign_submit_wait(payload).await?;
-            println!("SUCCESS: The account has been finalized and caged.");
- 
+        // Execute the transaction
+        sender.sign_submit_wait(payload).await?;
+        println!("SUCCESS: The account has been finalized and caged.");
 
         Ok(())
-
     }
 }

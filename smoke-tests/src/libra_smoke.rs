@@ -51,15 +51,11 @@ impl LibraSmoke {
         )
         .await;
 
-            // First, collect the validator addresses
-            let validator_addresses: Vec<_> = swarm
-            .validators()
-            .map(|node| node.peer_id())
-            .collect();
+        // First, collect the validator addresses
+        let validator_addresses: Vec<_> = swarm.validators().map(|node| node.peer_id()).collect();
 
-
-            // Initialize an empty Vec to store the private keys
-            let mut validator_private_keys = Vec::new();
+        // Initialize an empty Vec to store the private keys
+        let mut validator_private_keys = Vec::new();
 
         // Iterate over the validator addresses
         for &validator_address in &validator_addresses {
@@ -115,13 +111,12 @@ impl LibraSmoke {
         // the genesis does NOT mint by default to genesis validators
         // 10,000 coins with 6 decimals precision
 
-
         Ok(Self {
             swarm,
             first_account,
             encoded_pri_key,
             api_endpoint,
-            validator_private_keys
+            validator_private_keys,
         })
     }
 
@@ -170,19 +165,18 @@ impl LibraSmoke {
 
     //TODO: Create coin store to be able to fund these accs
     pub async fn create_accounts(
-        &mut self, 
-        num_accounts: usize 
+        &mut self,
+        num_accounts: usize,
     ) -> anyhow::Result<(Vec<LocalAccount>, Vec<AccountAddress>)> {
         let mut signers = Vec::new();
         let mut signer_addresses = Vec::new();
 
         for _ in 0..num_accounts {
-            let local_account = self.marlon_rando(); 
+            let local_account = self.marlon_rando();
             signer_addresses.push(local_account.address());
-            signers.push(local_account); 
+            signers.push(local_account);
         }
 
         Ok((signers, signer_addresses))
     }
-
 }
