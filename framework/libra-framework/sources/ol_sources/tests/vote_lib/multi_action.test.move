@@ -10,11 +10,9 @@ module ol_framework::test_multi_action {
   use std::guid;
   use ol_framework::ol_account;
   use diem_framework::resource_account;
-  // use ol_framework::slow_wallet;
   use diem_framework::reconfiguration;
-  // use diem_framework::coin;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   struct DummyType has drop, store {}
 
@@ -169,7 +167,7 @@ module ol_framework::test_multi_action {
     multi_action::init_type<DummyType>(&resource_sig, true);
 
     //need to be caged to finalize multi action workflow and release control of the account
-    print(&vals);
+    // print(&vals);
     multi_action::finalize_and_cage(&resource_sig);
 
     let proposal = multi_action::proposal_constructor(DummyType{}, option::none());
@@ -237,7 +235,7 @@ module ol_framework::test_multi_action {
     mock::trigger_epoch(root); // epoch 4 -- now expired
 
     let epoch = reconfiguration::get_current_epoch();
-    print(&epoch);
+    // print(&epoch);
     assert!(epoch == 4, 7357003);
 
     // trying to vote on a closed ballot will error

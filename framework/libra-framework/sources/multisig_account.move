@@ -52,7 +52,6 @@ module diem_framework::multisig_account {
     use std::signer::address_of;
     use std::string::String;
     use std::vector;
-    use std::debug::print;
 
     /// The salt used to create a resource account during multisig account creation.
     /// This is used to avoid conflicts with other modules that also create resource accounts with the same owner
@@ -486,8 +485,6 @@ module diem_framework::multisig_account {
         metadata_keys: vector<String>,
         metadata_values: vector<vector<u8>>,
     ) acquires MultisigAccount {
-      print(&num_signatures_required);
-      print(&vector::length(&owners));
         assert!(
             num_signatures_required > 0 && num_signatures_required <= vector::length(&owners),
             error::invalid_argument(EINVALID_SIGNATURES_REQUIRED),
@@ -940,8 +937,6 @@ module diem_framework::multisig_account {
         let distinct_owners: vector<address> = vector[];
         vector::for_each_ref(owners, |owner| {
             let owner = *owner;
-            print(&owner);
-            print(&multisig_account);
             assert!(owner != multisig_account, error::invalid_argument(EOWNER_CANNOT_BE_MULTISIG_ACCOUNT_ITSELF));
             let (found, _) = vector::index_of(&distinct_owners, &owner);
             assert!(!found, error::invalid_argument(EDUPLICATE_OWNER));

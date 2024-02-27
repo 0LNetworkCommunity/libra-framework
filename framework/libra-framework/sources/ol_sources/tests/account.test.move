@@ -8,7 +8,8 @@ module ol_framework::test_account {
   use ol_framework::ol_account;
   use ol_framework::ancestry;
   use diem_framework::coin;
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
+
   // scenario: testing trying send more funds than are unlocked
   #[test(root = @ol_framework, alice_sig = @0x1000a)]
   fun test_account_create(root: signer, alice_sig: signer) {
@@ -24,7 +25,7 @@ module ol_framework::test_account {
 
     let addr_tree = ancestry::get_tree(alice_addr);
     assert!(vector::length(&addr_tree) > 0, 7357001);
-    print(&addr_tree);
+    // print(&addr_tree);
     assert!(vector::contains(&addr_tree, &@0x1), 7357002);
 
 
@@ -36,7 +37,7 @@ module ol_framework::test_account {
     assert!(vector::length(&addr_tree) > 1, 7357004);
     assert!(vector::contains(&addr_tree, &alice_addr), 7357005);
 
-    print(&addr_tree);
+    // print(&addr_tree);
 
   }
 }
