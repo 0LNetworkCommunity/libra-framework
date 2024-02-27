@@ -30,7 +30,6 @@ module ol_framework::ol_account {
     friend ol_framework::burn;
     friend ol_framework::safe;
     friend diem_framework::genesis;
-    friend diem_framework::resource_account;
     friend diem_framework::transaction_fee;
     friend ol_framework::genesis_migration;
 

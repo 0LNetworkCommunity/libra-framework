@@ -448,6 +448,30 @@ module diem_framework::multisig_account {
         );
     }
 
+
+    /////// 0L ////////
+    public entry fun migrate_with_owners(
+        owner: &signer,
+        additional_owners: vector<address>,
+        num_signatures_required: u64,
+        metadata_keys: vector<String>,
+        metadata_values: vector<vector<u8>>,
+    ) acquires MultisigAccount {
+        // let (multisig_account, multisig_signer_cap) =
+        // create_multisig_account(owner);
+        let multisig_signer_cap = account::create_signer_cap_for_multisig(owner);
+
+        vector::push_back(&mut additional_owners, address_of(owner));
+        create_with_owners_internal(
+            owner,
+            additional_owners,
+            num_signatures_required,
+            option::some(multisig_signer_cap),
+            metadata_keys,
+            metadata_values,
+        );
+    }
+
     fun create_with_owners_internal(
         multisig_account: &signer,
         owners: vector<address>,
