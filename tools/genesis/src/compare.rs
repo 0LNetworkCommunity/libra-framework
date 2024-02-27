@@ -47,6 +47,7 @@ pub fn compare_recovery_vec_to_genesis_tx(
     supply: &Supply,
 ) -> Result<Vec<CompareError>, anyhow::Error> {
     let mut err_list: Vec<CompareError> = vec![];
+    let mut user_supply = 0u64;
 
     recovery
         .iter_mut()
@@ -100,6 +101,8 @@ pub fn compare_recovery_vec_to_genesis_tx(
                 });
             }
 
+            user_supply += on_chain_balance.coin();
+
             // Check Slow Wallet Balance was migrated as expected
             if let Some(old_slow) = &old.slow_wallet {
                 let new_slow = account_state_view
@@ -129,7 +132,6 @@ pub fn compare_recovery_vec_to_genesis_tx(
                 }
             }
         });
-
     Ok(err_list)
 }
 

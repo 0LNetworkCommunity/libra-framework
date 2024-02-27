@@ -11,7 +11,6 @@ use libra_types::exports::ChainId;
 use libra_types::legacy_types::legacy_address::LegacyAddress;
 use support::{path_utils::json_path, test_vals};
 
-#[ignore]
 #[test]
 // test that a genesis blob created from struct, will actually contain the data
 fn test_correct_supply_arithmetic_all() {
@@ -20,7 +19,7 @@ fn test_correct_supply_arithmetic_all() {
     let path = json_path()
         .parent()
         .unwrap()
-        .join("v5_recovery_epoch_690.json");
+        .join("v5_recovery_actual.json"); // the actual file used on 6.9.0 upgrade
 
     let mut user_accounts = recovery_file_parse(path).unwrap();
     let map_dd_to_slow = vec![
@@ -61,8 +60,8 @@ fn test_correct_supply_arithmetic_all() {
     let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&gen_tx).unwrap();
 
     // test dump balances
-    compare::export_account_balances(&user_accounts, &db_rw.reader, json_path().parent().unwrap())
-        .unwrap();
+    // compare::export_account_balances(&user_accounts, &db_rw.reader, json_path().parent().unwrap())
+    //     .unwrap();
 
     // audit
     match compare::compare_recovery_vec_to_genesis_tx(
