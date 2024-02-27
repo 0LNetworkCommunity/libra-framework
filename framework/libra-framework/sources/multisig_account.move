@@ -53,7 +53,7 @@ module diem_framework::multisig_account {
     use std::string::String;
     use std::vector;
 
-    use diem_std::debug::print;
+    // use diem_std::debug::print;
 
     friend ol_framework::multi_action;
 
@@ -470,8 +470,6 @@ module diem_framework::multisig_account {
         metadata_values: vector<vector<u8>>,
     ) acquires MultisigAccount {
         let multisig_signer_cap = account::create_signer_cap_for_multisig(owner);
-
-        print(&additional_owners);
         create_with_owners_internal(
             owner,
             additional_owners,

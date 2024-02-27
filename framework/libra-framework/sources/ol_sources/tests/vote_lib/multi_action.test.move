@@ -12,7 +12,7 @@ module ol_framework::test_multi_action {
   use diem_framework::resource_account;
   use diem_framework::reconfiguration;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   struct DummyType has drop, store {}
 
@@ -274,7 +274,7 @@ module ol_framework::test_multi_action {
     option::none());
 
     let a = multi_action::get_authorities(new_resource_address);
-    print(&a);
+
     assert!(vector::length(&a) == 2, 7357002);
 
     // bob votes and it becomes final. Bob could either use vote_governance()
@@ -336,7 +336,7 @@ module ol_framework::test_multi_action {
     let a = multi_action::get_authorities(new_resource_address);
     assert!(vector::length(&a) == 2, 7357005); // no change
     let (n, _m) = multi_action::get_threshold(new_resource_address);
-    print(&n);
+
     assert!(n == 1, 7357006);
 
     // now any other type of action can be taken with just one signer

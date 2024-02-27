@@ -12,7 +12,7 @@
     use std::vector;
 
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
 
     #[test(root = @ol_framework, community = @0x10011)]
@@ -255,7 +255,7 @@
         community_wallet_init::migrate_community_wallet_account(root, alice);
 
         donor_voice_txs::make_donor_voice(alice, signers, 1);
-        print(&4444);
+
         // try to cage the address by calling multi auth
         community_wallet_init::finalize_and_cage(alice, signers, 1);
 
