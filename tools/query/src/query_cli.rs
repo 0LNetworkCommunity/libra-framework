@@ -14,7 +14,6 @@ pub struct QueryCli {
 
 impl QueryCli {
     pub async fn run(&self) -> Result<()> {
-        // let client = Client::default()?;
         // TODO: get client from configs
 
         let res = self.subcommand.query_to_json(None).await?;

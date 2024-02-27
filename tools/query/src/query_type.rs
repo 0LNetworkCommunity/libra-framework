@@ -9,6 +9,7 @@ use crate::{
 };
 use anyhow::{bail, Context, Result};
 use diem_api_types::Transaction;
+use diem_debugger::DiemDebugger;
 use diem_sdk::{rest_client::Client, types::account_address::AccountAddress};
 use indoc::indoc;
 use libra_types::exports::AuthenticationKey;
@@ -164,6 +165,36 @@ pub enum QueryType {
     //     /// what event sequence number to start querying from, if DB does not have all.
     //     seq_start: Option<u64>,
     // },
+
+    Annotate {
+        account: AccountAddress,
+    }, // TODO:
+       // /// Network block height
+       // BlockHeight,
+       // /// Get transaction history
+       // Txs {
+       //     #[clap(short, long)]
+       //     /// account to query txs of
+       //     account: AccountAddress,
+       //     #[clap(long)]
+       //     /// get transactions after this height
+       //     txs_height: Option<u64>,
+       //     #[clap(long)]
+       //     /// limit how many txs
+       //     txs_count: Option<u64>,
+       //     #[clap(long)]
+       //     /// filter by type
+       //     txs_type: Option<String>,
+       // },
+       // /// Get events
+       // Events {
+       //     /// account to query events
+       //     account: AccountAddress,
+       //     /// switch for sent or received events.
+       //     sent_or_received: bool,
+       //     /// what event sequence number to start querying from, if DB does not have all.
+       //     seq_start: Option<u64>,
+       // },
 }
 
 impl QueryType {
@@ -284,9 +315,23 @@ impl QueryType {
                 let _res = community_wallet_pending_transactions(&client, *account).await?;
                 Ok(json!({ "pending_transactions": "None" }))
             }
+            QueryType::Annotate { account } => {
+                let dbgger = DiemDebugger::rest_client(client)?;
+                let version = dbgger.get_latest_version().await?;
+                let blob = dbgger
+                    .annotate_account_state_at_version(account.to_owned(), version)
+                    .await?;
+                if blob.is_none() {
+                    bail!("cannot find account state at {}", account)
+                };
+                // dbg!(&blob.unwrap());
+                // blob.unwrap().to_string();
+                let pretty = format!("{:#}", blob.unwrap().to_string());
+                Ok(json!(pretty))
+            }
             _ => {
                 bail!(
-                    "Not implemented for type: {:?}\n Ground control to major tom.",
+                    "Not implemented for type: {:?}\n Ground control to Major Tom.",
                     self
                 )
             }
