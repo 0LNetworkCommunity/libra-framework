@@ -47,12 +47,6 @@ impl CommunityTxs {
                     println!("ERROR: could not add admin, message: {}", e);
                 }
             },
-            CommunityTxs::FinalizeAndCage(cage) => match cage.run(sender).await {
-                Ok(_) => println!("SUCCESS: account finalized and caged"),
-                Err(e) => {
-                    println!("ERROR: could not finalize and cage account, message: {}", e);
-                }
-            },
         }
 
         Ok(())
