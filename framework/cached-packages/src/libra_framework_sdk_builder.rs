@@ -150,15 +150,20 @@ pub enum EntryFunctionCall {
         amount: u64,
     },
 
-    /// add signer to multisig, and check if they may be related in ancestry tree
-    CommunityWalletAddSignerCommunityMultisig {
+    /// Add or remove a signer to/from the multisig, and check if they may be related in the ancestry tree
+    CommunityWalletInitChangeSignerCommunityMultisig {
         multisig_address: AccountAddress,
         new_signer: AccountAddress,
+        is_add_operation: bool,
         n_of_m: u64,
         vote_duration_epochs: u64,
     },
 
-    CommunityWalletInitCommunity {
+    /// convenience function to check if the account can be caged
+    /// after all the structs are in place
+    CommunityWalletInitFinalizeAndCage {},
+
+    CommunityWalletInitInitCommunity {
         init_signers: Vec<AccountAddress>,
     },
 
@@ -229,7 +234,7 @@ pub enum EntryFunctionCall {
         should_pass: bool,
     },
 
-    DonorVoiceMakeDonorVoiceTx {
+    DonorVoiceTxsMakeDonorVoiceTx {
         init_signers: Vec<AccountAddress>,
         cfg_n_signers: u64,
     },
@@ -237,33 +242,33 @@ pub enum EntryFunctionCall {
     /// Like any MultiSig instance, a sponsor which is the original owner of the account, needs to initialize the account.
     /// The account must be "bricked" by the owner before MultiSig actions can be taken.
     /// Note, as with any multisig, the new_authorities cannot include the sponsor, since that account will no longer be able to sign transactions.
-    DonorVoiceMakeMultiAction {
+    DonorVoiceTxsMakeMultiAction {
         cfg_default_n_sigs: u64,
         new_authorities: Vec<AccountAddress>,
     },
 
-    DonorVoiceProposeLiquidateTx {
+    DonorVoiceTxsProposeLiquidateTx {
         multisig_address: AccountAddress,
     },
 
-    DonorVoiceProposePaymentTx {
+    DonorVoiceTxsProposePaymentTx {
         multisig_address: AccountAddress,
         payee: AccountAddress,
         value: u64,
         description: Vec<u8>,
     },
 
-    DonorVoiceProposeVetoTx {
+    DonorVoiceTxsProposeVetoTx {
         multisig_address: AccountAddress,
         id: u64,
     },
 
-    DonorVoiceVoteLiquidationTx {
+    DonorVoiceTxsVoteLiquidationTx {
         multisig_address: AccountAddress,
     },
 
     /// Entry functiont to vote the veto.
-    DonorVoiceVoteVetoTx {
+    DonorVoiceTxsVoteVetoTx {
         multisig_address: AccountAddress,
         id: u64,
     },
@@ -290,6 +295,9 @@ pub enum EntryFunctionCall {
         dst_addr: AccountAddress,
         amount: u64,
     },
+
+    /// finalize the account and put in a cage. Will abort if governance has not
+    MultiActionFinalizeAndCage {},
 
     /// Similar to add_owners, but only allow adding one owner.
     MultisigAccountAddOwner {
@@ -638,19 +646,22 @@ impl EntryFunctionCall {
                 to,
                 amount,
             } => coin_transfer(coin_type, to, amount),
-            CommunityWalletAddSignerCommunityMultisig {
+            CommunityWalletInitChangeSignerCommunityMultisig {
                 multisig_address,
                 new_signer,
+                is_add_operation,
                 n_of_m,
                 vote_duration_epochs,
-            } => community_wallet_add_signer_community_multisig(
+            } => community_wallet_init_change_signer_community_multisig(
                 multisig_address,
                 new_signer,
+                is_add_operation,
                 n_of_m,
                 vote_duration_epochs,
             ),
-            CommunityWalletInitCommunity { init_signers } => {
-                community_wallet_init_community(init_signers)
+            CommunityWalletInitFinalizeAndCage {} => community_wallet_init_finalize_and_cage(),
+            CommunityWalletInitInitCommunity { init_signers } => {
+                community_wallet_init_init_community(init_signers)
             }
             DemoPrintThis {} => demo_print_this(),
             DemoSetMessage { message } => demo_set_message(message),
@@ -704,38 +715,39 @@ impl EntryFunctionCall {
                 proposal_id,
                 should_pass,
             } => diem_governance_vote(proposal_id, should_pass),
-            DonorVoiceMakeDonorVoiceTx {
+            DonorVoiceTxsMakeDonorVoiceTx {
                 init_signers,
                 cfg_n_signers,
-            } => donor_voice_make_donor_voice_tx(init_signers, cfg_n_signers),
-            DonorVoiceMakeMultiAction {
+            } => donor_voice_txs_make_donor_voice_tx(init_signers, cfg_n_signers),
+            DonorVoiceTxsMakeMultiAction {
                 cfg_default_n_sigs,
                 new_authorities,
-            } => donor_voice_make_multi_action(cfg_default_n_sigs, new_authorities),
-            DonorVoiceProposeLiquidateTx { multisig_address } => {
-                donor_voice_propose_liquidate_tx(multisig_address)
+            } => donor_voice_txs_make_multi_action(cfg_default_n_sigs, new_authorities),
+            DonorVoiceTxsProposeLiquidateTx { multisig_address } => {
+                donor_voice_txs_propose_liquidate_tx(multisig_address)
             }
-            DonorVoiceProposePaymentTx {
+            DonorVoiceTxsProposePaymentTx {
                 multisig_address,
                 payee,
                 value,
                 description,
-            } => donor_voice_propose_payment_tx(multisig_address, payee, value, description),
-            DonorVoiceProposeVetoTx {
+            } => donor_voice_txs_propose_payment_tx(multisig_address, payee, value, description),
+            DonorVoiceTxsProposeVetoTx {
                 multisig_address,
                 id,
-            } => donor_voice_propose_veto_tx(multisig_address, id),
-            DonorVoiceVoteLiquidationTx { multisig_address } => {
-                donor_voice_vote_liquidation_tx(multisig_address)
+            } => donor_voice_txs_propose_veto_tx(multisig_address, id),
+            DonorVoiceTxsVoteLiquidationTx { multisig_address } => {
+                donor_voice_txs_vote_liquidation_tx(multisig_address)
             }
-            DonorVoiceVoteVetoTx {
+            DonorVoiceTxsVoteVetoTx {
                 multisig_address,
                 id,
-            } => donor_voice_vote_veto_tx(multisig_address, id),
+            } => donor_voice_txs_vote_veto_tx(multisig_address, id),
             JailUnjailByVoucher { addr } => jail_unjail_by_voucher(addr),
             LibraCoinClaimMintCapability {} => libra_coin_claim_mint_capability(),
             LibraCoinDelegateMintCapability { to } => libra_coin_delegate_mint_capability(to),
             LibraCoinMintToImpl { dst_addr, amount } => libra_coin_mint_to_impl(dst_addr, amount),
+            MultiActionFinalizeAndCage {} => multi_action_finalize_and_cage(),
             MultisigAccountAddOwner { new_owner } => multisig_account_add_owner(new_owner),
             MultisigAccountAddOwners { new_owners } => multisig_account_add_owners(new_owners),
             MultisigAccountApproveTransaction {
@@ -1184,10 +1196,11 @@ pub fn coin_transfer(coin_type: TypeTag, to: AccountAddress, amount: u64) -> Tra
     ))
 }
 
-/// add signer to multisig, and check if they may be related in ancestry tree
-pub fn community_wallet_add_signer_community_multisig(
+/// Add or remove a signer to/from the multisig, and check if they may be related in the ancestry tree
+pub fn community_wallet_init_change_signer_community_multisig(
     multisig_address: AccountAddress,
     new_signer: AccountAddress,
+    is_add_operation: bool,
     n_of_m: u64,
     vote_duration_epochs: u64,
 ) -> TransactionPayload {
@@ -1197,27 +1210,47 @@ pub fn community_wallet_add_signer_community_multisig(
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("community_wallet").to_owned(),
+            ident_str!("community_wallet_init").to_owned(),
         ),
-        ident_str!("add_signer_community_multisig").to_owned(),
+        ident_str!("change_signer_community_multisig").to_owned(),
         vec![],
         vec![
             bcs::to_bytes(&multisig_address).unwrap(),
             bcs::to_bytes(&new_signer).unwrap(),
+            bcs::to_bytes(&is_add_operation).unwrap(),
             bcs::to_bytes(&n_of_m).unwrap(),
             bcs::to_bytes(&vote_duration_epochs).unwrap(),
         ],
     ))
 }
 
-pub fn community_wallet_init_community(init_signers: Vec<AccountAddress>) -> TransactionPayload {
+/// convenience function to check if the account can be caged
+/// after all the structs are in place
+pub fn community_wallet_init_finalize_and_cage() -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("community_wallet").to_owned(),
+            ident_str!("community_wallet_init").to_owned(),
+        ),
+        ident_str!("finalize_and_cage").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
+pub fn community_wallet_init_init_community(
+    init_signers: Vec<AccountAddress>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("community_wallet_init").to_owned(),
         ),
         ident_str!("init_community").to_owned(),
         vec![],
@@ -1432,7 +1465,7 @@ pub fn diem_governance_vote(proposal_id: u64, should_pass: bool) -> TransactionP
     ))
 }
 
-pub fn donor_voice_make_donor_voice_tx(
+pub fn donor_voice_txs_make_donor_voice_tx(
     init_signers: Vec<AccountAddress>,
     cfg_n_signers: u64,
 ) -> TransactionPayload {
@@ -1442,7 +1475,7 @@ pub fn donor_voice_make_donor_voice_tx(
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("donor_voice").to_owned(),
+            ident_str!("donor_voice_txs").to_owned(),
         ),
         ident_str!("make_donor_voice_tx").to_owned(),
         vec![],
@@ -1456,7 +1489,7 @@ pub fn donor_voice_make_donor_voice_tx(
 /// Like any MultiSig instance, a sponsor which is the original owner of the account, needs to initialize the account.
 /// The account must be "bricked" by the owner before MultiSig actions can be taken.
 /// Note, as with any multisig, the new_authorities cannot include the sponsor, since that account will no longer be able to sign transactions.
-pub fn donor_voice_make_multi_action(
+pub fn donor_voice_txs_make_multi_action(
     cfg_default_n_sigs: u64,
     new_authorities: Vec<AccountAddress>,
 ) -> TransactionPayload {
@@ -1466,7 +1499,7 @@ pub fn donor_voice_make_multi_action(
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("donor_voice").to_owned(),
+            ident_str!("donor_voice_txs").to_owned(),
         ),
         ident_str!("make_multi_action").to_owned(),
         vec![],
@@ -1477,14 +1510,16 @@ pub fn donor_voice_make_multi_action(
     ))
 }
 
-pub fn donor_voice_propose_liquidate_tx(multisig_address: AccountAddress) -> TransactionPayload {
+pub fn donor_voice_txs_propose_liquidate_tx(
+    multisig_address: AccountAddress,
+) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("donor_voice").to_owned(),
+            ident_str!("donor_voice_txs").to_owned(),
         ),
         ident_str!("propose_liquidate_tx").to_owned(),
         vec![],
@@ -1492,7 +1527,7 @@ pub fn donor_voice_propose_liquidate_tx(multisig_address: AccountAddress) -> Tra
     ))
 }
 
-pub fn donor_voice_propose_payment_tx(
+pub fn donor_voice_txs_propose_payment_tx(
     multisig_address: AccountAddress,
     payee: AccountAddress,
     value: u64,
@@ -1504,7 +1539,7 @@ pub fn donor_voice_propose_payment_tx(
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("donor_voice").to_owned(),
+            ident_str!("donor_voice_txs").to_owned(),
         ),
         ident_str!("propose_payment_tx").to_owned(),
         vec![],
@@ -1517,7 +1552,7 @@ pub fn donor_voice_propose_payment_tx(
     ))
 }
 
-pub fn donor_voice_propose_veto_tx(
+pub fn donor_voice_txs_propose_veto_tx(
     multisig_address: AccountAddress,
     id: u64,
 ) -> TransactionPayload {
@@ -1527,7 +1562,7 @@ pub fn donor_voice_propose_veto_tx(
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("donor_voice").to_owned(),
+            ident_str!("donor_voice_txs").to_owned(),
         ),
         ident_str!("propose_veto_tx").to_owned(),
         vec![],
@@ -1538,14 +1573,14 @@ pub fn donor_voice_propose_veto_tx(
     ))
 }
 
-pub fn donor_voice_vote_liquidation_tx(multisig_address: AccountAddress) -> TransactionPayload {
+pub fn donor_voice_txs_vote_liquidation_tx(multisig_address: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("donor_voice").to_owned(),
+            ident_str!("donor_voice_txs").to_owned(),
         ),
         ident_str!("vote_liquidation_tx").to_owned(),
         vec![],
@@ -1554,14 +1589,17 @@ pub fn donor_voice_vote_liquidation_tx(multisig_address: AccountAddress) -> Tran
 }
 
 /// Entry functiont to vote the veto.
-pub fn donor_voice_vote_veto_tx(multisig_address: AccountAddress, id: u64) -> TransactionPayload {
+pub fn donor_voice_txs_vote_veto_tx(
+    multisig_address: AccountAddress,
+    id: u64,
+) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("donor_voice").to_owned(),
+            ident_str!("donor_voice_txs").to_owned(),
         ),
         ident_str!("vote_veto_tx").to_owned(),
         vec![],
@@ -1640,6 +1678,22 @@ pub fn libra_coin_mint_to_impl(dst_addr: AccountAddress, amount: u64) -> Transac
             bcs::to_bytes(&dst_addr).unwrap(),
             bcs::to_bytes(&amount).unwrap(),
         ],
+    ))
+}
+
+/// finalize the account and put in a cage. Will abort if governance has not
+pub fn multi_action_finalize_and_cage() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("multi_action").to_owned(),
+        ),
+        ident_str!("finalize_and_cage").to_owned(),
+        vec![],
+        vec![],
     ))
 }
 
@@ -2592,16 +2646,17 @@ mod decoder {
         }
     }
 
-    pub fn community_wallet_add_signer_community_multisig(
+    pub fn community_wallet_init_change_signer_community_multisig(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(
-                EntryFunctionCall::CommunityWalletAddSignerCommunityMultisig {
+                EntryFunctionCall::CommunityWalletInitChangeSignerCommunityMultisig {
                     multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
                     new_signer: bcs::from_bytes(script.args().get(1)?).ok()?,
-                    n_of_m: bcs::from_bytes(script.args().get(2)?).ok()?,
-                    vote_duration_epochs: bcs::from_bytes(script.args().get(3)?).ok()?,
+                    is_add_operation: bcs::from_bytes(script.args().get(2)?).ok()?,
+                    n_of_m: bcs::from_bytes(script.args().get(3)?).ok()?,
+                    vote_duration_epochs: bcs::from_bytes(script.args().get(4)?).ok()?,
                 },
             )
         } else {
@@ -2609,11 +2664,21 @@ mod decoder {
         }
     }
 
-    pub fn community_wallet_init_community(
+    pub fn community_wallet_init_finalize_and_cage(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::CommunityWalletInitFinalizeAndCage {})
+        } else {
+            None
+        }
+    }
+
+    pub fn community_wallet_init_init_community(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::CommunityWalletInitCommunity {
+            Some(EntryFunctionCall::CommunityWalletInitInitCommunity {
                 init_signers: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
@@ -2743,11 +2808,11 @@ mod decoder {
         }
     }
 
-    pub fn donor_voice_make_donor_voice_tx(
+    pub fn donor_voice_txs_make_donor_voice_tx(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DonorVoiceMakeDonorVoiceTx {
+            Some(EntryFunctionCall::DonorVoiceTxsMakeDonorVoiceTx {
                 init_signers: bcs::from_bytes(script.args().get(0)?).ok()?,
                 cfg_n_signers: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
@@ -2756,11 +2821,11 @@ mod decoder {
         }
     }
 
-    pub fn donor_voice_make_multi_action(
+    pub fn donor_voice_txs_make_multi_action(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DonorVoiceMakeMultiAction {
+            Some(EntryFunctionCall::DonorVoiceTxsMakeMultiAction {
                 cfg_default_n_sigs: bcs::from_bytes(script.args().get(0)?).ok()?,
                 new_authorities: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
@@ -2769,11 +2834,11 @@ mod decoder {
         }
     }
 
-    pub fn donor_voice_propose_liquidate_tx(
+    pub fn donor_voice_txs_propose_liquidate_tx(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DonorVoiceProposeLiquidateTx {
+            Some(EntryFunctionCall::DonorVoiceTxsProposeLiquidateTx {
                 multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
@@ -2781,11 +2846,11 @@ mod decoder {
         }
     }
 
-    pub fn donor_voice_propose_payment_tx(
+    pub fn donor_voice_txs_propose_payment_tx(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DonorVoiceProposePaymentTx {
+            Some(EntryFunctionCall::DonorVoiceTxsProposePaymentTx {
                 multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
                 payee: bcs::from_bytes(script.args().get(1)?).ok()?,
                 value: bcs::from_bytes(script.args().get(2)?).ok()?,
@@ -2796,9 +2861,11 @@ mod decoder {
         }
     }
 
-    pub fn donor_voice_propose_veto_tx(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+    pub fn donor_voice_txs_propose_veto_tx(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DonorVoiceProposeVetoTx {
+            Some(EntryFunctionCall::DonorVoiceTxsProposeVetoTx {
                 multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
                 id: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
@@ -2807,11 +2874,11 @@ mod decoder {
         }
     }
 
-    pub fn donor_voice_vote_liquidation_tx(
+    pub fn donor_voice_txs_vote_liquidation_tx(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DonorVoiceVoteLiquidationTx {
+            Some(EntryFunctionCall::DonorVoiceTxsVoteLiquidationTx {
                 multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
@@ -2819,9 +2886,9 @@ mod decoder {
         }
     }
 
-    pub fn donor_voice_vote_veto_tx(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+    pub fn donor_voice_txs_vote_veto_tx(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DonorVoiceVoteVetoTx {
+            Some(EntryFunctionCall::DonorVoiceTxsVoteVetoTx {
                 multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
                 id: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
@@ -2868,6 +2935,16 @@ mod decoder {
                 dst_addr: bcs::from_bytes(script.args().get(0)?).ok()?,
                 amount: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
+        } else {
+            None
+        }
+    }
+
+    pub fn multi_action_finalize_and_cage(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::MultiActionFinalizeAndCage {})
         } else {
             None
         }
@@ -3388,12 +3465,16 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::coin_transfer),
         );
         map.insert(
-            "community_wallet_add_signer_community_multisig".to_string(),
-            Box::new(decoder::community_wallet_add_signer_community_multisig),
+            "community_wallet_init_change_signer_community_multisig".to_string(),
+            Box::new(decoder::community_wallet_init_change_signer_community_multisig),
         );
         map.insert(
-            "community_wallet_init_community".to_string(),
-            Box::new(decoder::community_wallet_init_community),
+            "community_wallet_init_finalize_and_cage".to_string(),
+            Box::new(decoder::community_wallet_init_finalize_and_cage),
+        );
+        map.insert(
+            "community_wallet_init_init_community".to_string(),
+            Box::new(decoder::community_wallet_init_init_community),
         );
         map.insert(
             "demo_print_this".to_string(),
@@ -3436,32 +3517,32 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::diem_governance_vote),
         );
         map.insert(
-            "donor_voice_make_donor_voice_tx".to_string(),
-            Box::new(decoder::donor_voice_make_donor_voice_tx),
+            "donor_voice_txs_make_donor_voice_tx".to_string(),
+            Box::new(decoder::donor_voice_txs_make_donor_voice_tx),
         );
         map.insert(
-            "donor_voice_make_multi_action".to_string(),
-            Box::new(decoder::donor_voice_make_multi_action),
+            "donor_voice_txs_make_multi_action".to_string(),
+            Box::new(decoder::donor_voice_txs_make_multi_action),
         );
         map.insert(
-            "donor_voice_propose_liquidate_tx".to_string(),
-            Box::new(decoder::donor_voice_propose_liquidate_tx),
+            "donor_voice_txs_propose_liquidate_tx".to_string(),
+            Box::new(decoder::donor_voice_txs_propose_liquidate_tx),
         );
         map.insert(
-            "donor_voice_propose_payment_tx".to_string(),
-            Box::new(decoder::donor_voice_propose_payment_tx),
+            "donor_voice_txs_propose_payment_tx".to_string(),
+            Box::new(decoder::donor_voice_txs_propose_payment_tx),
         );
         map.insert(
-            "donor_voice_propose_veto_tx".to_string(),
-            Box::new(decoder::donor_voice_propose_veto_tx),
+            "donor_voice_txs_propose_veto_tx".to_string(),
+            Box::new(decoder::donor_voice_txs_propose_veto_tx),
         );
         map.insert(
-            "donor_voice_vote_liquidation_tx".to_string(),
-            Box::new(decoder::donor_voice_vote_liquidation_tx),
+            "donor_voice_txs_vote_liquidation_tx".to_string(),
+            Box::new(decoder::donor_voice_txs_vote_liquidation_tx),
         );
         map.insert(
-            "donor_voice_vote_veto_tx".to_string(),
-            Box::new(decoder::donor_voice_vote_veto_tx),
+            "donor_voice_txs_vote_veto_tx".to_string(),
+            Box::new(decoder::donor_voice_txs_vote_veto_tx),
         );
         map.insert(
             "jail_unjail_by_voucher".to_string(),
@@ -3478,6 +3559,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "libra_coin_mint_to_impl".to_string(),
             Box::new(decoder::libra_coin_mint_to_impl),
+        );
+        map.insert(
+            "multi_action_finalize_and_cage".to_string(),
+            Box::new(decoder::multi_action_finalize_and_cage),
         );
         map.insert(
             "multisig_account_add_owner".to_string(),
