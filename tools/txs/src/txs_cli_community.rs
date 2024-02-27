@@ -57,21 +57,21 @@ impl CommunityTxs {
 pub struct ProposeTx {
     #[clap(short, long)]
     /// The Community Wallet you are a admin for
-    community_wallet: AccountAddress,
+    pub community_wallet: AccountAddress,
     #[clap(short, long)]
     /// The SlowWallet recipient of funds
-    recipient: AccountAddress,
+    pub recipient: AccountAddress,
     #[clap(short, long)]
     /// amount of coins (units) to transfer
-    amount: u64,
+    pub amount: u64,
     #[clap(short, long)]
     /// description of payment for memo
-    description: String,
+    pub description: String,
 }
 
 impl ProposeTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload = libra_stdlib::donor_voice_propose_payment_tx(
+        let payload = libra_stdlib::donor_voice_txs_propose_payment_tx(
             self.community_wallet,
             self.recipient,
             self.amount,
@@ -95,7 +95,7 @@ pub struct VetoTx {
 impl VetoTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         let payload =
-            libra_stdlib::donor_voice_propose_veto_tx(self.community_wallet, self.proposal_id);
+            libra_stdlib::donor_voice_txs_propose_veto_tx(self.community_wallet, self.proposal_id);
         sender.sign_submit_wait(payload).await?;
         Ok(())
     }
@@ -106,20 +106,20 @@ pub struct InitTx {
     #[clap(short, long)]
     /// The initial admins of the Multisig. Note: the signer of this TX
     /// (sponsor) cannot add self.
-    admins: Vec<AccountAddress>,
+    pub admins: Vec<AccountAddress>,
 
     #[clap(short, long)]
     /// migrate a legacy v5 community wallet, with N being the n-of-m
-    migrate_n: Option<u64>,
+    pub migrate_n: Option<u64>,
 }
 
 impl InitTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        println!("trying to migrate");
         let payload = if let Some(n) = self.migrate_n {
-            println!("trying to migrate");
-            libra_stdlib::donor_voice_make_donor_voice_tx(self.admins.clone(), n)
+            libra_stdlib::donor_voice_txs_make_donor_voice_tx(self.admins.clone(), n)
         } else {
-            libra_stdlib::community_wallet_init_community(self.admins.clone())
+            libra_stdlib::community_wallet_init_init_community(self.admins.clone())
         };
         sender.sign_submit_wait(payload).await?;
         Ok(())
@@ -130,26 +130,30 @@ impl InitTx {
 pub struct AdminTx {
     #[clap(short, long)]
     /// The SlowWallet recipient of funds
-    community_wallet: AccountAddress,
+    pub community_wallet: AccountAddress,
     #[clap(short, long)]
     /// Admin to add (or remove) from the multisig
-    admin: AccountAddress,
+    pub admin: AccountAddress,
     #[clap(short, long)]
     /// Drops this admin from the multisig
-    drop: bool,
+    pub drop: Option<bool>,
     #[clap(short, long)]
     /// Number of sigs required for action (must be greater than 3-of-5)
-    n: u64,
+    pub n: u64,
     #[clap(short, long)]
     /// Proposal duration (in epochs)
-    epochs: Option<u64>,
+    pub epochs: Option<u64>,
 }
 
 impl AdminTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload = libra_stdlib::community_wallet_add_signer_community_multisig(
+        // Default to adding a signer if the `drop` flag is not provided
+        let is_add_operation = self.drop.unwrap_or(true);
+
+        let payload = libra_stdlib::community_wallet_init_change_signer_community_multisig(
             self.community_wallet,
             self.admin,
+            is_add_operation,
             self.n,
             self.epochs.unwrap_or(10), // todo: remo
         );

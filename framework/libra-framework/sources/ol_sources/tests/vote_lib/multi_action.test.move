@@ -51,6 +51,10 @@ module ol_framework::test_multi_action {
     multi_action::init_gov(&resource_sig, 2, &vals);
     multi_action::init_type<DummyType>(&resource_sig, true);
 
+
+    //need to be caged to finalize multi action workflow and release control of the account
+    multi_action::finalize_and_cage(&resource_sig);
+
     let proposal = multi_action::proposal_constructor(DummyType{}, option::none());
     let id = multi_action::propose_new(alice, new_resource_address, proposal);
 
@@ -74,6 +78,9 @@ module ol_framework::test_multi_action {
     // SO ALICE IS AUTHORIZED
     multi_action::init_gov(&resource_sig, 2, &vals);
     multi_action::init_type<DummyType>(&resource_sig, true);
+
+    //need to be caged to finalize multi action workflow and release control of the account
+    multi_action::finalize_and_cage(&resource_sig);
 
     let count = multi_action::get_count_of_pending<DummyType>(new_resource_address);
     assert!(count == 0, 7357001);
@@ -121,6 +128,9 @@ module ol_framework::test_multi_action {
     // Ths is a simple multi_action: there is no capability being stored
     multi_action::init_type<DummyType>(&resource_sig, false);
 
+    //need to be caged to finalize multi action workflow and release control of the account
+    multi_action::finalize_and_cage(&resource_sig);
+
     let proposal = multi_action::proposal_constructor(DummyType{}, option::none());
 
     let id = multi_action::propose_new<DummyType>(alice, new_resource_address, proposal);
@@ -156,6 +166,9 @@ module ol_framework::test_multi_action {
     // make the vals the signers on the safe, and 2-of-2 need to sign
     multi_action::init_gov(&resource_sig, 2, &vals);
     multi_action::init_type<DummyType>(&resource_sig, true);
+
+    //need to be caged to finalize multi action workflow and release control of the account
+    multi_action::finalize_and_cage(&resource_sig);
 
     let proposal = multi_action::proposal_constructor(DummyType{}, option::none());
 
@@ -210,6 +223,9 @@ module ol_framework::test_multi_action {
     // SO ALICE and DAVE ARE AUTHORIZED
     safe::init_payment_multisig(&resource_sig, vals, 2); // both need to sign
 
+    //need to be caged to finalize multi action workflow and release control of the account
+    multi_action::finalize_and_cage(&resource_sig);
+
     // make a proposal for governance, expires in 2 epoch from now
     let id = multi_action::propose_governance(alice, new_resource_address, vector::empty(), true, option::some(1), option::some(2));
 
@@ -247,6 +263,9 @@ module ol_framework::test_multi_action {
     // SO ALICE and BOB ARE AUTHORIZED
     multi_action::init_gov(&resource_sig, 2, &vals);// both need to sign
     multi_action::init_type<DummyType>(&resource_sig, true);
+
+    //need to be caged to finalize multi action workflow and release control of the account
+    multi_action::finalize_and_cage(&resource_sig);
 
     // Alice is going to propose to change the authorities to add Rando
 
@@ -293,6 +312,9 @@ module ol_framework::test_multi_action {
     // SO ALICE and BOB ARE AUTHORIZED
     multi_action::init_gov(&resource_sig, 2, &vals);// both need to sign
     multi_action::init_type<DummyType>(&resource_sig, false); // simple type with no capability
+
+    //need to be caged to finalize multi action workflow and release control of the account
+    multi_action::finalize_and_cage(&resource_sig);
 
     // Alice is going to propose to change the authorities to add Rando
 

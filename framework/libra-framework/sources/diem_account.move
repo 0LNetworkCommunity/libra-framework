@@ -14,7 +14,7 @@ module diem_framework::diem_account {
 
     /// Account does not exist.
     const EACCOUNT_NOT_FOUND: u64 = 1;
-    /// Account is not registered to receive APT.
+    /// Account is not registered to receive GAS.
     const EACCOUNT_NOT_REGISTERED_FOR_APT: u64 = 2;
     /// Account opted out of receiving coins that they did not register to receive.
     const EACCOUNT_DOES_NOT_ACCEPT_DIRECT_COIN_TRANSFERS: u64 = 3;
@@ -45,7 +45,7 @@ module diem_framework::diem_account {
         coin::register<DiemCoin>(&signer);
     }
 
-    /// Batch version of APT transfer.
+    /// Batch version of GAS transfer.
     public entry fun batch_transfer(source: &signer, recipients: vector<address>, amounts: vector<u64>) {
         let recipients_len = vector::length(&recipients);
         assert!(
@@ -62,13 +62,13 @@ module diem_framework::diem_account {
         };
     }
 
-    /// Convenient function to transfer APT to a recipient account that might not exist.
-    /// This would create the recipient account first, which also registers it to receive APT, before transferring.
+    /// Convenient function to transfer GAS to a recipient account that might not exist.
+    /// This would create the recipient account first, which also registers it to receive GAS, before transferring.
     public entry fun transfer(source: &signer, to: address, amount: u64) {
         if (!account::exists_at(to)) {
             create_account(to)
         };
-        // Resource accounts can be created without registering them to receive APT.
+        // Resource accounts can be created without registering them to receive GAS.
         // This conveniently does the registration if necessary.
         if (!coin::is_account_registered<DiemCoin>(to)) {
             coin::register<DiemCoin>(&create_signer(to));
