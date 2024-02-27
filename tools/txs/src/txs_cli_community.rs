@@ -85,8 +85,7 @@ impl ProposeTx {
             self.amount,
             self.description.clone().into_bytes(),
         );
-        let res = sender.sign_submit_wait(payload).await?;
-        println!{"{:#?}", res}
+        sender.sign_submit_wait(payload).await?;
         Ok(())
     }
 }
