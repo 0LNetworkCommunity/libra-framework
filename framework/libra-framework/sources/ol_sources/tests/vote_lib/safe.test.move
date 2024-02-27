@@ -33,7 +33,7 @@ module ol_framework::test_safe {
     safe::init_payment_multisig(&resource_sig, vals, vector::length(&vals)); // all need to sign
 
     //need to be caged to finalize multi action workflow and release control of the account
-    multi_action::finalize_and_cage(&resource_sig);
+    multi_action::finalize_and_cage(&resource_sig, vals, vector::length(&vals));
 
     // first make sure dave is initialized to receive LibraCoin
     ol_account::create_account(root, @0x1000d);
@@ -66,7 +66,7 @@ module ol_framework::test_safe {
     safe::init_payment_multisig(&resource_sig, vals, 3); // requires 3
 
     //need to be caged to finalize multi action workflow and release control of the account
-    multi_action::finalize_and_cage(&resource_sig);
+    multi_action::finalize_and_cage(&resource_sig, vals, 3);
 
     // first make sure EVE is initialized to receive LibraCoin
     ol_account::create_account(root, @0x1000e);
@@ -92,7 +92,7 @@ module ol_framework::test_safe {
     safe::init_payment_multisig(&resource_sig, vals, 2); // requires 3
 
     //need to be caged to finalize multi action workflow and release control of the account
-    multi_action::finalize_and_cage(&resource_sig);
+    multi_action::finalize_and_cage(&resource_sig, vals, 2);
 
     // fund the account
     ol_account::transfer(alice, new_resource_address, 1000000);

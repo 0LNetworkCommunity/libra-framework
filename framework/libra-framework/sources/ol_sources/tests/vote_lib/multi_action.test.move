@@ -12,7 +12,7 @@ module ol_framework::test_multi_action {
   use diem_framework::resource_account;
   use diem_framework::reconfiguration;
 
-  // use diem_std::debug::print;
+  use diem_std::debug::print;
 
   struct DummyType has drop, store {}
 
@@ -51,7 +51,7 @@ module ol_framework::test_multi_action {
 
 
     //need to be caged to finalize multi action workflow and release control of the account
-    multi_action::finalize_and_cage(&resource_sig);
+    multi_action::finalize_and_cage(&resource_sig, vals, vector::length(&vals));
 
     let proposal = multi_action::proposal_constructor(DummyType{}, option::none());
     let id = multi_action::propose_new(alice, new_resource_address, proposal);
@@ -78,7 +78,7 @@ module ol_framework::test_multi_action {
     multi_action::init_type<DummyType>(&resource_sig, true);
 
     //need to be caged to finalize multi action workflow and release control of the account
-    multi_action::finalize_and_cage(&resource_sig);
+    multi_action::finalize_and_cage(&resource_sig, vals, vector::length(&vals));
 
     let count = multi_action::get_count_of_pending<DummyType>(new_resource_address);
     assert!(count == 0, 7357001);
@@ -127,7 +127,7 @@ module ol_framework::test_multi_action {
     multi_action::init_type<DummyType>(&resource_sig, false);
 
     //need to be caged to finalize multi action workflow and release control of the account
-    multi_action::finalize_and_cage(&resource_sig);
+    multi_action::finalize_and_cage(&resource_sig, vals, vector::length(&vals));
 
     let proposal = multi_action::proposal_constructor(DummyType{}, option::none());
 
@@ -168,7 +168,7 @@ module ol_framework::test_multi_action {
 
     //need to be caged to finalize multi action workflow and release control of the account
     // print(&vals);
-    multi_action::finalize_and_cage(&resource_sig);
+    multi_action::finalize_and_cage(&resource_sig, vals, vector::length(&vals));
 
     let proposal = multi_action::proposal_constructor(DummyType{}, option::none());
 
@@ -224,7 +224,7 @@ module ol_framework::test_multi_action {
     safe::init_payment_multisig(&resource_sig, vals, 2); // both need to sign
 
     //need to be caged to finalize multi action workflow and release control of the account
-    multi_action::finalize_and_cage(&resource_sig);
+    multi_action::finalize_and_cage(&resource_sig, vals, vector::length(&vals));
 
     // make a proposal for governance, expires in 2 epoch from now
     let id = multi_action::propose_governance(alice, new_resource_address, vector::empty(), true, option::some(1), option::some(2));
@@ -244,7 +244,7 @@ module ol_framework::test_multi_action {
   }
 
 
-  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, dave = @0x1000d, marlon_rando = @0x2000a)]
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, dave = @0x1000d, marlon_rando = @0x123456)]
   fun governance_change_auths(root: &signer, alice: &signer, bob: &signer, dave: &signer, marlon_rando: &signer) {
     // Scenario: The multisig gets initiated with the 2 validators as the only authorities. IT takes 2-of-2 to sign.
     // later they add a third (Rando) so it becomes a 2-of-3.
@@ -264,13 +264,17 @@ module ol_framework::test_multi_action {
     multi_action::init_gov(&resource_sig, 2, &vals);// both need to sign
     multi_action::init_type<DummyType>(&resource_sig, true);
 
-    //need to be caged to finalize multi action workflow and release control of the account
-    multi_action::finalize_and_cage(&resource_sig);
+    //need to be caged to finalize multi action workflow and release control of
+    // the account
+    multi_action::finalize_and_cage(&resource_sig, vals, 2);
 
     // Alice is going to propose to change the authorities to add Rando
+    let id = multi_action::propose_governance(alice, new_resource_address,
+    vector::singleton(signer::address_of(marlon_rando)), true, option::none(),
+    option::none());
 
-    let id = multi_action::propose_governance(alice, new_resource_address, vector::singleton(signer::address_of(marlon_rando)), true, option::none(), option::none());
     let a = multi_action::get_authorities(new_resource_address);
+    print(&a);
     assert!(vector::length(&a) == 2, 7357002);
 
     // bob votes and it becomes final. Bob could either use vote_governance()
@@ -314,7 +318,7 @@ module ol_framework::test_multi_action {
     multi_action::init_type<DummyType>(&resource_sig, false); // simple type with no capability
 
     //need to be caged to finalize multi action workflow and release control of the account
-    multi_action::finalize_and_cage(&resource_sig);
+    multi_action::finalize_and_cage(&resource_sig, vals, vector::length(&vals));
 
     // Alice is going to propose to change the authorities to add Rando
 
@@ -332,6 +336,7 @@ module ol_framework::test_multi_action {
     let a = multi_action::get_authorities(new_resource_address);
     assert!(vector::length(&a) == 2, 7357005); // no change
     let (n, _m) = multi_action::get_threshold(new_resource_address);
+    print(&n);
     assert!(n == 1, 7357006);
 
     // now any other type of action can be taken with just one signer
