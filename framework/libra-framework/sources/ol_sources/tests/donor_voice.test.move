@@ -9,6 +9,8 @@ module ol_framework::test_donor_voice {
   use ol_framework::multi_action;
   use ol_framework::receipts;
   use ol_framework::donor_voice_governance;
+  use ol_framework::community_wallet_init;
+  use ol_framework::community_wallet;
   use ol_framework::burn;
   use std::guid;
   use std::vector;

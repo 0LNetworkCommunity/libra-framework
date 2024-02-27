@@ -1,11 +1,11 @@
 // Upgrade proposal for package `LibraFramework`
 
-// Framework commit hash: 4c45d4714916c4592d7fbf4c51f2593e27e6df00
+// Framework commit hash: 92c6cf9da41cc8bcc2e731c96a13e7e28a6307a1
 // Builder commit hash: db1137ba1f8e7301e325021f71f740063daaf76e
 
 // Next step script hash:
 
-// source digest: 0B5ECDC23E306E729797F496DE079505825448872F5456E6D92E4B0D50C1FFAB
+// source digest: E75879CC78FDCEAAE73EC9C9CFC188F1E538661236E840C5538A166595AAF341
 script {
     use std::vector;
     use diem_framework::diem_governance;
@@ -9434,10 +9434,10 @@ script {
         vector::push_back(&mut code, code_chunk79);
         let metadata_chunk1 = vector[
             14u8,76u8,105u8,98u8,114u8,97u8,70u8,114u8,97u8,109u8,101u8,119u8,111u8,114u8,107u8,1u8,0u8,0u8,0u8,
-            0u8,0u8,0u8,0u8,0u8,64u8,48u8,66u8,53u8,69u8,67u8,68u8,67u8,50u8,51u8,69u8,51u8,48u8,54u8,69u8,
-            55u8,50u8,57u8,55u8,57u8,55u8,70u8,52u8,57u8,54u8,68u8,69u8,48u8,55u8,57u8,53u8,48u8,53u8,56u8,50u8,
-            53u8,52u8,52u8,56u8,56u8,55u8,50u8,70u8,53u8,52u8,53u8,54u8,69u8,54u8,68u8,57u8,50u8,69u8,52u8,66u8,
-            48u8,68u8,53u8,48u8,67u8,49u8,70u8,70u8,65u8,66u8,194u8,1u8,31u8,139u8,8u8,0u8,0u8,0u8,0u8,0u8,
+            0u8,0u8,0u8,0u8,0u8,64u8,69u8,55u8,53u8,56u8,55u8,57u8,67u8,67u8,55u8,56u8,70u8,68u8,67u8,69u8,
+            65u8,65u8,69u8,55u8,51u8,69u8,67u8,57u8,67u8,57u8,67u8,70u8,67u8,49u8,56u8,56u8,70u8,49u8,69u8,53u8,
+            51u8,56u8,54u8,54u8,49u8,50u8,51u8,54u8,69u8,56u8,52u8,48u8,67u8,53u8,53u8,51u8,56u8,65u8,49u8,54u8,
+            54u8,53u8,57u8,53u8,65u8,65u8,70u8,51u8,52u8,49u8,194u8,1u8,31u8,139u8,8u8,0u8,0u8,0u8,0u8,0u8,
             2u8,255u8,109u8,142u8,49u8,11u8,194u8,48u8,16u8,133u8,247u8,251u8,21u8,37u8,187u8,181u8,69u8,4u8,23u8,7u8,
             17u8,156u8,220u8,4u8,151u8,82u8,74u8,154u8,156u8,18u8,218u8,230u8,202u8,37u8,86u8,65u8,252u8,239u8,38u8,173u8,
             10u8,162u8,219u8,221u8,251u8,30u8,31u8,175u8,232u8,165u8,106u8,228u8,25u8,75u8,176u8,178u8,195u8,100u8,157u8,136u8,
@@ -9516,6 +9516,6 @@ script {
             100u8,111u8,114u8,83u8,116u8,100u8,108u8,105u8,98u8,0u8,
         ];
         code::publish_package_txn(&framework_signer, metadata_chunk1, code);
-        version::upgrade_set_git(&framework_signer, x"4c45d4714916c4592d7fbf4c51f2593e27e6df00")
+        version::upgrade_set_git(&framework_signer, x"92c6cf9da41cc8bcc2e731c96a13e7e28a6307a1")
     }
 }
