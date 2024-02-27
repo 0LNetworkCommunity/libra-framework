@@ -1452,7 +1452,7 @@
 // async fn liquidate_community_wallet() {
 // }
 
-// UTILITY // 
+// UTILITY //
 
 // async fn setup_environment() -> (LibraSmoke, TempPath, AccountAddress, AccountAddress) {
 //     let dir = diem_temppath::TempPath::new();
