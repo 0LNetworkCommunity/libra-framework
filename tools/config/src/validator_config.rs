@@ -111,7 +111,8 @@ pub async fn validator_dialogue(
             None,
             keep_legacy_address,
             None,
-        ).await?;
+        )
+        .await?;
 
         // now set up the vfn.yaml on the same host for convenience
         vfn_dialogue(

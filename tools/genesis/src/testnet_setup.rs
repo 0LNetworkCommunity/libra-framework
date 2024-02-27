@@ -40,7 +40,8 @@ pub async fn setup(
         Some(me.get_persona_mnem()),
         false,
         Some(chain),
-    ).await?;
+    )
+    .await?;
 
     // create validator configurations from fixtures
     // without needing to use a github repo to register and read

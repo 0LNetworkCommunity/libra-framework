@@ -15,7 +15,6 @@ pub async fn save_validator_yaml(home_dir: Option<PathBuf>) -> Result<PathBuf> {
     let home_dir = home_dir.unwrap_or_else(global_config_dir);
     let path = home_dir.display().to_string();
 
-
     let template = format!(
         "
 base:
@@ -58,7 +57,7 @@ full_node_networks:
     path: {path}/validator-identity.yaml
 - network_id: 'public'
   listen_address: '/ip4/0.0.0.0/tcp/6182'
- 
+
 api:
   enabled: true
   address: '127.0.0.1:8080'
