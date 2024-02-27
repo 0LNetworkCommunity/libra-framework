@@ -63,7 +63,7 @@ module ol_framework::ol_account {
     /// donor voice cannot use transfer, they have a dedicated workflow
     const ENOT_FOR_DV: u64 = 11;
 
-    /// to create a "caged" account, where there is no signer that can could
+    // Create a "caged" account, where there is no signer that can could
     // new state, and only the existing state can be modified by modules. This
     // is useful for multi_action.move
     const CAGE_AUTH_KEY: vector<u8> = x"00000000000000000000000000000000000000000000000000000000000ca9ed";
