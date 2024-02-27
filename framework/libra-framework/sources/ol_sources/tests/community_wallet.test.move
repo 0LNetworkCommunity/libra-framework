@@ -4,7 +4,7 @@
     use ol_framework::community_wallet;
     use ol_framework::community_wallet_init;
     use ol_framework::donor_voice_txs;
-    // use ol_framework::multi_action;
+    use diem_framework::multisig_account;
     use ol_framework::mock;
     use ol_framework::ol_account;
     use ol_framework::ancestry;
@@ -36,12 +36,12 @@
         // the usual initialization should fix the structs
         community_wallet_init::init_community(community, auths);
         // confirm the bug
-        assert!(!ol_account::is_cage(community_wallet_address), 7357002);
+        assert!(!multisig_account::is_multisig(community_wallet_address), 7357002);
 
         // fix it by calling multi auth:
-        community_wallet_init::finalize_and_cage(community);
+        community_wallet_init::finalize_and_cage(community, auths, vector::length(&auths));
         // multi_action::finalize_and_cage(community);
-        assert!(ol_account::is_cage(community_wallet_address), 7357003);
+        assert!(multisig_account::is_multisig(community_wallet_address), 7357003);
 
         community_wallet_init::assert_qualifies(community_wallet_address);
     }
@@ -115,15 +115,15 @@
         community_wallet_init::init_community(alice, signers);
 
         // fix it by calling multi auth:
-        community_wallet_init::finalize_and_cage(alice);
+        community_wallet_init::finalize_and_cage(alice, signers, 2);
 
         let alice_comm_wallet_addr = signer::address_of(alice);
-        let carols_addr = signer::address_of(carol); 
+        let carols_addr = signer::address_of(carol);
 
 
         // VERIFY PAYMENTS OPERATE AS EXPECTED
         let uid = donor_voice_txs::propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol");
-        let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid); 
+        let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
         assert!(found, 7357004);
         assert!(idx == 0, 7357005);
         assert!(status_enum == 1, 7357006);
@@ -190,15 +190,15 @@
         community_wallet_init::init_community(alice, signers);
 
         // fix it by calling multi auth:
-        community_wallet_init::finalize_and_cage(alice);
+        community_wallet_init::finalize_and_cage(alice, signers, 2);
 
         let alice_comm_wallet_addr = signer::address_of(alice);
-        let carols_addr = signer::address_of(carol); 
+        let carols_addr = signer::address_of(carol);
 
 
         // VERIFY PAYMENTS OPERATE AS EXPECTED
         let uid = donor_voice_txs::propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol");
-        let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid); 
+        let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
         assert!(found, 7357004);
         assert!(idx == 0, 7357005);
         assert!(status_enum == 1, 7357006);
@@ -256,7 +256,7 @@
         donor_voice_txs::make_donor_voice(alice, signers, 1);
 
         // try to cage the address by calling multi auth
-        community_wallet_init::finalize_and_cage(alice);
+        community_wallet_init::finalize_and_cage(alice, signers, 1);
 
     }
 
@@ -280,7 +280,7 @@
         donor_voice_txs::make_donor_voice(alice, signers, 1);
 
         // try to cage the address by calling multi auth
-        community_wallet_init::finalize_and_cage(alice);
+        community_wallet_init::finalize_and_cage(alice, signers, 1);
 
     }
 
@@ -304,11 +304,43 @@
         donor_voice_txs::make_donor_voice(alice, signers, 1);
 
         // try to cage the address by calling multi auth
-        community_wallet_init::finalize_and_cage(alice);
+        community_wallet_init::finalize_and_cage(alice, signers, 1);
 
     }
 
 
-    //TODO: Test for liquidate
-    //TODO: Test for make payment
+    // #[test(root = @ol_framework, _alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d, eve = @0x1000e)]
+    // #[expected_failure(abort_code = 196618, location = 0x1::ol_account)]
+    // fun cw_below_minimum_signer(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer, eve: &signer) {
+    //     // A community wallet by default must be 2/3 multisig.
+    //     // This test verifies that the wallet can not be initialized with less signers
+    //     mock::genesis_n_vals(root, 4);
+    //     mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
+
+    //     let signers = vector::empty<address>();
+
+    //     // helpers in line to help
+    //     vector::push_back(&mut signers, signer::address_of(bob));
+    //     vector::push_back(&mut signers, signer::address_of(dave));
+
+    //     community_wallet_init::init_community(alice, signers);
+
+    //     // After being set as a community wallet, the owner loses control over the wallet
+    //     ol_account::transfer(alice, @0x1000b, 100);
+    // }
+
+        //      let alice_comm_wallet_addr = signer::address_of(alice);
+    //    let carols_addr = signer::address_of(carol);
+
+    //     let uid = donor_voice_txs::propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol");
+    //     let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
+    //     assert!(found, 7357004);
+    //     assert!(idx == 0, 7357005);
+    //     assert!(status_enum == 1, 7357006);
+    //     assert!(!completed, 7357007);
+
+    //   // it is not yet scheduled, it's still only a proposal by an admin
+    //   assert!(!donor_voice_txs::is_scheduled(alice_comm_wallet_addr, &uid), 7357008);
+
+
   }

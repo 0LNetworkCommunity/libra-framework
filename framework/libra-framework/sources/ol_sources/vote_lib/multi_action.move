@@ -29,11 +29,11 @@ module ol_framework::multi_action {
   use std::error;
   use std::guid;
   use diem_framework::account::{Self, WithdrawCapability};
-  use ol_framework::ol_account;
+  use diem_framework::multisig_account;
   use ol_framework::ballot::{Self, BallotTracker};
   use ol_framework::epoch_helper;
 
- // use diem_std::debug::print;
+ use diem_std::debug::print;
 
   const EGOV_NOT_INITIALIZED: u64 = 1;
   /// The owner of this account can't be an authority, since it will subsequently be bricked. The signer of this account is no longer useful. The account is now controlled by the Governance logic.
@@ -58,7 +58,8 @@ module ol_framework::multi_action {
   const EPROPOSAL_NOT_FOUND: u64 = 11;
   /// Proposal voting is closed
   const EVOTING_CLOSED: u64 = 12;
-
+  /// No addresses in multisig changes
+  const EEMPTY_ADDRESSES: u64 = 13;
 
   /// default setting for a proposal to expire
   const DEFAULT_EPOCHS_EXPIRE: u64 = 14;
@@ -129,7 +130,7 @@ module ol_framework::multi_action {
     }
   }
 
-  fun assert_authorized(sig: &signer, multisig_address: address) acquires Governance {
+  fun assert_authorized(sig: &signer, multisig_address: address) {
     // cannot start manipulating contract until the sponsor gave up the auth key
     assert_multi_action(multisig_address);
 
@@ -142,19 +143,23 @@ module ol_framework::multi_action {
   // Initialize the governance structs for this account.
   // Governance contains the constraints for each Action that are checked on each vote (n_sigs, expiration, signers, etc)
   // Also, an initial Action of type PropGovSigners is created, which is used to govern the signers and threshold for this account.
-  public fun init_gov(sig: &signer, cfg_default_n_sigs: u64, m_seed_authorities: &vector<address>) {
-    assert!(cfg_default_n_sigs > 0, error::invalid_argument(ENO_SIGNERS));
+  public fun init_gov(sig: &signer, _cfg_default_n_sigs: u64,
+  _m_seed_authorities: &vector<address>) {
+
+    // heals un-initialized state, and does nothing if state already exists.
+
+    // assert!(cfg_default_n_sigs > 0, error::invalid_argument(ENO_SIGNERS));
 
     let multisig_address = signer::address_of(sig);
     // User footgun. The signer of this account is bricked, and as such the signer can no longer be an authority.
-    assert!(!vector::contains(m_seed_authorities, &multisig_address), error::invalid_argument(ESIGNER_CANT_BE_AUTHORITY));
+    // assert!(!vector::contains(m_seed_authorities, &multisig_address),
+    // error::invalid_argument(ESIGNER_CANT_BE_AUTHORITY));
 
     if (!exists<Governance>(multisig_address)) {
         move_to(sig, Governance {
         cfg_duration_epochs: DEFAULT_EPOCHS_EXPIRE,
-        cfg_default_n_sigs,
-        signers: *m_seed_authorities,
-        // counter: 0,
+        cfg_default_n_sigs: 0, // deprecate
+        signers: vector::empty(), // *m_seed_authorities, // deprecate
         withdraw_capability: option::none(),
         guid_capability: account::create_guid_capability(sig),
       });
@@ -165,17 +170,25 @@ module ol_framework::multi_action {
         can_withdraw: false,
         vote: ballot::new_tracker<Proposal<PropGovSigners>>(),
       });
-    }
+    };
   }
 
   /// finalize the account and put in a cage. Will abort if governance has not
   // been initialized
-  public entry fun finalize_and_cage(sig: &signer) {
+  public entry fun finalize_and_cage(sig: &signer, initial_authorities:
+  vector<address>, num_signers: u64) {
     let addr = signer::address_of(sig);
     assert!(exists<Governance>(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
     assert!(exists<Action<PropGovSigners>>(addr),
     error::invalid_argument(EGOV_NOT_INITIALIZED));
-    ol_account::cage_this_account(sig);
+    // not yet initialized
+    assert!(!multisig_account::is_multisig(addr),
+    error::invalid_argument(EGOV_NOT_INITIALIZED));
+
+    // let authorities = get_authorities(addr);
+    // let (n, _m) = get_threshold(addr);
+    print(&initial_authorities);
+    multisig_account::migrate_with_owners(sig, initial_authorities, num_signers, vector::empty(), vector::empty());
   }
 
   //////// Helper functions to check initialization //////////
@@ -184,12 +197,12 @@ module ol_framework::multi_action {
   public fun is_multi_action(addr: address): bool {
     exists<Governance>(addr) &&
     exists<Action<PropGovSigners>>(addr) &&
-    ol_account::is_cage(addr)
+    multisig_account::is_multisig(addr)
   }
 
   /// helper to assert if the account is in the right state
   public fun assert_multi_action(addr: address) {
-    assert!(ol_account::is_cage(addr), error::invalid_argument(ENOT_FINALIZED_NOT_BRICK));
+    assert!(multisig_account::is_multisig(addr), error::invalid_argument(ENOT_FINALIZED_NOT_BRICK));
     assert!(exists<Governance>(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
     assert!(exists<Action<PropGovSigners>>(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
   }
@@ -219,9 +232,6 @@ module ol_framework::multi_action {
     assert!(!exists<Action<ProposalData>>(multisig_address), error::invalid_argument(EACTION_ALREADY_EXISTS));
     // make sure the signer's address is not in the list of authorities.
     // This account's signer will now be useless.
-
-
-
     // maybe the withdraw cap was never extracted in previous set up.
     // but we won't extract it if none of the Actions require it.
     if (can_withdraw) {
@@ -342,7 +352,8 @@ module ol_framework::multi_action {
     let b = ballot::get_ballot_by_id_mut(&mut action.vote, id);
     let t = ballot::get_type_struct_mut(b);
     vector::push_back(&mut t.votes, signer::address_of(sig));
-    let passed = tally(t, *&ms.cfg_default_n_sigs);
+    let (n, _m) = get_threshold(multisig_address);
+    let passed = tally(t, n);
 
     if (passed) {
       ballot::complete_ballot(b);
@@ -415,9 +426,9 @@ module ol_framework::multi_action {
     epoch_now > prop.expiration_epoch
   }
 
-  public fun is_authority(multisig_addr: address, addr: address): bool acquires Governance {
-    let m = borrow_global<Governance>(multisig_addr);
-    vector::contains(&m.signers, &addr)
+  public fun is_authority(multisig_addr: address, addr: address): bool {
+    let auths = multisig_account::owners(multisig_addr);
+    vector::contains(&auths, &addr)
   }
 
   /// This function is used to copy the data from the proposal that is in the multisig.
@@ -527,7 +538,11 @@ module ol_framework::multi_action {
 
   // Proposing a governance change of adding or removing signer, or changing the n-of-m of the authorities. Note that proposing will deduplicate in the event that two authorities miscommunicate and send the same proposal, in that case for UX purposes the second proposal becomes a vote.
   public fun propose_governance(sig: &signer, multisig_address: address, addresses: vector<address>, add_remove: bool, n_of_m: Option<u64>, duration_epochs: Option<u64> ): guid::ID acquires Governance, Action {
-    assert_authorized(sig, multisig_address); // Duplicated with propose(), belt and suspenders
+    assert_authorized(sig, multisig_address); // Duplicated with propose(), belt
+    // and suspenders
+
+    print(&222);
+    print(&addresses);
     let data = PropGovSigners {
       addresses,
       add_remove,
@@ -545,16 +560,19 @@ module ol_framework::multi_action {
   public fun vote_governance(sig: &signer, multisig_address: address, id: &guid::ID): bool acquires Governance, Action {
     assert_authorized(sig, multisig_address);
 
-
     let (passed, cap_opt) = {
       vote_impl<PropGovSigners>(sig, multisig_address, id)
     };
-    maybe_restore_withdraw_cap(cap_opt); // don't need this and can't drop.
+    maybe_restore_withdraw_cap(cap_opt); // don't need this but can't drop.
 
+    print(&3333);
+    print(&passed);
     if (passed) {
       let ms = borrow_global_mut<Governance>(multisig_address);
       let data = extract_proposal_data<PropGovSigners>(multisig_address, id);
-      maybe_update_authorities(ms, data.add_remove, &data.addresses);
+      if (!vector::is_empty(&data.addresses)) {
+        maybe_update_authorities(ms, data.add_remove, &data.addresses);
+      };
       maybe_update_threshold(ms, &data.n_of_m);
     };
     passed
@@ -564,45 +582,26 @@ module ol_framework::multi_action {
   // must be called with the withdraw capability and signer. belt and suspenders
   fun maybe_update_authorities(ms: &mut Governance, add_remove: bool, addresses: &vector<address>) {
 
-      if (vector::is_empty(addresses)) {
-        // The address field may be empty if the multisig is only changing the threshold
-        return
-      };
+      assert!(!vector::is_empty(addresses), error::invalid_argument(EEMPTY_ADDRESSES));
 
-      if (add_remove) {
-        vector::append(&mut ms.signers, *addresses);
-      } else {
-
-        // remove the signers
-        let i = 0;
-        while (i < vector::length(addresses)) {
-          let addr = vector::borrow(addresses, i);
-          let (found, idx) = vector::index_of(&ms.signers, addr);
-          if (found) {
-            vector::swap_remove(&mut ms.signers, idx);
-          };
-          i = i + 1;
-        };
-      };
+      multisig_account::multi_auth_helper_add_remove(&ms.guid_capability, add_remove, addresses);
   }
 
   fun maybe_update_threshold(ms: &mut Governance, n_of_m_opt: &Option<u64>) {
     if (option::is_some(n_of_m_opt)) {
-      ms.cfg_default_n_sigs = *option::borrow(n_of_m_opt);
+      multisig_account::multi_auth_helper_update_signatures_required(&ms.guid_capability, *option::borrow(n_of_m_opt));
     };
   }
 
   //////// GETTERS ////////
   #[view]
-  public fun get_authorities(multisig_address: address): vector<address> acquires Governance {
-    let m = borrow_global<Governance>(multisig_address);
-    *&m.signers
+  public fun get_authorities(multisig_address: address): vector<address> {
+    multisig_account::owners(multisig_address)
   }
 
   #[view]
-  public fun get_threshold(multisig_address: address): (u64, u64) acquires Governance {
-    let m = borrow_global<Governance>(multisig_address);
-    (*&m.cfg_default_n_sigs, vector::length(&m.signers))
+  public fun get_threshold(multisig_address: address): (u64, u64) {
+        (multisig_account::num_signatures_required(multisig_address), vector::length(&multisig_account::owners(multisig_address)))
   }
 
   #[view]

@@ -161,7 +161,10 @@ pub enum EntryFunctionCall {
 
     /// convenience function to check if the account can be caged
     /// after all the structs are in place
-    CommunityWalletInitFinalizeAndCage {},
+    CommunityWalletInitFinalizeAndCage {
+        initial_authorities: Vec<AccountAddress>,
+        num_signers: u64,
+    },
 
     CommunityWalletInitInitCommunity {
         init_signers: Vec<AccountAddress>,
@@ -297,7 +300,10 @@ pub enum EntryFunctionCall {
     },
 
     /// finalize the account and put in a cage. Will abort if governance has not
-    MultiActionFinalizeAndCage {},
+    MultiActionFinalizeAndCage {
+        initial_authorities: Vec<AccountAddress>,
+        num_signers: u64,
+    },
 
     /// Similar to add_owners, but only allow adding one owner.
     MultisigAccountAddOwner {
@@ -380,6 +386,15 @@ pub enum EntryFunctionCall {
     /// Remove the next transaction if it has sufficient owner rejections.
     MultisigAccountExecuteRejectedTransaction {
         multisig_account: AccountAddress,
+    },
+
+    /// keeps the origin account as the ADDRESS
+    /// rotates the key to ZERO
+    MultisigAccountMigrateWithOwners {
+        additional_owners: Vec<AccountAddress>,
+        num_signatures_required: u64,
+        metadata_keys: Vec<Vec<u8>>,
+        metadata_values: Vec<Vec<u8>>,
     },
 
     /// Reject a multisig transaction.
@@ -476,14 +491,6 @@ pub enum EntryFunctionCall {
     ResourceAccountCreateResourceAccount {
         seed: Vec<u8>,
         optional_auth_key: Vec<u8>,
-    },
-
-    /// Creates a new resource account, publishes the package under this account transaction under
-    /// this account and leaves the signer cap readily available for pickup.
-    ResourceAccountCreateResourceAccountAndPublishPackage {
-        seed: Vec<u8>,
-        metadata_serialized: Vec<u8>,
-        code: Vec<Vec<u8>>,
     },
 
     SlowWalletSmokeTestVmUnlock {
@@ -659,7 +666,10 @@ impl EntryFunctionCall {
                 n_of_m,
                 vote_duration_epochs,
             ),
-            CommunityWalletInitFinalizeAndCage {} => community_wallet_init_finalize_and_cage(),
+            CommunityWalletInitFinalizeAndCage {
+                initial_authorities,
+                num_signers,
+            } => community_wallet_init_finalize_and_cage(initial_authorities, num_signers),
             CommunityWalletInitInitCommunity { init_signers } => {
                 community_wallet_init_init_community(init_signers)
             }
@@ -747,7 +757,10 @@ impl EntryFunctionCall {
             LibraCoinClaimMintCapability {} => libra_coin_claim_mint_capability(),
             LibraCoinDelegateMintCapability { to } => libra_coin_delegate_mint_capability(to),
             LibraCoinMintToImpl { dst_addr, amount } => libra_coin_mint_to_impl(dst_addr, amount),
-            MultiActionFinalizeAndCage {} => multi_action_finalize_and_cage(),
+            MultiActionFinalizeAndCage {
+                initial_authorities,
+                num_signers,
+            } => multi_action_finalize_and_cage(initial_authorities, num_signers),
             MultisigAccountAddOwner { new_owner } => multisig_account_add_owner(new_owner),
             MultisigAccountAddOwners { new_owners } => multisig_account_add_owners(new_owners),
             MultisigAccountApproveTransaction {
@@ -800,6 +813,17 @@ impl EntryFunctionCall {
             MultisigAccountExecuteRejectedTransaction { multisig_account } => {
                 multisig_account_execute_rejected_transaction(multisig_account)
             }
+            MultisigAccountMigrateWithOwners {
+                additional_owners,
+                num_signatures_required,
+                metadata_keys,
+                metadata_values,
+            } => multisig_account_migrate_with_owners(
+                additional_owners,
+                num_signatures_required,
+                metadata_keys,
+                metadata_values,
+            ),
             MultisigAccountRejectTransaction {
                 multisig_account,
                 sequence_number,
@@ -837,15 +861,6 @@ impl EntryFunctionCall {
                 seed,
                 optional_auth_key,
             } => resource_account_create_resource_account(seed, optional_auth_key),
-            ResourceAccountCreateResourceAccountAndPublishPackage {
-                seed,
-                metadata_serialized,
-                code,
-            } => resource_account_create_resource_account_and_publish_package(
-                seed,
-                metadata_serialized,
-                code,
-            ),
             SlowWalletSmokeTestVmUnlock {
                 user_addr,
                 unlocked,
@@ -1226,7 +1241,10 @@ pub fn community_wallet_init_change_signer_community_multisig(
 
 /// convenience function to check if the account can be caged
 /// after all the structs are in place
-pub fn community_wallet_init_finalize_and_cage() -> TransactionPayload {
+pub fn community_wallet_init_finalize_and_cage(
+    initial_authorities: Vec<AccountAddress>,
+    num_signers: u64,
+) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
@@ -1237,7 +1255,10 @@ pub fn community_wallet_init_finalize_and_cage() -> TransactionPayload {
         ),
         ident_str!("finalize_and_cage").to_owned(),
         vec![],
-        vec![],
+        vec![
+            bcs::to_bytes(&initial_authorities).unwrap(),
+            bcs::to_bytes(&num_signers).unwrap(),
+        ],
     ))
 }
 
@@ -1682,7 +1703,10 @@ pub fn libra_coin_mint_to_impl(dst_addr: AccountAddress, amount: u64) -> Transac
 }
 
 /// finalize the account and put in a cage. Will abort if governance has not
-pub fn multi_action_finalize_and_cage() -> TransactionPayload {
+pub fn multi_action_finalize_and_cage(
+    initial_authorities: Vec<AccountAddress>,
+    num_signers: u64,
+) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
@@ -1693,7 +1717,10 @@ pub fn multi_action_finalize_and_cage() -> TransactionPayload {
         ),
         ident_str!("finalize_and_cage").to_owned(),
         vec![],
-        vec![],
+        vec![
+            bcs::to_bytes(&initial_authorities).unwrap(),
+            bcs::to_bytes(&num_signers).unwrap(),
+        ],
     ))
 }
 
@@ -1917,6 +1944,33 @@ pub fn multisig_account_execute_rejected_transaction(
         ident_str!("execute_rejected_transaction").to_owned(),
         vec![],
         vec![bcs::to_bytes(&multisig_account).unwrap()],
+    ))
+}
+
+/// keeps the origin account as the ADDRESS
+/// rotates the key to ZERO
+pub fn multisig_account_migrate_with_owners(
+    additional_owners: Vec<AccountAddress>,
+    num_signatures_required: u64,
+    metadata_keys: Vec<Vec<u8>>,
+    metadata_values: Vec<Vec<u8>>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("multisig_account").to_owned(),
+        ),
+        ident_str!("migrate_with_owners").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&additional_owners).unwrap(),
+            bcs::to_bytes(&num_signatures_required).unwrap(),
+            bcs::to_bytes(&metadata_keys).unwrap(),
+            bcs::to_bytes(&metadata_values).unwrap(),
+        ],
     ))
 }
 
@@ -2206,31 +2260,6 @@ pub fn resource_account_create_resource_account(
         vec![
             bcs::to_bytes(&seed).unwrap(),
             bcs::to_bytes(&optional_auth_key).unwrap(),
-        ],
-    ))
-}
-
-/// Creates a new resource account, publishes the package under this account transaction under
-/// this account and leaves the signer cap readily available for pickup.
-pub fn resource_account_create_resource_account_and_publish_package(
-    seed: Vec<u8>,
-    metadata_serialized: Vec<u8>,
-    code: Vec<Vec<u8>>,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("resource_account").to_owned(),
-        ),
-        ident_str!("create_resource_account_and_publish_package").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&seed).unwrap(),
-            bcs::to_bytes(&metadata_serialized).unwrap(),
-            bcs::to_bytes(&code).unwrap(),
         ],
     ))
 }
@@ -2667,8 +2696,11 @@ mod decoder {
     pub fn community_wallet_init_finalize_and_cage(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(_script) = payload {
-            Some(EntryFunctionCall::CommunityWalletInitFinalizeAndCage {})
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::CommunityWalletInitFinalizeAndCage {
+                initial_authorities: bcs::from_bytes(script.args().get(0)?).ok()?,
+                num_signers: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
         } else {
             None
         }
@@ -2943,8 +2975,11 @@ mod decoder {
     pub fn multi_action_finalize_and_cage(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(_script) = payload {
-            Some(EntryFunctionCall::MultiActionFinalizeAndCage {})
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::MultiActionFinalizeAndCage {
+                initial_authorities: bcs::from_bytes(script.args().get(0)?).ok()?,
+                num_signers: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
         } else {
             None
         }
@@ -3069,6 +3104,21 @@ mod decoder {
                     multisig_account: bcs::from_bytes(script.args().get(0)?).ok()?,
                 },
             )
+        } else {
+            None
+        }
+    }
+
+    pub fn multisig_account_migrate_with_owners(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::MultisigAccountMigrateWithOwners {
+                additional_owners: bcs::from_bytes(script.args().get(0)?).ok()?,
+                num_signatures_required: bcs::from_bytes(script.args().get(1)?).ok()?,
+                metadata_keys: bcs::from_bytes(script.args().get(2)?).ok()?,
+                metadata_values: bcs::from_bytes(script.args().get(3)?).ok()?,
+            })
         } else {
             None
         }
@@ -3237,22 +3287,6 @@ mod decoder {
                 seed: bcs::from_bytes(script.args().get(0)?).ok()?,
                 optional_auth_key: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
-        } else {
-            None
-        }
-    }
-
-    pub fn resource_account_create_resource_account_and_publish_package(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(
-                EntryFunctionCall::ResourceAccountCreateResourceAccountAndPublishPackage {
-                    seed: bcs::from_bytes(script.args().get(0)?).ok()?,
-                    metadata_serialized: bcs::from_bytes(script.args().get(1)?).ok()?,
-                    code: bcs::from_bytes(script.args().get(2)?).ok()?,
-                },
-            )
         } else {
             None
         }
@@ -3601,6 +3635,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::multisig_account_execute_rejected_transaction),
         );
         map.insert(
+            "multisig_account_migrate_with_owners".to_string(),
+            Box::new(decoder::multisig_account_migrate_with_owners),
+        );
+        map.insert(
             "multisig_account_reject_transaction".to_string(),
             Box::new(decoder::multisig_account_reject_transaction),
         );
@@ -3659,10 +3697,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "resource_account_create_resource_account".to_string(),
             Box::new(decoder::resource_account_create_resource_account),
-        );
-        map.insert(
-            "resource_account_create_resource_account_and_publish_package".to_string(),
-            Box::new(decoder::resource_account_create_resource_account_and_publish_package),
         );
         map.insert(
             "slow_wallet_smoke_test_vm_unlock".to_string(),

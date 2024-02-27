@@ -26,6 +26,7 @@ module diem_framework::account {
     friend diem_framework::transaction_validation;
     //////// 0L ////////
     friend ol_framework::ol_account;
+    friend diem_framework::multisig_account;
     /// Resource representing an account.
     struct Account has key, store {
         authentication_key: vector<u8>,
@@ -818,6 +819,13 @@ module diem_framework::account {
         (resource, signer_cap)
     }
 
+    /// helper for multisig_account migration case
+    public(friend) fun create_signer_cap_for_multisig(sig: &signer):
+    SignerCapability acquires Account {
+      rotate_authentication_key_internal(sig, ZERO_AUTH_KEY);
+      SignerCapability { account: signer::address_of(sig) }
+    }
+
     /// create the account for system reserved addresses
     public(friend) fun create_framework_reserved_account(addr: address): (signer, SignerCapability) {
         assert!(
@@ -934,6 +942,7 @@ module diem_framework::account {
       // this is a hot potato, can never be dropped.
       WithdrawCapability { addr: signer::address_of(owner) }
     }
+
     public fun get_withdraw_cap_address(cap: &WithdrawCapability): address {
         cap.addr
     }

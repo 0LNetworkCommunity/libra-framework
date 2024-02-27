@@ -30,7 +30,6 @@ module ol_framework::ol_account {
     friend ol_framework::burn;
     friend ol_framework::safe;
     friend diem_framework::genesis;
-    friend diem_framework::resource_account;
     friend diem_framework::transaction_fee;
     friend ol_framework::genesis_migration;
 
@@ -63,7 +62,7 @@ module ol_framework::ol_account {
     /// donor voice cannot use transfer, they have a dedicated workflow
     const ENOT_FOR_DV: u64 = 11;
 
-    /// to create a "caged" account, where there is no signer that can could
+    // Create a "caged" account, where there is no signer that can could
     // new state, and only the existing state can be modified by modules. This
     // is useful for multi_action.move
     const CAGE_AUTH_KEY: vector<u8> = x"00000000000000000000000000000000000000000000000000000000000ca9ed";

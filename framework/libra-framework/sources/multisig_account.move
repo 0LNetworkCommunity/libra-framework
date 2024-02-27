@@ -53,6 +53,10 @@ module diem_framework::multisig_account {
     use std::string::String;
     use std::vector;
 
+    // use diem_std::debug::print;
+
+    friend ol_framework::multi_action;
+
     /// The salt used to create a resource account during multisig account creation.
     /// This is used to avoid conflicts with other modules that also create resource accounts with the same owner
     /// account.
@@ -235,6 +239,12 @@ module diem_framework::multisig_account {
     }
 
     ////////////////////////// View functions ///////////////////////////////
+
+    #[view]
+    /// is initialized as a multisig account
+    public fun is_multisig(multisig_account: address): bool {
+        exists<MultisigAccount>(multisig_account)
+    }
 
     #[view]
     /// Return the multisig account's metadata.
@@ -448,6 +458,28 @@ module diem_framework::multisig_account {
         );
     }
 
+
+    /////// 0L ////////
+    /// keeps the origin account as the ADDRESS
+    /// rotates the key to ZERO
+    public entry fun migrate_with_owners(
+        owner: &signer,
+        additional_owners: vector<address>,
+        num_signatures_required: u64,
+        metadata_keys: vector<String>,
+        metadata_values: vector<vector<u8>>,
+    ) acquires MultisigAccount {
+        let multisig_signer_cap = account::create_signer_cap_for_multisig(owner);
+        create_with_owners_internal(
+            owner,
+            additional_owners,
+            num_signatures_required,
+            option::some(multisig_signer_cap),
+            metadata_keys,
+            metadata_values,
+        );
+    }
+
     fun create_with_owners_internal(
         multisig_account: &signer,
         owners: vector<address>,
@@ -456,9 +488,9 @@ module diem_framework::multisig_account {
         metadata_keys: vector<String>,
         metadata_values: vector<vector<u8>>,
     ) acquires MultisigAccount {
-        assert!(features::multisig_accounts_enabled(), error::unavailable(EMULTISIG_ACCOUNTS_NOT_ENABLED_YET));
         assert!(
-            num_signatures_required > 0 && num_signatures_required <= vector::length(&owners),
+            num_signatures_required > 0 &&
+            num_signatures_required <= vector::length(&owners),
             error::invalid_argument(EINVALID_SIGNATURES_REQUIRED),
         );
 
@@ -488,6 +520,82 @@ module diem_framework::multisig_account {
     }
 
     ////////////////////////// Self-updates ///////////////////////////////
+
+    //////// 0L ////////
+    /// internal helper for the multi_auth governance abstraction
+    public(friend) fun multi_auth_helper_add_remove(multisig_id_cap:
+    &account::GUIDCapability, add_remove: bool, auths: &vector<address> )
+    acquires MultisigAccount {
+      let multisig_address = account::get_guid_capability_address(multisig_id_cap);
+      assert_multisig_account_exists(multisig_address);
+      let multisig_account_resource = borrow_global_mut<MultisigAccount>(multisig_address);
+      if (add_remove) { // true == add
+
+
+        vector::append(&mut multisig_account_resource.owners, *auths);
+        // This will fail if an existing owner is added again.
+        validate_owners(&multisig_account_resource.owners, multisig_address);
+        emit_event(&mut multisig_account_resource.add_owners_events, AddOwnersEvent {
+            owners_added: *auths,
+        });
+      } else {
+        let owners = &mut multisig_account_resource.owners;
+        let owners_removed = vector::empty<address>();
+        vector::for_each_ref(auths, |owner_to_remove| {
+            let owner_to_remove = *owner_to_remove;
+            let (found, index) = vector::index_of(owners, &owner_to_remove);
+            // Only remove an owner if they're present in the owners list.
+            if (found) {
+                vector::push_back(&mut owners_removed, owner_to_remove);
+                vector::swap_remove(owners, index);
+            };
+        });
+
+        // Make sure there's still at least as many owners as the number of signatures required.
+        // This also ensures that there's at least one owner left as signature threshold must be > 0.
+        assert!(
+            vector::length(owners) >= multisig_account_resource.num_signatures_required,
+            error::invalid_state(ENOT_ENOUGH_OWNERS),
+        );
+
+        emit_event(&mut multisig_account_resource.remove_owners_events, RemoveOwnersEvent { owners_removed });
+      }
+    }
+
+    /// expose update signatures to multi_action
+    public(friend) fun multi_auth_helper_update_signatures_required(
+        multisig_id_cap: &account::GUIDCapability,
+        new_num_signatures_required: u64
+    ) acquires MultisigAccount {
+
+        let multisig_address = account::get_guid_capability_address(multisig_id_cap);
+        assert_multisig_account_exists(multisig_address);
+        let multisig_account_resource =
+        borrow_global_mut<MultisigAccount>(multisig_address);
+
+        // Short-circuit if the new number of signatures required is the same as before.
+        // This avoids emitting an event.
+        if (multisig_account_resource.num_signatures_required == new_num_signatures_required) {
+            return
+        };
+        let num_owners = vector::length(&multisig_account_resource.owners);
+        assert!(
+            new_num_signatures_required > 0 && new_num_signatures_required <= num_owners,
+            error::invalid_argument(EINVALID_SIGNATURES_REQUIRED),
+        );
+
+        let old_num_signatures_required = multisig_account_resource.num_signatures_required;
+        multisig_account_resource.num_signatures_required = new_num_signatures_required;
+        emit_event(
+            &mut multisig_account_resource.update_signature_required_events,
+            UpdateSignaturesRequiredEvent {
+                old_num_signatures_required,
+                new_num_signatures_required,
+            }
+        );
+    }
+
+
 
     /// Similar to add_owners, but only allow adding one owner.
     entry fun add_owner(multisig_account: &signer, new_owner: address) acquires MultisigAccount {
@@ -957,6 +1065,7 @@ module diem_framework::multisig_account {
     use diem_std::multi_ed25519;
     #[test_only]
     use std::string::utf8;
+    #[test_only]
     use std::features;
 
     #[test_only]
@@ -1096,13 +1205,13 @@ module diem_framework::multisig_account {
             vector[]);
     }
 
-    #[test(owner = @0x123)]
-    #[expected_failure(abort_code = 0xD000E, location = Self)]
-    public entry fun test_create_with_without_feature_flag_enabled_should_fail(
-        owner: &signer) acquires MultisigAccount {
-        create_account(address_of(owner));
-        create(owner, 2, vector[], vector[]);
-    }
+    // #[test(owner = @0x123)]
+    // #[expected_failure(abort_code = 0xD000E, location = Self)]
+    // public entry fun test_create_with_without_feature_flag_enabled_should_fail(
+    //     owner: &signer) acquires MultisigAccount {
+    //     create_account(address_of(owner));
+    //     create(owner, 2, vector[], vector[]);
+    // }
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
     #[expected_failure(abort_code = 0x10001, location = Self)]

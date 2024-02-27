@@ -91,13 +91,16 @@ module ol_framework::community_wallet_init {
 
     /// convenience function to check if the account can be caged
     /// after all the structs are in place
-    public entry fun finalize_and_cage(sig: &signer) {
+    public entry fun finalize_and_cage(sig: &signer, initial_authorities: vector<address>, num_signers: u64) {
       let addr = signer::address_of(sig);
       assert!(community_wallet::is_init(addr), error::invalid_argument(ENO_CW_FLAG));
       assert!(donor_voice_txs::is_liquidate_to_match_index(addr), error::invalid_argument(ENOT_MATCH_INDEX_LIQ));
+
+      multi_action::finalize_and_cage(sig, initial_authorities, num_signers);
+
       assert!(multisig_thresh(addr), error::invalid_argument(ESIG_THRESHOLD_RATIO));
       assert!(!multisig_common_ancestry(addr), error::invalid_argument(ESIGNERS_SYBIL));
-      multi_action::finalize_and_cage(sig);
+
     }
 
     #[view]
