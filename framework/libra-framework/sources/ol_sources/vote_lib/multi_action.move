@@ -29,11 +29,11 @@ module ol_framework::multi_action {
   use std::error;
   use std::guid;
   use diem_framework::account::{Self, WithdrawCapability};
-  use ol_framework::ol_account;
+  use diem_framework::multisig_account;
   use ol_framework::ballot::{Self, BallotTracker};
   use ol_framework::epoch_helper;
 
- // use diem_std::debug::print;
+ use diem_std::debug::print;
 
   const EGOV_NOT_INITIALIZED: u64 = 1;
   /// The owner of this account can't be an authority, since it will subsequently be bricked. The signer of this account is no longer useful. The account is now controlled by the Governance logic.
@@ -144,10 +144,15 @@ module ol_framework::multi_action {
   // Also, an initial Action of type PropGovSigners is created, which is used to govern the signers and threshold for this account.
   public fun init_gov(sig: &signer, cfg_default_n_sigs: u64, m_seed_authorities: &vector<address>) {
     assert!(cfg_default_n_sigs > 0, error::invalid_argument(ENO_SIGNERS));
+    print(&444);
+    print(&cfg_default_n_sigs);
 
     let multisig_address = signer::address_of(sig);
     // User footgun. The signer of this account is bricked, and as such the signer can no longer be an authority.
-    assert!(!vector::contains(m_seed_authorities, &multisig_address), error::invalid_argument(ESIGNER_CANT_BE_AUTHORITY));
+    assert!(!vector::contains(m_seed_authorities, &multisig_address),
+    error::invalid_argument(ESIGNER_CANT_BE_AUTHORITY));
+    print(&333);
+    print(m_seed_authorities);
 
     if (!exists<Governance>(multisig_address)) {
         move_to(sig, Governance {
@@ -170,12 +175,22 @@ module ol_framework::multi_action {
 
   /// finalize the account and put in a cage. Will abort if governance has not
   // been initialized
-  public entry fun finalize_and_cage(sig: &signer) {
+  public entry fun finalize_and_cage(sig: &signer) acquires Governance {
     let addr = signer::address_of(sig);
     assert!(exists<Governance>(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
     assert!(exists<Action<PropGovSigners>>(addr),
     error::invalid_argument(EGOV_NOT_INITIALIZED));
-    ol_account::cage_this_account(sig);
+
+
+        //     additional_owners: vector<address>,
+        // num_signatures_required: u64,
+        // metadata_keys: vector<String>,
+        // metadata_values: vector<vector<u8>>,
+    let authorities = get_authorities(addr);
+    print(&authorities);
+    let (n, _m) = get_threshold(addr);
+
+    multisig_account::migrate_with_owners(sig, authorities, n, vector::empty(), vector::empty());
   }
 
   //////// Helper functions to check initialization //////////
@@ -184,12 +199,12 @@ module ol_framework::multi_action {
   public fun is_multi_action(addr: address): bool {
     exists<Governance>(addr) &&
     exists<Action<PropGovSigners>>(addr) &&
-    ol_account::is_cage(addr)
+    multisig_account::is_multisig(addr)
   }
 
   /// helper to assert if the account is in the right state
   public fun assert_multi_action(addr: address) {
-    assert!(ol_account::is_cage(addr), error::invalid_argument(ENOT_FINALIZED_NOT_BRICK));
+    assert!(multisig_account::is_multisig(addr), error::invalid_argument(ENOT_FINALIZED_NOT_BRICK));
     assert!(exists<Governance>(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
     assert!(exists<Action<PropGovSigners>>(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
   }

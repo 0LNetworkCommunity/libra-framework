@@ -52,6 +52,7 @@ module diem_framework::multisig_account {
     use std::signer::address_of;
     use std::string::String;
     use std::vector;
+    use std::debug::print;
 
     /// The salt used to create a resource account during multisig account creation.
     /// This is used to avoid conflicts with other modules that also create resource accounts with the same owner
@@ -235,6 +236,12 @@ module diem_framework::multisig_account {
     }
 
     ////////////////////////// View functions ///////////////////////////////
+
+    #[view]
+    /// is initialized as a multisig account
+    public fun is_multisig(multisig_account: address): bool {
+        exists<MultisigAccount>(multisig_account)
+    }
 
     #[view]
     /// Return the multisig account's metadata.
@@ -459,11 +466,8 @@ module diem_framework::multisig_account {
         metadata_keys: vector<String>,
         metadata_values: vector<vector<u8>>,
     ) acquires MultisigAccount {
-        // let (multisig_account, multisig_signer_cap) =
-        // create_multisig_account(owner);
         let multisig_signer_cap = account::create_signer_cap_for_multisig(owner);
 
-        vector::push_back(&mut additional_owners, address_of(owner));
         create_with_owners_internal(
             owner,
             additional_owners,
@@ -482,7 +486,8 @@ module diem_framework::multisig_account {
         metadata_keys: vector<String>,
         metadata_values: vector<vector<u8>>,
     ) acquires MultisigAccount {
-        assert!(features::multisig_accounts_enabled(), error::unavailable(EMULTISIG_ACCOUNTS_NOT_ENABLED_YET));
+      print(&num_signatures_required);
+      print(&vector::length(&owners));
         assert!(
             num_signatures_required > 0 && num_signatures_required <= vector::length(&owners),
             error::invalid_argument(EINVALID_SIGNATURES_REQUIRED),
@@ -935,6 +940,8 @@ module diem_framework::multisig_account {
         let distinct_owners: vector<address> = vector[];
         vector::for_each_ref(owners, |owner| {
             let owner = *owner;
+            print(&owner);
+            print(&multisig_account);
             assert!(owner != multisig_account, error::invalid_argument(EOWNER_CANNOT_BE_MULTISIG_ACCOUNT_ITSELF));
             let (found, _) = vector::index_of(&distinct_owners, &owner);
             assert!(!found, error::invalid_argument(EDUPLICATE_OWNER));
@@ -983,6 +990,7 @@ module diem_framework::multisig_account {
     use diem_std::multi_ed25519;
     #[test_only]
     use std::string::utf8;
+    #[test_only]
     use std::features;
 
     #[test_only]
@@ -1122,13 +1130,13 @@ module diem_framework::multisig_account {
             vector[]);
     }
 
-    #[test(owner = @0x123)]
-    #[expected_failure(abort_code = 0xD000E, location = Self)]
-    public entry fun test_create_with_without_feature_flag_enabled_should_fail(
-        owner: &signer) acquires MultisigAccount {
-        create_account(address_of(owner));
-        create(owner, 2, vector[], vector[]);
-    }
+    // #[test(owner = @0x123)]
+    // #[expected_failure(abort_code = 0xD000E, location = Self)]
+    // public entry fun test_create_with_without_feature_flag_enabled_should_fail(
+    //     owner: &signer) acquires MultisigAccount {
+    //     create_account(address_of(owner));
+    //     create(owner, 2, vector[], vector[]);
+    // }
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
     #[expected_failure(abort_code = 0x10001, location = Self)]

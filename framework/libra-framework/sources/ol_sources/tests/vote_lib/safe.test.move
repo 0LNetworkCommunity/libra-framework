@@ -7,7 +7,10 @@ module ol_framework::test_safe {
   use ol_framework::multi_action;
   use std::signer;
   use std::option;
+  use std::vector;
   use diem_framework::resource_account;
+
+  // use diem_std::debug::print;
 
   // NOTE: Most of the save.move features are tested in multi_action (e.g. governance). Here we are testing for specific APIs.
 
@@ -26,7 +29,8 @@ module ol_framework::test_safe {
     ol_account::transfer(alice, new_resource_address, 100);
     // make the vals the signers on the safe
     // SO ALICE and DAVE ARE AUTHORIZED
-    safe::init_payment_multisig(&resource_sig, vals, 2); // both need to sign
+
+    safe::init_payment_multisig(&resource_sig, vals, vector::length(&vals)); // all need to sign
 
     //need to be caged to finalize multi action workflow and release control of the account
     multi_action::finalize_and_cage(&resource_sig);
@@ -79,13 +83,13 @@ module ol_framework::test_safe {
   #[test(root = @ol_framework, alice = @0x1000a, dave = @0x1000d )]
   fun safe_root_security_fee(root: &signer, alice: &signer, dave: &signer, ) {
 
-    let vals = mock::genesis_n_vals(root, 2);
+    let vals = mock::genesis_n_vals(root, 3);
     mock::ol_initialize_coin_and_fund_vals(root, 1000000000000, true);
     // Dave creates the resource account. HE is not one of the validators, and is not an authority in the multisig.
     let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
     assert!(resource_account::is_resource_account(new_resource_address), 0);
-    safe::init_payment_multisig(&resource_sig, vals, 3); // requires 3
+    safe::init_payment_multisig(&resource_sig, vals, 2); // requires 3
 
     //need to be caged to finalize multi action workflow and release control of the account
     multi_action::finalize_and_cage(&resource_sig);

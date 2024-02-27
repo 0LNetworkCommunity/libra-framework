@@ -157,7 +157,8 @@ module ol_framework::test_multi_action {
     let vals = mock::genesis_n_vals(root, 2);
     mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
 
-    let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
+    let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave,
+    b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
     assert!(resource_account::is_resource_account(new_resource_address), 0);
     // fund the multi_action's account
@@ -168,6 +169,7 @@ module ol_framework::test_multi_action {
     multi_action::init_type<DummyType>(&resource_sig, true);
 
     //need to be caged to finalize multi action workflow and release control of the account
+    print(&vals);
     multi_action::finalize_and_cage(&resource_sig);
 
     let proposal = multi_action::proposal_constructor(DummyType{}, option::none());
