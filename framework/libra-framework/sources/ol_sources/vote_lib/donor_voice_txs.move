@@ -116,7 +116,7 @@ module ol_framework::donor_voice_txs {
     }
 
 
-    #[test_only]
+  
     // // can only be called by genesis
     public(friend) fun migrate_community_wallet_account(vm: &signer, dv_account:
     &signer) {

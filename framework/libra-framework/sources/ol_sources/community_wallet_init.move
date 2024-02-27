@@ -47,7 +47,6 @@ module ol_framework::community_wallet_init {
     const MINIMUM_AUTH: u64 = 3;
 
 
-    #[test_only]
     public fun migrate_community_wallet_account(vm: &signer, dv_account:
     &signer) {
       use diem_framework::system_addresses;
