@@ -15,8 +15,6 @@ pub enum CommunityTxs {
     GovInit(InitTx),
     /// propose a change to the authorities of the DonorVoice multisig
     GovAdmin(AdminTx),
-    /// Finalize and cage a Community Wallet, making it inaccessible
-    FinalizeAndCage(FinalizeCageTx),
 }
 
 impl CommunityTxs {
@@ -118,18 +116,38 @@ pub struct InitTx {
 
     #[clap(short, long)]
     /// migrate a legacy v5 community wallet, with N being the n-of-m
-    pub migrate_n: Option<u64>,
+    pub num_signers: u64,
+
+    #[clap(long)]
+    /// Will finalize the configurations and rotate the auth key. Not reversible!
+    pub finalize: bool,
 }
 
 impl InitTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         println!("trying to migrate");
-        let payload = if let Some(n) = self.migrate_n {
-            libra_stdlib::donor_voice_txs_make_donor_voice_tx(self.admins.clone(), n)
+        if self.finalize {
+            // Warning message
+            println!("\nWARNING: This operation will finalize the account associated with the governance-initialized wallet and make it inaccessible. This action is IRREVERSIBLE and can only be applied to a wallet where governance has been initialized.\n");
+
+            // Assuming the signer's account is already set in the `sender` object
+            // The payload for the finalize and cage operation
+            let payload =
+                libra_stdlib::multi_action_finalize_and_cage(self.admins.clone(), self.num_signers); // This function now does not require an account address
+
+            // Execute the transaction
+            sender.sign_submit_wait(payload).await?;
+            println!("SUCCESS: The account has been finalized and caged.");
         } else {
-            libra_stdlib::community_wallet_init_init_community(self.admins.clone())
-        };
-        sender.sign_submit_wait(payload).await?;
+            let payload = libra_stdlib::community_wallet_init_init_community(
+                self.admins.clone(),
+                self.num_signers,
+            );
+
+            sender.sign_submit_wait(payload).await?;
+            println!("SUCCESS: you have completed the first step in creating a community wallet, now you should check your work and finalize with --finalize");
+        }
+
         Ok(())
     }
 }
@@ -166,26 +184,6 @@ impl AdminTx {
             self.epochs.unwrap_or(10), // todo: remo
         );
         sender.sign_submit_wait(payload).await?;
-        Ok(())
-    }
-}
-
-#[derive(clap::Args)]
-pub struct FinalizeCageTx {}
-
-impl FinalizeCageTx {
-    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        // Warning message
-        println!("\nWARNING: This operation will finalize the account associated with the governance-initialized wallet and make it inaccessible. This action is IRREVERSIBLE and can only be applied to a wallet where governance has been initialized.\n");
-
-        // Assuming the signer's account is already set in the `sender` object
-        // The payload for the finalize and cage operation
-        let payload = libra_stdlib::multi_action_finalize_and_cage(); // This function now does not require an account address
-
-        // Execute the transaction
-        sender.sign_submit_wait(payload).await?;
-        println!("SUCCESS: The account has been finalized and caged.");
-
         Ok(())
     }
 }

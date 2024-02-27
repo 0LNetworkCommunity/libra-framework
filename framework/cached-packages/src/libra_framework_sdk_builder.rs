@@ -167,7 +167,8 @@ pub enum EntryFunctionCall {
     },
 
     CommunityWalletInitInitCommunity {
-        init_signers: Vec<AccountAddress>,
+        check_addresses: Vec<AccountAddress>,
+        check_threshold: u64,
     },
 
     DemoPrintThis {},
@@ -235,19 +236,6 @@ pub enum EntryFunctionCall {
     DiemGovernanceVote {
         proposal_id: u64,
         should_pass: bool,
-    },
-
-    DonorVoiceTxsMakeDonorVoiceTx {
-        init_signers: Vec<AccountAddress>,
-        cfg_n_signers: u64,
-    },
-
-    /// Like any MultiSig instance, a sponsor which is the original owner of the account, needs to initialize the account.
-    /// The account must be "bricked" by the owner before MultiSig actions can be taken.
-    /// Note, as with any multisig, the new_authorities cannot include the sponsor, since that account will no longer be able to sign transactions.
-    DonorVoiceTxsMakeMultiAction {
-        cfg_default_n_sigs: u64,
-        new_authorities: Vec<AccountAddress>,
     },
 
     DonorVoiceTxsProposeLiquidateTx {
@@ -670,9 +658,10 @@ impl EntryFunctionCall {
                 initial_authorities,
                 num_signers,
             } => community_wallet_init_finalize_and_cage(initial_authorities, num_signers),
-            CommunityWalletInitInitCommunity { init_signers } => {
-                community_wallet_init_init_community(init_signers)
-            }
+            CommunityWalletInitInitCommunity {
+                check_addresses,
+                check_threshold,
+            } => community_wallet_init_init_community(check_addresses, check_threshold),
             DemoPrintThis {} => demo_print_this(),
             DemoSetMessage { message } => demo_set_message(message),
             DiemGovernanceAddApprovedScriptHashScript { proposal_id } => {
@@ -725,14 +714,6 @@ impl EntryFunctionCall {
                 proposal_id,
                 should_pass,
             } => diem_governance_vote(proposal_id, should_pass),
-            DonorVoiceTxsMakeDonorVoiceTx {
-                init_signers,
-                cfg_n_signers,
-            } => donor_voice_txs_make_donor_voice_tx(init_signers, cfg_n_signers),
-            DonorVoiceTxsMakeMultiAction {
-                cfg_default_n_sigs,
-                new_authorities,
-            } => donor_voice_txs_make_multi_action(cfg_default_n_sigs, new_authorities),
             DonorVoiceTxsProposeLiquidateTx { multisig_address } => {
                 donor_voice_txs_propose_liquidate_tx(multisig_address)
             }
@@ -1263,7 +1244,8 @@ pub fn community_wallet_init_finalize_and_cage(
 }
 
 pub fn community_wallet_init_init_community(
-    init_signers: Vec<AccountAddress>,
+    check_addresses: Vec<AccountAddress>,
+    check_threshold: u64,
 ) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -1275,7 +1257,10 @@ pub fn community_wallet_init_init_community(
         ),
         ident_str!("init_community").to_owned(),
         vec![],
-        vec![bcs::to_bytes(&init_signers).unwrap()],
+        vec![
+            bcs::to_bytes(&check_addresses).unwrap(),
+            bcs::to_bytes(&check_threshold).unwrap(),
+        ],
     ))
 }
 
@@ -1482,51 +1467,6 @@ pub fn diem_governance_vote(proposal_id: u64, should_pass: bool) -> TransactionP
         vec![
             bcs::to_bytes(&proposal_id).unwrap(),
             bcs::to_bytes(&should_pass).unwrap(),
-        ],
-    ))
-}
-
-pub fn donor_voice_txs_make_donor_voice_tx(
-    init_signers: Vec<AccountAddress>,
-    cfg_n_signers: u64,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("donor_voice_txs").to_owned(),
-        ),
-        ident_str!("make_donor_voice_tx").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&init_signers).unwrap(),
-            bcs::to_bytes(&cfg_n_signers).unwrap(),
-        ],
-    ))
-}
-
-/// Like any MultiSig instance, a sponsor which is the original owner of the account, needs to initialize the account.
-/// The account must be "bricked" by the owner before MultiSig actions can be taken.
-/// Note, as with any multisig, the new_authorities cannot include the sponsor, since that account will no longer be able to sign transactions.
-pub fn donor_voice_txs_make_multi_action(
-    cfg_default_n_sigs: u64,
-    new_authorities: Vec<AccountAddress>,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("donor_voice_txs").to_owned(),
-        ),
-        ident_str!("make_multi_action").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&cfg_default_n_sigs).unwrap(),
-            bcs::to_bytes(&new_authorities).unwrap(),
         ],
     ))
 }
@@ -2711,7 +2651,8 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::CommunityWalletInitInitCommunity {
-                init_signers: bcs::from_bytes(script.args().get(0)?).ok()?,
+                check_addresses: bcs::from_bytes(script.args().get(0)?).ok()?,
+                check_threshold: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
             None
@@ -2834,32 +2775,6 @@ mod decoder {
             Some(EntryFunctionCall::DiemGovernanceVote {
                 proposal_id: bcs::from_bytes(script.args().get(0)?).ok()?,
                 should_pass: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn donor_voice_txs_make_donor_voice_tx(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DonorVoiceTxsMakeDonorVoiceTx {
-                init_signers: bcs::from_bytes(script.args().get(0)?).ok()?,
-                cfg_n_signers: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn donor_voice_txs_make_multi_action(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DonorVoiceTxsMakeMultiAction {
-                cfg_default_n_sigs: bcs::from_bytes(script.args().get(0)?).ok()?,
-                new_authorities: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
             None
@@ -3549,14 +3464,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "diem_governance_vote".to_string(),
             Box::new(decoder::diem_governance_vote),
-        );
-        map.insert(
-            "donor_voice_txs_make_donor_voice_tx".to_string(),
-            Box::new(decoder::donor_voice_txs_make_donor_voice_tx),
-        );
-        map.insert(
-            "donor_voice_txs_make_multi_action".to_string(),
-            Box::new(decoder::donor_voice_txs_make_multi_action),
         );
         map.insert(
             "donor_voice_txs_propose_liquidate_tx".to_string(),
