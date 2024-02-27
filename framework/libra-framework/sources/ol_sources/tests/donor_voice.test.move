@@ -491,4 +491,52 @@ module ol_framework::test_donor_voice {
       assert!(lifetime_burn_now == lifetime_burn_pre, 7357011);
     }
 
+    #[test(root = @ol_framework, community = @0x10011)]
+    fun migrate_cw_bug_not_resource(root: &signer, community: &signer) {
+
+      // create genesis and fund accounts
+      let auths = mock::genesis_n_vals(root, 3);
+      mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
+
+
+      let community_wallet_address = signer::address_of(community);
+      // genesis migration would have created this account.
+      ol_account::create_account(root, community_wallet_address);
+      // migrate community wallet
+      // THIS PUTS THE ACCOUNT IN LIMBO
+      community_wallet_init::migrate_community_wallet_account(root, community);
+
+      // verify correct migration of community wallet
+      assert!(community_wallet::is_init(community_wallet_address), 7357001); //TODO: find appropriate error codes
+
+      // the usual initialization should fix the structs
+      community_wallet_init::init_community(community, auths);
+      // confirm the bug
+      assert!(!ol_account::is_cage(community_wallet_address), 7357002);
+
+      // fix it by calling multi auth:
+      community_wallet_init::finalize_and_cage(community);
+      // multi_action::finalize_and_cage(community);
+      assert!(ol_account::is_cage(community_wallet_address), 7357003);
+
+      community_wallet_init::assert_qualifies(community_wallet_address);
+    }
+
+
+    fun create_friendly_helper_accounts(root: &signer): vector<address>{
+
+        // recruit 3 friendly folks to be signers or donors
+        ol_account::create_account(root, @80801);
+        ol_account::create_account(root, @80802);
+        ol_account::create_account(root, @80803);
+
+        let workers = vector::empty<address>();
+
+        // helpers in line to help
+        vector::push_back(&mut workers, @80801);
+        vector::push_back(&mut workers, @80802);
+        vector::push_back(&mut workers, @80803);
+
+        workers
+    }
 }

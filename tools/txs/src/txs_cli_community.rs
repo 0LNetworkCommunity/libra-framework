@@ -15,6 +15,8 @@ pub enum CommunityTxs {
     GovInit(InitTx),
     /// propose a change to the authorities of the DonorVoice multisig
     GovAdmin(AdminTx),
+    /// Finalize and cage a Community Wallet, making it inaccessible
+    FinalizeAndCage(FinalizeCageTx),
 }
 
 impl CommunityTxs {
@@ -47,6 +49,12 @@ impl CommunityTxs {
                     println!("ERROR: could not add admin, message: {}", e);
                 }
             },
+            CommunityTxs::FinalizeAndCage(cage) => match cage.run(sender).await {
+                Ok(_) => println!("SUCCESS: account finalized and caged"),
+                Err(e) => {
+                    println!("ERROR: could not finalize and cage account, message: {}", e);
+                }
+            },
         }
 
         Ok(())
@@ -77,7 +85,8 @@ impl ProposeTx {
             self.amount,
             self.description.clone().into_bytes(),
         );
-        sender.sign_submit_wait(payload).await?;
+        let res = sender.sign_submit_wait(payload).await?;
+        println!{"{:#?}", res}
         Ok(())
     }
 }
@@ -86,10 +95,10 @@ impl ProposeTx {
 pub struct VetoTx {
     #[clap(short, long)]
     /// The SlowWallet recipient of funds
-    community_wallet: AccountAddress,
+    pub community_wallet: AccountAddress,
     #[clap(short, long)]
     /// Proposal number
-    proposal_id: u64,
+    pub proposal_id: u64,
 }
 
 impl VetoTx {
@@ -159,5 +168,29 @@ impl AdminTx {
         );
         sender.sign_submit_wait(payload).await?;
         Ok(())
+    }
+}
+
+#[derive(clap::Args)]
+pub struct FinalizeCageTx {}
+
+impl FinalizeCageTx {
+    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        // Warning message
+        println!("\nWARNING: This operation will finalize the account associated with the governance-initialized wallet and make it inaccessible. This action is IRREVERSIBLE and can only be applied to a wallet where governance has been initialized.\n");
+
+
+
+            // Assuming the signer's account is already set in the `sender` object
+            // The payload for the finalize and cage operation
+            let payload = libra_stdlib::multi_action_finalize_and_cage(); // This function now does not require an account address
+
+            // Execute the transaction
+            sender.sign_submit_wait(payload).await?;
+            println!("SUCCESS: The account has been finalized and caged.");
+ 
+
+        Ok(())
+
     }
 }
