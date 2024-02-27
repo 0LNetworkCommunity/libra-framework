@@ -23,14 +23,14 @@ module ol_framework::community_wallet_init {
     const ENOT_QUALIFY_COMMUNITY_WALLET: u64 = 2;
     /// Recipient does not have a slow wallet
     const EPAYEE_NOT_SLOW_WALLET: u64 = 8;
-    /// Too few signers for Match Index
-    const ETOO_FEW_SIGNERS: u64 = 9;
     /// This account needs to be donor directed.
     const ENOT_DONOR_VOICE: u64 = 3;
     /// This account needs a multisig enabled
     const ENOT_MULTISIG: u64 = 4;
-    /// The multisig does not have minimum MINIMUM_AUTH signers and MINIMUM_SIGS approvals in config
-    const ESIG_THRESHOLD: u64 = 5;
+    /// config has few authorities on multisig
+    const ETOO_FEW_AUTH: u64 = 9;
+    /// config has too few signatures required for each proposal to pass
+    const ESIG_THRESHOLD_CONFIG: u64 = 5;
     /// The multisig threshold is not better than MINIMUM_SIGS/MINIMUM_AUTH
     const ESIG_THRESHOLD_RATIO: u64 = 6;
     /// Signers may be sybil
@@ -62,44 +62,67 @@ module ol_framework::community_wallet_init {
 
     public entry fun init_community(
       sig: &signer,
-      init_signers: vector<address>
+      check_addresses: vector<address>,
+      check_threshold: u64,
     ) {
-      // policy is to have at least m signers as auths on the account.
-      let len = vector::length(&init_signers);
-      assert!(len >= MINIMUM_AUTH, error::invalid_argument(ETOO_FEW_SIGNERS));
+      check_proposed_auths(&check_addresses, check_threshold);
+      // // policy is to have at least m signers as auths on the account.
+      // let len = vector::length(&init_signers);
+      // assert!(len >= MINIMUM_AUTH, error::invalid_argument(ETOO_FEW_SIGNERS));
 
-      // enforce n/m multi auth
-      let n = if (len == 3) { 2 }
-      else {
-        (MINIMUM_SIGS * len) / MINIMUM_AUTH
-      };
+      // // enforce n/m multi auth
+      // let n = if (len == 3) { 2 }
+      // else {
+      //   (MINIMUM_SIGS * len) / MINIMUM_AUTH
+      // };
 
-      let (fam, _, _) = ancestry::any_family_in_list(*&init_signers);
-      assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
+      // let (fam, _, _) = ancestry::any_family_in_list(*&init_signers);
+      // assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
 
       // set as donor directed with any liquidation going to contemporary
       // matching index (not liquidated to historical community wallets)
 
-      donor_voice_txs::make_donor_voice(sig, init_signers, n);
+      donor_voice_txs::make_donor_voice(sig);
       if (!donor_voice_txs::is_liquidate_to_match_index(signer::address_of(sig))) {
         donor_voice_txs::set_liquidate_to_match_index(sig, true);
       };
       match_index::opt_into_match_index(sig);
 
-      community_wallet::set_comm_wallet(sig);
+    }
+
+    fun check_proposed_auths(initial_authorities: &vector<address>, num_signers:
+    u64) {
+      // // enforce n/m multi auth
+      // let n = if (len == 3) { 2 }
+      // else {
+      //   (MINIMUM_SIGS * len) / MINIMUM_AUTH
+      // };
+
+      assert!(num_signers >= MINIMUM_SIGS, error::invalid_argument(ESIG_THRESHOLD_CONFIG));
+
+            // policy is to have at least m signers as auths on the account.
+      let len = vector::length(initial_authorities);
+      assert!(len >= MINIMUM_AUTH, error::invalid_argument(ETOO_FEW_AUTH));
+
+      let (fam, _, _) = ancestry::any_family_in_list(*initial_authorities);
+      assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
+
     }
 
     /// convenience function to check if the account can be caged
     /// after all the structs are in place
     public entry fun finalize_and_cage(sig: &signer, initial_authorities: vector<address>, num_signers: u64) {
       let addr = signer::address_of(sig);
-      assert!(community_wallet::is_init(addr), error::invalid_argument(ENO_CW_FLAG));
+
       assert!(donor_voice_txs::is_liquidate_to_match_index(addr), error::invalid_argument(ENOT_MATCH_INDEX_LIQ));
 
       multi_action::finalize_and_cage(sig, initial_authorities, num_signers);
+      community_wallet::set_comm_wallet(sig);
 
       assert!(multisig_thresh(addr), error::invalid_argument(ESIG_THRESHOLD_RATIO));
-      assert!(!multisig_common_ancestry(addr), error::invalid_argument(ESIGNERS_SYBIL));
+      assert!(!multisig_common_ancestry(addr),
+      error::invalid_argument(ESIGNERS_SYBIL));
+      assert!(community_wallet::is_init(addr), error::invalid_argument(ENO_CW_FLAG));
 
     }
 
@@ -191,7 +214,7 @@ module ol_framework::community_wallet_init {
       n_of_m: u64,
       vote_duration_epochs: u64
     ) {
-      assert!(n_of_m >= MINIMUM_SIGS , error::invalid_argument(ETOO_FEW_SIGNERS));
+      assert!(n_of_m >= MINIMUM_SIGS , error::invalid_argument(ETOO_FEW_AUTH));
 
       let current_signers = multi_action::get_authorities(multisig_address);
 
@@ -203,7 +226,7 @@ module ol_framework::community_wallet_init {
 
       // Verify the signers will not fall below the threshold the signers will fall below threshold
       if (!is_add_operation) {
-          assert!((vector::length(&current_signers) - 1) >  MINIMUM_AUTH, error::invalid_argument(ESIG_THRESHOLD));
+          assert!((vector::length(&current_signers) - 1) >  MINIMUM_AUTH, error::invalid_argument(ESIG_THRESHOLD_CONFIG));
       };
 
       multi_action::propose_governance(

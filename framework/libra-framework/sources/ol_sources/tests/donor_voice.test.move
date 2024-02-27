@@ -12,6 +12,7 @@ module ol_framework::test_donor_voice {
   use ol_framework::community_wallet_init;
   use ol_framework::community_wallet;
   use ol_framework::burn;
+  use diem_framework::multisig_account;
   use std::guid;
   use std::vector;
   use std::signer;
@@ -28,7 +29,7 @@ module ol_framework::test_donor_voice {
       let auths = mock::personas();
 
       // the account needs basic donor directed structs
-      donor_voice_txs::make_donor_voice(&resource_sig, auths, 2);
+      donor_voice_txs::make_donor_voice(&resource_sig);
 
       let list = donor_voice::get_root_registry();
       assert!(vector::length(&list) == 1, 7357001);
@@ -52,7 +53,7 @@ module ol_framework::test_donor_voice {
       let donor_voice_address = signer::address_of(&resource_sig);
 
       // the account needs basic donor directed structs
-      donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
+      donor_voice_txs::make_donor_voice(&resource_sig);
 
       //need to be caged to finalize donor directed workflow and release control of the account
       multi_action::finalize_and_cage(&resource_sig, vals, vector::length(&vals));
@@ -78,7 +79,7 @@ module ol_framework::test_donor_voice {
       let donor_voice_address = signer::address_of(&resource_sig);
 
       // the account needs basic donor directed structs
-      donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
+      donor_voice_txs::make_donor_voice(&resource_sig);
 
       //need to cage to finalize donor directed workflow and release control of the account
       multi_action::finalize_and_cage(&resource_sig, vals, 2);
@@ -123,7 +124,7 @@ module ol_framework::test_donor_voice {
       let donor_voice_address = signer::address_of(&resource_sig);
 
       // the account needs basic donor directed structs
-      donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
+      donor_voice_txs::make_donor_voice(&resource_sig);
 
       //need to be caged to finalize donor directed workflow and release control of the account
       multi_action::finalize_and_cage(&resource_sig, vals, 2);
@@ -214,7 +215,7 @@ module ol_framework::test_donor_voice {
 
 
       // the account needs basic donor directed structs
-      donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
+      donor_voice_txs::make_donor_voice(&resource_sig);
 
       //need to be caged to finalize donor directed workflow and release control of the account
       multi_action::finalize_and_cage(&resource_sig, vals, 2);
@@ -276,7 +277,7 @@ module ol_framework::test_donor_voice {
 
 
       // the account needs basic donor directed structs
-      donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
+      donor_voice_txs::make_donor_voice(&resource_sig);
 
 
       //need to be caged to finalize donor directed workflow and release control of the account
@@ -326,7 +327,7 @@ module ol_framework::test_donor_voice {
       // Dave and Eve make a donation and so are able to have some voting on that account.
       // Dave and Eve are unhappy, and vote to liquidate the account.
 
-      let vals = mock::genesis_n_vals(root, 5); // need to include eve to init funds
+      mock::genesis_n_vals(root, 5); // need to include eve to init funds
       mock::ol_initialize_coin_and_fund_vals(root, 100000, true);
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause
       // issues
@@ -336,7 +337,7 @@ module ol_framework::test_donor_voice {
 
       let donor_voice_address = signer::address_of(donor_voice);
       // the account needs basic donor directed structs
-      donor_voice_txs::make_donor_voice(donor_voice, vals, 2);
+      donor_voice_txs::make_donor_voice(donor_voice);
       // donor_voice_txs::set_liquidate_to_match_index(&resource_sig, true);
 
       // EVE Establishes some governance over the wallet, when donating.
@@ -412,7 +413,7 @@ module ol_framework::test_donor_voice {
       // Dave and Eve make a donation and so are able to have some voting on that account.
       // Dave and Eve are unhappy, and vote to liquidate the account.
 
-      let vals = mock::genesis_n_vals(root, 5); // need to include eve to init funds
+      mock::genesis_n_vals(root, 5); // need to include eve to init funds
       mock::ol_initialize_coin_and_fund_vals(root, 100000, true);
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
       mock::trigger_epoch(root);
@@ -422,7 +423,7 @@ module ol_framework::test_donor_voice {
       let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
       let donor_voice_address = signer::address_of(&resource_sig);
       // the account needs basic donor directed structs
-      donor_voice_txs::make_donor_voice(&resource_sig, vals, 2);
+      donor_voice_txs::make_donor_voice(&resource_sig);
       donor_voice_txs::set_liquidate_to_match_index(&resource_sig, true);
 
       // EVE Establishes some governance over the wallet, when donating.
@@ -512,14 +513,13 @@ module ol_framework::test_donor_voice {
       assert!(community_wallet::is_init(community_wallet_address), 7357001); //TODO: find appropriate error codes
 
       // the usual initialization should fix the structs
-      community_wallet_init::init_community(community, auths);
+      community_wallet_init::init_community(community, auths, 2);
       // confirm the bug
-      assert!(!ol_account::is_cage(community_wallet_address), 7357002);
+      assert!(!multisig_account::is_multisig(community_wallet_address), 7357002);
 
       // fix it by calling multi auth:
-      community_wallet_init::finalize_and_cage(community);
-      // multi_action::finalize_and_cage(community);
-      assert!(ol_account::is_cage(community_wallet_address), 7357003);
+      community_wallet_init::finalize_and_cage(community, auths, 2);
+      assert!(multisig_account::is_multisig(community_wallet_address), 7357003);
 
       community_wallet_init::assert_qualifies(community_wallet_address);
     }

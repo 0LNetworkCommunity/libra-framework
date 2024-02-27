@@ -143,8 +143,7 @@ module ol_framework::multi_action {
   // Initialize the governance structs for this account.
   // Governance contains the constraints for each Action that are checked on each vote (n_sigs, expiration, signers, etc)
   // Also, an initial Action of type PropGovSigners is created, which is used to govern the signers and threshold for this account.
-  public fun init_gov(sig: &signer, _cfg_default_n_sigs: u64,
-  _m_seed_authorities: &vector<address>) {
+  public fun init_gov(sig: &signer) {
 
     // heals un-initialized state, and does nothing if state already exists.
 

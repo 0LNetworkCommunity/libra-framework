@@ -34,7 +34,7 @@
         assert!(community_wallet::is_init(community_wallet_address), 7357001); //TODO: find appropriate error codes
 
         // the usual initialization should fix the structs
-        community_wallet_init::init_community(community, auths);
+        community_wallet_init::init_community(community, auths, 2);
         // confirm the bug
         assert!(!multisig_account::is_multisig(community_wallet_address), 7357002);
 
@@ -47,7 +47,7 @@
     }
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
-    #[expected_failure(abort_code = 196618, location = 0x1::ol_account)]
+    #[expected_failure(abort_code = 196619, location = 0x1::ol_account)]
     fun cw_sponsor_cant_transfer(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer,) {
         mock::genesis_n_vals(root, 4);
         mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
@@ -62,7 +62,7 @@
         // Alice is a vanilla account and should be able to transfer
         ol_account::transfer(alice, @0x1000b, 100);
 
-        community_wallet_init::init_community(alice, signers);
+        community_wallet_init::init_community(alice, signers, 2);
 
         // After being set as a community wallet, the owner loses control over the wallet
         ol_account::transfer(alice, @0x1000b, 100);
@@ -82,7 +82,7 @@
         vector::push_back(&mut signers, signer::address_of(bob));
         vector::push_back(&mut signers, signer::address_of(carol));
 
-        community_wallet_init::init_community(alice, signers);
+        community_wallet_init::init_community(alice, signers, 2);
 
     }
 
@@ -112,7 +112,7 @@
         vector::push_back(&mut signers, signer::address_of(dave));
         vector::push_back(&mut signers, signer::address_of(eve));
 
-        community_wallet_init::init_community(alice, signers);
+        community_wallet_init::init_community(alice, signers, 2);
 
         // fix it by calling multi auth:
         community_wallet_init::finalize_and_cage(alice, signers, 2);
@@ -187,7 +187,7 @@
         vector::push_back(&mut signers, signer::address_of(dave));
         vector::push_back(&mut signers, signer::address_of(eve));
 
-        community_wallet_init::init_community(alice, signers);
+        community_wallet_init::init_community(alice, signers, 2);
 
         // fix it by calling multi auth:
         community_wallet_init::finalize_and_cage(alice, signers, 2);
@@ -253,7 +253,7 @@
 
         community_wallet_init::migrate_community_wallet_account(root, alice);
 
-        donor_voice_txs::make_donor_voice(alice, signers, 1);
+        donor_voice_txs::make_donor_voice(alice);
 
         // try to cage the address by calling multi auth
         community_wallet_init::finalize_and_cage(alice, signers, 1);
@@ -277,7 +277,7 @@
 
         community_wallet_init::migrate_community_wallet_account(root, alice);
 
-        donor_voice_txs::make_donor_voice(alice, signers, 1);
+        donor_voice_txs::make_donor_voice(alice);
 
         // try to cage the address by calling multi auth
         community_wallet_init::finalize_and_cage(alice, signers, 1);
@@ -301,7 +301,7 @@
 
         community_wallet_init::migrate_community_wallet_account(root, alice);
 
-        donor_voice_txs::make_donor_voice(alice, signers, 1);
+        donor_voice_txs::make_donor_voice(alice);
 
         // try to cage the address by calling multi auth
         community_wallet_init::finalize_and_cage(alice, signers, 1);
