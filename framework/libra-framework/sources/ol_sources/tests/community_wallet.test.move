@@ -47,7 +47,7 @@
     }
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
-    #[expected_failure(abort_code = 196619, location = 0x1::ol_account)]
+    #[expected_failure(abort_code = 196620, location = 0x1::ol_account)]
     fun cw_sponsor_cant_transfer(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer,) {
         mock::genesis_n_vals(root, 4);
         mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
