@@ -148,6 +148,9 @@ full_node_networks:
 api:
   enabled: true
   address: '0.0.0.0:8080'
+
+mempool:
+  default_failovers: 3
 "
     );
 
