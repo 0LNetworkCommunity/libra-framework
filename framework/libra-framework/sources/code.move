@@ -161,14 +161,16 @@ module diem_framework::code {
         // Sayin', ("This is my message to you-ou-ou:")
         );
 
+        let addr = signer::address_of(owner);
+
         // Disallow incompatible upgrade mode. Governance can decide later if
         // this should be reconsidered.
         assert!(
+            is_policy_exempted_address(addr) ||
             pack.upgrade_policy.policy > upgrade_policy_arbitrary().policy,
             error::invalid_argument(EINCOMPATIBLE_POLICY_DISABLED),
         );
 
-        let addr = signer::address_of(owner);
         if (!exists<PackageRegistry>(addr)) {
             move_to(owner, PackageRegistry { packages: vector::empty() })
         };
