@@ -21,60 +21,88 @@ env:
 jobs:
   build-framework:
     timeout-minutes: 60
-    runs-on: ubuntu-latest
+    runs-on: debian-latest
     steps:
       - uses: actions/checkout@v3
+      
       - name: setup env
         uses: ./.github/actions/build_env
+
+      - uses: Swatinem/rust-cache@v2.7.3
+        with:
+          shared-key: "libra-framework"
+          cache-all-crates: true
+
       - name: build framework
         working-directory: ./framework
         run: cargo r release
 
-      - uses: actions/upload-artifact@master
+      - uses: actions/upload-artifact@v4.3.1
         with:
           name: framework-build
           path: framework/*
+
   types:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: ubuntu-latest
+    runs-on: debian-latest
     steps:
       - uses: actions/checkout@v3
       - name: setup env
         uses: ./.github/actions/build_env
+
+      - uses: Swatinem/rust-cache@v2.7.3
+        with:
+          shared-key: "libra-framework"
+          cache-all-crates: true
 
       # fail fast if types doesnt compile, everything else will fail.
       - name: types
         working-directory: ./types
         run: cargo test --no-fail-fast
+
   wallet:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: ubuntu-latest
+    runs-on: debian-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: setup env
         uses: ./.github/actions/build_env
+
+      - uses: Swatinem/rust-cache@v2.7.3
+        with:
+          shared-key: "libra-framework"
+          cache-all-crates: true
+
       - name: wallet
         if: always()
         working-directory: ./tools/wallet
         run: cargo test --no-fail-fast
 
-# NOTE: all jobs below need the fresh framework build
+  # NOTE: all jobs below need the fresh framework build
   smoke:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: ubuntu-latest
+    runs-on: debian-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: setup env
         uses: ./.github/actions/build_env
 
       # make sure we have a fresh framework build
-      - uses: actions/download-artifact@master
+      - uses: actions/download-artifact@v4.1.2
         with:
           name: framework-build
           path: framework/
+
+      - uses: Swatinem/rust-cache@v2.7.3
+        with:
+          shared-key: "libra-framework"
+          cache-all-crates: true
+
       # Check test suite meta tests
       - name: smoke-tests # NOTE: needs working DIEM_FORGE_NODE_BIN_PATH
         if: always()
@@ -84,16 +112,22 @@ jobs:
   query:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: ubuntu-latest
+    runs-on: debian-latest
     steps:
       - uses: actions/checkout@v3
       - name: setup env
         uses: ./.github/actions/build_env
 
-      - uses: actions/download-artifact@master
+      - uses: Swatinem/rust-cache@v2.7.3
+        with:
+          shared-key: "libra-framework"
+          cache-all-crates: true
+
+      - uses: actions/download-artifact@v4.1.2
         with:
           name: framework-build
           path: framework/
+
       # Tools tests (some use smoke-tests)
       - name: query
         if: always()
@@ -103,31 +137,48 @@ jobs:
   genesis:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: ubuntu-latest
+    runs-on: debian-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: setup env
         uses: ./.github/actions/build_env
-      - uses: actions/download-artifact@master
+
+      - uses: Swatinem/rust-cache@v2.7.3
+        with:
+          shared-key: "libra-framework"
+          cache-all-crates: true
+
+      - uses: actions/download-artifact@v4.1.2
         with:
           name: framework-build
           path: framework/
+
       - name: genesis
         if: always()
         working-directory: ./tools/genesis
         run: cargo test --no-fail-fast
+
   tower:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: ubuntu-latest
+    runs-on: debian-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: setup env
         uses: ./.github/actions/build_env
-      - uses: actions/download-artifact@master
+
+      - uses: Swatinem/rust-cache@v2.7.3
+        with:
+          shared-key: "libra-framework"
+          cache-all-crates: true
+
+      - uses: actions/download-artifact@v4.1.2
         with:
           name: framework-build
           path: framework/
+
       - name: tower
         if: always()
         working-directory: ./tools/tower
@@ -136,15 +187,23 @@ jobs:
   txs:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: ubuntu-latest
+    runs-on: debian-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: setup env
         uses: ./.github/actions/build_env
-      - uses: actions/download-artifact@master
+
+      - uses: Swatinem/rust-cache@v2.7.3
+        with:
+          shared-key: "libra-framework"
+          cache-all-crates: true
+
+      - uses: actions/download-artifact@v4.1.2
         with:
           name: framework-build
           path: framework/
+
       - name: txs
         if: always()
         working-directory: ./tools/txs
@@ -154,12 +213,14 @@ jobs:
   rescue:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: ubuntu-latest
+    runs-on: debian-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: setup env
         uses: ./.github/actions/build_env
-      - uses: actions/download-artifact@master
+
+      - uses: actions/download-artifact@v4.1.2
         with:
           name: framework-build
           path: framework/

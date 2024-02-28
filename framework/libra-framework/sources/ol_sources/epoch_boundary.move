@@ -23,6 +23,8 @@ module diem_framework::epoch_boundary {
     use std::vector;
     use std::error;
     use std::string;
+    use std::signer;
+    use diem_framework::create_signer;
 
     use diem_std::debug::print;
 
@@ -116,15 +118,14 @@ module diem_framework::epoch_boundary {
 
     /// initialize structs, requires both signers since BoundaryBit can only be
     // accessed by VM
-    public fun initialize(vm_signer: &signer, framework_signer: &signer) {
-      system_addresses::assert_vm(vm_signer);
+    public fun initialize(framework_signer: &signer) {
       if (!exists<BoundaryStatus>(@ol_framework)){
         move_to(framework_signer, reset());
       };
 
       // boundary bit can only be written by VM
-      if (!exists<BoundaryBit>(@vm_reserved)) {
-        move_to(vm_signer, BoundaryBit {
+      if (!exists<BoundaryBit>(@ol_framework)) {
+        move_to(framework_signer, BoundaryBit {
           ready: false,
           closing_epoch: 0,
         });
@@ -189,22 +190,28 @@ module diem_framework::epoch_boundary {
         }
     }
 
-
+    ///TODO: epoch trigger is currently disabled and requires further testing.
+    /// refer to block.move and std::features
     /// flip the bit to allow the epoch to be reconfigured on any transaction
     public(friend) fun enable_epoch_trigger(vm_signer: &signer, closing_epoch:
     u64) acquires BoundaryBit {
+      if (signer::address_of(vm_signer) != @vm_reserved) return;
 
-      if (!exists<BoundaryBit>(@vm_reserved)) {
+      // though the VM is calling this, we need the struct to be on
+      // diem_framework. So we need to use create_signer
+
+      let framework_signer = create_signer::create_signer(@ol_framework);
+      if (!exists<BoundaryBit>(@ol_framework)) {
         // Just like a prayer, your voice can take me there
         // Just like a muse to me, you are a mystery
         // Just like a dream, you are not what you seem
         // Just like a prayer, no choice your voice can take me there...
-        move_to(vm_signer, BoundaryBit {
+        move_to(&framework_signer, BoundaryBit {
           closing_epoch: closing_epoch,
           ready: true,
         })
       } else {
-        let state = borrow_global_mut<BoundaryBit>(@vm_reserved);
+        let state = borrow_global_mut<BoundaryBit>(@ol_framework);
         state.closing_epoch = closing_epoch;
         state.ready = true;
       }
@@ -214,25 +221,26 @@ module diem_framework::epoch_boundary {
     /// Why do this? It's preferable that the VM never trigger any function.
     /// An abort by the VM will cause a network halt. The same abort, if called
     /// by a user, would not cause a halt.
-    public(friend) fun trigger_epoch(root: &signer) acquires BoundaryBit,
+    public(friend) fun trigger_epoch(framework_signer: &signer) acquires BoundaryBit,
     BoundaryStatus {
       // must be mainnet
       assert!(!testnet::is_not_mainnet(), ETRIGGER_EPOCH_MAINNET);
       // must get root permission from governance.move
-      system_addresses::assert_ol(root);
+      system_addresses::assert_ol(framework_signer);
       let _ = can_trigger(); // will abort if false
 
       // update the state and flip the Bit
-      let state = borrow_global_mut<BoundaryBit>(@vm_reserved);
+      // note we are using the 0x0 address for BoundaryBit
+      let state = borrow_global_mut<BoundaryBit>(@ol_framework);
       state.ready = false;
 
-      epoch_boundary(root, state.closing_epoch, 0);
+      epoch_boundary(framework_signer, state.closing_epoch, 0);
     }
 
     #[view]
     /// check to see if the epoch Boundary Bit is true
     public fun can_trigger(): bool acquires BoundaryBit {
-      let state = borrow_global_mut<BoundaryBit>(@vm_reserved);
+      let state = borrow_global_mut<BoundaryBit>(@ol_framework);
       assert!(state.ready, ETRIGGER_NOT_READY);
       assert!(state.closing_epoch == reconfiguration::get_current_epoch(),
       ENOT_SAME_EPOCH);
@@ -494,10 +502,13 @@ module diem_framework::epoch_boundary {
   }
 
   #[test_only]
-  public fun test_set_boundary_ready(vm: &signer, closing_epoch: u64) acquires
+  public fun test_set_boundary_ready(framework: &signer, closing_epoch: u64) acquires
   BoundaryBit {
-      // don't check for "testnet" here, otherwise we can't test the production settings
-      enable_epoch_trigger(vm, closing_epoch);
+      system_addresses::assert_ol(framework);
+      // don't check for "testnet" here, otherwise we can't test the production
+      // settings
+      let vm_signer = create_signer::create_signer(@vm_reserved);
+      enable_epoch_trigger(&vm_signer, closing_epoch);
   }
 
   #[test_only]

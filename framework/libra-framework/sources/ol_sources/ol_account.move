@@ -54,7 +54,13 @@ module ol_framework::ol_account {
     /// why is VM trying to use this?
     const ENOT_FOR_VM: u64 = 9;
 
+    /// you are trying to send a large coin transfer to an account that does not
+    /// yet exist.  If you are trying to initialize this address send an amount
+    /// below 1,000 coins
+    const ETRANSFER_TOO_HIGH_FOR_INIT: u64 = 10;
 
+    /// what limit should be set for new account creation while using transfer()
+    const MAX_COINS_FOR_INITIALIZE: u64 = 1000 * 1000000;
 
 
 
@@ -159,12 +165,13 @@ module ol_framework::ol_account {
     public entry fun transfer(sender: &signer, to: address, amount: u64)
     acquires BurnTracker {
       let payer = signer::address_of(sender);
-      maybe_sender_creates_account(sender, to);
+      maybe_sender_creates_account(sender, to, amount);
       transfer_checks(payer, to, amount);
       // both update burn tracker
       let c = withdraw(sender, amount);
       deposit_coins(to, c);
     }
+
 
     // transfer with capability, and do appropriate checks on both sides, and
     // track the slow wallet
@@ -219,8 +226,12 @@ module ol_framework::ol_account {
         coin
     }
 
-    fun maybe_sender_creates_account(sender: &signer, maybe_new_user: address) {
+    fun maybe_sender_creates_account(sender: &signer, maybe_new_user: address,
+    amount: u64) {
       if (!account::exists_at(maybe_new_user)) {
+          // prevents someone's Terrible, Horrible, No Good, Very Bad Day
+          assert!(amount <= MAX_COINS_FOR_INITIALIZE, error::out_of_range(ETRANSFER_TOO_HIGH_FOR_INIT));
+
           // creates the account address (with the same bytes as the authentication key).
           create_impl(sender, maybe_new_user);
       };
@@ -335,6 +346,29 @@ module ol_framework::ol_account {
     }
 
     #[view]
+    /// returns the INDEXED value of the coins.
+    // Note: there is a similar function in coin.move to get the indexed
+    // value of a single coin.
+    public fun real_balance(addr: address): (u64, u64) {
+      let final = libra_coin::get_final_supply();
+      let current = libra_coin::supply();
+      let (unlocked, total) = slow_wallet::balance(addr);
+
+      let unlocked_indexed = math64::mul_div(unlocked, final, current);
+      let total_indexed = math64::mul_div(total, final, current);
+
+      (unlocked_indexed, total_indexed)
+      // Going to another place
+      // Another universe, another realm
+      // Sleeping, dreaming, what is real?
+      // Leap and the net will appear
+      // Going to another place
+      // Another universe, another realm
+      // Sleeping, dreaming, what is real?
+      // Leap and the net will appear
+    }
+
+    #[view]
     /// Returns a human readable version of the balance with (integer, decimal_part)
     public fun balance_human(owner: address): (u64, u64) {
 
@@ -344,13 +378,23 @@ module ol_framework::ol_account {
         let decimal_places = coin::decimals<LibraCoin>();
         let scaling = math64::pow(10, (decimal_places as u64));
         let value = fixed_point32::create_from_rational(unscaled_value, scaling);
-        // multply will TRUNCATE.
+        // multiply will TRUNCATE.
         let integer_part = fixed_point32::multiply_u64(1, value);
 
         let decimal_part = unscaled_value - (integer_part * scaling);
 
         (integer_part, decimal_part)
     }
+
+    #[view]
+    /// helper to safely convert from coin units (human readable) to the value scaled to
+    /// the on chain decimal precision
+    public fun scale_from_human(human: u64): u64 {
+        let decimal_places = coin::decimals<LibraCoin>();
+        let scaling = math64::pow(10, (decimal_places as u64));
+        return human * scaling
+    }
+
     // on new account creation we need the burn tracker created
     // note return quietly if it's already initialized, so we can use it
     // in the creation and tx flow

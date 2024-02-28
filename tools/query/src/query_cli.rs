@@ -14,12 +14,13 @@ pub struct QueryCli {
 
 impl QueryCli {
     pub async fn run(&self) -> Result<()> {
-        // let client = Client::default()?;
         // TODO: get client from configs
 
         let res = self.subcommand.query_to_json(None).await?;
-
-        println!("{}", res);
+        match res {
+            serde_json::Value::String(a) => println!("{:#}", a.as_str()),
+            _ => println!("{:#}", res),
+        }
 
         Ok(())
     }

@@ -1,6 +1,6 @@
 use diem_forge::Swarm;
 use diem_sdk::types::LocalAccount;
-use libra_framework::builder::release::ReleaseTarget;
+use libra_framework::release::ReleaseTarget;
 use libra_smoke_tests::helpers::{get_libra_balance, mint_libra};
 use smoke_test::smoke_test_environment::new_local_swarm_with_release;
 

@@ -17,7 +17,7 @@
 
 /// 2. The Multisig account holders do not have common ancestry. This is important to prevent an account holder from trivially creating sybil accounts to qualify as a community wallet. Sybils are possibly without common ancestry, but it is much harder.
 
-/// 3. The multisig account has a minimum of 5 Authorities, and a threshold of 3 signatures. If there are more authorities, a 3/5 ratio or more should be preserved.
+/// MINIMUM_SIGS. The multisig account has a minimum of MINIMUM_AUTH Authorities, and a threshold of MINIMUM_SIGS signatures. If there are more authorities, a MINIMUM_SIGS/MINIMUM_AUTH ratio or more should be preserved.
 
 /// 4. CommunityWallets have a high threshold for sybils: all multisig authorities must be unrelated in their permission trees, per ancestry.
 
@@ -33,27 +33,33 @@ module ol_framework::community_wallet {
     use ol_framework::match_index;
     use diem_framework::system_addresses;
 
-    // use diem_std::debug::print;
+    use diem_std::debug::print;
 
     /// not authorized to operate on this account
     const ENOT_AUTHORIZED: u64 = 1;
     /// does not meet criteria for community wallet
     const ENOT_QUALIFY_COMMUNITY_WALLET: u64 = 2;
-    /// This account needs to be donor directed.
-    const ENOT_donor_voice: u64 = 3;
-    /// This account needs a multisig enabled
-    const ENOT_MULTISIG: u64 = 4;
-    /// The multisig does not have minimum 5 signers and 3 approvals in config
-    const ESIG_THRESHOLD: u64 = 5;
-    /// The multisig threshold does not equal 3/5
-    const ESIG_THRESHOLD_RATIO: u64 = 6;
-    /// Signers may be sybil
-    const ESIGNERS_SYBIL: u64 = 7;
     /// Recipient does not have a slow wallet
     const EPAYEE_NOT_SLOW_WALLET: u64 = 8;
     /// Too few signers for Match Index
     const ETOO_FEW_SIGNERS: u64 = 9;
+    /// This account needs to be donor directed.
+    const ENOT_DONOR_VOICE: u64 = 3;
+    /// This account needs a multisig enabled
+    const ENOT_MULTISIG: u64 = 4;
+    /// The multisig does not have minimum MINIMUM_AUTH signers and MINIMUM_SIGS approvals in config
+    const ESIG_THRESHOLD: u64 = 5;
+    /// The multisig threshold does not equal MINIMUM_SIGS/MINIMUM_AUTH
+    const ESIG_THRESHOLD_RATIO: u64 = 6;
+    /// Signers may be sybil
+    const ESIGNERS_SYBIL: u64 = 7;
 
+
+    // STATICS
+    /// minimum n signatures for a transaction
+    const MINIMUM_SIGS: u64 = 2;
+    /// minimum m authorities for a wallet
+    const MINIMUM_AUTH: u64 = 3;
 
     // A flag on the account that it wants to be considered a community wallet
     struct CommunityWallet has key { }
@@ -64,7 +70,7 @@ module ol_framework::community_wallet {
     }
     public fun set_comm_wallet(sender: &signer) {
       let addr = signer::address_of(sender);
-      assert!(donor_voice::is_donor_voice(addr), error::invalid_state(ENOT_donor_voice));
+      assert!(donor_voice::is_donor_voice(addr), error::invalid_state(ENOT_DONOR_VOICE));
 
       if (is_init(addr)) {
         move_to(sender, CommunityWallet{});
@@ -90,7 +96,7 @@ module ol_framework::community_wallet {
       donor_voice::is_liquidate_to_match_index(addr) &&
       // has multi_action instantialized
       multi_action::is_multi_action(addr) &&
-      // multisig has minimum requirement of 3 signatures, and minimum list of 5 signers, and a minimum of 3/5 threshold. I.e. OK to have 4/5 signatures.
+      // multisig has minimum requirement of MINIMUM_SIGS signatures, and minimum list of MINIMUM_AUTH signers, and a minimum of MINIMUM_SIGS/MINIMUM_AUTH threshold. I.e. OK to have 4/MINIMUM_AUTH signatures.
       multisig_thresh(addr)
       &&
       // the multisig authorities are unrelated per ancestry
@@ -101,12 +107,12 @@ module ol_framework::community_wallet {
       let (n, m) = multi_action::get_threshold(addr);
 
       // can't have less than three signatures
-      if (n < 3) return false;
+      if (n < MINIMUM_SIGS) return false;
       // can't have less than five authorities
       // pentapedal locomotion https://www.youtube.com/watch?v=bgWJ9DN1Qak
-      if (m < 5) return false;
+      if (m < MINIMUM_AUTH) return false;
 
-      let r = fixed_point32::create_from_rational(3, 5);
+      let r = fixed_point32::create_from_rational(MINIMUM_SIGS, MINIMUM_AUTH);
       let pct_baseline = fixed_point32::multiply_u64(100, r);
       let r = fixed_point32::create_from_rational(n, m);
       let pct = fixed_point32::multiply_u64(100, r);
@@ -149,12 +155,14 @@ module ol_framework::community_wallet {
       sig: &signer,
       init_signers: vector<address>
     ) {
-      // policy is to have at least 5 signers as auths on the account.
+      // policy is to have at least m signers as auths on the account.
       let len = vector::length(&init_signers);
-      assert!(len > 4, error::invalid_argument(ETOO_FEW_SIGNERS));
+      assert!(len >= MINIMUM_AUTH, error::invalid_argument(ETOO_FEW_SIGNERS));
+      print(&len);
 
-      // enforce 3/5 multi auth
-      let n = (3 * len) / 5;
+      // enforce n/m multi auth
+      let n = (MINIMUM_SIGS * len) / MINIMUM_AUTH;
+      print(&n);
 
       let (fam, _, _) = ancestry::any_family_in_list(*&init_signers);
       assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
