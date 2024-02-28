@@ -6,7 +6,6 @@
 use diem_framework::{
     docgen::DocgenOptions, BuildOptions, ReleaseBundle, ReleaseOptions, RELEASE_BUNDLE_EXTENSION,
 };
-// use clap::Args;
 use move_command_line_common::address::NumericalAddress;
 use once_cell::sync::Lazy;
 use std::{collections::BTreeMap, fmt::Display, path::PathBuf, str::FromStr};
@@ -64,14 +63,6 @@ impl ReleaseTarget {
                 "libra-framework",
                 Some("cached-packages/src/libra_framework_sdk_builder.rs"),
             ),
-            // (
-            //     "diem-token",
-            //     Some("cached-packages/src/diem_token_sdk_builder.rs"),
-            // ),
-            // (
-            //     "diem-token-objects",
-            //     Some("cached-packages/src/diem_token_objects_sdk_builder.rs"),
-            // ),
         ];
         // Currently we don't have experimental packages only included in particular targets.
         result
