@@ -71,6 +71,11 @@ pub fn generate_fixtures(output_path: PathBuf, modules: Vec<String>) -> anyhow::
 // KEEP THIS TEST HERE TO HELP REGENERATE FIXTURES
 #[test]
 fn make_the_upgrade_fixtures() -> anyhow::Result<()> {
+  test_warmup_make_fixtures()
+}
+
+/// helper for testing, so that we have fresh fixtures at every run.
+pub fn test_warmup_make_fixtures() -> anyhow::Result<()> {
     let fixture_path = fixtures_path();
 
     // for single step upgrades

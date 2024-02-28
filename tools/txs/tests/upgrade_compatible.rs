@@ -11,7 +11,8 @@ use libra_txs::{
 use libra_types::legacy_types::app_cfg::TxCost;
 use smoke_test::smoke_test_environment;
 use libra_framework::release::ReleaseTarget;
-
+use diem_forge::interface::swarm::Swarm;
+use anyhow::Context;
 /// Testing that the next upgrade is compatible with what is on the previous
 /// maiinet release.
 
@@ -31,6 +32,7 @@ async fn smoke_upgrade_compatible() {
 
     let mut client = swarm.diem_public_info().client().to_owned();
 
+    let node = swarm.validators().next().unwrap();
     let pri_key = node
         .account_private_key()
         .as_ref()
@@ -108,7 +110,7 @@ async fn smoke_upgrade_compatible() {
     std::thread::sleep(std::time::Duration::from_secs(3));
 
     let query_res = query_view::get_view(
-        &s.client(),
+        &client,
         "0x1::diem_governance::get_can_resolve",
         None,
         Some("0".to_string()),
@@ -121,7 +123,7 @@ async fn smoke_upgrade_compatible() {
     );
 
     let query_res = query_view::get_view(
-        &s.client(),
+        &client,
         "0x1::diem_governance::get_approved_hash",
         None,
         Some("0".to_string()),
@@ -170,7 +172,7 @@ async fn smoke_upgrade_compatible() {
     //////////////////////////////
 
     let query_res =
-        query_view::get_view(&s.client(), "0x1::all_your_base::are_belong_to", None, None)
+        query_view::get_view(&client, "0x1::all_your_base::are_belong_to", None, None)
             .await
             .expect("no all_your_base module found");
     assert!(&query_res.as_array().unwrap()[0]
