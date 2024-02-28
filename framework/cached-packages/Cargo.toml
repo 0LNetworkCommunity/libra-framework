@@ -15,7 +15,11 @@ rust-version = { workspace = true }
 [dependencies]
 bcs = { workspace = true }
 # Note the generated SDK code uses hard coded `diemtypes`
+<<<<<<< HEAD
 diem-types = { git = "https://github.com/davidrotari19/diem.git", branch = "universal-yaml-david"}
+=======
+diem-types = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "8725477" }
+>>>>>>> upstream/main
 move-core-types = { workspace = true }
 once_cell = { workspace = true }
 
