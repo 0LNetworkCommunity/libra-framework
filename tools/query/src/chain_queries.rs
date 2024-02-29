@@ -102,3 +102,12 @@ pub async fn get_gov_proposal_votes(client: &Client, id: u64) -> anyhow::Result<
     // let id: Vec<String> = serde_json::from_value(query_res)?;
     Ok(serde_json::from_value::<Vec<u128>>(query_res)?)
 }
+
+pub async fn get_height(client: &Client) -> anyhow::Result<u64> {
+    let res = get_view(client, "0x1::block::get_current_block_height", None, None).await?;
+
+    let value: Vec<String> = serde_json::from_value(res)?;
+    let height = value.first().unwrap().parse::<u64>()?;
+
+    Ok(height)
+}

@@ -159,7 +159,7 @@ impl ClientExt for Client {
         &self,
         address: AccountAddress,
     ) -> anyhow::Result<T> {
-        let resource_type = format!("0x1::{}::{}", T::MODULE_NAME, T::STRUCT_NAME);
+        let resource_type: String = format!("0x1::{}::{}", T::MODULE_NAME, T::STRUCT_NAME);
         let res = self
             .get_account_resource_bcs::<T>(address, &resource_type)
             .await?

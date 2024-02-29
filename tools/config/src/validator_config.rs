@@ -15,7 +15,7 @@ use libra_wallet::validator_files::SetValidatorConfiguration;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
-pub fn initialize_validator(
+pub async fn initialize_validator(
     home_path: Option<PathBuf>,
     username: Option<&str>,
     host: HostAndPort,
@@ -33,7 +33,7 @@ pub fn initialize_validator(
         .set_config_files()?;
     OLProgress::complete("saved validator registration files locally");
 
-    make_yaml_validator::save_validator_yaml(home_path.clone())?;
+    make_yaml_validator::save_validator_yaml(home_path.clone()).await?;
     OLProgress::complete("saved validator node yaml file locally");
 
     // TODO: nice to have
@@ -111,7 +111,8 @@ pub async fn validator_dialogue(
             None,
             keep_legacy_address,
             None,
-        )?;
+        )
+        .await?;
 
         // now set up the vfn.yaml on the same host for convenience
         vfn_dialogue(
@@ -166,8 +167,8 @@ pub async fn vfn_dialogue(
     Ok(())
 }
 
-#[test]
-fn test_validator_files_config() {
+#[tokio::test]
+async fn test_validator_files_config() {
     use libra_types::global_config_dir;
     let alice_mnem = "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse".to_string();
     let h = HostAndPort::local(6180).unwrap();
@@ -184,6 +185,7 @@ fn test_validator_files_config() {
         false,
         None,
     )
+    .await
     .unwrap();
 
     std::fs::remove_dir_all(&test_path).unwrap();
