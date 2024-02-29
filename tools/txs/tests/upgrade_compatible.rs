@@ -15,10 +15,12 @@ use libra_types::legacy_types::app_cfg::TxCost;
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn smoke_upgrade_compatible() {
     // setup
-    upgrade_fixtures::testsuite_warmup_fixtures();
+    // upgrade_fixtures::testsuite_warmup_fixtures();
 
     let d = diem_temppath::TempPath::new();
 
+    // NOTE: WE ARE USING MAINNET.MRB WHICH SHOULD BE UPDATED HERE
+    // WHENEVER MAINNET IS UPGRADED
     let mut s = LibraSmoke::new_with_target(Some(1), ReleaseTarget::Mainnet)
         .await
         .expect("could not start libra smoke");
@@ -29,8 +31,8 @@ async fn smoke_upgrade_compatible() {
             .expect("could not init validator config");
 
     let script_dir = upgrade_fixtures::fixtures_path()
-        .join("upgrade-single-lib")
-        .join("1-move-stdlib");
+        .join("upgrade-multi-lib")
+        .join("3-libra-framework");
     assert!(script_dir.exists(), "can't find upgrade fixtures");
 
     // This step should fail. The view function does not yet exist in the system address.
