@@ -16,7 +16,9 @@ pub fn testsuite_warmup_fixtures() {
         // don't regenerate
         let fixture_path = fixtures_path();
         let p = fixture_path.join("upgrade-single-lib");
-        if p.exists() { return }
+        if p.exists() {
+            return;
+        }
         // initialization code here
         upgrade_fixtures().expect("could no warmup upgrade fixtures");
     });
