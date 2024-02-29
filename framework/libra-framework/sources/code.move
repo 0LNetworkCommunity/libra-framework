@@ -234,7 +234,7 @@ module diem_framework::code {
 
     /// Checks whether the given package is upgradable, and returns true if a compatibility check is needed.
     fun check_upgradability(
-        old_pack: &PackageMetadata, new_pack: &PackageMetadata, new_modules:
+        old_pack: &PackageMetadata, _new_pack: &PackageMetadata, new_modules:
         &vector<String>) {
 
         // system can change policy to stronger or weaker
