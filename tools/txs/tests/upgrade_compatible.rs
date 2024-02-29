@@ -14,6 +14,9 @@ use libra_types::legacy_types::app_cfg::TxCost;
 /// fixtures.
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn smoke_upgrade_compatible() {
+    // setup
+    upgrade_fixtures::testsuite_warmup_fixtures();
+
     let d = diem_temppath::TempPath::new();
 
     let mut s = LibraSmoke::new_with_target(Some(1), ReleaseTarget::Mainnet)
