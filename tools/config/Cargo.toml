@@ -24,6 +24,7 @@ libra-wallet = { workspace = true }
 reqwest = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
+serde = { workspace = true }
 tokio = { workspace = true }
 url = { workspace = true }
 
