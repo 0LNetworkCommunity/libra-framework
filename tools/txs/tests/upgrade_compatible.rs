@@ -15,7 +15,7 @@ use libra_types::legacy_types::app_cfg::TxCost;
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn smoke_upgrade_compatible() {
     // setup
-    // upgrade_fixtures::testsuite_warmup_fixtures();
+    upgrade_fixtures::testsuite_warmup_fixtures();
 
     let d = diem_temppath::TempPath::new();
 

@@ -13,6 +13,10 @@ static INIT: Once = Once::new();
 /// helper to create fixtures before the testsuite runs.
 pub fn testsuite_warmup_fixtures() {
     INIT.call_once(|| {
+        // don't regenerate
+        let fixture_path = fixtures_path();
+        let p = fixture_path.join("upgrade-single-lib");
+        if p.exists() { return }
         // initialization code here
         upgrade_fixtures().expect("could no warmup upgrade fixtures");
     });
