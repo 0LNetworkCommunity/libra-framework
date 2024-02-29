@@ -40,9 +40,14 @@ impl Drop for LibraSmoke {
 }
 
 impl LibraSmoke {
-    /// start a swarm and return first val account
+    /// start a swarm and return first val account.
+    /// defaults to Head release.
     pub async fn new(count_vals: Option<u8>) -> anyhow::Result<Self> {
-        let release = ReleaseTarget::Head.load_bundle().unwrap();
+      Self::new_with_target(count_vals, ReleaseTarget::Head).await
+    }
+    /// start a swarm and specify the release bundle
+    pub async fn new_with_target(count_vals: Option<u8>, target: ReleaseTarget) -> anyhow::Result<Self> {
+        let release = target.load_bundle().unwrap();
         let mut swarm = smoke_test_environment::new_local_swarm_with_release(
             count_vals.unwrap_or(1).into(),
             release,
