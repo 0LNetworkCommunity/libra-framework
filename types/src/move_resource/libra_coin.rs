@@ -1,16 +1,13 @@
-use move_core_types::{
-    ident_str,
-    language_storage::StructTag,
-    move_resource::{MoveResource, MoveStructType},
-};
+use crate::move_resource::gas_coin::cast_coin_to_decimal;
+use crate::move_resource::gas_coin::GAS_COIN_TYPE;
+use diem_types::event::EventHandle;
 use move_core_types::identifier::IdentStr;
 use move_core_types::language_storage::TypeTag;
+use move_core_types::{
+    ident_str,
+    move_resource::{MoveResource, MoveStructType},
+};
 use serde::{Deserialize, Serialize};
-
-use diem_types::{account_address::AccountAddress, event::EventHandle};
-use once_cell::sync::Lazy;
-
-use crate::ONCHAIN_DECIMAL_PRECISION;
 
 /// The balance resource held under an account.
 #[derive(Debug, Serialize, Deserialize)]
@@ -22,15 +19,9 @@ pub struct LibraCoinStoreResource {
 }
 
 impl LibraCoinStoreResource {
-    pub fn new(
-        coin: u64,
-        frozen: bool,
-        deposit_events: EventHandle,
-        withdraw_events: EventHandle,
-    ) -> Self {
+    pub fn new(coin: u64, deposit_events: EventHandle, withdraw_events: EventHandle) -> Self {
         Self {
             coin,
-            frozen,
             deposit_events,
             withdraw_events,
         }
@@ -38,10 +29,6 @@ impl LibraCoinStoreResource {
 
     pub fn coin(&self) -> u64 {
         self.coin
-    }
-
-    pub fn frozen(&self) -> bool {
-        self.frozen
     }
 
     pub fn deposit_events(&self) -> &EventHandle {
