@@ -61,7 +61,7 @@ impl SetSlowTx {
 pub struct RotateKeyTx {
     #[clap(short, long)]
     /// The new authkey to be used
-    new_private_key: Option<String>, // Dev NOTE: account address has the same bytes as AuthKey
+    pub new_private_key: Option<String>, // Dev NOTE: account address has the same bytes as AuthKey
 }
 
 impl RotateKeyTx {
