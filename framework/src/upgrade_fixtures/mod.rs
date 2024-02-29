@@ -78,7 +78,12 @@ pub fn generate_fixtures(output_path: PathBuf, modules: Vec<String>) -> anyhow::
         .context("no parent dir")?
         .join("framework");
 
-    make_framework_upgrade_artifacts(&output_path, &libra_framework_sources, &Some(modules))?;
+    make_framework_upgrade_artifacts(
+        &output_path,
+        &libra_framework_sources,
+        &Some(modules),
+        false,
+    )?;
     // ok, cleanup
     insert_test_file(&destination_module, true)?;
 
