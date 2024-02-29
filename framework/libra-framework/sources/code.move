@@ -237,10 +237,12 @@ module diem_framework::code {
         old_pack: &PackageMetadata, new_pack: &PackageMetadata, new_modules:
         &vector<String>) {
 
-        assert!(old_pack.upgrade_policy.policy < upgrade_policy_immutable().policy,
-            error::invalid_argument(EUPGRADE_IMMUTABLE));
-        assert!(can_change_upgrade_policy_to(old_pack.upgrade_policy, new_pack.upgrade_policy),
-            error::invalid_argument(EUPGRADE_WEAKER_POLICY));
+        // system can change policy to stronger or weaker
+
+        // assert!(old_pack.upgrade_policy.policy < upgrade_policy_immutable().policy,
+        //     error::invalid_argument(EUPGRADE_IMMUTABLE));
+        // assert!(can_change_upgrade_policy_to(old_pack.upgrade_policy, new_pack.upgrade_policy),
+        //     error::invalid_argument(EUPGRADE_WEAKER_POLICY));
         let old_modules = get_module_names(old_pack);
         let i = 0;
         while (i < vector::length(&old_modules)) {
@@ -297,10 +299,10 @@ module diem_framework::code {
                 if (dep_pack.name == dep.package_name) {
                     found = true;
                     // Check policy
-                    assert!(
-                        dep_pack.upgrade_policy.policy >= pack.upgrade_policy.policy,
-                        error::invalid_argument(EDEP_WEAKER_POLICY)
-                    );
+                    // assert!(
+                    //     dep_pack.upgrade_policy.policy >= pack.upgrade_policy.policy,
+                    //     error::invalid_argument(EDEP_WEAKER_POLICY)
+                    // );
                     if (dep_pack.upgrade_policy == upgrade_policy_arbitrary()) {
                         assert!(
                             dep.account == publish_address,
