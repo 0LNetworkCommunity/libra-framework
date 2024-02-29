@@ -243,7 +243,7 @@ impl ConfigCli {
                     std::fs::create_dir_all(&data_path)?;
                 }
                 download_genesis(Some(data_path.clone()), None).await?;
-                let _ = get_genesis_waypoint(Some(data_path.clone()), None).await?;
+                let _ = get_genesis_waypoint(Some(data_path.clone())).await?;
                 validator_dialogue(&data_path, None).await?;
                 println!("Validators' config initialized.");
                 Ok(())

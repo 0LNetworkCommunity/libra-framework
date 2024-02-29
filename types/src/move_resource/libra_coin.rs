@@ -1,3 +1,4 @@
+use crate::move_resource::gas_coin::cast_coin_to_decimal;
 use crate::move_resource::gas_coin::GAS_COIN_TYPE;
 use diem_types::event::EventHandle;
 use move_core_types::identifier::IdentStr;
@@ -7,8 +8,6 @@ use move_core_types::{
     move_resource::{MoveResource, MoveStructType},
 };
 use serde::{Deserialize, Serialize};
-
-use crate::ONCHAIN_DECIMAL_PRECISION;
 
 /// The balance resource held under an account.
 #[derive(Debug, Serialize, Deserialize)]
@@ -86,13 +85,9 @@ impl SlowWalletBalance {
     // scale it to include decimals
     pub fn scaled(&self) -> LibraBalanceDisplay {
         LibraBalanceDisplay {
-            unlocked: self.unlocked as f64 / ONCHAIN_DECIMAL_PRECISION as f64,
-            total: self.total as f64 / ONCHAIN_DECIMAL_PRECISION as f64,
+            unlocked: cast_coin_to_decimal(self.unlocked),
+            total: cast_coin_to_decimal(self.total),
         }
-        //LibraBalanceDisplay {
-        //    unlocked: cast_coin_to_decimal(self.unlocked),
-        //    total: cast_coin_to_decimal(self.total),
-        //}
     }
 }
 

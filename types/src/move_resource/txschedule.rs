@@ -1,6 +1,6 @@
-use move_core_types::identifier::IdentStr;
 use move_core_types::{
     ident_str,
+    identifier::IdentStr,
     move_resource::{MoveResource, MoveStructType},
 };
 use serde::{Deserialize, Serialize};

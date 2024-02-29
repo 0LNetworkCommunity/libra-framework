@@ -5647,6 +5647,7 @@ dependencies = [
  "libra-types",
  "libra-wallet",
  "reqwest",
+ "serde 1.0.163",
  "serde_json",
  "serde_yaml 0.8.26",
  "tokio",

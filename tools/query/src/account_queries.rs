@@ -1,7 +1,6 @@
-use diem_api_types::Transaction;
 use diem_sdk::{
     rest_client::{
-        diem_api_types::{VersionedEvent, ViewRequest},
+        diem_api_types::{Transaction, VersionedEvent, ViewRequest},
         Client,
     },
     types::{account_address::AccountAddress, validator_config::ValidatorConfig},
