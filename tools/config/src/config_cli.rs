@@ -1,4 +1,6 @@
-use crate::make_yaml_public_fullnode::{download_genesis, init_fullnode_yaml};
+use crate::make_yaml_public_fullnode::{
+    download_genesis, get_genesis_waypoint, init_fullnode_yaml,
+};
 use crate::validator_config::{validator_dialogue, vfn_dialogue};
 use crate::{legacy_config, make_profile};
 use anyhow::{Context, Result};
@@ -240,12 +242,14 @@ impl ConfigCli {
                     );
                     std::fs::create_dir_all(&data_path)?;
                 }
+                download_genesis(Some(data_path.clone()), None).await?;
+                let _ = get_genesis_waypoint(Some(data_path.clone())).await?;
                 validator_dialogue(&data_path, None).await?;
                 println!("Validators' config initialized.");
                 Ok(())
             }
             Some(ConfigSub::FullnodeInit { home_path }) => {
-                download_genesis(home_path.to_owned()).await?;
+                download_genesis(home_path.to_owned(), None).await?;
                 println!("downloaded genesis block");
 
                 let p = init_fullnode_yaml(home_path.to_owned(), true).await?;
