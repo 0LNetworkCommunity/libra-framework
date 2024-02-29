@@ -10,6 +10,13 @@ use libra_txs::{
 };
 use libra_types::legacy_types::app_cfg::TxCost;
 
+
+// #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[test]
+fn test_setup() {
+  upgrade_fixtures::testsuite_warmup_fixtures();
+}
+
 /// Testing that we can upgrade the chain framework using txs tools.
 /// Note: We have another upgrade meta test in ./smoke-tests
 /// We assume a built transaction script for upgrade in tests/fixtures/test_upgrade.

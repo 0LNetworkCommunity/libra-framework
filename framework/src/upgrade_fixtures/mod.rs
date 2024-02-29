@@ -10,7 +10,8 @@ use std::sync::Once;
 
 static INIT: Once = Once::new();
 
-pub fn testsuit_warmup_fixtures() {
+/// helper to create fixtures before the testsuite runs.
+pub fn testsuite_warmup_fixtures() {
     INIT.call_once(|| {
         // initialization code here
         upgrade_fixtures().expect("could no warmup upgrade fixtures");
