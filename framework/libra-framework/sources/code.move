@@ -148,27 +148,29 @@ module diem_framework::code {
         // If you need a specific functionality or program on the Layer 1,
         // submit a pull request for module "Ascension" (for more info see: https://www.youtube.com/watch?v=jDwqPCAw_7k).
 
-        // If it is not a reserved address this must not be chain ID 1 (mainnet)
-        assert!(system_addresses::is_framework_reserved_address(signer::address_of(owner)) ||
-        testnet::is_testnet(),
-        ENOT_A_COMPUTE_PLATFORM
-        // Rise up this mornin',
-        // Smiled with the risin' sun,
-        // Three little birds
-        // Pitch by my doorstep
-        // Singin' sweet songs
-        // Of melodies pure and true,
-        // Sayin', ("This is my message to you-ou-ou:")
-        );
-
-        // Disallow incompatible upgrade mode. Governance can decide later if
-        // this should be reconsidered.
-        assert!(
-            pack.upgrade_policy.policy > upgrade_policy_arbitrary().policy,
-            error::invalid_argument(EINCOMPATIBLE_POLICY_DISABLED),
-        );
-
         let addr = signer::address_of(owner);
+
+        // If it is not a reserved address this must not be chain ID 1 (mainnet)
+        assert!(
+          is_policy_exempted_address(addr) ||
+          testnet::is_testnet(),
+          ENOT_A_COMPUTE_PLATFORM
+          // Rise up this mornin',
+          // Smiled with the risin' sun,
+          // Three little birds
+          // Pitch by my doorstep
+          // Singin' sweet songs
+          // Of melodies pure and true,
+          // Sayin', ("This is my message to you-ou-ou:")
+        );
+
+        // // Disallow incompatible upgrade mode. Governance can decide later if
+        // // this should be reconsidered.
+        // assert!(
+        //     pack.upgrade_policy.policy > upgrade_policy_arbitrary().policy,
+        //     error::invalid_argument(EINCOMPATIBLE_POLICY_DISABLED),
+        // );
+
         if (!exists<PackageRegistry>(addr)) {
             move_to(owner, PackageRegistry { packages: vector::empty() })
         };
