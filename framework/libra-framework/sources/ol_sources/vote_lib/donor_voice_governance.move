@@ -11,6 +11,7 @@
   /// The voting mechanism is a TurnoutTally. Such votes ajust the threshold for passing a vote based on the actual turnout. I.e. The fewer people that vote, the higher the threshold to reach consensus. But a vote is not scuttled if the turnout is low. See more details in the TurnoutTally.move module.
 module ol_framework::donor_voice_governance {
     friend ol_framework::donor_voice;
+    friend ol_framework::donor_voice_txs;
 
     use std::error;
     use std::signer;

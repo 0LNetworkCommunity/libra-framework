@@ -17,17 +17,19 @@ module ol_framework::ol_account {
     use ol_framework::slow_wallet;
     use ol_framework::receipts;
     use ol_framework::cumulative_deposits;
+    use ol_framework::community_wallet;
+    use ol_framework::donor_voice;
 
     // use diem_std::debug::print;
 
     #[test_only]
     use std::vector;
 
-    friend ol_framework::donor_voice;
+    friend ol_framework::donor_voice_txs;
+    friend ol_framework::multi_action;
     friend ol_framework::burn;
     friend ol_framework::safe;
     friend diem_framework::genesis;
-    friend diem_framework::resource_account;
     friend diem_framework::transaction_fee;
     friend ol_framework::genesis_migration;
 
@@ -62,6 +64,11 @@ module ol_framework::ol_account {
     /// what limit should be set for new account creation while using transfer()
     const MAX_COINS_FOR_INITIALIZE: u64 = 1000 * 1000000;
 
+    /// community wallets cannot use transfer, they have a dedicated workflow
+    const ENOT_FOR_CW: u64 = 11;
+
+    /// donor voice cannot use transfer, they have a dedicated workflow
+    const ENOT_FOR_DV: u64 = 12;
 
 
     struct BurnTracker has key {
@@ -86,12 +93,11 @@ module ol_framework::ol_account {
     }
 
 
-    /// A wrapper to create a resource account and register it to receive GAS.
+    /// A wrapper to create a NEW account and register it to receive GAS.
     public fun ol_create_resource_account(user: &signer, seed: vector<u8>): (signer, account::SignerCapability) {
       let (resource_account_sig, cap) = account::create_resource_account(user, seed);
       coin::register<LibraCoin>(&resource_account_sig);
       (resource_account_sig, cap)
-      // adopt_this_child(user, resource_account_sig);
     }
 
     fun create_impl(sender: &signer, maybe_new_user: address) {
@@ -241,6 +247,13 @@ module ol_framework::ol_account {
     fun transfer_checks(payer: address, recipient: address, amount: u64) {
         let limit = slow_wallet::unlocked_amount(payer);
         assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
+
+        // community wallets cannot use ol_transfer, they have a dedicated workflow
+        assert!(!community_wallet::is_init(payer),
+        error::invalid_state(ENOT_FOR_CW));
+        assert!(!donor_voice::is_donor_voice(payer),
+        error::invalid_state(ENOT_FOR_DV));
+
 
         // TODO: Check if Resource Accounts can register here, since they
         // may be created without any coin registration.
@@ -602,7 +615,9 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
     public fun test_transfer_to_resource_account_ol(root: &signer, alice: &signer,
     core: &signer) acquires BurnTracker{
+        // use diem_framework::resource_account;
         let (resource_account, _) = ol_create_resource_account(alice, vector[]);
+
         let resource_acc_addr = signer::address_of(&resource_account);
 
         let (burn_cap, mint_cap) =
