@@ -1,7 +1,7 @@
 use std::fs;
 
 use diem_types::chain_id::NamedChain;
-use libra_framework::upgrade_fixtures;
+use libra_framework::{release::ReleaseTarget, upgrade_fixtures};
 use libra_query::query_view;
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::{
@@ -10,21 +10,18 @@ use libra_txs::{
 };
 use libra_types::legacy_types::app_cfg::TxCost;
 
-/// Testing that we can upgrade the chain framework using txs tools.
-/// Note: We have another upgrade meta test in ./smoke-tests
-/// We assume a built transaction script for upgrade in tests/fixtures/test_upgrade.
-/// 1. a validator can submit a proposal with txs
-/// 2. the validator can vote for the proposal
-/// 3. check that the proposal is resolvable
-/// 4. resolve a propsosal by sending the upgrade payload.
-/// 5. Check that the new function all_your_base can be called
+/// starting from previous mainnet.mrb, we'll try to upgrade with the current
+/// fixtures.
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn smoke_upgrade_single_step() {
+async fn smoke_upgrade_compatible() {
+    // setup
     upgrade_fixtures::testsuite_warmup_fixtures();
 
     let d = diem_temppath::TempPath::new();
 
-    let mut s = LibraSmoke::new(Some(1))
+    // NOTE: WE ARE USING MAINNET.MRB WHICH SHOULD BE UPDATED HERE
+    // WHENEVER MAINNET IS UPGRADED
+    let mut s = LibraSmoke::new_with_target(Some(1), ReleaseTarget::Mainnet)
         .await
         .expect("could not start libra smoke");
 
@@ -34,8 +31,8 @@ async fn smoke_upgrade_single_step() {
             .expect("could not init validator config");
 
     let script_dir = upgrade_fixtures::fixtures_path()
-        .join("upgrade-single-lib")
-        .join("1-move-stdlib");
+        .join("upgrade-multi-lib")
+        .join("3-libra-framework");
     assert!(script_dir.exists(), "can't find upgrade fixtures");
 
     // This step should fail. The view function does not yet exist in the system address.

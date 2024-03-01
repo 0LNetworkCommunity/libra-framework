@@ -32,7 +32,7 @@ spec diem_framework::code {
         pragma verify = false;
     }
 
-    spec check_upgradability(old_pack: &PackageMetadata, new_pack: &PackageMetadata, new_modules: &vector<String>) {
+    spec check_upgradability(old_pack: &PackageMetadata, _new_pack: &PackageMetadata, new_modules: &vector<String>) {
         // TODO: Can't `aborts_if` in a loop.
         pragma verify = false;
     }
