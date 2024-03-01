@@ -222,6 +222,8 @@ pub enum EntryFunctionCall {
         should_pass: bool,
     },
 
+    DiemGovernanceSmokeTriggerEpoch {},
+
     /// Any end user can triger epoch/boundary and reconfiguration
     /// as long as the VM set the BoundaryBit to true.
     /// We do this because we don't want the VM calling complex
@@ -709,6 +711,7 @@ impl EntryFunctionCall {
                 proposal_id,
                 should_pass,
             } => diem_governance_ol_vote(proposal_id, should_pass),
+            DiemGovernanceSmokeTriggerEpoch {} => diem_governance_smoke_trigger_epoch(),
             DiemGovernanceTriggerEpoch {} => diem_governance_trigger_epoch(),
             DiemGovernanceVote {
                 proposal_id,
@@ -1426,6 +1429,21 @@ pub fn diem_governance_ol_vote(proposal_id: u64, should_pass: bool) -> Transacti
             bcs::to_bytes(&proposal_id).unwrap(),
             bcs::to_bytes(&should_pass).unwrap(),
         ],
+    ))
+}
+
+pub fn diem_governance_smoke_trigger_epoch() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("diem_governance").to_owned(),
+        ),
+        ident_str!("smoke_trigger_epoch").to_owned(),
+        vec![],
+        vec![],
     ))
 }
 
@@ -2760,6 +2778,16 @@ mod decoder {
         }
     }
 
+    pub fn diem_governance_smoke_trigger_epoch(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::DiemGovernanceSmokeTriggerEpoch {})
+        } else {
+            None
+        }
+    }
+
     pub fn diem_governance_trigger_epoch(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -3456,6 +3484,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "diem_governance_ol_vote".to_string(),
             Box::new(decoder::diem_governance_ol_vote),
+        );
+        map.insert(
+            "diem_governance_smoke_trigger_epoch".to_string(),
+            Box::new(decoder::diem_governance_smoke_trigger_epoch),
         );
         map.insert(
             "diem_governance_trigger_epoch".to_string(),
