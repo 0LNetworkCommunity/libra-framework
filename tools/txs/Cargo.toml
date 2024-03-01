@@ -35,3 +35,5 @@ url = { workspace = true }
 diem-temppath = { workspace = true }
 libra-framework = { workspace = true }
 libra-smoke-tests = { workspace = true }
+smoke-test = { workspace = true }
+diem-forge = { workspace = true }

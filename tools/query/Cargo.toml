@@ -14,9 +14,12 @@ anyhow = { workspace = true }
 clap = { workspace = true }
 diem-debugger = { workspace = true }
 diem-sdk = { workspace = true }
+diem-types = { workspace = true }
+diem-api-types = { workspace = true }
 indoc = { workspace = true }
 libra-types = { workspace = true }
 serde_json = { workspace = true }
+serde = { workspace = true }
 tokio = { workspace = true }
 
 [dev-dependencies]

@@ -11,7 +11,7 @@ pub const NODE_YAML_FILE: &str = "validator.yaml";
 
 /// Create a validator yaml file to start validator node.
 /// NOTE: this will not work for fullnodes
-pub fn save_validator_yaml(home_dir: Option<PathBuf>) -> Result<PathBuf> {
+pub async fn save_validator_yaml(home_dir: Option<PathBuf>) -> Result<PathBuf> {
     let home_dir = home_dir.unwrap_or_else(global_config_dir);
     let path = home_dir.display().to_string();
 
@@ -55,6 +55,8 @@ full_node_networks:
   identity:
     type: 'from_file'
     path: {path}/validator-identity.yaml
+- network_id: 'public'
+  listen_address: '/ip4/0.0.0.0/tcp/6182'
 
 api:
   enabled: true
@@ -66,12 +68,15 @@ api:
 
     write_to_user_only_file(&output_file, NODE_YAML_FILE, template.as_bytes())?;
 
+    let peers = crate::make_yaml_public_fullnode::fetch_seed_addresses(None).await?;
+    crate::make_yaml_public_fullnode::add_peers_to_yaml(&output_file, peers)?;
+
     Ok(output_file)
 }
 
-#[test]
+#[tokio::test]
 #[ignore] // TODO: not sure why this parsing is failing, when node can start with this file.
-fn test_yaml() {
+async fn test_yaml() {
     use diem_config::config::NodeConfig;
     use libra_wallet::utils::from_yaml;
 
@@ -79,7 +84,7 @@ fn test_yaml() {
 
     std::fs::create_dir_all(&path).unwrap();
 
-    let file = save_validator_yaml(Some(path.clone())).unwrap();
+    let file = save_validator_yaml(Some(path.clone())).await.unwrap();
 
     let read = std::fs::read_to_string(file).unwrap();
 
