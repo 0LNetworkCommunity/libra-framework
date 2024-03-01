@@ -46,6 +46,11 @@ pub struct FrameworkUpgrade {
     /// optional, list of core module directory names to compile. It will default to this order: move-stdlib, vendor-stdlib, libra-framework
     #[clap(long)]
     pub core_modules: Option<Vec<String>>,
+
+    /// optional, DANGER: force the upgrade, and ignore all compatibility checks
+    /// I hope to god you know what you are doing.
+    #[clap(long)]
+    pub danger_force_upgrade: bool,
 }
 
 impl FrameworkUpgrade {
@@ -63,6 +68,7 @@ impl FrameworkUpgrade {
             &self.output_dir,
             &self.framework_local_dir,
             &self.core_modules,
+            self.danger_force_upgrade,
         )?;
 
         Ok(())
