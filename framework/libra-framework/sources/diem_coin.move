@@ -43,7 +43,7 @@ module diem_framework::diem_coin {
         let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<DiemCoin>(
             diem_framework,
             string::utf8(b"Diem Coin"),
-            string::utf8(b"APT"),
+            string::utf8(b"GAS"),
             8, /* decimals */
             true, /* monitor_supply */
         );

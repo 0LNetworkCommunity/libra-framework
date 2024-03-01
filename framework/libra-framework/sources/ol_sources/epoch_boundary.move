@@ -9,12 +9,15 @@ module diem_framework::epoch_boundary {
     use ol_framework::jail;
     use ol_framework::safe;
     use ol_framework::burn;
-    use ol_framework::donor_voice;
+    use ol_framework::donor_voice_txs;
     use ol_framework::fee_maker;
     use ol_framework::tower_state;
     use ol_framework::infra_escrow;
     use ol_framework::oracle;
     use ol_framework::ol_account;
+    use ol_framework::match_index;
+    use ol_framework::community_wallet_init;
+
     use ol_framework::testnet;
     use diem_framework::reconfiguration;
     use diem_framework::transaction_fee;
@@ -226,7 +229,7 @@ module diem_framework::epoch_boundary {
       // must be mainnet
       assert!(!testnet::is_not_mainnet(), ETRIGGER_EPOCH_MAINNET);
       // must get root permission from governance.move
-      system_addresses::assert_ol(framework_signer);
+      system_addresses::assert_diem_framework(framework_signer);
       let _ = can_trigger(); // will abort if false
 
       // update the state and flip the Bit
@@ -234,6 +237,18 @@ module diem_framework::epoch_boundary {
       let state = borrow_global_mut<BoundaryBit>(@ol_framework);
       state.ready = false;
 
+      epoch_boundary(framework_signer, state.closing_epoch, 0);
+    }
+
+    // utility to use in smoke tests
+    public fun smoke_trigger_epoch(framework_signer: &signer) acquires BoundaryBit,
+    BoundaryStatus {
+      // cannot call thsi on mainnet
+      // only for smoke testing
+      assert!(testnet::is_not_mainnet(), 666);
+      // must get 0x1 sig from governance.move
+      system_addresses::assert_diem_framework(framework_signer);
+      let state = borrow_global_mut<BoundaryBit>(@ol_framework);
       epoch_boundary(framework_signer, state.closing_epoch, 0);
     }
 
@@ -266,7 +281,7 @@ module diem_framework::epoch_boundary {
 
         print(&string::utf8(b"process_donor_voice_accounts"));
         // run the transactions of donor directed accounts
-        let (count, amount, success) = donor_voice::process_donor_voice_accounts(root, closing_epoch);
+        let (count, amount, success) = donor_voice_txs::process_donor_voice_accounts(root, closing_epoch);
         status.dd_accounts_count = count;
         status.dd_accounts_amount = amount;
         status.dd_accounts_success = success;
@@ -458,6 +473,16 @@ module diem_framework::epoch_boundary {
       infra_escrow::epoch_boundary_collection(root,
       total_epoch_budget)
   }
+
+    /// check qualifications of community wallets
+    /// need to check every epoch so that wallets who no longer qualify are not biasing the Match algorithm.
+    public fun reset_match_index_ratios(root: &signer) {
+      system_addresses::assert_ol(root);
+      let list = match_index::get_address_list();
+      let good = community_wallet_init::get_qualifying(list);
+      match_index::calc_ratios(root, good);
+    }
+
 
   // all services the root collective security is billing for
   fun root_service_billing(vm: &signer, status: &mut BoundaryStatus) {
