@@ -11,7 +11,7 @@ use std::sync::Once;
 static INIT: Once = Once::new();
 
 /// testsuite helper to create fixtures before the testsuite runs.
-pub fn testsuite_warmup_fixtures() {
+pub fn testsuite_maybe_warmup_fixtures() {
     INIT.call_once(|| {
         // TODO: decide how to force rebuild, or never rebuild. Maybe envvar? or
         // using build.rs

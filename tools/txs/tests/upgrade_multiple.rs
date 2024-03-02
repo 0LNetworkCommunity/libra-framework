@@ -20,7 +20,7 @@ use libra_types::legacy_types::app_cfg::TxCost;
 /// 5. Check that the new function all_your_base can be called
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn smoke_upgrade_multiple_steps() {
-    upgrade_fixtures::testsuite_warmup_fixtures();
+    upgrade_fixtures::testsuite_maybe_warmup_fixtures();
 
     let d = diem_temppath::TempPath::new();
 

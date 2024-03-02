@@ -14,8 +14,20 @@ use libra_types::legacy_types::app_cfg::TxCost;
 /// fixtures.
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn smoke_upgrade_compatible() {
+  upgrade_test_impl("upgrade-multi-lib").await;
+}
+
+/// similar to above test, but we want to know if in the worst case
+/// we need to push a backward incompatible module.
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn smoke_upgrade_can_force_arbitrary() {
+  upgrade_test_impl("upgrade-multi-lib-force").await;
+}
+
+
+async fn upgrade_test_impl(fixture_dir: &str) {
     // setup
-    upgrade_fixtures::testsuite_warmup_fixtures();
+    upgrade_fixtures::testsuite_maybe_warmup_fixtures();
 
     let d = diem_temppath::TempPath::new();
 
@@ -31,7 +43,7 @@ async fn smoke_upgrade_compatible() {
             .expect("could not init validator config");
 
     let script_dir = upgrade_fixtures::fixtures_path()
-        .join("upgrade-multi-lib")
+        .join(fixture_dir)
         .join("3-libra-framework");
     assert!(script_dir.exists(), "can't find upgrade fixtures");
 
