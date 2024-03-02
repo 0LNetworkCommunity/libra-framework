@@ -1,9 +1,7 @@
-use anyhow::{anyhow, bail};
+use anyhow::anyhow;
 use clap::Parser;
-use diem_config::config::NodeConfig;
-use libra_types::global_config_dir;
 use std::path::PathBuf;
-
+use tokio::process::Command;
 #[derive(Parser)]
 /// Start a libra node
 pub struct NodeCli {
@@ -14,58 +12,36 @@ pub struct NodeCli {
 
 impl NodeCli {
     pub async fn run(&self) -> anyhow::Result<()> {
-        // validators typically aren't looking for verbose logs.
-        // but they can set it if they wish with RUST_LOG=info
-        if std::env::var("RUST_LOG").is_err() {
-            std::env::set_var("RUST_LOG", "warn")
-        }
-
-        let path = self
+        //Get the current executable path
+        let current_exe = std::env::current_exe().unwrap();
+        //Get the path to the libra-node executable
+        let node_path = current_exe.parent().unwrap().join("./libra-node");
+        // Convert the config path to a string for the command line, providing a default if none is set
+        let config_path_arg = self
             .config_path
-            .clone()
-            .unwrap_or_else(|| find_a_config().expect("no config"));
-        // A config file exists, attempt to parse the config
-        let config = NodeConfig::load_from_path(path.clone()).map_err(|error| {
-            anyhow!(
-                "Failed to load the node config file! Given file path: {:?}. Error: {:?}",
-                path.display(),
-                error
-            )
-        })?;
+            .as_ref()
+            .map_or_else(|| "".to_string(), |p| p.to_str().unwrap_or("").to_string());
+        // Construct the command to run in the tmux session
+        let command = format!("{} --config-path {}", node_path.display(), config_path_arg);
+        // The session is named 'libra_node'
+        Command::new("tmux")
+            .args(["new-session", "-d", "-s", "libra-node"])
+            .output()
+            .await
+            .map_err(|e| anyhow!("Failed to create new tmux session: {}", e))?;
 
-        // Start the node
-        diem_node::start(config, None, true).expect("Node should start correctly");
-
+        // Send the command to the created tmux session
+        Command::new("tmux")
+            .args(["send-keys", "-t", "libra-node", &command, "C-m"])
+            .output()
+            .await
+            .map_err(|e| anyhow!("Failed to send keys to tmux session: {}", e))?;
+        // Attach to the tmux session
+        Command::new("tmux")
+            .args(["attach-session", "-t", "libra-node"])
+            .output()
+            .await
+            .map_err(|e| anyhow!("Failed to attach to tmux session: {}", e))?;
         Ok(())
     }
-}
-
-/// helper to find a default config
-fn find_a_config() -> anyhow::Result<PathBuf> {
-    let d = global_config_dir();
-    let val_file = d.join("validator.yaml");
-
-    let help = "If this is not what you expected explicitly set it with --config-file <path>";
-
-    // we assume if this is set up as a validator that's the preferred profile
-    if val_file.exists() {
-        println!(
-            "\nUsing validator profile at {}.\n{}",
-            val_file.display(),
-            help
-        );
-        return Ok(val_file);
-    }
-
-    let fn_file = d.join("fullnode.yaml");
-    if fn_file.exists() {
-        println!(
-            "\nUsing fullnode profile at {}.\n{}",
-            fn_file.display(),
-            help
-        );
-        return Ok(fn_file);
-    }
-
-    bail!("ERROR: you have no node *.yaml configured in the default directory $HOME/.libra/");
 }

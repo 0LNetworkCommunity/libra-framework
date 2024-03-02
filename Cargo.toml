@@ -8,6 +8,7 @@ members = [
   "tools/cli",
   "tools/config",
   "tools/genesis",
+  "tools/node",
   "tools/query",
   "tools/rescue",
   "tools/tower",
@@ -32,6 +33,7 @@ rust-version = "1.70.0"
 # Internal crate dependencies.
 libra-cached-packages = { path = "framework/cached-packages" }
 libra-config = { path = "tools/config" }
+libra-node = { path = "tools/node" }
 libra-framework = { path = "framework" }
 libra-genesis-tools = { path = "tools/genesis" }
 libra-query = { path = "tools/query" }

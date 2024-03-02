@@ -5608,8 +5608,6 @@ dependencies = [
  "anyhow",
  "clap 4.4.2",
  "diem",
- "diem-config",
- "diem-node",
  "libra-config",
  "libra-query",
  "libra-tower",
@@ -5709,6 +5707,17 @@ dependencies = [
  "serde_json",
  "tokio",
  "ureq",
+]
+
+[[package]]
+name = "libra-node"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap 4.4.2",
+ "diem-config",
+ "diem-node",
+ "libra-types",
 ]
 
 [[package]]

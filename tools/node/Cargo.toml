@@ -1,5 +1,5 @@
 [package]
-name = "libra"
+name = "libra-node"
 version = "0.1.0"
 
 # Workspace inherited keys
@@ -13,12 +13,7 @@ rust-version = { workspace = true }
 
 [dependencies]
 anyhow = { workspace = true }
-clap = { workspace = true }
-diem = { workspace = true }
-libra-config = { workspace = true }
-libra-query = { workspace = true }
-libra-tower = { workspace = true }
-libra-txs = { workspace = true }
+diem-config = { workspace = true }
+diem-node = { workspace = true }
 libra-types = { workspace = true }
-libra-wallet = { workspace = true }
-tokio = { workspace = true }
+clap = { workspace = true }
