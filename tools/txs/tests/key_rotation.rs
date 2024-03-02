@@ -30,6 +30,10 @@ async fn rotate_key() -> anyhow::Result<()> {
         .await?
         .unwrap();
     assert!(res.info.status().is_success());
+    println!("alice: {:?} auth: {:?} pri: {:?}", alice.child_0_owner.account,
+             alice.child_0_owner.auth_key.to_string(),
+             alice.child_0_owner.pri_key.to_string(),
+    );
 
     let mut p = Profile::new(alice.child_0_owner.auth_key, alice.child_0_owner.account);
     assert!(alice_acct == &p.account);
@@ -43,18 +47,38 @@ async fn rotate_key() -> anyhow::Result<()> {
         Sender::from_app_cfg(&val_app_cfg, Some(alice.child_0_owner.account.to_string())).await?;
 
     assert!(alice_acct == &alice_sender.local_account.address());
-    
-    let private_key = Ed25519PrivateKey::generate_for_testing();
-    //let public_key = Ed25519PublicKey::from(&private_key);
-    let private_key_encoded = Ed25519PrivateKey::to_encoded_string(&private_key);
-    assert!(private_key_encoded.is_ok());
+
+    let original_auth_key  = alice.child_0_owner.auth_key.to_string();
+    println!("original_auth_key: {:?}", original_auth_key);
+
+    // check auth key from chain
+    let account_query = ls.client().get_account(alice.child_0_owner.account).await;
+    assert!(account_query.is_ok());
+    let account_from_chain = account_query.unwrap().into_inner();
+    let auth_key_from_chain = account_from_chain.authentication_key.to_string();
+    assert_eq!(auth_key_from_chain, original_auth_key);
+
+    // generate new private key from which auth key will be generated
+    let generated_private_key = Ed25519PrivateKey::generate_for_testing();
+    let generated_private_key_encoded = Ed25519PrivateKey::to_encoded_string(&generated_private_key);
+    assert!(generated_private_key_encoded.is_ok());
+
 
     let cli = RotateKeyTx{
-        new_private_key: Some(private_key_encoded.unwrap()),
+        new_private_key: Some(generated_private_key_encoded.unwrap()),
     };
 
     let res = cli.run(&mut  alice_sender).await;
     assert!(res.is_ok());
+
+    // check new auth key
+    let updated_account_query = ls.client().get_account(alice.child_0_owner.account).await;
+    assert!(updated_account_query.is_ok());
+    let account_updated = updated_account_query.unwrap().into_inner();
+    let new_auth_key = account_updated.authentication_key.to_string();
+    println!("new_auth_key: {:?}", new_auth_key);
+
+    assert_ne!(new_auth_key, original_auth_key);
 
     Ok(())
 }
