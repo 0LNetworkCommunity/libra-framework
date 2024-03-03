@@ -20,7 +20,7 @@ use libra_types::legacy_types::app_cfg::TxCost;
 /// starting from previous mainnet.mrb, we'll try to upgrade with the current
 /// fixtures.
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn smoke_upgrade_compatible() {
+async fn smoke_upgrade_mainnet_compatible_libra() {
     support::upgrade_test_single_impl(
         "upgrade-multi-lib",
         "3-libra-framework",
@@ -29,13 +29,24 @@ async fn smoke_upgrade_compatible() {
     .await;
 }
 
-/// similar to above test, but we want to know if in the worst case
-/// we could push a backward incompatible module.
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn smoke_upgrade_can_force_arbitrary() {
-    support::upgrade_test_single_impl(
-        "upgrade-multi-lib-force", // "arbitrary" policy in metadata
-        "3-libra-framework",
+/// same as above but with multiple modules being upgraded
+async fn smoke_upgrade_mainnet_compatible_multiple() {
+    support::upgrade_multiple_impl(
+        "upgrade-multi-lib",
+        vec!["1-move-stdlib", "2-vendor-stdlib", "3-libra-framework"],
+        ReleaseTarget::Mainnet,
+    )
+    .await;
+}
+
+/// do the same as above, but use the "arbitrary" upgrade policy to force an
+/// upgrade.
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn smoke_upgrade_mainnet_compatible_multiple_force() {
+    support::upgrade_multiple_impl(
+        "upgrade-multi-lib-force",
+        vec!["1-move-stdlib", "2-vendor-stdlib", "3-libra-framework"],
         ReleaseTarget::Mainnet,
     )
     .await;
