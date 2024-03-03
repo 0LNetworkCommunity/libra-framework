@@ -1,14 +1,6 @@
 mod support;
-use std::fs;
-use diem_types::chain_id::NamedChain;
-use libra_framework::{release::ReleaseTarget, upgrade_fixtures};
-use libra_query::query_view;
-use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
-use libra_txs::{
-    txs_cli::{TxsCli, TxsSub::Governance},
-    txs_cli_governance::GovernanceTxs::{Propose, Resolve, Vote},
-};
-use libra_types::legacy_types::app_cfg::TxCost;
+
+use libra_framework::release::ReleaseTarget;
 
 /// Testing that we can upgrade the chain framework using txs tools.
 /// NOTE: this aims to tests that the upgrade workflow works.
@@ -19,6 +11,7 @@ use libra_types::legacy_types::app_cfg::TxCost;
 /// We assume a built transaction script for upgrade in
 /// tests/fixtures/test_upgrade. If it is not there, there is a helper that will
 /// refresh those fixtures once.
+
 /// Workflow
 /// 1. a validator can submit a proposal with txs
 /// 2. the validator can vote for the proposal
@@ -27,14 +20,13 @@ use libra_types::legacy_types::app_cfg::TxCost;
 /// 5. Check that the new function all_your_base can be called
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn smoke_upgrade_workflow_passes_on_stable_stdlib() {
-      support::upgrade_test_single_impl(
+    support::upgrade_multiple_impl(
         "upgrade-single-lib",
-        "1-move-stdlib",
+        vec!["1-move-stdlib"],
         ReleaseTarget::Head,
     )
     .await;
 }
-
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 /// same as above but with multiple modules being upgraded

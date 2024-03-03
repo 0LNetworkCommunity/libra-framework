@@ -18,14 +18,14 @@ pub fn testsuite_maybe_warmup_fixtures() {
 
         let fixture_path = fixtures_path();
         let p = fixture_path.join("upgrade-single-lib");
-        if p.exists() { // don't regenerate
+        if p.exists() {
+            // don't regenerate
             return;
         }
         // initialization code here
         upgrade_fixtures().expect("could no warmup upgrade fixtures");
     });
 }
-
 
 /// where we store upgrade fixtures
 pub fn fixtures_path() -> PathBuf {
@@ -72,7 +72,11 @@ pub fn insert_test_file(core_module_name: &str, remove: bool) -> anyhow::Result<
 }
 
 // like is sounds
-pub fn generate_fixtures(output_path: PathBuf, modules: Vec<String>, force_incompatible_upgrade: bool) -> anyhow::Result<()> {
+pub fn generate_fixtures(
+    output_path: PathBuf,
+    modules: Vec<String>,
+    force_incompatible_upgrade: bool,
+) -> anyhow::Result<()> {
     println!("generating files, this will take some time, go do some laundry");
     let destination_module = modules.last().unwrap().clone();
     insert_test_file(&destination_module, false).context("could not insert test file")?;
@@ -135,7 +139,6 @@ pub fn upgrade_fixtures() -> anyhow::Result<()> {
     ];
 
     generate_fixtures(p, modules, true)?;
-
 
     Ok(())
 }
