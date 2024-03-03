@@ -20,18 +20,31 @@ use libra_types::legacy_types::app_cfg::TxCost;
 /// 5. Check that the new function all_your_base can be called
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn smoke_upgrade_multiple_steps() {
-  upgrade_multiple_impl("upgrade-multi-lib").await;
+    upgrade_multiple_impl(
+        "upgrade-multi-lib",
+        vec!["1-move-stdlib", "2-vendor-stdlib", "3-libra-framework"],
+    )
+    .await;
 }
 
 /// do the same as above, but use the "arbitrary" upgrade policy to force an
 /// upgrade.
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn smoke_upgrade_multiple_steps_force() {
-  upgrade_multiple_impl("upgrade-multi-lib-force").await;
+    upgrade_multiple_impl(
+        "upgrade-multi-lib-force",
+        vec!["1-move-stdlib", "2-vendor-stdlib", "3-libra-framework"],
+    )
+    .await;
 }
 
-
-async fn upgrade_multiple_impl(dir_path: &str) {
+/// If there are multiple modules being upgraded only one of the modules (the
+/// first) needs to be included in the proposal.
+/// The transaction script which upgrades the first module, also sets the
+/// transaction hash for the subsequent module needed to be upgraded.
+/// these hashes are produced offline during the framework upgrade builder
+/// workflow.
+async fn upgrade_multiple_impl(dir_path: &str, modules: Vec<&str>) {
     upgrade_fixtures::testsuite_maybe_warmup_fixtures();
 
     let d = diem_temppath::TempPath::new();
@@ -51,10 +64,17 @@ async fn upgrade_multiple_impl(dir_path: &str) {
         query_view::get_view(&s.client(), "0x1::all_your_base::are_belong_to", None, None).await;
     assert!(query_res.is_err(), "expected all_your_base to fail");
 
-    ///// NOTE THERE ARE MULTIPLE STEPS, we are getting the artifacts for the first step.
+    ///// NOTE THERE ARE MULTIPLE STEPS, we are getting the artifacts for the
+    // first step. This is what sets the governance in motion
+    // we do not need to submit proposals for each subsequent step.
+    // that's because the resolution of the the first step, already
+    // includes the hash of the second step, which gets stored in
+    // advance of the user resolving the step 2 with its transaction.
+
+    // Set up governance proposal, just with first module
     let script_dir = upgrade_fixtures::fixtures_path()
         .join(dir_path)
-        .join("1-move-stdlib");
+        .join(modules[0]); // take first module usually "1-move-stdlib"
     assert!(script_dir.exists(), "can't find upgrade fixtures");
 
     let mut cli = TxsCli {
@@ -140,39 +160,46 @@ async fn upgrade_multiple_impl(dir_path: &str) {
         "expected this script hash, did you change the fixtures?"
     );
 
-    ///////// SHOW TIME, RESOLVE FIRST STEP 1/3////////
-    // Now try to resolve upgrade
-    cli.subcommand = Some(Governance(Resolve {
-        proposal_id: 0,
-        proposal_script_dir: script_dir,
-    }));
-    cli.run().await.expect("cannot resolve proposal at step 1");
-    //////////////////////////////
+    // ///////// SHOW TIME, RESOLVE FIRST STEP 1/3////////
+    // // Now try to resolve upgrade
+    // cli.subcommand = Some(Governance(Resolve {
+    //     proposal_id: 0,
+    //     proposal_script_dir: script_dir,
+    // }));
+    // cli.run().await.expect("cannot resolve proposal at step 1");
+    // //////////////////////////////
 
-    ///////// SHOW TIME, RESOLVE SECOND STEP 2/3 ////////
+    // if modules.len() > 1 {
+    for name in modules {
+        ///////// SHOW TIME, RESOLVE EACH STEP ////////
 
-    let script_dir = upgrade_fixtures::fixtures_path()
-        .join(dir_path)
-        .join("2-vendor-stdlib");
-    cli.subcommand = Some(Governance(Resolve {
-        proposal_id: 0,
-        proposal_script_dir: script_dir,
-    }));
-    cli.run().await.expect("cannot resolve proposal at step 2");
-    //////////////////////////////
+        let script_dir = upgrade_fixtures::fixtures_path().join(dir_path).join(name);
 
-    ///////// SHOW TIME, RESOLVE THIRD STEP 3/3 ////////
-    // THIS IS THE STEP THAT CONTAINS THE CHANGED MODULE all_your_base
-    // Now try to resolve upgrade
-    let script_dir = upgrade_fixtures::fixtures_path()
-        .join(dir_path)
-        .join("3-libra-framework");
-    cli.subcommand = Some(Governance(Resolve {
-        proposal_id: 0,
-        proposal_script_dir: script_dir,
-    }));
-    cli.run().await.expect("cannot resolve proposal at step 3");
-    //////////////////////////////
+        cli.subcommand = Some(Governance(Resolve {
+            proposal_id: 0,
+            proposal_script_dir: script_dir,
+        }));
+        cli.run()
+            .await
+            .expect(&format!("cannot resolve proposal at step {name}"));
+    }
+
+    // // }
+
+    // //////////////////////////////
+
+    // ///////// SHOW TIME, RESOLVE THIRD STEP 3/3 ////////
+    // // THIS IS THE STEP THAT CONTAINS THE CHANGED MODULE all_your_base
+    // // Now try to resolve upgrade
+    // let script_dir = upgrade_fixtures::fixtures_path()
+    //     .join(dir_path)
+    //     .join("3-libra-framework");
+    // cli.subcommand = Some(Governance(Resolve {
+    //     proposal_id: 0,
+    //     proposal_script_dir: script_dir,
+    // }));
+    // cli.run().await.expect("cannot resolve proposal at step 3");
+    // //////////////////////////////
 
     let query_res =
         query_view::get_view(&s.client(), "0x1::all_your_base::are_belong_to", None, None)
