@@ -10,21 +10,18 @@ use libra_txs::{
 };
 use libra_types::legacy_types::app_cfg::TxCost;
 
-/// Testing that we can upgrade the chain framework using txs tools.
-/// Note: We have another upgrade meta test in ./smoke-tests
-/// We assume a built transaction script for upgrade in tests/fixtures/test_upgrade.
-/// 1. a validator can submit a proposal with txs
-/// 2. the validator can vote for the proposal
-/// 3. check that the proposal is resolvable
-/// 4. resolve a propsosal by sending the upgrade payload.
-/// 5. Check that the new function all_your_base can be called
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn smoke_upgrade_single_step() {
+// TODO: deduplicate this function with the multiple upgrade test function version.
+/// test for upgrading a single module from framework e.g. libra-framework or
+/// stdlib.
+pub async fn upgrade_test_single_impl(fixture_dir: &str, module: &str, prior_release: ReleaseTarget) {
+    // setup
     upgrade_fixtures::testsuite_maybe_warmup_fixtures();
 
     let d = diem_temppath::TempPath::new();
 
-    let mut s = LibraSmoke::new(Some(1))
+    // NOTE: WE ARE USING MAINNET.MRB WHICH SHOULD BE UPDATED HERE
+    // WHENEVER MAINNET IS UPGRADED
+    let mut s = LibraSmoke::new_with_target(Some(1), prior_release)
         .await
         .expect("could not start libra smoke");
 
@@ -34,8 +31,8 @@ async fn smoke_upgrade_single_step() {
             .expect("could not init validator config");
 
     let script_dir = upgrade_fixtures::fixtures_path()
-        .join("upgrade-single-lib")
-        .join("1-move-stdlib");
+        .join(fixture_dir) // e.g.  "upgrade-single-lib"
+        .join(module); //e.g. "libra-framework"
     assert!(script_dir.exists(), "can't find upgrade fixtures");
 
     // This step should fail. The view function does not yet exist in the system address.

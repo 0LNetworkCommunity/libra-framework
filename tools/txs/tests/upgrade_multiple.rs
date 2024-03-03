@@ -20,6 +20,18 @@ use libra_types::legacy_types::app_cfg::TxCost;
 /// 5. Check that the new function all_your_base can be called
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn smoke_upgrade_multiple_steps() {
+  upgrade_multiple_impl("upgrade-multi-lib").await;
+}
+
+/// do the same as above, but use the "arbitrary" upgrade policy to force an
+/// upgrade.
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn smoke_upgrade_multiple_steps_force() {
+  upgrade_multiple_impl("upgrade-multi-lib-force").await;
+}
+
+
+async fn upgrade_multiple_impl(dir_path: &str) {
     upgrade_fixtures::testsuite_maybe_warmup_fixtures();
 
     let d = diem_temppath::TempPath::new();
@@ -41,7 +53,7 @@ async fn smoke_upgrade_multiple_steps() {
 
     ///// NOTE THERE ARE MULTIPLE STEPS, we are getting the artifacts for the first step.
     let script_dir = upgrade_fixtures::fixtures_path()
-        .join("upgrade-multi-lib")
+        .join(dir_path)
         .join("1-move-stdlib");
     assert!(script_dir.exists(), "can't find upgrade fixtures");
 
@@ -140,7 +152,7 @@ async fn smoke_upgrade_multiple_steps() {
     ///////// SHOW TIME, RESOLVE SECOND STEP 2/3 ////////
 
     let script_dir = upgrade_fixtures::fixtures_path()
-        .join("upgrade-multi-lib")
+        .join(dir_path)
         .join("2-vendor-stdlib");
     cli.subcommand = Some(Governance(Resolve {
         proposal_id: 0,
@@ -153,7 +165,7 @@ async fn smoke_upgrade_multiple_steps() {
     // THIS IS THE STEP THAT CONTAINS THE CHANGED MODULE all_your_base
     // Now try to resolve upgrade
     let script_dir = upgrade_fixtures::fixtures_path()
-        .join("upgrade-multi-lib")
+        .join(dir_path)
         .join("3-libra-framework");
     cli.subcommand = Some(Governance(Resolve {
         proposal_id: 0,
