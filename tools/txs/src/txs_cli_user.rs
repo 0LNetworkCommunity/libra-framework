@@ -1,18 +1,22 @@
 //! Validator subcommands
 
+use std::str::FromStr;
 use crate::submit_transaction::Sender;
 use diem::common::types::RotationProofChallenge;
 use diem_sdk::crypto::{PrivateKey, SigningKey, ValidCryptoMaterialStringExt};
+use diem_sdk::types::LocalAccount;
 use diem_types::{
-    account_address::AccountAddress, account_config::CORE_CODE_ADDRESS,
+    account_config::CORE_CODE_ADDRESS,
     transaction::TransactionPayload,
 };
+use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib;
 use libra_types::{
     exports::{AuthenticationKey, Ed25519PrivateKey},
     type_extensions::client_ext::ClientExt,
 };
 use libra_wallet::account_keys::get_keys_from_prompt;
+use serde::{Deserialize, Serialize};
 
 #[derive(clap::Subcommand)]
 pub enum UserTxs {
@@ -97,7 +101,7 @@ pub fn rotate_key(
     sequence_number: u64,
     new_private_key: Ed25519PrivateKey,
 ) -> anyhow::Result<TransactionPayload> {
-    // form a rotation proof challence. See account.move
+    // form a rotation proof challenge. See account.move
     let rotation_proof = RotationProofChallenge {
         account_address: CORE_CODE_ADDRESS,
         module_name: "account".to_string(),
@@ -132,3 +136,71 @@ pub fn rotate_key(
 
     Ok(payload)
 }
+#[derive(Serialize, Deserialize)]
+pub struct RotationCapabilityOfferProofChallengeV2 {
+    account_address: AccountAddress,
+    module_name: String,
+    struct_name: String,
+    chain_id: u8,
+    sequence_number: u64,
+    source_address: AccountAddress,
+    recipient_address: AccountAddress,
+}
+
+/// Offer rotation capability to a recipient address
+/// A recipient address now can rotate a key of this account owner
+#[derive(clap::Args)]
+pub struct OfferRotationCapabilityTx {
+    #[clap(short, long)]
+    pub delegate_address: String,
+}
+impl OfferRotationCapabilityTx {
+    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        let user_account: AccountAddress = sender.local_account.address();
+        let index_response = sender.client().get_index().await?;
+        let chain_id = index_response.into_inner().chain_id;
+
+        let recipient_address = AccountAddress::from_str(&self.delegate_address)?;
+        let seq = sender.client().get_sequence_number(user_account).await?;
+        let payload = offer_rotation_capability_v2(
+            &sender.local_account,
+            recipient_address,
+            chain_id,
+            seq,
+        )?;
+
+        sender.sign_submit_wait(payload).await?;
+        Ok(())
+    }
+}
+
+pub fn offer_rotation_capability_v2(
+    offerer_account: &LocalAccount,
+    delegate_account: AccountAddress,
+    chain_id: u8,
+    sequence_number: u64,
+) -> anyhow::Result<TransactionPayload>{
+    let rotation_capability_offer_proof = RotationCapabilityOfferProofChallengeV2 {
+        account_address: CORE_CODE_ADDRESS,
+        module_name: String::from("account"),
+        struct_name: String::from("RotationCapabilityOfferProofChallengeV2"),
+        chain_id: chain_id,
+        sequence_number: sequence_number,
+        source_address: offerer_account.address(),
+        recipient_address: delegate_account,
+    };
+
+    let rotation_capability_proof_msg = bcs::to_bytes(&rotation_capability_offer_proof);
+    let rotation_proof_signed = offerer_account.private_key().clone()
+        .sign_arbitrary_message(&rotation_capability_proof_msg.unwrap());
+
+    let payload = libra_stdlib::account_offer_rotation_capability(
+        rotation_proof_signed.to_bytes().to_vec(),
+        0,
+        offerer_account.public_key().to_bytes().to_vec(),
+        delegate_account,
+    );
+
+    Ok(payload)
+}
+
