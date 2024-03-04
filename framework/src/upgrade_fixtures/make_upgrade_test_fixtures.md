@@ -1,5 +1,17 @@
+## Upgrade Fixtures
+All fixtures needed to test upgrades are generated on the first run of any test
+that requires it.
 
-## Generate these fixtures
+A test will call:
+`upgrade_fixtures::testsuite_warmup_fixtures();`
+
+It will only build if there are no such fixtures in the expected path
+`framework/src/upgrade_fixtures/fixtures`.
+
+Sometimes if the test aborts the fixtures may be in an incomplete state. So you
+can delete the fixtures or generate manually, see below.
+
+## Generate these fixtures manually
 Making these fixtures is prone to error, so we have some helpers.
 
 TODO: fixtures should be done pre-test in a build.rs
@@ -9,11 +21,14 @@ TODO: fixtures should be done pre-test in a build.rs
 RUST_MIN_STACK=104857600 cargo t -- make_the_upgrade_fixtures --include-ignored
 ```
 
-## Fixtures
+## How the test fixtures work
 
 We want to test that we can modify code in the 0x1 address and upgrade successfully.
 
-To do this we will create a framework upgrade script for MoveStdlib. We will add a module and function that would not otherwise not be there; "all your base"
+To do this we will create a framework upgrade script for MoveStdlib. We will add
+a module and function that would not otherwise not be there;
+"all_your_base.move". That way after the upgrade, when we call that function we
+get a result, instead of an abort (in the case of an upgrade not being successful).
 
 ```
 
@@ -45,4 +60,5 @@ make upgrade_fixtures
 If everything went well you'll have a `script.mv` and a `script_sha3` file here. The script_sha3 should be a different hash that you've had before if there are any changes to the MoveStdlib.
 
 #### 3. Run the test
-Any test that call the newly deployed view function which should return hex enconded "us", which is "0x7573".
+Any test that call the newly deployed view function which should return hex
+enconded "us", which is "0x7573".
