@@ -117,6 +117,13 @@ pub fn upgrade_fixtures() -> anyhow::Result<()> {
     let modules = vec!["move-stdlib".to_string()];
     generate_fixtures(p, modules, false)?;
 
+    // for single step arbitrary/forced upgrades
+    // places the all_your_base in the move-stdlib dir
+    let p = fixture_path.join("upgrade-single-lib-force");
+    std::fs::create_dir_all(&p)?;
+    let modules = vec!["libra-framework".to_string()];
+    generate_fixtures(p, modules, true)?;
+
     // for multi step upgrades
     // places the all_your_base in the libra_framework dir
     let p = fixture_path.join("upgrade-multi-lib");
@@ -126,7 +133,6 @@ pub fn upgrade_fixtures() -> anyhow::Result<()> {
         "vendor-stdlib".to_string(),
         "libra-framework".to_string(),
     ];
-
     generate_fixtures(p, modules, false)?;
 
     // generate fixtures with arbitrary release
@@ -137,7 +143,6 @@ pub fn upgrade_fixtures() -> anyhow::Result<()> {
         "vendor-stdlib".to_string(),
         "libra-framework".to_string(),
     ];
-
     generate_fixtures(p, modules, true)?;
 
     Ok(())
