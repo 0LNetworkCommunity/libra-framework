@@ -184,8 +184,8 @@ pub fn offer_rotation_capability_v2(
         account_address: CORE_CODE_ADDRESS,
         module_name: String::from("account"),
         struct_name: String::from("RotationCapabilityOfferProofChallengeV2"),
-        chain_id: chain_id,
-        sequence_number: sequence_number,
+        chain_id,
+        sequence_number,
         source_address: offerer_account.address(),
         recipient_address: delegate_account,
     };

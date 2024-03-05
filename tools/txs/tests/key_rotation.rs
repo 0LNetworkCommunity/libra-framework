@@ -3,7 +3,7 @@ use diem_sdk::crypto::{Uniform, ValidCryptoMaterialStringExt};
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_txs::submit_transaction::Sender;
 use libra_txs::txs_cli_user::{OfferRotationCapabilityTx, RotateKeyTx};
-use libra_types::legacy_types::app_cfg::{Profile};
+use libra_types::legacy_types::app_cfg::Profile;
 use libra_wallet::account_keys;
 
 // Scenario: We have an initial validator, Val 0 with a random address
@@ -49,7 +49,7 @@ async fn rotate_key() -> anyhow::Result<()> {
     let mut alice_sender =
         Sender::from_app_cfg(&val_app_cfg, Some(alice.child_0_owner.account.to_string())).await?;
 
-    assert!(alice_acct == &alice_sender.local_account.address());
+    assert_eq!(alice_acct, &alice_sender.local_account.address());
 
     let original_auth_key = alice.child_0_owner.auth_key.to_string();
     println!("original_auth_key: {:?}", original_auth_key);
@@ -124,7 +124,7 @@ async fn offer_rotation_capability() -> anyhow::Result<()> {
     let mut alice_sender =
         Sender::from_app_cfg(&val_app_cfg, Some(alice.child_0_owner.account.to_string())).await?;
 
-    assert!(alice_acct == &alice_sender.local_account.address());
+    assert_eq!(alice_acct, &alice_sender.local_account.address());
 
     let original_auth_key = alice.child_0_owner.auth_key.to_string();
     println!("original_auth_key: {:?}", original_auth_key);
@@ -144,7 +144,9 @@ async fn offer_rotation_capability() -> anyhow::Result<()> {
     let res = cli.run(&mut alice_sender).await;
     match res.as_ref() {
         Ok(_) => {}
-        Err(err) => {println!("got error={:?}", err)}
+        Err(err) => {
+            println!("got error={:?}", err)
+        }
     }
     assert!(res.is_ok());
 
