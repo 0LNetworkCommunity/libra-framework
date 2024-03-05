@@ -69,6 +69,7 @@ async fn rotate_key() -> anyhow::Result<()> {
 
     let cli = RotateKeyTx {
         new_private_key: Some(generated_private_key_encoded.unwrap()),
+        account_address: None,
     };
 
     let res = cli.run(&mut alice_sender).await;
@@ -86,7 +87,8 @@ async fn rotate_key() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Test rotation capability offer
+/// Test rotation capability offer and delegated key rotation
+/// see rotate_auth_key_with_rotation_capability_e2e() as an example
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn offer_rotation_capability() -> anyhow::Result<()> {
     // create libra swarm and get app config for the first validator
@@ -114,7 +116,7 @@ async fn offer_rotation_capability() -> anyhow::Result<()> {
     );
 
     let mut p = Profile::new(alice.child_0_owner.auth_key, alice.child_0_owner.account);
-    assert!(alice_acct == &p.account);
+    assert_eq!(alice_acct, &p.account);
 
     p.set_private_key(&alice.child_0_owner.pri_key);
 
@@ -129,7 +131,7 @@ async fn offer_rotation_capability() -> anyhow::Result<()> {
     let original_auth_key = alice.child_0_owner.auth_key.to_string();
     println!("original_auth_key: {:?}", original_auth_key);
 
-    // create a new account by transferring fundsF
+    // create a new account by transferring funds
     let bob_account = ls.marlon_rando();
     let res_bob = s
         .transfer(bob_account.address(), 100.0, false)
@@ -137,8 +139,12 @@ async fn offer_rotation_capability() -> anyhow::Result<()> {
         .unwrap();
     assert!(res_bob.info.status().is_success());
 
+    let mut bob_sender =
+        Sender::from_app_cfg(&val_app_cfg, Some(bob_account.address().to_string())).await?;
+
+    // allow bob to rotate keys for alice
     let cli = OfferRotationCapabilityTx {
-        delegate_address: bob_account.address().to_string(),
+        delegate_address: bob_sender.local_account.address().to_string(),
     };
 
     let res = cli.run(&mut alice_sender).await;
@@ -149,6 +155,35 @@ async fn offer_rotation_capability() -> anyhow::Result<()> {
         }
     }
     assert!(res.is_ok());
+
+    // now bob can rotate alice's key
+    let generated_private_key = Ed25519PrivateKey::generate_for_testing();
+    let generated_private_key_encoded =
+        Ed25519PrivateKey::to_encoded_string(&generated_private_key);
+    assert!(generated_private_key_encoded.is_ok());
+
+    let cli = RotateKeyTx {
+        new_private_key: Some(generated_private_key_encoded.unwrap()),
+        account_address: Some(alice_acct.to_string()),
+    };
+
+    let res_rotation = cli.run(&mut bob_sender).await;
+    match res_rotation.as_ref() {
+        Ok(_) => {}
+        Err(err) => {
+            println!("got error={:?}", err)
+        }
+    }
+    assert!(res_rotation.is_ok());
+
+    // alice got new auth key
+    let updated_account_query = ls.client().get_account(alice.child_0_owner.account).await;
+    assert!(updated_account_query.is_ok());
+    let account_updated = updated_account_query.unwrap().into_inner();
+    let new_auth_key = account_updated.authentication_key.to_string();
+    println!("new_auth_key: {:?}", new_auth_key);
+
+    assert_ne!(new_auth_key, original_auth_key);
 
     Ok(())
 }
