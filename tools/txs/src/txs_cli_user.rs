@@ -19,6 +19,7 @@ use diem_sdk::crypto::ed25519::Ed25519PublicKey;
 #[derive(clap::Subcommand)]
 pub enum UserTxs {
     RotateKey(RotateKeyTx),
+    RotationCapability(RotationCapabilityTx),
     SetSlow(SetSlowTx),
 }
 
@@ -40,6 +41,12 @@ impl UserTxs {
                     );
                 }
             },
+            UserTxs::RotationCapability(offer_rotation_capability) => match offer_rotation_capability.run(sender).await {
+                Ok(_) => println!("SUCCESS: private offered rotation capability"),
+                Err(e) => {
+                    println!("ERROR: could not offer rotation capability, message: {}", e);
+                }
+            }
         }
 
         Ok(())
@@ -64,9 +71,10 @@ pub struct RotateKeyTx {
     #[clap(short, long)]
     /// The new authkey to be used
     pub new_private_key: Option<String>, // Dev NOTE: account address has the same bytes as AuthKey
-    /// Account address for which rotation is done
-    /// Can be different from caller's address if rotation capability has been granted
-    /// to the caller
+    #[clap(short, long)]
+    /// Account address for which rotation is done. It
+    /// can be different from caller's address if rotation capability has been granted
+    /// to the caller. Do not specify this if you want to rotate your own key.
     pub account_address: Option<String>,
 }
 
@@ -200,12 +208,20 @@ pub struct RotationCapabilityOfferProofChallengeV2 {
 /// Offer rotation capability to a recipient address
 /// A recipient address now can rotate a key of this account owner
 #[derive(clap::Args)]
-pub struct OfferRotationCapabilityTx {
+pub struct RotationCapabilityTx {
+    #[clap(short, long)]
+    pub action: String,
+
     #[clap(short, long)]
     pub delegate_address: String,
 }
-impl OfferRotationCapabilityTx {
+impl RotationCapabilityTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        let isRevoke = match self.action.to_lowercase().as_str() {
+            "offer" => false,
+            "revoke" => true,
+            _ => return Err(anyhow::anyhow!("Invalid action, allowed: offer, revoke")),
+        };
         let user_account: AccountAddress = sender.local_account.address();
         let index_response = sender.client().get_index().await?;
         let chain_id = index_response.into_inner().chain_id;

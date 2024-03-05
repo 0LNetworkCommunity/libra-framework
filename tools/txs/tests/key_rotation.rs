@@ -2,7 +2,7 @@ use diem_sdk::crypto::ed25519::Ed25519PrivateKey;
 use diem_sdk::crypto::{Uniform, ValidCryptoMaterialStringExt};
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_txs::submit_transaction::Sender;
-use libra_txs::txs_cli_user::{OfferRotationCapabilityTx, RotateKeyTx};
+use libra_txs::txs_cli_user::{RotationCapabilityTx, RotateKeyTx};
 use libra_types::legacy_types::app_cfg::Profile;
 use libra_wallet::account_keys;
 
@@ -143,8 +143,10 @@ async fn offer_rotation_capability() -> anyhow::Result<()> {
         Sender::from_app_cfg(&val_app_cfg, Some(bob_account.address().to_string())).await?;
 
     // allow bob to rotate keys for alice
-    let cli = OfferRotationCapabilityTx {
+    let cli = RotationCapabilityTx {
         delegate_address: bob_sender.local_account.address().to_string(),
+        action: "offer"
+            .to_string(),
     };
 
     let res = cli.run(&mut alice_sender).await;
@@ -184,6 +186,8 @@ async fn offer_rotation_capability() -> anyhow::Result<()> {
     println!("new_auth_key: {:?}", new_auth_key);
 
     assert_ne!(new_auth_key, original_auth_key);
+
+    // now revoke rotation capability
 
     Ok(())
 }
