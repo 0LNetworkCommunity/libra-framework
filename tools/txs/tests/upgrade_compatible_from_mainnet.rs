@@ -18,6 +18,7 @@ async fn smoke_upgrade_mainnet_compatible_libra() {
     .await;
 }
 
+
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 /// same as above but with multiple modules being upgraded
 async fn smoke_upgrade_mainnet_compatible_multiple() {
@@ -29,8 +30,23 @@ async fn smoke_upgrade_mainnet_compatible_multiple() {
     .await;
 }
 
-/// do the same as above, but use the "arbitrary" upgrade policy to force an
-/// upgrade.
+
+/////// TEST ARBITRARY UPGRADES ///////
+// do the same as above, but use the "arbitrary" upgrade policy to force an
+// upgrade.
+//
+/// Force upgrade Libra
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn smoke_upgrade_mainnet_compatible_libra_force() {
+    support::upgrade_multiple_impl(
+        "upgrade-single-lib-force",
+        vec!["1-libra-framework"],
+        ReleaseTarget::Mainnet,
+    )
+    .await;
+}
+
+/// Upgrade all modules
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn smoke_upgrade_mainnet_compatible_multiple_force() {
     support::upgrade_multiple_impl(
