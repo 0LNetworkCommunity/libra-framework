@@ -179,7 +179,7 @@ pub fn rotate_key_delegated(
         module_name: String::from("account"),
         struct_name: String::from("RotationProofChallenge"),
         sequence_number,
-        originator: target_account_address.clone(),
+        originator: *target_account_address,
         current_auth_key: AccountAddress::from_bytes(target_auth_key)?,
         new_public_key: new_public_key.to_bytes().to_vec(),
     };
@@ -191,7 +191,7 @@ pub fn rotate_key_delegated(
         new_private_key.sign_arbitrary_message(&rotation_msg);
 
     let payload = libra_stdlib::account_rotate_authentication_key_with_rotation_capability(
-        target_account_address.clone(),
+        *target_account_address,
         0,
         new_public_key.to_bytes().to_vec(),
         rotation_proof_signed_by_new_private_key.to_bytes().to_vec(),
