@@ -148,27 +148,29 @@ module diem_framework::code {
         // If you need a specific functionality or program on the Layer 1,
         // submit a pull request for module "Ascension" (for more info see: https://www.youtube.com/watch?v=jDwqPCAw_7k).
 
-        // If it is not a reserved address this must not be chain ID 1 (mainnet)
-        assert!(system_addresses::is_framework_reserved_address(signer::address_of(owner)) ||
-        testnet::is_testnet(),
-        ENOT_A_COMPUTE_PLATFORM
-        // Rise up this mornin',
-        // Smiled with the risin' sun,
-        // Three little birds
-        // Pitch by my doorstep
-        // Singin' sweet songs
-        // Of melodies pure and true,
-        // Sayin', ("This is my message to you-ou-ou:")
-        );
-
-        // Disallow incompatible upgrade mode. Governance can decide later if
-        // this should be reconsidered.
-        assert!(
-            pack.upgrade_policy.policy > upgrade_policy_arbitrary().policy,
-            error::invalid_argument(EINCOMPATIBLE_POLICY_DISABLED),
-        );
-
         let addr = signer::address_of(owner);
+
+        // If it is not a reserved address this must not be chain ID 1 (mainnet)
+        assert!(
+          is_policy_exempted_address(addr) ||
+          testnet::is_testnet(),
+          ENOT_A_COMPUTE_PLATFORM
+          // Rise up this mornin',
+          // Smiled with the risin' sun,
+          // Three little birds
+          // Pitch by my doorstep
+          // Singin' sweet songs
+          // Of melodies pure and true,
+          // Sayin', ("This is my message to you-ou-ou:")
+        );
+
+        // // Disallow incompatible upgrade mode. Governance can decide later if
+        // // this should be reconsidered.
+        // assert!(
+        //     pack.upgrade_policy.policy > upgrade_policy_arbitrary().policy,
+        //     error::invalid_argument(EINCOMPATIBLE_POLICY_DISABLED),
+        // );
+
         if (!exists<PackageRegistry>(addr)) {
             move_to(owner, PackageRegistry { packages: vector::empty() })
         };
@@ -232,13 +234,15 @@ module diem_framework::code {
 
     /// Checks whether the given package is upgradable, and returns true if a compatibility check is needed.
     fun check_upgradability(
-        old_pack: &PackageMetadata, new_pack: &PackageMetadata, new_modules:
+        old_pack: &PackageMetadata, _new_pack: &PackageMetadata, new_modules:
         &vector<String>) {
 
-        assert!(old_pack.upgrade_policy.policy < upgrade_policy_immutable().policy,
-            error::invalid_argument(EUPGRADE_IMMUTABLE));
-        assert!(can_change_upgrade_policy_to(old_pack.upgrade_policy, new_pack.upgrade_policy),
-            error::invalid_argument(EUPGRADE_WEAKER_POLICY));
+        // system can change policy to stronger or weaker
+
+        // assert!(old_pack.upgrade_policy.policy < upgrade_policy_immutable().policy,
+        //     error::invalid_argument(EUPGRADE_IMMUTABLE));
+        // assert!(can_change_upgrade_policy_to(old_pack.upgrade_policy, new_pack.upgrade_policy),
+        //     error::invalid_argument(EUPGRADE_WEAKER_POLICY));
         let old_modules = get_module_names(old_pack);
         let i = 0;
         while (i < vector::length(&old_modules)) {
@@ -295,10 +299,10 @@ module diem_framework::code {
                 if (dep_pack.name == dep.package_name) {
                     found = true;
                     // Check policy
-                    assert!(
-                        dep_pack.upgrade_policy.policy >= pack.upgrade_policy.policy,
-                        error::invalid_argument(EDEP_WEAKER_POLICY)
-                    );
+                    // assert!(
+                    //     dep_pack.upgrade_policy.policy >= pack.upgrade_policy.policy,
+                    //     error::invalid_argument(EDEP_WEAKER_POLICY)
+                    // );
                     if (dep_pack.upgrade_policy == upgrade_policy_arbitrary()) {
                         assert!(
                             dep.account == publish_address,

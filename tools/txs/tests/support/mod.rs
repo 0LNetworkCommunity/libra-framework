@@ -1,7 +1,5 @@
-//! test framework upgrades with multiple steps
-
 use diem_types::chain_id::NamedChain;
-use libra_framework::upgrade_fixtures;
+use libra_framework::{release::ReleaseTarget, upgrade_fixtures};
 use libra_query::query_view;
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::{
@@ -10,21 +8,28 @@ use libra_txs::{
 };
 use libra_types::legacy_types::app_cfg::TxCost;
 
-/// Testing that we can upgrade the chain framework using txs tools.
-/// Note: We have another upgrade meta test in ./smoke-tests
-/// We assume a built transaction script for upgrade in tests/fixtures/test_upgrade.
-/// 1. a validator can submit a proposal with txs
-/// 2. the validator can vote for the proposal
-/// 3. check that the proposal is resolvable
-/// 4. resolve a propsosal by sending the upgrade payload.
-/// 5. Check that the new function all_your_base can be called
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn smoke_upgrade_multiple_steps() {
+/// If there are multiple modules being upgraded only one of the modules (the
+/// first) needs to be included in the proposal.
+/// The transaction script which upgrades the first module, also sets the
+/// transaction hash for the subsequent module needed to be upgraded.
+/// these hashes are produced offline during the framework upgrade builder
+/// workflow.
+pub async fn upgrade_multiple_impl(
+    dir_path: &str,
+    modules: Vec<&str>,
+    prior_release: ReleaseTarget,
+) {
+    upgrade_fixtures::testsuite_maybe_warmup_fixtures();
+
     let d = diem_temppath::TempPath::new();
 
-    let mut s = LibraSmoke::new(Some(1))
+    let mut s = LibraSmoke::new_with_target(Some(1), prior_release)
         .await
         .expect("could not start libra smoke");
+
+    // let mut s = LibraSmoke::new(Some(1))
+    //     .await
+    //     .expect("could not start libra smoke");
 
     let (_, _app_cfg) =
         configure_validator::init_val_config_files(&mut s.swarm, 0, d.path().to_owned())
@@ -37,10 +42,18 @@ async fn smoke_upgrade_multiple_steps() {
         query_view::get_view(&s.client(), "0x1::all_your_base::are_belong_to", None, None).await;
     assert!(query_res.is_err(), "expected all_your_base to fail");
 
-    ///// NOTE THERE ARE MULTIPLE STEPS, we are getting the artifacts for the first step.
+    ///// NOTE THERE ARE MULTIPLE STEPS, we are getting the artifacts for the
+    // first step. This is what sets the governance in motion
+    // we do not need to submit proposals for each subsequent step.
+    // that's because the resolution of the the first step, already
+    // includes the hash of the second step, which gets stored in
+    // advance of the user resolving the step 2 with its transaction.
+
+    //////////// PROPOSAL ////////////
+    // Set up governance proposal, just with first module
     let script_dir = upgrade_fixtures::fixtures_path()
-        .join("upgrade-multi-lib")
-        .join("1-move-stdlib");
+        .join(dir_path)
+        .join(modules[0]); // take first module usually "1-move-stdlib"
     assert!(script_dir.exists(), "can't find upgrade fixtures");
 
     let mut cli = TxsCli {
@@ -61,6 +74,8 @@ async fn smoke_upgrade_multiple_steps() {
     cli.run()
         .await
         .expect("cli could not send upgrade proposal");
+
+    //////////// VOTING ////////////
 
     // ALICE VOTES
     cli.subcommand = Some(Governance(Vote {
@@ -126,40 +141,23 @@ async fn smoke_upgrade_multiple_steps() {
         "expected this script hash, did you change the fixtures?"
     );
 
-    ///////// SHOW TIME, RESOLVE FIRST STEP 1/3////////
-    // Now try to resolve upgrade
-    cli.subcommand = Some(Governance(Resolve {
-        proposal_id: 0,
-        proposal_script_dir: script_dir,
-    }));
-    cli.run().await.expect("cannot resolve proposal at step 1");
-    //////////////////////////////
+    //////////// RESOLVE ////////////
 
-    ///////// SHOW TIME, RESOLVE SECOND STEP 2/3 ////////
+    for name in modules {
+        ///////// SHOW TIME, RESOLVE EACH STEP ////////
 
-    let script_dir = upgrade_fixtures::fixtures_path()
-        .join("upgrade-multi-lib")
-        .join("2-vendor-stdlib");
-    cli.subcommand = Some(Governance(Resolve {
-        proposal_id: 0,
-        proposal_script_dir: script_dir,
-    }));
-    cli.run().await.expect("cannot resolve proposal at step 2");
-    //////////////////////////////
+        let script_dir = upgrade_fixtures::fixtures_path().join(dir_path).join(name);
 
-    ///////// SHOW TIME, RESOLVE THIRD STEP 3/3 ////////
-    // THIS IS THE STEP THAT CONTAINS THE CHANGED MODULE all_your_base
-    // Now try to resolve upgrade
-    let script_dir = upgrade_fixtures::fixtures_path()
-        .join("upgrade-multi-lib")
-        .join("3-libra-framework");
-    cli.subcommand = Some(Governance(Resolve {
-        proposal_id: 0,
-        proposal_script_dir: script_dir,
-    }));
-    cli.run().await.expect("cannot resolve proposal at step 3");
-    //////////////////////////////
+        cli.subcommand = Some(Governance(Resolve {
+            proposal_id: 0,
+            proposal_script_dir: script_dir,
+        }));
+        cli.run()
+            .await
+            .unwrap_or_else(|_| panic!("cannot resolve proposal at step {name}"));
+    }
 
+    //////////// VERIFY SUCCESS ////////////
     let query_res =
         query_view::get_view(&s.client(), "0x1::all_your_base::are_belong_to", None, None)
             .await
@@ -167,5 +165,5 @@ async fn smoke_upgrade_multiple_steps() {
     assert!(&query_res.as_array().unwrap()[0]
         .as_str()
         .unwrap()
-        .contains("7573"));
+        .contains("7573")); // bytes for "us"
 }

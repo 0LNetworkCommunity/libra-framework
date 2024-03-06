@@ -6,6 +6,7 @@ use diem_types::{
     PeerId,
 };
 use libra_types::global_config_dir;
+use serde::Deserialize;
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
@@ -13,6 +14,17 @@ use std::{
 
 const FN_FILENAME: &str = "fullnode.yaml";
 const VFN_FILENAME: &str = "vfn.yaml";
+const DEFAULT_WAYPOINT_VERSION: &str = "6.9.0";
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+struct GithubContent {
+    name: String,
+    path: String,
+    #[serde(rename = "type")]
+    content_type: String, // Use `content_type` to avoid conflict with Rust's `type` keyword
+    download_url: Option<String>,
+}
+
 /// fetch seed peers and make a yaml file from template
 pub async fn init_fullnode_yaml(
     home_dir: Option<PathBuf>,
@@ -52,7 +64,6 @@ pub fn add_peers_to_yaml(
 
     Ok(())
 }
-
 /// get seed peers from an upstream url
 pub async fn fetch_seed_addresses(
     url: Option<&str>,
@@ -148,6 +159,9 @@ full_node_networks:
 api:
   enabled: true
   address: '0.0.0.0:8080'
+
+mempool:
+  default_failovers: 3
 "
     );
 
@@ -158,39 +172,51 @@ api:
 }
 
 /// download genesis blob
-pub async fn download_genesis(home_dir: Option<PathBuf>) -> anyhow::Result<()> {
-    let bytes = reqwest::get(
-        "https://raw.githubusercontent.com/0LNetworkCommunity/epoch-archive-mainnet/main/upgrades/v6.9.0/genesis.blob",
-    )
-    .await?
-    .bytes()
-    .await?;
-
+pub async fn download_genesis(
+    home_dir: Option<PathBuf>,
+    genesis_path: Option<&str>,
+) -> anyhow::Result<()> {
+    let path = genesis_path.unwrap_or("https://raw.githubusercontent.com/0LNetworkCommunity/epoch-archive-mainnet/main/upgrades/v6.9.0/genesis.blob");
+    let bytes = reqwest::get(path).await?.bytes().await?;
     let home = home_dir.unwrap_or_else(global_config_dir);
     let genesis_dir = home.join("genesis/");
     std::fs::create_dir_all(&genesis_dir)?;
     let p = genesis_dir.join("genesis.blob");
-
     std::fs::write(p, bytes)?;
-
     Ok(())
 }
 
 pub async fn get_genesis_waypoint(home_dir: Option<PathBuf>) -> anyhow::Result<Waypoint> {
-    let wp_string = reqwest::get(
-        "https://raw.githubusercontent.com/0LNetworkCommunity/epoch-archive-mainnet/main/upgrades/v6.9.0/waypoint.txt",
-    )
-    .await?
-    .text()
-    .await?;
+    // Base URL for GitHub API requests
+    let base_url =
+        "https://api.github.com/repos/0LNetworkCommunity/epoch-archive-mainnet/contents/upgrades";
+    let client = reqwest::Client::new();
+    let resp = client
+        .get(base_url)
+        .header("User-Agent", "request")
+        .send()
+        .await?
+        .json::<Vec<GithubContent>>()
+        .await?;
+    // Find the latest version by parsing version numbers and sorting
+    let latest_version = resp
+        .iter()
+        .filter_map(|entry| entry.name.split('v').nth(1)) // Assuming the name is 'vX.X.X'
+        .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
+    let latest_path = format!(
+        "{}/v{}/waypoint.txt",
+        "https://raw.githubusercontent.com/0LNetworkCommunity/epoch-archive-mainnet/main/upgrades",
+        latest_version.unwrap_or(DEFAULT_WAYPOINT_VERSION)
+    );
+    // Fetch the latest waypoint
+    let wp_string = reqwest::get(&latest_path).await?.text().await?;
     let home = home_dir.unwrap_or_else(libra_types::global_config_dir);
     let genesis_dir = home.join("genesis/");
     let p = genesis_dir.join("waypoint.txt");
 
     std::fs::write(p, &wp_string)?;
-
-    wp_string.parse()
+    wp_string.trim().parse::<Waypoint>()
 }
 
 #[tokio::test]
@@ -238,7 +264,7 @@ async fn persist_genesis() {
 
     let path = p.path().to_owned();
 
-    download_genesis(Some(path)).await.unwrap();
+    download_genesis(Some(path), None).await.unwrap();
     let l = std::fs::read_dir(p.path())
         .unwrap()
         .next()

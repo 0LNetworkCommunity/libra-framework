@@ -6,8 +6,28 @@ use std::str::FromStr;
 use crate::builder::framework_generate_upgrade_proposal::make_framework_upgrade_artifacts;
 use anyhow::Context;
 
-// TODO: This could be generated dynamically at the start of the test suites. using `Once`. Though if the tools aren't compiled it will take approximately forever to do so. Hence fixtures, though not ideal.
+use std::sync::Once;
 
+static INIT: Once = Once::new();
+
+/// testsuite helper to create fixtures before the testsuite runs.
+pub fn testsuite_maybe_warmup_fixtures() {
+    INIT.call_once(|| {
+        // TODO: decide how to force rebuild, or never rebuild. Maybe envvar? or
+        // using build.rs
+
+        let fixture_path = fixtures_path();
+        let p = fixture_path.join("upgrade-single-lib");
+        if p.exists() {
+            // don't regenerate
+            return;
+        }
+        // initialization code here
+        upgrade_fixtures().expect("could no warmup upgrade fixtures");
+    });
+}
+
+/// where we store upgrade fixtures
 pub fn fixtures_path() -> PathBuf {
     let this_crate = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
     this_crate
@@ -16,6 +36,8 @@ pub fn fixtures_path() -> PathBuf {
         .join("fixtures")
 }
 
+/// add the all_your_base.move file which serves as the canary to test if the
+/// upgrade went through
 pub fn insert_test_file(core_module_name: &str, remove: bool) -> anyhow::Result<()> {
     //1. Copy the allyourbase code to the module.
     let this_crate = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
@@ -49,7 +71,12 @@ pub fn insert_test_file(core_module_name: &str, remove: bool) -> anyhow::Result<
     Ok(())
 }
 
-pub fn generate_fixtures(output_path: PathBuf, modules: Vec<String>) -> anyhow::Result<()> {
+// like is sounds
+pub fn generate_fixtures(
+    output_path: PathBuf,
+    modules: Vec<String>,
+    force_incompatible_upgrade: bool,
+) -> anyhow::Result<()> {
     println!("generating files, this will take some time, go do some laundry");
     let destination_module = modules.last().unwrap().clone();
     insert_test_file(&destination_module, false).context("could not insert test file")?;
@@ -60,7 +87,12 @@ pub fn generate_fixtures(output_path: PathBuf, modules: Vec<String>) -> anyhow::
         .context("no parent dir")?
         .join("framework");
 
-    make_framework_upgrade_artifacts(&output_path, &libra_framework_sources, &Some(modules))?;
+    make_framework_upgrade_artifacts(
+        &output_path,
+        &libra_framework_sources,
+        &Some(modules),
+        force_incompatible_upgrade,
+    )?;
     // ok, cleanup
     insert_test_file(&destination_module, true)?;
 
@@ -71,6 +103,11 @@ pub fn generate_fixtures(output_path: PathBuf, modules: Vec<String>) -> anyhow::
 // KEEP THIS TEST HERE TO HELP REGENERATE FIXTURES
 #[test]
 fn make_the_upgrade_fixtures() -> anyhow::Result<()> {
+    upgrade_fixtures()
+}
+
+/// helper for testing, so that we have fresh fixtures at every run.
+pub fn upgrade_fixtures() -> anyhow::Result<()> {
     let fixture_path = fixtures_path();
 
     // for single step upgrades
@@ -78,7 +115,14 @@ fn make_the_upgrade_fixtures() -> anyhow::Result<()> {
     let p = fixture_path.join("upgrade-single-lib");
     std::fs::create_dir_all(&p)?;
     let modules = vec!["move-stdlib".to_string()];
-    generate_fixtures(p, modules)?;
+    generate_fixtures(p, modules, false)?;
+
+    // for single step arbitrary/forced upgrades
+    // places the all_your_base in the move-stdlib dir
+    let p = fixture_path.join("upgrade-single-lib-force");
+    std::fs::create_dir_all(&p)?;
+    let modules = vec!["libra-framework".to_string()];
+    generate_fixtures(p, modules, true)?;
 
     // for multi step upgrades
     // places the all_your_base in the libra_framework dir
@@ -89,7 +133,17 @@ fn make_the_upgrade_fixtures() -> anyhow::Result<()> {
         "vendor-stdlib".to_string(),
         "libra-framework".to_string(),
     ];
+    generate_fixtures(p, modules, false)?;
 
-    generate_fixtures(p, modules)?;
+    // generate fixtures with arbitrary release
+    let p = fixture_path.join("upgrade-multi-lib-force");
+    std::fs::create_dir_all(&p)?;
+    let modules = vec![
+        "move-stdlib".to_string(),
+        "vendor-stdlib".to_string(),
+        "libra-framework".to_string(),
+    ];
+    generate_fixtures(p, modules, true)?;
+
     Ok(())
 }
