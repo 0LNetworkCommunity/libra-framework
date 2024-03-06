@@ -43,7 +43,7 @@ impl UserTxs {
             },
             UserTxs::RotationCapability(offer_rotation_capability) => {
                 match offer_rotation_capability.run(sender).await {
-                    Ok(_) => println!("SUCCESS: private offered rotation capability"),
+                    Ok(_) => println!("SUCCESS: offered rotation capability"),
                     Err(e) => {
                         println!("ERROR: could not offer rotation capability, message: {}", e);
                     }
