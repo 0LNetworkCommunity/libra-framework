@@ -211,8 +211,8 @@ pub struct RotationCapabilityOfferProofChallengeV2 {
     recipient_address: AccountAddress,
 }
 
-/// Offer rotation capability to a recipient address
-/// A recipient address now can rotate a key of this account owner
+/// Offer rotation capability to a delegate address.
+/// A delegate address now can rotate a key for this account owner
 #[derive(clap::Args)]
 pub struct RotationCapabilityTx {
     #[clap(short, long)]
