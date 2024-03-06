@@ -2,6 +2,7 @@
 
 use crate::submit_transaction::Sender;
 use diem::common::types::RotationProofChallenge;
+use diem_sdk::crypto::ed25519::Ed25519PublicKey;
 use diem_sdk::crypto::{PrivateKey, SigningKey, ValidCryptoMaterialStringExt};
 use diem_sdk::types::LocalAccount;
 use diem_types::account_address::AccountAddress;
@@ -14,7 +15,6 @@ use libra_types::{
 use libra_wallet::account_keys::get_keys_from_prompt;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use diem_sdk::crypto::ed25519::Ed25519PublicKey;
 
 #[derive(clap::Subcommand)]
 pub enum UserTxs {
@@ -41,10 +41,12 @@ impl UserTxs {
                     );
                 }
             },
-            UserTxs::RotationCapability(offer_rotation_capability) => match offer_rotation_capability.run(sender).await {
-                Ok(_) => println!("SUCCESS: private offered rotation capability"),
-                Err(e) => {
-                    println!("ERROR: could not offer rotation capability, message: {}", e);
+            UserTxs::RotationCapability(offer_rotation_capability) => {
+                match offer_rotation_capability.run(sender).await {
+                    Ok(_) => println!("SUCCESS: private offered rotation capability"),
+                    Err(e) => {
+                        println!("ERROR: could not offer rotation capability, message: {}", e);
+                    }
                 }
             }
         }
@@ -92,7 +94,11 @@ impl RotateKeyTx {
         let seq = sender.client().get_sequence_number(user_account).await?;
         let payload = if let Some(account_address) = &self.account_address {
             let target_account_address = AccountAddress::from_str(account_address)?;
-            let target_account = sender.client().get_account(target_account_address).await?.into_inner();
+            let target_account = sender
+                .client()
+                .get_account(target_account_address)
+                .await?
+                .into_inner();
             // rotate key for account_address
             rotate_key_delegated(
                 seq,
@@ -217,9 +223,9 @@ pub struct RotationCapabilityTx {
 }
 impl RotationCapabilityTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let isRevoke = match self.action.to_lowercase().as_str() {
-            "offer" => false,
-            "revoke" => true,
+        let is_offer = match self.action.to_lowercase().as_str() {
+            "offer" => true,
+            "revoke" => false,
             _ => return Err(anyhow::anyhow!("Invalid action, allowed: offer, revoke")),
         };
         let user_account: AccountAddress = sender.local_account.address();
@@ -228,8 +234,11 @@ impl RotationCapabilityTx {
 
         let recipient_address = AccountAddress::from_str(&self.delegate_address)?;
         let seq = sender.client().get_sequence_number(user_account).await?;
-        let payload =
-            offer_rotation_capability_v2(&sender.local_account, recipient_address, chain_id, seq)?;
+        let payload = if is_offer {
+            offer_rotation_capability_v2(&sender.local_account, recipient_address, chain_id, seq)
+        } else {
+            revoke_rotation_capability(recipient_address)
+        }?;
 
         sender.sign_submit_wait(payload).await?;
         Ok(())
@@ -264,6 +273,14 @@ pub fn offer_rotation_capability_v2(
         offerer_account.public_key().to_bytes().to_vec(),
         delegate_account,
     );
+
+    Ok(payload)
+}
+
+pub fn revoke_rotation_capability(
+    delegate_account: AccountAddress,
+) -> anyhow::Result<TransactionPayload> {
+    let payload = libra_stdlib::account_revoke_rotation_capability(delegate_account);
 
     Ok(payload)
 }
