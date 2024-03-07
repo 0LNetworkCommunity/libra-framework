@@ -81,8 +81,8 @@ module ol_framework::safe {
   /// init_gov fails gracefully if the governance is already initialized.
   /// init_type will throw errors if the type is already initialized.
 
-  public fun init_payment_multisig(sponsor: &signer, init_signers: vector<address>, cfg_n_signers: u64) acquires RootMultiSigRegistry {
-    multi_action::init_gov(sponsor, cfg_n_signers, &init_signers);
+  public fun init_payment_multisig(sponsor: &signer) acquires RootMultiSigRegistry {
+    multi_action::init_gov(sponsor);
     multi_action::init_type<PaymentType>(sponsor, true);
     add_to_registry(signer::address_of(sponsor));
   }
