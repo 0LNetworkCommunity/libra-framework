@@ -37,10 +37,10 @@ fn main() -> anyhow::Result<()> {
         }
         _ => {
             let rt = tokio::runtime::Runtime::new()?;
-             rt.block_on(async {
+            rt.block_on(async {
                 match cli.command {
                     Some(Sub::Config(config_cli)) => {
-                        if let Err(e) = config_cli.run().await{
+                        if let Err(e) = config_cli.run().await {
                             eprintln!("Failed to execute config tool, message: {}", &e);
                         }
                     }
@@ -48,9 +48,10 @@ fn main() -> anyhow::Result<()> {
                         if let Err(e) = move_tool
                             .execute()
                             .await
-                            .map_err(|e| anyhow!("Failed to execute move tool, message: {}", &e)){
+                            .map_err(|e| anyhow!("Failed to execute move tool, message: {}", &e))
+                        {
                             eprintln!("Failed to execute move tool, message: {}", &e);
-                            }
+                        }
                     }
                     Some(Sub::Query(query_cli)) => {
                         if let Err(e) = query_cli.run().await {
