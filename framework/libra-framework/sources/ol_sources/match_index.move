@@ -11,8 +11,12 @@ module ol_framework::match_index {
   use std::signer;
   use std::error;
 
+  friend diem_framework::genesis;
+
   friend ol_framework::community_wallet_init;
   friend ol_framework::epoch_boundary;
+  friend ol_framework::donor_voice_txs;
+  friend ol_framework::burn;
 
   /// matching index is not initialized
   const ENOT_INIT: u64 = 1;
@@ -26,7 +30,7 @@ module ol_framework::match_index {
     ratio: vector<fixed_point32::FixedPoint32>,
   }
   /// initialize, usually for testnet.
-  public fun initialize(vm: &signer) {
+  public(friend) fun initialize(vm: &signer) {
     system_addresses::assert_ol(vm);
 
     move_to<MatchIndex>(vm, MatchIndex {
@@ -96,7 +100,7 @@ module ol_framework::match_index {
     /// the root account can take a user coin, and match with accounts in index.
   // Note, this leave NO REMAINDER, and burns any rounding.
   // TODO: When the coin is sent, an attribution is also made to the payer.
-  public fun match_and_recycle(vm: &signer, coin: &mut Coin<LibraCoin>) acquires MatchIndex {
+  public(friend) fun match_and_recycle(vm: &signer, coin: &mut Coin<LibraCoin>) acquires MatchIndex {
 
     match_impl(vm, coin);
     // if there is anything remaining it's a superman 3 issue
@@ -155,7 +159,7 @@ module ol_framework::match_index {
   }
 
   /// calculate the ratio which the matching wallet should receive per the recently weighted historical donations.
-  public fun get_payee_share(payee: address, total_vale_to_split: u64): u64 acquires MatchIndex {
+  fun get_payee_share(payee: address, total_vale_to_split: u64): u64 acquires MatchIndex {
     if (!exists<MatchIndex>(@ol_framework))
       return 0;
 
