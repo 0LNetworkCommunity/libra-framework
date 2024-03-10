@@ -10,7 +10,7 @@ module ol_framework::vector_helper {
           let num_a = borrow(a, i);
           let num_b = borrow(b, i);
           if (num_a == num_b) {
-              i = i + 1;  
+              i = i + 1;
           } else {
               return false
           }
