@@ -475,6 +475,11 @@ pub enum EntryFunctionCall {
         epoch_expiry: u64,
     },
 
+    /// This fucntion initiates governance for the multisig. It is called by the sponsor address, and is only callable once.
+    /// init_gov fails gracefully if the governance is already initialized.
+    /// init_type will throw errors if the type is already initialized.
+    SafeInitPaymentMultisig {},
+
     SlowWalletSmokeTestVmUnlock {
         user_addr: AccountAddress,
         unlocked: u64,
@@ -833,6 +838,7 @@ impl EntryFunctionCall {
             ProofOfFeePofUpdateBid { bid, epoch_expiry } => {
                 proof_of_fee_pof_update_bid(bid, epoch_expiry)
             }
+            SafeInitPaymentMultisig {} => safe_init_payment_multisig(),
             SlowWalletSmokeTestVmUnlock {
                 user_addr,
                 unlocked,
@@ -2186,6 +2192,24 @@ pub fn proof_of_fee_pof_update_bid(bid: u64, epoch_expiry: u64) -> TransactionPa
     ))
 }
 
+/// This fucntion initiates governance for the multisig. It is called by the sponsor address, and is only callable once.
+/// init_gov fails gracefully if the governance is already initialized.
+/// init_type will throw errors if the type is already initialized.
+pub fn safe_init_payment_multisig() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("safe").to_owned(),
+        ),
+        ident_str!("init_payment_multisig").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
 pub fn slow_wallet_smoke_test_vm_unlock(
     user_addr: AccountAddress,
     unlocked: u64,
@@ -3186,6 +3210,14 @@ mod decoder {
         }
     }
 
+    pub fn safe_init_payment_multisig(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::SafeInitPaymentMultisig {})
+        } else {
+            None
+        }
+    }
+
     pub fn slow_wallet_smoke_test_vm_unlock(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -3583,6 +3615,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "proof_of_fee_pof_update_bid".to_string(),
             Box::new(decoder::proof_of_fee_pof_update_bid),
+        );
+        map.insert(
+            "safe_init_payment_multisig".to_string(),
+            Box::new(decoder::safe_init_payment_multisig),
         );
         map.insert(
             "slow_wallet_smoke_test_vm_unlock".to_string(),
