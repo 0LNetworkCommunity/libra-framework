@@ -15,7 +15,6 @@ module diem_framework::event {
     friend diem_framework::multisig_account;
     friend diem_framework::fungible_asset;
     friend diem_framework::diem_governance;
-    friend diem_framework::demo;
     friend diem_framework::coin;
     friend diem_framework::block;
 
@@ -26,6 +25,8 @@ module diem_framework::event {
 
     #[test_only]
     friend diem_framework::diem_account;
+    #[test_only]
+    friend diem_framework::demo;
     //////// end 0L ////////
 
     /// A handle for an event such that:
