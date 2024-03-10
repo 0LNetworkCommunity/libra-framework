@@ -122,7 +122,7 @@
 
 
         // VERIFY PAYMENTS OPERATE AS EXPECTED
-        let uid = donor_voice_txs::propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol");
+        let uid = donor_voice_txs::test_propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol");
         let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
         assert!(found, 7357004);
         assert!(idx == 0, 7357005);
@@ -132,7 +132,7 @@
         // it is not yet scheduled, it's still only a proposal by an admin
         assert!(!donor_voice_txs::is_scheduled(alice_comm_wallet_addr, &uid), 7357008);
 
-        let uid = donor_voice_txs::propose_payment(dave, alice_comm_wallet_addr, @0x1000c, 100, b"thanks carol");
+        let uid = donor_voice_txs::test_propose_payment(dave, alice_comm_wallet_addr, @0x1000c, 100, b"thanks carol");
         let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
         assert!(found, 7357004);
         assert!(idx == 0, 7357005);
@@ -197,7 +197,7 @@
 
 
         // VERIFY PAYMENTS OPERATE AS EXPECTED
-        let uid = donor_voice_txs::propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol");
+        let uid = donor_voice_txs::test_propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol");
         let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
         assert!(found, 7357004);
         assert!(idx == 0, 7357005);
@@ -207,7 +207,7 @@
         // it is not yet scheduled, it's still only a proposal by an admin
         assert!(!donor_voice_txs::is_scheduled(alice_comm_wallet_addr, &uid), 7357008);
 
-        let uid = donor_voice_txs::propose_payment(dave, alice_comm_wallet_addr, @0x1000c, 100, b"thanks carol");
+        let uid = donor_voice_txs::test_propose_payment(dave, alice_comm_wallet_addr, @0x1000c, 100, b"thanks carol");
         let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
         assert!(found, 7357004);
         assert!(idx == 0, 7357005);
@@ -332,7 +332,7 @@
         //      let alice_comm_wallet_addr = signer::address_of(alice);
     //    let carols_addr = signer::address_of(carol);
 
-    //     let uid = donor_voice_txs::propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol");
+    //     let uid = donor_voice_txs::test_propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol");
     //     let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
     //     assert!(found, 7357004);
     //     assert!(idx == 0, 7357005);
