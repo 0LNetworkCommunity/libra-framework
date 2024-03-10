@@ -34,8 +34,6 @@ module ol_framework::rewards {
     process_recipients_impl(root, list, reward_per, reward_budget, reward_type);
   }
 
-
-
   /// process all the validators
   // belt and suspenders
   fun process_recipients_impl(root: &signer, list: vector<address>, reward_per: u64, reward_budget: &mut Coin<LibraCoin>, reward_type: u8) {
