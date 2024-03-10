@@ -70,7 +70,7 @@ module ol_framework::test_slow_wallet {
     // create alice account
     ol_account::create_account(&root, @0x123);
 
-    slow_wallet::set_slow(&alice);
+    slow_wallet::user_set_slow(&alice);
 
     assert!(slow_wallet::is_slow(@0x123), 7357000);
     assert!(slow_wallet::unlocked_amount(@0x123) == 0, 735701);
@@ -97,7 +97,7 @@ module ol_framework::test_slow_wallet {
     // create alice account
     ol_account::create_account(&root, @0x123);
 
-    slow_wallet::set_slow(&alice);
+    slow_wallet::user_set_slow(&alice);
 
     assert!(slow_wallet::is_slow(@0x123), 7357000);
     assert!(slow_wallet::unlocked_amount(@0x123) == 0, 735701);
@@ -140,7 +140,7 @@ module ol_framework::test_slow_wallet {
     let mint_cap = libra_coin::extract_mint_cap(&root);
     slow_wallet::initialize(&root);
     ol_account::create_account(&root, @0x123);
-    slow_wallet::set_slow(&alice);
+    slow_wallet::user_set_slow(&alice);
     assert!(slow_wallet::is_slow(@0x123), 7357000);
     assert!(slow_wallet::unlocked_amount(@0x123) == 0, 735701);
 

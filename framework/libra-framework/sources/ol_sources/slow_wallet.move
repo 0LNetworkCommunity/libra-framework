@@ -19,8 +19,19 @@ module ol_framework::slow_wallet {
 
   // use diem_std::debug::print;
 
+  friend diem_framework::genesis;
+
   friend ol_framework::ol_account;
   friend ol_framework::transaction_fee;
+  friend ol_framework::epoch_boundary;
+  #[test_only]
+  friend ol_framework::test_slow_wallet;
+  #[test_only]
+  friend ol_framework::test_pof;
+  #[test_only]
+  friend ol_framework::mock;
+  #[test_only]
+  friend ol_framework::test_boundary;
 
   /// genesis failed to initialized the slow wallet registry
   const EGENESIS_ERROR: u64 = 1;
@@ -44,7 +55,7 @@ module ol_framework::slow_wallet {
         drip_events: event::EventHandle<DripEvent>,
     }
 
-    public fun initialize(framework: &signer){
+    public(friend) fun initialize(framework: &signer){
       system_addresses::assert_ol(framework);
       if (!exists<SlowWalletList>(@ol_framework)) {
         move_to<SlowWalletList>(framework, SlowWalletList {
@@ -54,9 +65,10 @@ module ol_framework::slow_wallet {
       }
     }
 
+    #[test_only]
     /// private function which can only be called at genesis
     /// must apply the coin split factor.
-    // TODO: make this private with a public test helper
+    /// TODO: make this private with a public test helper
     public fun fork_migrate_slow_wallet(
       vm: &signer,
       user: &signer,
@@ -106,7 +118,7 @@ module ol_framework::slow_wallet {
     }
 
     /// implementation of setting slow wallet, allows contracts to call.
-    public fun set_slow(sig: &signer) acquires SlowWalletList {
+    fun set_slow(sig: &signer) acquires SlowWalletList {
       assert!(exists<SlowWalletList>(@ol_framework), error::invalid_argument(EGENESIS_ERROR));
 
         let addr = signer::address_of(sig);
@@ -127,8 +139,8 @@ module ol_framework::slow_wallet {
     /// VM causes the slow wallet to unlock by X amount
     /// @return tuple of 2
     /// 0: bool, was this successful
-    // 1: u64, how much was dripped
-    public fun slow_wallet_epoch_drip(vm: &signer, amount: u64): (bool, u64) acquires
+    /// 1: u64, how much was dripped
+    public(friend) fun slow_wallet_epoch_drip(vm: &signer, amount: u64): (bool, u64) acquires
     SlowWallet, SlowWalletList{
 
       system_addresses::assert_ol(vm);
@@ -234,13 +246,13 @@ module ol_framework::slow_wallet {
     /// Every epoch the system will drip a fixed amount
     /// @return tuple of 2
     /// 0: bool, was this successful
-    // 1: u64, how much was dripped
-    public fun on_new_epoch(vm: &signer): (bool, u64) acquires SlowWallet, SlowWalletList {
+    /// 1: u64, how much was dripped
+    public(friend) fun on_new_epoch(vm: &signer): (bool, u64) acquires SlowWallet, SlowWalletList {
       system_addresses::assert_ol(vm);
       slow_wallet_epoch_drip(vm, sacred_cows::get_slow_drip_const())
     }
 
-    ///////// SLOW GETTERS ////////
+    ///////// GETTERS ////////
 
     #[view]
     public fun is_slow(addr: address): bool {
@@ -260,6 +272,7 @@ module ol_framework::slow_wallet {
       (total, total)
     }
 
+    #[view]
     /// Returns the amount of unlocked funds for a slow wallet.
     public fun unlocked_amount(addr: address): u64 acquires SlowWallet{
       // this is a normal account, so return the normal balance
