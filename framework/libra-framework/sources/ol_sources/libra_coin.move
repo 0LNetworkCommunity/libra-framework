@@ -103,7 +103,7 @@ module ol_framework::libra_coin {
         (burn_cap, mint_cap)
     }
 
-    public fun has_mint_capability(account: &signer): bool {
+    fun has_mint_capability(account: &signer): bool {
         exists<MintCapStore>(signer::address_of(account))
     }
 
@@ -308,13 +308,6 @@ module ol_framework::libra_coin {
         };
         index
     }
-
-    // #[view]
-    // /// helper to get balance in gas coin
-    // public fun get_balance(account: address): u64 {
-    //     coin::balance<LibraCoin>(account)
-    // }
-
 
     #[test_only]
     use diem_framework::aggregator_factory;
