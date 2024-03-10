@@ -4,7 +4,7 @@
 // Demo Persistence
 // Error Code: 0400
 /////////////////////////////////////////////////////////////////////////
-
+#[test_only]
 module ol_framework::persistence_demo {
     use std::vector;
     use std::signer;
