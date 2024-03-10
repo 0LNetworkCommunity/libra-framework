@@ -23,7 +23,7 @@ module ol_framework::test_donor_voice {
     fun dd_init(root: &signer, alice: &signer) {
       mock::genesis_n_vals(root, 4);
 
-      let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
+      let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
       let donor_voice_address = signer::address_of(&resource_sig);
 
       let auths = mock::personas();
@@ -49,7 +49,7 @@ module ol_framework::test_donor_voice {
       // only bob, carol, and dave with be authorities
 
       let vals = mock::genesis_n_vals(root, 4);
-      let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
+      let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
       let donor_voice_address = signer::address_of(&resource_sig);
 
       // the account needs basic donor directed structs
@@ -75,7 +75,7 @@ module ol_framework::test_donor_voice {
       // only bob, carol, and dave with be authorities
 
       let vals = mock::genesis_n_vals(root, 4);
-      let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
+      let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
       let donor_voice_address = signer::address_of(&resource_sig);
 
       // the account needs basic donor directed structs
@@ -120,7 +120,7 @@ module ol_framework::test_donor_voice {
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
       mock::trigger_epoch(root);
 
-      let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
+      let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
       let donor_voice_address = signer::address_of(&resource_sig);
 
       // the account needs basic donor directed structs
@@ -205,7 +205,7 @@ module ol_framework::test_donor_voice {
       let (_, bob_balance_pre) = ol_account::balance(@0x1000b);
       assert!(bob_balance_pre == 10000000, 7357001);
 
-      let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
+      let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
       let donor_voice_address = signer::address_of(&resource_sig);
 
       // fund the account
@@ -267,7 +267,7 @@ module ol_framework::test_donor_voice {
       assert!(marlon_rando_balance_pre == 0, 7357000);
 
 
-      let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
+      let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
       let donor_voice_address = signer::address_of(&resource_sig);
 
       // fund the account
@@ -420,7 +420,7 @@ module ol_framework::test_donor_voice {
       // a burn happend in the epoch above, so let's compare it to end of epoch
       let (lifetime_burn_pre, _) = burn::get_lifetime_tracker();
 
-      let (resource_sig, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
+      let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
       let donor_voice_address = signer::address_of(&resource_sig);
       // the account needs basic donor directed structs
       donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig);
