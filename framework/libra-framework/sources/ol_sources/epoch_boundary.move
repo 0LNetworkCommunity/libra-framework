@@ -31,6 +31,7 @@ module diem_framework::epoch_boundary {
 
     use diem_std::debug::print;
 
+    friend diem_framework::genesis;
     friend diem_framework::diem_governance;
     friend diem_framework::block; // for testnet only
 
@@ -121,7 +122,7 @@ module diem_framework::epoch_boundary {
 
     /// initialize structs, requires both signers since BoundaryBit can only be
     // accessed by VM
-    public fun initialize(framework_signer: &signer) {
+    public(friend) fun initialize(framework_signer: &signer) {
       if (!exists<BoundaryStatus>(@ol_framework)){
         move_to(framework_signer, reset());
       };
@@ -241,7 +242,7 @@ module diem_framework::epoch_boundary {
     }
 
     // utility to use in smoke tests
-    public fun smoke_trigger_epoch(framework_signer: &signer) acquires BoundaryBit,
+    public entry fun smoke_trigger_epoch(framework_signer: &signer) acquires BoundaryBit,
     BoundaryStatus {
       // cannot call thsi on mainnet
       // only for smoke testing
@@ -476,7 +477,7 @@ module diem_framework::epoch_boundary {
 
     /// check qualifications of community wallets
     /// need to check every epoch so that wallets who no longer qualify are not biasing the Match algorithm.
-    public fun reset_match_index_ratios(root: &signer) {
+    fun reset_match_index_ratios(root: &signer) {
       system_addresses::assert_ol(root);
       let list = match_index::get_address_list();
       let good = community_wallet_init::get_qualifying(list);
