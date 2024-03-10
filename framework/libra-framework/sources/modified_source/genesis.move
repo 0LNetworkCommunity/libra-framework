@@ -260,7 +260,7 @@ module diem_framework::genesis {
             // default 90% to align with thermostatic rule in the PoF paper.
             // otherwise the thermostatic rule starts kicking-in immediately
             let sig = create_signer(validator.validator_config.owner_address);
-            proof_of_fee::set_bid(&sig, 0900, 1000); // make the genesis
+            proof_of_fee::pof_update_bid(&sig, 0900, 1000); // make the genesis
 
             if (testnet::is_not_mainnet()) {
               // TODO: this is for testnet purposes only
