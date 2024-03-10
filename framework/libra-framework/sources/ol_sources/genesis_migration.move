@@ -31,8 +31,11 @@ module ol_framework::genesis_migration {
   /// makewhole is not initialized
   const EMAKEWHOLE_NOT_INIT: u64 = 4;
 
+  #[test_only]
+  friend ol_framework::test_migration;
+
   /// Called by root in genesis to initialize the GAS coin
-  public fun migrate_legacy_user(
+  public(friend) fun migrate_legacy_user(
       vm: &signer,
       user_sig: &signer,
       auth_key: vector<u8>,
@@ -94,7 +97,7 @@ module ol_framework::genesis_migration {
 
     /// for an uprade using an escrow percent. Only to be called at genesis
   // escrow percent has 6 decimal precision (1m);
-  public fun fork_escrow_init(vm: &signer, user_sig: &signer, to_escrow: u64) {
+  public(friend) fun fork_escrow_init(vm: &signer, user_sig: &signer, to_escrow: u64) {
     system_addresses::assert_vm(vm);
     let user_addr = signer::address_of(user_sig);
     // shouldn't be tracking slow wallets at this point, do a direct withdraw
