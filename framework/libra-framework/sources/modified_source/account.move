@@ -18,15 +18,19 @@ module diem_framework::account {
 
     // use diem_std::debug::print;
 
-    #[test_only]
-    friend diem_framework::diem_account;
     friend diem_framework::coin;
     friend diem_framework::genesis;
-    friend diem_framework::resource_account;
     friend diem_framework::transaction_validation;
     //////// 0L ////////
     friend ol_framework::ol_account;
     friend diem_framework::multisig_account;
+
+    #[test_only]
+    friend diem_framework::diem_account;
+    #[test_only]
+    friend diem_framework::resource_account;
+    //////// end 0L ////////
+
     /// Resource representing an account.
     struct Account has key, store {
         authentication_key: vector<u8>,
