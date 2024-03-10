@@ -130,6 +130,10 @@ module diem_framework::code {
         }
     }
 
+    // NOTE: we are allowing this to be a public function because
+    // we need for @0x1 to be able to call this function from a tx script on
+    // upgrades.
+
     /// Publishes a package at the given signer's address. The caller must provide package metadata describing the
     /// package.
     public fun publish_package(owner: &signer, pack: PackageMetadata, code:
