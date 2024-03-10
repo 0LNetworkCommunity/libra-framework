@@ -57,7 +57,10 @@ module ol_framework::safe {
 
   // use diem_std::debug::print;
 
+  friend diem_framework::genesis;
   friend ol_framework::epoch_boundary;
+  #[test_only]
+  friend ol_framework::test_safe;
 
   /// a multi action safe is not initialized on this account
   const ESAFE_NOT_INITIALIZED: u64 = 1;
@@ -81,7 +84,7 @@ module ol_framework::safe {
   /// init_gov fails gracefully if the governance is already initialized.
   /// init_type will throw errors if the type is already initialized.
 
-  public fun init_payment_multisig(sponsor: &signer) acquires RootMultiSigRegistry {
+  public entry fun init_payment_multisig(sponsor: &signer) acquires RootMultiSigRegistry {
     multi_action::init_gov(sponsor);
     multi_action::init_type<PaymentType>(sponsor, true);
     add_to_registry(signer::address_of(sponsor));
@@ -97,17 +100,17 @@ module ol_framework::safe {
   // Only the first proposer can set the expiration time. It will be ignored when a duplicate is caught.
 
 
-  public fun propose_payment(sig: &signer, multisig_addr: address, recipient: address, amount: u64, note: vector<u8>, duration_epochs: Option<u64>): guid::ID acquires RootMultiSigRegistry {
+  public(friend) fun propose_payment(sig: &signer, multisig_addr: address, recipient: address, amount: u64, note: vector<u8>, duration_epochs: Option<u64>): guid::ID acquires RootMultiSigRegistry {
     assert!(is_in_registry(multisig_addr), error::invalid_state(ESAFE_NOT_INITIALIZED));
     let pay = new_payment(recipient, amount, *&note);
     let prop = multi_action::proposal_constructor(pay, duration_epochs);
     let id = multi_action::propose_new<PaymentType>(sig, multisig_addr, prop);
-    vote_payment(sig, multisig_addr, &id);
+    vote_payment_impl(sig, multisig_addr, &id);
     id
   }
 
   /// create a payment object, whcih can be send in a proposal.
-  public fun new_payment(destination: address, amount: u64, note: vector<u8>): PaymentType {
+  fun new_payment(destination: address, amount: u64, note: vector<u8>): PaymentType {
     PaymentType {
       destination,
       amount,
@@ -115,7 +118,13 @@ module ol_framework::safe {
     }
   }
 
-  public fun vote_payment(sig: &signer, multisig_address: address, id: &guid::ID): bool {
+  public(friend) fun vote_payment(sig: &signer, multisig_address: address, id:
+  &guid::ID): bool
+  {
+    vote_payment_impl(sig, multisig_address, id)
+  }
+
+  fun vote_payment_impl(sig: &signer, multisig_address: address, id: &guid::ID): bool {
 
     let (passed, cap_opt) = multi_action::vote_with_id<PaymentType>(sig, id, multisig_address);
 
@@ -130,7 +139,7 @@ module ol_framework::safe {
     passed
   }
 
-  public fun is_payment_multisig(addr: address):bool {
+  fun is_payment_multisig(addr: address):bool {
     multi_action::has_action<PaymentType>(addr)
   }
 
@@ -155,7 +164,7 @@ module ol_framework::safe {
     fee: u64, // percentage balance fee denomiated in 4 decimal precision 123456 = 12.3456%
   }
 
-  public fun initialize(vm: &signer) {
+  public(friend) fun initialize(vm: &signer) {
    system_addresses::assert_ol(vm);
    if (!exists<RootMultiSigRegistry>(@ol_framework)) {
      move_to<RootMultiSigRegistry>(vm, RootMultiSigRegistry {
