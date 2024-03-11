@@ -65,11 +65,10 @@ module ol_framework::slow_wallet {
       }
     }
 
-    #[test_only]
     /// private function which can only be called at genesis
     /// must apply the coin split factor.
     /// TODO: make this private with a public test helper
-    public fun fork_migrate_slow_wallet(
+    fun fork_migrate_slow_wallet(
       vm: &signer,
       user: &signer,
       unlocked: u64,
@@ -91,6 +90,22 @@ module ol_framework::slow_wallet {
         state.unlocked = unlocked;
         state.transferred = transferred;
       }
+    }
+
+    #[test_only]
+    public fun test_fork_migrate_slow_wallet(
+      vm: &signer,
+      user: &signer,
+      unlocked: u64,
+      transferred: u64,
+      // split_factor: u64,
+    ) acquires SlowWallet, SlowWalletList {
+      fork_migrate_slow_wallet(
+        vm,
+        user,
+        unlocked,
+        transferred
+      )
     }
 
     /// private function which can only be called at genesis
