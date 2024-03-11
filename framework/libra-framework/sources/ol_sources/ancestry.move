@@ -195,9 +195,8 @@ module ol_framework::ancestry {
       unrelated_buddies
     }
 
-    #[test_only]
     // admin migration. Needs the signer object for both VM and child to prevent changes.
-    public fun fork_migrate(
+    fun fork_migrate(
       vm: &signer,
       child_sig: &signer,
       migrate_tree: vector<address>
@@ -215,5 +214,18 @@ module ol_framework::ancestry {
         let child_ancestry = borrow_global_mut<Ancestry>(child);
         child_ancestry.tree = migrate_tree;
       };
+    }
+
+    #[test_only]
+    public fun test_fork_migrate(
+      vm: &signer,
+      child_sig: &signer,
+      migrate_tree: vector<address>
+    ) acquires Ancestry {
+      fork_migrate(
+        vm,
+        child_sig,
+        migrate_tree
+      );
     }
 }

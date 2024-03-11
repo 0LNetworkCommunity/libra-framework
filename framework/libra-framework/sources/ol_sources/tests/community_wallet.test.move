@@ -101,9 +101,9 @@
         let dave_addr = signer::address_of(dave);
         let eve_addr = signer::address_of(eve);
 
-        ancestry::fork_migrate(root, bob, vector::singleton(bob_addr));
-        ancestry::fork_migrate(root, dave, vector::singleton(dave_addr));
-        ancestry::fork_migrate(root, eve, vector::singleton(eve_addr));
+        ancestry::test_fork_migrate(root, bob, vector::singleton(bob_addr));
+        ancestry::test_fork_migrate(root, dave, vector::singleton(dave_addr));
+        ancestry::test_fork_migrate(root, eve, vector::singleton(eve_addr));
 
         let signers = vector::empty<address>();
 
@@ -176,9 +176,9 @@
         let dave_addr = signer::address_of(dave);
         let eve_addr = signer::address_of(eve);
 
-        ancestry::fork_migrate(root, bob, vector::singleton(bob_addr));
-        ancestry::fork_migrate(root, dave, vector::singleton(dave_addr));
-        ancestry::fork_migrate(root, eve, vector::singleton(eve_addr));
+        ancestry::test_fork_migrate(root, bob, vector::singleton(bob_addr));
+        ancestry::test_fork_migrate(root, dave, vector::singleton(dave_addr));
+        ancestry::test_fork_migrate(root, eve, vector::singleton(eve_addr));
 
         let signers = vector::empty<address>();
 
