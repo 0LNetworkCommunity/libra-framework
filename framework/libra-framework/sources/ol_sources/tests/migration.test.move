@@ -5,8 +5,8 @@ module ol_framework::test_migration {
   use ol_framework::slow_wallet;
   use ol_framework::ol_account;
   use ol_framework::mock;
-  use diem_framework::coin;
-  use ol_framework::libra_coin::LibraCoin;
+  // use diem_framework::coin;
+  use ol_framework::libra_coin;
   use std::signer;
   use std::bcs;
 
@@ -42,7 +42,7 @@ module ol_framework::test_migration {
       init_balance,
     );
 
-    let user_balance = coin::balance<LibraCoin>(addr);
+    let user_balance = libra_coin::balance(addr);
 
     assert!(user_balance == init_balance, 73570000);
 
@@ -72,7 +72,7 @@ module ol_framework::test_migration {
 
     assert!(all_pledge_balance == user_pledge, 73570005);
 
-    let updated_balance = coin::balance<LibraCoin>(addr);
+    let updated_balance = libra_coin::balance(addr);
 
     assert!((updated_balance + user_pledge) == init_balance, 73570006);
   }

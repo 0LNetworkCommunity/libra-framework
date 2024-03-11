@@ -6,7 +6,7 @@ module diem_framework::transaction_validation {
 
     use diem_framework::account;
     // use diem_framework::diem_coin::DiemCoin;
-    use ol_framework::libra_coin::LibraCoin;
+    use ol_framework::libra_coin::{Self, LibraCoin};
     use diem_framework::chain_id;
     use diem_framework::coin;
     use diem_framework::system_addresses;
@@ -111,7 +111,7 @@ module diem_framework::transaction_validation {
             coin::is_account_registered<LibraCoin>(transaction_sender),
             error::invalid_argument(PROLOGUE_ECANT_PAY_GAS_DEPOSIT),
         );
-        let balance = coin::balance<LibraCoin>(transaction_sender);
+        let balance = libra_coin::balance(transaction_sender);
         assert!(balance >= max_transaction_fee, error::invalid_argument(PROLOGUE_ECANT_PAY_GAS_DEPOSIT));
     }
 
@@ -195,7 +195,7 @@ module diem_framework::transaction_validation {
         // it's important to maintain the error code consistent with vm
         // to do failed transaction cleanup.
         assert!(
-            coin::balance<LibraCoin>(addr) >= transaction_fee_amount,
+            libra_coin::balance(addr) >= transaction_fee_amount,
             error::out_of_range(PROLOGUE_ECANT_PAY_GAS_DEPOSIT),
         );
 

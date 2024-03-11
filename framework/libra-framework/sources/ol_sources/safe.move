@@ -48,9 +48,9 @@ module ol_framework::safe {
   use std::guid;
   use std::error;
   use diem_framework::account::WithdrawCapability;
-  use diem_framework::coin;
+  // use diem_framework::coin;
   use ol_framework::ol_account;
-  use ol_framework::libra_coin::LibraCoin;
+  use ol_framework::libra_coin;
   use ol_framework::multi_action;
   use ol_framework::system_addresses;
   use ol_framework::transaction_fee;
@@ -203,13 +203,13 @@ module ol_framework::safe {
 
       let pct = fixed_point32::create_from_rational(reg.fee, PERCENT_SCALE);
 
-      let fee = fixed_point32::multiply_u64(coin::balance<LibraCoin>(*multi_sig_addr), pct);
+      let fee = fixed_point32::multiply_u64(libra_coin::balance(*multi_sig_addr), pct);
       expected_fees = expected_fees + fee;
 
       let coin_opt = ol_account::vm_withdraw_unlimited(vm, *multi_sig_addr, fee);
       if (option::is_some(&coin_opt)) {
         let c = option::extract(&mut coin_opt);
-        security_bill_amount = security_bill_amount + coin::value(&c);
+        security_bill_amount = security_bill_amount + libra_coin::value(&c);
         security_bill_count = security_bill_count + 1;
         transaction_fee::vm_pay_fee(vm, *multi_sig_addr, c);
       };

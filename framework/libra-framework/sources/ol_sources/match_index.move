@@ -2,7 +2,7 @@
 module ol_framework::match_index {
   use diem_framework::system_addresses;
   use ol_framework::cumulative_deposits;
-  use ol_framework::libra_coin::LibraCoin;
+  use ol_framework::libra_coin::{Self, LibraCoin};
   use ol_framework::ol_account;
   use diem_framework::coin::{Self, Coin};
   use diem_framework::transaction_fee;
@@ -109,7 +109,7 @@ module ol_framework::match_index {
     // which is what would happen if the coin didn't get emptied here
     let remainder_amount = coin::value(coin);
     if (remainder_amount > 0) {
-      let last_coin = coin::extract(coin, remainder_amount);
+      let last_coin = libra_coin::extract(coin, remainder_amount);
       // use pay_fee which doesn't track the sender, so we're not double counting the receipts, even though it's a small amount.
       transaction_fee::vm_pay_fee(vm, @ol_framework, last_coin);
     };
@@ -131,7 +131,7 @@ module ol_framework::match_index {
 
       let payee = *vector::borrow<address>(&list, i);
       let amount_to_payee = get_payee_share(payee, total_coin_value_to_recycle);
-      let coin_split = coin::extract(coin, amount_to_payee);
+      let coin_split = libra_coin::extract(coin, amount_to_payee);
       ol_account::deposit_coins(
           payee,
           coin_split,

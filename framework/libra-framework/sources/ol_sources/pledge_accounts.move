@@ -44,7 +44,7 @@
         use std::error;
         use std::option::{Self, Option};
         use std::fixed_point64;
-        use ol_framework::libra_coin::LibraCoin;
+        use ol_framework::libra_coin::{Self, LibraCoin};
         use ol_framework::ol_account;
         use ol_framework::epoch_helper;
         use ol_framework::burn;
@@ -170,7 +170,7 @@
           let (found, idx) = pledge_at_idx(&pledger, &address_of_beneficiary);
           let value = coin::value(pledge);
           if (found) {
-            let c = coin::extract(pledge, value);
+            let c = libra_coin::extract(pledge, value);
             add_coin_to_pledge_account(pledger, idx, c)
           }
           // caller of this function needs to decide what to do if the coin cannot be added. Which is why its a mutable reference.
@@ -218,7 +218,7 @@
           pledge_account.lifetime_pledged = pledge_account.lifetime_pledged + amount;
 
           // merge the coins in the account
-          coin::merge(&mut pledge_account.pledge, coin);
+          libra_coin::merge(&mut pledge_account.pledge, coin);
 
           // must add pledger address the ProjectPledgers list on beneficiary account
 
@@ -270,7 +270,7 @@
 
                   let temp = option::extract(&mut all_coins);
                   let coin =  option::extract(&mut c);
-                  coin::merge(&mut temp, coin);
+                  libra_coin::merge(&mut temp, coin);
                   option::destroy_none(all_coins);
                   all_coins = option::some(temp);
                   option::destroy_none(c);
@@ -309,7 +309,7 @@
                   pledge_account.lifetime_withdrawn = pledge_account.lifetime_withdrawn + amount;
 
 
-                  let coin = coin::extract(&mut pledge_account.pledge, amount);
+                  let coin = libra_coin::extract(&mut pledge_account.pledge, amount);
 
                   // return coin
 
@@ -370,7 +370,7 @@
 
                 bp.lifetime_withdrawn = bp.lifetime_withdrawn + downcast_withdraw;
 
-                let coin = coin::extract(&mut pledge_account.pledge, downcast_withdraw);
+                let coin = libra_coin::extract(&mut pledge_account.pledge, downcast_withdraw);
                 return option::some(coin)
               };
             option::none()

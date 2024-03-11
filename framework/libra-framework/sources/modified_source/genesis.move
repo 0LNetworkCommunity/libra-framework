@@ -44,8 +44,7 @@ module diem_framework::genesis {
     use ol_framework::testnet;
     use ol_framework::epoch_boundary;
     use ol_framework::sacred_cows;
-    #[test_only]
-    use ol_framework::libra_coin::LibraCoin;
+
     //////// end 0L ////////
 
 
@@ -444,7 +443,7 @@ module diem_framework::genesis {
         let test_signer_before = create_account(diem_framework, addr, 15);
         let test_signer_after = create_account(diem_framework, addr, 500);
         assert!(test_signer_before == test_signer_after, 0);
-        assert!(coin::balance<LibraCoin>(addr) == 0, 1); //////// 0L ////////
+        assert!(libra_coin::balance(addr) == 0, 1); //////// 0L ////////
     }
 
     #[test(diem_framework = @0x1)]
@@ -468,10 +467,10 @@ module diem_framework::genesis {
         ];
 
         create_accounts(diem_framework, accounts);
-        assert!(coin::balance<LibraCoin>(addr0) == 0, 0); //////// 0L //////// no coins minted at genesis
-        assert!(coin::balance<LibraCoin>(addr1) == 0, 1); //////// 0L ////////
+        assert!(libra_coin::balance(addr0) == 0, 0); //////// 0L //////// no coins minted at genesis
+        assert!(libra_coin::balance(addr1) == 0, 1); //////// 0L ////////
 
         create_account(diem_framework, addr0, 23456);
-        assert!(coin::balance<LibraCoin>(addr0) == 0, 2); //////// 0L ////////
+        assert!(libra_coin::balance(addr0) == 0, 2); //////// 0L ////////
     }
 }

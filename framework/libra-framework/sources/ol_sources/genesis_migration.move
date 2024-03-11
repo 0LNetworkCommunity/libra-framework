@@ -62,7 +62,7 @@ module ol_framework::genesis_migration {
 
     // Genesis validators should not receive ANY coins from MINT during testing, testnet, nor mainnet up to this point.
     // they will receive some from the infra escrow.
-    let genesis_balance = coin::balance<LibraCoin>(user_addr);
+    let genesis_balance = libra_coin::balance(user_addr);
 
     assert!(expected_initial_balance >= genesis_balance, error::invalid_state(EGENESIS_BALANCE_TOO_HIGH));
 
@@ -70,7 +70,7 @@ module ol_framework::genesis_migration {
     let c = coin::vm_mint<LibraCoin>(vm, coins_to_mint);
     ol_account::deposit_coins(user_addr, c);
 
-    let new_balance = coin::balance<LibraCoin>(user_addr);
+    let new_balance = libra_coin::balance(user_addr);
 
     assert!(new_balance == expected_initial_balance, error::invalid_state(EBALANCE_MISMATCH));
 

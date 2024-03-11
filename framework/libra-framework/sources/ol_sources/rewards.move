@@ -4,7 +4,7 @@ module ol_framework::rewards {
   use diem_framework::coin::{Self, Coin};
   use diem_framework::stake;
   use diem_framework::system_addresses;
-  use ol_framework::libra_coin::LibraCoin;
+  use ol_framework::libra_coin::{Self, LibraCoin};
   use ol_framework::ol_account;
 
   // use diem_std::debug::print;
@@ -43,7 +43,7 @@ module ol_framework::rewards {
     let i = 0;
     while (i < vector::length(&list)) {
       // split off the reward amount per validator from coin
-      let user_coin = coin::extract(reward_budget, reward_per);
+      let user_coin = libra_coin::extract(reward_budget, reward_per);
       pay_reward(root, *vector::borrow(&list, i), user_coin, reward_type);
       // TODO: emit payment event in stake.move
       i = i + 1;

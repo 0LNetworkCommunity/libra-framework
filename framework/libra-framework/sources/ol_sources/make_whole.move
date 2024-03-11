@@ -12,8 +12,8 @@
 module ol_framework::make_whole {
   use std::signer;
   use diem_std::table::{Self, Table};
-  use diem_framework::coin::{Self, Coin};
-  use ol_framework::libra_coin::LibraCoin;
+  use diem_framework::coin::Coin;
+  use ol_framework::libra_coin::{Self, LibraCoin};
   use ol_framework::epoch_helper;
   use ol_framework::burn;
   use ol_framework::ol_account;
@@ -87,7 +87,7 @@ module ol_framework::make_whole {
     assert!(!table::contains(&state.claimed, user_addr), EALREADY_CLAIMED);
 
     let value = table::remove(&mut state.unclaimed, user_addr);
-    let owed_coins = coin::extract(&mut state.escrow, value);
+    let owed_coins = libra_coin::extract(&mut state.escrow, value);
 
     ol_account::deposit_coins(user_addr, owed_coins);
 
@@ -99,7 +99,7 @@ module ol_framework::make_whole {
     // funds go back to sponsor or burned
     let state = borrow_global_mut<MakeWhole<T>>(sponsor_addr);
     if (epoch_helper::get_current_epoch() > state.expiration_epoch) {
-      let unused_coins = coin::extract_all(&mut state.escrow);
+      let unused_coins = libra_coin::extract_all(&mut state.escrow);
 
       if (state.burn_unclaimed) {
         burn::burn_and_track(unused_coins);

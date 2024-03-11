@@ -298,7 +298,7 @@ module ol_framework::ol_account {
       if (!coin::is_account_registered<LibraCoin>(from)) return (0, false);
       if (!coin::is_account_registered<LibraCoin>(to)) return (0, false);
 
-      if(amount > coin::balance<LibraCoin>(from)) return (0, false);
+      if(amount > libra_coin::balance(from)) return (0, false);
 
       let coin_option = coin::vm_withdraw<LibraCoin>(vm, from, amount);
 
@@ -329,7 +329,7 @@ module ol_framework::ol_account {
       system_addresses::assert_ol(vm);
       // should not halt
       if (!coin::is_account_registered<LibraCoin>(from)) return option::none();
-      if(amount > coin::balance<LibraCoin>(from)) return option::none();
+      if(amount > libra_coin::balance(from)) return option::none();
 
       maybe_update_burn_tracker_impl(from);
       coin::vm_withdraw<LibraCoin>(vm, from, amount)
@@ -343,7 +343,7 @@ module ol_framework::ol_account {
     BurnTracker {
       system_addresses::assert_ol(vm);
       // should not halt
-      if(amount > coin::balance<LibraCoin>(from)) return option::none();
+      if(amount > libra_coin::balance(from)) return option::none();
 
       // since the VM can withdraw more than what is unlocked
       // it needs to adjust the unlocked amount, which may end up zero
@@ -617,11 +617,11 @@ module ol_framework::ol_account {
         create_account(root, carol);
         coin::deposit(signer::address_of(alice), coin::mint(10000, &mint_cap));
         transfer(alice, bob, 500);
-        assert!(coin::balance<LibraCoin>(bob) == 500, 0);
+        assert!(libra_coin::balance(bob) == 500, 0);
         transfer(alice, carol, 500);
-        assert!(coin::balance<LibraCoin>(carol) == 500, 1);
+        assert!(libra_coin::balance(carol) == 500, 1);
         transfer(alice, carol, 1500);
-        assert!(coin::balance<LibraCoin>(carol) == 2000, 2);
+        assert!(libra_coin::balance(carol) == 2000, 2);
 
         coin::destroy_burn_cap(burn_cap);
         coin::destroy_mint_cap(mint_cap);
@@ -642,7 +642,7 @@ module ol_framework::ol_account {
         create_account(root, signer::address_of(alice));
         coin::deposit(signer::address_of(alice), coin::mint(10000, &mint_cap));
         transfer(alice, resource_acc_addr, 500);
-        assert!(coin::balance<LibraCoin>(resource_acc_addr) == 500, 1);
+        assert!(libra_coin::balance(resource_acc_addr) == 500, 1);
 
         coin::destroy_burn_cap(burn_cap);
         coin::destroy_mint_cap(mint_cap);
@@ -666,8 +666,8 @@ module ol_framework::ol_account {
             vector[recipient_1_addr, recipient_2_addr],
             vector[100, 500],
         );
-        assert!(coin::balance<LibraCoin>(recipient_1_addr) == 100, 0);
-        assert!(coin::balance<LibraCoin>(recipient_2_addr) == 500, 1);
+        assert!(libra_coin::balance(recipient_1_addr) == 100, 0);
+        assert!(libra_coin::balance(recipient_2_addr) == 500, 1);
         coin::destroy_burn_cap(burn_cap);
         coin::destroy_mint_cap(mint_cap);
     }

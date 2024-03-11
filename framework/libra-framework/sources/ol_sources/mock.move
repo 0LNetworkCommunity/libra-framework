@@ -187,7 +187,7 @@ module ol_framework::mock {
         let c = coin::test_mint(amount, &mint_cap);
         ol_account::deposit_coins(*addr, c);
 
-        let b = coin::balance<LibraCoin>(*addr);
+        let b = libra_coin::balance(*addr);
         assert!(b == amount, 0001);
 
 

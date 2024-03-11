@@ -12,6 +12,7 @@ module diem_framework::aggregator_factory {
 
     friend diem_framework::genesis;
     friend diem_framework::optional_aggregator;
+    friend diem_framework::coin;
 
     /// Aggregator factory is not published yet.
     const EAGGREGATOR_FACTORY_NOT_FOUND: u64 = 1;
@@ -45,7 +46,7 @@ module diem_framework::aggregator_factory {
 
     /// This is currently a function closed for public. This can be updated in the future by on-chain governance
     /// to allow any signer to call.
-    public fun create_aggregator(account: &signer, limit: u128): Aggregator acquires AggregatorFactory {
+    public(friend) fun create_aggregator(account: &signer, limit: u128): Aggregator acquires AggregatorFactory {
         // Only Diem Framework (0x1) account can call this for now.
         system_addresses::assert_diem_framework(account);
         create_aggregator_internal(limit)
