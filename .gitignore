@@ -22,3 +22,6 @@ sccache.log
 
 # formal verification files
 *.bpl
+
+# exclude diem dependency
+diem/
