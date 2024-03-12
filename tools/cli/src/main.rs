@@ -29,36 +29,55 @@ enum Sub {
     Wallet(WalletCli),
 }
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<()> {
     let cli = LibraCli::parse();
     match cli.command {
-        Some(Sub::Config(config_cli)) => {
-            config_cli.run().await?;
-        }
-        Some(Sub::Move(move_tool)) => {
-            move_tool
-                .execute()
-                .await
-                .map_err(|e| anyhow!("Failed to execute move tool, message: {}", &e))?;
-        }
         Some(Sub::Node(n)) => {
-            n.run().await?;
-        }
-        Some(Sub::Query(query_cli)) => {
-            query_cli.run().await?;
-        }
-        Some(Sub::Tower(tower_cli)) => {
-            tower_cli.run().await?;
-        }
-        Some(Sub::Txs(txs_cli)) => {
-            txs_cli.run().await?;
-        }
-        Some(Sub::Wallet(wallet_cli)) => {
-            wallet_cli.run().await?;
+            n.run()?;
         }
         _ => {
-            println!("\nliving is easy with eyes closed")
+            let rt = tokio::runtime::Runtime::new()?;
+            rt.block_on(async {
+                match cli.command {
+                    Some(Sub::Config(config_cli)) => {
+                        if let Err(e) = config_cli.run().await {
+                            eprintln!("Failed to execute config tool, message: {}", &e);
+                        }
+                    }
+                    Some(Sub::Move(move_tool)) => {
+                        if let Err(e) = move_tool
+                            .execute()
+                            .await
+                            .map_err(|e| anyhow!("Failed to execute move tool, message: {}", &e))
+                        {
+                            eprintln!("Failed to execute move tool, message: {}", &e);
+                        }
+                    }
+                    Some(Sub::Query(query_cli)) => {
+                        if let Err(e) = query_cli.run().await {
+                            eprintln!("Failed to execute query tool, message: {}", &e);
+                        }
+                    }
+                    Some(Sub::Tower(tower_cli)) => {
+                        if let Err(e) = tower_cli.run().await {
+                            eprintln!("Failed to execute tower tool, message: {}", &e);
+                        }
+                    }
+                    Some(Sub::Txs(txs_cli)) => {
+                        if let Err(e) = txs_cli.run().await {
+                            eprintln!("Failed to execute txs tool, message: {}", &e);
+                        }
+                    }
+                    Some(Sub::Wallet(wallet_cli)) => {
+                        if let Err(e) = wallet_cli.run().await {
+                            eprintln!("Failed to execute wallet tool, message: {}", &e);
+                        }
+                    }
+                    _ => {
+                        println!("\nliving is easy with eyes closed")
+                    }
+                }
+            });
         }
     }
 

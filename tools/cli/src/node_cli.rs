@@ -13,7 +13,7 @@ pub struct NodeCli {
 }
 
 impl NodeCli {
-    pub async fn run(&self) -> anyhow::Result<()> {
+    pub fn run(&self) -> anyhow::Result<()> {
         // validators typically aren't looking for verbose logs.
         // but they can set it if they wish with RUST_LOG=info
         if std::env::var("RUST_LOG").is_err() {
