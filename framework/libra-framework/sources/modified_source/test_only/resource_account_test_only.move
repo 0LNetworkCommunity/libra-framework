@@ -1,3 +1,4 @@
+
 /// A resource account is used to manage resources independent of an account managed by a user.
 /// This contains several utilities to make using resource accounts more effective.
 ///
@@ -58,6 +59,7 @@
 ///    module.resource_signer_cap = option::some(resource_signer_cap);
 /// }
 /// ```
+
 module diem_framework::resource_account {
     use std::error;
     use std::signer;
