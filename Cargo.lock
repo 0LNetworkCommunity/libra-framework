@@ -5797,6 +5797,7 @@ dependencies = [
  "libra-smoke-tests",
  "libra-types",
  "libra-wallet",
+ "serde 1.0.163",
  "serde_json",
  "serde_yaml 0.8.26",
  "smoke-test",

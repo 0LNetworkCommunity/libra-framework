@@ -30,6 +30,7 @@ serde_json = { workspace = true }
 serde_yaml = { workspace = true }
 tokio = { workspace = true }
 url = { workspace = true }
+serde = { version = "1.0.163", features = ["derive"] }
 
 [dev-dependencies]
 diem-temppath = { workspace = true }
