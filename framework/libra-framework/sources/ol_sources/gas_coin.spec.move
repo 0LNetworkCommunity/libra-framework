@@ -1,4 +1,4 @@
-spec diem_framework::diem_coin {
+spec diem_framework::diem_coin  {
     spec module {
         pragma verify = true;
         pragma aborts_if_is_strict;
@@ -8,7 +8,7 @@ spec diem_framework::diem_coin {
         pragma aborts_if_is_partial;
         let addr = signer::address_of(diem_framework);
         ensures exists<MintCapStore>(addr);
-        ensures exists<coin::CoinInfo<DiemCoin>>(addr);
+        ensures exists<coin::CoinInfo<GasCoin>>(addr);
     }
 
     spec destroy_mint_cap {
