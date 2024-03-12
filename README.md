@@ -17,10 +17,8 @@ There isn't any code regarding database, consensus, networking, virtual machines
 # Technology Strategy
 In general, we have a light touch approach with our upstream dependencies, and optimize for clean APIs easily pull changes from vendors (and even ultimately have freedom to change infrastructure vendors).
 
-[Read Engineering Strategy](./docs/core_devs/0_engineering_strategy.md)
+[Read More on Technology Strategy](./docs/core_devs/0_engineering_strategy.md)
 
 ### [Go To Documentation](./docs/README.md)
-
-Smart Contract Devs should [start here](./docs/publishing_smart_contracts.md).
 
 Core Devs should [start here](./docs/core_devs/dev_quick_start.md).
