@@ -43,3 +43,5 @@ diem-temppath = { workspace = true }
 regex = { workspace = true }
 serde_json = { workspace = true }
 smoke-test = { workspace = true }
+# diem-validator-interface = { workspace = true }
+diem-debugger = { workspace = true }
