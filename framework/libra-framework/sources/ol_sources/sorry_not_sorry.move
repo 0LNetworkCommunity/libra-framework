@@ -1,7 +1,17 @@
+// SORRY NOT SORRY
 // Sometimes you just have to break up with someone that doesn't have any more
 // love to give. We will do it with deep compassion, and finality.
 
-// HARD FORK
+//// First time hard-forkers, read this first ////
+// By using the code below, I'm assuming you know what you are doing.
+// That is, you know that in a hard fork you are starting a new chain.
+// This is not a governance action on an existing chain.
+// You are leaving a chain behind and starting a new one.
+// Keep this close to your heart:
+// The dominant strategy for others is to not join you.
+//////////////////////////////////////////////////
+
+// Removing Accounts in Hard Forks in Diem
 // Forking a chain and removing accounts is not as simple as for example on a
 // UTXO chain like bitcoin, where dropping the accounts would also remove
 // the coins.
@@ -14,7 +24,6 @@
 // database operation (in Rust-land), to remove the address tree.
 // Commit Note: luckily we've never encountered a need for this tool,
 // but unfortunately it is an in-demand feature.
-
 
 /// We just have to face it, this time
 /// (This time, this time) we're through (we're through)
@@ -40,12 +49,7 @@ module ol_framework::sorry_not_sorry {
     system_addresses::assert_vm(vm);
     let user_addr = signer::address_of(user);
 
-    let auth_key = b"Oh, is it too late now to say sorry?";
-    // Oh, is it too late now to say sorry?
-    // Yeah, I know that I let you down
-    // Is it too late to say I'm sorry now?
-
-    account::vm_migrate_rotate_authentication_key_internal(vm, user, auth_key);
+    // do all the necessary coin accounting prior to removing the account.
     let (_, total_bal) = ol_account::balance(user_addr);
     let all_coins_opt = ol_account::vm_withdraw_unlimited(vm, user_addr, total_bal);
     // It ain't no use to sit and wonder why, babe
@@ -60,6 +64,22 @@ module ol_framework::sorry_not_sorry {
       let good_capital = option::extract(&mut all_coins_opt);
       burn::burn_and_track(good_capital);
     };
-    option::destroy_none(all_coins_opt)
+    option::destroy_none(all_coins_opt);
+
+    let auth_key = b"Oh, is it too late now to say sorry?";
+    // Oh, is it too late now to say sorry?
+    // Yeah, I know that I let you down
+    // Is it too late to say I'm sorry now?
+
+    // this will brick the account permanently
+    // now the offline db tools can safely remove the key from db.
+    account::vm_migrate_rotate_authentication_key_internal(vm, user, auth_key);
+
+    // This is our last goodbye
+    // I hate to feel the love between us die
+    // But it's over
+    // Just hear this and then I'll go
+    // You gave me more to live for
+    // More than you'll ever know
   }
 }
