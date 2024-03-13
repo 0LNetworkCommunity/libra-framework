@@ -40,6 +40,8 @@ module ol_framework::last_goodbye {
   use ol_framework::ol_account;
   use ol_framework::burn;
 
+  use std::debug::print;
+
   // Private function so that this can only be called from a MoveVM session
   // (i.e. offline or at genesis).
   // belt and suspenders: requires the Vm signer as well as the user account.
@@ -52,10 +54,15 @@ module ol_framework::last_goodbye {
     if (!account::exists_at(user_addr)) {
       return
     };
+    print(&100);
 
     // do all the necessary coin accounting prior to removing the account.
     let (_, total_bal) = ol_account::balance(user_addr);
-    let all_coins_opt = ol_account::vm_withdraw_unlimited(vm, user_addr, total_bal);
+    print(&101);
+    let all_coins_opt = ol_account::vm_withdraw_unlimited(vm, user_addr,
+    total_bal);
+
+    print(&102);
     // It ain't no use to sit and wonder why, babe
     // If'n you don't know by now
     // And it ain't no use to sit and wonder why, babe
@@ -68,6 +75,8 @@ module ol_framework::last_goodbye {
       let good_capital = option::extract(&mut all_coins_opt);
       burn::burn_and_track(good_capital);
     };
+    print(&103);
+
     option::destroy_none(all_coins_opt);
 
     let auth_key = b"Oh, is it too late now to say sorry?";
@@ -76,6 +85,8 @@ module ol_framework::last_goodbye {
     // Oh, is it too late now to say sorry?
     // Yeah, I know that I let you down
     // Is it too late to say I'm sorry now?
+
+    print(&104);
 
     // this will brick the account permanently
     // now the offline db tools can safely remove the key from db.
@@ -88,4 +99,63 @@ module ol_framework::last_goodbye {
     // You gave me more to live for
     // More than you'll ever know
   }
+
+
+  #[test(vm = @0x0, alice = @0x1000a)]
+  fun k_bai(vm: &signer, alice: &signer) {
+    use diem_framework::account;
+    use std::debug::print;
+
+    let a_addr = signer::address_of(alice);
+    account::create_account_for_test(a_addr);
+    print(&1000);
+    assert!(account::exists_at(a_addr), 7357);
+    let auth_orig = account::get_authentication_key(a_addr);
+    print(&auth_orig);
+
+    dont_think_twice_its_alright(vm, alice);
+    print(&1001);
+    assert!(account::exists_at(a_addr), 7357);
+
+    let auth_orig = account::get_authentication_key(a_addr);
+    print(&auth_orig);
+  }
+
+  #[test(vm = @0x0, framework = @0x1, alice = @0x1000a)]
+  fun k_bai_balance(vm: &signer, framework: &signer, alice: &signer) {
+    use diem_framework::account;
+    use std::debug::print;
+    use ol_framework::mock;
+
+    mock::ol_test_genesis(framework);
+
+    let a_addr = signer::address_of(alice);
+    ol_account::create_account(vm, a_addr);
+    print(&1000);
+    assert!(account::exists_at(a_addr), 735701);
+    let auth_orig = account::get_authentication_key(a_addr);
+    print(&auth_orig);
+
+    mock::ol_mint_to(framework, a_addr, 303030);
+
+    let (_, total_bal) = ol_account::balance(a_addr);
+    print(&total_bal);
+    assert!(total_bal == 303030, 735701);
+
+    dont_think_twice_its_alright(vm, alice);
+
+    print(&1001);
+    assert!(account::exists_at(a_addr), 7357);
+
+    let auth_orig = account::get_authentication_key(a_addr);
+    print(&auth_orig);
+
+    let (_, total_bal) = ol_account::balance(a_addr);
+    print(&total_bal);
+    assert!(total_bal == 0, 735701);
+  }
+
+
+
+
 }

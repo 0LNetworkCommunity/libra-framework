@@ -13,23 +13,29 @@ use move_vm_types::gas::UnmeteredGasMeter;
 pub async fn test_last_goodbye() -> anyhow::Result<()> {
     // get a clean swarm db with current framework
     let mut smoke = LibraSmoke::new(None).await?;
-    let marlon_node = smoke.swarm.validators_mut().next().unwrap();
-    marlon_node.stop(); // should safely stop diem-node process, and prevent any DB locks.
-    let swarm_db_path = marlon_node.config().storage.dir();
+    let (_, addrs) = smoke.create_accounts(1).await?;
+    let bob = *addrs.get(0).unwrap();
+
+    smoke.transfer_from_first_val(bob, 100000).await?;
+
+    let val_one_node = smoke.swarm.validators_mut().next().unwrap();
+
+    val_one_node.stop(); // should safely stop diem-node process, and prevent any DB locks.
+    let swarm_db_path = val_one_node.config().storage.dir();
 
     let debug = DiemDebugger::db(swarm_db_path)?;
 
     let version = debug.get_latest_version().await?;
-    dbg!(&version);
+    // dbg!(&version);
 
     let vm_sig = MoveValue::Signer(AccountAddress::ZERO);
-    let marlon_sig = MoveValue::Signer(marlon_node.peer_id());
+    let bob_sig = MoveValue::Signer(bob);
 
 
     let _ = debug
         .run_session_at_version(version, |session| {
 
-            execute_fn(session, "last_goodbye", "dont_think_twice_its_alright", vec![&vm_sig, &marlon_sig]);
+            execute_fn(session, "last_goodbye", "dont_think_twice_its_alright", vec![&vm_sig, &bob_sig]);
 
             Ok(())
         })
