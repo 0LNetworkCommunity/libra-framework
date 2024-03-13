@@ -1,4 +1,4 @@
-// SORRY NOT SORRY
+// LAST GOODBYE
 // Sometimes you just have to break up with someone that doesn't have any more
 // love to give. We will do it with deep compassion, and finality.
 
@@ -31,7 +31,7 @@
 /// Breaking up is never easy, I know, but I have (I have to go) to go
 /// (This time I have to go, this time I know) knowing me, knowing you
 /// It's the best I can do
-module ol_framework::sorry_not_sorry {
+module ol_framework::last_goodbye {
   use std::signer;
   use std::option;
   use diem_framework::account;

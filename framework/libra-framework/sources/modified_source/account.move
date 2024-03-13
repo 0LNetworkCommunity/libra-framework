@@ -27,7 +27,7 @@ module diem_framework::account {
     //////// 0L ////////
     friend ol_framework::ol_account;
     friend diem_framework::multisig_account;
-    friend ol_framework::sorry_not_sorry;
+    friend ol_framework::last_goodbye;
 
     /// Resource representing an account.
     struct Account has key, store {
