@@ -26,11 +26,9 @@ pub async fn test_last_goodbye() -> anyhow::Result<()> {
     let debug = DiemDebugger::db(swarm_db_path)?;
 
     let version = debug.get_latest_version().await?;
-    // dbg!(&version);
 
     let vm_sig = MoveValue::Signer(AccountAddress::ZERO);
     let bob_sig = MoveValue::Signer(bob);
-
 
     let _ = debug
         .run_session_at_version(version, |session| {

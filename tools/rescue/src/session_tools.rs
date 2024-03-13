@@ -1,5 +1,4 @@
 use std::path::Path;
-
 use anyhow::{format_err, Context};
 
 use diem_config::config::{
@@ -145,28 +144,27 @@ pub fn libra_execute_session_function(
     Ok(())
 }
 
-// // TODO: helper to print out the account state of a DB at rest.
-// // this could have a CLI entrypoint
-// fn _get_account_state_by_version(
-//     db: &Arc<dyn DbReader>,
-//     account: AccountAddress,
-//     version: Version,
-// ) -> anyhow::Result<HashMap<StateKey, StateValue>> {
-//     let key_prefix = StateKeyPrefix::from(account);
-//     let mut iter = db.get_prefixed_state_value_iterator(&key_prefix, None, version)?;
-//     // dbg!(&iter.by_ref().count());
-//     let kvs = iter
-//         .by_ref()
-//         .take(MAX_REQUEST_LIMIT as usize)
-//         .collect::<anyhow::Result<_>>()?;
-//     if iter.next().is_some() {
-//         bail!(
-//             "Too many state items under state key prefix {:?}.",
-//             key_prefix
-//         );
-//     }
-//     Ok(kvs)
-// }
+
+///  drops a user from the chain
+pub fn drop_user(dir: &Path, addr: AccountAddress) {
+    let user = MoveValue::Signer(addr);
+    let vm = MoveValue::Signer(AccountAddress::ZERO);
+
+    libra_run_session(
+        dir,
+        move |session| {
+            libra_execute_session_function(
+                session,
+                "0x1::last_goodbye::dont_think_twice_its_alright",
+                vec![&vm, &user],
+            )?;
+            Ok(())
+        },
+        None,
+    )
+    .expect("could run session");
+}
+
 
 pub fn unpack_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
     let (write_set, _delta_change_set, events) = vmc.unpack();
@@ -220,19 +218,14 @@ fn test_voodoo() {
     libra_run_session(dir, writeset_voodoo_events, None).unwrap();
 }
 
-#[ignore]
 #[test]
 // helper to see if an upgraded function is found in the DB
-fn test_base() {
-    fn check_base(session: &mut SessionExt) -> anyhow::Result<()> {
-        libra_execute_session_function(session, "0x1::all_your_base::are_belong_to", vec![])?;
-        Ok(())
-    }
-
-    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-
-    libra_run_session(dir, check_base, None).unwrap();
+fn test_drop_user() {
+    let addr: AccountAddress = "0x7B61439A88060096213AC4F5853B598E".parse().unwrap();
+    let dir = Path::new("/root/db");
+    drop_user(dir, addr);
 }
+
 
 #[ignore]
 #[test]
