@@ -25,13 +25,18 @@ pub async fn repro_deserialize_debugger() -> anyhow::Result<()> {
     dbg!(&version);
     let rand = AccountAddress::random();
     let addr = MoveValue::Address(rand);
+    let sig = MoveValue::Signer(rand);
+
 
     let _ = debug
         .run_session_at_version(version, |session| {
             // let root = MoveValue::Signer("0x1".parse().unwrap());
-            // execute_fn(session, "create_signer", "create_signer", vec![&addr]);
+            // execute_fn(session, "create_signer", "create_signer",
+            // vec![&addr]);
+            execute_fn(session, "demo", "print_this", vec![&sig]);
 
-            execute_fn(session, "repro_deserialize", "maybe_aborts", vec![&addr]);
+
+            // execute_fn(session, "repro_deserialize", "maybe_aborts", vec![&addr]);
             Ok(())
         })
         .expect("could run session");
