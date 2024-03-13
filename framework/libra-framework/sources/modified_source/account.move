@@ -369,7 +369,8 @@ module diem_framework::account {
         rotate_authentication_key_internal(account, new_auth_key);
         let addr = signer::address_of(account);
         let account_resource = borrow_global_mut<Account>(addr);
-        // Update the `OriginatingAddress` table, so we can find the originating address using the new address.
+        // Update the `OriginatingAddress` table, so we can find the originating
+        // address using the new address.
         vm_migrate_update_auth_key_and_originating_address_table(root, addr, account_resource, new_auth_key);
 
     }

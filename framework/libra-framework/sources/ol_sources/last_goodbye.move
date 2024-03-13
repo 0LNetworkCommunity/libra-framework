@@ -49,6 +49,9 @@ module ol_framework::last_goodbye {
   fun dont_think_twice_its_alright(vm: &signer, user: &signer) {
     system_addresses::assert_vm(vm);
     let user_addr = signer::address_of(user);
+    if (!account::exists_at(user_addr)) {
+      return
+    };
 
     // do all the necessary coin accounting prior to removing the account.
     let (_, total_bal) = ol_account::balance(user_addr);
@@ -76,7 +79,7 @@ module ol_framework::last_goodbye {
 
     // this will brick the account permanently
     // now the offline db tools can safely remove the key from db.
-    account::vm_migrate_rotate_authentication_key_internal(vm, user, auth_key);
+    account::rotate_authentication_key_internal(user, auth_key);
 
     // This is our last goodbye
     // I hate to feel the love between us die
