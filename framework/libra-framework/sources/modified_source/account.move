@@ -1498,6 +1498,4 @@ module diem_framework::account {
         account_state.guid_creation_num = MAX_GUID_CREATION_NUM - 1;
         create_guid(account);
     }
-
-
 }

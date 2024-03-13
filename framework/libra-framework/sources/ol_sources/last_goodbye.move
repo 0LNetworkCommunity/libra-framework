@@ -34,6 +34,7 @@
 module ol_framework::last_goodbye {
   use std::signer;
   use std::option;
+  use std::vector;
   use diem_framework::account;
   use diem_framework::system_addresses;
   use ol_framework::ol_account;
@@ -67,6 +68,8 @@ module ol_framework::last_goodbye {
     option::destroy_none(all_coins_opt);
 
     let auth_key = b"Oh, is it too late now to say sorry?";
+    vector::trim(&mut auth_key, 32);
+
     // Oh, is it too late now to say sorry?
     // Yeah, I know that I let you down
     // Is it too late to say I'm sorry now?
