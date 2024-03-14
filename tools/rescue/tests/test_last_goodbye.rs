@@ -1,5 +1,5 @@
 use diem_debugger::DiemDebugger;
-use diem_types::{account_config, account_address::AccountAddress};
+use diem_types::{account_address::AccountAddress, account_config};
 use diem_vm::move_vm_ext::SessionExt;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use move_core_types::{
@@ -32,8 +32,12 @@ pub async fn test_last_goodbye() -> anyhow::Result<()> {
 
     let _ = debug
         .run_session_at_version(version, |session| {
-
-            execute_fn(session, "last_goodbye", "dont_think_twice_its_alright", vec![&vm_sig, &bob_sig]);
+            execute_fn(
+                session,
+                "last_goodbye",
+                "dont_think_twice_its_alright",
+                vec![&vm_sig, &bob_sig],
+            );
 
             Ok(())
         })

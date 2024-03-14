@@ -151,7 +151,6 @@ impl LibraSmoke {
         Ok(())
     }
 
-
     pub async fn transfer(
         &mut self,
         sender_local: &mut LocalAccount,

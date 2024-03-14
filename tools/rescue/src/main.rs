@@ -1,7 +1,10 @@
 use std::time::Duration;
 
 use clap::{Parser, Subcommand};
-use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts, twin::TwinOpts};
+use rescue::{
+    diem_db_bootstrapper::BootstrapOpts, fork_user::ForkOpts, rescue_tx::RescueTxOpts,
+    twin::TwinOpts,
+};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -15,6 +18,7 @@ struct RescueCli {
 enum Sub {
     RescueTx(RescueTxOpts),
     Bootstrap(BootstrapOpts),
+    HardFork(ForkOpts),
     Debug(TwinOpts),
 }
 
@@ -38,6 +42,9 @@ fn main() -> anyhow::Result<()> {
         }
         Some(Sub::Debug(twin)) => {
             twin.run()?;
+        }
+        Some(Sub::HardFork(fork)) => {
+            fork.run()?;
         }
         _ => {} // prints help
     }

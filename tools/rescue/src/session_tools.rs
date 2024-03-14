@@ -1,5 +1,5 @@
-use std::path::Path;
 use anyhow::{format_err, Context};
+use std::path::Path;
 
 use diem_config::config::{
     RocksdbConfigs, BUFFERED_STATE_TARGET_ITEMS, DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
@@ -144,33 +144,38 @@ pub fn libra_execute_session_function(
     Ok(())
 }
 
+///  drops a users from the chain
+pub fn drop_users(dir: &Path, addr_list: &[AccountAddress]) -> anyhow::Result<ChangeSet> {
+    let vm_sig = MoveValue::Signer(AccountAddress::ZERO);
 
-///  drops a user from the chain
-pub fn drop_user(dir: &Path, addr: AccountAddress) {
-    let user = MoveValue::Signer(addr);
-    let vm = MoveValue::Signer(AccountAddress::ZERO);
-
-    libra_run_session(
+    let vmc = libra_run_session(
         dir,
         move |session| {
-            libra_execute_session_function(
-                session,
-                "0x1::last_goodbye::dont_think_twice_its_alright",
-                vec![&vm, &user],
-            )?;
+            addr_list.iter().for_each(|a| {
+                let user: MoveValue = MoveValue::Signer(*a);
+                libra_execute_session_function(
+                    session,
+                    "0x1::last_goodbye::dont_think_twice_its_alright",
+                    vec![&vm_sig, &user],
+                )
+                .expect("run through whole list");
+            });
+
             Ok(())
         },
         None,
     )
     .expect("could run session");
-}
 
+    unpack_changeset(vmc)
+}
 
 pub fn unpack_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
     let (write_set, _delta_change_set, events) = vmc.unpack();
     dbg!(&events);
     Ok(ChangeSet::new(write_set, events))
 }
+
 pub fn publish_current_framework(
     dir: &Path,
     debug_vals: Option<Vec<AccountAddress>>,
@@ -223,9 +228,8 @@ fn test_voodoo() {
 fn test_drop_user() {
     let addr: AccountAddress = "0x7B61439A88060096213AC4F5853B598E".parse().unwrap();
     let dir = Path::new("/root/db");
-    drop_user(dir, addr);
+    drop_users(dir, &[addr]).expect("drop user");
 }
-
 
 #[ignore]
 #[test]

@@ -195,7 +195,7 @@ module ol_framework::last_goodbye {
     mock::genesis_n_vals(framework, 1);
     let mint_amount = 10000;
     mock::ol_initialize_coin_and_fund_vals(framework, mint_amount, true);
-    
+
     let alice_addr = signer::address_of(alice);
 
     // Capture the global supply and burn counters before operation.
@@ -211,7 +211,7 @@ module ol_framework::last_goodbye {
 
     // Verify burn
     assert!(burned_post > burned_pre, 7357001);
-    
+
     // Assert that recycled coins count remains the same, indicating no recycling occurred.
     assert!(recycled_pre == recycled_post, 7357005);
 
