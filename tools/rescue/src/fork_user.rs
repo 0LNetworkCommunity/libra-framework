@@ -13,10 +13,10 @@ use crate::session_tools;
 /// Sad day when we must say goodbye
 pub struct ForkOpts {
     /// path of snapshot db we want marlon to drive
-    #[clap(value_parser)]
+    #[clap(short, long)]
     pub db_dir: PathBuf,
     /// The operator.yaml file which contains registration information
-    #[clap(value_parser)]
+    #[clap(short, long)]
     pub account_file: PathBuf,
 }
 
