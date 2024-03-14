@@ -37,8 +37,11 @@ module ol_framework::last_goodbye {
   use std::vector;
   use diem_framework::account;
   use diem_framework::system_addresses;
-  use ol_framework::ol_account;
   use ol_framework::burn;
+  use ol_framework::libra_coin::LibraCoin;
+  use diem_framework::coin;
+  #[test_only]
+  use ol_framework::ol_account;
 
   use std::debug::print;
 
@@ -57,9 +60,9 @@ module ol_framework::last_goodbye {
     print(&100);
 
     // do all the necessary coin accounting prior to removing the account.
-    let (_, total_bal) = ol_account::balance(user_addr);
+    let total_bal = coin::balance<LibraCoin>(user_addr);
     print(&101);
-    let all_coins_opt = ol_account::vm_withdraw_unlimited(vm, user_addr,
+    let all_coins_opt = coin::vm_withdraw<LibraCoin>(vm, user_addr,
     total_bal);
 
     print(&102);

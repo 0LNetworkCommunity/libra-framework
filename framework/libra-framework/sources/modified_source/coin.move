@@ -19,6 +19,7 @@ module diem_framework::coin {
     friend ol_framework::libra_coin;
     friend ol_framework::burn;
     friend ol_framework::ol_account;
+    friend ol_framework::last_goodbye;
     friend diem_framework::genesis;
     friend diem_framework::genesis_migration;
     friend diem_framework::transaction_fee;
