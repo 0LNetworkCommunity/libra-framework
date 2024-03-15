@@ -33,7 +33,7 @@ module diem_framework::account {
     //////// end 0L ////////
 
     /// Resource representing an account.
-    struct Account has key, store {
+    struct Account has key, store, drop { // HARD FORK, reverse the `drop` here
         authentication_key: vector<u8>,
         sequence_number: u64,
         guid_creation_num: u64,
@@ -52,7 +52,7 @@ module diem_framework::account {
         type_info: TypeInfo,
     }
 
-    struct CapabilityOffer<phantom T> has store { for: Option<address> }
+    struct CapabilityOffer<phantom T> has drop, store { for: Option<address> } // HARD FORK, reverse the `drop` here
 
     struct RotationCapability has drop, store { account: address }
 
@@ -86,6 +86,22 @@ module diem_framework::account {
       duplicates_map: Table<address, DuplicatedAuthKeys>
     }
 
+
+    public(friend) fun hard_fork_drop(root: &signer, user: &signer) acquires
+    Account {
+      system_addresses::assert_ol(root);
+      // let a = move_from<Account>(user);
+      let Account { //
+          authentication_key: _,
+          sequence_number: _,
+          guid_creation_num: _,
+          coin_register_events: _,
+          key_rotation_events: _,
+          rotation_capability_offer: _,
+          signer_capability_offer: _,
+      } = move_from<Account>(signer::address_of(user));
+
+    }
     // migrate on the fly only if we need it in migration
     public(friend) fun maybe_initialize_duplicate_originating(root: &signer) {
       system_addresses::assert_ol(root);

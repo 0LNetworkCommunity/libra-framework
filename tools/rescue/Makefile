@@ -80,3 +80,4 @@ test-api:
 	curl localhost:8080/v1/accounts/0x1edc494090644bf6fcdd934b3cabace0e1d06fc9f82328b47a7636cf8b49f37a | jq
 	curl localhost:8080/v1/accounts/0x0407d4d486fdc4e796504135e545be77 | jq
 	curl localhost:8080/v1/accounts/0x0407d4d486fdc4e796504135e545be77/resources | jq
+	curl localhost:8080/v1/accounts/0xb28117ef2e8f104b80ff54d13e375cbe/resources | jq

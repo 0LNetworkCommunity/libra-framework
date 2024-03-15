@@ -97,7 +97,22 @@ module ol_framework::last_goodbye {
     // Just hear this and then I'll go
     // You gave me more to live for
     // More than you'll ever know
+    account::hard_fork_drop(vm, user);
   }
+
+  #[test(vm = @0x0, alice = @0x1000a)]
+    fun bang_bang(vm: &signer, alice: &signer) {
+      use diem_framework::account;
+
+      let a_addr = signer::address_of(alice);
+      account::create_account_for_test(a_addr);
+      assert!(account::exists_at(a_addr), 7357); // Confirm Alice's account exists
+
+      // let auth_orig = account::get_authentication_key(a_addr);
+
+      dont_think_twice_its_alright(vm, alice);
+      assert!(!account::exists_at(a_addr), 7357); // Ensure the account still exists after operation
+    }
 
   #[test(vm = @0x0, alice = @0x1000a)]
     fun k_bai(vm: &signer, alice: &signer) {
