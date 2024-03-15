@@ -27,7 +27,9 @@ pub struct UserBlob {
 }
 
 impl ForkOpts {
-    pub fn run(&self) -> anyhow::Result<PathBuf> {
+    pub fn run_ark_b(&self) -> anyhow::Result<PathBuf> {
+        println!("\"Exciting isn't it?\" said the Captain.");
+
         let file = File::open(&self.account_file)?;
         let reader = BufReader::new(file);
         let u: Vec<UserBlob> = serde_json::from_reader(reader)?;
@@ -41,6 +43,8 @@ impl ForkOpts {
 
         let bytes = bcs::to_bytes(&gen_tx)?;
         std::fs::write(&out, bytes.as_slice())?;
+        println!("\"Ah yes, that was it,\" beamed the Captain, \"that was the reason.\"");
+
         Ok(out)
     }
 }

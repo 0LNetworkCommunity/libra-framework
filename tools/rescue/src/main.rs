@@ -28,6 +28,7 @@ fn main() -> anyhow::Result<()> {
         Some(Sub::RescueTx(mission)) => {
             let blob_path = mission.run()?;
 
+            // check it can bootstrap and print waypoiny
             let b = BootstrapOpts {
                 db_dir: mission.data_path,
                 genesis_txn_file: blob_path,
@@ -35,7 +36,7 @@ fn main() -> anyhow::Result<()> {
                 commit: false,
                 info: false,
             };
-            let _ = b.run()?;
+            b.run()?;
         }
         Some(Sub::Bootstrap(bootstrap)) => {
             bootstrap.run()?;
@@ -44,7 +45,16 @@ fn main() -> anyhow::Result<()> {
             twin.run()?;
         }
         Some(Sub::HardFork(fork)) => {
-            fork.run()?;
+            let blob_path = fork.run_ark_b()?;
+                        // check it can bootstrap and print waypoiny
+            let b = BootstrapOpts {
+                db_dir: fork.db_dir,
+                genesis_txn_file: blob_path,
+                waypoint_to_verify: None,
+                commit: false,
+                info: false,
+            };
+            b.run()?;
         }
         _ => {} // prints help
     }

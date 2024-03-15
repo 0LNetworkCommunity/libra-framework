@@ -80,24 +80,13 @@ impl BootstrapOpts {
             .with_context(|| format_err!("Failed to get latest tree state."))?;
 
         println!("num txs: {:?}", executed_trees.num_transactions());
-        println!("version: {:?}", executed_trees.version());
+        println!("version: {:?}", executed_trees.version().unwrap());
         println!(
-            "root hash: {:?}",
+            "root hash: {}",
             executed_trees.txn_accumulator().root_hash
         );
 
         if self.info {
-            return Ok(None);
-        }
-
-        if self.info {
-            println!("num txs: {:?}", executed_trees.num_transactions());
-            println!("version: {:?}", executed_trees.version());
-            println!(
-                "root hash: {:?}",
-                executed_trees.txn_accumulator().root_hash
-            );
-
             return Ok(None);
         }
 
