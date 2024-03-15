@@ -1,5 +1,10 @@
 SHELL=/usr/bin/env bash
 
+## NOTE YOU WILL WANT TO EXPORT:
+# ACCOUNT_FILE=/root//ibra-framework/tools/rescue/fixtures/fork/sample_fork_user.json
+# VALS_FILE=/root//ibra-framework/tools/rescue/fixtures/fork/validators.json
+# and after you get a waypoint:
+# WAYPOINT=0x.....
 
 ifndef SOURCE_PATH
 SOURCE_PATH=~/libra-framework
