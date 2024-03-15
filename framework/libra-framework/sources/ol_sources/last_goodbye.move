@@ -1,6 +1,7 @@
 // LAST GOODBYE
-// Sometimes you just have to break up with someone that doesn't have any more
-// love to give. We will do it with deep compassion, and finality.
+// When you are doing a hard fork, sometimes you want to start your new
+// chain with a subset of users. This tool in unopinionated about that.
+// There are implementation details specific to MoveVm which complicate this process.
 
 //// First time hard-forkers, read this first ////
 // By using the code below, I'm assuming you know what you are doing.
@@ -19,11 +20,24 @@
 // there is state that needs to be gracefully removed in a cascade.
 // With MoveVm however there is no way of eliminating accounts from within the
 // VM, the account is a primitive of the database.
-// So forking accounts would be a two step procedure: execute some MoveVm
+// So forking accounts would be a three step procedure: execute some MoveVm
 // transactions to gracefully sunset accounts. Then subsequently run some
 // database operation (in Rust-land), to remove the address tree.
-// Commit Note: luckily we've never encountered a need for this tool,
-// but unfortunately it is an in-demand feature.
+// This module deals with sunsetting accounts. These operatiosn happen in a
+// MoveVM except not in a production chain, on a database at rest.
+// This step  has three sub-tasks:
+// a) brick the account with an unrecoverable authkey. No operations would be
+// possible from here
+// b) updating any system-wide state affected by dropping accounts, effectively
+// sanitizing the telephone handle (e.g. adjust total supply counter).
+// c) finally, removing the accounts::Account struct so that this address is no
+// longer discoverable.
+// Important note: after these steps this address is still able to receive state
+// changes from offline db processing. The address` did not disappear from the
+// DB's merkle tree. And so for the address to be fully
+// removed from the db it needs specialized processing offline and outside of a
+// move-vm session
+
 
 /// We just have to face it, this time
 /// (This time, this time) we're through (we're through)
@@ -86,11 +100,18 @@ module ol_framework::last_goodbye {
     // Yeah, I know that I let you down
     // Is it too late to say I'm sorry now?
 
-
     // this will brick the account permanently
-    // now the offline db tools can safely remove the key from db.
+    // another function can be called to drop the account::Account completely
+    // and then the offline db tools can safely remove the key from db.
     account::rotate_authentication_key_internal(user, auth_key);
+  }
 
+  fun last_goodbye(vm: &signer, user: &signer) {
+    let addr = signer::address_of(user);
+    let auth_orig = account::get_authentication_key(addr);
+    dont_think_twice_its_alright(vm, user);
+    let new_auth = account::get_authentication_key(addr);
+    assert!(auth_orig != new_auth, 0);
     // This is our last goodbye
     // I hate to feel the love between us die
     // But it's over
@@ -106,12 +127,11 @@ module ol_framework::last_goodbye {
 
       let a_addr = signer::address_of(alice);
       account::create_account_for_test(a_addr);
-      assert!(account::exists_at(a_addr), 7357); // Confirm Alice's account exists
+      assert!(account::exists_at(a_addr), 735701); // Confirm Alice's account exists
 
-      // let auth_orig = account::get_authentication_key(a_addr);
-
-      dont_think_twice_its_alright(vm, alice);
-      assert!(!account::exists_at(a_addr), 7357); // Ensure the account still exists after operation
+      last_goodbye(vm, alice);
+      // Ensure the account DOES NOT exist at all
+      assert!(!account::exists_at(a_addr), 735702);
     }
 
   #[test(vm = @0x0, alice = @0x1000a)]
