@@ -57,7 +57,7 @@ async fn test_twin() -> anyhow::Result<()> {
     println!("2. compile the script");
 
     let r = RescueTxOpts {
-        data_path: brick_db.clone(),
+        db_dir: brick_db.clone(),
         blob_path: Some(blob_path.path().to_owned()),
         script_path: None,
         framework_upgrade: true,

@@ -12,19 +12,19 @@ use crate::session_tools;
 
 /// Sad day when we must say goodbye
 pub struct ForkOpts {
-    /// path of snapshot db we want marlon to drive
+    /// path of DB which will be used to start new network
     #[clap(short, long)]
-    pub db_path: PathBuf,
-    /// The operator.yaml file which contains registration information
+    pub db_dir: PathBuf,
+    /// JSON file with list of accounts to drop on new network
     #[clap(short, long)]
     pub account_file: PathBuf,
-    /// list of validators in validator set
+    /// optional, JSON file with list of new validators. Must already have on-chain configurations
     #[clap(short, long)]
-    pub debug_vals: Option<PathBuf>,
+    pub validators_file: Option<PathBuf>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct UserBlob {
+struct UserBlob {
     /// acccount
     account: AccountAddress,
 }
@@ -39,8 +39,8 @@ impl ForkOpts {
         let u: Vec<UserBlob> = serde_json::from_reader(reader)?;
         let drop_list: Vec<AccountAddress> = u.iter().map(|el| el.account).collect();
         // new validator set
-        let vals = if let Some(file) = &self.debug_vals {
-            let file = File::open(&self.account_file)?;
+        let vals = if let Some(path) = &self.validators_file {
+            let file = File::open(path)?;
             let reader = BufReader::new(file);
             let u: Vec<UserBlob> = serde_json::from_reader(reader)?;
 
@@ -51,10 +51,10 @@ impl ForkOpts {
         };
 
         let cs =
-            session_tools::load_them_onto_ark_b(&self.db_path, &drop_list, vals)?;
+            session_tools::load_them_onto_ark_b(&self.db_dir, &drop_list, vals)?;
         let gen_tx = Transaction::GenesisTransaction(WriteSetPayload::Direct(cs));
 
-        let out = self.db_path.join("hard_fork.blob");
+        let out = self.db_dir.join("hard_fork.blob");
 
         let bytes = bcs::to_bytes(&gen_tx)?;
         std::fs::write(&out, bytes.as_slice())?;

@@ -42,10 +42,10 @@ install:
 ######## WRITESETS ########
 
 hard-fork-blob:
-	rescue hard-fork --db-path ${DB_PATH} $(foreach val, ${DEBUG_VALS},--debug-vals $(val)) --account-file ${ACCOUNT_FILE}
+	rescue hard-fork --db-dir ${DB_PATH} --validators-file ${VALS_FILE} --account-file ${ACCOUNT_FILE}
 
 hard-fork-commit:
-	rescue bootstrap --db-path ${DB_PATH} -g ${DB_PATH}/hard_fork.blob --commit -w ${WAYPOINT}
+	rescue bootstrap --db-dir ${DB_PATH} -g ${DB_PATH}/hard_fork.blob --commit -w ${WAYPOINT}
 
 ######## UTILS ########
 backup-db:
@@ -61,15 +61,11 @@ backup-db:
 	fi
 
 
-download-db:
-	@echo THIS IS A BAD PRACTICE
+bad-bad-download-db:
+	@echo THIS IS A BAD PRACTICE, please stop doing it
 	@echo you should be starting a fullnode instead
 	@echo or using a snapshot from https://github.com/0LNetworkCommunity/epoch-archive-mainnet
-	mkdir -p ~/0L_upgrade_81/
-	cd ~/0L_upgrade_81/
 	pip install gdown
-	rm -f ~/0L_upgrade_81/db-33254886.tar.gz
-	gdown 1AinUVYZknPM6q__W7vqo4xbhzkgiEF82 -O ~/0L_upgrade_81/db-33254886.tar.gz
-	tar -xvf db-33254886.tar.gz
-	rm -rf ${DB_PATH}
-	mv ~/0L_upgrade_81/home/sirouk/.libra/data-2024-03-14-045027/db ${DB_PATH}
+	mkdir -p ${DATA_PATH}/0L_upgrade_81/
+	gdown 1AinUVYZknPM6q__W7vqo4xbhzkgiEF82 -O ${DATA_PATH}/db-33254886.tar.gz
+	tar -xvf ${DATA_PATH}/db-33254886.tar.gz

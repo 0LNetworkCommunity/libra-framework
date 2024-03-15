@@ -13,7 +13,7 @@ use std::path::PathBuf;
 pub struct RescueTxOpts {
     #[clap(short, long)]
     /// directory enclosing the `/db` folder of the node
-    pub data_path: PathBuf,
+    pub db_dir: PathBuf,
     #[clap(short, long)]
     /// directory to read/write or the rescue.blob. Will default to db_path/rescue.blob
     pub blob_path: Option<PathBuf>,
@@ -31,7 +31,7 @@ pub struct RescueTxOpts {
 
 impl RescueTxOpts {
     pub fn run(&self) -> anyhow::Result<PathBuf> {
-        let db_path = self.data_path.clone();
+        let db_path = self.db_dir.clone();
 
         // There are two options:
         // 1. upgrade the framework because the source in db is a brick.
@@ -85,7 +85,7 @@ fn test_create_blob() -> anyhow::Result<()> {
     blob_path.create_as_dir()?;
 
     let r = RescueTxOpts {
-        data_path: db_root_path.path().to_owned(),
+        db_dir: db_root_path.path().to_owned(),
         blob_path: Some(blob_path.path().to_owned()),
         script_path: Some(script_path),
         framework_upgrade: false,
