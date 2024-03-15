@@ -222,8 +222,4 @@ module ol_framework::last_goodbye {
     let (_, alice_balance_post) = ol_account::balance(alice_addr);
     assert!(alice_balance_post == 0, 7357003);
   }
-
-
-
-
 }

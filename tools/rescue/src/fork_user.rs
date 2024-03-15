@@ -34,7 +34,7 @@ impl ForkOpts {
 
         let list: Vec<AccountAddress> = u.iter().map(|el| el.account).collect();
 
-        let cs = session_tools::drop_users(&self.db_dir, &list)?;
+        let cs = session_tools::load_them_onto_ark_b(&self.db_dir, &list)?;
         let gen_tx = Transaction::GenesisTransaction(WriteSetPayload::Direct(cs));
 
         let out = self.db_dir.join("hard_fork.blob");

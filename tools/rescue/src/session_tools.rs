@@ -144,8 +144,8 @@ pub fn libra_execute_session_function(
     Ok(())
 }
 
-///  drops a users from the chain
-pub fn drop_users(dir: &Path, addr_list: &[AccountAddress]) -> anyhow::Result<ChangeSet> {
+///  drops users from the chain
+pub fn load_them_onto_ark_b(dir: &Path, addr_list: &[AccountAddress]) -> anyhow::Result<ChangeSet> {
     let vm_sig = MoveValue::Signer(AccountAddress::ZERO);
     let vmc = libra_run_session(
         dir,
@@ -229,7 +229,7 @@ fn test_voodoo() {
 fn test_drop_user() {
     let addr: AccountAddress = "0x7B61439A88060096213AC4F5853B598E".parse().unwrap();
     let dir = Path::new("/root/db");
-    drop_users(dir, &[addr]).expect("drop user");
+    load_them_onto_ark_b(dir, &[addr]).expect("drop user");
 }
 
 #[ignore]
