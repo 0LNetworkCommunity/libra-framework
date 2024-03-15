@@ -20,7 +20,7 @@ pub struct ForkOpts {
     pub account_file: PathBuf,
     /// list of validators in validator set
     #[clap(short, long)]
-    pub debug_vals: Option<Vec<AccountAddress>>
+    pub debug_vals: Option<PathBuf>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -33,13 +33,25 @@ impl ForkOpts {
     pub fn run_ark_b(&self) -> anyhow::Result<PathBuf> {
         println!("\"Exciting isn't it?\" said the Captain.");
 
+        // accounts that will drop
         let file = File::open(&self.account_file)?;
         let reader = BufReader::new(file);
         let u: Vec<UserBlob> = serde_json::from_reader(reader)?;
+        let drop_list: Vec<AccountAddress> = u.iter().map(|el| el.account).collect();
+        // new validator set
+        let vals = if let Some(file) = &self.debug_vals {
+            let file = File::open(&self.account_file)?;
+            let reader = BufReader::new(file);
+            let u: Vec<UserBlob> = serde_json::from_reader(reader)?;
 
-        let list: Vec<AccountAddress> = u.iter().map(|el| el.account).collect();
+            let list: Vec<AccountAddress> = u.iter().map(|el| el.account).collect();
+            Some(list)
+        } else {
+          None
+        };
 
-        let cs = session_tools::load_them_onto_ark_b(&self.db_path, &list, self.debug_vals.clone())?;
+        let cs =
+            session_tools::load_them_onto_ark_b(&self.db_path, &drop_list, vals)?;
         let gen_tx = Transaction::GenesisTransaction(WriteSetPayload::Direct(cs));
 
         let out = self.db_path.join("hard_fork.blob");
