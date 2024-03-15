@@ -147,10 +147,11 @@ pub fn libra_execute_session_function(
 ///  drops a users from the chain
 pub fn drop_users(dir: &Path, addr_list: &[AccountAddress]) -> anyhow::Result<ChangeSet> {
     let vm_sig = MoveValue::Signer(AccountAddress::ZERO);
-
     let vmc = libra_run_session(
         dir,
         move |session| {
+            upgrade_framework(session).expect("upgrade framework");
+
             addr_list.iter().for_each(|a| {
                 let user: MoveValue = MoveValue::Signer(*a);
                 libra_execute_session_function(
@@ -161,6 +162,7 @@ pub fn drop_users(dir: &Path, addr_list: &[AccountAddress]) -> anyhow::Result<Ch
                 .expect("run through whole list");
             });
 
+            writeset_voodoo_events(session).expect("voodoo");
             Ok(())
         },
         None,
@@ -172,7 +174,6 @@ pub fn drop_users(dir: &Path, addr_list: &[AccountAddress]) -> anyhow::Result<Ch
 
 pub fn unpack_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
     let (write_set, _delta_change_set, events) = vmc.unpack();
-    dbg!(&events);
     Ok(ChangeSet::new(write_set, events))
 }
 
