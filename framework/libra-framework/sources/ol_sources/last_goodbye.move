@@ -49,6 +49,7 @@ module ol_framework::last_goodbye {
   use std::signer;
   use std::option;
   use std::vector;
+  use std::error;
   use diem_framework::account;
   use diem_framework::system_addresses;
   use ol_framework::burn;
@@ -58,6 +59,9 @@ module ol_framework::last_goodbye {
   use ol_framework::ol_account;
 
   // use std::debug::print;
+
+  /// the key should have rotated
+  const EAUTH_KEY_SHOULD_ROTATE: u64 = 0;
 
   // Private function so that this can only be called from a MoveVM session
   // (i.e. offline or at genesis).
@@ -111,7 +115,7 @@ module ol_framework::last_goodbye {
     let auth_orig = account::get_authentication_key(addr);
     dont_think_twice_its_alright(vm, user);
     let new_auth = account::get_authentication_key(addr);
-    assert!(auth_orig != new_auth, 0);
+    assert!(auth_orig != new_auth, error::invalid_state(EAUTH_KEY_SHOULD_ROTATE));
     // This is our last goodbye
     // I hate to feel the love between us die
     // But it's over
