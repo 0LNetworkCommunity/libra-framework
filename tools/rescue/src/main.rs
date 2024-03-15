@@ -46,7 +46,7 @@ fn main() -> anyhow::Result<()> {
         }
         Some(Sub::HardFork(fork)) => {
             let blob_path = fork.run_ark_b()?;
-                        // check it can bootstrap and print waypoiny
+            // check it can bootstrap and print waypoiny
             let b = BootstrapOpts {
                 db_dir: fork.db_dir,
                 genesis_txn_file: blob_path,

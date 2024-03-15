@@ -1,12 +1,8 @@
 use clap::Parser;
-use diem_types::{
-    account_address::AccountAddress,
-    transaction::{Transaction, WriteSetPayload},
-};
-use serde::{Deserialize, Serialize};
-use std::{fs::File, io::BufReader, path::PathBuf};
+use diem_types::transaction::{Transaction, WriteSetPayload};
+use std::path::PathBuf;
 
-use crate::session_tools;
+use crate::{session_tools, user_file::UserBlob};
 
 #[derive(Parser)]
 
@@ -23,35 +19,17 @@ pub struct ForkOpts {
     pub validators_file: Option<PathBuf>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct UserBlob {
-    /// acccount
-    account: AccountAddress,
-}
-
 impl ForkOpts {
     pub fn run_ark_b(&self) -> anyhow::Result<PathBuf> {
         println!("\"Exciting isn't it?\" said the Captain.");
 
         // accounts that will drop
-        let file = File::open(&self.account_file)?;
-        let reader = BufReader::new(file);
-        let u: Vec<UserBlob> = serde_json::from_reader(reader)?;
-        let drop_list: Vec<AccountAddress> = u.iter().map(|el| el.account).collect();
+        let drop_list = UserBlob::get_vals(Some(self.account_file.clone()))
+            .expect("missing list of accounts to drop");
         // new validator set
-        let vals = if let Some(path) = &self.validators_file {
-            let file = File::open(path)?;
-            let reader = BufReader::new(file);
-            let u: Vec<UserBlob> = serde_json::from_reader(reader)?;
+        let vals = UserBlob::get_vals(self.validators_file.clone());
 
-            let list: Vec<AccountAddress> = u.iter().map(|el| el.account).collect();
-            Some(list)
-        } else {
-          None
-        };
-
-        let cs =
-            session_tools::load_them_onto_ark_b(&self.db_dir, &drop_list, vals)?;
+        let cs = session_tools::load_them_onto_ark_b(&self.db_dir, &drop_list, vals)?;
         let gen_tx = Transaction::GenesisTransaction(WriteSetPayload::Direct(cs));
 
         let out = self.db_dir.join("hard_fork.blob");

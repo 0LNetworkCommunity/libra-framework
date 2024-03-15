@@ -81,10 +81,7 @@ impl BootstrapOpts {
 
         println!("num txs: {:?}", executed_trees.num_transactions());
         println!("version: {:?}", executed_trees.version().unwrap());
-        println!(
-            "root hash: {}",
-            executed_trees.txn_accumulator().root_hash
-        );
+        println!("root hash: {}", executed_trees.txn_accumulator().root_hash);
 
         if self.info {
             return Ok(None);

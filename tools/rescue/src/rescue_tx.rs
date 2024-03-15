@@ -1,9 +1,6 @@
-use crate::session_tools;
+use crate::{session_tools, user_file::UserBlob};
 use clap::Parser;
-use diem_types::{
-    account_address::AccountAddress,
-    transaction::{Script, Transaction, WriteSetPayload},
-};
+use diem_types::transaction::{Script, Transaction, WriteSetPayload};
 use libra_framework::builder::framework_generate_upgrade_proposal::libra_compile_script;
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
 use std::path::PathBuf;
@@ -24,9 +21,9 @@ pub struct RescueTxOpts {
     /// directory to read/write or the rescue.blob
     pub framework_upgrade: bool,
     #[clap(long)]
-    /// Replace validator set with these addresses. They must
-    /// already have valid configurations on chain.
-    pub debug_vals: Option<Vec<AccountAddress>>,
+    /// optional, JSON file with list of new validators. Must already have on-chain configurations
+    #[clap(short, long)]
+    pub validators_file: Option<PathBuf>,
 }
 
 impl RescueTxOpts {
@@ -49,8 +46,8 @@ impl RescueTxOpts {
 
             Transaction::GenesisTransaction(wp)
         } else if self.framework_upgrade {
-            let cs =
-                session_tools::publish_current_framework(&db_path, self.debug_vals.to_owned())?;
+            let vals = UserBlob::get_vals(self.validators_file.clone());
+            let cs = session_tools::publish_current_framework(&db_path, vals)?;
             Transaction::GenesisTransaction(WriteSetPayload::Direct(cs))
         } else {
             anyhow::bail!("no options provided, need a --framework-upgrade or a --script-path");
@@ -89,7 +86,7 @@ fn test_create_blob() -> anyhow::Result<()> {
         blob_path: Some(blob_path.path().to_owned()),
         script_path: Some(script_path),
         framework_upgrade: false,
-        debug_vals: None,
+        validators_file: None,
     };
     r.run()?;
 

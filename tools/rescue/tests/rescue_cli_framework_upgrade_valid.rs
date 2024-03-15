@@ -29,7 +29,7 @@ async fn test_framework_upgrade_writeset() -> anyhow::Result<()> {
         blob_path: Some(blob_path.path().to_owned()),
         script_path: None,
         framework_upgrade: true,
-        debug_vals: None,
+        validators_file: None,
     };
     r.run()?;
 

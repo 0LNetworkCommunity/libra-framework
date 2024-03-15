@@ -1,10 +1,11 @@
 SHELL=/usr/bin/env bash
 
 ## NOTE YOU WILL WANT TO EXPORT:
-# ACCOUNT_FILE=/root//ibra-framework/tools/rescue/fixtures/fork/sample_fork_user.json
-# VALS_FILE=/root//ibra-framework/tools/rescue/fixtures/fork/validators.json
+DB_PATH = /root/fork_db/data/db
+ACCOUNT_FILE=/root/libra-framework/tools/rescue/fixtures/fork/sample_fork_user.json
+VALS_FILE=/root/libra-framework/tools/rescue/fixtures/fork/validators.json
 # and after you get a waypoint:
-# WAYPOINT=0x.....
+WAYPOINT=33254829:10386ede6d2e22d44d1315512100974c7c87e0968261fe89ec1256514c3bed02
 
 ifndef SOURCE_PATH
 SOURCE_PATH=~/libra-framework
@@ -51,6 +52,9 @@ hard-fork-blob:
 
 hard-fork-commit:
 	rescue bootstrap --db-dir ${DB_PATH} -g ${DB_PATH}/hard_fork.blob --commit -w ${WAYPOINT}
+
+framework-upgrade-blob:
+	rescue rescue-txs --db-dir ${DB_PATH} --validators-file ${VALS_FILE}
 
 ######## UTILS ########
 backup-db:

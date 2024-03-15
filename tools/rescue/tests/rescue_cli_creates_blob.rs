@@ -41,7 +41,7 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
         blob_path: Some(blob_path.path().to_owned()),
         script_path: Some(script_path),
         framework_upgrade: false,
-        debug_vals: None,
+        validators_file: None,
     };
     r.run()?;
 
@@ -116,7 +116,7 @@ async fn test_can_build_gov_rescue_script() -> anyhow::Result<()> {
         blob_path: Some(blob_path.path().to_owned()),
         script_path: Some(script_path),
         framework_upgrade: false,
-        debug_vals: None,
+        validators_file: None,
     };
     r.run()?;
 
@@ -164,7 +164,7 @@ async fn test_valid_waypoint() -> anyhow::Result<()> {
         blob_path: Some(blob_path.path().to_owned()),
         script_path: Some(script_path),
         framework_upgrade: false,
-        debug_vals: None,
+        validators_file: None,
     };
     r.run()?;
 

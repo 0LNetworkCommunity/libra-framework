@@ -145,19 +145,22 @@ pub fn libra_execute_session_function(
 }
 
 ///  drops users from the chain
-pub fn load_them_onto_ark_b(dir: &Path, addr_list: &[AccountAddress], debug_vals: Option<Vec<AccountAddress>>) -> anyhow::Result<ChangeSet> {
+pub fn load_them_onto_ark_b(
+    dir: &Path,
+    addr_list: &[AccountAddress],
+    debug_vals: Option<Vec<AccountAddress>>,
+) -> anyhow::Result<ChangeSet> {
     let vm_sig = MoveValue::Signer(AccountAddress::ZERO);
     let vmc = libra_run_session(
         dir,
         move |session| {
             upgrade_framework(session).expect("upgrade framework");
 
-
             addr_list.iter().for_each(|a| {
                 let user: MoveValue = MoveValue::Signer(*a);
                 libra_execute_session_function(
                     session,
-                    "0x1::last_goodbye::dont_think_twice_its_alright",
+                    "0x1::last_goodbye::last_goodbye",
                     vec![&vm_sig, &user],
                 )
                 .expect("run through whole list");
