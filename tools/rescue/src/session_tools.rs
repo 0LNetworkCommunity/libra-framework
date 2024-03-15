@@ -98,15 +98,13 @@ pub fn writeset_voodoo_events(session: &mut SessionExt) -> anyhow::Result<()> {
         ],
     )?;
 
-    ////// TODO: revert this once rescue is complete
-    // libra_execute_session_function(
-    //     session,
-    //     "0x1::reconfiguration::reconfigure_for_rescue",
-    //     vec![&vm_signer],
-    // )?;
-    //////
-
-    libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
+    // force bump epoch and emit the epoch event
+    libra_execute_session_function(
+        session,
+        "0x1::reconfiguration::maybe_bump_epoch",
+        vec![&MoveValue::Bool(false)],
+    )?;
+    libra_execute_session_function(session, "0x1::reconfiguration::emit_epoch_event", vec![])?;
 
     Ok(())
 }

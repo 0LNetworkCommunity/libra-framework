@@ -5,7 +5,7 @@ DB_PATH = /root/fork_db/data/db
 ACCOUNT_FILE=/root/libra-framework/tools/rescue/fixtures/fork/sample_fork_user.json
 VALS_FILE=/root/libra-framework/tools/rescue/fixtures/fork/validators.json
 # and after you get a waypoint:
-WAYPOINT=33254829:10386ede6d2e22d44d1315512100974c7c87e0968261fe89ec1256514c3bed02
+WAYPOINT=33254830:3fee05943cbb8b90432cf9af25ed5ea9d7b58666c79d7a66862a08a95b230038
 
 ifndef SOURCE_PATH
 SOURCE_PATH=~/libra-framework
@@ -55,6 +55,10 @@ hard-fork-commit:
 
 framework-upgrade-blob:
 	rescue rescue-txs --db-dir ${DB_PATH} --validators-file ${VALS_FILE}
+
+rescue-commit:
+	rescue bootstrap --db-dir ${DB_PATH} --genesis-txn-file ${DB_PATH}/rescue.blob --commit -w ${WAYPOINT}
+
 
 ######## UTILS ########
 backup-db:
