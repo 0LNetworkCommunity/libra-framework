@@ -25,9 +25,30 @@ ifndef DEBUG_VALS
 DEBUG_VALS=""
 endif
 
+check:
+	git log -n 1 --pretty=format:'%H'
+	@echo "Make sure to verify the git hash above with your peers!"
+	@echo $(foreach val, ${DEBUG_VALS},--debug-vals $(val))
 
-backup:
+######## BUILD ########
+bins:
+	cd ${SOURCE_PATH}/framework && cargo r release
+	cargo build --release -p rescue
 
+install:
+	cp ${SOURCE_PATH}/target/release/rescue ~/.cargo/bin/
+	@which rescue
+
+######## WRITESETS ########
+
+hard-fork-blob:
+	rescue hard-fork --db-path ${DB_PATH} $(foreach val, ${DEBUG_VALS},--debug-vals $(val)) --account-file ${ACCOUNT_FILE}
+
+hard-fork-commit:
+	rescue bootstrap --db-path ${DB_PATH} -g ${DB_PATH}/hard_fork.blob --commit -w ${WAYPOINT}
+
+######## UTILS ########
+backup-db:
 	-pkill -f libra
 	rm -f ${DATA_PATH}/secure-data.json
 
@@ -38,58 +59,17 @@ backup:
 		cp -r $(DATA_PATH) $$backup_dir; \
 		echo "Backup successful: $$backup_dir"; \
 	fi
-	
-	
-fetch-snapshot:
 
-	mkdir -p ~/0L_upgrade_81/ && \
-	cd ~/0L_upgrade_81/ && \
-	pip install gdown && \
-	rm -f ~/0L_upgrade_81/db-33254886.tar.gz && \
-	gdown 1AinUVYZknPM6q__W7vqo4xbhzkgiEF82 -O ~/0L_upgrade_81/db-33254886.tar.gz && \
-	tar -xvf db-33254886.tar.gz && \
-	rm -rf ${DB_PATH} && \
+
+download-db:
+	@echo THIS IS A BAD PRACTICE
+	@echo you should be starting a fullnode instead
+	@echo or using a snapshot from https://github.com/0LNetworkCommunity/epoch-archive-mainnet
+	mkdir -p ~/0L_upgrade_81/
+	cd ~/0L_upgrade_81/
+	pip install gdown
+	rm -f ~/0L_upgrade_81/db-33254886.tar.gz
+	gdown 1AinUVYZknPM6q__W7vqo4xbhzkgiEF82 -O ~/0L_upgrade_81/db-33254886.tar.gz
+	tar -xvf db-33254886.tar.gz
+	rm -rf ${DB_PATH}
 	mv ~/0L_upgrade_81/home/sirouk/.libra/data-2024-03-14-045027/db ${DB_PATH}
-
-
-build:
-
-	cd ${SOURCE_PATH} && \
-	git fetch --all && \
-	git checkout cyber-knife-test && \
-	git pull && \
-	cargo build --release -p rescue && \
-	cd ${SOURCE_PATH}/framework && \
-	cargo r release && \
-	git log -n 1 --pretty=format:'%H'
-
-	echo "Make sure to verify the git hash above with your peers!"
-
-
-write-valset:
-
-	cd ${SOURCE_PATH}/target/release/ && \
-	./rescue rescue-tx --data-path $(DB_PATH) --framework-upgrade $(foreach val,$(DEBUG_VALS),--debug-vals $(val))
-
-
-bootstrap-valset:
-
-	cd ${SOURCE_PATH}/target/release/ && \
-	./rescue bootstrap ${DB_PATH} -g ${DB_PATH}/rescue.blob --waypoint-to-verify ${WAYPOINT} --commit
-
-
-upgrade-framework:
-
-	cd ${SOURCE_PATH}/target/release/ && \
-	./rescue rescue-tx --data-path ${DB_PATH} --framework-upgrade
-
-
-bootstrap-framework:
-
-	cd ${SOURCE_PATH}/target/release/ && \
-	./rescue bootstrap --genesis-txn-file ${DB_PATH}/rescue.blob --waypoint-to-verify ${WAYPOINT} --commit ${DB_PATH} && \
-	./rescue hard-fork --db-dir ${DB_PATH} --account-file ${SOURCE_PATH}/tools/rescue/fixtures/fork/sample_fork_user.json && \
-	echo ${WAYPOINT} > ${LIBRA_PATH}/genesis/waypoint.txt
-
-	echo "Prepare to start your node"
-

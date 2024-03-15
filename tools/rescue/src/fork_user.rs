@@ -14,10 +14,13 @@ use crate::session_tools;
 pub struct ForkOpts {
     /// path of snapshot db we want marlon to drive
     #[clap(short, long)]
-    pub db_dir: PathBuf,
+    pub db_path: PathBuf,
     /// The operator.yaml file which contains registration information
     #[clap(short, long)]
     pub account_file: PathBuf,
+    /// list of validators in validator set
+    #[clap(short, long)]
+    pub debug_vals: Option<Vec<AccountAddress>>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -36,10 +39,10 @@ impl ForkOpts {
 
         let list: Vec<AccountAddress> = u.iter().map(|el| el.account).collect();
 
-        let cs = session_tools::load_them_onto_ark_b(&self.db_dir, &list)?;
+        let cs = session_tools::load_them_onto_ark_b(&self.db_path, &list, self.debug_vals.clone())?;
         let gen_tx = Transaction::GenesisTransaction(WriteSetPayload::Direct(cs));
 
-        let out = self.db_dir.join("hard_fork.blob");
+        let out = self.db_path.join("hard_fork.blob");
 
         let bytes = bcs::to_bytes(&gen_tx)?;
         std::fs::write(&out, bytes.as_slice())?;

@@ -145,12 +145,13 @@ pub fn libra_execute_session_function(
 }
 
 ///  drops users from the chain
-pub fn load_them_onto_ark_b(dir: &Path, addr_list: &[AccountAddress]) -> anyhow::Result<ChangeSet> {
+pub fn load_them_onto_ark_b(dir: &Path, addr_list: &[AccountAddress], debug_vals: Option<Vec<AccountAddress>>) -> anyhow::Result<ChangeSet> {
     let vm_sig = MoveValue::Signer(AccountAddress::ZERO);
     let vmc = libra_run_session(
         dir,
         move |session| {
             upgrade_framework(session).expect("upgrade framework");
+
 
             addr_list.iter().for_each(|a| {
                 let user: MoveValue = MoveValue::Signer(*a);
@@ -165,7 +166,7 @@ pub fn load_them_onto_ark_b(dir: &Path, addr_list: &[AccountAddress]) -> anyhow:
             writeset_voodoo_events(session).expect("voodoo");
             Ok(())
         },
-        None,
+        debug_vals,
     )
     .expect("could run session");
 
@@ -229,7 +230,7 @@ fn test_voodoo() {
 fn test_drop_user() {
     let addr: AccountAddress = "0x7B61439A88060096213AC4F5853B598E".parse().unwrap();
     let dir = Path::new("/root/db");
-    load_them_onto_ark_b(dir, &[addr]).expect("drop user");
+    load_them_onto_ark_b(dir, &[addr], None).expect("drop user");
 }
 
 #[ignore]
