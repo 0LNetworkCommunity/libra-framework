@@ -27,11 +27,11 @@ use std::{
     about = "Calculate, verify and commit the genesis to local DB without a consensus among validators."
 )]
 pub struct BootstrapOpts {
-    #[clap(value_parser)]
+    #[clap(short, long)]
     /// DB directory
     pub db_dir: PathBuf,
 
-    #[clap(short, long, value_parser)]
+    #[clap(short, long)]
     /// path to genesis tx file
     pub genesis_txn_file: PathBuf,
 

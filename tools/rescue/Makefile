@@ -69,3 +69,9 @@ bad-bad-download-db:
 	mkdir -p ${DATA_PATH}/0L_upgrade_81/
 	gdown 1AinUVYZknPM6q__W7vqo4xbhzkgiEF82 -O ${DATA_PATH}/db-33254886.tar.gz
 	tar -xvf ${DATA_PATH}/db-33254886.tar.gz
+
+test-api:
+	curl localhost:8080/v1/accounts/0x9A710919B1A1E67EDA335269C0085C91 | jq
+	curl localhost:8080/v1/accounts/0x1edc494090644bf6fcdd934b3cabace0e1d06fc9f82328b47a7636cf8b49f37a | jq
+	curl localhost:8080/v1/accounts/0x0407d4d486fdc4e796504135e545be77 | jq
+	curl localhost:8080/v1/accounts/0x0407d4d486fdc4e796504135e545be77/resources | jq
