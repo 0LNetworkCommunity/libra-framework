@@ -20,27 +20,23 @@ use serde_json::json;
 pub enum QueryType {
     /// Account balance
     Balance {
-        #[clap(short, long)]
         /// account to query txs of
         account: AccountAddress,
     },
     /// User's Tower state
     Tower {
-        #[clap(short, long)]
         /// account to query txs of
         account: AccountAddress,
     },
     /// A validator's on-chain configuration
     ValConfig {
-        #[clap(short, long)]
         /// account to query txs of
         account: AccountAddress,
     },
     /// Epoch and waypoint
     Epoch,
-    /// All account resources
+    /// Query any account resource by access path string
     Resource {
-        #[clap(short, long)]
         /// account to query txs of
         account: AccountAddress,
         #[clap(short, long)]
@@ -87,7 +83,6 @@ pub enum QueryType {
     },
     /// Looks up the address of an account given an auth key. The authkey diverges from the address after a key rotation.
     LookupAddress {
-        #[clap(short, long)]
         auth_key: AuthenticationKey, // we use account address to parse, because that's the format needed to lookup users. AuthKeys and AccountAddress are the same formats.
     },
     /// Network block height
@@ -96,7 +91,6 @@ pub enum QueryType {
     SyncDelay,
     /// Get events
     Events {
-        #[clap(short, long)]
         /// account to query events
         account: AccountAddress,
         #[clap(short, long)]
@@ -108,7 +102,6 @@ pub enum QueryType {
     },
     /// Get transaction history
     Txs {
-        #[clap(short, long)]
         /// account to query txs of
         account: AccountAddress,
         #[clap(long)]
@@ -121,21 +114,18 @@ pub enum QueryType {
         /// filter by type
         txs_type: Option<String>,
     },
-    /// Is the community wallter migrated
+    /// Is the community wallet migrated
     ComWalletMigrated {
-        #[clap(short, long)]
         /// account to query txs of
         account: AccountAddress,
     },
     /// Signers of the community wallet
     ComWalletSigners {
-        #[clap(short, long)]
         /// account to query txs of
         account: AccountAddress,
     },
     /// Get the community wallet's pending transactions
     ComWalletPendTransactions {
-        #[clap(short, long)]
         /// account to query txs of
         account: AccountAddress,
     },
@@ -165,6 +155,7 @@ pub enum QueryType {
     //     /// what event sequence number to start querying from, if DB does not have all.
     //     seq_start: Option<u64>,
     // },
+    /// Display all account structs
     Annotate {
         account: AccountAddress,
     },
