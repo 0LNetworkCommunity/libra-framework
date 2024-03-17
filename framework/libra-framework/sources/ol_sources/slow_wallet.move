@@ -130,8 +130,8 @@ module ol_framework::slow_wallet {
     // 1: u64, how much was dripped
     public fun slow_wallet_epoch_drip(vm: &signer, amount: u64): (bool, u64) acquires
     SlowWallet, SlowWalletList{
-
       system_addresses::assert_ol(vm);
+      garbage_collection();
       let list = get_slow_list();
       let len = vector::length<address>(&list);
       if (len == 0) return (false, 0);
@@ -240,6 +240,16 @@ module ol_framework::slow_wallet {
       slow_wallet_epoch_drip(vm, sacred_cows::get_slow_drip_const())
     }
 
+    fun garbage_collection() acquires SlowWalletList {
+      let state = borrow_global_mut<SlowWalletList>(@diem_framework);
+
+      let to_keep = vector::filter(state.list, |e| {
+        account::exists_at(*e)
+      });
+
+      state.list = to_keep;
+    }
+
     ///////// SLOW GETTERS ////////
 
     #[view]
@@ -292,6 +302,7 @@ module ol_framework::slow_wallet {
         return vector::empty<address>()
       }
     }
+
 
     ////////// SMOKE TEST HELPERS //////////
     // cannot use the #[test_only] attribute
