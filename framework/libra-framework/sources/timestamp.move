@@ -29,8 +29,13 @@ module diem_framework::timestamp {
         move_to(diem_framework, timer);
     }
 
-    /// Updates the wall clock time by consensus. Requires VM privilege and will be invoked during block prologue.
-    public(friend) fun update_global_time(
+    /// Updates the wall clock time by consensus. Requires VM privilege and will
+    // be invoked during block prologue.
+    // NOTE: This function is not `(friend)` because governance scripts need to
+    // call it.
+    // TODO: refactor diem_governance so that this can again have only
+    // friend visibility.
+    public fun update_global_time(
         account: &signer,
         proposer: address,
         timestamp: u64
