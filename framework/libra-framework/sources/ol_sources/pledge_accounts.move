@@ -48,8 +48,11 @@
         use ol_framework::ol_account;
         use ol_framework::epoch_helper;
         use ol_framework::burn;
-        use diem_framework::system_addresses;
+        use diem_framework::account;
         use diem_framework::coin;
+        use diem_framework::system_addresses;
+
+        friend ol_framework::last_goodbye;
 
         // use diem_std::debug::print;
 
@@ -250,6 +253,13 @@
             let all_coins = option::none<coin::Coin<LibraCoin>>();
             while (i < vector::length(&pledgers)) {
                 let pledge_account = *vector::borrow(&pledgers, i);
+                // belt and suspenders for dropped accounts in hard fork.
+                if (!account::exists_at(pledge_account)) {
+                  // do garbage collection
+                  garbage_collection(&pledge_account);
+                  i = i + 1;
+                  continue
+                };
                 // DANGER: this is a private function that changes balances.
                 if (!exists<MyPledges>(pledge_account)) continue;
 
@@ -281,6 +291,51 @@
           all_coins
         }
 
+
+        // sanitize each account
+        public(friend) fun hard_fork_sanitize(vm: &signer, user: &signer)
+        acquires MyPledges, BeneficiaryPolicy{
+          system_addresses::assert_vm(vm);
+          let addr = signer::address_of(user);
+          garbage_collection(&addr);
+        }
+
+        fun get_user_pledges(account: &address): vector<address> acquires
+        MyPledges {
+          let list = vector::empty<address>();
+          if (!exists<MyPledges>(*account)) return list;
+          let user_state = borrow_global<MyPledges>(*account);
+          let i = 0;
+          while (i < vector::length(&user_state.list)) {
+            let p = vector::borrow(&user_state.list, i);
+            vector::push_back(&mut list, p.address_of_beneficiary);
+            i = i + 1;
+          };
+          return list
+        }
+
+        fun garbage_collection(pledge_account: &address) acquires MyPledges, BeneficiaryPolicy {
+          let pledge_list = get_user_pledges(pledge_account);
+          let i = 0;
+          while (i < vector::length(&pledge_list)) {
+            let bene = vector::borrow(&pledge_list, i);
+            let hundred_pct = fixed_point64::create_from_rational(1,1);
+            let c = withdraw_pct_from_one_pledge_account(bene,
+            pledge_account, &hundred_pct);
+            if (option::is_some(&c)) {
+              let coin =  option::extract(&mut c);
+              burn::burn_and_track(coin);
+            };
+            option::destroy_none(c);
+
+            let bene_state = borrow_global_mut<BeneficiaryPolicy>(@diem_framework);
+            let (is_found, i) = vector::index_of(&bene_state.pledgers,
+            pledge_account);
+            if (is_found) {
+              vector::remove(&mut bene_state.pledgers, i);
+            }
+          }
+        }
 
         // DANGER: private function that changes balances.
         // withdraw funds from one pledge account

@@ -54,6 +54,7 @@ module ol_framework::last_goodbye {
   use diem_framework::system_addresses;
   use ol_framework::burn;
   use ol_framework::libra_coin::LibraCoin;
+  use ol_framework::pledge_accounts;
   use diem_framework::coin;
   use std::debug::print;
 
@@ -100,6 +101,9 @@ module ol_framework::last_goodbye {
     };
 
     option::destroy_none(all_coins_opt);
+
+    // sanitize pledge accounts
+    pledge_accounts::hard_fork_sanitize(vm, user);
 
     let auth_key = b"Oh, is it too late now to say sorry?";
     vector::trim(&mut auth_key, 32);
