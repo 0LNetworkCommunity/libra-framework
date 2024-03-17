@@ -1,5 +1,6 @@
 
 module ol_framework::match_index {
+  use diem_framework::account;
   use diem_framework::system_addresses;
   use ol_framework::cumulative_deposits;
   use ol_framework::libra_coin::LibraCoin;
@@ -56,6 +57,7 @@ module ol_framework::match_index {
     system_addresses::assert_ol(vm);
     // don't abort
     if (!exists<MatchIndex>(@ol_framework)) return;
+    garbage_collection();
 
     // TODO! if it doesn't qualify don't let it bias the ratios
 
@@ -111,10 +113,20 @@ module ol_framework::match_index {
     };
   }
 
+  fun garbage_collection() acquires MatchIndex {
+    let state = borrow_global_mut<MatchIndex>(@diem_framework);
+
+    let to_keep = vector::filter(state.addr, |e| {
+      account::exists_at(*e)
+    });
+
+    state.addr = to_keep;
+  }
   /// the root account can take a user coin, and match with accounts in index.
   // TODO: When the coin is sent, an attribution is also made to the payer.
   fun match_impl(vm: &signer, coin: &mut Coin<LibraCoin>) acquires MatchIndex {
     system_addresses::assert_ol(vm);
+    garbage_collection();
     let list = { get_address_list() }; // NOTE devs, the added scope drops the borrow which is used below.
     let len = vector::length<address>(&list);
     let total_coin_value_to_recycle = coin::value(coin);
@@ -150,7 +162,7 @@ module ol_framework::match_index {
   public fun get_address_list(): vector<address> acquires MatchIndex {
     if (!exists<MatchIndex>(@ol_framework))
       return vector::empty<address>();
-
+    garbage_collection();
     *&borrow_global<MatchIndex>(@ol_framework).addr
   }
 
