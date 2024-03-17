@@ -7,6 +7,7 @@ module diem_framework::timestamp {
     use std::error;
 
     friend diem_framework::genesis;
+    friend diem_framework::block;
 
     /// A singleton resource holding the current Unix time in microseconds
     struct CurrentTimeMicroseconds has key {
@@ -28,7 +29,12 @@ module diem_framework::timestamp {
         move_to(diem_framework, timer);
     }
 
-    /// Updates the wall clock time by consensus. Requires VM privilege and will be invoked during block prologue.
+    /// Updates the wall clock time by consensus. Requires VM privilege and will
+    // be invoked during block prologue.
+    // NOTE: This function is not `(friend)` because governance scripts need to
+    // call it.
+    // TODO: refactor diem_governance so that this can again have only
+    // friend visibility.
     public fun update_global_time(
         account: &signer,
         proposer: address,

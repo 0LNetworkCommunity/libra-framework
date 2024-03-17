@@ -69,8 +69,9 @@ module ol_framework::cumulative_deposits {
         };
     }
 
-      /// get the proportion of donoations of all donors to account.
-   public fun get_pro_rata_cumu_deposits(multisig_address: address): (vector<address>, vector<FixedPoint32>, vector<u64>) acquires CumulativeDeposits{
+
+    /// get the proportion of donoations of all donors to account.
+    fun get_pro_rata_cumu_deposits(multisig_address: address): (vector<address>, vector<FixedPoint32>, vector<u64>) acquires CumulativeDeposits{
     // get total fees
     let balance = get_cumulative_deposits(multisig_address);
     let donors = get_depositors(multisig_address);
@@ -94,7 +95,7 @@ module ol_framework::cumulative_deposits {
     };
 
       (pro_rata_addresses, pro_rata, pro_rata_amounts)
-   }
+    }
 
 
     /// adjust the points of the deposits favoring more recent deposits.
@@ -109,6 +110,7 @@ module ol_framework::cumulative_deposits {
     }
 
     //////// GETTERS ////////
+    #[view]
     public fun is_init_cumu_tracking(addr: address): bool {
       exists<CumulativeDeposits>(addr)
     }

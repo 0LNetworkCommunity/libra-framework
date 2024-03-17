@@ -13,9 +13,12 @@ module ol_framework::community_wallet_init {
     use ol_framework::ancestry;
     use ol_framework::match_index;
     use ol_framework::community_wallet;
-
-
     // use diem_std::debug::print;
+
+    #[test_only]
+    friend ol_framework::test_community_wallet;
+    #[test_only]
+    friend ol_framework::test_donor_voice;
 
     /// not authorized to operate on this account
     const ENOT_AUTHORIZED: u64 = 1;
@@ -47,7 +50,7 @@ module ol_framework::community_wallet_init {
     const MINIMUM_AUTH: u64 = 3;
 
 
-    public fun migrate_community_wallet_account(vm: &signer, dv_account:
+    public(friend) fun migrate_community_wallet_account(vm: &signer, dv_account:
     &signer) {
       use diem_framework::system_addresses;
       system_addresses::assert_ol(vm);
@@ -129,7 +132,8 @@ module ol_framework::community_wallet_init {
       !multisig_common_ancestry(addr)
     }
 
-
+    #[test_only]
+    // COMMIT NOTE: leaving this function which allows for assertion to be made
     /// Dynamic check to see if CommunityWallet is qualifying.
     /// if it is not qualifying it wont be part of the burn funds matching.
     public fun assert_qualifies(addr: address) {
@@ -165,14 +169,6 @@ module ol_framework::community_wallet_init {
 
       fam
     }
-
-    // /// check qualifications of community wallets
-    // /// need to check every epoch so that wallets who no longer qualify are not biasing the Match algorithm.
-    // public fun epoch_reset_ratios(root: &signer) {
-    //   system_addresses::assert_ol(root);
-    //   let good = get_qualifying();
-    //   match_index::calc_ratios(root, good);
-    // }
 
     #[view]
     /// from the list of addresses that opted into the match_index, filter for only those that qualified.

@@ -264,6 +264,7 @@ module ol_framework::sacred_cows {
     })
   }
 
+  //////// GETTERS ////////
   // get the stored value
   public fun get_stored<T>(): u64 acquires SacredCow {
     if (!exists<SacredCow<T>>(@0x2)) return 0;

@@ -48,16 +48,19 @@ module ol_framework::safe {
   use std::guid;
   use std::error;
   use diem_framework::account::WithdrawCapability;
-  use diem_framework::coin;
+  // use diem_framework::coin;
   use ol_framework::ol_account;
-  use ol_framework::libra_coin::LibraCoin;
+  use ol_framework::libra_coin;
   use ol_framework::multi_action;
   use ol_framework::system_addresses;
   use ol_framework::transaction_fee;
 
   // use diem_std::debug::print;
 
+  friend diem_framework::genesis;
   friend ol_framework::epoch_boundary;
+  #[test_only]
+  friend ol_framework::test_safe;
 
   /// a multi action safe is not initialized on this account
   const ESAFE_NOT_INITIALIZED: u64 = 1;
@@ -81,7 +84,7 @@ module ol_framework::safe {
   /// init_gov fails gracefully if the governance is already initialized.
   /// init_type will throw errors if the type is already initialized.
 
-  public fun init_payment_multisig(sponsor: &signer) acquires RootMultiSigRegistry {
+  public entry fun init_payment_multisig(sponsor: &signer) acquires RootMultiSigRegistry {
     multi_action::init_gov(sponsor);
     multi_action::init_type<PaymentType>(sponsor, true);
     add_to_registry(signer::address_of(sponsor));
@@ -97,17 +100,17 @@ module ol_framework::safe {
   // Only the first proposer can set the expiration time. It will be ignored when a duplicate is caught.
 
 
-  public fun propose_payment(sig: &signer, multisig_addr: address, recipient: address, amount: u64, note: vector<u8>, duration_epochs: Option<u64>): guid::ID acquires RootMultiSigRegistry {
+  public(friend) fun propose_payment(sig: &signer, multisig_addr: address, recipient: address, amount: u64, note: vector<u8>, duration_epochs: Option<u64>): guid::ID acquires RootMultiSigRegistry {
     assert!(is_in_registry(multisig_addr), error::invalid_state(ESAFE_NOT_INITIALIZED));
     let pay = new_payment(recipient, amount, *&note);
     let prop = multi_action::proposal_constructor(pay, duration_epochs);
     let id = multi_action::propose_new<PaymentType>(sig, multisig_addr, prop);
-    vote_payment(sig, multisig_addr, &id);
+    vote_payment_impl(sig, multisig_addr, &id);
     id
   }
 
   /// create a payment object, whcih can be send in a proposal.
-  public fun new_payment(destination: address, amount: u64, note: vector<u8>): PaymentType {
+  fun new_payment(destination: address, amount: u64, note: vector<u8>): PaymentType {
     PaymentType {
       destination,
       amount,
@@ -115,7 +118,13 @@ module ol_framework::safe {
     }
   }
 
-  public fun vote_payment(sig: &signer, multisig_address: address, id: &guid::ID): bool {
+  public(friend) fun vote_payment(sig: &signer, multisig_address: address, id:
+  &guid::ID): bool
+  {
+    vote_payment_impl(sig, multisig_address, id)
+  }
+
+  fun vote_payment_impl(sig: &signer, multisig_address: address, id: &guid::ID): bool {
 
     let (passed, cap_opt) = multi_action::vote_with_id<PaymentType>(sig, id, multisig_address);
 
@@ -130,7 +139,7 @@ module ol_framework::safe {
     passed
   }
 
-  public fun is_payment_multisig(addr: address):bool {
+  fun is_payment_multisig(addr: address):bool {
     multi_action::has_action<PaymentType>(addr)
   }
 
@@ -155,7 +164,7 @@ module ol_framework::safe {
     fee: u64, // percentage balance fee denomiated in 4 decimal precision 123456 = 12.3456%
   }
 
-  public fun initialize(vm: &signer) {
+  public(friend) fun initialize(vm: &signer) {
    system_addresses::assert_ol(vm);
    if (!exists<RootMultiSigRegistry>(@ol_framework)) {
      move_to<RootMultiSigRegistry>(vm, RootMultiSigRegistry {
@@ -194,13 +203,13 @@ module ol_framework::safe {
 
       let pct = fixed_point32::create_from_rational(reg.fee, PERCENT_SCALE);
 
-      let fee = fixed_point32::multiply_u64(coin::balance<LibraCoin>(*multi_sig_addr), pct);
+      let fee = fixed_point32::multiply_u64(libra_coin::balance(*multi_sig_addr), pct);
       expected_fees = expected_fees + fee;
 
       let coin_opt = ol_account::vm_withdraw_unlimited(vm, *multi_sig_addr, fee);
       if (option::is_some(&coin_opt)) {
         let c = option::extract(&mut coin_opt);
-        security_bill_amount = security_bill_amount + coin::value(&c);
+        security_bill_amount = security_bill_amount + libra_coin::value(&c);
         security_bill_count = security_bill_count + 1;
         transaction_fee::vm_pay_fee(vm, *multi_sig_addr, c);
       };

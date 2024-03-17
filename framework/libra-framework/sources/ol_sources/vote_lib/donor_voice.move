@@ -39,6 +39,7 @@ module ol_framework::donor_voice {
     use diem_framework::system_addresses;
 
     // use diem_std::debug::print;
+    friend diem_framework::genesis;
 
     friend ol_framework::community_wallet_init;
     friend ol_framework::donor_voice_txs;
@@ -80,7 +81,7 @@ module ol_framework::donor_voice {
     // Donor Voice Accounts are a root security service. So the root account needs to keep a registry of all Donor Voice accounts, using this service.
 
     // Utility used at genesis (and on upgrade) to initialize the system state.
-    public fun initialize(vm: &signer) {
+    public(friend) fun initialize(vm: &signer) {
       system_addresses::assert_ol(vm);
 
       if (!is_root_init()) {
@@ -91,12 +92,7 @@ module ol_framework::donor_voice {
       };
     }
 
-    public fun is_root_init():bool {
-      exists<Registry>(@ol_framework)
-    }
-
-
-    public fun migrate_root_registry(vm: &signer, list: vector<address>) {
+    public(friend) fun migrate_root_registry(vm: &signer, list: vector<address>) {
       system_addresses::assert_ol(vm);
       if (!is_root_init()) {
         move_to<Registry>(vm, Registry {
@@ -106,9 +102,15 @@ module ol_framework::donor_voice {
       };
     }
 
-    /// public helper to add
+    //////// GETTERS ///////
+
+    public fun is_root_init():bool {
+      exists<Registry>(@ol_framework)
+    }
+
+    /// public helper to add account to donor voice registry
     // commit note: this so we don't break compatibility of add_to_registry
-    public (friend) fun add(sig: &signer) acquires Registry {
+    public(friend) fun add(sig: &signer) acquires Registry {
       add_to_registry(sig)
     }
 
@@ -124,12 +126,21 @@ module ol_framework::donor_voice {
       };
     }
 
+    // Function to add an address to the liquidation queue directly
+    public(friend) fun add_to_liquidation_queue(addr: address) acquires Registry {
+        let registry = borrow_global_mut<Registry>(@ol_framework);
+        vector::push_back(&mut registry.liquidation_queue, addr);
+    }
+
+
+    #[view]
     /// check if an account is in the registry
     public fun is_donor_voice(addr: address): bool acquires Registry {
       let list = get_root_registry();
       vector::contains<address>(&list, &addr)
     }
 
+    #[view]
     /// Getter for retrieving the list of TxSchedule wallets.
     public fun get_root_registry(): vector<address> acquires Registry{
       if (exists<Registry>(@ol_framework)) {
@@ -139,12 +150,6 @@ module ol_framework::donor_voice {
         return vector::empty<address>()
       }
     }
-
-  // Function to add an address to the liquidation queue directly
-  public fun add_to_liquidation_queue(addr: address) acquires Registry {
-      let registry = borrow_global_mut<Registry>(@ol_framework);
-      vector::push_back(&mut registry.liquidation_queue, addr);
-  }
 
 
   #[view]

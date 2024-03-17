@@ -44,7 +44,7 @@ module ol_framework::test_tower {
     timestamp::fast_forward_seconds(1);
     ol_account::create_account(&root, signer::address_of(&cousin_alice));
 
-    tower_state::init_miner_state(
+    tower_state::test_init_miner_state(
           &cousin_alice,
           &vdf_fixtures::alice_0_easy_chal(),
           &vdf_fixtures::alice_0_easy_sol(),
@@ -63,7 +63,7 @@ module ol_framework::test_tower {
     mock::tower_default(&root); // make all the validators initialize towers
     // because we need randomness for the toy rng
 
-    let num = tower_state::toy_rng(1, 3, 0);
+    let num = tower_state::test_toy_rng(1, 3, 0);
 
     assert!(num == 116, 7357001);
 
@@ -78,7 +78,7 @@ module ol_framework::test_tower {
     mock::tower_default(&root); // make all the validators initialize towers
     // because we need randomness for the toy rng
 
-    let num = tower_state::toy_rng(0, 1, 0);
+    let num = tower_state::test_toy_rng(0, 1, 0);
     assert!(num == 116, 7357001);
 
   }

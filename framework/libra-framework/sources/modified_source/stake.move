@@ -382,7 +382,7 @@ module diem_framework::stake {
             validator_index: 0,
         });
 
-        slow_wallet::set_slow(account);
+        slow_wallet::user_set_slow(account);
     }
 
     fun initialize_owner(owner: &signer) acquires AllowedValidators {

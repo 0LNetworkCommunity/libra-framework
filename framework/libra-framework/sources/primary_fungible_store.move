@@ -15,7 +15,7 @@ module diem_framework::primary_fungible_store {
 
     /// Creators of fungible assets can call this to enable support for creating primary (deterministic) stores for
     /// their users.
-    public fun create_primary_store_enabled_fungible_asset(
+    public(friend) fun create_primary_store_enabled_fungible_asset(
         constructor_ref: &ConstructorRef,
         monitoring_supply_with_maximum: Option<Option<u128>>,
         name: String,
@@ -29,7 +29,7 @@ module diem_framework::primary_fungible_store {
         });
     }
 
-    public fun ensure_primary_store_exists<T: key>(
+    public(friend) fun ensure_primary_store_exists<T: key>(
         owner: address,
         metadata: Object<T>,
     ): Object<FungibleStore> acquires DeriveRefPod {
@@ -41,7 +41,7 @@ module diem_framework::primary_fungible_store {
     }
 
     /// Create a primary store object to hold fungible asset for the given address.
-    public fun create_primary_store<T: key>(
+    public(friend) fun create_primary_store<T: key>(
         owner_addr: address,
         metadata: Object<T>,
     ): Object<FungibleStore> acquires DeriveRefPod {
@@ -94,13 +94,13 @@ module diem_framework::primary_fungible_store {
     }
 
     /// Withdraw `amount` of fungible asset from `store` by the owner.
-    public fun withdraw<T: key>(owner: &signer, metadata: Object<T>, amount: u64): FungibleAsset {
+    public(friend) fun withdraw<T: key>(owner: &signer, metadata: Object<T>, amount: u64): FungibleAsset {
         let store = primary_store(signer::address_of(owner), metadata);
         fungible_asset::withdraw(owner, store, amount)
     }
 
     /// Deposit `amount` of fungible asset to the given account's primary store.
-    public fun deposit(owner: address, fa: FungibleAsset) acquires DeriveRefPod {
+    public(friend) fun deposit(owner: address, fa: FungibleAsset) acquires DeriveRefPod {
         let metadata = fungible_asset::asset_metadata(&fa);
         let store = ensure_primary_store_exists(owner, metadata);
         fungible_asset::deposit(store, fa);

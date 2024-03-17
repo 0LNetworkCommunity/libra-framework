@@ -47,6 +47,15 @@ module ol_framework::jail {
   use ol_framework::vouch;
   use ol_framework::stake;
 
+  friend ol_framework::validator_universe;
+  friend ol_framework::epoch_boundary;
+  #[test_only]
+  friend ol_framework::test_pof;
+  #[test_only]
+  friend ol_framework::test_jail;
+  #[test_only]
+  friend ol_framework::test_boundary;
+
   /// Validator is misconfigured cannot unjail.
   const EVALIDATOR_CONFIG: u64 = 1;
   /// You are not a validator in the current set, you can't unjail anyone.
@@ -72,7 +81,7 @@ module ol_framework::jail {
 
   }
 
-  public fun init(val_sig: &signer) {
+  public(friend) fun init(val_sig: &signer) {
     let addr = signer::address_of(val_sig);
     if (!exists<Jail>(addr)) {
       move_to<Jail>(val_sig, Jail {
@@ -94,7 +103,7 @@ module ol_framework::jail {
     borrow_global<Jail>(validator).is_jailed
   }
 
-  public fun jail(vm: &signer, validator: address) acquires Jail{
+  public(friend) fun jail(vm: &signer, validator: address) acquires Jail{
     system_addresses::assert_ol(vm);
     if (exists<Jail>(validator)) {
       let j = borrow_global_mut<Jail>(validator);
@@ -109,12 +118,17 @@ module ol_framework::jail {
   /// If the validator performs again after having been jailed,
   /// then we can remove the consecutive fails.
   /// Otherwise the lifetime counters on their account, and on buddy Voucher accounts does not get cleared.
-  public fun reset_consecutive_fail(root: &signer, validator: address) acquires Jail {
+  fun reset_consecutive_fail(root: &signer, validator: address) acquires Jail {
     system_addresses::assert_ol(root);
     if (exists<Jail>(validator)) {
       let j = borrow_global_mut<Jail>(validator);
       j.consecutive_failure_to_rejoin = 0;
     }
+  }
+
+  #[test_only]
+  public(friend) fun test_reset_consecutive_fail(root: &signer, validator: address) acquires Jail {
+    reset_consecutive_fail(root, validator)
   }
 
   /// Only a Voucher of the validator can flip the unjail bit.
@@ -146,7 +160,7 @@ module ol_framework::jail {
   /// this is used in the bidding process for Proof-of-Fee where
   /// we seat the validators with the least amount of consecutive failures
   /// to rejoin.
-  public fun sort_by_jail(vec_address: vector<address>): vector<address> acquires Jail {
+  public(friend) fun sort_by_jail(vec_address: vector<address>): vector<address> acquires Jail {
 
     // Sorting the accounts vector based on value (weights).
     // Bubble sort algorithm

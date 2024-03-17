@@ -5,8 +5,8 @@ module ol_framework::test_migration {
   use ol_framework::slow_wallet;
   use ol_framework::ol_account;
   use ol_framework::mock;
-  use diem_framework::coin;
-  use ol_framework::libra_coin::LibraCoin;
+  // use diem_framework::coin;
+  use ol_framework::libra_coin;
   use std::signer;
   use std::bcs;
 
@@ -42,7 +42,7 @@ module ol_framework::test_migration {
       init_balance,
     );
 
-    let user_balance = coin::balance<LibraCoin>(addr);
+    let user_balance = libra_coin::balance(addr);
 
     assert!(user_balance == init_balance, 73570000);
 
@@ -50,7 +50,7 @@ module ol_framework::test_migration {
 
     // alice only has 1000 unlocked, and 100 lifetime transferred out
     let legacy_unlocked = 1000;
-    slow_wallet::fork_migrate_slow_wallet(&root, &marlon_rando, legacy_unlocked, 100);
+    slow_wallet::test_fork_migrate_slow_wallet(&root, &marlon_rando, legacy_unlocked, 100);
     let (unlocked, total) = ol_account::balance(addr);
     assert!(unlocked == legacy_unlocked, 73570001);
     assert!(total == user_balance, 73570002);
@@ -72,7 +72,7 @@ module ol_framework::test_migration {
 
     assert!(all_pledge_balance == user_pledge, 73570005);
 
-    let updated_balance = coin::balance<LibraCoin>(addr);
+    let updated_balance = libra_coin::balance(addr);
 
     assert!((updated_balance + user_pledge) == init_balance, 73570006);
   }

@@ -28,7 +28,7 @@ module ol_framework::test_pof {
     let a_sig = account::create_signer_for_test(*alice);
     // mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
 
-    proof_of_fee::set_bid(&a_sig, 1, 10000);
+    proof_of_fee::pof_update_bid(&a_sig, 1, 10000);
     let (bid, expires) = proof_of_fee::current_bid(*alice);
     assert!(bid == 1, 1001);
     assert!(expires == 10000, 1002);
@@ -50,21 +50,21 @@ module ol_framework::test_pof {
     stake::is_valid(*alice);
 
     let a_sig = account::create_signer_for_test(*alice);
-    proof_of_fee::init(&a_sig);
+    proof_of_fee::init_bidding(&a_sig);
 
     let (bid, expires) = proof_of_fee::current_bid(*alice);
     assert!(bid == 0, 1001);
     assert!(expires == 0, 1002);
 
 
-    proof_of_fee::set_bid(&a_sig, 100, 0);
+    proof_of_fee::pof_update_bid(&a_sig, 100, 0);
     let (bid, expires) = proof_of_fee::current_bid(*alice);
     assert!(bid == 100, 1003);
     assert!(expires == 0, 1004);
 
 
     // now retract
-    proof_of_fee::retract_bid(&a_sig);
+    proof_of_fee::pof_retract_bid(a_sig);
     let (bid, expires) = proof_of_fee::current_bid(*alice);
     let (is_rectracted, epoch) = proof_of_fee::is_already_retracted(*alice);
     assert!(is_rectracted, 1007);
@@ -136,7 +136,7 @@ module ol_framework::test_pof {
     assert!(!jail::is_jailed(alice), 7357001);
     let a_sig = account::create_signer_for_test(alice);
 
-    proof_of_fee::set_bid(&a_sig, 100, 10000); // 10 pct
+    proof_of_fee::pof_update_bid(&a_sig, 100, 10000); // 10 pct
     let (bid, expires) = proof_of_fee::current_bid(alice);
     assert!(bid == 100, 7357001);
     assert!(expires == 10000, 7357002);
@@ -180,7 +180,7 @@ module ol_framework::test_pof {
     let a_sig = account::create_signer_for_test(alice);
 
     // set a bid in the past
-    proof_of_fee::set_bid(&a_sig, 1, 0);
+    proof_of_fee::pof_update_bid(&a_sig, 1, 0);
     let (bid, expires) = proof_of_fee::current_bid(alice);
     assert!(bid == 1, 1006);
     assert!(expires == 0, 1007);
@@ -189,7 +189,7 @@ module ol_framework::test_pof {
     assert!(!pass, 1008);
 
     // fix it
-    proof_of_fee::set_bid(&a_sig, 1, 1000);
+    proof_of_fee::pof_update_bid(&a_sig, 1, 1000);
 
     let (_err, pass) = proof_of_fee::audit_qualification(alice);
     assert!(pass, 1009);
@@ -314,7 +314,7 @@ module ol_framework::test_pof {
     // set an expired bid for alice
     let alice = vector::borrow(&set, 0);
     let alice_sig = account::create_signer_for_test(*alice);
-    proof_of_fee::set_bid(&alice_sig, 55, 1);
+    proof_of_fee::pof_update_bid(&alice_sig, 55, 1);
 
     // advance the epoch 2x, so the previous bid is expired.
     mock::mock_all_vals_good_performance(&root);
@@ -413,7 +413,7 @@ module ol_framework::test_pof {
 
     // Ok now EVE changes her mind. Will force the bid to expire.
     let a_sig = account::create_signer_for_test(*vector::borrow(&set, 4));
-    proof_of_fee::set_bid(&a_sig, 0, 0);
+    proof_of_fee::pof_update_bid(&a_sig, 0, 0);
 
     slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 

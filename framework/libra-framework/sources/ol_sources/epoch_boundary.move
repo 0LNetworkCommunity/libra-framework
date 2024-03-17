@@ -15,6 +15,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::infra_escrow;
     use ol_framework::oracle;
     use ol_framework::ol_account;
+    use ol_framework::libra_coin;
     use ol_framework::match_index;
     use ol_framework::community_wallet_init;
 
@@ -22,7 +23,7 @@ module diem_framework::epoch_boundary {
     use diem_framework::reconfiguration;
     use diem_framework::transaction_fee;
     use diem_framework::system_addresses;
-    use diem_framework::coin::{Self, Coin};
+    use diem_framework::coin::{Coin};
     use std::vector;
     use std::error;
     use std::string;
@@ -31,6 +32,7 @@ module diem_framework::epoch_boundary {
 
     use diem_std::debug::print;
 
+    friend diem_framework::genesis;
     friend diem_framework::diem_governance;
     friend diem_framework::block; // for testnet only
 
@@ -121,7 +123,7 @@ module diem_framework::epoch_boundary {
 
     /// initialize structs, requires both signers since BoundaryBit can only be
     // accessed by VM
-    public fun initialize(framework_signer: &signer) {
+    public(friend) fun initialize(framework_signer: &signer) {
       if (!exists<BoundaryStatus>(@ol_framework)){
         move_to(framework_signer, reset());
       };
@@ -241,7 +243,7 @@ module diem_framework::epoch_boundary {
     }
 
     // utility to use in smoke tests
-    public fun smoke_trigger_epoch(framework_signer: &signer) acquires BoundaryBit,
+    public entry fun smoke_trigger_epoch(framework_signer: &signer) acquires BoundaryBit,
     BoundaryStatus {
       // cannot call thsi on mainnet
       // only for smoke testing
@@ -346,7 +348,7 @@ module diem_framework::epoch_boundary {
 
         if (transaction_fee::system_fees_collected() > 0) {
           let all_fees = transaction_fee::root_withdraw_all(root);
-          status.system_fees_collected = coin::value(&all_fees);
+          status.system_fees_collected = libra_coin::value(&all_fees);
 
           // Nominal fee set by the PoF thermostat
           let (nominal_reward_to_vals, entry_fee, clearing_percent, _ ) = proof_of_fee::get_consensus_reward();
@@ -373,9 +375,9 @@ module diem_framework::epoch_boundary {
             if (nominal_reward_to_vals > entry_fee) {
                 let net_val_reward = nominal_reward_to_vals - entry_fee;
 
-                if (coin::value(&all_fees) > net_val_reward) {
-                    let oracle_budget = coin::extract(&mut all_fees, net_val_reward);
-                    status.oracle_budget = coin::value(&oracle_budget);
+                if (libra_coin::value(&all_fees) > net_val_reward) {
+                    let oracle_budget = libra_coin::extract(&mut all_fees, net_val_reward);
+                    status.oracle_budget = libra_coin::value(&oracle_budget);
 
                     let (count, amount) = oracle::epoch_boundary(root, &mut oracle_budget);
                     status.oracle_pay_count = count;
@@ -418,9 +420,9 @@ module diem_framework::epoch_boundary {
         jail::jail(root, *addr);
       } else {
         // vector::push_back(&mut compliant_vals, *addr);
-        if (coin::value(reward_budget) > reward_per) {
-          let user_coin = coin::extract(reward_budget, reward_per);
-          reward_deposited = reward_deposited + coin::value(&user_coin);
+        if (libra_coin::value(reward_budget) > reward_per) {
+          let user_coin = libra_coin::extract(reward_budget, reward_per);
+          reward_deposited = reward_deposited + libra_coin::value(&user_coin);
           rewards::process_single(root, *addr, user_coin, 1);
         }
       };
@@ -476,7 +478,7 @@ module diem_framework::epoch_boundary {
 
     /// check qualifications of community wallets
     /// need to check every epoch so that wallets who no longer qualify are not biasing the Match algorithm.
-    public fun reset_match_index_ratios(root: &signer) {
+    fun reset_match_index_ratios(root: &signer) {
       system_addresses::assert_ol(root);
       let list = match_index::get_address_list();
       let good = community_wallet_init::get_qualifying(list);

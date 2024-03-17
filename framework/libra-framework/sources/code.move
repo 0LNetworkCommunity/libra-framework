@@ -130,6 +130,10 @@ module diem_framework::code {
         }
     }
 
+    // NOTE: we are allowing this to be a public function because
+    // we need for @0x1 to be able to call this function from a tx script on
+    // upgrades.
+
     /// Publishes a package at the given signer's address. The caller must provide package metadata describing the
     /// package.
     public fun publish_package(owner: &signer, pack: PackageMetadata, code:
@@ -164,12 +168,14 @@ module diem_framework::code {
           // Sayin', ("This is my message to you-ou-ou:")
         );
 
-        // // Disallow incompatible upgrade mode. Governance can decide later if
-        // // this should be reconsidered.
-        // assert!(
-        //     pack.upgrade_policy.policy > upgrade_policy_arbitrary().policy,
-        //     error::invalid_argument(EINCOMPATIBLE_POLICY_DISABLED),
-        // );
+        // including this for future compatibility.
+        // only system accounts can publish so this is always a `false`
+        if (!is_policy_exempted_address(addr)) { // wrapping this to prevent fat finger
+          // assert!(
+          //     pack.upgrade_policy.policy > upgrade_policy_arbitrary().policy,
+          //     error::invalid_argument(EINCOMPATIBLE_POLICY_DISABLED),
+          // );
+        };
 
         if (!exists<PackageRegistry>(addr)) {
             move_to(owner, PackageRegistry { packages: vector::empty() })
@@ -198,7 +204,12 @@ module diem_framework::code {
 
                 upgrade_number = old.upgrade_number + 1;
 
-                check_upgradability(old, &pack, &module_names);
+                // including this for future compatibility.
+                // only system accounts can publish so this is always a `false`
+                if (!is_policy_exempted_address(addr)) {
+                  // check_upgradability(old, &pack, &module_names);
+                };
+
                 index = i;
             } else {
                 check_coexistence(old, &module_names)
@@ -232,17 +243,23 @@ module diem_framework::code {
     // Helpers
     // -------
 
-    /// Checks whether the given package is upgradable, and returns true if a compatibility check is needed.
+    /// Checks whether the given package is upgradable, and returns true if a
+    // compatibility check is needed.
+    // COMMIT NOTE: we are restoring this for test and reference purposes
+    // the vm and framework are allowed to do unchecked upgrades:
+    //
+    // - system might be dropping a module
+    // - system might be changing visibility of functions
+    // - system might change policy to stronger or weaker (but this is ignored).
+    // - system might intentionally break struct layouts (WARNING: you crazy).
     fun check_upgradability(
-        old_pack: &PackageMetadata, _new_pack: &PackageMetadata, new_modules:
+        old_pack: &PackageMetadata, new_pack: &PackageMetadata, new_modules:
         &vector<String>) {
 
-        // system can change policy to stronger or weaker
-
-        // assert!(old_pack.upgrade_policy.policy < upgrade_policy_immutable().policy,
-        //     error::invalid_argument(EUPGRADE_IMMUTABLE));
-        // assert!(can_change_upgrade_policy_to(old_pack.upgrade_policy, new_pack.upgrade_policy),
-        //     error::invalid_argument(EUPGRADE_WEAKER_POLICY));
+        assert!(old_pack.upgrade_policy.policy < upgrade_policy_immutable().policy,
+            error::invalid_argument(EUPGRADE_IMMUTABLE));
+        assert!(can_change_upgrade_policy_to(old_pack.upgrade_policy, new_pack.upgrade_policy),
+            error::invalid_argument(EUPGRADE_WEAKER_POLICY));
         let old_modules = get_module_names(old_pack);
         let i = 0;
         while (i < vector::length(&old_modules)) {

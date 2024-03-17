@@ -10,9 +10,6 @@
   /// The voting on a veto of a transaction or an outright liquidation of the account is done by the Donors.
   /// The voting mechanism is a TurnoutTally. Such votes ajust the threshold for passing a vote based on the actual turnout. I.e. The fewer people that vote, the higher the threshold to reach consensus. But a vote is not scuttled if the turnout is low. See more details in the TurnoutTally.move module.
 module ol_framework::donor_voice_governance {
-    friend ol_framework::donor_voice;
-    friend ol_framework::donor_voice_txs;
-
     use std::error;
     use std::signer;
     use std::guid;
@@ -25,6 +22,9 @@ module ol_framework::donor_voice_governance {
     use ol_framework::epoch_helper;
     use std::vector;
     // use ol_framework::debug::print;
+
+    friend ol_framework::donor_voice;
+    friend ol_framework::donor_voice_txs;
 
     /// Is not a donor to this account
     const ENOT_A_DONOR: u64 = 1;
@@ -49,7 +49,7 @@ module ol_framework::donor_voice_governance {
     /// this is a GovAction type for liquidation
     struct Liquidate has drop, store {}
 
-    public fun init_donor_governance(dv_account: &signer) {
+    public(friend) fun init_donor_governance(dv_account: &signer) {
       let addr = signer::address_of(dv_account);
 
       if (!exists<Governance<TurnoutTally<Veto>>>(addr)) {
@@ -75,18 +75,18 @@ module ol_framework::donor_voice_governance {
       cumulative_deposits::get_cumulative_deposits(dv_account)
     }
 
-    /// public function to check that a user account is a Donor for a Donor Voice account.
-
+    #[view]
+    /// view function to check that a user account is a Donor for a Donor Voice account.
     public fun check_is_donor(dv_account: address, user: address): bool {
       get_user_donations(dv_account, user) > 0
     }
 
-    public fun assert_authorized(sig: &signer, dv_account: address) {
+    public(friend) fun assert_authorized(sig: &signer, dv_account: address) {
       let user = signer::address_of(sig);
       assert!(check_is_donor(dv_account, user), error::permission_denied(ENOT_A_DONOR));
     }
 
-    public fun is_authorized(user: address, dv_account: address):bool {
+    fun is_authorized(user: address, dv_account: address):bool {
       check_is_donor(dv_account, user)
     }
 
@@ -236,7 +236,7 @@ module ol_framework::donor_voice_governance {
 
     // with a known transaction uid, scan all the pending vetos to see if there is a veto for that transaction, and what the index is.
     // NOTE: what is being returned is a different ID, that of the proposal to veto
-    public fun find_tx_veto_id(tx_id: guid::ID): (bool, guid::ID) acquires Governance {
+    public(friend) fun find_tx_veto_id(tx_id: guid::ID): (bool, guid::ID) acquires Governance {
       // let proposal_guid = guid::create_id(dv_account, id);
       let dv_account = guid::id_creator_address(&tx_id);
       let state = borrow_global_mut<Governance<TurnoutTally<Veto>>>(dv_account);

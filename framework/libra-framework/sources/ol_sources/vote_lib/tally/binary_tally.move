@@ -15,6 +15,9 @@
     use std::option::{Self, Option};
     use diem_framework::reconfiguration;
 
+    #[test_only]
+    friend ol_framework::turnkey_binary_poll;
+
     /// tally not initialized
     const ENOT_INITIALIZED: u64 = 0;
     /// no ballot found
@@ -76,7 +79,7 @@
 
     //////// PROPOSE BALLOT WITH AN ISSUE ////////
 
-    public fun ballot_constructor<IssueData: drop + store>(issue_data: IssueData): BinaryTally<IssueData> {
+    public(friend) fun ballot_constructor<IssueData: drop + store>(issue_data: IssueData): BinaryTally<IssueData> {
       BinaryTally {
         votes_for: 0,
         votes_against: 0,
@@ -88,7 +91,7 @@
       }
     }
 
-    public fun propose_ballot<IssueData: drop + store>(
+    public(friend) fun propose_ballot<IssueData: drop + store>(
       tracker: &mut BallotTracker<BinaryTally<IssueData>>,
       guid: guid::GUID,
       issue_data: IssueData,
@@ -97,7 +100,7 @@
       ballot::propose_ballot(tracker, guid, prop);
     }
 
-    public fun update_enrollment<IssueData: drop + store>(
+    public(friend) fun update_enrollment<IssueData: drop + store>(
       tracker: &mut BallotTracker<BinaryTally<IssueData>>,
       uid: &guid::ID,
       list: vector<address>,
@@ -122,7 +125,7 @@
 
 
     ///////// GETTERS  /////////
-    public fun is_enrolled<IssueData: drop + store>(
+    public(friend) fun is_enrolled<IssueData: drop + store>(
       sig: &signer,
       tally_type: &BinaryTally<IssueData>,
     ): bool {
@@ -130,7 +133,7 @@
        vector::contains(&tally_type.enrollment, &addr)
     }
 
-    public fun has_voted<IssueData: drop + store>(
+    public(friend) fun has_voted<IssueData: drop + store>(
       sig: &signer,
       tally_type: &BinaryTally<IssueData>,
       // uid: &guid::ID,
@@ -143,7 +146,7 @@
 
     //////// TALLY METHODS ////////
 
-    public fun vote<IssueData: drop + store>(
+    public(friend) fun vote<IssueData: drop + store>(
       sig: &signer,
       tracker: &mut BallotTracker<BinaryTally<IssueData>>,
       uid: &guid::ID,
@@ -234,7 +237,7 @@
         option::none()
     }
 
-    public fun complete_and_move<IssueData: drop + store>(
+    public(friend) fun complete_and_move<IssueData: drop + store>(
       tracker: &mut BallotTracker<BinaryTally<IssueData>>,
       uid: &guid::ID,
       to_status_enum: u8
@@ -248,7 +251,7 @@
     }
 
     // Convenience function to overwrite the tally data of a ballot, in case you got boxed in somewhere
-    public fun force_update_tally<IssueData: drop + store> (
+    public(friend) fun force_update_tally<IssueData: drop + store> (
       tracker: &mut BallotTracker<BinaryTally<IssueData>>,
       uid: &guid::ID,
       new_tally: BinaryTally<IssueData>,

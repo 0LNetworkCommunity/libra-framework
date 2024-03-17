@@ -136,6 +136,12 @@ pub enum EntryFunctionCall {
         cap_update_table: Vec<u8>,
     },
 
+    /// User opts into burns being sent to community (recycle burn).
+    /// default is false (burn is final).
+    BurnSetSendCommunity {
+        community: bool,
+    },
+
     /// Same as `publish_package` but as an entry function which can be called as a transaction. Because
     /// of current restrictions for txn parameters, the metadata needs to be passed in serialized form.
     CodePublishPackageTxn {
@@ -169,12 +175,6 @@ pub enum EntryFunctionCall {
     CommunityWalletInitInitCommunity {
         check_addresses: Vec<AccountAddress>,
         check_threshold: u64,
-    },
-
-    DemoPrintThis {},
-
-    DemoSetMessage {
-        message: Vec<u8>,
     },
 
     DiemGovernanceAddApprovedScriptHashScript {
@@ -265,6 +265,8 @@ pub enum EntryFunctionCall {
         multisig_address: AccountAddress,
         id: u64,
     },
+
+    EpochBoundarySmokeTriggerEpoch {},
 
     /// Only a Voucher of the validator can flip the unjail bit.
     /// This is a way to make sure the validator is ready to rejoin.
@@ -475,13 +477,10 @@ pub enum EntryFunctionCall {
         epoch_expiry: u64,
     },
 
-    /// Creates a new resource account and rotates the authentication key to either
-    /// the optional auth key if it is non-empty (though auth keys are 32-bytes)
-    /// or the source accounts current auth key.
-    ResourceAccountCreateResourceAccount {
-        seed: Vec<u8>,
-        optional_auth_key: Vec<u8>,
-    },
+    /// This fucntion initiates governance for the multisig. It is called by the sponsor address, and is only callable once.
+    /// init_gov fails gracefully if the governance is already initialized.
+    /// init_type will throw errors if the type is already initialized.
+    SafeInitPaymentMultisig {},
 
     SlowWalletSmokeTestVmUnlock {
         user_addr: AccountAddress,
@@ -634,6 +633,7 @@ impl EntryFunctionCall {
                 new_public_key_bytes,
                 cap_update_table,
             ),
+            BurnSetSendCommunity { community } => burn_set_send_community(community),
             CodePublishPackageTxn {
                 metadata_serialized,
                 code,
@@ -664,8 +664,6 @@ impl EntryFunctionCall {
                 check_addresses,
                 check_threshold,
             } => community_wallet_init_init_community(check_addresses, check_threshold),
-            DemoPrintThis {} => demo_print_this(),
-            DemoSetMessage { message } => demo_set_message(message),
             DiemGovernanceAddApprovedScriptHashScript { proposal_id } => {
                 diem_governance_add_approved_script_hash_script(proposal_id)
             }
@@ -737,6 +735,7 @@ impl EntryFunctionCall {
                 multisig_address,
                 id,
             } => donor_voice_txs_vote_veto_tx(multisig_address, id),
+            EpochBoundarySmokeTriggerEpoch {} => epoch_boundary_smoke_trigger_epoch(),
             JailUnjailByVoucher { addr } => jail_unjail_by_voucher(addr),
             LibraCoinClaimMintCapability {} => libra_coin_claim_mint_capability(),
             LibraCoinDelegateMintCapability { to } => libra_coin_delegate_mint_capability(to),
@@ -841,10 +840,7 @@ impl EntryFunctionCall {
             ProofOfFeePofUpdateBid { bid, epoch_expiry } => {
                 proof_of_fee_pof_update_bid(bid, epoch_expiry)
             }
-            ResourceAccountCreateResourceAccount {
-                seed,
-                optional_auth_key,
-            } => resource_account_create_resource_account(seed, optional_auth_key),
+            SafeInitPaymentMultisig {} => safe_init_payment_multisig(),
             SlowWalletSmokeTestVmUnlock {
                 user_addr,
                 unlocked,
@@ -1156,6 +1152,23 @@ pub fn account_rotate_authentication_key_with_rotation_capability(
     ))
 }
 
+/// User opts into burns being sent to community (recycle burn).
+/// default is false (burn is final).
+pub fn burn_set_send_community(community: bool) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("burn").to_owned(),
+        ),
+        ident_str!("set_send_community").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&community).unwrap()],
+    ))
+}
+
 /// Same as `publish_package` but as an entry function which can be called as a transaction. Because
 /// of current restrictions for txn parameters, the metadata needs to be passed in serialized form.
 pub fn code_publish_package_txn(
@@ -1264,36 +1277,6 @@ pub fn community_wallet_init_init_community(
             bcs::to_bytes(&check_addresses).unwrap(),
             bcs::to_bytes(&check_threshold).unwrap(),
         ],
-    ))
-}
-
-pub fn demo_print_this() -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("demo").to_owned(),
-        ),
-        ident_str!("print_this").to_owned(),
-        vec![],
-        vec![],
-    ))
-}
-
-pub fn demo_set_message(message: Vec<u8>) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("demo").to_owned(),
-        ),
-        ident_str!("set_message").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&message).unwrap()],
     ))
 }
 
@@ -1586,6 +1569,21 @@ pub fn donor_voice_txs_vote_veto_tx(
             bcs::to_bytes(&multisig_address).unwrap(),
             bcs::to_bytes(&id).unwrap(),
         ],
+    ))
+}
+
+pub fn epoch_boundary_smoke_trigger_epoch() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("epoch_boundary").to_owned(),
+        ),
+        ident_str!("smoke_trigger_epoch").to_owned(),
+        vec![],
+        vec![],
     ))
 }
 
@@ -2198,27 +2196,21 @@ pub fn proof_of_fee_pof_update_bid(bid: u64, epoch_expiry: u64) -> TransactionPa
     ))
 }
 
-/// Creates a new resource account and rotates the authentication key to either
-/// the optional auth key if it is non-empty (though auth keys are 32-bytes)
-/// or the source accounts current auth key.
-pub fn resource_account_create_resource_account(
-    seed: Vec<u8>,
-    optional_auth_key: Vec<u8>,
-) -> TransactionPayload {
+/// This fucntion initiates governance for the multisig. It is called by the sponsor address, and is only callable once.
+/// init_gov fails gracefully if the governance is already initialized.
+/// init_type will throw errors if the type is already initialized.
+pub fn safe_init_payment_multisig() -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("resource_account").to_owned(),
+            ident_str!("safe").to_owned(),
         ),
-        ident_str!("create_resource_account").to_owned(),
+        ident_str!("init_payment_multisig").to_owned(),
         vec![],
-        vec![
-            bcs::to_bytes(&seed).unwrap(),
-            bcs::to_bytes(&optional_auth_key).unwrap(),
-        ],
+        vec![],
     ))
 }
 
@@ -2610,6 +2602,16 @@ mod decoder {
         }
     }
 
+    pub fn burn_set_send_community(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::BurnSetSendCommunity {
+                community: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn code_publish_package_txn(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::CodePublishPackageTxn {
@@ -2671,24 +2673,6 @@ mod decoder {
             Some(EntryFunctionCall::CommunityWalletInitInitCommunity {
                 check_addresses: bcs::from_bytes(script.args().get(0)?).ok()?,
                 check_threshold: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn demo_print_this(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(_script) = payload {
-            Some(EntryFunctionCall::DemoPrintThis {})
-        } else {
-            None
-        }
-    }
-
-    pub fn demo_set_message(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DemoSetMessage {
-                message: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -2867,6 +2851,16 @@ mod decoder {
                 multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
                 id: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
+        } else {
+            None
+        }
+    }
+
+    pub fn epoch_boundary_smoke_trigger_epoch(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::EpochBoundarySmokeTriggerEpoch {})
         } else {
             None
         }
@@ -3222,14 +3216,9 @@ mod decoder {
         }
     }
 
-    pub fn resource_account_create_resource_account(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::ResourceAccountCreateResourceAccount {
-                seed: bcs::from_bytes(script.args().get(0)?).ok()?,
-                optional_auth_key: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
+    pub fn safe_init_payment_multisig(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::SafeInitPaymentMultisig {})
         } else {
             None
         }
@@ -3434,6 +3423,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::account_rotate_authentication_key_with_rotation_capability),
         );
         map.insert(
+            "burn_set_send_community".to_string(),
+            Box::new(decoder::burn_set_send_community),
+        );
+        map.insert(
             "code_publish_package_txn".to_string(),
             Box::new(decoder::code_publish_package_txn),
         );
@@ -3452,14 +3445,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "community_wallet_init_init_community".to_string(),
             Box::new(decoder::community_wallet_init_init_community),
-        );
-        map.insert(
-            "demo_print_this".to_string(),
-            Box::new(decoder::demo_print_this),
-        );
-        map.insert(
-            "demo_set_message".to_string(),
-            Box::new(decoder::demo_set_message),
         );
         map.insert(
             "diem_governance_add_approved_script_hash_script".to_string(),
@@ -3516,6 +3501,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "donor_voice_txs_vote_veto_tx".to_string(),
             Box::new(decoder::donor_voice_txs_vote_veto_tx),
+        );
+        map.insert(
+            "epoch_boundary_smoke_trigger_epoch".to_string(),
+            Box::new(decoder::epoch_boundary_smoke_trigger_epoch),
         );
         map.insert(
             "jail_unjail_by_voucher".to_string(),
@@ -3634,8 +3623,8 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::proof_of_fee_pof_update_bid),
         );
         map.insert(
-            "resource_account_create_resource_account".to_string(),
-            Box::new(decoder::resource_account_create_resource_account),
+            "safe_init_payment_multisig".to_string(),
+            Box::new(decoder::safe_init_payment_multisig),
         );
         map.insert(
             "slow_wallet_smoke_test_vm_unlock".to_string(),

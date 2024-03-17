@@ -41,6 +41,8 @@ module diem_framework::voting {
 
     // use diem_std::debug::print;
 
+    friend diem_framework::diem_governance;
+
     /// Current script's execution hash does not match the specified proposal's
     const EPROPOSAL_EXECUTION_HASH_NOT_MATCHING: u64 = 1;
     /// Proposal cannot be resolved. Either voting duration has not passed, not enough votes, or fewer yes than no votes
@@ -175,7 +177,7 @@ module diem_framework::voting {
         resolved_early: bool
     }
 
-    public fun register<ProposalType: store>(account: &signer) {
+    public(friend) fun register<ProposalType: store>(account: &signer) {
         let addr = signer::address_of(account);
         assert!(!exists<VotingForum<ProposalType>>(addr), error::already_exists(EVOTING_FORUM_ALREADY_REGISTERED));
 
@@ -213,7 +215,7 @@ module diem_framework::voting {
     /// @param early_resolution_vote_threshold The vote threshold for early resolution of this proposal.
     /// @param metadata A simple_map that stores information about this proposal.
     /// @return The proposal id.
-    public fun create_proposal<ProposalType: store>(
+    public(friend) fun create_proposal<ProposalType: store>(
         proposer: address,
         voting_forum_address: address,
         execution_content: ProposalType,
@@ -249,7 +251,7 @@ module diem_framework::voting {
     /// @param metadata A simple_map that stores information about this proposal.
     /// @param is_multi_step_proposal A bool value that indicates if the proposal is single-step or multi-step.
     /// @return The proposal id.
-    public fun create_proposal_v2<ProposalType: store>(
+    public(friend) fun create_proposal_v2<ProposalType: store>(
         proposer: address,
         voting_forum_address: address,
         execution_content: ProposalType,
@@ -326,7 +328,7 @@ module diem_framework::voting {
     /// @param proposal_id The proposal id.
     /// @param num_votes Number of votes. Voting power should be calculated by governance.
     /// @param should_pass Whether the votes are for yes or no.
-    public fun vote<ProposalType: store>(
+    public(friend) fun vote<ProposalType: store>(
         _proof: &ProposalType,
         voting_forum_address: address,
         proposal_id: u64,
@@ -434,7 +436,7 @@ module diem_framework::voting {
     ///
     /// @param voting_forum_address The address of the forum where the proposals are stored.
     /// @param proposal_id The proposal id.
-    public fun resolve<ProposalType: store>(
+    public(friend) fun resolve<ProposalType: store>(
         voting_forum_address: address,
         proposal_id: u64,
     ): ProposalType acquires VotingForum {
@@ -476,7 +478,7 @@ module diem_framework::voting {
     /// @param voting_forum_address The address of the forum where the proposals are stored.
     /// @param proposal_id The proposal id.
     /// @param next_execution_hash The next execution hash if the given proposal is multi-step.
-    public fun resolve_proposal_v2<ProposalType: store>(
+    public(friend) fun resolve_proposal_v2<ProposalType: store>(
         voting_forum_address: address,
         proposal_id: u64,
         next_execution_hash: vector<u8>,
@@ -549,7 +551,7 @@ module diem_framework::voting {
     }
 
     /// Return true if the proposal has reached early resolution threshold (if specified).
-    public fun can_be_resolved_early<ProposalType: store>(proposal: &Proposal<ProposalType>): bool {
+    public(friend) fun can_be_resolved_early<ProposalType: store>(proposal: &Proposal<ProposalType>): bool {
         if (option::is_some(&proposal.early_resolution_vote_threshold)) {
             let early_resolution_threshold = *option::borrow(&proposal.early_resolution_vote_threshold);
             if (proposal.yes_votes >= early_resolution_threshold || proposal.no_votes >= early_resolution_threshold) {

@@ -10,6 +10,14 @@ module ol_framework::vouch {
     use diem_framework::transaction_fee;
 
     friend diem_framework::genesis;
+    friend ol_framework::validator_universe;
+    friend ol_framework::proof_of_fee;
+    friend ol_framework::oracle;
+    friend ol_framework::jail;
+    #[test_only]
+    friend ol_framework::mock;
+    #[test_only]
+    friend ol_framework::test_pof;
 
     /// trying to vouch for yourself?
     const ETRY_SELF_VOUCH_REALLY: u64 = 1;
@@ -24,7 +32,7 @@ module ol_framework::vouch {
     }
 
     // init the struct on a validators account.
-    public fun init(new_account_sig: &signer ) {
+    public(friend) fun init(new_account_sig: &signer ) {
       let acc = signer::address_of(new_account_sig);
 
       if (!is_init(acc)) {
@@ -168,7 +176,7 @@ module ol_framework::vouch {
     }
 
     /// for a given list find and count any of my vouchers
-    public fun true_friends_in_list(addr: address, list: &vector<address>): (vector<address>, u64) acquires MyVouches {
+    public(friend) fun true_friends_in_list(addr: address, list: &vector<address>): (vector<address>, u64) acquires MyVouches {
 
       if (!exists<MyVouches>(addr)) return (vector::empty(), 0);
 

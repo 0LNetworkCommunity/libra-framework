@@ -16,6 +16,11 @@
     use std::signer;
     use diem_framework::guid::{Self, ID};
 
+    friend ol_framework::binary_tally;
+    friend ol_framework::turnout_tally;
+    #[test_only]
+    friend ol_framework::test_turnout_tally;
+
     struct VoteReceipt has key, store, drop, copy {
       guid: guid::ID,
       approve_reject: bool,
@@ -25,7 +30,7 @@
       elections: vector<VoteReceipt>,
     }
 
-    public fun make_receipt(user_sig: &signer, vote_id: &ID, approve_reject: bool, weight: u64) acquires IVoted {
+  public(friend) fun make_receipt(user_sig: &signer, vote_id: &ID, approve_reject: bool, weight: u64) acquires IVoted {
 
       let user_addr = signer::address_of(user_sig);
 
@@ -53,7 +58,7 @@
     }
 
 
-    public fun find_prior_vote_idx(user_addr: address, vote_id: &ID): (u64, bool) acquires IVoted {
+    public(friend) fun find_prior_vote_idx(user_addr: address, vote_id: &ID): (u64, bool) acquires IVoted {
       if (!exists<IVoted>(user_addr)) {
         return (0, false)
       };
@@ -72,13 +77,7 @@
       return (0, false)
     }
 
-    fun get_vote_receipt(user_addr: address, idx: u64): VoteReceipt acquires IVoted {
-      let ivoted = borrow_global<IVoted>(user_addr);
-      let r = vector::borrow(&ivoted.elections, idx);
-      return *r
-    }
-
-    public fun remove_vote_receipt(sig: &signer, vote_id: &guid::ID) acquires IVoted {
+    public(friend) fun remove_vote_receipt(sig: &signer, vote_id: &guid::ID) acquires IVoted {
       let user_addr = signer::address_of(sig);
       let (idx, is_found) = find_prior_vote_idx(user_addr, vote_id);
 
@@ -90,12 +89,19 @@
 
     /// gets the receipt data
     // should return an OPTION.
-    public fun get_receipt_data(user_addr: address, vote_id: &ID): (bool, u64) acquires IVoted {
+    public(friend) fun get_receipt_data(user_addr: address, vote_id: &ID): (bool, u64) acquires IVoted {
       let (idx, found) = find_prior_vote_idx(user_addr, vote_id);
       if (found) {
           let v = get_vote_receipt(user_addr, idx);
           return (v.approve_reject, v.weight)
         };
       return (false, 0)
+    }
+
+    #[view]
+    public fun get_vote_receipt(user_addr: address, idx: u64): VoteReceipt acquires IVoted {
+      let ivoted = borrow_global<IVoted>(user_addr);
+      let r = vector::borrow(&ivoted.elections, idx);
+      return *r
     }
   }

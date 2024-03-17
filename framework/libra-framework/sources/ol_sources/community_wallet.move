@@ -24,6 +24,8 @@
 module ol_framework::community_wallet {
     use std::signer;
 
+    friend ol_framework::community_wallet_init;
+
     /// not authorized to operate on this account
     const ENOT_AUTHORIZED: u64 = 1;
     /// does not meet criteria for community wallet
@@ -59,7 +61,7 @@ module ol_framework::community_wallet {
       exists<CommunityWallet>(addr)
     }
 
-    public fun set_comm_wallet(sender: &signer) {
+    public(friend) fun set_comm_wallet(sender: &signer) {
       let addr = signer::address_of(sender);
       if (!is_init(addr)) {
         move_to(sender, CommunityWallet{});

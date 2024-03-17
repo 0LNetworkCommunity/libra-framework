@@ -3,6 +3,17 @@ module diem_framework::guid {
     friend diem_framework::account;
     friend diem_framework::object;
 
+    //////// 0L ////////
+    friend ol_framework::multi_action;
+    friend ol_framework::donor_voice_txs;
+    friend ol_framework::donor_voice_governance;
+    friend ol_framework::ballot;
+
+    #[test_only]
+    friend ol_framework::turnout_tally_demo;
+    //////// end 0L ////////
+
+
     /// A globally unique identifier derived from the sender's address and a counter
     struct GUID has drop, store {
         id: ID
@@ -32,12 +43,13 @@ module diem_framework::guid {
     }
 
     /// Create a non-privileged id from `addr` and `creation_num`
-    public fun create_id(addr: address, creation_num: u64): ID {
+    public(friend) fun create_id(addr: address, creation_num: u64): ID {
         ID { creation_num, addr }
     }
 
+    //////// GETTERS ////////
     /// Get the non-privileged ID associated with a GUID
-    public fun id(guid: &GUID): ID {
+    public(friend) fun id(guid: &GUID): ID {
         guid.id
     }
 

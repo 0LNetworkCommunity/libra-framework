@@ -12,13 +12,14 @@ module ol_framework::oracle {
     use diem_framework::event::{Self, EventHandle};
     use diem_framework::coin::{Self, Coin};
     use ol_framework::ol_account;
-    use ol_framework::libra_coin::LibraCoin;
+    use ol_framework::libra_coin::{Self, LibraCoin};
     use ol_framework::globals;
     use ol_framework::vouch;
     use ol_framework::epoch_helper;
     use std::error;
 
     // use diem_std::debug::print;
+    friend diem_framework::genesis;
 
     friend ol_framework::epoch_boundary;
     friend ol_framework::tower_state;
@@ -77,7 +78,7 @@ module ol_framework::oracle {
     }
 
 
-    public fun initialize(root: &signer) {
+    public(friend) fun initialize(root: &signer) {
       move_to(root, GlobalCounter {
         lifetime_proofs: 0,
         proofs_in_epoch: 0,
@@ -108,7 +109,7 @@ module ol_framework::oracle {
     }
 
     /// At genesis this can be called once to migrate towers
-    public fun migrate_from_vdf_tower(
+    fun migrate_from_vdf_tower(
       root: &signer,
       provider: &signer,
       previous_proof_hash: vector<u8>,
@@ -131,7 +132,7 @@ module ol_framework::oracle {
       })
     }
 
-    public fun submit_proof(
+    fun submit_proof(
       provider: &signer,
       public_key_bytes: vector<u8>,
       signature_bytes: vector<u8>,
@@ -299,8 +300,8 @@ module ol_framework::oracle {
       let per_user = coin_value / len;
       vector::for_each_ref(&provider_list, |addr| {
         emit_distribute_reward(root, addr, per_user);
-        let split = coin::extract(budget, per_user);
-        let value = coin::value(&split);
+        let split = libra_coin::extract(budget, per_user);
+        let value = libra_coin::value(&split);
         total_deposited = total_deposited + value;
         ol_account::deposit_coins(*addr, split);
       });

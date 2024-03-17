@@ -1,4 +1,4 @@
-spec diem_framework::diem_coin  {
+spec ol_framework::libra_coin {
     spec module {
         pragma verify = true;
         pragma aborts_if_is_strict;
@@ -8,7 +8,7 @@ spec diem_framework::diem_coin  {
         pragma aborts_if_is_partial;
         let addr = signer::address_of(diem_framework);
         ensures exists<MintCapStore>(addr);
-        ensures exists<coin::CoinInfo<GasCoin>>(addr);
+        ensures exists<coin::CoinInfo<LibraCoin>>(addr);
     }
 
     spec destroy_mint_cap {
@@ -22,10 +22,10 @@ spec diem_framework::diem_coin  {
         pragma verify = false;
     }
 
-    // Only callable in tests and testnets.not needed verify.
-    spec mint {
-        pragma verify = false;
-    }
+    // // Only callable in tests and testnets.not needed verify.
+    // spec mint {
+    //     pragma verify = false;
+    // }
 
     // Only callable in tests and testnets.not needed verify.
     spec delegate_mint_capability {

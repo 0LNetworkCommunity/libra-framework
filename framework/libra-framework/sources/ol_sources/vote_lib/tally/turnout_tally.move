@@ -44,6 +44,12 @@
     use ol_framework::epoch_helper;
     use ol_framework::vote_receipt;
 
+    friend ol_framework::donor_voice_governance;
+    #[test_only]
+    friend ol_framework::test_turnout_tally;
+    #[test_only]
+    friend ol_framework::turnout_tally_demo;
+
     // use diem_std::debug::print;
 
     /// The ballot has already been completed.
@@ -116,8 +122,7 @@
       tally_pass: bool, // if it passed
     }
 
-    public fun new_tally_struct<Data: drop + store>(
-      // guid_cap: &guid::CreateCapability,
+    public(friend) fun new_tally_struct<Data: drop + store>(
       data: Data,
       max_vote_enrollment: u64,
       deadline: u64,
@@ -145,7 +150,7 @@
         }
     }
 
-    public fun update_enrollment<Data: drop + store>(ballot: &mut TurnoutTally<Data>, enrollment: vector<address>) {
+    fun update_enrollment<Data: drop + store>(ballot: &mut TurnoutTally<Data>, enrollment: vector<address>) {
       assert!(!maybe_complete(ballot), error::invalid_state(ECOMPLETED));
       ballot.enrollment = enrollment;
     }
@@ -155,7 +160,7 @@
 
     // the vote flow will return if the ballot passed (on the vote that gets over the threshold). This can be used for triggering actions lazily.
 
-    public fun vote<Data: drop + store>(
+    public(friend) fun vote<Data: drop + store>(
       user: &signer,
       ballot: &mut TurnoutTally<Data>,
       uid: &guid::ID,
@@ -219,7 +224,7 @@
       ballot.completed
     }
 
-    public fun retract<Data: drop + store>(
+    public(friend) fun retract<Data: drop + store>(
       ballot: &mut TurnoutTally<Data>,
       uid: &guid::ID,
       user: &signer
@@ -243,7 +248,7 @@
     /// The handler for a third party contract may wish to extend the ballot deadline.
     /// DANGER: the thirdparty ballot contract needs to know what it is doing. If this ballot object is exposed to end users it's game over.
 
-    public fun extend_deadline<Data: drop + store>(ballot: &mut TurnoutTally<Data>, new_epoch: u64) {
+    public(friend) fun extend_deadline<Data: drop + store>(ballot: &mut TurnoutTally<Data>, new_epoch: u64) {
 
       ballot.extended_deadline = new_epoch;
     }
@@ -253,7 +258,7 @@
     /// All that needs to be done, is on the return of vote(), to then call this function.
     /// It's a useful feature, but it will not be included by default in all votes.
 
-    public fun maybe_auto_competitive_extend<Data: drop + store>(ballot: &mut TurnoutTally<Data>):u64  {
+    fun maybe_auto_competitive_extend<Data: drop + store>(ballot: &mut TurnoutTally<Data>):u64  {
 
       let epoch = epoch_helper::get_current_epoch();
 
@@ -346,6 +351,7 @@
       };
     }
 
+    #[view]
     // TODO: this should probably use Decimal.move
     // can't multiply fixed_point32 types directly.
     public fun get_threshold_from_turnout(voters: u64, max_votes: u64): u64 {
@@ -380,7 +386,7 @@
     //////// GETTERS ////////
 
     /// get current tally percentage scaled
-    public fun get_current_ballot_participation<Data: store>(ballot: &TurnoutTally<Data>): u64 {
+    fun get_current_ballot_participation<Data: store>(ballot: &TurnoutTally<Data>): u64 {
       let total = ballot.votes_approve + ballot.votes_reject;
       if (ballot.votes_approve + ballot.votes_reject > ballot.max_votes) {
         return 0
@@ -392,23 +398,23 @@
     }
 
     // with the current participation get the threshold to pass
-    public fun get_current_threshold_required<Data: store>(ballot: &TurnoutTally<Data>): u64 {
+    public(friend) fun get_current_threshold_required<Data: store>(ballot: &TurnoutTally<Data>): u64 {
       get_threshold_from_turnout(ballot.votes_approve + ballot.votes_reject, ballot.max_votes)
     }
 
     /// get current tally percentage scaled
-    public fun get_current_ballot_approval<Data: store>(ballot: &TurnoutTally<Data>): u64 {
+    public(friend) fun get_current_ballot_approval<Data: store>(ballot: &TurnoutTally<Data>): u64 {
       let total = ballot.votes_approve + ballot.votes_reject;
       return fixed_point32::multiply_u64(PCT_SCALE, fixed_point32::create_from_rational(ballot.votes_approve ,total))
     }
 
 
-    public fun get_tally_data<Data: store>(ballot: &TurnoutTally<Data>): &Data {
+    public(friend) fun get_tally_data<Data: store>(ballot: &TurnoutTally<Data>): &Data {
       &ballot.data
     }
 
     /// is it complete and what's the result
-    public fun maybe_complete_result<Data: copy + store>(ballot: &TurnoutTally<Data>): (bool, bool) {
+    fun maybe_complete_result<Data: copy + store>(ballot: &TurnoutTally<Data>): (bool, bool) {
       (ballot.completed, ballot.tally_pass)
     }
 

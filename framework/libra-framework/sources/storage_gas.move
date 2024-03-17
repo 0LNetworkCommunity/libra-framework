@@ -297,7 +297,7 @@ module diem_framework::storage_gas {
     /// | 90%   | 40.61%              |
     /// | 95%   | 63.72%              |
     /// | 99%   | 91.38%              |
-    public fun base_8192_exponential_curve(min_gas: u64, max_gas: u64): GasCurve {
+    public(friend) fun base_8192_exponential_curve(min_gas: u64, max_gas: u64): GasCurve {
         new_gas_curve(min_gas, max_gas,
             vector[
                 new_point(1000, 2),
@@ -323,7 +323,7 @@ module diem_framework::storage_gas {
         byte_config: UsageGasConfig,
     }
 
-    public fun new_point(x: u64, y: u64): Point {
+    public(friend) fun new_point(x: u64, y: u64): Point {
         assert!(
             x <= BASIS_POINT_DENOMINATION && y <= BASIS_POINT_DENOMINATION,
             error::invalid_argument(EINVALID_POINT_RANGE)
@@ -331,7 +331,7 @@ module diem_framework::storage_gas {
         Point { x, y }
     }
 
-    public fun new_gas_curve(min_gas: u64, max_gas: u64, points: vector<Point>): GasCurve {
+    public(friend) fun new_gas_curve(min_gas: u64, max_gas: u64, points: vector<Point>): GasCurve {
         assert!(max_gas >= min_gas, error::invalid_argument(EINVALID_GAS_RANGE));
         assert!(max_gas <= MAX_U64 / BASIS_POINT_DENOMINATION, error::invalid_argument(EINVALID_GAS_RANGE));
         validate_points(&points);
@@ -342,7 +342,7 @@ module diem_framework::storage_gas {
         }
     }
 
-    public fun new_usage_gas_config(target_usage: u64, read_curve: GasCurve, create_curve: GasCurve, write_curve: GasCurve): UsageGasConfig {
+    public(friend) fun new_usage_gas_config(target_usage: u64, read_curve: GasCurve, create_curve: GasCurve, write_curve: GasCurve): UsageGasConfig {
         assert!(target_usage > 0, error::invalid_argument(EZERO_TARGET_USAGE));
         assert!(target_usage <= MAX_U64 / BASIS_POINT_DENOMINATION, error::invalid_argument(ETARGET_USAGE_TOO_BIG));
         UsageGasConfig {
@@ -353,7 +353,7 @@ module diem_framework::storage_gas {
         }
     }
 
-    public fun new_storage_gas_config(item_config: UsageGasConfig, byte_config: UsageGasConfig): StorageGasConfig {
+    public(friend) fun new_storage_gas_config(item_config: UsageGasConfig, byte_config: UsageGasConfig): StorageGasConfig {
         StorageGasConfig {
             item_config,
             byte_config
@@ -386,7 +386,7 @@ module diem_framework::storage_gas {
     ///
     /// See `base_8192_exponential_curve()` fore more information on
     /// target utilization.
-    public fun initialize(diem_framework: &signer) {
+    public(friend) fun initialize(diem_framework: &signer) {
         system_addresses::assert_diem_framework(diem_framework);
         assert!(
             !exists<StorageGasConfig>(@diem_framework),

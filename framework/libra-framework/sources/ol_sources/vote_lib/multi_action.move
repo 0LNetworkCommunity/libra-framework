@@ -33,6 +33,13 @@ module ol_framework::multi_action {
   use ol_framework::ballot::{Self, BallotTracker};
   use ol_framework::epoch_helper;
 
+  friend ol_framework::community_wallet_init;
+  friend ol_framework::donor_voice_txs;
+  friend ol_framework::safe;
+
+  #[test_only]
+  friend ol_framework::test_multi_action;
+
 //  use diem_std::debug::print;
 
   const EGOV_NOT_INITIALIZED: u64 = 1;
@@ -113,7 +120,7 @@ module ol_framework::multi_action {
   }
 
 
-  public fun proposal_constructor<ProposalData: store + drop>(proposal_data: ProposalData, duration_epochs: Option<u64>): Proposal<ProposalData> {
+  public(friend) fun proposal_constructor<ProposalData: store + drop>(proposal_data: ProposalData, duration_epochs: Option<u64>): Proposal<ProposalData> {
 
     let duration_epochs = if (option::is_some(&duration_epochs)) {
       *option::borrow(&duration_epochs)
@@ -143,7 +150,7 @@ module ol_framework::multi_action {
   // Initialize the governance structs for this account.
   // Governance contains the constraints for each Action that are checked on each vote (n_sigs, expiration, signers, etc)
   // Also, an initial Action of type PropGovSigners is created, which is used to govern the signers and threshold for this account.
-  public fun init_gov(sig: &signer) {
+  public(friend) fun init_gov(sig: &signer) {
 
     // heals un-initialized state, and does nothing if state already exists.
 
@@ -197,26 +204,26 @@ module ol_framework::multi_action {
   }
 
   /// helper to assert if the account is in the right state
-  public fun assert_multi_action(addr: address) {
+  fun assert_multi_action(addr: address) {
     assert!(multisig_account::is_multisig(addr), error::invalid_argument(ENOT_FINALIZED_NOT_BRICK));
     assert!(exists<Governance>(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
     assert!(exists<Action<PropGovSigners>>(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
   }
 
 
-  public fun is_gov_init(addr: address): bool {
+  fun is_gov_init(addr: address): bool {
     exists<Governance>(addr) &&
     exists<Action<PropGovSigners>>(addr)
   }
 
   /// Has a multisig struct for a given action been created?
-  public fun has_action<ProposalData: store>(addr: address):bool {
+  public(friend) fun has_action<ProposalData: store>(addr: address):bool {
     exists<Action<ProposalData>>(addr)
   }
 
   /// An initial "sponsor" who is the signer of the initialization account calls this function.
   // This function creates the data structures, but also IMPORTANTLY it rotates the AuthKey of the account to a system-wide unusuable key (b"brick_all_your_base_are_belong_to_us").
-  public fun init_type<ProposalData: store + drop >(
+  public(friend) fun init_type<ProposalData: store + drop >(
     sig: &signer,
     can_withdraw: bool,
    ) acquires Governance {
@@ -256,7 +263,7 @@ module ol_framework::multi_action {
 
   /// Withdraw cap is a hot-potato and can never be dropped, we can extract and fill it into a struct that holds it.
 
-  public fun maybe_restore_withdraw_cap(cap_opt: Option<WithdrawCapability>) acquires Governance {
+  public(friend) fun maybe_restore_withdraw_cap(cap_opt: Option<WithdrawCapability>) acquires Governance {
     if (option::is_some(&cap_opt)) {
       let cap = option::extract(&mut cap_opt);
       let addr = account::get_withdraw_cap_address(&cap);
@@ -275,7 +282,7 @@ module ol_framework::multi_action {
   // The default will be 14 days.
   // Only the first proposer can set the expiration time. It will be ignored when a duplicate is caught.
 
-  public fun propose_new<ProposalData: store + drop>(
+  public(friend) fun propose_new<ProposalData: store + drop>(
     sig: &signer,
     multisig_address: address,
     proposal_data: Proposal<ProposalData>,
@@ -301,7 +308,7 @@ module ol_framework::multi_action {
   }
 
 
-  public fun vote_with_data<ProposalData: store + drop>(sig: &signer, proposal: &Proposal<ProposalData>, multisig_address: address): (bool, Option<WithdrawCapability>) acquires Governance, Action {
+  fun vote_with_data<ProposalData: store + drop>(sig: &signer, proposal: &Proposal<ProposalData>, multisig_address: address): (bool, Option<WithdrawCapability>) acquires Governance, Action {
     assert_authorized(sig, multisig_address);
 
     let action = borrow_global_mut<Action<ProposalData>>(multisig_address);
@@ -320,7 +327,7 @@ module ol_framework::multi_action {
 
 
   /// helper function to vote with ID only
-  public fun vote_with_id<ProposalData: store + drop>(sig: &signer, id: &guid::ID, multisig_address: address): (bool, Option<WithdrawCapability>) acquires Governance, Action {
+  public(friend) fun vote_with_id<ProposalData: store + drop>(sig: &signer, id: &guid::ID, multisig_address: address): (bool, Option<WithdrawCapability>) acquires Governance, Action {
     assert_authorized(sig, multisig_address);
 
     vote_impl<ProposalData>(sig, multisig_address, id)
@@ -422,6 +429,7 @@ module ol_framework::multi_action {
     epoch_now > prop.expiration_epoch
   }
 
+  #[view]
   public fun is_authority(multisig_addr: address, addr: address): bool {
     let auths = multisig_account::owners(multisig_addr);
     vector::contains(&auths, &addr)
@@ -429,7 +437,7 @@ module ol_framework::multi_action {
 
   /// This function is used to copy the data from the proposal that is in the multisig.
   /// Note that this is the only way to get the data out of the multisig, and it is the only function to use the `copy` trait. If you have a workflow that needs copying, then the data struct for the action payload will need to use the `copy` trait.
-    public fun extract_proposal_data<ProposalData: store + copy + drop>(multisig_address: address, uid: &guid::ID): ProposalData acquires Action {
+  public(friend) fun extract_proposal_data<ProposalData: store + copy + drop>(multisig_address: address, uid: &guid::ID): ProposalData acquires Action {
       let a = borrow_global<Action<ProposalData>>(multisig_address);
       let b = ballot::get_ballot_by_id(&a.vote, uid);
       let t = ballot::get_type_struct<Proposal<ProposalData>>(b);
@@ -445,7 +453,7 @@ module ol_framework::multi_action {
     }
 
     /// returns a tuple of (is_found: bool, id: guid:ID, index: u64, status_enum: u8, is_complete: bool)
-    public fun search_proposals_by_data<ProposalData: drop + store> (
+    fun search_proposals_by_data<ProposalData: drop + store> (
       tracker: &BallotTracker<Proposal<ProposalData>>,
       data: &Proposal<ProposalData>,
     ): (bool, guid::ID, u64, u8, bool)  {
@@ -476,7 +484,7 @@ module ol_framework::multi_action {
     }
 
     /// returns the a tuple with (is_found, id, status_enum ) of ballot while seaching by data
-    public fun find_index_of_ballot_by_data<ProposalData: drop + store> (
+    fun find_index_of_ballot_by_data<ProposalData: drop + store> (
       tracker: &BallotTracker<Proposal<ProposalData>>,
       incoming_proposal: &Proposal<ProposalData>,
       status_enum: u8,
@@ -514,7 +522,7 @@ module ol_framework::multi_action {
     }
 
    /// returns a tuple of (is_found: bool, index: u64, status_enum: u8, is_complete: bool)
-  public fun get_proposal_status_by_id<ProposalData: drop + store>(multisig_address: address, uid: &guid::ID): (bool, u64, u8, bool) acquires Action { // found, index, status_enum, is_complete
+  public(friend) fun get_proposal_status_by_id<ProposalData: drop + store>(multisig_address: address, uid: &guid::ID): (bool, u64, u8, bool) acquires Action { // found, index, status_enum, is_complete
     let a = borrow_global<Action<ProposalData>>(multisig_address);
     ballot::find_anywhere(&a.vote, uid)
   }
@@ -533,7 +541,7 @@ module ol_framework::multi_action {
   }
 
   // Proposing a governance change of adding or removing signer, or changing the n-of-m of the authorities. Note that proposing will deduplicate in the event that two authorities miscommunicate and send the same proposal, in that case for UX purposes the second proposal becomes a vote.
-  public fun propose_governance(sig: &signer, multisig_address: address, addresses: vector<address>, add_remove: bool, n_of_m: Option<u64>, duration_epochs: Option<u64> ): guid::ID acquires Governance, Action {
+  public(friend) fun propose_governance(sig: &signer, multisig_address: address, addresses: vector<address>, add_remove: bool, n_of_m: Option<u64>, duration_epochs: Option<u64> ): guid::ID acquires Governance, Action {
     assert_authorized(sig, multisig_address); // Duplicated with propose(), belt
     // and suspenders
 
@@ -551,7 +559,7 @@ module ol_framework::multi_action {
   }
 
   /// This function can be called directly. Or the user can call propose_governance() with same parameters, which will deduplicate the proposal and instead vote. Voting is always a positive vote. There is no negative (reject) vote.
-  public fun vote_governance(sig: &signer, multisig_address: address, id: &guid::ID): bool acquires Governance, Action {
+  public(friend) fun vote_governance(sig: &signer, multisig_address: address, id: &guid::ID): bool acquires Governance, Action {
     assert_authorized(sig, multisig_address);
 
     let (passed, cap_opt) = {

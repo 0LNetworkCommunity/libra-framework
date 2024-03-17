@@ -1,7 +1,7 @@
 // Simple example to set/get string on chain
 // Taken/modified from diem-core:
 // diem-move/move-examples/hello_blockchain/sources/hello_blockchain.move
-
+#[test_only]
 module ol_framework::demo {
     use std::error;
     use std::signer;
