@@ -12,13 +12,13 @@ module ol_framework::test_boundary {
   use ol_framework::testnet;
   use ol_framework::validator_universe;
   use ol_framework::epoch_boundary;
-  use ol_framework::block;  
+  use ol_framework::block;
   use ol_framework::ol_account;
   use diem_framework::stake;
   use diem_framework::reconfiguration;
   use diem_framework::timestamp;
   use diem_framework::diem_governance;
-  
+
   // use diem_std::debug::print;
 
   const Alice: address = @0x1000a;
@@ -219,14 +219,14 @@ module ol_framework::test_boundary {
     // testing mainnet, so change the chainid
     testnet::unset(root);
 
-    //verify trigger is not enabled 
+    //verify trigger is not enabled
     assert!(!features::epoch_trigger_enabled(), 101);
 
     // test setup advances to epoch #2
     let epoch = reconfiguration::get_current_epoch();
     assert!(epoch == 2, 7357001);
     epoch_boundary::test_set_boundary_ready(root, epoch);
-    
+
 
     // case: trigger not set and flipped
     timestamp::fast_forward_seconds(1); // needed for reconfig
@@ -263,6 +263,30 @@ module ol_framework::test_boundary {
     assert!(epoch == 3, 7357002);
   }
 
+  // when we drop accounts through hard fork we should have no boundary
+  // account processing issues.
+  #[test(vm = @0x0, framework = @ 0x1, alice = @0x1000a)]
+  fun e2e_boundary_happy_drop_accounts(vm: signer, framework: signer, alice: signer) {
+    use ol_framework::last_goodbye;
+
+    let _vals = common_test_setup(&framework);
+
+    last_goodbye::danger_test_last_goodby(&vm, &alice);
+
+    mock::trigger_epoch(&framework);
+
+    // let _vals_post = stake::get_current_validators();
+
+    // assert!(epoch_boundary::get_reconfig_success(), 7357001);
+
+    // // all validators were compliant, should be +1 of the 10 vals
+    // assert!(epoch_boundary::get_seats_offered() == 11, 7357002);
+
+    // // all vals had winning bids, but it was less than the seats on offer
+    // assert!(vector::length(&epoch_boundary::get_auction_winners()) == 10, 7357003);
+    // // all of the auction winners became the validators ulitmately
+    // assert!(vector::length(&epoch_boundary::get_actual_vals()) == 10, 7357004);
+  }
 
 
 }

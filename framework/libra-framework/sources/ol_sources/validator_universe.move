@@ -4,6 +4,7 @@
 module diem_framework::validator_universe {
   use std::signer;
   use std::vector;
+  use diem_framework::account;
   use diem_framework::system_addresses;
   use ol_framework::jail;
   use ol_framework::vouch;
@@ -64,6 +65,20 @@ module diem_framework::validator_universe {
     jail::init(sender);
   }
 
+  // clean any accounts that have been dropped in hard fork
+  fun garbage_collection() acquires ValidatorUniverse {
+    let state = borrow_global_mut<ValidatorUniverse>(@diem_framework);
+    let len = vector::length(&state.validators);
+    let i = 0;
+    while (i < 0) {
+      let addr = *vector::borrow(&state.validators, i);
+      if (!account::exists_at(addr) && i < len) {
+        vector::remove(&mut state.validators, i);
+      };
+      i = i + 1;
+    }
+  }
+
   //////// GENESIS ////////
   /// For 0L genesis, initialize and add the validators
   /// both root and validator need to sign. This is only possible at genesis.
@@ -76,8 +91,12 @@ module diem_framework::validator_universe {
   // A simple public function to query the EligibleValidators.
   // Function code: 03 Prefix: 220103
   #[view]
-  public fun get_eligible_validators(): vector<address> acquires ValidatorUniverse {
+  public fun get_eligible_validators(): vector<address> acquires
+  ValidatorUniverse {
+    // always run garbage collection before returning list.
+    garbage_collection();
     let state = borrow_global<ValidatorUniverse>(@diem_framework);
+
     *&state.validators
   }
 

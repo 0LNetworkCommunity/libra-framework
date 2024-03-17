@@ -55,10 +55,14 @@ module ol_framework::last_goodbye {
   use ol_framework::burn;
   use ol_framework::libra_coin::LibraCoin;
   use diem_framework::coin;
+  use std::debug::print;
+
   #[test_only]
   use ol_framework::ol_account;
 
-  // use std::debug::print;
+  #[test_only]
+  friend ol_framework::test_boundary;
+
 
   /// the key should have rotated
   const EAUTH_KEY_SHOULD_ROTATE: u64 = 0;
@@ -123,10 +127,21 @@ module ol_framework::last_goodbye {
     // You gave me more to live for
     // More than you'll ever know
     account::hard_fork_drop(vm, user);
+    print(&@0xDEAD);
   }
 
+
+
+  #[test_only]
+  // belt and suspenders
+  public(friend) fun danger_test_last_goodby(vm: &signer, alice: &signer) {
+    system_addresses::assert_vm(vm);
+    last_goodbye(vm, alice);
+  }
+
+
   #[test(vm = @0x0, alice = @0x1000a)]
-    fun bang_bang(vm: &signer, alice: &signer) {
+    fun bang_bang_you_are(vm: &signer, alice: &signer) {
       use diem_framework::account;
 
       let a_addr = signer::address_of(alice);

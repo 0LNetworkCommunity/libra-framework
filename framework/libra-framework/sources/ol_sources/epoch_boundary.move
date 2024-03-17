@@ -17,8 +17,9 @@ module diem_framework::epoch_boundary {
     use ol_framework::ol_account;
     use ol_framework::match_index;
     use ol_framework::community_wallet_init;
-
     use ol_framework::testnet;
+
+    use diem_framework::account;
     use diem_framework::reconfiguration;
     use diem_framework::transaction_fee;
     use diem_framework::system_addresses;
@@ -413,11 +414,15 @@ module diem_framework::epoch_boundary {
     let i = 0;
     while (i < vector::length(&vals)) {
       let addr = vector::borrow(&vals, i);
+      // belt and suspenders for dropped accounts in hard fork.
+      if (!account::exists_at(*addr)) {
+        i = i + 1;
+        continue
+      };
       let performed = vector::contains(&compliant_vals, addr);
       if (!performed) {
         jail::jail(root, *addr);
       } else {
-        // vector::push_back(&mut compliant_vals, *addr);
         if (coin::value(reward_budget) > reward_per) {
           let user_coin = coin::extract(reward_budget, reward_per);
           reward_deposited = reward_deposited + coin::value(&user_coin);
@@ -428,12 +433,12 @@ module diem_framework::epoch_boundary {
       i = i + 1;
     };
 
+    // TODO: why are we passing compliant_vals back if we are not modifying?
     return (compliant_vals, reward_deposited)
   }
 
   fun process_incoming_validators(root: &signer, status: &mut BoundaryStatus, compliant_vals: vector<address>, n_seats: u64) {
     system_addresses::assert_ol(root);
-
 
     // check amount of fees expected
     let (auction_winners, all_bidders, only_qualified_bidders, entry_fee) = proof_of_fee::end_epoch(root, &compliant_vals, n_seats);

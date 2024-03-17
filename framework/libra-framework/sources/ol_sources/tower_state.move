@@ -6,6 +6,7 @@ module ol_framework::tower_state {
     use std::hash;
     use ol_framework::globals;
     use diem_framework::system_addresses;
+    use diem_framework::account;
     use ol_framework::epoch_helper;
     use diem_framework::testnet;
     use diem_framework::ol_native_vdf;
@@ -410,7 +411,11 @@ module ol_framework::tower_state {
         let i = 0;
         while (i < vals_len) {
             let val = vector::borrow(&outgoing_miners, i);
-
+            // belt and suspenders for dropped accounts in hard fork.
+            if (!account::exists_at(*val)) {
+              i = i + 1;
+              continue
+            };
             // For testing: don't call update_metrics unless there is account state for the address.
             if (exists<TowerProofHistory>(*val)){
                 update_epoch_metrics_vals(vm, *val);
@@ -585,7 +590,7 @@ module ol_framework::tower_state {
         // pick the next miner
         // make sure we get an n smaller than list of miners
 
-        // Current case: if miner_index = count_miners could lead to overflow 
+        // Current case: if miner_index = count_miners could lead to overflow
 
         // let k = 0; // k keeps track of this loop, abort if loops too much
         // while (this_miner_index >= count_miners) {

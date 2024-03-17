@@ -2,6 +2,7 @@ module ol_framework::musical_chairs {
     use diem_framework::chain_status;
     use diem_framework::system_addresses;
     use diem_framework::stake;
+    use diem_framework::account;
     use ol_framework::grade;
     use std::fixed_point32;
     use std::vector;
@@ -152,6 +153,11 @@ module ol_framework::musical_chairs {
         let i = 0;
         while (i < val_set_len) {
             let addr = *vector::borrow(&validators, i);
+            // belt and suspenders for dropped accounts in hard fork.
+            if (!account::exists_at(addr)) {
+              i = i + 1;
+              continue
+            };
             let (compliant, _, _, _) = grade::get_validator_grade(addr, highest_net_props);
             // let compliant = true;
             if (compliant) {

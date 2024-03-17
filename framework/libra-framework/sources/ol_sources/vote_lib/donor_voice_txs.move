@@ -299,6 +299,11 @@ module ol_framework::donor_voice_txs {
 
       while (i < vector::length(&list)) {
         let multisig_address = vector::borrow(&list, i);
+        // belt and suspenders for dropped accounts in hard fork.
+        if (!account::exists_at(*multisig_address)) {
+          i = i + 1;
+          continue
+        };
         if (exists<TxSchedule>(*multisig_address)) {
           let state = borrow_global_mut<TxSchedule>(*multisig_address);
           let (processed, expected, _success) = maybe_pay_deadline(vm, state, epoch);

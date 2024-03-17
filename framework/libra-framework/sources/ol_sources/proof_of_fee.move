@@ -197,6 +197,7 @@ module ol_framework::proof_of_fee {
       // TODO: Ensure that this address is an active validator
 
       let cur_address = *vector::borrow<address>(eligible_validators, k);
+
       let (bid, _expire) = current_bid(cur_address);
 
       let (_, qualified) = audit_qualification(cur_address);
