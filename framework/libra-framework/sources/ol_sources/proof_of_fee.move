@@ -24,7 +24,15 @@ module ol_framework::proof_of_fee {
   use ol_framework::globals;
   // use diem_std::debug::print;
 
+  friend diem_framework::genesis;
   friend ol_framework::epoch_boundary;
+  #[test_only]
+  friend ol_framework::test_pof;
+  #[test_only]
+  friend ol_framework::mock;
+  #[test_only]
+  friend ol_framework::test_tower;
+
 
   /// The nominal reward for each validator in each epoch.
   const GENESIS_BASELINE_REWARD: u64 = 1000000;
@@ -69,7 +77,8 @@ module ol_framework::proof_of_fee {
     median_win_bid: u64,
     median_history: vector<u64>,
   }
-  public fun init_genesis_baseline_reward(vm: &signer) {
+
+  public(friend) fun init_genesis_baseline_reward(vm: &signer) {
     system_addresses::assert_ol(vm);
 
     if (!exists<ConsensusReward>(@ol_framework)) {
@@ -89,7 +98,7 @@ module ol_framework::proof_of_fee {
 
   // on a migration genesis for mainnet the genesis reward needs to be calculated
   // from supply data.
-  public fun genesis_migrate_reward(vm: &signer, nominal_reward: u64) acquires
+  fun genesis_migrate_reward(vm: &signer, nominal_reward: u64) acquires
   ConsensusReward {
     system_addresses::assert_ol(vm); // either 0x1 or 0x0
 
@@ -99,7 +108,7 @@ module ol_framework::proof_of_fee {
     // on first epoch change.
   }
 
-  public fun init(account_sig: &signer) {
+  fun init(account_sig: &signer) {
 
     let acc = signer::address_of(account_sig);
 
@@ -304,7 +313,7 @@ module ol_framework::proof_of_fee {
   // c. the clearing bid (percentage paid)
   // d. the list of proven nodes added, for audit and instrumentation
   // e. the list of unproven, for audit and instrumentation
-  public fun fill_seats_and_get_price(
+  public(friend) fun fill_seats_and_get_price(
     vm: &signer,
     final_set_size: u64,
     sorted_vals_by_bid: &vector<address>,
@@ -436,7 +445,7 @@ module ol_framework::proof_of_fee {
   /// 1: did it increment, or decrease, bool
   /// 2: how much
   /// if the thermostat returns (false, false, 0), it means there was an error running
-  public fun reward_thermostat(vm: &signer): (bool, bool, u64) acquires ConsensusReward {
+  public(friend) fun reward_thermostat(vm: &signer): (bool, bool, u64) acquires ConsensusReward {
     system_addresses::assert_ol(vm);
     // check the bid history
     // if there are 5 days above 95% adjust the reward up by 5%
@@ -545,7 +554,7 @@ module ol_framework::proof_of_fee {
 
   /// find the median bid to push to history
   // this is needed for reward_thermostat
-  public fun set_history(vm: &signer, proposed_validators: &vector<address>) acquires ProofOfFeeAuction, ConsensusReward {
+  fun set_history(vm: &signer, proposed_validators: &vector<address>) acquires ProofOfFeeAuction, ConsensusReward {
     system_addresses::assert_ol(vm);
 
     let median_bid = get_median(proposed_validators);
@@ -582,6 +591,7 @@ module ol_framework::proof_of_fee {
   // get the current bid for a validator
 
 
+  #[view]
   /// get the baseline reward from ConsensusReward
   /// returns (reward, entry_fee, clearing_bid, median_win_bid)
   public fun get_consensus_reward(): (u64, u64, u64, u64) acquires ConsensusReward {
@@ -610,6 +620,7 @@ module ol_framework::proof_of_fee {
     return (0, 0)
   }
 
+  #[view]
   // which epoch did they last retract a bid?
   public fun is_already_retracted(node_addr: address): (bool, u64) acquires ProofOfFeeAuction {
     if (exists<ProofOfFeeAuction>(node_addr)) {
@@ -620,7 +631,7 @@ module ol_framework::proof_of_fee {
   }
 
   // Get the top N validators by bid, this is FILTERED by default
-  public fun top_n_accounts(account: &signer, n: u64, unfiltered: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
+  public(friend) fun top_n_accounts(account: &signer, n: u64, unfiltered: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
       system_addresses::assert_vm(account);
 
       let eligible_validators = get_bidders(unfiltered);
@@ -644,7 +655,7 @@ module ol_framework::proof_of_fee {
   // Bids are denomiated in percentages, with ONE decimal place..
   // i.e. 0123 = 12.3%
   // Provisionally 110% is the maximum bid. Which could be reviewed.
-  public fun set_bid(account_sig: &signer, bid: u64, expiry_epoch: u64) acquires ProofOfFeeAuction {
+  fun set_bid(account_sig: &signer, bid: u64, expiry_epoch: u64) acquires ProofOfFeeAuction {
 
     let acc = signer::address_of(account_sig);
     if (!exists<ProofOfFeeAuction>(acc)) {
@@ -659,10 +670,9 @@ module ol_framework::proof_of_fee {
     pof.bid = bid;
   }
 
-
   /// Note that the validator will not be bidding on any future
   /// epochs if they retract their bid. The must set a new bid.
-  public fun retract_bid(account_sig: &signer) acquires ProofOfFeeAuction {
+  fun retract_bid(account_sig: &signer) acquires ProofOfFeeAuction {
 
     let acc = signer::address_of(account_sig);
     if (!exists<ProofOfFeeAuction>(acc)) {
@@ -688,14 +698,14 @@ module ol_framework::proof_of_fee {
 
   ////////// TRANSACTION APIS //////////
   //. manually init the struct, fallback in case of migration fail
-  public entry fun init_bidding(sender: signer) {
-    init(&sender);
+  public entry fun init_bidding(sender: &signer) {
+    init(sender);
   }
 
   /// update the bid for the sender
-  public entry fun pof_update_bid(sender: signer, bid: u64, epoch_expiry: u64) acquires ProofOfFeeAuction {
+  public entry fun pof_update_bid(sender: &signer, bid: u64, epoch_expiry: u64) acquires ProofOfFeeAuction {
     // update the bid, initializes if not already.
-    set_bid(&sender, bid, epoch_expiry);
+    set_bid(sender, bid, epoch_expiry);
   }
 
   /// retract bid

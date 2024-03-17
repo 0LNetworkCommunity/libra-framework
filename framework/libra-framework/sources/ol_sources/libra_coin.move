@@ -15,13 +15,14 @@ module ol_framework::libra_coin {
     use std::option::{Self, Option};
     // use diem_std::debug::print;
 
-    use diem_framework::coin::{Self, MintCapability, BurnCapability};
+    use diem_framework::coin::{Self, Coin, MintCapability, BurnCapability};
     use diem_framework::system_addresses;
 
     use ol_framework::globals;
 
     friend diem_framework::genesis;
     friend ol_framework::genesis_migration;
+    friend ol_framework::pledge_accounts;
 
     const MAX_U64: u128 = 18446744073709551615;
 
@@ -103,7 +104,7 @@ module ol_framework::libra_coin {
         (burn_cap, mint_cap)
     }
 
-    public fun has_mint_capability(account: &signer): bool {
+    fun has_mint_capability(account: &signer): bool {
         exists<MintCapStore>(signer::address_of(account))
     }
 
@@ -152,6 +153,39 @@ module ol_framework::libra_coin {
     }
 
 
+    // NOTE: these public functions are duplicated here to isolate the coin.move
+    // from generic implementations
+    /// libra coin value
+    public fun value(coin: &Coin<LibraCoin>): u64 {
+      coin::value<LibraCoin>(coin)
+    }
+    /// simple libra coin balance at this address,
+    /// without considering locks or index
+    public fun balance(addr: address): u64 {
+      coin::balance<LibraCoin>(addr)
+    }
+
+    /// extract coin by splitting a coin
+    public fun extract(coin: &mut Coin<LibraCoin>, amount: u64): Coin<LibraCoin> {
+      coin::extract<LibraCoin>(coin, amount)
+    }
+    /// extract all remaining value from a coin
+    public fun extract_all(coin: &mut Coin<LibraCoin>): Coin<LibraCoin> {
+      coin::extract_all<LibraCoin>(coin)
+    }
+
+    /// merge two libra coins back together
+    public fun merge(dst_coin: &mut Coin<LibraCoin>, source_coin: Coin<LibraCoin>) {
+      coin::merge<LibraCoin>(dst_coin, source_coin)
+    }
+
+
+    /// try to register an account to use libra coin if noy yet enabled
+    public fun maybe_register(sig: &signer) {
+    if (!coin::is_account_registered<LibraCoin>(signer::address_of(sig))) {
+        coin::register<LibraCoin>(sig);
+      };
+    }
     #[view]
     /// get the gas coin supply. Helper which wraps coin::supply and extracts option type
     // NOTE: there is casting between u128 and u64, but 0L has final supply below the u64.
@@ -192,6 +226,7 @@ module ol_framework::libra_coin {
         mint_cap
     }
 
+
     /// FOR TESTS ONLY
     /// The `core addresses` sudo account is used to execute system transactions for testing
     /// Can only be called during genesis for tests to grant mint capability to diem framework and core resources
@@ -216,18 +251,6 @@ module ol_framework::libra_coin {
         move_to(core_resources, MintCapStore { mint_cap });
         move_to(core_resources, Delegations { inner: vector::empty() });
     }
-
-    // /// Only callable in tests and testnets where the core resources account exists.
-    // /// Create new coins and deposit them into dst_addr's account.
-    // mint_impl(
-    //     root: &signer,
-    //     amount: u64,
-    // ): Coin<LibraCoin> acquires MintCapStore {
-    //     system_addresses::assert_ol(root);
-
-    //     let mint_cap = &borrow_global<MintCapStore>(signer::address_of(root)).mint_cap;
-    //     coin::mint<LibraCoin>(amount, mint_cap)
-    // }
 
     // NOTE: needed for smoke tests
     // TODO: guard some other way besides using the testing root account.
@@ -308,13 +331,6 @@ module ol_framework::libra_coin {
         };
         index
     }
-
-    // #[view]
-    // /// helper to get balance in gas coin
-    // public fun get_balance(account: address): u64 {
-    //     coin::balance<LibraCoin>(account)
-    // }
-
 
     #[test_only]
     use diem_framework::aggregator_factory;

@@ -3,7 +3,7 @@ module ol_framework::test_rewards {
   use diem_framework::coin;
   use diem_framework::stake;
   use ol_framework::burn;
-  use ol_framework::libra_coin::{Self, LibraCoin};
+  use ol_framework::libra_coin;
   use ol_framework::mock;
   use ol_framework::rewards;
 
@@ -27,7 +27,7 @@ module ol_framework::test_rewards {
     let uid_after = stake::get_reward_event_guid(alice);
     assert!(uid_after > uid_before, 7357001);
 
-    let b = coin::balance<LibraCoin>(alice);
+    let b = libra_coin::balance(alice);
     assert!(b == 10000, 7357002);
   }
 
@@ -50,10 +50,10 @@ module ol_framework::test_rewards {
     let uid_after = stake::get_reward_event_guid(dave);
     assert!(uid_after > uid_before, 7357001);
 
-    let b = coin::balance<LibraCoin>(alice);
+    let b = libra_coin::balance(alice);
     assert!(b == 1000, 7357002);
 
-    let b = coin::balance<LibraCoin>(dave);
+    let b = libra_coin::balance(dave);
     assert!(b == 1000, 7357002);
 
     burn::burn_and_track(new_coin);

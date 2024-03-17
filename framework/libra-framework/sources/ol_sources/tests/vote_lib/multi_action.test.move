@@ -23,7 +23,7 @@ module ol_framework::test_multi_action {
     mock::genesis_n_vals(root, 2);
 
 
-    let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
+    let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(dave, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
     assert!(resource_account::is_resource_account(new_resource_address), 0);
 
@@ -39,7 +39,7 @@ module ol_framework::test_multi_action {
     let vals = mock::genesis_n_vals(root, 2);
     // mock::ol_initialize_coin(root);
 
-    let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
+    let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(dave, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
     assert!(resource_account::is_resource_account(new_resource_address), 0);
 
@@ -67,7 +67,7 @@ module ol_framework::test_multi_action {
     let vals = mock::genesis_n_vals(root, 2);
     // mock::ol_initialize_coin(root);
 
-    let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
+    let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(dave, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
     assert!(resource_account::is_resource_account(new_resource_address), 0);
 
@@ -116,7 +116,7 @@ module ol_framework::test_multi_action {
     let vals = mock::genesis_n_vals(root, 2);
     mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
 
-    let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
+    let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(dave, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
     assert!(resource_account::is_resource_account(new_resource_address), 0);
 
@@ -154,7 +154,7 @@ module ol_framework::test_multi_action {
     let vals = mock::genesis_n_vals(root, 2);
     mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
 
-    let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave,
+    let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(dave,
     b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
     assert!(resource_account::is_resource_account(new_resource_address), 0);
@@ -212,7 +212,7 @@ module ol_framework::test_multi_action {
     let epoch = reconfiguration::get_current_epoch();
     assert!(epoch == 0, 7357001);
     // Dave creates the resource account. He is not one of the validators, and is not an authority in the multisig.
-    let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
+    let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(dave, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
     assert!(resource_account::is_resource_account(new_resource_address), 7357002);
 
@@ -252,7 +252,7 @@ module ol_framework::test_multi_action {
     let vals = mock::genesis_n_vals(root, 2);
     mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
     // Dave creates the resource account. HE is not one of the validators, and is not an authority in the multisig.
-    let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
+    let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(dave, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
     assert!(resource_account::is_resource_account(new_resource_address), 7357001);
 
@@ -305,7 +305,7 @@ module ol_framework::test_multi_action {
     let vals = mock::genesis_n_vals(root, 2);
     mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
     // Dave creates the resource account. HE is not one of the validators, and is not an authority in the multisig.
-    let (resource_sig, _cap) = ol_account::ol_create_resource_account(dave, b"0x1");
+    let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(dave, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
     assert!(resource_account::is_resource_account(new_resource_address), 7357001);
 
