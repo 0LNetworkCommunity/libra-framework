@@ -15,7 +15,8 @@ async fn smoke_upgrade_mainnet_compatible_libra() {
         vec!["3-libra-framework"],
         ReleaseTarget::Mainnet,
     )
-    .await.unwrap();
+    .await
+    .unwrap();
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
@@ -26,7 +27,8 @@ async fn smoke_upgrade_mainnet_compatible_multiple() {
         vec!["1-move-stdlib", "2-vendor-stdlib", "3-libra-framework"],
         ReleaseTarget::Mainnet,
     )
-    .await.unwrap();
+    .await
+    .unwrap();
 }
 
 /////// TEST ARBITRARY UPGRADES ///////
@@ -41,7 +43,8 @@ async fn smoke_upgrade_mainnet_force_libra() {
         vec!["1-libra-framework"],
         ReleaseTarget::Mainnet,
     )
-    .await.unwrap();
+    .await
+    .unwrap();
 }
 
 /// Upgrade all modules
@@ -52,5 +55,6 @@ async fn smoke_upgrade_mainnet_force_multiple() {
         vec!["1-move-stdlib", "2-vendor-stdlib", "3-libra-framework"],
         ReleaseTarget::Mainnet,
     )
-    .await.unwrap();
+    .await
+    .unwrap();
 }

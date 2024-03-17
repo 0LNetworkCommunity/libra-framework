@@ -19,7 +19,7 @@ pub async fn upgrade_multiple_impl(
     dir_path: &str,
     modules: Vec<&str>,
     prior_release: ReleaseTarget,
-) -> anyhow::Result<()>{
+) -> anyhow::Result<()> {
     upgrade_fixtures::testsuite_maybe_warmup_fixtures();
 
     let d = diem_temppath::TempPath::new();
