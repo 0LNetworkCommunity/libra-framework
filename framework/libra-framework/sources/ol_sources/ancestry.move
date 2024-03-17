@@ -8,6 +8,7 @@ module ol_framework::ancestry {
 
     friend ol_framework::vouch;
     friend ol_framework::ol_account;
+    friend ol_framework::community_wallet_init;
 
     /// two accounts are related by ancestry and should not be.
     const EACCOUNTS_ARE_FAMILY: u64 = 1;
@@ -69,7 +70,7 @@ module ol_framework::ancestry {
     }
 
     /// helper function to check on transactions (e.g. vouch) if accounts are related
-    public fun assert_unrelated(left: address, right: address) acquires
+    public(friend) fun assert_unrelated(left: address, right: address) acquires
     Ancestry{
       let (is, _) = is_family(left, right);
       assert!(!is, error::invalid_state(EACCOUNTS_ARE_FAMILY));
@@ -121,7 +122,7 @@ module ol_framework::ancestry {
     /// stops when it finds the first.
     /// this is intended for relatively short lists, such as multisig checking.
 
-    public fun is_family_one_in_list(
+    public(friend) fun is_family_one_in_list(
       left: address,
       list: &vector<address>
     ):(bool, Option<address>, Option<address>) acquires Ancestry {
@@ -141,7 +142,7 @@ module ol_framework::ancestry {
     /// given one list, finds if any pair of addresses are family.
     /// stops on the first pair found.
     /// this is intended for relatively short lists, such as multisig checking.
-    public fun any_family_in_list(
+    public(friend) fun any_family_in_list(
       addr_vec: vector<address>
     ):(bool, Option<address>, Option<address>) acquires Ancestry  {
       let i = 0;
@@ -195,7 +196,7 @@ module ol_framework::ancestry {
     }
 
     // admin migration. Needs the signer object for both VM and child to prevent changes.
-    public fun fork_migrate(
+    fun fork_migrate(
       vm: &signer,
       child_sig: &signer,
       migrate_tree: vector<address>
@@ -213,5 +214,19 @@ module ol_framework::ancestry {
         let child_ancestry = borrow_global_mut<Ancestry>(child);
         child_ancestry.tree = migrate_tree;
       };
+    }
+
+
+    #[test_only]
+    public fun test_fork_migrate(
+      vm: &signer,
+      child_sig: &signer,
+      migrate_tree: vector<address>
+    ) acquires Ancestry {
+      fork_migrate(
+        vm,
+        child_sig,
+        migrate_tree
+      );
     }
 }

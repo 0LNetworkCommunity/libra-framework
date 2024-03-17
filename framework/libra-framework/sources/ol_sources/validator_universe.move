@@ -17,6 +17,7 @@ module diem_framework::validator_universe {
   // use diem_std::debug::print;
 
   friend diem_framework::reconfiguration;
+  friend diem_framework::genesis;
 
   // resource for tracking the universe of accounts that have submitted
   // a mined proof correctly, with the epoch number.
@@ -27,7 +28,7 @@ module diem_framework::validator_universe {
   // Genesis function to initialize ValidatorUniverse struct in 0x0.
   // This is triggered in new epoch by Configuration in Genesis.move
   // Function code: 01 Prefix: 220101
-  public fun initialize(vm: &signer){
+  public(friend) fun initialize(vm: &signer){
     // Check for transactions sender is association
     system_addresses::assert_diem_framework(vm);
     move_to<ValidatorUniverse>(vm, ValidatorUniverse {
@@ -67,7 +68,7 @@ module diem_framework::validator_universe {
   //////// GENESIS ////////
   /// For 0L genesis, initialize and add the validators
   /// both root and validator need to sign. This is only possible at genesis.
-  public fun genesis_helper_add_validator(root: &signer, validator: &signer) acquires ValidatorUniverse {
+  public(friend) fun genesis_helper_add_validator(root: &signer, validator: &signer) acquires ValidatorUniverse {
     system_addresses::assert_ol(root);
     add(validator);
   }

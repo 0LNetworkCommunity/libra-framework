@@ -135,7 +135,7 @@ module ol_framework::mock {
         let a = vector::borrow(vals, i);
         let sig = account::create_signer_for_test(*a);
         // initialize and set.
-        proof_of_fee::set_bid(&sig, b, 1000);
+        proof_of_fee::pof_update_bid(&sig, b, 1000);
         prev = fib;
         fib = b;
         i = i + 1;
@@ -187,7 +187,7 @@ module ol_framework::mock {
         let c = coin::test_mint(amount, &mint_cap);
         ol_account::deposit_coins(*addr, c);
 
-        let b = coin::balance<LibraCoin>(*addr);
+        let b = libra_coin::balance(*addr);
         assert!(b == amount, 0001);
 
 
