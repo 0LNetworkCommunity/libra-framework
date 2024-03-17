@@ -25,7 +25,7 @@ async fn smoke_upgrade_workflow_passes_on_stable_stdlib() {
         vec!["1-move-stdlib"],
         ReleaseTarget::Head,
     )
-    .await;
+    .await.unwrap();
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
@@ -36,7 +36,7 @@ async fn smoke_upgrade_multiple_steps() {
         vec!["1-move-stdlib", "2-vendor-stdlib", "3-libra-framework"],
         ReleaseTarget::Head,
     )
-    .await;
+    .await.unwrap();
 }
 
 /// do the same as above, but use the "arbitrary" upgrade policy to force an
@@ -48,5 +48,5 @@ async fn smoke_upgrade_multiple_steps_force() {
         vec!["1-move-stdlib", "2-vendor-stdlib", "3-libra-framework"],
         ReleaseTarget::Head,
     )
-    .await;
+    .await.unwrap();
 }
