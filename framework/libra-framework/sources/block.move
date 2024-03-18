@@ -3,7 +3,8 @@ module diem_framework::block {
     use std::error;
     use std::vector;
     use std::option;
-    use std::features;
+    // TODO: restore this
+    // use std::features;
     use std::string;
     use diem_framework::account;
     use diem_framework::event::{Self, EventHandle};
@@ -234,7 +235,9 @@ module diem_framework::block {
             };
 
             if (timestamp - reconfiguration::last_reconfiguration_time() >= block_metadata_ref.epoch_interval) {
-                if (!features::epoch_trigger_enabled() || testnet::is_not_mainnet()) {
+                // if (!features::epoch_trigger_enabled() ||
+                // testnet::is_testnet()) {
+                if (testnet::is_testnet()) {
                     epoch_boundary::epoch_boundary(
                         vm,
                         reconfiguration::get_current_epoch(),
