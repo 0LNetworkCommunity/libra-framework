@@ -12,6 +12,7 @@ module ol_framework::test_donor_voice {
   use ol_framework::community_wallet_init;
   use ol_framework::community_wallet;
   use ol_framework::burn;
+  use ol_framework::slow_wallet;
   use diem_framework::multisig_account;
   use std::guid;
   use std::vector;
@@ -141,6 +142,7 @@ module ol_framework::test_donor_voice {
       ol_account::transfer(dave, donor_voice_address, 1);
       let is_donor = donor_voice_governance::check_is_donor(donor_voice_address, signer::address_of(dave));
       assert!(is_donor, 7357003);
+
 
       // Bob proposes a tx that will come from the donor directed account.
       // It is not yet scheduled because it doesnt have the MultiAuth quorum. Still waiting for Alice or Carol to approve.
@@ -282,6 +284,8 @@ module ol_framework::test_donor_voice {
 
       //need to be caged to finalize donor directed workflow and release control of the account
       multi_action::finalize_and_cage(&resource_sig, vals, 2);
+
+      slow_wallet::user_set_slow(marlon_rando);
 
       let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), 100, b"thanks marlon");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
