@@ -18,6 +18,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::match_index; // ok
     use ol_framework::community_wallet_init; //ok
     use ol_framework::testnet;
+    use ol_framework::libra_coin;
 
     use diem_framework::account;
     use diem_framework::reconfiguration;

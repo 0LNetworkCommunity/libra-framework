@@ -28,6 +28,7 @@ module ol_framework::burn {
   friend ol_framework::epoch_boundary;
   friend ol_framework::pledge_accounts;
   friend ol_framework::make_whole;
+  friend ol_framework::last_goodbye;
   #[test_only]
   friend ol_framework::test_burn;
   #[test_only]

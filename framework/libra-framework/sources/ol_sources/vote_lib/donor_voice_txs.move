@@ -68,6 +68,7 @@ module ol_framework::donor_voice_txs {
 
 
 
+
     /// Not initialized as a Donor Voice account.
     const ENOT_INIT_DONOR_VOICE: u64 = 1;
     /// User is not a donor and cannot vote on this account
@@ -214,7 +215,7 @@ module ol_framework::donor_voice_txs {
     /// Since Donor Voice accounts are involved with sensitive assets, we have moved the WithdrawCapability to the MultiSig instance. Even though we don't need it for any account functions for paying, we use it to ensure no private functions related to assets can be called. Belt and suspenders.
 
     /// Returns the GUID of the transfer.
-    fun propose_payment(
+    public(friend) fun propose_payment(
       sender: &signer,
       multisig_address: address,
       payee: address,
@@ -345,8 +346,6 @@ module ol_framework::donor_voice_txs {
           accounts_processed = accounts_processed + 1;
         };
         i = i + 1;
-      };
-      i = i + 1;
     };
 
     let success = vector::length(&list) == accounts_processed && amount_processed == expected_amount;

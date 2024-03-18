@@ -31,8 +31,10 @@ module diem_framework::account {
 
     #[test_only]
     friend diem_framework::diem_account;
-
+    #[test_only]
     friend diem_framework::resource_account;
+
+    // friend diem_framework::resource_account;
     //////// end 0L ////////
 
     /// Resource representing an account.
