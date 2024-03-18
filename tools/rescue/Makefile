@@ -21,11 +21,11 @@ endif
 
 
 ifndef VALS_FILE
-VALS_FILE=~/libra-framework/tools/rescue/fixtures/fork/validators.json
+VALS_FILE=${SOURCE_PATH}/tools/rescue/fixtures/fork/validators.json
 endif
 
 ifndef ACCOUNT_FILE
-ACCOUNT_FILE=~/libra-framework/tools/rescue/fixtures/fork/sample_fork_user.json
+ACCOUNT_FILE=${SOURCE_PATH}/tools/rescue/fixtures/fork/sample_fork_user.json
 endif
 
 
@@ -100,9 +100,9 @@ fetch-db:
 	
 	@echo "Fetching database..."
 	rm -rf ${DB_PATH}
-	cd ${DATA_PATH}/ && \
-	wget https://storage.googleapis.com/0l-network/db-33254886.tar.gz -O db-33254886.tar.gz && \
-	tar -xvzf db-33254886.tar.gz --strip-components=4 home/sirouk/.libra/data-2024-03-14-045027/db && \
+	wget https://storage.googleapis.com/0l-network/db-33254886.tar.gz -O db-33254886.tar.gz
+	tar -xvzf db-33254886.tar.gz --strip-components=4 home/sirouk/.libra/data-2024-03-14-045027/db
+	mv ./db ${DB_PATH}
 	rm -f db-33254886.tar.gz
 
 
