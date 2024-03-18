@@ -156,9 +156,7 @@ pub enum QueryType {
     //     seq_start: Option<u64>,
     // },
     /// Display all account structs
-    Annotate {
-        account: AccountAddress,
-    },
+    Annotate { account: AccountAddress },
 }
 
 impl QueryType {
