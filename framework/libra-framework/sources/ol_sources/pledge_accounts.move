@@ -301,7 +301,9 @@
           if(!exists<PledgeAccount>(signer::address_of(user))) return;
           system_addresses::assert_vm(vm);
           let addr = signer::address_of(user);
-          garbage_collection(&addr);
+          if(exists<PledgeAccount>(addr)) {
+            garbage_collection(&addr);
+          }
         }
 
         fun get_user_pledges(account: &address): vector<address> acquires

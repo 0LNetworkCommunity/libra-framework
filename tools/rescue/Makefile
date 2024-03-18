@@ -5,7 +5,7 @@ DB_PATH = /root/fork_db/data/db
 ACCOUNT_FILE=/root/libra-framework/tools/rescue/fixtures/fork/sample_fork_user.json
 VALS_FILE=/root/libra-framework/tools/rescue/fixtures/fork/validators.json
 # and after you get a waypoint:
-WAYPOINT=33254830:3fee05943cbb8b90432cf9af25ed5ea9d7b58666c79d7a66862a08a95b230038
+WAYPOINT=33254829:a730d227c26655f2881fc7e9868040f3fec53f9fff6b6b2374b28ceb67912fee
 
 ifndef SOURCE_PATH
 SOURCE_PATH=~/libra-framework

@@ -243,7 +243,7 @@ fn test_voodoo() {
 fn test_drop_user() {
     let addr: AccountAddress = "0x7B61439A88060096213AC4F5853B598E".parse().unwrap();
     let dir = Path::new("/root/db");
-    load_them_onto_ark_b(dir, &[addr], None).expect("drop user");
+    load_them_onto_ark_b(dir, &[addr], None, false).expect("drop user");
 }
 
 #[ignore]
