@@ -78,7 +78,7 @@ module diem_framework::block {
 
     /// Update the epoch interval.
     /// Can only be called as part of the Diem governance proposal process established by the DiemGovernance module.
-    public fun update_epoch_interval_microsecs(
+    public(friend) fun update_epoch_interval_microsecs(
         diem_framework: &signer,
         new_epoch_interval: u64,
     ) acquires BlockResource {
@@ -201,6 +201,10 @@ module diem_framework::block {
 
     ///  Emit a `NewBlockEvent` event. This function will be invoked by write set script directly to generate the
     ///  new block event for WriteSetPayload.
+    // NOTE: This function is not `(friend)` because governance scripts need to
+    // call it.
+    // TODO: refactor diem_governance so that this can again have only
+    // friend visibility.
     public fun emit_writeset_block_event(vm_signer: &signer, fake_block_hash: address) acquires BlockResource {
         system_addresses::assert_vm(vm_signer);
         let block_metadata_ref = borrow_global_mut<BlockResource>(@diem_framework);

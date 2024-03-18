@@ -11,16 +11,27 @@ module ol_framework::slow_wallet {
   use std::vector;
   use std::signer;
   use diem_framework::system_addresses;
-  use diem_framework::coin;
+  // use diem_framework::coin;
   use diem_framework::account;
-  use ol_framework::libra_coin::LibraCoin;
+  use ol_framework::libra_coin;
   use ol_framework::testnet;
   use ol_framework::sacred_cows;
 
   // use diem_std::debug::print;
 
+  friend diem_framework::genesis;
+
   friend ol_framework::ol_account;
   friend ol_framework::transaction_fee;
+  friend ol_framework::epoch_boundary;
+  #[test_only]
+  friend ol_framework::test_slow_wallet;
+  #[test_only]
+  friend ol_framework::test_pof;
+  #[test_only]
+  friend ol_framework::mock;
+  #[test_only]
+  friend ol_framework::test_boundary;
 
   /// genesis failed to initialized the slow wallet registry
   const EGENESIS_ERROR: u64 = 1;
@@ -44,7 +55,7 @@ module ol_framework::slow_wallet {
         drip_events: event::EventHandle<DripEvent>,
     }
 
-    public fun initialize(framework: &signer){
+    public(friend) fun initialize(framework: &signer){
       system_addresses::assert_ol(framework);
       if (!exists<SlowWalletList>(@ol_framework)) {
         move_to<SlowWalletList>(framework, SlowWalletList {
@@ -56,8 +67,8 @@ module ol_framework::slow_wallet {
 
     /// private function which can only be called at genesis
     /// must apply the coin split factor.
-    // TODO: make this private with a public test helper
-    public fun fork_migrate_slow_wallet(
+    /// TODO: make this private with a public test helper
+    fun fork_migrate_slow_wallet(
       vm: &signer,
       user: &signer,
       unlocked: u64,
@@ -79,6 +90,22 @@ module ol_framework::slow_wallet {
         state.unlocked = unlocked;
         state.transferred = transferred;
       }
+    }
+
+    #[test_only]
+    public fun test_fork_migrate_slow_wallet(
+      vm: &signer,
+      user: &signer,
+      unlocked: u64,
+      transferred: u64,
+      // split_factor: u64,
+    ) acquires SlowWallet, SlowWalletList {
+      fork_migrate_slow_wallet(
+        vm,
+        user,
+        unlocked,
+        transferred
+      )
     }
 
     /// private function which can only be called at genesis
@@ -106,7 +133,7 @@ module ol_framework::slow_wallet {
     }
 
     /// implementation of setting slow wallet, allows contracts to call.
-    public fun set_slow(sig: &signer) acquires SlowWalletList {
+    fun set_slow(sig: &signer) acquires SlowWalletList {
       assert!(exists<SlowWalletList>(@ol_framework), error::invalid_argument(EGENESIS_ERROR));
 
         let addr = signer::address_of(sig);
@@ -118,7 +145,7 @@ module ol_framework::slow_wallet {
 
         if (!exists<SlowWallet>(signer::address_of(sig))) {
           move_to<SlowWallet>(sig, SlowWallet {
-            unlocked: coin::balance<LibraCoin>(addr),
+            unlocked: libra_coin::balance(addr),
             transferred: 0,
           });
         }
@@ -127,8 +154,8 @@ module ol_framework::slow_wallet {
     /// VM causes the slow wallet to unlock by X amount
     /// @return tuple of 2
     /// 0: bool, was this successful
-    // 1: u64, how much was dripped
-    public fun slow_wallet_epoch_drip(vm: &signer, amount: u64): (bool, u64) acquires
+    /// 1: u64, how much was dripped
+    public(friend) fun slow_wallet_epoch_drip(vm: &signer, amount: u64): (bool, u64) acquires
     SlowWallet, SlowWalletList{
       system_addresses::assert_ol(vm);
       garbage_collection();
@@ -139,7 +166,7 @@ module ol_framework::slow_wallet {
       let i = 0;
       while (i < len) {
         let addr = vector::borrow<address>(&list, i);
-        let user_balance = coin::balance<LibraCoin>(*addr);
+        let user_balance = libra_coin::balance(*addr);
         if (!exists<SlowWallet>(*addr)) continue; // NOTE: formal verifiction caught
         // this, not sure how it's possible
 
@@ -234,8 +261,8 @@ module ol_framework::slow_wallet {
     /// Every epoch the system will drip a fixed amount
     /// @return tuple of 2
     /// 0: bool, was this successful
-    // 1: u64, how much was dripped
-    public fun on_new_epoch(vm: &signer): (bool, u64) acquires SlowWallet, SlowWalletList {
+    /// 1: u64, how much was dripped
+    public(friend) fun on_new_epoch(vm: &signer): (bool, u64) acquires SlowWallet, SlowWalletList {
       system_addresses::assert_ol(vm);
       slow_wallet_epoch_drip(vm, sacred_cows::get_slow_drip_const())
     }
@@ -260,7 +287,7 @@ module ol_framework::slow_wallet {
     /// helper to get the unlocked and total balance. (unlocked, total)
     public(friend) fun balance(addr: address): (u64, u64) acquires SlowWallet{
       // this is a normal account, so return the normal balance
-      let total = coin::balance<LibraCoin>(addr);
+      let total = libra_coin::balance(addr);
       if (exists<SlowWallet>(addr)) {
         let s = borrow_global<SlowWallet>(addr);
         return (s.unlocked, total)
@@ -270,6 +297,7 @@ module ol_framework::slow_wallet {
       (total, total)
     }
 
+    #[view]
     /// Returns the amount of unlocked funds for a slow wallet.
     public fun unlocked_amount(addr: address): u64 acquires SlowWallet{
       // this is a normal account, so return the normal balance
@@ -278,7 +306,7 @@ module ol_framework::slow_wallet {
         return s.unlocked
       };
 
-      coin::balance<LibraCoin>(addr)
+      libra_coin::balance(addr)
     }
 
     #[view]

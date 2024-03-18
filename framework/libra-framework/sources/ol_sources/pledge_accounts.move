@@ -44,7 +44,7 @@
         use std::error;
         use std::option::{Self, Option};
         use std::fixed_point64;
-        use ol_framework::libra_coin::LibraCoin;
+        use ol_framework::libra_coin::{Self, LibraCoin};
         use ol_framework::ol_account;
         use ol_framework::epoch_helper;
         use ol_framework::burn;
@@ -55,6 +55,9 @@
         friend ol_framework::last_goodbye;
 
         // use diem_std::debug::print;
+
+        friend ol_framework::infra_escrow;
+        friend ol_framework::genesis_migration;
 
         /// no policy at this address
         const ENO_BENEFICIARY_POLICY: u64 = 1;
@@ -99,7 +102,7 @@
 
         // beneficiary publishes a policy to their account.
         // NOTE: It cannot be modified after a first pledge is made!.
-        public fun publish_beneficiary_policy(
+        public(friend) fun publish_beneficiary_policy(
           account: &signer,
           purpose: vector<u8>,
           vote_threshold_to_revoke: u64,
@@ -134,7 +137,7 @@
         }
 
         // Initialize a list of pledges on a user's account
-        public fun maybe_initialize_my_pledges(account: &signer) {
+        fun maybe_initialize_my_pledges(account: &signer) {
             if (!exists<MyPledges>(signer::address_of(account))) {
                 let my_pledges = MyPledges { list: vector::empty() };
                 move_to(account, my_pledges);
@@ -142,7 +145,7 @@
         }
 
         /// saves a pledge if it exists
-        public fun save_pledge(
+        public(friend) fun save_pledge(
           sig: &signer,
           address_of_beneficiary: address,
           pledge: coin::Coin<LibraCoin>
@@ -158,7 +161,7 @@
           }
         }
 
-        public fun vm_add_to_pledge(
+        fun vm_add_to_pledge(
           vm: &signer,
           pledger: address,
           address_of_beneficiary: address,
@@ -170,7 +173,7 @@
           let (found, idx) = pledge_at_idx(&pledger, &address_of_beneficiary);
           let value = coin::value(pledge);
           if (found) {
-            let c = coin::extract(pledge, value);
+            let c = libra_coin::extract(pledge, value);
             add_coin_to_pledge_account(pledger, idx, c)
           }
           // caller of this function needs to decide what to do if the coin cannot be added. Which is why its a mutable reference.
@@ -218,7 +221,7 @@
           pledge_account.lifetime_pledged = pledge_account.lifetime_pledged + amount;
 
           // merge the coins in the account
-          coin::merge(&mut pledge_account.pledge, coin);
+          libra_coin::merge(&mut pledge_account.pledge, coin);
 
           // must add pledger address the ProjectPledgers list on beneficiary account
 
@@ -233,7 +236,7 @@
         }
 
         // withdraw an amount from all pledge accounts. Check first that there are remaining funds before attempting to withdraw.
-        public fun withdraw_from_all_pledge_accounts(sig_beneficiary: &signer, amount: u64): option::Option<coin::Coin<LibraCoin>> acquires MyPledges, BeneficiaryPolicy {
+        public(friend) fun withdraw_from_all_pledge_accounts(sig_beneficiary: &signer, amount: u64): option::Option<coin::Coin<LibraCoin>> acquires MyPledges, BeneficiaryPolicy {
 
             let address_of_beneficiary = signer::address_of(sig_beneficiary);
             if (!exists<BeneficiaryPolicy>(address_of_beneficiary)) {
@@ -277,7 +280,7 @@
 
                   let temp = option::extract(&mut all_coins);
                   let coin =  option::extract(&mut c);
-                  coin::merge(&mut temp, coin);
+                  libra_coin::merge(&mut temp, coin);
                   option::destroy_none(all_coins);
                   all_coins = option::some(temp);
                   option::destroy_none(c);
@@ -361,7 +364,7 @@
                   pledge_account.lifetime_withdrawn = pledge_account.lifetime_withdrawn + amount;
 
 
-                  let coin = coin::extract(&mut pledge_account.pledge, amount);
+                  let coin = libra_coin::extract(&mut pledge_account.pledge, amount);
 
                   // return coin
 
@@ -422,7 +425,7 @@
 
                 bp.lifetime_withdrawn = bp.lifetime_withdrawn + downcast_withdraw;
 
-                let coin = coin::extract(&mut pledge_account.pledge, downcast_withdraw);
+                let coin = libra_coin::extract(&mut pledge_account.pledge, downcast_withdraw);
                 return option::some(coin)
               };
             option::none()
@@ -431,7 +434,7 @@
         // vote to revoke a beneficiary's policy
         // this is just a vote, it requires a tally, and consensus to
         // revert the fund OR burn them, depending on policy
-        public fun vote_to_revoke_beneficiary_policy(account: &signer, address_of_beneficiary: address) acquires MyPledges, BeneficiaryPolicy {
+        fun vote_to_revoke_beneficiary_policy(account: &signer, address_of_beneficiary: address) acquires MyPledges, BeneficiaryPolicy {
 
 
             // first check if they have already voted
@@ -455,7 +458,7 @@
 
         // The user changes their mind.
         // They are retracting/cancelling their vote.
-        public fun try_cancel_vote(account: &signer, address_of_beneficiary: address) acquires BeneficiaryPolicy {
+        fun try_cancel_vote(account: &signer, address_of_beneficiary: address) acquires BeneficiaryPolicy {
             let pledger = signer::address_of(account);
             let bp = borrow_global_mut<BeneficiaryPolicy>(address_of_beneficiary);
 
@@ -549,7 +552,7 @@
 
         ////////// TX  //////////
         // for general pledge accounts
-        public fun user_pledge(user_sig: &signer, beneficiary: address, amount: u64) acquires BeneficiaryPolicy, MyPledges {
+        public(friend) fun user_pledge(user_sig: &signer, beneficiary: address, amount: u64) acquires BeneficiaryPolicy, MyPledges {
           let coin = ol_account::withdraw(user_sig, amount);
           save_pledge(user_sig, beneficiary, coin);
         }
@@ -572,23 +575,6 @@
           (false, 0)
         }
 
-        // public fun maybe_find_a_pledge(account: &address, address_of_beneficiary: &address): option::Option<PledgeAccount> acquires MyPledges {
-        //   if (!exists<MyPledges>(*account)) {
-        //     return option::none<PledgeAccount>()
-        //   };
-
-        //   let my_pledges = &borrow_global<MyPledges>(*account).list;
-        //     let i = 0;
-        //     while (i < vector::length(my_pledges)) {
-        //         let p = vector::borrow(my_pledges, i);
-        //         if (&p.address_of_beneficiary == address_of_beneficiary) {
-        //             return option::some<PledgeAccount>(*p)
-        //         };
-        //         i = i + 1;
-        //     };
-        //     return option::none()
-        // }
-        // get the pledge amount on a specific pledge account
       #[view]
       public fun get_user_pledge_amount(account: address, address_of_beneficiary: address): u64 acquires MyPledges {
           let (found, idx) = pledge_at_idx(&account, &address_of_beneficiary);

@@ -78,11 +78,11 @@ module ol_framework::test_burn {
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
       mock::trigger_epoch(root);
 
-      let (communityA, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
+      let (communityA, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
       let addr_A = signer::address_of(&communityA);
       community_wallet_init::init_community(&communityA, vals, 2); // make all the vals signers
 
-      let (communityB, _cap) = ol_account::ol_create_resource_account(bob, b"0xdeadbeef");
+      let (communityB, _cap) = ol_account::test_ol_create_resource_account(bob, b"0xdeadbeef");
       let addr_B = signer::address_of(&communityB);
       community_wallet_init::init_community(&communityB, vals, 2); // make all the vals signers
 
@@ -113,7 +113,7 @@ module ol_framework::test_burn {
       let bob_burn = 100000;
       let c = ol_account::withdraw(bob, bob_burn);
       // then the system burns based on his preference.
-      burn::vm_burn_with_user_preference(root, signer::address_of(bob), c);
+      burn::test_vm_burn_with_user_preference(root, signer::address_of(bob), c);
       // check that a recycle to match index happened instead of a straight burn
       let (_lifetime_burn, lifetime_match) = burn::get_lifetime_tracker();
       assert!(lifetime_match > 0, 7357003);
@@ -141,11 +141,11 @@ module ol_framework::test_burn {
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
       mock::trigger_epoch(root);
 
-      let (communityA, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
+      let (communityA, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
       let addr_A = signer::address_of(&communityA);
       community_wallet_init::init_community(&communityA, vals, 2); // make all the vals signers
 
-      let (communityB, _cap) = ol_account::ol_create_resource_account(bob, b"0xdeadbeef");
+      let (communityB, _cap) = ol_account::test_ol_create_resource_account(bob, b"0xdeadbeef");
       let addr_B = signer::address_of(&communityB);
       community_wallet_init::init_community(&communityB, vals, 2); // make all the vals signers
 
@@ -177,7 +177,7 @@ module ol_framework::test_burn {
       let bob_burn = 100000;
       let c = ol_account::withdraw(bob, bob_burn);
       // then the system burns based on his preference.
-      burn::vm_burn_with_user_preference(root, signer::address_of(bob), c);
+      burn::test_vm_burn_with_user_preference(root, signer::address_of(bob), c);
 
       // no match recycling happened
       let (lifetime_burn, lifetime_match) = burn::get_lifetime_tracker();
@@ -251,11 +251,11 @@ module ol_framework::test_burn {
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
       mock::trigger_epoch(root);
 
-      let (communityA, _cap) = ol_account::ol_create_resource_account(alice, b"0x1");
+      let (communityA, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
       let addr_A = signer::address_of(&communityA);
       community_wallet_init::init_community(&communityA, vals, 2); // make all the vals signers
 
-      let (communityB, _cap) = ol_account::ol_create_resource_account(bob, b"0xdeadbeef");
+      let (communityB, _cap) = ol_account::test_ol_create_resource_account(bob, b"0xdeadbeef");
       let addr_B = signer::address_of(&communityB);
       community_wallet_init::init_community(&communityB, vals, 2); // make all the vals signers
 
@@ -286,7 +286,7 @@ module ol_framework::test_burn {
       let bob_burn = 100000;
       let c = ol_account::withdraw(bob, bob_burn);
       // then the system burns based on his preference.
-      burn::vm_burn_with_user_preference(root, signer::address_of(bob), c);
+      burn::test_vm_burn_with_user_preference(root, signer::address_of(bob), c);
       // check that a recycle to match index happened instead of a straight burn
       let (_lifetime_burn, lifetime_match) = burn::get_lifetime_tracker();
       assert!(lifetime_match > 0, 7357003);

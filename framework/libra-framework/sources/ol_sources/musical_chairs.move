@@ -8,7 +8,10 @@ module ol_framework::musical_chairs {
     use std::vector;
     // use diem_std::debug::print;
 
+    friend diem_framework::genesis;
     friend ol_framework::epoch_boundary;
+    #[test_only]
+    friend ol_framework::mock;
 
     struct Chairs has key {
         // The number of chairs in the game
@@ -43,7 +46,7 @@ module ol_framework::musical_chairs {
     // to the number of compliant and performant nodes.
 
     /// Called by root in genesis to initialize the GAS coin
-    public fun initialize(
+    public(friend) fun initialize(
         vm: &signer,
         genesis_seats: u64,
     ) {
@@ -119,7 +122,7 @@ module ol_framework::musical_chairs {
     // in case we were not able to fill all the seats offered
     // we don't want to keep incrementing from a baseline which we cannot fill
     // it can spiral out of range.
-    public fun set_current_seats(vm: &signer, filled_seats: u64): u64 acquires Chairs{
+    public(friend) fun set_current_seats(vm: &signer, filled_seats: u64): u64 acquires Chairs{
       system_addresses::assert_ol(vm);
       let chairs = borrow_global_mut<Chairs>(@ol_framework);
       chairs.seats_offered = filled_seats;
@@ -198,6 +201,7 @@ module ol_framework::musical_chairs {
 
     //////// GETTERS ////////
 
+    #[view]
     public fun get_current_seats(): u64 acquires Chairs {
         borrow_global<Chairs>(@ol_framework).seats_offered
     }

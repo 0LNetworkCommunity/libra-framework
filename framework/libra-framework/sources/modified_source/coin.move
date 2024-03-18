@@ -23,6 +23,7 @@ module diem_framework::coin {
     friend diem_framework::genesis;
     friend diem_framework::genesis_migration;
     friend diem_framework::transaction_fee;
+    friend diem_framework::transaction_validation;
 
 
     // NOTE: these vendor structs are left here for tests
@@ -33,6 +34,18 @@ module diem_framework::coin {
     friend diem_framework::diem_account;
     #[test_only]
     friend diem_framework::resource_account;
+    #[test_only]
+    friend diem_framework::diem_governance;
+    #[test_only]
+    friend ol_framework::test_account;
+    #[test_only]
+    friend ol_framework::mock;
+    #[test_only]
+    friend ol_framework::test_slow_wallet;
+    #[test_only]
+    friend ol_framework::test_burn;
+    #[test_only]
+    friend ol_framework::test_rewards;
 
 
     //
@@ -182,7 +195,7 @@ module diem_framework::coin {
 
     //////// 0L ////////
     /// the value of the aggregated coin
-    public fun aggregatable_value<CoinType>(aggregatable_coin: &AggregatableCoin<CoinType>): u128 {
+    public(friend) fun aggregatable_value<CoinType>(aggregatable_coin: &AggregatableCoin<CoinType>): u128 {
         aggregator::read(&aggregatable_coin.value)
     }
 
@@ -240,9 +253,8 @@ module diem_framework::coin {
         type_info::account_address(&type_info)
     }
 
-    // #[view]
     /// Returns the balance of `owner` for provided `CoinType`.
-    public fun balance<CoinType>(owner: address): u64 acquires CoinStore {
+    public(friend) fun balance<CoinType>(owner: address): u64 acquires CoinStore {
         // should not abort if the VM might call this
         if (!is_account_registered<CoinType>(owner)) return 0;
         borrow_global<CoinStore<CoinType>>(owner).coin.value
@@ -296,10 +308,6 @@ module diem_framework::coin {
         }
     }
 
-    // Public functions
-    /// Burn `coin` with capability.
-    /// The capability `_cap` should be passed as a reference to
-    /// `BurnCapability<CoinType>`.
 
     // 0L: TODO: isn't this deprecated?
     public(friend) fun burn<CoinType>(
@@ -384,14 +392,14 @@ module diem_framework::coin {
     /// Destroys a zero-value coin. Calls will fail if the `value` in the passed-in `token` is non-zero
     /// so it is impossible to "burn" any non-zero amount of `Coin` without having
     /// a `BurnCapability` for the specific `CoinType`.
-    public fun destroy_zero<CoinType>(zero_coin: Coin<CoinType>) {
+    public(friend) fun destroy_zero<CoinType>(zero_coin: Coin<CoinType>) {
         let Coin { value } = zero_coin;
         assert!(value == 0, error::invalid_argument(EDESTRUCTION_OF_NONZERO_TOKEN))
     }
 
     /// Extracts `amount` from the passed-in `coin`, where the original token is modified in place.
     // NOTE: does not need to be friend only, since it is a method (requires a mutable coin already be out of an account);
-    public fun extract<CoinType>(coin: &mut Coin<CoinType>, amount: u64): Coin<CoinType> {
+    public(friend) fun extract<CoinType>(coin: &mut Coin<CoinType>, amount: u64): Coin<CoinType> {
         assert!(coin.value >= amount, error::invalid_argument(EINSUFFICIENT_BALANCE));
         coin.value = coin.value - amount;
         Coin { value: amount }
@@ -400,7 +408,7 @@ module diem_framework::coin {
     /// Extracts the entire amount from the passed-in `coin`, where the original token is modified in place.
     // NOTE: does not need to be friend only, since it is a method (requires a mutable coin already be out of an account);
 
-    public fun extract_all<CoinType>(coin: &mut Coin<CoinType>): Coin<CoinType> {
+    public(friend) fun extract_all<CoinType>(coin: &mut Coin<CoinType>): Coin<CoinType> {
         let total_value = coin.value;
         coin.value = 0;
         Coin { value: total_value }
@@ -470,7 +478,7 @@ module diem_framework::coin {
     /// "Merges" the two given coins.  The coin passed in as `dst_coin` will have a value equal
     /// to the sum of the two tokens (`dst_coin` and `source_coin`).
     // NOTE: ok to not be a friend function, since these coins had to be withdrawn through the ol_account pathway
-    public fun merge<CoinType>(dst_coin: &mut Coin<CoinType>, source_coin: Coin<CoinType>) {
+    public(friend) fun merge<CoinType>(dst_coin: &mut Coin<CoinType>, source_coin: Coin<CoinType>) {
         spec {
             assume dst_coin.value + source_coin.value <= MAX_U64;
         };
@@ -531,7 +539,7 @@ module diem_framework::coin {
 
     // regsister a user to receive a coin type.
     // NOTE: does not need to be a friend, and may be needed for third party applications.
-    public fun register<CoinType>(account: &signer) {
+    public(friend) fun register<CoinType>(account: &signer) {
         let account_addr = signer::address_of(account);
         // Short-circuit and do nothing if account is already registered for CoinType.
         if (is_account_registered<CoinType>(account_addr)) {
@@ -567,7 +575,7 @@ module diem_framework::coin {
 
     /// Returns an indexed value based on the current supply, compared to the
     /// final supply
-    public fun index_value<CoinType>(coin: &Coin<CoinType>, index_supply: u128):
+    public(friend) fun index_value<CoinType>(coin: &Coin<CoinType>, index_supply: u128):
     u128 acquires CoinInfo {
         let units = (value(coin) as u128);
         let supply_now_opt = supply<CoinType>();
@@ -650,7 +658,7 @@ module diem_framework::coin {
     }
 
     /// Create a new `Coin<CoinType>` with a value of `0`.
-    public fun zero<CoinType>(): Coin<CoinType> {
+    public(friend) fun zero<CoinType>(): Coin<CoinType> {
         Coin<CoinType> {
             value: 0
         }
@@ -658,17 +666,17 @@ module diem_framework::coin {
 
     /// SILLY RABBIT, TRICKS ARE FOR KIDS
     /// Destroy a freeze capability. Freeze capability is dangerous and therefore should be destroyed if not used.
-    public fun destroy_freeze_cap<CoinType>(freeze_cap: FreezeCapability<CoinType>) {
+    public(friend) fun destroy_freeze_cap<CoinType>(freeze_cap: FreezeCapability<CoinType>) {
         let FreezeCapability<CoinType> {} = freeze_cap;
     }
 
     /// Destroy a mint capability.
-    public fun destroy_mint_cap<CoinType>(mint_cap: MintCapability<CoinType>) {
+    public(friend) fun destroy_mint_cap<CoinType>(mint_cap: MintCapability<CoinType>) {
         let MintCapability<CoinType> {} = mint_cap;
     }
 
     /// Destroy a burn capability.
-    public fun destroy_burn_cap<CoinType>(burn_cap: BurnCapability<CoinType>) {
+    public(friend) fun destroy_burn_cap<CoinType>(burn_cap: BurnCapability<CoinType>) {
         let BurnCapability<CoinType> {} = burn_cap;
     }
 

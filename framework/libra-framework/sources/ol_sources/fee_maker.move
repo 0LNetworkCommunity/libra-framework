@@ -10,6 +10,8 @@ module ol_framework::fee_maker {
     // use diem_std::debug::print;
 
     friend diem_framework::transaction_fee;
+    friend diem_framework::genesis;
+    friend ol_framework::epoch_boundary;
 
     /// FeeMaker struct lives on an individual's account
     /// We check how many fees the user has paid.
@@ -27,7 +29,7 @@ module ol_framework::fee_maker {
     }
 
     /// Initialize the registry at the VM address.
-    public fun initialize(ol_framework: &signer) {
+    public(friend) fun initialize(ol_framework: &signer) {
       system_addresses::assert_ol(ol_framework);
       if (!exists<EpochFeeMakerRegistry>(@ol_framework)) {
         let registry = EpochFeeMakerRegistry {
@@ -58,7 +60,7 @@ module ol_framework::fee_maker {
       };
     }
 
-    public fun epoch_reset_fee_maker(vm: &signer): bool acquires EpochFeeMakerRegistry, FeeMaker {
+    public(friend) fun epoch_reset_fee_maker(vm: &signer): bool acquires EpochFeeMakerRegistry, FeeMaker {
       system_addresses::assert_ol(vm);
       let registry = borrow_global_mut<EpochFeeMakerRegistry>(@ol_framework);
       let fee_makers = &registry.fee_makers;
@@ -125,6 +127,7 @@ module ol_framework::fee_maker {
 
     //////// GETTERS ///////
 
+    #[view]
     // get list of fee makers
     public fun get_fee_makers(): vector<address> acquires EpochFeeMakerRegistry {
       let registry = borrow_global<EpochFeeMakerRegistry>(@ol_framework);
