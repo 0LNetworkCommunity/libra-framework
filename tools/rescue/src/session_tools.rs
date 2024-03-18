@@ -148,6 +148,8 @@ pub fn load_them_onto_ark_b(
     addr_list: &[AccountAddress],
     debug_vals: Option<Vec<AccountAddress>>,
 ) -> anyhow::Result<ChangeSet> {
+    let staging_mode = true; // TODO make this a CLI arg.
+
     let vm_sig = MoveValue::Signer(AccountAddress::ZERO);
     let vmc = libra_run_session(
         dir,
@@ -163,6 +165,16 @@ pub fn load_them_onto_ark_b(
                 )
                 .expect("run through whole list");
             });
+
+            if staging_mode { // TODO: make an arg
+              let staging_id: MoveValue = MoveValue::U8(2);
+                libra_execute_session_function(
+                    session,
+                    "0x1::chain_id::set_impl",
+                    vec![&vm_sig, &staging_id],
+                )
+                .expect("run through whole list");
+            }
 
             writeset_voodoo_events(session).expect("voodoo");
             Ok(())
