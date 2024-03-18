@@ -51,6 +51,7 @@ diem-transactional-test-harness = { git = "https://github.com/0LNetworkCommunity
 smoke-test = { package = "smoke-test", git = "https://github.com/0LNetworkCommunity/diem.git", rev = "e64df872" }
 
 diem = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "e64df872" }
+diem-backup-cli = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "e64df872" }
 diem-build-info = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "e64df872" }
 diem-db-tool = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "e64df872" }
 diem-node = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "e64df872" }

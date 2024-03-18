@@ -9141,9 +9141,11 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap 4.4.2",
+ "diem-backup-cli",
  "diem-db-tool",
  "diem-logger",
  "diem-push-metrics",
+ "serde_json",
  "tokio",
 ]
 
