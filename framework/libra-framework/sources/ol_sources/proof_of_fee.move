@@ -19,6 +19,7 @@ module ol_framework::proof_of_fee {
   use ol_framework::vouch;
   use diem_framework::transaction_fee;
   use ol_framework::epoch_helper;
+  use diem_framework::account;
   use diem_framework::stake;
   use diem_framework::system_addresses;
   use ol_framework::globals;
@@ -337,6 +338,10 @@ module ol_framework::proof_of_fee {
       (i < vector::length(&sorted_vals_by_bid))
     ) {
       let val = vector::borrow(&sorted_vals_by_bid, i);
+        if (!account::exists_at(*val)) {
+          i = i + 1;
+          continue
+        };
       // check if a proven node
       // NOTE: if the top bidders all all "proven" nodes, then there will
       // be no reason to add an unproven. Unproven nodes will only

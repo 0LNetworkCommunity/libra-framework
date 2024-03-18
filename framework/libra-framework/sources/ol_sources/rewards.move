@@ -3,6 +3,7 @@ module ol_framework::rewards {
   use std::vector;
   use diem_framework::coin::{Self, Coin};
   use diem_framework::stake;
+  use diem_framework::account;
   use diem_framework::system_addresses;
   use ol_framework::libra_coin::LibraCoin;
   use ol_framework::ol_account;
@@ -44,9 +45,15 @@ module ol_framework::rewards {
     system_addresses::assert_ol(root);
     let i = 0;
     while (i < vector::length(&list)) {
+        let account = *vector::borrow(&list, i);
+              // belt and suspenders for dropped accounts in hard fork.
+        if (!account::exists_at(account)) {
+          i = i + 1;
+          continue
+        };
       // split off the reward amount per validator from coin
       let user_coin = coin::extract(reward_budget, reward_per);
-      pay_reward(root, *vector::borrow(&list, i), user_coin, reward_type);
+      pay_reward(root, account, user_coin, reward_type);
       // TODO: emit payment event in stake.move
       i = i + 1;
     }

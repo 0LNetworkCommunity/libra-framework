@@ -15,7 +15,7 @@ module ol_framework::burn {
   use std::fixed_point32;
   use std::signer;
   use std::vector;
-  // use ol_framework::ol_account;
+  use diem_framework::account;
   use ol_framework::system_addresses;
   use ol_framework::libra_coin::LibraCoin;
   // use ol_framework::transaction_fee;
@@ -81,6 +81,11 @@ module ol_framework::burn {
       let i = 0;
       while (i < len) {
           let user = vector::borrow(&fee_makers, i);
+          // belt and suspenders for dropped accounts in hard fork.
+          if (!account::exists_at(*user)) {
+            i = i + 1;
+            continue
+          };
           let user_made = fee_maker::get_user_fees_made(*user);
           let share = fixed_point32::create_from_rational(user_made, total_fees_made);
 

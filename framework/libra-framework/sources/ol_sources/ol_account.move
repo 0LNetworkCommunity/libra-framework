@@ -328,6 +328,8 @@ module ol_framework::ol_account {
     u64): Option<Coin<LibraCoin>> acquires
     BurnTracker {
       system_addresses::assert_ol(vm);
+      // prevent vm trying to reach accounts that may not exist
+      if (!account::exists_at(from)) return option::none();
       // should not halt
       if(amount > coin::balance<LibraCoin>(from)) return option::none();
 
@@ -510,6 +512,7 @@ module ol_framework::ol_account {
     public fun vm_deposit_coins_locked(vm: &signer, to: address, coins: Coin<LibraCoin>) acquires
     BurnTracker {
         system_addresses::assert_ol(vm);
+        // prevent vm trying to reach accounts that may not exist
         assert!(coin::is_account_registered<LibraCoin>(to), error::invalid_state(EACCOUNT_NOT_REGISTERED_FOR_GAS));
         coin::deposit<LibraCoin>(to, coins);
         // the incoming coins should trigger an update in tracker
