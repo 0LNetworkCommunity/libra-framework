@@ -17,6 +17,9 @@ pub struct ForkOpts {
     /// optional, JSON file with list of new validators. Must already have on-chain configurations
     #[clap(short, long)]
     pub validators_file: Option<PathBuf>,
+    /// Enable staging mode
+    #[clap(short, long, takes_value = false)]
+    pub staging_mode: bool,
 }
 
 impl ForkOpts {
@@ -29,7 +32,7 @@ impl ForkOpts {
         // new validator set
         let vals = UserBlob::get_vals(self.validators_file.clone());
 
-        let cs = session_tools::load_them_onto_ark_b(&self.db_dir, &drop_list, vals)?;
+        let cs = session_tools::load_them_onto_ark_b(&self.db_dir, &drop_list, vals, self.staging_mode)?;
         let gen_tx = Transaction::GenesisTransaction(WriteSetPayload::Direct(cs));
 
         let out = self.db_dir.join("hard_fork.blob");
