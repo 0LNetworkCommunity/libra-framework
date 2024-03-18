@@ -18,7 +18,7 @@ pub struct ForkOpts {
     #[clap(short, long)]
     pub validators_file: Option<PathBuf>,
     /// Enable staging mode
-    #[clap(short, long, takes_value = false)]
+    #[clap(short, long)]
     pub staging_mode: bool,
 }
 
