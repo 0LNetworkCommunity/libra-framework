@@ -131,6 +131,7 @@ module ol_framework::last_goodbye {
     // You gave me more to live for
     // More than you'll ever know
     account::hard_fork_drop(vm, user);
+    print(&addr);
     print(&@0xDEAD);
   }
 
