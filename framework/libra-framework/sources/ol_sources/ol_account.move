@@ -75,6 +75,9 @@ module ol_framework::ol_account {
     /// donor voice cannot use transfer, they have a dedicated workflow
     const ENOT_FOR_DV: u64 = 12;
 
+    /// This key cannot be used to create accounts. The address may have
+    /// malformed state. And says, "My advice is to not let the boys in".
+    const ETOMBSTONE: u64 = 21;
 
     struct BurnTracker has key {
       prev_supply: u64,
@@ -115,6 +118,9 @@ module ol_framework::ol_account {
     }
 
     fun create_impl(sender: &signer, maybe_new_user: address) {
+        // prevent reincarnation of accounts where there may be malformed state
+        // during pending deletion.
+        assert!(!account::is_tombstone(maybe_new_user), error::already_exists(ETOMBSTONE));
         let new_signer = account::create_account(maybe_new_user);
         coin::register<LibraCoin>(&new_signer);
         receipts::user_init(&new_signer);
@@ -610,6 +616,7 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
     public fun test_transfer_ol(root: &signer, alice: &signer, core: &signer)
     acquires BurnTracker {
+        account::maybe_initialize_duplicate_originating(root);
         let bob = from_bcs::to_address(x"0000000000000000000000000000000000000000000000000000000000000b0b");
         let carol = from_bcs::to_address(x"00000000000000000000000000000000000000000000000000000000000ca501");
 
@@ -642,7 +649,7 @@ module ol_framework::ol_account {
         let (burn_cap, mint_cap) =
         ol_framework::libra_coin::initialize_for_test(core);
         libra_coin::test_set_final_supply(root, 1000); // dummy to prevent fail
-
+        account::maybe_initialize_duplicate_originating(root);
         create_account(root, signer::address_of(alice));
         coin::deposit(signer::address_of(alice), coin::mint(10000, &mint_cap));
         transfer(alice, resource_acc_addr, 500);
@@ -655,6 +662,7 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, from = @0x123, core = @0x1, recipient_1 = @0x124, recipient_2 = @0x125)]
     public fun test_batch_transfer(root: &signer, from: &signer, core: &signer,
     recipient_1: &signer, recipient_2: &signer) acquires BurnTracker{
+        account::maybe_initialize_duplicate_originating(root);
         let (burn_cap, mint_cap) =
         diem_framework::libra_coin::initialize_for_test(core);
         libra_coin::test_set_final_supply(root, 1000); // dummy to prevent fail
@@ -679,6 +687,7 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, user = @0x123)]
     public fun test_set_allow_direct_coin_transfers(root: &signer, user:
     &signer) acquires DirectTransferConfig {
+        account::maybe_initialize_duplicate_originating(root);
         let addr = signer::address_of(user);
         let (b, m) = libra_coin::initialize_for_test(root);
         coin::destroy_burn_cap(b);

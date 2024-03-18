@@ -144,9 +144,10 @@ module ol_framework::last_goodbye {
   }
 
 
-  #[test(vm = @0x0, alice = @0x1000a)]
-    fun bang_bang(vm: &signer, alice: &signer) {
+  #[test(vm = @0x0, framework = @0x1, alice = @0x1000a, bob = @0x1000b)]
+    fun bang_bang(vm: &signer, framework: &signer, alice: &signer, bob: address) {
       use diem_framework::account;
+      account::maybe_initialize_duplicate_originating(framework);
 
       let a_addr = signer::address_of(alice);
       account::create_account_for_test(a_addr);
@@ -155,6 +156,10 @@ module ol_framework::last_goodbye {
       last_goodbye(vm, alice);
       // Ensure the account DOES NOT exist at all
       assert!(!account::exists_at(a_addr), 735702);
+      // is a tombstone
+      assert!(account::is_tombstone(a_addr), 735703);
+      assert!(!account::is_tombstone(bob), 735704);
+
     }
 
   #[test(vm = @0x0, alice = @0x1000a)]
