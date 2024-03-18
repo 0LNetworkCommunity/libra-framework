@@ -147,8 +147,8 @@ pub fn load_them_onto_ark_b(
     dir: &Path,
     addr_list: &[AccountAddress],
     debug_vals: Option<Vec<AccountAddress>>,
+    staging_mode: bool,
 ) -> anyhow::Result<ChangeSet> {
-    let staging_mode = true; // TODO make this a CLI arg.
 
     let vm_sig = MoveValue::Signer(AccountAddress::ZERO);
     let vmc = libra_run_session(
@@ -167,7 +167,6 @@ pub fn load_them_onto_ark_b(
             });
 
             if staging_mode {
-                // TODO: make an arg
                 let staging_id: MoveValue = MoveValue::U8(2);
                 libra_execute_session_function(
                     session,
