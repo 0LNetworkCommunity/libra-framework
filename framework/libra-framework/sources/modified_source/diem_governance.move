@@ -609,7 +609,7 @@ module diem_framework::diem_governance {
     // helper to use on staging chain.
     public entry fun staging_trigger_epoch(_sig: &signer) acquires
     GovernanceResponsbility { // doesn't need a signer
-      assert!(!testnet::is_staging_net(), 666););
+      assert!(!testnet::is_staging_net(), 666);
       let _ = epoch_boundary::can_trigger(); // will abort if false
       let framework_signer = get_signer(@ol_framework);
       epoch_boundary::trigger_epoch(&framework_signer);
