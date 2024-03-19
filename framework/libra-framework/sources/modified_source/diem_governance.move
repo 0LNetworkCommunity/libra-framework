@@ -612,7 +612,7 @@ module diem_framework::diem_governance {
       assert!(!testnet::is_staging_net(), 666););
       let _ = epoch_boundary::can_trigger(); // will abort if false
       let framework_signer = get_signer(@ol_framework);
-      epoch_boundary::smoke_trigger_epoch(&framework_signer);
+      epoch_boundary::trigger_epoch(&framework_signer);
     }
 
 
