@@ -5,26 +5,91 @@
   "version": "0.2.0",
   // target/debug/ol-genesis-tools --fork --output-path /opt/genesis_from_snapshot.blob --snapshot-path /Users/gsimsek/code/libra-main/ol/devnet/snapshot/state_ver_267.54ab`
   "configurations": [
+        {
+          "name": "restore-bootstrap",
+          "type": "lldb",
+          "request": "launch",
+          "cargo": {
+            "args": [
+              "build",
+              "-p",
+              "storage"
+            ],
+          },
+          	// cd ${ARCHIVE_PATH} && ${BIN_PATH}/${BIN_FILE} restore bootstrap-db --target-db-dir ${DB_PATH} --metadata-cache-dir ${REPO_PATH}/metacache --command-adapter-config ${REPO_PATH}/epoch-archive.yaml
+
+          "args": [
+            "restore",
+            "bootstrap-db",
+            "epoch-ending",
+            "--metadata-cache-dir",
+            "${workspaceFolder}/tools/storage/fixtures/epoch_ending.manifest",
+            "--command-adapter-config",
+            "${workspaceFolder}/tools/storage/fixtures",
+            "--target-db-dir",
+            "${workspaceFolder}/test_db",
+          ],
+          "env": {
+            "RUST_LOG": "warn"
+          },
+          "cwd": "${workspaceFolder}"
+        },
     {
-      "name": "rescue-script",
+      "name": "restore-epoch",
       "type": "lldb",
       "request": "launch",
       "cargo": {
         "args": [
           "build",
           "-p",
-          "rescue"
+          "storage"
         ],
       },
       "args": [
-        "rescue-tx",
-        "--data-path",
-        // "/root/test-db/db",
-        "/root/dbarchive/data_bak_2023-12-11/db",
-        // "--script-path",
-        // "${workspaceFolder}/tools/rescue/fixtures/rescue_framework_script",
-        "--framework-upgrade"
+        "restore",
+        "oneoff",
+        "epoch-ending",
+        "--epoch-ending-manifest",
+        "${workspaceFolder}/tools/storage/fixtures/epoch_ending_79-.166d/epoch_ending.manifest.unzip",
+        "--local-fs-dir",
+        "${workspaceFolder}/test_db",
+        "--target-db-dir",
+        "${workspaceFolder}/test_db",
       ],
+      "env": {
+        "RUST_LOG": "warn"
+      },
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "restore-state",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": [
+          "build",
+          "-p",
+          "storage"
+        ],
+      },
+      "args": [
+        "restore",
+        "oneoff",
+        "state-snapshot",
+        "--state-manifest",
+        "${workspaceFolder}/tools/storage/fixtures/state.manifest",
+        "--restore-mode",
+        "default",
+        "--state-into-version",
+        "1",
+        "--local-fs-dir",
+        "${workspaceFolder}/test_db",
+        "--target-db-dir",
+        "${workspaceFolder}/test_db",
+      ],
+      "env": {
+        "RUST_LOG": "warn"
+      },
       "cwd": "${workspaceFolder}"
     },
     {

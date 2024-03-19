@@ -1,23 +1,20 @@
 //! read-archive
 use anyhow::{Error, Result};
-use diem_backup_cli::{
-    backup_types::{epoch_ending::manifest::EpochEndingBackup, state_snapshot::manifest::StateSnapshotBackup},
-    metadata::StateSnapshotBackupMeta,
-    // storage::{FileHandle, FileHandleRef},
-    // utils::read_record_bytes::ReadRecordBytes,
+use diem_backup_cli::backup_types::{
+    epoch_ending::manifest::EpochEndingBackup, state_snapshot::manifest::StateSnapshotBackup,
 };
-use serde_json::json;
+// use serde_json::json;
 // use diem_crypto::HashValue;
 // use diem_types::account_state_blob::AccountStateBlob;
 use std::{
     fs,
-    path::{Path, PathBuf}, str::FromStr,
+    path::{Path, PathBuf},
 };
 // use tokio::{fs::OpenOptions, io::AsyncRead};
 
 ////// SNAPSHOT FILE IO //////
 /// read snapshot manifest file into object
-pub fn read_from_json(path: &PathBuf) -> Result<StateSnapshotBackup, Error> {
+pub fn load_snapshot_manifest(path: &PathBuf) -> Result<StateSnapshotBackup, Error> {
     let config = std::fs::read_to_string(path).map_err(|e| {
         format!("Error: cannot read file {:?}, error: {:?}", &path, &e);
         e
@@ -36,11 +33,14 @@ fn load_epoch_manifest(p: &Path) -> Result<EpochEndingBackup> {
 
 #[test]
 fn test_parse_manifest() {
-  let mut this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
-  this_path.push("fixtures/epoch_ending_79-.166d/epoch_ending.manifest");
-  let r = load_epoch_manifest(&this_path).expect("parse manifest");
-  dbg!(json!(&r));
+    use std::str::FromStr;
+    let mut this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
+    this_path.push("fixtures/state_epoch_79_ver_33217173.795d/state.manifest.unzip");
+    let r = load_snapshot_manifest(&this_path).expect("parse manifest");
+    dbg!(&r.epoch);
 }
+
+
 // /// parse each chunk of a state snapshot manifest
 // pub async fn read_account_state_chunk(
 //     file_handle: FileHandle,

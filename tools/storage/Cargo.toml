@@ -15,6 +15,7 @@ rust-version = { workspace = true }
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true }
+diem-api-types = { workspace = true }
 diem-backup-cli = { workspace = true }
 diem-db-tool = { workspace = true }
 diem-logger = { workspace = true }
