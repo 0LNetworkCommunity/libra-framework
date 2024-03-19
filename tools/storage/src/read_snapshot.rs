@@ -41,19 +41,10 @@ pub fn load_epoch_manifest(p: &Path) -> Result<EpochEndingBackup> {
     Ok(serde_json::from_slice::<EpochEndingBackup>(&bytes)?)
 }
 
-#[test]
-fn test_parse_manifest() {
-    use std::str::FromStr;
-    let mut this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
-    this_path.push("fixtures/state_epoch_79_ver_33217173.795d/state.manifest.unzip");
-    let r = load_snapshot_manifest(&this_path).expect("parse manifest");
-    dbg!(&r.epoch);
-}
-
 /// parse each chunk of a state snapshot manifest
 pub async fn read_account_state_chunk(
     file_handle: FileHandle,
-    archive_path: &PathBuf,
+    archive_path: &Path,
 ) -> Result<Vec<(HashValue, AccountState)>, Error> {
     let full_handle = archive_path
         .parent()
@@ -75,4 +66,43 @@ pub async fn read_account_state_chunk(
 async fn open_for_read(file_handle: &FileHandleRef) -> Result<Box<dyn AsyncRead + Send + Unpin>> {
     let file = OpenOptions::new().read(true).open(file_handle).await?;
     Ok(Box::new(file))
+}
+
+/// Tokio async parsing of state snapshot into blob
+async fn accounts_from_snapshot_backup(
+    manifest: StateSnapshotBackup,
+    archive_path: &Path,
+) -> anyhow::Result<Vec<AccountState>> {
+    // parse AccountStateBlob from chunks of the archive
+    let mut account_state_blobs: Vec<AccountState> = Vec::new();
+    for chunk in manifest.chunks {
+        let blobs = read_account_state_chunk(chunk.blobs, archive_path).await?;
+        for (_key, blob) in blobs {
+            account_state_blobs.push(blob)
+        }
+    }
+
+    Ok(account_state_blobs)
+}
+
+#[test]
+fn test_parse_manifest() {
+    use std::str::FromStr;
+    let mut this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
+    this_path.push("fixtures/state_epoch_79_ver_33217173.795d/state.manifest");
+    let r = load_snapshot_manifest(&this_path).expect("parse manifest");
+    dbg!(&r.epoch);
+}
+
+#[tokio::test]
+async fn test_deserialize_account() {
+    use std::str::FromStr;
+    let mut this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
+    this_path.push("fixtures/state_epoch_79_ver_33217173.795d/state.manifest");
+    let snapshot_manifest = load_snapshot_manifest(&this_path).expect("parse manifest");
+    let archive_path = this_path.parent().unwrap();
+    let r = accounts_from_snapshot_backup(snapshot_manifest, &archive_path)
+        .await
+        .expect("could not parse snapshot");
+    dbg!(&r);
 }
