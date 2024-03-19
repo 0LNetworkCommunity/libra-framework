@@ -1,8 +1,8 @@
 use anyhow::Result;
+use clap::Parser;
 use diem_db_tool::DBTool;
 use diem_logger::{Level, Logger};
 use diem_push_metrics::MetricsPusher;
-use clap::Parser;
 
 #[tokio::main]
 async fn main() -> Result<()> {

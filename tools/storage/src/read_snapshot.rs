@@ -1,8 +1,15 @@
 //! read-archive
-use anyhow::{Error, Result};
-use diem_backup_cli::backup_types::{
-    epoch_ending::manifest::EpochEndingBackup, state_snapshot::manifest::StateSnapshotBackup,
+use anyhow::{anyhow, Error, Result};
+use diem_api_types::HashValue;
+use diem_backup_cli::utils::read_record_bytes::ReadRecordBytes;
+use diem_backup_cli::{
+    backup_types::{
+        epoch_ending::manifest::EpochEndingBackup, state_snapshot::manifest::StateSnapshotBackup,
+    },
+    storage::{FileHandle, FileHandleRef},
 };
+use diem_types::account_state::AccountState;
+use tokio::{fs::OpenOptions, io::AsyncRead};
 // use serde_json::json;
 // use diem_crypto::HashValue;
 // use diem_types::account_state_blob::AccountStateBlob;
@@ -25,8 +32,11 @@ pub fn load_snapshot_manifest(path: &PathBuf) -> Result<StateSnapshotBackup, Err
     Ok(map)
 }
 
+/// get the epoch manifest from file
+/// NOTE: this file may sometimes be gzipped. So if it's not parsing, that may
+/// be why.
 // https://github.com/0LNetworkCommunity/diem/blob/restore-hard-forks/storage/backup/backup-cli/src/backup_types/state_snapshot/backup.rs#L260
-fn load_epoch_manifest(p: &Path) -> Result<EpochEndingBackup> {
+pub fn load_epoch_manifest(p: &Path) -> Result<EpochEndingBackup> {
     let bytes = fs::read(p)?;
     Ok(serde_json::from_slice::<EpochEndingBackup>(&bytes)?)
 }
@@ -40,30 +50,29 @@ fn test_parse_manifest() {
     dbg!(&r.epoch);
 }
 
+/// parse each chunk of a state snapshot manifest
+pub async fn read_account_state_chunk(
+    file_handle: FileHandle,
+    archive_path: &PathBuf,
+) -> Result<Vec<(HashValue, AccountState)>, Error> {
+    let full_handle = archive_path
+        .parent()
+        .expect("could not read archive path")
+        .join(file_handle);
+    let handle_str = full_handle.to_str().unwrap();
+    let mut file = open_for_read(handle_str)
+        .await
+        .map_err(|e| anyhow!("snapshot chunk {:?}, {:?}", &handle_str, e))?;
 
-// /// parse each chunk of a state snapshot manifest
-// pub async fn read_account_state_chunk(
-//     file_handle: FileHandle,
-//     archive_path: &PathBuf,
-// ) -> Result<Vec<(HashValue, AccountStateBlob)>, Error> {
-//     let full_handle = archive_path
-//         .parent()
-//         .expect("could not read archive path")
-//         .join(file_handle);
-//     let handle_str = full_handle.to_str().unwrap();
-//     let mut file = open_for_read(handle_str)
-//         .await
-//         .map_err(|e| anyhow!("snapshot chunk {:?}, {:?}", &handle_str, e))?;
+    let mut chunk = vec![];
 
-//     let mut chunk = vec![];
+    while let Some(record_bytes) = file.read_record_bytes().await? {
+        chunk.push(bcs::from_bytes(&record_bytes)?);
+    }
+    Ok(chunk)
+}
 
-//     while let Some(record_bytes) = file.read_record_bytes().await? {
-//         chunk.push(bcs::from_bytes(&record_bytes)?);
-//     }
-//     Ok(chunk)
-// }
-
-// async fn open_for_read(file_handle: &FileHandleRef) -> Result<Box<dyn AsyncRead + Send + Unpin>> {
-//     let file = OpenOptions::new().read(true).open(file_handle).await?;
-//     Ok(Box::new(file))
-// }
+async fn open_for_read(file_handle: &FileHandleRef) -> Result<Box<dyn AsyncRead + Send + Unpin>> {
+    let file = OpenOptions::new().read(true).open(file_handle).await?;
+    Ok(Box::new(file))
+}
