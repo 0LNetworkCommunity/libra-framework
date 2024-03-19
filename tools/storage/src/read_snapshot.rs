@@ -1,11 +1,12 @@
 //! read-archive
 use anyhow::{Error, Result};
 use diem_backup_cli::{
-    backup_types::state_snapshot::manifest::StateSnapshotBackup,
+    backup_types::{epoch_ending::manifest::EpochEndingBackup, state_snapshot::manifest::StateSnapshotBackup},
     metadata::StateSnapshotBackupMeta,
     // storage::{FileHandle, FileHandleRef},
     // utils::read_record_bytes::ReadRecordBytes,
 };
+use serde_json::json;
 // use diem_crypto::HashValue;
 // use diem_types::account_state_blob::AccountStateBlob;
 use std::{
@@ -27,21 +28,18 @@ pub fn read_from_json(path: &PathBuf) -> Result<StateSnapshotBackup, Error> {
     Ok(map)
 }
 
-fn load_metadata_lines(p: &Path) -> Result<Vec<StateSnapshotBackupMeta>> {
-    let buf = String::new();
-    fs::read_to_string(p)?;
-    Ok(buf
-        .lines()
-        .map(serde_json::from_str::<StateSnapshotBackupMeta>)
-        .collect::<Result<_, serde_json::error::Error>>()?)
+// https://github.com/0LNetworkCommunity/diem/blob/restore-hard-forks/storage/backup/backup-cli/src/backup_types/state_snapshot/backup.rs#L260
+fn load_epoch_manifest(p: &Path) -> Result<EpochEndingBackup> {
+    let bytes = fs::read(p)?;
+    Ok(serde_json::from_slice::<EpochEndingBackup>(&bytes)?)
 }
 
 #[test]
 fn test_parse_manifest() {
   let mut this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
   this_path.push("fixtures/epoch_ending_79-.166d/epoch_ending.manifest");
-  let r = load_metadata_lines(&this_path).unwrap();
-  dbg!(&r);
+  let r = load_epoch_manifest(&this_path).expect("parse manifest");
+  dbg!(json!(&r));
 }
 // /// parse each chunk of a state snapshot manifest
 // pub async fn read_account_state_chunk(
