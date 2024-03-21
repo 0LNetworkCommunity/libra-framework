@@ -115,6 +115,18 @@ module ol_framework::musical_chairs {
           chairs.seats_offered = 4;
         };
 
+        // catch edge cases due to hard forks and rescue missions the set could deviate by a large percentage.
+        // eg the last epoch was going to offer 24 seats but a hard fork or rescue mission took place with 5 validators
+        // the non compliance pct is not above the threshold to change the set due to all new validators being compliant.
+        // on the next epoch the set will attempt to open up more seats than can be filled and the chain will halt.
+        if (chairs.seats_offered > 0 && num_compliant_nodes > 0) {
+          let compliant_vs_offered_ratio = fixed_point32::create_from_rational(chairs.seats_offered, num_compliant_nodes);
+          let adjusted_compliant_vs_offered_ratio = fixed_point32::multiply_u64(100, *&compliant_vs_offered_ratio);
+          if (adjusted_compliant_vs_offered_ratio > 10) { 
+              chairs.seats_offered = num_compliant_nodes;
+          };
+        };
+
         (compliant_vals, chairs.seats_offered)
     }
 
