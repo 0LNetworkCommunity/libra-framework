@@ -150,10 +150,6 @@ pub fn load_them_onto_ark_b(
     staging_mode: bool,
 ) -> anyhow::Result<ChangeSet> {
     let vm_sig = MoveValue::Signer(AccountAddress::ZERO);
-    let ol_sig = MoveValue::Signer(AccountAddress::new([
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 1,
-    ]))
     let vmc = libra_run_session(
         dir,
         move |session| {
@@ -183,7 +179,7 @@ pub fn load_them_onto_ark_b(
                 libra_execute_session_function(
                     session,
                     "0x1::block::update_epoch_interval_microsecs",
-                    vec![&ol_sig, &epoch_interval],
+                    vec![&vm_sig, &epoch_interval],
                 )
                 .expect("set epoch interval seconds");
             }
