@@ -21,7 +21,6 @@ pub enum UserTxs {
     RotateKey(RotateKeyTx),
     RotationCapability(RotationCapabilityTx),
     SetSlow(SetSlowTx),
-    TriggerEpoch,
 }
 
 impl UserTxs {
@@ -50,12 +49,6 @@ impl UserTxs {
                     }
                 }
             }
-            UserTxs::TriggerEpoch => match trigger_epoch().await {
-                Ok(_) => println!("SUCCESS: triggered new epoch"),
-                Err(e) => {
-                    println!("ERROR: could not offer rotation capability, message: {}", e);
-                }
-            },
         }
 
         Ok(())
@@ -290,10 +283,4 @@ pub fn revoke_rotation_capability(
     let payload = libra_stdlib::account_revoke_rotation_capability(delegate_account);
 
     Ok(payload)
-}
-
-async fn trigger_epoch() -> anyhow::Result<()> {
-    libra_stdlib::diem_governance_trigger_epoch();
-    println!("Triggering a new epoch...");
-    Ok(())
 }

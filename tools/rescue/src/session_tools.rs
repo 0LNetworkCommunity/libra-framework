@@ -149,7 +149,6 @@ pub fn load_them_onto_ark_b(
     debug_vals: Option<Vec<AccountAddress>>,
     staging_mode: bool,
 ) -> anyhow::Result<ChangeSet> {
-
     let vm_sig = MoveValue::Signer(AccountAddress::ZERO);
     let vmc = libra_run_session(
         dir,
@@ -183,8 +182,6 @@ pub fn load_them_onto_ark_b(
                     vec![&vm_sig, &epoch_interval],
                 )
                 .expect("set epoch interval seconds");
-
-
             }
 
             writeset_voodoo_events(session).expect("voodoo");
