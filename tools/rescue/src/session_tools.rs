@@ -168,12 +168,23 @@ pub fn load_them_onto_ark_b(
 
             if staging_mode {
                 let staging_id: MoveValue = MoveValue::U8(2);
+                let epoch_interval: MoveValue = MoveValue::U64(900000000);
+                // set chain id
                 libra_execute_session_function(
                     session,
                     "0x1::chain_id::set_impl",
                     vec![&vm_sig, &staging_id],
                 )
-                .expect("run through whole list");
+                .expect("set chain id to staging");
+                // set epoch interval seconds
+                libra_execute_session_function(
+                    session,
+                    "0x1::block::update_epoch_interval_microsecs",
+                    vec![&vm_sig, &epoch_interval],
+                )
+                .expect("set epoch interval seconds");
+
+
             }
 
             writeset_voodoo_events(session).expect("voodoo");
