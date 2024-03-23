@@ -54,7 +54,8 @@ module ol_framework::last_goodbye {
   use diem_framework::system_addresses;
   use ol_framework::burn;
   use ol_framework::libra_coin::LibraCoin;
-  // use ol_framework::pledge_accounts;
+  use ol_framework::pledge_accounts;
+  use ol_framework::receipts;
   use diem_framework::coin;
   use std::debug::print;
 
@@ -102,8 +103,11 @@ module ol_framework::last_goodbye {
 
     option::destroy_none(all_coins_opt);
 
-    // sanitize pledge accounts
-    // pledge_accounts::hard_fork_sanitize(vm, user);
+    // dangling state in receipts could allow user to participate in community wallets
+    receipts::hard_fork_sanitize(vm, user);
+    // remove a pledge account if there is one, so that coins there are
+    // not dangling
+    pledge_accounts::hard_fork_sanitize(vm, user);
 
     let auth_key = b"Oh, is it too late now to say sorry?";
     vector::trim(&mut auth_key, 32);
