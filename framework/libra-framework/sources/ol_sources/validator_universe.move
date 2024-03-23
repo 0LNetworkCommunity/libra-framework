@@ -57,6 +57,8 @@ module diem_framework::validator_universe {
   /// This function is called to add validator to the validator universe.
   fun add(sender: &signer) acquires ValidatorUniverse {
     let addr = signer::address_of(sender);
+    // lazy run garbage collection on next user registration
+    garbage_collection();
     let state = borrow_global<ValidatorUniverse>(@diem_framework);
     let (elegible_list, _) = vector::index_of<address>(&state.validators, &addr);
     if (!elegible_list) {
@@ -94,8 +96,6 @@ module diem_framework::validator_universe {
   #[view]
   public fun get_eligible_validators(): vector<address> acquires
   ValidatorUniverse {
-    // always run garbage collection before returning list.
-    garbage_collection();
     let state = borrow_global<ValidatorUniverse>(@diem_framework);
 
     *&state.validators
