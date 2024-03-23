@@ -41,8 +41,8 @@ module diem_framework::epoch_boundary {
     /// The transaction fee coin has not been initialized
     const ETX_FEES_NOT_INITIALIZED: u64 = 0;
 
-    /// Epoch trigger only implemented on mainnet
-    const ETRIGGER_EPOCH_MAINNET: u64 = 1;
+    /// Epoch trigger can only be called on mainnet or in smoketests
+    const ETRIGGER_EPOCH_UNAUTHORIZED: u64 = 1;
 
     /// Epoch is not ready for reconfiguration
     const ETRIGGER_NOT_READY: u64 = 2;
@@ -229,8 +229,9 @@ module diem_framework::epoch_boundary {
     /// by a user, would not cause a halt.
     public(friend) fun trigger_epoch(framework_signer: &signer) acquires BoundaryBit,
     BoundaryStatus {
-      // must be mainnet
-      assert!(!testnet::is_not_mainnet(), ETRIGGER_EPOCH_MAINNET);
+      // COMMIT NOTE: there's no reason to gate this, if th trigger is not
+      // ready (which only happens on Main and Stage, then user will get an error)
+      // assert!(!testnet::is_testnet(), ETRIGGER_EPOCH_MAINNET);
       // must get root permission from governance.move
       system_addresses::assert_diem_framework(framework_signer);
       let _ = can_trigger(); // will abort if false
@@ -246,9 +247,9 @@ module diem_framework::epoch_boundary {
     // utility to use in smoke tests
     public entry fun smoke_trigger_epoch(framework_signer: &signer) acquires BoundaryBit,
     BoundaryStatus {
-      // cannot call thsi on mainnet
+      // cannot call this on mainnet
       // only for smoke testing
-      assert!(testnet::is_not_mainnet(), 666);
+      assert!(testnet::is_not_mainnet(), ETRIGGER_EPOCH_UNAUTHORIZED);
       // must get 0x1 sig from governance.move
       system_addresses::assert_diem_framework(framework_signer);
       let state = borrow_global_mut<BoundaryBit>(@ol_framework);
