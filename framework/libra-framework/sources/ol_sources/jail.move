@@ -40,6 +40,7 @@
 
 
 module ol_framework::jail {
+  use diem_framework::account;
   use diem_framework::system_addresses;
   use std::signer;
   use std::vector;
@@ -49,6 +50,8 @@ module ol_framework::jail {
 
   friend ol_framework::validator_universe;
   friend ol_framework::epoch_boundary;
+  #[test_only]
+  friend ol_framework::last_goodbye;
   #[test_only]
   friend ol_framework::test_pof;
   #[test_only]
@@ -64,7 +67,7 @@ module ol_framework::jail {
   /// You not actually a valid voucher for this user. Did it expire?
   const EU_NO_VOUCHER: u64 = 3;
 
-  struct Jail has key {
+  struct Jail has key, drop {
       is_jailed: bool,
       // number of times the validator was dropped from set. Does not reset.
       lifetime_jailed: u64,
@@ -198,6 +201,13 @@ module ol_framework::jail {
         v.lifetime_vouchees_jailed = v.lifetime_vouchees_jailed + 1;
       };
       i = i + 1;
+    }
+  }
+
+  public(friend) fun garbage_collection(user: &signer) acquires Jail  {
+    let addr = signer::address_of(user);
+    if (exists<Jail>(addr) && !account::exists_at(addr)) {
+      let _ = move_from<Jail>(addr);
     }
   }
 

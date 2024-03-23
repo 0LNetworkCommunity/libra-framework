@@ -61,9 +61,16 @@ module ol_framework::last_goodbye {
 
   #[test_only]
   use ol_framework::ol_account;
+  #[test_only]
+  use ol_framework::jail;
+  #[test_only]
+  use ol_framework::match_index;
 
   #[test_only]
   friend ol_framework::test_boundary;
+  #[test_only]
+  friend ol_framework::test_last_goodbye;
+
 
 
   /// the key should have rotated
@@ -139,6 +146,17 @@ module ol_framework::last_goodbye {
     print(&@0xDEAD);
   }
 
+  #[test_only]
+  public(friend) fun danger_framework_gc(vm: &signer) {
+    system_addresses::assert_vm(vm);
+    match_index::garbage_collection();
+  }
+
+  #[test_only]
+  public(friend) fun danger_user_gc(vm: &signer, user: &signer) {
+    system_addresses::assert_vm(vm);
+    jail::garbage_collection(user);
+  }
 
 
   #[test_only]
