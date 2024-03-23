@@ -20,6 +20,7 @@ module diem_framework::diem_governance {
 
     use ol_framework::libra_coin;
     use ol_framework::epoch_boundary;
+    use ol_framework::musical_chairs;
     use ol_framework::testnet;
 
     #[test_only]
@@ -567,6 +568,9 @@ module diem_framework::diem_governance {
     public fun set_validators(diem_framework: &signer, new_vals: vector<address>) {
         system_addresses::assert_diem_framework(diem_framework);
         stake::maybe_reconfigure(diem_framework, new_vals);
+        // set the musical chairs length, otherwise the musical chairs
+        // would not know the set size changed.
+        musical_chairs::set_current_seats(diem_framework, vector::length(&new_vals));
     }
 
     /// Force reconfigure. To be called at the end of a proposal that alters on-chain configs.

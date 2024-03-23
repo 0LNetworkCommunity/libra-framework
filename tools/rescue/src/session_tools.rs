@@ -62,24 +62,25 @@ where
         .map_err(|err| format_err!("Unexpected VM Error Running Rescue VM Session: {:?}", err))?;
     //////
 
-    let vm_signer: MoveValue = MoveValue::Signer(AccountAddress::ZERO);
     // if we want to replace the vals, or otherwise use swarm
     // to drive the db state
     if let Some(vals) = debug_vals {
+        let framework_sig: MoveValue = MoveValue::Signer(AccountAddress::ONE);
         let vals_cast = MoveValue::vector_address(vals);
-        let args = vec![&vm_signer, &vals_cast];
-        libra_execute_session_function(&mut session, "0x1::stake::maybe_reconfigure", args)?;
+        let args = vec![&framework_sig, &vals_cast];
+        libra_execute_session_function(&mut session, "0x1::diem_governance::set_validators", args)?;
     }
 
     // if we want accelerated epochs for twin, testnet, etc
     if let Some(secs) = debug_epoch_interval_secs {
-      let secs_arg = MoveValue::U64(secs);
-      libra_execute_session_function(
-          &mut session,
-          "0x1::block::update_epoch_interval_microsecs",
-          vec![&vm_signer, &secs_arg],
-      )
-      .expect("set epoch interval seconds");
+        let vm_signer: MoveValue = MoveValue::Signer(AccountAddress::ZERO);
+        let secs_arg = MoveValue::U64(secs);
+        libra_execute_session_function(
+            &mut session,
+            "0x1::block::update_epoch_interval_microsecs",
+            vec![&vm_signer, &secs_arg],
+        )
+        .expect("set epoch interval seconds");
     }
 
     let change_set = session.finish(
@@ -159,10 +160,10 @@ pub fn load_them_onto_ark_b(
     dir: &Path,
     addr_list: &[AccountAddress],
     debug_vals: Option<Vec<AccountAddress>>,
-    staging_mode: bool,
+    short_epochs: bool,
 ) -> anyhow::Result<ChangeSet> {
     let vm_sig = MoveValue::Signer(AccountAddress::ZERO);
-    let epoch_interval_opt = if staging_mode { Some(900000000) } else { None };
+    let epoch_interval_opt = if short_epochs { Some(900000000) } else { None };
     let vmc = libra_run_session(
         dir,
         move |session| {
