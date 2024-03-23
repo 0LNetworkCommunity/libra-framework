@@ -2,6 +2,7 @@
 
 use anyhow::Result;
 use move_core_types::{ident_str, identifier::IdentStr, move_resource::MoveStructType};
+use move_core_types::move_resource::MoveResource;
 use serde::{Deserialize, Serialize};
 
 /// Struct that represents a CurrencyInfo resource
@@ -34,3 +35,5 @@ impl TowerStateResource {
         bcs::from_bytes(bytes).map_err(Into::into)
     }
 }
+
+impl MoveResource for TowerStateResource {}

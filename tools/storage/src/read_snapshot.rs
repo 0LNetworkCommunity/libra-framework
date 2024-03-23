@@ -18,10 +18,9 @@ use std::{
 use std::collections::HashMap;
 use diem_types::account_address::AccountAddress;
 use diem_types::account_state::AccountState;
-use diem_types::account_view::AccountView;
 use diem_types::state_store::state_key::{StateKey, StateKeyInner};
 use diem_types::state_store::state_value::StateValue;
-use diem_types::transaction::authenticator::AuthenticationKey;
+use libra_types::legacy_types::legacy_recovery::get_legacy_recovery;
 // use tokio::{fs::OpenOptions, io::AsyncRead};
 
 ////// SNAPSHOT FILE IO //////
@@ -138,123 +137,9 @@ async fn test_deserialize_account() {
         .await
         .expect("could not parse snapshot");
     for account_state in account_states.iter() {
-        println!("account_address: {:?}", account_state.get_account_address());
-        let r = account_state.get_coin_store_resource();
-        println!("coin store: {:?}", r);
+        //println!("account_address: {:?}", account_state.get_account_address());
+        let legacy_recovery = get_legacy_recovery(&account_state).expect("could not get legacy recovery");
+        //println!("legacy_recovery: {:?}", legacy_recovery);
     }
 }
 
-use libra_types::legacy_types::legacy_recovery::{AccountRole};
-
-use libra_types::legacy_types::{
-    ancestry_legacy::LegacyAncestryResource,
-    cumulative_deposits::{CumulativeDepositResource, LegacyBalanceResource},
-    legacy_address::LegacyAddress,
-    legacy_currency_info::CurrencyInfoResource,
-    legacy_miner_state::TowerStateResource,
-    makewhole_resource::MakeWholeResource,
-    receipts::ReceiptsResource,
-    validator_config::ValidatorConfigResource,
-    wallet::{CommunityWalletsResourceLegacy, SlowWalletListResource, SlowWalletResource},
-};
-
-use libra_types::legacy_types::validator_config::ConfigResource;
-
-#[derive(Debug, Default, Clone)]
-pub struct LegacyRecoveryV6 {
-    ///
-    pub account: Option<AccountAddress>,
-    ///
-    pub auth_key: Option<AuthenticationKey>,
-    ///
-    pub role: AccountRole,
-    ///
-    pub balance: Option<LegacyBalanceResource>,
-    ///
-    pub val_cfg: Option<ValidatorConfigResource>,
-    ///
-    pub miner_state: Option<TowerStateResource>,
-    ///
-    pub comm_wallet: Option<CommunityWalletsResourceLegacy>,
-
-    pub currency_info: Option<CurrencyInfoResource>,
-    ///
-    pub ancestry: Option<LegacyAncestryResource>,
-    ///
-    pub make_whole: Option<MakeWholeResource>,
-    ///
-    pub receipts: Option<ReceiptsResource>,
-    ///
-    pub cumulative_deposits: Option<CumulativeDepositResource>,
-    ///
-    pub slow_wallet: Option<SlowWalletResource>,
-    ///
-    pub slow_wallet_list: Option<SlowWalletListResource>,
-    // TODO: use on V7 tools
-    // ///
-    // pub fullnode_counter: Option<FullnodeCounterResource>,
-    // ///
-    // pub autopay: Option<AutoPayResource>,
-}
-
-
-fn get_legacy_recovery(account_states: &Vec<AccountState>) -> anyhow::Result<Vec<LegacyRecoveryV6>> {
-    let mut legacy_recovery_v6 = Vec::new();
-    for account_state in account_states.iter() {
-        let mut legacy_recovery = LegacyRecoveryV6 {
-            account: account_state.get_account_address()?,
-            auth_key: None,
-            role: AccountRole::EndUser,
-            balance: None,
-            val_cfg: None,
-            miner_state: None,
-            comm_wallet: None,
-            //fullnode_counter: None,
-            //autopay: None,
-            currency_info: None,
-            ancestry: None,
-            make_whole: None,
-            receipts: None,
-            cumulative_deposits: None,
-            slow_wallet: None,
-            slow_wallet_list: None,
-        };
-        let account_resource = account_state.get_account_resource()?;
-
-        if let Some(account_resource) = account_resource {
-            let byte_slice: [u8; 32] = account_resource.authentication_key()
-                .to_vec().try_into().map_err(|err| { anyhow!("error: {:?}", err) })?;
-
-            legacy_recovery.auth_key = Some(AuthenticationKey::new(byte_slice));
-            legacy_recovery.balance = account_state.get_coin_store_resource()?.map(|r| LegacyBalanceResource {
-                coin: r.coin(),
-            });
-
-            let validator_config = account_state.get_validator_config_resource()?;
-            let validator_operator_config = account_state.get_validator_operator_config_resource()?;
-
-            let validator_config_resource = ValidatorConfigResource {
-                config: if let Some(validator_config) = validator_config {
-                    Some(ConfigResource {
-                        consensus_pubkey: Vec::from(validator_config.consensus_public_key.to_bytes()),
-                        validator_network_addresses: vec![],
-                        fullnode_network_addresses: validator_config.fullnode_network_addresses.clone(),
-                    })
-                } else {
-                    None
-                },
-
-                operator_account: None, // TODO: account is not available
-                human_name: validator_operator_config.map(|r| r.human_name).unwrap_or_else(|| vec![]),
-            };
-
-            legacy_recovery.val_cfg = Some(validator_config_resource);
-        }
-
-        legacy_recovery_v6.push(legacy_recovery);
-        println!("account_address: {:?}", account_state.get_account_address());
-        let r = account_state.get_coin_store_resource();
-        println!("coin store: {:?}", r);
-    }
-    Ok(legacy_recovery_v6)
-}

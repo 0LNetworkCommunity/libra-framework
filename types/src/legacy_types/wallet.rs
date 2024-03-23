@@ -2,7 +2,9 @@
 use crate::legacy_types::legacy_address::LegacyAddress;
 use anyhow::Result;
 use move_core_types::{ident_str, identifier::IdentStr, move_resource::MoveStructType};
+use move_core_types::move_resource::MoveResource;
 use serde::{Deserialize, Serialize};
+use crate::legacy_types::legacy_miner_state::TowerStateResource;
 
 // NOTE: these are legacy structs for v5
 
@@ -24,6 +26,8 @@ impl CommunityWalletsResourceLegacy {
         bcs::from_bytes(bytes).map_err(Into::into)
     }
 }
+
+impl MoveResource for CommunityWalletsResourceLegacy {}
 
 /// Struct that represents a SlowWallet resource
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -64,3 +68,5 @@ impl SlowWalletListResource {
         bcs::from_bytes(bytes).map_err(Into::into)
     }
 }
+
+impl MoveResource for SlowWalletListResource {}
