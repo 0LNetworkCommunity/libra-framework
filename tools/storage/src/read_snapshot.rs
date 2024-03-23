@@ -165,7 +165,7 @@ use diem_types::account_config::AccountResource;
 use libra_types::legacy_types::validator_config::ConfigResource;
 
 #[derive(Debug, Default, Clone)]
-pub struct LegacyRecoveryV7 {
+pub struct LegacyRecoveryV6 {
     ///
     pub account: Option<AccountAddress>,
     ///
@@ -202,10 +202,10 @@ pub struct LegacyRecoveryV7 {
 }
 
 
-fn get_legacy_recovery(account_states: &Vec<AccountState>) -> anyhow::Result<Vec<LegacyRecoveryV7>> {
-    let mut legacy_recovery_v7 = Vec::new();
+fn get_legacy_recovery(account_states: &Vec<AccountState>) -> anyhow::Result<Vec<LegacyRecoveryV6>> {
+    let mut legacy_recovery_v6 = Vec::new();
     for account_state in account_states.iter() {
-        let mut legacy_recovery = LegacyRecoveryV7 {
+        let mut legacy_recovery = LegacyRecoveryV6 {
             account: account_state.get_account_address()?,
             auth_key: None,
             role: AccountRole::EndUser,
@@ -256,10 +256,10 @@ fn get_legacy_recovery(account_states: &Vec<AccountState>) -> anyhow::Result<Vec
             legacy_recovery.val_cfg = Some(validator_config_resource);
         }
 
-        legacy_recovery_v7.push(legacy_recovery);
+        legacy_recovery_v6.push(legacy_recovery);
         println!("account_address: {:?}", account_state.get_account_address());
         let r = account_state.get_coin_store_resource();
         println!("coin store: {:?}", r);
     }
-    Ok(legacy_recovery_v7)
+    Ok(legacy_recovery_v6)
 }
