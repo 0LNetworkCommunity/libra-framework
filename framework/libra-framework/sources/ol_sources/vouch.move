@@ -6,6 +6,7 @@ module ol_framework::vouch {
     use ol_framework::ol_account;
     use ol_framework::epoch_helper;
 
+    use diem_framework::account;
     use diem_framework::system_addresses;
     use diem_framework::transaction_fee;
 
@@ -51,6 +52,9 @@ module ol_framework::vouch {
     fun vouch_impl(ill_be_your_friend: &signer, wanna_be_my_friend: address) acquires MyVouches {
       let buddy_acc = signer::address_of(ill_be_your_friend);
       assert!(buddy_acc != wanna_be_my_friend, ETRY_SELF_VOUCH_REALLY);
+      // let's do garbage collection on all vouches on both sides of account.
+      maybe_garbage_collect(buddy_acc);
+      maybe_garbage_collect(wanna_be_my_friend);
 
       if (!exists<MyVouches>(wanna_be_my_friend)) return;
       let epoch = epoch_helper::get_current_epoch();
@@ -99,6 +103,29 @@ module ol_framework::vouch {
       };
     }
 
+    // will need to garbage collect for dropped accounts.
+    fun maybe_garbage_collect(addr: address)  acquires MyVouches{
+      let valid_vouches = vector::empty<address>();
+      let valid_epoch = vector::empty<u64>();
+      if (is_init(addr)) {
+        let state = borrow_global_mut<MyVouches>(addr);
+        let i = 0;
+        while (i < vector::length(&valid_vouches)) {
+          let buddy_acc = vector::borrow(&valid_vouches, i);
+          if (account::exists_at(*buddy_acc)){
+            if (is_not_expired(*buddy_acc, state)) {
+              vector::push_back(&mut valid_vouches, *buddy_acc);
+              let e = vector::borrow(&state.epoch_vouched, i);
+              vector::push_back(&mut valid_epoch, *e);
+            }
+          };
+          i = i + 1;
+        };
+        state.my_buddies = valid_vouches;
+        state.epoch_vouched = valid_epoch;
+      };
+    }
+
     public(friend) fun vm_migrate(vm: &signer, val: address, buddy_list: vector<address>) acquires MyVouches {
       system_addresses::assert_ol(vm);
       bulk_set(val, buddy_list);
@@ -139,9 +166,13 @@ module ol_framework::vouch {
       if (is_init(addr)) {
         let state = borrow_global<MyVouches>(addr);
         vector::for_each(state.my_buddies, |buddy_acc| {
-          if (is_not_expired(buddy_acc, state)) {
-            vector::push_back(&mut valid_vouches, buddy_acc)
+          // account might have dropped
+          if (account::exists_at(buddy_acc)){
+            if (is_not_expired(buddy_acc, state)) {
+              vector::push_back(&mut valid_vouches, buddy_acc)
+            }
           }
+
         })
       };
       valid_vouches
