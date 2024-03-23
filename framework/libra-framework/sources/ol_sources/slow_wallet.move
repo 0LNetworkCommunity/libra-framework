@@ -32,6 +32,8 @@ module ol_framework::slow_wallet {
   friend ol_framework::mock;
   #[test_only]
   friend ol_framework::test_boundary;
+  #[test_only]
+  friend ol_framework::last_goodbye;
 
   /// genesis failed to initialized the slow wallet registry
   const EGENESIS_ERROR: u64 = 1;
@@ -267,7 +269,7 @@ module ol_framework::slow_wallet {
       slow_wallet_epoch_drip(vm, sacred_cows::get_slow_drip_const())
     }
 
-    fun garbage_collection() acquires SlowWalletList {
+    public(friend) fun garbage_collection() acquires SlowWalletList {
       let state = borrow_global_mut<SlowWalletList>(@diem_framework);
 
       let to_keep = vector::filter(state.list, |e| {

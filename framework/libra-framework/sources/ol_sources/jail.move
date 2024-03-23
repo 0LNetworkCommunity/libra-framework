@@ -50,8 +50,8 @@ module ol_framework::jail {
 
   friend ol_framework::validator_universe;
   friend ol_framework::epoch_boundary;
-  #[test_only]
   friend ol_framework::last_goodbye;
+
   #[test_only]
   friend ol_framework::test_pof;
   #[test_only]

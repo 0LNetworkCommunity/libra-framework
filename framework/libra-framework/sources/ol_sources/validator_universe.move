@@ -15,11 +15,10 @@ module diem_framework::validator_universe {
   #[test_only]
   use diem_std::bls12381;
 
-  // use diem_std::debug::print;
-
   friend diem_framework::reconfiguration;
   friend diem_framework::genesis;
-
+  #[test_only]
+  friend ol_framework::last_goodbye;
   // resource for tracking the universe of accounts that have submitted
   // a mined proof correctly, with the epoch number.
   struct ValidatorUniverse has key {
@@ -69,7 +68,7 @@ module diem_framework::validator_universe {
   }
 
   // clean any accounts that have been dropped in hard fork
-  fun garbage_collection() acquires ValidatorUniverse {
+  public(friend) fun garbage_collection() acquires ValidatorUniverse {
     let state = borrow_global_mut<ValidatorUniverse>(@diem_framework);
     let len = vector::length(&state.validators);
     let i = 0;

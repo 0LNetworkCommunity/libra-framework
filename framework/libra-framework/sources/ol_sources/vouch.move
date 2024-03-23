@@ -15,6 +15,7 @@ module ol_framework::vouch {
     friend ol_framework::proof_of_fee;
     friend ol_framework::oracle;
     friend ol_framework::jail;
+    friend ol_framework::last_goodbye;
     #[test_only]
     friend ol_framework::mock;
     #[test_only]
@@ -124,6 +125,13 @@ module ol_framework::vouch {
         state.my_buddies = valid_vouches;
         state.epoch_vouched = valid_epoch;
       };
+    }
+
+    public(friend) fun hard_fork_sanitize(vm: &signer, user: &signer) acquires
+    MyVouches {
+      system_addresses::assert_ol(vm);
+      maybe_garbage_collect(signer::address_of(user));
+
     }
 
     public(friend) fun vm_migrate(vm: &signer, val: address, buddy_list: vector<address>) acquires MyVouches {

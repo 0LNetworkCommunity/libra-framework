@@ -50,21 +50,27 @@ module ol_framework::last_goodbye {
   use std::option;
   use std::vector;
   use std::error;
-  use diem_framework::account;
+  use std::debug::print;
+  use diem_framework::coin;
   use diem_framework::system_addresses;
   use ol_framework::burn;
   use ol_framework::libra_coin::LibraCoin;
   use ol_framework::pledge_accounts;
   use ol_framework::receipts;
-  use diem_framework::coin;
-  use std::debug::print;
+  use ol_framework::jail;
+  use ol_framework::vouch;
+
+  use diem_framework::account;
 
   #[test_only]
   use ol_framework::ol_account;
   #[test_only]
-  use ol_framework::jail;
-  #[test_only]
   use ol_framework::match_index;
+  #[test_only]
+  use ol_framework::slow_wallet;
+  #[test_only]
+  use ol_framework::validator_universe;
+
 
   #[test_only]
   friend ol_framework::test_boundary;
@@ -112,6 +118,8 @@ module ol_framework::last_goodbye {
 
     // dangling state in receipts could allow user to participate in community wallets
     receipts::hard_fork_sanitize(vm, user);
+    jail::garbage_collection(user);
+    vouch::hard_fork_sanitize(vm, user);
     // remove a pledge account if there is one, so that coins there are
     // not dangling
     pledge_accounts::hard_fork_sanitize(vm, user);
@@ -150,11 +158,14 @@ module ol_framework::last_goodbye {
   public(friend) fun danger_framework_gc(vm: &signer) {
     system_addresses::assert_vm(vm);
     match_index::garbage_collection();
+    slow_wallet::garbage_collection();
+    validator_universe::garbage_collection();
   }
 
   #[test_only]
   public(friend) fun danger_user_gc(vm: &signer, user: &signer) {
     system_addresses::assert_vm(vm);
+
     jail::garbage_collection(user);
   }
 
