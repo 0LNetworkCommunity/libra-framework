@@ -20,7 +20,6 @@ use diem_types::account_address::AccountAddress;
 use diem_types::account_state::AccountState;
 use diem_types::account_view::AccountView;
 use diem_types::state_store::state_key::{StateKey, StateKeyInner};
-use diem_types::state_store::state_key::StateKeyTag::TableItem;
 use diem_types::state_store::state_value::StateValue;
 use diem_types::transaction::authenticator::AuthenticationKey;
 // use tokio::{fs::OpenOptions, io::AsyncRead};
@@ -146,7 +145,6 @@ async fn test_deserialize_account() {
 }
 
 use libra_types::legacy_types::legacy_recovery::{AccountRole};
-use diem_types::validator_config::ValidatorConfig;
 
 use libra_types::legacy_types::{
     ancestry_legacy::LegacyAncestryResource,
@@ -160,8 +158,6 @@ use libra_types::legacy_types::{
     wallet::{CommunityWalletsResourceLegacy, SlowWalletListResource, SlowWalletResource},
 };
 
-use std::convert::TryInto;
-use diem_types::account_config::AccountResource;
 use libra_types::legacy_types::validator_config::ConfigResource;
 
 #[derive(Debug, Default, Clone)]
@@ -225,7 +221,6 @@ fn get_legacy_recovery(account_states: &Vec<AccountState>) -> anyhow::Result<Vec
         };
         let account_resource = account_state.get_account_resource()?;
 
-        use std::convert::TryInto;
         if let Some(account_resource) = account_resource {
             let byte_slice: [u8; 32] = account_resource.authentication_key()
                 .to_vec().try_into().map_err(|err| { anyhow!("error: {:?}", err) })?;
