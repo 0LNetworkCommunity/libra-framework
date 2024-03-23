@@ -28,6 +28,7 @@ pub fn libra_run_session<F>(
     dir: &Path,
     f: F,
     debug_vals: Option<Vec<AccountAddress>>,
+    debug_epoch_interval_secs: Option<u64>, // seconds per epoch, for twin and testnet
 ) -> anyhow::Result<VMChangeSet>
 where
     F: FnOnce(&mut SessionExt) -> anyhow::Result<()>,
@@ -61,13 +62,24 @@ where
         .map_err(|err| format_err!("Unexpected VM Error Running Rescue VM Session: {:?}", err))?;
     //////
 
+    let vm_signer: MoveValue = MoveValue::Signer(AccountAddress::ZERO);
     // if we want to replace the vals, or otherwise use swarm
     // to drive the db state
     if let Some(vals) = debug_vals {
-        let vm_signer = MoveValue::Signer(AccountAddress::ZERO);
         let vals_cast = MoveValue::vector_address(vals);
         let args = vec![&vm_signer, &vals_cast];
         libra_execute_session_function(&mut session, "0x1::stake::maybe_reconfigure", args)?;
+    }
+
+    // if we want accelerated epochs for twin, testnet, etc
+    if let Some(secs) = debug_epoch_interval_secs {
+      let secs_arg = MoveValue::U64(secs);
+      libra_execute_session_function(
+          &mut session,
+          "0x1::block::update_epoch_interval_microsecs",
+          vec![&vm_signer, &secs_arg],
+      )
+      .expect("set epoch interval seconds");
     }
 
     let change_set = session.finish(
@@ -150,6 +162,7 @@ pub fn load_them_onto_ark_b(
     staging_mode: bool,
 ) -> anyhow::Result<ChangeSet> {
     let vm_sig = MoveValue::Signer(AccountAddress::ZERO);
+    let epoch_interval_opt = if staging_mode { Some(900000000) } else { None };
     let vmc = libra_run_session(
         dir,
         move |session| {
@@ -165,29 +178,11 @@ pub fn load_them_onto_ark_b(
                 .expect("run through whole list");
             });
 
-            if staging_mode {
-                let staging_id: MoveValue = MoveValue::U8(2);
-                let epoch_interval: MoveValue = MoveValue::U64(900000000);
-                // set chain id
-                libra_execute_session_function(
-                    session,
-                    "0x1::chain_id::set_impl",
-                    vec![&vm_sig, &staging_id],
-                )
-                .expect("set chain id to staging");
-                // set epoch interval seconds
-                libra_execute_session_function(
-                    session,
-                    "0x1::block::update_epoch_interval_microsecs",
-                    vec![&vm_sig, &epoch_interval],
-                )
-                .expect("set epoch interval seconds");
-            }
-
             writeset_voodoo_events(session).expect("voodoo");
             Ok(())
         },
         debug_vals,
+        epoch_interval_opt,
     )
     .expect("could run session");
 
@@ -203,7 +198,7 @@ pub fn publish_current_framework(
     dir: &Path,
     debug_vals: Option<Vec<AccountAddress>>,
 ) -> anyhow::Result<ChangeSet> {
-    let vmc = libra_run_session(dir, combined_steps, debug_vals)?;
+    let vmc = libra_run_session(dir, combined_steps, debug_vals, None)?;
     unpack_changeset(vmc)
 }
 
@@ -243,7 +238,7 @@ fn _update_resource_in_session(session: &mut SessionExt) {
 // the writeset voodoo needs to be perfect
 fn test_voodoo() {
     let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-    libra_run_session(dir, writeset_voodoo_events, None).unwrap();
+    libra_run_session(dir, writeset_voodoo_events, None, None).unwrap();
 }
 
 #[test]
