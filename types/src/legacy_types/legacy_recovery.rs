@@ -201,9 +201,9 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         val_cfg: None,
         miner_state: None,
         comm_wallet: None,
-        //fullnode_counter: None,
-        //autopay: None,
-        currency_info: None,
+        //fullnode_counter: None, / TODO: DO WE NEED THIS
+        //autopay: None, // TODO: DO WE NEED THIS
+        currency_info: None, // TODO: DO WE NEED THIS
         ancestry: None,
         receipts: None,
         cumulative_deposits: None,
@@ -248,15 +248,45 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
 
         // miner state
         legacy_recovery.miner_state = account_state.get_resource::<TowerStateResource>()?;
-        if let Some(miner_state) = &legacy_recovery.miner_state {
-            println!("miner_state: {:?}", &miner_state);
-        }
+        // if let Some(miner_state) = &legacy_recovery.miner_state {
+        //     println!("miner_state: {:?}", &miner_state);
+        // }
 
-        // comm_wallet
-        let comm_wallet = account_state.get_resource::<CommunityWalletsResourceLegacy>()?;
-        if let Some(comm_wallet) = &comm_wallet {
+        // comm_wallet // TODO: serialization is broken
+        legacy_recovery.comm_wallet = account_state.get_resource::<CommunityWalletsResourceLegacy>()?;
+        if let Some(comm_wallet) = &legacy_recovery.comm_wallet {
             println!("comm_wallet: {:?}", &comm_wallet);
         }
+
+        // ancestry
+        legacy_recovery.ancestry = account_state.get_resource::<LegacyAncestryResource>()?;
+        // if let Some(ancestry) = &legacy_recovery.ancestry {
+        //     println!("ancestry: {:?}", &ancestry);
+        // }
+
+        // receipts
+        legacy_recovery.receipts = account_state.get_resource::<ReceiptsResource>()?;
+        // if let Some(receipts) = &legacy_recovery.receipts {
+        //     println!("receipts: {:?}", &receipts);
+        // }
+
+        // cumulative_deposits
+        legacy_recovery.cumulative_deposits = account_state.get_resource::<CumulativeDepositResource>()?;
+        // if let Some(cumulative_deposits) = &legacy_recovery.cumulative_deposits {
+        //     println!("cumulative_deposits: {:?}", &cumulative_deposits);
+        // }
+
+        // slow wallet
+        legacy_recovery.slow_wallet = account_state.get_resource::<SlowWalletResource>()?;
+        // if let Some(slow_wallet) = &legacy_recovery.slow_wallet {
+        //     println!("slow_wallet: {:?}", &slow_wallet);
+        // }
+
+        // slow wallet
+        legacy_recovery.slow_wallet_list = account_state.get_resource::<SlowWalletListResource>()?;
+        // if let Some(slow_wallet_list) = &legacy_recovery.slow_wallet_list {
+        //     println!("slow_wallet_list: {:?}", &slow_wallet_list);
+        // }
     }
 
     Ok(legacy_recovery)

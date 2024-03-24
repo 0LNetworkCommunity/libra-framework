@@ -14,12 +14,13 @@ use serde::{Deserialize, Serialize};
 // use move_core_types::language_storage::CORE_CODE_ADDRESS;
 
 use super::legacy_address::LegacyAddress;
+use move_core_types::account_address::AccountAddress;
 
 /// Struct that represents a AutoPay resource
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LegacyAncestryResource {
     ///
-    pub tree: Vec<LegacyAddress>,
+    pub tree: Vec<AccountAddress>,
 }
 
 impl MoveStructType for LegacyAncestryResource {

@@ -17,15 +17,13 @@ pub struct TowerStateResource {
     ///
     pub count_proofs_in_epoch: u64,
     ///
-    pub epochs_validating_and_mining: u64,
+    pub epochs_mining: u64,
     ///
-    pub contiguous_epochs_validating_and_mining: u64,
-    ///
-    pub epochs_since_last_account_creation: u64,
+    pub contiguous_epochs_mining: u64,
 }
 
 impl MoveStructType for TowerStateResource {
-    const MODULE_NAME: &'static IdentStr = ident_str!("TowerState");
+    const MODULE_NAME: &'static IdentStr = ident_str!("tower_state");
     const STRUCT_NAME: &'static IdentStr = ident_str!("TowerProofHistory");
 }
 

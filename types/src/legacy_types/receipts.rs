@@ -3,13 +3,15 @@
 use super::legacy_address::LegacyAddress;
 use anyhow::Result;
 use move_core_types::{ident_str, identifier::IdentStr, move_resource::MoveStructType};
+use move_core_types::move_resource::MoveResource;
 use serde::{Deserialize, Serialize};
+use move_core_types::account_address::AccountAddress;
 
 /// Struct that represents a CurrencyInfo resource
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReceiptsResource {
     ///
-    pub destination: Vec<LegacyAddress>,
+    pub destination: Vec<AccountAddress>,
     ///
     pub cumulative: Vec<u64>,
     ///
@@ -19,7 +21,7 @@ pub struct ReceiptsResource {
 }
 
 impl MoveStructType for ReceiptsResource {
-    const MODULE_NAME: &'static IdentStr = ident_str!("Receipts");
+    const MODULE_NAME: &'static IdentStr = ident_str!("receipts");
     const STRUCT_NAME: &'static IdentStr = ident_str!("UserReceipts");
 }
 
@@ -29,3 +31,5 @@ impl ReceiptsResource {
         bcs::from_bytes(bytes).map_err(Into::into)
     }
 }
+
+impl MoveResource for ReceiptsResource {}
