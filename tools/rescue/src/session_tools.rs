@@ -27,7 +27,7 @@ pub fn libra_run_session<F>(
     dir: PathBuf,
     f: F,
     debug_vals: Option<Vec<AccountAddress>>,
-    debug_epoch_interval_secs: Option<u64>, // seconds per epoch, for twin and testnet
+    debug_epoch_interval_microsecs: Option<u64>, // seconds per epoch, for twin and testnet
 ) -> anyhow::Result<VMChangeSet>
 where
     F: FnOnce(&mut SessionExt) -> anyhow::Result<()>,
@@ -61,23 +61,22 @@ where
         .map_err(|err| format_err!("Unexpected VM Error Running Rescue VM Session: {:?}", err))?;
     //////
 
+    let framework_sig: MoveValue = MoveValue::Signer(AccountAddress::ONE);
     // if we want to replace the vals, or otherwise use swarm
     // to drive the db state
     if let Some(vals) = debug_vals {
-        let framework_sig: MoveValue = MoveValue::Signer(AccountAddress::ONE);
         let vals_cast = MoveValue::vector_address(vals);
         let args = vec![&framework_sig, &vals_cast];
         libra_execute_session_function(&mut session, "0x1::diem_governance::set_validators", args)?;
     }
 
     // if we want accelerated epochs for twin, testnet, etc
-    if let Some(secs) = debug_epoch_interval_secs {
-        let vm_signer: MoveValue = MoveValue::Signer(AccountAddress::ZERO);
-        let secs_arg = MoveValue::U64(secs);
+    if let Some(ms) = debug_epoch_interval_microsecs {
+        let secs_arg = MoveValue::U64(ms);
         libra_execute_session_function(
             &mut session,
             "0x1::block::update_epoch_interval_microsecs",
-            vec![&vm_signer, &secs_arg],
+            vec![&framework_sig, &secs_arg],
         )
         .expect("set epoch interval seconds");
     }
