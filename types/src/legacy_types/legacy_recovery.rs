@@ -282,7 +282,7 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         //     println!("slow_wallet: {:?}", &slow_wallet);
         // }
 
-        // slow wallet
+        // slow wallet list // TODO: broken
         legacy_recovery.slow_wallet_list = account_state.get_resource::<SlowWalletListResource>()?;
         // if let Some(slow_wallet_list) = &legacy_recovery.slow_wallet_list {
         //     println!("slow_wallet_list: {:?}", &slow_wallet_list);
