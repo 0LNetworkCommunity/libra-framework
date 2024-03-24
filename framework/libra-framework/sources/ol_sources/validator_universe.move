@@ -15,11 +15,10 @@ module diem_framework::validator_universe {
   #[test_only]
   use diem_std::bls12381;
 
-  // use diem_std::debug::print;
-
   friend diem_framework::reconfiguration;
   friend diem_framework::genesis;
-
+  #[test_only]
+  friend ol_framework::last_goodbye;
   // resource for tracking the universe of accounts that have submitted
   // a mined proof correctly, with the epoch number.
   struct ValidatorUniverse has key {
@@ -57,6 +56,8 @@ module diem_framework::validator_universe {
   /// This function is called to add validator to the validator universe.
   fun add(sender: &signer) acquires ValidatorUniverse {
     let addr = signer::address_of(sender);
+    // lazy run garbage collection on next user registration
+    garbage_collection();
     let state = borrow_global<ValidatorUniverse>(@diem_framework);
     let (elegible_list, _) = vector::index_of<address>(&state.validators, &addr);
     if (!elegible_list) {
@@ -67,7 +68,7 @@ module diem_framework::validator_universe {
   }
 
   // clean any accounts that have been dropped in hard fork
-  fun garbage_collection() acquires ValidatorUniverse {
+  public(friend) fun garbage_collection() acquires ValidatorUniverse {
     let state = borrow_global_mut<ValidatorUniverse>(@diem_framework);
     let len = vector::length(&state.validators);
     let i = 0;
@@ -94,8 +95,6 @@ module diem_framework::validator_universe {
   #[view]
   public fun get_eligible_validators(): vector<address> acquires
   ValidatorUniverse {
-    // always run garbage collection before returning list.
-    garbage_collection();
     let state = borrow_global<ValidatorUniverse>(@diem_framework);
 
     *&state.validators

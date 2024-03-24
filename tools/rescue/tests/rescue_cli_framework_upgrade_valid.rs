@@ -28,7 +28,7 @@ async fn test_framework_upgrade_writeset() -> anyhow::Result<()> {
         db_dir: val_db_path.clone(),
         blob_path: Some(blob_path.path().to_owned()),
         script_path: None,
-        framework_upgrade: true,
+        framework_mrb_file: None,
         validators_file: None,
     };
     r.run()?;

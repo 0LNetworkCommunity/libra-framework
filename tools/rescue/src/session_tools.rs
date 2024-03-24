@@ -1,5 +1,5 @@
 use anyhow::{format_err, Context};
-use std::path::Path;
+use std::path::PathBuf;
 
 use diem_config::config::{
     RocksdbConfigs, BUFFERED_STATE_TARGET_ITEMS, DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
@@ -11,7 +11,7 @@ use diem_storage_interface::{state_view::DbStateViewAtVersion, DbReaderWriter};
 use diem_types::{account_address::AccountAddress, transaction::ChangeSet};
 use diem_vm::move_vm_ext::{MoveVmExt, SessionExt, SessionId};
 use diem_vm_types::change_set::VMChangeSet;
-use libra_framework::head_release_bundle;
+use libra_framework::{head_release_bundle, release::ReleaseTarget};
 use move_core_types::{
     ident_str,
     language_storage::{StructTag, CORE_CODE_ADDRESS},
@@ -19,16 +19,15 @@ use move_core_types::{
 };
 
 use move_vm_types::gas::UnmeteredGasMeter;
-
 // Run a VM session with a dirty database
 // NOTE: there are several implementations of this elsewhere in Diem
 // Some are buggy, some don't have exports or APIs needed (DiemDbBootstrapper). Some have issues with async and db locks (DiemDbDebugger).
 // so we had to rewrite it.
 pub fn libra_run_session<F>(
-    dir: &Path,
+    dir: PathBuf,
     f: F,
     debug_vals: Option<Vec<AccountAddress>>,
-    debug_epoch_interval_secs: Option<u64>, // seconds per epoch, for twin and testnet
+    debug_epoch_interval_microsecs: Option<u64>, // seconds per epoch, for twin and testnet
 ) -> anyhow::Result<VMChangeSet>
 where
     F: FnOnce(&mut SessionExt) -> anyhow::Result<()>,
@@ -62,23 +61,22 @@ where
         .map_err(|err| format_err!("Unexpected VM Error Running Rescue VM Session: {:?}", err))?;
     //////
 
+    let framework_sig: MoveValue = MoveValue::Signer(AccountAddress::ONE);
     // if we want to replace the vals, or otherwise use swarm
     // to drive the db state
     if let Some(vals) = debug_vals {
-        let framework_sig: MoveValue = MoveValue::Signer(AccountAddress::ONE);
         let vals_cast = MoveValue::vector_address(vals);
         let args = vec![&framework_sig, &vals_cast];
         libra_execute_session_function(&mut session, "0x1::diem_governance::set_validators", args)?;
     }
 
     // if we want accelerated epochs for twin, testnet, etc
-    if let Some(secs) = debug_epoch_interval_secs {
-        let vm_signer: MoveValue = MoveValue::Signer(AccountAddress::ZERO);
-        let secs_arg = MoveValue::U64(secs);
+    if let Some(ms) = debug_epoch_interval_microsecs {
+        let secs_arg = MoveValue::U64(ms);
         libra_execute_session_function(
             &mut session,
             "0x1::block::update_epoch_interval_microsecs",
-            vec![&vm_signer, &secs_arg],
+            vec![&framework_sig, &secs_arg],
         )
         .expect("set epoch interval seconds");
     }
@@ -123,8 +121,12 @@ pub fn writeset_voodoo_events(session: &mut SessionExt) -> anyhow::Result<()> {
 }
 
 // wrapper to publish the latest head framework release
-pub fn upgrade_framework(session: &mut SessionExt) -> anyhow::Result<()> {
-    let new_modules = head_release_bundle();
+pub fn upgrade_framework(session: &mut SessionExt, path_opt: Option<PathBuf>) -> anyhow::Result<()> {
+    let new_modules = if path_opt.is_some() {
+        ReleaseTarget::load_bundle_from_file(path_opt.unwrap())?
+    } else {
+        head_release_bundle()
+    };
 
     session.publish_module_bundle_relax_compatibility(
         new_modules.legacy_copy_code(),
@@ -157,7 +159,8 @@ pub fn libra_execute_session_function(
 
 ///  drops users from the chain
 pub fn load_them_onto_ark_b(
-    dir: &Path,
+    dir: PathBuf,
+    framework_release_file: Option<PathBuf>,
     addr_list: &[AccountAddress],
     debug_vals: Option<Vec<AccountAddress>>,
     short_epochs: bool,
@@ -167,7 +170,8 @@ pub fn load_them_onto_ark_b(
     let vmc = libra_run_session(
         dir,
         move |session| {
-            upgrade_framework(session).expect("upgrade framework");
+            upgrade_framework(session, framework_release_file)
+                .expect("could not upgrade framework");
 
             addr_list.iter().for_each(|a| {
                 let user: MoveValue = MoveValue::Signer(*a);
@@ -196,18 +200,23 @@ pub fn unpack_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
 }
 
 pub fn publish_current_framework(
-    dir: &Path,
+    dir: PathBuf,
+    framework_release_file: Option<PathBuf>,
     debug_vals: Option<Vec<AccountAddress>>,
 ) -> anyhow::Result<ChangeSet> {
-    let vmc = libra_run_session(dir, combined_steps, debug_vals, None)?;
+    let vmc = libra_run_session(dir, |s| combined_steps(s, framework_release_file), debug_vals, None)?;
     unpack_changeset(vmc)
 }
 
-fn combined_steps(session: &mut SessionExt) -> anyhow::Result<()> {
-    upgrade_framework(session)?;
+fn combined_steps(session: &mut SessionExt, framework_release_file: Option<PathBuf>) -> anyhow::Result<()> {
+    upgrade_framework(session, framework_release_file)?;
     writeset_voodoo_events(session)?;
     Ok(())
 }
+
+#[cfg(test)]
+use std::path::Path;
+
 
 #[ignore]
 #[test]
@@ -215,7 +224,7 @@ fn combined_steps(session: &mut SessionExt) -> anyhow::Result<()> {
 fn test_publish() {
     let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
 
-    publish_current_framework(dir, None).unwrap();
+    publish_current_framework(dir.to_owned(), None, None).unwrap();
 }
 
 // TODO: ability to mutate some state without calling a function
@@ -239,15 +248,16 @@ fn _update_resource_in_session(session: &mut SessionExt) {
 // the writeset voodoo needs to be perfect
 fn test_voodoo() {
     let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-    libra_run_session(dir, writeset_voodoo_events, None, None).unwrap();
+    libra_run_session(dir.to_owned(), writeset_voodoo_events, None, None).unwrap();
 }
 
 #[test]
+#[ignore]
 // helper to see if an upgraded function is found in the DB
 fn test_drop_user() {
     let addr: AccountAddress = "0x7B61439A88060096213AC4F5853B598E".parse().unwrap();
     let dir = Path::new("/root/db");
-    load_them_onto_ark_b(dir, &[addr], None, false).expect("drop user");
+    load_them_onto_ark_b(dir.to_owned(), None, &[addr], None, false).expect("drop user");
 }
 
 #[ignore]

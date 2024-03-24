@@ -11,6 +11,9 @@ pub struct ForkOpts {
     /// path of DB which will be used to start new network
     #[clap(short, long)]
     pub db_dir: PathBuf,
+    /// path to framework MRB file used for upgrade. Usually libra-framework source ./framework/releases/head.mrb
+    #[clap(short, long)]
+    pub framework_mrb_file: PathBuf,
     /// JSON file with list of accounts to drop on new network
     #[clap(short, long)]
     pub account_file: PathBuf,
@@ -33,7 +36,8 @@ impl ForkOpts {
         let vals = UserBlob::get_vals(self.validators_file.clone());
 
         let cs = session_tools::load_them_onto_ark_b(
-            &self.db_dir,
+            self.db_dir.clone(),
+            Some(self.framework_mrb_file.clone()),
             &drop_list,
             vals,
             self.debug_short_epochs,

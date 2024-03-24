@@ -1,7 +1,7 @@
 SHELL=/usr/bin/env bash
 
 ## NOTE YOU WILL WANT TO EXPORT:
-DB_PATH = /root/fork_db/data/db
+DB_PATH = /root/db
 ACCOUNT_FILE=/root/libra-framework/tools/rescue/fixtures/fork/sample_fork_user.json
 VALS_FILE=/root/libra-framework/tools/rescue/fixtures/fork/validators.json
 # and after you get a waypoint:
@@ -10,6 +10,11 @@ WAYPOINT=33254829:a730d227c26655f2881fc7e9868040f3fec53f9fff6b6b2374b28ceb67912f
 ifndef SOURCE_PATH
 SOURCE_PATH=~/libra-framework
 endif
+
+ifndef MRB_PATH
+MRB_PATH=~/libra-framework/framework/releases/head.mrb
+endif
+
 
 ifndef LIBRA_PATH
 LIBRA_PATH=~/.libra
@@ -48,13 +53,13 @@ install:
 ######## WRITESETS ########
 
 hard-fork-blob:
-	rescue hard-fork --db-dir ${DB_PATH} --validators-file ${VALS_FILE} --account-file ${ACCOUNT_FILE}
+	rescue hard-fork --db-dir ${DB_PATH} --validators-file ${VALS_FILE} --account-file ${ACCOUNT_FILE} --framework-mrb-file ${MRB_PATH} --debug-short-epochs
 
 hard-fork-commit:
 	rescue bootstrap --db-dir ${DB_PATH} -g ${DB_PATH}/hard_fork.blob --commit -w ${WAYPOINT}
 
 framework-upgrade-blob:
-	rescue rescue-txs --db-dir ${DB_PATH} --validators-file ${VALS_FILE}
+	rescue rescue-txs --db-dir ${DB_PATH} --validators-file ${VALS_FILE} --framework-mrb-file ${MRB_PATH}
 
 rescue-commit:
 	rescue bootstrap --db-dir ${DB_PATH} --genesis-txn-file ${DB_PATH}/rescue.blob --commit -w ${WAYPOINT}

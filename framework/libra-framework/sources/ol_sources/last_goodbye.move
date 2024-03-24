@@ -50,19 +50,33 @@ module ol_framework::last_goodbye {
   use std::option;
   use std::vector;
   use std::error;
-  use diem_framework::account;
+  use std::debug::print;
+  use diem_framework::coin;
   use diem_framework::system_addresses;
   use ol_framework::burn;
   use ol_framework::libra_coin::LibraCoin;
-  // use ol_framework::pledge_accounts;
-  use diem_framework::coin;
-  use std::debug::print;
+  use ol_framework::pledge_accounts;
+  use ol_framework::receipts;
+  use ol_framework::jail;
+  use ol_framework::vouch;
+
+  use diem_framework::account;
 
   #[test_only]
   use ol_framework::ol_account;
+  #[test_only]
+  use ol_framework::match_index;
+  #[test_only]
+  use ol_framework::slow_wallet;
+  #[test_only]
+  use ol_framework::validator_universe;
+
 
   #[test_only]
   friend ol_framework::test_boundary;
+  #[test_only]
+  friend ol_framework::test_last_goodbye;
+
 
 
   /// the key should have rotated
@@ -81,6 +95,7 @@ module ol_framework::last_goodbye {
       return
     };
 
+    print(&2000);
     // do all the necessary coin accounting prior to removing the account.
     let total_bal = coin::balance<LibraCoin>(user_addr);
 
@@ -99,14 +114,32 @@ module ol_framework::last_goodbye {
       let good_capital = option::extract(&mut all_coins_opt);
       burn::burn_and_track(good_capital);
     };
+    print(&2001);
 
     option::destroy_none(all_coins_opt);
 
-    // sanitize pledge accounts
-    // pledge_accounts::hard_fork_sanitize(vm, user);
+    // dangling state in receipts could allow user to participate in community
+    // wallets
+        print(&2002);
+
+    receipts::hard_fork_sanitize(vm, user);
+            print(&2003);
+
+    jail::garbage_collection(user);
+            print(&2004);
+
+    vouch::hard_fork_sanitize(vm, user);
+            print(&2005);
+
+    // remove a pledge account if there is one, so that coins there are
+    // not dangling
+    pledge_accounts::hard_fork_sanitize(vm, user);
+            print(&2006);
+
 
     let auth_key = b"Oh, is it too late now to say sorry?";
     vector::trim(&mut auth_key, 32);
+        print(&2007);
 
     // Oh, is it too late now to say sorry?
     // Yeah, I know that I let you down
@@ -116,12 +149,23 @@ module ol_framework::last_goodbye {
     // another function can be called to drop the account::Account completely
     // and then the offline db tools can safely remove the key from db.
     account::rotate_authentication_key_internal(user, auth_key);
+            print(&2008);
+
   }
 
   fun last_goodbye(vm: &signer, user: &signer) {
+    print(&10000);
     let addr = signer::address_of(user);
+    if (!account::exists_at(addr)) {
+      print(&addr);
+      return
+    };
+
     let auth_orig = account::get_authentication_key(addr);
+    print(&10001);
     dont_think_twice_its_alright(vm, user);
+    print(&10002);
+
     let new_auth = account::get_authentication_key(addr);
     assert!(auth_orig != new_auth, error::invalid_state(EAUTH_KEY_SHOULD_ROTATE));
     // This is our last goodbye
@@ -130,11 +174,29 @@ module ol_framework::last_goodbye {
     // Just hear this and then I'll go
     // You gave me more to live for
     // More than you'll ever know
+        print(&10003);
     account::hard_fork_drop(vm, user);
+        print(&10004);
+
     print(&addr);
+
     print(&@0xDEAD);
   }
 
+  #[test_only]
+  public(friend) fun danger_framework_gc(vm: &signer) {
+    system_addresses::assert_vm(vm);
+    match_index::garbage_collection();
+    slow_wallet::garbage_collection();
+    validator_universe::garbage_collection();
+  }
+
+  #[test_only]
+  public(friend) fun danger_user_gc(vm: &signer, user: &signer) {
+    system_addresses::assert_vm(vm);
+
+    jail::garbage_collection(user);
+  }
 
 
   #[test_only]
