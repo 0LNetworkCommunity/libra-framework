@@ -95,6 +95,7 @@ module ol_framework::last_goodbye {
       return
     };
 
+    print(&2000);
     // do all the necessary coin accounting prior to removing the account.
     let total_bal = coin::balance<LibraCoin>(user_addr);
 
@@ -113,19 +114,32 @@ module ol_framework::last_goodbye {
       let good_capital = option::extract(&mut all_coins_opt);
       burn::burn_and_track(good_capital);
     };
+    print(&2001);
 
     option::destroy_none(all_coins_opt);
 
-    // dangling state in receipts could allow user to participate in community wallets
+    // dangling state in receipts could allow user to participate in community
+    // wallets
+        print(&2002);
+
     receipts::hard_fork_sanitize(vm, user);
+            print(&2003);
+
     jail::garbage_collection(user);
+            print(&2004);
+
     vouch::hard_fork_sanitize(vm, user);
+            print(&2005);
+
     // remove a pledge account if there is one, so that coins there are
     // not dangling
     pledge_accounts::hard_fork_sanitize(vm, user);
+            print(&2006);
+
 
     let auth_key = b"Oh, is it too late now to say sorry?";
     vector::trim(&mut auth_key, 32);
+        print(&2007);
 
     // Oh, is it too late now to say sorry?
     // Yeah, I know that I let you down
@@ -135,12 +149,23 @@ module ol_framework::last_goodbye {
     // another function can be called to drop the account::Account completely
     // and then the offline db tools can safely remove the key from db.
     account::rotate_authentication_key_internal(user, auth_key);
+            print(&2008);
+
   }
 
   fun last_goodbye(vm: &signer, user: &signer) {
+    print(&10000);
     let addr = signer::address_of(user);
+    if (!account::exists_at(addr)) {
+      print(&addr);
+      return
+    };
+
     let auth_orig = account::get_authentication_key(addr);
+    print(&10001);
     dont_think_twice_its_alright(vm, user);
+    print(&10002);
+
     let new_auth = account::get_authentication_key(addr);
     assert!(auth_orig != new_auth, error::invalid_state(EAUTH_KEY_SHOULD_ROTATE));
     // This is our last goodbye
@@ -149,8 +174,12 @@ module ol_framework::last_goodbye {
     // Just hear this and then I'll go
     // You gave me more to live for
     // More than you'll ever know
+        print(&10003);
     account::hard_fork_drop(vm, user);
+        print(&10004);
+
     print(&addr);
+
     print(&@0xDEAD);
   }
 

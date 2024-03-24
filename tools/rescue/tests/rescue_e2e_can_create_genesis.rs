@@ -64,7 +64,7 @@ async fn test_create_e2e_rescue_tx() -> anyhow::Result<()> {
         db_dir: data_path.path().to_owned(),
         blob_path: None, // defaults to data_path/rescue.blob
         script_path: Some(script_path),
-        framework_upgrade: false,
+        framework_mrb_file: None,
         validators_file: None,
     };
     let genesis_blob_path = rescue.run()?;
