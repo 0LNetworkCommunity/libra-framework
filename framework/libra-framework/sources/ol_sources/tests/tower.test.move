@@ -14,14 +14,11 @@ module ol_framework::test_tower {
   use diem_framework::timestamp;
   use std::vector;
   use ol_framework::oracle;
-
   // use std::debug::print;
 
   #[test(root = @ol_framework)]
   fun epoch_changes_difficulty(root: signer) {
     mock::genesis_n_vals(&root, 4);
-    // mock::ol_initialize_coin(&root);
-
     mock::tower_default(&root); // make all the validators initialize towers
     // because we need randomness for the toy rng
 
@@ -40,7 +37,6 @@ module ol_framework::test_tower {
   #[test(root = @ol_framework, cousin_alice = @0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5)]
   fun init_tower_state(root: signer, cousin_alice: signer){
     mock::ol_test_genesis(&root);
-    // mock::ol_initialize_coin(&root);
     timestamp::fast_forward_seconds(1);
     ol_account::create_account(&root, signer::address_of(&cousin_alice));
 
@@ -58,7 +54,6 @@ module ol_framework::test_tower {
   #[test(root = @ol_framework)]
   fun toy_rng_state(root: signer) {
     mock::genesis_n_vals(&root, 4);
-    // mock::ol_initialize_coin(&root);
 
     mock::tower_default(&root); // make all the validators initialize towers
     // because we need randomness for the toy rng
@@ -71,9 +66,7 @@ module ol_framework::test_tower {
 
   #[test(root = @ol_framework)]
   fun toy_rng_minimal(root: signer) {
-    // use diem_std::debug::print;
     mock::genesis_n_vals(&root, 1);
-    // mock::ol_initialize_coin(&root);
 
     mock::tower_default(&root); // make all the validators initialize towers
     // because we need randomness for the toy rng
@@ -88,7 +81,7 @@ module ol_framework::test_tower {
   fun miner_receives_reward(root: signer, cousin_alice: signer) {
     let a_addr = signer::address_of(&cousin_alice);
     let vals = mock::genesis_n_vals(&root, 5);
-    // mock::ol_initialize_coin(&root);
+
     mock::pof_default();
     ol_account::create_account(&root, a_addr);
     proof_of_fee::fill_seats_and_get_price(&root, 5, &vals, &vals);
@@ -156,7 +149,42 @@ module ol_framework::test_tower {
 
     let count_post_reset = oracle::get_exact_count(a_addr);
     assert!(count_post_reset==1, 7347004);
-
   }
 
+  #[test(root = @ol_framework, cousin_alice =
+  @0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5)]
+  #[expected_failure(abort_code = 196618, location = ol_framework::tower_state)]
+  fun test_sunset(root: signer, cousin_alice: signer) {
+    let a_addr = signer::address_of(&cousin_alice);
+    let _vals = mock::genesis_n_vals(&root, 5);
+
+    ol_account::create_account(&root, a_addr);
+    tower_state::minerstate_commit(
+      &cousin_alice,
+      vdf_fixtures::alice_0_easy_chal(),
+      vdf_fixtures::alice_0_easy_sol(),
+      vdf_fixtures::easy_difficulty(),
+      vdf_fixtures::security(),
+    );
+
+    timestamp::fast_forward_seconds(10);
+    tower_state::minerstate_commit(
+      &cousin_alice,
+      vdf_fixtures::alice_1_easy_chal(),
+      vdf_fixtures::alice_1_easy_sol(),
+      vdf_fixtures::easy_difficulty(),
+      vdf_fixtures::security(),
+    );
+
+
+    tower_state::tower_sunset(&root);
+
+    tower_state::minerstate_commit(
+      &cousin_alice,
+      vdf_fixtures::alice_1_easy_chal(),
+      vdf_fixtures::alice_1_easy_sol(),
+      vdf_fixtures::easy_difficulty(),
+      vdf_fixtures::security(),
+    );
+  }
 }

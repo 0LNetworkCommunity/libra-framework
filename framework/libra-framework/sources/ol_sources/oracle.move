@@ -18,9 +18,7 @@ module ol_framework::oracle {
     use ol_framework::epoch_helper;
     use std::error;
 
-    // use diem_std::debug::print;
     friend diem_framework::genesis;
-
     friend ol_framework::epoch_boundary;
     friend ol_framework::tower_state;
 
@@ -187,9 +185,9 @@ module ol_framework::oracle {
 
     fun increment_stats(provider_addr: address, tower: &mut Tower, time: u64, signature_bytes: vector<u8>) acquires GlobalCounter, ProviderList {
 
-            // update the global state
+      // update the global state
       let global = borrow_global_mut<GlobalCounter>(@ol_framework);
-            // is this a proof in a new epoch?
+      // is this a proof in a new epoch?
       let current_epoch = epoch_helper::get_current_epoch();
 
       // if this is the first proof this epoch;
