@@ -121,7 +121,10 @@ pub fn writeset_voodoo_events(session: &mut SessionExt) -> anyhow::Result<()> {
 }
 
 // wrapper to publish the latest head framework release
-pub fn upgrade_framework(session: &mut SessionExt, path_opt: Option<PathBuf>) -> anyhow::Result<()> {
+pub fn upgrade_framework(
+    session: &mut SessionExt,
+    path_opt: Option<PathBuf>,
+) -> anyhow::Result<()> {
     let new_modules = if path_opt.is_some() {
         ReleaseTarget::load_bundle_from_file(path_opt.unwrap())?
     } else {
@@ -204,11 +207,19 @@ pub fn publish_current_framework(
     framework_release_file: Option<PathBuf>,
     debug_vals: Option<Vec<AccountAddress>>,
 ) -> anyhow::Result<ChangeSet> {
-    let vmc = libra_run_session(dir, |s| combined_steps(s, framework_release_file), debug_vals, None)?;
+    let vmc = libra_run_session(
+        dir,
+        |s| combined_steps(s, framework_release_file),
+        debug_vals,
+        None,
+    )?;
     unpack_changeset(vmc)
 }
 
-fn combined_steps(session: &mut SessionExt, framework_release_file: Option<PathBuf>) -> anyhow::Result<()> {
+fn combined_steps(
+    session: &mut SessionExt,
+    framework_release_file: Option<PathBuf>,
+) -> anyhow::Result<()> {
     upgrade_framework(session, framework_release_file)?;
     writeset_voodoo_events(session)?;
     Ok(())
@@ -216,7 +227,6 @@ fn combined_steps(session: &mut SessionExt, framework_release_file: Option<PathB
 
 #[cfg(test)]
 use std::path::Path;
-
 
 #[ignore]
 #[test]

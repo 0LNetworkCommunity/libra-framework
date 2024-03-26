@@ -47,7 +47,11 @@ impl RescueTxOpts {
             Transaction::GenesisTransaction(wp)
         } else if self.framework_mrb_file.is_some() {
             let vals = UserBlob::get_vals(self.validators_file.clone());
-            let cs = session_tools::publish_current_framework(db_path.clone(), self.framework_mrb_file.clone(),vals)?;
+            let cs = session_tools::publish_current_framework(
+                db_path.clone(),
+                self.framework_mrb_file.clone(),
+                vals,
+            )?;
             Transaction::GenesisTransaction(WriteSetPayload::Direct(cs))
         } else {
             anyhow::bail!("no options provided, need a --framework-upgrade or a --script-path");
