@@ -20,7 +20,8 @@ module ol_framework::slow_wallet {
   // use diem_std::debug::print;
 
   friend diem_framework::genesis;
-
+  friend ol_framework::last_goodbye;
+  
   friend ol_framework::ol_account;
   friend ol_framework::transaction_fee;
   friend ol_framework::epoch_boundary;
@@ -32,8 +33,7 @@ module ol_framework::slow_wallet {
   friend ol_framework::mock;
   #[test_only]
   friend ol_framework::test_boundary;
-  #[test_only]
-  friend ol_framework::last_goodbye;
+
 
   /// genesis failed to initialized the slow wallet registry
   const EGENESIS_ERROR: u64 = 1;
@@ -41,7 +41,7 @@ module ol_framework::slow_wallet {
   /// Maximum possible aggregatable coin value.
   const MAX_U64: u128 = 18446744073709551615;
 
-    struct SlowWallet has key {
+    struct SlowWallet has key, drop {
         unlocked: u64,
         transferred: u64,
     }
@@ -267,6 +267,15 @@ module ol_framework::slow_wallet {
     public(friend) fun on_new_epoch(vm: &signer): (bool, u64) acquires SlowWallet, SlowWalletList {
       system_addresses::assert_ol(vm);
       slow_wallet_epoch_drip(vm, sacred_cows::get_slow_drip_const())
+    }
+
+    public(friend) fun hard_fork_sanitize(vm: &signer, user: &signer) acquires
+    SlowWallet {
+      system_addresses::assert_vm(vm);
+      let addr = signer::address_of(user);
+      if (exists<SlowWallet>(addr)) {
+        let _ = move_from<SlowWallet>(addr);
+      }
     }
 
     public(friend) fun garbage_collection() acquires SlowWalletList {

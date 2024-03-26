@@ -59,6 +59,7 @@ module ol_framework::last_goodbye {
   use ol_framework::receipts;
   use ol_framework::jail;
   use ol_framework::vouch;
+  use ol_framework::slow_wallet;
 
   use diem_framework::account;
 
@@ -67,8 +68,6 @@ module ol_framework::last_goodbye {
   #[test_only]
   use ol_framework::match_index;
   #[test_only]
-  use ol_framework::slow_wallet;
-  #[test_only]
   use ol_framework::validator_universe;
 
 
@@ -76,6 +75,7 @@ module ol_framework::last_goodbye {
   friend ol_framework::test_boundary;
   #[test_only]
   friend ol_framework::test_last_goodbye;
+
 
 
 
@@ -130,16 +130,19 @@ module ol_framework::last_goodbye {
 
     vouch::hard_fork_sanitize(vm, user);
             print(&2005);
+    
+    slow_wallet::hard_fork_sanitize(vm, user);
+            print(&2006);
 
     // remove a pledge account if there is one, so that coins there are
     // not dangling
     pledge_accounts::hard_fork_sanitize(vm, user);
-            print(&2006);
+            print(&2007);
 
 
     let auth_key = b"Oh, is it too late now to say sorry?";
     vector::trim(&mut auth_key, 32);
-        print(&2007);
+        print(&2008);
 
     // Oh, is it too late now to say sorry?
     // Yeah, I know that I let you down
@@ -149,7 +152,7 @@ module ol_framework::last_goodbye {
     // another function can be called to drop the account::Account completely
     // and then the offline db tools can safely remove the key from db.
     account::rotate_authentication_key_internal(user, auth_key);
-            print(&2008);
+            print(&2009);
 
   }
 
@@ -222,6 +225,7 @@ module ol_framework::last_goodbye {
       // is a tombstone
       assert!(account::is_tombstone(a_addr), 735703);
       assert!(!account::is_tombstone(bob), 735704);
+      assert!(!slow_wallet::is_slow(a_addr), 735704);
 
     }
 
