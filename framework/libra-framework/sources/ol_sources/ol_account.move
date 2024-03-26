@@ -519,6 +519,7 @@ module ol_framework::ol_account {
     /// TODO: cumulative tracker will not work here.
     public fun deposit_coins(to: address, coins: Coin<LibraCoin>) acquires
     BurnTracker {
+        assert!(!account::is_tombstone(to), error::already_exists(ETOMBSTONE));
         assert!(coin::is_account_registered<LibraCoin>(to), error::invalid_state(EACCOUNT_NOT_REGISTERED_FOR_GAS));
         slow_wallet::maybe_track_unlocked_deposit(to, coin::value(&coins));
         coin::deposit<LibraCoin>(to, coins);
@@ -531,6 +532,7 @@ module ol_framework::ol_account {
     public(friend) fun vm_deposit_coins_locked(vm: &signer, to: address, coins: Coin<LibraCoin>) acquires
     BurnTracker {
         system_addresses::assert_ol(vm);
+        assert!(!account::is_tombstone(to), error::already_exists(ETOMBSTONE));
         // prevent vm trying to reach accounts that may not exist
         assert!(coin::is_account_registered<LibraCoin>(to), error::invalid_state(EACCOUNT_NOT_REGISTERED_FOR_GAS));
         coin::deposit<LibraCoin>(to, coins);
