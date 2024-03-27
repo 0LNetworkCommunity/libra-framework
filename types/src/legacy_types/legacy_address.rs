@@ -11,9 +11,6 @@ use hex::FromHex;
 use rand::{rngs::OsRng, Rng};
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize, Serializer};
 use std::{convert::TryFrom, fmt, str::FromStr};
-use move_core_types::move_resource::MoveResource;
-use crate::legacy_types::legacy_miner_state::TowerStateResource;
-use crate::legacy_types::legacy_recovery::LegacyRecoveryV6;
 
 /// A struct that represents an account address.
 #[derive(Ord, PartialOrd, Eq, PartialEq, Hash, Clone, Copy)]

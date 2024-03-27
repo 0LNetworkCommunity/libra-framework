@@ -1,10 +1,8 @@
 //! community wallet resource
-use crate::legacy_types::legacy_address::LegacyAddress;
-use anyhow::Result;
+use diem_types::event::EventHandle;
 use move_core_types::{ident_str, identifier::IdentStr, move_resource::MoveStructType};
 use move_core_types::move_resource::MoveResource;
 use serde::{Deserialize, Serialize};
-use crate::legacy_types::legacy_miner_state::TowerStateResource;
 use move_core_types::account_address::AccountAddress;
 // NOTE: these are legacy structs for v5
 
@@ -13,7 +11,7 @@ use move_core_types::account_address::AccountAddress;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CommunityWalletsResourceLegacy {
     // List
-    pub list: Vec<LegacyAddress>,
+    pub list: Vec<AccountAddress>,
 }
 
 impl MoveStructType for CommunityWalletsResourceLegacy {
@@ -21,13 +19,6 @@ impl MoveStructType for CommunityWalletsResourceLegacy {
     const STRUCT_NAME: &'static IdentStr = ident_str!("CommunityWallet");
 }
 
-impl CommunityWalletsResourceLegacy {
-    ///
-    pub fn try_from_bytes(bytes: &[u8]) -> Result<Self> {
-        println!("community bytes: {:?}", bytes.len());
-        bcs::from_bytes(bytes).map_err(Into::into)
-    }
-}
 
 impl MoveResource for CommunityWalletsResourceLegacy {}
 
@@ -44,14 +35,6 @@ impl MoveStructType for SlowWalletResource {
     const MODULE_NAME: &'static IdentStr = ident_str!("slow_wallet");
     const STRUCT_NAME: &'static IdentStr = ident_str!("SlowWallet");
 }
-
-impl SlowWalletResource {
-    ///
-    pub fn try_from_bytes(bytes: &[u8]) -> Result<Self> {
-        bcs::from_bytes(bytes).map_err(Into::into)
-    }
-}
-
 impl MoveResource for SlowWalletResource {}
 
 /// Struct that represents a SlowWallet resource
@@ -59,19 +42,13 @@ impl MoveResource for SlowWalletResource {}
 pub struct SlowWalletListResource {
     ///
     pub list: Vec<AccountAddress>,
-    // TODO: add drip events
+    ///
+    pub drip_events: EventHandle
 }
 
 impl MoveStructType for SlowWalletListResource {
     const MODULE_NAME: &'static IdentStr = ident_str!("slow_wallet");
     const STRUCT_NAME: &'static IdentStr = ident_str!("SlowWalletList");
-}
-
-impl SlowWalletListResource {
-    ///
-    pub fn try_from_bytes(bytes: &[u8]) -> Result<Self> {
-        bcs::from_bytes(bytes).map_err(Into::into)
-    }
 }
 
 impl MoveResource for SlowWalletListResource {}

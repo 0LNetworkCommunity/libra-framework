@@ -19,6 +19,7 @@ use anyhow::anyhow;
 use diem_types::account_state::AccountState;
 use move_core_types::account_address::AccountAddress;
 use diem_types::account_view::AccountView;
+use diem_types::validator_config::{ValidatorConfig, ValidatorOperatorConfigResource};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 /// Account role
@@ -154,9 +155,6 @@ pub fn read_from_recovery_file(path: &PathBuf) -> Vec<LegacyRecovery> {
     serde_json::from_str(&data).expect("Unable to parse")
 }
 
-
-use crate::legacy_types::validator_config::ConfigResource;
-
 #[derive(Debug, Default, Clone)]
 pub struct LegacyRecoveryV6 {
     ///
@@ -168,7 +166,9 @@ pub struct LegacyRecoveryV6 {
     ///
     pub balance: Option<LegacyBalanceResource>,
     ///
-    pub val_cfg: Option<ValidatorConfigResource>,
+    pub val_cfg: Option<ValidatorConfig>,
+    ///
+    pub val_operator_cfg: Option<ValidatorOperatorConfigResource>,
     ///
     pub miner_state: Option<TowerStateResource>,
     ///
@@ -199,6 +199,7 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         role: AccountRole::EndUser,
         balance: None,
         val_cfg: None,
+        val_operator_cfg: None,
         miner_state: None,
         comm_wallet: None,
         //fullnode_counter: None, / TODO: DO WE NEED THIS
@@ -224,66 +225,54 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
             coin: r.coin(),
         });
 
-        // val_cfg
-        let validator_config = account_state.get_validator_config_resource()?;
-        let validator_operator_config = account_state.get_validator_operator_config_resource()?;
-
-
-        let validator_config_resource = ValidatorConfigResource {
-            config: if let Some(validator_config) = validator_config {
-                Some(ConfigResource {
-                    consensus_pubkey: Vec::from(validator_config.consensus_public_key.to_bytes()),
-                    validator_network_addresses: vec![], // TODO fill out
-                    fullnode_network_addresses: validator_config.fullnode_network_addresses.clone(),
-                })
-            } else {
-                None
-            },
-
-            operator_account: None, // TODO: account is not available
-            human_name: validator_operator_config.map(|r| r.human_name).unwrap_or_else(|| vec![]),
-        };
-
-        legacy_recovery.val_cfg = Some(validator_config_resource);
+        // validator config
+        legacy_recovery.val_cfg = account_state.get_validator_config_resource()?;
+        // if let Some(val_cfg) = &legacy_recovery.val_cfg {
+        //     println!("val_cfg: {:?}", &val_cfg);
+        // }
+        legacy_recovery.val_operator_cfg = account_state.get_validator_operator_config_resource()?;
+        // if let Some(val_operator_cfg) = &legacy_recovery.val_operator_cfg {
+        //     println!("val_operator_cfg: {:?}", &val_operator_cfg);
+        // }
 
         // miner state
-        legacy_recovery.miner_state = account_state.get_resource::<TowerStateResource>()?;
+        legacy_recovery.miner_state = account_state.get_move_resource::<TowerStateResource>()?;
         // if let Some(miner_state) = &legacy_recovery.miner_state {
         //     println!("miner_state: {:?}", &miner_state);
         // }
 
-        // comm_wallet // TODO: serialization is broken
-        legacy_recovery.comm_wallet = account_state.get_resource::<CommunityWalletsResourceLegacy>()?;
-        if let Some(comm_wallet) = &legacy_recovery.comm_wallet {
-            println!("comm_wallet: {:?}", &comm_wallet);
-        }
+        // comm_wallet
+        legacy_recovery.comm_wallet = account_state.get_move_resource::<CommunityWalletsResourceLegacy>()?;
+        // if let Some(comm_wallet) = &legacy_recovery.comm_wallet {
+        //     println!("comm_wallet: {:?}", &comm_wallet);
+        // }
 
         // ancestry
-        legacy_recovery.ancestry = account_state.get_resource::<LegacyAncestryResource>()?;
+        legacy_recovery.ancestry = account_state.get_move_resource::<LegacyAncestryResource>()?;
         // if let Some(ancestry) = &legacy_recovery.ancestry {
         //     println!("ancestry: {:?}", &ancestry);
         // }
 
         // receipts
-        legacy_recovery.receipts = account_state.get_resource::<ReceiptsResource>()?;
+        legacy_recovery.receipts = account_state.get_move_resource::<ReceiptsResource>()?;
         // if let Some(receipts) = &legacy_recovery.receipts {
         //     println!("receipts: {:?}", &receipts);
         // }
 
         // cumulative_deposits
-        legacy_recovery.cumulative_deposits = account_state.get_resource::<CumulativeDepositResource>()?;
+        legacy_recovery.cumulative_deposits = account_state.get_move_resource::<CumulativeDepositResource>()?;
         // if let Some(cumulative_deposits) = &legacy_recovery.cumulative_deposits {
         //     println!("cumulative_deposits: {:?}", &cumulative_deposits);
         // }
 
         // slow wallet
-        legacy_recovery.slow_wallet = account_state.get_resource::<SlowWalletResource>()?;
+        legacy_recovery.slow_wallet = account_state.get_move_resource::<SlowWalletResource>()?;
         // if let Some(slow_wallet) = &legacy_recovery.slow_wallet {
         //     println!("slow_wallet: {:?}", &slow_wallet);
         // }
 
         // slow wallet list // TODO: broken
-        legacy_recovery.slow_wallet_list = account_state.get_resource::<SlowWalletListResource>()?;
+        legacy_recovery.slow_wallet_list = account_state.get_move_resource::<SlowWalletListResource>()?;
         // if let Some(slow_wallet_list) = &legacy_recovery.slow_wallet_list {
         //     println!("slow_wallet_list: {:?}", &slow_wallet_list);
         // }

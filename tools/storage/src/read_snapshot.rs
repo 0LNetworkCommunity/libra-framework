@@ -138,7 +138,8 @@ async fn test_deserialize_account() {
         .expect("could not parse snapshot");
     for account_state in account_states.iter() {
         //println!("account_address: {:?}", account_state.get_account_address());
-        let legacy_recovery = get_legacy_recovery(&account_state).expect("could not get legacy recovery");
+        let legacy_recovery = get_legacy_recovery(&account_state)
+            .expect("could not get legacy recovery");
         //println!("legacy_recovery: {:?}", legacy_recovery);
     }
 }

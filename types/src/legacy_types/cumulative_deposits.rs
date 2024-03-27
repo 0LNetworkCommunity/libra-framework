@@ -36,11 +36,4 @@ impl MoveStructType for CumulativeDepositResource {
     const STRUCT_NAME: &'static IdentStr = ident_str!("CumulativeDeposits");
 }
 
-impl CumulativeDepositResource {
-    ///
-    pub fn try_from_bytes(bytes: &[u8]) -> Result<Self> {
-        bcs::from_bytes(bytes).map_err(Into::into)
-    }
-}
-
 impl MoveResource for CumulativeDepositResource {}
