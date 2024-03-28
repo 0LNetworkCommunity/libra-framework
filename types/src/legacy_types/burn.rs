@@ -22,3 +22,21 @@ impl MoveStructType for UserBurnPreferenceResource {
 }
 
 impl MoveResource for UserBurnPreferenceResource {}
+
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BurnCounterResource {
+    pub lifetime_burned: u64,
+    pub lifetime_recycled: u64,
+}
+
+impl MoveStructType for BurnCounterResource {
+    const MODULE_NAME: &'static IdentStr = ident_str!("burn");
+    const STRUCT_NAME: &'static IdentStr = ident_str!("BurnCounter");
+
+    fn type_params() -> Vec<TypeTag> {
+        vec![]
+    }
+}
+
+impl MoveResource for BurnCounterResource {}

@@ -5,6 +5,7 @@ pub mod app_cfg;
 pub mod block;
 pub mod burn;
 pub mod cumulative_deposits;
+pub mod donor_voice;
 pub mod donor_voice_txs;
 pub mod fixtures;
 pub mod fee_maker;
@@ -24,5 +25,6 @@ pub mod vdf_difficulty;
 pub mod vouch;
 pub mod wallet;
 pub mod pledge_account;
+
 
 

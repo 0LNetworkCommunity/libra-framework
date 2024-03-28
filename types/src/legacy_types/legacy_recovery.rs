@@ -20,7 +20,8 @@ use diem_types::account_state::AccountState;
 use move_core_types::account_address::AccountAddress;
 use diem_types::account_view::AccountView;
 use diem_types::validator_config::{ValidatorConfig, ValidatorOperatorConfigResource};
-use crate::legacy_types::burn::UserBurnPreferenceResource;
+use crate::legacy_types::burn::{BurnCounterResource, UserBurnPreferenceResource};
+use crate::legacy_types::donor_voice::RegistryResource;
 use crate::legacy_types::donor_voice_txs::{TxScheduleResource};
 use crate::legacy_types::fee_maker::FeeMakerResource;
 use crate::legacy_types::jail::JailResource;
@@ -211,6 +212,11 @@ pub struct LegacyRecoveryV6 {
     ///
     pub my_pledge: Option<MyPledgesResource>,
 
+    ///
+    pub burn_counter: Option<BurnCounterResource>,
+
+    pub donor_voice_registry: Option<RegistryResource>,
+
     // TODO: use on V7 tools
     // ///
     // pub fullnode_counter: Option<FullnodeCounterResource>,
@@ -240,6 +246,8 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         fee_maker: None,
         jail: None,
         my_pledge: None,
+        burn_counter: None,
+        donor_voice_registry: None,
     };
     let account_resource = account_state.get_account_resource()?;
 
@@ -344,6 +352,17 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         // if let Some(my_pledges) = &legacy_recovery.my_pledge {
         //     println!("my_pledges: {:?}", &my_pledges);
         // }
+
+        // burn counter
+        legacy_recovery.burn_counter = account_state.get_move_resource::<BurnCounterResource>()?;
+        // if let Some(burn_counter) = &legacy_recovery.burn_counter {
+        //     println!("burn_counter: {:?}", &burn_counter);
+        // }
+
+        legacy_recovery.donor_voice_registry = account_state.get_move_resource::<RegistryResource>()?;
+        if let Some(donor_voice_registry) = &legacy_recovery.donor_voice_registry {
+            println!("donor_voice_registry: {:?}", &donor_voice_registry);
+        }
     }
 
     Ok(legacy_recovery)
