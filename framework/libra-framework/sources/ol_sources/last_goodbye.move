@@ -60,7 +60,7 @@ module ol_framework::last_goodbye {
   use ol_framework::jail;
   use ol_framework::vouch;
   use ol_framework::slow_wallet;
-  use ol_framework::validator_universe;
+  use ol_framework::stake;
 
   use diem_framework::account;
 
@@ -68,6 +68,8 @@ module ol_framework::last_goodbye {
   use ol_framework::ol_account;
   #[test_only]
   use ol_framework::match_index;
+  #[test_only]
+  use ol_framework::validator_universe;
 
 
   #[test_only]
@@ -95,7 +97,7 @@ module ol_framework::last_goodbye {
     };
 
     // we dont drop validators - work is work
-    if(validator_universe::is_in_universe(user_addr)){
+    if(stake::is_valid(user_addr)){
       return
     };
 

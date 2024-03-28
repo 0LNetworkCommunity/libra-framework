@@ -265,7 +265,7 @@ module ol_framework::test_boundary {
 
   // when we drop accounts through hard fork we should have no boundary
   // account processing issues.
-  #[test(vm = @0x0, framework = @ 0x1, alice = @0x1000a)]
+  #[test(vm = @0x0, framework = @ 0x1, alice = @0x1111a)]
   fun e2e_boundary_happy_drop_accounts(vm: signer, framework: signer, alice: signer) {
     use ol_framework::last_goodbye;
 
