@@ -172,6 +172,13 @@ module ol_framework::last_goodbye {
       return
     };
 
+    // we dont drop validators - work is work
+    if(stake::is_valid(addr)){
+      print(&addr);
+      print(&string::utf8(b"Validator boarding ark a"));
+      return
+    };
+
     let auth_orig = account::get_authentication_key(addr);
     print(&10001);
     dont_think_twice_its_alright(vm, user);
@@ -179,22 +186,22 @@ module ol_framework::last_goodbye {
 
     let new_auth = account::get_authentication_key(addr);
     // if the account is a validator they stay on ark a
-    if(!stake::is_valid(addr)){
+
       assert!(auth_orig != new_auth, error::invalid_state(EAUTH_KEY_SHOULD_ROTATE));
-    };
-    // This is our last goodbye
-    // I hate to feel the love between us die
-    // But it's over
-    // Just hear this and then I'll go
-    // You gave me more to live for
-    // More than you'll ever know
-        print(&10003);
-    account::hard_fork_drop(vm, user);
-        print(&10004);
 
-    print(&addr);
+      // This is our last goodbye
+      // I hate to feel the love between us die
+      // But it's over
+      // Just hear this and then I'll go
+      // You gave me more to live for
+      // More than you'll ever know
+          print(&10003);
+      account::hard_fork_drop(vm, user);
+          print(&10004);
 
-    print(&@0xDEAD);
+      print(&addr);
+
+      print(&@0xDEAD);
   }
 
   #[test_only]
@@ -222,13 +229,13 @@ module ol_framework::last_goodbye {
   }
 
 
-  #[test(vm = @0x0, framework = @0x1, alice = @0x1111a, bob = @0x1000b)]
+  #[test(vm = @0x0, framework = @0x1, alice = @0x1000a, bob = @0x1111b)]
     fun bang_bang(vm: &signer, framework: &signer, alice: address, bob: &signer) {
       use diem_framework::account;
       use ol_framework::mock;
 
       account::maybe_initialize_duplicate_originating(framework);
-      mock::ol_test_genesis(framework);
+      mock::genesis_n_vals(framework, 1);
 
       let b_addr = signer::address_of(bob);
       account::create_account_for_test(b_addr);
