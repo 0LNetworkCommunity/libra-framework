@@ -3,9 +3,7 @@ use diem_sdk::move_types::{
     move_resource::MoveStructType,
 };
 use move_core_types::account_address::AccountAddress;
-
 use serde::{Deserialize, Serialize};
-use crate::move_resource::libra_coin::{LibraCoinStoreResource};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MyPledgesResource {

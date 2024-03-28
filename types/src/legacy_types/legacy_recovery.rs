@@ -21,10 +21,10 @@ use move_core_types::account_address::AccountAddress;
 use diem_types::account_view::AccountView;
 use diem_types::validator_config::{ValidatorConfig, ValidatorOperatorConfigResource};
 use crate::legacy_types::burn::UserBurnPreferenceResource;
-use crate::legacy_types::donor_voice_txs::{PaymentResource, TxScheduleResource};
+use crate::legacy_types::donor_voice_txs::{TxScheduleResource};
 use crate::legacy_types::fee_maker::FeeMakerResource;
 use crate::legacy_types::jail::JailResource;
-use crate::legacy_types::pledge_account::{MyPledgesResource, PledgeAccountResource};
+use crate::legacy_types::pledge_account::{MyPledgesResource};
 use crate::legacy_types::vouch::MyVouchesResource;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -322,8 +322,7 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         // }
 
         // tx schedule
-        // TODO: fails with an error: "Parsing u128 string "" failed, caused by error: cannot parse integer from empty string'"
-        // legacy_recovery.tx_schedule = account_state.get_move_resource::<TxScheduleResource>()?;
+        legacy_recovery.tx_schedule = account_state.get_move_resource::<TxScheduleResource>()?;
         // if let Some(tx_schedule) = &legacy_recovery.tx_schedule {
         //     println!("tx_schedule: {:?}", &tx_schedule);
         // }
@@ -342,9 +341,9 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
 
         // pledge account
         legacy_recovery.my_pledge = account_state.get_move_resource::<MyPledgesResource>()?;
-        if let Some(my_pledges) = &legacy_recovery.my_pledge {
-            println!("my_pledges: {:?}", &my_pledges);
-        }
+        // if let Some(my_pledges) = &legacy_recovery.my_pledge {
+        //     println!("my_pledges: {:?}", &my_pledges);
+        // }
     }
 
     Ok(legacy_recovery)
