@@ -247,7 +247,7 @@ module ol_framework::last_goodbye {
       mock::ol_test_genesis(framework);
       let a_addr = signer::address_of(alice);
       account::create_account_for_test(a_addr);
-      assert!(account::exists_at(a_addr), 7357); // Confirm Bob's account exists
+      assert!(account::exists_at(a_addr), 7357); // Confirm Alice's account exists
 
       let auth_orig = account::get_authentication_key(a_addr);
 
@@ -257,6 +257,25 @@ module ol_framework::last_goodbye {
       // Verify if the authentication key changed as expected
       let auth_changed = account::get_authentication_key(a_addr);
       assert!(auth_changed != auth_orig, 7358); // Confirm the authentication key was altered
+    }
+
+    #[test(vm = @0x0, framework = @0x1, alice = @0x1000a)]
+    fun validator_can_stay(vm: &signer, framework: &signer, alice: &signer) {
+      use diem_framework::account;
+      use ol_framework::mock;
+
+      mock::genesis_n_vals(framework, 1);
+      let a_addr = signer::address_of(alice);
+      assert!(account::exists_at(a_addr), 7357); // Confirm Alice's account exists
+
+      let auth_orig = account::get_authentication_key(a_addr);
+
+      dont_think_twice_its_alright(vm, alice);
+      assert!(account::exists_at(a_addr), 7357); // Ensure the account still exists after operation
+
+      // Verify if the authentication key changed as expected
+      let auth_changed = account::get_authentication_key(a_addr);
+      assert!(auth_changed == auth_orig, 7358); // Confirm the authentication key was not altered
     }
 
     #[test(vm = @0x0, framework = @0x1, alice = @0x1111a)]
