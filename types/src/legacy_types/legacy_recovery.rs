@@ -15,6 +15,7 @@ use crate::legacy_types::{
 };
 use serde::{Deserialize, Serialize};
 use std::{fs, io::Write, path::PathBuf};
+use std::str::FromStr;
 use anyhow::anyhow;
 use diem_types::account_state::AccountState;
 use move_core_types::account_address::AccountAddress;
@@ -182,7 +183,6 @@ pub struct LegacyRecoveryV6 {
     pub miner_state: Option<TowerStateResource>,
     ///
     pub comm_wallet: Option<CommunityWalletsResourceLegacy>,
-
     ///
     pub currency_info: Option<CurrencyInfoResource>,
     ///
@@ -195,41 +195,28 @@ pub struct LegacyRecoveryV6 {
     pub slow_wallet: Option<SlowWalletResource>,
     ///
     pub slow_wallet_list: Option<SlowWalletListResource>,
-
     ///
     pub user_burn_preference: Option<UserBurnPreferenceResource>,
-
     ///
     pub my_vouches: Option<MyVouchesResource>,
-
     ///
     pub tx_schedule: Option<TxScheduleResource>,
-
     ///
     pub fee_maker: Option<FeeMakerResource>,
-
     ///
     pub jail: Option<JailResource>,
-
     ///
     pub my_pledge: Option<MyPledgesResource>,
-
     ///
     pub burn_counter: Option<BurnCounterResource>,
-
+    ///
     pub donor_voice_registry: Option<RegistryResource>,
-
+    ///
     pub epoch_fee_maker_registry: Option<EpochFeeMakerRegistryResource>,
-
+    ///
     pub match_index: Option<MatchIndexResource>,
-
+    ///
     pub validator_universe: Option<ValidatorUniverseResource>,
-
-    // TODO: use on V7 tools
-    // ///
-    // pub fullnode_counter: Option<FullnodeCounterResource>,
-    // ///
-    // pub autopay: Option<AutoPayResource>,
 }
 
 pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<LegacyRecoveryV6> {
@@ -266,6 +253,10 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         let byte_slice: [u8; 32] = account_resource.authentication_key()
             .to_vec().try_into().map_err(|err| { anyhow!("error: {:?}", err) })?;
 
+        if account_state.get_account_address()? == Some(AccountAddress::from_str("0x1")?) {
+            legacy_recovery.role = AccountRole::System;
+        }
+
         // auth key
         legacy_recovery.auth_key = Some(AuthenticationKey::new(byte_slice));
 
@@ -277,121 +268,69 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
 
         // validator config
         legacy_recovery.val_cfg = account_state.get_validator_config_resource()?;
-        // if let Some(val_cfg) = &legacy_recovery.val_cfg {
-        //     println!("val_cfg: {:?}", &val_cfg);
-        // }
+        if legacy_recovery.val_cfg.is_some() {
+            legacy_recovery.role = AccountRole::Validator;
+        }
+
+        // validator operator config
         legacy_recovery.val_operator_cfg = account_state.get_validator_operator_config_resource()?;
-        // if let Some(val_operator_cfg) = &legacy_recovery.val_operator_cfg {
-        //     println!("val_operator_cfg: {:?}", &val_operator_cfg);
-        // }
+        if legacy_recovery.val_operator_cfg.is_some() {
+            legacy_recovery.role = AccountRole::Operator;
+        }
 
         // miner state
         legacy_recovery.miner_state = account_state.get_move_resource::<TowerStateResource>()?;
-        // if let Some(miner_state) = &legacy_recovery.miner_state {
-        //     println!("miner_state: {:?}", &miner_state);
-        // }
 
         // comm_wallet
         legacy_recovery.comm_wallet = account_state.get_move_resource::<CommunityWalletsResourceLegacy>()?;
-        // if let Some(comm_wallet) = &legacy_recovery.comm_wallet {
-        //     println!("comm_wallet: {:?}", &comm_wallet);
-        // }
 
         // ancestry
         legacy_recovery.ancestry = account_state.get_move_resource::<LegacyAncestryResource>()?;
-        // if let Some(ancestry) = &legacy_recovery.ancestry {
-        //     println!("ancestry: {:?}", &ancestry);
-        // }
 
         // receipts
         legacy_recovery.receipts = account_state.get_move_resource::<ReceiptsResource>()?;
-        // if let Some(receipts) = &legacy_recovery.receipts {
-        //     println!("receipts: {:?}", &receipts);
-        // }
 
         // cumulative_deposits
         legacy_recovery.cumulative_deposits = account_state.get_move_resource::<CumulativeDepositResource>()?;
-        // if let Some(cumulative_deposits) = &legacy_recovery.cumulative_deposits {
-        //     println!("cumulative_deposits: {:?}", &cumulative_deposits);
-        // }
 
         // slow wallet
         legacy_recovery.slow_wallet = account_state.get_move_resource::<SlowWalletResource>()?;
-        // if let Some(slow_wallet) = &legacy_recovery.slow_wallet {
-        //     println!("slow_wallet: {:?}", &slow_wallet);
-        // }
 
         // slow wallet list
         legacy_recovery.slow_wallet_list = account_state.get_move_resource::<SlowWalletListResource>()?;
-        // if let Some(slow_wallet_list) = &legacy_recovery.slow_wallet_list {
-        //     println!("slow_wallet_list: {:?}", &slow_wallet_list);
-        // }
 
         // user burn preference
-        // fixtures/state_epoch_79_ver_33217173.795d/0-.chunk has no such users
         legacy_recovery.user_burn_preference = account_state.get_move_resource::<UserBurnPreferenceResource>()?;
-        if let Some(user_burn_preference) = &legacy_recovery.user_burn_preference {
-            println!("user_burn_preference: {:?}", &user_burn_preference);
-        }
 
         // my vouches
         legacy_recovery.my_vouches = account_state.get_move_resource::<MyVouchesResource>()?;
-        // if let Some(my_vouches) = &legacy_recovery.my_vouches {
-        //     println!("my_vouches: {:?}", &my_vouches);
-        // }
 
         // tx schedule
         legacy_recovery.tx_schedule = account_state.get_move_resource::<TxScheduleResource>()?;
-        // if let Some(tx_schedule) = &legacy_recovery.tx_schedule {
-        //     println!("tx_schedule: {:?}", &tx_schedule);
-        // }
 
         // fee maker
         legacy_recovery.fee_maker = account_state.get_move_resource::<FeeMakerResource>()?;
-        // if let Some(fee_maker) = &legacy_recovery.fee_maker {
-        //     println!("fee_maker: {:?}", &fee_maker);
-        // }
 
         // jail
         legacy_recovery.jail = account_state.get_move_resource::<JailResource>()?;
-        // if let Some(jail) = &legacy_recovery.jail {
-        //     println!("jail: {:?}", &jail);
-        // }
 
-        // pledge account
+        // my pledge
         legacy_recovery.my_pledge = account_state.get_move_resource::<MyPledgesResource>()?;
-        // if let Some(my_pledges) = &legacy_recovery.my_pledge {
-        //     println!("my_pledges: {:?}", &my_pledges);
-        // }
 
         // burn counter
         legacy_recovery.burn_counter = account_state.get_move_resource::<BurnCounterResource>()?;
-        // if let Some(burn_counter) = &legacy_recovery.burn_counter {
-        //     println!("burn_counter: {:?}", &burn_counter);
-        // }
 
+        // donor voice registry
         legacy_recovery.donor_voice_registry = account_state.get_move_resource::<RegistryResource>()?;
-        // if let Some(donor_voice_registry) = &legacy_recovery.donor_voice_registry {
-        //     println!("donor_voice_registry: {:?}", &donor_voice_registry);
-        // }
 
         // epoch fee maker registry
         legacy_recovery.epoch_fee_maker_registry = account_state.get_move_resource::<EpochFeeMakerRegistryResource>()?;
-        // if let Some(epoch_fee_maker_registry) = &legacy_recovery.epoch_fee_maker_registry {
-        //     println!("epoch_fee_maker_registry: {:?}", &epoch_fee_maker_registry);
-        // }
 
         // match index
         legacy_recovery.match_index = account_state.get_move_resource::<MatchIndexResource>()?;
-        // if let Some(match_index) = &legacy_recovery.match_index {
-        //     println!("match_index: {:?}", &match_index);
-        // }
 
         // validator universe
         legacy_recovery.validator_universe = account_state.get_move_resource::<ValidatorUniverseResource>()?;
-        if let Some(validator_universe) = &legacy_recovery.validator_universe {
-            println!("validator_universe: {:?}", &validator_universe);
-        }
     }
 
     Ok(legacy_recovery)
