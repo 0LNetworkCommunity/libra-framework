@@ -20,6 +20,12 @@ use diem_types::account_state::AccountState;
 use move_core_types::account_address::AccountAddress;
 use diem_types::account_view::AccountView;
 use diem_types::validator_config::{ValidatorConfig, ValidatorOperatorConfigResource};
+use crate::legacy_types::burn::UserBurnPreferenceResource;
+use crate::legacy_types::donor_voice_txs::{PaymentResource, TxScheduleResource};
+use crate::legacy_types::fee_maker::FeeMakerResource;
+use crate::legacy_types::jail::JailResource;
+use crate::legacy_types::pledge_account::{MyPledgesResource, PledgeAccountResource};
+use crate::legacy_types::vouch::MyVouchesResource;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 /// Account role
@@ -174,6 +180,7 @@ pub struct LegacyRecoveryV6 {
     ///
     pub comm_wallet: Option<CommunityWalletsResourceLegacy>,
 
+    ///
     pub currency_info: Option<CurrencyInfoResource>,
     ///
     pub ancestry: Option<LegacyAncestryResource>,
@@ -185,6 +192,25 @@ pub struct LegacyRecoveryV6 {
     pub slow_wallet: Option<SlowWalletResource>,
     ///
     pub slow_wallet_list: Option<SlowWalletListResource>,
+
+    ///
+    pub user_burn_preference: Option<UserBurnPreferenceResource>,
+
+    ///
+    pub my_vouches: Option<MyVouchesResource>,
+
+    ///
+    pub tx_schedule: Option<TxScheduleResource>,
+
+    ///
+    pub fee_maker: Option<FeeMakerResource>,
+
+    ///
+    pub jail: Option<JailResource>,
+
+    ///
+    pub my_pledge: Option<MyPledgesResource>,
+
     // TODO: use on V7 tools
     // ///
     // pub fullnode_counter: Option<FullnodeCounterResource>,
@@ -202,14 +228,18 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         val_operator_cfg: None,
         miner_state: None,
         comm_wallet: None,
-        //fullnode_counter: None, / TODO: DO WE NEED THIS
-        //autopay: None, // TODO: DO WE NEED THIS
         currency_info: None, // TODO: DO WE NEED THIS
         ancestry: None,
         receipts: None,
         cumulative_deposits: None,
         slow_wallet: None,
         slow_wallet_list: None,
+        user_burn_preference: None,
+        my_vouches: None,
+        tx_schedule: None,
+        fee_maker: None,
+        jail: None,
+        my_pledge: None,
     };
     let account_resource = account_state.get_account_resource()?;
 
@@ -221,6 +251,7 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         legacy_recovery.auth_key = Some(AuthenticationKey::new(byte_slice));
 
         // balance
+        // native CoinStoreResource doesn't implement COpy thus use LegacyBalanceResource instead
         legacy_recovery.balance = account_state.get_coin_store_resource()?.map(|r| LegacyBalanceResource {
             coin: r.coin(),
         });
@@ -271,11 +302,49 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         //     println!("slow_wallet: {:?}", &slow_wallet);
         // }
 
-        // slow wallet list // TODO: broken
+        // slow wallet list
         legacy_recovery.slow_wallet_list = account_state.get_move_resource::<SlowWalletListResource>()?;
         // if let Some(slow_wallet_list) = &legacy_recovery.slow_wallet_list {
         //     println!("slow_wallet_list: {:?}", &slow_wallet_list);
         // }
+
+        // user burn preference
+        // fixtures/state_epoch_79_ver_33217173.795d/0-.chunk has no such users
+        legacy_recovery.user_burn_preference = account_state.get_move_resource::<UserBurnPreferenceResource>()?;
+        if let Some(user_burn_preference) = &legacy_recovery.user_burn_preference {
+            println!("user_burn_preference: {:?}", &user_burn_preference);
+        }
+
+        // my vouches
+        legacy_recovery.my_vouches = account_state.get_move_resource::<MyVouchesResource>()?;
+        // if let Some(my_vouches) = &legacy_recovery.my_vouches {
+        //     println!("my_vouches: {:?}", &my_vouches);
+        // }
+
+        // tx schedule
+        // TODO: fails with an error: "Parsing u128 string "" failed, caused by error: cannot parse integer from empty string'"
+        // legacy_recovery.tx_schedule = account_state.get_move_resource::<TxScheduleResource>()?;
+        // if let Some(tx_schedule) = &legacy_recovery.tx_schedule {
+        //     println!("tx_schedule: {:?}", &tx_schedule);
+        // }
+
+        // fee maker
+        legacy_recovery.fee_maker = account_state.get_move_resource::<FeeMakerResource>()?;
+        // if let Some(fee_maker) = &legacy_recovery.fee_maker {
+        //     println!("fee_maker: {:?}", &fee_maker);
+        // }
+
+        // jail
+        legacy_recovery.jail = account_state.get_move_resource::<JailResource>()?;
+        // if let Some(jail) = &legacy_recovery.jail {
+        //     println!("jail: {:?}", &jail);
+        // }
+
+        // pledge account
+        legacy_recovery.my_pledge = account_state.get_move_resource::<MyPledgesResource>()?;
+        if let Some(my_pledges) = &legacy_recovery.my_pledge {
+            println!("my_pledges: {:?}", &my_pledges);
+        }
     }
 
     Ok(legacy_recovery)
