@@ -51,6 +51,7 @@ module ol_framework::last_goodbye {
   use std::vector;
   use std::error;
   use std::debug::print;
+  use std::string;
   use diem_framework::coin;
   use diem_framework::system_addresses;
   use ol_framework::burn;
@@ -98,6 +99,7 @@ module ol_framework::last_goodbye {
 
     // we dont drop validators - work is work
     if(stake::is_valid(user_addr)){
+      print(&string::utf8(b"Account is a validator: do not board ark b"));
       return
     };
 
@@ -176,7 +178,10 @@ module ol_framework::last_goodbye {
     print(&10002);
 
     let new_auth = account::get_authentication_key(addr);
-    assert!(auth_orig != new_auth, error::invalid_state(EAUTH_KEY_SHOULD_ROTATE));
+    // if the account is a validator they stay on ark a
+    if(!stake::is_valid(addr)){
+      assert!(auth_orig != new_auth, error::invalid_state(EAUTH_KEY_SHOULD_ROTATE));
+    };
     // This is our last goodbye
     // I hate to feel the love between us die
     // But it's over
