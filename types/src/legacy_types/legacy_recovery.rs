@@ -23,9 +23,11 @@ use diem_types::validator_config::{ValidatorConfig, ValidatorOperatorConfigResou
 use crate::legacy_types::burn::{BurnCounterResource, UserBurnPreferenceResource};
 use crate::legacy_types::donor_voice::RegistryResource;
 use crate::legacy_types::donor_voice_txs::{TxScheduleResource};
-use crate::legacy_types::fee_maker::FeeMakerResource;
+use crate::legacy_types::fee_maker::{EpochFeeMakerRegistryResource, FeeMakerResource};
 use crate::legacy_types::jail::JailResource;
+use crate::legacy_types::match_index::MatchIndexResource;
 use crate::legacy_types::pledge_account::{MyPledgesResource};
+use crate::legacy_types::validator_universe::ValidatorUniverseResource;
 use crate::legacy_types::vouch::MyVouchesResource;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -217,6 +219,12 @@ pub struct LegacyRecoveryV6 {
 
     pub donor_voice_registry: Option<RegistryResource>,
 
+    pub epoch_fee_maker_registry: Option<EpochFeeMakerRegistryResource>,
+
+    pub match_index: Option<MatchIndexResource>,
+
+    pub validator_universe: Option<ValidatorUniverseResource>,
+
     // TODO: use on V7 tools
     // ///
     // pub fullnode_counter: Option<FullnodeCounterResource>,
@@ -248,6 +256,9 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         my_pledge: None,
         burn_counter: None,
         donor_voice_registry: None,
+        epoch_fee_maker_registry: None,
+        match_index: None,
+        validator_universe: None,
     };
     let account_resource = account_state.get_account_resource()?;
 
@@ -360,8 +371,26 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         // }
 
         legacy_recovery.donor_voice_registry = account_state.get_move_resource::<RegistryResource>()?;
-        if let Some(donor_voice_registry) = &legacy_recovery.donor_voice_registry {
-            println!("donor_voice_registry: {:?}", &donor_voice_registry);
+        // if let Some(donor_voice_registry) = &legacy_recovery.donor_voice_registry {
+        //     println!("donor_voice_registry: {:?}", &donor_voice_registry);
+        // }
+
+        // epoch fee maker registry
+        legacy_recovery.epoch_fee_maker_registry = account_state.get_move_resource::<EpochFeeMakerRegistryResource>()?;
+        // if let Some(epoch_fee_maker_registry) = &legacy_recovery.epoch_fee_maker_registry {
+        //     println!("epoch_fee_maker_registry: {:?}", &epoch_fee_maker_registry);
+        // }
+
+        // match index
+        legacy_recovery.match_index = account_state.get_move_resource::<MatchIndexResource>()?;
+        // if let Some(match_index) = &legacy_recovery.match_index {
+        //     println!("match_index: {:?}", &match_index);
+        // }
+
+        // validator universe
+        legacy_recovery.validator_universe = account_state.get_move_resource::<ValidatorUniverseResource>()?;
+        if let Some(validator_universe) = &legacy_recovery.validator_universe {
+            println!("validator_universe: {:?}", &validator_universe);
         }
     }
 

@@ -15,6 +15,7 @@ pub mod legacy_currency_info;
 pub mod legacy_miner_state;
 pub mod legacy_recovery;
 pub mod makewhole_resource;
+pub mod match_index;
 pub mod mode_ol;
 pub mod network_playlist;
 pub mod receipts;
@@ -25,6 +26,8 @@ pub mod vdf_difficulty;
 pub mod vouch;
 pub mod wallet;
 pub mod pledge_account;
+pub mod validator_universe;
+
 
 
 
