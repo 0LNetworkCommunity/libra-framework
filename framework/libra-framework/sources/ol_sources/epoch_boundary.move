@@ -1,9 +1,9 @@
 
 module diem_framework::epoch_boundary {
-    use ol_framework::slow_wallet;
-    use ol_framework::musical_chairs;
-    use ol_framework::proof_of_fee;
-    use ol_framework::stake;
+    use ol_framework::slow_wallet; //ok
+    use ol_framework::musical_chairs; //ok
+    use ol_framework::proof_of_fee; //ok
+    use ol_framework::stake; // ?
     use ol_framework::libra_coin::LibraCoin;
     use ol_framework::rewards;
     use ol_framework::jail;
@@ -18,8 +18,9 @@ module diem_framework::epoch_boundary {
     use ol_framework::libra_coin;
     use ol_framework::match_index;
     use ol_framework::community_wallet_init;
-
     use ol_framework::testnet;
+
+    use diem_framework::account;
     use diem_framework::reconfiguration;
     use diem_framework::transaction_fee;
     use diem_framework::system_addresses;
@@ -40,8 +41,8 @@ module diem_framework::epoch_boundary {
     /// The transaction fee coin has not been initialized
     const ETX_FEES_NOT_INITIALIZED: u64 = 0;
 
-    /// Epoch trigger only implemented on mainnet
-    const ETRIGGER_EPOCH_MAINNET: u64 = 1;
+    /// Epoch trigger can only be called on mainnet or in smoketests
+    const ETRIGGER_EPOCH_UNAUTHORIZED: u64 = 1;
 
     /// Epoch is not ready for reconfiguration
     const ETRIGGER_NOT_READY: u64 = 2;
@@ -228,8 +229,9 @@ module diem_framework::epoch_boundary {
     /// by a user, would not cause a halt.
     public(friend) fun trigger_epoch(framework_signer: &signer) acquires BoundaryBit,
     BoundaryStatus {
-      // must be mainnet
-      assert!(!testnet::is_not_mainnet(), ETRIGGER_EPOCH_MAINNET);
+      // COMMIT NOTE: there's no reason to gate this, if th trigger is not
+      // ready (which only happens on Main and Stage, then user will get an error)
+      // assert!(!testnet::is_testnet(), ETRIGGER_EPOCH_MAINNET);
       // must get root permission from governance.move
       system_addresses::assert_diem_framework(framework_signer);
       let _ = can_trigger(); // will abort if false
@@ -245,9 +247,9 @@ module diem_framework::epoch_boundary {
     // utility to use in smoke tests
     public entry fun smoke_trigger_epoch(framework_signer: &signer) acquires BoundaryBit,
     BoundaryStatus {
-      // cannot call thsi on mainnet
+      // cannot call this on mainnet
       // only for smoke testing
-      assert!(testnet::is_not_mainnet(), 666);
+      assert!(testnet::is_not_mainnet(), ETRIGGER_EPOCH_UNAUTHORIZED);
       // must get 0x1 sig from governance.move
       system_addresses::assert_diem_framework(framework_signer);
       let state = borrow_global_mut<BoundaryBit>(@ol_framework);
@@ -415,6 +417,11 @@ module diem_framework::epoch_boundary {
     let i = 0;
     while (i < vector::length(&vals)) {
       let addr = vector::borrow(&vals, i);
+      // belt and suspenders for dropped accounts in hard fork.
+      if (!account::exists_at(*addr)) {
+        i = i + 1;
+        continue
+      };
       let performed = vector::contains(&compliant_vals, addr);
       if (!performed) {
         jail::jail(root, *addr);
@@ -430,12 +437,12 @@ module diem_framework::epoch_boundary {
       i = i + 1;
     };
 
+    // TODO: why are we passing compliant_vals back if we are not modifying?
     return (compliant_vals, reward_deposited)
   }
 
   fun process_incoming_validators(root: &signer, status: &mut BoundaryStatus, compliant_vals: vector<address>, n_seats: u64) {
     system_addresses::assert_ol(root);
-
 
     // check amount of fees expected
     let (auction_winners, all_bidders, only_qualified_bidders, entry_fee) = proof_of_fee::end_epoch(root, &compliant_vals, n_seats);

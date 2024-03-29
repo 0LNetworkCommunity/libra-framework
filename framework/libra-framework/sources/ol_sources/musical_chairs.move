@@ -2,12 +2,13 @@ module ol_framework::musical_chairs {
     use diem_framework::chain_status;
     use diem_framework::system_addresses;
     use diem_framework::stake;
+    use diem_framework::account;
     use ol_framework::grade;
     use std::fixed_point32;
     use std::vector;
-    // use diem_std::debug::print;
 
     friend diem_framework::genesis;
+    friend diem_framework::diem_governance;
     friend ol_framework::epoch_boundary;
     #[test_only]
     friend ol_framework::mock;
@@ -75,32 +76,34 @@ module ol_framework::musical_chairs {
         system_addresses::assert_ol(vm);
 
         let validators = stake::get_current_validators();
-        let (compliant_vals, _non, ratio) = eval_compliance_impl(validators, epoch_round);
+        let (compliant_vals, _non, fail_ratio) = eval_compliance_impl(validators, epoch_round);
 
         let chairs = borrow_global_mut<Chairs>(@ol_framework);
 
         let num_compliant_nodes = vector::length(&compliant_vals);
 
-        // failover, there should not be more compliant nodes than seats that
-        // were offered.
-
+        // check for errors. We should not have gone into an epoch where we
+        // had MORE validators than seats offered.
+        // If this happens it's because we are in some kind of a fork condition.
         // return with no changes
         if (num_compliant_nodes > chairs.seats_offered) {
           return (compliant_vals, chairs.seats_offered)
         };
 
         // The happiest case. All filled seats performed well in the last epoch
-        if (fixed_point32::is_zero(*&ratio)) { // handle this here to prevent multiplication error below
+        if (fixed_point32::is_zero(*&fail_ratio)) { // handle this here to prevent multiplication error below
           chairs.seats_offered = chairs.seats_offered + 1;
           return (compliant_vals, chairs.seats_offered)
         };
 
 
-        let non_compliance_pct = fixed_point32::multiply_u64(100, *&ratio);
 
         // Conditions under which seats should be one more than the number of compliant nodes(<= 5%)
         // Sad case. If we are not getting compliance, need to ratchet down the offer of seats in next epoch.
-        // See below find_safe_set_size, how we determine what that number should be
+        // See below find_safe_set_size, how we determine what that number
+        // should be
+        let non_compliance_pct = fixed_point32::multiply_u64(100, *&fail_ratio);
+
         if (non_compliance_pct > 5) {
             chairs.seats_offered = num_compliant_nodes;
         } else {
@@ -121,8 +124,8 @@ module ol_framework::musical_chairs {
     // in case we were not able to fill all the seats offered
     // we don't want to keep incrementing from a baseline which we cannot fill
     // it can spiral out of range.
-    public(friend) fun set_current_seats(vm: &signer, filled_seats: u64): u64 acquires Chairs{
-      system_addresses::assert_ol(vm);
+    public(friend) fun set_current_seats(framework: &signer, filled_seats: u64): u64 acquires Chairs{
+      system_addresses::assert_diem_framework(framework);
       let chairs = borrow_global_mut<Chairs>(@ol_framework);
       chairs.seats_offered = filled_seats;
       chairs.seats_offered
@@ -155,6 +158,11 @@ module ol_framework::musical_chairs {
         let i = 0;
         while (i < val_set_len) {
             let addr = *vector::borrow(&validators, i);
+            // belt and suspenders for dropped accounts in hard fork.
+            if (!account::exists_at(addr)) {
+              i = i + 1;
+              continue
+            };
             let (compliant, _, _, _) = grade::get_validator_grade(addr, highest_net_props);
             // let compliant = true;
             if (compliant) {

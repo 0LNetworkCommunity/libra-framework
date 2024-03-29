@@ -19,17 +19,7 @@ module diem_framework::coin {
     friend ol_framework::libra_coin;
     friend ol_framework::burn;
     friend ol_framework::ol_account;
-    // friend ol_framework::slow_wallet;
-    // friend ol_framework::safe;
-    // friend ol_framework::rewards;
-    // friend ol_framework::pledge_accounts;
-    // friend ol_framework::oracle;
-    // friend ol_framework::multisig_account;
-    // friend ol_framework::match_index;
-    // friend ol_framework::make_whole;
-    // friend ol_framework::infra_escrow;
-    // friend ol_framework::epoch_boundary;
-
+    friend ol_framework::last_goodbye;
     friend diem_framework::genesis;
     friend diem_framework::genesis_migration;
     friend diem_framework::transaction_fee;

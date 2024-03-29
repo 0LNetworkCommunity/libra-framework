@@ -141,6 +141,29 @@ impl LibraSmoke {
         Ok(())
     }
 
+    pub async fn transfer_from_first_val(
+        &mut self,
+        addr: AccountAddress,
+        amount: u64,
+    ) -> anyhow::Result<()> {
+        let mut pub_info = self.swarm.diem_public_info();
+        helpers::transfer(&mut pub_info, &mut self.first_account, addr, amount).await?;
+        Ok(())
+    }
+
+    pub async fn transfer(
+        &mut self,
+        sender_local: &mut LocalAccount,
+        addr: AccountAddress,
+        amount: u64,
+    ) -> anyhow::Result<()> {
+        let mut pub_info = self.swarm.diem_public_info();
+
+        helpers::transfer(&mut pub_info, sender_local, addr, amount).await?;
+
+        Ok(())
+    }
+
     pub fn client(&mut self) -> Client {
         self.swarm.diem_public_info().client().to_owned()
     }
