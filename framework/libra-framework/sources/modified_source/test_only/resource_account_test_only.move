@@ -1,4 +1,4 @@
-
+#[test_only]
 /// A resource account is used to manage resources independent of an account managed by a user.
 /// This contains several utilities to make using resource accounts more effective.
 ///

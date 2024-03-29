@@ -1,3 +1,4 @@
+use anyhow::Context;
 use diem_types::chain_id::NamedChain;
 use libra_framework::{release::ReleaseTarget, upgrade_fixtures};
 use libra_query::query_view;
@@ -18,23 +19,19 @@ pub async fn upgrade_multiple_impl(
     dir_path: &str,
     modules: Vec<&str>,
     prior_release: ReleaseTarget,
-) {
+) -> anyhow::Result<()> {
     upgrade_fixtures::testsuite_maybe_warmup_fixtures();
 
     let d = diem_temppath::TempPath::new();
 
     let mut s = LibraSmoke::new_with_target(Some(1), prior_release)
         .await
-        .expect("could not start libra smoke");
-
-    // let mut s = LibraSmoke::new(Some(1))
-    //     .await
-    //     .expect("could not start libra smoke");
+        .context("could not start libra smoke")?;
 
     let (_, _app_cfg) =
         configure_validator::init_val_config_files(&mut s.swarm, 0, d.path().to_owned())
             .await
-            .expect("could not init validator config");
+            .context("could not init validator config")?;
 
     // This step should fail. The view function does not yet exist in the system address.
     // we will upgrade a new binary which will include this function.
@@ -73,7 +70,7 @@ pub async fn upgrade_multiple_impl(
 
     cli.run()
         .await
-        .expect("cli could not send upgrade proposal");
+        .context("cli could not send upgrade proposal")?;
 
     //////////// VOTING ////////////
 
@@ -82,7 +79,7 @@ pub async fn upgrade_multiple_impl(
         proposal_id: 0,
         should_fail: false,
     }));
-    cli.run().await.expect("alice votes on prop 0");
+    cli.run().await.context("alice votes on prop 0")?;
 
     let query_res = query_view::get_view(
         &s.client(),
@@ -90,8 +87,7 @@ pub async fn upgrade_multiple_impl(
         None,
         Some("0".to_string()),
     )
-    .await
-    .unwrap();
+    .await?;
 
     assert!(
         query_res[0].as_str().unwrap() == "1",
@@ -104,8 +100,7 @@ pub async fn upgrade_multiple_impl(
         Some("0x1::governance_proposal::GovernanceProposal".to_string()),
         Some("0x1, 0".to_string()),
     )
-    .await
-    .unwrap();
+    .await?;
 
     assert!(query_res[0].as_bool().unwrap(), "expected to be closed");
 
@@ -119,8 +114,7 @@ pub async fn upgrade_multiple_impl(
         None,
         Some("0".to_string()),
     )
-    .await
-    .unwrap();
+    .await?;
     assert!(
         query_res[0].as_bool().unwrap(),
         "expected to be able to resolve"
@@ -132,8 +126,7 @@ pub async fn upgrade_multiple_impl(
         None,
         Some("0".to_string()),
     )
-    .await
-    .unwrap();
+    .await?;
 
     let expected_hash = std::fs::read_to_string(script_dir.join("script_sha3")).unwrap();
     assert!(
@@ -154,16 +147,17 @@ pub async fn upgrade_multiple_impl(
         }));
         cli.run()
             .await
-            .unwrap_or_else(|_| panic!("cannot resolve proposal at step {name}"));
+            .map_err(|e| e.context("cannot resolve proposal at step {name}"))?;
     }
 
     //////////// VERIFY SUCCESS ////////////
     let query_res =
         query_view::get_view(&s.client(), "0x1::all_your_base::are_belong_to", None, None)
             .await
-            .expect("no all_your_base module found");
+            .context("no all_your_base module found")?;
     assert!(&query_res.as_array().unwrap()[0]
         .as_str()
         .unwrap()
         .contains("7573")); // bytes for "us"
+    Ok(())
 }

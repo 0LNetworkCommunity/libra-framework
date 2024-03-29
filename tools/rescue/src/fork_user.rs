@@ -11,12 +11,18 @@ pub struct ForkOpts {
     /// path of DB which will be used to start new network
     #[clap(short, long)]
     pub db_dir: PathBuf,
+    /// path to framework MRB file used for upgrade. Usually libra-framework source ./framework/releases/head.mrb
+    #[clap(short, long)]
+    pub framework_mrb_file: PathBuf,
     /// JSON file with list of accounts to drop on new network
     #[clap(short, long)]
     pub account_file: PathBuf,
     /// optional, JSON file with list of new validators. Must already have on-chain configurations
     #[clap(short, long)]
     pub validators_file: Option<PathBuf>,
+    /// optional, short epochs for debugging
+    #[clap(short, long)]
+    pub debug_short_epochs: bool,
 }
 
 impl ForkOpts {
@@ -29,7 +35,13 @@ impl ForkOpts {
         // new validator set
         let vals = UserBlob::get_vals(self.validators_file.clone());
 
-        let cs = session_tools::load_them_onto_ark_b(&self.db_dir, &drop_list, vals)?;
+        let cs = session_tools::load_them_onto_ark_b(
+            self.db_dir.clone(),
+            Some(self.framework_mrb_file.clone()),
+            &drop_list,
+            vals,
+            self.debug_short_epochs,
+        )?;
         let gen_tx = Transaction::GenesisTransaction(WriteSetPayload::Direct(cs));
 
         let out = self.db_dir.join("hard_fork.blob");

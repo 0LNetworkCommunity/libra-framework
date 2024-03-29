@@ -31,8 +31,11 @@ module ol_framework::genesis_migration {
   /// makewhole is not initialized
   const EMAKEWHOLE_NOT_INIT: u64 = 4;
 
+  #[test_only]
+  friend ol_framework::test_migration;
+
   /// Called by root in genesis to initialize the GAS coin
-  public fun migrate_legacy_user(
+  public(friend) fun migrate_legacy_user(
       vm: &signer,
       user_sig: &signer,
       auth_key: vector<u8>,
@@ -59,7 +62,7 @@ module ol_framework::genesis_migration {
 
     // Genesis validators should not receive ANY coins from MINT during testing, testnet, nor mainnet up to this point.
     // they will receive some from the infra escrow.
-    let genesis_balance = coin::balance<LibraCoin>(user_addr);
+    let genesis_balance = libra_coin::balance(user_addr);
 
     assert!(expected_initial_balance >= genesis_balance, error::invalid_state(EGENESIS_BALANCE_TOO_HIGH));
 
@@ -67,7 +70,7 @@ module ol_framework::genesis_migration {
     let c = coin::vm_mint<LibraCoin>(vm, coins_to_mint);
     ol_account::deposit_coins(user_addr, c);
 
-    let new_balance = coin::balance<LibraCoin>(user_addr);
+    let new_balance = libra_coin::balance(user_addr);
 
     assert!(new_balance == expected_initial_balance, error::invalid_state(EBALANCE_MISMATCH));
 
@@ -94,7 +97,7 @@ module ol_framework::genesis_migration {
 
     /// for an uprade using an escrow percent. Only to be called at genesis
   // escrow percent has 6 decimal precision (1m);
-  public fun fork_escrow_init(vm: &signer, user_sig: &signer, to_escrow: u64) {
+  public(friend) fun fork_escrow_init(vm: &signer, user_sig: &signer, to_escrow: u64) {
     system_addresses::assert_vm(vm);
     let user_addr = signer::address_of(user_sig);
     // shouldn't be tracking slow wallets at this point, do a direct withdraw

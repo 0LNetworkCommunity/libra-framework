@@ -71,7 +71,7 @@ async fn test_twin() -> anyhow::Result<()> {
         db_dir: brick_db.clone(),
         blob_path: Some(blob_path.path().to_owned()),
         script_path: None,
-        framework_upgrade: true,
+        framework_mrb_file: None,
         validators_file: Some(temp.path().to_owned()),
     };
     r.run()?;

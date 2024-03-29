@@ -14,7 +14,7 @@ async fn meta_can_start_swarm() {
 
     let payload = public_info
         .transaction_factory()
-        .payload(libra_stdlib::demo_print_this());
+        .payload(libra_stdlib::diem_governance_smoke_trigger_epoch());
 
     let demo_txn = public_info
         .root_account()

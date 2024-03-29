@@ -1,10 +1,21 @@
 SHELL=/usr/bin/env bash
 
 
+## NOTE YOU WILL WANT TO EXPORT:
+# DB_PATH = /root/db
+# ACCOUNT_FILE=/root/libra-framework/tools/rescue/fixtures/fork/sample_fork_user.json
+# VALS_FILE=/root/libra-framework/tools/rescue/fixtures/fork/validators.json
+# and after you get a waypoint:
+# WAYPOINT=33254829:a730d227c26655f2881fc7e9868040f3fec53f9fff6b6b2374b28ceb67912fee
 
 ifndef SOURCE_PATH
 SOURCE_PATH=~/libra-framework
 endif
+
+ifndef MRB_PATH
+MRB_PATH=~/libra-framework/framework/releases/head.mrb
+endif
+
 
 ifndef LIBRA_PATH
 LIBRA_PATH=~/.libra
@@ -59,7 +70,7 @@ install:
 
 ######## WRITESETS ########
 hard-fork-blob:
-	rescue hard-fork --db-dir ${DB_PATH} --validators-file ${VALS_FILE} --account-file ${ACCOUNT_FILE} --staging-mode
+	rescue hard-fork --db-dir ${DB_PATH} --validators-file ${VALS_FILE} --account-file ${ACCOUNT_FILE} --framework-mrb-file ${MRB_PATH} --debug-short-epochs
 
 hard-fork-commit:
 	rescue bootstrap --db-dir ${DB_PATH} --genesis-txn-file ${DB_PATH}/hard_fork.blob --waypoint-to-verify ${WAYPOINT} --commit
@@ -67,7 +78,7 @@ hard-fork-commit:
 
 
 framework-upgrade-blob:
-	rescue rescue-tx --db-dir ${DB_PATH} --framework-upgrade
+	rescue rescue-txs --db-dir ${DB_PATH} --validators-file ${VALS_FILE} --framework-mrb-file ${MRB_PATH}
 
 rescue-commit:
 	rescue bootstrap --db-dir ${DB_PATH} --genesis-txn-file ${DB_PATH}/rescue.blob --waypoint-to-verify ${WAYPOINT} --commit
@@ -99,11 +110,11 @@ fetch-db:
 	@echo "For simplicity, we will use the db from the machine that maintains the epoch-archive-mainnet repo."
 	
 	@echo "Fetching database..."
-	rm -rf ${DB_PATH}
+	#rm -rf ${DB_PATH}
 	wget https://storage.googleapis.com/0l-network/db-33254886.tar.gz -O db-33254886.tar.gz
-	tar -xvzf db-33254886.tar.gz --strip-components=4 home/sirouk/.libra/data-2024-03-14-045027/db
-	mv ./db ${DB_PATH}
-	rm -f db-33254886.tar.gz
+	tar -xvzf db-33254886.tar.gz --strip-components=4 $(DATA_PATH)/db
+
+	#rm -f db-33254886.tar.gz
 
 
 test-api:

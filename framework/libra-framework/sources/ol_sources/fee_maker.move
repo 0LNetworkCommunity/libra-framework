@@ -3,12 +3,15 @@ module ol_framework::fee_maker {
 
     use ol_framework::system_addresses;
     use diem_framework::create_signer;
+    use diem_framework::account;
     use std::vector;
     use std::signer;
 
     // use diem_std::debug::print;
 
     friend diem_framework::transaction_fee;
+    friend diem_framework::genesis;
+    friend ol_framework::epoch_boundary;
 
     /// FeeMaker struct lives on an individual's account
     /// We check how many fees the user has paid.
@@ -26,7 +29,7 @@ module ol_framework::fee_maker {
     }
 
     /// Initialize the registry at the VM address.
-    public fun initialize(ol_framework: &signer) {
+    public(friend) fun initialize(ol_framework: &signer) {
       system_addresses::assert_ol(ol_framework);
       if (!exists<EpochFeeMakerRegistry>(@ol_framework)) {
         let registry = EpochFeeMakerRegistry {
@@ -57,13 +60,18 @@ module ol_framework::fee_maker {
       };
     }
 
-    public fun epoch_reset_fee_maker(vm: &signer): bool acquires EpochFeeMakerRegistry, FeeMaker {
+    public(friend) fun epoch_reset_fee_maker(vm: &signer): bool acquires EpochFeeMakerRegistry, FeeMaker {
       system_addresses::assert_ol(vm);
       let registry = borrow_global_mut<EpochFeeMakerRegistry>(@ol_framework);
       let fee_makers = &registry.fee_makers;
       let i = 0;
       while (i < vector::length(fee_makers)) {
         let account = *vector::borrow(fee_makers, i);
+        // belt and suspenders for dropped accounts in hard fork.
+        if (!account::exists_at(account)) {
+          i = i + 1;
+          continue
+        };
         reset_one_fee_maker(vm, account);
         i = i + 1;
       };
@@ -76,6 +84,7 @@ module ol_framework::fee_maker {
     /// FeeMaker is reset at the epoch boundary, and the lifetime is updated.
     fun reset_one_fee_maker(vm: &signer, account: address) acquires FeeMaker {
       system_addresses::assert_ol(vm);
+      if (!exists<FeeMaker>(account)) return ;
       let fee_maker = borrow_global_mut<FeeMaker>(account);
         fee_maker.lifetime = fee_maker.lifetime + fee_maker.epoch;
         fee_maker.epoch = 0;
@@ -118,6 +127,7 @@ module ol_framework::fee_maker {
 
     //////// GETTERS ///////
 
+    #[view]
     // get list of fee makers
     public fun get_fee_makers(): vector<address> acquires EpochFeeMakerRegistry {
       let registry = borrow_global<EpochFeeMakerRegistry>(@ol_framework);

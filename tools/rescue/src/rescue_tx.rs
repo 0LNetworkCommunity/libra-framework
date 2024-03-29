@@ -18,8 +18,8 @@ pub struct RescueTxOpts {
     /// directory to read/write or the rescue.blob
     pub script_path: Option<PathBuf>,
     #[clap(long)]
-    /// directory to read/write or the rescue.blob
-    pub framework_upgrade: bool,
+    /// path to an MRB file used to upgrade the network at rescue
+    pub framework_mrb_file: Option<PathBuf>,
     #[clap(long)]
     /// optional, JSON file with list of new validators. Must already have on-chain configurations
     #[clap(short, long)]
@@ -45,9 +45,13 @@ impl RescueTxOpts {
             };
 
             Transaction::GenesisTransaction(wp)
-        } else if self.framework_upgrade {
+        } else if self.framework_mrb_file.is_some() {
             let vals = UserBlob::get_vals(self.validators_file.clone());
-            let cs = session_tools::publish_current_framework(&db_path, vals)?;
+            let cs = session_tools::publish_current_framework(
+                db_path.clone(),
+                self.framework_mrb_file.clone(),
+                vals,
+            )?;
             Transaction::GenesisTransaction(WriteSetPayload::Direct(cs))
         } else {
             anyhow::bail!("no options provided, need a --framework-upgrade or a --script-path");
@@ -85,7 +89,7 @@ fn test_create_blob() -> anyhow::Result<()> {
         db_dir: db_root_path.path().to_owned(),
         blob_path: Some(blob_path.path().to_owned()),
         script_path: Some(script_path),
-        framework_upgrade: false,
+        framework_mrb_file: None,
         validators_file: None,
     };
     r.run()?;

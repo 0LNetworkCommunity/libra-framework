@@ -11,6 +11,8 @@ module diem_framework::fungible_asset {
     use std::signer;
     use std::string::String;
 
+    friend diem_framework::primary_fungible_store;
+
     /// Amount cannot be zero.
     const EAMOUNT_CANNOT_BE_ZERO: u64 = 1;
     /// The transfer ref and the fungible asset do not match.
@@ -136,7 +138,7 @@ module diem_framework::fungible_asset {
 
     /// Make an existing object fungible by adding the Metadata resource.
     /// This returns the capabilities to mint, burn, and transfer.
-    public fun add_fungibility(
+    public(friend) fun add_fungibility(
         constructor_ref: &ConstructorRef,
         monitoring_supply_with_maximum: Option<Option<u128>>,
         name: String,
@@ -175,14 +177,14 @@ module diem_framework::fungible_asset {
 
     /// Creates a mint ref that can be used to mint fungible assets from the given fungible object's constructor ref.
     /// This can only be called at object creation time as constructor_ref is only available then.
-    public fun generate_mint_ref(constructor_ref: &ConstructorRef): MintRef {
+    public(friend) fun generate_mint_ref(constructor_ref: &ConstructorRef): MintRef {
         let metadata = object::object_from_constructor_ref<Metadata>(constructor_ref);
         MintRef { metadata }
     }
 
     /// Creates a burn ref that can be used to burn fungible assets from the given fungible object's constructor ref.
     /// This can only be called at object creation time as constructor_ref is only available then.
-    public fun generate_burn_ref(constructor_ref: &ConstructorRef): BurnRef {
+    public(friend) fun generate_burn_ref(constructor_ref: &ConstructorRef): BurnRef {
         let metadata = object::object_from_constructor_ref<Metadata>(constructor_ref);
         BurnRef { metadata }
     }
@@ -190,7 +192,7 @@ module diem_framework::fungible_asset {
     /// Creates a transfer ref that can be used to freeze/unfreeze/transfer fungible assets from the given fungible
     /// object's constructor ref.
     /// This can only be called at object creation time as constructor_ref is only available then.
-    public fun generate_transfer_ref(constructor_ref: &ConstructorRef): TransferRef {
+    public(friend) fun generate_transfer_ref(constructor_ref: &ConstructorRef): TransferRef {
         let metadata = object::object_from_constructor_ref<Metadata>(constructor_ref);
         TransferRef { metadata }
     }
@@ -244,7 +246,7 @@ module diem_framework::fungible_asset {
     }
 
     /// Return the underlying metadata object
-    public fun metadata_from_asset(fa: &FungibleAsset): Object<Metadata> {
+    public(friend) fun metadata_from_asset(fa: &FungibleAsset): Object<Metadata> {
         fa.metadata
     }
 
@@ -255,7 +257,7 @@ module diem_framework::fungible_asset {
     }
 
     /// Return the `amount` of a given fungible asset.
-    public fun amount(fa: &FungibleAsset): u64 {
+    public(friend) fun amount(fa: &FungibleAsset): u64 {
         fa.amount
     }
 
@@ -277,22 +279,22 @@ module diem_framework::fungible_asset {
         store_exists(object::object_address(&store)) && borrow_store_resource(&store).frozen
     }
 
-    public fun asset_metadata(fa: &FungibleAsset): Object<Metadata> {
+    public(friend) fun asset_metadata(fa: &FungibleAsset): Object<Metadata> {
         fa.metadata
     }
 
     /// Get the underlying metadata object from the `MintRef`.
-    public fun mint_ref_metadata(ref: &MintRef): Object<Metadata> {
+    public(friend) fun mint_ref_metadata(ref: &MintRef): Object<Metadata> {
         ref.metadata
     }
 
     /// Get the underlying metadata object from the `TransferRef`.
-    public fun transfer_ref_metadata(ref: &TransferRef): Object<Metadata> {
+    public(friend) fun transfer_ref_metadata(ref: &TransferRef): Object<Metadata> {
         ref.metadata
     }
 
     /// Get the underlying metadata object from the `BurnRef`.
-    public fun burn_ref_metadata(ref: &BurnRef): Object<Metadata> {
+    public(friend) fun burn_ref_metadata(ref: &BurnRef): Object<Metadata> {
         ref.metadata
     }
 
@@ -310,7 +312,7 @@ module diem_framework::fungible_asset {
 
     /// Allow an object to hold a store for fungible assets.
     /// Applications can use this to create multiple stores for isolating fungible assets for different purposes.
-    public fun create_store<T: key>(
+    public(friend) fun create_store<T: key>(
         constructor_ref: &ConstructorRef,
         metadata: Object<T>,
     ): Object<FungibleStore> {
@@ -333,7 +335,7 @@ module diem_framework::fungible_asset {
     }
 
     /// Used to delete a store.  Requires the store to be completely empty prior to removing it
-    public fun remove_store(delete_ref: &DeleteRef) acquires FungibleStore, FungibleAssetEvents {
+    public(friend) fun remove_store(delete_ref: &DeleteRef) acquires FungibleStore, FungibleAssetEvents {
         let store = &object::object_from_delete_ref<FungibleStore>(delete_ref);
         let addr = object::object_address(store);
         let FungibleStore { metadata: _, balance, frozen: _ }
@@ -350,7 +352,7 @@ module diem_framework::fungible_asset {
     }
 
     /// Withdraw `amount` of the fungible asset from `store` by the owner.
-    public fun withdraw<T: key>(
+    public(friend) fun withdraw<T: key>(
         owner: &signer,
         store: Object<T>,
         amount: u64,
@@ -361,13 +363,13 @@ module diem_framework::fungible_asset {
     }
 
     /// Deposit `amount` of the fungible asset to `store`.
-    public fun deposit<T: key>(store: Object<T>, fa: FungibleAsset) acquires FungibleStore, FungibleAssetEvents {
+    public(friend) fun deposit<T: key>(store: Object<T>, fa: FungibleAsset) acquires FungibleStore, FungibleAssetEvents {
         assert!(!is_frozen(store), error::invalid_argument(ESTORE_IS_FROZEN));
         deposit_internal(store, fa);
     }
 
     /// Mint the specified `amount` of the fungible asset.
-    public fun mint(ref: &MintRef, amount: u64): FungibleAsset acquires Metadata {
+    public(friend) fun mint(ref: &MintRef, amount: u64): FungibleAsset acquires Metadata {
         assert!(amount > 0, error::invalid_argument(EAMOUNT_CANNOT_BE_ZERO));
         let metadata = ref.metadata;
         increase_supply(&metadata, amount);
@@ -379,13 +381,13 @@ module diem_framework::fungible_asset {
     }
 
     /// Mint the specified `amount` of the fungible asset to a destination store.
-    public fun mint_to<T: key>(ref: &MintRef, store: Object<T>, amount: u64)
+    public(friend) fun mint_to<T: key>(ref: &MintRef, store: Object<T>, amount: u64)
     acquires Metadata, FungibleStore, FungibleAssetEvents {
         deposit(store, mint(ref, amount));
     }
 
     /// Enable/disable a store's ability to do direct transfers of the fungible asset.
-    public fun set_frozen_flag<T: key>(
+    public(friend) fun set_frozen_flag<T: key>(
         ref: &TransferRef,
         store: Object<T>,
         frozen: bool,
@@ -402,7 +404,7 @@ module diem_framework::fungible_asset {
     }
 
     /// Burns a fungible asset
-    public fun burn(ref: &BurnRef, fa: FungibleAsset) acquires Metadata {
+    public(friend) fun burn(ref: &BurnRef, fa: FungibleAsset) acquires Metadata {
         let FungibleAsset {
             metadata,
             amount,
@@ -412,7 +414,7 @@ module diem_framework::fungible_asset {
     }
 
     /// Burn the `amount` of the fungible asset from the given store.
-    public fun burn_from<T: key>(
+    public(friend) fun burn_from<T: key>(
         ref: &BurnRef,
         store: Object<T>,
         amount: u64
@@ -424,7 +426,7 @@ module diem_framework::fungible_asset {
     }
 
     /// Withdraw `amount` of the fungible asset from the `store` ignoring `frozen`.
-    public fun withdraw_with_ref<T: key>(
+    public(friend) fun withdraw_with_ref<T: key>(
         ref: &TransferRef,
         store: Object<T>,
         amount: u64
@@ -437,7 +439,7 @@ module diem_framework::fungible_asset {
     }
 
     /// Deposit the fungible asset into the `store` ignoring `frozen`.
-    public fun deposit_with_ref<T: key>(
+    public(friend) fun deposit_with_ref<T: key>(
         ref: &TransferRef,
         store: Object<T>,
         fa: FungibleAsset
@@ -450,7 +452,7 @@ module diem_framework::fungible_asset {
     }
 
     /// Transfer `amount` of the fungible asset with `TransferRef` even it is frozen.
-    public fun transfer_with_ref<T: key>(
+    public(friend) fun transfer_with_ref<T: key>(
         transfer_ref: &TransferRef,
         from: Object<T>,
         to: Object<T>,
@@ -461,7 +463,7 @@ module diem_framework::fungible_asset {
     }
 
     /// Extract a given amount from the given fungible asset and return a new one.
-    public fun extract(fungible_asset: &mut FungibleAsset, amount: u64): FungibleAsset {
+    public(friend) fun extract(fungible_asset: &mut FungibleAsset, amount: u64): FungibleAsset {
         assert!(fungible_asset.amount >= amount, error::invalid_argument(EINSUFFICIENT_BALANCE));
         fungible_asset.amount = fungible_asset.amount - amount;
         FungibleAsset {
@@ -472,13 +474,13 @@ module diem_framework::fungible_asset {
 
     /// "Merges" the two given fungible assets. The fungible asset passed in as `dst_fungible_asset` will have a value
     /// equal to the sum of the two (`dst_fungible_asset` and `src_fungible_asset`).
-    public fun merge(dst_fungible_asset: &mut FungibleAsset, src_fungible_asset: FungibleAsset) {
+    public(friend) fun merge(dst_fungible_asset: &mut FungibleAsset, src_fungible_asset: FungibleAsset) {
         let FungibleAsset { metadata: _, amount } = src_fungible_asset;
         dst_fungible_asset.amount = dst_fungible_asset.amount + amount;
     }
 
     /// Destroy an empty fungible asset.
-    public fun destroy_zero(fungible_asset: FungibleAsset) {
+    public(friend) fun destroy_zero(fungible_asset: FungibleAsset) {
         let FungibleAsset { amount, metadata: _ } = fungible_asset;
         assert!(amount == 0, error::invalid_argument(EAMOUNT_IS_NOT_ZERO));
     }

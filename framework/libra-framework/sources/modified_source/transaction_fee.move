@@ -1,5 +1,6 @@
 /// This module provides an interface to burn or collect and redistribute transaction fees.
 module diem_framework::transaction_fee {
+    use diem_framework::account;
     use diem_framework::coin::{Self, AggregatableCoin, BurnCapability, Coin};
     use diem_framework::system_addresses;
     use std::error;
@@ -235,6 +236,11 @@ module diem_framework::transaction_fee {
 
       while (i < vector::length(list)) {
         let from = vector::borrow(list, i);
+        // belt and suspenders for dropped accounts in hard fork.
+        if (!account::exists_at(*from)) {
+          i = i + 1;
+          continue
+        };
         let coin_option = ol_account::vm_withdraw_unlimited(vm, *from, amount);
         if (option::is_some(&coin_option)) {
           let c = option::extract(&mut coin_option);
@@ -381,9 +387,9 @@ module diem_framework::transaction_fee {
     //     collect_fee(bob_addr, 400);
 
     //     // Now Bob must have 1000 less in his account. Alice and Carol have the same amounts.
-    //     assert!(coin::balance<LibraCoin>(alice_addr) == 10000, 0);
-    //     assert!(coin::balance<LibraCoin>(bob_addr) == 9000, 0);
-    //     assert!(coin::balance<LibraCoin>(carol_addr) == 10000, 0);
+    //     assert!(libra_coin::balance(alice_addr) == 10000, 0);
+    //     assert!(libra_coin::balance(bob_addr) == 9000, 0);
+    //     assert!(libra_coin::balance(carol_addr) == 10000, 0);
 
     //     // Block 2 starts.
     //     process_collected_fees();
@@ -391,9 +397,9 @@ module diem_framework::transaction_fee {
 
     //     // Collected fees from Bob must have been assigned to Alice.
     //     // assert!(stake::get_validator_fee(alice_addr) == 900, 0);
-    //     assert!(coin::balance<LibraCoin>(alice_addr) == 10000, 0);
-    //     assert!(coin::balance<LibraCoin>(bob_addr) == 9000, 0);
-    //     assert!(coin::balance<LibraCoin>(carol_addr) == 10000, 0);
+    //     assert!(libra_coin::balance(alice_addr) == 10000, 0);
+    //     assert!(libra_coin::balance(bob_addr) == 9000, 0);
+    //     assert!(libra_coin::balance(carol_addr) == 10000, 0);
 
     //     // Also, aggregator coin is drained and total supply is slightly changed (10% of 1000 is burnt).
     //     let collected_fees = borrow_global<CollectedFeesPerBlock>(@ol_framework);
@@ -405,9 +411,9 @@ module diem_framework::transaction_fee {
     //     collect_fee(bob_addr, 5000);
     //     collect_fee(bob_addr, 4000);
 
-    //     assert!(coin::balance<LibraCoin>(alice_addr) == 10000, 0);
-    //     assert!(coin::balance<LibraCoin>(bob_addr) == 0, 0);
-    //     assert!(coin::balance<LibraCoin>(carol_addr) == 10000, 0);
+    //     assert!(libra_coin::balance(alice_addr) == 10000, 0);
+    //     assert!(libra_coin::balance(bob_addr) == 0, 0);
+    //     assert!(libra_coin::balance(carol_addr) == 10000, 0);
 
     //     // Block 3 starts.
     //     process_collected_fees();
@@ -415,10 +421,10 @@ module diem_framework::transaction_fee {
 
     //     // Collected fees should have been assigned to Bob because he was the peoposer.
     //     // assert!(stake::get_validator_fee(alice_addr) == 900, 0);
-    //     assert!(coin::balance<LibraCoin>(alice_addr) == 10000, 0);
+    //     assert!(libra_coin::balance(alice_addr) == 10000, 0);
     //     // assert!(stake::get_validator_fee(bob_addr) == 8100, 0);
-    //     assert!(coin::balance<LibraCoin>(bob_addr) == 0, 0);
-    //     assert!(coin::balance<LibraCoin>(carol_addr) == 10000, 0);
+    //     assert!(libra_coin::balance(bob_addr) == 0, 0);
+    //     assert!(libra_coin::balance(carol_addr) == 10000, 0);
 
     //     // Again, aggregator coin is drained and total supply is changed by 10% of 9000.
     //     let collected_fees = borrow_global<CollectedFeesPerBlock>(@diem_framework);
@@ -435,8 +441,8 @@ module diem_framework::transaction_fee {
     //     register_proposer_for_fee_collection(alice_addr);
 
     //     // Check that 2000 was collected from Alice.
-    //     assert!(coin::balance<LibraCoin>(alice_addr) == 8000, 0);
-    //     assert!(coin::balance<LibraCoin>(bob_addr) == 0, 0);
+    //     assert!(libra_coin::balance(alice_addr) == 8000, 0);
+    //     assert!(libra_coin::balance(bob_addr) == 0, 0);
 
     //     // Carol must have some fees assigned now.
     //     let collected_fees = borrow_global<CollectedFeesPerBlock>(@diem_framework);

@@ -50,15 +50,36 @@ module ol_framework::last_goodbye {
   use std::option;
   use std::vector;
   use std::error;
-  use diem_framework::account;
+  use std::debug::print;
+  use std::string;
+  use diem_framework::coin;
   use diem_framework::system_addresses;
   use ol_framework::burn;
   use ol_framework::libra_coin::LibraCoin;
-  use diem_framework::coin;
+  use ol_framework::pledge_accounts;
+  use ol_framework::receipts;
+  use ol_framework::jail;
+  use ol_framework::vouch;
+  use ol_framework::slow_wallet;
+  use ol_framework::stake;
+
+  use diem_framework::account;
+
   #[test_only]
   use ol_framework::ol_account;
+  #[test_only]
+  use ol_framework::match_index;
+  #[test_only]
+  use ol_framework::validator_universe;
 
-  // use std::debug::print;
+
+  #[test_only]
+  friend ol_framework::test_boundary;
+  #[test_only]
+  friend ol_framework::test_last_goodbye;
+
+
+
 
   /// the key should have rotated
   const EAUTH_KEY_SHOULD_ROTATE: u64 = 0;
@@ -76,6 +97,13 @@ module ol_framework::last_goodbye {
       return
     };
 
+    // we dont drop validators - work is work
+    if(stake::is_valid(user_addr)){
+      print(&string::utf8(b"Account is a validator: do not board ark b"));
+      return
+    };
+
+    print(&2000);
     // do all the necessary coin accounting prior to removing the account.
     let total_bal = coin::balance<LibraCoin>(user_addr);
 
@@ -94,11 +122,35 @@ module ol_framework::last_goodbye {
       let good_capital = option::extract(&mut all_coins_opt);
       burn::burn_and_track(good_capital);
     };
+    print(&2001);
 
     option::destroy_none(all_coins_opt);
 
+    // dangling state in receipts could allow user to participate in community
+    // wallets
+        print(&2002);
+
+    receipts::hard_fork_sanitize(vm, user);
+            print(&2003);
+
+    jail::garbage_collection(user);
+            print(&2004);
+
+    vouch::hard_fork_sanitize(vm, user);
+            print(&2005);
+    
+    slow_wallet::hard_fork_sanitize(vm, user);
+            print(&2006);
+
+    // remove a pledge account if there is one, so that coins there are
+    // not dangling
+    pledge_accounts::hard_fork_sanitize(vm, user);
+            print(&2007);
+
+
     let auth_key = b"Oh, is it too late now to say sorry?";
     vector::trim(&mut auth_key, 32);
+        print(&2008);
 
     // Oh, is it too late now to say sorry?
     // Yeah, I know that I let you down
@@ -108,40 +160,103 @@ module ol_framework::last_goodbye {
     // another function can be called to drop the account::Account completely
     // and then the offline db tools can safely remove the key from db.
     account::rotate_authentication_key_internal(user, auth_key);
+            print(&2009);
+
   }
 
   fun last_goodbye(vm: &signer, user: &signer) {
+    print(&10000);
     let addr = signer::address_of(user);
+    if (!account::exists_at(addr)) {
+      print(&addr);
+      return
+    };
+
+    // we dont drop validators - work is work
+    if(stake::is_valid(addr)){
+      print(&addr);
+      print(&string::utf8(b"Validator boarding ark a"));
+      return
+    };
+
     let auth_orig = account::get_authentication_key(addr);
+    print(&10001);
     dont_think_twice_its_alright(vm, user);
+    print(&10002);
+
     let new_auth = account::get_authentication_key(addr);
-    assert!(auth_orig != new_auth, error::invalid_state(EAUTH_KEY_SHOULD_ROTATE));
-    // This is our last goodbye
-    // I hate to feel the love between us die
-    // But it's over
-    // Just hear this and then I'll go
-    // You gave me more to live for
-    // More than you'll ever know
-    account::hard_fork_drop(vm, user);
+    // if the account is a validator they stay on ark a
+
+      assert!(auth_orig != new_auth, error::invalid_state(EAUTH_KEY_SHOULD_ROTATE));
+
+      // This is our last goodbye
+      // I hate to feel the love between us die
+      // But it's over
+      // Just hear this and then I'll go
+      // You gave me more to live for
+      // More than you'll ever know
+          print(&10003);
+      account::hard_fork_drop(vm, user);
+          print(&10004);
+
+      print(&addr);
+
+      print(&@0xDEAD);
   }
 
-  #[test(vm = @0x0, alice = @0x1000a)]
-    fun bang_bang(vm: &signer, alice: &signer) {
+  #[test_only]
+  public(friend) fun danger_framework_gc(vm: &signer) {
+    system_addresses::assert_vm(vm);
+    match_index::garbage_collection();
+    slow_wallet::garbage_collection();
+    validator_universe::garbage_collection();
+  }
+
+  #[test_only]
+  public(friend) fun danger_user_gc(vm: &signer, user: &signer) {
+    system_addresses::assert_vm(vm);
+
+    jail::garbage_collection(user);
+  }
+
+
+  #[test_only]
+  // belt and suspenders
+  public(friend) fun danger_test_last_goodby(vm: &signer, alice: &signer) {
+    system_addresses::assert_vm(vm);
+
+    last_goodbye(vm, alice);
+  }
+
+
+  #[test(vm = @0x0, framework = @0x1, alice = @0x1000a, bob = @0x1111b)]
+    fun bang_bang(vm: &signer, framework: &signer, alice: address, bob: &signer) {
       use diem_framework::account;
+      use ol_framework::mock;
 
-      let a_addr = signer::address_of(alice);
-      account::create_account_for_test(a_addr);
-      assert!(account::exists_at(a_addr), 735701); // Confirm Alice's account exists
+      account::maybe_initialize_duplicate_originating(framework);
+      mock::genesis_n_vals(framework, 1);
 
-      last_goodbye(vm, alice);
+      let b_addr = signer::address_of(bob);
+      account::create_account_for_test(b_addr);
+      assert!(account::exists_at(b_addr), 735701); // Confirm Bob's account exists
+
+      last_goodbye(vm, bob);
       // Ensure the account DOES NOT exist at all
-      assert!(!account::exists_at(a_addr), 735702);
+      assert!(!account::exists_at(b_addr), 735702);
+      // is a tombstone
+      assert!(account::is_tombstone(b_addr), 735703);
+      assert!(!account::is_tombstone(alice), 735704);
+      assert!(!slow_wallet::is_slow(b_addr), 735704);
+
     }
 
-  #[test(vm = @0x0, alice = @0x1000a)]
-    fun k_bai(vm: &signer, alice: &signer) {
+  #[test(vm = @0x0, framework = @0x1, alice = @0x1111a)]
+    fun k_bai(vm: &signer, framework: &signer, alice: &signer) {
       use diem_framework::account;
+      use ol_framework::mock;
 
+      mock::ol_test_genesis(framework);
       let a_addr = signer::address_of(alice);
       account::create_account_for_test(a_addr);
       assert!(account::exists_at(a_addr), 7357); // Confirm Alice's account exists
@@ -157,6 +272,25 @@ module ol_framework::last_goodbye {
     }
 
     #[test(vm = @0x0, framework = @0x1, alice = @0x1000a)]
+    fun validator_can_stay(vm: &signer, framework: &signer, alice: &signer) {
+      use diem_framework::account;
+      use ol_framework::mock;
+
+      mock::genesis_n_vals(framework, 1);
+      let a_addr = signer::address_of(alice);
+      assert!(account::exists_at(a_addr), 7357); // Confirm Alice's account exists
+
+      let auth_orig = account::get_authentication_key(a_addr);
+
+      dont_think_twice_its_alright(vm, alice);
+      assert!(account::exists_at(a_addr), 7357); // Ensure the account still exists after operation
+
+      // Verify if the authentication key changed as expected
+      let auth_changed = account::get_authentication_key(a_addr);
+      assert!(auth_changed == auth_orig, 7358); // Confirm the authentication key was not altered
+    }
+
+    #[test(vm = @0x0, framework = @0x1, alice = @0x1111a)]
     fun k_bai_balance(vm: &signer, framework: &signer, alice: &signer) {
       use diem_framework::account;
       use ol_framework::mock;
@@ -165,7 +299,7 @@ module ol_framework::last_goodbye {
 
       let a_addr = signer::address_of(alice);
       ol_account::create_account(vm, a_addr);
-      assert!(account::exists_at(a_addr), 735701); // Verify Alice's account was successfully created
+      assert!(account::exists_at(a_addr), 735701); // Verify Bob's account was successfully created
 
       let auth_orig = account::get_authentication_key(a_addr);
 
@@ -185,37 +319,39 @@ module ol_framework::last_goodbye {
       assert!(auth_changed != auth_orig, 735705); // Confirm the authentication key was altered
     }
 
-  #[test(vm = @0x0, framework = @0x1, alice = @0x1000a)]
-  fun k_bai_global_balance(vm: &signer, framework: &signer, alice: &signer) {
+  #[test(vm = @0x0, framework = @0x1, alice = @0x1000a, bob = @0x1000b)]
+  fun k_bai_global_balance(vm: &signer, framework: &signer, alice: &signer, bob: &signer) {
     use diem_framework::account;
     use ol_framework::mock;
     use ol_framework::libra_coin;
 
     // Initialize the framework and set initial conditions
     mock::genesis_n_vals(framework, 1);
-    mock::ol_initialize_coin_and_fund_vals(framework, 10000, true);
+    mock::ol_initialize_coin_and_fund_vals(framework, 10000000, true);
+
 
     // Check the initial global supply
     let existing_supply_pre = libra_coin::supply();
     assert!(existing_supply_pre > 0, 735701); // Ensure there's an initial supply
 
-    let a_addr = signer::address_of(alice);
-    assert!(account::exists_at(a_addr), 735702); // Verify Alice's account exists
+    let b_addr = signer::address_of(bob);
+    ol_account::transfer(alice, b_addr, 350000);
+    assert!(account::exists_at(b_addr), 735702); // Verify Bob's account exists
 
-    // Retrieve and assert Alice's initial balance
-    let (_, total_bal_pre) = ol_account::balance(a_addr);
-    assert!(total_bal_pre == 10000, 735703); // Expected balance before operation
+    // Retrieve and assert Bob's initial balance
+    let (_, total_bal_pre) = ol_account::balance(b_addr);
+    assert!(total_bal_pre == 350000, 735703); // Expected balance before operation
 
     // Perform the account modification operation
-    dont_think_twice_its_alright(vm, alice);
-    assert!(account::exists_at(a_addr), 735704); // Account should still exist
+    dont_think_twice_its_alright(vm, bob);
+    assert!(account::exists_at(b_addr), 735704); // Account should still exist
 
     // Assert the authentication key was changed
-    let auth_orig_post = account::get_authentication_key(a_addr);
+    let auth_orig_post = account::get_authentication_key(b_addr);
     assert!(auth_orig_post != b"Oh, is it too late now to say sorry?", 735705);
 
-    // Assert Alice's balance is now 0 after the operation
-    let (_, total_bal_post) = ol_account::balance(a_addr);
+    // Assert Bob's balance is now 0 after the operation
+    let (_, total_bal_post) = ol_account::balance(b_addr);
     assert!(total_bal_post == 0, 735706); // Balance should be zero
 
     // Check the global supply after the operation
@@ -223,25 +359,30 @@ module ol_framework::last_goodbye {
     assert!(existing_supply_post < existing_supply_pre, 735707); // Global supply should decrease
   }
 
-  #[test(vm = @0x0,framework = @0x1, alice = @0x1000a)]
-  fun k_bai_effect_on_global_burns(vm: &signer, framework: &signer, alice: &signer) {
+  #[test(vm = @0x0,framework = @0x1, alice = @0x1000a, bob = @0x1000b)]
+  fun k_bai_effect_on_global_burns(vm: &signer, framework: &signer, alice: &signer, bob: &signer) {
     use ol_framework::mock;
     use ol_framework::burn;
     use ol_framework::libra_coin;
     use std::signer;
 
-    // Initialize the testing environment and mint coins to Alice's account.
+    // Initialize the testing environment and mint coins to Bob's account.
     mock::genesis_n_vals(framework, 1);
-    let mint_amount = 10000;
-    mock::ol_initialize_coin_and_fund_vals(framework, mint_amount, true);
 
-    let alice_addr = signer::address_of(alice);
+    mock::ol_initialize_coin_and_fund_vals(framework, 1000000, true);
+    
+
+    let b_addr = signer::address_of(bob);
+    
+    ol_account::transfer(alice, b_addr, 350000);
+
+    let bob_addr = signer::address_of(bob);
 
     // Capture the global supply and burn counters before operation.
     let global_supply_pre = libra_coin::supply();
     let (burned_pre, recycled_pre) = burn::get_lifetime_tracker();
 
-    dont_think_twice_its_alright(vm, alice);
+    dont_think_twice_its_alright(vm, bob);
 
     // Capture the global supply and burn counters after operation.
     let global_supply_post = libra_coin::supply();
@@ -257,8 +398,8 @@ module ol_framework::last_goodbye {
     // Assert the global supply of coins has decreased if the coins were burned,
     assert!(global_supply_post < global_supply_pre, 7357004);
 
-    // Verify Alice's account balance is zero after the operation.
-    let (_, alice_balance_post) = ol_account::balance(alice_addr);
-    assert!(alice_balance_post == 0, 7357003);
+    // Verify Bob's account balance is zero after the operation.
+    let (_, bob_balance_post) = ol_account::balance(bob_addr);
+    assert!(bob_balance_post == 0, 7357003);
   }
 }

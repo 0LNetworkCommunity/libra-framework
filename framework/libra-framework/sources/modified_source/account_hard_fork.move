@@ -31,8 +31,10 @@ module diem_framework::account {
 
     #[test_only]
     friend diem_framework::diem_account;
-
+    #[test_only]
     friend diem_framework::resource_account;
+
+    // friend diem_framework::resource_account;
     //////// end 0L ////////
 
     /// Resource representing an account.
@@ -91,25 +93,33 @@ module diem_framework::account {
 
 
     public(friend) fun hard_fork_drop(root: &signer, user: &signer) acquires
-    Account {
+    Account, MigrateOriginatingAddress {
       system_addresses::assert_ol(root);
-      // let a = move_from<Account>(user);
-      let Account { //
-          authentication_key: _,
-          sequence_number: _,
-          guid_creation_num: _,
-          coin_register_events: _,
-          key_rotation_events: _,
-          rotation_capability_offer: _,
-          signer_capability_offer: _,
-      } = move_from<Account>(signer::address_of(user));
+      let addr = signer::address_of(user);
+      let _ = move_from<Account>(addr);
+
+      let duplicate_table = &mut borrow_global_mut<MigrateOriginatingAddress>(@ol_framework).duplicates_map;
+      let tomb_auth_as_addr = from_bcs::to_address(tomb_auth());
+      if (table::contains(duplicate_table, tomb_auth_as_addr)) {
+        let entry = table::borrow_mut(duplicate_table, tomb_auth_as_addr);
+        vector::push_back(&mut entry.list, addr);
+      } else {
+        table::add(
+          duplicate_table,
+          tomb_auth_as_addr,
+          DuplicatedAuthKeys {
+            list: vector::singleton(addr),
+          }
+        )
+      }
+
 
     }
     // migrate on the fly only if we need it in migration
-    public(friend) fun maybe_initialize_duplicate_originating(root: &signer) {
-      system_addresses::assert_ol(root);
+    public(friend) fun maybe_initialize_duplicate_originating(diem_framework: &signer) {
+      system_addresses::assert_diem_framework(diem_framework);
       if (!exists<MigrateOriginatingAddress>(@ol_framework)) {
-        move_to(root, MigrateOriginatingAddress {
+        move_to(diem_framework, MigrateOriginatingAddress {
           duplicates_map: table::new(),
         });
       }
@@ -222,10 +232,14 @@ module diem_framework::account {
     const EOFFERER_ADDRESS_DOES_NOT_EXIST: u64 = 17;
     /// The specified rotation capablity offer does not exist at the specified offerer address
     const ENO_SUCH_ROTATION_CAPABILITY_OFFER: u64 = 18;
-    // The signer capability is not offered to any address
+    /// The signer capability is not offered to any address
     const ENO_SIGNER_CAPABILITY_OFFERED: u64 = 19;
-    // This account has exceeded the allocated GUIDs it can create. It should be impossible to reach this number for real applications.
+    /// This account has exceeded the allocated GUIDs it can create. It should be impossible to reach this number for real applications.
     const EEXCEEDED_MAX_GUID_CREATION_NUM: u64 = 20;
+
+    /// This key cannot be used to create accounts. The address may have
+    /// malformed state. And says, "My advice is to not let the boys in".
+    const ETOMBSTONE: u64 = 21;
 
     /// Explicitly separate the GUID space between Object and Account to prevent accidental overlap.
     const MAX_GUID_CREATION_NUM: u64 = 0x4000000000000;
@@ -243,13 +257,19 @@ module diem_framework::account {
 
 
     /// 0L: creates account from VM signer, for use at genesis, e.g. hard fork migration.
-    public (friend) fun vm_create_account(root: &signer, new_address: address, authentication_key: vector<u8>): signer {
+    public (friend) fun vm_create_account(root: &signer, new_address: address,
+    authentication_key: vector<u8>): signer acquires MigrateOriginatingAddress {
       system_addresses::assert_ol(root);
       ol_create_account_with_auth(new_address, authentication_key)
     }
     /// 0L: account creation uses the address of the sender as the address of the new account.
-    fun ol_create_account_with_auth(new_address: address, authentication_key: vector<u8>): signer {
+    fun ol_create_account_with_auth(new_address: address, authentication_key:
+    vector<u8>): signer acquires MigrateOriginatingAddress {
         let new_account = create_signer(new_address);
+
+        // prevent reincarnation of accounts where there may be malformed state
+        // during pending deletion.
+        assert!(!is_tombstone(new_address), error::already_exists(ETOMBSTONE));
 
         // there cannot be an Account resource under new_addr already.
         assert!(!exists<Account>(new_address), error::already_exists(EACCOUNT_ALREADY_EXISTS));
@@ -297,7 +317,8 @@ module diem_framework::account {
     /// `new_address`.
     public(friend) fun create_account(new_address: address): signer {
         // there cannot be an Account resource under new_addr already.
-        assert!(!exists<Account>(new_address), error::already_exists(EACCOUNT_ALREADY_EXISTS));
+        assert!(!exists<Account>(new_address),
+        error::already_exists(EACCOUNT_ALREADY_EXISTS));
 
         // NOTE: @core_resources gets created via a `create_account` call, so we do not include it below.
         assert!(
@@ -343,6 +364,54 @@ module diem_framework::account {
     #[view]
     public fun exists_at(addr: address): bool {
         exists<Account>(addr)
+    }
+
+    #[view]
+    /// was this address dropped from db previously. Prevents reincarnation of
+    // accounts with ghost state from unsuccessfully sanitizing telephones.
+    public fun is_tombstone(addr: address): bool acquires
+    MigrateOriginatingAddress {
+        // The sweet pretty things are in bed now of course
+        // The city fathers they're trying to endorse
+        // The reincarnation of Paul Revere's horse
+        // But the town has no need to be nervous.
+        let duplicate_table = &borrow_global<MigrateOriginatingAddress>(@ol_framework).duplicates_map;
+
+        let tomb_auth_as_addr = from_bcs::to_address(tomb_auth());
+        if (table::contains(duplicate_table, tomb_auth_as_addr)) {
+          let entry = table::borrow(duplicate_table, tomb_auth_as_addr);
+          vector::contains(&entry.list, &addr)
+        } else {
+          false
+        }
+      // Mama's in the fact'ry
+      // She ain't got no shoes
+      // Daddy's in the alley
+      // He's lookin' for food
+      // I'm in the kitchen
+      // With the tombstone blues
+    }
+
+    // Tombstone is a backstop on account operations while an account is pending
+    // being dropped.
+    // When an account is dropped through a VM function
+    // you need to sanitize all the telephones and datastrutures
+    // on that account.
+    // If you fail to sanitize every account struct, there may be dangling garbage
+    // on that address. If an ark_b user then gets re-onboarded with the same
+    // account (and authkey) then they may have the ability to use that state in
+    // transactions.
+    // As a backstop to all these cases, a tombstone can be placed on the address.
+    // That way all modules and clients can know to reject operations on
+    // that address.
+    /// And the National Bank at a profit sells road maps for the soul
+    public fun tomb_auth(): vector<u8>{
+      let auth_key = b"Oh, is it too late now to say sorry?";
+      // Oh, is it too late now to say sorry?
+      // Yeah, I know that I let you down
+      // Is it too late to say I'm sorry now?
+      vector::trim(&mut auth_key, 32);
+      auth_key
     }
 
     #[view]

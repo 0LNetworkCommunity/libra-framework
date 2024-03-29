@@ -12,6 +12,9 @@ module ol_framework::testnet {
     /// yo! only root should be trying this
     const EWHY_U_NO_ROOT: u64 = 2;
 
+    // NOTE: these getters are public no need to be (friend)
+
+    //////// 0L ////////
     public fun is_testnet(): bool {
         chain_id::get() == 4
     }

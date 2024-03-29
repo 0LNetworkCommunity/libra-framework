@@ -4,10 +4,10 @@
 module ol_framework::test_reconfiguration {
   use std::vector;
   use diem_framework::stake;
-  use diem_framework::coin;
+  // use diem_framework::coin;
   use ol_framework::mock;
   use ol_framework::testnet;
-  use ol_framework::libra_coin::LibraCoin;
+  use ol_framework::libra_coin;
   use ol_framework::proof_of_fee;
   use diem_framework::reconfiguration;
   use ol_framework::epoch_helper;
@@ -42,7 +42,7 @@ module ol_framework::test_reconfiguration {
       let vals = stake::get_current_validators();
 
       assert!(vector::length(&vals) == 5, 7357005);
-      // let alice_bal = coin::balance<LibraCoin>(@0x1000a);
+      // let alice_bal = libra_coin::balance(@0x1000a);
       let (_unlocked, alice_bal) = ol_account::balance(@0x1000a);
 
       let (_, entry_fee, _,  _ ) = proof_of_fee::get_consensus_reward();
@@ -58,7 +58,7 @@ module ol_framework::test_reconfiguration {
       let _vals = mock::genesis_n_vals(&root, 5);
       // mock::ol_initialize_coin(&root);
       mock::pof_default();
-      assert!(coin::balance<LibraCoin>(@0x1000a) == 0, 7357000);
+      assert!(libra_coin::balance(@0x1000a) == 0, 7357000);
 
       // NOTE: epoch 0 and 1 are a special case, we don't run performance grades on that one. Need to move two epochs ahead
       reconfiguration::test_helper_increment_epoch_dont_reconfigure(1);
@@ -91,9 +91,9 @@ module ol_framework::test_reconfiguration {
 
       // alice doesn't get paid
 
-      assert!(coin::balance<LibraCoin>(@0x1000a) == 0, 7357005);
+      assert!(libra_coin::balance(@0x1000a) == 0, 7357005);
       // bob does
-      assert!(coin::balance<LibraCoin>(@0x1000b) == (reward - entry_fee), 7357006);
+      assert!(libra_coin::balance(@0x1000b) == (reward - entry_fee), 7357006);
 
 
   }
