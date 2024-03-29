@@ -70,7 +70,7 @@ install:
 
 ######## WRITESETS ########
 hard-fork-blob:
-	rescue hard-fork --db-dir ${DB_PATH} --validators-file ${VALS_FILE} --account-file ${ACCOUNT_FILE} --framework-mrb-file ${MRB_PATH} --debug-short-epochs
+	rescue hard-fork --db-dir ${DB_PATH} --validators-file ${VALS_FILE} --account-file ${ACCOUNT_FILE} --framework-mrb-file ${MRB_PATH}
 
 hard-fork-commit:
 	rescue bootstrap --db-dir ${DB_PATH} --genesis-txn-file ${DB_PATH}/hard_fork.blob --waypoint-to-verify ${WAYPOINT} --commit
