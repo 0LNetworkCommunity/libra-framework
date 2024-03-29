@@ -20,7 +20,8 @@ module ol_framework::slow_wallet {
   // use diem_std::debug::print;
 
   friend diem_framework::genesis;
-
+  friend ol_framework::last_goodbye;
+  
   friend ol_framework::ol_account;
   friend ol_framework::transaction_fee;
   friend ol_framework::epoch_boundary;
@@ -33,13 +34,14 @@ module ol_framework::slow_wallet {
   #[test_only]
   friend ol_framework::test_boundary;
 
+
   /// genesis failed to initialized the slow wallet registry
   const EGENESIS_ERROR: u64 = 1;
 
   /// Maximum possible aggregatable coin value.
   const MAX_U64: u128 = 18446744073709551615;
 
-    struct SlowWallet has key {
+    struct SlowWallet has key, drop {
         unlocked: u64,
         transferred: u64,
     }
@@ -157,8 +159,8 @@ module ol_framework::slow_wallet {
     /// 1: u64, how much was dripped
     public(friend) fun slow_wallet_epoch_drip(vm: &signer, amount: u64): (bool, u64) acquires
     SlowWallet, SlowWalletList{
-
       system_addresses::assert_ol(vm);
+      garbage_collection();
       let list = get_slow_list();
       let len = vector::length<address>(&list);
       if (len == 0) return (false, 0);
@@ -267,7 +269,26 @@ module ol_framework::slow_wallet {
       slow_wallet_epoch_drip(vm, sacred_cows::get_slow_drip_const())
     }
 
-    ///////// GETTERS ////////
+    public(friend) fun hard_fork_sanitize(vm: &signer, user: &signer) acquires
+    SlowWallet {
+      system_addresses::assert_vm(vm);
+      let addr = signer::address_of(user);
+      if (exists<SlowWallet>(addr)) {
+        let _ = move_from<SlowWallet>(addr);
+      }
+    }
+
+    public(friend) fun garbage_collection() acquires SlowWalletList {
+      let state = borrow_global_mut<SlowWalletList>(@diem_framework);
+
+      let to_keep = vector::filter(state.list, |e| {
+        account::exists_at(*e)
+      });
+
+      state.list = to_keep;
+    }
+
+    ///////// SLOW GETTERS ////////
 
     #[view]
     public fun is_slow(addr: address): bool {
@@ -320,6 +341,7 @@ module ol_framework::slow_wallet {
         return vector::empty<address>()
       }
     }
+
 
     ////////// SMOKE TEST HELPERS //////////
     // cannot use the #[test_only] attribute

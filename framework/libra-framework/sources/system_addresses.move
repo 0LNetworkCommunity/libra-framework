@@ -7,7 +7,7 @@ module diem_framework::system_addresses {
     /// The operation can only be performed by the VM
     const EVM: u64 = 2;
     /// The address/account did not correspond to the core framework address
-    const ENOT_APTOS_FRAMEWORK_ADDRESS: u64 = 3;
+    const ENOT_DIEM_FRAMEWORK_ADDRESS: u64 = 3;
     /// The address is not framework reserved address
     const ENOT_FRAMEWORK_RESERVED_ADDRESS: u64 = 4;
 
@@ -26,7 +26,7 @@ module diem_framework::system_addresses {
     public fun assert_diem_framework(account: &signer) {
         assert!(
             is_diem_framework_address(signer::address_of(account)),
-            error::permission_denied(ENOT_APTOS_FRAMEWORK_ADDRESS),
+            error::permission_denied(ENOT_DIEM_FRAMEWORK_ADDRESS),
         )
     }
 

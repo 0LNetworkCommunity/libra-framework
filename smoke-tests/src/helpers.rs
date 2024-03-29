@@ -1,6 +1,6 @@
 use anyhow::Context;
 use diem_forge::DiemPublicInfo;
-use diem_sdk::rest_client::Client;
+use diem_sdk::{rest_client::Client, types::LocalAccount};
 use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib;
 use libra_types::{
@@ -24,6 +24,38 @@ pub async fn get_libra_balance(
     };
 
     Ok(b)
+}
+
+pub async fn transfer(
+    public_info: &mut DiemPublicInfo<'_>,
+    sender_local: &mut LocalAccount,
+    addr: AccountAddress,
+    amount: u64,
+) -> anyhow::Result<()> {
+    let payload = public_info
+        .transaction_factory()
+        .payload(libra_stdlib::ol_account_transfer(addr, amount));
+
+    let tx = sender_local.sign_with_transaction_builder(payload);
+
+    public_info.client().submit_and_wait(&tx).await?;
+    Ok(())
+}
+
+pub async fn create_account(
+    public_info: &mut DiemPublicInfo<'_>,
+    addr: AccountAddress,
+) -> anyhow::Result<()> {
+    let payload = public_info
+        .transaction_factory()
+        .payload(libra_stdlib::ol_account_create_account(addr));
+
+    let mint_txn = public_info
+        .root_account()
+        .sign_with_transaction_builder(payload);
+
+    public_info.client().submit_and_wait(&mint_txn).await?;
+    Ok(())
 }
 
 pub async fn mint_libra(
