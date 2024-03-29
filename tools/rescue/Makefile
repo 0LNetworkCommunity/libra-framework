@@ -1,11 +1,12 @@
 SHELL=/usr/bin/env bash
 
+
 ## NOTE YOU WILL WANT TO EXPORT:
-DB_PATH = /root/db
-ACCOUNT_FILE=/root/libra-framework/tools/rescue/fixtures/fork/sample_fork_user.json
-VALS_FILE=/root/libra-framework/tools/rescue/fixtures/fork/validators.json
+# DB_PATH = /root/db
+# ACCOUNT_FILE=/root/libra-framework/tools/rescue/fixtures/fork/sample_fork_user.json
+# VALS_FILE=/root/libra-framework/tools/rescue/fixtures/fork/validators.json
 # and after you get a waypoint:
-WAYPOINT=33254829:a730d227c26655f2881fc7e9868040f3fec53f9fff6b6b2374b28ceb67912fee
+# WAYPOINT=33254829:a730d227c26655f2881fc7e9868040f3fec53f9fff6b6b2374b28ceb67912fee
 
 ifndef SOURCE_PATH
 SOURCE_PATH=~/libra-framework
@@ -20,6 +21,7 @@ ifndef LIBRA_PATH
 LIBRA_PATH=~/.libra
 endif
 
+
 ifndef DATA_PATH
 DATA_PATH=${LIBRA_PATH}/data
 endif
@@ -28,41 +30,66 @@ ifndef DB_PATH
 DB_PATH=${DATA_PATH}/db
 endif
 
+
+ifndef VALS_FILE
+VALS_FILE=${SOURCE_PATH}/tools/rescue/fixtures/fork/validators.json
+endif
+
+ifndef ACCOUNT_FILE
+ACCOUNT_FILE=${SOURCE_PATH}/tools/rescue/fixtures/fork/sample_fork_user.json
+endif
+
+
 ifndef WAYPOINT
 WAYPOINT=""
 endif
 
-ifndef DEBUG_VALS
-DEBUG_VALS=""
-endif
+
 
 check:
 	git log -n 1 --pretty=format:'%H'
 	@echo "Make sure to verify the git hash above with your peers!"
-	@echo $(foreach val, ${DEBUG_VALS},--debug-vals $(val))
+	@echo "Forked validator set will consist of the following:"
+	@cat ${VALS_FILE}
+
+
 
 ######## BUILD ########
 bins:
-	cd ${SOURCE_PATH}/framework && cargo r release
+	cd ${SOURCE_PATH}/framework && \
+	cargo clean && \
+	cargo r release && \
 	cargo build --release -p rescue
 
 install:
-	cp ${SOURCE_PATH}/target/release/rescue ~/.cargo/bin/
+	sudo cp -f ${SOURCE_PATH}/target/release/rescue ~/.cargo/bin/
+	@echo "The following should match: ${HOME}/.cargo/bin/rescue"
 	@which rescue
 
-######## WRITESETS ########
 
+
+######## WRITESETS ########
 hard-fork-blob:
 	rescue hard-fork --db-dir ${DB_PATH} --validators-file ${VALS_FILE} --account-file ${ACCOUNT_FILE} --framework-mrb-file ${MRB_PATH} --debug-short-epochs
 
 hard-fork-commit:
-	rescue bootstrap --db-dir ${DB_PATH} -g ${DB_PATH}/hard_fork.blob --commit -w ${WAYPOINT}
+	rescue bootstrap --db-dir ${DB_PATH} --genesis-txn-file ${DB_PATH}/hard_fork.blob --waypoint-to-verify ${WAYPOINT} --commit
+	@$(MAKE) update-waypoint
+
 
 framework-upgrade-blob:
 	rescue rescue-txs --db-dir ${DB_PATH} --validators-file ${VALS_FILE} --framework-mrb-file ${MRB_PATH}
 
 rescue-commit:
-	rescue bootstrap --db-dir ${DB_PATH} --genesis-txn-file ${DB_PATH}/rescue.blob --commit -w ${WAYPOINT}
+	rescue bootstrap --db-dir ${DB_PATH} --genesis-txn-file ${DB_PATH}/rescue.blob --waypoint-to-verify ${WAYPOINT} --commit
+	@$(MAKE) update-waypoint
+
+
+update-waypoint:
+	@echo "Updating waypoint.txt with value:"
+	echo ${WAYPOINT} > ${LIBRA_PATH}/genesis/waypoint.txt
+	@cat ${LIBRA_PATH}/genesis/waypoint.txt
+
 
 
 ######## UTILS ########
@@ -78,15 +105,17 @@ backup-db:
 		echo "Backup successful: $$backup_dir"; \
 	fi
 
+fetch-db:
+	@echo "This will be replaced by either starting a fullnode or using a snapshot from the epoch-archive-mainnet repo."
+	@echo "For simplicity, we will use the db from the machine that maintains the epoch-archive-mainnet repo."
+	
+	@echo "Fetching database..."
+	#rm -rf ${DB_PATH}
+	wget https://storage.googleapis.com/0l-network/db-33254886.tar.gz -O db-33254886.tar.gz
+	tar -xvzf db-33254886.tar.gz --strip-components=4 $(DATA_PATH)/db
 
-bad-bad-download-db:
-	@echo THIS IS A BAD PRACTICE, please stop doing it
-	@echo you should be starting a fullnode instead
-	@echo or using a snapshot from https://github.com/0LNetworkCommunity/epoch-archive-mainnet
-	pip install gdown
-	mkdir -p ${DATA_PATH}/0L_upgrade_81/
-	gdown 1AinUVYZknPM6q__W7vqo4xbhzkgiEF82 -O ${DATA_PATH}/db-33254886.tar.gz
-	tar -xvf ${DATA_PATH}/db-33254886.tar.gz
+	#rm -f db-33254886.tar.gz
+
 
 test-api:
 	curl localhost:8080/v1/accounts/0x9A710919B1A1E67EDA335269C0085C91 | jq
