@@ -129,7 +129,7 @@ module diem_framework::reconfiguration {
         // explicitly so that staking can distribute them.
         // transaction_fee::process_collected_fees();
 
-        // On ordinary production cases we e want to check time
+        // On ordinary production cases we want to check time
         // Note: we don't want to check the time at times on off chain
         // governance (rescue misssions, that produce a fork)
         let check_timestamp = true;

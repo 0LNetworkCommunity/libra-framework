@@ -22,8 +22,9 @@ module ol_framework::receipts {
   // use diem_std::debug::print;
 
   friend ol_framework::ol_account;
+  friend ol_framework::last_goodbye;
 
-  struct UserReceipts has key {
+  struct UserReceipts has key, drop {
     destination: vector<address>,
     cumulative: vector<u64>,
     last_payment_timestamp: vector<u64>,
@@ -130,6 +131,16 @@ module ol_framework::receipts {
       };
 
       (timestamp, value, cumu)
+  }
+
+  /// wipe the telephone handle clean.
+  public(friend) fun hard_fork_sanitize(vm: &signer, user: &signer) acquires
+  UserReceipts {
+    system_addresses::assert_vm(vm);
+    let addr = signer::address_of(user);
+    if (exists<UserReceipts>(addr)) {
+      let _ = move_from<UserReceipts>(addr);
+    }
   }
 
   #[view]

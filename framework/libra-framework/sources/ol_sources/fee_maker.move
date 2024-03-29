@@ -3,6 +3,7 @@ module ol_framework::fee_maker {
 
     use ol_framework::system_addresses;
     use diem_framework::create_signer;
+    use diem_framework::account;
     use std::vector;
     use std::signer;
 
@@ -66,6 +67,11 @@ module ol_framework::fee_maker {
       let i = 0;
       while (i < vector::length(fee_makers)) {
         let account = *vector::borrow(fee_makers, i);
+        // belt and suspenders for dropped accounts in hard fork.
+        if (!account::exists_at(account)) {
+          i = i + 1;
+          continue
+        };
         reset_one_fee_maker(vm, account);
         i = i + 1;
       };
@@ -78,6 +84,7 @@ module ol_framework::fee_maker {
     /// FeeMaker is reset at the epoch boundary, and the lifetime is updated.
     fun reset_one_fee_maker(vm: &signer, account: address) acquires FeeMaker {
       system_addresses::assert_ol(vm);
+      if (!exists<FeeMaker>(account)) return ;
       let fee_maker = borrow_global_mut<FeeMaker>(account);
         fee_maker.lifetime = fee_maker.lifetime + fee_maker.epoch;
         fee_maker.epoch = 0;

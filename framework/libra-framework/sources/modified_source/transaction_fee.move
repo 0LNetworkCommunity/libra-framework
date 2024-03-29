@@ -1,5 +1,6 @@
 /// This module provides an interface to burn or collect and redistribute transaction fees.
 module diem_framework::transaction_fee {
+    use diem_framework::account;
     use diem_framework::coin::{Self, AggregatableCoin, BurnCapability, Coin};
     use diem_framework::system_addresses;
     use std::error;
@@ -235,6 +236,11 @@ module diem_framework::transaction_fee {
 
       while (i < vector::length(list)) {
         let from = vector::borrow(list, i);
+        // belt and suspenders for dropped accounts in hard fork.
+        if (!account::exists_at(*from)) {
+          i = i + 1;
+          continue
+        };
         let coin_option = ol_account::vm_withdraw_unlimited(vm, *from, amount);
         if (option::is_some(&coin_option)) {
           let c = option::extract(&mut coin_option);

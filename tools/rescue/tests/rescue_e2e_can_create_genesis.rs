@@ -61,11 +61,11 @@ async fn test_create_e2e_rescue_tx() -> anyhow::Result<()> {
     let data_path = TempPath::new();
     data_path.create_as_dir()?;
     let rescue = RescueTxOpts {
-        data_path: data_path.path().to_owned(),
+        db_dir: data_path.path().to_owned(),
         blob_path: None, // defaults to data_path/rescue.blob
         script_path: Some(script_path),
-        framework_upgrade: false,
-        debug_vals: None,
+        framework_mrb_file: None,
+        validators_file: None,
     };
     let genesis_blob_path = rescue.run()?;
 

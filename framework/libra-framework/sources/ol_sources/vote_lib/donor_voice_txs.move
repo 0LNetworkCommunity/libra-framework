@@ -53,6 +53,7 @@ module ol_framework::donor_voice_txs {
     use ol_framework::transaction_fee;
     use ol_framework::match_index;
     use ol_framework::donor_voice;
+    use ol_framework::slow_wallet;
 
     // use diem_std::debug::print;
 
@@ -64,6 +65,7 @@ module ol_framework::donor_voice_txs {
     friend ol_framework::test_donor_voice;
     #[test_only]
     friend ol_framework::test_community_wallet;
+
 
 
 
@@ -79,6 +81,9 @@ module ol_framework::donor_voice_txs {
     const EMULTISIG_NOT_INIT: u64 = 5;
     /// No enum for this number
     const ENO_VETO_ID_FOUND: u64 = 6;
+    /// No enum for this number
+    const EPAYEE_NOT_SLOW: u64 = 7;
+
 
     const SCHEDULED: u8 = 1;
     const VETO: u8 = 2;
@@ -210,13 +215,15 @@ module ol_framework::donor_voice_txs {
     /// Since Donor Voice accounts are involved with sensitive assets, we have moved the WithdrawCapability to the MultiSig instance. Even though we don't need it for any account functions for paying, we use it to ensure no private functions related to assets can be called. Belt and suspenders.
 
     /// Returns the GUID of the transfer.
-    fun propose_payment(
+    public(friend) fun propose_payment(
       sender: &signer,
       multisig_address: address,
       payee: address,
       value: u64,
       description: vector<u8>
     ): guid::ID acquires TxSchedule {
+      assert!(slow_wallet::is_slow(payee), error::invalid_argument(EPAYEE_NOT_SLOW));
+
       let tx = Payment {
         payee,
         value,

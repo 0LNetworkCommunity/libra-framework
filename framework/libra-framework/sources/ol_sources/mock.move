@@ -168,6 +168,25 @@ module ol_framework::mock {
     }
 
     #[test_only]
+    public fun ol_mint_to(root: &signer, addr: address, amount: u64) {
+      system_addresses::assert_ol(root);
+
+
+      let mint_cap = if (coin::is_coin_initialized<LibraCoin>()) {
+         libra_coin::extract_mint_cap(root)
+      } else {
+        init_coin_impl(root)
+      };
+      let c = coin::test_mint(amount, &mint_cap);
+      ol_account::deposit_coins(addr, c);
+
+      let b = coin::balance<LibraCoin>(addr);
+      assert!(b == amount, 0001);
+
+      libra_coin::restore_mint_cap(root, mint_cap);
+    }
+
+    #[test_only]
     public fun ol_initialize_coin_and_fund_vals(root: &signer, amount: u64,
     drip: bool) {
       system_addresses::assert_ol(root);

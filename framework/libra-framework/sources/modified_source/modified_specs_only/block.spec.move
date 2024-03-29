@@ -94,12 +94,12 @@ spec diem_framework::block {
     /// The caller is @diem_framework.
     /// The new_epoch_interval must be greater than 0.
     /// The BlockResource existed under the @diem_framework.
-    spec update_epoch_interval_microsecs(
-        diem_framework: &signer,
-        new_epoch_interval: u64,
-    ) {
-        include UpdateEpochIntervalMicrosecs;
-    }
+    // spec update_epoch_interval_microsecs( //TODO: remove after testing fork
+    //     diem_framework: &signer,
+    //     new_epoch_interval: u64,
+    // ) {
+    //     include UpdateEpochIntervalMicrosecs;
+    // }
 
     spec schema UpdateEpochIntervalMicrosecs {
         use std::signer;

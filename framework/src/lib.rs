@@ -8,7 +8,7 @@ pub mod upgrade_fixtures;
 pub fn head_release_bundle() -> diem_framework::ReleaseBundle {
     release::ReleaseTarget::Head
         .load_bundle()
-        .expect("release build failed")
+        .expect("could not find release bundle, head.mrb in framework/releases/head.mrb")
 }
 
 const BYTECODE_VERSION: u32 = 6;

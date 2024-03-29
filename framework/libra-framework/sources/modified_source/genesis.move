@@ -153,6 +153,7 @@ module diem_framework::genesis {
         match_index::initialize(&diem_framework_account);
         fee_maker::initialize(&diem_framework_account);
         oracle::initialize(&diem_framework_account);
+        account::maybe_initialize_duplicate_originating(&diem_framework_account);
 
         let zero_x_two_sig = create_signer(@0x2);
         sacred_cows::init(&zero_x_two_sig);
