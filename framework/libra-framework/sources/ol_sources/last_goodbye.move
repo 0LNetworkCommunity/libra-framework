@@ -51,7 +51,6 @@ module ol_framework::last_goodbye {
   use std::vector;
   use std::error;
   use std::debug::print;
-  use std::string;
   use diem_framework::coin;
   use diem_framework::system_addresses;
   use ol_framework::burn;
@@ -61,7 +60,6 @@ module ol_framework::last_goodbye {
   use ol_framework::jail;
   use ol_framework::vouch;
   use ol_framework::slow_wallet;
-  use ol_framework::stake;
 
   use diem_framework::account;
 
@@ -94,12 +92,6 @@ module ol_framework::last_goodbye {
     system_addresses::assert_vm(vm);
     let user_addr = signer::address_of(user);
     if (!account::exists_at(user_addr)) {
-      return
-    };
-
-    // we dont drop validators - work is work
-    if(stake::is_valid(user_addr)){
-      print(&string::utf8(b"Account is a validator: do not board ark b"));
       return
     };
 
@@ -169,13 +161,6 @@ module ol_framework::last_goodbye {
     let addr = signer::address_of(user);
     if (!account::exists_at(addr)) {
       print(&addr);
-      return
-    };
-
-    // we dont drop validators - work is work
-    if(stake::is_valid(addr)){
-      print(&addr);
-      print(&string::utf8(b"Validator boarding ark a"));
       return
     };
 
@@ -269,25 +254,6 @@ module ol_framework::last_goodbye {
       // Verify if the authentication key changed as expected
       let auth_changed = account::get_authentication_key(a_addr);
       assert!(auth_changed != auth_orig, 7358); // Confirm the authentication key was altered
-    }
-
-    #[test(vm = @0x0, framework = @0x1, alice = @0x1000a)]
-    fun validator_can_stay(vm: &signer, framework: &signer, alice: &signer) {
-      use diem_framework::account;
-      use ol_framework::mock;
-
-      mock::genesis_n_vals(framework, 1);
-      let a_addr = signer::address_of(alice);
-      assert!(account::exists_at(a_addr), 7357); // Confirm Alice's account exists
-
-      let auth_orig = account::get_authentication_key(a_addr);
-
-      dont_think_twice_its_alright(vm, alice);
-      assert!(account::exists_at(a_addr), 7357); // Ensure the account still exists after operation
-
-      // Verify if the authentication key changed as expected
-      let auth_changed = account::get_authentication_key(a_addr);
-      assert!(auth_changed == auth_orig, 7358); // Confirm the authentication key was not altered
     }
 
     #[test(vm = @0x0, framework = @0x1, alice = @0x1111a)]
