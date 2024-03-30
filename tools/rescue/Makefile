@@ -72,6 +72,9 @@ install:
 hard-fork-blob:
 	rescue hard-fork --db-dir ${DB_PATH} --validators-file ${VALS_FILE} --account-file ${ACCOUNT_FILE} --framework-mrb-file ${MRB_PATH}
 
+hard-fork-blob-debug:
+	rescue hard-fork --db-dir ${DB_PATH} --validators-file ${VALS_FILE} --account-file ${ACCOUNT_FILE} --framework-mrb-file ${MRB_PATH} --debug-short-epochs
+
 hard-fork-commit:
 	rescue bootstrap --db-dir ${DB_PATH} --genesis-txn-file ${DB_PATH}/hard_fork.blob --waypoint-to-verify ${WAYPOINT} --commit
 	@$(MAKE) update-waypoint
@@ -110,10 +113,10 @@ fetch-db:
 	@echo "For simplicity, we will use the db from the machine that maintains the epoch-archive-mainnet repo."
 	
 	@echo "Fetching database..."
-	#rm -rf ${DB_PATH}
+	mv ${DB_PATH} ${DB_PATH}_pre_hf
 	wget https://storage.googleapis.com/0l-network/db-33254886.tar.gz -O db-33254886.tar.gz
-	tar -xvzf db-33254886.tar.gz --strip-components=4 $(DATA_PATH)/db
-
+	tar -xvzf db-33254886.tar.gz --strip-components=4 */*/.libra/data-2024-03-14-045027/db
+	mv ./db ${DB_PATH}
 	#rm -f db-33254886.tar.gz
 
 
