@@ -119,7 +119,7 @@ backup-fetch-db:
 		echo "Database archive exists. Checking MD5..."; \
 		CURRENT_MD5=$$(md5sum db-33254886.tar.gz | awk '{ print $$1 }'); \
 	fi; \
-	if [ ${DB_ARCHIVE_MD5} != $${CURRENT_MD5} ]; then \
+	if [ "${DB_ARCHIVE_MD5}" != "$${CURRENT_MD5}" ]; then \
 		echo "MD5 mismatch or file not found, downloading..."; \
 		wget https://storage.googleapis.com/0l-network/db-33254886.tar.gz -O db-33254886.tar.gz; \
 	else \
