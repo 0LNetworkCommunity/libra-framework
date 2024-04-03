@@ -330,6 +330,7 @@
           let pledge_list = get_user_pledges(pledge_account);
           print(&pledge_list);
           print(&5001);
+          print(pledge_account);
 
           let i = 0;
           while (i < vector::length(&pledge_list)) {
@@ -341,25 +342,25 @@
             print(&c);
 
             if (option::is_some(&c)) {
-              print(&5001);
+              print(&5002);
 
               let coin = option::extract(&mut c);
               burn::burn_and_track(coin);
-              print(&5002);
+              print(&5003);
 
             };
             option::destroy_none(c);
-            print(&5003);
+            print(&5004);
             if (!exists<BeneficiaryPolicy>(@0x0)) return;
             let bene_state = borrow_global_mut<BeneficiaryPolicy>(@0x0);
             let (is_found, idx) = vector::index_of(&bene_state.pledgers,
             pledge_account);
-            print(&5004);
+            print(&5005);
 
             print(&is_found);
 
             if (is_found) {
-              print(&5005);
+              print(&5006);
               vector::remove(&mut bene_state.pledgers, idx);
             };
             i = i + 1;
