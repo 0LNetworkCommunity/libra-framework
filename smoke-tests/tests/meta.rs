@@ -28,9 +28,10 @@ async fn meta_can_start_swarm() {
         .await
         .expect("could not send demo tx");
 
-    swarm.liveness_check(Instant::now().checked_add(Duration::from_secs(5)).unwrap())
-    .await
-    .expect("cannot confirm swarm liveness");
+    swarm
+        .liveness_check(Instant::now().checked_add(Duration::from_secs(5)).unwrap())
+        .await
+        .expect("cannot confirm swarm liveness");
 }
 
 /// testing the LibraSmoke abstraction can load
