@@ -130,7 +130,7 @@ module ol_framework::last_goodbye {
 
     vouch::hard_fork_sanitize(vm, user);
             print(&2005);
-    
+
     slow_wallet::hard_fork_sanitize(vm, user);
             print(&2006);
 
@@ -336,10 +336,10 @@ module ol_framework::last_goodbye {
     mock::genesis_n_vals(framework, 1);
 
     mock::ol_initialize_coin_and_fund_vals(framework, 1000000, true);
-    
+
 
     let b_addr = signer::address_of(bob);
-    
+
     ol_account::transfer(alice, b_addr, 350000);
 
     let bob_addr = signer::address_of(bob);

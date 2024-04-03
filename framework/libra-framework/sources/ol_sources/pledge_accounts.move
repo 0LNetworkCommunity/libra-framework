@@ -52,10 +52,9 @@
         use diem_framework::coin;
         use diem_framework::system_addresses;
 
+        use diem_std::debug::print;
+
         friend ol_framework::last_goodbye;
-
-        // use diem_std::debug::print;
-
         friend ol_framework::infra_escrow;
         friend ol_framework::genesis_migration;
 
@@ -257,7 +256,7 @@
             while (i < vector::length(&pledgers)) {
                 let pledge_account = *vector::borrow(&pledgers, i);
                 // belt and suspenders for dropped accounts in hard fork.
-                if (!account::exists_at(pledge_account)) {
+                if (!account::exists_at(pledge_account) || account::is_tombstone(pledge_account)) {
                   // do garbage collection
                   garbage_collection(&pledge_account);
                   i = i + 1;
@@ -274,8 +273,6 @@
                   let coin =  option::extract(&mut c);
                   option::fill(&mut all_coins, coin);
                   option::destroy_none(c);
-                  // option::destroy_none(c);
-
                 } else if (option::is_some(&c)) {
 
                   let temp = option::extract(&mut all_coins);
@@ -298,10 +295,17 @@
         // sanitize each account
         public(friend) fun hard_fork_sanitize(vm: &signer, user: &signer)
         acquires MyPledges, BeneficiaryPolicy{
-          if(!exists<PledgeAccount>(signer::address_of(user))) return;
           system_addresses::assert_vm(vm);
+          print(&4000);
+          if(!exists<MyPledges>(signer::address_of(user))) return;
+          print(&4001);
+
+
           let addr = signer::address_of(user);
-          if(exists<PledgeAccount>(addr)) {
+          print(&4002);
+
+          if(exists<MyPledges>(addr)) {
+            print(&4003);
             garbage_collection(&addr);
           }
         }
@@ -320,27 +324,46 @@
           return list
         }
 
-        fun garbage_collection(pledge_account: &address) acquires MyPledges, BeneficiaryPolicy {
+        fun garbage_collection(pledge_account: &address) acquires MyPledges,
+        BeneficiaryPolicy {
+          print(&5000);
           let pledge_list = get_user_pledges(pledge_account);
+          print(&pledge_list);
+          print(&5001);
+
           let i = 0;
           while (i < vector::length(&pledge_list)) {
+
             let bene = vector::borrow(&pledge_list, i);
             let hundred_pct = fixed_point64::create_from_rational(1,1);
             let c = withdraw_pct_from_one_pledge_account(bene,
             pledge_account, &hundred_pct);
+            print(&c);
+
             if (option::is_some(&c)) {
-              let coin =  option::extract(&mut c);
+              print(&5001);
+
+              let coin = option::extract(&mut c);
               burn::burn_and_track(coin);
+              print(&5002);
+
             };
             option::destroy_none(c);
-
-            let bene_state = borrow_global_mut<BeneficiaryPolicy>(@diem_framework);
-            let (is_found, i) = vector::index_of(&bene_state.pledgers,
+            print(&5003);
+            if (!exists<BeneficiaryPolicy>(@0x0)) return;
+            let bene_state = borrow_global_mut<BeneficiaryPolicy>(@0x0);
+            let (is_found, idx) = vector::index_of(&bene_state.pledgers,
             pledge_account);
+            print(&5004);
+
+            print(&is_found);
+
             if (is_found) {
-              vector::remove(&mut bene_state.pledgers, i);
-            }
-          }
+              print(&5005);
+              vector::remove(&mut bene_state.pledgers, idx);
+            };
+            i = i + 1;
+          };
         }
 
         // DANGER: private function that changes balances.
