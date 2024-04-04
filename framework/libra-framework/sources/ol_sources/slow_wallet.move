@@ -21,7 +21,7 @@ module ol_framework::slow_wallet {
 
   friend diem_framework::genesis;
   friend ol_framework::last_goodbye;
-  
+
   friend ol_framework::ol_account;
   friend ol_framework::transaction_fee;
   friend ol_framework::epoch_boundary;
@@ -269,13 +269,20 @@ module ol_framework::slow_wallet {
       slow_wallet_epoch_drip(vm, sacred_cows::get_slow_drip_const())
     }
 
-    public(friend) fun hard_fork_sanitize(vm: &signer, user: &signer) acquires
+    public(friend) fun hard_fork_sanitize(vm: &signer, user: &signer): u64 acquires
     SlowWallet {
       system_addresses::assert_vm(vm);
       let addr = signer::address_of(user);
       if (exists<SlowWallet>(addr)) {
+        let (unlocked, total) = balance(addr);
         let _ = move_from<SlowWallet>(addr);
-      }
+        if (total < unlocked) {
+          // everything has been transferred out after unlocked
+          return 0
+        };
+        return (total - unlocked)
+      };
+      0
     }
 
     public(friend) fun garbage_collection() acquires SlowWalletList {
