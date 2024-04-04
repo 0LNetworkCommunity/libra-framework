@@ -89,8 +89,12 @@ async fn accounts_from_snapshot_backup(
         let account_states_map_chunk: HashMap<AccountAddress, Vec<(StateKey, StateValue)>> = blobs.into_iter().fold(HashMap::new(), |mut acc, (key, blob)| {
             match key.inner() {
                 StateKeyInner::AccessPath(access_path) => {
+                    // println!("AccessPath: {:?}, address: {:?}", access_path.path, access_path.address);
                     acc.entry(access_path.address).or_insert(vec![]).push((key, blob));
                 }
+                // StateKeyInner::TableItem { handle, key } => {
+                //     println!("TableItem: {:?}, key_len: {:?}", handle, key.len());
+                // },
                 _ => (),
             }
             acc
@@ -142,9 +146,14 @@ async fn test_deserialize_account() {
         // println!("account_address: {:?}", account_state.get_account_address());
         let legacy_recovery = get_legacy_recovery(&account_state)
             .expect("could not get legacy recovery");
-        // println!("legacy_recovery: {:?}", legacy_recovery);
+        //println!("legacy_recovery: {:?}", legacy_recovery);
         legacy_recovery_vec.push(legacy_recovery);
     }
+
+    let legacy_recovery_vec_json = serde_json::to_string(&legacy_recovery_vec)
+        .expect("could not create json for state");
+
+    println!("{}", legacy_recovery_vec_json);
 
     // basic validation of the account state
     let account_count = 23634;

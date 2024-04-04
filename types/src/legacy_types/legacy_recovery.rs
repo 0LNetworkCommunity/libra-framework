@@ -165,7 +165,7 @@ pub fn read_from_recovery_file(path: &PathBuf) -> Vec<LegacyRecovery> {
     serde_json::from_str(&data).expect("Unable to parse")
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct LegacyRecoveryV6 {
     ///
     pub account: Option<AccountAddress>,
