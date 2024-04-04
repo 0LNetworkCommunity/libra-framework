@@ -11,7 +11,6 @@ use diem_vm_genesis::{TestValidator, Validator};
 use libra_genesis_tools::{
     genesis::{make_recovery_genesis_from_vec_legacy_recovery, save_genesis},
     parse_json,
-    supply::SupplySettings,
     vm::libra_genesis_default,
 };
 use std::path::PathBuf;
@@ -35,28 +34,27 @@ fn end_to_end_single() {
     let test_validators = TestValidator::new_test_set(Some(num_vals), Some(100_000_000_000_000));
     let validators: Vec<Validator> = test_validators.iter().map(|t| t.data.clone()).collect();
 
-    let supply_settings = SupplySettings {
-        // target_supply: 10_000_000.0,
-        target_future_uses: 0.70,
-        map_dd_to_slow: vec![
-            // FTW
-            "3A6C51A0B786D644590E8A21591FA8E2"
-                .parse::<LegacyAddress>()
-                .unwrap(),
-            // tip jar
-            "2B0E8325DEA5BE93D856CFDE2D0CBA12"
-                .parse::<LegacyAddress>()
-                .unwrap(),
-        ],
-        ..Default::default()
-    };
+    // let supply_settings = SupplySettings {
+    //     // target_supply: 10_000_000.0,
+    //     target_future_uses: 0.70,
+    //     map_dd_to_slow: vec![
+    //         // FTW
+    //         "3A6C51A0B786D644590E8A21591FA8E2"
+    //             .parse::<LegacyAddress>()
+    //             .unwrap(),
+    //         // tip jar
+    //         "2B0E8325DEA5BE93D856CFDE2D0CBA12"
+    //             .parse::<LegacyAddress>()
+    //             .unwrap(),
+    //     ],
+    //     ..Default::default()
+    // };
 
     let tx = make_recovery_genesis_from_vec_legacy_recovery(
         &mut recovery,
         &validators,
         &head_release_bundle(),
         ChainId::test(),
-        Some(supply_settings),
         &libra_genesis_default(NamedChain::TESTING),
     )
     .expect("could not write genesis.blob");
@@ -101,27 +99,12 @@ fn end_to_end_all() {
     let test_validators = TestValidator::new_test_set(Some(num_vals), Some(100_000_000_000_000));
     let validators: Vec<Validator> = test_validators.iter().map(|t| t.data.clone()).collect();
 
-    let supply_settings = SupplySettings {
-        target_future_uses: 0.70,
-        map_dd_to_slow: vec![
-            // FTW
-            "3A6C51A0B786D644590E8A21591FA8E2"
-                .parse::<LegacyAddress>()
-                .unwrap(),
-            // tip jar
-            "2B0E8325DEA5BE93D856CFDE2D0CBA12"
-                .parse::<LegacyAddress>()
-                .unwrap(),
-        ],
-        ..Default::default()
-    };
 
     let tx = make_recovery_genesis_from_vec_legacy_recovery(
         &mut recovery,
         &validators,
         &head_release_bundle(),
         ChainId::test(),
-        Some(supply_settings),
         &libra_genesis_default(NamedChain::TESTING),
     )
     .expect("could not write genesis.blob");

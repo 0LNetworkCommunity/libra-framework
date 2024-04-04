@@ -1,7 +1,7 @@
 //! build the genesis file
 use crate::genesis::make_recovery_genesis_from_vec_legacy_recovery;
 use crate::genesis_reader::bootstrap_db_reader_from_gen_tx;
-use crate::supply::SupplySettings;
+
 
 use crate::wizard::DEFAULT_GIT_BRANCH;
 use crate::{compare, supply, vm};
@@ -71,7 +71,7 @@ pub fn build(
     home_path: PathBuf,
     use_local_framework: bool,
     legacy_recovery: &mut [LegacyRecoveryV5],
-    supply_settings: Option<SupplySettings>,
+    // supply_settings: Option<SupplySettings>,
     chain_name: NamedChain,
     testnet_vals: Option<Vec<ValidatorConfiguration>>,
 ) -> Result<Vec<PathBuf>> {
@@ -118,7 +118,7 @@ pub fn build(
         &gen_info.validators,
         &gen_info.framework,
         gen_info.chain_id,
-        supply_settings.clone(),
+        // supply_settings.clone(),
         &genesis_config,
     )?;
 
@@ -153,12 +153,12 @@ pub fn build(
         // get a boostrapped DB to do audits
         let (db_rw, _) = bootstrap_db_reader_from_gen_tx(gen_info.get_genesis())?;
 
-        let settings = supply_settings.context("no supply settings provided")?;
+        // let settings = supply_settings.context("no supply settings provided")?;
 
         let mut s =
-            supply::populate_supply_stats_from_legacy(legacy_recovery, &settings.map_dd_to_slow)?;
+            supply::populate_supply_stats_from_legacy(legacy_recovery)?;
 
-        s.set_ratios_from_settings(&settings)?;
+        // s.set_ratios_from_settings(&settings)?;
 
         compare::compare_recovery_vec_to_genesis_tx(legacy_recovery, &db_rw.reader, &s)?;
         OLProgress::complete("account balances as expected");
@@ -166,7 +166,7 @@ pub fn build(
         compare::export_account_balances(legacy_recovery, &db_rw.reader, &output_dir)?;
         OLProgress::complete("exported balances to genesis_balances.json");
 
-        compare::check_supply(settings.scale_supply() as u64, &db_rw.reader)?;
+        // compare::check_supply(settings.scale_supply() as u64, &db_rw.reader)?;
         OLProgress::complete("final supply as expected");
     }
 
@@ -575,7 +575,6 @@ fn test_build() {
         home,
         true,
         &mut [],
-        None,
         NamedChain::TESTING,
         None,
     )

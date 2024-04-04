@@ -28,11 +28,11 @@ use libra_types::{legacy_types::legacy_recovery_v5::LegacyRecoveryV5, ol_progres
 
 use crate::{
     genesis_functions::{
-        create_make_whole_incident, genesis_migrate_community_wallet,
-        genesis_migrate_cumu_deposits, rounding_mint, set_final_supply,
+        genesis_migrate_community_wallet,
+        genesis_migrate_cumu_deposits, set_final_supply,
         set_validator_baseline_reward,
     },
-    supply::{populate_supply_stats_from_legacy, SupplySettings},
+    supply::populate_supply_stats_from_legacy,
 };
 
 /// set the genesis parameters
@@ -68,7 +68,7 @@ pub fn migration_genesis(
     recovery: &mut [LegacyRecoveryV5],
     framework: &ReleaseBundle,
     chain_id: ChainId,
-    supply_settings: &SupplySettings,
+    // supply_settings: &SupplySettings,
     genesis_config: &GenesisConfiguration,
 ) -> anyhow::Result<ChangeSet> {
     let genesis = encode_genesis_change_set(
@@ -81,7 +81,7 @@ pub fn migration_genesis(
         &OnChainConsensusConfig::default(),
         &OnChainExecutionConfig::default(),
         &default_gas_schedule(),
-        supply_settings,
+        // supply_settings,
     );
 
     Ok(genesis)
@@ -98,7 +98,7 @@ pub fn encode_genesis_change_set(
     consensus_config: &OnChainConsensusConfig,
     execution_config: &OnChainExecutionConfig,
     gas_schedule: &GasScheduleV2,
-    supply_settings: &SupplySettings,
+    // supply_settings: &SupplySettings,
 ) -> ChangeSet {
     validate_genesis_config(genesis_config);
 
@@ -139,18 +139,15 @@ pub fn encode_genesis_change_set(
 
     // final supply must be set after coin is initialized, but before any
     // accounts are created
-    set_final_supply(&mut session, supply_settings);
+    set_final_supply(&mut session);
 
     initialize_on_chain_governance(&mut session, genesis_config);
 
     if !recovery.is_empty() {
         let mut supply =
-            populate_supply_stats_from_legacy(recovery, &supply_settings.map_dd_to_slow)
+            populate_supply_stats_from_legacy(recovery)
                 .expect("could not parse supply from legacy file");
 
-        supply
-            .set_ratios_from_settings(supply_settings)
-            .expect("could not set supply ratios from settings");
 
         crate::genesis_functions::genesis_migrate_all_users(&mut session, recovery, &supply)
             .expect("could not migrate users");
@@ -166,13 +163,13 @@ pub fn encode_genesis_change_set(
         genesis_migrate_cumu_deposits(&mut session, recovery)
             .expect("could not migrate cumu deposits of cw");
 
-        create_make_whole_incident(
-            &mut session,
-            recovery,
-            supply.make_whole,
-            supply.split_factor,
-        )
-        .expect("could not create make whole credits");
+        // create_make_whole_incident(
+        //     &mut session,
+        //     recovery,
+        //     supply.make_whole,
+        //     supply.split_factor,
+        // )
+        // .expect("could not create make whole credits");
     }
 
     OLProgress::complete("user migration complete");
@@ -182,9 +179,9 @@ pub fn encode_genesis_change_set(
     // Note: the operator accounts at genesis will be different.
     create_and_initialize_validators(&mut session, validators);
 
-    //////// 0L ////////
-    // need to ajust for rounding issues from target supply
-    rounding_mint(&mut session, supply_settings);
+    // //////// 0L ////////
+    // // need to ajust for rounding issues from target supply
+    // rounding_mint(&mut session, supply_settings);
 
     // // add some coins in each validator account.
     // if chain_id != ChainId::new(1) || option_env!("LIBRA_CI").is_some() {

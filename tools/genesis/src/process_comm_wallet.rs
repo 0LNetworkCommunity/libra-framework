@@ -163,8 +163,7 @@ pub fn update_cw_with_donor(cw: &mut AllCommWallets, donors: &mut DonorReceipts)
 #[test]
 fn test_cw_recovery() {
     use crate::supply::populate_supply_stats_from_legacy;
-    use crate::supply::SupplySettings;
-    use crate::{genesis_functions, parse_json};
+    use crate::parse_json;
     use libra_types::legacy_types::legacy_address::LegacyAddress;
 
     let p = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -173,33 +172,33 @@ fn test_cw_recovery() {
     let mut recovery = parse_json::recovery_file_parse(p).unwrap();
 
     // test splitting the coin and get scale factor
-    let settings = SupplySettings {
-        target_supply: 100_000_000_000.0, // 100B times scaling factor
-        target_future_uses: 0.70,
-        years_escrow: 7,
-        map_dd_to_slow: vec![
-            // FTW
-            "3A6C51A0B786D644590E8A21591FA8E2"
-                .parse::<LegacyAddress>()
-                .unwrap(),
-            // tip jar
-            "2B0E8325DEA5BE93D856CFDE2D0CBA12"
-                .parse::<LegacyAddress>()
-                .unwrap(),
-        ],
-    };
-    let mut supply =
-        populate_supply_stats_from_legacy(&recovery, &settings.map_dd_to_slow).unwrap();
-    supply.set_ratios_from_settings(&settings).unwrap();
-    dbg!(&supply);
+    // let settings = SupplySettings {
+    //     target_supply: 100_000_000_000.0, // 100B times scaling factor
+    //     target_future_uses: 0.70,
+    //     years_escrow: 7,
+    //     map_dd_to_slow: vec![
+    //         // FTW
+    //         "3A6C51A0B786D644590E8A21591FA8E2"
+    //             .parse::<LegacyAddress>()
+    //             .unwrap(),
+    //         // tip jar
+    //         "2B0E8325DEA5BE93D856CFDE2D0CBA12"
+    //             .parse::<LegacyAddress>()
+    //             .unwrap(),
+    //     ],
+    // };
+    // let mut supply =
+    //     populate_supply_stats_from_legacy(&recovery, &settings.map_dd_to_slow).unwrap();
+    // supply.set_ratios_from_settings(&settings).unwrap();
+    // dbg!(&supply);
 
     // Check calcs with no supply scaling
     let t = rebuild_cw_cumu_deposits(&recovery).unwrap();
     assert!(t.total_deposits == 1208569282086623, "cumu not equal");
 
-    recovery.iter_mut().for_each(|e| {
-        genesis_functions::util_scale_all_coins(e, &supply).unwrap();
-    });
+    // recovery.iter_mut().for_each(|e| {
+    //     genesis_functions::util_scale_all_coins(e, &supply).unwrap();
+    // });
 
     // scaled
     let t = rebuild_cw_cumu_deposits(&recovery).unwrap();

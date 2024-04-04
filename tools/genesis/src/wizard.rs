@@ -2,7 +2,7 @@
 //! instead of using many CLI tools.
 //! genesis wizard
 
-use crate::{genesis_builder, parse_json, supply::SupplySettings};
+use crate::{genesis_builder, parse_json};
 ///////
 // TODO: import from libra
 use crate::genesis_registration;
@@ -80,7 +80,6 @@ impl GenesisWizard {
         use_local_framework: bool,
         legacy_recovery_path: Option<PathBuf>,
         do_genesis: bool,
-        supply_settings: Option<SupplySettings>,
     ) -> anyhow::Result<()> {
         if !Path::exists(&self.data_path) {
             println!(
@@ -151,7 +150,6 @@ impl GenesisWizard {
                 self.data_path.clone(),
                 use_local_framework,
                 &mut legacy_recovery,
-                supply_settings,
                 self.chain,
                 None,
             )?;
@@ -424,7 +422,7 @@ async fn test_wizard() {
         None,
         NamedChain::TESTING,
     );
-    wizard.start_wizard(false, None, false, None).await.unwrap();
+    wizard.start_wizard(false, None, false).await.unwrap();
 }
 
 #[test]

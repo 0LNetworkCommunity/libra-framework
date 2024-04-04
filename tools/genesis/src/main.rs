@@ -3,7 +3,6 @@ use clap::{Args, Parser, Subcommand};
 
 use libra_genesis_tools::{
     genesis_builder, parse_json,
-    supply::SupplySettings,
     testnet_setup,
     wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME},
 };
@@ -49,9 +48,6 @@ enum Sub {
         /// github args
         #[clap(flatten)]
         github: GithubArgs,
-        /// required, settings for supply.
-        #[clap(flatten)]
-        supply_settings: SupplySettings,
     }, // just do genesis without wizard
     Register {
         /// github args
@@ -63,9 +59,6 @@ enum Sub {
         /// github args
         #[clap(flatten)]
         github: GithubArgs,
-        /// required, settings for supply.
-        #[clap(flatten)]
-        supply_settings: SupplySettings,
     },
     /// sensible defaults for testnet, does not need a genesis repo
     /// accounts are created from fixture mnemonics for alice, bob, carol, dave
@@ -76,9 +69,6 @@ enum Sub {
         /// list of IP addresses of each persona Alice, Bob, Carol, Dave
         #[clap(short, long)]
         ip_list: Vec<Ipv4Addr>,
-        /// optional, settings for supply.
-        #[clap(flatten)]
-        supply_settings: Option<SupplySettings>,
         /// path to file for legacy migration file
         #[clap(short, long)]
         json_legacy: Option<PathBuf>,
@@ -90,7 +80,6 @@ async fn main() -> anyhow::Result<()> {
     match cli.command {
         Some(Sub::Genesis {
             github,
-            supply_settings,
         }) => {
             let data_path = cli.home_dir.unwrap_or_else(global_config_dir);
 
@@ -114,7 +103,6 @@ async fn main() -> anyhow::Result<()> {
                 data_path,
                 github.local_framework,
                 &mut recovery,
-                Some(supply_settings),
                 cli.chain.unwrap_or(NamedChain::TESTING),
                 None,
             )?;
@@ -126,12 +114,11 @@ async fn main() -> anyhow::Result<()> {
                 cli.home_dir,
                 cli.chain.unwrap_or(NamedChain::TESTING),
             )
-            .start_wizard(github.local_framework, github.json_legacy, false, None)
+            .start_wizard(github.local_framework, github.json_legacy, false)
             .await?;
         }
         Some(Sub::Wizard {
             github,
-            supply_settings,
         }) => {
             GenesisWizard::new(
                 github.org_github,
@@ -143,14 +130,12 @@ async fn main() -> anyhow::Result<()> {
                 github.local_framework,
                 github.json_legacy,
                 true,
-                Some(supply_settings),
             )
             .await?;
         }
         Some(Sub::Testnet {
             me,
             ip_list,
-            supply_settings,
             json_legacy,
         }) => {
             testnet_setup::setup(
@@ -158,7 +143,6 @@ async fn main() -> anyhow::Result<()> {
                 &ip_list,
                 cli.chain.unwrap_or(NamedChain::TESTING),
                 cli.home_dir.unwrap_or_else(global_config_dir),
-                &supply_settings,
                 json_legacy,
             )
             .await?

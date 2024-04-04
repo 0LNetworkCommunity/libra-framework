@@ -4,7 +4,7 @@ use diem_types::chain_id::NamedChain;
 use libra_framework::head_release_bundle;
 use libra_genesis_tools::genesis_reader;
 use libra_genesis_tools::parse_json::recovery_file_parse;
-use libra_genesis_tools::supply::{self, SupplySettings};
+use libra_genesis_tools::supply::{self};
 use libra_genesis_tools::vm::libra_genesis_default;
 use libra_genesis_tools::{compare, genesis::make_recovery_genesis_from_vec_legacy_recovery};
 use libra_types::exports::ChainId;
@@ -34,24 +34,14 @@ fn test_correct_supply_arithmetic_all() {
     ];
     // get the supply arithmetic so that we can compare outputs
     let mut supply_stats =
-        supply::populate_supply_stats_from_legacy(&user_accounts, &map_dd_to_slow).unwrap();
-    let supply_settings = SupplySettings {
-        target_supply: 100_000_000_000.0,
-        target_future_uses: 0.70,
-        years_escrow: 7,
-        map_dd_to_slow,
-    };
-    supply_stats
-        .set_ratios_from_settings(&supply_settings)
-        .unwrap();
+        supply::populate_supply_stats_from_legacy(&user_accounts).unwrap();
 
-    dbg!(&supply_stats);
+
     let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
         &mut user_accounts,
         &genesis_vals,
         &head_release_bundle(),
         ChainId::mainnet(),
-        Some(supply_settings),
         &libra_genesis_default(NamedChain::MAINNET),
     )
     .unwrap();
