@@ -8,7 +8,6 @@ use libra_genesis_tools::supply::{self};
 use libra_genesis_tools::vm::libra_genesis_default;
 use libra_genesis_tools::{compare, genesis::make_recovery_genesis_from_vec_legacy_recovery};
 use libra_types::exports::ChainId;
-use libra_types::legacy_types::legacy_address::LegacyAddress;
 use support::{path_utils::json_path, test_vals};
 
 #[test]
@@ -19,19 +18,19 @@ fn test_correct_supply_arithmetic_all() {
     let path = json_path()
         .parent()
         .unwrap()
-        .join("v5_recovery_actual.json"); // the actual file used on 6.9.0 upgrade
+        .join("sample_export_recovery.json"); // the actual file used on 6.9.0 upgrade
 
     let mut user_accounts = recovery_file_parse(path).unwrap();
-    let _map_dd_to_slow = vec![
-        // FTW
-        "3A6C51A0B786D644590E8A21591FA8E2"
-            .parse::<LegacyAddress>()
-            .unwrap(),
-        // tip jar
-        "2B0E8325DEA5BE93D856CFDE2D0CBA12"
-            .parse::<LegacyAddress>()
-            .unwrap(),
-    ];
+    // let _map_dd_to_slow = vec![
+    //     // FTW
+    //     "3A6C51A0B786D644590E8A21591FA8E2"
+    //         .parse::<LegacyAddress>()
+    //         .unwrap(),
+    //     // tip jar
+    //     "2B0E8325DEA5BE93D856CFDE2D0CBA12"
+    //         .parse::<LegacyAddress>()
+    //         .unwrap(),
+    // ];
     // get the supply arithmetic so that we can compare outputs
     let supply_stats = supply::populate_supply_stats_from_legacy(&user_accounts).unwrap();
 

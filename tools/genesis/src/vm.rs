@@ -28,7 +28,7 @@ use libra_types::{legacy_types::legacy_recovery_v6::LegacyRecoveryV6, ol_progres
 
 use crate::{
     genesis_functions::{
-        genesis_migrate_community_wallet, genesis_migrate_cumu_deposits, set_final_supply,
+        genesis_migrate_cumu_deposits, set_final_supply,
         set_validator_baseline_reward,
     },
     supply::populate_supply_stats_from_legacy,
@@ -152,9 +152,6 @@ pub fn encode_genesis_change_set(
         // need to set the baseline reward based on supply settings
         set_validator_baseline_reward(&mut session, supply.epoch_reward_base_case as u64);
 
-        // migrate community wallets
-        genesis_migrate_community_wallet(&mut session, recovery)
-            .expect("could not migrate community wallets");
         // cumulative deposits (for match index) also need separate
         // migration for CW
         genesis_migrate_cumu_deposits(&mut session, recovery)

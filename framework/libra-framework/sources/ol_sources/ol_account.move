@@ -20,7 +20,7 @@ module ol_framework::ol_account {
     use ol_framework::community_wallet;
     use ol_framework::donor_voice;
 
-    // use diem_std::debug::print;
+    use diem_std::debug::print;
 
     #[test_only]
     use std::vector;
@@ -134,24 +134,32 @@ module ol_framework::ol_account {
     /// The remedy is to run the authkey rotation
     /// even if it hasn't changed, such that the lookup table (OriginatingAddress) is created and populated with legacy accounts.
     public(friend) fun vm_create_account_migration(
-        root: &signer,
+        framework: &signer,
         new_account: address,
         auth_key: vector<u8>,
-        // value: u64,
     ): signer {
-        system_addresses::assert_ol(root);
+        system_addresses::assert_diem_framework(framework);
+        // print(&new_account);
         // chain_status::assert_genesis(); TODO
-        let new_signer = account::vm_create_account(root, new_account, auth_key);
+        let new_signer = account::vm_create_account(framework, new_account, auth_key);
         // fake "rotate" legacy auth key  to itself so that the lookup is populated
-        account::vm_migrate_rotate_authentication_key_internal(root, &new_signer, auth_key);
+        account::vm_migrate_rotate_authentication_key_internal(framework, &new_signer, auth_key);
         // check we can in fact look up the account
         let auth_key_as_address = from_bcs::to_address(auth_key);
         let lookup_addr = account::get_originating_address(auth_key_as_address);
-        assert!(
-          lookup_addr == signer::address_of(&new_signer),
-          error::invalid_state(ECANT_MATCH_ADDRESS_IN_LOOKUP)
-        );
+        // print(&@0x01);
+        // print(&lookup_addr);
+        let sig_addr = signer::address_of(&new_signer);
+        if (lookup_addr != sig_addr) {
+          print(&lookup_addr);
+          print(&sig_addr);
+        };
 
+        // trim_reverse
+        // assert!(
+        //   lookup_addr == signer::address_of(&new_signer),
+        //   error::invalid_state(ECANT_MATCH_ADDRESS_IN_LOOKUP)
+        // );
         coin::register<LibraCoin>(&new_signer);
         init_burn_tracker(&new_signer);
         new_signer

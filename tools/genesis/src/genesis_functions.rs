@@ -53,6 +53,12 @@ pub fn genesis_migrate_all_users(
                 }
             }
 
+            if a.comm_wallet.is_some() {
+              // migrate community wallets
+              genesis_migrate_community_wallet(session, a)
+              .expect("could not migrate community wallets");
+            }
+
             // // migrating infra escrow, check if this has historically been a validator and has a slow wallet
             // if a.val_cfg.is_some() && a.slow_wallet.is_some() {
             //     match genesis_migrate_infra_escrow(session, a, supply) {
@@ -518,35 +524,36 @@ pub fn genesis_migrate_ancestry(
 
 pub fn genesis_migrate_community_wallet(
     session: &mut SessionExt,
-    user_recovery: &[LegacyRecoveryV6],
+    user_recovery: &LegacyRecoveryV6,
 ) -> anyhow::Result<()> {
-    if let Some(root) = user_recovery.iter().find(|e| e.role == AccountRole::System) {
-        let cw_list = &root
-            .comm_wallet
-            .as_ref()
-            .context("no comm_wallet struct")?
-            .list;
+    let serialized_values = serialize_values(&vec![
+        MoveValue::Signer(CORE_CODE_ADDRESS),
+        MoveValue::Signer(user_recovery.account.unwrap()),
+    ]);
 
-        cw_list.iter().for_each(|el| {
-            let acc_str = el.to_string();
+    exec_function(
+        session,
+        "community_wallet_init",
+        "migrate_community_wallet_account",
+        vec![],
+        serialized_values,
+    );
 
-            let new_address = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))
-                .expect("could not parse address");
+    // if let Some(root) = user_recovery.iter().find(|e| e.role == AccountRole::System) {
+    //     let cw_list = &root
+    //         .comm_wallet
+    //         .as_ref()
+    //         .context("no comm_wallet struct")?
+    //         .list;
 
-            let serialized_values = serialize_values(&vec![
-                MoveValue::Signer(CORE_CODE_ADDRESS),
-                MoveValue::Signer(new_address),
-            ]);
+    //     cw_list.iter().for_each(|el| {
+    //         let acc_str = el.to_string();
 
-            exec_function(
-                session,
-                "community_wallet_init",
-                "migrate_community_wallet_account",
-                vec![],
-                serialized_values,
-            );
-        });
-    }
+    //         let new_address = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))
+    //             .expect("could not parse address");
+
+    //     });
+    // }
 
     Ok(())
 }

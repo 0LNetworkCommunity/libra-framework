@@ -711,7 +711,10 @@ module diem_framework::account {
             // because address b is not the account's originating address.
             // 0L NOTE: this should not abort on migration only, and the duplcates need to be identified for the users.
             // The original implementation meant that the transaction will abort for users which try to use the same private key / mnemonic for two accounts (i.e. they rotated account_b account_c etc, to use the private key of account_a ). There is an issue with migration from V5 where there are cases like this, since this check was not in place then.
-            let maybe_duplicated_addr = *table::borrow(address_map, curr_auth_key);
+            let maybe_duplicated_addr = *table::borrow(address_map,
+            curr_auth_key);
+            // print(&@0x3);
+            // print(&maybe_duplicated_addr);
             // there's an address returned in the table lookup for the authentication key of this account, it's not what the caller is expecting. We need to start populating the duplicates
             if (originating_addr != maybe_duplicated_addr) {
               maybe_initialize_duplicate_originating(root);
