@@ -382,7 +382,7 @@ module diem_framework::stake {
             validator_index: 0,
         });
 
-        slow_wallet::set_slow(account);
+        slow_wallet::user_set_slow(account);
     }
 
     fun initialize_owner(owner: &signer) acquires AllowedValidators {
@@ -678,6 +678,9 @@ module diem_framework::stake {
         // which establishes minimum amount of vals for a viable network
 
         //////// RECONFIGURE ////////
+        let proposed_validators = vector::filter(proposed_validators, |e| {
+          account::exists_at(*e)
+        });
 
         let (list_info, _voting_power, missing_configs) = make_validator_set_config(&proposed_validators);
         // mutations happen in private function

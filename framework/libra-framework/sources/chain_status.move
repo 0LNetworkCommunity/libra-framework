@@ -8,6 +8,9 @@ module diem_framework::chain_status {
 
     friend diem_framework::genesis;
 
+    //////// 0L ////////
+    friend ol_framework::sacred_cows;
+
     /// Marker to publish at the end of genesis.
     struct GenesisEndMarker has key {}
 
@@ -37,12 +40,12 @@ module diem_framework::chain_status {
     }
 
     /// Helper function to assert operating (not genesis) state.
-    public fun assert_operating() {
+    public(friend) fun assert_operating() {
         assert!(is_operating(), error::invalid_state(ENOT_OPERATING));
     }
 
     /// Helper function to assert genesis state.
-    public fun assert_genesis() {
+    public(friend) fun assert_genesis() {
         assert!(is_genesis(), error::invalid_state(ENOT_OPERATING));
     }
 }

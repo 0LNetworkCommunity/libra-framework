@@ -28,7 +28,7 @@ module ol_framework::infra_escrow{
 
     const EGENESIS_REWARD: u64 = 0;
     /// for use on genesis, creates the infra escrow pledge policy struct
-    public fun initialize(vm: &signer) {
+    public(friend) fun initialize(vm: &signer) {
         // NOTE: THIS MUST BE THE 0x0 address, because on epoch boundary it is that address @vm_reserved which will be calling the functions.
         system_addresses::assert_vm(vm);
         // TODO: perhaps this policy needs to be published to a different address?
@@ -73,7 +73,7 @@ module ol_framework::infra_escrow{
 
 
     // Transaction script for user to pledge to infra escrow.
-    public fun user_pledge_infra(user_sig: &signer, amount: u64){
+    fun user_pledge_infra(user_sig: &signer, amount: u64){
 
       pledge_accounts::user_pledge(user_sig, @vm_reserved, amount);
     }
@@ -95,7 +95,7 @@ module ol_framework::infra_escrow{
     // this is only called through genesis when using the production rust libra-genesis-tool
     // and in the move code, we want the validators to start with zero balances
     // and add them with mock.move when we need it.
-    public fun genesis_coin_validator(root: &signer, to: address) {
+    public(friend) fun genesis_coin_validator(root: &signer, to: address) {
       system_addresses::assert_ol(root);
       let bootstrap_amount = 1000000000;
       if (infra_escrow_balance() > bootstrap_amount) {

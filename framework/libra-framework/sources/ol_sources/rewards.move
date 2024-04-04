@@ -3,8 +3,9 @@ module ol_framework::rewards {
   use std::vector;
   use diem_framework::coin::{Self, Coin};
   use diem_framework::stake;
+  use diem_framework::account;
   use diem_framework::system_addresses;
-  use ol_framework::libra_coin::LibraCoin;
+  use ol_framework::libra_coin::{Self, LibraCoin};
   use ol_framework::ol_account;
 
   // use diem_std::debug::print;
@@ -34,8 +35,6 @@ module ol_framework::rewards {
     process_recipients_impl(root, list, reward_per, reward_budget, reward_type);
   }
 
-
-
   /// process all the validators
   // belt and suspenders
   fun process_recipients_impl(root: &signer, list: vector<address>, reward_per: u64, reward_budget: &mut Coin<LibraCoin>, reward_type: u8) {
@@ -44,8 +43,14 @@ module ol_framework::rewards {
     system_addresses::assert_ol(root);
     let i = 0;
     while (i < vector::length(&list)) {
+        let account = *vector::borrow(&list, i);
+              // belt and suspenders for dropped accounts in hard fork.
+        if (!account::exists_at(account)) {
+          i = i + 1;
+          continue
+        };
       // split off the reward amount per validator from coin
-      let user_coin = coin::extract(reward_budget, reward_per);
+      let user_coin = libra_coin::extract(reward_budget, reward_per);
       pay_reward(root, *vector::borrow(&list, i), user_coin, reward_type);
       // TODO: emit payment event in stake.move
       i = i + 1;

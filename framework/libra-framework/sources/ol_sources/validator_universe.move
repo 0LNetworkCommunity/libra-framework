@@ -4,6 +4,7 @@
 module diem_framework::validator_universe {
   use std::signer;
   use std::vector;
+  use diem_framework::account;
   use diem_framework::system_addresses;
   use ol_framework::jail;
   use ol_framework::vouch;
@@ -14,10 +15,10 @@ module diem_framework::validator_universe {
   #[test_only]
   use diem_std::bls12381;
 
-  // use diem_std::debug::print;
-
   friend diem_framework::reconfiguration;
-
+  friend diem_framework::genesis;
+  #[test_only]
+  friend ol_framework::last_goodbye;
   // resource for tracking the universe of accounts that have submitted
   // a mined proof correctly, with the epoch number.
   struct ValidatorUniverse has key {
@@ -27,7 +28,7 @@ module diem_framework::validator_universe {
   // Genesis function to initialize ValidatorUniverse struct in 0x0.
   // This is triggered in new epoch by Configuration in Genesis.move
   // Function code: 01 Prefix: 220101
-  public fun initialize(vm: &signer){
+  public(friend) fun initialize(vm: &signer){
     // Check for transactions sender is association
     system_addresses::assert_diem_framework(vm);
     move_to<ValidatorUniverse>(vm, ValidatorUniverse {
@@ -55,6 +56,8 @@ module diem_framework::validator_universe {
   /// This function is called to add validator to the validator universe.
   fun add(sender: &signer) acquires ValidatorUniverse {
     let addr = signer::address_of(sender);
+    // lazy run garbage collection on next user registration
+    garbage_collection();
     let state = borrow_global<ValidatorUniverse>(@diem_framework);
     let (elegible_list, _) = vector::index_of<address>(&state.validators, &addr);
     if (!elegible_list) {
@@ -64,10 +67,24 @@ module diem_framework::validator_universe {
     jail::init(sender);
   }
 
+  // clean any accounts that have been dropped in hard fork
+  public(friend) fun garbage_collection() acquires ValidatorUniverse {
+    let state = borrow_global_mut<ValidatorUniverse>(@diem_framework);
+    let len = vector::length(&state.validators);
+    let i = 0;
+    while (i < 0) {
+      let addr = *vector::borrow(&state.validators, i);
+      if (!account::exists_at(addr) && i < len) {
+        vector::remove(&mut state.validators, i);
+      };
+      i = i + 1;
+    }
+  }
+
   //////// GENESIS ////////
   /// For 0L genesis, initialize and add the validators
   /// both root and validator need to sign. This is only possible at genesis.
-  public fun genesis_helper_add_validator(root: &signer, validator: &signer) acquires ValidatorUniverse {
+  public(friend) fun genesis_helper_add_validator(root: &signer, validator: &signer) acquires ValidatorUniverse {
     system_addresses::assert_ol(root);
     add(validator);
   }
@@ -76,8 +93,10 @@ module diem_framework::validator_universe {
   // A simple public function to query the EligibleValidators.
   // Function code: 03 Prefix: 220103
   #[view]
-  public fun get_eligible_validators(): vector<address> acquires ValidatorUniverse {
+  public fun get_eligible_validators(): vector<address> acquires
+  ValidatorUniverse {
     let state = borrow_global<ValidatorUniverse>(@diem_framework);
+
     *&state.validators
   }
 

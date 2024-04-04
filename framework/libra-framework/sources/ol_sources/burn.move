@@ -15,14 +15,24 @@ module ol_framework::burn {
   use std::fixed_point32;
   use std::signer;
   use std::vector;
-  // use ol_framework::ol_account;
+  use diem_framework::account;
   use ol_framework::system_addresses;
   use ol_framework::libra_coin::LibraCoin;
-  // use ol_framework::transaction_fee;
   use ol_framework::coin::{Self, Coin};
   use ol_framework::match_index;
   use ol_framework::fee_maker;
   // use ol_framework::Debug::print;
+
+  friend diem_framework::genesis;
+
+  friend ol_framework::epoch_boundary;
+  friend ol_framework::pledge_accounts;
+  friend ol_framework::make_whole;
+  friend ol_framework::last_goodbye;
+  #[test_only]
+  friend ol_framework::test_burn;
+  #[test_only]
+  friend ol_framework::test_rewards;
 
   // the users preferences for system burns
   struct UserBurnPreference has key {
@@ -36,7 +46,7 @@ module ol_framework::burn {
   }
 
     /// initialize, usually for testnet.
-  public fun initialize(vm: &signer) {
+  public(friend) fun initialize(vm: &signer) {
     system_addresses::assert_ol(vm);
 
     move_to<BurnCounter>(vm, BurnCounter {
@@ -55,7 +65,7 @@ module ol_framework::burn {
   /// @return a tuple of 2
   /// 0: BOOL, if epoch burn ran correctly
   /// 1: U64, how many coins burned
-  public fun epoch_burn_fees(
+  public(friend) fun epoch_burn_fees(
       vm: &signer,
       coins: &mut Coin<LibraCoin>,
   ): (bool, u64)  acquires UserBurnPreference, BurnCounter {
@@ -81,6 +91,11 @@ module ol_framework::burn {
       let i = 0;
       while (i < len) {
           let user = vector::borrow(&fee_makers, i);
+          // belt and suspenders for dropped accounts in hard fork.
+          if (!account::exists_at(*user)) {
+            i = i + 1;
+            continue
+          };
           let user_made = fee_maker::get_user_fees_made(*user);
           let share = fixed_point32::create_from_rational(user_made, total_fees_made);
 
@@ -109,7 +124,7 @@ module ol_framework::burn {
 
 
   /// Migration script for hard forks
-  public fun vm_migration(vm: &signer,
+  fun vm_migration(vm: &signer,
     lifetime_burned: u64, // these get reset on final supply V6. Future upgrades need to decide what to do with this
     lifetime_recycled: u64,
   ) {
@@ -128,37 +143,22 @@ module ol_framework::burn {
   /// NOTE: this is unchecked, any user can perform this.
   /// the user should call this function and not burn methods on coin.move
   /// since those methods do not track the lifetime_burned
-  public fun burn_and_track(coin: Coin<LibraCoin>) acquires BurnCounter {
+  public(friend) fun burn_and_track(coin: Coin<LibraCoin>) acquires BurnCounter {
     let value_sent = coin::value(&coin);
     let state = borrow_global_mut<BurnCounter>(@ol_framework);
     coin::user_burn(coin);
     state.lifetime_burned = state.lifetime_burned + value_sent;
   }
 
-  // /// performs a burn or recycle according to the signer's preference
-  // public fun burn_with_my_preference(
-  //   sig: &signer, user_share: Coin<LibraCoin>
-  // ) acquires BurnCounter, UserBurnPreference {
-  //   let payer = signer::address_of(sig);
-  //   let value_sent = coin::value(&user_share);
-  //   if (exists<UserBurnPreference>(payer)) {
-  //     if (borrow_global<UserBurnPreference>(payer).send_community) {
-  //       match_index::match_and_recycle(vm, &mut user_share);
-
-  //        // update the root state tracker
-  //       let state = borrow_global_mut<BurnCounter>(@ol_framework);
-  //       state.lifetime_recycled = state.lifetime_recycled + value_sent;
-  //     }
-  //   };
-
-  //   // do a default burn which is not attributed
-  //   // also checks for Superman 3
-  //   burn_and_track(user_share);
-
-  // }
+  #[test_only]
+  public fun test_vm_burn_with_user_preference(
+    vm: &signer, payer: address, user_share: Coin<LibraCoin>
+  ) acquires BurnCounter, UserBurnPreference {
+    vm_burn_with_user_preference(vm, payer, user_share);
+  }
 
   /// performs a burn or recycle according to the attributed user's preference
-  public fun vm_burn_with_user_preference(
+  fun vm_burn_with_user_preference(
     vm: &signer, payer: address, user_share: Coin<LibraCoin>
   ) acquires BurnCounter, UserBurnPreference {
     system_addresses::assert_ol(vm);
@@ -177,11 +177,11 @@ module ol_framework::burn {
     // do a default burn which is not attributed
     // also checks for Superman 3
     burn_and_track(user_share);
-
   }
 
-
-  public fun set_send_community(sender: &signer, community: bool) acquires UserBurnPreference {
+  /// User opts into burns being sent to community (recycle burn).
+  /// default is false (burn is final).
+  public entry fun set_send_community(sender: &signer, community: bool) acquires UserBurnPreference {
     let addr = signer::address_of(sender);
     if (exists<UserBurnPreference>(addr)) {
       let b = borrow_global_mut<UserBurnPreference>(addr);
@@ -195,6 +195,7 @@ module ol_framework::burn {
 
   //////// GETTERS ////////
 
+  #[view]
   /// returns tuple of (lifetime burned, lifetime recycled)
   public fun get_lifetime_tracker(): (u64, u64) acquires BurnCounter {
     let state = borrow_global<BurnCounter>(@ol_framework);

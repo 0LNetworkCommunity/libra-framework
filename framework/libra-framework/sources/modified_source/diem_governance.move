@@ -10,7 +10,6 @@ module diem_framework::diem_governance {
     use diem_std::table::{Self, Table};
 
     use diem_framework::account::{Self, SignerCapability, create_signer_with_capability};
-    use diem_framework::coin;
     use diem_framework::event::{Self, EventHandle};
     use diem_framework::governance_proposal::{Self, GovernanceProposal};
     use diem_framework::reconfiguration;
@@ -19,14 +18,21 @@ module diem_framework::diem_governance {
     use diem_framework::timestamp;
     use diem_framework::voting;
 
-    use ol_framework::libra_coin::LibraCoin;
+    use ol_framework::libra_coin;
     use ol_framework::epoch_boundary;
+    use ol_framework::musical_chairs;
     use ol_framework::testnet;
+
+    #[test_only]
+    use ol_framework::libra_coin::LibraCoin;
+    #[test_only]
+    use diem_framework::coin;
+
     // use diem_std::debug::print;
 
 
-    #[test_only]
-    use ol_framework::libra_coin;
+    // #[test_only]
+    // use ol_framework::libra_coin;
 
 
     /// The specified stake pool does not have sufficient stake to create a proposal
@@ -49,6 +55,9 @@ module diem_framework::diem_governance {
     const EMETADATA_HASH_TOO_LONG: u64 = 10;
     /// Account is not authorized to call this function.
     const EUNAUTHORIZED: u64 = 11;
+
+    /// Function cannot be called on Mainnet
+    const ENOT_FOR_MAINNET: u64 = 12;
 
     /// This matches the same enum const in voting. We have to duplicate it as Move doesn't have support for enums yet.
     const PROPOSAL_STATE_SUCCEEDED: u64 = 1;
@@ -248,17 +257,17 @@ module diem_framework::diem_governance {
         // Create and validate proposal metadata.
         let proposal_metadata = create_proposal_metadata(metadata_location, metadata_hash);
 
-        // We want to allow early resolution of proposals if more than 50% of the total supply of the network coins
-        // has voted. This doesn't take into subsequent inflation/deflation (rewards are issued every epoch and gas fees
-        // are burnt after every transaction), but inflation/delation is very unlikely to have a major impact on total
-        // supply during the voting period.
-        let total_voting_token_supply = coin::supply<LibraCoin>(); //////// 0L ////////
-        let early_resolution_vote_threshold = option::none<u128>();
-        if (option::is_some(&total_voting_token_supply)) {
-            let total_supply = *option::borrow(&total_voting_token_supply);
-            // 50% + 1 to avoid rounding errors.
-            early_resolution_vote_threshold = option::some(total_supply / 2 + 1);
-        };
+        // // We want to allow early resolution of proposals if more than 50% of the total supply of the network coins
+        // // has voted. This doesn't take into subsequent inflation/deflation (rewards are issued every epoch and gas fees
+        // // are burnt after every transaction), but inflation/delation is very unlikely to have a major impact on total
+        // // supply during the voting period.
+        // let total_voting_token_supply = libra_coin::supply(); //////// 0L ////////
+        // let early_resolution_vote_threshold = option::none<u128>();
+        // if (option::is_some(&total_voting_token_supply)) {
+        //     let total_supply = *option::borrow(&total_voting_token_supply);
+        //     // 50% + 1 to avoid rounding errors.
+        //     early_resolution_vote_threshold = option::some(total_supply / 2 + 1);
+        // };
 
         let proposal_id = voting::create_proposal_v2(
             proposer_address,
@@ -267,7 +276,7 @@ module diem_framework::diem_governance {
             execution_hash,
             governance_config.min_voting_threshold,
             proposal_expiration,
-            early_resolution_vote_threshold,
+            option::none(),
             proposal_metadata,
             is_multi_step_proposal,
         );
@@ -415,7 +424,7 @@ module diem_framework::diem_governance {
             error::invalid_argument(EALREADY_VOTED));
         table::add(&mut voting_records.votes, record_key, true);
 
-        let voting_power = coin::balance<LibraCoin>(voter_address);
+        let voting_power = libra_coin::balance(voter_address);
         voting::vote<GovernanceProposal>(
             &governance_proposal::create_empty_proposal(),
             @diem_framework,
@@ -559,6 +568,9 @@ module diem_framework::diem_governance {
     public fun set_validators(diem_framework: &signer, new_vals: vector<address>) {
         system_addresses::assert_diem_framework(diem_framework);
         stake::maybe_reconfigure(diem_framework, new_vals);
+        // set the musical chairs length, otherwise the musical chairs
+        // would not know the set size changed.
+        musical_chairs::set_current_seats(diem_framework, vector::length(&new_vals));
     }
 
     /// Force reconfigure. To be called at the end of a proposal that alters on-chain configs.
@@ -586,22 +598,24 @@ module diem_framework::diem_governance {
     /// decides the epoch can change. Any error will just cause the
     /// user's transaction to abort, but the chain will continue.
     /// Whatever fix is needed can be done online with on-chain governance.
-    public entry fun trigger_epoch(_sig: &signer) acquires GovernanceResponsbility { // doesn't need a signer
-      let framework_signer = get_signer(@ol_framework);
+    public entry fun trigger_epoch(_sig: &signer) acquires
+    GovernanceResponsbility { // doesn't need a signer
       let _ = epoch_boundary::can_trigger(); // will abort if false
+      let framework_signer = get_signer(@ol_framework);
       epoch_boundary::trigger_epoch(&framework_signer);
     }
 
-    // helper to use on smoke tests only. Will fail on m
+    // helper to use on smoke tests only. Will fail on Mainnet. Needs testnet
+    // Core Resources user.
     public entry fun smoke_trigger_epoch(core_resources: &signer) acquires
     GovernanceResponsbility { // doesn't need a signer
-      assert!(testnet::is_not_mainnet(), 666);
+      assert!(testnet::is_not_mainnet(), error::invalid_state(ENOT_FOR_MAINNET));
       system_addresses::assert_ol(core_resources);
       let framework_signer = get_signer(@ol_framework);
       epoch_boundary::smoke_trigger_epoch(&framework_signer);
     }
 
-
+    // COMMIT NOTE: trigger_epoch() should now work on Stage as well.
 
     /// Return the voting power a stake pool has with respect to governance proposals.
     fun get_voting_power(_pool_address: address): u64 {

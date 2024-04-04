@@ -44,8 +44,7 @@ module diem_framework::genesis {
     use ol_framework::testnet;
     use ol_framework::epoch_boundary;
     use ol_framework::sacred_cows;
-    #[test_only]
-    use ol_framework::libra_coin::LibraCoin;
+
     //////// end 0L ////////
 
 
@@ -154,6 +153,7 @@ module diem_framework::genesis {
         match_index::initialize(&diem_framework_account);
         fee_maker::initialize(&diem_framework_account);
         oracle::initialize(&diem_framework_account);
+        account::maybe_initialize_duplicate_originating(&diem_framework_account);
 
         let zero_x_two_sig = create_signer(@0x2);
         sacred_cows::init(&zero_x_two_sig);
@@ -260,7 +260,7 @@ module diem_framework::genesis {
             // default 90% to align with thermostatic rule in the PoF paper.
             // otherwise the thermostatic rule starts kicking-in immediately
             let sig = create_signer(validator.validator_config.owner_address);
-            proof_of_fee::set_bid(&sig, 0900, 1000); // make the genesis
+            proof_of_fee::pof_update_bid(&sig, 0900, 1000); // make the genesis
 
             if (testnet::is_not_mainnet()) {
               // TODO: this is for testnet purposes only
@@ -444,7 +444,7 @@ module diem_framework::genesis {
         let test_signer_before = create_account(diem_framework, addr, 15);
         let test_signer_after = create_account(diem_framework, addr, 500);
         assert!(test_signer_before == test_signer_after, 0);
-        assert!(coin::balance<LibraCoin>(addr) == 0, 1); //////// 0L ////////
+        assert!(libra_coin::balance(addr) == 0, 1); //////// 0L ////////
     }
 
     #[test(diem_framework = @0x1)]
@@ -468,10 +468,10 @@ module diem_framework::genesis {
         ];
 
         create_accounts(diem_framework, accounts);
-        assert!(coin::balance<LibraCoin>(addr0) == 0, 0); //////// 0L //////// no coins minted at genesis
-        assert!(coin::balance<LibraCoin>(addr1) == 0, 1); //////// 0L ////////
+        assert!(libra_coin::balance(addr0) == 0, 0); //////// 0L //////// no coins minted at genesis
+        assert!(libra_coin::balance(addr1) == 0, 1); //////// 0L ////////
 
         create_account(diem_framework, addr0, 23456);
-        assert!(coin::balance<LibraCoin>(addr0) == 0, 2); //////// 0L ////////
+        assert!(libra_coin::balance(addr0) == 0, 2); //////// 0L ////////
     }
 }

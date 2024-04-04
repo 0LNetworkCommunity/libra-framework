@@ -1,7 +1,10 @@
 use std::time::Duration;
 
 use clap::{Parser, Subcommand};
-use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts, twin::TwinOpts};
+use rescue::{
+    diem_db_bootstrapper::BootstrapOpts, fork_user::ForkOpts, rescue_tx::RescueTxOpts,
+    twin::TwinOpts,
+};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -15,6 +18,7 @@ struct RescueCli {
 enum Sub {
     RescueTx(RescueTxOpts),
     Bootstrap(BootstrapOpts),
+    HardFork(ForkOpts),
     Debug(TwinOpts),
 }
 
@@ -24,20 +28,33 @@ fn main() -> anyhow::Result<()> {
         Some(Sub::RescueTx(mission)) => {
             let blob_path = mission.run()?;
 
+            // check it can bootstrap and print waypoiny
             let b = BootstrapOpts {
-                db_dir: mission.data_path,
+                db_dir: mission.db_dir,
                 genesis_txn_file: blob_path,
                 waypoint_to_verify: None,
                 commit: false,
                 info: false,
             };
-            let _ = b.run()?;
+            b.run()?;
         }
         Some(Sub::Bootstrap(bootstrap)) => {
             bootstrap.run()?;
         }
         Some(Sub::Debug(twin)) => {
             twin.run()?;
+        }
+        Some(Sub::HardFork(fork)) => {
+            let blob_path = fork.run_ark_b()?;
+            // check it can bootstrap and print waypoiny
+            let b = BootstrapOpts {
+                db_dir: fork.db_dir,
+                genesis_txn_file: blob_path,
+                waypoint_to_verify: None,
+                commit: false,
+                info: false,
+            };
+            b.run()?;
         }
         _ => {} // prints help
     }

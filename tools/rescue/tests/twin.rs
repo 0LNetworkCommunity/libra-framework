@@ -1,12 +1,15 @@
 mod support;
 
+use std::fs;
+
 use crate::support::{deadline_secs, update_node_config_restart};
 
 use diem_config::config::InitialSafetyRulesConfig;
 use diem_forge::SwarmExt;
 use diem_types::transaction::Transaction;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
-use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
+use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts, user_file::UserBlob};
+use serde_json::json;
 use smoke_test::test_utils::swarm_utils::insert_waypoint;
 
 #[tokio::test]
@@ -56,12 +59,20 @@ async fn test_twin() -> anyhow::Result<()> {
 
     println!("2. compile the script");
 
+    let j = json!(UserBlob {
+        account: first_validator_address
+    });
+
+    let temp = diem_temppath::TempPath::new();
+    temp.create_as_file()?;
+    fs::write(temp.path(), j.to_string())?;
+
     let r = RescueTxOpts {
-        data_path: brick_db.clone(),
+        db_dir: brick_db.clone(),
         blob_path: Some(blob_path.path().to_owned()),
         script_path: None,
-        framework_upgrade: true,
-        debug_vals: Some(vec![first_validator_address]),
+        framework_mrb_file: None,
+        validators_file: Some(temp.path().to_owned()),
     };
     r.run()?;
 
