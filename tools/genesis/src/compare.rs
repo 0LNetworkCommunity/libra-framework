@@ -252,7 +252,6 @@ pub fn check_val_set(
 
 pub fn check_supply(
     expected_supply: u64,
-    // genesis_transaction: &Transaction,
     db_reader: &Arc<dyn DbReader>,
 ) -> Result<(), anyhow::Error> {
     let pb = ProgressBar::new(1000)
