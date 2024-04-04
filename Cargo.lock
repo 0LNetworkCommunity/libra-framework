@@ -5611,6 +5611,7 @@ dependencies = [
  "diem-config",
  "diem-node",
  "libra-config",
+ "libra-framework",
  "libra-query",
  "libra-tower",
  "libra-txs",

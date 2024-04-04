@@ -1,8 +1,8 @@
+mod move_cli;
 mod node_cli;
 
 use anyhow::anyhow;
 use clap::{Parser, Subcommand};
-use diem::move_tool::MoveTool;
 use libra_config::config_cli::ConfigCli;
 use libra_query::query_cli::QueryCli;
 use libra_tower::tower_cli::TowerCli;
@@ -21,7 +21,7 @@ struct LibraCli {
 enum Sub {
     Config(ConfigCli),
     #[clap(subcommand)]
-    Move(MoveTool), // from vendor
+    Move(move_cli::MoveTool),
     Node(node_cli::NodeCli),
     Query(QueryCli),
     Tower(TowerCli),

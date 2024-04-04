@@ -1,8 +1,6 @@
 use libra_types::{
     exports::AccountAddress,
-    legacy_types::{
-        legacy_recovery_v6::{self, LegacyRecoveryV6}
-    },
+    legacy_types::legacy_recovery_v6::{self, LegacyRecoveryV6},
 };
 
 use std::path::PathBuf;
@@ -35,12 +33,13 @@ fn fix_slow_wallet(r: &mut [LegacyRecoveryV6]) -> anyhow::Result<Vec<AccountAddr
 
 #[test]
 fn parse_json_single() {
-    let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/fixtures/single.json");
+    let p = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/single.json");
 
     let r = recovery_file_parse(p).unwrap();
     if let Some(acc) = r[0].account {
-        assert!(&acc.to_string() == "0000000000000000000000000000000045558bad546e6159020871f7e5d094d7");
+        assert!(
+            &acc.to_string() == "0000000000000000000000000000000045558bad546e6159020871f7e5d094d7"
+        );
     }
 
     // let _has_root = r

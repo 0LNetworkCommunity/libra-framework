@@ -1,4 +1,4 @@
-# Publishing Smart Contracts
+# Testnet: Publishing Smart Contracts
 The `txs` tool is responsible for sending all kinds of transctions including the Package Publish transaction.
 
 See an example of a Move package in `./tests/fixtures/test_publish`, which we use for internal "smoke tests".
