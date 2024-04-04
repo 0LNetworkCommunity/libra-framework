@@ -26,7 +26,7 @@ fn end_to_end_single() {
     let blob = temp_dir.path().join("genesis.blob");
 
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/fixtures/sample_end_user_single.json");
+        .join("tests/fixtures/single.json");
 
     let mut recovery = parse_json::recovery_file_parse(p).unwrap();
 
