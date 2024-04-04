@@ -11,7 +11,7 @@ use libra_genesis_tools::{compare, genesis::make_recovery_genesis_from_vec_legac
 use libra_genesis_tools::{genesis_reader, parse_json};
 use libra_types::exports::AccountAddress;
 use libra_types::exports::ChainId;
-use libra_types::legacy_types::legacy_recovery_v6::LegacyRecoveryV5;
+use libra_types::legacy_types::legacy_recovery_v5::LegacyRecoveryV5;
 use libra_types::legacy_types::vdf_difficulty::VDFDifficulty;
 use libra_types::move_resource::ancestry::AncestryResource;
 use support::{path_utils::json_path, test_vals};

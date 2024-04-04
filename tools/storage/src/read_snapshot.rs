@@ -7,10 +7,9 @@ use diem_backup_cli::{
     },
     storage::{FileHandle, FileHandleRef},
 };
+
 use tokio::{fs::OpenOptions, io::AsyncRead};
-// use serde_json::json;
-// use diem_crypto::HashValue;
-// use diem_types::account_state_blob::AccountStateBlob;
+
 use diem_types::account_address::AccountAddress;
 use diem_types::account_state::AccountState;
 use diem_types::state_store::state_key::{StateKey, StateKeyInner};
@@ -21,7 +20,9 @@ use std::{
     fs,
     path::{Path, PathBuf},
 };
-// use tokio::{fs::OpenOptions, io::AsyncRead};
+
+#[cfg(test)]
+use libra_types::legacy_types::legacy_recovery_v6::{get_legacy_recovery, AccountRole};
 
 ////// SNAPSHOT FILE IO //////
 /// read snapshot manifest file into object

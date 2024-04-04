@@ -11,21 +11,14 @@ use crate::legacy_types::{
     makewhole_resource::MakeWholeResource,
     receipts::ReceiptsResource,
     validator_config::ValidatorConfigResource,
-    wallet::{SlowWalletListResource,
-    SlowWalletResource},
+    wallet::{SlowWalletListResource, SlowWalletResource},
 };
-
-
-
-
 
 use serde::{Deserialize, Serialize};
 
 use std::{fs, io::Write, path::PathBuf};
 
 use super::legacy_cw_resource_v5::CommunityWalletsResourceLegacyV5;
-
-
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 /// Account role
