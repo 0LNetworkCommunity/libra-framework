@@ -9148,6 +9148,7 @@ dependencies = [
  "diem-logger",
  "diem-push-metrics",
  "diem-types",
+ "libra-types",
  "serde_json",
  "tokio",
 ]

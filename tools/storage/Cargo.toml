@@ -24,3 +24,5 @@ diem-push-metrics = { workspace = true }
 diem-types = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
+libra-types = { workspace = true }
+

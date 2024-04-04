@@ -1,6 +1,5 @@
 //! read-archive
 use anyhow::{anyhow, Error, Result};
-use diem_api_types::HashValue;
 use diem_backup_cli::utils::read_record_bytes::ReadRecordBytes;
 use diem_backup_cli::{
     backup_types::{
@@ -8,7 +7,6 @@ use diem_backup_cli::{
     },
     storage::{FileHandle, FileHandleRef},
 };
-use diem_types::account_state::AccountState;
 use tokio::{fs::OpenOptions, io::AsyncRead};
 // use serde_json::json;
 // use diem_crypto::HashValue;
@@ -17,6 +15,12 @@ use std::{
     fs,
     path::{Path, PathBuf},
 };
+use std::collections::HashMap;
+use diem_types::account_address::AccountAddress;
+use diem_types::account_state::AccountState;
+use diem_types::state_store::state_key::{StateKey, StateKeyInner};
+use diem_types::state_store::state_value::StateValue;
+use libra_types::legacy_types::legacy_recovery::{AccountRole, get_legacy_recovery};
 // use tokio::{fs::OpenOptions, io::AsyncRead};
 
 ////// SNAPSHOT FILE IO //////
@@ -45,7 +49,7 @@ pub fn load_epoch_manifest(p: &Path) -> Result<EpochEndingBackup> {
 pub async fn read_account_state_chunk(
     file_handle: FileHandle,
     archive_path: &Path,
-) -> Result<Vec<(HashValue, AccountState)>, Error> {
+) -> Result<Vec<(StateKey, StateValue)>, Error> {
     let full_handle = archive_path
         .parent()
         .expect("could not read archive path")
@@ -58,8 +62,10 @@ pub async fn read_account_state_chunk(
     let mut chunk = vec![];
 
     while let Some(record_bytes) = file.read_record_bytes().await? {
+        //println!("record_bytes: {:?}", &record_bytes.len());
         chunk.push(bcs::from_bytes(&record_bytes)?);
     }
+    //println!("chunk: {:?}", &chunk.len()    );
     Ok(chunk)
 }
 
@@ -74,15 +80,45 @@ async fn accounts_from_snapshot_backup(
     archive_path: &Path,
 ) -> anyhow::Result<Vec<AccountState>> {
     // parse AccountStateBlob from chunks of the archive
-    let mut account_state_blobs: Vec<AccountState> = Vec::new();
+    let mut account_states_map: HashMap<AccountAddress, Vec<(StateKey, StateValue)>> = HashMap::new();
     for chunk in manifest.chunks {
-        let blobs = read_account_state_chunk(chunk.blobs, archive_path).await?;
-        for (_key, blob) in blobs {
-            account_state_blobs.push(blob)
+        let blobs: Vec<(StateKey, StateValue)> = read_account_state_chunk(chunk.blobs, archive_path).await?;
+
+        // Filter out the AccountState blobs
+        // and group by address
+        let account_states_map_chunk: HashMap<AccountAddress, Vec<(StateKey, StateValue)>> = blobs.into_iter().fold(HashMap::new(), |mut acc, (key, blob)| {
+            match key.inner() {
+                StateKeyInner::AccessPath(access_path) => {
+                    // println!("AccessPath: {:?}, address: {:?}", access_path.path, access_path.address);
+                    acc.entry(access_path.address).or_insert(vec![]).push((key, blob));
+                }
+                // StateKeyInner::TableItem { handle, key } => {
+                //     println!("TableItem: {:?}, key_len: {:?}", handle, key.len());
+                // },
+                _ => (),
+            }
+            acc
+        });
+
+        // merge account_states_map_chunk into account_states_map
+        for (address, blobs) in account_states_map_chunk {
+            account_states_map.entry(address).or_insert(vec![]).extend(blobs);
         }
     }
+    // materialize account state for each address
+    let mut account_states: Vec<AccountState> = Vec::new();
+    for (address, blobs) in account_states_map {
+        let blobs_hash_table = blobs.into_iter().fold(HashMap::new(), |mut acc, (key, blob)| {
+            acc.insert(key, blob);
+            acc
+        });
+        match AccountState::from_access_paths_and_values(address, &blobs_hash_table)? {
+            None => {}
+            Some(account_state) => { account_states.push(account_state); }
+        };
+    }
 
-    Ok(account_state_blobs)
+    Ok(account_states)
 }
 
 #[test]
@@ -101,8 +137,127 @@ async fn test_deserialize_account() {
     this_path.push("fixtures/state_epoch_79_ver_33217173.795d/state.manifest");
     let snapshot_manifest = load_snapshot_manifest(&this_path).expect("parse manifest");
     let archive_path = this_path.parent().unwrap();
-    let r = accounts_from_snapshot_backup(snapshot_manifest, &archive_path)
+    let account_states = accounts_from_snapshot_backup(snapshot_manifest, &archive_path)
         .await
         .expect("could not parse snapshot");
-    dbg!(&r);
+    let mut legacy_recovery_vec = Vec::new();
+    for account_state in account_states.iter() {
+        // println!("----------------------------------------------------");
+        // println!("account_address: {:?}", account_state.get_account_address());
+        let legacy_recovery = get_legacy_recovery(&account_state)
+            .expect("could not get legacy recovery");
+        //println!("legacy_recovery: {:?}", legacy_recovery);
+        legacy_recovery_vec.push(legacy_recovery);
+    }
+
+    let legacy_recovery_vec_json = serde_json::to_string(&legacy_recovery_vec)
+        .expect("could not create json for state");
+
+    println!("{}", legacy_recovery_vec_json);
+
+    // basic validation of the account state
+    let account_count = 23634;
+    assert_eq!(account_states.len(), account_count);
+    // auth key
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.auth_key.is_some())
+                   .fold(0, |count, _| count + 1), 23633);
+    // role
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.role == AccountRole::System)
+                   .fold(0, |count, _| count + 1), 1);
+
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.role == AccountRole::Validator)
+                   .fold(0, |count, _| count + 1), 74);
+
+    // TODO: check that there are no operators in snapshot
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.role == AccountRole::Operator)
+                   .fold(0, |count, _| count + 1), 0);
+
+    // balance
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.balance.is_some())
+                   .fold(0, |count, _| count + 1), 23622);
+
+    // val_cfg
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.val_cfg.is_some())
+                   .fold(0, |count, _| count + 1), 74);
+
+
+    // val operator
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.val_operator_cfg.is_some())
+                   .fold(0, |count, _| count + 1), 0);
+
+    // miner state
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.miner_state.is_some())
+                   .fold(0, |count, _| count + 1), 16597);
+
+    // comm wallet
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.comm_wallet.is_some())
+                   .fold(0, |count, _| count + 1), 143);
+
+    // ancestry
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.ancestry.is_some())
+                   .fold(0, |count, _| count + 1), 23574);
+
+    // receipts
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.receipts.is_some())
+                   .fold(0, |count, _| count + 1), 4740);
+
+    // cumulative deposits
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.cumulative_deposits.is_some())
+                   .fold(0, |count, _| count + 1), 145);
+
+    // slow wallet
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.slow_wallet.is_some())
+                   .fold(0, |count, _| count + 1), 1210);
+
+    // slow wallet list
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.slow_wallet_list.is_some())
+                   .fold(0, |count, _| count + 1), 1);
+
+    // user burn preference
+    // TODO:         // fixtures/state_epoch_79_ver_33217173.795d/0-.chunk has no such users
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.user_burn_preference.is_some())
+                   .fold(0, |count, _| count + 1), 0);
+
+    // my vouches
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.my_vouches.is_some())
+                   .fold(0, |count, _| count + 1), 74);
+
+    // tx schedule
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.tx_schedule.is_some())
+                   .fold(0, |count, _| count + 1), 145);
+
+    // fee maker
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.fee_maker.is_some())
+                   .fold(0, |count, _| count + 1), 65);
+
+    // jail
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.jail.is_some())
+                   .fold(0, |count, _| count + 1), 74);
+
+    // my pledge
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.my_pledge.is_some())
+                   .fold(0, |count, _| count + 1), 199);
+
+
+    // burn counter
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.burn_counter.is_some())
+                   .fold(0, |count, _| count + 1), 1);
+
+    // donor voice registry
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.donor_voice_registry.is_some())
+                   .fold(0, |count, _| count + 1), 1);
+
+    // epoch fee maker registry
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.epoch_fee_maker_registry.is_some())
+                   .fold(0, |count, _| count + 1), 1);
+
+
+    // match index
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.match_index.is_some())
+                   .fold(0, |count, _| count + 1), 1);
+
+    // validator universe
+    assert_eq!(legacy_recovery_vec.iter().filter(|l| l.validator_universe.is_some())
+                   .fold(0, |count, _| count + 1), 1);
 }
+
