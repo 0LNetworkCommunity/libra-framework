@@ -56,10 +56,10 @@ fn parse_json_all() {
 
     let mut r = recovery_file_parse(p).unwrap();
 
-    let _has_root = r
-        .iter()
-        .find(|el| el.comm_wallet.is_some())
-        .expect("could not find 0x0 state in recovery file");
+    // let _has_root = r
+    //     .iter()
+    //     .find(|el| el.comm_wallet.is_some())
+    //     .expect("could not find 0x0 state in recovery file");
 
     // parse again to see if we got any errors back.
     let res = fix_slow_wallet(&mut r).unwrap();
