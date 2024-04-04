@@ -28,8 +28,7 @@ use libra_types::{legacy_types::legacy_recovery_v5::LegacyRecoveryV5, ol_progres
 
 use crate::{
     genesis_functions::{
-        genesis_migrate_community_wallet,
-        genesis_migrate_cumu_deposits, set_final_supply,
+        genesis_migrate_community_wallet, genesis_migrate_cumu_deposits, set_final_supply,
         set_validator_baseline_reward,
     },
     supply::populate_supply_stats_from_legacy,
@@ -144,10 +143,8 @@ pub fn encode_genesis_change_set(
     initialize_on_chain_governance(&mut session, genesis_config);
 
     if !recovery.is_empty() {
-        let mut supply =
-            populate_supply_stats_from_legacy(recovery)
-                .expect("could not parse supply from legacy file");
-
+        let supply = populate_supply_stats_from_legacy(recovery)
+            .expect("could not parse supply from legacy file");
 
         crate::genesis_functions::genesis_migrate_all_users(&mut session, recovery, &supply)
             .expect("could not migrate users");

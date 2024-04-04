@@ -2,8 +2,7 @@ use anyhow::Context;
 use clap::{Args, Parser, Subcommand};
 
 use libra_genesis_tools::{
-    genesis_builder, parse_json,
-    testnet_setup,
+    genesis_builder, parse_json, testnet_setup,
     wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME},
 };
 use libra_types::{exports::NamedChain, global_config_dir, legacy_types::fixtures::TestPersona};
@@ -78,9 +77,7 @@ enum Sub {
 async fn main() -> anyhow::Result<()> {
     let cli = GenesisCliArgs::parse();
     match cli.command {
-        Some(Sub::Genesis {
-            github,
-        }) => {
+        Some(Sub::Genesis { github }) => {
             let data_path = cli.home_dir.unwrap_or_else(global_config_dir);
 
             let github_token = github.token_github.unwrap_or(
@@ -117,20 +114,14 @@ async fn main() -> anyhow::Result<()> {
             .start_wizard(github.local_framework, github.json_legacy, false)
             .await?;
         }
-        Some(Sub::Wizard {
-            github,
-        }) => {
+        Some(Sub::Wizard { github }) => {
             GenesisWizard::new(
                 github.org_github,
                 github.name_github,
                 cli.home_dir,
                 cli.chain.unwrap_or(NamedChain::TESTING),
             )
-            .start_wizard(
-                github.local_framework,
-                github.json_legacy,
-                true,
-            )
+            .start_wizard(github.local_framework, github.json_legacy, true)
             .await?;
         }
         Some(Sub::Testnet {

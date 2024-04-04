@@ -1,11 +1,6 @@
-use anyhow::Context;
-use clap::Args;
 use indicatif::ProgressBar;
+use libra_types::legacy_types::legacy_recovery_v5::LegacyRecoveryV5;
 use libra_types::ol_progress::OLProgress;
-use libra_types::{
-    legacy_types::{legacy_address::LegacyAddress, legacy_recovery_v5::LegacyRecoveryV5},
-    ONCHAIN_DECIMAL_PRECISION,
-};
 use std::time::Duration;
 
 // #[derive(Debug, Clone, Args)]
@@ -149,9 +144,7 @@ impl Supply {
 /// iterate over the recovery file and get the sum of all balances.
 /// there's an option to map certain donor-directed wallets to be counted as slow wallets
 /// Note: this may not be the "total supply", since there may be coins in other structs beside an account::balance, e.g escrowed in contracts.
-pub fn populate_supply_stats_from_legacy(
-    rec: &[LegacyRecoveryV5],
-) -> anyhow::Result<Supply> {
+pub fn populate_supply_stats_from_legacy(rec: &[LegacyRecoveryV5]) -> anyhow::Result<Supply> {
     let pb = ProgressBar::new(1000)
         .with_style(OLProgress::spinner())
         .with_message("calculating coin supply");

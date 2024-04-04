@@ -44,7 +44,7 @@ pub struct CompareError {
 pub fn compare_recovery_vec_to_genesis_tx(
     recovery: &mut [LegacyRecoveryV5],
     db_reader: &Arc<dyn DbReader>,
-    supply: &Supply,
+    _supply: &Supply,
 ) -> Result<Vec<CompareError>, anyhow::Error> {
     let mut err_list: Vec<CompareError> = vec![];
     let mut user_supply = 0u64;

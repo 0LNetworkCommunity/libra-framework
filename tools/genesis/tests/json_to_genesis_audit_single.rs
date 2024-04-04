@@ -30,8 +30,7 @@ fn test_correct_supply_arithmetic_single() {
     let mut user_accounts: Vec<LegacyRecoveryV5> = parse_json::recovery_file_parse(json).unwrap();
 
     // get the supply arithmetic so that we can compare outputs
-    let mut supply = supply::populate_supply_stats_from_legacy(&user_accounts).unwrap();
-
+    let supply = supply::populate_supply_stats_from_legacy(&user_accounts).unwrap();
 
     let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
         &mut user_accounts,
@@ -53,7 +52,7 @@ fn test_correct_supply_arithmetic_single() {
         Err(_e) => panic!("error creating comparison"),
     }
 
-    compare::check_supply((100_000_000_000u64 * 1_000_000u64), &db_rw.reader).unwrap();
+    compare::check_supply(100_000_000_000u64 * 1_000_000u64, &db_rw.reader).unwrap();
 }
 
 #[test]

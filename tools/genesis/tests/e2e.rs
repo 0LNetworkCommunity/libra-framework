@@ -16,7 +16,7 @@ use libra_genesis_tools::{
 use std::path::PathBuf;
 
 use libra_framework::head_release_bundle;
-use libra_types::legacy_types::legacy_address::LegacyAddress;
+
 use std::fs;
 
 #[test]
@@ -98,7 +98,6 @@ fn end_to_end_all() {
     let num_vals = 6;
     let test_validators = TestValidator::new_test_set(Some(num_vals), Some(100_000_000_000_000));
     let validators: Vec<Validator> = test_validators.iter().map(|t| t.data.clone()).collect();
-
 
     let tx = make_recovery_genesis_from_vec_legacy_recovery(
         &mut recovery,

@@ -2,7 +2,6 @@
 use crate::genesis::make_recovery_genesis_from_vec_legacy_recovery;
 use crate::genesis_reader::bootstrap_db_reader_from_gen_tx;
 
-
 use crate::wizard::DEFAULT_GIT_BRANCH;
 use crate::{compare, supply, vm};
 
@@ -13,7 +12,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{anyhow, bail, Result};
 use indicatif::ProgressBar;
 
 use diem_crypto::ed25519::ED25519_PUBLIC_KEY_LENGTH;
@@ -155,8 +154,7 @@ pub fn build(
 
         // let settings = supply_settings.context("no supply settings provided")?;
 
-        let mut s =
-            supply::populate_supply_stats_from_legacy(legacy_recovery)?;
+        let s = supply::populate_supply_stats_from_legacy(legacy_recovery)?;
 
         // s.set_ratios_from_settings(&settings)?;
 

@@ -1,9 +1,6 @@
 //! ol functions to run at genesis e.g. migration.
 
-use crate::{
-    process_comm_wallet,
-    supply::{Supply},
-};
+use crate::{process_comm_wallet, supply::Supply};
 
 use anyhow::Context;
 use diem_logger::prelude::*;
@@ -21,7 +18,7 @@ use move_core_types::value::{serialize_values, MoveValue};
 pub fn genesis_migrate_all_users(
     session: &mut SessionExt,
     user_recovery: &mut [LegacyRecoveryV5],
-    supply: &Supply,
+    _supply: &Supply,
 ) -> anyhow::Result<()> {
     user_recovery
         .iter_mut()
@@ -603,7 +600,7 @@ pub fn genesis_migrate_cumu_deposits(
 pub fn set_final_supply(session: &mut SessionExt) {
     let serialized_values = serialize_values(&vec![
         MoveValue::Signer(CORE_CODE_ADDRESS),
-        MoveValue::U64((100_000_000_000u64 * 1_000_000u64) as u64), // scaled final supply
+        MoveValue::U64(100_000_000_000u64 * 1_000_000u64), // scaled final supply
     ]);
 
     exec_function(

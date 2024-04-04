@@ -22,7 +22,7 @@ fn test_correct_supply_arithmetic_all() {
         .join("v5_recovery_actual.json"); // the actual file used on 6.9.0 upgrade
 
     let mut user_accounts = recovery_file_parse(path).unwrap();
-    let map_dd_to_slow = vec![
+    let _map_dd_to_slow = vec![
         // FTW
         "3A6C51A0B786D644590E8A21591FA8E2"
             .parse::<LegacyAddress>()
@@ -33,9 +33,7 @@ fn test_correct_supply_arithmetic_all() {
             .unwrap(),
     ];
     // get the supply arithmetic so that we can compare outputs
-    let mut supply_stats =
-        supply::populate_supply_stats_from_legacy(&user_accounts).unwrap();
-
+    let supply_stats = supply::populate_supply_stats_from_legacy(&user_accounts).unwrap();
 
     let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
         &mut user_accounts,

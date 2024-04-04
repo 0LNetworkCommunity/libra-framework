@@ -162,14 +162,12 @@ pub fn update_cw_with_donor(cw: &mut AllCommWallets, donors: &mut DonorReceipts)
 
 #[test]
 fn test_cw_recovery() {
-    use crate::supply::populate_supply_stats_from_legacy;
     use crate::parse_json;
-    use libra_types::legacy_types::legacy_address::LegacyAddress;
 
     let p = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_export_recovery.json");
 
-    let mut recovery = parse_json::recovery_file_parse(p).unwrap();
+    let recovery = parse_json::recovery_file_parse(p).unwrap();
 
     // test splitting the coin and get scale factor
     // let settings = SupplySettings {
