@@ -8,7 +8,7 @@ use diem_types::{
     transaction::{Transaction, WriteSetPayload},
 };
 use diem_vm_genesis::{GenesisConfiguration, Validator};
-use libra_types::legacy_types::legacy_recovery_v5::LegacyRecoveryV5;
+use libra_types::legacy_types::legacy_recovery_v6::LegacyRecoveryV6;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
@@ -20,7 +20,7 @@ use diem_types::chain_id::NamedChain;
 
 /// Make a recovery genesis blob
 pub fn make_recovery_genesis_from_vec_legacy_recovery(
-    recovery: &mut [LegacyRecoveryV5],
+    recovery: &mut [LegacyRecoveryV6],
     genesis_vals: &[Validator],
     framework_release: &ReleaseBundle,
     chain_id: ChainId,
@@ -68,7 +68,6 @@ fn test_basic_genesis() {
     )
     .unwrap();
 
-    // std::fs::write(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("test_genesis.blob"), bcs::to_bytes(&tx).unwrap());
 }
 
 #[test]

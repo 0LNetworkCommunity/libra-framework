@@ -24,7 +24,7 @@ use diem_vm_genesis::{
     initialize_on_chain_governance, publish_framework, set_genesis_end, validate_genesis_config,
     verify_genesis_write_set, GenesisConfiguration, Validator, GENESIS_KEYPAIR,
 };
-use libra_types::{legacy_types::legacy_recovery_v5::LegacyRecoveryV5, ol_progress::OLProgress};
+use libra_types::{legacy_types::legacy_recovery_v6::LegacyRecoveryV6, ol_progress::OLProgress};
 
 use crate::{
     genesis_functions::{
@@ -64,7 +64,7 @@ pub fn libra_genesis_default(chain: NamedChain) -> GenesisConfiguration {
 
 pub fn migration_genesis(
     validators: &[Validator],
-    recovery: &mut [LegacyRecoveryV5],
+    recovery: &mut [LegacyRecoveryV6],
     framework: &ReleaseBundle,
     chain_id: ChainId,
     // supply_settings: &SupplySettings,
@@ -90,7 +90,7 @@ pub fn migration_genesis(
 pub fn encode_genesis_change_set(
     _core_resources_key: &Ed25519PublicKey,
     validators: &[Validator],
-    recovery: &mut [LegacyRecoveryV5],
+    recovery: &mut [LegacyRecoveryV6],
     framework: &ReleaseBundle,
     chain_id: ChainId,
     genesis_config: &GenesisConfiguration,

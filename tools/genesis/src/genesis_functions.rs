@@ -10,14 +10,14 @@ use diem_vm_genesis::exec_function;
 use indicatif::ProgressIterator;
 use libra_types::{
     exports::AccountAddress,
-    legacy_types::legacy_recovery_v5::{AccountRole, LegacyRecoveryV5},
+    legacy_types::legacy_recovery_v6::{AccountRole, LegacyRecoveryV6},
     ol_progress::OLProgress,
 };
 use move_core_types::value::{serialize_values, MoveValue};
 
 pub fn genesis_migrate_all_users(
     session: &mut SessionExt,
-    user_recovery: &mut [LegacyRecoveryV5],
+    user_recovery: &mut [LegacyRecoveryV6],
     _supply: &Supply,
 ) -> anyhow::Result<()> {
     user_recovery
@@ -106,7 +106,7 @@ pub fn genesis_migrate_all_users(
 
 pub fn genesis_migrate_one_user(
     session: &mut SessionExt,
-    user_recovery: &LegacyRecoveryV5,
+    user_recovery: &LegacyRecoveryV6,
     // split_factor: f64,
 ) -> anyhow::Result<()> {
     if user_recovery.account.is_none()
@@ -154,7 +154,7 @@ pub fn genesis_migrate_one_user(
 
 pub fn genesis_migrate_slow_wallet(
     session: &mut SessionExt,
-    user_recovery: &LegacyRecoveryV5,
+    user_recovery: &LegacyRecoveryV6,
     // split_factor: f64,
 ) -> anyhow::Result<()> {
     if user_recovery.account.is_none()
@@ -230,7 +230,7 @@ pub fn genesis_migrate_slow_wallet(
 
 // pub fn genesis_migrate_infra_escrow(
 //     session: &mut SessionExt,
-//     user_recovery: &LegacyRecoveryV5,
+//     user_recovery: &LegacyRecoveryV6,
 //     supply: &Supply,
 // ) -> anyhow::Result<()> {
 //     if user_recovery.account.is_none()
@@ -268,7 +268,7 @@ pub fn genesis_migrate_slow_wallet(
 
 // /// helper to adjust the expected balance of a validator
 // pub fn util_simulate_new_val_balance(
-//     user_recovery: &mut LegacyRecoveryV5,
+//     user_recovery: &mut LegacyRecoveryV6,
 //     supply: &Supply,
 // ) -> anyhow::Result<()> {
 //     if user_recovery.balance.is_some()
@@ -287,7 +287,7 @@ pub fn genesis_migrate_slow_wallet(
 // /// single place to scale all coins in a legacy recovery
 // // TODO: move to own module
 // pub fn util_scale_all_coins(
-//     user_recovery: &mut LegacyRecoveryV5,
+//     user_recovery: &mut LegacyRecoveryV6,
 //     supply: &Supply,
 // ) -> anyhow::Result<()> {
 //     let split = supply.split_factor;
@@ -326,7 +326,7 @@ pub fn genesis_migrate_slow_wallet(
 
 // // helper for genesis and tests to calculate infra escrow the same
 // pub fn util_calculate_infra_escrow(
-//     user_recovery: &LegacyRecoveryV5,
+//     user_recovery: &LegacyRecoveryV6,
 //     supply: &Supply,
 // ) -> anyhow::Result<u64> {
 //     if user_recovery.account.is_none()
@@ -359,7 +359,7 @@ pub fn genesis_migrate_slow_wallet(
 
 pub fn genesis_migrate_receipts(
     session: &mut SessionExt,
-    user_recovery: &LegacyRecoveryV5,
+    user_recovery: &LegacyRecoveryV6,
 ) -> anyhow::Result<()> {
     if user_recovery.account.is_none()
         || user_recovery.auth_key.is_none()
@@ -426,7 +426,7 @@ pub fn genesis_migrate_receipts(
 
 // pub fn genesis_migrate_tower_state(
 //     session: &mut SessionExt,
-//     user_recovery: &LegacyRecoveryV5,
+//     user_recovery: &LegacyRecoveryV6,
 // ) -> anyhow::Result<()> {
 //     if user_recovery.account.is_none()
 //         || user_recovery.auth_key.is_none()
@@ -468,7 +468,7 @@ pub fn genesis_migrate_receipts(
 
 pub fn genesis_migrate_ancestry(
     session: &mut SessionExt,
-    user_recovery: &LegacyRecoveryV5,
+    user_recovery: &LegacyRecoveryV6,
 ) -> anyhow::Result<()> {
     if user_recovery.account.is_none()
         || user_recovery.auth_key.is_none()
@@ -518,7 +518,7 @@ pub fn genesis_migrate_ancestry(
 
 pub fn genesis_migrate_community_wallet(
     session: &mut SessionExt,
-    user_recovery: &[LegacyRecoveryV5],
+    user_recovery: &[LegacyRecoveryV6],
 ) -> anyhow::Result<()> {
     if let Some(root) = user_recovery.iter().find(|e| e.role == AccountRole::System) {
         let cw_list = &root
@@ -554,7 +554,7 @@ pub fn genesis_migrate_community_wallet(
 /// migrate the Cumulative Deposits Structs (for the Match Index weights).
 pub fn genesis_migrate_cumu_deposits(
     session: &mut SessionExt,
-    user_recovery: &[LegacyRecoveryV5],
+    user_recovery: &[LegacyRecoveryV6],
 ) -> anyhow::Result<()> {
     let (_dr, cw) = process_comm_wallet::prepare_cw_and_receipts(user_recovery)?;
 
@@ -629,7 +629,7 @@ pub fn set_validator_baseline_reward(session: &mut SessionExt, nominal_reward: u
 
 // pub fn _create_make_whole_incident(
 //     session: &mut SessionExt,
-//     user_recovery: &[LegacyRecoveryV5],
+//     user_recovery: &[LegacyRecoveryV6],
 //     make_whole_budget: f64,
 //     split_factor: f64,
 // ) -> anyhow::Result<()> {

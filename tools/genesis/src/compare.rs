@@ -15,8 +15,7 @@ use diem_types::account_view::AccountView;
 use diem_types::transaction::Transaction;
 use indicatif::{ProgressBar, ProgressIterator};
 use libra_types::exports::AccountAddress;
-use libra_types::legacy_types::legacy_address::LegacyAddress;
-use libra_types::legacy_types::legacy_recovery_v5::LegacyRecoveryV5;
+use libra_types::legacy_types::legacy_recovery_v6::LegacyRecoveryV6;
 use libra_types::move_resource::gas_coin::{GasCoinStoreResource, SlowWalletBalance};
 use libra_types::ol_progress::OLProgress;
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
@@ -31,7 +30,7 @@ pub struct CompareError {
     /// index of LegacyRecover
     pub index: u64,
     /// user account
-    pub account: Option<LegacyAddress>,
+    pub account: Option<AccountAddress>,
     /// value expected
     pub expected: u64,
     /// value on chain after migration
@@ -42,7 +41,7 @@ pub struct CompareError {
 
 /// Compare the balances in a recovery file to the balances in a genesis blob.
 pub fn compare_recovery_vec_to_genesis_tx(
-    recovery: &mut [LegacyRecoveryV5],
+    recovery: &mut [LegacyRecoveryV6],
     db_reader: &Arc<dyn DbReader>,
     _supply: &Supply,
 ) -> Result<Vec<CompareError>, anyhow::Error> {
@@ -66,7 +65,7 @@ pub fn compare_recovery_vec_to_genesis_tx(
                 return;
             };
 
-            if old.account.unwrap() == LegacyAddress::ZERO {
+            if old.account.unwrap() == AccountAddress::ZERO {
                 return;
             };
 
@@ -143,7 +142,7 @@ struct JsonDump {
 }
 /// Compare the balances in a recovery file to the balances in a genesis blob.
 pub fn export_account_balances(
-    recovery: &[LegacyRecoveryV5],
+    recovery: &[LegacyRecoveryV6],
     db_reader: &Arc<dyn DbReader>,
     output: &Path,
 ) -> anyhow::Result<()> {

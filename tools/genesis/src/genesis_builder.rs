@@ -39,7 +39,7 @@ use libra_framework::release;
 use libra_types::exports::ChainId;
 use libra_types::exports::NamedChain;
 use libra_types::legacy_types::fixtures::TestPersona;
-use libra_types::legacy_types::legacy_recovery_v5::LegacyRecoveryV5;
+use libra_types::legacy_types::legacy_recovery_v6::LegacyRecoveryV6;
 use libra_types::ol_progress::OLProgress;
 use libra_wallet::account_keys::get_keys_from_mnem;
 use libra_wallet::keys::generate_key_objects_from_legacy;
@@ -69,7 +69,7 @@ pub fn build(
     github_token: String,
     home_path: PathBuf,
     use_local_framework: bool,
-    legacy_recovery: &mut [LegacyRecoveryV5],
+    legacy_recovery: &mut [LegacyRecoveryV6],
     // supply_settings: Option<SupplySettings>,
     chain_name: NamedChain,
     testnet_vals: Option<Vec<ValidatorConfiguration>>,

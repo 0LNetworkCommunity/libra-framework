@@ -1,5 +1,5 @@
 use indicatif::ProgressBar;
-use libra_types::legacy_types::legacy_recovery_v5::LegacyRecoveryV5;
+use libra_types::legacy_types::legacy_recovery_v6::LegacyRecoveryV6;
 use libra_types::ol_progress::OLProgress;
 use std::time::Duration;
 
@@ -88,7 +88,7 @@ impl Supply {
     //     }
     // }
 
-    fn inc_supply(&mut self, r: &LegacyRecoveryV5) -> &mut Self {
+    fn inc_supply(&mut self, r: &LegacyRecoveryV6) -> &mut Self {
         // get balances
         let user_total: f64 = match &r.balance {
             Some(b) => b.coin as f64,
@@ -96,18 +96,18 @@ impl Supply {
         };
         self.total += user_total;
 
-        // get loose coins in make_whole
-        if let Some(mk) = &r.make_whole {
-            let user_credits = mk.credits.iter().fold(0, |sum, e| {
-                if !e.claimed {
-                    return sum + e.coins.value;
-                }
-                sum
-            }) as f64;
+        // // get loose coins in make_whole
+        // if let Some(mk) = &r.make_whole {
+        //     let user_credits = mk.credits.iter().fold(0, |sum, e| {
+        //         if !e.claimed {
+        //             return sum + e.coins.value;
+        //         }
+        //         sum
+        //     }) as f64;
 
-            self.total += user_credits;
-            self.make_whole += user_credits;
-        }
+        //     self.total += user_credits;
+        //     self.make_whole += user_credits;
+        // }
 
         // sum all accounts
         if let Some(sl) = &r.slow_wallet {
@@ -144,7 +144,7 @@ impl Supply {
 /// iterate over the recovery file and get the sum of all balances.
 /// there's an option to map certain donor-directed wallets to be counted as slow wallets
 /// Note: this may not be the "total supply", since there may be coins in other structs beside an account::balance, e.g escrowed in contracts.
-pub fn populate_supply_stats_from_legacy(rec: &[LegacyRecoveryV5]) -> anyhow::Result<Supply> {
+pub fn populate_supply_stats_from_legacy(rec: &[LegacyRecoveryV6]) -> anyhow::Result<Supply> {
     let pb = ProgressBar::new(1000)
         .with_style(OLProgress::spinner())
         .with_message("calculating coin supply");
