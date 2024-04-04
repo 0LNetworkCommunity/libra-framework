@@ -50,11 +50,11 @@ module ol_framework::community_wallet_init {
     const MINIMUM_AUTH: u64 = 3;
 
 
-    public(friend) fun migrate_community_wallet_account(vm: &signer, dv_account:
+    public(friend) fun migrate_community_wallet_account(framework: &signer, dv_account:
     &signer) {
       use diem_framework::system_addresses;
-      system_addresses::assert_ol(vm);
-      donor_voice_txs::migrate_community_wallet_account(vm, dv_account);
+      system_addresses::assert_diem_framework(framework);
+      donor_voice_txs::migrate_community_wallet_account(framework, dv_account);
       community_wallet::set_comm_wallet(dv_account);
     }
 

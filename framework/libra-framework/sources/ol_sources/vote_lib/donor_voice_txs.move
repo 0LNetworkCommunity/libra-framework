@@ -127,9 +127,9 @@ module ol_framework::donor_voice_txs {
 
 
     // // can only be called by genesis
-    public(friend) fun migrate_community_wallet_account(vm: &signer, dv_account:
+    public(friend) fun migrate_community_wallet_account(framework: &signer, dv_account:
     &signer) {
-      system_addresses::assert_ol(vm);
+      system_addresses::assert_ol(framework);
       let liquidate_to_match_index = true;
       // skip setting up the multisig
       structs_init(dv_account, liquidate_to_match_index);

@@ -69,13 +69,13 @@ module ol_framework::slow_wallet {
     /// must apply the coin split factor.
     /// TODO: make this private with a public test helper
     fun fork_migrate_slow_wallet(
-      vm: &signer,
+      framework: &signer,
       user: &signer,
       unlocked: u64,
       transferred: u64,
       // split_factor: u64,
     ) acquires SlowWallet, SlowWalletList {
-      system_addresses::assert_ol(vm);
+      system_addresses::assert_diem_framework(framework);
 
       let user_addr = signer::address_of(user);
       if (!exists<SlowWallet>(user_addr)) {
@@ -84,7 +84,7 @@ module ol_framework::slow_wallet {
           transferred,
         });
 
-        update_slow_list(vm, user);
+        update_slow_list(framework, user);
       } else {
         let state = borrow_global_mut<SlowWallet>(user_addr);
         state.unlocked = unlocked;
@@ -111,12 +111,12 @@ module ol_framework::slow_wallet {
     /// private function which can only be called at genesis
     /// sets the list of accounts that are slow wallets.
     fun update_slow_list(
-      vm: &signer,
+      framework: &signer,
       user: &signer,
     ) acquires SlowWalletList{
-      system_addresses::assert_ol(vm);
+      system_addresses::assert_diem_framework(framework);
       if (!exists<SlowWalletList>(@ol_framework)) {
-        initialize(vm); //don't abort
+        initialize(framework); //don't abort
       };
       let state = borrow_global_mut<SlowWalletList>(@ol_framework);
       let addr = signer::address_of(user);
