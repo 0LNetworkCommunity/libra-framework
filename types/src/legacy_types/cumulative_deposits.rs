@@ -2,10 +2,10 @@
 
 use anyhow::Result;
 
+use move_core_types::account_address::AccountAddress;
+use move_core_types::move_resource::MoveResource;
 use move_core_types::{ident_str, identifier::IdentStr, move_resource::MoveStructType};
 use serde::{Deserialize, Serialize};
-use move_core_types::move_resource::MoveResource;
-use move_core_types::account_address::AccountAddress;
 
 // Legacy Balance resource
 #[derive(Debug, Clone, Serialize, Deserialize)]

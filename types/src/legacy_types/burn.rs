@@ -11,7 +11,6 @@ pub struct UserBurnPreferenceResource {
     pub send_community: bool,
 }
 
-
 impl MoveStructType for UserBurnPreferenceResource {
     const MODULE_NAME: &'static IdentStr = ident_str!("burn");
     const STRUCT_NAME: &'static IdentStr = ident_str!("UserBurnPreference");
@@ -22,7 +21,6 @@ impl MoveStructType for UserBurnPreferenceResource {
 }
 
 impl MoveResource for UserBurnPreferenceResource {}
-
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct BurnCounterResource {

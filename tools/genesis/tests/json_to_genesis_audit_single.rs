@@ -11,7 +11,7 @@ use libra_genesis_tools::{compare, genesis::make_recovery_genesis_from_vec_legac
 use libra_genesis_tools::{genesis_reader, parse_json};
 use libra_types::exports::AccountAddress;
 use libra_types::exports::ChainId;
-use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
+use libra_types::legacy_types::legacy_recovery_v6::LegacyRecoveryV5;
 use libra_types::legacy_types::vdf_difficulty::VDFDifficulty;
 use libra_types::move_resource::ancestry::AncestryResource;
 use support::{path_utils::json_path, test_vals};
@@ -27,7 +27,7 @@ fn test_correct_supply_arithmetic_single() {
         .unwrap()
         .join("sample_end_user_single.json");
 
-    let mut user_accounts: Vec<LegacyRecovery> = parse_json::recovery_file_parse(json).unwrap();
+    let mut user_accounts: Vec<LegacyRecoveryV5> = parse_json::recovery_file_parse(json).unwrap();
 
     // get the supply arithmetic so that we can compare outputs
     let mut supply = supply::populate_supply_stats_from_legacy(&user_accounts, &[]).unwrap();
@@ -69,7 +69,7 @@ fn test_check_genesis_validators() {
         .unwrap()
         .join("sample_end_user_single.json");
 
-    let mut user_accounts: Vec<LegacyRecovery> = parse_json::recovery_file_parse(json).unwrap();
+    let mut user_accounts: Vec<LegacyRecoveryV5> = parse_json::recovery_file_parse(json).unwrap();
 
     let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
         &mut user_accounts,
@@ -105,7 +105,7 @@ fn test_check_ancestry() {
         .unwrap()
         .join("sample_end_user_single.json");
 
-    let mut user_accounts: Vec<LegacyRecovery> = parse_json::recovery_file_parse(json).unwrap();
+    let mut user_accounts: Vec<LegacyRecoveryV5> = parse_json::recovery_file_parse(json).unwrap();
 
     let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
         &mut user_accounts,
@@ -159,7 +159,7 @@ fn test_check_mainnet_constants() -> anyhow::Result<()> {
         .unwrap()
         .join("sample_end_user_single.json");
 
-    let mut user_accounts: Vec<LegacyRecovery> = parse_json::recovery_file_parse(json).unwrap();
+    let mut user_accounts: Vec<LegacyRecoveryV5> = parse_json::recovery_file_parse(json).unwrap();
     let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
         &mut user_accounts,
         &genesis_vals,

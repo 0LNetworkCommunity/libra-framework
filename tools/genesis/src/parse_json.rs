@@ -1,18 +1,18 @@
 use libra_types::legacy_types::{
     legacy_address::LegacyAddress,
-    legacy_recovery::{self, LegacyRecovery},
+    legacy_recovery_v5::{self, LegacyRecoveryV5},
 };
 use std::path::PathBuf;
 /// Make a recovery genesis blob
-pub fn recovery_file_parse(recovery_json_path: PathBuf) -> anyhow::Result<Vec<LegacyRecovery>> {
-    let mut r = legacy_recovery::read_from_recovery_file(&recovery_json_path);
+pub fn recovery_file_parse(recovery_json_path: PathBuf) -> anyhow::Result<Vec<LegacyRecoveryV5>> {
+    let mut r = legacy_recovery_v5::read_from_recovery_file(&recovery_json_path);
 
     fix_slow_wallet(&mut r)?;
 
     Ok(r)
 }
 
-fn fix_slow_wallet(r: &mut [LegacyRecovery]) -> anyhow::Result<Vec<LegacyAddress>> {
+fn fix_slow_wallet(r: &mut [LegacyRecoveryV5]) -> anyhow::Result<Vec<LegacyAddress>> {
     let mut errs = vec![];
     r.iter_mut().for_each(|e| {
         if e.account.is_some() && e.balance.is_some() {

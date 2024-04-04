@@ -31,7 +31,6 @@ pub struct MatchIndexResource {
     ratio: Vec<f64>, // TODO: do conversion from fixed_point32::FixedPoint32
 }
 
-
 impl MoveStructType for MatchIndexResource {
     const MODULE_NAME: &'static IdentStr = ident_str!("match_index");
     const STRUCT_NAME: &'static IdentStr = ident_str!("MatchIndex");

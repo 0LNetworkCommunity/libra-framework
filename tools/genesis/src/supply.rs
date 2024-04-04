@@ -3,7 +3,7 @@ use clap::Args;
 use indicatif::ProgressBar;
 use libra_types::ol_progress::OLProgress;
 use libra_types::{
-    legacy_types::{legacy_address::LegacyAddress, legacy_recovery::LegacyRecovery},
+    legacy_types::{legacy_address::LegacyAddress, legacy_recovery_v5::LegacyRecoveryV5},
     ONCHAIN_DECIMAL_PRECISION,
 };
 use std::time::Duration;
@@ -95,7 +95,7 @@ impl Supply {
 
 fn inc_supply(
     mut acc: Supply,
-    r: &LegacyRecovery,
+    r: &LegacyRecoveryV5,
     dd_wallet_list: &[LegacyAddress],
 ) -> anyhow::Result<Supply> {
     // get balances
@@ -156,7 +156,7 @@ fn inc_supply(
 /// there's an option to map certain donor-directed wallets to be counted as slow wallets
 /// Note: this may not be the "total supply", since there may be coins in other structs beside an account::balance, e.g escrowed in contracts.
 pub fn populate_supply_stats_from_legacy(
-    rec: &[LegacyRecovery],
+    rec: &[LegacyRecoveryV5],
     map_dd_to_slow: &[LegacyAddress],
 ) -> anyhow::Result<Supply> {
     let pb = ProgressBar::new(1000)

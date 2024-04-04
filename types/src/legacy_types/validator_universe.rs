@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ValidatorUniverseResource {
-    validators: Vec<AccountAddress>
+    validators: Vec<AccountAddress>,
 }
 
 impl MoveStructType for ValidatorUniverseResource {

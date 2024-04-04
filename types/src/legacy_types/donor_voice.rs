@@ -12,7 +12,6 @@ pub struct RegistryResource {
     pub liquidation_queue: Vec<AccountAddress>,
 }
 
-
 impl MoveStructType for RegistryResource {
     const MODULE_NAME: &'static IdentStr = ident_str!("donor_voice");
     const STRUCT_NAME: &'static IdentStr = ident_str!("Registry");

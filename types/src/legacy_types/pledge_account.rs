@@ -27,7 +27,7 @@ pub struct PledgeAccountResource {
     address_of_beneficiary: AccountAddress,
     // the address of the project, also where the BeneficiaryPolicy is stored for reference.
     amount: u64,
-    pledge: u64 , // use u64 instead of Coin<LibraCoin>,
+    pledge: u64, // use u64 instead of Coin<LibraCoin>,
     epoch_of_last_deposit: u64,
     lifetime_pledged: u64,
     lifetime_withdrawn: u64,

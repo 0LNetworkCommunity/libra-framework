@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use diem_types::account_address::AccountAddress;
-use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
+use libra_types::legacy_types::legacy_recovery_v5::LegacyRecoveryV5;
 use serde::Serialize;
 
 pub struct AllCommWallets {
@@ -35,7 +35,7 @@ pub struct ReceiptsResourceV7 {
 /// do the entire workflow of processing community wallet accounts
 /// and inserting the donor information based on receipts
 pub fn prepare_cw_and_receipts(
-    recovery: &[LegacyRecovery],
+    recovery: &[LegacyRecoveryV5],
     // split_factor: f64,
 ) -> anyhow::Result<(DonorReceipts, AllCommWallets)> {
     let mut dr = rebuild_donor_receipts(recovery)?;
@@ -47,7 +47,7 @@ pub fn prepare_cw_and_receipts(
 }
 
 /// process donor receipts
-pub fn rebuild_donor_receipts(recovery: &[LegacyRecovery]) -> anyhow::Result<DonorReceipts> {
+pub fn rebuild_donor_receipts(recovery: &[LegacyRecoveryV5]) -> anyhow::Result<DonorReceipts> {
     let total_cumu = 0;
     let mut list = BTreeMap::new();
 
@@ -89,7 +89,7 @@ pub fn rebuild_donor_receipts(recovery: &[LegacyRecovery]) -> anyhow::Result<Don
     })
 }
 
-pub fn rebuild_cw_cumu_deposits(recovery: &[LegacyRecovery]) -> anyhow::Result<AllCommWallets> {
+pub fn rebuild_cw_cumu_deposits(recovery: &[LegacyRecoveryV5]) -> anyhow::Result<AllCommWallets> {
     let mut total_cumu = 0;
     let mut list = BTreeMap::new();
 
