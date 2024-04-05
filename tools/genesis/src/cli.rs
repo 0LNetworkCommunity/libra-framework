@@ -26,14 +26,18 @@ impl GenesisCli {
         let data_path = self.home_dir.clone().unwrap_or_else(global_config_dir);
 
         match &self.command {
-            Some(Sub::Build { github }) => {
-                let github_token = find_github_token(&github.token_github_dir)?;
-
+            Some(Sub::Build { github, drop_list }) => {
                 let mut recovery = if let Some(p) = github.json_legacy.clone() {
                     parse_json::recovery_file_parse(p)?
                 } else {
                     vec![]
                 };
+
+                if let Some(dp) = drop_list {
+                    parse_json::drop_accounts(&mut recovery, dp)?;
+                };
+
+                let github_token = find_github_token(&github.token_github_dir)?;
 
                 genesis_builder::build(
                     github.org_github.to_owned(),
@@ -114,6 +118,10 @@ enum Sub {
         /// github args
         #[clap(flatten)]
         github: GithubArgs,
+
+        /// Ark B
+        #[clap(long)]
+        drop_list: Option<PathBuf>,
     }, // just do genesis without wizard
     Register {
         /// github args

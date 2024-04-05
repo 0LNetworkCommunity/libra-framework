@@ -1,9 +1,13 @@
 use libra_types::{
-    exports::AccountAddress,
+    exports::{AccountAddress, AuthenticationKey},
     legacy_types::legacy_recovery_v6::{self, LegacyRecoveryV6},
 };
+use serde::{Deserialize, Serialize};
 
-use std::path::PathBuf;
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 /// Make a recovery genesis blob
 pub fn recovery_file_parse(recovery_json_path: PathBuf) -> anyhow::Result<Vec<LegacyRecoveryV6>> {
     let mut r = legacy_recovery_v6::read_from_recovery_file(&recovery_json_path);
@@ -31,6 +35,36 @@ fn fix_slow_wallet(r: &mut [LegacyRecoveryV6]) -> anyhow::Result<Vec<AccountAddr
     });
 
     Ok(errs)
+}
+
+#[derive(Serialize, Deserialize)]
+struct DropList {
+    account: AccountAddress,
+}
+
+/// strip accounts from legacy
+pub fn drop_accounts(r: &mut [LegacyRecoveryV6], drop_file: &Path) -> anyhow::Result<()> {
+    let data = fs::read_to_string(&drop_file).expect("Unable to read file");
+    let list: Vec<DropList> = serde_json::from_str(&data).expect("Unable to parse");
+    let mapped: Vec<AccountAddress> = list.into_iter().map(|e| e.account).collect();
+    let mut dummy = [0u8; 32];
+    let auth_key = b"Oh, is it too late now to say sorry?".to_vec();
+    dummy.copy_from_slice(&auth_key);
+    r.iter_mut().for_each(|e| {
+        if let Some(account) = e.account {
+            if mapped.contains(&account) {
+                let mut dead = LegacyRecoveryV6::default();
+                dead.account = Some(account);
+                dead.auth_key = Some(AuthenticationKey::new(dummy));
+                *e = dead;
+            }
+        }
+    });
+
+    let path = drop_file.parent().unwrap().join("migration_sanitized.json");
+    let json = serde_json::to_string(r)?;
+    std::fs::write(path, json)?;
+    Ok(())
 }
 
 #[test]
