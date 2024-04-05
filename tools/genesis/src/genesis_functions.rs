@@ -89,15 +89,23 @@ pub fn genesis_migrate_all_users(
                 }
             }
 
-            if a.burn_counter.is_some() {
-                match genesis_migrate_infra_escrow(session, a) {
-                    Ok(_) => {}
-                    Err(e) => {
-                        if a.role != AccountRole::System {
-                            println!("Error migrating user: {:?}", e);
-                        }
-                    }
-                }
+            if let Some(b) = a.burn_tracker.as_ref() {
+                let serialized_values = serialize_values(&vec![
+                    MoveValue::Signer(CORE_CODE_ADDRESS),
+                    MoveValue::Signer(a.account.expect("address")),
+                    MoveValue::U64(b.prev_supply),
+                    MoveValue::U64(b.prev_balance),
+                    MoveValue::U64(b.burn_at_last_calc),
+                    MoveValue::U64(b.cumu_burn),
+                ]);
+
+                exec_function(
+                    session,
+                    "ol_account",
+                    "fork_migrate_burn_tracker",
+                    vec![],
+                    serialized_values,
+                );
             }
         });
     Ok(())
