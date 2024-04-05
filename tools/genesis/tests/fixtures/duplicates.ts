@@ -1,7 +1,7 @@
 ///
 import { readFileSync, writeFileSync } from 'fs';
 
-const str = readFileSync('./sample_export_recovery.orig').toString()
+const str = readFileSync('./sample_export_recovery.json').toString()
 let all = JSON.parse(str)
 console.log(all.length)
 
@@ -46,20 +46,20 @@ let duplicates = [
 "647f14a85feb267ad78368c10e203322"]
 
 
-let b = all.filter((e: string) => !e.account.includes("58c12048bc8313cc82dcb903878ac81e")
-  && !e.account.includes("38c091fb1fd44d7913ae3796fb2c98b5")
-  && !e.account.includes("b84c2c84e241733dc685dde2c55338a")
-  && !e.account.includes("d49e2f74b3f10c944f2fa4063f1ab4e3")
-  && !e.account.includes("8e73e907027707677facc7f272c0c24b")
-  && !e.account.includes("385a69bfb47273ad316d48d2a2bcafcf")
-  && !e.account.includes("44f53d9235410335f10ca433d544ab89")
-  && !e.account.includes("ff5d10d60a1ee396153e8eafb23959b4")
-  && !e.account.includes("95d9a5635b751dc137bc22ff265e5d9c7f")
-  && !e.account.includes("95e42cd20d430f5ab50e4693f8465d48")
-  && !e.account.includes("2624f05af4b4f23ef888fb3e119751c1")
+let b = all.filter((e: string) => e.account.includes("0000000000000000000000000000000000000000000000000000000000000003")
+  // && !e.account.includes("38c091fb1fd44d7913ae3796fb2c98b5")
+  // && !e.account.includes("b84c2c84e241733dc685dde2c55338a")
+  // && !e.account.includes("d49e2f74b3f10c944f2fa4063f1ab4e3")
+  // && !e.account.includes("8e73e907027707677facc7f272c0c24b")
+  // && !e.account.includes("385a69bfb47273ad316d48d2a2bcafcf")
+  // && !e.account.includes("44f53d9235410335f10ca433d544ab89")
+  // && !e.account.includes("ff5d10d60a1ee396153e8eafb23959b4")
+  // && !e.account.includes("95d9a5635b751dc137bc22ff265e5d9c7f")
+  // && !e.account.includes("95e42cd20d430f5ab50e4693f8465d48")
+  // && !e.account.includes("2624f05af4b4f23ef888fb3e119751c1")
 
 )
 
-console.log(b.length)",
-console.log(all[0])
-writeFileSync('./sample_export_recovery.json', JSON.stringify(b))
+// console.log(b.length)",
+console.log(b)
+writeFileSync('./test.json', JSON.stringify(b))
