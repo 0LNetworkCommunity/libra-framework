@@ -9,6 +9,7 @@ use libra_types::{exports::NamedChain, global_config_dir, legacy_types::fixtures
 use std::{env, fs, net::Ipv4Addr, path::PathBuf};
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
+/// Generate genesis transactions for testnet and upgrades
 pub struct GenesisCli {
     #[clap(subcommand)]
     command: Option<Sub>,

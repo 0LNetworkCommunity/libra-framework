@@ -70,7 +70,6 @@ pub fn build(
     home_path: PathBuf,
     use_local_framework: bool,
     legacy_recovery: &mut [LegacyRecoveryV6],
-    // supply_settings: Option<SupplySettings>,
     chain_name: NamedChain,
     testnet_vals: Option<Vec<ValidatorConfiguration>>,
 ) -> Result<Vec<PathBuf>> {
