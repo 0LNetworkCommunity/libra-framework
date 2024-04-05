@@ -272,8 +272,9 @@ module diem_framework::epoch_boundary {
     public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64,
     _epoch_round: u64) acquires BoundaryStatus {
         print(&string::utf8(b"EPOCH BOUNDARY BEGINS"));
+        // either 0x0 or 0x1 can call, but we will always use framework signer
         system_addresses::assert_ol(root);
-
+        let root = &create_signer::create_signer(@ol_framework);
         let status = borrow_global_mut<BoundaryStatus>(@ol_framework);
 
         print(&string::utf8(b"status reset"));

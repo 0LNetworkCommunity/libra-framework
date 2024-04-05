@@ -1,6 +1,8 @@
+use std::time::{Duration, Instant};
+
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 
-use diem_forge::Swarm;
+use diem_forge::{Swarm, SwarmExt};
 use libra_cached_packages::libra_stdlib;
 use libra_framework::release::ReleaseTarget;
 use smoke_test::smoke_test_environment::new_local_swarm_with_release;
@@ -25,6 +27,11 @@ async fn meta_can_start_swarm() {
         .submit_and_wait(&demo_txn)
         .await
         .expect("could not send demo tx");
+
+    swarm
+        .liveness_check(Instant::now().checked_add(Duration::from_secs(5)).unwrap())
+        .await
+        .expect("cannot confirm swarm liveness");
 }
 
 /// testing the LibraSmoke abstraction can load

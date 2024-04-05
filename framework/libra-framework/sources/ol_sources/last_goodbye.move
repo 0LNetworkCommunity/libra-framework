@@ -51,7 +51,6 @@ module ol_framework::last_goodbye {
   use std::vector;
   use std::error;
   use std::debug::print;
-  use std::string;
   use diem_framework::coin;
   use diem_framework::system_addresses;
   use ol_framework::burn;
@@ -61,7 +60,6 @@ module ol_framework::last_goodbye {
   use ol_framework::jail;
   use ol_framework::vouch;
   use ol_framework::slow_wallet;
-  use ol_framework::stake;
 
   use diem_framework::account;
 
@@ -97,14 +95,32 @@ module ol_framework::last_goodbye {
       return
     };
 
-    // we dont drop validators - work is work
-    if(stake::is_valid(user_addr)){
-      print(&string::utf8(b"Account is a validator: do not board ark b"));
-      return
+    // print(&2000);
+
+    // dangling state in receipts could allow user to participate in community
+    // wallets
+        // print(&2002);
+
+    receipts::hard_fork_sanitize(vm, user);
+            // print(&2003);
+
+    jail::garbage_collection(user);
+            // print(&2004);
+
+    vouch::hard_fork_sanitize(vm, user);
+            // print(&2005);
+
+    let locked = slow_wallet::hard_fork_sanitize(vm, user);
+    if (locked > 0) {
+      print(&user_addr);
+      print(&locked);
     };
 
-    print(&2000);
-    // do all the necessary coin accounting prior to removing the account.
+    // remove a pledge account if there is one, so that coins there are
+    // not dangling
+    let _coin_val = pledge_accounts::hard_fork_sanitize(vm, user);
+
+        // do all the necessary coin accounting prior to removing the account.
     let total_bal = coin::balance<LibraCoin>(user_addr);
 
     let all_coins_opt = coin::vm_withdraw<LibraCoin>(vm, user_addr,
@@ -122,35 +138,20 @@ module ol_framework::last_goodbye {
       let good_capital = option::extract(&mut all_coins_opt);
       burn::burn_and_track(good_capital);
     };
-    print(&2001);
+    // print(&2001);
 
     option::destroy_none(all_coins_opt);
 
-    // dangling state in receipts could allow user to participate in community
-    // wallets
-        print(&2002);
 
-    receipts::hard_fork_sanitize(vm, user);
-            print(&2003);
-
-    jail::garbage_collection(user);
-            print(&2004);
-
-    vouch::hard_fork_sanitize(vm, user);
-            print(&2005);
-    
-    slow_wallet::hard_fork_sanitize(vm, user);
-            print(&2006);
-
-    // remove a pledge account if there is one, so that coins there are
-    // not dangling
-    pledge_accounts::hard_fork_sanitize(vm, user);
-            print(&2007);
+    // if (coin_val > 0) {
+    //   print(&user_addr);
+    //   print(&coin_val);
+    // };
 
 
     let auth_key = b"Oh, is it too late now to say sorry?";
     vector::trim(&mut auth_key, 32);
-        print(&2008);
+        // print(&2008);
 
     // Oh, is it too late now to say sorry?
     // Yeah, I know that I let you down
@@ -160,29 +161,22 @@ module ol_framework::last_goodbye {
     // another function can be called to drop the account::Account completely
     // and then the offline db tools can safely remove the key from db.
     account::rotate_authentication_key_internal(user, auth_key);
-            print(&2009);
+            // print(&2009);
 
   }
 
   fun last_goodbye(vm: &signer, user: &signer) {
-    print(&10000);
+    // print(&10000);
     let addr = signer::address_of(user);
     if (!account::exists_at(addr)) {
-      print(&addr);
-      return
-    };
-
-    // we dont drop validators - work is work
-    if(stake::is_valid(addr)){
-      print(&addr);
-      print(&string::utf8(b"Validator boarding ark a"));
+      // print(&addr);
       return
     };
 
     let auth_orig = account::get_authentication_key(addr);
-    print(&10001);
+    // print(&10001);
     dont_think_twice_its_alright(vm, user);
-    print(&10002);
+    // print(&10002);
 
     let new_auth = account::get_authentication_key(addr);
     // if the account is a validator they stay on ark a
@@ -195,13 +189,12 @@ module ol_framework::last_goodbye {
       // Just hear this and then I'll go
       // You gave me more to live for
       // More than you'll ever know
-          print(&10003);
+          // print(&10003);
       account::hard_fork_drop(vm, user);
-          print(&10004);
+          // print(&10004);
 
-      print(&addr);
 
-      print(&@0xDEAD);
+      // print(&@0xDEAD);
   }
 
   #[test_only]
@@ -269,25 +262,6 @@ module ol_framework::last_goodbye {
       // Verify if the authentication key changed as expected
       let auth_changed = account::get_authentication_key(a_addr);
       assert!(auth_changed != auth_orig, 7358); // Confirm the authentication key was altered
-    }
-
-    #[test(vm = @0x0, framework = @0x1, alice = @0x1000a)]
-    fun validator_can_stay(vm: &signer, framework: &signer, alice: &signer) {
-      use diem_framework::account;
-      use ol_framework::mock;
-
-      mock::genesis_n_vals(framework, 1);
-      let a_addr = signer::address_of(alice);
-      assert!(account::exists_at(a_addr), 7357); // Confirm Alice's account exists
-
-      let auth_orig = account::get_authentication_key(a_addr);
-
-      dont_think_twice_its_alright(vm, alice);
-      assert!(account::exists_at(a_addr), 7357); // Ensure the account still exists after operation
-
-      // Verify if the authentication key changed as expected
-      let auth_changed = account::get_authentication_key(a_addr);
-      assert!(auth_changed == auth_orig, 7358); // Confirm the authentication key was not altered
     }
 
     #[test(vm = @0x0, framework = @0x1, alice = @0x1111a)]
@@ -370,10 +344,10 @@ module ol_framework::last_goodbye {
     mock::genesis_n_vals(framework, 1);
 
     mock::ol_initialize_coin_and_fund_vals(framework, 1000000, true);
-    
+
 
     let b_addr = signer::address_of(bob);
-    
+
     ol_account::transfer(alice, b_addr, 350000);
 
     let bob_addr = signer::address_of(bob);
