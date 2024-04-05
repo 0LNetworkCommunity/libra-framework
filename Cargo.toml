@@ -11,7 +11,6 @@ members = [
   "tools/query",
   "tools/rescue",
   "tools/storage",
-  "tools/tower",
   "tools/txs",
   "tools/wallet",
   "transactional-tests",
@@ -41,7 +40,7 @@ libra-tower = { path = "tools/tower" }
 libra-types = { path = "types" }
 libra-txs = { path = "tools/txs" }
 libra-wallet = { path = "tools/wallet" }
-vdf = { git = "https://github.com/0o-de-lally/verifiable_delay.git" }
+# vdf = { git = "https://github.com/0o-de-lally/verifiable_delay.git" }
 
 diem-api-types = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "416d1ca" }
 diem-debugger = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "416d1ca" }

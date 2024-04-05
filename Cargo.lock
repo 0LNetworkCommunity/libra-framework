@@ -1023,15 +1023,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "classgroup"
-version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/verifiable_delay.git#97bc59431ae98a9aad87e7a05f7997d5586275a9"
-dependencies = [
- "libc",
- "num-traits 0.2.15",
-]
-
-[[package]]
 name = "codespan"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2609,7 +2600,7 @@ dependencies = [
  "tempfile",
  "thiserror",
  "tiny-keccak",
- "vdf 0.1.0 (git+https://github.com/0LNetworkCommunity/verifiable_delay.git)",
+ "vdf",
 ]
 
 [[package]]
@@ -5613,7 +5604,6 @@ dependencies = [
  "libra-config",
  "libra-framework",
  "libra-query",
- "libra-tower",
  "libra-txs",
  "libra-types",
  "libra-wallet",
@@ -5750,28 +5740,6 @@ dependencies = [
  "smoke-test",
  "tokio",
  "url",
-]
-
-[[package]]
-name = "libra-tower"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "byteorder",
- "clap 4.4.2",
- "diem-sdk",
- "diem-temppath",
- "hex",
- "indicatif",
- "libra-query",
- "libra-smoke-tests",
- "libra-txs",
- "libra-types",
- "libra-wallet",
- "serde 1.0.163",
- "serde_json",
- "tokio",
- "vdf 0.1.0 (git+https://github.com/0o-de-lally/verifiable_delay.git)",
 ]
 
 [[package]]
@@ -10244,19 +10212,7 @@ version = "0.1.0"
 source = "git+https://github.com/0LNetworkCommunity/verifiable_delay.git#97bc59431ae98a9aad87e7a05f7997d5586275a9"
 dependencies = [
  "bit-vec 0.5.1",
- "classgroup 0.1.0 (git+https://github.com/0LNetworkCommunity/verifiable_delay.git)",
- "num-traits 0.2.15",
- "sha2 0.8.2",
- "sha3 0.8.2",
-]
-
-[[package]]
-name = "vdf"
-version = "0.1.0"
-source = "git+https://github.com/0o-de-lally/verifiable_delay.git#97bc59431ae98a9aad87e7a05f7997d5586275a9"
-dependencies = [
- "bit-vec 0.5.1",
- "classgroup 0.1.0 (git+https://github.com/0o-de-lally/verifiable_delay.git)",
+ "classgroup",
  "num-traits 0.2.15",
  "sha2 0.8.2",
  "sha3 0.8.2",

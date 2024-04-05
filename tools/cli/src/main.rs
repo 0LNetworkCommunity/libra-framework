@@ -5,7 +5,6 @@ use anyhow::anyhow;
 use clap::{Parser, Subcommand};
 use libra_config::config_cli::ConfigCli;
 use libra_query::query_cli::QueryCli;
-use libra_tower::tower_cli::TowerCli;
 use libra_txs::txs_cli::TxsCli;
 use libra_wallet::wallet_cli::WalletCli;
 
@@ -24,7 +23,6 @@ enum Sub {
     Move(move_cli::MoveTool),
     Node(node_cli::NodeCli),
     Query(QueryCli),
-    Tower(TowerCli),
     Txs(TxsCli),
     Wallet(WalletCli),
 }
@@ -58,11 +56,11 @@ fn main() -> anyhow::Result<()> {
                             eprintln!("Failed to execute query tool, message: {}", &e);
                         }
                     }
-                    Some(Sub::Tower(tower_cli)) => {
-                        if let Err(e) = tower_cli.run().await {
-                            eprintln!("Failed to execute tower tool, message: {}", &e);
-                        }
-                    }
+                    // Some(Sub::Tower(tower_cli)) => {
+                    //     if let Err(e) = tower_cli.run().await {
+                    //         eprintln!("Failed to execute tower tool, message: {}", &e);
+                    //     }
+                    // }
                     Some(Sub::Txs(txs_cli)) => {
                         if let Err(e) = txs_cli.run().await {
                             eprintln!("Failed to execute txs tool, message: {}", &e);

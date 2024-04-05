@@ -20,7 +20,6 @@ diem-node = { workspace = true }
 libra-config = { workspace = true }
 libra-framework = { workspace = true }
 libra-query = { workspace = true }
-libra-tower = { workspace = true }
 libra-txs = { workspace = true }
 libra-types = { workspace = true }
 libra-wallet = { workspace = true }
