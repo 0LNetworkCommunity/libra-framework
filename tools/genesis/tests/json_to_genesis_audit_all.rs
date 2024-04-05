@@ -128,5 +128,4 @@ fn test_drop_all() {
 
     // there will be no balance struct on this account.
     assert!(on_chain_balance.is_none());
-
 }
