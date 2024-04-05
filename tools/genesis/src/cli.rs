@@ -26,7 +26,7 @@ impl GenesisCli {
         let data_path = self.home_dir.clone().unwrap_or_else(global_config_dir);
 
         match &self.command {
-            Some(Sub::Genesis { github }) => {
+            Some(Sub::Build { github }) => {
                 let github_token = find_github_token(&github.token_github_dir)?;
 
                 let mut recovery = if let Some(p) = github.json_legacy.clone() {
@@ -110,7 +110,7 @@ struct GithubArgs {
 
 #[derive(Subcommand)]
 enum Sub {
-    Genesis {
+    Build {
         /// github args
         #[clap(flatten)]
         github: GithubArgs,
