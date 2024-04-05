@@ -4,6 +4,7 @@ mod node_cli;
 use anyhow::anyhow;
 use clap::{Parser, Subcommand};
 use libra_config::config_cli::ConfigCli;
+use libra_genesis_tools::cli::GenesisCli;
 use libra_query::query_cli::QueryCli;
 use libra_txs::txs_cli::TxsCli;
 use libra_wallet::wallet_cli::WalletCli;
@@ -25,6 +26,7 @@ enum Sub {
     Query(QueryCli),
     Txs(TxsCli),
     Wallet(WalletCli),
+    Genesis(GenesisCli),
 }
 
 fn main() -> anyhow::Result<()> {
@@ -56,11 +58,7 @@ fn main() -> anyhow::Result<()> {
                             eprintln!("Failed to execute query tool, message: {}", &e);
                         }
                     }
-                    // Some(Sub::Tower(tower_cli)) => {
-                    //     if let Err(e) = tower_cli.run().await {
-                    //         eprintln!("Failed to execute tower tool, message: {}", &e);
-                    //     }
-                    // }
+
                     Some(Sub::Txs(txs_cli)) => {
                         if let Err(e) = txs_cli.run().await {
                             eprintln!("Failed to execute txs tool, message: {}", &e);
@@ -69,6 +67,11 @@ fn main() -> anyhow::Result<()> {
                     Some(Sub::Wallet(wallet_cli)) => {
                         if let Err(e) = wallet_cli.run().await {
                             eprintln!("Failed to execute wallet tool, message: {}", &e);
+                        }
+                    }
+                    Some(Sub::Genesis(genesis_cli)) => {
+                        if let Err(e) = genesis_cli.execute().await {
+                            eprintln!("Failed to execute genesis tool, message: {}", &e);
                         }
                     }
                     _ => {

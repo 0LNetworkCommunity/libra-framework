@@ -5603,6 +5603,7 @@ dependencies = [
  "diem-node",
  "libra-config",
  "libra-framework",
+ "libra-genesis-tools",
  "libra-query",
  "libra-txs",
  "libra-types",
