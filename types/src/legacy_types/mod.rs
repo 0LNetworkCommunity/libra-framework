@@ -25,6 +25,7 @@ pub mod pledge_account;
 pub mod receipts;
 pub mod tower;
 pub mod tx_error;
+pub mod ol_account;
 pub mod validator_config;
 pub mod validator_universe;
 pub mod vdf_difficulty;

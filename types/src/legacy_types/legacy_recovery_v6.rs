@@ -29,6 +29,8 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use std::{fs, path::PathBuf};
 
+use super::ol_account::BurnTrackerResource;
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 /// Account role
 pub enum AccountRole {
@@ -120,6 +122,8 @@ pub struct LegacyRecoveryV6 {
     ///
     pub user_burn_preference: Option<UserBurnPreferenceResource>,
     ///
+    pub burn_tracker: Option<BurnTrackerResource>,
+    ///
     pub my_vouches: Option<MyVouchesResource>,
     ///
     pub tx_schedule: Option<TxScheduleResource>,
@@ -173,6 +177,7 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         slow_wallet: None,
         slow_wallet_list: None,
         user_burn_preference: None,
+        burn_tracker: None,
         my_vouches: None,
         tx_schedule: None,
         fee_maker: None,
@@ -246,6 +251,10 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         // user burn preference
         legacy_recovery.user_burn_preference =
             account_state.get_move_resource::<UserBurnPreferenceResource>()?;
+
+        // burn tracker
+        legacy_recovery.burn_tracker = account_state.get_move_resource::<BurnTrackerResource>()?;
+
 
         // my vouches
         legacy_recovery.my_vouches = account_state.get_move_resource::<MyVouchesResource>()?;

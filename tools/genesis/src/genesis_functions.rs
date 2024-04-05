@@ -88,6 +88,17 @@ pub fn genesis_migrate_all_users(
                     }
                 }
             }
+
+            if a.burn_counter.is_some() {
+                match genesis_migrate_infra_escrow(session, a) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        if a.role != AccountRole::System {
+                            println!("Error migrating user: {:?}", e);
+                        }
+                    }
+                }
+            }
         });
     Ok(())
 }
