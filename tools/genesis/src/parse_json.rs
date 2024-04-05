@@ -1,6 +1,6 @@
 use libra_types::{
     exports::{AccountAddress, AuthenticationKey},
-    legacy_types::legacy_recovery_v6::{self, LegacyRecoveryV6},
+    legacy_types::legacy_recovery_v6::{self, AccountRole, LegacyRecoveryV6},
 };
 use serde::{Deserialize, Serialize};
 
@@ -47,9 +47,9 @@ pub fn drop_accounts(r: &mut [LegacyRecoveryV6], drop_file: &Path) -> anyhow::Re
     let data = fs::read_to_string(drop_file).expect("Unable to read file");
     let list: Vec<DropList> = serde_json::from_str(&data).expect("Unable to parse");
     let mapped: Vec<AccountAddress> = list.into_iter().map(|e| e.account).collect();
-    let mut tombstone = [0u8; 32];
-    let auth_key = b"Oh, is it too late now to say sorry?".to_vec();
-    tombstone.copy_from_slice(&auth_key);
+    let tombstone = [9u8; 32];
+    // let auth_key = b"Oh, is it too late now to say sorry?".to_vec();
+    // tombstone.copy_from_slice(&auth_key);
     r.iter_mut().for_each(|e| {
         if let Some(account) = e.account {
             if mapped.contains(&account) {
@@ -58,6 +58,7 @@ pub fn drop_accounts(r: &mut [LegacyRecoveryV6], drop_file: &Path) -> anyhow::Re
                 };
                 dead.account = Some(account);
                 dead.auth_key = Some(AuthenticationKey::new(tombstone));
+                dead.role = AccountRole::Drop;
                 *e = dead;
             }
         }

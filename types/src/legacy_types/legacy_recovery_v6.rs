@@ -42,6 +42,9 @@ pub enum AccountRole {
     Operator,
     /// Users
     EndUser,
+
+    /// Dropped
+    Drop,
 }
 
 impl Default for AccountRole {

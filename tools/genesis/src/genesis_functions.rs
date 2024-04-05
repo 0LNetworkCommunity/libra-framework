@@ -23,6 +23,9 @@ pub fn genesis_migrate_all_users(
         .iter_mut()
         .progress_with_style(OLProgress::bar())
         .for_each(|a| {
+          if a.role == AccountRole::Drop {
+                warn!("Drop user, bang bang: {:?}", a.account);
+            }
             if a.balance.is_none() {
                 warn!("Skip migrating user, no balance: {:?}", a.account);
             }
