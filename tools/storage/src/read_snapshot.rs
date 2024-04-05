@@ -92,17 +92,10 @@ pub async fn accounts_from_snapshot_backup(
         let account_states_map_chunk: HashMap<AccountAddress, Vec<(StateKey, StateValue)>> = blobs
             .into_iter()
             .fold(HashMap::new(), |mut acc, (key, blob)| {
-                match key.inner() {
-                    StateKeyInner::AccessPath(access_path) => {
-                        // println!("AccessPath: {:?}, address: {:?}", access_path.path, access_path.address);
-                        acc.entry(access_path.address)
-                            .or_insert(vec![])
-                            .push((key, blob));
-                    }
-                    // StateKeyInner::TableItem { handle, key } => {
-                    //     println!("TableItem: {:?}, key_len: {:?}", handle, key.len());
-                    // },
-                    _ => (),
+                if let StateKeyInner::AccessPath(access_path) = key.inner() {
+                    acc.entry(access_path.address)
+                        .or_insert(vec![])
+                        .push((key, blob));
                 }
                 acc
             });
@@ -118,17 +111,14 @@ pub async fn accounts_from_snapshot_backup(
     // materialize account state for each address
     let mut account_states: Vec<AccountState> = Vec::new();
     for (address, blobs) in account_states_map {
-        let blobs_hash_table = blobs
-            .into_iter()
-            .fold(HashMap::new(), |mut acc, (key, blob)| {
-                acc.insert(key, blob);
-                acc
-            });
-        match AccountState::from_access_paths_and_values(address, &blobs_hash_table)? {
-            None => {}
-            Some(account_state) => {
-                account_states.push(account_state);
-            }
+        let mut blobs_hash_table = HashMap::new();
+        blobs.into_iter().for_each(|(key, blob)| {
+            blobs_hash_table.insert(key, blob);
+        });
+        if let Some(a_state) =
+            AccountState::from_access_paths_and_values(address, &blobs_hash_table)?
+        {
+            account_states.push(a_state);
         };
     }
 
