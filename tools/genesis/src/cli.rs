@@ -1,11 +1,12 @@
 use clap::{Args, Parser, Subcommand};
+use diem_logger::warn;
 
 use crate::{
     genesis_builder, parse_json, testnet_setup,
     wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME},
 };
 use libra_types::{exports::NamedChain, global_config_dir, legacy_types::fixtures::TestPersona};
-use std::{net::Ipv4Addr, path::PathBuf};
+use std::{env, fs, net::Ipv4Addr, path::PathBuf};
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 pub struct GenesisCli {
@@ -26,13 +27,7 @@ impl GenesisCli {
 
         match &self.command {
             Some(Sub::Genesis { github }) => {
-                let github_token = github.token_github.clone().unwrap_or(
-                    std::fs::read_to_string(data_path.join(GITHUB_TOKEN_FILENAME))
-                        // .context("cannot find github_token.txt in config path")
-                        .expect("cannot find github_token.txt in config path")
-                        .trim()
-                        .to_string(),
-                );
+                let github_token = find_github_token(&github.token_github_dir)?;
 
                 let mut recovery = if let Some(p) = github.json_legacy.clone() {
                     parse_json::recovery_file_parse(p)?
@@ -98,7 +93,7 @@ impl GenesisCli {
 struct GithubArgs {
     /// optionally provide a github token, otherwise will search in home_dir/github_token.txt
     #[clap(long)]
-    token_github: Option<String>,
+    token_github_dir: Option<PathBuf>,
     /// what are the settings for the genesis repo configs
     #[clap(short, long)]
     org_github: String,
@@ -144,4 +139,23 @@ enum Sub {
         #[clap(short, long)]
         json_legacy: Option<PathBuf>,
     },
+}
+
+/// help the user locate a github_token.txt in $HOME/.libra or working directory.
+fn find_github_token(data_path_opt: &Option<PathBuf>) -> anyhow::Result<String> {
+    // try to find in specified path
+    let mut p = data_path_opt
+        .as_ref()
+        // try to find in $HOME/.libra
+        .unwrap_or(&global_config_dir())
+        .join(GITHUB_TOKEN_FILENAME);
+    // try to find in working dir
+    if !p.exists() {
+        p = env::current_dir()?.join(GITHUB_TOKEN_FILENAME);
+        warn!(
+            "github_token.txt not found in {}. Trying the working path",
+            p.display()
+        )
+    };
+    Ok(fs::read_to_string(p)?.trim().to_owned())
 }
