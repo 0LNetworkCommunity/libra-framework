@@ -255,7 +255,6 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         // burn tracker
         legacy_recovery.burn_tracker = account_state.get_move_resource::<BurnTrackerResource>()?;
 
-
         // my vouches
         legacy_recovery.my_vouches = account_state.get_move_resource::<MyVouchesResource>()?;
 

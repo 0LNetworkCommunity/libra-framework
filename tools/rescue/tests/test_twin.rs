@@ -1,8 +1,8 @@
 mod support;
 use crate::support::{deadline_secs, update_node_config_restart};
 
-use std::{fs, path::PathBuf};
 use std::str::FromStr;
+use std::{fs, path::PathBuf};
 
 use diem_config::config::InitialSafetyRulesConfig;
 use diem_forge::SwarmExt;
@@ -69,9 +69,11 @@ async fn test_twin() -> anyhow::Result<()> {
 
     let this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR"))?;
     let mrb_path = this_path
-    .parent().unwrap()
-    .parent().unwrap()
-    .join("framework/releases/head.mrb");
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("framework/releases/head.mrb");
 
     let r = RescueTxOpts {
         db_dir: brick_db.clone(),

@@ -29,9 +29,11 @@ async fn test_framework_upgrade_writeset() -> anyhow::Result<()> {
 
     let this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR"))?;
     let mrb_path = this_path
-    .parent().unwrap()
-    .parent().unwrap()
-    .join("framework/releases/head.mrb");
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("framework/releases/head.mrb");
 
     let r = RescueTxOpts {
         db_dir: val_db_path.clone(),
