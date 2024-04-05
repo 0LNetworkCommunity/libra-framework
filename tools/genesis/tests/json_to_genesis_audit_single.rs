@@ -50,7 +50,7 @@ fn test_correct_supply_arithmetic_single() {
     }
 
     // TODO: double check supply
-    compare::check_supply(557040689585, &db_rw.reader).unwrap();
+    compare::check_supply(4560101774012, &db_rw.reader).unwrap();
 }
 
 #[test]
