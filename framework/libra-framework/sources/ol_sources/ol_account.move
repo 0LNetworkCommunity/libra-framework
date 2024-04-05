@@ -162,7 +162,7 @@ module ol_framework::ol_account {
           print(&sig_addr);
         };
 
-        // trim_reverse
+        // TODO: create migration path for duplicates
         // assert!(
         //   lookup_addr == signer::address_of(&new_signer),
         //   error::invalid_state(ECANT_MATCH_ADDRESS_IN_LOOKUP)
@@ -170,6 +170,19 @@ module ol_framework::ol_account {
         coin::register<LibraCoin>(&new_signer);
         init_burn_tracker(&new_signer);
         new_signer
+    }
+    /// migrate the tracker. Depends on the BurnTracker having been initialized
+    /// on  account migration
+    /// Private. So it's only called on genesis
+    fun fork_migrate_burn_tracker(framework: &signer, user:
+    &signer, prev_supply: u64, prev_balance: u64, burn_at_last_calc: u64,
+    cumu_burn: u64) acquires BurnTracker {
+      system_addresses::assert_diem_framework(framework);
+      let b = borrow_global_mut<BurnTracker>(signer::address_of(user));
+      b.prev_supply = prev_supply;
+      b.prev_balance = prev_balance;
+      b.burn_at_last_calc = burn_at_last_calc;
+      b.cumu_burn = cumu_burn;
     }
 
 
