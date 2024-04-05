@@ -141,6 +141,15 @@ pub struct LegacyRecoveryV6 {
     pub validator_universe: Option<ValidatorUniverseResource>,
 }
 
+pub fn strip_system_address(list: &mut Vec<LegacyRecoveryV6>) {
+    list.retain(|e| {
+        !e.account
+            .unwrap()
+            .to_string()
+            .contains("000000000000000000000000000000000000000000000000000000000000000")
+    })
+}
+
 /// Read from genesis recovery file
 pub fn read_from_recovery_file(path: &PathBuf) -> Vec<LegacyRecoveryV6> {
     let data = fs::read_to_string(path).expect("Unable to read file");

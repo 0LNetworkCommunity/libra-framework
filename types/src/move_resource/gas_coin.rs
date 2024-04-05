@@ -44,11 +44,7 @@ pub struct GasCoinStoreResource {
 }
 
 impl GasCoinStoreResource {
-    pub fn new(
-        coin: u64,
-        deposit_events: EventHandle,
-        withdraw_events: EventHandle,
-    ) -> Self {
+    pub fn new(coin: u64, deposit_events: EventHandle, withdraw_events: EventHandle) -> Self {
         Self {
             coin,
             deposit_events,

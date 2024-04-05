@@ -1,6 +1,6 @@
 //! ol functions to run at genesis e.g. migration.
 
-use crate::{process_comm_wallet, supply::Supply};
+use crate::process_comm_wallet;
 
 use anyhow::Context;
 use diem_logger::prelude::*;
@@ -24,8 +24,7 @@ pub fn genesis_migrate_all_users(
         .progress_with_style(OLProgress::bar())
         .for_each(|a| {
             // skip system accounts
-            if a
-                .account
+            if a.account
                 .unwrap()
                 .to_hex_literal()
                 .contains("000000000000000000000000000000000000000000000000000000000000000")

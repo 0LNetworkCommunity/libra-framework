@@ -25,8 +25,7 @@ fn end_to_end_single() {
     temp_dir.create_as_dir().unwrap();
     let blob = temp_dir.path().join("genesis.blob");
 
-    let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/fixtures/single.json");
+    let p = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/single.json");
 
     let mut recovery = parse_json::recovery_file_parse(p).unwrap();
 
@@ -116,7 +115,6 @@ fn end_to_end_all() {
         _ => panic!("not a genesis transaction"),
     }
 }
-
 
 //TODO: test duplicates
 // let duplicates = [

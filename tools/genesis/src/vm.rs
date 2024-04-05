@@ -24,13 +24,13 @@ use diem_vm_genesis::{
     initialize_on_chain_governance, publish_framework, set_genesis_end, validate_genesis_config,
     verify_genesis_write_set, GenesisConfiguration, Validator, GENESIS_KEYPAIR,
 };
-use libra_types::{legacy_types::legacy_recovery_v6::LegacyRecoveryV6, ol_progress::OLProgress};
+use libra_types::{
+    legacy_types::legacy_recovery_v6::{self, LegacyRecoveryV6},
+    ol_progress::OLProgress,
+};
 
-use crate::{
-    genesis_functions::{
-        self, genesis_migrate_cumu_deposits, set_final_supply, set_validator_baseline_reward
-    },
-    supply::populate_supply_stats_from_legacy,
+use crate::genesis_functions::{
+    self, genesis_migrate_cumu_deposits, set_final_supply, set_validator_baseline_reward,
 };
 
 /// set the genesis parameters
@@ -154,7 +154,6 @@ pub fn encode_genesis_change_set(
         // migration for CW
         genesis_migrate_cumu_deposits(&mut session, recovery)
             .expect("could not migrate cumu deposits of cw");
-
     }
 
     OLProgress::complete("user migration complete");

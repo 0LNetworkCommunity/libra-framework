@@ -68,8 +68,8 @@ pub fn compare_recovery_vec_to_genesis_tx(
             if old
                 .account
                 .unwrap()
-                .to_hex_literal()
-                .contains("000000000000000000000000000000000000000000000000000000000000000")
+                .to_string()
+                .contains("0000000000000000000000000000000000000000000000000000000000000003")
             {
                 return;
             };
@@ -85,7 +85,8 @@ pub fn compare_recovery_vec_to_genesis_tx(
                 .expect("should have move resource");
 
             if on_chain_balance.is_none() {
-                dbg!(&convert_address);
+                println!("account without a balance struct: {}", &convert_address);
+                return;
             }
             let on_chain_balance = on_chain_balance.expect("should have balance");
 

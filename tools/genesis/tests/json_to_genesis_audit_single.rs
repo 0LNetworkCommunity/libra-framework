@@ -22,10 +22,7 @@ fn test_correct_supply_arithmetic_single() {
     let num_vals = 1;
     let genesis_vals = test_vals::get_test_valset(num_vals);
 
-    let json = json_path()
-        .parent()
-        .unwrap()
-        .join("single.json");
+    let json = json_path().parent().unwrap().join("single.json");
 
     let mut user_accounts: Vec<LegacyRecoveryV6> = parse_json::recovery_file_parse(json).unwrap();
 
@@ -62,10 +59,7 @@ fn test_check_genesis_validators() {
     // let path = DropTemp::new_in_crate("db_rw").dir();
     let genesis_vals = test_vals::get_test_valset(4);
 
-    let json = json_path()
-        .parent()
-        .unwrap()
-        .join("single.json");
+    let json = json_path().parent().unwrap().join("single.json");
 
     let mut user_accounts: Vec<LegacyRecoveryV6> = parse_json::recovery_file_parse(json).unwrap();
 
@@ -97,10 +91,7 @@ fn test_check_ancestry() {
     // let path = DropTemp::new_in_crate("db_rw").dir();
     let genesis_vals = test_vals::get_test_valset(1);
 
-    let json = json_path()
-        .parent()
-        .unwrap()
-        .join("single.json");
+    let json = json_path().parent().unwrap().join("single.json");
 
     let mut user_accounts: Vec<LegacyRecoveryV6> = parse_json::recovery_file_parse(json).unwrap();
 
@@ -116,7 +107,10 @@ fn test_check_ancestry() {
     let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&gen_tx).unwrap();
     let db_state_view = db_rw.reader.latest_state_checkpoint_view().unwrap();
 
-    let acc = AccountAddress::from_hex_literal("0x0000000000000000000000000000000045558bad546e6159020871f7e5d094d7").unwrap();
+    let acc = AccountAddress::from_hex_literal(
+        "0x0000000000000000000000000000000045558bad546e6159020871f7e5d094d7",
+    )
+    .unwrap();
     let acc_state = db_state_view.as_account_with_state_view(&acc);
     let ancestry = acc_state
         .get_resource::<AncestryResource>()
@@ -130,7 +124,6 @@ fn test_check_ancestry() {
         .unwrap()
         .to_string()
         .contains("46a7a744b"));
-
 }
 
 #[test]
@@ -139,10 +132,7 @@ fn test_check_ancestry() {
 fn test_check_mainnet_constants() -> anyhow::Result<()> {
     let genesis_vals = test_vals::get_test_valset(4);
 
-    let json = json_path()
-        .parent()
-        .unwrap()
-        .join("single.json");
+    let json = json_path().parent().unwrap().join("single.json");
 
     let mut user_accounts: Vec<LegacyRecoveryV6> = parse_json::recovery_file_parse(json).unwrap();
     let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(

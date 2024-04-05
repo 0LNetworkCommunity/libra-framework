@@ -10,6 +10,8 @@ pub fn recovery_file_parse(recovery_json_path: PathBuf) -> anyhow::Result<Vec<Le
 
     fix_slow_wallet(&mut r)?;
 
+    legacy_recovery_v6::strip_system_address(&mut r);
+
     Ok(r)
 }
 
@@ -41,6 +43,7 @@ fn parse_json_single() {
             &acc.to_string() == "0000000000000000000000000000000045558bad546e6159020871f7e5d094d7"
         );
     }
+    dbg!(&r.len());
 
     // let _has_root = r
     //     .iter()
