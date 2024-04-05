@@ -190,7 +190,6 @@
             let my_pledges = borrow_global_mut<MyPledges>(account);
             let value = coin::value(&init_pledge);
             let new_pledge_account = PledgeAccount {
-                // project_id: project_id,
                 address_of_beneficiary: address_of_beneficiary,
                 amount: value,
                 pledge: init_pledge,
@@ -571,8 +570,6 @@
         }
 
 
-        //NOTE: deprecated with refactor
-
         ////////// TX  //////////
         // for general pledge accounts
         public(friend) fun user_pledge(user_sig: &signer, beneficiary: address, amount: u64) acquires BeneficiaryPolicy, MyPledges {
@@ -660,6 +657,39 @@
         (false, null)
       }
 
+      ///////// MIGRATION ////////
+
+              // Create a new pledge account on a user's list of pledges
+      public(friend) fun migrate_pledge_account(
+          framework: &signer,
+          sig: &signer,
+          // project_id: vector<u8>,
+          address_of_beneficiary: address,
+          init_pledge: coin::Coin<LibraCoin>,
+          lifetime_pledged: u64,
+          lifetime_withdrawn: u64,
+        ) acquires MyPledges, BeneficiaryPolicy {
+            system_addresses::assert_diem_framework(framework);
+            let account = signer::address_of(sig);
+            maybe_initialize_my_pledges(sig);
+            let my_pledges = borrow_global_mut<MyPledges>(account);
+            let value = coin::value(&init_pledge);
+            let new_pledge_account = PledgeAccount {
+                address_of_beneficiary: address_of_beneficiary,
+                amount: value,
+                pledge: init_pledge,
+                epoch_of_last_deposit: epoch_helper::get_current_epoch(),
+                lifetime_pledged: lifetime_pledged,
+                lifetime_withdrawn: lifetime_withdrawn
+            };
+            vector::push_back(&mut my_pledges.list, new_pledge_account);
+
+          let b = borrow_global_mut<BeneficiaryPolicy>(address_of_beneficiary);
+          vector::push_back(&mut b.pledgers, account);
+
+          b.amount_available = b.amount_available  + value;
+          b.lifetime_pledged = b.lifetime_pledged + value;
+        }
 
 
       //////// TEST HELPERS ///////

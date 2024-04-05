@@ -97,16 +97,12 @@ module ol_framework::genesis_migration {
 
     /// for an uprade using an escrow percent. Only to be called at genesis
   // escrow percent has 6 decimal precision (1m);
-  public(friend) fun fork_escrow_init(vm: &signer, user_sig: &signer, to_escrow: u64) {
-    system_addresses::assert_vm(vm);
-    let user_addr = signer::address_of(user_sig);
-    // shouldn't be tracking slow wallets at this point, do a direct withdraw
-    let coin_opt = coin::vm_withdraw<LibraCoin>(vm, user_addr, to_escrow);
-    if (option::is_some(&coin_opt)) {
-      let c = option::extract(&mut coin_opt);
-      pledge_accounts::save_pledge(user_sig, @0x0, c);
-    };
-    option::destroy_none(coin_opt);
+  public(friend) fun fork_escrow_init(framework: &signer, user_sig: &signer,
+  to_escrow: u64, lifetime_pledged: u64, lifetime_withdrawn: u64) {
+    system_addresses::assert_diem_framework(framework);
+    let c = coin::vm_mint<LibraCoin>(framework, to_escrow);
+    pledge_accounts::migrate_pledge_account(framework, user_sig, @0x0, c, lifetime_pledged,
+    lifetime_withdrawn);
   }
 
   //////// MAKE WHOLE INIT ////////

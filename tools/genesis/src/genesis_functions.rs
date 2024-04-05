@@ -1,7 +1,5 @@
 //! ol functions to run at genesis e.g. migration.
 
-use crate::process_comm_wallet;
-
 use anyhow::Context;
 use diem_logger::prelude::*;
 use diem_types::account_config::CORE_CODE_ADDRESS;
@@ -15,6 +13,8 @@ use libra_types::{
 };
 use move_core_types::value::{serialize_values, MoveValue};
 
+use crate::process_comm_wallet;
+
 pub fn genesis_migrate_all_users(
     session: &mut SessionExt,
     user_recovery: &mut [LegacyRecoveryV6],
@@ -23,21 +23,15 @@ pub fn genesis_migrate_all_users(
         .iter_mut()
         .progress_with_style(OLProgress::bar())
         .for_each(|a| {
-            // skip system accounts
-            if a.account
-                .unwrap()
-                .to_hex_literal()
-                .contains("000000000000000000000000000000000000000000000000000000000000000")
-            {
-                return;
-            };
-
+            if a.balance.is_none() {
+                warn!("Skip migrating user, no balance: {:?}", a.account);
+            }
             match genesis_migrate_one_user(session, a) {
                 Ok(_) => {}
                 Err(e) => {
                     // TODO: compile a list of errors.
                     if a.role != AccountRole::System {
-                        println!("Error migrating user: {:?}", e);
+                        error!("Error migrating user: {:?}", e);
                     }
                 }
             }
@@ -61,18 +55,6 @@ pub fn genesis_migrate_all_users(
                     .expect("could not migrate community wallets");
             }
 
-            // // migrating infra escrow, check if this has historically been a validator and has a slow wallet
-            // if a.val_cfg.is_some() && a.slow_wallet.is_some() {
-            //     match genesis_migrate_infra_escrow(session, a, supply) {
-            //         Ok(_) => {}
-            //         Err(e) => {
-            //             if a.role != AccountRole::System {
-            //                 println!("Error migrating user: {:?}", e);
-            //             }
-            //         }
-            //     }
-            // }
-
             // migrating ancestry
             if a.ancestry.is_some() {
                 match genesis_migrate_ancestry(session, a) {
@@ -85,21 +67,19 @@ pub fn genesis_migrate_all_users(
                 }
             }
 
-            // // migrating tower
-            // if a.miner_state.is_some() {
-            //     match genesis_migrate_tower_state(session, a) {
-            //         Ok(_) => {}
-            //         Err(e) => {
-            //             if a.role != AccountRole::System {
-            //                 println!("Error migrating user: {:?}", e);
-            //             }
-            //         }
-            //     }
-            // }
-
-            // migrating tower
             if a.receipts.is_some() {
                 match genesis_migrate_receipts(session, a) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        if a.role != AccountRole::System {
+                            println!("Error migrating user: {:?}", e);
+                        }
+                    }
+                }
+            }
+
+            if a.my_pledge.is_some() {
+                match genesis_migrate_infra_escrow(session, a) {
                     Ok(_) => {}
                     Err(e) => {
                         if a.role != AccountRole::System {
@@ -197,170 +177,42 @@ pub fn genesis_migrate_slow_wallet(
     Ok(())
 }
 
-// pub fn genesis_migrate_infra_escrow_depr(
-//     session: &mut SessionExt,
-//     user_recovery: &LegacyRecovery,
-//     escrow_pct: f64,
-// ) -> anyhow::Result<()> {
-//     if user_recovery.account.is_none()
-//         || user_recovery.auth_key.is_none()
-//         || user_recovery.balance.is_none()
-//         || user_recovery.slow_wallet.is_none()
-//     {
-//         anyhow::bail!("no user account found {:?}", user_recovery);
-//     }
+pub fn genesis_migrate_infra_escrow(
+    session: &mut SessionExt,
+    user_recovery: &LegacyRecoveryV6,
+) -> anyhow::Result<()> {
+    if user_recovery.account.is_none()
+        || user_recovery.auth_key.is_none()
+        || user_recovery.my_pledge.is_none()
+    {
+        anyhow::bail!("no user pledge found {:?}", user_recovery);
+    }
 
-//     // convert between different types from ol_types in diem, to current
-//     let acc_str = user_recovery
-//         .account
-//         .context("could not parse account")?
-//         .to_string();
-//     let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
+    user_recovery
+        .my_pledge
+        .as_ref()
+        .expect("no pledge")
+        .list
+        .iter()
+        .for_each(|p| {
+            let serialized_values = serialize_values(&vec![
+                MoveValue::Signer(CORE_CODE_ADDRESS), // is sent by the 0x0 address
+                MoveValue::Signer(user_recovery.account.unwrap()),
+                MoveValue::U64(p.pledge),
+                MoveValue::U64(p.lifetime_pledged),
+                MoveValue::U64(p.lifetime_withdrawn),
+            ]);
 
-//     let serialized_values = serialize_values(&vec![
-//         MoveValue::Signer(AccountAddress::ZERO), // is sent by the 0x0 address
-//         MoveValue::Signer(new_addr_type),
-//         MoveValue::U64((escrow_pct * 1_000_000.0) as u64),
-//     ]);
-
-//     exec_function(
-//         session,
-//         "genesis_migration",
-//         "fork_escrow_init",
-//         vec![],
-//         serialized_values,
-//     );
-//     Ok(())
-// }
-
-// pub fn genesis_migrate_infra_escrow(
-//     session: &mut SessionExt,
-//     user_recovery: &LegacyRecoveryV6,
-//     supply: &Supply,
-// ) -> anyhow::Result<()> {
-//     if user_recovery.account.is_none()
-//         || user_recovery.auth_key.is_none()
-//         || user_recovery.balance.is_none()
-//         || user_recovery.slow_wallet.is_none()
-//     {
-//         anyhow::bail!("no user account found {:?}", user_recovery);
-//     }
-
-//     // convert between different types from ol_types in diem, to current
-//     let acc_str = user_recovery
-//         .account
-//         .context("could not parse account")?
-//         .to_string();
-//     let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
-
-//     let pledge = util_calculate_infra_escrow(user_recovery, supply)?;
-
-//     let serialized_values = serialize_values(&vec![
-//         MoveValue::Signer(AccountAddress::ZERO), // is sent by the 0x0 address
-//         MoveValue::Signer(new_addr_type),
-//         MoveValue::U64(pledge),
-//     ]);
-
-//     exec_function(
-//         session,
-//         "genesis_migration",
-//         "fork_escrow_init",
-//         vec![],
-//         serialized_values,
-//     );
-//     Ok(())
-// }
-
-// /// helper to adjust the expected balance of a validator
-// pub fn util_simulate_new_val_balance(
-//     user_recovery: &mut LegacyRecoveryV6,
-//     supply: &Supply,
-// ) -> anyhow::Result<()> {
-//     if user_recovery.balance.is_some()
-//         && user_recovery.val_cfg.is_some()
-//         && user_recovery.slow_wallet.is_some()
-//     {
-//         let contrib = util_calculate_infra_escrow(user_recovery, supply)?;
-//         if let Some(b) = &mut user_recovery.balance {
-//             b.coin -= contrib;
-//         }
-//     }
-
-//     Ok(())
-// }
-
-// /// single place to scale all coins in a legacy recovery
-// // TODO: move to own module
-// pub fn util_scale_all_coins(
-//     user_recovery: &mut LegacyRecoveryV6,
-//     supply: &Supply,
-// ) -> anyhow::Result<()> {
-//     let split = supply.split_factor;
-
-//     if let Some(b) = &mut user_recovery.balance {
-//         b.coin = (b.coin as f64).mul(split).floor() as u64;
-//     }
-
-//     if let Some(b) = &mut user_recovery.slow_wallet {
-//         b.unlocked = (b.unlocked as f64).mul(split).floor() as u64;
-//         b.transferred = (b.transferred as f64).mul(split).floor() as u64;
-//     }
-
-//     if let Some(mk) = &mut user_recovery.make_whole {
-//         mk.credits
-//             .iter_mut()
-//             .for_each(|el| el.coins.value = (el.coins.value as f64).mul(split).floor() as u64);
-//     }
-
-//     if let Some(rec) = &mut user_recovery.receipts {
-//         rec.cumulative
-//             .iter_mut()
-//             .for_each(|el| *el = (el.to_owned() as f64).mul(split).floor() as u64);
-//         rec.last_payment_value
-//             .iter_mut()
-//             .for_each(|el| *el = (el.to_owned() as f64).mul(split).floor() as u64);
-//     }
-
-//     if let Some(cumu) = &mut user_recovery.cumulative_deposits {
-//         cumu.value = (cumu.value as f64 * split).floor() as u64;
-//         cumu.index = (cumu.index as f64 * split).floor() as u64;
-//     }
-
-//     Ok(())
-// }
-
-// // helper for genesis and tests to calculate infra escrow the same
-// pub fn util_calculate_infra_escrow(
-//     user_recovery: &LegacyRecoveryV6,
-//     supply: &Supply,
-// ) -> anyhow::Result<u64> {
-//     if user_recovery.account.is_none()
-//         || user_recovery.auth_key.is_none()
-//         || user_recovery.balance.is_none()
-//         || user_recovery.slow_wallet.is_none()
-//         || user_recovery.val_cfg.is_none()
-//     {
-//         anyhow::bail!("no validator account found {:?}", user_recovery);
-//     }
-
-//     let total_balance = user_recovery
-//         .balance
-//         .as_ref()
-//         .expect("no balance struct")
-//         .coin;
-//     let unlocked = user_recovery
-//         .slow_wallet
-//         .as_ref()
-//         .expect("no slow wallet struct")
-//         .unlocked;
-//     assert!(
-//         total_balance >= unlocked,
-//         "there should be no unlocked amount above balance, this should have been cleaned by now."
-//     ); // we shouldn't have got this far if the data is bad
-//     let validator_locked = total_balance - unlocked;
-//     let pledge_coins_amount = supply.escrow_pct * validator_locked as f64;
-//     Ok(pledge_coins_amount.floor() as u64)
-// }
+            exec_function(
+                session,
+                "genesis_migration",
+                "fork_escrow_init",
+                vec![],
+                serialized_values,
+            );
+        });
+    Ok(())
+}
 
 pub fn genesis_migrate_receipts(
     session: &mut SessionExt,

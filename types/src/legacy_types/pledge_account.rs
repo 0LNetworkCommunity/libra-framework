@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MyPledgesResource {
-    list: Vec<PledgeAccountResource>,
+    pub list: Vec<PledgeAccountResource>,
 }
 
 impl MoveStructType for MyPledgesResource {
@@ -23,14 +23,12 @@ impl MoveResource for MyPledgesResource {}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PledgeAccountResource {
-    // project_id: vector<u8>, // a string that identifies the project
-    address_of_beneficiary: AccountAddress,
-    // the address of the project, also where the BeneficiaryPolicy is stored for reference.
-    amount: u64,
-    pledge: u64, // use u64 instead of Coin<LibraCoin>,
-    epoch_of_last_deposit: u64,
-    lifetime_pledged: u64,
-    lifetime_withdrawn: u64,
+    pub address_of_beneficiary: AccountAddress,
+    pub amount: u64,
+    pub pledge: u64, // use u64 instead of Coin<LibraCoin>,
+    pub epoch_of_last_deposit: u64,
+    pub lifetime_pledged: u64,
+    pub lifetime_withdrawn: u64,
 }
 
 impl MoveStructType for PledgeAccountResource {
