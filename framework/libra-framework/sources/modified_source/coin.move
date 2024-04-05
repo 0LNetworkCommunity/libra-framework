@@ -131,7 +131,6 @@ module diem_framework::coin {
     /// These are kept in a single resource to ensure locality of data.
     struct CoinStore<phantom CoinType> has key {
         coin: Coin<CoinType>,
-        // frozen: bool,
         deposit_events: EventHandle<DepositEvent>,
         withdraw_events: EventHandle<WithdrawEvent>,
     }

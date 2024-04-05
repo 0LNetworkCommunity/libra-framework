@@ -65,18 +65,16 @@ pub fn compare_recovery_vec_to_genesis_tx(
                 return;
             };
 
-            if old.account.unwrap() == AccountAddress::ZERO {
+            if old
+                .account
+                .unwrap()
+                .to_hex_literal()
+                .contains("000000000000000000000000000000000000000000000000000000000000000")
+            {
                 return;
             };
 
-            let convert_address =
-                AccountAddress::from_hex_literal(&old.account.as_ref().unwrap().to_hex_literal())
-                    .expect("could not convert address types");
-
-            // // scale all coin values per record consistently
-            // util_scale_all_coins(old, supply).expect("could not scale coins");
-            // util_simulate_new_val_balance(old, supply)
-            //     .expect("could not simulate infra escrow validators");
+            let convert_address = old.account.unwrap();
 
             // Ok now let's compare to what's on chain
             let db_state_view = db_reader.latest_state_checkpoint_view().unwrap();
@@ -84,8 +82,12 @@ pub fn compare_recovery_vec_to_genesis_tx(
 
             let on_chain_balance = account_state_view
                 .get_move_resource::<GasCoinStoreResource>()
-                .expect("should have move resource")
-                .expect("should have a GasCoinStoreResource for balance");
+                .expect("should have move resource");
+
+            if on_chain_balance.is_none() {
+                dbg!(&convert_address);
+            }
+            let on_chain_balance = on_chain_balance.expect("should have balance");
 
             // CHECK: we should have scaled the balance correctly, including
             // adjusting for validators
@@ -115,7 +117,6 @@ pub fn compare_recovery_vec_to_genesis_tx(
                         account: old.account,
                         expected: old_slow.unlocked,
                         migrated: new_slow.unlocked,
-                        // bal_diff: on_chain_slow_wallet.unlocked as i64 - expected_unlocked as i64,
                         message: "unexpected slow wallet unlocked".to_string(),
                     });
                 }

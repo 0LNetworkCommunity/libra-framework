@@ -39,7 +39,6 @@ pub fn cast_decimal_to_coin(decimal: f64) -> u64 {
 // #[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
 pub struct GasCoinStoreResource {
     coin: u64,
-    // frozen: bool,
     deposit_events: EventHandle,
     withdraw_events: EventHandle,
 }
@@ -47,13 +46,11 @@ pub struct GasCoinStoreResource {
 impl GasCoinStoreResource {
     pub fn new(
         coin: u64,
-        // frozen: bool,
         deposit_events: EventHandle,
         withdraw_events: EventHandle,
     ) -> Self {
         Self {
             coin,
-            // frozen,
             deposit_events,
             withdraw_events,
         }
@@ -62,10 +59,6 @@ impl GasCoinStoreResource {
     pub fn coin(&self) -> u64 {
         self.coin
     }
-
-    // pub fn frozen(&self) -> bool {
-    //     self.frozen
-    // }
 
     pub fn deposit_events(&self) -> &EventHandle {
         &self.deposit_events

@@ -18,18 +18,21 @@ use move_core_types::value::{serialize_values, MoveValue};
 pub fn genesis_migrate_all_users(
     session: &mut SessionExt,
     user_recovery: &mut [LegacyRecoveryV6],
-    _supply: &Supply,
 ) -> anyhow::Result<()> {
     user_recovery
         .iter_mut()
         .progress_with_style(OLProgress::bar())
         .for_each(|a| {
-            // ///////// IMPORTANT //////
-            // // we are scaling all the coins here in RUST
-            // // before any transactions occur
-            // util_scale_all_coins(a, supply).expect("could not scale coins");
-            // ///////////////////////////
-            // do basic account creation and coin scaling
+            // skip system accounts
+            if a
+                .account
+                .unwrap()
+                .to_hex_literal()
+                .contains("000000000000000000000000000000000000000000000000000000000000000")
+            {
+                return;
+            };
+
             match genesis_migrate_one_user(session, a) {
                 Ok(_) => {}
                 Err(e) => {
@@ -54,9 +57,9 @@ pub fn genesis_migrate_all_users(
             }
 
             if a.comm_wallet.is_some() {
-              // migrate community wallets
-              genesis_migrate_community_wallet(session, a)
-              .expect("could not migrate community wallets");
+                // migrate community wallets
+                genesis_migrate_community_wallet(session, a)
+                    .expect("could not migrate community wallets");
             }
 
             // // migrating infra escrow, check if this has historically been a validator and has a slow wallet
@@ -113,7 +116,6 @@ pub fn genesis_migrate_all_users(
 pub fn genesis_migrate_one_user(
     session: &mut SessionExt,
     user_recovery: &LegacyRecoveryV6,
-    // split_factor: f64,
 ) -> anyhow::Result<()> {
     if user_recovery.account.is_none()
         || user_recovery.auth_key.is_none()
@@ -137,8 +139,6 @@ pub fn genesis_migrate_one_user(
         .as_ref()
         .expect("no balance found")
         .coin;
-
-    // let rescaled_balance = (split_factor * legacy_balance as f64).floor() as u64;
 
     let serialized_values = serialize_values(&vec![
         MoveValue::Signer(CORE_CODE_ADDRESS),

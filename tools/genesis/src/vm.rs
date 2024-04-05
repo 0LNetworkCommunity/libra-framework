@@ -28,8 +28,7 @@ use libra_types::{legacy_types::legacy_recovery_v6::LegacyRecoveryV6, ol_progres
 
 use crate::{
     genesis_functions::{
-        genesis_migrate_cumu_deposits, set_final_supply,
-        set_validator_baseline_reward,
+        self, genesis_migrate_cumu_deposits, set_final_supply, set_validator_baseline_reward
     },
     supply::populate_supply_stats_from_legacy,
 };
@@ -67,7 +66,6 @@ pub fn migration_genesis(
     recovery: &mut [LegacyRecoveryV6],
     framework: &ReleaseBundle,
     chain_id: ChainId,
-    // supply_settings: &SupplySettings,
     genesis_config: &GenesisConfiguration,
 ) -> anyhow::Result<ChangeSet> {
     let genesis = encode_genesis_change_set(
@@ -80,7 +78,6 @@ pub fn migration_genesis(
         &OnChainConsensusConfig::default(),
         &OnChainExecutionConfig::default(),
         &default_gas_schedule(),
-        // supply_settings,
     );
 
     Ok(genesis)
@@ -97,7 +94,6 @@ pub fn encode_genesis_change_set(
     consensus_config: &OnChainConsensusConfig,
     execution_config: &OnChainExecutionConfig,
     gas_schedule: &GasScheduleV2,
-    // supply_settings: &SupplySettings,
 ) -> ChangeSet {
     validate_genesis_config(genesis_config);
 
@@ -143,27 +139,22 @@ pub fn encode_genesis_change_set(
     initialize_on_chain_governance(&mut session, genesis_config);
 
     if !recovery.is_empty() {
-        let supply = populate_supply_stats_from_legacy(recovery)
-            .expect("could not parse supply from legacy file");
+        // let supply = populate_supply_stats_from_legacy(recovery)
+        //     .expect("could not parse supply from legacy file");
 
-        crate::genesis_functions::genesis_migrate_all_users(&mut session, recovery, &supply)
+        genesis_functions::genesis_migrate_all_users(&mut session, recovery)
             .expect("could not migrate users");
 
         // need to set the baseline reward based on supply settings
-        set_validator_baseline_reward(&mut session, supply.epoch_reward_base_case as u64);
+        // TODO
+        let todo_pof_baseline = 10000;
+        set_validator_baseline_reward(&mut session, todo_pof_baseline);
 
         // cumulative deposits (for match index) also need separate
         // migration for CW
         genesis_migrate_cumu_deposits(&mut session, recovery)
             .expect("could not migrate cumu deposits of cw");
 
-        // create_make_whole_incident(
-        //     &mut session,
-        //     recovery,
-        //     supply.make_whole,
-        //     supply.split_factor,
-        // )
-        // .expect("could not create make whole credits");
     }
 
     OLProgress::complete("user migration complete");
