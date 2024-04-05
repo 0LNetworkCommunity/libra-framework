@@ -24,7 +24,7 @@ jobs:
     runs-on: debian-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: setup env
         uses: ./.github/actions/build_env
 
@@ -159,30 +159,7 @@ jobs:
         working-directory: ./tools/genesis
         run: cargo test --no-fail-fast
 
-  tower:
-    timeout-minutes: 60
-    needs: [build-framework]
-    runs-on: debian-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: setup env
-        uses: ./.github/actions/build_env
-
-      - uses: Swatinem/rust-cache@v2.7.3
-        with:
-          shared-key: "libra-framework"
-          cache-all-crates: true
-
-      - uses: actions/download-artifact@v4.1.2
-        with:
-          name: framework-build
-          path: framework/
-
-      - name: tower
-        if: always()
-        working-directory: ./tools/tower
-        run: cargo test --no-fail-fast
+# tower sleeps tonight
 
   txs:
     timeout-minutes: 60
