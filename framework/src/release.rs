@@ -82,6 +82,13 @@ impl ReleaseTarget {
         ReleaseBundle::read(path)
     }
 
+    /// Loads a bundle from .mrb file. Used for production cases.
+    pub fn load_bundle_from_file(path: PathBuf) -> anyhow::Result<ReleaseBundle> {
+        //////// 0L ////////
+        // helper to return a bundle from file
+        ReleaseBundle::read(path)
+    }
+
     pub fn create_release_options(self, dev_mode: bool, out: Option<PathBuf>) -> ReleaseOptions {
         let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         // let crate_dir = crate_dir.parent().unwrap().to_path_buf();

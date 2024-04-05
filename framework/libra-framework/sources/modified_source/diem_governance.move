@@ -20,6 +20,7 @@ module diem_framework::diem_governance {
 
     use ol_framework::libra_coin;
     use ol_framework::epoch_boundary;
+    use ol_framework::musical_chairs;
     use ol_framework::testnet;
 
     #[test_only]
@@ -54,6 +55,9 @@ module diem_framework::diem_governance {
     const EMETADATA_HASH_TOO_LONG: u64 = 10;
     /// Account is not authorized to call this function.
     const EUNAUTHORIZED: u64 = 11;
+
+    /// Function cannot be called on Mainnet
+    const ENOT_FOR_MAINNET: u64 = 12;
 
     /// This matches the same enum const in voting. We have to duplicate it as Move doesn't have support for enums yet.
     const PROPOSAL_STATE_SUCCEEDED: u64 = 1;
@@ -564,6 +568,9 @@ module diem_framework::diem_governance {
     public fun set_validators(diem_framework: &signer, new_vals: vector<address>) {
         system_addresses::assert_diem_framework(diem_framework);
         stake::maybe_reconfigure(diem_framework, new_vals);
+        // set the musical chairs length, otherwise the musical chairs
+        // would not know the set size changed.
+        musical_chairs::set_current_seats(diem_framework, vector::length(&new_vals));
     }
 
     /// Force reconfigure. To be called at the end of a proposal that alters on-chain configs.
@@ -591,22 +598,24 @@ module diem_framework::diem_governance {
     /// decides the epoch can change. Any error will just cause the
     /// user's transaction to abort, but the chain will continue.
     /// Whatever fix is needed can be done online with on-chain governance.
-    public entry fun trigger_epoch(_sig: &signer) acquires GovernanceResponsbility { // doesn't need a signer
-      let framework_signer = get_signer(@ol_framework);
+    public entry fun trigger_epoch(_sig: &signer) acquires
+    GovernanceResponsbility { // doesn't need a signer
       let _ = epoch_boundary::can_trigger(); // will abort if false
+      let framework_signer = get_signer(@ol_framework);
       epoch_boundary::trigger_epoch(&framework_signer);
     }
 
-    // helper to use on smoke tests only. Will fail on m
+    // helper to use on smoke tests only. Will fail on Mainnet. Needs testnet
+    // Core Resources user.
     public entry fun smoke_trigger_epoch(core_resources: &signer) acquires
     GovernanceResponsbility { // doesn't need a signer
-      assert!(testnet::is_not_mainnet(), 666);
+      assert!(testnet::is_not_mainnet(), error::invalid_state(ENOT_FOR_MAINNET));
       system_addresses::assert_ol(core_resources);
       let framework_signer = get_signer(@ol_framework);
       epoch_boundary::smoke_trigger_epoch(&framework_signer);
     }
 
-
+    // COMMIT NOTE: trigger_epoch() should now work on Stage as well.
 
     /// Return the voting power a stake pool has with respect to governance proposals.
     fun get_voting_power(_pool_address: address): u64 {

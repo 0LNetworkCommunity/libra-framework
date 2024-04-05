@@ -1,4 +1,7 @@
 ///////////////////////////////////////////////////////////////////
+// DEPRECATION NOTICE
+// this module's funtions will be removed shortly after the Tower Sunset
+///////////////////////////////////////////////////////////////////
 module ol_framework::tower_state {
     use std::error;
     use std::signer;
@@ -6,6 +9,7 @@ module ol_framework::tower_state {
     use std::hash;
     use ol_framework::globals;
     use diem_framework::system_addresses;
+    use diem_framework::account;
     use ol_framework::epoch_helper;
     use diem_framework::testnet;
     use diem_framework::ol_native_vdf;
@@ -33,6 +37,9 @@ module ol_framework::tower_state {
     const EALREADY_INITIALIZED: u64 = 8;
     /// Not testnet
     const ENOT_TESTNET: u64 = 9;
+    /// Tower game is over. All coins were mined, and every last coin has been
+    /// mined. Thank you Tower!
+    const ETOWER_GAME_OVER: u64 = 10;
 
     /// A list of all miners' addresses
     // reset at epoch boundary
@@ -44,6 +51,20 @@ module ol_framework::tower_state {
       lifetime_proofs: u64,
       proofs_in_epoch: u64,
       miners_above_thresh: u64,
+    }
+
+    // Thank you Tower, we wouldn't be here without you
+    struct TowerGameOver has key {
+      // Now it's time to say good night
+      // Good night sleep tight
+      // Now the sun turns out his light
+      // Good night sleep tight
+      // Dream sweet dreams for me (dream sweet)
+      // Dream sweet dreams for you
+
+      // Close your eyes and I'll close mine
+      // Good night sleep tight
+      // Now the moon begins to shine
     }
 
 
@@ -100,6 +121,17 @@ module ol_framework::tower_state {
       init_miner_list(root);
       init_tower_counter(root, 0);
     }
+
+    /// Sunsets the tower game
+    public fun tower_sunset(framework_sig: &signer) {
+      move_to<TowerGameOver>(framework_sig, TowerGameOver {});
+    }
+
+    #[view]
+    public fun is_game_over():bool {
+      exists<TowerGameOver>(@ol_framework)
+    }
+
     // Create the difficulty struct
     public(friend) fun init_difficulty(vm: &signer) {
       system_addresses::assert_ol(vm);
@@ -205,6 +237,7 @@ module ol_framework::tower_state {
       miner_sign: &signer,
       proof: Proof
     ) acquires TowerProofHistory, TowerList, TowerCounter {
+      assert!(!is_game_over(), error::invalid_state(ETOWER_GAME_OVER));
       // Get address, assumes the sender is the signer.
       let miner_addr = signer::address_of(miner_sign);
       oracle::init_provider(miner_sign);
@@ -237,6 +270,8 @@ module ol_framework::tower_state {
         difficulty: u64,
         security: u64,
     ) acquires TowerCounter, TowerList, TowerProofHistory {
+        assert!(!is_game_over(), error::invalid_state(ETOWER_GAME_OVER));
+
         let proof = create_proof_blob(
             challenge,
             solution,
@@ -403,7 +438,11 @@ module ol_framework::tower_state {
         let i = 0;
         while (i < vals_len) {
             let val = vector::borrow(&outgoing_miners, i);
-
+            // belt and suspenders for dropped accounts in hard fork.
+            if (!account::exists_at(*val)) {
+              i = i + 1;
+              continue
+            };
             // For testing: don't call update_metrics unless there is account state for the address.
             if (exists<TowerProofHistory>(*val)){
                 update_epoch_metrics_vals(vm, *val);
