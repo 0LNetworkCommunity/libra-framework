@@ -8,7 +8,7 @@ module ol_framework::musical_chairs {
     use std::fixed_point32;
     use std::vector;
 
-    use diem_std::debug::print;
+    // use diem_std::debug::print;
 
     friend diem_framework::genesis;
     friend diem_framework::diem_governance;
@@ -99,14 +99,13 @@ module ol_framework::musical_chairs {
         let num_compliant_nodes = vector::length(&compliant_vals);
 
 
-        // check for errors. We should not have gone into an epoch where we
+        // Error handle. We should not have gone into an epoch where we
         // had MORE validators than seats offered.
         // If this happens it's because we are in some kind of a fork condition.
         // return with no changes
         if (num_compliant_nodes > chairs.seats_offered) {
           return (compliant_vals, chairs.seats_offered)
         };
-
 
         // The happiest case. All filled seats performed well in the last epoch
         if (fixed_point32::is_zero(*&fail_ratio)) { // handle this here to prevent multiplication error below
