@@ -218,8 +218,10 @@ module ol_framework::musical_chairs {
     // Check for genesis, upgrade or recovery mode scenarios
     // if we are at genesis or otherwise at start of an epoch and don't
     // have a sufficient amount of history to evaluate nodes
-    // we might reduce the validator set too agressively
-    // TODO: use status.move is_operating
+    // we might reduce the validator set too agressively.
+    // Musical chairs should not evaluate performance with less than 1000 rounds
+    // created on mainnet,
+    // there's something else very wrong in that case.
 
     fun is_booting_up(epoch: u64, round: u64): bool {
       !testnet::is_testnet() &&
@@ -233,8 +235,6 @@ module ol_framework::musical_chairs {
     public fun get_current_seats(): u64 acquires Chairs {
         borrow_global<Chairs>(@ol_framework).seats_offered
     }
-
-
 
     //////// TEST HELPERS ////////
 
