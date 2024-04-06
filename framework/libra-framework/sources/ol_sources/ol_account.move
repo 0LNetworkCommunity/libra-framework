@@ -153,9 +153,10 @@ module ol_framework::ol_account {
         ancestry::adopt_this_child(sender, new_account_sig);
     }
 
-    // #[test_only]
-    /// Helper for tests to create acounts
+
+    /// Helper for smoke tests to create acounts.
     /// Belt and suspenders
+    // TODO: should check chain ID is not mainnet.
     public entry fun create_account(root: &signer, auth_key: address) {
         system_addresses::assert_ol(root);
         create_impl(root, auth_key);
@@ -182,7 +183,7 @@ module ol_framework::ol_account {
 
         let sig_addr = signer::address_of(&new_signer);
         if (lookup_addr != sig_addr) {
-          print(&lookup_addr);
+          // print(&lookup_addr);
           print(&sig_addr);
         };
 
@@ -481,11 +482,8 @@ module ol_framework::ol_account {
     // note return quietly if it's already initialized, so we can use it
     // in the creation and tx flow
     fun maybe_init_burn_tracker(sig: &signer) {
-      print(&100001);
-      print(&signer::address_of(sig));
       let addr = signer::address_of(sig);
       if (exists<BurnTracker>(addr)) return;
-      print(&100002);
 
       let prev_supply = if (chain_status::is_genesis()) {
         libra_coin::get_final_supply()
@@ -494,7 +492,6 @@ module ol_framework::ol_account {
       };
 
       let (_, current_user_balance) = balance(addr);
-      print(&100003);
 
       move_to(sig, BurnTracker {
         prev_supply,
@@ -502,14 +499,10 @@ module ol_framework::ol_account {
         burn_at_last_calc: 0,
         cumu_burn: 0,
       });
-      print(&100004);
-
     }
 
   // NOTE: this must be called before immediately after any coins are deposited or withrdrawn.
   fun maybe_update_burn_tracker_impl(addr: address) acquires BurnTracker {
-    print(&200001);
-    print(&addr);
     assert!(exists<BurnTracker>(addr), error::invalid_state(ENO_TRACKER_INITIALIZED));
     let state = borrow_global_mut<BurnTracker>(addr);
     let (_, current_user_balance) = balance(addr);
@@ -517,9 +510,10 @@ module ol_framework::ol_account {
     // this must be true but we
     // don't abort since the VM may be calling this
     let current_supply = libra_coin::supply();
-    let original_supply = libra_coin::get_final_supply();
-    if (original_supply > current_supply) { // update if there was a change in supply
-      let burn_in_period = original_supply - current_supply;
+    // has there been a change in
+    // supply since we last used this account
+    if (state.prev_supply > current_supply) {
+      let burn_in_period = state.prev_supply - current_supply;
 
       if (
         state.prev_balance > 0 &&// if there was a user balance
@@ -536,12 +530,13 @@ module ol_framework::ol_account {
             assume (state.burn_at_last_calc + attributed_burn) < MAX_U64;
           };
 
-          state.cumu_burn = state.burn_at_last_calc + attributed_burn;
+          // get cumulative burn
+          state.cumu_burn = state.cumu_burn + attributed_burn;
           // now change last calc
           state.burn_at_last_calc = attributed_burn;
           // reset trackers for next tx
           state.prev_supply = current_supply;
-
+          // user's balance for next time we check
           state.prev_balance = current_user_balance;
         }
       }
@@ -549,6 +544,7 @@ module ol_framework::ol_account {
       state.prev_balance == 0 &&
       current_user_balance > 0
     ){
+      state.prev_supply = current_supply;
       state.prev_balance = current_user_balance;
     }
   }

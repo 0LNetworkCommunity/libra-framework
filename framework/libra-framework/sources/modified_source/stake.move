@@ -15,8 +15,7 @@ module diem_framework::stake {
     use ol_framework::slow_wallet;
     use ol_framework::testnet;
 
-    #[test_only]
-    use diem_std::debug::print;
+    // use diem_std::debug::print;
 
     friend diem_framework::block;
     friend diem_framework::genesis;
@@ -1154,18 +1153,14 @@ module diem_framework::stake {
     ) acquires AllowedValidators, ValidatorState, ValidatorConfig, ValidatorSet,
    ValidatorPerformance {
         use ol_framework::ol_account;
-        // use std::debug::print;
         system_addresses::assert_ol(root);
         let validator_address = signer::address_of(validator);
-        print(&300001);
-        print(&validator_address);
         ol_account::create_account(root, validator_address);
 
         let pk_bytes = bls12381::public_key_to_bytes(public_key);
         let pop_bytes = bls12381::proof_of_possession_to_bytes(proof_of_possession);
         initialize_validator(validator, pk_bytes, pop_bytes, vector::empty(),
         vector::empty());
-        print(&signer::address_of(validator));
 
         if (should_join_validator_set) {
             join_validator_set(validator, validator_address);

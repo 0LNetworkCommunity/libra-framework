@@ -446,7 +446,7 @@ pub enum EntryFunctionCall {
         to: AccountAddress,
     },
 
-    /// Helper for tests to create acounts
+    /// Helper for smoke tests to create acounts.
     /// Belt and suspenders
     OlAccountCreateAccount {
         auth_key: AccountAddress,
@@ -2081,7 +2081,7 @@ pub fn object_transfer_call(object: AccountAddress, to: AccountAddress) -> Trans
     ))
 }
 
-/// Helper for tests to create acounts
+/// Helper for smoke tests to create acounts.
 /// Belt and suspenders
 pub fn ol_account_create_account(auth_key: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
