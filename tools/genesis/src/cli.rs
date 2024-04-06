@@ -25,6 +25,7 @@ pub struct GenesisCli {
 impl GenesisCli {
     pub async fn execute(&self) -> anyhow::Result<()> {
         let data_path = self.home_dir.clone().unwrap_or_else(global_config_dir);
+        let chain_name  = self.chain.unwrap_or(NamedChain::TESTNET);
 
         match &self.command {
             Some(Sub::Build { github, drop_list }) => {
@@ -47,7 +48,7 @@ impl GenesisCli {
                     data_path,
                     github.local_framework,
                     &mut recovery,
-                    self.chain.unwrap_or(NamedChain::TESTING),
+                    chain_name,
                     None,
                 )?;
             }
@@ -56,7 +57,7 @@ impl GenesisCli {
                     github.org_github.to_owned(),
                     github.name_github.to_owned(),
                     Some(data_path),
-                    self.chain.unwrap_or(NamedChain::TESTING),
+                    chain_name,
                 )
                 .start_wizard(github.local_framework, github.json_legacy.clone(), false)
                 .await?;
@@ -66,7 +67,7 @@ impl GenesisCli {
                     github.org_github.to_owned(),
                     github.name_github.to_owned(),
                     Some(data_path),
-                    self.chain.unwrap_or(NamedChain::TESTING),
+                    chain_name,
                 )
                 .start_wizard(github.local_framework, github.json_legacy.clone(), true)
                 .await?;
@@ -79,7 +80,7 @@ impl GenesisCli {
                 testnet_setup::setup(
                     me,
                     ip_list,
-                    self.chain.unwrap_or(NamedChain::TESTING),
+                    chain_name,
                     data_path,
                     json_legacy.to_owned(),
                 )
