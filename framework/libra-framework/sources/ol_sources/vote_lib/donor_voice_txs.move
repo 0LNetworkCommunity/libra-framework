@@ -129,9 +129,7 @@ module ol_framework::donor_voice_txs {
       liquidate_to_match_index: bool,
     }
 
-
-
-    // // can only be called by genesis
+    // can only be called by genesis
     public(friend) fun migrate_community_wallet_account(framework: &signer, dv_account:
     &signer) {
       system_addresses::assert_ol(framework);
@@ -661,12 +659,12 @@ module ol_framework::donor_voice_txs {
     vm_liquidate(vm);
   }
 
-   #[test_only]
-   public fun test_helper_make_donor_voice(vm: &signer, sig: &signer) {
-    use ol_framework::testnet;
-    testnet::assert_testnet(vm);
-    make_donor_voice(sig);
-   }
+  #[test_only]
+  public fun test_helper_make_donor_voice(vm: &signer, sig: &signer) {
+  use ol_framework::testnet;
+  testnet::assert_testnet(vm);
+  make_donor_voice(sig);
+  }
 
   #[view]
   /// get the proportion of donations of all donors to account.
@@ -697,6 +695,17 @@ module ol_framework::donor_voice_txs {
       (pro_rata_addresses, pro_rata_amounts)
   }
 
+  #[view]
+  /// get the total aggregate balance in all donor voice accounts.
+  public fun get_dv_supply(): u64 {
+    let list = donor_voice::get_root_registry();
+    let sum = 0;
+    vector::for_each(list, |addr| {
+      let (_, balance) =  ol_account::balance(addr);
+      sum = sum + balance;
+    });
+    sum
+  }
   //////// GETTERS ////////
   public fun get_tx_params(t: &TimedTransfer): (address, u64, vector<u8>, u64) {
     (t.tx.payee, t.tx.value, *&t.tx.description, t.deadline)

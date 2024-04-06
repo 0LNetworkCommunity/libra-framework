@@ -28,12 +28,12 @@ module ol_framework::infra_escrow{
 
     const EGENESIS_REWARD: u64 = 0;
     /// for use on genesis, creates the infra escrow pledge policy struct
-    public(friend) fun initialize(vm: &signer) {
+    public(friend) fun initialize(framework: &signer) {
         // NOTE: THIS MUST BE THE 0x0 address, because on epoch boundary it is that address @vm_reserved which will be calling the functions.
-        system_addresses::assert_vm(vm);
+        system_addresses::assert_diem_framework(framework);
         // TODO: perhaps this policy needs to be published to a different address?
         pledge_accounts::publish_beneficiary_policy(
-          vm, // only VM calls at genesis
+          framework, // only framework calls at genesis
           b"infra escrow",
           90,
           true
@@ -65,7 +65,7 @@ module ol_framework::infra_escrow{
         let c = option::extract(&mut opt);
         option::destroy_none(opt);
         let value = coin::value(&c);
-        transaction_fee::vm_pay_fee(root, @vm_reserved, c); // don't attribute
+        transaction_fee::vm_pay_fee(root, @ol_framework, c); // don't attribute
         // to the user
         return(true, value)
     }
@@ -74,20 +74,19 @@ module ol_framework::infra_escrow{
 
     // Transaction script for user to pledge to infra escrow.
     fun user_pledge_infra(user_sig: &signer, amount: u64){
-
-      pledge_accounts::user_pledge(user_sig, @vm_reserved, amount);
+      pledge_accounts::user_pledge(user_sig, @ol_framework, amount);
     }
 
     #[view]
     /// gets the amount a user has pledged to infra escrow
     public fun user_infra_pledge_balance(addr: address): u64 {
-      pledge_accounts::get_user_pledge_amount(addr, @vm_reserved)
+      pledge_accounts::get_user_pledge_amount(addr, @ol_framework)
     }
 
     #[view]
     /// gets the amount a user has pledged to infra escrow
     public fun infra_escrow_balance(): u64 {
-      pledge_accounts::get_available_to_beneficiary(@vm_reserved)
+      pledge_accounts::get_available_to_beneficiary(@ol_framework)
     }
 
     //////// TESTNET HELPERS ////////

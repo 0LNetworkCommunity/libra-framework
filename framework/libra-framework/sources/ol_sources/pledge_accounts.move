@@ -57,6 +57,7 @@
         friend ol_framework::last_goodbye;
         friend ol_framework::infra_escrow;
         friend ol_framework::genesis_migration;
+        friend ol_framework::genesis;
 
         /// no policy at this address
         const ENO_BENEFICIARY_POLICY: u64 = 1;
@@ -99,15 +100,26 @@
           revoked: bool, // for historical record keeping.
         }
 
+        // convenience tracker of all beneficiaries
+        struct BeneficiaryRegistry has key {
+          list: vector<address>
+        }
+
+        public(friend) fun initialize(framework: &signer) {
+          move_to(framework, BeneficiaryRegistry {
+            list: vector::empty()
+          })
+        }
         // beneficiary publishes a policy to their account.
         // NOTE: It cannot be modified after a first pledge is made!.
         public(friend) fun publish_beneficiary_policy(
-          account: &signer,
+          user_sig: &signer,
           purpose: vector<u8>,
           vote_threshold_to_revoke: u64,
           burn_funds_on_revoke: bool
-        ) acquires BeneficiaryPolicy {
-            if (!exists<BeneficiaryPolicy>(signer::address_of(account))) {
+        ) acquires BeneficiaryPolicy, BeneficiaryRegistry {
+            let addr = signer::address_of(user_sig);
+            if (!exists<BeneficiaryPolicy>(addr)) {
                 let beneficiary_policy = BeneficiaryPolicy {
                     purpose: purpose,
                     vote_threshold_to_revoke: vote_threshold_to_revoke,
@@ -122,10 +134,12 @@
                     revoked: false
 
                 };
-                move_to(account, beneficiary_policy);
+                move_to(user_sig, beneficiary_policy);
+                let registry = borrow_global_mut<BeneficiaryRegistry>(addr);
+                vector::push_back(&mut registry.list, addr)
             } else {
               // allow the beneficiary to write drafts, and modify the policy, as long as no pledge has been made.
-              let b = borrow_global_mut<BeneficiaryPolicy>(signer::address_of(account));
+              let b = borrow_global_mut<BeneficiaryPolicy>(addr);
               if (vector::length(&b.pledgers) == 0) {
                 b.purpose = purpose;
                 b.vote_threshold_to_revoke = vote_threshold_to_revoke;
@@ -348,8 +362,8 @@
             };
             option::destroy_none(c);
 
-            if (!exists<BeneficiaryPolicy>(@0x0)) return 0;
-            let bene_state = borrow_global_mut<BeneficiaryPolicy>(@0x0);
+            if (!exists<BeneficiaryPolicy>(@ol_framework)) return 0;
+            let bene_state = borrow_global_mut<BeneficiaryPolicy>(@ol_framework);
             let (is_found, idx) = vector::index_of(&bene_state.pledgers,
             pledge_account);
 

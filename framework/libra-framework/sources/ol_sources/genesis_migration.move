@@ -101,7 +101,7 @@ module ol_framework::genesis_migration {
   to_escrow: u64, lifetime_pledged: u64, lifetime_withdrawn: u64) {
     system_addresses::assert_diem_framework(framework);
     let c = coin::vm_mint<LibraCoin>(framework, to_escrow);
-    pledge_accounts::migrate_pledge_account(framework, user_sig, @0x0, c, lifetime_pledged,
+    pledge_accounts::migrate_pledge_account(framework, user_sig, @ol_framework, c, lifetime_pledged,
     lifetime_withdrawn);
   }
 

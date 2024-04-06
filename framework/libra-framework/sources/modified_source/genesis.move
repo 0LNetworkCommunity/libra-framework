@@ -39,6 +39,7 @@ module diem_framework::genesis {
     use ol_framework::epoch_helper;
     use ol_framework::burn;
     use ol_framework::fee_maker;
+    use ol_framework::pledge_accounts;
     use ol_framework::oracle;
     use ol_framework::vouch;
     use ol_framework::testnet;
@@ -153,16 +154,12 @@ module diem_framework::genesis {
         match_index::initialize(&diem_framework_account);
         fee_maker::initialize(&diem_framework_account);
         oracle::initialize(&diem_framework_account);
+        pledge_accounts::initialize(&diem_framework_account);
         account::maybe_initialize_duplicate_originating(&diem_framework_account);
+        infra_escrow::initialize(&diem_framework_account);
 
         let zero_x_two_sig = create_signer(@0x2);
         sacred_cows::init(&zero_x_two_sig);
-
-        // since the infra_escrow requires a VM signature, we need to initialized it as 0x0 and not 0x1, as the others.
-        let vm_sig = create_signer(@vm_reserved);
-        infra_escrow::initialize(&vm_sig);
-
-
         // end 0L
 
         timestamp::set_time_has_started(&diem_framework_account);
