@@ -27,19 +27,19 @@ module ol_framework::genesis_migration {
 
   /// Called by root in genesis to initialize the GAS coin
   public(friend) fun migrate_legacy_user(
-      vm: &signer,
+      framework_sig: &signer,
       user_sig: &signer,
       auth_key: vector<u8>,
       expected_initial_balance: u64,
   ) {
-    system_addresses::assert_diem_framework(vm);
+    system_addresses::assert_diem_framework(framework_sig);
 
     let user_addr = signer::address_of(user_sig);
     // if not a validator OR operator of a validator, create a new account
     // previously during genesis validator and oper accounts were already created
     if (!is_genesis_val(user_addr)) {
       ol_account::vm_create_account_migration(
-        vm,
+        framework_sig,
         user_addr,
         auth_key,
       );
@@ -58,7 +58,7 @@ module ol_framework::genesis_migration {
     assert!(expected_initial_balance >= genesis_balance, error::invalid_state(EGENESIS_BALANCE_TOO_HIGH));
 
     let coins_to_mint = expected_initial_balance - genesis_balance;
-    let c = coin::vm_mint<LibraCoin>(vm, coins_to_mint);
+    let c = coin::vm_mint<LibraCoin>(framework_sig, coins_to_mint);
     ol_account::deposit_coins(user_addr, c);
 
     let new_balance = libra_coin::balance(user_addr);
@@ -74,11 +74,11 @@ module ol_framework::genesis_migration {
 
   /// for an uprade using an escrow percent. Only to be called at genesis
   // escrow percent has 6 decimal precision (1m);
-  public(friend) fun fork_escrow_init(framework: &signer, user_sig: &signer,
+  public(friend) fun fork_escrow_init(framework_sig: &signer, user_sig: &signer,
   to_escrow: u64, lifetime_pledged: u64, lifetime_withdrawn: u64) {
-    system_addresses::assert_diem_framework(framework);
-    let c = coin::vm_mint<LibraCoin>(framework, to_escrow);
-    pledge_accounts::migrate_pledge_account(framework, user_sig, @ol_framework, c, lifetime_pledged,
+    system_addresses::assert_diem_framework(framework_sig);
+    let c = coin::vm_mint<LibraCoin>(framework_sig, to_escrow);
+    pledge_accounts::migrate_pledge_account(framework_sig, user_sig, @ol_framework, c, lifetime_pledged,
     lifetime_withdrawn);
   }
 }

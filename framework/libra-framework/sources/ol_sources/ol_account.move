@@ -68,9 +68,6 @@ module ol_framework::ol_account {
     /// below 1,000 coins
     const ETRANSFER_TOO_HIGH_FOR_INIT: u64 = 10;
 
-    /// what limit should be set for new account creation while using transfer()
-    const MAX_COINS_FOR_INITIALIZE: u64 = 1000 * 1000000;
-
     /// community wallets cannot use transfer, they have a dedicated workflow
     const ENOT_FOR_CW: u64 = 11;
 
@@ -80,6 +77,14 @@ module ol_framework::ol_account {
     /// This key cannot be used to create accounts. The address may have
     /// malformed state. And says, "My advice is to not let the boys in".
     const ETOMBSTONE: u64 = 21;
+
+    /// This account is malformed, it does not have the necessary burn tracker struct
+    const ENO_TRACKER_INITIALIZED: u64 = 13;
+
+
+    ///////// CONSTS /////////
+    /// what limit should be set for new account creation while using transfer()
+    const MAX_COINS_FOR_INITIALIZE: u64 = 1000 * 1000000;
 
     /// tracks the burns relative to each account
     struct BurnTracker has key {
@@ -109,26 +114,43 @@ module ol_framework::ol_account {
     public fun test_ol_create_resource_account(user: &signer, seed: vector<u8>): (signer, account::SignerCapability) {
       let (resource_account_sig, cap) = account::create_resource_account(user, seed);
       coin::register<LibraCoin>(&resource_account_sig);
+
+      receipts::user_init(&resource_account_sig);
+      maybe_init_burn_tracker(&resource_account_sig);
+      ancestry::adopt_this_child(user, &resource_account_sig);
+
       (resource_account_sig, cap)
     }
 
+    // Deprecation Notice: creating resource accounts are disabled in Libra.
+    // Similar methods exist in multi_action::finalize_and_cage) which is
+    // a wrapper for  and multi_sig::migrate_with_owners
+    // if your are testing this, see below a test_only option
 
-    /// A wrapper to create a NEW account and register it to receive GAS.
-    fun ol_create_resource_account(user: &signer, seed: vector<u8>): (signer, account::SignerCapability) {
-      let (resource_account_sig, cap) = account::create_resource_account(user, seed);
-      coin::register<LibraCoin>(&resource_account_sig);
-      (resource_account_sig, cap)
-    }
+    /// A wrapper to create a NEW account and register it to receive
+    // GAS.
+    // fun _ol_create_resource_account(user: &signer, seed: vector<u8>): (signer, account::SignerCapability) {
+    //   let (resource_account_sig, cap) = account::create_resource_account(user, seed);
+    //   coin::register<LibraCoin>(&resource_account_sig);
+
+    //   init_from_sig_impl(user, &resource_account_sig);
+    //   (resource_account_sig, cap);
+    // }
 
     fun create_impl(sender: &signer, maybe_new_user: address) {
         // prevent reincarnation of accounts where there may be malformed state
         // during pending deletion.
         assert!(!account::is_tombstone(maybe_new_user), error::already_exists(ETOMBSTONE));
-        let new_signer = account::create_account(maybe_new_user);
-        coin::register<LibraCoin>(&new_signer);
-        receipts::user_init(&new_signer);
-        init_burn_tracker(&new_signer);
-        ancestry::adopt_this_child(sender, &new_signer);
+        let new_account_sig = account::create_account(maybe_new_user);
+        init_from_sig_impl(sender, &new_account_sig);
+    }
+
+    /// all account initialization happens here after a signer is created
+    fun init_from_sig_impl(sender: &signer, new_account_sig: &signer) {
+        coin::register<LibraCoin>(new_account_sig);
+        receipts::user_init(new_account_sig);
+        maybe_init_burn_tracker(new_account_sig);
+        ancestry::adopt_this_child(sender, new_account_sig);
     }
 
     // #[test_only]
@@ -149,16 +171,15 @@ module ol_framework::ol_account {
         auth_key: vector<u8>,
     ): signer {
         system_addresses::assert_diem_framework(framework);
-        // print(&new_account);
-        // chain_status::assert_genesis(); TODO
+        // TODO: only run at genesis
+        // chain_status::assert_genesis();
         let new_signer = account::vm_create_account(framework, new_account, auth_key);
         // fake "rotate" legacy auth key  to itself so that the lookup is populated
         account::vm_migrate_rotate_authentication_key_internal(framework, &new_signer, auth_key);
         // check we can in fact look up the account
         let auth_key_as_address = from_bcs::to_address(auth_key);
         let lookup_addr = account::get_originating_address(auth_key_as_address);
-        // print(&@0x01);
-        // print(&lookup_addr);
+
         let sig_addr = signer::address_of(&new_signer);
         if (lookup_addr != sig_addr) {
           print(&lookup_addr);
@@ -171,7 +192,7 @@ module ol_framework::ol_account {
         //   error::invalid_state(ECANT_MATCH_ADDRESS_IN_LOOKUP)
         // );
         coin::register<LibraCoin>(&new_signer);
-        init_burn_tracker(&new_signer);
+        maybe_init_burn_tracker(&new_signer);
         new_signer
     }
     /// Migrate the tracker. Depends on the BurnTracker having been initialized
@@ -459,9 +480,12 @@ module ol_framework::ol_account {
     // on new account creation we need the burn tracker created
     // note return quietly if it's already initialized, so we can use it
     // in the creation and tx flow
-    fun init_burn_tracker(sig: &signer) {
+    fun maybe_init_burn_tracker(sig: &signer) {
+      print(&100001);
+      print(&signer::address_of(sig));
       let addr = signer::address_of(sig);
       if (exists<BurnTracker>(addr)) return;
+      print(&100002);
 
       let prev_supply = if (chain_status::is_genesis()) {
         libra_coin::get_final_supply()
@@ -470,19 +494,23 @@ module ol_framework::ol_account {
       };
 
       let (_, current_user_balance) = balance(addr);
+      print(&100003);
 
       move_to(sig, BurnTracker {
         prev_supply,
         prev_balance: current_user_balance,
         burn_at_last_calc: 0,
         cumu_burn: 0,
-      })
+      });
+      print(&100004);
+
     }
 
   // NOTE: this must be called before immediately after any coins are deposited or withrdrawn.
   fun maybe_update_burn_tracker_impl(addr: address) acquires BurnTracker {
-    if (!exists<BurnTracker>(addr)) return;// return quietly as the VM may call this
-
+    print(&200001);
+    print(&addr);
+    assert!(exists<BurnTracker>(addr), error::invalid_state(ENO_TRACKER_INITIALIZED));
     let state = borrow_global_mut<BurnTracker>(addr);
     let (_, current_user_balance) = balance(addr);
     // 1. how much burn happened in between
@@ -667,14 +695,13 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
     public fun test_transfer_to_resource_account_ol(root: &signer, alice: &signer,
     core: &signer) acquires BurnTracker{
-        // use diem_framework::resource_account;
-        let (resource_account, _) = ol_create_resource_account(alice, vector[]);
-
-        let resource_acc_addr = signer::address_of(&resource_account);
-
         let (burn_cap, mint_cap) =
         ol_framework::libra_coin::initialize_for_test(core);
         libra_coin::test_set_final_supply(root, 1000); // dummy to prevent fail
+
+        let (resource_account, _) = test_ol_create_resource_account(alice, vector[]);
+        let resource_acc_addr = signer::address_of(&resource_account);
+
         account::maybe_initialize_duplicate_originating(root);
         create_account(root, signer::address_of(alice));
         coin::deposit(signer::address_of(alice), coin::mint(10000, &mint_cap));

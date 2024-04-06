@@ -271,7 +271,7 @@ module ol_framework::mock {
         let sig = account::create_signer_for_test(*val);
 
         let (_sk, pk, pop) = stake::generate_identity();
-        // stake::initialize_test_validator(&pk, &pop, &sig, 100, true, true);
+
         validator_universe::test_register_validator(root, &pk, &pop, &sig, 100,
         true, true);
 
