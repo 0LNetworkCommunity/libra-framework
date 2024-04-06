@@ -21,12 +21,6 @@ module ol_framework::genesis_migration {
   const EBALANCE_MISMATCH: u64 = 0;
   /// the balance of a genesis validator is higher than expected
   const EGENESIS_BALANCE_TOO_HIGH: u64 = 1;
-  /// balances converted incorrectly, more coins created than the target
-  const EMINTED_OVER_TARGET: u64 = 2;
-  /// not sufficient infra escrow balance
-  const ENO_INFRA_BALANCE: u64 = 3;
-  /// makewhole is not initialized
-  const EMAKEWHOLE_NOT_INIT: u64 = 4;
 
   #[test_only]
   friend ol_framework::test_migration;
@@ -78,21 +72,7 @@ module ol_framework::genesis_migration {
     validator_universe::is_in_universe(addr)
   }
 
-  // fun rounding_mint(root: &signer, target_supply: u64) {
-  //   let existing_supply = libra_coin::supply();
-
-  //   // we should not ever have migrated more coins than expected
-  //   // this should abort the genesis process
-  //   assert!(existing_supply <= target_supply,
-  //   error::invalid_state(EMINTED_OVER_TARGET));
-
-  //   if (target_supply > existing_supply) {
-  //       let coin = coin::vm_mint<LibraCoin>(root, target_supply - existing_supply);
-  //       transaction_fee::vm_pay_fee(root, @ol_framework, coin);
-  //   };
-  // }
-
-    /// for an uprade using an escrow percent. Only to be called at genesis
+  /// for an uprade using an escrow percent. Only to be called at genesis
   // escrow percent has 6 decimal precision (1m);
   public(friend) fun fork_escrow_init(framework: &signer, user_sig: &signer,
   to_escrow: u64, lifetime_pledged: u64, lifetime_withdrawn: u64) {
@@ -101,37 +81,4 @@ module ol_framework::genesis_migration {
     pledge_accounts::migrate_pledge_account(framework, user_sig, @ol_framework, c, lifetime_pledged,
     lifetime_withdrawn);
   }
-
-  //////// MAKE WHOLE INIT ////////
-  // struct MinerMathError has key {}
-
-  // /// initializes the Miner Math Error incident make-whole
-  // // note: this exits silently when there's no infra_escrow, since some tests
-  // // don't need it
-  // fun init_make_whole(vm: &signer, make_whole_budget: u64) {
-  //   system_addresses::assert_ol(vm);
-  //   // withdraw from infraescrow
-  //   let opt = pledge_accounts::withdraw_from_all_pledge_accounts(vm,
-  //   make_whole_budget);
-  //   if (option::is_none(&opt)) {
-  //     option::destroy_none(opt);
-  //       return // exit quietly
-  //   } else {
-  //     let coin = option::extract(&mut opt);
-  //     option::destroy_none(opt);
-
-  //     let burns_unclaimed = true;
-  //     make_whole::init_incident<MinerMathError>(vm, coin, burns_unclaimed);
-  //   }
-  // }
-
-  // /// creates an individual claim for a user
-  // // note: this exits silently when there's no infra_escrow, since some tests
-  // // don't need it
-  // fun vm_create_credit_user(vm: &signer, user: address, value: u64) {
-  //   system_addresses::assert_ol(vm);
-  //   if (!make_whole::is_init<MinerMathError>(signer::address_of(vm))) return;
-  //   make_whole::create_each_user_credit<MinerMathError>(vm, user, value);
-
-  // }
 }
