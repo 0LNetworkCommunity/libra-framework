@@ -37,6 +37,8 @@ module ol_framework::ol_account {
 
     #[test_only]
     friend ol_framework::test_multi_action;
+    #[test_only]
+    friend ol_framework::test_slow_wallet;
 
     /// Account does not exist.
     const EACCOUNT_NOT_FOUND: u64 = 1;
@@ -400,7 +402,7 @@ module ol_framework::ol_account {
     /// return the LibraCoin balance as tuple (unlocked, total)
     // TODO v7: consolidate balance checks here, not in account, slow_wallet, or coin
     public fun balance(addr: address): (u64, u64) {
-      slow_wallet::balance(addr)
+      slow_wallet::unlocked_and_total(addr)
     }
 
     #[view]
@@ -410,7 +412,7 @@ module ol_framework::ol_account {
     public fun real_balance(addr: address): (u64, u64) {
       let final = libra_coin::get_final_supply();
       let current = libra_coin::supply();
-      let (unlocked, total) = slow_wallet::balance(addr);
+      let (unlocked, total) = slow_wallet::unlocked_and_total(addr);
 
       let unlocked_indexed = math64::mul_div(unlocked, final, current);
       let total_indexed = math64::mul_div(total, final, current);

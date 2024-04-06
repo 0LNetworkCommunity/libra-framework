@@ -15,13 +15,14 @@ module ol_framework::test_slow_wallet {
   use ol_framework::transaction_fee;
   use ol_framework::rewards;
   use std::vector;
+  use std::signer;
 
-  // use diem_std::debug::print;
+  use diem_std::debug::print;
 
   #[test(root = @ol_framework)]
   // we are testing that genesis creates the needed struct
   // and a validator creation sets the users account to slow.
-  fun slow_wallet_init (root: signer) {
+  fun slow_wallet_init(root: signer) {
       let _set = mock::genesis_n_vals(&root, 4);
       let list = slow_wallet::get_slow_list();
 
@@ -37,24 +38,54 @@ module ol_framework::test_slow_wallet {
       assert!(vector::length<address>(&list) == 5, 735701);
   }
 
+  #[test(root = @ol_framework, alice_sig = @0x1000a)]
+  fun test_locked_supply(root: signer, alice_sig: &signer) {
+    let addr = signer::address_of(alice_sig);
+    mock::ol_test_genesis(&root);
+    let mint_cap = libra_coin::extract_mint_cap(&root);
+    slow_wallet::initialize(&root);
+    // create alice account
+    ol_account::create_account(&root, addr);
+    slow_wallet::user_set_slow(alice_sig);
+    let (u, t) = ol_account::balance(addr);
+    print(&u);
+    print(&t);
+    assert!(u == 0, 735701);
+    assert!(t == 0, 735702);
+
+    assert!(slow_wallet::is_slow(addr), 7357003);
+    assert!(slow_wallet::unlocked_amount(addr) == 0, 735705);
+
+    let alice_init_balance = 1000;
+    let c = coin::test_mint(alice_init_balance, &mint_cap);
+    ol_account::vm_deposit_coins_locked(&root, addr, c);
+    coin::destroy_mint_cap(mint_cap);
+    let (u, t) = ol_account::balance(addr);
+    print(&u);
+    print(&t);
+    let locked_supply = slow_wallet::get_locked_supply();
+    print(&locked_supply);
+
+  }
+
   #[test(root = @ol_framework)]
   fun test_epoch_drip(root: signer) {
     let set = mock::genesis_n_vals(&root, 4);
     mock::ol_initialize_coin_and_fund_vals(&root, 100, false);
-    let a = vector::borrow(&set, 0);
+    let a = *vector::borrow(&set, 0);
 
-    assert!(slow_wallet::is_slow(*a), 7357000);
-    assert!(slow_wallet::unlocked_amount(*a) == 100, 735701);
+    assert!(slow_wallet::is_slow(a), 7357000);
+    assert!(slow_wallet::unlocked_amount(a) == 100, 735701);
 
     let coin = transaction_fee::test_root_withdraw_all(&root);
-    rewards::test_helper_pay_reward(&root, *a, coin, 0);
+    rewards::test_helper_pay_reward(&root, a, coin, 0);
 
-    let (u, b) = ol_account::balance(*a);
+    let (u, b) = ol_account::balance(a);
     assert!(b==100000100, 735702);
     assert!(u==100, 735703);
 
     slow_wallet::slow_wallet_epoch_drip(&root, 233);
-    let (u, b) = ol_account::balance(*a);
+    let (u, b) = ol_account::balance(a);
     assert!(b==100000100, 735704);
     assert!(u==333, 735705);
   }
@@ -66,10 +97,8 @@ module ol_framework::test_slow_wallet {
 
     slow_wallet::initialize(&root);
 
-
     // create alice account
     ol_account::create_account(&root, @0x123);
-
     slow_wallet::user_set_slow(&alice);
 
     assert!(slow_wallet::is_slow(@0x123), 7357000);
@@ -82,7 +111,6 @@ module ol_framework::test_slow_wallet {
     // the transfer was of already unlocked coins, so they will post as unlocked on alice
     assert!(slow_wallet::unlocked_amount(@0x123) == alice_init_balance, 735703);
     assert!(slow_wallet::transferred_amount(@0x123) == 0, 735704);
-
   }
 
 

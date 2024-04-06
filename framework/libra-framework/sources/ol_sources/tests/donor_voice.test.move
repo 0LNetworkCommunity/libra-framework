@@ -342,7 +342,6 @@ module ol_framework::test_donor_voice {
       let donor_voice_address = signer::address_of(donor_voice);
       // the account needs basic donor directed structs
       donor_voice_txs::test_helper_make_donor_voice(root, donor_voice);
-      // donor_voice_txs::set_liquidate_to_match_index(&resource_sig, true);
 
       // EVE Establishes some governance over the wallet, when donating.
       let eve_donation = 42;

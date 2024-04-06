@@ -191,7 +191,6 @@ module ol_framework::mock {
     drip: bool) {
       system_addresses::assert_ol(root);
 
-
       let mint_cap = if (coin::is_coin_initialized<LibraCoin>()) {
          libra_coin::extract_mint_cap(root)
       } else {
