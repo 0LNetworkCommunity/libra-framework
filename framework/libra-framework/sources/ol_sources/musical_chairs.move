@@ -4,6 +4,7 @@ module ol_framework::musical_chairs {
     use diem_framework::stake;
     use diem_framework::account;
     use ol_framework::grade;
+    use ol_framework::testnet;
     use std::fixed_point32;
     use std::vector;
 
@@ -76,11 +77,15 @@ module ol_framework::musical_chairs {
         system_addresses::assert_ol(vm);
 
         let validators = stake::get_current_validators();
+
+
+
         let (compliant_vals, _non, fail_ratio) = eval_compliance_impl(validators, epoch_round);
 
         let chairs = borrow_global_mut<Chairs>(@ol_framework);
 
         let num_compliant_nodes = vector::length(&compliant_vals);
+
 
         // check for errors. We should not have gone into an epoch where we
         // had MORE validators than seats offered.
@@ -89,6 +94,7 @@ module ol_framework::musical_chairs {
         if (num_compliant_nodes > chairs.seats_offered) {
           return (compliant_vals, chairs.seats_offered)
         };
+
 
         // The happiest case. All filled seats performed well in the last epoch
         if (fixed_point32::is_zero(*&fail_ratio)) { // handle this here to prevent multiplication error below
@@ -105,7 +111,14 @@ module ol_framework::musical_chairs {
         let non_compliance_pct = fixed_point32::multiply_u64(100, *&fail_ratio);
 
         if (non_compliance_pct > 5) {
-            chairs.seats_offered = num_compliant_nodes;
+            // If network is bootstrapping don't reduce the seat count below
+            // compliant nodes,
+            if (vector::length(&validators) < 21 && !testnet::is_testnet()) {
+              chairs.seats_offered = vector::length(&validators);
+            } else {
+              chairs.seats_offered = num_compliant_nodes;
+            }
+
         } else {
             // Ok case. If it's between 0 and 5% then we accept that margin as if it was fully compliant
             chairs.seats_offered = chairs.seats_offered + 1;
