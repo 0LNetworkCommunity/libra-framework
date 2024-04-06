@@ -308,19 +308,14 @@ module diem_framework::coin {
     }
 
 
-    // 0L: TODO: isn't this deprecated?
-    public(friend) fun burn<CoinType>(
+    // only public to internal functions
+    // users should call burn::burn_and_track
+    #[test_only]
+    fun test_burn<CoinType>(
         coin: Coin<CoinType>,
         _cap: &BurnCapability<CoinType>,
     ) acquires CoinInfo {
-        let Coin { value: amount } = coin;
-        assert!(amount > 0, error::invalid_argument(EZERO_COIN_AMOUNT));
-
-        let maybe_supply = &mut borrow_global_mut<CoinInfo<CoinType>>(coin_address<CoinType>()).supply;
-        if (option::is_some(maybe_supply)) {
-            let supply = option::borrow_mut(maybe_supply);
-            optional_aggregator::sub(supply, (amount as u128));
-        }
+        user_burn(coin);
     }
 
     //////// 0L ////////
@@ -351,21 +346,21 @@ module diem_framework::coin {
     /// Note: This bypasses CoinStore::frozen -- coins within a frozen CoinStore
     /// can be burned.
 
-    // 0L: is this deprecated?
-    public(friend) fun burn_from<CoinType>(
-        account_addr: address,
-        amount: u64,
-        burn_cap: &BurnCapability<CoinType>,
-    ) acquires CoinInfo, CoinStore {
-        // Skip burning if amount is zero. This shouldn't error out as it's called as part of transaction fee burning.
-        if (amount == 0) {
-            return
-        };
+    // // 0L: is this deprecated?
+    // public(friend) fun burn_from<CoinType>(
+    //     account_addr: address,
+    //     amount: u64,
+    //     burn_cap: &BurnCapability<CoinType>,
+    // ) acquires CoinInfo, CoinStore {
+    //     // Skip burning if amount is zero. This shouldn't error out as it's called as part of transaction fee burning.
+    //     if (amount == 0) {
+    //         return
+    //     };
 
-        let coin_store = borrow_global_mut<CoinStore<CoinType>>(account_addr);
-        let coin_to_burn = extract(&mut coin_store.coin, amount);
-        burn(coin_to_burn, burn_cap);
-    }
+    //     let coin_store = borrow_global_mut<CoinStore<CoinType>>(account_addr);
+    //     let coin_to_burn = extract(&mut coin_store.coin, amount);
+    //     test_burn(coin_to_burn, burn_cap);
+    // }
 
     /// Deposit the coin balance into the recipient's account and emit an event.
     public(friend) fun deposit<CoinType>(account_addr: address, coin: Coin<CoinType>) acquires CoinStore {
@@ -777,7 +772,7 @@ module diem_framework::coin {
 
         let coin = withdraw<FakeMoney>(&source, 10);
         assert!(value(&coin) == 10, 7);
-        burn(coin, &burn_cap);
+        test_burn(coin, &burn_cap);
         assert!(*option::borrow(&supply<FakeMoney>()) == 90, 8);
 
         move_to(&source, FakeMoneyCapabilities {
@@ -811,7 +806,7 @@ module diem_framework::coin {
         assert!(option::is_none(&supply<FakeMoney>()), 3);
 
         let coin = withdraw<FakeMoney>(&source, 10);
-        burn(coin, &burn_cap);
+        test_burn(coin, &burn_cap);
         assert!(option::is_none(&supply<FakeMoney>()), 4);
 
         move_to(&source, FakeMoneyCapabilities {
@@ -865,29 +860,29 @@ module diem_framework::coin {
         });
     }
 
-    #[test(source = @0x1, destination = @0x2)]
-    public entry fun test_burn_from_with_capability(
-        source: signer,
-    ) acquires CoinInfo, CoinStore {
-        let source_addr = signer::address_of(&source);
-        account::create_account_for_test(source_addr);
-        let (burn_cap, freeze_cap, mint_cap) = initialize_and_register_fake_money(&source, 1, true);
+    // #[test(source = @0x1, destination = @0x2)]
+    // public entry fun test_burn_from_with_capability(
+    //     source: signer,
+    // ) acquires CoinInfo, CoinStore {
+    //     let source_addr = signer::address_of(&source);
+    //     account::create_account_for_test(source_addr);
+    //     let (burn_cap, freeze_cap, mint_cap) = initialize_and_register_fake_money(&source, 1, true);
 
-        let coins_minted = mint<FakeMoney>(100, &mint_cap);
-        deposit(source_addr, coins_minted);
-        assert!(balance<FakeMoney>(source_addr) == 100, 0);
-        assert!(*option::borrow(&supply<FakeMoney>()) == 100, 1);
+    //     let coins_minted = mint<FakeMoney>(100, &mint_cap);
+    //     deposit(source_addr, coins_minted);
+    //     assert!(balance<FakeMoney>(source_addr) == 100, 0);
+    //     assert!(*option::borrow(&supply<FakeMoney>()) == 100, 1);
 
-        burn_from<FakeMoney>(source_addr, 10, &burn_cap);
-        assert!(balance<FakeMoney>(source_addr) == 90, 2);
-        assert!(*option::borrow(&supply<FakeMoney>()) == 90, 3);
+    //     burn_from<FakeMoney>(source_addr, 10, &burn_cap);
+    //     assert!(balance<FakeMoney>(source_addr) == 90, 2);
+    //     assert!(*option::borrow(&supply<FakeMoney>()) == 90, 3);
 
-        move_to(&source, FakeMoneyCapabilities {
-            burn_cap,
-            freeze_cap,
-            mint_cap,
-        });
-    }
+    //     move_to(&source, FakeMoneyCapabilities {
+    //         burn_cap,
+    //         freeze_cap,
+    //         mint_cap,
+    //     });
+    // }
 
     #[test(source = @0x1)]
     #[expected_failure(abort_code = 0x10007, location = Self)]
@@ -981,7 +976,7 @@ module diem_framework::coin {
 
     //     freeze_coin_store(account_addr, &freeze_cap);
     //     let coin = withdraw<FakeMoney>(&account, 10);
-    //     burn(coin, &burn_cap);
+    //     test_burn(coin, &burn_cap);
 
     //     move_to(&account, FakeMoneyCapabilities {
     //         burn_cap,
@@ -1022,7 +1017,7 @@ module diem_framework::coin {
     //     freeze_coin_store(account_addr, &freeze_cap);
     //     unfreeze_coin_store(account_addr, &freeze_cap);
     //     let coin = withdraw<FakeMoney>(&account, 10);
-    //     burn(coin, &burn_cap);
+    //     test_burn(coin, &burn_cap);
 
     //     move_to(&account, FakeMoneyCapabilities {
     //         burn_cap,
@@ -1194,7 +1189,7 @@ module diem_framework::coin {
         assert!(balance<FakeMoney>(framework_addr) == 90, 0);
         assert!(*option::borrow(&supply<FakeMoney>()) == 100, 0);
 
-        burn(collected_coin, &burn_cap);
+        test_burn(collected_coin, &burn_cap);
         destroy_aggregatable_coin_for_test(aggregatable_coin);
         move_to(&framework, FakeMoneyCapabilities {
             burn_cap,

@@ -14,10 +14,11 @@ module ol_framework::test_slow_wallet {
   use diem_framework::block;
   use ol_framework::transaction_fee;
   use ol_framework::rewards;
+  use ol_framework::burn;
   use std::vector;
   use std::signer;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   #[test(root = @ol_framework)]
   // we are testing that genesis creates the needed struct
@@ -38,33 +39,72 @@ module ol_framework::test_slow_wallet {
       assert!(vector::length<address>(&list) == 5, 735701);
   }
 
-  #[test(root = @ol_framework, alice_sig = @0x1000a)]
-  fun test_locked_supply(root: signer, alice_sig: &signer) {
-    let addr = signer::address_of(alice_sig);
+  #[test(root = @ol_framework, alice_sig = @0x1000a, bob_sig = @0x1000b)]
+  fun test_locked_supply(root: signer, alice_sig: &signer, bob_sig: &signer) {
+    let a_addr = signer::address_of(alice_sig);
+    let b_addr = signer::address_of(bob_sig);
     mock::ol_test_genesis(&root);
     let mint_cap = libra_coin::extract_mint_cap(&root);
     slow_wallet::initialize(&root);
     // create alice account
-    ol_account::create_account(&root, addr);
+    ol_account::create_account(&root, a_addr);
+    ol_account::create_account(&root, b_addr);
     slow_wallet::user_set_slow(alice_sig);
-    let (u, t) = ol_account::balance(addr);
-    print(&u);
-    print(&t);
+    slow_wallet::user_set_slow(bob_sig);
+
+    let (u, t) = ol_account::balance(a_addr);
     assert!(u == 0, 735701);
     assert!(t == 0, 735702);
 
-    assert!(slow_wallet::is_slow(addr), 7357003);
-    assert!(slow_wallet::unlocked_amount(addr) == 0, 735705);
+    assert!(slow_wallet::is_slow(a_addr), 7357003);
+    assert!(slow_wallet::unlocked_amount(a_addr) == 0, 735704);
 
-    let alice_init_balance = 1000;
-    let c = coin::test_mint(alice_init_balance, &mint_cap);
-    ol_account::vm_deposit_coins_locked(&root, addr, c);
+    let a_coin = coin::test_mint(1000, &mint_cap);
+    let b_coin = coin::test_mint(2000, &mint_cap);
+
+    ol_account::vm_deposit_coins_locked(&root, a_addr, a_coin);
+
     coin::destroy_mint_cap(mint_cap);
-    let (u, t) = ol_account::balance(addr);
-    print(&u);
-    print(&t);
+    let (u, t) = ol_account::balance(a_addr);
+    assert!(u == 0, 735705);
+    assert!(t == 1000, 735706);
+
     let locked_supply = slow_wallet::get_locked_supply();
-    print(&locked_supply);
+    assert!(locked_supply == 1000, 735707);
+
+    // let's check it works with more than one account.
+    // now bob gets his coins, and the locked supply goes up
+    ol_account::vm_deposit_coins_locked(&root, b_addr, b_coin);
+    let locked_supply = slow_wallet::get_locked_supply();
+    assert!(locked_supply == 3000, 735708);
+
+    // everyone gets a 500 coin drip at end of epoch
+    slow_wallet::slow_wallet_epoch_drip(&root, 500);
+    let locked_supply_post_drip = slow_wallet::get_locked_supply();
+    assert!(locked_supply_post_drip == 2000, 735709);
+
+    // transfer of unlocked funds should not change the locked supply or
+    // trackers
+    let (u, t) = ol_account::balance(a_addr);
+    let alice_locked_post_drip = (t-u);
+    ol_account::transfer(bob_sig, a_addr, 100);
+
+    // check alice balance
+    let (u, t) = ol_account::balance(a_addr);
+    // alice total balance has gone up
+    assert!(t == 1100, 7357010);
+    // not change in locked balance since drip
+    let alice_locked_end = (t-u);
+    assert!(alice_locked_end == alice_locked_post_drip, 7357011);
+
+    let locked_supply_end = slow_wallet::get_locked_supply();
+    assert!(locked_supply_post_drip == locked_supply_end, 7357012);
+
+    let burnthis = ol_account::withdraw(alice_sig, 100);
+    burn::burn_and_track(burnthis);
+    let locked_supply_burn = slow_wallet::get_locked_supply();
+    // no change to locked on withdraw unlocked and burn
+    assert!(locked_supply_burn == locked_supply_end, 7357012);
 
   }
 

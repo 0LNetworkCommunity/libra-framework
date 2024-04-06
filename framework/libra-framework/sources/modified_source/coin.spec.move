@@ -94,32 +94,32 @@ spec diem_framework::coin {
         include AbortsIfNotExistCoinInfo<CoinType>;
     }
 
-    spec burn<CoinType>(
-        coin: Coin<CoinType>,
-        _cap: &BurnCapability<CoinType>,
-    ) {
-        let addr =  type_info::type_of<CoinType>().account_address;
-        aborts_if !exists<CoinInfo<CoinType>>(addr);
-        modifies global<CoinInfo<CoinType>>(addr);
-        include AbortsIfNotExistCoinInfo<CoinType>;
-        aborts_if coin.value == 0;
-        include AbortsIfAggregator<CoinType>;
-    }
+    // spec burn<CoinType>(
+    //     coin: Coin<CoinType>,
+    //     _cap: &BurnCapability<CoinType>,
+    // ) {
+    //     let addr =  type_info::type_of<CoinType>().account_address;
+    //     aborts_if !exists<CoinInfo<CoinType>>(addr);
+    //     modifies global<CoinInfo<CoinType>>(addr);
+    //     include AbortsIfNotExistCoinInfo<CoinType>;
+    //     aborts_if coin.value == 0;
+    //     include AbortsIfAggregator<CoinType>;
+    // }
 
-    spec burn_from<CoinType>(
-        account_addr: address,
-        amount: u64,
-        burn_cap: &BurnCapability<CoinType>,
-    ) {
-        // TODO: The target of the error is `coin::burn`,
-        // and I added the verification of the resource `CoinInfo` and it was still wrong.
-        pragma aborts_if_is_partial;
-        let addr =  type_info::type_of<CoinType>().account_address;
-        let coin_store = global<CoinStore<CoinType>>(account_addr);
-        modifies global<CoinInfo<CoinType>>(addr);
-        aborts_if amount != 0 && !exists<CoinStore<CoinType>>(account_addr);
-        aborts_if coin_store.coin.value < amount;
-    }
+    // spec burn_from<CoinType>(
+    //     account_addr: address,
+    //     amount: u64,
+    //     burn_cap: &BurnCapability<CoinType>,
+    // ) {
+    //     // TODO: The target of the error is `coin::burn`,
+    //     // and I added the verification of the resource `CoinInfo` and it was still wrong.
+    //     pragma aborts_if_is_partial;
+    //     let addr =  type_info::type_of<CoinType>().account_address;
+    //     let coin_store = global<CoinStore<CoinType>>(account_addr);
+    //     modifies global<CoinInfo<CoinType>>(addr);
+    //     aborts_if amount != 0 && !exists<CoinStore<CoinType>>(account_addr);
+    //     aborts_if coin_store.coin.value < amount;
+    // }
 
     /// `account_addr` is not frozen.
     spec deposit<CoinType>(account_addr: address, coin: Coin<CoinType>) {
