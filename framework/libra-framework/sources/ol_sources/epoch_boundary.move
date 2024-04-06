@@ -270,7 +270,7 @@ module diem_framework::epoch_boundary {
     // This removed business logic from reconfiguration.move
     // and prevents dependency cycling.
     public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64,
-    _epoch_round: u64) acquires BoundaryStatus {
+    epoch_round: u64) acquires BoundaryStatus {
         print(&string::utf8(b"EPOCH BOUNDARY BEGINS"));
         // either 0x0 or 0x1 can call, but we will always use framework signer
         system_addresses::assert_ol(root);
@@ -303,7 +303,8 @@ module diem_framework::epoch_boundary {
         status.tower_state_success = true;
 
         print(&string::utf8(b"musical_chairs::stop_the_music"));
-        let (compliant_vals, n_seats) = musical_chairs::stop_the_music(root, closing_epoch);
+        let (compliant_vals, n_seats) = musical_chairs::stop_the_music(root,
+        closing_epoch, epoch_round);
         status.incoming_compliant_count = vector::length(&compliant_vals);
         status.incoming_compliant = compliant_vals;
         status.incoming_seats_offered = n_seats;

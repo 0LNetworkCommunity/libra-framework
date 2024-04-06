@@ -130,8 +130,8 @@ fn test_parse_manifest() {
     use std::str::FromStr;
     let mut this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
     this_path.push("fixtures/state_epoch_79_ver_33217173.795d/state.manifest");
-    let r = load_snapshot_manifest(&this_path).expect("parse manifest");
-    dbg!(&r.epoch);
+    let _r = load_snapshot_manifest(&this_path).expect("parse manifest");
+    // dbg!(&r.epoch);
 }
 
 #[tokio::test]
@@ -154,10 +154,10 @@ async fn test_deserialize_account() {
         legacy_recovery_vec.push(legacy_recovery);
     }
 
-    let legacy_recovery_vec_json =
-        serde_json::to_string(&legacy_recovery_vec).expect("could not create json for state");
+    // let legacy_recovery_vec_json =
+    //     serde_json::to_string(&legacy_recovery_vec).expect("could not create json for state");
 
-    println!("{}", legacy_recovery_vec_json);
+    // println!("{}", legacy_recovery_vec_json);
 
     // basic validation of the account state
     let account_count = 23634;

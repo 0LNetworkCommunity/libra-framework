@@ -878,6 +878,7 @@ module diem_framework::stake {
         let current_vals = get_current_validators();
         // check if this is not test. Failover only when there are no validators proposed
         if (testnet::is_testnet()) {
+          // ignore if no vals are returning.
           if (vector::length(&proposed) == 0) {
             return current_vals
           };
@@ -892,9 +893,8 @@ module diem_framework::stake {
         // with unprepared validtors.
         let new_target = if (seats_offered > healthy_threshold)
         healthy_threshold else seats_offered;
-        // // do we have 10 or more performant validators (whether or not they
-        // // qualified for next epoch)?
-        // let sufficient_performance = vector::length(&performant) > 9;
+        // do we have 10 or more performant validators (whether or not they
+        // qualified for next epoch)?
 
         // Scenario A) Happy Case
         // not near failure
@@ -909,12 +909,11 @@ module diem_framework::stake {
           // likely equal
             return proposed
           } else {
-          // Scenario C) Defibrillator
-          // we are below threshold, and neither can get to the number
-          // of seats offered. If we don't expand the set, we will likely fail
-          // lets expand the set even with people that did not win the auction
-          // or otherwise qualify, but may have been performant in the last epoch
-
+            // Scenario C) Defibrillator
+            // we are below threshold, and neither can get to the number
+            // of seats offered. If we don't expand the set, we will likely fail
+            // lets expand the set even with people that did not win the auction
+            // or otherwise qualify, but may have been performant in the last epoch
 
             // fill remaining seats with
             // take the most performant validators from previous epoch.

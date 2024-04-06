@@ -14,7 +14,7 @@ pub fn recovery_file_parse(recovery_json_path: PathBuf) -> anyhow::Result<Vec<Le
 
     fix_slow_wallet(&mut r)?;
 
-    legacy_recovery_v6::strip_system_address(&mut r);
+    // legacy_recovery_v6::strip_system_address(&mut r);
 
     Ok(r)
 }
@@ -95,11 +95,6 @@ fn parse_json_all() {
 
     let mut r = recovery_file_parse(p).unwrap();
 
-    // let _has_root = r
-    //     .iter()
-    //     .find(|el| el.comm_wallet.is_some())
-    //     .expect("could not find 0x0 state in recovery file");
-
     // parse again to see if we got any errors back.
     let res = fix_slow_wallet(&mut r).unwrap();
     assert!(res.is_empty());
@@ -113,5 +108,24 @@ fn parse_json_all() {
         a.balance.as_ref().unwrap().coin == a.slow_wallet.as_ref().unwrap().unlocked,
         "unlocked should equal balance"
     );
-    // dbg!(&a);
+}
+
+#[test]
+fn includes_all_user_structs() {
+    let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/sample_export_recovery.json");
+
+    let r = recovery_file_parse(p).unwrap();
+
+    // let f = r.iter().filter(|e| {
+    //   e.burn_counter.is_some()
+    // });
+    // let b: Vec<&LegacyRecoveryV6> = f.collect();
+    // dbg!(&b.len());
+    // dbg!(&b[0].burn_counter);
+
+    let f = r.iter().filter(|e| e.burn_tracker.is_some());
+    let b: Vec<&LegacyRecoveryV6> = f.collect();
+    dbg!(&b.len());
+    // dbg!(&b[0].burn_tracker);
 }

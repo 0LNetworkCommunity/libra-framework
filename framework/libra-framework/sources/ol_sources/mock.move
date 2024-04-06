@@ -297,11 +297,17 @@ module ol_framework::mock {
     // the reconfiguration module must run last, since no other
     // transactions or operations can happen after the reconfig.
     public fun trigger_epoch(root: &signer) {
-        let old_epoch = reconfiguration::get_current_epoch();
+      trigger_epoch_exactly_at(
+        root,
+        reconfiguration::get_current_epoch(),
+        block::get_current_block_height()
+      );
+    }
+
+    public fun trigger_epoch_exactly_at(root: &signer, old_epoch: u64, round: u64) {
         timestamp::fast_forward_seconds(EPOCH_DURATION);
 
-        epoch_boundary::ol_reconfigure_for_test(root, old_epoch,
-        block::get_current_block_height());
+        epoch_boundary::ol_reconfigure_for_test(root, old_epoch, round);
 
         // always advance
         assert!(reconfiguration::get_current_epoch() > old_epoch,
@@ -311,15 +317,6 @@ module ol_framework::mock {
         assert!(reconfiguration::get_current_epoch() ==
         epoch_helper::get_current_epoch(), 666);
     }
-
-  //   // function to deposit into network fee account
-  //   public fun mock_network_fees(vm: &signer, amount: u64) {
-  //     Testnet::assert_testnet(vm);
-  //     let c = Diem::mint<GAS>(vm, amount);
-  //     let c_value = Diem::value(&c);
-  //     assert!(c_value == amount, 777707);
-  //     TransactionFee::pay_fee(c);
-  //   }
 
 
   //////// META TESTS ////////

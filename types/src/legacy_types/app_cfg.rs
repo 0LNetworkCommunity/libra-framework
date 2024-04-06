@@ -343,10 +343,8 @@ impl Default for AppCfg {
     fn default() -> Self {
         Self {
             workspace: Workspace::default(),
-            // profile: None,
             user_profiles: vec![],
             network_playlist: vec![],
-            // chain_info: ChainInfo::default(),
             tx_configs: TxConfigs::default(),
         }
     }

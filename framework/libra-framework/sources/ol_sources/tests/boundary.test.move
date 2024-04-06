@@ -69,7 +69,6 @@ module ol_framework::test_boundary {
     let _vals = common_test_setup(&root);
 
     // generate credentials for validator registration
-    // ol_account::create_account(&root, @0x12345);
     ol_account::transfer(&alice, @0x12345, 200000);
     let (_sk, pk, pop) = stake::generate_identity();
     let pk_bytes = bls12381::public_key_to_bytes(&pk);
@@ -113,7 +112,6 @@ module ol_framework::test_boundary {
     // this test requires prod settings, since we don't check vouches on testing
     testnet::unset(&root);
     // generate credentials for validator registration
-    // ol_account::create_account(&root, @0x12345);
     ol_account::transfer(&alice, @0x12345, 200000);
     let (_sk, pk, pop) = stake::generate_identity();
     let pk_bytes = bls12381::public_key_to_bytes(&pk);

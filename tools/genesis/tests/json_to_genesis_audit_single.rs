@@ -154,3 +154,45 @@ fn test_check_mainnet_constants() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+#[test]
+// test that a genesis blob created from struct, will actually contain the data
+fn test_drop() {
+    // let path = DropTemp::new_in_crate("db_rw").dir();
+    let genesis_vals = test_vals::get_test_valset(1);
+
+    let json = json_path().parent().unwrap().join("single_dropped.json");
+
+    let mut user_accounts: Vec<LegacyRecoveryV6> = parse_json::recovery_file_parse(json).unwrap();
+
+    let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
+        &mut user_accounts,
+        &genesis_vals,
+        &head_release_bundle(),
+        ChainId::test(),
+        &libra_genesis_default(NamedChain::TESTING),
+    )
+    .unwrap();
+
+    let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&gen_tx).unwrap();
+    let db_state_view = db_rw.reader.latest_state_checkpoint_view().unwrap();
+
+    let acc = AccountAddress::from_hex_literal(
+        "0x0000000000000000000000000000000045558bad546e6159020871f7e5d094d7",
+    )
+    .unwrap();
+    let _acc_state = db_state_view.as_account_with_state_view(&acc);
+
+    // let ancestry = acc_state
+    //     .get_resource::<AncestryResource>()
+    //     .unwrap()
+    //     .unwrap();
+    // assert!(ancestry.tree.len() == 4);
+
+    // assert!(ancestry
+    //     .tree
+    //     .get(0)
+    //     .unwrap()
+    //     .to_string()
+    //     .contains("46a7a744b"));
+}
