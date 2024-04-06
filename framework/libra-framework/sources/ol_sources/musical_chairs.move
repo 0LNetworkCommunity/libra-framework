@@ -8,6 +8,8 @@ module ol_framework::musical_chairs {
     use std::fixed_point32;
     use std::vector;
 
+    use diem_std::debug::print;
+
     friend diem_framework::genesis;
     friend diem_framework::diem_governance;
     friend ol_framework::epoch_boundary;
@@ -17,7 +19,7 @@ module ol_framework::musical_chairs {
 
   /// we don't want to play the validator selection games
   /// before we're clear out of genesis
-  const EPOCH_TO_START_GAME: u64 = 3;
+  const EPOCH_TO_START_EVAL: u64 = 2;
 
   /// we can't evaluate the performance of validators
   /// when there are too few rounds committed
@@ -155,16 +157,18 @@ module ol_framework::musical_chairs {
     fun eval_compliance_impl(
       validators: vector<address>,
       epoch: u64,
-      round: u64,
-    ) : (vector<address>, vector<address>, fixed_point32::FixedPoint32) {
+      _round: u64,
+    ): (vector<address>, vector<address>, fixed_point32::FixedPoint32) {
 
         let val_set_len = vector::length(&validators);
 
         let compliant_nodes = vector::empty<address>();
         let non_compliant_nodes = vector::empty<address>();
 
-
-        if (is_booting_up(epoch, round)) return (validators, non_compliant_nodes, fixed_point32::create_from_rational(1, 1));
+        // don't evaluate if the network doesn't have sufficient data
+        // this happens on recovery modes
+        // TODOL use is_booting_up()
+        if (epoch < EPOCH_TO_START_EVAL) return (validators, non_compliant_nodes, fixed_point32::create_from_rational(1, 1));
 
         let (highest_net_props, _val) = stake::get_highest_net_proposer();
         let i = 0;
@@ -220,7 +224,7 @@ module ol_framework::musical_chairs {
 
     fun is_booting_up(epoch: u64, round: u64): bool {
       !testnet::is_testnet() &&
-      (epoch < EPOCH_TO_START_GAME ||
+      (epoch < EPOCH_TO_START_EVAL ||
       round < MINIMUM_ROUNDS_PER_EPOCH)
     }
 

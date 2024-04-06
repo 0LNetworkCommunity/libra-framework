@@ -191,7 +191,6 @@ module ol_framework::test_burn {
       assert!(balance == eve_donation_to_A, 7357006);
     }
 
-
     #[test(root = @ol_framework)]
     fun epoch_fees_burn(root: &signer) {
       // Scenario:
@@ -200,23 +199,16 @@ module ol_framework::test_burn {
       // the epoch turns and the fee account should be empty
       // and the supply should be lower
 
-
       let n_vals = 5;
       let _vals = mock::genesis_n_vals(root, n_vals); // need to include eve to init funds
       let genesis_mint = 1000000; // 1 coin per
       let epoch_reward = genesis_mint; // just to be explicit
-
-      mock::trigger_epoch(root);
-      mock::trigger_epoch(root);
-      mock::trigger_epoch(root); // start at epoch 3
 
       mock::ol_initialize_coin_and_fund_vals(root, genesis_mint, true);
       let supply_pre = libra_coin::supply();
       let mocked_tx_fees = 1000000 * 100; // 100 coins in tx fee account
       // 105 coins total
       assert!(supply_pre == mocked_tx_fees + (n_vals * genesis_mint), 73570001);
-
-
 
       let fees = transaction_fee::system_fees_collected();
       assert!(fees == mocked_tx_fees, 73570002);
@@ -308,6 +300,9 @@ module ol_framework::test_burn {
       assert!(balance > balance_pre, 7357004);
       assert!(balance == (bob_burn_share_A + eve_donation_to_A), 7357005);
     }
+
+
+    // TODO:
 
     // #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000d, eve = @0x1000e)]
     // fun fee_makers_calc(root: &signer, alice: &signer, bob: &signer, eve: &signer) {
