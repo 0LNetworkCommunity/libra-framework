@@ -671,6 +671,16 @@
         (false, null)
       }
 
+      #[view]
+      public fun get_pledge_supply(): u64 acquires BeneficiaryRegistry, BeneficiaryPolicy {
+        let registry = borrow_global<BeneficiaryRegistry>(@ol_framework);
+        let sum = 0;
+        vector::for_each(registry.list, |a| {
+          sum = sum + get_available_to_beneficiary(a);
+        });
+        sum
+      }
+
       ///////// MIGRATION ////////
 
               // Create a new pledge account on a user's list of pledges

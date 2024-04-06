@@ -250,8 +250,8 @@ module diem_framework::genesis {
             let validator = vector::borrow(&validators, i);
             register_one_genesis_validator(diem_framework, validator, false);
             vector::push_back(&mut val_addr_list, *&validator.validator_config.owner_address);
-            // 0x1 code account is calling this contract but the 0x0 VM address is authorized for infra escrow.
-            infra_escrow::genesis_coin_validator(&create_signer(@0x0),
+
+            infra_escrow::genesis_coin_validator(diem_framework,
             *&validator.validator_config.owner_address);
 
             // default 90% to align with thermostatic rule in the PoF paper.
