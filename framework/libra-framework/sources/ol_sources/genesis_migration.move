@@ -8,15 +8,12 @@
 module ol_framework::genesis_migration {
   use std::signer;
   use std::error;
-  use std::option;
   use diem_framework::coin;
   use ol_framework::ol_account;
   use ol_framework::validator_universe;
   use ol_framework::libra_coin;
   use ol_framework::libra_coin::LibraCoin;
-  use ol_framework::transaction_fee;
   use ol_framework::pledge_accounts;
-  use ol_framework::make_whole;
   use diem_framework::system_addresses;
   // use diem_std::debug::print;
 
@@ -81,19 +78,19 @@ module ol_framework::genesis_migration {
     validator_universe::is_in_universe(addr)
   }
 
-  fun rounding_mint(root: &signer, target_supply: u64) {
-    let existing_supply = libra_coin::supply();
+  // fun rounding_mint(root: &signer, target_supply: u64) {
+  //   let existing_supply = libra_coin::supply();
 
-    // we should not ever have migrated more coins than expected
-    // this should abort the genesis process
-    assert!(existing_supply <= target_supply,
-    error::invalid_state(EMINTED_OVER_TARGET));
+  //   // we should not ever have migrated more coins than expected
+  //   // this should abort the genesis process
+  //   assert!(existing_supply <= target_supply,
+  //   error::invalid_state(EMINTED_OVER_TARGET));
 
-    if (target_supply > existing_supply) {
-        let coin = coin::vm_mint<LibraCoin>(root, target_supply - existing_supply);
-        transaction_fee::vm_pay_fee(root, @ol_framework, coin);
-    };
-  }
+  //   if (target_supply > existing_supply) {
+  //       let coin = coin::vm_mint<LibraCoin>(root, target_supply - existing_supply);
+  //       transaction_fee::vm_pay_fee(root, @ol_framework, coin);
+  //   };
+  // }
 
     /// for an uprade using an escrow percent. Only to be called at genesis
   // escrow percent has 6 decimal precision (1m);
@@ -106,35 +103,35 @@ module ol_framework::genesis_migration {
   }
 
   //////// MAKE WHOLE INIT ////////
-  struct MinerMathError has key {}
+  // struct MinerMathError has key {}
 
-  /// initializes the Miner Math Error incident make-whole
-  // note: this exits silently when there's no infra_escrow, since some tests
-  // don't need it
-  fun init_make_whole(vm: &signer, make_whole_budget: u64) {
-    system_addresses::assert_ol(vm);
-    // withdraw from infraescrow
-    let opt = pledge_accounts::withdraw_from_all_pledge_accounts(vm,
-    make_whole_budget);
-    if (option::is_none(&opt)) {
-      option::destroy_none(opt);
-        return // exit quietly
-    } else {
-      let coin = option::extract(&mut opt);
-      option::destroy_none(opt);
+  // /// initializes the Miner Math Error incident make-whole
+  // // note: this exits silently when there's no infra_escrow, since some tests
+  // // don't need it
+  // fun init_make_whole(vm: &signer, make_whole_budget: u64) {
+  //   system_addresses::assert_ol(vm);
+  //   // withdraw from infraescrow
+  //   let opt = pledge_accounts::withdraw_from_all_pledge_accounts(vm,
+  //   make_whole_budget);
+  //   if (option::is_none(&opt)) {
+  //     option::destroy_none(opt);
+  //       return // exit quietly
+  //   } else {
+  //     let coin = option::extract(&mut opt);
+  //     option::destroy_none(opt);
 
-      let burns_unclaimed = true;
-      make_whole::init_incident<MinerMathError>(vm, coin, burns_unclaimed);
-    }
-  }
+  //     let burns_unclaimed = true;
+  //     make_whole::init_incident<MinerMathError>(vm, coin, burns_unclaimed);
+  //   }
+  // }
 
-  /// creates an individual claim for a user
-  // note: this exits silently when there's no infra_escrow, since some tests
-  // don't need it
-  fun vm_create_credit_user(vm: &signer, user: address, value: u64) {
-    system_addresses::assert_ol(vm);
-    if (!make_whole::is_init<MinerMathError>(signer::address_of(vm))) return;
-    make_whole::create_each_user_credit<MinerMathError>(vm, user, value);
+  // /// creates an individual claim for a user
+  // // note: this exits silently when there's no infra_escrow, since some tests
+  // // don't need it
+  // fun vm_create_credit_user(vm: &signer, user: address, value: u64) {
+  //   system_addresses::assert_ol(vm);
+  //   if (!make_whole::is_init<MinerMathError>(signer::address_of(vm))) return;
+  //   make_whole::create_each_user_credit<MinerMathError>(vm, user, value);
 
-  }
+  // }
 }

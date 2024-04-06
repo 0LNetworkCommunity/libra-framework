@@ -81,6 +81,7 @@ module ol_framework::ol_account {
     /// malformed state. And says, "My advice is to not let the boys in".
     const ETOMBSTONE: u64 = 21;
 
+    /// tracks the burns relative to each account
     struct BurnTracker has key {
       prev_supply: u64,
       prev_balance: u64,
@@ -173,7 +174,7 @@ module ol_framework::ol_account {
         init_burn_tracker(&new_signer);
         new_signer
     }
-    /// migrate the tracker. Depends on the BurnTracker having been initialized
+    /// Migrate the tracker. Depends on the BurnTracker having been initialized
     /// on  account migration
     /// Private. So it's only called on genesis
     fun fork_migrate_burn_tracker(framework: &signer, user:

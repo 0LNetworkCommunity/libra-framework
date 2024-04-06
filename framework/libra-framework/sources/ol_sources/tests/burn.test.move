@@ -362,7 +362,7 @@ module ol_framework::test_burn {
 
 
   #[test(root = @ol_framework)]
-  fun init_burn_tracker(root: &signer) {
+  fun test_init_burn_tracker(root: &signer) {
     mock::genesis_n_vals(root, 1);
     let genesis_mint = 12345;
     mock::ol_initialize_coin_and_fund_vals(root, genesis_mint, true);
