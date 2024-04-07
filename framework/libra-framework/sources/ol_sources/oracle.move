@@ -20,7 +20,6 @@ module ol_framework::oracle {
 
     friend diem_framework::genesis;
     friend ol_framework::epoch_boundary;
-    friend ol_framework::tower_state;
 
     /// You need a minimum of Vouches on your account for this task.
     /// They also must be of unrelated buddies.

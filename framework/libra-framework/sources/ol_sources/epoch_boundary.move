@@ -1,9 +1,9 @@
 
 module diem_framework::epoch_boundary {
-    use ol_framework::slow_wallet; //ok
-    use ol_framework::musical_chairs; //ok
-    use ol_framework::proof_of_fee; //ok
-    use ol_framework::stake; // ?
+    use ol_framework::slow_wallet;
+    use ol_framework::musical_chairs;
+    use ol_framework::proof_of_fee;
+    use ol_framework::stake;
     use ol_framework::libra_coin::LibraCoin;
     use ol_framework::rewards;
     use ol_framework::jail;
@@ -11,7 +11,6 @@ module diem_framework::epoch_boundary {
     use ol_framework::burn;
     use ol_framework::donor_voice_txs;
     use ol_framework::fee_maker;
-    use ol_framework::tower_state;
     use ol_framework::infra_escrow;
     use ol_framework::oracle;
     use ol_framework::ol_account;
@@ -294,13 +293,6 @@ module diem_framework::epoch_boundary {
         print(&string::utf8(b"tower_state::reconfig"));
         // reset fee makers tracking
         status.set_fee_makers_success = fee_maker::epoch_reset_fee_maker(root);
-
-
-        print(&string::utf8(b"tower_state::reconfig"));
-        // randomize the Tower/Oracle difficulty
-        tower_state::reconfig(root);
-        // TODO: there isn't much to checkhere.
-        status.tower_state_success = true;
 
         print(&string::utf8(b"musical_chairs::stop_the_music"));
         let (compliant_vals, n_seats) = musical_chairs::stop_the_music(root,

@@ -31,8 +31,6 @@ module ol_framework::proof_of_fee {
   friend ol_framework::test_pof;
   #[test_only]
   friend ol_framework::mock;
-  #[test_only]
-  friend ol_framework::test_tower;
 
 
   /// The nominal reward for each validator in each epoch.

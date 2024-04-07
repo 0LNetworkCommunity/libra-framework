@@ -12,7 +12,6 @@ use libra_genesis_tools::{genesis_reader, parse_json};
 use libra_types::exports::AccountAddress;
 use libra_types::exports::ChainId;
 use libra_types::legacy_types::legacy_recovery_v6::LegacyRecoveryV6;
-use libra_types::legacy_types::vdf_difficulty::VDFDifficulty;
 use libra_types::move_resource::ancestry::AncestryResource;
 use support::{path_utils::json_path, test_vals};
 #[test]
@@ -128,7 +127,6 @@ fn test_check_ancestry() {
 
 #[test]
 /// check the mainnet constants are actually being returned
-/// VDF difficulty is a good check
 fn test_check_mainnet_constants() -> anyhow::Result<()> {
     let genesis_vals = test_vals::get_test_valset(4);
 
@@ -144,13 +142,14 @@ fn test_check_mainnet_constants() -> anyhow::Result<()> {
     )
     .unwrap();
 
-    let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&gen_tx).unwrap();
+    let (_db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&gen_tx).unwrap();
 
     // TODO: change this check
     dbg!("!!!! change this test !!!!");
-    let res = compare::get_struct::<VDFDifficulty>(&db_rw.reader, None)?;
+    assert!(false);
+    // let res = compare::get_struct::<VDFDifficulty>(&db_rw.reader, None)?;
 
-    assert!(res.difficulty == 120_000_000);
+    // assert!(res.difficulty == 120_000_000);
 
     Ok(())
 }
