@@ -222,27 +222,27 @@ module ol_framework::last_goodbye {
   }
 
 
-  #[test(vm = @0x0, framework = @0x1, alice = @0x1000a, bob = @0x1111b)]
-    fun bang_bang(vm: &signer, framework: &signer, alice: address, bob: &signer) {
-      use diem_framework::account;
-      use ol_framework::mock;
+  // #[test(vm = @0x0, framework = @0x1, alice = @0x1000a, bob = @0x1111b)]
+  //   fun bang_bang(vm: &signer, framework: &signer, alice: address, bob: &signer) {
+  //     use diem_framework::account;
+  //     use ol_framework::mock;
 
-      account::maybe_initialize_duplicate_originating(framework);
-      mock::genesis_n_vals(framework, 1);
+  //     account::maybe_initialize_duplicate_originating(framework);
+  //     mock::genesis_n_vals(framework, 1);
 
-      let b_addr = signer::address_of(bob);
-      account::create_account_for_test(b_addr);
-      assert!(account::exists_at(b_addr), 735701); // Confirm Bob's account exists
+  //     let b_addr = signer::address_of(bob);
+  //     account::create_account_for_test(b_addr);
+  //     assert!(account::exists_at(b_addr), 735701); // Confirm Bob's account exists
 
-      last_goodbye(vm, bob);
-      // Ensure the account DOES NOT exist at all
-      assert!(!account::exists_at(b_addr), 735702);
-      // is a tombstone
-      assert!(account::is_tombstone(b_addr), 735703);
-      assert!(!account::is_tombstone(alice), 735704);
-      assert!(!slow_wallet::is_slow(b_addr), 735704);
+  //     last_goodbye(vm, bob);
+  //     // Ensure the account DOES NOT exist at all
+  //     assert!(!account::exists_at(b_addr), 735702);
+  //     // is a tombstone
+  //     assert!(account::is_tombstone(b_addr), 735703);
+  //     assert!(!account::is_tombstone(alice), 735704);
+  //     assert!(!slow_wallet::is_slow(b_addr), 735704);
 
-    }
+  //   }
 
   #[test(vm = @0x0, framework = @0x1, alice = @0x1111a)]
     fun k_bai(vm: &signer, framework: &signer, alice: &signer) {

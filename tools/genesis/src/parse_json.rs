@@ -119,5 +119,5 @@ fn includes_all_user_structs() {
 
     let f = r.iter().filter(|e| e.burn_tracker.is_some());
     let b: Vec<&LegacyRecoveryV6> = f.collect();
-    assert!(b.len() > 0);
+    assert!(!b.is_empty());
 }

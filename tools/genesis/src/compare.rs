@@ -56,7 +56,9 @@ pub fn compare_recovery_vec_to_genesis_tx(
         .with_message("auditing migration")
         .enumerate()
         .for_each(|(i, old)| {
-            if old.role == AccountRole::Drop {return};
+            if old.role == AccountRole::Drop {
+                return;
+            };
             if old.account.is_none() {
                 err_list.push(CompareError {
                     index: i as u64,
