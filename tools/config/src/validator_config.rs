@@ -101,7 +101,9 @@ pub async fn validator_dialogue(
         let host = what_host().await?;
 
         let keep_legacy_address = Confirm::new()
-            .with_prompt("Will you use a legacy V5 address in registration (32 characters or less)?")
+            .with_prompt(
+                "Will you use a legacy V5 address in registration (32 characters or less)?",
+            )
             .interact()?;
 
         let pub_id = initialize_validator(

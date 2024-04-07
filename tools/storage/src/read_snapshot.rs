@@ -111,6 +111,7 @@ pub async fn accounts_from_snapshot_backup(
     // materialize account state for each address
     let mut account_states: Vec<AccountState> = Vec::new();
     for (address, blobs) in account_states_map {
+        #[allow(clippy::mutable_key_type)]
         let mut blobs_hash_table = HashMap::new();
         blobs.into_iter().for_each(|(key, blob)| {
             blobs_hash_table.insert(key, blob);

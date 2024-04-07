@@ -25,7 +25,7 @@ pub struct GenesisCli {
 impl GenesisCli {
     pub async fn execute(&self) -> anyhow::Result<()> {
         let data_path = self.home_dir.clone().unwrap_or_else(global_config_dir);
-        let chain_name  = self.chain.unwrap_or(NamedChain::TESTNET);
+        let chain_name = self.chain.unwrap_or(NamedChain::TESTNET); // chain_id = 2
 
         match &self.command {
             Some(Sub::Build { github, drop_list }) => {
@@ -77,14 +77,8 @@ impl GenesisCli {
                 ip_list,
                 json_legacy,
             }) => {
-                testnet_setup::setup(
-                    me,
-                    ip_list,
-                    chain_name,
-                    data_path,
-                    json_legacy.to_owned(),
-                )
-                .await?
+                testnet_setup::setup(me, ip_list, chain_name, data_path, json_legacy.to_owned())
+                    .await?
             }
             _ => {
                 println!("\nIf you're looking for trouble \nYou came to the right place");
