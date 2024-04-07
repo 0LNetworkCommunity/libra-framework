@@ -464,8 +464,6 @@ pub enum EntryFunctionCall {
         amount: u64,
     },
 
-    OracleInitProvider {},
-
     ProofOfFeeInitBidding {},
 
     /// retract bid
@@ -528,14 +526,6 @@ pub enum EntryFunctionCall {
         validator_address: AccountAddress,
         new_network_addresses: Vec<u8>,
         new_fullnode_addresses: Vec<u8>,
-    },
-
-    /// The entry point to commit miner state.
-    TowerStateMinerstateCommit {
-        challenge: Vec<u8>,
-        solution: Vec<u8>,
-        difficulty: u64,
-        security: u64,
     },
 
     /// This is the entrypoint for a validator joining the network.
@@ -834,7 +824,6 @@ impl EntryFunctionCall {
                 ol_account_set_allow_direct_coin_transfers(allow)
             }
             OlAccountTransfer { to, amount } => ol_account_transfer(to, amount),
-            OracleInitProvider {} => oracle_init_provider(),
             ProofOfFeeInitBidding {} => proof_of_fee_init_bidding(),
             ProofOfFeePofRetractBid {} => proof_of_fee_pof_retract_bid(),
             ProofOfFeePofUpdateBid { bid, epoch_expiry } => {
@@ -882,12 +871,6 @@ impl EntryFunctionCall {
                 new_network_addresses,
                 new_fullnode_addresses,
             ),
-            TowerStateMinerstateCommit {
-                challenge,
-                solution,
-                difficulty,
-                security,
-            } => tower_state_minerstate_commit(challenge, solution, difficulty, security),
             ValidatorUniverseRegisterValidator {
                 consensus_pubkey,
                 proof_of_possession,
@@ -2131,21 +2114,6 @@ pub fn ol_account_transfer(to: AccountAddress, amount: u64) -> TransactionPayloa
     ))
 }
 
-pub fn oracle_init_provider() -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("oracle").to_owned(),
-        ),
-        ident_str!("init_provider").to_owned(),
-        vec![],
-        vec![],
-    ))
-}
-
 pub fn proof_of_fee_init_bidding() -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -2368,32 +2336,6 @@ pub fn stake_update_network_and_fullnode_addresses(
             bcs::to_bytes(&validator_address).unwrap(),
             bcs::to_bytes(&new_network_addresses).unwrap(),
             bcs::to_bytes(&new_fullnode_addresses).unwrap(),
-        ],
-    ))
-}
-
-/// The entry point to commit miner state.
-pub fn tower_state_minerstate_commit(
-    challenge: Vec<u8>,
-    solution: Vec<u8>,
-    difficulty: u64,
-    security: u64,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("tower_state").to_owned(),
-        ),
-        ident_str!("minerstate_commit").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&challenge).unwrap(),
-            bcs::to_bytes(&solution).unwrap(),
-            bcs::to_bytes(&difficulty).unwrap(),
-            bcs::to_bytes(&security).unwrap(),
         ],
     ))
 }
@@ -3181,14 +3123,6 @@ mod decoder {
         }
     }
 
-    pub fn oracle_init_provider(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(_script) = payload {
-            Some(EntryFunctionCall::OracleInitProvider {})
-        } else {
-            None
-        }
-    }
-
     pub fn proof_of_fee_init_bidding(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(_script) = payload {
             Some(EntryFunctionCall::ProofOfFeeInitBidding {})
@@ -3301,21 +3235,6 @@ mod decoder {
                 validator_address: bcs::from_bytes(script.args().get(0)?).ok()?,
                 new_network_addresses: bcs::from_bytes(script.args().get(1)?).ok()?,
                 new_fullnode_addresses: bcs::from_bytes(script.args().get(2)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn tower_state_minerstate_commit(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::TowerStateMinerstateCommit {
-                challenge: bcs::from_bytes(script.args().get(0)?).ok()?,
-                solution: bcs::from_bytes(script.args().get(1)?).ok()?,
-                difficulty: bcs::from_bytes(script.args().get(2)?).ok()?,
-                security: bcs::from_bytes(script.args().get(3)?).ok()?,
             })
         } else {
             None
@@ -3607,10 +3526,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::ol_account_transfer),
         );
         map.insert(
-            "oracle_init_provider".to_string(),
-            Box::new(decoder::oracle_init_provider),
-        );
-        map.insert(
             "proof_of_fee_init_bidding".to_string(),
             Box::new(decoder::proof_of_fee_init_bidding),
         );
@@ -3653,10 +3568,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "stake_update_network_and_fullnode_addresses".to_string(),
             Box::new(decoder::stake_update_network_and_fullnode_addresses),
-        );
-        map.insert(
-            "tower_state_minerstate_commit".to_string(),
-            Box::new(decoder::tower_state_minerstate_commit),
         );
         map.insert(
             "validator_universe_register_validator".to_string(),
