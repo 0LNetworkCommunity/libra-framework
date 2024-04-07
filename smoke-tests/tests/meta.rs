@@ -37,9 +37,14 @@ async fn meta_can_start_swarm() {
 /// testing the LibraSmoke abstraction can load
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn meta_create_libra_smoke_single() {
-    let _s = LibraSmoke::new(Some(1))
+    let ls = LibraSmoke::new(Some(1))
         .await
         .expect("cannot start libra swarm");
+
+    ls.swarm
+        .liveness_check(Instant::now().checked_add(Duration::from_secs(5)).unwrap())
+        .await
+        .expect("cannot confirm swarm liveness");
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 5)]
