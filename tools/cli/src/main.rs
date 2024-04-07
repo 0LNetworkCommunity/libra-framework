@@ -10,7 +10,7 @@ use libra_txs::txs_cli::TxsCli;
 use libra_wallet::wallet_cli::WalletCli;
 
 #[derive(Parser)]
-#[clap(author, version, about, long_about = None)]
+#[clap(author, about, long_about = None)]
 #[clap(arg_required_else_help(true))]
 struct LibraCli {
     #[clap(subcommand)]
@@ -27,10 +27,12 @@ enum Sub {
     Txs(TxsCli),
     Wallet(WalletCli),
     Genesis(GenesisCli),
+    Version,
 }
 
 fn main() -> anyhow::Result<()> {
     let cli = LibraCli::parse();
+
     match cli.command {
         Some(Sub::Node(n)) => {
             n.run()?;
@@ -74,6 +76,19 @@ fn main() -> anyhow::Result<()> {
                             eprintln!("Failed to execute genesis tool, message: {}", &e);
                         }
                     }
+                    Some(Sub::Version) => {
+                        println!("LIBRA VERSION {}", env!("CARGO_PKG_VERSION"));
+                        println!("Build Timestamp: {}", env!("VERGEN_BUILD_TIMESTAMP"));
+                        println!("Git Branch: {}", env!("VERGEN_GIT_BRANCH"));
+                        println!("Git SHA: {}", env!("VERGEN_GIT_SHA"));
+                        println!(
+                            "Git Commit Timestamp: {}",
+                            env!("VERGEN_GIT_COMMIT_TIMESTAMP")
+                        );
+                    }
+                    // Some(Sub::Version(v)) => {
+                    //     clap_vergen::print!(version);
+                    // }
                     _ => {
                         println!("\nliving is easy with eyes closed")
                     }

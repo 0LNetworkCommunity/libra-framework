@@ -26,6 +26,7 @@ license = "Apache-2.0"
 publish = false
 repository = "https://github.com/0LNetworkCommunity/libra-v7"
 rust-version = "1.70.0"
+version = "7.0.0"
 
 [workspace.dependencies]
 ######## Internal crate dependencies ########
@@ -314,6 +315,7 @@ indicatif = "0.17.3"
 pbkdf2 = "0.7.3"
 rpassword = "5.0"
 serde_with = "^3"
+vergen = { version = "8.3.1", features = ["build", "git", "gitcl"] }
 
 ######## MOVE DEPENDENCIES ########
 # move-abigen = { path = "third_party/move/move-prover/move-abigen" }

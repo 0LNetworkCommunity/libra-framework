@@ -26,7 +26,7 @@ pub fn genesis_migrate_all_users(
             if a.account.is_some() && a.role == AccountRole::Drop {
                 warn!("Drop user, bang bang: {:?}", a.account);
                 set_tombstone(session, a.account.unwrap());
-                return
+                return;
             }
 
             if a.balance.is_none() {
