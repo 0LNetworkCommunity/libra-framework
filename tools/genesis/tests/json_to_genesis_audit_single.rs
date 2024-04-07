@@ -158,7 +158,6 @@ fn test_check_mainnet_constants() -> anyhow::Result<()> {
 #[test]
 // test that a genesis blob created from struct, will actually contain the data
 fn test_drop() {
-    // let path = DropTemp::new_in_crate("db_rw").dir();
     let genesis_vals = test_vals::get_test_valset(1);
 
     let json = json_path().parent().unwrap().join("single_dropped.json");
