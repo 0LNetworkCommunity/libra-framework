@@ -115,7 +115,7 @@ pub async fn accounts_from_snapshot_backup(
         // Since we use diem from_access_paths_and_values() function,
         // thus have no choice in selection of argument, thus disable the warning
         #[allow(clippy::mutable_key_type)]
-        let blobs_hash_table: HashMap<_, _> = blobs.into_iter().collect();
+            let blobs_hash_table: HashMap<_, _> = blobs.into_iter().collect();
         if let Some(a_state) =
             AccountState::from_access_paths_and_values(address, &blobs_hash_table)?
         {
@@ -147,11 +147,8 @@ async fn test_deserialize_account() {
         .expect("could not parse snapshot");
     let mut legacy_recovery_vec = Vec::new();
     for account_state in account_states.iter() {
-        // println!("----------------------------------------------------");
-        // println!("account_address: {:?}", account_state.get_account_address());
         let legacy_recovery =
             get_legacy_recovery(account_state).expect("could not get legacy recovery");
-        //println!("legacy_recovery: {:?}", legacy_recovery);
         legacy_recovery_vec.push(legacy_recovery);
     }
 
