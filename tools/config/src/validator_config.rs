@@ -90,6 +90,7 @@ pub async fn what_host() -> Result<HostAndPort, anyhow::Error> {
 pub async fn validator_dialogue(
     data_path: &Path,
     github_username: Option<&str>,
+    chain_name: Option<NamedChain>,
 ) -> Result<(), anyhow::Error> {
     let to_init = Confirm::new()
         .with_prompt(format!(
@@ -112,7 +113,7 @@ pub async fn validator_dialogue(
             host.clone(),
             None,
             keep_legacy_address,
-            None,
+            chain_name,
         )
         .await?;
 

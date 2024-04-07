@@ -83,6 +83,11 @@ impl AppCfg {
         };
 
         if let Some(np) = network_playlist {
+            if chain_name.is_some() {
+                println!("overriding chain_name, since the network playlist also has a chain name");
+            }
+
+            default_config.workspace.default_chain_id = np.chain_name;
             default_config.network_playlist.push(np)
         }
 
