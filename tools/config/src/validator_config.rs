@@ -37,7 +37,7 @@ pub async fn initialize_validator(
     OLProgress::complete("saved validator node yaml file locally");
 
     // TODO: nice to have
-    // also for convenience create a local user libra.yaml file so the
+    // also for convenience create a local user libra-cli-config.yaml file so the
     // validator can make transactions against the localhost
     let cfg = AppCfg::init_app_configs(
         keys.child_0_owner.auth_key,
@@ -51,7 +51,7 @@ pub async fn initialize_validator(
         "could not initialize configs at {}",
         cfg.workspace.node_home.to_str().unwrap()
     ))?;
-    OLProgress::complete("saved a user libra.yaml file locally");
+    OLProgress::complete("saved a user libra-cli-config.yaml file locally");
 
     Ok(pub_id)
 }

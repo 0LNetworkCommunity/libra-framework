@@ -19,7 +19,7 @@ use super::network_playlist::{self, HostProfile, NetworkPlaylist};
 // TODO: the GAS_UNIT_PRICE is set in DIEM. IT IS ALSO THE MINIMUM GAS PRICE This is arbitrary and needs to be reviewed.
 pub const MINUMUM_GAS_PRICE_IN_DIEM: u64 = GAS_UNIT_PRICE;
 
-pub const CONFIG_FILE_NAME: &str = "libra.yaml";
+pub const CONFIG_FILE_NAME: &str = "libra-cli-config.yaml";
 /// MinerApp Configuration
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AppCfg {
@@ -119,7 +119,7 @@ impl AppCfg {
         let path = file.unwrap_or_else(default_file_path);
         if !path.exists() {
             bail!(format!(
-                "libra.yaml dir does not exist at {}\nHave you initialized the configs with `libra config init`?",
+                "libra-cli-config.yaml dir does not exist at {}\nHave you initialized the configs with `libra config init`?",
                 path.to_str().unwrap()
             ))
         }

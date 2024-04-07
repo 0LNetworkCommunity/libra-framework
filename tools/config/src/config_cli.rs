@@ -36,7 +36,7 @@ pub struct ConfigCli {
 
 #[derive(clap::Subcommand)]
 enum ConfigSub {
-    /// Generates a libra.yaml for cli tools like txs, tower, etc.  Note: the file can also be used for Carpe, though that app uses a different default directory than these cli tools.
+    /// Generates a libra-cli-config.yaml for cli tools like txs, tower, etc.  Note: the file can also be used for Carpe, though that app uses a different default directory than these cli tools.
     Init {
         /// force an account address instead of reading from mnemonic, requires --force_authkey
         #[clap(long)]
@@ -51,8 +51,8 @@ enum ConfigSub {
         #[clap(long)]
         playlist_url: Option<Url>,
     },
-    // TODO: add WhoAmI to show libra.yaml profile info.
-    /// Utils for libra.yaml file
+    // TODO: add WhoAmI to show libra-cli-config.yaml profile info.
+    /// Utils for libra-cli-config.yaml file
     #[clap(arg_required_else_help(true))]
     Fix {
         /// optional, reset the address from mnemonic. Will also lookup on the chain for the actual address if you forgot it, or rotated your authkey.
