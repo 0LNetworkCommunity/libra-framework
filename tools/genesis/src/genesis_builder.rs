@@ -151,11 +151,7 @@ pub fn build(
         // get a boostrapped DB to do audits
         let (db_rw, _) = bootstrap_db_reader_from_gen_tx(gen_info.get_genesis())?;
 
-        // let settings = supply_settings.context("no supply settings provided")?;
-
         let s = supply::populate_supply_stats_from_legacy(legacy_recovery)?;
-
-        // s.set_ratios_from_settings(&settings)?;
 
         compare::compare_recovery_vec_to_genesis_tx(legacy_recovery, &db_rw.reader, &s)?;
         OLProgress::complete("account balances as expected");
@@ -163,7 +159,6 @@ pub fn build(
         compare::export_account_balances(legacy_recovery, &db_rw.reader, &output_dir)?;
         OLProgress::complete("exported balances to genesis_balances.json");
 
-        // compare::check_supply(settings.scale_supply() as u64, &db_rw.reader)?;
         OLProgress::complete("final supply as expected");
     }
 

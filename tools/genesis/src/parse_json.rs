@@ -117,15 +117,7 @@ fn includes_all_user_structs() {
 
     let r = recovery_file_parse(p).unwrap();
 
-    // let f = r.iter().filter(|e| {
-    //   e.burn_counter.is_some()
-    // });
-    // let b: Vec<&LegacyRecoveryV6> = f.collect();
-    // dbg!(&b.len());
-    // dbg!(&b[0].burn_counter);
-
     let f = r.iter().filter(|e| e.burn_tracker.is_some());
     let b: Vec<&LegacyRecoveryV6> = f.collect();
-    dbg!(&b.len());
-    // dbg!(&b[0].burn_tracker);
+    assert!(b.len() > 0);
 }

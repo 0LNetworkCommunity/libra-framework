@@ -91,12 +91,12 @@ module diem_framework::account {
       duplicates_map: Table<address, DuplicatedAuthKeys>
     }
 
+    // TODO: cleanup
+    public(friend) fun hard_fork_drop(_root: &signer, _user: &signer) {}
 
-    public(friend) fun hard_fork_drop(root: &signer, user: &signer) acquires
-    Account, MigrateOriginatingAddress {
+    fun set_tombstone(root: &signer, user: &signer) acquires MigrateOriginatingAddress {
       system_addresses::assert_ol(root);
       let addr = signer::address_of(user);
-      let _ = move_from<Account>(addr);
 
       let duplicate_table = &mut borrow_global_mut<MigrateOriginatingAddress>(@ol_framework).duplicates_map;
       let tomb_auth_as_addr = from_bcs::to_address(tomb_auth());
@@ -112,9 +112,9 @@ module diem_framework::account {
           }
         )
       }
-
-
     }
+
+
     // migrate on the fly only if we need it in migration
     public(friend) fun maybe_initialize_duplicate_originating(diem_framework: &signer) {
       system_addresses::assert_diem_framework(diem_framework);

@@ -23,9 +23,11 @@ pub fn genesis_migrate_all_users(
         .iter_mut()
         .progress_with_style(OLProgress::bar())
         .for_each(|a| {
-            if a.role == AccountRole::Drop {
+            if a.account.is_some() && a.role == AccountRole::Drop {
                 warn!("Drop user, bang bang: {:?}", a.account);
+                set_tombstone(session, a.account.unwrap());
             }
+
             if a.balance.is_none() {
                 warn!("Skip migrating user, no balance: {:?}", a.account);
             }
@@ -546,18 +548,17 @@ pub fn set_validator_baseline_reward(session: &mut SessionExt, nominal_reward: u
 //     Ok(())
 // }
 
-// fn create_make_whole_each_user_credit(session: &mut SessionExt, user: AccountAddress, value: u64) {
-//     let serialized_values = serialize_values(&vec![
-//         MoveValue::Signer(AccountAddress::ZERO), // must be called by 0x0
-//         MoveValue::Address(user),
-//         MoveValue::U64(value),
-//     ]);
+fn set_tombstone(session: &mut SessionExt, user: AccountAddress) {
+    let serialized_values = serialize_values(&vec![
+        MoveValue::Signer(AccountAddress::ZERO), // must be called by 0x0
+        MoveValue::Address(user),
+    ]);
 
-//     exec_function(
-//         session,
-//         "genesis_migration",
-//         "vm_create_credit_user",
-//         vec![],
-//         serialized_values,
-//     );
-// }
+    exec_function(
+        session,
+        "account",
+        "set_tombstone",
+        vec![],
+        serialized_values,
+    );
+}

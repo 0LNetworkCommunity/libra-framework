@@ -15,7 +15,7 @@ use diem_types::account_view::AccountView;
 use diem_types::transaction::Transaction;
 use indicatif::{ProgressBar, ProgressIterator};
 use libra_types::exports::AccountAddress;
-use libra_types::legacy_types::legacy_recovery_v6::LegacyRecoveryV6;
+use libra_types::legacy_types::legacy_recovery_v6::{self, AccountRole, LegacyRecoveryV6};
 use libra_types::move_resource::gas_coin::{GasCoinStoreResource, SlowWalletBalance};
 use libra_types::ol_progress::OLProgress;
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
@@ -47,13 +47,16 @@ pub fn compare_recovery_vec_to_genesis_tx(
 ) -> Result<Vec<CompareError>, anyhow::Error> {
     let mut err_list: Vec<CompareError> = vec![];
     let mut user_supply = 0u64;
+    let mut r_as_vec = recovery.to_vec();
+    legacy_recovery_v6::strip_system_address(&mut r_as_vec);
 
-    recovery
+    r_as_vec
         .iter_mut()
         .progress_with_style(OLProgress::bar())
         .with_message("auditing migration")
         .enumerate()
         .for_each(|(i, old)| {
+            if old.role == AccountRole::Drop {return};
             if old.account.is_none() {
                 err_list.push(CompareError {
                     index: i as u64,
@@ -62,15 +65,6 @@ pub fn compare_recovery_vec_to_genesis_tx(
                     migrated: 0,
                     message: "account is None".to_string(),
                 }); // instead of balance, if there is an account that is None, we insert the index of the recovery file
-                return;
-            };
-
-            if old
-                .account
-                .unwrap()
-                .to_string()
-                .contains("0000000000000000000000000000000000000000000000000000000000000003")
-            {
                 return;
             };
 
