@@ -2,7 +2,6 @@ module ol_framework::musical_chairs {
     use diem_framework::chain_status;
     use diem_framework::system_addresses;
     use diem_framework::stake;
-    // use diem_framework::account;
     use ol_framework::grade;
     use ol_framework::testnet;
     use std::fixed_point32;
@@ -150,7 +149,6 @@ module ol_framework::musical_chairs {
       chairs.seats_offered
     }
 
-
     // use the Case statistic to determine what proportion of the network is compliant.
     // private function prevent list DoS.
     fun eval_compliance_impl(
@@ -161,29 +159,8 @@ module ol_framework::musical_chairs {
 
         let val_set_len = vector::length(&validators);
 
-        // don't evaluate if the network doesn't have sufficient data
-        // this happens on recovery modes
-        // TODOL use is_booting_up()
+        // skip first epoch, don't evaluate if the network doesn't have sufficient data
         if (epoch < EPOCH_TO_START_EVAL) return (validators, vector::empty<address>(), fixed_point32::create_from_rational(1, 1));
-
-        // let (highest_net_props, _val) = stake::get_highest_net_proposer();
-        // let i = 0;
-        // while (i < val_set_len) {
-        //     let addr = *vector::borrow(&validators, i);
-        //     // belt and suspenders for dropped accounts in hard fork.
-        //     if (!account::exists_at(addr)) {
-        //       i = i + 1;
-        //       continue
-        //     };
-        //     let (compliant, _, _, _) = grade::get_validator_grade(addr, highest_net_props);
-        //     // let compliant = true;
-        //     if (compliant) {
-        //         vector::push_back(&mut compliant_nodes, addr);
-        //     } else {
-        //         vector::push_back(&mut non_compliant_nodes, addr);
-        //     };
-        //     i = i + 1;
-        // };
 
         let (compliant_nodes, non_compliant_nodes) = grade::eval_compliant_vals(validators);
 
@@ -203,7 +180,6 @@ module ol_framework::musical_chairs {
         if ((good_len + bad_len) != val_set_len) { // safety
           return (vector::empty(), vector::empty(), null)
         };
-
 
         let ratio = if (bad_len > 0) {
           fixed_point32::create_from_rational(bad_len, val_set_len)
