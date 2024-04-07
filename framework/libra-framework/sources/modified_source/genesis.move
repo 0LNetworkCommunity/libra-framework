@@ -39,7 +39,6 @@ module diem_framework::genesis {
     use ol_framework::burn;
     use ol_framework::fee_maker;
     use ol_framework::pledge_accounts;
-    use ol_framework::oracle;
     use ol_framework::vouch;
     use ol_framework::testnet;
     use ol_framework::epoch_boundary;
@@ -152,7 +151,6 @@ module diem_framework::genesis {
         burn::initialize(&diem_framework_account);
         match_index::initialize(&diem_framework_account);
         fee_maker::initialize(&diem_framework_account);
-        oracle::initialize(&diem_framework_account);
         pledge_accounts::initialize(&diem_framework_account);
         account::maybe_initialize_duplicate_originating(&diem_framework_account);
         infra_escrow::initialize(&diem_framework_account);

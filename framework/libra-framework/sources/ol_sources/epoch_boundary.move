@@ -12,8 +12,6 @@ module diem_framework::epoch_boundary {
     use ol_framework::donor_voice_txs;
     use ol_framework::fee_maker;
     use ol_framework::infra_escrow;
-    use ol_framework::oracle;
-    use ol_framework::ol_account;
     use ol_framework::libra_coin;
     use ol_framework::match_index;
     use ol_framework::community_wallet_init;
@@ -366,23 +364,7 @@ module diem_framework::epoch_boundary {
             status.outgoing_vals_success = total_reward == (vector::length(&compliant_vals) * nominal_reward_to_vals)
           };
 
-          // since we reserved some fees to go to the oracle miners
-          // we take the NET REWARD of the validators, since it is the equivalent of what the validator would earn net of entry fee.
-            if (nominal_reward_to_vals > entry_fee) {
-                let net_val_reward = nominal_reward_to_vals - entry_fee;
-
-                if (libra_coin::value(&all_fees) > net_val_reward) {
-                    let oracle_budget = libra_coin::extract(&mut all_fees, net_val_reward);
-                    status.oracle_budget = libra_coin::value(&oracle_budget);
-
-                    let (count, amount) = oracle::epoch_boundary(root, &mut oracle_budget);
-                    status.oracle_pay_count = count;
-                    status.oracle_pay_amount = amount;
-                    status.oracle_pay_success = (amount > 0);
-                    // in case there is any dust left
-                    ol_account::merge_coins(&mut all_fees, oracle_budget);
-                };
-            };
+          // Commit note: deprecated with tower mining.
 
           // remainder gets burnt according to fee maker preferences
           let (b_success, b_fees) = burn::epoch_burn_fees(root, &mut all_fees);
