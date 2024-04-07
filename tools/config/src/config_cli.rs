@@ -179,7 +179,7 @@ impl ConfigCli {
                 }
                 download_genesis(Some(data_path.clone()), None).await?;
                 let _ = get_genesis_waypoint(Some(data_path.clone())).await?;
-                validator_dialogue(&data_path, None, self.chain_name.clone()).await?;
+                validator_dialogue(&data_path, None, self.chain_name).await?;
                 println!("Validators' config initialized.");
                 Ok(())
             }

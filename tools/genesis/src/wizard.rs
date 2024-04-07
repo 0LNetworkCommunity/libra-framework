@@ -91,7 +91,13 @@ impl GenesisWizard {
         // check the git token is as expected, and set it.
         self.git_token_check()?;
 
-        match validator_dialogue(&self.data_path, Some(&self.github_username), Some(self.chain)).await {
+        match validator_dialogue(
+            &self.data_path,
+            Some(&self.github_username),
+            Some(self.chain),
+        )
+        .await
+        {
             Ok(_) => {
                 println!("Validators' config initialized!");
             }
