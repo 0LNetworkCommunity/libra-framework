@@ -60,12 +60,12 @@ module diem_framework::diem_governance {
     /// by this DiemGovernance module.
     struct GovernanceConfig has key {
         min_voting_threshold: u128,
-        required_proposer_stake: u64,
+        // required_proposer_stake: u64,
         voting_duration_secs: u64,
     }
 
     struct RecordKey has copy, drop, store {
-        stake_pool: address,
+        voter: address,
         proposal_id: u64,
     }
 
@@ -90,7 +90,7 @@ module diem_framework::diem_governance {
     /// Event emitted when a proposal is created.
     struct CreateProposalEvent has drop, store {
         proposer: address,
-        stake_pool: address,
+        // stake_pool: address,
         proposal_id: u64,
         execution_hash: vector<u8>,
         proposal_metadata: SimpleMap<String, vector<u8>>,
@@ -100,7 +100,7 @@ module diem_framework::diem_governance {
     struct VoteEvent has drop, store {
         proposal_id: u64,
         voter: address,
-        stake_pool: address,
+        // stake_pool: address,
         num_votes: u64,
         should_pass: bool,
     }
@@ -108,7 +108,7 @@ module diem_framework::diem_governance {
     /// Event emitted when the governance configs are updated.
     struct UpdateConfigEvent has drop, store {
         min_voting_threshold: u128,
-        required_proposer_stake: u64,
+        // required_proposer_stake: u64,
         voting_duration_secs: u64,
     }
 
@@ -136,7 +136,7 @@ module diem_framework::diem_governance {
     fun initialize(
         diem_framework: &signer,
         min_voting_threshold: u128,
-        required_proposer_stake: u64,
+        _required_proposer_stake: u64,
         voting_duration_secs: u64,
     ) {
         system_addresses::assert_diem_framework(diem_framework);
@@ -145,7 +145,7 @@ module diem_framework::diem_governance {
         move_to(diem_framework, GovernanceConfig {
             voting_duration_secs,
             min_voting_threshold,
-            required_proposer_stake,
+            // required_proposer_stake,
         });
         move_to(diem_framework, GovernanceEvents {
             create_proposal_events: account::new_event_handle<CreateProposalEvent>(diem_framework),
@@ -180,7 +180,7 @@ module diem_framework::diem_governance {
             &mut events.update_config_events,
             UpdateConfigEvent {
                 min_voting_threshold,
-                required_proposer_stake: 0,
+                // required_proposer_stake: 0,
                 voting_duration_secs
             },
         );
@@ -202,7 +202,7 @@ module diem_framework::diem_governance {
     /// only the exact script with matching hash can be successfully executed.
     public entry fun create_proposal_v2(
         proposer: &signer,
-        stake_pool: address,
+        _stake_pool: address,
         execution_hash: vector<u8>,
         metadata_location: vector<u8>,
         metadata_hash: vector<u8>,
@@ -210,10 +210,9 @@ module diem_framework::diem_governance {
     ) acquires GovernanceConfig, GovernanceEvents {
         let proposer_address = signer::address_of(proposer);
 
-        // The proposer's stake needs to be at least the required bond amount.
-        let governance_config = borrow_global<GovernanceConfig>(@diem_framework);
+        let governance_config =
+        borrow_global<GovernanceConfig>(@diem_framework);
 
-        // The proposer's stake needs to be locked up at least as long as the proposal's voting period.
         let current_time = timestamp::now_seconds();
         let proposal_expiration = current_time + governance_config.voting_duration_secs;
 
@@ -238,14 +237,14 @@ module diem_framework::diem_governance {
             CreateProposalEvent {
                 proposal_id,
                 proposer: proposer_address,
-                stake_pool,
+                // stake_pool,
                 execution_hash,
                 proposal_metadata,
             },
         );
     }
 
-    /// Create a single-step or multi-step proposal with the backing `stake_pool`.
+    /// Create a single-step or multi-step proposal
     /// @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
     /// only the exact script with matching hash can be successfully executed.
     public entry fun ol_create_proposal_v2(
@@ -294,17 +293,17 @@ module diem_framework::diem_governance {
             CreateProposalEvent {
                 proposal_id,
                 proposer: proposer_address,
-                stake_pool: proposer_address,
+                // stake_pool: proposer_address,
                 execution_hash,
                 proposal_metadata,
             },
         );
     }
 
-    /// Vote on proposal with `proposal_id` and voting power from `stake_pool`.
+    /// Vote on proposal with `proposal_id`.
     public entry fun ol_vote(
         voter: &signer,
-        // stake_pool: address,
+        _stake_pool: address,
         proposal_id: u64,
         should_pass: bool,
     ) acquires ApprovedExecutionHashes, GovernanceEvents, VotingRecords {
@@ -314,7 +313,7 @@ module diem_framework::diem_governance {
         // TODO: method to retract.
         let voting_records = borrow_global_mut<VotingRecords>(@diem_framework);
         let record_key = RecordKey {
-            stake_pool: voter_address,
+            voter: voter_address,
             proposal_id,
         };
         assert!(
@@ -337,7 +336,7 @@ module diem_framework::diem_governance {
             VoteEvent {
                 proposal_id,
                 voter: voter_address,
-                stake_pool: voter_address,
+                // stake_pool: voter_address,
                 num_votes: voting_power,
                 should_pass,
             },
@@ -350,7 +349,7 @@ module diem_framework::diem_governance {
     }
 
 
-    /// Vote on proposal with `proposal_id` and voting power from `stake_pool`.
+    /// Vote on proposal with `proposal_id`
     public entry fun vote(
         voter: &signer,
         // stake_pool: address,
@@ -359,10 +358,10 @@ module diem_framework::diem_governance {
     ) acquires ApprovedExecutionHashes, GovernanceEvents, VotingRecords {
         let voter_address = signer::address_of(voter);
 
-        // Ensure the voter doesn't double vote with the same stake pool.
+        // Ensure the voter doesn't double vote
         let voting_records = borrow_global_mut<VotingRecords>(@diem_framework);
         let record_key = RecordKey {
-            stake_pool: voter_address,
+            voter: voter_address,
             proposal_id,
         };
         assert!(
@@ -385,7 +384,7 @@ module diem_framework::diem_governance {
             VoteEvent {
                 proposal_id,
                 voter: voter_address,
-                stake_pool: voter_address,
+                // stake_pool: voter_address,
                 num_votes: voting_power,
                 should_pass,
             },
@@ -557,10 +556,10 @@ module diem_framework::diem_governance {
 
     // COMMIT NOTE: trigger_epoch() should now work on Stage as well.
 
-    /// Return the voting power a stake pool has with respect to governance proposals.
-    fun get_voting_power(_pool_address: address): u64 {
-        1
-    }
+    // /// Return the voting power
+    // fun get_voting_power(_pool_address: address): u64 {
+    //     1
+    // }
 
     #[view]
     public fun get_next_governance_proposal_id():u64 {
@@ -733,9 +732,9 @@ module diem_framework::diem_governance {
     public fun initialize_for_verification(
         diem_framework: &signer,
         min_voting_threshold: u128,
-        required_proposer_stake: u64,
+        _required_proposer_stake: u64,
         voting_duration_secs: u64,
     ) {
-        initialize(diem_framework, min_voting_threshold, required_proposer_stake, voting_duration_secs);
+        initialize(diem_framework, min_voting_threshold, 0, voting_duration_secs);
     }
 }

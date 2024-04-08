@@ -25,7 +25,7 @@ spec diem_framework::diem_governance {
     spec initialize(
         diem_framework: &signer,
         min_voting_threshold: u128,
-        required_proposer_stake: u64,
+        _required_proposer_stake: u64,
         voting_duration_secs: u64,
     ) {
         use diem_std::type_info::Self;
@@ -51,7 +51,7 @@ spec diem_framework::diem_governance {
     spec schema InitializeAbortIf {
         diem_framework: &signer;
         min_voting_threshold: u128;
-        required_proposer_stake: u64;
+        // required_proposer_stake: u64;
         voting_duration_secs: u64;
 
         let addr = signer::address_of(diem_framework);
@@ -105,7 +105,7 @@ spec diem_framework::diem_governance {
 
     spec create_proposal_v2(
         proposer: &signer,
-        stake_pool: address,
+        _stake_pool: address,
         execution_hash: vector<u8>,
         metadata_location: vector<u8>,
         metadata_hash: vector<u8>,
@@ -128,7 +128,7 @@ spec diem_framework::diem_governance {
         // use diem_framework::stake;
 
         proposer: &signer;
-        stake_pool: address;
+        _stake_pool: address;
         execution_hash: vector<u8>;
         metadata_location: vector<u8>;
         metadata_hash: vector<u8>;
@@ -302,7 +302,7 @@ spec diem_framework::diem_governance {
     spec initialize_for_verification(
         diem_framework: &signer,
         min_voting_threshold: u128,
-        required_proposer_stake: u64,
+        _required_proposer_stake: u64,
         voting_duration_secs: u64,
     ) {
         pragma verify = false;
