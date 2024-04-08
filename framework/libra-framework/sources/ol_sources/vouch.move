@@ -14,7 +14,7 @@ module ol_framework::vouch {
     friend ol_framework::validator_universe;
     friend ol_framework::proof_of_fee;
     friend ol_framework::jail;
-    friend ol_framework::last_goodbye;
+
     #[test_only]
     friend ol_framework::mock;
     #[test_only]

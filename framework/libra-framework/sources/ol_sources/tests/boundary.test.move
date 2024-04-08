@@ -261,30 +261,5 @@ module ol_framework::test_boundary {
     assert!(epoch == 3, 7357002);
   }
 
-  // when we drop accounts through hard fork we should have no boundary
-  // account processing issues.
-  #[test(vm = @0x0, framework = @ 0x1, alice = @0x1111a)]
-  fun e2e_boundary_happy_drop_accounts(vm: signer, framework: signer, alice: signer) {
-    use ol_framework::last_goodbye;
-
-    let _vals = common_test_setup(&framework);
-
-    last_goodbye::danger_test_last_goodby(&vm, &alice);
-
-    mock::trigger_epoch(&framework);
-
-    // let _vals_post = stake::get_current_validators();
-
-    // assert!(epoch_boundary::get_reconfig_success(), 7357001);
-
-    // // all validators were compliant, should be +1 of the 10 vals
-    // assert!(epoch_boundary::get_seats_offered() == 11, 7357002);
-
-    // // all vals had winning bids, but it was less than the seats on offer
-    // assert!(vector::length(&epoch_boundary::get_auction_winners()) == 10, 7357003);
-    // // all of the auction winners became the validators ulitmately
-    // assert!(vector::length(&epoch_boundary::get_actual_vals()) == 10, 7357004);
-  }
-
 
 }

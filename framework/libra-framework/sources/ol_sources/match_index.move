@@ -18,8 +18,6 @@ module ol_framework::match_index {
   friend ol_framework::epoch_boundary;
   friend ol_framework::donor_voice_txs;
   friend ol_framework::burn;
-  #[test_only]
-  friend ol_framework::last_goodbye;
 
   /// matching index is not initialized
   const ENOT_INIT: u64 = 1;

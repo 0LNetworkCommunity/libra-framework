@@ -17,8 +17,7 @@ module diem_framework::validator_universe {
 
   friend diem_framework::reconfiguration;
   friend diem_framework::genesis;
-  #[test_only]
-  friend ol_framework::last_goodbye;
+
   // resource for tracking the universe of accounts that have submitted
   // a mined proof correctly, with the epoch number.
   struct ValidatorUniverse has key {

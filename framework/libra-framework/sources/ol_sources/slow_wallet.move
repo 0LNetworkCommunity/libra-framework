@@ -20,7 +20,6 @@ module ol_framework::slow_wallet {
   // use diem_std::debug::print;
 
   friend diem_framework::genesis;
-  friend ol_framework::last_goodbye;
 
   friend ol_framework::ol_account;
   friend ol_framework::transaction_fee;

@@ -32,7 +32,6 @@ module ol_framework::ol_account {
     friend diem_framework::genesis;
     friend diem_framework::transaction_fee;
     friend ol_framework::genesis_migration;
-    friend ol_framework::last_goodbye;
     friend ol_framework::rewards;
 
     #[test_only]

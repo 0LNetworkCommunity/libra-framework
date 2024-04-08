@@ -54,7 +54,6 @@
 
         // use diem_std::debug::print;
 
-        friend ol_framework::last_goodbye;
         friend ol_framework::infra_escrow;
         friend ol_framework::genesis_migration;
         friend ol_framework::genesis;
