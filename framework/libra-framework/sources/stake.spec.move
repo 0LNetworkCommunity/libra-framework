@@ -1,8 +1,4 @@
-// TODO: rename this to validator.move if
-// diem-platform allows
 spec diem_framework::stake {
-    // -----------------
-    // Global invariants
     // -----------------
     use diem_framework::chain_status;
     use diem_framework::timestamp;
@@ -58,12 +54,12 @@ spec diem_framework::stake {
         ensures validator_info.fullnode_addresses == new_fullnode_addresses;
     }
 
-    spec set_operator_with_cap(owner_cap: &OwnerCapability, new_operator: address) {
-        let validator_address = owner_cap.validator_address;
-        let post stake_pool = global<ValidatorState>(validator_address);
-        modifies global<ValidatorState>(validator_address);
-        ensures stake_pool.operator_address == new_operator;
-    }
+    // spec set_operator_with_cap(owner_cap: &OwnerCapability, new_operator: address) {
+    //     let validator_address = owner_cap.validator_address;
+    //     let post stake_pool = global<ValidatorState>(validator_address);
+    //     modifies global<ValidatorState>(validator_address);
+    //     ensures stake_pool.operator_address == new_operator;
+    // }
 
     // spec reactivate_stake_with_cap(owner_cap: &OwnerCapability, amount: u64) {
     //     let validator_address = owner_cap.validator_address;
@@ -130,9 +126,9 @@ spec diem_framework::stake {
         ensures result == spec_is_current_epoch_validator(addr);
     }
 
-    spec initialize_stake_owner {
-        include ResourceRequirement;
-    }
+    // spec initialize_stake_owner {
+    //     include ResourceRequirement;
+    // }
 
     spec assert_stake_pool_exists(validator_address: address) {
         aborts_if !stake_pool_exists(validator_address);
