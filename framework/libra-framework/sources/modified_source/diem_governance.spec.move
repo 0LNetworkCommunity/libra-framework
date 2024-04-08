@@ -70,7 +70,7 @@ spec diem_framework::diem_governance {
     spec update_governance_config(
         diem_framework: &signer,
         min_voting_threshold: u128,
-        required_proposer_stake: u64,
+        _required_proposer_stake: u64,
         voting_duration_secs: u64,
     ) {
         let addr = signer::address_of(diem_framework);
@@ -84,7 +84,7 @@ spec diem_framework::diem_governance {
 
         ensures new_governance_config.voting_duration_secs == voting_duration_secs;
         ensures new_governance_config.min_voting_threshold == min_voting_threshold;
-        ensures new_governance_config.required_proposer_stake == required_proposer_stake;
+        // ensures new_governance_config.required_proposer_stake == required_proposer_stake;
     }
 
     spec get_voting_duration_secs(): u64 {
@@ -95,27 +95,12 @@ spec diem_framework::diem_governance {
         include AbortsIfNotGovernanceConfig;
     }
 
-    spec get_required_proposer_stake(): u64 {
-        include AbortsIfNotGovernanceConfig;
-    }
+    // spec get_required_proposer_stake(): u64 {
+    //     include AbortsIfNotGovernanceConfig;
+    // }
 
     spec schema AbortsIfNotGovernanceConfig {
         aborts_if !exists<GovernanceConfig>(@diem_framework);
-    }
-
-    /// The same as spec of `create_proposal_v2()`.
-    spec create_proposal(
-        proposer: &signer,
-        stake_pool: address,
-        execution_hash: vector<u8>,
-        metadata_location: vector<u8>,
-        metadata_hash: vector<u8>,
-    ) {
-        use diem_framework::chain_status;
-        // TODO: Calls `create_proposal_v2`.
-        pragma aborts_if_is_partial;
-        requires chain_status::is_operating();
-        include CreateProposalAbortsIf;
     }
 
     spec create_proposal_v2(
