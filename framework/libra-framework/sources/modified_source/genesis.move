@@ -345,7 +345,7 @@ module diem_framework::genesis {
         voting_power_increase_limit: u64,
         diem_framework: &signer,
         min_voting_threshold: u128,
-        required_proposer_stake: u64,
+        _required_proposer_stake: u64,
         voting_duration_secs: u64,
         accounts: vector<AccountMap>,
         _employee_vesting_start: u64,
@@ -373,7 +373,6 @@ module diem_framework::genesis {
         diem_governance::initialize_for_verification(
             diem_framework,
             min_voting_threshold,
-            required_proposer_stake,
             voting_duration_secs
         );
         create_accounts(diem_framework, accounts);

@@ -185,18 +185,17 @@ pub enum EntryFunctionCall {
         proposal_id: u64,
     },
 
-    /// Create a single-step or multi-step proposal with the backing `stake_pool`.
+    /// Create a single-step or multi-step proposal
     /// @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
     /// only the exact script with matching hash can be successfully executed.
     DiemGovernanceCreateProposalV2 {
-        stake_pool: AccountAddress,
         execution_hash: Vec<u8>,
         metadata_location: Vec<u8>,
         metadata_hash: Vec<u8>,
         is_multi_step_proposal: bool,
     },
 
-    /// Create a single-step or multi-step proposal with the backing `stake_pool`.
+    /// Create a single-step or multi-step proposal
     /// @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
     /// only the exact script with matching hash can be successfully executed.
     DiemGovernanceOlCreateProposalV2 {
@@ -206,7 +205,7 @@ pub enum EntryFunctionCall {
         is_multi_step_proposal: bool,
     },
 
-    /// Vote on proposal with `proposal_id` and voting power from `stake_pool`.
+    /// Vote on proposal with `proposal_id`.
     DiemGovernanceOlVote {
         proposal_id: u64,
         should_pass: bool,
@@ -224,7 +223,7 @@ pub enum EntryFunctionCall {
     /// Whatever fix is needed can be done online with on-chain governance.
     DiemGovernanceTriggerEpoch {},
 
-    /// Vote on proposal with `proposal_id` and voting power from `stake_pool`.
+    /// Vote on proposal with `proposal_id`
     DiemGovernanceVote {
         proposal_id: u64,
         should_pass: bool,
@@ -636,13 +635,11 @@ impl EntryFunctionCall {
                 diem_governance_assert_can_resolve(proposal_id)
             }
             DiemGovernanceCreateProposalV2 {
-                stake_pool,
                 execution_hash,
                 metadata_location,
                 metadata_hash,
                 is_multi_step_proposal,
             } => diem_governance_create_proposal_v2(
-                stake_pool,
                 execution_hash,
                 metadata_location,
                 metadata_hash,
@@ -1251,11 +1248,10 @@ pub fn diem_governance_assert_can_resolve(proposal_id: u64) -> TransactionPayloa
     ))
 }
 
-/// Create a single-step or multi-step proposal with the backing `stake_pool`.
+/// Create a single-step or multi-step proposal
 /// @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
 /// only the exact script with matching hash can be successfully executed.
 pub fn diem_governance_create_proposal_v2(
-    stake_pool: AccountAddress,
     execution_hash: Vec<u8>,
     metadata_location: Vec<u8>,
     metadata_hash: Vec<u8>,
@@ -1272,7 +1268,6 @@ pub fn diem_governance_create_proposal_v2(
         ident_str!("create_proposal_v2").to_owned(),
         vec![],
         vec![
-            bcs::to_bytes(&stake_pool).unwrap(),
             bcs::to_bytes(&execution_hash).unwrap(),
             bcs::to_bytes(&metadata_location).unwrap(),
             bcs::to_bytes(&metadata_hash).unwrap(),
@@ -1281,7 +1276,7 @@ pub fn diem_governance_create_proposal_v2(
     ))
 }
 
-/// Create a single-step or multi-step proposal with the backing `stake_pool`.
+/// Create a single-step or multi-step proposal
 /// @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
 /// only the exact script with matching hash can be successfully executed.
 pub fn diem_governance_ol_create_proposal_v2(
@@ -1309,7 +1304,7 @@ pub fn diem_governance_ol_create_proposal_v2(
     ))
 }
 
-/// Vote on proposal with `proposal_id` and voting power from `stake_pool`.
+/// Vote on proposal with `proposal_id`.
 pub fn diem_governance_ol_vote(proposal_id: u64, should_pass: bool) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -1366,7 +1361,7 @@ pub fn diem_governance_trigger_epoch() -> TransactionPayload {
     ))
 }
 
-/// Vote on proposal with `proposal_id` and voting power from `stake_pool`.
+/// Vote on proposal with `proposal_id`
 pub fn diem_governance_vote(proposal_id: u64, should_pass: bool) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -2539,11 +2534,10 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DiemGovernanceCreateProposalV2 {
-                stake_pool: bcs::from_bytes(script.args().get(0)?).ok()?,
-                execution_hash: bcs::from_bytes(script.args().get(1)?).ok()?,
-                metadata_location: bcs::from_bytes(script.args().get(2)?).ok()?,
-                metadata_hash: bcs::from_bytes(script.args().get(3)?).ok()?,
-                is_multi_step_proposal: bcs::from_bytes(script.args().get(4)?).ok()?,
+                execution_hash: bcs::from_bytes(script.args().get(0)?).ok()?,
+                metadata_location: bcs::from_bytes(script.args().get(1)?).ok()?,
+                metadata_hash: bcs::from_bytes(script.args().get(2)?).ok()?,
+                is_multi_step_proposal: bcs::from_bytes(script.args().get(3)?).ok()?,
             })
         } else {
             None

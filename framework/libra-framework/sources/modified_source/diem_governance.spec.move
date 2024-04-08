@@ -25,7 +25,6 @@ spec diem_framework::diem_governance {
     spec initialize(
         diem_framework: &signer,
         min_voting_threshold: u128,
-        _required_proposer_stake: u64,
         voting_duration_secs: u64,
     ) {
         use diem_std::type_info::Self;
@@ -70,7 +69,6 @@ spec diem_framework::diem_governance {
     spec update_governance_config(
         diem_framework: &signer,
         min_voting_threshold: u128,
-        _required_proposer_stake: u64,
         voting_duration_secs: u64,
     ) {
         let addr = signer::address_of(diem_framework);
@@ -105,7 +103,6 @@ spec diem_framework::diem_governance {
 
     spec create_proposal_v2(
         proposer: &signer,
-        _stake_pool: address,
         execution_hash: vector<u8>,
         metadata_location: vector<u8>,
         metadata_hash: vector<u8>,
@@ -128,24 +125,17 @@ spec diem_framework::diem_governance {
         // use diem_framework::stake;
 
         proposer: &signer;
-        _stake_pool: address;
         execution_hash: vector<u8>;
         metadata_location: vector<u8>;
         metadata_hash: vector<u8>;
 
         let proposer_address = signer::address_of(proposer);
         let governance_config = global<GovernanceConfig>(@diem_framework);
-        // let stake_pool_res = global<stake::StakePool>(stake_pool);
-        // aborts_if !exists<staking_config::StakingConfig>(@diem_framework);
-        // aborts_if !exists<stake::StakePool>(stake_pool);
-        // aborts_if global<stake::StakePool>(stake_pool).delegated_voter != proposer_address;
+
         include AbortsIfNotGovernanceConfig;
         let current_time = timestamp::now_seconds();
         let proposal_expiration = current_time + governance_config.voting_duration_secs;
-        // aborts_if stake_pool_res.locked_until_secs < proposal_expiration;
         aborts_if !exists<GovernanceEvents>(@diem_framework);
-        // let allow_validator_set_change = global<staking_config::StakingConfig>(@diem_framework).allow_validator_set_change;
-        // aborts_if !allow_validator_set_change && !exists<stake::ValidatorSet>(@diem_framework);
     }
 
     /// stake_pool must exist StakePool.
@@ -153,7 +143,6 @@ spec diem_framework::diem_governance {
     /// Address @diem_framework must exist VotingRecords and GovernanceProposal.
     spec vote (
         voter: &signer,
-        // stake_pool: address,
         proposal_id: u64,
         should_pass: bool,
     ) {
@@ -302,7 +291,6 @@ spec diem_framework::diem_governance {
     spec initialize_for_verification(
         diem_framework: &signer,
         min_voting_threshold: u128,
-        _required_proposer_stake: u64,
         voting_duration_secs: u64,
     ) {
         pragma verify = false;
