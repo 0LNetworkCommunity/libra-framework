@@ -4,6 +4,7 @@
 module diem_framework::validator_universe {
   use std::signer;
   use std::vector;
+  use diem_framework::account;
   use diem_framework::system_addresses;
   use ol_framework::jail;
   use ol_framework::vouch;
@@ -54,6 +55,8 @@ module diem_framework::validator_universe {
   /// This function is called to add validator to the validator universe.
   fun add(sender: &signer) acquires ValidatorUniverse {
     let addr = signer::address_of(sender);
+    // lazy run garbage collection on next user registration
+    garbage_collection();
     let state = borrow_global<ValidatorUniverse>(@diem_framework);
     let (elegible_list, _) = vector::index_of<address>(&state.validators, &addr);
     if (!elegible_list) {
@@ -61,6 +64,20 @@ module diem_framework::validator_universe {
       vector::push_back<address>(&mut state.validators, addr);
     };
     jail::init(sender);
+  }
+
+  // clean any accounts that have been dropped in hard fork
+  public(friend) fun garbage_collection() acquires ValidatorUniverse {
+    let state = borrow_global_mut<ValidatorUniverse>(@diem_framework);
+    let len = vector::length(&state.validators);
+    let i = 0;
+    while (i < 0) {
+      let addr = *vector::borrow(&state.validators, i);
+      if (!account::exists_at(addr) && i < len) {
+        vector::remove(&mut state.validators, i);
+      };
+      i = i + 1;
+    }
   }
 
   //////// GENESIS ////////
