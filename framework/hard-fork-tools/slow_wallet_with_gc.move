@@ -112,6 +112,7 @@ module ol_framework::slow_wallet {
     public(friend) fun slow_wallet_epoch_drip(vm: &signer, amount: u64): (bool, u64) acquires
     SlowWallet, SlowWalletList{
       system_addresses::assert_ol(vm);
+      garbage_collection();
       let list = get_slow_list();
       let len = vector::length<address>(&list);
       if (len == 0) return (false, 0);
@@ -335,6 +336,16 @@ module ol_framework::slow_wallet {
         return (total - unlocked)
       };
       0
+    }
+
+    public(friend) fun garbage_collection() acquires SlowWalletList {
+      let state = borrow_global_mut<SlowWalletList>(@diem_framework);
+
+      let to_keep = vector::filter(state.list, |e| {
+        account::exists_at(*e)
+      });
+
+      state.list = to_keep;
     }
 
     //////// TEST HELPERS /////////
