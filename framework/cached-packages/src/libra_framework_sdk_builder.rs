@@ -185,16 +185,6 @@ pub enum EntryFunctionCall {
         proposal_id: u64,
     },
 
-    /// Create a single-step proposal with the backing `stake_pool`.
-    /// @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
-    /// only the exact script with matching hash can be successfully executed.
-    DiemGovernanceCreateProposal {
-        stake_pool: AccountAddress,
-        execution_hash: Vec<u8>,
-        metadata_location: Vec<u8>,
-        metadata_hash: Vec<u8>,
-    },
-
     /// Create a single-step or multi-step proposal with the backing `stake_pool`.
     /// @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
     /// only the exact script with matching hash can be successfully executed.
@@ -491,21 +481,6 @@ pub enum EntryFunctionCall {
     /// reverse a "slow wallet".
     SlowWalletUserSetSlow {},
 
-    /// Initialize the validator account and give ownership to the signing account
-    /// except it leaves the ValidatorConfig to be set by another entity.
-    /// Note: this triggers setting the operator and owner, set it to the account's address
-    /// to set later.
-    StakeDeprInitializeStakeOwner {
-        initial_stake_amount: u64,
-        operator: AccountAddress,
-        _voter: AccountAddress,
-    },
-
-    /// Allows an owner to change the operator of the stake pool.
-    StakeDeprSetOperator {
-        new_operator: AccountAddress,
-    },
-
     /// Initialize the validator account and give ownership to the signing account.
     StakeInitializeValidator {
         consensus_pubkey: Vec<u8>,
@@ -660,17 +635,6 @@ impl EntryFunctionCall {
             DiemGovernanceAssertCanResolve { proposal_id } => {
                 diem_governance_assert_can_resolve(proposal_id)
             }
-            DiemGovernanceCreateProposal {
-                stake_pool,
-                execution_hash,
-                metadata_location,
-                metadata_hash,
-            } => diem_governance_create_proposal(
-                stake_pool,
-                execution_hash,
-                metadata_location,
-                metadata_hash,
-            ),
             DiemGovernanceCreateProposalV2 {
                 stake_pool,
                 execution_hash,
@@ -836,12 +800,6 @@ impl EntryFunctionCall {
                 transferred,
             } => slow_wallet_smoke_test_vm_unlock(user_addr, unlocked, transferred),
             SlowWalletUserSetSlow {} => slow_wallet_user_set_slow(),
-            StakeDeprInitializeStakeOwner {
-                initial_stake_amount,
-                operator,
-                _voter,
-            } => stake_depr_initialize_stake_owner(initial_stake_amount, operator, _voter),
-            StakeDeprSetOperator { new_operator } => stake_depr_set_operator(new_operator),
             StakeInitializeValidator {
                 consensus_pubkey,
                 proof_of_possession,
@@ -1290,34 +1248,6 @@ pub fn diem_governance_assert_can_resolve(proposal_id: u64) -> TransactionPayloa
         ident_str!("assert_can_resolve").to_owned(),
         vec![],
         vec![bcs::to_bytes(&proposal_id).unwrap()],
-    ))
-}
-
-/// Create a single-step proposal with the backing `stake_pool`.
-/// @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
-/// only the exact script with matching hash can be successfully executed.
-pub fn diem_governance_create_proposal(
-    stake_pool: AccountAddress,
-    execution_hash: Vec<u8>,
-    metadata_location: Vec<u8>,
-    metadata_hash: Vec<u8>,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("diem_governance").to_owned(),
-        ),
-        ident_str!("create_proposal").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&stake_pool).unwrap(),
-            bcs::to_bytes(&execution_hash).unwrap(),
-            bcs::to_bytes(&metadata_location).unwrap(),
-            bcs::to_bytes(&metadata_hash).unwrap(),
-        ],
     ))
 }
 
@@ -2223,49 +2153,6 @@ pub fn slow_wallet_user_set_slow() -> TransactionPayload {
     ))
 }
 
-/// Initialize the validator account and give ownership to the signing account
-/// except it leaves the ValidatorConfig to be set by another entity.
-/// Note: this triggers setting the operator and owner, set it to the account's address
-/// to set later.
-pub fn stake_depr_initialize_stake_owner(
-    initial_stake_amount: u64,
-    operator: AccountAddress,
-    _voter: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("stake").to_owned(),
-        ),
-        ident_str!("depr_initialize_stake_owner").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&initial_stake_amount).unwrap(),
-            bcs::to_bytes(&operator).unwrap(),
-            bcs::to_bytes(&_voter).unwrap(),
-        ],
-    ))
-}
-
-/// Allows an owner to change the operator of the stake pool.
-pub fn stake_depr_set_operator(new_operator: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("stake").to_owned(),
-        ),
-        ident_str!("depr_set_operator").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&new_operator).unwrap()],
-    ))
-}
-
 /// Initialize the validator account and give ownership to the signing account.
 pub fn stake_initialize_validator(
     consensus_pubkey: Vec<u8>,
@@ -2641,21 +2528,6 @@ mod decoder {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DiemGovernanceAssertCanResolve {
                 proposal_id: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn diem_governance_create_proposal(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DiemGovernanceCreateProposal {
-                stake_pool: bcs::from_bytes(script.args().get(0)?).ok()?,
-                execution_hash: bcs::from_bytes(script.args().get(1)?).ok()?,
-                metadata_location: bcs::from_bytes(script.args().get(2)?).ok()?,
-                metadata_hash: bcs::from_bytes(script.args().get(3)?).ok()?,
             })
         } else {
             None
@@ -3180,30 +3052,6 @@ mod decoder {
         }
     }
 
-    pub fn stake_depr_initialize_stake_owner(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakeDeprInitializeStakeOwner {
-                initial_stake_amount: bcs::from_bytes(script.args().get(0)?).ok()?,
-                operator: bcs::from_bytes(script.args().get(1)?).ok()?,
-                _voter: bcs::from_bytes(script.args().get(2)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn stake_depr_set_operator(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakeDeprSetOperator {
-                new_operator: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
     pub fn stake_initialize_validator(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::StakeInitializeValidator {
@@ -3376,10 +3224,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::diem_governance_assert_can_resolve),
         );
         map.insert(
-            "diem_governance_create_proposal".to_string(),
-            Box::new(decoder::diem_governance_create_proposal),
-        );
-        map.insert(
             "diem_governance_create_proposal_v2".to_string(),
             Box::new(decoder::diem_governance_create_proposal_v2),
         );
@@ -3550,14 +3394,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "slow_wallet_user_set_slow".to_string(),
             Box::new(decoder::slow_wallet_user_set_slow),
-        );
-        map.insert(
-            "stake_depr_initialize_stake_owner".to_string(),
-            Box::new(decoder::stake_depr_initialize_stake_owner),
-        );
-        map.insert(
-            "stake_depr_set_operator".to_string(),
-            Box::new(decoder::stake_depr_set_operator),
         );
         map.insert(
             "stake_initialize_validator".to_string(),
