@@ -6,6 +6,7 @@ use crate::{genesis_builder, parse_json};
 ///////
 // TODO: import from libra
 use crate::genesis_registration;
+use diem_logger::warn;
 use diem_types::chain_id::NamedChain;
 use libra_types::ol_progress::OLProgress;
 //////
@@ -14,6 +15,7 @@ use anyhow::{bail, Context};
 use dialoguer::{Confirm, Input};
 use indicatif::{ProgressBar, ProgressIterator};
 use libra_types::global_config_dir;
+use std::env;
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -79,6 +81,7 @@ impl GenesisWizard {
         &mut self,
         use_local_framework: bool,
         legacy_recovery_path: Option<PathBuf>,
+        github_token_path_opt: Option<PathBuf>,
         do_genesis: bool,
     ) -> anyhow::Result<()> {
         if !Path::exists(&self.data_path) {
@@ -89,7 +92,7 @@ impl GenesisWizard {
             std::fs::create_dir_all(&self.data_path)?;
         }
         // check the git token is as expected, and set it.
-        self.git_token_check()?;
+        self.git_token_check(github_token_path_opt)?;
 
         match validator_dialogue(
             &self.data_path,
@@ -173,27 +176,47 @@ impl GenesisWizard {
         Ok(())
     }
 
-    fn git_token_check(&mut self) -> anyhow::Result<()> {
-        let gh_token_path = self.data_path.join(GITHUB_TOKEN_FILENAME);
-        if !Path::exists(&gh_token_path) {
-            match Input::<String>::new()
-                .with_prompt(&format!(
-                    "No github token found, enter one now, or save to {}",
-                    self.data_path.join(GITHUB_TOKEN_FILENAME).display()
-                ))
-                .interact_text()
-            {
-                Ok(s) => {
-                    // creates the folders if necessary (this check is called before host init)
-                    std::fs::create_dir_all(&self.data_path)?;
-                    std::fs::write(&gh_token_path, s)?;
-                }
-                _ => println!("somehow couldn't read what you typed"),
-            }
-        }
+    /// help the user locate a github_token.txt in $HOME/.libra or working directory.
+    fn find_github_token(&self, git_token_path_opt: Option<PathBuf>) -> anyhow::Result<PathBuf> {
 
-        self.github_token = std::fs::read_to_string(&gh_token_path)?;
-        OLProgress::complete("github token found");
+        // try to find in specified path
+        let mut p = git_token_path_opt
+            // try to find in the specified data path (usually $HOME/.libra)
+            .unwrap_or(self.data_path.to_owned().join(GITHUB_TOKEN_FILENAME));
+        // try to find in working dir
+        if !p.exists() {
+            warn!(
+                "github_token.txt not found in {}. Trying the working path",
+                p.display()
+            );
+            p = env::current_dir()?.join(GITHUB_TOKEN_FILENAME);
+        };
+        if p.exists() {
+          return Ok(p)
+        } else {
+          bail!("ERROR: could not find any github token at --data-path --token-github-file, or in this working dir, exiting.");
+        }
+    }
+
+    fn git_token_check(&mut self, git_token_path_opt: Option<PathBuf>) -> anyhow::Result<()> {
+        let token_path = self.find_github_token(git_token_path_opt.clone());
+        self.github_token = if token_path.is_err() {
+            let s = Input::<String>::new()
+                .with_prompt(&format!("No github token found, enter one now",))
+                .interact_text()?;
+            s
+        } else {
+            fs::read_to_string(token_path.unwrap())?.trim().to_owned()
+        };
+
+        // also copy to data path
+        let p = self.data_path.clone();
+        if !p.exists() {
+          std::fs::create_dir_all(&p)?;
+        }
+        std::fs::write(&p.join(GITHUB_TOKEN_FILENAME), &self.github_token).context("could not write token file")?;
+
+        OLProgress::complete("github token is set");
 
         let temp_gh_client = Client::new(
             self.genesis_repo_org.clone(), // doesn't matter
@@ -428,7 +451,7 @@ async fn test_wizard() {
         None,
         NamedChain::TESTING,
     );
-    wizard.start_wizard(false, None, false).await.unwrap();
+    wizard.start_wizard(false, None, None, false).await.unwrap();
 }
 
 #[test]
@@ -441,6 +464,6 @@ fn test_register() {
         NamedChain::TESTING,
     );
     g.validator_address = "0xTEST".to_string();
-    g.git_token_check().unwrap();
+    g.git_token_check(None).unwrap();
     g.genesis_registration_github().unwrap();
 }
