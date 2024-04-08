@@ -258,13 +258,13 @@ module diem_framework::stake {
 
     #[view]
     /// Return the operator of the validator at `validator_address`.
-    public fun get_operator(validator_address: address): address acquires ValidatorState {
+    public fun depr_get_operator(validator_address: address): address acquires ValidatorState {
         assert_stake_pool_exists(validator_address);
         borrow_global<ValidatorState>(validator_address).operator_address
     }
 
     /// Return the pool address in `owner_cap`.
-    public fun get_owned_pool_address(owner_cap: &OwnerCapability): address {
+    public fun depr_get_owned_pool_address(owner_cap: &OwnerCapability): address {
         owner_cap.validator_address
     }
 
@@ -334,7 +334,7 @@ module diem_framework::stake {
     /// except it leaves the ValidatorConfig to be set by another entity.
     /// Note: this triggers setting the operator and owner, set it to the account's address
     /// to set later.
-    public entry fun initialize_stake_owner(
+    public entry fun depr_initialize_stake_owner(
         owner: &signer,
         initial_stake_amount: u64,
         operator: address,
@@ -354,7 +354,7 @@ module diem_framework::stake {
 
         let account_address = signer::address_of(owner);
         if (account_address != operator) {
-            set_operator(owner, operator)
+            depr_set_operator(owner, operator)
         };
     }
 
@@ -406,15 +406,15 @@ module diem_framework::stake {
     }
 
     /// Allows an owner to change the operator of the stake pool.
-    public entry fun set_operator(owner: &signer, new_operator: address) acquires OwnerCapability, ValidatorState {
+    public entry fun depr_set_operator(owner: &signer, new_operator: address) acquires OwnerCapability, ValidatorState {
         let owner_address = signer::address_of(owner);
         assert_owner_cap_exists(owner_address);
         let ownership_cap = borrow_global<OwnerCapability>(owner_address);
-        set_operator_with_cap(ownership_cap, new_operator);
+        depr_set_operator_with_cap(ownership_cap, new_operator);
     }
 
     /// Allows an account with ownership capability to change the operator of the stake pool.
-    public fun set_operator_with_cap(owner_cap: &OwnerCapability, new_operator: address) acquires ValidatorState {
+    public fun depr_set_operator_with_cap(owner_cap: &OwnerCapability, new_operator: address) acquires ValidatorState {
         let validator_address = owner_cap.validator_address;
         assert_stake_pool_exists(validator_address);
         let stake_pool = borrow_global_mut<ValidatorState>(validator_address);
