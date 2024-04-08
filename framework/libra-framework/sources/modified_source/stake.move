@@ -1,4 +1,5 @@
-
+// TODO: rename this to validator.move with change to
+// diem-platform source
 module diem_framework::stake {
     use std::error;
     use std::option::{Self, Option};
@@ -257,18 +258,6 @@ module diem_framework::stake {
 
 
     #[view]
-    /// Return the operator of the validator at `validator_address`.
-    public fun depr_get_operator(validator_address: address): address acquires ValidatorState {
-        assert_stake_pool_exists(validator_address);
-        borrow_global<ValidatorState>(validator_address).operator_address
-    }
-
-    /// Return the pool address in `owner_cap`.
-    public fun depr_get_owned_pool_address(owner_cap: &OwnerCapability): address {
-        owner_cap.validator_address
-    }
-
-    #[view]
     /// Return the validator index for `validator_address`.
     public fun get_validator_index(validator_address: address): u64 acquires ValidatorConfig {
         assert_stake_pool_exists(validator_address);
@@ -330,34 +319,6 @@ module diem_framework::stake {
         });
     }
 
-    /// Initialize the validator account and give ownership to the signing account
-    /// except it leaves the ValidatorConfig to be set by another entity.
-    /// Note: this triggers setting the operator and owner, set it to the account's address
-    /// to set later.
-    public entry fun depr_initialize_stake_owner(
-        owner: &signer,
-        initial_stake_amount: u64,
-        operator: address,
-        _voter: address,
-    ) acquires AllowedValidators, OwnerCapability, ValidatorState {
-        initialize_owner(owner);
-        move_to(owner, ValidatorConfig {
-            consensus_pubkey: vector::empty(),
-            network_addresses: vector::empty(),
-            fullnode_addresses: vector::empty(),
-            validator_index: 0,
-        });
-
-        if (initial_stake_amount > 0) {
-            // add_stake(owner, initial_stake_amount);
-        };
-
-        let account_address = signer::address_of(owner);
-        if (account_address != operator) {
-            depr_set_operator(owner, operator)
-        };
-    }
-
     /// Initialize the validator account and give ownership to the signing account.
     public entry fun initialize_validator(
         account: &signer,
@@ -405,32 +366,7 @@ module diem_framework::stake {
 
     }
 
-    /// Allows an owner to change the operator of the stake pool.
-    public entry fun depr_set_operator(owner: &signer, new_operator: address) acquires OwnerCapability, ValidatorState {
-        let owner_address = signer::address_of(owner);
-        assert_owner_cap_exists(owner_address);
-        let ownership_cap = borrow_global<OwnerCapability>(owner_address);
-        depr_set_operator_with_cap(ownership_cap, new_operator);
-    }
-
-    /// Allows an account with ownership capability to change the operator of the stake pool.
-    public fun depr_set_operator_with_cap(owner_cap: &OwnerCapability, new_operator: address) acquires ValidatorState {
-        let validator_address = owner_cap.validator_address;
-        assert_stake_pool_exists(validator_address);
-        let stake_pool = borrow_global_mut<ValidatorState>(validator_address);
-        let old_operator = stake_pool.operator_address;
-        stake_pool.operator_address = new_operator;
-
-        event::emit_event(
-            &mut stake_pool.set_operator_events,
-            SetOperatorEvent {
-                validator_address,
-                old_operator,
-                new_operator,
-            },
-        );
-    }
-
+    // Commit note: in 0L the validator owner and operator are the same.
 
     /// Rotate the consensus key of the validator, it'll take effect in next epoch.
     public entry fun rotate_consensus_key(
@@ -495,7 +431,6 @@ module diem_framework::stake {
     }
 
 
-    // #[test_only]
     /// Request to have `validator_address` join the validator set. Can only be called after calling `initialize_validator`.
     /// If the validator has the required stake (more than minimum and less than maximum allowed), they will be
     /// added to the pending_active queue. All validators in this queue will be added to the active set when the next
@@ -845,6 +780,9 @@ module diem_framework::stake {
       validator_set.total_voting_power = (vector::length(&list) as u128);
     }
 
+
+    // TODO: check if this still applies with the set expansion logic below 18 validators.
+
     //////// Failover Rules ////////
     // If the cardinality of proposed validators set (as chosen by Musical
     // Chairs and Proof of Fee) in the upcoming is less than a
@@ -994,14 +932,6 @@ module diem_framework::stake {
 
       // Reverse to have sorted order - high to low.
       vector::reverse<address>(&mut filtered_vals);
-
-      // // Return the top n validators
-      // let final = vector::empty<address>();
-      // let m = 0;
-      // while ( m < n) {
-      //    vector::push_back(&mut final, *vector::borrow(&filtered_vals, m));
-      //    m = m + 1;
-      // };
 
       return filtered_vals
 

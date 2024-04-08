@@ -1,8 +1,4 @@
-// TODO: rename this to validator.move if
-// diem-platform allows
 spec diem_framework::stake {
-    // -----------------
-    // Global invariants
     // -----------------
     use diem_framework::chain_status;
     use diem_framework::timestamp;
