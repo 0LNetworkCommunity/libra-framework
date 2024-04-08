@@ -178,7 +178,6 @@ impl GenesisWizard {
 
     /// help the user locate a github_token.txt in $HOME/.libra or working directory.
     fn find_github_token(&self, git_token_path_opt: Option<PathBuf>) -> anyhow::Result<PathBuf> {
-
         // try to find in specified path
         let mut p = git_token_path_opt
             // try to find in the specified data path (usually $HOME/.libra)
@@ -192,19 +191,18 @@ impl GenesisWizard {
             p = env::current_dir()?.join(GITHUB_TOKEN_FILENAME);
         };
         if p.exists() {
-          return Ok(p)
+            Ok(p)
         } else {
-          bail!("ERROR: could not find any github token at --data-path --token-github-file, or in this working dir, exiting.");
+            bail!("ERROR: could not find any github token at --data-path --token-github-file, or in this working dir, exiting.");
         }
     }
 
     fn git_token_check(&mut self, git_token_path_opt: Option<PathBuf>) -> anyhow::Result<()> {
-        let token_path = self.find_github_token(git_token_path_opt.clone());
+        let token_path = self.find_github_token(git_token_path_opt);
         self.github_token = if token_path.is_err() {
-            let s = Input::<String>::new()
-                .with_prompt(&format!("No github token found, enter one now",))
-                .interact_text()?;
-            s
+            Input::<String>::new()
+                .with_prompt(&"No github token found, enter one now".to_string())
+                .interact_text()?
         } else {
             fs::read_to_string(token_path.unwrap())?.trim().to_owned()
         };
@@ -212,9 +210,10 @@ impl GenesisWizard {
         // also copy to data path
         let p = self.data_path.clone();
         if !p.exists() {
-          std::fs::create_dir_all(&p)?;
+            std::fs::create_dir_all(&p)?;
         }
-        std::fs::write(&p.join(GITHUB_TOKEN_FILENAME), &self.github_token).context("could not write token file")?;
+        std::fs::write(p.join(GITHUB_TOKEN_FILENAME), &self.github_token)
+            .context("could not write token file")?;
 
         OLProgress::complete("github token is set");
 
