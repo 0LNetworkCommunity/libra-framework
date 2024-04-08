@@ -29,16 +29,8 @@ module diem_framework::diem_governance {
 
     // use diem_std::debug::print;
 
-    /// The specified stake pool does not have sufficient stake to create a proposal
-    const EINSUFFICIENT_PROPOSER_STAKE: u64 = 1;
-    /// This account is not the designated voter of the specified stake pool
-    const ENOT_DELEGATED_VOTER: u64 = 2;
-    /// The specified stake pool does not have long enough remaining lockup to create a proposal or vote
-    const EINSUFFICIENT_STAKE_LOCKUP: u64 = 3;
     /// The specified address already been used to vote on the same proposal
     const EALREADY_VOTED: u64 = 4;
-    /// The specified stake pool must be part of the validator set
-    const ENO_VOTING_POWER: u64 = 5;
     /// Proposal is not ready to be resolved. Waiting on time or votes
     const EPROPOSAL_NOT_RESOLVABLE_YET: u64 = 6;
     /// The proposal has not been resolved yet
@@ -49,7 +41,6 @@ module diem_framework::diem_governance {
     const EMETADATA_HASH_TOO_LONG: u64 = 10;
     /// Account is not authorized to call this function.
     const EUNAUTHORIZED: u64 = 11;
-
     /// Function cannot be called on Mainnet
     const ENOT_FOR_MAINNET: u64 = 12;
 
