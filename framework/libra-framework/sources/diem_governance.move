@@ -132,6 +132,8 @@ module diem_framework::diem_governance {
     fun initialize(
         diem_framework: &signer,
         min_voting_threshold: u128,
+        _dummy: u64, // TODO: this function is called by diem platform code,
+        // and it expects this argument.
         voting_duration_secs: u64,
     ) {
         system_addresses::assert_diem_framework(diem_framework);
@@ -664,9 +666,11 @@ module diem_framework::diem_governance {
       system_addresses::assert_ol(root);
 
       let min_voting_threshold = 0;
+      let dummy = 0; // see code, requires refactor
       let voting_duration_secs = 100000000000;
 
-      initialize(root, min_voting_threshold, voting_duration_secs);
+
+      initialize(root, min_voting_threshold, dummy, voting_duration_secs);
     }
 
     #[test_only]
@@ -689,8 +693,9 @@ module diem_framework::diem_governance {
 
         // Initialize the governance.
         let min_voting_threshold = 0;
+        let dummy = 0; // see code, requires refactor
         let voting_duration = 1000;
-        initialize(diem_framework, min_voting_threshold, voting_duration);
+        initialize(diem_framework, min_voting_threshold, dummy, voting_duration);
         store_signer_cap(
             diem_framework,
             @diem_framework,
@@ -716,6 +721,6 @@ module diem_framework::diem_governance {
         min_voting_threshold: u128,
         voting_duration_secs: u64,
     ) {
-        initialize(diem_framework, min_voting_threshold, voting_duration_secs);
+        initialize(diem_framework, min_voting_threshold, 0, voting_duration_secs);
     }
 }

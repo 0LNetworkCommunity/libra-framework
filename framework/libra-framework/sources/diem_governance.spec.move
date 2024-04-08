@@ -25,6 +25,7 @@ spec diem_framework::diem_governance {
     spec initialize(
         diem_framework: &signer,
         min_voting_threshold: u128,
+        _dummy: u64,
         voting_duration_secs: u64,
     ) {
         use diem_std::type_info::Self;
