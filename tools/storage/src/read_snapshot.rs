@@ -224,15 +224,6 @@ async fn test_deserialize_account() {
         0
     );
 
-    // miner state
-    assert_eq!(
-        legacy_recovery_vec
-            .iter()
-            .filter(|l| l.miner_state.is_some())
-            .fold(0, |count, _| count + 1),
-        16597
-    );
-
     // comm wallet
     assert_eq!(
         legacy_recovery_vec

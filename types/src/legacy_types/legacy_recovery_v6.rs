@@ -14,9 +14,7 @@ use crate::legacy_types::vouch::MyVouchesResource;
 use crate::legacy_types::{
     ancestry_legacy::LegacyAncestryResource,
     cumulative_deposits::{CumulativeDepositResource, LegacyBalanceResource},
-    legacy_address::LegacyAddress,
     legacy_currency_info::CurrencyInfoResource,
-    legacy_miner_state::TowerStateResource,
     receipts::ReceiptsResource,
     wallet::{CommunityWalletsResourceLegacy, SlowWalletListResource, SlowWalletResource},
 };
@@ -53,45 +51,6 @@ impl Default for AccountRole {
     }
 }
 
-//////// 0L ///////
-/// Validator/owner state to recover in genesis recovery mode
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct ValStateRecover {
-    ///
-    pub val_account: LegacyAddress,
-    ///
-    pub operator_delegated_account: LegacyAddress,
-    ///
-    pub val_auth_key: AuthenticationKey,
-}
-
-//////// 0L ///////
-/// Operator state to recover in genesis recovery mode
-#[derive(Debug, Clone, PartialEq)]
-pub struct OperRecover {
-    ///
-    pub operator_account: LegacyAddress,
-    ///
-    pub operator_auth_key: AuthenticationKey,
-    ///
-    pub validator_to_represent: LegacyAddress,
-    ///
-    pub operator_consensus_pubkey: Vec<u8>,
-    ///
-    pub validator_network_addresses: Vec<u8>,
-    ///
-    pub fullnode_network_addresses: Vec<u8>,
-}
-
-/// RecoveryFile
-#[derive(Debug, Clone, Default)]
-pub struct RecoverConsensusAccounts {
-    ///
-    pub vals: Vec<ValStateRecover>,
-    ///
-    pub opers: Vec<OperRecover>,
-}
-
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct LegacyRecoveryV6 {
     ///
@@ -106,8 +65,6 @@ pub struct LegacyRecoveryV6 {
     pub val_cfg: Option<ValidatorConfig>,
     ///
     pub val_operator_cfg: Option<ValidatorOperatorConfigResource>,
-    ///
-    pub miner_state: Option<TowerStateResource>,
     ///
     pub comm_wallet: Option<CommunityWalletsResourceLegacy>,
     ///
@@ -171,7 +128,6 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         balance: None,
         val_cfg: None,
         val_operator_cfg: None,
-        miner_state: None,
         comm_wallet: None,
         currency_info: None, // TODO: DO WE NEED THIS
         ancestry: None,
@@ -226,9 +182,6 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         if legacy_recovery.val_operator_cfg.is_some() {
             legacy_recovery.role = AccountRole::Operator;
         }
-
-        // miner state
-        legacy_recovery.miner_state = account_state.get_move_resource::<TowerStateResource>()?;
 
         // comm_wallet
         legacy_recovery.comm_wallet =
