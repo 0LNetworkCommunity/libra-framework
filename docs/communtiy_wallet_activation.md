@@ -1,5 +1,18 @@
 # Community Wallet Activation
 
+Community wallet is a qualification an account can receive if it is composed
+with certain properties.
+Those properties are:
+- Donor Voice, makes payments with a policy where the donors have observability
+  over the transactions.
+- Multisig, accounts can only be manipulated with a multi-sig policy
+- Ancestry limits, multisig authorities must be minimum of 3 addresses which are
+  not related by Ancestry.
+- Caged, the original authentication key is rotated, similar to resource
+  accounts, but further restricted since they cannot sign arbitrary
+  scripts.
+
+# Steps
 There are two steps in creating a community wallet account:
  1) make it a Donor Voice account, and check if the proposed authorites could be
     added.
