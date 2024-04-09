@@ -102,14 +102,16 @@ impl VetoTx {
 }
 
 #[derive(clap::Args)]
+/// Initialize a community wallet in two steps 1) make it a donor voice account,
+/// and check proposed authorities 2) finalize and set the authorities
 pub struct InitTx {
     #[clap(short, long)]
-    /// The initial admins of the Multisig. Note: the signer of this TX
-    /// (sponsor) cannot add self.
+    /// The initial admins of the Multisig.
+    /// the signer of this TX (sponsor) cannot add self.
     pub admins: Vec<AccountAddress>,
 
     #[clap(short, long)]
-    /// migrate a legacy v5 community wallet, with N being the n-of-m
+    /// Num of signatures needed for the n-of-m
     pub num_signers: u64,
 
     #[clap(long)]
@@ -119,7 +121,6 @@ pub struct InitTx {
 
 impl InitTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        println!("trying to migrate");
         if self.finalize {
             // Warning message
             println!("\nWARNING: This operation will finalize the account associated with the governance-initialized wallet and make it inaccessible. This action is IRREVERSIBLE and can only be applied to a wallet where governance has been initialized.\n");
@@ -131,7 +132,7 @@ impl InitTx {
 
             // Execute the transaction
             sender.sign_submit_wait(payload).await?;
-            println!("SUCCESS: The account has been finalized and caged.");
+            println!("The account has been finalized and caged.");
         } else {
             let payload = libra_stdlib::community_wallet_init_init_community(
                 self.admins.clone(),
