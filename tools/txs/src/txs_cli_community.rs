@@ -139,7 +139,7 @@ impl InitTx {
             );
 
             sender.sign_submit_wait(payload).await?;
-            println!("SUCCESS: you have completed the first step in creating a community wallet, now you should check your work and finalize with --finalize");
+            println!("You have completed the first step in creating a community wallet, now you should check your work and finalize with --finalize");
         }
 
         Ok(())
