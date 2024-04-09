@@ -191,7 +191,6 @@ module ol_framework::test_burn {
       assert!(balance == eve_donation_to_A, 7357006);
     }
 
-
     #[test(root = @ol_framework)]
     fun epoch_fees_burn(root: &signer) {
       // Scenario:
@@ -204,17 +203,18 @@ module ol_framework::test_burn {
       let _vals = mock::genesis_n_vals(root, n_vals); // need to include eve to init funds
       let genesis_mint = 1000000; // 1 coin per
       let epoch_reward = genesis_mint; // just to be explicit
+
       mock::ol_initialize_coin_and_fund_vals(root, genesis_mint, true);
       let supply_pre = libra_coin::supply();
       let mocked_tx_fees = 1000000 * 100; // 100 coins in tx fee account
       // 105 coins total
       assert!(supply_pre == mocked_tx_fees + (n_vals * genesis_mint), 73570001);
 
-
       let fees = transaction_fee::system_fees_collected();
       assert!(fees == mocked_tx_fees, 73570002);
       // start at epoch 1. NOTE Validators WILL GET PAID FOR EPOCH 1
-      mock::trigger_epoch(root);
+      mock::trigger_epoch(root); // under 1000 rounds we don't
+      // evaluate performance of validators
       let fees = transaction_fee::system_fees_collected();
       // There should be no fees left in tx fee wallet
       assert!(fees == 0, 73570003);
@@ -301,6 +301,9 @@ module ol_framework::test_burn {
       assert!(balance == (bob_burn_share_A + eve_donation_to_A), 7357005);
     }
 
+
+    // TODO:
+
     // #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000d, eve = @0x1000e)]
     // fun fee_makers_calc(root: &signer, alice: &signer, bob: &signer, eve: &signer) {
     //   // Scenario:
@@ -361,33 +364,45 @@ module ol_framework::test_burn {
     }
 
 
-  #[test(root = @ol_framework)]
-  fun init_burn_tracker(root: &signer) {
+  #[test(root = @ol_framework, alice_val = @0x1000a)]
+  fun test_init_burn_tracker(root: &signer, alice_val: &signer) {
     mock::genesis_n_vals(root, 1);
-    let genesis_mint = 12345;
-    mock::ol_initialize_coin_and_fund_vals(root, genesis_mint, true);
+    let genesis_mint_to_vals = 12345;
+    mock::ol_initialize_coin_and_fund_vals(root, genesis_mint_to_vals, true);
+    let supply = libra_coin::supply();
 
-    let (prev_supply, prev_balance, burn_at_last_calc, cumu_burn) = ol_account::get_burn_tracker(@0x1000a);
+    let marlon_rando = @0x12345;
+    let marlon_salary = 100;
+    ol_account::transfer(alice_val, marlon_rando, marlon_salary);
+
+    let (prev_supply, prev_balance, burn_at_last_calc, cumu_burn) =
+    ol_account::get_burn_tracker(marlon_rando);
+
     // everything initialized correctly
-    assert!(prev_supply == 100000000, 7357001);
-    assert!(prev_balance == 12345, 7357002);
+    assert!(prev_supply == supply, 7357001);
+    assert!(prev_balance == marlon_salary, 7357002);
     assert!(burn_at_last_calc == 0, 7357003);
     assert!(cumu_burn == 0, 7357004);
 
   }
 
-  #[test(root = @ol_framework, alice=@0x1000a)]
-  fun burn_tracker_increment(root: &signer, alice: &signer) {
-    mock::genesis_n_vals(root, 2);
-    let genesis_mint = 12345;
-    mock::ol_initialize_coin_and_fund_vals(root, genesis_mint, true);
+  #[test(root = @ol_framework, alice_val=@0x1000a)]
+  fun burn_tracker_increment(root: &signer, alice_val: &signer) {
+    mock::genesis_n_vals(root, 1);
+    let genesis_mint_to_vals = 12345;
+    mock::ol_initialize_coin_and_fund_vals(root, genesis_mint_to_vals, true);
+    let supply = libra_coin::supply();
 
-    // check init
+    let marlon_rando = @0x12345;
+    let marlon_salary = 100;
+    ol_account::transfer(alice_val, marlon_rando, marlon_salary);
+
     let (prev_supply, prev_balance, burn_at_last_calc, cumu_burn) =
-    ol_account::get_burn_tracker(@0x1000a);
+    ol_account::get_burn_tracker(marlon_rando);
+
     // everything initialized correctly
-    assert!(prev_supply == 100000000, 7357001);
-    assert!(prev_balance == 12345, 7357002);
+    assert!(prev_supply == supply, 7357001);
+    assert!(prev_balance == marlon_salary, 7357002);
     assert!(burn_at_last_calc == 0, 7357003);
     assert!(cumu_burn == 0, 7357004);
 
@@ -398,24 +413,27 @@ module ol_framework::test_burn {
 
     // there should be no change at this point
     let (prev_supply_1, prev_balance_1, burn_at_last_calc, cumu_burn) =
-    ol_account::get_burn_tracker(@0x1000a);
+    ol_account::get_burn_tracker(marlon_rando);
     assert!(prev_supply == prev_supply_1, 7357005);
     assert!(prev_balance == prev_balance_1, 7357006);
+    // there was no previous calculation, just initialization
+    assert!(burn_at_last_calc == 0, 7357007);
+    assert!(cumu_burn == 0, 7357008);
 
-    ol_account::transfer(alice, @0x1000b, 100);
+    ol_account::transfer(alice_val, marlon_rando, 100);
 
     // burn tracker will change on each transaction
     let (prev_supply_2, prev_balance_2, burn_at_last_calc_2, cumu_burn_2) =
-    ol_account::get_burn_tracker(@0x1000a);
+    ol_account::get_burn_tracker(marlon_rando);
 
+    // marlon balance went up
+    assert!(prev_balance_2 > prev_balance, 73570010);
     // supply must go down
-    assert!(prev_supply_2 < prev_supply, 7357007);
-    // alice balance must go down after alice sent to bob
-    assert!(prev_balance_2 < prev_balance, 7357008);
+    assert!(prev_supply_2 < prev_supply, 7357009);
     // the last burn should be higher than 0 at init
-    assert!(burn_at_last_calc_2 > burn_at_last_calc, 7357009);
+    assert!(burn_at_last_calc_2 > burn_at_last_calc, 73570011);
     // the cumu burn should be higher
-    assert!(cumu_burn_2 > cumu_burn, 7357010);
+    assert!(cumu_burn_2 > cumu_burn, 73570012);
 
   }
 }

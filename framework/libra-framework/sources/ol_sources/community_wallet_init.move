@@ -50,11 +50,11 @@ module ol_framework::community_wallet_init {
     const MINIMUM_AUTH: u64 = 3;
 
 
-    public(friend) fun migrate_community_wallet_account(vm: &signer, dv_account:
+    public(friend) fun migrate_community_wallet_account(framework: &signer, dv_account:
     &signer) {
       use diem_framework::system_addresses;
-      system_addresses::assert_ol(vm);
-      donor_voice_txs::migrate_community_wallet_account(vm, dv_account);
+      system_addresses::assert_diem_framework(framework);
+      donor_voice_txs::migrate_community_wallet_account(framework, dv_account);
       community_wallet::set_comm_wallet(dv_account);
     }
 
@@ -68,7 +68,7 @@ module ol_framework::community_wallet_init {
       check_addresses: vector<address>,
       check_threshold: u64,
     ) {
-      check_proposed_auths(&check_addresses, check_threshold);
+      check_proposed_auths(check_addresses, check_threshold);
 
       donor_voice_txs::make_donor_voice(sig);
       if (!donor_voice_txs::is_liquidate_to_match_index(signer::address_of(sig))) {
@@ -78,8 +78,11 @@ module ol_framework::community_wallet_init {
 
     }
 
-    fun check_proposed_auths(initial_authorities: &vector<address>, num_signers:
-    u64) {
+    #[view]
+    /// check if the authorities being proposed, and signature threshold would
+    /// qualify
+    public fun check_proposed_auths(initial_authorities: vector<address>, num_signers:
+    u64): bool {
       // // enforce n/m multi auth
       // let n = if (len == 3) { 2 }
       // else {
@@ -89,11 +92,12 @@ module ol_framework::community_wallet_init {
       assert!(num_signers >= MINIMUM_SIGS, error::invalid_argument(ESIG_THRESHOLD_CONFIG));
 
             // policy is to have at least m signers as auths on the account.
-      let len = vector::length(initial_authorities);
+      let len = vector::length(&initial_authorities);
       assert!(len >= MINIMUM_AUTH, error::invalid_argument(ETOO_FEW_AUTH));
 
-      let (fam, _, _) = ancestry::any_family_in_list(*initial_authorities);
+      let (fam, _, _) = ancestry::any_family_in_list(initial_authorities);
       assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
+      true
 
     }
 

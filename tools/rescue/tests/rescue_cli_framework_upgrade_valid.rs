@@ -1,5 +1,8 @@
 mod support;
 
+use std::path::PathBuf;
+use std::str::FromStr;
+
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use rescue::diem_db_bootstrapper::BootstrapOpts;
 use rescue::rescue_tx::RescueTxOpts;
@@ -24,11 +27,19 @@ async fn test_framework_upgrade_writeset() -> anyhow::Result<()> {
     let blob_path = diem_temppath::TempPath::new();
     blob_path.create_as_dir()?;
 
+    let this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR"))?;
+    let mrb_path = this_path
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("framework/releases/head.mrb");
+
     let r = RescueTxOpts {
         db_dir: val_db_path.clone(),
         blob_path: Some(blob_path.path().to_owned()),
         script_path: None,
-        framework_mrb_file: None,
+        framework_mrb_file: Some(mrb_path),
         validators_file: None,
     };
     r.run()?;

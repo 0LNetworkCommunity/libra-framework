@@ -1,8 +1,8 @@
+use crate::legacy_config;
 use crate::make_yaml_public_fullnode::{
     download_genesis, get_genesis_waypoint, init_fullnode_yaml,
 };
 use crate::validator_config::{validator_dialogue, vfn_dialogue};
-use crate::{legacy_config, make_profile};
 use anyhow::{Context, Result};
 use clap::Parser;
 use libra_types::exports::AccountAddress;
@@ -36,7 +36,7 @@ pub struct ConfigCli {
 
 #[derive(clap::Subcommand)]
 enum ConfigSub {
-    /// Generates a libra.yaml for cli tools like txs, tower, etc.  Note: the file can also be used for Carpe, though that app uses a different default directory than these cli tools.
+    /// Generates a libra-cli-config.yaml for cli tools like txs, tower, etc.  Note: the file can also be used for Carpe, though that app uses a different default directory than these cli tools.
     Init {
         /// force an account address instead of reading from mnemonic, requires --force_authkey
         #[clap(long)]
@@ -51,8 +51,8 @@ enum ConfigSub {
         #[clap(long)]
         playlist_url: Option<Url>,
     },
-    // TODO: add WhoAmI to show libra.yaml profile info.
-    /// try to add for fix the libra.yaml file
+    // TODO: add WhoAmI to show libra-cli-config.yaml profile info.
+    /// Utils for libra-cli-config.yaml file
     #[clap(arg_required_else_help(true))]
     Fix {
         /// optional, reset the address from mnemonic. Will also lookup on the chain for the actual address if you forgot it, or rotated your authkey.
@@ -66,32 +66,12 @@ enum ConfigSub {
         #[clap(short('u'), long)]
         force_url: Option<Url>,
     },
-    /// For core developers. Generates a config.yaml in the vendor format. This is a hidden command in the CLI.
-    #[clap(hide(true))]
-    VendorInit {
-        /// Ed25519 public key
-        #[clap(short, long)]
-        public_key: String,
+    /// Show the addresses and configs on this device
+    View {},
 
-        /// Profile name to use when saving the config. Defaults to "default"
-        ///
-        /// This will be used to override associated settings such as
-        /// the REST URL, and the private key arguments.
-        #[clap(long)]
-        profile: Option<String>,
-
-        /// In libra we default to the configs being global in $HOME/.libra
-        /// Otherwise you should pass -w to use the workspace configuration.
-        /// Uses this directory as the workspace, instead of using the global
-        /// parameters in $HOME/.libra
-        #[clap(short, long)]
-        workspace: bool,
-    },
+    // COMMIT NOTE: we havent'used vendor tooling configs for anything.
     /// Generate validators' config file
     ValidatorInit {
-        /// check the files generated
-        #[clap(short, long)]
-        check: bool,
         // just make the VFN file
         #[clap(short, long)]
         vfn: bool,
@@ -108,11 +88,6 @@ enum ConfigSub {
 impl ConfigCli {
     pub async fn run(&self) -> Result<()> {
         match &self.subcommand {
-            Some(ConfigSub::VendorInit {
-                public_key,
-                profile,
-                workspace,
-            }) => make_profile::run(public_key, profile.as_deref().to_owned(), *workspace).await,
             Some(ConfigSub::Fix {
                 address,
                 remove_profile,
@@ -187,50 +162,10 @@ impl ConfigCli {
 
                 Ok(())
             }
-            Some(ConfigSub::ValidatorInit { check, vfn }) => {
+            Some(ConfigSub::ValidatorInit { vfn }) => {
                 let home_dir = self.path.clone().unwrap_or_else(global_config_dir);
                 if *vfn {
                     vfn_dialogue(&home_dir, None, None).await?;
-                    return Ok(());
-                }
-                if *check {
-                    let public_keys_file = home_dir.join(OPERATOR_FILE);
-
-                    let public_identity = read_operator_file(public_keys_file.as_path())?;
-                    println!("validator public credentials:");
-                    println!(
-                        "{}",
-                        serde_json::to_string_pretty(&public_identity).unwrap()
-                    );
-
-                    println!("network addresses:");
-                    let validator_net = public_identity.validator_host;
-                    let net_addr = validator_net
-                        .as_network_address(public_identity.validator_network_public_key)?;
-                    println!(
-                        "validator: {}",
-                        serde_json::to_string_pretty(&net_addr).unwrap()
-                    );
-
-                    if let Some(fn_host) = public_identity.full_node_host {
-                        let net_addr_fn = fn_host.as_network_address(
-                            public_identity.full_node_network_public_key.context(
-                                "expected a full_node_network_public_key in operator.yaml",
-                            )?,
-                        )?;
-
-                        println!(
-                            "vfn: {}",
-                            serde_json::to_string_pretty(&net_addr_fn).unwrap()
-                        );
-                    } else {
-                        println!("WARN: no config information found for Validator Full Node (VFN)")
-                    }
-
-                    println!(
-                        "\nNOTE: to check if this matches your mnemonic try `libra wallet whoami`"
-                    );
-
                     return Ok(());
                 }
 
@@ -244,8 +179,50 @@ impl ConfigCli {
                 }
                 download_genesis(Some(data_path.clone()), None).await?;
                 let _ = get_genesis_waypoint(Some(data_path.clone())).await?;
-                validator_dialogue(&data_path, None).await?;
+                validator_dialogue(&data_path, None, self.chain_name).await?;
                 println!("Validators' config initialized.");
+                Ok(())
+            }
+            Some(ConfigSub::View {}) => {
+                let home_dir = self.path.clone().unwrap_or_else(global_config_dir);
+
+                let public_keys_file = home_dir.join(OPERATOR_FILE);
+
+                let public_identity = read_operator_file(public_keys_file.as_path())?;
+                println!("validator public credentials:");
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&public_identity).unwrap()
+                );
+
+                println!("network addresses:");
+                let validator_net = public_identity.validator_host;
+                let net_addr = validator_net
+                    .as_network_address(public_identity.validator_network_public_key)?;
+                println!(
+                    "validator: {}",
+                    serde_json::to_string_pretty(&net_addr).unwrap()
+                );
+
+                if let Some(fn_host) = public_identity.full_node_host {
+                    let net_addr_fn = fn_host.as_network_address(
+                        public_identity
+                            .full_node_network_public_key
+                            .context("expected a full_node_network_public_key in operator.yaml")?,
+                    )?;
+
+                    println!(
+                        "vfn: {}",
+                        serde_json::to_string_pretty(&net_addr_fn).unwrap()
+                    );
+                } else {
+                    println!("WARN: no config information found for Validator Full Node (VFN)")
+                }
+
+                println!(
+                    "\nNOTE: to check if this matches your mnemonic try `libra wallet whoami`"
+                );
+
                 Ok(())
             }
             Some(ConfigSub::FullnodeInit { home_path }) => {

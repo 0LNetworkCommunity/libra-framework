@@ -11,6 +11,28 @@ use anyhow::Context;
 use clap::Parser;
 use std::path::{Path, PathBuf};
 
+#[derive(Parser)]
+#[clap(name = "libra-framework", author, version, propagate_version = true)]
+/// Libra framework compiler.
+pub enum FrameworkCli {
+    /// Creates a .mrb move framework release
+    Release(GenesisRelease),
+    /// Creates the script payload for a governance script
+    Governance(GovernanceScript),
+    /// Creates all artifacts for a network governance upgrade
+    Upgrade(FrameworkUpgrade),
+}
+
+impl FrameworkCli {
+    pub fn execute(&self) -> anyhow::Result<()> {
+        match self {
+            FrameworkCli::Release(tool) => tool.execute(),
+            FrameworkCli::Governance(tool) => tool.execute(),
+            FrameworkCli::Upgrade(tool) => tool.execute(),
+        }
+    }
+}
+
 #[derive(Debug, Parser)]
 /// Creates a framework release used for test genesis (as well as production genesis).
 pub struct GenesisRelease {
@@ -20,14 +42,15 @@ pub struct GenesisRelease {
     #[clap(long, default_value = "head")]
     pub target: ReleaseTarget,
 
-    /// Remove the source code from the release package to shrink its size.
+    /// Default is to create a bloated dev compile, with options: dev, sources, with_source_maps, etc.
+    /// set -p to create a "skinny" version to publish on chain.
     #[clap(short, long)]
-    pub without_source_code: bool,
+    pub production: bool,
 }
 
 impl GenesisRelease {
     pub fn execute(&self) -> anyhow::Result<()> {
-        self.target.create_release(!self.without_source_code, None)
+        self.target.create_release(!self.production, None)
     }
 }
 

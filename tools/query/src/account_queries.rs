@@ -6,7 +6,6 @@ use diem_sdk::{
     types::{account_address::AccountAddress, validator_config::ValidatorConfig},
 };
 use libra_types::{
-    legacy_types::tower::TowerProofHistoryView,
     move_resource::gas_coin::SlowWalletBalance,
     move_resource::txschedule::TxSchedule,
     type_extensions::client_ext::{entry_function_id, ClientExt},
@@ -29,15 +28,6 @@ pub async fn get_account_balance_libra(
     let res = client.view(&request, None).await?.into_inner();
 
     SlowWalletBalance::from_value(res)
-}
-
-pub async fn get_tower_state(
-    client: &Client,
-    account: AccountAddress,
-) -> anyhow::Result<TowerProofHistoryView> {
-    client
-        .get_move_resource::<TowerProofHistoryView>(account)
-        .await
 }
 
 pub async fn get_val_config(
