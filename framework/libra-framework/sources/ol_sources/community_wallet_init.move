@@ -78,7 +78,10 @@ module ol_framework::community_wallet_init {
 
     }
 
-    fun check_proposed_auths(initial_authorities: &vector<address>, num_signers:
+    #[view]
+    /// check if the authorities being proposed, and signature threshold would
+    /// qualify
+    public fun check_proposed_auths(initial_authorities: &vector<address>, num_signers:
     u64) {
       // // enforce n/m multi auth
       // let n = if (len == 3) { 2 }
