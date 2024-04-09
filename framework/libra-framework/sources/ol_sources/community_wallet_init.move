@@ -68,7 +68,7 @@ module ol_framework::community_wallet_init {
       check_addresses: vector<address>,
       check_threshold: u64,
     ) {
-      check_proposed_auths(&check_addresses, check_threshold);
+      check_proposed_auths(check_addresses, check_threshold);
 
       donor_voice_txs::make_donor_voice(sig);
       if (!donor_voice_txs::is_liquidate_to_match_index(signer::address_of(sig))) {
@@ -81,9 +81,9 @@ module ol_framework::community_wallet_init {
     #[view]
     /// check if the authorities being proposed, and signature threshold would
     /// qualify
-    public fun check_proposed_auths(initial_authorities: &vector<address>, num_signers:
-    u64) {
-      // // enforce n/m multi auth
+    public fun check_proposed_auths(initial_authorities: vector<address>, num_signers:
+    u64): bool {
+      // TODO: enforce n/m multi auth such as:
       // let n = if (len == 3) { 2 }
       // else {
       //   (MINIMUM_SIGS * len) / MINIMUM_AUTH
@@ -92,11 +92,12 @@ module ol_framework::community_wallet_init {
       assert!(num_signers >= MINIMUM_SIGS, error::invalid_argument(ESIG_THRESHOLD_CONFIG));
 
             // policy is to have at least m signers as auths on the account.
-      let len = vector::length(initial_authorities);
+      let len = vector::length(&initial_authorities);
       assert!(len >= MINIMUM_AUTH, error::invalid_argument(ETOO_FEW_AUTH));
 
-      let (fam, _, _) = ancestry::any_family_in_list(*initial_authorities);
+      let (fam, _, _) = ancestry::any_family_in_list(initial_authorities);
       assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
+      true
 
     }
 
