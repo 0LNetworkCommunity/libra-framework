@@ -1,6 +1,6 @@
 [package]
 name = "transactional-tests"
-version = "0.1.0"
+version = { workspace = true }
 authors = [""]
 edition = "2018"
 

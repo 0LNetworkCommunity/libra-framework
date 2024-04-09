@@ -1,6 +1,26 @@
-# Libra Dev Quick Start
+# Libra Move Dev Quick Start
 ## TL;DR
 
+
+### If you are running Move tests:
+* You must install `libra` cli tool to your PATH.
+
+```
+# in this repo
+cargo build --release -p libra --target-dir ~/.cargo/bin
+
+# make it executable
+chmod +x ~/.cargo/bin/libra
+
+# run framework tests with
+cd ./framework/libra-framework
+libra move framework test
+
+# fun formal verification with
+libra move framework prove
+```
+
+### If you are running e2e smoke tests:
 * You need our fork of `diem-node` before working on `libra-framework`
 * compile `diem-node` to `$HOME/.cargo/bin`
 
@@ -12,7 +32,7 @@ cd diem
 cargo build --profile cli -p diem-node --target-dir ~/.cargo/bin
 
 # make it executable
-chmod +x ~/.cargo/diem-node
+chmod +x ~/.cargo/bin/diem-node
 ```
 * export these env vars in your dev env, `~/.bashrc` or `~/.zshrc`
 
@@ -61,7 +81,7 @@ Just check those executables appear in your path.
 `which diem-node`
 
 Now you can run commands as below.
-## Running Move unit tests
+# Running Move unit tests
 Change into a Move project dir (i.e., the directory with a Move.toml).
 
 `diem move test`
@@ -98,4 +118,3 @@ export DIEM_FORGE_NODE_BIN_PATH="$HOME/.cargo/bin/diem-node"
 cargo test
 
 ```
-

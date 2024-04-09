@@ -48,16 +48,14 @@
         use ol_framework::ol_account;
         use ol_framework::epoch_helper;
         use ol_framework::burn;
-        use diem_framework::account;
         use diem_framework::coin;
         use diem_framework::system_addresses;
-
-        friend ol_framework::last_goodbye;
 
         // use diem_std::debug::print;
 
         friend ol_framework::infra_escrow;
         friend ol_framework::genesis_migration;
+        friend ol_framework::genesis;
 
         /// no policy at this address
         const ENO_BENEFICIARY_POLICY: u64 = 1;
@@ -100,15 +98,26 @@
           revoked: bool, // for historical record keeping.
         }
 
+        // convenience tracker of all beneficiaries
+        struct BeneficiaryRegistry has key {
+          list: vector<address>
+        }
+
+        public(friend) fun initialize(framework: &signer) {
+          move_to(framework, BeneficiaryRegistry {
+            list: vector::empty()
+          })
+        }
         // beneficiary publishes a policy to their account.
         // NOTE: It cannot be modified after a first pledge is made!.
         public(friend) fun publish_beneficiary_policy(
-          account: &signer,
+          user_sig: &signer,
           purpose: vector<u8>,
           vote_threshold_to_revoke: u64,
           burn_funds_on_revoke: bool
-        ) acquires BeneficiaryPolicy {
-            if (!exists<BeneficiaryPolicy>(signer::address_of(account))) {
+        ) acquires BeneficiaryPolicy, BeneficiaryRegistry {
+            let addr = signer::address_of(user_sig);
+            if (!exists<BeneficiaryPolicy>(addr)) {
                 let beneficiary_policy = BeneficiaryPolicy {
                     purpose: purpose,
                     vote_threshold_to_revoke: vote_threshold_to_revoke,
@@ -123,10 +132,12 @@
                     revoked: false
 
                 };
-                move_to(account, beneficiary_policy);
+                move_to(user_sig, beneficiary_policy);
+                let registry = borrow_global_mut<BeneficiaryRegistry>(addr);
+                vector::push_back(&mut registry.list, addr)
             } else {
               // allow the beneficiary to write drafts, and modify the policy, as long as no pledge has been made.
-              let b = borrow_global_mut<BeneficiaryPolicy>(signer::address_of(account));
+              let b = borrow_global_mut<BeneficiaryPolicy>(addr);
               if (vector::length(&b.pledgers) == 0) {
                 b.purpose = purpose;
                 b.vote_threshold_to_revoke = vote_threshold_to_revoke;
@@ -191,7 +202,6 @@
             let my_pledges = borrow_global_mut<MyPledges>(account);
             let value = coin::value(&init_pledge);
             let new_pledge_account = PledgeAccount {
-                // project_id: project_id,
                 address_of_beneficiary: address_of_beneficiary,
                 amount: value,
                 pledge: init_pledge,
@@ -256,13 +266,7 @@
             let all_coins = option::none<coin::Coin<LibraCoin>>();
             while (i < vector::length(&pledgers)) {
                 let pledge_account = *vector::borrow(&pledgers, i);
-                // belt and suspenders for dropped accounts in hard fork.
-                if (!account::exists_at(pledge_account)) {
-                  // do garbage collection
-                  garbage_collection(&pledge_account);
-                  i = i + 1;
-                  continue
-                };
+
                 // DANGER: this is a private function that changes balances.
                 if (!exists<MyPledges>(pledge_account)) continue;
 
@@ -274,8 +278,6 @@
                   let coin =  option::extract(&mut c);
                   option::fill(&mut all_coins, coin);
                   option::destroy_none(c);
-                  // option::destroy_none(c);
-
                 } else if (option::is_some(&c)) {
 
                   let temp = option::extract(&mut all_coins);
@@ -295,17 +297,6 @@
         }
 
 
-        // sanitize each account
-        public(friend) fun hard_fork_sanitize(vm: &signer, user: &signer)
-        acquires MyPledges, BeneficiaryPolicy{
-          if(!exists<PledgeAccount>(signer::address_of(user))) return;
-          system_addresses::assert_vm(vm);
-          let addr = signer::address_of(user);
-          if(exists<PledgeAccount>(addr)) {
-            garbage_collection(&addr);
-          }
-        }
-
         fun get_user_pledges(account: &address): vector<address> acquires
         MyPledges {
           let list = vector::empty<address>();
@@ -318,29 +309,6 @@
             i = i + 1;
           };
           return list
-        }
-
-        fun garbage_collection(pledge_account: &address) acquires MyPledges, BeneficiaryPolicy {
-          let pledge_list = get_user_pledges(pledge_account);
-          let i = 0;
-          while (i < vector::length(&pledge_list)) {
-            let bene = vector::borrow(&pledge_list, i);
-            let hundred_pct = fixed_point64::create_from_rational(1,1);
-            let c = withdraw_pct_from_one_pledge_account(bene,
-            pledge_account, &hundred_pct);
-            if (option::is_some(&c)) {
-              let coin =  option::extract(&mut c);
-              burn::burn_and_track(coin);
-            };
-            option::destroy_none(c);
-
-            let bene_state = borrow_global_mut<BeneficiaryPolicy>(@diem_framework);
-            let (is_found, i) = vector::index_of(&bene_state.pledgers,
-            pledge_account);
-            if (is_found) {
-              vector::remove(&mut bene_state.pledgers, i);
-            }
-          }
         }
 
         // DANGER: private function that changes balances.
@@ -551,8 +519,6 @@
         }
 
 
-        //NOTE: deprecated with refactor
-
         ////////// TX  //////////
         // for general pledge accounts
         public(friend) fun user_pledge(user_sig: &signer, beneficiary: address, amount: u64) acquires BeneficiaryPolicy, MyPledges {
@@ -640,6 +606,49 @@
         (false, null)
       }
 
+      #[view]
+      public fun get_pledge_supply(): u64 acquires BeneficiaryRegistry, BeneficiaryPolicy {
+        let registry = borrow_global<BeneficiaryRegistry>(@ol_framework);
+        let sum = 0;
+        vector::for_each(registry.list, |a| {
+          sum = sum + get_available_to_beneficiary(a);
+        });
+        sum
+      }
+
+      ///////// MIGRATION ////////
+
+              // Create a new pledge account on a user's list of pledges
+      public(friend) fun migrate_pledge_account(
+          framework: &signer,
+          sig: &signer,
+          // project_id: vector<u8>,
+          address_of_beneficiary: address,
+          init_pledge: coin::Coin<LibraCoin>,
+          lifetime_pledged: u64,
+          lifetime_withdrawn: u64,
+        ) acquires MyPledges, BeneficiaryPolicy {
+            system_addresses::assert_diem_framework(framework);
+            let account = signer::address_of(sig);
+            maybe_initialize_my_pledges(sig);
+            let my_pledges = borrow_global_mut<MyPledges>(account);
+            let value = coin::value(&init_pledge);
+            let new_pledge_account = PledgeAccount {
+                address_of_beneficiary: address_of_beneficiary,
+                amount: value,
+                pledge: init_pledge,
+                epoch_of_last_deposit: epoch_helper::get_current_epoch(),
+                lifetime_pledged: lifetime_pledged,
+                lifetime_withdrawn: lifetime_withdrawn
+            };
+            vector::push_back(&mut my_pledges.list, new_pledge_account);
+
+          let b = borrow_global_mut<BeneficiaryPolicy>(address_of_beneficiary);
+          vector::push_back(&mut b.pledgers, account);
+
+          b.amount_available = b.amount_available  + value;
+          b.lifetime_pledged = b.lifetime_pledged + value;
+        }
 
 
       //////// TEST HELPERS ///////

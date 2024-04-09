@@ -8,6 +8,10 @@ SHELL=/usr/bin/env bash
 # and after you get a waypoint:
 # WAYPOINT=33254829:a730d227c26655f2881fc7e9868040f3fec53f9fff6b6b2374b28ceb67912fee
 
+ifndef DB_ARCHIVE_MD5
+DB_ARCHIVE_MD5="60784e149d065c6732dffc5289b93fa2"
+endif
+
 ifndef SOURCE_PATH
 SOURCE_PATH=~/libra-framework
 endif
@@ -72,6 +76,9 @@ install:
 hard-fork-blob:
 	rescue hard-fork --db-dir ${DB_PATH} --validators-file ${VALS_FILE} --account-file ${ACCOUNT_FILE} --framework-mrb-file ${MRB_PATH}
 
+hard-fork-blob-debug:
+	rescue hard-fork --db-dir ${DB_PATH} --validators-file ${VALS_FILE} --account-file ${ACCOUNT_FILE} --framework-mrb-file ${MRB_PATH} --debug-short-epochs
+
 hard-fork-commit:
 	rescue bootstrap --db-dir ${DB_PATH} --genesis-txn-file ${DB_PATH}/hard_fork.blob --waypoint-to-verify ${WAYPOINT} --commit
 	@$(MAKE) update-waypoint
@@ -93,29 +100,36 @@ update-waypoint:
 
 
 ######## UTILS ########
-backup-db:
+backup-fetch-db:
+	@echo "Stopping any found libra process and removing secure-data.json..."
 	-pkill -f libra
 	rm -f ${DATA_PATH}/secure-data.json
 
-	@backup_dir=$(DATA_PATH)-$$(date +"%Y-%m-%d-%H%M%S"); \
-	if [ -d "$$backup_dir" ]; then \
-		echo "Backup already exists for $$backup_dir, skipping backup."; \
-	else \
-		cp -r $(DATA_PATH) $$backup_dir; \
-		echo "Backup successful: $$backup_dir"; \
-	fi
-
-fetch-db:
+	@echo "Fetching database..."
 	@echo "This will be replaced by either starting a fullnode or using a snapshot from the epoch-archive-mainnet repo."
 	@echo "For simplicity, we will use the db from the machine that maintains the epoch-archive-mainnet repo."
-	
-	@echo "Fetching database..."
-	#rm -rf ${DB_PATH}
-	wget https://storage.googleapis.com/0l-network/db-33254886.tar.gz -O db-33254886.tar.gz
-	tar -xvzf db-33254886.tar.gz --strip-components=4 $(DATA_PATH)/db
 
-	#rm -f db-33254886.tar.gz
+	@DB_ARCHIVE_PATH=${DB_PATH}_pre_hf_$$(date +"%Y-%m-%d-%H%M%S"); \
+	if [ -d ${DB_PATH} ]; then \
+		echo "Archiving Pre-Fork Database to $$DB_ARCHIVE_PATH..."; \
+		mv ${DB_PATH} $$DB_ARCHIVE_PATH; \
+	fi; \
+	CURRENT_MD5=""; \
+	if [ -f db-33254886.tar.gz ]; then \
+		echo "Database archive exists. Checking MD5..."; \
+		CURRENT_MD5=$$(md5sum db-33254886.tar.gz | awk '{ print $$1 }'); \
+	fi; \
+	if [ "${DB_ARCHIVE_MD5}" != "$${CURRENT_MD5}" ]; then \
+		echo "MD5 mismatch or file not found, downloading..."; \
+		wget https://storage.googleapis.com/0l-network/db-33254886.tar.gz -O db-33254886.tar.gz; \
+	else \
+		echo "MD5 matches. Skipping download."; \
+	fi
 
+	@echo "Unpacking database from archive..."
+	tar -xvzf db-33254886.tar.gz --strip-components=4 home/sirouk/.libra/data-2024-03-14-045027/db
+	mv ./db ${DB_PATH}
+	#@rm -f db-33254886.tar.gz
 
 test-api:
 	curl localhost:8080/v1/accounts/0x9A710919B1A1E67EDA335269C0085C91 | jq

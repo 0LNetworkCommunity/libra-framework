@@ -2,16 +2,28 @@ module ol_framework::musical_chairs {
     use diem_framework::chain_status;
     use diem_framework::system_addresses;
     use diem_framework::stake;
-    use diem_framework::account;
     use ol_framework::grade;
+    use ol_framework::testnet;
     use std::fixed_point32;
     use std::vector;
+
+    // use diem_std::debug::print;
 
     friend diem_framework::genesis;
     friend diem_framework::diem_governance;
     friend ol_framework::epoch_boundary;
     #[test_only]
     friend ol_framework::mock;
+
+
+  /// we don't want to play the validator selection games
+  /// before we're clear out of genesis
+  const EPOCH_TO_START_EVAL: u64 = 2;
+
+  /// we can't evaluate the performance of validators
+  /// when there are too few rounds committed
+  const MINIMUM_ROUNDS_PER_EPOCH: u64 = 1000;
+
 
     struct Chairs has key {
         // The number of chairs in the game
@@ -71,18 +83,22 @@ module ol_framework::musical_chairs {
     /// (compliant_vals, seats_offered)
     public(friend) fun stop_the_music( // sorry, had to.
         vm: &signer,
-        epoch_round: u64,
+        epoch: u64,
+        round: u64,
     ): (vector<address>, u64) acquires Chairs {
         system_addresses::assert_ol(vm);
 
         let validators = stake::get_current_validators();
-        let (compliant_vals, _non, fail_ratio) = eval_compliance_impl(validators, epoch_round);
+
+        let (compliant_vals, _non, fail_ratio) =
+        eval_compliance_impl(validators, epoch, round);
 
         let chairs = borrow_global_mut<Chairs>(@ol_framework);
 
         let num_compliant_nodes = vector::length(&compliant_vals);
 
-        // check for errors. We should not have gone into an epoch where we
+
+        // Error handle. We should not have gone into an epoch where we
         // had MORE validators than seats offered.
         // If this happens it's because we are in some kind of a fork condition.
         // return with no changes
@@ -96,8 +112,6 @@ module ol_framework::musical_chairs {
           return (compliant_vals, chairs.seats_offered)
         };
 
-
-
         // Conditions under which seats should be one more than the number of compliant nodes(<= 5%)
         // Sad case. If we are not getting compliance, need to ratchet down the offer of seats in next epoch.
         // See below find_safe_set_size, how we determine what that number
@@ -105,7 +119,11 @@ module ol_framework::musical_chairs {
         let non_compliance_pct = fixed_point32::multiply_u64(100, *&fail_ratio);
 
         if (non_compliance_pct > 5) {
-            chairs.seats_offered = num_compliant_nodes;
+          // If network is bootstrapping don't reduce the seat count below
+          // compliant nodes,
+
+          chairs.seats_offered = num_compliant_nodes;
+
         } else {
             // Ok case. If it's between 0 and 5% then we accept that margin as if it was fully compliant
             chairs.seats_offered = chairs.seats_offered + 1;
@@ -131,47 +149,20 @@ module ol_framework::musical_chairs {
       chairs.seats_offered
     }
 
-    #[test_only]
-    public fun test_eval_compliance(root: &signer, validators: vector<address>, epoch_round: u64): (vector<address>, vector<address>, fixed_point32::FixedPoint32) {
-      system_addresses::assert_ol(root);
-      eval_compliance_impl(validators, epoch_round)
-
-    }
     // use the Case statistic to determine what proportion of the network is compliant.
     // private function prevent list DoS.
     fun eval_compliance_impl(
       validators: vector<address>,
       epoch: u64,
-    ) : (vector<address>, vector<address>, fixed_point32::FixedPoint32) {
+      _round: u64,
+    ): (vector<address>, vector<address>, fixed_point32::FixedPoint32) {
 
         let val_set_len = vector::length(&validators);
 
-        let compliant_nodes = vector::empty<address>();
-        let non_compliant_nodes = vector::empty<address>();
+        // skip first epoch, don't evaluate if the network doesn't have sufficient data
+        if (epoch < EPOCH_TO_START_EVAL) return (validators, vector::empty<address>(), fixed_point32::create_from_rational(1, 1));
 
-        // if we are at genesis or otherwise at start of an epoch, we don't
-        // want to brick the validator set
-        // TODO: use status.move is_operating
-        if (epoch < 2) return (validators, non_compliant_nodes, fixed_point32::create_from_rational(1, 1));
-
-        let (highest_net_props, _val) = stake::get_highest_net_proposer();
-        let i = 0;
-        while (i < val_set_len) {
-            let addr = *vector::borrow(&validators, i);
-            // belt and suspenders for dropped accounts in hard fork.
-            if (!account::exists_at(addr)) {
-              i = i + 1;
-              continue
-            };
-            let (compliant, _, _, _) = grade::get_validator_grade(addr, highest_net_props);
-            // let compliant = true;
-            if (compliant) {
-                vector::push_back(&mut compliant_nodes, addr);
-            } else {
-                vector::push_back(&mut non_compliant_nodes, addr);
-            };
-            i = i + 1;
-        };
+        let (compliant_nodes, non_compliant_nodes) = grade::eval_compliant_vals(validators);
 
         let good_len = vector::length(&compliant_nodes) ;
         let bad_len = vector::length(&non_compliant_nodes);
@@ -190,7 +181,6 @@ module ol_framework::musical_chairs {
           return (vector::empty(), vector::empty(), null)
         };
 
-
         let ratio = if (bad_len > 0) {
           fixed_point32::create_from_rational(bad_len, val_set_len)
         } else {
@@ -200,6 +190,19 @@ module ol_framework::musical_chairs {
         (compliant_nodes, non_compliant_nodes, ratio)
     }
 
+    // Check for genesis, upgrade or recovery mode scenarios
+    // if we are at genesis or otherwise at start of an epoch and don't
+    // have a sufficient amount of history to evaluate nodes
+    // we might reduce the validator set too agressively.
+    // Musical chairs should not evaluate performance with less than 1000 rounds
+    // created on mainnet,
+    // there's something else very wrong in that case.
+
+    fun is_booting_up(epoch: u64, round: u64): bool {
+      !testnet::is_testnet() &&
+      (epoch < EPOCH_TO_START_EVAL ||
+      round < MINIMUM_ROUNDS_PER_EPOCH)
+    }
 
     //////// GETTERS ////////
 
@@ -208,14 +211,24 @@ module ol_framework::musical_chairs {
         borrow_global<Chairs>(@ol_framework).seats_offered
     }
 
+    //////// TEST HELPERS ////////
+
     #[test_only]
     use diem_framework::chain_id;
 
     #[test_only]
-    public fun test_stop(vm: &signer, epoch_round: u64): (vector<address>, u64) acquires Chairs {
-      stop_the_music(vm, epoch_round)
+    public fun test_stop(vm: &signer, epoch: u64, epoch_round: u64): (vector<address>, u64) acquires Chairs {
+      stop_the_music(vm, epoch, epoch_round)
     }
 
+    #[test_only]
+    public fun test_eval_compliance(root: &signer, validators: vector<address>,
+    epoch: u64, round: u64): (vector<address>, vector<address>,
+    fixed_point32::FixedPoint32) {
+      system_addresses::assert_ol(root);
+      eval_compliance_impl(validators, epoch, round)
+
+    }
     //////// TESTS ////////
 
     #[test(vm = @ol_framework)]

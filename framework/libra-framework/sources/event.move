@@ -20,7 +20,6 @@ module diem_framework::event {
 
     friend ol_framework::slow_wallet;
     friend ol_framework::reconfiguration;
-    friend ol_framework::oracle;
     friend ol_framework::ol_account;
 
     #[test_only]

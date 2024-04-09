@@ -1,8 +1,8 @@
 [package]
 name = "libra"
-version = "0.1.0"
-
+build = "build.rs"
 # Workspace inherited keys
+version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
 homepage = { workspace = true }
@@ -18,9 +18,14 @@ diem = { workspace = true }
 diem-config = { workspace = true }
 diem-node = { workspace = true }
 libra-config = { workspace = true }
+libra-framework = { workspace = true }
+libra-genesis-tools = { workspace = true }
 libra-query = { workspace = true }
-libra-tower = { workspace = true }
 libra-txs = { workspace = true }
 libra-types = { workspace = true }
 libra-wallet = { workspace = true }
 tokio = { workspace = true }
+
+[build-dependencies]
+anyhow = { workspace = true }
+vergen = { workspace = true }

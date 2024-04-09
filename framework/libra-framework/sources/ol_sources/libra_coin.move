@@ -273,9 +273,6 @@ module ol_framework::libra_coin {
         let mint_cap = &borrow_global<MintCapStore>(account_addr).mint_cap;
         let coins_minted = coin::mint<LibraCoin>(amount, mint_cap);
         coin::deposit<LibraCoin>(dst_addr, coins_minted);
-
-        // TODO: update the final supply for tests
-        // genesis_set_final_supply(root, supply());
     }
 
     #[test_only]
