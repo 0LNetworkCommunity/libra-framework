@@ -61,7 +61,7 @@ pub async fn upgrade_multiple_impl(
         mnemonic: None,
         test_private_key: Some(s.encoded_pri_key.clone()),
         chain_id: Some(NamedChain::TESTING),
-        config_path: Some(d.path().to_owned().join("libra.yaml")),
+        config_path: Some(d.path().to_owned().join("libra-cli-config.yaml")),
         url: Some(s.api_endpoint.clone()),
         tx_profile: None,
         tx_cost: Some(TxCost::default_critical_txs_cost()),

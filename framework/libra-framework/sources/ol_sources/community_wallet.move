@@ -67,5 +67,4 @@ module ol_framework::community_wallet {
         move_to(sender, CommunityWallet{});
       }
     }
-
 }

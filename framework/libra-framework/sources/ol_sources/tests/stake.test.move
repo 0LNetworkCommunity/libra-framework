@@ -166,7 +166,7 @@ module ol_framework::test_stake {
     // now make Eve not compliant
     let eve = @0x1000e;
     mock::mock_case_4(&root, eve);
-    let (compliant, _, _, _) = grade::get_validator_grade(eve, 0);
+    let (compliant, _, _) = grade::get_validator_grade(eve);
     assert!(!compliant, 735701);
 
   }
@@ -206,15 +206,15 @@ module ol_framework::test_stake {
     let lowest_score = stake::get_val_net_proposals(@0x1000a);
 
     assert!(highest_score > (lowest_score*20), 7357001);
-    let (a, _, _, _) = grade::get_validator_grade(@0x1000a, highest_score);
+    let (a, _, _) = grade::get_validator_grade(@0x1000a);
     assert!(a == false, 73570002);
 
     // Second lowest is fine
-    let (b, _, _, _) = grade::get_validator_grade(@0x1000c, highest_score);
+    let (b, _, _) = grade::get_validator_grade(@0x1000c);
     assert!(b == true, 73570003);
 
     // and top is also fine
-    let (top, _, _, _) = grade::get_validator_grade(@0x10011, highest_score);
+    let (top, _, _) = grade::get_validator_grade(@0x10011);
     assert!(top == true, 73570004);
 
   }
@@ -247,14 +247,12 @@ module ol_framework::test_stake {
     // in this example 40% failing proposals
     stake::mock_performance(&root, @0x1000a, 500, 200);
 
-    let (highest_score, _addr) = stake::get_highest_net_proposer();
-
     // Lots of failing proposals will make you drop out
-    let (a, _, _, _) = grade::get_validator_grade(@0x1000a, highest_score);
+    let (a, _, _) = grade::get_validator_grade(@0x1000a);
     assert!(a == false, 73570002);
 
     // Other accounts are ok
-    let (b, _, _, _) = grade::get_validator_grade(@0x1000c, highest_score);
+    let (b, _, _) = grade::get_validator_grade(@0x1000c);
     assert!(b == true, 73570003);
 
   }

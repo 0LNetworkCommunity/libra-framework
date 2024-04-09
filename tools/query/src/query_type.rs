@@ -1,8 +1,7 @@
 use crate::{
     account_queries::{
         community_wallet_pending_transactions, community_wallet_signers, get_account_balance_libra,
-        get_events, get_tower_state, get_transactions, get_val_config,
-        is_community_wallet_migrated,
+        get_events, get_transactions, get_val_config, is_community_wallet_migrated,
     },
     chain_queries::{get_epoch, get_height},
     query_view::get_view,
@@ -20,11 +19,6 @@ use serde_json::json;
 pub enum QueryType {
     /// Account balance
     Balance {
-        /// account to query txs of
-        account: AccountAddress,
-    },
-    /// User's Tower state
-    Tower {
         /// account to query txs of
         account: AccountAddress,
     },
@@ -170,10 +164,6 @@ impl QueryType {
             QueryType::Balance { account } => {
                 let res = get_account_balance_libra(&client, *account).await?;
                 Ok(json!(res.scaled()))
-            }
-            QueryType::Tower { account } => {
-                let res = get_tower_state(&client, *account).await?;
-                Ok(json!(res))
             }
             QueryType::View {
                 function_id,

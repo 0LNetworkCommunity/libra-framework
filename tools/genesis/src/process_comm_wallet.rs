@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use diem_types::account_address::AccountAddress;
-use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
+use libra_types::legacy_types::legacy_recovery_v6::LegacyRecoveryV6;
 use serde::Serialize;
 
 pub struct AllCommWallets {
@@ -35,7 +35,7 @@ pub struct ReceiptsResourceV7 {
 /// do the entire workflow of processing community wallet accounts
 /// and inserting the donor information based on receipts
 pub fn prepare_cw_and_receipts(
-    recovery: &[LegacyRecovery],
+    recovery: &[LegacyRecoveryV6],
     // split_factor: f64,
 ) -> anyhow::Result<(DonorReceipts, AllCommWallets)> {
     let mut dr = rebuild_donor_receipts(recovery)?;
@@ -47,7 +47,7 @@ pub fn prepare_cw_and_receipts(
 }
 
 /// process donor receipts
-pub fn rebuild_donor_receipts(recovery: &[LegacyRecovery]) -> anyhow::Result<DonorReceipts> {
+pub fn rebuild_donor_receipts(recovery: &[LegacyRecoveryV6]) -> anyhow::Result<DonorReceipts> {
     let total_cumu = 0;
     let mut list = BTreeMap::new();
 
@@ -59,27 +59,17 @@ pub fn rebuild_donor_receipts(recovery: &[LegacyRecovery]) -> anyhow::Result<Don
             // the underlying LegacyRecovery. So it will be intentionally
             // less efficient
             let temp_receipts = e.receipts.as_ref().expect("no receipts field");
-            let destinations_cast: Vec<AccountAddress> = temp_receipts
-                .destination
-                .iter()
-                .map(|&a| a.try_into().expect("could not cast LegacyAdresss"))
-                .collect();
+
             // this resource should now show the split numbers
             let cast_receipts = ReceiptsResourceV7 {
-                destination: destinations_cast,
+                destination: temp_receipts.clone().destination,
                 cumulative: temp_receipts.clone().cumulative,
                 last_payment_timestamp: temp_receipts.clone().last_payment_timestamp,
                 last_payment_value: temp_receipts.clone().last_payment_value,
                 audit_not_found: vec![],
             };
 
-            let user: AccountAddress = e
-                .account
-                .expect("no legacy_account")
-                .try_into()
-                .expect("could not cast LegacyAddress");
-
-            list.insert(user, cast_receipts);
+            list.insert(e.account.unwrap(), cast_receipts);
         });
 
     Ok(DonorReceipts {
@@ -89,7 +79,7 @@ pub fn rebuild_donor_receipts(recovery: &[LegacyRecovery]) -> anyhow::Result<Don
     })
 }
 
-pub fn rebuild_cw_cumu_deposits(recovery: &[LegacyRecovery]) -> anyhow::Result<AllCommWallets> {
+pub fn rebuild_cw_cumu_deposits(recovery: &[LegacyRecoveryV6]) -> anyhow::Result<AllCommWallets> {
     let mut total_cumu = 0;
     let mut list = BTreeMap::new();
 
@@ -111,13 +101,7 @@ pub fn rebuild_cw_cumu_deposits(recovery: &[LegacyRecovery]) -> anyhow::Result<A
                 audit_deposits_with_receipts: 0,
             };
 
-            let user: AccountAddress = e
-                .account
-                .expect("could not get account addr")
-                .try_into()
-                .expect("could not cast LegacyAddress");
-
-            list.insert(user, cast_receipts);
+            list.insert(e.account.unwrap(), cast_receipts);
         });
 
     Ok(AllCommWallets {
@@ -162,50 +146,19 @@ pub fn update_cw_with_donor(cw: &mut AllCommWallets, donors: &mut DonorReceipts)
 
 #[test]
 fn test_cw_recovery() {
-    use crate::supply::populate_supply_stats_from_legacy;
-    use crate::supply::SupplySettings;
-    use crate::{genesis_functions, parse_json};
-    use libra_types::legacy_types::legacy_address::LegacyAddress;
+    use crate::parse_json;
 
     let p = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_export_recovery.json");
 
-    let mut recovery = parse_json::recovery_file_parse(p).unwrap();
-
-    // test splitting the coin and get scale factor
-    let settings = SupplySettings {
-        target_supply: 100_000_000_000.0, // 100B times scaling factor
-        target_future_uses: 0.70,
-        years_escrow: 7,
-        map_dd_to_slow: vec![
-            // FTW
-            "3A6C51A0B786D644590E8A21591FA8E2"
-                .parse::<LegacyAddress>()
-                .unwrap(),
-            // tip jar
-            "2B0E8325DEA5BE93D856CFDE2D0CBA12"
-                .parse::<LegacyAddress>()
-                .unwrap(),
-        ],
-    };
-    let mut supply =
-        populate_supply_stats_from_legacy(&recovery, &settings.map_dd_to_slow).unwrap();
-    supply.set_ratios_from_settings(&settings).unwrap();
-    dbg!(&supply);
-
-    // Check calcs with no supply scaling
-    let t = rebuild_cw_cumu_deposits(&recovery).unwrap();
-    assert!(t.total_deposits == 1208569282086623, "cumu not equal");
-
-    recovery.iter_mut().for_each(|e| {
-        genesis_functions::util_scale_all_coins(e, &supply).unwrap();
-    });
+    let recovery = parse_json::recovery_file_parse(p).unwrap();
 
     // scaled
     let t = rebuild_cw_cumu_deposits(&recovery).unwrap();
-    assert!(t.total_deposits == 50324012162657770, "cumu not equal");
-
-    assert!(t.list.len() == 134, "len not equal");
+    // dbg!(&t.total_deposits);
+    assert!(t.total_deposits == 52488307886371112, "cumu not equal");
+    // dbg!(&t.list.len());
+    assert!(t.list.len() == 145, "len not equal");
 }
 
 #[test]
@@ -215,25 +168,7 @@ fn test_receipt_recovery() {
     let p = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_export_recovery.json");
 
-    let recovery = parse_json::recovery_file_parse(p.clone()).unwrap();
-
-    // first, test with no split
-    // let split_factor = 1.0;
-
-    let t = rebuild_donor_receipts(&recovery).unwrap();
-    let test_addr = "00000000000000000000000000000000123c6ca26a6ed35ad00868b33b4a98d1"
-        .parse::<AccountAddress>()
-        .unwrap();
-
-    dbg!(&t.list.get(&test_addr));
-
-    if let Some(t) = t.list.get(&test_addr) {
-        assert!(t.cumulative[0] == 6555272577, "cumu does not match");
-    }
-
-    // Do it again with a split factor
     let recovery = parse_json::recovery_file_parse(p).unwrap();
-    // let split_factor = 2.0;
 
     let t = rebuild_donor_receipts(&recovery).unwrap();
     let test_addr = "00000000000000000000000000000000123c6ca26a6ed35ad00868b33b4a98d1"
@@ -241,7 +176,7 @@ fn test_receipt_recovery() {
         .unwrap();
 
     if let Some(t) = t.list.get(&test_addr) {
-        assert!(t.cumulative[0] == 6555272577, "cumu does not match");
+        assert!(t.cumulative[0] == 231401421509, "cumu does not match");
     }
 }
 
@@ -250,21 +185,6 @@ fn test_update_cw_from_receipts() {
     use crate::parse_json;
     let p = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/sample_export_recovery.json");
-    let recovery = parse_json::recovery_file_parse(p.clone()).unwrap();
-
-    let (_dr, cw) = prepare_cw_and_receipts(&recovery).unwrap();
-
-    let v = cw
-        .list
-        .get(&AccountAddress::from_hex_literal("0x7209c13e1253ad8fb2d96a30552052aa").unwrap())
-        .unwrap();
-
-    let original_value = 162900862;
-    assert!(v.cumulative_value == original_value, "cumu value not equal");
-    assert!(
-        v.audit_deposits_with_receipts == 116726512,
-        "receipts value not equal"
-    );
 
     let recovery = parse_json::recovery_file_parse(p).unwrap();
 
@@ -275,10 +195,5 @@ fn test_update_cw_from_receipts() {
         .get(&AccountAddress::from_hex_literal("0x7209c13e1253ad8fb2d96a30552052aa").unwrap())
         .unwrap();
 
-    assert!(v.cumulative_value == original_value, "cumu value not equal");
-
-    // assert!(
-    //     v.audit_deposits_with_receipts == 116726512,
-    //     "receipts value not equal"
-    // );
+    assert!(v.cumulative_value == 6405927426, "cumu value not equal");
 }

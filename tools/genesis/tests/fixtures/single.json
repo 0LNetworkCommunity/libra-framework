@@ -1,0 +1,164 @@
+[
+  {
+    "account": "0000000000000000000000000000000045558bad546e6159020871f7e5d094d7",
+    "auth_key": "0xade4bead273c201aa89f2b4239085e6b45558bad546e6159020871f7e5d094d7",
+    "role": "EndUser",
+    "balance": {
+      "coin": 557040689585
+    },
+    "val_cfg": null,
+    "val_operator_cfg": null,
+    "miner_state": {
+      "previous_proof_hash": [
+        227,
+        193,
+        28,
+        59,
+        2,
+        174,
+        229,
+        244,
+        38,
+        15,
+        32,
+        138,
+        49,
+        89,
+        122,
+        159,
+        162,
+        97,
+        28,
+        62,
+        157,
+        76,
+        161,
+        58,
+        170,
+        216,
+        25,
+        222,
+        13,
+        182,
+        228,
+        117
+      ],
+      "verified_tower_height": 1627,
+      "latest_epoch_mining": 656,
+      "count_proofs_in_epoch": 4,
+      "epochs_mining": 12,
+      "contiguous_epochs_mining": 12
+    },
+    "comm_wallet": null,
+    "currency_info": null,
+    "ancestry": {
+      "tree": [
+        "0000000000000000000000000000000046a7a744b5d33c47f6b20766f8088b10",
+        "00000000000000000000000000000000bcb79d7c813062f41b221e58b21203b4",
+        "000000000000000000000000000000006a9f0fa0b6bd687f4343d8880b40f697",
+        "000000000000000000000000000000004c95e7b998b4e66ef666fe12930a4d5c"
+      ]
+    },
+    "receipts": {
+      "destination": [
+        "00000000000000000000000000000000c906f67f626683b77145d1f20c1a753b",
+        "000000000000000000000000000000003a6c51a0b786d644590e8a21591fa8e2",
+        "000000000000000000000000000000002b0e8325dea5be93d856cfde2d0cba12",
+        "00000000000000000000000000000000b31bd7796bc113013a2bf6c3953305fd",
+        "000000000000000000000000000000002057bcfb0189b7fd0aba7244ba271661",
+        "000000000000000000000000000000001367b68c86cb27fa7215d9f75a26eb8f",
+        "000000000000000000000000000000008bbd842055e8c0312c2158ec4f3c5865",
+        "00000000000000000000000000000000bc25f79fef8a981be4636ac1a2d6f587",
+        "00000000000000000000000000000000bca50d10041fa111d1b44181a264a599"
+      ],
+      "cumulative": [
+        31783513211,
+        30512886089,
+        385283640681,
+        20432620573,
+        19819989515,
+        25634452956,
+        119234517,
+        161727653092,
+        119513973039
+      ],
+      "last_payment_timestamp": [
+        1645559263,
+        1645559263,
+        1652226417,
+        1645559263,
+        1645559263,
+        1645559263,
+        1696210102,
+        1652226417,
+        1652226417
+      ],
+      "last_payment_value": [
+        31765012280,
+        30495122330,
+        334019899694,
+        20420723504,
+        19808448059,
+        25619523402,
+        11020391,
+        161727653092,
+        119513973039
+      ]
+    },
+    "cumulative_deposits": null,
+    "slow_wallet": {
+      "unlocked": 557040689585,
+      "transferred": 18108994041481
+    },
+    "slow_wallet_list": null,
+    "user_burn_preference": null,
+    "my_vouches": null,
+    "tx_schedule": null,
+    "fee_maker": null,
+    "jail": null,
+    "my_pledge": {
+      "list": [
+        {
+          "address_of_beneficiary": "0000000000000000000000000000000000000000000000000000000000000000",
+          "amount": 4003061084427,
+          "pledge": 4003061084427,
+          "epoch_of_last_deposit": 0,
+          "lifetime_pledged": 4018361893520,
+          "lifetime_withdrawn": 15300809093
+        }
+      ]
+    },
+    "burn_counter": null,
+    "donor_voice_registry": null,
+    "epoch_fee_maker_registry": null,
+    "match_index": null,
+    "validator_universe": null
+  },
+  {
+    "account": "0000000000000000000000000000000000000000000000000000000000000003",
+    "auth_key": "0x0000000000000000000000000000000000000000000000000000000000000003",
+    "role": "EndUser",
+    "balance": null,
+    "val_cfg": null,
+    "val_operator_cfg": null,
+    "miner_state": null,
+    "comm_wallet": null,
+    "currency_info": null,
+    "ancestry": null,
+    "receipts": null,
+    "cumulative_deposits": null,
+    "slow_wallet": null,
+    "slow_wallet_list": null,
+    "user_burn_preference": null,
+    "my_vouches": null,
+    "tx_schedule": null,
+    "fee_maker": null,
+    "jail": null,
+    "my_pledge": null,
+    "burn_counter": null,
+    "donor_voice_registry": null,
+    "epoch_fee_maker_registry": null,
+    "match_index": null,
+    "validator_universe": null
+  }
+]

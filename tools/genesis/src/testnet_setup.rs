@@ -1,4 +1,4 @@
-use crate::{genesis_builder, parse_json, supply::SupplySettings};
+use crate::{genesis_builder, parse_json};
 use diem_genesis::config::{HostAndPort, ValidatorConfiguration};
 use libra_config::validator_config;
 use libra_types::{exports::NamedChain, legacy_types::fixtures::TestPersona};
@@ -9,7 +9,7 @@ pub async fn setup(
     ip_list: &[Ipv4Addr],
     chain: NamedChain,
     data_path: PathBuf,
-    supply_settings: &Option<SupplySettings>,
+    // supply_settings: &Option<SupplySettings>,
     legacy_data_path: Option<PathBuf>,
 ) -> anyhow::Result<()> {
     let db_path = data_path.join("data");
@@ -72,7 +72,7 @@ pub async fn setup(
         data_path,
         true,
         &mut recovery,
-        supply_settings.to_owned(),
+        // supply_settings.to_owned(),
         chain,
         Some(val_cfg),
     )?;

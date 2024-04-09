@@ -41,7 +41,7 @@ pub struct TxsCli {
     #[clap(short, long)]
     pub test_private_key: Option<String>,
 
-    /// optional, use a transaction profile used in libra.yaml
+    /// optional, use a transaction profile used in libra-cli-config.yaml
     /// is mutually exclusive with --tx-cost
     #[clap(long)]
     pub tx_profile: Option<TxType>,
@@ -167,7 +167,7 @@ impl TxsCli {
         .await?;
 
         if self.tx_cost.is_some() && self.tx_profile.is_some() {
-            println!("ERROR: --tx-cost and --tx-profile are mutually exclusive. Either set the costs explicitly or choose a profile in libra.yaml, exiting");
+            println!("ERROR: --tx-cost and --tx-profile are mutually exclusive. Either set the costs explicitly or choose a profile in libra-cli-config.yaml, exiting");
         }
         let tx_cost = self
             .tx_cost

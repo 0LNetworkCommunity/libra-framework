@@ -18,11 +18,8 @@ module ol_framework::mock {
   use ol_framework::libra_coin::{Self, LibraCoin};
   use diem_framework::transaction_fee;
   use ol_framework::ol_account;
-  use ol_framework::tower_state;
-  use ol_framework::vdf_fixtures;
   use ol_framework::epoch_helper;
   use ol_framework::musical_chairs;
-  use ol_framework::globals;
   use diem_framework::block;
 
   // use diem_std::debug::print;
@@ -53,7 +50,7 @@ module ol_framework::mock {
   public fun mock_case_1(vm: &signer, addr: address){
       assert!(stake::is_valid(addr), 01);
       stake::mock_performance(vm, addr, 100, 10);
-      let (compliant, _, _, _) = grade::get_validator_grade(addr, 100);
+      let (compliant, _, _) = grade::get_validator_grade(addr);
       assert!(compliant, 01);
     }
 
@@ -63,7 +60,8 @@ module ol_framework::mock {
     public fun mock_case_4(vm: &signer, addr: address){
       assert!(stake::is_valid(addr), 01);
       stake::mock_performance(vm, addr, 0, 100); // 100 failing proposals
-      let (compliant, _, _, _) = grade::get_validator_grade(addr, 0);
+      // let (compliant, _, _, _) = grade::get_validator_grade(addr, 0);
+      let (compliant, _, _) = grade::get_validator_grade(addr);
       assert!(!compliant, 02);
     }
 
@@ -81,26 +79,6 @@ module ol_framework::mock {
         i = i + 1;
       };
 
-    }
-
-    //////// TOWER ///////
-    #[test_only]
-    public fun tower_default(root: &signer) {
-      let vals = stake::get_current_validators();
-      tower_state::set_difficulty(root, globals::get_vdf_difficulty_baseline(), globals::get_vdf_security_baseline()); // original fixtures pre-wesolowski change.
-      let i = 0;
-      while (i < vector::length(&vals)) {
-
-        let addr = vector::borrow(&vals, i);
-        tower_state::test_helper_init_val(
-            &account::create_signer_for_test(*addr),
-            vdf_fixtures::alice_0_easy_chal(),
-            vdf_fixtures::alice_0_easy_sol(),
-            vdf_fixtures::easy_difficulty(),
-            vdf_fixtures::security(),
-        );
-        i = i + 1;
-      };
     }
 
     //////// PROOF OF FEE ////////
@@ -191,7 +169,6 @@ module ol_framework::mock {
     drip: bool) {
       system_addresses::assert_ol(root);
 
-
       let mint_cap = if (coin::is_coin_initialized<LibraCoin>()) {
          libra_coin::extract_mint_cap(root)
       } else {
@@ -272,7 +249,7 @@ module ol_framework::mock {
         let sig = account::create_signer_for_test(*val);
 
         let (_sk, pk, pop) = stake::generate_identity();
-        // stake::initialize_test_validator(&pk, &pop, &sig, 100, true, true);
+
         validator_universe::test_register_validator(root, &pk, &pop, &sig, 100,
         true, true);
 
@@ -298,11 +275,17 @@ module ol_framework::mock {
     // the reconfiguration module must run last, since no other
     // transactions or operations can happen after the reconfig.
     public fun trigger_epoch(root: &signer) {
-        let old_epoch = reconfiguration::get_current_epoch();
+      trigger_epoch_exactly_at(
+        root,
+        reconfiguration::get_current_epoch(),
+        block::get_current_block_height()
+      );
+    }
+
+    public fun trigger_epoch_exactly_at(root: &signer, old_epoch: u64, round: u64) {
         timestamp::fast_forward_seconds(EPOCH_DURATION);
 
-        epoch_boundary::ol_reconfigure_for_test(root, old_epoch,
-        block::get_current_block_height());
+        epoch_boundary::ol_reconfigure_for_test(root, old_epoch, round);
 
         // always advance
         assert!(reconfiguration::get_current_epoch() > old_epoch,
@@ -312,15 +295,6 @@ module ol_framework::mock {
         assert!(reconfiguration::get_current_epoch() ==
         epoch_helper::get_current_epoch(), 666);
     }
-
-  //   // function to deposit into network fee account
-  //   public fun mock_network_fees(vm: &signer, amount: u64) {
-  //     Testnet::assert_testnet(vm);
-  //     let c = Diem::mint<GAS>(vm, amount);
-  //     let c_value = Diem::value(&c);
-  //     assert!(c_value == amount, 777707);
-  //     TransactionFee::pay_fee(c);
-  //   }
 
 
   //////// META TESTS ////////

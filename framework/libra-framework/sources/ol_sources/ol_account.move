@@ -20,7 +20,7 @@ module ol_framework::ol_account {
     use ol_framework::community_wallet;
     use ol_framework::donor_voice;
 
-    // use diem_std::debug::print;
+    use diem_std::debug::print;
 
     #[test_only]
     use std::vector;
@@ -32,11 +32,12 @@ module ol_framework::ol_account {
     friend diem_framework::genesis;
     friend diem_framework::transaction_fee;
     friend ol_framework::genesis_migration;
-    friend ol_framework::last_goodbye;
     friend ol_framework::rewards;
 
     #[test_only]
     friend ol_framework::test_multi_action;
+    #[test_only]
+    friend ol_framework::test_slow_wallet;
 
     /// Account does not exist.
     const EACCOUNT_NOT_FOUND: u64 = 1;
@@ -66,9 +67,6 @@ module ol_framework::ol_account {
     /// below 1,000 coins
     const ETRANSFER_TOO_HIGH_FOR_INIT: u64 = 10;
 
-    /// what limit should be set for new account creation while using transfer()
-    const MAX_COINS_FOR_INITIALIZE: u64 = 1000 * 1000000;
-
     /// community wallets cannot use transfer, they have a dedicated workflow
     const ENOT_FOR_CW: u64 = 11;
 
@@ -79,6 +77,15 @@ module ol_framework::ol_account {
     /// malformed state. And says, "My advice is to not let the boys in".
     const ETOMBSTONE: u64 = 21;
 
+    /// This account is malformed, it does not have the necessary burn tracker struct
+    const ENO_TRACKER_INITIALIZED: u64 = 13;
+
+
+    ///////// CONSTS /////////
+    /// what limit should be set for new account creation while using transfer()
+    const MAX_COINS_FOR_INITIALIZE: u64 = 1000 * 1000000;
+
+    /// tracks the burns relative to each account
     struct BurnTracker has key {
       prev_supply: u64,
       prev_balance: u64,
@@ -106,31 +113,49 @@ module ol_framework::ol_account {
     public fun test_ol_create_resource_account(user: &signer, seed: vector<u8>): (signer, account::SignerCapability) {
       let (resource_account_sig, cap) = account::create_resource_account(user, seed);
       coin::register<LibraCoin>(&resource_account_sig);
+
+      receipts::user_init(&resource_account_sig);
+      maybe_init_burn_tracker(&resource_account_sig);
+      ancestry::adopt_this_child(user, &resource_account_sig);
+
       (resource_account_sig, cap)
     }
 
+    // Deprecation Notice: creating resource accounts are disabled in Libra.
+    // Similar methods exist in multi_action::finalize_and_cage) which is
+    // a wrapper for  and multi_sig::migrate_with_owners
+    // if your are testing this, see below a test_only option
 
-    /// A wrapper to create a NEW account and register it to receive GAS.
-    fun ol_create_resource_account(user: &signer, seed: vector<u8>): (signer, account::SignerCapability) {
-      let (resource_account_sig, cap) = account::create_resource_account(user, seed);
-      coin::register<LibraCoin>(&resource_account_sig);
-      (resource_account_sig, cap)
-    }
+    /// A wrapper to create a NEW account and register it to receive
+    // GAS.
+    // fun _ol_create_resource_account(user: &signer, seed: vector<u8>): (signer, account::SignerCapability) {
+    //   let (resource_account_sig, cap) = account::create_resource_account(user, seed);
+    //   coin::register<LibraCoin>(&resource_account_sig);
+
+    //   init_from_sig_impl(user, &resource_account_sig);
+    //   (resource_account_sig, cap);
+    // }
 
     fun create_impl(sender: &signer, maybe_new_user: address) {
         // prevent reincarnation of accounts where there may be malformed state
         // during pending deletion.
         assert!(!account::is_tombstone(maybe_new_user), error::already_exists(ETOMBSTONE));
-        let new_signer = account::create_account(maybe_new_user);
-        coin::register<LibraCoin>(&new_signer);
-        receipts::user_init(&new_signer);
-        init_burn_tracker(&new_signer);
-        ancestry::adopt_this_child(sender, &new_signer);
+        let new_account_sig = account::create_account(maybe_new_user);
+        init_from_sig_impl(sender, &new_account_sig);
     }
 
-    // #[test_only]
-    /// Helper for tests to create acounts
+    /// all account initialization happens here after a signer is created
+    fun init_from_sig_impl(sender: &signer, new_account_sig: &signer) {
+        coin::register<LibraCoin>(new_account_sig);
+        receipts::user_init(new_account_sig);
+        maybe_init_burn_tracker(new_account_sig);
+        ancestry::adopt_this_child(sender, new_account_sig);
+    }
+
+
+    /// Helper for smoke tests to create acounts.
     /// Belt and suspenders
+    // TODO: should check chain ID is not mainnet.
     public entry fun create_account(root: &signer, auth_key: address) {
         system_addresses::assert_ol(root);
         create_impl(root, auth_key);
@@ -141,27 +166,47 @@ module ol_framework::ol_account {
     /// The remedy is to run the authkey rotation
     /// even if it hasn't changed, such that the lookup table (OriginatingAddress) is created and populated with legacy accounts.
     public(friend) fun vm_create_account_migration(
-        root: &signer,
+        framework: &signer,
         new_account: address,
         auth_key: vector<u8>,
-        // value: u64,
     ): signer {
-        system_addresses::assert_ol(root);
-        // chain_status::assert_genesis(); TODO
-        let new_signer = account::vm_create_account(root, new_account, auth_key);
+        system_addresses::assert_diem_framework(framework);
+        // TODO: only run at genesis
+        // chain_status::assert_genesis();
+        let new_signer = account::vm_create_account(framework, new_account, auth_key);
         // fake "rotate" legacy auth key  to itself so that the lookup is populated
-        account::vm_migrate_rotate_authentication_key_internal(root, &new_signer, auth_key);
+        account::vm_migrate_rotate_authentication_key_internal(framework, &new_signer, auth_key);
         // check we can in fact look up the account
         let auth_key_as_address = from_bcs::to_address(auth_key);
         let lookup_addr = account::get_originating_address(auth_key_as_address);
-        assert!(
-          lookup_addr == signer::address_of(&new_signer),
-          error::invalid_state(ECANT_MATCH_ADDRESS_IN_LOOKUP)
-        );
 
+        let sig_addr = signer::address_of(&new_signer);
+        if (lookup_addr != sig_addr) {
+          // print(&lookup_addr);
+          print(&sig_addr);
+        };
+
+        // TODO: create migration path for duplicates
+        // assert!(
+        //   lookup_addr == signer::address_of(&new_signer),
+        //   error::invalid_state(ECANT_MATCH_ADDRESS_IN_LOOKUP)
+        // );
         coin::register<LibraCoin>(&new_signer);
-        init_burn_tracker(&new_signer);
+        maybe_init_burn_tracker(&new_signer);
         new_signer
+    }
+    /// Migrate the tracker. Depends on the BurnTracker having been initialized
+    /// on  account migration
+    /// Private. So it's only called on genesis
+    fun fork_migrate_burn_tracker(framework: &signer, user:
+    &signer, prev_supply: u64, prev_balance: u64, burn_at_last_calc: u64,
+    cumu_burn: u64) acquires BurnTracker {
+      system_addresses::assert_diem_framework(framework);
+      let b = borrow_global_mut<BurnTracker>(signer::address_of(user));
+      b.prev_supply = prev_supply;
+      b.prev_balance = prev_balance;
+      b.burn_at_last_calc = burn_at_last_calc;
+      b.cumu_burn = cumu_burn;
     }
 
 
@@ -379,7 +424,7 @@ module ol_framework::ol_account {
     /// return the LibraCoin balance as tuple (unlocked, total)
     // TODO v7: consolidate balance checks here, not in account, slow_wallet, or coin
     public fun balance(addr: address): (u64, u64) {
-      slow_wallet::balance(addr)
+      slow_wallet::unlocked_and_total(addr)
     }
 
     #[view]
@@ -389,7 +434,7 @@ module ol_framework::ol_account {
     public fun real_balance(addr: address): (u64, u64) {
       let final = libra_coin::get_final_supply();
       let current = libra_coin::supply();
-      let (unlocked, total) = slow_wallet::balance(addr);
+      let (unlocked, total) = slow_wallet::unlocked_and_total(addr);
 
       let unlocked_indexed = math64::mul_div(unlocked, final, current);
       let total_indexed = math64::mul_div(total, final, current);
@@ -435,7 +480,7 @@ module ol_framework::ol_account {
     // on new account creation we need the burn tracker created
     // note return quietly if it's already initialized, so we can use it
     // in the creation and tx flow
-    fun init_burn_tracker(sig: &signer) {
+    fun maybe_init_burn_tracker(sig: &signer) {
       let addr = signer::address_of(sig);
       if (exists<BurnTracker>(addr)) return;
 
@@ -452,22 +497,22 @@ module ol_framework::ol_account {
         prev_balance: current_user_balance,
         burn_at_last_calc: 0,
         cumu_burn: 0,
-      })
+      });
     }
 
   // NOTE: this must be called before immediately after any coins are deposited or withrdrawn.
   fun maybe_update_burn_tracker_impl(addr: address) acquires BurnTracker {
-    if (!exists<BurnTracker>(addr)) return;// return quietly as the VM may call this
-
+    assert!(exists<BurnTracker>(addr), error::invalid_state(ENO_TRACKER_INITIALIZED));
     let state = borrow_global_mut<BurnTracker>(addr);
     let (_, current_user_balance) = balance(addr);
     // 1. how much burn happened in between
     // this must be true but we
     // don't abort since the VM may be calling this
     let current_supply = libra_coin::supply();
-    let original_supply = libra_coin::get_final_supply();
-    if (original_supply > current_supply) { // update if there was a change in supply
-      let burn_in_period = original_supply - current_supply;
+    // has there been a change in
+    // supply since we last used this account
+    if (state.prev_supply > current_supply) {
+      let burn_in_period = state.prev_supply - current_supply;
 
       if (
         state.prev_balance > 0 &&// if there was a user balance
@@ -484,12 +529,13 @@ module ol_framework::ol_account {
             assume (state.burn_at_last_calc + attributed_burn) < MAX_U64;
           };
 
-          state.cumu_burn = state.burn_at_last_calc + attributed_burn;
+          // get cumulative burn
+          state.cumu_burn = state.cumu_burn + attributed_burn;
           // now change last calc
           state.burn_at_last_calc = attributed_burn;
           // reset trackers for next tx
           state.prev_supply = current_supply;
-
+          // user's balance for next time we check
           state.prev_balance = current_user_balance;
         }
       }
@@ -497,6 +543,7 @@ module ol_framework::ol_account {
       state.prev_balance == 0 &&
       current_user_balance > 0
     ){
+      state.prev_supply = current_supply;
       state.prev_balance = current_user_balance;
     }
   }
@@ -643,14 +690,13 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
     public fun test_transfer_to_resource_account_ol(root: &signer, alice: &signer,
     core: &signer) acquires BurnTracker{
-        // use diem_framework::resource_account;
-        let (resource_account, _) = ol_create_resource_account(alice, vector[]);
-
-        let resource_acc_addr = signer::address_of(&resource_account);
-
         let (burn_cap, mint_cap) =
         ol_framework::libra_coin::initialize_for_test(core);
         libra_coin::test_set_final_supply(root, 1000); // dummy to prevent fail
+
+        let (resource_account, _) = test_ol_create_resource_account(alice, vector[]);
+        let resource_acc_addr = signer::address_of(&resource_account);
+
         account::maybe_initialize_duplicate_originating(root);
         create_account(root, signer::address_of(alice));
         coin::deposit(signer::address_of(alice), coin::mint(10000, &mint_cap));

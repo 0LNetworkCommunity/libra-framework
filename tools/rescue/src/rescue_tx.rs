@@ -54,7 +54,7 @@ impl RescueTxOpts {
             )?;
             Transaction::GenesisTransaction(WriteSetPayload::Direct(cs))
         } else {
-            anyhow::bail!("no options provided, need a --framework-upgrade or a --script-path");
+            anyhow::bail!("no options provided, need a --framework_mrb_file or a --script-path");
         };
 
         let mut output = self.blob_path.clone().unwrap_or(db_path);

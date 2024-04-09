@@ -22,7 +22,6 @@ module ol_framework::receipts {
   // use diem_std::debug::print;
 
   friend ol_framework::ol_account;
-  friend ol_framework::last_goodbye;
 
   struct UserReceipts has key, drop {
     destination: vector<address>,

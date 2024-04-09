@@ -83,7 +83,7 @@ impl GovernanceTxs {
             GovernanceTxs::Vote {
                 proposal_id,
                 should_fail,
-            } => diem_governance_ol_vote(*proposal_id, !*should_fail), // NOTE: we are inverting the BOOL here.
+            } => diem_governance_ol_vote(*proposal_id, !*should_fail), // NOTE: the default is to vote for "pass" so we invert the BOOL versus what diem_governance.move expects.
             GovernanceTxs::Resolve {
                 proposal_id,
                 proposal_script_dir,

@@ -1,6 +1,6 @@
 [package]
 name = "libra-genesis-tools"
-version = "0.1.0"
+version = { workspace = true }
 
 # Workspace inherited keys
 authors = { workspace = true }
@@ -48,4 +48,3 @@ ureq = { workspace = true }
 
 [dev-dependencies]
 #diem-sdk = { workspace = true }
-

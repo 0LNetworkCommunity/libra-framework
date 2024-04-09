@@ -36,6 +36,7 @@
 module ol_framework::donor_voice {
     use std::vector;
     use std::signer;
+    use std::error;
     use diem_framework::system_addresses;
 
     // use diem_std::debug::print;
@@ -44,30 +45,8 @@ module ol_framework::donor_voice {
     friend ol_framework::community_wallet_init;
     friend ol_framework::donor_voice_txs;
 
-    /// Not initialized as a Donor Voice account.
-    const ENOT_INIT_DONOR_VOICE: u64 = 1;
-    /// User is not a donor and cannot vote on this account
-    const ENOT_AUTHORIZED_TO_VOTE: u64 = 2;
-    /// Could not find a pending transaction by this GUID
-    const ENO_PEDNING_TRANSACTION_AT_UID: u64 = 3;
-    /// No enum for this number
-    const ENOT_VALID_STATE_ENUM: u64 = 4;
-    /// No enum for this number
-    const EMULTISIG_NOT_INIT: u64 = 5;
-    /// No enum for this number
-    const ENO_VETO_ID_FOUND: u64 = 6;
-
-    const SCHEDULED: u8 = 1;
-    const VETO: u8 = 2;
-    const PAID: u8 = 3;
-
-    /// number of epochs to wait before a transaction is executed
-    /// Veto can happen in this time
-    /// at the end of the third epoch from when multisig gets consensus
-    const DEFAULT_PAYMENT_DURATION: u64 = 3;
-    /// minimum amount of time to evaluate when one donor flags for veto.
-    const DEFAULT_VETO_DURATION: u64 = 7;
-
+    /// Root registry not initialized
+    const ENOT_REGISTRY_NOT_INIT: u64 = 1;
 
     // root registry for the Donor Voice accounts
     struct Registry has key {
@@ -91,17 +70,6 @@ module ol_framework::donor_voice {
         });
       };
     }
-
-    public(friend) fun migrate_root_registry(vm: &signer, list: vector<address>) {
-      system_addresses::assert_ol(vm);
-      if (!is_root_init()) {
-        move_to<Registry>(vm, Registry {
-          list,
-          liquidation_queue: vector::empty<address>(),
-        });
-      };
-    }
-
     //////// GETTERS ///////
 
     public fun is_root_init():bool {
@@ -116,7 +84,7 @@ module ol_framework::donor_voice {
 
     // add to root registry
     fun add_to_registry(sig: &signer) acquires Registry {
-      if (!exists<Registry>(@ol_framework)) return;
+      assert!(exists<Registry>(@ol_framework), error::invalid_state(ENOT_REGISTRY_NOT_INIT));
 
       let addr = signer::address_of(sig);
       let list = get_root_registry();
@@ -150,7 +118,6 @@ module ol_framework::donor_voice {
         return vector::empty<address>()
       }
     }
-
 
   #[view]
   /// list of accounts that are pending liquidation after a successful vote to liquidate
