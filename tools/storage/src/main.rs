@@ -9,6 +9,7 @@ use storage::read_snapshot::manifest_to_json;
 
 #[derive(Parser)]
 #[clap(name = "libra storage", author, version)]
+#[allow(clippy::large_enum_variant)]
 enum StorageCli {
     #[clap(subcommand)]
     Db(DBTool),
