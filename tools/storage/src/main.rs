@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-
 use anyhow::Result;
 use clap::Parser;
 use diem_db_tool::DBTool;
@@ -26,6 +25,7 @@ async fn main() -> Result<()> {
     Logger::new().level(Level::Info).init();
     let _mp = MetricsPusher::start(vec![]);
 
+
     match StorageCli::parse() {
         StorageCli::Db(tool) => {
             tool.run().await?;
@@ -37,5 +37,8 @@ async fn main() -> Result<()> {
             manifest_to_json(manifest_path, out_path).await;
         }
     }
+
+    DBTool::parse().run().await?;
+
     Ok(())
 }
