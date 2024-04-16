@@ -1,9 +1,9 @@
-use std::path::PathBuf;
 use anyhow::Result;
 use clap::Parser;
 use diem_db_tool::DBTool;
 use diem_logger::{Level, Logger};
 use diem_push_metrics::MetricsPusher;
+use std::path::PathBuf;
 use storage::read_snapshot::manifest_to_json;
 
 #[derive(Parser)]
@@ -24,7 +24,6 @@ enum StorageCli {
 async fn main() -> Result<()> {
     Logger::new().level(Level::Info).init();
     let _mp = MetricsPusher::start(vec![]);
-
 
     match StorageCli::parse() {
         StorageCli::Db(tool) => {
