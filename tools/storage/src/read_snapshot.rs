@@ -7,19 +7,18 @@ use diem_backup_cli::{
     },
     storage::{FileHandle, FileHandleRef},
 };
-
-use tokio::{fs::OpenOptions, io::AsyncRead};
-
 use diem_types::account_address::AccountAddress;
 use diem_types::account_state::AccountState;
 use diem_types::state_store::state_key::{StateKey, StateKeyInner};
 use diem_types::state_store::state_value::StateValue;
-
+use libra_types::legacy_types::legacy_recovery_v6;
+use serde_json::json;
 use std::collections::HashMap;
 use std::{
     fs,
     path::{Path, PathBuf},
 };
+use tokio::{fs::OpenOptions, io::AsyncRead};
 
 #[cfg(test)]
 use libra_types::legacy_types::legacy_recovery_v6::{get_legacy_recovery, AccountRole};
@@ -135,6 +134,34 @@ fn test_parse_manifest() {
     // dbg!(&r.epoch);
 }
 
+pub async fn manifest_to_json(manifest_path: PathBuf, out_path: Option<PathBuf>) {
+    let snapshot_manifest = load_snapshot_manifest(&manifest_path).expect("parse manifest");
+    let archive_path = manifest_path.parent().unwrap();
+    let account_states = accounts_from_snapshot_backup(snapshot_manifest, archive_path)
+        .await
+        .expect("could not parse snapshot");
+    let mut legacy_recovery_vec = Vec::new();
+    for account_state in account_states.iter() {
+        let legacy_recovery = legacy_recovery_v6::get_legacy_recovery(account_state)
+            .expect("could not get legacy recovery");
+
+        legacy_recovery_vec.push(legacy_recovery);
+    }
+
+    let json = json!(&legacy_recovery_vec);
+    let out = out_path.unwrap_or(manifest_path.parent().unwrap().join("migration.json"));
+    fs::write(out, json.to_string()).expect("could not save file");
+}
+
+#[tokio::test]
+async fn test_export() {
+    use std::str::FromStr;
+    let this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
+    let manifest_path = this_path.join("fixtures/state_epoch_79_ver_33217173.795d/state.manifest");
+    let export_path = this_path.join("json/v6_migration.json");
+    manifest_to_json(manifest_path, Some(export_path)).await;
+}
+
 #[tokio::test]
 async fn test_deserialize_account() {
     use std::str::FromStr;
@@ -147,18 +174,11 @@ async fn test_deserialize_account() {
         .expect("could not parse snapshot");
     let mut legacy_recovery_vec = Vec::new();
     for account_state in account_states.iter() {
-        // println!("----------------------------------------------------");
-        // println!("account_address: {:?}", account_state.get_account_address());
         let legacy_recovery =
             get_legacy_recovery(account_state).expect("could not get legacy recovery");
-        //println!("legacy_recovery: {:?}", legacy_recovery);
+
         legacy_recovery_vec.push(legacy_recovery);
     }
-
-    // let legacy_recovery_vec_json =
-    //     serde_json::to_string(&legacy_recovery_vec).expect("could not create json for state");
-
-    // println!("{}", legacy_recovery_vec_json);
 
     // basic validation of the account state
     let account_count = 23634;
