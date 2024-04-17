@@ -15,27 +15,8 @@ pub struct CurrencyInfoResource {
     fractional_part: u64,
     currency_code: Identifier,
     can_mint: bool,
-    // #[serde(skip)]
-    // mint_events: LegacyEventHandle,
-    // #[serde(skip)]
-    // burn_events: LegacyEventHandle,
-    // #[serde(skip)]
-    // preburn_events: LegacyEventHandle,
-    // #[serde(skip)]
-    // cancel_burn_events: LegacyEventHandle,
-    // #[serde(skip)]
-    // exchange_rate_update_events: LegacyEventHandle,
 }
 
-// #[derive(Clone, Default, Debug)]
-// struct LegacyEventHandle {
-//   count: u64,
-//   key: Vec<u8>
-// }
-// impl MoveStructType for CurrencyInfoResource {
-//     const MODULE_NAME: &'static IdentStr = DIEM_MODULE_IDENTIFIER;
-//     const STRUCT_NAME: &'static IdentStr = ident_str!("CurrencyInfo");
-// }
 
 impl CurrencyInfoResource {
     pub fn try_from_bytes(bytes: &[u8]) -> Result<Self> {
