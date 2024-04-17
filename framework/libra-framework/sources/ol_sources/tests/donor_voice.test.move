@@ -2,6 +2,7 @@
 #[test_only]
 
 module ol_framework::test_donor_voice {
+  use ol_framework::ballot;
   use ol_framework::donor_voice;
   use ol_framework::donor_voice_txs;
   use ol_framework::mock;
@@ -63,7 +64,7 @@ module ol_framework::test_donor_voice {
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
-      assert!(status_enum == 1, 7357006);
+      assert!(status_enum == ballot::get_pending_enum(), 7357006);
       assert!(!completed, 7357007);
 
       // it is not yet scheduled, it's still only a proposal by an admin
@@ -89,7 +90,7 @@ module ol_framework::test_donor_voice {
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
-      assert!(status_enum == 1, 7357006);
+      assert!(status_enum == ballot::get_pending_enum(), 7357006);
       assert!(!completed, 7357007);
 
       // it is not yet scheduled, it's still only a proposal by an admin
@@ -99,7 +100,7 @@ module ol_framework::test_donor_voice {
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
-      assert!(status_enum == 1, 7357006);
+      assert!(status_enum == ballot::get_approved_enum(), 7357006);
       assert!(completed, 7357007); // now vote is completed
 
       // confirm it is scheduled
@@ -162,8 +163,7 @@ module ol_framework::test_donor_voice {
       // Now Carol, along with Bob, as admins have proposed the payment.
       // Now the payment should be scheduled
       let uid_of_transfer = donor_voice_txs::test_propose_payment(carol, donor_voice_address, @0x1000b, 100, b"thanks bob");
-      let (_found, _idx, state) = donor_voice_txs::get_schedule_state(donor_voice_address, &uid_of_transfer);
-      assert!(state == 1, 7357006); // is scheduled
+      assert!(donor_voice_txs::is_scheduled(donor_voice_address, &uid_of_transfer), 7357006); // is scheduled
 
 
       // Eve tries again after it has been scheduled
@@ -189,11 +189,12 @@ module ol_framework::test_donor_voice {
       donor_voice_txs::vote_veto_tx(dave, donor_voice_address, id_num);
 
       // it is not yet scheduled, it's still only a proposal by an admin
-      assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid_of_transfer), 7357010);
+      assert!(!donor_voice_txs::is_scheduled(donor_voice_address,
+      &uid_of_transfer), 7357010);
 
-      // should not be scheduled
-      let (_found, _idx, state) = donor_voice_txs::get_schedule_state(donor_voice_address, &uid_of_transfer);
-      assert!(state == 2, 7357006); // is veto
+      // it's vetoed
+      assert!(donor_voice_txs::is_veto(donor_voice_address, &uid_of_transfer), 7357011);
+
     }
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
@@ -227,7 +228,7 @@ module ol_framework::test_donor_voice {
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
-      assert!(status_enum == 1, 7357006);
+      assert!(status_enum == ballot::get_pending_enum(), 7357006);
       assert!(!completed, 7357007);
 
       // it is not yet scheduled, it's still only a proposal by an admin
@@ -237,7 +238,7 @@ module ol_framework::test_donor_voice {
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
-      assert!(status_enum == 1, 7357006);
+      assert!(status_enum == ballot::get_approved_enum(), 7357006);
       assert!(completed, 7357007); // now vote is completed
 
       // confirm it is scheduled
@@ -255,13 +256,13 @@ module ol_framework::test_donor_voice {
       assert!(bob_balance > bob_balance_pre, 7357005);
       assert!(bob_balance == 10000100, 7357006);
 
-            // the first proposal should be processed
+      // the first proposal should be processed
       let (found, idx, status_enum, completed) =
       donor_voice_txs::get_multisig_proposal_state(donor_voice_address,
       &uid);
       assert!(found, 73570021);
       assert!(idx == 0, 73570022);
-      assert!(status_enum == 1, 73570023);
+      assert!(status_enum == ballot::get_approved_enum(), 73570023);
       assert!(completed, 73570024); // now vote is completed
       assert!(donor_voice_txs::is_paid(donor_voice_address, &uid), 7357002501);
     }
@@ -301,7 +302,7 @@ module ol_framework::test_donor_voice {
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
-      assert!(status_enum == 1, 7357006);
+      assert!(status_enum == ballot::get_pending_enum(), 7357006);
       assert!(!completed, 7357007);
 
       // it is not yet scheduled, it's still only a proposal by an admin
@@ -311,7 +312,7 @@ module ol_framework::test_donor_voice {
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
-      assert!(status_enum == 1, 7357006);
+      assert!(status_enum == ballot::get_approved_enum(), 7357006);
       assert!(completed, 7357007); // now vote is completed
 
       // confirm it is scheduled
@@ -374,7 +375,7 @@ module ol_framework::test_donor_voice {
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &first_uid_bob);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
-      assert!(status_enum == 1, 7357006);
+      assert!(status_enum == ballot::get_pending_enum(), 7357006);
       assert!(!completed, 7357007);
 
       // it is not yet scheduled, it's still only a proposal by an admin
@@ -384,9 +385,8 @@ module ol_framework::test_donor_voice {
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &first_uid_carol);
       assert!(found, 7357009);
       assert!(idx == 0, 73570010);
-      assert!(status_enum == 1, 73570011);
+      assert!(status_enum == ballot::get_approved_enum(), 73570011);
       assert!(completed, 73570012); // now vote is completed
-
       assert!(first_uid_bob == first_uid_carol, 73570021);
 
       // confirm it is scheduled
@@ -398,8 +398,9 @@ module ol_framework::test_donor_voice {
       let second_uid_bob = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_two, b"thanks again!!!");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &second_uid_bob);
       assert!(found, 73570015);
-      assert!(idx == 1, 73570016);
-      assert!(status_enum == 1, 73570017);
+      assert!(idx == 0, 73570016); // since the above payment was approved, now
+      // this is the only one in the multi_auth pending list
+      assert!(status_enum == ballot::get_pending_enum(), 73570017);
       assert!(!completed, 73570018);
 
       // it is not yet scheduled, it's still only a proposal by an admin
@@ -411,20 +412,21 @@ module ol_framework::test_donor_voice {
       &second_uid_carol);
       assert!(second_uid_bob == second_uid_carol, 73570021);
       assert!(found, 73570021);
-      assert!(idx == 1, 73570022); // a new proposal
-      assert!(status_enum == 1, 73570023);
+      assert!(idx == 1, 73570022); // now there should be two payments that
+      // multi_auth has approved, and thus scheduled
+      assert!(status_enum == ballot::get_approved_enum(), 73570023);
       assert!(completed, 73570024); // now vote is completed
 
       // confirm it is scheduled
       assert!(donor_voice_txs::is_scheduled(donor_voice_address, &second_uid_carol), 73570025);
-      assert!(vector::contains(&list, &first_uid_bob), 7357001401);
+      assert!(vector::contains(&list, &first_uid_bob), 73570026);
 
       // PROCESS THE PAYMENT
       // the default timed payment is 3 epochs, we are in epoch 1
       let list = donor_voice_txs::find_by_deadline(donor_voice_address, 3);
-      assert!(vector::contains(&list, &first_uid_bob), 73570026);
+      assert!(vector::contains(&list, &first_uid_bob), 73570027);
       print(&list);
-      assert!(vector::contains(&list, &second_uid_bob), 7357001402);
+      assert!(vector::contains(&list, &second_uid_bob), 73570028);
 
       // process epoch 3 accounts
       // one epoch goes by and then new payment to marlon
@@ -443,19 +445,18 @@ module ol_framework::test_donor_voice {
       let (found, idx, status_enum, completed) =
       donor_voice_txs::get_multisig_proposal_state(donor_voice_address,
       &first_uid_bob);
-      assert!(found, 73570021);
-      assert!(idx == 0, 73570022);
-      assert!(status_enum == 1, 73570023);
-      assert!(completed, 73570024); // now vote is completed
-      assert!(donor_voice_txs::is_paid(donor_voice_address, &first_uid_bob), 7357002501);
+      assert!(found, 73570029);
+      assert!(idx == 0, 73570030);
+      assert!(status_enum == ballot::get_approved_enum(), 73570031);
+      assert!(completed, 73570032); // now vote is completed
+      assert!(donor_voice_txs::is_paid(donor_voice_address, &first_uid_bob), 73570033);
       // the second proposal should be processed
-      let (found, idx, status_enum, completed) =
+      let (found, _idx, status_enum, completed) =
       donor_voice_txs::get_multisig_proposal_state(donor_voice_address,
       &second_uid_bob);
-      assert!(found, 73570021);
-      assert!(idx == 2, 73570022); // shouldbe processed
-      assert!(status_enum == 1, 73570023);
-      assert!(completed, 73570024); // now vote is completed
+      assert!(found, 73570034);
+      assert!(status_enum == ballot::get_approved_enum(), 73570035);
+      assert!(completed, 73570036); // now vote is completed
 
 
 
@@ -518,7 +519,7 @@ module ol_framework::test_donor_voice {
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
-      assert!(status_enum == 1, 7357006);
+      assert!(status_enum == ballot::get_pending_enum(), 7357006);
       assert!(!completed, 7357007);
 
       // it is not yet scheduled, it's still only a proposal by an admin
@@ -527,8 +528,8 @@ module ol_framework::test_donor_voice {
       let uid = donor_voice_txs::test_propose_payment(carol, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_one, b"thanks marlon");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357009);
-      assert!(idx == 0, 73570010);
-      assert!(status_enum == 1, 73570011);
+      assert!(idx == 0, 73570010); // it's index 0 of approved payments
+      assert!(status_enum == ballot::get_approved_enum(), 73570011);
       assert!(completed, 73570012); // now vote is completed
 
       // confirm it is scheduled
@@ -546,8 +547,9 @@ module ol_framework::test_donor_voice {
       let second_uid_bob = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_two, b"thanks again!!!");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &second_uid_bob);
       assert!(found, 73570015);
-      assert!(idx == 1, 73570016);
-      assert!(status_enum == 1, 73570017);
+      assert!(idx == 0, 73570016); // now pending is empty, should be first
+      // index of pending list.
+      assert!(status_enum == ballot::get_pending_enum(), 73570017);
       assert!(!completed, 73570018);
 
       // it is not yet scheduled, it's still only a proposal by an admin
@@ -559,8 +561,9 @@ module ol_framework::test_donor_voice {
       &second_uid_carol);
       assert!(second_uid_bob == second_uid_carol, 73570021);
       assert!(found, 73570021);
-      assert!(idx == 1, 73570022); // a new proposal
-      assert!(status_enum == 1, 73570023);
+      assert!(idx == 1, 73570022); // now there should be two approved payments
+      // from multi_auth and thus scheduled
+      assert!(status_enum == ballot::get_approved_enum(), 73570023);
       assert!(completed, 73570024); // now vote is completed
 
       // confirm it is scheduled

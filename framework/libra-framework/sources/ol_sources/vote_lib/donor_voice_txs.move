@@ -42,13 +42,13 @@ module ol_framework::donor_voice_txs {
     use std::option::{Self, Option};
     use diem_framework::system_addresses;
     use diem_framework::coin;
+    use ol_framework::ballot;
     use ol_framework::epoch_helper;
     use ol_framework::ol_account;
     use ol_framework::receipts;
     use ol_framework::multi_action;
     use ol_framework::account::{Self, WithdrawCapability};
     use ol_framework::donor_voice_governance;
-    use ol_framework::ballot;
     use ol_framework::cumulative_deposits;
     use ol_framework::transaction_fee;
     use ol_framework::match_index;
@@ -79,11 +79,6 @@ module ol_framework::donor_voice_txs {
     const ENO_VETO_ID_FOUND: u64 = 6;
     /// No enum for this number
     const EPAYEE_NOT_SLOW: u64 = 7;
-
-
-    const SCHEDULED: u8 = 1;
-    const VETO: u8 = 2;
-    const PAID: u8 = 3;
 
     /// number of epochs to wait before a transaction is executed
     /// Veto can happen in this time
@@ -293,14 +288,14 @@ module ol_framework::donor_voice_txs {
 
     /// saerch for a transction ID in the queues. Returns (is found, index, status enum)
     fun find_schedule_by_id(state: &TxSchedule, uid: &guid::ID): (bool, u64, u8) { // (is_found, index, state)
-      let (found, i) = schedule_status(state, uid, SCHEDULED);
-      if (found) return (found, i, SCHEDULED);
+      let (found, i) = schedule_status(state, uid, scheduled_enum());
+      if (found) return (found, i, scheduled_enum());
 
-      let (found, i) = schedule_status(state, uid, VETO);
-      if (found) return (found, i, VETO);
+      let (found, i) = schedule_status(state, uid, veto_enum());
+      if (found) return (found, i, veto_enum());
 
-      let (found, i) = schedule_status(state, uid, PAID);
-      if (found) return (found, i, PAID);
+      let (found, i) = schedule_status(state, uid, paid_enum());
+      if (found) return (found, i, paid_enum());
 
       (false, 0, 0)
     }
@@ -375,7 +370,7 @@ module ol_framework::donor_voice_txs {
       let len = vector::length(&due_list);
       while (i < len) {
 
-        let t = vector::remove(&mut due_list, i);
+        let t = vector::pop_back(&mut due_list);
         // if (this_exp <= epoch) {
         //   let t = vector::remove(&mut state.scheduled, i);
         let multisig_address = guid::id_creator_address(&t.uid);
@@ -388,15 +383,19 @@ module ol_framework::donor_voice_txs {
         let coin_opt = ol_account::vm_withdraw_unlimited(vm, multisig_address,
         t.tx.value);
         let amount_transferred = 0;
-        // TBD: transfers from DV which are not CW
-        // There's a circular dependency with CW which
-        // prevents from making a switch case here.
         if (option::is_some(&coin_opt)) {
           let c = option::extract(&mut coin_opt);
           amount_transferred = coin::value(&c);
           ol_account::vm_deposit_coins_locked(vm, t.tx.payee, c);
-            // update the records (don't copy or drop)
-            vector::push_back(&mut state.paid, t);
+          // update the records (don't copy or drop)
+          print(&state.scheduled);
+          print(&state.paid);
+
+
+          vector::push_back(&mut state.paid, t);
+          // print(is_paid());
+          print(&state.scheduled);
+          print(&state.paid);
         } else {
           // if it could not be paid because of low balance,
           // place it back on the scheduled list
@@ -460,8 +459,8 @@ module ol_framework::donor_voice_txs {
     let veto_is_approved = donor_voice_governance::veto_by_id(sender, veto_uid);
     if (option::is_none(&veto_is_approved)) return;
 
-    let (_found, _idx, state) = get_schedule_state(multisig_address, tx_uid);
-    assert!(state == 1, error::invalid_state(ENOT_VALID_STATE_ENUM)); // is scheduled
+    // check is scheduled
+    assert!(is_scheduled(multisig_address, tx_uid), error::invalid_state(ENO_PEDNING_TRANSACTION_AT_UID));
 
     if (*option::borrow(&veto_is_approved)) {
       // if the veto passes, freeze the account
@@ -491,9 +490,7 @@ module ol_framework::donor_voice_txs {
   // removed from proposed list.
   fun reject(uid: &guid::ID)  acquires TxSchedule, Freeze {
     let multisig_address = guid::id_creator_address(uid);
-    let (found, _idx, state) = get_schedule_state(multisig_address, uid);
-    assert!(found, error::invalid_state(ENO_PEDNING_TRANSACTION_AT_UID));
-    assert!(state == 1, error::invalid_state(ENOT_VALID_STATE_ENUM));
+    assert!(is_scheduled(multisig_address, uid), error::invalid_state(ENO_PEDNING_TRANSACTION_AT_UID));
 
     let c = borrow_global_mut<TxSchedule>(multisig_address);
 
@@ -525,7 +522,7 @@ module ol_framework::donor_voice_txs {
     // need to check if the tx is already schdules.
 
     let (found, _index, status) = find_schedule_by_id(state, uid_of_tx);
-    if (found && status == SCHEDULED) {
+    if (found && status == scheduled_enum()) {
       let epochs_duration = DEFAULT_VETO_DURATION;
 
       let uid = donor_voice_governance::propose_veto(&state.guid_capability, uid_of_tx,  epochs_duration);
@@ -555,16 +552,16 @@ module ol_framework::donor_voice_txs {
   }
 
   fun get_pending_timed_transfer_mut(state: &mut TxSchedule, uid: &guid::ID): &mut TimedTransfer {
-    let (found, i) = schedule_status(state, uid, SCHEDULED);
+    let (found, i) = schedule_status(state, uid, scheduled_enum());
 
     assert!(found, error::invalid_argument(ENO_PEDNING_TRANSACTION_AT_UID));
     vector::borrow_mut<TimedTransfer>(&mut state.scheduled, i)
   }
 
   fun schedule_status(state: &TxSchedule, uid: &guid::ID, state_enum: u8): (bool, u64) {
-    let list = if (state_enum == SCHEDULED) { &state.scheduled }
-    else if (state_enum == VETO) { &state.veto }
-    else if (state_enum == PAID) { &state.paid }
+    let list = if (state_enum == scheduled_enum()) { &state.scheduled }
+    else if (state_enum == veto_enum()) { &state.veto }
+    else if (state_enum == paid_enum()) { &state.paid }
     else {
       assert!(false, error::invalid_argument(ENOT_VALID_STATE_ENUM));
       &state.scheduled  // dummy
@@ -736,8 +733,8 @@ module ol_framework::donor_voice_txs {
 
   /// Check the status of proposals in the MultiSig Workflow
   /// NOTE: These are payments that have not yet been scheduled.
-  public fun get_multisig_proposal_state(directed_address: address, uid: &guid::ID): (bool, u64, u8, bool) { // (is_found, index, state)
-
+  public fun get_multisig_proposal_state(directed_address: address, uid:
+  &guid::ID): (bool, u64, u8, bool) { // (is_found, index, state, is_voting_complete)
     multi_action::get_proposal_status_by_id<Payment>(directed_address, uid)
   }
 
@@ -748,19 +745,59 @@ module ol_framework::donor_voice_txs {
     find_schedule_by_id(state, uid)
   }
 
-  public fun is_scheduled(directed_address: address, uid: &guid::ID): bool acquires TxSchedule {
-    let (_, _, state) = get_schedule_state(directed_address, uid);
-    state == ballot::get_pending_enum()
+
+  // Mapping the status enums to the multiaction (ballot) naming.
+
+  // multisig approval process
+  fun voting_enum(): u8 {
+    ballot::get_pending_enum()
+  }
+  fun approved_enum(): u8 {
+    ballot::get_approved_enum()
+  }
+  fun rejected_enum(): u8 {
+    ballot::get_rejected_enum()
+  }
+  // payment process
+  fun scheduled_enum(): u8 {
+    4
+  }
+  fun paid_enum(): u8 {
+    5
+  }
+  fun veto_enum(): u8 {
+    6
   }
 
-  public fun is_paid(directed_address: address, uid: &guid::ID): bool acquires TxSchedule {
-    let (_, _, state) = get_schedule_state(directed_address, uid);
-    state == ballot::get_approved_enum()
+  public fun is_voting(donor_voice_address: address, uid: &guid::ID): bool  {
+    let (found, _, status, _) = get_multisig_proposal_state(donor_voice_address,
+    uid);
+    found && (status == voting_enum())
+  }
+  public fun is_approved(donor_voice_address: address, uid: &guid::ID): bool {
+    let (found, _, status, _) =
+    get_multisig_proposal_state(donor_voice_address, uid);
+     found && (status == approved_enum())
+  }
+  public fun is_rejected(donor_voice_address: address, uid: &guid::ID): bool {
+    let (found, _, status, _) =
+    get_multisig_proposal_state(donor_voice_address, uid);
+    found && (status == rejected_enum())
+  }
+
+  public fun is_scheduled(donor_voice_address: address, uid: &guid::ID): bool acquires TxSchedule {
+    let (_, _, state) = get_schedule_state(donor_voice_address, uid);
+    state == scheduled_enum()
+  }
+
+  public fun is_paid(donor_voice_address: address, uid: &guid::ID): bool acquires TxSchedule {
+    let (_, _, state) = get_schedule_state(donor_voice_address, uid);
+    state == paid_enum()
   }
 
   public fun is_veto(directed_address: address, uid: &guid::ID): bool acquires TxSchedule {
     let (_, _, state) = get_schedule_state(directed_address, uid);
-    state == ballot::get_rejected_enum()
+    state == veto_enum()
   }
 
   // getter to check if wallet is frozen

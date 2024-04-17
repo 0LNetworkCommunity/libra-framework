@@ -31,6 +31,8 @@
     const ENO_BALLOT_FOUND: u64 = 1;
     /// Bad status enum
     const EBAD_STATUS_ENUM: u64 = 2;
+    /// Already complete cannot change
+    const EALREADY_COMPLETE: u64 = 3;
 
 
     // poor man's enum for the ballot status. Wen enum?
@@ -265,8 +267,10 @@
     }
 
     public fun complete_ballot<TallyType: drop + store>(
-      ballot: &mut Ballot<TallyType>,
+      ballot: &mut Ballot<TallyType>
     ) {
+      assert!(!is_completed(ballot), error::invalid_argument(EALREADY_COMPLETE));
+
       ballot.completed = true;
     }
 
