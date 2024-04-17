@@ -353,6 +353,8 @@ module ol_framework::donor_voice_txs {
       let amount_processed = 0;
       let i = 0;
 
+      // find all Txs scheduled prior to this epoch.
+
       while (i < vector::length(&state.scheduled)) {
 
         let this_exp = *&vector::borrow(&state.scheduled, i).deadline;
