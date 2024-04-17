@@ -102,7 +102,7 @@ module ol_framework::proof_of_fee {
 
   // on a migration genesis for mainnet the genesis reward needs to be calculated
   // from supply data.
-  public(friend) fun genesis_migrate_reward(framework: &signer, nominal_reward: u64) acquires
+  public fun genesis_migrate_reward(framework: &signer, nominal_reward: u64) acquires
   ConsensusReward {
     system_addresses::assert_diem_framework(framework); // either 0x1 or 0x0
 
