@@ -216,28 +216,25 @@ pub struct RotationCapabilityOfferProofChallengeV2 {
 #[derive(clap::Args)]
 pub struct RotationCapabilityTx {
     #[clap(short, long)]
-    pub action: String,
+    pub revoke: bool,
 
     #[clap(short, long)]
-    pub delegate_address: String,
+    pub delegate_address: AccountAddress,
 }
+
 impl RotationCapabilityTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let is_offer = match self.action.to_lowercase().as_str() {
-            "offer" => true,
-            "revoke" => false,
-            _ => return Err(anyhow::anyhow!("Invalid action, allowed: offer, revoke")),
-        };
-        let user_account: AccountAddress = sender.local_account.address();
+
+        let user_account = sender.local_account.address();
         let index_response = sender.client().get_index().await?;
+
         let chain_id = index_response.into_inner().chain_id;
 
-        let recipient_address = AccountAddress::from_str(&self.delegate_address)?;
         let seq = sender.client().get_sequence_number(user_account).await?;
-        let payload = if is_offer {
-            offer_rotation_capability_v2(&sender.local_account, recipient_address, chain_id, seq)
+        let payload = if self.revoke {
+          revoke_rotation_capability(self.delegate_address)
         } else {
-            revoke_rotation_capability(recipient_address)
+          offer_rotation_capability_v2(&sender.local_account, self.delegate_address, chain_id, seq)
         }?;
 
         sender.sign_submit_wait(payload).await?;
