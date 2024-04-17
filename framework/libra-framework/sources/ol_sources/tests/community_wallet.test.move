@@ -1,6 +1,7 @@
 
   #[test_only]
   module ol_framework::test_community_wallet{
+    use ol_framework::ballot;
     use ol_framework::community_wallet;
     use ol_framework::community_wallet_init;
     use ol_framework::donor_voice_txs;
@@ -126,7 +127,7 @@
         let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
         assert!(found, 7357004);
         assert!(idx == 0, 7357005);
-        assert!(status_enum == 1, 7357006);
+        assert!(status_enum == ballot::get_pending_enum(), 7357006);
         assert!(!completed, 7357007);
 
         // it is not yet scheduled, it's still only a proposal by an admin
@@ -136,7 +137,7 @@
         let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
         assert!(found, 7357004);
         assert!(idx == 0, 7357005);
-        assert!(status_enum == 1, 7357006);
+        assert!(status_enum == ballot::get_approved_enum(), 7357006);
         assert!(completed, 7357007); // now completed
 
         // confirm it is scheduled
@@ -211,7 +212,7 @@
         let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
         assert!(found, 7357004);
         assert!(idx == 0, 7357005);
-        assert!(status_enum == 1, 7357006);
+        assert!(status_enum == ballot::get_approved_enum(), 7357006);
         assert!(completed, 7357007); // now completed
 
         // confirm it is scheduled
