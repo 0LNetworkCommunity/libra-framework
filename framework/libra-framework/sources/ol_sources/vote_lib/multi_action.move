@@ -360,6 +360,12 @@ module ol_framework::multi_action {
 
     if (passed) {
       ballot::complete_ballot(b);
+      ballot::move_ballot(
+        &mut action.vote,
+        id,
+        ballot::get_pending_enum(),
+        ballot::get_approved_enum()
+      );
     };
 
     // get the withdrawal capability, we're not allowed copy, but we can
@@ -379,6 +385,8 @@ module ol_framework::multi_action {
   }
 
 
+  // @returns bool, complete and passed
+  // TODO: Multi_action will never pass a complete and rejected, which needs a UX
   fun tally<ProposalData: store + drop>(prop: &mut Proposal<ProposalData>, n: u64): bool {
 
     if (vector::length(&prop.votes) >= n) {
@@ -521,8 +529,8 @@ module ol_framework::multi_action {
       (false, guid::create_id(@0x0, 0), 0)
     }
 
-   /// returns a tuple of (is_found: bool, index: u64, status_enum: u8, is_complete: bool)
-  public(friend) fun get_proposal_status_by_id<ProposalData: drop + store>(multisig_address: address, uid: &guid::ID): (bool, u64, u8, bool) acquires Action { // found, index, status_enum, is_complete
+   /// returns a tuple of (is_found: bool, index: u64, status_enum: u8, is_voting_complete: bool)
+  public(friend) fun get_proposal_status_by_id<ProposalData: drop + store>(multisig_address: address, uid: &guid::ID): (bool, u64, u8, bool) acquires Action { // found, index, status_enum, is_voting_complete
     let a = borrow_global<Action<ProposalData>>(multisig_address);
     ballot::find_anywhere(&a.vote, uid)
   }
