@@ -83,7 +83,8 @@ module ol_framework::community_wallet_init {
     /// qualify
     public fun check_proposed_auths(initial_authorities: vector<address>, num_signers:
     u64): bool {
-      // // enforce n/m multi auth
+
+      // TODO: enforce n/m multi auth such as:
       // let n = if (len == 3) { 2 }
       // else {
       //   (MINIMUM_SIGS * len) / MINIMUM_AUTH
