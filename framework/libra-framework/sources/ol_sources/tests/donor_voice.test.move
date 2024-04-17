@@ -254,6 +254,16 @@ module ol_framework::test_donor_voice {
       let (_, bob_balance) = ol_account::balance(@0x1000b);
       assert!(bob_balance > bob_balance_pre, 7357005);
       assert!(bob_balance == 10000100, 7357006);
+
+            // the first proposal should be processed
+      let (found, idx, status_enum, completed) =
+      donor_voice_txs::get_multisig_proposal_state(donor_voice_address,
+      &uid);
+      assert!(found, 73570021);
+      assert!(idx == 0, 73570022);
+      assert!(status_enum == 1, 73570023);
+      assert!(completed, 73570024); // now vote is completed
+      assert!(donor_voice_txs::is_paid(donor_voice_address, &uid), 7357002501);
     }
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, marlon_rando = @0x123456)]

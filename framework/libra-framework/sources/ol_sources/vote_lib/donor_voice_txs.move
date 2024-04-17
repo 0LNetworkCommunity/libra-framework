@@ -55,19 +55,15 @@ module ol_framework::donor_voice_txs {
     use ol_framework::donor_voice;
     use ol_framework::slow_wallet;
 
-    // use diem_std::debug::print;
+    use diem_std::debug::print;
 
     friend ol_framework::community_wallet_init;
     friend ol_framework::epoch_boundary;
-
 
     #[test_only]
     friend ol_framework::test_donor_voice;
     #[test_only]
     friend ol_framework::test_community_wallet;
-
-
-
 
     /// Not initialized as a Donor Voice account.
     const ENOT_INIT_DONOR_VOICE: u64 = 1;
@@ -309,41 +305,60 @@ module ol_framework::donor_voice_txs {
       (false, 0, 0)
     }
 
-  ///////// PROCESS PAYMENTS /////////
-  /// The VM on epoch boundaries will execute the payments without the users
-  /// needing to intervene.
-  /// Returns (accounts_processed, amount_processed, success)
-  // TODO: add to the return the tuple of sender/recipient that failed
-  public(friend) fun process_donor_voice_accounts(
-      vm: &signer,
-      epoch: u64,
-  ): (u64, u64, bool) acquires TxSchedule, Freeze {
-    // while we are here let's liquidate any expired accounts.
-    vm_liquidate(vm);
+    ///////// PROCESS PAYMENTS /////////
+    /// The VM on epoch boundaries will execute the payments without the users
+    /// needing to intervene.
+    /// Returns (accounts_processed, amount_processed, success)
+    // TODO: add to the return the tuple of sender/recipient that failed
+    public(friend) fun process_donor_voice_accounts(
+        vm: &signer,
+        epoch: u64,
+    ): (u64, u64, bool) acquires TxSchedule, Freeze {
+      // while we are here let's liquidate any expired accounts.
+      vm_liquidate(vm);
 
-    let accounts_processed = 0;
-    let amount_processed = 0;
-    let expected_amount = 0;
+      let accounts_processed = 0;
+      let amount_processed = 0;
+      let expected_amount = 0;
 
-    let list = donor_voice::get_root_registry();
+      let list = donor_voice::get_root_registry();
 
-    let i = 0;
+      let i = 0;
 
-    while (i < vector::length(&list)) {
-      let multisig_address = vector::borrow(&list, i);
-      if (exists<TxSchedule>(*multisig_address)) {
-        let state = borrow_global_mut<TxSchedule>(*multisig_address);
-        let (processed, expected, _success) = maybe_pay_deadline(vm, state, epoch);
-        amount_processed = amount_processed + processed;
-        expected_amount = expected_amount + expected;
-        accounts_processed = accounts_processed + 1;
+      while (i < vector::length(&list)) {
+        let multisig_address = vector::borrow(&list, i);
+        if (exists<TxSchedule>(*multisig_address)) {
+          let state = borrow_global_mut<TxSchedule>(*multisig_address);
+          let (processed, expected, _success) = maybe_pay_deadline(vm, state, epoch);
+          amount_processed = amount_processed + processed;
+          expected_amount = expected_amount + expected;
+          accounts_processed = accounts_processed + 1;
+        };
+        i = i + 1;
       };
-      i = i + 1;
-    };
 
-    let success = vector::length(&list) == accounts_processed && amount_processed == expected_amount;
-    (accounts_processed, amount_processed, success)
-}
+      let success = vector::length(&list) == accounts_processed && amount_processed == expected_amount;
+      (accounts_processed, amount_processed, success)
+    }
+
+    fun filter_scheduled_due(state: &mut TxSchedule, epoch:
+    u64): vector<TimedTransfer> {
+      // move the future payments to the front of the list,
+      // so we can split off the due payments from the second half.
+      let list = &mut state.scheduled;
+      let split_point = vector::stable_partition<TimedTransfer>(list, |e| {
+        let e: &TimedTransfer = e;
+        // &tt.deadline > epoch
+        // print(&tt.uid);
+        print(&e.deadline);
+        print(&epoch);
+        e.deadline > epoch
+      });
+     print(&split_point);
+    //  vector::empty()
+      vector::trim(&mut state.scheduled, split_point)
+    }
+
 
     /// tries to settle any amounts that have been scheduled for payment
     /// for audit instrumentation returns how much was actually transferred
@@ -353,41 +368,47 @@ module ol_framework::donor_voice_txs {
       let amount_processed = 0;
       let i = 0;
 
+      let due_list = filter_scheduled_due(state, epoch);
+      print(&due_list);
+
       // find all Txs scheduled prior to this epoch.
+      let len = vector::length(&due_list);
+      while (i < len) {
 
-      while (i < vector::length(&state.scheduled)) {
+        let t = vector::remove(&mut due_list, i);
+        // if (this_exp <= epoch) {
+        //   let t = vector::remove(&mut state.scheduled, i);
+        let multisig_address = guid::id_creator_address(&t.uid);
 
-        let this_exp = *&vector::borrow(&state.scheduled, i).deadline;
-        if (this_exp == epoch) {
-          let t = vector::remove(&mut state.scheduled, i);
-          let multisig_address = guid::id_creator_address(&t.uid);
+        // Note the VM can do this without the WithdrawCapability
+        expected_amount = expected_amount + t.tx.value;
 
-          // Note the VM can do this without the WithdrawCapability
-          expected_amount = expected_amount + t.tx.value;
-
-          // if the account is a community wallet, then we assume
-          // the transfers will be locked.
-          let coin_opt = ol_account::vm_withdraw_unlimited(vm, multisig_address,
-          t.tx.value);
-          let amount_transferred = 0;
-          // TBD: transfers from DV which are not CW
-          // There's a circular dependency with CW which
-          // prevents from making a switch case here.
-          if (option::is_some(&coin_opt)) {
-            let c = option::extract(&mut coin_opt);
-            amount_transferred = coin::value(&c);
-            ol_account::vm_deposit_coins_locked(vm, t.tx.payee, c);
-          };
-          option::destroy_none(coin_opt);
-
-          amount_processed = amount_processed + amount_transferred;
-
-          // update the records
-          vector::push_back(&mut state.paid, t);
-
-          // if theres a single transaction that gets approved, then the freeze consecutive rejection counter is reset
-          reset_rejection_counter(vm, multisig_address)
+        // if the account is a community wallet, then we assume
+        // the transfers will be locked.
+        let coin_opt = ol_account::vm_withdraw_unlimited(vm, multisig_address,
+        t.tx.value);
+        let amount_transferred = 0;
+        // TBD: transfers from DV which are not CW
+        // There's a circular dependency with CW which
+        // prevents from making a switch case here.
+        if (option::is_some(&coin_opt)) {
+          let c = option::extract(&mut coin_opt);
+          amount_transferred = coin::value(&c);
+          ol_account::vm_deposit_coins_locked(vm, t.tx.payee, c);
+            // update the records (don't copy or drop)
+            vector::push_back(&mut state.paid, t);
+        } else {
+          // if it could not be paid because of low balance,
+          // place it back on the scheduled list
+          vector::push_back(&mut state.scheduled, t);
         };
+
+        option::destroy_none(coin_opt);
+
+        amount_processed = amount_processed + amount_transferred;
+
+        // if theres a single transaction that gets approved, then the freeze consecutive rejection counter is reset
+        reset_rejection_counter(vm, multisig_address);
 
         i = i + 1;
       };
