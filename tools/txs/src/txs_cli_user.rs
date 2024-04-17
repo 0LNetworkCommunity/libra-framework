@@ -224,7 +224,6 @@ pub struct RotationCapabilityTx {
 
 impl RotationCapabilityTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-
         let user_account = sender.local_account.address();
         let index_response = sender.client().get_index().await?;
 
@@ -232,9 +231,14 @@ impl RotationCapabilityTx {
 
         let seq = sender.client().get_sequence_number(user_account).await?;
         let payload = if self.revoke {
-          revoke_rotation_capability(self.delegate_address)
+            revoke_rotation_capability(self.delegate_address)
         } else {
-          offer_rotation_capability_v2(&sender.local_account, self.delegate_address, chain_id, seq)
+            offer_rotation_capability_v2(
+                &sender.local_account,
+                self.delegate_address,
+                chain_id,
+                seq,
+            )
         }?;
 
         sender.sign_submit_wait(payload).await?;
