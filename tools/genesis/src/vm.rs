@@ -1,7 +1,7 @@
 #![allow(clippy::too_many_arguments)]
 
 use diem_crypto::{ed25519::Ed25519PublicKey, HashValue};
-use diem_framework::{self, natives::account, ReleaseBundle};
+use diem_framework::{self, ReleaseBundle};
 use diem_gas::{
     AbstractValueSizeGasParameters, ChangeSetConfigs, NativeGasParameters,
     LATEST_GAS_FEATURE_VERSION,
@@ -133,10 +133,10 @@ pub fn encode_genesis_change_set(
 
     initialize_on_chain_governance(&mut session, genesis_config);
 
+    //////// MIGRATION ////////
     if !recovery.is_empty() {
-        genesis_functions::genesis_migrate_all_users(&mut session, recovery)
-            .expect("could not migrate users");
 
+        //////// FRAMEWORK STATE ////////
         // Migrate standalone framework account 0x1 state
         let framework_state = recovery.iter().find(|e| {
           if let Some(a) = e.account {
@@ -145,11 +145,16 @@ pub fn encode_genesis_change_set(
           false
         });
 
-        // need to set the baseline reward based on supply settings
         if let Some(f) = framework_state {
-          let nominal_reward = f.consensus_reward.as_ref().unwrap().nominal_reward;
-           set_validator_baseline_reward(&mut session, nominal_reward);
+          // need to set the baseline reward based on supply settings
+          if let Some(cr) = f.consensus_reward.as_ref() {
+            set_validator_baseline_reward(&mut session, cr.nominal_reward);
+          }
         }
+
+        //////// MIGRATE ALL USERS ////////
+        genesis_functions::genesis_migrate_all_users(&mut session, recovery)
+            .expect("could not migrate users");
 
         // cumulative deposits (for match index) also need separate
         // migration for CW
@@ -160,13 +165,15 @@ pub fn encode_genesis_change_set(
     OLProgress::complete("user migration complete");
 
     //////// 0L ////////
-    // moved this to happen after legacy account migration, since the validators need to have their accounts migrated as well, including the mapping of legacy address to the authkey (which no longer derives to the previous same address).
-    // Note: the operator accounts at genesis will be different.
+    // moved this to happen after legacy account migration, since the validators
+    // may need to have their accounts migrated as well, including the mapping
+    // of legacy address to the authkey (which no longer derives to the previous
+    // same address).
     create_and_initialize_validators(&mut session, validators);
 
     OLProgress::complete("initialized genesis validators");
 
-    let spin = OLProgress::spin_steady(100, "publishing framework".to_string());
+    let spin = OLProgress::spin_steady(500, "publishing framework".to_string());
 
     set_genesis_end(&mut session);
 
