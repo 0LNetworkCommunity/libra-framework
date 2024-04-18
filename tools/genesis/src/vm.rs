@@ -8,9 +8,12 @@ use diem_gas::{
 };
 use diem_logger::prelude::*;
 use diem_types::{
-    account_config::CORE_CODE_ADDRESS, chain_id::{ChainId, NamedChain}, on_chain_config::{
+    account_config::CORE_CODE_ADDRESS,
+    chain_id::{ChainId, NamedChain},
+    on_chain_config::{
         Features, GasScheduleV2, OnChainConsensusConfig, OnChainExecutionConfig, TimedFeatures,
-    }, transaction::ChangeSet
+    },
+    transaction::ChangeSet,
 };
 use diem_vm::{
     data_cache::AsMoveResolver,
@@ -135,21 +138,20 @@ pub fn encode_genesis_change_set(
 
     //////// MIGRATION ////////
     if !recovery.is_empty() {
-
         //////// FRAMEWORK STATE ////////
         // Migrate standalone framework account 0x1 state
         let framework_state = recovery.iter().find(|e| {
-          if let Some(a) = e.account {
-            return a == CORE_CODE_ADDRESS
-          }
-          false
+            if let Some(a) = e.account {
+                return a == CORE_CODE_ADDRESS;
+            }
+            false
         });
 
         if let Some(f) = framework_state {
-          // need to set the baseline reward based on supply settings
-          if let Some(cr) = f.consensus_reward.as_ref() {
-            set_validator_baseline_reward(&mut session, cr.nominal_reward);
-          }
+            // need to set the baseline reward based on supply settings
+            if let Some(cr) = f.consensus_reward.as_ref() {
+                set_validator_baseline_reward(&mut session, cr.nominal_reward);
+            }
         }
 
         //////// MIGRATE ALL USERS ////////
