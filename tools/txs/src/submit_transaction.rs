@@ -116,7 +116,11 @@ impl Sender {
     }
 
     ///
-    pub async fn from_app_cfg(app_cfg: &AppCfg, profile: Option<String>) -> anyhow::Result<Self> {
+    pub async fn from_app_cfg(
+        app_cfg: &AppCfg,
+        profile: Option<String>,
+        legacy: bool,
+    ) -> anyhow::Result<Self> {
         let profile = app_cfg.get_profile(profile)?;
 
         let key = match profile.borrow_private_key() {
@@ -132,10 +136,14 @@ impl Sender {
         let auth_key = AuthenticationKey::ed25519(&key.public_key());
         let url = &app_cfg.pick_url(None)?;
         let client = Client::new(url.clone());
-        let address = client
-            .lookup_originating_address(auth_key)
-            .await
-            .unwrap_or(profile.account);
+        let address = if (!legacy) {
+            client
+                .lookup_originating_address(auth_key)
+                .await
+                .unwrap_or(profile.account)
+        } else {
+            profile.account
+        };
 
         let mut local_account = LocalAccount::new(address, key, temp_seq_num);
         let seq_num = local_account.sequence_number_mut();

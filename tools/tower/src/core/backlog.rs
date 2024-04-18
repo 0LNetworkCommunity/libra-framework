@@ -87,7 +87,7 @@ pub async fn process_backlog(config: &AppCfg) -> anyhow::Result<BacklogResult> {
 
 pub async fn submit_or_delete(config: &AppCfg, block: VDFProof, path: PathBuf) -> Result<()> {
     // TODO: allow user to set a profile
-    let mut sender = Sender::from_app_cfg(config, None).await?;
+    let mut sender = Sender::from_app_cfg(config, None, false).await?;
 
     sender.commit_proof(block.clone()).await?;
 
