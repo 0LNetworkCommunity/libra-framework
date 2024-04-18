@@ -7,12 +7,18 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ConsensusRewardResource {
-    nominal_reward: u64,
-    net_reward: u64,
-    entry_fee: u64,
-    clearing_bid: u64,
-    median_win_bid: u64,
-    median_history: Vec<u64>,
+    ///
+    pub nominal_reward: u64,
+    ///
+    pub net_reward: u64,
+    ///
+    pub entry_fee: u64,
+    ///
+    pub clearing_bid: u64,
+    ///
+    pub median_win_bid: u64,
+    ///
+    pub median_history: Vec<u64>,
 }
 
 impl MoveStructType for ConsensusRewardResource {
