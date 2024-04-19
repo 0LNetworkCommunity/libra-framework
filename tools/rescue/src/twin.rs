@@ -317,8 +317,6 @@ impl TwinOpts {
             .await
             .expect("cli could not send to existing account");
         */
-        //wait for 1000
-        std::thread::sleep(Duration::from_secs(1000));
         Ok(smoke)
     }
 
@@ -426,8 +424,6 @@ impl TwinOpts {
 
 #[tokio::test]
 // cargo test -p rescue --test twin_with_rando -- --nocapture
-
-
 async fn test_twin_with_rando() -> anyhow::Result<()> {
     let prod_db_to_clone = PathBuf::from("/root/db");
     TwinOpts::apply_with_rando_e2e(prod_db_to_clone).await?;

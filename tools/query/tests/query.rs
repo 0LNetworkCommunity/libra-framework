@@ -5,7 +5,9 @@ use libra_types::move_resource::gas_coin::LibraBalanceDisplay;
 /// Testing the query library
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn libra_query_test() {
-    let mut s = LibraSmoke::new(None, None).await.expect("could not start swarm");
+    let mut s = LibraSmoke::new(None, None)
+        .await
+        .expect("could not start swarm");
     let val_acct = s.first_account.address();
 
     let c = s.client();
@@ -28,7 +30,9 @@ async fn libra_query_test() {
 /// test account struct annotation
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn account_annotate_test() {
-    let mut s = LibraSmoke::new(None, None).await.expect("could not start swarm");
+    let mut s = LibraSmoke::new(None, None)
+        .await
+        .expect("could not start swarm");
     let val_acct = s.first_account.address();
 
     let c = s.client();
