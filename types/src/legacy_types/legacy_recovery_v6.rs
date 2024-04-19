@@ -28,6 +28,7 @@ use std::str::FromStr;
 use std::{fs, path::PathBuf};
 
 use super::ol_account::BurnTrackerResource;
+use super::proof_of_fee::ConsensusRewardResource;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 /// Account role
@@ -103,6 +104,8 @@ pub struct LegacyRecoveryV6 {
     pub match_index: Option<MatchIndexResource>,
     ///
     pub validator_universe: Option<ValidatorUniverseResource>,
+    ///
+    pub consensus_reward: Option<ConsensusRewardResource>,
 }
 
 pub fn strip_system_address(list: &mut Vec<LegacyRecoveryV6>) {
@@ -147,6 +150,7 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         epoch_fee_maker_registry: None,
         match_index: None,
         validator_universe: None,
+        consensus_reward: None,
     };
     let account_resource = account_state.get_account_resource()?;
 
@@ -165,7 +169,6 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         legacy_recovery.auth_key = Some(AuthenticationKey::new(byte_slice));
 
         // balance
-        // native CoinStoreResource doesn't implement COpy thus use LegacyBalanceResource instead
         legacy_recovery.balance = account_state
             .get_coin_store_resource()?
             .map(|r| LegacyBalanceResource { coin: r.coin() });
@@ -243,6 +246,10 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         // validator universe
         legacy_recovery.validator_universe =
             account_state.get_move_resource::<ValidatorUniverseResource>()?;
+
+        // consensus reward
+        legacy_recovery.consensus_reward =
+            account_state.get_move_resource::<ConsensusRewardResource>()?;
     }
 
     Ok(legacy_recovery)

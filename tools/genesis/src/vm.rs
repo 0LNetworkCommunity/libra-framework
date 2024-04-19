@@ -8,6 +8,7 @@ use diem_gas::{
 };
 use diem_logger::prelude::*;
 use diem_types::{
+    account_config::CORE_CODE_ADDRESS,
     chain_id::{ChainId, NamedChain},
     on_chain_config::{
         Features, GasScheduleV2, OnChainConsensusConfig, OnChainExecutionConfig, TimedFeatures,
@@ -124,28 +125,38 @@ pub fn encode_genesis_change_set(
 
     initialize_features(&mut session);
 
-    // TODO: consolidate with set_final_supply below
     initialize_diem_coin(&mut session);
     warn!("initialize_diem_coin");
-    println!("initialize_diem_coin");
 
     // final supply must be set after coin is initialized, but before any
     // accounts are created
+    // NOTE: this is a hard coded figure, since it would not change between
+    // upgrades.
     set_final_supply(&mut session);
 
     initialize_on_chain_governance(&mut session, genesis_config);
 
+    //////// MIGRATION ////////
     if !recovery.is_empty() {
-        // let supply = populate_supply_stats_from_legacy(recovery)
-        //     .expect("could not parse supply from legacy file");
+        //////// FRAMEWORK STATE ////////
+        // Migrate standalone framework account 0x1 state
+        let framework_state = recovery.iter().find(|e| {
+            if let Some(a) = e.account {
+                return a == CORE_CODE_ADDRESS;
+            }
+            false
+        });
 
+        if let Some(f) = framework_state {
+            // need to set the baseline reward based on supply settings
+            if let Some(cr) = f.consensus_reward.as_ref() {
+                set_validator_baseline_reward(&mut session, cr.nominal_reward);
+            }
+        }
+
+        //////// MIGRATE ALL USERS ////////
         genesis_functions::genesis_migrate_all_users(&mut session, recovery)
             .expect("could not migrate users");
-
-        // need to set the baseline reward based on supply settings
-        // TODO
-        let todo_pof_baseline = 10000;
-        set_validator_baseline_reward(&mut session, todo_pof_baseline);
 
         // cumulative deposits (for match index) also need separate
         // migration for CW
@@ -156,22 +167,15 @@ pub fn encode_genesis_change_set(
     OLProgress::complete("user migration complete");
 
     //////// 0L ////////
-    // moved this to happen after legacy account migration, since the validators need to have their accounts migrated as well, including the mapping of legacy address to the authkey (which no longer derives to the previous same address).
-    // Note: the operator accounts at genesis will be different.
+    // moved this to happen after legacy account migration, since the validators
+    // may need to have their accounts migrated as well, including the mapping
+    // of legacy address to the authkey (which no longer derives to the previous
+    // same address).
     create_and_initialize_validators(&mut session, validators);
-
-    // //////// 0L ////////
-    // // need to ajust for rounding issues from target supply
-    // rounding_mint(&mut session, supply_settings);
-
-    // // add some coins in each validator account.
-    // if chain_id != ChainId::new(1) || option_env!("LIBRA_CI").is_some() {
-    //     mint_genesis_bootstrap_coin(&mut session, validators);
-    // }
 
     OLProgress::complete("initialized genesis validators");
 
-    let spin = OLProgress::spin_steady(100, "publishing framework".to_string());
+    let spin = OLProgress::spin_steady(500, "publishing framework".to_string());
 
     set_genesis_end(&mut session);
 

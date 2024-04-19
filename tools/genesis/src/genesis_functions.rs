@@ -498,7 +498,7 @@ pub fn set_final_supply(session: &mut SessionExt) {
 
 pub fn set_validator_baseline_reward(session: &mut SessionExt, nominal_reward: u64) {
     let serialized_values = serialize_values(&vec![
-        MoveValue::Signer(AccountAddress::ZERO), // must be called by 0x0
+        MoveValue::Signer(CORE_CODE_ADDRESS), // must be called by 0x1
         MoveValue::U64(nominal_reward),
     ]);
 

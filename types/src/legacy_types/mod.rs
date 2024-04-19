@@ -17,6 +17,7 @@ pub mod mode_ol;
 pub mod network_playlist;
 pub mod ol_account;
 pub mod pledge_account;
+pub mod proof_of_fee;
 pub mod receipts;
 pub mod tx_error;
 pub mod validator_config;

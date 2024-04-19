@@ -183,6 +183,7 @@ async fn test_deserialize_account() {
     // basic validation of the account state
     let account_count = 23634;
     assert_eq!(account_states.len(), account_count);
+
     // auth key
     assert_eq!(
         legacy_recovery_vec

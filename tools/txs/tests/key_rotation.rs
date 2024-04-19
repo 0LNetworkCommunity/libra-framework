@@ -143,8 +143,8 @@ async fn offer_rotation_capability() -> anyhow::Result<()> {
 
     // allow bob to rotate keys for alice
     let cli = RotationCapabilityTx {
-        delegate_address: bob_sender.local_account.address().to_string(),
-        action: "offer".to_string(),
+        delegate_address: bob_sender.local_account.address(),
+        revoke: false,
     };
 
     let res = cli.run(&mut alice_sender).await;
@@ -244,8 +244,8 @@ async fn revoke_rotation_capability() -> anyhow::Result<()> {
 
     // allow bob to rotate keys for alice
     let cli = RotationCapabilityTx {
-        delegate_address: bob_sender.local_account.address().to_string(),
-        action: "offer".to_string(),
+        delegate_address: bob_sender.local_account.address(),
+        revoke: false,
     };
 
     let res = cli.run(&mut alice_sender).await;
@@ -259,8 +259,8 @@ async fn revoke_rotation_capability() -> anyhow::Result<()> {
 
     // revoke rotation capability from bob
     let cli = RotationCapabilityTx {
-        delegate_address: bob_sender.local_account.address().to_string(),
-        action: "revoke".to_string(),
+        delegate_address: bob_sender.local_account.address(),
+        revoke: true,
     };
 
     let res = cli.run(&mut alice_sender).await;

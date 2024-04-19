@@ -108,7 +108,6 @@ module ol_framework::multi_action {
   // Governance, will only say if it passed or not.
   // Note: The underlying Ballot deals with the GUID generation
   struct Proposal<ProposalData> has store, drop {
-    // id: u64,
     // The transaction to be executed
     proposal_data: ProposalData,
     // The votes received
@@ -129,7 +128,6 @@ module ol_framework::multi_action {
     };
 
     Proposal<ProposalData> {
-      // id: 0,
       proposal_data,
       votes: vector::empty<address>(),
       approved: false,
@@ -151,21 +149,16 @@ module ol_framework::multi_action {
   // Governance contains the constraints for each Action that are checked on each vote (n_sigs, expiration, signers, etc)
   // Also, an initial Action of type PropGovSigners is created, which is used to govern the signers and threshold for this account.
   public(friend) fun init_gov(sig: &signer) {
-
     // heals un-initialized state, and does nothing if state already exists.
-
-    // assert!(cfg_default_n_sigs > 0, error::invalid_argument(ENO_SIGNERS));
 
     let multisig_address = signer::address_of(sig);
     // User footgun. The signer of this account is bricked, and as such the signer can no longer be an authority.
-    // assert!(!vector::contains(m_seed_authorities, &multisig_address),
-    // error::invalid_argument(ESIGNER_CANT_BE_AUTHORITY));
 
     if (!exists<Governance>(multisig_address)) {
         move_to(sig, Governance {
         cfg_duration_epochs: DEFAULT_EPOCHS_EXPIRE,
         cfg_default_n_sigs: 0, // deprecate
-        signers: vector::empty(), // *m_seed_authorities, // deprecate
+        signers: vector::empty(),
         withdraw_capability: option::none(),
         guid_capability: account::create_guid_capability(sig),
       });
@@ -222,7 +215,7 @@ module ol_framework::multi_action {
   }
 
   /// An initial "sponsor" who is the signer of the initialization account calls this function.
-  // This function creates the data structures, but also IMPORTANTLY it rotates the AuthKey of the account to a system-wide unusuable key (b"brick_all_your_base_are_belong_to_us").
+  // This function creates the data structures.
   public(friend) fun init_type<ProposalData: store + drop >(
     sig: &signer,
     can_withdraw: bool,
@@ -312,9 +305,6 @@ module ol_framework::multi_action {
     assert_authorized(sig, multisig_address);
 
     let action = borrow_global_mut<Action<ProposalData>>(multisig_address);
-    // let ms = borrow_global_mut<Governance>(multisig_address);
-    // go through all proposals and clean up expired ones.
-    // lazy_cleanup_expired(action);
 
     // does this proposal already exist in the pending list?
     let (found, uid, _idx, _status_enum, _is_complete) = search_proposals_by_data<ProposalData>(&action.vote, proposal);
@@ -407,7 +397,6 @@ module ol_framework::multi_action {
     while (i < vector::length(b_vec)) {
       let b = vector::borrow(b_vec, i);
       let t = ballot::get_type_struct<Proposal<ProposalData>>(b);
-
 
       if (epoch > t.expiration_epoch) {
         let id = ballot::get_ballot_id(b);
