@@ -235,7 +235,7 @@ impl Sender {
         }
 
         let signed = self.sign_payload(payload);
-        let spin = OLProgress::spin_steady(250, "awaiting transaction response".to_string());
+        let spin = OLProgress::spin_steady(500, "awaiting transaction response".to_string());
         let r = self.submit(&signed).await?;
         self.response = Some(r.clone());
         spin.finish_and_clear();

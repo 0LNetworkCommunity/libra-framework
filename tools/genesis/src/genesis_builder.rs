@@ -210,7 +210,7 @@ pub fn fetch_genesis_info(
     let layout: LibraSimpleLayout = from_yaml(&String::from_utf8(base64::decode(l_file)?)?)?;
     OLProgress::complete("fetched layout file");
 
-    let pb = OLProgress::spin_steady(100, "fetching validator registrations".to_string());
+    let pb = OLProgress::spin_steady(500, "fetching validator registrations".to_string());
 
     let validators = get_validator_configs(&client, &layout, false)?;
     OLProgress::complete("fetched validator configs");
