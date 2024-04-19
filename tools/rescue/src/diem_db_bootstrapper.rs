@@ -27,11 +27,11 @@ use std::{
     about = "Calculate, verify and commit the genesis to local DB without a consensus among validators."
 )]
 pub struct BootstrapOpts {
-    #[clap(short, long)]
+    #[clap(value_parser)]
     /// DB directory
     pub db_dir: PathBuf,
 
-    #[clap(short, long)]
+    #[clap(short, long, value_parser)]
     /// path to genesis tx file
     pub genesis_txn_file: PathBuf,
 
@@ -80,10 +80,24 @@ impl BootstrapOpts {
             .with_context(|| format_err!("Failed to get latest tree state."))?;
 
         println!("num txs: {:?}", executed_trees.num_transactions());
-        println!("version: {:?}", executed_trees.version().unwrap());
-        println!("root hash: {}", executed_trees.txn_accumulator().root_hash);
+        println!("version: {:?}", executed_trees.version());
+        println!(
+            "root hash: {:?}",
+            executed_trees.txn_accumulator().root_hash
+        );
 
         if self.info {
+            return Ok(None);
+        }
+
+        if self.info {
+            println!("num txs: {:?}", executed_trees.num_transactions());
+            println!("version: {:?}", executed_trees.version());
+            println!(
+                "root hash: {:?}",
+                executed_trees.txn_accumulator().root_hash
+            );
+
             return Ok(None);
         }
 

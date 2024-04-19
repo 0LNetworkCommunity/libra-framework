@@ -11,7 +11,7 @@ use libra_types::legacy_types::app_cfg::TxCost;
 async fn smoke_transfer_existing_account() {
     let d = diem_temppath::TempPath::new();
 
-    let mut s = LibraSmoke::new(Some(2)) // going to transfer from validator #0 to validator #1
+    let mut s = LibraSmoke::new(Some(2), None) // going to transfer from validator #0 to validator #1
         .await
         .expect("could not start libra smoke");
 
@@ -49,7 +49,7 @@ async fn smoke_transfer_existing_account() {
 async fn smoke_transfer_create_account() -> Result<(), anyhow::Error> {
     let d = diem_temppath::TempPath::new();
 
-    let mut s = LibraSmoke::new(None)
+    let mut s = LibraSmoke::new(None, None)
         .await
         .expect("could not start libra smoke");
 
@@ -97,7 +97,7 @@ async fn smoke_transfer_create_account() -> Result<(), anyhow::Error> {
 async fn smoke_transfer_estimate() {
     let d = diem_temppath::TempPath::new();
 
-    let mut s = LibraSmoke::new(None)
+    let mut s = LibraSmoke::new(None, None)
         .await
         .expect("could not start libra smoke");
 

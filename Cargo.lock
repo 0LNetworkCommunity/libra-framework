@@ -5735,7 +5735,7 @@ dependencies = [
 
 [[package]]
 name = "libra-smoke-tests"
-version = "7.0.0"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "diem-config",
@@ -8268,7 +8268,7 @@ dependencies = [
 
 [[package]]
 name = "rescue"
-version = "7.0.0"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
@@ -8277,25 +8277,34 @@ dependencies = [
  "diem-config",
  "diem-crypto",
  "diem-db",
- "diem-debugger",
  "diem-executor",
  "diem-forge",
  "diem-gas",
+ "diem-genesis",
  "diem-logger",
  "diem-storage-interface",
  "diem-temppath",
  "diem-types",
  "diem-vm",
  "diem-vm-types",
+ "fs_extra",
  "futures-util",
+ "hex",
+ "libra-config",
  "libra-framework",
+ "libra-query",
  "libra-smoke-tests",
  "libra-txs",
+ "libra-types",
+ "libra-wallet",
  "move-core-types",
+ "move-vm-runtime",
  "move-vm-types",
  "regex",
+ "reqwest",
  "serde 1.0.197",
  "serde_json",
+ "serde_yaml 0.8.26",
  "smoke-test",
  "tokio",
 ]

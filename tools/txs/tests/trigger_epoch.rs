@@ -9,7 +9,7 @@ use libra_txs::txs_cli_governance::GovernanceTxs;
 #[ignore] // TODO
 async fn trigger_epoch() -> anyhow::Result<()> {
     // create libra swarm and get app config for the validator
-    let mut ls = LibraSmoke::new(Some(1))
+    let mut ls = LibraSmoke::new(Some(1), None)
         .await
         .expect("could not start libra smoke");
     let val_app_cfg = ls.first_account_app_cfg()?;

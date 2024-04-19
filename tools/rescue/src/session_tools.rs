@@ -1,5 +1,6 @@
+use std::path::Path;
+
 use anyhow::{format_err, Context};
-use std::path::PathBuf;
 
 use diem_config::config::{
     RocksdbConfigs, BUFFERED_STATE_TARGET_ITEMS, DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
@@ -11,23 +12,31 @@ use diem_storage_interface::{state_view::DbStateViewAtVersion, DbReaderWriter};
 use diem_types::{account_address::AccountAddress, transaction::ChangeSet};
 use diem_vm::move_vm_ext::{MoveVmExt, SessionExt, SessionId};
 use diem_vm_types::change_set::VMChangeSet;
-use libra_framework::{head_release_bundle, release::ReleaseTarget};
+use libra_framework::head_release_bundle;
 use move_core_types::{
     ident_str,
     language_storage::{StructTag, CORE_CODE_ADDRESS},
     value::{serialize_values, MoveValue},
 };
+use move_vm_runtime::session::SerializedReturnValues;
 
+#[derive(Debug, Clone)]
+pub struct ValCredentials {
+    pub account: AccountAddress,
+    pub consensus_pubkey: Vec<u8>,
+    pub proof_of_possession: Vec<u8>,
+    pub network_addresses: Vec<u8>,
+    pub fullnode_addresses: Vec<u8>,
+}
 use move_vm_types::gas::UnmeteredGasMeter;
 // Run a VM session with a dirty database
 // NOTE: there are several implementations of this elsewhere in Diem
 // Some are buggy, some don't have exports or APIs needed (DiemDbBootstrapper). Some have issues with async and db locks (DiemDbDebugger).
 // so we had to rewrite it.
 pub fn libra_run_session<F>(
-    dir: PathBuf,
+    dir: &Path,
     f: F,
     debug_vals: Option<Vec<AccountAddress>>,
-    debug_epoch_interval_microsecs: Option<u64>, // seconds per epoch, for twin and testnet
 ) -> anyhow::Result<VMChangeSet>
 where
     F: FnOnce(&mut SessionExt) -> anyhow::Result<()>,
@@ -61,24 +70,13 @@ where
         .map_err(|err| format_err!("Unexpected VM Error Running Rescue VM Session: {:?}", err))?;
     //////
 
-    let framework_sig: MoveValue = MoveValue::Signer(AccountAddress::ONE);
     // if we want to replace the vals, or otherwise use swarm
     // to drive the db state
     if let Some(vals) = debug_vals {
+        let vm_signer = MoveValue::Signer(AccountAddress::ZERO);
         let vals_cast = MoveValue::vector_address(vals);
-        let args = vec![&framework_sig, &vals_cast];
-        libra_execute_session_function(&mut session, "0x1::diem_governance::set_validators", args)?;
-    }
-
-    // if we want accelerated epochs for twin, testnet, etc
-    if let Some(ms) = debug_epoch_interval_microsecs {
-        let secs_arg = MoveValue::U64(ms);
-        libra_execute_session_function(
-            &mut session,
-            "0x1::block::update_epoch_interval_microsecs",
-            vec![&framework_sig, &secs_arg],
-        )
-        .expect("set epoch interval seconds");
+        let args = vec![&vm_signer, &vals_cast];
+        libra_execute_session_function(&mut session, "0x1::stake::maybe_reconfigure", args)?;
     }
 
     let change_set = session.finish(
@@ -109,27 +107,22 @@ pub fn writeset_voodoo_events(session: &mut SessionExt) -> anyhow::Result<()> {
         ],
     )?;
 
-    // force bump epoch and emit the epoch event
-    libra_execute_session_function(
-        session,
-        "0x1::reconfiguration::maybe_bump_epoch",
-        vec![&MoveValue::Bool(false)],
-    )?;
-    libra_execute_session_function(session, "0x1::reconfiguration::emit_epoch_event", vec![])?;
+    ////// TODO: revert this once rescue is complete
+    // libra_execute_session_function(
+    //     session,
+    //     "0x1::reconfiguration::reconfigure_for_rescue",
+    //     vec![&vm_signer],
+    // )?;
+    //////
+
+    libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
 
     Ok(())
 }
 
 // wrapper to publish the latest head framework release
-pub fn upgrade_framework(
-    session: &mut SessionExt,
-    path_opt: Option<PathBuf>,
-) -> anyhow::Result<()> {
-    let new_modules = if path_opt.is_some() {
-        ReleaseTarget::load_bundle_from_file(path_opt.unwrap())?
-    } else {
-        head_release_bundle()
-    };
+pub fn upgrade_framework(session: &mut SessionExt) -> anyhow::Result<()> {
+    let new_modules = head_release_bundle();
 
     session.publish_module_bundle_relax_compatibility(
         new_modules.legacy_copy_code(),
@@ -146,87 +139,147 @@ pub fn libra_execute_session_function(
     session: &mut SessionExt,
     function_str: &str,
     args: Vec<&MoveValue>,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<SerializedReturnValues> {
     let function_tag: StructTag = function_str.parse()?;
 
     // TODO: return Serialized Values
-    let _res = session.execute_function_bypass_visibility(
+    let res = session.execute_function_bypass_visibility(
         &function_tag.module_id(),
         function_tag.name.as_ident_str(),
         function_tag.type_params,
         serialize_values(args),
         &mut UnmeteredGasMeter,
     )?;
-    Ok(())
+    Ok(res)
 }
 
-///  drops users from the chain
-pub fn load_them_onto_ark_b(
-    dir: PathBuf,
-    framework_release_file: Option<PathBuf>,
-    addr_list: &[AccountAddress],
-    debug_vals: Option<Vec<AccountAddress>>,
-    short_epochs: bool,
-) -> anyhow::Result<ChangeSet> {
-    let vm_sig = MoveValue::Signer(AccountAddress::ZERO);
-    let epoch_interval_opt = if short_epochs { Some(900000000) } else { None };
-    let vmc = libra_run_session(
-        dir,
-        move |session| {
-            upgrade_framework(session, framework_release_file)
-                .expect("could not upgrade framework");
+// // TODO: helper to print out the account state of a DB at rest.
+// // this could have a Clibra_execute_session_functionLI entrypoint
+// fn _get_account_state_by_version(
+//     db: &Arc<dyn DbReader>,
+//     account: AccountAddress,
+//     version: Version,
+// ) -> anyhow::Result<HashMap<StateKey, StateValue>> {
+//     let key_prefix = StateKeyPrefix::from(account);
+//     let mut iter = db.get_prefixed_state_value_iterator(&key_prefix, None, version)?;
+//     // dbg!(&iter.by_ref().count());
+//     let kvs = iter
+//         .by_ref()
+//         .take(MAX_REQUEST_LIMIT as usize)
+//         .collect::<anyhow::Result<_>>()?;
+//     if iter.next().is_some() {
+//         bail!(
+//             "Too many state items under state key prefix {:?}.",
+//             key_prefix
+//         );
+//     }
+//     Ok(kvs)
+// }
 
-            addr_list.iter().for_each(|a| {
-                let user: MoveValue = MoveValue::Signer(*a);
-                libra_execute_session_function(
-                    session,
-                    "0x1::last_goodbye::last_goodbye",
-                    vec![&vm_sig, &user],
-                )
-                .expect("run through whole list");
-            });
+/// Function for combined function calls
+pub fn session_add_validators(
+    session: &mut SessionExt,
+    creds: Vec<&ValCredentials>,
+) -> anyhow::Result<()> {
+    // account address of the diem_framework
+    upgrade_framework(session)?;
+    libra_execute_session_function(
+        session,
+        "0x1::stake::bulk_set_next_validators",
+        vec![
+            &MoveValue::Signer(AccountAddress::ONE),
+            &MoveValue::vector_address(vec![]),
+        ],
+    )?;
+    libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
 
-            writeset_voodoo_events(session).expect("voodoo");
-            Ok(())
-        },
-        debug_vals,
-        epoch_interval_opt,
-    )
-    .expect("could run session");
+    //get the validator state
+    for cred in creds.iter().copied() {
+        let signer = MoveValue::Signer(AccountAddress::ONE);
+        let vector_val = MoveValue::vector_address(vec![cred.account]);
+        let args = vec![&signer, &vector_val];
+        dbg!("configure_allowed_validators");
+        libra_execute_session_function(session, "0x1::stake::configure_allowed_validators", args)?;
+        // end ////
+        let signer = MoveValue::Signer(cred.account);
+        // let signer_address = MoveValue::Address(cred.account);
+        let consensus_pubkey = MoveValue::vector_u8(cred.consensus_pubkey.clone());
+        let proof_of_possession = MoveValue::vector_u8(cred.proof_of_possession.clone());
+        let network_addresses = MoveValue::vector_u8(cred.network_addresses.clone());
+        let fullnode_addresses = MoveValue::vector_u8(cred.fullnode_addresses.clone());
+        let args = vec![
+            &signer,
+            &consensus_pubkey,
+            &proof_of_possession,
+            &network_addresses,
+            &fullnode_addresses,
+        ];
+        let amount = 1000 * 1000_1000_u64;
+        let amount = MoveValue::U64(amount);
+        dbg!("create account");
+        libra_execute_session_function(
+            session,
+            "0x1::ol_account::create_impl",
+            vec![&MoveValue::Signer(AccountAddress::ONE), &signer],
+        )?;
+        //The accounts are not slow so we do not have to unlock them
+        dbg!("mint to account");
+        libra_execute_session_function(
+            session,
+            "0x1::libra_coin::mint_to_impl",
+            vec![&MoveValue::Signer(AccountAddress::ONE), &signer, &amount],
+        )?;
+        dbg!("registering validator");
+        libra_execute_session_function(
+            session,
+            "0x1::validator_universe::register_validator",
+            args,
+        )?;
+        dbg!("joining the set of validators");
+        let va = MoveValue::Address(cred.account);
+        dbg!("join_validator_set");
+        libra_execute_session_function(
+            session,
+            "0x1::stake::join_validator_set",
+            vec![&signer, &va],
+        )?;
+    }
 
-    unpack_changeset(vmc)
+    dbg!("reconfigure");
+    libra_execute_session_function(session, "0x1::stake::on_new_epoch", vec![])?;
+    let vm_signer = MoveValue::Signer(AccountAddress::ZERO);
+
+    libra_execute_session_function(
+        session,
+        "0x1::block::emit_writeset_block_event",
+        vec![
+            &vm_signer,
+            // note: any address would work below
+            &MoveValue::Address(CORE_CODE_ADDRESS),
+        ],
+    )?;
+    libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
+    Ok(())
 }
 
 pub fn unpack_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
     let (write_set, _delta_change_set, events) = vmc.unpack();
+    dbg!(&events);
     Ok(ChangeSet::new(write_set, events))
 }
-
 pub fn publish_current_framework(
-    dir: PathBuf,
-    framework_release_file: Option<PathBuf>,
+    dir: &Path,
     debug_vals: Option<Vec<AccountAddress>>,
 ) -> anyhow::Result<ChangeSet> {
-    let vmc = libra_run_session(
-        dir,
-        |s| combined_steps(s, framework_release_file),
-        debug_vals,
-        None,
-    )?;
+    let vmc = libra_run_session(dir, combined_steps, debug_vals)?;
     unpack_changeset(vmc)
 }
 
-fn combined_steps(
-    session: &mut SessionExt,
-    framework_release_file: Option<PathBuf>,
-) -> anyhow::Result<()> {
-    upgrade_framework(session, framework_release_file)?;
+fn combined_steps(session: &mut SessionExt) -> anyhow::Result<()> {
+    upgrade_framework(session)?;
     writeset_voodoo_events(session)?;
     Ok(())
 }
-
-#[cfg(test)]
-use std::path::Path;
 
 #[ignore]
 #[test]
@@ -234,7 +287,7 @@ use std::path::Path;
 fn test_publish() {
     let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
 
-    publish_current_framework(dir.to_owned(), None, None).unwrap();
+    publish_current_framework(dir, None).unwrap();
 }
 
 // TODO: ability to mutate some state without calling a function
@@ -258,16 +311,21 @@ fn _update_resource_in_session(session: &mut SessionExt) {
 // the writeset voodoo needs to be perfect
 fn test_voodoo() {
     let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-    libra_run_session(dir.to_owned(), writeset_voodoo_events, None, None).unwrap();
+    libra_run_session(dir, writeset_voodoo_events, None).unwrap();
 }
 
-#[test]
 #[ignore]
+#[test]
 // helper to see if an upgraded function is found in the DB
-fn test_drop_user() {
-    let addr: AccountAddress = "0x7B61439A88060096213AC4F5853B598E".parse().unwrap();
-    let dir = Path::new("/root/db");
-    load_them_onto_ark_b(dir.to_owned(), None, &[addr], None, false).expect("drop user");
+fn test_base() {
+    fn check_base(session: &mut SessionExt) -> anyhow::Result<()> {
+        libra_execute_session_function(session, "0x1::all_your_base::are_belong_to", vec![])?;
+        Ok(())
+    }
+
+    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
+
+    libra_run_session(dir, check_base, None).unwrap();
 }
 
 #[ignore]

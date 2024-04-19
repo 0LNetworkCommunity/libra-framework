@@ -1,6 +1,6 @@
 [package]
 name = "rescue"
-version = { workspace = true }
+version = "0.1.0"
 
 # Workspace inherited keys
 authors = { workspace = true }
@@ -27,22 +27,34 @@ diem-types = { workspace = true }
 diem-vm = { workspace = true }
 diem-vm-types = { workspace = true }
 
+fs_extra = { workspace = true }
 futures-util = { workspace = true }
 libra-smoke-tests = { workspace = true }
 libra-framework = { workspace = true }
 libra-txs = { workspace = true }
 move-core-types = { workspace = true }
 move-vm-types = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
+move-vm-runtime= {workspace = true}
 tokio = { workspace = true }
+diem-temppath = { workspace = true }
+diem-api-types = { workspace = true }
+diem-forge = { workspace = true }
+libra-wallet = { workspace = true }
+diem-genesis = { workspace = true }
+libra-config = { workspace = true }
+libra-types = { workspace = true }
+serde = { workspace = true }
+serde_yaml = { workspace = true }
+libra-query = { workspace = true }
+reqwest = { workspace = true }
+hex = { workspace = true }
+smoke-test = { workspace = true }
+serde_json = {workspace = true }
+
 
 [dev-dependencies]
 diem-api-types = { workspace = true }
-diem-forge = { workspace = true }
 diem-logger = { workspace = true }
-diem-temppath = { workspace = true }
 regex = { workspace = true }
+serde_json = { workspace = true }
 smoke-test = { workspace = true }
-# diem-validator-interface = { workspace = true }
-diem-debugger = { workspace = true }
