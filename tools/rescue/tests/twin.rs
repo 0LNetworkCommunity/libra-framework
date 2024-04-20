@@ -1,8 +1,5 @@
 mod support;
 
-use std::time::Duration;
-//use std::time::Duration;
-
 use crate::support::{deadline_secs, update_node_config_restart};
 
 use diem_config::config::InitialSafetyRulesConfig;
@@ -127,8 +124,5 @@ async fn test_twin() -> anyhow::Result<()> {
         env.liveness_check(deadline_secs(1)).await.is_err(),
         "test suite thinks dead node is live"
     );
-
-    std::thread::sleep(Duration::from_secs(10000));
-
     Ok(())
 }
