@@ -169,7 +169,7 @@ impl TwinOpts {
         let number_of_nodes = 3;
         // 1. Create a new validator set with new accounts
         println!("1. Create a new validator set with new accounts");
-        let mut smoke = LibraSmoke::new(Some(number_of_nodes), Some(diem_node_path)).await?;
+        let mut smoke = LibraSmoke::new(Some(number_of_nodes), None).await?;
 
         let (_, _app_cfg) =
             configure_validator::init_val_config_files(&mut smoke.swarm, 0, d.path().to_owned())
