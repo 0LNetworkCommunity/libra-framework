@@ -165,7 +165,7 @@ impl TwinOpts {
         let current_path = std::env::current_dir()?;
         //path to diem-node binary
         let diem_node_path = current_path.join("tests/diem-ghost");
-
+        //number of nodes to create
         let number_of_nodes = 3;
         // 1. Create a new validator set with new accounts
         println!("1. Create a new validator set with new accounts");
