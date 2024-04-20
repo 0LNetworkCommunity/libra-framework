@@ -7,10 +7,7 @@ use rescue::rescue_tx::RescueTxOpts;
 #[tokio::test]
 async fn test_framework_upgrade_writeset() -> anyhow::Result<()> {
     println!("0. create a valid test database from smoke-tests");
-    let current_path = std::env::current_dir()?;
-    //path to diem-node binary
-    let diem_node_path = current_path.join("tests/diem-ghost");
-    let mut s = LibraSmoke::new(Some(3), Some(diem_node_path))
+    let mut s = LibraSmoke::new(Some(3), None)
         .await
         .expect("could not start libra smoke");
 

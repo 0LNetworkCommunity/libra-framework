@@ -18,10 +18,7 @@ use crate::support::{update_node_config_restart, wait_for_node};
 /// do want the granularity.
 async fn test_create_e2e_rescue_tx() -> anyhow::Result<()> {
     let num_nodes: usize = 5;
-    let current_path = std::env::current_dir()?;
-    //path to diem-node binary
-    let diem_node_path = current_path.join("tests/diem-ghost");
-    let mut s = LibraSmoke::new(Some(num_nodes as u8), Some(diem_node_path))
+    let mut s = LibraSmoke::new(Some(num_nodes as u8), None)
         .await
         .expect("could not start libra smoke");
 

@@ -25,11 +25,7 @@ use std::{fs, time::Duration};
 async fn test_rescue_e2e_with_sync() -> anyhow::Result<()> {
     //increase thread stack size
     let num_nodes: usize = 5;
-    let current_path = std::env::current_dir()?;
-    //path to diem-node binary
-    let diem_node_path = current_path.join("tests/diem-ghost");
-
-    let mut s: LibraSmoke = LibraSmoke::new(Some(num_nodes as u8), Some(diem_node_path.clone()))
+    let mut s: LibraSmoke = LibraSmoke::new(Some(num_nodes as u8), None)
         .await
         .expect("could not start libra smoke");
 

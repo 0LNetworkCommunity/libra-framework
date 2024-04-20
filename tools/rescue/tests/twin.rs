@@ -25,10 +25,7 @@ async fn test_twin() -> anyhow::Result<()> {
 
     // The diem-node should be compiled externally to avoid any potential conflicts with the current build
     //get the current path
-    let current_path = std::env::current_dir()?;
-    //path to diem-node binary
-    let diem_node_path = current_path.join("tests/diem-ghost");
-    let mut s = LibraSmoke::new(Some(num_nodes as u8), Some(diem_node_path.clone()))
+    let mut s = LibraSmoke::new(Some(num_nodes as u8), None)
         .await
         .expect("could not start libra smoke");
 
@@ -46,7 +43,7 @@ async fn test_twin() -> anyhow::Result<()> {
     }
 
     println!("1. start new swarm configs, and stop the network");
-    let _s: LibraSmoke = LibraSmoke::new(Some(1), Some(diem_node_path))
+    let _s: LibraSmoke = LibraSmoke::new(Some(1), None)
         .await
         .expect("could not start libra smoke");
 

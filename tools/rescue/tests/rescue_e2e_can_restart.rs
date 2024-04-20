@@ -21,10 +21,7 @@ use std::{fs, time::Duration};
 /// looks something like this `/tmp/.tmpM9dF7w/0/log`
 async fn test_can_restart() -> anyhow::Result<()> {
     let num_nodes: usize = 5;
-    let current_path = std::env::current_dir()?;
-    //path to diem-node binary
-    let diem_node_path = current_path.join("tests/diem-ghost");
-    let mut s = LibraSmoke::new(Some(num_nodes as u8), Some(diem_node_path))
+    let mut s = LibraSmoke::new(Some(num_nodes as u8), None)
         .await
         .expect("could not start libra smoke");
 

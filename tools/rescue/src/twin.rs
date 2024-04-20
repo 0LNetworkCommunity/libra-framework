@@ -169,7 +169,7 @@ impl TwinOpts {
         let number_of_nodes = 3;
         // 1. Create a new validator set with new accounts
         println!("1. Create a new validator set with new accounts");
-        let mut smoke = LibraSmoke::new(Some(number_of_nodes), None).await?;
+        let mut smoke = LibraSmoke::new(Some(number_of_nodes), Some(diem_node_path)).await?;
 
         let (_, _app_cfg) =
             configure_validator::init_val_config_files(&mut smoke.swarm, 0, d.path().to_owned())
@@ -422,10 +422,12 @@ impl TwinOpts {
     }
 }
 
+#[ignore]
 #[tokio::test]
 // cargo test -p rescue --test twin_with_rando -- --nocapture
 async fn test_twin_with_rando() -> anyhow::Result<()> {
-    let prod_db_to_clone = PathBuf::from("/root/db");
+    //use any db
+    let prod_db_to_clone = PathBuf::from("/root/.libra/db");
     TwinOpts::apply_with_rando_e2e(prod_db_to_clone).await?;
     println!("Test passed");
     Ok(())
