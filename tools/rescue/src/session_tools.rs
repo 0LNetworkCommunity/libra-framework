@@ -210,8 +210,9 @@ pub fn session_add_validators(
             &MoveValue::vector_address(vec![]),
         ],
     )?;
-    //libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
-
+    //let t = libra_execute_session_function(session, "0x1::validator_universe::get_eligible_validators", vec![])?;
+    //dbg!("Current validator universe");
+    //dbg!(t);
     //get the validator state
     for cred in creds.iter().copied() {
         let signer = MoveValue::Signer(AccountAddress::ONE);

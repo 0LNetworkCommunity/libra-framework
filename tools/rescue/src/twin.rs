@@ -172,8 +172,8 @@ impl TwinOpts {
         // 1. Create a new validator set with new accounts
         println!("1. Create a new validator set with new accounts");
         // Or provide a path to the diem-node binary
-        //std::env::set_var("DIEM_FORGE_NODE_BIN_PATH", "/root/.cargo/diem-node");
-        let mut smoke = LibraSmoke::new(Some(number_of_nodes), Some(diem_node_path)).await?;
+        std::env::set_var("DIEM_FORGE_NODE_BIN_PATH", "/root/.cargo/diem-node");
+        let mut smoke = LibraSmoke::new(Some(number_of_nodes), None).await?;
         std::env::remove_var("DIEM_FORGE_NODE_BIN_PATH");
 
         //due to borrowing issues
@@ -338,6 +338,7 @@ impl TwinOpts {
             .expect("cli could not send to existing account");
         std::thread::sleep(Duration::from_secs(1000));
         */
+        std::thread::sleep(Duration::from_secs(1000));
         Ok(smoke)
     }
 
