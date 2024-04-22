@@ -6,14 +6,14 @@ use libra_cached_packages::libra_stdlib;
 
 #[derive(clap::Subcommand)]
 pub enum CommunityTxs {
-    /// Propose a Tx
+    /// Propose a multi-sig transaction
     Propose(ProposeTx),
-    /// Donors to Donor Voice addresses (like Community Wallets), can vote to
-    /// reject transactions.
+    /// Donors to Donor Voice addresses can vote to reject transactions
     Veto(VetoTx),
-    /// initialize a DonorVoice multisig with the initial admins.
+    /// Initialize a DonorVoice multi-sig. NOTE: this is a two step procedure:
+    /// propose the admins, and then rotate the account keys with --finalize
     GovInit(InitTx),
-    /// propose a change to the authorities of the DonorVoice multisig
+    /// Propose a change to the authorities of the DonorVoice multi-sig
     GovAdmin(AdminTx),
 }
 
@@ -62,10 +62,10 @@ pub struct ProposeTx {
     /// The SlowWallet recipient of funds
     pub recipient: AccountAddress,
     #[clap(short, long)]
-    /// amount of coins (units) to transfer
+    /// Amount of coins (units) to transfer
     pub amount: u64,
     #[clap(short, long)]
-    /// description of payment for memo
+    /// Description of payment for memo
     pub description: String,
 }
 
@@ -85,7 +85,7 @@ impl ProposeTx {
 #[derive(clap::Args)]
 pub struct VetoTx {
     #[clap(short, long)]
-    /// The SlowWallet recipient of funds
+    /// The Slow Wallet recipient of funds
     pub community_wallet: AccountAddress,
     #[clap(short, long)]
     /// Proposal number
@@ -106,8 +106,7 @@ impl VetoTx {
 /// and check proposed authorities 2) finalize and set the authorities
 pub struct InitTx {
     #[clap(short, long)]
-    /// The initial admins of the Multisig.
-    /// the signer of this TX (sponsor) cannot add self.
+    /// The initial admins of the multi-sig (cannot add self)
     pub admins: Vec<AccountAddress>,
 
     #[clap(short, long)]
@@ -115,7 +114,7 @@ pub struct InitTx {
     pub num_signers: u64,
 
     #[clap(long)]
-    /// Will finalize the configurations and rotate the auth key. Not reversible!
+    /// Finalize the configurations and rotate the auth key, not reversible!
     pub finalize: bool,
 }
 
