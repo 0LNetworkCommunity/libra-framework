@@ -80,16 +80,12 @@
     public fun propose_ballot<TallyType:  drop + store>(
       tracker: &mut BallotTracker<TallyType>,
       guid: guid::GUID, // whoever is ceating this issue needs access to the GUID creation capability
-      // issue: IssueData,
       tally_type: TallyType,
     ): &mut Ballot<TallyType>  {
-
       let b = Ballot {
-
         guid,
         tally_type,
         completed: false,
-
       };
       let len = vector::length(&tracker.ballots_pending);
       vector::push_back(&mut tracker.ballots_pending, b);
@@ -299,4 +295,3 @@
     }
 
   }
-// }

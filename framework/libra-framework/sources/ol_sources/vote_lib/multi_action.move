@@ -67,6 +67,9 @@ module ol_framework::multi_action {
   const EVOTING_CLOSED: u64 = 12;
   /// No addresses in multisig changes
   const EEMPTY_ADDRESSES: u64 = 13;
+  /// Duplicate vote
+  const EDUPLICATE_VOTE: u64 = 14;
+
 
   /// default setting for a proposal to expire
   const DEFAULT_EPOCHS_EXPIRE: u64 = 14;
@@ -324,6 +327,8 @@ module ol_framework::multi_action {
 
   }
 
+  // TODO: consider using multisig_account also for voting.
+  // currently only used for governance.
   fun vote_impl<ProposalData: store + drop>(
     sig: &signer,
     multisig_address: address,
@@ -340,11 +345,16 @@ module ol_framework::multi_action {
     let (found, _idx, status_enum, is_complete) = ballot::find_anywhere<Proposal<ProposalData>>(&action.vote, id);
     assert!(found, error::invalid_argument(EPROPOSAL_NOT_FOUND));
     assert!(status_enum == ballot::get_pending_enum(), error::invalid_argument(EVOTING_CLOSED));
-     assert!(!is_complete, error::invalid_argument(EVOTING_CLOSED));
+    assert!(!is_complete, error::invalid_argument(EVOTING_CLOSED));
 
     let b = ballot::get_ballot_by_id_mut(&mut action.vote, id);
     let t = ballot::get_type_struct_mut(b);
-    vector::push_back(&mut t.votes, signer::address_of(sig));
+    let voter_addr = signer::address_of(sig);
+    // prevent duplicates
+    assert!(!vector::contains(&t.votes, &voter_addr),
+    error::invalid_argument(EDUPLICATE_VOTE));
+
+    vector::push_back(&mut t.votes, voter_addr);
     let (n, _m) = get_threshold(multisig_address);
     let passed = tally(t, n);
 
@@ -453,32 +463,32 @@ module ol_framework::multi_action {
     fun search_proposals_by_data<ProposalData: drop + store> (
       tracker: &BallotTracker<Proposal<ProposalData>>,
       data: &Proposal<ProposalData>,
-    ): (bool, guid::ID, u64, u8, bool)  {
-     // looking in pending
+    ): (bool, guid::ID, u64, u8, bool) {
+    // looking in pending
 
-     let (found, guid, idx) = find_index_of_ballot_by_data(tracker, data, ballot::get_pending_enum());
-     if (found) {
+    let (found, guid, idx) = find_index_of_ballot_by_data(tracker, data, ballot::get_pending_enum());
+    if (found) {
       let b = ballot::get_ballot_by_id(tracker, &guid);
       let complete = ballot::is_completed<Proposal<ProposalData>>(b);
-       return (true, guid, idx, ballot::get_pending_enum(), complete)
-     };
+      return (true, guid, idx, ballot::get_pending_enum(), complete)
+    };
 
     let (found, guid, idx) = find_index_of_ballot_by_data(tracker, data, ballot::get_approved_enum());
-     if (found) {
+    if (found) {
       let b = ballot::get_ballot_by_id(tracker, &guid);
       let complete = ballot::is_completed<Proposal<ProposalData>>(b);
-       return (true, guid, idx, ballot::get_approved_enum(), complete)
-     };
+      return (true, guid, idx, ballot::get_approved_enum(), complete)
+    };
 
     let (found, guid, idx) = find_index_of_ballot_by_data(tracker, data, ballot::get_rejected_enum());
-     if (found) {
+    if (found) {
       let b = ballot::get_ballot_by_id(tracker, &guid);
       let complete = ballot::is_completed<Proposal<ProposalData>>(b);
-       return (true, guid, idx, ballot::get_rejected_enum(), complete)
-     };
+      return (true, guid, idx, ballot::get_rejected_enum(), complete)
+    };
 
-      (false, guid::create_id(@0x0, 0), 0, 0, false)
-    }
+    (false, guid::create_id(@0x0, 0), 0, 0, false)
+  }
 
     /// returns the a tuple with (is_found, id, status_enum ) of ballot while seaching by data
     fun find_index_of_ballot_by_data<ProposalData: drop + store> (

@@ -197,6 +197,46 @@ module ol_framework::test_donor_voice {
 
     }
 
+
+    // should not be able sign a tx twice
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
+    #[expected_failure(abort_code = 65550, location = 0x1::multi_action)]
+
+    fun dd_reject_duplicate_proposal(root: &signer, alice: &signer, bob:
+    &signer) {
+      // Scenario: Alice creates a resource_account which will be a donor directed account. She will not be one of the authorities of the account.
+      // only bob, carol, and dave with be authorities
+
+      let vals = mock::genesis_n_vals(root, 4);
+      let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
+      let donor_voice_address = signer::address_of(&resource_sig);
+
+      // the account needs basic donor directed structs
+      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig);
+
+      //need to cage to finalize donor directed workflow and release control of the account
+      multi_action::finalize_and_cage(&resource_sig, vals, 2);
+
+      let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address,
+      @0x1000c, 100, b"thanks carol");
+
+      let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
+      assert!(found, 7357004);
+      assert!(idx == 0, 7357005);
+      assert!(status_enum == ballot::get_pending_enum(), 7357006);
+      assert!(!completed, 7357007);
+
+      // it is not yet scheduled, it's still only a proposal by an admin
+      assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
+
+      let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address,
+      @0x1000c, 100, b"thanks carol");
+
+      // confirm it is scheduled
+      assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
+    }
+
+
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
     fun dd_process_unit(root: &signer, alice: &signer, bob: &signer, carol: &signer) {
       // Scenario: Alice creates a resource_account which will be a donor directed account. She will not be one of the authorities of the account.
