@@ -24,9 +24,9 @@ edition = "2021"
 homepage = "https://0l.network/"
 license = "Apache-2.0"
 publish = false
-repository = "https://github.com/0LNetworkCommunity/libra-v7"
+repository = "https://github.com/0LNetworkCommunity/libra-framework"
 rust-version = "1.70.0"
-version = "7.0.0"
+version = "7.0.1"
 
 [workspace.dependencies]
 ######## Internal crate dependencies ########
