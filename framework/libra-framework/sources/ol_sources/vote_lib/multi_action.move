@@ -324,7 +324,6 @@ module ol_framework::multi_action {
     assert_authorized(sig, multisig_address);
 
     vote_impl<ProposalData>(sig, multisig_address, id)
-
   }
 
   // TODO: consider using multisig_account also for voting.
@@ -348,6 +347,7 @@ module ol_framework::multi_action {
     assert!(!is_complete, error::invalid_argument(EVOTING_CLOSED));
 
     let b = ballot::get_ballot_by_id_mut(&mut action.vote, id);
+
     let t = ballot::get_type_struct_mut(b);
     let voter_addr = signer::address_of(sig);
     // prevent duplicates
