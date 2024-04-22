@@ -18,9 +18,9 @@ use std::str::FromStr;
 
 #[derive(clap::Subcommand)]
 pub enum UserTxs {
-    RotateKey(RotateKeyTx),
-    RotationCapability(RotationCapabilityTx),
     SetSlow(SetSlowTx),
+    RotationCapability(RotationCapabilityTx),
+    RotateKey(RotateKeyTx),
 }
 
 impl UserTxs {
@@ -55,6 +55,8 @@ impl UserTxs {
     }
 }
 
+/// Sets the account sending the tx to a Slow Wallet.
+/// WARNING: this is not reversible!
 #[derive(clap::Args)]
 pub struct SetSlowTx {
     // TODO: any arguments needed? Confirmation?
@@ -68,6 +70,9 @@ impl SetSlowTx {
     }
 }
 
+/// Rotate an account's auth key, but entering a new private key. Note, this
+/// depends on the rotation capability being set with subcommand
+/// rotation-capability.
 #[derive(clap::Args)]
 pub struct RotateKeyTx {
     #[clap(short, long)]
