@@ -174,6 +174,7 @@ impl TxsCli {
             .clone()
             .unwrap_or_else(|| app_cfg.tx_configs.get_cost(self.tx_profile.clone()));
 
+        println!("tx_cost: {:?}", tx_cost);
         // let tx_cost = app_cfg.tx_configs.get_cost(self.tx_profile.clone());
 
         send.set_tx_cost(&tx_cost);

@@ -16,37 +16,38 @@ anyhow = { workspace = true }
 bcs = { workspace = true }
 clap = { workspace = true }
 
-diem-config = { workspace = true }
+diem-config = { workspace = true , features = ["testing"] }
 diem-crypto = { workspace = true }
 diem-db = { workspace = true }
-diem-gas = { workspace = true }
+diem-gas = { workspace = true , features = ["testing"] }
 diem-executor = { workspace = true }
 diem-logger = { workspace = true }
-diem-storage-interface = { workspace = true }
-diem-types = { workspace = true }
-diem-vm = { workspace = true }
+diem-storage-interface = { workspace = true}
+diem-types = { workspace = true}
+diem-vm = { workspace = true , features = ["testing"] }
 diem-vm-types = { workspace = true }
 
 fs_extra = { workspace = true }
 futures-util = { workspace = true }
-libra-smoke-tests = { workspace = true }
+libra-smoke-tests = { workspace = true, features = ["testing"] }
 libra-framework = { workspace = true }
 libra-txs = { workspace = true }
 move-core-types = { workspace = true }
 move-vm-types = { workspace = true }
-move-vm-runtime= {workspace = true}
-tokio = { workspace = true }
+move-vm-runtime= {workspace = true, features = ["testing"] }
+tokio = { workspace = true , features = ["full"] }
 diem-temppath = { workspace = true }
 diem-api-types = { workspace = true }
-diem-forge = { workspace = true }
-libra-wallet = { workspace = true }
-diem-genesis = { workspace = true }
-libra-config = { workspace = true }
+diem-forge = { workspace = true , features = ["testing"] }
+libra-wallet = { workspace = true}
+diem-genesis = { workspace = true, features = ["testing"] }
+libra-config = { workspace = true}
 libra-types = { workspace = true }
 serde = { workspace = true }
-serde_yaml = { workspace = true }
-libra-query = { workspace = true }
+serde_yaml = { workspace = true}
+libra-query = { workspace = true}
 reqwest = { workspace = true }
+
 hex = { workspace = true }
 smoke-test = { workspace = true }
 serde_json = {workspace = true }

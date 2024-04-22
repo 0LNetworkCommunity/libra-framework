@@ -48,6 +48,8 @@ async fn wait_for_node(validator: &mut dyn Validator, expected_to_connect: usize
 #[tokio::test]
 /// This meta test checks that our tools can control a network
 /// so the nodes stop producing blocks, shut down, and start again.
+// cargo test test_swarm_can_halt_and_restart -- --nocapture
+
 async fn test_swarm_can_halt_and_restart() -> anyhow::Result<()> {
     let num_nodes: usize = 5;
 

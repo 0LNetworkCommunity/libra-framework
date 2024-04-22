@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::path::PathBuf;
 
 use anyhow::{format_err, Context};
 
@@ -34,9 +35,10 @@ use move_vm_types::gas::UnmeteredGasMeter;
 // Some are buggy, some don't have exports or APIs needed (DiemDbBootstrapper). Some have issues with async and db locks (DiemDbDebugger).
 // so we had to rewrite it.
 pub fn libra_run_session<F>(
-    dir: &Path,
+    dir: PathBuf,
     f: F,
     debug_vals: Option<Vec<AccountAddress>>,
+    debug_epoch_interval_microsecs: Option<u64>, // seconds per epoch, for twin and testnet
 ) -> anyhow::Result<VMChangeSet>
 where
     F: FnOnce(&mut SessionExt) -> anyhow::Result<()>,
@@ -70,13 +72,24 @@ where
         .map_err(|err| format_err!("Unexpected VM Error Running Rescue VM Session: {:?}", err))?;
     //////
 
+    let framework_sig: MoveValue = MoveValue::Signer(AccountAddress::ONE);
     // if we want to replace the vals, or otherwise use swarm
     // to drive the db state
     if let Some(vals) = debug_vals {
-        let vm_signer = MoveValue::Signer(AccountAddress::ZERO);
         let vals_cast = MoveValue::vector_address(vals);
-        let args = vec![&vm_signer, &vals_cast];
-        libra_execute_session_function(&mut session, "0x1::stake::maybe_reconfigure", args)?;
+        let args = vec![&framework_sig, &vals_cast];
+        libra_execute_session_function(&mut session, "0x1::diem_governance::set_validators", args)?;
+    }
+
+    // if we want accelerated epochs for twin, testnet, etc
+    if let Some(ms) = debug_epoch_interval_microsecs {
+        let secs_arg = MoveValue::U64(ms);
+        libra_execute_session_function(
+            &mut session,
+            "0x1::block::update_epoch_interval_microsecs",
+            vec![&framework_sig, &secs_arg],
+        )
+        .expect("set epoch interval seconds");
     }
 
     let change_set = session.finish(
@@ -87,7 +100,6 @@ where
     println!("session run sucessfully");
     Ok(change_set)
 }
-
 // BLACK MAGIC
 // there's a bunch of branch magic that happens for a writeset.
 // these are the ceremonial dance steps
@@ -181,8 +193,15 @@ pub fn session_add_validators(
     session: &mut SessionExt,
     creds: Vec<&ValCredentials>,
 ) -> anyhow::Result<()> {
-    // account address of the diem_framework
+    // upgrade the framework
     upgrade_framework(session)?;
+    // set the chain id
+    libra_execute_session_function(
+        session,
+        "0x1::chain_id::set_impl",
+        vec![&MoveValue::Signer(AccountAddress::ONE), &MoveValue::U8(4)],
+    )?;
+    // resset the validators
     libra_execute_session_function(
         session,
         "0x1::stake::bulk_set_next_validators",
@@ -191,7 +210,7 @@ pub fn session_add_validators(
             &MoveValue::vector_address(vec![]),
         ],
     )?;
-    libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
+    //libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
 
     //get the validator state
     for cred in creds.iter().copied() {
@@ -224,18 +243,21 @@ pub fn session_add_validators(
         )?;
         //The accounts are not slow so we do not have to unlock them
         dbg!("mint to account");
-        libra_execute_session_function(
+        let t = libra_execute_session_function(
             session,
             "0x1::libra_coin::mint_to_impl",
             vec![&MoveValue::Signer(AccountAddress::ONE), &signer, &amount],
         )?;
+        dbg!(t);
         dbg!("registering validator");
+
         libra_execute_session_function(
             session,
             "0x1::validator_universe::register_validator",
             args,
         )?;
         dbg!("joining the set of validators");
+        /*
         let va = MoveValue::Address(cred.account);
         dbg!("join_validator_set");
         libra_execute_session_function(
@@ -243,12 +265,22 @@ pub fn session_add_validators(
             "0x1::stake::join_validator_set",
             vec![&signer, &va],
         )?;
+        */
     }
-
+    //get vector of validators addressses in terms of vec![MoveValue::Address(cred.account)]
+    let validators = MoveValue::vector_address(creds.iter().map(|c| c.account).collect());
+    let signer = MoveValue::Signer(AccountAddress::ONE);
+    dbg!("set_validators");
+    let t = libra_execute_session_function(
+        session,
+        "0x1::diem_governance::set_validators",
+        vec![&signer, &validators],
+    )?;
+    dbg!("Validator set");
+    dbg!(t);
     dbg!("reconfigure");
     libra_execute_session_function(session, "0x1::stake::on_new_epoch", vec![])?;
     let vm_signer = MoveValue::Signer(AccountAddress::ZERO);
-
     libra_execute_session_function(
         session,
         "0x1::block::emit_writeset_block_event",
@@ -271,7 +303,7 @@ pub fn publish_current_framework(
     dir: &Path,
     debug_vals: Option<Vec<AccountAddress>>,
 ) -> anyhow::Result<ChangeSet> {
-    let vmc = libra_run_session(dir, combined_steps, debug_vals)?;
+    let vmc = libra_run_session(dir.to_path_buf(), combined_steps, debug_vals, None)?;
     unpack_changeset(vmc)
 }
 
@@ -311,7 +343,7 @@ fn _update_resource_in_session(session: &mut SessionExt) {
 // the writeset voodoo needs to be perfect
 fn test_voodoo() {
     let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-    libra_run_session(dir, writeset_voodoo_events, None).unwrap();
+    libra_run_session(dir.to_path_buf(), writeset_voodoo_events, None, None).unwrap();
 }
 
 #[ignore]
@@ -325,7 +357,7 @@ fn test_base() {
 
     let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
 
-    libra_run_session(dir, check_base, None).unwrap();
+    libra_run_session(dir.to_path_buf(), check_base, None, None).unwrap();
 }
 
 #[ignore]

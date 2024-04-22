@@ -1,5 +1,5 @@
 [package]
-name = "diem-node-ghost"
+name = "diem-node-proxy"
 version = "0.1.0"
 
 [dependencies]

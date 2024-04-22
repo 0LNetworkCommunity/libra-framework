@@ -2,7 +2,7 @@
 resolver = "2"
 
 members = [
-  "diem-node-ghost"
+  "diem-node-proxy"
 ]
 
 [workspace.dependencies]

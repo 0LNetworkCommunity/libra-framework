@@ -4,7 +4,9 @@ use crate::session_tools::session_add_validators;
 use anyhow::bail;
 use anyhow::Context;
 use clap::Parser;
+use diem_config::config::WaypointConfig;
 use diem_types::transaction::Script;
+use libra_config::make_profile;
 use libra_smoke_tests::helpers::mint_libra;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_txs::txs_cli_vals::ValidatorTxs;
@@ -96,7 +98,6 @@ impl TwinOpts {
     async fn initialize_marlon_the_val() -> anyhow::Result<PathBuf> {
         // we use LibraSwarm to create a new folder with validator configs.
         // we then take the operator.yaml, and use it to register on a dirty db
-
         let mut s = LibraSmoke::new(Some(1), None).await?;
         s.swarm.wait_all_alive(Duration::from_secs(10)).await?;
         let marlon = s.swarm.validators_mut().next().unwrap();
@@ -127,10 +128,12 @@ impl TwinOpts {
         creds: Vec<&ValCredentials>,
     ) -> anyhow::Result<PathBuf> {
         println!("run session to create validator onboarding tx (rescue.blob)");
+        let epoch_interval = 100_u64;
         let vmc = libra_run_session(
-            db_path,
+            db_path.to_path_buf(),
             |session| session_add_validators(session, creds),
             None,
+            Some(epoch_interval),
         )?;
 
         let cs = session_tools::unpack_changeset(vmc)?;
@@ -159,22 +162,20 @@ impl TwinOpts {
     pub async fn apply_with_rando_e2e(
         prod_db: PathBuf,
     ) -> anyhow::Result<LibraSmoke, anyhow::Error> {
-        let d = diem_temppath::TempPath::new();
         //The diem-node should be compiled externally to avoid any potential conflicts with the current build
         //get the current path
         let current_path = std::env::current_dir()?;
         //path to diem-node binary
-        let diem_node_path = current_path.join("tests/diem-ghost");
+        let diem_node_path = current_path.join("tests/diem-proxy");
         //number of nodes to create
         let number_of_nodes = 3;
         // 1. Create a new validator set with new accounts
         println!("1. Create a new validator set with new accounts");
+        // Or provide a path to the diem-node binary
+        //std::env::set_var("DIEM_FORGE_NODE_BIN_PATH", "/root/.cargo/diem-node");
         let mut smoke = LibraSmoke::new(Some(number_of_nodes), Some(diem_node_path)).await?;
+        std::env::remove_var("DIEM_FORGE_NODE_BIN_PATH");
 
-        let (_, _app_cfg) =
-            configure_validator::init_val_config_files(&mut smoke.swarm, 0, d.path().to_owned())
-                .await
-                .expect("could not init validator config");
         //due to borrowing issues
         let client = smoke.client().clone();
 
@@ -262,14 +263,16 @@ impl TwinOpts {
             5. Chenge the waypoint in the node configs and add the rescue blob to the config"
         );
         for (i, n) in smoke.swarm.validators_mut().enumerate() {
-            let config_path = n.config_path();
             let mut config = n.config().clone();
             let mut node_config = n.config().clone();
             insert_waypoint(&mut node_config, waypoints[i]);
             node_config
                 .consensus
                 .safety_rules
-                .initial_safety_rules_config = InitialSafetyRulesConfig::None;
+                .initial_safety_rules_config = InitialSafetyRulesConfig::FromFile {
+                identity_blob_path: genesis_blob_paths[i].clone(),
+                waypoint: WaypointConfig::FromConfig(waypoints[i]),
+            };
             let genesis_transaction = {
                 let buf = std::fs::read(&genesis_blob_paths[i].clone()).unwrap();
                 bcs::from_bytes::<Transaction>(&buf).unwrap()
@@ -284,6 +287,16 @@ impl TwinOpts {
         smoke
             .swarm
             .liveness_check(Instant::now().checked_add(Duration::from_secs(10)).unwrap());
+        //DO NOT FORGET TO CHANGE THE MAX GAS UNIT ALLOWED
+        //path to config file
+        //peer id of all the validators
+        let peer_ids = smoke
+            .swarm
+            .validators()
+            .map(|n| n.config().validator_network.as_ref().unwrap().peer_id())
+            .collect::<Vec<_>>();
+        println!("peer ids of validators: {:?}", peer_ids);
+
         let a = client
             .view(
                 &ViewRequest {
@@ -295,10 +308,17 @@ impl TwinOpts {
             )
             .await;
         println!("Current validators: {:?}", a);
-        //DO NOT FORGET TO CHANGE THE MAX GAS UNIT ALLOWED
+        // TO DO: REVESIT THIS TRANSACTION
         /*
-        //path to config file
+        let d = diem_temppath::TempPath::new();
+        let (_, _app_cfg) =
+            configure_validator::init_val_config_files(&mut smoke.swarm, 0, d.path().to_owned())
+                .await
+                .expect("could not init validator config");
         let recipient = smoke.swarm.validators().nth(1).unwrap().peer_id(); // sending to second genesis node.
+        let marlon = smoke.swarm.validators().nth(0).unwrap().peer_id();
+        let bal = get_libra_balance(&client, marlon).await?;
+        println!("balance of marlon: {:?}", bal);
         let cli = TxsCli {
             subcommand: Some(Transfer {
                 to_account: recipient,
@@ -307,15 +327,16 @@ impl TwinOpts {
             mnemonic: None,
             test_private_key: Some(smoke.encoded_pri_key.clone()),
             chain_id: None,
-            config_path: Some(d.path().to_owned().join("libra.yaml")),
+            config_path: Some(d.path().to_owned().join("libra-cli-config.yaml")),
             url: Some(smoke.api_endpoint.clone()),
             tx_profile: None,
-            tx_cost: Some(TxCost::default_critical_txs_cost()),
+            tx_cost: Some(TxCost::default_baseline_cost()),
             estimate_only: false,
         };
         cli.run()
             .await
             .expect("cli could not send to existing account");
+        std::thread::sleep(Duration::from_secs(1000));
         */
         Ok(smoke)
     }
@@ -424,7 +445,7 @@ impl TwinOpts {
 
 #[ignore]
 #[tokio::test]
-// cargo test -p rescue --test twin_with_rando -- --nocapture
+// cargo test test_twin_with_rando -- --nocapture
 async fn test_twin_with_rando() -> anyhow::Result<()> {
     //use any db
     let prod_db_to_clone = PathBuf::from("/root/.libra/db");

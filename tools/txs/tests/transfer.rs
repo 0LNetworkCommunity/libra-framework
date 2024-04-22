@@ -1,6 +1,7 @@
 use libra_smoke_tests::{configure_validator, helpers::get_libra_balance, libra_smoke::LibraSmoke};
 use libra_txs::txs_cli::{TxsCli, TxsSub::Transfer};
 use libra_types::legacy_types::app_cfg::TxCost;
+use std::time::Duration;
 
 // Testing that we can send the minimal transaction: a transfer from one existing validator to another.
 // Case 1: send to an existing account: another genesis validator
@@ -8,9 +9,11 @@ use libra_types::legacy_types::app_cfg::TxCost;
 
 /// Case 1: send to an existing account: another genesis validator
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+
 async fn smoke_transfer_existing_account() {
     let d = diem_temppath::TempPath::new();
 
+    std::env::set_var("DIEM_FORGE_NODE_BIN_PATH", "/root/.cargo/diem-node");
     let mut s = LibraSmoke::new(Some(2), None) // going to transfer from validator #0 to validator #1
         .await
         .expect("could not start libra smoke");
@@ -49,6 +52,7 @@ async fn smoke_transfer_existing_account() {
 async fn smoke_transfer_create_account() -> Result<(), anyhow::Error> {
     let d = diem_temppath::TempPath::new();
 
+    std::env::set_var("DIEM_FORGE_NODE_BIN_PATH", "/root/.cargo/diem-node");
     let mut s = LibraSmoke::new(None, None)
         .await
         .expect("could not start libra smoke");
@@ -88,6 +92,8 @@ async fn smoke_transfer_create_account() -> Result<(), anyhow::Error> {
         "Balance of the new account should be 1.0(1000000) after the transfer"
     );
 
+    //wait for 1000
+    std::thread::sleep(Duration::from_secs(1000));
     Ok(())
 }
 
