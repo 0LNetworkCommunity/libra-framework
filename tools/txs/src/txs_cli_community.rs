@@ -5,7 +5,7 @@ use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib;
 use libra_query::{account_queries, query_view};
 use serde::{Deserialize, Serialize};
-use std::{fs, path::PathBuf};
+use std::{collections::HashMap, fs, path::PathBuf};
 
 #[derive(clap::Subcommand)]
 pub enum CommunityTxs {
@@ -117,7 +117,8 @@ struct ProposePay {
     amount: u64,
     description: String,
     is_slow: Option<bool>,
-    success: Option<bool>,
+    proposed: Option<bool>,
+    voters: Option<Vec<AccountAddress>>,
     error: Option<String>,
     note: Option<String>,
 }
@@ -130,20 +131,67 @@ impl BatchTx {
         let data = fs::read_to_string(&self.file).expect("Unable to read file");
         let mut list: Vec<ProposePay> = serde_json::from_str(&data).expect("Unable to parse");
 
-        let ballots = account_queries::multi_auth_ballots(sender.client(), self.community_wallet).await?;
+        let ballots =
+            account_queries::multi_auth_ballots(sender.client(), self.community_wallet).await?;
         let d = ballots.as_object().unwrap();
         let v = d.get("vote").unwrap().as_object().unwrap();
-        dbg!(&v.get("ballots_pending"));
+        let p = v.get("ballots_pending").unwrap().as_array().unwrap();
 
-        // TODO: use an iter_mut here. Async will be annoying.
+        let mut pending: HashMap<AccountAddress, ProposePay> = HashMap::new();
+        p.iter().for_each(|e| {
+            let o = e.as_object().unwrap();
+            let prop = o.get("tally_type").unwrap().as_object().unwrap();
+            let data = prop.get("proposal_data").unwrap().as_object().unwrap();
+            let recipient: AccountAddress = data.get("payee").unwrap().as_str().unwrap().parse().unwrap();
+            let amount: u64 = data
+                .get("value")
+                .unwrap()
+                .as_str()
+                .unwrap()
+                .parse()
+                .unwrap();
+
+            let voters: Vec<AccountAddress> = prop
+                .get("votes")
+                .unwrap()
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|e| {
+                  e.as_str().unwrap().parse::<AccountAddress>().unwrap()
+                })
+                .collect();
+
+            let found = ProposePay {
+                recipient,
+                amount,
+                description: "debugging".to_string(),
+                is_slow: None,
+                proposed: None,
+                voters: Some(voters),
+                error: None,
+                note: None,
+            };
+
+            pending.insert(recipient, found);
+        });
+
         for inst in &mut list {
             println!("account: {:?}", &inst.recipient);
 
-            if let Some(success) = inst.success {
-                if success {
-                    println!("...skipping already successful transaction");
+            if let Some((_, pp)) = pending.get_key_value(&inst.recipient) {
+              if pp.amount == inst.amount {
+                inst.proposed = Some(true);
+                inst.voters = pp.voters.clone();
+                println!("... found already pending, mark as proposed");
+              }
+            };
+
+            if let Some(v) = &inst.voters {
+                if v.contains(&sender.local_account.address()) {
+                    println!("... already voted, skipping");
                     continue;
-                };
+                }
             }
 
             let res_slow = query_view::get_view(
@@ -159,25 +207,23 @@ impl BatchTx {
                 .unwrap();
             inst.is_slow = Some(res_slow);
             if !res_slow {
-                println!("...skipping, is not a slow wallet");
+                println!("... is not a slow wallet, skipping");
             }
 
+            println!("checks completed");
             if self.check {
                 continue;
             };
-
-            // TODO: check if the TX already exists as a proposal (just address
-            // and value), don't duplicate.
 
             println!("scheduling tx");
 
             match propose_single(sender, &self.community_wallet, &inst).await {
                 Ok(_) => {
-                    inst.success = Some(true);
+                    inst.proposed = Some(true);
                 }
                 Err(e) => {
                     println!("transaction failed");
-                    inst.success = Some(false);
+                    inst.proposed = Some(false);
                     inst.error = Some(e.to_string())
                 }
             }
