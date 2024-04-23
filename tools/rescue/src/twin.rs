@@ -84,15 +84,16 @@ pub struct TwinOpts {
 }
 
 impl TwinOpts {
-    /// takes a snapshot db and makes a validator set of ONE from an
-    /// existing or NEW marlon rando account
-    pub fn run(&self) -> anyhow::Result<()> {
-        if self.info {
-            return Ok(());
-        }
-
-        Ok(())
+    /// takes a snapshot db and make  a twin of the network with it
+    pub fn run(&self) -> anyhow::Result<LibraSmoke, anyhow::Error> {
+        let db_path = &self.db_dir;
+        //let creds = vec![];
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+        let num_validators = 3_u8;
+        runtime.block_on(Self::apply_with_rando_e2e(db_path.to_path_buf(), num_validators))
     }
+
+    /// ! TO DO : REFACTOR THIS FUNCTION
 
     /// we need a new account config created locally
     async fn initialize_marlon_the_val() -> anyhow::Result<PathBuf> {
@@ -105,7 +106,6 @@ impl TwinOpts {
 
         Ok(marlon.config_path().join("operator.yaml"))
     }
-
     /// create the validator registration entry function payload
     /// needs the file operator.yaml
     fn register_marlon_tx(file: PathBuf) -> anyhow::Result<Script> {
@@ -119,10 +119,12 @@ impl TwinOpts {
         }
         bail!("function did not return a script")
     }
-
     /// create the rescue blob which has one validator
     fn recue_blob_with_one_val() {}
 
+    /// ''' 
+    ///  Make a rescue blob with the given credentials
+    /// '''
     pub async fn make_rescue_twin_blob(
         db_path: &Path,
         creds: Vec<&ValCredentials>,
@@ -146,6 +148,9 @@ impl TwinOpts {
         Ok(out)
     }
 
+    /// '''
+    /// Apply the rescue blob to the swarm db
+    /// '''
     pub fn update_node_config_restart(
         validator: &mut LocalNode,
         mut config: NodeConfig,
@@ -157,26 +162,21 @@ impl TwinOpts {
         Ok(())
     }
 
-    /// end to end with rando
-    /// Which is basically running a new random swarm on an existing db.
-    pub async fn apply_with_rando_e2e(
+    /// '''
+    /// Apply the rescue blob to the swarm db
+    /// '''
+    async fn apply_with_rando_e2e(
         prod_db: PathBuf,
+        num_validators: u8,
     ) -> anyhow::Result<LibraSmoke, anyhow::Error> {
         //The diem-node should be compiled externally to avoid any potential conflicts with the current build
         //get the current path
         let current_path = std::env::current_dir()?;
         //path to diem-node binary
         let diem_node_path = current_path.join("tests/diem-proxy");
-        //number of nodes to create
-        let number_of_nodes = 3;
         // 1. Create a new validator set with new accounts
         println!("1. Create a new validator set with new accounts");
-        // Or provide a path to the diem-node binary
-        //std::env::set_var("DIEM_FORGE_NODE_BIN_PATH", "/root/.cargo/diem-node");
-        std::env::set_var("DIEM_FORGE_NODE_BIN_PATH", "/root/libra-framework/tools/rescue/tests/diem-proxy/target/release/diem-node");
-        let mut smoke = LibraSmoke::new(Some(number_of_nodes), None).await?;
-        std::env::remove_var("DIEM_FORGE_NODE_BIN_PATH");
-
+        let mut smoke = LibraSmoke::new(Some(num_validators), Some(diem_node_path)).await?;
         //due to borrowing issues
         let client = smoke.client().clone();
 
@@ -288,27 +288,7 @@ impl TwinOpts {
         smoke
             .swarm
             .liveness_check(Instant::now().checked_add(Duration::from_secs(10)).unwrap());
-        //DO NOT FORGET TO CHANGE THE MAX GAS UNIT ALLOWED
-        //path to config file
-        //peer id of all the validators
-        let peer_ids = smoke
-            .swarm
-            .validators()
-            .map(|n| n.config().validator_network.as_ref().unwrap().peer_id())
-            .collect::<Vec<_>>();
-        println!("peer ids of validators: {:?}", peer_ids);
-
-        let a = client
-            .view(
-                &ViewRequest {
-                    function: "0x1::stake::get_current_validators".parse().unwrap(),
-                    type_arguments: vec![],
-                    arguments: vec![],
-                },
-                None,
-            )
-            .await;
-        println!("Current validators: {:?}", a);
+        
         // TO DO: REVESIT THIS TRANSACTION
         let d = diem_temppath::TempPath::new();
         let (_, _app_cfg) =
@@ -317,8 +297,7 @@ impl TwinOpts {
                 .expect("could not init validator config");
         let recipient = smoke.swarm.validators().nth(1).unwrap().peer_id(); // sending to second genesis node.
         let marlon = smoke.swarm.validators().nth(0).unwrap().peer_id();
-        let bal = get_libra_balance(&client, recipient).await?;
-        println!("balance of recepient: {:?}", bal);
+        let bal_old = get_libra_balance(&client, recipient).await?;
         let cli = TxsCli {
             subcommand: Some(Transfer {
                 to_account: recipient,
@@ -336,14 +315,14 @@ impl TwinOpts {
         cli.run()
             .await
             .expect("cli could not send to existing account");
-        let bal = get_libra_balance(&client, recipient).await?;
-        println!("balance of recepient: {:?}", bal);
-        std::thread::sleep(Duration::from_secs(1000));
-        
+        let bal_curr = get_libra_balance(&client, recipient).await?;
+        assert!(bal_curr.total > bal_old.total, "balance should change");
         Ok(smoke)
     }
 
-    /// from an initialized swarm state, extract one node's credentials
+    /// '''
+    /// Extract the credentials of the random validator
+    /// '''
     async fn extract_credentials(marlon_node: &LocalNode) -> anyhow::Result<ValCredentials> {
         println!("extracting swarm validator credentpials");
         // get the necessary values from the current db
@@ -397,6 +376,9 @@ impl TwinOpts {
         })
     }
 
+    /// '''
+    /// Clone the prod db to the swarm db
+    /// '''
     fn clone_db(prod_db: &Path, swarm_db: &Path) -> anyhow::Result<()> {
         println!("copying the db db to the swarm db");
         println!("prod db path: {:?}", prod_db);
@@ -420,7 +402,10 @@ impl TwinOpts {
         Ok(())
     }
 
-    pub async fn wait_for_node(
+    /// '''
+    /// Wait for the node to become healthy
+    /// '''
+    async fn wait_for_node(
         validator: &mut dyn Validator,
         expected_to_connect: usize,
     ) -> anyhow::Result<()> {
@@ -446,12 +431,15 @@ impl TwinOpts {
 }
 
 
-#[tokio::test]
-// cargo test test_twin_with_rando -- --nocapture
-async fn test_twin_with_rando() -> anyhow::Result<()> {
+#[test]
+fn test_twin_random() -> anyhow::Result<()> {
     //use any db
     let prod_db_to_clone = PathBuf::from("/root/.libra/db");
-    TwinOpts::apply_with_rando_e2e(prod_db_to_clone).await?;
-    println!("Test passed");
+    let twin = TwinOpts{
+        db_dir: prod_db_to_clone,
+        oper_file: None,
+        info: false,
+    };
+    let _s = twin.run();
     Ok(())
 }

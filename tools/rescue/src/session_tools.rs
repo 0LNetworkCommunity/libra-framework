@@ -8,7 +8,6 @@ use diem_config::config::{
     NO_OP_STORAGE_PRUNER_CONFIG,
 };
 use diem_db::DiemDB;
-use diem_vm::data_cache::StorageAdapter;
 use diem_gas::{ChangeSetConfigs, LATEST_GAS_FEATURE_VERSION};
 use diem_storage_interface::{state_view::DbStateViewAtVersion, DbReaderWriter};
 use diem_types::{account_address::AccountAddress, transaction::ChangeSet};
@@ -57,12 +56,9 @@ where
     .unwrap();
 
     let db_rw = DbReaderWriter::new(db);
-
     let v = db_rw.reader.get_latest_version().unwrap();
-
     let view = db_rw.reader.state_view_at_version(Some(v)).unwrap();
     let dvm = diem_vm::DiemVM::new(&view);      
-
     let adapter = dvm.as_move_resolver(&view);
     let s_id = SessionId::genesis(diem_crypto::HashValue::zero());
     let mvm: &MoveVmExt = dvm.internals().move_vm();
@@ -88,7 +84,7 @@ where
         println!("setting epoch interval seconds");
         println!("{}, {}", ms, "ms");
         let secs_arg = MoveValue::U64(ms);
-        let t = libra_execute_session_function(
+        libra_execute_session_function(
             &mut session,
             "0x1::block::update_epoch_interval_microsecs",
             vec![&framework_sig, &secs_arg],
@@ -159,7 +155,6 @@ pub fn libra_execute_session_function(
 ) -> anyhow::Result<SerializedReturnValues> {
     let function_tag: StructTag = function_str.parse()?;
 
-    // TODO: return Serialized Values
     let res = session.execute_function_bypass_visibility(
         &function_tag.module_id(),
         function_tag.name.as_ident_str(),
@@ -193,27 +188,37 @@ pub fn libra_execute_session_function(
 //     Ok(kvs)
 // }
 
-/// Function for combined function calls
+
+
+
+/// Add validators to the session
+/// 
+/// 
+/// ! CAUTION: This function will overwrite the current validator set
+/// Vector of `ValCredentials` is a list of validators to be added to the session
 pub fn session_add_validators(
     session: &mut SessionExt,
     creds: Vec<&ValCredentials>,
 ) -> anyhow::Result<()> {
     // upgrade the framework
+    dbg!("upgrade_framework");
     upgrade_framework(session)?;
-    // set the chain id
+    // set the chain id (its is set to devnet by default)
+    dbg!("set_chain_id");
     libra_execute_session_function(
         session,
         "0x1::chain_id::set_impl",
         vec![&MoveValue::Signer(AccountAddress::ONE), &MoveValue::U8(4)],
     )?;
-
+    // clean the validator universe
+    dbg!("clean_validator_universe");
     libra_execute_session_function(
         session,
         "0x1::validator_universe::clean_validator_universe",
         vec![&MoveValue::Signer(AccountAddress::ONE)],
     )?;
-
-    // resset the validators
+    // reset the validators
+    dbg!("bulk_set_next_validators");
     libra_execute_session_function(
         session,
         "0x1::stake::bulk_set_next_validators",
@@ -222,16 +227,15 @@ pub fn session_add_validators(
             &MoveValue::vector_address(vec![]),
         ],
     )?;
-    //get the validator state
+    //setup the allowed validators
     for cred in creds.iter().copied() {
         let signer = MoveValue::Signer(AccountAddress::ONE);
         let vector_val = MoveValue::vector_address(vec![cred.account]);
         let args = vec![&signer, &vector_val];
+        //configure allowed validators(it should be deprecated??)
         dbg!("configure_allowed_validators");
         libra_execute_session_function(session, "0x1::stake::configure_allowed_validators", args)?;
-        // end ////
         let signer = MoveValue::Signer(cred.account);
-        // let signer_address = MoveValue::Address(cred.account);
         let consensus_pubkey = MoveValue::vector_u8(cred.consensus_pubkey.clone());
         let proof_of_possession = MoveValue::vector_u8(cred.proof_of_possession.clone());
         let network_addresses = MoveValue::vector_u8(cred.network_addresses.clone());
@@ -243,8 +247,10 @@ pub fn session_add_validators(
             &network_addresses,
             &fullnode_addresses,
         ];
-        let amount = 1000_000_000_u64;
+        //set the initial amount of coins(uts set to 1000)
+        let amount = 1000 * 1000_000_u64;
         let amount = MoveValue::U64(amount);
+        //create account
         dbg!("create account");
         libra_execute_session_function(
             session,
@@ -253,44 +259,41 @@ pub fn session_add_validators(
         )?;
         //The accounts are not slow so we do not have to unlock them
         dbg!("mint to account");
-        let t = libra_execute_session_function(
+        libra_execute_session_function(
             session,
             "0x1::libra_coin::mint_to_impl",
             vec![&MoveValue::Signer(AccountAddress::ONE), &signer, &amount],
         )?;
-        dbg!(t);
         dbg!("registering validator");
-
         libra_execute_session_function(
             session,
             "0x1::validator_universe::register_validator",
             args,
         )?;
-        dbg!("joining the set of validators");
     }
-    //get vector of validators addressses in terms of vec![MoveValue::Address(cred.account)]
     let validators = MoveValue::vector_address(creds.iter().map(|c| c.account).collect());
     let signer = MoveValue::Signer(AccountAddress::ONE);
+    //set the new validators
     dbg!("set_validators");
-    let t = libra_execute_session_function(
+    libra_execute_session_function(
         session,
         "0x1::diem_governance::set_validators",
         vec![&signer, &validators],
     )?;
-    dbg!("Validator set");
-    dbg!(t);
-    dbg!("reconfigure");
+    // RECONFIGURE
+    dbg!("on new epoch");
     libra_execute_session_function(session, "0x1::stake::on_new_epoch", vec![])?;
     let vm_signer = MoveValue::Signer(AccountAddress::ZERO);
+    dbg!("emit_writeset_block_event");
     libra_execute_session_function(
         session,
         "0x1::block::emit_writeset_block_event",
         vec![
             &vm_signer,
-            // note: any address would work below
             &MoveValue::Address(CORE_CODE_ADDRESS),
         ],
     )?;
+    dbg!("reconfigure");
     libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
     Ok(())
 }
