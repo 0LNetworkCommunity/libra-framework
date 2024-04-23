@@ -142,7 +142,13 @@ impl BatchTx {
             let o = e.as_object().unwrap();
             let prop = o.get("tally_type").unwrap().as_object().unwrap();
             let data = prop.get("proposal_data").unwrap().as_object().unwrap();
-            let recipient: AccountAddress = data.get("payee").unwrap().as_str().unwrap().parse().unwrap();
+            let recipient: AccountAddress = data
+                .get("payee")
+                .unwrap()
+                .as_str()
+                .unwrap()
+                .parse()
+                .unwrap();
             let amount: u64 = data
                 .get("value")
                 .unwrap()
@@ -157,9 +163,7 @@ impl BatchTx {
                 .as_array()
                 .unwrap()
                 .iter()
-                .map(|e| {
-                  e.as_str().unwrap().parse::<AccountAddress>().unwrap()
-                })
+                .map(|e| e.as_str().unwrap().parse::<AccountAddress>().unwrap())
                 .collect();
 
             let found = ProposePay {
@@ -180,11 +184,11 @@ impl BatchTx {
             println!("account: {:?}", &inst.recipient);
 
             if let Some((_, pp)) = pending.get_key_value(&inst.recipient) {
-              if pp.amount == inst.amount {
-                inst.proposed = Some(true);
-                inst.voters = pp.voters.clone();
-                println!("... found already pending, mark as proposed");
-              }
+                if pp.amount == inst.amount {
+                    inst.proposed = Some(true);
+                    inst.voters = pp.voters.clone();
+                    println!("... found already pending, mark as proposed");
+                }
             };
 
             if let Some(v) = &inst.voters {
@@ -228,6 +232,16 @@ impl BatchTx {
                 }
             }
         }
+
+        if self.check {
+            list.iter().for_each(|e| {
+                if let Some(s) = e.is_slow {
+                    if s {
+                        println!("not slow: {} : {}", e.note.as_ref().unwrap_or(&"n/a".to_string()), e.recipient.to_string());
+                    }
+                }
+            });
+        };
 
         let json = serde_json::to_string(&list)?;
         let p = if let Some(out_path) = &self.out {
