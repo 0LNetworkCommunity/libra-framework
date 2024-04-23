@@ -103,7 +103,7 @@ pub struct BatchTx {
     /// JSON file with batch payments
     pub file: PathBuf,
 
-    #[clap(short, long)]
+    #[clap(long)]
     /// Just check if the destinations are slow wallets
     pub check: bool,
 }
@@ -138,7 +138,7 @@ impl BatchTx {
         fs::write(
             &self.file.parent().unwrap().join("batch_response.json"),
             json,
-        );
+        )?;
 
         Ok(())
     }
