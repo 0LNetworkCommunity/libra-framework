@@ -47,11 +47,10 @@ module ol_framework::test_multi_action {
     // SO ALICE IS AUTHORIZED
     multi_action::init_gov(&resource_sig);
     multi_action::init_type<DummyType>(&resource_sig, true);
-
-
     //need to be caged to finalize multi action workflow and release control of the account
     multi_action::finalize_and_cage(&resource_sig, vals, vector::length(&vals));
 
+    // create a proposal
     let proposal = multi_action::proposal_constructor(DummyType{}, option::none());
     let id = multi_action::propose_new(alice, new_resource_address, proposal);
 
@@ -109,8 +108,8 @@ module ol_framework::test_multi_action {
     assert!(epoch == 14, 7357005);
   }
 
-  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000a, dave = @0x1000d)]
-  fun vote_action_happy(root: &signer, alice: &signer, bob: &signer, dave: &signer) {
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, dave = @0x1000d)]
+  fun vote_action_happy_simple(root: &signer, alice: &signer, bob: &signer, dave: &signer) {
     // Scenario: a simple MultiAction where we don't need any capabilities. Only need to know if the result was successful on the vote that crossed the threshold.
 
     let vals = mock::genesis_n_vals(root, 2);
@@ -124,10 +123,10 @@ module ol_framework::test_multi_action {
     multi_action::init_gov(&resource_sig);
     // Ths is a simple multi_action: there is no capability being stored
     multi_action::init_type<DummyType>(&resource_sig, false);
-
     //need to be caged to finalize multi action workflow and release control of the account
     multi_action::finalize_and_cage(&resource_sig, vals, vector::length(&vals));
 
+    // create a proposal
     let proposal = multi_action::proposal_constructor(DummyType{}, option::none());
 
     let id = multi_action::propose_new<DummyType>(alice, new_resource_address, proposal);
@@ -136,7 +135,9 @@ module ol_framework::test_multi_action {
     assert!(passed == false, 7357001);
     option::destroy_none(cap_opt);
 
-    let (passed, cap_opt) = multi_action::vote_with_id<DummyType>(bob, &id, new_resource_address);
+    let (passed, cap_opt) = multi_action::vote_with_id<DummyType>(bob, &id,
+    new_resource_address);
+
     assert!(passed == true, 7357002);
 
     // THE WITHDRAW CAPABILITY IS MISSING AS EXPECTED
@@ -147,7 +148,7 @@ module ol_framework::test_multi_action {
   }
 
 
-  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000a, dave = @0x1000d)]
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, dave = @0x1000d)]
   fun vote_action_happy_withdraw_cap(root: &signer, alice: &signer, bob: &signer, dave: &signer) {
     // Scenario: testing that a payment type multisig could be created with this module: that the WithdrawCapability can be used here.
 
@@ -166,7 +167,7 @@ module ol_framework::test_multi_action {
     multi_action::init_type<DummyType>(&resource_sig, true);
 
     //need to be caged to finalize multi action workflow and release control of the account
-    // print(&vals);
+
     multi_action::finalize_and_cage(&resource_sig, vals, vector::length(&vals));
 
     let proposal = multi_action::proposal_constructor(DummyType{}, option::none());
@@ -234,7 +235,7 @@ module ol_framework::test_multi_action {
     mock::trigger_epoch(root); // epoch 4 -- now expired
 
     let epoch = reconfiguration::get_current_epoch();
-    // print(&epoch);
+
     assert!(epoch == 4, 7357003);
 
     // trying to vote on a closed ballot will error

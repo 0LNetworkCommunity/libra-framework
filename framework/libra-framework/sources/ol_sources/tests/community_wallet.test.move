@@ -234,8 +234,6 @@
         // signers must be removed by n signers
         community_wallet_init::change_signer_community_multisig(bob, alice_comm_wallet_addr, dave_addr, false, 1, 10); // remove by setting as false
 
-
-
     }
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
@@ -268,7 +266,6 @@
         // This test verifies that the wallet can not be decreased below this specification
         mock::genesis_n_vals(root, 4);
         mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
-
 
         // create signers
         let signers = vector::empty<address>();
@@ -309,6 +306,9 @@
 
     }
 
+
+
+    // TODO: test below
 
     // #[test(root = @ol_framework, _alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d, eve = @0x1000e)]
     // #[expected_failure(abort_code = 196618, location = 0x1::ol_account)]
