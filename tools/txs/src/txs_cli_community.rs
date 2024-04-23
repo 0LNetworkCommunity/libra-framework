@@ -54,9 +54,7 @@ impl CommunityTxs {
                 }
             },
             CommunityTxs::Batch(batch) => match batch.run(sender).await {
-                Ok(_) => {
-                    println!("Batch transactions submitted, see log in batch_log.json, some TXS may have failed (not atomic)")
-                }
+                Ok(_) => {}
                 Err(e) => {
                     println!("ERROR: could not add admin, message: {}", e);
                 }
@@ -184,7 +182,10 @@ impl BatchTx {
         });
 
         for inst in &mut list {
-            let addr: AccountAddress = inst.recipient.parse().expect(&format!("could not parse {}", &inst.recipient));
+            let addr: AccountAddress = inst
+                .recipient
+                .parse()
+                .expect(&format!("could not parse {}", &inst.recipient));
 
             inst.parsed = Some(addr.clone());
 
@@ -244,11 +245,18 @@ impl BatchTx {
             list.iter().for_each(|e| {
                 if let Some(s) = e.is_slow {
                     if !s {
-                        println!("not slow: {} : {}", e.note.as_ref().unwrap_or(&"n/a".to_string()), e.recipient.to_string());
+                        println!(
+                            "not slow: {} : {}",
+                            e.note.as_ref().unwrap_or(&"n/a".to_string()),
+                            e.recipient.to_string()
+                        );
                     }
                 }
             });
-        };
+            println!("checks completed");
+        } else {
+          println!("Transfers proposed and voted on. Note: transactions are not atomic, some of the transfers may have been ignored. JSON file will be updated.");
+        }
 
         let json = serde_json::to_string(&list)?;
         let p = if let Some(out_path) = &self.out {
