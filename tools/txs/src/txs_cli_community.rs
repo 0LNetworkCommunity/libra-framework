@@ -191,20 +191,14 @@ impl BatchTx {
 
             println!("account: {:?}", &inst.recipient);
 
+            // if this instruction exists, just update our JSON file
             if let Some((_, pp)) = pending.get_key_value(&addr) {
-                if pp.amount == inst.amount {
+                if pp.amount == gas_coin::cast_decimal_to_coin(inst.amount as f64) {
                     inst.proposed = Some(true);
                     inst.voters = pp.voters.clone();
                     println!("... found already pending, mark as proposed");
                 }
             };
-
-            if let Some(v) = &inst.voters {
-                if v.contains(&sender.local_account.address()) {
-                    println!("... already voted, skipping");
-                    continue;
-                }
-            }
 
             let res_slow = query_view::get_view(
                 &sender.client(),
@@ -221,6 +215,14 @@ impl BatchTx {
             inst.is_slow = Some(res_slow);
             if !res_slow {
                 println!("... is not a slow wallet, skipping");
+                continue;
+            }
+
+            if let Some(v) = &inst.voters {
+                if v.contains(&sender.local_account.address()) {
+                    println!("... already voted, skipping");
+                    continue;
+                }
             }
 
             if self.check {
@@ -255,7 +257,7 @@ impl BatchTx {
             });
             println!("checks completed");
         } else {
-          println!("Transfers proposed and voted on. Note: transactions are not atomic, some of the transfers may have been ignored. JSON file will be updated.");
+            println!("Transfers proposed and voted on. Note: transactions are not atomic, some of the transfers may have been ignored. JSON file will be updated.");
         }
 
         let json = serde_json::to_string(&list)?;
