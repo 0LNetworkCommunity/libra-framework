@@ -1,1 +1,2 @@
-cat state_epoch_79_ver_33217173.795d.json   | jq 'map({auth_key: .auth_key, account: .account})' |  jq 'group_by(.auth_key) | map({auth_key: .[0].auth_key, count: length}) | [.[] | select(.count > 1)]'  | jq 'length'
+#cat state_epoch_79_ver_33217173.795d.json   | jq 'map({auth_key: .auth_key, account: .account, balance: .balance})' |  jq 'group_by(.auth_key) | map({auth_key: .[0].auth_key, balance: .[1].balance, count: length}) | [.[] | select(.count > 1)]'  
+cat state_epoch_79_ver_33217173.795d.json   | jq 'map({auth_key: .auth_key, account: .account, balance: .balance})' |  jq 'group_by(.auth_key) | map({auth_key: .[0].auth_key, accounts: [.[].account], balance: [.[].balance], count: length}) | [.[] | select(.count > 1)]'

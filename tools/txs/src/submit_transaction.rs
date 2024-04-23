@@ -19,6 +19,7 @@ use std::{
     path::PathBuf,
     time::{SystemTime, UNIX_EPOCH},
 };
+use diem_types::account_address::AccountAddress;
 use url::Url;
 
 use libra_types::{
@@ -88,6 +89,7 @@ impl Sender {
         account_key: AccountKey,
         chain_id: ChainId,
         client_opt: Option<Client>,
+        use_legacy_address: bool,
     ) -> anyhow::Result<Self> {
         let client = match client_opt {
             Some(c) => c,
@@ -96,7 +98,21 @@ impl Sender {
 
         let address = client
             .lookup_originating_address(account_key.authentication_key())
-            .await?;
+            .await
+            .map(|address| {
+                if !use_legacy_address {
+                    return Ok(address);
+                }
+                // trim the first 16 bytes for legacy v5 address
+                let mut address_str = address.to_string();
+                if address_str.len() >= 32 {
+                    let rest = &address_str[32..];
+                    address_str = format!("{:0<32}{}", "", rest);
+                }
+
+                AccountAddress::from_hex_literal(&format!("0x{}", address_str.as_str()).to_string())
+                    .map_err(|e| anyhow::anyhow!(e))
+            })??;
         info!("using address {}", &address);
 
         let seq = client.get_sequence_number(address).await?;

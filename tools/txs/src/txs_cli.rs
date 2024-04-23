@@ -66,6 +66,10 @@ pub struct TxsCli {
     /// optional, only estimate the gas fees
     #[clap(long)]
     pub estimate_only: bool,
+
+    /// optional, use legacy (v5) 16-byte address format for a sender
+    #[clap(long)]
+    pub legacy_address: bool,
 }
 
 #[derive(clap::Subcommand)]
@@ -163,6 +167,7 @@ impl TxsCli {
             AccountKey::from_private_key(pri_key),
             ChainId::new(chain_name.id()),
             Some(client),
+            self.legacy_address,
         )
         .await?;
 
