@@ -122,6 +122,9 @@ struct ProposePay {
     note: Option<String>,
 }
 
+// DEV NOTE: really what we should be doing is creating a Move transaction
+// script that submits all TXS in a batch and executes all or aborts
+// (an atomic batch).
 impl BatchTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         let data = fs::read_to_string(&self.file).expect("Unable to read file");
