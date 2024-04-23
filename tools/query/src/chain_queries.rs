@@ -64,14 +64,11 @@ pub async fn can_gov_proposal_resolve(client: &Client, id: u64) -> anyhow::Resul
         client,
         "0x1::diem_governance::get_can_resolve",
         None,
-        Some(id.to_string()), //Some(format!("{}u64", id)),
+        Some(id.to_string()),
     )
     .await?;
-    // let id: Vec<String> = serde_json::from_value(query_res)?;
+
     serde_json::from_value::<bool>(query_res).context("cannot parse api res")
-    // .into_iter()
-    // .next()
-    // .context("could not get a response from view function can_resolve")
 }
 
 // TODO: code duplication
@@ -80,10 +77,10 @@ pub async fn is_gov_proposal_resolved(client: &Client, id: u64) -> anyhow::Resul
         client,
         "0x1::diem_governance::is_resolved",
         None,
-        Some(id.to_string()), //Some(format!("{}u64", id)),
+        Some(id.to_string()),
     )
     .await?;
-    // let id: Vec<String> = serde_json::from_value(query_res)?;
+
     serde_json::from_value::<Vec<bool>>(query_res)?
         .into_iter()
         .next()
@@ -96,10 +93,10 @@ pub async fn get_gov_proposal_votes(client: &Client, id: u64) -> anyhow::Result<
         client,
         "0x1::diem_governance::get_votes",
         None,
-        Some(id.to_string()), //Some(format!("{}u64", id)),
+        Some(id.to_string()),
     )
     .await?;
-    // let id: Vec<String> = serde_json::from_value(query_res)?;
+
     Ok(serde_json::from_value::<Vec<u128>>(query_res)?)
 }
 

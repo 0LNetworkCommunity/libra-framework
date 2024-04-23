@@ -3,6 +3,7 @@ use crate::submit_transaction::Sender;
 
 use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib;
+use libra_query::query_view;
 use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf};
 
@@ -53,7 +54,7 @@ impl CommunityTxs {
             },
             CommunityTxs::Batch(batch) => match batch.run(sender).await {
                 Ok(_) => {
-                    println!("SUCCESS: batch transactions submitted, see log in batch_log.json")
+                    println!("Batch transactions submitted, see log in batch_log.json, some TXS may have failed (not atomic)")
                 }
                 Err(e) => {
                     println!("ERROR: could not add admin, message: {}", e);
@@ -102,7 +103,9 @@ pub struct BatchTx {
     #[clap(short, long)]
     /// JSON file with batch payments
     pub file: PathBuf,
-
+    #[clap(short, long)]
+    /// Write the result json to a different file (otherwise will overwrite)
+    pub out: Option<PathBuf>,
     #[clap(long)]
     /// Just check if the destinations are slow wallets
     pub check: bool,
@@ -115,6 +118,8 @@ struct ProposePay {
     description: String,
     is_slow: Option<bool>,
     success: Option<bool>,
+    error: Option<String>,
+    note: Option<String>,
 }
 
 impl BatchTx {
@@ -124,21 +129,49 @@ impl BatchTx {
 
         // TODO: use an iter_mut here. Async will be annoying.
         for inst in &mut list {
+            println!("account: {:?}", &inst.recipient);
+
+            if let Some(success) = inst.success {
+                if success {
+                    println!("...skipping already successful transaction");
+                    continue;
+                };
+            }
+
+            let res_slow = query_view::get_view(
+                &sender.client(),
+                "0x1::slow_wallet::is_slow",
+                None,
+                Some(inst.recipient.to_string()),
+            )
+            .await?;
+            dbg!(&res_slow);
+            if self.check {
+                continue;
+            };
+
+            println!("scheduling tx");
             match propose_single(sender, &self.community_wallet, &inst).await {
                 Ok(_) => {
                     inst.success = Some(true);
                 }
-                Err(_) => {
+                Err(e) => {
+                    println!("transaction failed");
                     inst.success = Some(false);
+                    inst.error = Some(e.to_string())
                 }
             }
         }
 
         let json = serde_json::to_string(&list)?;
-        fs::write(
-            &self.file.parent().unwrap().join("batch_response.json"),
-            json,
-        )?;
+        let p = if let Some(out_path) = &self.out {
+            out_path
+        } else {
+            println!("overwriting {}", &self.file.display());
+            &self.file
+        };
+
+        fs::write(p, json)?;
 
         Ok(())
     }
