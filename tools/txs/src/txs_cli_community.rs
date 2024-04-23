@@ -113,7 +113,8 @@ pub struct BatchTx {
 
 #[derive(Serialize, Deserialize, Clone)]
 struct ProposePay {
-    recipient: AccountAddress,
+    recipient: String,
+    parsed: Option<AccountAddress>,
     amount: u64,
     description: String,
     is_slow: Option<bool>,
@@ -167,7 +168,8 @@ impl BatchTx {
                 .collect();
 
             let found = ProposePay {
-                recipient,
+                recipient: recipient.to_canonical_string(),
+                parsed: Some(recipient),
                 amount,
                 description: "debugging".to_string(),
                 is_slow: None,
@@ -181,9 +183,13 @@ impl BatchTx {
         });
 
         for inst in &mut list {
+            let addr: AccountAddress = inst.recipient.parse().expect(&format!("could not parse {}", &inst.recipient));
+
+            inst.parsed = Some(addr.clone());
+
             println!("account: {:?}", &inst.recipient);
 
-            if let Some((_, pp)) = pending.get_key_value(&inst.recipient) {
+            if let Some((_, pp)) = pending.get_key_value(&addr) {
                 if pp.amount == inst.amount {
                     inst.proposed = Some(true);
                     inst.voters = pp.voters.clone();
@@ -209,12 +215,12 @@ impl BatchTx {
             .unwrap()[0]
                 .as_bool()
                 .unwrap();
+
             inst.is_slow = Some(res_slow);
             if !res_slow {
                 println!("... is not a slow wallet, skipping");
             }
 
-            println!("checks completed");
             if self.check {
                 continue;
             };
@@ -236,7 +242,7 @@ impl BatchTx {
         if self.check {
             list.iter().for_each(|e| {
                 if let Some(s) = e.is_slow {
-                    if s {
+                    if !s {
                         println!("not slow: {} : {}", e.note.as_ref().unwrap_or(&"n/a".to_string()), e.recipient.to_string());
                     }
                 }
@@ -264,7 +270,7 @@ async fn propose_single(
 ) -> anyhow::Result<()> {
     let payload = libra_stdlib::donor_voice_txs_propose_payment_tx(
         multisig.to_owned(),
-        instruction.recipient,
+        instruction.parsed.unwrap(),
         instruction.amount,
         instruction.description.clone().into_bytes(),
     );
