@@ -152,8 +152,6 @@ impl BatchTx {
             .unwrap()[0]
                 .as_bool()
                 .unwrap();
-
-            dbg!(&res_slow);
             inst.is_slow = Some(res_slow);
             if !res_slow {
                 println!("...skipping, is not a slow wallet");
@@ -163,7 +161,11 @@ impl BatchTx {
                 continue;
             };
 
+            // TODO: check if the TX already exists as a proposal (just address
+            // and value), don't duplicate.
+
             println!("scheduling tx");
+
             match propose_single(sender, &self.community_wallet, &inst).await {
                 Ok(_) => {
                     inst.success = Some(true);
