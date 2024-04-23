@@ -3,7 +3,7 @@ use crate::submit_transaction::Sender;
 
 use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib;
-use libra_query::query_view;
+use libra_query::{account_queries, query_view};
 use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf};
 
@@ -129,6 +129,11 @@ impl BatchTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         let data = fs::read_to_string(&self.file).expect("Unable to read file");
         let mut list: Vec<ProposePay> = serde_json::from_str(&data).expect("Unable to parse");
+
+        let ballots = account_queries::multi_auth_ballots(sender.client(), self.community_wallet).await?;
+        let d = ballots.as_object().unwrap();
+        let v = d.get("vote").unwrap().as_object().unwrap();
+        dbg!(&v.get("ballots_pending"));
 
         // TODO: use an iter_mut here. Async will be annoying.
         for inst in &mut list {
