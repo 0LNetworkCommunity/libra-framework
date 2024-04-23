@@ -128,12 +128,12 @@ impl TwinOpts {
         creds: Vec<&ValCredentials>,
     ) -> anyhow::Result<PathBuf> {
         println!("run session to create validator onboarding tx (rescue.blob)");
-        let epoch_interval = 100_u64;
+        let epoch_interval = 100000_u64;
         let vmc = libra_run_session(
             db_path.to_path_buf(),
             |session| session_add_validators(session, creds),
             None,
-            Some(epoch_interval),
+            None,
         )?;
 
         let cs = session_tools::unpack_changeset(vmc)?;
@@ -172,7 +172,8 @@ impl TwinOpts {
         // 1. Create a new validator set with new accounts
         println!("1. Create a new validator set with new accounts");
         // Or provide a path to the diem-node binary
-        std::env::set_var("DIEM_FORGE_NODE_BIN_PATH", "/root/.cargo/diem-node");
+        //std::env::set_var("DIEM_FORGE_NODE_BIN_PATH", "/root/.cargo/diem-node");
+        std::env::set_var("DIEM_FORGE_NODE_BIN_PATH", "/root/libra-framework/tools/rescue/tests/diem-proxy/target/release/diem-node");
         let mut smoke = LibraSmoke::new(Some(number_of_nodes), None).await?;
         std::env::remove_var("DIEM_FORGE_NODE_BIN_PATH");
 
@@ -309,7 +310,6 @@ impl TwinOpts {
             .await;
         println!("Current validators: {:?}", a);
         // TO DO: REVESIT THIS TRANSACTION
-        /*
         let d = diem_temppath::TempPath::new();
         let (_, _app_cfg) =
             configure_validator::init_val_config_files(&mut smoke.swarm, 0, d.path().to_owned())
@@ -317,8 +317,8 @@ impl TwinOpts {
                 .expect("could not init validator config");
         let recipient = smoke.swarm.validators().nth(1).unwrap().peer_id(); // sending to second genesis node.
         let marlon = smoke.swarm.validators().nth(0).unwrap().peer_id();
-        let bal = get_libra_balance(&client, marlon).await?;
-        println!("balance of marlon: {:?}", bal);
+        let bal = get_libra_balance(&client, recipient).await?;
+        println!("balance of recepient: {:?}", bal);
         let cli = TxsCli {
             subcommand: Some(Transfer {
                 to_account: recipient,
@@ -336,9 +336,10 @@ impl TwinOpts {
         cli.run()
             .await
             .expect("cli could not send to existing account");
+        let bal = get_libra_balance(&client, recipient).await?;
+        println!("balance of recepient: {:?}", bal);
         std::thread::sleep(Duration::from_secs(1000));
-        */
-        std::thread::sleep(Duration::from_secs(1000));
+        
         Ok(smoke)
     }
 
@@ -444,7 +445,7 @@ impl TwinOpts {
     }
 }
 
-#[ignore]
+
 #[tokio::test]
 // cargo test test_twin_with_rando -- --nocapture
 async fn test_twin_with_rando() -> anyhow::Result<()> {

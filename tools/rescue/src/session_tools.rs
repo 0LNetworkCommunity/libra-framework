@@ -8,6 +8,7 @@ use diem_config::config::{
     NO_OP_STORAGE_PRUNER_CONFIG,
 };
 use diem_db::DiemDB;
+use diem_vm::data_cache::StorageAdapter;
 use diem_gas::{ChangeSetConfigs, LATEST_GAS_FEATURE_VERSION};
 use diem_storage_interface::{state_view::DbStateViewAtVersion, DbReaderWriter};
 use diem_types::{account_address::AccountAddress, transaction::ChangeSet};
@@ -60,7 +61,8 @@ where
     let v = db_rw.reader.get_latest_version().unwrap();
 
     let view = db_rw.reader.state_view_at_version(Some(v)).unwrap();
-    let dvm = diem_vm::DiemVM::new(&view);
+    let dvm = diem_vm::DiemVM::new(&view);      
+
     let adapter = dvm.as_move_resolver(&view);
     let s_id = SessionId::genesis(diem_crypto::HashValue::zero());
     let mvm: &MoveVmExt = dvm.internals().move_vm();
@@ -83,13 +85,16 @@ where
 
     // if we want accelerated epochs for twin, testnet, etc
     if let Some(ms) = debug_epoch_interval_microsecs {
+        println!("setting epoch interval seconds");
+        println!("{}, {}", ms, "ms");
         let secs_arg = MoveValue::U64(ms);
-        libra_execute_session_function(
+        let t = libra_execute_session_function(
             &mut session,
             "0x1::block::update_epoch_interval_microsecs",
             vec![&framework_sig, &secs_arg],
         )
         .expect("set epoch interval seconds");
+        libra_execute_session_function(&mut session, "0x1::reconfiguration::reconfigure", vec![])?;   
     }
 
     let change_set = session.finish(
@@ -201,6 +206,13 @@ pub fn session_add_validators(
         "0x1::chain_id::set_impl",
         vec![&MoveValue::Signer(AccountAddress::ONE), &MoveValue::U8(4)],
     )?;
+
+    libra_execute_session_function(
+        session,
+        "0x1::validator_universe::clean_validator_universe",
+        vec![&MoveValue::Signer(AccountAddress::ONE)],
+    )?;
+
     // resset the validators
     libra_execute_session_function(
         session,
@@ -210,9 +222,6 @@ pub fn session_add_validators(
             &MoveValue::vector_address(vec![]),
         ],
     )?;
-    //let t = libra_execute_session_function(session, "0x1::validator_universe::get_eligible_validators", vec![])?;
-    //dbg!("Current validator universe");
-    //dbg!(t);
     //get the validator state
     for cred in creds.iter().copied() {
         let signer = MoveValue::Signer(AccountAddress::ONE);
@@ -234,7 +243,7 @@ pub fn session_add_validators(
             &network_addresses,
             &fullnode_addresses,
         ];
-        let amount = 1000 * 1000_1000_u64;
+        let amount = 1000_000_000_u64;
         let amount = MoveValue::U64(amount);
         dbg!("create account");
         libra_execute_session_function(
@@ -258,15 +267,6 @@ pub fn session_add_validators(
             args,
         )?;
         dbg!("joining the set of validators");
-        /*
-        let va = MoveValue::Address(cred.account);
-        dbg!("join_validator_set");
-        libra_execute_session_function(
-            session,
-            "0x1::stake::join_validator_set",
-            vec![&signer, &va],
-        )?;
-        */
     }
     //get vector of validators addressses in terms of vec![MoveValue::Address(cred.account)]
     let validators = MoveValue::vector_address(creds.iter().map(|c| c.account).collect());
