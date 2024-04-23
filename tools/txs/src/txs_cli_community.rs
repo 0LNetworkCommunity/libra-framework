@@ -4,6 +4,7 @@ use crate::submit_transaction::Sender;
 use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib;
 use libra_query::{account_queries, query_view};
+use libra_types::move_resource::gas_coin;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fs, path::PathBuf};
 
@@ -87,7 +88,7 @@ impl ProposeTx {
         let payload = libra_stdlib::donor_voice_txs_propose_payment_tx(
             self.community_wallet,
             self.recipient,
-            self.amount,
+            gas_coin::cast_decimal_to_coin(self.amount as f64),
             self.description.clone().into_bytes(),
         );
         sender.sign_submit_wait(payload).await?;
@@ -271,7 +272,7 @@ async fn propose_single(
     let payload = libra_stdlib::donor_voice_txs_propose_payment_tx(
         multisig.to_owned(),
         instruction.parsed.unwrap(),
-        instruction.amount,
+        gas_coin::cast_decimal_to_coin(instruction.amount as f64),
         instruction.description.clone().into_bytes(),
     );
     sender.sign_submit_wait(payload).await?;
