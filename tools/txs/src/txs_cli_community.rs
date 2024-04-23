@@ -1,13 +1,17 @@
 //! Validator subcommands
-
 use crate::submit_transaction::Sender;
+
 use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib;
+use serde::{Deserialize, Serialize};
+use std::{fs, path::PathBuf};
 
 #[derive(clap::Subcommand)]
 pub enum CommunityTxs {
     /// Propose a multi-sig transaction
     Propose(ProposeTx),
+    /// Execute batch proposals/approvals of transactions
+    Batch(BatchTx),
     /// Donors to Donor Voice addresses can vote to reject transactions
     Veto(VetoTx),
     /// Initialize a DonorVoice multi-sig. NOTE: this is a two step procedure:
@@ -47,6 +51,14 @@ impl CommunityTxs {
                     println!("ERROR: could not add admin, message: {}", e);
                 }
             },
+            CommunityTxs::Batch(batch) => match batch.run(sender).await {
+                Ok(_) => {
+                    println!("SUCCESS: batch transactions submitted, see log in batch_log.json")
+                }
+                Err(e) => {
+                    println!("ERROR: could not add admin, message: {}", e);
+                }
+            },
         }
 
         Ok(())
@@ -56,7 +68,7 @@ impl CommunityTxs {
 #[derive(clap::Args)]
 pub struct ProposeTx {
     #[clap(short, long)]
-    /// The Community Wallet you are a admin for
+    /// The Community Wallet to schedule transaction
     pub community_wallet: AccountAddress,
     #[clap(short, long)]
     /// The SlowWallet recipient of funds
@@ -80,6 +92,71 @@ impl ProposeTx {
         sender.sign_submit_wait(payload).await?;
         Ok(())
     }
+}
+
+#[derive(clap::Args)]
+pub struct BatchTx {
+    #[clap(short, long)]
+    /// The Community Wallet to schedule transaction
+    pub community_wallet: AccountAddress,
+    #[clap(short, long)]
+    /// JSON file with batch payments
+    pub file: PathBuf,
+
+    #[clap(short, long)]
+    /// Just check if the destinations are slow wallets
+    pub check: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct ProposePay {
+    recipient: AccountAddress,
+    amount: u64,
+    description: String,
+    is_slow: Option<bool>,
+    success: Option<bool>,
+}
+
+impl BatchTx {
+    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        let data = fs::read_to_string(&self.file).expect("Unable to read file");
+        let mut list: Vec<ProposePay> = serde_json::from_str(&data).expect("Unable to parse");
+
+        // TODO: use an iter_mut here. Async will be annoying.
+        for inst in &mut list {
+            match propose_single(sender, &self.community_wallet, &inst).await {
+                Ok(_) => {
+                    inst.success = Some(true);
+                }
+                Err(_) => {
+                    inst.success = Some(false);
+                }
+            }
+        }
+
+        let json = serde_json::to_string(&list)?;
+        fs::write(
+            &self.file.parent().unwrap().join("batch_response.json"),
+            json,
+        );
+
+        Ok(())
+    }
+}
+
+async fn propose_single(
+    sender: &mut Sender,
+    multisig: &AccountAddress,
+    instruction: &ProposePay,
+) -> anyhow::Result<()> {
+    let payload = libra_stdlib::donor_voice_txs_propose_payment_tx(
+        multisig.to_owned(),
+        instruction.recipient,
+        instruction.amount,
+        instruction.description.clone().into_bytes(),
+    );
+    sender.sign_submit_wait(payload).await?;
+    Ok(())
 }
 
 #[derive(clap::Args)]
