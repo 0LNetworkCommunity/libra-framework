@@ -144,8 +144,18 @@ impl BatchTx {
                 None,
                 Some(inst.recipient.to_string()),
             )
-            .await?;
+            .await?
+            .as_array()
+            .unwrap()[0]
+                .as_bool()
+                .unwrap();
+
             dbg!(&res_slow);
+            inst.is_slow = Some(res_slow);
+            if !res_slow {
+                println!("...skipping, is not a slow wallet");
+            }
+
             if self.check {
                 continue;
             };
