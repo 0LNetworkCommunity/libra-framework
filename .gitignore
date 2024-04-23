@@ -25,5 +25,3 @@ sccache.log
 
 # exclude diem dependency
 diem/
-tools/rescue/tests/diem-proxy/target/.future-incompat-report.json
-tools/rescue/tests/diem-proxy/target/.rustc_info.json

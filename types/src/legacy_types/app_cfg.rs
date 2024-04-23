@@ -575,9 +575,10 @@ impl TxCost {
             max_gas_unit_for_tx: units, // oracle upgrade transaction is expensive.
             // TODO: the GAS_UNIT_PRICE is set in DIEM. IT IS ALSO THE MINIMUM GAS PRICE This is arbitrary and needs to be reviewed.
             // It is also 0 in tests, so we need to increase to at least 1.
-            //coin_price_per_unit: (MINUMUM_GAS_PRICE_IN_DIEM.max(1) as f64 * price_multiplier)
-                //as u64, // this is the minimum price
-            coin_price_per_unit: 100 as u64,
+            coin_price_per_unit: (MINUMUM_GAS_PRICE_IN_DIEM.max(1) as f64 * price_multiplier)
+                as u64,
+            // this is the minimum price
+            //coin_price_per_unit: 100 as u64,
             user_tx_timeout: 5_000,
         }
     }

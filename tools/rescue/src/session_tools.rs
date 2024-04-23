@@ -54,11 +54,10 @@ where
     )
     .context("Failed to open DB.")
     .unwrap();
-
     let db_rw = DbReaderWriter::new(db);
     let v = db_rw.reader.get_latest_version().unwrap();
     let view = db_rw.reader.state_view_at_version(Some(v)).unwrap();
-    let dvm = diem_vm::DiemVM::new(&view);      
+    let dvm = diem_vm::DiemVM::new(&view);
     let adapter = dvm.as_move_resolver(&view);
     let s_id = SessionId::genesis(diem_crypto::HashValue::zero());
     let mvm: &MoveVmExt = dvm.internals().move_vm();
@@ -82,7 +81,7 @@ where
     // if we want accelerated epochs for twin, testnet, etc
     if let Some(ms) = debug_epoch_interval_microsecs {
         println!("setting epoch interval seconds");
-        println!("{}, {}", ms, "ms");
+        println!("{}, ms", ms);
         let secs_arg = MoveValue::U64(ms);
         libra_execute_session_function(
             &mut session,
@@ -90,7 +89,7 @@ where
             vec![&framework_sig, &secs_arg],
         )
         .expect("set epoch interval seconds");
-        libra_execute_session_function(&mut session, "0x1::reconfiguration::reconfigure", vec![])?;   
+        libra_execute_session_function(&mut session, "0x1::reconfiguration::reconfigure", vec![])?;
     }
 
     let change_set = session.finish(
@@ -188,12 +187,9 @@ pub fn libra_execute_session_function(
 //     Ok(kvs)
 // }
 
-
-
-
 /// Add validators to the session
-/// 
-/// 
+///
+///
 /// ! CAUTION: This function will overwrite the current validator set
 /// Vector of `ValCredentials` is a list of validators to be added to the session
 pub fn session_add_validators(
@@ -248,7 +244,7 @@ pub fn session_add_validators(
             &fullnode_addresses,
         ];
         //set the initial amount of coins(uts set to 1000)
-        let amount = 1000 * 1000_000_u64;
+        let amount = 1000 * 1_000_000_u64;
         let amount = MoveValue::U64(amount);
         //create account
         dbg!("create account");
@@ -288,10 +284,7 @@ pub fn session_add_validators(
     libra_execute_session_function(
         session,
         "0x1::block::emit_writeset_block_event",
-        vec![
-            &vm_signer,
-            &MoveValue::Address(CORE_CODE_ADDRESS),
-        ],
+        vec![&vm_signer, &MoveValue::Address(CORE_CODE_ADDRESS)],
     )?;
     dbg!("reconfigure");
     libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
