@@ -185,9 +185,9 @@ impl BatchTx {
             let addr: AccountAddress = inst
                 .recipient
                 .parse()
-                .expect(&format!("could not parse {}", &inst.recipient));
+                .unwrap_or_else(|_| panic!("could not parse {}", &inst.recipient));
 
-            inst.parsed = Some(addr.clone());
+            inst.parsed = Some(addr);
 
             println!("account: {:?}", &inst.recipient);
 
@@ -201,7 +201,7 @@ impl BatchTx {
             };
 
             let res_slow = query_view::get_view(
-                &sender.client(),
+                sender.client(),
                 "0x1::slow_wallet::is_slow",
                 None,
                 Some(inst.recipient.to_string()),
@@ -231,7 +231,7 @@ impl BatchTx {
 
             println!("scheduling tx");
 
-            match propose_single(sender, &self.community_wallet, &inst).await {
+            match propose_single(sender, &self.community_wallet, inst).await {
                 Ok(_) => {
                     inst.proposed = Some(true);
                 }
@@ -250,7 +250,7 @@ impl BatchTx {
                         println!(
                             "not slow: {} : {}",
                             e.note.as_ref().unwrap_or(&"n/a".to_string()),
-                            e.recipient.to_string()
+                            e.recipient
                         );
                     }
                 }

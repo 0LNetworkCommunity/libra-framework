@@ -115,7 +115,10 @@ pub async fn community_wallet_scheduled_transactions(
 }
 
 /// get all of the multi_auth actions, pending, approved, expired.
-pub async fn multi_auth_ballots(client: &Client, multi_auth_account: AccountAddress) -> anyhow::Result<Value> {
+pub async fn multi_auth_ballots(
+    client: &Client,
+    multi_auth_account: AccountAddress,
+) -> anyhow::Result<Value> {
     let resource_path_str = "0x1::multi_action::Action<0x1::donor_voice_txs::Payment>";
     let proposal_state = client
         .get_account_resource(multi_auth_account, resource_path_str)
