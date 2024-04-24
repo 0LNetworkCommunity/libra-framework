@@ -1,7 +1,8 @@
 use crate::{
     account_queries::{
-        community_wallet_pending_transactions, community_wallet_signers, get_account_balance_libra,
-        get_events, get_transactions, get_val_config, is_community_wallet_migrated,
+        community_wallet_scheduled_transactions, community_wallet_signers,
+        get_account_balance_libra, get_events, get_transactions, get_val_config,
+        is_community_wallet_migrated,
     },
     chain_queries::{get_epoch, get_height},
     query_view::get_view,
@@ -264,7 +265,7 @@ impl QueryType {
             }
             QueryType::ComWalletPendTransactions { account } => {
                 // Wont work at the moment as there is no community wallet migrated
-                let _res = community_wallet_pending_transactions(&client, *account).await?;
+                let _res = community_wallet_scheduled_transactions(&client, *account).await?;
                 Ok(json!({ "pending_transactions": "None" }))
             }
             QueryType::Annotate { account } => {

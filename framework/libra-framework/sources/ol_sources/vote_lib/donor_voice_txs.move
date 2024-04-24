@@ -371,8 +371,6 @@ module ol_framework::donor_voice_txs {
       while (i < len) {
 
         let t = vector::pop_back(&mut due_list);
-        // if (this_exp <= epoch) {
-        //   let t = vector::remove(&mut state.scheduled, i);
         let multisig_address = guid::id_creator_address(&t.uid);
 
         // Note the VM can do this without the WithdrawCapability
@@ -393,7 +391,6 @@ module ol_framework::donor_voice_txs {
 
 
           vector::push_back(&mut state.paid, t);
-          // print(is_paid());
           print(&state.scheduled);
           print(&state.paid);
         } else {
@@ -406,7 +403,7 @@ module ol_framework::donor_voice_txs {
 
         amount_processed = amount_processed + amount_transferred;
 
-        // if theres a single transaction that gets approved, then the freeze consecutive rejection counter is reset
+        // if there's a single transaction that gets approved, then the freeze consecutive rejection counter is reset
         reset_rejection_counter(vm, multisig_address);
 
         i = i + 1;

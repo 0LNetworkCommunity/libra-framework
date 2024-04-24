@@ -534,6 +534,19 @@ module ol_framework::multi_action {
     ballot::find_anywhere(&a.vote, uid)
   }
 
+  /// get all IDs of multi_auth proposal that are pending
+  fun get_pending_id<ProposalData: store + drop>(multisig_address: address): vector<guid::ID> acquires Action {
+    let action = borrow_global<Action<ProposalData>>(multisig_address);
+    let list = ballot::get_list_ballots_by_enum(&action.vote,
+    ballot::get_pending_enum());
+
+    let id_list = vector::map_ref(list, |el| {
+      ballot::get_ballot_id(el)
+    });
+
+    id_list
+  }
+
 
   ////////  GOVERNANCE  ////////
   // Governance of the multisig happens through an instance of Action<PropGovSigners>. This action has no special privileges, and is just a normal proposal type.
@@ -612,11 +625,21 @@ module ol_framework::multi_action {
   }
 
   #[view]
+  /// how many multi_action proposals are pending
   public fun get_count_of_pending<ProposalData: store + drop>(multisig_address: address): u64 acquires Action {
-    let action = borrow_global<Action<ProposalData>>(multisig_address);
-    let list = ballot::get_list_ballots_by_enum(&action.vote, ballot::get_pending_enum());
-    vector::length(list)
+    let list = get_pending_id<ProposalData>(multisig_address);
+    vector::length(&list)
   }
+
+  #[view]
+  /// the creation number u64 of the pending proposals
+  public fun get_pending_by_creation_number<ProposalData: store + drop>(multisig_address: address): vector<u64> acquires Action {
+    let list = get_pending_id<ProposalData>(multisig_address);
+    vector::map(list, |el| {
+      guid::id_creation_num(&el)
+    })
+  }
+
 
   #[view]
   /// returns the votes for a given proposal ID. For `view` functions must provide the destructured guid::ID as address and integer.
