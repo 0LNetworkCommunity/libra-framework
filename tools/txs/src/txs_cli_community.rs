@@ -118,6 +118,7 @@ struct ProposePay {
     description: String,
     is_slow: Option<bool>,
     proposed: Option<bool>,
+    approved: Option<bool>,
     voters: Option<Vec<AccountAddress>>,
     error: Option<String>,
     note: Option<String>,
@@ -135,13 +136,27 @@ impl BatchTx {
             account_queries::multi_auth_ballots(sender.client(), self.community_wallet).await?;
         let d = ballots.as_object().unwrap();
         let v = d.get("vote").unwrap().as_object().unwrap();
-        let p = v.get("ballots_pending").unwrap().as_array().unwrap();
+        let mut approved = v
+            .get("ballots_approved")
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .to_owned();
 
-        let mut pending: HashMap<AccountAddress, ProposePay> = HashMap::new();
+        let mut p = v
+            .get("ballots_pending")
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .to_owned();
+        p.append(&mut approved);
+
+        let mut pending_or_approved: HashMap<AccountAddress, ProposePay> = HashMap::new();
         p.iter().for_each(|e| {
             let o = e.as_object().unwrap();
             let prop = o.get("tally_type").unwrap().as_object().unwrap();
             let data = prop.get("proposal_data").unwrap().as_object().unwrap();
+
             let recipient: AccountAddress = data
                 .get("payee")
                 .unwrap()
@@ -166,6 +181,8 @@ impl BatchTx {
                 .map(|e| e.as_str().unwrap().parse::<AccountAddress>().unwrap())
                 .collect();
 
+            let is_approved = prop.get("approved").unwrap().as_bool().unwrap();
+            dbg!(&is_approved);
             let found = ProposePay {
                 recipient: recipient.to_canonical_string(),
                 parsed: Some(recipient),
@@ -173,12 +190,13 @@ impl BatchTx {
                 description: "debugging".to_string(),
                 is_slow: None,
                 proposed: None,
+                approved: Some(is_approved),
                 voters: Some(voters),
                 error: None,
                 note: None,
             };
 
-            pending.insert(recipient, found);
+            pending_or_approved.insert(recipient, found);
         });
 
         for inst in &mut list {
@@ -192,10 +210,11 @@ impl BatchTx {
             println!("account: {:?}", &inst.recipient);
 
             // if this instruction exists, just update our JSON file
-            if let Some((_, pp)) = pending.get_key_value(&addr) {
+            if let Some((_, pp)) = pending_or_approved.get_key_value(&addr) {
                 if pp.amount == gas_coin::cast_decimal_to_coin(inst.amount as f64) {
                     inst.proposed = Some(true);
                     inst.voters = pp.voters.clone();
+                    inst.approved = pp.approved;
                     println!("... found already pending, mark as proposed");
                 }
             };
