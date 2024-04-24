@@ -31,7 +31,7 @@ pub fn make_script(remove_validator: AccountAddress) -> PathBuf {
     "#,
         remove_validator
     );
-
+    println!("{}", script);
     let framework_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("..")
         .join("..")

@@ -71,6 +71,14 @@ module diem_framework::validator_universe {
     add(validator);
   }
 
+  /// For 0L smoke tests
+  /// A helper function to clean the validator universe.
+  fun clean_validator_universe(root: &signer) acquires ValidatorUniverse {
+    system_addresses::assert_ol(root);
+    let state = borrow_global_mut<ValidatorUniverse>(@diem_framework);
+    state.validators = vector::empty<address>();
+  }
+
   //////// GETTERS ////////
   // A simple public function to query the EligibleValidators.
   // Function code: 03 Prefix: 220103
