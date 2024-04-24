@@ -20,7 +20,7 @@ use libra_types::legacy_types::app_cfg::TxCost;
 async fn smoke_gov_script() {
     let d = diem_temppath::TempPath::new();
 
-    let mut s = LibraSmoke::new(Some(2))
+    let mut s = LibraSmoke::new(Some(2), None)
         .await
         .expect("could not start libra smoke");
 

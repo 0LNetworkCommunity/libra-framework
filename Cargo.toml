@@ -328,6 +328,7 @@ move-compiler = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = 
 move-model = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "416d1ca" }
 move-vm-test-utils = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "416d1ca" }
 move-vm-types = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "416d1ca" }
+move-vm-runtime =  { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "416d1ca" }
 
 # uses a profile similar to `cli` in Diem/Cargo.toml
 # optimized for performance and size

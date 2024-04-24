@@ -12,6 +12,7 @@ use libra_types::exports::Client;
 use libra_types::legacy_types::app_cfg::AppCfg;
 use libra_types::legacy_types::network_playlist::NetworkPlaylist;
 use smoke_test::smoke_test_environment;
+use std::path::PathBuf;
 use url::Url;
 
 use crate::helpers;
@@ -44,14 +45,37 @@ impl Drop for LibraSmoke {
 impl LibraSmoke {
     /// start a swarm and return first val account.
     /// defaults to Head release.
-    pub async fn new(count_vals: Option<u8>) -> anyhow::Result<Self> {
-        Self::new_with_target(count_vals, ReleaseTarget::Head).await
+    pub async fn new(count_vals: Option<u8>, path: Option<PathBuf>) -> anyhow::Result<Self> {
+        Self::new_with_target(count_vals, path, ReleaseTarget::Head).await
     }
     /// start a swarm and specify the release bundle
     pub async fn new_with_target(
         count_vals: Option<u8>,
+        path: Option<PathBuf>,
         target: ReleaseTarget,
     ) -> anyhow::Result<Self> {
+        if let Some(path) = path {
+            println!("Using diem-node binary at {:?}", path);
+            //path to diem-node binary
+            let diem_node_path = path;
+            //Run cargo clear to make sure we have the latest changes
+            let _ = std::process::Command::new("cargo")
+                .current_dir(&diem_node_path)
+                .args(["clean"])
+                .output()
+                .expect("failed to execute process");
+            //Run cargo build to make sure we have the latest changes
+            let _ = std::process::Command::new("cargo")
+                .current_dir(&diem_node_path)
+                .args(["build", "--package", "diem-node", "--release"])
+                .output()
+                .expect("failed to execute process");
+            // Get the path diem-node binary
+            let diem_node_bin_path = diem_node_path.join("target/release/diem-node");
+            //export env var to use release
+            std::env::set_var("DIEM_FORGE_NODE_BIN_PATH", diem_node_bin_path);
+        }
+
         let release = target.load_bundle().unwrap();
         let mut swarm = smoke_test_environment::new_local_swarm_with_release(
             count_vals.unwrap_or(1).into(),
@@ -69,6 +93,7 @@ impl LibraSmoke {
         for &validator_address in &validator_addresses {
             // Create a mutable borrow of `swarm` within the loop to limit its scope
             let mut pub_info = swarm.diem_public_info();
+            println!("Diem public info {:?}", pub_info.root_account().address());
 
             // Mint and unlock coins
             helpers::mint_libra(&mut pub_info, validator_address, 1000 * 1_000_000)
@@ -114,6 +139,8 @@ impl LibraSmoke {
         let first_account = LocalAccount::new(node.peer_id(), pri_key.private_key(), 0);
         let api_endpoint = node.rest_api_endpoint();
 
+        std::env::remove_var("DIEM_FORGE_NODE_BIN_PATH");
+
         // TODO: order here is awkward because of borrow issues. Clean this up.
         // mint one coin to the main validator.
         // the genesis does NOT mint by default to genesis validators
@@ -136,30 +163,7 @@ impl LibraSmoke {
         let mut pub_info = self.swarm.diem_public_info();
 
         helpers::mint_libra(&mut pub_info, addr, amount).await?;
-        helpers::unlock_libra(&mut pub_info, addr, amount).await?;
-
-        Ok(())
-    }
-
-    pub async fn transfer_from_first_val(
-        &mut self,
-        addr: AccountAddress,
-        amount: u64,
-    ) -> anyhow::Result<()> {
-        let mut pub_info = self.swarm.diem_public_info();
-        helpers::transfer(&mut pub_info, &mut self.first_account, addr, amount).await?;
-        Ok(())
-    }
-
-    pub async fn transfer(
-        &mut self,
-        sender_local: &mut LocalAccount,
-        addr: AccountAddress,
-        amount: u64,
-    ) -> anyhow::Result<()> {
-        let mut pub_info = self.swarm.diem_public_info();
-
-        helpers::transfer(&mut pub_info, sender_local, addr, amount).await?;
+        //helpers::unlock_libra(&mut pub_info, addr, amount).await?;
 
         Ok(())
     }

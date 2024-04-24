@@ -48,10 +48,12 @@ async fn wait_for_node(validator: &mut dyn Validator, expected_to_connect: usize
 #[tokio::test]
 /// This meta test checks that our tools can control a network
 /// so the nodes stop producing blocks, shut down, and start again.
-async fn test_swarm_can_halt_and_restart() {
+// cargo test test_swarm_can_halt_and_restart -- --nocapture
+
+async fn test_swarm_can_halt_and_restart() -> anyhow::Result<()> {
     let num_nodes: usize = 5;
 
-    let mut s = LibraSmoke::new(Some(num_nodes as u8))
+    let mut s = LibraSmoke::new(Some(num_nodes as u8), None)
         .await
         .expect("could not start libra smoke");
 
@@ -82,4 +84,6 @@ async fn test_swarm_can_halt_and_restart() {
     for node in env.validators_mut().take(3) {
         assert!(node.liveness_check(1).await.is_err());
     }
+
+    Ok(())
 }
