@@ -7,9 +7,12 @@
 
 ```
 # in this repo
-cargo build --release -p libra --target-dir ~/.cargo/bin
+cargo build --release -p libra
 
-# make it executable
+
+# copy to a dir in your PATH
+cp ./target/release/libra ~/.cargo/bin
+# you may need to make it executable
 chmod +x ~/.cargo/bin/libra
 
 # run framework tests with
