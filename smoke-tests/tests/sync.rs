@@ -48,7 +48,7 @@ async fn wait_for_node(validator: &mut dyn Validator, expected_to_connect: usize
 async fn test_sync_only_mode() {
     let num_nodes: usize = 5;
 
-    let mut s = LibraSmoke::new(Some(num_nodes as u8))
+    let mut s = LibraSmoke::new(Some(num_nodes as u8), None)
         .await
         .expect("could not start libra smoke");
 

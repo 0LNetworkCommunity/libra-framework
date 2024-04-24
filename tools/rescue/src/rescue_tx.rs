@@ -1,16 +1,19 @@
-use crate::{session_tools, user_file::UserBlob};
+use crate::session_tools;
 use clap::Parser;
-use diem_types::transaction::{Script, Transaction, WriteSetPayload};
+use diem_types::{
+    account_address::AccountAddress,
+    transaction::{Script, Transaction, WriteSetPayload},
+};
 use libra_framework::builder::framework_generate_upgrade_proposal::libra_compile_script;
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
 use std::path::PathBuf;
 
 #[derive(Parser)]
-/// Apply transactions to a DB at rest (fork the chain)
+/// Start a libra node
 pub struct RescueTxOpts {
     #[clap(short, long)]
     /// directory enclosing the `/db` folder of the node
-    pub db_dir: PathBuf,
+    pub data_path: PathBuf,
     #[clap(short, long)]
     /// directory to read/write or the rescue.blob. Will default to db_path/rescue.blob
     pub blob_path: Option<PathBuf>,
@@ -18,17 +21,17 @@ pub struct RescueTxOpts {
     /// directory to read/write or the rescue.blob
     pub script_path: Option<PathBuf>,
     #[clap(long)]
-    /// path to an MRB file used to upgrade the network at rescue
-    pub framework_mrb_file: Option<PathBuf>,
+    /// directory to read/write or the rescue.blob
+    pub framework_upgrade: bool,
     #[clap(long)]
-    /// optional, JSON file with list of new validators. Must already have on-chain configurations
-    #[clap(short, long)]
-    pub validators_file: Option<PathBuf>,
+    /// Replace validator set with these addresses. They must
+    /// already have valid configurations on chain.
+    pub debug_vals: Option<Vec<AccountAddress>>,
 }
 
 impl RescueTxOpts {
     pub fn run(&self) -> anyhow::Result<PathBuf> {
-        let db_path = self.db_dir.clone();
+        let db_path = self.data_path.clone();
 
         // There are two options:
         // 1. upgrade the framework because the source in db is a brick.
@@ -45,16 +48,12 @@ impl RescueTxOpts {
             };
 
             Transaction::GenesisTransaction(wp)
-        } else if self.framework_mrb_file.is_some() {
-            let vals = UserBlob::get_vals(self.validators_file.clone());
-            let cs = session_tools::publish_current_framework(
-                db_path.clone(),
-                self.framework_mrb_file.clone(),
-                vals,
-            )?;
+        } else if self.framework_upgrade {
+            let cs =
+                session_tools::publish_current_framework(&db_path, self.debug_vals.to_owned())?;
             Transaction::GenesisTransaction(WriteSetPayload::Direct(cs))
         } else {
-            anyhow::bail!("no options provided, need a --framework_mrb_file or a --script-path");
+            anyhow::bail!("no options provided, need a --framework-upgrade or a --script-path");
         };
 
         let mut output = self.blob_path.clone().unwrap_or(db_path);
@@ -86,11 +85,11 @@ fn test_create_blob() -> anyhow::Result<()> {
     blob_path.create_as_dir()?;
 
     let r = RescueTxOpts {
-        db_dir: db_root_path.path().to_owned(),
+        data_path: db_root_path.path().to_owned(),
         blob_path: Some(blob_path.path().to_owned()),
         script_path: Some(script_path),
-        framework_mrb_file: None,
-        validators_file: None,
+        framework_upgrade: false,
+        debug_vals: None,
     };
     r.run()?;
 

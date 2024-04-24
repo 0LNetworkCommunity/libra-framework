@@ -14,7 +14,7 @@ use libra_wallet::account_keys;
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn sender_back_and_forth() -> anyhow::Result<()> {
     // create libra swarm and get app config for the first validator
-    let mut ls = LibraSmoke::new(Some(1))
+    let mut ls = LibraSmoke::new(Some(1), None)
         .await
         .expect("could not start libra smoke");
     let mut val_app_cfg = ls.first_account_app_cfg()?;
