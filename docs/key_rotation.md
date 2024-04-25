@@ -17,6 +17,10 @@ To recover a private key using a mnemonic, use:
 libra wallet keygen --mnemonic <MNEMONIC> --output-dir <OUTPUT_DIR>
 ```
 
+Your private key will be stored in a file called `private_keys.yaml` in the directory you specified above. Specifically called `account_private_key`. The private key corresponds with the `account_address` above it.
+
+
+
 ## Rotate Keys on Your Wallet
 
 ### Rotate Authentication Key
