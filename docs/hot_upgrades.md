@@ -5,11 +5,11 @@
 
 The "framework" which contains all the consensus, account, econ policies, etc. for the network is written in Move. This code is stored in the network database, and effectively executed on demand. This means that framework upgrades can occur without redeploying the Move VM itself, or the supporting system code (network node software). It also means the state machine can upgrade without a coordinated halt.
 
-- To do this we require the `libra` cli tool. The subcommand `libra move framework` is used for building the artifacts, and `libra txs` for proposing, voting, and ultimately deploying the artifacts.
+- To do this we require the `libra` and `libra-framework` cli tools. The command `libra-framework` is used for building the artifacts, and `libra txs` for proposing, voting, and ultimately deploying the artifacts.
 
 ## TLDR
 - **Fetch the latest release**: `cd libra-framework; git fetch --all; git checkout release-x.x.x`
-- **Build framework**: `libra move framework  upgrade --output-dir ~/framework_upgrade --framework-local-dir ~/libra-framework/framework/`
+- **Build framework**: `libra-framework  upgrade --output-dir ~/framework_upgrade --framework-local-dir ~/libra-framework/framework/`
 - **Propose**: `libra txs governance propose --proposal-script-dir ~/framework_upgrade/1-move-stdlib/ --metadata-url https://www.github.com/0LNetworkCommunity/UpdateProposalTemplate`
 - **Validators vote**: `libra txs governance  vote --proposal-id <ID>`
 - **Resolve**:
@@ -72,7 +72,7 @@ This will be a Move package which is machine-generated for a one-time execution.
 
 An upgrade script that is tampered with will yield a different execution hash, and will be prevented from running (it is likely to be blocked by the transaction size limits before entering the mempool).
 
-The `libra move framework upgrade` command will produce a newly compiled Move upgrade transaction script, its binary, and the hash.
+The `libra-framework upgrade` command will produce a newly compiled Move upgrade transaction script, its binary, and the hash.
 
 You need to provide:
 - `--output-dir`: this directory the upgrade transaction files should be saved to. A new folder called `framework_upgrade` will be created under the output-dir path.
@@ -83,10 +83,10 @@ Optionally you could provide the flag `--danger-force-upgrade
 
 ```
 # Note the paths
-libra move framework upgrade --output-dir <OUTPUT_DIR> --framework-local-dir <FRAMEWORK_PATH>
+libra-framework upgrade --output-dir <OUTPUT_DIR> --framework-local-dir <FRAMEWORK_PATH>
 
 # Example
-libra move framework upgrade --output-dir ~/framework_upgrade --framework-local-dir ~/libra-framework/framework/
+libra-framework upgrade --output-dir ~/framework_upgrade --framework-local-dir ~/libra-framework/framework/
 ```
 :::note
 This creates 3 seperate library upgrade script directories
