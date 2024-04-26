@@ -7,10 +7,14 @@ The "framework" which contains all the consensus, account, econ policies, etc. f
 
 - To do this we require the `libra` and `libra-framework` cli tools. The command `libra-framework` is used for building the artifacts, and `libra txs` for proposing, voting, and ultimately deploying the artifacts.
 
+## Historical Upgrade Information and Proposing Upgrades
+Historical upgrade information since release 7.0.0 is canonically stored in the [upgrade repository](https://github.com/0LNetworkCommunity/upgrades). To submit an upgrade proposal, you should draft a PR with the relevant information detailing the upgrade using the provided [template](https://github.com/0LNetworkCommunity/upgrades/tree/main/proposals/template) and include the upgrade script packages.
+
+
 ## TLDR
 - **Fetch the latest release**: `cd libra-framework; git fetch --all; git checkout release-x.x.x`
 - **Build framework**: `libra-framework  upgrade --output-dir ~/framework_upgrade --framework-local-dir ~/libra-framework/framework/`
-- **Propose**: `libra txs governance propose --proposal-script-dir ~/framework_upgrade/1-move-stdlib/ --metadata-url https://www.github.com/0LNetworkCommunity/UpdateProposalTemplate`
+- **Propose**: `libra txs governance propose --proposal-script-dir ~/framework_upgrade/1-move-stdlib/ --metadata-url https://github.com/0LNetworkCommunity/upgrades/tree/main/proposals/template`
 - **Validators vote**: `libra txs governance  vote --proposal-id <ID>`
 - **Resolve**:
 
