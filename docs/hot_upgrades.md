@@ -9,9 +9,9 @@ The "framework" which contains all the consensus, account, econ policies, etc. f
 
 ## TLDR
 - **Fetch the latest release**: `cd libra-framework; git fetch --all; git checkout release-x.x.x`
-- **Build framework**: `libra-framework  upgrade --output-dir ~/framework_upgrade --framework-local-dir ~/libra-framework/framework/`
+- **Build framework**: `libra-framework upgrade --output-dir ~/framework_upgrade --framework-local-dir ~/libra-framework/framework/`
 - **Propose**: `libra txs governance propose --proposal-script-dir ~/framework_upgrade/1-move-stdlib/ --metadata-url https://www.github.com/0LNetworkCommunity/UpdateProposalTemplate`
-- **Validators vote**: `libra txs governance  vote --proposal-id <ID>`
+- **Validators vote**: `libra txs governance vote --proposal-id <ID>`
 - **Resolve**:
 
     1. `libra txs governance resolve --proposal-script-dir ~/framework_upgrade/1-move-stdlib/ --proposal-id 0`
@@ -39,7 +39,7 @@ Multiple framework upgrades require a more nuanced approach, especially regardin
 - **Build Framework**: Similar to a single upgrade, start by generating Move transaction scripts for all relevant modules.
 - **Proposal for Initial Module**: Propose the upgrade by using the first module (`1-move-stdlib`). This initial proposal is critical as it kickstarts the governance process for the entire upgrade.
 
-  Importantly, the transaction script for upgrading this first module includes a significant addition: **the transaction hash for the subsequent modules** that needs upgrading. These hashes, produced during the artifact building phase, serve as secure identifiers for each module's upgrade script.
+Importantly, the transaction script for upgrading this first module includes a significant addition: **the transaction hash for the subsequent modules** that needs upgrading. These hashes, produced during the artifact building phase, serve as secure identifiers for each module's upgrade script.
 
 - **Validator Voting**: As with single upgrades, validators vote for or against the proposed upgrade.
 - **Achieving Consensus and Sequential Resolution**: Once at least 66% of active validators support the proposal, the initial upgrade can be resolved.
@@ -128,7 +128,7 @@ You can query the next proposal using this command: ` libra query view --functio
 
 We assume the default is to vote in favor. To vote "approve" simply:
 ```
-libra txs governance  vote --proposal-id <PROPOSAL_ID>
+libra txs governance vote --proposal-id <PROPOSAL_ID>
 ```
 
 If voter would like the proposal to be rejected:
@@ -139,7 +139,7 @@ libra txs governance vote --proposal-id <PROPOSAL_ID> --should-fail
 You can query to see the for and against votes using this command: ` libra query view --function-id 0x1::diem_governance::get_votes --args <proposal_number>`
 :::
 
-After everyone has voted (to reach the consensus threshold of 66% as of  `V7`), the proposal will be in a "Resolvable" state. Anyone can resolve it by submitting the upgrade transaction. This means the sender must have the source transaction script for the upgrade (step #1 above).
+After everyone has voted (to reach the consensus threshold of 66% as of `V7`), the proposal will be in a "Resolvable" state. Anyone can resolve it by submitting the upgrade transaction. This means the sender must have the source transaction script for the upgrade (step #1 above).
 
 ##### 6. Use `txs` to resolve a successfully approved proposal
 ```
