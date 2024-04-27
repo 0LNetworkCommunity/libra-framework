@@ -1,0 +1,119 @@
+[
+  {
+    "account": "f0f2ecec3b7e7bb39bc77fa970f31e4e38c091fb1fd44d7913ae3796fb2c98b5",
+    "auth_key": "0xf0f2ecec3b7e7bb39bc77fa970f31e4e38c091fb1fd44d7913ae3796fb2c98b5",
+    "role": "EndUser",
+    "balance": {
+      "coin": 1000000
+    },
+    "val_cfg": null,
+    "val_operator_cfg": null,
+    "miner_state": null,
+    "comm_wallet": null,
+    "currency_info": null,
+    "ancestry": {
+      "tree": [
+        "00000000000000000000000000000000bdb8ad37341cec0817fd8e2474e25031",
+        "00000000000000000000000000000000cd7c59c9d7ca50fe417e3083771fa7e8",
+        "0000000000000000000000000000000088d2ed4905f65b8b841e1707069126e2",
+        "000000000000000000000000000000007355e047e103e2bb5f31137d068ad68d"
+      ]
+    },
+    "receipts": {
+      "destination": [],
+      "cumulative": [],
+      "last_payment_timestamp": [],
+      "last_payment_value": []
+    },
+    "cumulative_deposits": null,
+    "slow_wallet": null,
+    "slow_wallet_list": null,
+    "user_burn_preference": null,
+    "my_vouches": null,
+    "tx_schedule": null,
+    "fee_maker": null,
+    "jail": null,
+    "my_pledge": null,
+    "burn_counter": null,
+    "donor_voice_registry": null,
+    "epoch_fee_maker_registry": null,
+    "match_index": null,
+    "validator_universe": null
+  },
+  {
+    "account": "0000000000000000000000000000000038c091fb1fd44d7913ae3796fb2c98b5",
+    "auth_key": "0xf0f2ecec3b7e7bb39bc77fa970f31e4e38c091fb1fd44d7913ae3796fb2c98b5",
+    "role": "EndUser",
+    "balance": {
+      "coin": 34793913
+    },
+    "val_cfg": null,
+    "val_operator_cfg": null,
+    "miner_state": {
+      "previous_proof_hash": [
+        96,
+        169,
+        243,
+        19,
+        147,
+        209,
+        110,
+        158,
+        129,
+        24,
+        103,
+        106,
+        27,
+        112,
+        148,
+        6,
+        228,
+        67,
+        132,
+        223,
+        174,
+        109,
+        186,
+        148,
+        227,
+        236,
+        198,
+        160,
+        83,
+        238,
+        82,
+        55
+      ],
+      "verified_tower_height": 1,
+      "latest_epoch_mining": 145,
+      "count_proofs_in_epoch": 2,
+      "epochs_mining": 0,
+      "contiguous_epochs_mining": 0
+    },
+    "comm_wallet": null,
+    "currency_info": null,
+    "ancestry": {
+      "tree": [
+        "00000000000000000000000000000000bdb8ad37341cec0817fd8e2474e25031",
+        "00000000000000000000000000000000cd7c59c9d7ca50fe417e3083771fa7e8",
+        "0000000000000000000000000000000088d2ed4905f65b8b841e1707069126e2",
+        "000000000000000000000000000000007355e047e103e2bb5f31137d068ad68d"
+      ]
+    },
+    "receipts": null,
+    "cumulative_deposits": null,
+    "slow_wallet": null,
+    "slow_wallet_list": null,
+    "user_burn_preference": null,
+    "my_vouches": null,
+    "tx_schedule": null,
+    "fee_maker": null,
+    "jail": null,
+    "my_pledge": null,
+    "burn_counter": null,
+    "donor_voice_registry": null,
+    "epoch_fee_maker_registry": null,
+    "match_index": null,
+    "validator_universe": null
+  }
+]

@@ -29,7 +29,7 @@ async fn smoke_onboard_validator() -> anyhow::Result<()> {
         "0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5",
     )?;
 
-    let mut s = LibraSmoke::new(None)
+    let mut s = LibraSmoke::new(None, None)
         .await
         .expect("could not start libra smoke");
 
@@ -47,7 +47,7 @@ async fn smoke_onboard_validator() -> anyhow::Result<()> {
         mnemonic: None,
         test_private_key: Some(s.encoded_pri_key.clone()),
         chain_id: None,
-        config_path: Some(d.path().to_owned().join("libra.yaml")),
+        config_path: Some(d.path().to_owned().join("libra-cli-config.yaml")),
         url: Some(s.api_endpoint.clone()),
         tx_profile: None,
         tx_cost: Some(TxCost::default_baseline_cost()),
@@ -74,7 +74,7 @@ async fn smoke_onboard_validator() -> anyhow::Result<()> {
             "0x74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b".to_owned(),
         ),
         chain_id: None,
-        config_path: Some(d.path().to_owned().join("libra.yaml")),
+        config_path: Some(d.path().to_owned().join("libra-cli-config.yaml")),
         url: Some(s.api_endpoint.clone()),
         tx_profile: None,
         tx_cost: Some(TxCost::default_baseline_cost()),

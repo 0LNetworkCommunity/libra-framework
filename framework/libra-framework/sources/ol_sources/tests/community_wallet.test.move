@@ -1,6 +1,7 @@
 
   #[test_only]
   module ol_framework::test_community_wallet{
+    use ol_framework::ballot;
     use ol_framework::community_wallet;
     use ol_framework::community_wallet_init;
     use ol_framework::donor_voice_txs;
@@ -126,7 +127,7 @@
         let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
         assert!(found, 7357004);
         assert!(idx == 0, 7357005);
-        assert!(status_enum == 1, 7357006);
+        assert!(status_enum == ballot::get_pending_enum(), 7357006);
         assert!(!completed, 7357007);
 
         // it is not yet scheduled, it's still only a proposal by an admin
@@ -136,7 +137,7 @@
         let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
         assert!(found, 7357004);
         assert!(idx == 0, 7357005);
-        assert!(status_enum == 1, 7357006);
+        assert!(status_enum == ballot::get_approved_enum(), 7357006);
         assert!(completed, 7357007); // now completed
 
         // confirm it is scheduled
@@ -211,7 +212,7 @@
         let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
         assert!(found, 7357004);
         assert!(idx == 0, 7357005);
-        assert!(status_enum == 1, 7357006);
+        assert!(status_enum == ballot::get_approved_enum(), 7357006);
         assert!(completed, 7357007); // now completed
 
         // confirm it is scheduled
@@ -232,8 +233,6 @@
         // remove a signer and decrease to 2 and verify the community wallet is bricked
         // signers must be removed by n signers
         community_wallet_init::change_signer_community_multisig(bob, alice_comm_wallet_addr, dave_addr, false, 1, 10); // remove by setting as false
-
-
 
     }
 
@@ -267,7 +266,6 @@
         // This test verifies that the wallet can not be decreased below this specification
         mock::genesis_n_vals(root, 4);
         mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
-
 
         // create signers
         let signers = vector::empty<address>();
@@ -308,6 +306,9 @@
 
     }
 
+
+
+    // TODO: test below
 
     // #[test(root = @ol_framework, _alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d, eve = @0x1000e)]
     // #[expected_failure(abort_code = 196618, location = 0x1::ol_account)]

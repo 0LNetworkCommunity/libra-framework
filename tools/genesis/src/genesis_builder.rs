@@ -1,7 +1,6 @@
 //! build the genesis file
 use crate::genesis::make_recovery_genesis_from_vec_legacy_recovery;
 use crate::genesis_reader::bootstrap_db_reader_from_gen_tx;
-use crate::supply::SupplySettings;
 
 use crate::wizard::DEFAULT_GIT_BRANCH;
 use crate::{compare, supply, vm};
@@ -13,7 +12,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{anyhow, bail, Result};
 use indicatif::ProgressBar;
 
 use diem_crypto::ed25519::ED25519_PUBLIC_KEY_LENGTH;
@@ -40,7 +39,7 @@ use libra_framework::release;
 use libra_types::exports::ChainId;
 use libra_types::exports::NamedChain;
 use libra_types::legacy_types::fixtures::TestPersona;
-use libra_types::legacy_types::legacy_recovery::LegacyRecovery;
+use libra_types::legacy_types::legacy_recovery_v6::LegacyRecoveryV6;
 use libra_types::ol_progress::OLProgress;
 use libra_wallet::account_keys::get_keys_from_mnem;
 use libra_wallet::keys::generate_key_objects_from_legacy;
@@ -70,8 +69,7 @@ pub fn build(
     github_token: String,
     home_path: PathBuf,
     use_local_framework: bool,
-    legacy_recovery: &mut [LegacyRecovery],
-    supply_settings: Option<SupplySettings>,
+    legacy_recovery: &mut [LegacyRecoveryV6],
     chain_name: NamedChain,
     testnet_vals: Option<Vec<ValidatorConfiguration>>,
 ) -> Result<Vec<PathBuf>> {
@@ -118,7 +116,7 @@ pub fn build(
         &gen_info.validators,
         &gen_info.framework,
         gen_info.chain_id,
-        supply_settings.clone(),
+        // supply_settings.clone(),
         &genesis_config,
     )?;
 
@@ -153,12 +151,7 @@ pub fn build(
         // get a boostrapped DB to do audits
         let (db_rw, _) = bootstrap_db_reader_from_gen_tx(gen_info.get_genesis())?;
 
-        let settings = supply_settings.context("no supply settings provided")?;
-
-        let mut s =
-            supply::populate_supply_stats_from_legacy(legacy_recovery, &settings.map_dd_to_slow)?;
-
-        s.set_ratios_from_settings(&settings)?;
+        let s = supply::populate_supply_stats_from_legacy(legacy_recovery)?;
 
         compare::compare_recovery_vec_to_genesis_tx(legacy_recovery, &db_rw.reader, &s)?;
         OLProgress::complete("account balances as expected");
@@ -166,7 +159,6 @@ pub fn build(
         compare::export_account_balances(legacy_recovery, &db_rw.reader, &output_dir)?;
         OLProgress::complete("exported balances to genesis_balances.json");
 
-        compare::check_supply(settings.scale_supply() as u64, &db_rw.reader)?;
         OLProgress::complete("final supply as expected");
     }
 
@@ -218,7 +210,7 @@ pub fn fetch_genesis_info(
     let layout: LibraSimpleLayout = from_yaml(&String::from_utf8(base64::decode(l_file)?)?)?;
     OLProgress::complete("fetched layout file");
 
-    let pb = OLProgress::spin_steady(100, "fetching validator registrations".to_string());
+    let pb = OLProgress::spin_steady(500, "fetching validator registrations".to_string());
 
     let validators = get_validator_configs(&client, &layout, false)?;
     OLProgress::complete("fetched validator configs");
@@ -575,7 +567,6 @@ fn test_build() {
         home,
         true,
         &mut [],
-        None,
         NamedChain::TESTING,
         None,
     )

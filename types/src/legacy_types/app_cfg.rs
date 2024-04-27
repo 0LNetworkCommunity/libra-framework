@@ -19,7 +19,7 @@ use super::network_playlist::{self, HostProfile, NetworkPlaylist};
 // TODO: the GAS_UNIT_PRICE is set in DIEM. IT IS ALSO THE MINIMUM GAS PRICE This is arbitrary and needs to be reviewed.
 pub const MINUMUM_GAS_PRICE_IN_DIEM: u64 = GAS_UNIT_PRICE;
 
-pub const CONFIG_FILE_NAME: &str = "libra.yaml";
+pub const CONFIG_FILE_NAME: &str = "libra-cli-config.yaml";
 /// MinerApp Configuration
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AppCfg {
@@ -83,6 +83,11 @@ impl AppCfg {
         };
 
         if let Some(np) = network_playlist {
+            if chain_name.is_some() {
+                println!("overriding chain_name, since the network playlist also has a chain name");
+            }
+
+            default_config.workspace.default_chain_id = np.chain_name;
             default_config.network_playlist.push(np)
         }
 
@@ -114,7 +119,7 @@ impl AppCfg {
         let path = file.unwrap_or_else(default_file_path);
         if !path.exists() {
             bail!(format!(
-                "libra.yaml dir does not exist at {}\nHave you initialized the configs with `libra config init`?",
+                "libra-cli-config.yaml dir does not exist at {}\nHave you initialized the configs with `libra config init`?",
                 path.to_str().unwrap()
             ))
         }
@@ -343,10 +348,8 @@ impl Default for AppCfg {
     fn default() -> Self {
         Self {
             workspace: Workspace::default(),
-            // profile: None,
             user_profiles: vec![],
             network_playlist: vec![],
-            // chain_info: ChainInfo::default(),
             tx_configs: TxConfigs::default(),
         }
     }
@@ -573,7 +576,9 @@ impl TxCost {
             // TODO: the GAS_UNIT_PRICE is set in DIEM. IT IS ALSO THE MINIMUM GAS PRICE This is arbitrary and needs to be reviewed.
             // It is also 0 in tests, so we need to increase to at least 1.
             coin_price_per_unit: (MINUMUM_GAS_PRICE_IN_DIEM.max(1) as f64 * price_multiplier)
-                as u64, // this is the minimum price
+                as u64,
+            // this is the minimum price
+            //coin_price_per_unit: 100 as u64,
             user_tx_timeout: 5_000,
         }
     }

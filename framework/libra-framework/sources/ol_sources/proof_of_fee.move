@@ -31,12 +31,15 @@ module ol_framework::proof_of_fee {
   friend ol_framework::test_pof;
   #[test_only]
   friend ol_framework::mock;
-  #[test_only]
-  friend ol_framework::test_tower;
 
 
   /// The nominal reward for each validator in each epoch.
   const GENESIS_BASELINE_REWARD: u64 = 1000000;
+
+  /// Number of vals needed before PoF becomes competitive for
+  /// performant nodes as well
+  const VAL_BOOT_UP_THRESHOLD: u64 = 19;
+
 
   //////// ERRORS /////////
   /// Not an active validator
@@ -99,14 +102,18 @@ module ol_framework::proof_of_fee {
 
   // on a migration genesis for mainnet the genesis reward needs to be calculated
   // from supply data.
-  fun genesis_migrate_reward(vm: &signer, nominal_reward: u64) acquires
+  public fun genesis_migrate_reward(framework: &signer, nominal_reward: u64) acquires
   ConsensusReward {
-    system_addresses::assert_ol(vm); // either 0x1 or 0x0
+    system_addresses::assert_diem_framework(framework); // either 0x1 or 0x0
+
+    // Nominal reward at end of V6 was 178204815
+    if (nominal_reward > 178204815) return;
+
 
     let state = borrow_global_mut<ConsensusReward>(@ol_framework);
     state.nominal_reward = nominal_reward;
     state.net_reward = nominal_reward; // just for info purposes. It gets calculated
-    // on first epoch change.
+    // on next epoch change.
   }
 
   fun init(account_sig: &signer) {
@@ -144,6 +151,28 @@ module ol_framework::proof_of_fee {
       // The set size as determined by musical chairs is a target size
       // but the actual final size depends on how much can we expand the set
       // without adding too many unproven nodes (which we don't know if they are prepared to validate, and risk halting th network).
+
+
+      // Boot up
+      // After an upgrade or incident the network may need to rebuild the
+      // validator set from a small base.
+      // we should increase the available seats starting from a base of
+      // compliant nodes. And make it competitive for the unknown nodes.
+      // Instead of increasing the seats by +1 the compliant vals we should
+      // increase by compliant + (1/2 compliant - 1) or another
+      // safe threshold.
+      // Another effect is that with PoF we might be dropping compliant nodes,
+      //  in favor of unknown nodes with high bids.
+      // So in the case of a small validator set, we ignore the musical_chairs
+      // suggestion, and increase the seats offered, and guarantee seats to
+      // performant nodes.
+      let performant_len = vector::length(outgoing_compliant_set);
+      if (
+        performant_len < VAL_BOOT_UP_THRESHOLD &&
+        performant_len > 2
+      ) {
+        final_set_size = performant_len + (performant_len/2 - 1)
+      };
 
       // This is the core of the mechanism, the uniform price auction
       // the winners of the auction will be the validator set.

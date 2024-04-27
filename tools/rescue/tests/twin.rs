@@ -1,15 +1,12 @@
 mod support;
 
-use std::fs;
-
 use crate::support::{deadline_secs, update_node_config_restart};
 
 use diem_config::config::InitialSafetyRulesConfig;
 use diem_forge::SwarmExt;
 use diem_types::transaction::Transaction;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
-use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts, user_file::UserBlob};
-use serde_json::json;
+use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
 use smoke_test::test_utils::swarm_utils::insert_waypoint;
 
 #[tokio::test]
@@ -19,12 +16,13 @@ use smoke_test::test_utils::swarm_utils::insert_waypoint;
 // create a new network of 1, just so we can use the configurations.
 // change the configurations to point to the old db, after creating a rescue
 // which replaces the 3 validators with 1.
-
 async fn test_twin() -> anyhow::Result<()> {
     println!("0. create a valid test database from smoke-tests");
     let num_nodes: usize = 3;
 
-    let mut s = LibraSmoke::new(Some(num_nodes as u8))
+    // The diem-node should be compiled externally to avoid any potential conflicts with the current build
+    //get the current path
+    let mut s = LibraSmoke::new(Some(num_nodes as u8), None)
         .await
         .expect("could not start libra smoke");
 
@@ -42,7 +40,7 @@ async fn test_twin() -> anyhow::Result<()> {
     }
 
     println!("1. start new swarm configs, and stop the network");
-    let _s = LibraSmoke::new(Some(1))
+    let _s: LibraSmoke = LibraSmoke::new(Some(1), None)
         .await
         .expect("could not start libra smoke");
 
@@ -59,20 +57,12 @@ async fn test_twin() -> anyhow::Result<()> {
 
     println!("2. compile the script");
 
-    let j = json!(UserBlob {
-        account: first_validator_address
-    });
-
-    let temp = diem_temppath::TempPath::new();
-    temp.create_as_file()?;
-    fs::write(temp.path(), j.to_string())?;
-
     let r = RescueTxOpts {
-        db_dir: brick_db.clone(),
+        data_path: brick_db.clone(),
         blob_path: Some(blob_path.path().to_owned()),
         script_path: None,
-        framework_mrb_file: None,
-        validators_file: Some(temp.path().to_owned()),
+        framework_upgrade: true,
+        debug_vals: Some(vec![first_validator_address]),
     };
     r.run()?;
 
@@ -128,13 +118,11 @@ async fn test_twin() -> anyhow::Result<()> {
         update_node_config_restart(node, node_config)?;
         // wait_for_node(node, expected_to_connect).await?;
     }
-
     assert!(
         // NOTE: liveness check fails because the test tool doesn't
         // have a way of removing a validator from the test suite. I tried...
         env.liveness_check(deadline_secs(1)).await.is_err(),
         "test suite thinks dead node is live"
     );
-
     Ok(())
 }

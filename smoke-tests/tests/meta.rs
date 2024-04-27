@@ -30,14 +30,14 @@ async fn meta_can_start_swarm() {
 /// testing the LibraSmoke abstraction can load
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn meta_create_libra_smoke_single() {
-    let _s = LibraSmoke::new(Some(1))
+    let _s = LibraSmoke::new(Some(1), None)
         .await
         .expect("cannot start libra swarm");
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 5)]
 async fn meta_create_libra_smoke_multi() -> anyhow::Result<()> {
-    let mut s = LibraSmoke::new(Some(5))
+    let mut s = LibraSmoke::new(Some(5), None)
         .await
         .expect("cannot start libra swarm");
 

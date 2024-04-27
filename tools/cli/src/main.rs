@@ -1,16 +1,16 @@
+mod move_cli;
 mod node_cli;
 
 use anyhow::anyhow;
 use clap::{Parser, Subcommand};
-use diem::move_tool::MoveTool;
 use libra_config::config_cli::ConfigCli;
+use libra_genesis_tools::cli::GenesisCli;
 use libra_query::query_cli::QueryCli;
-use libra_tower::tower_cli::TowerCli;
 use libra_txs::txs_cli::TxsCli;
 use libra_wallet::wallet_cli::WalletCli;
 
 #[derive(Parser)]
-#[clap(author, version, about, long_about = None)]
+#[clap(author, about, long_about = None)]
 #[clap(arg_required_else_help(true))]
 struct LibraCli {
     #[clap(subcommand)]
@@ -21,16 +21,18 @@ struct LibraCli {
 enum Sub {
     Config(ConfigCli),
     #[clap(subcommand)]
-    Move(MoveTool), // from vendor
+    Move(move_cli::MoveTool),
     Node(node_cli::NodeCli),
     Query(QueryCli),
-    Tower(TowerCli),
     Txs(TxsCli),
     Wallet(WalletCli),
+    Genesis(GenesisCli),
+    Version,
 }
 
 fn main() -> anyhow::Result<()> {
     let cli = LibraCli::parse();
+
     match cli.command {
         Some(Sub::Node(n)) => {
             n.run()?;
@@ -58,11 +60,7 @@ fn main() -> anyhow::Result<()> {
                             eprintln!("Failed to execute query tool, message: {}", &e);
                         }
                     }
-                    Some(Sub::Tower(tower_cli)) => {
-                        if let Err(e) = tower_cli.run().await {
-                            eprintln!("Failed to execute tower tool, message: {}", &e);
-                        }
-                    }
+
                     Some(Sub::Txs(txs_cli)) => {
                         if let Err(e) = txs_cli.run().await {
                             eprintln!("Failed to execute txs tool, message: {}", &e);
@@ -73,6 +71,24 @@ fn main() -> anyhow::Result<()> {
                             eprintln!("Failed to execute wallet tool, message: {}", &e);
                         }
                     }
+                    Some(Sub::Genesis(genesis_cli)) => {
+                        if let Err(e) = genesis_cli.execute().await {
+                            eprintln!("Failed to execute genesis tool, message: {}", &e);
+                        }
+                    }
+                    Some(Sub::Version) => {
+                        println!("LIBRA VERSION {}", env!("CARGO_PKG_VERSION"));
+                        println!("Build Timestamp: {}", env!("VERGEN_BUILD_TIMESTAMP"));
+                        println!("Git Branch: {}", env!("VERGEN_GIT_BRANCH"));
+                        println!("Git SHA: {}", env!("VERGEN_GIT_SHA"));
+                        println!(
+                            "Git Commit Timestamp: {}",
+                            env!("VERGEN_GIT_COMMIT_TIMESTAMP")
+                        );
+                    }
+                    // Some(Sub::Version(v)) => {
+                    //     clap_vergen::print!(version);
+                    // }
                     _ => {
                         println!("\nliving is easy with eyes closed")
                     }

@@ -1,6 +1,6 @@
 [package]
 name = "libra-config"
-version = "0.1.0"
+version = { workspace = true }
 
 # Workspace inherited keys
 authors = { workspace = true }

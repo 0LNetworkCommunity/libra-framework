@@ -7,7 +7,7 @@ use rescue::rescue_tx::RescueTxOpts;
 #[tokio::test]
 async fn test_framework_upgrade_writeset() -> anyhow::Result<()> {
     println!("0. create a valid test database from smoke-tests");
-    let mut s = LibraSmoke::new(Some(3))
+    let mut s = LibraSmoke::new(Some(3), None)
         .await
         .expect("could not start libra smoke");
 
@@ -25,11 +25,11 @@ async fn test_framework_upgrade_writeset() -> anyhow::Result<()> {
     blob_path.create_as_dir()?;
 
     let r = RescueTxOpts {
-        db_dir: val_db_path.clone(),
+        data_path: val_db_path.clone(),
         blob_path: Some(blob_path.path().to_owned()),
         script_path: None,
-        framework_mrb_file: None,
-        validators_file: None,
+        framework_upgrade: true,
+        debug_vals: None,
     };
     r.run()?;
 

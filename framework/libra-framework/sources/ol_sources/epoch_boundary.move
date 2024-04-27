@@ -1,9 +1,9 @@
 
 module diem_framework::epoch_boundary {
-    use ol_framework::slow_wallet; //ok
-    use ol_framework::musical_chairs; //ok
-    use ol_framework::proof_of_fee; //ok
-    use ol_framework::stake; // ?
+    use ol_framework::slow_wallet;
+    use ol_framework::musical_chairs;
+    use ol_framework::proof_of_fee;
+    use ol_framework::stake;
     use ol_framework::libra_coin::LibraCoin;
     use ol_framework::rewards;
     use ol_framework::jail;
@@ -11,10 +11,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::burn;
     use ol_framework::donor_voice_txs;
     use ol_framework::fee_maker;
-    use ol_framework::tower_state;
     use ol_framework::infra_escrow;
-    use ol_framework::oracle;
-    use ol_framework::ol_account;
     use ol_framework::libra_coin;
     use ol_framework::match_index;
     use ol_framework::community_wallet_init;
@@ -270,10 +267,11 @@ module diem_framework::epoch_boundary {
     // This removed business logic from reconfiguration.move
     // and prevents dependency cycling.
     public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64,
-    _epoch_round: u64) acquires BoundaryStatus {
+    epoch_round: u64) acquires BoundaryStatus {
         print(&string::utf8(b"EPOCH BOUNDARY BEGINS"));
+        // either 0x0 or 0x1 can call, but we will always use framework signer
         system_addresses::assert_ol(root);
-
+        let root = &create_signer::create_signer(@ol_framework);
         let status = borrow_global_mut<BoundaryStatus>(@ol_framework);
 
         print(&string::utf8(b"status reset"));
@@ -294,15 +292,9 @@ module diem_framework::epoch_boundary {
         // reset fee makers tracking
         status.set_fee_makers_success = fee_maker::epoch_reset_fee_maker(root);
 
-
-        print(&string::utf8(b"tower_state::reconfig"));
-        // randomize the Tower/Oracle difficulty
-        tower_state::reconfig(root);
-        // TODO: there isn't much to checkhere.
-        status.tower_state_success = true;
-
         print(&string::utf8(b"musical_chairs::stop_the_music"));
-        let (compliant_vals, n_seats) = musical_chairs::stop_the_music(root, closing_epoch);
+        let (compliant_vals, n_seats) = musical_chairs::stop_the_music(root,
+        closing_epoch, epoch_round);
         status.incoming_compliant_count = vector::length(&compliant_vals);
         status.incoming_compliant = compliant_vals;
         status.incoming_seats_offered = n_seats;
@@ -372,23 +364,7 @@ module diem_framework::epoch_boundary {
             status.outgoing_vals_success = total_reward == (vector::length(&compliant_vals) * nominal_reward_to_vals)
           };
 
-          // since we reserved some fees to go to the oracle miners
-          // we take the NET REWARD of the validators, since it is the equivalent of what the validator would earn net of entry fee.
-            if (nominal_reward_to_vals > entry_fee) {
-                let net_val_reward = nominal_reward_to_vals - entry_fee;
-
-                if (libra_coin::value(&all_fees) > net_val_reward) {
-                    let oracle_budget = libra_coin::extract(&mut all_fees, net_val_reward);
-                    status.oracle_budget = libra_coin::value(&oracle_budget);
-
-                    let (count, amount) = oracle::epoch_boundary(root, &mut oracle_budget);
-                    status.oracle_pay_count = count;
-                    status.oracle_pay_amount = amount;
-                    status.oracle_pay_success = (amount > 0);
-                    // in case there is any dust left
-                    ol_account::merge_coins(&mut all_fees, oracle_budget);
-                };
-            };
+          // Commit note: deprecated with tower mining.
 
           // remainder gets burnt according to fee maker preferences
           let (b_success, b_fees) = burn::epoch_burn_fees(root, &mut all_fees);

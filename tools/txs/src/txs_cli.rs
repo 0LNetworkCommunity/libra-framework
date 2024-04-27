@@ -24,7 +24,7 @@ use diem_sdk::{
 
 #[derive(Parser)]
 #[clap(name = env!("CARGO_PKG_NAME"), author, version, about, long_about = None, arg_required_else_help = true)]
-/// Submit a transaction to the blockchain.
+/// Submit a transaction to the blockchain
 pub struct TxsCli {
     #[clap(subcommand)]
     pub subcommand: Option<TxsSub>,
@@ -33,28 +33,25 @@ pub struct TxsCli {
     #[clap(short, long)]
     pub config_path: Option<PathBuf>,
 
-    /// optional, mnemonic to pass at runtime. Otherwise this will prompt for mnemonic.
+    /// optional, mnemonic to pass at runtime. Otherwise this will prompt for mnemonic
     #[clap(short, long)]
     pub mnemonic: Option<String>,
 
-    /// optional, private key of the account. Otherwise this will prompt for mnemonic. Warning: intended for testing.
+    /// optional, Private key of the account. Otherwise this will prompt for mnemonic. Warning: intended for testing
     #[clap(short, long)]
     pub test_private_key: Option<String>,
 
-    /// optional, use a transaction profile used in libra.yaml
-    /// is mutually exclusive with --tx-cost
+    /// optional, Use a transaction profile used in libra-cli-config.yaml.
+    /// Is mutually exclusive with --tx-cost
     #[clap(long)]
     pub tx_profile: Option<TxType>,
 
-    /// optional, maximum number of gas units to be used to send this transaction
-    /// is mutually exclusive with --tx-profile
+    /// optional, Maximum number of gas units to be used to send this
+    /// transaction. Is mutually exclusive with --tx-profile
     #[clap(flatten)]
     pub tx_cost: Option<TxCost>,
 
-    // /// optional, pick name (substring of address or nickname) of a user profile, if there are multiple. Will choose the default one set..
-    // #[clap(short, long)]
-    // pub nickname_profile: Option<String>,
-    /// optional, id of chain as name. Will default to MAINNET;
+    /// optional, Id of chain as name. Will default to MAINNET
     #[clap(long)]
     pub chain_id: Option<NamedChain>,
 
@@ -63,7 +60,7 @@ pub struct TxsCli {
     #[clap(short, long)]
     pub url: Option<Url>,
 
-    /// optional, only estimate the gas fees
+    /// optional, Only estimate the gas fees
     #[clap(long)]
     pub estimate_only: bool,
 }
@@ -82,7 +79,8 @@ pub enum TxsSub {
     #[clap(subcommand)]
     /// Perform transactions for addresses with Community Wallet settings
     Community(CommunityTxs),
-    /// Transfer coins between accounts. Transferring can also be used to create accounts.
+    /// Transfer coins between accounts (and create new account)
+    // Transferring can also be used to create accounts
     Transfer {
         /// Address of the recipient
         #[clap(short, long)]
@@ -93,9 +91,9 @@ pub enum TxsSub {
         amount: f64,
     },
     #[clap(hide(true))]
-    /// Warn: publishing contracts is for testing purposes only on Testnet.
+    /// Warn: Publishing contracts is for testing purposes only on Testnet
     Publish(MovePackageDir),
-    /// Generate a transaction that executes an Entry function on-chain
+    /// Execute arbitrary on-chain `entry` function
     GenerateTransaction {
         #[clap(
             short,
@@ -167,14 +165,12 @@ impl TxsCli {
         .await?;
 
         if self.tx_cost.is_some() && self.tx_profile.is_some() {
-            println!("ERROR: --tx-cost and --tx-profile are mutually exclusive. Either set the costs explicitly or choose a profile in libra.yaml, exiting");
+            println!("ERROR: --tx-cost and --tx-profile are mutually exclusive. Either set the costs explicitly or choose a profile in libra-cli-config.yaml, exiting");
         }
         let tx_cost = self
             .tx_cost
             .clone()
             .unwrap_or_else(|| app_cfg.tx_configs.get_cost(self.tx_profile.clone()));
-
-        // let tx_cost = app_cfg.tx_configs.get_cost(self.tx_profile.clone());
 
         send.set_tx_cost(&tx_cost);
 

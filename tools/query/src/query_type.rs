@@ -1,7 +1,7 @@
 use crate::{
     account_queries::{
-        community_wallet_pending_transactions, community_wallet_signers, get_account_balance_libra,
-        get_events, get_tower_state, get_transactions, get_val_config,
+        community_wallet_scheduled_transactions, community_wallet_signers,
+        get_account_balance_libra, get_events, get_transactions, get_val_config,
         is_community_wallet_migrated,
     },
     chain_queries::{get_epoch, get_height},
@@ -20,11 +20,6 @@ use serde_json::json;
 pub enum QueryType {
     /// Account balance
     Balance {
-        /// account to query txs of
-        account: AccountAddress,
-    },
-    /// User's Tower state
-    Tower {
         /// account to query txs of
         account: AccountAddress,
     },
@@ -171,10 +166,6 @@ impl QueryType {
                 let res = get_account_balance_libra(&client, *account).await?;
                 Ok(json!(res.scaled()))
             }
-            QueryType::Tower { account } => {
-                let res = get_tower_state(&client, *account).await?;
-                Ok(json!(res))
-            }
             QueryType::View {
                 function_id,
                 type_args,
@@ -274,7 +265,7 @@ impl QueryType {
             }
             QueryType::ComWalletPendTransactions { account } => {
                 // Wont work at the moment as there is no community wallet migrated
-                let _res = community_wallet_pending_transactions(&client, *account).await?;
+                let _res = community_wallet_scheduled_transactions(&client, *account).await?;
                 Ok(json!({ "pending_transactions": "None" }))
             }
             QueryType::Annotate { account } => {

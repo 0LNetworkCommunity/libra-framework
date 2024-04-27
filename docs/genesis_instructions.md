@@ -1,5 +1,5 @@
 
-## Genesis Instructions
+## Genesis Transaction Instructions
 (WIP)
 
 ### Testnet
@@ -11,7 +11,7 @@
 
 2. Configure the nodes
 
-2a. Nodes will need to have a number of tools installed in order to compile. This script *might*  work for your distro `https://github.com/0o-de-lally/libra/blob/v6/ol/util/setup.sh`
+2a. Nodes will need to have a number of tools installed in order to compile. This script *might*  work for your distro `https://github.com/0o-de-lally/libra/blob/main/ol/util/setup.sh`
 
 ```
 # targeting ubuntu
@@ -21,7 +21,7 @@ sudo apt install -y git tmux jq build-essential cmake clang llvm libgmp-dev pkg-
 curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y
 ```
 
-3. checkout and build `libra-v7`
+3. checkout and build `v7-genesis`
 
 You'll want to do "release" builds of everything. Grab a cup.
 
@@ -47,9 +47,9 @@ You'll want to choose the `repo permissions` setting.
 5. Do the genesis ceremony.
 You'll use the wizard for both configuring, registering, and building the genesis transaction.
 
-You'll input the name of the github repo (`--org-github` and `--name-github `) being used to coordinate. 
+You'll input the name of the github repo (`--org-github` and `--name-github `) being used to coordinate.
 ```
-./target/release/libra-genesis-tools  --org-github <ORG_GITHUB> --name-github <NAME_GITHUB> register 
+./target/release/libra-genesis-tools  --org-github <ORG_GITHUB> --name-github <NAME_GITHUB> register
 ```
 
 6. Coordinator: merge pull requests.
@@ -58,7 +58,7 @@ The owner of the coordinator repo should merge the pull requests the registrants
 
 7. Run the genesis transaction builder with `libra-genesis-tools genesis`
 
-You'll use the same github arguments as above plus two more. You'll be using a local copy of the move framework (`--local-framework`). Last, you'll tell the wizard which DB backup file to use to migrate state from the previous network (`--json-legacy`). 
+You'll use the same github arguments as above plus two more. You'll be using a local copy of the move framework (`--local-framework`). Last, you'll tell the wizard which DB backup file to use to migrate state from the previous network (`--json-legacy`).
 
 For the legacy JSON you can use the test example: `tools/genesis/tests/fixtures/sample_export_recovery.json`
 
@@ -84,5 +84,3 @@ cd framework/
 cargo r --release release
 # yes two releases in there.
 ```
-
-

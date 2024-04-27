@@ -17,34 +17,38 @@ use libra_cached_packages::libra_stdlib::{
 
 #[derive(clap::Subcommand)]
 pub enum GovernanceTxs {
-    /// after compiling a proposal script with `libra-framework upgrade` any authorized voter can create a proposal.
+    /// Register an upgrade proposal. NOTE: requires compiling a proposal script
     Propose {
         #[clap(short = 'd', long)]
         /// Path to the directory of the compiled proposal script
         proposal_script_dir: PathBuf,
 
         #[clap(short, long)]
-        /// a url which describes the proposal
+        /// URL which describes the proposal
         metadata_url: String,
     },
+    /// Vote for a chain upgrade
     Vote {
         #[clap(short = 'i', long)]
-        /// the on chain ID of the proposal
+        /// On-chain ID of the proposal
         proposal_id: u64,
 
         #[clap(long)]
-        /// must explicitly inform if it should fail. In the absense of this flag it assumes you are voting "should pass"
+        /// Must explicitly inform if it should fail (default is to pass)
+        // In the absense of this flag it assumes you are voting "should pass"
         should_fail: bool,
     },
-    /// All proposals need to be resolved by any user submitting the actual bytes in a transaction. This transaction has it's hash registered in the proposal, so that only the actual bytes of the script can be submitted, and any user is able to do so. This assumes that the proposal passed.
+    /// Resolve by sending all compiled bytes of the transaction
+    // All proposals need to be resolved by any user submitting the actual bytes in a transaction. This transaction has it's hash registered in the proposal, so that only the actual bytes of the script can be submitted, and any user is able to do so. This assumes that the proposal passed.
     Resolve {
         #[clap(short = 'i', long)]
-        /// the on chain ID of the proposal
+        /// On-chain ID of the proposal
         proposal_id: u64,
         #[clap(short = 'd', long)]
         /// Path to the directory of the compiled proposal script
         proposal_script_dir: PathBuf,
     },
+    /// Tickle the epoch boundary
     EpochBoundary,
 }
 
@@ -83,7 +87,7 @@ impl GovernanceTxs {
             GovernanceTxs::Vote {
                 proposal_id,
                 should_fail,
-            } => diem_governance_ol_vote(*proposal_id, !*should_fail), // NOTE: we are inverting the BOOL here.
+            } => diem_governance_ol_vote(*proposal_id, !*should_fail), // NOTE: the default is to vote for "pass" so we invert the BOOL versus what diem_governance.move expects.
             GovernanceTxs::Resolve {
                 proposal_id,
                 proposal_script_dir,

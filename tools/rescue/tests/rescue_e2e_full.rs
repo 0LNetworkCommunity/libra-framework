@@ -12,8 +12,6 @@ use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
 use smoke_test::test_utils::{swarm_utils::insert_waypoint, MAX_CATCH_UP_WAIT_SECS};
 use std::{fs, time::Duration};
 
-#[tokio::test]
-
 /// NOTE: much of this is duplicated in rescue_cli_creates_blob and e2e but we
 /// do want the granularity.
 /// NOTE: You should `tail` the logs from the advertised logs location. It
@@ -25,9 +23,9 @@ use std::{fs, time::Duration};
 /// 3. Test the nodes and clients resume working after updating waypoint
 /// 4. Test a node lagging behind can sync to the waypoint
 async fn test_rescue_e2e_with_sync() -> anyhow::Result<()> {
+    //increase thread stack size
     let num_nodes: usize = 5;
-
-    let mut s = LibraSmoke::new(Some(num_nodes as u8))
+    let mut s: LibraSmoke = LibraSmoke::new(Some(num_nodes as u8), None)
         .await
         .expect("could not start libra smoke");
 
@@ -67,18 +65,18 @@ async fn test_rescue_e2e_with_sync() -> anyhow::Result<()> {
     let data_path = TempPath::new();
     data_path.create_as_dir().unwrap();
     let rescue = RescueTxOpts {
-        db_dir: data_path.path().to_owned(),
+        data_path: data_path.path().to_owned(),
         blob_path: None, // defaults to data_path/rescue.blob
         script_path: Some(script_path),
-        framework_mrb_file: None,
-        validators_file: None,
+        framework_upgrade: false,
+        debug_vals: None,
     };
     let genesis_blob_path = rescue.run().unwrap();
 
     assert!(genesis_blob_path.exists());
 
     let genesis_transaction = {
-        let buf = fs::read(&genesis_blob_path).unwrap();
+        let buf: Vec<u8> = fs::read(&genesis_blob_path).unwrap();
         bcs::from_bytes::<Transaction>(&buf).unwrap()
     };
 
@@ -200,4 +198,20 @@ async fn test_rescue_e2e_with_sync() -> anyhow::Result<()> {
     assert!(bal.total > old_bal.total, "transaction did not post");
 
     Ok(())
+}
+
+use tokio::runtime::Builder;
+
+#[test]
+
+fn test_with_custom_stack_size() {
+    let rt = Builder::new_multi_thread()
+        .worker_threads(1) // Set the number of threads
+        .thread_stack_size(32 * 1024 * 1024) // Stack size in bytes
+        .enable_all()
+        .build()
+        .unwrap();
+    rt.block_on(async {
+        test_rescue_e2e_with_sync().await.unwrap();
+    });
 }

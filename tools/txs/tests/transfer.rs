@@ -8,10 +8,12 @@ use libra_types::legacy_types::app_cfg::TxCost;
 
 /// Case 1: send to an existing account: another genesis validator
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+
 async fn smoke_transfer_existing_account() {
     let d = diem_temppath::TempPath::new();
 
-    let mut s = LibraSmoke::new(Some(2)) // going to transfer from validator #0 to validator #1
+    //std::env::set_var("DIEM_FORGE_NODE_BIN_PATH", "/root/.cargo/diem-node");
+    let mut s = LibraSmoke::new(Some(2), None) // going to transfer from validator #0 to validator #1
         .await
         .expect("could not start libra smoke");
 
@@ -32,7 +34,7 @@ async fn smoke_transfer_existing_account() {
         mnemonic: None,
         test_private_key: Some(s.encoded_pri_key.clone()),
         chain_id: None,
-        config_path: Some(d.path().to_owned().join("libra.yaml")),
+        config_path: Some(d.path().to_owned().join("libra-cli-config.yaml")),
         url: Some(s.api_endpoint.clone()),
         tx_profile: None,
         tx_cost: Some(TxCost::default_baseline_cost()),
@@ -49,7 +51,8 @@ async fn smoke_transfer_existing_account() {
 async fn smoke_transfer_create_account() -> Result<(), anyhow::Error> {
     let d = diem_temppath::TempPath::new();
 
-    let mut s = LibraSmoke::new(None)
+    //std::env::set_var("DIEM_FORGE_NODE_BIN_PATH", "/root/.cargo/diem-node");
+    let mut s = LibraSmoke::new(None, None)
         .await
         .expect("could not start libra smoke");
 
@@ -71,7 +74,7 @@ async fn smoke_transfer_create_account() -> Result<(), anyhow::Error> {
         mnemonic: None,
         test_private_key: Some(s.encoded_pri_key.clone()),
         chain_id: None,
-        config_path: Some(d.path().to_owned().join("libra.yaml")),
+        config_path: Some(d.path().to_owned().join("libra-cli-config.yaml")),
         url: Some(s.api_endpoint.clone()),
         tx_profile: None,
         tx_cost: Some(TxCost::default_baseline_cost()),
@@ -87,7 +90,6 @@ async fn smoke_transfer_create_account() -> Result<(), anyhow::Error> {
         bal.total, 1000000,
         "Balance of the new account should be 1.0(1000000) after the transfer"
     );
-
     Ok(())
 }
 
@@ -97,7 +99,7 @@ async fn smoke_transfer_create_account() -> Result<(), anyhow::Error> {
 async fn smoke_transfer_estimate() {
     let d = diem_temppath::TempPath::new();
 
-    let mut s = LibraSmoke::new(None)
+    let mut s = LibraSmoke::new(None, None)
         .await
         .expect("could not start libra smoke");
 
@@ -115,7 +117,7 @@ async fn smoke_transfer_estimate() {
         mnemonic: None,
         test_private_key: Some(s.encoded_pri_key.clone()),
         chain_id: None,
-        config_path: Some(d.path().to_owned().join("libra.yaml")),
+        config_path: Some(d.path().to_owned().join("libra-cli-config.yaml")),
         url: Some(s.api_endpoint.clone()),
         tx_profile: None,
         tx_cost: Some(TxCost::default_cheap_txs_cost()),

@@ -31,6 +31,8 @@
     const ENO_BALLOT_FOUND: u64 = 1;
     /// Bad status enum
     const EBAD_STATUS_ENUM: u64 = 2;
+    /// Already complete cannot change
+    const EALREADY_COMPLETE: u64 = 3;
 
 
     // poor man's enum for the ballot status. Wen enum?
@@ -78,16 +80,12 @@
     public fun propose_ballot<TallyType:  drop + store>(
       tracker: &mut BallotTracker<TallyType>,
       guid: guid::GUID, // whoever is ceating this issue needs access to the GUID creation capability
-      // issue: IssueData,
       tally_type: TallyType,
     ): &mut Ballot<TallyType>  {
-
       let b = Ballot {
-
         guid,
         tally_type,
         completed: false,
-
       };
       let len = vector::length(&tracker.ballots_pending);
       vector::push_back(&mut tracker.ballots_pending, b);
@@ -265,8 +263,10 @@
     }
 
     public fun complete_ballot<TallyType: drop + store>(
-      ballot: &mut Ballot<TallyType>,
+      ballot: &mut Ballot<TallyType>
     ) {
+      assert!(!is_completed(ballot), error::invalid_argument(EALREADY_COMPLETE));
+
       ballot.completed = true;
     }
 
@@ -295,4 +295,3 @@
     }
 
   }
-// }

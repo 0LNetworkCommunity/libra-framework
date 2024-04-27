@@ -10,7 +10,7 @@ use move_core_types::{
 use serde::{Deserialize, Serialize};
 
 /// The balance resource held under an account.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 // #[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
 pub struct LibraCoinStoreResource {
     coin: u64,

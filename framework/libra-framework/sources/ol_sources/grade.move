@@ -9,7 +9,10 @@
 /// set and/or jailed. To be compliant, validators must be BOTH validating and mining.
 module ol_framework::grade {
     use diem_framework::stake;
-    use std::fixed_point32::{Self, FixedPoint32};
+    use std::vector;
+    use std::fixed_point32;
+
+    friend ol_framework::musical_chairs;
 
     // use diem_std::debug::print;
 
@@ -23,7 +26,36 @@ module ol_framework::grade {
     const TRAILING_VALIDATOR_THRESHOLD: u64 = 5;
 
 
-    #[view]
+    /// split a the list of validators into compliant, and non-compliant.
+    /// @return
+    /// 1. compliant nodes
+    /// 2. non-compliant
+    public(friend) fun eval_compliant_vals(list: vector<address>):
+    (vector<address>, vector<address>) {
+      let non_compliant = vector::empty<address>();
+
+      let (highest_net_props, _val) = stake::get_highest_net_proposer();
+      let compliant = vector::filter(list, |a| {
+        let (compliant, _, _) = is_compliant(*a, highest_net_props);
+        if (!compliant) {
+          vector::push_back(&mut non_compliant, *a);
+        };
+        compliant
+      });
+      (compliant, non_compliant)
+    }
+
+    /// evaluates if a validator is compliant
+    /// returns proposal as a convenience
+    public(friend) fun is_compliant(node_addr: address, highest_net_props: u64):
+    (bool, u64, u64) {
+      let (proposed, failed) = validator_proposals(node_addr);
+
+      let compliant = has_good_success_ratio(proposed, failed) &&
+      does_not_trail(proposed, failed, highest_net_props);
+      (compliant, proposed, failed)
+    }
+
     /// returns if the validator passed or failed, and the number of proposals
     /// and failures, and the ratio.
     /// @return: tuple
@@ -32,20 +64,9 @@ module ol_framework::grade {
     /// u64: failed blocks, and
     /// FixedPoint32: the ratio of proposed to failed.
 
-    public fun get_validator_grade(node_addr: address, highest_net_props: u64): (bool, u64, u64, FixedPoint32) {
+    public fun validator_proposals(node_addr: address): (u64, u64) {
       let idx = stake::get_validator_index(node_addr);
-      let (proposed, failed) = stake::get_current_epoch_proposal_counts(idx);
-
-      // first pass: should have accepted proposals
-      if (proposed < failed) {
-        return (false, proposed, failed, fixed_point32::create_from_raw_value(0))
-      };
-
-      let compliant = has_good_success_ratio(proposed, failed) &&
-      does_not_trail(proposed, failed, highest_net_props);
-
-      // make failed at leat 1 to avoid division by zero
-      (compliant, proposed, failed, fixed_point32::create_from_rational(proposed, (failed + 1)))
+      stake::get_current_epoch_proposal_counts(idx)
     }
 
     /// Does the validator produce far more valid proposals than failed ones.
@@ -54,7 +75,6 @@ module ol_framework::grade {
     /// It's unclear what the right ratio should be. On problematic epochs
     /// (i.e. low consensus) we may want to have some allowance for errors.
     fun has_good_success_ratio(proposed: u64, failed: u64): bool {
-
       let fail_ratio = if (proposed >= failed) {
         // +1 to prevent denomiator zero error
         fixed_point32::create_from_rational(failed, (proposed + 1))
@@ -64,7 +84,6 @@ module ol_framework::grade {
       let is_above = fixed_point32::multiply_u64(100, fail_ratio) < FAILED_PROPS_THRESHOLD_PCT;
 
       is_above
-
     }
 
     /// is this user very far behind the leading proposer.
@@ -93,5 +112,15 @@ module ol_framework::grade {
         highest_net_props);
         fixed_point32::multiply_u64(100, net_props_vs_leader) > TRAILING_VALIDATOR_THRESHOLD
       } else { false }
+    }
+
+    #[view]
+    /// @return tuple (bool, u64, u64)
+    /// 1: boolean if the validator is compliant up to this point in the epoch
+    /// 2: accepted proposals
+    /// 3: failed proposals
+    public fun get_validator_grade(val: address): (bool, u64, u64) {
+      let (highest_net_props, _val) = stake::get_highest_net_proposer();
+      is_compliant(val, highest_net_props)
     }
 }

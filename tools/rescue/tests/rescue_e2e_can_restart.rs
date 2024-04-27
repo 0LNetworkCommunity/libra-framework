@@ -21,8 +21,7 @@ use std::{fs, time::Duration};
 /// looks something like this `/tmp/.tmpM9dF7w/0/log`
 async fn test_can_restart() -> anyhow::Result<()> {
     let num_nodes: usize = 5;
-
-    let mut s = LibraSmoke::new(Some(num_nodes as u8))
+    let mut s = LibraSmoke::new(Some(num_nodes as u8), None)
         .await
         .expect("could not start libra smoke");
 
@@ -62,11 +61,11 @@ async fn test_can_restart() -> anyhow::Result<()> {
     let data_path = TempPath::new();
     data_path.create_as_dir().unwrap();
     let rescue = RescueTxOpts {
-        db_dir: data_path.path().to_owned(),
+        data_path: data_path.path().to_owned(),
         blob_path: None, // defaults to data_path/rescue.blob
         script_path: Some(script_path),
-        framework_mrb_file: None,
-        validators_file: None,
+        framework_upgrade: false,
+        debug_vals: None,
     };
     let genesis_blob_path = rescue.run().unwrap();
 

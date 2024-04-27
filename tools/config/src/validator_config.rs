@@ -37,7 +37,7 @@ pub async fn initialize_validator(
     OLProgress::complete("saved validator node yaml file locally");
 
     // TODO: nice to have
-    // also for convenience create a local user libra.yaml file so the
+    // also for convenience create a local user libra-cli-config.yaml file so the
     // validator can make transactions against the localhost
     let cfg = AppCfg::init_app_configs(
         keys.child_0_owner.auth_key,
@@ -51,7 +51,7 @@ pub async fn initialize_validator(
         "could not initialize configs at {}",
         cfg.workspace.node_home.to_str().unwrap()
     ))?;
-    OLProgress::complete("saved a user libra.yaml file locally");
+    OLProgress::complete("saved a user libra-cli-config.yaml file locally");
 
     Ok(pub_id)
 }
@@ -90,6 +90,7 @@ pub async fn what_host() -> Result<HostAndPort, anyhow::Error> {
 pub async fn validator_dialogue(
     data_path: &Path,
     github_username: Option<&str>,
+    chain_name: Option<NamedChain>,
 ) -> Result<(), anyhow::Error> {
     let to_init = Confirm::new()
         .with_prompt(format!(
@@ -101,7 +102,9 @@ pub async fn validator_dialogue(
         let host = what_host().await?;
 
         let keep_legacy_address = Confirm::new()
-            .with_prompt("Is this a legacy V5 address you wish to keep?")
+            .with_prompt(
+                "Will you use a legacy V5 address in registration (32 characters or less)?",
+            )
             .interact()?;
 
         let pub_id = initialize_validator(
@@ -110,7 +113,7 @@ pub async fn validator_dialogue(
             host.clone(),
             None,
             keep_legacy_address,
-            None,
+            chain_name,
         )
         .await?;
 
