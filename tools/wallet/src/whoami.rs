@@ -2,8 +2,8 @@ use crate::keys::make_validator_keys;
 use dialoguer::Confirm;
 
 // given a mnemonic what are all the settings which could be expected
-pub fn who_am_i(show_validator: bool) -> anyhow::Result<()> {
-    let keep_legacy_address = Confirm::new()
+pub fn who_am_i(legacy_address_opt: bool, mnemonic: Option<String>, show_validator: bool) -> anyhow::Result<()> {
+    let keep_legacy_address = legacy_address_opt || Confirm::new()
         .with_prompt("Is this a legacy (v5 or prior) address?")
         .interact()?;
 
@@ -11,7 +11,7 @@ pub fn who_am_i(show_validator: bool) -> anyhow::Result<()> {
     // info
     // the owner key will derive to the same.
     let (_validator_blob, _vfn_blob, _private_identity, public_identity, _legacy_keys) =
-        make_validator_keys(None, keep_legacy_address)?;
+        make_validator_keys(mnemonic, keep_legacy_address)?;
 
     if show_validator {
         println!("validator public credentials:");
