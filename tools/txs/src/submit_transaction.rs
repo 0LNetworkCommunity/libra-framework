@@ -19,7 +19,6 @@ use std::{
     path::PathBuf,
     time::{SystemTime, UNIX_EPOCH},
 };
-use diem_types::account_address::AccountAddress;
 use url::Url;
 
 use libra_types::{
