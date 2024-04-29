@@ -165,7 +165,7 @@ async fn send_v6_v5() -> anyhow::Result<()> {
 
     let client = ls.client();
 
-    let bal = get_libra_balance(&client, alice_acct_v6.clone()).await?;
+    let bal = get_libra_balance(&client, *alice_acct_v6).await?;
     assert_eq!(
         bal.total, 100000000,
         "Balance of the new account should be 100.0(100000000) after the transfer"
