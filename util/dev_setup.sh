@@ -971,7 +971,9 @@ if [[ "$INSTALL_BUILD_TOOLS" == "true" ]]; then
   install_lld
 
   install_rustup "$BATCH_MODE"
-  install_toolchain "$(cat ./rust-toolchain)"
+  if [[ -f ./rust-toolchain ]]; then
+    install_toolchain "$(cat ./rust-toolchain)"
+  fi
   install_rustup_components_and_stable
 
   install_cargo_sort
