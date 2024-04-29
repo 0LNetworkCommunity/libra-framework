@@ -5604,7 +5604,7 @@ dependencies = [
 
 [[package]]
 name = "libra"
-version = "7.0.0"
+version = "7.0.1"
 dependencies = [
  "anyhow",
  "clap 4.4.2",
@@ -5624,7 +5624,7 @@ dependencies = [
 
 [[package]]
 name = "libra-cached-packages"
-version = "7.0.0"
+version = "7.0.1"
 dependencies = [
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "diem-types",
@@ -5635,7 +5635,7 @@ dependencies = [
 
 [[package]]
 name = "libra-config"
-version = "7.0.0"
+version = "7.0.1"
 dependencies = [
  "anyhow",
  "clap 4.4.2",
@@ -5659,7 +5659,7 @@ dependencies = [
 
 [[package]]
 name = "libra-framework"
-version = "7.0.0"
+version = "7.0.1"
 dependencies = [
  "anyhow",
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
@@ -5679,7 +5679,7 @@ dependencies = [
 
 [[package]]
 name = "libra-genesis-tools"
-version = "7.0.0"
+version = "7.0.1"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -5716,7 +5716,7 @@ dependencies = [
 
 [[package]]
 name = "libra-query"
-version = "7.0.0"
+version = "7.0.1"
 dependencies = [
  "anyhow",
  "clap 4.4.2",
@@ -5735,7 +5735,7 @@ dependencies = [
 
 [[package]]
 name = "libra-smoke-tests"
-version = "7.0.0"
+version = "7.0.1"
 dependencies = [
  "anyhow",
  "diem-config",
@@ -5756,7 +5756,7 @@ dependencies = [
 
 [[package]]
 name = "libra-txs"
-version = "7.0.0"
+version = "7.0.1"
 dependencies = [
  "anyhow",
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
@@ -5788,7 +5788,7 @@ dependencies = [
 
 [[package]]
 name = "libra-types"
-version = "7.0.0"
+version = "7.0.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5823,7 +5823,7 @@ dependencies = [
 
 [[package]]
 name = "libra-wallet"
-version = "7.0.0"
+version = "7.0.1"
 dependencies = [
  "anyhow",
  "blst",
@@ -8268,34 +8268,44 @@ dependencies = [
 
 [[package]]
 name = "rescue"
-version = "7.0.0"
+version = "7.0.1"
 dependencies = [
  "anyhow",
+ "async-trait",
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
  "clap 4.4.2",
  "diem-api-types",
  "diem-config",
  "diem-crypto",
  "diem-db",
- "diem-debugger",
  "diem-executor",
  "diem-forge",
  "diem-gas",
+ "diem-genesis",
  "diem-logger",
  "diem-storage-interface",
  "diem-temppath",
  "diem-types",
  "diem-vm",
  "diem-vm-types",
+ "fs_extra",
  "futures-util",
+ "hex",
+ "libra-config",
  "libra-framework",
+ "libra-query",
  "libra-smoke-tests",
  "libra-txs",
+ "libra-types",
+ "libra-wallet",
  "move-core-types",
+ "move-vm-runtime",
  "move-vm-types",
  "regex",
+ "reqwest",
  "serde 1.0.197",
  "serde_json",
+ "serde_yaml 0.8.26",
  "smoke-test",
  "tokio",
 ]
@@ -9132,7 +9142,7 @@ dependencies = [
 
 [[package]]
 name = "storage"
-version = "7.0.0"
+version = "7.0.1"
 dependencies = [
  "anyhow",
  "bcs 0.1.4 (git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d)",
@@ -9907,7 +9917,7 @@ dependencies = [
 
 [[package]]
 name = "transactional-tests"
-version = "7.0.0"
+version = "7.0.1"
 dependencies = [
  "datatest-stable",
  "diem-transactional-test-harness",

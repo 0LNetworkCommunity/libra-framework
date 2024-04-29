@@ -24,7 +24,7 @@ pub async fn upgrade_multiple_impl(
 
     let d = diem_temppath::TempPath::new();
 
-    let mut s = LibraSmoke::new_with_target(Some(1), prior_release)
+    let mut s = LibraSmoke::new_with_target(Some(1), None, prior_release)
         .await
         .context("could not start libra smoke")?;
 

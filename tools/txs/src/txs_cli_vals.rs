@@ -16,40 +16,41 @@ use libra_wallet::validator_files::OPERATOR_FILE;
 
 #[derive(clap::Subcommand)]
 pub enum ValidatorTxs {
-    /// txs proof-of-fee settings
+    /// Proof-of-Fee auction bidding
     Pof {
         #[clap(short, long)]
-        /// the percentage of the nominal reward you will bid to join the validator set. Numbers can include three decimal places: 1.234 is 123.4%. Note this is the maximum precision allowed in the bid (i.e. one decimal of a percent). Numbers with more decimals will be truncated (not rounded)
+        /// Percentage of the nominal reward you will bid to join the
+        /// validator set, with three decimal places: 1.234 is 123.4%
         bid_pct: f64,
         #[clap(short, long)]
-        /// epoch number in which this bid expires. The validity of the bit is inclusive of the epoch number, that is, on `expiry + 1` the bid is no longer valid. If it should not expire the number must be 0.
+        /// Epoch until the bid is valid (will expire in `expiry` + 1)
         expiry: u64,
         #[clap(short, long)]
-        /// eliminates the bid. There are only a limited amount of retractions that can happen in an epoch.
+        /// Eliminates the bid. There are only a limited amount of retractions that can happen in an epoch
         retract: bool,
     },
-    /// jail and unjail transactions
+    /// Jail and unjail transactions
     Jail {
         #[clap(short, long)]
-        /// you are a voucher for a validator which is jailed. you are un-jailing this validator after checking that they are able to join again.
+        /// Un-jail this validator. Used by any validators which are vouching for a validator which is jailed
         unjail_acct: AccountAddress,
     },
-    /// vouch transactions
+    /// Vouch for accounts
     Vouch {
         #[clap(short, long)]
-        /// This is an account that you are vouching for. They may not be a validator account.
+        /// Vouch for another account, usually for validators
         vouch_for: AccountAddress,
         #[clap(short, long)]
-        /// If you are revoking the vouch for the account specified here.
+        /// Revoke a vouch for an account
         revoke: bool,
     },
-    /// register as a validator
+    /// Register as a validator
     Register {
         #[clap(short('f'), long)]
         /// optional, Path to files with registration files
         operator_file: Option<PathBuf>,
     },
-    /// update validator configurations
+    /// Update validator configurations
     Update {
         #[clap(short('f'), long)]
         /// optional, Path to files with registration files

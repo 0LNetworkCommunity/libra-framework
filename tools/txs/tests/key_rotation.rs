@@ -14,7 +14,7 @@ use libra_wallet::account_keys;
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn rotate_key() -> anyhow::Result<()> {
     // create libra swarm and get app config for the first validator
-    let mut ls = LibraSmoke::new(Some(1))
+    let mut ls = LibraSmoke::new(Some(1), None)
         .await
         .expect("could not start libra smoke");
     let mut val_app_cfg = ls.first_account_app_cfg()?;
@@ -91,7 +91,7 @@ async fn rotate_key() -> anyhow::Result<()> {
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn offer_rotation_capability() -> anyhow::Result<()> {
     // create libra swarm and get app config for the first validator
-    let mut ls = LibraSmoke::new(Some(1))
+    let mut ls = LibraSmoke::new(Some(1), None)
         .await
         .expect("could not start libra smoke");
     let mut val_app_cfg = ls.first_account_app_cfg()?;
@@ -143,8 +143,8 @@ async fn offer_rotation_capability() -> anyhow::Result<()> {
 
     // allow bob to rotate keys for alice
     let cli = RotationCapabilityTx {
-        delegate_address: bob_sender.local_account.address().to_string(),
-        action: "offer".to_string(),
+        delegate_address: bob_sender.local_account.address(),
+        revoke: false,
     };
 
     let res = cli.run(&mut alice_sender).await;
@@ -192,7 +192,7 @@ async fn offer_rotation_capability() -> anyhow::Result<()> {
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn revoke_rotation_capability() -> anyhow::Result<()> {
     // create libra swarm and get app config for the first validator
-    let mut ls = LibraSmoke::new(Some(1))
+    let mut ls = LibraSmoke::new(Some(1), None)
         .await
         .expect("could not start libra smoke");
     let mut val_app_cfg = ls.first_account_app_cfg()?;
@@ -244,8 +244,8 @@ async fn revoke_rotation_capability() -> anyhow::Result<()> {
 
     // allow bob to rotate keys for alice
     let cli = RotationCapabilityTx {
-        delegate_address: bob_sender.local_account.address().to_string(),
-        action: "offer".to_string(),
+        delegate_address: bob_sender.local_account.address(),
+        revoke: false,
     };
 
     let res = cli.run(&mut alice_sender).await;
@@ -259,8 +259,8 @@ async fn revoke_rotation_capability() -> anyhow::Result<()> {
 
     // revoke rotation capability from bob
     let cli = RotationCapabilityTx {
-        delegate_address: bob_sender.local_account.address().to_string(),
-        action: "revoke".to_string(),
+        delegate_address: bob_sender.local_account.address(),
+        revoke: true,
     };
 
     let res = cli.run(&mut alice_sender).await;

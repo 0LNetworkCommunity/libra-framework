@@ -29,7 +29,7 @@ async fn smoke_onboard_validator() -> anyhow::Result<()> {
         "0x87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5",
     )?;
 
-    let mut s = LibraSmoke::new(None)
+    let mut s = LibraSmoke::new(None, None)
         .await
         .expect("could not start libra smoke");
 
