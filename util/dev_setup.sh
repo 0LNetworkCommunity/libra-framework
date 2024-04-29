@@ -885,7 +885,7 @@ if [[ "$INSTALL_BUILD_TOOLS" == "false" ]] && \
    INSTALL_BUILD_TOOLS="true"
 fi
 
-if [ ! -f rust-toolchain ]; then
+if [ ! -f Cargo.toml ]; then
 	echo "Unknown location. Please run this from the Libra project root. Abort."
 	exit 1
 fi
