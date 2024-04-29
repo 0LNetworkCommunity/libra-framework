@@ -1,7 +1,7 @@
 use libra_smoke_tests::{configure_validator, helpers::get_libra_balance, libra_smoke::LibraSmoke};
 use libra_txs::submit_transaction::Sender;
 use libra_txs::txs_cli::{to_legacy_address, TxsCli, TxsSub::Transfer};
-use libra_types::legacy_types::app_cfg::{TxCost};
+use libra_types::legacy_types::app_cfg::TxCost;
 use libra_wallet::account_keys;
 
 // Testing that we can send the minimal transaction: a transfer from one existing validator to another.
@@ -132,7 +132,6 @@ async fn smoke_transfer_estimate() {
     // NOTE: This should not fail
 }
 
-
 // create v5 and v6 accouunts from the same seed phrase
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn send_v6_v5() -> anyhow::Result<()> {
@@ -175,10 +174,7 @@ async fn send_v6_v5() -> anyhow::Result<()> {
 
     {
         let mut s = Sender::from_app_cfg(&val_app_cfg, None).await?;
-        let res = s
-            .transfer(alice_acc_v5, 200.0, false)
-            .await?
-            .unwrap();
+        let res = s.transfer(alice_acc_v5, 200.0, false).await?.unwrap();
         assert!(res.info.status().is_success());
 
         let bal = get_libra_balance(&client, alice_acc_v5).await?;
@@ -190,4 +186,3 @@ async fn send_v6_v5() -> anyhow::Result<()> {
 
     Ok(())
 }
-

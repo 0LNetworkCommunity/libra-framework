@@ -226,6 +226,5 @@ pub fn to_legacy_address(address: &AccountAddress) -> anyhow::Result<AccountAddr
         address_str = format!("{:0<32}{}", "", rest);
     }
 
-    AccountAddress::from_hex_literal(&format!("0x{}", address_str))
-        .map_err(|e| anyhow::anyhow!(e))
+    AccountAddress::from_hex_literal(&format!("0x{}", address_str)).map_err(|e| anyhow::anyhow!(e))
 }
