@@ -138,7 +138,7 @@ async fn smoke_transfer_estimate() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn send_v6_v5() -> anyhow::Result<()> {
     // create libra swarm and get app config for the first validator
-    let mut ls = LibraSmoke::new(Some(1))
+    let mut ls = LibraSmoke::new(Some(1), None)
         .await
         .expect("could not start libra smoke");
     let val_app_cfg = ls.first_account_app_cfg()?;
