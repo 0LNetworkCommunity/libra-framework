@@ -101,10 +101,7 @@ pub async fn accounts_from_snapshot_backup(
 
         // merge account_states_map_chunk into account_states_map
         for (address, blobs) in account_states_map_chunk {
-            account_states_map
-                .entry(address)
-                .or_default()
-                .extend(blobs);
+            account_states_map.entry(address).or_default().extend(blobs);
         }
     }
     // materialize account state for each address
