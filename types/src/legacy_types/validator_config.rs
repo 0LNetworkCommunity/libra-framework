@@ -6,7 +6,7 @@ use move_core_types::move_resource::MoveResource;
 use move_core_types::{ident_str, identifier::IdentStr, move_resource::MoveStructType};
 use serde::{Deserialize, Serialize};
 
-//// TODO THIS IS DUPLICATED WITH types/src/validator_config.rs
+/// TODO THIS IS DUPLICATED WITH types/src/validator_config.rs
 /// Please rename.
 
 /// Struct that represents a Validator Config resource

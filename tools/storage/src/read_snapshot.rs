@@ -93,7 +93,7 @@ pub async fn accounts_from_snapshot_backup(
             .fold(HashMap::new(), |mut acc, (key, blob)| {
                 if let StateKeyInner::AccessPath(access_path) = key.inner() {
                     acc.entry(access_path.address)
-                        .or_insert(vec![])
+                        .or_default()
                         .push((key, blob));
                 }
                 acc
@@ -103,7 +103,7 @@ pub async fn accounts_from_snapshot_backup(
         for (address, blobs) in account_states_map_chunk {
             account_states_map
                 .entry(address)
-                .or_insert(vec![])
+                .or_default()
                 .extend(blobs);
         }
     }
