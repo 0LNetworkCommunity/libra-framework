@@ -26,7 +26,7 @@ license = "NOASSERTION"
 publish = false
 repository = "https://github.com/0LNetworkCommunity/libra-framework"
 rust-version = "1.70.0"
-version = "7.0.1"
+version = "7.0.2"
 
 [workspace.dependencies]
 ######## Internal crate dependencies ########
