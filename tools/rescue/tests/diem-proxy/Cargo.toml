@@ -6,4 +6,4 @@ members = [
 ]
 
 [workspace.dependencies]
-diem-node = { git = "https://github.com/0LNetworkCommunity/diem.git", rev = "416d1ca" }
+diem-node = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
