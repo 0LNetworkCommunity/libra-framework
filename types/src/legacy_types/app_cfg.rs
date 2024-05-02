@@ -107,7 +107,7 @@ impl AppCfg {
             None,
         )?;
 
-        let mut profile = cfg.get_profile_mut(None)?;
+        let profile = cfg.get_profile_mut(None)?;
         profile.test_private_key = Some(Ed25519PrivateKey::from_encoded_string(
             "0x74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b",
         )?);

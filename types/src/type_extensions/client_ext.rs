@@ -279,8 +279,7 @@ impl ClientExt for Client {
         let args: Vec<serde_json::Value> = if let Some(args) = args {
             let mut output = vec![];
             for arg in args.split(',') {
-                let arg = serde_json::Value::try_from(arg.trim())
-                    .context(format!("Failed to parse argument: {arg}"))?;
+                let arg = serde_json::Value::from(arg.trim());
                 output.push(arg);
             }
             output
