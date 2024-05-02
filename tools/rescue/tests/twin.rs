@@ -89,7 +89,7 @@ async fn test_twin() -> anyhow::Result<()> {
     //////////
 
     println!("4. apply genesis transaction to all validators");
-    for (_expected_to_connect, node) in env.validators_mut().enumerate() {
+    for node in env.validators_mut() {
         let mut node_config = node.config().clone();
 
         let val_db_path = node.config().storage.dir();

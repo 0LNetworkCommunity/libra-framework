@@ -119,7 +119,7 @@ fn test_check_ancestry() {
 
     assert!(ancestry
         .tree
-        .get(0)
+        .first()
         .unwrap()
         .to_string()
         .contains("46a7a744b"));
