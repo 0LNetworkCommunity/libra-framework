@@ -108,8 +108,7 @@ impl RotateKeyTx {
                 .interact()
                 .unwrap()
             {
-                println!("better safe than sorry, exiting.");
-                return Ok(());
+                anyhow::bail!("better safe than sorry, exiting.");
             }
         }
 
