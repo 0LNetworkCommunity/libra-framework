@@ -5644,7 +5644,7 @@ checksum = "4ec2a862134d2a7d32d7983ddcdd1c4923530833c9f2ea1a44fc5fa473989058"
 
 [[package]]
 name = "libra"
-version = "7.0.1"
+version = "7.0.2"
 dependencies = [
  "anyhow",
  "clap 4.5.4",
@@ -5664,7 +5664,7 @@ dependencies = [
 
 [[package]]
 name = "libra-cached-packages"
-version = "7.0.1"
+version = "7.0.2"
 dependencies = [
  "bcs 0.1.4",
  "diem-types",
@@ -5675,7 +5675,7 @@ dependencies = [
 
 [[package]]
 name = "libra-config"
-version = "7.0.1"
+version = "7.0.2"
 dependencies = [
  "anyhow",
  "clap 4.5.4",
@@ -5699,7 +5699,7 @@ dependencies = [
 
 [[package]]
 name = "libra-framework"
-version = "7.0.1"
+version = "7.0.2"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -5719,7 +5719,7 @@ dependencies = [
 
 [[package]]
 name = "libra-genesis-tools"
-version = "7.0.1"
+version = "7.0.2"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -5756,7 +5756,7 @@ dependencies = [
 
 [[package]]
 name = "libra-query"
-version = "7.0.1"
+version = "7.0.2"
 dependencies = [
  "anyhow",
  "clap 4.5.4",
@@ -5796,11 +5796,12 @@ dependencies = [
 
 [[package]]
 name = "libra-txs"
-version = "7.0.1"
+version = "7.0.2"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
  "clap 4.5.4",
+ "dialoguer",
  "diem",
  "diem-crypto",
  "diem-forge",
@@ -5828,7 +5829,7 @@ dependencies = [
 
 [[package]]
 name = "libra-types"
-version = "7.0.1"
+version = "7.0.2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5863,7 +5864,7 @@ dependencies = [
 
 [[package]]
 name = "libra-wallet"
-version = "7.0.1"
+version = "7.0.2"
 dependencies = [
  "anyhow",
  "blst",
@@ -9185,7 +9186,7 @@ dependencies = [
 
 [[package]]
 name = "storage"
-version = "7.0.1"
+version = "7.0.2"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -9964,7 +9965,7 @@ dependencies = [
 
 [[package]]
 name = "transactional-tests"
-version = "7.0.1"
+version = "7.0.2"
 dependencies = [
  "datatest-stable",
  "diem-transactional-test-harness",

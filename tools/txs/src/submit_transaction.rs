@@ -112,10 +112,10 @@ impl Sender {
     }
 
     pub fn set_tx_cost(&mut self, cost: &TxCost) {
-        self.tx_cost = cost.to_owned();
+        cost.clone_into(&mut self.tx_cost);
     }
 
-    ///
+    /// load from local app configs
     pub async fn from_app_cfg(app_cfg: &AppCfg, profile: Option<String>) -> anyhow::Result<Self> {
         let profile = app_cfg.get_profile(profile)?;
 
