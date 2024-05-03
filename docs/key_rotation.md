@@ -53,7 +53,7 @@ this for him.
 
 With all that in place:
 
-##### Step 1: Original Owner Alice
+#### Original Owner Alice's Job
 
 Alice will send a transaction to "delegate" Bob's
 account `0x456` with
@@ -61,7 +61,7 @@ the power to rotate the keys to `0x123`.
 
 Alice's job ends here.
 
-##### Step 2: New Owner Bob
+#### New Owner Bob's Job
 
 Next Bob needs his usual credentials for `0x456`, and also the New Mnemonic he
 plans to use for `0x123`.
@@ -72,7 +72,7 @@ keys), which should successfully rotate the keys to `0x123`
 The job of the Delegate account `0x456` is over (the account could even be disposed of).
 
 
-### Step 1 Command: Original Owner Delegates Rotation Capability
+## Step 1: Original Owner Delegates Rotation Capability
 Grant another user the capability to change the Authentication Key for a specified address. You will be prompted to enter the mnemonic for the address whose authentication key will be changed:
 
 ```bash
@@ -81,7 +81,7 @@ libra txs user rotation-capability --delegate-address <DELEGATE_ADDRESS>
 
 The specified delegate address can now rotate authentication keys on the address for which the mnemonic was provided.
 
-## Step 2 Command: New Owner Rotates Authentication Keys Using the Delegated Address
+## Step 2: New Owner Rotates Authentication Keys Using the Delegated Address
 
 Enables a delegated user to rotate the Authentication Key for a specified wallet address:
 
@@ -89,7 +89,7 @@ Enables a delegated user to rotate the Authentication Key for a specified wallet
 libra txs user rotate-key --claim-address <ACCOUNT_ADDRESS>
 ```
 
-## Cheat Sheet
+# Cheat Sheet
 
 ### Create a new mnemonic
 ```
@@ -97,7 +97,7 @@ libra wallet keygen
 ```
 
 
-### Advanced: Optionally Input the Private Key
+# Advanced: Optionally Input the Private Key
 To recover a private key using a mnemonic, use:
 
 ```bash
