@@ -11,21 +11,21 @@ transaction), and the new mnemonic (to sign a rotation proof).
 
 2) you are claiming an account from someone else.
 
-This requires two steps where the first current owner will assign one of your
-existing on-chain accounts as authorized to rotate keys for the account being
-claimed.
+This requires two steps where the current owner (Alice) will first authorize an existing
+account of the new owner (Bob) to rotate keys for the account being
+claimed. The Bob will have two accounts at the end of the process, and the
+prior owner, Alice, will have none.
 
 
-## CASE 1 Rotate Keys on Your Wallet
+## CASE 1: Rotate Keys on Your Wallet
 
-You will be prompted for a mnemonic TWICE. But theses should be DIFFERENT
+You will be prompted for a mnemonic twice. But theses should be DIFFERENT
 mnemonics.
 
-The first mnemonic is to create a client to sign and send a transaction to
-blockchain.
+The first mnemonic is for your current credentials which will be decprected. It
+is used to sign and send the rotation transaction to blockchain.
 
-Then you will be prompted for what NEW mnemonic you would like to be using for
-that account going forward.
+In the process you will be prompted for the NEW mnemonic you would like to be using going forward.
 
 Additionally, you can expect the CLI tool to ask you to confirm this operation
 twice in the process.
@@ -38,29 +38,41 @@ Note: If you have an advanced case, and would like to submit the private key its
 
 ## CASE 2: Claim an account
 
-There are two steps involved to claim another account. There are three accounts
-- There are two parties Alice (Original Owner) and Bob (New Owner).
-- Alice is offering account `0x123` to Bob
-(Claimed Account).
-- Bob must already have a separate account on chain `0x456` (Delegate Account). The
+There are two steps involved to claim another account. First, some definitions:
+- There are two parties Original Owner (Alice for example) and New Owner (Bob).
+
+- Alice is offering Claimed Account (`0x123`) to Bob.
+
+- Bob must already have a separate Delegate Account on chain (`0x456`). The
 only reason for this is that Bob needs to do some sensitive signing of keys and
 submit it to the chain, and there's no way for Alice or really anyone else to do
-this for him. So, this could be a disposable account.
+this for him.
 
-- Bob will also require a New Mnemonic, which is generated offline.
+- Bob will also require a New Mnemonic, which he will use to control Claimed
+  Account in the future.
 
-With all that in place, Alice will send a transaction to "delegate" Bob's
+With all that in place:
+
+##### Step 1: Original Owner Alice
+
+Alice will send a transaction to "delegate" Bob's
 account `0x456` with
-the power to rotate the keys to `0x123`. Alice's job ends here.
-Next bob needs his usual credentials for `0x456`, and also the New Mnemonic he
+the power to rotate the keys to `0x123`.
+
+Alice's job ends here.
+
+##### Step 2: New Owner Bob
+
+Next Bob needs his usual credentials for `0x456`, and also the New Mnemonic he
 plans to use for `0x123`.
+
 He submits a transaction (after a bit of processing of the New Mnemonic private
 keys), which should successfully rotate the keys to `0x123`
 
 The job of the Delegate account `0x456` is over (the account could even be disposed of).
 
 
-### Step 1: Alice Delegates Rotation Capability
+### Step 1 Command: Original Owner Delegates Rotation Capability
 Grant another user the capability to change the Authentication Key for a specified address. You will be prompted to enter the mnemonic for the address whose authentication key will be changed:
 
 ```bash
@@ -69,7 +81,7 @@ libra txs user rotation-capability --delegate-address <DELEGATE_ADDRESS>
 
 The specified delegate address can now rotate authentication keys on the address for which the mnemonic was provided.
 
-## Step 2: Bob Rotates Authentication Keys Using the Delegated Address
+## Step 2 Command: New Owner Rotates Authentication Keys Using the Delegated Address
 
 Enables a delegated user to rotate the Authentication Key for a specified wallet address:
 
