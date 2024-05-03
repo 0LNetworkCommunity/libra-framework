@@ -102,14 +102,11 @@ impl RotateKeyTx {
             sender_account
         };
 
-        if confirm {
-            if !Confirm::new()
+        if confirm && !Confirm::new()
                 .with_prompt("Do you want to continue? (You will be asked to confirm your keys once again submitting the transaction)")
                 .interact()
-                .unwrap()
-            {
-                anyhow::bail!("better safe than sorry, exiting.");
-            }
+                .unwrap() {
+            anyhow::bail!("better safe than sorry, exiting.");
         }
 
         let new_private_key = if let Some(pk) = &self.new_private_key {
