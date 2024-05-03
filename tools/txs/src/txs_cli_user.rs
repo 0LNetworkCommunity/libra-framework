@@ -71,9 +71,8 @@ impl SetSlowTx {
     }
 }
 
-/// Rotate an account's auth key, but entering a new private key. Note, this
-/// depends on the rotation capability being set with subcommand
-/// rotation-capability.
+/// Rotate an account's keys. Either you are a) rotating your existing account's
+/// keys, or b) claiming someone else's account.
 #[derive(clap::Args)]
 pub struct RotateKeyTx {
     #[clap(short, long)]
@@ -92,6 +91,8 @@ impl RotateKeyTx {
 
         let rotating_account = if let Some(claim) = self.claim_address {
             println!("You have set --claim-address, this means you are claiming someone else's account: {}", &claim);
+            println!("IMPORTANT: The account submitting the transaction {} must have previously been delegated responsibility for rotating the keys of the address being claimed", &sender_account.short_str_lossless());
+
             claim
         } else {
             println!(
