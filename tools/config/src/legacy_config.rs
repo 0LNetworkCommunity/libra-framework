@@ -20,6 +20,7 @@ pub async fn wizard(
     playlist_url: Option<Url>,
     network_playlist: Option<NetworkPlaylist>,
 ) -> anyhow::Result<AppCfg> {
+    #[allow(clippy::unnecessary_unwrap)]
     let (authkey, mut address) = if force_authkey.is_some() && force_address.is_some() {
         (force_authkey.unwrap(), force_address.unwrap())
     } else if let Some(pk_string) = test_private_key {
