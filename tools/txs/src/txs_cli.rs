@@ -63,6 +63,10 @@ pub struct TxsCli {
     /// optional, Only estimate the gas fees
     #[clap(long)]
     pub estimate_only: bool,
+
+    /// optional, use legacy (v5) 16-byte address format for a sender
+    #[clap(long)]
+    pub legacy_address: bool,
 }
 
 #[derive(clap::Subcommand)]
@@ -161,6 +165,7 @@ impl TxsCli {
             AccountKey::from_private_key(pri_key),
             ChainId::new(chain_name.id()),
             Some(client),
+            self.legacy_address,
         )
         .await?;
 
@@ -207,4 +212,15 @@ All that's left is an unhappy ending\"
             }
         }
     }
+}
+
+pub fn to_legacy_address(address: &AccountAddress) -> anyhow::Result<AccountAddress> {
+    // trim the first 16 bytes for legacy v5 address
+    let mut address_str = address.to_string();
+    if address_str.len() >= 32 {
+        let rest = &address_str[32..];
+        address_str = format!("{:0<32}{}", "", rest);
+    }
+
+    AccountAddress::from_hex_literal(&format!("0x{}", address_str)).map_err(|e| anyhow::anyhow!(e))
 }

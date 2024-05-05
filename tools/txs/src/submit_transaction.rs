@@ -21,6 +21,7 @@ use std::{
 };
 use url::Url;
 
+use crate::txs_cli::to_legacy_address;
 use libra_types::{
     exports::{AuthenticationKey, Ed25519PrivateKey},
     legacy_types::app_cfg::{AppCfg, TxCost},
@@ -88,6 +89,7 @@ impl Sender {
         account_key: AccountKey,
         chain_id: ChainId,
         client_opt: Option<Client>,
+        use_legacy_address: bool,
     ) -> anyhow::Result<Self> {
         let client = match client_opt {
             Some(c) => c,
@@ -96,7 +98,14 @@ impl Sender {
 
         let address = client
             .lookup_originating_address(account_key.authentication_key())
-            .await?;
+            .await
+            .map(|address| {
+                if !use_legacy_address {
+                    return Ok(address);
+                }
+
+                to_legacy_address(&address)
+            })??;
         info!("using address {}", &address);
 
         let seq = client.get_sequence_number(address).await?;

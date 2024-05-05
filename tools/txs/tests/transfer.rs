@@ -1,6 +1,8 @@
 use libra_smoke_tests::{configure_validator, helpers::get_libra_balance, libra_smoke::LibraSmoke};
-use libra_txs::txs_cli::{TxsCli, TxsSub::Transfer};
+use libra_txs::submit_transaction::Sender;
+use libra_txs::txs_cli::{to_legacy_address, TxsCli, TxsSub::Transfer};
 use libra_types::legacy_types::app_cfg::TxCost;
+use libra_wallet::account_keys;
 
 // Testing that we can send the minimal transaction: a transfer from one existing validator to another.
 // Case 1: send to an existing account: another genesis validator
@@ -39,6 +41,7 @@ async fn smoke_transfer_existing_account() {
         tx_profile: None,
         tx_cost: Some(TxCost::default_baseline_cost()),
         estimate_only: false,
+        legacy_address: false,
     };
 
     cli.run()
@@ -79,6 +82,7 @@ async fn smoke_transfer_create_account() -> Result<(), anyhow::Error> {
         tx_profile: None,
         tx_cost: Some(TxCost::default_baseline_cost()),
         estimate_only: false,
+        legacy_address: false,
     };
 
     cli.run()
@@ -122,9 +126,65 @@ async fn smoke_transfer_estimate() {
         tx_profile: None,
         tx_cost: Some(TxCost::default_cheap_txs_cost()),
         estimate_only: true, // THIS IS THE TEST
+        legacy_address: false,
     };
 
     cli.run().await.expect("could not get estimate");
 
     // NOTE: This should not fail
+}
+
+// create v5 and v6 accouunts from the same seed phrase
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn send_v6_v5() -> anyhow::Result<()> {
+    // create libra swarm and get app config for the first validator
+    let mut ls = LibraSmoke::new(Some(1), None)
+        .await
+        .expect("could not start libra smoke");
+    let val_app_cfg = ls.first_account_app_cfg()?;
+
+    // get an appcfg struct from Alice's mnemonic
+    let alice = account_keys::get_keys_from_mnem("talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse".to_owned())?;
+    let alice_acct_v6 = &alice.child_0_owner.account;
+
+    {
+        // create an account for alice by transferring funds
+        let mut s = Sender::from_app_cfg(&val_app_cfg, None).await?;
+        let res = s
+            .transfer(alice.child_0_owner.account, 100.0, false)
+            .await?
+            .unwrap();
+        assert!(res.info.status().is_success());
+        println!(
+            "alice v6: {:?} auth: {:?} pri: {:?}",
+            alice.child_0_owner.account,
+            alice.child_0_owner.auth_key.to_string(),
+            alice.child_0_owner.pri_key.to_string(),
+        );
+    }
+
+    let client = ls.client();
+
+    let bal = get_libra_balance(&client, *alice_acct_v6).await?;
+    assert_eq!(
+        bal.total, 100000000,
+        "Balance of the new account should be 100.0(100000000) after the transfer"
+    );
+
+    // create alice v5 style account and transfer some funds to it
+    let alice_acc_v5 = to_legacy_address(alice_acct_v6).unwrap();
+
+    {
+        let mut s = Sender::from_app_cfg(&val_app_cfg, None).await?;
+        let res = s.transfer(alice_acc_v5, 200.0, false).await?.unwrap();
+        assert!(res.info.status().is_success());
+
+        let bal = get_libra_balance(&client, alice_acc_v5).await?;
+        assert_eq!(
+            bal.total, 200000000,
+            "Balance of the new account should be 200.0(200000000) after the transfer"
+        );
+    }
+
+    Ok(())
 }
