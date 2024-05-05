@@ -36,13 +36,24 @@ struct WhoamiOpts {
     ///  show the validator configurations
     #[clap(short('v'), long, default_value = "false")]
     show_validator: bool,
+
+    ///  show the validator configurations
+    #[clap(short('l'), long, default_value = "false")]
+    legacy_address: bool,
+
+    #[clap(short('m'), long)]
+    mnemonic: Option<String>,
 }
 
 impl WalletCli {
     pub async fn run(&self) -> Result<()> {
         match &self.command {
             WalletSub::Whoami(args) => {
-                who_am_i(args.show_validator)?;
+                who_am_i(
+                    args.legacy_address,
+                    args.mnemonic.clone(),
+                    args.show_validator,
+                )?;
             }
             WalletSub::Legacy => {
                 println!("this command will generate legacy keys and addresses from v5 addresses. You should only be using this for testing or debugging purposes");
