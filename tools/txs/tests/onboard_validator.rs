@@ -52,6 +52,7 @@ async fn smoke_onboard_validator() -> anyhow::Result<()> {
         tx_profile: None,
         tx_cost: Some(TxCost::default_baseline_cost()),
         estimate_only: false,
+        legacy_address: false,
     };
 
     alice_cli
@@ -79,6 +80,7 @@ async fn smoke_onboard_validator() -> anyhow::Result<()> {
         tx_profile: None,
         tx_cost: Some(TxCost::default_baseline_cost()),
         estimate_only: false,
+        legacy_address: false,
     };
 
     rando_cli

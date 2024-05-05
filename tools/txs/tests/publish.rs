@@ -43,6 +43,7 @@ async fn smoke_publish() {
         tx_profile: None,
         tx_cost: Some(TxCost::default_baseline_cost()),
         estimate_only: false,
+        legacy_address: false,
     };
 
     cli.run().await.expect("cli could not publish contract");

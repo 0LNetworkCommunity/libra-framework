@@ -66,6 +66,7 @@ pub async fn upgrade_multiple_impl(
         tx_profile: None,
         tx_cost: Some(TxCost::default_critical_txs_cost()),
         estimate_only: false,
+        legacy_address: false,
     };
 
     cli.run()
