@@ -13,6 +13,7 @@ repository = { workspace = true }
 anyhow = { workspace = true }
 bcs = { workspace = true }
 clap = { workspace = true }
+dialoguer = { workspace = true }
 diem = { workspace = true }
 diem-crypto = { workspace = true }
 diem-framework = { workspace = true }

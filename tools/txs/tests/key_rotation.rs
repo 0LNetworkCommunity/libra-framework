@@ -68,10 +68,10 @@ async fn rotate_key() -> anyhow::Result<()> {
 
     let cli = RotateKeyTx {
         new_private_key: Some(generated_private_key_encoded.unwrap()),
-        account_address: None,
+        claim_address: None,
     };
 
-    let res = cli.run(&mut alice_sender).await;
+    let res = cli.run(&mut alice_sender, false).await;
     assert!(res.is_ok());
 
     // check new auth key
@@ -164,10 +164,10 @@ async fn offer_rotation_capability() -> anyhow::Result<()> {
 
     let cli = RotateKeyTx {
         new_private_key: Some(generated_private_key_encoded.unwrap()),
-        account_address: Some(alice_acct.to_string()),
+        claim_address: Some(alice_acct.to_owned()),
     };
 
-    let res_rotation = cli.run(&mut bob_sender).await;
+    let res_rotation = cli.run(&mut bob_sender, false).await;
     match res_rotation.as_ref() {
         Ok(_) => {}
         Err(err) => {
@@ -280,10 +280,10 @@ async fn revoke_rotation_capability() -> anyhow::Result<()> {
 
     let cli = RotateKeyTx {
         new_private_key: Some(generated_private_key_encoded.unwrap()),
-        account_address: Some(alice_acct.to_string()),
+        claim_address: Some(alice_acct.to_owned()),
     };
 
-    let res_rotation = cli.run(&mut bob_sender).await;
+    let res_rotation = cli.run(&mut bob_sender, false).await;
     match res_rotation.as_ref() {
         Ok(_) => {}
         Err(err) => {
