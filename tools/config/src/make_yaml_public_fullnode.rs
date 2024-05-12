@@ -55,7 +55,7 @@ pub fn add_peers_to_yaml(
 
     parsed.full_node_networks.iter_mut().for_each(move |e| {
         if e.network_id.is_public_network() {
-            e.seed_addrs = peers.clone();
+            e.seed_addrs.clone_from(&peers);
         }
     });
 

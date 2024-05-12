@@ -79,7 +79,7 @@ impl AppCfg {
         default_config.workspace.node_home = config_path.unwrap_or_else(global_config_dir);
 
         if let Some(id) = chain_name {
-            default_config.workspace.default_chain_id = id.to_owned();
+            id.clone_into(&mut default_config.workspace.default_chain_id);
         };
 
         if let Some(np) = network_playlist {
@@ -202,7 +202,7 @@ impl AppCfg {
 
         // try to use the default profile unless one was requested
         if nickname.is_none() {
-            nickname = self.workspace.default_profile.clone()
+            nickname.clone_from(&self.workspace.default_profile)
         };
 
         if let Some(n) = nickname {
@@ -328,7 +328,7 @@ impl AppCfg {
         self.network_playlist.iter_mut().for_each(|play| {
             if play.chain_name == new_playlist.chain_name {
                 found = true;
-                *play = new_playlist.to_owned();
+                new_playlist.clone_into(play);
             }
         });
         if !found {
