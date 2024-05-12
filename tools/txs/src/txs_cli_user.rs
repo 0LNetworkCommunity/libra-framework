@@ -1,6 +1,7 @@
 //! Validator subcommands
 
 use crate::submit_transaction::Sender;
+use dialoguer::Confirm;
 use diem::common::types::RotationProofChallenge;
 use diem_sdk::crypto::ed25519::Ed25519PublicKey;
 use diem_sdk::crypto::{PrivateKey, SigningKey, ValidCryptoMaterialStringExt};
@@ -14,7 +15,7 @@ use libra_types::{
 };
 use libra_wallet::account_keys::get_keys_from_prompt;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
+// use std::str::FromStr;
 
 #[derive(clap::Subcommand)]
 pub enum UserTxs {
@@ -26,7 +27,7 @@ pub enum UserTxs {
 impl UserTxs {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         match &self {
-            UserTxs::RotateKey(rotate) => match rotate.run(sender).await {
+            UserTxs::RotateKey(rotate) => match rotate.run(sender, true).await {
                 Ok(_) => println!("SUCCESS: private key rotated"),
                 Err(e) => {
                     println!("ERROR: could not rotate private key, message: {}", e);
@@ -70,57 +71,86 @@ impl SetSlowTx {
     }
 }
 
-/// Rotate an account's auth key, but entering a new private key. Note, this
-/// depends on the rotation capability being set with subcommand
-/// rotation-capability.
+/// Rotate an account's keys. Either you are a) rotating your existing account's
+/// keys, or b) claiming someone else's account.
 #[derive(clap::Args)]
 pub struct RotateKeyTx {
     #[clap(short, long)]
-    /// The new authkey to be used
-    pub new_private_key: Option<String>, // Dev NOTE: account address has the same bytes as AuthKey
+    /// Private key to be used, optional.
+    pub new_private_key: Option<String>,
     #[clap(short, long)]
-    /// Account address for which rotation is done. It
-    /// can be different from caller's address if rotation capability has been granted
-    /// to the caller. Do not specify this if you want to rotate your own key.
-    pub account_address: Option<String>,
+    /// Account being claimed, if being transferred
+    pub claim_address: Option<AccountAddress>,
 }
 
 impl RotateKeyTx {
-    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let user_account: AccountAddress = sender.local_account.address();
+    pub async fn run(&self, sender: &mut Sender, confirm: bool) -> anyhow::Result<()> {
+        println!("\nWARN: you will be rotating the keys for an account, this could permanently lock you out!");
+
+        let sender_account = sender.local_account.address();
+
+        let rotating_account = if let Some(claim) = self.claim_address {
+            println!("You have set --claim-address, this means you are claiming someone else's account: {}", &claim);
+            println!("IMPORTANT: The account submitting the transaction {} must have previously been delegated responsibility for rotating the keys of the address being claimed", &sender_account.short_str_lossless());
+
+            claim
+        } else {
+            println!(
+                "\nWARN: you have not entered --claim-address. It seems you are planning to rotate keys on your the address signing this transaction: {}",
+                &sender_account
+            );
+            sender_account
+        };
+
+        if confirm && !Confirm::new()
+                .with_prompt("Do you want to continue? (You will be asked to confirm your keys once again submitting the transaction)")
+                .interact()
+                .unwrap() {
+            anyhow::bail!("better safe than sorry, exiting.");
+        }
 
         let new_private_key = if let Some(pk) = &self.new_private_key {
             Ed25519PrivateKey::from_encoded_string(pk)?
         } else {
+            println!("\nWARN: no private key provided with --new-private-key.");
+            println!("You can now enter the NEW mnemonic to be used on the account.");
             let legacy = get_keys_from_prompt()?;
             legacy.child_0_owner.pri_key
         };
 
-        let seq = sender.client().get_sequence_number(user_account).await?;
-        let payload = if let Some(account_address) = &self.account_address {
-            let target_account_address = AccountAddress::from_str(account_address)?;
+        let seq = sender.client().get_sequence_number(sender_account).await?;
+        let payload = if let Some(target_account_address) = self.claim_address {
             let target_account = sender
                 .client()
                 .get_account(target_account_address)
                 .await?
                 .into_inner();
+
             // rotate key for account_address
             rotate_key_delegated(
                 seq,
-                &target_account_address, // account for which rotation is carried
-                &target_account.authentication_key, // auth key for an account for which rotation is carried
-                &new_private_key,
+                &target_account_address, // account which is being claimed
+                &target_account.authentication_key, // the on chain authkey of the account being claimed (old)
+                &new_private_key, // the private key with which new auth key will be generated
             )
         } else {
             // rotate key for self
             rotate_key(
-                user_account,
+                sender_account,
                 sender.local_account.private_key().to_owned(),
                 sender.local_account.authentication_key(),
                 seq,
-                new_private_key,
+                &new_private_key,
             )
         }?;
+
+        if confirm {
+            let msg = format!("\nYou are claiming account: {}\nThe new private key will be: {}\nThis will permanent, you will get no other confirmation! Do you wish to continue? ", rotating_account, &new_private_key.to_encoded_string().unwrap());
+
+            if !Confirm::new().with_prompt(msg).interact().unwrap() {
+                anyhow::bail!("better safe than sorry, exiting.");
+            }
+        }
 
         sender.sign_submit_wait(payload).await?;
         Ok(())
@@ -133,7 +163,7 @@ pub fn rotate_key(
     current_private_key: Ed25519PrivateKey,
     auth_key: AuthenticationKey,
     sequence_number: u64,
-    new_private_key: Ed25519PrivateKey,
+    new_private_key: &Ed25519PrivateKey,
 ) -> anyhow::Result<TransactionPayload> {
     // form a rotation proof challenge. See account.move
     let rotation_proof = RotationProofChallenge {

@@ -213,7 +213,7 @@ impl BatchTx {
             if let Some((_, pp)) = pending_or_approved.get_key_value(&addr) {
                 if pp.amount == gas_coin::cast_decimal_to_coin(inst.amount as f64) {
                     inst.proposed = Some(true);
-                    inst.voters = pp.voters.clone();
+                    inst.voters.clone_from(&pp.voters);
                     inst.approved = pp.approved;
                     println!("... found already pending, mark as proposed");
                 }
