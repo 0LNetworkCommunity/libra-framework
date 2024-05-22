@@ -67,9 +67,26 @@ module ol_framework::vouch {
         let e = vector::borrow_mut(&mut v.epoch_vouched, i);
         *e = epoch;
       } else {
-        vector::push_back(&mut v.my_buddies, buddy_acc);
-        vector::push_back(&mut v.epoch_vouched, epoch);
+        // limit amount of vouches given to 3
+        vector::insert(&mut v.my_buddies, 0, buddy_acc);
+        vector::insert(&mut v.epoch_vouched, 0, epoch);
+
+        trim_vouches(v)
       }
+    }
+
+    /// ensures no vouch list is greater than
+    /// hygiene for the vouch list
+    public (friend) fun root_trim_vouchers(framework: &signer, acc: address) acquires MyVouches {
+      system_addresses::assert_ol(framework);
+          // limit amount of vouches given to 3
+      let state = borrow_global_mut<MyVouches>(acc);
+      trim_vouches(state)
+    }
+
+    fun trim_vouches(state: &mut MyVouches) {
+        vector::trim(&mut state.my_buddies, 2);
+        vector::trim(&mut state.epoch_vouched, 2);
     }
 
     /// will only succesfully vouch if the two are not related by ancestry
