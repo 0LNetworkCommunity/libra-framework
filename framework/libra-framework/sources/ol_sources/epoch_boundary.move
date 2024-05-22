@@ -16,6 +16,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::match_index;
     use ol_framework::community_wallet_init;
     use ol_framework::testnet;
+    use ol_framework::vouch;
 
     use diem_framework::account;
     use diem_framework::reconfiguration;
@@ -409,6 +410,10 @@ module diem_framework::epoch_boundary {
           rewards::process_single(root, *addr, user_coin, 1);
         }
       };
+
+      // Do any migrations necessary
+      vouch::root_trim_vouchers(root, addr);
+
 
       i = i + 1;
     };

@@ -197,9 +197,6 @@ module ol_framework::proof_of_fee {
   }
 
 
-
-
-
   //////// CONSENSUS CRITICAL ////////
   // Get the validator universe sorted by bid
   // By default this will return a FILTERED list of validators

@@ -14,11 +14,15 @@ module ol_framework::vouch {
     friend ol_framework::validator_universe;
     friend ol_framework::proof_of_fee;
     friend ol_framework::jail;
+    friend ol_framework::epoch_boundary;
 
     #[test_only]
     friend ol_framework::mock;
     #[test_only]
     friend ol_framework::test_pof;
+
+    /// Maximum number of vouches
+    const MAX_VOUCHES: u64 = 3;
 
     /// trying to vouch for yourself?
     const ETRY_SELF_VOUCH_REALLY: u64 = 1;
@@ -77,16 +81,21 @@ module ol_framework::vouch {
 
     /// ensures no vouch list is greater than
     /// hygiene for the vouch list
-    public (friend) fun root_trim_vouchers(framework: &signer, acc: address) acquires MyVouches {
+    public (friend) fun root_trim_vouchers(framework: &signer, acc: &address) acquires MyVouches {
       system_addresses::assert_ol(framework);
           // limit amount of vouches given to 3
-      let state = borrow_global_mut<MyVouches>(acc);
+      let state = borrow_global_mut<MyVouches>(*acc);
       trim_vouches(state)
     }
 
+    // safely trims vouch list, drops backmost elements
     fun trim_vouches(state: &mut MyVouches) {
-        vector::trim(&mut state.my_buddies, 2);
-        vector::trim(&mut state.epoch_vouched, 2);
+        if (vector::length(&state.my_buddies) >= MAX_VOUCHES) {
+          vector::trim(&mut state.my_buddies, MAX_VOUCHES - 1);
+        };
+        if (vector::length(&state.epoch_vouched) > MAX_VOUCHES) {
+          vector::trim(&mut state.epoch_vouched, MAX_VOUCHES - 1);
+        }
     }
 
     /// will only succesfully vouch if the two are not related by ancestry
