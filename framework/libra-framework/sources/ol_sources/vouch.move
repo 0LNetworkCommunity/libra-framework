@@ -24,6 +24,9 @@ module ol_framework::vouch {
 
     /// Maximum number of vouches
     const MAX_VOUCHES: u64 = 3;
+    /// how many epochs must pass before the voucher expires.
+    const EXPIRATION_ELAPSED_EPOCHS: u64 = 90;
+
 
     /// Limit reached. You cannot give any new vouches.
     const EMAX_LIMIT_GIVEN: u64 = 4;
@@ -31,11 +34,15 @@ module ol_framework::vouch {
     /// trying to vouch for yourself?
     const ETRY_SELF_VOUCH_REALLY: u64 = 1;
 
-    /// how many epochs must pass before the voucher expires.
-    const EXPIRATION_ELAPSED_EPOCHS: u64 = 90;
+    /// User cannot receive vouch because their vouch state is not initialized
+    const ERECEIVER_NOT_INIT: u64 = 2;
+
+    /// Cannot give vouch because your vouch state is not initialized
+    const EGIVER_STATE_NOT_INIT: u64 = 3;
+
 
     /// Struct for the Voucher
-    /// Alice vouches for Bob
+    /// Alice vouches for Bob, this is Alice's state
     struct GivenOut has key {
       /// list of the accounts I'm vouching for
       vouches_given: vector<address>,
@@ -46,6 +53,8 @@ module ol_framework::vouch {
     /// Struct for the Vouchee
     /// Vouches received from other people
     /// keeps a list of my buddies and when the vouch was given.
+    /// Alice vouches for Bob, this is Bob's state
+
     // TODO: someday this should be renamed to Received
     struct MyVouches has key {
       my_buddies: vector<address>,
@@ -88,24 +97,26 @@ module ol_framework::vouch {
       assert!(check_can_add(give_acc), error::invalid_state(EMAX_LIMIT_GIVEN));
 
       if (!exists<MyVouches>(receive)) return;
-      let epoch = epoch_helper::get_current_epoch();
       // this fee is paid to the system, cannot be reclaimed
       let c = ol_account::withdraw(give_sig, vouch_cost_microlibra());
       transaction_fee::user_pay_fee(give_sig, c);
 
       let v = borrow_global_mut<MyVouches>(receive);
+      add_buddy_to_recipient(v, give_acc);
+    }
 
-      let (found, i) = vector::index_of(&v.my_buddies, &give_acc);
+    fun add_buddy_to_recipient(receive_state: &mut MyVouches, give_acc: address) {
+      let epoch = epoch_helper::get_current_epoch();
+
+      let (found, i) = vector::index_of(&receive_state.my_buddies, &give_acc);
       if (found) { // prevent duplicates
         // update date
-        let e = vector::borrow_mut(&mut v.epoch_vouched, i);
+        let e = vector::borrow_mut(&mut receive_state.epoch_vouched, i);
         *e = epoch;
       } else {
         // limit amount of vouches given to 3
-        vector::insert(&mut v.my_buddies, 0, give_acc);
-        vector::insert(&mut v.epoch_vouched, 0, epoch);
-
-        trim_vouches(v)
+        vector::insert(&mut receive_state.my_buddies, 0, give_acc);
+        vector::insert(&mut receive_state.epoch_vouched, 0, epoch);
       }
     }
 
@@ -118,21 +129,20 @@ module ol_framework::vouch {
 
     /// ensures no vouch list is greater than
     /// hygiene for the vouch list
-    public (friend) fun root_trim_vouchers(framework: &signer, acc: &address) acquires MyVouches {
+    public (friend) fun root_trim_vouchers(framework: &signer, give_acc: address) acquires MyVouches, GivenOut {
       system_addresses::assert_ol(framework);
-          // limit amount of vouches given to 3
-      let state = borrow_global_mut<MyVouches>(*acc);
-      trim_vouches(state)
+      let give_state = borrow_global_mut<GivenOut>(give_acc);
+      maybe_trim_given_vouches(give_state, give_acc)
     }
 
     // safely trims vouch list, drops backmost elements
-    fun trim_vouches(state: &mut MyVouches) {
-        if (vector::length(&state.my_buddies) >= MAX_VOUCHES) {
-          vector::trim(&mut state.my_buddies, MAX_VOUCHES - 1);
-        };
-        if (vector::length(&state.epoch_vouched) > MAX_VOUCHES) {
-          vector::trim(&mut state.epoch_vouched, MAX_VOUCHES - 1);
-        }
+    fun maybe_trim_given_vouches(give_state: &mut GivenOut, give_acc: address) acquires MyVouches {
+        if (vector::length(&give_state.vouches_given) > give_state.limit) {
+          let dropped = vector::trim(&mut give_state.vouches_given, give_state.limit - 1);
+          vector::for_each(dropped, |addr| {
+            revoke_impl(give_state, give_acc, addr);
+          })
+      }
     }
 
     /// will only succesfully vouch if the two are not related by ancestry
@@ -150,18 +160,39 @@ module ol_framework::vouch {
     }
 
     /// Let's break up with this account
-    public entry fun revoke(give_sig: &signer, its_not_me_its_you: address) acquires MyVouches {
+    public entry fun revoke(give_sig: &signer, its_not_me_its_you: address) acquires MyVouches, GivenOut  {
       let give_acc = signer::address_of(give_sig);
-      assert!(give_acc!=its_not_me_its_you, ETRY_SELF_VOUCH_REALLY);
 
-      if (!exists<MyVouches>(its_not_me_its_you)) return;
+      // Commit note: this check is not necessary, if this did somehow happen we
+      // would need it to self heal.
+      // assert!(give_acc!=its_not_me_its_you, ETRY_SELF_VOUCH_REALLY);
 
-      let v = borrow_global_mut<MyVouches>(its_not_me_its_you);
+      assert!(exists<MyVouches>(its_not_me_its_you), error::invalid_state(ERECEIVER_NOT_INIT));
+      assert!(exists<GivenOut>(give_acc), error::invalid_state(EGIVER_STATE_NOT_INIT));
+
+      let given_state = borrow_global_mut<GivenOut>(give_acc);
+
+      revoke_impl(given_state, give_acc, its_not_me_its_you);
+
+    }
+
+    fun revoke_impl(given_state: &mut GivenOut, give_acc: address, receive_acc: address) acquires MyVouches {
+
+      // first update the recipient's state
+      let v = borrow_global_mut<MyVouches>(receive_acc);
       let (found, i) = vector::index_of(&v.my_buddies, &give_acc);
       if (found) {
         vector::remove(&mut v.my_buddies, i);
         vector::remove(&mut v.epoch_vouched, i);
       };
+
+      // next maybe we need to clean up the giver's state
+      // Though possibly this has already been trimmed
+      let (found, i) = vector::index_of(&given_state.vouches_given, &receive_acc);
+      if (found) {
+        vector::remove(&mut given_state.vouches_given, i);
+      };
+
     }
 
     /// If we need to reset a vouch list for genesis and upgrades
