@@ -85,4 +85,25 @@ module diem_framework::leaderboard {
     state.value = 0;
   }
 
+  //////// GETTERS ////////
+  #[view]
+  /// Get totals (success epochs, fail epochs)
+  public fun get_total(acc: address): (u64, u64) acquires TotalScore {
+    let state = borrow_global<TotalScore>(acc);
+    (state.success, state.fail)
+  }
+
+  #[view]
+  /// Get win streak (success epochs, fail epochs)
+  public fun get_streak(acc: address): u64 acquires WinStreak {
+    let state = borrow_global<WinStreak>(acc);
+    state.value
+  }
+
+  #[view]
+  /// Get win streak (success epochs, fail epochs)
+  public fun get_topten_streak(acc: address): u64 acquires TopTenStreak {
+    let state = borrow_global<TopTenStreak>(acc);
+    state.value
+  }
 }
