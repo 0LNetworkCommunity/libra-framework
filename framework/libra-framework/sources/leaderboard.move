@@ -3,6 +3,7 @@
 module diem_framework::leaderboard {
 
   use std::vector;
+  use std::signer;
   use diem_framework::system_addresses;
 
   // NOTE: reputation will be a work in progress. As a dev strategy, let's break
@@ -37,6 +38,37 @@ module diem_framework::leaderboard {
   // The count of epochs the validator has been in the Top Ten by net proposal count
   struct TopTenStreak has key {
     value: u64
+  }
+
+  public entry fun init_player(sig: &signer) {
+    let addr = signer::address_of(sig);
+    if (!exists<TotalScore>(addr)) {
+      move_to(sig, TotalScore {
+        success: 0,
+        fail: 0
+      })
+    };
+
+    if (!exists<WinStreak>(addr)) {
+      move_to(sig, WinStreak {
+        value: 0
+      })
+    };
+
+    if (!exists<TopTenStreak>(addr)) {
+      move_to(sig, TopTenStreak {
+        value: 0
+      })
+    }
+  }
+
+  fun init_root(framework: &signer) {
+
+    if (!exists<TopTen>(@diem_framework)) {
+      move_to(framework, TopTen {
+        list: vector::empty()
+      })
+    }
   }
 
   /// sets the top 10
