@@ -12,6 +12,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::donor_voice_txs;
     use ol_framework::fee_maker;
     use ol_framework::infra_escrow;
+    use ol_framework::leaderboard;
     use ol_framework::libra_coin;
     use ol_framework::match_index;
     use ol_framework::community_wallet_init;
@@ -411,6 +412,7 @@ module diem_framework::epoch_boundary {
         }
       };
 
+      leaderboard::increment_total(root, *addr, true);
       // update the vouch state
       // Do any migrations necessary
       vouch::root_migrate_trim_vouchers(root, *addr);

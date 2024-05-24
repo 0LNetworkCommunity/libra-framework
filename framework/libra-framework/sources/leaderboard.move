@@ -2,12 +2,15 @@
 /// NOTE: other reputational metrics exist on jail.move
 module diem_framework::leaderboard {
 
-    use std::vector;
-    use diem_framework::system_addresses;
+  use std::vector;
+  use diem_framework::system_addresses;
 
   // NOTE: reputation will be a work in progress. As a dev strategy, let's break
   // up the structs into small atomic pieces so we can increment without
   // needing to migrate state when we imlpement new metrics.
+
+
+   friend ol_framework::epoch_boundary;
 
   // Who is in the Top 10 net proposals at end of last epoch.
   // Note: in 0L validators all have equal weight, so the net proposals are a
