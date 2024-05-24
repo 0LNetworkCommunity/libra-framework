@@ -411,6 +411,7 @@ module diem_framework::epoch_boundary {
         }
       };
 
+      // update the vouch state
       // Do any migrations necessary
       vouch::root_migrate_trim_vouchers(root, *addr);
 

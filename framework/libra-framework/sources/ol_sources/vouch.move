@@ -330,6 +330,12 @@ module ol_framework::vouch {
       (buddies_in_list, vector::length(&buddies_in_list))
     }
 
+    /// Root account can set the max limit to vouches that can be given by this account
+    public(friend) fun set_limit(framework: &signer, give_acc: address, limit: u64) acquires GivenOut{
+      system_addresses::assert_diem_framework(framework);
+      let give_state = borrow_global_mut<GivenOut>(give_acc);
+      give_state.limit = limit;
+    }
 
     // TODO: move to globals
     // the cost to verify a vouch. Coins are burned.
