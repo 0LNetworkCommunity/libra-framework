@@ -2,6 +2,7 @@
 module ol_framework::vouch {
     use std::signer;
     use std::vector;
+    use std::error;
     use ol_framework::ancestry;
     use ol_framework::ol_account;
     use ol_framework::epoch_helper;
@@ -24,59 +25,95 @@ module ol_framework::vouch {
     /// Maximum number of vouches
     const MAX_VOUCHES: u64 = 3;
 
+    /// Limit reached. You cannot give any new vouches.
+    const EMAX_LIMIT_GIVEN: u64 = 4;
+
     /// trying to vouch for yourself?
     const ETRY_SELF_VOUCH_REALLY: u64 = 1;
 
     /// how many epochs must pass before the voucher expires.
     const EXPIRATION_ELAPSED_EPOCHS: u64 = 90;
 
-    // triggered once per epoch
+    /// Struct for the Voucher
+    /// Alice vouches for Bob
+    struct GivenOut has key {
+      /// list of the accounts I'm vouching for
+      vouches_given: vector<address>,
+      /// maximum number of vouches that can be given
+      limit: u64,
+    }
+
+    /// Struct for the Vouchee
+    /// Vouches received from other people
+    /// keeps a list of my buddies and when the vouch was given.
+    // TODO: someday this should be renamed to Received
     struct MyVouches has key {
       my_buddies: vector<address>,
       epoch_vouched: vector<u64>,
     }
 
+
+
     // init the struct on a validators account.
     public(friend) fun init(new_account_sig: &signer ) {
       let acc = signer::address_of(new_account_sig);
 
-      if (!is_init(acc)) {
+      if (!exists<MyVouches>(acc)) {
         move_to<MyVouches>(new_account_sig, MyVouches {
-            my_buddies: vector::empty(),
-            epoch_vouched: vector::empty(),
-          });
+          my_buddies: vector::empty(),
+          epoch_vouched: vector::empty(),
+        });
+      };
+      // Note: separate initialization for migrations of accounts which already
+      // have MyVouches
+      if(!exists<GivenOut>(acc)){
+        move_to<GivenOut>(new_account_sig, GivenOut {
+          vouches_given: vector::empty(),
+          limit: 0,
+        });
       }
     }
 
+
     #[view]
+    // NOTE: this should be renamed to is_received_init()
     public fun is_init(acc: address ):bool {
       exists<MyVouches>(acc)
     }
 
-    fun vouch_impl(ill_be_your_friend: &signer, wanna_be_my_friend: address) acquires MyVouches {
-      let buddy_acc = signer::address_of(ill_be_your_friend);
-      assert!(buddy_acc != wanna_be_my_friend, ETRY_SELF_VOUCH_REALLY);
+    // implement the vouching.
+    fun vouch_impl(give_sig: &signer, receive: address) acquires MyVouches, GivenOut {
+      let give_acc = signer::address_of(give_sig);
+      assert!(give_acc != receive, error::invalid_argument(ETRY_SELF_VOUCH_REALLY));
+      assert!(check_can_add(give_acc), error::invalid_state(EMAX_LIMIT_GIVEN));
 
-      if (!exists<MyVouches>(wanna_be_my_friend)) return;
+      if (!exists<MyVouches>(receive)) return;
       let epoch = epoch_helper::get_current_epoch();
       // this fee is paid to the system, cannot be reclaimed
-      let c = ol_account::withdraw(ill_be_your_friend, vouch_cost_microlibra());
-      transaction_fee::user_pay_fee(ill_be_your_friend, c);
+      let c = ol_account::withdraw(give_sig, vouch_cost_microlibra());
+      transaction_fee::user_pay_fee(give_sig, c);
 
-      let v = borrow_global_mut<MyVouches>(wanna_be_my_friend);
+      let v = borrow_global_mut<MyVouches>(receive);
 
-      let (found, i) = vector::index_of(&v.my_buddies, &buddy_acc);
+      let (found, i) = vector::index_of(&v.my_buddies, &give_acc);
       if (found) { // prevent duplicates
         // update date
         let e = vector::borrow_mut(&mut v.epoch_vouched, i);
         *e = epoch;
       } else {
         // limit amount of vouches given to 3
-        vector::insert(&mut v.my_buddies, 0, buddy_acc);
+        vector::insert(&mut v.my_buddies, 0, give_acc);
         vector::insert(&mut v.epoch_vouched, 0, epoch);
 
         trim_vouches(v)
       }
+    }
+
+    fun check_can_add(giver: address): bool acquires GivenOut{
+      if (!exists<GivenOut>(giver)) return false;
+
+      let state = borrow_global<GivenOut>(giver);
+      vector::length(&state.vouches_given) < state.limit
     }
 
     /// ensures no vouch list is greater than
@@ -101,44 +138,47 @@ module ol_framework::vouch {
     /// will only succesfully vouch if the two are not related by ancestry
     /// prevents spending a vouch that would not be counted.
     /// to add a vouch and ignore this check use insist_vouch
-    public entry fun vouch_for(grantor: &signer, wanna_be_my_friend: address) acquires MyVouches {
-      ancestry::assert_unrelated(signer::address_of(grantor), wanna_be_my_friend);
-      vouch_impl(grantor, wanna_be_my_friend);
+    public entry fun vouch_for(give_sig: &signer, receive: address) acquires MyVouches, GivenOut {
+      ancestry::assert_unrelated(signer::address_of(give_sig), receive);
+      vouch_impl(give_sig, receive);
     }
 
     /// you may want to add people who are related to you
     /// there are no known use cases for this at the moment.
-    public entry fun insist_vouch_for(grantor: &signer, wanna_be_my_friend: address) acquires MyVouches {
-      vouch_impl(grantor, wanna_be_my_friend);
+    public entry fun insist_vouch_for(give_sig: &signer, receive: address) acquires MyVouches, GivenOut {
+      vouch_impl(give_sig, receive);
     }
 
-    public entry fun revoke(buddy: &signer, its_not_me_its_you: address) acquires MyVouches {
-      let buddy_acc = signer::address_of(buddy);
-      assert!(buddy_acc!=its_not_me_its_you, ETRY_SELF_VOUCH_REALLY);
+    /// Let's break up with this account
+    public entry fun revoke(give_sig: &signer, its_not_me_its_you: address) acquires MyVouches {
+      let give_acc = signer::address_of(give_sig);
+      assert!(give_acc!=its_not_me_its_you, ETRY_SELF_VOUCH_REALLY);
 
       if (!exists<MyVouches>(its_not_me_its_you)) return;
 
       let v = borrow_global_mut<MyVouches>(its_not_me_its_you);
-      let (found, i) = vector::index_of(&v.my_buddies, &buddy_acc);
+      let (found, i) = vector::index_of(&v.my_buddies, &give_acc);
       if (found) {
         vector::remove(&mut v.my_buddies, i);
         vector::remove(&mut v.epoch_vouched, i);
       };
     }
 
+    /// If we need to reset a vouch list for genesis and upgrades
     public(friend) fun vm_migrate(vm: &signer, val: address, buddy_list: vector<address>) acquires MyVouches {
       system_addresses::assert_ol(vm);
       bulk_set(val, buddy_list);
     }
 
-    fun bulk_set(val: address, buddy_list: vector<address>) acquires MyVouches {
+    // implements bulk setting of vouchers
+    fun bulk_set(receiver_acc: address, buddy_list: vector<address>) acquires MyVouches {
 
-      if (!exists<MyVouches>(val)) return;
+      if (!exists<MyVouches>(receiver_acc)) return;
 
-      let v = borrow_global_mut<MyVouches>(val);
+      let v = borrow_global_mut<MyVouches>(receiver_acc);
 
       // take self out of list
-      let (is_found, i) = vector::index_of(&buddy_list, &val);
+      let (is_found, i) = vector::index_of(&buddy_list, &receiver_acc);
 
       if (is_found) {
         vector::swap_remove<address>(&mut buddy_list, i);
