@@ -91,21 +91,42 @@ module ol_framework::vouch {
     }
 
     // implement the vouching.
-    fun vouch_impl(give_sig: &signer, receive: address) acquires MyVouches, GivenOut {
+    fun vouch_impl(give_sig: &signer, receive_acc: address) acquires MyVouches, GivenOut {
       let give_acc = signer::address_of(give_sig);
-      assert!(give_acc != receive, error::invalid_argument(ETRY_SELF_VOUCH_REALLY));
-      assert!(check_can_add(give_acc), error::invalid_state(EMAX_LIMIT_GIVEN));
+      assert!(give_acc != receive_acc, error::invalid_argument(ETRY_SELF_VOUCH_REALLY));
 
-      if (!exists<MyVouches>(receive)) return;
+      if (!exists<MyVouches>(receive_acc)) return;
       // this fee is paid to the system, cannot be reclaimed
       let c = ol_account::withdraw(give_sig, vouch_cost_microlibra());
       transaction_fee::user_pay_fee(give_sig, c);
 
-      let v = borrow_global_mut<MyVouches>(receive);
-      add_buddy_to_recipient(v, give_acc);
+      // add to receipient's state first
+      let v = borrow_global_mut<MyVouches>(receive_acc);
+      add_or_refresh_buddy_to_recipient(v, give_acc);
+
+      // check if we reached our max number of vouches given
+      // Note: we only check if we try to add a new buddy.
+      // will not fail if we are just extending the expiration
+      checked_add_buddy_to_giver(give_sig, receive_acc)
     }
 
-    fun add_buddy_to_recipient(receive_state: &mut MyVouches, give_acc: address) {
+    fun checked_add_buddy_to_giver(give_sig: &signer, receive_acc: address) acquires GivenOut {
+      let give_acc = signer::address_of(give_sig);
+      let give_state = borrow_global_mut<GivenOut>(give_acc);
+
+      // check this account is not already on the list.
+      // error if already there
+      let (found, _i) = vector::index_of(&give_state.vouches_given, &receive_acc);
+      if (!found) { // prevent duplicates
+        assert!(can_add(give_state), error::invalid_state(EMAX_LIMIT_GIVEN));
+        vector::push_back(&mut give_state.vouches_given, receive_acc);
+      }
+    }
+
+    // receipient's state gets updated.
+    // guarded function since the signer cannot write state of recipient,
+    // besides in private function.
+    fun add_or_refresh_buddy_to_recipient(receive_state: &mut MyVouches, give_acc: address) {
       let epoch = epoch_helper::get_current_epoch();
 
       let (found, i) = vector::index_of(&receive_state.my_buddies, &give_acc);
@@ -120,11 +141,15 @@ module ol_framework::vouch {
       }
     }
 
-    fun check_can_add(giver: address): bool acquires GivenOut{
-      if (!exists<GivenOut>(giver)) return false;
+    #[view]
+    public fun giver_can_add(give_acc: address): bool acquires GivenOut{
+      if (!exists<GivenOut>(give_acc)) return false;
 
-      let state = borrow_global<GivenOut>(giver);
-      vector::length(&state.vouches_given) < state.limit
+      can_add(borrow_global<GivenOut>(give_acc))
+    }
+
+    fun can_add(give_state: &GivenOut): bool {
+      vector::length(&give_state.vouches_given) < give_state.limit
     }
 
     /// ensures no vouch list is greater than
