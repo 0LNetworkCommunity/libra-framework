@@ -276,6 +276,9 @@ module diem_framework::epoch_boundary {
         let root = &create_signer::create_signer(@ol_framework);
         let status = borrow_global_mut<BoundaryStatus>(@ol_framework);
 
+        print(&string::utf8(b"running migrations"));
+        migration_backstop(root);
+
         print(&string::utf8(b"status reset"));
         *status = reset();
 
@@ -484,6 +487,11 @@ module diem_framework::epoch_boundary {
     status.security_bill_count = security_bill_count;
     status.security_bill_amount = security_bill_amount;
     status.security_bill_success = security_bill_success;
+  }
+
+  // perhaps initialize state which is not yet implemented
+  fun migration_backstop(framework_sig: &signer) {
+    leaderboard::initialize(framework_sig);
   }
 
   //////// GETTERS ////////

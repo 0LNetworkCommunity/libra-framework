@@ -12,6 +12,7 @@ module diem_framework::leaderboard {
 
 
    friend ol_framework::epoch_boundary;
+   friend ol_framework::genesis;
 
   // Who is in the Top 10 net proposals at end of last epoch.
   // Note: in 0L validators all have equal weight, so the net proposals are a
@@ -62,7 +63,8 @@ module diem_framework::leaderboard {
     }
   }
 
-  fun init_root(framework: &signer) {
+  /// genesis and migration initializer
+  public(friend) fun initialize(framework: &signer) {
 
     if (!exists<TopTen>(@diem_framework)) {
       move_to(framework, TopTen {
