@@ -92,11 +92,16 @@ module ol_framework::vouch {
 
     // implement the vouching.
     fun vouch_impl(give_sig: &signer, receive_acc: address) acquires MyVouches, GivenOut {
+      // heal the account if there is a migration issue:
+      init(give_sig);
+
       let give_acc = signer::address_of(give_sig);
       assert!(give_acc != receive_acc, error::invalid_argument(ETRY_SELF_VOUCH_REALLY));
 
-      if (!exists<MyVouches>(receive_acc)) return;
+      assert!(exists<MyVouches>(receive_acc), error::invalid_state(ERECEIVER_NOT_INIT));
+
       // this fee is paid to the system, cannot be reclaimed
+      // fail fast if no fee can be paid
       let c = ol_account::withdraw(give_sig, vouch_cost_microlibra());
       transaction_fee::user_pay_fee(give_sig, c);
 
@@ -142,19 +147,21 @@ module ol_framework::vouch {
     }
 
     #[view]
+    /// check if an address can add a new vouchee recipient
     public fun giver_can_add(give_acc: address): bool acquires GivenOut{
       if (!exists<GivenOut>(give_acc)) return false;
 
       can_add(borrow_global<GivenOut>(give_acc))
     }
 
+    // helper to check can add vouchee
     fun can_add(give_state: &GivenOut): bool {
       vector::length(&give_state.vouches_given) < give_state.limit
     }
 
     /// ensures no vouch list is greater than
     /// hygiene for the vouch list
-    public (friend) fun root_trim_vouchers(framework: &signer, give_acc: address) acquires MyVouches, GivenOut {
+    public (friend) fun root_migrate_trim_vouchers(framework: &signer, give_acc: address) acquires MyVouches, GivenOut {
       system_addresses::assert_ol(framework);
       let give_state = borrow_global_mut<GivenOut>(give_acc);
       maybe_trim_given_vouches(give_state, give_acc)
