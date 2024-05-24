@@ -5,6 +5,7 @@ module diem_framework::validator_universe {
   use std::signer;
   use std::vector;
   use diem_framework::system_addresses;
+  use ol_framework::leaderboard;
   use ol_framework::jail;
   use ol_framework::vouch;
   use diem_framework::stake;
@@ -46,9 +47,7 @@ module diem_framework::validator_universe {
   ) acquires ValidatorUniverse {
       stake::initialize_validator(account, consensus_pubkey, proof_of_possession, network_addresses, fullnode_addresses);
       vouch::init(account);
-      // 0L specific,
       add(account);
-      jail::init(account);
   }
 
   /// This function is called to add validator to the validator universe.
@@ -61,6 +60,7 @@ module diem_framework::validator_universe {
       vector::push_back<address>(&mut state.validators, addr);
     };
     jail::init(sender);
+    leaderboard::init_player(sender);
   }
 
   //////// GENESIS ////////

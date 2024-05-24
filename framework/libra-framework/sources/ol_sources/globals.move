@@ -135,7 +135,7 @@ module ol_framework::globals {
           epoch_mining_thres_upper: 72, // upper bound enforced at 20 mins per  proof
           epoch_slow_wallet_unlock: 1000 * get_coin_scaling_factor(), // approx 10 years for largest accounts in genesis.
           min_blocks_per_epoch: 10000,
-          validator_vouch_threshold: 3, // Production must be 3 or more vouches
+          validator_vouch_threshold: 2, // Production must minimally be 2 or more vouches
           signing_threshold_pct: 3,
         }
       } else {
@@ -155,7 +155,7 @@ module ol_framework::globals {
           epoch_mining_thres_upper: 72, // upper bound enforced at 20 mins per  proof
           epoch_slow_wallet_unlock: 1000 * get_coin_scaling_factor(), // approx 10 years for largest accounts in genesis.
           min_blocks_per_epoch: 10000,
-          validator_vouch_threshold: 3, // Production must be 3 or more vouches
+          validator_vouch_threshold: 2, // Production must minimally be 2 or more vouches
           signing_threshold_pct: 3,
         }
       }
