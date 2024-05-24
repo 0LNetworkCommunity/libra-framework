@@ -253,6 +253,63 @@ module ol_framework::vouch {
       v.epoch_vouched = epoch_data;
     }
 
+    public fun calc_limit(
+      topten_streak: u64,
+      win_streak: u64,
+      wins: u64,
+      losses: u64,
+      lifetime_vouchees_jailed: u64,
+    ): u64 {
+      // unless you are winning you don't get to vouch for people.
+      let limit = 0;
+      // if you've been jailed more than you've won over time, this game may
+      // not be for you
+      if (losses >  wins)  {
+        return limit
+      };
+      // If you fall within certain thresholds of Leaderboard you get an extra voucher.
+      // If you fall below a threshold on Jail statistics you lose a voucher.
+
+      // If you are an all star you are allowed more vouches
+      if (topten_streak > 7) {
+        limit = limit + 1;
+      };
+
+      // if you have been on a winning streak for one month, you are great too
+      if (win_streak > 30) {
+        limit = limit + 1;
+      };
+
+      let net_wins = 1; // prevent zero error
+      if (wins > losses) {
+        net_wins = wins - losses
+      };
+      // if you have a high total score, lots of games played and won  (wins -
+      // losses) (even though you may be having a bad streak)
+      if (net_wins > 60) {
+        limit = limit + 1;
+      };
+
+      // Now for negative points
+      // are you joining the validator set at an acceptable rate?
+      if (limit > 0 && net_wins > 0) {
+        let win_rate = (net_wins * 100) / ( wins + losses);
+        if (win_rate < 80 )  {
+          limit = limit - 1;
+        }
+      };
+
+      // are the people you are vouching for getting jailed?
+      if (limit > 0 && net_wins > 0) {
+        if (lifetime_vouchees_jailed > 30 )  {
+          limit = limit - 1;
+        }
+      };
+
+      return limit
+
+    }
+
     #[view]
     /// gets all buddies, including expired ones
     public fun all_vouchers(val: address): vector<address> acquires MyVouches{
