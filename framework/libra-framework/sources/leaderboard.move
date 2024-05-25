@@ -42,7 +42,7 @@ module diem_framework::leaderboard {
     value: u64
   }
 
-  public entry fun init_player(sig: &signer) {
+  public entry fun init(sig: &signer) {
     let addr = signer::address_of(sig);
     if (!exists<TotalScore>(addr)) {
       move_to(sig, TotalScore {

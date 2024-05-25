@@ -1,10 +1,54 @@
 /// Validator track record
 /// NOTE: other reputational metrics exist on jail.move
 module diem_framework::reputation {
+  use std::signer;
+  use std::vector;
   use ol_framework::leaderboard;
   use ol_framework::jail;
 
-  const BASE_REPUTATION: u64 = 2; // 2 stars out of five
+  friend ol_framework::validator_universe;
+
+  const BASE_REPUTATION: u64 = 20; // 2 stars out of five, one decimal
+
+  struct Reputation has key {
+    score_baseline: u64,
+    // for every iteration/hop of the graph calculate the recursive score
+    // 0th score is first level of recursion.
+    score_upstream: vector<u64>,
+    score_downstream: vector<u64>
+  }
+
+  // a group of validators N hops away from a validator
+  struct Cohort has store {
+    list: vector<address>
+  }
+
+  // the successive cohorts of validators at each hop away. 0th element is first
+  // hop.
+  struct ReputationTree has key {
+    upstream_cohorts: vector<Cohort>,
+    downstream_cohorts: vector<Cohort>,
+  }
+
+  public(friend) fun init(sig: &signer) {
+    let addr = signer::address_of(sig);
+    if (!exists<Reputation>(addr)) {
+      move_to(sig, Reputation {
+        score_baseline: 0,
+        score_upstream: vector::empty(),
+        score_downstream: vector::empty(),
+      })
+    };
+
+    if (!exists<ReputationTree>(addr)) {
+      move_to(sig, ReputationTree {
+        upstream_cohorts: vector::empty(),
+        downstream_cohorts: vector::empty(),
+      })
+    }
+  }
+
+
 
   #[view]
   /// get the validator reputation index

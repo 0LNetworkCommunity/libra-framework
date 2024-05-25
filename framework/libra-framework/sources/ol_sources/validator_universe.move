@@ -4,11 +4,12 @@
 module diem_framework::validator_universe {
   use std::signer;
   use std::vector;
-  use diem_framework::system_addresses;
-  use ol_framework::leaderboard;
-  use ol_framework::jail;
-  use ol_framework::vouch;
   use diem_framework::stake;
+  use diem_framework::system_addresses;
+  use ol_framework::jail;
+  use ol_framework::leaderboard;
+  use ol_framework::reputation;
+  use ol_framework::vouch;
 
   #[test_only]
   use ol_framework::testnet;
@@ -46,7 +47,14 @@ module diem_framework::validator_universe {
     fullnode_addresses: vector<u8>,
   ) acquires ValidatorUniverse {
       stake::initialize_validator(account, consensus_pubkey, proof_of_possession, network_addresses, fullnode_addresses);
-      vouch::init(account);
+      add(account);
+  }
+
+  /// If there is any state which is not initialized or hasnt
+  /// been migrated, this function might heal the validator state.
+  public entry fun maybe_fix(
+    account: &signer,
+  ) acquires ValidatorUniverse {
       add(account);
   }
 
@@ -59,8 +67,10 @@ module diem_framework::validator_universe {
       let state = borrow_global_mut<ValidatorUniverse>(@diem_framework);
       vector::push_back<address>(&mut state.validators, addr);
     };
+    vouch::init(sender);
     jail::init(sender);
-    leaderboard::init_player(sender);
+    leaderboard::init(sender);
+    reputation::init(sender);
   }
 
   //////// GENESIS ////////
