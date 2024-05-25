@@ -17,6 +17,8 @@ module diem_framework::epoch_boundary {
     use ol_framework::match_index;
     use ol_framework::community_wallet_init;
     use ol_framework::testnet;
+    use ol_framework::reputation;
+    use ol_framework::validator_universe;
 
     use diem_framework::account;
     use diem_framework::reconfiguration;
@@ -292,9 +294,18 @@ module diem_framework::epoch_boundary {
         status.dd_accounts_amount = amount;
         status.dd_accounts_success = success;
 
-        print(&string::utf8(b"tower_state::reconfig"));
+        print(&string::utf8(b"fee_maker"));
         // reset fee makers tracking
         status.set_fee_makers_success = fee_maker::epoch_reset_fee_maker(root);
+
+        print(&string::utf8(b"reputation"));
+
+        // TODO: put a features switch here
+        if (false) {
+          let all_eligible_vals = validator_universe::get_eligible_validators();
+          let iters = 1;
+          reputation::batch_score(root, all_eligible_vals, iters);
+        };
 
         print(&string::utf8(b"musical_chairs::stop_the_music"));
         let (compliant_vals, n_seats) = musical_chairs::stop_the_music(root,

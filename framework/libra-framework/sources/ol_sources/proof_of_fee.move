@@ -14,6 +14,7 @@ module ol_framework::proof_of_fee {
   use std::vector;
   use std::fixed_point32;
   use diem_framework::validator_universe;
+  use ol_framework::globals;
   use ol_framework::jail;
   use ol_framework::slow_wallet;
   use ol_framework::vouch;
@@ -22,7 +23,6 @@ module ol_framework::proof_of_fee {
   use diem_framework::account;
   use diem_framework::stake;
   use diem_framework::system_addresses;
-  use ol_framework::globals;
   // use diem_std::debug::print;
 
   friend diem_framework::genesis;
@@ -287,7 +287,7 @@ module ol_framework::proof_of_fee {
   public fun get_valid_vouchers_in_set(incoming_addr: address): (bool, u64) {
       let val_set = stake::get_current_validators();
       let (frens_in_val_set, _found) = vouch::true_friends_in_list(incoming_addr, &val_set);
-      let threshold = globals::get_validator_vouch_threshold();
+      let threshold = min_vouches_required(vector::length(&val_set));
       let count_in_set = vector::length(&frens_in_val_set);
 
       (count_in_set >= threshold, count_in_set)
@@ -621,6 +621,22 @@ module ol_framework::proof_of_fee {
 
   //////////////// GETTERS ////////////////
   // get the current bid for a validator
+
+  #[view]
+  public fun min_vouches_required(set_size: u64): u64 {
+    let required = globals::get_validator_vouch_threshold();
+
+    // dynamically increase the amount of social proofing as the
+    // validator set increases
+    // TODO: set a features switch here
+    if (false) {
+      if (set_size > 20) {
+        required = (set_size / 10) + 1
+      }
+    };
+
+    required
+  }
 
 
   #[view]

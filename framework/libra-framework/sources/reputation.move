@@ -9,6 +9,7 @@ module diem_framework::reputation {
   use ol_framework::vouch;
 
   friend ol_framework::validator_universe;
+  friend ol_framework::epoch_boundary;
 
   const BASE_REPUTATION: u64 = 20; // 2 stars out of five, one decimal
 
