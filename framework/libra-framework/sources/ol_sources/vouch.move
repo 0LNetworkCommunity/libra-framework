@@ -23,10 +23,18 @@ module ol_framework::vouch {
     #[test_only]
     friend ol_framework::test_pof;
 
+    //////// CONST ////////
+
     /// Maximum number of vouches
     const BASE_MAX_VOUCHES: u64 = 2;
+
     /// how many epochs must pass before the voucher expires.
     const EXPIRATION_ELAPSED_EPOCHS: u64 = 90;
+
+    /// how deep the VouchTree needs to be
+    const VOUCH_TREE_DEPTH: u64 = 1;
+
+    //////// ERROR CODES ////////
 
     /// Limit reached. You cannot give any new vouches.
     const EMAX_LIMIT_GIVEN: u64 = 4;
@@ -110,7 +118,7 @@ module ol_framework::vouch {
     }
 
     // implement the vouching.
-    fun vouch_impl(give_sig: &signer, receive_acc: address) acquires MyVouches, GivenOut {
+    fun vouch_impl(give_sig: &signer, receive_acc: address) acquires MyVouches, GivenOut, VouchTree {
       // heal the account if there is a migration issue:
       init(give_sig);
 
@@ -131,7 +139,15 @@ module ol_framework::vouch {
       // check if we reached our max number of vouches given
       // Note: we only check if we try to add a new buddy.
       // will not fail if we are just extending the expiration
-      checked_add_buddy_to_giver(give_sig, receive_acc)
+      checked_add_buddy_to_giver(give_sig, receive_acc);
+
+      // update vouch trees for both giver and receiver.
+      construct_vouch_tree(give_acc, true, VOUCH_TREE_DEPTH);
+      construct_vouch_tree(give_acc, false, VOUCH_TREE_DEPTH);
+
+      construct_vouch_tree(receive_acc, true, VOUCH_TREE_DEPTH);
+      construct_vouch_tree(receive_acc, false, VOUCH_TREE_DEPTH);
+
     }
 
     fun checked_add_buddy_to_giver(give_sig: &signer, receive_acc: address) acquires GivenOut {
@@ -180,10 +196,16 @@ module ol_framework::vouch {
 
     /// ensures no vouch list is greater than
     /// hygiene for the vouch list
-    public(friend) fun root_migrate_trim_vouchers(framework: &signer, give_acc: address) acquires MyVouches, GivenOut {
+    public(friend) fun root_migrate_trim_vouchers(framework: &signer, give_acc: address) acquires MyVouches, GivenOut, VouchTree {
       system_addresses::assert_ol(framework);
-      let give_state = borrow_global_mut<GivenOut>(give_acc);
-      maybe_trim_given_vouches(give_state, give_acc)
+      {
+        let give_state = borrow_global_mut<GivenOut>(give_acc);
+        maybe_trim_given_vouches(give_state, give_acc)
+      };
+
+      // recalculate tree
+      construct_vouch_tree(give_acc, true, VOUCH_TREE_DEPTH);
+      construct_vouch_tree(give_acc, false, VOUCH_TREE_DEPTH);
     }
 
     // safely trims vouch list, drops backmost elements
@@ -199,19 +221,19 @@ module ol_framework::vouch {
     /// will only succesfully vouch if the two are not related by ancestry
     /// prevents spending a vouch that would not be counted.
     /// to add a vouch and ignore this check use insist_vouch
-    public entry fun vouch_for(give_sig: &signer, receive: address) acquires MyVouches, GivenOut {
+    public entry fun vouch_for(give_sig: &signer, receive: address) acquires MyVouches, GivenOut, VouchTree {
       ancestry::assert_unrelated(signer::address_of(give_sig), receive);
       vouch_impl(give_sig, receive);
     }
 
     /// you may want to add people who are related to you
     /// there are no known use cases for this at the moment.
-    public entry fun insist_vouch_for(give_sig: &signer, receive: address) acquires MyVouches, GivenOut {
+    public entry fun insist_vouch_for(give_sig: &signer, receive: address) acquires MyVouches, GivenOut, VouchTree {
       vouch_impl(give_sig, receive);
     }
 
     /// Let's break up with this account
-    public entry fun revoke(give_sig: &signer, its_not_me_its_you: address) acquires MyVouches, GivenOut  {
+    public entry fun revoke(give_sig: &signer, its_not_me_its_you: address) acquires MyVouches, GivenOut, VouchTree  {
       let give_acc = signer::address_of(give_sig);
 
       // Commit note: this check is not necessary, if this did somehow happen we
@@ -225,9 +247,15 @@ module ol_framework::vouch {
 
       revoke_impl(given_state, give_acc, its_not_me_its_you);
 
+      // update vouch trees for both giver and receiver.
+      construct_vouch_tree(give_acc, true, VOUCH_TREE_DEPTH);
+      construct_vouch_tree(give_acc, false, VOUCH_TREE_DEPTH);
+
+      construct_vouch_tree(its_not_me_its_you, true, VOUCH_TREE_DEPTH);
+      construct_vouch_tree(its_not_me_its_you, false, VOUCH_TREE_DEPTH);
     }
 
-    fun revoke_impl(given_state: &mut GivenOut, give_acc: address, receive_acc: address) acquires MyVouches {
+    fun revoke_impl(given_state: &mut GivenOut, give_acc: address, receive_acc: address) acquires MyVouches{
 
       // first update the recipient's state
       let v = borrow_global_mut<MyVouches>(receive_acc);
@@ -252,11 +280,15 @@ module ol_framework::vouch {
       bulk_set(val, buddy_list);
     }
 
-    public(friend) fun vm_construct_vouch_tree(framework: &signer, vals: vector<address>) acquires MyVouches, GivenOut, VouchTree {
+    public(friend) fun vm_migrate_vouch_tree(framework: &signer, vals: vector<address>) acquires MyVouches, GivenOut, VouchTree {
       system_addresses::assert_diem_framework(framework);
+      batch_vouch_tree(vals);
+    }
+
+    fun batch_vouch_tree(vals: vector<address>) acquires MyVouches, GivenOut, VouchTree {
       vector::for_each(vals, |acc| {
-        construct_vouch_tree(acc, true, 1);
-        construct_vouch_tree(acc, false, 1);
+        construct_vouch_tree(acc, true, VOUCH_TREE_DEPTH);
+        construct_vouch_tree(acc, false, VOUCH_TREE_DEPTH);
       })
     }
 
