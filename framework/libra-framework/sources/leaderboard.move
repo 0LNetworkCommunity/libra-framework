@@ -6,13 +6,14 @@ module diem_framework::leaderboard {
   use std::signer;
   use diem_framework::system_addresses;
 
+  friend ol_framework::epoch_boundary;
+  friend ol_framework::genesis;
+
+  const BASE_REPUTATION: u64 = 2;
+
   // NOTE: reputation will be a work in progress. As a dev strategy, let's break
   // up the structs into small atomic pieces so we can increment without
   // needing to migrate state when we imlpement new metrics.
-
-
-   friend ol_framework::epoch_boundary;
-   friend ol_framework::genesis;
 
   // Who is in the Top 10 net proposals at end of last epoch.
   // Note: in 0L validators all have equal weight, so the net proposals are a
@@ -126,6 +127,7 @@ module diem_framework::leaderboard {
   #[view]
   /// Get totals (success epochs, fail epochs)
   public fun get_total(acc: address): (u64, u64) acquires TotalScore {
+    if (!exists<TotalScore>(acc)) return (0, 0);
     let state = borrow_global<TotalScore>(acc);
     (state.success, state.fail)
   }
@@ -133,6 +135,8 @@ module diem_framework::leaderboard {
   #[view]
   /// Get win streak (success epochs, fail epochs)
   public fun get_streak(acc: address): u64 acquires WinStreak {
+    if (!exists<TotalScore>(acc)) return 0;
+
     let state = borrow_global<WinStreak>(acc);
     state.value
   }
@@ -140,6 +144,7 @@ module diem_framework::leaderboard {
   #[view]
   /// Get win streak (success epochs, fail epochs)
   public fun get_topten_streak(acc: address): u64 acquires TopTenStreak {
+    if (!exists<TotalScore>(acc)) return 0;
     let state = borrow_global<TopTenStreak>(acc);
     state.value
   }

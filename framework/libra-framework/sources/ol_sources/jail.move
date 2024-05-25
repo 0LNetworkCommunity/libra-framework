@@ -208,6 +208,7 @@ module ol_framework::jail {
   /// Returns how many times has the validator failed to join the network after consecutive attempts.
   /// Should not abort, since its used in validator admission.
   /// Returns (lifetime_jailed, consecutive_failure_to_rejoin)
+  // TODO: lifetime_jailed is probably duplicate with leaderboard TotalScore.losses
   public fun get_jail_reputation(addr: address): (u64, u64) acquires Jail {
     if (exists<Jail>(addr)) {
       let s = borrow_global<Jail>(addr);

@@ -420,6 +420,7 @@ module diem_framework::epoch_boundary {
 
       // update the vouch state
       // Do any migrations necessary
+      // TODO: should this happen on every epoch? If the vouch give limit goes down for a validator?
       vouch::root_migrate_trim_vouchers(root, *addr);
 
       i = i + 1;
