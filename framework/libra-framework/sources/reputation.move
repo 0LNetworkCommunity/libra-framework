@@ -173,4 +173,8 @@ module diem_framework::reputation {
       return *vector::borrow(&state.score_downstream, hop)
     }
   }
+
+  // TODO:
+  // #[view]
+  // public fun rank_by_rep() {}
 }

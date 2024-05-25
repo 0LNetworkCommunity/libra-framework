@@ -8,6 +8,8 @@ module diem_framework::leaderboard {
 
   friend ol_framework::epoch_boundary;
   friend ol_framework::genesis;
+  #[test_only]
+  friend ol_framework::test_reputation;
 
   const BASE_REPUTATION: u64 = 2;
 
@@ -147,5 +149,18 @@ module diem_framework::leaderboard {
     if (!exists<TotalScore>(acc)) return 0;
     let state = borrow_global<TopTenStreak>(acc);
     state.value
+  }
+
+  #[test_only]
+  public(friend) fun test_mock_state(framework: &signer, acc: address, success: u64, fail: u64, win_streak: u64, toptep_streak: u64) acquires TotalScore, WinStreak, TopTenStreak {
+    system_addresses::assert_diem_framework(framework);
+    let ts = borrow_global_mut<TotalScore>(acc);
+    ts.success = success;
+    ts.fail = fail;
+    let ws = borrow_global_mut<WinStreak>(acc);
+    ws.value = win_streak;
+    let tts = borrow_global_mut<TopTenStreak>(acc);
+    tts.value = toptep_streak;
+
   }
 }

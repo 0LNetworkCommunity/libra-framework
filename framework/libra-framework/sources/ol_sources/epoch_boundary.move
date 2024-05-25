@@ -17,6 +17,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::match_index;
     use ol_framework::community_wallet_init;
     use ol_framework::testnet;
+    use ol_framework::validator_universe;
     use ol_framework::vouch;
 
     use diem_framework::account;
@@ -305,8 +306,14 @@ module diem_framework::epoch_boundary {
         status.incoming_seats_offered = n_seats;
 
         print(&string::utf8(b"settle_accounts"));
-
         settle_accounts(root, compliant_vals, status);
+
+        // set feature
+        if (false) {
+          print(&string::utf8(b"reputation"));
+          let elegible_list = validator_universe::get_eligible_validators();
+          vouch::vm_construct_vouch_tree(root, elegible_list);
+        };
 
         print(&string::utf8(b"slow_wallet::on_new_epoch"));
         // drip coins

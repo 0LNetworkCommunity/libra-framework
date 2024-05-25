@@ -28,7 +28,6 @@ module ol_framework::vouch {
     /// how many epochs must pass before the voucher expires.
     const EXPIRATION_ELAPSED_EPOCHS: u64 = 90;
 
-
     /// Limit reached. You cannot give any new vouches.
     const EMAX_LIMIT_GIVEN: u64 = 4;
 
@@ -63,7 +62,7 @@ module ol_framework::vouch {
     }
 
     // a group of validators N hops away by vouch
-    struct Cohort has store {
+    struct Cohort has store, drop {
       list: vector<address>
     }
 
@@ -181,7 +180,7 @@ module ol_framework::vouch {
 
     /// ensures no vouch list is greater than
     /// hygiene for the vouch list
-    public (friend) fun root_migrate_trim_vouchers(framework: &signer, give_acc: address) acquires MyVouches, GivenOut {
+    public(friend) fun root_migrate_trim_vouchers(framework: &signer, give_acc: address) acquires MyVouches, GivenOut {
       system_addresses::assert_ol(framework);
       let give_state = borrow_global_mut<GivenOut>(give_acc);
       maybe_trim_given_vouches(give_state, give_acc)
@@ -251,6 +250,61 @@ module ol_framework::vouch {
     public(friend) fun vm_migrate(vm: &signer, val: address, buddy_list: vector<address>) acquires MyVouches {
       system_addresses::assert_ol(vm);
       bulk_set(val, buddy_list);
+    }
+
+    public(friend) fun vm_construct_vouch_tree(framework: &signer, vals: vector<address>) acquires MyVouches, GivenOut, VouchTree {
+      system_addresses::assert_diem_framework(framework);
+      vector::for_each(vals, |acc| {
+        construct_vouch_tree(acc, true, 1);
+        construct_vouch_tree(acc, false, 1);
+      })
+    }
+
+    fun construct_vouch_tree(validator: address, up_or_downstream: bool, iters: u64) acquires MyVouches, GivenOut, VouchTree {
+      // NOTE: upstream's 0th element is a copy of the my_buddies struct.
+      // Similarly, downstream's first element is a copy of the GivenOut.list
+      // TODO: someday consider deduplicating this.
+      let start_list = if (up_or_downstream) {
+        borrow_global<MyVouches>(validator).my_buddies
+      } else {
+        borrow_global<GivenOut>(validator).vouches_given
+      };
+
+      let first_cohort = Cohort {
+        list: start_list
+      };
+
+      let cohort_vec = vector::singleton(first_cohort);
+
+      let i = 0;
+      while (i < iters) {
+        let this_cohort = vector::borrow(&cohort_vec, i);
+        let this_hop_addrs = this_cohort.list;
+
+        let next_hop_addrs = vector::empty<address>();
+
+        vector::for_each(this_hop_addrs, |buddy| {
+
+          let v = if (up_or_downstream) {
+            borrow_global<MyVouches>(buddy).my_buddies
+          } else {
+            borrow_global<GivenOut>(buddy).vouches_given
+          };
+          vector::append(&mut next_hop_addrs, v)
+        });
+        let next_cohort = Cohort {
+          list: next_hop_addrs
+        };
+        vector::push_back(&mut cohort_vec, next_cohort);
+        i = i + 1;
+      };
+
+      let state = borrow_global_mut<VouchTree>(validator);
+      if (up_or_downstream) {
+        state.received_from_upstream = cohort_vec;
+      } else {
+        state.given_to_downstream = cohort_vec;
+      }
     }
 
     // implements bulk setting of vouchers
