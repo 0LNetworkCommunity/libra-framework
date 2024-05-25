@@ -196,14 +196,16 @@ module ol_framework::vouch {
 
     /// ensures no vouch list is greater than
     /// hygiene for the vouch list
-    public(friend) fun root_migrate_trim_vouchers(framework: &signer, give_acc: address) acquires MyVouches, GivenOut, VouchTree {
+    //  TODO: this is not used anywhere, perhaps it needs to be done during the
+    //  upgrade
+
+    public(friend) fun vm_migrate_trim_vouchers(framework: &signer, give_acc: address) acquires MyVouches, GivenOut, VouchTree {
       system_addresses::assert_ol(framework);
       {
         let give_state = borrow_global_mut<GivenOut>(give_acc);
         maybe_trim_given_vouches(give_state, give_acc)
       };
 
-      // recalculate tree
       construct_vouch_tree(give_acc, true, VOUCH_TREE_DEPTH);
       construct_vouch_tree(give_acc, false, VOUCH_TREE_DEPTH);
     }
@@ -293,6 +295,11 @@ module ol_framework::vouch {
     }
 
     fun construct_vouch_tree(validator: address, up_or_downstream: bool, iters: u64) acquires MyVouches, GivenOut, VouchTree {
+      if (
+        !exists<MyVouches>(validator) ||
+        !exists<GivenOut>(validator) ||
+        !exists<VouchTree>(validator)
+      ) return;
       // NOTE: upstream's 0th element is a copy of the my_buddies struct.
       // Similarly, downstream's first element is a copy of the GivenOut.list
       // TODO: someday consider deduplicating this.
@@ -316,11 +323,16 @@ module ol_framework::vouch {
         let next_hop_addrs = vector::empty<address>();
 
         vector::for_each(this_hop_addrs, |buddy| {
+          let v = vector::empty();
 
-          let v = if (up_or_downstream) {
-            borrow_global<MyVouches>(buddy).my_buddies
+          if (up_or_downstream) {
+            if (exists<MyVouches>(buddy)) {
+              v = borrow_global<MyVouches>(buddy).my_buddies
+            }
           } else {
-            borrow_global<GivenOut>(buddy).vouches_given
+            if (exists<GivenOut>(buddy)) {
+              v = borrow_global<GivenOut>(buddy).vouches_given
+            }
           };
           vector::append(&mut next_hop_addrs, v)
         });

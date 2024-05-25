@@ -17,7 +17,6 @@ module diem_framework::epoch_boundary {
     use ol_framework::match_index;
     use ol_framework::community_wallet_init;
     use ol_framework::testnet;
-    use ol_framework::vouch;
 
     use diem_framework::account;
     use diem_framework::reconfiguration;
@@ -416,11 +415,6 @@ module diem_framework::epoch_boundary {
         };
         leaderboard::increment_total(root, *addr, true);
       };
-
-      // update the vouch state
-      // Do any migrations necessary
-      // TODO: should this happen on every epoch? If the vouch give limit goes down for a validator?
-      vouch::root_migrate_trim_vouchers(root, *addr);
 
       i = i + 1;
     };
