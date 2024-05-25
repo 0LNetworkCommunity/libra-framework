@@ -3,8 +3,10 @@
 module diem_framework::reputation {
   use std::signer;
   use std::vector;
+  use diem_framework::system_addresses;
   use ol_framework::leaderboard;
   use ol_framework::jail;
+  use ol_framework::vouch;
 
   friend ol_framework::validator_universe;
 
@@ -18,18 +20,6 @@ module diem_framework::reputation {
     score_downstream: vector<u64>
   }
 
-  // a group of validators N hops away from a validator
-  struct Cohort has store {
-    list: vector<address>
-  }
-
-  // the successive cohorts of validators at each hop away. 0th element is first
-  // hop.
-  struct ReputationTree has key {
-    upstream_cohorts: vector<Cohort>,
-    downstream_cohorts: vector<Cohort>,
-  }
-
   public(friend) fun init(sig: &signer) {
     let addr = signer::address_of(sig);
     if (!exists<Reputation>(addr)) {
@@ -38,21 +28,72 @@ module diem_framework::reputation {
         score_upstream: vector::empty(),
         score_downstream: vector::empty(),
       })
-    };
-
-    if (!exists<ReputationTree>(addr)) {
-      move_to(sig, ReputationTree {
-        upstream_cohorts: vector::empty(),
-        downstream_cohorts: vector::empty(),
-      })
     }
+  }
+
+  public(friend) fun batch_score(framework_sig: &signer, vals: vector<address>, iters: u64) acquires Reputation {
+    system_addresses::assert_diem_framework(framework_sig);
+    // must update base first
+    batch_set_base(vals);
+    // the downstream recursive at iters
+    batch_set_recursive(vals, false, iters);
+    // the upstream recursive at iters
+    batch_set_recursive(vals, true, iters);
   }
 
 
 
-  #[view]
-  /// get the validator reputation index
-  public fun calc_reputation(acc: address): u64 {
+  fun batch_set_recursive(vals: vector<address>, up_or_down: bool, iters: u64) acquires Reputation {
+    // need to update all the addresses base scores first
+    vector::for_each(vals, |acc| {
+      set_recursive(acc, up_or_down, iters);
+    })
+  }
+
+  fun set_recursive(acc: address, up_or_down: bool, iters: u64) acquires Reputation {
+
+    let score_vec = vector::empty<u64>();
+
+    let i = 0;
+    while (i < iters) {
+      let vals = vouch::get_cohort(acc, up_or_down, i);
+      let group_total = 0;
+      vector::for_each(vals, |addr| {
+        let s = get_base_reputation(addr);
+        group_total = group_total + s;
+      });
+      let len = vector::length(&vals);
+      let hop_score = 0;
+      if (len > 0) {
+         hop_score = group_total / len;
+      };
+      vector::push_back(&mut score_vec, hop_score);
+      i = i + 1;
+    };
+    let state = borrow_global_mut<Reputation>(acc);
+    if (up_or_down) {
+      state.score_upstream = score_vec;
+    } else {
+      state.score_downstream = score_vec;
+    }
+  }
+
+  fun batch_set_base(vals: vector<address>) acquires Reputation {
+    // need to update all the addresses base scores first
+    vector::for_each(vals, |acc| {
+      set_base_reputation(acc);
+    })
+  }
+
+  // save the baseline reputation for a user
+  fun set_base_reputation(acc: address) acquires Reputation {
+      let state = borrow_global_mut<Reputation>(acc);
+      let base = calc_base_reputation(acc);
+      state.score_baseline = base;
+  }
+
+  /// get the validator base reputation
+  fun calc_base_reputation(acc: address): u64 {
     let (wins, losses) = leaderboard::get_total(acc);
     let topten_streak = leaderboard::get_streak(acc);
     let win_streak = leaderboard::get_topten_streak(acc);
@@ -112,5 +153,24 @@ module diem_framework::reputation {
 
     return rep
 
+  }
+
+  //////// GETTERS ////////
+  #[view]
+  /// Get the baseline reputation of an address. Not a recursive reputation calc.
+  public fun get_base_reputation(acc: address): u64 acquires Reputation {
+    borrow_global<Reputation>(acc).score_baseline
+  }
+
+  #[view]
+  /// Get the baseline reputation of an address. Not a recursive reputation calc.
+  public fun get_recursive_score(acc: address, up_or_downstream: bool, hop: u64): u64 acquires Reputation {
+     let state = borrow_global<Reputation>(acc);
+
+    if (up_or_downstream) {
+      return *vector::borrow(&state.score_upstream, hop)
+    } else {
+      return *vector::borrow(&state.score_downstream, hop)
+    }
   }
 }

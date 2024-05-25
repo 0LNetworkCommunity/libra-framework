@@ -15,6 +15,7 @@ module ol_framework::vouch {
     friend ol_framework::validator_universe;
     friend ol_framework::proof_of_fee;
     friend ol_framework::jail;
+    friend ol_framework::reputation;
     friend ol_framework::epoch_boundary;
 
     #[test_only]
@@ -61,10 +62,22 @@ module ol_framework::vouch {
       epoch_vouched: vector<u64>,
     }
 
+    // a group of validators N hops away by vouch
+    struct Cohort has store {
+      list: vector<address>
+    }
 
+    // the successive cohorts of validators at each hop away. 0th element is first
+    // hop.
+    struct VouchTree has key {
+      // all upstream vouches
+      received_from_upstream: vector<Cohort>,
+      // all downstream vouches
+      given_to_downstream: vector<Cohort>,
+    }
 
     // init the struct on a validators account.
-    public(friend) fun init(new_account_sig: &signer ) {
+    public(friend) fun init(new_account_sig: &signer) {
       let acc = signer::address_of(new_account_sig);
 
       if (!exists<MyVouches>(acc)) {
@@ -80,6 +93,13 @@ module ol_framework::vouch {
           vouches_given: vector::empty(),
           limit: 0,
         });
+      };
+
+      if (!exists<VouchTree>(acc)) {
+        move_to(new_account_sig, VouchTree {
+          received_from_upstream: vector::empty(),
+          given_to_downstream: vector::empty(),
+        })
       }
     }
 
@@ -254,6 +274,23 @@ module ol_framework::vouch {
     }
 
 
+    public(friend) fun get_cohort(acc: address, up_or_down: bool, hop: u64): vector<address> acquires VouchTree {
+      let state = borrow_global<VouchTree>(acc);
+      let list = vector::empty();
+      if (up_or_down) {
+        if (vector::length(&state.received_from_upstream) >= hop) {
+          let c = vector::borrow(&state.received_from_upstream, hop);
+          list = c.list;
+        }
+      } else {
+        if (vector::length(&state.given_to_downstream) >= hop) {
+          let c = vector::borrow(&state.given_to_downstream, hop);
+          list = c.list;
+
+        }
+      };
+      return list
+    }
 
     #[view]
     /// gets all buddies, including expired ones
