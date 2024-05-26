@@ -472,6 +472,7 @@ module ol_framework::vouch {
       (buddies_in_list, vector::length(&buddies_in_list))
     }
 
+
     /// Root account can set the max limit to vouches that can be given by this account
     public(friend) fun set_limit(framework: &signer, give_acc: address, limit: u64) acquires GivenOut{
       system_addresses::assert_diem_framework(framework);

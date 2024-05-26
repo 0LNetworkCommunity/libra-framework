@@ -24,4 +24,11 @@ module ol_framework::feature_flags {
     public fun dynamic_vouch_limits_enabled(): bool {
         features::is_enabled(DYNAMIC_VOUCH_LIMITS)
     }
+
+    /// does the dynamic vouching depend on Reputation
+    const RECURSIVE_REPUTATION: u64 = 102;
+    public fun get_recursive_reputation(): u64 { RECURSIVE_REPUTATION }
+    public fun recursive_reputation_enabled(): bool {
+        features::is_enabled(RECURSIVE_REPUTATION)
+    }
 }

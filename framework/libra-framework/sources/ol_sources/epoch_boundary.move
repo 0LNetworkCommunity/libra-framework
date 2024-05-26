@@ -9,6 +9,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::jail;
     use ol_framework::safe;
     use ol_framework::burn;
+    use ol_framework::feature_flags;
     use ol_framework::donor_voice_txs;
     use ol_framework::fee_maker;
     use ol_framework::infra_escrow;
@@ -19,6 +20,7 @@ module diem_framework::epoch_boundary {
     use ol_framework::testnet;
     use ol_framework::reputation;
     use ol_framework::validator_universe;
+    use ol_framework::vouch;
 
     use diem_framework::account;
     use diem_framework::reconfiguration;
@@ -300,12 +302,30 @@ module diem_framework::epoch_boundary {
 
         print(&string::utf8(b"reputation"));
 
-        // TODO: put a features switch here
-        if (false) {
-          let all_eligible_vals = validator_universe::get_eligible_validators();
+
+        // Commit note: the reputation calculation may be expensive, so we won't
+        // do it in the epoch boundary initially. Instead during the initial
+        // deployment phase, validators can call the reputation directly to
+        // calculate it.
+        let all_eligible_vals = validator_universe::get_eligible_validators();
+
+        if (feature_flags::recursive_reputation_enabled()) {
           let iters = 1;
-          reputation::batch_score(root, all_eligible_vals, iters);
+          reputation::batch_score_recursive(root, all_eligible_vals, iters);
+        } else {
+          reputation::batch_score_simple(root, all_eligible_vals);
         };
+
+
+        if (feature_flags::dynamic_vouch_limits_enabled()) {
+          // NOTE: Lots of looping going on with reputation then vouch.
+          // One day when epoch_boundary gets refactored for performance this should be moved.
+          vector::for_each(all_eligible_vals, |val| {
+            let r = reputation::get_base_reputation(val);
+            vouch::set_limit(root, val, r);
+          });
+        };
+
 
         print(&string::utf8(b"musical_chairs::stop_the_music"));
         let (compliant_vals, n_seats) = musical_chairs::stop_the_music(root,

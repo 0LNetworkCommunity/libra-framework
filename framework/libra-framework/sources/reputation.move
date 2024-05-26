@@ -32,7 +32,13 @@ module diem_framework::reputation {
     }
   }
 
-  public(friend) fun batch_score(framework_sig: &signer, vals: vector<address>, iters: u64) acquires Reputation {
+  public(friend) fun batch_score_simple(framework_sig: &signer, vals: vector<address>) acquires Reputation {
+    system_addresses::assert_diem_framework(framework_sig);
+    // must update base first
+    batch_set_base(vals);
+  }
+
+  public(friend) fun batch_score_recursive(framework_sig: &signer, vals: vector<address>, iters: u64) acquires Reputation {
     system_addresses::assert_diem_framework(framework_sig);
     // must update base first
     batch_set_base(vals);
@@ -41,8 +47,6 @@ module diem_framework::reputation {
     // the upstream recursive at iters
     batch_set_recursive(vals, true, iters);
   }
-
-
 
   fun batch_set_recursive(vals: vector<address>, up_or_down: bool, iters: u64) acquires Reputation {
     // need to update all the addresses base scores first
@@ -178,4 +182,5 @@ module diem_framework::reputation {
   // TODO:
   // #[view]
   // public fun rank_by_rep() {}
+
 }
