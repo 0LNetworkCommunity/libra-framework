@@ -3,6 +3,7 @@ module ol_framework::vouch {
     use std::signer;
     use std::vector;
     use std::error;
+
     use ol_framework::ancestry;
     use ol_framework::ol_account;
     use ol_framework::epoch_helper;
@@ -26,7 +27,7 @@ module ol_framework::vouch {
     //////// CONST ////////
 
     /// Maximum number of vouches
-    const BASE_MAX_VOUCHES: u64 = 2;
+    const BASE_MAX_VOUCHES: u64 = 10;
 
     /// how many epochs must pass before the voucher expires.
     // Commit Note: proposing faster vouch expiration
@@ -99,7 +100,9 @@ module ol_framework::vouch {
       if(!exists<GivenOut>(acc)){
         move_to<GivenOut>(new_account_sig, GivenOut {
           vouches_given: vector::empty(),
-          limit: 0,
+          // TODO: when dynamic vouch limits feature is implemented
+          // this should be zero
+          limit: BASE_MAX_VOUCHES,
         });
       };
 
@@ -130,7 +133,8 @@ module ol_framework::vouch {
 
       // this fee is paid to the system, cannot be reclaimed
       // fail fast if no fee can be paid
-      let c = ol_account::withdraw(give_sig, vouch_cost_microlibra());
+      let vouch_cost = epoch_helper::get_nominal_reward();
+      let c = ol_account::withdraw(give_sig, vouch_cost);
       transaction_fee::user_pay_fee(give_sig, c);
 
       // add to receipient's state first
@@ -475,11 +479,12 @@ module ol_framework::vouch {
       give_state.limit = limit;
     }
 
-    // TODO: move to globals
-    // the cost to verify a vouch. Coins are burned.
-    fun vouch_cost_microlibra(): u64 {
-      1000
-    }
+    // Commit note: deprecated in favor of the dynamic epoch's nominal reward
+    // // TODO: move to globals
+    // // the cost to verify a vouch. Coins are burned.
+    // fun vouch_cost_microlibra(): u64 {
+    //   1000
+    // }
 
     #[test_only]
     public fun test_set_buddies(val: address, buddy_list: vector<address>) acquires MyVouches {

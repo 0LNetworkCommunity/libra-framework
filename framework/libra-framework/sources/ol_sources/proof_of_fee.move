@@ -580,6 +580,8 @@ module ol_framework::proof_of_fee {
         return (true, false, 0)
     };
 
+    epoch_helper::set_nominal_reward(vm, cr.nominal_reward);
+
     // nominal reward is zero, there's a problem
     return (false, false, 0)
   }
