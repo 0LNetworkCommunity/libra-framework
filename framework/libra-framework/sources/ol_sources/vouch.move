@@ -29,7 +29,8 @@ module ol_framework::vouch {
     const BASE_MAX_VOUCHES: u64 = 2;
 
     /// how many epochs must pass before the voucher expires.
-    const EXPIRATION_ELAPSED_EPOCHS: u64 = 90;
+    // Commit Note: proposing faster vouch expiration
+    const EXPIRATION_ELAPSED_EPOCHS: u64 = 45;
 
     /// how deep the VouchTree needs to be
     const VOUCH_TREE_DEPTH: u64 = 1;
