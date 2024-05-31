@@ -31,6 +31,7 @@ module diem_framework::genesis {
     use ol_framework::musical_chairs;
     use ol_framework::proof_of_fee;
     use ol_framework::slow_wallet;
+    use ol_framework::leaderboard;
     use ol_framework::libra_coin;
     use ol_framework::infra_escrow;
     use ol_framework::safe;
@@ -154,6 +155,7 @@ module diem_framework::genesis {
         pledge_accounts::initialize(&diem_framework_account);
         account::maybe_initialize_duplicate_originating(&diem_framework_account);
         infra_escrow::initialize(&diem_framework_account);
+        leaderboard::initialize(&diem_framework_account);
 
         let zero_x_two_sig = create_signer(@0x2);
         sacred_cows::init(&zero_x_two_sig);

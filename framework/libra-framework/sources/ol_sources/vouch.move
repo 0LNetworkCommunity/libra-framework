@@ -2,6 +2,8 @@
 module ol_framework::vouch {
     use std::signer;
     use std::vector;
+    use std::error;
+
     use ol_framework::ancestry;
     use ol_framework::ol_account;
     use ol_framework::epoch_helper;
@@ -14,105 +16,355 @@ module ol_framework::vouch {
     friend ol_framework::validator_universe;
     friend ol_framework::proof_of_fee;
     friend ol_framework::jail;
+    friend ol_framework::reputation;
+    friend ol_framework::epoch_boundary;
 
     #[test_only]
     friend ol_framework::mock;
     #[test_only]
     friend ol_framework::test_pof;
 
+    //////// CONST ////////
+
+    /// Maximum number of vouches
+    const BASE_MAX_VOUCHES: u64 = 10;
+
+    /// how many epochs must pass before the voucher expires.
+    // Commit Note: proposing faster vouch expiration
+    const EXPIRATION_ELAPSED_EPOCHS: u64 = 45;
+
+    /// how deep the VouchTree needs to be
+    const VOUCH_TREE_DEPTH: u64 = 1;
+
+    //////// ERROR CODES ////////
+
+    /// Limit reached. You cannot give any new vouches.
+    const EMAX_LIMIT_GIVEN: u64 = 4;
+
     /// trying to vouch for yourself?
     const ETRY_SELF_VOUCH_REALLY: u64 = 1;
 
-    /// how many epochs must pass before the voucher expires.
-    const EXPIRATION_ELAPSED_EPOCHS: u64 = 90;
+    /// User cannot receive vouch because their vouch state is not initialized
+    const ERECEIVER_NOT_INIT: u64 = 2;
 
-    // triggered once per epoch
+    /// Cannot give vouch because your vouch state is not initialized
+    const EGIVER_STATE_NOT_INIT: u64 = 3;
+
+
+    /// Struct for the Voucher
+    /// Alice vouches for Bob, this is Alice's state
+    struct GivenOut has key {
+      /// list of the accounts I'm vouching for
+      vouches_given: vector<address>,
+      /// maximum number of vouches that can be given
+      limit: u64,
+    }
+
+    /// Struct for the Vouchee
+    /// Vouches received from other people
+    /// keeps a list of my buddies and when the vouch was given.
+    /// Alice vouches for Bob, this is Bob's state
+
+    // TODO: someday this should be renamed to Received
     struct MyVouches has key {
       my_buddies: vector<address>,
       epoch_vouched: vector<u64>,
     }
 
+    // a group of validators N hops away by vouch
+    struct Cohort has store, drop {
+      list: vector<address>
+    }
+
+    // the successive cohorts of validators at each hop away. 0th element is first
+    // hop.
+    struct VouchTree has key {
+      // all upstream vouches
+      received_from_upstream: vector<Cohort>,
+      // all downstream vouches
+      given_to_downstream: vector<Cohort>,
+    }
+
     // init the struct on a validators account.
-    public(friend) fun init(new_account_sig: &signer ) {
+    public(friend) fun init(new_account_sig: &signer) {
       let acc = signer::address_of(new_account_sig);
 
-      if (!is_init(acc)) {
+      if (!exists<MyVouches>(acc)) {
         move_to<MyVouches>(new_account_sig, MyVouches {
-            my_buddies: vector::empty(),
-            epoch_vouched: vector::empty(),
-          });
+          my_buddies: vector::empty(),
+          epoch_vouched: vector::empty(),
+        });
+      };
+      // Note: separate initialization for migrations of accounts which already
+      // have MyVouches
+      if(!exists<GivenOut>(acc)){
+        move_to<GivenOut>(new_account_sig, GivenOut {
+          vouches_given: vector::empty(),
+          // TODO: when dynamic vouch limits feature is implemented
+          // this should be zero
+          limit: BASE_MAX_VOUCHES,
+        });
+      };
+
+      if (!exists<VouchTree>(acc)) {
+        move_to(new_account_sig, VouchTree {
+          received_from_upstream: vector::empty(),
+          given_to_downstream: vector::empty(),
+        })
       }
     }
 
+
     #[view]
+    // NOTE: this should be renamed to is_received_init()
     public fun is_init(acc: address ):bool {
       exists<MyVouches>(acc)
     }
 
-    fun vouch_impl(ill_be_your_friend: &signer, wanna_be_my_friend: address) acquires MyVouches {
-      let buddy_acc = signer::address_of(ill_be_your_friend);
-      assert!(buddy_acc != wanna_be_my_friend, ETRY_SELF_VOUCH_REALLY);
+    // implement the vouching.
+    fun vouch_impl(give_sig: &signer, receive_acc: address) acquires MyVouches, GivenOut, VouchTree {
+      // heal the account if there is a migration issue:
+      init(give_sig);
 
-      if (!exists<MyVouches>(wanna_be_my_friend)) return;
-      let epoch = epoch_helper::get_current_epoch();
+      let give_acc = signer::address_of(give_sig);
+      assert!(give_acc != receive_acc, error::invalid_argument(ETRY_SELF_VOUCH_REALLY));
+
+      assert!(exists<MyVouches>(receive_acc), error::invalid_state(ERECEIVER_NOT_INIT));
+
       // this fee is paid to the system, cannot be reclaimed
-      let c = ol_account::withdraw(ill_be_your_friend, vouch_cost_microlibra());
-      transaction_fee::user_pay_fee(ill_be_your_friend, c);
+      // fail fast if no fee can be paid
+      let vouch_cost = epoch_helper::get_nominal_reward();
+      let c = ol_account::withdraw(give_sig, vouch_cost);
+      transaction_fee::user_pay_fee(give_sig, c);
 
-      let v = borrow_global_mut<MyVouches>(wanna_be_my_friend);
+      // add to receipient's state first
+      let v = borrow_global_mut<MyVouches>(receive_acc);
+      add_or_refresh_buddy_to_recipient(v, give_acc);
 
-      let (found, i) = vector::index_of(&v.my_buddies, &buddy_acc);
+      // check if we reached our max number of vouches given
+      // Note: we only check if we try to add a new buddy.
+      // will not fail if we are just extending the expiration
+      checked_add_buddy_to_giver(give_sig, receive_acc);
+
+      // update vouch trees for both giver and receiver.
+      construct_vouch_tree(give_acc, true, VOUCH_TREE_DEPTH);
+      construct_vouch_tree(give_acc, false, VOUCH_TREE_DEPTH);
+
+      construct_vouch_tree(receive_acc, true, VOUCH_TREE_DEPTH);
+      construct_vouch_tree(receive_acc, false, VOUCH_TREE_DEPTH);
+
+    }
+
+    fun checked_add_buddy_to_giver(give_sig: &signer, receive_acc: address) acquires GivenOut {
+      let give_acc = signer::address_of(give_sig);
+      let give_state = borrow_global_mut<GivenOut>(give_acc);
+
+      // check this account is not already on the list.
+      // error if already there
+      let (found, _i) = vector::index_of(&give_state.vouches_given, &receive_acc);
+      if (!found) { // prevent duplicates
+        assert!(can_add(give_state), error::invalid_state(EMAX_LIMIT_GIVEN));
+        vector::push_back(&mut give_state.vouches_given, receive_acc);
+      }
+    }
+
+    // receipient's state gets updated.
+    // guarded function since the signer cannot write state of recipient,
+    // besides in private function.
+    fun add_or_refresh_buddy_to_recipient(receive_state: &mut MyVouches, give_acc: address) {
+      let epoch = epoch_helper::get_current_epoch();
+
+      let (found, i) = vector::index_of(&receive_state.my_buddies, &give_acc);
       if (found) { // prevent duplicates
         // update date
-        let e = vector::borrow_mut(&mut v.epoch_vouched, i);
+        let e = vector::borrow_mut(&mut receive_state.epoch_vouched, i);
         *e = epoch;
       } else {
-        vector::push_back(&mut v.my_buddies, buddy_acc);
-        vector::push_back(&mut v.epoch_vouched, epoch);
+        // limit amount of vouches given to 3
+        vector::insert(&mut receive_state.my_buddies, 0, give_acc);
+        vector::insert(&mut receive_state.epoch_vouched, 0, epoch);
+      }
+    }
+
+    #[view]
+    /// check if an address can add a new vouchee recipient
+    public fun giver_can_add(give_acc: address): bool acquires GivenOut{
+      if (!exists<GivenOut>(give_acc)) return false;
+
+      can_add(borrow_global<GivenOut>(give_acc))
+    }
+
+    // helper to check can add vouchee
+    fun can_add(give_state: &GivenOut): bool {
+      vector::length(&give_state.vouches_given) < give_state.limit
+    }
+
+    /// ensures no vouch list is greater than
+    /// hygiene for the vouch list
+    //  TODO: this is not used anywhere, perhaps it needs to be done during the
+    //  upgrade
+
+    public(friend) fun vm_migrate_trim_vouchers(framework: &signer, give_acc: address) acquires MyVouches, GivenOut, VouchTree {
+      system_addresses::assert_ol(framework);
+      {
+        let give_state = borrow_global_mut<GivenOut>(give_acc);
+        maybe_trim_given_vouches(give_state, give_acc)
+      };
+
+      construct_vouch_tree(give_acc, true, VOUCH_TREE_DEPTH);
+      construct_vouch_tree(give_acc, false, VOUCH_TREE_DEPTH);
+    }
+
+    // safely trims vouch list, drops backmost elements
+    fun maybe_trim_given_vouches(give_state: &mut GivenOut, give_acc: address) acquires MyVouches {
+        if (vector::length(&give_state.vouches_given) > give_state.limit) {
+          let dropped = vector::trim(&mut give_state.vouches_given, give_state.limit - 1);
+          vector::for_each(dropped, |addr| {
+            revoke_impl(give_state, give_acc, addr);
+          })
       }
     }
 
     /// will only succesfully vouch if the two are not related by ancestry
     /// prevents spending a vouch that would not be counted.
     /// to add a vouch and ignore this check use insist_vouch
-    public entry fun vouch_for(grantor: &signer, wanna_be_my_friend: address) acquires MyVouches {
-      ancestry::assert_unrelated(signer::address_of(grantor), wanna_be_my_friend);
-      vouch_impl(grantor, wanna_be_my_friend);
+    public entry fun vouch_for(give_sig: &signer, receive: address) acquires MyVouches, GivenOut, VouchTree {
+      ancestry::assert_unrelated(signer::address_of(give_sig), receive);
+      vouch_impl(give_sig, receive);
     }
 
     /// you may want to add people who are related to you
     /// there are no known use cases for this at the moment.
-    public entry fun insist_vouch_for(grantor: &signer, wanna_be_my_friend: address) acquires MyVouches {
-      vouch_impl(grantor, wanna_be_my_friend);
+    public entry fun insist_vouch_for(give_sig: &signer, receive: address) acquires MyVouches, GivenOut, VouchTree {
+      vouch_impl(give_sig, receive);
     }
 
-    public entry fun revoke(buddy: &signer, its_not_me_its_you: address) acquires MyVouches {
-      let buddy_acc = signer::address_of(buddy);
-      assert!(buddy_acc!=its_not_me_its_you, ETRY_SELF_VOUCH_REALLY);
+    /// Let's break up with this account
+    public entry fun revoke(give_sig: &signer, its_not_me_its_you: address) acquires MyVouches, GivenOut, VouchTree  {
+      let give_acc = signer::address_of(give_sig);
 
-      if (!exists<MyVouches>(its_not_me_its_you)) return;
+      // Commit note: this check is not necessary, if this did somehow happen we
+      // would need it to self heal.
+      // assert!(give_acc!=its_not_me_its_you, ETRY_SELF_VOUCH_REALLY);
 
-      let v = borrow_global_mut<MyVouches>(its_not_me_its_you);
-      let (found, i) = vector::index_of(&v.my_buddies, &buddy_acc);
+      assert!(exists<MyVouches>(its_not_me_its_you), error::invalid_state(ERECEIVER_NOT_INIT));
+      assert!(exists<GivenOut>(give_acc), error::invalid_state(EGIVER_STATE_NOT_INIT));
+
+      let given_state = borrow_global_mut<GivenOut>(give_acc);
+
+      revoke_impl(given_state, give_acc, its_not_me_its_you);
+
+      // update vouch trees for both giver and receiver.
+      construct_vouch_tree(give_acc, true, VOUCH_TREE_DEPTH);
+      construct_vouch_tree(give_acc, false, VOUCH_TREE_DEPTH);
+
+      construct_vouch_tree(its_not_me_its_you, true, VOUCH_TREE_DEPTH);
+      construct_vouch_tree(its_not_me_its_you, false, VOUCH_TREE_DEPTH);
+    }
+
+    fun revoke_impl(given_state: &mut GivenOut, give_acc: address, receive_acc: address) acquires MyVouches{
+
+      // first update the recipient's state
+      let v = borrow_global_mut<MyVouches>(receive_acc);
+      let (found, i) = vector::index_of(&v.my_buddies, &give_acc);
       if (found) {
         vector::remove(&mut v.my_buddies, i);
         vector::remove(&mut v.epoch_vouched, i);
       };
+
+      // next maybe we need to clean up the giver's state
+      // Though possibly this has already been trimmed
+      let (found, i) = vector::index_of(&given_state.vouches_given, &receive_acc);
+      if (found) {
+        vector::remove(&mut given_state.vouches_given, i);
+      };
+
     }
 
+    /// If we need to reset a vouch list for genesis and upgrades
     public(friend) fun vm_migrate(vm: &signer, val: address, buddy_list: vector<address>) acquires MyVouches {
       system_addresses::assert_ol(vm);
       bulk_set(val, buddy_list);
     }
 
-    fun bulk_set(val: address, buddy_list: vector<address>) acquires MyVouches {
+    public(friend) fun vm_migrate_vouch_tree(framework: &signer, vals: vector<address>) acquires MyVouches, GivenOut, VouchTree {
+      system_addresses::assert_diem_framework(framework);
+      batch_vouch_tree(vals);
+    }
 
-      if (!exists<MyVouches>(val)) return;
+    fun batch_vouch_tree(vals: vector<address>) acquires MyVouches, GivenOut, VouchTree {
+      vector::for_each(vals, |acc| {
+        construct_vouch_tree(acc, true, VOUCH_TREE_DEPTH);
+        construct_vouch_tree(acc, false, VOUCH_TREE_DEPTH);
+      })
+    }
 
-      let v = borrow_global_mut<MyVouches>(val);
+    fun construct_vouch_tree(validator: address, up_or_downstream: bool, iters: u64) acquires MyVouches, GivenOut, VouchTree {
+      if (
+        !exists<MyVouches>(validator) ||
+        !exists<GivenOut>(validator) ||
+        !exists<VouchTree>(validator)
+      ) return;
+      // NOTE: upstream's 0th element is a copy of the my_buddies struct.
+      // Similarly, downstream's first element is a copy of the GivenOut.list
+      // TODO: someday consider deduplicating this.
+      let start_list = if (up_or_downstream) {
+        borrow_global<MyVouches>(validator).my_buddies
+      } else {
+        borrow_global<GivenOut>(validator).vouches_given
+      };
+
+      let first_cohort = Cohort {
+        list: start_list
+      };
+
+      let cohort_vec = vector::singleton(first_cohort);
+
+      let i = 0;
+      while (i < iters) {
+        let this_cohort = vector::borrow(&cohort_vec, i);
+        let this_hop_addrs = this_cohort.list;
+
+        let next_hop_addrs = vector::empty<address>();
+
+        vector::for_each(this_hop_addrs, |buddy| {
+          let v = vector::empty();
+
+          if (up_or_downstream) {
+            if (exists<MyVouches>(buddy)) {
+              v = borrow_global<MyVouches>(buddy).my_buddies
+            }
+          } else {
+            if (exists<GivenOut>(buddy)) {
+              v = borrow_global<GivenOut>(buddy).vouches_given
+            }
+          };
+          vector::append(&mut next_hop_addrs, v)
+        });
+        let next_cohort = Cohort {
+          list: next_hop_addrs
+        };
+        vector::push_back(&mut cohort_vec, next_cohort);
+        i = i + 1;
+      };
+
+      let state = borrow_global_mut<VouchTree>(validator);
+      if (up_or_downstream) {
+        state.received_from_upstream = cohort_vec;
+      } else {
+        state.given_to_downstream = cohort_vec;
+      }
+    }
+
+    // implements bulk setting of vouchers
+    fun bulk_set(receiver_acc: address, buddy_list: vector<address>) acquires MyVouches {
+
+      if (!exists<MyVouches>(receiver_acc)) return;
+
+      let v = borrow_global_mut<MyVouches>(receiver_acc);
 
       // take self out of list
-      let (is_found, i) = vector::index_of(&buddy_list, &val);
+      let (is_found, i) = vector::index_of(&buddy_list, &receiver_acc);
 
       if (is_found) {
         vector::swap_remove<address>(&mut buddy_list, i);
@@ -122,6 +374,25 @@ module ol_framework::vouch {
 
       let epoch_data: vector<u64> = vector::map_ref(&buddy_list, |_e| { 0u64 } );
       v.epoch_vouched = epoch_data;
+    }
+
+
+    public(friend) fun get_cohort(acc: address, up_or_down: bool, hop: u64): vector<address> acquires VouchTree {
+      let state = borrow_global<VouchTree>(acc);
+      let list = vector::empty();
+      if (up_or_down) {
+        if (vector::length(&state.received_from_upstream) >= hop) {
+          let c = vector::borrow(&state.received_from_upstream, hop);
+          list = c.list;
+        }
+      } else {
+        if (vector::length(&state.given_to_downstream) >= hop) {
+          let c = vector::borrow(&state.given_to_downstream, hop);
+          list = c.list;
+
+        }
+      };
+      return list
     }
 
     #[view]
@@ -202,11 +473,19 @@ module ol_framework::vouch {
     }
 
 
-    // TODO: move to globals
-    // the cost to verify a vouch. Coins are burned.
-    fun vouch_cost_microlibra(): u64 {
-      1000
+    /// Root account can set the max limit to vouches that can be given by this account
+    public(friend) fun set_limit(framework: &signer, give_acc: address, limit: u64) acquires GivenOut{
+      system_addresses::assert_diem_framework(framework);
+      let give_state = borrow_global_mut<GivenOut>(give_acc);
+      give_state.limit = limit;
     }
+
+    // Commit note: deprecated in favor of the dynamic epoch's nominal reward
+    // // TODO: move to globals
+    // // the cost to verify a vouch. Coins are burned.
+    // fun vouch_cost_microlibra(): u64 {
+    //   1000
+    // }
 
     #[test_only]
     public fun test_set_buddies(val: address, buddy_list: vector<address>) acquires MyVouches {

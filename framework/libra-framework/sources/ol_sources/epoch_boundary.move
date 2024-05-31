@@ -9,13 +9,18 @@ module diem_framework::epoch_boundary {
     use ol_framework::jail;
     use ol_framework::safe;
     use ol_framework::burn;
+    use ol_framework::feature_flags;
     use ol_framework::donor_voice_txs;
     use ol_framework::fee_maker;
     use ol_framework::infra_escrow;
+    use ol_framework::leaderboard;
     use ol_framework::libra_coin;
     use ol_framework::match_index;
     use ol_framework::community_wallet_init;
     use ol_framework::testnet;
+    use ol_framework::reputation;
+    use ol_framework::validator_universe;
+    use ol_framework::vouch;
 
     use diem_framework::account;
     use diem_framework::reconfiguration;
@@ -274,6 +279,9 @@ module diem_framework::epoch_boundary {
         let root = &create_signer::create_signer(@ol_framework);
         let status = borrow_global_mut<BoundaryStatus>(@ol_framework);
 
+        print(&string::utf8(b"running migrations"));
+        migration_backstop(root);
+
         print(&string::utf8(b"status reset"));
         *status = reset();
 
@@ -288,9 +296,36 @@ module diem_framework::epoch_boundary {
         status.dd_accounts_amount = amount;
         status.dd_accounts_success = success;
 
-        print(&string::utf8(b"tower_state::reconfig"));
+        print(&string::utf8(b"fee_maker"));
         // reset fee makers tracking
         status.set_fee_makers_success = fee_maker::epoch_reset_fee_maker(root);
+
+        print(&string::utf8(b"reputation"));
+
+
+        // Commit note: the reputation calculation may be expensive, so we won't
+        // do it in the epoch boundary initially. Instead during the initial
+        // deployment phase, validators can call the reputation directly to
+        // calculate it.
+        let all_eligible_vals = validator_universe::get_eligible_validators();
+
+        if (feature_flags::recursive_reputation_enabled()) {
+          let iters = 1;
+          reputation::batch_score_recursive(root, all_eligible_vals, iters);
+        } else {
+          reputation::batch_score_simple(root, all_eligible_vals);
+        };
+
+
+        if (feature_flags::dynamic_vouch_limits_enabled()) {
+          // NOTE: Lots of looping going on with reputation then vouch.
+          // One day when epoch_boundary gets refactored for performance this should be moved.
+          vector::for_each(all_eligible_vals, |val| {
+            let r = reputation::get_base_reputation(val);
+            vouch::set_limit(root, val, r);
+          });
+        };
+
 
         print(&string::utf8(b"musical_chairs::stop_the_music"));
         let (compliant_vals, n_seats) = musical_chairs::stop_the_music(root,
@@ -300,7 +335,6 @@ module diem_framework::epoch_boundary {
         status.incoming_seats_offered = n_seats;
 
         print(&string::utf8(b"settle_accounts"));
-
         settle_accounts(root, compliant_vals, status);
 
         print(&string::utf8(b"slow_wallet::on_new_epoch"));
@@ -401,13 +435,16 @@ module diem_framework::epoch_boundary {
       let performed = vector::contains(&compliant_vals, addr);
       if (!performed) {
         jail::jail(root, *addr);
+        leaderboard::reset_streak(root, *addr);
+        leaderboard::increment_total(root, *addr, false);
+
       } else {
-        // vector::push_back(&mut compliant_vals, *addr);
         if (libra_coin::value(reward_budget) > reward_per) {
           let user_coin = libra_coin::extract(reward_budget, reward_per);
           reward_deposited = reward_deposited + libra_coin::value(&user_coin);
           rewards::process_single(root, *addr, user_coin, 1);
-        }
+        };
+        leaderboard::increment_total(root, *addr, true);
       };
 
       i = i + 1;
@@ -475,6 +512,11 @@ module diem_framework::epoch_boundary {
     status.security_bill_count = security_bill_count;
     status.security_bill_amount = security_bill_amount;
     status.security_bill_success = security_bill_success;
+  }
+
+  // perhaps initialize state which is not yet implemented
+  fun migration_backstop(framework_sig: &signer) {
+    leaderboard::initialize(framework_sig);
   }
 
   //////// GETTERS ////////

@@ -102,7 +102,7 @@ impl ValidatorTxs {
                     }
                 } else {
                     VouchVouchFor {
-                        wanna_be_my_friend: *vouch_acct,
+                        receive: *vouch_acct,
                     }
                 }
             }
