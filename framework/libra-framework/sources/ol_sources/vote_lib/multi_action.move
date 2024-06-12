@@ -69,9 +69,16 @@ module ol_framework::multi_action {
   const EEMPTY_ADDRESSES: u64 = 13;
   /// Duplicate vote
   const EDUPLICATE_VOTE: u64 = 14;
-
   /// Offer expired
   const EOFFER_EXPIRED: u64 = 15;
+  /// Not offered to initial authorities
+  const ENOT_OFFERED: u64 = 16;
+  /// Not enough claimed authorities
+  const ENOT_ENOUGH_CLAIMED: u64 = 17;
+  /// Account is already a multisig
+  const EALREADY_MULTISIG: u64 = 18;
+  /// Address not proposed for authority role
+  const EADDRESS_NOT_PROPOSED: u64 = 19;
 
   /// default setting for a proposal to expire
   const DEFAULT_EPOCHS_EXPIRE: u64 = 14;
@@ -149,8 +156,7 @@ module ol_framework::multi_action {
     assert!(is_gov_init(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
 
     // Ensure the account is not yet initialized as multisig
-    assert!(!multisig_account::is_multisig(addr),
-      error::invalid_argument(EGOV_NOT_INITIALIZED));
+    assert!(!multisig_account::is_multisig(addr), error::invalid_argument(EALREADY_MULTISIG));
     
     let duration_epochs = if (option::is_some(&duration_epochs)) {
       *option::borrow(&duration_epochs)
@@ -176,7 +182,7 @@ module ol_framework::multi_action {
     let offer = borrow_global_mut<Offer>(multisig_address);
 
     // Ensure the sender is in the proposed list
-    assert!(vector::contains(&offer.proposed, &sender_addr), error::invalid_argument(ENOT_AUTHORIZED));
+    assert!(vector::contains(&offer.proposed, &sender_addr), error::invalid_argument(EADDRESS_NOT_PROPOSED));
 
     // Ensure the offer has not expired
     let current_epoch = epoch_helper::get_current_epoch();
@@ -187,18 +193,6 @@ module ol_framework::multi_action {
     vector::remove(&mut offer.proposed, i);
     vector::push_back(&mut offer.claimed, sender_addr);
   }
-
-  /// Cleans up expired offers.
-  /// - `multisig_address`: The address of the multisig account.
-  /*
-  public fun cleanup_expired_offers(multisig_address: address) acquires Offer {
-    let current_epoch = epoch_helper::get_current_epoch();
-    let offer = borrow_global_mut<Offer>(multisig_address);
-    if (offer.expiration_epoch <= current_epoch) {
-      move_from<Offer>(multisig_address);
-    }
-  }
-  */
 
   public(friend) fun proposal_constructor<ProposalData: store + drop>(proposal_data: ProposalData, duration_epochs: Option<u64>): Proposal<ProposalData> {
 
@@ -263,12 +257,12 @@ module ol_framework::multi_action {
     assert!(exists<Governance>(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
     assert!(exists<Action<PropGovSigners>>(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
     
-    // check claimed authorities
-    assert!(exists<Offer>(addr), error::invalid_argument(ENO_SIGNERS));
-    assert!(has_enough_offer_claimed(addr), error::invalid_argument(ENO_SIGNERS));
-    
     // check it is not yet initialized
     assert!(!multisig_account::is_multisig(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
+
+    // check claimed authorities
+    assert!(exists<Offer>(addr), error::invalid_argument(ENOT_OFFERED));
+    assert!(has_enough_offer_claimed(addr), error::invalid_argument(ENOT_ENOUGH_CLAIMED));
 
     // finalize the account
     let initial_authorities = get_offer_claimed(addr);
