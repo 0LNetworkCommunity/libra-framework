@@ -61,7 +61,7 @@ module ol_framework::community_wallet_init {
     //////// MULTISIG TX HELPERS ////////
 
     // Helper to initialize the PaymentMultiAction but also while confirming that the signers are not related family
-    // These transactions can be sent directly to donor_voice, but this is a helper to make it easier to initialize the multisig with the acestry requirements.
+    // These transactions can be sent directly to donor_voice, but this is a helper to make it easier to initialize the multisig with the ancestry requirements.
 
     public entry fun init_community(
       sig: &signer,
