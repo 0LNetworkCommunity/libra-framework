@@ -86,7 +86,7 @@ module diem_framework::randomness {
     }
 
     /// Generates a sequence of bytes uniformly at random
-    public fun bytes(n: u64): vector<u8> acquires PerBlockRandomness {
+    fun bytes(n: u64): vector<u8> acquires PerBlockRandomness {
         let v = vector[];
         let c = 0;
         while (c < n) {
@@ -106,7 +106,7 @@ module diem_framework::randomness {
     }
 
     /// Generates an u8 uniformly at random.
-    public fun u8_integer(): u8 acquires PerBlockRandomness {
+    fun u8_integer(): u8 acquires PerBlockRandomness {
         let raw = next_32_bytes();
         let ret: u8 = vector::pop_back(&mut raw);
 
@@ -116,7 +116,7 @@ module diem_framework::randomness {
     }
 
     /// Generates an u16 uniformly at random.
-    public fun u16_integer(): u16 acquires PerBlockRandomness {
+    fun u16_integer(): u16 acquires PerBlockRandomness {
         let raw = next_32_bytes();
         let i = 0;
         let ret: u16 = 0;
@@ -131,7 +131,7 @@ module diem_framework::randomness {
     }
 
     /// Generates an u32 uniformly at random.
-    public fun u32_integer(): u32 acquires PerBlockRandomness {
+    fun u32_integer(): u32 acquires PerBlockRandomness {
         let raw = next_32_bytes();
         let i = 0;
         let ret: u32 = 0;
@@ -146,7 +146,7 @@ module diem_framework::randomness {
     }
 
     /// Generates an u64 uniformly at random.
-    public fun u64_integer(): u64 acquires PerBlockRandomness {
+    fun u64_integer(): u64 acquires PerBlockRandomness {
         let raw = next_32_bytes();
         let i = 0;
         let ret: u64 = 0;
@@ -161,7 +161,7 @@ module diem_framework::randomness {
     }
 
     /// Generates an u128 uniformly at random.
-    public fun u128_integer(): u128 acquires PerBlockRandomness {
+    fun u128_integer(): u128 acquires PerBlockRandomness {
         let raw = next_32_bytes();
         let i = 0;
         let ret: u128 = 0;
@@ -176,7 +176,7 @@ module diem_framework::randomness {
     }
 
     /// Generates a u256 uniformly at random.
-    public fun u256_integer(): u256 acquires PerBlockRandomness {
+    fun u256_integer(): u256 acquires PerBlockRandomness {
         // event::emit_event(RandomnessGeneratedEvent {});
         u256_integer_internal()
     }
@@ -197,7 +197,7 @@ module diem_framework::randomness {
     ///
     /// NOTE: The uniformity is not perfect, but it can be proved that the bias is negligible.
     /// If you need perfect uniformity, consider implement your own via rejection sampling.
-    public fun u8_range(min_incl: u8, max_excl: u8): u8 acquires PerBlockRandomness {
+    fun u8_range(min_incl: u8, max_excl: u8): u8 acquires PerBlockRandomness {
         let range = ((max_excl - min_incl) as u256);
         let sample = ((u256_integer_internal() % range) as u8);
 
@@ -210,7 +210,7 @@ module diem_framework::randomness {
     ///
     /// NOTE: The uniformity is not perfect, but it can be proved that the bias is negligible.
     /// If you need perfect uniformity, consider implement your own via rejection sampling.
-    public fun u16_range(min_incl: u16, max_excl: u16): u16 acquires PerBlockRandomness {
+    fun u16_range(min_incl: u16, max_excl: u16): u16 acquires PerBlockRandomness {
         let range = ((max_excl - min_incl) as u256);
         let sample = ((u256_integer_internal() % range) as u16);
 
@@ -223,7 +223,7 @@ module diem_framework::randomness {
     ///
     /// NOTE: The uniformity is not perfect, but it can be proved that the bias is negligible.
     /// If you need perfect uniformity, consider implement your own via rejection sampling.
-    public fun u32_range(min_incl: u32, max_excl: u32): u32 acquires PerBlockRandomness {
+    fun u32_range(min_incl: u32, max_excl: u32): u32 acquires PerBlockRandomness {
         let range = ((max_excl - min_incl) as u256);
         let sample = ((u256_integer_internal() % range) as u32);
 
@@ -236,13 +236,13 @@ module diem_framework::randomness {
     ///
     /// NOTE: The uniformity is not perfect, but it can be proved that the bias is negligible.
     /// If you need perfect uniformity, consider implement your own via rejection sampling.
-    public fun u64_range(min_incl: u64, max_excl: u64): u64 acquires PerBlockRandomness {
+   fun u64_range(min_incl: u64, max_excl: u64): u64 acquires PerBlockRandomness {
         // event::emit_event(RandomnessGeneratedEvent {});
 
         u64_range_internal(min_incl, max_excl)
     }
 
-    public fun u64_range_internal(min_incl: u64, max_excl: u64): u64 acquires PerBlockRandomness {
+    fun u64_range_internal(min_incl: u64, max_excl: u64): u64 acquires PerBlockRandomness {
         let range = ((max_excl - min_incl) as u256);
         let sample = ((u256_integer_internal() % range) as u64);
 
@@ -253,7 +253,7 @@ module diem_framework::randomness {
     ///
     /// NOTE: The uniformity is not perfect, but it can be proved that the bias is negligible.
     /// If you need perfect uniformity, consider implement your own via rejection sampling.
-    public fun u128_range(min_incl: u128, max_excl: u128): u128 acquires PerBlockRandomness {
+    fun u128_range(min_incl: u128, max_excl: u128): u128 acquires PerBlockRandomness {
         let range = ((max_excl - min_incl) as u256);
         let sample = ((u256_integer_internal() % range) as u128);
 
@@ -266,7 +266,7 @@ module diem_framework::randomness {
     ///
     /// NOTE: The uniformity is not perfect, but it can be proved that the bias is negligible.
     /// If you need perfect uniformity, consider implement your own with `u256_integer()` + rejection sampling.
-    public fun u256_range(min_incl: u256, max_excl: u256): u256 acquires PerBlockRandomness {
+    fun u256_range(min_incl: u256, max_excl: u256): u256 acquires PerBlockRandomness {
         let range = max_excl - min_incl;
         let r0 = u256_integer_internal();
         let r1 = u256_integer_internal();
@@ -297,7 +297,7 @@ module diem_framework::randomness {
 
     /// Generate a permutation of `[0, 1, ..., n-1]` uniformly at random.
     /// If n is 0, returns the empty vector.
-    public fun permutation(n: u64): vector<u64> acquires PerBlockRandomness {
+    fun permutation(n: u64): vector<u64> acquires PerBlockRandomness {
         let values = vector[];
 
         if(n == 0) {
