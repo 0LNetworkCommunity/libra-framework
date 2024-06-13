@@ -133,7 +133,7 @@ module ol_framework::test_multi_action {
 
   // Try to propose offer without governance
   #[test(root = @ol_framework, carol = @0x1000c, alice = @0x1000a, bob = @0x1000b)]
-  #[expected_failure(abort_code = 1, location = ol_framework::multi_action)]
+  #[expected_failure(abort_code = 0x30001, location = ol_framework::multi_action)]
   fun propose_offer_without_gov(root: &signer, carol: &signer, alice: &signer, bob: &signer) {
     let _vals = mock::genesis_n_vals(root, 3);
 
@@ -146,7 +146,7 @@ module ol_framework::test_multi_action {
 
   // Try to propose offer to an multisig account
   #[test(root = @ol_framework, dave = @0x1000d, carol = @0x1000c, alice = @0x1000a, bob = @0x1000b)]
-  #[expected_failure(abort_code = 18, location = ol_framework::multi_action)]
+  #[expected_failure(abort_code = 0x30019, location = ol_framework::multi_action)]
   fun propose_offer_to_multisign(root: &signer, carol: &signer, alice: &signer, bob: &signer) {
     let _vals = mock::genesis_n_vals(root, 4);
     let carol_address = @0x1000c;
@@ -166,7 +166,7 @@ module ol_framework::test_multi_action {
 
   // Try to propose an empty offer
   #[test(root = @ol_framework, alice = @0x1000a)]
-  #[expected_failure(abort_code = 16, location = ol_framework::multi_action)]
+  #[expected_failure(abort_code = 0x10016, location = ol_framework::multi_action)]
   fun propose_empty_offer(root: &signer, alice: &signer) {
     let _vals = mock::genesis_n_vals(root, 4);
     multi_action::init_gov(alice);
@@ -175,7 +175,7 @@ module ol_framework::test_multi_action {
 
   // Try to propose offer to the signer address
   #[test(root = @ol_framework, alice = @0x1000a)]
-  #[expected_failure(abort_code = 2, location = ol_framework::multi_action)]
+  #[expected_failure(abort_code = 0x50002, location = ol_framework::multi_action)]
   fun propose_offer_to_signer(root: &signer, alice: &signer) {
     let _vals = mock::genesis_n_vals(root, 4);
     let alice_address = signer::address_of(alice);
@@ -185,7 +185,7 @@ module ol_framework::test_multi_action {
 
   // Try to propose offer to an invalid signer
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
-  #[expected_failure(abort_code = 20, location = ol_framework::multi_action)]
+  #[expected_failure(abort_code = 0x60021, location = ol_framework::multi_action)]
   fun offer_to_invalid_authority(root: &signer, alice: &signer, bob: &signer) {
     let _vals = mock::genesis_n_vals(root, 3);
     multi_action::init_gov(alice);
@@ -199,7 +199,7 @@ module ol_framework::test_multi_action {
 
   // Try to propose offer with zero duration epochs
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
-  #[expected_failure(abort_code = 22, location = ol_framework::multi_action)]
+  #[expected_failure(abort_code = 0x10022, location = ol_framework::multi_action)]
   fun offer_with_zero_duration(root: &signer, alice: &signer, bob: &signer) {
     let _vals = mock::genesis_n_vals(root, 3);
     multi_action::init_gov(alice);
@@ -210,9 +210,24 @@ module ol_framework::test_multi_action {
     multi_action::propose_offer(alice, authorities, option::some(0));
   }
 
+  // Try to claim offer not offered to signer
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
+  #[expected_failure(abort_code = 0x60020, location = ol_framework::multi_action)]
+  fun claim_offer_not_offered(root: &signer, alice: &signer, carol: &signer) {
+    let _vals = mock::genesis_n_vals(root, 3);
+    let carol_address = @0x1000c;
+    multi_action::init_gov(carol);
+    
+    // invite bob
+    multi_action::propose_offer(carol, vector::singleton(@0x1000b), option::none());
+
+    // alice try to claim the offer
+    multi_action::claim_offer(alice, carol_address);
+  }
+
   // Try to claim expired offer
   #[test(root = @ol_framework, carol = @0x1000c, alice = @0x1000a, bob = @0x1000b)]
-  #[expected_failure(abort_code = 15, location = ol_framework::multi_action)]
+  #[expected_failure(abort_code = 0x20015, location = ol_framework::multi_action)]
   fun claim_expired_offer(root: &signer, carol: &signer, alice: &signer, bob: &signer) {
     let _vals = mock::genesis_n_vals(root, 3);
     let carol_address = @0x1000c;
@@ -237,7 +252,7 @@ module ol_framework::test_multi_action {
 
   // Try to claim offer of an account without proposal
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]  
-  #[expected_failure(abort_code = 17, location = ol_framework::multi_action)]
+  #[expected_failure(abort_code = 0x60017, location = ol_framework::multi_action)]
   fun claim_offer_without_proposal(root: &signer, alice: &signer) {
     let _vals = mock::genesis_n_vals(root, 2);
     let bob_address = @0x1000c;
@@ -246,7 +261,7 @@ module ol_framework::test_multi_action {
 
   // Try to claim offer twice
   #[test(root = @ol_framework, carol = @0x1000c, alice = @0x1000a, bob = @0x1000b)]
-  #[expected_failure(abort_code = 23, location = ol_framework::multi_action)]
+  #[expected_failure(abort_code = 0x80023, location = ol_framework::multi_action)]
   fun claim_offer_twice(root: &signer, carol: &signer, alice: &signer, bob: &signer) {
     let _vals = mock::genesis_n_vals(root, 3);
     let carol_address = @0x1000c;
@@ -258,9 +273,70 @@ module ol_framework::test_multi_action {
     vector::push_back(&mut authorities, signer::address_of(bob));
     multi_action::propose_offer(carol, authorities, option::some(2));
 
-    // alice claim the offer
+    // Alice claim the offer twice
     multi_action::claim_offer(alice, carol_address);
     multi_action::claim_offer(alice, carol_address);
+  }
+
+  // Try to finalize account without governance
+  #[test(root = @ol_framework, alice = @0x1000a)]
+  #[expected_failure(abort_code = 0x30001, location = ol_framework::multi_action)]
+  fun finalize_without_gov(root: &signer, alice: &signer) {
+    let _vals = mock::genesis_n_vals(root, 1);
+    multi_action::finalize_and_cage2(alice);
+  }
+
+  // Try to finalize account without offer
+  #[test(root = @ol_framework, alice = @0x1000a)]
+  #[expected_failure(abort_code = 0x60017, location = ol_framework::multi_action)]
+  fun finalize_without_offer(root: &signer, alice: &signer) {
+    let _vals = mock::genesis_n_vals(root, 1);
+    multi_action::init_gov(alice);
+    multi_action::finalize_and_cage2(alice);
+  }
+
+  // Try to finalize account without enough offer claimed
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
+  #[expected_failure(abort_code = 0x30018, location = ol_framework::multi_action)]
+  fun finalize_without_enough_claimed(root: &signer, alice: &signer, bob: &signer, carol: &signer) {
+    let _vals = mock::genesis_n_vals(root, 3);
+    let alice_address = @0x1000a;
+    multi_action::init_gov(alice);
+    
+    // invite the vals to the resource account
+    let authorities = vector::empty<address>();
+    vector::push_back(&mut authorities, signer::address_of(bob));
+    vector::push_back(&mut authorities, signer::address_of(carol));
+    multi_action::propose_offer(alice, authorities, option::none());
+
+    // bob claim the offer
+    multi_action::claim_offer(bob, alice_address);
+
+    // finalize the multi_action account
+    multi_action::finalize_and_cage2(alice);
+  }
+
+  // Try to finalize account already finalized
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
+  #[expected_failure(abort_code = 0x80019, location = ol_framework::multi_action)]
+  fun finalize_already_finalized(root: &signer, alice: &signer, bob: &signer, carol: &signer) {
+    let _vals = mock::genesis_n_vals(root, 3);
+    let alice_address = @0x1000a;
+    multi_action::init_gov(alice);
+    
+    // invite the vals to the resource account
+    let authorities = vector::empty<address>();
+    vector::push_back(&mut authorities, signer::address_of(bob));
+    vector::push_back(&mut authorities, signer::address_of(carol));
+    multi_action::propose_offer(alice, authorities, option::none());
+
+    // bob claim the offer
+    multi_action::claim_offer(bob, alice_address);
+    multi_action::claim_offer(carol, alice_address);
+
+    // finalize the multi_action account
+    multi_action::finalize_and_cage2(alice);
+    multi_action::finalize_and_cage2(alice);
   }
   
   #[test(root = @ol_framework, carol = @0x1000c, alice = @0x1000a)]
