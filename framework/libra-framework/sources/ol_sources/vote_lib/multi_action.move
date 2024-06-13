@@ -156,7 +156,7 @@ module ol_framework::multi_action {
   // - sig: The signer proposing the offer.
   // - proposed: The list of addresses proposed for new authority roles.
   // - duration_epochs: The duration in epochs before the offer expires.
-  public fun propose_offer(sig: &signer, proposed: vector<address>, duration_epochs: Option<u64>) {
+  public fun propose_offer(sig: &signer, proposed: vector<address>, duration_epochs: Option<u64>) acquires Offer{
     let addr = signer::address_of(sig);
 
     // Ensure the account is not yet initialized as multisig
@@ -178,10 +178,7 @@ module ol_framework::multi_action {
       assert!(account::exists_at(*proposed_addr), error::not_found(EPROPOSED_NOT_EXISTS));
       i = i + 1;
     };
-    
-    // Ensure the offer has not yet been proposed
-    // assert!(!exists<Offer>(addr), error::invalid_argument(EDUPLICATE_PROPOSAL));   
-    
+       
     let duration_epochs = if (option::is_some(&duration_epochs)) {
       *option::borrow(&duration_epochs)
     } else {
@@ -192,13 +189,44 @@ module ol_framework::multi_action {
     assert!(duration_epochs > 0, error::invalid_argument(EZERO_DURATION));
 
     let expiration_epoch = epoch_helper::get_current_epoch() + duration_epochs;
-    let offer = Offer {
-      proposed,
-      claimed: vector::empty<address>(),
-      expiration_epoch,
-    };
-    
-    move_to(sig, offer);
+
+    // Update the offer if exists, otherwise create a new one
+    if (exists<Offer>(addr)) {
+      // Update offer
+      let offer = borrow_global_mut<Offer>(addr);
+      
+      // Remove claimed addresses that are not in the new proposed list
+      let j = 0;
+      while (j < vector::length(&offer.claimed)) {
+        let claimed_addr = vector::borrow(&offer.claimed, j);
+        if (!vector::contains(&proposed, claimed_addr)) {
+          vector::remove(&mut offer.claimed, j);
+        } else {
+          j = j + 1;
+        };        
+      };
+
+      // Remove new proposed addresses that are already claimed
+      let i = 0;
+      while (i < vector::length(&proposed)) {
+        let proposed_addr = vector::borrow(&proposed, i);
+        if (vector::contains(&offer.claimed, proposed_addr)) {
+          vector::remove(&mut proposed, i);
+        };
+        i = i + 1;
+      };
+
+      offer.proposed = proposed;
+      offer.expiration_epoch = expiration_epoch;
+    } else {
+      // create new offer
+      let offer = Offer {
+        proposed,
+        claimed: vector::empty<address>(),
+        expiration_epoch,
+      };
+      move_to(sig, offer);
+    }
   }
 
   // Allows a proposed authority to claim their role.

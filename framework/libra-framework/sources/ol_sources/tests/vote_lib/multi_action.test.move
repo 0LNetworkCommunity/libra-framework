@@ -51,6 +51,7 @@ module ol_framework::test_multi_action {
     // check the offer is proposed and account is not muti_action yet
     assert!(multi_action::exists_offer(carol_address), 0);
     assert!(multi_action::get_offer_proposed(carol_address) == authorities, 0);
+    assert!(multi_action::get_offer_claimed(carol_address) == vector::empty(), 0);
     assert!(vector::is_empty(&multi_action::get_offer_claimed(carol_address)), 0);
     assert!(multi_action::get_offer_expiration_epoch(carol_address) == 3, 0);
     assert!(!multi_action::is_multi_action(carol_address), 0);
@@ -129,6 +130,126 @@ module ol_framework::test_multi_action {
 
     // check offer was removed
     assert!(!multi_action::exists_offer(carol_address), 0);
+  }
+
+  // Propose another offer with different authorities
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
+  fun propose_another_offer_different_authorities(root: &signer, alice: &signer) {
+    let _vals = mock::genesis_n_vals(root, 4);
+    multi_action::init_gov(alice);
+
+    // invite bob
+    multi_action::propose_offer(alice, vector::singleton(@0x1000b), option::some(1));
+
+    // invite carol and dave
+    let authorities = vector::empty<address>();
+    vector::push_back(&mut authorities, @0x1000c);
+    vector::push_back(&mut authorities, @0x1000d);
+    multi_action::propose_offer(alice, authorities, option::some(2));
+
+    // check new authorities
+    assert!(multi_action::get_offer_expiration_epoch(@0x1000a) == 2, 0);
+    print(&multi_action::get_offer_proposed(@0x1000a));
+    assert!(multi_action::get_offer_proposed(@0x1000a) == authorities, 0);
+    assert!(multi_action::get_offer_claimed(@0x1000a) == vector::empty(), 0);
+  }
+
+  // Propose new offer with more authorities
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
+  fun propose_offer_more_authorities(root: &signer, alice: &signer, carol: &signer) {
+    let _vals = mock::genesis_n_vals(root, 4);
+    multi_action::init_gov(alice);
+
+    // invite bob
+    multi_action::propose_offer(alice, vector::singleton(@0x1000b), option::some(1));
+
+    // new invite bob and carol
+    let authorities = vector::empty<address>();
+    vector::push_back(&mut authorities, @0x1000b);
+    vector::push_back(&mut authorities, @0x1000c);
+    multi_action::propose_offer(alice, authorities, option::some(2));
+
+    // check new authorities
+    assert!(multi_action::get_offer_proposed(@0x1000a) == authorities, 0);
+    assert!(multi_action::get_offer_claimed(@0x1000a) == vector::empty(), 0);
+
+    // carol claim the offer
+    multi_action::claim_offer(carol, @0x1000a);
+
+    // new invite bob, carol and dave
+    vector::push_back(&mut authorities, @0x1000d);
+    multi_action::propose_offer(alice, authorities, option::some(3));
+
+    // check new authorities
+    let proposed = vector::empty();
+    vector::push_back(&mut proposed, @0x1000b);
+    vector::push_back(&mut proposed, @0x1000d);
+    assert!(multi_action::get_offer_expiration_epoch(@0x1000a) == 3, 0);
+    assert!(multi_action::get_offer_proposed(@0x1000a) == proposed, 0);
+    assert!(multi_action::get_offer_claimed(@0x1000a) == vector::singleton(@0x1000c), 0);
+  }
+
+  // Propose new offer with less authorities
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
+  fun propose_offer_less_authorities(root: &signer, alice: &signer, carol: &signer) {
+    let _vals = mock::genesis_n_vals(root, 4);
+    multi_action::init_gov(alice);
+
+    // invite bob, carol and dave
+    let authorities = vector::empty<address>();
+    vector::push_back(&mut authorities, @0x1000b);
+    vector::push_back(&mut authorities, @0x1000c);
+    vector::push_back(&mut authorities, @0x1000d);
+    multi_action::propose_offer(alice, authorities, option::some(2));
+
+    // new invite bob and carol
+    let new_authorities = vector::empty<address>();
+    vector::push_back(&mut new_authorities, @0x1000b);
+    vector::push_back(&mut new_authorities, @0x1000c);
+    multi_action::propose_offer(alice, new_authorities, option::some(3));
+
+    // check new authorities minus dave
+    assert!(multi_action::get_offer_proposed(@0x1000a) == new_authorities, 0);
+    assert!(multi_action::get_offer_claimed(@0x1000a) == vector::empty(), 0);
+
+    // carol claim the offer
+    multi_action::claim_offer(carol, @0x1000a);
+
+    // new invite carol
+    multi_action::propose_offer(alice, vector::singleton(@0x1000c), option::some(4));
+
+    // check new authorities minus bob
+    assert!(multi_action::get_offer_proposed(@0x1000a) == vector::empty(), 0);
+    assert!(multi_action::get_offer_claimed(@0x1000a) == vector::singleton(@0x1000c), 0);
+  }
+
+  // Propose new offer with same authorities
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
+  fun propose_offer_same_authorities(root: &signer, alice: &signer, bob: &signer) {
+    let _vals = mock::genesis_n_vals(root, 3);
+    multi_action::init_gov(alice);
+
+    // invite bob and carol
+    let authorities = vector::empty<address>();
+    vector::push_back(&mut authorities, @0x1000b);
+    vector::push_back(&mut authorities, @0x1000c);
+    multi_action::propose_offer(alice, authorities, option::some(2));
+
+    // new invite bob and carol
+    multi_action::propose_offer(alice, authorities, option::some(3));
+
+    // check authorities
+    assert!(multi_action::get_offer_proposed(@0x1000a) == authorities, 0);
+
+    // bob claim the offer
+    multi_action::claim_offer(bob, @0x1000a);
+
+    // new invite bob and carol
+    multi_action::propose_offer(alice, authorities, option::some(4));
+
+    // check authorities
+    assert!(multi_action::get_offer_proposed(@0x1000a) == vector::singleton(@0x1000c), 0);
+    assert!(multi_action::get_offer_claimed(@0x1000a) == vector::singleton(@0x1000b), 0);
   }
 
   // Try to propose offer without governance
