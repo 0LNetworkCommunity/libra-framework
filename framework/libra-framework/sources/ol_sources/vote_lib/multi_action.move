@@ -146,7 +146,7 @@ module ol_framework::multi_action {
   /// - proposed: List of authority addresses proposed
   /// - claimed: List of authority addresses that have claimed the offer.
   /// - expiration_epoch: The epoch when the offer expires.
-  struct Offer has key, store, drop {
+  struct Offer has key, store {
     proposed: vector<address>,
     claimed: vector<address>,
     expiration_epoch: u64,
@@ -179,19 +179,13 @@ module ol_framework::multi_action {
     };
   }
 
-  // Proposes an offer for multisign authorities
-  // - sig: The signer proposing the offer.
-  // - proposed: The list of authorities addresses proposed.
-  // - duration_epochs: The duration in epochs before the offer expires.
-  public fun propose_offer(sig: &signer, proposed: vector<address>, duration_epochs: Option<u64>) acquires Offer{
-    let addr = signer::address_of(sig);
+  // Offer authorities voted.
+  fun propose_offer_voted(sig: &signer, multisign_address: address, proposed: vector<address>, duration_epochs: Option<u64>) acquires Offer {
+    // Propose the offer
+    propose_offer_address(sig, multisign_address, proposed, duration_epochs);
+  }
 
-    // Ensure the account is not yet initialized as multisig
-    assert!(!multisig_account::is_multisig(addr), error::invalid_state(EALREADY_MULTISIG));
-
-    // Ensure the account has governance initialized
-    assert!(is_gov_init(addr), error::invalid_state(EGOV_NOT_INITIALIZED));
-
+  fun propose_offer_address(sig: &signer, addr: address, proposed: vector<address>, duration_epochs: Option<u64>) acquires Offer {
     // Ensure the proposed list is not empty
     assert!(vector::length(&proposed) > 0, error::invalid_argument(EOFFER_EMPTY));
 
@@ -242,7 +236,6 @@ module ol_framework::multi_action {
         };
         i = i + 1;
       };
-
       offer.proposed = proposed;
       offer.expiration_epoch = expiration_epoch;
     } else {
@@ -256,10 +249,26 @@ module ol_framework::multi_action {
     }
   }
 
+  // Offer authorities for an account to be initialized as multisig.
+  // - sig: The signer proposing the offer.
+  // - proposed: The list of authorities addresses proposed.
+  // - duration_epochs: The duration in epochs before the offer expires.
+  public entry fun propose_offer(sig: &signer, proposed: vector<address>, duration_epochs: Option<u64>) acquires Offer {
+    let addr = signer::address_of(sig);
+
+    // Ensure the account is not yet initialized as multisig
+    assert!(!multisig_account::is_multisig(addr), error::invalid_state(EALREADY_MULTISIG));
+
+    // Ensure the account has governance initialized
+    assert!(is_gov_init(addr), error::invalid_state(EGOV_NOT_INITIALIZED));
+
+    propose_offer_address(sig, addr, proposed, duration_epochs);
+  }
+  
   // Allows a proposed authority to claim their role.
   // - sig: The signer making the claim.
   // - multisig_address: The address of the multisig account.
-  public fun claim_offer(sig: &signer, multisig_address: address) acquires Offer {  
+  public fun claim_offer(sig: &signer, multisig_address: address) acquires Offer, Governance {  
     let sender_addr = signer::address_of(sig);
 
     // Ensure the account has an offer
@@ -281,6 +290,21 @@ module ol_framework::multi_action {
     let (_, i) = vector::index_of(&offer.proposed, &sender_addr);
     vector::remove(&mut offer.proposed, i);
     vector::push_back(&mut offer.claimed, sender_addr);
+
+    // if account is multisig, add authority to the multisig account
+    if (multisig_account::is_multisig(multisig_address)) {
+      let ms = borrow_global_mut<Governance>(multisig_address);
+      maybe_update_authorities(ms, true, &vector::singleton(sender_addr));
+      // remove sender_addr from offer claimed
+      let offer = borrow_global_mut<Offer>(multisig_address);
+      let (_, i) = vector::index_of(&offer.claimed, &sender_addr);
+      vector::remove(&mut offer.claimed, i);
+
+      if (vector::length(&offer.claimed) == 0 && vector::length(&offer.proposed) == 0) {
+        // clean expiration_epoch
+        offer.expiration_epoch = 0;
+      };
+    };
   }
 
   /// Finalizes the multisign account and locks it (cage).
@@ -305,8 +329,11 @@ module ol_framework::multi_action {
     let initial_authorities = get_offer_claimed(addr);
     multisig_account::migrate_with_owners(sig, initial_authorities, vector::length(&initial_authorities), vector::empty(), vector::empty());
 
-    // remove offer
-    move_from<Offer>(addr);
+    // clean offer
+    let offer = borrow_global_mut<Offer>(addr);
+    offer.proposed = vector::empty();
+    offer.claimed = vector::empty();
+    offer.expiration_epoch = 0;
   }
 
   public(friend) fun proposal_constructor<ProposalData: store + drop>(proposal_data: ProposalData, duration_epochs: Option<u64>): Proposal<ProposalData> {
@@ -426,7 +453,6 @@ module ol_framework::multi_action {
         vote: ballot::new_tracker<Proposal<ProposalData>>(),
       });
   }
-
 
   fun maybe_extract_withdraw_cap(sig: &signer) acquires Governance {
     let multisig_address = signer::address_of(sig);
@@ -745,7 +771,7 @@ module ol_framework::multi_action {
   }
 
   // Proposing a governance change of adding or removing signer, or changing the n-of-m of the authorities. Note that proposing will deduplicate in the event that two authorities miscommunicate and send the same proposal, in that case for UX purposes the second proposal becomes a vote.
-  public(friend) fun propose_governance(sig: &signer, multisig_address: address, addresses: vector<address>, add_remove: bool, n_of_m: Option<u64>, duration_epochs: Option<u64> ): guid::ID acquires Governance, Action {
+  public(friend) fun propose_governance(sig: &signer, multisig_address: address, addresses: vector<address>, add_remove: bool, n_of_m: Option<u64>, duration_epochs: Option<u64> ): guid::ID acquires Governance, Action, Offer {
     assert_authorized(sig, multisig_address); // Duplicated with propose(), belt
     // and suspenders
 
@@ -763,7 +789,7 @@ module ol_framework::multi_action {
   }
 
   /// This function can be called directly. Or the user can call propose_governance() with same parameters, which will deduplicate the proposal and instead vote. Voting is always a positive vote. There is no negative (reject) vote.
-  public(friend) fun vote_governance(sig: &signer, multisig_address: address, id: &guid::ID): bool acquires Governance, Action {
+  public(friend) fun vote_governance(sig: &signer, multisig_address: address, id: &guid::ID): bool acquires Governance, Action, Offer {
     assert_authorized(sig, multisig_address);
 
     let (passed, cap_opt) = {
@@ -775,7 +801,11 @@ module ol_framework::multi_action {
       let ms = borrow_global_mut<Governance>(multisig_address);
       let data = extract_proposal_data<PropGovSigners>(multisig_address, id);
       if (!vector::is_empty(&data.addresses)) {
-        maybe_update_authorities(ms, data.add_remove, &data.addresses);
+        if (data.add_remove) {
+          propose_offer_voted(sig, multisig_address, data.addresses, option::none());
+        } else {
+          maybe_update_authorities(ms, data.add_remove, &data.addresses);
+        };        
       };
       maybe_update_threshold(ms, &data.n_of_m);
     };
