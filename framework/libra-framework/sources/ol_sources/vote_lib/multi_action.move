@@ -40,11 +40,11 @@ module ol_framework::multi_action {
   #[test_only]
   friend ol_framework::test_multi_action;
 
-//  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
-  const EGOV_NOT_INITIALIZED: u64 = 1;
+  const EGOV_NOT_INITIALIZED: u64 = 0x1;
   /// The owner of this account can't be an authority, since it will subsequently be bricked. The signer of this account is no longer useful. The account is now controlled by the Governance logic.
-  const ESIGNER_CANT_BE_AUTHORITY: u64 = 2;
+  const ESIGNER_CANT_BE_AUTHORITY: u64 = 0x2;
   /// signer not authorized to approve a transaction.
   const ENOT_AUTHORIZED: u64 = 3;
   /// There are no pending transactions to search
@@ -70,23 +70,23 @@ module ol_framework::multi_action {
   /// Duplicate vote
   const EDUPLICATE_VOTE: u64 = 14;
   /// Offer expired
-  const EOFFER_EXPIRED: u64 = 15;
+  const EOFFER_EXPIRED: u64 = 0x15;
   /// Offer empty
-  const EOFFER_EMPTY: u64 = 16;
+  const EOFFER_EMPTY: u64 = 0x16;
   /// Not offered to initial authorities
-  const ENOT_OFFERED: u64 = 17;
+  const ENOT_OFFERED: u64 = 0x17;
   /// Not enough claimed authorities
-  const ENOT_ENOUGH_CLAIMED: u64 = 18;
+  const ENOT_ENOUGH_CLAIMED: u64 = 0x18;
   /// Account is already a multisig
-  const EALREADY_MULTISIG: u64 = 19;
+  const EALREADY_MULTISIG: u64 = 0x19;
   /// Address not proposed for authority role
-  const EADDRESS_NOT_PROPOSED: u64 = 20;
+  const EADDRESS_NOT_PROPOSED: u64 = 0x20;
   /// Address proposed for authority role does not exist
-  const EPROPOSED_NOT_EXISTS: u64 = 21;
+  const EPROPOSED_NOT_EXISTS: u64 = 0x21;
   /// Offer duration must be greater than zero
-  const EZERO_DURATION: u64 = 22;
+  const EZERO_DURATION: u64 = 0x22;
   /// Offer already claimed
-  const EALREADY_CLAIMED: u64 = 23;
+  const EALREADY_CLAIMED: u64 = 0x23;
 
   /// default setting for a proposal to expire
   const DEFAULT_EPOCHS_EXPIRE: u64 = 14;
@@ -159,23 +159,23 @@ module ol_framework::multi_action {
   public fun propose_offer(sig: &signer, proposed: vector<address>, duration_epochs: Option<u64>) {
     let addr = signer::address_of(sig);
 
-    // Ensure the account has governance initialized
-    assert!(is_gov_init(addr), EGOV_NOT_INITIALIZED);
-
     // Ensure the account is not yet initialized as multisig
-    assert!(!multisig_account::is_multisig(addr), EALREADY_MULTISIG);
+    assert!(!multisig_account::is_multisig(addr), error::invalid_state(EALREADY_MULTISIG));
+
+    // Ensure the account has governance initialized
+    assert!(is_gov_init(addr), error::invalid_state(EGOV_NOT_INITIALIZED));
 
     // Ensure the proposed list is not empty
-    assert!(vector::length(&proposed) > 0, EOFFER_EMPTY);
+    assert!(vector::length(&proposed) > 0, error::invalid_argument(EOFFER_EMPTY));
 
     // Ensure the proposed list does not contain the signer
-    assert!(!vector::contains(&proposed, &addr), ESIGNER_CANT_BE_AUTHORITY);
+    assert!(!vector::contains(&proposed, &addr), error::permission_denied(ESIGNER_CANT_BE_AUTHORITY));
 
     // Ensure the proposed list address are valid
     let i = 0;
     while (i < vector::length(&proposed)) {
       let proposed_addr = vector::borrow(&proposed, i);
-      assert!(account::exists_at(*proposed_addr), EPROPOSED_NOT_EXISTS);
+      assert!(account::exists_at(*proposed_addr), error::not_found(EPROPOSED_NOT_EXISTS));
       i = i + 1;
     };
     
@@ -189,7 +189,7 @@ module ol_framework::multi_action {
     };
 
     // Ensure duration is greater than zero
-    assert!(duration_epochs > 0, EZERO_DURATION);
+    assert!(duration_epochs > 0, error::invalid_argument(EZERO_DURATION));
 
     let expiration_epoch = epoch_helper::get_current_epoch() + duration_epochs;
     let offer = Offer {
@@ -204,28 +204,54 @@ module ol_framework::multi_action {
   // Allows a proposed authority to claim their role.
   // - sig: The signer making the claim.
   // - multisig_address: The address of the multisig account.
-  public fun claim_offer(sig: &signer, multisig_address: address) acquires Offer {
+  public fun claim_offer(sig: &signer, multisig_address: address) acquires Offer {  
     let sender_addr = signer::address_of(sig);
 
     // Ensure the account has an offer
-    assert!(exists<Offer>(multisig_address), ENOT_OFFERED);
+    assert!(exists<Offer>(multisig_address), error::not_found(ENOT_OFFERED));
 
     let offer = borrow_global_mut<Offer>(multisig_address);
 
     // Ensure the sender is not in the claimed list
-    assert!(!vector::contains(&offer.claimed, &sender_addr), EALREADY_CLAIMED);
+    assert!(!vector::contains(&offer.claimed, &sender_addr), error::already_exists(EALREADY_CLAIMED));
     
     // Ensure the sender is in the proposed list
-    assert!(vector::contains(&offer.proposed, &sender_addr), EADDRESS_NOT_PROPOSED);
+    assert!(vector::contains(&offer.proposed, &sender_addr), error::not_found(EADDRESS_NOT_PROPOSED));
 
     // Ensure the offer has not expired
     let current_epoch = epoch_helper::get_current_epoch();
-    assert!(offer.expiration_epoch > current_epoch, EOFFER_EXPIRED);
+    assert!(offer.expiration_epoch > current_epoch, error::out_of_range(EOFFER_EXPIRED));
 
     // Remove the sender from the proposed list and add to the claimed list
     let (_, i) = vector::index_of(&offer.proposed, &sender_addr);
     vector::remove(&mut offer.proposed, i);
     vector::push_back(&mut offer.claimed, sender_addr);
+  }
+
+  /// Finalizes the multisign account and locks it (cage).
+  /// - sig: The signer finalizing the account.
+  /// Aborts if governance is not initialized, the account is already a multisig,
+  /// there are not enough claimed authorities, or the offer is not found.
+  public fun finalize_and_cage2(sig: &signer) acquires Offer {
+    let addr = signer::address_of(sig);
+    
+    // check it is not yet initialized
+    assert!(!multisig_account::is_multisig(addr), error::already_exists(EALREADY_MULTISIG));
+
+    // check governance
+    assert!(exists<Governance>(addr), error::invalid_state(EGOV_NOT_INITIALIZED));
+    assert!(exists<Action<PropGovSigners>>(addr), error::invalid_state(EGOV_NOT_INITIALIZED));
+    
+    // check claimed authorities
+    assert!(exists<Offer>(addr), error::not_found(ENOT_OFFERED));
+    assert!(has_enough_offer_claimed(addr), error::invalid_state(ENOT_ENOUGH_CLAIMED));
+
+    // finalize the account
+    let initial_authorities = get_offer_claimed(addr);
+    multisig_account::migrate_with_owners(sig, initial_authorities, vector::length(&initial_authorities), vector::empty(), vector::empty());
+
+    // remove offer
+    move_from<Offer>(addr);
   }
 
   public(friend) fun proposal_constructor<ProposalData: store + drop>(proposal_data: ProposalData, duration_epochs: Option<u64>): Proposal<ProposalData> {
@@ -281,31 +307,6 @@ module ol_framework::multi_action {
     };
   }
 
-  /// Finalize the multisign account and put in a cage. Will abort 
-  //  if governance has not been initialized and 
-  //  if there are not enough claimed authorities.
-  public fun finalize_and_cage2(sig: &signer) acquires Offer {
-    let addr = signer::address_of(sig);
-    
-    // check governance
-    assert!(exists<Governance>(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
-    assert!(exists<Action<PropGovSigners>>(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
-    
-    // check it is not yet initialized
-    assert!(!multisig_account::is_multisig(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
-
-    // check claimed authorities
-    assert!(exists<Offer>(addr), error::invalid_argument(ENOT_OFFERED));
-    assert!(has_enough_offer_claimed(addr), error::invalid_argument(ENOT_ENOUGH_CLAIMED));
-
-    // finalize the account
-    let initial_authorities = get_offer_claimed(addr);
-    multisig_account::migrate_with_owners(sig, initial_authorities, vector::length(&initial_authorities), vector::empty(), vector::empty());
-
-    // remove offer
-    move_from<Offer>(addr);
-  }
-  
   // TODO: Remove this
   public entry fun finalize_and_cage(sig: &signer, initial_authorities:
   vector<address>, num_signers: u64) {
