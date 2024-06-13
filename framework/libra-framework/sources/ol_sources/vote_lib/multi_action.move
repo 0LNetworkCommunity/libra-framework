@@ -64,7 +64,7 @@ module ol_framework::multi_action {
   /// Proposal is expired
   const EPROPOSAL_NOT_FOUND: u64 = 11;
   /// Proposal voting is closed
-  const EVOTING_CLOSED: u64 = 12;
+  const EVOTING_CLOSED: u64 = 0x12;
   /// No addresses in multisig changes
   const EEMPTY_ADDRESSES: u64 = 13;
   /// Duplicate vote
@@ -104,13 +104,13 @@ module ol_framework::multi_action {
 
 
   /// DANGER
-  // Governance optionally holds a WithdrawCapability, which is used to withdraw funds from the account. All actions share the same WithdrawCapability.
+  /// Governance optionally holds a WithdrawCapability, which is used to withdraw funds from the account. All actions share the same WithdrawCapability.
   /// The WithdrawCapability can be used to withdraw funds from the account.
   /// Ordinarily only the signer/owner of this address can use it.
   /// We are bricking the signer, and as such the withdraw capability is now controlled by the Governance logic.
   /// Core Devs: This is a major attack vector. The WithdrawCapability should NEVER be returned to a public caller, UNLESS it is within the vote and approve flow.
 
-  /// Note, the WithdrawCApability is moved to this shared structure, and as such the signer of the account is bricked. The signer who was the original owner of this account ("sponsor") can no longer issue transactions to this account, and as such the WithdrawCapability would be inaccessible. So on initialization we extract the WithdrawCapability into the Governance governance struct.
+  /// Note, the WithdrawCapability is moved to this shared structure, and as such the signer of the account is bricked. The signer who was the original owner of this account ("sponsor") can no longer issue transactions to this account, and as such the WithdrawCapability would be inaccessible. So on initialization we extract the WithdrawCapability into the Governance governance struct.
 
   //TODO: feature: signers is a hashmap and each can have a different weight
   struct Governance has key {
@@ -143,8 +143,8 @@ module ol_framework::multi_action {
   }
 
   /// Offer struct to manage the proposal and claiming of new authorities.
-  /// - proposed: List of addresses proposed for new authority roles.
-  /// - claimed: List of addresses that have claimed their proposed roles.
+  /// - proposed: List of authority addresses proposed
+  /// - claimed: List of authority addresses that have claimed the offer.
   /// - expiration_epoch: The epoch when the offer expires.
   struct Offer has key, store, drop {
     proposed: vector<address>,
@@ -152,9 +152,36 @@ module ol_framework::multi_action {
     expiration_epoch: u64,
   }
 
-  // Proposes a new offer for authorities while the account is not yet initialized as multi_action.
+  // Initialize the governance structs for this account.
+  // Governance contains the constraints for each Action that are checked on each vote (n_sigs, expiration, signers, etc)
+  // Also, an initial Action of type PropGovSigners is created, which is used to govern the signers and threshold for this account.
+  public(friend) fun init_gov(sig: &signer) {
+    // heals un-initialized state, and does nothing if state already exists.
+
+    let multisig_address = signer::address_of(sig);
+    // User footgun. The signer of this account is bricked, and as such the signer can no longer be an authority.
+
+    if (!exists<Governance>(multisig_address)) {
+        move_to(sig, Governance {
+        cfg_duration_epochs: DEFAULT_EPOCHS_EXPIRE,
+        cfg_default_n_sigs: 0, // deprecate
+        signers: vector::empty(),
+        withdraw_capability: option::none(),
+        guid_capability: account::create_guid_capability(sig),
+      });
+    };
+
+    if (!exists<Action<PropGovSigners>>(multisig_address)) {
+      move_to(sig, Action<PropGovSigners> {
+        can_withdraw: false,
+        vote: ballot::new_tracker<Proposal<PropGovSigners>>(),
+      });
+    };
+  }
+
+  // Proposes an offer for multisign authorities
   // - sig: The signer proposing the offer.
-  // - proposed: The list of addresses proposed for new authority roles.
+  // - proposed: The list of authorities addresses proposed.
   // - duration_epochs: The duration in epochs before the offer expires.
   public fun propose_offer(sig: &signer, proposed: vector<address>, duration_epochs: Option<u64>) acquires Offer{
     let addr = signer::address_of(sig);
@@ -305,34 +332,6 @@ module ol_framework::multi_action {
     // check sender is authorized
     let sender_addr = signer::address_of(sig);
     assert!(is_authority(multisig_address, sender_addr), error::invalid_argument(ENOT_AUTHORIZED));
-  }
-
-
-  // Initialize the governance structs for this account.
-  // Governance contains the constraints for each Action that are checked on each vote (n_sigs, expiration, signers, etc)
-  // Also, an initial Action of type PropGovSigners is created, which is used to govern the signers and threshold for this account.
-  public(friend) fun init_gov(sig: &signer) {
-    // heals un-initialized state, and does nothing if state already exists.
-
-    let multisig_address = signer::address_of(sig);
-    // User footgun. The signer of this account is bricked, and as such the signer can no longer be an authority.
-
-    if (!exists<Governance>(multisig_address)) {
-        move_to(sig, Governance {
-        cfg_duration_epochs: DEFAULT_EPOCHS_EXPIRE,
-        cfg_default_n_sigs: 0, // deprecate
-        signers: vector::empty(),
-        withdraw_capability: option::none(),
-        guid_capability: account::create_guid_capability(sig),
-      });
-    };
-
-    if (!exists<Action<PropGovSigners>>(multisig_address)) {
-      move_to(sig, Action<PropGovSigners> {
-        can_withdraw: false,
-        vote: ballot::new_tracker<Proposal<PropGovSigners>>(),
-      });
-    };
   }
 
   // TODO: Remove this
@@ -528,7 +527,7 @@ module ol_framework::multi_action {
     // does this proposal already exist in the pending list?
     let (found, _idx, status_enum, is_complete) = ballot::find_anywhere<Proposal<ProposalData>>(&action.vote, id);
     assert!(found, error::invalid_argument(EPROPOSAL_NOT_FOUND));
-    assert!(status_enum == ballot::get_pending_enum(), error::invalid_argument(EVOTING_CLOSED));
+    assert!(status_enum == ballot::get_pending_enum(), error::invalid_state(EVOTING_CLOSED));
     assert!(!is_complete, error::invalid_argument(EVOTING_CLOSED));
 
     let b = ballot::get_ballot_by_id_mut(&mut action.vote, id);
