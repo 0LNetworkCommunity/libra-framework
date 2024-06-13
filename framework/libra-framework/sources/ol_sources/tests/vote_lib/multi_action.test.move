@@ -12,7 +12,7 @@ module ol_framework::test_multi_action {
   use diem_framework::reconfiguration;
   use diem_framework::account;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   struct DummyType has drop, store {}  
 
@@ -125,11 +125,12 @@ module ol_framework::test_multi_action {
     let claimed = vector::empty<address>();
     vector::push_back(&mut claimed, signer::address_of(alice));
     vector::push_back(&mut claimed, signer::address_of(bob));
-    print(&authorities);
     assert!(authorities == claimed, 0);
 
-    // check offer was removed
-    assert!(!multi_action::exists_offer(carol_address), 0);
+    // check offer was cleaned
+    assert!(multi_action::get_offer_proposed(carol_address) == vector::empty(), 0);
+    assert!(multi_action::get_offer_claimed(carol_address) == vector::empty(), 0);
+    assert!(multi_action::get_offer_expiration_epoch(carol_address) == 0, 0);
   }
 
   // Propose another offer with different authorities
@@ -149,7 +150,6 @@ module ol_framework::test_multi_action {
 
     // check new authorities
     assert!(multi_action::get_offer_expiration_epoch(@0x1000a) == 2, 0);
-    print(&multi_action::get_offer_proposed(@0x1000a));
     assert!(multi_action::get_offer_proposed(@0x1000a) == authorities, 0);
     assert!(multi_action::get_offer_claimed(@0x1000a) == vector::empty(), 0);
   }
@@ -667,7 +667,6 @@ module ol_framework::test_multi_action {
     mock::trigger_epoch(root); // epoch 4 -- now expired
 
     let epoch = reconfiguration::get_current_epoch();
-
     assert!(epoch == 4, 7357003);
 
     // trying to vote on a closed ballot will error
@@ -675,59 +674,76 @@ module ol_framework::test_multi_action {
   }
 
 
-  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, marlon_rando = @0x123456)]
-  fun governance_change_auths(root: &signer, alice: &signer, bob: &signer, carol: &signer, marlon_rando: &signer) {
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
+  fun governance_change_auths(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer) {
     // Scenario: The multisig gets initiated with the 2 validators as the only authorities. IT takes 2-of-2 to sign.
-    // later they add a third (Rando) so it becomes a 2-of-3.
-    // Rando and Bob, then remove alice so it becomes 2-of-2 again
+    // later they add a third (Dave) so it becomes a 2-of-3.
+    // Dave and Bob, then remove alice so it becomes 2-of-2 again
 
-    let _vals = mock::genesis_n_vals(root, 2);
+    let _vals = mock::genesis_n_vals(root, 4);
     mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
-    // Dave creates the resource account. HE is not one of the validators, and is not an authority in the multisig.
-    let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(carol, b"0x1");
-    let new_resource_address = signer::address_of(&resource_sig);
-    assert!(resource_account::is_resource_account(new_resource_address), 7357001);
-
+    let carol_address = @0x1000c;
+    let dave_address = @0x1000d;
+    
     // fund the account
-    ol_account::transfer(alice, new_resource_address, 100);
+    ol_account::transfer(alice, carol_address, 100);
     // offer alice and bob authority on the safe
-    multi_action::init_gov(&resource_sig);// both need to sign
-    multi_action::init_type<DummyType>(&resource_sig, true);
+    multi_action::init_gov(carol);// both need to sign
+    multi_action::init_type<DummyType>(carol, true);
     let authorities = vector::empty<address>();
     vector::push_back(&mut authorities, signer::address_of(alice));
     vector::push_back(&mut authorities, signer::address_of(bob));
-    multi_action::propose_offer(&resource_sig, authorities, option::none());
-    multi_action::claim_offer(alice, new_resource_address);
-    multi_action::claim_offer(bob, new_resource_address);  
-    multi_action::finalize_and_cage2(&resource_sig);
+    multi_action::propose_offer(carol, authorities, option::none());
+    multi_action::claim_offer(alice, carol_address);
+    multi_action::claim_offer(bob, carol_address);  
+    multi_action::finalize_and_cage2(carol);
 
-    // alice is going to propose to change the authorities to add Rando
-    let id = multi_action::propose_governance(alice, new_resource_address,
-      vector::singleton(signer::address_of(marlon_rando)), true, option::none(),
+    // alice is going to propose to change the authorities to add dave
+    let id = multi_action::propose_governance(alice, carol_address,
+      vector::singleton(dave_address), true, option::none(),
       option::none());
 
-    let a = multi_action::get_authorities(new_resource_address);
-    assert!(vector::length(&a) == 2, 7357002);
+    // check authorities did not change
+    let ret = multi_action::get_authorities(carol_address);
+    assert!(ret == authorities, 7357002);
 
-    // bob votes and it becomes final. Bob could either use vote_governance()
-    let passed = multi_action::vote_governance(bob, new_resource_address, &id);
+    // bob votes. bob could either use vote_governance()
+    let passed = multi_action::vote_governance(bob, carol_address, &id);
     assert!(passed, 7357003);
-    let a = multi_action::get_authorities(new_resource_address);
-    assert!(vector::length(&a) == 3, 7357003);
-    assert!(multi_action::is_authority(new_resource_address, signer::address_of(marlon_rando)), 7357004);
 
-    // Now Rando and Bob, will conspire to remove alice.
+    // check authorities did not change
+    let ret = multi_action::get_authorities(carol_address);
+    assert!(ret == authorities, 7357002);
+
+    // check the offer
+    let ret = multi_action::get_offer_proposed(carol_address);
+    assert!(ret == vector::singleton(dave_address), 7357003);
+
+    // dave claims the offer and it becomes final.
+    multi_action::claim_offer(dave, carol_address);
+
+    // Chek new set of authorities
+    let ret = multi_action::get_authorities(carol_address);
+    vector::push_back(&mut authorities, dave_address);
+    assert!(ret == authorities, 7357003);
+
+    // Check offer is cleaned up
+    assert!(multi_action::get_offer_proposed(carol_address) == vector::empty(), 7357004);
+    assert!(multi_action::get_offer_claimed(carol_address) == vector::empty(), 7357005);
+    // assert!(multi_action::get_offer_expiration_epoch(carol_address) == 0, 7357006);
+
+    // Now dave and bob, will conspire to remove alice.
     // NOTE: `false` means `remove account` here
-    let id = multi_action::propose_governance(marlon_rando, new_resource_address, vector::singleton(signer::address_of(alice)), false, option::none(), option::none());
-    let a = multi_action::get_authorities(new_resource_address);
+    let id = multi_action::propose_governance(dave, carol_address, vector::singleton(signer::address_of(alice)), false, option::none(), option::none());
+    let a = multi_action::get_authorities(carol_address);
     assert!(vector::length(&a) == 3, 7357002); // no change yet
 
     // bob votes and it becomes final. Bob could either use vote_governance()
-    let passed = multi_action::vote_governance(bob, new_resource_address, &id);
+    let passed = multi_action::vote_governance(bob, carol_address, &id);
     assert!(passed, 7357003);
-    let a = multi_action::get_authorities(new_resource_address);
+    let a = multi_action::get_authorities(carol_address);
     assert!(vector::length(&a) == 2, 7357003);
-    assert!(!multi_action::is_authority(new_resource_address, signer::address_of(alice)), 7357004);
+    assert!(!multi_action::is_authority(carol_address, signer::address_of(alice)), 7357004);
   }
 
   // Happy day: change the threshold of a multisig
@@ -784,7 +800,6 @@ module ol_framework::test_multi_action {
     assert!(passed == true, 7357002);
 
     // THE WITHDRAW CAPABILITY IS MISSING AS EXPECTED
-    print(&cap_opt);
     assert!(option::is_none(&cap_opt), 7357003);
 
     option::destroy_none(cap_opt);
