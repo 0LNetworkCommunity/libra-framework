@@ -17,7 +17,8 @@
 // - per block seed is provided directly from block prologue
 // - uses the block hash for seed.
 // - does not have access to a transaction hash, so it drops that
-// - the tx counter nonce has been removed since it requires a native function
+// - the tx counter has been removed since it requires a native function,
+// replaced with an on chain sequence number
 // - events have been removed
 
 
@@ -47,7 +48,7 @@ module diem_framework::randomness {
         epoch: u64,
         round: u64,
         seed: Option<vector<u8>>,
-        nonce: u8,
+        seq: u8,
     }
 
     // 0L NOTE: we will be skipping sending events on every randomness
@@ -68,7 +69,7 @@ module diem_framework::randomness {
                 epoch: 0,
                 round: 0,
                 seed: option::none(),
-                nonce: 0,
+                seq: 0,
             });
         }
     }
@@ -113,18 +114,18 @@ module diem_framework::randomness {
         transaction_context::get_script_hash());
 
         // 0L NOTE:
-        // The increment txn_counter native which creates a nonce, will be
+        // The increment txn_counter native which creates a sequence number, will be
         // ignored. Though could later be added back. Unclear if there's any
-        // added safety versus the nonce being on chain as a malicious validator
+        // added safety versus the sequence number being on chain as a malicious validator
         // could see this counter.
 
         // vector::append(&mut input, fetch_and_increment_txn_counter());
-        if (randomness.nonce == 254) {
-          randomness.nonce = 0;
+        if (randomness.seq == 254) {
+          randomness.seq = 0;
         } else {
-          randomness.nonce = randomness.nonce + 1;
+          randomness.seq = randomness.seq + 1;
         };
-        vector::push_back(&mut input, randomness.nonce);
+        vector::push_back(&mut input, randomness.seq);
 
         hash::sha3_256(input)
     }
