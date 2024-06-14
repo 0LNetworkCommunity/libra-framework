@@ -201,7 +201,8 @@ module ol_framework::multi_action {
 
   fun lazy_clean_offer_expired(addr: address) acquires Offer {
     if (is_offer_expired(addr)) {
-      clean_offer(addr);
+      let offer = borrow_global_mut<Offer>(addr);
+      offer.proposed = vector::empty();
     };
   }
 
