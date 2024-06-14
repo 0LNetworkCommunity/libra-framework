@@ -127,10 +127,8 @@ module ol_framework::test_multi_action {
     vector::push_back(&mut claimed, signer::address_of(bob));
     assert!(authorities == claimed, 0);
 
-    // check offer was cleaned
-    assert!(multi_action::get_offer_proposed(carol_address) == vector::empty(), 0);
-    assert!(multi_action::get_offer_claimed(carol_address) == vector::empty(), 0);
-    assert!(multi_action::get_offer_expiration_epoch(carol_address) == 0, 0);
+    // check offer was dropped
+    assert!(!multi_action::exists_offer(carol_address), 0);
   }
 
   // Propose another offer with different authorities
@@ -715,7 +713,7 @@ module ol_framework::test_multi_action {
     let ret = multi_action::get_authorities(carol_address);
     assert!(ret == authorities, 7357002);
 
-    // check the offer
+    // check the Offer
     let ret = multi_action::get_offer_proposed(carol_address);
     assert!(ret == vector::singleton(dave_address), 7357003);
 
@@ -727,10 +725,8 @@ module ol_framework::test_multi_action {
     vector::push_back(&mut authorities, dave_address);
     assert!(ret == authorities, 7357003);
 
-    // Check offer is cleaned up
-    assert!(multi_action::get_offer_proposed(carol_address) == vector::empty(), 7357004);
-    assert!(multi_action::get_offer_claimed(carol_address) == vector::empty(), 7357005);
-    // assert!(multi_action::get_offer_expiration_epoch(carol_address) == 0, 7357006);
+    // Check if offer was dropped
+    assert!(!multi_action::exists_offer(carol_address), 7357004);  
 
     // Now dave and bob, will conspire to remove alice.
     // NOTE: `false` means `remove account` here
