@@ -199,8 +199,17 @@ module ol_framework::multi_action {
     };
   }
 
+  fun lazy_clean_offer_expired(addr: address) acquires Offer {
+    if (is_offer_expired(addr)) {
+      clean_offer(addr);
+    };
+  }
+
   // Private function to assist offer proposal by entry function and governance vote
   fun propose_offer_address(addr: address, proposed: vector<address>, duration_epochs: Option<u64>) acquires Offer {
+    // Avoid renew expired offer
+    lazy_clean_offer_expired(addr);
+    
     // Ensure the proposed list is not empty
     assert!(vector::length(&proposed) > 0, error::invalid_argument(EOFFER_EMPTY));
 
@@ -310,6 +319,9 @@ module ol_framework::multi_action {
     // Ensure the account has an offer
     assert!(exists_offer(multisig_address), error::not_found(ENOT_OFFERED));
 
+    // Ensure the offer has not expired
+    assert!(!is_offer_expired(multisig_address), error::out_of_range(EOFFER_EXPIRED));
+
     let offer = borrow_global_mut<Offer>(multisig_address);
 
     // Ensure the sender is not in the claimed list
@@ -317,10 +329,6 @@ module ol_framework::multi_action {
     
     // Ensure the sender is in the proposed list
     assert!(vector::contains(&offer.proposed, &sender_addr), error::not_found(EADDRESS_NOT_PROPOSED));
-
-    // Ensure the offer has not expired
-    let current_epoch = epoch_helper::get_current_epoch();
-    assert!(offer.expiration_epoch > current_epoch, error::out_of_range(EOFFER_EXPIRED));
 
     // Remove the sender from the proposed list 
     let (_, i) = vector::index_of(&offer.proposed, &sender_addr);
@@ -451,6 +459,12 @@ module ol_framework::multi_action {
   fun has_enough_offer_claimed(multisig_address: address): bool acquires Offer {
     let claimed = get_offer_claimed(multisig_address);
     vector::length(&claimed) >= MIN_OFFER_CLAIMS_TO_CAGE
+  }
+
+  // Query if the offer has expired.
+  public fun is_offer_expired(multisig_address: address): bool acquires Offer {
+    let offer = borrow_global<Offer>(multisig_address);
+    epoch_helper::get_current_epoch() >= offer.expiration_epoch
   }
 
   /// Has a multisig struct for a given action been created?
