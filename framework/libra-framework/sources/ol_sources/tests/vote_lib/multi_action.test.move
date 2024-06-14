@@ -131,6 +131,44 @@ module ol_framework::test_multi_action {
     assert!(!multi_action::exists_offer(carol_address), 0);
   }
 
+  // Finalize multisign account having a pending claim
+  #[test(root = @ol_framework, carol = @0x1000c, alice = @0x1000a, bob = @0x1000b, dave = @0x1000d)]
+  fun finalize_with_pending_claim(root: &signer, carol: &signer, alice: &signer, bob: &signer, dave: &signer) {
+    let _vals = mock::genesis_n_vals(root, 4);
+    let carol_address = @0x1000c;
+
+    // initialize the multi_action account
+    multi_action::init_gov(carol);
+
+    // invite the vals to the resource account
+    let authorities = vector::empty<address>();
+    vector::push_back(&mut authorities, signer::address_of(alice));
+    vector::push_back(&mut authorities, signer::address_of(bob));
+    vector::push_back(&mut authorities, signer::address_of(dave));
+    multi_action::propose_offer(carol, authorities, option::none());
+
+    // authorities claim the offer
+    multi_action::claim_offer(alice, carol_address);
+    multi_action::claim_offer(bob, carol_address);
+
+    // finalize the multi_action account
+    assert!(account::exists_at(carol_address), 666);
+    multi_action::finalize_and_cage2(carol);
+
+    // check the account is multi_action
+    assert!(multi_action::is_multi_action(carol_address), 0);
+    
+    // check authorities
+    let authorities = multi_action::get_authorities(carol_address);
+    let claimed = vector::empty<address>();
+    vector::push_back(&mut claimed, signer::address_of(alice));
+    vector::push_back(&mut claimed, signer::address_of(bob));
+    assert!(authorities == claimed, 0);
+
+    // check offer was dropped
+    assert!(!multi_action::exists_offer(carol_address), 0);
+  }
+
   // Propose another offer with different authorities
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
   fun propose_another_offer_different_authorities(root: &signer, alice: &signer) {
