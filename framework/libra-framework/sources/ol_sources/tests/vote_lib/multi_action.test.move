@@ -12,8 +12,6 @@ module ol_framework::test_multi_action {
   use diem_framework::reconfiguration;
   use diem_framework::account;
 
-  // use diem_std::debug::print;
-
   struct DummyType has drop, store {}  
 
   #[test(root = @ol_framework, carol = @0x1000c)]
@@ -22,7 +20,7 @@ module ol_framework::test_multi_action {
 
     let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(carol, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
-    assert!(resource_account::is_resource_account(new_resource_address), 0);
+    assert!(resource_account::is_resource_account(new_resource_address), 7357001);
 
     // make the vals the signers on the safe
     multi_action::init_gov(&resource_sig);
@@ -36,8 +34,8 @@ module ol_framework::test_multi_action {
     let carol_address = @0x1000c;
     
     // check the offer does not exist
-    assert!(!multi_action::exists_offer(carol_address), 0);
-    assert!(!multi_action::is_multi_action(carol_address), 0);
+    assert!(!multi_action::exists_offer(carol_address), 7357001);
+    assert!(!multi_action::is_multi_action(carol_address), 7357002);
 
     // initialize the multi_action account
     multi_action::init_gov(carol);
@@ -49,12 +47,12 @@ module ol_framework::test_multi_action {
     multi_action::propose_offer(carol, authorities, option::some(3));
 
     // check the offer is proposed and account is not muti_action yet
-    assert!(multi_action::exists_offer(carol_address), 0);
-    assert!(multi_action::get_offer_proposed(carol_address) == authorities, 0);
-    assert!(multi_action::get_offer_claimed(carol_address) == vector::empty(), 0);
-    assert!(vector::is_empty(&multi_action::get_offer_claimed(carol_address)), 0);
-    assert!(multi_action::get_offer_expiration_epoch(carol_address) == 3, 0);
-    assert!(!multi_action::is_multi_action(carol_address), 0);
+    assert!(multi_action::exists_offer(carol_address), 7357003);
+    assert!(multi_action::get_offer_proposed(carol_address) == authorities, 7357004);
+    assert!(multi_action::get_offer_claimed(carol_address) == vector::empty(), 7357005);
+    assert!(vector::is_empty(&multi_action::get_offer_claimed(carol_address)), 7357006);
+    assert!(multi_action::get_offer_expiration_epoch(carol_address) == 3, 7357007);
+    assert!(!multi_action::is_multi_action(carol_address), 7357008);
   }
 
   // Happy Day: claim offer by authorities
@@ -76,11 +74,11 @@ module ol_framework::test_multi_action {
     multi_action::claim_offer(bob, carol_address);
 
     // check the claimed offer
-    assert!(multi_action::exists_offer(carol_address), 0);
+    assert!(multi_action::exists_offer(carol_address), 7357001);
     let claimed = vector::singleton(signer::address_of(bob));
     let proposed = vector::singleton(signer::address_of(alice));
-    assert!(multi_action::get_offer_claimed(carol_address) == claimed, 0);
-    assert!(multi_action::get_offer_proposed(carol_address) == proposed, 0);
+    assert!(multi_action::get_offer_claimed(carol_address) == claimed, 7357002);
+    assert!(multi_action::get_offer_proposed(carol_address) == proposed, 7357003);
 
     // alice claim the offer
     multi_action::claim_offer(alice, carol_address);
@@ -90,8 +88,8 @@ module ol_framework::test_multi_action {
     let authorities = vector::empty<address>();
     vector::push_back(&mut authorities, signer::address_of(bob));
     vector::push_back(&mut authorities, signer::address_of(alice));
-    assert!(claimed == authorities, 0);
-    assert!(multi_action::get_offer_proposed(carol_address) == vector::empty(), 0);
+    assert!(claimed == authorities, 7357004);
+    assert!(multi_action::get_offer_proposed(carol_address) == vector::empty(), 7357005);
   }
 
   // Happy Day: finalize multisign account
@@ -114,21 +112,23 @@ module ol_framework::test_multi_action {
     multi_action::claim_offer(bob, carol_address);
 
     // finalize the multi_action account
-    assert!(account::exists_at(carol_address), 666);
+    assert!(account::exists_at(carol_address), 7357001);
     multi_action::finalize_and_cage2(carol);
 
     // check the account is multi_action
-    assert!(multi_action::is_multi_action(carol_address), 0);
+    assert!(multi_action::is_multi_action(carol_address), 7357002);
     
     // check authorities
     let authorities = multi_action::get_authorities(carol_address);
     let claimed = vector::empty<address>();
     vector::push_back(&mut claimed, signer::address_of(alice));
     vector::push_back(&mut claimed, signer::address_of(bob));
-    assert!(authorities == claimed, 0);
+    assert!(authorities == claimed, 7357003);
 
-    // check offer was dropped
-    assert!(!multi_action::exists_offer(carol_address), 0);
+    // check offer was cleaned
+    assert!(multi_action::get_offer_proposed(carol_address) == vector::empty(), 7357004);
+    assert!(multi_action::get_offer_claimed(carol_address) == vector::empty(), 7357005);
+    assert!(multi_action::get_offer_expiration_epoch(carol_address) == 0, 7357006);
   }
 
   // Finalize multisign account having a pending claim
@@ -152,21 +152,24 @@ module ol_framework::test_multi_action {
     multi_action::claim_offer(bob, carol_address);
 
     // finalize the multi_action account
-    assert!(account::exists_at(carol_address), 666);
+    assert!(account::exists_at(carol_address), 7357001);
     multi_action::finalize_and_cage2(carol);
 
     // check the account is multi_action
-    assert!(multi_action::is_multi_action(carol_address), 0);
+    assert!(multi_action::is_multi_action(carol_address), 7357002);
     
     // check authorities
     let authorities = multi_action::get_authorities(carol_address);
     let claimed = vector::empty<address>();
     vector::push_back(&mut claimed, signer::address_of(alice));
     vector::push_back(&mut claimed, signer::address_of(bob));
-    assert!(authorities == claimed, 0);
+    assert!(authorities == claimed, 7357003);
 
-    // check offer was dropped
-    assert!(!multi_action::exists_offer(carol_address), 0);
+    // check offer was cleared
+    assert!(multi_action::get_offer_proposed(carol_address) == vector::empty(), 7357004);
+    assert!(multi_action::get_offer_claimed(carol_address) == vector::empty(), 7357005);
+    assert!(multi_action::get_offer_expiration_epoch(carol_address) == 0, 7357006);
+
   }
 
   // Propose another offer with different authorities
@@ -185,9 +188,9 @@ module ol_framework::test_multi_action {
     multi_action::propose_offer(alice, authorities, option::some(2));
 
     // check new authorities
-    assert!(multi_action::get_offer_expiration_epoch(@0x1000a) == 2, 0);
-    assert!(multi_action::get_offer_proposed(@0x1000a) == authorities, 0);
-    assert!(multi_action::get_offer_claimed(@0x1000a) == vector::empty(), 0);
+    assert!(multi_action::get_offer_expiration_epoch(@0x1000a) == 2, 7357001);
+    assert!(multi_action::get_offer_proposed(@0x1000a) == authorities, 7357002);
+    assert!(multi_action::get_offer_claimed(@0x1000a) == vector::empty(), 7357003);
   }
 
   // Propose new offer with more authorities
@@ -206,8 +209,8 @@ module ol_framework::test_multi_action {
     multi_action::propose_offer(alice, authorities, option::some(2));
 
     // check new authorities
-    assert!(multi_action::get_offer_proposed(@0x1000a) == authorities, 0);
-    assert!(multi_action::get_offer_claimed(@0x1000a) == vector::empty(), 0);
+    assert!(multi_action::get_offer_proposed(@0x1000a) == authorities, 7357001);
+    assert!(multi_action::get_offer_claimed(@0x1000a) == vector::empty(), 7357002);
 
     // carol claim the offer
     multi_action::claim_offer(carol, @0x1000a);
@@ -220,9 +223,9 @@ module ol_framework::test_multi_action {
     let proposed = vector::empty();
     vector::push_back(&mut proposed, @0x1000b);
     vector::push_back(&mut proposed, @0x1000d);
-    assert!(multi_action::get_offer_expiration_epoch(@0x1000a) == 3, 0);
-    assert!(multi_action::get_offer_proposed(@0x1000a) == proposed, 0);
-    assert!(multi_action::get_offer_claimed(@0x1000a) == vector::singleton(@0x1000c), 0);
+    assert!(multi_action::get_offer_expiration_epoch(@0x1000a) == 3, 7357003);
+    assert!(multi_action::get_offer_proposed(@0x1000a) == proposed, 7357004);
+    assert!(multi_action::get_offer_claimed(@0x1000a) == vector::singleton(@0x1000c), 7357005);
   }
 
   // Propose new offer with less authorities
@@ -231,32 +234,32 @@ module ol_framework::test_multi_action {
     let _vals = mock::genesis_n_vals(root, 4);
     multi_action::init_gov(alice);
 
-    // invite bob, carol and dave
+    // invite bob, carol e dave
     let authorities = vector::empty<address>();
     vector::push_back(&mut authorities, @0x1000b);
     vector::push_back(&mut authorities, @0x1000c);
     vector::push_back(&mut authorities, @0x1000d);
     multi_action::propose_offer(alice, authorities, option::some(2));
 
-    // new invite bob and carol
+    // new invite bob e carol
     let new_authorities = vector::empty<address>();
     vector::push_back(&mut new_authorities, @0x1000b);
     vector::push_back(&mut new_authorities, @0x1000c);
     multi_action::propose_offer(alice, new_authorities, option::some(3));
 
     // check new authorities minus dave
-    assert!(multi_action::get_offer_proposed(@0x1000a) == new_authorities, 0);
-    assert!(multi_action::get_offer_claimed(@0x1000a) == vector::empty(), 0);
+    assert!(multi_action::get_offer_proposed(@0x1000a) == new_authorities, 7357001);
+    assert!(multi_action::get_offer_claimed(@0x1000a) == vector::empty(), 7357002);
 
     // carol claim the offer
     multi_action::claim_offer(carol, @0x1000a);
 
-    // new invite carol
-    multi_action::propose_offer(alice, vector::singleton(@0x1000c), option::some(4));
+    // new invite bob only
+    multi_action::propose_offer(alice, vector::singleton(@0x1000b), option::some(4));
 
-    // check new authorities minus bob
-    assert!(multi_action::get_offer_proposed(@0x1000a) == vector::empty(), 0);
-    assert!(multi_action::get_offer_claimed(@0x1000a) == vector::singleton(@0x1000c), 0);
+    // check new authorities minus carol
+    assert!(multi_action::get_offer_proposed(@0x1000a) == vector::singleton(@0x1000b), 7357003);
+    assert!(multi_action::get_offer_claimed(@0x1000a) == vector::empty(), 7357004);
   }
 
   // Propose new offer with same authorities
@@ -265,28 +268,28 @@ module ol_framework::test_multi_action {
     let _vals = mock::genesis_n_vals(root, 3);
     multi_action::init_gov(alice);
 
-    // invite bob and carol
+    // invite bob e carol
     let authorities = vector::empty<address>();
     vector::push_back(&mut authorities, @0x1000b);
     vector::push_back(&mut authorities, @0x1000c);
     multi_action::propose_offer(alice, authorities, option::some(2));
 
-    // new invite bob and carol
+    // new invite bob e carol
     multi_action::propose_offer(alice, authorities, option::some(3));
 
     // check authorities
-    assert!(multi_action::get_offer_proposed(@0x1000a) == authorities, 0);
+    assert!(multi_action::get_offer_proposed(@0x1000a) == authorities, 7357001);
 
     // bob claim the offer
     multi_action::claim_offer(bob, @0x1000a);
 
-    // new invite bob and carol
+    // new invite bob e carol
     multi_action::propose_offer(alice, authorities, option::some(4));
 
     // check authorities
-    assert!(multi_action::get_offer_expiration_epoch(@0x1000a) == 4, 0);
-    assert!(multi_action::get_offer_proposed(@0x1000a) == vector::singleton(@0x1000c), 0);
-    assert!(multi_action::get_offer_claimed(@0x1000a) == vector::singleton(@0x1000b), 0);
+    assert!(multi_action::get_offer_expiration_epoch(@0x1000a) == 4, 7357002);
+    assert!(multi_action::get_offer_proposed(@0x1000a) == vector::singleton(@0x1000c), 7357003);
+    assert!(multi_action::get_offer_claimed(@0x1000a) == vector::singleton(@0x1000b), 7357004);
   }
 
   // Try to propose offer without governance
@@ -446,7 +449,7 @@ module ol_framework::test_multi_action {
 
   // Try to finalize account without offer
   #[test(root = @ol_framework, alice = @0x1000a)]
-  #[expected_failure(abort_code = 0x60017, location = ol_framework::multi_action)]
+  #[expected_failure(abort_code = 0x30018, location = ol_framework::multi_action)]
   fun finalize_without_offer(root: &signer, alice: &signer) {
     let _vals = mock::genesis_n_vals(root, 1);
     multi_action::init_gov(alice);
@@ -524,7 +527,7 @@ module ol_framework::test_multi_action {
 
     // SHOULD NOT HAVE COUNTED ANY VOTES
     let v = multi_action::get_votes<DummyType>(alice_address, guid::id_creation_num(&id));
-    assert!(vector::length(&v) == 0, 7357003);
+    assert!(vector::length(&v) == 0, 7357001);
   }
 
   // Multisign authorities bob and carol try to send the same proposal
@@ -562,20 +565,19 @@ module ol_framework::test_multi_action {
     let proposal = multi_action::proposal_constructor(DummyType{}, option::none());
     multi_action::propose_new(carol, alice_address, proposal);
     let count = multi_action::get_count_of_pending<DummyType>(alice_address);
-    assert!(count == 1, 7357005); // no change
+    assert!(count == 1, 7357004); // no change
 
     // confirm there are no votes
     let v = multi_action::get_votes<DummyType>(alice_address, guid::id_creation_num(&id));
-    assert!(vector::length(&v) == 0, 7357003);
+    assert!(vector::length(&v) == 0, 7357005);
 
     // proposing a different ending epoch will have no effect on the proposal once it is started. Here we try to set to epoch 4, but nothing should change, at it will still be 14.
     let proposal = multi_action::proposal_constructor(DummyType{}, option::some(4));
     multi_action::propose_new(carol, alice_address, proposal);
     let count = multi_action::get_count_of_pending<DummyType>(alice_address);
-    assert!(count == 1, 7357004);
+    assert!(count == 1, 7357006);
     let epoch = multi_action::get_expiration<DummyType>(alice_address, guid::id_creation_num(&id));
-    assert!(epoch != 4, 7357004);
-    assert!(epoch == 14, 7357005);
+    assert!(epoch == 14, 7357007);
   }
 
   // Happy day: complete vote action
@@ -741,19 +743,19 @@ module ol_framework::test_multi_action {
 
     // check authorities did not change
     let ret = multi_action::get_authorities(carol_address);
-    assert!(ret == authorities, 7357002);
+    assert!(ret == authorities, 7357001);
 
     // bob votes. bob could either use vote_governance()
     let passed = multi_action::vote_governance(bob, carol_address, &id);
-    assert!(passed, 7357003);
+    assert!(passed, 7357002);
 
     // check authorities did not change
     let ret = multi_action::get_authorities(carol_address);
-    assert!(ret == authorities, 7357002);
+    assert!(ret == authorities, 7357003);
 
     // check the Offer
     let ret = multi_action::get_offer_proposed(carol_address);
-    assert!(ret == vector::singleton(dave_address), 7357003);
+    assert!(ret == vector::singleton(dave_address), 7357004);
 
     // dave claims the offer and it becomes final.
     multi_action::claim_offer(dave, carol_address);
@@ -761,23 +763,30 @@ module ol_framework::test_multi_action {
     // Chek new set of authorities
     let ret = multi_action::get_authorities(carol_address);
     vector::push_back(&mut authorities, dave_address);
-    assert!(ret == authorities, 7357003);
+    assert!(ret == authorities, 7357005);
 
-    // Check if offer was dropped
-    assert!(!multi_action::exists_offer(carol_address), 7357004);  
+    // Check if offer was cleaned
+    assert!(multi_action::get_offer_proposed(carol_address) == vector::empty(), 7357006);
+    assert!(multi_action::get_offer_claimed(carol_address) == vector::empty(), 7357007);
+    assert!(multi_action::get_offer_expiration_epoch(carol_address) == 0, 7357008);
 
     // Now dave and bob, will conspire to remove alice.
     // NOTE: `false` means `remove account` here
     let id = multi_action::propose_governance(dave, carol_address, vector::singleton(signer::address_of(alice)), false, option::none(), option::none());
     let a = multi_action::get_authorities(carol_address);
-    assert!(vector::length(&a) == 3, 7357002); // no change yet
+    assert!(vector::length(&a) == 3, 7357009); // no change yet
 
     // bob votes and it becomes final. Bob could either use vote_governance()
     let passed = multi_action::vote_governance(bob, carol_address, &id);
-    assert!(passed, 7357003);
+    assert!(passed, 7357008);
     let a = multi_action::get_authorities(carol_address);
-    assert!(vector::length(&a) == 2, 7357003);
-    assert!(!multi_action::is_authority(carol_address, signer::address_of(alice)), 7357004);
+    assert!(vector::length(&a) == 2, 73570010);
+    assert!(!multi_action::is_authority(carol_address, signer::address_of(alice)), 7357011);
+
+    // Check if offer was cleaned
+    assert!(multi_action::get_offer_proposed(carol_address) == vector::empty(), 73570012);
+    assert!(multi_action::get_offer_claimed(carol_address) == vector::empty(), 73570013);
+    assert!(multi_action::get_offer_expiration_epoch(carol_address) == 0, 73570014);
   }
 
   // Happy day: change the threshold of a multisig
@@ -831,10 +840,10 @@ module ol_framework::test_multi_action {
     let proposal = multi_action::proposal_constructor(DummyType{}, option::none());
     let id = multi_action::propose_new<DummyType>(bob, new_resource_address, proposal);
     let (passed, cap_opt) = multi_action::vote_with_id<DummyType>(bob, &id, new_resource_address);
-    assert!(passed == true, 7357002);
+    assert!(passed == true, 7357007);
 
     // THE WITHDRAW CAPABILITY IS MISSING AS EXPECTED
-    assert!(option::is_none(&cap_opt), 7357003);
+    assert!(option::is_none(&cap_opt), 7357008);
 
     option::destroy_none(cap_opt);
   }

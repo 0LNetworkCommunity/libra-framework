@@ -147,10 +147,25 @@ module ol_framework::multi_action {
   /// - proposed: List of authority addresses proposed
   /// - claimed: List of authority addresses that have claimed the offer.
   /// - expiration_epoch: The epoch when the offer expires.
-  struct Offer has key, store, drop {
+  struct Offer has key, store {
     proposed: vector<address>,
     claimed: vector<address>,
     expiration_epoch: u64,
+  }
+
+  fun construct_empty_offer(): Offer {
+    Offer {
+      proposed: vector::empty(),
+      claimed: vector::empty(),
+      expiration_epoch: 0,
+    }
+  }
+
+  fun clean_offer(addr: address) acquires Offer {
+    let offer = borrow_global_mut<Offer>(addr);
+    offer.proposed = vector::empty();
+    offer.claimed = vector::empty();
+    offer.expiration_epoch = 0;
   }
 
   // Initialize the governance structs for this account.
@@ -178,9 +193,14 @@ module ol_framework::multi_action {
         vote: ballot::new_tracker<Proposal<PropGovSigners>>(),
       });
     };
+
+    if (!exists<Offer>(multisig_address)) {
+      move_to(sig, construct_empty_offer());
+    };
   }
 
-  fun propose_offer_address(sig: &signer, addr: address, proposed: vector<address>, duration_epochs: Option<u64>) acquires Offer {
+  // Private function to assist offer proposal by entry function and governance vote
+  fun propose_offer_address(addr: address, proposed: vector<address>, duration_epochs: Option<u64>) acquires Offer {
     // Ensure the proposed list is not empty
     assert!(vector::length(&proposed) > 0, error::invalid_argument(EOFFER_EMPTY));
 
@@ -206,42 +226,61 @@ module ol_framework::multi_action {
 
     let expiration_epoch = epoch_helper::get_current_epoch() + duration_epochs;
 
-    // Update the offer if exists, otherwise create a new one
-    if (exists_offer(addr)) {
-      // Update offer
-      let offer = borrow_global_mut<Offer>(addr);
-      
-      // Remove claimed addresses that are not in the new proposed list
-      let j = 0;
-      while (j < vector::length(&offer.claimed)) {
-        let claimed_addr = vector::borrow(&offer.claimed, j);
-        if (!vector::contains(&proposed, claimed_addr)) {
-          vector::remove(&mut offer.claimed, j);
-        } else {
-          j = j + 1;
-        };        
-      };
+    // Update offer
+    let offer = borrow_global_mut<Offer>(addr);
+    
+    // Remove claimed addresses that are not in the new proposed list
+    let j = 0;
+    while (j < vector::length(&offer.claimed)) {
+      let claimed_addr = vector::borrow(&offer.claimed, j);
+      if (!vector::contains(&proposed, claimed_addr)) {
+        vector::remove(&mut offer.claimed, j);
+      } else {
+        j = j + 1;
+      };        
+    };
 
-      // Remove new proposed addresses that are already claimed
-      let i = 0;
-      while (i < vector::length(&proposed)) {
-        let proposed_addr = vector::borrow(&proposed, i);
-        if (vector::contains(&offer.claimed, proposed_addr)) {
-          vector::remove(&mut proposed, i);
-        };
-        i = i + 1;
+    // Remove new proposed addresses that are already claimed
+    let i = 0;
+    while (i < vector::length(&proposed)) {
+      let proposed_addr = vector::borrow(&proposed, i);
+      if (vector::contains(&offer.claimed, proposed_addr)) {
+        vector::remove(&mut proposed, i);
       };
-      offer.proposed = proposed;
-      offer.expiration_epoch = expiration_epoch;
+      i = i + 1;
+    };
+    offer.proposed = proposed;
+    offer.expiration_epoch = expiration_epoch;
+  }
+
+  // TODO: test this - WIP
+  // DANGER - may forge the signer of the multisig account is necessary here
+  // Migrate an account to have structure Offer in order to propose authorities changes
+  public entry fun migrate_init_offer(sig: &signer, multisig_address: address) {
+    // Ensure the account does not have Offer structure
+    assert!(!exists_offer(multisig_address), error::already_exists(666));
+
+    // if account is multisig, forge signer and add Offer to the multisig account
+    if (multisig_account::is_multisig(multisig_address)) {
+      // a) multisig account: ensure the signer is in the authorities list
+      let authorities = multisig_account::owners(multisig_address);
+      assert!(vector::contains(&authorities, &signer::address_of(sig)), error::permission_denied(ENOT_AUTHORIZED));
+
+      // We create the signer for the multisig account here since this is required 
+      // to add the Offer resource. 
+      // This should be safe because we check that the signer is in the authorities list.
+      // Also, after all accounts are migrated this function will be deprecated.
+      let multisig_signer = &create_signer(multisig_address); // <<< DANGER
+
+      // create Offer structure
+      let offer = construct_empty_offer();
+      move_to(multisig_signer, offer);
     } else {
-      // create new offer
-      let offer = Offer {
-        proposed,
-        claimed: vector::empty<address>(),
-        expiration_epoch,
-      };
+      // b) initiated account: ensure the account is initialized with governance and add Offer to the account
+      assert!(!is_gov_init(multisig_address), error::invalid_state(EGOV_NOT_INITIALIZED));
+      let offer = construct_empty_offer();
       move_to(sig, offer);
-    }  
+    };
   }
 
   // Offer authorities for an account to be initialized as multisig.
@@ -249,18 +288,20 @@ module ol_framework::multi_action {
   // - proposed: The list of authorities addresses proposed.
   // - duration_epochs: The duration in epochs before the offer expires.
   public entry fun propose_offer(sig: &signer, proposed: vector<address>, duration_epochs: Option<u64>) acquires Offer {
+    // Propose the offer on the signer's account
     let addr = signer::address_of(sig);
 
     // Ensure the account is not yet initialized as multisig
     assert!(!multisig_account::is_multisig(addr), error::invalid_state(EALREADY_MULTISIG));
 
-    // Ensure the account has governance initialized
+    // Ensure the account has governance initialized and offer structure
     assert!(is_gov_init(addr), error::invalid_state(EGOV_NOT_INITIALIZED));
+    assert!(exists_offer(addr), error::not_found(ENOT_OFFERED));
 
-    propose_offer_address(sig, addr, proposed, duration_epochs);
+    propose_offer_address(addr, proposed, duration_epochs);
   }
   
-  // Allows a proposed authority to claim their role.
+  // Allows a proposed authority to claim their offer.
   // - sig: The signer making the claim.
   // - multisig_address: The address of the multisig account.
   public fun claim_offer(sig: &signer, multisig_address: address) acquires Offer, Governance {  
@@ -281,24 +322,21 @@ module ol_framework::multi_action {
     let current_epoch = epoch_helper::get_current_epoch();
     assert!(offer.expiration_epoch > current_epoch, error::out_of_range(EOFFER_EXPIRED));
 
-    // Remove the sender from the proposed list and add to the claimed list
+    // Remove the sender from the proposed list 
     let (_, i) = vector::index_of(&offer.proposed, &sender_addr);
     vector::remove(&mut offer.proposed, i);
-    vector::push_back(&mut offer.claimed, sender_addr);
 
-    // if account is multisig, add authority to the multisig account
     if (multisig_account::is_multisig(multisig_address)) {
+      // a) finalized account: add authority to the multisig account
       let ms = borrow_global_mut<Governance>(multisig_address);
       maybe_update_authorities(ms, true, &vector::singleton(sender_addr));
-      // remove sender_addr from offer claimed
-      let offer = borrow_global_mut<Offer>(multisig_address);
-      let (_, i) = vector::index_of(&offer.claimed, &sender_addr);
-      vector::remove(&mut offer.claimed, i);
-
       if (vector::length(&offer.proposed) == 0) {
-        // drop empty Offer
-        move_from<Offer>(multisig_address);
+        // clean the Offer
+        clean_offer(multisig_address);
       };
+    } else {
+      // b) initiated account: add sender to the claimed list
+      vector::push_back(&mut offer.claimed, sender_addr);
     };
   }
 
@@ -324,8 +362,8 @@ module ol_framework::multi_action {
     let initial_authorities = get_offer_claimed(addr);
     multisig_account::migrate_with_owners(sig, initial_authorities, vector::length(&initial_authorities), vector::empty(), vector::empty());
 
-    // drop the offer
-    move_from<Offer>(addr);
+    // clean offer
+    clean_offer(addr);
   }
 
   public(friend) fun proposal_constructor<ProposalData: store + drop>(proposal_data: ProposalData, duration_epochs: Option<u64>): Proposal<ProposalData> {
@@ -794,11 +832,7 @@ module ol_framework::multi_action {
       let data = extract_proposal_data<PropGovSigners>(multisig_address, id);
       if (!vector::is_empty(&data.addresses)) {
         if (data.add_remove) {
-          // We create the signer for the multisig account here since this is required 
-          // to add the Offer resource, specialy for pre existing multisig accounts. 
-          // This should be safe because it is triggered by the vote governance.
-          let multisig_account = &create_signer(multisig_address);
-          propose_offer_address(multisig_account, multisig_address, data.addresses, option::none());
+          propose_offer_address(multisig_address, data.addresses, option::none());
         } else {
           maybe_update_authorities(ms, data.add_remove, &data.addresses);
         };        
