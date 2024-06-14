@@ -55,6 +55,37 @@ module ol_framework::test_multi_action {
     assert!(!multi_action::is_multi_action(carol_address), 7357008);
   }
 
+  // Propose new offer after expired
+  #[test(root = @ol_framework, carol = @0x1000c, alice = @0x1000a, bob = @0x1000b)]
+  fun propose_offer_after_expired(root: &signer, carol: &signer) {
+    let _vals = mock::genesis_n_vals(root, 3);
+    let carol_address = @0x1000c;
+
+    // initialize the multi_action account
+    multi_action::init_gov(carol);
+
+    // offer to alice
+    multi_action::propose_offer(carol, vector::singleton(@0x1000a), option::some(2));
+
+    // check the offer is valid
+    assert!(multi_action::get_offer_expiration_epoch(carol_address) == 2, 7357004);
+
+    // wait for the offer to expire
+    mock::trigger_epoch(root); // epoch 1 valid
+    mock::trigger_epoch(root); // epoch 2 expired
+    assert!(multi_action::is_offer_expired(carol_address), 7357005);
+
+    // propose a new offer to bob
+    let new_authorities = vector::empty<address>();
+    vector::push_back(&mut new_authorities, @0x1000b);
+    multi_action::propose_offer(carol, new_authorities, option::some(3));
+
+    // check the new offer is proposed
+    assert!(multi_action::get_offer_proposed(carol_address) == vector::singleton(@0x1000b), 7357007);
+    assert!(multi_action::get_offer_claimed(carol_address) == vector::empty(), 7357008);
+    assert!(multi_action::get_offer_expiration_epoch(carol_address) == 5, 7357009);
+  }
+
   // Happy Day: claim offer by authorities
   #[test(root = @ol_framework, carol = @0x1000c, alice = @0x1000a, bob = @0x1000b)]
   fun claim_offer(root: &signer, carol: &signer, alice: &signer, bob: &signer) {
