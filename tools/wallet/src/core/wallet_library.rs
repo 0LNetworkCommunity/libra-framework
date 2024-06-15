@@ -12,8 +12,6 @@
 //! https://github.com/rust-bitcoin/rust-wallet/blob/master/wallet/src/walletlibrary.rs
 
 use super::{
-    // error::WalletError,
-    // io_utils,
     key_factory::{ChildNumber, KeyFactory, Seed},
     mnemonic::Mnemonic,
 };
