@@ -1,4 +1,4 @@
-//! generate keys for V7 forward with vendor specific keygen
+//! Generate keys for V7 forward with vendor specific keygen
 
 // In libra we have a very specific key generation process that is not compatible with BIP-44. It's a similar HKDF. Any wallet will need to implement
 // our key gen process, which is quite simple if you are already using BIP-44.
@@ -19,7 +19,6 @@ use diem_config::{config::IdentityBlob, keys::ConfigKey};
 use diem_crypto::{bls12381, ed25519::Ed25519PrivateKey, traits::PrivateKey, x25519};
 use diem_genesis::keys::{PrivateIdentity, PublicIdentity};
 use std::path::{Path, PathBuf};
-// use diem_types::transaction::authenticator::AuthenticationKey;
 
 // These are consistent with Vendor
 const PRIVATE_KEYS_FILE: &str = "private-keys.yaml";
@@ -29,7 +28,7 @@ const VFN_FILE: &str = "validator-full-node-identity.yaml";
 // This is Libra specific
 const USER_FILE: &str = "danger-user-private-keys.yaml";
 
-// new keys for user
+// Generate new keys for user
 pub fn user_keygen(output_opt: Option<PathBuf>) -> anyhow::Result<()> {
     let user_keys = legacy_keygen(true)?;
 
@@ -241,7 +240,6 @@ pub fn network_keys_x25519_from_ed25519(
 #[test]
 // checks we can get deterministic bls keys from the seed from mnemonic.
 fn deterministic_bls_from_seed() {
-    // use ol_keys::wallet::get_account_from_mnem;
     use crate::account_keys::get_keys_from_mnem;
     use crate::load_keys::get_account_from_mnem;
     use diem_crypto::ValidCryptoMaterialStringExt;
@@ -251,11 +249,11 @@ fn deterministic_bls_from_seed() {
 
     let seed = wallet.get_key_factory().main();
     let l = get_keys_from_mnem(alice_mnem.to_string()).unwrap();
-    assert!(seed == l.seed);
+    assert_eq!(seed, l.seed);
 
     let prk1 = bls_generate_key(seed).unwrap();
     let prk2 = bls_generate_key(seed).unwrap();
     let prk3 = bls_generate_key(seed).unwrap();
-    assert!(prk1.to_encoded_string().unwrap() == prk2.to_encoded_string().unwrap());
-    assert!(prk2.to_encoded_string().unwrap() == prk3.to_encoded_string().unwrap());
+    assert_eq!(prk1.to_encoded_string().unwrap(), prk2.to_encoded_string().unwrap());
+    assert_eq!(prk2.to_encoded_string().unwrap(), prk3.to_encoded_string().unwrap());
 }
