@@ -98,9 +98,15 @@ fn fixture_wallet() {
     let (_, acc, _) = get_account_from_mnem(mnemonic_string.to_owned()).unwrap();
 
     // expect the same address for alice
-    assert_eq!(&acc.to_string(), "87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5");
-    assert_eq!(get_ol_legacy_address(acc)
-                   .unwrap()
-                   .to_string()
-                   .to_uppercase(), "000000000000000000000000000000004C613C2F4B1E67CA8D98A542EE3F59F5");
+    assert_eq!(
+        &acc.to_string(),
+        "87515d94a244235a1433d7117bc0cb154c613c2f4b1e67ca8d98a542ee3f59f5"
+    );
+    assert_eq!(
+        get_ol_legacy_address(acc)
+            .unwrap()
+            .to_string()
+            .to_uppercase(),
+        "000000000000000000000000000000004C613C2F4B1E67CA8D98A542EE3F59F5"
+    );
 }

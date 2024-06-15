@@ -254,6 +254,12 @@ fn deterministic_bls_from_seed() {
     let prk1 = bls_generate_key(seed).unwrap();
     let prk2 = bls_generate_key(seed).unwrap();
     let prk3 = bls_generate_key(seed).unwrap();
-    assert_eq!(prk1.to_encoded_string().unwrap(), prk2.to_encoded_string().unwrap());
-    assert_eq!(prk2.to_encoded_string().unwrap(), prk3.to_encoded_string().unwrap());
+    assert_eq!(
+        prk1.to_encoded_string().unwrap(),
+        prk2.to_encoded_string().unwrap()
+    );
+    assert_eq!(
+        prk2.to_encoded_string().unwrap(),
+        prk3.to_encoded_string().unwrap()
+    );
 }
