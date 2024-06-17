@@ -92,6 +92,10 @@ module ol_framework::multi_action {
   const ETOO_MANY_ADDRESSES: u64 = 0x24;
   /// Offer already exists
   const EOFFER_ALREADY_EXISTS: u64 = 0x25;
+  /// Already an owner
+  const EALREADY_OWNER: u64 = 0x26;
+  /// Owner not found
+  const EOWNER_NOT_FOUND: u64 = 0x27;
 
   /// default setting for a proposal to expire
   const DEFAULT_EPOCHS_EXPIRE: u64 = 14;
@@ -898,7 +902,7 @@ module ol_framework::multi_action {
     assert_authorized(sig, multisig_address); // Duplicated with propose(), belt
     // and suspenders
 
-    multisig_account::validate_owners(&addresses, multisig_address);
+    validate_owners(&addresses, multisig_address, add_remove);
 
     let data = PropGovSigners {
       addresses,
@@ -952,6 +956,25 @@ module ol_framework::multi_action {
     if (option::is_some(n_of_m_opt)) {
       multisig_account::multi_auth_helper_update_signatures_required(&ms.guid_capability, *option::borrow(n_of_m_opt));
     };
+  }
+
+  fun validate_owners(addresses: &vector<address>, multisig_address: address, add_remove: bool) {
+    let auths = multisig_account::owners(multisig_address);
+    let i = 0;
+    if (add_remove) {
+      while (i < vector::length(addresses)) {
+        let addr = vector::borrow(addresses, i);
+        assert!(!vector::contains(&auths, addr), error::invalid_argument(EALREADY_OWNER));
+        i = i + 1;
+      };
+    } else {
+      while (i < vector::length(addresses)) {
+        let addr = vector::borrow(addresses, i);
+        assert!(vector::contains(&auths, addr), error::not_found(EOWNER_NOT_FOUND));
+        i = i + 1;
+      };
+    };
+    multisig_account::validate_owners(addresses, multisig_address);
   }
 
   //////// GETTERS ////////
