@@ -433,7 +433,7 @@ module ol_framework::test_multi_action {
 
   // Try to propose offer to an invalid signer
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
-  #[expected_failure(abort_code = 0x60021, location = ol_framework::multi_action)]
+  #[expected_failure(abort_code = 0x60018, location = ol_framework::multisig_account)]
   fun offer_to_invalid_authority(root: &signer, alice: &signer, bob: &signer) {
     let _vals = mock::genesis_n_vals(root, 3);
     multi_action::init_gov(alice);
@@ -615,7 +615,7 @@ module ol_framework::test_multi_action {
   // Happy Day: init offer on a legacy mulstisign finalized account
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
   fun migrate_offer_account_finalized(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer) {
-    let _vals = mock::genesis_n_vals(root, 2);
+    let _vals = mock::genesis_n_vals(root, 4);
     let alice_address = signer::address_of(alice);
 
     // make alice account multisign with deprecated methods
@@ -1092,5 +1092,73 @@ module ol_framework::test_multi_action {
     let expiration = vector::singleton(7);
     vector::push_back(&mut expiration, 8);
     assert!(multi_action::get_offer_expiration_epoch(alice_address) == expiration, 7357005);    
+  }
+
+  // Try to vote an invalid address for new authority
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
+  #[expected_failure(abort_code = 0x60018, location = ol_framework::multisig_account)]
+  fun governance_vote_invalid_address(root: &signer, alice: &signer, bob: &signer, carol: &signer) {
+    let _vals = mock::genesis_n_vals(root, 3);
+    let alice_address = @0x1000a;
+
+    // alice offer bob and carol authority on her account
+    multi_action::init_gov(alice);
+    let authorities = vector::empty<address>();
+    vector::push_back(&mut authorities, signer::address_of(bob));
+    vector::push_back(&mut authorities, signer::address_of(carol));
+    multi_action::propose_offer(alice, authorities, option::some(1));
+    multi_action::claim_offer(bob, alice_address);
+    multi_action::claim_offer(carol, alice_address);
+    multi_action::finalize_and_cage2(alice);
+
+    // carol is going to propose to change the authorities to add dave
+    let id = multi_action::propose_governance(carol, alice_address, vector::singleton(@0xCAFE), true, option::none(), option::none());
+    
+    // bob votes and dave does not claims the offer
+    multi_action::vote_governance(bob, alice_address, &id);
+  }
+
+  // Try to vote duplicated addresses for new authority
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
+  #[expected_failure(abort_code = 0x10001, location = ol_framework::multisig_account)]
+  fun governance_vote_duplicated_addresses(root: &signer, alice: &signer, bob: &signer, carol: &signer) {
+    let _vals = mock::genesis_n_vals(root, 5);
+    let alice_address = @0x1000a;
+
+    // alice offer bob and carol authority on her account
+    multi_action::init_gov(alice);
+    let authorities = vector::empty<address>();
+    vector::push_back(&mut authorities, signer::address_of(bob));
+    vector::push_back(&mut authorities, signer::address_of(carol));
+    multi_action::propose_offer(alice, authorities, option::some(1));
+    multi_action::claim_offer(bob, alice_address);
+    multi_action::claim_offer(carol, alice_address);
+    multi_action::finalize_and_cage2(alice);
+
+    // carol is going to propose to change the authorities to add dave twice
+    let authorities = vector::singleton(@0x1000d);
+    vector::push_back(&mut authorities, @0x1000d);
+    let _id = multi_action::propose_governance(carol, alice_address, authorities, true, option::none(), option::none());
+  }
+
+  // Try to vote multisig account address for new authority
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
+  #[expected_failure(abort_code = 0x10013, location = ol_framework::multisig_account)]
+  fun governance_vote_multisig_address(root: &signer, alice: &signer, bob: &signer, carol: &signer) {
+    let _vals = mock::genesis_n_vals(root, 5);
+    let alice_address = @0x1000a;
+
+    // alice offer bob and carol authority on her account
+    multi_action::init_gov(alice);
+    let authorities = vector::empty<address>();
+    vector::push_back(&mut authorities, signer::address_of(bob));
+    vector::push_back(&mut authorities, signer::address_of(carol));
+    multi_action::propose_offer(alice, authorities, option::some(1));
+    multi_action::claim_offer(bob, alice_address);
+    multi_action::claim_offer(carol, alice_address);
+    multi_action::finalize_and_cage2(alice);
+
+    // carol is going to propose to change the authorities to add dave twice
+    let _id = multi_action::propose_governance(carol, alice_address, vector::singleton(alice_address), true, option::none(), option::none());
   }
 }
