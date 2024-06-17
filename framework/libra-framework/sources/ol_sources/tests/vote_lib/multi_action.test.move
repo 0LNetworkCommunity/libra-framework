@@ -387,6 +387,27 @@ module ol_framework::test_multi_action {
     multi_action::propose_offer(alice, vector::empty<address>(), option::none());
   }
 
+  // Try to propose too many authorities
+  #[test(root = @ol_framework, alice = @0x1000a)]
+  #[expected_failure(abort_code = 0x10024, location = ol_framework::multi_action)]
+  fun propose_too_many_authorities(root: &signer, alice: &signer) {
+    let _vals = mock::genesis_n_vals(root, 1);
+    multi_action::init_gov(alice);
+    let authorities = vector::empty<address>();
+    vector::push_back(&mut authorities, @0x10001);
+    vector::push_back(&mut authorities, @0x10002);
+    vector::push_back(&mut authorities, @0x10003);
+    vector::push_back(&mut authorities, @0x10004);
+    vector::push_back(&mut authorities, @0x10005);
+    vector::push_back(&mut authorities, @0x10006);
+    vector::push_back(&mut authorities, @0x10007);
+    vector::push_back(&mut authorities, @0x10008);
+    vector::push_back(&mut authorities, @0x10009);
+    vector::push_back(&mut authorities, @0x10010);
+    vector::push_back(&mut authorities, @0x10011);
+    multi_action::propose_offer(alice, authorities, option::none());
+  }
+
   // Try to propose offer to the signer address
   #[test(root = @ol_framework, alice = @0x1000a)]
   #[expected_failure(abort_code = 0x50002, location = ol_framework::multi_action)]
