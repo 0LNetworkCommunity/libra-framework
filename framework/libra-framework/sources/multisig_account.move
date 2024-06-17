@@ -95,6 +95,8 @@ module diem_framework::multisig_account {
     const EDUPLICATE_METADATA_KEY: u64 = 16;
     /// The sequence number provided is invalid. It must be between [1, next pending transaction - 1].
     const EINVALID_SEQUENCE_NUMBER: u64 = 17;
+    /// The owner does not exist in the chain.
+    const EOWNER_DOES_NOT_EXIST: u64 = 0x18;
 
     /// Represents a multisig account's configurations and transactions.
     /// This will be stored in the multisig account (created as a resource account separate from any owner accounts).
@@ -1021,6 +1023,7 @@ module diem_framework::multisig_account {
             assert!(owner != multisig_account, error::invalid_argument(EOWNER_CANNOT_BE_MULTISIG_ACCOUNT_ITSELF));
             let (found, _) = vector::index_of(&distinct_owners, &owner);
             assert!(!found, error::invalid_argument(EDUPLICATE_OWNER));
+            assert!(account::exists_at(owner), error::not_found(EOWNER_DOES_NOT_EXIST));
             vector::push_back(&mut distinct_owners, owner);
         });
     }
