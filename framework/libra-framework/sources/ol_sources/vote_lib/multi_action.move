@@ -34,14 +34,14 @@ module ol_framework::multi_action {
   use ol_framework::ballot::{Self, BallotTracker};
   use ol_framework::epoch_helper;
 
+  // use diem_std::debug::print;
+
   friend ol_framework::community_wallet_init;
   friend ol_framework::donor_voice_txs;
   friend ol_framework::safe;
 
   #[test_only]
   friend ol_framework::test_multi_action;
-
-  // use diem_std::debug::print;
 
   const EGOV_NOT_INITIALIZED: u64 = 0x1;
   /// The owner of this account can't be an authority, since it will subsequently be bricked. The signer of this account is no longer useful. The account is now controlled by the Governance logic.
@@ -146,18 +146,18 @@ module ol_framework::multi_action {
   /// Offer struct to manage the proposal and claiming of new authorities.
   /// - proposed: List of authority addresses proposed
   /// - claimed: List of authority addresses that have claimed the offer.
-  /// - expiration_epoch: The epoch when the offer expires.
+  /// - expiration_epoch: The epoch when each proposed expires.
   struct Offer has key, store {
     proposed: vector<address>,
     claimed: vector<address>,
-    expiration_epoch: u64,
+    expiration_epoch: vector<u64>,
   }
 
   fun construct_empty_offer(): Offer {
     Offer {
       proposed: vector::empty(),
       claimed: vector::empty(),
-      expiration_epoch: 0,
+      expiration_epoch: vector::empty(),
     }
   }
 
@@ -165,7 +165,7 @@ module ol_framework::multi_action {
     let offer = borrow_global_mut<Offer>(addr);
     offer.proposed = vector::empty();
     offer.claimed = vector::empty();
-    offer.expiration_epoch = 0;
+    offer.expiration_epoch = vector::empty();
   }
 
   // Initialize the governance structs for this account.
@@ -199,18 +199,34 @@ module ol_framework::multi_action {
     };
   }
 
-  fun lazy_clean_offer_expired(addr: address) acquires Offer {
+  /*fun lazy_clean_offer_expired(addr: address) acquires Offer {
     if (is_offer_expired(addr)) {
       let offer = borrow_global_mut<Offer>(addr);
       offer.proposed = vector::empty();
     };
+  }*/
+
+  // TODO
+  // propose offer add
+  // propose offer remove
+  // propose offer update
+  // update scenarios
+
+  // Private function to assist governance vote
+  fun add_offer_addresses(addr: address, proposed: vector<address>) acquires Offer {
+    let offer = borrow_global_mut<Offer>(addr);
+    let duration = epoch_helper::get_current_epoch() + DEFAULT_EPOCHS_OFFER_EXPIRE;
+    let i = 0;
+    while (i < vector::length(&proposed)) {
+      let addr = vector::borrow(&proposed, i);
+      vector::push_back(&mut offer.proposed, *addr);
+      vector::push_back(&mut offer.expiration_epoch, duration);
+      i = i + 1;
+    };
   }
 
   // Private function to assist offer proposal by entry function and governance vote
-  fun propose_offer_address(addr: address, proposed: vector<address>, duration_epochs: Option<u64>) acquires Offer {
-    // Avoid renew expired offer
-    lazy_clean_offer_expired(addr);
-    
+  fun propose_offer_address(addr: address, proposed: vector<address>, duration_epochs: Option<u64>) acquires Offer {   
     // Ensure the proposed list is not empty
     assert!(vector::length(&proposed) > 0, error::invalid_argument(EOFFER_EMPTY));
 
@@ -259,8 +275,34 @@ module ol_framework::multi_action {
       };
       i = i + 1;
     };
-    offer.proposed = proposed;
-    offer.expiration_epoch = expiration_epoch;
+
+    // update proposed and expiration_epoch
+    let k = 0;
+    while (k < vector::length(&proposed)) {
+      // if already contains the address, update the expiration_epoch
+      let proposed_addr = vector::borrow(&proposed, k);
+      let (found, i) = vector::index_of(&offer.proposed, proposed_addr);
+      if (found) {
+        vector::remove(&mut offer.expiration_epoch, i);
+        vector::insert(&mut offer.expiration_epoch, i, expiration_epoch);
+      } else {
+        vector::push_back(&mut offer.proposed, *proposed_addr);
+        vector::push_back(&mut offer.expiration_epoch, expiration_epoch);
+      };
+      k = k + 1;
+    };
+
+    // Remove old proposed addresses that are not in the new proposed list
+    let j = 0;
+    while (j < vector::length(&offer.proposed)) {
+      let proposed_addr = vector::borrow(&offer.proposed, j);
+      if (!vector::contains(&proposed, proposed_addr)) {
+        vector::remove(&mut offer.proposed, j);
+        vector::remove(&mut offer.expiration_epoch, j);
+      } else {
+        j = j + 1;
+      };
+    };
   }
 
   // TODO: test this - WIP
@@ -293,6 +335,7 @@ module ol_framework::multi_action {
     };
   }
 
+  // TODO: set proposed limit to avoid DoS attack
   // Offer authorities for an account to be initialized as multisig.
   // - sig: The signer proposing the offer.
   // - proposed: The list of authorities addresses proposed.
@@ -321,7 +364,7 @@ module ol_framework::multi_action {
     assert!(exists_offer(multisig_address), error::not_found(ENOT_OFFERED));
 
     // Ensure the offer has not expired
-    assert!(!is_offer_expired(multisig_address), error::out_of_range(EOFFER_EXPIRED));
+    assert!(!is_offer_expired(multisig_address, sender_addr), error::out_of_range(EOFFER_EXPIRED));
 
     let offer = borrow_global_mut<Offer>(multisig_address);
 
@@ -331,9 +374,10 @@ module ol_framework::multi_action {
     // Ensure the sender is in the proposed list
     assert!(vector::contains(&offer.proposed, &sender_addr), error::not_found(EADDRESS_NOT_PROPOSED));
 
-    // Remove the sender from the proposed list 
+    // Remove the sender from the proposed list and expiration_epoch
     let (_, i) = vector::index_of(&offer.proposed, &sender_addr);
     vector::remove(&mut offer.proposed, i);
+    vector::remove(&mut offer.expiration_epoch, i);
 
     if (multisig_account::is_multisig(multisig_address)) {
       // a) finalized account: add authority to the multisig account
@@ -452,7 +496,7 @@ module ol_framework::multi_action {
   }
 
   // Query offer expiration epoch.
-  public fun get_offer_expiration_epoch(multisig_address: address): u64 acquires Offer {
+  public fun get_offer_expiration_epoch(multisig_address: address): vector<u64> acquires Offer {
     borrow_global<Offer>(multisig_address).expiration_epoch
   }
 
@@ -463,9 +507,11 @@ module ol_framework::multi_action {
   }
 
   // Query if the offer has expired.
-  public fun is_offer_expired(multisig_address: address): bool acquires Offer {
+  public fun is_offer_expired(multisig_address: address, authority_address: address): bool acquires Offer {
     let offer = borrow_global<Offer>(multisig_address);
-    epoch_helper::get_current_epoch() >= offer.expiration_epoch
+    let (_, i) = vector::index_of(&offer.proposed, &authority_address);
+    let expiration_epoch = vector::borrow(&offer.expiration_epoch, i);
+    epoch_helper::get_current_epoch() >= *expiration_epoch
   }
 
   /// Has a multisig struct for a given action been created?
@@ -815,6 +861,7 @@ module ol_framework::multi_action {
     n_of_m: Option<u64>, // Optionally change the n of m threshold. To only change the n_of_m threshold, an empty list of addresses is required.
   }
 
+  // TODO: check if the addresses are on chain, does not contain the multisig_address and the current authorities
   // Proposing a governance change of adding or removing signer, or changing the n-of-m of the authorities. Note that proposing will deduplicate in the event that two authorities miscommunicate and send the same proposal, in that case for UX purposes the second proposal becomes a vote.
   public(friend) fun propose_governance(sig: &signer, multisig_address: address, addresses: vector<address>, add_remove: bool, n_of_m: Option<u64>, duration_epochs: Option<u64> ): guid::ID acquires Governance, Action, Offer {
     assert_authorized(sig, multisig_address); // Duplicated with propose(), belt
@@ -847,7 +894,8 @@ module ol_framework::multi_action {
       let data = extract_proposal_data<PropGovSigners>(multisig_address, id);
       if (!vector::is_empty(&data.addresses)) {
         if (data.add_remove) {
-          propose_offer_address(multisig_address, data.addresses, option::none());
+          // offer the authority adition voted to be claimed
+          add_offer_addresses(multisig_address, data.addresses);
         } else {
           maybe_update_authorities(ms, data.add_remove, &data.addresses);
         };        
