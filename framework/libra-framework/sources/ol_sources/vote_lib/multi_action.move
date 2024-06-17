@@ -199,19 +199,6 @@ module ol_framework::multi_action {
     };
   }
 
-  /*fun lazy_clean_offer_expired(addr: address) acquires Offer {
-    if (is_offer_expired(addr)) {
-      let offer = borrow_global_mut<Offer>(addr);
-      offer.proposed = vector::empty();
-    };
-  }*/
-
-  // TODO
-  // propose offer add
-  // propose offer remove
-  // propose offer update
-  // update scenarios
-
   // Private function to assist governance vote
   fun add_offer_addresses(addr: address, proposed: vector<address>) acquires Offer {
     let offer = borrow_global_mut<Offer>(addr);
@@ -222,86 +209,6 @@ module ol_framework::multi_action {
       vector::push_back(&mut offer.proposed, *addr);
       vector::push_back(&mut offer.expiration_epoch, duration);
       i = i + 1;
-    };
-  }
-
-  // Private function to assist offer proposal by entry function and governance vote
-  fun propose_offer_address(addr: address, proposed: vector<address>, duration_epochs: Option<u64>) acquires Offer {   
-    // Ensure the proposed list is not empty
-    assert!(vector::length(&proposed) > 0, error::invalid_argument(EOFFER_EMPTY));
-
-    // Ensure the proposed list does not contain the signer
-    assert!(!vector::contains(&proposed, &addr), error::permission_denied(ESIGNER_CANT_BE_AUTHORITY));
-
-    // Ensure the proposed list address are valid
-    let i = 0;
-    while (i < vector::length(&proposed)) {
-      let proposed_addr = vector::borrow(&proposed, i);
-      assert!(account::exists_at(*proposed_addr), error::not_found(EPROPOSED_NOT_EXISTS));
-      i = i + 1;
-    };
-       
-    let duration_epochs = if (option::is_some(&duration_epochs)) {
-      *option::borrow(&duration_epochs)
-    } else {
-      DEFAULT_EPOCHS_OFFER_EXPIRE
-    };
-
-    // Ensure duration is greater than zero
-    assert!(duration_epochs > 0, error::invalid_argument(EZERO_DURATION));
-
-    let expiration_epoch = epoch_helper::get_current_epoch() + duration_epochs;
-
-    // Update offer
-    let offer = borrow_global_mut<Offer>(addr);
-    
-    // Remove claimed addresses that are not in the new proposed list
-    let j = 0;
-    while (j < vector::length(&offer.claimed)) {
-      let claimed_addr = vector::borrow(&offer.claimed, j);
-      if (!vector::contains(&proposed, claimed_addr)) {
-        vector::remove(&mut offer.claimed, j);
-      } else {
-        j = j + 1;
-      };        
-    };
-
-    // Remove new proposed addresses that are already claimed
-    let i = 0;
-    while (i < vector::length(&proposed)) {
-      let proposed_addr = vector::borrow(&proposed, i);
-      if (vector::contains(&offer.claimed, proposed_addr)) {
-        vector::remove(&mut proposed, i);
-      };
-      i = i + 1;
-    };
-
-    // update proposed and expiration_epoch
-    let k = 0;
-    while (k < vector::length(&proposed)) {
-      // if already contains the address, update the expiration_epoch
-      let proposed_addr = vector::borrow(&proposed, k);
-      let (found, i) = vector::index_of(&offer.proposed, proposed_addr);
-      if (found) {
-        vector::remove(&mut offer.expiration_epoch, i);
-        vector::insert(&mut offer.expiration_epoch, i, expiration_epoch);
-      } else {
-        vector::push_back(&mut offer.proposed, *proposed_addr);
-        vector::push_back(&mut offer.expiration_epoch, expiration_epoch);
-      };
-      k = k + 1;
-    };
-
-    // Remove old proposed addresses that are not in the new proposed list
-    let j = 0;
-    while (j < vector::length(&offer.proposed)) {
-      let proposed_addr = vector::borrow(&offer.proposed, j);
-      if (!vector::contains(&proposed, proposed_addr)) {
-        vector::remove(&mut offer.proposed, j);
-        vector::remove(&mut offer.expiration_epoch, j);
-      } else {
-        j = j + 1;
-      };
     };
   }
 
@@ -351,7 +258,82 @@ module ol_framework::multi_action {
     assert!(is_gov_init(addr), error::invalid_state(EGOV_NOT_INITIALIZED));
     assert!(exists_offer(addr), error::not_found(ENOT_OFFERED));
 
-    propose_offer_address(addr, proposed, duration_epochs);
+    // Ensure the proposed list is not empty
+    assert!(vector::length(&proposed) > 0, error::invalid_argument(EOFFER_EMPTY));
+
+    // Ensure the proposed list does not contain the signer
+    assert!(!vector::contains(&proposed, &addr), error::permission_denied(ESIGNER_CANT_BE_AUTHORITY));
+
+    // Ensure the proposed list address are valid
+    let i = 0;
+    while (i < vector::length(&proposed)) {
+      let proposed_addr = vector::borrow(&proposed, i);
+      assert!(account::exists_at(*proposed_addr), error::not_found(EPROPOSED_NOT_EXISTS));
+      i = i + 1;
+    };
+       
+    let duration_epochs = if (option::is_some(&duration_epochs)) {
+      *option::borrow(&duration_epochs)
+    } else {
+      DEFAULT_EPOCHS_OFFER_EXPIRE
+    };
+
+    // Ensure duration is greater than zero
+    assert!(duration_epochs > 0, error::invalid_argument(EZERO_DURATION));
+
+    let expiration_epoch = epoch_helper::get_current_epoch() + duration_epochs;
+
+    // Update offer
+    let offer = borrow_global_mut<Offer>(addr);
+    
+    // Remove claimed addresses that are not in the new proposed list
+    let j = 0;
+    while (j < vector::length(&offer.claimed)) {
+      let claimed_addr = vector::borrow(&offer.claimed, j);
+      if (!vector::contains(&proposed, claimed_addr)) {
+        vector::remove(&mut offer.claimed, j);
+      } else {
+        j = j + 1;
+      };        
+    };
+
+    // Remove new proposed addresses that are already claimed
+    let i = 0;
+    while (i < vector::length(&proposed)) {
+      let proposed_addr = vector::borrow(&proposed, i);
+      if (vector::contains(&offer.claimed, proposed_addr)) {
+        vector::remove(&mut proposed, i);
+      };
+      i = i + 1;
+    };
+
+    // Remove old proposed addresses that are not in the new proposed list
+    let j = 0;
+    while (j < vector::length(&offer.proposed)) {
+      let proposed_addr = vector::borrow(&offer.proposed, j);
+      if (!vector::contains(&proposed, proposed_addr)) {
+        vector::remove(&mut offer.proposed, j);
+        vector::remove(&mut offer.expiration_epoch, j);
+      } else {
+        j = j + 1;
+      };
+    };
+
+    // Update proposed and expiration epoch lists
+    let k = 0;
+    while (k < vector::length(&proposed)) {
+      // if already contains the address, update the expiration_epoch
+      let proposed_addr = vector::borrow(&proposed, k);
+      let (found, i) = vector::index_of(&offer.proposed, proposed_addr);
+      if (found) {
+        vector::remove(&mut offer.expiration_epoch, i);
+        vector::insert(&mut offer.expiration_epoch, i, expiration_epoch);
+      } else {
+        vector::push_back(&mut offer.proposed, *proposed_addr);
+        vector::push_back(&mut offer.expiration_epoch, expiration_epoch);
+      };
+      k = k + 1;
+    };   
   }
   
   // Allows a proposed authority to claim their offer.
