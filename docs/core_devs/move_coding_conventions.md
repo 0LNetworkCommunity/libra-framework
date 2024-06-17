@@ -22,7 +22,7 @@ Wherever there are "critical mutations" i.e. state changes related to consensus,
 
 5. Authorize test helpers: The `#[test_only]` annotations are especially dangerous. If a developer accidentally removes an annotation (or places a line break in the wrong place), then the helper function may be exposed as a public function. Treat test functions as entry points that need to be authorized by `root`. We have seen these errors by the best Move develoeprs, e.g. in Move standard library and vendor code.
 
-6. Write formal verification `specs`: They don't need to be complicated. Even simple ones will save from a catastrophic deployment. An important patters is to use them within module code, for example in `if` flows and `while` loops to check that a condition isn't being met.
+6. Write formal verification `specs`: They don't need to be complicated. Even simple ones will save from a catastrophic deployment. An important pattern is to use them within module code, for example, in `if` flows and `while` loops to check that a condition isn't being met.
 
 7. Use `assert!` liberally:  Functions that only have USER transactions should always abort and return errors for known exceptions. An `assert!` shouldn't prevent you from writing a `spec`, assume you need to do both. Note this does not apply to `root` functions: `assert!` could cause an abort during consensus critical code and that will be fatal. Alway use flow control and return early. (There is an exception for genesis of the network in `genesis.move`).
 
