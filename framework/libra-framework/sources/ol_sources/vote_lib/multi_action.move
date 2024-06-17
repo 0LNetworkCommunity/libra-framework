@@ -267,9 +267,9 @@ module ol_framework::multi_action {
 
     // Ensure the proposed list is not greater than the maximum limit - avoid DoS attack
     assert!(vector::length(&proposed) <= MAX_OFFER_ADDRESSES, error::invalid_argument(ETOO_MANY_ADDRESSES));
-
-    // Ensure the proposed list does not contain the signer
-    assert!(!vector::contains(&proposed, &addr), error::permission_denied(ESIGNER_CANT_BE_AUTHORITY));
+  
+    // Ensure distinct addresses and multisign owner not in the list
+    multisig_account::validate_owners(&proposed, addr);
 
     // Ensure the proposed list address are valid
     let i = 0;
