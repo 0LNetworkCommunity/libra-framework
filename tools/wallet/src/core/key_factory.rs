@@ -233,7 +233,7 @@ fn test_key_derivation() {
     let key_factory = KeyFactory::new(&seed).unwrap();
     assert_eq!(
         "86ebb495902d5638a8a7ea19575157ccc646dcbb2ec0b32037ee8f0cb3cb5582",
-        hex::encode(&key_factory.main())
+        hex::encode(key_factory.main())
     );
 
     // Check child_0 key derivation.
