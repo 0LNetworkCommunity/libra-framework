@@ -209,30 +209,6 @@ module ol_framework::multi_action {
     };
   }
 
-  // TODO: remove this after offer migration is completed
-  #[test_only]
-  public(friend) fun init_gov_deprecated(sig: &signer) {
-    let multisig_address = signer::address_of(sig);
-
-    if (!exists<Governance>(multisig_address)) {
-        move_to(sig, Governance {
-        cfg_duration_epochs: DEFAULT_EPOCHS_EXPIRE,
-        cfg_default_n_sigs: 0, // deprecate
-        signers: vector::empty(),
-        withdraw_capability: option::none(),
-        guid_capability: account::create_guid_capability(sig),
-      });
-    };
-
-    if (!exists<Action<PropGovSigners>>(multisig_address)) {
-      move_to(sig, Action<PropGovSigners> {
-        can_withdraw: false,
-        vote: ballot::new_tracker<Proposal<PropGovSigners>>(),
-      });
-    };
-  }
-
-
   // Private function to assist governance vote
   fun add_offer_addresses(addr: address, proposed: vector<address>) acquires Offer {
     let offer = borrow_global_mut<Offer>(addr);
@@ -276,21 +252,16 @@ module ol_framework::multi_action {
     };
   }
 
-  // Propose an offer to new authorities on the signer account 
-  // or update the expiration epoch of the existing proposed authorities.
-  // - sig: The signer proposing the offer.
-  // - proposed: The list of authorities addresses proposed.
-  // - duration_epochs: The duration in epochs before the offer expires.
-  public entry fun propose_offer(sig: &signer, proposed: vector<address>, duration_epochs: Option<u64>) acquires Offer {
-    // Propose the offer on the signer's account
-    let addr = signer::address_of(sig);
-
+  fun ensure_valid_propose_offer_state(addr: address) {
     // Ensure the account is not yet initialized as multisig
     assert!(!multisig_account::is_multisig(addr), error::invalid_state(EALREADY_MULTISIG));
 
     // Ensure the account has governance initialized and offer structure
     assert!(is_gov_init(addr), error::invalid_state(EGOV_NOT_INITIALIZED));
-    assert!(exists_offer(addr), error::not_found(ENOT_OFFERED));
+    assert!(exists_offer(addr), error::already_exists(EOFFER_ALREADY_EXISTS));
+  }
+
+  fun ensure_valid_propose_offer_params(addr: address, proposed: vector<address>, duration_epochs: Option<u64>) {
 
     // Ensure the proposed list is not empty
     assert!(vector::length(&proposed) > 0, error::invalid_argument(EOFFER_EMPTY));
@@ -301,24 +272,27 @@ module ol_framework::multi_action {
     // Ensure distinct addresses and multisign owner not in the list
     multisig_account::validate_owners(&proposed, addr);
 
-    // Ensure the proposed list address are valid
-    let i = 0;
-    while (i < vector::length(&proposed)) {
-      let proposed_addr = vector::borrow(&proposed, i);
-      assert!(account::exists_at(*proposed_addr), error::not_found(EPROPOSED_NOT_EXISTS));
-      i = i + 1;
+    if (option::is_some(&duration_epochs)) {
+      let duration_epochs = *option::borrow(&duration_epochs);
+      // Ensure duration is greater than zero
+      assert!(duration_epochs > 0, error::invalid_argument(EZERO_DURATION));
     };
-       
+  }
+
+  // Calculate the expiration epoch for the offer.
+  fun calculate_expiration_epoch(duration_epochs: Option<u64>): u64 {
     let duration_epochs = if (option::is_some(&duration_epochs)) {
       *option::borrow(&duration_epochs)
     } else {
       DEFAULT_EPOCHS_OFFER_EXPIRE
     };
 
-    // Ensure duration is greater than zero
-    assert!(duration_epochs > 0, error::invalid_argument(EZERO_DURATION));
+    epoch_helper::get_current_epoch() + duration_epochs
+  }
 
-    let expiration_epoch = epoch_helper::get_current_epoch() + duration_epochs;
+  // Update the offer with the new proposed authorities and expiration epoch.
+  fun update_offer(addr: address, proposed: vector<address>, duration_epochs: Option<u64>) acquires Offer {
+    let expiration_epoch = calculate_expiration_epoch(duration_epochs);
 
     // Update offer
     let offer = borrow_global_mut<Offer>(addr);
@@ -356,7 +330,7 @@ module ol_framework::multi_action {
       };
     };
 
-    // Update proposed and expiration epoch lists
+    // Insert/Update proposed and expiration epoch lists
     let k = 0;
     while (k < vector::length(&proposed)) {
       // if already contains the address, update the expiration_epoch
@@ -371,6 +345,19 @@ module ol_framework::multi_action {
       };
       k = k + 1;
     };   
+  }
+
+  // Propose an offer to new authorities on the signer account 
+  // or update the expiration epoch of the existing proposed authorities.
+  // - sig: The signer proposing the offer.
+  // - proposed: The list of authorities addresses proposed.
+  // - duration_epochs: The duration in epochs before the offer expires.
+  public entry fun propose_offer(sig: &signer, proposed: vector<address>, duration_epochs: Option<u64>) acquires Offer {
+    // Propose the offer on the signer's account
+    let addr = signer::address_of(sig);
+    ensure_valid_propose_offer_state(addr);
+    ensure_valid_propose_offer_params(addr, proposed, duration_epochs);
+    update_offer(addr, proposed, duration_epochs);
   }
   
   // Allows a proposed authority to claim their offer.
@@ -461,22 +448,6 @@ module ol_framework::multi_action {
     // check sender is authorized
     let sender_addr = signer::address_of(sig);
     assert!(is_authority(multisig_address, sender_addr), error::invalid_argument(ENOT_AUTHORIZED));
-  }
-
-  // TODO: remove this function after offer migration is completed
-  #[test_only]
-  public entry fun finalize_and_cage_deprecated(sig: &signer, initial_authorities:
-  vector<address>, num_signers: u64) {
-    let addr = signer::address_of(sig);
-    assert!(exists<Governance>(addr),
-      error::invalid_argument(EGOV_NOT_INITIALIZED));
-    assert!(exists<Action<PropGovSigners>>(addr),
-      error::invalid_argument(EGOV_NOT_INITIALIZED));
-    // not yet initialized
-    assert!(!multisig_account::is_multisig(addr),
-      error::invalid_argument(EGOV_NOT_INITIALIZED));
-
-    multisig_account::migrate_with_owners(sig, initial_authorities, num_signers, vector::empty(), vector::empty());
   }
 
   // TODO: remove this function after dependencies are updated
@@ -1023,5 +994,45 @@ module ol_framework::multi_action {
     let b = ballot::get_ballot_by_id(&action.vote, &id);
     let prop = ballot::get_type_struct(b);
     prop.expiration_epoch
+  }
+
+
+  // TODO: remove this after offer migration is completed
+  #[test_only]
+  public(friend) fun init_gov_deprecated(sig: &signer) {
+    let multisig_address = signer::address_of(sig);
+
+    if (!exists<Governance>(multisig_address)) {
+        move_to(sig, Governance {
+        cfg_duration_epochs: DEFAULT_EPOCHS_EXPIRE,
+        cfg_default_n_sigs: 0, // deprecate
+        signers: vector::empty(),
+        withdraw_capability: option::none(),
+        guid_capability: account::create_guid_capability(sig),
+      });
+    };
+
+    if (!exists<Action<PropGovSigners>>(multisig_address)) {
+      move_to(sig, Action<PropGovSigners> {
+        can_withdraw: false,
+        vote: ballot::new_tracker<Proposal<PropGovSigners>>(),
+      });
+    };
+  }
+
+  // TODO: remove this function after offer migration is completed
+  #[test_only]
+  public entry fun finalize_and_cage_deprecated(sig: &signer, initial_authorities:
+  vector<address>, num_signers: u64) {
+    let addr = signer::address_of(sig);
+    assert!(exists<Governance>(addr),
+      error::invalid_argument(EGOV_NOT_INITIALIZED));
+    assert!(exists<Action<PropGovSigners>>(addr),
+      error::invalid_argument(EGOV_NOT_INITIALIZED));
+    // not yet initialized
+    assert!(!multisig_account::is_multisig(addr),
+      error::invalid_argument(EGOV_NOT_INITIALIZED));
+
+    multisig_account::migrate_with_owners(sig, initial_authorities, num_signers, vector::empty(), vector::empty());
   }
 }
