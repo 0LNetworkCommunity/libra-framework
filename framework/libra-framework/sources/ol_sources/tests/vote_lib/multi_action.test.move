@@ -12,6 +12,9 @@ module ol_framework::test_multi_action {
   use diem_framework::reconfiguration;
   use diem_framework::account;
 
+  // print
+  // use std::debug::print;
+
   struct DummyType has drop, store {}  
 
   #[test(root = @ol_framework, carol = @0x1000c)]
@@ -51,7 +54,10 @@ module ol_framework::test_multi_action {
     assert!(multi_action::get_offer_proposed(carol_address) == authorities, 7357004);
     assert!(multi_action::get_offer_claimed(carol_address) == vector::empty(), 7357005);
     assert!(vector::is_empty(&multi_action::get_offer_claimed(carol_address)), 7357006);
-    assert!(multi_action::get_offer_expiration_epoch(carol_address) == 3, 7357007);
+    let expiration = vector::empty();
+    vector::push_back(&mut expiration, 3);
+    vector::push_back(&mut expiration, 3);
+    assert!(multi_action::get_offer_expiration_epoch(carol_address) == expiration, 7357007);
     assert!(!multi_action::is_multi_action(carol_address), 7357008);
   }
 
@@ -68,22 +74,20 @@ module ol_framework::test_multi_action {
     multi_action::propose_offer(carol, vector::singleton(@0x1000a), option::some(2));
 
     // check the offer is valid
-    assert!(multi_action::get_offer_expiration_epoch(carol_address) == 2, 7357004);
+    assert!(multi_action::get_offer_expiration_epoch(carol_address) == vector::singleton(2), 7357004);
 
     // wait for the offer to expire
     mock::trigger_epoch(root); // epoch 1 valid
     mock::trigger_epoch(root); // epoch 2 expired
-    assert!(multi_action::is_offer_expired(carol_address), 7357005);
+    assert!(multi_action::is_offer_expired(carol_address, @0x1000a), 7357005);
 
     // propose a new offer to bob
-    let new_authorities = vector::empty<address>();
-    vector::push_back(&mut new_authorities, @0x1000b);
-    multi_action::propose_offer(carol, new_authorities, option::some(3));
+    multi_action::propose_offer(carol, vector::singleton(@0x1000b), option::some(3));
 
     // check the new offer is proposed
     assert!(multi_action::get_offer_proposed(carol_address) == vector::singleton(@0x1000b), 7357007);
     assert!(multi_action::get_offer_claimed(carol_address) == vector::empty(), 7357008);
-    assert!(multi_action::get_offer_expiration_epoch(carol_address) == 5, 7357009);
+    assert!(multi_action::get_offer_expiration_epoch(carol_address) == vector::singleton(5), 7357009);
   }
 
   // Happy Day: claim offer by authorities
@@ -159,7 +163,7 @@ module ol_framework::test_multi_action {
     // check offer was cleaned
     assert!(multi_action::get_offer_proposed(carol_address) == vector::empty(), 7357004);
     assert!(multi_action::get_offer_claimed(carol_address) == vector::empty(), 7357005);
-    assert!(multi_action::get_offer_expiration_epoch(carol_address) == 0, 7357006);
+    assert!(multi_action::get_offer_expiration_epoch(carol_address) == vector::empty(), 7357006);
   }
 
   // Finalize multisign account having a pending claim
@@ -199,7 +203,7 @@ module ol_framework::test_multi_action {
     // check offer was cleared
     assert!(multi_action::get_offer_proposed(carol_address) == vector::empty(), 7357004);
     assert!(multi_action::get_offer_claimed(carol_address) == vector::empty(), 7357005);
-    assert!(multi_action::get_offer_expiration_epoch(carol_address) == 0, 7357006);
+    assert!(multi_action::get_offer_expiration_epoch(carol_address) == vector::empty(), 7357006);
 
   }
 
@@ -219,7 +223,9 @@ module ol_framework::test_multi_action {
     multi_action::propose_offer(alice, authorities, option::some(2));
 
     // check new authorities
-    assert!(multi_action::get_offer_expiration_epoch(@0x1000a) == 2, 7357001);
+    let expiration = vector::singleton(2);
+    vector::push_back(&mut expiration, 2);
+    assert!(multi_action::get_offer_expiration_epoch(@0x1000a) == expiration, 7357001);
     assert!(multi_action::get_offer_proposed(@0x1000a) == authorities, 7357002);
     assert!(multi_action::get_offer_claimed(@0x1000a) == vector::empty(), 7357003);
   }
@@ -239,9 +245,12 @@ module ol_framework::test_multi_action {
     vector::push_back(&mut authorities, @0x1000c);
     multi_action::propose_offer(alice, authorities, option::some(2));
 
-    // check new authorities
+    // check offer
     assert!(multi_action::get_offer_proposed(@0x1000a) == authorities, 7357001);
     assert!(multi_action::get_offer_claimed(@0x1000a) == vector::empty(), 7357002);
+    let expiration = vector::singleton(2);
+    vector::push_back(&mut expiration, 2);
+    assert!(multi_action::get_offer_expiration_epoch(@0x1000a) == expiration, 7357003);
 
     // carol claim the offer
     multi_action::claim_offer(carol, @0x1000a);
@@ -251,11 +260,12 @@ module ol_framework::test_multi_action {
     multi_action::propose_offer(alice, authorities, option::some(3));
 
     // check new authorities
-    let proposed = vector::empty();
-    vector::push_back(&mut proposed, @0x1000b);
+    let proposed = vector::singleton(@0x1000b);
     vector::push_back(&mut proposed, @0x1000d);
-    assert!(multi_action::get_offer_expiration_epoch(@0x1000a) == 3, 7357003);
+    let expiration = vector::singleton(3);
+    vector::push_back(&mut expiration, 3);
     assert!(multi_action::get_offer_proposed(@0x1000a) == proposed, 7357004);
+    assert!(multi_action::get_offer_expiration_epoch(@0x1000a) == expiration, 7357003);
     assert!(multi_action::get_offer_claimed(@0x1000a) == vector::singleton(@0x1000c), 7357005);
   }
 
@@ -266,21 +276,22 @@ module ol_framework::test_multi_action {
     multi_action::init_gov(alice);
 
     // invite bob, carol e dave
-    let authorities = vector::empty<address>();
-    vector::push_back(&mut authorities, @0x1000b);
+    let authorities = vector::singleton(@0x1000b);
     vector::push_back(&mut authorities, @0x1000c);
     vector::push_back(&mut authorities, @0x1000d);
     multi_action::propose_offer(alice, authorities, option::some(2));
 
     // new invite bob e carol
-    let new_authorities = vector::empty<address>();
-    vector::push_back(&mut new_authorities, @0x1000b);
+    let new_authorities = vector::singleton(@0x1000b);
     vector::push_back(&mut new_authorities, @0x1000c);
     multi_action::propose_offer(alice, new_authorities, option::some(3));
 
     // check new authorities minus dave
     assert!(multi_action::get_offer_proposed(@0x1000a) == new_authorities, 7357001);
     assert!(multi_action::get_offer_claimed(@0x1000a) == vector::empty(), 7357002);
+    let expiration = vector::singleton(3);
+    vector::push_back(&mut expiration, 3);
+    assert!(multi_action::get_offer_expiration_epoch(@0x1000a) == expiration, 7357003);
 
     // carol claim the offer
     multi_action::claim_offer(carol, @0x1000a);
@@ -305,11 +316,22 @@ module ol_framework::test_multi_action {
     vector::push_back(&mut authorities, @0x1000c);
     multi_action::propose_offer(alice, authorities, option::some(2));
 
+    // check offer
+    assert!(multi_action::get_offer_proposed(@0x1000a) == authorities, 7357001);
+    assert!(multi_action::get_offer_claimed(@0x1000a) == vector::empty(), 7357002);
+    let expiration = vector::singleton(2);
+    vector::push_back(&mut expiration, 2);
+    assert!(multi_action::get_offer_expiration_epoch(@0x1000a) == expiration, 7357003);
+
     // new invite bob e carol
     multi_action::propose_offer(alice, authorities, option::some(3));
 
-    // check authorities
+    // check offer
     assert!(multi_action::get_offer_proposed(@0x1000a) == authorities, 7357001);
+    assert!(multi_action::get_offer_claimed(@0x1000a) == vector::empty(), 7357002);
+    let expiration = vector::singleton(3);
+    vector::push_back(&mut expiration, 3);
+    assert!(multi_action::get_offer_expiration_epoch(@0x1000a) == expiration, 7357003);
 
     // bob claim the offer
     multi_action::claim_offer(bob, @0x1000a);
@@ -318,7 +340,7 @@ module ol_framework::test_multi_action {
     multi_action::propose_offer(alice, authorities, option::some(4));
 
     // check authorities
-    assert!(multi_action::get_offer_expiration_epoch(@0x1000a) == 4, 7357002);
+    assert!(multi_action::get_offer_expiration_epoch(@0x1000a) == vector::singleton(4), 7357002);
     assert!(multi_action::get_offer_proposed(@0x1000a) == vector::singleton(@0x1000c), 7357003);
     assert!(multi_action::get_offer_claimed(@0x1000a) == vector::singleton(@0x1000b), 7357004);
   }
@@ -799,7 +821,7 @@ module ol_framework::test_multi_action {
     // Check if offer was cleaned
     assert!(multi_action::get_offer_proposed(carol_address) == vector::empty(), 7357006);
     assert!(multi_action::get_offer_claimed(carol_address) == vector::empty(), 7357007);
-    assert!(multi_action::get_offer_expiration_epoch(carol_address) == 0, 7357008);
+    assert!(multi_action::get_offer_expiration_epoch(carol_address) == vector::empty(), 7357008);
 
     // Now dave and bob, will conspire to remove alice.
     // NOTE: `false` means `remove account` here
@@ -817,7 +839,7 @@ module ol_framework::test_multi_action {
     // Check if offer was cleaned
     assert!(multi_action::get_offer_proposed(carol_address) == vector::empty(), 73570012);
     assert!(multi_action::get_offer_claimed(carol_address) == vector::empty(), 73570013);
-    assert!(multi_action::get_offer_expiration_epoch(carol_address) == 0, 73570014);
+    assert!(multi_action::get_offer_expiration_epoch(carol_address) == vector::empty(), 73570014);
   }
 
   // Happy day: change the threshold of a multisig
