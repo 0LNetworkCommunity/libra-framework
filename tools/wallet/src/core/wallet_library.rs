@@ -157,14 +157,22 @@ mod tests {
     #[test]
     fn test_wallet_creation() {
         let wallet = WalletLibrary::new();
-        assert_eq!(wallet.get_addresses().unwrap().len(), 0, "New wallet should have no addresses");
+        assert_eq!(
+            wallet.get_addresses().unwrap().len(),
+            0,
+            "New wallet should have no addresses"
+        );
     }
 
     #[test]
     fn test_address_generation() {
         let mut wallet = WalletLibrary::new();
         wallet.generate_addresses(5).unwrap();
-        assert_eq!(wallet.get_addresses().unwrap().len(), 5, "Wallet should have 5 addresses after generation");
+        assert_eq!(
+            wallet.get_addresses().unwrap().len(),
+            5,
+            "Wallet should have 5 addresses after generation"
+        );
     }
 
     #[test]
@@ -172,11 +180,21 @@ mod tests {
         let mut wallet = WalletLibrary::new();
         wallet.generate_addresses(3).unwrap();
         let addresses = wallet.get_addresses().unwrap();
-        assert_eq!(addresses.len(), 3, "Wallet should have 3 addresses after generation");
+        assert_eq!(
+            addresses.len(),
+            3,
+            "Wallet should have 3 addresses after generation"
+        );
 
         for address in addresses {
-            assert!(wallet.get_private_key(&address).is_ok(), "Should retrieve private key for address");
-            assert!(wallet.get_authentication_key(&address).is_ok(), "Should retrieve authentication key for address");
+            assert!(
+                wallet.get_private_key(&address).is_ok(),
+                "Should retrieve private key for address"
+            );
+            assert!(
+                wallet.get_authentication_key(&address).is_ok(),
+                "Should retrieve authentication key for address"
+            );
         }
     }
 
@@ -185,21 +203,34 @@ mod tests {
         let mut wallet = WalletLibrary::new();
         wallet.generate_addresses(5).unwrap();
         let result = wallet.generate_addresses(3);
-        assert!(result.is_err(), "Generating addresses beyond the current depth should return an error");
+        assert!(
+            result.is_err(),
+            "Generating addresses beyond the current depth should return an error"
+        );
     }
 
     #[test]
     fn test_retrieve_nonexistent_keys() {
         let wallet = WalletLibrary::new();
         let fake_address = AccountAddress::random();
-        assert!(wallet.get_private_key(&fake_address).is_err(), "Retrieving private key for nonexistent address should return an error");
-        assert!(wallet.get_authentication_key(&fake_address).is_err(), "Retrieving authentication key for nonexistent address should return an error");
+        assert!(
+            wallet.get_private_key(&fake_address).is_err(),
+            "Retrieving private key for nonexistent address should return an error"
+        );
+        assert!(
+            wallet.get_authentication_key(&fake_address).is_err(),
+            "Retrieving authentication key for nonexistent address should return an error"
+        );
     }
 
     #[test]
     fn test_wallet_from_mnemonic() {
         let mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
         let wallet = WalletLibrary::new_from_mnemonic(Mnemonic::from(mnemonic).unwrap());
-        assert_eq!(wallet.mnemonic(), mnemonic, "Mnemonic should match the one used to create the wallet");
+        assert_eq!(
+            wallet.mnemonic(),
+            mnemonic,
+            "Mnemonic should match the one used to create the wallet"
+        );
     }
 }

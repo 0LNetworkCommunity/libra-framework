@@ -64,7 +64,13 @@ mod tests {
         assert!(key_scheme.child_0_owner.get_private_key().length() > 0);
         assert!(key_scheme.child_1_operator.get_private_key().length() > 0);
         assert!(key_scheme.child_2_val_network.get_private_key().length() > 0);
-        assert!(key_scheme.child_3_fullnode_network.get_private_key().length() > 0);
+        assert!(
+            key_scheme
+                .child_3_fullnode_network
+                .get_private_key()
+                .length()
+                > 0
+        );
         assert!(key_scheme.child_4_consensus.get_private_key().length() > 0);
         assert!(key_scheme.child_5_executor.get_private_key().length() > 0);
     }
