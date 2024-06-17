@@ -410,12 +410,25 @@ module ol_framework::test_multi_action {
 
   // Try to propose offer to the signer address
   #[test(root = @ol_framework, alice = @0x1000a)]
-  #[expected_failure(abort_code = 0x50002, location = ol_framework::multi_action)]
+  #[expected_failure(abort_code = 0x10013, location = ol_framework::multisig_account)]
   fun propose_offer_to_signer(root: &signer, alice: &signer) {
-    let _vals = mock::genesis_n_vals(root, 4);
+    let _vals = mock::genesis_n_vals(root, 1);
     let alice_address = signer::address_of(alice);
     multi_action::init_gov(alice);
     multi_action::propose_offer(alice, vector::singleton<address>(alice_address), option::none());
+  }
+
+  // Try to propose offer with duplicated addresses
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
+  #[expected_failure(abort_code = 0x10001, location = ol_framework::multisig_account)]
+  fun propose_offer_duplicated_authorities(root: &signer, alice: &signer) {
+    let _vals = mock::genesis_n_vals(root, 3);
+    multi_action::init_gov(alice);
+
+    let authorities = vector::singleton<address>(@0x1000b);
+    vector::push_back(&mut authorities, @0x1000c);
+    vector::push_back(&mut authorities, @0x1000b);
+    multi_action::propose_offer(alice, authorities, option::none());
   }
 
   // Try to propose offer to an invalid signer
