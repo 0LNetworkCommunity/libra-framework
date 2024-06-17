@@ -1016,6 +1016,8 @@ module diem_framework::multisig_account {
         multisig_account_seed
     }
 
+    /// Validate the owners list for a multisig account.
+    /// It is friend to ensure that multi_action use the same validation logic.
     public(friend) fun validate_owners(owners: &vector<address>, multisig_account: address) {
         let distinct_owners: vector<address> = vector[];
         vector::for_each_ref(owners, |owner| {
