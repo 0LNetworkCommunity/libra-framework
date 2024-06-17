@@ -47,7 +47,7 @@ module ol_framework::multi_action {
   /// The owner of this account can't be an authority, since it will subsequently be bricked. The signer of this account is no longer useful. The account is now controlled by the Governance logic.
   const ESIGNER_CANT_BE_AUTHORITY: u64 = 0x2;
   /// signer not authorized to approve a transaction.
-  const ENOT_AUTHORIZED: u64 = 3;
+  const ENOT_AUTHORIZED: u64 = 0x3;
   /// There are no pending transactions to search
   const EPENDING_EMPTY: u64 = 4;
   /// Not enough signers configured
@@ -90,6 +90,8 @@ module ol_framework::multi_action {
   const EALREADY_CLAIMED: u64 = 0x23;
   /// Too many addresses in offer - avoid DoS attack
   const ETOO_MANY_ADDRESSES: u64 = 0x24;
+  /// Offer already exists
+  const EOFFER_ALREADY_EXISTS: u64 = 0x25;
 
   /// default setting for a proposal to expire
   const DEFAULT_EPOCHS_EXPIRE: u64 = 14;
@@ -203,6 +205,30 @@ module ol_framework::multi_action {
     };
   }
 
+  // TODO: remove this after offer migration is completed
+  #[test_only]
+  public(friend) fun init_gov_deprecated(sig: &signer) {
+    let multisig_address = signer::address_of(sig);
+
+    if (!exists<Governance>(multisig_address)) {
+        move_to(sig, Governance {
+        cfg_duration_epochs: DEFAULT_EPOCHS_EXPIRE,
+        cfg_default_n_sigs: 0, // deprecate
+        signers: vector::empty(),
+        withdraw_capability: option::none(),
+        guid_capability: account::create_guid_capability(sig),
+      });
+    };
+
+    if (!exists<Action<PropGovSigners>>(multisig_address)) {
+      move_to(sig, Action<PropGovSigners> {
+        can_withdraw: false,
+        vote: ballot::new_tracker<Proposal<PropGovSigners>>(),
+      });
+    };
+  }
+
+
   // Private function to assist governance vote
   fun add_offer_addresses(addr: address, proposed: vector<address>) acquires Offer {
     let offer = borrow_global_mut<Offer>(addr);
@@ -216,12 +242,12 @@ module ol_framework::multi_action {
     };
   }
 
-  // TODO: test this - WIP
   // DANGER - may forge the signer of the multisig account is necessary here
-  // Migrate an account to have structure Offer in order to propose authorities changes
-  public entry fun migrate_init_offer(sig: &signer, multisig_address: address) {
+  // TODO: remove this function after offer migration is completed
+  // Migrate a legacy account to have structure Offer in order to propose authorities changes
+  public entry fun migrate_offer(sig: &signer, multisig_address: address) {
     // Ensure the account does not have Offer structure
-    assert!(!exists_offer(multisig_address), error::already_exists(666));
+    assert!(!exists_offer(multisig_address), error::already_exists(EOFFER_ALREADY_EXISTS));
 
     // if account is multisig, forge signer and add Offer to the multisig account
     if (multisig_account::is_multisig(multisig_address)) {
@@ -240,14 +266,15 @@ module ol_framework::multi_action {
       move_to(multisig_signer, offer);
     } else {
       // b) initiated account: ensure the account is initialized with governance and add Offer to the account
-      assert!(!is_gov_init(multisig_address), error::invalid_state(EGOV_NOT_INITIALIZED));
+      assert!(multisig_address == signer::address_of(sig), error::permission_denied(ENOT_AUTHORIZED));
+      assert!(is_gov_init(multisig_address), error::invalid_state(EGOV_NOT_INITIALIZED));
       let offer = construct_empty_offer();
       move_to(sig, offer);
     };
   }
 
-  // TODO: set proposed limit to avoid DoS attack
-  // Offer authorities for an account to be initialized as multisig.
+  // Propose an offer to new authorities on the signer account 
+  // or update the expiration epoch of the existing proposed authorities.
   // - sig: The signer proposing the offer.
   // - proposed: The list of authorities addresses proposed.
   // - duration_epochs: The duration in epochs before the offer expires.
@@ -433,7 +460,23 @@ module ol_framework::multi_action {
     assert!(is_authority(multisig_address, sender_addr), error::invalid_argument(ENOT_AUTHORIZED));
   }
 
-  // TODO: Remove this
+  // TODO: remove this function after offer migration is completed
+  #[test_only]
+  public entry fun finalize_and_cage_deprecated(sig: &signer, initial_authorities:
+  vector<address>, num_signers: u64) {
+    let addr = signer::address_of(sig);
+    assert!(exists<Governance>(addr),
+      error::invalid_argument(EGOV_NOT_INITIALIZED));
+    assert!(exists<Action<PropGovSigners>>(addr),
+      error::invalid_argument(EGOV_NOT_INITIALIZED));
+    // not yet initialized
+    assert!(!multisig_account::is_multisig(addr),
+      error::invalid_argument(EGOV_NOT_INITIALIZED));
+
+    multisig_account::migrate_with_owners(sig, initial_authorities, num_signers, vector::empty(), vector::empty());
+  }
+
+  // TODO: remove this function after dependencies are updated
   public entry fun finalize_and_cage(sig: &signer, initial_authorities:
   vector<address>, num_signers: u64) {
     let addr = signer::address_of(sig);
