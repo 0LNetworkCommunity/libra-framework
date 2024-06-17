@@ -13,7 +13,7 @@ module ol_framework::test_multi_action {
   use diem_framework::account;
 
   // print
-  // use std::debug::print;
+  use std::debug::print;
 
   struct DummyType has drop, store {}  
 
@@ -899,5 +899,62 @@ module ol_framework::test_multi_action {
     assert!(option::is_none(&cap_opt), 7357008);
 
     option::destroy_none(cap_opt);
+  }
+
+  // Vote new athority before the previous one is claimed
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d, erik = @0x1000e)]
+  fun governance_vote_before_claim(root: &signer, alice: &signer, bob: &signer, carol: &signer) {
+    let _vals = mock::genesis_n_vals(root, 5);
+    let alice_address = @0x1000a;
+
+    // alice offer bob and carol authority on her account
+    multi_action::init_gov(alice);
+    let authorities = vector::empty<address>();
+    vector::push_back(&mut authorities, signer::address_of(bob));
+    vector::push_back(&mut authorities, signer::address_of(carol));
+    multi_action::propose_offer(alice, authorities, option::some(1));
+    multi_action::claim_offer(bob, alice_address);
+    multi_action::claim_offer(carol, alice_address);
+    multi_action::finalize_and_cage2(alice);
+
+    // carol is going to propose to change the authorities to add dave
+    let id = multi_action::propose_governance(carol, alice_address, vector::singleton(@0x1000d), true, option::none(), option::none());
+    
+    // bob votes and dave does not claims the offer
+    multi_action::vote_governance(bob, alice_address, &id);
+    
+    // check authorities and threshold
+    assert!(multi_action::get_authorities(alice_address) == authorities, 7357001);
+    let (n, _m) = multi_action::get_threshold(alice_address);
+    assert!(n == 2, 7357002);
+
+    // check offer
+    print(&multi_action::get_offer_proposed(alice_address));
+    assert!(multi_action::get_offer_claimed(alice_address) == vector::empty(), 7357003);
+    print(&multi_action::get_offer_proposed(alice_address));
+    assert!(multi_action::get_offer_proposed(alice_address) == vector::singleton(@0x1000d), 7357004);
+    assert!(multi_action::get_offer_expiration_epoch(alice_address) == vector::singleton(7), 7357005);
+
+    mock::trigger_epoch(root); // epoch 1
+
+    // bob is going to propose to change the authorities to add erik
+    let id = multi_action::propose_governance(bob, alice_address, vector::singleton(@0x1000e), true, option::none(), option::none());
+
+    // carol votes
+    multi_action::vote_governance(carol, alice_address, &id);
+
+    // check authorities and threshold
+    assert!(multi_action::get_authorities(alice_address) == authorities, 7357001);
+    let (n, _m) = multi_action::get_threshold(alice_address);
+    assert!(n == 2, 7357002);
+
+    // check offer
+    assert!(multi_action::get_offer_claimed(alice_address) == vector::empty(), 7357003);
+    let proposed = vector::singleton(@0x1000d);
+    vector::push_back(&mut proposed, @0x1000e);
+    assert!(multi_action::get_offer_proposed(alice_address) == proposed, 7357004);
+    let expiration = vector::singleton(7);
+    vector::push_back(&mut expiration, 8);
+    assert!(multi_action::get_offer_expiration_epoch(alice_address) == expiration, 7357005);    
   }
 }
