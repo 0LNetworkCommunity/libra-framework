@@ -28,7 +28,6 @@ module ol_framework::multi_action {
     use std::signer;
     use std::error;
     use std::guid;
-    use diem_framework::create_signer::create_signer;
     use diem_framework::account::{Self, WithdrawCapability};
     use diem_framework::multisig_account;
     use ol_framework::ballot::{Self, BallotTracker};
@@ -40,6 +39,12 @@ module ol_framework::multi_action {
     friend ol_framework::donor_voice_txs;
     friend ol_framework::safe;
 
+    // TODO: Remove after migration
+    friend ol_framework::multi_action_migration;
+
+    #[test_only]
+    friend ol_framework::test_multi_action_migration; // TODO: remove after offer migration
+    
     #[test_only]
     friend ol_framework::test_multi_action;
 
@@ -165,9 +170,9 @@ module ol_framework::multi_action {
 
     fun construct_empty_offer(): Offer {
         Offer {
-        proposed: vector::empty(),
-        claimed: vector::empty(),
-        expiration_epoch: vector::empty(),
+            proposed: vector::empty(),
+            claimed: vector::empty(),
+            expiration_epoch: vector::empty(),
         }
     }
 
@@ -176,6 +181,12 @@ module ol_framework::multi_action {
         offer.proposed = vector::empty();
         offer.claimed = vector::empty();
         offer.expiration_epoch = vector::empty();
+    }
+
+    public(friend) fun init_offer(sig: &signer, addr: address) {
+        if (!exists<Offer>(addr)) {
+            move_to(sig, construct_empty_offer());
+        };
     }
 
     // Initialize the governance structs for this account.
@@ -189,24 +200,22 @@ module ol_framework::multi_action {
 
         if (!exists<Governance>(multisig_address)) {
             move_to(sig, Governance {
-            cfg_duration_epochs: DEFAULT_EPOCHS_EXPIRE,
-            cfg_default_n_sigs: 0, // deprecate
-            signers: vector::empty(),
-            withdraw_capability: option::none(),
-            guid_capability: account::create_guid_capability(sig),
-        });
+                cfg_duration_epochs: DEFAULT_EPOCHS_EXPIRE,
+                cfg_default_n_sigs: 0, // deprecate
+                signers: vector::empty(),
+                withdraw_capability: option::none(),
+                guid_capability: account::create_guid_capability(sig),
+            });
         };
 
         if (!exists<Action<PropGovSigners>>(multisig_address)) {
-        move_to(sig, Action<PropGovSigners> {
-            can_withdraw: false,
-            vote: ballot::new_tracker<Proposal<PropGovSigners>>(),
-        });
+            move_to(sig, Action<PropGovSigners> {
+                can_withdraw: false,
+                vote: ballot::new_tracker<Proposal<PropGovSigners>>(),
+            });
         };
 
-        if (!exists<Offer>(multisig_address)) {
-        move_to(sig, construct_empty_offer());
-        };
+        init_offer(sig, multisig_address);
     }
 
     // Private function to assist governance vote
@@ -222,36 +231,6 @@ module ol_framework::multi_action {
         };
     }
 
-    // DANGER - may forge the signer of the multisig account is necessary here
-    // TODO: remove this function after offer migration is completed
-    // Migrate a legacy account to have structure Offer in order to propose authorities changes
-    public entry fun migrate_offer(sig: &signer, multisig_address: address) {
-        // Ensure the account does not have Offer structure
-        assert!(!exists_offer(multisig_address), error::already_exists(EOFFER_ALREADY_EXISTS));
-
-        // if account is multisig, forge signer and add Offer to the multisig account
-        if (multisig_account::is_multisig(multisig_address)) {
-        // a) multisig account: ensure the signer is in the authorities list
-        assert!(is_authority(multisig_address, signer::address_of(sig)), error::permission_denied(ENOT_AUTHORIZED));
-
-        // We create the signer for the multisig account here since this is required
-        // to add the Offer resource.
-        // This should be safe because we check that the signer is in the authorities list.
-        // Also, after all accounts are migrated this function will be deprecated.
-        let multisig_signer = &create_signer(multisig_address); // <<< DANGER
-
-        // create Offer structure
-        let offer = construct_empty_offer();
-        move_to(multisig_signer, offer);
-        } else {
-        // b) initiated account: ensure the account is initialized with governance and add Offer to the account
-        assert!(multisig_address == signer::address_of(sig), error::permission_denied(ENOT_AUTHORIZED));
-        assert!(is_gov_init(multisig_address), error::invalid_state(EGOV_NOT_INITIALIZED));
-        let offer = construct_empty_offer();
-        move_to(sig, offer);
-        };
-    }
-
     fun ensure_valid_propose_offer_state(addr: address) {
         // Ensure the account is not yet initialized as multisig
         assert!(!multisig_account::is_multisig(addr), error::invalid_state(EALREADY_MULTISIG));
@@ -262,7 +241,6 @@ module ol_framework::multi_action {
     }
 
     fun ensure_valid_propose_offer_params(addr: address, proposed: vector<address>, duration_epochs: Option<u64>) {
-
         // Ensure the proposed list is not empty
         assert!(vector::length(&proposed) > 0, error::invalid_argument(EOFFER_EMPTY));
 
@@ -282,9 +260,9 @@ module ol_framework::multi_action {
     // Calculate the expiration epoch for the offer.
     fun calculate_expiration_epoch(duration_epochs: Option<u64>): u64 {
         let duration_epochs = if (option::is_some(&duration_epochs)) {
-        *option::borrow(&duration_epochs)
+            *option::borrow(&duration_epochs)
         } else {
-        DEFAULT_EPOCHS_OFFER_EXPIRE
+            DEFAULT_EPOCHS_OFFER_EXPIRE
         };
 
         epoch_helper::get_current_epoch() + duration_epochs
@@ -300,50 +278,50 @@ module ol_framework::multi_action {
         // Remove claimed addresses that are not in the new proposed list
         let j = 0;
         while (j < vector::length(&offer.claimed)) {
-        let claimed_addr = vector::borrow(&offer.claimed, j);
-        if (!vector::contains(&proposed, claimed_addr)) {
-            vector::remove(&mut offer.claimed, j);
-        } else {
-            j = j + 1;
-        };
+            let claimed_addr = vector::borrow(&offer.claimed, j);
+            if (!vector::contains(&proposed, claimed_addr)) {
+                vector::remove(&mut offer.claimed, j);
+            } else {
+                j = j + 1;
+            };
         };
 
         // Remove new proposed addresses that are already claimed
         let i = 0;
         while (i < vector::length(&proposed)) {
-        let proposed_addr = vector::borrow(&proposed, i);
-        if (vector::contains(&offer.claimed, proposed_addr)) {
-            vector::remove(&mut proposed, i);
-        };
-        i = i + 1;
+            let proposed_addr = vector::borrow(&proposed, i);
+            if (vector::contains(&offer.claimed, proposed_addr)) {
+                vector::remove(&mut proposed, i);
+            };
+            i = i + 1;
         };
 
         // Remove old proposed addresses that are not in the new proposed list
         let j = 0;
         while (j < vector::length(&offer.proposed)) {
-        let proposed_addr = vector::borrow(&offer.proposed, j);
-        if (!vector::contains(&proposed, proposed_addr)) {
-            vector::remove(&mut offer.proposed, j);
-            vector::remove(&mut offer.expiration_epoch, j);
-        } else {
-            j = j + 1;
-        };
+            let proposed_addr = vector::borrow(&offer.proposed, j);
+            if (!vector::contains(&proposed, proposed_addr)) {
+                vector::remove(&mut offer.proposed, j);
+                vector::remove(&mut offer.expiration_epoch, j);
+            } else {
+                j = j + 1;
+            };
         };
 
         // Insert/Update proposed and expiration epoch lists
         let k = 0;
         while (k < vector::length(&proposed)) {
-        // if already contains the address, update the expiration_epoch
-        let proposed_addr = vector::borrow(&proposed, k);
-        let (found, i) = vector::index_of(&offer.proposed, proposed_addr);
-        if (found) {
-            vector::remove(&mut offer.expiration_epoch, i);
-            vector::insert(&mut offer.expiration_epoch, i, expiration_epoch);
-        } else {
-            vector::push_back(&mut offer.proposed, *proposed_addr);
-            vector::push_back(&mut offer.expiration_epoch, expiration_epoch);
-        };
-        k = k + 1;
+            // if already contains the address, update the expiration_epoch
+            let proposed_addr = vector::borrow(&proposed, k);
+            let (found, i) = vector::index_of(&offer.proposed, proposed_addr);
+            if (found) {
+                vector::remove(&mut offer.expiration_epoch, i);
+                vector::insert(&mut offer.expiration_epoch, i, expiration_epoch);
+            } else {
+                vector::push_back(&mut offer.proposed, *proposed_addr);
+                vector::push_back(&mut offer.expiration_epoch, expiration_epoch);
+            };
+            k = k + 1;
         };
     }
 
@@ -386,16 +364,16 @@ module ol_framework::multi_action {
         vector::remove(&mut offer.expiration_epoch, i);
 
         if (multisig_account::is_multisig(multisig_address)) {
-        // a) finalized account: add authority to the multisig account
-        let ms = borrow_global_mut<Governance>(multisig_address);
-        maybe_update_authorities(ms, true, &vector::singleton(sender_addr));
-        if (vector::length(&offer.proposed) == 0) {
-            // clean the Offer
-            clean_offer(multisig_address);
-        };
+            // a) finalized account: add authority to the multisig account
+            let ms = borrow_global_mut<Governance>(multisig_address);
+            maybe_update_authorities(ms, true, &vector::singleton(sender_addr));
+            if (vector::length(&offer.proposed) == 0) {
+                // clean the Offer
+                clean_offer(multisig_address);
+            };
         } else {
-        // b) initiated account: add sender to the claimed list
-        vector::push_back(&mut offer.claimed, sender_addr);
+            // b) initiated account: add sender to the claimed list
+            vector::push_back(&mut offer.claimed, sender_addr);
         };
     }
 
@@ -428,16 +406,16 @@ module ol_framework::multi_action {
     public(friend) fun proposal_constructor<ProposalData: store + drop>(proposal_data: ProposalData, duration_epochs: Option<u64>): Proposal<ProposalData> {
 
         let duration_epochs = if (option::is_some(&duration_epochs)) {
-        *option::borrow(&duration_epochs)
+            *option::borrow(&duration_epochs)
         } else {
-        DEFAULT_EPOCHS_EXPIRE
+            DEFAULT_EPOCHS_EXPIRE
         };
 
         Proposal<ProposalData> {
-        proposal_data,
-        votes: vector::empty<address>(),
-        approved: false,
-        expiration_epoch: epoch_helper::get_current_epoch() + duration_epochs,
+            proposal_data,
+            votes: vector::empty<address>(),
+            approved: false,
+            expiration_epoch: epoch_helper::get_current_epoch() + duration_epochs,
         }
     }
 
@@ -451,8 +429,7 @@ module ol_framework::multi_action {
     }
 
     // TODO: remove this function after dependencies are updated
-    public entry fun finalize_and_cage(sig: &signer, initial_authorities:
-    vector<address>, num_signers: u64) {
+    public entry fun finalize_and_cage(sig: &signer, initial_authorities: vector<address>, num_signers: u64) {
         let addr = signer::address_of(sig);
         assert!(exists<Governance>(addr),
         error::invalid_argument(EGOV_NOT_INITIALIZED));
@@ -481,7 +458,8 @@ module ol_framework::multi_action {
         assert!(exists<Action<PropGovSigners>>(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
     }
 
-    fun is_gov_init(addr: address): bool {
+    // Check if the account is a multisig and has the Governance initialized
+    public fun is_gov_init(addr: address): bool {
         exists<Governance>(addr) &&
         exists<Action<PropGovSigners>>(addr)
     }
@@ -542,7 +520,7 @@ module ol_framework::multi_action {
         // maybe the withdraw cap was never extracted in previous set up.
         // but we won't extract it if none of the Actions require it.
         if (can_withdraw) {
-        maybe_extract_withdraw_cap(sig);
+            maybe_extract_withdraw_cap(sig);
         };
 
         move_to(sig, Action<ProposalData> {
@@ -557,10 +535,10 @@ module ol_framework::multi_action {
 
         let ms = borrow_global_mut<Governance>(multisig_address);
         if (option::is_some(&ms.withdraw_capability)) {
-        return
+            return
         } else {
-        let cap = account::extract_withdraw_capability(sig);
-        option::fill(&mut ms.withdraw_capability, cap);
+            let cap = account::extract_withdraw_capability(sig);
+            option::fill(&mut ms.withdraw_capability, cap);
         }
     }
 
@@ -568,10 +546,10 @@ module ol_framework::multi_action {
 
     public(friend) fun maybe_restore_withdraw_cap(cap_opt: Option<WithdrawCapability>) acquires Governance {
         if (option::is_some(&cap_opt)) {
-        let cap = option::extract(&mut cap_opt);
-        let addr = account::get_withdraw_cap_address(&cap);
-        let ms = borrow_global_mut<Governance>(addr);
-        option::fill(&mut ms.withdraw_capability, cap);
+            let cap = option::extract(&mut cap_opt);
+            let addr = account::get_withdraw_cap_address(&cap);
+            let ms = borrow_global_mut<Governance>(addr);
+            option::fill(&mut ms.withdraw_capability, cap);
         };
         option::destroy_none(cap_opt);
     }
@@ -598,9 +576,9 @@ module ol_framework::multi_action {
         // does this proposal already exist in the pending list?
         let (found, guid, _idx, status_enum, _is_complete) = search_proposals_by_data<ProposalData>(&action.vote, &proposal_data);
         if (found && status_enum == ballot::get_pending_enum()) {
-        // this exact proposal is already pending, so we we will just return the guid of the existing proposal.
-        // we'll let the caller decide what to do (we wont vote by default)
-        return guid
+            // this exact proposal is already pending, so we we will just return the guid of the existing proposal.
+            // we'll let the caller decide what to do (we wont vote by default)
+            return guid
         };
 
         let guid = account::create_guid_with_capability(&ms.guid_capability);
@@ -666,26 +644,26 @@ module ol_framework::multi_action {
         let passed = tally(t, n);
 
         if (passed) {
-        ballot::complete_ballot(b);
-        ballot::move_ballot(
-            &mut action.vote,
-            id,
-            ballot::get_pending_enum(),
-            ballot::get_approved_enum()
-        );
+            ballot::complete_ballot(b);
+            ballot::move_ballot(
+                &mut action.vote,
+                id,
+                ballot::get_pending_enum(),
+                ballot::get_approved_enum()
+            );
         };
 
         // get the withdrawal capability, we're not allowed copy, but we can
         // extract and fill, and then replace it. See account for an example.
         let withdraw_cap = if (
-        passed &&
-        option::is_some(&ms.withdraw_capability) &&
-        action.can_withdraw
+            passed &&
+            option::is_some(&ms.withdraw_capability) &&
+            action.can_withdraw
         ) {
-        let c = option::extract(&mut ms.withdraw_capability);
-        option::some(c)
+            let c = option::extract(&mut ms.withdraw_capability);
+            option::some(c)
         } else {
-        option::none()
+            option::none()
         };
 
         (passed, withdraw_cap)
@@ -695,12 +673,10 @@ module ol_framework::multi_action {
     // @returns bool, complete and passed
     // TODO: Multi_action will never pass a complete and rejected, which needs a UX
     fun tally<ProposalData: store + drop>(prop: &mut Proposal<ProposalData>, n: u64): bool {
-
         if (vector::length(&prop.votes) >= n) {
-        prop.approved = true;
-        return true
+            prop.approved = true;
+            return true
         };
-
         false
     }
 
@@ -712,15 +688,15 @@ module ol_framework::multi_action {
         let id_vec = vector::empty();
         let i = 0;
         while (i < vector::length(b_vec)) {
-        let b = vector::borrow(b_vec, i);
-        let t = ballot::get_type_struct<Proposal<ProposalData>>(b);
+            let b = vector::borrow(b_vec, i);
+            let t = ballot::get_type_struct<Proposal<ProposalData>>(b);
 
-        if (epoch > t.expiration_epoch) {
-            let id = ballot::get_ballot_id(b);
-            vector::push_back(&mut id_vec, id);
+            if (epoch > t.expiration_epoch) {
+                let id = ballot::get_ballot_id(b);
+                vector::push_back(&mut id_vec, id);
 
-        };
-        i = i + 1;
+            };
+            i = i + 1;
         };
 
         id_vec
@@ -731,10 +707,10 @@ module ol_framework::multi_action {
         let len = vector::length(&expired_vec);
         let i = 0;
         while (i < len) {
-        let id = vector::borrow(&expired_vec, i);
-        // lets check the status just in case.
-        ballot::move_ballot(&mut a.vote, id, ballot::get_pending_enum(), ballot::get_rejected_enum());
-        i = i + 1;
+            let id = vector::borrow(&expired_vec, i);
+            // lets check the status just in case.
+            ballot::move_ballot(&mut a.vote, id, ballot::get_pending_enum(), ballot::get_rejected_enum());
+            i = i + 1;
         };
     }
 
@@ -764,45 +740,45 @@ module ol_framework::multi_action {
         } = t;
 
         *existing_data
-        }
+    }
 
-        /// returns a tuple of (is_found: bool, id: guid:ID, index: u64, status_enum: u8, is_complete: bool)
-        fun search_proposals_by_data<ProposalData: drop + store> (
+    /// returns a tuple of (is_found: bool, id: guid:ID, index: u64, status_enum: u8, is_complete: bool)
+    fun search_proposals_by_data<ProposalData: drop + store> (
         tracker: &BallotTracker<Proposal<ProposalData>>,
         data: &Proposal<ProposalData>,
-        ): (bool, guid::ID, u64, u8, bool) {
+    ): (bool, guid::ID, u64, u8, bool) {
         // looking in pending
 
         let (found, guid, idx) = find_index_of_ballot_by_data(tracker, data, ballot::get_pending_enum());
         if (found) {
-        let b = ballot::get_ballot_by_id(tracker, &guid);
-        let complete = ballot::is_completed<Proposal<ProposalData>>(b);
-        return (true, guid, idx, ballot::get_pending_enum(), complete)
+            let b = ballot::get_ballot_by_id(tracker, &guid);
+            let complete = ballot::is_completed<Proposal<ProposalData>>(b);
+            return (true, guid, idx, ballot::get_pending_enum(), complete)
         };
 
         let (found, guid, idx) = find_index_of_ballot_by_data(tracker, data, ballot::get_approved_enum());
         if (found) {
-        let b = ballot::get_ballot_by_id(tracker, &guid);
-        let complete = ballot::is_completed<Proposal<ProposalData>>(b);
-        return (true, guid, idx, ballot::get_approved_enum(), complete)
+            let b = ballot::get_ballot_by_id(tracker, &guid);
+            let complete = ballot::is_completed<Proposal<ProposalData>>(b);
+            return (true, guid, idx, ballot::get_approved_enum(), complete)
         };
 
         let (found, guid, idx) = find_index_of_ballot_by_data(tracker, data, ballot::get_rejected_enum());
-        if (found) {
-        let b = ballot::get_ballot_by_id(tracker, &guid);
-        let complete = ballot::is_completed<Proposal<ProposalData>>(b);
-        return (true, guid, idx, ballot::get_rejected_enum(), complete)
+            if (found) {
+            let b = ballot::get_ballot_by_id(tracker, &guid);
+            let complete = ballot::is_completed<Proposal<ProposalData>>(b);
+            return (true, guid, idx, ballot::get_rejected_enum(), complete)
         };
 
         (false, guid::create_id(@0x0, 0), 0, 0, false)
     }
 
-        /// returns the a tuple with (is_found, id, status_enum ) of ballot while seaching by data
-        fun find_index_of_ballot_by_data<ProposalData: drop + store> (
+    /// returns the a tuple with (is_found, id, status_enum ) of ballot while seaching by data
+    fun find_index_of_ballot_by_data<ProposalData: drop + store> (
         tracker: &BallotTracker<Proposal<ProposalData>>,
         incoming_proposal: &Proposal<ProposalData>,
         status_enum: u8,
-        ): (bool, guid::ID, u64) {
+    ): (bool, guid::ID, u64) {
         let Proposal<ProposalData> {
             proposal_data: incoming_data,
             expiration_epoch: _,
@@ -833,7 +809,7 @@ module ol_framework::multi_action {
         };
 
         (false, guid::create_id(@0x0, 0), 0)
-        }
+    }
 
     /// returns a tuple of (is_found: bool, index: u64, status_enum: u8, is_voting_complete: bool)
     public(friend) fun get_proposal_status_by_id<ProposalData: drop + store>(multisig_address: address, uid: &guid::ID): (bool, u64, u8, bool) acquires Action { // found, index, status_enum, is_voting_complete
@@ -848,7 +824,7 @@ module ol_framework::multi_action {
         ballot::get_pending_enum());
 
         let id_list = vector::map_ref(list, |el| {
-        ballot::get_ballot_id(el)
+            ballot::get_ballot_id(el)
         });
 
         id_list
@@ -876,9 +852,9 @@ module ol_framework::multi_action {
         validate_owners(&addresses, multisig_address, add_remove);
 
         let data = PropGovSigners {
-        addresses,
-        add_remove,
-        n_of_m,
+            addresses,
+            add_remove,
+            n_of_m,
         };
 
         let prop = proposal_constructor<PropGovSigners>(data, duration_epochs);
@@ -893,23 +869,23 @@ module ol_framework::multi_action {
         assert_authorized(sig, multisig_address);
 
         let (passed, cap_opt) = {
-        vote_impl<PropGovSigners>(sig, multisig_address, id)
+            vote_impl<PropGovSigners>(sig, multisig_address, id)
         };
         maybe_restore_withdraw_cap(cap_opt); // don't need this but can't drop.
 
         if (passed) {
-        let ms = borrow_global_mut<Governance>(multisig_address);
-        let data = extract_proposal_data<PropGovSigners>(multisig_address, id);
-        if (!vector::is_empty(&data.addresses)) {
-            if (data.add_remove) {
-            // offer the authority adition voted to be claimed
-            add_offer_addresses(multisig_address, data.addresses);
-            return passed
-            } else {
-            maybe_update_authorities(ms, data.add_remove, &data.addresses);
+            let ms = borrow_global_mut<Governance>(multisig_address);
+            let data = extract_proposal_data<PropGovSigners>(multisig_address, id);
+            if (!vector::is_empty(&data.addresses)) {
+                if (data.add_remove) {
+                    // offer the authority adition voted to be claimed
+                    add_offer_addresses(multisig_address, data.addresses);
+                    return passed
+                } else {
+                    maybe_update_authorities(ms, data.add_remove, &data.addresses);
+                };
             };
-        };
-        maybe_update_threshold(ms, &data.n_of_m);
+            maybe_update_threshold(ms, &data.n_of_m);
         };
         passed
     }
@@ -917,9 +893,7 @@ module ol_framework::multi_action {
     /// Updates the authorities of the multisig. This is a helper function for governance.
     // must be called with the withdraw capability and signer. belt and suspenders
     fun maybe_update_authorities(ms: &mut Governance, add_remove: bool, addresses: &vector<address>) {
-
         assert!(!vector::is_empty(addresses), error::invalid_argument(EEMPTY_ADDRESSES));
-
         multisig_account::multi_auth_helper_add_remove(&ms.guid_capability, add_remove, addresses);
     }
 
@@ -956,7 +930,7 @@ module ol_framework::multi_action {
 
     #[view]
     public fun get_threshold(multisig_address: address): (u64, u64) {
-            (multisig_account::num_signatures_required(multisig_address), vector::length(&multisig_account::owners(multisig_address)))
+        (multisig_account::num_signatures_required(multisig_address), vector::length(&multisig_account::owners(multisig_address)))
     }
 
     #[view]
@@ -971,7 +945,7 @@ module ol_framework::multi_action {
     public fun get_pending_by_creation_number<ProposalData: store + drop>(multisig_address: address): vector<u64> acquires Action {
         let list = get_pending_id<ProposalData>(multisig_address);
         vector::map(list, |el| {
-        guid::id_creation_num(&el)
+            guid::id_creation_num(&el)
         })
     }
 
@@ -1004,26 +978,25 @@ module ol_framework::multi_action {
 
         if (!exists<Governance>(multisig_address)) {
             move_to(sig, Governance {
-            cfg_duration_epochs: DEFAULT_EPOCHS_EXPIRE,
-            cfg_default_n_sigs: 0, // deprecate
-            signers: vector::empty(),
-            withdraw_capability: option::none(),
-            guid_capability: account::create_guid_capability(sig),
-        });
+                cfg_duration_epochs: DEFAULT_EPOCHS_EXPIRE,
+                cfg_default_n_sigs: 0, // deprecate
+                signers: vector::empty(),
+                withdraw_capability: option::none(),
+                guid_capability: account::create_guid_capability(sig),
+            });
         };
 
         if (!exists<Action<PropGovSigners>>(multisig_address)) {
-        move_to(sig, Action<PropGovSigners> {
-            can_withdraw: false,
-            vote: ballot::new_tracker<Proposal<PropGovSigners>>(),
-        });
+            move_to(sig, Action<PropGovSigners> {
+                can_withdraw: false,
+                vote: ballot::new_tracker<Proposal<PropGovSigners>>(),
+            });
         };
     }
 
     // TODO: remove this function after offer migration is completed
     #[test_only]
-    public entry fun finalize_and_cage_deprecated(sig: &signer, initial_authorities:
-    vector<address>, num_signers: u64) {
+    public entry fun finalize_and_cage_deprecated(sig: &signer, initial_authorities: vector<address>, num_signers: u64) {
         let addr = signer::address_of(sig);
         assert!(exists<Governance>(addr),
         error::invalid_argument(EGOV_NOT_INITIALIZED));
