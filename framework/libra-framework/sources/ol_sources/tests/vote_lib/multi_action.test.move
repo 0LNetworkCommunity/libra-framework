@@ -1161,4 +1161,46 @@ module ol_framework::test_multi_action {
     // carol is going to propose to change the authorities to add dave twice
     let _id = multi_action::propose_governance(carol, alice_address, vector::singleton(alice_address), true, option::none(), option::none());
   }
+
+  // Try to vote an owner as new authority
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
+  #[expected_failure(abort_code = 0x10026, location = ol_framework::multi_action)]
+  fun governance_vote_owner_as_new_authority(root: &signer, alice: &signer, bob: &signer, carol: &signer) {
+    let _vals = mock::genesis_n_vals(root, 3);
+    let alice_address = @0x1000a;
+
+    // alice offer bob and carol authority on her account
+    multi_action::init_gov(alice);
+    let authorities = vector::empty<address>();
+    vector::push_back(&mut authorities, signer::address_of(bob));
+    vector::push_back(&mut authorities, signer::address_of(carol));
+    multi_action::propose_offer(alice, authorities, option::some(1));
+    multi_action::claim_offer(bob, alice_address);
+    multi_action::claim_offer(carol, alice_address);
+    multi_action::finalize_and_cage2(alice);
+
+    // carol is going to propose to change the authorities to add bob
+    let _id = multi_action::propose_governance(carol, alice_address, vector::singleton(signer::address_of(bob)), true, option::none(), option::none());
+  }
+
+  // Try to vote remove an authority that is not in the multisig
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
+  #[expected_failure(abort_code = 0x60027, location = ol_framework::multi_action)]
+  fun governance_vote_remove_non_authority(root: &signer, alice: &signer, bob: &signer, carol: &signer) {
+    let _vals = mock::genesis_n_vals(root, 3);
+    let alice_address = @0x1000a;
+
+    // alice offer bob and carol authority on her account
+    multi_action::init_gov(alice);
+    let authorities = vector::empty<address>();
+    vector::push_back(&mut authorities, signer::address_of(bob));
+    vector::push_back(&mut authorities, signer::address_of(carol));
+    multi_action::propose_offer(alice, authorities, option::some(1));
+    multi_action::claim_offer(bob, alice_address);
+    multi_action::claim_offer(carol, alice_address);
+    multi_action::finalize_and_cage2(alice);
+
+    // carol is going to propose to remove dave
+    let _id = multi_action::propose_governance(carol, alice_address, vector::singleton(@0x1000d), false, option::none(), option::none());
+  }
 }
