@@ -88,6 +88,8 @@ module ol_framework::multi_action {
   const EZERO_DURATION: u64 = 0x22;
   /// Offer already claimed
   const EALREADY_CLAIMED: u64 = 0x23;
+  /// Too many addresses in offer - avoid DoS attack
+  const ETOO_MANY_ADDRESSES: u64 = 0x24;
 
   /// default setting for a proposal to expire
   const DEFAULT_EPOCHS_EXPIRE: u64 = 14;
@@ -95,6 +97,8 @@ module ol_framework::multi_action {
   const DEFAULT_EPOCHS_OFFER_EXPIRE: u64 = 7;
   /// minimum number of claimed authorities to cage the account  
   const MIN_OFFER_CLAIMS_TO_CAGE: u64 = 2;
+  /// maximum number of address to offer
+  const MAX_OFFER_ADDRESSES: u64 = 10;
 
   /// A Governance account is an account which requires multiple votes from Authorities to  send a transaction.
   /// A multisig can be used to get agreement on different types of Actions, such as a payment transaction where the handler code for the transaction is an a separate contract. See for example MultiSigPayment.
@@ -260,6 +264,9 @@ module ol_framework::multi_action {
 
     // Ensure the proposed list is not empty
     assert!(vector::length(&proposed) > 0, error::invalid_argument(EOFFER_EMPTY));
+
+    // Ensure the proposed list is not greater than the maximum limit - avoid DoS attack
+    assert!(vector::length(&proposed) <= MAX_OFFER_ADDRESSES, error::invalid_argument(ETOO_MANY_ADDRESSES));
 
     // Ensure the proposed list does not contain the signer
     assert!(!vector::contains(&proposed, &addr), error::permission_denied(ESIGNER_CANT_BE_AUTHORITY));
