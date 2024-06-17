@@ -252,8 +252,7 @@ module ol_framework::multi_action {
     // if account is multisig, forge signer and add Offer to the multisig account
     if (multisig_account::is_multisig(multisig_address)) {
       // a) multisig account: ensure the signer is in the authorities list
-      let authorities = multisig_account::owners(multisig_address);
-      assert!(vector::contains(&authorities, &signer::address_of(sig)), error::permission_denied(ENOT_AUTHORIZED));
+      assert!(is_authority(multisig_address, signer::address_of(sig)), error::permission_denied(ENOT_AUTHORIZED));
 
       // We create the signer for the multisig account here since this is required 
       // to add the Offer resource. 
@@ -899,6 +898,8 @@ module ol_framework::multi_action {
     assert_authorized(sig, multisig_address); // Duplicated with propose(), belt
     // and suspenders
 
+    multisig_account::validate_owners(&addresses, multisig_address);
+
     let data = PropGovSigners {
       addresses,
       add_remove,
@@ -928,6 +929,7 @@ module ol_framework::multi_action {
         if (data.add_remove) {
           // offer the authority adition voted to be claimed
           add_offer_addresses(multisig_address, data.addresses);
+          return passed
         } else {
           maybe_update_authorities(ms, data.add_remove, &data.addresses);
         };        
