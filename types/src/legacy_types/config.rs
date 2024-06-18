@@ -184,7 +184,6 @@ impl AppCfg {
         };
 
         if source_path.is_some() {
-            // let source_path = what_source();
             default_config.workspace.source_path = source_path.clone();
             default_config.workspace.stdlib_bin_path = Some(
                 source_path
@@ -258,7 +257,6 @@ impl AppCfg {
             .as_str(),
         )
         .unwrap();
-        // let waypoint = config.base.waypoint.waypoint();
 
         let mut cfg = AppCfg {
             workspace: Workspace::default(),
