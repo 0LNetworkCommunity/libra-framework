@@ -1,4 +1,4 @@
-//! autopay view for web monitor
+//! AutoPay view for web monitor
 
 use anyhow::Result;
 use diem_types::account_address::AccountAddress;
@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 /// Struct that represents a AutoPay resource
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AncestryResource {
-    ///
+    /// A vector representing the ancestry tree of account addresses.
     pub tree: Vec<AccountAddress>,
 }
 
@@ -23,7 +23,7 @@ impl MoveStructType for AncestryResource {
 impl MoveResource for AncestryResource {}
 
 impl AncestryResource {
-    ///
+    /// Create an `AncestryResource` from a byte array.
     pub fn try_from_bytes(bytes: &[u8]) -> Result<Self> {
         bcs::from_bytes(bytes).map_err(Into::into)
     }
