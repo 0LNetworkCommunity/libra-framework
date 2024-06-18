@@ -49,9 +49,7 @@ module ol_framework::community_wallet_init {
     /// minimum m authorities for a wallet
     const MINIMUM_AUTH: u64 = 3;
 
-
-    public(friend) fun migrate_community_wallet_account(framework: &signer, dv_account:
-    &signer) {
+    public(friend) fun migrate_community_wallet_account(framework: &signer, dv_account: &signer) {
       use diem_framework::system_addresses;
       system_addresses::assert_diem_framework(framework);
       donor_voice_txs::migrate_community_wallet_account(framework, dv_account);
@@ -60,29 +58,30 @@ module ol_framework::community_wallet_init {
 
     //////// MULTISIG TX HELPERS ////////
 
-    // Helper to initialize the PaymentMultiAction but also while confirming that the signers are not related family
-    // These transactions can be sent directly to donor_voice, but this is a helper to make it easier to initialize the multisig with the ancestry requirements.
-
+    // Helper to initialize:
+    //  - the PaymentMultiAction 
+    //  - offer authorities to the multisig after confirming that the signers are not related family
+    // These transactions can be sent directly to donor_voice, but this is a helper to make it easier to initialize 
+    // the multisig with the ancestry requirements.
     public entry fun init_community(
       sig: &signer,
-      check_addresses: vector<address>,
+      initial_authorities: vector<address>,
       check_threshold: u64,
     ) {
-      check_proposed_auths(check_addresses, check_threshold);
+      check_proposed_auths(initial_authorities, check_threshold);
 
       donor_voice_txs::make_donor_voice(sig);
       if (!donor_voice_txs::is_liquidate_to_match_index(signer::address_of(sig))) {
         donor_voice_txs::set_liquidate_to_match_index(sig, true);
       };
       match_index::opt_into_match_index(sig);
-
+      
+      propose_offer(sig, initial_authorities, check_threshold);
     }
 
     #[view]
-    /// check if the authorities being proposed, and signature threshold would
-    /// qualify
-    public fun check_proposed_auths(initial_authorities: vector<address>, num_signers:
-    u64): bool {
+    /// check if the authorities being proposed, and signature threshold would qualify
+    public fun check_proposed_auths(initial_authorities: vector<address>, num_signers: u64): bool {
 
       // TODO: enforce n/m multi auth such as:
       // let n = if (len == 3) { 2 }
@@ -92,35 +91,36 @@ module ol_framework::community_wallet_init {
 
       assert!(num_signers >= MINIMUM_SIGS, error::invalid_argument(ESIG_THRESHOLD_CONFIG));
 
-            // policy is to have at least m signers as auths on the account.
+      // policy is to have at least m signers as auths on the account.
       let len = vector::length(&initial_authorities);
       assert!(len >= MINIMUM_AUTH, error::invalid_argument(ETOO_FEW_AUTH));
 
       let (fam, _, _) = ancestry::any_family_in_list(initial_authorities);
       assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
       true
+    }
 
+    /// Propose offer to the multisig, and check if the signers are not related family
+    public entry fun propose_offer(sig: &signer, new_signers: vector<address>, num_signers: u64) {
+      check_proposed_auths(new_signers, num_signers);
+      multi_action::propose_offer_internal(sig, new_signers, option::none());
     }
 
     /// convenience function to check if the account can be caged
     /// after all the structs are in place
-    public entry fun finalize_and_cage(sig: &signer, initial_authorities: vector<address>, num_signers: u64) {
+    public entry fun finalize_and_cage(sig: &signer, num_signers: u64) {
       let addr = signer::address_of(sig);
 
-      assert!(donor_voice_txs::is_liquidate_to_match_index(addr), error::invalid_argument(ENOT_MATCH_INDEX_LIQ));
-
-      multi_action::finalize_and_cage(sig, initial_authorities, num_signers);
+      multi_action::finalize_and_cage(sig, num_signers);
       community_wallet::set_comm_wallet(sig);
-
+      
+      assert!(donor_voice_txs::is_liquidate_to_match_index(addr), error::invalid_argument(ENOT_MATCH_INDEX_LIQ));
       assert!(multisig_thresh(addr), error::invalid_argument(ESIG_THRESHOLD_RATIO));
-      assert!(!multisig_common_ancestry(addr),
-      error::invalid_argument(ESIGNERS_SYBIL));
+      assert!(!multisig_common_ancestry(addr), error::invalid_argument(ESIGNERS_SYBIL));
       assert!(community_wallet::is_init(addr), error::invalid_argument(ENO_CW_FLAG));
-
     }
 
     #[view]
-
     /// Dynamic check to see if CommunityWallet is qualifying.
     /// if it is not qualifying it wont be part of the burn funds matching.
     public fun qualifies(addr: address): bool {

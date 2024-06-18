@@ -5,6 +5,7 @@
     use ol_framework::community_wallet;
     use ol_framework::community_wallet_init;
     use ol_framework::donor_voice_txs;
+    use ol_framework::multi_action;
     use diem_framework::multisig_account;
     use ol_framework::mock;
     use ol_framework::ol_account;
@@ -12,17 +13,14 @@
     use std::signer;
     use std::vector;
 
+    // use diem_std::debug::print;
 
-  // use diem_std::debug::print;
-
-
-    #[test(root = @ol_framework, community = @0x10011)]
-    fun migrate_cw_bug_not_resource(root: &signer, community: &signer) {
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, community = @0x10011)]
+    fun migrate_cw_bug_not_resource(root: &signer, alice: &signer, bob: &signer, carol: &signer, community: &signer) {
 
         // create genesis and fund accounts
         let auths = mock::genesis_n_vals(root, 3);
         mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
-
 
         let community_wallet_address = signer::address_of(community);
         // genesis migration would have created this account.
@@ -39,8 +37,13 @@
         // confirm the bug
         assert!(!multisig_account::is_multisig(community_wallet_address), 7357002);
 
+        // vals claim the offer
+        multi_action::claim_offer(alice, community_wallet_address);
+        multi_action::claim_offer(bob, community_wallet_address);
+        multi_action::claim_offer(carol, community_wallet_address);
+
         // fix it by calling multi auth:
-        community_wallet_init::finalize_and_cage(community, auths, vector::length(&auths));
+        community_wallet_init::finalize_and_cage(community, vector::length(&auths));
         // multi_action::finalize_and_cage(community);
         assert!(multisig_account::is_multisig(community_wallet_address), 7357003);
 
@@ -92,7 +95,7 @@
     fun cw_decrease_below_m_authorized_sigs(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer, eve: &signer ) {
         // A community wallet by default must be 2/3 multisig.
         // This test verifies that the wallet can not be initialized with less signers
-        mock::genesis_n_vals(root, 4);
+        mock::genesis_n_vals(root, 5);
         mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
 
         let (_, carol_balance_pre) = ol_account::balance(@0x1000c);
@@ -112,11 +115,15 @@
         vector::push_back(&mut signers, signer::address_of(bob));
         vector::push_back(&mut signers, signer::address_of(dave));
         vector::push_back(&mut signers, signer::address_of(eve));
-
         community_wallet_init::init_community(alice, signers, 2);
 
+        // signers claim the offer
+        multi_action::claim_offer(bob, signer::address_of(alice));
+        multi_action::claim_offer(dave, signer::address_of(alice));
+        multi_action::claim_offer(eve, signer::address_of(alice));
+
         // fix it by calling multi auth:
-        community_wallet_init::finalize_and_cage(alice, signers, 2);
+        community_wallet_init::finalize_and_cage(alice, 2);
 
         let alice_comm_wallet_addr = signer::address_of(alice);
         let carols_addr = signer::address_of(carol);
@@ -167,7 +174,7 @@
     fun cw_decrease_below_minimum_n_sigs(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer, eve: &signer ) {
         // A community wallet by default must be 2/3 multisig.
         // This test verifies that the wallet can not be initialized with less signers
-        mock::genesis_n_vals(root, 4);
+        mock::genesis_n_vals(root, 5);
         mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
 
         let (_, carol_balance_pre) = ol_account::balance(@0x1000c);
@@ -187,11 +194,15 @@
         vector::push_back(&mut signers, signer::address_of(bob));
         vector::push_back(&mut signers, signer::address_of(dave));
         vector::push_back(&mut signers, signer::address_of(eve));
-
         community_wallet_init::init_community(alice, signers, 2);
 
+        // signers claim the offer
+        multi_action::claim_offer(bob, signer::address_of(alice));
+        multi_action::claim_offer(dave, signer::address_of(alice));
+        multi_action::claim_offer(eve, signer::address_of(alice));
+
         // fix it by calling multi auth:
-        community_wallet_init::finalize_and_cage(alice, signers, 2);
+        community_wallet_init::finalize_and_cage(alice, 2);
 
         let alice_comm_wallet_addr = signer::address_of(alice);
         let carols_addr = signer::address_of(carol);
@@ -236,112 +247,106 @@
 
     }
 
+    // Try to initialize with less than the required signitures
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
-    #[expected_failure(abort_code = 65542, location = 0x1::community_wallet_init)]
-    fun cw_init_with_n_and_m_below_minimum_sigs(root: &signer, alice: &signer, bob: &signer) {
+    #[expected_failure(abort_code = 0x10005, location = 0x1::community_wallet_init)]
+    fun cw_init_with_less_signitures_than_min(root: &signer, alice: &signer) {
         // A community wallet by default must be 2/3 multisig.
-        // This test verifies that the wallet can not be initialized with less signers
         mock::genesis_n_vals(root, 4);
         mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
 
-
-        // create signers
-        let signers = vector::empty<address>();
-        vector::push_back(&mut signers, signer::address_of(bob));
-
-
-        community_wallet_init::migrate_community_wallet_account(root, alice);
-
-        donor_voice_txs::test_helper_make_donor_voice(root, alice);
-
-        // try to cage the address by calling multi auth
-        community_wallet_init::finalize_and_cage(alice, signers, 1);
-
+        // try to initialize
+        let authorities = vector::singleton(@0x1000b);
+        vector::push_back(&mut authorities, @0x1000c);
+        vector::push_back(&mut authorities, @0x1000d);
+        community_wallet_init::init_community(alice, authorities, 1);
     }
 
+    // Try to initialize with less than the required authorities
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
-    #[expected_failure(abort_code = 65542, location = 0x1::community_wallet_init)]
-    fun cw_dd_init_with_n_below_minimum_sigs(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer) {
+    #[expected_failure(abort_code = 0x10009, location = 0x1::community_wallet_init)]
+    fun cw_init_with_less_authorities_than_min(root: &signer, alice: &signer, bob: &signer, carol: &signer) {
         // A community wallet by default must be 2/3 multisig.
-        // This test verifies that the wallet can not be decreased below this specification
         mock::genesis_n_vals(root, 4);
         mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
 
-        // create signers
+        // try to initialize
+        let signers = vector::empty<address>();
+        vector::push_back(&mut signers, signer::address_of(bob));
+        vector::push_back(&mut signers, signer::address_of(carol));
+        community_wallet_init::init_community(alice, signers, 2);
+    }
+
+    // Try to finalize with less than the required authorities
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
+    #[expected_failure(abort_code = 0x10006, location = 0x1::community_wallet_init)]
+    fun cw_finalize_with_less_authorities_than_min(root: &signer, alice: &signer, bob: &signer, carol: &signer) {
+        // A community wallet by default must be 2/3 multisig.
+        mock::genesis_n_vals(root, 4);
+        mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
+
+        let authorities = vector::singleton(@0x1000b);
+        vector::push_back(&mut authorities, @0x1000c);
+        vector::push_back(&mut authorities, @0x1000d);
+        community_wallet_init::init_community(alice, authorities, 2);
+
+        multi_action::claim_offer(bob, signer::address_of(alice));
+        multi_action::claim_offer(carol, signer::address_of(alice));
+
+        // try to finalize
+        community_wallet_init::finalize_and_cage(alice, 2);
+    }
+
+    // Try to finalize with less than the required signitures
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
+    #[expected_failure(abort_code = 0x10006, location = 0x1::community_wallet_init)]
+    fun cw_finalize_with_less_signitures_than_min(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer) {
+        // A community wallet by default must be 2/3 multisig.
+        mock::genesis_n_vals(root, 4);
+        mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
+
         let signers = vector::empty<address>();
         vector::push_back(&mut signers, signer::address_of(bob));
         vector::push_back(&mut signers, signer::address_of(carol));
         vector::push_back(&mut signers, signer::address_of(dave));
 
-        community_wallet_init::migrate_community_wallet_account(root, alice);
+        community_wallet_init::init_community(alice, signers, 2);
 
-        donor_voice_txs::test_helper_make_donor_voice(root, alice);
+        multi_action::claim_offer(bob, signer::address_of(alice));
+        multi_action::claim_offer(carol, signer::address_of(alice));
+        multi_action::claim_offer(dave, signer::address_of(alice));
 
-        // try to cage the address by calling multi auth
-        community_wallet_init::finalize_and_cage(alice, signers, 1);
-
+        // try to finalize
+        community_wallet_init::finalize_and_cage(alice, 1);
     }
 
-    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
-    #[expected_failure(abort_code = 65542, location = 0x1::community_wallet_init)]
-    fun cw_dd_decrease_m_below_minimum_sigs(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer) {
-        // A community wallet by default must be 2/3 multisig.
-        // This test verifies that the wallet can not be decreased below this specification
-        mock::genesis_n_vals(root, 4);
+    // change the authorities offer of a community wallet
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d, eve = @0x1000e)]
+    fun cw_change_authorities(root: &signer, alice: &signer, bob: &signer, carol: &signer,dave: &signer, eve: &signer) {
+        mock::genesis_n_vals(root, 5);
         mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
 
+        let authorities = vector::empty<address>();
+        vector::push_back(&mut authorities, signer::address_of(bob));
+        vector::push_back(&mut authorities, signer::address_of(carol));
+        vector::push_back(&mut authorities, signer::address_of(dave));
+        community_wallet_init::init_community(alice, authorities, 2);
 
-        // create signers
-        let signers = vector::empty<address>();
-        vector::push_back(&mut signers, signer::address_of(bob));
-        vector::push_back(&mut signers, signer::address_of(carol));
-        vector::push_back(&mut signers, signer::address_of(dave));
+        vector::pop_back(&mut authorities); // remove dave
+        vector::push_back(&mut authorities, signer::address_of(eve)); // add eve
+        community_wallet_init::propose_offer(alice, authorities, 2);        
 
-        community_wallet_init::migrate_community_wallet_account(root, alice);
+        multi_action::claim_offer(bob, signer::address_of(alice));
+        multi_action::claim_offer(carol, signer::address_of(alice));
+        multi_action::claim_offer(eve, signer::address_of(alice));
 
-        donor_voice_txs::test_helper_make_donor_voice(root, alice);
+        community_wallet_init::finalize_and_cage(alice, 2);
 
-        // try to cage the address by calling multi auth
-        community_wallet_init::finalize_and_cage(alice, signers, 1);
-
+        // certify the change
+        let new_authorities = multi_action::get_authorities(signer::address_of(alice));
+        assert!(vector::length(&new_authorities) == 3, 7357001);
+        assert!(vector::contains(&new_authorities, &signer::address_of(bob)), 7357002);
+        assert!(vector::contains(&new_authorities, &signer::address_of(carol)), 7357003);
+        assert!(vector::contains(&new_authorities, &signer::address_of(eve)), 7357004);
     }
-
-
-
-    // TODO: test below
-
-    // #[test(root = @ol_framework, _alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d, eve = @0x1000e)]
-    // #[expected_failure(abort_code = 196618, location = 0x1::ol_account)]
-    // fun cw_below_minimum_signer(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer, eve: &signer) {
-    //     // A community wallet by default must be 2/3 multisig.
-    //     // This test verifies that the wallet can not be initialized with less signers
-    //     mock::genesis_n_vals(root, 4);
-    //     mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
-
-    //     let signers = vector::empty<address>();
-
-    //     // helpers in line to help
-    //     vector::push_back(&mut signers, signer::address_of(bob));
-    //     vector::push_back(&mut signers, signer::address_of(dave));
-
-    //     community_wallet_init::init_community(alice, signers);
-
-    //     // After being set as a community wallet, the owner loses control over the wallet
-    //     ol_account::transfer(alice, @0x1000b, 100);
-    // }
-
-        //      let alice_comm_wallet_addr = signer::address_of(alice);
-    //    let carols_addr = signer::address_of(carol);
-
-    //     let uid = donor_voice_txs::test_propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol");
-    //     let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
-    //     assert!(found, 7357004);
-    //     assert!(idx == 0, 7357005);
-    //     assert!(status_enum == 1, 7357006);
-    //     assert!(!completed, 7357007);
-
-    //   // it is not yet scheduled, it's still only a proposal by an admin
-    //   assert!(!donor_voice_txs::is_scheduled(alice_comm_wallet_addr, &uid), 7357008);
-
-
   }
