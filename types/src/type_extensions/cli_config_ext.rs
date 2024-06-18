@@ -26,7 +26,6 @@ pub trait CliConfigExt {
 }
 
 impl CliConfigExt for CliConfig {
-
     /// Checks if the configuration file exists in the specified workspace and mode.
     fn config_exists_ext(workspace: Option<PathBuf>, mode: ConfigSearchMode) -> bool {
         if let Ok(folder) = libra_folder(workspace, mode) {

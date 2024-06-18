@@ -54,7 +54,6 @@ impl Default for AccountRole {
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct LegacyRecoveryV6 {
-
     /// The account address associated with this recovery.
     pub account: Option<AccountAddress>,
 

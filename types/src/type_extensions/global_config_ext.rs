@@ -17,7 +17,6 @@ pub trait GlobalConfigExt {
 }
 
 impl GlobalConfigExt for GlobalConfig {
-
     /// Loads the global configuration from the specified file.
     fn load_ext() -> CliTypedResult<GlobalConfig> {
         let path = global_folder()?.join(GLOBAL_CONFIG_FILE);
