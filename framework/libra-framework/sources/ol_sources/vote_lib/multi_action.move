@@ -110,7 +110,7 @@ module ol_framework::multi_action {
     /// default setting for an offer to expire
     const DEFAULT_EPOCHS_OFFER_EXPIRE: u64 = 7;
     /// minimum number of claimed authorities to cage the account
-    const MIN_OFFER_CLAIMS_TO_CAGE: u64 = 1;
+    const MIN_OFFER_CLAIMS_TO_CAGE: u64 = 2;
     /// maximum number of address to offer
     const MAX_OFFER_ADDRESSES: u64 = 10;
 
