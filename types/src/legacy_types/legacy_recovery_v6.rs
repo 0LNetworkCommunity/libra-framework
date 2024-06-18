@@ -108,6 +108,7 @@ pub struct LegacyRecoveryV6 {
     pub consensus_reward: Option<ConsensusRewardResource>,
 }
 
+/// Strips the system address from the legacy recovery list
 pub fn strip_system_address(list: &mut Vec<LegacyRecoveryV6>) {
     list.retain(|e| {
         !e.account
@@ -123,6 +124,7 @@ pub fn read_from_recovery_file(path: &PathBuf) -> Vec<LegacyRecoveryV6> {
     serde_json::from_str(&data).expect("Unable to parse")
 }
 
+/// Gets the legacy recovery data for an account state
 pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<LegacyRecoveryV6> {
     let mut legacy_recovery = LegacyRecoveryV6 {
         account: account_state.get_account_address()?,

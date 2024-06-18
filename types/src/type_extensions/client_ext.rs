@@ -7,7 +7,6 @@ use anyhow::{anyhow, Context};
 use async_trait::async_trait;
 use serde::de::DeserializeOwned;
 use serde_json::{self, Value};
-// use std::time::Duration;
 use diem::common::types::{CliConfig, ConfigSearchMode, DEFAULT_PROFILE};
 use diem_sdk::{
     move_types::{
@@ -286,9 +285,6 @@ impl ClientExt for Client {
         } else {
             vec![]
         };
-
-        // println!("{}", format_type_args(&ty_args));
-        // println!("{}", format_args(&args));
 
         let request = ViewRequest {
             function: entry_fuction_id,

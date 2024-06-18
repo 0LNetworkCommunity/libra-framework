@@ -1,5 +1,4 @@
 use crate::GLOBAL_CONFIG_DIRECTORY_0L;
-// use super::global_config_ext::GlobalConfigExt;
 use anyhow::{anyhow, bail, Result};
 use diem::{
     common::{
@@ -8,7 +7,6 @@ use diem::{
         },
         utils::{create_dir_if_not_exist, read_from_file, write_to_user_only_file},
     },
-    // config::GlobalConfig,
     genesis::git::from_yaml,
 };
 use std::path::PathBuf;

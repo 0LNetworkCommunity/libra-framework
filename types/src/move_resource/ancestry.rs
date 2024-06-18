@@ -1,5 +1,4 @@
 //! autopay view for web monitor
-//! autopay view for web monitor
 
 use anyhow::Result;
 use diem_types::account_address::AccountAddress;
