@@ -788,12 +788,11 @@ module ol_framework::test_multi_action {
 
         // fund the account
         ol_account::transfer(alice, erik_address, 100);
+        
         // offer alice and bob authority on the safe
-        safe::init_payment_multisig(&erik); // both need to sign
-        let authorities = vector::empty<address>();
-        vector::push_back(&mut authorities, signer::address_of(alice));
+        let authorities = vector::singleton(signer::address_of(alice));
         vector::push_back(&mut authorities, signer::address_of(bob));
-        multi_action::propose_offer(&erik, authorities, option::none());
+        safe::init_payment_multisig(&erik, authorities); // both need to sign
         multi_action::claim_offer(alice, erik_address);
         multi_action::claim_offer(bob, erik_address);  
         multi_action::finalize_and_cage(&erik, 2);

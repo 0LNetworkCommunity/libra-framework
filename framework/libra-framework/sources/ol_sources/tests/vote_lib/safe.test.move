@@ -30,10 +30,7 @@ module ol_framework::test_safe {
     // make the vals the signers on the safe
     // SO ALICE and DAVE ARE AUTHORIZED
 
-    safe::init_payment_multisig(&resource_sig); // all need to sign
-
-    // offer authorities to the safe
-    multi_action::propose_offer(&resource_sig, vals, option::none());
+    safe::init_payment_multisig(&resource_sig, vals);
 
     // vals claim the offer
     multi_action::claim_offer(alice, new_resource_address);
@@ -70,10 +67,7 @@ module ol_framework::test_safe {
     // make the vals the signers on the safe
     // SO ALICE, BOB, CAROL, DAVE ARE AUTHORIZED
     // not enough voters
-    safe::init_payment_multisig(&resource_sig); // requires 3
-
-    // offer authorities to the safe
-    multi_action::propose_offer(&resource_sig, vals, option::none());
+    safe::init_payment_multisig(&resource_sig, vals); // requires 3
 
     // vals claim the offer
     multi_action::claim_offer(alice, new_resource_address);
@@ -105,11 +99,8 @@ module ol_framework::test_safe {
     let new_resource_address = signer::address_of(&resource_sig);
     assert!(resource_account::is_resource_account(new_resource_address), 0);
     
-    safe::init_payment_multisig(&resource_sig); // requires 3
+    safe::init_payment_multisig(&resource_sig, vals); // requires 3
     
-    // offer authorities to the safe
-    multi_action::propose_offer(&resource_sig, vals, option::none());
-
     // vals claim the offer
     multi_action::claim_offer(alice, new_resource_address);
     multi_action::claim_offer(bob, new_resource_address);
