@@ -757,7 +757,7 @@ module ol_framework::test_multi_action {
         multi_action::maybe_restore_withdraw_cap(cap_opt);
     }
 
-    // Try to vote on a closed ballot
+    // Try to vote on an expired ballot
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
     #[expected_failure(abort_code = 0x3000C, location = ol_framework::multi_action)]
     fun vote_action_expiration(root: &signer, alice: &signer, bob: &signer, dave: &signer) {
@@ -800,9 +800,9 @@ module ol_framework::test_multi_action {
 
         // trying to vote on a closed ballot will error
         let _passed = multi_action::vote_governance(bob, erik_address, &id);
-    }
+    }      
 
-
+    // Happy day: change the authorities of a multisig
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
     fun governance_change_auths(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer) {
         // Scenario: The multisig gets initiated with the 2 validators as the only authorities. IT takes 2-of-2 to sign.
@@ -994,6 +994,42 @@ module ol_framework::test_multi_action {
         let expiration = vector::singleton(7);
         vector::push_back(&mut expiration, 8);
         assert!(multi_action::get_offer_expiration_epoch(alice_address) == expiration, 7357005);    
+    }
+
+    // Try to vote twice on the same ballot
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
+    #[expected_failure(abort_code = 0x3000C, location = ol_framework::multi_action)]
+    fun vote_action_twice(root: &signer, alice: &signer, bob: &signer, carol: &signer) {
+        // Scenario: Testing that a vote cannot be done twice on the same ballot.
+        
+        let _vals = mock::genesis_n_vals(root, 4);
+        mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
+        let carol_address = @0x1000c;
+        let dave_address = @0x1000d;
+        ol_account::transfer(alice, carol_address, 100);
+
+        // offer alice and bob authority on the safe
+        multi_action::init_gov(carol);
+        multi_action::init_type<DummyType>(carol, true);
+        let authorities = vector::empty<address>();
+        vector::push_back(&mut authorities, signer::address_of(alice));
+        vector::push_back(&mut authorities, signer::address_of(bob));
+        multi_action::propose_offer(carol, authorities, option::none());
+        multi_action::claim_offer(alice, carol_address);
+        multi_action::claim_offer(bob, carol_address);  
+        multi_action::finalize_and_cage2(carol);
+
+        // alice is going to propose to change the authorities to add dave
+        let id = multi_action::propose_governance(alice, carol_address,
+        vector::singleton(dave_address), true, option::none(),
+        option::none());
+
+        // bob votes
+        let passed = multi_action::vote_governance(bob, carol_address, &id);
+        assert!(passed, 7357002);
+
+        // bob try to vote again
+        let _passed = multi_action::vote_governance(bob, carol_address, &id);
     }
 
     // Try to vote an invalid address for new authority
