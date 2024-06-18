@@ -154,6 +154,7 @@ impl ClientExt for Client {
         Ok(addr)
     }
 
+    /// Gets a Move resource of the specified type from the given address.
     async fn get_move_resource<T: MoveStructType + DeserializeOwned>(
         &self,
         address: AccountAddress,
@@ -167,6 +168,7 @@ impl ClientExt for Client {
         Ok(res)
     }
 
+    /// Gets the account resources for the specified account address.
     async fn get_account_resources_ext(&self, account: AccountAddress) -> anyhow::Result<String> {
         let response = self
             .get_account_resources(account)
@@ -175,6 +177,7 @@ impl ClientExt for Client {
         Ok(format!("{:#?}", response.inner()))
     }
 
+    /// Gets the sequence number for the specified account address.
     async fn get_sequence_number(&self, account: AccountAddress) -> anyhow::Result<u64> {
         let response = self
             .get_account_resource(account, "0x1::account::Account")
@@ -210,9 +213,6 @@ impl ClientExt for Client {
         } else {
             vec![]
         };
-
-        // println!("{}", format_type_args(&ty_args));
-        // println!("{}", format_args(&args));
 
         let expiration_timestamp_secs = SystemTime::now()
             .duration_since(UNIX_EPOCH)

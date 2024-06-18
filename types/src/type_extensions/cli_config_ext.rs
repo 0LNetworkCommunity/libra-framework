@@ -26,6 +26,8 @@ pub trait CliConfigExt {
 }
 
 impl CliConfigExt for CliConfig {
+
+    /// Checks if the configuration file exists in the specified workspace and mode.
     fn config_exists_ext(workspace: Option<PathBuf>, mode: ConfigSearchMode) -> bool {
         if let Ok(folder) = libra_folder(workspace, mode) {
             let config_file = folder.join(CONFIG_FILE);
@@ -55,6 +57,7 @@ impl CliConfigExt for CliConfig {
         }
     }
 
+    /// Loads a profile configuration from the specified workspace and mode.
     fn load_profile_ext(
         profile: Option<&str>,
         workspace: Option<PathBuf>,
@@ -102,6 +105,7 @@ impl CliConfigExt for CliConfig {
     }
 }
 
+/// Helper function to locate the configuration directory based on the workspace and mode.
 fn libra_folder(workspace: Option<PathBuf>, mode: ConfigSearchMode) -> CliTypedResult<PathBuf> {
     if let Some(p) = workspace {
         return find_workspace_config(p, mode);
@@ -110,6 +114,7 @@ fn libra_folder(workspace: Option<PathBuf>, mode: ConfigSearchMode) -> CliTypedR
     Ok(crate::global_config_dir())
 }
 
+/// Finds the configuration directory starting from a given path and mode.
 pub fn find_workspace_config(
     starting_path: PathBuf,
     mode: ConfigSearchMode,
