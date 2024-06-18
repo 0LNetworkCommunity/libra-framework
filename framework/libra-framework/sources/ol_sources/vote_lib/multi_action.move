@@ -800,8 +800,8 @@ module ol_framework::multi_action {
             } = t;
 
             if (existing_data == incoming_data) {
-            let uid = ballot::get_ballot_id(b);
-            return (true, uid, i)
+                let uid = ballot::get_ballot_id(b);
+                return (true, uid, i)
             };
             i = i + 1;
         };
