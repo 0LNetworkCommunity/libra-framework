@@ -173,8 +173,7 @@ mempool:
 
 /// download genesis blob
 pub async fn download_genesis(
-    home_dir: Option<PathBuf>,
-    genesis_path: Option<&str>,
+    home_dir: Option<PathBuf>
 ) -> anyhow::Result<()> {
     // Base URL for GitHub API requests
     let base_url =
@@ -286,7 +285,7 @@ async fn persist_genesis() {
 
     let path = p.path().to_owned();
 
-    download_genesis(Some(path), None).await.unwrap();
+    download_genesis(Some(path)).await.unwrap();
     let l = std::fs::read_dir(p.path())
         .unwrap()
         .next()
