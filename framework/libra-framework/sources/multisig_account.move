@@ -65,7 +65,7 @@ module diem_framework::multisig_account {
 
     // Any error codes > 2000 can be thrown as part of transaction prologue.
     /// Owner list cannot contain the same address more than once.
-    const EDUPLICATE_OWNER: u64 = 0x1;
+    const EDUPLICATE_OWNER: u64 = 1;
     /// Specified account is not a multisig account.
     const EACCOUNT_NOT_MULTISIG: u64 = 2002;
     /// Account executing this operation is not an owner of the multisig account.
@@ -87,7 +87,7 @@ module diem_framework::multisig_account {
     /// Payload hash must be exactly 32 bytes (sha3-256).
     const EINVALID_PAYLOAD_HASH: u64 = 12;
     /// The multisig account itself cannot be an owner.
-    const EOWNER_CANNOT_BE_MULTISIG_ACCOUNT_ITSELF: u64 = 0x13;
+    const EOWNER_CANNOT_BE_MULTISIG_ACCOUNT_ITSELF: u64 = 13;
     /// Multisig accounts has not been enabled on this current network yet.
     const EMULTISIG_ACCOUNTS_NOT_ENABLED_YET: u64 = 14;
     /// The number of metadata keys and values don't match.
@@ -97,7 +97,7 @@ module diem_framework::multisig_account {
     /// The sequence number provided is invalid. It must be between [1, next pending transaction - 1].
     const EINVALID_SEQUENCE_NUMBER: u64 = 17;
     /// The owner does not exist in the chain.
-    const EOWNER_DOES_NOT_EXIST: u64 = 0x18;
+    const EOWNER_DOES_NOT_EXIST: u64 = 18;
 
     /// Represents a multisig account's configurations and transactions.
     /// This will be stored in the multisig account (created as a resource account separate from any owner accounts).
