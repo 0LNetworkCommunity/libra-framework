@@ -12,11 +12,11 @@ module ol_framework::multi_action_migration {
     //friend ol_framework::test_multi_action_migration;
 
     /// Account already has Offer structure
-    const EOFFER_ALREADY_EXISTS: u64 = 0x1;
+    const EOFFER_ALREADY_EXISTS: u64 = 1;
     /// Signer is not in the authorities list
-    const ENOT_AUTHORIZED: u64 = 0x2;
+    const ENOT_AUTHORIZED: u64 = 2;
     /// Governance is not initialized
-    const EGOV_NOT_INITIALIZED: u64 = 0x3;
+    const EGOV_NOT_INITIALIZED: u64 = 3;
 
     // DANGER - may forge the signer of the multisig account is necessary here
     // TODO: remove this function after offer migration is completed

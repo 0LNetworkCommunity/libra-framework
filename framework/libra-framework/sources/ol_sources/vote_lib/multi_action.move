@@ -48,11 +48,11 @@ module ol_framework::multi_action {
     #[test_only]
     friend ol_framework::test_multi_action;
 
-    const EGOV_NOT_INITIALIZED: u64 = 0x1;
+    const EGOV_NOT_INITIALIZED: u64 = 1;
     /// The owner of this account can't be an authority, since it will subsequently be bricked. The signer of this account is no longer useful. The account is now controlled by the Governance logic.
-    const ESIGNER_CANT_BE_AUTHORITY: u64 = 0x2;
+    const ESIGNER_CANT_BE_AUTHORITY: u64 = 2;
     /// signer not authorized to approve a transaction.
-    const ENOT_AUTHORIZED: u64 = 0x3;
+    const ENOT_AUTHORIZED: u64 = 3;
     /// There are no pending transactions to search
     const EPENDING_EMPTY: u64 = 4;
     /// Not enough signers configured
@@ -70,37 +70,37 @@ module ol_framework::multi_action {
     /// Proposal is expired
     const EPROPOSAL_NOT_FOUND: u64 = 11;
     /// Proposal voting is closed
-    const EVOTING_CLOSED: u64 = 0x12;
+    const EVOTING_CLOSED: u64 = 12;
     /// No addresses in multisig changes
     const EEMPTY_ADDRESSES: u64 = 13;
     /// Duplicate vote
     const EDUPLICATE_VOTE: u64 = 14;
     /// Offer expired
-    const EOFFER_EXPIRED: u64 = 0x15;
+    const EOFFER_EXPIRED: u64 = 15;
     /// Offer empty
-    const EOFFER_EMPTY: u64 = 0x16;
+    const EOFFER_EMPTY: u64 = 16;
     /// Not offered to initial authorities
-    const ENOT_OFFERED: u64 = 0x17;
+    const ENOT_OFFERED: u64 = 17;
     /// Not enough claimed authorities
-    const ENOT_ENOUGH_CLAIMED: u64 = 0x18;
+    const ENOT_ENOUGH_CLAIMED: u64 = 18;
     /// Account is already a multisig
-    const EALREADY_MULTISIG: u64 = 0x19;
+    const EALREADY_MULTISIG: u64 = 19;
     /// Address not proposed for authority role
-    const EADDRESS_NOT_PROPOSED: u64 = 0x20;
+    const EADDRESS_NOT_PROPOSED: u64 = 20;
     /// Address proposed for authority role does not exist
-    const EPROPOSED_NOT_EXISTS: u64 = 0x21;
+    const EPROPOSED_NOT_EXISTS: u64 = 21;
     /// Offer duration must be greater than zero
-    const EZERO_DURATION: u64 = 0x22;
+    const EZERO_DURATION: u64 = 22;
     /// Offer already claimed
-    const EALREADY_CLAIMED: u64 = 0x23;
+    const EALREADY_CLAIMED: u64 = 23;
     /// Too many addresses in offer - avoid DoS attack
-    const ETOO_MANY_ADDRESSES: u64 = 0x24;
+    const ETOO_MANY_ADDRESSES: u64 = 24;
     /// Offer already exists
-    const EOFFER_ALREADY_EXISTS: u64 = 0x25;
+    const EOFFER_ALREADY_EXISTS: u64 = 25;
     /// Already an owner
-    const EALREADY_OWNER: u64 = 0x26;
+    const EALREADY_OWNER: u64 = 26;
     /// Owner not found
-    const EOWNER_NOT_FOUND: u64 = 0x27;
+    const EOWNER_NOT_FOUND: u64 = 27;
 
     /// default setting for a proposal to expire
     const DEFAULT_EPOCHS_EXPIRE: u64 = 14;
