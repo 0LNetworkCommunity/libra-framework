@@ -107,4 +107,24 @@ module ol_framework::test_multi_action_migration {
         // try to migrate offer
         multi_action_migration::migrate_offer(bob, alice_address);
     }
+
+    // Try to migrate offer after expire epoch
+    #[test(root = @ol_framework, alice = @0x1000a)]
+    #[expected_failure(abort_code = 0x30004, location = ol_framework::multi_action_migration)]
+    fun migrate_offer_after_expire_epoch(root: &signer, alice: &signer) {
+        let _vals = mock::genesis_n_vals(root, 2);
+        let alice_address = signer::address_of(alice);
+
+        // initialize the multi_action account
+        multi_action::init_gov_deprecated(alice);
+               
+        let i = 0;
+        while (i < 110) {
+            mock::trigger_epoch(root);
+            i = i + 1;
+        };
+
+        // try to migrate offer
+        multi_action_migration::migrate_offer(alice, alice_address);
+    }
 }
