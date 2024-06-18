@@ -1,3 +1,5 @@
+//! Burn Preference and Counter Resources
+
 use diem_sdk::move_types::{
     ident_str, identifier::IdentStr, language_storage::TypeTag, move_resource::MoveResource,
     move_resource::MoveStructType,
@@ -7,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserBurnPreferenceResource {
-    ///
+    /// Indicates if user wants to send to community
     pub send_community: bool,
 }
 
