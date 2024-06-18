@@ -150,7 +150,7 @@ module ol_framework::test_multi_action {
 
         // finalize the multi_action account
         assert!(account::exists_at(carol_address), 7357001);
-        multi_action::finalize_and_cage2(carol);
+        multi_action::finalize_and_cage(carol, 2);
 
         // check the account is multi_action
         assert!(multi_action::is_multi_action(carol_address), 7357002);
@@ -190,7 +190,7 @@ module ol_framework::test_multi_action {
 
         // finalize the multi_action account
         assert!(account::exists_at(carol_address), 7357001);
-        multi_action::finalize_and_cage2(carol);
+        multi_action::finalize_and_cage(carol, 2);
 
         // check the account is multi_action
         assert!(multi_action::is_multi_action(carol_address), 7357002);
@@ -374,7 +374,7 @@ module ol_framework::test_multi_action {
         multi_action::propose_offer(carol, authorities, option::none());
         multi_action::claim_offer(alice, carol_address);
         multi_action::claim_offer(bob, carol_address);
-        multi_action::finalize_and_cage2(carol);
+        multi_action::finalize_and_cage(carol, 2);
 
         // propose offer to multisig account
         multi_action::propose_offer(carol, vector::singleton(dave_address), option::none());
@@ -533,7 +533,7 @@ module ol_framework::test_multi_action {
     #[expected_failure(abort_code = 0x30001, location = ol_framework::multi_action)]
     fun finalize_without_gov(root: &signer, alice: &signer) {
         let _vals = mock::genesis_n_vals(root, 1);
-        multi_action::finalize_and_cage2(alice);
+        multi_action::finalize_and_cage(alice, 2);
     }
 
     // Try to finalize account without offer
@@ -542,7 +542,7 @@ module ol_framework::test_multi_action {
     fun finalize_without_offer(root: &signer, alice: &signer) {
         let _vals = mock::genesis_n_vals(root, 1);
         multi_action::init_gov(alice);
-        multi_action::finalize_and_cage2(alice);
+        multi_action::finalize_and_cage(alice, 2);
     }
 
     // Try to finalize account without enough offer claimed
@@ -563,7 +563,7 @@ module ol_framework::test_multi_action {
         multi_action::claim_offer(bob, alice_address);
 
         // finalize the multi_action account
-        multi_action::finalize_and_cage2(alice);
+        multi_action::finalize_and_cage(alice, 2);
     }
 
     // Try to finalize account already finalized
@@ -585,8 +585,8 @@ module ol_framework::test_multi_action {
         multi_action::claim_offer(carol, alice_address);
 
         // finalize the multi_action account
-        multi_action::finalize_and_cage2(alice);
-        multi_action::finalize_and_cage2(alice);
+        multi_action::finalize_and_cage(alice, 2);
+        multi_action::finalize_and_cage(alice, 2);
     }
 
     // Governance Tests
@@ -610,7 +610,7 @@ module ol_framework::test_multi_action {
         multi_action::claim_offer(carol, alice_address);  
         
         // alice finalize multi action workflow to release control of the account
-        multi_action::finalize_and_cage2(alice);
+        multi_action::finalize_and_cage(alice, 2);
 
         // bob create a proposal
         let proposal = multi_action::proposal_constructor(DummyType{}, option::none());
@@ -619,6 +619,17 @@ module ol_framework::test_multi_action {
         // SHOULD NOT HAVE COUNTED ANY VOTES
         let v = multi_action::get_votes<DummyType>(alice_address, guid::id_creation_num(&id));
         assert!(vector::length(&v) == 0, 7357001);
+    }
+
+    // Try to propose an action to a non multisig account
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
+    #[expected_failure(abort_code = 0x30006, location = ol_framework::multi_action)]
+    fun propose_action_to_non_multisig(root: &signer, alice: &signer) {
+        let _vals = mock::genesis_n_vals(root, 1);
+
+        // alice try to create a proposal to bob account
+        let proposal = multi_action::proposal_constructor(DummyType{}, option::none());
+        let _id = multi_action::propose_new(alice, @0x1000b, proposal);
     }
 
     // Multisign authorities bob and carol try to send the same proposal
@@ -640,7 +651,7 @@ module ol_framework::test_multi_action {
         multi_action::claim_offer(carol, alice_address);  
         
         // alice finalize multi action workflow to release control of the account
-        multi_action::finalize_and_cage2(alice);
+        multi_action::finalize_and_cage(alice, 2);
 
         let count = multi_action::get_count_of_pending<DummyType>(alice_address);
         assert!(count == 0, 7357001);
@@ -688,7 +699,7 @@ module ol_framework::test_multi_action {
         multi_action::propose_offer(alice, authorities, option::none());
         multi_action::claim_offer(bob, alice_address);
         multi_action::claim_offer(carol, alice_address);  
-        multi_action::finalize_and_cage2(alice);
+        multi_action::finalize_and_cage(alice, 2);
 
         // bob create a proposal
         let proposal = multi_action::proposal_constructor(DummyType{}, option::none());
@@ -726,7 +737,7 @@ module ol_framework::test_multi_action {
         multi_action::propose_offer(alice, authorities, option::none());
         multi_action::claim_offer(bob, alice_address);
         multi_action::claim_offer(carol, alice_address);  
-        multi_action::finalize_and_cage2(alice);
+        multi_action::finalize_and_cage(alice, 2);
 
         // bob create a proposal and vote
         let proposal = multi_action::proposal_constructor(DummyType{}, option::none());
@@ -785,7 +796,7 @@ module ol_framework::test_multi_action {
         multi_action::propose_offer(&erik, authorities, option::none());
         multi_action::claim_offer(alice, erik_address);
         multi_action::claim_offer(bob, erik_address);  
-        multi_action::finalize_and_cage2(&erik);
+        multi_action::finalize_and_cage(&erik, 2);
 
         // make a proposal for governance, expires in 2 epoch from now
         let id = multi_action::propose_governance(alice, erik_address, vector::empty(), true, option::some(1), option::some(2));
@@ -825,7 +836,7 @@ module ol_framework::test_multi_action {
         multi_action::propose_offer(carol, authorities, option::none());
         multi_action::claim_offer(alice, carol_address);
         multi_action::claim_offer(bob, carol_address);  
-        multi_action::finalize_and_cage2(carol);
+        multi_action::finalize_and_cage(carol, 2);
 
         // alice is going to propose to change the authorities to add dave
         let id = multi_action::propose_governance(alice, carol_address,
@@ -906,7 +917,7 @@ module ol_framework::test_multi_action {
         multi_action::propose_offer(&resource_sig, authorities, option::none());
         multi_action::claim_offer(carol, new_resource_address);
         multi_action::claim_offer(bob, new_resource_address);  
-        multi_action::finalize_and_cage2(&resource_sig);
+        multi_action::finalize_and_cage(&resource_sig, 2);
 
         // carol is going to propose to change the authorities to add Rando
         let id = multi_action::propose_governance(carol, new_resource_address, vector::empty(), true, option::some(1), option::none());
@@ -953,7 +964,7 @@ module ol_framework::test_multi_action {
         multi_action::propose_offer(alice, authorities, option::some(1));
         multi_action::claim_offer(bob, alice_address);
         multi_action::claim_offer(carol, alice_address);
-        multi_action::finalize_and_cage2(alice);
+        multi_action::finalize_and_cage(alice, 2);
 
         // carol is going to propose to change the authorities to add dave
         let id = multi_action::propose_governance(carol, alice_address, vector::singleton(@0x1000d), true, option::none(), option::none());
@@ -1017,7 +1028,7 @@ module ol_framework::test_multi_action {
         multi_action::propose_offer(carol, authorities, option::none());
         multi_action::claim_offer(alice, carol_address);
         multi_action::claim_offer(bob, carol_address);  
-        multi_action::finalize_and_cage2(carol);
+        multi_action::finalize_and_cage(carol, 2);
 
         // alice is going to propose to change the authorities to add dave
         let id = multi_action::propose_governance(alice, carol_address,
@@ -1047,7 +1058,7 @@ module ol_framework::test_multi_action {
         multi_action::propose_offer(alice, authorities, option::some(1));
         multi_action::claim_offer(bob, alice_address);
         multi_action::claim_offer(carol, alice_address);
-        multi_action::finalize_and_cage2(alice);
+        multi_action::finalize_and_cage(alice, 2);
 
         // carol is going to propose to change the authorities to add dave
         let id = multi_action::propose_governance(carol, alice_address, vector::singleton(@0xCAFE), true, option::none(), option::none());
@@ -1071,7 +1082,7 @@ module ol_framework::test_multi_action {
         multi_action::propose_offer(alice, authorities, option::some(1));
         multi_action::claim_offer(bob, alice_address);
         multi_action::claim_offer(carol, alice_address);
-        multi_action::finalize_and_cage2(alice);
+        multi_action::finalize_and_cage(alice, 2);
 
         // carol is going to propose to change the authorities to add dave twice
         let authorities = vector::singleton(@0x1000d);
@@ -1094,7 +1105,7 @@ module ol_framework::test_multi_action {
         multi_action::propose_offer(alice, authorities, option::some(1));
         multi_action::claim_offer(bob, alice_address);
         multi_action::claim_offer(carol, alice_address);
-        multi_action::finalize_and_cage2(alice);
+        multi_action::finalize_and_cage(alice, 2);
 
         // carol is going to propose to change the authorities to add dave twice
         let _id = multi_action::propose_governance(carol, alice_address, vector::singleton(alice_address), true, option::none(), option::none());
@@ -1115,7 +1126,7 @@ module ol_framework::test_multi_action {
         multi_action::propose_offer(alice, authorities, option::some(1));
         multi_action::claim_offer(bob, alice_address);
         multi_action::claim_offer(carol, alice_address);
-        multi_action::finalize_and_cage2(alice);
+        multi_action::finalize_and_cage(alice, 2);
 
         // carol is going to propose to change the authorities to add bob
         let _id = multi_action::propose_governance(carol, alice_address, vector::singleton(signer::address_of(bob)), true, option::none(), option::none());
@@ -1136,7 +1147,7 @@ module ol_framework::test_multi_action {
         multi_action::propose_offer(alice, authorities, option::some(1));
         multi_action::claim_offer(bob, alice_address);
         multi_action::claim_offer(carol, alice_address);
-        multi_action::finalize_and_cage2(alice);
+        multi_action::finalize_and_cage(alice, 2);
 
         // carol is going to propose to remove dave
         let _id = multi_action::propose_governance(carol, alice_address, vector::singleton(@0x1000d), false, option::none(), option::none());

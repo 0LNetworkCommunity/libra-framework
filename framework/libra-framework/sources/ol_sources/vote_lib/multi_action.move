@@ -32,6 +32,7 @@ module ol_framework::multi_action {
     use diem_framework::multisig_account;
     use ol_framework::ballot::{Self, BallotTracker};
     use ol_framework::epoch_helper;
+    use ol_framework::community_wallet;
 
     // use diem_std::debug::print;
 
@@ -101,13 +102,15 @@ module ol_framework::multi_action {
     const EALREADY_OWNER: u64 = 26;
     /// Owner not found
     const EOWNER_NOT_FOUND: u64 = 27;
+    /// Community wallet account
+    const ECW_ACCOUNT: u64 = 28;
 
     /// default setting for a proposal to expire
     const DEFAULT_EPOCHS_EXPIRE: u64 = 14;
     /// default setting for an offer to expire
     const DEFAULT_EPOCHS_OFFER_EXPIRE: u64 = 7;
     /// minimum number of claimed authorities to cage the account
-    const MIN_OFFER_CLAIMS_TO_CAGE: u64 = 2;
+    const MIN_OFFER_CLAIMS_TO_CAGE: u64 = 1;
     /// maximum number of address to offer
     const MAX_OFFER_ADDRESSES: u64 = 10;
 
@@ -333,6 +336,16 @@ module ol_framework::multi_action {
     public entry fun propose_offer(sig: &signer, proposed: vector<address>, duration_epochs: Option<u64>) acquires Offer {
         // Propose the offer on the signer's account
         let addr = signer::address_of(sig);
+
+        // Ensure the account is not community wallet
+        // Community wallet has its own propose_offer function
+        assert!(community_wallet::is_init(addr) == false, error::invalid_argument(ECW_ACCOUNT));
+        
+        propose_offer_internal(sig, proposed, duration_epochs);
+    }
+
+    public(friend) fun propose_offer_internal(sig: &signer, proposed: vector<address>, duration_epochs: Option<u64>) acquires Offer {
+        let addr = signer::address_of(sig);
         ensure_valid_propose_offer_state(addr);
         ensure_valid_propose_offer_params(addr, proposed, duration_epochs);
         update_offer(addr, proposed, duration_epochs);
@@ -379,9 +392,10 @@ module ol_framework::multi_action {
 
     /// Finalizes the multisign account and locks it (cage).
     /// - sig: The signer finalizing the account.
+    /// - num_signers: The number of signers required to approve a transaction.
     /// Aborts if governance is not initialized, the account is already a multisig,
     /// there are not enough claimed authorities, or the offer is not found.
-    public fun finalize_and_cage2(sig: &signer) acquires Offer {
+    public fun finalize_and_cage(sig: &signer, num_signers: u64) acquires Offer {
         let addr = signer::address_of(sig);
 
         // check it is not yet initialized
@@ -397,7 +411,7 @@ module ol_framework::multi_action {
 
         // finalize the account
         let initial_authorities = get_offer_claimed(addr);
-        multisig_account::migrate_with_owners(sig, initial_authorities, vector::length(&initial_authorities), vector::empty(), vector::empty());
+        multisig_account::migrate_with_owners(sig, initial_authorities, num_signers, vector::empty(), vector::empty());
 
         // clean offer
         clean_offer(addr);
@@ -429,7 +443,7 @@ module ol_framework::multi_action {
     }
 
     // TODO: remove this function after dependencies are updated
-    public entry fun finalize_and_cage(sig: &signer, initial_authorities: vector<address>, num_signers: u64) {
+    /*public entry fun finalize_and_cage(sig: &signer, initial_authorities: vector<address>, num_signers: u64) {
         let addr = signer::address_of(sig);
         assert!(exists<Governance>(addr),
         error::invalid_argument(EGOV_NOT_INITIALIZED));
@@ -440,7 +454,7 @@ module ol_framework::multi_action {
         error::invalid_argument(EGOV_NOT_INITIALIZED));
 
         multisig_account::migrate_with_owners(sig, initial_authorities, num_signers, vector::empty(), vector::empty());
-    }
+    }*/
 
     //////// Helper functions to check initialization //////////
 
@@ -461,9 +475,9 @@ module ol_framework::multi_action {
 
     /// helper to assert if the account is in the right state
     fun assert_multi_action(addr: address) {
-        assert!(multisig_account::is_multisig(addr), error::invalid_argument(ENOT_FINALIZED_NOT_BRICK));
-        assert!(exists<Governance>(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
-        assert!(exists<Action<PropGovSigners>>(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
+        assert!(multisig_account::is_multisig(addr), error::invalid_state(ENOT_FINALIZED_NOT_BRICK));
+        assert!(exists<Governance>(addr), error::invalid_state(EGOV_NOT_INITIALIZED));
+        assert!(exists<Action<PropGovSigners>>(addr), error::invalid_state(EGOV_NOT_INITIALIZED));
     }
 
     // Query if an offer exists for the given multisig address.
@@ -590,22 +604,6 @@ module ol_framework::multi_action {
 
         id
     }
-
-
-    fun vote_with_data<ProposalData: store + drop>(sig: &signer, proposal: &Proposal<ProposalData>, multisig_address: address): (bool, Option<WithdrawCapability>) acquires Governance, Action {
-        assert_authorized(sig, multisig_address);
-
-        let action = borrow_global_mut<Action<ProposalData>>(multisig_address);
-
-        // does this proposal already exist in the pending list?
-        let (found, uid, _idx, _status_enum, _is_complete) = search_proposals_by_data<ProposalData>(&action.vote, proposal);
-
-        assert!(found, error::invalid_argument(EPROPOSAL_NOT_FOUND));
-
-        vote_impl<ProposalData>(sig, multisig_address, &uid)
-
-    }
-
 
     /// helper function to vote with ID only
     public(friend) fun vote_with_id<ProposalData: store + drop>(sig: &signer, id: &guid::ID, multisig_address: address): (bool, Option<WithdrawCapability>) acquires Governance, Action {
