@@ -598,8 +598,6 @@ module diem_framework::multisig_account {
         );
     }
 
-
-
     /// Similar to add_owners, but only allow adding one owner.
     entry fun add_owner(multisig_account: &signer, new_owner: address) acquires MultisigAccount {
         add_owners(multisig_account, vector[new_owner]);

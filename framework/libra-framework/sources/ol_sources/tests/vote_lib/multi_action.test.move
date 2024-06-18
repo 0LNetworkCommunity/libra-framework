@@ -39,9 +39,11 @@ module ol_framework::test_multi_action {
         // check the offer does not exist
         assert!(!multi_action::exists_offer(carol_address), 7357001);
         assert!(!multi_action::is_multi_action(carol_address), 7357002);
+        assert!(!multi_action::exists_offer(carol_address), 7357003);
 
         // initialize the multi_action account
         multi_action::init_gov(carol);
+        assert!(multi_action::exists_offer(carol_address), 7357004);
 
         // offer authorities
         let authorities = vector::empty<address>();
@@ -50,15 +52,15 @@ module ol_framework::test_multi_action {
         multi_action::propose_offer(carol, authorities, option::none());
 
         // check the offer is proposed and account is not muti_action yet
-        assert!(multi_action::exists_offer(carol_address), 7357003);
-        assert!(multi_action::get_offer_proposed(carol_address) == authorities, 7357004);
-        assert!(multi_action::get_offer_claimed(carol_address) == vector::empty(), 7357005);
-        assert!(vector::is_empty(&multi_action::get_offer_claimed(carol_address)), 7357006);
+        assert!(multi_action::exists_offer(carol_address), 7357005);
+        assert!(multi_action::get_offer_proposed(carol_address) == authorities, 7357006);
+        assert!(multi_action::get_offer_claimed(carol_address) == vector::empty(), 7357007);
+        assert!(vector::is_empty(&multi_action::get_offer_claimed(carol_address)), 7357008);
         let expiration = vector::empty();
         vector::push_back(&mut expiration, 7);
         vector::push_back(&mut expiration, 7);
-        assert!(multi_action::get_offer_expiration_epoch(carol_address) == expiration, 7357007);
-        assert!(!multi_action::is_multi_action(carol_address), 7357008);
+        assert!(multi_action::get_offer_expiration_epoch(carol_address) == expiration, 7357009);
+        assert!(!multi_action::is_multi_action(carol_address), 7357010);
     }
 
     // Propose new offer after expired
