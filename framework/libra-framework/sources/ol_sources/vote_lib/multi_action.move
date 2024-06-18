@@ -442,20 +442,6 @@ module ol_framework::multi_action {
         assert!(is_authority(multisig_address, sender_addr), error::invalid_argument(ENOT_AUTHORIZED));
     }
 
-    // TODO: remove this function after dependencies are updated
-    /*public entry fun finalize_and_cage(sig: &signer, initial_authorities: vector<address>, num_signers: u64) {
-        let addr = signer::address_of(sig);
-        assert!(exists<Governance>(addr),
-        error::invalid_argument(EGOV_NOT_INITIALIZED));
-        assert!(exists<Action<PropGovSigners>>(addr),
-        error::invalid_argument(EGOV_NOT_INITIALIZED));
-        // not yet initialized
-        assert!(!multisig_account::is_multisig(addr),
-        error::invalid_argument(EGOV_NOT_INITIALIZED));
-
-        multisig_account::migrate_with_owners(sig, initial_authorities, num_signers, vector::empty(), vector::empty());
-    }*/
-
     //////// Helper functions to check initialization //////////
 
     #[view]
