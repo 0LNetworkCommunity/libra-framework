@@ -753,6 +753,7 @@ module ol_framework::multi_action {
             return (true, guid, idx, ballot::get_pending_enum(), complete)
         };
 
+        /* code not used and not tested
         let (found, guid, idx) = find_index_of_ballot_by_data(tracker, data, ballot::get_approved_enum());
         if (found) {
             let b = ballot::get_ballot_by_id(tracker, &guid);
@@ -765,7 +766,7 @@ module ol_framework::multi_action {
             let b = ballot::get_ballot_by_id(tracker, &guid);
             let complete = ballot::is_completed<Proposal<ProposalData>>(b);
             return (true, guid, idx, ballot::get_rejected_enum(), complete)
-        };
+        };*/
 
         (false, guid::create_id(@0x0, 0), 0, 0, false)
     }
