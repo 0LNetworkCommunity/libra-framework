@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 /// The GAS coin resource
 pub struct GasResource {
-    ///
+    /// The value of the gas balance
     pub value: u64,
 }
 

@@ -60,6 +60,8 @@ pub struct UserConfigs {
     pub block_zero: VDFProof,
 }
 // TODO: Duplicated from block.rs
+
+/// Serialize data as hex string
 fn as_hex<S>(data: &[u8], serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
@@ -67,6 +69,8 @@ where
     serializer.serialize_str(&encode(data))
 }
 
+
+/// Deserialize data from hex string
 fn from_hex<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
 where
     D: Deserializer<'de>,
