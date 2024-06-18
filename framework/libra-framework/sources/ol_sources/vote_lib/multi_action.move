@@ -443,12 +443,20 @@ module ol_framework::multi_action {
     }
 
     //////// Helper functions to check initialization //////////
+
     #[view]
-    /// Is the Multisig Governance initialized?
+    /// Is the Multisig Governance finalized
     public fun is_multi_action(addr: address): bool {
         exists<Governance>(addr) &&
         exists<Action<PropGovSigners>>(addr) &&
         multisig_account::is_multisig(addr)
+    }
+
+    // Check if the account has the Governance initialized
+    #[view]
+    public fun is_gov_init(addr: address): bool {
+        exists<Governance>(addr) &&
+        exists<Action<PropGovSigners>>(addr)
     }
 
     /// helper to assert if the account is in the right state
@@ -458,13 +466,8 @@ module ol_framework::multi_action {
         assert!(exists<Action<PropGovSigners>>(addr), error::invalid_argument(EGOV_NOT_INITIALIZED));
     }
 
-    // Check if the account is a multisig and has the Governance initialized
-    public fun is_gov_init(addr: address): bool {
-        exists<Governance>(addr) &&
-        exists<Action<PropGovSigners>>(addr)
-    }
-
     // Query if an offer exists for the given multisig address.
+    #[view]
     public fun exists_offer(multisig_address: address): bool {
         exists<Offer>(multisig_address)
     }
@@ -719,12 +722,6 @@ module ol_framework::multi_action {
         epoch_now > prop.expiration_epoch
     }
 
-    #[view]
-    public fun is_authority(multisig_addr: address, addr: address): bool {
-        let auths = multisig_account::owners(multisig_addr);
-        vector::contains(&auths, &addr)
-    }
-
     /// This function is used to copy the data from the proposal that is in the multisig.
     /// Note that this is the only way to get the data out of the multisig, and it is the only function to use the `copy` trait. If you have a workflow that needs copying, then the data struct for the action payload will need to use the `copy` trait.
     public(friend) fun extract_proposal_data<ProposalData: store + copy + drop>(multisig_address: address, uid: &guid::ID): ProposalData acquires Action {
@@ -929,6 +926,12 @@ module ol_framework::multi_action {
     }
 
     #[view]
+    public fun is_authority(multisig_addr: address, addr: address): bool {
+        let auths = multisig_account::owners(multisig_addr);
+        vector::contains(&auths, &addr)
+    }
+
+    #[view]
     public fun get_threshold(multisig_address: address): (u64, u64) {
         (multisig_account::num_signatures_required(multisig_address), vector::length(&multisig_account::owners(multisig_address)))
     }
@@ -948,7 +951,6 @@ module ol_framework::multi_action {
             guid::id_creation_num(&el)
         })
     }
-
 
     #[view]
     /// returns the votes for a given proposal ID. For `view` functions must provide the destructured guid::ID as address and integer.
