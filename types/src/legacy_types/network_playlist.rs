@@ -45,6 +45,8 @@ impl HostProfile {
         }
     }
 
+    /// Checks the sync status of the host.
+    /// Attempts to fetch the ledger version from the host.
     async fn check_sync(mut self) -> anyhow::Result<HostProfile> {
         let client = Client::new(self.url.clone());
 
@@ -110,6 +112,7 @@ impl NetworkPlaylist {
         np
     }
 
+    /// Creates a `NetworkPlaylist` with a localhost node.
     pub fn localhost(chain_name: Option<NamedChain>) -> Self {
         Self {
             chain_name: chain_name.unwrap_or(NamedChain::MAINNET),
@@ -122,6 +125,8 @@ impl NetworkPlaylist {
             }],
         }
     }
+
+    /// Fetches the default playlist for the specified network.
     pub async fn default_for_network(chain_id: Option<NamedChain>) -> anyhow::Result<Self> {
         if let Some(NamedChain::TESTING) = chain_id {
             return Ok(Self::new(None, Some(NamedChain::TESTING)));
@@ -247,6 +252,7 @@ impl NetworkPlaylist {
         Ok(())
     }
 
+    /// Checks which nodes are alive by performing a sync check.
     pub async fn check_which_are_alive(mut self) -> anyhow::Result<Self> {
         let mut upstream = self.nodes;
 
