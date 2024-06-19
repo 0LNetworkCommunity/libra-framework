@@ -11,16 +11,18 @@
 
 // This is a type of multisig that can be programmable by other on-chain contracts. Previously in V6 we used to call this MultiSig. However platform vendor introduced a new (and great) multisig feature. Both of these can coexist as they have different purposes.
 
+// The module MultiAction allows the sponsor to propose authorities for a future multisig account, which must be claimed by each designated authority. Once enough claims are received, the sponsor can proceed to set up the multisig account. After the account becomes multisig, any changes to authorities must be voted on.
+
 // With vendor::MultiSig, the action needs to be constructed offline using a script. There are advantages to this. Anything that can be written into a script can be made to execute by the authorities. However the code is not inspectable, it's stored as bytecode. MultiAction, on the other hand requires that all the logic be written in a deployed contract. The execution of the action depends on the third-party published contract. MultiAction will only return the Capabilities necessary for the smart contract to do what it needs, e.g. a simple passed/rejected result, an optional WithdrawCapability, and and optional (dangerous) SignerCapability (tbd as of V7).
 
-// similarly any handler for the Action can be executed by an external contract, and the Governance module will only check if the Action has been approved by the required number of authorities.
+// Similarly any handler for the Action can be executed by an external contract, and the Governance module will only check if the Action has been approved by the required number of authorities.
 // Each Action has a separate data structure for tabulating the votes in approval of the Action. But there is shared state between the Actions, that being Governance, which contains the constraints for each Action that are checked on each vote (n_sigs, expiration, signers, etc)
 // The Actions are triggered "lazily", that is: the last authorized sender of a proposal/vote, is the one to trigger the action.
 // Theere is no offline signature aggregation. The authorities over the address should not require collecting signatures offline: proposal should be submitted directly to this contract.
 
 // With this design, the multisig can be used for different actions. The safe.move contract is an example of a Root Service which the chain provides, which leverages the Governance module to provide a payment service which requires n-of-m approvals.
 
-//V7 NOTE: from V6 we are refactoring so the the account first needs to be created as a "resource account". It's a minor change given that V6 had a similar construct of a "signerless account", Previously in ol this meant to "Brick" the authkey after the WithdrawCapability was stored in a common struct. Vendor had independenly made the same design using Signer Capability.
+// V7 NOTE: from V6 we are refactoring so the the account first needs to be created as a "resource account". It's a minor change given that V6 had a similar construct of a "signerless account", Previously in 0L this meant to "Brick" the authkey after the WithdrawCapability was stored in a common struct. Vendor had independenly made the same design using Signer Capability.
 
 module ol_framework::multi_action {
     use std::vector;
@@ -28,8 +30,8 @@ module ol_framework::multi_action {
     use std::signer;
     use std::error;
     use std::guid;
-    use diem_framework::account::{Self, WithdrawCapability};
     use diem_framework::multisig_account;
+    use diem_framework::account::{Self, WithdrawCapability};
     use ol_framework::ballot::{Self, BallotTracker};
     use ol_framework::epoch_helper;
     use ol_framework::community_wallet;
@@ -165,10 +167,12 @@ module ol_framework::multi_action {
     /// - proposed: List of authority addresses proposed
     /// - claimed: List of authority addresses that have claimed the offer.
     /// - expiration_epoch: The epoch when each proposed expires.
+    /// - proposed_n_of_m: The n-of-m threshold for the account. Used only after account is cage.
     struct Offer has key, store {
         proposed: vector<address>,
         claimed: vector<address>,
         expiration_epoch: vector<u64>,
+        proposed_n_of_m: Option<u64>,
     }
 
     fun construct_empty_offer(): Offer {
@@ -176,6 +180,7 @@ module ol_framework::multi_action {
             proposed: vector::empty(),
             claimed: vector::empty(),
             expiration_epoch: vector::empty(),
+            proposed_n_of_m: option::none(),
         }
     }
 
@@ -184,6 +189,7 @@ module ol_framework::multi_action {
         offer.proposed = vector::empty();
         offer.claimed = vector::empty();
         offer.expiration_epoch = vector::empty();
+        offer.proposed_n_of_m = option::none();
     }
 
     public(friend) fun init_offer(sig: &signer, addr: address) {
@@ -357,38 +363,15 @@ module ol_framework::multi_action {
         };
     }
 
-    // Private function to assist governance vote
-    fun add_offer_addresses(addr: address, proposed: vector<address>) acquires Offer {
-        let offer = borrow_global_mut<Offer>(addr);
-        let duration = epoch_helper::get_current_epoch() + DEFAULT_EPOCHS_OFFER_EXPIRE;
-        let i = 0;
-        while (i < vector::length(&proposed)) {
-            let addr = vector::borrow(&proposed, i);
-            vector::push_back(&mut offer.proposed, *addr);
-            vector::push_back(&mut offer.expiration_epoch, duration);
-            i = i + 1;
-        };
-    }
-
     // Allows a proposed authority to claim their offer.
     // - sig: The signer making the claim.
     // - multisig_address: The address of the multisig account.
     public fun claim_offer(sig: &signer, multisig_address: address) acquires Offer, Governance {
         let sender_addr = signer::address_of(sig);
 
-        // Ensure the account has an offer
-        assert!(exists_offer(multisig_address), error::not_found(ENOT_OFFERED));
-
-        // Ensure the offer has not expired
-        assert!(!is_offer_expired(multisig_address, sender_addr), error::out_of_range(EOFFER_EXPIRED));
+        validate_claim_offer(multisig_address, sender_addr);
 
         let offer = borrow_global_mut<Offer>(multisig_address);
-
-        // Ensure the sender is not in the claimed list
-        assert!(!vector::contains(&offer.claimed, &sender_addr), error::already_exists(EALREADY_CLAIMED));
-
-        // Ensure the sender is in the proposed list
-        assert!(vector::contains(&offer.proposed, &sender_addr), error::not_found(EADDRESS_NOT_PROPOSED));
 
         // Remove the sender from the proposed list and expiration_epoch
         let (_, i) = vector::index_of(&offer.proposed, &sender_addr);
@@ -400,6 +383,10 @@ module ol_framework::multi_action {
             let ms = borrow_global_mut<Governance>(multisig_address);
             maybe_update_authorities(ms, true, &vector::singleton(sender_addr));
             if (vector::length(&offer.proposed) == 0) {
+                // Update voted n_of_m after all authorities claimed
+                let gov = borrow_global_mut<Governance>(multisig_address);
+                maybe_update_threshold(gov, &offer.proposed_n_of_m);
+                
                 // clean the Offer
                 clean_offer(multisig_address);
             };
@@ -407,6 +394,23 @@ module ol_framework::multi_action {
             // b) initiated account: add sender to the claimed list
             vector::push_back(&mut offer.claimed, sender_addr);
         };
+    }
+
+    // Validate account state and parameters to claim the offer.
+    fun validate_claim_offer(multisig_address: address, sender_addr: address) acquires Offer{       
+        // Ensure the account has an offer
+        assert!(exists_offer(multisig_address), error::not_found(ENOT_OFFERED));
+
+        // Ensure the offer has not expired
+        assert!(!is_offer_expired(multisig_address, sender_addr), error::out_of_range(EOFFER_EXPIRED));
+
+        let offer = borrow_global<Offer>(multisig_address);
+
+        // Ensure the sender is not in the claimed list
+        assert!(!vector::contains(&offer.claimed, &sender_addr), error::already_exists(EALREADY_CLAIMED));
+
+        // Ensure the sender is in the proposed list
+        assert!(vector::contains(&offer.proposed, &sender_addr), error::not_found(EADDRESS_NOT_PROPOSED));
     }
 
     /// Finalizes the multisign account and locks it (cage).
@@ -504,6 +508,10 @@ module ol_framework::multi_action {
     // Query offer expiration epoch.
     public fun get_offer_expiration_epoch(multisig_address: address): vector<u64> acquires Offer {
         borrow_global<Offer>(multisig_address).expiration_epoch
+    }
+
+    public fun get_offer_proposed_n_of_m(multisig_address: address): Option<u64> acquires Offer {
+        borrow_global<Offer>(multisig_address).proposed_n_of_m
     }
 
     // Query if the offer has enough claimed authorities to cage the account.
@@ -879,8 +887,7 @@ module ol_framework::multi_action {
             let data = extract_proposal_data<PropGovSigners>(multisig_address, id);
             if (!vector::is_empty(&data.addresses)) {
                 if (data.add_remove) {
-                    // offer the authority adition voted to be claimed
-                    add_offer_addresses(multisig_address, data.addresses);
+                    propose_voted_offer(multisig_address, data.addresses, &data.n_of_m);
                     return passed
                 } else {
                     maybe_update_authorities(ms, data.add_remove, &data.addresses);
@@ -889,6 +896,33 @@ module ol_framework::multi_action {
             maybe_update_threshold(ms, &data.n_of_m);
         };
         passed
+    }
+
+    // New authorities voted must claim the offer to become authorities.
+    fun propose_voted_offer(multisig_address: address, new_authorities: vector<address>, n_of_m: &Option<u64>) acquires Offer {
+        let offer = borrow_global_mut<Offer>(multisig_address);
+        let duration = epoch_helper::get_current_epoch() + DEFAULT_EPOCHS_OFFER_EXPIRE;
+        let i = 0;
+        while (i < vector::length(&new_authorities)) {
+            let addr = vector::borrow(&new_authorities, i);
+            vector::push_back(&mut offer.proposed, *addr);
+            vector::push_back(&mut offer.expiration_epoch, duration);
+            i = i + 1;
+        };
+        maybe_update_threshold_after_claim(multisig_address, n_of_m);
+    }
+
+    // If authorities voted to change the number of signatures required along authorities addition, 
+    // new authorities must claim the offer before the number of signatures required is applied.
+    fun maybe_update_threshold_after_claim(multisig_address: address, n_of_m: &Option<u64>) acquires Offer {   
+        if (option::is_some(n_of_m)) {
+            let new_n_of_m = *option::borrow(n_of_m);
+            let current_n_of_m = multisig_account::num_signatures_required(multisig_address);
+            if (current_n_of_m != new_n_of_m) {
+                let offer = borrow_global_mut<Offer>(multisig_address);
+                offer.proposed_n_of_m = option::some(new_n_of_m);
+            };
+        };
     }
 
     /// Updates the authorities of the multisig. This is a helper function for governance.
@@ -900,7 +934,7 @@ module ol_framework::multi_action {
 
     fun maybe_update_threshold(ms: &mut Governance, n_of_m_opt: &Option<u64>) {
         if (option::is_some(n_of_m_opt)) {
-        multisig_account::multi_auth_helper_update_signatures_required(&ms.guid_capability, *option::borrow(n_of_m_opt));
+            multisig_account::multi_auth_helper_update_signatures_required(&ms.guid_capability, *option::borrow(n_of_m_opt));
         };
     }
 
