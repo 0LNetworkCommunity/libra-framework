@@ -380,12 +380,13 @@ module ol_framework::multi_action {
 
         if (multisig_account::is_multisig(multisig_address)) {
             // a) finalized account: add authority to the multisig account
-            let ms = borrow_global_mut<Governance>(multisig_address);
-            maybe_update_authorities(ms, true, &vector::singleton(sender_addr));
+            let gov = borrow_global_mut<Governance>(multisig_address);
+            maybe_update_authorities(gov, true, &vector::singleton(sender_addr));
             if (vector::length(&offer.proposed) == 0) {
                 // Update voted n_of_m after all authorities claimed
-                let gov = borrow_global_mut<Governance>(multisig_address);
-                maybe_update_threshold(gov, &offer.proposed_n_of_m);
+                let n_of_m = offer.proposed_n_of_m;
+                let _ = offer;
+                maybe_update_threshold(multisig_address, gov, &n_of_m);
                 
                 // clean the Offer
                 clean_offer(multisig_address);
@@ -883,17 +884,17 @@ module ol_framework::multi_action {
         maybe_restore_withdraw_cap(cap_opt); // don't need this but can't drop.
 
         if (passed) {
-            let ms = borrow_global_mut<Governance>(multisig_address);
+            let governance = borrow_global_mut<Governance>(multisig_address);
             let data = extract_proposal_data<PropGovSigners>(multisig_address, id);
             if (!vector::is_empty(&data.addresses)) {
                 if (data.add_remove) {
                     propose_voted_offer(multisig_address, data.addresses, &data.n_of_m);
                     return passed
                 } else {
-                    maybe_update_authorities(ms, data.add_remove, &data.addresses);
+                    maybe_update_authorities(governance, data.add_remove, &data.addresses);
                 };
             };
-            maybe_update_threshold(ms, &data.n_of_m);
+            maybe_update_threshold(multisig_address, governance, &data.n_of_m);
         };
         passed
     }
@@ -932,9 +933,14 @@ module ol_framework::multi_action {
         multisig_account::multi_auth_helper_add_remove(&ms.guid_capability, add_remove, addresses);
     }
 
-    fun maybe_update_threshold(ms: &mut Governance, n_of_m_opt: &Option<u64>) {
+    fun maybe_update_threshold(multisig_address: address, governance: &mut Governance, n_of_m_opt: &Option<u64>) acquires Offer {
         if (option::is_some(n_of_m_opt)) {
-            multisig_account::multi_auth_helper_update_signatures_required(&ms.guid_capability, *option::borrow(n_of_m_opt));
+            multisig_account::multi_auth_helper_update_signatures_required(&governance.guid_capability, 
+                *option::borrow(n_of_m_opt));
+            
+            // clean the Offer n_of_m to avoid a future claim change the n_of_m
+            let offer = borrow_global_mut<Offer>(multisig_address);
+            offer.proposed_n_of_m = option::none();
         };
     }
 
