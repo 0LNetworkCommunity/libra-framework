@@ -2,6 +2,7 @@
 module ol_framework::test_multi_action {
     use ol_framework::mock;
     use ol_framework::multi_action;
+    use ol_framework::multisig_account;
     use ol_framework::safe;
     use std::signer;
     use std::option;
@@ -837,10 +838,9 @@ module ol_framework::test_multi_action {
         multi_action::claim_offer(bob, carol_address);  
         multi_action::finalize_and_cage(carol, 2);
 
-        // alice is going to propose to change the authorities to add dave
+        // alice is going to propose to change the authorities to add dave and increase the threshold to 3
         let id = multi_action::propose_governance(alice, carol_address,
-        vector::singleton(dave_address), true, option::none(),
-        option::none());
+            vector::singleton(dave_address), true, option::none(), option::none());
 
         // check authorities did not change
         let ret = multi_action::get_authorities(carol_address);
@@ -855,8 +855,8 @@ module ol_framework::test_multi_action {
         assert!(ret == authorities, 7357003);
 
         // check the Offer
-        let ret = multi_action::get_offer_proposed(carol_address);
-        assert!(ret == vector::singleton(dave_address), 7357004);
+        assert!(multi_action::get_offer_proposed(carol_address) == vector::singleton(dave_address), 7357004);
+        assert!(multi_action::get_offer_proposed_n_of_m(carol_address) == option::none(), 7357005);
 
         // dave claims the offer and it becomes final.
         multi_action::claim_offer(dave, carol_address);
@@ -865,6 +865,10 @@ module ol_framework::test_multi_action {
         let ret = multi_action::get_authorities(carol_address);
         vector::push_back(&mut authorities, dave_address);
         assert!(ret == authorities, 7357005);
+
+        // Check new signitures threshold
+        assert!(multisig_account::num_signatures_required(carol_address) == 2, 7357006);
+        assert!(multi_action::get_offer_proposed_n_of_m(carol_address) == option::none(), 7357005);
 
         // Check if offer was cleaned
         assert!(multi_action::get_offer_proposed(carol_address) == vector::empty(), 7357006);
@@ -893,10 +897,12 @@ module ol_framework::test_multi_action {
     // Happy day: change the threshold of a multisig
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
     fun governance_change_threshold(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer) {
-        // Scenario: The multisig gets initiated with the 2 bob and carol as the only authorities. It takes 2-of-2 to sign.
+        // Scenario: The multisig gets initiated with the 2 bob and carol as the only authorities. 
+        // It takes 2-of-2 to sign.
         // They decide next only 1-of-2 will be needed.
+        // Then they decide to invite dave and make it 3-of-3.
 
-        let _vals = mock::genesis_n_vals(root, 3);
+        let _vals = mock::genesis_n_vals(root, 4);
         mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
 
         // Dave creates the resource account. He is not one of the validators, and is not an authority in the multisig.
@@ -918,7 +924,7 @@ module ol_framework::test_multi_action {
         multi_action::claim_offer(bob, new_resource_address);  
         multi_action::finalize_and_cage(&resource_sig, 2);
 
-        // carol is going to propose to change the authorities to add Rando
+        // carol is going to propose to change the threshold to 1
         let id = multi_action::propose_governance(carol, new_resource_address, vector::empty(), true, option::some(1), option::none());
         
         // check authorities and threshold
@@ -934,8 +940,9 @@ module ol_framework::test_multi_action {
         assert!(passed, 7357004);
         let a = multi_action::get_authorities(new_resource_address);
         assert!(vector::length(&a) == 2, 7357005); // no change
-        let (n, _m) = multi_action::get_threshold(new_resource_address);
+        let (n, m) = multi_action::get_threshold(new_resource_address);
         assert!(n == 1, 7357006);
+        assert!(m == 2, 7357006);
 
         // now any other type of action can be taken with just one signer
         let proposal = multi_action::proposal_constructor(DummyType{}, option::none());
@@ -947,6 +954,42 @@ module ol_framework::test_multi_action {
         assert!(option::is_none(&cap_opt), 7357008);
 
         option::destroy_none(cap_opt);
+
+        // now bob decide to invite dave and make it 3-of-3.
+        multi_action::propose_governance(bob, new_resource_address, vector::singleton(signer::address_of(dave)), true, option::some(3), option::none());
+        
+        // check authorities and threshold did not change
+        let a = multi_action::get_authorities(new_resource_address);
+        assert!(vector::length(&a) == 2, 7357010);
+        assert!(vector::contains(&a, &signer::address_of(bob)), 7357010);
+        assert!(vector::contains(&a, &signer::address_of(carol)), 7357010);
+        let (n, m) = multi_action::get_threshold(new_resource_address);
+        assert!(n == 1, 7357011);
+        assert!(m == 2, 7357011);
+
+        // check the Offer
+        assert!(multi_action::get_offer_proposed(new_resource_address) == vector::singleton(signer::address_of(dave)), 7357012);
+        assert!(multi_action::get_offer_proposed_n_of_m(new_resource_address) == option::some(3), 7357013);
+
+        // dave claims the offer and it becomes final.
+        multi_action::claim_offer(dave, new_resource_address);
+
+        // Chek new set of authorities
+        let ret = multi_action::get_authorities(new_resource_address);
+        vector::push_back(&mut authorities, signer::address_of(dave));
+        assert!(ret == vector[ @0x1000c, @0x1000b, @0x1000d ], 7357014);
+
+        // Check new threshold
+        let (n, m) = multi_action::get_threshold(new_resource_address);
+        assert!(n == 3, 7357015);
+        assert!(m == 3, 7357015);
+
+        // Check if offer was cleaned
+        assert!(multi_action::get_offer_proposed(new_resource_address) == vector::empty(), 7357016);
+        assert!(multi_action::get_offer_claimed(new_resource_address) == vector::empty(), 7357017);
+        assert!(multi_action::get_offer_expiration_epoch(new_resource_address) == vector::empty(), 7357018);
+        assert!(multi_action::get_offer_proposed_n_of_m(new_resource_address) == option::none(), 7357019);
+
     }
 
     // Vote new athority before the previous one is claimed
