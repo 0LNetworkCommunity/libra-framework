@@ -14,7 +14,7 @@ module ol_framework::test_multi_action {
     use diem_framework::account;
 
     // print
-    // use std::debug::print;
+    //use std::debug::print;
 
     struct DummyType has drop, store {}  
 
@@ -637,6 +637,10 @@ module ol_framework::test_multi_action {
         let (passed, cap_opt) = multi_action::vote_with_id<DummyType>(bob, &id, alice_address);
         assert!(passed == false, 7357001);
         option::destroy_none(cap_opt);
+
+        // query proposal id
+        let creation_number = multi_action::get_pending_by_creation_number<DummyType>(alice_address);
+        assert!(creation_number == vector[guid::id_creation_num(&id)], 7357002);
 
         // carol vote on bob proposal
         let (passed, cap_opt) = multi_action::vote_with_id<DummyType>(carol, &id, alice_address);
