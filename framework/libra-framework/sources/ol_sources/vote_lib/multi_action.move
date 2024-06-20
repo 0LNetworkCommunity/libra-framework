@@ -258,7 +258,7 @@ module ol_framework::multi_action {
     // - sig: The signer proposing the offer.
     // - proposed: The list of authorities addresses proposed.
     // - duration_epochs: The duration in epochs before the offer expires.
-    public entry fun propose_offer(sig: &signer, proposed: vector<address>, duration_epochs: Option<u64>) acquires Offer {
+    public fun propose_offer(sig: &signer, proposed: vector<address>, duration_epochs: Option<u64>) acquires Offer {
         // Propose the offer on the signer's account
         let addr = signer::address_of(sig);
 
