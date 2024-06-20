@@ -681,7 +681,7 @@ module ol_framework::donor_voice_txs {
     use ol_framework::testnet;
     testnet::assert_testnet(vm);
     make_donor_voice(sig);
-    multi_action::propose_offer(sig, initial_authorities, option::none());
+    multi_action::propose_offer_internal(sig, initial_authorities, option::none());
   }
 
   #[view]
