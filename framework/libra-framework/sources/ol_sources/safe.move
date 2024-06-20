@@ -6,7 +6,7 @@
 
 
 // The main design goals of this multisig implementation are:
-// 0 . Leverages MultiSig library which allows for arbitrary transaction types to be handled by the multisig. This is a payments implementation.
+// 0. Leverages MultiSig library which allows for arbitrary transaction types to be handled by the multisig. This is a payments implementation.
 // 1. should leverage the usual transaction flow and tools which users are familiar with to add funds to the account. The funds remain viewable by the usual tools for viewing account balances.
 // 2. The authority over the address should not require collecting signatures offline: transactions should be submitted directly to the contract.
 // 3. Funds are disbursed as usual: to a destination addresses, and not into any intermediate structures.
@@ -85,7 +85,7 @@ module ol_framework::safe {
     multi_action::init_gov(sponsor);
     multi_action::init_type<PaymentType>(sponsor, true);
     add_to_registry(signer::address_of(sponsor));
-    multi_action::propose_offer(sponsor, authorities, option::none());
+    multi_action::propose_offer_internal(sponsor, authorities, option::none());
   }
 
   // Propose a transaction
