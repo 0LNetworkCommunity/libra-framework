@@ -121,3 +121,20 @@ export DIEM_FORGE_NODE_BIN_PATH="$HOME/.cargo/bin/diem-node"
 cargo test
 
 ```
+
+## Troubleshooting
+
+### 1. Building diem-node
+
+#### Issue
+If you encounter the following error:
+`error[E0599]: no method named disable_lifo_slot found for mutable reference &mut tokio::runtime::Builder in the current scope`
+
+#### Solution
+You can resolve this issue by building with the following flag:
+
+```
+RUSTFLAGS="--cfg tokio_unstable" cargo build --profile cli -p diem-node --target-dir ~/.cargo/bin
+```
+
+This flag enables the unstable features required by the tokio runtime.
