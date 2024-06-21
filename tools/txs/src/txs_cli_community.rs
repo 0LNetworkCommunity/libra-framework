@@ -35,7 +35,10 @@ impl CommunityTxs {
             CommunityTxs::GovInit(init) => match init.run(sender).await {
                 Ok(_) => println!("SUCCESS: community wallet initialized"),
                 Err(e) => {
-                    println!("ERROR: could not initialize Community Wallet, message: {}", e);
+                    println!(
+                        "ERROR: could not initialize Community Wallet, message: {}",
+                        e
+                    );
                 }
             },
             CommunityTxs::GovOffer(offer) => match offer.run(sender).await {
@@ -167,7 +170,6 @@ impl CageTx {
         Ok(())
     }
 }
-
 
 #[derive(clap::Args)]
 pub struct AdminTx {
