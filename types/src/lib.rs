@@ -1,11 +1,11 @@
 //! Exprorting some types from vendor so that they can be used in other crates
+pub mod core_types;
 pub mod exports;
 pub mod legacy_types;
 pub mod move_resource;
 pub mod ol_progress;
 pub mod type_extensions;
 pub mod util;
-pub mod core_types;
 
 use std::path::PathBuf;
 
