@@ -5,7 +5,7 @@ use libra_types::exports::Client;
 use libra_types::type_extensions::client_ext::ClientExt;
 use libra_types::{
     exports::{AccountAddress, AuthenticationKey},
-    legacy_types::{app_cfg::AppCfg, network_playlist::NetworkPlaylist},
+    core_types::{app_cfg::AppCfg, network_playlist::NetworkPlaylist},
 };
 use libra_wallet::account_keys::{get_ol_legacy_address, AccountKeys};
 use std::path::PathBuf;

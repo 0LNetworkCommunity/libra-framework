@@ -8,7 +8,7 @@ use diem_types::{
     transaction::{Transaction, WriteSetPayload},
 };
 use diem_vm_genesis::{GenesisConfiguration, Validator};
-use libra_types::legacy_types::legacy_recovery_v6::LegacyRecoveryV6;
+use libra_types::core_types::legacy_recovery_v6::LegacyRecoveryV6;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;

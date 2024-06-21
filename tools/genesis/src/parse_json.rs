@@ -1,6 +1,6 @@
 use libra_types::{
     exports::{AccountAddress, AuthenticationKey},
-    legacy_types::legacy_recovery_v6::{self, AccountRole, LegacyRecoveryV6},
+    core_types::legacy_recovery_v6::{self, AccountRole, LegacyRecoveryV6},
 };
 use serde::{Deserialize, Serialize};
 

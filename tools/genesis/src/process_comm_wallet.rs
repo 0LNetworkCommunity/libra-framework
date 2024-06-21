@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use diem_types::account_address::AccountAddress;
-use libra_types::legacy_types::legacy_recovery_v6::LegacyRecoveryV6;
+use libra_types::core_types::legacy_recovery_v6::LegacyRecoveryV6;
 use serde::Serialize;
 
 pub struct AllCommWallets {
