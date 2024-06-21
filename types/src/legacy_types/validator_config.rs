@@ -42,14 +42,6 @@ impl ValidatorConfigResource {
     pub fn try_from_bytes(bytes: &[u8]) -> Result<Self> {
         bcs::from_bytes(bytes).map_err(Into::into)
     }
-
-    // ///
-    // pub fn get_view(&self) -> ValidatorConfigView {
-    //     ValidatorConfigView {
-    //         operator_account: self.operator_account.clone(),
-    //         operator_has_balance: None,
-    //     }
-    // }
 }
 
 /// Struct that represents a view for Validator Config view

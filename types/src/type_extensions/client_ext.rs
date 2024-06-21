@@ -1,5 +1,5 @@
 use crate::exports::AuthenticationKey;
-use crate::legacy_types::app_cfg::AppCfg;
+use crate::core_types::app_cfg::AppCfg;
 use crate::type_extensions::cli_config_ext::CliConfigExt;
 use crate::util::parse_function_id;
 
@@ -235,28 +235,6 @@ impl ClientExt for Client {
 
         Ok(from_account.sign_with_transaction_builder(transaction_builder))
     }
-
-    // async fn view_bcs(
-    //     &self,
-    //     request: &ViewRequest,
-    //     version: Option<u64>,
-    // ) -> anyhow::Result<bytes::Bytes> {
-    //     let request = serde_json::to_string(request)?;
-    //     let mut url = self.build_path("view")?;
-    //     if let Some(version) = version {
-    //         url.set_query(Some(format!("ledger_version={}", version).as_str()));
-    //     }
-
-    //     let response = self
-    //         .inner
-    //         .post(url)
-    //         .header(CONTENT_TYPE, JSON)
-    //         .body(request)
-    //         .send()
-    //         .await?;
-
-    //     Ok(self.check_and_parse_bcs_response(response).await?.inner())
-    // }
 
     async fn view_ext(
         &self,

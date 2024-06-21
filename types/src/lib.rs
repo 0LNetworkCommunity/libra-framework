@@ -5,6 +5,7 @@ pub mod move_resource;
 pub mod ol_progress;
 pub mod type_extensions;
 pub mod util;
+pub mod core_types;
 
 use std::path::PathBuf;
 

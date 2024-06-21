@@ -2,18 +2,19 @@
 
 use crate::exports::AuthenticationKey;
 
-use crate::legacy_types::burn::{BurnCounterResource, UserBurnPreferenceResource};
-use crate::legacy_types::donor_voice::RegistryResource;
-use crate::legacy_types::donor_voice_txs::TxScheduleResource;
-use crate::legacy_types::fee_maker::{EpochFeeMakerRegistryResource, FeeMakerResource};
-use crate::legacy_types::jail::JailResource;
-use crate::legacy_types::match_index::MatchIndexResource;
-use crate::legacy_types::pledge_account::MyPledgesResource;
-use crate::legacy_types::validator_universe::ValidatorUniverseResource;
-use crate::legacy_types::vouch::MyVouchesResource;
-use crate::legacy_types::{
+use crate::core_types::burn::{BurnCounterResource, UserBurnPreferenceResource};
+use crate::core_types::donor_voice::RegistryResource;
+use crate::core_types::donor_voice_txs::TxScheduleResource;
+use crate::core_types::fee_maker::{EpochFeeMakerRegistryResource, FeeMakerResource};
+use crate::core_types::jail::JailResource;
+use crate::core_types::match_index::MatchIndexResource;
+use crate::core_types::pledge_account::MyPledgesResource;
+use crate::core_types::validator_universe::ValidatorUniverseResource;
+use crate::core_types::vouch::MyVouchesResource;
+use crate::core_types::{
     ancestry_legacy::LegacyAncestryResource,
     cumulative_deposits::{CumulativeDepositResource, LegacyBalanceResource},
+    legacy_currency_info::CurrencyInfoResource,
     receipts::ReceiptsResource,
     wallet::{CommunityWalletsResourceLegacy, SlowWalletListResource, SlowWalletResource},
 };
@@ -25,7 +26,6 @@ use move_core_types::account_address::AccountAddress;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use std::{fs, path::PathBuf};
-use crate::types::legacy_currency_info::CurrencyInfoResource;
 
 use super::ol_account::BurnTrackerResource;
 use super::proof_of_fee::ConsensusRewardResource;
