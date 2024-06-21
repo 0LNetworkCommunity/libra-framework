@@ -13,14 +13,13 @@ pub enum CommunityTxs {
     /// Initialize a DonorVoice multi-sig by proposing an offer to initial authorities.
     /// NOTE: Then authorities need to claim the offer, and the donor needs to cage the account to become a multi-sig account.
     GovInit(InitTx),
-    /// Update proposed offer to initial authorities
-    /*GovOffer(OfferTx),
+    /*/// Update proposed offer to initial authorities
+    GovOffer(OfferTx),*/
     /// Claim the proposed offer
     GovClaim(ClaimTx),
     /// Finalize and cage the multisig account after authorities claim the offer
     GovCage(CageTx),
     /// Propose a change to the authorities of the DonorVoice multi-sig
-    */
     GovAdmin(AdminTx),
     /// Propose a multi-sig transaction
     Propose(ProposeTx),
@@ -44,7 +43,7 @@ impl CommunityTxs {
                 Err(e) => {
                     println!("ERROR: could not propose offer, message: {}", e);
                 }
-            },
+            },*/
             CommunityTxs::GovClaim(claim) => match claim.run(sender).await {
                 Ok(_) => println!("SUCCESS: community wallet offer claimed"),
                 Err(e) => {
@@ -56,7 +55,7 @@ impl CommunityTxs {
                 Err(e) => {
                     println!("ERROR: could not finalize wallet, message: {}", e);
                 }
-            },*/
+            },
             CommunityTxs::GovAdmin(admin) => match admin.run(sender).await {
                 Ok(_) => println!("SUCCESS: community wallet admin added"),
                 Err(e) => {
@@ -98,15 +97,11 @@ pub struct InitTx {
     #[clap(short, long)]
     /// Num of signatures needed for the n-of-m
     pub num_signers: u64,
-
-    #[clap(long)]
-    /// Finalize the configurations and rotate the auth key, not reversible!
-    pub finalize: bool,
 }
 
 impl InitTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        if self.finalize {
+        /*if self.finalize {
             // Warning message
             println!("\nWARNING: This operation will finalize the account associated with the governance-initialized wallet and make it inaccessible. This action is IRREVERSIBLE and can only be applied to a wallet where governance has been initialized.\n");
 
@@ -118,19 +113,51 @@ impl InitTx {
             // Execute the transaction
             sender.sign_submit_wait(payload).await?;
             println!("The account has been finalized and caged.");
-        } else {
-            let payload = libra_stdlib::community_wallet_init_init_community(
-                self.admins.clone(),
-                self.num_signers,
-            );
+        } else {*/
+        let payload = libra_stdlib::community_wallet_init_init_community(
+            self.admins.clone(),
+            self.num_signers,
+        );
 
-            sender.sign_submit_wait(payload).await?;
-            println!("You have completed the first step in creating a community wallet, now you should check your work and finalize with --finalize");
-        }
+        sender.sign_submit_wait(payload).await?;
+        println!("You have completed the first step in creating a community wallet, now you should check your work and finalize with --finalize");
 
         Ok(())
     }
 }
+
+#[derive(clap::Args)]
+/// Claim the offer to become an authority in the multi-sig
+pub struct ClaimTx {
+    #[clap(short, long)]
+    /// The Community Wallet to claim the offer
+    pub community_wallet: AccountAddress,
+}
+
+impl ClaimTx {
+    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        let payload = libra_stdlib::multi_action_claim_offer(self.community_wallet);
+        sender.sign_submit_wait(payload).await?;
+        Ok(())
+    }
+}
+
+#[derive(clap::Args)]
+/// Finalize and cage the community wallet to become multisig
+pub struct CageTx {
+    #[clap(short, long)]
+    /// Num of signatures needed for the n-of-m
+    pub num_signers: u64,
+}
+
+impl CageTx {
+    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        let payload = libra_stdlib::community_wallet_init_finalize_and_cage(self.num_signers);
+        sender.sign_submit_wait(payload).await?;
+        Ok(())
+    }
+}
+
 
 #[derive(clap::Args)]
 pub struct AdminTx {
@@ -429,4 +456,3 @@ impl VetoTx {
         Ok(())
     }
 }
-

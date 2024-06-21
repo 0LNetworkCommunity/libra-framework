@@ -47,7 +47,7 @@ module ol_framework::multi_action {
 
     #[test_only]
     friend ol_framework::test_multi_action_migration; // TODO: remove after offer migration
-    
+
     #[test_only]
     friend ol_framework::test_multi_action;
 
@@ -265,7 +265,7 @@ module ol_framework::multi_action {
         // Ensure the account is not community wallet
         // Community wallet has its own propose_offer function
         assert!(community_wallet::is_init(addr) == false, error::invalid_argument(ECW_ACCOUNT));
-        
+
         propose_offer_internal(sig, proposed, duration_epochs);
     }
 
@@ -291,7 +291,7 @@ module ol_framework::multi_action {
 
         // step 3
         remove_old_proposed_not_in_new_proposed(offer, proposed);
-        
+
         // step 4
         upsert_new_proposed_and_expiration_epoch(offer, proposed, expiration_epoch);
     }
@@ -366,7 +366,7 @@ module ol_framework::multi_action {
     // Allows a proposed authority to claim their offer.
     // - sig: The signer making the claim.
     // - multisig_address: The address of the multisig account.
-    public fun claim_offer(sig: &signer, multisig_address: address) acquires Offer, Governance {
+    public entry fun claim_offer(sig: &signer, multisig_address: address) acquires Offer, Governance {
         let sender_addr = signer::address_of(sig);
 
         validate_claim_offer(multisig_address, sender_addr);
@@ -387,7 +387,7 @@ module ol_framework::multi_action {
                 let n_of_m = offer.proposed_n_of_m;
                 let _ = offer;
                 maybe_update_threshold(multisig_address, gov, &n_of_m);
-                
+
                 // clean the Offer
                 clean_offer(multisig_address);
             };
@@ -398,7 +398,7 @@ module ol_framework::multi_action {
     }
 
     // Validate account state and parameters to claim the offer.
-    fun validate_claim_offer(multisig_address: address, sender_addr: address) acquires Offer{       
+    fun validate_claim_offer(multisig_address: address, sender_addr: address) acquires Offer{
         // Ensure the account has an offer
         assert!(exists_offer(multisig_address), error::not_found(ENOT_OFFERED));
 
@@ -497,11 +497,13 @@ module ol_framework::multi_action {
     }
 
     // Query proposed authorities for the given multisig address.
+    #[view]
     public fun get_offer_proposed(multisig_address: address): vector<address> acquires Offer {
         borrow_global<Offer>(multisig_address).proposed
     }
 
     // Query claimed authorities for the given multisig address.
+    #[view]
     public fun get_offer_claimed(multisig_address: address): vector<address> acquires Offer {
         borrow_global<Offer>(multisig_address).claimed
     }
@@ -511,6 +513,7 @@ module ol_framework::multi_action {
         borrow_global<Offer>(multisig_address).expiration_epoch
     }
 
+    #[view]
     public fun get_offer_proposed_n_of_m(multisig_address: address): Option<u64> acquires Offer {
         borrow_global<Offer>(multisig_address).proposed_n_of_m
     }
@@ -913,9 +916,9 @@ module ol_framework::multi_action {
         maybe_update_threshold_after_claim(multisig_address, n_of_m);
     }
 
-    // If authorities voted to change the number of signatures required along authorities addition, 
+    // If authorities voted to change the number of signatures required along authorities addition,
     // new authorities must claim the offer before the number of signatures required is applied.
-    fun maybe_update_threshold_after_claim(multisig_address: address, n_of_m: &Option<u64>) acquires Offer {   
+    fun maybe_update_threshold_after_claim(multisig_address: address, n_of_m: &Option<u64>) acquires Offer {
         if (option::is_some(n_of_m)) {
             let new_n_of_m = *option::borrow(n_of_m);
             let current_n_of_m = multisig_account::num_signatures_required(multisig_address);
@@ -935,9 +938,9 @@ module ol_framework::multi_action {
 
     fun maybe_update_threshold(multisig_address: address, governance: &mut Governance, n_of_m_opt: &Option<u64>) acquires Offer {
         if (option::is_some(n_of_m_opt)) {
-            multisig_account::multi_auth_helper_update_signatures_required(&governance.guid_capability, 
+            multisig_account::multi_auth_helper_update_signatures_required(&governance.guid_capability,
                 *option::borrow(n_of_m_opt));
-            
+
             // clean the Offer n_of_m to avoid a future claim change the n_of_m
             let offer = borrow_global_mut<Offer>(multisig_address);
             offer.proposed_n_of_m = option::none();
