@@ -11,10 +11,10 @@ use std::{collections::HashMap, fs, path::PathBuf};
 #[derive(clap::Subcommand)]
 pub enum CommunityTxs {
     /// Initialize a DonorVoice multi-sig by proposing an offer to initial authorities.
-    /// NOTE: Then authorities need to claim the offer, and the donor needs to cage the account to become a multi-sig account.
+    /// NOTE: Then authorities need to claim the offer, and the donor have to cage the account to become a multi-sig account.
     GovInit(InitTx),
-    /*/// Update proposed offer to initial authorities
-    GovOffer(OfferTx),*/
+    /// Update proposed offer to initial authorities
+    GovOffer(OfferTx),
     /// Claim the proposed offer
     GovClaim(ClaimTx),
     /// Finalize and cage the multisig account after authorities claim the offer
@@ -38,12 +38,12 @@ impl CommunityTxs {
                     println!("ERROR: could not initialize Community Wallet, message: {}", e);
                 }
             },
-            /*CommunityTxs::GovOffer(offer) => match offer.run(sender).await {
+            CommunityTxs::GovOffer(offer) => match offer.run(sender).await {
                 Ok(_) => println!("SUCCESS: community wallet offer proposed"),
                 Err(e) => {
                     println!("ERROR: could not propose offer, message: {}", e);
                 }
-            },*/
+            },
             CommunityTxs::GovClaim(claim) => match claim.run(sender).await {
                 Ok(_) => println!("SUCCESS: community wallet offer claimed"),
                 Err(e) => {
@@ -87,8 +87,7 @@ impl CommunityTxs {
 }
 
 #[derive(clap::Args)]
-/// Initialize a community wallet in two steps 1) make it a donor voice account,
-/// and check proposed authorities 2) finalize and set the authorities
+/// Initialize a community wallet offering the initial authorities
 pub struct InitTx {
     #[clap(short, long)]
     /// The initial admins of the multi-sig (cannot add self)
@@ -109,6 +108,28 @@ impl InitTx {
         sender.sign_submit_wait(payload).await?;
         println!("You have completed the first step in creating a community wallet, now the authorities you have proposed need to claim the offer.");
 
+        Ok(())
+    }
+}
+
+#[derive(clap::Args)]
+/// Propose offer to authorities to become an authority in the community wallet
+pub struct OfferTx {
+    #[clap(short, long)]
+    /// The Community Wallet to propose the offer
+    pub admins: Vec<AccountAddress>,
+    /// Num of signatures needed for the n-of-m
+    pub num_signers: u64,
+}
+
+impl OfferTx {
+    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        let payload = libra_stdlib::community_wallet_init_propose_offer(
+            self.admins.clone(),
+            self.num_signers,
+        );
+        sender.sign_submit_wait(payload).await?;
+        println!("You have proposed the community wallet offer to the authorities.");
         Ok(())
     }
 }
