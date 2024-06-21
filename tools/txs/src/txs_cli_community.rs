@@ -101,26 +101,13 @@ pub struct InitTx {
 
 impl InitTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        /*if self.finalize {
-            // Warning message
-            println!("\nWARNING: This operation will finalize the account associated with the governance-initialized wallet and make it inaccessible. This action is IRREVERSIBLE and can only be applied to a wallet where governance has been initialized.\n");
-
-            // Assuming the signer's account is already set in the `sender` object
-            // The payload for the finalize and cage operation
-            let payload =
-                libra_stdlib::community_wallet_init_finalize_and_cage(self.num_signers); // This function now does not require an account address
-
-            // Execute the transaction
-            sender.sign_submit_wait(payload).await?;
-            println!("The account has been finalized and caged.");
-        } else {*/
         let payload = libra_stdlib::community_wallet_init_init_community(
             self.admins.clone(),
             self.num_signers,
         );
 
         sender.sign_submit_wait(payload).await?;
-        println!("You have completed the first step in creating a community wallet, now you should check your work and finalize with --finalize");
+        println!("You have completed the first step in creating a community wallet, now the authorities you have proposed need to claim the offer.");
 
         Ok(())
     }
@@ -138,6 +125,7 @@ impl ClaimTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         let payload = libra_stdlib::multi_action_claim_offer(self.community_wallet);
         sender.sign_submit_wait(payload).await?;
+        println!("You have claimed the community wallet offer.");
         Ok(())
     }
 }
@@ -154,6 +142,7 @@ impl CageTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         let payload = libra_stdlib::community_wallet_init_finalize_and_cage(self.num_signers);
         sender.sign_submit_wait(payload).await?;
+        println!("The community wallet is finalized and caged. It is now a multi-sig account.");
         Ok(())
     }
 }

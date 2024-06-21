@@ -24,13 +24,12 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
 
     // SETUP COMMUNITY WALLET
     // 3. Prepare a new admin account but do not immediately use it within the community wallet.
-    // 4. Create a community wallet offering the first three of the newly funded accounts as its admins.
+    // 4. Initialize a community wallet offering the first three of the newly funded accounts as its admins.
     // 5. Admins claim the offer.
     // 6. Donor finalize and cage the community wallet to ensure its independence and security.
 
     // SETUP ADMIN SIGNERS //
-    // We set up 5 new accounts and also fund them from each of the 5 validators
-
+    // 1. Generate and fund 5 new accounts
     let (signers, signer_addresses) = s.create_accounts(5).await?;
 
     // Ensure there's a one-to-one correspondence between signers and private keys
@@ -38,6 +37,7 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
         panic!("The number of signer addresses does not match the number of validator private keys.");
     }
 
+    // 2. Transfer funds to the newly created signer accounts
     for (signer_address, validator_private_key) in signer_addresses.iter().zip(s.validator_private_keys.iter()) {
         let to_account = signer_address.clone();
 
@@ -47,9 +47,8 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
 
     // SETUP COMMUNITY WALLET //
 
-    // Prepare new admin account
+    // 3. Prepare a new admin account
     let new_admin = "0xDCD1AFDFB32A8EB0AADF169ECE2D9BA1552E96FA7D683934F280AC28F29D3611";
-
     let new_admin_address = AccountAddress::from_hex_literal(new_admin)
       .expect("Failed to parse account address");
 
@@ -69,7 +68,7 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
         .take(3)
         .collect();
 
-    // Create new community wallet and offer it to the first three signers
+    // 4. Initialize the community wallet
     let donor_private_key = s.encoded_pri_key.clone();
     run_cli_community_init(donor_private_key.clone(), first_three_signer_addresses.clone(), 3, s.api_endpoint.clone(), config_path.clone()).await;
 
@@ -92,7 +91,7 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
         assert_eq!(authorities[i].as_str().unwrap().trim_start_matches("0x"), first_three_signer_addresses[i].to_string(), "Authority should be the same");
     }
 
-    // Admins claim the offer
+    // 5. Admins claim the offer.
     for j in 0..3 {
         let auth = &signers[j];
         // print private key
@@ -112,7 +111,7 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
         assert_eq!(authorities[i].as_str().unwrap().trim_start_matches("0x"), first_three_signer_addresses[i].to_string(), "Authority should be the same");
     }
 
-    // Donor finalize and cage the community wallet
+    // 6. Donor finalize and cage the community wallet
     run_cli_community_cage(donor_private_key.clone(), 3, s.api_endpoint.clone(), config_path.clone()).await;
 
     // Ensure the account is now a community wallet
@@ -121,6 +120,17 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
         .expect("Query failed: community wallet init check");
 
     assert!(is_comm_wallet_query_res.as_array().unwrap()[0].as_bool().unwrap(), "Account should be a community wallet");
+
+    // Ensure authorities are the three proposed
+    let authrotities_query_res = query_view::get_view(&s.client(), "0x1::multi_action::get_authorities", None, Some(comm_wallet_addr.clone().to_string()))
+        .await
+        .expect("Query failed: community wallet authorities check");
+
+    let authorities = authrotities_query_res.as_array().unwrap()[0].as_array().unwrap();
+    assert_eq!(authorities.len(), 3, "There should be 3 authorities");
+    for i in 0..3 {
+        assert_eq!(authorities[i].as_str().unwrap().trim_start_matches("0x"), first_three_signer_addresses[i].to_string(), "Authority should be the same");
+    }
 
     Ok(())
 }
