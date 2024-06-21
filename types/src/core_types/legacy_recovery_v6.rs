@@ -14,7 +14,6 @@ use crate::legacy_types::vouch::MyVouchesResource;
 use crate::legacy_types::{
     ancestry_legacy::LegacyAncestryResource,
     cumulative_deposits::{CumulativeDepositResource, LegacyBalanceResource},
-    legacy_currency_info::CurrencyInfoResource,
     receipts::ReceiptsResource,
     wallet::{CommunityWalletsResourceLegacy, SlowWalletListResource, SlowWalletResource},
 };
@@ -26,6 +25,7 @@ use move_core_types::account_address::AccountAddress;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use std::{fs, path::PathBuf};
+use crate::types::legacy_currency_info::CurrencyInfoResource;
 
 use super::ol_account::BurnTrackerResource;
 use super::proof_of_fee::ConsensusRewardResource;
