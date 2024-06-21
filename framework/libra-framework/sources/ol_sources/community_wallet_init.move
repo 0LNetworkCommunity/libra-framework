@@ -20,9 +20,9 @@ module ol_framework::community_wallet_init {
     #[test_only]
     friend ol_framework::test_donor_voice;
 
-    /// not authorized to operate on this account
+    /// Not authorized to operate on this account
     const ENOT_AUTHORIZED: u64 = 1;
-    /// does not meet criteria for community wallet
+    /// Does not meet criteria for community wallet
     const ENOT_QUALIFY_COMMUNITY_WALLET: u64 = 2;
     /// Recipient does not have a slow wallet
     const EPAYEE_NOT_SLOW_WALLET: u64 = 8;
@@ -30,17 +30,17 @@ module ol_framework::community_wallet_init {
     const ENOT_DONOR_VOICE: u64 = 3;
     /// This account needs a multisig enabled
     const ENOT_MULTISIG: u64 = 4;
-    /// config has few authorities on multisig
+    /// Config has few authorities on multisig
     const ETOO_FEW_AUTH: u64 = 9;
-    /// config has too few signatures required for each proposal to pass
+    /// Config has too few signatures required for each proposal to pass
     const ESIG_THRESHOLD_CONFIG: u64 = 5;
     /// The multisig threshold is not better than MINIMUM_SIGS/MINIMUM_AUTH
     const ESIG_THRESHOLD_RATIO: u64 = 6;
     /// Signers may be sybil
     const ESIGNERS_SYBIL: u64 = 7;
-    /// does not liquidate to match index
+    /// Does not liquidate to match index
     const ENOT_MATCH_INDEX_LIQ: u64 = 8;
-    /// does not have the community wallet flag
+    /// Does not have the community wallet flag
     const ENO_CW_FLAG: u64 = 9;
 
     // STATICS
@@ -59,9 +59,9 @@ module ol_framework::community_wallet_init {
     //////// MULTISIG TX HELPERS ////////
 
     // Helper to initialize:
-    //  - the PaymentMultiAction 
+    //  - the PaymentMultiAction
     //  - offer authorities to the multisig after confirming that the signers are not related family
-    // These transactions can be sent directly to donor_voice, but this is a helper to make it easier to initialize 
+    // These transactions can be sent directly to donor_voice, but this is a helper to make it easier to initialize
     // the multisig with the ancestry requirements.
     public entry fun init_community(
       sig: &signer,
@@ -75,7 +75,7 @@ module ol_framework::community_wallet_init {
         donor_voice_txs::set_liquidate_to_match_index(sig, true);
       };
       match_index::opt_into_match_index(sig);
-      
+
       propose_offer(sig, initial_authorities, check_threshold);
     }
 
@@ -113,7 +113,7 @@ module ol_framework::community_wallet_init {
 
       multi_action::finalize_and_cage(sig, num_signers);
       community_wallet::set_comm_wallet(sig);
-      
+
       assert!(donor_voice_txs::is_liquidate_to_match_index(addr), error::invalid_argument(ENOT_MATCH_INDEX_LIQ));
       assert!(multisig_thresh(addr), error::invalid_argument(ESIG_THRESHOLD_RATIO));
       assert!(!multisig_common_ancestry(addr), error::invalid_argument(ESIGNERS_SYBIL));
@@ -212,7 +212,7 @@ module ol_framework::community_wallet_init {
 
       // Verify the signers will not fall below the threshold the signers will fall below threshold
       if (!is_add_operation) {
-          assert!((vector::length(&current_signers) - 1) >  MINIMUM_AUTH, error::invalid_argument(ESIG_THRESHOLD_CONFIG));
+          assert!((vector::length(&current_signers) - 1) >= MINIMUM_AUTH, error::invalid_argument(ESIG_THRESHOLD_CONFIG));
       };
 
       multi_action::propose_governance(
