@@ -173,7 +173,7 @@ mempool:
 
 /// download genesis blob
 pub async fn download_genesis(
-    home_dir: Option<PathBuf>
+    home_dir: Option<PathBuf>,
 ) -> anyhow::Result<()> {
     // Base URL for GitHub API requests
     let base_url =
