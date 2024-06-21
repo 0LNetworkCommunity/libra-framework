@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use diem_crypto::ValidCryptoMaterialStringExt;
 use diem_types::account_address::AccountAddress;
 use diem_temppath::TempPath;
@@ -8,11 +10,13 @@ use libra_txs::txs_cli_community::{
     CommunityTxs, InitTx, ClaimTx, CageTx
 };
 use libra_types::legacy_types::app_cfg::TxCost;
+use url::Url;
 
 // Create a V7 community wallet
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn create_community_wallet() -> Result<(), anyhow::Error> {
     let (mut s, dir, _account_address, comm_wallet_addr) = setup_environment().await;
+    let config_path = dir.path().to_owned().join("libra-cli-config.yaml");
 
     // SETUP ADMIN SIGNERS
     // 1. Generate and fund 5 new accounts from validators to ensure their on-chain presence for signing operations.
@@ -38,26 +42,7 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
         let to_account = signer_address.clone();
 
         // Transfer funds to ensure the account exists on-chain using the specific validator's private key
-        let cli_transfer = TxsCli {
-            subcommand: Some(Transfer {
-                to_account,
-                amount: 10.0,
-            }),
-            mnemonic: None,
-            test_private_key: Some(validator_private_key.clone()),
-            chain_id: None,
-            config_path: Some(dir.path().to_owned().join("libra-cli-config.yaml")),
-            url: Some(s.api_endpoint.clone()),
-            tx_profile: None,
-            tx_cost: Some(TxCost::default_baseline_cost()),
-            estimate_only: false,
-            legacy_address: false,
-        };
-
-        // Execute the transfer
-        cli_transfer.run()
-            .await
-            .expect(&format!("CLI could not transfer funds to account {}", signer_address));
+       run_cli_transfer(to_account, 10.0, validator_private_key.clone(), s.api_endpoint.clone(), config_path.clone()).await;
     }
 
     // SETUP COMMUNITY WALLET //
@@ -75,25 +60,7 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
         .expect("cannot decode pri key");
 
     // Transfer funds to ensure the account exists on-chain
-    let cli_transfer = TxsCli {
-        subcommand: Some(Transfer {
-            to_account: new_admin_address,
-            amount: 1.0,
-        }),
-        mnemonic: None,
-        test_private_key: Some(private_key_of_fifth_signer),
-        chain_id: None,
-        config_path: Some(dir.path().to_owned().join("libra-cli-config.yaml")),
-        url: Some(s.api_endpoint.clone()),
-        tx_profile: None,
-        tx_cost: Some(TxCost::default_baseline_cost()),
-        estimate_only: false,
-        legacy_address: false,
-    };
-
-    cli_transfer.run()
-        .await
-        .expect("CLI could not transfer funds to the new account");
+    run_cli_transfer(new_admin_address, 1.0, private_key_of_fifth_signer.clone(), s.api_endpoint.clone(), config_path.clone()).await;
 
     // Get 3 signers to be admins
     let first_three_signer_addresses: Vec<AccountAddress> = signer_addresses
@@ -103,25 +70,8 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
         .collect();
 
     // Create new community wallet and offer it to the first three signers
-    let cli_set_community_wallet = TxsCli {
-        subcommand: Some(TxsSub::Community(CommunityTxs::GovInit(InitTx {
-            admins: first_three_signer_addresses.clone(),
-            num_signers: 3,
-        }))),
-        mnemonic: None,
-        test_private_key: Some(s.encoded_pri_key.clone()),
-        chain_id: None,
-        config_path: Some(dir.path().to_owned().join("libra-cli-config.yaml")),
-        url: Some(s.api_endpoint.clone()),
-        tx_profile: None,
-        tx_cost: Some(TxCost::default_baseline_cost()),
-        estimate_only: false,
-        legacy_address: false,
-    };
-
-    cli_set_community_wallet.run()
-        .await
-        .expect("CLI could not create community wallet");
+    let donor_private_key = s.encoded_pri_key.clone();
+    run_cli_community_init(donor_private_key.clone(), first_three_signer_addresses.clone(), 3, s.api_endpoint.clone(), config_path.clone()).await;
 
     // Verify if the account is not a community wallet yet
     let is_comm_wallet_query_res = query_view::get_view(&s.client(), "0x1::community_wallet::is_init", None, Some(comm_wallet_addr.clone().to_string()))
@@ -146,27 +96,11 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
     for j in 0..3 {
         let auth = &signers[j];
         // print private key
-        let cli_claim_offer = TxsCli {
-            subcommand: Some(TxsSub::Community(CommunityTxs::GovClaim(ClaimTx {
-                community_wallet: comm_wallet_addr.clone(),
-            }))),
-            mnemonic: None,
-            test_private_key: Some(auth.private_key().to_encoded_string().expect("cannot decode pri key")),
-            chain_id: None,
-            config_path: Some(dir.path().to_owned().join("libra-cli-config.yaml")),
-            url: Some(s.api_endpoint.clone()),
-            tx_profile: None,
-            tx_cost: Some(TxCost::default_baseline_cost()),
-            estimate_only: false,
-            legacy_address: false,
-        };
-
-        cli_claim_offer.run()
-            .await
-            .expect("CLI could not claim offer");
+        let authority_pk = auth.private_key().to_encoded_string().expect("cannot decode pri key");
+        run_cli_claim_offer(authority_pk, comm_wallet_addr.clone(), s.api_endpoint.clone(), config_path.clone()).await;
     }
 
-    // Check offer proposed
+    // Check offer claimed
     let proposed_query_res = query_view::get_view(&s.client(), "0x1::multi_action::get_offer_claimed", None, Some(comm_wallet_addr.clone().to_string()))
         .await
         .expect("Query failed: community wallet offer claimed");
@@ -179,24 +113,7 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
     }
 
     // Donor finalize and cage the community wallet
-    let cli_finalize_cage = TxsCli {
-        subcommand: Some(TxsSub::Community(CommunityTxs::GovCage(CageTx {
-            num_signers: 3,
-        }))),
-        mnemonic: None,
-        test_private_key: Some(s.encoded_pri_key.clone()),
-        chain_id: None,
-        config_path: Some(dir.path().to_owned().join("libra-cli-config.yaml")),
-        url: Some(s.api_endpoint.clone()),
-        tx_profile: None,
-        tx_cost: Some(TxCost::default_baseline_cost()),
-        estimate_only: false,
-        legacy_address: false,
-    };
-
-    cli_finalize_cage.run()
-        .await
-        .expect("CLI could not finalize and cage community wallet");
+    run_cli_community_cage(donor_private_key.clone(), 3, s.api_endpoint.clone(), config_path.clone()).await;
 
     // Ensure the account is now a community wallet
     let is_comm_wallet_query_res = query_view::get_view(&s.client(), "0x1::community_wallet::is_init", None, Some(comm_wallet_addr.clone().to_string()))
@@ -209,6 +126,119 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
 }
 
 // UTILITY //
+
+async fn run_cli_transfer(
+    to_account: AccountAddress,
+    amount: f64,
+    private_key: String,
+    api_endpoint: Url,
+    config_path: PathBuf,
+) {
+    // Build the CLI command
+    let cli_transfer = TxsCli {
+        subcommand: Some(Transfer {
+            to_account,
+            amount,
+        }),
+        mnemonic: None,
+        test_private_key: Some(private_key),
+        chain_id: None,
+        config_path: Some(config_path),
+        url: Some(api_endpoint),
+        tx_profile: None,
+        tx_cost: Some(TxCost::default_baseline_cost()),
+        estimate_only: false,
+        legacy_address: false,
+    };
+
+    // Execute the transfer
+    cli_transfer
+        .run()
+        .await
+        .expect(&format!("CLI could not transfer funds to account {}", to_account.to_string()));
+}
+
+async fn run_cli_community_init(
+    donor_private_key: String,
+    auhtorities: Vec<AccountAddress>,
+    num_signers: u64,
+    api_endpoint: Url,
+    config_path: PathBuf,
+) {
+    // Build the CLI command
+    let cli_set_community_wallet = TxsCli {
+        subcommand: Some(TxsSub::Community(CommunityTxs::GovInit(InitTx {
+            admins: auhtorities,
+            num_signers: num_signers,
+        }))),
+        mnemonic: None,
+        test_private_key: Some(donor_private_key),
+        chain_id: None,
+        config_path: Some(config_path),
+        url: Some(api_endpoint),
+        tx_profile: None,
+        tx_cost: Some(TxCost::default_baseline_cost()),
+        estimate_only: false,
+        legacy_address: false,
+    };
+
+    // Execute the transaction
+    cli_set_community_wallet.run()
+        .await
+        .expect("CLI could not create community wallet");
+}
+
+async fn run_cli_claim_offer(
+    signer_pk: String,
+    community_address: AccountAddress,
+    api_endpoint: Url,
+    config_path: PathBuf
+) {
+    let cli_claim_offer = TxsCli {
+        subcommand: Some(TxsSub::Community(CommunityTxs::GovClaim(ClaimTx {
+            community_wallet: community_address,
+        }))),
+        mnemonic: None,
+        test_private_key: Some(signer_pk),
+        chain_id: None,
+        config_path: Some(config_path),
+        url: Some(api_endpoint),
+        tx_profile: None,
+        tx_cost: Some(TxCost::default_baseline_cost()),
+        estimate_only: false,
+        legacy_address: false,
+    };
+
+    cli_claim_offer.run()
+        .await
+        .expect("CLI could not claim offer");
+}
+
+async fn run_cli_community_cage(
+    donor_private_key: String,
+    num_signers: u64,
+    api_endpoint: Url,
+    config_path: PathBuf
+) {
+    let cli_finalize_cage = TxsCli {
+        subcommand: Some(TxsSub::Community(CommunityTxs::GovCage(CageTx {
+            num_signers: num_signers,
+        }))),
+        mnemonic: None,
+        test_private_key: Some(donor_private_key),
+        chain_id: None,
+        config_path: Some(config_path),
+        url: Some(api_endpoint),
+        tx_profile: None,
+        tx_cost: Some(TxCost::default_baseline_cost()),
+        estimate_only: false,
+        legacy_address: false,
+    };
+
+    cli_finalize_cage.run()
+        .await
+        .expect("CLI could not finalize and cage community wallet");
+}
 
 async fn setup_environment() -> (LibraSmoke, TempPath, AccountAddress, AccountAddress) {
     let dir = diem_temppath::TempPath::new();
