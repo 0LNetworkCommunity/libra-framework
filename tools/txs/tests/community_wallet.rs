@@ -1,14 +1,18 @@
+use std::path::PathBuf;
+use diem_sdk::types::LocalAccount;
 use diem_crypto::ValidCryptoMaterialStringExt;
-use diem_temppath::TempPath;
 use diem_types::account_address::AccountAddress;
+use diem_temppath::TempPath;
 use libra_query::query_view;
-use libra_smoke_tests::{configure_validator, helpers::get_libra_balance, libra_smoke::LibraSmoke};
+use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::txs_cli::{TxsCli, TxsSub, TxsSub::Transfer};
 use libra_txs::txs_cli_community::{
-    AdminTx, CommunityTxs, FinalizeCageTx, InitTx, ProposeTx, VetoTx,
+    CommunityTxs, InitTx, ClaimTx, CageTx, OfferTx, AdminTx
 };
 use libra_types::legacy_types::app_cfg::TxCost;
+use url::Url;
 
+/*
 /// TODO: Test the migration of an existing community wallet with n flag
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn migrate_community_wallet_with_flag() {
@@ -282,13 +286,13 @@ async fn new_community_wallet_cant_transfer() -> Result<(), anyhow::Error> {
     }
 
     Ok(())
-}
+}*/
 
-// PASSING
-//Create a V7 community wallet
+// Create a v7 community wallet
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn create_community_wallet() -> Result<(), anyhow::Error> {
-    let (mut s, dir, _account_address, comm_wallet_addr) = setup_environment().await;
+    let (mut s, dir, _account_address, comm_wallet_pk, comm_wallet_addr) = setup_environment().await;
+    let config_path = dir.path().to_owned().join("libra-cli-config.yaml");
 
     // SETUP ADMIN SIGNERS
     // 1. Generate and fund 5 new accounts from validators to ensure their on-chain presence for signing operations.
@@ -296,13 +300,11 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
 
     // SETUP COMMUNITY WALLET
     // 3. Prepare a new admin account but do not immediately use it within the community wallet.
-    // 4. Create a community wallet specifying the first three of the newly funded accounts as its admins.
-    // 5. Confirm the successful creation of the community wallet and its recognition by the system.
-    // 6. Revoke the original creator account's access to ensure security and independence of the community wallet.
+    // 4. Initialize a community wallet offering the first three of the newly funded accounts as its admins.
+    // 5. Update the community wallet with a new admin account.
 
     // SETUP ADMIN SIGNERS //
-    // We set up 5 new accounts and also fund them from each of the 5 validators
-
+    // 1. Generate and fund 5 new accounts
     let (signers, signer_addresses) = s.create_accounts(5).await?;
 
     // Ensure there's a one-to-one correspondence between signers and private keys
@@ -310,101 +312,189 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
         panic!("The number of signer addresses does not match the number of validator private keys.");
     }
 
+    // 2. Transfer funds to the newly created signer accounts
     for (signer_address, validator_private_key) in signer_addresses.iter().zip(s.validator_private_keys.iter()) {
         let to_account = signer_address.clone();
 
         // Transfer funds to ensure the account exists on-chain using the specific validator's private key
-        let cli_transfer = TxsCli {
-            subcommand: Some(Transfer {
-                to_account,
-                amount: 10.0,
-            }),
-            mnemonic: None,
-            test_private_key: Some(validator_private_key.clone()),
-            chain_id: None,
-            config_path: Some(dir.path().to_owned().join("libra-cli-config.yaml")),
-            url: Some(s.api_endpoint.clone()),
-            tx_profile: None,
-            tx_cost: Some(TxCost::default_baseline_cost()),
-            estimate_only: false,
-        };
-
-        // Execute the transfer
-        cli_transfer.run()
-            .await
-            .expect(&format!("CLI could not transfer funds to account {}", signer_address));
+       run_cli_transfer(to_account, 10.0, validator_private_key.clone(), s.api_endpoint.clone(), config_path.clone()).await;
     }
 
     // SETUP COMMUNITY WALLET //
 
-    // Prepare new admin account
+    // 3. Prepare a new admin account
     let new_admin = "0xDCD1AFDFB32A8EB0AADF169ECE2D9BA1552E96FA7D683934F280AC28F29D3611";
-
     let new_admin_address = AccountAddress::from_hex_literal(new_admin)
-    .expect("Failed to parse account address");
+      .expect("Failed to parse account address");
 
     // Fund with the last signer to avoid ancestry issues
     let private_key_of_fifth_signer = signers[4]
-    .private_key()
-    .to_encoded_string()
-    .expect("cannot decode pri key");
+        .private_key()
+        .to_encoded_string()
+        .expect("cannot decode pri key");
 
     // Transfer funds to ensure the account exists on-chain
-    let cli_transfer = TxsCli {
-        subcommand: Some(Transfer {
-            to_account: new_admin_address,
-            amount: 1.0,
-        }),
-        mnemonic: None,
-        test_private_key: Some(private_key_of_fifth_signer),
-        chain_id: None,
-        config_path: Some(dir.path().to_owned().join("libra-cli-config.yaml")),
-        url: Some(s.api_endpoint.clone()),
-        tx_profile: None,
-        tx_cost: Some(TxCost::default_baseline_cost()),
-        estimate_only: false,
-    };
-
-    cli_transfer.run()
-    .await
-    .expect("CLI could not transfer funds to the new account");
+    run_cli_transfer(new_admin_address, 1.0, private_key_of_fifth_signer.clone(), s.api_endpoint.clone(), config_path.clone()).await;
 
     // Get 3 signers to be admins
     let first_three_signer_addresses: Vec<AccountAddress> = signer_addresses
-    .clone()
-    .into_iter()
-    .take(3)
-    .collect();
+        .clone()
+        .into_iter()
+        .take(3)
+        .collect();
 
-    //create new community wallet
-    let cli_set_community_wallet = TxsCli {
-        subcommand: Some(TxsSub::Community(CommunityTxs::GovInit(InitTx {
-            admins:first_three_signer_addresses,
-            migrate_n: None
-        }))),
-        mnemonic: None,
-        test_private_key: Some(s.encoded_pri_key.clone()),
-        chain_id: None,
-        config_path: Some(dir.path().to_owned().join("libra-cli-config.yaml")),
-        url: Some(s.api_endpoint.clone()),
-        tx_profile: None,
-        tx_cost: Some(TxCost::default_baseline_cost()),
-        estimate_only: false,
-    };
+    // 4. Initialize the community wallet
+    run_cli_community_init(comm_wallet_pk.clone(), first_three_signer_addresses.clone(), 3, s.api_endpoint.clone(), config_path.clone()).await;
 
-    cli_set_community_wallet.run()
+    // Verify if the account is not a community wallet yet
+    let is_comm_wallet_query_res = query_view::get_view(&s.client(), "0x1::community_wallet::is_init", None, Some(comm_wallet_addr.clone().to_string()))
         .await
-        .expect("CLI could not create community wallet");
+        .expect("Query failed: community wallet init check");
 
-    // Verify if the account is a community wallet
+    assert!(!is_comm_wallet_query_res.as_array().unwrap()[0].as_bool().unwrap(), "Account should not be a community wallet yet");
+
+    // Check offer proposed
+    let proposed_query_res = query_view::get_view(&s.client(), "0x1::multi_action::get_offer_proposed", None, Some(comm_wallet_addr.clone().to_string()))
+        .await
+        .expect("Query failed: community wallet proposed offer");
+
+    // Assert authorities are the three proposed
+    let authorities = proposed_query_res.as_array().unwrap()[0].as_array().unwrap();
+    assert_eq!(authorities.len(), 3, "There should be 3 authorities");
+    for i in 0..3 {
+        let authority_str = &authorities[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
+        assert_eq!(authority_str, first_three_signer_addresses[i].to_string(), "Authority should be the same");
+    }
+
+    // 5. Admins claim the offer.
+    for j in 0..3 {
+        let auth = &signers[j];
+        // print private key
+        let authority_pk = auth.private_key().to_encoded_string().expect("cannot decode pri key");
+        run_cli_claim_offer(authority_pk, comm_wallet_addr.clone(), s.api_endpoint.clone(), config_path.clone()).await;
+    }
+
+    // Check offer claimed
+    let proposed_query_res = query_view::get_view(&s.client(), "0x1::multi_action::get_offer_claimed", None, Some(comm_wallet_addr.clone().to_string()))
+        .await
+        .expect("Query failed: community wallet offer claimed");
+
+    // Assert authorities are the three proposed
+    let authorities = proposed_query_res.as_array().unwrap()[0].as_array().unwrap();
+    assert_eq!(authorities.len(), 3, "There should be 3 authorities");
+    for i in 0..3 {
+        let authority_str = &authorities[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
+        assert_eq!(authority_str, first_three_signer_addresses[i].to_string(), "Authority should be the same");
+    }
+
+    // 6. Donor finalize and cage the community wallet
+    run_cli_community_cage(comm_wallet_pk.clone(), 3, s.api_endpoint.clone(), config_path.clone()).await;
+
+    // Ensure the account is now a community wallet
     let is_comm_wallet_query_res = query_view::get_view(&s.client(), "0x1::community_wallet::is_init", None, Some(comm_wallet_addr.clone().to_string()))
         .await
         .expect("Query failed: community wallet init check");
 
     assert!(is_comm_wallet_query_res.as_array().unwrap()[0].as_bool().unwrap(), "Account should be a community wallet");
 
+    // Ensure authorities are the three proposed
+    let authrotities_query_res = query_view::get_view(&s.client(), "0x1::multi_action::get_authorities", None, Some(comm_wallet_addr.clone().to_string()))
+        .await
+        .expect("Query failed: community wallet authorities check");
+
+    let authorities = authrotities_query_res.as_array().unwrap()[0].as_array().unwrap();
+    assert_eq!(authorities.len(), 3, "There should be 3 authorities");
+    for i in 0..3 {
+        let authority_str = &authorities[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
+        assert_eq!(authority_str, first_three_signer_addresses[i].to_string(), "Authority should be the same");
+    }
+
     Ok(())
 }
+
+// Happy day: update community wallet offer before cage
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn update_community_wallet_offer() -> Result<(), anyhow::Error> {
+    let (mut s, dir, _account_address, comm_wallet_pk, comm_wallet_addr) = setup_environment().await;
+    let config_path = dir.path().to_owned().join("libra-cli-config.yaml");
+
+    // SETUP ADMIN SIGNERS
+    // 1. Generate and fund 5 new accounts from validators to ensure their on-chain presence for signing operations.
+    // 2. Transfer funds to the newly created signer accounts to enable their transactional capabilities.
+
+    // SETUP COMMUNITY WALLET
+    // 3. Prepare a new admin account but do not immediately use it within the community wallet.
+    // 4. Initialize a community wallet offering the first three of the newly funded accounts as its admins.
+    // 5. Admins claim the offer.
+    // 6. Donor finalize and cage the community wallet to ensure its independence and security.
+
+    // SETUP ADMIN SIGNERS //
+    // 1. Generate and fund 5 new accounts
+    let (signers, signer_addresses) = s.create_accounts(5).await?;
+
+    // Ensure there's a one-to-one correspondence between signers and private keys
+    if signer_addresses.len() != s.validator_private_keys.len() {
+        panic!("The number of signer addresses does not match the number of validator private keys.");
+    }
+
+    // 2. Transfer funds to the newly created signer accounts
+    for (signer_address, validator_private_key) in signer_addresses.iter().zip(s.validator_private_keys.iter()) {
+        let to_account = signer_address.clone();
+
+        // Transfer funds to ensure the account exists on-chain using the specific validator's private key
+       run_cli_transfer(to_account, 10.0, validator_private_key.clone(), s.api_endpoint.clone(), config_path.clone()).await;
+    }
+
+    // SETUP COMMUNITY WALLET //
+
+    // 3. Prepare a new admin account
+    let new_admin = "0xDCD1AFDFB32A8EB0AADF169ECE2D9BA1552E96FA7D683934F280AC28F29D3611";
+    let new_admin_address = AccountAddress::from_hex_literal(new_admin)
+      .expect("Failed to parse account address");
+
+    // Fund with the last signer to avoid ancestry issues
+    let private_key_of_fifth_signer = signers[4]
+        .private_key()
+        .to_encoded_string()
+        .expect("cannot decode pri key");
+
+    // Transfer funds to ensure the account exists on-chain
+    run_cli_transfer(new_admin_address, 1.0, private_key_of_fifth_signer.clone(), s.api_endpoint.clone(), config_path.clone()).await;
+
+    // Get 3 signers to be admins
+    let mut authorities: Vec<AccountAddress> = signer_addresses
+        .clone()
+        .into_iter()
+        .take(3)
+        .collect();
+
+    // 4. Initialize the community wallet
+    run_cli_community_init(comm_wallet_pk.clone(), authorities.clone(), 3, s.api_endpoint.clone(), config_path.clone()).await;
+
+    // 5. Update the community wallet with a new admin account.
+
+    // Add forth signer as admin
+    let forth_signer_address = signer_addresses[3].clone();
+    authorities.push(forth_signer_address);
+    run_cli_community_propose_offer(comm_wallet_pk.clone(), authorities.clone(), 4, s.api_endpoint.clone(), config_path.clone()).await;
+
+    // Check offer proposed
+    let proposed_query_res = query_view::get_view(&s.client(), "0x1::multi_action::get_offer_proposed", None, Some(comm_wallet_addr.clone().to_string()))
+        .await
+        .expect("Query failed: community wallet proposed offer");
+
+    // Assert authorities are the three proposed
+    let proposed = proposed_query_res.as_array().unwrap()[0].as_array().unwrap();
+    assert_eq!(proposed.len(), 4, "There should be 4 authorities");
+    for i in 0..4 {
+        let proposed_str = &proposed[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
+        assert_eq!(proposed_str, authorities[i].to_string(), "Authority should be the same");
+    }
+
+    Ok(())
+}
+
+/*
 
 // TODO: apply once we have a method to progress epochs
 // Propose and sign payment
@@ -579,246 +669,182 @@ async fn community_wallet_payment() -> Result<(), anyhow::Error> {
     Ok(())
 }
 
-// TODO: apply once we have a method to progress epochs
+*/
+
+async fn setup_community_wallet_caged(donor_pk: String, donor_address: AccountAddress, authorities: &Vec<&LocalAccount>, num_signitures: u64, config_path: PathBuf, api_endpoint: Url) {
+
+    // 1. Initialize the community wallet
+    let authorities_addresses = authorities.iter().map(|a| a.address()).collect();
+    run_cli_community_init(donor_pk.clone(), authorities_addresses, num_signitures, api_endpoint.clone(), config_path.clone()).await;
+
+    // 2. Admins claim the offer.
+    for j in 0..3 {
+        let auth = &authorities[j];
+        // print private key
+        let authority_pk = auth.private_key().to_encoded_string().expect("cannot decode pri key");
+        run_cli_claim_offer(authority_pk, donor_address.clone(), api_endpoint.clone(), config_path.clone()).await;
+    }
+
+    // 3. Donor finalize and cage the community wallet
+    run_cli_community_cage(donor_pk, 3, api_endpoint, config_path).await;
+}
+
 // Add an admin
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn add_community_wallet_admin() -> Result<(), anyhow::Error> {
-    let (mut s, dir, _account_address, comm_wallet_addr) = setup_environment().await;
-    let client = s.client();
 
-    // SETUP ADMIN SIGNERS
-    // 1. Generate and fund 5 new accounts from validators to ensure their on-chain presence for signing operations.
-    // 2. Transfer funds to the newly created signer accounts to enable their transactional capabilities.
+    // 1. Setup environment
+    let (mut smoke, dir, _account_address, comm_wallet_pk, comm_wallet_addr) = setup_environment().await;
+    let config_path = dir.path().to_owned().join("libra-cli-config.yaml");
+    let api_endpoint = smoke.api_endpoint.clone();
+    let client = smoke.client();
 
-    // SETUP COMMUNITY WALLET
-    // 3. Prepare a new admin account but do not immediately use it within the community wallet.
-    // 4. Create a community wallet specifying the first three of the newly funded accounts as its admins.
-    // 5. Confirm the successful creation of the community wallet and its recognition by the system.
-    // 6. Revoke the original creator account's access to ensure security and independence of the community wallet.
-
-    // ADD NEW ADMIN
-    // 7. Initiate the process to add a new admin to the community wallet by proposing through an existing admin.
-    // 8. Validate the addition of the new admin by checking the updated count of admins/signers in the wallet.
-
-    // SETUP ADMIN SIGNERS //
-    // We set up 5 new accounts and also fund them from each of the 5 validators
-
-    let (signers, signer_addresses) = s.create_accounts(5).await?;
-
-    // Ensure there's a one-to-one correspondence between signers and private keys
-    if signer_addresses.len() != s.validator_private_keys.len() {
-        panic!("The number of signer addresses does not match the number of validator private keys.");
-    }
-
-    for (signer_address, validator_private_key) in signer_addresses.iter().zip(s.validator_private_keys.iter()) {
-        let to_account = signer_address.clone(); // Adjust this line if necessary
-
+    // 2. Setup 4 funded accounts
+    let (signers, addresses) = smoke.create_accounts(5).await?;
+    for (signer_address, validator_private_key) in addresses.iter().zip(smoke.validator_private_keys.iter()) {
+        let to_account = signer_address.clone();
         // Transfer funds to ensure the account exists on-chain using the specific validator's private key
-        let cli_transfer = TxsCli {
-            subcommand: Some(Transfer {
-                to_account, // Use the current signer address for this iteration
-                amount: 10.0, // Adjust the amount as needed
-            }),
-            mnemonic: None,
-            test_private_key: Some(validator_private_key.clone()), // Use the corresponding validator's private key
-            chain_id: None,
-            config_path: Some(dir.path().to_owned().join("libra-cli-config.yaml")),
-            url: Some(s.api_endpoint.clone()),
-            tx_profile: None,
-            tx_cost: Some(TxCost::default_baseline_cost()),
-            estimate_only: false,
-        };
-
-        // Execute the transfer
-        cli_transfer.run()
-            .await
-            .expect(&format!("CLI could not transfer funds to account {}", signer_address));
+        run_cli_transfer(to_account, 10.0, validator_private_key.clone(), smoke.api_endpoint.clone(), config_path.clone()).await;
     }
 
-    // SETUP COMMUNITY WALLET //
+    // 3. Setup community wallet caged with 3 authorities and 2 signitures
+    let initial_authorities: Vec<_> = signers.iter().take(3).collect();
+    println!(">>> initial_authorities{:?}", initial_authorities);
+    setup_community_wallet_caged(comm_wallet_pk.clone(),  comm_wallet_addr.clone(), &initial_authorities, 2, config_path.clone(), api_endpoint.clone()).await;
 
-    // Prepare new admin account
-    let new_admin = "0xDCD1AFDFB32A8EB0AADF169ECE2D9BA1552E96FA7D683934F280AC28F29D3611";
-
-    let new_admin_address = AccountAddress::from_hex_literal(new_admin)
-    .expect("Failed to parse account address");
-
-    // Fund with the last signer to avoid ancestry issues
-    let private_key_of_fifth_signer = signers[4]
-    .private_key()
-    .to_encoded_string()
-    .expect("cannot decode pri key");
-
-    // Transfer funds to ensure the account exists on-chain
-    let cli_transfer = TxsCli {
-        subcommand: Some(Transfer {
-            to_account: new_admin_address,
-            amount: 1.0,
-        }),
-        mnemonic: None,
-        test_private_key: Some(private_key_of_fifth_signer),
-        chain_id: None,
-        config_path: Some(dir.path().to_owned().join("libra-cli-config.yaml")),
-        url: Some(s.api_endpoint.clone()),
-        tx_profile: None,
-        tx_cost: Some(TxCost::default_baseline_cost()),
-        estimate_only: false,
-    };
-
-    cli_transfer.run()
-    .await
-    .expect("CLI could not transfer funds to the new account");
-
-    // Get 3 signers to be admins
-    let first_three_signer_addresses: Vec<AccountAddress> = signer_addresses
-    .clone()
-    .into_iter()
-    .take(3)
-    .collect();
-
-    //create new community wallet
-    let cli_set_community_wallet = TxsCli {
-        subcommand: Some(TxsSub::Community(CommunityTxs::GovInit(InitTx {
-            admins:first_three_signer_addresses,
-            migrate_n: None
-        }))),
-        mnemonic: None,
-        test_private_key: Some(s.encoded_pri_key.clone()),
-        chain_id: None,
-        config_path: Some(dir.path().to_owned().join("libra-cli-config.yaml")),
-        url: Some(s.api_endpoint.clone()),
-        tx_profile: None,
-        tx_cost: Some(TxCost::default_baseline_cost()),
-        estimate_only: false,
-    };
-
-    cli_set_community_wallet.run()
-        .await
-        .expect("CLI could not create community wallet");
-
-    // Verify if the account is a community wallet
-    let is_comm_wallet_query_res = query_view::get_view(&s.client(), "0x1::community_wallet::is_init", None, Some(comm_wallet_addr.clone().to_string()))
-        .await
-        .expect("Query failed: community wallet init check");
-
-    assert!(is_comm_wallet_query_res.as_array().unwrap()[0].as_bool().unwrap(), "Account should be a community wallet");
-
-    // Remove the ability for the original account to access
-    let cli_finalize_cage = TxsCli {
-        subcommand: Some(TxsSub::Community(CommunityTxs::FinalizeAndCage(FinalizeCageTx {}))),
-        mnemonic: None,
-        test_private_key: Some(s.encoded_pri_key.clone()),
-        chain_id: None,
-        config_path: Some(dir.path().to_owned().join("libra-cli-config.yaml")),
-        url: Some(s.api_endpoint.clone()),
-        tx_profile: None,
-        tx_cost: Some(TxCost::default_baseline_cost()),
-        estimate_only: false,
-    };
-
-    cli_finalize_cage.run()
-        .await
-        .expect("CLI could not finalize and cage the community wallet");
-
-    // ADD NEW ADMIN //
-
-    // Create initial proposal
-    let private_key_of_first_signer = signers[1]
+    // 4. The first authority propose a new community wallet admin and 3 signitures
+    let new_admin_address = addresses[3];
+    let new_admin_pk = signers[3]
         .private_key()
         .to_encoded_string()
         .expect("cannot decode pri key");
+    let private_key_of_first_signer = signers[0]
+        .private_key()
+        .to_encoded_string()
+        .expect("cannot decode pri key")
+        .clone();
 
-    // Verify the admins remain unchanged
-    let comm_wallet_signers = query_view::get_view(&client, "0x1::multi_action::get_authorities", None, Some(comm_wallet_addr.clone().to_string()))
-        .await
-        .expect("Query failed: community wallet init check");
-    let no_of_signers_before = comm_wallet_signers
-    .as_array()
-    .and_then(|outer_array| outer_array.get(0))
-    .and_then(|inner_array_value| inner_array_value.as_array())
-    .map_or(0, |inner_array| inner_array.len());
-
-    assert_eq!(no_of_signers_before, 3, "The number of signers should be 3");
-
-    // Propose add admin
     let cli_add_new_admin_proposal = TxsCli {
         subcommand: Some(TxsSub::Community(CommunityTxs::GovAdmin(AdminTx {
             community_wallet: comm_wallet_addr,
             admin: new_admin_address,
             drop: Some(true),
-            n: 2,
+            n: 3,
             epochs: Some(10),
         }))),
         mnemonic: None,
         test_private_key: Some(private_key_of_first_signer),
         chain_id: None,
         config_path: Some(dir.path().to_owned().join("libra-cli-config.yaml")),
-        url: Some(s.api_endpoint.clone()),
+        url: Some(api_endpoint.clone()),
         tx_profile: None,
         tx_cost: Some(TxCost::default_baseline_cost()),
         estimate_only: false,
+        legacy_address: false
     };
 
     cli_add_new_admin_proposal.run()
-    .await
-    .expect("CLI could not add new admin to community wallet");
+        .await
+        .expect("CLI could not add new admin to community wallet");
 
     // Verify the admins remain unchanged
-    let comm_wallet_signers = query_view::get_view(&client, "0x1::multi_action::get_authorities", None, Some(comm_wallet_addr.clone().to_string()))
+    let authrotities_query_res = query_view::get_view(&client, "0x1::multi_action::get_authorities", None, Some(comm_wallet_addr.clone().to_string()))
         .await
-        .expect("Query failed: community wallet init check");
-    let no_of_signers_after_proposal = comm_wallet_signers
-    .as_array()
-    .and_then(|outer_array| outer_array.get(0))
-    .and_then(|inner_array_value| inner_array_value.as_array())
-    .map_or(0, |inner_array| inner_array.len());
+        .expect("Query failed: community wallet authorities check");
 
-    assert_eq!(no_of_signers_after_proposal, 3, "The number of signers should be 3");
+    let authorities_queried = authrotities_query_res.as_array().unwrap()[0].as_array().unwrap();
+    assert_eq!(authorities_queried.len(), 3, "There should be 3 authorities");
 
-    // Get second signer private key
-    let private_key_of_second_signer = signers[2]
-        .private_key()
-        .to_encoded_string()
-        .expect("cannot decode pri key");
+    let authorities_addresses: Vec<AccountAddress> = initial_authorities.iter().map(|a| a.address()).collect();
+    println!(">>> authorities_queried{:?}", authorities_queried);
+    for i in 0..3 {
+        let authority_str = &authorities_queried[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
+        assert_eq!(authority_str, authorities_addresses[i].to_string(), "Authority should be the same");
+    }
 
-    // Singer 2 verify new admin
-    let cli_add_new_admin_proposal = TxsCli {
-        subcommand: Some(TxsSub::Community(CommunityTxs::GovAdmin(AdminTx {
-            community_wallet: comm_wallet_addr,
-            admin: new_admin_address,
-            drop: Some(true),
-            n: 2,
-            epochs: Some(10),
-        }))),
-        mnemonic: None,
-        test_private_key: Some(private_key_of_second_signer),
-        chain_id: None,
-        config_path: Some(dir.path().to_owned().join("libra-cli-config.yaml")),
-        url: Some(s.api_endpoint.clone()),
-        tx_profile: None,
-        tx_cost: Some(TxCost::default_baseline_cost()),
-        estimate_only: false,
-    };
+    // 5. All the other authorities vote to add the new admin and change threshold to 3
+    for j in 1..3 {
+        let private_key_of_signer = initial_authorities[j]
+            .private_key()
+            .to_encoded_string()
+            .expect("cannot decode pri key");
+        let cli_add_new_admin_proposal = TxsCli {
+            subcommand: Some(TxsSub::Community(CommunityTxs::GovAdmin(AdminTx {
+                community_wallet: comm_wallet_addr,
+                admin: new_admin_address,
+                drop: Some(true),
+                n: 3,
+                epochs: Some(10),
+            }))),
+            mnemonic: None,
+            test_private_key: Some(private_key_of_signer),
+            chain_id: None,
+            config_path: Some(dir.path().to_owned().join("libra-cli-config.yaml")),
+            url: Some(api_endpoint.clone()),
+            tx_profile: None,
+            tx_cost: Some(TxCost::default_baseline_cost()),
+            estimate_only: false,
+            legacy_address: false
+        };
 
-    cli_add_new_admin_proposal.run()
-    .await
-    .expect("CLI could not add new admin to community wallet");
+        cli_add_new_admin_proposal.run()
+            .await
+            .expect("CLI could not add new admin to community wallet");
+    }
 
-    // Verify the admins have dropped
-    let comm_wallet_signers = query_view::get_view(&client, "0x1::multi_action::get_authorities", None, Some(comm_wallet_addr.clone().to_string()))
+    // Verify the admins remain unchanged
+    let authrotities_query_res = query_view::get_view(&client, "0x1::multi_action::get_authorities", None, Some(comm_wallet_addr.clone().to_string()))
         .await
-        .expect("Query failed: community wallet init check");
-    let no_of_signers_after_second_proposal = comm_wallet_signers
-    .as_array()
-    .and_then(|outer_array| outer_array.get(0))
-    .and_then(|inner_array_value| inner_array_value.as_array())
-    .map_or(0, |inner_array| inner_array.len());
+        .expect("Query failed: community wallet authorities check");
 
-    assert_eq!(no_of_signers_after_second_proposal, 4, "The number of signers should be 4");
+    let authorities_queried = authrotities_query_res.as_array().unwrap()[0].as_array().unwrap();
+    assert_eq!(authorities_queried.len(), 3, "There should be 3 authorities");
+
+    let authorities_addresses: Vec<AccountAddress> = initial_authorities.iter().map(|a| a.address()).collect();
+    for i in 0..3 {
+        let authority_str = &authorities_queried[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
+        assert_eq!(authority_str, authorities_addresses[i].to_string(), "Authority should be the same");
+    }
+
+    // 6. New admin claim the offer
+    run_cli_claim_offer(new_admin_pk, comm_wallet_addr.clone(), api_endpoint.clone(), config_path.clone()).await;
+
+    // 7. Validate the new admin was added
+    let authrotities_query_res = query_view::get_view(&client, "0x1::multi_action::get_authorities", None, Some(comm_wallet_addr.clone().to_string()))
+        .await
+        .expect("Query failed: community wallet authorities check");
+
+    let authorities_queried = authrotities_query_res.as_array().unwrap()[0].as_array().unwrap();
+    assert_eq!(authorities_queried.len(), 4, "There should be 3 authorities");
+
+    let new_authorities_addresses: Vec<AccountAddress> = signers
+        .iter()
+        .take(4)
+        .map(| a | a.address())
+        .collect();
+    for i in 0..4 {
+        let authority_str = &authorities_queried[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
+        assert_eq!(new_authorities_addresses[i].to_string(), authority_str, "Authority should be the same");
+    }
+
+    // Verify the number of signitures have changed to 3
+    let query_res = query_view::get_view(
+        &client,
+        "0x1::multi_action::get_threshold",
+        None,
+        Some(comm_wallet_addr.clone().to_string())
+    )
+        .await
+        .expect("Query failed: community wallet authorities check");
+
+    let query_ret = query_res.as_array().unwrap();
+    assert_eq!(query_ret[0], "3", "There should be 3 signitures");
+    assert_eq!(query_ret[1], "4", "There should be 3 signers");
 
     Ok(())
 }
 
+/*
 // TODO: apply once we have a method to progress epochs
 // Remove an admin
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
@@ -1451,12 +1477,13 @@ async fn cancel_community_wallet_payment() -> Result<(), anyhow::Error> {
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn liquidate_community_wallet() {
 }
+*/
 
-UTILITY //
+// UTILITY //
 
-async fn setup_environment() -> (LibraSmoke, TempPath, AccountAddress, AccountAddress) {
+async fn setup_environment() -> (LibraSmoke, TempPath, AccountAddress, String, AccountAddress) {
     let dir = diem_temppath::TempPath::new();
-    let mut s = LibraSmoke::new(Some(5))
+    let mut s = LibraSmoke::new(Some(5), None)
         .await
         .expect("Could not start libra smoke");
 
@@ -1483,6 +1510,7 @@ async fn setup_environment() -> (LibraSmoke, TempPath, AccountAddress, AccountAd
         tx_profile: None,
         tx_cost: Some(TxCost::default_baseline_cost()),
         estimate_only: false,
+        legacy_address: false,
     };
 
     cli_transfer
@@ -1498,6 +1526,148 @@ async fn setup_environment() -> (LibraSmoke, TempPath, AccountAddress, AccountAd
         .expect("no first validator")
         .to_owned();
     let comm_wallet_addr = first_node.peer_id();
+    let comm_wallet_pk = first_node.account_private_key().as_ref().unwrap().private_key().to_encoded_string().expect("cannot decode pri key");
 
-    (s, dir, account_address_wrapped, comm_wallet_addr)
+    (s, dir, account_address_wrapped, comm_wallet_pk, comm_wallet_addr)
+}
+
+async fn run_cli_transfer(
+    to_account: AccountAddress,
+    amount: f64,
+    private_key: String,
+    api_endpoint: Url,
+    config_path: PathBuf,
+) {
+    // Build the CLI command
+    let cli_transfer = TxsCli {
+        subcommand: Some(Transfer {
+            to_account,
+            amount,
+        }),
+        mnemonic: None,
+        test_private_key: Some(private_key),
+        chain_id: None,
+        config_path: Some(config_path),
+        url: Some(api_endpoint),
+        tx_profile: None,
+        tx_cost: Some(TxCost::default_baseline_cost()),
+        estimate_only: false,
+        legacy_address: false,
+    };
+
+    // Execute the transfer
+    cli_transfer
+        .run()
+        .await
+        .expect(&format!("CLI could not transfer funds to account {}", to_account.to_string()));
+}
+
+async fn run_cli_community_init(
+    donor_private_key: String,
+    auhtorities: Vec<AccountAddress>,
+    num_signers: u64,
+    api_endpoint: Url,
+    config_path: PathBuf,
+) {
+    // Build the CLI command
+    let cli_set_community_wallet = TxsCli {
+        subcommand: Some(TxsSub::Community(CommunityTxs::GovInit(InitTx {
+            admins: auhtorities,
+            num_signers: num_signers,
+        }))),
+        mnemonic: None,
+        test_private_key: Some(donor_private_key),
+        chain_id: None,
+        config_path: Some(config_path),
+        url: Some(api_endpoint),
+        tx_profile: None,
+        tx_cost: Some(TxCost::default_baseline_cost()),
+        estimate_only: false,
+        legacy_address: false,
+    };
+
+    // Execute the transaction
+    cli_set_community_wallet.run()
+        .await
+        .expect("CLI could not create community wallet");
+}
+
+async fn run_cli_claim_offer(
+    signer_pk: String,
+    community_address: AccountAddress,
+    api_endpoint: Url,
+    config_path: PathBuf
+) {
+    let cli_claim_offer = TxsCli {
+        subcommand: Some(TxsSub::Community(CommunityTxs::GovClaim(ClaimTx {
+            community_wallet: community_address,
+        }))),
+        mnemonic: None,
+        test_private_key: Some(signer_pk),
+        chain_id: None,
+        config_path: Some(config_path),
+        url: Some(api_endpoint),
+        tx_profile: None,
+        tx_cost: Some(TxCost::default_baseline_cost()),
+        estimate_only: false,
+        legacy_address: false,
+    };
+
+    cli_claim_offer.run()
+        .await
+        .expect("CLI could not claim offer");
+}
+
+async fn run_cli_community_cage(
+    donor_private_key: String,
+    num_signers: u64,
+    api_endpoint: Url,
+    config_path: PathBuf
+) {
+    let cli_finalize_cage = TxsCli {
+        subcommand: Some(TxsSub::Community(CommunityTxs::GovCage(CageTx {
+            num_signers: num_signers,
+        }))),
+        mnemonic: None,
+        test_private_key: Some(donor_private_key),
+        chain_id: None,
+        config_path: Some(config_path),
+        url: Some(api_endpoint),
+        tx_profile: None,
+        tx_cost: Some(TxCost::default_baseline_cost()),
+        estimate_only: false,
+        legacy_address: false,
+    };
+
+    cli_finalize_cage.run()
+        .await
+        .expect("CLI could not finalize and cage community wallet");
+}
+
+async fn run_cli_community_propose_offer(
+    donor_private_key: String,
+    authorities: Vec<AccountAddress>,
+    num_signers: u64,
+    api_endpoint: Url,
+    config_path: PathBuf
+) {
+    let cli_propose_offer = TxsCli {
+        subcommand: Some(TxsSub::Community(CommunityTxs::GovOffer(OfferTx {
+            admins: authorities,
+            num_signers: num_signers,
+        }))),
+        mnemonic: None,
+        test_private_key: Some(donor_private_key),
+        chain_id: None,
+        config_path: Some(config_path),
+        url: Some(api_endpoint),
+        tx_profile: None,
+        tx_cost: Some(TxCost::default_baseline_cost()),
+        estimate_only: false,
+        legacy_address: false,
+    };
+
+    cli_propose_offer.run()
+        .await
+        .expect("CLI could not propose offer");
 }

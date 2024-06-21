@@ -57,9 +57,9 @@ impl CommunityTxs {
                 }
             },
             CommunityTxs::GovAdmin(admin) => match admin.run(sender).await {
-                Ok(_) => println!("SUCCESS: community wallet admin added"),
+                Ok(_) => println!("SUCCESS: community wallet admin proposed"),
                 Err(e) => {
-                    println!("ERROR: could not add admin, message: {}", e);
+                    println!("ERROR: could not propose new admin, message: {}", e);
                 }
             },
             CommunityTxs::Propose(propose) => match propose.run(sender).await {
