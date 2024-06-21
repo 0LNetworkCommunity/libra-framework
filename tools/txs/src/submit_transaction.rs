@@ -24,7 +24,7 @@ use url::Url;
 use crate::txs_cli::to_legacy_address;
 use libra_types::{
     exports::{AuthenticationKey, Ed25519PrivateKey},
-    legacy_types::app_cfg::{AppCfg, TxCost},
+    core_types::app_cfg::{AppCfg, TxCost},
     ol_progress::OLProgress,
     type_extensions::{
         cli_config_ext::CliConfigExt,

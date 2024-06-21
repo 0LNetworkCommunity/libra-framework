@@ -36,7 +36,7 @@ use move_core_types::account_address::AccountAddress;
 use tokio::process::Command;
 
 use libra_txs::txs_cli::{TxsCli, TxsSub::Transfer};
-use libra_types::legacy_types::app_cfg::TxCost;
+use libra_types::core_types::app_cfg::TxCost;
 
 use crate::{rescue_tx::RescueTxOpts, session_tools::ValCredentials};
 use diem_api_types::ViewRequest;

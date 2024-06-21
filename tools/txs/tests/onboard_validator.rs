@@ -9,7 +9,7 @@ use libra_txs::{
     },
     txs_cli_vals::ValidatorTxs,
 };
-use libra_types::legacy_types::app_cfg::TxCost;
+use libra_types::core_types::app_cfg::TxCost;
 
 // Scenario, a new user wants to become a validator.
 // 1. the account needs to be created, and funded

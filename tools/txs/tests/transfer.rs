@@ -1,7 +1,7 @@
 use libra_smoke_tests::{configure_validator, helpers::get_libra_balance, libra_smoke::LibraSmoke};
 use libra_txs::submit_transaction::Sender;
 use libra_txs::txs_cli::{to_legacy_address, TxsCli, TxsSub::Transfer};
-use libra_types::legacy_types::app_cfg::TxCost;
+use libra_types::core_types::app_cfg::TxCost;
 use libra_wallet::account_keys;
 
 // Testing that we can send the minimal transaction: a transfer from one existing validator to another.

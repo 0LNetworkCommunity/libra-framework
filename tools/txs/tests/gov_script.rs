@@ -7,7 +7,7 @@ use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Governance},
     txs_cli_governance::GovernanceTxs::{Propose, Resolve, Vote},
 };
-use libra_types::legacy_types::app_cfg::TxCost;
+use libra_types::core_types::app_cfg::TxCost;
 
 /// Testing that we can upgrade the chain framework using txs tools.
 /// Note: We have another upgrade meta test in ./smoke-tests

@@ -10,7 +10,7 @@ use clap::Parser;
 use indoc::indoc;
 use libra_types::{
     exports::{ChainId, NamedChain},
-    legacy_types::app_cfg::{AppCfg, TxCost, TxType},
+    core_types::app_cfg::{AppCfg, TxCost, TxType},
 };
 use libra_wallet::account_keys::{get_keys_from_mnem, get_keys_from_prompt};
 use url::Url;
