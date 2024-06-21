@@ -13,6 +13,9 @@ on:
     branches:
       - "release**"
       - "main**"
+  schedule:
+    - cron:  '30 00 * * *'
+
 env:
   DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
