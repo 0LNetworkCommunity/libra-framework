@@ -24,11 +24,12 @@ use pbkdf2::pbkdf2;
 use serde::{Deserialize, Serialize};
 use std::ops::AddAssign;
 
-use diem_crypto::compat::Sha3_256;
-use diem_crypto::ed25519::{Ed25519PrivateKey, Ed25519PublicKey};
-use diem_crypto::hkdf::Hkdf;
-use diem_types::account_address::AccountAddress;
-use diem_types::transaction::authenticator::AuthenticationKey;
+use diem_crypto::{
+    compat::Sha3_256,
+    ed25519::{Ed25519PrivateKey, Ed25519PublicKey},
+    hkdf::Hkdf,
+};
+use diem_types::{account_address::AccountAddress, transaction::authenticator::AuthenticationKey};
 
 /// Main is a set of raw bytes that are used for child key derivation
 pub struct Main([u8; 32]);

@@ -7,18 +7,16 @@
 //! https://github.com/rust-bitcoin/rust-wallet/blob/master/wallet/src/mnemonic.rs
 
 use anyhow::{bail, Result};
-#[cfg(test)]
-use diem_temppath::TempPath;
 use mirai_annotations::*;
-
 use sha2::{Digest, Sha256};
-
 use std::{
     fs::{self, File},
     io::Write,
     path::Path,
 };
 
+#[cfg(test)]
+use diem_temppath::TempPath;
 #[cfg(test)]
 use rand::rngs::OsRng;
 #[cfg(test)]
