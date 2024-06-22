@@ -10,14 +10,14 @@ use crate::core_types::jail::JailResource;
 use crate::core_types::match_index::MatchIndexResource;
 use crate::core_types::pledge_account::MyPledgesResource;
 use crate::core_types::validator_universe::ValidatorUniverseResource;
-use crate::core_types::vouch::MyVouchesResource;
+use crate::move_resource::vouch::MyVouchesResource;
 use crate::core_types::{
-    ancestry_legacy::LegacyAncestryResource,
     cumulative_deposits::{CumulativeDepositResource, LegacyBalanceResource},
     legacy_currency_info::CurrencyInfoResource,
     receipts::ReceiptsResource,
     wallet::{CommunityWalletsResourceLegacy, SlowWalletListResource, SlowWalletResource},
 };
+use super::ancestry_legacy::LegacyAncestryResource;
 use anyhow::anyhow;
 use diem_types::account_state::AccountState;
 use diem_types::account_view::AccountView;
@@ -27,8 +27,8 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use std::{fs, path::PathBuf};
 
-use super::ol_account::BurnTrackerResource;
-use super::proof_of_fee::ConsensusRewardResource;
+use crate::core_types::ol_account::BurnTrackerResource;
+use crate::core_types::proof_of_fee::ConsensusRewardResource;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 /// Account role
