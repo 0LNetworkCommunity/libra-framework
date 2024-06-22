@@ -8,7 +8,7 @@ use diem_vm_genesis::exec_function;
 use indicatif::ProgressIterator;
 use libra_types::{
     exports::AccountAddress,
-    core_types::legacy_recovery_v6::{AccountRole, LegacyRecoveryV6},
+    legacy_types::legacy_recovery_v6::{AccountRole, LegacyRecoveryV6},
     ol_progress::OLProgress,
 };
 use move_core_types::value::{serialize_values, MoveValue};

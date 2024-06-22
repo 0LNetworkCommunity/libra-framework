@@ -15,7 +15,7 @@ use diem_types::account_view::AccountView;
 use diem_types::transaction::Transaction;
 use indicatif::{ProgressBar, ProgressIterator};
 use libra_types::exports::AccountAddress;
-use libra_types::core_types::legacy_recovery_v6::{self, AccountRole, LegacyRecoveryV6};
+use libra_types::legacy_types::legacy_recovery_v6::{self, AccountRole, LegacyRecoveryV6};
 use libra_types::move_resource::gas_coin::{GasCoinStoreResource, SlowWalletBalance};
 use libra_types::ol_progress::OLProgress;
 use move_core_types::language_storage::CORE_CODE_ADDRESS;

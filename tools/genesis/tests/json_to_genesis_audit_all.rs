@@ -11,7 +11,7 @@ use libra_genesis_tools::vm::libra_genesis_default;
 use libra_genesis_tools::{compare, genesis::make_recovery_genesis_from_vec_legacy_recovery};
 use libra_genesis_tools::{genesis_reader, parse_json};
 use libra_types::exports::ChainId;
-use libra_types::core_types::legacy_recovery_v6::AccountRole;
+use libra_types::legacy_types::legacy_recovery_v6::AccountRole;
 use libra_types::move_resource::gas_coin::GasCoinStoreResource;
 use support::{path_utils::json_path, test_vals};
 

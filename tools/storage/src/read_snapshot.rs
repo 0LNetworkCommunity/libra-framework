@@ -11,7 +11,7 @@ use diem_types::account_address::AccountAddress;
 use diem_types::account_state::AccountState;
 use diem_types::state_store::state_key::{StateKey, StateKeyInner};
 use diem_types::state_store::state_value::StateValue;
-use libra_types::core_types::legacy_recovery_v6;
+use libra_types::legacy_types::legacy_recovery_v6;
 use serde_json::json;
 use std::collections::HashMap;
 use std::{
@@ -21,7 +21,7 @@ use std::{
 use tokio::{fs::OpenOptions, io::AsyncRead};
 
 #[cfg(test)]
-use libra_types::core_types::legacy_recovery_v6::{get_legacy_recovery, AccountRole};
+use libra_types::legacy_types::legacy_recovery_v6::{get_legacy_recovery, AccountRole};
 
 ////// SNAPSHOT FILE IO //////
 /// read snapshot manifest file into object

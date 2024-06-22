@@ -39,7 +39,7 @@ use libra_framework::release;
 use libra_types::exports::ChainId;
 use libra_types::exports::NamedChain;
 use libra_types::core_types::fixtures::TestPersona;
-use libra_types::core_types::legacy_recovery_v6::LegacyRecoveryV6;
+use libra_types::legacy_types::legacy_recovery_v6::LegacyRecoveryV6;
 use libra_types::ol_progress::OLProgress;
 use libra_wallet::account_keys::get_keys_from_mnem;
 use libra_wallet::keys::generate_key_objects_from_legacy;
