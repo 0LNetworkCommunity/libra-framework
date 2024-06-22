@@ -1,7 +1,7 @@
-use crate::core_types::app_cfg::AppCfg;
-use crate::exports::AuthenticationKey;
-use crate::type_extensions::cli_config_ext::CliConfigExt;
-use crate::util::parse_function_id;
+use crate::{
+    core_types::app_cfg::AppCfg, exports::AuthenticationKey,
+    type_extensions::cli_config_ext::CliConfigExt, util::parse_function_id,
+};
 
 use anyhow::{anyhow, Context};
 use async_trait::async_trait;
@@ -27,8 +27,10 @@ use diem_sdk::{
 };
 use serde::de::DeserializeOwned;
 use serde_json::{self, Value};
-use std::time::SystemTime;
-use std::{str::FromStr, time::UNIX_EPOCH};
+use std::{
+    str::FromStr,
+    time::{SystemTime, UNIX_EPOCH},
+};
 use url::Url;
 
 pub const DEFAULT_TIMEOUT_SECS: u64 = 10;
