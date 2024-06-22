@@ -21,7 +21,7 @@ env:
 
 jobs:
   formal:
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       #   # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
       # - name: Setup tmate session

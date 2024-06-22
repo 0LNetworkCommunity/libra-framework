@@ -21,7 +21,7 @@ env:
 jobs:
   build-framework:
     timeout-minutes: 60
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
@@ -45,7 +45,7 @@ jobs:
   types:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: setup env
@@ -64,7 +64,7 @@ jobs:
   wallet:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
@@ -85,7 +85,7 @@ jobs:
   smoke:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
@@ -112,7 +112,7 @@ jobs:
   query:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: setup env
@@ -137,7 +137,7 @@ jobs:
   genesis:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
@@ -164,7 +164,7 @@ jobs:
   txs:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
@@ -190,7 +190,7 @@ jobs:
   rescue:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
