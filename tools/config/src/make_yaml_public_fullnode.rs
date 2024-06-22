@@ -174,7 +174,8 @@ mempool:
 /// download genesis blob
 pub async fn download_genesis(home_dir: Option<PathBuf>) -> anyhow::Result<()> {
     // Base URL for GitHub API requests
-    let base_url = "https://api.github.com/repos/0LNetworkCommunity/epoch-archive-mainnet/contents/upgrades";
+    let base_url =
+        "https://api.github.com/repos/0LNetworkCommunity/epoch-archive-mainnet/contents/upgrades";
     let client = reqwest::Client::new();
     let resp = client
         .get(base_url)
@@ -206,7 +207,8 @@ pub async fn download_genesis(home_dir: Option<PathBuf>) -> anyhow::Result<()> {
 
 pub async fn get_genesis_waypoint(home_dir: Option<PathBuf>) -> anyhow::Result<Waypoint> {
     // Base URL for GitHub API requests
-    let base_url = "https://api.github.com/repos/0LNetworkCommunity/epoch-archive-mainnet/contents/upgrades";
+    let base_url =
+        "https://api.github.com/repos/0LNetworkCommunity/epoch-archive-mainnet/contents/upgrades";
     let client = reqwest::Client::new();
     let resp = client
         .get(base_url)
