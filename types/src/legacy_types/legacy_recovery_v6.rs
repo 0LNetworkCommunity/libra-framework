@@ -2,22 +2,24 @@
 
 use crate::exports::AuthenticationKey;
 
-use crate::core_types::burn::{BurnCounterResource, UserBurnPreferenceResource};
-use crate::core_types::donor_voice::RegistryResource;
-use crate::core_types::donor_voice_txs::TxScheduleResource;
-use crate::core_types::fee_maker::{EpochFeeMakerRegistryResource, FeeMakerResource};
-use crate::core_types::jail::JailResource;
-use crate::core_types::match_index::MatchIndexResource;
-use crate::core_types::pledge_account::MyPledgesResource;
-use crate::core_types::validator_universe::ValidatorUniverseResource;
-use crate::move_resource::vouch::MyVouchesResource;
-use crate::core_types::{
-    cumulative_deposits::{CumulativeDepositResource, LegacyBalanceResource},
-    legacy_currency_info::CurrencyInfoResource,
-    receipts::ReceiptsResource,
-    wallet::{CommunityWalletsResourceLegacy, SlowWalletListResource, SlowWalletResource},
-};
 use super::ancestry_legacy::LegacyAncestryResource;
+use crate::core_types::legacy_currency_info::CurrencyInfoResource;
+use crate::legacy_types::wallet::{
+    CommunityWalletsResourceLegacy, SlowWalletListResource, SlowWalletResource,
+};
+use crate::move_resource::burn::{BurnCounterResource, UserBurnPreferenceResource};
+use crate::move_resource::donor_voice::RegistryResource;
+use crate::move_resource::donor_voice_txs::TxScheduleResource;
+use crate::move_resource::fee_maker::{EpochFeeMakerRegistryResource, FeeMakerResource};
+use crate::move_resource::jail::JailResource;
+use crate::move_resource::match_index::MatchIndexResource;
+use crate::move_resource::pledge_account::MyPledgesResource;
+use crate::move_resource::validator_universe::ValidatorUniverseResource;
+use crate::move_resource::vouch::MyVouchesResource;
+use crate::move_resource::{
+    cumulative_deposits::{CumulativeDepositResource, LegacyBalanceResource},
+    receipts::ReceiptsResource,
+};
 use anyhow::anyhow;
 use diem_types::account_state::AccountState;
 use diem_types::account_view::AccountView;
@@ -27,8 +29,8 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use std::{fs, path::PathBuf};
 
-use crate::core_types::ol_account::BurnTrackerResource;
-use crate::core_types::proof_of_fee::ConsensusRewardResource;
+use crate::move_resource::ol_account::BurnTrackerResource;
+use crate::move_resource::proof_of_fee::ConsensusRewardResource;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 /// Account role
