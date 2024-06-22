@@ -13,11 +13,11 @@ on:
       - "release**"
       - "main**"
 env:
-  DOTNET_ROOT: "/home/github-runner/.dotnet"
-  Z3_EXE: "/home/github-runner/bin/z3"
-  CVC5_EXE: "/home/github-runner/bin/cvc5"
-  BOOGIE_EXE: "/home/github-runner/.dotnet/tools/boogie"
-  SOLC_EXE: "/home/github-runner/bin/solc"
+  DOTNET_ROOT: "~/.dotnet"
+  Z3_EXE: "~/bin/z3"
+  CVC5_EXE: "~/bin/cvc5"
+  BOOGIE_EXE: "~/.dotnet/tools/boogie"
+  SOLC_EXE: "~/bin/solc"
 
 jobs:
   formal:
