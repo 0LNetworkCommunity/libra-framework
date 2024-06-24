@@ -1021,8 +1021,7 @@ module ol_framework::multi_action {
 
 
     // TODO: remove this after offer migration is completed
-    #[test_only]
-    public(friend) fun init_gov_deprecated(sig: &signer) {
+    public(friend) entry fun init_gov_deprecated(sig: &signer) {
         let multisig_address = signer::address_of(sig);
 
         if (!exists<Governance>(multisig_address)) {
