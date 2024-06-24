@@ -154,6 +154,7 @@ pub enum EntryFunctionCall {
         amount: u64,
     },
 
+    /// TODO: Allow to propose change only on the signature threshold
     /// Add or remove a signer to/from the multisig, and check if they may be related in the ancestry tree
     CommunityWalletInitChangeSignerCommunityMultisig {
         multisig_address: AccountAddress,
@@ -286,6 +287,8 @@ pub enum EntryFunctionCall {
     MultiActionClaimOffer {
         multisig_address: AccountAddress,
     },
+
+    MultiActionInitGovDeprecated {},
 
     MultiActionMigrationMigrateOffer {
         multisig_address: AccountAddress,
@@ -704,6 +707,7 @@ impl EntryFunctionCall {
             MultiActionClaimOffer { multisig_address } => {
                 multi_action_claim_offer(multisig_address)
             }
+            MultiActionInitGovDeprecated {} => multi_action_init_gov_deprecated(),
             MultiActionMigrationMigrateOffer { multisig_address } => {
                 multi_action_migration_migrate_offer(multisig_address)
             }
@@ -1158,6 +1162,7 @@ pub fn coin_transfer(coin_type: TypeTag, to: AccountAddress, amount: u64) -> Tra
     ))
 }
 
+/// TODO: Allow to propose change only on the signature threshold
 /// Add or remove a signer to/from the multisig, and check if they may be related in the ancestry tree
 pub fn community_wallet_init_change_signer_community_multisig(
     multisig_address: AccountAddress,
@@ -1606,6 +1611,21 @@ pub fn multi_action_claim_offer(multisig_address: AccountAddress) -> Transaction
         ident_str!("claim_offer").to_owned(),
         vec![],
         vec![bcs::to_bytes(&multisig_address).unwrap()],
+    ))
+}
+
+pub fn multi_action_init_gov_deprecated() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("multi_action").to_owned(),
+        ),
+        ident_str!("init_gov_deprecated").to_owned(),
+        vec![],
+        vec![],
     ))
 }
 
@@ -2777,6 +2797,16 @@ mod decoder {
         }
     }
 
+    pub fn multi_action_init_gov_deprecated(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::MultiActionInitGovDeprecated {})
+        } else {
+            None
+        }
+    }
+
     pub fn multi_action_migration_migrate_offer(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -3349,6 +3379,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "multi_action_claim_offer".to_string(),
             Box::new(decoder::multi_action_claim_offer),
+        );
+        map.insert(
+            "multi_action_init_gov_deprecated".to_string(),
+            Box::new(decoder::multi_action_init_gov_deprecated),
         );
         map.insert(
             "multi_action_migration_migrate_offer".to_string(),
