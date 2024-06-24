@@ -1,9 +1,10 @@
 # Libra Move Dev Quick Start
+
 ## TL;DR
 
-
 ### If you are running Move tests:
-* You must install `libra` cli tool to your PATH.
+
+- You must install `libra` cli tool to your PATH.
 
 ```
 # in this repo
@@ -24,8 +25,9 @@ libra move framework prove
 ```
 
 ### If you are running e2e smoke tests:
-* You need our fork of `diem-node` before working on `libra-framework`
-* compile `diem-node` to `$HOME/.cargo/bin`
+
+- You need our fork of `diem-node` before working on `libra-framework`
+- compile `diem-node` to `$HOME/.cargo/bin`
 
 ```
 git clone https://github.com/0LNetworkCommunity/diem -b release --single-branch
@@ -37,12 +39,14 @@ cargo build --profile cli -p diem-node --target-dir ~/.cargo/bin
 # make it executable
 chmod +x ~/.cargo/bin/diem-node
 ```
-* export these env vars in your dev env, `~/.bashrc` or `~/.zshrc`
+
+- export these env vars in your dev env, `~/.bashrc` or `~/.zshrc`
 
 ```
 export RUST_MIN_STACK=104857600
 export DIEM_FORGE_NODE_BIN_PATH="$HOME/.cargo/bin/diem-node"
 ```
+
 ## Set up environment
 
 You should have two repos that you are working with. This one `libra-framework`, as well as `diem`. We'll need to build some executables from diem and install them on your dev machine.
@@ -50,13 +54,17 @@ You should have two repos that you are working with. This one `libra-framework`,
 ### Get the DIEM dependencies
 
 You need our fork of diem before working on `libra-framework`
+
 ```
 git clone https://github.com/0LNetworkCommunity/diem -b release --single-branch
 ```
+
 ### check env
+
 This assumes that you have a `~/.cargo/bin` which is added to your environment's $PATH.
 
 ### build executables
+
 You want to build the `diem-node` (for smoke tests only).
 
 There are two environment variables that are needed to use the correct Coin for
@@ -84,18 +92,18 @@ Just check those executables appear in your path.
 `which diem-node`
 
 Now you can run commands as below.
+
 # Running Move unit tests
+
 Change into a Move project dir (i.e., the directory with a Move.toml).
 
 `diem move test`
-
 
 optionally with filters:
 
 `diem move test -f`
 
 ## Build a libra framework release for smoke tests (head.mrb)
-
 
 ```
 cd ./framework
@@ -119,5 +127,23 @@ cd ./smoke-tests
 export RUST_MIN_STACK=104857600
 export DIEM_FORGE_NODE_BIN_PATH="$HOME/.cargo/bin/diem-node"
 cargo test
+```
+
+## Troubleshooting
+
+### 1. Building diem-node
+
+#### Issue
+
+If you encounter the following error:
+`error[E0599]: no method named disable_lifo_slot found for mutable reference &mut tokio::runtime::Builder in the current scope`
+
+#### Solution
+
+You can resolve this issue by building with the following flag:
 
 ```
+RUSTFLAGS="--cfg tokio_unstable" cargo build --profile cli -p diem-node --target-dir ~/.cargo/bin
+```
+
+This flag enables the unstable features required by the tokio runtime.
