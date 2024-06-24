@@ -27,10 +27,6 @@ pub enum CommunityTxs {
     Batch(BatchTx),
     /// Donors to Donor Voice addresses can vote to reject transactions
     Veto(VetoTx),
-    /// Migrate legacy account to initialize offer structure
-    Migration(MigrateOfferTx), // TODO remove after migration complete
-    /// Initilize legacy multi-sig account governance
-    GovInitDeprectated, // TODO remove after migration complete
 }
 
 impl CommunityTxs {
@@ -87,31 +83,8 @@ impl CommunityTxs {
                     println!("ERROR: could not add admin, message: {}", e);
                 }
             },
-            CommunityTxs::Migration(migration) => match migration.run(sender).await {
-                Ok(_) => {}
-                Err(e) => {
-                    println!("ERROR: could not migrate, message: {}", e);
-                }
-            },
-            // for tests only - TODO Remove when migration is finished
-            CommunityTxs::GovInitDeprectated => match self.run_init_deprecated(sender).await {
-                Ok(_) => println!("SUCCESS: community wallet initialized"),
-                Err(e) => {
-                    println!(
-                        "ERROR: could not initialize Community Wallet, message: {}",
-                        e
-                    );
-                }
-            },
         }
 
-        Ok(())
-    }
-
-    // for tests only - TODO Remove when migration is finished
-    async fn run_init_deprecated(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload = libra_stdlib::multi_action_init_gov_deprecated();
-        sender.sign_submit_wait(payload).await?;
         Ok(())
     }
 }
@@ -492,26 +465,6 @@ impl VetoTx {
         let payload =
             libra_stdlib::donor_voice_txs_propose_veto_tx(self.community_wallet, self.proposal_id);
         sender.sign_submit_wait(payload).await?;
-        Ok(())
-    }
-}
-
-
-// TODO remove after migration is completed
-#[derive(clap::Args)]
-pub struct MigrateOfferTx {
-    #[clap(short, long)]
-    /// The Community Wallet to propose the offer
-    pub community_wallet: AccountAddress,
-}
-
-impl MigrateOfferTx {
-    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload = libra_stdlib::multi_action_migration_migrate_offer(
-            self.community_wallet,
-        );
-        sender.sign_submit_wait(payload).await?;
-        println!("You have migrated the account to have the Offer structure. You can proceed with the authority offer now.");
         Ok(())
     }
 }

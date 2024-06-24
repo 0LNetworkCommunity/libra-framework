@@ -56,7 +56,6 @@ module diem_framework::multisig_account {
     // use diem_std::debug::print;
 
     friend ol_framework::multi_action;
-    friend ol_framework::multi_action_migration;
 
     /// The salt used to create a resource account during multisig account creation.
     /// This is used to avoid conflicts with other modules that also create resource accounts with the same owner

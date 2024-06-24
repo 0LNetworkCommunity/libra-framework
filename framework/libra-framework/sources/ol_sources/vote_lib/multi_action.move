@@ -42,12 +42,6 @@ module ol_framework::multi_action {
     friend ol_framework::donor_voice_txs;
     friend ol_framework::safe;
 
-    // TODO: Remove after migration
-    friend ol_framework::multi_action_migration;
-
-    #[test_only]
-    friend ol_framework::test_multi_action_migration; // TODO: remove after offer migration
-
     #[test_only]
     friend ol_framework::test_multi_action;
 
@@ -1017,43 +1011,5 @@ module ol_framework::multi_action {
         let b = ballot::get_ballot_by_id(&action.vote, &id);
         let prop = ballot::get_type_struct(b);
         prop.expiration_epoch
-    }
-
-
-    // TODO: remove this after offer migration is completed
-    public(friend) entry fun init_gov_deprecated(sig: &signer) {
-        let multisig_address = signer::address_of(sig);
-
-        if (!exists<Governance>(multisig_address)) {
-            move_to(sig, Governance {
-                cfg_duration_epochs: DEFAULT_EPOCHS_EXPIRE,
-                cfg_default_n_sigs: 0, // deprecate
-                signers: vector::empty(),
-                withdraw_capability: option::none(),
-                guid_capability: account::create_guid_capability(sig),
-            });
-        };
-
-        if (!exists<Action<PropGovSigners>>(multisig_address)) {
-            move_to(sig, Action<PropGovSigners> {
-                can_withdraw: false,
-                vote: ballot::new_tracker<Proposal<PropGovSigners>>(),
-            });
-        };
-    }
-
-    // TODO: remove this function after offer migration is completed
-    #[test_only]
-    public entry fun finalize_and_cage_deprecated(sig: &signer, initial_authorities: vector<address>, num_signers: u64) {
-        let addr = signer::address_of(sig);
-        assert!(exists<Governance>(addr),
-        error::invalid_argument(EGOV_NOT_INITIALIZED));
-        assert!(exists<Action<PropGovSigners>>(addr),
-        error::invalid_argument(EGOV_NOT_INITIALIZED));
-        // not yet initialized
-        assert!(!multisig_account::is_multisig(addr),
-        error::invalid_argument(EGOV_NOT_INITIALIZED));
-
-        multisig_account::migrate_with_owners(sig, initial_authorities, num_signers, vector::empty(), vector::empty());
     }
 }

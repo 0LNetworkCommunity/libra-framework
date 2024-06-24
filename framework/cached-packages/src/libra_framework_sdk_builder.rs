@@ -156,6 +156,7 @@ pub enum EntryFunctionCall {
         amount: u64,
     },
 
+    /// TODO: Allow to propose change only on the signature threshold
     /// Add or remove a signer to/from the multisig, and check if they may be related in the ancestry tree
     CommunityWalletInitChangeSignerCommunityMultisig {
         multisig_address: AccountAddress,
@@ -286,10 +287,6 @@ pub enum EntryFunctionCall {
     },
 
     MultiActionClaimOffer {
-        multisig_address: AccountAddress,
-    },
-
-    MultiActionMigrationMigrateOffer {
         multisig_address: AccountAddress,
     },
 
@@ -705,9 +702,6 @@ impl EntryFunctionCall {
             LibraCoinMintToImpl { dst_addr, amount } => libra_coin_mint_to_impl(dst_addr, amount),
             MultiActionClaimOffer { multisig_address } => {
                 multi_action_claim_offer(multisig_address)
-            }
-            MultiActionMigrationMigrateOffer { multisig_address } => {
-                multi_action_migration_migrate_offer(multisig_address)
             }
             MultisigAccountAddOwner { new_owner } => multisig_account_add_owner(new_owner),
             MultisigAccountAddOwners { new_owners } => multisig_account_add_owners(new_owners),
@@ -1160,6 +1154,7 @@ pub fn coin_transfer(coin_type: TypeTag, to: AccountAddress, amount: u64) -> Tra
     ))
 }
 
+/// TODO: Allow to propose change only on the signature threshold
 /// Add or remove a signer to/from the multisig, and check if they may be related in the ancestry tree
 pub fn community_wallet_init_change_signer_community_multisig(
     multisig_address: AccountAddress,
@@ -1606,23 +1601,6 @@ pub fn multi_action_claim_offer(multisig_address: AccountAddress) -> Transaction
             ident_str!("multi_action").to_owned(),
         ),
         ident_str!("claim_offer").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&multisig_address).unwrap()],
-    ))
-}
-
-pub fn multi_action_migration_migrate_offer(
-    multisig_address: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("multi_action_migration").to_owned(),
-        ),
-        ident_str!("migrate_offer").to_owned(),
         vec![],
         vec![bcs::to_bytes(&multisig_address).unwrap()],
     ))
@@ -2779,18 +2757,6 @@ mod decoder {
         }
     }
 
-    pub fn multi_action_migration_migrate_offer(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::MultiActionMigrationMigrateOffer {
-                multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
     pub fn multisig_account_add_owner(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountAddOwner {
@@ -3351,10 +3317,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "multi_action_claim_offer".to_string(),
             Box::new(decoder::multi_action_claim_offer),
-        );
-        map.insert(
-            "multi_action_migration_migrate_offer".to_string(),
-            Box::new(decoder::multi_action_migration_migrate_offer),
         );
         map.insert(
             "multisig_account_add_owner".to_string(),
