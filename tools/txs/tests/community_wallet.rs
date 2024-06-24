@@ -403,7 +403,7 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
         let authority_str = &authorities[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
         assert_eq!(
             authority_str,
-            first_three_signer_addresses[i].to_string(),
+            first_three_signer_addresses[i].to_string().trim_start_matches('0'),
             "Authority should be the same"
         );
     }
@@ -444,7 +444,7 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
         let authority_str = &authorities[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
         assert_eq!(
             authority_str,
-            first_three_signer_addresses[i].to_string(),
+            first_three_signer_addresses[i].to_string().trim_start_matches('0'),
             "Authority should be the same"
         );
     }
@@ -493,7 +493,7 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
         let authority_str = &authorities[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
         assert_eq!(
             authority_str,
-            first_three_signer_addresses[i].to_string(),
+            first_three_signer_addresses[i].to_string().trim_start_matches('0'),
             "Authority should be the same"
         );
     }
@@ -616,7 +616,7 @@ async fn update_community_wallet_offer() -> Result<(), anyhow::Error> {
         let proposed_str = &proposed[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
         assert_eq!(
             proposed_str,
-            authorities[i].to_string(),
+            authorities[i].to_string().trim_start_matches('0'),
             "Authority should be the same"
         );
     }
@@ -901,7 +901,7 @@ async fn add_community_wallet_admin() -> Result<(), anyhow::Error> {
         let authority_str = &authorities_queried[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
         assert_eq!(
             authority_str,
-            authorities_addresses[i].to_string(),
+            authorities_addresses[i].to_string().trim_start_matches('0'),
             "Authority should be the same"
         );
     }
@@ -962,7 +962,7 @@ async fn add_community_wallet_admin() -> Result<(), anyhow::Error> {
         let authority_str = &authorities_queried[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
         assert_eq!(
             authority_str,
-            authorities_addresses[i].to_string(),
+            authorities_addresses[i].to_string().trim_start_matches('0'),
             "Authority should be the same"
         );
     }
@@ -1000,7 +1000,7 @@ async fn add_community_wallet_admin() -> Result<(), anyhow::Error> {
     for i in 0..4 {
         let authority_str = &authorities_queried[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
         assert_eq!(
-            new_authorities_addresses[i].to_string(),
+            new_authorities_addresses[i].to_string().trim_start_matches('0'),
             authority_str,
             "Authority should be the same"
         );
@@ -1094,7 +1094,7 @@ async fn remove_community_wallet_admin() -> Result<(), anyhow::Error> {
             community_wallet: comm_wallet_addr,
             admin: admin_to_remove,
             drop: Some(false),
-            n: 3,
+            n: 2,
             epochs: Some(10),
         }))),
         mnemonic: None,
@@ -1135,10 +1135,11 @@ async fn remove_community_wallet_admin() -> Result<(), anyhow::Error> {
     let authorities_addresses: Vec<AccountAddress> =
         initial_authorities.iter().map(|a| a.address()).collect();
     for i in 0..4 {
+        println!("{:?}", authorities_queried[i]);
         let authority_str = &authorities_queried[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
         assert_eq!(
             authority_str,
-            authorities_addresses[i].to_string(),
+            authorities_addresses[i].to_string().trim_start_matches('0'),
             "Authority should be the same"
         );
     }
@@ -1154,7 +1155,7 @@ async fn remove_community_wallet_admin() -> Result<(), anyhow::Error> {
                 community_wallet: comm_wallet_addr,
                 admin: admin_to_remove,
                 drop: Some(false),
-                n: 3,
+                n: 2,
                 epochs: Some(10),
             }))),
             mnemonic: None,
@@ -1198,7 +1199,7 @@ async fn remove_community_wallet_admin() -> Result<(), anyhow::Error> {
     for i in 0..3 {
         let authority_str = &authorities_queried[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
         assert_eq!(
-            new_authorities_addresses[i].to_string(),
+            new_authorities_addresses[i].to_string().trim_start_matches('0'),
             authority_str,
             "Authority should be the same"
         );
@@ -1215,7 +1216,7 @@ async fn remove_community_wallet_admin() -> Result<(), anyhow::Error> {
     .expect("Query failed: community wallet authorities check");
 
     let query_ret = query_res.as_array().unwrap();
-    assert_eq!(query_ret[0], "3", "There should be 3 signitures");
+    assert_eq!(query_ret[0], "2", "There should be 2 signitures");
     assert_eq!(query_ret[1], "3", "There should be 3 signers");
 
     Ok(())

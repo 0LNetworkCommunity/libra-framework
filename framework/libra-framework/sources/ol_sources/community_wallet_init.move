@@ -215,7 +215,7 @@ module ol_framework::community_wallet_init {
 
       // Verify the signers will not fall below the threshold the signers will fall below threshold
       if (!is_add_operation) {
-          assert!((vector::length(&current_signers) - 1) > MINIMUM_AUTH, error::invalid_argument(ETOO_FEW_AUTH));
+          assert!((vector::length(&current_signers) - 1) >= MINIMUM_AUTH, error::invalid_argument(ETOO_FEW_AUTH));
       };
 
       multi_action::propose_governance(

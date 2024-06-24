@@ -698,8 +698,6 @@ module ol_framework::multi_action {
         false
     }
 
-
-
     fun find_expired<ProposalData: store + drop>(a: & Action<ProposalData>): vector<guid::ID>{
         let epoch = epoch_helper::get_current_epoch();
         let b_vec = ballot::get_list_ballots_by_enum(&a.vote, ballot::get_pending_enum());
