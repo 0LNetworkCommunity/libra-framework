@@ -72,64 +72,34 @@
         ol_account::transfer(alice, @0x1000b, 100);
     }
 
-    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
-    #[expected_failure(abort_code = 65545, location = 0x1::community_wallet_init)]
-    fun cw_init_below_minimum_sigs(root: &signer, alice: &signer, bob: &signer, carol: &signer) {
-        // A community wallet by default must be 2/3 multisig.
-        // This test verifies that the wallet can not be initialized with less signers
-        mock::genesis_n_vals(root, 4);
-        mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
-
-        let signers = vector::empty<address>();
-
-        // helpers in line to help
-        vector::push_back(&mut signers, signer::address_of(bob));
-        vector::push_back(&mut signers, signer::address_of(carol));
-
-        community_wallet_init::init_community(alice, signers, 2);
-
-    }
-
+    // Test payment proposal and processing
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d, eve = @0x1000e)]
-    #[expected_failure(abort_code = 65541, location = 0x1::community_wallet_init)]
-    fun cw_decrease_below_m_authorized_sigs(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer, eve: &signer ) {
-        // A community wallet by default must be 2/3 multisig.
-        // This test verifies that the wallet can not be initialized with less signers
+    fun cw_payment_proposal(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer, eve: &signer ) {
         mock::genesis_n_vals(root, 5);
         mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
 
+        // initilize accounts
         let (_, carol_balance_pre) = ol_account::balance(@0x1000c);
         assert!(carol_balance_pre == 1000, 7357001);
-
         let bob_addr = signer::address_of(bob);
         let dave_addr = signer::address_of(dave);
         let eve_addr = signer::address_of(eve);
-
         ancestry::test_fork_migrate(root, bob, vector::singleton(bob_addr));
         ancestry::test_fork_migrate(root, dave, vector::singleton(dave_addr));
         ancestry::test_fork_migrate(root, eve, vector::singleton(eve_addr));
 
-        let signers = vector::empty<address>();
-
-        // helpers in line to help
-        vector::push_back(&mut signers, signer::address_of(bob));
-        vector::push_back(&mut signers, signer::address_of(dave));
-        vector::push_back(&mut signers, signer::address_of(eve));
-        community_wallet_init::init_community(alice, signers, 2);
-
-        // signers claim the offer
+        // setup community wallet
+        community_wallet_init::init_community(alice, vector[bob_addr,dave_addr,eve_addr], 2);
         multi_action::claim_offer(bob, signer::address_of(alice));
         multi_action::claim_offer(dave, signer::address_of(alice));
         multi_action::claim_offer(eve, signer::address_of(alice));
-
-        // fix it by calling multi auth:
         community_wallet_init::finalize_and_cage(alice, 2);
 
         let alice_comm_wallet_addr = signer::address_of(alice);
         let carols_addr = signer::address_of(carol);
 
-
         // VERIFY PAYMENTS OPERATE AS EXPECTED
+        // bob propose payment
         let uid = donor_voice_txs::test_propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol");
         let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
         assert!(found, 7357004);
@@ -140,6 +110,7 @@
         // it is not yet scheduled, it's still only a proposal by an admin
         assert!(!donor_voice_txs::is_scheduled(alice_comm_wallet_addr, &uid), 7357008);
 
+        // dave votes the payment and it is approved.
         let uid = donor_voice_txs::test_propose_payment(dave, alice_comm_wallet_addr, @0x1000c, 100, b"thanks carol");
         let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
         assert!(found, 7357004);
@@ -158,98 +129,15 @@
         // process epoch 3 accounts
         donor_voice_txs::process_donor_voice_accounts(root, 3);
 
+        // verify the payment was processed
         let (_, carol_balance) = ol_account::balance(@0x1000c);
         assert!(carol_balance > carol_balance_pre, 7357005);
         assert!(carol_balance == 1100, 7357006);
-
-        // remove a signer and decrease to 2 and verify the community wallet is bricked
-        // signers must be removed by n signers
-        community_wallet_init::change_signer_community_multisig(bob, alice_comm_wallet_addr, dave_addr, false, 2, 10); // remove by setting as false
-        community_wallet_init::change_signer_community_multisig(eve, alice_comm_wallet_addr, dave_addr, false, 2, 10);
-
-    }
-
-    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d, eve = @0x1000e)]
-    #[expected_failure(abort_code = 65545, location = 0x1::community_wallet_init)]
-    fun cw_decrease_below_minimum_n_sigs(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer, eve: &signer ) {
-        // A community wallet by default must be 2/3 multisig.
-        // This test verifies that the wallet can not be initialized with less signers
-        mock::genesis_n_vals(root, 5);
-        mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
-
-        let (_, carol_balance_pre) = ol_account::balance(@0x1000c);
-        assert!(carol_balance_pre == 1000, 7357001);
-
-        let bob_addr = signer::address_of(bob);
-        let dave_addr = signer::address_of(dave);
-        let eve_addr = signer::address_of(eve);
-
-        ancestry::test_fork_migrate(root, bob, vector::singleton(bob_addr));
-        ancestry::test_fork_migrate(root, dave, vector::singleton(dave_addr));
-        ancestry::test_fork_migrate(root, eve, vector::singleton(eve_addr));
-
-        let signers = vector::empty<address>();
-
-        // helpers in line to help
-        vector::push_back(&mut signers, signer::address_of(bob));
-        vector::push_back(&mut signers, signer::address_of(dave));
-        vector::push_back(&mut signers, signer::address_of(eve));
-        community_wallet_init::init_community(alice, signers, 2);
-
-        // signers claim the offer
-        multi_action::claim_offer(bob, signer::address_of(alice));
-        multi_action::claim_offer(dave, signer::address_of(alice));
-        multi_action::claim_offer(eve, signer::address_of(alice));
-
-        // fix it by calling multi auth:
-        community_wallet_init::finalize_and_cage(alice, 2);
-
-        let alice_comm_wallet_addr = signer::address_of(alice);
-        let carols_addr = signer::address_of(carol);
-
-
-        // VERIFY PAYMENTS OPERATE AS EXPECTED
-        let uid = donor_voice_txs::test_propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol");
-        let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
-        assert!(found, 7357004);
-        assert!(idx == 0, 7357005);
-        assert!(status_enum == 1, 7357006);
-        assert!(!completed, 7357007);
-
-        // it is not yet scheduled, it's still only a proposal by an admin
-        assert!(!donor_voice_txs::is_scheduled(alice_comm_wallet_addr, &uid), 7357008);
-
-        let uid = donor_voice_txs::test_propose_payment(dave, alice_comm_wallet_addr, @0x1000c, 100, b"thanks carol");
-        let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
-        assert!(found, 7357004);
-        assert!(idx == 0, 7357005);
-        assert!(status_enum == ballot::get_approved_enum(), 7357006);
-        assert!(completed, 7357007); // now completed
-
-        // confirm it is scheduled
-        assert!(donor_voice_txs::is_scheduled(alice_comm_wallet_addr, &uid), 7357008);
-
-        // PROCESS THE PAYMENT
-        // the default timed payment is 3 epochs, we are in epoch 1
-        let list = donor_voice_txs::find_by_deadline(alice_comm_wallet_addr, 3);
-        assert!(vector::contains(&list, &uid), 7357009);
-
-        // process epoch 3 accounts
-        donor_voice_txs::process_donor_voice_accounts(root, 3);
-
-        let (_, carol_balance) = ol_account::balance(@0x1000c);
-        assert!(carol_balance > carol_balance_pre, 7357005);
-        assert!(carol_balance == 1100, 7357006);
-
-        // remove a signer and decrease to 2 and verify the community wallet is bricked
-        // signers must be removed by n signers
-        community_wallet_init::change_signer_community_multisig(bob, alice_comm_wallet_addr, dave_addr, false, 1, 10); // remove by setting as false
-
     }
 
     // Try to initialize with less than the required signitures
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
-    #[expected_failure(abort_code = 0x10005, location = 0x1::community_wallet_init)]
+    #[expected_failure(abort_code = 0x1000B, location = 0x1::community_wallet_init)]
     fun cw_init_with_less_signitures_than_min(root: &signer, alice: &signer) {
         // A community wallet by default must be 2/3 multisig.
         mock::genesis_n_vals(root, 4);
@@ -264,7 +152,7 @@
 
     // Try to initialize with less than the required authorities
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
-    #[expected_failure(abort_code = 0x10009, location = 0x1::community_wallet_init)]
+    #[expected_failure(abort_code = 0x1000A, location = 0x1::community_wallet_init)]
     fun cw_init_with_less_authorities_than_min(root: &signer, alice: &signer, bob: &signer, carol: &signer) {
         // A community wallet by default must be 2/3 multisig.
         mock::genesis_n_vals(root, 4);
@@ -334,7 +222,7 @@
 
         vector::pop_back(&mut authorities); // remove dave
         vector::push_back(&mut authorities, signer::address_of(eve)); // add eve
-        community_wallet_init::propose_offer(alice, authorities, 2);        
+        community_wallet_init::propose_offer(alice, authorities, 2);
 
         multi_action::claim_offer(bob, signer::address_of(alice));
         multi_action::claim_offer(carol, signer::address_of(alice));
@@ -349,4 +237,64 @@
         assert!(vector::contains(&new_authorities, &signer::address_of(carol)), 7357003);
         assert!(vector::contains(&new_authorities, &signer::address_of(eve)), 7357004);
     }
-  }
+
+    // Try to propose offer with less authorities than the minimum
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
+    #[expected_failure(abort_code = 0x1000A, location = 0x1::community_wallet_init)]
+    fun cw_propose_offer_with_less_authorities_than_min(root: &signer, alice: &signer) {
+        mock::genesis_n_vals(root, 4);
+        community_wallet_init::init_community(alice, vector[@0x1000b, @0x1000c, @0x1000d], 2);
+        community_wallet_init::propose_offer(alice, vector[@0x1000b, @0x1000c], 2);
+    }
+
+    // Try to propose offer with less signatures than the minimum
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
+    #[expected_failure(abort_code = 0x1000B, location = 0x1::community_wallet_init)]
+    fun cw_propose_offer_with_less_signatures_than_min(root: &signer, alice: &signer) {
+        mock::genesis_n_vals(root, 4);
+        community_wallet_init::init_community(alice, vector[@0x1000b, @0x1000c, @0x1000d], 2);
+        community_wallet_init::propose_offer(alice, vector[@0x1000b, @0x1000c], 1);
+    }
+
+    // Try to reduce the number of signatures below the minimum
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
+    #[expected_failure(abort_code = 0x1000B, location = 0x1::community_wallet_init)]
+    fun cw_decrease_signatures_below_minimum(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer) {
+        mock::genesis_n_vals(root, 5);
+        let alice_address = signer::address_of(alice); // community wallet address
+
+        // 1. Initializes a community wallet with 3 authorities and 2 signatures.
+        let authorities = vector[@0x1000b, @0x1000c, @0x1000d];
+        community_wallet_init::init_community(alice, authorities, 2);
+        multi_action::claim_offer(bob, alice_address);
+        multi_action::claim_offer(carol, alice_address);
+        multi_action::claim_offer(dave, alice_address);
+        community_wallet_init::finalize_and_cage(alice, 2);
+        let (num_signatures, _) = multi_action::get_threshold(alice_address);
+        assert!(num_signatures == 2, 73573001);
+
+        // 2. Try to change the requirement to 1 signature when adding eve
+        community_wallet_init::change_signer_community_multisig(bob, alice_address, @0x1000e, true, 1, 10);
+    }
+
+    // Try to reduce the number of authorities below the minimum
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
+    #[expected_failure(abort_code = 0x1000A, location = 0x1::community_wallet_init)]
+    fun cw_decrease_authorities_below_minimum(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer) {
+        mock::genesis_n_vals(root, 5);
+        let alice_address = signer::address_of(alice); // community wallet address
+
+        // 1. Initializes a community wallet with 3 authorities and 2 signatures.
+        let authorities = vector[@0x1000b, @0x1000c, @0x1000d];
+        community_wallet_init::init_community(alice, authorities, 2);
+        multi_action::claim_offer(bob, alice_address);
+        multi_action::claim_offer(carol, alice_address);
+        multi_action::claim_offer(dave, alice_address);
+        community_wallet_init::finalize_and_cage(alice, 2);
+        let (num_signatures, _) = multi_action::get_threshold(alice_address);
+        assert!(num_signatures == 2, 73573001);
+
+        // 2. Try to remove authorities below the minimum
+        community_wallet_init::change_signer_community_multisig(bob, alice_address, @0x1000b, false, 2, 10);
+    }
+}

@@ -30,8 +30,6 @@ module ol_framework::community_wallet_init {
     const ENOT_DONOR_VOICE: u64 = 3;
     /// This account needs a multisig enabled
     const ENOT_MULTISIG: u64 = 4;
-    /// Config has few authorities on multisig
-    const ETOO_FEW_AUTH: u64 = 9;
     /// Config has too few signatures required for each proposal to pass
     const ESIG_THRESHOLD_CONFIG: u64 = 5;
     /// The multisig threshold is not better than MINIMUM_SIGS/MINIMUM_AUTH
@@ -42,6 +40,10 @@ module ol_framework::community_wallet_init {
     const ENOT_MATCH_INDEX_LIQ: u64 = 8;
     /// Does not have the community wallet flag
     const ENO_CW_FLAG: u64 = 9;
+    /// Config has few authorities on multisig
+    const ETOO_FEW_AUTH: u64 = 10;
+    /// Config has few signatures on multisig
+    const ETOO_FEW_SIGS: u64 = 11;
 
     // STATICS
     /// minimum n signatures for a transaction
@@ -81,7 +83,7 @@ module ol_framework::community_wallet_init {
 
     #[view]
     /// check if the authorities being proposed, and signature threshold would qualify
-    public fun check_proposed_auths(initial_authorities: vector<address>, num_signers: u64): bool {
+    public fun check_proposed_auths(initial_authorities: vector<address>, num_signatures: u64): bool {
 
       // TODO: enforce n/m multi auth such as:
       // let n = if (len == 3) { 2 }
@@ -89,7 +91,7 @@ module ol_framework::community_wallet_init {
       //   (MINIMUM_SIGS * len) / MINIMUM_AUTH
       // };
 
-      assert!(num_signers >= MINIMUM_SIGS, error::invalid_argument(ESIG_THRESHOLD_CONFIG));
+      assert!(num_signatures >= MINIMUM_SIGS, error::invalid_argument(ETOO_FEW_SIGS));
 
       // policy is to have at least m signers as auths on the account.
       let len = vector::length(&initial_authorities);
@@ -191,6 +193,7 @@ module ol_framework::community_wallet_init {
       multi_action::get_authorities(multisig_address)
     }
 
+    /// TODO: Allow to propose change only on the signature threshold
     /// Add or remove a signer to/from the multisig, and check if they may be related in the ancestry tree
     public entry fun change_signer_community_multisig(
       sig: &signer,
@@ -200,7 +203,7 @@ module ol_framework::community_wallet_init {
       n_of_m: u64,
       vote_duration_epochs: u64
     ) {
-      assert!(n_of_m >= MINIMUM_SIGS , error::invalid_argument(ETOO_FEW_AUTH));
+      assert!(n_of_m >= MINIMUM_SIGS , error::invalid_argument(ETOO_FEW_SIGS));
 
       let current_signers = multi_action::get_authorities(multisig_address);
 
@@ -212,7 +215,7 @@ module ol_framework::community_wallet_init {
 
       // Verify the signers will not fall below the threshold the signers will fall below threshold
       if (!is_add_operation) {
-          assert!((vector::length(&current_signers) - 1) >= MINIMUM_AUTH, error::invalid_argument(ESIG_THRESHOLD_CONFIG));
+          assert!((vector::length(&current_signers) - 1) > MINIMUM_AUTH, error::invalid_argument(ETOO_FEW_AUTH));
       };
 
       multi_action::propose_governance(
