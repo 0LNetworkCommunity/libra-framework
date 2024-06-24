@@ -20,7 +20,7 @@ chmod +x ~/.cargo/bin/libra
 cd ./framework/libra-framework
 libra move framework test
 
-# fun formal verification with
+# run formal verification with
 libra move framework prove
 ```
 
@@ -70,8 +70,8 @@ You want to build the `diem-node` (for smoke tests only).
 There are two environment variables that are needed to use the correct Coin for
 diem-node instead of a generic.
 
-`export RUST_DIEM_COIN_MODULE: "libra_coin"`
-`export RUST_DIEM_COIN_NAME: "LibraCoin"`
+`export RUST_DIEM_COIN_MODULE="libra_coin"`
+`export RUST_DIEM_COIN_NAME="LibraCoin"`
 
 Note that the `--profile cli` compilation profile makes for much smaller binaries (e.g. `diem-node` goes from about 2GB to 30MB).
 
@@ -82,10 +82,10 @@ export RUST_DIEM_COIN_NAME="LibraCoin"
 
 # build it
 cargo build --profile cli -p diem-node --target-dir ~/.cargo/bin
-# see you tomorrow (welcome to rust).
+# see you tomorrow (welcome to Rust).
 
 # next day, make it executable.
-chmod +x ~/.cargo/diem-node
+chmod +x ~/.cargo/bin/diem-node
 ```
 
 Just check those executables appear in your path.
@@ -93,7 +93,7 @@ Just check those executables appear in your path.
 
 Now you can run commands as below.
 
-# Running Move unit tests
+## Running Move unit tests
 
 Change into a Move project dir (i.e., the directory with a Move.toml).
 
@@ -113,9 +113,9 @@ cargo run release
 
 Your release will be in `./releases/head.mrb`, you will need this for genesis and smoketests.
 
-Note for smoke tests: you must regenerate the .mrb file, EVERYTIME YOU MAKE A CHANGE TO CORE MOVE CODE. Otherwise your tests will be against the old code
+Note for smoke tests: you must regenerate the .mrb file EVERYTIME YOU MAKE A CHANGE TO CORE MOVE CODE. Otherwise your tests will be against the old code
 
-## running smoke tests
+## Running smoke tests
 
 Do it yourself:
 Make sure you are in the root of the project.
@@ -133,12 +133,12 @@ cargo test
 
 ### 1. Building diem-node
 
-#### Issue
+**Issue**
 
 If you encounter the following error:
 `error[E0599]: no method named disable_lifo_slot found for mutable reference &mut tokio::runtime::Builder in the current scope`
 
-#### Solution
+**Solution**
 
 You can resolve this issue by building with the following flag:
 
