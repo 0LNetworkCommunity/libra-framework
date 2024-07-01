@@ -1,15 +1,15 @@
 use crate::{genesis_builder, parse_json};
 use diem_genesis::config::{HostAndPort, ValidatorConfiguration};
 use libra_config::validator_config;
-use libra_types::{exports::NamedChain, core_types::fixtures::TestPersona};
+use libra_types::{core_types::fixtures::TestPersona, exports::NamedChain};
 use std::{fs, net::Ipv4Addr, path::PathBuf, thread, time};
 
+// Sets up the environment for the given test persona.
 pub async fn setup(
     me: &TestPersona,
     ip_list: &[Ipv4Addr],
     chain: NamedChain,
     data_path: PathBuf,
-    // supply_settings: &Option<SupplySettings>,
     legacy_data_path: Option<PathBuf>,
 ) -> anyhow::Result<()> {
     let db_path = data_path.join("data");
@@ -33,6 +33,8 @@ pub async fn setup(
     let my_host: HostAndPort = format_host_str
         .parse()
         .expect("could not parse IP address for host");
+
+    // Initializes the validator configuration.
     validator_config::initialize_validator(
         Some(data_path.clone()),
         Some(&me.to_string()),
@@ -58,6 +60,7 @@ pub async fn setup(
         })
         .collect();
 
+    // Determines the path for the recovery data.
     let p = legacy_data_path.unwrap_or(
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("tests/fixtures/sample_export_recovery.json"),
@@ -65,6 +68,7 @@ pub async fn setup(
 
     let mut recovery = parse_json::recovery_file_parse(p)?;
 
+    // Builds the genesis block with the specified configurations.
     genesis_builder::build(
         "none".to_string(), // when is testnet is ignored
         "none".to_string(),
@@ -72,7 +76,6 @@ pub async fn setup(
         data_path,
         true,
         &mut recovery,
-        // supply_settings.to_owned(),
         chain,
         Some(val_cfg),
     )?;
