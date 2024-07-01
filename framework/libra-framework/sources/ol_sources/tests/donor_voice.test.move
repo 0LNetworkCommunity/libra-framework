@@ -21,17 +21,15 @@ module ol_framework::test_donor_voice {
 
   use diem_std::debug::print;
 
-    #[test(root = @ol_framework, alice = @0x1000a)]
-    fun dd_init(root: &signer, alice: &signer) {
-      mock::genesis_n_vals(root, 4);
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
+    fun dd_init(root: &signer, alice: &signer, bob: &signer) {
+      let vals = mock::genesis_n_vals(root, 2);
 
       let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
       let donor_voice_address = signer::address_of(&resource_sig);
 
-      let auths = mock::personas();
-
       // the account needs basic donor directed structs
-      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig);
+      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig, vals);
 
       let list = donor_voice::get_root_registry();
       assert!(vector::length(&list) == 1, 7357001);
@@ -39,8 +37,12 @@ module ol_framework::test_donor_voice {
       //shouldnt be donor voice yet. Needs to be caged first
       assert!(!donor_voice_txs::is_donor_voice(donor_voice_address), 7357002);
 
+      // vals claim the offer
+      multi_action::claim_offer(alice, donor_voice_address);
+      multi_action::claim_offer(bob, donor_voice_address);
+      
       //need to be caged to finalize donor directed workflow and release control of the account
-      multi_action::finalize_and_cage(&resource_sig, auths, vector::length(&auths));
+      multi_action::finalize_and_cage(&resource_sig, 2);
 
       assert!(donor_voice_txs::is_donor_voice(donor_voice_address), 7357003);
     }
@@ -50,15 +52,19 @@ module ol_framework::test_donor_voice {
       // Scenario: Alice creates a resource_account which will be a donor directed account. She will not be one of the authorities of the account.
       // only bob, carol, and dave with be authorities
 
-      let vals = mock::genesis_n_vals(root, 4);
+      let vals = mock::genesis_n_vals(root, 2);
       let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
       let donor_voice_address = signer::address_of(&resource_sig);
 
       // the account needs basic donor directed structs
-      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig);
+      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig, vals);
+
+      // vals claim the offer
+      multi_action::claim_offer(alice, donor_voice_address);
+      multi_action::claim_offer(bob, donor_voice_address); 
 
       //need to be caged to finalize donor directed workflow and release control of the account
-      multi_action::finalize_and_cage(&resource_sig, vals, vector::length(&vals));
+      multi_action::finalize_and_cage(&resource_sig, vector::length(&vals));
 
       let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
@@ -71,8 +77,8 @@ module ol_framework::test_donor_voice {
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
     }
 
-    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
-    fun dd_schedule_happy(root: &signer, alice: &signer, bob: &signer, carol: &signer) {
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
+    fun dd_schedule_happy(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer) {
       // Scenario: Alice creates a resource_account which will be a donor directed account. She will not be one of the authorities of the account.
       // only bob, carol, and dave with be authorities
 
@@ -81,10 +87,16 @@ module ol_framework::test_donor_voice {
       let donor_voice_address = signer::address_of(&resource_sig);
 
       // the account needs basic donor directed structs
-      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig);
+      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig, vals);
+
+      // vals claim the offer
+      multi_action::claim_offer(alice, donor_voice_address);
+      multi_action::claim_offer(bob, donor_voice_address);
+      multi_action::claim_offer(carol, donor_voice_address);
+      multi_action::claim_offer(dave, donor_voice_address);
 
       //need to cage to finalize donor directed workflow and release control of the account
-      multi_action::finalize_and_cage(&resource_sig, vals, 2);
+      multi_action::finalize_and_cage(&resource_sig, 2);
 
       let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
@@ -126,10 +138,17 @@ module ol_framework::test_donor_voice {
       let donor_voice_address = signer::address_of(&resource_sig);
 
       // the account needs basic donor directed structs
-      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig);
+      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig, vals);
+
+      // vals claim the offer
+      multi_action::claim_offer(alice, donor_voice_address);
+      multi_action::claim_offer(bob, donor_voice_address);
+      multi_action::claim_offer(carol, donor_voice_address);
+      multi_action::claim_offer(dave, donor_voice_address);
+      multi_action::claim_offer(eve, donor_voice_address);
 
       //need to be caged to finalize donor directed workflow and release control of the account
-      multi_action::finalize_and_cage(&resource_sig, vals, 2);
+      multi_action::finalize_and_cage(&resource_sig, 2);
 
       // EVE Establishes some governance over the wallet, when donating.
       let eve_donation = 42;
@@ -144,14 +163,11 @@ module ol_framework::test_donor_voice {
       let is_donor = donor_voice_governance::check_is_donor(donor_voice_address, signer::address_of(dave));
       assert!(is_donor, 7357003);
 
-
       // Bob proposes a tx that will come from the donor directed account.
       // It is not yet scheduled because it doesnt have the MultiAuth quorum. Still waiting for Alice or Carol to approve.
       let uid_of_transfer = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
-
       let (_found, _idx, _status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid_of_transfer);
       assert!(!completed, 7357004);
-
 
       // Eve wants to propose a Veto, but this should fail at this, because
       // the tx is not yet scheduled
@@ -159,12 +175,10 @@ module ol_framework::test_donor_voice {
       let has_veto = donor_voice_governance::tx_has_veto(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
       assert!(!has_veto, 7357005); // propose does not cast a vote.
 
-
       // Now Carol, along with Bob, as admins have proposed the payment.
       // Now the payment should be scheduled
       let uid_of_transfer = donor_voice_txs::test_propose_payment(carol, donor_voice_address, @0x1000b, 100, b"thanks bob");
       assert!(donor_voice_txs::is_scheduled(donor_voice_address, &uid_of_transfer), 7357006); // is scheduled
-
 
       // Eve tries again after it has been scheduled
       let _uid_of_veto_prop = donor_voice_txs::test_propose_veto(eve, &uid_of_transfer);
@@ -194,16 +208,12 @@ module ol_framework::test_donor_voice {
 
       // it's vetoed
       assert!(donor_voice_txs::is_veto(donor_voice_address, &uid_of_transfer), 7357011);
-
     }
 
-
     // should not be able sign a tx twice
-    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
     #[expected_failure(abort_code = 65550, location = 0x1::multi_action)]
-
-    fun dd_reject_duplicate_proposal(root: &signer, alice: &signer, bob:
-    &signer) {
+    fun dd_reject_duplicate_proposal(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer) {
       // Scenario: Alice creates a resource_account which will be a donor directed account. She will not be one of the authorities of the account.
       // only bob, carol, and dave with be authorities
 
@@ -212,13 +222,18 @@ module ol_framework::test_donor_voice {
       let donor_voice_address = signer::address_of(&resource_sig);
 
       // the account needs basic donor directed structs
-      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig);
+      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig, vals);
+
+      // vals claim the offer
+      multi_action::claim_offer(alice, donor_voice_address);
+      multi_action::claim_offer(bob, donor_voice_address);
+      multi_action::claim_offer(carol, donor_voice_address);
+      multi_action::claim_offer(dave, donor_voice_address);
 
       //need to cage to finalize donor directed workflow and release control of the account
-      multi_action::finalize_and_cage(&resource_sig, vals, 2);
+      multi_action::finalize_and_cage(&resource_sig, 2);
 
-      let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address,
-      @0x1000c, 100, b"thanks carol");
+      let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000c, 100, b"thanks carol");
 
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
@@ -229,16 +244,15 @@ module ol_framework::test_donor_voice {
       // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
 
-      let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address,
-      @0x1000c, 100, b"thanks carol");
+      let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000c, 100, b"thanks carol");
 
       // confirm it is scheduled
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
     }
 
 
-    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
-    fun dd_process_unit(root: &signer, alice: &signer, bob: &signer, carol: &signer) {
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
+    fun dd_process_unit(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer) {
       // Scenario: Alice creates a resource_account which will be a donor directed account. She will not be one of the authorities of the account.
       // only bob, carol, and dave with be authorities
 
@@ -258,10 +272,16 @@ module ol_framework::test_donor_voice {
 
 
       // the account needs basic donor directed structs
-      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig);
+      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig, vals);
+
+      // vals claim the offer
+      multi_action::claim_offer(alice, donor_voice_address);
+      multi_action::claim_offer(bob, donor_voice_address);
+      multi_action::claim_offer(carol, donor_voice_address);
+      multi_action::claim_offer(dave, donor_voice_address);
 
       //need to be caged to finalize donor directed workflow and release control of the account
-      multi_action::finalize_and_cage(&resource_sig, vals, 2);
+      multi_action::finalize_and_cage(&resource_sig, 2);
 
 
       let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
@@ -319,7 +339,6 @@ module ol_framework::test_donor_voice {
       let (_bal, marlon_rando_balance_pre) = ol_account::balance(signer::address_of(marlon_rando));
       assert!(marlon_rando_balance_pre == 0, 7357000);
 
-
       let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
       let donor_voice_address = signer::address_of(&resource_sig);
 
@@ -328,14 +347,16 @@ module ol_framework::test_donor_voice {
       let (_, resource_balance) = ol_account::balance(donor_voice_address);
       assert!(resource_balance == 100, 7357002);
 
-
       // the account needs basic donor directed structs
-      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig);
+      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig, vals);
 
+      // vals claim the offer
+      multi_action::claim_offer(alice, donor_voice_address);
+      multi_action::claim_offer(bob, donor_voice_address);
+      multi_action::claim_offer(carol, donor_voice_address);
 
       //need to be caged to finalize donor directed workflow and release control of the account
-      multi_action::finalize_and_cage(&resource_sig, vals, 2);
-
+      multi_action::finalize_and_cage(&resource_sig, 2);
       slow_wallet::user_set_slow(marlon_rando);
 
       let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), 100, b"thanks marlon");
@@ -375,8 +396,8 @@ module ol_framework::test_donor_voice {
       assert!(marlon_rando_balance_post == marlon_rando_balance_pre + 100, 7357006);
     }
 
-    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, marlon_rando = @0x123456)]
-    fun dd_process_multi_same_epoch(root: &signer, alice: &signer, bob: &signer, carol: &signer, marlon_rando: &signer) {
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d, marlon_rando = @0x123456)]
+    fun dd_process_multi_same_epoch(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer, marlon_rando: &signer) {
       // Scenario: Alice creates a resource_account which will be a donor directed account. She will not be one of the authorities of the account.
       // only bob, carol, and dave with be authorities
 
@@ -385,14 +406,12 @@ module ol_framework::test_donor_voice {
       let marlon_pay_one = 111;
       let marlon_pay_two = 222;
 
-
       let vals = mock::genesis_n_vals(root, 4);
       mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
 
       ol_account::create_account(root, signer::address_of(marlon_rando));
       let (_bal, marlon_rando_balance_pre) = ol_account::balance(signer::address_of(marlon_rando));
       assert!(marlon_rando_balance_pre == 0, 7357000);
-
 
       let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
       let donor_voice_address = signer::address_of(&resource_sig);
@@ -402,12 +421,17 @@ module ol_framework::test_donor_voice {
       let (_, resource_balance) = ol_account::balance(donor_voice_address);
       assert!(resource_balance == 10000, 7357002);
 
-
       // the account needs basic donor directed structs
-      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig);
+      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig, vals);
+
+      // vals claim the offer
+      multi_action::claim_offer(alice, donor_voice_address);
+      multi_action::claim_offer(bob, donor_voice_address);
+      multi_action::claim_offer(carol, donor_voice_address);
+      multi_action::claim_offer(dave, donor_voice_address);
 
       //need to be caged to finalize donor directed workflow and release control of the account
-      multi_action::finalize_and_cage(&resource_sig, vals, 2);
+      multi_action::finalize_and_cage(&resource_sig, 2);
 
       slow_wallet::user_set_slow(marlon_rando);
 
@@ -548,10 +572,15 @@ module ol_framework::test_donor_voice {
 
 
       // the account needs basic donor directed structs
-      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig);
+      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig, vals);
 
+      // vals claim the offer
+      multi_action::claim_offer(alice, donor_voice_address);
+      multi_action::claim_offer(bob, donor_voice_address);
+      multi_action::claim_offer(carol, donor_voice_address);
+      
       //need to be caged to finalize donor directed workflow and release control of the account
-      multi_action::finalize_and_cage(&resource_sig, vals, 2);
+      multi_action::finalize_and_cage(&resource_sig, 2);
 
       slow_wallet::user_set_slow(marlon_rando);
 
@@ -646,7 +675,7 @@ module ol_framework::test_donor_voice {
       // Dave and Eve make a donation and so are able to have some voting on that account.
       // Dave and Eve are unhappy, and vote to liquidate the account.
 
-      mock::genesis_n_vals(root, 5); // need to include eve to init funds
+      let vals = mock::genesis_n_vals(root, 5); // need to include eve to init funds
       mock::ol_initialize_coin_and_fund_vals(root, 100000, true);
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause
       // issues
@@ -656,7 +685,7 @@ module ol_framework::test_donor_voice {
 
       let donor_voice_address = signer::address_of(donor_voice);
       // the account needs basic donor directed structs
-      donor_voice_txs::test_helper_make_donor_voice(root, donor_voice);
+      donor_voice_txs::test_helper_make_donor_voice(root, donor_voice, vals);
 
       // EVE Establishes some governance over the wallet, when donating.
       let eve_donation = 42;
@@ -731,7 +760,7 @@ module ol_framework::test_donor_voice {
       // Dave and Eve make a donation and so are able to have some voting on that account.
       // Dave and Eve are unhappy, and vote to liquidate the account.
 
-      mock::genesis_n_vals(root, 5); // need to include eve to init funds
+      let vals = mock::genesis_n_vals(root, 5); // need to include eve to init funds
       mock::ol_initialize_coin_and_fund_vals(root, 100000, true);
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
       mock::trigger_epoch(root);
@@ -741,7 +770,7 @@ module ol_framework::test_donor_voice {
       let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
       let donor_voice_address = signer::address_of(&resource_sig);
       // the account needs basic donor directed structs
-      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig);
+      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig, vals);
       donor_voice_txs::set_liquidate_to_match_index(&resource_sig, true);
 
       // EVE Establishes some governance over the wallet, when donating.
@@ -812,8 +841,8 @@ module ol_framework::test_donor_voice {
       assert!(lifetime_burn_now == lifetime_burn_pre, 7357011);
     }
 
-    #[test(root = @ol_framework, community = @0x10011)]
-    fun migrate_cw_bug_not_resource(root: &signer, community: &signer) {
+    #[test(root = @ol_framework, community = @0x10011, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
+    fun migrate_cw_bug_not_resource(root: &signer, community: &signer, alice: &signer, bob: &signer, carol: &signer) {
 
       // create genesis and fund accounts
       let auths = mock::genesis_n_vals(root, 3);
@@ -835,8 +864,13 @@ module ol_framework::test_donor_voice {
       // confirm the bug
       assert!(!multisig_account::is_multisig(community_wallet_address), 7357002);
 
+      // athorities claim the offer
+      multi_action::claim_offer(alice, community_wallet_address);
+      multi_action::claim_offer(bob, community_wallet_address);
+      multi_action::claim_offer(carol, community_wallet_address);
+
       // fix it by calling multi auth:
-      community_wallet_init::finalize_and_cage(community, auths, 2);
+      community_wallet_init::finalize_and_cage(community, 2);
       assert!(multisig_account::is_multisig(community_wallet_address), 7357003);
 
       community_wallet_init::assert_qualifies(community_wallet_address);
