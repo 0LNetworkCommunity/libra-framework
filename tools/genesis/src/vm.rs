@@ -1,5 +1,8 @@
 #![allow(clippy::too_many_arguments)]
 
+use crate::genesis_functions::{
+    self, genesis_migrate_cumu_deposits, set_final_supply, set_validator_baseline_reward,
+};
 use diem_crypto::{ed25519::Ed25519PublicKey, HashValue};
 use diem_framework::{self, ReleaseBundle};
 use diem_gas::{
@@ -26,10 +29,6 @@ use diem_vm_genesis::{
     verify_genesis_write_set, GenesisConfiguration, Validator, GENESIS_KEYPAIR,
 };
 use libra_types::{legacy_types::legacy_recovery_v6::LegacyRecoveryV6, ol_progress::OLProgress};
-
-use crate::genesis_functions::{
-    self, genesis_migrate_cumu_deposits, set_final_supply, set_validator_baseline_reward,
-};
 
 /// set the genesis parameters
 /// NOTE: many of the parameters are ignored in libra_framework
@@ -59,6 +58,7 @@ pub fn libra_genesis_default(chain: NamedChain) -> GenesisConfiguration {
     }
 }
 
+/// Handles the genesis migration process.
 pub fn migration_genesis(
     validators: &[Validator],
     recovery: &mut [LegacyRecoveryV6],
@@ -95,7 +95,7 @@ pub fn encode_genesis_change_set(
 ) -> ChangeSet {
     validate_genesis_config(genesis_config);
 
-    // Create a Move VM session so we can invoke on-chain genesis intializations.
+    // Create a Move VM session, so we can invoke on-chain genesis initializations.
     let mut state_view = GenesisStateView::new();
     for (module_bytes, module) in framework.code_and_compiled_modules() {
         state_view.add_module(&module.self_id(), module_bytes);
