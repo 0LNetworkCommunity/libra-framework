@@ -6,8 +6,7 @@ use libra_txs::txs_cli::{
 use libra_types::{core_types::app_cfg::TxCost, type_extensions::client_ext::ClientExt};
 
 use diem::common::types::MovePackageDir;
-use std::path::PathBuf;
-use std::str::FromStr;
+use std::{path::PathBuf, str::FromStr};
 /// Testing that a smart contract can be published. It should be possible for:
 /// 1) the genesis validator to build and publish a fixture Move module ("tests/fixtures/test_publish").
 /// 2) any account should be able to change state on that contract.
@@ -82,5 +81,5 @@ async fn smoke_publish() {
 
     let de: Vec<String> = serde_json::from_value(res).unwrap();
 
-    assert!(de == vec!["42".to_string()]);
+    assert_eq!(de, vec!["42".to_string()]);
 }
