@@ -1,11 +1,10 @@
 use anyhow::Context;
 use diem_crypto::{ed25519::Ed25519PrivateKey, ValidCryptoMaterialStringExt};
 use diem_types::chain_id::NamedChain;
-use libra_types::exports::Client;
-use libra_types::type_extensions::client_ext::ClientExt;
 use libra_types::{
-    exports::{AccountAddress, AuthenticationKey},
     core_types::{app_cfg::AppCfg, network_playlist::NetworkPlaylist},
+    exports::{AccountAddress, AuthenticationKey, Client},
+    type_extensions::client_ext::ClientExt,
 };
 use libra_wallet::account_keys::{get_ol_legacy_address, AccountKeys};
 use std::path::PathBuf;
@@ -21,6 +20,7 @@ pub async fn wizard(
     network_playlist: Option<NetworkPlaylist>,
 ) -> anyhow::Result<AppCfg> {
     #[allow(clippy::unnecessary_unwrap)]
+    // Determine authkey and address based on provided options or prompt for account details
     let (authkey, mut address) = if force_authkey.is_some() && force_address.is_some() {
         (force_authkey.unwrap(), force_address.unwrap())
     } else if let Some(pk_string) = test_private_key {
@@ -33,7 +33,7 @@ pub async fn wizard(
         (account_keys.auth_key, account_keys.account)
     };
 
-    // if the user specified both a chain name and playlist, then the playlist will override the degault settings for the named chain.
+    // if the user specified both a chain name and playlist, then the playlist will override the default settings for the named chain.
     let mut np = match network_playlist {
         Some(a) => a,
         None => {
@@ -72,7 +72,8 @@ pub async fn wizard(
     Ok(cfg)
 }
 
-/// Wrapper on get keys_from_prompt, which checks if this is a legacy account.
+/// Wrapper on get keys_from_prompt,
+/// Prompts the user for account details and checks if it is a legacy account.
 pub fn prompt_for_account() -> anyhow::Result<AccountKeys> {
     let mut account_keys = libra_wallet::account_keys::get_keys_from_prompt()?.child_0_owner;
 
