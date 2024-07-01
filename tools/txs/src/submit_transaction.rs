@@ -1,3 +1,6 @@
+//! Module for managing transaction sending and management with Diem blockchain.
+
+use crate::txs_cli::to_legacy_address;
 use anyhow::{bail, Context};
 use diem::common::types::{CliConfig, ConfigSearchMode};
 use diem_logger::prelude::*;
@@ -14,66 +17,20 @@ use diem_sdk::{
         AccountKey, LocalAccount,
     },
 };
-
-use std::{
-    path::PathBuf,
-    time::{SystemTime, UNIX_EPOCH},
-};
-use url::Url;
-
-use crate::txs_cli::to_legacy_address;
 use libra_types::{
-    exports::{AuthenticationKey, Ed25519PrivateKey},
     core_types::app_cfg::{AppCfg, TxCost},
+    exports::{AuthenticationKey, Ed25519PrivateKey},
     ol_progress::OLProgress,
     type_extensions::{
         cli_config_ext::CliConfigExt,
         client_ext::{ClientExt, DEFAULT_TIMEOUT_SECS},
     },
 };
-
-// #[derive(Debug)]
-// /// a transaction error type specific to ol txs
-// pub struct TxError {
-//     /// the actual error type
-//     pub err: Option<Error>,
-//     /// transaction view if the transaction got that far
-//     pub tx_view: Option<TransactionView>,
-//     /// Move module or script where error occurred
-//     pub location: Option<String>,
-//     /// Move abort code used in error
-//     pub abort_code: Option<u64>,
-// }
-
-// impl From<anyhow::Error> for TxError {
-//     fn from(e: anyhow::Error) -> Self {
-//         TxError {
-//             err: Some(e),
-//             tx_view: None,
-//             location: None,
-//             abort_code: None,
-//         }
-//     }
-// }
-
-// pub async fn submit(signed_trans: &SignedTransaction) -> anyhow::Result<String> {
-//     let client = Client::default()?;
-//     let pending_trans = client.submit(signed_trans).await?.into_inner();
-//     let res = client.wait_for_transaction(&pending_trans).await?;
-
-//     match res.inner().success() {
-//         true => {
-//           // TODO: use logger crate
-//           println!("transaction success!")
-//           return Ok(res.inner().vm_status())
-//         },
-//         false => {
-//           println!("transaction not successful, status: {:?}", &res.inner().vm_status());
-//           return bail!("transaction not successful, status: {:?}", &res.inner().vm_status());
-//         },
-//     }
-//     Ok(())
-// }
+use std::{
+    path::PathBuf,
+    time::{SystemTime, UNIX_EPOCH},
+};
+use url::Url;
 
 /// Struct to organize all the TXS sending, so we're not creating new Client on every TX, if there are multiple.
 pub struct Sender {
@@ -96,6 +53,7 @@ impl Sender {
             None => Client::default().await?,
         };
 
+        // Lookup the originating address and handle legacy address conversion if necessary
         let address = client
             .lookup_originating_address(account_key.authentication_key())
             .await
@@ -108,6 +66,7 @@ impl Sender {
             })??;
         info!("using address {}", &address);
 
+        // Fetch sequence number for the account
         let seq = client.get_sequence_number(address).await?;
         let local_account = LocalAccount::new(address, account_key, seq);
 
@@ -120,6 +79,7 @@ impl Sender {
         })
     }
 
+    /// Sets the transaction cost for the `Sender`.
     pub fn set_tx_cost(&mut self, cost: &TxCost) {
         cost.clone_into(&mut self.tx_cost);
     }
@@ -138,6 +98,7 @@ impl Sender {
 
         let temp_seq_num = 0;
 
+        // Create authentication key and initialize client with URL
         let auth_key = AuthenticationKey::ed25519(&key.public_key());
         let url = &app_cfg.pick_url(None)?;
         let client = Client::new(url.clone());
@@ -234,6 +195,7 @@ impl Sender {
         );
     }
 
+    /// Signs and submits a transaction payload, waiting for the transaction on-chain data.
     pub async fn sign_submit_wait(
         &mut self,
         payload: TransactionPayload,
@@ -255,6 +217,7 @@ impl Sender {
         Ok(r)
     }
 
+    /// Signs a transaction payload.
     pub fn sign_payload(&mut self, payload: TransactionPayload) -> SignedTransaction {
         let t = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -286,6 +249,8 @@ impl Sender {
 
         Ok(res)
     }
+
+    /// Evaluates the response of the last submitted transaction.
     pub fn eval_response(&self) -> anyhow::Result<ExecutionStatus, ExecutionStatus> {
         if self.response.is_none() {
             return Err(ExecutionStatus::MiscellaneousError(None));
@@ -323,6 +288,7 @@ impl Sender {
         None
     }
 
+    /// Returns a reference to the underlying client.
     pub fn client(&self) -> &Client {
         &self.client
     }

@@ -1,19 +1,14 @@
 //! Validator subcommands
 
 use crate::submit_transaction::Sender;
-use std::fs;
-use std::path::PathBuf;
-
-use anyhow::bail;
-use anyhow::Context;
-use diem_types::transaction::Script;
-use diem_types::transaction::TransactionPayload;
-
+use anyhow::{bail, Context};
 use diem_sdk::types::transaction::TransactionArgument;
-use libra_cached_packages::libra_stdlib;
-use libra_cached_packages::libra_stdlib::{
-    diem_governance_ol_create_proposal_v2, diem_governance_ol_vote,
+use diem_types::transaction::{Script, TransactionPayload};
+use libra_cached_packages::{
+    libra_stdlib,
+    libra_stdlib::{diem_governance_ol_create_proposal_v2, diem_governance_ol_vote},
 };
+use std::{fs, path::PathBuf};
 
 #[derive(clap::Subcommand)]
 pub enum GovernanceTxs {

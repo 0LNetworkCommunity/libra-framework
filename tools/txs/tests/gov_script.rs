@@ -1,5 +1,4 @@
-use std::path::PathBuf;
-use std::str::FromStr;
+use std::{path::PathBuf, str::FromStr};
 
 use libra_query::query_view;
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
