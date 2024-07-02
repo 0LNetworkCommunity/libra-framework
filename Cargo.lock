@@ -5874,6 +5874,7 @@ dependencies = [
  "diem-config",
  "diem-crypto",
  "diem-genesis",
+ "diem-temppath",
  "diem-types",
  "hex",
  "hmac 0.10.1",

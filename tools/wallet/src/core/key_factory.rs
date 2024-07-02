@@ -17,16 +17,7 @@
 
 use crate::core::mnemonic::Mnemonic;
 use anyhow::{anyhow, Result};
-// use byteorder::LittleEndian;
 use byteorder::{ByteOrder, LittleEndian};
-// use diem_crypto::{
-//     compat::Sha3_256,
-//     ed25519::{Ed25519PrivateKey, Ed25519PublicKey, Ed25519Signature},
-//     hash::CryptoHash,
-//     hkdf::Hkdf,
-//     traits::SigningKey,
-// };
-// use diem_types::{account_address::AccountAddress, transaction::authenticator::AuthenticationKey};
 use hmac::Hmac;
 use mirai_annotations::*;
 use pbkdf2::pbkdf2;
@@ -38,12 +29,11 @@ use diem_crypto::ed25519::{Ed25519PrivateKey, Ed25519PublicKey};
 use diem_crypto::hkdf::Hkdf;
 use diem_types::account_address::AccountAddress;
 use diem_types::transaction::authenticator::AuthenticationKey;
-// use diem_crypto::ed25519::Ed25519Signature;
 
 /// Main is a set of raw bytes that are used for child key derivation
 pub struct Main([u8; 32]);
 
-// NOTE: 0L, removed the macros, since on the FROM is still used
+// NOTE: 0L, removed macros for this implementation; however, the `From` trait is still used.
 impl From<&[u8]> for Main {
     fn from(data: &[u8]) -> Main {
         assert_eq!(data.len(), 32);
@@ -114,10 +104,7 @@ impl ExtendedPrivKey {
         (&self.private_key).into()
     }
 
-    // /// Compute the account address for this account's public key
-    // pub fn get_address(&self) -> AccountAddress {
-    //     diem_types::account_address::from_public_key(&self.get_public())
-    // }
+    /// Compute the account address for this account's public key
     pub fn get_address(&self) -> AccountAddress {
         AuthenticationKey::ed25519(&self.get_public()).derived_address()
     }
@@ -226,58 +213,58 @@ impl Seed {
     }
 }
 
-// #[cfg(test)]
-// #[test]
-// fn assert_default_child_number() {
-//     assert_eq!(ChildNumber::default(), ChildNumber(0));
-// }
+#[cfg(test)]
+#[test]
+fn assert_default_child_number() {
+    assert_eq!(ChildNumber::default(), ChildNumber(0));
+}
 
-// #[cfg(test)]
-// #[test]
-// fn test_key_derivation() {
-//     let data = hex::decode("7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f").unwrap();
-//     let mnemonic = Mnemonic::from("legal winner thank year wave sausage worth useful legal winner thank year wave sausage worth useful legal will").unwrap();
-//     assert_eq!(
-//         mnemonic.to_string(),
-//         Mnemonic::mnemonic(&data).unwrap().to_string()
-//     );
-//     let seed = Seed::new(&mnemonic, "DIEM");
+#[cfg(test)]
+#[test]
+fn test_key_derivation() {
+    let data = hex::decode("7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f").unwrap();
+    let mnemonic = Mnemonic::from("legal winner thank year wave sausage worth useful legal winner thank year wave sausage worth useful legal will").unwrap();
+    assert_eq!(
+        mnemonic.to_string(),
+        Mnemonic::new(&data).unwrap().to_string()
+    );
+    let seed = Seed::new(&mnemonic, "DIEM");
 
-//     let key_factory = KeyFactory::new(&seed).unwrap();
-//     assert_eq!(
-//         "66ae6b767defe3ea0c646f10bf31ad3b36f822064d3923adada7676703a350c0",
-//         hex::encode(&key_factory.main())
-//     );
+    let key_factory = KeyFactory::new(&seed).unwrap();
+    assert_eq!(
+        "86ebb495902d5638a8a7ea19575157ccc646dcbb2ec0b32037ee8f0cb3cb5582",
+        hex::encode(key_factory.main())
+    );
 
-//     // Check child_0 key derivation.
-//     let child_private_0 = key_factory.private_child(ChildNumber(0)).unwrap();
-//     assert_eq!(
-//         "732bc883893c716f320c01864709ca9f16f8f30342a1de42144bfcc2ddb7af10",
-//         hex::encode(&child_private_0.private_key.to_bytes()[..])
-//     );
+    // Check child_0 key derivation.
+    let child_private_0 = key_factory.private_child(ChildNumber(0)).unwrap();
+    assert_eq!(
+        "46ecb654538a0bf0aee7901dc4d6d53cfc2c7f436fce283280db08ff965810ca",
+        hex::encode(&child_private_0.private_key.to_bytes()[..])
+    );
 
-//     // Check determinism, regenerate child_0.
-//     let child_private_0_again = key_factory.private_child(ChildNumber(0)).unwrap();
-//     assert_eq!(
-//         hex::encode(&child_private_0.private_key.to_bytes()[..]),
-//         hex::encode(&child_private_0_again.private_key.to_bytes()[..])
-//     );
+    // Check determinism, regenerate child_0.
+    let child_private_0_again = key_factory.private_child(ChildNumber(0)).unwrap();
+    assert_eq!(
+        hex::encode(&child_private_0.private_key.to_bytes()[..]),
+        hex::encode(&child_private_0_again.private_key.to_bytes()[..])
+    );
 
-//     // Check child_1 key derivation.
-//     let child_private_1 = key_factory.private_child(ChildNumber(1)).unwrap();
-//     assert_eq!(
-//         "f6b472bd0941e315d3c34c3ac679d610d2b9e1abe85128752d04bb0f042f3391",
-//         hex::encode(&child_private_1.private_key.to_bytes()[..])
-//     );
+    // Check child_1 key derivation.
+    let child_private_1 = key_factory.private_child(ChildNumber(1)).unwrap();
+    assert_eq!(
+        "898e7adc4234c6d905c7145a97f288ed9891690b9cf02f05ec0177f85e763bb5",
+        hex::encode(&child_private_1.private_key.to_bytes()[..])
+    );
 
-//     let mut child_1_again = ChildNumber(0);
-//     child_1_again.increment();
-//     assert_eq!(ChildNumber(1), child_1_again);
+    let mut child_1_again = ChildNumber(0);
+    child_1_again.increment();
+    assert_eq!(ChildNumber(1), child_1_again);
 
-//     // Check determinism, regenerate child_1, but by incrementing ChildNumber(0).
-//     let child_private_1_from_increment = key_factory.private_child(child_1_again).unwrap();
-//     assert_eq!(
-//         "f6b472bd0941e315d3c34c3ac679d610d2b9e1abe85128752d04bb0f042f3391",
-//         hex::encode(&child_private_1_from_increment.private_key.to_bytes()[..])
-//     );
-// }
+    // Check determinism, regenerate child_1, but by incrementing ChildNumber(0).
+    let child_private_1_from_increment = key_factory.private_child(child_1_again).unwrap();
+    assert_eq!(
+        "898e7adc4234c6d905c7145a97f288ed9891690b9cf02f05ec0177f85e763bb5",
+        hex::encode(&child_private_1_from_increment.private_key.to_bytes()[..])
+    );
+}

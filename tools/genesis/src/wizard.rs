@@ -25,7 +25,7 @@ use std::{
 
 use diem_config::config::IdentityBlob;
 use diem_github_client::Client;
-use libra_types::legacy_types::app_cfg::AppCfg;
+use libra_types::core_types::app_cfg::AppCfg;
 use libra_wallet::keys::VALIDATOR_FILE;
 
 use libra_config::validator_config::validator_dialogue;

@@ -1,7 +1,7 @@
 use crate::{genesis_builder, parse_json};
 use diem_genesis::config::{HostAndPort, ValidatorConfiguration};
 use libra_config::validator_config;
-use libra_types::{exports::NamedChain, legacy_types::fixtures::TestPersona};
+use libra_types::{exports::NamedChain, core_types::fixtures::TestPersona};
 use std::{fs, net::Ipv4Addr, path::PathBuf, thread, time};
 
 pub async fn setup(
