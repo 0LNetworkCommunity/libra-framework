@@ -1,5 +1,4 @@
-//! autopay view for web monitor
-//! autopay view for web monitor
+//! AutoPay view for web monitor
 
 use move_core_types::{
     ident_str,
@@ -7,17 +6,13 @@ use move_core_types::{
     move_resource::{MoveResource, MoveStructType},
 };
 use serde::{Deserialize, Serialize};
-// use diem_types::access_path::AccessPath;
-// use move_core_types::language_storage::StructTag;
-// use move_core_types::account_address::AccountAddress;
-// use move_core_types::language_storage::CORE_CODE_ADDRESS;
 
 use move_core_types::account_address::AccountAddress;
 
-/// Struct that represents a AutoPay resource
+/// Struct that represents an AutoPay resource
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LegacyAncestryResource {
-    ///
+    /// List of account addresses representing the ancestry tree
     pub tree: Vec<AccountAddress>,
 }
 

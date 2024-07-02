@@ -2,8 +2,7 @@ use anyhow::Result;
 use diem_github_client::Client;
 use libra_wallet::{
     utils::to_yaml,
-    validator_files::SetValidatorConfiguration,
-    validator_files::{OPERATOR_FILE, OWNER_FILE},
+    validator_files::{SetValidatorConfiguration, OPERATOR_FILE, OWNER_FILE},
 };
 use std::path::PathBuf;
 

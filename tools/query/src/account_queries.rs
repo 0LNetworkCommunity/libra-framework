@@ -1,3 +1,5 @@
+//! Helper functions for querying account-related data using the Diem SDK client.
+
 use diem_sdk::{
     rest_client::{
         diem_api_types::{Transaction, VersionedEvent, ViewRequest},
@@ -6,12 +8,11 @@ use diem_sdk::{
     types::{account_address::AccountAddress, validator_config::ValidatorConfig},
 };
 use libra_types::{
-    move_resource::gas_coin::SlowWalletBalance,
-    move_resource::txschedule::TxSchedule,
+    move_resource::{gas_coin::SlowWalletBalance, txschedule::TxSchedule},
     type_extensions::client_ext::{entry_function_id, ClientExt},
 };
-
 use serde_json::{json, Value};
+
 /// helper to get libra balance at a SlowWalletBalance type which shows
 /// total balance and the unlocked balance.
 pub async fn get_account_balance_libra(
@@ -30,6 +31,7 @@ pub async fn get_account_balance_libra(
     SlowWalletBalance::from_value(res)
 }
 
+/// Retrieves the validator configuration for a given account.
 pub async fn get_val_config(
     client: &Client,
     account: AccountAddress,
@@ -37,6 +39,7 @@ pub async fn get_val_config(
     client.get_move_resource::<ValidatorConfig>(account).await
 }
 
+/// Retrieves events associated with a given account.
 pub async fn get_events(
     client: &Client,
     account: AccountAddress,
@@ -61,6 +64,7 @@ pub async fn get_events(
     Ok(res)
 }
 
+/// Retrieves transactions associated with a given account.
 pub async fn get_transactions(
     client: &Client,
     account: AccountAddress,
@@ -76,6 +80,7 @@ pub async fn get_transactions(
     Ok(res)
 }
 
+/// Checks if the community wallet for a given account has been migrated.
 pub async fn is_community_wallet_migrated(
     client: &Client,
     account: AccountAddress,
@@ -91,6 +96,7 @@ pub async fn is_community_wallet_migrated(
     Ok(json!(res))
 }
 
+/// Retrieves signers for the community wallet associated with a given account.
 pub async fn community_wallet_signers(
     client: &Client,
     account: AccountAddress,
@@ -107,6 +113,7 @@ pub async fn community_wallet_signers(
     Ok(json!(res))
 }
 
+/// Retrieves scheduled transactions for the community wallet associated with a given account.
 pub async fn community_wallet_scheduled_transactions(
     client: &Client,
     account: AccountAddress,
@@ -114,7 +121,7 @@ pub async fn community_wallet_scheduled_transactions(
     client.get_move_resource::<TxSchedule>(account).await
 }
 
-/// get all of the multi_auth actions, pending, approved, expired.
+/// Retrieves all multi_auth actions (pending, approved, expired) for a given multi_auth account.
 pub async fn multi_auth_ballots(
     client: &Client,
     multi_auth_account: AccountAddress,

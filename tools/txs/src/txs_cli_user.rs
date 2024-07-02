@@ -3,11 +3,14 @@
 use crate::submit_transaction::Sender;
 use dialoguer::Confirm;
 use diem::common::types::RotationProofChallenge;
-use diem_sdk::crypto::ed25519::Ed25519PublicKey;
-use diem_sdk::crypto::{PrivateKey, SigningKey, ValidCryptoMaterialStringExt};
-use diem_sdk::types::LocalAccount;
-use diem_types::account_address::AccountAddress;
-use diem_types::{account_config::CORE_CODE_ADDRESS, transaction::TransactionPayload};
+use diem_sdk::{
+    crypto::{ed25519::Ed25519PublicKey, PrivateKey, SigningKey, ValidCryptoMaterialStringExt},
+    types::LocalAccount,
+};
+use diem_types::{
+    account_address::AccountAddress, account_config::CORE_CODE_ADDRESS,
+    transaction::TransactionPayload,
+};
 use libra_cached_packages::libra_stdlib;
 use libra_types::{
     exports::{AuthenticationKey, Ed25519PrivateKey},
@@ -15,7 +18,6 @@ use libra_types::{
 };
 use libra_wallet::account_keys::get_keys_from_prompt;
 use serde::{Deserialize, Serialize};
-// use std::str::FromStr;
 
 #[derive(clap::Subcommand)]
 pub enum UserTxs {

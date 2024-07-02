@@ -60,6 +60,8 @@ pub struct UserConfigs {
     pub block_zero: VDFProof,
 }
 // TODO: Duplicated from block.rs
+
+/// Serialize data as hex string
 fn as_hex<S>(data: &[u8], serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
@@ -67,6 +69,8 @@ where
     serializer.serialize_str(&encode(data))
 }
 
+
+/// Deserialize data from hex string
 fn from_hex<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
 where
     D: Deserializer<'de>,
@@ -166,25 +170,6 @@ impl ValConfigs {
             serde_json::from_reader(reader).expect("init_configs.json should deserialize");
         return Ok(configs);
     }
-
-    // /// create the encrypted network address for use on the validator network.
-    // pub fn make_val_network_addr(ip_address: &Ipv4Addr, val_pubkey: PublicKey) -> NetworkAddress {
-    //           // Create the list of validator addresses
-    //     let val_network_string = format!("/ip4/{}/tcp/{}", ip_address.to_string(), DEFAULT_VAL_PORT);
-    //     let val_addr_obj: NetworkAddress = val_network_string
-    //         .parse()
-    //         .expect("could not parse validator network address");
-    //     val_addr_obj.append_prod_protos(val_pubkey, 0)
-    // }
-
-    // /// format the fullnode address which the validator's VFN will use.
-    // pub fn make_fullnode_unencrypted_addr(ip_address: &Ipv4Addr, fn_pubkey: PublicKey) -> NetworkAddress {
-    //     let fullnode_network_string = format!("/ip4/{}/tcp/{}", ip_address.to_string(), DEFAULT_VFN_PORT);
-    //     let fn_addr_obj: NetworkAddress = fullnode_network_string
-    //         .parse()
-    //         .expect("could not parse fullnode network address");
-    //     fn_addr_obj.append_prod_protos(fn_pubkey, 0)
-    // }
 
     /// format the fullnode address which the validator's VFN will use.
     pub fn make_unencrypted_addr(

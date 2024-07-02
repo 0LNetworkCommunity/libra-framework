@@ -1,10 +1,11 @@
 //! chain queries
-use crate::query_view::{self, get_view};
 
+use crate::query_view::{self, get_view};
 use anyhow::Context;
 use diem_sdk::rest_client::{diem_api_types::ViewRequest, Client};
 use libra_types::type_extensions::client_ext::entry_function_id;
 
+/// Retrieves the current epoch from the blockchain.
 pub async fn get_epoch(client: &Client) -> anyhow::Result<u64> {
     let res = get_view(
         client,
@@ -19,6 +20,7 @@ pub async fn get_epoch(client: &Client) -> anyhow::Result<u64> {
 
     Ok(num)
 }
+
 /// helper to get libra balance at a SlowWalletBalance type which shows
 /// total balance and the unlocked balance.
 pub async fn get_tower_difficulty(client: &Client) -> anyhow::Result<(u64, u64)> {
@@ -43,6 +45,7 @@ pub async fn get_tower_difficulty(client: &Client) -> anyhow::Result<(u64, u64)>
     Ok((difficulty, security))
 }
 
+/// Retrieves the ID of the next governance proposal.
 pub async fn get_next_governance_proposal_id(client: &Client) -> anyhow::Result<u64> {
     let query_res = query_view::get_view(
         client,
@@ -59,6 +62,7 @@ pub async fn get_next_governance_proposal_id(client: &Client) -> anyhow::Result<
     Ok(num)
 }
 
+/// Checks if a governance proposal can be resolved.
 pub async fn can_gov_proposal_resolve(client: &Client, id: u64) -> anyhow::Result<bool> {
     let query_res = query_view::get_view(
         client,
@@ -72,6 +76,7 @@ pub async fn can_gov_proposal_resolve(client: &Client, id: u64) -> anyhow::Resul
 }
 
 // TODO: code duplication
+/// Checks if a governance proposal with the given ID has been resolved.
 pub async fn is_gov_proposal_resolved(client: &Client, id: u64) -> anyhow::Result<bool> {
     let query_res = query_view::get_view(
         client,
@@ -88,6 +93,7 @@ pub async fn is_gov_proposal_resolved(client: &Client, id: u64) -> anyhow::Resul
 }
 
 // TODO: code duplication
+/// Retrieves votes for a governance proposal with the given ID.
 pub async fn get_gov_proposal_votes(client: &Client, id: u64) -> anyhow::Result<Vec<u128>> {
     let query_res = query_view::get_view(
         client,
@@ -100,6 +106,7 @@ pub async fn get_gov_proposal_votes(client: &Client, id: u64) -> anyhow::Result<
     Ok(serde_json::from_value::<Vec<u128>>(query_res)?)
 }
 
+/// Retrieves the current blockchain height.
 pub async fn get_height(client: &Client) -> anyhow::Result<u64> {
     let res = get_view(client, "0x1::block::get_current_block_height", None, None).await?;
 

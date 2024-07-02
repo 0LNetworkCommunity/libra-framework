@@ -19,7 +19,6 @@ impl QueryCli {
         let res = self.subcommand.query_to_json(None).await?;
         let pretty_json = serde_json::to_string_pretty(&res)?;
         println!("{}", pretty_json);
-        //println!("{}", res);
 
         Ok(())
     }

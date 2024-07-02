@@ -6,10 +6,9 @@
 //!
 //! https://github.com/rust-bitcoin/rust-wallet/blob/master/wallet/src/mnemonic.rs
 
-// use crate::error::WalletError;
 use anyhow::{bail, Result};
-// #[cfg(test)]
-// use diem_temppath::TempPath;
+#[cfg(test)]
+use diem_temppath::TempPath;
 use mirai_annotations::*;
 
 use sha2::{Digest, Sha256};
@@ -20,10 +19,10 @@ use std::{
     path::Path,
 };
 
-// #[cfg(test)]
-// use rand::rngs::OsRng;
-// #[cfg(test)]
-// use rand::RngCore;
+#[cfg(test)]
+use rand::rngs::OsRng;
+#[cfg(test)]
+use rand::RngCore;
 
 /// Mnemonic seed for deterministic key derivation based on [BIP39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki).
 /// The mnemonic must encode entropy in a multiple of 32 bits. With more entropy, security is
@@ -439,18 +438,18 @@ const WORDS: [&str; 2048] = [
     "zoo",
 ];
 
-// #[test]
-// fn test_roundtrip_mnemonic() {
-//     let mut rng = OsRng;
-//     let mut buf = [0u8; 32];
-//     rng.fill_bytes(&mut buf[..]);
-//     let file = TempPath::new();
-//     let path = file.path();
-//     let mnemonic = Mnemonic::mnemonic(&buf[..]).unwrap();
-//     mnemonic.write(path).unwrap();
-//     let other_mnemonic = Mnemonic::read(path).unwrap();
-//     assert_eq!(mnemonic.to_string(), other_mnemonic.to_string());
-// }
+#[test]
+fn test_roundtrip_mnemonic() {
+    let mut rng = OsRng;
+    let mut buf = [0u8; 32];
+    rng.fill_bytes(&mut buf[..]);
+    let file = TempPath::new();
+    let path = file.path();
+    let mnemonic = Mnemonic::new(&buf[..]).unwrap();
+    mnemonic.write(path).unwrap();
+    let other_mnemonic = Mnemonic::read(path).unwrap();
+    assert_eq!(mnemonic.to_string(), other_mnemonic.to_string());
+}
 
 #[test]
 fn test_deterministic_mnemonic() {

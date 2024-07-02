@@ -1,10 +1,9 @@
-use crate::move_resource::gas_coin::cast_coin_to_decimal;
-use crate::move_resource::gas_coin::GAS_COIN_TYPE;
+use crate::move_resource::gas_coin::{cast_coin_to_decimal, GAS_COIN_TYPE};
 use diem_types::event::EventHandle;
-use move_core_types::identifier::IdentStr;
-use move_core_types::language_storage::TypeTag;
 use move_core_types::{
     ident_str,
+    identifier::IdentStr,
+    language_storage::TypeTag,
     move_resource::{MoveResource, MoveStructType},
 };
 use serde::{Deserialize, Serialize};

@@ -2,8 +2,7 @@
 // We will assume that triggering an epoch is an operation that we can test in a single node testnet
 use libra_query::query_view;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
-use libra_txs::submit_transaction::Sender;
-use libra_txs::txs_cli_governance::GovernanceTxs;
+use libra_txs::{submit_transaction::Sender, txs_cli_governance::GovernanceTxs};
 /// Test triggering a new epoch
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 #[ignore] // TODO
@@ -26,8 +25,9 @@ async fn trigger_epoch() -> anyhow::Result<()> {
     .await
     .expect("Query failed: get epoch failed");
 
-    assert!(
-        &before_trigger_epoch_query_res.as_array().unwrap()[0] == "2",
+    assert_eq!(
+        &before_trigger_epoch_query_res.as_array().unwrap()[0],
+        "2",
         "Epoch is not 2"
     );
 

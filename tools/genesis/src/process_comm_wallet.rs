@@ -1,13 +1,15 @@
-use std::collections::BTreeMap;
-
 use diem_types::account_address::AccountAddress;
 use libra_types::legacy_types::legacy_recovery_v6::LegacyRecoveryV6;
 use serde::Serialize;
+use std::collections::BTreeMap;
 
+// Represents the state of all community wallets
 pub struct AllCommWallets {
     pub list: BTreeMap<AccountAddress, WalletState>,
     pub total_deposits: u64,
 }
+
+// Represents the state of an individual wallet
 #[derive(Debug, Serialize)]
 pub struct WalletState {
     pub cumulative_value: u64,
@@ -16,6 +18,8 @@ pub struct WalletState {
     pub audit_deposits_with_receipts: u64,
 }
 
+// Represents donor receipts, including a list of receipts, total cumulative value,
+// and addresses not found in community wallets.
 #[derive(Debug)]
 pub struct DonorReceipts {
     pub list: BTreeMap<AccountAddress, ReceiptsResourceV7>,
@@ -23,6 +27,7 @@ pub struct DonorReceipts {
     pub audit_not_cw: Vec<AccountAddress>,
 }
 
+// Represents a resource containing receipt information for a donor.
 #[derive(Debug)]
 pub struct ReceiptsResourceV7 {
     pub destination: Vec<AccountAddress>,
@@ -79,6 +84,7 @@ pub fn rebuild_donor_receipts(recovery: &[LegacyRecoveryV6]) -> anyhow::Result<D
     })
 }
 
+/// Processes cumulative deposits for community wallets.
 pub fn rebuild_cw_cumu_deposits(recovery: &[LegacyRecoveryV6]) -> anyhow::Result<AllCommWallets> {
     let mut total_cumu = 0;
     let mut list = BTreeMap::new();
@@ -91,7 +97,6 @@ pub fn rebuild_cw_cumu_deposits(recovery: &[LegacyRecoveryV6]) -> anyhow::Result
                 .cumulative_deposits
                 .as_ref()
                 .expect("no cumulative deposits field");
-            // dbg!(&cd.value);
             total_cumu += cd.value;
 
             let cast_receipts = WalletState {
@@ -111,7 +116,7 @@ pub fn rebuild_cw_cumu_deposits(recovery: &[LegacyRecoveryV6]) -> anyhow::Result
 }
 
 /// extract donor addresses from receipts and place into new
-/// communit wallet struct
+/// community wallet struct
 pub fn update_cw_with_donor(cw: &mut AllCommWallets, donors: &mut DonorReceipts) {
     donors.list.iter_mut().for_each(|(donor, receipt)| {
         receipt.audit_not_found = receipt
@@ -155,10 +160,9 @@ fn test_cw_recovery() {
 
     // scaled
     let t = rebuild_cw_cumu_deposits(&recovery).unwrap();
-    // dbg!(&t.total_deposits);
-    assert!(t.total_deposits == 52488307886371112, "cumu not equal");
-    // dbg!(&t.list.len());
-    assert!(t.list.len() == 145, "len not equal");
+
+    assert_eq!(t.total_deposits, 52488307886371112, "cumu not equal");
+    assert_eq!(t.list.len(), 145, "len not equal");
 }
 
 #[test]
@@ -176,7 +180,7 @@ fn test_receipt_recovery() {
         .unwrap();
 
     if let Some(t) = t.list.get(&test_addr) {
-        assert!(t.cumulative[0] == 231401421509, "cumu does not match");
+        assert_eq!(t.cumulative[0], 231401421509, "cumu does not match");
     }
 }
 
@@ -195,5 +199,5 @@ fn test_update_cw_from_receipts() {
         .get(&AccountAddress::from_hex_literal("0x7209c13e1253ad8fb2d96a30552052aa").unwrap())
         .unwrap();
 
-    assert!(v.cumulative_value == 6405927426, "cumu value not equal");
+    assert_eq!(v.cumulative_value, 6405927426, "cumu value not equal");
 }

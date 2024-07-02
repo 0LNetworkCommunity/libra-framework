@@ -20,10 +20,12 @@ impl NodeCli {
             std::env::set_var("RUST_LOG", "warn")
         }
 
+        // Determine the path to the configuration file
         let path = self
             .config_path
             .clone()
             .unwrap_or_else(|| find_a_config().expect("no config"));
+
         // A config file exists, attempt to parse the config
         let config = NodeConfig::load_from_path(path.clone()).map_err(|error| {
             anyhow!(
@@ -48,6 +50,7 @@ fn find_a_config() -> anyhow::Result<PathBuf> {
     let help = "If this is not what you expected explicitly set it with --config-file <path>";
 
     // we assume if this is set up as a validator that's the preferred profile
+    // Check if validator.yaml exists; use it if found
     if val_file.exists() {
         println!(
             "\nUsing validator profile at {}.\n{}",
@@ -57,6 +60,7 @@ fn find_a_config() -> anyhow::Result<PathBuf> {
         return Ok(val_file);
     }
 
+    // Check if fullnode.yaml exists; use it if found
     let fn_file = d.join("fullnode.yaml");
     if fn_file.exists() {
         println!(
@@ -67,5 +71,6 @@ fn find_a_config() -> anyhow::Result<PathBuf> {
         return Ok(fn_file);
     }
 
+    // Error if neither validator.yaml nor fullnode.yaml is found
     bail!("ERROR: you have no node *.yaml configured in the default directory $HOME/.libra/");
 }

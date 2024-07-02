@@ -2,7 +2,9 @@ use diem_github_client::{Client, Error};
 use serde::Deserialize;
 use serde_json::json;
 
+/// Trait defining GitHub client functionalities for genesis repository operations.
 pub trait LibraGithubClient {
+    /// Creates a pull request for the genesis repository.
     fn make_genesis_pull_request(
         &self,
         repo_owner: &str,
@@ -10,11 +12,16 @@ pub trait LibraGithubClient {
         github_username: &str,
         branch: Option<&str>,
     ) -> Result<(), Error>;
+
+    /// Forks the genesis repository.
     fn fork_genesis_repo(&self, repo_owner: &str, repo_name: &str) -> Result<(), Error>;
+
+    /// Retrieves the authenticated GitHub username.
     fn get_authenticated_user(&self) -> Result<String, Error>;
 }
 
 impl LibraGithubClient for Client {
+    /// Creates a pull request in the specified genesis repository.
     fn make_genesis_pull_request(
         &self,
         genesis_repo_owner: &str,
@@ -38,6 +45,8 @@ impl LibraGithubClient for Client {
             _ => Err(resp.into()),
         }
     }
+
+    /// Forks the specified genesis repository.
     fn fork_genesis_repo(
         &self,
         genesis_repo_owner: &str,
@@ -59,6 +68,7 @@ impl LibraGithubClient for Client {
         }
     }
 
+    /// Gets the username of the authenticated GitHub user.
     fn get_authenticated_user(&self) -> Result<String, Error> {
         let api_path = "https://api.github.com/user";
 

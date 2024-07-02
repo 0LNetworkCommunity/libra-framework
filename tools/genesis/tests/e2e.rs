@@ -1,8 +1,7 @@
 use diem_temppath::TempPath;
 use diem_types::{
     chain_id::{ChainId, NamedChain},
-    on_chain_config::OnChainConfig,
-    on_chain_config::ValidatorSet,
+    on_chain_config::{OnChainConfig, ValidatorSet},
     state_store::state_key::StateKey,
     transaction::{Transaction, WriteSetPayload},
     write_set::TransactionWrite,

@@ -1,13 +1,10 @@
-use crate::exports::AuthenticationKey;
-use crate::legacy_types::app_cfg::AppCfg;
-use crate::type_extensions::cli_config_ext::CliConfigExt;
-use crate::util::parse_function_id;
+use crate::{
+    core_types::app_cfg::AppCfg, exports::AuthenticationKey,
+    type_extensions::cli_config_ext::CliConfigExt, util::parse_function_id,
+};
 
 use anyhow::{anyhow, Context};
 use async_trait::async_trait;
-use serde::de::DeserializeOwned;
-use serde_json::{self, Value};
-// use std::time::Duration;
 use diem::common::types::{CliConfig, ConfigSearchMode, DEFAULT_PROFILE};
 use diem_sdk::{
     move_types::{
@@ -28,8 +25,12 @@ use diem_sdk::{
         LocalAccount,
     },
 };
-use std::time::SystemTime;
-use std::{str::FromStr, time::UNIX_EPOCH};
+use serde::de::DeserializeOwned;
+use serde_json::{self, Value};
+use std::{
+    str::FromStr,
+    time::{SystemTime, UNIX_EPOCH},
+};
 use url::Url;
 
 pub const DEFAULT_TIMEOUT_SECS: u64 = 10;
@@ -155,6 +156,7 @@ impl ClientExt for Client {
         Ok(addr)
     }
 
+    /// Gets a Move resource of the specified type from the given address.
     async fn get_move_resource<T: MoveStructType + DeserializeOwned>(
         &self,
         address: AccountAddress,
@@ -168,6 +170,7 @@ impl ClientExt for Client {
         Ok(res)
     }
 
+    /// Gets the account resources for the specified account address.
     async fn get_account_resources_ext(&self, account: AccountAddress) -> anyhow::Result<String> {
         let response = self
             .get_account_resources(account)
@@ -176,6 +179,7 @@ impl ClientExt for Client {
         Ok(format!("{:#?}", response.inner()))
     }
 
+    /// Gets the sequence number for the specified account address.
     async fn get_sequence_number(&self, account: AccountAddress) -> anyhow::Result<u64> {
         let response = self
             .get_account_resource(account, "0x1::account::Account")
@@ -212,9 +216,6 @@ impl ClientExt for Client {
             vec![]
         };
 
-        // println!("{}", format_type_args(&ty_args));
-        // println!("{}", format_args(&args));
-
         let expiration_timestamp_secs = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
@@ -236,28 +237,6 @@ impl ClientExt for Client {
 
         Ok(from_account.sign_with_transaction_builder(transaction_builder))
     }
-
-    // async fn view_bcs(
-    //     &self,
-    //     request: &ViewRequest,
-    //     version: Option<u64>,
-    // ) -> anyhow::Result<bytes::Bytes> {
-    //     let request = serde_json::to_string(request)?;
-    //     let mut url = self.build_path("view")?;
-    //     if let Some(version) = version {
-    //         url.set_query(Some(format!("ledger_version={}", version).as_str()));
-    //     }
-
-    //     let response = self
-    //         .inner
-    //         .post(url)
-    //         .header(CONTENT_TYPE, JSON)
-    //         .body(request)
-    //         .send()
-    //         .await?;
-
-    //     Ok(self.check_and_parse_bcs_response(response).await?.inner())
-    // }
 
     async fn view_ext(
         &self,
@@ -286,9 +265,6 @@ impl ClientExt for Client {
         } else {
             vec![]
         };
-
-        // println!("{}", format_type_args(&ty_args));
-        // println!("{}", format_args(&args));
 
         let request = ViewRequest {
             function: entry_fuction_id,

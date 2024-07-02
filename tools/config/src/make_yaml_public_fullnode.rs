@@ -46,19 +46,23 @@ pub async fn init_fullnode_yaml(
     Ok(p)
 }
 
+/// Add peers to the fullnode YAML configuration file.
 pub fn add_peers_to_yaml(
     path: &Path,
     peers: HashMap<PeerId, Vec<NetworkAddress>>,
 ) -> anyhow::Result<()> {
+    // Read the existing YAML content
     let string = std::fs::read_to_string(path)?;
     let mut parsed: NodeConfig = serde_yaml::from_str(&string)?;
 
+    // Update seed addresses for public networks
     parsed.full_node_networks.iter_mut().for_each(move |e| {
         if e.network_id.is_public_network() {
             e.seed_addrs.clone_from(&peers);
         }
     });
 
+    // Serialize the updated content and write it back to the file
     let ser = serde_yaml::to_string(&parsed)?;
     std::fs::write(path, ser)?;
 
@@ -71,6 +75,7 @@ pub async fn fetch_seed_addresses(
     let u = url.unwrap_or(
         "https://raw.githubusercontent.com/0LNetworkCommunity/seed-peers/main/seed_peers.yaml",
     );
+    // Fetch and parse the seed addresses from the URL
     let res = reqwest::get(u).await?;
     let out = res.text().await?;
     let seeds: HashMap<PeerId, Vec<NetworkAddress>> = serde_yaml::from_str(&out)?;
@@ -83,6 +88,7 @@ pub fn make_fullnode_yaml(home_dir: Option<PathBuf>, waypoint: Waypoint) -> anyh
     let home_dir = home_dir.unwrap_or_else(global_config_dir);
     let path = home_dir.display().to_string();
 
+    // Create the YAML template with necessary configurations
     let template = format!(
         "
 base:
@@ -121,6 +127,7 @@ pub fn make_private_vfn_yaml(
     let val_net_pubkey = val_net_pubkey.to_string();
     let val_host_addr = val_host_addr.to_string();
 
+    // Create the YAML template with necessary configurations for VFN
     let template = format!(
         "
 base:
@@ -171,7 +178,7 @@ mempool:
     Ok(template)
 }
 
-/// download genesis blob
+/// download genesis blob and save it to the specified directory.
 pub async fn download_genesis(
     home_dir: Option<PathBuf>,
     genesis_path: Option<&str>,
@@ -186,11 +193,14 @@ pub async fn download_genesis(
     Ok(())
 }
 
+/// Fetch the genesis waypoint from the GitHub repository.
 pub async fn get_genesis_waypoint(home_dir: Option<PathBuf>) -> anyhow::Result<Waypoint> {
     // Base URL for GitHub API requests
     let base_url =
         "https://api.github.com/repos/0LNetworkCommunity/epoch-archive-mainnet/contents/upgrades";
     let client = reqwest::Client::new();
+
+    // Fetch the list of upgrade versions
     let resp = client
         .get(base_url)
         .header("User-Agent", "request")
@@ -198,6 +208,7 @@ pub async fn get_genesis_waypoint(home_dir: Option<PathBuf>) -> anyhow::Result<W
         .await?
         .json::<Vec<GithubContent>>()
         .await?;
+
     // Find the latest version by parsing version numbers and sorting
     let latest_version = resp
         .iter()
@@ -209,12 +220,14 @@ pub async fn get_genesis_waypoint(home_dir: Option<PathBuf>) -> anyhow::Result<W
         "https://raw.githubusercontent.com/0LNetworkCommunity/epoch-archive-mainnet/main/upgrades",
         latest_version.unwrap_or(DEFAULT_WAYPOINT_VERSION)
     );
+
     // Fetch the latest waypoint
     let wp_string = reqwest::get(&latest_path).await?.text().await?;
     let home = home_dir.unwrap_or_else(libra_types::global_config_dir);
     let genesis_dir = home.join("genesis/");
     let p = genesis_dir.join("waypoint.txt");
 
+    // Save the waypoint to a file
     std::fs::write(p, &wp_string)?;
     wp_string.trim().parse::<Waypoint>()
 }
@@ -241,13 +254,6 @@ async fn get_yaml() {
     .unwrap();
 
     std::fs::write(&p, y).unwrap();
-
-    // let mut parsed: NodeConfig = serde_yaml::from_str(&y).unwrap();
-    // parsed.full_node_networks.iter_mut().for_each(move |e| {
-    //   if e.network_id.is_public_network() {
-    //     e.seed_addrs = seeds.clone();
-    //   }
-    // });
 
     add_peers_to_yaml(&p, seeds).unwrap();
 

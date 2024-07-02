@@ -34,7 +34,7 @@ impl MoveStructType for FullnodeCounterResource {
 }
 
 impl FullnodeCounterResource {
-    ///
+    /// Returns the struct tag for this resource
     pub fn struct_tag() -> StructTag {
         StructTag {
             address: CORE_CODE_ADDRESS,
@@ -43,17 +43,17 @@ impl FullnodeCounterResource {
             type_params: vec![],
         }
     }
-    ///
+    /// Returns the access path for this resource
     pub fn access_path(account: AccountAddress) -> AccessPath {
         let resource_key = ResourceKey::new(account, FullnodeCounterResource::struct_tag());
         AccessPath::resource_access_path(resource_key)
     }
-    ///
+    /// Returns the resource path as a byte vector
     pub fn resource_path() -> Vec<u8> {
         AccessPath::resource_access_vec(FullnodeCounterResource::struct_tag())
     }
 
-    ///
+    /// Attempts to deserialize the byte representation into `FullnodeCounterResource`
     pub fn try_from_bytes(bytes: &[u8]) -> Result<Self> {
         bcs::from_bytes(bytes).map_err(Into::into)
     }

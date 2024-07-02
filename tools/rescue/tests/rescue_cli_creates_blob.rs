@@ -72,7 +72,7 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
 
     let new_w = boot.run()?;
 
-    assert!(wp == new_w, "waypoint mismatch");
+    assert_eq!(wp, new_w, "waypoint mismatch");
 
     Ok(())
 }

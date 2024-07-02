@@ -1,8 +1,4 @@
-use std::path::Path;
-use std::path::PathBuf;
-
 use anyhow::{format_err, Context};
-
 use diem_config::config::{
     RocksdbConfigs, BUFFERED_STATE_TARGET_ITEMS, DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
     NO_OP_STORAGE_PRUNER_CONFIG,
@@ -20,6 +16,8 @@ use move_core_types::{
     value::{serialize_values, MoveValue},
 };
 use move_vm_runtime::session::SerializedReturnValues;
+use move_vm_types::gas::UnmeteredGasMeter;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone)]
 pub struct ValCredentials {
@@ -29,7 +27,7 @@ pub struct ValCredentials {
     pub network_addresses: Vec<u8>,
     pub fullnode_addresses: Vec<u8>,
 }
-use move_vm_types::gas::UnmeteredGasMeter;
+
 // Run a VM session with a dirty database
 // NOTE: there are several implementations of this elsewhere in Diem
 // Some are buggy, some don't have exports or APIs needed (DiemDbBootstrapper). Some have issues with async and db locks (DiemDbDebugger).
@@ -100,6 +98,7 @@ where
     println!("session run sucessfully");
     Ok(change_set)
 }
+
 // BLACK MAGIC
 // there's a bunch of branch magic that happens for a writeset.
 // these are the ceremonial dance steps
@@ -118,14 +117,6 @@ pub fn writeset_voodoo_events(session: &mut SessionExt) -> anyhow::Result<()> {
             &MoveValue::Address(CORE_CODE_ADDRESS),
         ],
     )?;
-
-    ////// TODO: revert this once rescue is complete
-    // libra_execute_session_function(
-    //     session,
-    //     "0x1::reconfiguration::reconfigure_for_rescue",
-    //     vec![&vm_signer],
-    // )?;
-    //////
 
     libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
 
@@ -163,29 +154,6 @@ pub fn libra_execute_session_function(
     )?;
     Ok(res)
 }
-
-// // TODO: helper to print out the account state of a DB at rest.
-// // this could have a Clibra_execute_session_functionLI entrypoint
-// fn _get_account_state_by_version(
-//     db: &Arc<dyn DbReader>,
-//     account: AccountAddress,
-//     version: Version,
-// ) -> anyhow::Result<HashMap<StateKey, StateValue>> {
-//     let key_prefix = StateKeyPrefix::from(account);
-//     let mut iter = db.get_prefixed_state_value_iterator(&key_prefix, None, version)?;
-//     // dbg!(&iter.by_ref().count());
-//     let kvs = iter
-//         .by_ref()
-//         .take(MAX_REQUEST_LIMIT as usize)
-//         .collect::<anyhow::Result<_>>()?;
-//     if iter.next().is_some() {
-//         bail!(
-//             "Too many state items under state key prefix {:?}.",
-//             key_prefix
-//         );
-//     }
-//     Ok(kvs)
-// }
 
 /// Add validators to the session
 ///
@@ -291,11 +259,14 @@ pub fn session_add_validators(
     Ok(())
 }
 
+/// Unpacks a VM change set.
 pub fn unpack_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
     let (write_set, _delta_change_set, events) = vmc.unpack();
     dbg!(&events);
     Ok(ChangeSet::new(write_set, events))
 }
+
+/// Publishes the current framework to the database.
 pub fn publish_current_framework(
     dir: &Path,
     debug_vals: Option<Vec<AccountAddress>>,

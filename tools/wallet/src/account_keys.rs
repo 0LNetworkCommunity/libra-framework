@@ -4,15 +4,11 @@ use crate::{
     key_gen::keygen,
     load_keys,
 };
-
 use anyhow::Result;
-use diem_crypto::ed25519::Ed25519PrivateKey;
-use diem_crypto::PrivateKey;
-use diem_types::account_address::AccountAddress;
-use diem_types::transaction::authenticator::AuthenticationKey;
+use diem_crypto::{ed25519::Ed25519PrivateKey, PrivateKey};
+use diem_types::{account_address::AccountAddress, transaction::authenticator::AuthenticationKey};
 use serde::Serialize;
-use std::path::Path;
-use std::str::FromStr;
+use std::{path::Path, str::FromStr};
 
 #[derive(Serialize)]
 /// A Struct to store ALL the legacy keys for storage.
@@ -184,15 +180,16 @@ fn test_legacy_keys() {
 
     let l = get_keys_from_mnem(alice_mnem.to_string()).unwrap();
 
-    assert!(
+    assert_eq!(
         get_ol_legacy_address(l.child_0_owner.account)
             .unwrap()
-            .to_string()
-            == "000000000000000000000000000000004c613c2f4b1e67ca8d98a542ee3f59f5"
+            .to_string(),
+        "000000000000000000000000000000004c613c2f4b1e67ca8d98a542ee3f59f5"
     );
 
-    assert!(
-        "2570472a9a08b9cc1f7c616e9ebb1dc534db452d3a3d3c567e58bec9f0fbd13e" == &hex::encode(&l.seed)
+    assert_eq!(
+        "2570472a9a08b9cc1f7c616e9ebb1dc534db452d3a3d3c567e58bec9f0fbd13e",
+        &hex::encode(&l.seed)
     );
 }
 
@@ -207,8 +204,11 @@ fn type_conversion_give_same_auth_and_address() {
 
     let l = KeyChain::new(&wallet).unwrap();
 
-    assert!(account.to_hex_literal() == l.child_0_owner.account.to_hex_literal());
-    assert!(auth_key.to_string() == l.child_0_owner.auth_key.to_string());
+    assert_eq!(
+        account.to_hex_literal(),
+        l.child_0_owner.account.to_hex_literal()
+    );
+    assert_eq!(auth_key.to_string(), l.child_0_owner.auth_key.to_string());
 
     // Check the vendor ConfigKey struct is the same.
     use diem_config::keys::ConfigKey;
@@ -216,5 +216,8 @@ fn type_conversion_give_same_auth_and_address() {
 
     let cfg_key: ConfigKey<Ed25519PrivateKey> = ConfigKey::new(l.child_0_owner.pri_key);
     let auth_key_from_cfg = AuthenticationKey::ed25519(&cfg_key.public_key()).derived_address();
-    assert!(auth_key_from_cfg.to_string() == l.child_0_owner.auth_key.to_string());
+    assert_eq!(
+        auth_key_from_cfg.to_string(),
+        l.child_0_owner.auth_key.to_string()
+    );
 }

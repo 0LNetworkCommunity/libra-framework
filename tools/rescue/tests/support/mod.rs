@@ -1,10 +1,4 @@
 #![allow(dead_code)]
-use std::{
-    path::PathBuf,
-    process::Command,
-    time::{Duration, Instant},
-};
-
 use anyhow::Context;
 use diem_config::config::NodeConfig;
 use diem_forge::{LocalNode, NodeExt, Validator};
@@ -13,6 +7,11 @@ use diem_temppath::TempPath;
 use diem_types::account_address::AccountAddress;
 use libra_framework::framework_cli::make_template_files;
 use smoke_test::test_utils::{MAX_CONNECTIVITY_WAIT_SECS, MAX_HEALTHY_WAIT_SECS};
+use std::{
+    path::PathBuf,
+    process::Command,
+    time::{Duration, Instant},
+};
 
 pub fn make_script(remove_validator: AccountAddress) -> PathBuf {
     let script = format!(
