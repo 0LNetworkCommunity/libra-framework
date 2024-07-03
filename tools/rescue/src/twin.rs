@@ -11,6 +11,7 @@ use libra_config::make_profile;
 use libra_smoke_tests::helpers::mint_libra;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_txs::txs_cli_vals::ValidatorTxs;
+use std::env;
 use std::process::abort;
 use std::time::Instant;
 use std::{path::PathBuf, time::Duration};
@@ -140,7 +141,7 @@ where
 /// ''' Setup the twin network with a synced db
 /// '''
 #[async_trait]
-trait TwinSetup {
+pub trait TwinSetup {
     async fn initialize_marlon_the_val() -> anyhow::Result<PathBuf>;
     fn register_marlon_tx(file: PathBuf) -> anyhow::Result<Script>;
     fn recue_blob_with_one_val();
@@ -155,7 +156,7 @@ trait TwinSetup {
     async fn apply_with_rando_e2e(
         prod_db: PathBuf,
         num_validators: u8,
-    ) -> anyhow::Result<LibraSmoke, anyhow::Error>;
+    ) -> anyhow::Result<(LibraSmoke, TempPath), anyhow::Error>;
     async fn extract_credentials(marlon_node: &LocalNode) -> anyhow::Result<ValCredentials>;
     fn clone_db(prod_db: &Path, swarm_db: &Path) -> anyhow::Result<()>;
     async fn wait_for_node(
@@ -238,9 +239,12 @@ impl TwinSetup for Twin {
     async fn apply_with_rando_e2e(
         prod_db: PathBuf,
         num_validators: u8,
-    ) -> anyhow::Result<LibraSmoke, anyhow::Error> {
+    ) -> anyhow::Result<(LibraSmoke, TempPath), anyhow::Error> {
         //The diem-node should be compiled externally to avoid any potential conflicts with the current build
         //get the current path
+
+        let start_upgrade = Instant::now();
+
         let current_path = std::env::current_dir()?;
         //path to diem-node binary
         let diem_node_path = current_path.join("tests/diem-proxy");
@@ -370,6 +374,7 @@ impl TwinSetup for Twin {
         let recipient = smoke.swarm.validators().nth(1).unwrap().peer_id();
         let marlon = smoke.swarm.validators().next().unwrap().peer_id();
         let bal_old = get_libra_balance(&client, recipient).await?;
+        let config_path = d.path().to_owned().join("libra-cli-config.yaml");
         let cli = TxsCli {
             subcommand: Some(Transfer {
                 to_account: recipient,
@@ -378,10 +383,10 @@ impl TwinSetup for Twin {
             mnemonic: None,
             test_private_key: Some(smoke.encoded_pri_key.clone()),
             chain_id: None,
-            config_path: Some(d.path().to_owned().join("libra-cli-config.yaml")),
+            config_path: Some(config_path.clone()),
             url: Some(smoke.api_endpoint.clone()),
             tx_profile: None,
-            tx_cost: Some(TxCost::default_baseline_cost()),
+            tx_cost: Some(TxCost::prod_baseline_cost()),
             estimate_only: false,
             legacy_address: false,
         };
@@ -391,14 +396,18 @@ impl TwinSetup for Twin {
         let bal_curr = get_libra_balance(&client, recipient).await?;
         // 8. Check that the balance has changed
         assert!(bal_curr.total > bal_old.total, "balance should change");
-        Ok(smoke)
+
+        let duration_upgrade = start_upgrade.elapsed();
+        println!(">>> Time to prepare swarm: {:?}", duration_upgrade);
+
+        Ok((smoke, d))
     }
 
     /// '''
     /// Extract the credentials of the random validator
     /// '''
     async fn extract_credentials(marlon_node: &LocalNode) -> anyhow::Result<ValCredentials> {
-        println!("extracting swarm validator credentpials");
+        println!("extracting swarm validator credentials");
         // get the necessary values from the current db
         let account = marlon_node.config().get_peer_id().unwrap();
 

@@ -458,21 +458,21 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
     )
     .await;
 
-    // Ensure the account is now a community wallet
+    // Ensure the account is now a multisig account
     let is_comm_wallet_query_res = query_view::get_view(
         &s.client(),
-        "0x1::community_wallet::is_init",
+        "0x1::multi_action::is_multi_action",
         None,
         Some(comm_wallet_addr.clone().to_string()),
     )
     .await
-    .expect("Query failed: community wallet init check");
+    .expect("Query failed: community wallet multisig check");
 
     assert!(
         is_comm_wallet_query_res.as_array().unwrap()[0]
             .as_bool()
             .unwrap(),
-        "Account should be a community wallet"
+        "Account should be a multisig account"
     );
 
     // Ensure authorities are the three proposed
@@ -1767,8 +1767,7 @@ async fn setup_community_wallet_caged(
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_offer_migration() -> Result<(), anyhow::Error> {
     // 1. Setup environment
-    let (mut smoke, dir, _account_address, comm_wallet_pk, comm_wallet_addr) =
-    setup_environment().await;
+    let (mut smoke, dir, _account_address, _, _) = setup_environment().await;
     let config_path = dir.path().to_owned().join("libra-cli-config.yaml");
     let api_endpoint = smoke.api_endpoint.clone();
     // let client = smoke.client();
