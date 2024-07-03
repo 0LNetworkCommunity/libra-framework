@@ -5,7 +5,9 @@ use diem_types::account_address::AccountAddress;
 use libra_query::query_view;
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::txs_cli::{TxsCli, TxsSub, TxsSub::Transfer};
-use libra_txs::txs_cli_community::{AdminTx, CageTx, ClaimTx, CommunityTxs, InitTx, OfferTx, MigrateOfferTx};
+use libra_txs::txs_cli_community::{
+    AdminTx, CageTx, ClaimTx, CommunityTxs, InitTx, MigrateOfferTx, OfferTx,
+};
 use libra_types::legacy_types::app_cfg::TxCost;
 use std::path::PathBuf;
 use url::Url;
@@ -403,7 +405,9 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
         let authority_str = &authorities[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
         assert_eq!(
             authority_str,
-            first_three_signer_addresses[i].to_string().trim_start_matches('0'),
+            first_three_signer_addresses[i]
+                .to_string()
+                .trim_start_matches('0'),
             "Authority should be the same"
         );
     }
@@ -444,7 +448,9 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
         let authority_str = &authorities[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
         assert_eq!(
             authority_str,
-            first_three_signer_addresses[i].to_string().trim_start_matches('0'),
+            first_three_signer_addresses[i]
+                .to_string()
+                .trim_start_matches('0'),
             "Authority should be the same"
         );
     }
@@ -493,7 +499,9 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
         let authority_str = &authorities[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
         assert_eq!(
             authority_str,
-            first_three_signer_addresses[i].to_string().trim_start_matches('0'),
+            first_three_signer_addresses[i]
+                .to_string()
+                .trim_start_matches('0'),
             "Authority should be the same"
         );
     }
@@ -1000,7 +1008,9 @@ async fn add_community_wallet_admin() -> Result<(), anyhow::Error> {
     for i in 0..4 {
         let authority_str = &authorities_queried[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
         assert_eq!(
-            new_authorities_addresses[i].to_string().trim_start_matches('0'),
+            new_authorities_addresses[i]
+                .to_string()
+                .trim_start_matches('0'),
             authority_str,
             "Authority should be the same"
         );
@@ -1199,7 +1209,9 @@ async fn remove_community_wallet_admin() -> Result<(), anyhow::Error> {
     for i in 0..3 {
         let authority_str = &authorities_queried[i].as_str().unwrap()[2..]; // Remove the "0x" prefix
         assert_eq!(
-            new_authorities_addresses[i].to_string().trim_start_matches('0'),
+            new_authorities_addresses[i]
+                .to_string()
+                .trim_start_matches('0'),
             authority_str,
             "Authority should be the same"
         );
@@ -1762,7 +1774,6 @@ async fn setup_community_wallet_caged(
     run_cli_community_cage(donor_pk, num_signitures, api_endpoint, config_path).await;
 }
 
-
 // Test Offer migration of a legacy account
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_offer_migration() -> Result<(), anyhow::Error> {
@@ -1788,7 +1799,10 @@ async fn test_offer_migration() -> Result<(), anyhow::Error> {
         )
         .await;
     }
-    let community_wallet_pk = signers[0].private_key().to_encoded_string().expect("cannot decode pri key");
+    let community_wallet_pk = signers[0]
+        .private_key()
+        .to_encoded_string()
+        .expect("cannot decode pri key");
     let community_wallet_address = addresses[0].clone();
 
     // 3. Initialize deprecated governance
@@ -1812,14 +1826,18 @@ async fn test_offer_migration() -> Result<(), anyhow::Error> {
 
     // Certify the account does not have an offer
     let is_offer_query_res = query_view::get_view(
-        &smoke.client(), "0x1::multi_action::exists_offer",
+        &smoke.client(),
+        "0x1::multi_action::exists_offer",
         None,
-        Some(community_wallet_address.clone().to_string())
+        Some(community_wallet_address.clone().to_string()),
     )
-        .await
-        .expect("Query failed: community wallet offer check");
+    .await
+    .expect("Query failed: community wallet offer check");
 
-    assert!(!is_offer_query_res.as_array().unwrap()[0].as_bool().unwrap(), "Account should not have an offer");
+    assert!(
+        !is_offer_query_res.as_array().unwrap()[0].as_bool().unwrap(),
+        "Account should not have an offer"
+    );
 
     // 4. Run offer migration
     let offer_migration = TxsCli {
@@ -1844,14 +1862,18 @@ async fn test_offer_migration() -> Result<(), anyhow::Error> {
 
     // certify the account has an offer
     let is_offer_query_res = query_view::get_view(
-        &smoke.client(), "0x1::multi_action::exists_offer",
+        &smoke.client(),
+        "0x1::multi_action::exists_offer",
         None,
-        Some(community_wallet_address.clone().to_string())
+        Some(community_wallet_address.clone().to_string()),
     )
-        .await
-        .expect("Query failed: community wallet offer check");
+    .await
+    .expect("Query failed: community wallet offer check");
 
-    assert!(is_offer_query_res.as_array().unwrap()[0].as_bool().unwrap(), "Account should have an offer");
+    assert!(
+        is_offer_query_res.as_array().unwrap()[0].as_bool().unwrap(),
+        "Account should have an offer"
+    );
 
     Ok(())
 }

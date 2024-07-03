@@ -132,8 +132,13 @@ pub async fn upgrade_multiple_impl(
 
     // This step should fail. The view function does not yet exist in the system address.
     // we will upgrade a new binary which will include this function.
-    let query_res =
-        query_view::get_view(&smoke.client(), "0x1::all_your_base::are_belong_to", None, None).await;
+    let query_res = query_view::get_view(
+        &smoke.client(),
+        "0x1::all_your_base::are_belong_to",
+        None,
+        None,
+    )
+    .await;
     assert!(query_res.is_err(), "expected all_your_base to fail");
 
     ///// NOTE THERE ARE MULTIPLE STEPS, we are getting the artifacts for the
@@ -178,9 +183,7 @@ pub async fn upgrade_multiple_impl(
             should_fail: false,
         }));
         cli.test_private_key = Some(val_key.clone());
-        cli.run()
-            .await
-            .context("cli could not send vote")?;
+        cli.run().await.context("cli could not send vote")?;
     }
 
     // ensure the proposal is passing
