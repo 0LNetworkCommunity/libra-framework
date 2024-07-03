@@ -496,7 +496,6 @@ impl VetoTx {
     }
 }
 
-
 // TODO remove after migration is completed
 #[derive(clap::Args)]
 pub struct MigrateOfferTx {
@@ -507,9 +506,7 @@ pub struct MigrateOfferTx {
 
 impl MigrateOfferTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload = libra_stdlib::multi_action_migration_migrate_offer(
-            self.community_wallet,
-        );
+        let payload = libra_stdlib::multi_action_migration_migrate_offer(self.community_wallet);
         sender.sign_submit_wait(payload).await?;
         println!("You have migrated the account to have the Offer structure. You can proceed with the authority offer now.");
         Ok(())
