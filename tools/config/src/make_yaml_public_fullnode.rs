@@ -172,17 +172,36 @@ mempool:
 }
 
 /// download genesis blob
-pub async fn download_genesis(
-    home_dir: Option<PathBuf>,
-    genesis_path: Option<&str>,
-) -> anyhow::Result<()> {
-    let path = genesis_path.unwrap_or("https://raw.githubusercontent.com/0LNetworkCommunity/epoch-archive-mainnet/main/upgrades/v6.9.0/genesis.blob");
-    let bytes = reqwest::get(path).await?.bytes().await?;
-    let home = home_dir.unwrap_or_else(global_config_dir);
+pub async fn download_genesis(home_dir: Option<PathBuf>) -> anyhow::Result<()> {
+    // Base URL for GitHub API requests
+    let base_url =
+        "https://api.github.com/repos/0LNetworkCommunity/epoch-archive-mainnet/contents/upgrades";
+    let client = reqwest::Client::new();
+    let resp = client
+        .get(base_url)
+        .header("User-Agent", "request")
+        .send()
+        .await?
+        .json::<Vec<GithubContent>>()
+        .await?;
+    // Find the latest version by parsing version numbers and sorting
+    let latest_version = resp
+        .iter()
+        .filter_map(|entry| entry.name.split('v').nth(1)) // Assuming the name is 'vX.X.X'
+        .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+
+    let latest_path = format!(
+        "{}/v{}/genesis.blob",
+        "https://raw.githubusercontent.com/0LNetworkCommunity/epoch-archive-mainnet/main/upgrades",
+        latest_version.unwrap_or(DEFAULT_WAYPOINT_VERSION)
+    );
+    // Fetch the latest waypoint
+    let blob_bytes = reqwest::get(&latest_path).await?.bytes().await?;
+    let home = home_dir.unwrap_or_else(libra_types::global_config_dir);
     let genesis_dir = home.join("genesis/");
-    std::fs::create_dir_all(&genesis_dir)?;
     let p = genesis_dir.join("genesis.blob");
-    std::fs::write(p, bytes)?;
+
+    std::fs::write(p, &blob_bytes)?;
     Ok(())
 }
 
@@ -264,7 +283,7 @@ async fn persist_genesis() {
 
     let path = p.path().to_owned();
 
-    download_genesis(Some(path), None).await.unwrap();
+    download_genesis(Some(path)).await.unwrap();
     let l = std::fs::read_dir(p.path())
         .unwrap()
         .next()
