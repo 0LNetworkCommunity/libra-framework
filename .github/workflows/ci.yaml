@@ -13,6 +13,9 @@ on:
     branches:
       - "release**"
       - "main**"
+  schedule:
+    - cron:  '30 00 * * *'
+
 env:
   DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
@@ -21,7 +24,7 @@ env:
 jobs:
   build-framework:
     timeout-minutes: 60
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
@@ -45,7 +48,7 @@ jobs:
   types:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: setup env
@@ -64,7 +67,7 @@ jobs:
   wallet:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
@@ -85,7 +88,7 @@ jobs:
   smoke:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
@@ -112,7 +115,7 @@ jobs:
   query:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: setup env
@@ -137,7 +140,7 @@ jobs:
   genesis:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
@@ -164,7 +167,7 @@ jobs:
   txs:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
@@ -190,18 +193,21 @@ jobs:
   rescue:
     timeout-minutes: 60
     needs: [build-framework]
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
       - name: setup env
+        if: ${{runner.environment == 'self-hosted'}}
         uses: ./.github/actions/build_env
 
       - uses: actions/download-artifact@v4.1.2
+        if: ${{runner.environment == 'self-hosted'}}
         with:
           name: framework-build
           path: framework/
       - name: rescue
-        if: always()
+        # if: always()
+        if: ${{runner.environment == 'self-hosted'}}
         working-directory: ./tools/rescue
         run: RUST_MIN_STACK=104857600 cargo test --no-fail-fast -- --test-threads=1
