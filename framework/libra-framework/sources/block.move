@@ -1,13 +1,15 @@
 /// This module defines a struct storing the metadata of the block and new block events.
 module diem_framework::block {
+    use std::bcs;
     use std::error;
-    use std::vector;
     use std::option;
+    use std::vector;
     // TODO: restore this
     // use std::features;
     use std::string;
     use diem_framework::account;
     use diem_framework::event::{Self, EventHandle};
+    use diem_framework::randomness;
     use diem_framework::reconfiguration;
     use diem_framework::stake;
     use diem_framework::state_storage;
@@ -156,6 +158,9 @@ module diem_framework::block {
         stake::update_performance_statistics(proposer_index, failed_proposer_indices);
         state_storage::on_new_block(reconfiguration::current_epoch());
 
+        // update randomness seed for this block
+        let seed = bcs::to_bytes(&hash);
+        randomness::on_new_block(&vm, epoch, round, option::some(seed));
 
         // seperate logic for epoch advancment to allow for testing
         maybe_advance_epoch(&vm, timestamp, block_metadata_ref, round);
