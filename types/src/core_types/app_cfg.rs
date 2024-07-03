@@ -560,12 +560,12 @@ pub struct TxCost {
 
 impl TxCost {
     /// create new cost object
-    pub fn new(units: u64, price_multiplier: f64) -> Self {
+    pub fn new(units: u64, price_multiplier: f64, min_gas_price: Option<u64>) -> Self {
         TxCost {
             max_gas_unit_for_tx: units, // oracle upgrade transaction is expensive.
             // TODO: the GAS_UNIT_PRICE is set in DIEM. IT IS ALSO THE MINIMUM GAS PRICE This is arbitrary and needs to be reviewed.
             // It is also 0 in tests, so we need to increase to at least 1.
-            coin_price_per_unit: (MINUMUM_GAS_PRICE_IN_DIEM.max(1) as f64 * price_multiplier)
+            coin_price_per_unit: (MINUMUM_GAS_PRICE_IN_DIEM.max(min_gas_price.unwrap_or(1)) as f64 * price_multiplier)
                 as u64,
             // this is the minimum price
             //coin_price_per_unit: 100 as u64,
@@ -574,19 +574,23 @@ impl TxCost {
     }
 
     pub fn default_baseline_cost() -> Self {
-        TxCost::new(MAX_GAS_AMOUNT / 50, 2.0)
+        TxCost::new(MAX_GAS_AMOUNT / 50, 2.0, None)
     }
     pub fn default_critical_txs_cost() -> Self {
-        TxCost::new(MAX_GAS_AMOUNT / 6, 5.0)
+        TxCost::new(MAX_GAS_AMOUNT / 6, 5.0, None)
     }
     pub fn default_management_txs_cost() -> Self {
-        TxCost::new(MAX_GAS_AMOUNT / 12, 4.0)
+        TxCost::new(MAX_GAS_AMOUNT / 12, 4.0, None)
     }
     pub fn default_miner_txs_cost() -> Self {
-        TxCost::new(MAX_GAS_AMOUNT / 25, 3.0)
+        TxCost::new(MAX_GAS_AMOUNT / 25, 3.0, None)
     }
     pub fn default_cheap_txs_cost() -> Self {
-        TxCost::new(MAX_GAS_AMOUNT / 100, 1.0)
+        TxCost::new(MAX_GAS_AMOUNT / 100, 1.0, None)
+    }
+    // TODO: review this. Probably not the best approach
+    pub fn prod_baseline_cost() -> Self {
+        TxCost::new(MAX_GAS_AMOUNT / 50, 2.0, Some(100))
     }
 }
 
