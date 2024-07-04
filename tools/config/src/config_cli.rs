@@ -177,7 +177,7 @@ impl ConfigCli {
                     );
                     std::fs::create_dir_all(&data_path)?;
                 }
-                download_genesis(Some(data_path.clone()), None).await?;
+                download_genesis(Some(data_path.clone())).await?;
                 let _ = get_genesis_waypoint(Some(data_path.clone())).await?;
                 validator_dialogue(&data_path, None, self.chain_name).await?;
                 println!("Validators' config initialized.");
@@ -226,7 +226,7 @@ impl ConfigCli {
                 Ok(())
             }
             Some(ConfigSub::FullnodeInit { home_path }) => {
-                download_genesis(home_path.to_owned(), None).await?;
+                download_genesis(home_path.to_owned()).await?;
                 println!("downloaded genesis block");
 
                 let p = init_fullnode_yaml(home_path.to_owned(), true).await?;
