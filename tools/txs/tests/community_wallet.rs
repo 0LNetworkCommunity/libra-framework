@@ -319,11 +319,9 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
     for (signer_address, validator_private_key) in
         signer_addresses.iter().zip(s.validator_private_keys.iter())
     {
-        let to_account = signer_address.clone();
-
         // Transfer funds to ensure the account exists on-chain using the specific validator's private key
         run_cli_transfer(
-            to_account,
+            *signer_address,
             10.0,
             validator_private_key.clone(),
             s.api_endpoint.clone(),
@@ -413,16 +411,14 @@ async fn create_community_wallet() -> Result<(), anyhow::Error> {
     }
 
     // 5. Admins claim the offer.
-    for j in 0..3 {
-        let auth = &signers[j];
-        // print private key
-        let authority_pk = auth
+    for authority in signers.iter().take(3) {
+        let authority_pk = authority
             .private_key()
             .to_encoded_string()
             .expect("cannot decode pri key");
         run_cli_claim_offer(
             authority_pk,
-            comm_wallet_addr.clone(),
+            comm_wallet_addr,
             s.api_endpoint.clone(),
             config_path.clone(),
         )
@@ -541,11 +537,9 @@ async fn update_community_wallet_offer() -> Result<(), anyhow::Error> {
     for (signer_address, validator_private_key) in
         signer_addresses.iter().zip(s.validator_private_keys.iter())
     {
-        let to_account = signer_address.clone();
-
         // Transfer funds to ensure the account exists on-chain using the specific validator's private key
         run_cli_transfer(
-            to_account,
+            *signer_address,
             10.0,
             validator_private_key.clone(),
             s.api_endpoint.clone(),
@@ -594,7 +588,7 @@ async fn update_community_wallet_offer() -> Result<(), anyhow::Error> {
     // 5. Update the community wallet with a new admin account.
 
     // Add forth signer as admin
-    let forth_signer_address = signer_addresses[3].clone();
+    let forth_signer_address = signer_addresses[3];
     authorities.push(forth_signer_address);
     run_cli_community_propose_offer(
         comm_wallet_pk.clone(),
@@ -824,10 +818,9 @@ async fn add_community_wallet_admin() -> Result<(), anyhow::Error> {
     for (signer_address, validator_private_key) in
         addresses.iter().zip(smoke.validator_private_keys.iter())
     {
-        let to_account = signer_address.clone();
         // Transfer funds to ensure the account exists on-chain using the specific validator's private key
         run_cli_transfer(
-            to_account,
+            *signer_address,
             10.0,
             validator_private_key.clone(),
             smoke.api_endpoint.clone(),
@@ -840,7 +833,7 @@ async fn add_community_wallet_admin() -> Result<(), anyhow::Error> {
     let initial_authorities: Vec<_> = signers.iter().take(3).collect();
     setup_community_wallet_caged(
         comm_wallet_pk.clone(),
-        comm_wallet_addr.clone(),
+        comm_wallet_addr,
         &initial_authorities,
         2,
         config_path.clone(),
@@ -915,8 +908,8 @@ async fn add_community_wallet_admin() -> Result<(), anyhow::Error> {
     }
 
     // 5. All the other authorities vote to add the new admin and change threshold to 3
-    for j in 1..3 {
-        let private_key_of_signer = initial_authorities[j]
+    for authority in initial_authorities.iter().take(3).skip(1) {
+        let private_key_of_signer = authority
             .private_key()
             .to_encoded_string()
             .expect("cannot decode pri key");
@@ -978,7 +971,7 @@ async fn add_community_wallet_admin() -> Result<(), anyhow::Error> {
     // 6. New admin claim the offer
     run_cli_claim_offer(
         new_admin_pk,
-        comm_wallet_addr.clone(),
+        comm_wallet_addr,
         api_endpoint.clone(),
         config_path.clone(),
     )
@@ -1048,10 +1041,9 @@ async fn remove_community_wallet_admin() -> Result<(), anyhow::Error> {
     for (signer_address, validator_private_key) in
         addresses.iter().zip(smoke.validator_private_keys.iter())
     {
-        let to_account = signer_address.clone();
         // Transfer funds to ensure the account exists on-chain using the specific validator's private key
         run_cli_transfer(
-            to_account,
+            *signer_address,
             10.0,
             validator_private_key.clone(),
             smoke.api_endpoint.clone(),
@@ -1064,7 +1056,7 @@ async fn remove_community_wallet_admin() -> Result<(), anyhow::Error> {
     let initial_authorities: Vec<_> = signers.iter().take(4).collect();
     setup_community_wallet_caged(
         comm_wallet_pk.clone(),
-        comm_wallet_addr.clone(),
+        comm_wallet_addr,
         &initial_authorities,
         3,
         config_path.clone(),
@@ -1155,8 +1147,8 @@ async fn remove_community_wallet_admin() -> Result<(), anyhow::Error> {
     }
 
     // 5. All the other authorities vote to remove the third admin and change threshold to 2
-    for j in 1..3 {
-        let private_key_of_signer = initial_authorities[j]
+    for authority in initial_authorities.iter().take(3).skip(1) {
+        let private_key_of_signer = authority
             .private_key()
             .to_encoded_string()
             .expect("cannot decode pri key");
@@ -1613,15 +1605,15 @@ async fn run_cli_transfer(
     };
 
     // Execute the transfer
-    cli_transfer.run().await.expect(&format!(
-        "CLI could not transfer funds to account {}",
-        to_account.to_string()
-    ));
+    cli_transfer
+        .run()
+        .await
+        .unwrap_or_else(|_| panic!("CLI could not transfer funds to account {}", to_account));
 }
 
 async fn run_cli_community_init(
     donor_private_key: String,
-    auhtorities: Vec<AccountAddress>,
+    admins: Vec<AccountAddress>,
     num_signers: u64,
     api_endpoint: Url,
     config_path: PathBuf,
@@ -1629,8 +1621,8 @@ async fn run_cli_community_init(
     // Build the CLI command
     let cli_set_community_wallet = TxsCli {
         subcommand: Some(TxsSub::Community(CommunityTxs::GovInit(InitTx {
-            admins: auhtorities,
-            num_signers: num_signers,
+            admins,
+            num_signers,
         }))),
         mnemonic: None,
         test_private_key: Some(donor_private_key),
@@ -1685,7 +1677,7 @@ async fn run_cli_community_cage(
 ) {
     let cli_finalize_cage = TxsCli {
         subcommand: Some(TxsSub::Community(CommunityTxs::GovCage(CageTx {
-            num_signers: num_signers,
+            num_signers,
         }))),
         mnemonic: None,
         test_private_key: Some(donor_private_key),
@@ -1706,15 +1698,15 @@ async fn run_cli_community_cage(
 
 async fn run_cli_community_propose_offer(
     donor_private_key: String,
-    authorities: Vec<AccountAddress>,
+    admins: Vec<AccountAddress>,
     num_signers: u64,
     api_endpoint: Url,
     config_path: PathBuf,
 ) {
     let cli_propose_offer = TxsCli {
         subcommand: Some(TxsSub::Community(CommunityTxs::GovOffer(OfferTx {
-            admins: authorities,
-            num_signers: num_signers,
+            admins,
+            num_signers,
         }))),
         mnemonic: None,
         test_private_key: Some(donor_private_key),
@@ -1737,7 +1729,7 @@ async fn run_cli_community_propose_offer(
 async fn setup_community_wallet_caged(
     donor_pk: String,
     donor_address: AccountAddress,
-    authorities: &Vec<&LocalAccount>,
+    authorities: &[&LocalAccount],
     num_signitures: u64,
     config_path: PathBuf,
     api_endpoint: Url,
@@ -1754,8 +1746,7 @@ async fn setup_community_wallet_caged(
     .await;
 
     // 2. Admins claim the offer.
-    for j in 0..authorities.len() {
-        let auth = &authorities[j];
+    for auth in authorities {
         // print private key
         let authority_pk = auth
             .private_key()
@@ -1763,7 +1754,7 @@ async fn setup_community_wallet_caged(
             .expect("cannot decode pri key");
         run_cli_claim_offer(
             authority_pk,
-            donor_address.clone(),
+            donor_address,
             api_endpoint.clone(),
             config_path.clone(),
         )
@@ -1788,10 +1779,9 @@ async fn test_offer_migration() -> Result<(), anyhow::Error> {
     for (signer_address, validator_private_key) in
         addresses.iter().zip(smoke.validator_private_keys.iter())
     {
-        let to_account = signer_address.clone();
         // Transfer funds to ensure the account exists on-chain using the specific validator's private key
         run_cli_transfer(
-            to_account,
+            *signer_address,
             10.0,
             validator_private_key.clone(),
             smoke.api_endpoint.clone(),
@@ -1803,7 +1793,7 @@ async fn test_offer_migration() -> Result<(), anyhow::Error> {
         .private_key()
         .to_encoded_string()
         .expect("cannot decode pri key");
-    let community_wallet_address = addresses[0].clone();
+    let community_wallet_address = addresses[0];
 
     // 3. Initialize deprecated governance
     let init_gov_deprecated = TxsCli {
