@@ -2,8 +2,8 @@
 use crate::core::{mnemonic::Mnemonic, wallet_library::WalletLibrary};
 use diem_types::chain_id::NamedChain;
 use libra_types::{
-    core_types::mode_ol::MODE_0L,
     exports::{AccountAddress, AuthenticationKey},
+    legacy_types::mode_ol::MODE_0L,
 };
 use std::{env, process::exit};
 
