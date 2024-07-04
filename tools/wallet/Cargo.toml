@@ -21,6 +21,7 @@ diem-config = { workspace = true }
 diem-crypto = { workspace = true }
 diem-genesis = { workspace = true }
 diem-types = { workspace = true }
+diem-temppath = { workspace = true }
 hex = { workspace = true }
 hmac = { workspace = true }
 indoc = { workspace = true }

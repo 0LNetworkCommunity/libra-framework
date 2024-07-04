@@ -1,4 +1,4 @@
-//! autopay view for web monitor
+//! AutoPay view for web monitor
 
 use anyhow::Result;
 
@@ -8,7 +8,7 @@ use move_core_types::{
     language_storage::{ResourceKey, StructTag},
     move_resource::{MoveResource, MoveStructType},
 };
-// use num_format::{Locale, ToFormattedString};
+
 use serde::{Deserialize, Serialize};
 use super::legacy_address::LegacyAddress;
 

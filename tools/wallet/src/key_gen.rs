@@ -4,13 +4,12 @@ use crate::{
     load_keys,
 };
 use anyhow::Result;
-use indoc::formatdoc;
-// use ol_keys::wallet::get_account_from_mnem;
 use diem_crypto::ed25519::{Ed25519PrivateKey, Ed25519PublicKey};
+use indoc::formatdoc;
 use libra_types::exports::{AccountAddress, AuthenticationKey};
 use std::path::PathBuf;
 
-/// Genereates keys from WalletLibrary, updates a MinerConfig
+/// Generates keys from WalletLibrary, updates a MinerConfig
 pub fn keygen() -> (AuthenticationKey, AccountAddress, WalletLibrary, String) {
     // Generate new keys
     let mut wallet = WalletLibrary::new();
@@ -21,6 +20,16 @@ pub fn keygen() -> (AuthenticationKey, AccountAddress, WalletLibrary, String) {
     (auth_key, account, wallet, mnemonic_string)
 }
 
+/// Runs the key generation process asynchronously.
+///
+/// # Arguments
+///
+/// * `mnemonic` - Optional mnemonic string to load keys.
+/// * `output_dir` - Optional output directory for key files.
+///
+/// # Returns
+///
+/// A string containing information about the generated keys.
 pub async fn run(mnemonic: Option<String>, output_dir: Option<PathBuf>) -> Result<String> {
     let private_key = if let Some(mnemonic) = mnemonic {
         let (_, account_address, wallet_lib) = load_keys::get_account_from_mnem(mnemonic.clone())?;

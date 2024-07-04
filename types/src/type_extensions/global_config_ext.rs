@@ -17,6 +17,7 @@ pub trait GlobalConfigExt {
 }
 
 impl GlobalConfigExt for GlobalConfig {
+    /// Loads the global configuration from the specified file.
     fn load_ext() -> CliTypedResult<GlobalConfig> {
         let path = global_folder()?.join(GLOBAL_CONFIG_FILE);
         if path.exists() {
@@ -27,6 +28,7 @@ impl GlobalConfigExt for GlobalConfig {
         }
     }
 
+    /// Gets the location of the configuration file based on the configuration type and mode.
     fn get_config_location_ext(&self, mode: ConfigSearchMode) -> CliTypedResult<PathBuf> {
         match self.config_type.unwrap_or_default() {
             ConfigType::Global => global_folder(),
@@ -35,6 +37,7 @@ impl GlobalConfigExt for GlobalConfig {
     }
 }
 
+/// Helper function to locate the global configuration directory.
 pub fn global_folder() -> CliTypedResult<PathBuf> {
     if let Some(dir) = dirs::home_dir() {
         Ok(dir.join(GLOBAL_CONFIG_DIRECTORY_0L))

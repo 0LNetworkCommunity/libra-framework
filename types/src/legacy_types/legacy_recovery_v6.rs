@@ -54,60 +54,86 @@ impl Default for AccountRole {
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct LegacyRecoveryV6 {
-    ///
+    /// The account address associated with this recovery.
     pub account: Option<AccountAddress>,
-    ///
+
+    /// The authentication key for the account.
     pub auth_key: Option<AuthenticationKey>,
-    ///
+
+    /// The role of the account (e.g., user, validator).
     pub role: AccountRole,
-    ///
+
+    /// The balance resource of the account in the legacy system.
     pub balance: Option<LegacyBalanceResource>,
-    ///
+
+    /// Validator configuration information.
     pub val_cfg: Option<ValidatorConfig>,
-    ///
+
+    /// Validator operator configuration resource.
     pub val_operator_cfg: Option<ValidatorOperatorConfigResource>,
-    ///
+
+    /// Community wallets associated with the account.
     pub comm_wallet: Option<CommunityWalletsResourceLegacy>,
-    ///
+
+    /// Information about the currency associated with the account.
     pub currency_info: Option<CurrencyInfoResource>,
-    ///
+
+    /// Ancestry information of the account in the legacy system.
     pub ancestry: Option<LegacyAncestryResource>,
-    ///
+
+    /// Receipts resource for the account.
     pub receipts: Option<ReceiptsResource>,
-    ///
+
+    /// Cumulative deposits resource for the account.
     pub cumulative_deposits: Option<CumulativeDepositResource>,
-    ///
+
+    /// Slow wallet resource, potentially used for delayed transactions.
     pub slow_wallet: Option<SlowWalletResource>,
-    ///
+
+    /// List of slow wallets associated with the account.
     pub slow_wallet_list: Option<SlowWalletListResource>,
-    ///
+
+    /// User's burn preference resource, indicating preferences for token burning.
     pub user_burn_preference: Option<UserBurnPreferenceResource>,
-    ///
+
+    /// Burn tracker resource for tracking burned tokens.
     pub burn_tracker: Option<BurnTrackerResource>,
-    ///
+
+    /// Resource indicating the user's vouches.
     pub my_vouches: Option<MyVouchesResource>,
-    ///
+
+    /// Transaction schedule resource for the account.
     pub tx_schedule: Option<TxScheduleResource>,
-    ///
+
+    /// Fee maker resource for handling transaction fees.
     pub fee_maker: Option<FeeMakerResource>,
-    ///
+
+    /// Jail resource, potentially indicating if the account is penalized.
     pub jail: Option<JailResource>,
-    ///
+
+    /// Resource for tracking user's pledges.
     pub my_pledge: Option<MyPledgesResource>,
-    ///
+
+    /// Burn counter resource for tracking the number of burns.
     pub burn_counter: Option<BurnCounterResource>,
-    ///
+
+    /// Registry resource for donor voices.
     pub donor_voice_registry: Option<RegistryResource>,
-    ///
+
+    /// Registry resource for epoch fee makers.
     pub epoch_fee_maker_registry: Option<EpochFeeMakerRegistryResource>,
-    ///
+
+    /// Match index resource.
     pub match_index: Option<MatchIndexResource>,
-    ///
+
+    /// Resource representing the validator universe.
     pub validator_universe: Option<ValidatorUniverseResource>,
-    ///
+
+    /// Consensus reward resource for the account.
     pub consensus_reward: Option<ConsensusRewardResource>,
 }
 
+/// Strips the system address from the legacy recovery list
 pub fn strip_system_address(list: &mut Vec<LegacyRecoveryV6>) {
     list.retain(|e| {
         !e.account
@@ -123,6 +149,7 @@ pub fn read_from_recovery_file(path: &PathBuf) -> Vec<LegacyRecoveryV6> {
     serde_json::from_str(&data).expect("Unable to parse")
 }
 
+/// Gets the legacy recovery data for an account state
 pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<LegacyRecoveryV6> {
     let mut legacy_recovery = LegacyRecoveryV6 {
         account: account_state.get_account_address()?,

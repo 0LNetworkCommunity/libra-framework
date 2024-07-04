@@ -12,7 +12,6 @@ use std::{
     env::current_dir,
     fs::OpenOptions,
     io::Write,
-    // os::unix::fs::OpenOptionsExt,
     path::{Path, PathBuf},
 };
 

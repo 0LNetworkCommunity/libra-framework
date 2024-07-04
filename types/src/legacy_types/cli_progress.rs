@@ -1,7 +1,9 @@
-//! standardize cli progress bars in 0L tools
+//! CLI Progress Bar and Spinner Styles
+
 use indicatif::ProgressStyle;
 use console::{self, style};
-/// standard cli progress bars etc. for 0L tools
+
+/// Struct to standardize CLI progress bars and spinners for 0L tools
 pub struct OLProgress;
 
 impl OLProgress {
@@ -55,7 +57,7 @@ impl OLProgress {
 
 }
 
-
+/// Generates tick strings for progress bars
 fn ol_ticks() -> Vec<&'static str> {
   vec![
     "      ",
