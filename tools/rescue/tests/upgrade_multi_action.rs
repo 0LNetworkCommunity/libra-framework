@@ -46,18 +46,17 @@ async fn upgrade_multi_action_on_twin_db() -> Result<(), anyhow::Error> {
     for (address, validator_private_key) in
         addresses.iter().zip(swarm.validator_private_keys.iter())
     {
-        let to_account = address.clone();
         cli_scaffold.subcommand = Some(Transfer {
-            to_account,
+            to_account: *address,
             amount: 500.0,
         });
         cli_scaffold.test_private_key = Some(validator_private_key.clone());
 
         // execute the transfer
-        cli_scaffold.run().await.expect(&format!(
-            "CLI could not transfer funds to account {}",
-            to_account.to_string()
-        ));
+        cli_scaffold
+            .run()
+            .await
+            .unwrap_or_else(|_| panic!("CLI could not transfer funds to account {}", address));
     }
 
     // 1.3 pick accounts to compose community wallet
@@ -74,7 +73,7 @@ async fn upgrade_multi_action_on_twin_db() -> Result<(), anyhow::Error> {
         .to_encoded_string()
         .expect("cannot decode pri key");
     let cw_authorities = [&accounts[0], &accounts[1], &accounts[2]];
-    let cw_authorities_addresses = addresses.iter().map(|a| a.clone()).collect::<Vec<_>>();
+    let cw_authorities_addresses: Vec<_> = addresses.iter().take(3).cloned().collect();
 
     // 2. upgrade to the latest version with Offer structure
     support::upgrade_multiple_impl("upgrade-multi-lib", vec!["3-libra-framework"], &mut swarm)
@@ -111,7 +110,7 @@ async fn upgrade_multi_action_on_twin_db() -> Result<(), anyhow::Error> {
     // 5. Claim Offer
     for authority in cw_authorities {
         cli_scaffold.subcommand = Some(TxsSub::Community(CommunityTxs::GovClaim(ClaimTx {
-            community_wallet: cw_address.clone(),
+            community_wallet: cw_address,
         })));
         cli_scaffold.test_private_key = Some(
             authority
