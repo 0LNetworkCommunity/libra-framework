@@ -1,3 +1,5 @@
+// Defines resources related to user burn preferences and burn counters in the Move language.
+
 use diem_sdk::move_types::{
     ident_str, identifier::IdentStr, language_storage::TypeTag, move_resource::MoveResource,
     move_resource::MoveStructType,
@@ -7,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserBurnPreferenceResource {
-    ///
+    /// Indicates if the user wants to send burned tokens to the community.
     pub send_community: bool,
 }
 

@@ -1,12 +1,10 @@
+use move_core_types::identifier::IdentStr;
+use move_core_types::language_storage::TypeTag;
 use move_core_types::{
     ident_str,
     language_storage::StructTag,
     move_resource::{MoveResource, MoveStructType},
 };
-// use move_core_types::language_storage::StructTag;
-// use diem_api_types::U64;
-use move_core_types::identifier::IdentStr;
-use move_core_types::language_storage::TypeTag;
 use serde::{Deserialize, Serialize};
 
 use diem_types::{account_address::AccountAddress, event::EventHandle};
