@@ -741,13 +741,13 @@ tx_configs:
 
     let cfg: AppCfg = serde_yaml::from_str(raw_yaml).unwrap();
 
-    assert!(cfg.workspace.default_chain_id == NamedChain::TESTING);
+    assert_eq!(cfg.workspace.default_chain_id, NamedChain::TESTING);
 
     let np = cfg.get_network_profile(None).unwrap();
-    assert!(np.chain_name == NamedChain::TESTING);
+    assert_eq!(np.chain_name, NamedChain::TESTING);
 
     let np = cfg.get_network_profile(Some(NamedChain::MAINNET)).unwrap();
-    assert!(np.chain_name == NamedChain::MAINNET);
+    assert_eq!(np.chain_name, NamedChain::MAINNET);
 
     assert!(np.the_good_ones().is_err());
     assert!(np.the_best_one().is_err());

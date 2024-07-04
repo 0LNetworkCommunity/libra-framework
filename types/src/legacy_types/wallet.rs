@@ -24,9 +24,9 @@ impl MoveResource for CommunityWalletsResourceLegacy {}
 /// Struct that represents a SlowWallet resource
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SlowWalletResource {
-    ///
+    /// Amount unlocked.
     pub unlocked: u64,
-    ///
+    /// Amount transferred.
     pub transferred: u64,
 }
 
@@ -39,9 +39,9 @@ impl MoveResource for SlowWalletResource {}
 /// Struct that represents a SlowWallet resource
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SlowWalletListResource {
-    ///
+    /// List of slow wallet addresses.
     pub list: Vec<AccountAddress>,
-    ///
+    /// Event handle for drip events.
     pub drip_events: EventHandle,
 }
 

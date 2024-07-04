@@ -8,9 +8,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MyVouchesResource {
-    ///
+    /// A vector containing the addresses of buddies vouched for.
     pub my_buddies: Vec<AccountAddress>,
-    ///
+    /// A vector containing the epochs when the vouches were made.
     pub epoch_vouched: Vec<u64>,
 }
 

@@ -15,6 +15,7 @@ pub struct TxError {
 }
 
 impl From<anyhow::Error> for TxError {
+    /// Converts an `anyhow::Error` into a `TxError`.
     fn from(e: anyhow::Error) -> Self {
         TxError {
             err: Some(e),

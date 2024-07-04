@@ -67,14 +67,17 @@ impl MoveStructType for GasCoinInfoResource {
 impl MoveResource for GasCoinInfoResource {}
 
 impl GasCoinInfoResource {
+    /// Returns the symbol of the coin as a string.
     pub fn symbol(&self) -> Result<String, FromUtf8Error> {
         String::from_utf8(self.symbol.clone())
     }
 
+    /// Returns the number of decimals for the coin.
     pub fn decimals(&self) -> u8 {
         self.decimals
     }
 
+    /// Returns the supply of the coin.
     pub fn supply(&self) -> &Option<OptionalAggregator> {
         &self.supply
     }
