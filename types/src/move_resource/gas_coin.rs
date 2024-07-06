@@ -1,3 +1,5 @@
+use move_core_types::identifier::IdentStr;
+use move_core_types::language_storage::TypeTag;
 use move_core_types::{
     ident_str,
     identifier::IdentStr,
