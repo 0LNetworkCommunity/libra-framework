@@ -199,7 +199,7 @@ impl GenesisWizard {
         let token_path = self.find_github_token(git_token_path_opt);
         self.github_token = if token_path.is_err() {
             Input::<String>::new()
-                .with_prompt(&"No github token found, enter one now".to_string())
+                .with_prompt("No github token found, enter one now".to_string())
                 .interact_text()?
         } else {
             fs::read_to_string(token_path.unwrap())?.trim().to_owned()

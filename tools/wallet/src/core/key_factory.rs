@@ -63,8 +63,8 @@ impl ChildNumber {
 
 impl std::ops::AddAssign for ChildNumber {
     fn add_assign(&mut self, other: Self) {
-        assume!(self.0 <= u64::max_value() / 2); // invariant
-        assume!(other.0 <= u64::max_value() / 2); // invariant
+        assume!(self.0 <= u64::MAX / 2); // invariant
+        assume!(other.0 <= u64::MAX / 2); // invariant
         *self = Self(self.0 + other.0)
     }
 }

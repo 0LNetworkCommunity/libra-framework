@@ -338,7 +338,7 @@ impl TwinSetup for Twin {
                 waypoint: WaypointConfig::FromConfig(waypoints[i]),
             };
             let genesis_transaction = {
-                let buf = std::fs::read(&genesis_blob_paths[i].clone()).unwrap();
+                let buf = std::fs::read(genesis_blob_paths[i].clone()).unwrap();
                 bcs::from_bytes::<Transaction>(&buf).unwrap()
             };
             node_config.execution.genesis = Some(genesis_transaction);

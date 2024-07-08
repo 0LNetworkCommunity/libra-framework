@@ -14,7 +14,7 @@ use std::{
     io::Write,
     path::Path,
 };
-
+use std::fmt::Display;
 #[cfg(test)]
 use diem_temppath::TempPath;
 #[cfg(test)]
@@ -40,9 +40,9 @@ use rand::RngCore;
 /// +---------+-------+
 pub struct Mnemonic(Vec<&'static str>);
 
-impl ToString for Mnemonic {
-    fn to_string(&self) -> String {
-        self.0.as_slice().join(" ")
+impl Display for Mnemonic {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0.as_slice().join(" "))
     }
 }
 
