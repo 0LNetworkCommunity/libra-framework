@@ -16,12 +16,11 @@ rust-version = { workspace = true }
 anyhow = { workspace = true }
 bcs = { workspace = true }
 clap = { workspace = true }
-diem-api-types = { workspace = true }
 diem-backup-cli = { workspace = true }
 diem-db-tool = { workspace = true }
 diem-logger = { workspace = true }
 diem-push-metrics = { workspace = true }
 diem-types = { workspace = true }
+libra-types = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
-libra-types = { workspace = true }

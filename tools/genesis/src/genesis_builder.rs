@@ -1,18 +1,11 @@
 //! build the genesis file
 
+use crate::{compare, supply, vm, wizard::DEFAULT_GIT_BRANCH};
 use crate::{
     genesis::make_recovery_genesis_from_vec_legacy_recovery,
     genesis_reader::bootstrap_db_reader_from_gen_tx,
 };
-use crate::{compare, supply, vm, wizard::DEFAULT_GIT_BRANCH};
-use std::{
-    cmp::Ordering,
-    path::{Path, PathBuf},
-    str::FromStr,
-    time::Duration,
-};
 use anyhow::{anyhow, bail, Result};
-use indicatif::ProgressBar;
 use diem_crypto::{
     bls12381,
     ed25519::{Ed25519PublicKey, ED25519_PUBLIC_KEY_LENGTH},
@@ -35,6 +28,7 @@ use diem_vm_genesis::{
     default_gas_schedule,
     GenesisConfiguration as VmGenesisGenesisConfiguration, // in vendor codethere are two structs separately called the same name with nearly identical fields
 };
+use indicatif::ProgressBar;
 use libra_framework::release;
 use libra_types::{
     core_types::fixtures::TestPersona,
@@ -48,6 +42,12 @@ use libra_wallet::{
     utils::{check_if_file_exists, from_yaml, write_to_user_only_file},
 };
 use serde::{Deserialize, Serialize};
+use std::{
+    cmp::Ordering,
+    path::{Path, PathBuf},
+    str::FromStr,
+    time::Duration,
+};
 
 pub const LAYOUT_FILE: &str = "layout.yaml";
 pub const OPERATOR_FILE: &str = "operator.yaml";
