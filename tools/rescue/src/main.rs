@@ -1,7 +1,9 @@
-use std::time::Duration;
+//! CLI tool for rescue operations in Diem, providing commands for transaction rescue,
+//! database bootstrapping, and debugging twin states.
 
 use clap::{Parser, Subcommand};
 use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts, twin::TwinOpts};
+use std::time::Duration;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]

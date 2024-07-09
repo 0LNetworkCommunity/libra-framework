@@ -1,9 +1,10 @@
 //! Key generation
 use crate::core::{mnemonic::Mnemonic, wallet_library::WalletLibrary};
 use diem_types::chain_id::NamedChain;
-use libra_types::exports::AccountAddress;
-use libra_types::exports::AuthenticationKey;
-use libra_types::legacy_types::mode_ol::MODE_0L;
+use libra_types::{
+    core_types::mode_ol::MODE_0L,
+    exports::{AccountAddress, AuthenticationKey},
+};
 use std::{env, process::exit};
 
 /// Get authkey and account from mnemonic

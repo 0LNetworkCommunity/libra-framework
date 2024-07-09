@@ -1,4 +1,5 @@
 //! Exprorting some types from vendor so that they can be used in other crates
+pub mod core_types;
 pub mod exports;
 pub mod legacy_types;
 pub mod move_resource;

@@ -1,19 +1,18 @@
-use crate::make_yaml_public_fullnode::make_private_vfn_yaml;
-use crate::make_yaml_validator;
+use crate::{make_yaml_public_fullnode::make_private_vfn_yaml, make_yaml_validator};
 use anyhow::{anyhow, bail, Context};
 use dialoguer::{Confirm, Input};
 use diem_crypto::x25519;
-use diem_genesis::config::HostAndPort;
-use diem_genesis::keys::PublicIdentity;
-use diem_types::chain_id::NamedChain;
-use diem_types::network_address::DnsName;
-use libra_types::legacy_types::app_cfg::AppCfg;
-use libra_types::legacy_types::network_playlist::NetworkPlaylist;
-use libra_types::ol_progress::OLProgress;
-use libra_wallet::utils::read_public_identity_file;
-use libra_wallet::validator_files::SetValidatorConfiguration;
-use std::path::{Path, PathBuf};
-use std::str::FromStr;
+use diem_genesis::{config::HostAndPort, keys::PublicIdentity};
+use diem_types::{chain_id::NamedChain, network_address::DnsName};
+use libra_types::{
+    core_types::{app_cfg::AppCfg, network_playlist::NetworkPlaylist},
+    ol_progress::OLProgress,
+};
+use libra_wallet::{utils::read_public_identity_file, validator_files::SetValidatorConfiguration};
+use std::{
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
 pub async fn initialize_validator(
     home_path: Option<PathBuf>,
@@ -56,6 +55,7 @@ pub async fn initialize_validator(
     Ok(pub_id)
 }
 
+// Function to get the external IP address of the host
 async fn get_ip() -> anyhow::Result<HostAndPort> {
     let res = reqwest::get("https://ipinfo.io/ip").await?;
     match res.text().await {
@@ -63,6 +63,7 @@ async fn get_ip() -> anyhow::Result<HostAndPort> {
         _ => bail!("can't get this host's external ip"),
     }
 }
+
 /// interact with user to get ip address
 pub async fn what_host() -> Result<HostAndPort, anyhow::Error> {
     // get from external source since many cloud providers show different interfaces for `machine_ip`
@@ -87,6 +88,7 @@ pub async fn what_host() -> Result<HostAndPort, anyhow::Error> {
     Ok(ip)
 }
 
+// Function to handle the validator dialogue with the user
 pub async fn validator_dialogue(
     data_path: &Path,
     github_username: Option<&str>,
@@ -129,6 +131,7 @@ pub async fn validator_dialogue(
     Ok(())
 }
 
+// Function to get the local validator full node ID
 fn get_local_vfn_id(home: &Path) -> anyhow::Result<x25519::PublicKey> {
     let id = read_public_identity_file(&home.join("public-keys.yaml"))?;
 
@@ -136,6 +139,7 @@ fn get_local_vfn_id(home: &Path) -> anyhow::Result<x25519::PublicKey> {
         .context("no validator public key found in public-keys.yaml")
 }
 
+/// Handles the dialogue for setting up the validator full node (VFN) configuration
 pub async fn vfn_dialogue(
     home: &Path,
     host: Option<DnsName>,
@@ -152,7 +156,7 @@ pub async fn vfn_dialogue(
 
     let pk = match net_pubkey {
         Some(r) => r,
-        // maybe they already have the public-keys.yamlhere
+        // maybe they already have the public-keys.yaml here
         None => get_local_vfn_id(home).map_err(|e| {
               anyhow!("ERROR: cannot make vfn.yaml, make sure you have the public-keys.yaml on this host before starting, message: {}", e)
         })?,

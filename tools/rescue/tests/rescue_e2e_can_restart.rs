@@ -164,7 +164,7 @@ async fn test_can_restart() -> anyhow::Result<()> {
         .unwrap()
         .len();
 
-    assert!(num_nodes == 4);
+    assert_eq!(num_nodes, 4);
 
     // show progress
     println!("10. verify transactions work");

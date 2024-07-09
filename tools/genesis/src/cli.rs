@@ -4,7 +4,7 @@ use crate::{
     genesis_builder, parse_json, testnet_setup,
     wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME},
 };
-use libra_types::{exports::NamedChain, global_config_dir, legacy_types::fixtures::TestPersona};
+use libra_types::{core_types::fixtures::TestPersona, exports::NamedChain, global_config_dir};
 use std::{fs, net::Ipv4Addr, path::PathBuf};
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
