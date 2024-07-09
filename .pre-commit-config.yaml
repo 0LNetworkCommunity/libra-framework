@@ -1,12 +1,39 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: trailing-whitespace
         files: \.(rs|move)$
       - id: end-of-file-fixer
         files: \.(rs|move)$
-  # -   repo: https://github.com/doublify/pre-commit-rust
-  #     rev: v1.0
-  #     hooks:
-  #     -   id: fmt
+
+# TODO:: Resolve Invalid Manifest issue
+#  - repo: https://github.com/rust-lang/rustfmt
+#    rev: v1.6.0
+#    hooks:
+#      - id: rustfmt
+
+#  - repo: https://github.com/rust-lang/rust-clippy
+#    rev: 0.1.53  # TODO:: Find the latest version to provide
+#    hooks:
+#      - id: cargo-clippy
+#        args: ["--workspace", "--tests", "--", "-D", "warnings"]
+
+
+#  - repo: local
+#    hooks:
+#      - id: cargo-machete
+#        name: cargo machete
+#        description: Run cargo machete on all folders in tools directory
+#        entry: bash -c 'cargo machete tools/*'  # TODO:: Exclude Makefile inside the tools
+#        language: rust
+#        files: ^tools/
+#        args: []
+#
+#      - id: cargo-sort
+#        name: cargo sort
+#        description: Run cargo sort on all folders in tools directory
+#        entry: bash -c 'cargo sort tools/*'   # TODO:: Exclude Makefile inside the tools
+#        language: rust
+#        files: ^tools/
+#        args: []
