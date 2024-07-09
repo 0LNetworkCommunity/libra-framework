@@ -7,20 +7,20 @@
 //! https://github.com/rust-bitcoin/rust-wallet/blob/master/wallet/src/mnemonic.rs
 
 use anyhow::{bail, Result};
+#[cfg(test)]
+use diem_temppath::TempPath;
 use mirai_annotations::*;
+#[cfg(test)]
+use rand::rngs::OsRng;
+#[cfg(test)]
+use rand::RngCore;
 use sha2::{Digest, Sha256};
+use std::fmt::Display;
 use std::{
     fs::{self, File},
     io::Write,
     path::Path,
 };
-use std::fmt::Display;
-#[cfg(test)]
-use diem_temppath::TempPath;
-#[cfg(test)]
-use rand::rngs::OsRng;
-#[cfg(test)]
-use rand::RngCore;
 
 /// Mnemonic seed for deterministic key derivation based on [BIP39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki).
 /// The mnemonic must encode entropy in a multiple of 32 bits. With more entropy, security is
