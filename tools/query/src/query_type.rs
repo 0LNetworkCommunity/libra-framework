@@ -12,8 +12,7 @@ use diem_api_types::Transaction;
 use diem_debugger::DiemDebugger;
 use diem_sdk::{rest_client::Client, types::account_address::AccountAddress};
 use indoc::indoc;
-use libra_types::exports::AuthenticationKey;
-use libra_types::type_extensions::client_ext::ClientExt;
+use libra_types::{exports::AuthenticationKey, type_extensions::client_ext::ClientExt};
 use serde_json::json;
 
 #[derive(Debug, clap::Subcommand)]
@@ -124,32 +123,6 @@ pub enum QueryType {
         /// account to query txs of
         account: AccountAddress,
     },
-    // TODO:
-
-    // /// Get transaction history
-    // Txs {
-    //     #[clap(short, long)]
-    //     /// account to query txs of
-    //     account: AccountAddress,
-    //     #[clap(long)]
-    //     /// get transactions after this height
-    //     txs_height: Option<u64>,
-    //     #[clap(long)]
-    //     /// limit how many txs
-    //     txs_count: Option<u64>,
-    //     #[clap(long)]
-    //     /// filter by type
-    //     txs_type: Option<String>,
-    // },
-    // /// Get events
-    // Events {
-    //     /// account to query events
-    //     account: AccountAddress,
-    //     /// switch for sent or received events.
-    //     sent_or_received: bool,
-    //     /// what event sequence number to start querying from, if DB does not have all.
-    //     seq_start: Option<u64>,
-    // },
     /// Display all account structs
     Annotate { account: AccountAddress },
 }
@@ -277,8 +250,6 @@ impl QueryType {
                 if blob.is_none() {
                     bail!("cannot find account state at {}", account)
                 };
-                // dbg!(&blob.unwrap());
-                // blob.unwrap().to_string();
                 let pretty = format!("{:#}", blob.unwrap().to_string());
                 Ok(json!(pretty))
             }

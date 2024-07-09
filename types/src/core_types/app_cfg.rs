@@ -368,16 +368,6 @@ pub struct Workspace {
 
     /// home directory of the diem node, may be the same as miner.
     pub node_home: PathBuf,
-    // /// Directory of source code (for developer tests only)
-    // pub source_path: Option<PathBuf>,
-    // /// Directory to store blocks in
-    // pub block_dir: String,
-    // /// Directory for the database
-    // #[serde(default = "default_db_path")]
-    // pub db_path: PathBuf,
-    // /// Path to which stdlib binaries for upgrades get built typically
-    // /// /language/diem-framework/staged/stdlib.mv
-    // pub stdlib_bin_path: Option<PathBuf>,
 }
 
 impl Default for Workspace {

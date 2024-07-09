@@ -1,19 +1,17 @@
-use crate::legacy_config;
-use crate::make_yaml_public_fullnode::{
-    download_genesis, get_genesis_waypoint, init_fullnode_yaml,
+use crate::{
+    legacy_config,
+    make_yaml_public_fullnode::{download_genesis, get_genesis_waypoint, init_fullnode_yaml},
+    validator_config::{validator_dialogue, vfn_dialogue},
 };
-use crate::validator_config::{validator_dialogue, vfn_dialogue};
 use anyhow::{Context, Result};
 use clap::Parser;
-use libra_types::exports::AccountAddress;
-use libra_types::exports::AuthenticationKey;
-use libra_types::exports::Client;
-use libra_types::exports::NamedChain;
-use libra_types::legacy_types::app_cfg::{self, AppCfg};
-use libra_types::type_extensions::client_ext::ClientExt;
-use libra_types::{global_config_dir, ol_progress};
-use libra_wallet::utils::read_operator_file;
-use libra_wallet::validator_files::OPERATOR_FILE;
+use libra_types::{
+    core_types::app_cfg::{self, AppCfg},
+    exports::{AccountAddress, AuthenticationKey, Client, NamedChain},
+    global_config_dir, ol_progress,
+    type_extensions::client_ext::ClientExt,
+};
+use libra_wallet::{utils::read_operator_file, validator_files::OPERATOR_FILE};
 use std::path::PathBuf;
 use url::Url;
 
@@ -86,6 +84,7 @@ enum ConfigSub {
 }
 
 impl ConfigCli {
+    /// Executes the appropriate subcommand based on user input.
     pub async fn run(&self) -> Result<()> {
         match &self.subcommand {
             Some(ConfigSub::Fix {
@@ -93,13 +92,16 @@ impl ConfigCli {
                 remove_profile,
                 force_url,
             }) => {
+                // Load configuration file
                 let mut cfg = AppCfg::load(self.path.clone())?;
 
+                // Handle address fix option
                 if *address {
                     let mut account_keys = legacy_config::prompt_for_account()?;
 
                     let client = Client::new(cfg.pick_url(self.chain_name)?);
 
+                    // Lookup originating address if client index is successful
                     if client.get_index().await.is_ok() {
                         account_keys.account = match client
                             .lookup_originating_address(account_keys.auth_key)
@@ -114,9 +116,11 @@ impl ConfigCli {
                         };
                     };
 
+                    // Create profile based on account keys
                     let profile =
                         app_cfg::Profile::new(account_keys.auth_key, account_keys.account);
 
+                    // Prompt to set as default profile
                     if dialoguer::Confirm::new()
                         .with_prompt("set as default profile?")
                         .interact()?
@@ -125,9 +129,11 @@ impl ConfigCli {
                             .set_default(account_keys.account.to_hex_literal());
                     }
 
+                    // Add profile to configuration
                     cfg.maybe_add_profile(profile)?;
                 }
 
+                // Remove profile if specified
                 if let Some(p) = remove_profile {
                     let r = cfg.try_remove_profile(p);
                     if r.is_err() {
@@ -135,14 +141,19 @@ impl ConfigCli {
                     }
                 }
 
+                // Force URL overwrite if specified
                 if let Some(u) = force_url {
                     let np = cfg.get_network_profile_mut(self.chain_name)?;
                     np.nodes = vec![];
                     np.add_url(u.to_owned());
                 }
+
+                // Save configuration file
                 cfg.save_file()?;
                 Ok(())
             }
+
+            // Initialize configuration wizard
             Some(ConfigSub::Init {
                 force_address,
                 force_authkey,
@@ -162,6 +173,8 @@ impl ConfigCli {
 
                 Ok(())
             }
+
+            // Initialize validator configuration
             Some(ConfigSub::ValidatorInit { vfn }) => {
                 let home_dir = self.path.clone().unwrap_or_else(global_config_dir);
                 if *vfn {
@@ -177,12 +190,15 @@ impl ConfigCli {
                     );
                     std::fs::create_dir_all(&data_path)?;
                 }
+                // Download genesis block and initialize validators' configuration
                 download_genesis(Some(data_path.clone())).await?;
                 let _ = get_genesis_waypoint(Some(data_path.clone())).await?;
                 validator_dialogue(&data_path, None, self.chain_name).await?;
                 println!("Validators' config initialized.");
                 Ok(())
             }
+
+            // View validator and network configurations
             Some(ConfigSub::View {}) => {
                 let home_dir = self.path.clone().unwrap_or_else(global_config_dir);
 
@@ -225,6 +241,8 @@ impl ConfigCli {
 
                 Ok(())
             }
+
+            // Initialize fullnode configuration
             Some(ConfigSub::FullnodeInit { home_path }) => {
                 download_genesis(home_path.to_owned()).await?;
                 println!("downloaded genesis block");

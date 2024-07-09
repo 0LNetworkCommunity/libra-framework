@@ -1,8 +1,7 @@
 mod support;
 
 use libra_smoke_tests::libra_smoke::LibraSmoke;
-use rescue::diem_db_bootstrapper::BootstrapOpts;
-use rescue::rescue_tx::RescueTxOpts;
+use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
 
 #[tokio::test]
 async fn test_framework_upgrade_writeset() -> anyhow::Result<()> {
@@ -61,7 +60,7 @@ async fn test_framework_upgrade_writeset() -> anyhow::Result<()> {
 
     let new_w = boot.run()?;
 
-    assert!(wp == new_w, "waypoint mismatch");
+    assert_eq!(wp, new_w, "waypoint mismatch");
 
     Ok(())
 }

@@ -1,20 +1,24 @@
 //! read-archive
 use anyhow::{anyhow, Error, Result};
-use diem_backup_cli::utils::read_record_bytes::ReadRecordBytes;
 use diem_backup_cli::{
     backup_types::{
         epoch_ending::manifest::EpochEndingBackup, state_snapshot::manifest::StateSnapshotBackup,
     },
     storage::{FileHandle, FileHandleRef},
+    utils::read_record_bytes::ReadRecordBytes,
 };
-use diem_types::account_address::AccountAddress;
-use diem_types::account_state::AccountState;
-use diem_types::state_store::state_key::{StateKey, StateKeyInner};
-use diem_types::state_store::state_value::StateValue;
+use diem_types::{
+    account_address::AccountAddress,
+    account_state::AccountState,
+    state_store::{
+        state_key::{StateKey, StateKeyInner},
+        state_value::StateValue,
+    },
+};
 use libra_types::legacy_types::legacy_recovery_v6;
 use serde_json::json;
-use std::collections::HashMap;
 use std::{
+    collections::HashMap,
     fs,
     path::{Path, PathBuf},
 };
@@ -62,10 +66,8 @@ pub async fn read_account_state_chunk(
     let mut chunk = vec![];
 
     while let Some(record_bytes) = file.read_record_bytes().await? {
-        //println!("record_bytes: {:?}", &record_bytes.len());
         chunk.push(bcs::from_bytes(&record_bytes)?);
     }
-    //println!("chunk: {:?}", &chunk.len()    );
     Ok(chunk)
 }
 

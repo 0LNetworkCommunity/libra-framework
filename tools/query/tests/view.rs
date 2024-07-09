@@ -18,9 +18,6 @@ async fn libra_view_test() {
     match q.query_to_json(Some(c.to_owned())).await {
         Ok(v) => {
             println!("v: {:?}", v);
-            // let b: LibraBalanceDisplay = serde_json::from_value(v).unwrap();
-            // assert!(b.unlocked == 10.0);
-            // assert!(b.total == 10.0);
         }
         Err(e) => {
             println!("e: {:?}", e);

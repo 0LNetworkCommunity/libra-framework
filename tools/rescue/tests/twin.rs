@@ -1,7 +1,6 @@
 mod support;
 
 use crate::support::{deadline_secs, update_node_config_restart};
-
 use diem_config::config::InitialSafetyRulesConfig;
 use diem_forge::SwarmExt;
 use diem_types::transaction::Transaction;

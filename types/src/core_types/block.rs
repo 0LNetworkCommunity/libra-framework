@@ -1,6 +1,6 @@
 //! Proof block data structure and operations
 
-use crate::legacy_types::{app_cfg::AppCfg, mode_ol::MODE_0L};
+use crate::core_types::{app_cfg::AppCfg, mode_ol::MODE_0L};
 
 use crate::exports::NamedChain;
 

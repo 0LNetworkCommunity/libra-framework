@@ -3,26 +3,24 @@
 //! every day is like sunday
 //! -- morrissey via github copilot
 
-use crate::genesis_reader::total_supply;
-use crate::supply::Supply;
-use crate::{genesis_reader, parse_json};
-
+use crate::{genesis_reader, genesis_reader::total_supply, parse_json, supply::Supply};
 use anyhow::{self, Context};
 use diem_state_view::account_with_state_view::AsAccountWithStateView;
-use diem_storage_interface::state_view::LatestDbStateCheckpointView;
-use diem_storage_interface::DbReader;
-use diem_types::account_view::AccountView;
-use diem_types::transaction::Transaction;
+use diem_storage_interface::{state_view::LatestDbStateCheckpointView, DbReader};
+use diem_types::{account_view::AccountView, transaction::Transaction};
 use indicatif::{ProgressBar, ProgressIterator};
-use libra_types::exports::AccountAddress;
-use libra_types::legacy_types::legacy_recovery_v6::{self, AccountRole, LegacyRecoveryV6};
-use libra_types::move_resource::gas_coin::{GasCoinStoreResource, SlowWalletBalance};
-use libra_types::ol_progress::OLProgress;
-use move_core_types::language_storage::CORE_CODE_ADDRESS;
-use move_core_types::move_resource::MoveResource;
+use libra_types::{
+    exports::AccountAddress,
+    legacy_types::legacy_recovery_v6::{self, AccountRole, LegacyRecoveryV6},
+    move_resource::gas_coin::{GasCoinStoreResource, SlowWalletBalance},
+    ol_progress::OLProgress,
+};
+use move_core_types::{language_storage::CORE_CODE_ADDRESS, move_resource::MoveResource};
 use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 /// struct for holding the results of a comparison
@@ -138,6 +136,7 @@ struct JsonDump {
     balance: Option<GasCoinStoreResource>,
     slow: Option<SlowWalletBalance>,
 }
+
 /// Compare the balances in a recovery file to the balances in a genesis blob.
 pub fn export_account_balances(
     recovery: &[LegacyRecoveryV6],
@@ -200,7 +199,6 @@ pub fn compare_json_to_genesis_blob(
 }
 
 // Check that the genesis validators are present in the genesis blob file, once we read the db.
-
 fn get_val_set(db_reader: &Arc<dyn DbReader>) -> anyhow::Result<Vec<AccountAddress>> {
     let db_state_view = db_reader.latest_state_checkpoint_view().unwrap();
     let root_account_state_view = db_state_view.as_account_with_state_view(&CORE_CODE_ADDRESS);
@@ -236,8 +234,9 @@ pub fn check_val_set(
 
     let addrs = get_val_set(&db_rw.reader)?;
 
-    assert!(
-        addrs.len() == expected_vals.len(),
+    assert_eq!(
+        addrs.len(),
+        expected_vals.len(),
         "validator set length mismatch"
     );
 
@@ -248,6 +247,7 @@ pub fn check_val_set(
     Ok(())
 }
 
+/// Verify total supply against the expected value in the genesis DB.
 pub fn check_supply(
     expected_supply: u64,
     db_reader: &Arc<dyn DbReader>,
@@ -260,8 +260,8 @@ pub fn check_supply(
     let on_chain_supply = total_supply(db_reader).unwrap();
 
     pb.finish_and_clear();
-    assert!(
-        expected_supply as u128 == on_chain_supply,
+    assert_eq!(
+        expected_supply as u128, on_chain_supply,
         "supply mismatch, expected: {expected_supply:?} vs in genesis tx {on_chain_supply:?}"
     );
     Ok(())

@@ -1,8 +1,7 @@
-use move_core_types::identifier::IdentStr;
-use move_core_types::language_storage::TypeTag;
 use move_core_types::{
     ident_str,
-    language_storage::StructTag,
+    identifier::IdentStr,
+    language_storage::{StructTag, TypeTag},
     move_resource::{MoveResource, MoveStructType},
 };
 use serde::{Deserialize, Serialize};

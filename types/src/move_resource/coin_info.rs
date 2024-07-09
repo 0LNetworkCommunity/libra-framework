@@ -1,6 +1,5 @@
 use crate::move_resource::gas_coin::GAS_COIN_TYPE;
-use diem_types::state_store::state_key::StateKey;
-use diem_types::state_store::table::TableHandle;
+use diem_types::state_store::{state_key::StateKey, table::TableHandle};
 
 use move_core_types::{
     account_address::AccountAddress,

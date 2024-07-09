@@ -18,7 +18,7 @@ fn encode_net_addr() -> anyhow::Result<()> {
 
     // dbg!(&hex::encode(&enc));
     let dec: NetworkAddress = bcs::from_bytes(&enc)?;
-    assert!(dec == val_net_protocol);
+    assert_eq!(dec, val_net_protocol);
 
     Ok(())
 }

@@ -15,7 +15,6 @@ bcs = { workspace = true }
 clap = { workspace = true }
 dialoguer = { workspace = true }
 diem = { workspace = true }
-diem-crypto = { workspace = true }
 diem-framework = { workspace = true }
 diem-genesis = { workspace = true }
 diem-logger = { workspace = true }
@@ -27,15 +26,15 @@ libra-cached-packages = { workspace = true }
 libra-query = { workspace = true }
 libra-types = { workspace = true }
 libra-wallet = { workspace = true }
+serde = { version = "1.0.163", features = ["derive"] }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
 tokio = { workspace = true }
 url = { workspace = true }
-serde = { version = "1.0.163", features = ["derive"] }
 
 [dev-dependencies]
+diem-forge = { workspace = true }
 diem-temppath = { workspace = true }
 libra-framework = { workspace = true }
 libra-smoke-tests = { workspace = true }
 smoke-test = { workspace = true }
-diem-forge = { workspace = true }

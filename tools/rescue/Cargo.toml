@@ -13,46 +13,43 @@ rust-version = { workspace = true }
 
 [dependencies]
 anyhow = { workspace = true }
+async-trait = { workspace = true }
 bcs = { workspace = true }
 clap = { workspace = true }
+diem-api-types = { workspace = true }
 
-diem-config = { workspace = true , features = ["testing"] }
+diem-config = { workspace = true, features = ["testing"] }
 diem-crypto = { workspace = true }
 diem-db = { workspace = true }
-diem-gas = { workspace = true , features = ["testing"] }
 diem-executor = { workspace = true }
+diem-forge = { workspace = true, features = ["testing"] }
+diem-gas = { workspace = true, features = ["testing"] }
+diem-genesis = { workspace = true, features = ["testing"] }
 diem-logger = { workspace = true }
-diem-storage-interface = { workspace = true}
-diem-types = { workspace = true}
-diem-vm = { workspace = true , features = ["testing"] }
+diem-storage-interface = { workspace = true }
+diem-temppath = { workspace = true }
+diem-types = { workspace = true }
+diem-vm = { workspace = true, features = ["testing"] }
 diem-vm-types = { workspace = true }
 
 fs_extra = { workspace = true }
 futures-util = { workspace = true }
-libra-smoke-tests = { workspace = true, features = ["testing"] }
-libra-framework = { workspace = true }
-libra-txs = { workspace = true }
-move-core-types = { workspace = true }
-move-vm-types = { workspace = true }
-move-vm-runtime= {workspace = true, features = ["testing"] }
-tokio = { workspace = true , features = ["full"] }
-diem-temppath = { workspace = true }
-diem-api-types = { workspace = true }
-diem-forge = { workspace = true , features = ["testing"] }
-libra-wallet = { workspace = true}
-diem-genesis = { workspace = true, features = ["testing"] }
-libra-config = { workspace = true}
-libra-types = { workspace = true }
-serde = { workspace = true }
-serde_yaml = { workspace = true}
-libra-query = { workspace = true}
-reqwest = { workspace = true }
 
 hex = { workspace = true }
-async-trait = { workspace = true }
+libra-config = { workspace = true }
+libra-framework = { workspace = true }
+libra-query = { workspace = true }
+libra-smoke-tests = { workspace = true, features = ["testing"] }
+libra-txs = { workspace = true }
+libra-types = { workspace = true }
+libra-wallet = { workspace = true }
+move-core-types = { workspace = true }
+move-vm-runtime = { workspace = true, features = ["testing"] }
+move-vm-types = { workspace = true }
+serde = { workspace = true }
+serde_yaml = { workspace = true }
 smoke-test = { workspace = true }
-serde_json = {workspace = true }
-
+tokio = { workspace = true, features = ["full"] }
 
 [dev-dependencies]
 diem-api-types = { workspace = true }

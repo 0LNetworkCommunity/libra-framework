@@ -2,33 +2,39 @@
 
 use crate::exports::AuthenticationKey;
 
-use crate::legacy_types::burn::{BurnCounterResource, UserBurnPreferenceResource};
-use crate::legacy_types::donor_voice::RegistryResource;
-use crate::legacy_types::donor_voice_txs::TxScheduleResource;
-use crate::legacy_types::fee_maker::{EpochFeeMakerRegistryResource, FeeMakerResource};
-use crate::legacy_types::jail::JailResource;
-use crate::legacy_types::match_index::MatchIndexResource;
-use crate::legacy_types::pledge_account::MyPledgesResource;
-use crate::legacy_types::validator_universe::ValidatorUniverseResource;
-use crate::legacy_types::vouch::MyVouchesResource;
-use crate::legacy_types::{
-    ancestry_legacy::LegacyAncestryResource,
-    cumulative_deposits::{CumulativeDepositResource, LegacyBalanceResource},
-    legacy_currency_info::CurrencyInfoResource,
-    receipts::ReceiptsResource,
-    wallet::{CommunityWalletsResourceLegacy, SlowWalletListResource, SlowWalletResource},
+use super::ancestry_legacy::LegacyAncestryResource;
+use crate::{
+    core_types::legacy_currency_info::CurrencyInfoResource,
+    legacy_types::wallet::{
+        CommunityWalletsResourceLegacy, SlowWalletListResource, SlowWalletResource,
+    },
+    move_resource::{
+        burn::{BurnCounterResource, UserBurnPreferenceResource},
+        cumulative_deposits::{CumulativeDepositResource, LegacyBalanceResource},
+        donor_voice::RegistryResource,
+        donor_voice_txs::TxScheduleResource,
+        fee_maker::{EpochFeeMakerRegistryResource, FeeMakerResource},
+        jail::JailResource,
+        match_index::MatchIndexResource,
+        pledge_account::MyPledgesResource,
+        receipts::ReceiptsResource,
+        validator_universe::ValidatorUniverseResource,
+        vouch::MyVouchesResource,
+    },
 };
 use anyhow::anyhow;
-use diem_types::account_state::AccountState;
-use diem_types::account_view::AccountView;
-use diem_types::validator_config::{ValidatorConfig, ValidatorOperatorConfigResource};
+use diem_types::{
+    account_state::AccountState,
+    account_view::AccountView,
+    validator_config::{ValidatorConfig, ValidatorOperatorConfigResource},
+};
 use move_core_types::account_address::AccountAddress;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
-use std::{fs, path::PathBuf};
+use std::{fs, path::PathBuf, str::FromStr};
 
-use super::ol_account::BurnTrackerResource;
-use super::proof_of_fee::ConsensusRewardResource;
+use crate::move_resource::{
+    ol_account::BurnTrackerResource, proof_of_fee::ConsensusRewardResource,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 /// Account role

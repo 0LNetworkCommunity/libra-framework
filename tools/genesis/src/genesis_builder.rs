@@ -1,50 +1,53 @@
 //! build the genesis file
-use crate::genesis::make_recovery_genesis_from_vec_legacy_recovery;
-use crate::genesis_reader::bootstrap_db_reader_from_gen_tx;
 
-use crate::wizard::DEFAULT_GIT_BRANCH;
-use crate::{compare, supply, vm};
-
-use std::str::FromStr;
-use std::time::Duration;
-use std::{
-    cmp::Ordering,
-    path::{Path, PathBuf},
+use crate::{compare, supply, vm, wizard::DEFAULT_GIT_BRANCH};
+use crate::{
+    genesis::make_recovery_genesis_from_vec_legacy_recovery,
+    genesis_reader::bootstrap_db_reader_from_gen_tx,
 };
-
 use anyhow::{anyhow, bail, Result};
-use indicatif::ProgressBar;
-
-use diem_crypto::ed25519::ED25519_PUBLIC_KEY_LENGTH;
-use diem_crypto::ValidCryptoMaterialStringExt;
-use diem_crypto::{bls12381, ed25519::Ed25519PublicKey, ValidCryptoMaterial};
+use diem_crypto::{
+    bls12381,
+    ed25519::{Ed25519PublicKey, ED25519_PUBLIC_KEY_LENGTH},
+    ValidCryptoMaterial, ValidCryptoMaterialStringExt,
+};
 use diem_framework::ReleaseBundle;
-use diem_genesis::config::HostAndPort;
 use diem_genesis::{
     builder::GenesisConfiguration,
-    config::{StringOperatorConfiguration, StringOwnerConfiguration, ValidatorConfiguration},
+    config::{
+        HostAndPort, StringOperatorConfiguration, StringOwnerConfiguration, ValidatorConfiguration,
+    },
     GenesisInfo,
 };
 use diem_github_client::Client;
-use diem_types::account_address::AccountAddress;
 use diem_types::{
-    account_address::AccountAddressWithChecks,
+    account_address::{AccountAddress, AccountAddressWithChecks},
     on_chain_config::{OnChainConsensusConfig, OnChainExecutionConfig},
 };
 use diem_vm_genesis::{
     default_gas_schedule,
     GenesisConfiguration as VmGenesisGenesisConfiguration, // in vendor codethere are two structs separately called the same name with nearly identical fields
 };
+use indicatif::ProgressBar;
 use libra_framework::release;
-use libra_types::exports::ChainId;
-use libra_types::exports::NamedChain;
-use libra_types::legacy_types::fixtures::TestPersona;
-use libra_types::legacy_types::legacy_recovery_v6::LegacyRecoveryV6;
-use libra_types::ol_progress::OLProgress;
-use libra_wallet::account_keys::get_keys_from_mnem;
-use libra_wallet::keys::generate_key_objects_from_legacy;
-use libra_wallet::utils::{check_if_file_exists, from_yaml, write_to_user_only_file};
+use libra_types::{
+    core_types::fixtures::TestPersona,
+    exports::{ChainId, NamedChain},
+    legacy_types::legacy_recovery_v6::LegacyRecoveryV6,
+    ol_progress::OLProgress,
+};
+use libra_wallet::{
+    account_keys::get_keys_from_mnem,
+    keys::generate_key_objects_from_legacy,
+    utils::{check_if_file_exists, from_yaml, write_to_user_only_file},
+};
 use serde::{Deserialize, Serialize};
+use std::{
+    cmp::Ordering,
+    path::{Path, PathBuf},
+    str::FromStr,
+    time::Duration,
+};
 
 pub const LAYOUT_FILE: &str = "layout.yaml";
 pub const OPERATOR_FILE: &str = "operator.yaml";
@@ -240,6 +243,7 @@ pub fn fetch_genesis_info(
     )
 }
 
+/// Retrieves validator configurations
 fn get_validator_configs(
     client: &Client,
     layout: &LibraSimpleLayout,
@@ -494,6 +498,7 @@ fn parse_key<T: ValidCryptoMaterial>(num_bytes: usize, str: &str) -> Result<T> {
     Ok(T::from_encoded_string(str.trim())?)
 }
 
+/// Parses a required option from a configuration file and validates its format.
 fn parse_required_option<F: Fn(&str) -> Result<T, E>, T, E: std::fmt::Display>(
     option: &Option<String>,
     file: &Path,
@@ -514,6 +519,7 @@ fn parse_required_option<F: Fn(&str) -> Result<T, E>, T, E: std::fmt::Display>(
     }
 }
 
+/// Parses an optional option from a configuration file and validates its format.
 fn parse_optional_option<F: Fn(&str) -> Result<T, E>, T, E: std::fmt::Display>(
     option: &Option<String>,
     file: &Path,

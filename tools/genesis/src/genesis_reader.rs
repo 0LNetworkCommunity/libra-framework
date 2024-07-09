@@ -3,31 +3,30 @@
 
 use anyhow::{self, bail, Context};
 use diem_db::DiemDB;
-use diem_executor::db_bootstrapper::generate_waypoint;
-use diem_executor::db_bootstrapper::maybe_bootstrap;
+use diem_executor::db_bootstrapper::{generate_waypoint, maybe_bootstrap};
 use diem_state_view::account_with_state_view::AsAccountWithStateView;
-use diem_storage_interface::state_view::LatestDbStateCheckpointView;
-use diem_storage_interface::DbReader;
-use diem_storage_interface::DbReaderWriter;
+use diem_storage_interface::{state_view::LatestDbStateCheckpointView, DbReader, DbReaderWriter};
 use diem_temppath::TempPath;
-use diem_types::access_path::AccessPath;
-use diem_types::account_state::AccountState;
-use diem_types::account_view::AccountView;
-use diem_types::state_store::state_key::StateKey;
-use diem_types::state_store::state_key_prefix::StateKeyPrefix;
-use diem_types::transaction::Transaction;
+use diem_types::{
+    access_path::AccessPath,
+    account_state::AccountState,
+    account_view::AccountView,
+    state_store::{state_key::StateKey, state_key_prefix::StateKeyPrefix},
+    transaction::Transaction,
+};
 use diem_vm::DiemVM;
 use indicatif::ProgressBar;
-use libra_types::exports::AccountAddress;
-use libra_types::exports::Waypoint;
-use libra_types::move_resource::coin_info::GasCoinInfoResource;
-use libra_types::ol_progress::OLProgress;
-use move_core_types::identifier::Identifier;
-use move_core_types::language_storage::{StructTag, CORE_CODE_ADDRESS};
-use std::fs::File;
-use std::io::Read;
-use std::path::PathBuf;
-use std::sync::Arc;
+use libra_types::{
+    exports::{AccountAddress, Waypoint},
+    move_resource::coin_info::GasCoinInfoResource,
+    ol_progress::OLProgress,
+};
+use move_core_types::{
+    identifier::Identifier,
+    language_storage::{StructTag, CORE_CODE_ADDRESS},
+};
+use std::{fs::File, io::Read, path::PathBuf, sync::Arc};
+
 /// Compute the ledger given a genesis writeset transaction and return access to that ledger and
 /// the waypoint for that state.
 pub fn bootstrap_db_reader_from_gen_tx(
@@ -58,6 +57,7 @@ pub fn bootstrap_db_reader_from_gen_tx(
     Ok((db_rw, waypoint))
 }
 
+/// Reads a genesis blob file and converts it into a transaction.
 pub fn read_blob_to_tx(genesis_path: PathBuf) -> anyhow::Result<Transaction> {
     let mut file = File::open(genesis_path).context("unable to find genesis file")?;
     let mut buffer = vec![];
@@ -68,6 +68,8 @@ pub fn read_blob_to_tx(genesis_path: PathBuf) -> anyhow::Result<Transaction> {
 
 pub const MAX_REQUEST_LIMIT: u64 = 10000;
 
+/// Retrieves the account state for a given account address from the database.
+/// Limits the number of state items to `MAX_REQUEST_LIMIT`.
 pub fn get_account_state(
     db: &Arc<dyn DbReader>,
     account: AccountAddress,
@@ -91,6 +93,7 @@ pub fn get_account_state(
     // todo!()
 }
 
+/// Creates a `StructTag` without type parameters for a given module and name.
 fn make_struct_tag_no_types(module: &str, name: &str) -> StructTag {
     StructTag {
         address: CORE_CODE_ADDRESS,
@@ -100,6 +103,7 @@ fn make_struct_tag_no_types(module: &str, name: &str) -> StructTag {
     }
 }
 
+/// Constructs an `AccessPath` for a given account, module, and resource name.
 pub fn make_access_path(
     account: AccountAddress,
     module: &str,
@@ -109,6 +113,7 @@ pub fn make_access_path(
     AccessPath::resource_access_path(account, tag)
 }
 
+/// Computes the total supply of the gas coin by reading the state from the database.
 pub fn total_supply(db_reader: &Arc<dyn DbReader>) -> Option<u128> {
     let db_state_view = db_reader.latest_state_checkpoint_view().unwrap();
     let root_account_state_view = db_state_view.as_account_with_state_view(&CORE_CODE_ADDRESS);
@@ -137,6 +142,7 @@ pub fn total_supply(db_reader: &Arc<dyn DbReader>) -> Option<u128> {
         })
 }
 
+/// Tests the database reader-writer initialization and state value retrieval.
 #[test]
 fn test_db_rw() {
     use diem_db::DiemDB;

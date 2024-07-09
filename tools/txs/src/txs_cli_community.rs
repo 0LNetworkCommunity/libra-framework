@@ -1,6 +1,6 @@
 //! Validator subcommands
-use crate::submit_transaction::Sender;
 
+use crate::submit_transaction::Sender;
 use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib;
 use libra_query::{account_queries, query_view};

@@ -21,6 +21,7 @@ use libra_types::type_extensions::cli_config_ext::CliConfigExt;
 use std::{collections::BTreeMap, env, str::FromStr};
 use url::Url;
 
+/// Run the profile configuration process
 pub async fn run(public_key: &str, profile: Option<&str>, workspace: bool) -> Result<()> {
     // init_workspace
     let mut config = CliConfig::default();
@@ -110,6 +111,7 @@ pub async fn run(public_key: &str, profile: Option<&str>, workspace: bool) -> Re
     Ok(())
 }
 
+/// Handles custom network setup by prompting for a REST endpoint
 fn custom_network(profile_config: &mut ProfileConfig) -> CliTypedResult<()> {
     // Rest Endpoint
     let rest_url = {
@@ -141,6 +143,7 @@ fn custom_network(profile_config: &mut ProfileConfig) -> CliTypedResult<()> {
     Ok(())
 }
 
+/// Checks if the network configuration is valid by parsing the REST URL
 fn check_network(cfg: &ProfileConfig) -> Result<Client> {
     let base = Url::parse(
         cfg.rest_url

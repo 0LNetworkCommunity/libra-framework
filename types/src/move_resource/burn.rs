@@ -1,8 +1,10 @@
 //! Burn Preference and Counter Resources
 
 use diem_sdk::move_types::{
-    ident_str, identifier::IdentStr, language_storage::TypeTag, move_resource::MoveResource,
-    move_resource::MoveStructType,
+    ident_str,
+    identifier::IdentStr,
+    language_storage::TypeTag,
+    move_resource::{MoveResource, MoveStructType},
 };
 
 use serde::{Deserialize, Serialize};

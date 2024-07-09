@@ -1,26 +1,23 @@
-use crate::txs_cli_community::CommunityTxs;
-use crate::txs_cli_governance::GovernanceTxs;
-use crate::txs_cli_user::UserTxs;
-use crate::txs_cli_vals::ValidatorTxs;
-use crate::{publish::encode_publish_payload, submit_transaction::Sender};
-use std::path::PathBuf;
-
+use crate::{
+    publish::encode_publish_payload, submit_transaction::Sender, txs_cli_community::CommunityTxs,
+    txs_cli_governance::GovernanceTxs, txs_cli_user::UserTxs, txs_cli_vals::ValidatorTxs,
+};
 use anyhow::Result;
 use clap::Parser;
-use indoc::indoc;
-use libra_types::{
-    exports::{ChainId, NamedChain},
-    legacy_types::app_cfg::{AppCfg, TxCost, TxType},
-};
-use libra_wallet::account_keys::{get_keys_from_mnem, get_keys_from_prompt};
-use url::Url;
-
 use diem::common::types::MovePackageDir;
 use diem_sdk::{
     crypto::{ed25519::Ed25519PrivateKey, ValidCryptoMaterialStringExt},
     rest_client::Client,
     types::{account_address::AccountAddress, AccountKey},
 };
+use indoc::indoc;
+use libra_types::{
+    core_types::app_cfg::{AppCfg, TxCost, TxType},
+    exports::{ChainId, NamedChain},
+};
+use libra_wallet::account_keys::{get_keys_from_mnem, get_keys_from_prompt};
+use std::path::PathBuf;
+use url::Url;
 
 #[derive(Parser)]
 #[clap(name = env!("CARGO_PKG_NAME"), author, version, about, long_about = None, arg_required_else_help = true)]
@@ -139,7 +136,9 @@ pub enum TxsSub {
 }
 
 impl TxsCli {
+    /// Executes the transaction CLI command based on parsed arguments.
     pub async fn run(&self) -> Result<()> {
+        // Determine private key based on CLI options or prompts
         let pri_key = if let Some(pk) = &self.test_private_key {
             Ed25519PrivateKey::from_encoded_string(pk)?
         } else if let Some(m) = &self.mnemonic {
@@ -150,8 +149,10 @@ impl TxsCli {
             legacy.child_0_owner.pri_key
         };
 
+        // Load application configuration
         let app_cfg = AppCfg::load(self.config_path.clone())?;
 
+        // Determine chain ID and URL for client
         let chain_name = self.chain_id.unwrap_or(app_cfg.workspace.default_chain_id);
         let url = if let Some(u) = self.url.as_ref() {
             u.to_owned()
@@ -159,8 +160,10 @@ impl TxsCli {
             app_cfg.pick_url(Some(chain_name))?
         };
 
+        // Initialize client
         let client = Client::new(url);
 
+        // Initialize sender
         let mut send = Sender::new(
             AccountKey::from_private_key(pri_key),
             ChainId::new(chain_name.id()),
@@ -169,16 +172,21 @@ impl TxsCli {
         )
         .await?;
 
+        // Handle mutually exclusive options for transaction cost
         if self.tx_cost.is_some() && self.tx_profile.is_some() {
             println!("ERROR: --tx-cost and --tx-profile are mutually exclusive. Either set the costs explicitly or choose a profile in libra-cli-config.yaml, exiting");
         }
+
+        // Determine transaction cost
         let tx_cost = self
             .tx_cost
             .clone()
             .unwrap_or_else(|| app_cfg.tx_configs.get_cost(self.tx_profile.clone()));
 
+        // Set transaction cost for sender
         send.set_tx_cost(&tx_cost);
 
+        // Execute subcommand based on parsed input
         match &self.subcommand {
             Some(TxsSub::Transfer { to_account, amount }) => {
                 send.transfer(to_account.to_owned(), amount.to_owned(), self.estimate_only)
@@ -214,6 +222,7 @@ All that's left is an unhappy ending\"
     }
 }
 
+/// Converts an account address to a legacy format (v5).
 pub fn to_legacy_address(address: &AccountAddress) -> anyhow::Result<AccountAddress> {
     // trim the first 16 bytes for legacy v5 address
     let mut address_str = address.to_string();

@@ -1,9 +1,10 @@
-use diem_sdk::crypto::ed25519::Ed25519PrivateKey;
-use diem_sdk::crypto::{Uniform, ValidCryptoMaterialStringExt};
+use diem_sdk::crypto::{ed25519::Ed25519PrivateKey, Uniform, ValidCryptoMaterialStringExt};
 use libra_smoke_tests::libra_smoke::LibraSmoke;
-use libra_txs::submit_transaction::Sender;
-use libra_txs::txs_cli_user::{RotateKeyTx, RotationCapabilityTx};
-use libra_types::legacy_types::app_cfg::Profile;
+use libra_txs::{
+    submit_transaction::Sender,
+    txs_cli_user::{RotateKeyTx, RotationCapabilityTx},
+};
+use libra_types::core_types::app_cfg::Profile;
 use libra_wallet::account_keys;
 
 // Scenario: We have an initial validator, Val 0 with a random address
@@ -38,7 +39,7 @@ async fn rotate_key() -> anyhow::Result<()> {
     );
 
     let mut p = Profile::new(alice.child_0_owner.auth_key, alice.child_0_owner.account);
-    assert!(alice_acct == &p.account);
+    assert_eq!(alice_acct, &p.account);
 
     p.set_private_key(&alice.child_0_owner.pri_key);
 
