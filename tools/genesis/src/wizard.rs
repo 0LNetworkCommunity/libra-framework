@@ -13,25 +13,22 @@ use libra_types::ol_progress::OLProgress;
 use crate::github_extensions::LibraGithubClient;
 use anyhow::{bail, Context};
 use dialoguer::{Confirm, Input};
+use diem_config::config::IdentityBlob;
+use diem_github_client::Client;
 use indicatif::{ProgressBar, ProgressIterator};
-use libra_types::global_config_dir;
-use std::env;
+use libra_config::validator_config::validator_dialogue;
+use libra_types::{core_types::app_cfg::AppCfg, global_config_dir};
+use libra_wallet::keys::VALIDATOR_FILE;
 use std::{
-    fs,
+    env, fs,
     path::{Path, PathBuf},
     thread,
     time::Duration,
 };
 
-use diem_config::config::IdentityBlob;
-use diem_github_client::Client;
-use libra_types::legacy_types::app_cfg::AppCfg;
-use libra_wallet::keys::VALIDATOR_FILE;
-
-use libra_config::validator_config::validator_dialogue;
-
 pub const DEFAULT_GIT_BRANCH: &str = "main";
 pub const GITHUB_TOKEN_FILENAME: &str = "github_token.txt";
+
 /// Wizard for genesis
 #[derive(Debug, Clone)]
 pub struct GenesisWizard {
@@ -94,6 +91,7 @@ impl GenesisWizard {
         // check the git token is as expected, and set it.
         self.git_token_check(github_token_path_opt)?;
 
+        // Initialize validators' configuration
         match validator_dialogue(
             &self.data_path,
             Some(&self.github_username),
@@ -201,7 +199,7 @@ impl GenesisWizard {
         let token_path = self.find_github_token(git_token_path_opt);
         self.github_token = if token_path.is_err() {
             Input::<String>::new()
-                .with_prompt(&"No github token found, enter one now".to_string())
+                .with_prompt("No github token found, enter one now".to_string())
                 .interact_text()?
         } else {
             fs::read_to_string(token_path.unwrap())?.trim().to_owned()
@@ -242,6 +240,7 @@ impl GenesisWizard {
         Ok(())
     }
 
+    /// Sets up the GitHub repository for the genesis process
     fn git_setup(&mut self) -> anyhow::Result<()> {
         let pb = ProgressBar::new(1000).with_style(OLProgress::spinner());
         let gh_client = Client::new(
@@ -296,25 +295,7 @@ impl GenesisWizard {
         Ok(())
     }
 
-    // fn maybe_remove_money_keys(&self, app_cfg: &AppCfg) {
-    //     if Confirm::new()
-    //         .with_prompt("Remove the money keys from the key store?")
-    //         .interact().unwrap()
-    //     {
-    //         let storage_helper =
-    //             StorageHelper::get_with_path(self.data_path.clone());
-
-    //         let mut owner_storage = storage_helper.storage(app_cfg.format_oper_namespace().clone());
-    //         owner_storage.set(OWNER_KEY, "").unwrap();
-    //         owner_storage.set(OPERATOR_KEY, "").unwrap();
-
-    //         let mut oper_storage = storage_helper.storage(app_cfg.format_oper_namespace().clone());
-
-    //         oper_storage.set(OWNER_KEY, "").unwrap();
-    //         oper_storage.set(OPERATOR_KEY, "").unwrap();
-    //     }
-    // }
-
+    /// Registers the genesis configuration on GitHub
     fn genesis_registration_github(&self) -> anyhow::Result<()> {
         let pb = ProgressBar::new(1000).with_style(OLProgress::spinner());
         pb.enable_steady_tick(Duration::from_millis(100));
@@ -351,26 +332,11 @@ impl GenesisWizard {
                 .with_prompt("What epoch are we migrating from? ")
                 .interact_text()
                 .ok();
-            // .map(|epoch| epoch.parse().unwrap()).ok();
         }
 
         let pb = ProgressBar::new(1000).with_style(OLProgress::spinner());
 
         pb.enable_steady_tick(Duration::from_millis(100));
-
-        // // All we are doing is download the snapshot from github.
-        // let backup = Backup::new(self.epoch, app_cfg);
-
-        // if backup.manifest_path().is_err() {
-        //     backup.fetch_backup(true)?;
-        // } else {
-        //     println!("Already have snapshot for epoch {}", self.epoch.unwrap());
-        // }
-
-        // I changed the manifest file name to state.manifest instead of epoch_ending.manifest
-        // let snapshot_manifest_file = backup.manifest_path()?;
-
-        // let snapshot_dir = snapshot_manifest_file.parent().unwrap().to_path_buf();
 
         // hack
         let snapshot_dir = PathBuf::new();
@@ -379,6 +345,7 @@ impl GenesisWizard {
         Ok(snapshot_dir)
     }
 
+    /// Creates a pull request on the genesis repository
     fn make_pull_request(&self) -> anyhow::Result<()> {
         let gh_token_path = self.data_path.join(GITHUB_TOKEN_FILENAME);
         let api_token = std::fs::read_to_string(gh_token_path)?;
@@ -442,7 +409,6 @@ impl GenesisWizard {
 
 #[tokio::test]
 #[ignore]
-
 async fn test_wizard() {
     let mut wizard = GenesisWizard::new(
         "0LNetworkCommunity".to_string(),

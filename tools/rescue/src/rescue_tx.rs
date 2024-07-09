@@ -95,7 +95,5 @@ fn test_create_blob() -> anyhow::Result<()> {
 
     assert!(blob_path.path().join("rescue.blob").exists());
 
-    // db_root_path.path()
-
     Ok(())
 }

@@ -4,15 +4,11 @@ use crate::{
     key_gen::keygen,
     load_keys,
 };
-
 use anyhow::Result;
-use diem_crypto::ed25519::Ed25519PrivateKey;
-use diem_crypto::PrivateKey;
-use diem_types::account_address::AccountAddress;
-use diem_types::transaction::authenticator::AuthenticationKey;
+use diem_crypto::{ed25519::Ed25519PrivateKey, PrivateKey};
+use diem_types::{account_address::AccountAddress, transaction::authenticator::AuthenticationKey};
 use serde::Serialize;
-use std::path::Path;
-use std::str::FromStr;
+use std::{path::Path, str::FromStr};
 
 #[derive(Serialize)]
 /// A Struct to store ALL the legacy keys for storage.

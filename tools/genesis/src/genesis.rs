@@ -9,9 +9,7 @@ use diem_types::{
 };
 use diem_vm_genesis::{GenesisConfiguration, Validator};
 use libra_types::legacy_types::legacy_recovery_v6::LegacyRecoveryV6;
-use std::fs::File;
-use std::io::Write;
-use std::path::PathBuf;
+use std::{fs::File, io::Write, path::PathBuf};
 
 #[cfg(test)]
 use crate::vm::libra_genesis_default;
@@ -53,7 +51,6 @@ pub fn save_genesis(gen_tx: &Transaction, output_path: &PathBuf) -> Result<(), E
 }
 
 #[test]
-
 fn test_basic_genesis() {
     use diem_vm_genesis::TestValidator;
     use libra_framework::head_release_bundle;
@@ -73,8 +70,9 @@ fn test_basic_genesis() {
 fn test_recovery_genesis() {
     use crate::parse_json;
     use diem_types::{
-        on_chain_config::OnChainConfig, on_chain_config::ValidatorSet,
-        state_store::state_key::StateKey, write_set::TransactionWrite,
+        on_chain_config::{OnChainConfig, ValidatorSet},
+        state_store::state_key::StateKey,
+        write_set::TransactionWrite,
     };
     use diem_vm_genesis::TestValidator;
     use libra_framework::head_release_bundle;
@@ -107,8 +105,9 @@ fn test_recovery_genesis() {
                 .unwrap();
             let validator_set: ValidatorSet =
                 bcs::from_bytes(&bytes).expect("no validator set found in bytes");
-            assert!(
-                validator_set.active_validators().len() == 4,
+            assert_eq!(
+                validator_set.active_validators().len(),
+                4,
                 "validator set is empty"
             );
         }

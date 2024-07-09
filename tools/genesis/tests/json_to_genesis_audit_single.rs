@@ -2,17 +2,17 @@
 mod support;
 use diem_state_view::account_with_state_view::AsAccountWithStateView;
 use diem_storage_interface::state_view::LatestDbStateCheckpointView;
-use diem_types::account_view::AccountView;
-use diem_types::chain_id::NamedChain;
+use diem_types::{account_view::AccountView, chain_id::NamedChain};
 use libra_framework::head_release_bundle;
-use libra_genesis_tools::supply;
-use libra_genesis_tools::vm::libra_genesis_default;
-use libra_genesis_tools::{compare, genesis::make_recovery_genesis_from_vec_legacy_recovery};
-use libra_genesis_tools::{genesis_reader, parse_json};
-use libra_types::exports::AccountAddress;
-use libra_types::exports::ChainId;
-use libra_types::legacy_types::legacy_recovery_v6::LegacyRecoveryV6;
-use libra_types::move_resource::ancestry::AncestryResource;
+use libra_genesis_tools::{
+    compare, genesis::make_recovery_genesis_from_vec_legacy_recovery, genesis_reader, parse_json,
+    supply, vm::libra_genesis_default,
+};
+use libra_types::{
+    exports::{AccountAddress, ChainId},
+    legacy_types::legacy_recovery_v6::LegacyRecoveryV6,
+    move_resource::ancestry::AncestryResource,
+};
 use support::{path_utils::json_path, test_vals};
 #[test]
 // test that a genesis blob created from struct, will actually contain the data
@@ -115,7 +115,7 @@ fn test_check_ancestry() {
         .get_resource::<AncestryResource>()
         .unwrap()
         .unwrap();
-    assert!(ancestry.tree.len() == 4);
+    assert_eq!(ancestry.tree.len(), 4);
 
     assert!(ancestry
         .tree

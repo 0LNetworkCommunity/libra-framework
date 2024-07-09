@@ -20,16 +20,7 @@ pub fn keygen() -> (AuthenticationKey, AccountAddress, WalletLibrary, String) {
     (auth_key, account, wallet, mnemonic_string)
 }
 
-/// Runs the key generation process asynchronously.
-///
-/// # Arguments
-///
-/// * `mnemonic` - Optional mnemonic string to load keys.
-/// * `output_dir` - Optional output directory for key files.
-///
-/// # Returns
-///
-/// A string containing information about the generated keys.
+/// Runs the key generation process.
 pub async fn run(mnemonic: Option<String>, output_dir: Option<PathBuf>) -> Result<String> {
     let private_key = if let Some(mnemonic) = mnemonic {
         let (_, account_address, wallet_lib) = load_keys::get_account_from_mnem(mnemonic.clone())?;

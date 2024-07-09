@@ -1,9 +1,12 @@
 //! validator config view for web monitor
 
 use anyhow::Result;
-use move_core_types::account_address::AccountAddress;
-use move_core_types::move_resource::MoveResource;
-use move_core_types::{ident_str, identifier::IdentStr, move_resource::MoveStructType};
+use move_core_types::{
+    account_address::AccountAddress,
+    ident_str,
+    identifier::IdentStr,
+    move_resource::{MoveResource, MoveStructType},
+};
 use serde::{Deserialize, Serialize};
 
 /// TODO THIS IS DUPLICATED WITH types/src/validator_config.rs
@@ -42,14 +45,6 @@ impl ValidatorConfigResource {
     pub fn try_from_bytes(bytes: &[u8]) -> Result<Self> {
         bcs::from_bytes(bytes).map_err(Into::into)
     }
-
-    // ///
-    // pub fn get_view(&self) -> ValidatorConfigView {
-    //     ValidatorConfigView {
-    //         operator_account: self.operator_account.clone(),
-    //         operator_has_balance: None,
-    //     }
-    // }
 }
 
 /// Struct that represents a view for Validator Config view

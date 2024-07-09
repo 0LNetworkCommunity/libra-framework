@@ -34,6 +34,7 @@ fn main() -> anyhow::Result<()> {
     let cli = LibraCli::parse();
 
     match cli.command {
+        // Execute Node CLI subcommand
         Some(Sub::Node(n)) => {
             n.run()?;
         }
@@ -41,11 +42,14 @@ fn main() -> anyhow::Result<()> {
             let rt = tokio::runtime::Runtime::new()?;
             rt.block_on(async {
                 match cli.command {
+                    // Execute Config CLI subcommand
                     Some(Sub::Config(config_cli)) => {
                         if let Err(e) = config_cli.run().await {
                             eprintln!("Failed to execute config tool, message: {}", &e);
                         }
                     }
+
+                    // Execute Move CLI subcommand
                     Some(Sub::Move(move_tool)) => {
                         if let Err(e) = move_tool
                             .execute()
@@ -55,27 +59,36 @@ fn main() -> anyhow::Result<()> {
                             eprintln!("Failed to execute move tool, message: {}", &e);
                         }
                     }
+
+                    // Execute Query CLI subcommand
                     Some(Sub::Query(query_cli)) => {
                         if let Err(e) = query_cli.run().await {
                             eprintln!("Failed to execute query tool, message: {}", &e);
                         }
                     }
 
+                    // Execute Transactions CLI subcommand
                     Some(Sub::Txs(txs_cli)) => {
                         if let Err(e) = txs_cli.run().await {
                             eprintln!("Failed to execute txs tool, message: {}", &e);
                         }
                     }
+
+                    // Execute Wallet CLI subcommand
                     Some(Sub::Wallet(wallet_cli)) => {
                         if let Err(e) = wallet_cli.run().await {
                             eprintln!("Failed to execute wallet tool, message: {}", &e);
                         }
                     }
+
+                    // Execute Genesis CLI subcommand
                     Some(Sub::Genesis(genesis_cli)) => {
                         if let Err(e) = genesis_cli.execute().await {
                             eprintln!("Failed to execute genesis tool, message: {}", &e);
                         }
                     }
+
+                    // Display version information
                     Some(Sub::Version) => {
                         println!("LIBRA VERSION {}", env!("CARGO_PKG_VERSION"));
                         println!("Build Timestamp: {}", env!("VERGEN_BUILD_TIMESTAMP"));
@@ -86,9 +99,8 @@ fn main() -> anyhow::Result<()> {
                             env!("VERGEN_GIT_COMMIT_TIMESTAMP")
                         );
                     }
-                    // Some(Sub::Version(v)) => {
-                    //     clap_vergen::print!(version);
-                    // }
+
+                    // Default message if no valid subcommand is provided
                     _ => {
                         println!("\nliving is easy with eyes closed")
                     }

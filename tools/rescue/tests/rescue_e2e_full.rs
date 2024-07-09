@@ -168,7 +168,7 @@ async fn test_rescue_e2e_with_sync() -> anyhow::Result<()> {
         .unwrap()
         .len();
 
-    assert!(num_nodes == 4);
+    assert_eq!(num_nodes, 4);
 
     // have a node sync from the beginning
     // TODO: the order of sync, and tx below, might be inverted

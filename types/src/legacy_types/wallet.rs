@@ -1,8 +1,11 @@
 //! community wallet resource
 use diem_types::event::EventHandle;
-use move_core_types::account_address::AccountAddress;
-use move_core_types::move_resource::MoveResource;
-use move_core_types::{ident_str, identifier::IdentStr, move_resource::MoveStructType};
+use move_core_types::{
+    account_address::AccountAddress,
+    ident_str,
+    identifier::IdentStr,
+    move_resource::{MoveResource, MoveStructType},
+};
 use serde::{Deserialize, Serialize};
 // NOTE: these are legacy structs for v5
 

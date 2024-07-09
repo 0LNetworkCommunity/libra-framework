@@ -2,17 +2,20 @@
 mod support;
 use diem_state_view::account_with_state_view::AsAccountWithStateView;
 use diem_storage_interface::state_view::LatestDbStateCheckpointView;
-use diem_types::account_view::AccountView;
-use diem_types::chain_id::NamedChain;
+use diem_types::{account_view::AccountView, chain_id::NamedChain};
 use libra_framework::head_release_bundle;
-use libra_genesis_tools::parse_json::recovery_file_parse;
-use libra_genesis_tools::supply::{self};
-use libra_genesis_tools::vm::libra_genesis_default;
-use libra_genesis_tools::{compare, genesis::make_recovery_genesis_from_vec_legacy_recovery};
-use libra_genesis_tools::{genesis_reader, parse_json};
-use libra_types::exports::ChainId;
-use libra_types::legacy_types::legacy_recovery_v6::AccountRole;
-use libra_types::move_resource::gas_coin::GasCoinStoreResource;
+use libra_genesis_tools::{
+    compare,
+    genesis::make_recovery_genesis_from_vec_legacy_recovery,
+    genesis_reader, parse_json,
+    parse_json::recovery_file_parse,
+    supply::{self},
+    vm::libra_genesis_default,
+};
+use libra_types::{
+    exports::ChainId, legacy_types::legacy_recovery_v6::AccountRole,
+    move_resource::gas_coin::GasCoinStoreResource,
+};
 use support::{path_utils::json_path, test_vals};
 
 #[test]

@@ -7,7 +7,7 @@ use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Governance},
     txs_cli_governance::GovernanceTxs::{Propose, Resolve, Vote},
 };
-use libra_types::legacy_types::app_cfg::TxCost;
+use libra_types::core_types::app_cfg::TxCost;
 
 /// If there are multiple modules being upgraded only one of the modules (the
 /// first) needs to be included in the proposal.

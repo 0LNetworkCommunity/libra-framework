@@ -10,19 +10,17 @@ use anyhow::{bail, Result};
 #[cfg(test)]
 use diem_temppath::TempPath;
 use mirai_annotations::*;
-
+#[cfg(test)]
+use rand::rngs::OsRng;
+#[cfg(test)]
+use rand::RngCore;
 use sha2::{Digest, Sha256};
-
+use std::fmt::Display;
 use std::{
     fs::{self, File},
     io::Write,
     path::Path,
 };
-
-#[cfg(test)]
-use rand::rngs::OsRng;
-#[cfg(test)]
-use rand::RngCore;
 
 /// Mnemonic seed for deterministic key derivation based on [BIP39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki).
 /// The mnemonic must encode entropy in a multiple of 32 bits. With more entropy, security is
@@ -42,9 +40,9 @@ use rand::RngCore;
 /// +---------+-------+
 pub struct Mnemonic(Vec<&'static str>);
 
-impl ToString for Mnemonic {
-    fn to_string(&self) -> String {
-        self.0.as_slice().join(" ")
+impl Display for Mnemonic {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0.as_slice().join(" "))
     }
 }
 

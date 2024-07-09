@@ -1,6 +1,6 @@
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_txs::submit_transaction::Sender;
-use libra_types::legacy_types::app_cfg::Profile;
+use libra_types::core_types::app_cfg::Profile;
 use libra_wallet::account_keys;
 
 // Scenario: We have an initial validator, Val 0 with a random address
@@ -32,7 +32,7 @@ async fn sender_back_and_forth() -> anyhow::Result<()> {
     assert!(res.info.status().is_success());
 
     let mut p = Profile::new(alice.child_0_owner.auth_key, alice.child_0_owner.account);
-    assert!(alice_acct == &p.account);
+    assert_eq!(alice_acct, &p.account);
 
     p.set_private_key(&alice.child_0_owner.pri_key);
 
@@ -42,7 +42,7 @@ async fn sender_back_and_forth() -> anyhow::Result<()> {
     let mut alice_sender =
         Sender::from_app_cfg(&val_app_cfg, Some(alice.child_0_owner.account.to_string())).await?;
 
-    assert!(alice_acct == &alice_sender.local_account.address());
+    assert_eq!(alice_acct, &alice_sender.local_account.address());
 
     let res = alice_sender
         .transfer(ls.first_account.address(), 10.0, false)

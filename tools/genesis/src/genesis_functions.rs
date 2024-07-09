@@ -1,5 +1,6 @@
 //! ol functions to run at genesis e.g. migration.
 
+use crate::process_comm_wallet;
 use anyhow::Context;
 use diem_logger::prelude::*;
 use diem_types::account_config::CORE_CODE_ADDRESS;
@@ -13,8 +14,7 @@ use libra_types::{
 };
 use move_core_types::value::{serialize_values, MoveValue};
 
-use crate::process_comm_wallet;
-
+/// Migrates all users' data during genesis including accounts, wallets, ancestry, and receipts.
 pub fn genesis_migrate_all_users(
     session: &mut SessionExt,
     user_recovery: &mut [LegacyRecoveryV6],
@@ -94,30 +94,11 @@ pub fn genesis_migrate_all_users(
                     }
                 }
             }
-
-            // NOTE: disabled for V7 upgrade, but may be used in future upgrades.
-            // if let Some(b) = a.burn_tracker.as_ref() {
-            //     let serialized_values = serialize_values(&vec![
-            //         MoveValue::Signer(CORE_CODE_ADDRESS),
-            //         MoveValue::Signer(a.account.expect("address")),
-            //         MoveValue::U64(b.prev_supply),
-            //         MoveValue::U64(b.prev_balance),
-            //         MoveValue::U64(b.burn_at_last_calc),
-            //         MoveValue::U64(b.cumu_burn),
-            //     ]);
-
-            //     exec_function(
-            //         session,
-            //         "ol_account",
-            //         "fork_migrate_burn_tracker",
-            //         vec![],
-            //         serialized_values,
-            //     );
-            // }
         });
     Ok(())
 }
 
+/// Migrates data for a single user during genesis based on legacy recovery information.
 pub fn genesis_migrate_one_user(
     session: &mut SessionExt,
     user_recovery: &LegacyRecoveryV6,
@@ -163,6 +144,7 @@ pub fn genesis_migrate_one_user(
     Ok(())
 }
 
+/// Migrates slow wallet data during genesis if available.
 pub fn genesis_migrate_slow_wallet(
     session: &mut SessionExt,
     user_recovery: &LegacyRecoveryV6,
@@ -203,6 +185,7 @@ pub fn genesis_migrate_slow_wallet(
     Ok(())
 }
 
+/// Migrates infrastructure escrow data during genesis if available.
 pub fn genesis_migrate_infra_escrow(
     session: &mut SessionExt,
     user_recovery: &LegacyRecoveryV6,
@@ -240,6 +223,7 @@ pub fn genesis_migrate_infra_escrow(
     Ok(())
 }
 
+/// Migrates receipts data during genesis if available.
 pub fn genesis_migrate_receipts(
     session: &mut SessionExt,
     user_recovery: &LegacyRecoveryV6,
@@ -307,48 +291,7 @@ pub fn genesis_migrate_receipts(
     Ok(())
 }
 
-// pub fn genesis_migrate_tower_state(
-//     session: &mut SessionExt,
-//     user_recovery: &LegacyRecoveryV6,
-// ) -> anyhow::Result<()> {
-//     if user_recovery.account.is_none()
-//         || user_recovery.auth_key.is_none()
-//         || user_recovery.balance.is_none()
-//         || user_recovery.miner_state.is_none()
-//     {
-//         anyhow::bail!("no user account found {:?}", user_recovery);
-//     }
-
-//     // convert between different types from ol_types in diem, to current
-//     let acc_str = user_recovery
-//         .account
-//         .context("could not parse account")?
-//         .to_string();
-//     let new_addr_type = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))?;
-
-//     let miner = user_recovery.miner_state.as_ref().unwrap();
-
-//     let serialized_values = serialize_values(&vec![
-//         MoveValue::Signer(CORE_CODE_ADDRESS),
-//         MoveValue::Signer(new_addr_type),
-//         MoveValue::vector_u8(miner.previous_proof_hash.to_vec()),
-//         MoveValue::U64(miner.verified_tower_height),
-//         MoveValue::U64(miner.latest_epoch_mining),
-//         MoveValue::U64(miner.count_proofs_in_epoch),
-//         MoveValue::U64(miner.epochs_mining),
-//         MoveValue::U64(miner.contiguous_epochs_mining),
-//     ]);
-
-//     exec_function(
-//         session,
-//         "tower_state",
-//         "fork_migrate_user_tower_history",
-//         vec![],
-//         serialized_values,
-//     );
-//     Ok(())
-// }
-
+/// Migrates ancestry data during genesis if available.
 pub fn genesis_migrate_ancestry(
     session: &mut SessionExt,
     user_recovery: &LegacyRecoveryV6,
@@ -398,7 +341,6 @@ pub fn genesis_migrate_ancestry(
 
 /// migrate the registry of Donor Voice Accounts
 /// Also mark them Community Wallets if they have chosen that designation.
-
 pub fn genesis_migrate_community_wallet(
     session: &mut SessionExt,
     user_recovery: &LegacyRecoveryV6,
@@ -415,22 +357,6 @@ pub fn genesis_migrate_community_wallet(
         vec![],
         serialized_values,
     );
-
-    // if let Some(root) = user_recovery.iter().find(|e| e.role == AccountRole::System) {
-    //     let cw_list = &root
-    //         .comm_wallet
-    //         .as_ref()
-    //         .context("no comm_wallet struct")?
-    //         .list;
-
-    //     cw_list.iter().for_each(|el| {
-    //         let acc_str = el.to_string();
-
-    //         let new_address = AccountAddress::from_hex_literal(&format!("0x{}", acc_str))
-    //             .expect("could not parse address");
-
-    //     });
-    // }
 
     Ok(())
 }
@@ -462,22 +388,6 @@ pub fn genesis_migrate_cumu_deposits(
 
     Ok(())
 }
-// /// Since we are minting for each account to convert account balances there may be a rounding difference from target. Add those micro cents into the transaction fee account.
-// /// Note: we could have minted one giant coin and then split it, however there's no place to store in on chain without repurposing accounts (ie. system accounts by design do no hold any funds, only the transaction_fee contract can temporarily hold an aggregatable coin which by design can only be fully withdrawn (not split)). So the rounding mint is less elegant, but practical.
-// pub fn rounding_mint(session: &mut SessionExt, supply_settings: &SupplySettings) {
-//     let serialized_values = serialize_values(&vec![
-//         MoveValue::Signer(CORE_CODE_ADDRESS),
-//         MoveValue::U64(supply_settings.scale_supply() as u64),
-//     ]);
-
-//     exec_function(
-//         session,
-//         "genesis_migration",
-//         "rounding_mint",
-//         vec![],
-//         serialized_values,
-//     );
-// }
 
 // before any accounts are created we need to have a FinalMint in place
 // It should also happen immediately after LibraCoin gets initialized
@@ -496,6 +406,7 @@ pub fn set_final_supply(session: &mut SessionExt) {
     );
 }
 
+/// Sets the baseline reward for validators during genesis.
 pub fn set_validator_baseline_reward(session: &mut SessionExt, nominal_reward: u64) {
     let serialized_values = serialize_values(&vec![
         MoveValue::Signer(CORE_CODE_ADDRESS), // must be called by 0x1
@@ -511,45 +422,7 @@ pub fn set_validator_baseline_reward(session: &mut SessionExt, nominal_reward: u
     );
 }
 
-// pub fn _create_make_whole_incident(
-//     session: &mut SessionExt,
-//     user_recovery: &[LegacyRecoveryV6],
-//     make_whole_budget: f64,
-//     split_factor: f64,
-// ) -> anyhow::Result<()> {
-//     let scaled_budget = (make_whole_budget * split_factor).floor() as u64;
-//     let serialized_values = serialize_values(&vec![
-//         MoveValue::Signer(AccountAddress::ZERO), // must be called by 0x0
-//         MoveValue::U64(scaled_budget),
-//     ]);
-
-//     exec_function(
-//         session,
-//         "genesis_migration",
-//         "init_make_whole",
-//         vec![],
-//         serialized_values,
-//     );
-
-//     user_recovery
-//         .iter()
-//         .progress_with_style(OLProgress::bar())
-//         .for_each(|a| {
-//             if let Some(mk) = &a.make_whole {
-//                 let user_coins = mk.credits.iter().fold(0, |sum, i| i.coins.value + sum);
-//                 create_make_whole_each_user_credit(
-//                     session,
-//                     a.account
-//                         .expect("could not find accout")
-//                         .try_into()
-//                         .unwrap(),
-//                     (user_coins as f64 * split_factor).floor() as u64,
-//                 )
-//             }
-//         });
-//     Ok(())
-// }
-
+/// Sets a tombstone for a user account during genesis.
 fn set_tombstone(session: &mut SessionExt, user: AccountAddress) {
     let serialized_values = serialize_values(&vec![
         MoveValue::Signer(AccountAddress::ZERO), // must be called by 0x0
