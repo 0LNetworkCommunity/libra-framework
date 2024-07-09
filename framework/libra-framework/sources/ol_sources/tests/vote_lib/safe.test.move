@@ -30,10 +30,14 @@ module ol_framework::test_safe {
     // make the vals the signers on the safe
     // SO ALICE and DAVE ARE AUTHORIZED
 
-    safe::init_payment_multisig(&resource_sig); // all need to sign
+    safe::init_payment_multisig(&resource_sig, vals);
+
+    // vals claim the offer
+    multi_action::claim_offer(alice, new_resource_address);
+    multi_action::claim_offer(bob, new_resource_address);
 
     //need to be caged to finalize multi action workflow and release control of the account
-    multi_action::finalize_and_cage(&resource_sig, vals, vector::length(&vals));
+    multi_action::finalize_and_cage(&resource_sig, vector::length(&vals));
 
     // first make sure dave is initialized to receive LibraCoin
     ol_account::create_account(root, @0x1000d);
@@ -47,8 +51,8 @@ module ol_framework::test_safe {
     assert!(total_dave == 42, 2);
   }
 
-  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, eve = @0x1000e)]
-  fun propose_payment_should_fail(root: &signer, alice: &signer, bob: &signer, eve: &signer) {
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, eve = @0x1000e)]
+  fun propose_payment_should_fail(root: &signer, alice: &signer, bob: &signer, carol: &signer, eve: &signer) {
     use ol_framework::ol_account;
 
     let vals = mock::genesis_n_vals(root, 4);
@@ -63,10 +67,15 @@ module ol_framework::test_safe {
     // make the vals the signers on the safe
     // SO ALICE, BOB, CAROL, DAVE ARE AUTHORIZED
     // not enough voters
-    safe::init_payment_multisig(&resource_sig); // requires 3
+    safe::init_payment_multisig(&resource_sig, vals); // requires 3
+
+    // vals claim the offer
+    multi_action::claim_offer(alice, new_resource_address);
+    multi_action::claim_offer(bob, new_resource_address);
+    multi_action::claim_offer(carol, new_resource_address);
 
     //need to be caged to finalize multi action workflow and release control of the account
-    multi_action::finalize_and_cage(&resource_sig, vals, 3);
+    multi_action::finalize_and_cage(&resource_sig, 3);
 
     // first make sure EVE is initialized to receive LibraCoin
     ol_account::create_account(root, @0x1000e);
@@ -80,8 +89,8 @@ module ol_framework::test_safe {
     assert!(total_dave == 0, 2);
   }
 
-  #[test(root = @ol_framework, alice = @0x1000a, dave = @0x1000d )]
-  fun safe_root_security_fee(root: &signer, alice: &signer, dave: &signer, ) {
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d )]
+  fun safe_root_security_fee(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer) {
 
     let vals = mock::genesis_n_vals(root, 3);
     mock::ol_initialize_coin_and_fund_vals(root, 1000000000000, true);
@@ -89,10 +98,16 @@ module ol_framework::test_safe {
     let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(dave, b"0x1");
     let new_resource_address = signer::address_of(&resource_sig);
     assert!(resource_account::is_resource_account(new_resource_address), 0);
-    safe::init_payment_multisig(&resource_sig); // requires 3
+    
+    safe::init_payment_multisig(&resource_sig, vals); // requires 3
+    
+    // vals claim the offer
+    multi_action::claim_offer(alice, new_resource_address);
+    multi_action::claim_offer(bob, new_resource_address);
+    multi_action::claim_offer(carol, new_resource_address);
 
     //need to be caged to finalize multi action workflow and release control of the account
-    multi_action::finalize_and_cage(&resource_sig, vals, 2);
+    multi_action::finalize_and_cage(&resource_sig, 2);
 
     // fund the account
     ol_account::transfer(alice, new_resource_address, 1000000);
