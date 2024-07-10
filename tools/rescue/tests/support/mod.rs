@@ -6,6 +6,7 @@ use diem_logger::info;
 use diem_temppath::TempPath;
 use diem_types::account_address::AccountAddress;
 use libra_framework::framework_cli::make_template_files;
+use libra_types::core_types::app_cfg::TxCost;
 use smoke_test::test_utils::{MAX_CONNECTIVITY_WAIT_SECS, MAX_HEALTHY_WAIT_SECS};
 use std::{
     path::PathBuf,
@@ -21,7 +22,6 @@ use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Governance},
     txs_cli_governance::GovernanceTxs::{Propose, Resolve, Vote},
 };
-use libra_types::legacy_types::app_cfg::TxCost;
 
 pub fn make_script(remove_validator: AccountAddress) -> PathBuf {
     let script = format!(
