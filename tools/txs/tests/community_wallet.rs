@@ -1,4 +1,4 @@
-use diem_crypto::ValidCryptoMaterialStringExt;
+use diem_sdk::crypto::ValidCryptoMaterialStringExt;
 use diem_sdk::types::LocalAccount;
 use diem_temppath::TempPath;
 use diem_types::account_address::AccountAddress;
@@ -8,7 +8,7 @@ use libra_txs::txs_cli::{TxsCli, TxsSub, TxsSub::Transfer};
 use libra_txs::txs_cli_community::{
     AdminTx, CageTx, ClaimTx, CommunityTxs, InitTx, MigrateOfferTx, OfferTx,
 };
-use libra_types::legacy_types::app_cfg::TxCost;
+use libra_types::core_types::app_cfg::TxCost;
 use std::path::PathBuf;
 use url::Url;
 
