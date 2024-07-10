@@ -6,7 +6,7 @@ use libra_txs::{
     txs_cli::{TxsCli, TxsSub, TxsSub::Transfer},
     txs_cli_community::{CageTx, ClaimTx, CommunityTxs, InitTx},
 };
-use libra_types::legacy_types::app_cfg::TxCost;
+use libra_types::core_types::app_cfg::TxCost;
 use rescue::twin::{Twin, TwinSetup};
 use std::{env, path::PathBuf};
 
