@@ -1,24 +1,25 @@
+//! Module for handling recovery genesis blob creation
+
 use libra_types::{
     exports::{AccountAddress, AuthenticationKey},
     legacy_types::legacy_recovery_v6::{self, AccountRole, LegacyRecoveryV6},
 };
 use serde::{Deserialize, Serialize};
-
 use std::{
     fs,
     path::{Path, PathBuf},
 };
+
 /// Make a recovery genesis blob
 pub fn recovery_file_parse(recovery_json_path: PathBuf) -> anyhow::Result<Vec<LegacyRecoveryV6>> {
     let mut r = legacy_recovery_v6::read_from_recovery_file(&recovery_json_path);
 
     fix_slow_wallet(&mut r)?;
 
-    // legacy_recovery_v6::strip_system_address(&mut r);
-
     Ok(r)
 }
 
+/// Fixes slow wallet issues in `LegacyRecoveryV6`.
 fn fix_slow_wallet(r: &mut [LegacyRecoveryV6]) -> anyhow::Result<Vec<AccountAddress>> {
     let mut errs = vec![];
     r.iter_mut().for_each(|e| {
@@ -37,6 +38,7 @@ fn fix_slow_wallet(r: &mut [LegacyRecoveryV6]) -> anyhow::Result<Vec<AccountAddr
     Ok(errs)
 }
 
+/// Represents an account to be dropped from the legacy recovery data.
 #[derive(Serialize, Deserialize)]
 struct DropList {
     account: AccountAddress,
@@ -76,16 +78,12 @@ fn parse_json_single() {
 
     let r = recovery_file_parse(p).unwrap();
     if let Some(acc) = r[0].account {
-        assert!(
-            &acc.to_string() == "0000000000000000000000000000000045558bad546e6159020871f7e5d094d7"
+        assert_eq!(
+            &acc.to_string(),
+            "0000000000000000000000000000000045558bad546e6159020871f7e5d094d7"
         );
     }
     dbg!(&r.len());
-
-    // let _has_root = r
-    //     .iter()
-    //     .find(|el| el.comm_wallet.is_some())
-    //     .expect("could not find 0x0 state in recovery file");
 }
 
 #[test]
@@ -104,8 +102,9 @@ fn parse_json_all() {
         .iter()
         .find(|e| e.account.unwrap().to_hex_literal() == "0x7f10901425237ee607afa9cc80e5df3e")
         .expect("should have account");
-    assert!(
-        a.balance.as_ref().unwrap().coin == a.slow_wallet.as_ref().unwrap().unlocked,
+    assert_eq!(
+        a.balance.as_ref().unwrap().coin,
+        a.slow_wallet.as_ref().unwrap().unlocked,
         "unlocked should equal balance"
     );
 }

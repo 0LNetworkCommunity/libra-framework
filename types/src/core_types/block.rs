@@ -1,6 +1,6 @@
-//! Proof block datastructure
+//! Proof block data structure and operations
 
-use crate::legacy_types::{app_cfg::AppCfg, mode_ol::MODE_0L};
+use crate::core_types::{app_cfg::AppCfg, mode_ol::MODE_0L};
 
 use crate::exports::NamedChain;
 
@@ -14,7 +14,6 @@ use std::{
     io::Write,
     path::{Path, PathBuf},
 };
-// use std::
 
 // TOWER DIFFICULTY SETTINGS
 // What we call "difficulty", is the intersection of number of VDF iterations with the security parameter.

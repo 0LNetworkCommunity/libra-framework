@@ -1,41 +1,7 @@
 use indicatif::ProgressBar;
-use libra_types::legacy_types::legacy_recovery_v6::LegacyRecoveryV6;
-use libra_types::ol_progress::OLProgress;
+use libra_types::{legacy_types::legacy_recovery_v6::LegacyRecoveryV6, ol_progress::OLProgress};
 use std::time::Duration;
 
-// #[derive(Debug, Clone, Args)]
-// pub struct SupplySettings {
-//     #[clap(long)]
-//     /// what is the final supply units to be split to. This is an "unscaled" number, meaning you should use the expected integer units of the coin, without the decimal precision.
-//     pub target_supply: f64,
-//     #[clap(long)]
-//     /// for calculating escrow, what's the desired percent to future uses
-//     pub target_future_uses: f64,
-//     #[clap(long)]
-//     /// for calculating base case validator reward
-//     pub years_escrow: u64,
-//     #[clap(long)]
-//     /// for future uses calc, are there any donor directed wallets which require mapping to slow wallets
-//     pub map_dd_to_slow: Vec<LegacyAddress>,
-// }
-
-// impl Default for SupplySettings {
-//     fn default() -> Self {
-//         Self {
-//             target_supply: 100_000_000_000.0,
-//             target_future_uses: 0.0,
-//             years_escrow: 10,
-//             map_dd_to_slow: vec![],
-//         }
-//     }
-// }
-
-// impl SupplySettings {
-//     // convert to the correct coin scaling
-//     pub fn scale_supply(&self) -> f64 {
-//         self.target_supply * 10f64.powf(ONCHAIN_DECIMAL_PRECISION.into())
-//     }
-// }
 #[derive(Debug, Clone, Default)]
 pub struct Supply {
     pub total: f64,
@@ -58,36 +24,6 @@ pub struct Supply {
 }
 
 impl Supply {
-    //     // returns the ratios (split_factor, escrow_pct)
-    //     pub fn set_ratios_from_settings(&mut self, settings: &SupplySettings) -> anyhow::Result<()> {
-    //         // NOTE IMPORTANT: the CLI receives an unscaled integer number. And it should be scaled up to the Movevm decimal precision being used: 10^6
-    //         self.split_factor = settings.scale_supply() / self.total;
-
-    //         // get the coin amount of chosen future uses
-    //         let target_future_uses = settings.target_future_uses * self.total;
-    //         // excluding donor directed, how many coins are remaining to fund
-    //         let remaining_to_fund = target_future_uses - self.donor_voice;
-    //         // what the ratio of remaining to fund, compared to validator_slow_locked
-    //         self.escrow_pct = remaining_to_fund / self.slow_validator_locked;
-    //         self.epoch_reward_base_case =
-    //             remaining_to_fund / (365 * 100 * settings.years_escrow) as f64; // one hundred validators over 7 years every day. Note: discussed elsewhere: if this is an over estimate, the capital gets returned to community by the daily excess burn.
-    //         self.expected_user_balance = self.split_factor
-    //             * (
-    //                 self.normal +
-    //           (self.slow_total - self.slow_validator_locked ) + // remove vals
-    //           (self.slow_validator_locked * (1.0 - self.escrow_pct))
-    //                 // add back vals after escrow
-    //             );
-    //         let total_scaled = self.total * self.split_factor;
-    //         self.expected_user_ratio = self.expected_user_balance / total_scaled;
-
-    //         self.expected_circulating = self.split_factor * (self.normal + self.slow_unlocked);
-    //         self.expected_circulating_ratio = self.expected_circulating / total_scaled;
-
-    //         Ok(())
-    //     }
-    // }
-
     fn inc_supply(&mut self, r: &LegacyRecoveryV6) -> &mut Self {
         // get balances
         let user_total: f64 = match &r.balance {
@@ -95,19 +31,6 @@ impl Supply {
             None => 0.0,
         };
         self.total += user_total;
-
-        // // get loose coins in make_whole
-        // if let Some(mk) = &r.make_whole {
-        //     let user_credits = mk.credits.iter().fold(0, |sum, e| {
-        //         if !e.claimed {
-        //             return sum + e.coins.value;
-        //         }
-        //         sum
-        //     }) as f64;
-
-        //     self.total += user_credits;
-        //     self.make_whole += user_credits;
-        // }
 
         // sum all accounts
         if let Some(sl) = &r.slow_wallet {

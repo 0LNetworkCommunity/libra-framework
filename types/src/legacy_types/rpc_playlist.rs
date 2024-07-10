@@ -11,16 +11,16 @@ use crate::config;
 #[derive(Deserialize)]
 /// A list of host information for upstream fullnodes serving RPC servers
 pub struct FullnodePlaylist {
-    ///
+    /// A list of host information.
     pub nodes: Vec<HostInfo>,
 }
 
 #[derive(Deserialize)]
 /// infor for the RPC peers connection.
 pub struct HostInfo {
-    ///
+    /// A note about the host.
     pub note: String,
-    ///
+    /// The URL of the host.
     pub url: Url,
 }
 

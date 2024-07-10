@@ -1,8 +1,11 @@
 //! community wallet resource
 use diem_types::event::EventHandle;
-use move_core_types::account_address::AccountAddress;
-use move_core_types::move_resource::MoveResource;
-use move_core_types::{ident_str, identifier::IdentStr, move_resource::MoveStructType};
+use move_core_types::{
+    account_address::AccountAddress,
+    ident_str,
+    identifier::IdentStr,
+    move_resource::{MoveResource, MoveStructType},
+};
 use serde::{Deserialize, Serialize};
 // NOTE: these are legacy structs for v5
 
@@ -24,9 +27,9 @@ impl MoveResource for CommunityWalletsResourceLegacy {}
 /// Struct that represents a SlowWallet resource
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SlowWalletResource {
-    ///
+    /// Amount unlocked.
     pub unlocked: u64,
-    ///
+    /// Amount transferred.
     pub transferred: u64,
 }
 
@@ -39,9 +42,9 @@ impl MoveResource for SlowWalletResource {}
 /// Struct that represents a SlowWallet resource
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SlowWalletListResource {
-    ///
+    /// List of slow wallet addresses.
     pub list: Vec<AccountAddress>,
-    ///
+    /// Event handle for drip events.
     pub drip_events: EventHandle,
 }
 

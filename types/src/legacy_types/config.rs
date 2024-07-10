@@ -23,28 +23,6 @@ use crate::dialogue::{what_home, what_ip, what_statement, what_vfn_ip};
 
 const BASE_WAYPOINT: &str = "0:683185844ef67e5c8eeaa158e635de2a4c574ce7bbb7f41f787d38db2d623ae2";
 
-// /// Check if we are in prod mode
-// pub static IS_PROD: Lazy<bool> = Lazy::new(|| {
-//     match std::env::var("NODE_ENV") {
-//         Ok(val) => {
-//             match val.as_str() {
-//                 "prod" => true,
-//                 // if anything else is set by user is false
-//                 _ => false,
-//             }
-//         }
-//         // default to prod if nothig is set
-//         _ => true,
-//     }
-// });
-
-// // TODO: this is duplicated in ol/keys/wallet due to dependency cycle. Move to Global constants?
-// /// check this is CI environment
-// pub static IS_TEST: Lazy<bool> = Lazy::new(|| {
-//     // assume default if NODE_ENV=prod and TEST=y.
-//     std::env::var("TEST").unwrap_or("n".to_string()) != "n".to_string()
-// });
-
 /// MinerApp Configuration
 #[derive(Clone, Debug, Deserialize, Serialize)]
 // #[serde(deny_unknown_fields)]
@@ -174,17 +152,12 @@ impl AppCfg {
         if let Some(u) = upstream_peer {
             default_config.profile.upstream_nodes = vec![u.to_owned()]
         };
-        // Add link to previous tower
-        // if !*IS_TEST {
-        //     default_config.profile.tower_link = add_tower(&default_config);
-        // }
 
         if let Some(id) = network_id {
             default_config.chain_info.chain_id = id.to_owned();
         };
 
         if source_path.is_some() {
-            // let source_path = what_source();
             default_config.workspace.source_path = source_path.clone();
             default_config.workspace.stdlib_bin_path = Some(
                 source_path
@@ -258,7 +231,6 @@ impl AppCfg {
             .as_str(),
         )
         .unwrap();
-        // let waypoint = config.base.waypoint.waypoint();
 
         let mut cfg = AppCfg {
             workspace: Workspace::default(),

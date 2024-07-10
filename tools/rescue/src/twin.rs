@@ -1,73 +1,66 @@
 #![allow(unused)]
-use crate::diem_db_bootstrapper::BootstrapOpts;
-use crate::session_tools::session_add_validators;
-use anyhow::bail;
-use anyhow::Context;
+use crate::{diem_db_bootstrapper::BootstrapOpts, session_tools::session_add_validators};
+use anyhow::{bail, Context};
 use async_trait::async_trait;
 use clap::Parser;
-use diem_config::config::WaypointConfig;
-use diem_types::transaction::Script;
+use diem_config::config::{NodeConfig, WaypointConfig};
+use diem_forge::{Swarm, SwarmExt, Validator};
+use diem_temppath::TempPath;
+use diem_types::{
+    transaction::{Script, Transaction, TransactionPayload, WriteSetPayload},
+    validator_config::ValidatorOperatorConfigResource,
+};
+use fs_extra::dir;
+use futures_util::TryFutureExt;
 use libra_config::make_profile;
-use libra_smoke_tests::helpers::mint_libra;
-use libra_smoke_tests::libra_smoke::LibraSmoke;
+use libra_smoke_tests::{
+    configure_validator, helpers,
+    helpers::{get_libra_balance, mint_libra},
+    libra_smoke::LibraSmoke,
+};
 use libra_txs::txs_cli_vals::ValidatorTxs;
-use std::env;
-use std::process::abort;
-use std::time::Instant;
-use std::{path::PathBuf, time::Duration};
-
+use move_core_types::account_address::AccountAddress;
 use smoke_test::test_utils::{
     swarm_utils::insert_waypoint, MAX_CATCH_UP_WAIT_SECS, MAX_CONNECTIVITY_WAIT_SECS,
     MAX_HEALTHY_WAIT_SECS,
 };
-
-use diem_config::config::NodeConfig;
-use diem_forge::Swarm;
-use diem_forge::SwarmExt;
-use diem_forge::Validator;
-use diem_temppath::TempPath;
-use diem_types::transaction::{Transaction, TransactionPayload, WriteSetPayload};
-use diem_types::validator_config::ValidatorOperatorConfigResource;
-use fs_extra::dir;
-use futures_util::TryFutureExt;
-use libra_smoke_tests::configure_validator;
-use libra_smoke_tests::helpers;
-use libra_smoke_tests::helpers::get_libra_balance;
-use move_core_types::account_address::AccountAddress;
+use std::{
+    path::PathBuf,
+    process::abort,
+    time::{Duration, Instant},
+};
 use tokio::process::Command;
 
 use libra_txs::txs_cli::{TxsCli, TxsSub::Transfer};
-use libra_types::legacy_types::app_cfg::TxCost;
+use libra_types::core_types::app_cfg::TxCost;
 
-use crate::{rescue_tx::RescueTxOpts, session_tools::ValCredentials};
+use crate::{
+    rescue_tx::RescueTxOpts,
+    session_tools::{
+        self, libra_execute_session_function, libra_run_session, writeset_voodoo_events,
+        ValCredentials,
+    },
+};
 use diem_api_types::ViewRequest;
-use diem_config::config::InitialSafetyRulesConfig;
-use diem_config::keys::ConfigKey;
-use diem_crypto::bls12381;
-use diem_crypto::bls12381::ProofOfPossession;
-use diem_crypto::ed25519::PrivateKey;
+use diem_config::{config::InitialSafetyRulesConfig, keys::ConfigKey};
+use diem_crypto::{bls12381, bls12381::ProofOfPossession, ed25519::PrivateKey};
 use diem_forge::{LocalNode, LocalVersion, Node, NodeExt, Version};
-use diem_genesis::config::HostAndPort;
-use diem_genesis::keys::{PrivateIdentity, PublicIdentity};
-use diem_types::on_chain_config::new_epoch_event_key;
-use diem_types::waypoint::Waypoint;
+use diem_genesis::{
+    config::HostAndPort,
+    keys::{PrivateIdentity, PublicIdentity},
+};
+use diem_types::{on_chain_config::new_epoch_event_key, waypoint::Waypoint};
 use diem_vm::move_vm_ext::SessionExt;
-use hex;
-use hex::FromHex;
+use hex::{self, FromHex};
 use libra_config::validator_config;
 use libra_query::query_view;
 use libra_types::exports::{Client, NamedChain};
-use libra_wallet::core::legacy_scheme::LegacyKeyScheme;
-use libra_wallet::validator_files::SetValidatorConfiguration;
+use libra_wallet::{
+    core::legacy_scheme::LegacyKeyScheme, validator_files::SetValidatorConfiguration,
+};
 use move_core_types::value::MoveValue;
 use serde::Deserialize;
-use std::fs;
-use std::mem::ManuallyDrop;
-use std::path::Path;
-
-use crate::session_tools::{
-    self, libra_execute_session_function, libra_run_session, writeset_voodoo_events,
-};
+use std::{fs, mem::ManuallyDrop, path::Path};
 
 #[derive(Parser)]
 
@@ -348,7 +341,7 @@ impl TwinSetup for Twin {
                 waypoint: WaypointConfig::FromConfig(waypoints[i]),
             };
             let genesis_transaction = {
-                let buf = std::fs::read(&genesis_blob_paths[i].clone()).unwrap();
+                let buf = std::fs::read(genesis_blob_paths[i].clone()).unwrap();
                 bcs::from_bytes::<Transaction>(&buf).unwrap()
             };
             node_config.execution.genesis = Some(genesis_transaction);

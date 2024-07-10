@@ -1,6 +1,8 @@
 use diem_sdk::move_types::{
-    ident_str, identifier::IdentStr, language_storage::TypeTag, move_resource::MoveResource,
-    move_resource::MoveStructType,
+    ident_str,
+    identifier::IdentStr,
+    language_storage::TypeTag,
+    move_resource::{MoveResource, MoveStructType},
 };
 use move_core_types::account_address::AccountAddress;
 
@@ -8,9 +10,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MyVouchesResource {
-    ///
+    /// A vector containing the addresses of buddies vouched for.
     pub my_buddies: Vec<AccountAddress>,
-    ///
+    /// A vector containing the epochs when the vouches were made.
     pub epoch_vouched: Vec<u64>,
 }
 

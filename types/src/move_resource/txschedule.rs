@@ -5,6 +5,7 @@ use move_core_types::{
 };
 use serde::{Deserialize, Serialize};
 
+/// Struct that represents a transaction schedule.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TxSchedule {
     scheduled: Vec<TimedTransfer>,

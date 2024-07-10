@@ -59,7 +59,7 @@ async fn meta_create_libra_smoke_multi() -> anyhow::Result<()> {
         .as_str()
         .unwrap()
         .parse::<u64>()?;
-    assert!(num == 5);
+    assert_eq!(num, 5);
 
     Ok(())
 }

@@ -368,16 +368,6 @@ pub struct Workspace {
 
     /// home directory of the diem node, may be the same as miner.
     pub node_home: PathBuf,
-    // /// Directory of source code (for developer tests only)
-    // pub source_path: Option<PathBuf>,
-    // /// Directory to store blocks in
-    // pub block_dir: String,
-    // /// Directory for the database
-    // #[serde(default = "default_db_path")]
-    // pub db_path: PathBuf,
-    // /// Path to which stdlib binaries for upgrades get built typically
-    // /// /language/diem-framework/staged/stdlib.mv
-    // pub stdlib_bin_path: Option<PathBuf>,
 }
 
 impl Default for Workspace {
@@ -745,13 +735,13 @@ tx_configs:
 
     let cfg: AppCfg = serde_yaml::from_str(raw_yaml).unwrap();
 
-    assert!(cfg.workspace.default_chain_id == NamedChain::TESTING);
+    assert_eq!(cfg.workspace.default_chain_id, NamedChain::TESTING);
 
     let np = cfg.get_network_profile(None).unwrap();
-    assert!(np.chain_name == NamedChain::TESTING);
+    assert_eq!(np.chain_name, NamedChain::TESTING);
 
     let np = cfg.get_network_profile(Some(NamedChain::MAINNET)).unwrap();
-    assert!(np.chain_name == NamedChain::MAINNET);
+    assert_eq!(np.chain_name, NamedChain::MAINNET);
 
     assert!(np.the_good_ones().is_err());
     assert!(np.the_best_one().is_err());
