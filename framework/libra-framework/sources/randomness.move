@@ -342,7 +342,7 @@ module diem_framework::randomness {
 
     /// Generate a permutation of `[0, 1, ..., n-1]` uniformly at random.
     /// If n is 0, returns the empty vector.
-    fun permutation(n: u64): vector<u64> acquires PerBlockRandomness {
+    public fun permutation(n: u64): vector<u64> acquires PerBlockRandomness {
         let values = vector[];
 
         if(n == 0) {
