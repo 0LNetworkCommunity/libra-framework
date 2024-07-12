@@ -1327,8 +1327,7 @@ module ol_framework::proof_of_fee {
   #[test(root = @ol_framework)]
   fun test_shuffle_with_duplicates(root: &signer) {
     // One group of duplicates in the bids vector
-    randomness::initialize(root);
-    randomness::set_seed(x"0000000000000000000000000000000000000000000000000000000000000000");
+    randomness::initialize_for_testing(root);
     let bids = vector[1, 2, 2, 3, 4];
     let addresses = vector[@0x1, @0x2, @0x3, @0x4, @0x5];
     let original_addresses = vector[@0x1, @0x2, @0x3, @0x4, @0x5];
@@ -1351,8 +1350,7 @@ module ol_framework::proof_of_fee {
   #[test(root = @ol_framework)]
   fun test_shuffle_multiple_duplicate_groups(root: &signer) {
     // Multiple groups of duplicates in the bids vector
-    randomness::initialize(root);
-    randomness::set_seed(x"0000000000000000000000000000000000000000000000000000000000000000");
+    randomness::initialize_for_testing(root);
     let bids = vector[1, 2, 2, 3, 3, 4];
     let addresses = vector[@0x1, @0x2, @0x3, @0x4, @0x5, @0x6];
     let original_addresses = vector[@0x1, @0x2, @0x3, @0x4, @0x5, @0x6];
@@ -1375,8 +1373,7 @@ module ol_framework::proof_of_fee {
   #[test(root = @ol_framework)]
   fun test_shuffle_all_elements_equal(root: &signer) {
     // All elements in the bids vector are the same
-    randomness::initialize(root);
-    randomness::set_seed(x"0000000000000000000000000000000000000000000000000000000000000000");
+    randomness::initialize_for_testing(root);
     let bids = vector[2, 2, 2, 2];
     let addresses = vector[@0x1, @0x2, @0x3, @0x4];
     let original_addresses = vector[@0x1, @0x2, @0x3, @0x4];
