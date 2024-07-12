@@ -506,8 +506,10 @@ module diem_framework::epoch_boundary {
   public fun ol_reconfigure_for_test(vm: &signer, closing_epoch: u64,
   epoch_round: u64) acquires BoundaryStatus {
       use diem_framework::system_addresses;
+      use diem_framework::randomness;
 
       system_addresses::assert_ol(vm);
+      randomness::initialize_for_testing(vm);
       epoch_boundary(vm, closing_epoch, epoch_round);
   }
 
