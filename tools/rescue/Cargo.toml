@@ -50,6 +50,7 @@ serde = { workspace = true }
 serde_yaml = { workspace = true }
 smoke-test = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
+storage = { path = "../storage" }
 
 [dev-dependencies]
 diem-api-types = { workspace = true }
