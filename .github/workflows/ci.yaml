@@ -191,7 +191,7 @@ jobs:
         run: RUST_MIN_STACK=104857600 cargo test --no-fail-fast
 
   rescue:
-    timeout-minutes: 60
+    timeout-minutes: 120
     needs: [build-framework]
     runs-on: ubuntu-latest
     steps:
