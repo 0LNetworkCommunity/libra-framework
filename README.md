@@ -1,14 +1,18 @@
 # LIBRA FRAMEWORK
 
-The Libra Framework is a Move framework that can run on Diem Platform nodes. It contains the policies for the 0L network. [See here a brief history of this source](./docs/core_devs/0_engineering_strategy.md#commit-history).
+The Libra Framework is a Move language framework that can run on Diem Platform nodes. It
+contains the policies for the $LIBRA asset and the Open Libra Network.
+
+For the Open Libra network members, who are very opinionated about policies and
+economics, the majority of the community's innovations are found here.
 
 ## What are Move Frameworks
 
-Move frameworks are source code written in the Move Language. In Diem Platform and their vendor versions, the framework does all most all of the state machine's business logic: account creation, coin minting, asset transferring, code publishing, code upgrades, selecting validators, etc.
+Move frameworks are source code written in the Move Language. In Diem Platform
+(and in vendor versions), the framework contains almost all of the platform's
+business logic: account creation, coin minting, asset transferring, code
+publishing, code upgrades, selecting validators, etc.
 
-## Relevance
-
-For the 0L network, which intends to be agnostic about platform vendors, but very opinionated about policies and economics, the majority of the community's innovations are found here.
 
 # What's Included
 
@@ -16,14 +20,19 @@ There are many tools needed for the framework to be properly developed, installe
 
 # What's Not Included
 
-There isn't any code regarding database, consensus, networking, virtual machines here. That code belongs in Diem Platform. There are many vendors of the Diem technologies, and 0L maintains a version which brings in maintenance upgrades from our peers.
+There isn't any code regarding database, consensus, networking, virtual
+machines, etc. here. That code belongs in Diem Platform. There are many vendors of
+the Diem technologies, and Open Libra maintains a version with linear commits
+back to Facebook's version, and updates it with maintenance
+upgrades from contemporary vendors.
 
 # Technology Strategy
+In general, we have a light touch approach with our upstream dependencies. We
+optimize for clean APIs that easily pull in libraries from vendors. Ultimately,
+the Open Libra members are agnostic about blockchain technology, so long as it
+has the necessary components for the mission of $LIBRA.
 
-In general, we have a light touch approach with our upstream dependencies, and optimize for clean APIs easily pull changes from vendors (and even ultimately have freedom to change infrastructure vendors).
+[Read details here: ](https://0lnetwork.dev/about/0_engineering_strategys)
 
-[Read More on Technology Strategy](./docs/core_devs/0_engineering_strategy.md)
 
-### [Go To Documentation](./docs/README.md)
-
-Core Devs should [start here](./docs/core_devs/dev_quick_start.md).
+Core Devs should [start here](https://0lnetwork.dev/developers/getting-started).
