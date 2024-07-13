@@ -210,19 +210,19 @@ jobs:
 
       - name: upgrade - check workflow
         if: always()
-        working-directory: ./tools/upgrade-tests
+        working-directory: ./upgrade-tests
         # NOTE: upgrade tests which compile Move code, and then submit in the same thread will cause a stack overflow with the default rust stack size.
         run: RUST_MIN_STACK=104857600 cargo test --no-fail-fast check_workflow
 
       - name: upgrade - can force
         if: always()
-        working-directory: ./tools/upgrade-tests
+        working-directory: ./upgrade-tests
         # NOTE: upgrade tests which compile Move code, and then submit in the same thread will cause a stack overflow with the default rust stack size.
         run: RUST_MIN_STACK=104857600 cargo test --no-fail-fast force_upgrade
       - name: upgrade - should be backwards compatible
         # should always run unless we explicitly mark the branch or tag as "breaking"
         if: not(contains(${{github.ref_name}}, "breaking/"))
-        working-directory: ./tools/upgrade-tests
+        working-directory: ./upgrade-tests
         # NOTE: upgrade tests which compile Move code, and then submit in the same thread will cause a stack overflow with the default rust stack size.
         run: RUST_MIN_STACK=104857600 cargo test --no-fail-fast backwards_compatible
   rescue:
