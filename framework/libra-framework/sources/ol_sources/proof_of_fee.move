@@ -148,24 +148,24 @@ module ol_framework::proof_of_fee {
     outgoing_compliant_set: &vector<address>,
     mc_set_size: u64 // musical chairs set size suggestion
   ): (vector<address>, vector<address>, vector<address>, u64) acquires ProofOfFeeAuction, ConsensusReward {
-      system_addresses::assert_ol(vm);
+    system_addresses::assert_ol(vm);
 
-      let all_bidders = get_bidders(false);
-      let only_qualified_bidders = get_bidders(true);
+    let all_bidders = get_bidders(false);
+    let only_qualified_bidders = get_bidders(true);
 
-      // Calculate the final set size considering the number of compliant validators,
-      // number of qualified bidders, and musical chairs set size suggestion
-      let final_set_size = calculate_final_set_size(
-        vector::length(outgoing_compliant_set),
-        vector::length(&only_qualified_bidders),
-        mc_set_size);
+    // Calculate the final set size considering the number of compliant validators,
+    // number of qualified bidders, and musical chairs set size suggestion
+    let final_set_size = calculate_final_set_size(
+      vector::length(outgoing_compliant_set),
+      vector::length(&only_qualified_bidders),
+      mc_set_size);
 
-      // This is the core of the mechanism, the uniform price auction
-      // the winners of the auction will be the validator set.
-      // Other lists are created for audit purposes of the BoundaryStatus
-      let (auction_winners, entry_fee, _clearing_bid, _proven, _unproven) = fill_seats_and_get_price(vm, final_set_size, &only_qualified_bidders, outgoing_compliant_set);
+    // This is the core of the mechanism, the uniform price auction
+    // the winners of the auction will be the validator set.
+    // Other lists are created for audit purposes of the BoundaryStatus
+    let (auction_winners, entry_fee, _clearing_bid, _proven, _unproven) = fill_seats_and_get_price(vm, final_set_size, &only_qualified_bidders, outgoing_compliant_set);
 
-      (auction_winners, all_bidders, only_qualified_bidders, entry_fee)
+    (auction_winners, all_bidders, only_qualified_bidders, entry_fee)
   }
 
 
@@ -436,12 +436,12 @@ module ol_framework::proof_of_fee {
       (i < vector::length(&sorted_vals_by_bid))
     ) {
       let val = vector::borrow(&sorted_vals_by_bid, i);
-        if (!account::exists_at(*val)) {
-          i = i + 1;
-          continue
-        };
+      if (!account::exists_at(*val)) {
+        i = i + 1;
+        continue
+      };
       // check if a proven node
-      // NOTE: if the top bidders all all "proven" nodes, then there will
+      // NOTE: if the top bidders are all "proven" nodes, then there will
       // be no reason to add an unproven. Unproven nodes will only
       // be picked if they have bids higher than the bottom 1/3 bids of the proven nodes
       if (vector::contains(proven_nodes, val)) {
@@ -532,6 +532,7 @@ module ol_framework::proof_of_fee {
   fun bid_as_fixedpoint(bid_pct: u64): fixed_point32::FixedPoint32 {
     fixed_point32::create_from_rational(bid_pct, 1000)
   }
+
   /// Adjust the reward at the end of the epoch
   /// as described in the paper, the epoch reward needs to be adjustable
   /// given that the implicit bond needs to be sufficient, eg 5-10x the reward.
@@ -670,8 +671,6 @@ module ol_framework::proof_of_fee {
   }
 
   //////////////// GETTERS ////////////////
-  // get the current bid for a validator
-
 
   #[view]
   /// get the baseline reward from ConsensusReward
@@ -681,6 +680,7 @@ module ol_framework::proof_of_fee {
     return (b.nominal_reward, b.entry_fee, b.clearing_bid, b.median_win_bid)
   }
 
+  // get the current bid for a validator
   // CONSENSUS CRITICAL
   // ALL EYES ON THIS
   // Proof of Fee returns the current bid of the validator during the auction for upcoming epoch seats.
@@ -714,19 +714,19 @@ module ol_framework::proof_of_fee {
 
   // Get the top N validators by bid, this is FILTERED by default
   public(friend) fun top_n_accounts(account: &signer, n: u64, unfiltered: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
-      system_addresses::assert_vm(account);
+    system_addresses::assert_vm(account);
 
-      let eligible_validators = get_bidders(unfiltered);
-      let len = vector::length<address>(&eligible_validators);
-      if(len <= n) return eligible_validators;
+    let eligible_validators = get_bidders(unfiltered);
+    let len = vector::length<address>(&eligible_validators);
+    if(len <= n) return eligible_validators;
 
-      let diff = len - n;
-      while(diff > 0){
-        vector::pop_back(&mut eligible_validators);
-        diff = diff - 1;
-      };
+    let diff = len - n;
+    while(diff > 0){
+      vector::pop_back(&mut eligible_validators);
+      diff = diff - 1;
+    };
 
-      eligible_validators
+    eligible_validators
   }
 
 
@@ -755,12 +755,10 @@ module ol_framework::proof_of_fee {
   /// Note that the validator will not be bidding on any future
   /// epochs if they retract their bid. The must set a new bid.
   fun retract_bid(account_sig: &signer) acquires ProofOfFeeAuction {
-
     let acc = signer::address_of(account_sig);
     if (!exists<ProofOfFeeAuction>(acc)) {
       init(account_sig);
     };
-
 
     let pof = borrow_global_mut<ProofOfFeeAuction>(acc);
     let this_epoch = epoch_helper::get_current_epoch();
@@ -771,7 +769,6 @@ module ol_framework::proof_of_fee {
     // already retracted this epoch
     // assert!(this_epoch > pof.last_epoch_retracted, error::ol_tx(EABOVE_RETRACT_LIMIT));
     //////// LEAVE COMMENTED. Code for a potential upgrade. ////////
-
 
     pof.epoch_expiration = 0;
     pof.bid = 0;
@@ -952,9 +949,7 @@ module ol_framework::proof_of_fee {
     assert!(reward == 105, 1003);
     assert!(clear_percent == 50, 1004);
     assert!(median_bid == 33, 1005);
-
   }
-
 
   // Scenario: The reward is too low during 5 days (short window). People are not bidding very high.
   #[test(vm = @ol_framework)]
@@ -976,7 +971,6 @@ module ol_framework::proof_of_fee {
       vector::push_back(&mut median_history, start_value);
       i = i + 1;
     };
-
 
     test_mock_reward(
       &vm,
@@ -1000,9 +994,7 @@ module ol_framework::proof_of_fee {
     assert!(reward == 110, 1003);
     assert!(clear_percent == 50, 1004);
     assert!(median_bid == 33, 1005);
-
   }
-
 
   // Scenario: The reward is too high during 5 days (short window). People are bidding over 95% of the baseline fee.
   #[test(vm = @ol_framework)]
@@ -1023,7 +1015,6 @@ module ol_framework::proof_of_fee {
       vector::push_back(&mut median_history, value);
       i = i + 1;
     };
-
 
     test_mock_reward(
       &vm,
@@ -1047,7 +1038,6 @@ module ol_framework::proof_of_fee {
     assert!(reward == 95, 1000);
     assert!(clear_percent == 50, 1004);
     assert!(median_bid == 33, 1005);
-
   }
 
   // Scenario: The reward is too low during 5 days (short window). People are not bidding very high.
@@ -1093,7 +1083,6 @@ module ol_framework::proof_of_fee {
     assert!(reward == 90, 1003);
     assert!(clear_percent == 50, 1004);
     assert!(median_bid == 33, 1005);
-
   }
 
   // #[test(vm = @ol_framework)]
@@ -1309,7 +1298,6 @@ module ol_framework::proof_of_fee {
     assert!(bids == vector[3, 3, 3, 3, 3], 7357013);
     assert!(addresses == vector[@0x1, @0x2, @0x3, @0x4, @0x5], 7357014);
   }
-
 
 
   // Shuffle Tests
