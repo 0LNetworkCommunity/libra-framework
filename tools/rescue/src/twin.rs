@@ -160,7 +160,7 @@ trait TwinSetup {
     ) -> anyhow::Result<LibraSmoke, anyhow::Error>;
     async fn extract_credentials(marlon_node: &LocalNode) -> anyhow::Result<ValCredentials>;
     fn clone_db(prod_db: &Path, swarm_db: &Path) -> anyhow::Result<()>;
-    async fn clone_db_with_snapshot(snapshot_file: &Path, target: &Path) -> anyhow::Result<()>;
+    async fn clone_db_with_snapshot(snapshot_file: &PathBuf, target: &Path) -> anyhow::Result<()>;
     async fn wait_for_node(
         validator: &mut dyn Validator,
         expected_to_connect: usize,
@@ -275,37 +275,22 @@ impl TwinSetup for Twin {
             n.clear_storage();
         });
 
-        // Use snapshot file if provided
         if let Some(snapshot_file) = snapshot_file {
-            swarm_db_paths.iter().for_each(|p|{
-                Self::clone_db_with_snapshot(&snapshot_file, p);
-            });
+            let snapshot_manifest = load_snapshot_manifest(&snapshot_file).expect("parse manifest");
+            let archive_path = snapshot_file.parent().unwrap();
+            let account_states = accounts_from_snapshot_backup(snapshot_manifest, archive_path)
+                .await
+                .expect("could not parse snapshot");
+
+            for (i, p) in swarm_db_paths.iter().enumerate() {
+                Self::clone_db_with_snapshot(&snapshot_file, p).await?;;
+            }
         } else {
+            // Copy production database if no snapshot file provided
             swarm_db_paths.iter().for_each(|p| {
                 Self::clone_db(&prod_db, p).unwrap();
             });
         }
-
-        // // Use snapshot file if provided
-        // if let Some(snapshot_file) = snapshot_file {
-        //     let snapshot_manifest = load_snapshot_manifest(&snapshot_file).expect("parse manifest");
-        //     let archive_path = snapshot_file.parent().unwrap();
-        //     let account_states = accounts_from_snapshot_backup(snapshot_manifest, archive_path)
-        //         .await
-        //         .expect("could not parse snapshot");
-        //
-        //     for (i, p) in swarm_db_paths.iter().enumerate() {
-        //         // Here we should write the account_states into the swarm_db_paths[i]
-        //         // This part depends on the specific database schema and APIs you're using.
-        //         // Assuming you have a function `write_account_states_to_db` that does this.
-        //         write_account_states_to_db(&account_states, p)?;
-        //     }
-        // } else {
-        //     swarm_db_paths.iter().for_each(|p| {
-        //         Self::clone_db(&prod_db, p).unwrap();
-        //     });
-        // }
-
 
         swarm_db_paths.iter().for_each(|p| {
             assert!(p.exists());
@@ -509,85 +494,18 @@ impl TwinSetup for Twin {
         Ok(())
     }
 
-    // async fn clone_db_with_snapshot(snapshot_file: &Path, target: &Path) -> anyhow::Result<()> {
-    //     // Ensure the snapshot file exists
-    //     if !snapshot_file.exists() {
-    //         bail!("Snapshot file does not exist: {:?}", snapshot_file);
-    //     }
-    //
-    //     // Ensure the target directory exists or create it
-    //     if !target.exists() {
-    //         std::fs::create_dir_all(target)
-    //             .with_context(|| format!("Failed to create target directory: {:?}", target))?;
-    //     }
-    //
-    //     // Extract the snapshot file to the target directory
-    //     let output = Command::new("tar")
-    //         .arg("-xvf")
-    //         .arg(snapshot_file)
-    //         .arg("-C")
-    //         .arg(target)
-    //         .output()
-    //         .await
-    //         .context("Failed to extract snapshot file")?;
-    //
-    //     if !output.status.success() {
-    //         bail!(
-    //             "Error extracting snapshot file: {}",
-    //             String::from_utf8_lossy(&output.stderr)
-    //         );
-    //     }
-    //
-    //     println!("Snapshot extracted successfully to {:?}", target);
-    //
-    //     // Ensure the target directory contains the necessary database files
-    //     let target_db_path = target.join("db");
-    //     if !target_db_path.exists() {
-    //         bail!("Target database path does not exist: {:?}", target_db_path);
-    //     }
-    //
-    //     println!("Target DB path: {:?}", target_db_path);
-    //
-    //     // Swap the directories (if required)
-    //     let target_old_path = target.parent().unwrap().join("db-old");
-    //     if target_old_path.exists() {
-    //         fs::remove_dir_all(&target_old_path)
-    //             .with_context(|| format!("Failed to remove old target directory: {:?}", target_old_path))?;
-    //     }
-    //     fs::create_dir(&target_old_path)
-    //         .with_context(|| format!("Failed to create old target directory: {:?}", target_old_path))?;
-    //     let options = dir::CopyOptions::new();
-    //
-    //     dir::move_dir(&target_db_path, &target_old_path, &options)
-    //         .with_context(|| format!("Failed to move target DB to old path: {:?}", target_old_path))?;
-    //     fs::create_dir(&target_db_path)
-    //         .with_context(|| format!("Failed to recreate target DB directory: {:?}", target_db_path))?;
-    //     dir::copy(&target_old_path, &target_db_path.parent().unwrap(), &options)
-    //         .with_context(|| format!("Failed to copy old target DB to new target path: {:?}", target_db_path))?;
-    //
-    //     println!("DB copied from snapshot successfully");
-    //
-    //     Ok(())
-    // }
-
-
-    async fn clone_db_with_snapshot(snapshot_file: &Path, target: &Path) -> anyhow::Result<()> {
-        println!("Cloning DB using snapshot file");
-        std::fs::create_dir_all(target)?;
-        let output = Command::new("tar")
-            .arg("-xvf")
-            .arg(snapshot_file)
-            .arg("-C")
-            .arg(target)
-            .output()
+    async fn clone_db_with_snapshot(snapshot_file: &PathBuf, target: &Path) -> anyhow::Result<()> {
+        println!("Cloning DB using snapshot file: {:?}", snapshot_file);
+        let snapshot_manifest = load_snapshot_manifest(snapshot_file)
+            .expect("Failed to parse snapshot manifest");
+        let archive_path = snapshot_file.parent().unwrap();
+        let account_states = accounts_from_snapshot_backup(snapshot_manifest, archive_path)
             .await
-            .expect("Failed to extract snapshot file");
+            .expect("Failed to parse snapshot");
 
-        if output.status.success() {
-            Ok(())
-        } else {
-            Err(anyhow::Error::msg(String::from_utf8_lossy(&output.stderr).to_string()))
-        }
+        println!("Cloning database with snapshot {:?} to {:?}", snapshot_file, target);
+
+        Ok(())
     }
 
     /// '''
@@ -618,7 +536,6 @@ impl TwinSetup for Twin {
     }
 }
 
-#[ignore]
 #[test]
 fn test_twin_cl() -> anyhow::Result<()> {
     //use any db
@@ -632,7 +549,6 @@ fn test_twin_cl() -> anyhow::Result<()> {
     twin.run();
     Ok(())
 }
-#[ignore]
 #[tokio::test]
 async fn test_twin_random() -> anyhow::Result<()> {
     //use any db

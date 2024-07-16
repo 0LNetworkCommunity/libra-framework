@@ -22,7 +22,7 @@ async fn test_twin() -> anyhow::Result<()> {
     println!("0. create a valid test database from smoke-tests");
     let num_nodes: usize = 3;
 
-    /// Start LibraSmoke to create a test network with `num_nodes` validators
+    // Start LibraSmoke to create a test network with `num_nodes` validators
     // The diem-node should be compiled externally to avoid any potential conflicts with the current build
     //get the current path
     let mut s = LibraSmoke::new(Some(num_nodes as u8), None)
@@ -38,19 +38,19 @@ async fn test_twin() -> anyhow::Result<()> {
     let brick_db = env.validators().next().unwrap().config().storage.dir();
     assert!(brick_db.exists());
 
-    /// Stop all validators in the current environment
+    // Stop all validators in the current environment
     for node in env.validators_mut() {
         node.stop();
     }
 
     println!("1. start new swarm configs, and stop the network");
 
-    /// Start a new LibraSmoke instance with only 1 validator
+    // Start a new LibraSmoke instance with only 1 validator
     let _s: LibraSmoke = LibraSmoke::new(Some(1), None)
         .await
         .expect("could not start libra smoke");
 
-    /// Retrieve the path of the first validator's config directory
+    // Retrieve the path of the first validator's config directory
     let first_validator_address = env
         .validators()
         .next()
@@ -64,21 +64,22 @@ async fn test_twin() -> anyhow::Result<()> {
 
     println!("2. compile the script");
 
-    /// Prepare options for generating a rescue blob
+    // Prepare options for generating a rescue blob
     let r = RescueTxOpts {
         data_path: brick_db.clone(),
         blob_path: Some(blob_path.path().to_owned()),
         script_path: None,
         framework_upgrade: true,
         debug_vals: Some(vec![first_validator_address]),
+        snapshot_path: None,
     };
     r.run()?;
 
-    /// Validate that the rescue.blob file has been generated
+    // Validate that the rescue.blob file has been generated
     let file = blob_path.path().join("rescue.blob");
     assert!(file.exists());
 
-    /// Deserialize the genesis transaction from the rescue blob
+    // Deserialize the genesis transaction from the rescue blob
     let genesis_transaction = {
         let buf = std::fs::read(&file).unwrap();
         bcs::from_bytes::<Transaction>(&buf).unwrap()
@@ -99,7 +100,7 @@ async fn test_twin() -> anyhow::Result<()> {
     //////////
 
     println!("4. apply genesis transaction to all validators");
-    /// Apply the genesis transaction to all validators in the environment
+    // Apply the genesis transaction to all validators in the environment
     for node in env.validators_mut() {
         let mut node_config = node.config().clone();
 
@@ -159,7 +160,7 @@ async fn test_twin_with_snapshot() -> anyhow::Result<()> {
     let archive_path = Path::new(&prod_db_snapshot);
 
     // Process account states from snapshot
-    let account_states = accounts_from_snapshot_backup(snapshot_manifest, archive_path)
+    let _account_states = accounts_from_snapshot_backup(snapshot_manifest, archive_path)
         .await
         .expect("Could not parse snapshot");
 
