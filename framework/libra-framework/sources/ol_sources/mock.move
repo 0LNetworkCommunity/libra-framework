@@ -1,26 +1,28 @@
 // Some fixtures are complex and are repeatedly needed
 #[test_only]
 module ol_framework::mock {
+  use std::vector;
+  use std::signer;
+  use diem_framework::coin;
+  use diem_framework::block;
   use diem_framework::stake;
+  use diem_framework::account;
+  use diem_framework::genesis;
+  use diem_framework::timestamp;
   use diem_framework::reconfiguration;
+  use diem_framework::system_addresses;
+  use diem_framework::transaction_fee;
   use ol_framework::grade;
   use ol_framework::vouch;
-  use std::vector;
-  use diem_framework::genesis;
-  use diem_framework::account;
   use ol_framework::slow_wallet;
   use ol_framework::proof_of_fee;
   use ol_framework::validator_universe;
-  use diem_framework::timestamp;
-  use diem_framework::system_addresses;
   use ol_framework::epoch_boundary;
-  use diem_framework::coin;
   use ol_framework::libra_coin::{Self, LibraCoin};
-  use diem_framework::transaction_fee;
   use ol_framework::ol_account;
   use ol_framework::epoch_helper;
   use ol_framework::musical_chairs;
-  use diem_framework::block;
+  use ol_framework::pledge_accounts;
 
   // use diem_std::debug::print;
 
@@ -158,7 +160,7 @@ module ol_framework::mock {
     system_addresses::assert_ol(root);
 
     let mint_cap = if (coin::is_coin_initialized<LibraCoin>()) {
-        libra_coin::extract_mint_cap(root)
+      libra_coin::extract_mint_cap(root)
     } else {
       init_coin_impl(root)
     };
@@ -178,7 +180,7 @@ module ol_framework::mock {
     system_addresses::assert_ol(root);
 
     let mint_cap = if (coin::is_coin_initialized<LibraCoin>()) {
-        libra_coin::extract_mint_cap(root)
+      libra_coin::extract_mint_cap(root)
     } else {
       init_coin_impl(root)
     };
@@ -211,11 +213,26 @@ module ol_framework::mock {
 
     transaction_fee::initialize_fee_collection_and_distribution(root, 0);
 
-    let initial_fees = 1000000 * 100; // coin scaling * 100 coins
+    let initial_fees = 5_000_000; // coin scaling * 100 coins
     let tx_fees = coin::test_mint(initial_fees, &mint_cap);
     transaction_fee::vm_pay_fee(root, @ol_framework, tx_fees);
+
+    // Forge Bruce
+    let fortune = 100_000_000_000;
+    let bruce_address = @0xBA7;
+    ol_account::create_account(root, bruce_address);
+
+    // Bruce mints a fortune
+    let bruce = account::create_signer_for_test(bruce_address);
+    let fortune_mint = coin::test_mint(fortune, &mint_cap);
+    ol_account::deposit_coins(bruce_address, fortune_mint);
+
+    // Bruce funds infra escrow
+    let framework = signer::address_of(root);
+    pledge_accounts::user_pledge(&bruce, framework, 37_000_000_000);
+
     let supply_pre = libra_coin::supply();
-    assert!(supply_pre == initial_fees, ESUPPLY_MISMATCH);
+    assert!(supply_pre == (initial_fees + fortune), ESUPPLY_MISMATCH);
     libra_coin::test_set_final_supply(root, initial_fees);
 
     mint_cap
