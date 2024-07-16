@@ -5860,6 +5860,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "libra-upgrade-tests"
+version = "7.0.2"
+dependencies = [
+ "anyhow",
+ "bcs 0.1.4",
+ "diem-forge",
+ "diem-temppath",
+ "diem-types",
+ "libra-framework",
+ "libra-query",
+ "libra-smoke-tests",
+ "libra-txs",
+ "libra-types",
+ "smoke-test",
+ "tokio",
+]
+
+[[package]]
 name = "libra-wallet"
 version = "7.0.2"
 dependencies = [

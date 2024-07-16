@@ -5,7 +5,7 @@ on:
     tags:
       - "[0-9]+.[0-9]+.[0-9]+"
       - "[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
-    branches: ["*"]
+    branches: ["**"] # glob pattern to allow slash /
   pull_request:
     types:
       - opened
@@ -31,11 +31,11 @@ jobs:
         run: >
           wget -O ${{github.workspace}}/diem https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem &&
           chmod +x ${{github.workspace}}/diem
-          
+
       - uses: Swatinem/rust-cache@v2.7.3
         with:
             shared-key: "libra-framework"
-            cache-all-crates: true          
+            cache-all-crates: true
 
       # Move framework tests
       - name: move framework

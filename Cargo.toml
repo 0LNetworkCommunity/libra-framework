@@ -15,6 +15,7 @@ members = [
   "tools/wallet",
   "transactional-tests",
   "types",
+  "upgrade-tests",
 ]
 
 # All workspace members should inherit these keys for package declarations.
