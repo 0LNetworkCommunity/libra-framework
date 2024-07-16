@@ -70,38 +70,38 @@ impl RescueTxOpts {
     }
 }
 
-// #[test]
-// fn test_create_blob() -> anyhow::Result<()> {
-//     use diem_temppath;
-//     use std::path::Path;
-//
-//     // Create a temporary directory for the script.
-//     let script_path = Path::new(env!("CARGO_MANIFEST_DIR"))
-//         .join("fixtures")
-//         .join("rescue_framework_script");
-//     assert!(script_path.exists());
-//
-//     // Create a temporary directory for the database.
-//     let db_root_path = diem_temppath::TempPath::new();
-//     db_root_path.create_as_dir()?;
-//     let _db = diem_db::DiemDB::new_for_test(db_root_path.path());
-//
-//     // Create a temporary directory for the rescue blob.
-//     let blob_path = diem_temppath::TempPath::new();
-//     blob_path.create_as_dir()?;
-//
-//     // Set up the options for creating a rescue blob.
-//     let r = RescueTxOpts {
-//         data_path: db_root_path.path().to_owned(),
-//         blob_path: Some(blob_path.path().to_owned()),
-//         script_path: Some(script_path),
-//         framework_upgrade: false,
-//         debug_vals: None,
-//         snapshot_path: None,
-//     };
-//     r.run()?;
-//
-//     assert!(blob_path.path().join("rescue.blob").exists());
-//
-//     Ok(())
-// }
+#[test]
+fn test_create_blob() -> anyhow::Result<()> {
+    use diem_temppath;
+    use std::path::Path;
+
+    // Create a temporary directory for the script.
+    let script_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("fixtures")
+        .join("rescue_framework_script");
+    assert!(script_path.exists());
+
+    // Create a temporary directory for the database.
+    let db_root_path = diem_temppath::TempPath::new();
+    db_root_path.create_as_dir()?;
+    let _db = diem_db::DiemDB::new_for_test(db_root_path.path());
+
+    // Create a temporary directory for the rescue blob.
+    let blob_path = diem_temppath::TempPath::new();
+    blob_path.create_as_dir()?;
+
+    // Set up the options for creating a rescue blob.
+    let r = RescueTxOpts {
+        data_path: db_root_path.path().to_owned(),
+        blob_path: Some(blob_path.path().to_owned()),
+        script_path: Some(script_path),
+        framework_upgrade: false,
+        debug_vals: None,
+        snapshot_path: None,
+    };
+    r.run()?;
+
+    assert!(blob_path.path().join("rescue.blob").exists());
+
+    Ok(())
+}
