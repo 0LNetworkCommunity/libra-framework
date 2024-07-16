@@ -9,7 +9,7 @@ use libra_framework::release::ReleaseTarget;
 /// NOTE: There are other tests here concerned with the TX workflow for
 /// upgrades.
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn smoke_upgrade_mainnet_compatible_libra() {
+async fn compatible_upgrade_mainnet_libra() {
     support::upgrade_multiple_impl(
         "upgrade-multi-lib",
         vec!["3-libra-framework"],
@@ -21,7 +21,7 @@ async fn smoke_upgrade_mainnet_compatible_libra() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 /// same as above but with multiple modules being upgraded
-async fn smoke_upgrade_mainnet_compatible_multiple() {
+async fn compatible_upgrade_mainnet_multiple() {
     support::upgrade_multiple_impl(
         "upgrade-multi-lib",
         vec!["1-move-stdlib", "2-vendor-stdlib", "3-libra-framework"],
