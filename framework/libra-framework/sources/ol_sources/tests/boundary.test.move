@@ -200,12 +200,39 @@ module ol_framework::test_boundary {
   fun e2e_boundary_excludes_jail(root: signer) {
     let vals = common_test_setup(&root);
     let alice_addr = *vector::borrow(&vals, 0);
-    jail::jail(&root, alice_addr);
-    assert!(jail::is_jailed(alice_addr), 7357000);
+
+    // mock vals performance
+    let i = 1;
+    while (i < vector::length(&vals)) {
+      let addr = *vector::borrow(&vals, i);
+      stake::mock_performance(&root, addr, 10, 0);
+      i = i + 1;
+    };
+
+    // make Alice val not compliant to end up in jail
+    stake::mock_performance(&root, alice_addr, 10, 10);
+
+    // get Alice balance before epoch boundary
+    let (_unlocked, alice_before) = ol_account::balance(alice_addr);
+
+    // new epoch
     mock::trigger_epoch(&root);
 
+    // check that Alice is jailed
+    assert!(jail::is_jailed(alice_addr), 7357000);
+
+    // ensure Alice did not receive rewards
+    let (_unlocked, alice_after) = ol_account::balance(alice_addr);
+    assert!(alice_before == alice_after, 7357001);
+
+    // check that validator set reduced by 1
     let qualified_bidders = epoch_boundary::get_qualified_bidders();
-    assert!(vector::length(&qualified_bidders) == (vector::length(&vals) - 1), 7357003);
+    assert!(vector::length(&qualified_bidders) == 9, 7357003);
+
+    // check subsidy for new rewards and fees collected
+    // fees collected = 9 * 1_000_000 + 9 * 2_000 = 9_018_000
+    print(&transaction_fee::system_fees_collected());
+    assert!(transaction_fee::system_fees_collected() == 9_018_000, 7357006);
 
     // all vals had winning bids, but it was less than the seats on offer
     assert!(vector::length(&epoch_boundary::get_auction_winners()) == vector::length(&qualified_bidders) , 7357003);
