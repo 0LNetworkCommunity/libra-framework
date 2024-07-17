@@ -8,7 +8,7 @@ use libra_framework::release::ReleaseTarget;
 //
 /// Force upgrade Libra
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn smoke_upgrade_mainnet_force_libra() {
+async fn force_upgrade_mainnet_libra() {
     support::upgrade_multiple_impl(
         "upgrade-single-lib-force",
         vec!["1-libra-framework"],
@@ -20,7 +20,7 @@ async fn smoke_upgrade_mainnet_force_libra() {
 
 /// Upgrade all modules
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn smoke_upgrade_mainnet_force_multiple() {
+async fn force_upgrade_mainnet_multiple() {
     support::upgrade_multiple_impl(
         "upgrade-multi-lib-force",
         vec!["1-move-stdlib", "2-vendor-stdlib", "3-libra-framework"],
