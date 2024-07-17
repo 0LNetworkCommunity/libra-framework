@@ -21,7 +21,7 @@ module ol_framework::infra_escrow{
     // use ol_framework::slow_wallet;
     // use std::fixed_point32;
     // use std::signer;
-     use diem_std::debug::print;
+    // use diem_std::debug::print;
 
     friend diem_framework::genesis;
     friend ol_framework::epoch_boundary;
@@ -69,7 +69,6 @@ module ol_framework::infra_escrow{
         // to the user
         return(true, value)
     }
-
 
 
     // Transaction script for user to pledge to infra escrow.

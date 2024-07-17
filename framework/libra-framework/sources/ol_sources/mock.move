@@ -213,7 +213,7 @@ module ol_framework::mock {
 
     transaction_fee::initialize_fee_collection_and_distribution(root, 0);
 
-    let initial_fees = 5_000_000; // coin scaling * 100 coins
+    let initial_fees = 5_000_000 * 100; // coin scaling * 100 coins
     let tx_fees = coin::test_mint(initial_fees, &mint_cap);
     transaction_fee::vm_pay_fee(root, @ol_framework, tx_fees);
 
