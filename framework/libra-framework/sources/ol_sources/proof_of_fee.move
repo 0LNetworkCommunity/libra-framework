@@ -477,7 +477,7 @@ module ol_framework::proof_of_fee {
     cr.clearing_bid = lowest_bid_pct;
 
     if (lowest_bid_pct > 0) {
-      cr.entry_fee = fixed_point32::multiply_u64(cr.nominal_reward, bid_as_fixedpoint(lowest_bid_pct));
+      cr.entry_fee = cr.nominal_reward * lowest_bid_pct / 1000;
 
       if (cr.nominal_reward > cr.entry_fee)  {
         cr.net_reward = cr.nominal_reward - cr.entry_fee;
