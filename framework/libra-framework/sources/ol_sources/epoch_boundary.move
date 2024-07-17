@@ -447,8 +447,7 @@ module diem_framework::epoch_boundary {
     let (reward_per, _, _, _ ) = proof_of_fee::get_consensus_reward();
     let vals = stake::get_current_validators();
     let count_vals = vector::length(&vals);
-    count_vals = count_vals + ORACLE_PROVIDERS_SEATS;
-    let total_epoch_budget = count_vals * reward_per;
+    let total_epoch_budget = (count_vals * reward_per) + 1; // +1 for rounding
     print(&999);
     print(&total_epoch_budget);
     infra_escrow::epoch_boundary_collection(root, total_epoch_budget)

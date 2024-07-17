@@ -21,8 +21,6 @@ module ol_framework::test_pof {
   const Eve: address = @0x1000e;
   const Frank: address = @0x1000f;
 
-
-
   #[test_only]
   fun mock_good_bid(_root: &signer, alice: &address) {
     let a_sig = account::create_signer_for_test(*alice);
@@ -56,12 +54,10 @@ module ol_framework::test_pof {
     assert!(bid == 0, 1001);
     assert!(expires == 0, 1002);
 
-
     proof_of_fee::pof_update_bid(&a_sig, 100, 0);
     let (bid, expires) = proof_of_fee::current_bid(*alice);
     assert!(bid == 100, 1003);
     assert!(expires == 0, 1004);
-
 
     // now retract
     proof_of_fee::pof_retract_bid(a_sig);
