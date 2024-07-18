@@ -9,6 +9,7 @@ module ol_framework::test_boundary {
   use diem_framework::reconfiguration;
   use diem_framework::diem_governance;
   use diem_framework::transaction_fee;
+  use diem_framework::account;
   use ol_framework::burn;
   use ol_framework::mock;
   use ol_framework::proof_of_fee;
@@ -275,6 +276,65 @@ module ol_framework::test_boundary {
     assert!(epoch == 4, 7357003);
   }
 
+  #[test(root = @ol_framework)]
+  fun epoch_increase_thermostat(root: &signer) {
+    let vals = common_test_setup(root);
+
+    // mock bids
+    vector::for_each(vals, |a| {
+      let sig = account::create_signer_for_test(a);
+      proof_of_fee::pof_update_bid(&sig, 0100, 30); // 10% for 30 epochs
+    });
+
+    // mock bid history to increase thermostat by 5%
+    proof_of_fee::test_mock_reward(
+      root,
+      1000, // nominal reward
+      0100, // clearing bid
+      0100, // median win bid
+      vector[ 0100, 0100, 0100, 0100, 0100, 0100 ] // median history bellow 50%
+    );
+
+    // trigger epoch
+    mock::trigger_epoch(root);
+
+    // check subsidy increased by 5%
+    // fees collected = entry fee + reward * 105%
+    // entry fee = 100 * 10 = 1_000
+    // reward = 1050 * 10 = 10_500
+    // fees collected = 11_500
+    assert!(transaction_fee::system_fees_collected() == 11_500, 7357001);
+  }
+
+  #[test(root = @ol_framework)]
+  fun epoch_decrease_thermostat(root: &signer) {
+    let vals = common_test_setup(root);
+
+    // mock bids
+    vector::for_each(vals, |a| {
+      let sig = account::create_signer_for_test(a);
+      proof_of_fee::pof_update_bid(&sig, 0970, 30); // 97% for 30 epochs
+    });
+
+    // mock bid history to decrease thermostat by 5%
+    proof_of_fee::test_mock_reward(
+      root,
+      100_000, // nominal reward
+      0970, // clearing bid
+      0970, // median win bid
+      vector[ 0970, 0970, 0970, 0970, 0970, 0970 ] // median history above 95%
+    );
+
+    // trigger epoch
+    mock::trigger_epoch(root);
+
+    // check subsidy decreased by 5%
+    // fees collected = entry fee + reward * 95%
+    // entry fee = 97_000 * 10 = 970_000
+    // reward = 95_000 * 10 = 950_000
+    // fees collected = 1_920_000
+    assert!(transaction_fee::system_fees_collected() == 1_920_000, 7357001);
+  }
 
   #[test(root = @ol_framework, marlon = @0x12345)]
   #[expected_failure(abort_code = 2, location = 0x1::epoch_boundary)]

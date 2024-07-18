@@ -398,7 +398,7 @@ module diem_framework::epoch_boundary {
         jail::jail(root, *addr);
       } else {
         // vector::push_back(&mut compliant_vals, *addr);
-        if (libra_coin::value(reward_budget) > reward_per) {
+        if (libra_coin::value(reward_budget) >= reward_per) {
           let user_coin = libra_coin::extract(reward_budget, reward_per);
           reward_deposited = reward_deposited + libra_coin::value(&user_coin);
           rewards::process_single(root, *addr, user_coin, 1);
