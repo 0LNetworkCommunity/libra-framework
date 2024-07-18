@@ -356,11 +356,12 @@ module ol_framework::mock {
 
     let n_vals = 5;
     let _vals = genesis_n_vals(root, n_vals); // need to include eve to init funds
-    let genesis_mint = 1000000;
+    let genesis_mint = 1_000_000;
     ol_initialize_coin_and_fund_vals(root, genesis_mint, true);
     let supply_pre = libra_coin::supply();
-    let mocked_tx_fees = 1000000 * 100;
-    assert!(supply_pre == mocked_tx_fees + (n_vals * genesis_mint), 73570001);
+    let bruce_fortune = 100_000_000_000;
+    let mocked_tx_fees = 5_000_000 * 100;
+    assert!(supply_pre == bruce_fortune + mocked_tx_fees + (n_vals * genesis_mint), 73570001);
   }
 
 
@@ -375,9 +376,9 @@ module ol_framework::mock {
 
     let (nominal_reward, entry_fee, clearing_percent, median_bid ) = proof_of_fee::get_consensus_reward();
 
-    assert!(nominal_reward == 1000000, 73570001);
+    assert!(nominal_reward == 1_000_000, 73570001);
     assert!(clearing_percent == 1, 73570002);
-    assert!(entry_fee == 999, 73570003);
+    assert!(entry_fee == 1_000, 73570003);
     assert!(median_bid == 3, 73570004);
   }
 }
