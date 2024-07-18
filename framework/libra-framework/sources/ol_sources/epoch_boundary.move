@@ -448,8 +448,6 @@ module diem_framework::epoch_boundary {
     let vals = stake::get_current_validators();
     let count_vals = vector::length(&vals);
     let total_epoch_budget = (count_vals * reward_per) + 1; // +1 for rounding
-    print(&999);
-    print(&total_epoch_budget);
     infra_escrow::epoch_boundary_collection(root, total_epoch_budget)
   }
 
