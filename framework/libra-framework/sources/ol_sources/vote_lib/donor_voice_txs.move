@@ -184,7 +184,7 @@ module ol_framework::donor_voice_txs {
     /// The account must be "bricked" by the owner before MultiSig actions can be taken.
     /// Note, as with any multisig, the new_authorities cannot include the sponsor, since that account will no longer be able to sign transactions.
     fun make_multi_action(sponsor: &signer) {
-      multi_action::init_gov(sponsor,);
+      multi_action::init_gov(sponsor);
       multi_action::init_type<Payment>(sponsor, true); // "true": We make this multisig instance hold the WithdrawCapability. Even though we don't need it for any account pay functions, we can use it to make sure the entire pipeline of private functions scheduling a payment are authorized. Belt and suspenders.
     }
 
@@ -677,10 +677,11 @@ module ol_framework::donor_voice_txs {
   }
 
   #[test_only]
-  public fun test_helper_make_donor_voice(vm: &signer, sig: &signer) {
-  use ol_framework::testnet;
-  testnet::assert_testnet(vm);
-  make_donor_voice(sig);
+  public fun test_helper_make_donor_voice(vm: &signer, sig: &signer, initial_authorities: vector<address>) {
+    use ol_framework::testnet;
+    testnet::assert_testnet(vm);
+    make_donor_voice(sig);
+    multi_action::propose_offer_internal(sig, initial_authorities, option::none());
   }
 
   #[view]

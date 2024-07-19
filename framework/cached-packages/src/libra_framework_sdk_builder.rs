@@ -154,6 +154,7 @@ pub enum EntryFunctionCall {
         amount: u64,
     },
 
+    /// TODO: Allow to propose change only on the signature threshold
     /// Add or remove a signer to/from the multisig, and check if they may be related in the ancestry tree
     CommunityWalletInitChangeSignerCommunityMultisig {
         multisig_address: AccountAddress,
@@ -166,13 +167,18 @@ pub enum EntryFunctionCall {
     /// convenience function to check if the account can be caged
     /// after all the structs are in place
     CommunityWalletInitFinalizeAndCage {
-        initial_authorities: Vec<AccountAddress>,
         num_signers: u64,
     },
 
     CommunityWalletInitInitCommunity {
-        check_addresses: Vec<AccountAddress>,
+        initial_authorities: Vec<AccountAddress>,
         check_threshold: u64,
+    },
+
+    /// Propose offer to the multisig, and check if the signers are not related family
+    CommunityWalletInitProposeOffer {
+        new_signers: Vec<AccountAddress>,
+        num_signers: u64,
     },
 
     DiemGovernanceAddApprovedScriptHashScript {
@@ -278,10 +284,14 @@ pub enum EntryFunctionCall {
         amount: u64,
     },
 
-    /// finalize the account and put in a cage. Will abort if governance has not
-    MultiActionFinalizeAndCage {
-        initial_authorities: Vec<AccountAddress>,
-        num_signers: u64,
+    MultiActionClaimOffer {
+        multisig_address: AccountAddress,
+    },
+
+    MultiActionInitGovDeprecated {},
+
+    MultiActionMigrationMigrateOffer {
+        multisig_address: AccountAddress,
     },
 
     /// Similar to add_owners, but only allow adding one owner.
@@ -462,10 +472,12 @@ pub enum EntryFunctionCall {
         epoch_expiry: u64,
     },
 
-    /// This fucntion initiates governance for the multisig. It is called by the sponsor address, and is only callable once.
+    /// This function initiates governance for the multisig. It is called by the sponsor address, and is only callable once.
     /// init_gov fails gracefully if the governance is already initialized.
     /// init_type will throw errors if the type is already initialized.
-    SafeInitPaymentMultisig {},
+    SafeInitPaymentMultisig {
+        authorities: Vec<AccountAddress>,
+    },
 
     SlowWalletSmokeTestVmUnlock {
         user_addr: AccountAddress,
@@ -618,14 +630,17 @@ impl EntryFunctionCall {
                 n_of_m,
                 vote_duration_epochs,
             ),
-            CommunityWalletInitFinalizeAndCage {
-                initial_authorities,
-                num_signers,
-            } => community_wallet_init_finalize_and_cage(initial_authorities, num_signers),
+            CommunityWalletInitFinalizeAndCage { num_signers } => {
+                community_wallet_init_finalize_and_cage(num_signers)
+            }
             CommunityWalletInitInitCommunity {
-                check_addresses,
+                initial_authorities,
                 check_threshold,
-            } => community_wallet_init_init_community(check_addresses, check_threshold),
+            } => community_wallet_init_init_community(initial_authorities, check_threshold),
+            CommunityWalletInitProposeOffer {
+                new_signers,
+                num_signers,
+            } => community_wallet_init_propose_offer(new_signers, num_signers),
             DiemGovernanceAddApprovedScriptHashScript { proposal_id } => {
                 diem_governance_add_approved_script_hash_script(proposal_id)
             }
@@ -689,10 +704,13 @@ impl EntryFunctionCall {
             LibraCoinClaimMintCapability {} => libra_coin_claim_mint_capability(),
             LibraCoinDelegateMintCapability { to } => libra_coin_delegate_mint_capability(to),
             LibraCoinMintToImpl { dst_addr, amount } => libra_coin_mint_to_impl(dst_addr, amount),
-            MultiActionFinalizeAndCage {
-                initial_authorities,
-                num_signers,
-            } => multi_action_finalize_and_cage(initial_authorities, num_signers),
+            MultiActionClaimOffer { multisig_address } => {
+                multi_action_claim_offer(multisig_address)
+            }
+            MultiActionInitGovDeprecated {} => multi_action_init_gov_deprecated(),
+            MultiActionMigrationMigrateOffer { multisig_address } => {
+                multi_action_migration_migrate_offer(multisig_address)
+            }
             MultisigAccountAddOwner { new_owner } => multisig_account_add_owner(new_owner),
             MultisigAccountAddOwners { new_owners } => multisig_account_add_owners(new_owners),
             MultisigAccountApproveTransaction {
@@ -788,7 +806,7 @@ impl EntryFunctionCall {
             ProofOfFeePofUpdateBid { bid, epoch_expiry } => {
                 proof_of_fee_pof_update_bid(bid, epoch_expiry)
             }
-            SafeInitPaymentMultisig {} => safe_init_payment_multisig(),
+            SafeInitPaymentMultisig { authorities } => safe_init_payment_multisig(authorities),
             SlowWalletSmokeTestVmUnlock {
                 user_addr,
                 unlocked,
@@ -1144,6 +1162,7 @@ pub fn coin_transfer(coin_type: TypeTag, to: AccountAddress, amount: u64) -> Tra
     ))
 }
 
+/// TODO: Allow to propose change only on the signature threshold
 /// Add or remove a signer to/from the multisig, and check if they may be related in the ancestry tree
 pub fn community_wallet_init_change_signer_community_multisig(
     multisig_address: AccountAddress,
@@ -1174,10 +1193,7 @@ pub fn community_wallet_init_change_signer_community_multisig(
 
 /// convenience function to check if the account can be caged
 /// after all the structs are in place
-pub fn community_wallet_init_finalize_and_cage(
-    initial_authorities: Vec<AccountAddress>,
-    num_signers: u64,
-) -> TransactionPayload {
+pub fn community_wallet_init_finalize_and_cage(num_signers: u64) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
@@ -1188,15 +1204,12 @@ pub fn community_wallet_init_finalize_and_cage(
         ),
         ident_str!("finalize_and_cage").to_owned(),
         vec![],
-        vec![
-            bcs::to_bytes(&initial_authorities).unwrap(),
-            bcs::to_bytes(&num_signers).unwrap(),
-        ],
+        vec![bcs::to_bytes(&num_signers).unwrap()],
     ))
 }
 
 pub fn community_wallet_init_init_community(
-    check_addresses: Vec<AccountAddress>,
+    initial_authorities: Vec<AccountAddress>,
     check_threshold: u64,
 ) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
@@ -1210,8 +1223,30 @@ pub fn community_wallet_init_init_community(
         ident_str!("init_community").to_owned(),
         vec![],
         vec![
-            bcs::to_bytes(&check_addresses).unwrap(),
+            bcs::to_bytes(&initial_authorities).unwrap(),
             bcs::to_bytes(&check_threshold).unwrap(),
+        ],
+    ))
+}
+
+/// Propose offer to the multisig, and check if the signers are not related family
+pub fn community_wallet_init_propose_offer(
+    new_signers: Vec<AccountAddress>,
+    num_signers: u64,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("community_wallet_init").to_owned(),
+        ),
+        ident_str!("propose_offer").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&new_signers).unwrap(),
+            bcs::to_bytes(&num_signers).unwrap(),
         ],
     ))
 }
@@ -1564,11 +1599,7 @@ pub fn libra_coin_mint_to_impl(dst_addr: AccountAddress, amount: u64) -> Transac
     ))
 }
 
-/// finalize the account and put in a cage. Will abort if governance has not
-pub fn multi_action_finalize_and_cage(
-    initial_authorities: Vec<AccountAddress>,
-    num_signers: u64,
-) -> TransactionPayload {
+pub fn multi_action_claim_offer(multisig_address: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
@@ -1577,12 +1608,41 @@ pub fn multi_action_finalize_and_cage(
             ]),
             ident_str!("multi_action").to_owned(),
         ),
-        ident_str!("finalize_and_cage").to_owned(),
+        ident_str!("claim_offer").to_owned(),
         vec![],
-        vec![
-            bcs::to_bytes(&initial_authorities).unwrap(),
-            bcs::to_bytes(&num_signers).unwrap(),
-        ],
+        vec![bcs::to_bytes(&multisig_address).unwrap()],
+    ))
+}
+
+pub fn multi_action_init_gov_deprecated() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("multi_action").to_owned(),
+        ),
+        ident_str!("init_gov_deprecated").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
+pub fn multi_action_migration_migrate_offer(
+    multisig_address: AccountAddress,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("multi_action_migration").to_owned(),
+        ),
+        ident_str!("migrate_offer").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&multisig_address).unwrap()],
     ))
 }
 
@@ -2087,10 +2147,10 @@ pub fn proof_of_fee_pof_update_bid(bid: u64, epoch_expiry: u64) -> TransactionPa
     ))
 }
 
-/// This fucntion initiates governance for the multisig. It is called by the sponsor address, and is only callable once.
+/// This function initiates governance for the multisig. It is called by the sponsor address, and is only callable once.
 /// init_gov fails gracefully if the governance is already initialized.
 /// init_type will throw errors if the type is already initialized.
-pub fn safe_init_payment_multisig() -> TransactionPayload {
+pub fn safe_init_payment_multisig(authorities: Vec<AccountAddress>) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
@@ -2101,7 +2161,7 @@ pub fn safe_init_payment_multisig() -> TransactionPayload {
         ),
         ident_str!("init_payment_multisig").to_owned(),
         vec![],
-        vec![],
+        vec![bcs::to_bytes(&authorities).unwrap()],
     ))
 }
 
@@ -2480,8 +2540,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::CommunityWalletInitFinalizeAndCage {
-                initial_authorities: bcs::from_bytes(script.args().first()?).ok()?,
-                num_signers: bcs::from_bytes(script.args().get(1)?).ok()?,
+                num_signers: bcs::from_bytes(script.args().first()?).ok()?,
             })
         } else {
             None
@@ -2493,8 +2552,21 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::CommunityWalletInitInitCommunity {
-                check_addresses: bcs::from_bytes(script.args().first()?).ok()?,
+                initial_authorities: bcs::from_bytes(script.args().first()?).ok()?,
                 check_threshold: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn community_wallet_init_propose_offer(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::CommunityWalletInitProposeOffer {
+                new_signers: bcs::from_bytes(script.args().first()?).ok()?,
+                num_signers: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
             None
@@ -2715,13 +2787,32 @@ mod decoder {
         }
     }
 
-    pub fn multi_action_finalize_and_cage(
+    pub fn multi_action_claim_offer(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::MultiActionClaimOffer {
+                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn multi_action_init_gov_deprecated(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::MultiActionInitGovDeprecated {})
+        } else {
+            None
+        }
+    }
+
+    pub fn multi_action_migration_migrate_offer(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::MultiActionFinalizeAndCage {
-                initial_authorities: bcs::from_bytes(script.args().first()?).ok()?,
-                num_signers: bcs::from_bytes(script.args().get(1)?).ok()?,
+            Some(EntryFunctionCall::MultiActionMigrationMigrateOffer {
+                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
             })
         } else {
             None
@@ -3015,8 +3106,10 @@ mod decoder {
     }
 
     pub fn safe_init_payment_multisig(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(_script) = payload {
-            Some(EntryFunctionCall::SafeInitPaymentMultisig {})
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::SafeInitPaymentMultisig {
+                authorities: bcs::from_bytes(script.args().first()?).ok()?,
+            })
         } else {
             None
         }
@@ -3208,6 +3301,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::community_wallet_init_init_community),
         );
         map.insert(
+            "community_wallet_init_propose_offer".to_string(),
+            Box::new(decoder::community_wallet_init_propose_offer),
+        );
+        map.insert(
             "diem_governance_add_approved_script_hash_script".to_string(),
             Box::new(decoder::diem_governance_add_approved_script_hash_script),
         );
@@ -3280,8 +3377,16 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::libra_coin_mint_to_impl),
         );
         map.insert(
-            "multi_action_finalize_and_cage".to_string(),
-            Box::new(decoder::multi_action_finalize_and_cage),
+            "multi_action_claim_offer".to_string(),
+            Box::new(decoder::multi_action_claim_offer),
+        );
+        map.insert(
+            "multi_action_init_gov_deprecated".to_string(),
+            Box::new(decoder::multi_action_init_gov_deprecated),
+        );
+        map.insert(
+            "multi_action_migration_migrate_offer".to_string(),
+            Box::new(decoder::multi_action_migration_migrate_offer),
         );
         map.insert(
             "multisig_account_add_owner".to_string(),
