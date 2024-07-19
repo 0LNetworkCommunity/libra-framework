@@ -20,9 +20,9 @@ module ol_framework::community_wallet_init {
     #[test_only]
     friend ol_framework::test_donor_voice;
 
-    /// not authorized to operate on this account
+    /// Not authorized to operate on this account
     const ENOT_AUTHORIZED: u64 = 1;
-    /// does not meet criteria for community wallet
+    /// Does not meet criteria for community wallet
     const ENOT_QUALIFY_COMMUNITY_WALLET: u64 = 2;
     /// Recipient does not have a slow wallet
     const EPAYEE_NOT_SLOW_WALLET: u64 = 8;
@@ -30,18 +30,20 @@ module ol_framework::community_wallet_init {
     const ENOT_DONOR_VOICE: u64 = 3;
     /// This account needs a multisig enabled
     const ENOT_MULTISIG: u64 = 4;
-    /// config has few authorities on multisig
-    const ETOO_FEW_AUTH: u64 = 9;
-    /// config has too few signatures required for each proposal to pass
+    /// Config has too few signatures required for each proposal to pass
     const ESIG_THRESHOLD_CONFIG: u64 = 5;
     /// The multisig threshold is not better than MINIMUM_SIGS/MINIMUM_AUTH
     const ESIG_THRESHOLD_RATIO: u64 = 6;
     /// Signers may be sybil
     const ESIGNERS_SYBIL: u64 = 7;
-    /// does not liquidate to match index
+    /// Does not liquidate to match index
     const ENOT_MATCH_INDEX_LIQ: u64 = 8;
-    /// does not have the community wallet flag
+    /// Does not have the community wallet flag
     const ENO_CW_FLAG: u64 = 9;
+    /// Config has few authorities on multisig
+    const ETOO_FEW_AUTH: u64 = 10;
+    /// Config has few signatures on multisig
+    const ETOO_FEW_SIGS: u64 = 11;
 
     // STATICS
     /// minimum n signatures for a transaction
@@ -49,9 +51,7 @@ module ol_framework::community_wallet_init {
     /// minimum m authorities for a wallet
     const MINIMUM_AUTH: u64 = 3;
 
-
-    public(friend) fun migrate_community_wallet_account(framework: &signer, dv_account:
-    &signer) {
+    public(friend) fun migrate_community_wallet_account(framework: &signer, dv_account: &signer) {
       use diem_framework::system_addresses;
       system_addresses::assert_diem_framework(framework);
       donor_voice_txs::migrate_community_wallet_account(framework, dv_account);
@@ -60,15 +60,17 @@ module ol_framework::community_wallet_init {
 
     //////// MULTISIG TX HELPERS ////////
 
-    // Helper to initialize the PaymentMultiAction but also while confirming that the signers are not related family
-    // These transactions can be sent directly to donor_voice, but this is a helper to make it easier to initialize the multisig with the acestry requirements.
-
+    // Helper to initialize:
+    //  - the PaymentMultiAction
+    //  - offer authorities to the multisig after confirming that the signers are not related family
+    // These transactions can be sent directly to donor_voice, but this is a helper to make it easier to initialize
+    // the multisig with the ancestry requirements.
     public entry fun init_community(
       sig: &signer,
-      check_addresses: vector<address>,
+      initial_authorities: vector<address>,
       check_threshold: u64,
     ) {
-      check_proposed_auths(check_addresses, check_threshold);
+      check_proposed_auths(initial_authorities, check_threshold);
 
       donor_voice_txs::make_donor_voice(sig);
       if (!donor_voice_txs::is_liquidate_to_match_index(signer::address_of(sig))) {
@@ -76,13 +78,12 @@ module ol_framework::community_wallet_init {
       };
       match_index::opt_into_match_index(sig);
 
+      propose_offer(sig, initial_authorities, check_threshold);
     }
 
     #[view]
-    /// check if the authorities being proposed, and signature threshold would
-    /// qualify
-    public fun check_proposed_auths(initial_authorities: vector<address>, num_signers:
-    u64): bool {
+    /// check if the authorities being proposed, and signature threshold would qualify
+    public fun check_proposed_auths(initial_authorities: vector<address>, num_signatures: u64): bool {
 
       // TODO: enforce n/m multi auth such as:
       // let n = if (len == 3) { 2 }
@@ -90,37 +91,38 @@ module ol_framework::community_wallet_init {
       //   (MINIMUM_SIGS * len) / MINIMUM_AUTH
       // };
 
-      assert!(num_signers >= MINIMUM_SIGS, error::invalid_argument(ESIG_THRESHOLD_CONFIG));
+      assert!(num_signatures >= MINIMUM_SIGS, error::invalid_argument(ETOO_FEW_SIGS));
 
-            // policy is to have at least m signers as auths on the account.
+      // policy is to have at least m signers as auths on the account.
       let len = vector::length(&initial_authorities);
       assert!(len >= MINIMUM_AUTH, error::invalid_argument(ETOO_FEW_AUTH));
 
       let (fam, _, _) = ancestry::any_family_in_list(initial_authorities);
       assert!(!fam, error::invalid_argument(ESIGNERS_SYBIL));
       true
+    }
 
+    /// Propose offer to the multisig, and check if the signers are not related family
+    public entry fun propose_offer(sig: &signer, new_signers: vector<address>, num_signers: u64) {
+      check_proposed_auths(new_signers, num_signers);
+      multi_action::propose_offer_internal(sig, new_signers, option::none());
     }
 
     /// convenience function to check if the account can be caged
     /// after all the structs are in place
-    public entry fun finalize_and_cage(sig: &signer, initial_authorities: vector<address>, num_signers: u64) {
+    public entry fun finalize_and_cage(sig: &signer, num_signers: u64) {
       let addr = signer::address_of(sig);
 
-      assert!(donor_voice_txs::is_liquidate_to_match_index(addr), error::invalid_argument(ENOT_MATCH_INDEX_LIQ));
-
-      multi_action::finalize_and_cage(sig, initial_authorities, num_signers);
+      multi_action::finalize_and_cage(sig, num_signers);
       community_wallet::set_comm_wallet(sig);
 
+      assert!(donor_voice_txs::is_liquidate_to_match_index(addr), error::invalid_argument(ENOT_MATCH_INDEX_LIQ));
       assert!(multisig_thresh(addr), error::invalid_argument(ESIG_THRESHOLD_RATIO));
-      assert!(!multisig_common_ancestry(addr),
-      error::invalid_argument(ESIGNERS_SYBIL));
+      assert!(!multisig_common_ancestry(addr), error::invalid_argument(ESIGNERS_SYBIL));
       assert!(community_wallet::is_init(addr), error::invalid_argument(ENO_CW_FLAG));
-
     }
 
     #[view]
-
     /// Dynamic check to see if CommunityWallet is qualifying.
     /// if it is not qualifying it wont be part of the burn funds matching.
     public fun qualifies(addr: address): bool {
@@ -191,6 +193,7 @@ module ol_framework::community_wallet_init {
       multi_action::get_authorities(multisig_address)
     }
 
+    /// TODO: Allow to propose change only on the signature threshold
     /// Add or remove a signer to/from the multisig, and check if they may be related in the ancestry tree
     public entry fun change_signer_community_multisig(
       sig: &signer,
@@ -200,7 +203,7 @@ module ol_framework::community_wallet_init {
       n_of_m: u64,
       vote_duration_epochs: u64
     ) {
-      assert!(n_of_m >= MINIMUM_SIGS , error::invalid_argument(ETOO_FEW_AUTH));
+      assert!(n_of_m >= MINIMUM_SIGS , error::invalid_argument(ETOO_FEW_SIGS));
 
       let current_signers = multi_action::get_authorities(multisig_address);
 
@@ -212,7 +215,7 @@ module ol_framework::community_wallet_init {
 
       // Verify the signers will not fall below the threshold the signers will fall below threshold
       if (!is_add_operation) {
-          assert!((vector::length(&current_signers) - 1) >  MINIMUM_AUTH, error::invalid_argument(ESIG_THRESHOLD_CONFIG));
+          assert!((vector::length(&current_signers) - 1) >= MINIMUM_AUTH, error::invalid_argument(ETOO_FEW_AUTH));
       };
 
       multi_action::propose_governance(
