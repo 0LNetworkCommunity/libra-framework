@@ -181,7 +181,8 @@ mempool:
 /// download genesis blob and save it to the specified directory.
 pub async fn download_genesis(home_dir: Option<PathBuf>) -> anyhow::Result<()> {
     // Base URL for GitHub API requests
-    let base_url = "https://api.github.com/repos/0LNetworkCommunity/epoch-archive-mainnet/contents/upgrades";
+    let base_url =
+        "https://api.github.com/repos/0LNetworkCommunity/epoch-archive-mainnet/contents/upgrades";
     let client = reqwest::Client::new();
     let resp = client
         .get(base_url)
@@ -217,7 +218,6 @@ pub async fn download_genesis(home_dir: Option<PathBuf>) -> anyhow::Result<()> {
     std::fs::write(p, &blob_bytes)?;
     Ok(())
 }
-
 
 /// Fetch the genesis waypoint from the GitHub repository.
 pub async fn get_genesis_waypoint(home_dir: Option<PathBuf>) -> anyhow::Result<Waypoint> {
@@ -297,10 +297,18 @@ async fn persist_genesis() {
     let path = p.path().to_owned();
 
     // Ensure the directory exists
-    assert!(std::fs::metadata(&path).is_ok(), "Directory does not exist: {:?}", path);
+    assert!(
+        std::fs::metadata(&path).is_ok(),
+        "Directory does not exist: {:?}",
+        path
+    );
 
     // Verify path is a directory
-    assert!(Path::new(&path).is_dir(), "Path is not a directory: {:?}", path);
+    assert!(
+        Path::new(&path).is_dir(),
+        "Path is not a directory: {:?}",
+        path
+    );
 
     // Attempt to download genesis
     download_genesis(Some(path.clone())).await.unwrap();
