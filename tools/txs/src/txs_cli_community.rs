@@ -10,22 +10,65 @@ use std::{collections::HashMap, fs, path::PathBuf};
 
 #[derive(clap::Subcommand)]
 pub enum CommunityTxs {
+    /// Initialize a DonorVoice multi-sig by proposing an offer to initial authorities.
+    /// NOTE: Then authorities need to claim the offer, and the donor have to cage the account to become a multi-sig account.
+    GovInit(InitTx),
+    /// Update proposed offer to initial authorities
+    GovOffer(OfferTx),
+    /// Claim the proposed offer
+    GovClaim(ClaimTx),
+    /// Finalize and cage the multisig account after authorities claim the offer
+    GovCage(CageTx),
+    /// Propose a change to the authorities of the DonorVoice multi-sig
+    GovAdmin(AdminTx),
     /// Propose a multi-sig transaction
     Propose(ProposeTx),
     /// Execute batch proposals/approvals of transactions
     Batch(BatchTx),
     /// Donors to Donor Voice addresses can vote to reject transactions
     Veto(VetoTx),
-    /// Initialize a DonorVoice multi-sig. NOTE: this is a two step procedure:
-    /// propose the admins, and then rotate the account keys with --finalize
-    GovInit(InitTx),
-    /// Propose a change to the authorities of the DonorVoice multi-sig
-    GovAdmin(AdminTx),
+    /// Migrate legacy account to initialize offer structure
+    Migration(MigrateOfferTx), // TODO remove after migration complete
+    /// Initilize legacy multi-sig account governance
+    GovInitDeprectated, // TODO remove after migration complete
 }
 
 impl CommunityTxs {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         match &self {
+            CommunityTxs::GovInit(init) => match init.run(sender).await {
+                Ok(_) => println!("SUCCESS: community wallet initialized"),
+                Err(e) => {
+                    println!(
+                        "ERROR: could not initialize Community Wallet, message: {}",
+                        e
+                    );
+                }
+            },
+            CommunityTxs::GovOffer(offer) => match offer.run(sender).await {
+                Ok(_) => println!("SUCCESS: community wallet offer proposed"),
+                Err(e) => {
+                    println!("ERROR: could not propose offer, message: {}", e);
+                }
+            },
+            CommunityTxs::GovClaim(claim) => match claim.run(sender).await {
+                Ok(_) => println!("SUCCESS: community wallet offer claimed"),
+                Err(e) => {
+                    println!("ERROR: could not claim offer, message: {}", e);
+                }
+            },
+            CommunityTxs::GovCage(cage) => match cage.run(sender).await {
+                Ok(_) => println!("SUCCESS: community wallet finalized"),
+                Err(e) => {
+                    println!("ERROR: could not finalize wallet, message: {}", e);
+                }
+            },
+            CommunityTxs::GovAdmin(admin) => match admin.run(sender).await {
+                Ok(_) => println!("SUCCESS: community wallet admin proposed"),
+                Err(e) => {
+                    println!("ERROR: could not propose new admin, message: {}", e);
+                }
+            },
             CommunityTxs::Propose(propose) => match propose.run(sender).await {
                 Ok(_) => println!("SUCCESS: community wallet transfer proposed"),
                 Err(e) => {
@@ -38,7 +81,20 @@ impl CommunityTxs {
                     println!("ERROR: veto vote rejected, message: {}", e);
                 }
             },
-            CommunityTxs::GovInit(init) => match init.run(sender).await {
+            CommunityTxs::Batch(batch) => match batch.run(sender).await {
+                Ok(_) => {}
+                Err(e) => {
+                    println!("ERROR: could not add admin, message: {}", e);
+                }
+            },
+            CommunityTxs::Migration(migration) => match migration.run(sender).await {
+                Ok(_) => {}
+                Err(e) => {
+                    println!("ERROR: could not migrate, message: {}", e);
+                }
+            },
+            // for tests only - TODO Remove when migration is finished
+            CommunityTxs::GovInitDeprectated => match self.run_init_deprecated(sender).await {
                 Ok(_) => println!("SUCCESS: community wallet initialized"),
                 Err(e) => {
                     println!(
@@ -47,20 +103,133 @@ impl CommunityTxs {
                     );
                 }
             },
-            CommunityTxs::GovAdmin(admin) => match admin.run(sender).await {
-                Ok(_) => println!("SUCCESS: community wallet admin added"),
-                Err(e) => {
-                    println!("ERROR: could not add admin, message: {}", e);
-                }
-            },
-            CommunityTxs::Batch(batch) => match batch.run(sender).await {
-                Ok(_) => {}
-                Err(e) => {
-                    println!("ERROR: could not add admin, message: {}", e);
-                }
-            },
         }
 
+        Ok(())
+    }
+
+    // for tests only - TODO Remove when migration is finished
+    async fn run_init_deprecated(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        let payload = libra_stdlib::multi_action_init_gov_deprecated();
+        sender.sign_submit_wait(payload).await?;
+        Ok(())
+    }
+}
+
+#[derive(clap::Args)]
+/// Initialize a community wallet offering the initial authorities
+pub struct InitTx {
+    #[clap(short, long)]
+    /// The initial admins of the multi-sig (cannot add self)
+    pub admins: Vec<AccountAddress>,
+
+    #[clap(short, long)]
+    /// Num of signatures needed for the n-of-m
+    pub num_signers: u64,
+}
+
+impl InitTx {
+    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        let payload = libra_stdlib::community_wallet_init_init_community(
+            self.admins.clone(),
+            self.num_signers,
+        );
+
+        sender.sign_submit_wait(payload).await?;
+        println!("You have completed the first step in creating a community wallet, now the authorities you have proposed need to claim the offer.");
+
+        Ok(())
+    }
+}
+
+#[derive(clap::Args)]
+/// Propose offer to authorities to become an authority in the community wallet
+pub struct OfferTx {
+    #[clap(short, long)]
+    /// The Community Wallet to propose the offer
+    pub admins: Vec<AccountAddress>,
+    /// Num of signatures needed for the n-of-m
+    pub num_signers: u64,
+}
+
+impl OfferTx {
+    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        let payload = libra_stdlib::community_wallet_init_propose_offer(
+            self.admins.clone(),
+            self.num_signers,
+        );
+        sender.sign_submit_wait(payload).await?;
+        println!("You have proposed the community wallet offer to the authorities.");
+        Ok(())
+    }
+}
+
+#[derive(clap::Args)]
+/// Claim the offer to become an authority in the multi-sig
+pub struct ClaimTx {
+    #[clap(short, long)]
+    /// The Community Wallet to claim the offer
+    pub community_wallet: AccountAddress,
+}
+
+impl ClaimTx {
+    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        let payload = libra_stdlib::multi_action_claim_offer(self.community_wallet);
+        sender.sign_submit_wait(payload).await?;
+        println!("You have claimed the community wallet offer.");
+        Ok(())
+    }
+}
+
+#[derive(clap::Args)]
+/// Finalize and cage the community wallet to become multisig
+pub struct CageTx {
+    #[clap(short, long)]
+    /// Num of signatures needed for the n-of-m
+    pub num_signers: u64,
+}
+
+impl CageTx {
+    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        let payload = libra_stdlib::community_wallet_init_finalize_and_cage(self.num_signers);
+        sender.sign_submit_wait(payload).await?;
+        println!("The community wallet is finalized and caged. It is now a multi-sig account.");
+        Ok(())
+    }
+}
+
+#[derive(clap::Args)]
+pub struct AdminTx {
+    #[clap(short, long)]
+    /// The SlowWallet recipient of funds
+    pub community_wallet: AccountAddress,
+    #[clap(short, long)]
+    /// Admin to add (or remove) from the multisig
+    pub admin: AccountAddress,
+    #[clap(short, long)]
+    /// Drops this admin from the multisig
+    pub drop: Option<bool>,
+    #[clap(short, long)]
+    /// Number of sigs required for action (must be greater than 3-of-5)
+    pub n: u64,
+    #[clap(short, long)]
+    /// Proposal duration (in epochs)
+    pub epochs: Option<u64>,
+}
+
+impl AdminTx {
+    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        // Default to adding a signer if the `drop` flag is not provided
+        let is_add_operation = self.drop.unwrap_or(true);
+
+        let payload = libra_stdlib::community_wallet_init_change_signer_community_multisig(
+            self.community_wallet,
+            self.admin,
+            is_add_operation,
+            self.n,
+            self.epochs.unwrap_or(10), // todo: remo
+        );
+        sender.sign_submit_wait(payload).await?;
         Ok(())
     }
 }
@@ -327,83 +496,19 @@ impl VetoTx {
     }
 }
 
+// TODO remove after migration is completed
 #[derive(clap::Args)]
-/// Initialize a community wallet in two steps 1) make it a donor voice account,
-/// and check proposed authorities 2) finalize and set the authorities
-pub struct InitTx {
+pub struct MigrateOfferTx {
     #[clap(short, long)]
-    /// The initial admins of the multi-sig (cannot add self)
-    pub admins: Vec<AccountAddress>,
-
-    #[clap(short, long)]
-    /// Num of signatures needed for the n-of-m
-    pub num_signers: u64,
-
-    #[clap(long)]
-    /// Finalize the configurations and rotate the auth key, not reversible!
-    pub finalize: bool,
-}
-
-impl InitTx {
-    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        if self.finalize {
-            // Warning message
-            println!("\nWARNING: This operation will finalize the account associated with the governance-initialized wallet and make it inaccessible. This action is IRREVERSIBLE and can only be applied to a wallet where governance has been initialized.\n");
-
-            // Assuming the signer's account is already set in the `sender` object
-            // The payload for the finalize and cage operation
-            let payload =
-                libra_stdlib::multi_action_finalize_and_cage(self.admins.clone(), self.num_signers); // This function now does not require an account address
-
-            // Execute the transaction
-            sender.sign_submit_wait(payload).await?;
-            println!("The account has been finalized and caged.");
-        } else {
-            let payload = libra_stdlib::community_wallet_init_init_community(
-                self.admins.clone(),
-                self.num_signers,
-            );
-
-            sender.sign_submit_wait(payload).await?;
-            println!("You have completed the first step in creating a community wallet, now you should check your work and finalize with --finalize");
-        }
-
-        Ok(())
-    }
-}
-
-#[derive(clap::Args)]
-pub struct AdminTx {
-    #[clap(short, long)]
-    /// The SlowWallet recipient of funds
+    /// The Community Wallet to propose the offer
     pub community_wallet: AccountAddress,
-    #[clap(short, long)]
-    /// Admin to add (or remove) from the multisig
-    pub admin: AccountAddress,
-    #[clap(short, long)]
-    /// Drops this admin from the multisig
-    pub drop: Option<bool>,
-    #[clap(short, long)]
-    /// Number of sigs required for action (must be greater than 3-of-5)
-    pub n: u64,
-    #[clap(short, long)]
-    /// Proposal duration (in epochs)
-    pub epochs: Option<u64>,
 }
 
-impl AdminTx {
+impl MigrateOfferTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        // Default to adding a signer if the `drop` flag is not provided
-        let is_add_operation = self.drop.unwrap_or(true);
-
-        let payload = libra_stdlib::community_wallet_init_change_signer_community_multisig(
-            self.community_wallet,
-            self.admin,
-            is_add_operation,
-            self.n,
-            self.epochs.unwrap_or(10), // todo: remo
-        );
+        let payload = libra_stdlib::multi_action_migration_migrate_offer(self.community_wallet);
         sender.sign_submit_wait(payload).await?;
+        println!("You have migrated the account to have the Offer structure. You can proceed with the authority offer now.");
         Ok(())
     }
 }

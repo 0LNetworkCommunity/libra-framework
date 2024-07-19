@@ -8,7 +8,7 @@ module ol_framework::test_account {
   use ol_framework::ol_account;
   use ol_framework::ancestry;
   use diem_framework::coin;
-  // use diem_std::debug::print;
+  //use diem_std::debug::print;
 
   // scenario: testing trying send more funds than are unlocked
   #[test(root = @ol_framework, alice_sig = @0x1000a)]
