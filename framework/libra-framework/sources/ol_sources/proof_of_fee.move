@@ -43,6 +43,14 @@ module ol_framework::proof_of_fee {
   /// based on another function or simply randomized within a range
   /// (as originally proposed in this feature request)
   const PCT_REDUCTION_FOR_COMPETITION: u64 = 10; // 10%
+  /// Upper bound threshold for bid percentages.
+  const BID_UPPER_BOUND: u64 = 0950; // 95%
+  /// Lower bound threshold for bid percentages.
+  const BID_LOWER_BOUND: u64 = 0500; // 50%
+  /// Short window period for recent bid trends.
+  const SHORT_WINDOW: u64 = 5; // 5 epochs
+  /// Long window period for extended bid trends.
+  const LONG_WINDOW: u64 = 10; // 10 epochs
 
   //////// ERRORS /////////
   /// Not an active validator
@@ -533,9 +541,64 @@ module ol_framework::proof_of_fee {
     fixed_point32::create_from_rational(bid_pct, 1000)
   }
 
+
+  /// Calculates the reward adjustment based on bid history and nominal reward.
+  /// @param median_history - The median history of bids.
+  /// @param nominal_reward - The current nominal reward.
+  /// @return Tuple (bool, bool, u64)
+  /// 0: did the thermostat run,
+  /// 1: did it increment, or decrease, bool
+  /// 2: how much
+  fun calculate_reward_adjustment(
+    median_history: &vector<u64>,
+    nominal_reward: u64
+  ): (bool, bool, u64) {
+    let history_length = vector::length<u64>(median_history);
+    let index = 0;
+    let epochs_above = 0;
+    let epochs_below = 0;
+
+    while (index < 16 && index < history_length) {
+      let avg_bid = *vector::borrow<u64>(median_history, index);
+
+      if (avg_bid > BID_UPPER_BOUND) {
+        epochs_above = epochs_above + 1;
+      } else if (avg_bid < BID_LOWER_BOUND) {
+        epochs_below = epochs_below + 1;
+      };
+
+      index = index + 1;
+    };
+
+    if (nominal_reward > 0) {
+      if (epochs_above > epochs_below) {
+        if (epochs_above > LONG_WINDOW) {
+          let less_ten_pct = (nominal_reward / 10);
+          return (true, false, less_ten_pct)
+        } else if (epochs_above > SHORT_WINDOW) {
+          let less_five_pct = (nominal_reward / 20);
+          return (true, false, less_five_pct)
+        }
+      } else {
+        if (epochs_below > LONG_WINDOW) {
+          let increase_ten_pct = (nominal_reward / 10);
+          return (true, true, increase_ten_pct)
+        } else if (epochs_below > SHORT_WINDOW) {
+          let increase_five_pct = (nominal_reward / 20);
+          return (true, true, increase_five_pct)
+        }
+      };
+      return (true, false, 0)
+    };
+
+    (false, false, 0)
+  }
+
+
   /// Adjust the reward at the end of the epoch
   /// as described in the paper, the epoch reward needs to be adjustable
   /// given that the implicit bond needs to be sufficient, eg 5-10x the reward.
+  /// @param vm - The signer.
   /// @return Tuple (bool, bool, u64)
   /// 0: did the thermostat run,
   /// 1: did it increment, or decrease, bool
@@ -543,96 +606,22 @@ module ol_framework::proof_of_fee {
   /// if the thermostat returns (false, false, 0), it means there was an error running
   public(friend) fun reward_thermostat(vm: &signer): (bool, bool, u64) acquires ConsensusReward {
     system_addresses::assert_ol(vm);
-    // check the bid history
-    // if there are 5 days above 95% adjust the reward up by 5%
-    // adjust by more if it has been 10 days then, 10%
-    // if there are 5 days below 50% adjust the reward down.
-    // adjust by more if it has been 10 days then 10%
-
-    let bid_upper_bound = 0950;
-    let bid_lower_bound = 0500;
-
-    let short_window: u64 = 5;
-    let long_window: u64 = 10;
-
     let cr = borrow_global_mut<ConsensusReward>(@ol_framework);
 
-    let len = vector::length<u64>(&cr.median_history);
-    let i = 0;
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(
+      &cr.median_history,
+      cr.nominal_reward
+    );
 
-    let epochs_above = 0;
-    let epochs_below = 0;
-    while (i < 16 && i < len) { // max ten days, but may have less in history, filling set should truncate the history at 15 epochs.
-      let avg_bid = *vector::borrow<u64>(&cr.median_history, i);
-
-      if (avg_bid > bid_upper_bound) {
-        epochs_above = epochs_above + 1;
-      } else if (avg_bid < bid_lower_bound) {
-        epochs_below = epochs_below + 1;
-      };
-
-      i = i + 1;
+    if (did_run) {
+      if (did_increment) {
+        cr.nominal_reward = cr.nominal_reward + amount;
+      } else {
+        cr.nominal_reward = cr.nominal_reward - amount;
+      }
     };
 
-    if (cr.nominal_reward > 0) {
-      // TODO: this is an initial implementation, we need to
-      // decide if we want more granularity in the reward adjustment
-      // Note: making this readable for now, but we can optimize later
-      if (epochs_above > epochs_below) {
-
-        // if (epochs_above > short_window) {
-
-        // check for zeros.
-        // TODO: put a better safety check here
-
-        // If the Validators are bidding near 100% that means
-        // the reward is very generous, i.e. their opportunity
-        // cost is met at small percentages. This means the
-        // implicit bond is very high on validators. E.g.
-        // at 1% median bid, the implicit bond is 100x the reward.
-        // We need to DECREASE the reward
-
-        if (epochs_above > long_window) {
-          // decrease the reward by 10%
-          let less_ten_pct = (cr.nominal_reward / 10);
-          cr.nominal_reward = cr.nominal_reward - less_ten_pct;
-          return (true, false, less_ten_pct)
-        } else if (epochs_above > short_window) {
-          // decrease the reward by 5%
-          let less_five_pct = (cr.nominal_reward / 20);
-          cr.nominal_reward = cr.nominal_reward - less_five_pct;
-          return (true, false, less_five_pct)
-        }
-      };
-      // return early since we can't increase and decrease simultaneously
-
-      // if validators are bidding low percentages
-      // it means the nominal reward is not high enough.
-      // That is the validator's opportunity cost is not met within a
-      // range where the bond is meaningful.
-      // For example: if the bids for the epoch's reward is 50% of the  value, that means the potential profit, is the same as the potential loss.
-      // At a 25% bid (potential loss), the profit is thus 75% of the value, which means the implicit bond is 25/75, or 1/3 of the bond, the risk favors the validator. This means among other things, that an attacker can pay for the cost of the attack with the profits. See paper, for more details.
-
-      // we need to INCREASE the reward, so that the bond is more meaningful.
-
-      if (epochs_below > long_window) {
-        // increase the reward by 10%
-        let increase_ten_pct = (cr.nominal_reward / 10);
-        cr.nominal_reward = cr.nominal_reward + increase_ten_pct;
-        return (true, true, increase_ten_pct)
-      } else if (epochs_below > short_window) {
-        // increase the reward by 5%
-        let increase_five_pct = (cr.nominal_reward / 20);
-        cr.nominal_reward = cr.nominal_reward + increase_five_pct;
-        return (true, true, increase_five_pct)
-      };
-
-      // we ran the thermostat but no change was made.
-      return (true, false, 0)
-    };
-
-    // nominal reward is zero, there's a problem
-    return (false, false, 0)
+    (did_run, did_increment, amount)
   }
 
   /// find the median bid to push to history
@@ -711,6 +700,26 @@ module ol_framework::proof_of_fee {
     };
     return (false, 0)
   }
+
+  #[view]
+  /// Query the reward adjustment without altering the nominal reward.
+  /// @param vm - The signer.
+  /// @return Tuple (bool, bool, u64)
+  /// 0: did the thermostat run,
+  /// 1: did it increment, or decrease, bool
+  /// 2: how much
+  /// if the thermostat returns (false, false, 0), it means there was an error running
+  public fun query_reward_adjustment(): (bool, bool, u64) acquires ConsensusReward {
+    let cr = borrow_global<ConsensusReward>(@ol_framework);
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(
+      &cr.median_history,
+      cr.nominal_reward
+    );
+
+    (did_run, did_increment, amount)
+  }
+
 
   // Get the top N validators by bid, this is FILTERED by default
   public(friend) fun top_n_accounts(account: &signer, n: u64, unfiltered: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
@@ -1379,5 +1388,174 @@ module ol_framework::proof_of_fee {
 
     assert!(bids == vector[2, 2, 2, 2], 7357021);
     assert!(shuffled, 7357022);
+  }
+
+
+  // Tests for calculate_reward_adjustment
+
+  #[test]
+  public fun cra_nominal_reward_zero() {
+    let median_history = vector::empty<u64>();
+    let nominal_reward = 0;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == false, 7357001);
+    assert!(did_increment == false, 7357002);
+    assert!(amount == 0, 7357003);
+  }
+
+  #[test]
+  public fun cra_empty_bid_history() {
+    let median_history = vector::empty<u64>();
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357004);
+    assert!(did_increment == false, 7357005);
+    assert!(amount == 0, 7357006);
+  }
+
+  #[test]
+  public fun cra_less_than_16_bids() {
+    // 10 entries all with value 600
+    let median_history = vector[600, 600, 600, 600, 600, 600, 600, 600, 600, 600];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357007);
+    assert!(did_increment == false, 7357008);
+    assert!(amount == 0, 7357009);
+  }
+
+  #[test]
+  public fun cra_exactly_16_bids() {
+    // 16 entries all with value 600
+    let median_history = vector[600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357010);
+    assert!(did_increment == false, 7357011);
+    assert!(amount == 0, 7357012);
+  }
+
+  #[test]
+  public fun cra_more_than_16_bids() {
+    // 20 entries all with value 600
+    let median_history = vector[600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357013);
+    assert!(did_increment == false, 7357014);
+    assert!(amount == 0, 7357015);
+  }
+
+  #[test]
+  public fun cra_all_bids_above_upper_bound_short_window() {
+    // 6 entries all with value 960
+    let median_history = vector[960, 960, 960, 960, 960, 960];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357016);
+    assert!(did_increment == false, 7357017);
+    assert!(amount == nominal_reward / 20, 7357018);
+  }
+
+  #[test]
+  public fun cra_all_bids_above_upper_bound_long_window() {
+    // 11 entries all with value 960
+    let median_history = vector[960, 960, 960, 960, 960, 960, 960, 960, 960, 960, 960];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357019);
+    assert!(did_increment == false, 7357020);
+    assert!(amount == nominal_reward / 10, 7357021);
+  }
+
+  #[test]
+  public fun cra_all_bids_below_lower_bound_short_window() {
+    // 6 entries all with value 400
+    let median_history = vector[400, 400, 400, 400, 400, 400];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357022);
+    assert!(did_increment == true, 7357023);
+    assert!(amount == nominal_reward / 20, 7357024);
+  }
+
+  #[test]
+  public fun cra_all_bids_below_lower_bound_long_window() {
+    // 11 entries all with value 400
+    let median_history = vector[400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357025);
+    assert!(did_increment == true, 7357026);
+    assert!(amount == nominal_reward / 10, 7357027);
+  }
+
+  #[test]
+  public fun cra_mixed_bids_with_majority_above() {
+    // 9 entries above upper bound and 7 entries below lower bound
+    let median_history = vector[960, 960, 960, 960, 960, 960, 960, 960, 960, 400, 400, 400, 400, 400, 400, 400];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357028);
+    assert!(did_increment == false, 7357029);
+    assert!(amount == nominal_reward / 20, 7357030); // Since the total entries are 16, it falls under the short window
+  }
+
+  #[test]
+  public fun cra_mixed_bids_with_majority_below() {
+    // 9 entries below lower bound and 7 entries above upper bound
+    let median_history = vector[400, 400, 400, 400, 400, 400, 400, 400, 400, 960, 960, 960, 960, 960, 960, 960];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357031);
+    assert!(did_increment == true, 7357032);
+    assert!(amount == nominal_reward / 20, 7357033); // Since the total entries are 16, it falls under the short window
+  }
+
+  #[test]
+  public fun cra_mixed_bids_without_clear_majority() {
+    // 4 entries below lower bound and 4 entries above upper bound
+    let median_history = vector[400, 400, 400, 400, 960, 960, 960, 960];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357034);
+    assert!(did_increment == false, 7357035);
+    assert!(amount == 0, 7357036);
+  }
+
+  #[test]
+  public fun cra_majority_above_long_window() {
+    // 12 entries above upper bound and 4 entries below lower bound
+    let median_history = vector[960, 960, 960, 960, 960, 960, 960, 960, 960, 960, 960, 960, 400, 400, 400, 400];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357037);
+    assert!(did_increment == false, 7357038);
+    assert!(amount == nominal_reward / 10, 7357039); // Majority above and longer than long window
+  }
+
+  #[test]
+  public fun cra_majority_above_short_window() {
+    // 7 entries above upper bound and 4 entries below lower bound
+    let median_history = vector[960, 960, 960, 960, 960, 960, 960, 400, 400, 400, 400];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357040);
+    assert!(did_increment == false, 7357041);
+    assert!(amount == nominal_reward / 20, 7357042); // Majority above and longer than short window but not long window
   }
 }
