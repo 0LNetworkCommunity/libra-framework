@@ -208,6 +208,12 @@ jobs:
           name: framework-build
           path: framework/
 
+      - name: Print GitHub Context
+        run: |
+          echo "Branch name: ${{ github.ref_name }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Event name: ${{ github.event_name }}"
+
       - name: upgrade - check workflow
         if: always()
         working-directory: ./upgrade-tests
@@ -216,10 +222,12 @@ jobs:
 
       - name: upgrade - should be backwards compatible
         # should always run unless we explicitly mark the branch or tag as "breaking"
-        if: not(contains(${{github.ref_name}}, "breaking/"))
+        if: not(contains(github.ref_name, 'breaking/'))
         working-directory: ./upgrade-tests
         # NOTE: upgrade tests which compile Move code, and then submit in the same thread will cause a stack overflow with the default rust stack size.
-        run: RUST_MIN_STACK=104857600 cargo test compatible_
+        run: |
+          echo "Branch name inside check: ${{ github.ref_name }}"
+          RUST_MIN_STACK=104857600 cargo test compatible_
   rescue:
     timeout-minutes: 60
     needs: [build-framework]
