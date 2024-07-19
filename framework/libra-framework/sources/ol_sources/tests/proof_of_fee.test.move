@@ -594,4 +594,59 @@ module ol_framework::test_pof {
     assert!(median_bid == 3, 10014);
   }
 
+  // Tests for query_reward_adjustment
+
+  #[test(root = @ol_framework)]
+  public fun test_query_reward_adjustment_no_change(root: &signer) {
+    use diem_framework::chain_id;
+    proof_of_fee::init_genesis_baseline_reward(root);
+    chain_id::initialize_for_test(root, 4);
+
+    // 16 entries all with value 600
+    let median_history = vector[600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600];
+    let nominal_reward = 1000;
+
+    proof_of_fee::test_mock_reward(root, nominal_reward, 500, 500, median_history);
+
+    let (did_run, did_increment, amount) = proof_of_fee::query_reward_adjustment();
+    assert!(did_run == true, 7357043);
+    assert!(did_increment == false, 7357044);
+    assert!(amount == 0, 7357045);
+  }
+
+  #[test(root = @ol_framework)]
+  public fun test_query_reward_adjustment_increase(root: &signer) {
+    use diem_framework::chain_id;
+    proof_of_fee::init_genesis_baseline_reward(root);
+    chain_id::initialize_for_test(root, 4);
+
+    // 11 entries all with value 400
+    let median_history = vector[400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400];
+    let nominal_reward = 1000;
+
+    proof_of_fee::test_mock_reward(root, nominal_reward, 500, 500, median_history);
+
+    let (did_run, did_increment, amount) = proof_of_fee::query_reward_adjustment();
+    assert!(did_run == true, 7357046);
+    assert!(did_increment == true, 7357047);
+    assert!(amount == nominal_reward / 10, 7357048);
+  }
+
+  #[test(root = @ol_framework)]
+  public fun test_query_reward_adjustment_decrease(root: &signer) {
+    use diem_framework::chain_id;
+    proof_of_fee::init_genesis_baseline_reward(root);
+    chain_id::initialize_for_test(root, 4);
+
+    // 11 entries all with value 960
+    let median_history = vector[960, 960, 960, 960, 960, 960, 960, 960, 960, 960, 960];
+    let nominal_reward = 1000;
+
+    proof_of_fee::test_mock_reward(root, nominal_reward, 500, 500, median_history);
+
+    let (did_run, did_increment, amount) = proof_of_fee::query_reward_adjustment();
+    assert!(did_run == true, 7357049);
+    assert!(did_increment == false, 7357050);
+    assert!(amount == nominal_reward / 10, 7357051);
+  }
 }
