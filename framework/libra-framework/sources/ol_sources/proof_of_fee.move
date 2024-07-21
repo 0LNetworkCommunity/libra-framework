@@ -14,7 +14,6 @@ module ol_framework::proof_of_fee {
   use std::fixed_point32;
   use diem_framework::validator_universe;
   use diem_framework::transaction_fee;
-  use diem_framework::randomness;
   use diem_framework::account;
   use diem_framework::stake;
   use diem_framework::system_addresses;
@@ -23,6 +22,7 @@ module ol_framework::proof_of_fee {
   use ol_framework::vouch;
   use ol_framework::epoch_helper;
   use ol_framework::globals;
+  use ol_framework::address_utils;
   //use diem_std::debug::print;
 
   friend diem_framework::genesis;
@@ -283,67 +283,17 @@ module ol_framework::proof_of_fee {
     };
 
     // Sorting the accounts vector based on their bids
-    bubble_sort_bids(&mut bids, &mut filtered_vals);
+    address_utils::sort_by_values(&mut filtered_vals, &mut bids);
 
     // Reverse to have sorted order - high to low.
     vector::reverse(&mut filtered_vals);
     vector::reverse(&mut bids);
 
     // Shuffle duplicates to garantee randomness/fairness
-    shuffle_duplicates(&mut bids, &mut filtered_vals);
+    address_utils::shuffle_duplicates(&mut filtered_vals, &mut bids);
 
     return (filtered_vals, bids)
   }
-
-  // Bubble sort bids and corresponding addresses
-  fun bubble_sort_bids(bids: &mut vector<u64>, addresses: &mut vector<address>) {
-    let len = vector::length<u64>(bids);
-    let i = 0;
-    while (i < len) {
-      let j = 0;
-      while (j < len - i - 1) {
-        let value_j = *vector::borrow<u64>(bids, j);
-        let value_jp1 = *vector::borrow<u64>(bids, j + 1);
-        if (value_j > value_jp1) {
-          vector::swap<u64>(bids, j, j + 1);
-          vector::swap<address>(addresses, j, j + 1);
-        };
-        j = j + 1;
-      };
-      i = i + 1;
-    };
-  }
-
-  // Shuffle addresses with the same bid amount to ensure randomness position
-  fun shuffle_duplicates(bids: &vector<u64>, addresses: &mut vector<address>) {
-    let len = vector::length(bids);
-    let i = 0;
-    while (i < len) {
-      let j = i + 1;
-      while (j < len && *vector::borrow(bids, i) == *vector::borrow(bids, j)) {
-        j = j + 1;
-      };
-      if (j > i + 1) {
-        let slice_len = j - i;
-        let perm = randomness::permutation(slice_len);
-        let temp_addresses = vector::empty<address>();
-        let k = 0;
-        while (k < slice_len) {
-          let pos = i + k;
-          vector::push_back(&mut temp_addresses, *vector::borrow(addresses, pos));
-          k = k + 1;
-        };
-        k = 0;
-        while (k < slice_len) {
-          let perm_pos = *vector::borrow(&perm, k);
-          *vector::borrow_mut(addresses, i + k) = *vector::borrow(&temp_addresses, perm_pos);
-          k = k + 1;
-        };
-      };
-      i = j;
-    };
-  }
-
 
   #[view]
   /// checks if the validator has enough vouchers in the current set (prior to entry)
@@ -1241,155 +1191,6 @@ module ol_framework::proof_of_fee {
     // mc value
     assert!(result == 21, 7357030);
   }
-
-
-  // Bubble Sort tests
-
-  #[test]
-  fun test_bubble_sort_empty_vectors() {
-    let bids: vector<u64> = vector::empty();
-    let addresses: vector<address> = vector::empty();
-    bubble_sort_bids(&mut bids, &mut addresses);
-    assert!(bids == vector[], 7357001);
-    assert!(addresses == vector[], 7357002);
-  }
-
-  #[test]
-  fun test_bubble_sort_single_element() {
-    let bids = vector[10];
-    let addresses = vector[@0x1];
-    bubble_sort_bids(&mut bids, &mut addresses);
-    assert!(bids == vector[10], 7357003);
-    assert!(addresses == vector[@0x1], 7357004);
-  }
-
-  #[test]
-  fun test_bubble_sort_already_sorted() {
-    let bids = vector[1, 2, 3, 4, 5];
-    let addresses = vector[@0x1, @0x2, @0x3, @0x4, @0x5];
-    bubble_sort_bids(&mut bids, &mut addresses);
-    assert!(bids == vector[1, 2, 3, 4, 5], 7357005);
-    assert!(addresses == vector[@0x1, @0x2, @0x3, @0x4, @0x5], 7357006);
-  }
-
-  #[test]
-  fun test_bubble_sort_reverse_order() {
-    let bids = vector[5, 4, 3, 2, 1];
-    let addresses = vector[@0x5, @0x4, @0x3, @0x2, @0x1];
-    bubble_sort_bids(&mut bids, &mut addresses);
-    assert!(bids == vector[1, 2, 3, 4, 5], 7357007);
-    assert!(addresses == vector[@0x1, @0x2, @0x3, @0x4, @0x5], 7357008);
-  }
-
-  #[test]
-  fun test_bubble_sort_with_duplicates() {
-    let bids = vector[4, 2, 2, 3, 1];
-    let addresses = vector[@0x1, @0x2, @0x3, @0x4, @0x5];
-    bubble_sort_bids(&mut bids, &mut addresses);
-    assert!(bids == vector[1, 2, 2, 3, 4], 7357009);
-    assert!(addresses == vector[@0x5, @0x2, @0x3, @0x4, @0x1], 7357010);
-  }
-
-  #[test]
-  fun test_bubble_sort_random_order() {
-    let bids = vector[3, 1, 4, 5, 2];
-    let addresses = vector[@0x1, @0x2, @0x3, @0x4, @0x5];
-    bubble_sort_bids(&mut bids, &mut addresses);
-    assert!(bids == vector[1, 2, 3, 4, 5], 7357011);
-    assert!(addresses == vector[@0x2, @0x5, @0x1, @0x3, @0x4], 7357012);
-  }
-
-  #[test]
-  fun test_bubble_sort_all_elements_equal() {
-    let bids = vector[3, 3, 3, 3, 3];
-    let addresses = vector[@0x1, @0x2, @0x3, @0x4, @0x5];
-    bubble_sort_bids(&mut bids, &mut addresses);
-    assert!(bids == vector[3, 3, 3, 3, 3], 7357013);
-    assert!(addresses == vector[@0x1, @0x2, @0x3, @0x4, @0x5], 7357014);
-  }
-
-
-  // Shuffle Tests
-
-  #[test]
-  fun test_shuffle_no_duplicates() {
-    // No duplicates in the bids vector
-    let bids = vector[1, 2, 3, 4, 5];
-    let addresses = vector[@0x1, @0x2, @0x3, @0x4, @0x5];
-    shuffle_duplicates(&mut bids, &mut addresses);
-    assert!(bids == vector[1, 2, 3, 4, 5], 7357015);
-    assert!(addresses == vector[@0x1, @0x2, @0x3, @0x4, @0x5], 7357016);
-  }
-
-  #[test(root = @ol_framework)]
-  fun test_shuffle_with_duplicates(root: &signer) {
-    // One group of duplicates in the bids vector
-    randomness::initialize_for_testing(root);
-    let bids = vector[1, 2, 2, 3, 4];
-    let addresses = vector[@0x1, @0x2, @0x3, @0x4, @0x5];
-    let original_addresses = vector[@0x1, @0x2, @0x3, @0x4, @0x5];
-    let shuffled = false;
-    let i = 0;
-
-    while (i < 10) {
-      shuffle_duplicates(&mut bids, &mut addresses);
-      if (addresses != original_addresses) {
-        shuffled = true;
-        break
-      };
-      i = i + 1;
-    };
-
-    assert!(bids == vector[1, 2, 2, 3, 4], 7357017);
-    assert!(shuffled, 7357018);
-  }
-
-  #[test(root = @ol_framework)]
-  fun test_shuffle_multiple_duplicate_groups(root: &signer) {
-    // Multiple groups of duplicates in the bids vector
-    randomness::initialize_for_testing(root);
-    let bids = vector[1, 2, 2, 3, 3, 4];
-    let addresses = vector[@0x1, @0x2, @0x3, @0x4, @0x5, @0x6];
-    let original_addresses = vector[@0x1, @0x2, @0x3, @0x4, @0x5, @0x6];
-    let shuffled = false;
-    let i = 0;
-
-    while (i < 10) {
-      shuffle_duplicates(&mut bids, &mut addresses);
-      if (addresses != original_addresses) {
-        shuffled = true;
-        break
-      };
-      i = i + 1;
-    };
-
-    assert!(bids == vector[1, 2, 2, 3, 3, 4], 7357019);
-    assert!(shuffled, 7357020);
-  }
-
-  #[test(root = @ol_framework)]
-  fun test_shuffle_all_elements_equal(root: &signer) {
-    // All elements in the bids vector are the same
-    randomness::initialize_for_testing(root);
-    let bids = vector[2, 2, 2, 2];
-    let addresses = vector[@0x1, @0x2, @0x3, @0x4];
-    let original_addresses = vector[@0x1, @0x2, @0x3, @0x4];
-    let shuffled = false;
-    let i = 0;
-
-    while (i < 10) {
-      shuffle_duplicates(&mut bids, &mut addresses);
-      if (addresses != original_addresses) {
-        shuffled = true;
-        break
-      };
-      i = i + 1;
-    };
-
-    assert!(bids == vector[2, 2, 2, 2], 7357021);
-    assert!(shuffled, 7357022);
-  }
-
 
   // Tests for calculate_reward_adjustment
 
