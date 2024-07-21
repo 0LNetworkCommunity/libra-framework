@@ -1,32 +1,32 @@
 
 module diem_framework::epoch_boundary {
-  use ol_framework::slow_wallet;
-  use ol_framework::musical_chairs;
-  use ol_framework::proof_of_fee;
-  use ol_framework::stake;
-  use ol_framework::libra_coin::LibraCoin;
-  use ol_framework::rewards;
-  use ol_framework::jail;
-  use ol_framework::safe;
-  use ol_framework::burn;
-  use ol_framework::donor_voice_txs;
-  use ol_framework::fee_maker;
-  use ol_framework::infra_escrow;
-  use ol_framework::libra_coin;
-  use ol_framework::match_index;
-  use ol_framework::community_wallet_init;
-  use ol_framework::testnet;
-
+  use std::error;
+  use std::vector;
+  use std::string;
+  use std::signer;
   use diem_framework::account;
+  use diem_framework::randomness;
+  use diem_framework::coin::{Coin};
+  use diem_framework::create_signer;
   use diem_framework::reconfiguration;
   use diem_framework::transaction_fee;
   use diem_framework::system_addresses;
-  use diem_framework::coin::{Coin};
-  use std::vector;
-  use std::error;
-  use std::string;
-  use std::signer;
-  use diem_framework::create_signer;
+  use ol_framework::stake;
+  use ol_framework::jail;
+  use ol_framework::safe;
+  use ol_framework::burn;
+  use ol_framework::rewards;
+  use ol_framework::testnet;
+  use ol_framework::fee_maker;
+  use ol_framework::libra_coin;
+  use ol_framework::slow_wallet;
+  use ol_framework::match_index;
+  use ol_framework::proof_of_fee;
+  use ol_framework::infra_escrow;
+  use ol_framework::musical_chairs;
+  use ol_framework::donor_voice_txs;
+  use ol_framework::libra_coin::LibraCoin;
+  use ol_framework::community_wallet_init;
 
   use diem_std::debug::print;
 
@@ -261,6 +261,12 @@ module diem_framework::epoch_boundary {
     true
   }
 
+  // This function handles the necessary migrations that occur at the epoch boundary
+  // when new modules or structures are added by chain upgrades.
+  fun migrate_data(root: &signer) {
+    randomness::initialize(root);
+  }
+
   // Contains all of 0L's business logic for end of epoch.
   // This removed business logic from reconfiguration.move
   // and prevents dependency cycling.
@@ -271,6 +277,9 @@ module diem_framework::epoch_boundary {
     system_addresses::assert_ol(root);
     let root = &create_signer::create_signer(@ol_framework);
     let status = borrow_global_mut<BoundaryStatus>(@ol_framework);
+
+    print(&string::utf8(b"migrate_data"));
+    migrate_data(root);
 
     print(&string::utf8(b"status reset"));
     *status = reset();
