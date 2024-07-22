@@ -4,6 +4,7 @@ module ol_framework::test_jail {
     use std::vector;
     use ol_framework::mock;
     use ol_framework::jail;
+    use ol_framework::randomness;
     // use diem_std::debug::print;
 
     #[test(root = @ol_framework)]
@@ -76,7 +77,7 @@ module ol_framework::test_jail {
 
     #[test(root = @ol_framework)]
     public entry fun sort_by_jail(root: signer) {
-
+      randomness::initialize_for_testing(&root);
       let vals = mock::genesis_n_vals(&root, 5);
       let alice = *vector::borrow(&vals, 0);
       let bob = *vector::borrow(&vals, 1);

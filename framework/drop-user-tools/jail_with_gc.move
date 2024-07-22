@@ -160,31 +160,21 @@ module ol_framework::jail {
     };
   }
 
-  /// gets a list of validators based on their jail reputation
+  /// Sort validators based on their jail reputation
   /// this is used in the bidding process for Proof-of-Fee where
   /// we seat the validators with the least amount of consecutive failures
   /// to rejoin.
   public(friend) fun sort_by_jail(vec_address: vector<address>): vector<address> acquires Jail {
+    // get the reputation of the validators
+    let reputation = vector::map(vec_address, |addr| {
+      let (_, value) = get_jail_reputation(addr);
+      value
+    });
 
-    // Sorting the accounts vector based on value (weights).
-    // Bubble sort algorithm
-    let length = vector::length(&vec_address);
-
-    let i = 0;
-    while (i < length){
-      let j = 0;
-      while(j < length-i-1){
-
-        let (_, value_j) = get_jail_reputation(*vector::borrow(&vec_address, j));
-        let (_, value_jp1) = get_jail_reputation(*vector::borrow(&vec_address, j + 1));
-
-        if(value_j > value_jp1){
-          vector::swap<address>(&mut vec_address, j, j+1);
-        };
-        j = j + 1;
-      };
-      i = i + 1;
-    };
+    // sort the validators based on their reputation
+    address_utils::sort_by_values(&mut vec_address, &mut reputation);
+    // shuffle duplicates scores to ensure fairness
+    address_utils::shuffle_duplicates(&mut vec_address, &reputation);
 
     vec_address
   }
