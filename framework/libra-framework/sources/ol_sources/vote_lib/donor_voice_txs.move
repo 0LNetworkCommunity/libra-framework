@@ -87,15 +87,6 @@ module ol_framework::donor_voice_txs {
     /// minimum amount of time to evaluate when one donor flags for veto.
     const DEFAULT_VETO_DURATION: u64 = 7;
 
-
-    // Timed transfer schedule pipeline
-    struct TxSchedule has key {
-      scheduled: vector<TimedTransfer>,
-      veto: vector<TimedTransfer>,
-      paid: vector<TimedTransfer>,
-      guid_capability: account::GUIDCapability, // we need this for the MultiSig
-    }
-
     /// This is the basic payment information.
     /// This is used initially in a MultiSig, for the Authorities
     /// initially to schedule.
@@ -118,6 +109,14 @@ module ol_framework::donor_voice_txs {
       consecutive_rejections: u64,
       unfreeze_votes: vector<address>,
       liquidate_to_match_index: bool,
+    }
+
+    // Timed transfer schedule pipeline
+    struct TxSchedule has key {
+      scheduled: vector<TimedTransfer>,
+      veto: vector<TimedTransfer>,
+      paid: vector<TimedTransfer>,
+      guid_capability: account::GUIDCapability, // we need this for the MultiSig
     }
 
     // can only be called by genesis
@@ -671,17 +670,74 @@ module ol_framework::donor_voice_txs {
     }
   }
 
-  #[test_only]
-  public fun test_helper_vm_liquidate(vm: &signer) acquires Freeze {
-    vm_liquidate(vm);
+  //////// GETTERS ////////
+
+  #[view]
+  /// get the list of scheduled, paid, and vetoed transfers
+  public fun get_transfers(multisig_address: address): (vector<TimedTransfer>, vector<TimedTransfer>, vector<TimedTransfer>) acquires TxSchedule {
+    let state = borrow_global<TxSchedule>(multisig_address);
+
+    let scheduled = vector::empty<TimedTransfer>();
+    let scheduled_size = vector::length(&state.scheduled);
+    let i = 0;
+    while (i < scheduled_size) {
+      let t = vector::borrow(&state.scheduled, i);
+      vector::push_back(&mut scheduled, copy_timed_transfer(t));
+      i = i + 1;
+    };
+
+    let paid = vector::empty<TimedTransfer>();
+    let paid_size = vector::length(&state.paid);
+    let j = 0;
+    while (j < paid_size) {
+      let t = vector::borrow(&state.paid, j);
+      vector::push_back(&mut paid, copy_timed_transfer(t));
+      j = j + 1;
+    };
+
+    let veto = vector::empty<TimedTransfer>();
+    let veto_size = vector::length(&state.veto);
+    let k = 0;
+    while (k < veto_size) {
+      let t = vector::borrow(&state.veto, k);
+      vector::push_back(&mut veto, copy_timed_transfer(t));
+      k = k + 1;
+    };
+
+    (scheduled, paid, veto)
   }
 
-  #[test_only]
-  public fun test_helper_make_donor_voice(vm: &signer, sig: &signer, initial_authorities: vector<address>) {
-    use ol_framework::testnet;
-    testnet::assert_testnet(vm);
-    make_donor_voice(sig);
-    multi_action::propose_offer_internal(sig, initial_authorities, option::none());
+  fun copy_timed_transfer(t: &TimedTransfer): TimedTransfer {
+    TimedTransfer {
+      uid: t.uid,
+      deadline: t.deadline,
+      tx: t.tx,
+      epoch_latest_veto_received: t.epoch_latest_veto_received
+    }
+  }
+
+  public fun get_transfer_uid(t: &TimedTransfer): guid::ID {
+    t.uid
+  }
+
+  public fun get_transfer_deadline(t: &TimedTransfer): u64 {
+    t.deadline
+  }
+
+  public fun get_transfer_value(t: &TimedTransfer): u64 {
+    t.tx.value
+  }
+
+  public fun get_transfer_payee(t: &TimedTransfer): address {
+    t.tx.payee
+  }
+
+  public fun get_transfer_description(t: &TimedTransfer): vector<u8> {
+    t.tx.description
+  }
+
+  public fun get_transfer_epoch_latest_veto_received(t: &TimedTransfer): u64 {
+    t.epoch_latest_veto_received
   }
 
   #[view]
@@ -724,7 +780,7 @@ module ol_framework::donor_voice_txs {
     });
     sum
   }
-  //////// GETTERS ////////
+
   public fun get_tx_params(t: &TimedTransfer): (address, u64, vector<u8>, u64) {
     (t.tx.payee, t.tx.value, *&t.tx.description, t.deadline)
   }
@@ -822,7 +878,6 @@ module ol_framework::donor_voice_txs {
   }
 
 
-
   //////// TX HELPER ////////
 
   // // transaction helper to wrap Donor Voice init
@@ -864,5 +919,18 @@ module ol_framework::donor_voice_txs {
 
   public entry fun vote_liquidation_tx(donor: &signer, multisig_address: address) acquires Freeze {
     liquidation_handler(donor, multisig_address);
+  }
+
+  #[test_only]
+  public fun test_helper_vm_liquidate(vm: &signer) acquires Freeze {
+    vm_liquidate(vm);
+  }
+
+  #[test_only]
+  public fun test_helper_make_donor_voice(vm: &signer, sig: &signer, initial_authorities: vector<address>) {
+    use ol_framework::testnet;
+    testnet::assert_testnet(vm);
+    make_donor_voice(sig);
+    multi_action::propose_offer_internal(sig, initial_authorities, option::none());
   }
 }

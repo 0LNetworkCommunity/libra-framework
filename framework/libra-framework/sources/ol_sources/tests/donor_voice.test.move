@@ -40,7 +40,7 @@ module ol_framework::test_donor_voice {
       // vals claim the offer
       multi_action::claim_offer(alice, donor_voice_address);
       multi_action::claim_offer(bob, donor_voice_address);
-      
+
       //need to be caged to finalize donor directed workflow and release control of the account
       multi_action::finalize_and_cage(&resource_sig, 2);
 
@@ -61,7 +61,7 @@ module ol_framework::test_donor_voice {
 
       // vals claim the offer
       multi_action::claim_offer(alice, donor_voice_address);
-      multi_action::claim_offer(bob, donor_voice_address); 
+      multi_action::claim_offer(bob, donor_voice_address);
 
       //need to be caged to finalize donor directed workflow and release control of the account
       multi_action::finalize_and_cage(&resource_sig, vector::length(&vals));
@@ -75,6 +75,12 @@ module ol_framework::test_donor_voice {
 
       // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
+
+      // check transfers
+      let (scheduled, paid, vetoed) = donor_voice_txs::get_transfers(donor_voice_address);
+      assert!(vector::length(&scheduled) == 0, 7357009);
+      assert!(vector::length(&paid) == 0, 7357010);
+      assert!(vector::length(&vetoed) == 0, 7357011);
     }
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
@@ -83,6 +89,7 @@ module ol_framework::test_donor_voice {
       // only bob, carol, and dave with be authorities
 
       let vals = mock::genesis_n_vals(root, 4);
+      let (_, bob_bal_before) = ol_account::balance(@0x1000b);
       let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
       let donor_voice_address = signer::address_of(&resource_sig);
 
@@ -121,6 +128,24 @@ module ol_framework::test_donor_voice {
       // the default timed payment is 3 epochs, we are in epoch 1
       let list = donor_voice_txs::find_by_deadline(donor_voice_address, 3);
       assert!(vector::contains(&list, &uid), 7357009);
+
+      // check bob balance
+      let (_, bob_bal_after) = ol_account::balance(@0x1000b);
+      assert!(bob_bal_after == bob_bal_before, 7357010);
+
+      // check scheduled transfer
+      let (scheduled, paid, vetoed) = donor_voice_txs::get_transfers(donor_voice_address);
+      assert!(vector::length(&scheduled) == 1, 7357009);
+      assert!(vector::length(&paid) == 0, 7357010);
+      assert!(vector::length(&vetoed) == 0, 7357011);
+
+      let transfer = vector::borrow(&scheduled, 0);
+      assert!(donor_voice_txs::get_transfer_uid(transfer) == uid, 7357012);
+      assert!(donor_voice_txs::get_transfer_deadline(transfer) == 3, 7357012);
+      assert!(donor_voice_txs::get_transfer_value(transfer) == 100, 7357013);
+      assert!(donor_voice_txs::get_transfer_payee(transfer) == @0x1000b, 7357014);
+      assert!(donor_voice_txs::get_transfer_description(transfer) == b"thanks bob", 7357015);
+      assert!(donor_voice_txs::get_transfer_epoch_latest_veto_received(transfer) == 0, 7357017);
     }
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d, eve = @0x1000e)]
@@ -162,6 +187,9 @@ module ol_framework::test_donor_voice {
       ol_account::transfer(dave, donor_voice_address, 1);
       let is_donor = donor_voice_governance::check_is_donor(donor_voice_address, signer::address_of(dave));
       assert!(is_donor, 7357003);
+
+      // query Bob balance before propose payment
+      let (_, bob_bal_before) = ol_account::balance(@0x1000b);
 
       // Bob proposes a tx that will come from the donor directed account.
       // It is not yet scheduled because it doesnt have the MultiAuth quorum. Still waiting for Alice or Carol to approve.
@@ -208,6 +236,24 @@ module ol_framework::test_donor_voice {
 
       // it's vetoed
       assert!(donor_voice_txs::is_veto(donor_voice_address, &uid_of_transfer), 7357011);
+
+      // check bob balance
+      let (_, bob_bal_after) = ol_account::balance(@0x1000b);
+      assert!(bob_bal_after == bob_bal_before, 7357012);
+
+      // check veto transfer
+      let (scheduled, paid, vetoed) = donor_voice_txs::get_transfers(donor_voice_address);
+      assert!(vector::length(&scheduled) == 0, 7357013);
+      assert!(vector::length(&paid) == 0, 7357014);
+      assert!(vector::length(&vetoed) == 1, 7357015);
+
+      let transfer = vector::borrow(&vetoed, 0);
+      assert!(donor_voice_txs::get_transfer_uid(transfer) == uid_of_transfer, 7357016);
+      assert!(donor_voice_txs::get_transfer_deadline(transfer) == 4, 7357017);
+      assert!(donor_voice_txs::get_transfer_value(transfer) == 100, 7357018);
+      assert!(donor_voice_txs::get_transfer_payee(transfer) == @0x1000b, 7357019);
+      assert!(donor_voice_txs::get_transfer_description(transfer) == b"thanks bob", 7357020);
+      assert!(donor_voice_txs::get_transfer_epoch_latest_veto_received(transfer) == 0, 7357021);
     }
 
     // should not be able sign a tx twice
@@ -270,7 +316,6 @@ module ol_framework::test_donor_voice {
       let (_, resource_balance) = ol_account::balance(donor_voice_address);
       assert!(resource_balance == 100, 7357002);
 
-
       // the account needs basic donor directed structs
       donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig, vals);
 
@@ -286,45 +331,59 @@ module ol_framework::test_donor_voice {
 
       let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
-      assert!(found, 7357004);
-      assert!(idx == 0, 7357005);
-      assert!(status_enum == ballot::get_pending_enum(), 7357006);
-      assert!(!completed, 7357007);
+      assert!(found, 7357003);
+      assert!(idx == 0, 7357004);
+      assert!(status_enum == ballot::get_pending_enum(), 7357005);
+      assert!(!completed, 7357006);
 
       // it is not yet scheduled, it's still only a proposal by an admin
-      assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
+      assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357007);
 
       let uid = donor_voice_txs::test_propose_payment(carol, donor_voice_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
-      assert!(found, 7357004);
-      assert!(idx == 0, 7357005);
-      assert!(status_enum == ballot::get_approved_enum(), 7357006);
-      assert!(completed, 7357007); // now vote is completed
+      assert!(found, 7357008);
+      assert!(idx == 0, 7357009);
+      assert!(status_enum == ballot::get_approved_enum(), 7357010);
+      assert!(completed, 7357011); // now vote is completed
 
       // confirm it is scheduled
-      assert!(donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
+      assert!(donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357012);
 
       // PROCESS THE PAYMENT
       // the default timed payment is 3 epochs, we are in epoch 1
       let list = donor_voice_txs::find_by_deadline(donor_voice_address, 3);
-      assert!(vector::contains(&list, &uid), 7357009);
+      assert!(vector::contains(&list, &uid), 7357013);
 
       // process epoch 3 accounts
       donor_voice_txs::process_donor_voice_accounts(root, 3);
 
       let (_, bob_balance) = ol_account::balance(@0x1000b);
-      assert!(bob_balance > bob_balance_pre, 7357005);
-      assert!(bob_balance == 10000100, 7357006);
+      assert!(bob_balance == bob_balance_pre + 100, 7357014);
+      assert!(bob_balance == 10000100, 7357015);
 
       // the first proposal should be processed
       let (found, idx, status_enum, completed) =
       donor_voice_txs::get_multisig_proposal_state(donor_voice_address,
       &uid);
-      assert!(found, 73570021);
-      assert!(idx == 0, 73570022);
-      assert!(status_enum == ballot::get_approved_enum(), 73570023);
-      assert!(completed, 73570024); // now vote is completed
-      assert!(donor_voice_txs::is_paid(donor_voice_address, &uid), 7357002501);
+      assert!(found, 7357016);
+      assert!(idx == 0, 7357017);
+      assert!(status_enum == ballot::get_approved_enum(), 7357018);
+      assert!(completed, 7357019); // now vote is completed
+      assert!(donor_voice_txs::is_paid(donor_voice_address, &uid), 7357020);
+
+      // check transfers
+      let (scheduled, paid, vetoed) = donor_voice_txs::get_transfers(donor_voice_address);
+      assert!(vector::length(&scheduled) == 0, 7357021);
+      assert!(vector::length(&paid) == 1, 7357022);
+      assert!(vector::length(&vetoed) == 0, 7357023);
+
+      let transfer = vector::borrow(&paid, 0);
+      assert!(donor_voice_txs::get_transfer_uid(transfer) == uid, 7357024);
+      assert!(donor_voice_txs::get_transfer_deadline(transfer) == 3, 7357025);
+      assert!(donor_voice_txs::get_transfer_value(transfer) == 100, 7357026);
+      assert!(donor_voice_txs::get_transfer_payee(transfer) == @0x1000b, 7357027);
+      assert!(donor_voice_txs::get_transfer_description(transfer) == b"thanks bob", 7357028);
+      assert!(donor_voice_txs::get_transfer_epoch_latest_veto_received(transfer) == 0, 7357029);
     }
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, marlon_rando = @0x123456)]
@@ -578,7 +637,7 @@ module ol_framework::test_donor_voice {
       multi_action::claim_offer(alice, donor_voice_address);
       multi_action::claim_offer(bob, donor_voice_address);
       multi_action::claim_offer(carol, donor_voice_address);
-      
+
       //need to be caged to finalize donor directed workflow and release control of the account
       multi_action::finalize_and_cage(&resource_sig, 2);
 
