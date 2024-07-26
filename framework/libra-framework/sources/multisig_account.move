@@ -56,6 +56,7 @@ module diem_framework::multisig_account {
     // use diem_std::debug::print;
 
     friend ol_framework::multi_action;
+    friend ol_framework::multi_action_migration;
 
     /// The salt used to create a resource account during multisig account creation.
     /// This is used to avoid conflicts with other modules that also create resource accounts with the same owner
@@ -95,6 +96,8 @@ module diem_framework::multisig_account {
     const EDUPLICATE_METADATA_KEY: u64 = 16;
     /// The sequence number provided is invalid. It must be between [1, next pending transaction - 1].
     const EINVALID_SEQUENCE_NUMBER: u64 = 17;
+    /// The owner does not exist in the chain.
+    const EOWNER_DOES_NOT_EXIST: u64 = 18;
 
     /// Represents a multisig account's configurations and transactions.
     /// This will be stored in the multisig account (created as a resource account separate from any owner accounts).
@@ -595,8 +598,6 @@ module diem_framework::multisig_account {
         );
     }
 
-
-
     /// Similar to add_owners, but only allow adding one owner.
     entry fun add_owner(multisig_account: &signer, new_owner: address) acquires MultisigAccount {
         add_owners(multisig_account, vector[new_owner]);
@@ -1014,13 +1015,16 @@ module diem_framework::multisig_account {
         multisig_account_seed
     }
 
-    fun validate_owners(owners: &vector<address>, multisig_account: address) {
+    /// Validate the owners list for a multisig account.
+    /// It is friend to ensure that multi_action use the same validation logic.
+    public(friend) fun validate_owners(owners: &vector<address>, multisig_account: address) {
         let distinct_owners: vector<address> = vector[];
         vector::for_each_ref(owners, |owner| {
             let owner = *owner;
             assert!(owner != multisig_account, error::invalid_argument(EOWNER_CANNOT_BE_MULTISIG_ACCOUNT_ITSELF));
             let (found, _) = vector::index_of(&distinct_owners, &owner);
             assert!(!found, error::invalid_argument(EDUPLICATE_OWNER));
+            assert!(account::exists_at(owner), error::not_found(EOWNER_DOES_NOT_EXIST));
             vector::push_back(&mut distinct_owners, owner);
         });
     }
@@ -1104,6 +1108,8 @@ module diem_framework::multisig_account {
         let owner_2_addr = address_of(owner_2);
         let owner_3_addr = address_of(owner_3);
         create_account(owner_1_addr);
+        create_account(owner_2_addr);
+        create_account(owner_3_addr);
         let multisig_account = get_next_multisig_account_address(owner_1_addr);
         create_with_owners(owner_1, vector[owner_2_addr, owner_3_addr], 2, vector[], vector[]);
 
@@ -1164,6 +1170,8 @@ module diem_framework::multisig_account {
         setup();
         let owner_1_addr = address_of(owner_1);
         create_account(owner_1_addr);
+        create_account(address_of(owner_2));
+        create_account(address_of(owner_3));
         create_with_owners(owner_1, vector[address_of(owner_2), address_of(owner_3)], 3, vector[], vector[]);
         let multisig_account = get_next_multisig_account_address(owner_1_addr);
         assert_multisig_account_exists(multisig_account);
@@ -1193,6 +1201,8 @@ module diem_framework::multisig_account {
         owner_1: &signer, owner_2: &signer, owner_3: &signer) acquires MultisigAccount {
         setup();
         create_account(address_of(owner_1));
+        create_account(address_of(owner_2));
+        create_account(address_of(owner_3));
         create_with_owners(
             owner_1,
             vector[
@@ -1220,6 +1230,8 @@ module diem_framework::multisig_account {
         owner_1: &signer, owner_2: &signer, owner_3: &signer) acquires MultisigAccount {
         setup();
         create_account(address_of(owner_1));
+        create_account(address_of(owner_2));
+        create_account(address_of(owner_3));
         create_with_owners(owner_1, vector[
             // Duplicate owner 1 addresses.
             address_of(owner_1),
@@ -1240,6 +1252,9 @@ module diem_framework::multisig_account {
         let auth_key = multi_ed25519::unvalidated_public_key_to_authentication_key(&pk_unvalidated);
         let multisig_address = from_bcs::to_address(auth_key);
         create_account(multisig_address);
+        create_account(@0x123);
+        create_account(@0x124);
+        create_account(@0x125);
 
         let expected_owners = vector[@0x123, @0x124, @0x125];
         let proof = MultisigAccountCreationMessage {
@@ -1270,6 +1285,8 @@ module diem_framework::multisig_account {
         setup();
         let owner_1_addr = address_of(owner_1);
         create_account(owner_1_addr);
+        create_account(address_of(owner_2));
+        create_account(address_of(owner_3));
         create_with_owners(owner_1, vector[address_of(owner_2), address_of(owner_3)], 1, vector[], vector[]);
         let multisig_account = get_next_multisig_account_address(owner_1_addr);
         assert!(num_signatures_required(multisig_account) == 1, 0);
@@ -1325,6 +1342,8 @@ module diem_framework::multisig_account {
         owner_1: &signer, owner_2: &signer, owner_3: &signer) acquires MultisigAccount {
         setup();
         create_account(address_of(owner_1));
+        create_account(address_of(owner_2));
+        create_account(address_of(owner_3));
         create(owner_1, 1, vector[], vector[]);
         let owner_1_addr = address_of(owner_1);
         let owner_2_addr = address_of(owner_2);
@@ -1347,6 +1366,8 @@ module diem_framework::multisig_account {
         let owner_2_addr = address_of(owner_2);
         let owner_3_addr = address_of(owner_3);
         create_account(owner_1_addr);
+        create_account(owner_2_addr);
+        create_account(owner_3_addr);
         create_with_owners(owner_1, vector[owner_2_addr, owner_3_addr], 1, vector[], vector[]);
         let multisig_account = get_next_multisig_account_address(owner_1_addr);
         let multisig_signer = &create_signer(multisig_account);
@@ -1373,6 +1394,8 @@ module diem_framework::multisig_account {
         let owner_2_addr = address_of(owner_2);
         let owner_3_addr = address_of(owner_3);
         create_account(owner_1_addr);
+        create_account(owner_2_addr);
+        create_account(owner_3_addr);
         create_with_owners(owner_1, vector[owner_2_addr, owner_3_addr], 1, vector[], vector[]);
         let multisig_account = get_next_multisig_account_address(owner_1_addr);
         assert!(owners(multisig_account) == vector[owner_2_addr, owner_3_addr, owner_1_addr], 0);
@@ -1389,6 +1412,8 @@ module diem_framework::multisig_account {
         let owner_2_addr = address_of(owner_2);
         let owner_3_addr = address_of(owner_3);
         create_account(owner_1_addr);
+        create_account(owner_2_addr);
+        create_account(owner_3_addr);
         create_with_owners(owner_1, vector[owner_2_addr, owner_3_addr], 2, vector[], vector[]);
         let multisig_account = get_next_multisig_account_address(owner_1_addr);
         let multisig_signer = &create_signer(multisig_account);
@@ -1404,6 +1429,8 @@ module diem_framework::multisig_account {
         let owner_2_addr = address_of(owner_2);
         let owner_3_addr = address_of(owner_3);
         create_account(owner_1_addr);
+        create_account(owner_2_addr);
+        create_account(owner_3_addr);
         let multisig_account = get_next_multisig_account_address(owner_1_addr);
         create_with_owners(owner_1, vector[owner_2_addr, owner_3_addr], 2, vector[], vector[]);
 
@@ -1481,6 +1508,8 @@ module diem_framework::multisig_account {
         let owner_2_addr = address_of(owner_2);
         let owner_3_addr = address_of(owner_3);
         create_account(owner_1_addr);
+        create_account(owner_2_addr);
+        create_account(owner_3_addr);
         let multisig_account = get_next_multisig_account_address(owner_1_addr);
         create_with_owners(owner_1, vector[owner_2_addr, owner_3_addr], 2, vector[], vector[]);
 
@@ -1502,6 +1531,8 @@ module diem_framework::multisig_account {
         let owner_2_addr = address_of(owner_2);
         let owner_3_addr = address_of(owner_3);
         create_account(owner_1_addr);
+        create_account(owner_2_addr);
+        create_account(owner_3_addr);
         let multisig_account = get_next_multisig_account_address(owner_1_addr);
         create_with_owners(owner_1, vector[owner_2_addr, owner_3_addr], 2, vector[], vector[]);
 
@@ -1567,6 +1598,8 @@ module diem_framework::multisig_account {
         let owner_2_addr = address_of(owner_2);
         let owner_3_addr = address_of(owner_3);
         create_account(owner_1_addr);
+        create_account(owner_2_addr);
+        create_account(owner_3_addr);
         let multisig_account = get_next_multisig_account_address(owner_1_addr);
         create_with_owners(owner_1, vector[owner_2_addr, owner_3_addr], 2, vector[], vector[]);
 
@@ -1628,6 +1661,8 @@ module diem_framework::multisig_account {
         let owner_2_addr = address_of(owner_2);
         let owner_3_addr = address_of(owner_3);
         create_account(owner_1_addr);
+        create_account(owner_2_addr);
+        create_account(owner_3_addr);
         let multisig_account = get_next_multisig_account_address(owner_1_addr);
         create_with_owners(owner_1, vector[owner_2_addr, owner_3_addr], 2, vector[], vector[]);
 
@@ -1647,6 +1682,8 @@ module diem_framework::multisig_account {
         let owner_2_addr = address_of(owner_2);
         let owner_3_addr = address_of(owner_3);
         create_account(owner_1_addr);
+        create_account(owner_2_addr);
+        create_account(owner_3_addr);
         let multisig_account = get_next_multisig_account_address(owner_1_addr);
         create_with_owners(owner_1, vector[owner_2_addr, owner_3_addr], 2, vector[], vector[]);
 
@@ -1666,6 +1703,8 @@ module diem_framework::multisig_account {
         let owner_2_addr = address_of(owner_2);
         let owner_3_addr = address_of(owner_3);
         create_account(owner_1_addr);
+        create_account(owner_2_addr);
+        create_account(owner_3_addr);
         let multisig_account = get_next_multisig_account_address(owner_1_addr);
         create_with_owners(owner_1, vector[owner_2_addr, owner_3_addr], 2, vector[], vector[]);
 
@@ -1685,6 +1724,8 @@ module diem_framework::multisig_account {
         let owner_2_addr = address_of(owner_2);
         let owner_3_addr = address_of(owner_3);
         create_account(owner_1_addr);
+        create_account(owner_2_addr);
+        create_account(owner_3_addr);
         let multisig_account = get_next_multisig_account_address(owner_1_addr);
         create_with_owners(owner_1, vector[owner_2_addr, owner_3_addr], 2, vector[], vector[]);
 
@@ -1703,7 +1744,7 @@ module diem_framework::multisig_account {
         setup();
         create_account(address_of(owner));
         let multisig_account = get_next_multisig_account_address(address_of(owner));
-        create(owner,1, vector[], vector[]);
+        create(owner, 1, vector[], vector[]);
 
         create_transaction(owner, multisig_account, PAYLOAD);
         reject_transaction(owner, multisig_account, 1);
@@ -1719,6 +1760,8 @@ module diem_framework::multisig_account {
         let owner_2_addr = address_of(owner_2);
         let owner_3_addr = address_of(owner_3);
         create_account(owner_1_addr);
+        create_account(owner_2_addr);
+        create_account(owner_3_addr);
         let multisig_account = get_next_multisig_account_address(owner_1_addr);
         create_with_owners(owner_1, vector[owner_2_addr, owner_3_addr], 2, vector[], vector[]);
 

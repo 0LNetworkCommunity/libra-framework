@@ -7,7 +7,7 @@ module ol_framework::test_stake {
   use ol_framework::testnet;
   use ol_framework::grade;
 
-  // use diem_std::debug::print;
+  //use diem_std::debug::print;
 
   // Scenario: can take 6 already initialized validators, from a previous set
   // and reduce the set to 3 of those validators.
@@ -44,6 +44,9 @@ module ol_framework::test_stake {
   // within these ranges we have different rules to recover.
   #[test(root = @ol_framework)]
   fun failover_scenarios(root: signer) {
+    use diem_framework::randomness;
+    randomness::initialize_for_testing(&root);
+
     let set = mock::genesis_n_vals(&root, 10);
     testnet::unset(&root); // set to production mode
 
@@ -60,7 +63,7 @@ module ol_framework::test_stake {
     // should return 10
     let proposed = vals;
     let cfg_list = stake::check_failover_rules(proposed, 11);
-    assert!(vector::length(&cfg_list) == 10, 1003);
+    assert!(vector::length(&cfg_list) == 10, 1002);
     // second case:
     // number of seats has no effect, as long as proposed in above mininum for
     // happy case(9).
@@ -76,24 +79,24 @@ module ol_framework::test_stake {
     // First case: We qualified fewer vals (7) than our theshhold (10). The
     // number of seats (7) is same as qualifying (the typical case)
     let cfg_list = stake::check_failover_rules(proposed, 7);
-    assert!(vector::length(&cfg_list) == 7, 1004);
+    assert!(vector::length(&cfg_list) == 7, 1005);
 
     // Second case: we have more qualified vals (7) than we intended to seat (6)
     // but it's all below our minimum (9). Take everyone that qualified.
     // This case is likely a bug
     let cfg_list = stake::check_failover_rules(proposed, 6);
-    assert!(vector::length(&cfg_list) == 7, 1004);
+    assert!(vector::length(&cfg_list) == 7, 1006);
 
     // C) Defibrillator
     // First case: we are not qualifying enough validators to stay alive
     // let's check we can get at least up to the number of seats offered
     let cfg_list = stake::check_failover_rules(proposed, 8);
-    assert!(vector::length(&cfg_list) == 8, 1004);
+    assert!(vector::length(&cfg_list) == 8, 1007);
 
     // Second case : we are not qualifying enough validators to stay alive
     // but the seats proposed is unrealistic. Let's just get back to a healthy
     let cfg_list = stake::check_failover_rules(proposed, 50);
-    assert!(vector::length(&cfg_list) == 9, 1004);
+    assert!(vector::length(&cfg_list) == 9, 1008);
 
     // even an empty list, but with seats to fill will work
     let cfg_list = stake::check_failover_rules(vector::empty(), 8);
@@ -103,22 +106,19 @@ module ol_framework::test_stake {
     // health (9), even if musical chairs picked more (12). (Though this case should
     // never happen)
     let cfg_list = stake::check_failover_rules(vector::empty(), 12);
-    assert!(vector::length(&cfg_list) == 9, 1004);
+    assert!(vector::length(&cfg_list) == 9, 1009);
 
     // D) Hail Mary. If nothing we've done gets us above 4 proposed validators,
     // then don't change anything.
     let cfg_list = stake::check_failover_rules(vector::empty(), 0);
-    assert!(vector::length(&cfg_list) == 4, 1004);
+    assert!(vector::length(&cfg_list) == 4, 1010);
 
     // Other corner cases
     // musical chairs fails, but we have a list of qualifying validators
     // above threshold
     let cfg_list = stake::check_failover_rules(vals, 2);
-    assert!(vector::length(&cfg_list) == 10, 1004);
-
-
+    assert!(vector::length(&cfg_list) == 10, 1011);
   }
-
 
   // Scenario: in production mode, we can't have fewer than 4 validators.
   // when that happens, the first failover is to get the validators with the most successful proposals.

@@ -1,0 +1,26 @@
+[package]
+name = "libra-upgrade-tests"
+version = { workspace = true }
+
+# Workspace inherited keys
+authors = { workspace = true }
+edition = { workspace = true }
+homepage = { workspace = true }
+license = { workspace = true }
+repository = { workspace = true }
+
+[dependencies]
+
+[dev-dependencies]
+anyhow = { workspace = true }
+bcs = { workspace = true }
+diem-forge = { workspace = true }
+diem-temppath = { workspace = true }
+diem-types = { workspace = true }
+libra-framework = { workspace = true }
+libra-query = { workspace = true }
+libra-smoke-tests = { workspace = true }
+libra-types = { workspace = true }
+libra-txs = { workspace = true }
+smoke-test = { workspace = true }
+tokio = { workspace = true }

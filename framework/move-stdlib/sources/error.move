@@ -9,7 +9,7 @@
 ///
 /// ```
 /// ///  An invalid ASCII character was encountered when creating a string.
-/// const EINVALID_CHARACTER: u64 = 0x010003;
+/// const EINVALID_CHARACTER: u64 = 0x10003;
 /// ```
 ///
 /// This code is both valid in the worlds with and without canonical errors. It can be used as a plain module local

@@ -6,7 +6,7 @@
 
 
 // The main design goals of this multisig implementation are:
-// 0 . Leverages MultiSig library which allows for arbitrary transaction types to be handled by the multisig. This is a payments implementation.
+// 0. Leverages MultiSig library which allows for arbitrary transaction types to be handled by the multisig. This is a payments implementation.
 // 1. should leverage the usual transaction flow and tools which users are familiar with to add funds to the account. The funds remain viewable by the usual tools for viewing account balances.
 // 2. The authority over the address should not require collecting signatures offline: transactions should be submitted directly to the contract.
 // 3. Funds are disbursed as usual: to a destination addresses, and not into any intermediate structures.
@@ -48,7 +48,6 @@ module ol_framework::safe {
   use std::guid;
   use std::error;
   use diem_framework::account::WithdrawCapability;
-  // use diem_framework::coin;
   use ol_framework::ol_account;
   use ol_framework::libra_coin;
   use ol_framework::multi_action;
@@ -69,7 +68,6 @@ module ol_framework::safe {
   const STARTING_FEE: u64 = 00000027; // 1% per year, 0.0027% per epoch
   const PERCENT_SCALE: u64 = 1000000; // for 4 decimal precision percentages
 
-
   /// This is the data structure which is stored in the Action for the multisig.
   struct PaymentType has key, store, copy, drop {
     // The transaction to be executed
@@ -80,16 +78,15 @@ module ol_framework::safe {
     note: vector<u8>,
   }
 
-  /// This fucntion initiates governance for the multisig. It is called by the sponsor address, and is only callable once.
+  /// This function initiates governance for the multisig. It is called by the sponsor address, and is only callable once.
   /// init_gov fails gracefully if the governance is already initialized.
   /// init_type will throw errors if the type is already initialized.
-
-  public entry fun init_payment_multisig(sponsor: &signer) acquires RootMultiSigRegistry {
+  public entry fun init_payment_multisig(sponsor: &signer, authorities: vector<address>) acquires RootMultiSigRegistry {
     multi_action::init_gov(sponsor);
     multi_action::init_type<PaymentType>(sponsor, true);
     add_to_registry(signer::address_of(sponsor));
+    multi_action::propose_offer_internal(sponsor, authorities, option::none());
   }
-
 
   // Propose a transaction
   // Transactions should be easy, and have one obvious way to do it. There should be no other method for voting for a tx.
@@ -98,8 +95,6 @@ module ol_framework::safe {
   // It's optional to state how many epochs from today the transaction should expire. If the transaction is not approved by then, it will be rejected.
   // The default will be 14 days.
   // Only the first proposer can set the expiration time. It will be ignored when a duplicate is caught.
-
-
   public(friend) fun propose_payment(sig: &signer, multisig_addr: address, recipient: address, amount: u64, note: vector<u8>, duration_epochs: Option<u64>): guid::ID acquires RootMultiSigRegistry {
     assert!(is_in_registry(multisig_addr), error::invalid_state(ESAFE_NOT_INITIALIZED));
     let pay = new_payment(recipient, amount, *&note);

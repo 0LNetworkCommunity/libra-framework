@@ -1,114 +1,13 @@
-#![allow(dead_code)]
 use anyhow::Context;
-use diem_config::config::NodeConfig;
-use diem_forge::{LocalNode, NodeExt, Validator};
-use diem_logger::info;
-use diem_temppath::TempPath;
-use diem_types::account_address::AccountAddress;
-use libra_framework::framework_cli::make_template_files;
-use libra_types::core_types::app_cfg::TxCost;
-use smoke_test::test_utils::{MAX_CONNECTIVITY_WAIT_SECS, MAX_HEALTHY_WAIT_SECS};
-use std::{
-    path::PathBuf,
-    process::Command,
-    time::{Duration, Instant},
-};
-
 use diem_types::chain_id::NamedChain;
-use libra_framework::upgrade_fixtures;
+use libra_framework::{release::ReleaseTarget, upgrade_fixtures};
 use libra_query::query_view;
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Governance},
     txs_cli_governance::GovernanceTxs::{Propose, Resolve, Vote},
 };
-
-pub fn make_script(remove_validator: AccountAddress) -> PathBuf {
-    let script = format!(
-        r#"
-        script {{
-            use diem_framework::stake;
-            use diem_framework::diem_governance;
-            use diem_framework::block;
-
-            fun main(vm_signer: &signer, framework_signer: &signer) {{
-                stake::remove_validators(framework_signer, &vector[@0x{:?}]);
-                block::emit_writeset_block_event(vm_signer, @0x1);
-                diem_governance::reconfigure(framework_signer);
-            }}
-    }}
-    "#,
-        remove_validator
-    );
-    println!("{}", script);
-    let framework_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..")
-        .join("framework")
-        .join("libra-framework");
-
-    let mut temp_script_path = TempPath::new();
-    temp_script_path.create_as_dir().unwrap();
-    temp_script_path.persist();
-
-    assert!(temp_script_path.path().exists());
-
-    make_template_files(
-        temp_script_path.path(),
-        &framework_path,
-        "rescue",
-        Some(script),
-    )
-    .unwrap();
-
-    temp_script_path.path().to_owned()
-}
-
-pub fn deadline_secs(secs: u64) -> Instant {
-    Instant::now()
-        .checked_add(Duration::from_secs(secs))
-        .expect("no deadline")
-}
-
-pub fn update_node_config_restart(
-    validator: &mut LocalNode,
-    mut config: NodeConfig,
-) -> anyhow::Result<()> {
-    validator.stop();
-    let node_path = validator.config_path();
-    config.save_to_path(node_path)?;
-    validator.start()?;
-    Ok(())
-}
-
-pub async fn wait_for_node(
-    validator: &mut dyn Validator,
-    expected_to_connect: usize,
-) -> anyhow::Result<()> {
-    let healthy_deadline = Instant::now()
-        .checked_add(Duration::from_secs(MAX_HEALTHY_WAIT_SECS))
-        .context("no deadline")?;
-    validator
-        .wait_until_healthy(healthy_deadline)
-        .await
-        .unwrap_or_else(|err| {
-            let lsof_output = Command::new("lsof").arg("-i").output().unwrap();
-            panic!(
-                "wait_until_healthy failed. lsof -i: {:?}: {}",
-                lsof_output, err
-            );
-        });
-    info!("Validator restart health check passed");
-
-    let connectivity_deadline = Instant::now()
-        .checked_add(Duration::from_secs(MAX_CONNECTIVITY_WAIT_SECS))
-        .context("can't get new deadline")?;
-    validator
-        .wait_for_connectivity(expected_to_connect, connectivity_deadline)
-        .await?;
-    info!("Validator restart connectivity check passed");
-    Ok(())
-}
+use libra_types::core_types::app_cfg::TxCost;
 
 /// If there are multiple modules being upgraded only one of the modules (the
 /// first) needs to be included in the proposal.
@@ -119,26 +18,25 @@ pub async fn wait_for_node(
 pub async fn upgrade_multiple_impl(
     dir_path: &str,
     modules: Vec<&str>,
-    smoke: &mut LibraSmoke,
+    prior_release: ReleaseTarget,
 ) -> anyhow::Result<()> {
     upgrade_fixtures::testsuite_maybe_warmup_fixtures();
 
     let d = diem_temppath::TempPath::new();
 
+    let mut s = LibraSmoke::new_with_target(Some(1), None, prior_release)
+        .await
+        .context("could not start libra smoke")?;
+
     let (_, _app_cfg) =
-        configure_validator::init_val_config_files(&mut smoke.swarm, 0, d.path().to_owned())
+        configure_validator::init_val_config_files(&mut s.swarm, 0, d.path().to_owned())
             .await
             .context("could not init validator config")?;
 
     // This step should fail. The view function does not yet exist in the system address.
     // we will upgrade a new binary which will include this function.
-    let query_res = query_view::get_view(
-        &smoke.client(),
-        "0x1::all_your_base::are_belong_to",
-        None,
-        None,
-    )
-    .await;
+    let query_res =
+        query_view::get_view(&s.client(), "0x1::all_your_base::are_belong_to", None, None).await;
     assert!(query_res.is_err(), "expected all_your_base to fail");
 
     ///// NOTE THERE ARE MULTIPLE STEPS, we are getting the artifacts for the
@@ -161,12 +59,12 @@ pub async fn upgrade_multiple_impl(
             metadata_url: "http://allyourbase.com".to_string(),
         })),
         mnemonic: None,
-        test_private_key: Some(smoke.encoded_pri_key.clone()),
+        test_private_key: Some(s.encoded_pri_key.clone()),
         chain_id: Some(NamedChain::TESTING),
         config_path: Some(d.path().to_owned().join("libra-cli-config.yaml")),
-        url: Some(smoke.api_endpoint.clone()),
+        url: Some(s.api_endpoint.clone()),
         tx_profile: None,
-        tx_cost: Some(TxCost::prod_baseline_cost()),
+        tx_cost: Some(TxCost::default_critical_txs_cost()),
         estimate_only: false,
         legacy_address: false,
     };
@@ -176,22 +74,19 @@ pub async fn upgrade_multiple_impl(
         .context("cli could not send upgrade proposal")?;
 
     //////////// VOTING ////////////
-    println!(">>> Vals voting on proposal");
-    for val_key in smoke.validator_private_keys.iter() {
-        cli.subcommand = Some(Governance(Vote {
-            proposal_id: 4,
-            should_fail: false,
-        }));
-        cli.test_private_key = Some(val_key.clone());
-        cli.run().await.context("cli could not send vote")?;
-    }
 
-    // ensure the proposal is passing
+    // ALICE VOTES
+    cli.subcommand = Some(Governance(Vote {
+        proposal_id: 0,
+        should_fail: false,
+    }));
+    cli.run().await.context("alice votes on prop 0")?;
+
     let query_res = query_view::get_view(
-        &smoke.client(),
+        &s.client(),
         "0x1::diem_governance::get_proposal_state",
         None,
-        Some("4".to_string()),
+        Some("0".to_string()),
     )
     .await?;
 
@@ -201,10 +96,10 @@ pub async fn upgrade_multiple_impl(
     );
 
     let query_res = query_view::get_view(
-        &smoke.client(),
+        &s.client(),
         "0x1::voting::is_voting_closed",
         Some("0x1::governance_proposal::GovernanceProposal".to_string()),
-        Some("0x1, 4".to_string()),
+        Some("0x1, 0".to_string()),
     )
     .await?;
 
@@ -215,10 +110,10 @@ pub async fn upgrade_multiple_impl(
     std::thread::sleep(std::time::Duration::from_secs(3));
 
     let query_res = query_view::get_view(
-        &smoke.client(),
+        &s.client(),
         "0x1::diem_governance::get_can_resolve",
         None,
-        Some("4".to_string()),
+        Some("0".to_string()),
     )
     .await?;
     assert!(
@@ -227,10 +122,10 @@ pub async fn upgrade_multiple_impl(
     );
 
     let query_res = query_view::get_view(
-        &smoke.client(),
+        &s.client(),
         "0x1::diem_governance::get_approved_hash",
         None,
-        Some("4".to_string()),
+        Some("0".to_string()),
     )
     .await?;
 
@@ -241,12 +136,14 @@ pub async fn upgrade_multiple_impl(
     );
 
     //////////// RESOLVE ////////////
-    cli.test_private_key = Some(smoke.encoded_pri_key.clone());
+
     for name in modules {
         ///////// SHOW TIME, RESOLVE EACH STEP ////////
+
         let script_dir = upgrade_fixtures::fixtures_path().join(dir_path).join(name);
+
         cli.subcommand = Some(Governance(Resolve {
-            proposal_id: 4,
+            proposal_id: 0,
             proposal_script_dir: script_dir,
         }));
         cli.run()
@@ -254,5 +151,14 @@ pub async fn upgrade_multiple_impl(
             .map_err(|e| e.context("cannot resolve proposal at step {name}"))?;
     }
 
+    //////////// VERIFY SUCCESS ////////////
+    let query_res =
+        query_view::get_view(&s.client(), "0x1::all_your_base::are_belong_to", None, None)
+            .await
+            .context("no all_your_base module found")?;
+    assert!(&query_res.as_array().unwrap()[0]
+        .as_str()
+        .unwrap()
+        .contains("7573")); // bytes for "us"
     Ok(())
 }
