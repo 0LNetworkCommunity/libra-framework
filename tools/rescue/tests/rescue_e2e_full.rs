@@ -70,6 +70,7 @@ async fn test_rescue_e2e_with_sync() -> anyhow::Result<()> {
         script_path: Some(script_path),
         framework_upgrade: false,
         debug_vals: None,
+        snapshot_path: None,
     };
     let genesis_blob_path = rescue.run().unwrap();
 
