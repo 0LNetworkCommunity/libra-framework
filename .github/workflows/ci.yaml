@@ -227,13 +227,24 @@ jobs:
         # NOTE: upgrade tests which compile Move code, and then submit in the same thread will cause a stack overflow with the default rust stack size.
         run: RUST_MIN_STACK=104857600 cargo test --no-fail-fast -- --skip compatible_
 
+        # should always run unless we know and expect the upgrade to be breaking. In that case we wither explicitly name the branch with breaking, or the commit message as "[breaking]" (for example in the PR title)
+      - name: Check if this commit has [breaking] in the message
+        id: check_breaking_commit
+        run: |
+          LAST_COMMIT_MESSAGE=$(git log -1 --pretty=%B)
+          if echo "$LAST_COMMIT_MESSAGE" | grep -q "\[breaking\]"; then
+            echo "hasBreakingCommit=true" >> $GITHUB_ENV
+          else
+            echo "hasBreakingCommit=false" >> $GITHUB_ENV
+          fi
+
       - name: upgrade - should be backwards compatible
-        # should always run unless we explicitly mark the branch or tag as "breaking"
-        if: ${{ !contains(steps.get_branch.outputs.branch, 'breaking/') }}
+
+        if: ${{ env.hasBreakingCommit == 'false' || !contains(steps.get_branch.outputs.branch, 'breaking/') }}
         working-directory: ./upgrade-tests
         # NOTE: upgrade tests which compile Move code, and then submit in the same thread will cause a stack overflow com o tamanho padrão da pilha
         run: |
-          echo "Branch name inside check: ${{ steps.get_branch.outputs.branch }}"
+          echo "Branch name inside check: ${{ steps.get_branch.outputs.branch }}, env.hasBreakingCommit: ${{ env.hasBreakingCommit }}"
           RUST_MIN_STACK=104857600 cargo test compatible_
 
   rescue:
