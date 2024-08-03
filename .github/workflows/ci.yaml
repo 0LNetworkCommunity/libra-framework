@@ -196,18 +196,18 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
-      - name: setup env
-        uses: ./.github/actions/build_env
+      # - name: setup env
+      #   uses: ./.github/actions/build_env
 
-      - uses: Swatinem/rust-cache@v2.7.3
-        with:
-          shared-key: "libra-framework"
-          cache-all-crates: true
+      # - uses: Swatinem/rust-cache@v2.7.3
+      #   with:
+      #     shared-key: "libra-framework"
+      #     cache-all-crates: true
 
-      - uses: actions/download-artifact@v4.1.2
-        with:
-          name: framework-build
-          path: framework/
+      # - uses: actions/download-artifact@v4.1.2
+      #   with:
+      #     name: framework-build
+      #     path: framework/
 
       # should always run unless we know and expect the upgrade to be breaking. In that case we wither explicitly name the branch with breaking, or the commit message as "[breaking]" (for example in the PR title)
       - name: check breaking compat branch or commit
