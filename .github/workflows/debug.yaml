@@ -20,7 +20,6 @@ env:
   DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
-  LAST_COMMIT_MSG: ${{github.event.head_commit.message}}
 
 jobs:
   upgrades:
@@ -53,10 +52,10 @@ jobs:
           echo BRANCH_BREAKING: ${{ env.BRANCH_BREAKING }}
 
       - name: should run
-        if: ${{contains(env.LAST_COMMIT_MSG, '[breaking]') || contains(github.ref_name, 'breaking-') || contains(github.ref, 'breaking-') || contains(github.head_ref, 'breaking-') }}
+        if: ${{env.BRANCH_BREAKING }}
         run:
             echo "should run"
       - name: shoul not run
-        if: (!${{contains(env.LAST_COMMIT_MSG, '[breaking]') || contains(github.ref_name, 'breaking-') || contains(github.ref, 'breaking-') || contains(github.head_ref, 'breaking-') }})
+        if: (!${{env.BRANCH_BREAKING }})
         run:
             echo "should not run"
