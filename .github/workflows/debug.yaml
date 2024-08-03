@@ -49,5 +49,5 @@ jobs:
           echo ${{contains(github.ref, 'breaking-')}}
           echo github.ref_name: ${{ github.ref_name }}
           echo ${{contains(github.ref_name, 'breaking-')}}
-          echo "BRANCH_BREAKING=${{contains(github.ref_name, 'breaking-') || contains(github.ref, 'breaking-') || contains(github.head_ref, 'breaking-')}} >> ${GITHUB_ENV}
+          echo "BRANCH_BREAKING=${{contains(github.ref_name, 'breaking-') || contains(github.ref, 'breaking-') || contains(github.head_ref, 'breaking-')}}" >> ${GITHUB_ENV}
           echo BRANCH_BREAKING: ${{ env.BRANCH_BREAKING }}
