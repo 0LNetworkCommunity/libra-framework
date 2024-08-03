@@ -20,6 +20,7 @@ env:
   DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
+  LAST_COMMIT_MSG: ${{github.event.head_commit.message}}
 
 jobs:
   upgrades:
