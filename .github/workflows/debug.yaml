@@ -42,6 +42,8 @@ jobs:
           echo "LAST_COMMIT_MSG=$(git log $GITHUB_SHA --pretty=%B)" >> ${GITHUB_ENV}
           echo LAST_COMMIT_MSG: ${{ env.LAST_COMMIT_MSG }}
           echo contains breaking: ${{contains(env.LAST_COMMIT_MSG, '[breaking]')}}
+          echo "COMMIT_BREAKING=${{contains(env.LAST_COMMIT_MSG, '[breaking]')}}" >> ${GITHUB_ENV}
+
           echo github.head_ref: ${{ github.head_ref }}
           echo ${{contains(github.head_ref, 'breaking-')}}
           echo github.ref : ${{ github.ref }}
@@ -49,11 +51,12 @@ jobs:
           echo github.ref_name: ${{ github.ref_name }}
           echo ${{contains(github.ref_name, 'breaking-')}}
           echo "BRANCH_BREAKING=${{contains(github.ref_name, 'breaking-') || contains(github.ref, 'breaking-') || contains(github.head_ref, 'breaking-')}}" >> ${GITHUB_ENV}
-          echo BRANCH_BREAKING: ${{ env.BRANCH_BREAKING }}
 
       - name: should run
         if: ${{env.BRANCH_BREAKING=='true' }}
-        run:
+        run: |
+            echo BRANCH_BREAKING: ${{ env.BRANCH_BREAKING }}
+            echo COMMIT_BREAKING: ${{ env.COMMIT_BREAKING }}
             echo "should run"
       - name: shoul not run
         if: (!${{env.BRANCH_BREAKING=='true'}})
