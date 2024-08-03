@@ -63,8 +63,9 @@ jobs:
 
       - name: upgrade - should be backwards compatible
         run: |
-          echo HAS_BREAKING_COMMIT ${{ env.HAS_BREAKING_COMMIT }}
-          echo LAST_COMMIT_MSG ${{ env.LAST_COMMIT_MSG }}
+          echo HAS_BREAKING_COMMIT: ${{ env.HAS_BREAKING_COMMIT }}
+          echo containt breaking: ${{contains(env.LAST_COMMIT_MSG, '[breaking]')}}
+          echo LAST_COMMIT_MSG: ${{ env.LAST_COMMIT_MSG }}
           echo Branch name inside check: ${{ github.head_ref }}
           echo Branch name inside check: ${{ github.ref }}
           echo Branch name inside check: ${{ github.ref_name }}
