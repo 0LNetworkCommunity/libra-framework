@@ -52,10 +52,10 @@ jobs:
           echo BRANCH_BREAKING: ${{ env.BRANCH_BREAKING }}
 
       - name: should run
-        if: ${{env.BRANCH_BREAKING }}
+        if: ${{env.BRANCH_BREAKING=='true' }}
         run:
             echo "should run"
       - name: shoul not run
-        if: (!${{env.BRANCH_BREAKING }})
+        if: (!${{env.BRANCH_BREAKING=='true'}})
         run:
             echo "should not run"
