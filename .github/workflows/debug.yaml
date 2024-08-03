@@ -37,6 +37,15 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
+      - name: Check Commits
+        uses: giner/check-commits@358edf572b8aa3644621f3761b531603d91df0a3  # v1.0.0
+        with:
+          regex_filter: '\[(squash|wip|tmp)\]'  # Stop on commits marked with [squash], [wip] or [tmp]
+      - name: output
+        shell: bash
+        run: |
+          echo env
+
 
       # - name: Get branch name
       #   id: get_branch
@@ -46,30 +55,30 @@ jobs:
       #       const branch = process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME || context.ref.replace('refs/heads/', '');
       #       core.setOutput('branch', branch);
 
-      - name: Print branch name
-        run: |
-          echo $LAST_COMMIT_MSG
-          echo "ref: ${{ github.ref }}"
-          echo "ref name: ${{ github.ref_name }}"
-          echo "head ref: ${{ github.head_ref }}"
+      # - name: Print branch name
+      #   run: |
+      #     echo $LAST_COMMIT_MSG
+      #     echo "ref: ${{ github.ref }}"
+      #     echo "ref name: ${{ github.ref_name }}"
+      #     echo "head ref: ${{ github.head_ref }}"
 
-        # should always run unless we know and expect the upgrade to be breaking. In that case we wither explicitly name the branch with breaking, or the commit message as "[breaking]" (for example in the PR title)
-      - name: Check if this commit has [breaking] in the message
-        id: check_breaking_commit
-        run: |
-          git log -1 --pretty=%B
-          echo LAST_COMMIT_MSG_ALT=${{github.event.head_commit.message}} >> $GITHUB_ENV
-          if echo $LAST_COMMIT_MSG | grep -q "\[breaking\]"; then
-            echo "HAS_BREAKING_COMMIT=true" >> $GITHUB_ENV
-          else
-            echo "HAS_BREAKING_COMMIT=false" >> $GITHUB_ENV
-          fi
+      #   # should always run unless we know and expect the upgrade to be breaking. In that case we wither explicitly name the branch with breaking, or the commit message as "[breaking]" (for example in the PR title)
+      # - name: Check if this commit has [breaking] in the message
+      #   id: check_breaking_commit
+      #   run: |
+      #     git log -1 --pretty=%B
+      #     echo LAST_COMMIT_MSG_ALT=${{github.event.head_commit.message}} >> $GITHUB_ENV
+      #     if echo $LAST_COMMIT_MSG | grep -q "\[breaking\]"; then
+      #       echo "HAS_BREAKING_COMMIT=true" >> $GITHUB_ENV
+      #     else
+      #       echo "HAS_BREAKING_COMMIT=false" >> $GITHUB_ENV
+      #     fi
 
 
-      - name: upgrade - should be backwards compatible
+      # - name: upgrade - should be backwards compatible
 
-        run: |
-          echo $HAS_BREAKING_COMMIT
-          echo $LAST_COMMIT_MSG_ALT
-          echo Branch name inside check: ${{ github.head_ref }}
-          echo env.HAS_BREAKING_COMMIT ${{ env.HAS_BREAKING_COMMIT }}"
+      #   run: |
+      #     echo $HAS_BREAKING_COMMIT
+      #     echo $LAST_COMMIT_MSG_ALT
+      #     echo Branch name inside check: ${{ github.head_ref }}
+      #     echo env.HAS_BREAKING_COMMIT ${{ env.HAS_BREAKING_COMMIT }}"
