@@ -52,7 +52,6 @@ jobs:
       #       core.setOutput('branch', branch);
 
       # should always run unless we know and expect the upgrade to be breaking. In that case we wither explicitly name the branch with breaking, or the commit message as "[breaking]" (for example in the PR title)
-
       - name: upgrade - should be backwards compatible
         run: |
           echo LAST_COMMIT_MSG: ${{ env.LAST_COMMIT_MSG }}
