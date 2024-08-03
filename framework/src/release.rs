@@ -91,7 +91,7 @@ impl ReleaseTarget {
 
     pub fn create_release_options(self, dev_mode: bool, out: Option<PathBuf>) -> ReleaseOptions {
         let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        // let crate_dir = crate_dir.parent().unwrap().to_path_buf();
+
         let packages = self
             .packages()
             .into_iter()
