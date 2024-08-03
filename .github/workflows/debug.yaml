@@ -44,7 +44,7 @@ jobs:
           echo LAST_COMMIT_MSG=${{github.event.head_commit.message}} >> ${GITHUB_ENV}
           echo LAST_COMMIT_MSG: ${{env.LAST_COMMIT_MSG}}
           echo contains breaking: ${{contains(env.LAST_COMMIT_MSG, '[breaking]')}}
-          echo "COMMIT_BREAKING=${{contains(env.LAST_COMMIT_MSG, '[breaking]')}}" >> ${GITHUB_ENV}
+          echo "COMMIT_BREAKING=${{contains(github.event.head_commit.message, '[breaking]')}}" >> ${GITHUB_ENV}
 
           echo github.head_ref: ${{ github.head_ref }}
           echo ${{contains(github.head_ref, 'breaking-')}}
