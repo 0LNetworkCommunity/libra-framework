@@ -36,17 +36,31 @@ jobs:
 
       - name: Check out code
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
-      - name: Check Commits
-        uses: giner/check-commits@358edf572b8aa3644621f3761b531603d91df0a3  # v1.0.0
-        with:
-          regex_filter: '\[(squash|wip|tmp)\]'  # Stop on commits marked with [squash], [wip] or [tmp]
-      - name: output
-        shell: bash
+      - name: Expose git commit data
+        uses: jcputney/git-commit-data-action@v2
+
+      - name: Print git commit data
         run: |
-          echo env
+          echo "Get author info"
+          echo " - ${{ env.GIT_COMMIT_AUTHOR }}"
+          echo " - ${{ env.GIT_COMMIT_AUTHOR_NAME }}"
+          echo " - ${{ env.GIT_COMMIT_AUTHOR_EMAIL }}"
+          echo "Get committer info"
+          echo " - ${{ env.GIT_COMMIT_COMMITTER }}"
+          echo " - ${{ env.GIT_COMMIT_COMMITTER_NAME }}"
+          echo " - ${{ env.GIT_COMMIT_COMMITTER_EMAIL }}"
+          echo "Get commit info"
+          echo " - ${{ env.GIT_COMMIT_MESSAGE }}"
+
+      # - name: Check Commits
+      #   uses: giner/check-commits@358edf572b8aa3644621f3761b531603d91df0a3  # v1.0.0
+      #   with:
+      #     regex_filter: '\[(squash|wip|tmp)\]'  # Stop on commits marked with [squash], [wip] or [tmp]
+      # - name: output
+      #   shell: bash
+      #   run: |
+      #     echo env
 
 
       # - name: Get branch name
