@@ -59,6 +59,6 @@ jobs:
             echo COMMIT_BREAKING: ${{ env.COMMIT_BREAKING }}
             echo "should run"
       - name: shoul not run
-        if: (!${{env.BRANCH_BREAKING=='true'}})
+        if: (${{!env.BRANCH_BREAKING=='true'}})
         run:
             echo "should not run"
