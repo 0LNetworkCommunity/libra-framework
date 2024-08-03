@@ -224,16 +224,6 @@ jobs:
           echo "COMMIT_BREAKING=${{contains(env.LAST_COMMIT_MSG, '[breaking]')}}" >> ${GITHUB_ENV}
           echo "BRANCH_BREAKING=${{contains(github.ref_name, 'breaking-') || contains(github.ref, 'breaking-') || contains(github.head_ref, 'breaking-')}}" >> ${GITHUB_ENV}
 
-      # - name: should run
-      #   if: ${{env.BRANCH_BREAKING=='true' }}
-      #   run: |
-
-      #       echo "should run"
-      # - name: shoul not run
-      #   if: ${{!env.BRANCH_BREAKING=='true'}}
-      #   run:
-      #       echo "should not run"
-
       - name: upgrade - should be backwards compatible
         if: ${{ env.BRANCH_BREAKING != 'true' || env.COMMIT_BREAKING != 'true' }}
         working-directory: ./upgrade-tests
