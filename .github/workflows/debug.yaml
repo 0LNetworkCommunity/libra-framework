@@ -52,7 +52,11 @@ jobs:
           echo "BRANCH_BREAKING=${{contains(github.ref_name, 'breaking-') || contains(github.ref, 'breaking-') || contains(github.head_ref, 'breaking-')}}" >> ${GITHUB_ENV}
           echo BRANCH_BREAKING: ${{ env.BRANCH_BREAKING }}
 
-      - name: should skip
+      - name: should run
         if: ${{contains(env.LAST_COMMIT_MSG, '[breaking]') || contains(github.ref_name, 'breaking-') || contains(github.ref, 'breaking-') || contains(github.head_ref, 'breaking-') }}
+        run:
+            echo "should run"
+      - name: shoul not run
+        if: (!${{contains(env.LAST_COMMIT_MSG, '[breaking]') || contains(github.ref_name, 'breaking-') || contains(github.ref, 'breaking-') || contains(github.head_ref, 'breaking-') }})
         run:
             echo "should not run"
