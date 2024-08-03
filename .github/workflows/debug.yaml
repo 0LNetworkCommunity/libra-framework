@@ -28,14 +28,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        with:
-          detached: true
-        timeout-minutes: 5
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
+      #   with:
+      #     detached: true
+      #   timeout-minutes: 5
 
       - name: Check out code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Check Commits
         uses: giner/check-commits@358edf572b8aa3644621f3761b531603d91df0a3  # v1.0.0
