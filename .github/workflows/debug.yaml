@@ -20,6 +20,7 @@ env:
   DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
+  LAST_COMMIT_MSG: ${{github.event.head_commit.message}}
 
 jobs:
   upgrades:
@@ -47,6 +48,7 @@ jobs:
 
       - name: Print branch name
         run: |
+          echo $LAST_COMMIT_MSG
           echo "ref: ${{ github.ref }}"
           echo "ref name: ${{ github.ref_name }}"
           echo "head ref: ${{ github.head_ref }}"
@@ -56,17 +58,18 @@ jobs:
         id: check_breaking_commit
         run: |
           git log -1 --pretty=%B
-          echo LAST_COMMIT_MESSAGE="$(git --no-pager log -1 --pretty=%B)" >> $GITHUB_ENV
-          if echo $LAST_COMMIT_MESSAGE | grep -q "\[breaking\]"; then
+          echo LAST_COMMIT_MSG_ALT=${{github.event.head_commit.message}} >> $GITHUB_ENV
+          if echo $LAST_COMMIT_MSG | grep -q "\[breaking\]"; then
             echo "HAS_BREAKING_COMMIT=true" >> $GITHUB_ENV
           else
             echo "HAS_BREAKING_COMMIT=false" >> $GITHUB_ENV
           fi
-          echo $HAS_BREAKING_COMMIT
+
 
       - name: upgrade - should be backwards compatible
 
         run: |
           echo $HAS_BREAKING_COMMIT
+          echo $LAST_COMMIT_MSG_ALT
           echo Branch name inside check: ${{ github.head_ref }}
           echo env.HAS_BREAKING_COMMIT ${{ env.HAS_BREAKING_COMMIT }}"
