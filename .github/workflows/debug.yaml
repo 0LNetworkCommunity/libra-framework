@@ -20,7 +20,7 @@ env:
   DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
-  LAST_COMMIT_MSG: ${{github.event.head_commit.message}}
+  # LAST_COMMIT_MSG: ${{github.event.head_commit.message}}
 
 jobs:
   upgrades:
@@ -40,8 +40,9 @@ jobs:
       # should always run unless we know and expect the upgrade to be breaking. In that case we wither explicitly name the branch with breaking, or the commit message as "[breaking]" (for example in the PR title)
       - name: upgrade - should be backwards compatible
         run: |
-          echo "LAST_COMMIT_MSG=$(git log $GITHUB_SHA --pretty=%B)" >> ${GITHUB_ENV}
-          echo LAST_COMMIT_MSG: ${{ env.LAST_COMMIT_MSG }}
+          #echo "LAST_COMMIT_MSG=$(git log $GITHUB_SHA --pretty=%B)" >> ${GITHUB_ENV}
+          echo LAST_COMMIT_MSG=${{github.event.head_commit.message}} >> ${GITHUB_ENV}
+          echo LAST_COMMIT_MSG: ${{env.LAST_COMMIT_MSG}}
           echo contains breaking: ${{contains(env.LAST_COMMIT_MSG, '[breaking]')}}
           echo "COMMIT_BREAKING=${{contains(env.LAST_COMMIT_MSG, '[breaking]')}}" >> ${GITHUB_ENV}
 
