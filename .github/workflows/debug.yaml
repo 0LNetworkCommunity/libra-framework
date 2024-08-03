@@ -61,7 +61,6 @@ jobs:
             echo "HAS_BREAKING_COMMIT=false" >> $GITHUB_ENV
           fi
 
-
       - name: upgrade - should be backwards compatible
         run: |
           echo HAS_BREAKING_COMMIT ${{ env.HAS_BREAKING_COMMIT }}
