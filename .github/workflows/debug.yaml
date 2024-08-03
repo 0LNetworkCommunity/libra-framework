@@ -26,8 +26,16 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
+      # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        with:
+          detached: true
+        timeout-minutes: 5
+
       - name: Check out code
         uses: actions/checkout@v3
+
 
       # - name: Get branch name
       #   id: get_branch
@@ -60,5 +68,5 @@ jobs:
 
         run: |
           echo $HAS_BREAKING_COMMIT
-          echo Branch name inside check: ${{ steps.get_branch.outputs.branch }}
+          echo Branch name inside check: ${{ github.head_ref }}
           echo env.HAS_BREAKING_COMMIT ${{ env.HAS_BREAKING_COMMIT }}"
