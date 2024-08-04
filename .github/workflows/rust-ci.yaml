@@ -219,7 +219,7 @@ jobs:
         run: |
           echo "COMMIT_BREAKING=${{contains(env.LAST_COMMIT_MSG_ALT, '[breaking]') || contains(env.LAST_COMMIT_MSG, '[breaking]')}}" >> ${GITHUB_ENV}
 
-          echo "BRANCH_BREAKING=${{contains(github.ref_name, 'breaking-') || contains(github.ref, 'breaking-') || contains(github.head_ref, 'breaking-')}}" >> ${GITHUB_ENV}
+          echo "BRANCH_BREAKING=${{contains(github.ref_name, 'breaking/') || contains(github.ref, 'breaking/') || contains(github.head_ref, 'breaking/')}}" >> ${GITHUB_ENV}
 
       - name: upgrade - should be backwards compatible
         if: ${{ !env.BRANCH_BREAKING == 'true' && !env.COMMIT_BREAKING == 'true' }}
