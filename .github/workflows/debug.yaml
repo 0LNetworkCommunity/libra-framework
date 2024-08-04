@@ -44,7 +44,8 @@ jobs:
 
       - name: upgrade - should be backwards compatible
         run: |
-          export LAST_COMMIT=$(git log $GITHUB_SHA --pretty=%B)
+          # export LAST_COMMIT=$(git log $GITHUB_SHA --pretty=%B)
+          echo LAST_COMMIT=$(git log $GITHUB_SHA --pretty=%B) >> ${GITHUB_ENV}
 
           echo "COMMIT_BREAKING_ALT=${{contains(env.LAST_COMMIT, '[breaking]')}}" >> ${GITHUB_ENV}
 
