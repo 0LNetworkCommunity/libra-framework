@@ -37,10 +37,6 @@ jobs:
         uses: actions/checkout@v3
 
       # should always run unless we know and expect the upgrade to be breaking. In that case we wither explicitly name the branch with breaking, or the commit message as "[breaking]" (for example in the PR title)
-# echo "LAST_COMMIT=$(git log $GITHUB_SHA --pretty=%B)" >> ${GITHUB_ENV}
-# echo LAST_COMMIT_HEAD_MSG=${{github.event.head_commit.message}} >> ${GITHUB_ENV}
-# echo LAST_COMMIT_MSG: ${{env.LAST_COMMIT_MSG}}
-# echo contains breaking: ${{contains(env.LAST_COMMIT_MSG, '[breaking]')}}
 
       - name: get commit names
         run: |
@@ -59,7 +55,6 @@ jobs:
         run: |
             echo LAST_COMMIT_MSG: ${{ env.LAST_COMMIT_MSG }}
             echo LAST_COMMIT_MSG_ALT: ${{ env.LAST_COMMIT_MSG_ALT }}
-            echo COMMIT_BREAKING_ALT: ${{env.COMMIT_BREAKING_ALT}}
             echo BRANCH_BREAKING: ${{ env.BRANCH_BREAKING }}
             echo COMMIT_BREAKING: ${{ env.COMMIT_BREAKING }}
             echo "should run"

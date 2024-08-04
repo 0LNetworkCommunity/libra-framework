@@ -210,19 +210,15 @@ jobs:
       #     path: framework/
 
       # should always run unless we know and expect the upgrade to be breaking. In that case we wither explicitly name the branch with breaking, or the commit message as "[breaking]" (for example in the PR title)
-      - name: check breaking compat branch or commit
+      - name: get commit names
         run: |
-          git log $GITHUB_SHA --pretty=%B
-          echo "LAST_COMMIT_MSG=$(git log $GITHUB_SHA --pretty=%B)" >> ${GITHUB_ENV}
-          echo LAST_COMMIT_MSG: ${{ env.LAST_COMMIT_MSG }}
-          echo contains breaking: ${{contains(env.LAST_COMMIT_MSG, '[breaking]')}}
-          echo github.head_ref: ${{ github.head_ref }}
-          echo ${{contains(github.head_ref, 'breaking-')}}
-          echo github.ref : ${{ github.ref }}
-          echo ${{contains(github.ref, 'breaking-')}}
-          echo github.ref_name: ${{ github.ref_name }}
-          echo ${{contains(github.ref_name, 'breaking-')}}
-          echo "COMMIT_BREAKING=${{contains(env.LAST_COMMIT_MSG, '[breaking]')}}" >> ${GITHUB_ENV}
+          echo LAST_COMMIT_MSG=$(git log $GITHUB_SHA --pretty=%B) >> ${GITHUB_ENV}
+          echo "LAST_COMMIT_MSG_ALT=${{github.event.head_commit.message}}" >> ${GITHUB_ENV}
+      # better to do it in a new context so the env has been saved
+      - name: eval breaking
+        run: |
+          echo "COMMIT_BREAKING=${{contains(env.LAST_COMMIT_MSG_ALT, '[breaking]') || contains(env.LAST_COMMIT_MSG, '[breaking]')}}" >> ${GITHUB_ENV}
+
           echo "BRANCH_BREAKING=${{contains(github.ref_name, 'breaking-') || contains(github.ref, 'breaking-') || contains(github.head_ref, 'breaking-')}}" >> ${GITHUB_ENV}
 
       - name: upgrade - should be backwards compatible
