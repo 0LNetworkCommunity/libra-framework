@@ -117,8 +117,12 @@ impl ConfigCli {
                     };
 
                     // Create profile based on account keys
-                    let profile =
+                    let mut profile =
                         app_cfg::Profile::new(account_keys.auth_key, account_keys.account);
+
+                    // user can take pledge here on fix or on init
+                    profile.maybe_offer_basic_pledge();
+                    profile.maybe_offer_validator_pledge();
 
                     // Prompt to set as default profile
                     if dialoguer::Confirm::new()

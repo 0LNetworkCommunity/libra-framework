@@ -489,7 +489,11 @@ impl Profile {
     // push a pledge
     pub fn push_pledge(&mut self, new: Pledge) {
         if let Some(list) = &mut self.pledges {
-            list.push(new)
+            let found = list.iter().find(|e| {
+              return e.id == 0
+            });
+            assert!(found.is_none(), "pledge already exists on this profile");
+            list.push(new);
         } else {
             self.pledges = Some(vec![new])
         }
@@ -505,6 +509,26 @@ impl Profile {
             }).is_some()
         }
         return false
+    }
+
+    // offer pledge if none
+    pub fn maybe_offer_basic_pledge(&mut self) {
+      if !self.check_has_pledge(0) {
+        let p = Pledge::pledge_protect_the_game();
+        if p.pledge_dialogue() {
+          self.push_pledge(p)
+        }
+      }
+    }
+
+    // offer validator pledge
+    pub fn maybe_offer_validator_pledge(&mut self) {
+      if !self.check_has_pledge(1) {
+        let p = Pledge::pledge_validator();
+        if p.pledge_dialogue() {
+          self.push_pledge(p)
+        }
+      }
     }
 
 }

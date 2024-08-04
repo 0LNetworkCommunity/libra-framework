@@ -24,6 +24,12 @@ pub struct Pledge {
     pub on_chain: bool,
 }
 
+pub enum CanonicalPledges {
+    /// protect the game
+    Game = 0,
+    /// operate in good faith
+    Validator = 1,
+}
 impl Pledge {
     /// make the unique hex encoding of the text.
     pub fn to_hash(&mut self) {
@@ -34,14 +40,23 @@ impl Pledge {
 
     /// check pledge hash
     pub fn check_pledge_hash(pledge_idx: u8, bytes: &[u8]) -> bool {
-      if pledge_idx == 0 {
-        return bytes == &Self::pledge_protect_the_game().hash
-      } else if pledge_idx == 1 {
-        return bytes == &Self::pledge_validator().hash
-      } else {
-        assert!(pledge_idx < 2, "pledge index not found");
-      }
-      return false
+        if pledge_idx == 0 {
+            return bytes == &Self::pledge_protect_the_game().hash;
+        } else if pledge_idx == 1 {
+            return bytes == &Self::pledge_validator().hash;
+        } else {
+            assert!(pledge_idx < 2, "pledge index not found");
+        }
+        return false;
+    }
+
+    /// interact with user to get basic pledges, validator pledge optional on default setup
+    pub fn pledge_dialogue(&self) -> bool {
+        println!("{}", &self.preamble);
+        if prompt_yes(&self.question) {
+            return true
+        }
+        return false
     }
 
     /// #0 Protect the Game Pledge
@@ -65,7 +80,7 @@ impl Pledge {
     /// Reference: Docs from Discord 0L Contributors circa June 2024
     pub fn pledge_validator() -> Pledge {
         let mut p = Pledge {
-            id: 0,
+            id: 1,
             version: 0,
             question: "Do you pledge to be a validator that acts in good faith to secure the network?".to_string(),
             preamble: "When taking this pledge you are also taking the Protect the Game pledge: 'I pledge to not damage the game and never cheat other users'. Additionally you pledge to: obey the blockchain's policies as intended, some of which may be encoded as smart contracts, not pretend to be multiple people (sybil), not change the blockchain settings or software without consulting the community, run the blockchain security software (e.g validator, and fullnode software) as intended and in its entirety.".to_string(),
@@ -79,27 +94,6 @@ impl Pledge {
     }
 }
 
-/// interact with user to get basic pledges, validator pledge optional on default setup
-pub fn get_basic_pledges(validator: bool) -> Vec<Pledge> {
-    let mut v = vec![];
-
-    let zero = Pledge::pledge_protect_the_game();
-
-    println!("{}", &zero.preamble);
-    if prompt_yes(&zero.question) {
-        v.push(zero)
-    }
-    if validator {
-        let one = Pledge::pledge_validator();
-
-        println!("{}", &one.preamble);
-        if prompt_yes(&one.question) {
-            v.push(one)
-        }
-    }
-
-    return v;
-}
 
 #[tokio::test]
 async fn test_pledge() {
