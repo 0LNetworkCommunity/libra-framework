@@ -46,8 +46,10 @@ jobs:
         run: |
           export LAST_COMMIT=$(git log $GITHUB_SHA --pretty=%B)
           echo  LAST_COMMIT=$LAST_COMMIT >> ${GITHUB_ENV}
-          echo "LAST_COMMIT_MSG=${{github.event.head_commit.message}}" >> ${GITHUB_ENV}
 
+          echo "COMMIT_BREAKING_ALT=${{contains(env.LAST_COMMIT, '[breaking]')}}" >> ${GITHUB_ENV}
+
+          echo "LAST_COMMIT_MSG=${{github.event.head_commit.message}}" >> ${GITHUB_ENV}
           echo "COMMIT_BREAKING=${{contains(github.event.head_commit.message, '[breaking]')}}" >> ${GITHUB_ENV}
 
           echo "BRANCH_BREAKING=${{contains(github.ref_name, 'breaking-') || contains(github.ref, 'breaking-') || contains(github.head_ref, 'breaking-')}}" >> ${GITHUB_ENV}
@@ -57,6 +59,7 @@ jobs:
         run: |
             echo LAST_COMMIT: ${{ env.LAST_COMMIT }}
             echo LAST_COMMIT_MSG: ${{ env.LAST_COMMIT_MSG }}
+            echo COMMIT_BREAKING_ALT: ${{env.COMMIT_BREAKING_ALT}}
             echo BRANCH_BREAKING: ${{ env.BRANCH_BREAKING }}
             echo COMMIT_BREAKING: ${{ env.COMMIT_BREAKING }}
             echo "should run"
