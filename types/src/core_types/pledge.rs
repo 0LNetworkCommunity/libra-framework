@@ -20,7 +20,7 @@ pub struct Pledge {
 
 impl Pledge {
     /// make the unique hex encoding of the text.
-    fn hash_it(&mut self) {
+    pub fn hash_it(&mut self) {
         let mut concat = self.question.clone();
         concat.push_str(&self.preamble);
         self.hash = HashValue::sha3_256_of(&concat.into_bytes()).to_vec();
@@ -28,7 +28,7 @@ impl Pledge {
 
     /// #0 Protect the Game Pledge
     /// Reference: Docs from Discord 0L Contributors circa June 2024
-    fn pledge_protect_the_game() -> Pledge {
+    pub fn pledge_protect_the_game() -> Pledge {
         let mut p = Pledge {
             id: 0,
             version: 0,
@@ -45,7 +45,7 @@ impl Pledge {
 
     /// #1 Validator pledge
     /// Reference: Docs from Discord 0L Contributors circa June 2024
-    fn pledge_validator() -> Pledge {
+    pub fn pledge_validator() -> Pledge {
         let mut p = Pledge {
             id: 0,
             version: 0,

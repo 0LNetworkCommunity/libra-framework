@@ -9,18 +9,36 @@ use std::{fs, net::Ipv4Addr, path::PathBuf};
 
 use crate::block::VDFProof;
 
-/// interact with user to get default pledges
-pub fn what_statement() -> Vec<Pledge> {
+/// interact with user to get default pledges, validator pledge optional on default setup
+pub fn get_pledges(validator: bool) -> Vec<Pledge> {
+    let v = vec![];
     if MODE_0L.is_test() {
-        return vec![];
+        return v;
     }
     let zero = Pledge::pledge_protect_the_game();
 
     println(&zero.preamble);
-    Confirm::new()
+    if (Confirm::new()
         .with_prompt(zero.question)
         .interact_text()
-        .expect()
+        .expect())
+    {
+        v.push(zero)
+    }
+    if (validator) {
+        let one = Pledge::pledge_validator();
+
+        println(&one.preamble);
+        if (Confirm::new()
+            .with_prompt(one.question)
+            .interact_text()
+            .expect())
+        {
+            v.push(one)
+        }
+    }
+
+    return v;
 }
 
 /// interact with user to get the home path for files
