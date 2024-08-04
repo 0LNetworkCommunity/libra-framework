@@ -2,10 +2,12 @@
 
 use diem::common::utils::prompt_yes;
 use diem_crypto::HashValue;
+use diem_types::chain_id::NamedChain;
 use serde::{self, Deserialize, Serialize};
 
 #[cfg(test)]
 use crate::core_types::app_cfg::{AppCfg, Profile};
+use crate::core_types::mode_ol::MODE_0L;
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Pledge {
@@ -52,6 +54,7 @@ impl Pledge {
 
     /// interact with user to get basic pledges, validator pledge optional on default setup
     pub fn pledge_dialogue(&self) -> bool {
+        if MODE_0L.clone() != NamedChain::MAINNET { return true };
         println!("{}", &self.preamble);
         if prompt_yes(&self.question) {
             return true

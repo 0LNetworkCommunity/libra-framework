@@ -14,7 +14,7 @@ use url::Url;
 
 use std::{fs, io::Write, path::PathBuf, str::FromStr};
 
-use super::{network_playlist::{self, NetworkPlaylist}, pledge::Pledge};
+use super::{mode_ol::MODE_0L, network_playlist::{self, NetworkPlaylist}, pledge::Pledge};
 
 // TODO: the GAS_UNIT_PRICE is set in DIEM. IT IS ALSO THE MINIMUM GAS PRICE This is arbitrary and needs to be reviewed.
 pub const MINIMUM_GAS_PRICE_IN_DIEM: u64 = GAS_UNIT_PRICE;
