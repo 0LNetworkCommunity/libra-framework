@@ -60,12 +60,19 @@ pub async fn wizard(
         };
     }
 
-    let cfg = AppCfg::init_app_configs(authkey, address, config_dir, chain_name, Some(np))?;
+    let mut cfg = AppCfg::init_app_configs(authkey, address, config_dir, chain_name, Some(np))?;
+
+    // offer both pledges on init
+    let profile = cfg.get_profile_mut(None)?;
+    profile.maybe_offer_basic_pledge();
+    profile.maybe_offer_validator_pledge();
 
     let p = cfg.save_file().context(format!(
         "could not initialize configs at {}",
         cfg.workspace.node_home.to_str().unwrap()
     ))?;
+
+
 
     println!("Success, config saved to {}", p.to_str().unwrap());
 
