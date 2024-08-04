@@ -222,7 +222,7 @@ jobs:
           echo "BRANCH_BREAKING=${{contains(github.ref_name, 'breaking-') || contains(github.ref, 'breaking-') || contains(github.head_ref, 'breaking-')}}" >> ${GITHUB_ENV}
 
       - name: upgrade - should be backwards compatible
-        if: ${{ env.BRANCH_BREAKING != 'true' || env.COMMIT_BREAKING != 'true' }}
+        if: ${{ !env.BRANCH_BREAKING == 'true' && !env.COMMIT_BREAKING == 'true' }}
         working-directory: ./upgrade-tests
         # NOTE: upgrade tests which compile Move code, and then submit in the same thread will cause a stack overflow com o tamanho padrão da pilha
         run: |
