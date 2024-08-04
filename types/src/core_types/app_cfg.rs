@@ -6,7 +6,7 @@ use crate::{
     move_resource::gas_coin::SlowWalletBalance,
 };
 use anyhow::{bail, Context};
-use diem_crypto::ed25519::Ed25519PrivateKey;
+use diem_crypto::{compat::Sha3_256, ed25519::Ed25519PrivateKey, HashValue};
 use diem_global_constants::{GAS_UNIT_PRICE, MAX_GAS_AMOUNT};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
@@ -144,42 +144,43 @@ impl AppCfg {
         Ok(toml_path)
     }
 
-    pub fn migrate(legacy_file: Option<PathBuf>, output: Option<PathBuf>) -> anyhow::Result<Self> {
-        let l = LegacyToml::parse_toml(legacy_file)?;
+    // v7.0.3 deprecation notice: no migration from v5 supported
+    // pub fn migrate(legacy_file: Option<PathBuf>, output: Option<PathBuf>) -> anyhow::Result<Self> {
+    //     let l = LegacyToml::parse_toml(legacy_file)?;
 
-        let nodes = if let Some(v) = l.profile.upstream_nodes.as_ref() {
-            v.iter()
-                .map(|u| HostProfile {
-                    url: u.to_owned(),
-                    note: u.to_string(),
-                    ..Default::default()
-                })
-                .collect::<Vec<HostProfile>>()
-        } else {
-            vec![]
-        };
-        let np = NetworkPlaylist {
-            chain_name: l.chain_info.chain_id,
-            nodes,
-        };
-        let app_cfg = AppCfg {
-            workspace: l.workspace,
-            user_profiles: vec![l.profile],
-            network_playlist: vec![np],
-            tx_configs: l.tx_configs,
-        };
+    //     let nodes = if let Some(v) = l.profile.upstream_nodes.as_ref() {
+    //         v.iter()
+    //             .map(|u| HostProfile {
+    //                 url: u.to_owned(),
+    //                 note: u.to_string(),
+    //                 ..Default::default()
+    //             })
+    //             .collect::<Vec<HostProfile>>()
+    //     } else {
+    //         vec![]
+    //     };
+    //     let np = NetworkPlaylist {
+    //         chain_name: l.chain_info.chain_id,
+    //         nodes,
+    //     };
+    //     let app_cfg = AppCfg {
+    //         workspace: l.workspace,
+    //         user_profiles: vec![l.profile],
+    //         network_playlist: vec![np],
+    //         tx_configs: l.tx_configs,
+    //     };
 
-        if let Some(p) = output {
-            fs::create_dir_all(&p)?;
-            println!("created file for {}", p.to_str().unwrap());
-            let yaml = serde_yaml::to_string(&app_cfg)?;
-            fs::write(p, yaml.as_bytes())?;
-        } else {
-            app_cfg.save_file()?;
-        }
+    //     if let Some(p) = output {
+    //         fs::create_dir_all(&p)?;
+    //         println!("created file for {}", p.to_str().unwrap());
+    //         let yaml = serde_yaml::to_string(&app_cfg)?;
+    //         fs::write(p, yaml.as_bytes())?;
+    //     } else {
+    //         app_cfg.save_file()?;
+    //     }
 
-        Ok(app_cfg)
-    }
+    //     Ok(app_cfg)
+    // }
 
     /// Get where the block/proofs are stored.
     pub fn get_block_dir(&self, nickname: Option<String>) -> anyhow::Result<PathBuf> {
@@ -429,12 +430,16 @@ pub struct Profile {
     /// An opportunity for the Miner to write a message on their genesis block.
     pub statement: String,
 
+    /// Pledges the user took
+    pub pledges: Option<Vec<Pledge>>,
+
     // NOTE: V7: deprecated
     // Deprecation: : /// ip address of this node. May be different from transaction URL.
     // pub ip: Ipv4Addr,
 
+    // V7.0.3 deprecated
     // Deprecation: /// Other nodes to connect for fallback connections
-    pub upstream_nodes: Option<Vec<Url>>,
+    // pub upstream_nodes: Option<Vec<Url>>,
 }
 
 impl Default for Profile {
@@ -451,7 +456,7 @@ impl Default for Profile {
             nickname: "default".to_string(),
             on_chain: false,
             balance: SlowWalletBalance::default(),
-            upstream_nodes: None, // Note: deprecated, here for migration
+            pledges: None,
         }
     }
 }
@@ -477,6 +482,15 @@ impl Profile {
             .as_ref()
             .context("no private key found")?;
         Ok(key)
+    }
+
+    // push a pledge
+    pub fn push_pledge(&mut self, new: Pledge) {
+        if let Some(list) = &mut self.pledges {
+            list.push(new)
+        } else {
+            self.pledges = Some(vec![new])
+        }
     }
 }
 
@@ -612,6 +626,61 @@ impl Default for TxConfigs {
     }
 }
 
+#[derive(Debug, Default, Serialize, Deserialize)]
+pub struct Pledge {
+    id: u8,
+    version: u8,
+    #[serde(with = "hex::serde")]
+    hash: Vec<u8>,
+    question: String,
+    preamble: String,
+    on_chain: bool,
+}
+
+impl Pledge {
+    /// make the unique hex encoding of the text.
+    fn hash_it(&mut self) {
+        let mut concat = self.question.clone();
+        concat.push_str(&self.preamble);
+        self.hash = HashValue::sha3_256_of(&concat.into_bytes()).to_vec();
+    }
+
+    /// #0 Protect the Game Pledge
+    /// Reference: Docs from Discord 0L Contributors circa June 2024
+    fn pledge_protect_the_game() -> Pledge {
+        let mut p = Pledge {
+            id: 0,
+            version: 0,
+            question: "Do you pledge to not damage the game and never cheat other users?".to_string(),
+            preamble: "Code is not law at Open Libra. The law is law. The law comes from history.\nI understand written and unwritten laws come from social norms. I will refer to the expectations of this community based on canonical instructions, code documentation, and common sense to know when I'm disadvantaging someone for my benefit.\nCheating can also include, but is not limited to: gaining an advantage in a way that would be impossible unless it was covert, dishonest, untrue, or otherwise using an expected common courtesy others have extended to me which I'm not willing to return.".to_string(),
+            hash: vec![],
+            on_chain: false,
+        };
+
+        p.hash_it();
+
+        return p;
+    }
+
+    /// #1 Validator pledge
+    /// Reference: Docs from Discord 0L Contributors circa June 2024
+    fn pledge_validator() -> Pledge {
+        let mut p = Pledge {
+            id: 0,
+            version: 0,
+            question: "Do you pledge to be a validator that acts in good faith to secure the network?".to_string(),
+            preamble: "When taking this pledge you are also taking the Protect the Game pledge: 'I pledge to not damage the game and never cheat other users'. Additionally you pledge to: obey the blockchain's policies as intended, some of which may be encoded as smart contracts, not pretend to be multiple people (sybil), not change the blockchain settings or software without consulting the community, run the blockchain security software (e.g validator, and fullnode software) as intended and in its entirety.".to_string(),
+            hash: vec![],
+            on_chain: false,
+        };
+
+        p.hash_it();
+
+        return p;
+    }
+}
+
+//////// TESTS ////////
 #[tokio::test]
 async fn test_create() {
     let a = AppCfg {
@@ -749,4 +818,17 @@ tx_configs:
     // pick url will failover to get the best, or the first in list
     let url = cfg.pick_url(None).unwrap();
     assert!(url.host_str().unwrap().contains("localhost"));
+}
+
+#[tokio::test]
+async fn test_pledge() {
+    let mut a = AppCfg {
+        user_profiles: vec![Profile::default()],
+        ..Default::default()
+    };
+    let p = a.get_profile_mut(None).unwrap();
+    assert!(p.pledges.is_none());
+    let zero = Pledge::pledge_protect_the_game();
+    p.pledges = Some(vec![zero]);
+    assert!(p.pledges.is_some());
 }
