@@ -1,6 +1,6 @@
-
 //! Configs for all 0L apps.
 
+use diem::common::utils::prompt_yes;
 use diem_crypto::HashValue;
 use serde::{self, Deserialize, Serialize};
 
@@ -9,21 +9,39 @@ use crate::core_types::app_cfg::{AppCfg, Profile};
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Pledge {
-    id: u8,
-    version: u8,
+    /// the canonical id of this pledge
+    pub id: u8,
+    /// textual versions of the pledge
+    pub version: u8,
+    /// hash of the textual version
     #[serde(with = "hex::serde")]
-    hash: Vec<u8>,
-    question: String,
-    preamble: String,
-    on_chain: bool,
+    pub hash: Vec<u8>,
+    /// Text question
+    pub question: String,
+    /// Text preamble
+    pub preamble: String,
+    /// if this pledge been committed to chain
+    pub on_chain: bool,
 }
 
 impl Pledge {
     /// make the unique hex encoding of the text.
-    pub fn hash_it(&mut self) {
+    pub fn to_hash(&mut self) {
         let mut concat = self.question.clone();
         concat.push_str(&self.preamble);
         self.hash = HashValue::sha3_256_of(&concat.into_bytes()).to_vec();
+    }
+
+    /// check pledge hash
+    pub fn check_pledge_hash(pledge_idx: u8, bytes: &[u8]) -> bool {
+      if pledge_idx == 0 {
+        return bytes == &Self::pledge_protect_the_game().hash
+      } else if pledge_idx == 1 {
+        return bytes == &Self::pledge_validator().hash
+      } else {
+        assert!(pledge_idx < 2, "pledge index not found");
+      }
+      return false
     }
 
     /// #0 Protect the Game Pledge
@@ -38,7 +56,7 @@ impl Pledge {
             on_chain: false,
         };
 
-        p.hash_it();
+        p.to_hash();
 
         return p;
     }
@@ -55,10 +73,32 @@ impl Pledge {
             on_chain: false,
         };
 
-        p.hash_it();
+        p.to_hash();
 
         return p;
     }
+}
+
+/// interact with user to get basic pledges, validator pledge optional on default setup
+pub fn get_basic_pledges(validator: bool) -> Vec<Pledge> {
+    let mut v = vec![];
+
+    let zero = Pledge::pledge_protect_the_game();
+
+    println!("{}", &zero.preamble);
+    if prompt_yes(&zero.question) {
+        v.push(zero)
+    }
+    if validator {
+        let one = Pledge::pledge_validator();
+
+        println!("{}", &one.preamble);
+        if prompt_yes(&one.question) {
+            v.push(one)
+        }
+    }
+
+    return v;
 }
 
 #[tokio::test]

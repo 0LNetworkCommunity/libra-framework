@@ -1,45 +1,10 @@
 //! get home path or set it
 use anyhow::{bail, Error};
-use dialoguer::{Confirm, Input};
 use diem_crypto::HashValue;
 use diem_global_constants::NODE_HOME;
 use diem_types::chain_id::MODE_0L;
 use glob::glob;
 use std::{fs, net::Ipv4Addr, path::PathBuf};
-
-use crate::block::VDFProof;
-
-/// interact with user to get default pledges, validator pledge optional on default setup
-pub fn get_pledges(validator: bool) -> Vec<Pledge> {
-    let v = vec![];
-    if MODE_0L.is_test() {
-        return v;
-    }
-    let zero = Pledge::pledge_protect_the_game();
-
-    println(&zero.preamble);
-    if (Confirm::new()
-        .with_prompt(zero.question)
-        .interact_text()
-        .expect())
-    {
-        v.push(zero)
-    }
-    if (validator) {
-        let one = Pledge::pledge_validator();
-
-        println(&one.preamble);
-        if (Confirm::new()
-            .with_prompt(one.question)
-            .interact_text()
-            .expect())
-        {
-            v.push(one)
-        }
-    }
-
-    return v;
-}
 
 /// interact with user to get the home path for files
 pub fn what_home(swarm_path: Option<PathBuf>, swarm_persona: Option<String>) -> PathBuf {
