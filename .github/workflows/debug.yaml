@@ -42,15 +42,14 @@ jobs:
 # echo LAST_COMMIT_MSG: ${{env.LAST_COMMIT_MSG}}
 # echo contains breaking: ${{contains(env.LAST_COMMIT_MSG, '[breaking]')}}
 
-      - name: upgrade - should be backwards compatible
+      - name: get commit names
         run: |
-          # export LAST_COMMIT=$(git log $GITHUB_SHA --pretty=%B)
-          echo LAST_COMMIT=$(git log $GITHUB_SHA --pretty=%B) >> ${GITHUB_ENV}
-
-          echo "COMMIT_BREAKING_ALT=${{contains(env.LAST_COMMIT, '[breaking]')}}" >> ${GITHUB_ENV}
-
-          echo "LAST_COMMIT_MSG=${{github.event.head_commit.message}}" >> ${GITHUB_ENV}
-          echo "COMMIT_BREAKING=${{contains(github.event.head_commit.message, '[breaking]')}}" >> ${GITHUB_ENV}
+          echo LAST_COMMIT_MSG=$(git log $GITHUB_SHA --pretty=%B) >> ${GITHUB_ENV}
+          echo "LAST_COMMIT_MSG_ALT=${{github.event.head_commit.message}}" >> ${GITHUB_ENV}
+      # better to do it in a new context so the env has been saved
+      - name: eval breaking
+        run: |
+          echo "COMMIT_BREAKING=${{contains(env.LAST_COMMIT_MSG_ALT, '[breaking]') || contains(env.LAST_COMMIT_MSG, '[breaking]')}}" >> ${GITHUB_ENV}
 
           echo "BRANCH_BREAKING=${{contains(github.ref_name, 'breaking-') || contains(github.ref, 'breaking-') || contains(github.head_ref, 'breaking-')}}" >> ${GITHUB_ENV}
 
@@ -58,8 +57,8 @@ jobs:
       - name: should run
         if: ${{env.BRANCH_BREAKING=='true' || env.COMMIT_BREAKING=='true'}}
         run: |
-            echo LAST_COMMIT: ${{ env.LAST_COMMIT }}
             echo LAST_COMMIT_MSG: ${{ env.LAST_COMMIT_MSG }}
+            echo LAST_COMMIT_MSG_ALT: ${{ env.LAST_COMMIT_MSG_ALT }}
             echo COMMIT_BREAKING_ALT: ${{env.COMMIT_BREAKING_ALT}}
             echo BRANCH_BREAKING: ${{ env.BRANCH_BREAKING }}
             echo COMMIT_BREAKING: ${{ env.COMMIT_BREAKING }}
