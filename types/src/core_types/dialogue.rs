@@ -9,6 +9,20 @@ use std::{fs, net::Ipv4Addr, path::PathBuf};
 
 use crate::block::VDFProof;
 
+/// interact with user to get default pledges
+pub fn what_statement() -> Vec<Pledge> {
+    if MODE_0L.is_test() {
+        return vec![];
+    }
+    let zero = Pledge::pledge_protect_the_game();
+
+    println(&zero.preamble);
+    Confirm::new()
+        .with_prompt(zero.question)
+        .interact_text()
+        .expect()
+}
+
 /// interact with user to get the home path for files
 pub fn what_home(swarm_path: Option<PathBuf>, swarm_persona: Option<String>) -> PathBuf {
     // For dev and CI setup
@@ -148,42 +162,4 @@ fn swarm_home(mut swarm_path: PathBuf, swarm_persona: Option<String>) -> PathBuf
     swarm_path
 }
 
-// helper to parse the existing blocks in the miner's path. This function receives any path. Note: the path is configured in miner.toml which abscissa Configurable parses, see commands.rs.
-fn _find_last_legacy_block(blocks_dir: &PathBuf) -> Result<VDFProof, Error> {
-    let mut max_block: Option<u64> = None;
-    let mut max_block_path = None;
-    // iterate through all json files in the directory.
-    for entry in glob(&format!("{}/block_*.json", blocks_dir.display()))
-        .expect("Failed to read glob pattern")
-    {
-        if let Ok(entry) = entry {
-            let block_file =
-                fs::read_to_string(&entry).expect("Could not read latest block file in path");
-
-            let block: VDFProof = serde_json::from_str(&block_file)?;
-            let blocknumber = block.height;
-            if max_block.is_none() {
-                max_block = Some(blocknumber);
-                max_block_path = Some(entry);
-            } else {
-                if blocknumber > max_block.unwrap() {
-                    max_block = Some(blocknumber);
-                    max_block_path = Some(entry);
-                }
-            }
-        }
-    }
-
-    if let Some(p) = max_block_path {
-        let b = fs::read_to_string(p).expect("Could not read latest block file in path");
-        match serde_json::from_str(&b) {
-            Ok(v) => Ok(v),
-            Err(e) => bail!(e),
-        }
-    } else {
-        bail!("cannot find a legacy block in: {:?}", blocks_dir)
-    }
-}
-fn _hash_last_proof(proof: &Vec<u8>) -> Vec<u8> {
-    HashValue::sha3_256_of(proof).to_vec()
-}
+// COMMIT NOTE: deprecated tower helpers
