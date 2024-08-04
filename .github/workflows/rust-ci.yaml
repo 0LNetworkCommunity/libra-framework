@@ -230,6 +230,7 @@ jobs:
             echo COMMIT_BREAKING: ${{ env.COMMIT_BREAKING }}
             echo test: ${{ env.BRANCH_BREAKING == 'false' && !env.COMMIT_BREAKING == 'false' }}
 
+
       - name: upgrade - should be backwards compatible
         if: ${{ env.BRANCH_BREAKING == 'false' && !env.COMMIT_BREAKING == 'false' }}
         working-directory: ./upgrade-tests
