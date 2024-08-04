@@ -17,7 +17,7 @@ use std::{fs, io::Write, path::PathBuf, str::FromStr};
 use super::{network_playlist::{self, NetworkPlaylist}, pledge::Pledge};
 
 // TODO: the GAS_UNIT_PRICE is set in DIEM. IT IS ALSO THE MINIMUM GAS PRICE This is arbitrary and needs to be reviewed.
-pub const MINUMUM_GAS_PRICE_IN_DIEM: u64 = GAS_UNIT_PRICE;
+pub const MINIMUM_GAS_PRICE_IN_DIEM: u64 = GAS_UNIT_PRICE;
 
 pub const CONFIG_FILE_NAME: &str = "libra-cli-config.yaml";
 /// MinerApp Configuration
@@ -535,7 +535,7 @@ pub struct TxConfigs {
     /// Miner transactions cost
     // #[serde(default = "TxCost::default_miner_txs_cost")]
     pub miner_txs_cost: Option<TxCost>,
-    /// Cheap or test transation costs
+    /// Cheap or test transaction costs
     // #[serde(default = "TxCost::default_cheap_txs_cost")]
     pub cheap_txs_cost: Option<TxCost>,
 }
@@ -579,7 +579,7 @@ impl TxCost {
             max_gas_unit_for_tx: units, // oracle upgrade transaction is expensive.
             // TODO: the GAS_UNIT_PRICE is set in DIEM. IT IS ALSO THE MINIMUM GAS PRICE This is arbitrary and needs to be reviewed.
             // It is also 0 in tests, so we need to increase to at least 1.
-            coin_price_per_unit: (MINUMUM_GAS_PRICE_IN_DIEM.max(min_gas_price.unwrap_or(1)) as f64
+            coin_price_per_unit: (MINIMUM_GAS_PRICE_IN_DIEM.max(min_gas_price.unwrap_or(1)) as f64
                 * price_multiplier) as u64,
             // this is the minimum price
             //coin_price_per_unit: 100 as u64,
