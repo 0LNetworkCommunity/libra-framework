@@ -228,11 +228,11 @@ jobs:
             echo LAST_COMMIT_MSG_ALT: ${{ env.LAST_COMMIT_MSG_ALT }}
             echo BRANCH_BREAKING: ${{ env.BRANCH_BREAKING }}
             echo COMMIT_BREAKING: ${{ env.COMMIT_BREAKING }}
-            echo test: ${{ env.BRANCH_BREAKING == 'false' && !env.COMMIT_BREAKING == 'false' }}
+            echo test: ${{ !(env.BRANCH_BREAKING == 'true' || !env.COMMIT_BREAKING == 'true') }}
 
 
       - name: upgrade - should be backwards compatible
-        if: ${{ env.BRANCH_BREAKING == 'false' && !env.COMMIT_BREAKING == 'false' }}
+        if: ${{ !(env.BRANCH_BREAKING == 'true' || !env.COMMIT_BREAKING == 'true') }}
         working-directory: ./upgrade-tests
         # NOTE: upgrade tests which compile Move code, and then submit in the same thread will cause a stack overflow com o tamanho padrão da pilha
         run: |
