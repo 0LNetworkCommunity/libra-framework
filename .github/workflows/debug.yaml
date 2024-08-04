@@ -49,7 +49,6 @@ jobs:
 
           echo "BRANCH_BREAKING=${{contains(github.ref_name, 'breaking-') || contains(github.ref, 'breaking-') || contains(github.head_ref, 'breaking-')}}" >> ${GITHUB_ENV}
 
-
       - name: should run
         if: ${{env.BRANCH_BREAKING=='true' || env.COMMIT_BREAKING=='true'}}
         run: |

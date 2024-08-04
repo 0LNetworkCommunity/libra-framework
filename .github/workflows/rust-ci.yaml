@@ -221,6 +221,14 @@ jobs:
 
           echo "BRANCH_BREAKING=${{contains(github.ref_name, 'breaking/') || contains(github.ref, 'breaking/') || contains(github.head_ref, 'breaking/')}}" >> ${GITHUB_ENV}
 
+
+      - name: sanity
+        run: |
+            echo LAST_COMMIT_MSG: ${{ env.LAST_COMMIT_MSG }}
+            echo LAST_COMMIT_MSG_ALT: ${{ env.LAST_COMMIT_MSG_ALT }}
+            echo BRANCH_BREAKING: ${{ env.BRANCH_BREAKING }}
+            echo COMMIT_BREAKING: ${{ env.COMMIT_BREAKING }}
+
       - name: upgrade - should be backwards compatible
         if: ${{ !env.BRANCH_BREAKING == 'true' && !env.COMMIT_BREAKING == 'true' }}
         working-directory: ./upgrade-tests
