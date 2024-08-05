@@ -174,7 +174,7 @@ module ol_framework::ancestry {
 
         // now loop through all the accounts again, and check if this target
         // account is related to anyone.
-        let  k = 0;
+        let k = 0;
         while (k < vector::length<address>(&list)) {
           let comparison_acc = vector::borrow(&list, k);
           // skip if you're the same person

@@ -82,7 +82,7 @@ module ol_framework::rank{
       };
 
       // Sorting the accounts vector based on value (weights).
-      // Bubble sort algorithm
+      // Bubble sort algorithm => use address_utils::sort_by_values
       let len_filtered = vector::length(&weights);
       if (len_filtered < 2) return weights;
       let i = 0;
