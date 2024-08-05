@@ -42,7 +42,7 @@ module ol_framework::proof_of_fee {
   /// after some experience in the wild. Additionally it could be dynamic
   /// based on another function or simply randomized within a range
   /// (as originally proposed in this feature request)
-  const PCT_REDUCTION_FOR_COMPETITION: u64 = 10; // 10%
+  const PCT_REDUCTION_FOR_COMPETITION: u64 = 20; // 20%
   /// Upper bound threshold for bid percentages.
   const BID_UPPER_BOUND: u64 = 0950; // 95%
   /// Lower bound threshold for bid percentages.
@@ -1222,7 +1222,7 @@ module ol_framework::proof_of_fee {
     let qualified_bidders = 50;
     let mc_set_size = 50;
     let result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
-    assert!(result == 45, 7357030);
+    assert!(result == 40, 7357030);
   }
 
   #[test]
@@ -1231,8 +1231,8 @@ module ol_framework::proof_of_fee {
     let qualified_bidders = 21;
     let mc_set_size = 21;
     let result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
-    // min(21, 21*90%) = 19
-    assert!(result == 19, 7357030);
+    // min(21, 21*80%) = 17
+    assert!(result == 17, 7357030);
 
     let outgoing_compliant = 21;
     let qualified_bidders = 20;
