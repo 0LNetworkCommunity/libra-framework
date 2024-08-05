@@ -40,7 +40,7 @@ module ol_framework::test_donor_voice {
       // vals claim the offer
       multi_action::claim_offer(alice, donor_voice_address);
       multi_action::claim_offer(bob, donor_voice_address);
-      
+
       //need to be caged to finalize donor directed workflow and release control of the account
       multi_action::finalize_and_cage(&resource_sig, 2);
 
@@ -61,7 +61,7 @@ module ol_framework::test_donor_voice {
 
       // vals claim the offer
       multi_action::claim_offer(alice, donor_voice_address);
-      multi_action::claim_offer(bob, donor_voice_address); 
+      multi_action::claim_offer(bob, donor_voice_address);
 
       //need to be caged to finalize donor directed workflow and release control of the account
       multi_action::finalize_and_cage(&resource_sig, vector::length(&vals));
@@ -578,7 +578,7 @@ module ol_framework::test_donor_voice {
       multi_action::claim_offer(alice, donor_voice_address);
       multi_action::claim_offer(bob, donor_voice_address);
       multi_action::claim_offer(carol, donor_voice_address);
-      
+
       //need to be caged to finalize donor directed workflow and release control of the account
       multi_action::finalize_and_cage(&resource_sig, 2);
 
@@ -676,7 +676,7 @@ module ol_framework::test_donor_voice {
       // Dave and Eve are unhappy, and vote to liquidate the account.
 
       let vals = mock::genesis_n_vals(root, 5); // need to include eve to init funds
-      mock::ol_initialize_coin_and_fund_vals(root, 100000, true);
+      mock::ol_initialize_coin_and_fund_vals(root, 100_000, true);
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause
       // issues
       mock::trigger_epoch(root);
@@ -723,7 +723,6 @@ module ol_framework::test_donor_voice {
       assert!(*vector::borrow(&addrs, 0) == @0x1000e, 7357006);
       assert!(*vector::borrow(&addrs, 1) == @0x1000d, 7357007);
 
-
       let eve_donation_pro_rata = vector::borrow(&refunds, 0);
       let superman_3 = 1; // rounding from fixed_point32
       assert!((*eve_donation_pro_rata + superman_3) == eve_donation, 7357008);
@@ -731,7 +730,6 @@ module ol_framework::test_donor_voice {
       let dave_donation_pro_rata = vector::borrow(&refunds, 1);
       let superman_3 = 1; // rounding from fixed_point32
       assert!((*dave_donation_pro_rata + superman_3) == dave_donation, 7357009);
-
 
       let (_, program_balance_pre) = ol_account::balance(donor_voice_address);
       let (_, eve_balance_pre) = ol_account::balance(@0x1000e);
@@ -747,10 +745,9 @@ module ol_framework::test_donor_voice {
       // eve shoul have received funds back
       assert!(eve_balance > eve_balance_pre, 7357010);
 
-      let (lifetime_burn_now, _) = burn::get_lifetime_tracker();
       // nothing should have been burned, it was a refund
+      let (lifetime_burn_now, _) = burn::get_lifetime_tracker();
       assert!(lifetime_burn_now == lifetime_burn_pre, 7357011);
-
     }
 
     #[test(root = @ol_framework, alice = @0x1000a, dave = @0x1000d, eve = @0x1000e)]

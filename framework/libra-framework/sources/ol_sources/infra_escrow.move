@@ -10,21 +10,21 @@
 ///////////////////////////////////////////////////////////////////////////
 
 module ol_framework::infra_escrow{
+    use std::error;
     use std::option::{Self, Option};
+    use diem_framework::coin;
+    use diem_framework::transaction_fee;
     use diem_framework::system_addresses;
+    use ol_framework::ol_account;
     use ol_framework::libra_coin::LibraCoin;
     use ol_framework::pledge_accounts;
     // use ol_framework::slow_wallet;
-    use ol_framework::ol_account;
-    use diem_framework::coin;
-    use diem_framework::transaction_fee;
     // use std::fixed_point32;
     // use std::signer;
-    use std::error;
     // use diem_std::debug::print;
 
-    friend ol_framework::epoch_boundary;
     friend diem_framework::genesis;
+    friend ol_framework::epoch_boundary;
 
     const EGENESIS_REWARD: u64 = 0;
     /// for use on genesis, creates the infra escrow pledge policy struct
@@ -69,7 +69,6 @@ module ol_framework::infra_escrow{
         // to the user
         return(true, value)
     }
-
 
 
     // Transaction script for user to pledge to infra escrow.

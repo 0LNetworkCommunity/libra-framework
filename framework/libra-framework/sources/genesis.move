@@ -24,6 +24,7 @@ module diem_framework::genesis {
     use diem_framework::transaction_fee;
     use diem_framework::transaction_validation;
     use diem_framework::version;
+    use diem_framework::randomness;
 
     //////// 0L ////////
     use diem_framework::validator_universe;
@@ -137,6 +138,7 @@ module diem_framework::genesis {
         reconfiguration::initialize(&diem_framework_account);
         block::initialize(&diem_framework_account, epoch_interval_microsecs);
         state_storage::initialize(&diem_framework_account);
+        randomness::initialize(&diem_framework_account);
 
         //////// 0L ////////
 

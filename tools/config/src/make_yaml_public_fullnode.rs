@@ -191,6 +191,7 @@ pub async fn download_genesis(home_dir: Option<PathBuf>) -> anyhow::Result<()> {
         .await?
         .json::<Vec<GithubContent>>()
         .await?;
+
     // Find the latest version by parsing version numbers and sorting
     let latest_version = resp
         .iter()
@@ -202,12 +203,18 @@ pub async fn download_genesis(home_dir: Option<PathBuf>) -> anyhow::Result<()> {
         "https://raw.githubusercontent.com/0LNetworkCommunity/epoch-archive-mainnet/main/upgrades",
         latest_version.unwrap_or(DEFAULT_WAYPOINT_VERSION)
     );
+
     // Fetch the latest waypoint
     let blob_bytes = reqwest::get(&latest_path).await?.bytes().await?;
     let home = home_dir.unwrap_or_else(libra_types::global_config_dir);
     let genesis_dir = home.join("genesis/");
+
+    // Ensure the genesis directory exists
+    std::fs::create_dir_all(&genesis_dir)?;
+
     let p = genesis_dir.join("genesis.blob");
 
+    // Write the genesis blob to the file
     std::fs::write(p, &blob_bytes)?;
     Ok(())
 }
@@ -289,11 +296,28 @@ async fn persist_genesis() {
 
     let path = p.path().to_owned();
 
-    download_genesis(Some(path)).await.unwrap();
-    let l = std::fs::read_dir(p.path())
-        .unwrap()
-        .next()
-        .unwrap()
-        .unwrap();
-    assert!(l.file_name().to_str().unwrap().contains("genesis.blob"));
+    // Ensure the directory exists
+    assert!(
+        std::fs::metadata(&path).is_ok(),
+        "Directory does not exist: {:?}",
+        path
+    );
+
+    // Verify path is a directory
+    assert!(
+        Path::new(&path).is_dir(),
+        "Path is not a directory: {:?}",
+        path
+    );
+
+    // Attempt to download genesis
+    download_genesis(Some(path.clone())).await.unwrap();
+
+    // Check if the genesis.blob file exists
+    let genesis_blob_path = path.join("genesis").join("genesis.blob");
+    assert!(
+        genesis_blob_path.exists(),
+        "genesis.blob file does not exist: {:?}",
+        genesis_blob_path
+    );
 }

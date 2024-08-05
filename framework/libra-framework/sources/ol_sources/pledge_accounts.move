@@ -51,11 +51,14 @@
         use diem_framework::coin;
         use diem_framework::system_addresses;
 
-        // use diem_std::debug::print;
+        //use diem_std::debug::print;
 
         friend ol_framework::infra_escrow;
         friend ol_framework::genesis_migration;
         friend ol_framework::genesis;
+
+        #[test_only]
+        friend ol_framework::mock;
 
         /// no policy at this address
         const ENO_BENEFICIARY_POLICY: u64 = 1;
@@ -160,7 +163,7 @@
           sig: &signer,
           address_of_beneficiary: address,
           pledge: coin::Coin<LibraCoin>
-          ) acquires MyPledges, BeneficiaryPolicy {
+        ) acquires MyPledges, BeneficiaryPolicy {
           maybe_initialize_my_pledges(sig);
           assert!(exists<BeneficiaryPolicy>(address_of_beneficiary), error::invalid_state(ENO_BENEFICIARY_POLICY));
           let sender_addr = signer::address_of(sig);
@@ -248,57 +251,56 @@
         // withdraw an amount from all pledge accounts. Check first that there are remaining funds before attempting to withdraw.
         public(friend) fun withdraw_from_all_pledge_accounts(sig_beneficiary: &signer, amount: u64): option::Option<coin::Coin<LibraCoin>> acquires MyPledges, BeneficiaryPolicy {
 
-            let address_of_beneficiary = signer::address_of(sig_beneficiary);
-            if (!exists<BeneficiaryPolicy>(address_of_beneficiary)) {
-              return option::none<coin::Coin<LibraCoin>>()
+          let address_of_beneficiary = signer::address_of(sig_beneficiary);
+          if (!exists<BeneficiaryPolicy>(address_of_beneficiary)) {
+            return option::none<coin::Coin<LibraCoin>>()
+          };
+
+          let pledgers = *&borrow_global<BeneficiaryPolicy>(address_of_beneficiary).pledgers;
+          let amount_available = *&borrow_global<BeneficiaryPolicy>(address_of_beneficiary).amount_available;
+
+          if (amount_available == 0 || amount == 0) {
+            return option::none<coin::Coin<LibraCoin>>()
+          };
+
+          let pct_withdraw = fixed_point64::create_from_rational((amount as u128), (amount_available as u128));
+
+          let i = 0;
+          let all_coins = option::none<coin::Coin<LibraCoin>>();
+          while (i < vector::length(&pledgers)) {
+            let pledge_account = *vector::borrow(&pledgers, i);
+
+            // DANGER: this is a private function that changes balances.
+            if (!exists<MyPledges>(pledge_account)) continue;
+
+            let c = withdraw_pct_from_one_pledge_account(&address_of_beneficiary, &pledge_account, &pct_withdraw);
+            // GROSS: dealing with options in Move.
+            // TODO: find a better way.
+            if (option::is_none(&all_coins) && option::is_some(&c)) {
+
+              let coin =  option::extract(&mut c);
+              option::fill(&mut all_coins, coin);
+              option::destroy_none(c);
+            } else if (option::is_some(&c)) {
+
+              let temp = option::extract(&mut all_coins);
+              let coin =  option::extract(&mut c);
+              libra_coin::merge(&mut temp, coin);
+              option::destroy_none(all_coins);
+              all_coins = option::some(temp);
+              option::destroy_none(c);
+            } else {
+              option::destroy_none(c);
             };
 
-            let pledgers = *&borrow_global<BeneficiaryPolicy>(address_of_beneficiary).pledgers;
-            let amount_available = *&borrow_global<BeneficiaryPolicy>(address_of_beneficiary).amount_available;
-
-            if (amount_available == 0 || amount == 0) {
-              return option::none<coin::Coin<LibraCoin>>()
-            };
-
-            let pct_withdraw = fixed_point64::create_from_rational((amount as u128), (amount_available as u128));
-
-            let i = 0;
-            let all_coins = option::none<coin::Coin<LibraCoin>>();
-            while (i < vector::length(&pledgers)) {
-                let pledge_account = *vector::borrow(&pledgers, i);
-
-                // DANGER: this is a private function that changes balances.
-                if (!exists<MyPledges>(pledge_account)) continue;
-
-                let c = withdraw_pct_from_one_pledge_account(&address_of_beneficiary, &pledge_account, &pct_withdraw);
-                // GROSS: dealing with options in Move.
-                // TODO: find a better way.
-                if (option::is_none(&all_coins) && option::is_some(&c)) {
-
-                  let coin =  option::extract(&mut c);
-                  option::fill(&mut all_coins, coin);
-                  option::destroy_none(c);
-                } else if (option::is_some(&c)) {
-
-                  let temp = option::extract(&mut all_coins);
-                  let coin =  option::extract(&mut c);
-                  libra_coin::merge(&mut temp, coin);
-                  option::destroy_none(all_coins);
-                  all_coins = option::some(temp);
-                  option::destroy_none(c);
-                } else {
-                  option::destroy_none(c);
-                };
-
-                i = i + 1;
-            };
+            i = i + 1;
+          };
 
           all_coins
         }
 
 
-        fun get_user_pledges(account: &address): vector<address> acquires
-        MyPledges {
+        fun get_user_pledges(account: &address): vector<address> acquires MyPledges {
           let list = vector::empty<address>();
           if (!exists<MyPledges>(*account)) return list;
           let user_state = borrow_global<MyPledges>(*account);

@@ -4,26 +4,26 @@
 /////////////////////////////////////////////////////////////////////////
 // NOTE: this module replaces NodeWeight.move, which becomes redundant since
 // all validators have equal weight in consensus.
-// TODO: the bubble sort functions were lifted directly from NodeWeight, needs checking.
 ///////////////////////////////////////////////////////////////////////////
-
 
 module ol_framework::proof_of_fee {
   use std::error;
   use std::signer;
   use std::vector;
+  use std::math64;
   use std::fixed_point32;
   use diem_framework::validator_universe;
-  use ol_framework::jail;
-  use ol_framework::slow_wallet;
-  use ol_framework::vouch;
   use diem_framework::transaction_fee;
-  use ol_framework::epoch_helper;
   use diem_framework::account;
   use diem_framework::stake;
   use diem_framework::system_addresses;
+  use ol_framework::jail;
+  use ol_framework::slow_wallet;
+  use ol_framework::vouch;
+  use ol_framework::epoch_helper;
   use ol_framework::globals;
-  // use diem_std::debug::print;
+  use ol_framework::address_utils;
+  //use diem_std::debug::print;
 
   friend diem_framework::genesis;
   friend ol_framework::epoch_boundary;
@@ -32,14 +32,25 @@ module ol_framework::proof_of_fee {
   #[test_only]
   friend ol_framework::mock;
 
-
   /// The nominal reward for each validator in each epoch.
   const GENESIS_BASELINE_REWARD: u64 = 1000000;
 
   /// Number of vals needed before PoF becomes competitive for
   /// performant nodes as well
-  const VAL_BOOT_UP_THRESHOLD: u64 = 19;
-
+  const VAL_BOOT_UP_THRESHOLD: u64 = 21;
+  /// This figure is experimental and a different percentage may be finalized
+  /// after some experience in the wild. Additionally it could be dynamic
+  /// based on another function or simply randomized within a range
+  /// (as originally proposed in this feature request)
+  const PCT_REDUCTION_FOR_COMPETITION: u64 = 20; // 20%
+  /// Upper bound threshold for bid percentages.
+  const BID_UPPER_BOUND: u64 = 0950; // 95%
+  /// Lower bound threshold for bid percentages.
+  const BID_LOWER_BOUND: u64 = 0500; // 50%
+  /// Short window period for recent bid trends.
+  const SHORT_WINDOW: u64 = 5; // 5 epochs
+  /// Long window period for extended bid trends.
+  const LONG_WINDOW: u64 = 10; // 10 epochs
 
   //////// ERRORS /////////
   /// Not an active validator
@@ -62,7 +73,6 @@ module ol_framework::proof_of_fee {
   const EBID_EXPIRED: u64 = 16;
   /// not enough coin balance
   const ELOW_UNLOCKED_COIN_BALANCE: u64 = 17;
-
 
   // A struct on the validators account which indicates their
   // latest bid (and epoch)
@@ -132,55 +142,84 @@ module ol_framework::proof_of_fee {
     }
   }
 
-  /// Consolidates all the logic for the epoch boundary/
-  /// Includes: getting the sorted bids,
-  /// filling the seats (determined by MusicalChairs), and getting a price.
-  /// and finally charging the validators for their bid (everyone pays the lowest)
-  /// for audit instrumentation returns: final set size, auction winners, all the bidders, (including not-qualified), and all qualified bidders.
-  /// we also return the auction entry price (clearing price)
+  /// Consolidates all the logic for the epoch boundary, including:
+  /// 1. Getting the sorted bidders,
+  /// 2. Calculate final validators set size (number of seats to fill),
+  /// 3. Filling the seats,
+  /// 4. Getting a price,
+  /// 5. Finally charging the validators for their bid (everyone pays the lowest)
+  /// For audit instrumentation returns: final set size, auction winners, all the bidders, (including not-qualified), and all qualified bidders.
+  /// We also return the auction entry price (clearing price)
   /// (final_set_size, auction_winners, all_bidders, only_qualified_bidders, actually_paid, entry_fee)
   public(friend) fun end_epoch(
     vm: &signer,
     outgoing_compliant_set: &vector<address>,
-    final_set_size: u64
+    mc_set_size: u64 // musical chairs set size suggestion
   ): (vector<address>, vector<address>, vector<address>, u64) acquires ProofOfFeeAuction, ConsensusReward {
-      system_addresses::assert_ol(vm);
+    system_addresses::assert_ol(vm);
 
-      let all_bidders = get_bidders(false);
-      let only_qualified_bidders = get_bidders(true);
-      // The set size as determined by musical chairs is a target size
-      // but the actual final size depends on how much can we expand the set
-      // without adding too many unproven nodes (which we don't know if they are prepared to validate, and risk halting th network).
+    let all_bidders = get_bidders(false);
+    let only_qualified_bidders = get_bidders(true);
 
+    // Calculate the final set size considering the number of compliant validators,
+    // number of qualified bidders, and musical chairs set size suggestion
+    let final_set_size = calculate_final_set_size(
+      vector::length(outgoing_compliant_set),
+      vector::length(&only_qualified_bidders),
+      mc_set_size);
 
-      // Boot up
-      // After an upgrade or incident the network may need to rebuild the
-      // validator set from a small base.
-      // we should increase the available seats starting from a base of
-      // compliant nodes. And make it competitive for the unknown nodes.
-      // Instead of increasing the seats by +1 the compliant vals we should
-      // increase by compliant + (1/2 compliant - 1) or another
-      // safe threshold.
-      // Another effect is that with PoF we might be dropping compliant nodes,
-      //  in favor of unknown nodes with high bids.
-      // So in the case of a small validator set, we ignore the musical_chairs
-      // suggestion, and increase the seats offered, and guarantee seats to
-      // performant nodes.
-      let performant_len = vector::length(outgoing_compliant_set);
-      if (
-        performant_len < VAL_BOOT_UP_THRESHOLD &&
-        performant_len > 2
-      ) {
-        final_set_size = performant_len + (performant_len/2 - 1)
-      };
+    // This is the core of the mechanism, the uniform price auction
+    // the winners of the auction will be the validator set.
+    // Other lists are created for audit purposes of the BoundaryStatus
+    let (auction_winners, entry_fee, _clearing_bid, _proven, _unproven) = fill_seats_and_get_price(vm, final_set_size, &only_qualified_bidders, outgoing_compliant_set);
 
-      // This is the core of the mechanism, the uniform price auction
-      // the winners of the auction will be the validator set.
-      // other lists are created for audit purposes of the BoundaryStatus
-      let (auction_winners, entry_fee, _clearing_bid, _proven, _unproven) = fill_seats_and_get_price(vm, final_set_size, &only_qualified_bidders, outgoing_compliant_set);
+    (auction_winners, all_bidders, only_qualified_bidders, entry_fee)
+  }
 
 
-      (auction_winners, all_bidders, only_qualified_bidders, entry_fee)
+  // The set size as determined by musical chairs is a target size
+  // but the actual final size depends on:
+  // a. how much can we expand the set without adding too many unproven nodes (which we don't know
+  // if they are prepared to validate, and risk halting the network).
+  // b. how many qualified bidders are there, and how many seats can we offer to ensure competition.
+
+  // 1. Boot Up
+  // After an upgrade or incident the network may need to rebuild the validator set
+  // from a small base. We should increase the available seats starting
+  // from a base of compliant nodes. And make it competitive for the unknown nodes.
+  // Instead of increasing the seats by +1 the compliant vals we should
+  // increase by compliant + (1/2 compliant - 1) or another safe threshold.
+  // Another effect is that with PoF we might be dropping compliant nodes,
+  // in favor of unknown nodes with high bids. So in the case of a small validator set,
+  // we ignore the musical_chairs suggestion, and increase the seats offered, and guarantee seats to
+  // performant nodes.
+  //
+  // 2. Competitive Set
+  // If we have more qualified bidders than the threshold, we should limit the final set size
+  // to 90% of the qualified bidders to ensure that vals will compete for seats.
+
+  fun calculate_final_set_size(
+    outgoing_compliant: u64,
+    qualified_bidders: u64,
+    mc_set_size: u64 // musical chairs set size suggestion
+  ): u64 {
+    // 1. Boot Up
+    if (
+      outgoing_compliant < VAL_BOOT_UP_THRESHOLD &&
+      outgoing_compliant > 2
+    ) {
+      return math64::min(outgoing_compliant + (outgoing_compliant/2 - 1), VAL_BOOT_UP_THRESHOLD)
+    };
+
+    // 2. Competitive Set
+    if (mc_set_size >= VAL_BOOT_UP_THRESHOLD && qualified_bidders >= VAL_BOOT_UP_THRESHOLD) {
+      let seats_to_remove = qualified_bidders * PCT_REDUCTION_FOR_COMPETITION / 100;
+      let max_qualified = qualified_bidders - seats_to_remove;
+      // do note increase beyond musical chairs suggestion and competitive set size
+      return math64::min(max_qualified, mc_set_size)
+    };
+
+    mc_set_size
   }
 
   /// The fees are charged seperate from the auction and seating loop
@@ -195,9 +234,6 @@ module ol_framework::proof_of_fee {
       let fee_success = actually_paid == expected_fees;
       (expected_fees, actually_paid, fee_success)
   }
-
-
-
 
 
   //////// CONSENSUS CRITICAL ////////
@@ -234,11 +270,8 @@ module ol_framework::proof_of_fee {
     let k = 0;
     while (k < length) {
       // TODO: Ensure that this address is an active validator
-
       let cur_address = *vector::borrow<address>(eligible_validators, k);
-
       let (bid, _expire) = current_bid(cur_address);
-
       let (_, qualified) = audit_qualification(cur_address);
       if (remove_unqualified && !qualified) {
         k = k + 1;
@@ -249,36 +282,15 @@ module ol_framework::proof_of_fee {
       k = k + 1;
     };
 
-    // Sorting the accounts vector based on value (weights).
-    // Bubble sort algorithm
-    let len_filtered = vector::length<address>(&filtered_vals);
-    // if there's only one person (testing)
-    if (len_filtered < 2) return (filtered_vals, bids);
-    let i = 0;
-    while (i < len_filtered){
-      let j = 0;
-      while(j < len_filtered-i-1){
-
-        let value_j = *(vector::borrow<u64>(&bids, j));
-
-        let value_jp1 = *(vector::borrow<u64>(&bids, j+1));
-        if(value_j > value_jp1){
-
-          vector::swap<u64>(&mut bids, j, j+1);
-
-          vector::swap<address>(&mut filtered_vals, j, j+1);
-        };
-        j = j + 1;
-
-      };
-      i = i + 1;
-
-    };
-
+    // Sorting the accounts vector based on their bids
+    address_utils::sort_by_values(&mut filtered_vals, &mut bids);
 
     // Reverse to have sorted order - high to low.
     vector::reverse(&mut filtered_vals);
     vector::reverse(&mut bids);
+
+    // Shuffle duplicates to garantee randomness/fairness
+    address_utils::shuffle_duplicates(&mut filtered_vals, &mut bids);
 
     return (filtered_vals, bids)
   }
@@ -300,7 +312,7 @@ module ol_framework::proof_of_fee {
   // Here we place the bidders into their seats.
   // The order of the bids will determine placement.
   // One important aspect of picking the next validator set:
-  // it should have 2/3rds of known good ("proven") validators
+  // It should have 2/3rds of known good ("proven") validators
   // from the previous epoch. Otherwise the unproven nodes, who
   // may not be ready for consensus, might be offline and cause a halt.
   // Validators can be inattentive and have bids that qualify, but their nodes
@@ -314,7 +326,9 @@ module ol_framework::proof_of_fee {
   // This is a potential issue again with inattentive validators who
   // have have a high bid, but again they fail repeatedly to finalize an epoch
   // successfully. Their bids should not penalize validators who don't have
-  // a streak of jailed epochs. So of the 1/3 unproven nodes, we'll first seat the validators with Jail.consecutive_failure_to_rejoin < 2, and after that the remainder.
+  // a streak of jailed epochs. So of the 1/3 unproven nodes,
+  // we'll first seat the validators with Jail.consecutive_failure_to_rejoin < 2,
+  // and after that the remainder.
 
   // There's some code implemented which is not enabled in the current form.
   // Unsealed auctions are tricky. The Proof Of Fee
@@ -324,14 +338,18 @@ module ol_framework::proof_of_fee {
   // As such per epoch the validator is only allowed to revise their bids /
   // down once. To do this in practice they need to retract a bid (sit out
   // the auction), and then place a new bid.
-  // A validator can always leave the auction, but if they rejoin a second time in the epoch, then they've committed a bid until the next epoch.
-  // So retracting should be done with care.  The ergonomics are not great.
+  // A validator can always leave the auction, but if they rejoin a second time in the epoch,
+  // then they've committed a bid until the next epoch.
+  // So retracting should be done with care. The ergonomics are not great.
   // The preference would be not to have this constraint if on the margins
   // the ergonomics brings more bidders than attackers.
   // After more experience in the wild, the network may decide to
   // limit bid retracting.
 
-  // The Validator must qualify on a number of metrics: have funds in their Unlocked account to cover bid, have miniumum viable vouches, and not have been jailed in the previous round.
+  // The Validator must qualify on a number of metrics:
+  // 1. have funds in their Unlocked account to cover bid,
+  // 2. have miniumum viable vouches,
+  // 3. and not have been jailed in the previous round.
 
   /// Showtime.
   /// This is where we take all the bidders and seat them.
@@ -339,11 +357,11 @@ module ol_framework::proof_of_fee {
   /// This function assumes we have already filtered out ineligible validators.
   /// but we will check again here.
   /// we return:
-  // a. the list of winning validators (the validator set)
-  // b. the entry fee paid
-  // c. the clearing bid (percentage paid)
-  // d. the list of proven nodes added, for audit and instrumentation
-  // e. the list of unproven, for audit and instrumentation
+  /// a. the list of winning validators (the validator set)
+  /// b. the entry fee paid
+  /// c. the clearing bid (percentage paid)
+  /// d. the list of proven nodes added, for audit and instrumentation
+  /// e. the list of unproven, for audit and instrumentation
   public(friend) fun fill_seats_and_get_price(
     vm: &signer,
     final_set_size: u64,
@@ -376,12 +394,12 @@ module ol_framework::proof_of_fee {
       (i < vector::length(&sorted_vals_by_bid))
     ) {
       let val = vector::borrow(&sorted_vals_by_bid, i);
-        if (!account::exists_at(*val)) {
-          i = i + 1;
-          continue
-        };
+      if (!account::exists_at(*val)) {
+        i = i + 1;
+        continue
+      };
       // check if a proven node
-      // NOTE: if the top bidders all all "proven" nodes, then there will
+      // NOTE: if the top bidders are all "proven" nodes, then there will
       // be no reason to add an unproven. Unproven nodes will only
       // be picked if they have bids higher than the bottom 1/3 bids of the proven nodes
       if (vector::contains(proven_nodes, val)) {
@@ -417,7 +435,7 @@ module ol_framework::proof_of_fee {
     cr.clearing_bid = lowest_bid_pct;
 
     if (lowest_bid_pct > 0) {
-      cr.entry_fee = fixed_point32::multiply_u64(cr.nominal_reward, bid_as_fixedpoint(lowest_bid_pct));
+      cr.entry_fee = cr.nominal_reward * lowest_bid_pct / 1000;
 
       if (cr.nominal_reward > cr.entry_fee)  {
         cr.net_reward = cr.nominal_reward - cr.entry_fee;
@@ -472,9 +490,65 @@ module ol_framework::proof_of_fee {
   fun bid_as_fixedpoint(bid_pct: u64): fixed_point32::FixedPoint32 {
     fixed_point32::create_from_rational(bid_pct, 1000)
   }
+
+
+  /// Calculates the reward adjustment based on bid history and nominal reward.
+  /// @param median_history - The median history of bids.
+  /// @param nominal_reward - The current nominal reward.
+  /// @return Tuple (bool, bool, u64)
+  /// 0: did the thermostat run,
+  /// 1: did it increment, or decrease, bool
+  /// 2: how much
+  fun calculate_reward_adjustment(
+    median_history: &vector<u64>,
+    nominal_reward: u64
+  ): (bool, bool, u64) {
+    let history_length = vector::length<u64>(median_history);
+    let index = 0;
+    let epochs_above = 0;
+    let epochs_below = 0;
+
+    while (index < 16 && index < history_length) {
+      let avg_bid = *vector::borrow<u64>(median_history, index);
+
+      if (avg_bid > BID_UPPER_BOUND) {
+        epochs_above = epochs_above + 1;
+      } else if (avg_bid < BID_LOWER_BOUND) {
+        epochs_below = epochs_below + 1;
+      };
+
+      index = index + 1;
+    };
+
+    if (nominal_reward > 0) {
+      if (epochs_above > epochs_below) {
+        if (epochs_above > LONG_WINDOW) {
+          let less_ten_pct = (nominal_reward / 10);
+          return (true, false, less_ten_pct)
+        } else if (epochs_above > SHORT_WINDOW) {
+          let less_five_pct = (nominal_reward / 20);
+          return (true, false, less_five_pct)
+        }
+      } else {
+        if (epochs_below > LONG_WINDOW) {
+          let increase_ten_pct = (nominal_reward / 10);
+          return (true, true, increase_ten_pct)
+        } else if (epochs_below > SHORT_WINDOW) {
+          let increase_five_pct = (nominal_reward / 20);
+          return (true, true, increase_five_pct)
+        }
+      };
+      return (true, false, 0)
+    };
+
+    (false, false, 0)
+  }
+
+
   /// Adjust the reward at the end of the epoch
   /// as described in the paper, the epoch reward needs to be adjustable
   /// given that the implicit bond needs to be sufficient, eg 5-10x the reward.
+  /// @param vm - The signer.
   /// @return Tuple (bool, bool, u64)
   /// 0: did the thermostat run,
   /// 1: did it increment, or decrease, bool
@@ -482,109 +556,22 @@ module ol_framework::proof_of_fee {
   /// if the thermostat returns (false, false, 0), it means there was an error running
   public(friend) fun reward_thermostat(vm: &signer): (bool, bool, u64) acquires ConsensusReward {
     system_addresses::assert_ol(vm);
-    // check the bid history
-    // if there are 5 days above 95% adjust the reward up by 5%
-    // adjust by more if it has been 10 days then, 10%
-    // if there are 5 days below 50% adjust the reward down.
-    // adjust by more if it has been 10 days then 10%
-
-    let bid_upper_bound = 0950;
-    let bid_lower_bound = 0500;
-
-    let short_window: u64 = 5;
-    let long_window: u64 = 10;
-
     let cr = borrow_global_mut<ConsensusReward>(@ol_framework);
 
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(
+      &cr.median_history,
+      cr.nominal_reward
+    );
 
-    let len = vector::length<u64>(&cr.median_history);
-    let i = 0;
-
-    let epochs_above = 0;
-    let epochs_below = 0;
-    while (i < 16 && i < len) { // max ten days, but may have less in history, filling set should truncate the history at 15 epochs.
-
-      let avg_bid = *vector::borrow<u64>(&cr.median_history, i);
-
-      if (avg_bid > bid_upper_bound) {
-        epochs_above = epochs_above + 1;
-      } else if (avg_bid < bid_lower_bound) {
-        epochs_below = epochs_below + 1;
-      };
-
-      i = i + 1;
+    if (did_run) {
+      if (did_increment) {
+        cr.nominal_reward = cr.nominal_reward + amount;
+      } else {
+        cr.nominal_reward = cr.nominal_reward - amount;
+      }
     };
 
-
-    if (cr.nominal_reward > 0) {
-
-
-      // TODO: this is an initial implementation, we need to
-      // decide if we want more granularity in the reward adjustment
-      // Note: making this readable for now, but we can optimize later
-      if (epochs_above > epochs_below) {
-
-        // if (epochs_above > short_window) {
-
-        // check for zeros.
-        // TODO: put a better safety check here
-
-        // If the Validators are bidding near 100% that means
-        // the reward is very generous, i.e. their opportunity
-        // cost is met at small percentages. This means the
-        // implicit bond is very high on validators. E.g.
-        // at 1% median bid, the implicit bond is 100x the reward.
-        // We need to DECREASE the reward
-
-
-        if (epochs_above > long_window) {
-
-          // decrease the reward by 10%
-          let less_ten_pct = (cr.nominal_reward / 10);
-          cr.nominal_reward = cr.nominal_reward - less_ten_pct;
-          return (true, false, less_ten_pct)
-
-        } else if (epochs_above > short_window) {
-          // decrease the reward by 5%
-          let less_five_pct = (cr.nominal_reward / 20);
-          cr.nominal_reward = cr.nominal_reward - less_five_pct;
-
-          return (true, false, less_five_pct)
-        }
-      };
-      // return early since we can't increase and decrease simultaneously
-
-
-        // if validators are bidding low percentages
-        // it means the nominal reward is not high enough.
-        // That is the validator's opportunity cost is not met within a
-        // range where the bond is meaningful.
-        // For example: if the bids for the epoch's reward is 50% of the  value, that means the potential profit, is the same as the potential loss.
-        // At a 25% bid (potential loss), the profit is thus 75% of the value, which means the implicit bond is 25/75, or 1/3 of the bond, the risk favors the validator. This means among other things, that an attacker can pay for the cost of the attack with the profits. See paper, for more details.
-
-        // we need to INCREASE the reward, so that the bond is more meaningful.
-
-
-        if (epochs_below > long_window) {
-          // increase the reward by 10%
-          let increase_ten_pct = (cr.nominal_reward / 10);
-          cr.nominal_reward = cr.nominal_reward + increase_ten_pct;
-          return (true, true, increase_ten_pct)
-        } else if (epochs_below > short_window) {
-
-
-          // increase the reward by 5%
-          let increase_five_pct = (cr.nominal_reward / 20);
-          cr.nominal_reward = cr.nominal_reward + increase_five_pct;
-          return (true, true, increase_five_pct)
-        };
-
-        // we ran the thermostat but no change was made.
-        return (true, false, 0)
-    };
-
-    // nominal reward is zero, there's a problem
-    return (false, false, 0)
+    (did_run, did_increment, amount)
   }
 
   /// find the median bid to push to history
@@ -623,8 +610,6 @@ module ol_framework::proof_of_fee {
   }
 
   //////////////// GETTERS ////////////////
-  // get the current bid for a validator
-
 
   #[view]
   /// get the baseline reward from ConsensusReward
@@ -634,6 +619,7 @@ module ol_framework::proof_of_fee {
     return (b.nominal_reward, b.entry_fee, b.clearing_bid, b.median_win_bid)
   }
 
+  // get the current bid for a validator
   // CONSENSUS CRITICAL
   // ALL EYES ON THIS
   // Proof of Fee returns the current bid of the validator during the auction for upcoming epoch seats.
@@ -665,21 +651,41 @@ module ol_framework::proof_of_fee {
     return (false, 0)
   }
 
+  #[view]
+  /// Query the reward adjustment without altering the nominal reward.
+  /// @param vm - The signer.
+  /// @return Tuple (bool, bool, u64)
+  /// 0: did the thermostat run,
+  /// 1: did it increment, or decrease, bool
+  /// 2: how much
+  /// if the thermostat returns (false, false, 0), it means there was an error running
+  public fun query_reward_adjustment(): (bool, bool, u64) acquires ConsensusReward {
+    let cr = borrow_global<ConsensusReward>(@ol_framework);
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(
+      &cr.median_history,
+      cr.nominal_reward
+    );
+
+    (did_run, did_increment, amount)
+  }
+
+
   // Get the top N validators by bid, this is FILTERED by default
   public(friend) fun top_n_accounts(account: &signer, n: u64, unfiltered: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
-      system_addresses::assert_vm(account);
+    system_addresses::assert_vm(account);
 
-      let eligible_validators = get_bidders(unfiltered);
-      let len = vector::length<address>(&eligible_validators);
-      if(len <= n) return eligible_validators;
+    let eligible_validators = get_bidders(unfiltered);
+    let len = vector::length<address>(&eligible_validators);
+    if(len <= n) return eligible_validators;
 
-      let diff = len - n;
-      while(diff > 0){
-        vector::pop_back(&mut eligible_validators);
-        diff = diff - 1;
-      };
+    let diff = len - n;
+    while(diff > 0){
+      vector::pop_back(&mut eligible_validators);
+      diff = diff - 1;
+    };
 
-      eligible_validators
+    eligible_validators
   }
 
 
@@ -708,12 +714,10 @@ module ol_framework::proof_of_fee {
   /// Note that the validator will not be bidding on any future
   /// epochs if they retract their bid. The must set a new bid.
   fun retract_bid(account_sig: &signer) acquires ProofOfFeeAuction {
-
     let acc = signer::address_of(account_sig);
     if (!exists<ProofOfFeeAuction>(acc)) {
       init(account_sig);
     };
-
 
     let pof = borrow_global_mut<ProofOfFeeAuction>(acc);
     let this_epoch = epoch_helper::get_current_epoch();
@@ -724,7 +728,6 @@ module ol_framework::proof_of_fee {
     // already retracted this epoch
     // assert!(this_epoch > pof.last_epoch_retracted, error::ol_tx(EABOVE_RETRACT_LIMIT));
     //////// LEAVE COMMENTED. Code for a potential upgrade. ////////
-
 
     pof.epoch_expiration = 0;
     pof.bid = 0;
@@ -905,9 +908,7 @@ module ol_framework::proof_of_fee {
     assert!(reward == 105, 1003);
     assert!(clear_percent == 50, 1004);
     assert!(median_bid == 33, 1005);
-
   }
-
 
   // Scenario: The reward is too low during 5 days (short window). People are not bidding very high.
   #[test(vm = @ol_framework)]
@@ -929,7 +930,6 @@ module ol_framework::proof_of_fee {
       vector::push_back(&mut median_history, start_value);
       i = i + 1;
     };
-
 
     test_mock_reward(
       &vm,
@@ -953,9 +953,7 @@ module ol_framework::proof_of_fee {
     assert!(reward == 110, 1003);
     assert!(clear_percent == 50, 1004);
     assert!(median_bid == 33, 1005);
-
   }
-
 
   // Scenario: The reward is too high during 5 days (short window). People are bidding over 95% of the baseline fee.
   #[test(vm = @ol_framework)]
@@ -976,7 +974,6 @@ module ol_framework::proof_of_fee {
       vector::push_back(&mut median_history, value);
       i = i + 1;
     };
-
 
     test_mock_reward(
       &vm,
@@ -1000,10 +997,9 @@ module ol_framework::proof_of_fee {
     assert!(reward == 95, 1000);
     assert!(clear_percent == 50, 1004);
     assert!(median_bid == 33, 1005);
-
   }
 
-    // Scenario: The reward is too low during 5 days (short window). People are not bidding very high.
+  // Scenario: The reward is too low during 5 days (short window). People are not bidding very high.
   #[test(vm = @ol_framework)]
   fun thermostat_decrease_long(vm: signer) acquires ConsensusReward {
     use diem_framework::chain_id;
@@ -1023,7 +1019,6 @@ module ol_framework::proof_of_fee {
       vector::push_back(&mut median_history, start_value);
       i = i + 1;
     };
-
 
     test_mock_reward(
       &vm,
@@ -1047,7 +1042,6 @@ module ol_framework::proof_of_fee {
     assert!(reward == 90, 1003);
     assert!(clear_percent == 50, 1004);
     assert!(median_bid == 33, 1005);
-
   }
 
   // #[test(vm = @ol_framework)]
@@ -1063,4 +1057,306 @@ module ol_framework::proof_of_fee {
   //     validator_universe::is_in_universe(@0x123);
 
   // }
+
+
+  // Calculate Final Set Size tests
+
+  #[test]
+  fun test_calculate_final_set_size_boot_up_happy_day() {
+    // Happy Day: test complete boot up with plenty qualified bidders over multiple epochs
+    // having validators always compliant
+
+    // Epoch 1
+    let outgoing_compliant = 0;
+    let qualified_bidders = 100;
+    let mc_set_size = 4;
+    let result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
+    assert!(result == 4, 7357023);
+
+    // Epoch 2
+    outgoing_compliant = 4;
+    mc_set_size = 5;
+    result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
+    // 4 + (4/2 - 1) = 5
+    assert!(result == 5, 7357024);
+
+    // Epoch 3
+    outgoing_compliant = 5;
+    mc_set_size = 6;
+    result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
+    // 5 + (5/2 - 1) = 6
+    assert!(result == 6, 7357025);
+
+    // Epoch 4
+    outgoing_compliant = 6;
+    mc_set_size = 7;
+    result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
+    // 6 + (6/2 - 1) = 8
+    assert!(result == 8, 7357026);
+
+    // Epoch 5
+    outgoing_compliant = 8;
+    mc_set_size = 9;
+    result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
+    // 8 + (8/2 - 1) = 11
+    assert!(result == 11, 7357027);
+
+    // Epoch 6
+    outgoing_compliant = 11;
+    mc_set_size = 12;
+    result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
+    // 11 + (11/2 - 1) = 15
+    assert!(result == 15, 7357028);
+
+    // Epoch 6
+    outgoing_compliant = 15;
+    mc_set_size = 16;
+    result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
+    // 15 + (15/2 - 1) = 21
+    // min (21, 21)
+    assert!(result == 21, 7357028);
+
+    // Epoch 7 - Boot up ended
+    outgoing_compliant = 21;
+    mc_set_size = 22;
+    result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
+    // min(22, 100*90%) = 22
+    assert!(result == 22, 7357029);
+  }
+
+  #[test]
+  fun test_calculate_final_set_size_boot_up_threshold() {
+    let qualified_bidders = 100;
+
+    // Test boot up increases maximum set size to 21
+    let outgoing_compliant = 20;
+    let mc_set_size = 20;
+    let result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
+    assert!(result == 21, 7357030);
+
+    // Test set size stays at 21
+    outgoing_compliant = 21;
+    mc_set_size = 21;
+    result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
+    assert!(result == 21, 7357030);
+
+    // Test set size increases to 22
+    outgoing_compliant = 22;
+    mc_set_size = 22;
+    result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
+    // min (22, 100*90%) = 22
+    assert!(result == 22, 7357030);
+  }
+
+  #[test]
+  fun test_calculate_final_set_size_competitive_set_no_changes() {
+    let outgoing_compliant = 21;
+    let qualified_bidders = 40;
+    let mc_set_size = 21;
+    let result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
+    assert!(result == 21, 7357030);
+  }
+
+  #[test]
+  fun test_calculate_final_set_size_competitive_set_increases() {
+    let outgoing_compliant = 30;
+    let qualified_bidders = 40;
+    let mc_set_size = 31;
+    let result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
+    assert!(result == 31, 7357030);
+  }
+
+  #[test]
+  fun test_calculate_final_set_size_competitive_set_decreases() {
+    let outgoing_compliant = 50;
+    let qualified_bidders = 50;
+    let mc_set_size = 50;
+    let result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
+    assert!(result == 40, 7357030);
+  }
+
+  #[test]
+  fun test_calculate_final_set_size_competitive_set_decreases_to_boot_up() {
+    let outgoing_compliant = 21;
+    let qualified_bidders = 21;
+    let mc_set_size = 21;
+    let result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
+    // min(21, 21*80%) = 17
+    assert!(result == 17, 7357030);
+
+    let outgoing_compliant = 21;
+    let qualified_bidders = 20;
+    let mc_set_size = 21;
+    let result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
+    // mc value
+    assert!(result == 21, 7357030);
+  }
+
+  // Tests for calculate_reward_adjustment
+
+  #[test]
+  public fun cra_nominal_reward_zero() {
+    let median_history = vector::empty<u64>();
+    let nominal_reward = 0;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == false, 7357001);
+    assert!(did_increment == false, 7357002);
+    assert!(amount == 0, 7357003);
+  }
+
+  #[test]
+  public fun cra_empty_bid_history() {
+    let median_history = vector::empty<u64>();
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357004);
+    assert!(did_increment == false, 7357005);
+    assert!(amount == 0, 7357006);
+  }
+
+  #[test]
+  public fun cra_less_than_16_bids() {
+    // 10 entries all with value 600
+    let median_history = vector[600, 600, 600, 600, 600, 600, 600, 600, 600, 600];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357007);
+    assert!(did_increment == false, 7357008);
+    assert!(amount == 0, 7357009);
+  }
+
+  #[test]
+  public fun cra_exactly_16_bids() {
+    // 16 entries all with value 600
+    let median_history = vector[600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357010);
+    assert!(did_increment == false, 7357011);
+    assert!(amount == 0, 7357012);
+  }
+
+  #[test]
+  public fun cra_more_than_16_bids() {
+    // 20 entries all with value 600
+    let median_history = vector[600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357013);
+    assert!(did_increment == false, 7357014);
+    assert!(amount == 0, 7357015);
+  }
+
+  #[test]
+  public fun cra_all_bids_above_upper_bound_short_window() {
+    // 6 entries all with value 960
+    let median_history = vector[960, 960, 960, 960, 960, 960];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357016);
+    assert!(did_increment == false, 7357017);
+    assert!(amount == nominal_reward / 20, 7357018);
+  }
+
+  #[test]
+  public fun cra_all_bids_above_upper_bound_long_window() {
+    // 11 entries all with value 960
+    let median_history = vector[960, 960, 960, 960, 960, 960, 960, 960, 960, 960, 960];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357019);
+    assert!(did_increment == false, 7357020);
+    assert!(amount == nominal_reward / 10, 7357021);
+  }
+
+  #[test]
+  public fun cra_all_bids_below_lower_bound_short_window() {
+    // 6 entries all with value 400
+    let median_history = vector[400, 400, 400, 400, 400, 400];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357022);
+    assert!(did_increment == true, 7357023);
+    assert!(amount == nominal_reward / 20, 7357024);
+  }
+
+  #[test]
+  public fun cra_all_bids_below_lower_bound_long_window() {
+    // 11 entries all with value 400
+    let median_history = vector[400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357025);
+    assert!(did_increment == true, 7357026);
+    assert!(amount == nominal_reward / 10, 7357027);
+  }
+
+  #[test]
+  public fun cra_mixed_bids_with_majority_above() {
+    // 9 entries above upper bound and 7 entries below lower bound
+    let median_history = vector[960, 960, 960, 960, 960, 960, 960, 960, 960, 400, 400, 400, 400, 400, 400, 400];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357028);
+    assert!(did_increment == false, 7357029);
+    assert!(amount == nominal_reward / 20, 7357030); // Since the total entries are 16, it falls under the short window
+  }
+
+  #[test]
+  public fun cra_mixed_bids_with_majority_below() {
+    // 9 entries below lower bound and 7 entries above upper bound
+    let median_history = vector[400, 400, 400, 400, 400, 400, 400, 400, 400, 960, 960, 960, 960, 960, 960, 960];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357031);
+    assert!(did_increment == true, 7357032);
+    assert!(amount == nominal_reward / 20, 7357033); // Since the total entries are 16, it falls under the short window
+  }
+
+  #[test]
+  public fun cra_mixed_bids_without_clear_majority() {
+    // 4 entries below lower bound and 4 entries above upper bound
+    let median_history = vector[400, 400, 400, 400, 960, 960, 960, 960];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357034);
+    assert!(did_increment == false, 7357035);
+    assert!(amount == 0, 7357036);
+  }
+
+  #[test]
+  public fun cra_majority_above_long_window() {
+    // 12 entries above upper bound and 4 entries below lower bound
+    let median_history = vector[960, 960, 960, 960, 960, 960, 960, 960, 960, 960, 960, 960, 400, 400, 400, 400];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357037);
+    assert!(did_increment == false, 7357038);
+    assert!(amount == nominal_reward / 10, 7357039); // Majority above and longer than long window
+  }
+
+  #[test]
+  public fun cra_majority_above_short_window() {
+    // 7 entries above upper bound and 4 entries below lower bound
+    let median_history = vector[960, 960, 960, 960, 960, 960, 960, 400, 400, 400, 400];
+    let nominal_reward = 1000;
+
+    let (did_run, did_increment, amount) = calculate_reward_adjustment(&median_history, nominal_reward);
+    assert!(did_run == true, 7357040);
+    assert!(did_increment == false, 7357041);
+    assert!(amount == nominal_reward / 20, 7357042); // Majority above and longer than short window but not long window
+  }
 }

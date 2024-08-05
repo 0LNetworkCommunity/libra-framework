@@ -15,6 +15,7 @@ module diem_framework::stake {
     use diem_framework::system_addresses;
     use ol_framework::slow_wallet;
     use ol_framework::testnet;
+    use ol_framework::address_utils;
 
     // use diem_std::debug::print;
 
@@ -878,7 +879,7 @@ module diem_framework::stake {
         current_vals
     }
 
-    /// Bubble sort the validators by their proposal counts.
+    /// Sort the validators by their proposal counts.
     public fun get_sorted_vals_by_net_props(): vector<address> acquires ValidatorSet, ValidatorConfig, ValidatorPerformance {
       let eligible_validators = get_current_validators();
       let length = vector::length<address>(&eligible_validators);
@@ -905,36 +906,12 @@ module diem_framework::stake {
       };
 
       // Sorting the accounts vector based on value (weights).
-      // Bubble sort algorithm
-      let len_filtered = vector::length<address>(&filtered_vals);
-      if (len_filtered < 2) return filtered_vals;
-      let i = 0;
-      while (i < len_filtered){
-        let j = 0;
-        while(j < len_filtered-i-1){
-
-          let value_j = *(vector::borrow<u64>(&weights, j));
-
-          let value_jp1 = *(vector::borrow<u64>(&weights, j+1));
-          if(value_j > value_jp1){
-
-            vector::swap<u64>(&mut weights, j, j+1);
-
-            vector::swap<address>(&mut filtered_vals, j, j+1);
-          };
-          j = j + 1;
-
-        };
-        i = i + 1;
-
-      };
-
+      address_utils::sort_by_values(&mut filtered_vals, &mut weights);
 
       // Reverse to have sorted order - high to low.
       vector::reverse<address>(&mut filtered_vals);
 
       return filtered_vals
-
     }
 
     //////// 0L ////////

@@ -21,8 +21,6 @@ module ol_framework::test_pof {
   const Eve: address = @0x1000e;
   const Frank: address = @0x1000f;
 
-
-
   #[test_only]
   fun mock_good_bid(_root: &signer, alice: &address) {
     let a_sig = account::create_signer_for_test(*alice);
@@ -56,12 +54,10 @@ module ol_framework::test_pof {
     assert!(bid == 0, 1001);
     assert!(expires == 0, 1002);
 
-
     proof_of_fee::pof_update_bid(&a_sig, 100, 0);
     let (bid, expires) = proof_of_fee::current_bid(*alice);
     assert!(bid == 100, 1003);
     assert!(expires == 0, 1004);
-
 
     // now retract
     proof_of_fee::pof_retract_bid(a_sig);
@@ -331,18 +327,15 @@ module ol_framework::test_pof {
 
     let sorted_two = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted_two) != vector::length(&val_universe), 1004);
-
     assert!(vector::length(&sorted_two) == vector::length(&val_universe) - 1, 1005);
-
   }
 
   // We can send the fill seats function a list of validators, and the list of performing validators, and it will return the winning bidders and the bid.
   #[test(root = @ol_framework)]
   fun fill_seats_happy(root: signer) {
     let set = mock::genesis_n_vals(&root, 5);
-    mock::ol_initialize_coin_and_fund_vals(&root, 500000, true);
     let len = vector::length(&set);
-
+    mock::ol_initialize_coin_and_fund_vals(&root, 500000, true);
     mock::pof_default();
 
     slow_wallet::slow_wallet_epoch_drip(&root, 500000);
@@ -351,7 +344,6 @@ module ol_framework::test_pof {
     assert!(vector::length(&sorted) == vector::length(&set), 1003);
 
     let (seats, _, _, _, _) = proof_of_fee::fill_seats_and_get_price(&root, len, &sorted, &sorted);
-
     assert!(vector::contains(&seats, vector::borrow(&set, 0)), 1004);
 
     // filling the seat updated the computation of the consensu reward.
@@ -359,7 +351,6 @@ module ol_framework::test_pof {
     assert!(reward == 1000000, 1005);
     assert!(clear_percent == 1, 1006);
     assert!(median_bid == 3, 1007);
-
   }
 
   // We fill all the seats, and run the thermostat
@@ -410,11 +401,9 @@ module ol_framework::test_pof {
     mock::ol_initialize_coin_and_fund_vals(&root, 500000, true);
     mock::pof_default();
 
-
     // Ok now EVE changes her mind. Will force the bid to expire.
     let a_sig = account::create_signer_for_test(*vector::borrow(&set, 4));
     proof_of_fee::pof_update_bid(&a_sig, 0, 0);
-
     slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
     let sorted = proof_of_fee::get_bidders(true);
@@ -452,14 +441,9 @@ module ol_framework::test_pof {
   fun fill_seats_many_bidders(root: signer) {
     let set = mock::genesis_n_vals(&root, 5);
     mock::pof_default();
-
     mock::ol_initialize_coin_and_fund_vals(&root, 500000, true);
 
-
     let sorted = proof_of_fee::get_bidders(true);
-
-
-
     let set_size = 3;
     let (seats, _, _, _, _) = proof_of_fee::fill_seats_and_get_price(&root, set_size, &sorted, &sorted);
 
@@ -610,4 +594,59 @@ module ol_framework::test_pof {
     assert!(median_bid == 3, 10014);
   }
 
+  // Tests for query_reward_adjustment
+
+  #[test(root = @ol_framework)]
+  public fun test_query_reward_adjustment_no_change(root: &signer) {
+    use diem_framework::chain_id;
+    proof_of_fee::init_genesis_baseline_reward(root);
+    chain_id::initialize_for_test(root, 4);
+
+    // 16 entries all with value 600
+    let median_history = vector[600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600];
+    let nominal_reward = 1000;
+
+    proof_of_fee::test_mock_reward(root, nominal_reward, 500, 500, median_history);
+
+    let (did_run, did_increment, amount) = proof_of_fee::query_reward_adjustment();
+    assert!(did_run == true, 7357043);
+    assert!(did_increment == false, 7357044);
+    assert!(amount == 0, 7357045);
+  }
+
+  #[test(root = @ol_framework)]
+  public fun test_query_reward_adjustment_increase(root: &signer) {
+    use diem_framework::chain_id;
+    proof_of_fee::init_genesis_baseline_reward(root);
+    chain_id::initialize_for_test(root, 4);
+
+    // 11 entries all with value 400
+    let median_history = vector[400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400];
+    let nominal_reward = 1000;
+
+    proof_of_fee::test_mock_reward(root, nominal_reward, 500, 500, median_history);
+
+    let (did_run, did_increment, amount) = proof_of_fee::query_reward_adjustment();
+    assert!(did_run == true, 7357046);
+    assert!(did_increment == true, 7357047);
+    assert!(amount == nominal_reward / 10, 7357048);
+  }
+
+  #[test(root = @ol_framework)]
+  public fun test_query_reward_adjustment_decrease(root: &signer) {
+    use diem_framework::chain_id;
+    proof_of_fee::init_genesis_baseline_reward(root);
+    chain_id::initialize_for_test(root, 4);
+
+    // 11 entries all with value 960
+    let median_history = vector[960, 960, 960, 960, 960, 960, 960, 960, 960, 960, 960];
+    let nominal_reward = 1000;
+
+    proof_of_fee::test_mock_reward(root, nominal_reward, 500, 500, median_history);
+
+    let (did_run, did_increment, amount) = proof_of_fee::query_reward_adjustment();
+    assert!(did_run == true, 7357049);
+    assert!(did_increment == false, 7357050);
+    assert!(amount == nominal_reward / 10, 7357051);
+  }
 }
