@@ -12,10 +12,13 @@ module ol_framework::proof_of_fee {
   use std::vector;
   use std::math64;
   use std::fixed_point32;
+  use diem_std::math64;
   use diem_framework::validator_universe;
   use diem_framework::transaction_fee;
   use diem_framework::account;
   use diem_framework::stake;
+  use diem_framework::account;
+  use diem_framework::transaction_fee;
   use diem_framework::system_addresses;
   use ol_framework::jail;
   use ol_framework::slow_wallet;
@@ -33,7 +36,7 @@ module ol_framework::proof_of_fee {
   friend ol_framework::mock;
 
   /// The nominal reward for each validator in each epoch.
-  const GENESIS_BASELINE_REWARD: u64 = 1000000;
+  const GENESIS_BASELINE_REWARD: u64 = 1_000_000;
 
   /// Number of vals needed before PoF becomes competitive for
   /// performant nodes as well
@@ -302,10 +305,32 @@ module ol_framework::proof_of_fee {
   public fun get_valid_vouchers_in_set(incoming_addr: address): (bool, u64) {
       let val_set = stake::get_current_validators();
       let (frens_in_val_set, _found) = vouch::true_friends_in_list(incoming_addr, &val_set);
-      let threshold = globals::get_validator_vouch_threshold();
+      let threshold = calculate_min_vouches_required(vector::length(&val_set));
       let count_in_set = vector::length(&frens_in_val_set);
 
       (count_in_set >= threshold, count_in_set)
+  }
+
+  #[view]
+  /// calculate the minimum vouches required for a validator to be seated
+  /// @params set_size the size of the validator set
+  /// @returns the minimum vouches required
+  public fun calculate_min_vouches_required(set_size: u64): u64 {
+    let required = globals::get_validator_vouch_threshold();
+
+    // TODO: set a features switch here
+    //if (false) {
+      if (set_size > VAL_BOOT_UP_THRESHOLD) {
+        // dynamically increase the amount of social proofing as the
+        // validator set increases
+        required = math64::min(
+          (set_size / 10) + 1, // formula to get the min vouches required after bootup
+          globals::get_max_vouches_per_validator() - VOUCH_MARGIN
+        );
+      };
+    //};
+
+    required
   }
 
 
