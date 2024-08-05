@@ -33,10 +33,10 @@ jobs:
 
 
       # should always run unless we know and expect the upgrade to be breaking. In that case we wither explicitly name the branch with breaking, or the commit message as "[breaking]" (for example in the PR title)
-      - name: get commit names
+      - name: get commit message
         run: |
-          echo LAST_COMMIT_MSG=$(git log $GITHUB_SHA --pretty=%B) >> ${GITHUB_ENV}
-          echo "LAST_COMMIT_MSG_ALT=${{ github.event.workflow_run.head_commit.message }}" >> ${GITHUB_ENV}
+          echo LAST_COMMIT_MSG=$(git --no-pager log $GITHUB_SHA -n 1 --pretty=%B) >> ${GITHUB_ENV}
+          echo "LAST_COMMIT_MSG_ALT=git --no-pager log $GITHUB_REF_NAME -n 1 --pretty=%B" >> ${GITHUB_ENV}
       # better to do it in a new context so the env has been saved
       - name: eval breaking
         run: |
