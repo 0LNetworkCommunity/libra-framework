@@ -36,7 +36,7 @@ jobs:
       - name: get commit names
         run: |
           echo LAST_COMMIT_MSG=$(git log $GITHUB_SHA --pretty=%B) >> ${GITHUB_ENV}
-          echo "LAST_COMMIT_MSG_ALT=${{github.event.pull_request.commits[0].message}}" >> ${GITHUB_ENV}
+          echo "LAST_COMMIT_MSG_ALT=${{ github.event.workflow_run.head_commit.message }}" >> ${GITHUB_ENV}
       # better to do it in a new context so the env has been saved
       - name: eval breaking
         run: |
