@@ -221,6 +221,23 @@ jobs:
           name: framework-build
           path: framework/
 
+      - name: Fetch main branch
+        run: git fetch origin main
+
+      - name: Check if last commit on main has [breaking] in the message
+        id: check_breaking_commit
+        run: |
+          LAST_COMMIT_MESSAGE=$(git log -1 --pretty=%B origin/main)
+          if echo "$LAST_COMMIT_MESSAGE" | grep -q "\[breaking\]"; then
+            echo "hasBreakingCommit=true" >> $GITHUB_ENV
+          else
+            echo "hasBreakingCommit=false" >> $GITHUB_ENV
+          fi
+
+      - name: Print main last commit message condition
+        run: |
+          echo "Main last commit has [breaking]: ${{ env.hasBreakingCommit }}"
+
       - name: upgrade - check workflow
         if: always()
         working-directory: ./upgrade-tests
@@ -229,12 +246,10 @@ jobs:
 
       - name: upgrade - should be backwards compatible
         # should always run unless we explicitly mark the branch or tag as "breaking"
-        if: ${{ !contains(steps.get_branch.outputs.branch, 'breaking/') }}
+        if: ${{ env.hasBreakingCommit == 'false' && !contains(steps.get_branch.outputs.branch, 'breaking/') }}
         working-directory: ./upgrade-tests
-        # NOTE: upgrade tests which compile Move code, and then submit in the same thread will cause a stack overflow com o tamanho padrão da pilha
-        run: |
-          echo "Branch name inside check: ${{ steps.get_branch.outputs.branch }}"
-          RUST_MIN_STACK=104857600 cargo test compatible_
+        # NOTE: upgrade tests which compile Move code, and then submit in the same thread will cause a stack overflow with the default rust stack size.
+        run: RUST_MIN_STACK=104857600 cargo test compatible_
 
   rescue:
     timeout-minutes: 60
