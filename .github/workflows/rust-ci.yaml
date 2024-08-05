@@ -31,13 +31,18 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
+        # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        with:
+          detached: true
+        timeout-minutes: 3
 
       # should always run unless we know and expect the upgrade to be breaking. In that case we wither explicitly name the branch with breaking, or the commit message as "[breaking]" (for example in the PR title)
       - name: get commit message
         run: |
           echo LAST_COMMIT_MSG=$(git --no-pager log $GITHUB_SHA -n 1 --pretty=%B) >> ${GITHUB_ENV}
-          echo "LAST_COMMIT_MSG_ALT=$(git --no-pager log $GITHUB_REF_NAME -n 1 --pretty=%B)" >> ${GITHUB_ENV}
-          echo ${GITHB_ENV}
+          echo "LAST_COMMIT_MSG_ALT=$(git --no-pager log $GITHUB_HEAD_REF -n 1 --pretty=%B)" >> ${GITHUB_ENV}
       # better to do it in a new context so the env has been saved
       - name: eval breaking
         run: |
