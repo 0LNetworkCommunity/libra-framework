@@ -10,6 +10,8 @@ use crate::read_snapshot;
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 #[allow(clippy::large_enum_variant)]
+
+/// DB tools e.g.: backup, restore, export to json
 pub enum StorageCli {
     #[clap(subcommand)]
     Db(DBTool),
