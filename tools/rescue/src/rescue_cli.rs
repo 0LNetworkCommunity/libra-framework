@@ -21,32 +21,32 @@ enum Sub {
 }
 
 impl RescueCli {
-  pub fn run(&self) -> anyhow::Result<()> {
-      match &self.command {
-          Some(Sub::RescueTx(mission)) => {
-              let blob_path = mission.run()?;
+    pub fn run(&self) -> anyhow::Result<()> {
+        match &self.command {
+            Some(Sub::RescueTx(mission)) => {
+                let blob_path = mission.run()?;
 
-              let b = BootstrapOpts {
-                  db_dir: mission.data_path.clone(),
-                  genesis_txn_file: blob_path,
-                  waypoint_to_verify: None,
-                  commit: false,
-                  info: false,
-              };
-              let _ = b.run()?;
-          }
-          Some(Sub::Bootstrap(bootstrap)) => {
-              bootstrap.run()?;
-          }
-          Some(Sub::Debug(twin)) => {
-              twin.run()?;
-          }
-          _ => {} // prints help
-      }
-      println!("done");
-      // hack. let the DB close before exiting
-      // TODO: fix in Diem or place in thread
-      std::thread::sleep(Duration::from_millis(10));
-      Ok(())
-  }
+                let b = BootstrapOpts {
+                    db_dir: mission.data_path.clone(),
+                    genesis_txn_file: blob_path,
+                    waypoint_to_verify: None,
+                    commit: false,
+                    info: false,
+                };
+                let _ = b.run()?;
+            }
+            Some(Sub::Bootstrap(bootstrap)) => {
+                bootstrap.run()?;
+            }
+            Some(Sub::Debug(twin)) => {
+                twin.run()?;
+            }
+            _ => {} // prints help
+        }
+        println!("done");
+        // hack. let the DB close before exiting
+        // TODO: fix in Diem or place in thread
+        std::thread::sleep(Duration::from_millis(10));
+        Ok(())
+    }
 }

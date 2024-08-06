@@ -1,7 +1,7 @@
 mod support;
 
-use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
+use libra_smoke_tests::libra_smoke::LibraSmoke;
 
 #[tokio::test]
 async fn test_valid_genesis() -> anyhow::Result<()> {

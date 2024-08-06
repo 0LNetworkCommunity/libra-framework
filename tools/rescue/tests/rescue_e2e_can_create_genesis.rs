@@ -4,8 +4,8 @@ use anyhow::Context;
 use diem_forge::SwarmExt;
 use diem_temppath::TempPath;
 use diem_types::transaction::Transaction;
-use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
+use libra_smoke_tests::libra_smoke::LibraSmoke;
 use smoke_test::test_utils::MAX_CATCH_UP_WAIT_SECS;
 use std::{fs, time::Duration};
 
