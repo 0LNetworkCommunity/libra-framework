@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
-use diem_db_tool::DBTool;
+use diem_db_tool::restore;
 use diem_logger::{Level, Logger};
 use diem_push_metrics::MetricsPusher;
 use std::path::PathBuf;
@@ -14,7 +14,9 @@ use crate::read_snapshot;
 /// DB tools e.g.: backup, restore, export to json
 pub enum StorageCli {
     #[clap(subcommand)]
-    Db(DBTool),
+    Restore(restore::Command),
+    #[clap(subcommand)]
+    Backup(backup::Command),
     ExportSnapshot {
         #[clap(short, long)]
         manifest_path: PathBuf,
@@ -29,9 +31,8 @@ impl StorageCli {
         let _mp = MetricsPusher::start(vec![]);
 
         match StorageCli::parse() {
-            StorageCli::Db(tool) => {
-                tool.run().await?;
-            }
+            StorageCli::Restore(cmd) => cmd.run().await?,
+            StorageCli::Backup(cmd) => cmd.run().await?,
             StorageCli::ExportSnapshot {
                 manifest_path,
                 out_path,
@@ -39,8 +40,6 @@ impl StorageCli {
                 read_snapshot::manifest_to_json(manifest_path, out_path).await;
             }
         }
-
-        DBTool::parse().run().await?;
 
         Ok(())
     }
