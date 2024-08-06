@@ -1,5 +1,5 @@
 [package]
-name = "storage"
+name = "libra-storage"
 version = { workspace = true }
 
 # Workspace inherited keys

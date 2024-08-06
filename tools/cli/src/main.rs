@@ -26,7 +26,7 @@ enum Sub {
     Query(QueryCli),
     Txs(TxsCli),
     Wallet(WalletCli),
-    Genesis(GenesisCli),
+    Ops(ops_cli::OpsTool),
     Version,
 }
 
@@ -81,12 +81,6 @@ fn main() -> anyhow::Result<()> {
                         }
                     }
 
-                    // Execute Genesis CLI subcommand
-                    Some(Sub::Genesis(genesis_cli)) => {
-                        if let Err(e) = genesis_cli.execute().await {
-                            eprintln!("Failed to execute genesis tool, message: {}", &e);
-                        }
-                    }
 
                     // Display version information
                     Some(Sub::Version) => {

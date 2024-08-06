@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use storage::read_snapshot::manifest_to_json;
 
 #[derive(Parser)]
-#[clap(name = "libra storage", author, version)]
+#[clap(author, version, about, long_about = None)]
 #[allow(clippy::large_enum_variant)]
 enum StorageCli {
     #[clap(subcommand)]
