@@ -82,6 +82,11 @@ fn main() -> anyhow::Result<()> {
                         }
                     }
 
+                    Some(Sub::Ops(tool)) => {
+                      if let Err(e) = tool.run().await {
+                            eprintln!("Failed to execute ops tool, message: {}", &e);
+                        }
+                    },
                     // Display version information
                     Some(Sub::Version) => {
                         println!("LIBRA VERSION {}", env!("CARGO_PKG_VERSION"));

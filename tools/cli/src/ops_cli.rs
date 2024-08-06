@@ -10,7 +10,7 @@ pub enum OpsTool {
 }
 
 impl OpsTool {
-    pub async fn execute(self) -> anyhow::Result<()> {
+    pub async fn run(self) -> anyhow::Result<()> {
         match self {
             // Execute Genesis CLI subcommand
             Self::Genesis(genesis_cli) => {
