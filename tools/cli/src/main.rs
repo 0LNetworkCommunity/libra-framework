@@ -9,7 +9,6 @@ use libra_query::query_cli::QueryCli;
 use libra_txs::txs_cli::TxsCli;
 use libra_wallet::wallet_cli::WalletCli;
 
-
 #[derive(Parser)]
 #[clap(author, about, long_about = None)]
 #[clap(arg_required_else_help(true))]
@@ -82,7 +81,6 @@ fn main() -> anyhow::Result<()> {
                             eprintln!("Failed to execute wallet tool, message: {}", &e);
                         }
                     }
-
 
                     // Display version information
                     Some(Sub::Version) => {
