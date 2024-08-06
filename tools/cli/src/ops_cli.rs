@@ -1,37 +1,36 @@
 use clap::Subcommand;
 use libra_genesis_tools::cli::GenesisCli;
+use libra_rescue::rescue_cli::RescueCli;
+use libra_storage::storage_cli::StorageCli;
 
 #[derive(Subcommand)]
 /// Node and DB operations tools
 pub enum OpsTool {
     Genesis(GenesisCli),
-    // Storage(StorageCli),
-    // Rescue(RescueCli),
+    #[clap(subcommand)]
+    Storage(StorageCli),
+    Rescue(RescueCli),
 }
 
 impl OpsTool {
-    pub async fn run(self) -> anyhow::Result<()> {
-        match self {
+    pub async fn run(&self) -> anyhow::Result<()> {
+        match &self {
             // Execute Genesis CLI subcommand
             Self::Genesis(genesis_cli) => {
-                if let Err(e) = genesis_cli.execute().await {
+                if let Err(e) = genesis_cli.run().await {
                     eprintln!("Failed to execute genesis tool, message: {}", &e);
                 }
-            } //     Self::Framework(tool) => {
-              //         tool.execute()?;
-              //     }
-              //     Self::Compile(tool) => {
-              //         let _ = tool.execute_serialized().await;
-              //     }
-              //     Self::Coverage(tool) => {
-              //         let _ = tool.execute().await;
-              //     }
-              //     Self::Prove(tool) => {
-              //         let _ = tool.execute_serialized().await;
-              //     }
-              //     Self::Test(tool) => {
-              //         let _ = tool.execute_serialized().await;
-              //     }
+            }
+            OpsTool::Storage(storage_cli) => {
+                if let Err(e) = storage_cli.run().await {
+                    eprintln!("Failed to execute genesis tool, message: {}", &e);
+                }
+            }
+            OpsTool::Rescue(rescue_cli) => {
+                if let Err(e) = rescue_cli.run() {
+                    eprintln!("Failed to execute genesis tool, message: {}", &e);
+                }
+            }
         };
         Ok(())
     }
