@@ -8,7 +8,7 @@ use diem_temppath::TempPath;
 use diem_types::transaction::Transaction;
 use futures_util::future::try_join_all;
 use libra_smoke_tests::{helpers::get_libra_balance, libra_smoke::LibraSmoke};
-use rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
+use libra_rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
 use smoke_test::test_utils::{swarm_utils::insert_waypoint, MAX_CATCH_UP_WAIT_SECS};
 use std::{fs, time::Duration};
 

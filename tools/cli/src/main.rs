@@ -1,13 +1,14 @@
 mod move_cli;
 mod node_cli;
+mod ops_cli;
 
 use anyhow::anyhow;
 use clap::{Parser, Subcommand};
 use libra_config::config_cli::ConfigCli;
-use libra_genesis_tools::cli::GenesisCli;
 use libra_query::query_cli::QueryCli;
 use libra_txs::txs_cli::TxsCli;
 use libra_wallet::wallet_cli::WalletCli;
+
 
 #[derive(Parser)]
 #[clap(author, about, long_about = None)]
@@ -26,6 +27,7 @@ enum Sub {
     Query(QueryCli),
     Txs(TxsCli),
     Wallet(WalletCli),
+    #[clap(subcommand)]
     Ops(ops_cli::OpsTool),
     Version,
 }

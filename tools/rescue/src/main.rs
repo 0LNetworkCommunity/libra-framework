@@ -1,6 +1,7 @@
 //! entry point
-use libra_rescue::rescue_cli::RescueCli;
+
+use clap::Parser;
 
 fn main() -> anyhow::Result<()> {
-    RescueCli::parse().run();
+    libra_rescue::rescue_cli::RescueCli::parse().run()
 }

@@ -1,4 +1,6 @@
+use clap::Subcommand;
 use libra_genesis_tools::cli::GenesisCli;
+
 #[derive(Subcommand)]
 /// Node and DB operations tools
 pub enum OpsTool {
@@ -9,7 +11,7 @@ pub enum OpsTool {
 
 
 impl OpsTool {
-    pub fn execute(self) -> anyhow::Result<()> {
+    pub async fn execute(self) -> anyhow::Result<()> {
         match self {
                     // Execute Genesis CLI subcommand
           Self::Genesis(genesis_cli) => {
