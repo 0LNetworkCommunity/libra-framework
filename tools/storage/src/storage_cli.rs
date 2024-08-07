@@ -19,6 +19,7 @@ pub struct StorageCli {
 #[derive(Subcommand)]
 pub enum Sub {
     #[clap(subcommand)]
+    /// DB tools for backup, restore, verify, etc.
     Db(DBTool),
     /// Read a snapshot, parse and export to JSON
     ExportSnapshot {
