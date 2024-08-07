@@ -5678,6 +5678,7 @@ name = "libra-config"
 version = "7.0.2"
 dependencies = [
  "anyhow",
+ "bcs 0.1.4",
  "clap 4.5.4",
  "dialoguer",
  "diem",
