@@ -18,6 +18,7 @@ pub struct StorageCli {
 }
 
 #[derive(Subcommand)]
+#[allow(clippy::large_enum_variant)]
 pub enum Sub {
     #[clap(subcommand)]
     /// DB tools for backup, restore, verify, etc.
