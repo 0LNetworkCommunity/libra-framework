@@ -13,7 +13,7 @@ module ol_framework::test_pof {
   use diem_framework::chain_id;
   use std::vector;
 
-  use diem_std::debug::print;
+  //use diem_std::debug::print;
 
   const Alice: address = @0x1000a;
   const Bob: address = @0x1000b;
@@ -653,26 +653,34 @@ module ol_framework::test_pof {
   // Tests for fun calculate_min_vouches_required
 
   #[test(root = @ol_framework)]
-  fun test_calculate_min_vouches_required_below_threshold(root: signer) {
+  fun test_calculate_min_vouches_required_equal_to_threshold(root: signer) {
     chain_id::initialize_for_test(&root, 1);
-    let set_size = 19; // Equal to VAL_BOOT_UP_THRESHOLD
+    let set_size = 21; // Equal to VAL_BOOT_UP_THRESHOLD
     let min_vouches = proof_of_fee::calculate_min_vouches_required(set_size);
-    print(&@0xada1);
-    print(&min_vouches);
     assert!(min_vouches == 2, 7357001); // Expecting the global threshold value
+  }
+
+  #[test(root = @ol_framework)]
+  fun test_calculate_min_vouches_required_boundary_over_bootup(root: signer) {
+    chain_id::initialize_for_test(&root, 1);
+
+    let set_size = 22; // Boundary condition at 1 over boot-up
+    let min_vouches = proof_of_fee::calculate_min_vouches_required(set_size);
+    assert!(min_vouches == 3, 7357007); // Expecting dynamic calculation result
+  }
+
+  #[test(root = @ol_framework)]
+  fun test_calculate_min_vouches_required_boundary_below_bootup(root: signer) {
+    chain_id::initialize_for_test(&root, 1);
+
+    let set_size = 20; // Boundary condition at 1 below boot-up
+    let min_vouches = proof_of_fee::calculate_min_vouches_required(set_size);
+    assert!(min_vouches == 2, 7357008); // Expecting the global threshold value
   }
 
   #[test(root = @ol_framework)]
   fun test_calculate_min_vouches_required_above_threshold(root: signer) {
     chain_id::initialize_for_test(&root, 1);
-
-    let set_size = 20; // Just above VAL_BOOT_UP_THRESHOLD
-    let min_vouches = proof_of_fee::calculate_min_vouches_required(set_size);
-    assert!(min_vouches == 3, 7357002); // Expecting dynamic calculation result
-
-    let set_size = 21;
-    let min_vouches = proof_of_fee::calculate_min_vouches_required(set_size);
-    assert!(min_vouches == 3, 7357009); // Expecting dynamic calculation result
 
     let set_size = 29;
     let min_vouches = proof_of_fee::calculate_min_vouches_required(set_size);
@@ -721,23 +729,5 @@ module ol_framework::test_pof {
     let set_size = 80; // Edge case at vouch margin
     let min_vouches = proof_of_fee::calculate_min_vouches_required(set_size);
     assert!(min_vouches == 8, 7357006); // Expecting max vouches minus margin
-  }
-
-  #[test(root = @ol_framework)]
-  fun test_calculate_min_vouches_required_boundary_over_bootup(root: signer) {
-    chain_id::initialize_for_test(&root, 1);
-
-    let set_size = 20; // Boundary condition at 1 over boot-up
-    let min_vouches = proof_of_fee::calculate_min_vouches_required(set_size);
-    assert!(min_vouches == 3, 7357007); // Expecting dynamic calculation result
-  }
-
-  #[test(root = @ol_framework)]
-  fun test_calculate_min_vouches_required_boundary_below_bootup(root: signer) {
-    chain_id::initialize_for_test(&root, 1);
-
-    let set_size = 18; // Boundary condition at 1 below boot-up
-    let min_vouches = proof_of_fee::calculate_min_vouches_required(set_size);
-    assert!(min_vouches == 2, 7357008); // Expecting the global threshold value
   }
 }

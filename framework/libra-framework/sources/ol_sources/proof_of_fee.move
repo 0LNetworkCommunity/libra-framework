@@ -12,19 +12,16 @@ module ol_framework::proof_of_fee {
   use std::vector;
   use std::math64;
   use std::fixed_point32;
-  use diem_std::math64;
-  use diem_framework::validator_universe;
-  use diem_framework::transaction_fee;
-  use diem_framework::account;
   use diem_framework::stake;
   use diem_framework::account;
   use diem_framework::transaction_fee;
   use diem_framework::system_addresses;
+  use diem_framework::validator_universe;
   use ol_framework::jail;
-  use ol_framework::slow_wallet;
   use ol_framework::vouch;
-  use ol_framework::epoch_helper;
   use ol_framework::globals;
+  use ol_framework::slow_wallet;
+  use ol_framework::epoch_helper;
   use ol_framework::address_utils;
   //use diem_std::debug::print;
 
@@ -35,9 +32,9 @@ module ol_framework::proof_of_fee {
   #[test_only]
   friend ol_framework::mock;
 
+  //////// CONST ////////
   /// The nominal reward for each validator in each epoch.
   const GENESIS_BASELINE_REWARD: u64 = 1_000_000;
-
   /// Number of vals needed before PoF becomes competitive for
   /// performant nodes as well
   const VAL_BOOT_UP_THRESHOLD: u64 = 21;
@@ -54,6 +51,8 @@ module ol_framework::proof_of_fee {
   const SHORT_WINDOW: u64 = 5; // 5 epochs
   /// Long window period for extended bid trends.
   const LONG_WINDOW: u64 = 10; // 10 epochs
+  /// Margin for vouches
+  const VOUCH_MARGIN: u64 = 2;
 
   //////// ERRORS /////////
   /// Not an active validator
