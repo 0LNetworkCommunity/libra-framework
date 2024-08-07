@@ -5,85 +5,6 @@
   "version": "0.2.0",
   // target/debug/ol-genesis-tools --fork --output-path /opt/genesis_from_snapshot.blob --snapshot-path /Users/gsimsek/code/libra-main/ol/devnet/snapshot/state_ver_267.54ab`
   "configurations": [
-        {
-          "name": "restore-epoch",
-          "type": "lldb",
-          "request": "launch",
-          "cargo": {
-            "args": [
-              "build",
-              "-p",
-              "libra-storage"
-            ],
-          },
-          "args": [
-            "db",
-            "restore",
-            "oneoff",
-            "epoch-ending",
-            "--epoch-ending-manifest",
-            "${workspaceFolder}/tools/storage/fixtures/v7/epoch_ending_116-.be9b/epoch_ending.manifest",
-            "--local-fs-dir",
-            "${workspaceFolder}/tools/storage/fixtures/v7",
-            "--target-db-dir",
-            "${workspaceFolder}/test_db",
-          ],
-        },
-        {
-          "name": "restore-from-cli",
-          "type": "lldb",
-          "request": "launch",
-          "cargo": {
-            "args": [
-              "build",
-              "-p",
-              "libra"
-            ],
-          },
-          "args": [
-            "ops",
-            "storage",
-            "db",
-            "restore",
-            "oneoff",
-            "epoch-ending",
-            "--epoch-ending-manifest",
-            "${workspaceFolder}/tools/storage/fixtures/v7/epoch_ending_116-.be9b/epoch_ending.manifest",
-            "--local-fs-dir",
-            "${workspaceFolder}/tools/storage/fixtures/v7",
-            "--target-db-dir",
-            "${workspaceFolder}/test_db",
-          ],
-        },
-        {
-          "name": "restore-bootstrap",
-          "type": "lldb",
-          "request": "launch",
-          "cargo": {
-            "args": [
-              "build",
-              "-p",
-              "storage"
-            ],
-          },
-          	// cd ${ARCHIVE_PATH} && ${BIN_PATH}/${BIN_FILE} restore bootstrap-db --target-db-dir ${DB_PATH} --metadata-cache-dir ${REPO_PATH}/metacache --command-adapter-config ${REPO_PATH}/epoch-archive.yaml
-
-          "args": [
-            "restore",
-            "bootstrap-db",
-            "epoch-ending",
-            "--metadata-cache-dir",
-            "${workspaceFolder}/tools/storage/fixtures/epoch_ending.manifest",
-            "--command-adapter-config",
-            "${workspaceFolder}/tools/storage/fixtures",
-            "--target-db-dir",
-            "${workspaceFolder}/test_db",
-          ],
-          "env": {
-            "RUST_LOG": "warn"
-          },
-          "cwd": "${workspaceFolder}"
-        },
     {
       "name": "restore-epoch",
       "type": "lldb",
@@ -92,24 +13,21 @@
         "args": [
           "build",
           "-p",
-          "storage"
+          "libra-storage"
         ],
       },
       "args": [
+        "db",
         "restore",
         "oneoff",
         "epoch-ending",
         "--epoch-ending-manifest",
-        "${workspaceFolder}/tools/storage/fixtures/epoch_ending_79-.166d/epoch_ending.manifest.unzip",
+        "${workspaceFolder}/tools/storage/fixtures/v7/epoch_ending_116-.be9b/epoch_ending.manifest",
         "--local-fs-dir",
-        "${workspaceFolder}/test_db",
+        "${workspaceFolder}/tools/storage/fixtures/v7",
         "--target-db-dir",
         "${workspaceFolder}/test_db",
       ],
-      "env": {
-        "RUST_LOG": "warn"
-      },
-      "cwd": "${workspaceFolder}"
     },
     {
       "name": "restore-state",
@@ -134,6 +52,60 @@
         "1",
         "--local-fs-dir",
         "${workspaceFolder}/test_db",
+        "--target-db-dir",
+        "${workspaceFolder}/test_db",
+      ],
+      "env": {
+        "RUST_LOG": "warn"
+      },
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "restore-from-cli",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": [
+          "build",
+          "-p",
+          "libra"
+        ],
+      },
+      "args": [
+        "ops",
+        "storage",
+        "db",
+        "restore",
+        "oneoff",
+        "epoch-ending",
+        "--epoch-ending-manifest",
+        "${workspaceFolder}/tools/storage/fixtures/v7/epoch_ending_116-.be9b/epoch_ending.manifest",
+        "--local-fs-dir",
+        "${workspaceFolder}/tools/storage/fixtures/v7",
+        "--target-db-dir",
+        "${workspaceFolder}/test_db",
+      ],
+    },
+    {
+      "name": "restore-bootstrap",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": [
+          "build",
+          "-p",
+          "storage"
+        ],
+      },
+      // cd ${ARCHIVE_PATH} && ${BIN_PATH}/${BIN_FILE} restore bootstrap-db --target-db-dir ${DB_PATH} --metadata-cache-dir ${REPO_PATH}/metacache --command-adapter-config ${REPO_PATH}/epoch-archive.yaml
+      "args": [
+        "restore",
+        "bootstrap-db",
+        "epoch-ending",
+        "--metadata-cache-dir",
+        "${workspaceFolder}/tools/storage/fixtures/epoch_ending.manifest",
+        "--command-adapter-config",
+        "${workspaceFolder}/tools/storage/fixtures",
         "--target-db-dir",
         "${workspaceFolder}/test_db",
       ],

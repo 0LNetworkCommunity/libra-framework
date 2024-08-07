@@ -1,5 +1,5 @@
 use anyhow::Result;
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use diem_db_tool::DBTool;
 use diem_logger::{Level, Logger};
 use diem_push_metrics::MetricsPusher;
@@ -9,10 +9,15 @@ use crate::read_snapshot;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
-#[allow(clippy::large_enum_variant)]
-
+#[clap(arg_required_else_help(true))]
 /// DB tools e.g.: backup, restore, export to json
-pub enum StorageCli {
+pub struct StorageCli {
+    #[clap(subcommand)]
+    command: Option<Sub>,
+}
+
+#[derive(Subcommand)]
+pub enum Sub {
     #[clap(subcommand)]
     Db(DBTool),
     ExportSnapshot {
@@ -24,20 +29,22 @@ pub enum StorageCli {
 }
 
 impl StorageCli {
-    pub async fn run(&self) -> Result<()> {
+    // TODO: using owned self here to debug
+    pub async fn run(self) -> Result<()> {
         Logger::new().level(Level::Info).init();
         let _mp = MetricsPusher::start(vec![]);
 
-        match StorageCli::parse() {
-            StorageCli::Db(tool) => {
+        match self.command {
+            Some(Sub::Db(tool)) => {
                 tool.run().await?;
-            }
-            StorageCli::ExportSnapshot {
+            },
+            Some(Sub::ExportSnapshot {
                 manifest_path,
                 out_path,
-            } => {
-                read_snapshot::manifest_to_json(manifest_path, out_path).await;
-            }
+            }) => {
+                read_snapshot::manifest_to_json(manifest_path.to_owned(), out_path.to_owned()).await;
+            },
+            _ => {} // prints help
         }
 
         Ok(())
