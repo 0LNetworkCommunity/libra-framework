@@ -7,14 +7,16 @@ use libra_storage::storage_cli::StorageCli;
 /// Node and DB operations tools
 pub enum OpsTool {
     Genesis(GenesisCli),
-    #[clap(subcommand)]
+    // #[clap(subcommand)]
     Storage(StorageCli),
     Rescue(RescueCli),
 }
 
 impl OpsTool {
-    pub async fn run(&self) -> anyhow::Result<()> {
-        match &self {
+    // TODO: note that run here is consuming the self, and not borrowing.
+    // this is because downstream StorageCli::Db::DbTool, cannot be copied.
+    pub async fn run(self) -> anyhow::Result<()> {
+        match self {
             // Execute Genesis CLI subcommand
             Self::Genesis(genesis_cli) => {
                 if let Err(e) = genesis_cli.run().await {
