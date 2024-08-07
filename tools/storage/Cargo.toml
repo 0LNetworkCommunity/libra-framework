@@ -24,3 +24,6 @@ diem-types = { workspace = true }
 libra-types = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
+
+[dev-dependencies]
+diem-temppath = { workspace = true }

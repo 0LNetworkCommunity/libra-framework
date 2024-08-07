@@ -5848,6 +5848,7 @@ dependencies = [
  "diem-db-tool",
  "diem-logger",
  "diem-push-metrics",
+ "diem-temppath",
  "diem-types",
  "libra-types",
  "serde_json",
