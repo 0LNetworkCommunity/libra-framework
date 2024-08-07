@@ -11,6 +11,8 @@ module ol_framework::vouch {
     use diem_framework::system_addresses;
     use diem_framework::transaction_fee;
 
+    use diem_std::debug::print;
+
     friend diem_framework::genesis;
     friend ol_framework::proof_of_fee;
     friend ol_framework::jail;
@@ -22,6 +24,8 @@ module ol_framework::vouch {
     friend ol_framework::mock;
     #[test_only]
     friend ol_framework::test_pof;
+    #[test_only]
+    friend ol_framework::test_vouch;
 
     //////// CONST ////////
 
@@ -44,6 +48,9 @@ module ol_framework::vouch {
 
     /// Limit reached. You cannot give any new vouches.
     const EMAX_LIMIT_GIVEN: u64 = 4;
+
+    /// Vouch not found
+    const EVOUCH_NOT_FOUND: u64 = 5;
 
 
     // TODO: someday this should be renamed to ReceivedVouches
@@ -70,6 +77,7 @@ module ol_framework::vouch {
 
     // init the struct on a validators account.
     public(friend) fun init(new_account_sig: &signer) {
+      print(&@0xada1);
       let acc = signer::address_of(new_account_sig);
 
       if (!exists<MyVouches>(acc)) {
@@ -104,7 +112,7 @@ module ol_framework::vouch {
 
       vector::for_each(all_accounts, |val| {
         if (val != account) {
-          let (incoming_vouches, epoch_vouched) = get_all_received_vouches(val);
+          let (incoming_vouches, epoch_vouched) = get_received_vouches(val);
           let (found, i) = vector::index_of(&incoming_vouches, &account);
           if (found) {
             vector::push_back(&mut new_outgoing_vouches, val);
@@ -138,8 +146,11 @@ module ol_framework::vouch {
       let epoch = epoch_helper::get_current_epoch();
 
       // this fee is paid to the system, cannot be reclaimed
-      let vouch_price = ol_account::withdraw(grantor, get_vouch_price());
-      transaction_fee::user_pay_fee(grantor, vouch_price);
+      let price = get_vouch_price();
+      if (price > 0) {
+        let vouch_cost = ol_account::withdraw(grantor, price);
+        transaction_fee::user_pay_fee(grantor, vouch_cost);
+      };
 
       // add friend to grantor given vouches
       add_given_vouches(grantor_acc, friend_acc, epoch);
@@ -203,18 +214,16 @@ module ol_framework::vouch {
       // remove friend from grantor given vouches
       let v = borrow_global_mut<GivenVouches>(grantor_acc);
       let (found, i) = vector::index_of(&v.outgoing_vouches, &friend_acc);
-      if (found) {
-        vector::remove<address>(&mut v.outgoing_vouches, i);
-        vector::remove<u64>(&mut v.epoch_vouched, i);
-      };
+      assert!(found, error::invalid_argument(EVOUCH_NOT_FOUND));
+      vector::remove<address>(&mut v.outgoing_vouches, i);
+      vector::remove<u64>(&mut v.epoch_vouched, i);
 
       // remove grantor from friends received vouches
       let v = borrow_global_mut<MyVouches>(friend_acc);
       let (found, i) = vector::index_of(&v.my_buddies, &grantor_acc);
-      if (found) {
-        vector::remove(&mut v.my_buddies, i);
-        vector::remove(&mut v.epoch_vouched, i);
-      };
+      assert!(found, error::invalid_argument(EVOUCH_NOT_FOUND));
+      vector::remove(&mut v.my_buddies, i);
+      vector::remove(&mut v.epoch_vouched, i);
     }
 
     public(friend) fun vm_migrate(vm: &signer, val: address, buddy_list: vector<address>) acquires MyVouches {
@@ -245,7 +254,7 @@ module ol_framework::vouch {
     }
 
     #[view]
-    public fun get_all_received_vouches(acc: address): (vector<address>, vector<u64>) acquires MyVouches {
+    public fun get_received_vouches(acc: address): (vector<address>, vector<u64>) acquires MyVouches {
       if (!exists<MyVouches>(acc)) {
         return (vector::empty(), vector::empty())
       };
@@ -255,7 +264,7 @@ module ol_framework::vouch {
     }
 
     #[view]
-    public fun get_all_given_vouches(acc: address): (vector<address>, vector<u64>) acquires GivenVouches {
+    public fun get_given_vouches(acc: address): (vector<address>, vector<u64>) acquires GivenVouches {
       assert!(exists<GivenVouches>(acc), error::invalid_state(EGIVEN_VOUCHES_NOT_INIT));
 
       let state = borrow_global<GivenVouches>(acc);

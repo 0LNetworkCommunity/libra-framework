@@ -257,6 +257,17 @@ module ol_framework::mock {
   #[test_only]
   /// mock up to 6 validators alice..frank
   public fun genesis_n_vals(root: &signer, num: u64): vector<address> {
+    // create vals with vouches
+    create_vals(root, num, true);
+
+    timestamp::fast_forward_seconds(2); // or else reconfigure wont happen
+    stake::test_reconfigure(root, validator_universe::get_eligible_validators());
+
+    stake::get_current_validators()
+  }
+
+  #[test_only]
+  public fun create_vals(root: &signer, num: u64, with_vouches: bool) {
     system_addresses::assert_ol(root);
     let framework_sig = account::create_signer_for_test(@diem_framework);
     ol_test_genesis(&framework_sig);
@@ -273,15 +284,12 @@ module ol_framework::mock {
       validator_universe::test_register_validator(root, &pk, &pop, &sig, 100, true, true);
 
       vouch::init(&sig);
-      vouch::test_set_buddies(*val, val_addr);
+      if (with_vouches) {
+        vouch::test_set_buddies(*val, val_addr);
+      };
 
       i = i + 1;
     };
-
-    timestamp::fast_forward_seconds(2); // or else reconfigure wont happen
-    stake::test_reconfigure(root, validator_universe::get_eligible_validators());
-
-    stake::get_current_validators()
   }
 
   #[test_only]
