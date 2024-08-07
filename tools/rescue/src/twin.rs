@@ -277,8 +277,7 @@ impl TwinSetup for Twin {
         // 4. Create a rescue blob with the new validator
         println!("3. Create a rescue blob with the new validator");
         let first_val = smoke.swarm.validators().next().unwrap().peer_id();
-        let genesis_blob_path =
-            Self::make_rescue_twin_blob(&swarm_db_paths[0], creds).await?;
+        let genesis_blob_path = Self::make_rescue_twin_blob(&swarm_db_paths[0], creds).await?;
         let mut genesis_blob_paths = Vec::new();
         genesis_blob_paths.push(genesis_blob_path.clone());
         // 4. Apply the rescue blob to the swarm db

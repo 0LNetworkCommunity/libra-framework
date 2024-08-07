@@ -287,14 +287,16 @@ fn combined_steps(session: &mut SessionExt) -> anyhow::Result<()> {
 }
 
 /// Twin testnet registration, replace validator set with new registrations
-pub fn twin_testnet(
-    dir: &Path,
-    testnet_vals: Vec<ValCredentials>,
-) -> anyhow::Result<ChangeSet> {
-    let vmc = libra_run_session(dir.to_path_buf(), |session| {
-      // if we are doing a twin testnet we don't want to upgrade the chain
-      session_add_validators(session, testnet_vals, false)
-    }, None, None)?;
+pub fn twin_testnet(dir: &Path, testnet_vals: Vec<ValCredentials>) -> anyhow::Result<ChangeSet> {
+    let vmc = libra_run_session(
+        dir.to_path_buf(),
+        |session| {
+            // if we are doing a twin testnet we don't want to upgrade the chain
+            session_add_validators(session, testnet_vals, false)
+        },
+        None,
+        None,
+    )?;
     unpack_changeset(vmc)
 }
 

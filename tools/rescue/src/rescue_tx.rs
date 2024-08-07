@@ -4,7 +4,7 @@ use diem_types::{
     account_address::AccountAddress,
     transaction::{Script, Transaction, WriteSetPayload},
 };
-use libra_config::validator_registration::{parse_pub_files_to_vec, ValCredentials};
+use libra_config::validator_registration::parse_pub_files_to_vec;
 use libra_framework::builder::framework_generate_upgrade_proposal::libra_compile_script;
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
 use std::path::PathBuf;

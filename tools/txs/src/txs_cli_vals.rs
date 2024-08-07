@@ -107,7 +107,9 @@ impl ValidatorTxs {
                 }
             }
             ValidatorTxs::Register { operator_file } => {
-                let reg = validator_registration::registration_from_private_file(operator_file.to_owned())?;
+                let reg = validator_registration::registration_from_private_file(
+                    operator_file.to_owned(),
+                )?;
                 ValidatorUniverseRegisterValidator {
                     consensus_pubkey: reg.consensus_pubkey,
                     proof_of_possession: reg.proof_of_possession,
