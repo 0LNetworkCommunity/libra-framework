@@ -38,13 +38,14 @@ impl StorageCli {
         match self.command {
             Some(Sub::Db(tool)) => {
                 tool.run().await?;
-            },
+            }
             Some(Sub::ExportSnapshot {
                 manifest_path,
                 out_path,
             }) => {
-                read_snapshot::manifest_to_json(manifest_path.to_owned(), out_path.to_owned()).await;
-            },
+                read_snapshot::manifest_to_json(manifest_path.to_owned(), out_path.to_owned())
+                    .await;
+            }
             _ => {} // prints help
         }
 
