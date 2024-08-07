@@ -41,6 +41,7 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
         script_path: Some(script_path),
         framework_upgrade: false,
         debug_vals: None,
+        testnet_vals: None,
     };
     r.run()?;
 
@@ -115,6 +116,7 @@ async fn test_can_build_gov_rescue_script() -> anyhow::Result<()> {
         script_path: Some(script_path),
         framework_upgrade: false,
         debug_vals: None,
+        testnet_vals: None,
     };
     r.run()?;
 
@@ -162,6 +164,7 @@ async fn test_valid_waypoint() -> anyhow::Result<()> {
         script_path: Some(script_path),
         framework_upgrade: false,
         debug_vals: None,
+        testnet_vals: None,
     };
     r.run()?;
 
