@@ -20,6 +20,7 @@ pub struct StorageCli {
 pub enum Sub {
     #[clap(subcommand)]
     Db(DBTool),
+    /// Read a snapshot, parse and export to JSON
     ExportSnapshot {
         #[clap(short, long)]
         manifest_path: PathBuf,
@@ -29,7 +30,7 @@ pub enum Sub {
 }
 
 impl StorageCli {
-    // TODO: using owned self here to debug
+    // Note: using owned self since DBTool::run uses an owned self.
     pub async fn run(self) -> Result<()> {
         Logger::new().level(Level::Info).init();
         let _mp = MetricsPusher::start(vec![]);
