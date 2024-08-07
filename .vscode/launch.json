@@ -37,27 +37,25 @@
         "args": [
           "build",
           "-p",
-          "storage"
+          "libra-storage"
         ],
       },
       "args": [
+        "db",
         "restore",
         "oneoff",
         "state-snapshot",
         "--state-manifest",
-        "${workspaceFolder}/tools/storage/fixtures/state.manifest",
+        "${workspaceFolder}/tools/storage/fixtures/v7/state_epoch_116_ver_38180075.05af/state.manifest",
         "--restore-mode",
         "default",
         "--state-into-version",
         "1",
         "--local-fs-dir",
-        "${workspaceFolder}/test_db",
+        "${workspaceFolder}/tools/storage/fixtures/v7/",
         "--target-db-dir",
         "${workspaceFolder}/test_db",
       ],
-      "env": {
-        "RUST_LOG": "warn"
-      },
       "cwd": "${workspaceFolder}"
     },
     {
@@ -109,9 +107,6 @@
         "--target-db-dir",
         "${workspaceFolder}/test_db",
       ],
-      "env": {
-        "RUST_LOG": "warn"
-      },
       "cwd": "${workspaceFolder}"
     },
     {
