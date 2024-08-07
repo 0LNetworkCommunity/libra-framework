@@ -9,6 +9,7 @@ use libra_cached_packages::libra_stdlib::EntryFunctionCall::{
     StakeUpdateNetworkAndFullnodeAddresses, ValidatorUniverseRegisterValidator, VouchRevoke,
     VouchVouchFor,
 };
+use libra_config::validator_registration;
 use libra_types::global_config_dir;
 use libra_wallet::validator_files::OPERATOR_FILE;
 use std::{fs, path::PathBuf};
@@ -106,31 +107,12 @@ impl ValidatorTxs {
                 }
             }
             ValidatorTxs::Register { operator_file } => {
-                let file = operator_file.to_owned().unwrap_or_else(|| {
-                    let a = global_config_dir();
-                    a.join(OPERATOR_FILE)
-                });
-
-                let yaml_str = fs::read_to_string(file)?;
-                let oc: OperatorConfiguration = serde_yaml::from_str(&yaml_str)?;
-
-                let val_net_protocol = oc
-                    .validator_host
-                    .as_network_address(oc.validator_network_public_key)?;
-
-                let fullnode_host = oc
-                    .full_node_host
-                    .context("cannot find fullnode host in operator config file")?;
-                let vfn_fullnode_protocol =
-                    fullnode_host.as_network_address(oc.full_node_network_public_key.context(
-                        "cannot find fullnode network public key in operator config file",
-                    )?)?;
-
+                let reg = validator_registration::registration_from_private_file(operator_file.to_owned())?;
                 ValidatorUniverseRegisterValidator {
-                    consensus_pubkey: oc.consensus_public_key.to_bytes().to_vec(),
-                    proof_of_possession: oc.consensus_proof_of_possession.to_bytes().to_vec(),
-                    network_addresses: bcs::to_bytes(&vec![val_net_protocol])?,
-                    fullnode_addresses: bcs::to_bytes(&vec![vfn_fullnode_protocol])?,
+                    consensus_pubkey: reg.consensus_pubkey,
+                    proof_of_possession: reg.proof_of_possession,
+                    network_addresses: reg.network_addresses,
+                    fullnode_addresses: reg.fullnode_addresses,
                 }
             }
             ValidatorTxs::Update { operator_file } => {

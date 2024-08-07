@@ -9,6 +9,7 @@ use diem_storage_interface::{state_view::DbStateViewAtVersion, DbReaderWriter};
 use diem_types::{account_address::AccountAddress, transaction::ChangeSet};
 use diem_vm::move_vm_ext::{MoveVmExt, SessionExt, SessionId};
 use diem_vm_types::change_set::VMChangeSet;
+use libra_config::validator_registration::ValCredentials;
 use libra_framework::head_release_bundle;
 use move_core_types::{
     ident_str,
@@ -19,14 +20,14 @@ use move_vm_runtime::session::SerializedReturnValues;
 use move_vm_types::gas::UnmeteredGasMeter;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug, Clone)]
-pub struct ValCredentials {
-    pub account: AccountAddress,
-    pub consensus_pubkey: Vec<u8>,
-    pub proof_of_possession: Vec<u8>,
-    pub network_addresses: Vec<u8>,
-    pub fullnode_addresses: Vec<u8>,
-}
+// #[derive(Debug, Clone)]
+// pub struct ValCredentials {
+//     pub account: AccountAddress,
+//     pub consensus_pubkey: Vec<u8>,
+//     pub proof_of_possession: Vec<u8>,
+//     pub network_addresses: Vec<u8>,
+//     pub fullnode_addresses: Vec<u8>,
+// }
 
 // Run a VM session with a dirty database
 // NOTE: there are several implementations of this elsewhere in Diem
@@ -162,11 +163,15 @@ pub fn libra_execute_session_function(
 /// Vector of `ValCredentials` is a list of validators to be added to the session
 pub fn session_add_validators(
     session: &mut SessionExt,
-    creds: Vec<&ValCredentials>,
+    creds: Vec<ValCredentials>,
+    upgrade: bool,
 ) -> anyhow::Result<()> {
     // upgrade the framework
-    dbg!("upgrade_framework");
-    upgrade_framework(session)?;
+    if upgrade {
+        dbg!("upgrade_framework");
+        upgrade_framework(session)?;
+    }
+
     // set the chain id (its is set to devnet by default)
     dbg!("set_chain_id");
     libra_execute_session_function(
@@ -192,7 +197,7 @@ pub fn session_add_validators(
         ],
     )?;
     //setup the allowed validators
-    for cred in creds.iter().copied() {
+    for cred in creds.iter() {
         let signer = MoveValue::Signer(AccountAddress::ONE);
         let vector_val = MoveValue::vector_address(vec![cred.account]);
         let args = vec![&signer, &vector_val];
@@ -279,6 +284,18 @@ fn combined_steps(session: &mut SessionExt) -> anyhow::Result<()> {
     upgrade_framework(session)?;
     writeset_voodoo_events(session)?;
     Ok(())
+}
+
+/// Twin testnet registration, replace validator set with new registrations
+pub fn twin_testnet(
+    dir: &Path,
+    testnet_vals: Vec<ValCredentials>,
+) -> anyhow::Result<ChangeSet> {
+    let vmc = libra_run_session(dir.to_path_buf(), |session| {
+      // if we are doing a twin testnet we don't want to upgrade the chain
+      session_add_validators(session, testnet_vals, false)
+    }, None, None)?;
+    unpack_changeset(vmc)
 }
 
 #[ignore]
