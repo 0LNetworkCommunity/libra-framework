@@ -8,11 +8,13 @@ BACKUP_DIR= ${ABS_PATH}/fixtures/v7/
 # OUTPUT_DB_PATH = ${ABS_PATH}/test_db
 OUTPUT_DB_PATH = $HOME/.libra/data/db
 
+
 # For the epoch restore
 EPOCH_MANIFEST = ${BACKUP_DIR}epoch_ending_116-.be9b/epoch_ending.manifest
 
 # For the snapshot restore
 STATE_MANIFEST = ${BACKUP_DIR}state_epoch_116_ver_38180075.05af/state.manifest
+
 
 # For the tx restore
 TX_MANIFEST = ${BACKUP_DIR}transaction_38100001-.541f/transaction.manifest
@@ -39,3 +41,4 @@ echo:
 
 config:
 	libra config fullnode-init
+

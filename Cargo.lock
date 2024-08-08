@@ -5680,6 +5680,7 @@ name = "libra-config"
 version = "7.0.2"
 dependencies = [
  "anyhow",
+ "bcs 0.1.4",
  "clap 4.5.4",
  "dialoguer",
  "diem",
@@ -5874,6 +5875,7 @@ dependencies = [
  "hex",
  "indoc",
  "libra-cached-packages",
+ "libra-config",
  "libra-framework",
  "libra-query",
  "libra-smoke-tests",
