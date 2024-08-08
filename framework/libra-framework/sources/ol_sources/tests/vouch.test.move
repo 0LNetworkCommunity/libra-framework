@@ -3,6 +3,9 @@ module ol_framework::test_vouch {
   use std::vector;
   use ol_framework::vouch;
   use ol_framework::mock;
+  use ol_framework::proof_of_fee;
+
+  // use diem_std::debug::print;
 
   // Happy Day scenarios
 
@@ -79,6 +82,46 @@ module ol_framework::test_vouch {
     let (received_vouches, received_epochs) = vouch::get_received_vouches(@0x1000b);
     assert!(received_vouches == vector[@0x1000c], 73570015);
     assert!(received_epochs == vector[0], 73570016);
+  }
+
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
+  fun epoch_boundary_update_vouch_price(root: &signer) {
+    // check default vouch micro-price
+    assert!(vouch::get_vouch_price() == 1_000, 73570025);
+
+    // initialize vals and vouch price
+    mock::genesis_n_vals(root, 3);
+    vouch::set_vouch_price(root, 0);
+    assert!(vouch::get_vouch_price() == 0, 73570025);
+
+    // mock to increase reward on the next epoch
+    proof_of_fee::test_mock_reward(root, 5_000, 1_000, 10, vector[10, 10, 10, 10, 10, 10]);
+    let (reward, _, _, _ ) = proof_of_fee::get_consensus_reward();
+    assert!(reward == 5_000, 73570026);
+
+    mock::trigger_epoch(root);
+
+    // check new vouch price
+    let (reward, _, _, _ ) = proof_of_fee::get_consensus_reward();
+    assert!(reward == 5_250, 73570027);
+    assert!(vouch::get_vouch_price() == 5_250, 73570026);
+
+    mock::trigger_epoch(root);
+
+    // check new vouch price
+    let (reward, _, _, _ ) = proof_of_fee::get_consensus_reward();
+    assert!(reward == 5_512, 73570027);
+    assert!(vouch::get_vouch_price() == 5_512, 73570026);
+
+    // mock to descrease reward on the next epoch
+    proof_of_fee::test_mock_reward(root, 10_000, 9_600, 960, vector[960, 960, 960, 960, 960, 960]);
+
+    mock::trigger_epoch(root);
+
+    // check new vouch price
+    let (reward, _, _, _ ) = proof_of_fee::get_consensus_reward();
+    assert!(reward == 9_500, 73570026);
+    assert!(vouch::get_vouch_price() == 9_500, 73570027);
   }
 
   // Sad Day scenarios
