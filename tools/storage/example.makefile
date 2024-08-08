@@ -6,7 +6,7 @@
 ABS_PATH?=`cd "$1"; pwd`
 BACKUP_DIR= ${ABS_PATH}/fixtures/v7/
 # OUTPUT_DB_PATH = ${ABS_PATH}/test_db
-OUTPUT_DB_PATH = /root/.libra/data/db
+OUTPUT_DB_PATH = $HOME/.libra/data/db
 
 # For the epoch restore
 EPOCH_MANIFEST = ${BACKUP_DIR}epoch_ending_116-.be9b/epoch_ending.manifest
