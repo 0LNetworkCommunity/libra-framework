@@ -66,6 +66,7 @@ async fn test_can_restart() -> anyhow::Result<()> {
         script_path: Some(script_path),
         framework_upgrade: false,
         debug_vals: None,
+        testnet_vals: None,
     };
     let genesis_blob_path = rescue.run().unwrap();
 
