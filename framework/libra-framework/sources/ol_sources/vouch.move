@@ -11,7 +11,7 @@ module ol_framework::vouch {
     use diem_framework::system_addresses;
     use diem_framework::transaction_fee;
 
-    use diem_std::debug::print;
+    //use diem_std::debug::print;
 
     friend diem_framework::genesis;
     friend ol_framework::proof_of_fee;
@@ -83,7 +83,6 @@ module ol_framework::vouch {
 
     // init the struct on a validators account.
     public(friend) fun init(new_account_sig: &signer) {
-      print(&@0xada1);
       let acc = signer::address_of(new_account_sig);
 
       if (!exists<MyVouches>(acc)) {
