@@ -4,6 +4,8 @@ use std::path::PathBuf;
 use diem_temppath::TempPath;
 use libra_storage::storage_cli::StorageCli;
 
+const TARGET_VERSION: u64 = 38180075;
+
 #[tokio::test]
 async fn e2e_epoch() -> anyhow::Result<()> {
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -11,10 +13,11 @@ async fn e2e_epoch() -> anyhow::Result<()> {
     let db_temp = TempPath::new();
     db_temp.create_as_dir()?;
 
-    let cmd = format!("storage db restore oneoff epoch-ending --epoch-ending-manifest {manifest} --target-db-dir {db} --local-fs-dir {fs}",
+    let cmd = format!("storage db restore oneoff epoch-ending --epoch-ending-manifest {manifest} --target-db-dir {db} --local-fs-dir {fs} --target-version {version}",
     manifest = fixtures.join("epoch_ending_116-.be9b/epoch_ending.manifest").display(),
     db = db_temp.path().display(),
-    fs = fixtures.display()
+    fs = fixtures.display(),
+    version = TARGET_VERSION,
   );
 
     let to_vec: Vec<_> = cmd.split_whitespace().collect();
@@ -29,10 +32,31 @@ async fn e2e_snapshot() -> anyhow::Result<()> {
     let db_temp = TempPath::new();
     db_temp.create_as_dir()?;
 
-    let cmd = format!("storage db restore oneoff state-snapshot --state-manifest {manifest} --target-db-dir {db} --local-fs-dir {fs} --restore-mode default --state-into-version 1",
+    let cmd = format!("storage db restore oneoff state-snapshot --state-manifest {manifest} --target-db-dir {db} --local-fs-dir {fs} --restore-mode default --state-into-version {version} --target-version {version}",
     manifest = fixtures.join("state_epoch_116_ver_38180075.05af/state.manifest").display(),
     db = db_temp.path().display(),
-    fs = fixtures.display()
+    fs = fixtures.display(),
+    version = TARGET_VERSION,
+  );
+
+    let to_vec: Vec<_> = cmd.split_whitespace().collect();
+    let s = StorageCli::try_parse_from(to_vec)?;
+    s.run().await
+}
+
+
+#[tokio::test]
+async fn e2e_transaction() -> anyhow::Result<()> {
+    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let fixtures = dir.join("fixtures/v7");
+    let db_temp = TempPath::new();
+    db_temp.create_as_dir()?;
+
+    let cmd = format!("storage db restore oneoff transaction --transaction-manifest {manifest}--target-db-dir {db} --local-fs-dir {fs} --target-version {version}",
+    manifest = fixtures.join("transaction_38100001-.541f/transaction.manifest").display(),
+    db = db_temp.path().display(),
+    fs = fixtures.display(),
+    version = TARGET_VERSION,
   );
 
     let to_vec: Vec<_> = cmd.split_whitespace().collect();
