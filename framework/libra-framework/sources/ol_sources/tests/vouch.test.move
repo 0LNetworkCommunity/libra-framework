@@ -114,4 +114,50 @@ module ol_framework::test_vouch {
     vouch::revoke(alice, @0x1000b);
   }
 
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, v1 = @0x10001, v2 = @0x10002, v3 = @0x10003, v4 = @0x10004, v5 = @0x10005, v6 = @0x10006, v7 = @0x10007, v8 = @0x10008, v9 = @0x10009, v10 = @0x10010)]
+  #[expected_failure(abort_code = 0x30004, location = ol_framework::vouch)]
+  fun vouch_over_max(root: &signer, alice: &signer, bob: &signer, v1: &signer, v2: &signer, v3: &signer, v4: &signer, v5: &signer, v6: &signer, v7: &signer, v8: &signer, v9: &signer, v10: &signer) {
+    // create vals without vouches
+    mock::create_vals(root, 1, false);
+    vouch::set_vouch_price(root, 0);
+
+    // init vouch for 10 validators
+    vouch::init(v1);
+    vouch::init(v2);
+    vouch::init(v3);
+    vouch::init(v4);
+    vouch::init(v5);
+    vouch::init(v6);
+    vouch::init(v7);
+    vouch::init(v8);
+    vouch::init(v9);
+    vouch::init(v10);
+    vouch::init(bob);
+
+    // alice vouches for 10 validators
+    vouch::insist_vouch_for(alice, @0x10001);
+    vouch::insist_vouch_for(alice, @0x10002);
+    vouch::insist_vouch_for(alice, @0x10003);
+    vouch::insist_vouch_for(alice, @0x10004);
+    vouch::insist_vouch_for(alice, @0x10005);
+    vouch::insist_vouch_for(alice, @0x10006);
+    vouch::insist_vouch_for(alice, @0x10007);
+    vouch::insist_vouch_for(alice, @0x10008);
+    vouch::insist_vouch_for(alice, @0x10009);
+    vouch::insist_vouch_for(alice, @0x10010);
+
+    // alice try to vouch for one more
+    vouch::insist_vouch_for(alice, @0x1000b);
+
+    // check alice
+    let (given_vouches, given_epochs) = vouch::get_given_vouches(@0x1000a);
+    assert!(given_vouches == vector[@0x10001, @0x10002, @0x10003, @0x10004, @0x10005, @0x10006, @0x10007, @0x10008, @0x10009, @0x10010], 73570017);
+    assert!(given_epochs == vector[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 73570018);
+
+    // check bob
+    let (received_vouches, received_epochs) = vouch::get_received_vouches(@0x1000b);
+    assert!(received_vouches == vector::empty(), 73570019);
+    assert!(received_epochs == vector::empty(), 73570020);
+  }
+
 }

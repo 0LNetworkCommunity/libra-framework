@@ -35,6 +35,7 @@ module ol_framework::vouch {
     /// Maximum number of vouches
     const BASE_MAX_VOUCHES: u64 = 10;
 
+
     //////// ERROR CODES ////////
 
     /// Trying to vouch for yourself?
@@ -52,6 +53,11 @@ module ol_framework::vouch {
     /// Vouch not found
     const EVOUCH_NOT_FOUND: u64 = 5;
 
+    /// Grantor state is not initialized
+    const EGRANTOR_NOT_INIT: u64 = 6;
+
+
+    //////// STRUCTS ////////
 
     // TODO: someday this should be renamed to ReceivedVouches
     struct MyVouches has key {
@@ -142,8 +148,16 @@ module ol_framework::vouch {
       let grantor_acc = signer::address_of(grantor);
       assert!(grantor_acc != friend_acc, error::invalid_argument(ETRY_SELF_VOUCH_REALLY));
 
-      if (!exists<MyVouches>(friend_acc)) return; // belts and suspenders
-      let epoch = epoch_helper::get_current_epoch();
+      // check if structures are initialized
+      assert!(is_init(grantor_acc), error::invalid_state(EGRANTOR_NOT_INIT));
+      assert!(is_init(friend_acc), error::invalid_state(ERECEIVER_NOT_INIT));
+
+      // check if the grantor has already reached the limit of vouches
+      let (given_vouches, _) = get_given_vouches(grantor_acc);
+      assert!(
+        vector::length(&given_vouches) < BASE_MAX_VOUCHES,
+        error::invalid_state(EMAX_LIMIT_GIVEN)
+      );
 
       // this fee is paid to the system, cannot be reclaimed
       let price = get_vouch_price();
@@ -151,6 +165,8 @@ module ol_framework::vouch {
         let vouch_cost = ol_account::withdraw(grantor, price);
         transaction_fee::user_pay_fee(grantor, vouch_cost);
       };
+
+      let epoch = epoch_helper::get_current_epoch();
 
       // add friend to grantor given vouches
       add_given_vouches(grantor_acc, friend_acc, epoch);
