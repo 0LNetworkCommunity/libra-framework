@@ -22,7 +22,7 @@ pub struct GenesisCli {
 }
 
 impl GenesisCli {
-    pub async fn execute(&self) -> anyhow::Result<()> {
+    pub async fn run(&self) -> anyhow::Result<()> {
         let data_path = self.home_dir.clone().unwrap_or_else(global_config_dir);
         let chain_name = self.chain.unwrap_or(NamedChain::TESTNET); // chain_id = 2
 

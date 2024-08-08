@@ -1,10 +1,10 @@
 mod move_cli;
 mod node_cli;
+mod ops_cli;
 
 use anyhow::anyhow;
 use clap::{Parser, Subcommand};
 use libra_config::config_cli::ConfigCli;
-use libra_genesis_tools::cli::GenesisCli;
 use libra_query::query_cli::QueryCli;
 use libra_txs::txs_cli::TxsCli;
 use libra_wallet::wallet_cli::WalletCli;
@@ -26,7 +26,8 @@ enum Sub {
     Query(QueryCli),
     Txs(TxsCli),
     Wallet(WalletCli),
-    Genesis(GenesisCli),
+    #[clap(subcommand)]
+    Ops(ops_cli::OpsTool),
     Version,
 }
 
@@ -81,13 +82,11 @@ fn main() -> anyhow::Result<()> {
                         }
                     }
 
-                    // Execute Genesis CLI subcommand
-                    Some(Sub::Genesis(genesis_cli)) => {
-                        if let Err(e) = genesis_cli.execute().await {
-                            eprintln!("Failed to execute genesis tool, message: {}", &e);
+                    Some(Sub::Ops(tool)) => {
+                        if let Err(e) = tool.run().await {
+                            eprintln!("Failed to execute ops tool, message: {}", &e);
                         }
                     }
-
                     // Display version information
                     Some(Sub::Version) => {
                         println!("LIBRA VERSION {}", env!("CARGO_PKG_VERSION"));
