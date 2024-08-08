@@ -4,20 +4,12 @@ use clap::Parser;
 use diem_config::config::{NodeConfig, WaypointConfig};
 use diem_forge::{SwarmExt, Validator};
 use diem_temppath::TempPath;
-use diem_types::{
-    transaction::{Script, Transaction, WriteSetPayload},
-};
+use diem_types::transaction::{Script, Transaction, WriteSetPayload};
 use fs_extra::dir;
-use futures_util::TryFutureExt;
-use libra_smoke_tests::{
-    configure_validator,
-    helpers::{get_libra_balance},
-    libra_smoke::LibraSmoke,
-};
+use libra_smoke_tests::{configure_validator, helpers::get_libra_balance, libra_smoke::LibraSmoke};
 use libra_txs::txs_cli_vals::ValidatorTxs;
 use smoke_test::test_utils::{
-    swarm_utils::insert_waypoint, MAX_CONNECTIVITY_WAIT_SECS,
-    MAX_HEALTHY_WAIT_SECS,
+    swarm_utils::insert_waypoint, MAX_CONNECTIVITY_WAIT_SECS, MAX_HEALTHY_WAIT_SECS,
 };
 use std::{
     path::PathBuf,
@@ -29,19 +21,15 @@ use libra_config::validator_registration::ValCredentials;
 use libra_txs::txs_cli::{TxsCli, TxsSub::Transfer};
 use libra_types::core_types::app_cfg::TxCost;
 
-use libra_rescue::{
-    session_tools::{
-        self, libra_run_session, session_add_validators
-    },
-    diem_db_bootstrapper::BootstrapOpts
-};
-use diem_config::{config::InitialSafetyRulesConfig};
+use diem_config::config::InitialSafetyRulesConfig;
 use diem_forge::{LocalNode, Node, NodeExt};
-use diem_genesis::{
-    keys::{PublicIdentity},
-};
+use diem_genesis::keys::PublicIdentity;
 use hex::{self};
 use libra_query::query_view;
+use libra_rescue::{
+    diem_db_bootstrapper::BootstrapOpts,
+    session_tools::{self, libra_run_session, session_add_validators},
+};
 use std::{fs, path::Path};
 
 #[derive(Parser)]
@@ -65,7 +53,6 @@ pub struct TwinOpts {
 impl TwinOpts {
     pub fn run(&self) -> anyhow::Result<(), anyhow::Error> {
         let db_path = &self.db_dir;
-        let num_val = 3_u8;
         let twin = Twin {
             db_dir: db_path.to_path_buf(),
             oper_file: self.oper_file.clone(),
@@ -100,10 +87,11 @@ where
         let db_path = &self.db_dir;
         let runtime = tokio::runtime::Runtime::new().unwrap();
         let num_validators = 3_u8;
+        // TODO: why are we not using the async here?
         runtime.block_on(Twin::apply_with_rando_e2e(
             db_path.to_path_buf(),
             num_validators,
-        ));
+        ))?;
         println!("Twins are running!");
         std::thread::park();
         Ok(())
@@ -176,7 +164,6 @@ impl TwinSetup for Twin {
         creds: Vec<ValCredentials>,
     ) -> anyhow::Result<PathBuf> {
         println!("run session to create validator onboarding tx (rescue.blob)");
-        let epoch_interval = 100000_u64;
         let vmc = libra_run_session(
             db_path.to_path_buf(),
             |session| session_add_validators(session, creds, true),
@@ -245,10 +232,13 @@ impl TwinSetup for Twin {
             .map(|n| n.config().storage.dir())
             .collect::<Vec<_>>();
 
-        smoke.swarm.validators_mut().for_each(|n| {
+        for n in smoke.swarm.validators_mut() {
             n.stop();
-            n.clear_storage();
-        });
+            // TODO: check this is doing what we expect
+            // was previously not being called
+            n.clear_storage().await?;
+        }
+
         swarm_db_paths.iter().for_each(|p| {
             Self::clone_db(&prod_db, p).unwrap();
         });
@@ -258,7 +248,7 @@ impl TwinSetup for Twin {
         });
         // 4. Create a rescue blob with the new validator
         println!("3. Create a rescue blob with the new validator");
-        let first_val = smoke.swarm.validators().next().unwrap().peer_id();
+        // let first_val = smoke.swarm.validators().next().unwrap().peer_id();
         let genesis_blob_path = Self::make_rescue_twin_blob(&swarm_db_paths[0], creds).await?;
         let mut genesis_blob_paths = Vec::new();
         genesis_blob_paths.push(genesis_blob_path.clone());
@@ -311,7 +301,6 @@ impl TwinSetup for Twin {
             6. Change the waypoint in the node configs and add the rescue blob to the config"
         );
         for (i, n) in smoke.swarm.validators_mut().enumerate() {
-            let config = n.config().clone();
             let mut node_config = n.config().clone();
             insert_waypoint(&mut node_config, waypoints[i]);
             node_config
@@ -332,21 +321,24 @@ impl TwinSetup for Twin {
             Self::wait_for_node(n, i).await?;
         }
         println!("7. wait for liveness");
+        // TODO: check if this is doing what is expected
+        // was previously not running
         smoke
             .swarm
-            .liveness_check(Instant::now().checked_add(Duration::from_secs(10)).unwrap());
+            .liveness_check(Instant::now().checked_add(Duration::from_secs(10)).unwrap())
+            .await?;
 
-        // TO DO: REVESIT THIS TRANSACTION
-        /// !!! The parameters are the one used by mainnet(in tests we use the same parameters as in testnet so change them manually)
-        ///  Do not forget to change the parameters before sending
-        ///  They should be the same as in mainnet
+        // TO DO: REVISIT THIS TRANSACTION
+        // !!! The parameters are the one used by mainnet(in tests we use the same parameters as in testnet so change them manually)
+        //  Do not forget to change the parameters before sending
+        //  They should be the same as in mainnet
         let d = diem_temppath::TempPath::new();
         let (_, _app_cfg) =
             configure_validator::init_val_config_files(&mut smoke.swarm, 0, d.path().to_owned())
                 .await
                 .expect("could not init validator config");
         let recipient = smoke.swarm.validators().nth(1).unwrap().peer_id();
-        let marlon = smoke.swarm.validators().next().unwrap().peer_id();
+        // let marlon = smoke.swarm.validators().next().unwrap().peer_id();
         let bal_old = get_libra_balance(&client, recipient).await?;
         let config_path = d.path().to_owned().join("libra-cli-config.yaml");
         let cli = TxsCli {
@@ -445,14 +437,14 @@ impl TwinSetup for Twin {
         assert!(prod_db.exists());
         assert!(swarm_db.exists());
         let swarm_old_path = swarm_db.parent().unwrap().join("db-old");
-        fs::create_dir(&swarm_old_path);
+        fs::create_dir(&swarm_old_path)?;
         let options = dir::CopyOptions::new(); //Initialize default values for CopyOptions
 
         // move source/dir1 to target/dir1
         dir::move_dir(swarm_db, &swarm_old_path, &options)?;
         assert!(!swarm_db.exists());
 
-        fs::create_dir(swarm_db);
+        fs::create_dir(swarm_db)?;
         dir::copy(prod_db, swarm_db.parent().unwrap(), &options)?;
 
         println!("db copied");
@@ -487,26 +479,26 @@ impl TwinSetup for Twin {
     }
 }
 
-#[ignore]
-#[test]
-fn test_twin_cl() -> anyhow::Result<()> {
-    //use any db
-    let prod_db_to_clone = PathBuf::from("/root/.libra/db");
-    let twin = TwinOpts {
-        db_dir: prod_db_to_clone,
-        oper_file: None,
-        info: false,
-    };
-    twin.run();
-    Ok(())
-}
-#[ignore]
-#[tokio::test]
-async fn test_twin_random() -> anyhow::Result<()> {
-    //use any db
-    let prod_db_to_clone = PathBuf::from("/root/.libra/db");
-    Twin::apply_with_rando_e2e(prod_db_to_clone, 3)
-        .await
-        .unwrap();
-    Ok(())
-}
+// #[ignore]
+// #[test]
+// fn test_twin_cl() -> anyhow::Result<()> {
+//     //use any db
+//     let prod_db_to_clone = PathBuf::from("/root/.libra/db");
+//     let twin = TwinOpts {
+//         db_dir: prod_db_to_clone,
+//         oper_file: None,
+//         info: false,
+//     };
+//     twin.run();
+//     Ok(())
+// }
+// #[ignore]
+// #[tokio::test]
+// async fn test_twin_random() -> anyhow::Result<()> {
+//     //use any db
+//     let prod_db_to_clone = PathBuf::from("/root/.libra/db");
+//     Twin::apply_with_rando_e2e(prod_db_to_clone, 3)
+//         .await
+//         .unwrap();
+//     Ok(())
+// }
