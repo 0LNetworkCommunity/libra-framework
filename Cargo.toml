@@ -5,6 +5,7 @@ members = [
   "framework",
   "framework/cached-packages",
   "smoke-tests",
+  "testsuites/twin",
   "tools/cli",
   "tools/config",
   "tools/genesis",
