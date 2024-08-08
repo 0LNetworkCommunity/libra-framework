@@ -60,8 +60,13 @@ module ol_framework::vouch {
     //////// STRUCTS ////////
 
     // TODO: someday this should be renamed to ReceivedVouches
-    struct MyVouches has key {
+    struct MyVouches has key, drop {
       my_buddies: vector<address>, // incoming vouches
+      epoch_vouched: vector<u64>,
+    }
+
+    struct ReceivedVouches has key {
+      incoming_vouches: vector<address>,
       epoch_vouched: vector<u64>,
     }
 
@@ -85,9 +90,9 @@ module ol_framework::vouch {
     public(friend) fun init(new_account_sig: &signer) {
       let acc = signer::address_of(new_account_sig);
 
-      if (!exists<MyVouches>(acc)) {
-        move_to<MyVouches>(new_account_sig, MyVouches {
-          my_buddies: vector::empty(),
+      if (!exists<ReceivedVouches>(acc)) {
+        move_to<ReceivedVouches>(new_account_sig, ReceivedVouches {
+          incoming_vouches: vector::empty(),
           epoch_vouched: vector::empty(),
         });
       };
@@ -100,39 +105,6 @@ module ol_framework::vouch {
       };
     }
 
-    // WARNING: Val signer being forgded here for migration purpose!!!
-    // The struct GivenVouches cannot not be lazy initialized because
-    // vouch module cannot depend on validator_universe (circle dependency)
-    // TODO: this migration function must be removed after all validators have migrated
-    public(friend) fun migrate_given_vouches(account_sig: &signer, all_accounts: vector<address>) acquires MyVouches {
-      let account = signer::address_of(account_sig);
-
-      if (exists<GivenVouches>(account)) {
-        // struct already initialized
-        return
-      };
-
-      let new_outgoing_vouches = vector::empty();
-      let new_epoch_vouched = vector::empty();
-
-      vector::for_each(all_accounts, |val| {
-        if (val != account) {
-          let (incoming_vouches, epoch_vouched) = get_received_vouches(val);
-          let (found, i) = vector::index_of(&incoming_vouches, &account);
-          if (found) {
-            vector::push_back(&mut new_outgoing_vouches, val);
-            vector::push_back(&mut new_epoch_vouched, *vector::borrow(&epoch_vouched, i));
-          }
-        }
-      });
-
-      // add the new GivenVouches struct with the new data
-      move_to<GivenVouches>(account_sig, GivenVouches {
-        outgoing_vouches: new_outgoing_vouches,
-        epoch_vouched: new_epoch_vouched,
-      });
-    }
-
     public(friend) fun set_vouch_price(framework: &signer, amount: u64) acquires VouchPrice {
       system_addresses::assert_ol(framework);
       if (!exists<VouchPrice>(@ol_framework)) {
@@ -143,7 +115,7 @@ module ol_framework::vouch {
       };
     }
 
-    fun vouch_impl(grantor: &signer, friend_acc: address) acquires MyVouches, GivenVouches, VouchPrice {
+    fun vouch_impl(grantor: &signer, friend_acc: address) acquires ReceivedVouches, GivenVouches, VouchPrice {
       let grantor_acc = signer::address_of(grantor);
       assert!(grantor_acc != friend_acc, error::invalid_argument(ETRY_SELF_VOUCH_REALLY));
 
@@ -191,9 +163,9 @@ module ol_framework::vouch {
     }
 
     // Function to add received vouches
-    public fun add_received_vouches(vouched_account: address, grantor_acc: address, epoch: u64) acquires MyVouches {
-      let received_vouches = borrow_global_mut<MyVouches>(vouched_account);
-      let (found, i) = vector::index_of(&received_vouches.my_buddies, &grantor_acc);
+    public fun add_received_vouches(vouched_account: address, grantor_acc: address, epoch: u64) acquires ReceivedVouches {
+      let received_vouches = borrow_global_mut<ReceivedVouches>(vouched_account);
+      let (found, i) = vector::index_of(&received_vouches.incoming_vouches, &grantor_acc);
 
       if (found) {
         // Update the epoch if the vouching account is already present
@@ -201,7 +173,7 @@ module ol_framework::vouch {
         *epoch_value = epoch;
       } else {
         // Add new vouching account and epoch if not already present
-        vector::push_back(&mut received_vouches.my_buddies, grantor_acc);
+        vector::push_back(&mut received_vouches.incoming_vouches, grantor_acc);
         vector::push_back(&mut received_vouches.epoch_vouched, epoch);
       }
     }
@@ -209,22 +181,22 @@ module ol_framework::vouch {
     /// will only succesfully vouch if the two are not related by ancestry
     /// prevents spending a vouch that would not be counted.
     /// to add a vouch and ignore this check use insist_vouch
-    public entry fun vouch_for(grantor: &signer, wanna_be_my_friend: address) acquires MyVouches, GivenVouches, VouchPrice {
+    public entry fun vouch_for(grantor: &signer, wanna_be_my_friend: address) acquires ReceivedVouches, GivenVouches, VouchPrice {
       ancestry::assert_unrelated(signer::address_of(grantor), wanna_be_my_friend);
       vouch_impl(grantor, wanna_be_my_friend);
     }
 
     /// you may want to add people who are related to you
     /// there are no known use cases for this at the moment.
-    public entry fun insist_vouch_for(grantor: &signer, wanna_be_my_friend: address) acquires MyVouches, GivenVouches, VouchPrice {
+    public entry fun insist_vouch_for(grantor: &signer, wanna_be_my_friend: address) acquires ReceivedVouches, GivenVouches, VouchPrice {
       vouch_impl(grantor, wanna_be_my_friend);
     }
 
-    public entry fun revoke(grantor: &signer, friend_acc: address) acquires MyVouches, GivenVouches {
+    public entry fun revoke(grantor: &signer, friend_acc: address) acquires ReceivedVouches, GivenVouches {
       let grantor_acc = signer::address_of(grantor);
       assert!(grantor_acc != friend_acc, error::invalid_argument(ETRY_SELF_VOUCH_REALLY));
 
-      if (!exists<MyVouches>(friend_acc)) return;
+      assert!(is_init(grantor_acc), error::invalid_state(EGRANTOR_NOT_INIT));
 
       // remove friend from grantor given vouches
       let v = borrow_global_mut<GivenVouches>(grantor_acc);
@@ -234,48 +206,108 @@ module ol_framework::vouch {
       vector::remove<u64>(&mut v.epoch_vouched, i);
 
       // remove grantor from friends received vouches
-      let v = borrow_global_mut<MyVouches>(friend_acc);
-      let (found, i) = vector::index_of(&v.my_buddies, &grantor_acc);
+      let v = borrow_global_mut<ReceivedVouches>(friend_acc);
+      let (found, i) = vector::index_of(&v.incoming_vouches, &grantor_acc);
       assert!(found, error::invalid_argument(EVOUCH_NOT_FOUND));
-      vector::remove(&mut v.my_buddies, i);
+      vector::remove(&mut v.incoming_vouches, i);
       vector::remove(&mut v.epoch_vouched, i);
     }
 
-    public(friend) fun vm_migrate(vm: &signer, val: address, buddy_list: vector<address>) acquires MyVouches {
+    public(friend) fun vm_migrate(vm: &signer, val: address, buddy_list: vector<address>) acquires ReceivedVouches {
       system_addresses::assert_ol(vm);
       bulk_set(val, buddy_list);
     }
 
-    fun bulk_set(val: address, buddy_list: vector<address>) acquires MyVouches {
-      if (!exists<MyVouches>(val)) return;
+    fun bulk_set(val: address, buddy_list: vector<address>) acquires ReceivedVouches {
+      if (!exists<ReceivedVouches>(val)) return;
 
       // take self out of list
-      let v = borrow_global_mut<MyVouches>(val);
+      let v = borrow_global_mut<ReceivedVouches>(val);
       let (is_found, i) = vector::index_of(&buddy_list, &val);
       if (is_found) {
         vector::swap_remove<address>(&mut buddy_list, i);
       };
-      v.my_buddies = buddy_list;
+      v.incoming_vouches = buddy_list;
 
       let epoch_data: vector<u64> = vector::map_ref(&buddy_list, |_e| { 0u64 } );
       v.epoch_vouched = epoch_data;
+    }
+
+    // The struct GivenVouches cannot not be lazy initialized because
+    // vouch module cannot depend on validator_universe (circle dependency)
+    // TODO: this migration function must be removed after all validators have migrated
+    public(friend) fun migrate_given_vouches(account_sig: &signer, all_accounts: vector<address>) acquires ReceivedVouches {
+      let account = signer::address_of(account_sig);
+
+      if (exists<GivenVouches>(account)) {
+        // struct already initialized
+        return
+      };
+
+      let new_outgoing_vouches = vector::empty();
+      let new_epoch_vouched = vector::empty();
+
+      vector::for_each(all_accounts, |val| {
+        if (val != account) {
+          let (incoming_vouches, epoch_vouched) = get_received_vouches(val);
+          let (found, i) = vector::index_of(&incoming_vouches, &account);
+          if (found) {
+            vector::push_back(&mut new_outgoing_vouches, val);
+            vector::push_back(&mut new_epoch_vouched, *vector::borrow(&epoch_vouched, i));
+          }
+        }
+      });
+
+      // add the new GivenVouches struct with the new data
+      move_to<GivenVouches>(account_sig, GivenVouches {
+        outgoing_vouches: new_outgoing_vouches,
+        epoch_vouched: new_epoch_vouched,
+      });
+    }
+
+    // TODO: remove/deprecate after migration is completed
+    public(friend) fun migrate_received_vouches(account_sig: &signer) acquires MyVouches {
+      let account = signer::address_of(account_sig);
+
+      if (!exists<MyVouches>(account)) {
+        // struct not initialized
+        return
+      };
+
+      if (exists<ReceivedVouches>(account)) {
+        // struct already initialized
+        return
+      };
+
+      let state = borrow_global<MyVouches>(account);
+      let new_incoming_vouches = state.my_buddies;
+      let new_epoch_vouched = state.epoch_vouched;
+
+      // add the new ReceivedVouches struct with the legacy data
+      move_to<ReceivedVouches>(account_sig, ReceivedVouches {
+        incoming_vouches: new_incoming_vouches,
+        epoch_vouched: new_epoch_vouched,
+      });
+
+      // remove deprecated MyVouches struct
+      move_from<MyVouches>(account);
     }
 
     ///////// GETTERS //////////
 
     #[view]
     public fun is_init(acc: address ):bool {
-      exists<MyVouches>(acc)
+      exists<ReceivedVouches>(acc) && exists<GivenVouches>(acc)
     }
 
     #[view]
-    public fun get_received_vouches(acc: address): (vector<address>, vector<u64>) acquires MyVouches {
-      if (!exists<MyVouches>(acc)) {
+    public fun get_received_vouches(acc: address): (vector<address>, vector<u64>) acquires ReceivedVouches {
+      if (!exists<ReceivedVouches>(acc)) {
         return (vector::empty(), vector::empty())
       };
 
-      let state = borrow_global<MyVouches>(acc);
-      (*&state.my_buddies, *&state.epoch_vouched)
+      let state = borrow_global<ReceivedVouches>(acc);
+      (*&state.incoming_vouches, *&state.epoch_vouched)
     }
 
     #[view]
@@ -298,20 +330,20 @@ module ol_framework::vouch {
 
     #[view]
     /// gets all buddies, including expired ones
-    public fun all_vouchers(val: address): vector<address> acquires MyVouches{
+    public fun all_vouchers(val: address): vector<address> acquires ReceivedVouches {
 
-      if (!exists<MyVouches>(val)) return vector::empty<address>();
-      let state = borrow_global<MyVouches>(val);
-      *&state.my_buddies
+      if (!exists<ReceivedVouches>(val)) return vector::empty<address>();
+      let state = borrow_global<ReceivedVouches>(val);
+      *&state.incoming_vouches
     }
 
     #[view]
     /// gets the buddies and checks if they are expired
-    public fun all_not_expired(addr: address): vector<address> acquires MyVouches{
+    public fun all_not_expired(addr: address): vector<address> acquires ReceivedVouches {
       let valid_vouches = vector::empty<address>();
       if (is_init(addr)) {
-        let state = borrow_global<MyVouches>(addr);
-        vector::for_each(state.my_buddies, |buddy_acc| {
+        let state = borrow_global<ReceivedVouches>(addr);
+        vector::for_each(state.incoming_vouches, |buddy_acc| {
           // account might have dropped
           if (account::exists_at(buddy_acc)){
             if (is_not_expired(buddy_acc, state)) {
@@ -326,8 +358,8 @@ module ol_framework::vouch {
 
     #[view]
     /// filter expired vouches, and do ancestry check
-    public fun true_friends(addr: address): vector<address> acquires MyVouches{
-      if (!exists<MyVouches>(addr)) return vector::empty<address>();
+    public fun true_friends(addr: address): vector<address> acquires ReceivedVouches {
+      if (!exists<ReceivedVouches>(addr)) return vector::empty<address>();
       let not_expired = all_not_expired(addr);
       let filtered_ancestry = ancestry::list_unrelated(not_expired);
       filtered_ancestry
@@ -336,13 +368,13 @@ module ol_framework::vouch {
     #[view]
     /// check if the user is in fact a valid voucher
     public fun is_valid_voucher_for(voucher: address, recipient: address):bool
-    acquires MyVouches {
+    acquires ReceivedVouches {
       let list = true_friends(recipient);
       vector::contains(&list, &voucher)
     }
 
-    fun is_not_expired(voucher: address, state: &MyVouches): bool {
-      let (found, i) = vector::index_of(&state.my_buddies, &voucher);
+    fun is_not_expired(voucher: address, state: &ReceivedVouches): bool {
+      let (found, i) = vector::index_of(&state.incoming_vouches, &voucher);
       if (found) {
         let when_vouched = vector::borrow(&state.epoch_vouched, i);
         return  (*when_vouched + EXPIRATION_ELAPSED_EPOCHS) > epoch_helper::get_current_epoch()
@@ -351,8 +383,8 @@ module ol_framework::vouch {
     }
 
     /// for a given list find and count any of my vouchers
-    public(friend) fun true_friends_in_list(addr: address, list: &vector<address>): (vector<address>, u64) acquires MyVouches {
-      if (!exists<MyVouches>(addr)) return (vector::empty(), 0);
+    public(friend) fun true_friends_in_list(addr: address, list: &vector<address>): (vector<address>, u64) acquires ReceivedVouches {
+      if (!exists<ReceivedVouches>(addr)) return (vector::empty(), 0);
 
       let tf = true_friends(addr);
       let buddies_in_list = vector::empty();
@@ -369,7 +401,7 @@ module ol_framework::vouch {
     }
 
     #[test_only]
-    public fun test_set_buddies(val: address, buddy_list: vector<address>) acquires MyVouches {
+    public fun test_set_buddies(val: address, buddy_list: vector<address>) acquires ReceivedVouches {
       bulk_set(val, buddy_list);
     }
   }
