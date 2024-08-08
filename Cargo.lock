@@ -5655,6 +5655,8 @@ dependencies = [
  "libra-framework",
  "libra-genesis-tools",
  "libra-query",
+ "libra-rescue",
+ "libra-storage",
  "libra-txs",
  "libra-types",
  "libra-wallet",
@@ -5772,6 +5774,49 @@ dependencies = [
 ]
 
 [[package]]
+name = "libra-rescue"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "bcs 0.1.4",
+ "clap 4.5.4",
+ "diem-api-types",
+ "diem-config",
+ "diem-crypto",
+ "diem-db",
+ "diem-executor",
+ "diem-forge",
+ "diem-gas",
+ "diem-genesis",
+ "diem-logger",
+ "diem-storage-interface",
+ "diem-temppath",
+ "diem-types",
+ "diem-vm",
+ "diem-vm-types",
+ "fs_extra",
+ "futures-util",
+ "hex",
+ "libra-config",
+ "libra-framework",
+ "libra-query",
+ "libra-smoke-tests",
+ "libra-txs",
+ "libra-types",
+ "libra-wallet",
+ "move-core-types",
+ "move-vm-runtime",
+ "move-vm-types",
+ "regex",
+ "serde 1.0.199",
+ "serde_json",
+ "serde_yaml 0.8.26",
+ "smoke-test",
+ "tokio",
+]
+
+[[package]]
 name = "libra-smoke-tests"
 version = "0.1.0"
 dependencies = [
@@ -5790,6 +5835,24 @@ dependencies = [
  "smoke-test",
  "tokio",
  "url",
+]
+
+[[package]]
+name = "libra-storage"
+version = "7.0.2"
+dependencies = [
+ "anyhow",
+ "bcs 0.1.4",
+ "clap 4.5.4",
+ "diem-backup-cli",
+ "diem-db-tool",
+ "diem-logger",
+ "diem-push-metrics",
+ "diem-temppath",
+ "diem-types",
+ "libra-types",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -8315,49 +8378,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rescue"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "bcs 0.1.4",
- "clap 4.5.4",
- "diem-api-types",
- "diem-config",
- "diem-crypto",
- "diem-db",
- "diem-executor",
- "diem-forge",
- "diem-gas",
- "diem-genesis",
- "diem-logger",
- "diem-storage-interface",
- "diem-temppath",
- "diem-types",
- "diem-vm",
- "diem-vm-types",
- "fs_extra",
- "futures-util",
- "hex",
- "libra-config",
- "libra-framework",
- "libra-query",
- "libra-smoke-tests",
- "libra-txs",
- "libra-types",
- "libra-wallet",
- "move-core-types",
- "move-vm-runtime",
- "move-vm-types",
- "regex",
- "serde 1.0.199",
- "serde_json",
- "serde_yaml 0.8.26",
- "smoke-test",
- "tokio",
-]
-
-[[package]]
 name = "retain_mut"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9197,23 +9217,6 @@ checksum = "a20cc99bbe608305546a850ec4352907279a8b8044f9c13ae58bd0a8ab46ebc1"
 dependencies = [
  "ansi-escapes",
  "atty",
-]
-
-[[package]]
-name = "storage"
-version = "7.0.2"
-dependencies = [
- "anyhow",
- "bcs 0.1.4",
- "clap 4.5.4",
- "diem-backup-cli",
- "diem-db-tool",
- "diem-logger",
- "diem-push-metrics",
- "diem-types",
- "libra-types",
- "serde_json",
- "tokio",
 ]
 
 [[package]]

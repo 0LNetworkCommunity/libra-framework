@@ -2,12 +2,12 @@ mod support;
 
 use diem_crypto::ValidCryptoMaterialStringExt;
 use libra_query::query_view;
+use libra_rescue::twin::{Twin, TwinSetup};
 use libra_txs::{
     txs_cli::{TxsCli, TxsSub, TxsSub::Transfer},
     txs_cli_community::{CageTx, ClaimTx, CommunityTxs, InitTx},
 };
 use libra_types::core_types::app_cfg::TxCost;
-use rescue::twin::{Twin, TwinSetup};
 use std::{env, path::PathBuf};
 
 // TODO: Remove after offer structure is migrated
