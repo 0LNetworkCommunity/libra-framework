@@ -11,6 +11,7 @@ repository = { workspace = true }
 
 [dependencies]
 anyhow = { workspace = true }
+bcs = { workspace = true }
 clap = { workspace = true }
 dialoguer = { workspace = true }
 diem = { workspace = true }

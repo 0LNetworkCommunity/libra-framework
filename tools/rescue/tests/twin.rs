@@ -62,6 +62,7 @@ async fn test_twin() -> anyhow::Result<()> {
         script_path: None,
         framework_upgrade: true,
         debug_vals: Some(vec![first_validator_address]),
+        testnet_vals: None,
     };
     r.run()?;
 

@@ -4,6 +4,7 @@ use diem_types::{
     account_address::AccountAddress,
     transaction::{Script, Transaction, WriteSetPayload},
 };
+use libra_config::validator_registration::parse_pub_files_to_vec;
 use libra_framework::builder::framework_generate_upgrade_proposal::libra_compile_script;
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
 use std::path::PathBuf;
@@ -27,6 +28,11 @@ pub struct RescueTxOpts {
     /// Replace validator set with these addresses. They must
     /// already have valid configurations on chain.
     pub debug_vals: Option<Vec<AccountAddress>>,
+    // TODO
+    /// testnet twin options
+    /// replaces the validator set with these new validators that need to be registered
+    /// must be in format of testnet_vals.yaml
+    pub testnet_vals: Option<Vec<PathBuf>>,
 }
 
 impl RescueTxOpts {
@@ -51,6 +57,10 @@ impl RescueTxOpts {
         } else if self.framework_upgrade {
             let cs =
                 session_tools::publish_current_framework(&db_path, self.debug_vals.to_owned())?;
+            Transaction::GenesisTransaction(WriteSetPayload::Direct(cs))
+        } else if let Some(reg_files) = self.testnet_vals.to_owned() {
+            let registrations = parse_pub_files_to_vec(reg_files);
+            let cs = session_tools::twin_testnet(&db_path, registrations)?;
             Transaction::GenesisTransaction(WriteSetPayload::Direct(cs))
         } else {
             anyhow::bail!("no options provided, need a --framework-upgrade or a --script-path");
@@ -90,6 +100,7 @@ fn test_create_blob() -> anyhow::Result<()> {
         script_path: Some(script_path),
         framework_upgrade: false,
         debug_vals: None,
+        testnet_vals: None,
     };
     r.run()?;
 

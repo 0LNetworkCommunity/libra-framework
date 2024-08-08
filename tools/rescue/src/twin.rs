@@ -31,6 +31,7 @@ use std::{
 };
 use tokio::process::Command;
 
+use libra_config::validator_registration::ValCredentials;
 use libra_txs::txs_cli::{TxsCli, TxsSub::Transfer};
 use libra_types::core_types::app_cfg::TxCost;
 
@@ -38,7 +39,6 @@ use crate::{
     rescue_tx::RescueTxOpts,
     session_tools::{
         self, libra_execute_session_function, libra_run_session, writeset_voodoo_events,
-        ValCredentials,
     },
 };
 use diem_api_types::ViewRequest;
@@ -140,7 +140,7 @@ pub trait TwinSetup {
     fn recue_blob_with_one_val();
     async fn make_rescue_twin_blob(
         db_path: &Path,
-        creds: Vec<&ValCredentials>,
+        creds: Vec<ValCredentials>,
     ) -> anyhow::Result<PathBuf>;
     fn update_node_config_restart(
         validator: &mut LocalNode,
@@ -191,13 +191,13 @@ impl TwinSetup for Twin {
     /// '''
     async fn make_rescue_twin_blob(
         db_path: &Path,
-        creds: Vec<&ValCredentials>,
+        creds: Vec<ValCredentials>,
     ) -> anyhow::Result<PathBuf> {
         println!("run session to create validator onboarding tx (rescue.blob)");
         let epoch_interval = 100000_u64;
         let vmc = libra_run_session(
             db_path.to_path_buf(),
-            |session| session_add_validators(session, creds),
+            |session| session_add_validators(session, creds, true),
             None,
             None,
         )?;
@@ -253,7 +253,7 @@ impl TwinSetup for Twin {
             creds.push(cred);
         }
         //convert from Vec<ValCredentials> to Vec<&ValCredentials>
-        let creds = creds.iter().collect::<Vec<_>>();
+        let creds = creds.into_iter().collect::<Vec<_>>();
 
         // 2.Replace the swarm db with the brick db
         println!("2.Replace the swarm db with the brick db");
@@ -277,8 +277,7 @@ impl TwinSetup for Twin {
         // 4. Create a rescue blob with the new validator
         println!("3. Create a rescue blob with the new validator");
         let first_val = smoke.swarm.validators().next().unwrap().peer_id();
-        let genesis_blob_path =
-            Self::make_rescue_twin_blob(&swarm_db_paths[0], creds.to_owned()).await?;
+        let genesis_blob_path = Self::make_rescue_twin_blob(&swarm_db_paths[0], creds).await?;
         let mut genesis_blob_paths = Vec::new();
         genesis_blob_paths.push(genesis_blob_path.clone());
         // 4. Apply the rescue blob to the swarm db
