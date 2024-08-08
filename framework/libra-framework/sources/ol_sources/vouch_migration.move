@@ -14,6 +14,7 @@ module ol_framework::vouch_migration {
       let val_signer = &create_signer(val); // <<< DANGER
 
       vouch::migrate_given_vouches(val_signer, all_vals);
+      vouch::migrate_received_vouches(val_signer);
     });
   }
 }
