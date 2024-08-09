@@ -2,7 +2,7 @@
 
 use std::path::Path;
 
-use crate::{init_hack, restore_bundle::RestoreBundle};
+use crate::{dbtool_init::{run_restore, RestoreTypes}, restore_bundle::RestoreBundle};
 
 pub async fn full_restore(target_db: &Path, bundle: &RestoreBundle) -> anyhow::Result<()> {
     assert!(
@@ -10,38 +10,13 @@ pub async fn full_restore(target_db: &Path, bundle: &RestoreBundle) -> anyhow::R
         "the restore bundle hasn't been checked yet"
     );
 
-    // restore epoch
-    let s = init_hack::hack_dbtool_init(
-        init_hack::RestoreTypes::Epoch,
-        target_db,
-        &bundle.restore_bundle_dir,
-        &bundle.epoch_manifest,
-        bundle.version,
-    )?;
-
-    s.run().await?;
-
-    // restore snapshot
-    let s = init_hack::hack_dbtool_init(
-        init_hack::RestoreTypes::Snapshot,
-        target_db,
-        &bundle.restore_bundle_dir,
-        &bundle.snapshot_manifest,
-        bundle.version,
-    )?;
-
-    s.run().await?;
-
-    // restore transactions
-    let s = init_hack::hack_dbtool_init(
-        init_hack::RestoreTypes::Transaction,
-        target_db,
-        &bundle.restore_bundle_dir,
-        &bundle.transaction_manifest,
-        bundle.version,
-    )?;
-
-    s.run().await
+    run_restore(RestoreTypes::Epoch, target_db.to_owned(), &bundle)
+        .await?;
+    run_restore(RestoreTypes::Snapshot, target_db.to_owned(), &bundle)
+        .await?;
+    run_restore(RestoreTypes::Transaction, target_db.to_owned(), &bundle)
+        .await?;
+    Ok(())
 }
 
 #[tokio::test]
