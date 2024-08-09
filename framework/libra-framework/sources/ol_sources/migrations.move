@@ -17,7 +17,6 @@ module ol_framework::migrations {
   struct Migration has store, copy {
     number: u64,
     epoch: u64,
-    module: vector<u8>,
     description: vector<u8>,
   }
 
@@ -31,26 +30,30 @@ module ol_framework::migrations {
     system_addresses::assert_ol(root);
 
     // execute all migrations
-    execute_vouch_migration(root, 1);
+    if (apply_migration(root, 1, b"Vouch migration initializes GivenVouches, ReceivedVouches, and drop MyVouches")) {
+      vouch_migration::migrate_my_vouches();
+    };
+
   }
 
-  // TODO: confirm that it is not possible the usage of higher order function
-  // to avoid code duplication
-  fun execute_vouch_migration(root: &signer, mig_number: u64) acquires Migrations {
+  fun apply_migration(root: &signer, mig_number: u64, description: vector<u8>): bool acquires Migrations {
     if (can_execute_migration(mig_number)) {
-      // migrate vouches
-      vouch_migration::migrate_my_vouches();
+      print(&string::utf8(b">>> Migration started:"));
+      print(&mig_number);
+      print(&string::utf8(description));
 
-      // update last_migration
-      register_migration(root, mig_number, b"ol_framework::vouch", b"Vouch migration initializes GivenVouches, ReceivedVouches, and drop MyVouches");
-    };
+      register_migration(root, mig_number, description);
+      true
+    } else {
+      false
+    }
   }
 
   fun can_execute_migration(mig_number: u64): bool acquires Migrations {
     get_last_migration_number() < mig_number
   }
 
-  fun register_migration(root: &signer, mig_number: u64, module: vector<u8>, description: vector<u8>) acquires Migrations {
+  fun register_migration(root: &signer, mig_number: u64, description: vector<u8>) acquires Migrations {
     let epoch = epoch_helper::get_current_epoch();
 
     if (exists<Migrations>(@ol_framework)) {
@@ -60,7 +63,6 @@ module ol_framework::migrations {
       vector::push_back(&mut state.history, Migration {
         number: mig_number,
         epoch: epoch,
-        module: module,
         description: description,
       });
     } else {
@@ -70,15 +72,10 @@ module ol_framework::migrations {
         history: vector[Migration {
           number: mig_number,
           epoch: epoch,
-          module: module,
           description: description,
         }],
       });
     };
-
-    print(&string::utf8(b">>> Migration executed:"));
-    print(&mig_number);
-    print(&string::utf8(description));
   }
 
   public fun get_last_migration_number(): u64 acquires Migrations {
