@@ -1,9 +1,7 @@
 [workspace]
 resolver = "2"
 
-members = [
-  "diem-node-proxy"
-]
+members = ["diem-node-proxy"]
 
 [workspace.dependencies]
-diem-node = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-node = { workspace = true }
