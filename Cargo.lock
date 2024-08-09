@@ -5851,6 +5851,7 @@ dependencies = [
  "diem-push-metrics",
  "diem-temppath",
  "diem-types",
+ "glob",
  "libra-types",
  "serde_json",
  "tokio",

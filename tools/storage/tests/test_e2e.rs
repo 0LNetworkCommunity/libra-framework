@@ -1,41 +1,98 @@
-use clap::Parser;
+use diem_temppath::TempPath;
+use libra_storage::init_hack;
 use std::path::PathBuf;
 
-use diem_temppath::TempPath;
-use libra_storage::storage_cli::StorageCli;
+// Known from fixtures
+const TARGET_VERSION: u64 = 38180075;
 
 #[tokio::test]
 async fn e2e_epoch() -> anyhow::Result<()> {
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let fixtures = dir.join("fixtures/v7");
+    let restore_files = dir.join("fixtures/v7");
     let db_temp = TempPath::new();
     db_temp.create_as_dir()?;
 
-    let cmd = format!("storage db restore oneoff epoch-ending --epoch-ending-manifest {manifest} --target-db-dir {db} --local-fs-dir {fs}",
-    manifest = fixtures.join("epoch_ending_116-.be9b/epoch_ending.manifest").display(),
-    db = db_temp.path().display(),
-    fs = fixtures.display()
-  );
+    let s = init_hack::hack_dbtool_init(
+        init_hack::RestoreTypes::Epoch,
+        db_temp.path(),
+        &restore_files,
+        &restore_files.join("epoch_ending_116-.be9b/epoch_ending.manifest"),
+        TARGET_VERSION,
+    )?;
 
-    let to_vec: Vec<_> = cmd.split_whitespace().collect();
-    let s = StorageCli::try_parse_from(to_vec)?;
     s.run().await
 }
 
 #[tokio::test]
 async fn e2e_snapshot() -> anyhow::Result<()> {
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let fixtures = dir.join("fixtures/v7");
+    let restore_files = dir.join("fixtures/v7");
     let db_temp = TempPath::new();
     db_temp.create_as_dir()?;
 
-    let cmd = format!("storage db restore oneoff state-snapshot --state-manifest {manifest} --target-db-dir {db} --local-fs-dir {fs} --restore-mode default --state-into-version 1",
-    manifest = fixtures.join("state_epoch_116_ver_38180075.05af/state.manifest").display(),
-    db = db_temp.path().display(),
-    fs = fixtures.display()
-  );
+    let s = init_hack::hack_dbtool_init(
+        init_hack::RestoreTypes::Snapshot,
+        db_temp.path(),
+        &restore_files,
+        &restore_files.join("state_epoch_116_ver_38180075.05af/state.manifest"),
+        TARGET_VERSION,
+    )?;
 
-    let to_vec: Vec<_> = cmd.split_whitespace().collect();
-    let s = StorageCli::try_parse_from(to_vec)?;
+    s.run().await
+}
+
+#[tokio::test]
+async fn e2e_transaction() -> anyhow::Result<()> {
+    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let restore_files = dir.join("fixtures/v7");
+    let db_temp = TempPath::new();
+    db_temp.create_as_dir()?;
+
+    let s = init_hack::hack_dbtool_init(
+        init_hack::RestoreTypes::Transaction,
+        db_temp.path(),
+        &restore_files,
+        &restore_files.join("transaction_38100001-.541f/transaction.manifest"),
+        TARGET_VERSION,
+    )?;
+
+    s.run().await
+}
+
+#[tokio::test]
+async fn e2e_everybody_sing_along() -> anyhow::Result<()> {
+    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let restore_files = dir.join("fixtures/v7");
+    let db_temp = TempPath::new();
+    db_temp.create_as_dir()?;
+
+    let s = init_hack::hack_dbtool_init(
+        init_hack::RestoreTypes::Epoch,
+        db_temp.path(),
+        &restore_files,
+        &restore_files.join("epoch_ending_116-.be9b/epoch_ending.manifest"),
+        TARGET_VERSION,
+    )?;
+
+    s.run().await?;
+
+    let s = init_hack::hack_dbtool_init(
+        init_hack::RestoreTypes::Snapshot,
+        db_temp.path(),
+        &restore_files,
+        &restore_files.join("state_epoch_116_ver_38180075.05af/state.manifest"),
+        TARGET_VERSION,
+    )?;
+
+    s.run().await?;
+
+    let s = init_hack::hack_dbtool_init(
+        init_hack::RestoreTypes::Transaction,
+        db_temp.path(),
+        &restore_files,
+        &restore_files.join("transaction_38100001-.541f/transaction.manifest"),
+        TARGET_VERSION,
+    )?;
+
     s.run().await
 }
