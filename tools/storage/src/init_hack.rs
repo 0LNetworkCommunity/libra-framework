@@ -9,39 +9,61 @@
 // so when those structs are make public/vendorized on diem, these hacks
 // won't be necessary.
 
+use std::path::Path;
 
+use clap::Parser;
 
-enum RestoreTypes {
+use crate::storage_cli::StorageCli;
+
+/// types of db restore. Note: all of them are necessary for a successful restore.
+pub enum RestoreTypes {
   Epoch,
   Snapshot,
   Transaction,
 }
 
-pub fn hack_dbtool_init(restore_type: RestoreTypes,  target_db: &Path, restore_files: &Path, restore_id: &str, version: u64) {
+pub fn hack_dbtool_init(restore_type: RestoreTypes,  target_db: &Path, restore_files: &Path, restore_id: &str, version: u64) -> anyhow::Result<StorageCli>{
     // do some checks
     assert!(restore_files.exists(), "backup files does not exist here");
-    let manifest_path_base = restore_file.join(restore_id);
-    assert!(manifest_path.exists(), "restore manifest does not exist");
     assert!(target_db.exists(), "target db exists, this will not overwrite but append, you will get in to a weird state, exiting");
+    let manifest_path_base = restore_files.join(restore_id);
 
-    let db = target_db.display(),
-    let fs = restore_files.display(),
+    let db = target_db.display();
+    let fs = restore_files.display();
 
    let cmd =  match restore_type {
-      Epoch => {
-        let manifest = manifest_path_base.join("epoch-ending.manifest").display();
-              format!("storage db restore oneoff epoch-ending \
-              --epoch-ending-manifest {manifest} \
-              --target-db-dir {db} \
-              --local-fs-dir {fs} \
-              --target-version {version}",
-      );
-
+      RestoreTypes::Epoch => {
+        format!("storage db restore oneoff epoch-ending \
+          --epoch-ending-manifest {manifest} \
+          --target-db-dir {db} \
+          --local-fs-dir {fs} \
+          --target-version {version}",
+          manifest = manifest_path_base.join("epoch-ending.manifest").display()
+        )
       }
-      _ -> "todo()"
-    }
+      RestoreTypes::Snapshot => {
+        format!("storage db restore oneoff state-snapshot \
+          --state-manifest {manifest} \
+          --target-db-dir {db} \
+          --local-fs-dir {fs} \
+          --restore-mode default \
+          --target-version {version} \
+          --state-into-version {version}",
+          manifest = manifest_path_base.join("transaction.manifest").display()
+        )
+      },
+      RestoreTypes::Transaction => {
+        format!("storage db restore transaction \
+          --transaction-manifest {manifest} \
+          --target-db-dir {db} \
+          --local-fs-dir {fs} \
+          --target-version {version}",
+          manifest = manifest_path_base.join("state.manifest").display()
+        )
+      },
+    };
 
 
     let to_vec: Vec<_> = cmd.split_whitespace().collect();
-    let s = StorageCli::try_parse_from(to_vec)?;
+    Ok(StorageCli::try_parse_from(to_vec)?)
 }
