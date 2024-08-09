@@ -68,7 +68,7 @@ pub async fn run_restore(
     db_path: PathBuf,
     bundle: &RestoreBundle,
 ) -> anyhow::Result<()> {
-    let global = get_global_db_opts(db_path.clone(), &bundle)?;
+    let global = get_global_db_opts(db_path.clone(), bundle)?;
 
     let storage = get_backup_storage(bundle.restore_bundle_dir.to_path_buf())?;
 
