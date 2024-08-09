@@ -33,36 +33,37 @@ pub fn hack_dbtool_init(restore_type: RestoreTypes,  target_db: &Path, restore_f
 
    let cmd =  match restore_type {
       RestoreTypes::Epoch => {
-        format!("storage db restore oneoff epoch-ending \
-          --epoch-ending-manifest {manifest} \
-          --target-db-dir {db} \
-          --local-fs-dir {fs} \
+        format!("storage db restore oneoff epoch-ending \n
+          --epoch-ending-manifest {manifest} \n
+          --target-db-dir {db} \n
+          --local-fs-dir {fs} \n
           --target-version {version}",
-          manifest = manifest_path_base.join("epoch-ending.manifest").display()
+          manifest = manifest_path_base.join("epoch_ending.manifest").display()
         )
       }
       RestoreTypes::Snapshot => {
-        format!("storage db restore oneoff state-snapshot \
-          --state-manifest {manifest} \
-          --target-db-dir {db} \
-          --local-fs-dir {fs} \
-          --restore-mode default \
-          --target-version {version} \
+        format!("storage db restore oneoff state-snapshot \n
+          --state-manifest {manifest} \n
+          --target-db-dir {db} \n
+          --local-fs-dir {fs} \n
+          --restore-mode default \n
+          --target-version {version} \n
           --state-into-version {version}",
-          manifest = manifest_path_base.join("transaction.manifest").display()
+          manifest = manifest_path_base.join("state.manifest").display()
         )
       },
       RestoreTypes::Transaction => {
-        format!("storage db restore transaction \
-          --transaction-manifest {manifest} \
-          --target-db-dir {db} \
-          --local-fs-dir {fs} \
+        format!("storage db restore oneoff transaction \n
+          --transaction-manifest {manifest} \n
+          --target-db-dir {db} \n
+          --local-fs-dir {fs} \n
           --target-version {version}",
-          manifest = manifest_path_base.join("state.manifest").display()
+          manifest = manifest_path_base.join("transaction.manifest").display()
         )
       },
     };
 
+    dbg!(&cmd);
 
     let to_vec: Vec<_> = cmd.split_whitespace().collect();
     Ok(StorageCli::try_parse_from(to_vec)?)
