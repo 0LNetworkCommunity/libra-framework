@@ -45,11 +45,11 @@ impl RestoreBundle {
 
     /// if we have the manifests checked
     pub fn is_loaded(&self) -> bool {
-      self.epoch > 0 &&
-      self.version > 0 &&
-      self.epoch_manifest.exists() &&
-      self.snapshot_manifest.exists() &&
-      self.transaction_manifest.exists()
+        self.epoch > 0
+            && self.version > 0
+            && self.epoch_manifest.exists()
+            && self.snapshot_manifest.exists()
+            && self.transaction_manifest.exists()
     }
 
     /// in the default case the user only has one epoch bundle in the directory
@@ -175,7 +175,6 @@ fn get_specific_epoch() {
 
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     b.restore_bundle_dir = dir.join("fixtures/v7");
-
 
     b.specific_epoch_manifest(116).unwrap();
     b.set_version().unwrap();

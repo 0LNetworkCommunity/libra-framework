@@ -29,7 +29,10 @@ pub fn hack_dbtool_init(
     version: u64,
 ) -> anyhow::Result<StorageCli> {
     // do some checks
-    assert!(restore_bundle_dir.exists(), "backup files does not exist here");
+    assert!(
+        restore_bundle_dir.exists(),
+        "backup files does not exist here"
+    );
     assert!(target_db.exists(), "target db exists, this will not overwrite but append, you will get in to a weird state, exiting");
     // let manifest_path_base = restore_bundle_dir.join(restore_id);
 

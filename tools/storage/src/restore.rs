@@ -5,7 +5,10 @@ use std::path::Path;
 use crate::{init_hack, restore_bundle::RestoreBundle};
 
 pub async fn full_restore(target_db: &Path, bundle: &RestoreBundle) -> anyhow::Result<()> {
-    assert!(bundle.is_loaded(), "the restore bundle hasn't been checked yet");
+    assert!(
+        bundle.is_loaded(),
+        "the restore bundle hasn't been checked yet"
+    );
 
     // restore epoch
     let s = init_hack::hack_dbtool_init(
