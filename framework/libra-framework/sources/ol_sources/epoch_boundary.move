@@ -11,13 +11,15 @@ module diem_framework::epoch_boundary {
   use diem_framework::reconfiguration;
   use diem_framework::transaction_fee;
   use diem_framework::system_addresses;
-  use ol_framework::stake;
   use ol_framework::jail;
   use ol_framework::safe;
   use ol_framework::burn;
+  use ol_framework::stake;
+  use ol_framework::vouch;
   use ol_framework::rewards;
   use ol_framework::testnet;
   use ol_framework::fee_maker;
+  use ol_framework::migrations;
   use ol_framework::libra_coin;
   use ol_framework::slow_wallet;
   use ol_framework::match_index;
@@ -265,6 +267,7 @@ module diem_framework::epoch_boundary {
   // when new modules or structures are added by chain upgrades.
   fun migrate_data(root: &signer) {
     randomness::initialize(root);
+    migrations::execute(root);
   }
 
   // Contains all of 0L's business logic for end of epoch.
@@ -329,6 +332,10 @@ module diem_framework::epoch_boundary {
     status.pof_thermo_success = t_success;
     status.pof_thermo_increase = t_increase;
     status.pof_thermo_amount = t_amount;
+
+    print(&string::utf8(b"set_vouch_price"));
+    let (nominal_reward, _, _, _) = proof_of_fee::get_consensus_reward();
+    vouch::set_vouch_price(root, nominal_reward);
 
     print(&string::utf8(b"subsidize_from_infra_escrow"));
     let (i_success, i_fee) = subsidize_from_infra_escrow(root);

@@ -25,6 +25,7 @@ module ol_framework::globals {
       min_blocks_per_epoch: u64,
       validator_vouch_threshold: u64,
       signing_threshold_pct: u64,
+      max_vouches_per_validator: u64,
     }
 
     const COIN_DECIMAL_PLACES: u8 = 6; // Or 10^6, 1 coin is 1_000_000 units in the database. Any human display needs to consider this scaling factor.
@@ -90,6 +91,11 @@ module ol_framework::globals {
       get_constants().validator_vouch_threshold
     }
 
+    /// Get the max number of vouches per validator
+    public fun get_max_vouches_per_validator(): u64 {
+      get_constants().max_vouches_per_validator
+    }
+
     /// Get the threshold of number of signed blocks in an epoch per validator
     public fun get_signing_threshold(): u64 {
       get_constants().signing_threshold_pct
@@ -113,6 +119,7 @@ module ol_framework::globals {
           min_blocks_per_epoch: 0,
           validator_vouch_threshold: 0,
           signing_threshold_pct: 3,
+          max_vouches_per_validator: 10,
         }
       };
 
@@ -137,6 +144,7 @@ module ol_framework::globals {
           min_blocks_per_epoch: 10000,
           validator_vouch_threshold: 2, // Production must be more than 1 vouch validator (at least 2)
           signing_threshold_pct: 3,
+          max_vouches_per_validator: 10,
         }
       } else {
         return GlobalConstants {
@@ -157,6 +165,7 @@ module ol_framework::globals {
           min_blocks_per_epoch: 10000,
           validator_vouch_threshold: 2, // Production must be more than 1 vouch validator (at least 2)
           signing_threshold_pct: 3,
+          max_vouches_per_validator: 10,
         }
       }
     }

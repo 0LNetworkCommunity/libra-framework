@@ -4,10 +4,10 @@
 module diem_framework::validator_universe {
   use std::signer;
   use std::vector;
-  use diem_framework::system_addresses;
   use ol_framework::jail;
   use ol_framework::vouch;
   use diem_framework::stake;
+  use diem_framework::system_addresses;
 
   #[test_only]
   use ol_framework::testnet;
