@@ -59,7 +59,7 @@ impl RestoreBundle {
     /// in the default case the user only has one epoch bundle in the directory
     pub fn any_epoch_manifest(&mut self) -> anyhow::Result<()> {
         let file_list = glob(&format!(
-            "{}/**/epoch_ending.manifest",
+            "{}/epoch_ending*/epoch_ending.manifest",
             &self.restore_bundle_dir.display(),
         ))?;
 

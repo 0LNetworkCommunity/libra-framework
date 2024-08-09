@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 use clap::{Parser, Subcommand};
 use diem_db_tool::DBTool;
 use diem_logger::{Level, Logger};
@@ -59,15 +59,28 @@ impl StorageCli {
                 bundle_path,
                 destination_db,
             }) => {
-                let mut b = RestoreBundle::new(fs::canonicalize(bundle_path)?);
+                if !bundle_path.exists() {
+                    bail!("bundle directory not found: {}", &bundle_path.display());
+                };
+                if destination_db.exists() {
+                    bail!("you are trying to restore to a directory that already exists, and may have conflicting state: {}", &destination_db.display());
+                };
+                assert!(!destination_db.exists());
+                fs::create_dir_all(&destination_db)?;
 
-                b.load()?;
+                // underlying tools get lost with relative paths
+                let bundle_path = fs::canonicalize(bundle_path)?;
+                let destination_db = fs::canonicalize(destination_db)?;
 
-                restore::full_restore(&fs::canonicalize(destination_db)?, &b).await?;
+                let mut bundle = RestoreBundle::new(bundle_path);
+
+                bundle.load()?;
+
+                restore::full_restore(&destination_db, &bundle).await?;
 
                 println!(
                     "SUCCESS: restored to epoch: {}, version: {}",
-                    b.epoch, b.version
+                    bundle.epoch, bundle.version
                 );
             }
             _ => {} // prints help
