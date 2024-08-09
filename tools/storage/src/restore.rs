@@ -2,7 +2,10 @@
 
 use std::path::Path;
 
-use crate::{dbtool_init::{run_restore, RestoreTypes}, restore_bundle::RestoreBundle};
+use crate::{
+    dbtool_init::{run_restore, RestoreTypes},
+    restore_bundle::RestoreBundle,
+};
 
 pub async fn full_restore(target_db: &Path, bundle: &RestoreBundle) -> anyhow::Result<()> {
     assert!(
@@ -10,12 +13,9 @@ pub async fn full_restore(target_db: &Path, bundle: &RestoreBundle) -> anyhow::R
         "the restore bundle hasn't been checked yet"
     );
 
-    run_restore(RestoreTypes::Epoch, target_db.to_owned(), &bundle)
-        .await?;
-    run_restore(RestoreTypes::Snapshot, target_db.to_owned(), &bundle)
-        .await?;
-    run_restore(RestoreTypes::Transaction, target_db.to_owned(), &bundle)
-        .await?;
+    run_restore(RestoreTypes::Epoch, target_db.to_owned(), &bundle).await?;
+    run_restore(RestoreTypes::Snapshot, target_db.to_owned(), &bundle).await?;
+    run_restore(RestoreTypes::Transaction, target_db.to_owned(), &bundle).await?;
     Ok(())
 }
 
