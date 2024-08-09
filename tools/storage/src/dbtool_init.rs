@@ -3,16 +3,14 @@
 //!
 use crate::restore_bundle::RestoreBundle;
 
-use std::{
-    path::PathBuf,
-    sync::Arc,
-};
+use std::{path::PathBuf, sync::Arc};
 
 use anyhow::Result;
 use diem_backup_cli::{
     backup_types::{
         epoch_ending::restore::{EpochEndingRestoreController, EpochEndingRestoreOpt},
-        state_snapshot::restore::{StateSnapshotRestoreController, StateSnapshotRestoreOpt}, transaction::restore::{TransactionRestoreController, TransactionRestoreOpt},
+        state_snapshot::restore::{StateSnapshotRestoreController, StateSnapshotRestoreOpt},
+        transaction::restore::{TransactionRestoreController, TransactionRestoreOpt},
     },
     storage::{local_fs::LocalFs, BackupStorage},
     utils::{GlobalRestoreOptions, RestoreRunMode, TrustedWaypointOpt},
@@ -23,7 +21,6 @@ use diem_config::config::{
 };
 use diem_db::{state_restore::StateSnapshotRestoreMode, DiemDB, GetRestoreHandler};
 use diem_executor_types::VerifyExecutionMode;
-
 
 /// types of db restore. Note: all of them are necessary for a successful restore.
 pub enum RestoreTypes {
@@ -66,15 +63,14 @@ pub fn get_global_db_opts(
     })
 }
 
-
 pub async fn run_restore(
     rtype: RestoreTypes,
     db_path: PathBuf,
-    bundle: RestoreBundle,
+    bundle: &RestoreBundle,
 ) -> anyhow::Result<()> {
     let global = get_global_db_opts(db_path.clone(), &bundle)?;
 
-    let storage = get_backup_storage(bundle.restore_bundle_dir)?;
+    let storage = get_backup_storage(bundle.restore_bundle_dir.to_path_buf())?;
 
     match rtype {
         RestoreTypes::Epoch => {
@@ -95,7 +91,10 @@ pub async fn run_restore(
                     version: bundle.version,
                     validate_modules: false,
                     restore_mode: StateSnapshotRestoreMode::Default,
-                }, global, storage, None, /* epoch_history */
+                },
+                global,
+                storage,
+                None, /* epoch_history */
             )
             .run()
             .await?;
@@ -126,8 +125,13 @@ async fn test_restore() {
     b.load().unwrap();
     let db_temp = diem_temppath::TempPath::new();
     db_temp.create_as_dir().unwrap();
-    run_restore(RestoreTypes::Snapshot, db_temp.path().to_owned(), b)
+    run_restore(RestoreTypes::Epoch, db_temp.path().to_owned(), &b)
         .await
         .unwrap();
-
+    run_restore(RestoreTypes::Snapshot, db_temp.path().to_owned(), &b)
+        .await
+        .unwrap();
+    run_restore(RestoreTypes::Transaction, db_temp.path().to_owned(), &b)
+        .await
+        .unwrap();
 }
