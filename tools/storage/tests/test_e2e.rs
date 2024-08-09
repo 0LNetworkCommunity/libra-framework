@@ -80,7 +80,7 @@ async fn e2e_everybody_sing_along() -> anyhow::Result<()> {
         init_hack::RestoreTypes::Snapshot,
         db_temp.path(),
         &restore_files,
-        "transaction_38100001-.541f",
+        "state_epoch_116_ver_38180075.05af",
         TARGET_VERSION,
     )?;
 
