@@ -3,9 +3,9 @@ use clap::{Parser, Subcommand};
 use diem_db_tool::DBTool;
 use diem_logger::{Level, Logger};
 use diem_push_metrics::MetricsPusher;
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 
-use crate::read_snapshot;
+use crate::{read_snapshot, restore, restore_bundle::RestoreBundle};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -22,6 +22,13 @@ pub enum Sub {
     #[clap(subcommand)]
     /// DB tools for backup, restore, verify, etc.
     Db(DBTool),
+    /// simple restore from a bundle for one epoch
+    EpochRestore {
+        #[clap(short, long)]
+        bundle_path: PathBuf,
+        #[clap(short, long)]
+        destination_db: PathBuf,
+    },
     /// Read a snapshot, parse and export to JSON
     ExportSnapshot {
         #[clap(short, long)]
@@ -47,6 +54,16 @@ impl StorageCli {
             }) => {
                 read_snapshot::manifest_to_json(manifest_path.to_owned(), out_path.to_owned())
                     .await;
+            }
+            Some(Sub::EpochRestore {
+                bundle_path,
+                destination_db,
+            }) => {
+                let mut b = RestoreBundle::new(fs::canonicalize(bundle_path)?);
+
+                b.load()?;
+
+                restore::full_restore(&fs::canonicalize(destination_db)?, &b).await?;
             }
             _ => {} // prints help
         }
