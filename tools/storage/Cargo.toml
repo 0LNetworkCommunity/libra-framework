@@ -17,6 +17,8 @@ anyhow = { workspace = true }
 bcs = { workspace = true }
 clap = { workspace = true }
 diem-backup-cli = { workspace = true }
+diem-config = { workspace = true }
+diem-db = { workspace = true }
 diem-db-tool = { workspace = true }
 diem-logger = { workspace = true }
 diem-push-metrics = { workspace = true }

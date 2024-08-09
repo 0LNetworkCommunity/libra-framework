@@ -3,6 +3,7 @@ use diem_backup_cli::backup_types::{
     epoch_ending::manifest::EpochEndingBackup, transaction::manifest::TransactionBackup,
 };
 use diem_logger::info;
+use diem_types::waypoint::Waypoint;
 use glob::glob;
 use std::{
     fs,
@@ -12,12 +13,15 @@ use std::{
 #[derive(Debug, Default, Clone)]
 /// Struct to organize the required bundle files for a given epoch archive.
 pub struct RestoreBundle {
-    /// epoch we are restoring to
-    pub epoch: u64,
     /// the directory of the restore bundle
     pub restore_bundle_dir: PathBuf,
+
+    /// epoch we are restoring to
+    pub epoch: u64,
     /// the blockchain version to restore to
     pub version: u64,
+    /// waypoint
+    pub waypoint: Option<Waypoint>,
     /// epoch manifest file location (under restore_bundle_dir)
     pub epoch_manifest: PathBuf,
     /// snapshot manifest file location (under restore_bundle_dir)
@@ -64,7 +68,8 @@ impl RestoreBundle {
             let s = fs::read_to_string(&self.epoch_manifest)?;
             let epoch_manifest: EpochEndingBackup = serde_json::from_str(&s)?;
 
-            self.epoch = epoch_manifest.first_epoch
+            self.epoch = epoch_manifest.first_epoch;
+            self.waypoint = epoch_manifest.waypoints.clone().pop();
         }
 
         info!(
