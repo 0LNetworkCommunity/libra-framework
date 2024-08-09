@@ -27,9 +27,8 @@ pub struct RestoreBundle {
 }
 
 impl RestoreBundle {
-    pub fn new(epoch: u64, restore_bundle_dir: PathBuf) -> Self {
+    pub fn new(restore_bundle_dir: PathBuf) -> Self {
         RestoreBundle {
-            epoch,
             restore_bundle_dir,
             ..Default::default()
         }
@@ -37,18 +36,42 @@ impl RestoreBundle {
 
     /// searches and checks that the manifests would work for this epoch upgrade
     pub fn load(&mut self) -> anyhow::Result<()> {
-        self.search_epoch_manifest()?;
+        self.any_epoch_manifest()?;
         self.set_version()?;
         self.search_snapshot_manifest()?;
         self.search_transaction_manifest()?;
         Ok(())
     }
 
-    pub fn search_epoch_manifest(&mut self) -> anyhow::Result<()> {
+    /// in the default case the user only has one epoch bundle in the directory
+    pub fn any_epoch_manifest(&mut self) -> anyhow::Result<()> {
+        let file_list = glob(&format!(
+            "{}/**/epoch_ending.manifest",
+            &self.restore_bundle_dir.display(),
+        ))?;
+
+        if let Some(p) = file_list.flatten().max() {
+            self.epoch_manifest = p;
+            let s = fs::read_to_string(&self.epoch_manifest)?;
+            let epoch_manifest: EpochEndingBackup = serde_json::from_str(&s)?;
+
+            self.epoch = epoch_manifest.first_epoch
+        }
+
+        info!(
+            "using bundle for epoch: {}, manifest: {}",
+            self.epoch,
+            self.epoch_manifest.display()
+        );
+        Ok(())
+    }
+
+    /// if the directory has many bundles, pick a specific epoch
+    pub fn specific_epoch_manifest(&mut self, epoch: u64) -> anyhow::Result<()> {
         let file_list = glob(&format!(
             "{}/*_{}*/epoch_ending.manifest",
             &self.restore_bundle_dir.display(),
-            &self.epoch
+            epoch
         ))?;
 
         if let Some(p) = file_list.flatten().max() {
@@ -68,6 +91,7 @@ impl RestoreBundle {
         let epoch_manifest: EpochEndingBackup = serde_json::from_str(&s)?;
         if let Some(wp) = epoch_manifest.waypoints.first() {
             self.version = wp.version();
+            self.epoch = epoch_manifest.first_epoch
         }
         Ok(())
     }
@@ -137,22 +161,22 @@ pub fn verify_valid_transaction_list(
 }
 
 #[test]
-fn get_manifests() {
+fn get_specific_epoch() {
     let mut b = RestoreBundle::default();
 
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     b.restore_bundle_dir = dir.join("fixtures/v7");
-    b.epoch = 116;
 
-    b.search_epoch_manifest().unwrap();
+
+    b.specific_epoch_manifest(116).unwrap();
     b.set_version().unwrap();
     b.search_snapshot_manifest().unwrap();
     b.search_transaction_manifest().unwrap();
 }
 
 #[test]
-fn test_load() {
+fn test_load_any() {
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let mut b = RestoreBundle::new(116, dir.join("fixtures/v7"));
+    let mut b = RestoreBundle::new(dir);
     b.load().unwrap();
 }
