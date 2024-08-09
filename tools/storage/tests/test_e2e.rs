@@ -1,7 +1,6 @@
-
-use std::path::PathBuf;
 use diem_temppath::TempPath;
 use libra_storage::init_hack;
+use std::path::PathBuf;
 
 // Known from fixtures
 const TARGET_VERSION: u64 = 38180075;
