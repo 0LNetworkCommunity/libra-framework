@@ -64,6 +64,11 @@ impl StorageCli {
                 b.load()?;
 
                 restore::full_restore(&fs::canonicalize(destination_db)?, &b).await?;
+
+                println!(
+                    "SUCCESS: restored to epoch: {}, version: {}",
+                    b.epoch, b.version
+                );
             }
             _ => {} // prints help
         }
