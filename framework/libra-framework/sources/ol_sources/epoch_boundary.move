@@ -19,6 +19,7 @@ module diem_framework::epoch_boundary {
   use ol_framework::rewards;
   use ol_framework::testnet;
   use ol_framework::fee_maker;
+  use ol_framework::migrations;
   use ol_framework::libra_coin;
   use ol_framework::slow_wallet;
   use ol_framework::match_index;
@@ -266,6 +267,7 @@ module diem_framework::epoch_boundary {
   // when new modules or structures are added by chain upgrades.
   fun migrate_data(root: &signer) {
     randomness::initialize(root);
+    migrations::execute(root);
   }
 
   // Contains all of 0L's business logic for end of epoch.
