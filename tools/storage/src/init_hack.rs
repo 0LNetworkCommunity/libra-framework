@@ -24,53 +24,50 @@ pub enum RestoreTypes {
 pub fn hack_dbtool_init(
     restore_type: RestoreTypes,
     target_db: &Path,
-    restore_files: &Path,
-    restore_id: &str,
+    restore_bundle_dir: &Path,
+    manifest: &Path,
     version: u64,
 ) -> anyhow::Result<StorageCli> {
     // do some checks
-    assert!(restore_files.exists(), "backup files does not exist here");
+    assert!(restore_bundle_dir.exists(), "backup files does not exist here");
     assert!(target_db.exists(), "target db exists, this will not overwrite but append, you will get in to a weird state, exiting");
-    let manifest_path_base = restore_files.join(restore_id);
+    // let manifest_path_base = restore_bundle_dir.join(restore_id);
 
     let db = target_db.display();
-    let fs = restore_files.display();
+    let fs = restore_bundle_dir.display();
+    let mfest = manifest.display();
 
     let cmd = match restore_type {
         RestoreTypes::Epoch => {
             format!(
                 "storage db restore oneoff epoch-ending \n
-          --epoch-ending-manifest {manifest} \n
+          --epoch-ending-manifest {mfest} \n
           --target-db-dir {db} \n
           --local-fs-dir {fs} \n
-          --target-version {version}",
-                manifest = manifest_path_base.join("epoch_ending.manifest").display()
+          --target-version {version}"
             )
         }
         RestoreTypes::Snapshot => {
             format!(
                 "storage db restore oneoff state-snapshot \n
-          --state-manifest {manifest} \n
+          --state-manifest {mfest} \n
           --target-db-dir {db} \n
           --local-fs-dir {fs} \n
           --restore-mode default \n
           --target-version {version} \n
-          --state-into-version {version}",
-                manifest = manifest_path_base.join("state.manifest").display()
+          --state-into-version {version}"
             )
         }
         RestoreTypes::Transaction => {
             format!(
                 "storage db restore oneoff transaction \n
-          --transaction-manifest {manifest} \n
+          --transaction-manifest {mfest} \n
           --target-db-dir {db} \n
           --local-fs-dir {fs} \n
           --target-version {version}",
-                manifest = manifest_path_base.join("transaction.manifest").display()
             )
         }
     };
-
     dbg!(&cmd);
 
     let to_vec: Vec<_> = cmd.split_whitespace().collect();

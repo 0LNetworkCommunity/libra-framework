@@ -16,7 +16,7 @@ async fn e2e_epoch() -> anyhow::Result<()> {
         init_hack::RestoreTypes::Epoch,
         db_temp.path(),
         &restore_files,
-        "epoch_ending_116-.be9b",
+        &restore_files.join("epoch_ending_116-.be9b/epoch_ending.manifest"),
         TARGET_VERSION,
     )?;
 
@@ -34,7 +34,7 @@ async fn e2e_snapshot() -> anyhow::Result<()> {
         init_hack::RestoreTypes::Snapshot,
         db_temp.path(),
         &restore_files,
-        "state_epoch_116_ver_38180075.05af",
+        &restore_files.join("state_epoch_116_ver_38180075.05af/state.manifest"),
         TARGET_VERSION,
     )?;
 
@@ -52,7 +52,7 @@ async fn e2e_transaction() -> anyhow::Result<()> {
         init_hack::RestoreTypes::Transaction,
         db_temp.path(),
         &restore_files,
-        "transaction_38100001-.541f",
+        &restore_files.join("transaction_38100001-.541f/transaction.manifest"),
         TARGET_VERSION,
     )?;
 
@@ -70,7 +70,7 @@ async fn e2e_everybody_sing_along() -> anyhow::Result<()> {
         init_hack::RestoreTypes::Epoch,
         db_temp.path(),
         &restore_files,
-        "epoch_ending_116-.be9b",
+        &restore_files.join("epoch_ending_116-.be9b/epoch_ending.manifest"),
         TARGET_VERSION,
     )?;
 
@@ -80,7 +80,7 @@ async fn e2e_everybody_sing_along() -> anyhow::Result<()> {
         init_hack::RestoreTypes::Snapshot,
         db_temp.path(),
         &restore_files,
-        "state_epoch_116_ver_38180075.05af",
+        &restore_files.join("state_epoch_116_ver_38180075.05af/state.manifest"),
         TARGET_VERSION,
     )?;
 
@@ -90,7 +90,7 @@ async fn e2e_everybody_sing_along() -> anyhow::Result<()> {
         init_hack::RestoreTypes::Transaction,
         db_temp.path(),
         &restore_files,
-        "transaction_38100001-.541f",
+        &restore_files.join("transaction_38100001-.541f/transaction.manifest"),
         TARGET_VERSION,
     )?;
 

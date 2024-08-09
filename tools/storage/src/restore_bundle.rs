@@ -43,6 +43,15 @@ impl RestoreBundle {
         Ok(())
     }
 
+    /// if we have the manifests checked
+    pub fn is_loaded(&self) -> bool {
+      self.epoch > 0 &&
+      self.version > 0 &&
+      self.epoch_manifest.exists() &&
+      self.snapshot_manifest.exists() &&
+      self.transaction_manifest.exists()
+    }
+
     /// in the default case the user only has one epoch bundle in the directory
     pub fn any_epoch_manifest(&mut self) -> anyhow::Result<()> {
         let file_list = glob(&format!(
@@ -177,6 +186,6 @@ fn get_specific_epoch() {
 #[test]
 fn test_load_any() {
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let mut b = RestoreBundle::new(dir);
+    let mut b = RestoreBundle::new(dir.join("fixtures/v7"));
     b.load().unwrap();
 }
