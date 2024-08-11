@@ -1,6 +1,4 @@
 use anyhow::{bail, Context};
-use async_trait::async_trait;
-use clap::Parser;
 use diem_config::config::{NodeConfig, WaypointConfig};
 use diem_forge::{SwarmExt, Validator};
 use diem_temppath::TempPath;
@@ -32,106 +30,14 @@ use libra_rescue::{
 };
 use std::{fs, path::Path};
 
-#[derive(Parser)]
+use crate::runner::Twin;
 
-/// '''
-/// Set up a twin of the network, with a synced db
-/// '''
-///  *** TO DO: Functionality to be added
-pub struct TwinOpts {
-    // path of snapshot db we want marlon to drive
-    #[clap(value_parser)]
-    pub db_dir: PathBuf,
-    /// The operator.yaml file which contains registration information
-    #[clap(value_parser)]
-    pub oper_file: Option<PathBuf>,
-    /// provide info about the DB state, e.g. version
-    #[clap(value_parser)]
-    pub info: bool,
-}
 
-impl TwinOpts {
-    pub fn run(&self) -> anyhow::Result<(), anyhow::Error> {
-        let db_path = &self.db_dir;
-        let twin = Twin {
-            db_dir: db_path.to_path_buf(),
-            oper_file: self.oper_file.clone(),
-            info: self.info,
-        };
-        twin.run()
-    }
-}
-
-/// '''
-/// Twin of the network
-/// '''
-pub struct Twin {
-    pub db_dir: PathBuf,
-    pub oper_file: Option<PathBuf>,
-    pub info: bool,
-}
-
-/// '''
-/// Runner for the twin
-/// '''
-trait TwinRunner {
-    /// Take the twin and run it
-    fn run(&self) -> anyhow::Result<(), anyhow::Error>;
-}
-
-impl TwinRunner for Twin
-where
-    Twin: TwinSetup,
-{
-    fn run(&self) -> anyhow::Result<(), anyhow::Error> {
-        let db_path = &self.db_dir;
-        let runtime = tokio::runtime::Runtime::new().unwrap();
-        let num_validators = 3_u8;
-        // TODO: why are we not using the async here?
-        runtime.block_on(Twin::apply_with_rando_e2e(
-            db_path.to_path_buf(),
-            num_validators,
-        ))?;
-        println!("Twins are running!");
-        std::thread::park();
-        Ok(())
-    }
-}
-
-/// '''
-/// Twin setup
-/// '''
-/// ''' Setup the twin network with a synced db
-/// '''
-#[async_trait]
-pub trait TwinSetup {
-    async fn initialize_marlon_the_val() -> anyhow::Result<PathBuf>;
-    fn register_marlon_tx(file: PathBuf) -> anyhow::Result<Script>;
-    fn recue_blob_with_one_val();
-    async fn make_rescue_twin_blob(
-        db_path: &Path,
-        creds: Vec<ValCredentials>,
-    ) -> anyhow::Result<PathBuf>;
-    fn update_node_config_restart(
-        validator: &mut LocalNode,
-        config: NodeConfig,
-    ) -> anyhow::Result<()>;
-    async fn apply_with_rando_e2e(
-        prod_db: PathBuf,
-        num_validators: u8,
-    ) -> anyhow::Result<(LibraSmoke, TempPath), anyhow::Error>;
-    async fn extract_credentials(marlon_node: &LocalNode) -> anyhow::Result<ValCredentials>;
-    fn clone_db(prod_db: &Path, swarm_db: &Path) -> anyhow::Result<()>;
-    async fn wait_for_node(
-        validator: &mut dyn Validator,
-        expected_to_connect: usize,
-    ) -> anyhow::Result<()>;
-}
-#[async_trait]
-impl TwinSetup for Twin {
+/// Setup the twin network with a synced db
+impl Twin {
     /// ! TO DO : REFACTOR THIS FUNCTION
     /// we need a new account config created locally
-    async fn initialize_marlon_the_val() -> anyhow::Result<PathBuf> {
+    pub async fn initialize_marlon_the_val() -> anyhow::Result<PathBuf> {
         // we use LibraSwarm to create a new folder with validator configs.
         // we then take the operator.yaml, and use it to register on a dirty db
         let mut s = LibraSmoke::new(Some(1), None).await?;
@@ -143,7 +49,7 @@ impl TwinSetup for Twin {
     }
     /// create the validator registration entry function payload
     /// needs the file operator.yaml
-    fn register_marlon_tx(file: PathBuf) -> anyhow::Result<Script> {
+    pub fn register_marlon_tx(file: PathBuf) -> anyhow::Result<Script> {
         let tx = ValidatorTxs::Register {
             operator_file: Some(file),
         }
@@ -155,10 +61,8 @@ impl TwinSetup for Twin {
         bail!("function did not return a script")
     }
     /// create the rescue blob which has one validator
-    fn recue_blob_with_one_val() {}
-    /// '''
+    pub fn recue_blob_with_one_val() {}
     ///  Make a rescue blob with the given credentials
-    /// '''
     async fn make_rescue_twin_blob(
         db_path: &Path,
         creds: Vec<ValCredentials>,
@@ -181,9 +85,7 @@ impl TwinSetup for Twin {
         Ok(out)
     }
 
-    /// '''
     /// Apply the rescue blob to the swarm db
-    /// '''
     fn update_node_config_restart(
         validator: &mut LocalNode,
         mut config: NodeConfig,
@@ -195,10 +97,8 @@ impl TwinSetup for Twin {
         Ok(())
     }
 
-    /// '''
     /// Apply the rescue blob to the swarm db
-    /// '''
-    async fn apply_with_rando_e2e(
+    pub async fn apply_with_rando_e2e(
         prod_db: PathBuf,
         num_validators: u8,
     ) -> anyhow::Result<(LibraSmoke, TempPath), anyhow::Error> {
@@ -478,27 +378,3 @@ impl TwinSetup for Twin {
         Ok(())
     }
 }
-
-// #[ignore]
-// #[test]
-// fn test_twin_cl() -> anyhow::Result<()> {
-//     //use any db
-//     let prod_db_to_clone = PathBuf::from("/root/.libra/db");
-//     let twin = TwinOpts {
-//         db_dir: prod_db_to_clone,
-//         oper_file: None,
-//         info: false,
-//     };
-//     twin.run();
-//     Ok(())
-// }
-// #[ignore]
-// #[tokio::test]
-// async fn test_twin_random() -> anyhow::Result<()> {
-//     //use any db
-//     let prod_db_to_clone = PathBuf::from("/root/.libra/db");
-//     Twin::apply_with_rando_e2e(prod_db_to_clone, 3)
-//         .await
-//         .unwrap();
-//     Ok(())
-// }
