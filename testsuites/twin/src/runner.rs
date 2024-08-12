@@ -23,10 +23,7 @@ impl Twin {
         // let runtime = tokio::runtime::Runtime::new().unwrap();
         let num_validators = 3_u8;
         // TODO: why are we not using the async here?
-        Twin::apply_with_rando_e2e(
-            db_path,
-            num_validators,
-        ).await?;
+        Twin::apply_with_rando_e2e(db_path, num_validators).await?;
         println!("Twins are running!");
         std::thread::park();
         Ok(())

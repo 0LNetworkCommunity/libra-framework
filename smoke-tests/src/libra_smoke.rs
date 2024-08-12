@@ -75,8 +75,12 @@ impl LibraSmoke {
             std::env::set_var("DIEM_FORGE_NODE_BIN_PATH", p);
         }
 
-        let diem_path = std::env::var("DIEM_FORGE_NODE_BIN_PATH").expect("DIEM_FORGE_NODE_BIN_PATH not set in env");
-        assert!(PathBuf::from(&diem_path).exists(),"doesn't seem like you have a binary linked to DIEM_FORGE_NODE_BIN_PATH");
+        let diem_path = std::env::var("DIEM_FORGE_NODE_BIN_PATH")
+            .expect("DIEM_FORGE_NODE_BIN_PATH not set in env");
+        assert!(
+            PathBuf::from(&diem_path).exists(),
+            "doesn't seem like you have a binary linked to DIEM_FORGE_NODE_BIN_PATH"
+        );
         println!("Using diem-node binary at {:?}", &diem_path);
 
         let release = target.load_bundle().unwrap();

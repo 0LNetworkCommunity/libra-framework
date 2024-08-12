@@ -20,8 +20,8 @@ struct LibraCli {
     command: Option<Sub>,
     // Note: this is for compatibility with how Diem Force calls diem-node
     // TODO: change this upstream.
-    #[clap(hide(true), long, short='f')]
-    swarm_config: Option<PathBuf>
+    #[clap(hide(true), long, short = 'f')]
+    swarm_config: Option<PathBuf>,
 }
 
 #[derive(Subcommand)]
@@ -43,11 +43,11 @@ fn main() -> anyhow::Result<()> {
 
     // Hack. Diem forge API compatibility.
     if let Some(p) = cli.swarm_config {
-      let n = NodeCli {
-        config_path: Some(p)
-      };
-      n.run()?;
-      exit(0);
+        let n = NodeCli {
+            config_path: Some(p),
+        };
+        n.run()?;
+        exit(0);
     }
 
     match cli.command {

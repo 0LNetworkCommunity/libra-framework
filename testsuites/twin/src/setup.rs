@@ -32,7 +32,6 @@ use std::{fs, path::Path};
 
 use crate::runner::Twin;
 
-
 /// Setup the twin network with a synced db
 impl Twin {
     /// ! TO DO : REFACTOR THIS FUNCTION
