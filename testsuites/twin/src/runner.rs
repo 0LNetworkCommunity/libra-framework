@@ -15,17 +15,23 @@ pub struct Twin {
     /// provide info about the DB state, e.g. version
     #[clap(long, short)]
     pub info: bool,
+
+    /// number of local validators to start
+    #[clap(long, short)]
+    pub count_vals: Option<u8>,
 }
 impl Twin {
     /// Runner for the twin
     pub async fn run(&self) -> anyhow::Result<(), anyhow::Error> {
         let db_path = fs::canonicalize(&self.db_dir)?;
-        // let runtime = tokio::runtime::Runtime::new().unwrap();
-        let num_validators = 3_u8;
-        // TODO: why are we not using the async here?
+
+        let num_validators = self.count_vals.unwrap_or(1);
+
         Twin::apply_with_rando_e2e(db_path, num_validators).await?;
-        println!("Twins are running!");
+
+        println!("SUCCESS: twin swarm is running. Press ctrl+c to exit.");
         std::thread::park();
+
         Ok(())
     }
 }

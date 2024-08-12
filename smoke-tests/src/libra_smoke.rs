@@ -83,7 +83,7 @@ impl LibraSmoke {
         for &validator_address in &validator_addresses {
             // Create a mutable borrow of `swarm` within the loop to limit its scope
             let mut pub_info = swarm.diem_public_info();
-            println!("Diem public info {:?}", pub_info.root_account().address());
+            println!("Minting coins to {:?}", validator_address);
 
             // Mint and unlock coins
             helpers::mint_libra(&mut pub_info, validator_address, 1000 * 1_000_000)

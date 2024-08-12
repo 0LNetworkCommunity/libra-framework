@@ -1,8 +1,11 @@
 use anyhow::{bail, Context};
 use diem_config::config::{NodeConfig, WaypointConfig};
-use diem_forge::{SwarmExt, Validator};
+use diem_forge::{LocalSwarm, SwarmExt, Validator};
 use diem_temppath::TempPath;
-use diem_types::transaction::{Script, Transaction, WriteSetPayload};
+use diem_types::{
+    transaction::{Script, Transaction, WriteSetPayload},
+    waypoint::Waypoint,
+};
 use fs_extra::dir;
 use libra_smoke_tests::{configure_validator, helpers::get_libra_balance, libra_smoke::LibraSmoke};
 use libra_txs::txs_cli_vals::ValidatorTxs;
@@ -68,7 +71,7 @@ impl Twin {
         println!("run session to create validator onboarding tx (rescue.blob)");
         let vmc = libra_run_session(
             db_path.to_path_buf(),
-            |session| session_add_validators(session, creds, true),
+            |session| session_add_validators(session, creds, false),
             None,
             None,
         )?;
@@ -95,18 +98,101 @@ impl Twin {
         Ok(())
     }
 
+    async fn replace_db(swarm: &mut LocalSwarm, reference_db: PathBuf) -> anyhow::Result<()> {
+        for v in swarm.validators_mut() {
+            // stop and clear storage
+            v.stop();
+            v.clear_storage().await?;
+
+            // clone the DB
+            Self::clone_db(&reference_db, &v.config().storage.dir())?;
+        }
+        Ok(())
+    }
+
+    fn rescue_db_with_blob(swarm: &LocalSwarm, rescue_blob: PathBuf) -> anyhow::Result<Waypoint> {
+        let mut waypoint: Option<Waypoint> = None;
+        for v in swarm.validators() {
+            let storage_dir = v.config().storage.dir();
+            let bootstrap = BootstrapOpts {
+                db_dir: storage_dir.clone(),
+                genesis_txn_file: rescue_blob.clone(),
+                waypoint_to_verify: None,
+                commit: false, // NOT APPLYING THE TX
+                info: false,
+            };
+
+            let waypoint_to_check = bootstrap.run()?.expect("could not get waypoint");
+            dbg!(&waypoint_to_check);
+
+            // give time for any IO to finish
+            std::thread::sleep(Duration::from_secs(10));
+
+            let bootstrap = BootstrapOpts {
+                db_dir: storage_dir.clone(),
+                genesis_txn_file: rescue_blob.clone(),
+                waypoint_to_verify: Some(waypoint_to_check),
+                commit: true, // APPLY THE TX
+                info: false,
+            };
+
+            let waypoint_post = bootstrap.run()?.expect("could not get waypoint");
+            assert!(
+                waypoint_to_check == waypoint_post,
+                "waypoints are not equal"
+            );
+            if let Some(w) = waypoint {
+                assert!(
+                    waypoint_to_check == w,
+                    "waypoints are not equal between nodes"
+                );
+            }
+            waypoint = Some(waypoint_to_check);
+        }
+        match waypoint {
+            Some(w) => Ok(w),
+            None => bail!("cannot generate consistent waypoint."),
+        }
+    }
+
+    async fn update_waypoint(
+        swarm: &mut LocalSwarm,
+        wp: Waypoint,
+        rescue_blob: PathBuf,
+    ) -> anyhow::Result<()> {
+        for (i, n) in swarm.validators_mut().enumerate() {
+            let mut node_config = n.config().clone();
+            insert_waypoint(&mut node_config, wp.clone());
+
+            // TODO:
+            node_config
+                .consensus
+                .safety_rules
+                .initial_safety_rules_config = InitialSafetyRulesConfig::None;
+            // };
+            // let genesis_transaction = {
+            //     let buf = std::fs::read(rescue_blob.clone()).unwrap();
+            //     bcs::from_bytes::<Transaction>(&buf).unwrap()
+            // };
+            node_config.execution.genesis_file_location = rescue_blob.clone();
+            // reset the sync_only flag to false
+            node_config.consensus.sync_only = false;
+            Self::update_node_config_restart(n, node_config)?;
+            Self::wait_for_node(n, i).await?;
+        }
+        Ok(())
+    }
+
     /// Apply the rescue blob to the swarm db
     pub async fn apply_with_rando_e2e(
-        prod_db: PathBuf,
+        reference_db: PathBuf,
         num_validators: u8,
-    ) -> anyhow::Result<(LibraSmoke, TempPath), anyhow::Error> {
-
+    ) -> anyhow::Result<(LibraSmoke, PathBuf), anyhow::Error> {
         let start_upgrade = Instant::now();
 
         println!("1. Create a new validator set with new accounts");
         let mut smoke = LibraSmoke::new(Some(num_validators), None).await?;
-        //due to borrowing issues
-        // let client = smoke.client().clone();
+
         //Get the credentials of all the nodes
         let mut creds = Vec::new();
         for n in smoke.swarm.validators() {
@@ -117,146 +203,44 @@ impl Twin {
         let creds = creds.into_iter().collect::<Vec<_>>();
 
         println!("2.Replace the swarm db with the snapshot db");
-        let swarm_db_paths = smoke
-            .swarm
-            .validators()
-            .map(|n| n.config().storage.dir())
-            .collect::<Vec<_>>();
-
-        for n in smoke.swarm.validators_mut() {
-            n.stop();
-            // TODO: check this is doing what we expect
-            // was previously not being called
-            n.clear_storage().await?;
-        }
-
-        swarm_db_paths.iter().for_each(|p| {
-            Self::clone_db(&prod_db, p).unwrap();
-        });
-
-        swarm_db_paths.iter().for_each(|p| {
-            assert!(p.exists());
-        });
+        Self::replace_db(&mut smoke.swarm, reference_db).await?;
 
         println!("3. Create a rescue blob with the new validator");
+        let one_storage_dir = smoke
+            .swarm
+            .validators()
+            .nth(0)
+            .unwrap()
+            .config()
+            .storage
+            .dir();
 
-        let genesis_blob_path = Self::make_rescue_twin_blob(&swarm_db_paths[0], creds).await?;
-        let mut genesis_blob_paths = Vec::new();
-        genesis_blob_paths.push(genesis_blob_path.clone());
-
+        let rescue_blob_path = Self::make_rescue_twin_blob(&one_storage_dir, creds).await?;
 
         println!("4. Apply the rescue blob to the swarm db");
-        for (i, p) in swarm_db_paths.iter().enumerate() {
-            // copy the genesis blob to the other swarm nodes dbachives directories
-            if i == 0 {
-                continue;
-            }
-            let out = p.join("rescue.blob");
-            std::fs::copy(&genesis_blob_path, &out)?;
-            genesis_blob_paths.push(out.to_owned());
-        }
-
-        let mut waypoints = Vec::new();
-        // 5. Bootstrap the swarm db with the rescue blob
         println!("5. Bootstrap the swarm db with the rescue blob");
-        for (i, p) in swarm_db_paths.iter().enumerate() {
-            let bootstrap = BootstrapOpts {
-                db_dir: p.clone(),
-                genesis_txn_file: genesis_blob_paths[i].clone(),
-                waypoint_to_verify: None,
-                commit: false, // NOT APPLYING THE TX
-                info: false,
-            };
 
-            let waypoint = bootstrap.run()?;
-            dbg!(&waypoint);
-
-            // give time for any IO to finish
-            std::thread::sleep(Duration::from_secs(10));
-
-            let bootstrap = BootstrapOpts {
-                db_dir: p.clone(),
-                genesis_txn_file: genesis_blob_paths[i].clone(),
-                waypoint_to_verify: None,
-                commit: true, // APPLY THE TX
-                info: false,
-            };
-
-            let waypoint = bootstrap.run().unwrap().unwrap();
-
-            waypoints.push(waypoint);
-        }
+        let wp = Self::rescue_db_with_blob(&smoke.swarm, rescue_blob_path.clone())?;
 
         println!(
             "6. Change the waypoint in the node configs and add the rescue blob to the config"
         );
-        for (i, n) in smoke.swarm.validators_mut().enumerate() {
-            let mut node_config = n.config().clone();
-            insert_waypoint(&mut node_config, waypoints[i]);
-            node_config
-                .consensus
-                .safety_rules
-                .initial_safety_rules_config = InitialSafetyRulesConfig::FromFile {
-                identity_blob_path: genesis_blob_paths[i].clone(),
-                waypoint: WaypointConfig::FromConfig(waypoints[i]),
-            };
-            let genesis_transaction = {
-                let buf = std::fs::read(genesis_blob_paths[i].clone()).unwrap();
-                bcs::from_bytes::<Transaction>(&buf).unwrap()
-            };
-            node_config.execution.genesis = Some(genesis_transaction);
-            // reset the sync_only flag to false
-            node_config.consensus.sync_only = false;
-            Self::update_node_config_restart(n, node_config)?;
-            Self::wait_for_node(n, i).await?;
-        }
+        Self::update_waypoint(&mut smoke.swarm, wp, rescue_blob_path).await?;
+
         println!("7. wait for liveness");
         // TODO: check if this is doing what is expected
         // was previously not running
         smoke
             .swarm
-            .liveness_check(Instant::now().checked_add(Duration::from_secs(10)).unwrap())
+            .liveness_check(Instant::now().checked_add(Duration::from_secs(20)).unwrap())
             .await?;
 
-        // // TO DO: REVISIT THIS TRANSACTION
-        // // !!! The parameters are the one used by mainnet(in tests we use the same parameters as in testnet so change them manually)
-        // //  Do not forget to change the parameters before sending
-        // //  They should be the same as in mainnet
-        let d = diem_temppath::TempPath::new();
-        let (_, _app_cfg) =
-            configure_validator::init_val_config_files(&mut smoke.swarm, 0, d.path().to_owned())
-                .await
-                .expect("could not init validator config");
-        // let recipient = smoke.swarm.validators().nth(1).unwrap().peer_id();
-
-        // let bal_old = get_libra_balance(&client, recipient).await?;
-        // let config_path = d.path().to_owned().join("libra-cli-config.yaml");
-        // let cli = TxsCli {
-        //     subcommand: Some(Transfer {
-        //         to_account: recipient,
-        //         amount: 1.0,
-        //     }),
-        //     mnemonic: None,
-        //     test_private_key: Some(smoke.encoded_pri_key.clone()),
-        //     chain_id: None,
-        //     config_path: Some(config_path.clone()),
-        //     url: Some(smoke.api_endpoint.clone()),
-        //     tx_profile: None,
-        //     tx_cost: Some(TxCost::prod_baseline_cost()),
-        //     estimate_only: false,
-        //     legacy_address: false,
-        // };
-        // cli.run()
-        //     .await
-        //     .expect("cli could not send to existing account");
-        // let bal_curr = get_libra_balance(&client, recipient).await?;
-        // // 8. Check that the balance has changed
-        // assert!(bal_curr.total > bal_old.total, "balance should change");
+        let cli_tools = smoke.first_account_app_cfg()?;
 
         let duration_upgrade = start_upgrade.elapsed();
         println!(">>> Time to prepare swarm: {:?}", duration_upgrade);
 
-        Ok((smoke, d))
+        Ok((smoke, cli_tools.workspace.node_home))
     }
 
     /// Extract the credentials of the random validator
