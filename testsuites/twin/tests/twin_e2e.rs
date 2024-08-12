@@ -17,11 +17,9 @@ use smoke_test::test_utils::swarm_utils::insert_waypoint;
 // which replaces the 3 validators with 1.
 async fn test_twin() -> anyhow::Result<()> {
     println!("0. create a valid test database from smoke-tests");
-    let num_nodes: usize = 3;
-
     // The diem-node should be compiled externally to avoid any potential conflicts with the current build
     //get the current path
-    let mut s = LibraSmoke::new(Some(num_nodes as u8), None)
+    let mut s = LibraSmoke::new(Some(3), None)
         .await
         .expect("could not start libra smoke");
 

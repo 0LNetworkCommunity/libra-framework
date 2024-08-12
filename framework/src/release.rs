@@ -8,7 +8,7 @@ use diem_framework::{
 };
 use move_command_line_common::address::NumericalAddress;
 use once_cell::sync::Lazy;
-use std::{collections::BTreeMap, fmt::Display, path::PathBuf, str::FromStr};
+use std::{collections::BTreeMap, env, fmt::Display, path::PathBuf, str::FromStr};
 
 use crate::BYTECODE_VERSION;
 
@@ -90,13 +90,26 @@ impl ReleaseTarget {
     }
 
     pub fn create_release_options(self, dev_mode: bool, out: Option<PathBuf>) -> ReleaseOptions {
-        let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        // Get the path to source. If we are running tests in cargo we
+        // can assume cargo manifest dir.
+        // Otherwise we assume the tool is being run in the source path
+
+        let source_path = if let Some(p) = env::var("CARGO_MANIFEST_DIR").ok() {
+            println!("using Cargo project path: {}", &p);
+            PathBuf::from(p)
+        } else {
+            env::current_dir().expect("could not get local current_dir")
+        };
+
         // let crate_dir = crate_dir.parent().unwrap().to_path_buf();
         let packages = self
             .packages()
             .into_iter()
             .map(|(path, binding_path)| {
-                (crate_dir.join(path), binding_path.unwrap_or("").to_owned())
+                (
+                    source_path.join(path),
+                    binding_path.unwrap_or("").to_owned(),
+                )
             })
             .collect::<Vec<_>>();
         ReleaseOptions {
@@ -126,7 +139,7 @@ impl ReleaseTarget {
                 .into_iter()
                 .map(|(_, binding)| {
                     if !binding.is_empty() {
-                        crate_dir.join(binding).display().to_string()
+                        source_path.join(binding).display().to_string()
                     } else {
                         binding
                     }
@@ -136,7 +149,7 @@ impl ReleaseTarget {
                 path
             } else {
                 // Place in release directory //////// 0L ////////
-                crate_dir.join("releases/head.mrb")
+                source_path.join("releases/head.mrb")
             },
         }
     }
