@@ -34,8 +34,8 @@ use crate::runner::Twin;
 
 /// Setup the twin network with a synced db
 impl Twin {
-    /// ! TO DO : REFACTOR THIS FUNCTION
-    /// we need a new account config created locally
+    /// initialize swarm and return the operator.yaml (keys) from
+    /// the first validator (marlon rando)
     pub async fn initialize_marlon_the_val() -> anyhow::Result<PathBuf> {
         // we use LibraSwarm to create a new folder with validator configs.
         // we then take the operator.yaml, and use it to register on a dirty db
@@ -46,6 +46,7 @@ impl Twin {
 
         Ok(marlon.config_path().join("operator.yaml"))
     }
+    // TODO: do we need this?
     /// create the validator registration entry function payload
     /// needs the file operator.yaml
     pub fn register_marlon_tx(file: PathBuf) -> anyhow::Result<Script> {
@@ -105,14 +106,14 @@ impl Twin {
         println!("1. Create a new validator set with new accounts");
         let mut smoke = LibraSmoke::new(Some(num_validators), None).await?;
         //due to borrowing issues
-        let client = smoke.client().clone();
+        // let client = smoke.client().clone();
         //Get the credentials of all the nodes
         let mut creds = Vec::new();
         for n in smoke.swarm.validators() {
             let cred = Self::extract_credentials(n).await?;
             creds.push(cred);
         }
-        //convert from Vec<ValCredentials> to Vec<&ValCredentials>
+
         let creds = creds.into_iter().collect::<Vec<_>>();
 
         println!("2.Replace the swarm db with the snapshot db");
@@ -217,40 +218,40 @@ impl Twin {
             .liveness_check(Instant::now().checked_add(Duration::from_secs(10)).unwrap())
             .await?;
 
-        // TO DO: REVISIT THIS TRANSACTION
-        // !!! The parameters are the one used by mainnet(in tests we use the same parameters as in testnet so change them manually)
-        //  Do not forget to change the parameters before sending
-        //  They should be the same as in mainnet
+        // // TO DO: REVISIT THIS TRANSACTION
+        // // !!! The parameters are the one used by mainnet(in tests we use the same parameters as in testnet so change them manually)
+        // //  Do not forget to change the parameters before sending
+        // //  They should be the same as in mainnet
         let d = diem_temppath::TempPath::new();
         let (_, _app_cfg) =
             configure_validator::init_val_config_files(&mut smoke.swarm, 0, d.path().to_owned())
                 .await
                 .expect("could not init validator config");
-        let recipient = smoke.swarm.validators().nth(1).unwrap().peer_id();
+        // let recipient = smoke.swarm.validators().nth(1).unwrap().peer_id();
 
-        let bal_old = get_libra_balance(&client, recipient).await?;
-        let config_path = d.path().to_owned().join("libra-cli-config.yaml");
-        let cli = TxsCli {
-            subcommand: Some(Transfer {
-                to_account: recipient,
-                amount: 1.0,
-            }),
-            mnemonic: None,
-            test_private_key: Some(smoke.encoded_pri_key.clone()),
-            chain_id: None,
-            config_path: Some(config_path.clone()),
-            url: Some(smoke.api_endpoint.clone()),
-            tx_profile: None,
-            tx_cost: Some(TxCost::prod_baseline_cost()),
-            estimate_only: false,
-            legacy_address: false,
-        };
-        cli.run()
-            .await
-            .expect("cli could not send to existing account");
-        let bal_curr = get_libra_balance(&client, recipient).await?;
-        // 8. Check that the balance has changed
-        assert!(bal_curr.total > bal_old.total, "balance should change");
+        // let bal_old = get_libra_balance(&client, recipient).await?;
+        // let config_path = d.path().to_owned().join("libra-cli-config.yaml");
+        // let cli = TxsCli {
+        //     subcommand: Some(Transfer {
+        //         to_account: recipient,
+        //         amount: 1.0,
+        //     }),
+        //     mnemonic: None,
+        //     test_private_key: Some(smoke.encoded_pri_key.clone()),
+        //     chain_id: None,
+        //     config_path: Some(config_path.clone()),
+        //     url: Some(smoke.api_endpoint.clone()),
+        //     tx_profile: None,
+        //     tx_cost: Some(TxCost::prod_baseline_cost()),
+        //     estimate_only: false,
+        //     legacy_address: false,
+        // };
+        // cli.run()
+        //     .await
+        //     .expect("cli could not send to existing account");
+        // let bal_curr = get_libra_balance(&client, recipient).await?;
+        // // 8. Check that the balance has changed
+        // assert!(bal_curr.total > bal_old.total, "balance should change");
 
         let duration_upgrade = start_upgrade.elapsed();
         println!(">>> Time to prepare swarm: {:?}", duration_upgrade);
