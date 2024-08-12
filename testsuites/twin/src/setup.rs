@@ -59,8 +59,6 @@ impl Twin {
         }
         bail!("function did not return a script")
     }
-    /// create the rescue blob which has one validator
-    pub fn recue_blob_with_one_val() {}
     ///  Make a rescue blob with the given credentials
     async fn make_rescue_twin_blob(
         db_path: &Path,
@@ -101,15 +99,9 @@ impl Twin {
         prod_db: PathBuf,
         num_validators: u8,
     ) -> anyhow::Result<(LibraSmoke, TempPath), anyhow::Error> {
-        //The diem-node should be compiled externally to avoid any potential conflicts with the current build
-        //get the current path
 
         let start_upgrade = Instant::now();
 
-        // let current_path = std::env::current_dir()?;
-        // //path to diem-node binary
-        // let diem_node_path = current_path.join("tests/diem-proxy");
-        // 1. Create a new validator set with new accounts
         println!("1. Create a new validator set with new accounts");
         let mut smoke = LibraSmoke::new(Some(num_validators), None).await?;
         //due to borrowing issues
@@ -123,8 +115,7 @@ impl Twin {
         //convert from Vec<ValCredentials> to Vec<&ValCredentials>
         let creds = creds.into_iter().collect::<Vec<_>>();
 
-        // 2.Replace the swarm db with the brick db
-        println!("2.Replace the swarm db with the brick db");
+        println!("2.Replace the swarm db with the snapshot db");
         let swarm_db_paths = smoke
             .swarm
             .validators()
@@ -145,16 +136,17 @@ impl Twin {
         swarm_db_paths.iter().for_each(|p| {
             assert!(p.exists());
         });
-        // 4. Create a rescue blob with the new validator
+
         println!("3. Create a rescue blob with the new validator");
-        // let first_val = smoke.swarm.validators().next().unwrap().peer_id();
+
         let genesis_blob_path = Self::make_rescue_twin_blob(&swarm_db_paths[0], creds).await?;
         let mut genesis_blob_paths = Vec::new();
         genesis_blob_paths.push(genesis_blob_path.clone());
-        // 4. Apply the rescue blob to the swarm db
+
+
         println!("4. Apply the rescue blob to the swarm db");
         for (i, p) in swarm_db_paths.iter().enumerate() {
-            //copy the genesis blob to the other swarm nodes dbachives directories
+            // copy the genesis blob to the other swarm nodes dbachives directories
             if i == 0 {
                 continue;
             }
@@ -178,7 +170,7 @@ impl Twin {
             let waypoint = bootstrap.run()?;
             dbg!(&waypoint);
 
-            //give time for any IO to finish
+            // give time for any IO to finish
             std::thread::sleep(Duration::from_secs(10));
 
             let bootstrap = BootstrapOpts {
@@ -194,10 +186,8 @@ impl Twin {
             waypoints.push(waypoint);
         }
 
-        // 6. Change the waypoint in the node configs and add the rescue blob to the config
         println!(
-            "
-            6. Change the waypoint in the node configs and add the rescue blob to the config"
+            "6. Change the waypoint in the node configs and add the rescue blob to the config"
         );
         for (i, n) in smoke.swarm.validators_mut().enumerate() {
             let mut node_config = n.config().clone();
@@ -237,7 +227,7 @@ impl Twin {
                 .await
                 .expect("could not init validator config");
         let recipient = smoke.swarm.validators().nth(1).unwrap().peer_id();
-        // let marlon = smoke.swarm.validators().next().unwrap().peer_id();
+
         let bal_old = get_libra_balance(&client, recipient).await?;
         let config_path = d.path().to_owned().join("libra-cli-config.yaml");
         let cli = TxsCli {
@@ -268,9 +258,7 @@ impl Twin {
         Ok((smoke, d))
     }
 
-    /// '''
     /// Extract the credentials of the random validator
-    /// '''
     async fn extract_credentials(marlon_node: &LocalNode) -> anyhow::Result<ValCredentials> {
         println!("extracting swarm validator credentials");
         // get the necessary values from the current db
@@ -324,9 +312,7 @@ impl Twin {
         })
     }
 
-    /// '''
     /// Clone the prod db to the swarm db
-    /// '''
     fn clone_db(prod_db: &Path, swarm_db: &Path) -> anyhow::Result<()> {
         println!("copying the db db to the swarm db");
         println!("prod db path: {:?}", prod_db);
@@ -337,7 +323,7 @@ impl Twin {
         assert!(swarm_db.exists());
         let swarm_old_path = swarm_db.parent().unwrap().join("db-old");
         fs::create_dir(&swarm_old_path)?;
-        let options = dir::CopyOptions::new(); //Initialize default values for CopyOptions
+        let options = dir::CopyOptions::new(); // Initialize default values for CopyOptions
 
         // move source/dir1 to target/dir1
         dir::move_dir(swarm_db, &swarm_old_path, &options)?;
@@ -350,9 +336,7 @@ impl Twin {
         Ok(())
     }
 
-    /// '''
     /// Wait for the node to become healthy
-    /// '''
     async fn wait_for_node(
         validator: &mut dyn Validator,
         expected_to_connect: usize,
