@@ -1,13 +1,12 @@
 use anyhow::{bail, Context};
-use diem_config::config::{NodeConfig, WaypointConfig};
+use diem_config::config::{NodeConfig};
 use diem_forge::{LocalSwarm, SwarmExt, Validator};
-use diem_temppath::TempPath;
 use diem_types::{
     transaction::{Script, Transaction, WriteSetPayload},
     waypoint::Waypoint,
 };
 use fs_extra::dir;
-use libra_smoke_tests::{configure_validator, helpers::get_libra_balance, libra_smoke::LibraSmoke};
+use libra_smoke_tests::{libra_smoke::LibraSmoke};
 use libra_txs::txs_cli_vals::ValidatorTxs;
 use smoke_test::test_utils::{
     swarm_utils::insert_waypoint, MAX_CONNECTIVITY_WAIT_SECS, MAX_HEALTHY_WAIT_SECS,
@@ -19,8 +18,6 @@ use std::{
 };
 
 use libra_config::validator_registration::ValCredentials;
-use libra_txs::txs_cli::{TxsCli, TxsSub::Transfer};
-use libra_types::core_types::app_cfg::TxCost;
 
 use diem_config::config::InitialSafetyRulesConfig;
 use diem_forge::{LocalNode, Node, NodeExt};
@@ -162,7 +159,7 @@ impl Twin {
     ) -> anyhow::Result<()> {
         for (i, n) in swarm.validators_mut().enumerate() {
             let mut node_config = n.config().clone();
-            insert_waypoint(&mut node_config, wp.clone());
+            insert_waypoint(&mut node_config, wp);
 
             // TODO:
             node_config
@@ -174,7 +171,7 @@ impl Twin {
             //     let buf = std::fs::read(rescue_blob.clone()).unwrap();
             //     bcs::from_bytes::<Transaction>(&buf).unwrap()
             // };
-            node_config.execution.genesis_file_location = rescue_blob.clone();
+            node_config.execution.genesis_file_location.clone_from(&rescue_blob);
             // reset the sync_only flag to false
             node_config.consensus.sync_only = false;
             Self::update_node_config_restart(n, node_config)?;

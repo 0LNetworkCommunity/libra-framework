@@ -20,15 +20,6 @@ use move_vm_runtime::session::SerializedReturnValues;
 use move_vm_types::gas::UnmeteredGasMeter;
 use std::path::{Path, PathBuf};
 
-// #[derive(Debug, Clone)]
-// pub struct ValCredentials {
-//     pub account: AccountAddress,
-//     pub consensus_pubkey: Vec<u8>,
-//     pub proof_of_possession: Vec<u8>,
-//     pub network_addresses: Vec<u8>,
-//     pub fullnode_addresses: Vec<u8>,
-// }
-
 // Run a VM session with a dirty database
 // NOTE: there are several implementations of this elsewhere in Diem
 // Some are buggy, some don't have exports or APIs needed (DiemDbBootstrapper). Some have issues with async and db locks (DiemDbDebugger).

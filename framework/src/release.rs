@@ -94,7 +94,7 @@ impl ReleaseTarget {
         // can assume cargo manifest dir.
         // Otherwise we assume the tool is being run in the source path
 
-        let source_path = if let Some(p) = env::var("CARGO_MANIFEST_DIR").ok() {
+        let source_path = if let Ok(p) = env::var("CARGO_MANIFEST_DIR") {
             println!("using Cargo project path: {}", &p);
             PathBuf::from(p)
         } else {
