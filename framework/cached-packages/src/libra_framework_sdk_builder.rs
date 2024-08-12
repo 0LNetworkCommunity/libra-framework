@@ -533,18 +533,18 @@ pub enum EntryFunctionCall {
     /// you may want to add people who are related to you
     /// there are no known use cases for this at the moment.
     VouchInsistVouchFor {
-        wanna_be_my_friend: AccountAddress,
+        friend_account: AccountAddress,
     },
 
     VouchRevoke {
-        its_not_me_its_you: AccountAddress,
+        friend_account: AccountAddress,
     },
 
     /// will only succesfully vouch if the two are not related by ancestry
     /// prevents spending a vouch that would not be counted.
     /// to add a vouch and ignore this check use insist_vouch
     VouchVouchFor {
-        wanna_be_my_friend: AccountAddress,
+        friend_account: AccountAddress,
     },
 }
 
@@ -856,11 +856,9 @@ impl EntryFunctionCall {
                 fullnode_addresses,
             ),
             VersionSetVersion { major } => version_set_version(major),
-            VouchInsistVouchFor { wanna_be_my_friend } => {
-                vouch_insist_vouch_for(wanna_be_my_friend)
-            }
-            VouchRevoke { its_not_me_its_you } => vouch_revoke(its_not_me_its_you),
-            VouchVouchFor { wanna_be_my_friend } => vouch_vouch_for(wanna_be_my_friend),
+            VouchInsistVouchFor { friend_account } => vouch_insist_vouch_for(friend_account),
+            VouchRevoke { friend_account } => vouch_revoke(friend_account),
+            VouchVouchFor { friend_account } => vouch_vouch_for(friend_account),
         }
     }
 
@@ -2329,7 +2327,7 @@ pub fn version_set_version(major: u64) -> TransactionPayload {
 
 /// you may want to add people who are related to you
 /// there are no known use cases for this at the moment.
-pub fn vouch_insist_vouch_for(wanna_be_my_friend: AccountAddress) -> TransactionPayload {
+pub fn vouch_insist_vouch_for(friend_account: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
@@ -2340,11 +2338,11 @@ pub fn vouch_insist_vouch_for(wanna_be_my_friend: AccountAddress) -> Transaction
         ),
         ident_str!("insist_vouch_for").to_owned(),
         vec![],
-        vec![bcs::to_bytes(&wanna_be_my_friend).unwrap()],
+        vec![bcs::to_bytes(&friend_account).unwrap()],
     ))
 }
 
-pub fn vouch_revoke(its_not_me_its_you: AccountAddress) -> TransactionPayload {
+pub fn vouch_revoke(friend_account: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
@@ -2355,14 +2353,14 @@ pub fn vouch_revoke(its_not_me_its_you: AccountAddress) -> TransactionPayload {
         ),
         ident_str!("revoke").to_owned(),
         vec![],
-        vec![bcs::to_bytes(&its_not_me_its_you).unwrap()],
+        vec![bcs::to_bytes(&friend_account).unwrap()],
     ))
 }
 
 /// will only succesfully vouch if the two are not related by ancestry
 /// prevents spending a vouch that would not be counted.
 /// to add a vouch and ignore this check use insist_vouch
-pub fn vouch_vouch_for(wanna_be_my_friend: AccountAddress) -> TransactionPayload {
+pub fn vouch_vouch_for(friend_account: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
@@ -2373,7 +2371,7 @@ pub fn vouch_vouch_for(wanna_be_my_friend: AccountAddress) -> TransactionPayload
         ),
         ident_str!("vouch_for").to_owned(),
         vec![],
-        vec![bcs::to_bytes(&wanna_be_my_friend).unwrap()],
+        vec![bcs::to_bytes(&friend_account).unwrap()],
     ))
 }
 mod decoder {
@@ -2383,7 +2381,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::AccountOfferRotationCapability {
-                rotation_capability_sig_bytes: bcs::from_bytes(script.args().first()?).ok()?,
+                rotation_capability_sig_bytes: bcs::from_bytes(script.args().get(0)?).ok()?,
                 account_scheme: bcs::from_bytes(script.args().get(1)?).ok()?,
                 account_public_key_bytes: bcs::from_bytes(script.args().get(2)?).ok()?,
                 recipient_address: bcs::from_bytes(script.args().get(3)?).ok()?,
@@ -2398,7 +2396,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::AccountOfferSignerCapability {
-                signer_capability_sig_bytes: bcs::from_bytes(script.args().first()?).ok()?,
+                signer_capability_sig_bytes: bcs::from_bytes(script.args().get(0)?).ok()?,
                 account_scheme: bcs::from_bytes(script.args().get(1)?).ok()?,
                 account_public_key_bytes: bcs::from_bytes(script.args().get(2)?).ok()?,
                 recipient_address: bcs::from_bytes(script.args().get(3)?).ok()?,
@@ -2433,7 +2431,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::AccountRevokeRotationCapability {
-                to_be_revoked_address: bcs::from_bytes(script.args().first()?).ok()?,
+                to_be_revoked_address: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -2445,7 +2443,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::AccountRevokeSignerCapability {
-                to_be_revoked_address: bcs::from_bytes(script.args().first()?).ok()?,
+                to_be_revoked_address: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -2457,7 +2455,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::AccountRotateAuthenticationKey {
-                from_scheme: bcs::from_bytes(script.args().first()?).ok()?,
+                from_scheme: bcs::from_bytes(script.args().get(0)?).ok()?,
                 from_public_key_bytes: bcs::from_bytes(script.args().get(1)?).ok()?,
                 to_scheme: bcs::from_bytes(script.args().get(2)?).ok()?,
                 to_public_key_bytes: bcs::from_bytes(script.args().get(3)?).ok()?,
@@ -2475,7 +2473,7 @@ mod decoder {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(
                 EntryFunctionCall::AccountRotateAuthenticationKeyWithRotationCapability {
-                    rotation_cap_offerer_address: bcs::from_bytes(script.args().first()?).ok()?,
+                    rotation_cap_offerer_address: bcs::from_bytes(script.args().get(0)?).ok()?,
                     new_scheme: bcs::from_bytes(script.args().get(1)?).ok()?,
                     new_public_key_bytes: bcs::from_bytes(script.args().get(2)?).ok()?,
                     cap_update_table: bcs::from_bytes(script.args().get(3)?).ok()?,
@@ -2489,7 +2487,7 @@ mod decoder {
     pub fn burn_set_send_community(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::BurnSetSendCommunity {
-                community: bcs::from_bytes(script.args().first()?).ok()?,
+                community: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -2499,7 +2497,7 @@ mod decoder {
     pub fn code_publish_package_txn(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::CodePublishPackageTxn {
-                metadata_serialized: bcs::from_bytes(script.args().first()?).ok()?,
+                metadata_serialized: bcs::from_bytes(script.args().get(0)?).ok()?,
                 code: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -2510,8 +2508,8 @@ mod decoder {
     pub fn coin_transfer(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::CoinTransfer {
-                coin_type: script.ty_args().first()?.clone(),
-                to: bcs::from_bytes(script.args().first()?).ok()?,
+                coin_type: script.ty_args().get(0)?.clone(),
+                to: bcs::from_bytes(script.args().get(0)?).ok()?,
                 amount: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -2525,7 +2523,7 @@ mod decoder {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(
                 EntryFunctionCall::CommunityWalletInitChangeSignerCommunityMultisig {
-                    multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
+                    multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
                     new_signer: bcs::from_bytes(script.args().get(1)?).ok()?,
                     is_add_operation: bcs::from_bytes(script.args().get(2)?).ok()?,
                     n_of_m: bcs::from_bytes(script.args().get(3)?).ok()?,
@@ -2542,7 +2540,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::CommunityWalletInitFinalizeAndCage {
-                num_signers: bcs::from_bytes(script.args().first()?).ok()?,
+                num_signers: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -2554,7 +2552,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::CommunityWalletInitInitCommunity {
-                initial_authorities: bcs::from_bytes(script.args().first()?).ok()?,
+                initial_authorities: bcs::from_bytes(script.args().get(0)?).ok()?,
                 check_threshold: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -2567,7 +2565,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::CommunityWalletInitProposeOffer {
-                new_signers: bcs::from_bytes(script.args().first()?).ok()?,
+                new_signers: bcs::from_bytes(script.args().get(0)?).ok()?,
                 num_signers: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -2581,7 +2579,7 @@ mod decoder {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(
                 EntryFunctionCall::DiemGovernanceAddApprovedScriptHashScript {
-                    proposal_id: bcs::from_bytes(script.args().first()?).ok()?,
+                    proposal_id: bcs::from_bytes(script.args().get(0)?).ok()?,
                 },
             )
         } else {
@@ -2594,7 +2592,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DiemGovernanceAssertCanResolve {
-                proposal_id: bcs::from_bytes(script.args().first()?).ok()?,
+                proposal_id: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -2606,7 +2604,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DiemGovernanceCreateProposalV2 {
-                execution_hash: bcs::from_bytes(script.args().first()?).ok()?,
+                execution_hash: bcs::from_bytes(script.args().get(0)?).ok()?,
                 metadata_location: bcs::from_bytes(script.args().get(1)?).ok()?,
                 metadata_hash: bcs::from_bytes(script.args().get(2)?).ok()?,
                 is_multi_step_proposal: bcs::from_bytes(script.args().get(3)?).ok()?,
@@ -2621,7 +2619,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DiemGovernanceOlCreateProposalV2 {
-                execution_hash: bcs::from_bytes(script.args().first()?).ok()?,
+                execution_hash: bcs::from_bytes(script.args().get(0)?).ok()?,
                 metadata_location: bcs::from_bytes(script.args().get(1)?).ok()?,
                 metadata_hash: bcs::from_bytes(script.args().get(2)?).ok()?,
                 is_multi_step_proposal: bcs::from_bytes(script.args().get(3)?).ok()?,
@@ -2634,7 +2632,7 @@ mod decoder {
     pub fn diem_governance_ol_vote(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DiemGovernanceOlVote {
-                proposal_id: bcs::from_bytes(script.args().first()?).ok()?,
+                proposal_id: bcs::from_bytes(script.args().get(0)?).ok()?,
                 should_pass: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -2665,7 +2663,7 @@ mod decoder {
     pub fn diem_governance_vote(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DiemGovernanceVote {
-                proposal_id: bcs::from_bytes(script.args().first()?).ok()?,
+                proposal_id: bcs::from_bytes(script.args().get(0)?).ok()?,
                 should_pass: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -2678,7 +2676,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DonorVoiceTxsProposeLiquidateTx {
-                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
+                multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -2690,7 +2688,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DonorVoiceTxsProposePaymentTx {
-                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
+                multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
                 payee: bcs::from_bytes(script.args().get(1)?).ok()?,
                 value: bcs::from_bytes(script.args().get(2)?).ok()?,
                 description: bcs::from_bytes(script.args().get(3)?).ok()?,
@@ -2705,7 +2703,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DonorVoiceTxsProposeVetoTx {
-                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
+                multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
                 id: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -2718,7 +2716,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DonorVoiceTxsVoteLiquidationTx {
-                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
+                multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -2728,7 +2726,7 @@ mod decoder {
     pub fn donor_voice_txs_vote_veto_tx(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DonorVoiceTxsVoteVetoTx {
-                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
+                multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
                 id: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -2749,7 +2747,7 @@ mod decoder {
     pub fn jail_unjail_by_voucher(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::JailUnjailByVoucher {
-                addr: bcs::from_bytes(script.args().first()?).ok()?,
+                addr: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -2771,7 +2769,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::LibraCoinDelegateMintCapability {
-                to: bcs::from_bytes(script.args().first()?).ok()?,
+                to: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -2781,7 +2779,7 @@ mod decoder {
     pub fn libra_coin_mint_to_impl(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::LibraCoinMintToImpl {
-                dst_addr: bcs::from_bytes(script.args().first()?).ok()?,
+                dst_addr: bcs::from_bytes(script.args().get(0)?).ok()?,
                 amount: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -2792,7 +2790,7 @@ mod decoder {
     pub fn multi_action_claim_offer(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultiActionClaimOffer {
-                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
+                multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -2814,7 +2812,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultiActionMigrationMigrateOffer {
-                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
+                multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -2824,7 +2822,7 @@ mod decoder {
     pub fn multisig_account_add_owner(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountAddOwner {
-                new_owner: bcs::from_bytes(script.args().first()?).ok()?,
+                new_owner: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -2834,7 +2832,7 @@ mod decoder {
     pub fn multisig_account_add_owners(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountAddOwners {
-                new_owners: bcs::from_bytes(script.args().first()?).ok()?,
+                new_owners: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -2846,7 +2844,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountApproveTransaction {
-                multisig_account: bcs::from_bytes(script.args().first()?).ok()?,
+                multisig_account: bcs::from_bytes(script.args().get(0)?).ok()?,
                 sequence_number: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -2857,7 +2855,7 @@ mod decoder {
     pub fn multisig_account_create(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountCreate {
-                num_signatures_required: bcs::from_bytes(script.args().first()?).ok()?,
+                num_signatures_required: bcs::from_bytes(script.args().get(0)?).ok()?,
                 metadata_keys: bcs::from_bytes(script.args().get(1)?).ok()?,
                 metadata_values: bcs::from_bytes(script.args().get(2)?).ok()?,
             })
@@ -2871,7 +2869,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountCreateTransaction {
-                multisig_account: bcs::from_bytes(script.args().first()?).ok()?,
+                multisig_account: bcs::from_bytes(script.args().get(0)?).ok()?,
                 payload: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -2885,7 +2883,7 @@ mod decoder {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(
                 EntryFunctionCall::MultisigAccountCreateTransactionWithHash {
-                    multisig_account: bcs::from_bytes(script.args().first()?).ok()?,
+                    multisig_account: bcs::from_bytes(script.args().get(0)?).ok()?,
                     payload_hash: bcs::from_bytes(script.args().get(1)?).ok()?,
                 },
             )
@@ -2900,7 +2898,7 @@ mod decoder {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(
                 EntryFunctionCall::MultisigAccountCreateWithExistingAccount {
-                    multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
+                    multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
                     owners: bcs::from_bytes(script.args().get(1)?).ok()?,
                     num_signatures_required: bcs::from_bytes(script.args().get(2)?).ok()?,
                     account_scheme: bcs::from_bytes(script.args().get(3)?).ok()?,
@@ -2921,7 +2919,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountCreateWithOwners {
-                additional_owners: bcs::from_bytes(script.args().first()?).ok()?,
+                additional_owners: bcs::from_bytes(script.args().get(0)?).ok()?,
                 num_signatures_required: bcs::from_bytes(script.args().get(1)?).ok()?,
                 metadata_keys: bcs::from_bytes(script.args().get(2)?).ok()?,
                 metadata_values: bcs::from_bytes(script.args().get(3)?).ok()?,
@@ -2937,7 +2935,7 @@ mod decoder {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(
                 EntryFunctionCall::MultisigAccountExecuteRejectedTransaction {
-                    multisig_account: bcs::from_bytes(script.args().first()?).ok()?,
+                    multisig_account: bcs::from_bytes(script.args().get(0)?).ok()?,
                 },
             )
         } else {
@@ -2950,7 +2948,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountMigrateWithOwners {
-                additional_owners: bcs::from_bytes(script.args().first()?).ok()?,
+                additional_owners: bcs::from_bytes(script.args().get(0)?).ok()?,
                 num_signatures_required: bcs::from_bytes(script.args().get(1)?).ok()?,
                 metadata_keys: bcs::from_bytes(script.args().get(2)?).ok()?,
                 metadata_values: bcs::from_bytes(script.args().get(3)?).ok()?,
@@ -2965,7 +2963,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountRejectTransaction {
-                multisig_account: bcs::from_bytes(script.args().first()?).ok()?,
+                multisig_account: bcs::from_bytes(script.args().get(0)?).ok()?,
                 sequence_number: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -2978,7 +2976,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountRemoveOwner {
-                owner_to_remove: bcs::from_bytes(script.args().first()?).ok()?,
+                owner_to_remove: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -2990,7 +2988,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountRemoveOwners {
-                owners_to_remove: bcs::from_bytes(script.args().first()?).ok()?,
+                owners_to_remove: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -3002,7 +3000,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountUpdateMetadata {
-                keys: bcs::from_bytes(script.args().first()?).ok()?,
+                keys: bcs::from_bytes(script.args().get(0)?).ok()?,
                 values: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -3015,7 +3013,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountUpdateSignaturesRequired {
-                new_num_signatures_required: bcs::from_bytes(script.args().first()?).ok()?,
+                new_num_signatures_required: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -3027,7 +3025,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountVoteTransanction {
-                multisig_account: bcs::from_bytes(script.args().first()?).ok()?,
+                multisig_account: bcs::from_bytes(script.args().get(0)?).ok()?,
                 sequence_number: bcs::from_bytes(script.args().get(1)?).ok()?,
                 approved: bcs::from_bytes(script.args().get(2)?).ok()?,
             })
@@ -3039,7 +3037,7 @@ mod decoder {
     pub fn object_transfer_call(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::ObjectTransferCall {
-                object: bcs::from_bytes(script.args().first()?).ok()?,
+                object: bcs::from_bytes(script.args().get(0)?).ok()?,
                 to: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -3050,7 +3048,7 @@ mod decoder {
     pub fn ol_account_create_account(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::OlAccountCreateAccount {
-                auth_key: bcs::from_bytes(script.args().first()?).ok()?,
+                auth_key: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -3062,7 +3060,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::OlAccountSetAllowDirectCoinTransfers {
-                allow: bcs::from_bytes(script.args().first()?).ok()?,
+                allow: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -3072,7 +3070,7 @@ mod decoder {
     pub fn ol_account_transfer(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::OlAccountTransfer {
-                to: bcs::from_bytes(script.args().first()?).ok()?,
+                to: bcs::from_bytes(script.args().get(0)?).ok()?,
                 amount: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -3099,7 +3097,7 @@ mod decoder {
     pub fn proof_of_fee_pof_update_bid(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::ProofOfFeePofUpdateBid {
-                bid: bcs::from_bytes(script.args().first()?).ok()?,
+                bid: bcs::from_bytes(script.args().get(0)?).ok()?,
                 epoch_expiry: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -3110,7 +3108,7 @@ mod decoder {
     pub fn safe_init_payment_multisig(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::SafeInitPaymentMultisig {
-                authorities: bcs::from_bytes(script.args().first()?).ok()?,
+                authorities: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -3122,7 +3120,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::SlowWalletSmokeTestVmUnlock {
-                user_addr: bcs::from_bytes(script.args().first()?).ok()?,
+                user_addr: bcs::from_bytes(script.args().get(0)?).ok()?,
                 unlocked: bcs::from_bytes(script.args().get(1)?).ok()?,
                 transferred: bcs::from_bytes(script.args().get(2)?).ok()?,
             })
@@ -3142,7 +3140,7 @@ mod decoder {
     pub fn stake_initialize_validator(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::StakeInitializeValidator {
-                consensus_pubkey: bcs::from_bytes(script.args().first()?).ok()?,
+                consensus_pubkey: bcs::from_bytes(script.args().get(0)?).ok()?,
                 proof_of_possession: bcs::from_bytes(script.args().get(1)?).ok()?,
                 network_addresses: bcs::from_bytes(script.args().get(2)?).ok()?,
                 fullnode_addresses: bcs::from_bytes(script.args().get(3)?).ok()?,
@@ -3155,7 +3153,7 @@ mod decoder {
     pub fn stake_rotate_consensus_key(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::StakeRotateConsensusKey {
-                validator_address: bcs::from_bytes(script.args().first()?).ok()?,
+                validator_address: bcs::from_bytes(script.args().get(0)?).ok()?,
                 new_consensus_pubkey: bcs::from_bytes(script.args().get(1)?).ok()?,
                 proof_of_possession: bcs::from_bytes(script.args().get(2)?).ok()?,
             })
@@ -3169,7 +3167,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::StakeUpdateNetworkAndFullnodeAddresses {
-                validator_address: bcs::from_bytes(script.args().first()?).ok()?,
+                validator_address: bcs::from_bytes(script.args().get(0)?).ok()?,
                 new_network_addresses: bcs::from_bytes(script.args().get(1)?).ok()?,
                 new_fullnode_addresses: bcs::from_bytes(script.args().get(2)?).ok()?,
             })
@@ -3183,7 +3181,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::ValidatorUniverseRegisterValidator {
-                consensus_pubkey: bcs::from_bytes(script.args().first()?).ok()?,
+                consensus_pubkey: bcs::from_bytes(script.args().get(0)?).ok()?,
                 proof_of_possession: bcs::from_bytes(script.args().get(1)?).ok()?,
                 network_addresses: bcs::from_bytes(script.args().get(2)?).ok()?,
                 fullnode_addresses: bcs::from_bytes(script.args().get(3)?).ok()?,
@@ -3196,7 +3194,7 @@ mod decoder {
     pub fn version_set_version(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::VersionSetVersion {
-                major: bcs::from_bytes(script.args().first()?).ok()?,
+                major: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -3206,7 +3204,7 @@ mod decoder {
     pub fn vouch_insist_vouch_for(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::VouchInsistVouchFor {
-                wanna_be_my_friend: bcs::from_bytes(script.args().first()?).ok()?,
+                friend_account: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -3216,7 +3214,7 @@ mod decoder {
     pub fn vouch_revoke(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::VouchRevoke {
-                its_not_me_its_you: bcs::from_bytes(script.args().first()?).ok()?,
+                friend_account: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -3226,7 +3224,7 @@ mod decoder {
     pub fn vouch_vouch_for(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::VouchVouchFor {
-                wanna_be_my_friend: bcs::from_bytes(script.args().first()?).ok()?,
+                friend_account: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None

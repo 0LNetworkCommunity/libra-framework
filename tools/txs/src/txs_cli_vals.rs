@@ -98,11 +98,11 @@ impl ValidatorTxs {
             } => {
                 if *revoke {
                     VouchRevoke {
-                        its_not_me_its_you: *vouch_acct,
+                        friend_account: *vouch_acct,
                     }
                 } else {
                     VouchVouchFor {
-                        wanna_be_my_friend: *vouch_acct,
+                        friend_account: *vouch_acct,
                     }
                 }
             }

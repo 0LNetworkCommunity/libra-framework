@@ -122,16 +122,16 @@ module ol_framework::vouch {
       };
     }
 
-    fun vouch_impl(grantor: &signer, friend_acc: address, check_unrelated: bool) acquires ReceivedVouches, GivenVouches, VouchPrice {
+    fun vouch_impl(grantor: &signer, friend_account: address, check_unrelated: bool) acquires ReceivedVouches, GivenVouches, VouchPrice {
       let grantor_acc = signer::address_of(grantor);
-      assert!(grantor_acc != friend_acc, error::invalid_argument(ETRY_SELF_VOUCH_REALLY));
+      assert!(grantor_acc != friend_account, error::invalid_argument(ETRY_SELF_VOUCH_REALLY));
 
       // check if structures are initialized
       assert!(is_init(grantor_acc), error::invalid_state(EGRANTOR_NOT_INIT));
-      assert!(is_init(friend_acc), error::invalid_state(ERECEIVER_NOT_INIT));
+      assert!(is_init(friend_account), error::invalid_state(ERECEIVER_NOT_INIT));
 
       if (check_unrelated) {
-        ancestry::assert_unrelated(grantor_acc, friend_acc);
+        ancestry::assert_unrelated(grantor_acc, friend_account);
       };
 
       // check if the grantor has already reached the limit of vouches
@@ -151,10 +151,10 @@ module ol_framework::vouch {
       let epoch = epoch_helper::get_current_epoch();
 
       // add friend to grantor given vouches
-      add_given_vouches(grantor_acc, friend_acc, epoch);
+      add_given_vouches(grantor_acc, friend_account, epoch);
 
       // add grantor to friend received vouches
-      add_received_vouches(friend_acc, grantor_acc, epoch);
+      add_received_vouches(friend_account, grantor_acc, epoch);
     }
 
     // Function to add given vouches
@@ -192,31 +192,31 @@ module ol_framework::vouch {
     /// will only succesfully vouch if the two are not related by ancestry
     /// prevents spending a vouch that would not be counted.
     /// to add a vouch and ignore this check use insist_vouch
-    public entry fun vouch_for(grantor: &signer, friend_acc: address) acquires ReceivedVouches, GivenVouches, VouchPrice {
-      vouch_impl(grantor, friend_acc, true);
+    public entry fun vouch_for(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches, VouchPrice {
+      vouch_impl(grantor, friend_account, true);
     }
 
     /// you may want to add people who are related to you
     /// there are no known use cases for this at the moment.
-    public entry fun insist_vouch_for(grantor: &signer, friend_acc: address) acquires ReceivedVouches, GivenVouches, VouchPrice {
-      vouch_impl(grantor, friend_acc, false);
+    public entry fun insist_vouch_for(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches, VouchPrice {
+      vouch_impl(grantor, friend_account, false);
     }
 
-    public entry fun revoke(grantor: &signer, friend_acc: address) acquires ReceivedVouches, GivenVouches {
+    public entry fun revoke(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches {
       let grantor_acc = signer::address_of(grantor);
-      assert!(grantor_acc != friend_acc, error::invalid_argument(ETRY_SELF_VOUCH_REALLY));
+      assert!(grantor_acc != friend_account, error::invalid_argument(ETRY_SELF_VOUCH_REALLY));
 
       assert!(is_init(grantor_acc), error::invalid_state(EGRANTOR_NOT_INIT));
 
       // remove friend from grantor given vouches
       let v = borrow_global_mut<GivenVouches>(grantor_acc);
-      let (found, i) = vector::index_of(&v.outgoing_vouches, &friend_acc);
+      let (found, i) = vector::index_of(&v.outgoing_vouches, &friend_account);
       assert!(found, error::invalid_argument(EVOUCH_NOT_FOUND));
       vector::remove<address>(&mut v.outgoing_vouches, i);
       vector::remove<u64>(&mut v.epoch_vouched, i);
 
       // remove grantor from friends received vouches
-      let v = borrow_global_mut<ReceivedVouches>(friend_acc);
+      let v = borrow_global_mut<ReceivedVouches>(friend_account);
       let (found, i) = vector::index_of(&v.incoming_vouches, &grantor_acc);
       assert!(found, error::invalid_argument(EVOUCH_NOT_FOUND));
       vector::remove(&mut v.incoming_vouches, i);
