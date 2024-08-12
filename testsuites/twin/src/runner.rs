@@ -1,5 +1,5 @@
 use clap::{self, Parser};
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 
 /// Twin of the network
 #[derive(Parser)]
@@ -11,7 +11,6 @@ pub struct Twin {
     pub db_dir: PathBuf,
     /// The operator.yaml file which contains registration information
     #[clap(long, short)]
-
     pub oper_file: Option<PathBuf>,
     /// provide info about the DB state, e.g. version
     #[clap(long, short)]
@@ -20,14 +19,14 @@ pub struct Twin {
 impl Twin {
     /// Runner for the twin
     pub async fn run(&self) -> anyhow::Result<(), anyhow::Error> {
-        let db_path = &self.db_dir;
-        let runtime = tokio::runtime::Runtime::new().unwrap();
+        let db_path = fs::canonicalize(&self.db_dir)?;
+        // let runtime = tokio::runtime::Runtime::new().unwrap();
         let num_validators = 3_u8;
         // TODO: why are we not using the async here?
-        runtime.block_on(Twin::apply_with_rando_e2e(
-            db_path.to_path_buf(),
+        Twin::apply_with_rando_e2e(
+            db_path,
             num_validators,
-        ))?;
+        ).await?;
         println!("Twins are running!");
         std::thread::park();
         Ok(())

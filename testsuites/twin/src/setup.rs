@@ -107,12 +107,12 @@ impl Twin {
 
         let start_upgrade = Instant::now();
 
-        let current_path = std::env::current_dir()?;
-        //path to diem-node binary
-        let diem_node_path = current_path.join("tests/diem-proxy");
+        // let current_path = std::env::current_dir()?;
+        // //path to diem-node binary
+        // let diem_node_path = current_path.join("tests/diem-proxy");
         // 1. Create a new validator set with new accounts
         println!("1. Create a new validator set with new accounts");
-        let mut smoke = LibraSmoke::new(Some(num_validators), Some(diem_node_path)).await?;
+        let mut smoke = LibraSmoke::new(Some(num_validators), None).await?;
         //due to borrowing issues
         let client = smoke.client().clone();
         //Get the credentials of all the nodes
