@@ -55,23 +55,6 @@ impl LibraSmoke {
         target: ReleaseTarget,
     ) -> anyhow::Result<Self> {
         if let Some(p) = path {
-            // //path to diem-node binary
-            // let diem_node_path = path;
-            // //Run cargo clear to make sure we have the latest changes
-            // let _ = std::process::Command::new("cargo")
-            //     .current_dir(&diem_node_path)
-            //     .args(["clean"])
-            //     .output()
-            //     .expect("failed to execute process");
-            // //Run cargo build to make sure we have the latest changes
-            // let _ = std::process::Command::new("cargo")
-            //     .current_dir(&diem_node_path)
-            //     .args(["build", "--package", "diem-node", "--release"])
-            //     .output()
-            //     .expect("failed to execute process");
-            // // Get the path diem-node binary
-            // let diem_node_bin_path = diem_node_path.join("target/release/diem-node");
-            //export env var to use release
             std::env::set_var("DIEM_FORGE_NODE_BIN_PATH", p);
         }
 
@@ -145,6 +128,8 @@ impl LibraSmoke {
             .expect("cannot decode pri key");
         let first_account = LocalAccount::new(node.peer_id(), pri_key.private_key(), 0);
         let api_endpoint = node.rest_api_endpoint();
+
+        println!("SUCCESS: swarm started!");
 
         // TODO: order here is awkward because of borrow issues. Clean this up.
         // mint one coin to the main validator.
