@@ -184,7 +184,7 @@ impl Twin {
     }
 
     /// Apply the rescue blob to the swarm db
-    pub async fn apply_with_rando_e2e(
+    pub async fn make_twin_swarm(
         reference_db: PathBuf,
         num_validators: u8,
     ) -> anyhow::Result<(LibraSmoke, PathBuf), anyhow::Error> {

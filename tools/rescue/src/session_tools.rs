@@ -50,12 +50,10 @@ where
         false, /* indexer */
         BUFFERED_STATE_TARGET_ITEMS,
         DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
-    )
-    .context("Failed to open DB.")
-    .unwrap();
+    ).context("failed to open db")?;
     let db_rw = DbReaderWriter::new(db);
-    let v = db_rw.reader.get_latest_version().unwrap();
-    let view = db_rw.reader.state_view_at_version(Some(v)).unwrap();
+    let v = db_rw.reader.get_latest_version()?;
+    let view = db_rw.reader.state_view_at_version(Some(v))?;
     let dvm = diem_vm::DiemVM::new(&view);
     let adapter = dvm.as_move_resolver(&view);
     let s_id = SessionId::genesis(diem_crypto::HashValue::zero());
