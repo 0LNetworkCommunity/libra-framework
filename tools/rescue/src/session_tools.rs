@@ -50,7 +50,8 @@ where
         false, /* indexer */
         BUFFERED_STATE_TARGET_ITEMS,
         DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
-    ).context("failed to open db")?;
+    )
+    .context("failed to open db")?;
     let db_rw = DbReaderWriter::new(db);
     let v = db_rw.reader.get_latest_version()?;
     let view = db_rw.reader.state_view_at_version(Some(v))?;
