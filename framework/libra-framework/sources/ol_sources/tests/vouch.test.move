@@ -124,6 +124,42 @@ module ol_framework::test_vouch {
     assert!(vouch::get_vouch_price() == 9_500, 73570027);
   }
 
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
+  fun update_vouch(root: &signer, alice: &signer) {
+    // create vals without vouches
+    mock::create_vals(root, 2, false);
+    vouch::set_vouch_price(root, 0);
+
+    // alice vouches for bob
+    vouch::vouch_for(alice, @0x1000b);
+
+    // check alice
+    let (given_vouches, given_epochs) = vouch::get_given_vouches(@0x1000a);
+    assert!(given_vouches == vector[@0x1000b], 73570005);
+    assert!(given_epochs == vector[0], 73570006);
+
+    // check bob
+    let (received_vouches, received_epochs) = vouch::get_received_vouches(@0x1000b);
+    assert!(received_vouches == vector[@0x1000a], 73570007);
+    assert!(received_epochs == vector[0], 73570008);
+
+    // fast forward to epoch 1
+    mock::trigger_epoch(root);
+
+    // alice vouches for bob again
+    vouch::vouch_for(alice, @0x1000b);
+
+    // check alice
+    let (given_vouches, given_epochs) = vouch::get_given_vouches(@0x1000a);
+    assert!(given_vouches == vector[@0x1000b], 73570005);
+    assert!(given_epochs == vector[1], 73570006);
+
+    // check bob
+    let (received_vouches, received_epochs) = vouch::get_received_vouches(@0x1000b);
+    assert!(received_vouches == vector[@0x1000a], 73570007);
+    assert!(received_epochs == vector[1], 73570008);
+  }
+
   // Sad Day scenarios
 
   #[test(root = @ol_framework, alice = @0x1000a)]
@@ -221,6 +257,80 @@ module ol_framework::test_vouch {
     let (received_vouches, received_epochs) = vouch::get_received_vouches(@0x1000b);
     assert!(received_vouches == vector::empty(), 73570023);
     assert!(received_epochs == vector::empty(), 73570024);
+  }
+
+  #[test(root = @ol_framework, alice = @0x1000a)]
+  #[expected_failure(abort_code = 0x30006, location = ol_framework::vouch)]
+  fun vouch_without_init(alice: &signer) {
+    // alice vouches for bob without init
+    vouch::vouch_for(alice, @0x1000b);
+  }
+
+  #[test(root = @ol_framework, alice = @0x1000a)]
+  #[expected_failure(abort_code = 0x30002, location = ol_framework::vouch)]
+  fun vouch_for_account_not_init(root: &signer, alice: &signer) {
+    mock::create_vals(root, 1, false);
+
+    // alice vouches for bob without init
+    vouch::vouch_for(alice, @0x1000b);
+  }
+
+  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
+  #[expected_failure(abort_code = 0x30006, location = ol_framework::vouch)]
+  fun revoke_without_init(alice: &signer) {
+    // alice try to revoke bob without vouch
+    vouch::revoke(alice, @0x1000b);
+  }
+
+  #[test(root = @ol_framework, alice = @0x1000a)]
+  #[expected_failure(abort_code = 0x10005, location = ol_framework::vouch)]
+  fun revoke_account_not_vouched(root: &signer, alice: &signer) {
+    mock::create_vals(root, 2, false);
+
+    // alice try to revoke bob without vouch
+    vouch::revoke(alice, @0x1000b);
+  }
+
+
+  #[test(root = @ol_framework, alice = @0x1000a)]
+  fun true_friends_not_init() {
+    // alice try to get true friends in list without init
+    let result = vouch::true_friends(@0x1000a);
+
+    assert!(result == vector::empty(), 73570028);
+  }
+
+  #[test(root = @ol_framework, alice = @0x1000a)]
+  fun true_friends_in_list_not_init() {
+    // alice try to get true friends in list without init
+    let (list, size) = vouch::true_friends_in_list(@0x1000a, &vector::singleton(@0x1000b));
+
+    assert!(list == vector::empty(), 73570028);
+    assert!(size == 0, 73570029);
+  }
+
+  #[test(root = @ol_framework, alice = @0x1000a)]
+  fun get_received_vouches_not_init() {
+    // alice try to get received vouches without init
+    let (received_vouches, received_epochs) = vouch::get_received_vouches(@0x1000a);
+
+    assert!(received_vouches == vector::empty(), 73570030);
+    assert!(received_epochs == vector::empty(), 73570031);
+  }
+
+  #[test(root = @ol_framework, alice = @0x1000a)]
+  #[expected_failure(abort_code = 0x30003, location = ol_framework::vouch)]
+  fun get_given_vouches_not_init() {
+    // alice try to get given vouches without init
+    vouch::get_given_vouches(@0x1000a);
+  }
+
+  #[test(root = @ol_framework, alice = @0x1000a)]
+  fun get_all_vouchers_not_init() {
+    // alice try to get all vouchers without init
+    let all_vouchers = vouch::all_vouchers(@0x1000a);
+
+    assert!(all_vouchers == vector::empty(), 73570034);
   }
 
 }

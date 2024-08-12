@@ -8,7 +8,6 @@ module ol_framework::vouch {
     use ol_framework::ol_account;
     use ol_framework::epoch_helper;
 
-    use diem_framework::account;
     use diem_framework::system_addresses;
     use diem_framework::transaction_fee;
 
@@ -123,13 +122,17 @@ module ol_framework::vouch {
       };
     }
 
-    fun vouch_impl(grantor: &signer, friend_acc: address) acquires ReceivedVouches, GivenVouches, VouchPrice {
+    fun vouch_impl(grantor: &signer, friend_acc: address, check_unrelated: bool) acquires ReceivedVouches, GivenVouches, VouchPrice {
       let grantor_acc = signer::address_of(grantor);
       assert!(grantor_acc != friend_acc, error::invalid_argument(ETRY_SELF_VOUCH_REALLY));
 
       // check if structures are initialized
       assert!(is_init(grantor_acc), error::invalid_state(EGRANTOR_NOT_INIT));
       assert!(is_init(friend_acc), error::invalid_state(ERECEIVER_NOT_INIT));
+
+      if (check_unrelated) {
+        ancestry::assert_unrelated(grantor_acc, friend_acc);
+      };
 
       // check if the grantor has already reached the limit of vouches
       let (given_vouches, _) = get_given_vouches(grantor_acc);
@@ -190,14 +193,13 @@ module ol_framework::vouch {
     /// prevents spending a vouch that would not be counted.
     /// to add a vouch and ignore this check use insist_vouch
     public entry fun vouch_for(grantor: &signer, friend_acc: address) acquires ReceivedVouches, GivenVouches, VouchPrice {
-      ancestry::assert_unrelated(signer::address_of(grantor), friend_acc);
-      vouch_impl(grantor, friend_acc);
+      vouch_impl(grantor, friend_acc, true);
     }
 
     /// you may want to add people who are related to you
     /// there are no known use cases for this at the moment.
     public entry fun insist_vouch_for(grantor: &signer, friend_acc: address) acquires ReceivedVouches, GivenVouches, VouchPrice {
-      vouch_impl(grantor, friend_acc);
+      vouch_impl(grantor, friend_acc, false);
     }
 
     public entry fun revoke(grantor: &signer, friend_acc: address) acquires ReceivedVouches, GivenVouches {
@@ -347,28 +349,29 @@ module ol_framework::vouch {
     #[view]
     /// gets all buddies, including expired ones
     public fun all_vouchers(val: address): vector<address> acquires ReceivedVouches {
-
-      if (!exists<ReceivedVouches>(val)) return vector::empty<address>();
-      let state = borrow_global<ReceivedVouches>(val);
-      *&state.incoming_vouches
+      let (incoming_vouches, _) = get_received_vouches(val);
+      incoming_vouches
     }
 
     #[view]
-    /// gets the buddies and checks if they are expired
+    /// gets the received vouches not expired
     public fun all_not_expired(addr: address): vector<address> acquires ReceivedVouches {
       let valid_vouches = vector::empty<address>();
-      if (is_init(addr)) {
-        let state = borrow_global<ReceivedVouches>(addr);
-        vector::for_each(state.incoming_vouches, |buddy_acc| {
-          // account might have dropped
-          if (account::exists_at(buddy_acc)){
-            if (is_not_expired(buddy_acc, state)) {
-              vector::push_back(&mut valid_vouches, buddy_acc)
-            }
-          }
 
-        })
+      let (all_received, epoch_vouched) = get_received_vouches(addr);
+      let current_epoch = epoch_helper::get_current_epoch();
+
+      let i = 0;
+      while (i < vector::length(&all_received)) {
+        let vouch_received = vector::borrow(&all_received, i);
+        let when_vouched = *vector::borrow(&epoch_vouched, i);
+        // check if the vouch is expired
+        if ((when_vouched + EXPIRATION_ELAPSED_EPOCHS) > current_epoch) {
+          vector::push_back(&mut valid_vouches, *vouch_received)
+        };
+        i = i + 1;
       };
+
       valid_vouches
     }
 
@@ -387,15 +390,6 @@ module ol_framework::vouch {
     acquires ReceivedVouches {
       let list = true_friends(recipient);
       vector::contains(&list, &voucher)
-    }
-
-    fun is_not_expired(voucher: address, state: &ReceivedVouches): bool {
-      let (found, i) = vector::index_of(&state.incoming_vouches, &voucher);
-      if (found) {
-        let when_vouched = vector::borrow(&state.epoch_vouched, i);
-        return  (*when_vouched + EXPIRATION_ELAPSED_EPOCHS) > epoch_helper::get_current_epoch()
-      };
-      false
     }
 
     /// for a given list find and count any of my vouchers
