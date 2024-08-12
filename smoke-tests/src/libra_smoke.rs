@@ -142,8 +142,6 @@ impl LibraSmoke {
         let first_account = LocalAccount::new(node.peer_id(), pri_key.private_key(), 0);
         let api_endpoint = node.rest_api_endpoint();
 
-        std::env::remove_var("DIEM_FORGE_NODE_BIN_PATH");
-
         // TODO: order here is awkward because of borrow issues. Clean this up.
         // mint one coin to the main validator.
         // the genesis does NOT mint by default to genesis validators
