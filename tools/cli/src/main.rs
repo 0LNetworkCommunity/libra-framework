@@ -2,12 +2,15 @@ mod move_cli;
 mod node_cli;
 mod ops_cli;
 
+use std::{path::PathBuf, process::exit};
+
 use anyhow::anyhow;
 use clap::{Parser, Subcommand};
 use libra_config::config_cli::ConfigCli;
 use libra_query::query_cli::QueryCli;
 use libra_txs::txs_cli::TxsCli;
 use libra_wallet::wallet_cli::WalletCli;
+use node_cli::NodeCli;
 
 #[derive(Parser)]
 #[clap(author, about, long_about = None)]
@@ -15,6 +18,10 @@ use libra_wallet::wallet_cli::WalletCli;
 struct LibraCli {
     #[clap(subcommand)]
     command: Option<Sub>,
+    // Note: this is for compatibility with how Diem Force calls diem-node
+    // TODO: change this upstream.
+    #[clap(hide(true), long, short='f')]
+    swarm_config: Option<PathBuf>
 }
 
 #[derive(Subcommand)]
@@ -33,6 +40,15 @@ enum Sub {
 
 fn main() -> anyhow::Result<()> {
     let cli = LibraCli::parse();
+
+    // Hack. Diem forge API compatibility.
+    if let Some(p) = cli.swarm_config {
+      let n = NodeCli {
+        config_path: Some(p)
+      };
+      n.run()?;
+      exit(0);
+    }
 
     match cli.command {
         // Execute Node CLI subcommand
