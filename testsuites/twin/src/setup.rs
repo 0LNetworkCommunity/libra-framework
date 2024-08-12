@@ -1,12 +1,12 @@
 use anyhow::{bail, Context};
-use diem_config::config::{NodeConfig};
+use diem_config::config::{NodeConfig, WaypointConfig};
 use diem_forge::{LocalSwarm, SwarmExt, Validator};
 use diem_types::{
     transaction::{Script, Transaction, WriteSetPayload},
     waypoint::Waypoint,
 };
 use fs_extra::dir;
-use libra_smoke_tests::{libra_smoke::LibraSmoke};
+use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_txs::txs_cli_vals::ValidatorTxs;
 use smoke_test::test_utils::{
     swarm_utils::insert_waypoint, MAX_CONNECTIVITY_WAIT_SECS, MAX_HEALTHY_WAIT_SECS,
@@ -161,17 +161,26 @@ impl Twin {
             let mut node_config = n.config().clone();
             insert_waypoint(&mut node_config, wp);
 
+            let validator_identity_file = n.config().storage.dir().join("validator-identity.yaml");
+
+            let init_safety = InitialSafetyRulesConfig::from_file(
+                validator_identity_file,
+                WaypointConfig::FromConfig(wp),
+            );
             // TODO:
             node_config
                 .consensus
                 .safety_rules
-                .initial_safety_rules_config = InitialSafetyRulesConfig::None;
+                .initial_safety_rules_config = init_safety;
             // };
             // let genesis_transaction = {
             //     let buf = std::fs::read(rescue_blob.clone()).unwrap();
             //     bcs::from_bytes::<Transaction>(&buf).unwrap()
             // };
-            node_config.execution.genesis_file_location.clone_from(&rescue_blob);
+            node_config
+                .execution
+                .genesis_file_location
+                .clone_from(&rescue_blob);
             // reset the sync_only flag to false
             node_config.consensus.sync_only = false;
             Self::update_node_config_restart(n, node_config)?;
