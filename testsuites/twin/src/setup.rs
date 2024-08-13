@@ -13,7 +13,10 @@ use smoke_test::test_utils::{
     swarm_utils::insert_waypoint, MAX_CONNECTIVITY_WAIT_SECS, MAX_HEALTHY_WAIT_SECS,
 };
 use std::{
-    path::PathBuf, process::abort, thread, time::{self, Duration, Instant}
+    path::PathBuf,
+    process::abort,
+    thread,
+    time::{self, Duration, Instant},
 };
 
 use libra_config::validator_registration::ValCredentials;
@@ -107,10 +110,8 @@ impl Twin {
     }
 
     fn temp_backup_db(reference_db: &Path, temp_dir: &Path) -> anyhow::Result<PathBuf> {
-
         let options: dir::CopyOptions = dir::CopyOptions::new(); // Initialize default values for CopyOptions
-        dir::copy(reference_db, temp_dir, &options)
-            .context("cannot copy to new db dir")?;
+        dir::copy(reference_db, temp_dir, &options).context("cannot copy to new db dir")?;
         let db_path = temp_dir.join("db");
         assert!(db_path.exists());
 
@@ -217,7 +218,7 @@ impl Twin {
 
         // stop all vals so we don't have DBs open.
         for n in smoke.swarm.validators_mut() {
-          n.stop();
+            n.stop();
         }
 
         let creds = creds.into_iter().collect::<Vec<_>>();
@@ -242,7 +243,6 @@ impl Twin {
         dbg!(&temp_db_path);
         assert!(temp_db_path.exists());
 
-
         println!("2. Create a rescue blob from the reference db");
 
         let rescue_blob_path = Self::make_rescue_twin_blob(&temp_db_path, creds).await?;
@@ -254,12 +254,9 @@ impl Twin {
 
         Self::replace_db(&mut smoke.swarm, &temp_db_path).await?;
 
-
         println!("3. Apply the rescue blob to the swarm db & bootstrap");
 
         let wp = Self::rescue_db_with_blob(&smoke.swarm, rescue_blob_path.clone())?;
-
-
 
         println!(
             "5. Change the waypoint in the node configs and add the rescue blob to the config"
@@ -347,10 +344,14 @@ impl Twin {
         assert!(swarm_db.exists());
         let swarm_old_path = swarm_db.parent().unwrap().join("db-old");
         match fs::create_dir(&swarm_old_path).context("cannot create db-old") {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(e) => {
-              println!("db-old path already exists at {:?}, {}", &swarm_old_path, &e.to_string());
-            },
+                println!(
+                    "db-old path already exists at {:?}, {}",
+                    &swarm_old_path,
+                    &e.to_string()
+                );
+            }
         };
         let options = dir::CopyOptions::new(); // Initialize default values for CopyOptions
 

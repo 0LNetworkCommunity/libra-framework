@@ -218,7 +218,7 @@ pub fn session_add_validators(
         ) {
             Ok(_) => {
                 println!("account created successfully");
-                        //The accounts are not slow so we do not have to unlock them
+                //The accounts are not slow so we do not have to unlock them
                 dbg!("mint to account");
                 libra_execute_session_function(
                     session,
@@ -236,7 +236,6 @@ pub fn session_add_validators(
                 println!("account already exists, skipping");
             }
         };
-
     }
     let validators = MoveValue::vector_address(creds.iter().map(|c| c.account).collect());
     let signer = MoveValue::Signer(AccountAddress::ONE);
