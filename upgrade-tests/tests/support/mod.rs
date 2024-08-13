@@ -16,17 +16,14 @@ use libra_types::core_types::app_cfg::TxCost;
 /// these hashes are produced offline during the framework upgrade builder
 /// workflow.
 pub async fn upgrade_multiple_impl(
+    s: &mut LibraSmoke,
     dir_path: &str,
     modules: Vec<&str>,
-    prior_release: ReleaseTarget,
+    // prior_release: ReleaseTarget,
 ) -> anyhow::Result<()> {
     upgrade_fixtures::testsuite_maybe_warmup_fixtures();
 
     let d = diem_temppath::TempPath::new();
-
-    let mut s = LibraSmoke::new_with_target(Some(1), None, prior_release)
-        .await
-        .context("could not start libra smoke")?;
 
     let (_, _app_cfg) =
         configure_validator::init_val_config_files(&mut s.swarm, 0, d.path().to_owned())
