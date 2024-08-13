@@ -33,11 +33,8 @@ pub fn get_backup_storage(local_fs_dir: PathBuf) -> Result<Arc<dyn BackupStorage
     Ok(Arc::new(LocalFs::new(local_fs_dir)))
 }
 
-pub fn get_global_db_opts(
-    db_dir: PathBuf,
-    bundle: &RestoreBundle,
-) -> anyhow::Result<GlobalRestoreOptions> {
-    let restore_handler = Arc::new(DiemDB::open_kv_only(
+fn open_db(db_dir: PathBuf) -> anyhow::Result<DiemDB>{
+  DiemDB::open_kv_only(
         db_dir,
         false,                       /* read_only */
         NO_OP_STORAGE_PRUNER_CONFIG, /* pruner config */
@@ -45,7 +42,14 @@ pub fn get_global_db_opts(
         false,
         BUFFERED_STATE_TARGET_ITEMS,
         DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
-    )?)
+    )
+}
+
+pub fn get_global_db_opts(
+    db_dir: PathBuf,
+    bundle: &RestoreBundle,
+) -> anyhow::Result<GlobalRestoreOptions> {
+    let restore_handler = Arc::new(open_db(db_dir)?)
     .get_restore_handler();
 
     let run_mode = RestoreRunMode::Restore { restore_handler };
@@ -125,6 +129,7 @@ async fn test_restore() {
     b.load().unwrap();
     let db_temp = diem_temppath::TempPath::new();
     db_temp.create_as_dir().unwrap();
+
     run_restore(RestoreTypes::Epoch, db_temp.path().to_owned(), &b)
         .await
         .unwrap();
