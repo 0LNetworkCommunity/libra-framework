@@ -211,24 +211,32 @@ pub fn session_add_validators(
         let amount = MoveValue::U64(amount);
         //create account
         dbg!("create account");
-        libra_execute_session_function(
+        match libra_execute_session_function(
             session,
             "0x1::ol_account::create_impl",
             vec![&MoveValue::Signer(AccountAddress::ONE), &signer],
-        )?;
-        //The accounts are not slow so we do not have to unlock them
-        dbg!("mint to account");
-        libra_execute_session_function(
-            session,
-            "0x1::libra_coin::mint_to_impl",
-            vec![&MoveValue::Signer(AccountAddress::ONE), &signer, &amount],
-        )?;
-        dbg!("registering validator");
-        libra_execute_session_function(
-            session,
-            "0x1::validator_universe::register_validator",
-            args,
-        )?;
+        ) {
+            Ok(_) => {
+                println!("account created successfully");
+                        //The accounts are not slow so we do not have to unlock them
+                dbg!("mint to account");
+                libra_execute_session_function(
+                    session,
+                    "0x1::libra_coin::mint_to_impl",
+                    vec![&MoveValue::Signer(AccountAddress::ONE), &signer, &amount],
+                )?;
+                dbg!("registering validator");
+                libra_execute_session_function(
+                    session,
+                    "0x1::validator_universe::register_validator",
+                    args,
+                )?;
+            }
+            Err(_) => {
+                println!("account already exists, skipping");
+            }
+        };
+
     }
     let validators = MoveValue::vector_address(creds.iter().map(|c| c.account).collect());
     let signer = MoveValue::Signer(AccountAddress::ONE);

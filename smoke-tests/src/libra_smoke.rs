@@ -93,8 +93,9 @@ impl LibraSmoke {
                 .await
                 .context("could not unlock coins")?;
 
+            // commit note: unsure why we are dropping this
             // Drop the mutable borrow of `swarm` by dropping `pub_info`
-            drop(pub_info);
+            // drop(pub_info);
 
             // Now it's safe to immutably borrow `swarm`
             let node = swarm.validator(validator_address).unwrap(); // Adjust as needed

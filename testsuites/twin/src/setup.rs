@@ -1,6 +1,7 @@
 use anyhow::{bail, Context};
 use diem_config::config::{NodeConfig, WaypointConfig};
 use diem_forge::{LocalSwarm, SwarmExt, Validator};
+use diem_temppath::TempPath;
 use diem_types::{
     transaction::{Script, Transaction, WriteSetPayload},
     waypoint::Waypoint,
@@ -12,9 +13,7 @@ use smoke_test::test_utils::{
     swarm_utils::insert_waypoint, MAX_CONNECTIVITY_WAIT_SECS, MAX_HEALTHY_WAIT_SECS,
 };
 use std::{
-    path::PathBuf,
-    process::abort,
-    time::{Duration, Instant},
+    path::PathBuf, process::abort, thread, time::{self, Duration, Instant}
 };
 
 use libra_config::validator_registration::ValCredentials;
@@ -95,16 +94,27 @@ impl Twin {
         Ok(())
     }
 
-    async fn replace_db(swarm: &mut LocalSwarm, reference_db: PathBuf) -> anyhow::Result<()> {
+    async fn replace_db(swarm: &mut LocalSwarm, reference_db: &Path) -> anyhow::Result<()> {
         for v in swarm.validators_mut() {
             // stop and clear storage
             v.stop();
             v.clear_storage().await?;
 
             // clone the DB
-            Self::clone_db(&reference_db, &v.config().storage.dir())?;
+            Self::clone_db(reference_db, &v.config().storage.dir())?;
         }
         Ok(())
+    }
+
+    fn temp_backup_db(reference_db: &Path, temp_dir: &Path) -> anyhow::Result<PathBuf> {
+
+        let options: dir::CopyOptions = dir::CopyOptions::new(); // Initialize default values for CopyOptions
+        dir::copy(reference_db, temp_dir, &options)
+            .context("cannot copy to new db dir")?;
+        let db_path = temp_dir.join("db");
+        assert!(db_path.exists());
+
+        Ok(db_path)
     }
 
     fn rescue_db_with_blob(swarm: &LocalSwarm, rescue_blob: PathBuf) -> anyhow::Result<Waypoint> {
@@ -120,10 +130,9 @@ impl Twin {
             };
 
             let waypoint_to_check = bootstrap.run()?.expect("could not get waypoint");
-            dbg!(&waypoint_to_check);
 
             // give time for any IO to finish
-            std::thread::sleep(Duration::from_secs(10));
+            std::thread::sleep(Duration::from_secs(1));
 
             let bootstrap = BootstrapOpts {
                 db_dir: storage_dir.clone(),
@@ -206,12 +215,14 @@ impl Twin {
             creds.push(cred);
         }
 
+        // stop all vals so we don't have DBs open.
+        for n in smoke.swarm.validators_mut() {
+          n.stop();
+        }
+
         let creds = creds.into_iter().collect::<Vec<_>>();
 
-        println!("2.Replace the swarm db with the snapshot db");
-        Self::replace_db(&mut smoke.swarm, reference_db).await?;
-
-        println!("3. Create a rescue blob with the new validator");
+        // Debugging mode. Create a No-op db.
         let one_storage_dir = smoke
             .swarm
             .validators()
@@ -221,19 +232,41 @@ impl Twin {
             .storage
             .dir();
 
-        let rescue_blob_path = Self::make_rescue_twin_blob(&one_storage_dir, creds).await?;
+        // Do all writeset operations on a temp db.
+        let mut temp = TempPath::new();
+        temp.persist();
+        temp.create_as_dir()?;
+        let temp_path = temp.path();
+        assert!(temp_path.exists());
+        let temp_db_path = Self::temp_backup_db(&one_storage_dir, temp_path)?;
+        dbg!(&temp_db_path);
+        assert!(temp_db_path.exists());
 
-        println!("4. Apply the rescue blob to the swarm db");
-        println!("5. Bootstrap the swarm db with the rescue blob");
+
+        println!("2. Create a rescue blob from the reference db");
+
+        let rescue_blob_path = Self::make_rescue_twin_blob(&temp_db_path, creds).await?;
+
+        // // let rocks db close
+        // let ten_millis = time::Duration::from_millis(1000);
+        // thread::sleep(ten_millis);
+        println!("4. Replace the swarm db with the snapshot db");
+
+        Self::replace_db(&mut smoke.swarm, &temp_db_path).await?;
+
+
+        println!("3. Apply the rescue blob to the swarm db & bootstrap");
 
         let wp = Self::rescue_db_with_blob(&smoke.swarm, rescue_blob_path.clone())?;
 
+
+
         println!(
-            "6. Change the waypoint in the node configs and add the rescue blob to the config"
+            "5. Change the waypoint in the node configs and add the rescue blob to the config"
         );
         Self::update_waypoint(&mut smoke.swarm, wp, rescue_blob_path).await?;
 
-        println!("7. wait for liveness");
+        println!("6. wait for liveness");
         // TODO: check if this is doing what is expected
         // was previously not running
         smoke
@@ -313,15 +346,25 @@ impl Twin {
         assert!(prod_db.exists());
         assert!(swarm_db.exists());
         let swarm_old_path = swarm_db.parent().unwrap().join("db-old");
-        fs::create_dir(&swarm_old_path)?;
+        match fs::create_dir(&swarm_old_path).context("cannot create db-old") {
+            Ok(_) => {},
+            Err(e) => {
+              println!("db-old path already exists at {:?}, {}", &swarm_old_path, &e.to_string());
+            },
+        };
         let options = dir::CopyOptions::new(); // Initialize default values for CopyOptions
 
         // move source/dir1 to target/dir1
         dir::move_dir(swarm_db, &swarm_old_path, &options)?;
-        assert!(!swarm_db.exists());
+        assert!(
+            !swarm_db.exists(),
+            "swarm db should have been moved/deleted"
+        );
 
-        fs::create_dir(swarm_db)?;
-        dir::copy(prod_db, swarm_db.parent().unwrap(), &options)?;
+        fs::create_dir(swarm_db).context("cannot create new db dir")?;
+
+        dir::copy(prod_db, swarm_db.parent().unwrap(), &options)
+            .context("cannot copy to new db dir")?;
 
         println!("db copied");
         Ok(())
