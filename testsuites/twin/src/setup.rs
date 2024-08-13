@@ -223,7 +223,7 @@ impl Twin {
         let creds = creds.into_iter().collect::<Vec<_>>();
 
         // Debugging mode. Create a No-op db.
-        let one_storage_dir = smoke
+        let _one_storage_dir = smoke
             .swarm
             .validators()
             .nth(0)
@@ -238,7 +238,7 @@ impl Twin {
         temp.create_as_dir()?;
         let temp_path = temp.path();
         assert!(temp_path.exists());
-        let temp_db_path = Self::temp_backup_db(&one_storage_dir, temp_path)?;
+        let temp_db_path = Self::temp_backup_db(&reference_db, temp_path)?;
         dbg!(&temp_db_path);
         assert!(temp_db_path.exists());
 
