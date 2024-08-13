@@ -5884,6 +5884,7 @@ dependencies = [
  "libra-query",
  "libra-rescue",
  "libra-smoke-tests",
+ "libra-storage",
  "libra-txs",
  "libra-types",
  "regex",

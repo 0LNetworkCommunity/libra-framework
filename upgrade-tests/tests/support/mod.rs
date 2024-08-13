@@ -19,7 +19,6 @@ pub async fn upgrade_multiple_impl(
     s: &mut LibraSmoke,
     dir_path: &str,
     modules: Vec<&str>,
-    // prior_release: ReleaseTarget,
 ) -> anyhow::Result<()> {
     upgrade_fixtures::testsuite_maybe_warmup_fixtures();
 

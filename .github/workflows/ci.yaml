@@ -238,6 +238,12 @@ jobs:
         run: |
           echo "Main last commit has [breaking]: ${{ env.hasBreakingCommit }}"
 
+      - name: delete fixtures and force rebuild
+        working-directory: ./framework/src/upgrade_fixtures/fixtures
+        run: |
+          rm -rf upgrade-*
+          RUST_MIN_STACK=104857600 cargo t -- make_the_upgrade_fixtures --include-ignored
+
       - name: upgrade - check workflow
         if: always()
         working-directory: ./upgrade-tests
