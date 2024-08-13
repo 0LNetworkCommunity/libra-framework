@@ -21,7 +21,7 @@ async fn compatible_upgrade_mainnet_libra() -> anyhow::Result<()> {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 /// same as above but with multiple modules being upgraded
-async fn compatible_upgrade_mainnet_multiple() -> anyhow::Result<()>{
+async fn compatible_upgrade_mainnet_multiple() -> anyhow::Result<()> {
     let mut s = LibraSmoke::new_with_target(Some(1), None, ReleaseTarget::Mainnet)
         .await
         .context("could not start libra smoke")?;
@@ -32,5 +32,5 @@ async fn compatible_upgrade_mainnet_multiple() -> anyhow::Result<()>{
         vec!["1-move-stdlib", "2-vendor-stdlib", "3-libra-framework"],
     )
     .await?;
-  Ok(())
+    Ok(())
 }

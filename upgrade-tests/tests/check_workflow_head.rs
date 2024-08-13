@@ -47,7 +47,7 @@ async fn workflow_upgrade_head_multiple_steps() -> anyhow::Result<()> {
 /// do the same as above, but use the "arbitrary" upgrade policy to force an
 /// upgrade.
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn workflow_upgrade_head_multiple_steps_force() -> anyhow::Result<()>{
+async fn workflow_upgrade_head_multiple_steps_force() -> anyhow::Result<()> {
     let mut s = LibraSmoke::new_with_target(Some(1), None, ReleaseTarget::Head)
         .await
         .context("could not start libra smoke")?;
@@ -58,5 +58,5 @@ async fn workflow_upgrade_head_multiple_steps_force() -> anyhow::Result<()>{
         vec!["1-move-stdlib", "2-vendor-stdlib", "3-libra-framework"],
     )
     .await?;
-  Ok(())
+    Ok(())
 }
