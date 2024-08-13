@@ -9,9 +9,7 @@ use diem_types::{
 use fs_extra::dir;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_txs::txs_cli_vals::ValidatorTxs;
-use smoke_test::test_utils::{
-    swarm_utils::insert_waypoint, MAX_CONNECTIVITY_WAIT_SECS, MAX_HEALTHY_WAIT_SECS,
-};
+use smoke_test::test_utils::{MAX_CONNECTIVITY_WAIT_SECS, MAX_HEALTHY_WAIT_SECS};
 use std::{
     path::PathBuf,
     process::abort,
@@ -27,7 +25,7 @@ use hex::{self};
 use libra_query::query_view;
 use libra_rescue::{
     diem_db_bootstrapper::BootstrapOpts,
-    session_tools::{self, libra_run_session, session_add_validators, writeset_voodoo_events},
+    session_tools::{self, libra_run_session, session_add_validators},
 };
 use std::{fs, path::Path};
 
@@ -176,13 +174,20 @@ impl Twin {
         for n in swarm.validators_mut() {
             let mut node_config = n.config().clone();
 
-            // DON'T INSERT WAYPOINT
-            // insert_waypoint(&mut node_config, wp);
-
             let configs_dir = &node_config.base.data_dir;
 
             let validator_identity_file = configs_dir.join("validator-identity.yaml");
-            assert!(validator_identity_file.exists(), "validator-identity.yaml not found");
+            assert!(
+                validator_identity_file.exists(),
+                "validator-identity.yaml not found"
+            );
+
+            ////////
+            // NOTE: you don't need to insert the waypoint as previously thought
+            // but it is harmless. You must however set initial safety
+            // rules config.
+            // insert_waypoint(&mut node_config, wp);
+            ///////
 
             let init_safety = InitialSafetyRulesConfig::from_file(
                 validator_identity_file,
@@ -193,21 +198,24 @@ impl Twin {
                 .safety_rules
                 .initial_safety_rules_config = init_safety;
 
-            let genesis_transaction = {
-                let buf = std::fs::read(rescue_blob.clone()).unwrap();
-                bcs::from_bytes::<Transaction>(&buf).unwrap()
-            };
-            node_config
-            .execution
-            .genesis = Some(genesis_transaction);
+            ////////
+            // Note: Example of getting genesis transaction serialized to include in config.
+            // let genesis_transaction = {
+            //     let buf = std::fs::read(rescue_blob.clone()).unwrap();
+            //     bcs::from_bytes::<Transaction>(&buf).unwrap()
+            // };
+            /////////
 
-            // node_config
-            //     .execution
-            //     .genesis_file_location
-            //     .clone_from(&rescue_blob);
+            // NOTE: Must reset the genesis transaction in the config file
+            // Or overwrite with a serialized versions
+            node_config.execution.genesis = None; // see above to use bin: Some(genesis_transaction);
+                                                  // ... and point to file
+            node_config
+                .execution
+                .genesis_file_location
+                .clone_from(&rescue_blob);
 
             Self::update_node_config(n, node_config)?;
-
         }
         Ok(())
     }
@@ -269,7 +277,6 @@ impl Twin {
 
         let rescue_blob_path = Self::make_rescue_twin_blob(&temp_db_path, creds).await?;
 
-
         println!("3. Apply the rescue blob to the swarm db & bootstrap");
 
         let wp = Self::apply_rescue_on_db(&temp_db_path, &rescue_blob_path)?;
@@ -277,7 +284,6 @@ impl Twin {
         println!("4. Replace the swarm db with the snapshot db");
 
         Self::replace_db_all(&mut smoke.swarm, &temp_db_path).await?;
-
 
         println!(
             "5. Change the waypoint in the node configs and add the rescue blob to the config"
@@ -437,12 +443,22 @@ impl Twin {
 
 #[tokio::test]
 async fn test_setup_twin_with_noop_db() -> anyhow::Result<()> {
-    let mut smoke = LibraSmoke::new(Some(1), None).await?;
+    let mut smoke = LibraSmoke::new(Some(3), None).await?;
 
-    let version_old = smoke.client().get_ledger_information().await?.inner().version;
+    let version_old = smoke
+        .client()
+        .get_ledger_information()
+        .await?
+        .inner()
+        .version;
     Twin::make_twin_swarm(&mut smoke, None, false).await?;
 
-    let version_now = smoke.client().get_ledger_information().await?.inner().version;
+    let version_now = smoke
+        .client()
+        .get_ledger_information()
+        .await?
+        .inner()
+        .version;
 
     assert!(version_now > version_old, "chain makes progress");
 
