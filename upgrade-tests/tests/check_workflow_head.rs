@@ -4,22 +4,22 @@ use anyhow::Context;
 use libra_framework::release::ReleaseTarget;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 
-/// Testing that we can upgrade the chain framework using txs tools.
-/// NOTE: this aims to tests that the upgrade workflow works.
-/// here we are applying an upgrade of a single file on a chain that uses the
-/// same head.mrb release. To check if the upgrade is "compatible" with the
-/// mainnet release, there see upgrade_compatible.
+// Testing that we can upgrade the chain framework using txs tools.
+// NOTE: this aims to tests that the upgrade workflow works.
+// here we are applying an upgrade of a single file on a chain that uses the
+// same head.mrb release. To check if the upgrade is "compatible" with the
+// mainnet release, there see upgrade_compatible.
 
-/// We assume a built transaction script for upgrade in
-/// tests/fixtures/test_upgrade. If it is not there, there is a helper that will
-/// refresh those fixtures once.
+// We assume a built transaction script for upgrade in
+// tests/fixtures/test_upgrade. If it is not there, there is a helper that will
+// refresh those fixtures once.
 
-/// Workflow
-/// 1. a validator can submit a proposal with txs
-/// 2. the validator can vote for the proposal
-/// 3. check that the proposal is resolvable
-/// 4. resolve a proposal by sending the upgrade payload.
-/// 5. Check that the new function all_your_base can be called
+// Workflow
+// 1. a validator can submit a proposal with txs
+// 2. the validator can vote for the proposal
+// 3. check that the proposal is resolvable
+// 4. resolve a proposal by sending the upgrade payload.
+// 5. Check that the new function all_your_base can be called
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn workflow_upgrade_head_stdlib() -> anyhow::Result<()> {
     let mut s = LibraSmoke::new_with_target(Some(1), None, ReleaseTarget::Head)

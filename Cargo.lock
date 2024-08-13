@@ -5973,6 +5973,7 @@ dependencies = [
  "libra-framework",
  "libra-query",
  "libra-smoke-tests",
+ "libra-twin-tests",
  "libra-txs",
  "libra-types",
  "smoke-test",
