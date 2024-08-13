@@ -1,4 +1,5 @@
 use clap::{self, Parser};
+use libra_smoke_tests::libra_smoke::LibraSmoke;
 use std::{fs, path::PathBuf};
 
 /// Twin of the network
@@ -27,7 +28,8 @@ impl Twin {
 
         let num_validators = self.count_vals.unwrap_or(1);
 
-        Twin::make_twin_swarm(db_path, num_validators, true).await?;
+        let mut smoke = LibraSmoke::new(Some(num_validators), None).await?;
+        Twin::make_twin_swarm(&mut smoke, Some(db_path), true).await?;
 
         Ok(())
     }

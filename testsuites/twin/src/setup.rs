@@ -166,7 +166,7 @@ impl Twin {
         wp: Waypoint,
         rescue_blob: PathBuf,
     ) -> anyhow::Result<()> {
-        for (i, n) in swarm.validators_mut().enumerate() {
+        for (n) in swarm.validators_mut() {
             let mut node_config = n.config().clone();
             insert_waypoint(&mut node_config, wp);
 
@@ -193,21 +193,20 @@ impl Twin {
             // reset the sync_only flag to false
             node_config.consensus.sync_only = false;
             Self::update_node_config_restart(n, node_config)?;
-            Self::wait_for_node(n, i).await?;
+            // Self::wait_for_node(n, i).await?;
         }
         Ok(())
     }
 
     /// Apply the rescue blob to the swarm db
     pub async fn make_twin_swarm(
-        reference_db: PathBuf,
-        num_validators: u8,
+        smoke: &mut LibraSmoke,
+        reference_db: Option<PathBuf>,
         keep_running: bool,
-    ) -> anyhow::Result<(LibraSmoke, PathBuf), anyhow::Error> {
+    ) -> anyhow::Result<PathBuf> {
         let start_upgrade = Instant::now();
 
-        println!("1. Create a new validator set with new accounts");
-        let mut smoke = LibraSmoke::new(Some(num_validators), None).await?;
+        println!("1. Get credentials from validator set.");
 
         //Get the credentials of all the nodes
         let mut creds = Vec::new();
@@ -217,21 +216,27 @@ impl Twin {
         }
 
         // stop all vals so we don't have DBs open.
+        let (start_version, _) = smoke
+            .swarm.get_client_with_newest_ledger_version().await.expect("could not get a client");
         for n in smoke.swarm.validators_mut() {
+
             n.stop();
         }
 
         let creds = creds.into_iter().collect::<Vec<_>>();
 
-        // Debugging mode. Create a No-op db.
-        let reference_db = smoke
+        // If no DB is sent, we will use the swarm's initial DB,
+        // this is useful for debugging the internals of Twin, since
+        // we should expect no changes to validator set, credentials and state, only the rescue transaction.
+        let reference_db = reference_db.unwrap_or_else(|| { smoke
             .swarm
             .validators()
             .nth(0)
             .unwrap()
             .config()
             .storage
-            .dir();
+            .dir()
+        });
 
         // Do all writeset operations on a temp db.
         let mut temp = TempPath::new();
@@ -266,10 +271,17 @@ impl Twin {
         println!("6. wait for liveness");
         // TODO: check if this is doing what is expected
         // was previously not running
+        // smoke
+        //     .swarm
+        //     .liveness_check(Instant::now().checked_add(Duration::from_secs(20)).unwrap())
+        //     .await?;
+
         smoke
             .swarm
-            .liveness_check(Instant::now().checked_add(Duration::from_secs(20)).unwrap())
+            .wait_for_all_nodes_to_catchup_to_version(start_version + 10, Duration::from_secs(20))
             .await?;
+        // smoke.wait_for_all_nodes_to_catchup_to_version(version_last, Duration::from_secs(20));
+
 
         let cli_tools = smoke.first_account_app_cfg()?;
 
@@ -278,13 +290,14 @@ impl Twin {
             "SUCCESS: twin swarm started. Time to prepare swarm: {:?}",
             duration_upgrade
         );
+
         if keep_running {
             dialoguer::Confirm::new()
                 .with_prompt("swarm will keep running in background. Would you like to exit?")
                 .interact()?;
         }
         // NOTE: all validators will stop when the LibraSmoke goes out of context.
-        Ok((smoke, cli_tools.workspace.node_home))
+        Ok(cli_tools.workspace.node_home)
     }
 
     /// Extract the credentials of the random validator
@@ -401,6 +414,17 @@ impl Twin {
         validator
             .wait_for_connectivity(expected_to_connect, connectivity_deadline)
             .await?;
+
         Ok(())
     }
+}
+
+
+#[tokio::test]
+async fn test_setup_twin_with_noop_db() -> anyhow::Result<()>{
+  let mut smoke = LibraSmoke::new(Some(1), None).await?;
+
+  Twin::make_twin_swarm(&mut smoke, None, false).await?;
+
+  Ok(())
 }
