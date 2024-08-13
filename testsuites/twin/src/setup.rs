@@ -27,7 +27,7 @@ use hex::{self};
 use libra_query::query_view;
 use libra_rescue::{
     diem_db_bootstrapper::BootstrapOpts,
-    session_tools::{self, libra_run_session, session_add_validators},
+    session_tools::{self, libra_run_session, session_add_validators, writeset_voodoo_events},
 };
 use std::{fs, path::Path};
 
@@ -69,6 +69,7 @@ impl Twin {
         println!("run session to create validator onboarding tx (rescue.blob)");
         let vmc = libra_run_session(
             db_path.to_path_buf(),
+            // |s| writeset_voodoo_events(s),
             |session| session_add_validators(session, creds, false),
             None,
             None,
@@ -85,18 +86,23 @@ impl Twin {
     }
 
     /// Apply the rescue blob to the swarm db
-    fn update_node_config_restart(
-        validator: &mut LocalNode,
-        mut config: NodeConfig,
-    ) -> anyhow::Result<()> {
-        validator.stop();
+    fn update_node_config(validator: &mut LocalNode, mut config: NodeConfig) -> anyhow::Result<()> {
+        // validator.stop();
         let node_path = validator.config_path();
         config.save_to_path(node_path)?;
-        validator.start()?;
+        // validator.start()?;
         Ok(())
     }
 
-    async fn replace_db(swarm: &mut LocalSwarm, reference_db: &Path) -> anyhow::Result<()> {
+    /// Apply the rescue blob to the swarm db
+    fn restart_all(swarm: &mut LocalSwarm) -> anyhow::Result<()> {
+        for v in swarm.validators_mut() {
+            v.start()?;
+        }
+        Ok(())
+    }
+
+    async fn replace_db_all(swarm: &mut LocalSwarm, reference_db: &Path) -> anyhow::Result<()> {
         for v in swarm.validators_mut() {
             // stop and clear storage
             v.stop();
@@ -117,44 +123,45 @@ impl Twin {
         Ok(db_path)
     }
 
-    fn rescue_db_with_blob(swarm: &LocalSwarm, rescue_blob: PathBuf) -> anyhow::Result<Waypoint> {
+    fn apply_rescue_on_db(
+        db_to_change_path: &Path,
+        rescue_blob: &Path,
+    ) -> anyhow::Result<Waypoint> {
         let mut waypoint: Option<Waypoint> = None;
-        for v in swarm.validators() {
-            let storage_dir = v.config().storage.dir();
-            let bootstrap = BootstrapOpts {
-                db_dir: storage_dir.clone(),
-                genesis_txn_file: rescue_blob.clone(),
-                waypoint_to_verify: None,
-                commit: false, // NOT APPLYING THE TX
-                info: false,
-            };
+        let bootstrap = BootstrapOpts {
+            db_dir: db_to_change_path.to_owned(),
+            genesis_txn_file: rescue_blob.to_owned(),
+            waypoint_to_verify: None,
+            commit: false, // NOT APPLYING THE TX
+            info: false,
+        };
 
-            let waypoint_to_check = bootstrap.run()?.expect("could not get waypoint");
+        let waypoint_to_check = bootstrap.run()?.expect("could not get waypoint");
 
-            // give time for any IO to finish
-            std::thread::sleep(Duration::from_secs(1));
+        // give time for any IO to finish
+        std::thread::sleep(Duration::from_secs(1));
 
-            let bootstrap = BootstrapOpts {
-                db_dir: storage_dir.clone(),
-                genesis_txn_file: rescue_blob.clone(),
-                waypoint_to_verify: Some(waypoint_to_check),
-                commit: true, // APPLY THE TX
-                info: false,
-            };
+        let bootstrap = BootstrapOpts {
+            db_dir: db_to_change_path.to_owned(),
+            genesis_txn_file: rescue_blob.to_owned(),
+            waypoint_to_verify: Some(waypoint_to_check),
+            commit: true, // APPLY THE TX
+            info: false,
+        };
 
-            let waypoint_post = bootstrap.run()?.expect("could not get waypoint");
+        let waypoint_post = bootstrap.run()?.expect("could not get waypoint");
+        assert!(
+            waypoint_to_check == waypoint_post,
+            "waypoints are not equal"
+        );
+        if let Some(w) = waypoint {
             assert!(
-                waypoint_to_check == waypoint_post,
-                "waypoints are not equal"
+                waypoint_to_check == w,
+                "waypoints are not equal between nodes"
             );
-            if let Some(w) = waypoint {
-                assert!(
-                    waypoint_to_check == w,
-                    "waypoints are not equal between nodes"
-                );
-            }
-            waypoint = Some(waypoint_to_check);
         }
+        waypoint = Some(waypoint_to_check);
+        // }
         match waypoint {
             Some(w) => Ok(w),
             None => bail!("cannot generate consistent waypoint."),
@@ -166,34 +173,41 @@ impl Twin {
         wp: Waypoint,
         rescue_blob: PathBuf,
     ) -> anyhow::Result<()> {
-        for (n) in swarm.validators_mut() {
+        for n in swarm.validators_mut() {
             let mut node_config = n.config().clone();
-            insert_waypoint(&mut node_config, wp);
 
-            let validator_identity_file = n.config().storage.dir().join("validator-identity.yaml");
+            // DON'T INSERT WAYPOINT
+            // insert_waypoint(&mut node_config, wp);
+
+            let configs_dir = &node_config.base.data_dir;
+
+            let validator_identity_file = configs_dir.join("validator-identity.yaml");
+            assert!(validator_identity_file.exists(), "validator-identity.yaml not found");
 
             let init_safety = InitialSafetyRulesConfig::from_file(
                 validator_identity_file,
                 WaypointConfig::FromConfig(wp),
             );
-            // TODO:
             node_config
                 .consensus
                 .safety_rules
                 .initial_safety_rules_config = init_safety;
-            // };
-            // let genesis_transaction = {
-            //     let buf = std::fs::read(rescue_blob.clone()).unwrap();
-            //     bcs::from_bytes::<Transaction>(&buf).unwrap()
-            // };
+
+            let genesis_transaction = {
+                let buf = std::fs::read(rescue_blob.clone()).unwrap();
+                bcs::from_bytes::<Transaction>(&buf).unwrap()
+            };
             node_config
-                .execution
-                .genesis_file_location
-                .clone_from(&rescue_blob);
-            // reset the sync_only flag to false
-            node_config.consensus.sync_only = false;
-            Self::update_node_config_restart(n, node_config)?;
-            // Self::wait_for_node(n, i).await?;
+            .execution
+            .genesis = Some(genesis_transaction);
+
+            // node_config
+            //     .execution
+            //     .genesis_file_location
+            //     .clone_from(&rescue_blob);
+
+            Self::update_node_config(n, node_config)?;
+
         }
         Ok(())
     }
@@ -217,9 +231,11 @@ impl Twin {
 
         // stop all vals so we don't have DBs open.
         let (start_version, _) = smoke
-            .swarm.get_client_with_newest_ledger_version().await.expect("could not get a client");
+            .swarm
+            .get_client_with_newest_ledger_version()
+            .await
+            .expect("could not get a client");
         for n in smoke.swarm.validators_mut() {
-
             n.stop();
         }
 
@@ -228,14 +244,15 @@ impl Twin {
         // If no DB is sent, we will use the swarm's initial DB,
         // this is useful for debugging the internals of Twin, since
         // we should expect no changes to validator set, credentials and state, only the rescue transaction.
-        let reference_db = reference_db.unwrap_or_else(|| { smoke
-            .swarm
-            .validators()
-            .nth(0)
-            .unwrap()
-            .config()
-            .storage
-            .dir()
+        let reference_db = reference_db.unwrap_or_else(|| {
+            smoke
+                .swarm
+                .validators()
+                .nth(0)
+                .unwrap()
+                .config()
+                .storage
+                .dir()
         });
 
         // Do all writeset operations on a temp db.
@@ -252,16 +269,15 @@ impl Twin {
 
         let rescue_blob_path = Self::make_rescue_twin_blob(&temp_db_path, creds).await?;
 
-        // // let rocks db close
-        // let ten_millis = time::Duration::from_millis(1000);
-        // thread::sleep(ten_millis);
-        println!("4. Replace the swarm db with the snapshot db");
-
-        Self::replace_db(&mut smoke.swarm, &temp_db_path).await?;
 
         println!("3. Apply the rescue blob to the swarm db & bootstrap");
 
-        let wp = Self::rescue_db_with_blob(&smoke.swarm, rescue_blob_path.clone())?;
+        let wp = Self::apply_rescue_on_db(&temp_db_path, &rescue_blob_path)?;
+
+        println!("4. Replace the swarm db with the snapshot db");
+
+        Self::replace_db_all(&mut smoke.swarm, &temp_db_path).await?;
+
 
         println!(
             "5. Change the waypoint in the node configs and add the rescue blob to the config"
@@ -269,6 +285,8 @@ impl Twin {
         Self::update_waypoint(&mut smoke.swarm, wp, rescue_blob_path).await?;
 
         println!("6. wait for liveness");
+        Self::restart_all(&mut smoke.swarm)?;
+
         // TODO: check if this is doing what is expected
         // was previously not running
         // smoke
@@ -278,10 +296,8 @@ impl Twin {
 
         smoke
             .swarm
-            .wait_for_all_nodes_to_catchup_to_version(start_version + 10, Duration::from_secs(20))
+            .wait_for_all_nodes_to_catchup_to_version(start_version + 10, Duration::from_secs(30))
             .await?;
-        // smoke.wait_for_all_nodes_to_catchup_to_version(version_last, Duration::from_secs(20));
-
 
         let cli_tools = smoke.first_account_app_cfg()?;
 
@@ -393,7 +409,7 @@ impl Twin {
     }
 
     /// Wait for the node to become healthy
-    async fn wait_for_node(
+    async fn _wait_for_node(
         validator: &mut dyn Validator,
         expected_to_connect: usize,
     ) -> anyhow::Result<()> {
@@ -419,12 +435,16 @@ impl Twin {
     }
 }
 
-
 #[tokio::test]
-async fn test_setup_twin_with_noop_db() -> anyhow::Result<()>{
-  let mut smoke = LibraSmoke::new(Some(1), None).await?;
+async fn test_setup_twin_with_noop_db() -> anyhow::Result<()> {
+    let mut smoke = LibraSmoke::new(Some(1), None).await?;
 
-  Twin::make_twin_swarm(&mut smoke, None, false).await?;
+    let version_old = smoke.client().get_ledger_information().await?.inner().version;
+    Twin::make_twin_swarm(&mut smoke, None, false).await?;
 
-  Ok(())
+    let version_now = smoke.client().get_ledger_information().await?.inner().version;
+
+    assert!(version_now > version_old, "chain makes progress");
+
+    Ok(())
 }
