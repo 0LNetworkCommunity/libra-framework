@@ -36,7 +36,7 @@ pub struct LibraSmoke {
 // https://doc.rust-lang.org/std/ops/trait.Drop.html
 impl Drop for LibraSmoke {
     fn drop(&mut self) {
-        println!("test dropped, running cleanup");
+        println!("libra smoke test dropped, running cleanup");
         let nodes = self.swarm.validators_mut();
         nodes.for_each(|n| n.stop());
     }

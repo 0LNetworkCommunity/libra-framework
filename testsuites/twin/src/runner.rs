@@ -27,10 +27,7 @@ impl Twin {
 
         let num_validators = self.count_vals.unwrap_or(1);
 
-        Twin::make_twin_swarm(db_path, num_validators).await?;
-
-        println!("SUCCESS: twin swarm is running. Press ctrl+c to exit.");
-        std::thread::park();
+        Twin::make_twin_swarm(db_path, num_validators, true).await?;
 
         Ok(())
     }

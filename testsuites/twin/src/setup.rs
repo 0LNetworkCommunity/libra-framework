@@ -202,6 +202,7 @@ impl Twin {
     pub async fn make_twin_swarm(
         reference_db: PathBuf,
         num_validators: u8,
+        keep_running: bool,
     ) -> anyhow::Result<(LibraSmoke, PathBuf), anyhow::Error> {
         let start_upgrade = Instant::now();
 
@@ -223,7 +224,7 @@ impl Twin {
         let creds = creds.into_iter().collect::<Vec<_>>();
 
         // Debugging mode. Create a No-op db.
-        let _one_storage_dir = smoke
+        let reference_db = smoke
             .swarm
             .validators()
             .nth(0)
@@ -273,8 +274,16 @@ impl Twin {
         let cli_tools = smoke.first_account_app_cfg()?;
 
         let duration_upgrade = start_upgrade.elapsed();
-        println!(">>> Time to prepare swarm: {:?}", duration_upgrade);
-
+        println!(
+            "SUCCESS: twin swarm started. Time to prepare swarm: {:?}",
+            duration_upgrade
+        );
+        if keep_running {
+            dialoguer::Confirm::new()
+                .with_prompt("swarm will keep running in background. Would you like to exit?")
+                .interact()?;
+        }
+        // NOTE: all validators will stop when the LibraSmoke goes out of context.
         Ok((smoke, cli_tools.workspace.node_home))
     }
 
