@@ -15,8 +15,7 @@ use smoke_test::test_utils::{
 use std::{
     path::PathBuf,
     process::abort,
-    thread,
-    time::{self, Duration, Instant},
+    time::{Duration, Instant},
 };
 
 use libra_config::validator_registration::ValCredentials;
