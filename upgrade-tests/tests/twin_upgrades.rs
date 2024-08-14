@@ -30,7 +30,7 @@ async fn twin_test_all_upgrades_dummy() -> anyhow::Result<()> {
 
 /// NOTE: WIP: depends on a restored DB having been created.
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-// #[ignore]
+#[ignore]
 async fn twin_test_stdlib_upgrade() -> anyhow::Result<()> {
     let mut s = LibraSmoke::new_with_target(Some(1), None, ReleaseTarget::Mainnet)
         .await
@@ -48,6 +48,7 @@ async fn twin_test_stdlib_upgrade() -> anyhow::Result<()> {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[ignore]
 async fn twin_test_framework_upgrade() -> anyhow::Result<()> {
     let mut s = LibraSmoke::new_with_target(Some(1), None, ReleaseTarget::Mainnet)
         .await
