@@ -80,7 +80,12 @@ pub async fn upgrade_multiple_impl(
         None,
     )
     .await?;
-    let seq_num = query_res.as_u64().expect("could not get proposal id");
+
+    let seq_num: u64 = query_res[0]
+        .as_str()
+        .expect("could not get proposal id")
+        .parse()
+        .expect("could not parse");
     let prop_id = seq_num - 1;
 
     // ALICE VOTES
