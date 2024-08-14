@@ -1,6 +1,6 @@
 //! standardize cli progress bars in 0L tools
 use console::{self, style};
-use indicatif::{ProgressBar, ProgressStyle};
+use indicatif::{ProgressBar, ProgressIterator, ProgressStyle};
 /// standard cli progress bars etc. for 0L tools
 pub struct OLProgress;
 
@@ -30,9 +30,9 @@ impl OLProgress {
         pb
     }
 
-    /// For special occasions. Don't overuse it :)
-    pub fn fun() -> ProgressStyle {
-        ProgressStyle::with_template("Carpe Diem: {msg} {spinner}")
+    /// YAY, carpe diem
+    pub fn fun_style() -> ProgressStyle {
+        ProgressStyle::with_template("Carpe Diem {spinner}")
             .unwrap()
             // For more spinners check out the cli-spinners project:
             // https://github.com/sindresorhus/cli-spinners/blob/master/spinners.json
@@ -45,6 +45,17 @@ impl OLProgress {
                 "\u{3000}✨\u{3000}✊🌞\u{3000}✨\u{3000} ",
                 "✨\u{3000}\u{3000}✊🌞\u{3000}\u{3000}✨ ",
             ])
+    }
+
+    /// For special occasions. Don't overuse it :)
+    pub fn make_fun() {
+      let a = 0..10;
+      let wait = core::time::Duration::from_millis(500);
+      a.progress_with_style(Self::fun_style())
+        // .with_message("message")
+        .for_each(|_| {
+            std::thread::sleep(wait);
+        });
     }
 
     /// formatted "complete" message
@@ -111,9 +122,15 @@ fn progress() {
             std::thread::sleep(wait);
         });
 
-    a.progress_with_style(OLProgress::fun())
+    a.progress_with_style(OLProgress::fun_style())
         .with_message("message")
         .for_each(|_| {
             std::thread::sleep(wait);
         });
+}
+
+#[test]
+#[ignore]
+fn fun() {
+  OLProgress::make_fun();
 }

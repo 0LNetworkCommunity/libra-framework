@@ -1,4 +1,4 @@
-use crate::{make_yaml_public_fullnode::make_private_vfn_yaml, make_yaml_validator};
+use crate::{make_yaml_public_fullnode::{make_private_vfn_yaml, VFN_FILENAME}, make_yaml_validator};
 use anyhow::{anyhow, bail, Context};
 use dialoguer::{Confirm, Input};
 use diem_crypto::x25519;
@@ -6,7 +6,7 @@ use diem_genesis::{config::HostAndPort, keys::PublicIdentity};
 use diem_types::{chain_id::NamedChain, network_address::DnsName};
 use libra_types::{
     core_types::{app_cfg::AppCfg, network_playlist::NetworkPlaylist},
-    ol_progress::OLProgress,
+    ol_progress::{self, OLProgress},
 };
 use libra_wallet::{utils::read_public_identity_file, validator_files::SetValidatorConfiguration};
 use std::{
@@ -38,13 +38,19 @@ pub async fn initialize_validator(
     // TODO: nice to have
     // also for convenience create a local user libra-cli-config.yaml file so the
     // validator can make transactions against the localhost
-    let cfg = AppCfg::init_app_configs(
+    let mut cfg = AppCfg::init_app_configs(
         keys.child_0_owner.auth_key,
         keys.child_0_owner.account,
         home_path,
         chain_name,
         Some(NetworkPlaylist::localhost(chain_name)),
     )?;
+
+    // offer the validator pledge on startup
+    let profile = cfg.get_profile_mut(None)?;
+    profile.maybe_offer_basic_pledge();
+    profile.maybe_offer_validator_pledge();
+
 
     cfg.save_file().context(format!(
         "could not initialize configs at {}",
@@ -169,7 +175,9 @@ pub async fn vfn_dialogue(
         pk, dns,
     )?;
 
-    println!("SUCCESS: on your VFN you should have vfn.yaml, validator-full-node.yaml files before starting node.");
+    ol_progress::OLProgress::complete(&format!("SUCCESS: config saved to {}", VFN_FILENAME));
+
+    println!("NOTE: on your VFN host you must place this vfn.yaml file in config directory before starting node.");
 
     Ok(())
 }
