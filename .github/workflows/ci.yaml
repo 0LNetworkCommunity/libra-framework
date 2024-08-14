@@ -293,7 +293,7 @@ jobs:
       - name: storage
         working-directory: ./tools/storage
         # TODO: not testing the V6 file parsing
-        run: cargo test --no-fail-fast e2e_
+        run: cargo test --no-fail-fast
 
   twin-testsuite:
     timeout-minutes: 60
