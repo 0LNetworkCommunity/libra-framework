@@ -15,7 +15,6 @@ use std::{
 pub struct RestoreBundle {
     /// the directory of the restore bundle
     pub restore_bundle_dir: PathBuf,
-
     /// epoch we are restoring to
     pub epoch: u64,
     /// the blockchain version to restore to

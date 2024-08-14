@@ -1,9 +1,12 @@
 //! refactoring the internals of Vendor DBTool::Oneoff
 //! source: <diem> storage/db-tool/src/restore.rs
-//!
+
 use crate::restore_bundle::RestoreBundle;
 
-use std::{path::PathBuf, sync::Arc};
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use anyhow::Result;
 use diem_backup_cli::{
@@ -34,11 +37,11 @@ pub fn get_backup_storage(local_fs_dir: PathBuf) -> Result<Arc<dyn BackupStorage
 }
 
 pub fn get_global_db_opts(
-    db_dir: PathBuf,
+    db_dir: &Path,
     bundle: &RestoreBundle,
 ) -> anyhow::Result<GlobalRestoreOptions> {
     let restore_handler = Arc::new(DiemDB::open_kv_only(
-        db_dir,
+        db_dir.to_owned(),
         false,                       /* read_only */
         NO_OP_STORAGE_PRUNER_CONFIG, /* pruner config */
         RocksdbConfigs::default(),
@@ -65,10 +68,10 @@ pub fn get_global_db_opts(
 
 pub async fn run_restore(
     rtype: RestoreTypes,
-    db_path: PathBuf,
+    db_path: &Path,
     bundle: &RestoreBundle,
 ) -> anyhow::Result<()> {
-    let global = get_global_db_opts(db_path.clone(), bundle)?;
+    let global = get_global_db_opts(db_path, bundle)?;
 
     let storage = get_backup_storage(bundle.restore_bundle_dir.to_path_buf())?;
 
@@ -118,20 +121,19 @@ pub async fn run_restore(
     Ok(())
 }
 
+// TODO: perhaps deprecated since this test is nearly identical to restore::test_full_restore
 #[tokio::test]
-async fn test_restore() {
+async fn test_restore() -> anyhow::Result<()> {
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let mut b = RestoreBundle::new(dir.join("fixtures/v7"));
-    b.load().unwrap();
+    b.load()?;
     let db_temp = diem_temppath::TempPath::new();
     db_temp.create_as_dir().unwrap();
-    run_restore(RestoreTypes::Epoch, db_temp.path().to_owned(), &b)
-        .await
-        .unwrap();
-    run_restore(RestoreTypes::Snapshot, db_temp.path().to_owned(), &b)
-        .await
-        .unwrap();
-    run_restore(RestoreTypes::Transaction, db_temp.path().to_owned(), &b)
-        .await
-        .unwrap();
+    run_restore(RestoreTypes::Epoch, db_temp.path(), &b).await?;
+    run_restore(RestoreTypes::Snapshot, db_temp.path(), &b).await?;
+    run_restore(RestoreTypes::Transaction, db_temp.path(), &b).await?;
+
+    assert!(db_temp.path().join("ledger_db").exists());
+    assert!(db_temp.path().join("state_merkle_db").exists());
+    Ok(())
 }
