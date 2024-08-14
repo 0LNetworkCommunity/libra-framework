@@ -14,7 +14,10 @@ use url::Url;
 
 use std::{fs, io::Write, path::PathBuf, str::FromStr};
 
-use super::{network_playlist::{self, NetworkPlaylist}, pledge::Pledge};
+use super::{
+    network_playlist::{self, NetworkPlaylist},
+    pledge::Pledge,
+};
 
 // TODO: the GAS_UNIT_PRICE is set in DIEM. IT IS ALSO THE MINIMUM GAS PRICE This is arbitrary and needs to be reviewed.
 pub const MINIMUM_GAS_PRICE_IN_DIEM: u64 = GAS_UNIT_PRICE;
@@ -223,7 +226,10 @@ impl AppCfg {
         let idx = self.get_profile_idx(nickname).unwrap_or(0);
         let p = self.user_profiles.get(idx).context("no profile at index")?;
         // The license to use this software depends on the user taking the pledge. Totally cool if you don't want to, but you'll need to write your own tools.
-        assert!(p.check_has_pledge(0), "user has not taken Protect the Game pledge, exiting.");
+        assert!(
+            p.check_has_pledge(0),
+            "user has not taken Protect the Game pledge, exiting."
+        );
         Ok(p)
     }
 
@@ -432,7 +438,6 @@ pub struct Profile {
 
     /// Pledges the user took
     pub pledges: Option<Vec<Pledge>>,
-
     // NOTE: V7: deprecated
     // Deprecation: : /// ip address of this node. May be different from transaction URL.
     // pub ip: Ipv4Addr,
@@ -487,13 +492,11 @@ impl Profile {
     // push a pledge
     pub fn push_pledge(&mut self, new: Pledge) {
         if let Some(list) = &mut self.pledges {
-            let found = list.iter().find(|e| {
-              return e.id == new.id
-            });
+            let found = list.iter().find(|e| return e.id == new.id);
             if found.is_none() {
-              list.push(new);
+                list.push(new);
             } else {
-              println!("pledge '{}' already found on this account", &new.question);
+                println!("pledge '{}' already found on this account", &new.question);
             }
         } else {
             self.pledges = Some(vec![new])
@@ -504,34 +507,33 @@ impl Profile {
     pub fn check_has_pledge(&self, pledge_id: u8) -> bool {
         if let Some(list) = &self.pledges {
             // check the pledge exists
-            return list.iter().find(|e| {
-              return e.id == 0 &&
-              Pledge::check_pledge_hash(pledge_id, &e.hash)
-            }).is_some()
+            return list
+                .iter()
+                .find(|e| return e.id == 0 && Pledge::check_pledge_hash(pledge_id, &e.hash))
+                .is_some();
         }
-        return false
+        return false;
     }
 
     // offer pledge if none
     pub fn maybe_offer_basic_pledge(&mut self) {
-      if !self.check_has_pledge(0) {
-        let p = Pledge::pledge_protect_the_game();
-        if p.pledge_dialogue() {
-          self.push_pledge(p)
+        if !self.check_has_pledge(0) {
+            let p = Pledge::pledge_protect_the_game();
+            if p.pledge_dialogue() {
+                self.push_pledge(p)
+            }
         }
-      }
     }
 
     // offer validator pledge
     pub fn maybe_offer_validator_pledge(&mut self) {
-      if !self.check_has_pledge(1) {
-        let p = Pledge::pledge_validator();
-        if p.pledge_dialogue() {
-          self.push_pledge(p)
+        if !self.check_has_pledge(1) {
+            let p = Pledge::pledge_validator();
+            if p.pledge_dialogue() {
+                self.push_pledge(p)
+            }
         }
-      }
     }
-
 }
 
 pub fn get_nickname(acc: AccountAddress) -> String {
@@ -665,7 +667,6 @@ impl Default for TxConfigs {
         }
     }
 }
-
 
 //////// TESTS ////////
 #[tokio::test]

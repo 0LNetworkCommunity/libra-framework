@@ -1,4 +1,7 @@
-use crate::{make_yaml_public_fullnode::{make_private_vfn_yaml, VFN_FILENAME}, make_yaml_validator};
+use crate::{
+    make_yaml_public_fullnode::{make_private_vfn_yaml, VFN_FILENAME},
+    make_yaml_validator,
+};
 use anyhow::{anyhow, bail, Context};
 use dialoguer::{Confirm, Input};
 use diem_crypto::x25519;
@@ -50,7 +53,6 @@ pub async fn initialize_validator(
     let profile = cfg.get_profile_mut(None)?;
     profile.maybe_offer_basic_pledge();
     profile.maybe_offer_validator_pledge();
-
 
     cfg.save_file().context(format!(
         "could not initialize configs at {}",

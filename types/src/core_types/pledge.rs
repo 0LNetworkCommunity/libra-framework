@@ -54,16 +54,19 @@ impl Pledge {
 
     /// interact with user to get basic pledges, validator pledge optional on default setup
     pub fn pledge_dialogue(&self) -> bool {
-        println!("PLEDGE #{}: {}\n\n{}", &self.id, &self.question, &self.preamble);
+        println!(
+            "PLEDGE #{}: {}\n\n{}",
+            &self.id, &self.question, &self.preamble
+        );
 
         if MODE_0L.clone() != NamedChain::MAINNET {
-          println!("seems you are using CI or testnet settings, pledges default to yes");
-          return true
+            println!("seems you are using CI or testnet settings, pledges default to yes");
+            return true;
         };
         if prompt_yes(&format!("\n{}", &self.question)) {
-            return true
+            return true;
         }
-        return false
+        return false;
     }
 
     /// #0 Protect the Game Pledge
@@ -100,7 +103,6 @@ impl Pledge {
         return p;
     }
 }
-
 
 #[tokio::test]
 async fn test_pledge() {

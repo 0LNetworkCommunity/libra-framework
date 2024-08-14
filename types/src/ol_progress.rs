@@ -49,13 +49,13 @@ impl OLProgress {
 
     /// For special occasions. Don't overuse it :)
     pub fn make_fun() {
-      let a = 0..10;
-      let wait = core::time::Duration::from_millis(500);
-      a.progress_with_style(Self::fun_style())
-        // .with_message("message")
-        .for_each(|_| {
-            std::thread::sleep(wait);
-        });
+        let a = 0..10;
+        let wait = core::time::Duration::from_millis(500);
+        a.progress_with_style(Self::fun_style())
+            // .with_message("message")
+            .for_each(|_| {
+                std::thread::sleep(wait);
+            });
     }
 
     /// formatted "complete" message
@@ -132,5 +132,5 @@ fn progress() {
 #[test]
 #[ignore]
 fn fun() {
-  OLProgress::make_fun();
+    OLProgress::make_fun();
 }

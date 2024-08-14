@@ -2,7 +2,10 @@ use anyhow::Context;
 use diem_crypto::{ed25519::Ed25519PrivateKey, ValidCryptoMaterialStringExt};
 use diem_types::chain_id::NamedChain;
 use libra_types::{
-    core_types::{app_cfg::AppCfg, network_playlist::NetworkPlaylist}, exports::{AccountAddress, AuthenticationKey, Client}, ol_progress, type_extensions::client_ext::ClientExt
+    core_types::{app_cfg::AppCfg, network_playlist::NetworkPlaylist},
+    exports::{AccountAddress, AuthenticationKey, Client},
+    ol_progress,
+    type_extensions::client_ext::ClientExt,
 };
 use libra_wallet::account_keys::{get_ol_legacy_address, AccountKeys};
 use std::path::PathBuf;
@@ -75,7 +78,6 @@ pub async fn wizard(
     ol_progress::OLProgress::make_fun();
     println!("config saved to {}", p.display());
     ol_progress::OLProgress::complete("SUCCESS: libra tool configured");
-
 
     Ok(cfg)
 }
