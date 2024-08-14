@@ -32,17 +32,17 @@ async fn twin_test_all_upgrades_dummy() -> anyhow::Result<()> {
 
 /// NOTE: WIP: depends on a restored DB having been created.
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-#[ignore]
+// #[ignore]
 async fn twin_test_framework_upgrade() -> anyhow::Result<()> {
     let mut s = LibraSmoke::new_with_target(Some(1), None, ReleaseTarget::Mainnet)
         .await
         .context("could not start libra smoke")?;
 
     // note: this DB needs to be a functioning restored snapshot
-    let p = PathBuf::from("$HOME/.libra/data/db");
+    let p = PathBuf::from("~/.libra/data/db");
 
     Twin::make_twin_swarm(&mut s, Some(p), false).await?;
 
-    support::upgrade_multiple_impl(&mut s, "upgrade-multi-lib", vec!["3-libra-framework"]).await?;
+    support::upgrade_multiple_impl(&mut s, "upgrade-single-lib", vec!["1-move-stdlib"]).await?;
     Ok(())
 }

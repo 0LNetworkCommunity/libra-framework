@@ -264,7 +264,7 @@ pub fn session_add_validators(
 /// Unpacks a VM change set.
 pub fn unpack_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
     let (write_set, _delta_change_set, events) = vmc.unpack();
-    dbg!(&events);
+
     Ok(ChangeSet::new(write_set, events))
 }
 

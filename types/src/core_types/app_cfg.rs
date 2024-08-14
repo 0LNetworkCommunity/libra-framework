@@ -592,6 +592,9 @@ impl TxCost {
     pub fn prod_baseline_cost() -> Self {
         TxCost::new(MAX_GAS_AMOUNT / 50, 2.0, Some(100))
     }
+    pub fn framework_upgrade() -> Self {
+        TxCost::new(100_000, 1.0, Some(100))
+    }
 }
 
 impl Default for TxCost {

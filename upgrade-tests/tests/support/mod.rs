@@ -60,7 +60,7 @@ pub async fn upgrade_multiple_impl(
         config_path: Some(d.path().to_owned().join("libra-cli-config.yaml")),
         url: Some(s.api_endpoint.clone()),
         tx_profile: None,
-        tx_cost: Some(TxCost::default_critical_txs_cost()),
+        tx_cost: Some(TxCost::framework_upgrade()),
         estimate_only: false,
         legacy_address: false,
     };
@@ -71,18 +71,30 @@ pub async fn upgrade_multiple_impl(
 
     //////////// VOTING ////////////
 
+    // confirm the proposal ID
+
+    let query_res = query_view::get_view(
+        &s.client(),
+        "0x1::diem_governance::get_next_governance_proposal_id",
+        None,
+        None,
+    )
+    .await?;
+    let seq_num = query_res.as_u64().expect("could not get proposal id");
+    let prop_id = seq_num - 1;
+
     // ALICE VOTES
     cli.subcommand = Some(Governance(Vote {
-        proposal_id: 0,
+        proposal_id: prop_id,
         should_fail: false,
     }));
-    cli.run().await.context("alice votes on prop 0")?;
+    cli.run().await.context("alice votes on prop")?;
 
     let query_res = query_view::get_view(
         &s.client(),
         "0x1::diem_governance::get_proposal_state",
         None,
-        Some("0".to_string()),
+        Some(prop_id.to_string()),
     )
     .await?;
 
@@ -95,7 +107,7 @@ pub async fn upgrade_multiple_impl(
         &s.client(),
         "0x1::voting::is_voting_closed",
         Some("0x1::governance_proposal::GovernanceProposal".to_string()),
-        Some("0x1, 0".to_string()),
+        Some(format!("0x1, {}", prop_id)),
     )
     .await?;
 
@@ -109,7 +121,7 @@ pub async fn upgrade_multiple_impl(
         &s.client(),
         "0x1::diem_governance::get_can_resolve",
         None,
-        Some("0".to_string()),
+        Some(prop_id.to_string()),
     )
     .await?;
     assert!(
@@ -121,7 +133,7 @@ pub async fn upgrade_multiple_impl(
         &s.client(),
         "0x1::diem_governance::get_approved_hash",
         None,
-        Some("0".to_string()),
+        Some(prop_id.to_string()),
     )
     .await?;
 
@@ -134,12 +146,12 @@ pub async fn upgrade_multiple_impl(
     //////////// RESOLVE ////////////
 
     for name in modules {
-        ///////// SHOW TIME, RESOLVE EACH STEP ////////
+        ///////// SHOWTIME, RESOLVE EACH STEP ////////
 
         let script_dir = upgrade_fixtures::fixtures_path().join(dir_path).join(name);
 
         cli.subcommand = Some(Governance(Resolve {
-            proposal_id: 0,
+            proposal_id: prop_id,
             proposal_script_dir: script_dir,
         }));
         cli.run()
