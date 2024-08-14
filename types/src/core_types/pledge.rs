@@ -49,7 +49,7 @@ impl Pledge {
         } else {
             assert!(pledge_idx < 2, "pledge index not found");
         }
-        return false;
+        false
     }
 
     /// interact with user to get basic pledges, validator pledge optional on default setup
@@ -59,14 +59,14 @@ impl Pledge {
             &self.id, &self.question, &self.preamble
         );
 
-        if MODE_0L.clone() != NamedChain::MAINNET {
+        if *MODE_0L != NamedChain::MAINNET {
             println!("seems you are using CI or testnet settings, pledges default to yes");
             return true;
         };
         if prompt_yes(&format!("\n{}", &self.question)) {
             return true;
         }
-        return false;
+        false
     }
 
     /// #0 Protect the Game Pledge
@@ -83,7 +83,7 @@ impl Pledge {
 
         p.to_hash();
 
-        return p;
+        p
     }
 
     /// #1 Validator pledge
@@ -100,7 +100,7 @@ impl Pledge {
 
         p.to_hash();
 
-        return p;
+        p
     }
 }
 

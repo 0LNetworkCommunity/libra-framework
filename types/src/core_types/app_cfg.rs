@@ -492,7 +492,7 @@ impl Profile {
     // push a pledge
     pub fn push_pledge(&mut self, new: Pledge) {
         if let Some(list) = &mut self.pledges {
-            let found = list.iter().find(|e| return e.id == new.id);
+            let found = list.iter().find(|e| e.id == new.id);
             if found.is_none() {
                 list.push(new);
             } else {
@@ -509,10 +509,9 @@ impl Profile {
             // check the pledge exists
             return list
                 .iter()
-                .find(|e| return e.id == 0 && Pledge::check_pledge_hash(pledge_id, &e.hash))
-                .is_some();
+                .any(|e| e.id == 0 && Pledge::check_pledge_hash(pledge_id, &e.hash));
         }
-        return false;
+        false
     }
 
     // offer pledge if none
