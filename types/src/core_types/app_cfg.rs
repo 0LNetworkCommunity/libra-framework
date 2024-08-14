@@ -14,7 +14,7 @@ use url::Url;
 
 use std::{fs, io::Write, path::PathBuf, str::FromStr};
 
-use super::{mode_ol::MODE_0L, network_playlist::{self, NetworkPlaylist}, pledge::Pledge};
+use super::{network_playlist::{self, NetworkPlaylist}, pledge::Pledge};
 
 // TODO: the GAS_UNIT_PRICE is set in DIEM. IT IS ALSO THE MINIMUM GAS PRICE This is arbitrary and needs to be reviewed.
 pub const MINIMUM_GAS_PRICE_IN_DIEM: u64 = GAS_UNIT_PRICE;
@@ -25,9 +25,7 @@ pub const CONFIG_FILE_NAME: &str = "libra-cli-config.yaml";
 pub struct AppCfg {
     /// Workspace config
     pub workspace: Workspace,
-    /// accounts which we have profiles for
-    // NOTE: for v7 it will load the default() for migration
-    // #[serde(default)]
+    /// A user may have multiple profiles for different accounts or networks
     pub user_profiles: Vec<Profile>,
     /// Network profile
     pub network_playlist: Vec<NetworkPlaylist>,
@@ -490,10 +488,13 @@ impl Profile {
     pub fn push_pledge(&mut self, new: Pledge) {
         if let Some(list) = &mut self.pledges {
             let found = list.iter().find(|e| {
-              return e.id == 0
+              return e.id == new.id
             });
-            assert!(found.is_none(), "pledge already exists on this profile");
-            list.push(new);
+            if found.is_none() {
+              list.push(new);
+            } else {
+              println!("pledge '{}' already found on this account", &new.question);
+            }
         } else {
             self.pledges = Some(vec![new])
         }

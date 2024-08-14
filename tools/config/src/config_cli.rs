@@ -1,5 +1,5 @@
 use crate::{
-    legacy_config,
+    config_wizard,
     make_yaml_public_fullnode::{download_genesis, get_genesis_waypoint, init_fullnode_yaml},
     validator_config::{validator_dialogue, vfn_dialogue},
 };
@@ -34,7 +34,7 @@ pub struct ConfigCli {
 
 #[derive(clap::Subcommand)]
 enum ConfigSub {
-    /// Generates a libra-cli-config.yaml for cli tools like txs, tower, etc.  Note: the file can also be used for Carpe, though that app uses a different default directory than these cli tools.
+    /// Generates a libra-cli-config.yaml for cli tools like `txs`, `query`, etc.  Note: the file can also be used for Carpe, though that app uses a different default directory than these cli tools.
     Init {
         /// force an account address instead of reading from mnemonic, requires --force_authkey
         #[clap(long)]
@@ -67,7 +67,7 @@ enum ConfigSub {
     /// Show the addresses and configs on this device
     View {},
 
-    // COMMIT NOTE: we havent'used vendor tooling configs for anything.
+    // COMMIT NOTE: we haven't used vendor tooling configs for anything.
     /// Generate validators' config file
     ValidatorInit {
         // just make the VFN file
@@ -97,7 +97,7 @@ impl ConfigCli {
 
                 // Handle address fix option
                 if *address {
-                    let mut account_keys = legacy_config::prompt_for_account()?;
+                    let mut account_keys = config_wizard::prompt_for_account()?;
 
                     let client = Client::new(cfg.pick_url(self.chain_name)?);
 
@@ -164,7 +164,7 @@ impl ConfigCli {
                 test_private_key,
                 playlist_url,
             }) => {
-                legacy_config::wizard(
+                config_wizard::wizard(
                     force_authkey.to_owned(),
                     force_address.to_owned(),
                     self.path.to_owned(),
