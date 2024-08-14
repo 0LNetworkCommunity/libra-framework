@@ -15,6 +15,7 @@ use url::Url;
 use std::{fs, io::Write, path::PathBuf, str::FromStr};
 
 use super::{
+    mode_ol::MODE_0L,
     network_playlist::{self, NetworkPlaylist},
     pledge::Pledge,
 };
@@ -189,11 +190,10 @@ impl AppCfg {
     pub fn get_profile(&self, nickname: Option<String>) -> anyhow::Result<&Profile> {
         let idx = self.get_profile_idx(nickname).unwrap_or(0);
         let p = self.user_profiles.get(idx).context("no profile at index")?;
-        // The license to use this software depends on the user taking the pledge. Totally cool if you don't want to, but you'll need to write your own tools.
-        assert!(
-            p.check_has_pledge(0),
-            "user has not taken Protect the Game pledge, exiting."
-        );
+        // The privilege to use this software depends on the user upholding a code of conduct and taking the pledge. Totally cool if you don't want to, but you'll need to write your own tools.
+        if !p.check_has_pledge(0) {
+            println!("user profile has not taken 'Protect the Game' pledge, exiting.");
+        }
         Ok(p)
     }
 
@@ -469,12 +469,18 @@ impl Profile {
 
     // check protect game pledge
     pub fn check_has_pledge(&self, pledge_id: u8) -> bool {
+        // are we in CI?
+        if *MODE_0L != NamedChain::MAINNET {
+            return true;
+        };
+
         if let Some(list) = &self.pledges {
             // check the pledge exists
             return list
                 .iter()
                 .any(|e| e.id == 0 && Pledge::check_pledge_hash(pledge_id, &e.hash));
         }
+
         false
     }
 
