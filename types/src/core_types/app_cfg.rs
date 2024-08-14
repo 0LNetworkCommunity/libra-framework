@@ -1,4 +1,4 @@
-//! Configs for all 0L apps.
+//! Common config for for all tools based on libra-framework .
 
 use crate::{
     exports::{AccountAddress, AuthenticationKey, NamedChain},
@@ -145,43 +145,7 @@ impl AppCfg {
         Ok(toml_path)
     }
 
-    // v7.0.3 deprecation notice: no migration from v5 supported
-    // pub fn migrate(legacy_file: Option<PathBuf>, output: Option<PathBuf>) -> anyhow::Result<Self> {
-    //     let l = LegacyToml::parse_toml(legacy_file)?;
-
-    //     let nodes = if let Some(v) = l.profile.upstream_nodes.as_ref() {
-    //         v.iter()
-    //             .map(|u| HostProfile {
-    //                 url: u.to_owned(),
-    //                 note: u.to_string(),
-    //                 ..Default::default()
-    //             })
-    //             .collect::<Vec<HostProfile>>()
-    //     } else {
-    //         vec![]
-    //     };
-    //     let np = NetworkPlaylist {
-    //         chain_name: l.chain_info.chain_id,
-    //         nodes,
-    //     };
-    //     let app_cfg = AppCfg {
-    //         workspace: l.workspace,
-    //         user_profiles: vec![l.profile],
-    //         network_playlist: vec![np],
-    //         tx_configs: l.tx_configs,
-    //     };
-
-    //     if let Some(p) = output {
-    //         fs::create_dir_all(&p)?;
-    //         println!("created file for {}", p.to_str().unwrap());
-    //         let yaml = serde_yaml::to_string(&app_cfg)?;
-    //         fs::write(p, yaml.as_bytes())?;
-    //     } else {
-    //         app_cfg.save_file()?;
-    //     }
-
-    //     Ok(app_cfg)
-    // }
+    // commit note: cleanup deprecated
 
     /// Get where the block/proofs are stored.
     pub fn get_block_dir(&self, nickname: Option<String>) -> anyhow::Result<PathBuf> {
