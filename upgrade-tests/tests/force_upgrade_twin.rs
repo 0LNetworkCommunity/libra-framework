@@ -1,7 +1,5 @@
 mod support;
 
-use std::path::PathBuf;
-
 use anyhow::Context;
 use libra_framework::release::ReleaseTarget;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
@@ -33,16 +31,40 @@ async fn twin_test_all_upgrades_dummy() -> anyhow::Result<()> {
 /// NOTE: WIP: depends on a restored DB having been created.
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 // #[ignore]
+async fn twin_test_stdlib_upgrade() -> anyhow::Result<()> {
+    let mut s = LibraSmoke::new_with_target(Some(1), None, ReleaseTarget::Mainnet)
+        .await
+        .context("could not start libra smoke")?;
+
+    // note: this DB needs to be a functioning restored snapshot
+    let default_path = libra_types::global_config_dir();
+    let p = default_path.join("data/db");
+    assert!(p.exists());
+
+    Twin::make_twin_swarm(&mut s, Some(p), false).await?;
+
+    support::upgrade_multiple_impl(&mut s, "upgrade-single-lib", vec!["1-move-stdlib"]).await?;
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn twin_test_framework_upgrade() -> anyhow::Result<()> {
     let mut s = LibraSmoke::new_with_target(Some(1), None, ReleaseTarget::Mainnet)
         .await
         .context("could not start libra smoke")?;
 
     // note: this DB needs to be a functioning restored snapshot
-    let p = PathBuf::from("~/.libra/data/db");
+    let default_path = libra_types::global_config_dir();
+    let p = default_path.join("data/db");
+    assert!(p.exists());
 
     Twin::make_twin_swarm(&mut s, Some(p), false).await?;
 
-    support::upgrade_multiple_impl(&mut s, "upgrade-single-lib", vec!["1-move-stdlib"]).await?;
+    support::upgrade_multiple_impl(
+        &mut s,
+        "upgrade-multi-lib-force",
+        vec!["1-move-stdlib", "2-vendor-stdlib", "3-libra-framework"],
+    )
+    .await?;
     Ok(())
 }

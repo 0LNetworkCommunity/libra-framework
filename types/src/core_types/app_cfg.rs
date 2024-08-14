@@ -593,7 +593,7 @@ impl TxCost {
         TxCost::new(MAX_GAS_AMOUNT / 50, 2.0, Some(100))
     }
     pub fn framework_upgrade() -> Self {
-        TxCost::new(100_000, 1.0, Some(100))
+        TxCost::new(100_000, 50.0, Some(100))
     }
 }
 
