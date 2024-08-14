@@ -54,9 +54,13 @@ impl Pledge {
 
     /// interact with user to get basic pledges, validator pledge optional on default setup
     pub fn pledge_dialogue(&self) -> bool {
-        if MODE_0L.clone() != NamedChain::MAINNET { return true };
-        println!("{}", &self.preamble);
-        if prompt_yes(&self.question) {
+        println!("PLEDGE #{}: {}\n\n{}", &self.id, &self.question, &self.preamble);
+
+        if MODE_0L.clone() != NamedChain::MAINNET {
+          println!("seems you are using CI or testnet settings, pledges default to yes");
+          return true
+        };
+        if prompt_yes(&format!("\n{}", &self.question)) {
             return true
         }
         return false
@@ -69,7 +73,7 @@ impl Pledge {
             id: 0,
             version: 0,
             question: "Do you pledge to not damage the game and never cheat other users?".to_string(),
-            preamble: "Code is not law at Open Libra. The law is law. The law comes from history.\nI understand written and unwritten laws come from social norms. I will refer to the expectations of this community based on canonical instructions, code documentation, and common sense to know when I'm disadvantaging someone for my benefit.\nCheating can also include, but is not limited to: gaining an advantage in a way that would be impossible unless it was covert, dishonest, untrue, or otherwise using an expected common courtesy others have extended to me which I'm not willing to return.".to_string(),
+            preamble: "Code is not law at Open Libra. The law is law. The law comes from history.\n\nI understand written and unwritten laws come from social norms. I will refer to the expectations of this community based on canonical instructions, code documentation, and common sense to know when I'm cheating at the game, or otherwise unlawfully disadvantaging someone for my benefit.\n\nCheating can include, but is not limited to: gaining an advantage in a way that would be impossible unless it was covert, dishonest, untrue, or otherwise using an expected common courtesy others have extended to me which I'm not willing to return.".to_string(),
             hash: vec![],
             on_chain: false,
         };
@@ -86,7 +90,7 @@ impl Pledge {
             id: 1,
             version: 0,
             question: "Do you pledge to be a validator that acts in good faith to secure the network?".to_string(),
-            preamble: "When taking this pledge you are also taking the Protect the Game pledge: 'I pledge to not damage the game and never cheat other users'. Additionally you pledge to: obey the blockchain's policies as intended, some of which may be encoded as smart contracts, not pretend to be multiple people (sybil), not change the blockchain settings or software without consulting the community, run the blockchain security software (e.g validator, and fullnode software) as intended and in its entirety.".to_string(),
+            preamble: "When taking this pledge you are also taking the Protect the Game pledge:\n'I pledge to not damage the game and never cheat other users'.\n\nAdditionally you pledge to: obey the blockchain's policies as intended, some of which may be encoded as smart contracts, not pretend to be multiple people (sybil), not change the blockchain settings or software without consulting the community, run the blockchain security software (e.g validator, and fullnode software) as intended and in its entirety.".to_string(),
             hash: vec![],
             on_chain: false,
         };
