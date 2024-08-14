@@ -1,0 +1,19 @@
+name: get cli bin
+description: use pre-build libra-cli bin for CI
+runs:
+  using: composite
+  steps:
+    - name: export diem-node DIEM_FORGE_NODE_BIN_PATH
+      shell: bash
+      run: |
+        echo "DIEM_FORGE_NODE_BIN_PATH=${{github.workspace}}/libra" >> $GITHUB_ENV
+        echo "LIBRA_BIN=${{github.workspace}}/libra" >> $GITHUB_ENV
+        echo ${{github.workspace}} >> $GITHUB_PATH
+
+    - name: install diem-node (for smoke tests)
+      shell: bash
+      run: >
+        wget -O $DIEM_FORGE_NODE_BIN_PATH https://github.com/0LNetworkCommunity/libra-framework/releases/download/ci/libra &&
+        sudo chmod 755 $DIEM_FORGE_NODE_BIN_PATH &&
+        echo $DIEM_FORGE_NODE_BIN_PATH &&
+        ls -l $DIEM_FORGE_NODE_BIN_PATH

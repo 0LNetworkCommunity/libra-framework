@@ -2,9 +2,8 @@ name: rust ci
 
 on:
   push:
-    tags:
+    tags: # only on releases, not RC, since we've tested already
       - "[0-9]+.[0-9]+.[0-9]+"
-      - "[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
     branches: ["**"] # glob pattern to allow slash /
   pull_request:
     types:
@@ -17,7 +16,7 @@ on:
     - cron: "30 00 * * *"
 
 env:
-  DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
+  # DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
 
@@ -28,8 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: setup env
-        uses: ./.github/actions/build_env
+      - uses: ./.github/actions/build_env
 
       - uses: Swatinem/rust-cache@v2.7.3
         with:
@@ -38,7 +36,8 @@ jobs:
 
       - name: build framework
         working-directory: ./framework
-        run: cargo r release
+        # uses the libra binary to compile faster, without needing to compile the Move compiler
+        run: ${{github.workspace}}/libra move framework release
 
       - uses: actions/upload-artifact@v4.3.1
         with:
@@ -265,17 +264,17 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: setup env
-        if: ${{runner.environment == 'self-hosted'}}
+        # if: ${{runner.environment == 'self-hosted'}}
         uses: ./.github/actions/build_env
 
       - uses: actions/download-artifact@v4.1.2
-        if: ${{runner.environment == 'self-hosted'}}
+        # if: ${{runner.environment == 'self-hosted'}}
         with:
           name: framework-build
           path: framework/
       - name: rescue
-        # if: always()
-        if: ${{runner.environment == 'self-hosted'}}
+        if: always()
+        # if: ${{runner.environment == 'self-hosted'}}
         working-directory: ./tools/rescue
         run: RUST_MIN_STACK=104857600 cargo test --no-fail-fast -- --test-threads=1
   storage:
