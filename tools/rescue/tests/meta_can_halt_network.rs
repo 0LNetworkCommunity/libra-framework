@@ -1,4 +1,3 @@
-mod support;
 use diem_config::config::NodeConfig;
 use diem_forge::{LocalNode, NodeExt, SwarmExt, Validator};
 use diem_logger::prelude::*;

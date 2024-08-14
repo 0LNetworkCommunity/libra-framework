@@ -1,6 +1,6 @@
 //! CLI tool for rescue operations in Diem, providing commands for transaction rescue,
 //! database bootstrapping, and debugging twin states.
-use crate::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts, twin::TwinOpts};
+use crate::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
 
 use clap::{Parser, Subcommand};
 use std::time::Duration;
@@ -18,7 +18,6 @@ pub struct RescueCli {
 enum Sub {
     RescueTx(RescueTxOpts),
     Bootstrap(BootstrapOpts),
-    Debug(TwinOpts),
 }
 
 impl RescueCli {
@@ -38,9 +37,6 @@ impl RescueCli {
             }
             Some(Sub::Bootstrap(bootstrap)) => {
                 bootstrap.run()?;
-            }
-            Some(Sub::Debug(twin)) => {
-                twin.run()?;
             }
             _ => {} // prints help
         }
