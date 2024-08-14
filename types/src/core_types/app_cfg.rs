@@ -536,9 +536,9 @@ impl Profile {
 }
 
 pub fn get_nickname(acc: AccountAddress) -> String {
-    // let's check if this is a legacy/founder key, it will have 16 zeros at the start, and that's not a useful nickname
-    if acc.to_string()[..32] == *"00000000000000000000000000000000" {
-        return acc.to_string()[33..37].to_owned();
+    // let's check if this is a legacy/founder key, it will have 32 zeros at the start, and that's not a useful nickname
+    if acc.to_string()[..31] == *"00000000000000000000000000000000" {
+        return acc.to_string()[32..36].to_owned();
     }
 
     acc.to_string()[..4].to_owned()
