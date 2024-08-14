@@ -92,7 +92,7 @@ impl ConfigCli {
                 // Load configuration file
                 let mut cfg = AppCfg::load(self.path.clone())
                     .map_err(|e| anyhow!("no config file found for libra tools, {}", e))?;
-                if cfg.user_profiles.len() > 0 {
+                if !cfg.user_profiles.is_empty() {
                     println!("your profiles:");
                     for p in &cfg.user_profiles {
                         println!("- address: {}, nickname: {}", p.account, p.nickname);

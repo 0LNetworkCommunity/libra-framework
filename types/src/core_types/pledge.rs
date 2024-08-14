@@ -13,6 +13,8 @@ use crate::core_types::mode_ol::MODE_0L;
 pub struct Pledge {
     /// the canonical id of this pledge
     pub id: u8,
+    /// nickname of pledge
+    pub name: String,
     /// textual versions of the pledge
     pub version: u8,
     /// hash of the textual version
@@ -32,6 +34,7 @@ pub enum CanonicalPledges {
     /// operate in good faith
     Validator = 1,
 }
+
 impl Pledge {
     /// make the unique hex encoding of the text.
     pub fn to_hash(&mut self) {
@@ -43,9 +46,9 @@ impl Pledge {
     /// check pledge hash
     pub fn check_pledge_hash(pledge_idx: u8, bytes: &[u8]) -> bool {
         if pledge_idx == 0 {
-            return bytes == &Self::pledge_protect_the_game().hash;
+            return bytes == Self::pledge_protect_the_game().hash;
         } else if pledge_idx == 1 {
-            return bytes == &Self::pledge_validator().hash;
+            return bytes == Self::pledge_validator().hash;
         } else {
             assert!(pledge_idx < 2, "pledge index not found");
         }
@@ -56,7 +59,7 @@ impl Pledge {
     pub fn pledge_dialogue(&self) -> bool {
         println!(
             "PLEDGE #{}: {}\n\n{}",
-            &self.id, &self.question, &self.preamble
+            &self.id, &self.name, &self.preamble
         );
 
         if *MODE_0L != NamedChain::MAINNET {
@@ -74,6 +77,7 @@ impl Pledge {
     pub fn pledge_protect_the_game() -> Pledge {
         let mut p = Pledge {
             id: 0,
+            name: "Protect the Game",
             version: 0,
             question: "Do you pledge to not damage the game and never cheat other users?".to_string(),
             preamble: "Code is not law at Open Libra. The law is law. The law comes from history.\n\nI understand written and unwritten laws come from social norms. I will refer to the expectations of this community based on canonical instructions, code documentation, and common sense to know when I'm cheating at the game, or otherwise unlawfully disadvantaging someone for my benefit.\n\nCheating can include, but is not limited to: gaining an advantage in a way that would be impossible unless it was covert, dishonest, untrue, or otherwise using an expected common courtesy others have extended to me which I'm not willing to return.".to_string(),
@@ -91,6 +95,7 @@ impl Pledge {
     pub fn pledge_validator() -> Pledge {
         let mut p = Pledge {
             id: 1,
+            name: "Operate in Good Faith",
             version: 0,
             question: "Do you pledge to be a validator that acts in good faith to secure the network?".to_string(),
             preamble: "When taking this pledge you are also taking the Protect the Game pledge:\n'I pledge to not damage the game and never cheat other users'.\n\nAdditionally you pledge to: obey the blockchain's policies as intended, some of which may be encoded as smart contracts, not pretend to be multiple people (sybil), not change the blockchain settings or software without consulting the community, run the blockchain security software (e.g validator, and fullnode software) as intended and in its entirety.".to_string(),
