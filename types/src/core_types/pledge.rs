@@ -1,4 +1,4 @@
-//! Configs for all 0L apps.
+//! User code of conduct pledges
 
 use diem::common::utils::prompt_yes;
 use diem_crypto::HashValue;
