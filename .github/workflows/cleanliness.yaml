@@ -36,6 +36,10 @@ jobs:
           command: fmt
           args: --all -- --check
 
+      # clippy can share cache if build for tests is done prior
+      - name: build for cache
+        run: cargo build --tests --workspace
+
       - name: clippy
         uses: actions-rs/cargo@v1
         with:
