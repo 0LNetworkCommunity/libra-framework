@@ -16,7 +16,6 @@ on:
     - cron: "30 00 * * *"
 
 env:
-  # DIEM_FORGE_NODE_BIN_PATH: ${{github.workspace}}/diem-node
   LIBRA_CI: 1
   MODE_0L: "TESTNET"
 
@@ -27,12 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: ./.github/actions/build_env
-
-      - uses: Swatinem/rust-cache@v2.7.3
-        with:
-          shared-key: "libra-framework"
-          cache-all-crates: true
+      - uses: ./.github/actions/get_cli
 
       - name: build framework
         working-directory: ./framework
