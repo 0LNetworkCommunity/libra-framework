@@ -1,4 +1,4 @@
-//! Configs for all 0L apps.
+//! Common config for for all tools based on libra-framework .
 
 use crate::{
     exports::{AccountAddress, AuthenticationKey, NamedChain},
@@ -14,10 +14,14 @@ use url::Url;
 
 use std::{fs, io::Write, path::PathBuf, str::FromStr};
 
-use super::network_playlist::{self, HostProfile, NetworkPlaylist};
+use super::{
+    mode_ol::MODE_0L,
+    network_playlist::{self, NetworkPlaylist},
+    pledge::Pledge,
+};
 
 // TODO: the GAS_UNIT_PRICE is set in DIEM. IT IS ALSO THE MINIMUM GAS PRICE This is arbitrary and needs to be reviewed.
-pub const MINUMUM_GAS_PRICE_IN_DIEM: u64 = GAS_UNIT_PRICE;
+pub const MINIMUM_GAS_PRICE_IN_DIEM: u64 = GAS_UNIT_PRICE;
 
 pub const CONFIG_FILE_NAME: &str = "libra-cli-config.yaml";
 /// MinerApp Configuration
@@ -25,9 +29,7 @@ pub const CONFIG_FILE_NAME: &str = "libra-cli-config.yaml";
 pub struct AppCfg {
     /// Workspace config
     pub workspace: Workspace,
-    /// accounts which we have profiles for
-    // NOTE: for v7 it will load the default() for migration
-    // #[serde(default)]
+    /// A user may have multiple profiles for different accounts or networks
     pub user_profiles: Vec<Profile>,
     /// Network profile
     pub network_playlist: Vec<NetworkPlaylist>,
@@ -144,42 +146,7 @@ impl AppCfg {
         Ok(toml_path)
     }
 
-    pub fn migrate(legacy_file: Option<PathBuf>, output: Option<PathBuf>) -> anyhow::Result<Self> {
-        let l = LegacyToml::parse_toml(legacy_file)?;
-
-        let nodes = if let Some(v) = l.profile.upstream_nodes.as_ref() {
-            v.iter()
-                .map(|u| HostProfile {
-                    url: u.to_owned(),
-                    note: u.to_string(),
-                    ..Default::default()
-                })
-                .collect::<Vec<HostProfile>>()
-        } else {
-            vec![]
-        };
-        let np = NetworkPlaylist {
-            chain_name: l.chain_info.chain_id,
-            nodes,
-        };
-        let app_cfg = AppCfg {
-            workspace: l.workspace,
-            user_profiles: vec![l.profile],
-            network_playlist: vec![np],
-            tx_configs: l.tx_configs,
-        };
-
-        if let Some(p) = output {
-            fs::create_dir_all(&p)?;
-            println!("created file for {}", p.to_str().unwrap());
-            let yaml = serde_yaml::to_string(&app_cfg)?;
-            fs::write(p, yaml.as_bytes())?;
-        } else {
-            app_cfg.save_file()?;
-        }
-
-        Ok(app_cfg)
-    }
+    // commit note: cleanup deprecated
 
     /// Get where the block/proofs are stored.
     pub fn get_block_dir(&self, nickname: Option<String>) -> anyhow::Result<PathBuf> {
@@ -223,6 +190,10 @@ impl AppCfg {
     pub fn get_profile(&self, nickname: Option<String>) -> anyhow::Result<&Profile> {
         let idx = self.get_profile_idx(nickname).unwrap_or(0);
         let p = self.user_profiles.get(idx).context("no profile at index")?;
+        // The privilege to use this software depends on the user upholding a code of conduct and taking the pledge. Totally cool if you don't want to, but you'll need to write your own tools.
+        if !p.check_has_pledge(0) {
+            println!("user profile has not taken 'Protect the Game' pledge, exiting.");
+        }
         Ok(p)
     }
 
@@ -429,12 +400,15 @@ pub struct Profile {
     /// An opportunity for the Miner to write a message on their genesis block.
     pub statement: String,
 
+    /// Pledges the user took
+    pub pledges: Option<Vec<Pledge>>,
     // NOTE: V7: deprecated
     // Deprecation: : /// ip address of this node. May be different from transaction URL.
     // pub ip: Ipv4Addr,
 
+    // V7.0.3 deprecated
     // Deprecation: /// Other nodes to connect for fallback connections
-    pub upstream_nodes: Option<Vec<Url>>,
+    // pub upstream_nodes: Option<Vec<Url>>,
 }
 
 impl Default for Profile {
@@ -451,7 +425,7 @@ impl Default for Profile {
             nickname: "default".to_string(),
             on_chain: false,
             balance: SlowWalletBalance::default(),
-            upstream_nodes: None, // Note: deprecated, here for migration
+            pledges: None,
         }
     }
 }
@@ -478,12 +452,63 @@ impl Profile {
             .context("no private key found")?;
         Ok(key)
     }
+
+    // push a pledge
+    pub fn push_pledge(&mut self, new: Pledge) {
+        if let Some(list) = &mut self.pledges {
+            let found = list.iter().find(|e| e.id == new.id);
+            if found.is_none() {
+                list.push(new);
+            } else {
+                println!("pledge '{}' already found on this account", &new.question);
+            }
+        } else {
+            self.pledges = Some(vec![new])
+        }
+    }
+
+    // check protect game pledge
+    pub fn check_has_pledge(&self, pledge_id: u8) -> bool {
+        // are we in CI?
+        if *MODE_0L != NamedChain::MAINNET {
+            return true;
+        };
+
+        if let Some(list) = &self.pledges {
+            // check the pledge exists
+            return list
+                .iter()
+                .any(|e| e.id == 0 && Pledge::check_pledge_hash(pledge_id, &e.hash));
+        }
+
+        false
+    }
+
+    // offer pledge if none
+    pub fn maybe_offer_basic_pledge(&mut self) {
+        if !self.check_has_pledge(0) {
+            let p = Pledge::pledge_protect_the_game();
+            if p.pledge_dialogue() {
+                self.push_pledge(p)
+            }
+        }
+    }
+
+    // offer validator pledge
+    pub fn maybe_offer_validator_pledge(&mut self) {
+        if !self.check_has_pledge(1) {
+            let p = Pledge::pledge_validator();
+            if p.pledge_dialogue() {
+                self.push_pledge(p)
+            }
+        }
+    }
 }
 
 pub fn get_nickname(acc: AccountAddress) -> String {
-    // let's check if this is a legacy/founder key, it will have 16 zeros at the start, and that's not a useful nickname
-    if acc.to_string()[..32] == *"00000000000000000000000000000000" {
-        return acc.to_string()[33..37].to_owned();
+    // let's check if this is a legacy/founder key, it will have 32 zeros at the start, and that's not a useful nickname
+    if acc.to_string()[..31] == *"00000000000000000000000000000000" {
+        return acc.to_string()[32..36].to_owned();
     }
 
     acc.to_string()[..4].to_owned()
@@ -521,7 +546,7 @@ pub struct TxConfigs {
     /// Miner transactions cost
     // #[serde(default = "TxCost::default_miner_txs_cost")]
     pub miner_txs_cost: Option<TxCost>,
-    /// Cheap or test transation costs
+    /// Cheap or test transaction costs
     // #[serde(default = "TxCost::default_cheap_txs_cost")]
     pub cheap_txs_cost: Option<TxCost>,
 }
@@ -565,7 +590,7 @@ impl TxCost {
             max_gas_unit_for_tx: units, // oracle upgrade transaction is expensive.
             // TODO: the GAS_UNIT_PRICE is set in DIEM. IT IS ALSO THE MINIMUM GAS PRICE This is arbitrary and needs to be reviewed.
             // It is also 0 in tests, so we need to increase to at least 1.
-            coin_price_per_unit: (MINUMUM_GAS_PRICE_IN_DIEM.max(min_gas_price.unwrap_or(1)) as f64
+            coin_price_per_unit: (MINIMUM_GAS_PRICE_IN_DIEM.max(min_gas_price.unwrap_or(1)) as f64
                 * price_multiplier) as u64,
             // this is the minimum price
             //coin_price_per_unit: 100 as u64,
@@ -612,6 +637,7 @@ impl Default for TxConfigs {
     }
 }
 
+//////// TESTS ////////
 #[tokio::test]
 async fn test_create() {
     let a = AppCfg {

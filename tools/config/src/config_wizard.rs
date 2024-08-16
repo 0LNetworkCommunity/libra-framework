@@ -4,6 +4,7 @@ use diem_types::chain_id::NamedChain;
 use libra_types::{
     core_types::{app_cfg::AppCfg, network_playlist::NetworkPlaylist},
     exports::{AccountAddress, AuthenticationKey, Client},
+    ol_progress,
     type_extensions::client_ext::ClientExt,
 };
 use libra_wallet::account_keys::{get_ol_legacy_address, AccountKeys};
@@ -33,6 +34,8 @@ pub async fn wizard(
         (account_keys.auth_key, account_keys.account)
     };
 
+    let spin = ol_progress::OLProgress::spin_steady(250, "fetching metadata".to_string());
+
     // if the user specified both a chain name and playlist, then the playlist will override the default settings for the named chain.
     let mut np = match network_playlist {
         Some(a) => a,
@@ -60,14 +63,21 @@ pub async fn wizard(
         };
     }
 
-    let cfg = AppCfg::init_app_configs(authkey, address, config_dir, chain_name, Some(np))?;
+    let mut cfg = AppCfg::init_app_configs(authkey, address, config_dir, chain_name, Some(np))?;
+
+    spin.finish();
+    // offer both pledges on init
+    let profile = cfg.get_profile_mut(None)?;
+    profile.maybe_offer_basic_pledge();
 
     let p = cfg.save_file().context(format!(
         "could not initialize configs at {}",
         cfg.workspace.node_home.to_str().unwrap()
     ))?;
 
-    println!("Success, config saved to {}", p.to_str().unwrap());
+    ol_progress::OLProgress::make_fun();
+    println!("config saved to {}", p.display());
+    ol_progress::OLProgress::complete("SUCCESS: libra tool configured");
 
     Ok(cfg)
 }
