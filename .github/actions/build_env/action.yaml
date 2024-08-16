@@ -41,4 +41,5 @@ runs:
         cache-on-failure: "true"
 
     # call own action for libra_cli
-    - uses: 0LNetworkCommunity/libra-framework/.github/actions/get_cli@ci
+    # TODO: figure out how to get the local action of this commit
+    - uses: 0LNetworkCommunity/libra-framework/.github/actions/get_cli
