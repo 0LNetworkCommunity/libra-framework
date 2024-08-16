@@ -1,9 +1,9 @@
 use crate::{
-    legacy_config,
+    config_wizard,
     make_yaml_public_fullnode::{download_genesis, get_genesis_waypoint, init_fullnode_yaml},
     validator_config::{validator_dialogue, vfn_dialogue},
 };
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use clap::Parser;
 use libra_types::{
     core_types::app_cfg::{self, AppCfg},
@@ -34,7 +34,7 @@ pub struct ConfigCli {
 
 #[derive(clap::Subcommand)]
 enum ConfigSub {
-    /// Generates a libra-cli-config.yaml for cli tools like txs, tower, etc.  Note: the file can also be used for Carpe, though that app uses a different default directory than these cli tools.
+    /// Generates a libra-cli-config.yaml for cli tools like `txs`, `query`, etc.  Note: the file can also be used for Carpe, though that app uses a different default directory than these cli tools.
     Init {
         /// force an account address instead of reading from mnemonic, requires --force_authkey
         #[clap(long)]
@@ -49,13 +49,10 @@ enum ConfigSub {
         #[clap(long)]
         playlist_url: Option<Url>,
     },
-    // TODO: add WhoAmI to show libra-cli-config.yaml profile info.
-    /// Utils for libra-cli-config.yaml file
-    #[clap(arg_required_else_help(true))]
     Fix {
         /// optional, reset the address from mnemonic. Will also lookup on the chain for the actual address if you forgot it, or rotated your authkey.
-        #[clap(short, long)]
-        address: bool,
+        #[clap(short('a'), long)]
+        reset_address: bool,
 
         #[clap(short, long)]
         remove_profile: Option<String>,
@@ -67,7 +64,7 @@ enum ConfigSub {
     /// Show the addresses and configs on this device
     View {},
 
-    // COMMIT NOTE: we havent'used vendor tooling configs for anything.
+    // COMMIT NOTE: we haven't used vendor tooling configs for anything.
     /// Generate validators' config file
     ValidatorInit {
         // just make the VFN file
@@ -88,16 +85,25 @@ impl ConfigCli {
     pub async fn run(&self) -> Result<()> {
         match &self.subcommand {
             Some(ConfigSub::Fix {
-                address,
+                reset_address,
                 remove_profile,
                 force_url,
             }) => {
                 // Load configuration file
-                let mut cfg = AppCfg::load(self.path.clone())?;
+                let mut cfg = AppCfg::load(self.path.clone())
+                    .map_err(|e| anyhow!("no config file found for libra tools, {}", e))?;
+                if !cfg.user_profiles.is_empty() {
+                    println!("your profiles:");
+                    for p in &cfg.user_profiles {
+                        println!("- address: {}, nickname: {}", p.account, p.nickname);
+                    }
+                } else {
+                    println!("no profiles found");
+                }
 
                 // Handle address fix option
-                if *address {
-                    let mut account_keys = legacy_config::prompt_for_account()?;
+                let profile = if *reset_address {
+                    let mut account_keys = config_wizard::prompt_for_account()?;
 
                     let client = Client::new(cfg.pick_url(self.chain_name)?);
 
@@ -120,6 +126,9 @@ impl ConfigCli {
                     let profile =
                         app_cfg::Profile::new(account_keys.auth_key, account_keys.account);
 
+                    // Add profile to configuration
+                    cfg.maybe_add_profile(profile)?;
+
                     // Prompt to set as default profile
                     if dialoguer::Confirm::new()
                         .with_prompt("set as default profile?")
@@ -129,9 +138,18 @@ impl ConfigCli {
                             .set_default(account_keys.account.to_hex_literal());
                     }
 
-                    // Add profile to configuration
-                    cfg.maybe_add_profile(profile)?;
-                }
+                    cfg.get_profile_mut(Some(account_keys.account.to_hex_literal()))
+                } else {
+                    // get default profile
+                    println!("will try to fix your default profile");
+                    cfg.get_profile_mut(None)
+                }?;
+
+                println!("using profile: {}", &profile.nickname);
+
+                // user can take pledge here on fix or on init
+                profile.maybe_offer_basic_pledge();
+                profile.maybe_offer_validator_pledge();
 
                 // Remove profile if specified
                 if let Some(p) = remove_profile {
@@ -160,7 +178,7 @@ impl ConfigCli {
                 test_private_key,
                 playlist_url,
             }) => {
-                legacy_config::wizard(
+                config_wizard::wizard(
                     force_authkey.to_owned(),
                     force_address.to_owned(),
                     self.path.to_owned(),

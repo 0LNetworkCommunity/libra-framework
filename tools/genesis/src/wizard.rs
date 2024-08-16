@@ -162,7 +162,7 @@ impl GenesisWizard {
             )?;
 
             for _ in (0..10)
-                .progress_with_style(OLProgress::fun())
+                .progress_with_style(OLProgress::fun_style())
                 .with_message("Initializing 0L")
             {
                 thread::sleep(Duration::from_millis(100));

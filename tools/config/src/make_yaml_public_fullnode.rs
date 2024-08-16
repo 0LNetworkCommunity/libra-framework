@@ -12,9 +12,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
-const FN_FILENAME: &str = "fullnode.yaml";
-const VFN_FILENAME: &str = "vfn.yaml";
-const DEFAULT_WAYPOINT_VERSION: &str = "6.9.0";
+pub const FN_FILENAME: &str = "fullnode.yaml";
+pub const VFN_FILENAME: &str = "vfn.yaml";
+pub const GENESIS_FILES_VERSION: &str = "7.0.0";
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
 struct GithubContent {
@@ -201,7 +201,7 @@ pub async fn download_genesis(home_dir: Option<PathBuf>) -> anyhow::Result<()> {
     let latest_path = format!(
         "{}/v{}/genesis.blob",
         "https://raw.githubusercontent.com/0LNetworkCommunity/epoch-archive-mainnet/main/upgrades",
-        latest_version.unwrap_or(DEFAULT_WAYPOINT_VERSION)
+        latest_version.unwrap_or(GENESIS_FILES_VERSION)
     );
 
     // Fetch the latest waypoint
@@ -244,7 +244,7 @@ pub async fn get_genesis_waypoint(home_dir: Option<PathBuf>) -> anyhow::Result<W
     let latest_path = format!(
         "{}/v{}/waypoint.txt",
         "https://raw.githubusercontent.com/0LNetworkCommunity/epoch-archive-mainnet/main/upgrades",
-        latest_version.unwrap_or(DEFAULT_WAYPOINT_VERSION)
+        latest_version.unwrap_or(GENESIS_FILES_VERSION)
     );
 
     // Fetch the latest waypoint
