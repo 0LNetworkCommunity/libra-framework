@@ -13,7 +13,7 @@ runs:
     - name: install diem-node (for smoke tests)
       shell: bash
       run: >
-        wget -O $DIEM_FORGE_NODE_BIN_PATH https://github.com/0LNetworkCommunity/libra-framework/releases/download/ci/libra &&
+        wget -O $DIEM_FORGE_NODE_BIN_PATH https://github.com/0LNetworkCommunity/libra-framework/releases/download/ci-bins/libra &&
         sudo chmod 755 $DIEM_FORGE_NODE_BIN_PATH &&
         echo $DIEM_FORGE_NODE_BIN_PATH &&
         ls -l $DIEM_FORGE_NODE_BIN_PATH
