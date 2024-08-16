@@ -22,5 +22,5 @@ runs:
         echo $LIBRA_BIN
         echo $DIEM_FORGE_NODE_BIN_PATH
         # for debugging, display the version, and ensure using the same aliases
-        ${{github.workspace}}/libra
+        ${{github.workspace}}/libra version
         libra version
