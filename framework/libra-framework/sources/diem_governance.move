@@ -542,11 +542,6 @@ module diem_framework::diem_governance {
 
     // COMMIT NOTE: trigger_epoch() should now work on Stage as well.
 
-    // /// Return the voting power
-    // fun get_voting_power(_pool_address: address): u64 {
-    //     1
-    // }
-
     #[view]
     public fun get_next_governance_proposal_id():u64 {
       voting::get_next_proposal_id<GovernanceProposal>(@diem_framework)

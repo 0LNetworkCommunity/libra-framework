@@ -1,7 +1,0 @@
-[workspace]
-resolver = "2"
-
-members = ["diem-node-proxy"]
-
-[workspace.dependencies]
-diem-node = { workspace = true }

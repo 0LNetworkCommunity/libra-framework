@@ -5862,6 +5862,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "libra-twin-tests"
+version = "7.0.2"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "bcs 0.1.4",
+ "clap 4.5.4",
+ "dialoguer",
+ "diem-api-types",
+ "diem-config",
+ "diem-forge",
+ "diem-genesis",
+ "diem-logger",
+ "diem-temppath",
+ "diem-types",
+ "fs_extra",
+ "hex",
+ "libra-config",
+ "libra-framework",
+ "libra-query",
+ "libra-rescue",
+ "libra-smoke-tests",
+ "libra-storage",
+ "libra-txs",
+ "libra-types",
+ "regex",
+ "serde_json",
+ "serde_yaml 0.8.26",
+ "smoke-test",
+ "tokio",
+]
+
+[[package]]
 name = "libra-txs"
 version = "7.0.2"
 dependencies = [
@@ -5941,6 +5974,7 @@ dependencies = [
  "libra-framework",
  "libra-query",
  "libra-smoke-tests",
+ "libra-twin-tests",
  "libra-txs",
  "libra-types",
  "smoke-test",

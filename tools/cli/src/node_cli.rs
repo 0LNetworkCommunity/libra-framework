@@ -9,7 +9,7 @@ use std::path::PathBuf;
 pub struct NodeCli {
     #[clap(short, long)]
     /// filepath to the validator or fullnode yaml config file.
-    config_path: Option<PathBuf>,
+    pub config_path: Option<PathBuf>,
 }
 
 impl NodeCli {
