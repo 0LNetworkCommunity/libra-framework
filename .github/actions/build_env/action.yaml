@@ -40,9 +40,5 @@ runs:
         shared-key: "libra"
         cache-on-failure: "true"
 
-    # call own action for libra_cli, try main first, but then use `ci` branch if exists or is different
-    - uses: 0LNetworkCommunity/libra-framework/.github/actions/get_cli@main
-      if: always()
     # call own action for libra_cli
     - uses: 0LNetworkCommunity/libra-framework/.github/actions/get_cli@ci
-      if: always()
