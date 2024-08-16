@@ -1,9 +1,8 @@
 name: formal verification
 on:
   push:
-    tags:
+    tags: # only on releases, not RC, since we've tested already
       - "[0-9]+.[0-9]+.[0-9]+"
-      - "[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
     branches: ["**"] # glob pattern to allow slash /
   pull_request:
     types:
@@ -23,35 +22,23 @@ jobs:
   formal:
     runs-on: ubuntu-latest
     steps:
-      #   # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
+      # NOTE: for debugging CI this allow shell access to github runner. Will print out tmate.io terminal url
       # - name: Setup tmate session
       #   uses: mxschmitt/action-tmate@v3
       #   with:
       #     detached: true
-      #   timeout-minutes: 15
+      #   timeout-minutes: 3
 
       - uses: actions/checkout@v3
 
       - name: setup env
         uses: ./.github/actions/build_env
 
-      - uses: Swatinem/rust-cache@v2.7.3
-        with:
-          shared-key: "libra-framework"
-          cache-all-crates: true
-
       - name: install prover dependencies
         run: |
           bash util/dev_setup.sh -byp
 
-      - name: install diem (for move tests)
-        run: |
-          wget -O ${{github.workspace}}/diem https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem &&
-          chmod +x ${{github.workspace}}/diem &&
-          cp ${{github.workspace}}/diem ~/.cargo/bin
-
-      # Move framework tests
-      # TODO:
+      # Move prover tests
       - name: prover tests
         working-directory: ./framework
-        run: make prove
+        run: make -f prover.mk prove

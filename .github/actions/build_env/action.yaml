@@ -34,23 +34,11 @@ runs:
       shell: bash
       run: rustup component add rustfmt clippy
 
-    # - name: enable sccache
-    #   uses: 0o-de-lally/sccache-action@2dd73efb90f3c9113a0cab8d983df6eb2b21fd20
-
     - name: also rust cache
       uses: Swatinem/rust-cache@v2.7.0
       with:
         shared-key: "libra"
         cache-on-failure: "true"
 
-    - name: export diem-node DIEM_FORGE_NODE_BIN_PATH
-      shell: bash
-      run: echo "DIEM_FORGE_NODE_BIN_PATH=${{github.workspace}}/diem-node" >> $GITHUB_ENV
-
-    - name: install diem-node (for smoke tests)
-      shell: bash
-      run: >
-        wget -O $DIEM_FORGE_NODE_BIN_PATH https://github.com/0LNetworkCommunity/diem/releases/latest/download/diem-node &&
-        sudo chmod 755 $DIEM_FORGE_NODE_BIN_PATH &&
-        echo $DIEM_FORGE_NODE_BIN_PATH &&
-        ls -l $DIEM_FORGE_NODE_BIN_PATH
+    # call own action for libra_cli
+    - uses: 0LNetworkCommunity/libra-framework/.github/actions/get_cli@ci

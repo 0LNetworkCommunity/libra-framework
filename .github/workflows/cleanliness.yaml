@@ -1,9 +1,8 @@
 name: cleanliness
 on:
   push:
-    tags:
+    tags: # only on releases, not RC, since we've tested already
       - "[0-9]+.[0-9]+.[0-9]+"
-      - "[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+"
     branches: ["**"] # glob pattern to allow slash /
   pull_request:
     types:
@@ -36,6 +35,10 @@ jobs:
         with:
           command: fmt
           args: --all -- --check
+
+      # TODO: clippy can share cache if build for tests is done prior
+      # - name: build for cache
+      #   run: cargo build --tests --workspace
 
       - name: clippy
         uses: actions-rs/cargo@v1
