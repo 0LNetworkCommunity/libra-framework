@@ -42,4 +42,4 @@ runs:
 
     # call own action for libra_cli
     # TODO: figure out how to get the local action of this commit
-    - uses: 0LNetworkCommunity/libra-framework/.github/actions/get_cli
+    - uses: 0LNetworkCommunity/libra-framework/.github/actions/get_cli@main
