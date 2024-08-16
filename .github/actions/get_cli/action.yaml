@@ -15,11 +15,12 @@ runs:
       shell: bash
       run: >
         wget -O $LIBRA_BIN https://github.com/0LNetworkCommunity/libra-framework/releases/download/ci-bins/libra &&
-        sudo chmod 755 $LIBRA_BIN &&
-        echo $LIBRA_BIN &&
-        ls -l $LIBRA_BIN
+        sudo chmod 755 $LIBRA_BIN
+    - name: print version
+      shell: bash
+      run: |
+        echo $LIBRA_BIN
+        echo $DIEM_FORGE_NODE_BIN_PATH
         # for debugging, display the version, and ensure using the same aliases
         ${{github.workspace}}/libra
         libra version
-        $LIBRA_BIN version
-        $DIEM_FORGE_NODE_BIN_PATH version
