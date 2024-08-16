@@ -32,11 +32,11 @@ pub struct LibraSmoke {
 }
 
 // like DropTemp, but tries to make all the nodes stop on drop.
-// NOTE: Useing drop trait for cleaning up env
+// NOTE: Using drop trait for cleaning up env
 // https://doc.rust-lang.org/std/ops/trait.Drop.html
 impl Drop for LibraSmoke {
     fn drop(&mut self) {
-        println!("test dropped, running cleanup");
+        println!("libra smoke test dropped, running cleanup");
         let nodes = self.swarm.validators_mut();
         nodes.for_each(|n| n.stop());
     }
@@ -54,27 +54,17 @@ impl LibraSmoke {
         path: Option<PathBuf>,
         target: ReleaseTarget,
     ) -> anyhow::Result<Self> {
-        if let Some(path) = path {
-            println!("Using diem-node binary at {:?}", path);
-            //path to diem-node binary
-            let diem_node_path = path;
-            //Run cargo clear to make sure we have the latest changes
-            let _ = std::process::Command::new("cargo")
-                .current_dir(&diem_node_path)
-                .args(["clean"])
-                .output()
-                .expect("failed to execute process");
-            //Run cargo build to make sure we have the latest changes
-            let _ = std::process::Command::new("cargo")
-                .current_dir(&diem_node_path)
-                .args(["build", "--package", "diem-node", "--release"])
-                .output()
-                .expect("failed to execute process");
-            // Get the path diem-node binary
-            let diem_node_bin_path = diem_node_path.join("target/release/diem-node");
-            //export env var to use release
-            std::env::set_var("DIEM_FORGE_NODE_BIN_PATH", diem_node_bin_path);
+        if let Some(p) = path {
+            std::env::set_var("DIEM_FORGE_NODE_BIN_PATH", p);
         }
+
+        let diem_path = std::env::var("DIEM_FORGE_NODE_BIN_PATH")
+            .expect("DIEM_FORGE_NODE_BIN_PATH not set in env");
+        assert!(
+            PathBuf::from(&diem_path).exists(),
+            "doesn't seem like you have a binary linked to DIEM_FORGE_NODE_BIN_PATH"
+        );
+        println!("Using diem-node binary at {:?}", &diem_path);
 
         let release = target.load_bundle().unwrap();
         let mut swarm = smoke_test_environment::new_local_swarm_with_release(
@@ -93,7 +83,7 @@ impl LibraSmoke {
         for &validator_address in &validator_addresses {
             // Create a mutable borrow of `swarm` within the loop to limit its scope
             let mut pub_info = swarm.diem_public_info();
-            println!("Diem public info {:?}", pub_info.root_account().address());
+            println!("Minting coins to {:?}", validator_address);
 
             // Mint and unlock coins
             helpers::mint_libra(&mut pub_info, validator_address, 1000 * 1_000_000)
@@ -103,8 +93,9 @@ impl LibraSmoke {
                 .await
                 .context("could not unlock coins")?;
 
+            // commit note: unsure why we are dropping this
             // Drop the mutable borrow of `swarm` by dropping `pub_info`
-            drop(pub_info);
+            // drop(pub_info);
 
             // Now it's safe to immutably borrow `swarm`
             let node = swarm.validator(validator_address).unwrap(); // Adjust as needed
@@ -139,7 +130,7 @@ impl LibraSmoke {
         let first_account = LocalAccount::new(node.peer_id(), pri_key.private_key(), 0);
         let api_endpoint = node.rest_api_endpoint();
 
-        std::env::remove_var("DIEM_FORGE_NODE_BIN_PATH");
+        println!("SUCCESS: swarm started!");
 
         // TODO: order here is awkward because of borrow issues. Clean this up.
         // mint one coin to the main validator.
@@ -198,7 +189,7 @@ impl LibraSmoke {
         Ok(a)
     }
 
-    //TODO: Create coin store to be able to fund these accs
+    //TODO: Create coin store to be able to fund these accounts
     pub async fn create_accounts(
         &mut self,
         num_accounts: usize,

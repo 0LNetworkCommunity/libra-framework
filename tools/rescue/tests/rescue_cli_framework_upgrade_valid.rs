@@ -1,5 +1,3 @@
-mod support;
-
 use libra_rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 

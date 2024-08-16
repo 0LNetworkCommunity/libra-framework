@@ -20,15 +20,6 @@ use move_vm_runtime::session::SerializedReturnValues;
 use move_vm_types::gas::UnmeteredGasMeter;
 use std::path::{Path, PathBuf};
 
-// #[derive(Debug, Clone)]
-// pub struct ValCredentials {
-//     pub account: AccountAddress,
-//     pub consensus_pubkey: Vec<u8>,
-//     pub proof_of_possession: Vec<u8>,
-//     pub network_addresses: Vec<u8>,
-//     pub fullnode_addresses: Vec<u8>,
-// }
-
 // Run a VM session with a dirty database
 // NOTE: there are several implementations of this elsewhere in Diem
 // Some are buggy, some don't have exports or APIs needed (DiemDbBootstrapper). Some have issues with async and db locks (DiemDbDebugger).
@@ -51,11 +42,10 @@ where
         BUFFERED_STATE_TARGET_ITEMS,
         DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
     )
-    .context("Failed to open DB.")
-    .unwrap();
+    .context("failed to open db")?;
     let db_rw = DbReaderWriter::new(db);
-    let v = db_rw.reader.get_latest_version().unwrap();
-    let view = db_rw.reader.state_view_at_version(Some(v)).unwrap();
+    let v = db_rw.reader.get_latest_version()?;
+    let view = db_rw.reader.state_view_at_version(Some(v))?;
     let dvm = diem_vm::DiemVM::new(&view);
     let adapter = dvm.as_move_resolver(&view);
     let s_id = SessionId::genesis(diem_crypto::HashValue::zero());
@@ -221,24 +211,31 @@ pub fn session_add_validators(
         let amount = MoveValue::U64(amount);
         //create account
         dbg!("create account");
-        libra_execute_session_function(
+        match libra_execute_session_function(
             session,
             "0x1::ol_account::create_impl",
             vec![&MoveValue::Signer(AccountAddress::ONE), &signer],
-        )?;
-        //The accounts are not slow so we do not have to unlock them
-        dbg!("mint to account");
-        libra_execute_session_function(
-            session,
-            "0x1::libra_coin::mint_to_impl",
-            vec![&MoveValue::Signer(AccountAddress::ONE), &signer, &amount],
-        )?;
-        dbg!("registering validator");
-        libra_execute_session_function(
-            session,
-            "0x1::validator_universe::register_validator",
-            args,
-        )?;
+        ) {
+            Ok(_) => {
+                println!("account created successfully");
+                //The accounts are not slow so we do not have to unlock them
+                dbg!("mint to account");
+                libra_execute_session_function(
+                    session,
+                    "0x1::libra_coin::mint_to_impl",
+                    vec![&MoveValue::Signer(AccountAddress::ONE), &signer, &amount],
+                )?;
+                dbg!("registering validator");
+                libra_execute_session_function(
+                    session,
+                    "0x1::validator_universe::register_validator",
+                    args,
+                )?;
+            }
+            Err(_) => {
+                println!("account already exists, skipping");
+            }
+        };
     }
     let validators = MoveValue::vector_address(creds.iter().map(|c| c.account).collect());
     let signer = MoveValue::Signer(AccountAddress::ONE);
@@ -267,7 +264,7 @@ pub fn session_add_validators(
 /// Unpacks a VM change set.
 pub fn unpack_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
     let (write_set, _delta_change_set, events) = vmc.unpack();
-    dbg!(&events);
+
     Ok(ChangeSet::new(write_set, events))
 }
 

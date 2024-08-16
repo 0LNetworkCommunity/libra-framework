@@ -238,6 +238,12 @@ jobs:
         run: |
           echo "Main last commit has [breaking]: ${{ env.hasBreakingCommit }}"
 
+      - name: delete fixtures and force rebuild
+        working-directory: ./framework/src/upgrade_fixtures/fixtures
+        run: |
+          rm -rf upgrade-*
+          RUST_MIN_STACK=104857600 cargo t -- make_the_upgrade_fixtures --include-ignored
+
       - name: upgrade - check workflow
         if: always()
         working-directory: ./upgrade-tests
@@ -289,3 +295,20 @@ jobs:
         working-directory: ./tools/storage
         # TODO: not testing the V6 file parsing
         run: cargo test --no-fail-fast e2e_
+
+  twin-testsuite:
+    timeout-minutes: 60
+    needs: [build-framework]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup env
+        uses: ./.github/actions/build_env
+
+      - uses: Swatinem/rust-cache@v2.7.3
+        with:
+          shared-key: "libra-framework"
+          cache-all-crates: true
+      - name: twin
+        working-directory: ./testsuites/twin
+        run: cargo test --no-fail-fast

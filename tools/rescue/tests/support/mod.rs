@@ -251,7 +251,7 @@ pub async fn upgrade_multiple_impl(
         }));
         cli.run()
             .await
-            .map_err(|e| e.context("cannot resolve proposal at step {name}"))?;
+            .map_err(|e| e.context(format!("cannot resolve proposal at step {name}")))?;
     }
 
     Ok(())

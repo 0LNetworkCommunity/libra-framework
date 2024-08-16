@@ -13,8 +13,8 @@ Cargo.lock
 **/build
 **/doc
 **/framework_upgrade
-# upgrade fixtures
-**/framework/src/upgrade_fixtures/fixtures/upgrade*
+# # upgrade fixtures
+# **/framework/src/upgrade_fixtures/fixtures/upgrade*
 
 sccache.log
 
