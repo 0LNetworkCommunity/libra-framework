@@ -37,6 +37,7 @@ runs:
     - name: also rust cache
       uses: Swatinem/rust-cache@v2.7.0
       with:
+        prefix-key: "v1"
         shared-key: "libra"
         cache-on-failure: "true"
 
