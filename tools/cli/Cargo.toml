@@ -1,9 +1,10 @@
 [package]
 name = "libra"
 build = "build.rs"
+
 # Workspace inherited keys
-version = { workspace = true }
 authors = { workspace = true }
+version = { workspace = true }
 edition = { workspace = true }
 homepage = { workspace = true }
 license = { workspace = true }
