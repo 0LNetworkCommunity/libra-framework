@@ -1,9 +1,9 @@
 [package]
 name = "libra-rescue"
-version = "0.1.0"
 
 # Workspace inherited keys
 authors = { workspace = true }
+version = { workspace = true }
 edition = { workspace = true }
 homepage = { workspace = true }
 license = { workspace = true }
@@ -16,20 +16,20 @@ anyhow = { workspace = true }
 async-trait = { workspace = true }
 bcs = { workspace = true }
 clap = { workspace = true }
-diem-api-types = { workspace = true }
 
-diem-config = { workspace = true, features = ["testing"] }
+diem-api-types = { workspace = true }
+diem-config = { workspace = true }
 diem-crypto = { workspace = true }
 diem-db = { workspace = true }
 diem-executor = { workspace = true }
-diem-forge = { workspace = true, features = ["testing"] }
-diem-gas = { workspace = true, features = ["testing"] }
-diem-genesis = { workspace = true, features = ["testing"] }
+diem-forge = { workspace = true }
+diem-gas = { workspace = true }
+diem-genesis = { workspace = true }
 diem-logger = { workspace = true }
 diem-storage-interface = { workspace = true }
 diem-temppath = { workspace = true }
 diem-types = { workspace = true }
-diem-vm = { workspace = true, features = ["testing"] }
+diem-vm = { workspace = true }
 diem-vm-types = { workspace = true }
 
 fs_extra = { workspace = true }
@@ -39,17 +39,17 @@ hex = { workspace = true }
 libra-config = { workspace = true }
 libra-framework = { workspace = true }
 libra-query = { workspace = true }
-libra-smoke-tests = { workspace = true, features = ["testing"] }
+libra-smoke-tests = { workspace = true }
 libra-txs = { workspace = true }
 libra-types = { workspace = true }
 libra-wallet = { workspace = true }
 move-core-types = { workspace = true }
-move-vm-runtime = { workspace = true, features = ["testing"] }
+move-vm-runtime = { workspace = true  }
 move-vm-types = { workspace = true }
 serde = { workspace = true }
 serde_yaml = { workspace = true }
 smoke-test = { workspace = true }
-tokio = { workspace = true, features = ["full"] }
+tokio = { workspace = true  }
 
 [dev-dependencies]
 diem-api-types = { workspace = true }

@@ -18,9 +18,9 @@ bcs = { workspace = true }
 clap = { workspace = true }
 dialoguer = { workspace = true }
 
-diem-config = { workspace = true, features = ["testing"] }
-diem-forge = { workspace = true, features = ["testing"] }
-diem-genesis = { workspace = true, features = ["testing"] }
+diem-config = { workspace = true }
+diem-forge = { workspace = true }
+diem-genesis = { workspace = true }
 diem-logger = { workspace = true }
 diem-temppath = { workspace = true }
 diem-types = { workspace = true }
@@ -32,13 +32,13 @@ libra-config = { workspace = true }
 libra-framework = { workspace = true }
 libra-query = { workspace = true }
 libra-rescue = { workspace = true }
-libra-smoke-tests = { workspace = true, features = ["testing"] }
+libra-smoke-tests = { workspace = true }
 libra-storage = { workspace = true }
 libra-txs = { workspace = true }
 libra-types = { workspace = true }
 serde_yaml = { workspace = true }
 smoke-test = { workspace = true }
-tokio = { workspace = true, features = ["full"] }
+tokio = { workspace = true }
 
 [dev-dependencies]
 diem-api-types = { workspace = true }
