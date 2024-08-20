@@ -17,7 +17,9 @@ impl NodeCli {
         // Production code should never have been compiled with
         // Test helpers in the MoveVm. This fuction is a safety check.
         // Check that we are not including any Move test natives
-        // diem_vm::natives::assert_no_test_natives(ERROR_MSG_BAD_FEATURE_FLAGS);
+        diem_vm::natives::assert_no_test_natives(
+            "SCARY: somehow your production binaries ended up with testing features. Aborting!",
+        );
 
         // validators typically aren't looking for verbose logs.
         // but they can set it if they wish with RUST_LOG=info

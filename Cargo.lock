@@ -5617,6 +5617,7 @@ dependencies = [
  "diem",
  "diem-config",
  "diem-node",
+ "diem-vm",
  "libra-config",
  "libra-framework",
  "libra-genesis-tools",
