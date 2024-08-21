@@ -13,7 +13,6 @@ rust-version = { workspace = true }
 
 [dependencies]
 anyhow = { workspace = true }
-async-trait = { workspace = true }
 bcs = { workspace = true }
 clap = { workspace = true }
 dialoguer = { workspace = true }
@@ -21,7 +20,6 @@ dialoguer = { workspace = true }
 diem-config = { workspace = true }
 diem-forge = { workspace = true }
 diem-genesis = { workspace = true }
-diem-logger = { workspace = true }
 diem-temppath = { workspace = true }
 diem-types = { workspace = true }
 
@@ -29,13 +27,10 @@ fs_extra = { workspace = true }
 
 hex = { workspace = true }
 libra-config = { workspace = true }
-libra-framework = { workspace = true }
 libra-query = { workspace = true }
 libra-rescue = { workspace = true }
 libra-smoke-tests = { workspace = true }
-libra-storage = { workspace = true }
 libra-txs = { workspace = true }
-libra-types = { workspace = true }
 serde_yaml = { workspace = true }
 smoke-test = { workspace = true }
 tokio = { workspace = true }
