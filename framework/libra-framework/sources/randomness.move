@@ -37,7 +37,7 @@ module diem_framework::randomness {
     friend diem_framework::block;
     friend ol_framework::musical_chairs;
 
-    const DST: vector<u8> = b"ALL_YOUR_BASE";
+    const INIT_SEED: vector<u8> = b"all your base are belong to us";
 
 
     const MAX_U256: u256 = 115792089237316195423570985008687907853269984665640564039457584007913129639935;
@@ -68,7 +68,7 @@ module diem_framework::randomness {
             move_to(framework, PerBlockRandomness {
                 epoch: 0,
                 round: 0,
-                seed: option::none(),
+                seed: option::some(INIT_SEED),
                 seq: 0,
             });
         }
@@ -103,11 +103,16 @@ module diem_framework::randomness {
         // public facing API.
         // assert!(is_unbiasable(), E_API_USE_IS_BIASIBLE);
 
-        let input = DST;
         let randomness = borrow_global_mut<PerBlockRandomness>(@diem_framework);
-        let seed = *option::borrow(&randomness.seed);
 
-        vector::append(&mut input, seed);
+        // belt and suspenders if something didn't initialize
+        let input = if (option::is_some(&randomness.seed)) {
+          *option::borrow(&randomness.seed)
+        } else {
+          INIT_SEED
+        };
+
+
         // 0L NOTE: these native APIs dont exist in 0L V7.
         // get_transaction_hash() doesnt exist. So different than vendor,
         // we will always increment a seed based on the block hash.
@@ -115,6 +120,7 @@ module diem_framework::randomness {
         // transaction.
         // we will add the script hash of the entry function as a placeholder
         // though this will likely not be adding much entropy.
+
         vector::append(&mut input,
         transaction_context::get_script_hash());
 
