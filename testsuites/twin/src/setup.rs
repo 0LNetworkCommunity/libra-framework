@@ -7,7 +7,7 @@ use diem_types::{
     waypoint::Waypoint,
 };
 use fs_extra::dir;
-use libra_smoke_tests::libra_smoke::LibraSmoke;
+use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::txs_cli_vals::ValidatorTxs;
 use smoke_test::test_utils::{MAX_CONNECTIVITY_WAIT_SECS, MAX_HEALTHY_WAIT_SECS};
 use std::{
@@ -221,6 +221,7 @@ impl Twin {
     }
 
     /// Apply the rescue blob to the swarm db
+    /// returns the temp directory of the swarm
     pub async fn make_twin_swarm(
         smoke: &mut LibraSmoke,
         reference_db: Option<PathBuf>,
@@ -270,7 +271,7 @@ impl Twin {
         let temp_path = temp.path();
         assert!(temp_path.exists());
         let temp_db_path = Self::temp_backup_db(&reference_db, temp_path)?;
-        dbg!(&temp_db_path);
+
         assert!(temp_db_path.exists());
 
         println!("2. Create a rescue blob from the reference db");
@@ -305,7 +306,9 @@ impl Twin {
             .wait_for_all_nodes_to_catchup_to_version(start_version + 10, Duration::from_secs(30))
             .await?;
 
-        let cli_tools = smoke.first_account_app_cfg()?;
+        // place a libra-cli-config.yaml in the home dir of the swarm vals
+        // helps test the cli tools
+        configure_validator::save_cli_config_all(&mut smoke.swarm)?;
 
         let duration_upgrade = start_upgrade.elapsed();
         println!(
@@ -313,18 +316,22 @@ impl Twin {
             duration_upgrade
         );
 
+        let temp_dir = smoke.swarm.dir();
+        println!("temp files found at: {}", temp_dir.display());
+
         if keep_running {
             dialoguer::Confirm::new()
                 .with_prompt("swarm will keep running in background. Would you like to exit?")
                 .interact()?;
+            // NOTE: all validators will stop when the LibraSmoke goes out of context.
+            // but since it's borrowed in this function you should assume it will continue until the caller goes out of scope.
         }
-        // NOTE: all validators will stop when the LibraSmoke goes out of context.
-        Ok(cli_tools.workspace.node_home)
+
+        Ok(temp_dir.to_owned())
     }
 
     /// Extract the credentials of the random validator
     async fn extract_credentials(marlon_node: &LocalNode) -> anyhow::Result<ValCredentials> {
-        println!("extracting swarm validator credentials");
         // get the necessary values from the current db
         let account = marlon_node.config().get_peer_id().unwrap();
 

@@ -138,7 +138,10 @@ impl AppCfg {
         let yaml = serde_yaml::to_string(&self)?;
         let home_path = &self.workspace.node_home.clone();
         // create home path if doesn't exist, usually only in dev/ci environments.
-        fs::create_dir_all(home_path)?;
+        if !home_path.exists() {
+            fs::create_dir_all(home_path)?;
+        }
+
         let toml_path = home_path.join(CONFIG_FILE_NAME);
         let mut file = fs::File::create(&toml_path)?;
         file.write_all(yaml.as_bytes())?;

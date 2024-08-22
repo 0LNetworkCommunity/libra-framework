@@ -1,10 +1,10 @@
-PK0 = 0xc2d3ac2bdb0d7a009b1d593afbfd0a83ba2301fea23ef1bfb1cb1e803bcc9474
-PK1 = 0x200217b12371c0ff25b629349623bca45cea9d7096ff8a35a95c41f64c70e171
-PK2 = 0x167d3c3e2196d12fd9d53fcceb7e27b285ac9ba9f2d9edd04c8c5dd4bc2e0a23
+PK0 = 0x2c1495930c667a8d184b591c29fe99340cc0f19ae0668f6d5b616947f6fb8d6c
+PK1 = 0xc6ee87812a58cdce6917e544d6bb3da6e9d8bd81b6265894259744d37f33c4d0
+PK2 = 0xcbaa77abda240ee14d271a97be8eb45049918f19a63b86746021990d5efd6f73
 UPGRADE_SCRIPT = /root/upgrade-six/1-libra-framework/
-API_URL = http://127.0.0.1:44949
+API_URL = http://127.0.0.1:42199
 PROPOSAL_ID = 6
-TMP_DIR = /tmp/.tmpK3MJpH/
+TMP_DIR = /tmp/.tmpCu3Rxh/
 
 tx-propose:
 	libra txs --url ${API_URL} -t ${PK0} governance propose -d ${UPGRADE_SCRIPT} -m https://tbd.com
@@ -38,3 +38,5 @@ show-keys:
 	cat ${TMP_DIR}/0/private-identity.yaml
 	cat ${TMP_DIR}/1/private-identity.yaml
 	cat ${TMP_DIR}/2/private-identity.yaml
+
+upgrade: tx-propose tx-vote tx-resolve
