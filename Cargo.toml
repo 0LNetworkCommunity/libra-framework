@@ -27,7 +27,7 @@ homepage = "https://openlibra.io/"
 license = "NOASSERTION"
 publish = false
 repository = "https://github.com/0LNetworkCommunity/libra-framework"
-rust-version = "1.70.0"
+rust-version = "1.78.0"
 version = "7.0.3"
 
 [workspace.dependencies]
@@ -299,7 +299,7 @@ tonic-reflection = "0.6.0"
 ureq = { version = "1.5.4", features = [
   "json",
   "native-tls",
-], default_features = false }
+], default-features = false }
 url = { version = "2.2.2", features = ["serde"] }
 uuid = { version = "1.0.0", features = ["v4", "serde"] }
 walkdir = "2.3.2"
@@ -353,9 +353,3 @@ incremental = true
 
 [profile.test]
 inherits = "dev"
-
-# # This is a temporary workaround to avoid multiple library
-# # definitions for LZ4 (caused by rust-rocksdb).
-# # This will be removed once our pull requests land.
-[patch.crates-io]
-serde-reflection = { git = "https://github.com/aptos-labs/serde-reflection", rev = "839aed62a20ddccf043c08961cfe74875741ccba" }
