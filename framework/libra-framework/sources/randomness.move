@@ -74,6 +74,11 @@ module diem_framework::randomness {
         }
     }
 
+    #[view]
+    public fun is_init(): bool {
+      exists<PerBlockRandomness>(@diem_framework)
+    }
+
     #[test_only]
     public fun initialize_for_testing(framework: &signer) acquires  PerBlockRandomness {
         initialize(framework);
