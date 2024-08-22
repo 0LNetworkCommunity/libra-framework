@@ -26,7 +26,7 @@ pub struct TxsCli {
     #[clap(subcommand)]
     pub subcommand: Option<TxsSub>,
 
-    /// optional, path to the config file
+    /// optional, path to the libra cli config file
     #[clap(short, long)]
     pub config_path: Option<PathBuf>,
 

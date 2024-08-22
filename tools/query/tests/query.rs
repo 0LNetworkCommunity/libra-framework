@@ -13,7 +13,7 @@ async fn libra_query_test() {
     let c = s.client();
 
     let q = QueryType::Balance { account: val_acct };
-    match q.query_to_json(Some(c.to_owned())).await {
+    match q.query_to_json(&c).await {
         Ok(v) => {
             println!("v: {:?}", v);
             let b: LibraBalanceDisplay = serde_json::from_value(v).unwrap();
@@ -38,7 +38,7 @@ async fn account_annotate_test() {
     let c = s.client();
 
     let q = QueryType::Annotate { account: val_acct };
-    let res = q.query_to_json(Some(c)).await.unwrap();
+    let res = q.query_to_json(&c).await.unwrap();
     println!("{:#}", &res.as_str().unwrap());
     assert!(res.as_str().unwrap().contains("drop"));
 }

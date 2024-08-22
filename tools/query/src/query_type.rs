@@ -128,15 +128,10 @@ pub enum QueryType {
 }
 
 impl QueryType {
-    pub async fn query_to_json(&self, client_opt: Option<Client>) -> Result<serde_json::Value> {
-        let client = match client_opt {
-            Some(c) => c,
-            None => Client::default().await?,
-        };
-
+    pub async fn query_to_json(&self, client: &Client) -> Result<serde_json::Value> {
         match self {
             QueryType::Balance { account } => {
-                let res = get_account_balance_libra(&client, *account).await?;
+                let res = get_account_balance_libra(client, *account).await?;
                 Ok(json!(res.scaled()))
             }
             QueryType::View {
@@ -145,12 +140,12 @@ impl QueryType {
                 args,
             } => {
                 let res =
-                    get_view(&client, function_id, type_args.to_owned(), args.to_owned()).await?;
+                    get_view(client, function_id, type_args.to_owned(), args.to_owned()).await?;
                 let json = json!({ "body": res });
                 Ok(json)
             }
             QueryType::Epoch => {
-                let num = get_epoch(&client).await?;
+                let num = get_epoch(client).await?;
                 let json = json!({
                   "epoch": num,
                 });
@@ -242,7 +237,7 @@ impl QueryType {
                 Ok(json!({ "pending_transactions": "None" }))
             }
             QueryType::Annotate { account } => {
-                let dbgger = DiemDebugger::rest_client(client)?;
+                let dbgger = DiemDebugger::rest_client(client.clone())?;
                 let version = dbgger.get_latest_version().await?;
                 let blob = dbgger
                     .annotate_account_state_at_version(account.to_owned(), version)

@@ -29,6 +29,7 @@ impl Twin {
         let num_validators = self.count_vals.unwrap_or(1);
 
         let mut smoke = LibraSmoke::new(Some(num_validators), None).await?;
+
         Twin::make_twin_swarm(&mut smoke, Some(db_path), true).await?;
 
         Ok(())

@@ -1,11 +1,10 @@
-use diem_forge::{LocalSwarm, Node, Swarm};
+use diem_forge::{LocalSwarm, Node};
 use diem_sdk::crypto::PrivateKey;
 use diem_sdk::types::LocalAccount;
 use diem_types::chain_id::NamedChain;
 use libra_types::core_types::network_playlist::NetworkPlaylist;
 use libra_types::{core_types::app_cfg::AppCfg, exports::AuthenticationKey};
 use std::path::PathBuf;
-use url::Url;
 
 /// Set up the 0L local files, and get an AppCfg back after initializing in a temp dir, that will drop at the end of the test.
 pub fn init_val_config_files(
@@ -14,10 +13,14 @@ pub fn init_val_config_files(
     dir_opt: Option<PathBuf>,
 ) -> anyhow::Result<(LocalAccount, AppCfg)> {
     // TODO: unclear why public info needs to be a mutable borrow
-    let node = swarm.validators().nth(nth).expect("could not get nth validator");
+    let node = swarm
+        .validators()
+        .nth(nth)
+        .expect("could not get nth validator");
     let url = node.rest_api_endpoint();
 
-    let dir = dir_opt.unwrap_or(node.config_path());
+    let dir = dir_opt.unwrap_or(node.config_path().parent().unwrap().to_owned());
+
     let chain_name = NamedChain::from_chain_id(&swarm.chain_id()).ok();
     let np = NetworkPlaylist::new(Some(url), chain_name);
 
@@ -52,7 +55,8 @@ pub fn save_cli_config_all(swarm: &mut LocalSwarm) -> anyhow::Result<()> {
     for i in 0..len {
         // a libra-cli-config file will be created at the temp swarm
         // directory of the node
-        init_val_config_files(swarm, i, None)?;
+        let (_, app_cfg) = init_val_config_files(swarm, i, None)?;
+        let _file = app_cfg.save_file()?;
     }
     Ok(())
 }
