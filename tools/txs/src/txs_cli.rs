@@ -138,19 +138,25 @@ pub enum TxsSub {
 impl TxsCli {
     /// Executes the transaction CLI command based on parsed arguments.
     pub async fn run(&self) -> Result<()> {
+        // Load application configuration
+        let app_cfg = AppCfg::load(self.config_path.clone())?;
+        let profile = app_cfg.get_profile(None)?;
+
         // Determine private key based on CLI options or prompts
         let pri_key = if let Some(pk) = &self.test_private_key {
+            println!("using private key from cli args --test-private-key");
             Ed25519PrivateKey::from_encoded_string(pk)?
         } else if let Some(m) = &self.mnemonic {
+            println!("using private key from cli args --mnemonic");
             let legacy = get_keys_from_mnem(m.to_string())?;
             legacy.child_0_owner.pri_key
+        } else if let Ok(p) = profile.borrow_private_key() {
+            println!("use private key from test libra-cli-config.yaml");
+            p.to_owned()
         } else {
             let legacy = get_keys_from_prompt()?;
             legacy.child_0_owner.pri_key
         };
-
-        // Load application configuration
-        let app_cfg = AppCfg::load(self.config_path.clone())?;
 
         // Determine chain ID and URL for client
         let chain_name = self.chain_id.unwrap_or(app_cfg.workspace.default_chain_id);

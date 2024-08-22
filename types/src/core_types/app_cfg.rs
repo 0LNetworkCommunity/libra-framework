@@ -76,6 +76,7 @@ impl AppCfg {
         let mut default_config = AppCfg::default();
 
         let profile = Profile::new(authkey, account);
+        default_config.workspace.default_profile = Some(profile.nickname.to_owned());
         default_config.user_profiles = vec![profile];
 
         default_config.workspace.node_home = config_path.unwrap_or_else(global_config_dir);
@@ -195,7 +196,7 @@ impl AppCfg {
         let p = self.user_profiles.get(idx).context("no profile at index")?;
         // The privilege to use this software depends on the user upholding a code of conduct and taking the pledge. Totally cool if you don't want to, but you'll need to write your own tools.
         if !p.check_has_pledge(0) {
-            println!("user profile has not taken 'Protect the Game' pledge, exiting.");
+            println!("user profile has not taken 'Protect the Game' pledge. Future releases will exit here.");
         }
         Ok(p)
     }
@@ -386,9 +387,7 @@ pub struct Profile {
     pub account: AccountAddress,
     /// Miner Authorization Key for 0L Blockchain. Note: not the same as public key, nor account.
     pub auth_key: AuthenticationKey,
-    /// Private key only for use with testing
-    /// Note: skip_serializing so that it is never saved to disk.
-    #[serde(skip_serializing)]
+    /// Danger: private key only for use with testing
     test_private_key: Option<Ed25519PrivateKey>,
     /// nickname for this profile
     pub nickname: String,
@@ -402,16 +401,8 @@ pub struct Profile {
     pub locale: Option<String>,
     /// An opportunity for the Miner to write a message on their genesis block.
     pub statement: String,
-
     /// Pledges the user took
     pub pledges: Option<Vec<Pledge>>,
-    // NOTE: V7: deprecated
-    // Deprecation: : /// ip address of this node. May be different from transaction URL.
-    // pub ip: Ipv4Addr,
-
-    // V7.0.3 deprecated
-    // Deprecation: /// Other nodes to connect for fallback connections
-    // pub upstream_nodes: Option<Vec<Url>>,
 }
 
 impl Default for Profile {

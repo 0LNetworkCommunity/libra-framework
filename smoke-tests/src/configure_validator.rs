@@ -23,27 +23,24 @@ pub fn init_val_config_files(
 
     let chain_name = NamedChain::from_chain_id(&swarm.chain_id()).ok();
     let np = NetworkPlaylist::new(Some(url), chain_name);
-
+    let cfg_key = node.account_private_key().as_ref().unwrap();
+    let prikey = cfg_key.private_key();
+    let pubkey = prikey.public_key();
     let mut app_cfg = AppCfg::init_app_configs(
-        AuthenticationKey::ed25519(&node.account_private_key().as_ref().unwrap().public_key()),
+        AuthenticationKey::ed25519(&pubkey),
         node.peer_id(),
         Some(dir),
         Some(np.chain_name),
         Some(np),
     )?;
 
-    let pri_key = node
-        .account_private_key()
-        .as_ref()
-        .expect("could not get pri_key")
-        .private_key();
-    let auth = AuthenticationKey::ed25519(&pri_key.public_key());
     let profile = app_cfg
         .get_profile_mut(None)
         .expect("could not get profile");
-    profile.set_private_key(&pri_key);
 
-    let local_account = LocalAccount::new(auth.derived_address(), pri_key, 0);
+    profile.set_private_key(&prikey);
+
+    let local_account = LocalAccount::new(profile.account, prikey, 0);
 
     Ok((local_account, app_cfg))
 }

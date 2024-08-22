@@ -173,7 +173,7 @@ impl QueryType {
                 }
             }
             QueryType::ValConfig { account } => {
-                let res = get_val_config(&client, *account).await?;
+                let res = get_val_config(client, *account).await?;
 
                 // make this readable, turn the network address into a string
                 Ok(json!({
@@ -184,7 +184,7 @@ impl QueryType {
                 }))
             }
             QueryType::BlockHeight => {
-                let height = get_height(&client).await?;
+                let height = get_height(client).await?;
                 Ok(json!({ "BlockHeight": height }))
             }
             QueryType::Events {
@@ -192,8 +192,7 @@ impl QueryType {
                 withdrawn_or_deposited,
                 seq_start,
             } => {
-                let res =
-                    get_events(&client, *account, *withdrawn_or_deposited, *seq_start).await?;
+                let res = get_events(client, *account, *withdrawn_or_deposited, *seq_start).await?;
                 Ok(json!({ "events": res }))
             }
             QueryType::Txs {
@@ -203,7 +202,7 @@ impl QueryType {
                 txs_type,
             } => {
                 let res: Vec<Transaction> = get_transactions(
-                    &client,
+                    client,
                     *account,
                     *txs_height,
                     *txs_count,
@@ -223,17 +222,17 @@ impl QueryType {
                 Ok(json!({ "transactions": prune_res }))
             }
             QueryType::ComWalletMigrated { account } => {
-                let res = is_community_wallet_migrated(&client, *account).await?;
+                let res = is_community_wallet_migrated(client, *account).await?;
                 Ok(json!({ "migrated": res }))
             }
             QueryType::ComWalletSigners { account } => {
                 // Wont work at the moment as there is no community wallet that with governace structure
-                let _res = community_wallet_signers(&client, *account).await?;
+                let _res = community_wallet_signers(client, *account).await?;
                 Ok(json!({ "signers": "None"}))
             }
             QueryType::ComWalletPendTransactions { account } => {
                 // Wont work at the moment as there is no community wallet migrated
-                let _res = community_wallet_scheduled_transactions(&client, *account).await?;
+                let _res = community_wallet_scheduled_transactions(client, *account).await?;
                 Ok(json!({ "pending_transactions": "None" }))
             }
             QueryType::Annotate { account } => {
