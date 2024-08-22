@@ -34,7 +34,7 @@ module ol_framework::address_utils {
   // Shuffle addresses with the same values to ensure randomness position
   public fun shuffle_duplicates(addresses: &mut vector<address>, values: &vector<u64>) {
     // belt and suspenders, if migration didn't happen.
-    if (!randomness::is_init()) return;
+    // assert!(randomness::is_init(), error::invalid_state(ERANDOM_INIT_ERROR));
 
     assert!(vector::length(addresses) == vector::length(values), error::invalid_argument(EDIFFERENT_LENGTH));
     let len = vector::length(values);
