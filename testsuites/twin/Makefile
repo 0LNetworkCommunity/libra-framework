@@ -33,6 +33,8 @@ PROPOSAL_ID = 6
 # if you are starting fresh use:
 # > libra config fullnode-init
 # > libra node
+# check height while syncing
+# > watch -n 5 'curl -s 127.0.0.1:9101/metrics | grep diem_state_sync_version'
 
 # 2. compile the new libra-framework MOVE code with:
 # > make upgrade-script
