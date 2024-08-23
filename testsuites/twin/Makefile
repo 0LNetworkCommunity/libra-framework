@@ -41,7 +41,7 @@ PROPOSAL_ID = 6
 # note the defaults for input: FRAMEWORK_SOURCE_PATH and and output: UPGRADE_SCRIPT_PATH
 
 # 3. start a Twin swarm locally
-# > make start twin
+# > make start-twin
 # NOTE: the output `temp files found at: /tmp/<......> `
 # A local Twin of mainnet is now running on your machine.
 
