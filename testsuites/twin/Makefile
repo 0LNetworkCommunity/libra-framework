@@ -20,6 +20,11 @@ PROPOSAL_ID = 6
 
 ##### INSTRUCTIONS
 
+# Grab the essentials:
+# sudo apt update
+# sudo apt install -y git build-essential cmake clang llvm libgmp-dev pkg-config libssl-dev lld libpq-dev
+# curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
 # 1. use an up to date libra-cli binary
 # > cargo build --release -p libra --locked
 # > cp target/release/libra ~/.cargo/bin/
