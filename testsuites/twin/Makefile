@@ -16,6 +16,10 @@ ifndef FRAMEWORK_SOURCE_PATH
 FRAMEWORK_SOURCE_PATH = $$HOME/libra-framework/framework
 endif
 
+ifndef DIEM_FORGE_NODE_BIN_PATH
+DIEM_FORGE_NODE_BIN_PATH = $$HOME/.cargo/bin/libra
+endif
+
 PROPOSAL_ID = 6
 
 ##### INSTRUCTIONS
