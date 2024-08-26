@@ -16,9 +16,18 @@ ifndef FRAMEWORK_SOURCE_PATH
 FRAMEWORK_SOURCE_PATH = $$HOME/libra-framework/framework
 endif
 
+ifndef DIEM_FORGE_NODE_BIN_PATH
+DIEM_FORGE_NODE_BIN_PATH = $$HOME/.cargo/bin/libra
+endif
+
 PROPOSAL_ID = 6
 
 ##### INSTRUCTIONS
+
+# Grab the essentials:
+# sudo apt update
+# sudo apt install -y git build-essential cmake clang llvm libgmp-dev pkg-config libssl-dev lld libpq-dev
+# curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 # 1. use an up to date libra-cli binary
 # > cargo build --release -p libra --locked
@@ -28,13 +37,15 @@ PROPOSAL_ID = 6
 # if you are starting fresh use:
 # > libra config fullnode-init
 # > libra node
+# check height while syncing
+# > watch -n 5 'curl -s 127.0.0.1:9101/metrics | grep diem_state_sync_version'
 
 # 2. compile the new libra-framework MOVE code with:
 # > make upgrade-script
 # note the defaults for input: FRAMEWORK_SOURCE_PATH and and output: UPGRADE_SCRIPT_PATH
 
 # 3. start a Twin swarm locally
-# > make start twin
+# > make start-twin
 # NOTE: the output `temp files found at: /tmp/<......> `
 # A local Twin of mainnet is now running on your machine.
 
