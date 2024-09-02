@@ -5745,6 +5745,7 @@ dependencies = [
  "libra-types",
  "serde_json",
  "tokio",
+ "url",
 ]
 
 [[package]]

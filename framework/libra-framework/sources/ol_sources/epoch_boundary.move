@@ -43,7 +43,7 @@ module diem_framework::epoch_boundary {
   const ETRIGGER_EPOCH_UNAUTHORIZED: u64 = 1;
   /// Epoch is not ready for reconfiguration
   const ETRIGGER_NOT_READY: u64 = 2;
-  /// Epoch number mismat
+  /// Epoch number mismatch
   const ENOT_SAME_EPOCH: u64 = 3;
 
   /////// Constants ////////
@@ -254,20 +254,22 @@ module diem_framework::epoch_boundary {
   }
 
   #[view]
-  /// check to see if the epoch Boundary Bit is true
+  /// check to see if the epoch BoundaryBit is true
   public fun can_trigger(): bool acquires BoundaryBit {
     let state = borrow_global_mut<BoundaryBit>(@ol_framework);
     assert!(state.ready, ETRIGGER_NOT_READY);
-    assert!(state.closing_epoch == reconfiguration::get_current_epoch(),
+    // greater than, in case there is an epoch change due to an epoch bump in
+    // testnet Twin tools, or a rescue operation.
+    assert!(state.closing_epoch <= reconfiguration::get_current_epoch(),
     ENOT_SAME_EPOCH);
     true
   }
 
   // This function handles the necessary migrations that occur at the epoch boundary
   // when new modules or structures are added by chain upgrades.
-  fun migrate_data(root: &signer) {
-    randomness::initialize(root);
-    migrations::execute(root);
+  fun migrate_data(framework: &signer) {
+    randomness::initialize(framework);
+    migrations::execute(framework);
   }
 
   // Contains all of 0L's business logic for end of epoch.

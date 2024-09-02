@@ -25,8 +25,7 @@ pub async fn upgrade_multiple_impl(
     let d = diem_temppath::TempPath::new();
 
     let (_, _app_cfg) =
-        configure_validator::init_val_config_files(&mut s.swarm, 0, d.path().to_owned())
-            .await
+        configure_validator::init_val_config_files(&mut s.swarm, 0, Some(d.path().to_owned()))
             .context("could not init validator config")?;
 
     // This step should fail. The view function does not yet exist in the system address.
