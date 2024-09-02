@@ -33,3 +33,6 @@ tokio = { workspace = true }
 [build-dependencies]
 anyhow = { workspace = true }
 vergen = { workspace = true }
+
+[features]
+testing = ["diem-vm/testing"]
