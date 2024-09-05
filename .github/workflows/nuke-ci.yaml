@@ -1,8 +1,7 @@
 name: nuke the CI
 on:
-  push:
-    tags:
-      - "nuke-ci*"
+  workflow_dispatch:
+
 jobs:
   delete_all_runs:
     name: delete all workflow runs
