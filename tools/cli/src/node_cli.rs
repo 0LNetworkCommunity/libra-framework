@@ -14,12 +14,15 @@ pub struct NodeCli {
 
 impl NodeCli {
     pub fn run(&self) -> anyhow::Result<()> {
-        // Production code should never have been compiled with
-        // Test helpers in the MoveVm. This fuction is a safety check.
-        // Check that we are not including any Move test natives
-        diem_vm::natives::assert_no_test_natives(
-            "SCARY: somehow your production binaries ended up with testing features. Aborting!",
-        );
+        // Commit Note: we can now remove the diem checks since we do actually
+        // expect the crypto test natives to exist in release compilations.
+        // but we still check to not expect compilation using --testing feature
+        // and also a unit test helper for creating signers
+        // TODO: A similar check can be done to check if unit_test natives have been built in VM. Though in libra they are unused.
+
+        // assert_no_test_natives(
+        //     "SCARY: somehow your production binaries ended up with testing features. Aborting!",
+        // );
 
         // validators typically aren't looking for verbose logs.
         // but they can set it if they wish with RUST_LOG=info
