@@ -30,7 +30,7 @@ module ol_framework::secret_bid {
     commit_signed_message: vector<u8>
   }
 
-  struct Bid has drop {
+  struct Bid has drop, copy {
     net_reward: u64,
     epoch: u64,
   }
@@ -98,5 +98,32 @@ module ol_framework::secret_bid {
     // confirm that the signature bytes belong to the message (the Bid struct)
     let sig = ed25519::new_signature_from_bytes(signed_message_bytes);
     assert!(ed25519::signature_verify_strict_t(&sig, &pubkey, bid_message), error::invalid_argument(EINVALID_SIGNATURE));
+  }
+
+  //////// TESTS ////////
+  #[test]
+  public entry fun test_sign_message() {
+      use diem_std::from_bcs;
+
+      let (new_sk, new_pk) = ed25519::generate_keys();
+      let new_pk_unvalidated = ed25519::public_key_to_unvalidated(&new_pk);
+      let new_auth_key = ed25519::unvalidated_public_key_to_authentication_key(&new_pk_unvalidated);
+      let new_addr = from_bcs::to_address(new_auth_key);
+      let _alice = account::create_account_for_test(new_addr);
+
+      let message = Bid {
+        net_reward: 0,
+        epoch: 0,
+      };
+
+      let to_sig = ed25519::sign_struct(&new_sk, copy message);
+      let sig_bytes = ed25519::signature_to_bytes(&to_sig);
+      // end set-up
+
+      // yes repetitive, but following the same workflow
+      let sig_again = ed25519::new_signature_from_bytes(sig_bytes);
+
+      assert!(ed25519::signature_verify_strict_t<Bid>(&sig_again, &new_pk_unvalidated, message), error::invalid_argument(EINVALID_SIGNATURE));
+
   }
 }
