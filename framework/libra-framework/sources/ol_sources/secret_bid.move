@@ -49,10 +49,20 @@ module ol_framework::secret_bid {
     exists<CommittedBid>(account)
   }
 
-  /// user transaction for setting a signed message with the bid
-  public fun commit_net_reward(user: &signer, message: vector<u8>) acquires CommittedBid {
+  public entry fun commit(user: &signer, message: vector<u8>) acquires CommittedBid {
     // don't allow commiting within reveal window
     assert!(!in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
+    commit_net_reward_impl(user, message);
+  }
+
+  public entry fun reveal(user: &signer, pk: vector<u8>, net_reward: u64) acquires CommittedBid {
+    // don't allow commiting within reveal window
+    assert!(in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
+    reveal_net_reward_impl(user, pk, net_reward);
+  }
+
+  /// user transaction for setting a signed message with the bid
+  fun commit_net_reward_impl(user: &signer, message: vector<u8>) acquires CommittedBid {
 
     if (!is_init(signer::address_of(user))) {
       move_to<CommittedBid>(user, CommittedBid {
@@ -70,7 +80,7 @@ module ol_framework::secret_bid {
   /// user sends transaction  which takes the committed signed message
   /// submits the public key used to sign message, which we compare to the authentication key.
   /// we use the epoch as the sequence number, so that messages are different on each submission.
-  public fun reveal_net_reward(user: &signer, pk: vector<u8>, net_reward: u64) acquires CommittedBid {
+  public fun reveal_net_reward_impl(user: &signer, pk: vector<u8>, net_reward: u64) acquires CommittedBid {
     assert!(is_init(signer::address_of(user)), error::invalid_state(ECOMMIT_BID_NOT_INITIALIZED));
 
     assert!(in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
@@ -102,7 +112,34 @@ module ol_framework::secret_bid {
 
   //////// TESTS ////////
   #[test]
-  public entry fun test_sign_message() {
+  fun test_sign_message() {
+      use diem_std::from_bcs;
+
+      let (new_sk, new_pk) = ed25519::generate_keys();
+      let new_pk_unvalidated = ed25519::public_key_to_unvalidated(&new_pk);
+      let new_auth_key = ed25519::unvalidated_public_key_to_authentication_key(&new_pk_unvalidated);
+      let new_addr = from_bcs::to_address(new_auth_key);
+      let _alice = account::create_account_for_test(new_addr);
+
+      let message = Bid {
+        net_reward: 0,
+        epoch: 0,
+      };
+
+      let to_sig = ed25519::sign_struct(&new_sk, copy message);
+      let sig_bytes = ed25519::signature_to_bytes(&to_sig);
+      // end set-up
+
+      // yes repetitive, but following the same workflow
+      let sig_again = ed25519::new_signature_from_bytes(sig_bytes);
+
+      assert!(ed25519::signature_verify_strict_t<Bid>(&sig_again, &new_pk_unvalidated, message), error::invalid_argument(EINVALID_SIGNATURE));
+
+  }
+
+
+  #[test]
+  fun test_commit_message() {
       use diem_std::from_bcs;
 
       let (new_sk, new_pk) = ed25519::generate_keys();
