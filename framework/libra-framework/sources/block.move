@@ -81,10 +81,10 @@ module diem_framework::block {
     /// Update the epoch interval.
     /// Can only be called as part of the Diem governance proposal process established by the DiemGovernance module.
     public(friend) fun update_epoch_interval_microsecs(
-        _diem_framework: &signer,
+        diem_framework: &signer,
         new_epoch_interval: u64,
     ) acquires BlockResource {
-        //system_addresses::assert_vm(diem_framework); //TODO: remove after testing fork
+        system_addresses::assert_diem_framework(diem_framework); //TODO: remove after testing fork
         assert!(new_epoch_interval > 0, error::invalid_argument(EZERO_EPOCH_INTERVAL));
 
         let block_resource = borrow_global_mut<BlockResource>(@diem_framework);
@@ -244,8 +244,6 @@ module diem_framework::block {
             };
 
             if (timestamp - reconfiguration::last_reconfiguration_time() >= block_metadata_ref.epoch_interval) {
-                // if (!features::epoch_trigger_enabled() ||
-                // testnet::is_testnet()) {
                 if (testnet::is_testnet()) {
                     epoch_boundary::epoch_boundary(
                         vm,
@@ -284,8 +282,7 @@ module diem_framework::block {
     }
 
     #[test(diem_framework = @diem_framework, account = @0x123)]
-    //#[expected_failure(abort_code = 0x50003, location = diem_framework::system_addresses)] //TODO: remove after testing fork
-    #[ignore] //TODO: remove after testing fork
+    #[expected_failure(abort_code = 0x50003, location = diem_framework::system_addresses)]
     public entry fun test_update_epoch_interval_unauthorized_should_fail(
         diem_framework: signer,
         account: signer,
