@@ -5,10 +5,14 @@
 ///////////////////////////////////////////////////////////////////////////
 
 module ol_framework::secret_bid {
+  use std::bcs;
   use std::error;
+  use std::hash;
   use std::signer;
   use std::vector;
+
   use diem_std::ed25519;
+  use diem_std::comparator;
   use diem_framework::account;
   use diem_framework::epoch_helper;
   use diem_framework::block;
@@ -26,10 +30,13 @@ module ol_framework::secret_bid {
   const EMISMATCH_EPOCH: u64 = 3;
   /// Must submit bid before reveal window opens, and reveal bid only after.
   const ENOT_IN_REVEAL_WINDOW: u64 = 4;
+  /// Bad Alice, the reveal does not match the commit
+  const ECOMMIT_HASH_NOT_EQUAL: u64 = 5;
 
 
   struct CommittedBid has key {
     reveal_net_reward: u64,
+    commit_hash: vector<u8>,
     commit_epoch: u64,
     commit_signed_message: vector<u8>
   }
@@ -57,52 +64,75 @@ module ol_framework::secret_bid {
     exists<CommittedBid>(account)
   }
 
-  public entry fun commit(user: &signer, message: vector<u8>) acquires CommittedBid {
+  public entry fun commit(user: &signer, hash: vector<u8>, signed_msg: vector<u8>) acquires CommittedBid {
     // don't allow commiting within reveal window
     assert!(!in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
-    commit_net_reward_impl(user, message);
+    commit_net_reward_impl(user, hash, signed_msg);
   }
 
-  public entry fun reveal(user: &signer, pk: vector<u8>, net_reward: u64) acquires CommittedBid {
+  // TODO: the public key could be the consensus_pubkey that is already registered for the validator. That way the operator does not need the root key for bidding strategy. Note it's a BLS key.
+  public entry fun reveal(user: &signer, pk: vector<u8>, net_reward: u64, signed_msg: vector<u8>) acquires CommittedBid {
     // don't allow commiting within reveal window
     assert!(in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
-    reveal_net_reward_impl(user, pk, net_reward);
+    reveal_net_reward_impl(user, pk, net_reward, signed_msg);
   }
 
   /// user transaction for setting a signed message with the bid
-  fun commit_net_reward_impl(user: &signer, message: vector<u8>) acquires CommittedBid {
+  fun commit_net_reward_impl(user: &signer, hash: vector<u8>, signed_bid: vector<u8>) acquires CommittedBid {
 
     if (!is_init(signer::address_of(user))) {
       move_to<CommittedBid>(user, CommittedBid {
         reveal_net_reward: 0,
+        commit_hash: vector::empty(),
         commit_epoch: 0,
         commit_signed_message: vector::empty(),
       });
     };
 
     let state = borrow_global_mut<CommittedBid>(signer::address_of(user));
-    state.commit_signed_message = message;
+    state.commit_hash = hash;
+    state.commit_signed_message = signed_bid;
     state.commit_epoch = epoch_helper::get_current_epoch();
+  }
+
+  //NOTE: instead of a nonce, we are using the signed message for hash salting which would be private to the validator before the reveal.
+  fun make_hash(net_reward: u64, epoch: u64, signed_message: vector<u8>): vector<u8>{
+    let bid = Bid {
+      net_reward,
+      epoch,
+    };
+
+    let bid_bytes = bcs::to_bytes(&bid);
+    vector::append(&mut bid_bytes, copy signed_message);
+    let commitment = hash::sha3_256(bid_bytes);
+    commitment
   }
 
   /// user sends transaction  which takes the committed signed message
   /// submits the public key used to sign message, which we compare to the authentication key.
   /// we use the epoch as the sequence number, so that messages are different on each submission.
-  public fun reveal_net_reward_impl(user: &signer, pk: vector<u8>, net_reward: u64) acquires CommittedBid {
+  public fun reveal_net_reward_impl(user: &signer, pk: vector<u8>, net_reward: u64, signed_msg: vector<u8>) acquires CommittedBid {
     assert!(is_init(signer::address_of(user)), error::invalid_state(ECOMMIT_BID_NOT_INITIALIZED));
 
     let state = borrow_global_mut<CommittedBid>(signer::address_of(user));
 
+
     // must reveal within the current epoch of the bid
     let epoch = epoch_helper::get_current_epoch();
     assert!(epoch == state.commit_epoch, error::invalid_state(EMISMATCH_EPOCH));
+
+
+    let commitment = make_hash(net_reward, epoch, signed_msg);
 
     let bid = Bid {
       net_reward,
       epoch,
     };
 
-    check_signature(user, pk, state.commit_signed_message, bid);
+    check_signature(user, pk, signed_msg, bid);
+
+    assert!(comparator::is_equal(&comparator::compare(&commitment, &state.commit_hash)), error::invalid_argument(ECOMMIT_HASH_NOT_EQUAL));
+
 
     state.reveal_net_reward = net_reward;
   }
@@ -224,78 +254,86 @@ module ol_framework::secret_bid {
       let new_auth_key = ed25519::unvalidated_public_key_to_authentication_key(&new_pk_unvalidated);
       let new_addr = from_bcs::to_address(new_auth_key);
       let alice = account::create_account_for_test(new_addr);
+      let net_reward = 5;
+      let epoch = 0;
 
       let message = Bid {
-        net_reward: 5,
-        epoch: 0,
+        net_reward,
+        epoch,
       };
 
       let to_sig = ed25519::sign_struct(&new_sk, copy message);
       let sig_bytes = ed25519::signature_to_bytes(&to_sig);
+      let hash = make_hash(net_reward, epoch, sig_bytes);
+
       // end set-up
 
-      commit_net_reward_impl(&alice, sig_bytes);
+      commit_net_reward_impl(&alice, hash, sig_bytes);
   }
 
   #[test(framework = @0x1)]
   fun test_reveal(framework: &signer) acquires CommittedBid {
       use diem_std::from_bcs;
 
-      let this_epoch = 1;
-      epoch_helper::test_set_epoch(framework, this_epoch);
+      let epoch = 1;
+      epoch_helper::test_set_epoch(framework, epoch);
 
       let (new_sk, new_pk) = ed25519::generate_keys();
       let new_pk_unvalidated = ed25519::public_key_to_unvalidated(&new_pk);
       let new_auth_key = ed25519::unvalidated_public_key_to_authentication_key(&new_pk_unvalidated);
       let new_addr = from_bcs::to_address(new_auth_key);
       let alice = account::create_account_for_test(new_addr);
-
+      let net_reward = 5;
       let message = Bid {
-        net_reward: 5,
-        epoch: this_epoch,
+        net_reward,
+        epoch,
       };
 
       let to_sig = ed25519::sign_struct(&new_sk, copy message);
       let sig_bytes = ed25519::signature_to_bytes(&to_sig);
+      let hash = make_hash(net_reward, epoch, sig_bytes);
       // end set-up
 
-      commit_net_reward_impl(&alice, sig_bytes);
+      commit_net_reward_impl(&alice, hash, sig_bytes);
 
       let pk_bytes = ed25519::unvalidated_public_key_to_bytes(&new_pk_unvalidated);
 
       check_signature(&alice, pk_bytes, sig_bytes, message);
 
-      reveal_net_reward_impl(&alice, pk_bytes, 5);
+      reveal_net_reward_impl(&alice, pk_bytes, 5, sig_bytes);
   }
 
   #[test(framework = @0x1)]
   #[expected_failure(abort_code = 65538, location = Self)]
   fun test_reveal_sad_wrong_epoch(framework: &signer) acquires CommittedBid {
       use diem_std::from_bcs;
-      let this_epoch = 1;
-      epoch_helper::test_set_epoch(framework, this_epoch);
+      let epoch = 1;
+      epoch_helper::test_set_epoch(framework, epoch);
 
       let (new_sk, new_pk) = ed25519::generate_keys();
       let new_pk_unvalidated = ed25519::public_key_to_unvalidated(&new_pk);
       let new_auth_key = ed25519::unvalidated_public_key_to_authentication_key(&new_pk_unvalidated);
       let new_addr = from_bcs::to_address(new_auth_key);
       let alice = account::create_account_for_test(new_addr);
+      let net_reward = 5;
+      let wrong_epoch = 100;
 
       let message = Bid {
-        net_reward: 5,
-        epoch: 100, // wrong epoch, we are at 1
+        net_reward,
+        epoch: wrong_epoch, // wrong epoch, we are at 1
       };
 
       let to_sig = ed25519::sign_struct(&new_sk, copy message);
       let sig_bytes = ed25519::signature_to_bytes(&to_sig);
+      let hash = make_hash(net_reward, epoch, sig_bytes);
       // end set-up
 
-      commit_net_reward_impl(&alice, sig_bytes);
+      commit_net_reward_impl(&alice, hash, sig_bytes);
 
       let pk_bytes = ed25519::unvalidated_public_key_to_bytes(&new_pk_unvalidated);
 
       check_signature(&alice, pk_bytes, sig_bytes, message);
 
-      reveal_net_reward_impl(&alice, pk_bytes, 5);
+      reveal_net_reward_impl(&alice, pk_bytes, 5, sig_bytes);
   }
 }
