@@ -103,6 +103,30 @@ module diem_framework::block {
         borrow_global<BlockResource>(@diem_framework).epoch_interval / 1000000
     }
 
+    #[view]
+    /// Return rough remaining seconds in epoch
+    public fun get_remaining_epoch_secs(): u64 acquires BlockResource {
+      let now = timestamp::now_seconds();
+      let last_epoch_secs = reconfiguration::last_reconfiguration_time() / 1000000;
+      let interval =  get_epoch_interval_secs();
+      if (now < last_epoch_secs) { // impossible underflow, some thign bad, or tests
+          return 0
+      };
+
+      let deadline = last_epoch_secs + interval;
+
+      if (now > deadline) { // we've run over the deadline
+        return 0
+      };
+
+      // belt and suspenders
+      if (deadline > now) {
+        return deadline - now
+      };
+
+      return 0
+
+    }
     /// Set the metadata for the current block.
     /// The runtime always runs this before executing the transactions in a block.
     fun block_prologue(

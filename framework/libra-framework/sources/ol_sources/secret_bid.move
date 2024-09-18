@@ -11,6 +11,8 @@ module ol_framework::secret_bid {
   use diem_std::ed25519;
   use diem_framework::account;
   use diem_framework::epoch_helper;
+  use diem_framework::block;
+
 
   // use diem_framework::debug::print;
 
@@ -42,8 +44,12 @@ module ol_framework::secret_bid {
   /// allow reveal transaction to be submitted
   fun in_reveal_window(): bool {
     // get the timestamp
-    // get the epoch ending timestamp
-    // get 5 mins prior
+    // NOTE: this might cause a dependency cycle issue in the future
+    let remaining_secs = block::get_remaining_epoch_secs();
+    let five_mins = 60*5;
+    if (remaining_secs > five_mins) {
+      return false
+    };
     true
   }
 
