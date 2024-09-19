@@ -6,5 +6,6 @@ pub mod transfer;
 pub mod txs_cli;
 pub mod txs_cli_community;
 pub mod txs_cli_governance;
+pub mod txs_cli_stream;
 pub mod txs_cli_user;
 pub mod txs_cli_vals;

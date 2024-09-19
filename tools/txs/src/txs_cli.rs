@@ -1,6 +1,7 @@
 use crate::{
     publish::encode_publish_payload, submit_transaction::Sender, txs_cli_community::CommunityTxs,
-    txs_cli_governance::GovernanceTxs, txs_cli_user::UserTxs, txs_cli_vals::ValidatorTxs,
+    txs_cli_governance::GovernanceTxs, txs_cli_stream::StreamTxs, txs_cli_user::UserTxs,
+    txs_cli_vals::ValidatorTxs,
 };
 use anyhow::Result;
 use clap::Parser;
@@ -17,6 +18,7 @@ use libra_types::{
 };
 use libra_wallet::account_keys::{get_keys_from_mnem, get_keys_from_prompt};
 use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 use url::Url;
 
 #[derive(Parser)]
@@ -91,6 +93,9 @@ pub enum TxsSub {
         #[clap(short, long)]
         amount: f64,
     },
+    #[clap(subcommand, hide(true))]
+    /// Warn: Streaming transactions is experimental
+    Stream(StreamTxs),
     #[clap(hide(true))]
     /// Warn: Publishing contracts is for testing purposes only on Testnet
     Publish(MovePackageDir),
@@ -214,6 +219,12 @@ impl TxsCli {
             Some(TxsSub::Governance(upgrade_txs)) => upgrade_txs.run(&mut send).await,
             Some(TxsSub::User(user_txs)) => user_txs.run(&mut send).await,
             Some(TxsSub::Community(comm_txs)) => comm_txs.run(&mut send).await,
+            Some(TxsSub::Stream(stream_txs)) => {
+                let arc_send = Arc::new(Mutex::new(send));
+                stream_txs.start(arc_send);
+                println!("stream here");
+                Ok(())
+            }
             _ => {
                 println!(
                     "\n\"I'm searching, though I don't succeed

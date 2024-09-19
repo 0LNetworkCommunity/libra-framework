@@ -212,9 +212,24 @@ impl Sender {
         println!("transaction sent");
         self.response = Some(r.clone());
         spin.finish_and_clear();
-        debug!("{:?}", &r);
+        // debug!("{:?}", &r);
         OLProgress::complete("transaction success");
         Ok(r)
+    }
+
+    /// sync helper for sending tx
+    pub fn sync_sign_submit_wait(
+        &mut self,
+        payload: TransactionPayload,
+    ) -> anyhow::Result<TransactionOnChainData> {
+        let rt = tokio::runtime::Builder::new_current_thread()
+          .enable_all()
+          .build()
+          .unwrap();
+
+        // Call the asynchronous connect method using the runtime.
+        Ok(rt.block_on(self.sign_submit_wait(payload))?)
+
     }
 
     /// Signs a transaction payload.
