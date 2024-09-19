@@ -1,6 +1,7 @@
 pub mod constants;
 pub mod generic_tx;
 pub mod publish;
+pub mod stream;
 pub mod submit_transaction;
 pub mod transfer;
 pub mod txs_cli;

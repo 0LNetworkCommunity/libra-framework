@@ -75,17 +75,23 @@ impl ValidatorTxs {
             } => {
                 if *retract {
                     ProofOfFeePofRetractBid {}
-                } else {
+                } else if let Some(b) = bid_pct {
                     // TODO: the u64 will truncate, but without rounding it will drop the last digit.
-                    let scaled_bid = (bid_pct * 1000.0).round() as u64; // scale to 10ˆ3.
+                    let scaled_bid = (b * 1000.0).round() as u64; // scale to 10ˆ3.
                     if scaled_bid > 1100 {
                         bail!(
-                            "a bid amount at 110.0% or above the epoch's reward, will be rejected"
-                        );
+                        "a bid amount at 110.0% or above the epoch's reward, will be rejected"
+                    );
                     }
                     ProofOfFeePofUpdateBid {
                         bid: scaled_bid,
-                        epoch_expiry: *epoch_expiry,
+                        epoch_expiry: *expiry,
+                    }
+                } else {
+                    // Default path is to update based on the expected net reward
+                    ProofOfFeePofUpdateBidNetReward {
+                        net_reward: *net_reward,
+                        epoch_expiry: *expiry,
                     }
                 }
             }

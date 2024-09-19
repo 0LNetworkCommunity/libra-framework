@@ -223,13 +223,12 @@ impl Sender {
         payload: TransactionPayload,
     ) -> anyhow::Result<TransactionOnChainData> {
         let rt = tokio::runtime::Builder::new_current_thread()
-          .enable_all()
-          .build()
-          .unwrap();
+            .enable_all()
+            .build()
+            .unwrap();
 
         // Call the asynchronous connect method using the runtime.
-        Ok(rt.block_on(self.sign_submit_wait(payload))?)
-
+        rt.block_on(self.sign_submit_wait(payload))
     }
 
     /// Signs a transaction payload.
