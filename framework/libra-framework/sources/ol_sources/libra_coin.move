@@ -334,7 +334,7 @@ module ol_framework::libra_coin {
     use diem_framework::aggregator_factory;
 
     #[test_only]
-    public fun initialize_for_test(diem_framework: &signer): (BurnCapability<LibraCoin>, MintCapability<LibraCoin>) {
+    public fun initialize_for_test(diem_framework: &signer): (BurnCapability<LibraCoin>, MintCapability<LibraCoin>) acquires FinalMint {
         aggregator_factory::initialize_aggregator_factory_for_test(diem_framework);
         let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<LibraCoin>(
             diem_framework,
@@ -343,7 +343,8 @@ module ol_framework::libra_coin {
             8, /* decimals */
             true, /* monitor_supply */
         );
-        // move_to(diem_framework, MintCapStore { mint_cap });
+
+        genesis_set_final_supply(diem_framework, 0);
 
         coin::destroy_freeze_cap(freeze_cap);
         (burn_cap, mint_cap)

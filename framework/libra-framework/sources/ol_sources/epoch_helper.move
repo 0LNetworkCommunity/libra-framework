@@ -19,7 +19,9 @@ module ol_framework::epoch_helper {
     }
 
     #[view]
-    public fun get_current_epoch():u64 acquires EpochHelper{
+    public fun get_current_epoch():u64 acquires EpochHelper {
+      if (!exists<EpochHelper>(@ol_framework)) return 0; // for unit tests
+
       let state = borrow_global<EpochHelper>(@ol_framework);
       state.epoch
     }
