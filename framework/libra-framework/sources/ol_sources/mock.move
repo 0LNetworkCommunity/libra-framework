@@ -162,7 +162,6 @@ module ol_framework::mock {
       libra_coin::extract_mint_cap(root)
     } else {
       coin_init_minimal(root)
-
     };
 
     if (!account::exists_at(addr)) {

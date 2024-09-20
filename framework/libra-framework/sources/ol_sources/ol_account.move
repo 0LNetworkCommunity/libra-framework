@@ -19,6 +19,7 @@ module ol_framework::ol_account {
     use ol_framework::cumulative_deposits;
     use ol_framework::community_wallet;
     use ol_framework::donor_voice;
+    use ol_framework::lockbox;
 
     use diem_std::debug::print;
 
@@ -299,6 +300,13 @@ module ol_framework::ol_account {
         coin
     }
 
+    /// User can call function that drips the lockbox amount.
+    // NOTE: dependency cycling issue. THis module needs to be the caller since libra_coin is a common dependency with lockbox.
+    fun self_drip_lockboxes(sender: &signer) acquires BurnTracker {
+      let coin = lockbox::withdraw_drip_one_duration_impl(sender, 1*12);
+      deposit_coins(signer::address_of(sender), coin);
+    }
+
     fun maybe_sender_creates_account(sender: &signer, maybe_new_user: address,
     amount: u64) {
       if (!account::exists_at(maybe_new_user)) {
@@ -418,7 +426,7 @@ module ol_framework::ol_account {
 
     }
 
-    //////// 0L ////////
+    //////// VIEW ////////
 
     #[view]
     /// return the LibraCoin balance as tuple (unlocked, total)
