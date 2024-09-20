@@ -90,7 +90,36 @@ module ol_framework::lockbox {
 
   // self drip
 
-  // balance
+  #[view]
+  /// balance for one duration's box
+  fun balance_duration(user_addr: address, duration: u64): u64 acquires SlowWalletV2 {
+    if (!exists<SlowWalletV2>(user_addr)) return 0;
+    let (found, idx) = idx_by_duration(user_addr, duration);
+    if (!found) {
+      return 0
+    };
+
+    let list = &borrow_global<SlowWalletV2>(user_addr).list;
+    let box = vector::borrow(list, idx);
+    libra_coin::value(&box.locked_coins)
+  }
+
+  #[view]
+  /// balance of all lockboxes
+  fun balance_all(user_addr: address): u64 acquires SlowWalletV2 {
+    let sum = 0;
+    if (!exists<SlowWalletV2>(user_addr)) return sum;
+    let list = &borrow_global<SlowWalletV2>(user_addr).list;
+    let len = vector::length(list);
+    let i = 0;
+    while (i < len) {
+        let el = vector::borrow(list, i);
+        sum = sum + libra_coin::value(&el.locked_coins);
+        i = i + 1;
+    };
+
+    sum
+  }
 
   // unlocked balance
 
@@ -131,6 +160,11 @@ module ol_framework::lockbox {
     let (found, idx) = idx_by_duration(bob_addr, 1*12);
     assert!(found, 7357002);
     assert!(idx == 0, 7357003);
+
+    let balance_one = balance_duration(bob_addr, 1*12);
+    assert!(balance_one == 23, 7357004);
+    let balanace_all = balance_all(bob_addr);
+    assert!(balanace_all == 23, 7357005);
   }
 
   #[test(framework = @0x1, bob_sig = @0x10002)]
@@ -146,14 +180,20 @@ module ol_framework::lockbox {
     assert!(found, 7357002);
     assert!(idx == 0, 7357003);
 
+    let bal = balance_all(bob_addr);
+    assert!(bal == 23, 7357004);
+
     let coin2 = ol_account::withdraw(bob_sig, 100);
 
     add_to_or_create_box(bob_sig, coin2, 1*12);
 
     // see if it exists
     let (found, idx) = idx_by_duration(bob_addr, 1*12);
-    assert!(found, 7357002);
-    assert!(idx == 0, 7357003);
+    assert!(found, 7357005);
+    assert!(idx == 0, 7357006);
+
+    let bal2 = balance_all(bob_addr);
+    assert!(bal2 == 123, 7357007);
   }
 
 }
