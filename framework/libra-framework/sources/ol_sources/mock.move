@@ -2,7 +2,6 @@
 #[test_only]
 module ol_framework::mock {
   use std::vector;
-  use std::signer;
   use diem_framework::coin;
   use diem_framework::block;
   use diem_framework::stake;
@@ -22,7 +21,7 @@ module ol_framework::mock {
   use ol_framework::ol_account;
   use ol_framework::epoch_helper;
   use ol_framework::musical_chairs;
-  use ol_framework::pledge_accounts;
+  use ol_framework::infra_escrow;
 
   // use diem_std::debug::print;
 
@@ -140,7 +139,7 @@ module ol_framework::mock {
     genesis::setup();
     genesis::test_end_genesis(root);
 
-    let mint_cap = init_coin_impl(root);
+    let mint_cap = coin_init_minimal(root);
     libra_coin::restore_mint_cap(root, mint_cap);
 
     assert!(!chain_status::is_genesis(), 0);
@@ -150,7 +149,7 @@ module ol_framework::mock {
   public fun ol_initialize_coin(root: &signer) {
     system_addresses::assert_ol(root);
 
-    let mint_cap = init_coin_impl(root);
+    let mint_cap = coin_init_minimal(root);
 
     libra_coin::restore_mint_cap(root, mint_cap);
   }
@@ -162,7 +161,8 @@ module ol_framework::mock {
     let mint_cap = if (coin::is_coin_initialized<LibraCoin>()) {
       libra_coin::extract_mint_cap(root)
     } else {
-      init_coin_impl(root)
+      coin_init_minimal(root)
+
     };
 
     if (!account::exists_at(addr)) {
@@ -186,7 +186,7 @@ module ol_framework::mock {
     let mint_cap = if (coin::is_coin_initialized<LibraCoin>()) {
       libra_coin::extract_mint_cap(root)
     } else {
-      init_coin_impl(root)
+      coin_init_minimal(root)
     };
 
     let vals = stake::get_current_validators();
@@ -209,7 +209,9 @@ module ol_framework::mock {
   }
 
   #[test_only]
-  fun init_coin_impl(root: &signer): coin::MintCapability<LibraCoin> {
+  // For unit test, we need to try to initialize the minimal state for
+  // user transactions. In the case of a unit tests which does a genesis with validators, this will not attempt to re-initialize the state.
+  fun coin_init_minimal(root: &signer): coin::MintCapability<LibraCoin> {
     system_addresses::assert_ol(root);
 
     let (burn_cap, mint_cap) = libra_coin::initialize_for_test(root);
@@ -232,8 +234,7 @@ module ol_framework::mock {
     ol_account::deposit_coins(bruce_address, fortune_mint);
 
     // Bruce funds infra escrow
-    let framework = signer::address_of(root);
-    pledge_accounts::user_pledge(&bruce, framework, 37_000_000_000);
+    infra_escrow::init_escrow_with_deposit(root, &bruce, 37_000_000_000);
 
     let supply_pre = libra_coin::supply();
     assert!(supply_pre == (initial_fees + fortune), ESUPPLY_MISMATCH);
@@ -392,5 +393,11 @@ module ol_framework::mock {
     assert!(clearing_percent == 1, 73570002);
     assert!(entry_fee == 1_000, 73570003);
     assert!(median_bid == 3, 73570004);
+  }
+
+
+  #[test(framework = @0x1, bob = @0x10002)]
+  fun meta_test_minimal_account_init(framework: &signer, bob: address) {
+    ol_mint_to(framework, bob, 123);
   }
 }
