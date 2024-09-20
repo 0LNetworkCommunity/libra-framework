@@ -165,6 +165,10 @@ module ol_framework::mock {
       init_coin_impl(root)
     };
 
+    if (!account::exists_at(addr)) {
+        ol_account::create_account(root, addr);
+    };
+
     let c = coin::test_mint(amount, &mint_cap);
     ol_account::deposit_coins(addr, c);
 
@@ -208,7 +212,7 @@ module ol_framework::mock {
   fun init_coin_impl(root: &signer): coin::MintCapability<LibraCoin> {
     system_addresses::assert_ol(root);
 
-    let (burn_cap, mint_cap) = libra_coin::initialize_for_test_without_aggregator_factory(root);
+    let (burn_cap, mint_cap) = libra_coin::initialize_for_test(root);
     coin::destroy_burn_cap(burn_cap);
 
     transaction_fee::initialize_fee_collection_and_distribution(root, 0);

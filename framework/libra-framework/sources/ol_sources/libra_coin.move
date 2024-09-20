@@ -69,6 +69,7 @@ module ol_framework::libra_coin {
 
         // Diem framework needs mint cap to mint coins to initial validators. This will be revoked once the validators
         // have been initialized.
+
         move_to(diem_framework, MintCapStore { mint_cap });
 
 
@@ -342,22 +343,10 @@ module ol_framework::libra_coin {
             8, /* decimals */
             true, /* monitor_supply */
         );
-        move_to(diem_framework, MintCapStore { mint_cap });
+        // move_to(diem_framework, MintCapStore { mint_cap });
 
         coin::destroy_freeze_cap(freeze_cap);
         (burn_cap, mint_cap)
     }
-    // This is particularly useful if the aggregator_factory is already initialized via another call path.
-    #[test_only]
-    public fun initialize_for_test_without_aggregator_factory(diem_framework: &signer): (BurnCapability<LibraCoin>, MintCapability<LibraCoin>) {
-                let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<LibraCoin>(
-            diem_framework,
-            string::utf8(b"LibraCoin"),
-            string::utf8(b"LIBRA"),
-            8, /* decimals */
-            true, /* monitor_supply */
-        );
-        coin::destroy_freeze_cap(freeze_cap);
-        (burn_cap, mint_cap)
-    }
+    // COMMIT NOTE: Deduplicate the initialization by lazy initializing aggregator_factory.move
 }
