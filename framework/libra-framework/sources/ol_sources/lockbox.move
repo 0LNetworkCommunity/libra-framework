@@ -18,6 +18,9 @@ module ol_framework::lockbox {
   /// No lockbox of this duration found
   const ENO_DURATION_FOUND: u64 = 2;
 
+  /// List of durations incomplete
+  const ELIST_INCOMPLETE: u64 = 3;
+
   const DEFAULT_LOCKS: vector<u64> = vector[1*12, 4*12, 8*12, 16*12, 20*12, 24*12, 28*12, 32*12];
 
   struct Lockbox has key, store {
@@ -54,7 +57,7 @@ module ol_framework::lockbox {
   }
 
   // add to lockbox
-  fun add_to_or_create_box(user: &signer, coin: Coin<LibraCoin>, duration_type: u64) acquires SlowWalletV2 {
+  public(friend) fun add_to_or_create_box(user: &signer, coin: Coin<LibraCoin>, duration_type: u64) acquires SlowWalletV2 {
     maybe_initialize(user);
 
     let user_addr = signer::address_of(user);
@@ -102,8 +105,24 @@ module ol_framework::lockbox {
     (false, 0)
   }
 
-  // self drip
-  public(friend) fun withdraw_drip_one_duration_impl(user: &signer, duration_type: u64): Coin<LibraCoin> acquires SlowWalletV2 {
+  fun get_list_durations_holding(user_addr: address): vector<u64> acquires SlowWalletV2 {
+    assert!(exists<SlowWalletV2>(user_addr), error::invalid_state(ENOT_INITIALIZED));
+    let list = &borrow_global<SlowWalletV2>(user_addr).list;
+    let all_durations = vector[];
+    let len = vector::length(list);
+    let i = 0;
+    while (i < len) {
+        let el = vector::borrow(list, i);
+        vector::push_back(&mut all_durations, el.duration_type);
+        i = i + 1;
+    };
+    assert!(vector::length(&all_durations) == len, error::invalid_state(ELIST_INCOMPLETE));
+
+    all_durations
+  }
+
+  // drip one duration
+  fun withdraw_drip_one_duration_impl(user: &signer, duration_type: u64): Coin<LibraCoin> acquires SlowWalletV2 {
     let user_addr = signer::address_of(user);
 
     let (found, idx) = idx_by_duration(user_addr, duration_type);
@@ -115,6 +134,31 @@ module ol_framework::lockbox {
     let drip_value = calc_daily_drip(box);
     libra_coin::extract(&mut box.locked_coins, drip_value)
 
+  }
+
+  /// drips all lockboxes, callable by ol_account
+  public(friend) fun withdraw_drip_all(user: &signer): Coin<LibraCoin> acquires SlowWalletV2 {
+    let list = &mut borrow_global_mut<SlowWalletV2>(signer::address_of(user)).list;
+
+    assert!(!vector::is_empty(list), 0);
+
+    let len = vector::length(list);
+    // extract the first coin available.
+    let first_box = vector::borrow_mut(list, 0);
+    let drip_value = calc_daily_drip(first_box);
+    let all_coins = libra_coin::extract(&mut first_box.locked_coins, drip_value);
+
+    if (len > 0) {
+      let i = 0;
+      while (i < len) {
+          let this_box = vector::borrow_mut(list, i);
+          let drip_value = calc_daily_drip(this_box);
+          let c = libra_coin::extract(&mut this_box.locked_coins, drip_value);
+          libra_coin::merge(&mut all_coins, c);
+          i = i + 1;
+      };
+    };
+    all_coins
   }
 
 
@@ -155,8 +199,8 @@ module ol_framework::lockbox {
   //////// UNIT TESTS ////////
   #[test_only]
   use diem_framework::coin;
-  #[test_only]
-  use diem_framework::debug::print;
+  // #[test_only]
+  // use diem_framework::debug::print;
 
 
   #[test_only]
@@ -168,13 +212,6 @@ module ol_framework::lockbox {
     c
   }
 
-
-  #[test]
-  fun test_iter() {
-    let t = vector::fold(DEFAULT_LOCKS, 0,  |r, e| r + e);
-    print(&t);
-    vector::for_each(DEFAULT_LOCKS, |e| print(&e));
-  }
 
   #[test(bob_sig = @0x10002)]
   #[expected_failure(abort_code = 196609, location = ol_framework::lockbox)]

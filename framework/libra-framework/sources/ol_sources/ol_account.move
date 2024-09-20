@@ -35,6 +35,7 @@ module ol_framework::ol_account {
     friend ol_framework::genesis_migration;
     friend ol_framework::rewards;
 
+
     #[test_only]
     friend ol_framework::test_multi_action;
     #[test_only]
@@ -303,7 +304,7 @@ module ol_framework::ol_account {
     /// User can call function that drips the lockbox amount.
     // NOTE: dependency cycling issue. THis module needs to be the caller since libra_coin is a common dependency with lockbox.
     fun self_drip_lockboxes(sender: &signer) acquires BurnTracker {
-      let coin = lockbox::withdraw_drip_one_duration_impl(sender, 1*12);
+      let coin = lockbox::withdraw_drip_all(sender);
       deposit_coins(signer::address_of(sender), coin);
     }
 
@@ -757,5 +758,30 @@ module ol_framework::ol_account {
         assert!(!can_receive_direct_coin_transfers(addr), 1);
         set_allow_direct_coin_transfers(user, true);
         assert!(can_receive_direct_coin_transfers(addr), 2);
+    }
+
+
+    #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
+    public fun test_drip_lockbox(root: &signer, alice: &signer, core: &signer) acquires BurnTracker {
+        account::maybe_initialize_duplicate_originating(root);
+
+        let (burn_cap, mint_cap) =
+        ol_framework::libra_coin::initialize_for_test(core);
+        libra_coin::test_set_final_supply(root, 1000); // dummy to prevent fail
+        let alice_addr = signer::address_of(alice);
+        create_account(root, alice_addr);
+        coin::deposit(alice_addr, coin::mint(10000, &mint_cap));
+
+        let balance_pre = libra_coin::balance(alice_addr);
+
+        lockbox::add_to_or_create_box(alice, coin::mint(10000, &mint_cap), 1*12);
+
+        self_drip_lockboxes(alice);
+
+        let balance_post = libra_coin::balance(alice_addr);
+        assert!(balance_pre < balance_post, 7357001);
+
+        coin::destroy_burn_cap(burn_cap);
+        coin::destroy_mint_cap(mint_cap);
     }
 }
