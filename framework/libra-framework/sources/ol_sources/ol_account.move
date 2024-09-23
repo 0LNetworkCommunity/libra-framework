@@ -304,8 +304,16 @@ module ol_framework::ol_account {
     /// User can call function that drips the lockbox amount.
     // NOTE: dependency cycling issue. THis module needs to be the caller since libra_coin is a common dependency with lockbox.
     fun self_drip_lockboxes(sender: &signer) acquires BurnTracker {
-      let coin = lockbox::withdraw_drip_all(sender);
-      deposit_coins(signer::address_of(sender), coin);
+      let addr = signer::address_of(sender);
+      // exit gracefully on no balance, this may be called on epoch_boundary
+      if (lockbox::balance_all(addr) > 0) {
+        let coin_opt = lockbox::withdraw_drip_all(sender);
+        if (option::is_some(&coin_opt)) {
+          let coins = option::extract(&mut coin_opt);
+          deposit_coins(addr, coins);
+        };
+        option::destroy_none(coin_opt);
+      }
     }
 
     fun maybe_sender_creates_account(sender: &signer, maybe_new_user: address,
@@ -762,7 +770,7 @@ module ol_framework::ol_account {
 
 
     #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
-    public fun test_drip_lockbox(root: &signer, alice: &signer, core: &signer) acquires BurnTracker {
+    public fun test_drip_one_lockbox(root: &signer, alice: &signer, core: &signer) acquires BurnTracker {
         account::maybe_initialize_duplicate_originating(root);
 
         let (burn_cap, mint_cap) =
@@ -780,6 +788,59 @@ module ol_framework::ol_account {
 
         let balance_post = libra_coin::balance(alice_addr);
         assert!(balance_pre < balance_post, 7357001);
+
+        coin::destroy_burn_cap(burn_cap);
+        coin::destroy_mint_cap(mint_cap);
+    }
+
+    #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
+    public fun test_drip_multi_lockbox(root: &signer, alice: &signer, core: &signer) acquires BurnTracker {
+        account::maybe_initialize_duplicate_originating(root);
+        ////
+        // settings specific to this example, boxes of 10000 at 12, 24, 36 months.
+        let drip_one_years = 27;
+        let drip_two_years = 13;
+        let drip_three_years = 9;
+        ////
+
+        let (burn_cap, mint_cap) =
+        ol_framework::libra_coin::initialize_for_test(core);
+        libra_coin::test_set_final_supply(root, 10000); // dummy to prevent fail
+        let alice_addr = signer::address_of(alice);
+        create_account(root, alice_addr);
+        coin::deposit(alice_addr, coin::mint(10000, &mint_cap));
+
+        let balance_pre = libra_coin::balance(alice_addr);
+
+        lockbox::add_to_or_create_box(alice, coin::mint(10000, &mint_cap), 1*12);
+
+        // DAY 1 drip with 1 box
+        self_drip_lockboxes(alice);
+
+        let balance_post_one = libra_coin::balance(alice_addr);
+        assert!(balance_pre < balance_post_one, 7357001);
+        assert!((balance_post_one-balance_pre) == drip_one_years, 7357002);
+
+        // DAY 2 drip with 1 box
+        self_drip_lockboxes(alice);
+
+        let balance_post_two = libra_coin::balance(alice_addr);
+        assert!(balance_post_one < balance_post_two, 7357003);
+        assert!((balance_post_two-balance_pre) == (2*drip_one_years), 7357004);
+        assert!((balance_post_two-balance_post_one) == drip_one_years, 7357005);
+
+        // more lockboxes of different durations
+        lockbox::add_to_or_create_box(alice, coin::mint(10000, &mint_cap), 2*12);
+        lockbox::add_to_or_create_box(alice, coin::mint(10000, &mint_cap), 3*12);
+
+        // DAY 3 drip with 3 boxes
+        self_drip_lockboxes(alice);
+
+        let balance_post_three = libra_coin::balance(alice_addr);
+        assert!(balance_post_two < balance_post_three, 7357006);
+
+        assert!((balance_post_three - balance_post_two) == (drip_one_years+drip_two_years+drip_three_years), 7357007);
+
 
         coin::destroy_burn_cap(burn_cap);
         coin::destroy_mint_cap(mint_cap);
