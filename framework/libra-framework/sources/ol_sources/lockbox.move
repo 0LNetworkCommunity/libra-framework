@@ -9,7 +9,7 @@ module ol_framework::lockbox {
   use ol_framework::libra_coin::{Self, LibraCoin};
   use ol_framework::date;
 
-  use diem_framework::debug::print;
+  // use diem_framework::debug::print;
 
   friend ol_framework::ol_account;
 
@@ -126,7 +126,7 @@ module ol_framework::lockbox {
   }
 
   // drip one duration
-  fun withdraw_drip_impl(user: &signer, idx: u64): Coin<LibraCoin> acquires SlowWalletV2 {
+  fun withdraw_drip_impl(user: &signer, idx: u64): Option<Coin<LibraCoin>> acquires SlowWalletV2 {
     let user_addr = signer::address_of(user);
 
     let list = &mut borrow_global_mut<SlowWalletV2>(user_addr).list;
@@ -136,13 +136,14 @@ module ol_framework::lockbox {
     assert!(start_today > box.last_unlock_timestamp, error::invalid_state(ENO_DOUBLE_DIPPING));
 
     let drip_value = calc_daily_drip(box);
-    print(&11111);
-    print(&box.duration_type);
-    print(&drip_value);
+
+    if (drip_value == 0) return option::none();
 
     box.last_unlock_timestamp = start_today;
 
-    libra_coin::extract(&mut box.locked_coins, drip_value)
+    let dripped_coins = libra_coin::extract(&mut box.locked_coins, drip_value);
+
+    option::some(dripped_coins)
   }
 
   /// drips all lockboxes, callable by ol_account
@@ -155,8 +156,14 @@ module ol_framework::lockbox {
     let len = vector::length(list);
     let i = 0;
     while (i < len) {
+        let box_coins_opt = withdraw_drip_impl(user, i);
+        if (option::is_none(&box_coins_opt)) {
+          option::destroy_none(box_coins_opt);
+          continue
+        };
 
-        let c = withdraw_drip_impl(user, i);
+        let c = option::extract(&mut box_coins_opt);
+        option::destroy_none(box_coins_opt);
 
         if (option::is_none(&coin_opt) ){
           option::fill(&mut coin_opt, c);
