@@ -771,6 +771,11 @@ module ol_framework::ol_account {
 
     #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
     public fun test_drip_one_lockbox(root: &signer, alice: &signer, core: &signer) acquires BurnTracker {
+        use diem_framework::timestamp;
+        timestamp::set_time_has_started_for_testing(root);
+        let then = 1727122878 * 1000000;
+        timestamp::update_global_time_for_test(then);
+
         account::maybe_initialize_duplicate_originating(root);
 
         let (burn_cap, mint_cap) =
@@ -795,7 +800,14 @@ module ol_framework::ol_account {
 
     #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
     public fun test_drip_multi_lockbox(root: &signer, alice: &signer, core: &signer) acquires BurnTracker {
+        use diem_framework::timestamp;
+        timestamp::set_time_has_started_for_testing(root);
+        let then = 1727122878 * 1000000;
+        timestamp::update_global_time_for_test(then);
+        let one_day_secs = 86400;
+
         account::maybe_initialize_duplicate_originating(root);
+
         ////
         // settings specific to this example, boxes of 10000 at 12, 24, 36 months.
         let drip_one_years = 27;
@@ -816,6 +828,8 @@ module ol_framework::ol_account {
 
         // DAY 1 drip with 1 box
         self_drip_lockboxes(alice);
+        timestamp::fast_forward_seconds(one_day_secs);
+
 
         let balance_post_one = libra_coin::balance(alice_addr);
         assert!(balance_pre < balance_post_one, 7357001);
@@ -823,6 +837,7 @@ module ol_framework::ol_account {
 
         // DAY 2 drip with 1 box
         self_drip_lockboxes(alice);
+        timestamp::fast_forward_seconds(one_day_secs);
 
         let balance_post_two = libra_coin::balance(alice_addr);
         assert!(balance_post_one < balance_post_two, 7357003);

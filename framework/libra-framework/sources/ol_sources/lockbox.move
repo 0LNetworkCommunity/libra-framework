@@ -7,6 +7,7 @@ module ol_framework::lockbox {
   use diem_framework::coin::Coin;
   use diem_std::math64;
   use ol_framework::libra_coin::{Self, LibraCoin};
+  use ol_framework::date;
 
   use diem_framework::debug::print;
 
@@ -20,6 +21,9 @@ module ol_framework::lockbox {
 
   /// List of durations incomplete
   const ELIST_INCOMPLETE: u64 = 3;
+
+  /// Tried to drip twice in one day, silly rabbit.
+  const ENO_DOUBLE_DIPPING: u64 = 4;
 
   const DEFAULT_LOCKS: vector<u64> = vector[1*12, 4*12, 8*12, 16*12, 20*12, 24*12, 28*12, 32*12];
 
@@ -127,10 +131,16 @@ module ol_framework::lockbox {
 
     let list = &mut borrow_global_mut<SlowWalletV2>(user_addr).list;
     let box = vector::borrow_mut(list, idx);
+    let (start_today, _) = date::start_of_day_seconds();
+    // abort if tried to drip on same unix day
+    assert!(start_today > box.last_unlock_timestamp, error::invalid_state(ENO_DOUBLE_DIPPING));
+
     let drip_value = calc_daily_drip(box);
     print(&11111);
     print(&box.duration_type);
     print(&drip_value);
+
+    box.last_unlock_timestamp = start_today;
 
     libra_coin::extract(&mut box.locked_coins, drip_value)
   }
