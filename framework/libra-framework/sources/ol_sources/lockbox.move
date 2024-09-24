@@ -22,8 +22,21 @@ module ol_framework::lockbox {
   /// List of durations incomplete
   const ELIST_INCOMPLETE: u64 = 3;
 
-  /// Tried to drip twice in one day, silly rabbit.
+  /// Tried to drip twice in one day, silly rabbit
   const ENO_DOUBLE_DIPPING: u64 = 4;
+
+  /// Destination does not have SlowWalletv2 initialized
+  const EDESTINATION_NOT_INIT: u64 = 5;
+
+  /// Can only shift to a later duration to drip slower
+  const EMUST_SHIFT_LATER: u64 = 6;
+
+  /// Total balances should never change when shifting coins to later duration.
+  const EBALANCES_CHANGED_ON_DELAY: u64 = 7;
+
+  /// The locked units for this box duration should have changed.
+  const EDURATION_UNITS_SHOULD_CHANGE: u64 = 8;
+
 
   const DEFAULT_LOCKS: vector<u64> = vector[1*12, 4*12, 8*12, 16*12, 20*12, 24*12, 28*12, 32*12];
 
@@ -39,18 +52,6 @@ module ol_framework::lockbox {
     list: vector<Lockbox>
   }
 
-  //////// GETTERS ////////
-  fun get_daily_pct(box: &Lockbox): FixedPoint32  {
-    let days = math64::mul_div(box.duration_type, 365, 12);
-    fixed_point32::create_from_rational(1, days)
-  }
-
-  fun calc_daily_drip(box: &Lockbox): u64  {
-    let daily_pct = get_daily_pct(box);
-    let value = libra_coin::value(&box.locked_coins);
-    fixed_point32::multiply_u64(value, daily_pct)
-  }
-
   // user init lockbox
   fun maybe_initialize(user: &signer) {
     if (!exists<SlowWalletV2>(signer::address_of(user))) {
@@ -60,69 +61,45 @@ module ol_framework::lockbox {
     }
   }
 
-  // add to lockbox
-  public(friend) fun add_to_or_create_box(user: &signer, coin: Coin<LibraCoin>, duration_type: u64) acquires SlowWalletV2 {
+  /// Creates a lockbox. The lockbox cannot be dropped, and so must be
+  /// stored in the same call.
+  public(friend) fun new(locked_coins: Coin<LibraCoin>, duration_type: u64): Lockbox {
+      Lockbox {
+        locked_coins,
+        duration_type,
+        lifetime_deposits: 0,
+        lifetime_unlocked: 0,
+        last_unlock_timestamp: 0,
+      }
+  }
+
+  /// helper to deposit coin: with a mutable borrow of a lockbox, add an owned coin
+  fun deposit(box: &mut Lockbox, more_coins: Coin<LibraCoin>) {
+    libra_coin::merge(&mut box.locked_coins, more_coins);
+  }
+
+
+  // Entrypoint for adding or creating a user box, when signed by holder of coins.
+  public(friend) fun add_to_or_create_box(user: &signer, locked_coins: Coin<LibraCoin>, duration_type: u64) acquires SlowWalletV2 {
     maybe_initialize(user);
 
     let user_addr = signer::address_of(user);
+    deposit_impl(user_addr, locked_coins, duration_type);
+  }
+
+  // private implementation for adding coins to a users lockbox, or creating it
+  fun deposit_impl(user_addr: address, locked_coins: Coin<LibraCoin>, duration_type: u64) acquires SlowWalletV2 {
     let (found, idx) = idx_by_duration(user_addr, duration_type);
 
     let list = &mut borrow_global_mut<SlowWalletV2>(user_addr).list;
 
     if (found) {
       let box = vector::borrow_mut(list, idx);
-      libra_coin::merge(&mut box.locked_coins, coin);
+      deposit(box, locked_coins);
     } else {
-      let new_lock = Lockbox {
-        locked_coins: coin,
-        duration_type,
-        lifetime_deposits: 0,
-        lifetime_unlocked: 0,
-        last_unlock_timestamp: 0,
-      };
-
-      vector::push_back(list, new_lock);
-
+      vector::push_back(list, new(locked_coins, duration_type));
     }
-
     // TODO: always sort the list by duration_type
-  }
-
-
-
-  #[view]
-  public fun idx_by_duration(user_addr: address, duration_type: u64): (bool, u64) acquires SlowWalletV2 {
-    assert!(exists<SlowWalletV2>(user_addr), error::invalid_state(ENOT_INITIALIZED));
-    let list = &borrow_global<SlowWalletV2>(user_addr).list;
-    // NOTE: there should only be one box per duration_type. TBD if there's a different use case to have duplicate lockbox durations.
-
-    let len = vector::length(list);
-    let i = 0;
-    while (i < len) {
-        let el = vector::borrow(list, i);
-        if (el.duration_type == duration_type) {
-            return (true, i)
-        };
-        i = i + 1;
-    };
-
-    (false, 0)
-  }
-
-  fun get_list_durations_holding(user_addr: address): vector<u64> acquires SlowWalletV2 {
-    assert!(exists<SlowWalletV2>(user_addr), error::invalid_state(ENOT_INITIALIZED));
-    let list = &borrow_global<SlowWalletV2>(user_addr).list;
-    let all_durations = vector[];
-    let len = vector::length(list);
-    let i = 0;
-    while (i < len) {
-        let el = vector::borrow(list, i);
-        vector::push_back(&mut all_durations, el.duration_type);
-        i = i + 1;
-    };
-    assert!(vector::length(&all_durations) == len, error::invalid_state(ELIST_INCOMPLETE));
-
-    all_durations
   }
 
   // drip one duration
@@ -178,7 +155,109 @@ module ol_framework::lockbox {
   }
 
 
+  // Shifts a lockbox's amount to a longer duration lockbox.
+  // the inverse is not possible (moving a longer lockbox to a shorter).
+  // a.k.a shift-back
+  fun delay_impl(user: &signer, duration_from: u64, duration_to: u64, units: u64) acquires SlowWalletV2 {
+    assert!(duration_to > duration_from, error::invalid_argument(EMUST_SHIFT_LATER));
 
+    let user_addr = signer::address_of(user);
+    assert!(exists<SlowWalletV2>(user_addr), error::invalid_state(ENOT_INITIALIZED));
+
+    let (found, idx) = idx_by_duration(user_addr, duration_from);
+    assert!(found, error::invalid_state(ENO_DURATION_FOUND));
+
+    let duration_from_balance_pre = balance_duration(user_addr, duration_from);
+    let duration_to_balance_pre = balance_duration(user_addr, duration_to);
+    let all_balances_pre = balance_all(user_addr);
+
+    // withdraw from one duration_from and send to duration_to
+    let list = &mut borrow_global_mut<SlowWalletV2>(user_addr).list;
+    let sender_box = vector::borrow_mut(list, idx);
+    let coins = libra_coin::extract(&mut sender_box.locked_coins, units);
+    deposit_impl(user_addr, coins, duration_to);
+
+    let all_balances_post = balance_all(user_addr);
+
+    // balances should never change
+    assert!(all_balances_pre == all_balances_post, error::invalid_state(EBALANCES_CHANGED_ON_DELAY));
+
+    // origin units should be LOWER
+    let duration_from_balance_post = balance_duration(user_addr, duration_from);
+    assert!(duration_from_balance_pre > duration_from_balance_post, error::invalid_state(EDURATION_UNITS_SHOULD_CHANGE));
+
+    // destination units should be GREATER
+    let duration_to_balance_post = balance_duration(user_addr, duration_to);
+    assert!( duration_to_balance_pre < duration_to_balance_post, error::invalid_state(EDURATION_UNITS_SHOULD_CHANGE));
+  }
+
+  // Sends a portion of a lockbox to a different account which has a slowwalletv2 enabled
+  // In this transfer we check that two users have accounts.
+  // We check that there's no possibility of transferring coins to boxes of
+  // different durations
+  fun checked_transfer_impl(from: &signer, to: address, duration_type: u64, units: u64) acquires SlowWalletV2 {
+    let from_addr = signer::address_of(from);
+    assert!(exists<SlowWalletV2>(from_addr), error::invalid_state(ENOT_INITIALIZED));
+    assert!(exists<SlowWalletV2>(to), error::invalid_state(EDESTINATION_NOT_INIT));
+
+    let (found, idx) = idx_by_duration(from_addr, duration_type);
+    assert!(found, error::invalid_state(ENO_DURATION_FOUND));
+
+    // borrow a box from the sender, and extract the coins
+    // then deposit in the box of the destination account account.
+    let list = &mut borrow_global_mut<SlowWalletV2>(from_addr).list;
+    let sender_box = vector::borrow_mut(list, idx);
+    let coins = libra_coin::extract(&mut sender_box.locked_coins, units);
+    deposit_impl(to, coins, duration_type);
+  }
+
+  ///////// GETTERS ////////
+
+  fun get_daily_pct(box: &Lockbox): FixedPoint32 {
+    let days = math64::mul_div(box.duration_type, 365, 12);
+    fixed_point32::create_from_rational(1, days)
+  }
+
+  fun calc_daily_drip(box: &Lockbox): u64  {
+    let daily_pct = get_daily_pct(box);
+    let value = libra_coin::value(&box.locked_coins);
+    fixed_point32::multiply_u64(value, daily_pct)
+  }
+
+  #[view]
+  public fun idx_by_duration(user_addr: address, duration_type: u64): (bool, u64) acquires SlowWalletV2 {
+    assert!(exists<SlowWalletV2>(user_addr), error::invalid_state(ENOT_INITIALIZED));
+    let list = &borrow_global<SlowWalletV2>(user_addr).list;
+    // NOTE: there should only be one box per duration_type. TBD if there's a different use case to have duplicate lockbox durations.
+
+    let len = vector::length(list);
+    let i = 0;
+    while (i < len) {
+        let el = vector::borrow(list, i);
+        if (el.duration_type == duration_type) {
+            return (true, i)
+        };
+        i = i + 1;
+    };
+
+    (false, 0)
+  }
+  #[view]
+  public fun get_list_durations_holding(user_addr: address): vector<u64> acquires SlowWalletV2 {
+    assert!(exists<SlowWalletV2>(user_addr), error::invalid_state(ENOT_INITIALIZED));
+    let list = &borrow_global<SlowWalletV2>(user_addr).list;
+    let all_durations = vector[];
+    let len = vector::length(list);
+    let i = 0;
+    while (i < len) {
+        let el = vector::borrow(list, i);
+        vector::push_back(&mut all_durations, el.duration_type);
+        i = i + 1;
+    };
+    assert!(vector::length(&all_durations) == len, error::invalid_state(ELIST_INCOMPLETE));
+
+    all_durations
+  }
 
   #[view]
   /// balance for one duration_type's box
