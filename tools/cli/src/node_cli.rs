@@ -47,7 +47,7 @@ fn find_a_config() -> anyhow::Result<PathBuf> {
     let d = global_config_dir();
     let val_file = d.join("validator.yaml");
 
-    let help = "If this is not what you expected explicitly set it with --config-file <path>";
+    let help = "If this is not what you expected explicitly set it with --config-path <path>";
 
     // we assume if this is set up as a validator that's the preferred profile
     // Check if validator.yaml exists; use it if found
