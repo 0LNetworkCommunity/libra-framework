@@ -1,13 +1,17 @@
 [package]
 name = "libra-txs"
-version = { workspace = true }
 
 # Workspace inherited keys
 authors = { workspace = true }
+version = { workspace = true }
 edition = { workspace = true }
 homepage = { workspace = true }
 license = { workspace = true }
+publish = { workspace = true }
 repository = { workspace = true }
+rust-version = { workspace = true }
+
+
 
 [dependencies]
 anyhow = { workspace = true }
@@ -27,7 +31,7 @@ libra-config = { workspace = true }
 libra-query = { workspace = true }
 libra-types = { workspace = true }
 libra-wallet = { workspace = true }
-serde = { version = "1.0.163", features = ["derive"] }
+serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
 tokio = { workspace = true }

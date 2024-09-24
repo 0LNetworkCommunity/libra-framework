@@ -1,14 +1,15 @@
 name: publish cli
 on:
   push:
+    branches:
+      # make binaries which may be ahead of releases to use in CI jobs
+      - "ci-bins*"
     tags: # run this also on release candidates
       - "[0-9]+.[0-9]+.[0-9]*"
-      # make binaries which may be ahead of releases to use in CI jobs
-      - "ci-bins"
+
 jobs:
   publish:
-    permissions:
-      write-all
+    permissions: write-all
     name: publish
     runs-on: ubuntu-latest
     steps:
@@ -29,11 +30,24 @@ jobs:
         # size and performance optimized binary with profile.cli
         run: cargo b --release -p libra
 
+      # release bin
       - name: libra publish
+        if: ${{ !contains(github.ref, 'ci-bins') }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: target/release/libra
           tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true
+
+      # CI bin
+      - name: libra publish
+        if: ${{ contains(github.ref, 'ci-bins') }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/release/libra
+          tag: ci-bins
           overwrite: true
           file_glob: true

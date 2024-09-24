@@ -423,7 +423,7 @@ module diem_framework::diem_governance {
     }
 
     #[view]
-    // is the proposal complete and executed?
+    // how many votes on the proposal
     public fun get_votes(proposal_id: u64): (u128, u128) {
       voting::get_votes<GovernanceProposal>(@diem_framework, proposal_id)
     }

@@ -1,10 +1,10 @@
 [package]
 name = "libra-cached-packages"
 description = "Builds framework packages for caching in builds and tests"
-version = { workspace = true }
 
 # Workspace inherited keys
 authors = { workspace = true }
+version = { workspace = true }
 edition = { workspace = true }
 homepage = { workspace = true }
 license = { workspace = true }
@@ -20,3 +20,7 @@ once_cell = { workspace = true }
 
 [build-dependencies]
 libra-framework = { workspace = true }
+
+[features]
+# hack. the framework sdk generated code inserts this feature
+fuzzing = []

@@ -34,8 +34,7 @@ async fn smoke_onboard_validator() -> anyhow::Result<()> {
         .expect("could not start libra smoke");
 
     let (_, _app_cfg) =
-        configure_validator::init_val_config_files(&mut s.swarm, 0, d.path().to_owned())
-            .await
+        configure_validator::init_val_config_files(&mut s.swarm, 0, Some(d.path().to_owned()))
             .expect("could not init validator config");
 
     // 1. CREATE THE ACCOUNT
