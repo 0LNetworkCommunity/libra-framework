@@ -78,7 +78,6 @@ module ol_framework::lockbox {
     libra_coin::merge(&mut box.locked_coins, more_coins);
   }
 
-
   // Entrypoint for adding or creating a user box, when signed by holder of coins.
   public(friend) fun add_to_or_create_box(user: &signer, locked_coins: Coin<LibraCoin>, duration_type: u64) acquires SlowWalletV2 {
     maybe_initialize(user);
@@ -161,6 +160,7 @@ module ol_framework::lockbox {
   fun delay_impl(user: &signer, duration_from: u64, duration_to: u64, units: u64) acquires SlowWalletV2 {
     assert!(duration_to > duration_from, error::invalid_argument(EMUST_SHIFT_LATER));
 
+
     let user_addr = signer::address_of(user);
     assert!(exists<SlowWalletV2>(user_addr), error::invalid_state(ENOT_INITIALIZED));
 
@@ -242,6 +242,7 @@ module ol_framework::lockbox {
 
     (false, 0)
   }
+
   #[view]
   public fun get_list_durations_holding(user_addr: address): vector<u64> acquires SlowWalletV2 {
     assert!(exists<SlowWalletV2>(user_addr), error::invalid_state(ENOT_INITIALIZED));
@@ -273,12 +274,9 @@ module ol_framework::lockbox {
     libra_coin::value(&box.locked_coins)
   }
 
-  #[view]
   /// balance of all lockboxes
-  public fun balance_all(user_addr: address): u64 acquires SlowWalletV2 {
+  fun balance_list(list: &vector<Lockbox>): u64 {
     let sum = 0;
-    if (!exists<SlowWalletV2>(user_addr)) return sum;
-    let list = &borrow_global<SlowWalletV2>(user_addr).list;
     let len = vector::length(list);
     let i = 0;
     while (i < len) {
@@ -288,6 +286,15 @@ module ol_framework::lockbox {
     };
 
     sum
+  }
+
+  #[view]
+  /// balance of all lockboxes
+  public fun balance_all(user_addr: address): u64 acquires SlowWalletV2 {
+    let sum = 0;
+    if (!exists<SlowWalletV2>(user_addr)) return sum;
+    let list = &borrow_global<SlowWalletV2>(user_addr).list;
+    balance_list(list)
   }
 
 
