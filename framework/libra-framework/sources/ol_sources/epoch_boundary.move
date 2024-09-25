@@ -228,7 +228,7 @@ module diem_framework::epoch_boundary {
   acquires BoundaryBit, BoundaryStatus {
     // must get root permission from governance.move
     system_addresses::assert_diem_framework(framework_signer);
-    let _ = can_trigger(); // will abort if false
+    let _ = assert_can_trigger(); // will abort if false
 
     // update the state and flip the Bit
     // note we are using the 0x1 address for BoundaryBit
@@ -266,15 +266,29 @@ module diem_framework::epoch_boundary {
 
 
   #[view]
-  /// check to see if the epoch BoundaryBit is true
-  public fun can_trigger(): bool acquires BoundaryBit {
+  /// API view for triggering which does not abort
+  public fun can_trigger():bool acquires BoundaryBit {
+    let state = borrow_global_mut<BoundaryBit>(@ol_framework);
+    if (state.ready &&
+      // greater than or equal because in case there is an epoch change due to an epoch bump in
+      // testnet Twin tools, or a rescue operation.
+      state.closing_epoch <= reconfiguration::get_current_epoch()){
+      return true
+    };
+
+    false
+  }
+
+  /// assert and abort with failure reason for trigger
+  fun assert_can_trigger(): bool acquires BoundaryBit {
     let state = borrow_global_mut<BoundaryBit>(@ol_framework);
     assert!(state.ready, ETRIGGER_NOT_READY);
-    // greater than, in case there is an epoch change due to an epoch bump in
+    // greater than or equal because in case there is an epoch change due to an epoch bump in
     // testnet Twin tools, or a rescue operation.
     assert!(state.closing_epoch <= reconfiguration::get_current_epoch(),
     ENOT_SAME_EPOCH);
-    true
+
+    can_trigger()
   }
 
   // This function handles the necessary migrations that occur at the epoch boundary
