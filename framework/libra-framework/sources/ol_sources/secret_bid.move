@@ -16,6 +16,8 @@ module ol_framework::secret_bid {
   use diem_framework::epoch_helper;
   use diem_framework::block;
 
+  use ol_framework::testnet;
+
   #[test_only]
   use diem_framework::account;
   // use diem_framework::debug::print;
@@ -33,13 +35,13 @@ module ol_framework::secret_bid {
 
 
   struct CommittedBid has key {
-    reveal_net_reward: u64,
+    reveal_entry_fee: u64,
     commit_digest: vector<u8>,
     commit_epoch: u64,
   }
 
   struct Bid has drop, copy {
-    net_reward: u64,
+    entry_fee: u64,
     epoch: u64,
   }
 
@@ -50,8 +52,15 @@ module ol_framework::secret_bid {
     // get the timestamp
     // NOTE: this might cause a dependency cycle issue in the future
     let remaining_secs = block::get_remaining_epoch_secs();
-    let five_mins = 60*5;
-    if (remaining_secs > five_mins) {
+    let window = if (testnet::is_testnet()) {
+      // ten secs
+      10
+    } else {
+      // five mins
+      60*5
+    };
+
+    if (remaining_secs > window) {
       return false
     };
     true
@@ -64,22 +73,22 @@ module ol_framework::secret_bid {
   public entry fun commit(user: &signer, digest: vector<u8>) acquires CommittedBid {
     // don't allow commiting within reveal window
     assert!(!in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
-    commit_net_reward_impl(user, digest);
+    commit_entry_fee_impl(user, digest);
   }
 
   // TODO: the public key could be the consensus_pubkey that is already registered for the validator. That way the operator does not need the root key for bidding strategy. Note it's a BLS key.
-  public entry fun reveal(user: &signer, pk: vector<u8>, net_reward: u64, signed_msg: vector<u8>) acquires CommittedBid {
+  public entry fun reveal(user: &signer, pk: vector<u8>, entry_fee: u64, signed_msg: vector<u8>) acquires CommittedBid {
     // don't allow commiting within reveal window
     assert!(in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
-    reveal_net_reward_impl(user, pk, net_reward, signed_msg);
+    reveal_entry_fee_impl(user, pk, entry_fee, signed_msg);
   }
 
   /// user transaction for setting a signed message with the bid
-  fun commit_net_reward_impl(user: &signer, digest: vector<u8>) acquires CommittedBid {
+  fun commit_entry_fee_impl(user: &signer, digest: vector<u8>) acquires CommittedBid {
 
     if (!is_init(signer::address_of(user))) {
       move_to<CommittedBid>(user, CommittedBid {
-        reveal_net_reward: 0,
+        reveal_entry_fee: 0,
         commit_digest: vector::empty(),
         commit_epoch: 0,
       });
@@ -93,9 +102,9 @@ module ol_framework::secret_bid {
   /// The hashing protocol which the client will be submitting commitments
   /// instead of a sequence number, we are using the signed message for hashing nonce, which would be private to the validator before the reveal.
   // TODO: should we also use a salt or overkill for these purposes?
-  fun make_hash(net_reward: u64, epoch: u64, signed_message: vector<u8>): vector<u8>{
+  fun make_hash(entry_fee: u64, epoch: u64, signed_message: vector<u8>): vector<u8>{
     let bid = Bid {
-      net_reward,
+      entry_fee,
       epoch,
     };
 
@@ -108,7 +117,7 @@ module ol_framework::secret_bid {
   /// user sends transaction  which takes the committed signed message
   /// submits the public key used to sign message, which we compare to the authentication key.
   /// we use the epoch as the sequence number, so that messages are different on each submission.
-  public fun reveal_net_reward_impl(user: &signer, pk: vector<u8>, net_reward: u64, signed_msg: vector<u8>) acquires CommittedBid {
+  public fun reveal_entry_fee_impl(user: &signer, pk: vector<u8>, entry_fee: u64, signed_msg: vector<u8>) acquires CommittedBid {
     assert!(is_init(signer::address_of(user)), error::invalid_state(ECOMMIT_BID_NOT_INITIALIZED));
 
     let state = borrow_global_mut<CommittedBid>(signer::address_of(user));
@@ -119,10 +128,10 @@ module ol_framework::secret_bid {
     assert!(epoch == state.commit_epoch, error::invalid_state(EMISMATCH_EPOCH));
 
 
-    let commitment = make_hash(net_reward, epoch, signed_msg);
+    let commitment = make_hash(entry_fee, epoch, signed_msg);
 
     let bid = Bid {
-      net_reward,
+      entry_fee,
       epoch,
     };
 
@@ -131,7 +140,7 @@ module ol_framework::secret_bid {
     assert!(comparator::is_equal(&comparator::compare(&commitment, &state.commit_digest)), error::invalid_argument(ECOMMIT_DIGEST_NOT_EQUAL));
 
 
-    state.reveal_net_reward = net_reward;
+    state.reveal_entry_fee = entry_fee;
   }
 
   fun check_signature(account_public_key_bytes: vector<u8>, signed_message_bytes: vector<u8>, bid_message: Bid) {
@@ -161,7 +170,7 @@ module ol_framework::secret_bid {
       let _alice = account::create_account_for_test(new_addr);
 
       let message = Bid {
-        net_reward: 0,
+        entry_fee: 0,
         epoch: 0,
       };
 
@@ -188,7 +197,7 @@ module ol_framework::secret_bid {
       let _alice = account::create_account_for_test(new_addr);
 
       let message = Bid {
-        net_reward: 0,
+        entry_fee: 0,
         epoch: 0,
       };
 
@@ -219,7 +228,7 @@ module ol_framework::secret_bid {
       let _alice = account::create_account_for_test(new_addr);
 
       let message = Bid {
-        net_reward: 0,
+        entry_fee: 0,
         epoch: 0,
       };
 
@@ -235,7 +244,7 @@ module ol_framework::secret_bid {
       let pk_bytes = ed25519::unvalidated_public_key_to_bytes(&new_pk_unvalidated);
 
       let message = Bid {
-        net_reward: 2, // incorrect
+        entry_fee: 2, // incorrect
         epoch: 0,
       };
 
@@ -256,20 +265,20 @@ module ol_framework::secret_bid {
       let new_auth_key = ed25519::unvalidated_public_key_to_authentication_key(&new_pk_unvalidated);
       let new_addr = from_bcs::to_address(new_auth_key);
       let alice = account::create_account_for_test(new_addr);
-      let net_reward = 5;
+      let entry_fee = 5;
       let epoch = 0;
 
       let message = Bid {
-        net_reward,
+        entry_fee,
         epoch,
       };
 
       let to_sig = ed25519::sign_struct(&new_sk, copy message);
       let sig_bytes = ed25519::signature_to_bytes(&to_sig);
-      let digest = make_hash(net_reward, epoch, sig_bytes);
+      let digest = make_hash(entry_fee, epoch, sig_bytes);
       // end set-up
 
-      commit_net_reward_impl(&alice, digest);
+      commit_entry_fee_impl(&alice, digest);
   }
 
   #[test(framework = @0x1)]
@@ -284,24 +293,24 @@ module ol_framework::secret_bid {
       let new_auth_key = ed25519::unvalidated_public_key_to_authentication_key(&new_pk_unvalidated);
       let new_addr = from_bcs::to_address(new_auth_key);
       let alice = account::create_account_for_test(new_addr);
-      let net_reward = 5;
+      let entry_fee = 5;
       let message = Bid {
-        net_reward,
+        entry_fee,
         epoch,
       };
 
       let to_sig = ed25519::sign_struct(&new_sk, copy message);
       let sig_bytes = ed25519::signature_to_bytes(&to_sig);
-      let digest = make_hash(net_reward, epoch, sig_bytes);
+      let digest = make_hash(entry_fee, epoch, sig_bytes);
       // end set-up
 
-      commit_net_reward_impl(&alice, digest);
+      commit_entry_fee_impl(&alice, digest);
 
       let pk_bytes = ed25519::unvalidated_public_key_to_bytes(&new_pk_unvalidated);
 
       check_signature(pk_bytes, sig_bytes, message);
 
-      reveal_net_reward_impl(&alice, pk_bytes, 5, sig_bytes);
+      reveal_entry_fee_impl(&alice, pk_bytes, 5, sig_bytes);
   }
 
   #[test(framework = @0x1)]
@@ -316,25 +325,25 @@ module ol_framework::secret_bid {
       let new_auth_key = ed25519::unvalidated_public_key_to_authentication_key(&new_pk_unvalidated);
       let new_addr = from_bcs::to_address(new_auth_key);
       let alice = account::create_account_for_test(new_addr);
-      let net_reward = 5;
+      let entry_fee = 5;
       let wrong_epoch = 100;
 
       let message = Bid {
-        net_reward,
+        entry_fee,
         epoch: wrong_epoch, // wrong epoch, we are at 1
       };
 
       let to_sig = ed25519::sign_struct(&new_sk, copy message);
       let sig_bytes = ed25519::signature_to_bytes(&to_sig);
-      let digest = make_hash(net_reward, epoch, sig_bytes);
+      let digest = make_hash(entry_fee, epoch, sig_bytes);
       // end set-up
 
-      commit_net_reward_impl(&alice, digest);
+      commit_entry_fee_impl(&alice, digest);
 
       let pk_bytes = ed25519::unvalidated_public_key_to_bytes(&new_pk_unvalidated);
 
       check_signature(pk_bytes, sig_bytes, message);
 
-      reveal_net_reward_impl(&alice, pk_bytes, 5, sig_bytes);
+      reveal_entry_fee_impl(&alice, pk_bytes, 5, sig_bytes);
   }
 }
