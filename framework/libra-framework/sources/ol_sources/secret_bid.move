@@ -36,6 +36,7 @@ module ol_framework::secret_bid {
 
   struct CommittedBid has key {
     reveal_entry_fee: u64,
+    entry_fee_history: vector<u64>, // keep previous 7 days bids
     commit_digest: vector<u8>,
     commit_epoch: u64,
   }
@@ -45,38 +46,14 @@ module ol_framework::secret_bid {
     epoch: u64,
   }
 
-  /// check if we are within the reveal window
-  /// do not allow bids within the reveal window
-  /// allow reveal transaction to be submitted
-  fun in_reveal_window(): bool {
-    // get the timestamp
-    // NOTE: this might cause a dependency cycle issue in the future
-    let remaining_secs = block::get_remaining_epoch_secs();
-    let window = if (testnet::is_testnet()) {
-      // ten secs
-      10
-    } else {
-      // five mins
-      60*5
-    };
-
-    if (remaining_secs > window) {
-      return false
-    };
-    true
-  }
-
-  fun is_init(account: address): bool {
-    exists<CommittedBid>(account)
-  }
-
+  /// Transaction entry function for committing bid
   public entry fun commit(user: &signer, digest: vector<u8>) acquires CommittedBid {
     // don't allow commiting within reveal window
     assert!(!in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
     commit_entry_fee_impl(user, digest);
   }
 
-  // TODO: the public key could be the consensus_pubkey that is already registered for the validator. That way the operator does not need the root key for bidding strategy. Note it's a BLS key.
+  /// Transaction entry function for revealing bid
   public entry fun reveal(user: &signer, pk: vector<u8>, entry_fee: u64, signed_msg: vector<u8>) acquires CommittedBid {
     // don't allow commiting within reveal window
     assert!(in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
@@ -89,14 +66,33 @@ module ol_framework::secret_bid {
     if (!is_init(signer::address_of(user))) {
       move_to<CommittedBid>(user, CommittedBid {
         reveal_entry_fee: 0,
+        entry_fee_history: vector::empty(),
         commit_digest: vector::empty(),
         commit_epoch: 0,
       });
     };
 
     let state = borrow_global_mut<CommittedBid>(signer::address_of(user));
+    // if first commit in an epoch reset the counters
+    maybe_reset_bids(state);
+
     state.commit_digest = digest;
-    state.commit_epoch = epoch_helper::get_current_epoch();
+  }
+
+  /// if this is the first commit in the epoch then we can reset bids
+  fun maybe_reset_bids(state: &mut CommittedBid) {
+    if (epoch_helper::get_current_epoch() > state.commit_epoch) {
+      // restart bidding
+      state.commit_epoch = epoch_helper::get_current_epoch();
+
+      vector::push_back(&mut state.entry_fee_history, state.reveal_entry_fee);
+
+      if (vector::length(&state.entry_fee_history) > 7) {
+        vector::trim(&mut state.entry_fee_history, 7);
+      };
+
+      state.reveal_entry_fee = 0;
+    }
   }
 
   /// The hashing protocol which the client will be submitting commitments
@@ -121,12 +117,9 @@ module ol_framework::secret_bid {
     assert!(is_init(signer::address_of(user)), error::invalid_state(ECOMMIT_BID_NOT_INITIALIZED));
 
     let state = borrow_global_mut<CommittedBid>(signer::address_of(user));
-
-
     // must reveal within the current epoch of the bid
     let epoch = epoch_helper::get_current_epoch();
     assert!(epoch == state.commit_epoch, error::invalid_state(EMISMATCH_EPOCH));
-
 
     let commitment = make_hash(entry_fee, epoch, signed_msg);
 
@@ -138,7 +131,6 @@ module ol_framework::secret_bid {
     check_signature(pk, signed_msg, bid);
 
     assert!(comparator::is_equal(&comparator::compare(&commitment, &state.commit_digest)), error::invalid_argument(ECOMMIT_DIGEST_NOT_EQUAL));
-
 
     state.reveal_entry_fee = entry_fee;
   }
@@ -156,6 +148,53 @@ module ol_framework::secret_bid {
     // let expected_auth_key = ed25519::unvalidated_public_key_to_authentication_key(&pubkey);
     // assert!(account::get_authentication_key(signer::address_of(user)) == expected_auth_key, error::invalid_argument(EWRONG_CURRENT_PUBLIC_KEY));
     ////////
+  }
+
+  ///////// GETTERS ////////
+
+  #[view]
+  /// check if we are within the reveal window
+  /// do not allow bids within the reveal window
+  /// allow reveal transaction to be submitted
+  public fun in_reveal_window(): bool {
+    // get the timestamp
+    // NOTE: using block:: might cause a dependency cycle issue in the future
+    let remaining_secs = block::get_remaining_epoch_secs();
+    let window = if (testnet::is_testnet()) {
+      // ten secs
+      10
+    } else {
+      // five mins
+      60*5
+    };
+
+    if (remaining_secs > window) {
+      return false
+    };
+    true
+  }
+
+  #[view]
+  public fun is_init(account: address): bool {
+    exists<CommittedBid>(account)
+  }
+
+  #[view]
+  /// get the current bid, and exclude bids that are stale
+  public fun current_revealed_bid(user: address): u64 acquires CommittedBid {
+    // if we are not in reveal window this information will be confusing.
+    assert!(in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
+
+    let state = borrow_global<CommittedBid>(user);
+    if (state.commit_epoch != epoch_helper::get_current_epoch()) return 0;
+    state.reveal_entry_fee
+  }
+
+  #[view]
+  /// get the current bid, and exclude bids that are stale
+  public fun historical_bids(user: address): vector<u64> acquires CommittedBid {
+    let state = borrow_global<CommittedBid>(user);
+    state.entry_fee_history
   }
 
   //////// TESTS ////////
