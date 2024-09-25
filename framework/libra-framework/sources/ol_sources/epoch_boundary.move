@@ -209,7 +209,7 @@ module diem_framework::epoch_boundary {
       // Just like a dream, you are not what you seem
       // Just like a prayer, no choice your voice can take me there...
       move_to(&framework_signer, BoundaryBit {
-        closing_epoch: closing_epoch,
+        closing_epoch,
         ready: true,
       })
     } else {
@@ -226,15 +226,12 @@ module diem_framework::epoch_boundary {
   /// by a user, would not cause a halt.
   public(friend) fun trigger_epoch(framework_signer: &signer)
   acquires BoundaryBit, BoundaryStatus {
-    // COMMIT NOTE: there's no reason to gate this, if th trigger is not
-    // ready (which only happens on Main and Stage, then user will get an error)
-    // assert!(!testnet::is_testnet(), ETRIGGER_EPOCH_MAINNET);
     // must get root permission from governance.move
     system_addresses::assert_diem_framework(framework_signer);
     let _ = can_trigger(); // will abort if false
 
     // update the state and flip the Bit
-    // note we are using the 0x0 address for BoundaryBit
+    // note we are using the 0x1 address for BoundaryBit
     let state = borrow_global_mut<BoundaryBit>(@ol_framework);
     state.ready = false;
 
@@ -252,6 +249,21 @@ module diem_framework::epoch_boundary {
     let state = borrow_global_mut<BoundaryBit>(@ol_framework);
     epoch_boundary(framework_signer, state.closing_epoch, 0);
   }
+
+  /// testnet helper to allow testnet root account to set flip the boundary bit
+  /// used for testing cli tools for polling and triggering
+  public entry fun smoke_enable_trigger(core_resource: &signer)
+  acquires BoundaryBit {
+    // cannot call this on mainnet
+    // only for smoke testing
+    assert!(testnet::is_not_mainnet(), ETRIGGER_EPOCH_UNAUTHORIZED);
+    // core_resource account is the the tesnet account with root permissions
+    system_addresses::assert_core_resource(core_resource);
+    let state = borrow_global_mut<BoundaryBit>(@ol_framework);
+    state.closing_epoch = reconfiguration::get_current_epoch();
+    state.ready = true;
+  }
+
 
   #[view]
   /// check to see if the epoch BoundaryBit is true
@@ -272,9 +284,10 @@ module diem_framework::epoch_boundary {
     migrations::execute(framework);
   }
 
-  // Contains all of 0L's business logic for end of epoch.
-  // This removed business logic from reconfiguration.move
-  // and prevents dependency cycling.
+  /// Contains all of 0L's business logic for end of epoch.
+  /// This removed business logic from reconfiguration.move
+  /// and prevents dependency cycling.
+  // TODO: do we need closing_epoch if there is no depedency cycling with reconfiguration::
   public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64, epoch_round: u64)
   acquires BoundaryStatus {
     print(&string::utf8(b"EPOCH BOUNDARY BEGINS"));
