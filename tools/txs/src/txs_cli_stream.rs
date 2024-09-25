@@ -11,7 +11,11 @@ use std::thread::{self, JoinHandle};
 #[derive(clap::Subcommand)]
 pub enum StreamTxs {
     /// Trigger the epoch boundary when available
-    EpochTickle,
+    EpochTickle {
+    /// optional, seconds delay between attempts, defaults to 60s
+    #[clap(short, long)]
+      delay: Option<u64>
+    },
     /// Submit secret PoF bids in background, and reveal when window opens
     PofBid,
 }
@@ -23,8 +27,9 @@ impl StreamTxs {
         let stream_service = listen(rx, send);
 
         match &self {
-            StreamTxs::EpochTickle => {
-                epoch_tickle_poll(tx, client);
+            StreamTxs::EpochTickle { delay } => {
+                println!("EpochTickle entry");
+                epoch_tickle_poll(tx, client, delay.unwrap_or(60));
             }
             _ => {
                 println!("no service specified");
@@ -46,7 +51,7 @@ pub(crate) fn listen(
     rx: Receiver<TransactionPayload>,
     send: Arc<Mutex<LibraSender>>,
 ) -> JoinHandle<()> {
-    
+
     thread::spawn(move || {
         let mut busy = false;
 
@@ -62,7 +67,6 @@ pub(crate) fn listen(
                             .sync_sign_submit_wait(payload)
                         {
                             Ok(r) => {
-                                dbg!(&r);
                                 busy = false;
                             }
                             Err(e) => {

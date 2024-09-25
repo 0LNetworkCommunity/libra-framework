@@ -97,8 +97,7 @@ pub async fn get_height(client: &Client) -> anyhow::Result<u64> {
 pub async fn epoch_over_can_trigger(client: &Client) -> anyhow::Result<bool> {
     let res = get_view(client, "0x1::epoch_boundary::can_trigger", None, None).await?;
 
-    let value: Vec<String> = serde_json::from_value(res)?;
-    let is_ready = value.first().unwrap().parse::<bool>()?;
+    let value: Vec<bool> = serde_json::from_value(res)?;
 
-    Ok(is_ready)
+    Ok(value[0])
 }

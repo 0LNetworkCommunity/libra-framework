@@ -222,7 +222,6 @@ impl TxsCli {
             Some(TxsSub::Stream(stream_txs)) => {
                 let arc_send = Arc::new(Mutex::new(send));
                 stream_txs.start(arc_send);
-                println!("stream here");
                 Ok(())
             }
             _ => {
