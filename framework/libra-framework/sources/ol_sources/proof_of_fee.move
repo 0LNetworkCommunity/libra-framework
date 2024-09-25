@@ -53,6 +53,9 @@ module ol_framework::proof_of_fee {
   const LONG_WINDOW: u64 = 10; // 10 epochs
   /// Margin for vouches
   const VOUCH_MARGIN: u64 = 2;
+  /// Maximum days before a bid expires.
+  const MAXIMUM_BID_EXPIRATION_EPOCHS: u64 = 30;
+
 
   //////// ERRORS /////////
   /// Not an active validator
@@ -75,6 +78,10 @@ module ol_framework::proof_of_fee {
   const EBID_EXPIRED: u64 = 16;
   /// not enough coin balance
   const ELOW_UNLOCKED_COIN_BALANCE: u64 = 17;
+  /// reward should never reach zero, very bad
+  const EWTF_WHY_IS_REWARD_ZERO: u64 = 18;
+  /// don't try to set a net reward greater than the max epoch reward
+  const ENET_REWARD_GREATER_THAN_REWARD: u64 = 19;
 
   // A struct on the validators account which indicates their
   // latest bid (and epoch)
@@ -645,7 +652,6 @@ module ol_framework::proof_of_fee {
 
   // get the current bid for a validator
   // CONSENSUS CRITICAL
-  // ALL EYES ON THIS
   // Proof of Fee returns the current bid of the validator during the auction for upcoming epoch seats.
   // returns (current bid, expiration epoch)
   #[view]
@@ -663,6 +669,31 @@ module ol_framework::proof_of_fee {
       return (0, pof.epoch_expiration)
     };
     return (0, 0)
+  }
+
+  #[view]
+  /// Convenience function to calculate the implied net reward
+  /// that the validator is seeking on a per-epoch basis.
+  /// @returns the unscaled coin value (not human readable) of the net reward
+  /// the user expects
+  public fun user_net_reward(node_addr: address): u64 acquires
+  ConsensusReward, ProofOfFeeAuction {
+    // get the user percentage rate
+
+    let (bid_pct, _) = current_bid(node_addr);
+    if (bid_pct == 0) return 0;
+    // get the current nominal reward
+    let (nominal_reward, _, _ , _) = get_consensus_reward();
+
+    let user_entry_fee = bid_pct * nominal_reward;
+    if (user_entry_fee == 0) return 0;
+    user_entry_fee = user_entry_fee / 10;
+
+    if (user_entry_fee < nominal_reward) {
+      return nominal_reward - user_entry_fee
+    };
+
+    return 0
   }
 
   #[view]
@@ -735,6 +766,47 @@ module ol_framework::proof_of_fee {
     pof.bid = bid;
   }
 
+  /// converts a current desired net_reward to the internal bid percentage
+  // Note: this uses the current epoch reward, which may not reflect the
+  // incoming epochs ajusted reward.
+  fun convert_net_reward_to_bid(net_reward: u64): u64 acquires ConsensusReward {
+    // if user wants zero, return 100% scaled
+    if (net_reward == 0) {
+      return 1000
+    };
+
+    let (nominal_reward, _, _ , _) = get_consensus_reward();
+    assert!(nominal_reward > 0, EWTF_WHY_IS_REWARD_ZERO);
+    assert!(net_reward <  nominal_reward, ENET_REWARD_GREATER_THAN_REWARD);
+
+    let pct_with_decimal = (net_reward * 10) / nominal_reward;
+
+    return pct_with_decimal
+  }
+
+  /// Instead of setting a bid with the internal variables of pct bid, we
+  /// allow the user to set their expected net_reward in an epoch
+  fun set_net_reward(account_sig: &signer, net_reward: u64, expiry_epoch: u64) acquires
+  ConsensusReward, ProofOfFeeAuction {
+    // double check the epoch expiry
+    let epoch_checked = check_epoch_expiry(expiry_epoch);
+    // convert to bid
+    let scaled_pct = convert_net_reward_to_bid(net_reward);
+    set_bid(account_sig, scaled_pct, epoch_checked);
+  }
+
+  /// check if the expiry is too far in the future
+  /// and if so, return what the maximum allowed would be.
+  /// if within range returns the provided epoch without change
+  /// @returns checked epoch for bid expiration
+  fun check_epoch_expiry(expiry_epoch: u64): u64 {
+    let this_epoch = epoch_helper::get_current_epoch();
+    if (expiry_epoch > MAXIMUM_BID_EXPIRATION_EPOCHS) {
+      return this_epoch + MAXIMUM_BID_EXPIRATION_EPOCHS
+    };
+    expiry_epoch
+  }
+
   /// Note that the validator will not be bidding on any future
   /// epochs if they retract their bid. The must set a new bid.
   fun retract_bid(account_sig: &signer) acquires ProofOfFeeAuction {
@@ -768,6 +840,14 @@ module ol_framework::proof_of_fee {
   public entry fun pof_update_bid(sender: &signer, bid: u64, epoch_expiry: u64) acquires ProofOfFeeAuction {
     // update the bid, initializes if not already.
     set_bid(sender, bid, epoch_expiry);
+  }
+
+  /// update the bid using estimated net reward instead of the internal bid variables
+  public entry fun pof_update_bid_net_reward(sender: &signer, net_reward: u64,
+  epoch_expiry: u64) acquires ProofOfFeeAuction, ConsensusReward {
+    let checked_epoch = check_epoch_expiry(epoch_expiry);
+    // update the bid, initializes if not already.
+    set_net_reward(sender, net_reward, checked_epoch);
   }
 
   /// retract bid
