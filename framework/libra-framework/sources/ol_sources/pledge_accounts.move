@@ -57,8 +57,8 @@
         friend ol_framework::genesis_migration;
         friend ol_framework::genesis;
 
-        #[test_only]
-        friend ol_framework::mock;
+        // #[test_only]
+        // friend ol_framework::mock;
 
         /// no policy at this address
         const ENO_BENEFICIARY_POLICY: u64 = 1;
@@ -107,9 +107,11 @@
         }
 
         public(friend) fun initialize(framework: &signer) {
-          move_to(framework, BeneficiaryRegistry {
-            list: vector::empty()
-          })
+          if (!exists<BeneficiaryRegistry>(@ol_framework)) {
+              move_to(framework, BeneficiaryRegistry {
+              list: vector::empty()
+            })
+          }
         }
         // beneficiary publishes a policy to their account.
         // NOTE: It cannot be modified after a first pledge is made!.
@@ -661,4 +663,5 @@
         // testnet::assert_testnet(vm);
         withdraw_from_one_pledge_account(bene, donor, amount)
       }
+
 }
