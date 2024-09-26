@@ -36,7 +36,7 @@ module ol_framework::test_boundary {
     let set = mock::genesis_n_vals(root, 10);
     mock::ol_initialize_coin_and_fund_vals(root, 500000, true);
     mock::mock_all_vals_good_performance(root);
-    mock::pof_default();
+    mock::pof_default(root);
     slow_wallet::slow_wallet_epoch_drip(root, 500000);
 
     // NOTE: for e2e epoch tests, we need to go into an operating epoch (not 0 or 1). Advance to epoch #2
@@ -99,7 +99,7 @@ module ol_framework::test_boundary {
     let vals = validator_universe::get_eligible_validators();
     assert!(vector::length(&vals) == 11, 7357001);
 
-    mock::mock_bids(&vals);
+    mock::mock_bids(&root, &vals);
 
     // MARLON HAS MANY FRIENDS
     vouch::test_set_buddies(@0x12345, vals);
@@ -181,8 +181,7 @@ module ol_framework::test_boundary {
   #[test(root = @ol_framework, alice = @0x1000a,  marlon_rando = @0x12345)]
   fun e2e_add_validator_sad_vouches(root: signer, alice: signer, marlon_rando: signer) {
     let _vals = common_test_setup(&root);
-    // this test requires prod settings, since we don't check vouches on testing
-    testnet::unset(&root);
+
     // generate credentials for validator registration
     ol_account::transfer(&alice, @0x12345, 200000);
     let (_sk, pk, pop) = stake::generate_identity();
@@ -192,7 +191,10 @@ module ol_framework::test_boundary {
 
     let vals = validator_universe::get_eligible_validators();
     assert!(vector::length(&vals) == 11, 7357000);
-    mock::mock_bids(&vals);
+
+    mock::mock_bids(&root, &vals);
+    // this test requires prod settings, since we don't check vouches on testing
+    testnet::unset(&root);
 
     mock::trigger_epoch(&root);
 
@@ -256,14 +258,14 @@ module ol_framework::test_boundary {
     // testing mainnet, so change the chainid
     testnet::unset(root);
     // test setup advances to epoch #2
-    let epoch = reconfiguration::get_current_epoch();
+    let epoch = reconfiguration::current_epoch();
     assert!(epoch == 2, 7357001);
     epoch_boundary::test_set_boundary_ready(root, epoch);
 
     // test the APIs as root
     timestamp::fast_forward_seconds(1); // needed for reconfig
     epoch_boundary::test_trigger(root);
-    let epoch = reconfiguration::get_current_epoch();
+    let epoch = reconfiguration::current_epoch();
     assert!(epoch == 3, 7357002);
 
     // scenario: marlon has no privileges
@@ -272,7 +274,7 @@ module ol_framework::test_boundary {
     epoch_boundary::test_set_boundary_ready(root, epoch);
     timestamp::fast_forward_seconds(1); // needed for reconfig
     diem_governance::trigger_epoch(marlon);
-    let epoch = reconfiguration::get_current_epoch();
+    let epoch = reconfiguration::current_epoch();
     assert!(epoch == 4, 7357003);
   }
 
@@ -343,14 +345,14 @@ module ol_framework::test_boundary {
     // testing mainnet, so change the chainid
     testnet::unset(root);
     // test setup advances to epoch #2
-    let epoch = reconfiguration::get_current_epoch();
+    let epoch = reconfiguration::current_epoch();
     assert!(epoch == 2, 7357001);
     epoch_boundary::test_set_boundary_ready(root, epoch);
 
     // test the APIs as root
     timestamp::fast_forward_seconds(1); // needed for reconfig
     epoch_boundary::test_trigger(root);
-    let epoch = reconfiguration::get_current_epoch();
+    let epoch = reconfiguration::current_epoch();
     assert!(epoch == 3, 7357002);
 
     // scenario: marlon has no privileges
@@ -378,7 +380,7 @@ module ol_framework::test_boundary {
   //   assert!(!features::epoch_trigger_enabled(), 101);
 
   //   // test setup advances to epoch #2
-  //   let epoch = reconfiguration::get_current_epoch();
+  //   let epoch = reconfiguration::current_epoch();
   //   assert!(epoch == 2, 7357001);
   //   epoch_boundary::test_set_boundary_ready(root, epoch);
 
@@ -388,7 +390,7 @@ module ol_framework::test_boundary {
   //   block::test_maybe_advance_epoch(root, 602000001, 602000000);
 
   //   // test epoch advances
-  //   let epoch = reconfiguration::get_current_epoch();
+  //   let epoch = reconfiguration::current_epoch();
   //   assert!(epoch == 3, 7357002);
 
   // }
@@ -399,7 +401,7 @@ module ol_framework::test_boundary {
     // testing mainnet, so change the chainid
     testnet::unset(root);
     // test setup advances to epoch #2
-    let epoch = reconfiguration::get_current_epoch();
+    let epoch = reconfiguration::current_epoch();
     assert!(epoch == 2, 7357001);
     epoch_boundary::test_set_boundary_ready(root, epoch);
 
@@ -409,12 +411,12 @@ module ol_framework::test_boundary {
     block::test_maybe_advance_epoch(root, 603000001, 602000000);
 
     // test epoch did not advance and needs to be triggered
-    let epoch = reconfiguration::get_current_epoch();
+    let epoch = reconfiguration::current_epoch();
     assert!(epoch == 2, 7357002);
 
     // test epoch can be triggered and advances
     epoch_boundary::test_trigger(root);
-    let epoch = reconfiguration::get_current_epoch();
+    let epoch = reconfiguration::current_epoch();
     assert!(epoch == 3, 7357002);
   }
 

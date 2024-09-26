@@ -67,6 +67,8 @@ module diem_framework::block {
         system_addresses::assert_diem_framework(diem_framework);
         assert!(epoch_interval_microsecs > 0, error::invalid_argument(EZERO_EPOCH_INTERVAL));
 
+        reconfiguration::set_epoch_interval(diem_framework, epoch_interval_microsecs);
+
         move_to<BlockResource>(
             diem_framework,
             BlockResource {
@@ -91,42 +93,14 @@ module diem_framework::block {
         let old_epoch_interval = block_resource.epoch_interval;
         block_resource.epoch_interval = new_epoch_interval;
 
+        reconfiguration::set_epoch_interval(diem_framework, new_epoch_interval);
+
         event::emit_event<UpdateEpochIntervalEvent>(
             &mut block_resource.update_epoch_interval_events,
             UpdateEpochIntervalEvent { old_epoch_interval, new_epoch_interval },
         );
     }
 
-    #[view]
-    /// Return epoch interval in seconds.
-    public fun get_epoch_interval_secs(): u64 acquires BlockResource {
-        borrow_global<BlockResource>(@diem_framework).epoch_interval / 1000000
-    }
-
-    #[view]
-    /// Return rough remaining seconds in epoch
-    public fun get_remaining_epoch_secs(): u64 acquires BlockResource {
-      let now = timestamp::now_seconds();
-      let last_epoch_secs = reconfiguration::last_reconfiguration_time() / 1000000;
-      let interval =  get_epoch_interval_secs();
-      if (now < last_epoch_secs) { // impossible underflow, some thign bad, or tests
-          return 0
-      };
-
-      let deadline = last_epoch_secs + interval;
-
-      if (now > deadline) { // we've run over the deadline
-        return 0
-      };
-
-      // belt and suspenders
-      if (deadline > now) {
-        return deadline - now
-      };
-
-      return 0
-
-    }
     /// Set the metadata for the current block.
     /// The runtime always runs this before executing the transactions in a block.
     fun block_prologue(
@@ -271,11 +245,11 @@ module diem_framework::block {
                 if (testnet::is_testnet()) {
                     epoch_boundary::epoch_boundary(
                         vm,
-                        reconfiguration::get_current_epoch(),
+                        reconfiguration::current_epoch(),
                         round
                     );
                 } else {
-                    epoch_boundary::enable_epoch_trigger(vm, reconfiguration::get_current_epoch());
+                    epoch_boundary::enable_epoch_trigger(vm, reconfiguration::current_epoch());
                 }
             }
     }

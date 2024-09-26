@@ -23,6 +23,7 @@ module ol_framework::proof_of_fee {
   use ol_framework::slow_wallet;
   use ol_framework::epoch_helper;
   use ol_framework::address_utils;
+  use ol_framework::secret_bid;
   //use diem_std::debug::print;
 
   friend diem_framework::genesis;
@@ -164,7 +165,7 @@ module ol_framework::proof_of_fee {
     vm: &signer,
     outgoing_compliant_set: &vector<address>,
     mc_set_size: u64 // musical chairs set size suggestion
-  ): (vector<address>, vector<address>, vector<address>, u64) acquires ProofOfFeeAuction, ConsensusReward {
+  ): (vector<address>, vector<address>, vector<address>, u64) acquires ConsensusReward {
     system_addresses::assert_ol(vm);
 
     let all_bidders = get_bidders(false);
@@ -256,7 +257,7 @@ module ol_framework::proof_of_fee {
 
 
   #[view]
-  public fun get_bidders(remove_unqualified: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
+  public fun get_bidders(remove_unqualified: bool): vector<address> acquires ConsensusReward {
     let eligible_validators = validator_universe::get_eligible_validators();
     let (bidders, _) = sort_vals_impl(&eligible_validators, remove_unqualified);
     bidders
@@ -264,12 +265,12 @@ module ol_framework::proof_of_fee {
 
   #[view]
   // same as get bidders, but returns the bid
-  public fun get_bidders_and_bids(remove_unqualified: bool): (vector<address>, vector<u64>) acquires ProofOfFeeAuction, ConsensusReward {
+  public fun get_bidders_and_bids(remove_unqualified: bool): (vector<address>, vector<u64>) acquires ConsensusReward {
     let eligible_validators = validator_universe::get_eligible_validators();
     sort_vals_impl(&eligible_validators, remove_unqualified)
   }
   // returns two lists: ordered bidder addresss and the list of bids bid
-  fun sort_vals_impl(eligible_validators: &vector<address>, remove_unqualified: bool): (vector<address>, vector<u64>) acquires ProofOfFeeAuction, ConsensusReward {
+  fun sort_vals_impl(eligible_validators: &vector<address>, remove_unqualified: bool): (vector<address>, vector<u64>) acquires ConsensusReward {
     // let eligible_validators = validator_universe::get_eligible_validators();
     let length = vector::length<address>(eligible_validators);
 
@@ -280,13 +281,13 @@ module ol_framework::proof_of_fee {
     while (k < length) {
       // TODO: Ensure that this address is an active validator
       let cur_address = *vector::borrow<address>(eligible_validators, k);
-      let (bid, _expire) = current_bid(cur_address);
+      let entry_fee = secret_bid::current_revealed_bid(cur_address);
       let (_, qualified) = audit_qualification(cur_address);
       if (remove_unqualified && !qualified) {
         k = k + 1;
         continue
       };
-      vector::push_back<u64>(&mut bids, bid);
+      vector::push_back<u64>(&mut bids, entry_fee);
       vector::push_back<address>(&mut filtered_vals, cur_address);
       k = k + 1;
     };
@@ -398,7 +399,7 @@ module ol_framework::proof_of_fee {
     final_set_size: u64,
     sorted_vals_by_bid: &vector<address>,
     proven_nodes: &vector<address>
-  ): (vector<address>, u64, u64, vector<address>, vector<address>) acquires ProofOfFeeAuction, ConsensusReward {
+  ): (vector<address>, u64, u64, vector<address>, vector<address>) acquires ConsensusReward {
     system_addresses::assert_ol(vm);
 
     // NOTE: this is duplicate work, but we are double checking we are getting a proper sort.
@@ -459,7 +460,7 @@ module ol_framework::proof_of_fee {
     // Find the clearing price which all validators will pay
     let lowest_bidder = vector::borrow(&proposed_validators, vector::length(&proposed_validators) - 1);
 
-    let (lowest_bid_pct, _) = current_bid(*lowest_bidder);
+    let lowest_bid_pct = secret_bid::current_revealed_bid(*lowest_bidder);
 
     // update the clearing price
     let cr = borrow_global_mut<ConsensusReward>(@ol_framework);
@@ -485,7 +486,7 @@ module ol_framework::proof_of_fee {
 
   #[view]
   /// consolidate all the checks for a validator to be seated
-  public fun audit_qualification(val: address): (vector<u64>, bool) acquires ProofOfFeeAuction, ConsensusReward {
+  public fun audit_qualification(val: address): (vector<u64>, bool) acquires  ConsensusReward {
 
       let errors = vector::empty<u64>();
       // Safety check: node has valid configs
@@ -502,12 +503,13 @@ module ol_framework::proof_of_fee {
       if (!is_above_thresh) vector::push_back(&mut errors, ETOO_FEW_VOUCHES); // 14
 
       // check if current BIDS are valid
-      let (bid_pct, expire) = current_bid(val);
-      if (bid_pct == 0) vector::push_back(&mut errors, EBID_IS_ZERO); // 15
+      let entry_fee_bid = secret_bid::current_revealed_bid(val);
+      if (entry_fee_bid == 0) vector::push_back(&mut errors, EBID_IS_ZERO); // 15
       // Skip if the bid expired. belt and suspenders, this should have been checked in the sorting above.
       // TODO: make this it's own function so it can be publicly callable, it's useful generally, and for debugging.
 
-      if (epoch_helper::get_current_epoch() > expire) vector::push_back(&mut errors, EBID_EXPIRED); // 16
+      let valid = secret_bid::has_valid_bid(val);
+      if (!valid) vector::push_back(&mut errors, EBID_EXPIRED); // 16
       // skip the user if they don't have sufficient UNLOCKED funds
       // or if the bid expired.
       let unlocked_coins = slow_wallet::unlocked_amount(val);
@@ -607,7 +609,7 @@ module ol_framework::proof_of_fee {
 
   /// find the median bid to push to history
   // this is needed for reward_thermostat
-  fun set_history(vm: &signer, proposed_validators: &vector<address>) acquires ProofOfFeeAuction, ConsensusReward {
+  fun set_history(vm: &signer, proposed_validators: &vector<address>) acquires ConsensusReward {
     system_addresses::assert_ol(vm);
 
     let median_bid = get_median(proposed_validators);
@@ -624,7 +626,7 @@ module ol_framework::proof_of_fee {
     };
   }
 
-  fun get_median(proposed_validators: &vector<address>):u64 acquires ProofOfFeeAuction {
+  fun get_median(proposed_validators: &vector<address>):u64 {
     // TODO: the list is sorted above, so
     // we assume the median is the middle element
     let len = vector::length(proposed_validators);
@@ -636,8 +638,8 @@ module ol_framework::proof_of_fee {
     } else {
       vector::borrow(proposed_validators, 0)
     };
-    let (median_bid, _) = current_bid(*median_bidder);
-    return median_bid
+
+    secret_bid::current_revealed_bid(*median_bidder)
   }
 
   //////////////// GETTERS ////////////////
@@ -654,22 +656,23 @@ module ol_framework::proof_of_fee {
   // CONSENSUS CRITICAL
   // Proof of Fee returns the current bid of the validator during the auction for upcoming epoch seats.
   // returns (current bid, expiration epoch)
-  #[view]
-  public fun current_bid(node_addr: address): (u64, u64) acquires ProofOfFeeAuction {
-    if (exists<ProofOfFeeAuction>(node_addr)) {
-      let pof = borrow_global<ProofOfFeeAuction>(node_addr);
-      let e = epoch_helper::get_current_epoch();
-      // check the expiration of the bid
-      // the bid is zero if it expires.
-      // The expiration epoch number is inclusive of the epoch.
-      // i.e. the bid expires on e + 1.
-      if (pof.epoch_expiration >= e || pof.epoch_expiration == 0) {
-        return (pof.bid, pof.epoch_expiration)
-      };
-      return (0, pof.epoch_expiration)
-    };
-    return (0, 0)
-  }
+  // #[view]
+  // public fun current_bid(node_addr: address): (u64, u64) acquires ProofOfFeeAuction {
+  //   if (exists<ProofOfFeeAuction>(node_addr)) {
+  //     let pof = borrow_global<ProofOfFeeAuction>(node_addr);
+  //     let e = epoch_helper::get_current_epoch();
+  //     // check the expiration of the bid
+  //     // the bid is zero if it expires.
+  //     // The expiration epoch number is inclusive of the epoch.
+  //     // i.e. the bid expires on e + 1.
+  //     if (pof.epoch_expiration >= e || pof.epoch_expiration == 0) {
+  //       return (pof.bid, pof.epoch_expiration)
+  //     };
+  //     return (0, pof.epoch_expiration)
+  //   };
+  //   return (0, 0)
+  // }
+
 
   #[view]
   /// Convenience function to calculate the implied net reward
@@ -677,23 +680,16 @@ module ol_framework::proof_of_fee {
   /// @returns the unscaled coin value (not human readable) of the net reward
   /// the user expects
   public fun user_net_reward(node_addr: address): u64 acquires
-  ConsensusReward, ProofOfFeeAuction {
+  ConsensusReward {
     // get the user percentage rate
 
-    let (bid_pct, _) = current_bid(node_addr);
-    if (bid_pct == 0) return 0;
+    let user_entry_fee = secret_bid::current_revealed_bid(node_addr);
+    if (user_entry_fee == 0) return 0;
     // get the current nominal reward
     let (nominal_reward, _, _ , _) = get_consensus_reward();
+    if (user_entry_fee >= nominal_reward) return 0;
 
-    let user_entry_fee = bid_pct * nominal_reward;
-    if (user_entry_fee == 0) return 0;
-    user_entry_fee = user_entry_fee / 10;
-
-    if (user_entry_fee < nominal_reward) {
-      return nominal_reward - user_entry_fee
-    };
-
-    return 0
+    return nominal_reward - user_entry_fee
   }
 
   #[view]
@@ -727,7 +723,7 @@ module ol_framework::proof_of_fee {
 
 
   // Get the top N validators by bid, this is FILTERED by default
-  public(friend) fun top_n_accounts(account: &signer, n: u64, unfiltered: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
+  public(friend) fun top_n_accounts(account: &signer, n: u64, unfiltered: bool): vector<address> acquires ConsensusReward {
     system_addresses::assert_vm(account);
 
     let eligible_validators = get_bidders(unfiltered);

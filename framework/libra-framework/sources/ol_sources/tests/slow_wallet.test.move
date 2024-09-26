@@ -238,7 +238,7 @@ module ol_framework::test_slow_wallet {
     // mock::ol_initialize_coin(&root);
     let a = vector::borrow(&set, 0);
     assert!(slow_wallet::unlocked_amount(*a) == 0, 735701);
-    epoch_boundary::ol_reconfigure_for_test(&root, reconfiguration::get_current_epoch(), block::get_current_block_height())
+    epoch_boundary::ol_reconfigure_for_test(&root, reconfiguration::current_epoch(), block::get_current_block_height())
 
   }
 

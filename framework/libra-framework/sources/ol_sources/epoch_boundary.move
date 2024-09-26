@@ -260,7 +260,7 @@ module diem_framework::epoch_boundary {
     assert!(state.ready, ETRIGGER_NOT_READY);
     // greater than, in case there is an epoch change due to an epoch bump in
     // testnet Twin tools, or a rescue operation.
-    assert!(state.closing_epoch <= reconfiguration::get_current_epoch(),
+    assert!(state.closing_epoch <= reconfiguration::current_epoch(),
     ENOT_SAME_EPOCH);
     true
   }

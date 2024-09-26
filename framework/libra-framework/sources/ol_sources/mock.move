@@ -23,6 +23,7 @@ module ol_framework::mock {
   use ol_framework::epoch_helper;
   use ol_framework::musical_chairs;
   use ol_framework::pledge_accounts;
+  use ol_framework::secret_bid;
 
   // use diem_std::debug::print;
 
@@ -94,43 +95,41 @@ module ol_framework::mock {
 
   //////// PROOF OF FEE ////////
   #[test_only]
-  public fun pof_default(): (vector<address>, vector<u64>, vector<u64>){
+  public fun pof_default(framework: &signer): (vector<address>, vector<u64>){
 
     let vals = stake::get_current_validators();
 
-    let (bids, expiry) = mock_bids(&vals);
+    let bids = mock_bids(framework, &vals);
 
     // make all validators pay auction fee
     // the clearing price in the fibonacci sequence is is 1
-    let (alice_bid, _) = proof_of_fee::current_bid(*vector::borrow(&vals, 0));
+    let alice_bid = secret_bid::get_bid_unchecked(*vector::borrow(&vals, 0));
+
     assert!(alice_bid == 1, 03);
-    (vals, bids, expiry)
+    (vals, bids)
   }
 
   #[test_only]
-  public fun mock_bids(vals: &vector<address>): (vector<u64>, vector<u64>) {
-    // system_addresses::assert_ol(vm);
+  public fun mock_bids(framework: &signer, vals: &vector<address>): vector<u64> {
     let bids = vector::empty<u64>();
-    let expiry = vector::empty<u64>();
     let i = 0;
     let prev = 0;
     let fib = 1;
     while (i < vector::length(vals)) {
-
-      vector::push_back(&mut expiry, 1000);
       let b = prev + fib;
       vector::push_back(&mut bids, b);
 
       let a = vector::borrow(vals, i);
       let sig = account::create_signer_for_test(*a);
       // initialize and set.
-      proof_of_fee::pof_update_bid(&sig, b, 1000);
+      let epoch = 0;
+      secret_bid::mock_revealed_bid(framework, &sig, b, epoch);
       prev = fib;
       fib = b;
       i = i + 1;
     };
 
-    (bids, expiry)
+    bids
   }
 
   use diem_framework::chain_status;
@@ -290,6 +289,8 @@ module ol_framework::mock {
 
       i = i + 1;
     };
+
+    pof_default(root);
   }
 
   #[test_only]
@@ -304,7 +305,7 @@ module ol_framework::mock {
   public fun trigger_epoch(root: &signer) {
     trigger_epoch_exactly_at(
       root,
-      reconfiguration::get_current_epoch(),
+      reconfiguration::current_epoch(),
       block::get_current_block_height()
     );
   }
@@ -314,11 +315,11 @@ module ol_framework::mock {
     epoch_boundary::ol_reconfigure_for_test(root, old_epoch, round);
 
     // always advance
-    assert!(reconfiguration::get_current_epoch() > old_epoch,
+    assert!(reconfiguration::current_epoch() > old_epoch,
     EDID_NOT_ADVANCE_EPOCH);
 
     // epoch helper should always be in sync
-    assert!(reconfiguration::get_current_epoch() == epoch_helper::get_current_epoch(), 666);
+    assert!(reconfiguration::current_epoch() == epoch_helper::get_current_epoch(), 666);
   }
 
 
@@ -345,7 +346,7 @@ module ol_framework::mock {
     // will assert! case_1
     mock_case_1(&root, *addr);
 
-    pof_default();
+    pof_default(&root);
 
     // will assert! case_4
     mock_case_4(&root, *addr);
@@ -378,7 +379,7 @@ module ol_framework::mock {
     // Scenario: unit testing that pof_default results in a usable auction
     let n_vals = 5;
     let vals = genesis_n_vals(root, n_vals); // need to include eve to init funds
-    pof_default();
+    pof_default(root);
 
     proof_of_fee::fill_seats_and_get_price(root, n_vals, &vals, &vals);
 

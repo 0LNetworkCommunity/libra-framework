@@ -14,16 +14,22 @@ module ol_framework::secret_bid {
   use diem_std::ed25519;
   use diem_std::comparator;
   use diem_framework::epoch_helper;
-  use diem_framework::block;
+  use diem_framework::reconfiguration;
 
   use ol_framework::testnet;
   use ol_framework::address_utils;
+
+  friend ol_framework::proof_of_fee;
 
   #[test_only]
   use diem_framework::account;
   #[test_only]
   use diem_framework::system_addresses;
 
+  #[test_only]
+  friend ol_framework::test_pof;
+  #[test_only]
+  friend ol_framework::mock;
 
   /// User bidding not initialized
   const ECOMMIT_BID_NOT_INITIALIZED: u64 = 1;
@@ -35,7 +41,8 @@ module ol_framework::secret_bid {
   const ENOT_IN_REVEAL_WINDOW: u64 = 4;
   /// Bad Alice, the reveal does not match the commit
   const ECOMMIT_DIGEST_NOT_EQUAL: u64 = 5;
-
+  /// Bid is for different epoch, expired
+  const EBID_EXPIRED: u64 = 6;
 
   struct CommittedBid has key {
     reveal_entry_fee: u64,
@@ -173,9 +180,9 @@ module ol_framework::secret_bid {
 
   ///////// GETTERS ////////
 
-  fun get_bid_unchecked(user: address): u64 acquires CommittedBid {
+  public(friend) fun get_bid_unchecked(user: address): u64 acquires CommittedBid {
     let state = borrow_global<CommittedBid>(user);
-    if (state.commit_epoch != epoch_helper::get_current_epoch()) return 0;
+
     state.reveal_entry_fee
   }
 
@@ -185,8 +192,7 @@ module ol_framework::secret_bid {
   /// allow reveal transaction to be submitted
   public fun in_reveal_window(): bool {
     // get the timestamp
-    // NOTE: using block:: might cause a dependency cycle issue in the future
-    let remaining_secs = block::get_remaining_epoch_secs();
+    let remaining_secs = reconfiguration::get_remaining_epoch_secs();
     let window = if (testnet::is_testnet()) {
       // ten secs
       10
@@ -209,10 +215,28 @@ module ol_framework::secret_bid {
   #[view]
   /// get the current bid, and exclude bids that are stale
   public fun current_revealed_bid(user: address): u64 acquires CommittedBid {
+    // // if we are not in reveal window this information will be confusing.
+    // assert!(in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
+
+    // let state = borrow_global<CommittedBid>(user);
+    // assert!(state.commit_epoch == epoch_helper::get_current_epoch(), error::invalid_state(EBID_EXPIRED));
+
+    // state.reveal_entry_fee
+    get_bid_unchecked(user)
+  }
+
+  /// does the user have a current bid
+  public(friend) fun has_valid_bid(user: address): bool acquires CommittedBid {
+    let state = borrow_global<CommittedBid>(user);
+    state.commit_epoch == epoch_helper::get_current_epoch()
+  }
+
+  /// will abort if bid is not valid
+  fun assert_valid_bid(user: address) acquires CommittedBid {
     // if we are not in reveal window this information will be confusing.
     assert!(in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
 
-    get_bid_unchecked(user)
+    assert!(has_valid_bid(user), error::invalid_state(EBID_EXPIRED));
   }
 
   #[view]
@@ -225,15 +249,23 @@ module ol_framework::secret_bid {
   //////// TESTS ////////
 
   #[test_only]
-  public(friend) fun mock_revealed_bid(framework: &signer, user: &signer, reveal_entry_fee: u64, commit_epoch: u64) {
+  public(friend) fun mock_revealed_bid(framework: &signer, user: &signer, reveal_entry_fee: u64, commit_epoch: u64) acquires CommittedBid {
     system_addresses::assert_diem_framework(framework);
     testnet::assert_testnet(framework);
-    move_to(user, CommittedBid {
-      reveal_entry_fee,
-      entry_fee_history: vector[0],
-      commit_digest: vector[0],
-      commit_epoch,
-    });
+    let user_addr = signer::address_of(user);
+    if (!exists<CommittedBid>(user_addr)) {
+      move_to(user, CommittedBid {
+        reveal_entry_fee,
+        entry_fee_history: vector[0],
+        commit_digest: vector[0],
+        commit_epoch,
+      });
+    } else {
+      let state = borrow_global_mut<CommittedBid>(user_addr);
+      state.reveal_entry_fee = reveal_entry_fee;
+      state.commit_epoch = commit_epoch;
+    }
+
   }
 
   #[test]
