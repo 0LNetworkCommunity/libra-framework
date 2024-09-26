@@ -17,10 +17,13 @@ module ol_framework::secret_bid {
   use diem_framework::block;
 
   use ol_framework::testnet;
+  use ol_framework::address_utils;
 
   #[test_only]
   use diem_framework::account;
-  // use diem_framework::debug::print;
+  #[test_only]
+  use diem_framework::system_addresses;
+
 
   /// User bidding not initialized
   const ECOMMIT_BID_NOT_INITIALIZED: u64 = 1;
@@ -150,7 +153,31 @@ module ol_framework::secret_bid {
     ////////
   }
 
+  /// populate the list of bids, but don't sort
+  fun get_bids_for_account_list(list: vector<address>): (vector<address>, vector<u64>) acquires CommittedBid {
+    let bids_vec = vector<u64>[];
+    vector::for_each_ref(&list, |el| {
+      let b = get_bid_unchecked(*el);
+      vector::push_back(&mut bids_vec, b);
+    });
+
+    (list, bids_vec)
+  }
+
+  /// get a sorted list of the addresses and their entry fee
+  public(friend) fun get_bids_by_account_sort_low_high(list: vector<address>): (vector<address>, vector<u64>) acquires CommittedBid {
+    let (addr, bids) = get_bids_for_account_list(list);
+    address_utils::sort_by_values(&mut addr, &mut bids);
+    (addr, bids)
+  }
+
   ///////// GETTERS ////////
+
+  fun get_bid_unchecked(user: address): u64 acquires CommittedBid {
+    let state = borrow_global<CommittedBid>(user);
+    if (state.commit_epoch != epoch_helper::get_current_epoch()) return 0;
+    state.reveal_entry_fee
+  }
 
   #[view]
   /// check if we are within the reveal window
@@ -185,9 +212,7 @@ module ol_framework::secret_bid {
     // if we are not in reveal window this information will be confusing.
     assert!(in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
 
-    let state = borrow_global<CommittedBid>(user);
-    if (state.commit_epoch != epoch_helper::get_current_epoch()) return 0;
-    state.reveal_entry_fee
+    get_bid_unchecked(user)
   }
 
   #[view]
@@ -198,6 +223,19 @@ module ol_framework::secret_bid {
   }
 
   //////// TESTS ////////
+
+  #[test_only]
+  public(friend) fun mock_revealed_bid(framework: &signer, user: &signer, reveal_entry_fee: u64, commit_epoch: u64) {
+    system_addresses::assert_diem_framework(framework);
+    testnet::assert_testnet(framework);
+    move_to(user, CommittedBid {
+      reveal_entry_fee,
+      entry_fee_history: vector[0],
+      commit_digest: vector[0],
+      commit_epoch,
+    });
+  }
+
   #[test]
   fun test_sign_message() {
       use diem_std::from_bcs;
@@ -384,5 +422,26 @@ module ol_framework::secret_bid {
       check_signature(pk_bytes, sig_bytes, message);
 
       reveal_entry_fee_impl(&alice, pk_bytes, 5, sig_bytes);
+  }
+
+  #[test(framework = @0x1, alice = @0x10001, bob = @0x10002, carol = @0x10003)]
+  fun test_sorting_secret_bids(framework: &signer, alice: &signer, bob: &signer, carol: &signer) acquires CommittedBid {
+    testnet::initialize(framework);
+
+    let this_epoch = 1;
+    epoch_helper::test_set_epoch(framework, this_epoch);
+
+    mock_revealed_bid(framework, alice, 234, this_epoch);
+    mock_revealed_bid(framework, bob, 1, this_epoch);
+    mock_revealed_bid(framework, carol, 30, this_epoch);
+
+    let (accounts, bids) = get_bids_for_account_list(vector[@0x10001, @0x10002, @0x10003]);
+
+    assert!(*vector::borrow(&accounts, 0) == @0x10001, 713570001);
+    assert!(*vector::borrow(&bids, 0) == 234, 713570002);
+
+    let (sorted_accounts, sorted_bids) = get_bids_by_account_sort_low_high(vector[@0x10001, @0x10002, @0x10003]);
+    assert!(*vector::borrow(&sorted_accounts, 0) == @0x10002, 713570003);
+    assert!(*vector::borrow(&sorted_bids, 0) == 1, 713570004);
   }
 }
