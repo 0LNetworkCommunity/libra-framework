@@ -32,6 +32,30 @@ module ol_framework::mock {
   /// coin supply does not match expected
   const ESUPPLY_MISMATCH: u64 = 3;
 
+  //////// STATIC ////////
+  /// The starting nominal reward. Also how much each validator will have in their starting balance; as a genesis reward at start of network
+  const EPOCH_REWARD: u64 = 1_000_000; /// 1M
+  /// What is the fixed and final supply of the network at start
+  const FINAL_SUPPLY_AT_GENESIS: u64 = 100_000_000_000; // 100B
+  /// Place some coins in the system transaction fee account;
+  const TX_FEE_ACCOUNT_AT_GENESIS: u64 =  500_000_000; // 500M
+  /// Tbe starting entry fee for validators
+  const ENTRY_FEE: u64 =  1_000; // 1K
+
+  #[test_only]
+  public fun default_epoch_reward(): u64 { EPOCH_REWARD }
+
+  #[test_only]
+  /// What is the fixed and final supply of the network at start
+  public fun default_final_supply_at_genesis(): u64 { FINAL_SUPPLY_AT_GENESIS }
+
+  #[test_only]
+  public fun default_tx_fee_account_at_genesis(): u64 { TX_FEE_ACCOUNT_AT_GENESIS }
+
+  #[test_only]
+  public fun default_entry_fee(): u64 { ENTRY_FEE }
+
+
   #[test_only]
   public fun reset_val_perf_one(vm: &signer, addr: address) {
     stake::mock_performance(vm, addr, 0, 0);
@@ -121,8 +145,8 @@ module ol_framework::mock {
 
       let a = vector::borrow(vals, i);
       let sig = account::create_signer_for_test(*a);
-      // initialize and set.
-      let epoch = 0;
+      // initialize and set. Will likely by epoch 0, genesis.
+      let epoch = epoch_helper::get_current_epoch();
       secret_bid::mock_revealed_bid(framework, &sig, b, epoch);
       prev = fib;
       fib = b;
@@ -216,14 +240,19 @@ module ol_framework::mock {
     let tx_fees = coin::test_mint(initial_fees, &mint_cap);
     transaction_fee::vm_pay_fee(root, @ol_framework, tx_fees);
 
-    // Forge Bruce
-    let fortune = 100_000_000_000;
+    let final_supply = 100_000_000_000;
+
+    // We need to simulate a long running network
+    // where the Infra Pledge account accumulated.
+    // Here we use Wayne Enterprises as the sole sponsor of the
+    // test environment Infra Pedge
     let bruce_address = @0xBA7;
     ol_account::create_account(root, bruce_address);
 
     // Bruce mints a fortune
+    // TODO: change this so that the FINAL supply does not exceed 100B
     let bruce = account::create_signer_for_test(bruce_address);
-    let fortune_mint = coin::test_mint(fortune, &mint_cap);
+    let fortune_mint = coin::test_mint(final_supply, &mint_cap);
     ol_account::deposit_coins(bruce_address, fortune_mint);
 
     // Bruce funds infra escrow
@@ -231,7 +260,7 @@ module ol_framework::mock {
     pledge_accounts::user_pledge(&bruce, framework, 37_000_000_000);
 
     let supply_pre = libra_coin::supply();
-    assert!(supply_pre == (initial_fees + fortune), ESUPPLY_MISMATCH);
+    assert!(supply_pre == (initial_fees + final_supply), ESUPPLY_MISMATCH);
     libra_coin::test_set_final_supply(root, initial_fees);
 
     mint_cap
@@ -365,12 +394,10 @@ module ol_framework::mock {
 
     let n_vals = 5;
     let _vals = genesis_n_vals(root, n_vals); // need to include eve to init funds
-    let genesis_mint = 1_000_000;
-    ol_initialize_coin_and_fund_vals(root, genesis_mint, true);
+
+    ol_initialize_coin_and_fund_vals(root, EPOCH_REWARD, true);
     let supply_pre = libra_coin::supply();
-    let bruce_fortune = 100_000_000_000;
-    let mocked_tx_fees = 5_000_000 * 100;
-    assert!(supply_pre == bruce_fortune + mocked_tx_fees + (n_vals * genesis_mint), 73570001);
+    assert!(supply_pre == FINAL_SUPPLY_AT_GENESIS + TX_FEE_ACCOUNT_AT_GENESIS + (n_vals * EPOCH_REWARD), 73570001);
   }
 
 
@@ -385,9 +412,9 @@ module ol_framework::mock {
 
     let (nominal_reward, entry_fee, clearing_percent, median_bid ) = proof_of_fee::get_consensus_reward();
 
-    assert!(nominal_reward == 1_000_000, 73570001);
+    assert!(nominal_reward == EPOCH_REWARD, 73570001);
     assert!(clearing_percent == 1, 73570002);
-    assert!(entry_fee == 1_000, 73570003);
+    assert!(entry_fee == ENTRY_FEE, 73570003);
     assert!(median_bid == 3, 73570004);
   }
 }

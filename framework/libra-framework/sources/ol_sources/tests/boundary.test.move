@@ -23,7 +23,7 @@ module ol_framework::test_boundary {
   use ol_framework::block;
   use ol_framework::ol_account;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   const Alice: address = @0x1000a;
   const Bob: address = @0x1000b;
@@ -80,17 +80,20 @@ module ol_framework::test_boundary {
 
     // check subsidy for new rewards and fees collected
     // fees collected = 10 * 1_000_000 + 10 * 1_000 = 10_010_000
-    print(&transaction_fee::system_fees_collected());
     assert!(transaction_fee::system_fees_collected() == 10_010_000, 7357006);
   }
 
 
   #[test(root = @ol_framework, alice = @0x1000a,  marlon_rando = @0x12345)]
   fun e2e_add_validator_happy(root: signer, alice: signer, marlon_rando: signer) {
+    let epoch_reward = 1_000_000;
+    let entry_fee = 1_000;
+    let marlon_starting_balance = 200_000;
+
     let initial_vals = common_test_setup(&root);
 
     // generate credentials for validator registration
-    ol_account::transfer(&alice, @0x12345, 200000);
+    ol_account::transfer(&alice, @0x12345, marlon_starting_balance);
     let (_sk, pk, pop) = stake::generate_identity();
     let pk_bytes = bls12381::public_key_to_bytes(&pk);
     let pop_bytes = bls12381::proof_of_possession_to_bytes(&pop);
@@ -132,20 +135,23 @@ module ol_framework::test_boundary {
     while (i < vector::length(&initial_vals)) {
       let (_unlocked, current) = ol_account::balance(*vector::borrow(&initial_vals, i));
       let previous = *vector::borrow(&balances, i);
-      assert!(current == (previous + 1_000_000 - 1_000), 7357007);
+      assert!(current == (previous + epoch_reward - entry_fee), 7357007);
       i = i + 1;
     };
 
     // check Marlon's balance: 200_000 - 1_000 = 199_000
     let (_unlocked, marlon_balance) = ol_account::balance(@0x12345);
-    assert!(marlon_balance == 199_000, 7357008);
+    assert!(marlon_balance == (marlon_starting_balance - entry_fee), 7357008);
 
     // check subsidy for new rewards and fees collected
-    // fees collected = 11 * 1_000_000 + 11 * 1_000 = 11_011_000
+    // fees collected = (11 * 1_000_000) + (11 * 1_000) = 11_011_000
+    assert!((11* epoch_reward) + (11 * entry_fee) == 11_011_000, 7357009);
     assert!(transaction_fee::system_fees_collected() == 11_011_000, 7357009);
 
     // another epoch and everyone is compliant as well
     mock::mock_all_vals_good_performance(&root);
+    mock::mock_bids(&root, &vals);
+
     mock::trigger_epoch(&root);
 
     assert!(epoch_boundary::get_seats_offered() == 12, 7357010);
@@ -157,13 +163,13 @@ module ol_framework::test_boundary {
     while (i < vector::length(&initial_vals)) {
       let (_unlocked, current) = ol_account::balance(*vector::borrow(&initial_vals, i));
       let previous = *vector::borrow(&balances, i);
-      assert!(current == (previous + 2_000_000 - 2_000), 7357012);
+      assert!(current == (previous + (2*epoch_reward) - (2*entry_fee)), 7357012);
       i = i + 1;
     };
 
-    // check Marlon's balance: 200_000 + 1_000_000 - 2_000 = 1_198_000
+    // check Marlon's balance = 1_000_000 + 200_000 - 2_000 = 1_198_000
     let (_unlocked, marlon_balance) = ol_account::balance(@0x12345);
-    assert!(marlon_balance == 1_198_000, 7357013);
+    assert!(marlon_balance == (epoch_reward + 198_000), 7357013);
 
     // CHECK BURNT FEES
 

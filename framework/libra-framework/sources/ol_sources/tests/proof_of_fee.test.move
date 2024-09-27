@@ -73,7 +73,6 @@ module ol_framework::test_pof {
 
   #[test(root = @ol_framework)]
   fun audit_happy (root: signer) {
-    use ol_framework::epoch_helper;
 
     let set = mock::genesis_n_vals(&root, 4);
     mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
@@ -85,7 +84,7 @@ module ol_framework::test_pof {
 
     mock_good_bid(&root, &alice);
 
-    let (err, pass) = proof_of_fee::audit_qualification(alice);
+    let (_err, pass) = proof_of_fee::audit_qualification(alice);
     assert!(pass, 1006);
   }
 
