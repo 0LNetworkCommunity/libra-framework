@@ -1,7 +1,7 @@
 
 #[test_only]
 module ol_framework::test_burn {
-  use ol_framework::mock::{Self, default_epoch_reward, default_final_supply_at_genesis, default_tx_fee_account_at_genesis, default_entry_fee };
+  use ol_framework::mock::{Self, default_epoch_reward, default_final_supply_at_genesis, default_entry_fee };
   use ol_framework::libra_coin;
   use ol_framework::ol_account;
   use ol_framework::match_index;
@@ -16,7 +16,7 @@ module ol_framework::test_burn {
   use std::option;
   use std::fixed_point32;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   #[test(root = @ol_framework, alice = @0x1000a)]
   fun burn_reduces_supply(root: &signer, alice: &signer) {
@@ -192,54 +192,70 @@ module ol_framework::test_burn {
     assert!(balance == eve_donation_to_A, 7357006);
   }
 
+
   #[test(root = @ol_framework)]
   fun epoch_fees_burn(root: &signer) {
     // Scenario:
-    // the network starts.
-    // we mock some tx fees going into the collection
-    // the epoch turns and the fee account should be empty
+    // the network starts
+    // we mock some tx fees going into the fee account
+    // validators have ZERO balance, so they cannot pay into tx fee account
+    // the validators perform correctly, and the epoch changes (they
+    // are allowed to continue because of failover rules)
+    // Expected Outcome:
+    // The fees from the previous epoch were used to pay validators.
+    // however there was an excess amount in Tx account, and this amount
+    // would be burned.
+
     // and the supply should be lower
 
     let n_vals = 5;
-    let epoch_reward = default_epoch_reward(); // 1 coin per validator
-    let genesis_reward_per_val = epoch_reward; // just to be explicit
-    let supply_pre = libra_coin::supply();
-    let genesis_supply = default_final_supply_at_genesis();
-    let mocked_tx_fees = default_tx_fee_account_at_genesis();
+    let genesis_balance_per_val = 0; // simplify calcs, no validators funded at start
+
+    let exact_amount_for_reward = n_vals * default_epoch_reward();
+    let excess_in_tx_fee_account = 30_000_000;
+
+    let starting_tx_fees = excess_in_tx_fee_account + exact_amount_for_reward;
 
     let _vals = mock::genesis_n_vals(root, n_vals);
-    mock::ol_initialize_coin_and_fund_vals(root, genesis_reward_per_val, true);
+    mock::ol_initialize_coin_and_fund_vals(root, genesis_balance_per_val, true);
+    let supply_pre = libra_coin::supply();
+    mock::mock_tx_fees_in_account(root, starting_tx_fees);
 
-    assert!(supply_pre == mocked_tx_fees + genesis_supply + (n_vals * genesis_reward_per_val), 73570001);
+    // supply at genesis always be equal to final supply
+    assert!(supply_pre == default_final_supply_at_genesis(), 73570001);
+
     // The only fees in the tX fee account at genesis should be what was mocked by default
-    let fees = transaction_fee::system_fees_collected();
-    assert!(fees == mocked_tx_fees, 73570002);
+    assert!(transaction_fee::system_fees_collected() == starting_tx_fees, 73570002);
+
+    // no change in supply, since these coins came from infra pledge
+    assert!(libra_coin::supply() == default_final_supply_at_genesis(), 73570001);
 
     // start at epoch 1. NOTE Validators WILL GET PAID FOR EPOCH 1
+    // but they have no balance to contribute to next epochs funds (for simplicity of calcs)
     mock::trigger_epoch(root);
     // NOTE: under 1000 rounds we don't evaluate performance of validators
 
-    let fees = transaction_fee::system_fees_collected();
-    print(&fees);
-    // There should be only entry fee left in tx fee wallet
-    assert!(fees == (5 * default_entry_fee()), 73570003);
-
-    let validator_rewards = epoch_reward * n_vals;
-
-    // of the initial supply,
-    // we expect to burn everything which was in the TX FEEs AFTER PAYING VALIDATOR REWARDS
-    let amount_burned_excess_tx_account = mocked_tx_fees - validator_rewards;
-
-    // So the current supply should be lower,
-    // The the old supply was reduced by what was burned (the excess in tx bucket)
-
+    // supply should be lower
     let supply_post = libra_coin::supply();
-    assert!(supply_post == supply_pre - amount_burned_excess_tx_account, 73570003);
 
-    // this ALSO means that the only supply left in this example
-    // is the rewards to validators from genesis, and from epoch 1
-    // and the starting supply of the network
-    assert!(supply_post == validator_rewards + (n_vals * genesis_reward_per_val) + genesis_supply, 73570003);
+    let fees_account_balance = transaction_fee::system_fees_collected();
+    let infra_pledge_subsidy = n_vals * default_epoch_reward();
+    let entry_fees_total = n_vals * default_entry_fee();
+
+    assert!(supply_post < default_final_supply_at_genesis(), 73570001);
+
+
+    // Now for the follwing epoch the tx fee account should have:
+    // a) the entry fees of validators (they can afford it now)
+    // b) the infra pledge subsidy * vals
+
+    assert!(fees_account_balance == (infra_pledge_subsidy +  entry_fees_total), 73570003);
+
+    // In this scenario
+    // we expect to burn everything which was in the txs after paying validator rewards.
+    // we funded the tx fee account with an excess, beyond what was needed for the validator reward.
+
+    assert!(supply_post == supply_pre - excess_in_tx_fee_account, 73570003);
   }
 
 

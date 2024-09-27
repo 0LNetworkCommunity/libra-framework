@@ -45,6 +45,8 @@ module diem_framework::epoch_boundary {
   const ETRIGGER_NOT_READY: u64 = 2;
   /// Epoch number mismatch
   const ENOT_SAME_EPOCH: u64 = 3;
+  /// Supply should not change until burns
+  const ESUPPLY_SHOULD_NOT_CHANGE: u64 = 4;
 
   /////// Constants ////////
   /// How many PoF baseline rewards to we set aside for the miners.
@@ -277,7 +279,11 @@ module diem_framework::epoch_boundary {
   // and prevents dependency cycling.
   public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64, epoch_round: u64)
   acquires BoundaryStatus {
+
     print(&string::utf8(b"EPOCH BOUNDARY BEGINS"));
+    // assert the supply does not change until there are burns.
+    let supply_a = libra_coin::supply();
+
     // either 0x0 or 0x1 can call, but we will always use framework signer
     system_addresses::assert_ol(root);
     let root = &create_signer::create_signer(@ol_framework);
@@ -310,6 +316,10 @@ module diem_framework::epoch_boundary {
     status.incoming_compliant_count = vector::length(&compliant_vals);
     status.incoming_compliant = compliant_vals;
     status.incoming_seats_offered = n_seats;
+
+    // up to this point supply should remain unchanged.
+    let supply_b = libra_coin::supply();
+    assert!(supply_b == supply_a, ESUPPLY_SHOULD_NOT_CHANGE);
 
     print(&string::utf8(b"settle_accounts"));
     settle_accounts(root, compliant_vals, status);
@@ -352,6 +362,7 @@ module diem_framework::epoch_boundary {
   /// withdraw coins and settle accounts for validators and oracles
   /// returns the list of compliant_vals
   fun settle_accounts(root: &signer, compliant_vals: vector<address>, status: &mut BoundaryStatus): vector<address> {
+    let supply_a = libra_coin::supply();
     assert!(transaction_fee::is_fees_collection_enabled(), error::invalid_state(ETX_FEES_NOT_INITIALIZED));
 
     if (transaction_fee::system_fees_collected() > 0) {
@@ -376,6 +387,10 @@ module diem_framework::epoch_boundary {
       if (nominal_reward_to_vals > 0) { // check for zero
         status.outgoing_vals_success = total_reward == (vector::length(&compliant_vals) * nominal_reward_to_vals)
       };
+
+      // up to this point supply should remain unchanged.
+      let supply_b = libra_coin::supply();
+      assert!(supply_b == supply_a, ESUPPLY_SHOULD_NOT_CHANGE);
 
       // Commit note: deprecated with tower mining.
 

@@ -2,7 +2,6 @@
 #[test_only]
 module ol_framework::mock {
   use std::vector;
-  use std::signer;
   use diem_framework::coin;
   use diem_framework::block;
   use diem_framework::stake;
@@ -25,7 +24,7 @@ module ol_framework::mock {
   use ol_framework::pledge_accounts;
   use ol_framework::secret_bid;
 
-  // use diem_std::debug::print;
+  use diem_std::debug::print;
 
   const ENO_GENESIS_END_MARKER: u64 = 1;
   const EDID_NOT_ADVANCE_EPOCH: u64 = 2;
@@ -38,9 +37,11 @@ module ol_framework::mock {
   /// What is the fixed and final supply of the network at start
   const FINAL_SUPPLY_AT_GENESIS: u64 = 100_000_000_000; // 100B
   /// Place some coins in the system transaction fee account;
-  const TX_FEE_ACCOUNT_AT_GENESIS: u64 =  500_000_000; // 500M
+  const TX_FEE_ACCOUNT_AT_GENESIS: u64 =  100_000_000; // 100M
   /// Tbe starting entry fee for validators
   const ENTRY_FEE: u64 =  1_000; // 1K
+  /// Initial funding of infra-escrow
+  const INFRA_ESCROW_START: u64 =  37_000_000_000; // 37B
 
   #[test_only]
   public fun default_epoch_reward(): u64 { EPOCH_REWARD }
@@ -200,22 +201,28 @@ module ol_framework::mock {
   #[test_only]
   public fun ol_initialize_coin_and_fund_vals(root: &signer, amount: u64,
   drip: bool) {
-    system_addresses::assert_ol(root);
-
-    let mint_cap = if (coin::is_coin_initialized<LibraCoin>()) {
-      libra_coin::extract_mint_cap(root)
-    } else {
-      init_coin_impl(root)
+    if (!coin::is_coin_initialized<LibraCoin>()) {
+      let mint_cap = init_coin_impl(root);
+      libra_coin::restore_mint_cap(root, mint_cap);
     };
+
+    fund_validators(root, amount, drip);
+  }
+
+  fun fund_validators(root: &signer, amount: u64,
+  drip: bool) {
+    system_addresses::assert_ol(root);
 
     let vals = stake::get_current_validators();
     let i = 0;
     while (i < vector::length(&vals)) {
       let addr = vector::borrow(&vals, i);
-      let c = coin::test_mint(amount, &mint_cap);
-      ol_account::deposit_coins(*addr, c);
+
+      let coin = pledge_accounts::test_single_withdrawal(root, @0xBA7, amount);
+      ol_account::deposit_coins(*addr, coin);
 
       let b = libra_coin::balance(*addr);
+
       assert!(b == amount, 0001);
 
       i = i + 1;
@@ -224,8 +231,13 @@ module ol_framework::mock {
     if (drip) {
       slow_wallet::slow_wallet_epoch_drip(root, amount);
     };
-    libra_coin::restore_mint_cap(root, mint_cap);
   }
+
+  public fun mock_tx_fees_in_account(root: &signer, amount: u64) {
+    let tx_fees_start = pledge_accounts::test_single_withdrawal(root, @0xBA7, amount);
+    transaction_fee::vm_pay_fee(root, @ol_framework, tx_fees_start);
+  }
+
 
   #[test_only]
   fun init_coin_impl(root: &signer): coin::MintCapability<LibraCoin> {
@@ -236,11 +248,10 @@ module ol_framework::mock {
 
     transaction_fee::initialize_fee_collection_and_distribution(root, 0);
 
-    let initial_fees = 5_000_000 * 100; // coin scaling * 100 coins
-    let tx_fees = coin::test_mint(initial_fees, &mint_cap);
-    transaction_fee::vm_pay_fee(root, @ol_framework, tx_fees);
+    let genesis_mint = coin::test_mint(FINAL_SUPPLY_AT_GENESIS, &mint_cap);
+    libra_coin::test_set_final_supply(root, FINAL_SUPPLY_AT_GENESIS);
+    assert!(libra_coin::supply() == FINAL_SUPPLY_AT_GENESIS, ESUPPLY_MISMATCH);
 
-    let final_supply = 100_000_000_000;
 
     // We need to simulate a long running network
     // where the Infra Pledge account accumulated.
@@ -248,20 +259,14 @@ module ol_framework::mock {
     // test environment Infra Pedge
     let bruce_address = @0xBA7;
     ol_account::create_account(root, bruce_address);
+    // Bruce inherits a fortune, the remainder of genesis mint
+    ol_account::deposit_coins(bruce_address, genesis_mint);
 
-    // Bruce mints a fortune
-    // TODO: change this so that the FINAL supply does not exceed 100B
+    // Bruce pledges 37B to infra escrow
     let bruce = account::create_signer_for_test(bruce_address);
-    let fortune_mint = coin::test_mint(final_supply, &mint_cap);
-    ol_account::deposit_coins(bruce_address, fortune_mint);
+    pledge_accounts::user_pledge(&bruce, @ol_framework, INFRA_ESCROW_START);
 
-    // Bruce funds infra escrow
-    let framework = signer::address_of(root);
-    pledge_accounts::user_pledge(&bruce, framework, 37_000_000_000);
-
-    let supply_pre = libra_coin::supply();
-    assert!(supply_pre == (initial_fees + final_supply), ESUPPLY_MISMATCH);
-    libra_coin::test_set_final_supply(root, initial_fees);
+    assert!(libra_coin::supply() == FINAL_SUPPLY_AT_GENESIS, ESUPPLY_MISMATCH);
 
     mint_cap
   }
@@ -397,7 +402,9 @@ module ol_framework::mock {
 
     ol_initialize_coin_and_fund_vals(root, EPOCH_REWARD, true);
     let supply_pre = libra_coin::supply();
-    assert!(supply_pre == FINAL_SUPPLY_AT_GENESIS + TX_FEE_ACCOUNT_AT_GENESIS + (n_vals * EPOCH_REWARD), 73570001);
+    print(&supply_pre);
+
+    assert!(libra_coin::supply() == FINAL_SUPPLY_AT_GENESIS, 73570001);
   }
 
 
