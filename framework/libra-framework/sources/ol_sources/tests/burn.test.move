@@ -1,7 +1,7 @@
 
 #[test_only]
 module ol_framework::test_burn {
-  use ol_framework::mock::{Self, default_epoch_reward, default_final_supply_at_genesis, default_entry_fee };
+  use ol_framework::mock::{Self, default_epoch_reward, default_final_supply_at_genesis, default_entry_fee, default_tx_fee_account_at_genesis};
   use ol_framework::libra_coin;
   use ol_framework::ol_account;
   use ol_framework::match_index;
@@ -228,13 +228,15 @@ module ol_framework::test_burn {
     assert!(transaction_fee::system_fees_collected() == starting_tx_fees, 73570002);
 
     // no change in supply, since these coins came from infra pledge
-    assert!(libra_coin::supply() == default_final_supply_at_genesis(), 73570001);
+    assert!(libra_coin::supply() == default_final_supply_at_genesis(), 73570003);
 
     // start at epoch 1. NOTE Validators WILL GET PAID FOR EPOCH 1
     // but they have no balance to contribute to next epochs funds (for simplicity of calcs)
+    let (lifetime_burn_pre, _lifetime_match) = burn::get_lifetime_tracker();
     mock::trigger_epoch(root);
     // NOTE: under 1000 rounds we don't evaluate performance of validators
-
+    let (lifetime_burn_post, _lifetime_match) = burn::get_lifetime_tracker();
+    assert!(lifetime_burn_post > lifetime_burn_pre, 73570004);
     // supply should be lower
     let supply_post = libra_coin::supply();
 
@@ -242,20 +244,20 @@ module ol_framework::test_burn {
     let infra_pledge_subsidy = n_vals * default_epoch_reward();
     let entry_fees_total = n_vals * default_entry_fee();
 
-    assert!(supply_post < default_final_supply_at_genesis(), 73570001);
+    assert!(supply_post < default_final_supply_at_genesis(), 73570005);
 
 
     // Now for the follwing epoch the tx fee account should have:
     // a) the entry fees of validators (they can afford it now)
     // b) the infra pledge subsidy * vals
 
-    assert!(fees_account_balance == (infra_pledge_subsidy +  entry_fees_total), 73570003);
+    assert!(fees_account_balance == (infra_pledge_subsidy +  entry_fees_total), 73570006);
 
     // In this scenario
     // we expect to burn everything which was in the txs after paying validator rewards.
     // we funded the tx fee account with an excess, beyond what was needed for the validator reward.
 
-    assert!(supply_post == supply_pre - excess_in_tx_fee_account, 73570003);
+    assert!(supply_post == supply_pre - excess_in_tx_fee_account, 73570007);
   }
 
 
@@ -338,9 +340,13 @@ module ol_framework::test_burn {
 
   #[test(root=@ol_framework, alice=@0x1000a)]
   fun track_fees(root: &signer, alice: address) {
-    // use ol_framework::libra_coin;
-    let _vals = mock::genesis_n_vals(root, 1); // need to include eve to init funds
-    mock::ol_initialize_coin_and_fund_vals(root, 10000, true);
+
+    let _vals = mock::genesis_n_vals(root, 1);
+    mock::ol_initialize_coin_and_fund_vals(root, default_epoch_reward(), true);
+    mock::mock_tx_fees_in_account(root, default_tx_fee_account_at_genesis());
+
+    let fees = transaction_fee::system_fees_collected();
+    assert!(fees == default_tx_fee_account_at_genesis(), 7357001);
 
     let marlon_rando = @0x12345;
     ol_account::create_account(root, marlon_rando);
@@ -356,25 +362,37 @@ module ol_framework::test_burn {
     option::destroy_none(coin_option);
 
     let fees = transaction_fee::system_fees_collected();
-    assert!(fees == 500_000_005, 7357001);
-    // Fees will include the initialization by MOCK. ol_initialize_coin_and_fund_vals
+    assert!(fees == (default_tx_fee_account_at_genesis() + rando_money), 7357001);
 
     // marlon is the only fee maker (since genesis)
     let fee_makers = fee_maker::get_fee_makers();
-    // includes 0x1 which makes a deposit on
     assert!(vector::length(&fee_makers)==1, 7357002);
+    let (_found, idx) = vector::index_of(&fee_makers, &marlon_rando);
+    assert!( idx == 0, 7357003);
 
     let marlon_fees_made = fee_maker::get_user_fees_made(marlon_rando);
-    assert!(marlon_fees_made == 5, 7357003);
+    assert!(marlon_fees_made == 5, 7357004);
 
+    let (lifetime_burn_pre, _lifetime_match) = burn::get_lifetime_tracker();
     mock::trigger_epoch(root);
+    // NOTE: under 1000 rounds we don't evaluate performance of validators
+    let (lifetime_burn_post, _lifetime_match) = burn::get_lifetime_tracker();
+    assert!(lifetime_burn_post > lifetime_burn_pre, 0);
 
     let marlon_fees_made = fee_maker::get_user_fees_made(marlon_rando);
-    assert!(marlon_fees_made == 0, 7357004);
+    assert!(marlon_fees_made == 0, 7357005);
+
+    // However, Alice (the only validator) did pay an entry fee during Proof of Fee,
+    // and that fee should be tracked
     let fee_makers = fee_maker::get_fee_makers();
-    assert!(vector::length(&fee_makers) == 0, 7357005);
+
+    assert!(vector::length(&fee_makers) == 1, 7357006);
+    let (_found, idx) = vector::index_of(&fee_makers, &alice);
+    assert!( idx == 0, 7357007);
+
+
     let fees = transaction_fee::system_fees_collected();
-    assert!(fees == 1_000_000, 7357006); // val set entry fee
+    assert!(fees == default_entry_fee() + default_epoch_reward(), 7357008); // val set entry fee
   }
 
   #[test(root = @ol_framework, alice_val = @0x1000a)]
