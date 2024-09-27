@@ -11,6 +11,7 @@ module ol_framework::test_boundary {
   use diem_framework::transaction_fee;
   use diem_framework::account;
   use ol_framework::burn;
+  use ol_framework::epoch_helper;
   use ol_framework::mock;
   use ol_framework::proof_of_fee;
   use ol_framework::secret_bid;
@@ -23,7 +24,7 @@ module ol_framework::test_boundary {
   use ol_framework::block;
   use ol_framework::ol_account;
 
-  // use diem_std::debug::print;
+  use diem_std::debug::print;
 
   const Alice: address = @0x1000a;
   const Bob: address = @0x1000b;
@@ -288,50 +289,53 @@ module ol_framework::test_boundary {
   #[test(root = @ol_framework)]
   fun epoch_increase_thermostat(root: &signer) {
     let vals = common_test_setup(root);
-
+    let this_epoch = epoch_helper::get_current_epoch();
+    let entry_fee_bid = 0100;
     // mock bids
     vector::for_each(vals, |a| {
       let sig = account::create_signer_for_test(a);
-      secret_bid::mock_revealed_bid(root, &sig, 0100, 30); // 10% for 30 epochs
+      secret_bid::mock_revealed_bid(root, &sig, entry_fee_bid, this_epoch); // 10% for 30 epochs
     });
 
     // mock bid history to increase thermostat by 5%
     proof_of_fee::test_mock_reward(
       root,
-      1000, // nominal reward
-      0100, // clearing bid
-      0100, // median win bid
-      vector[ 0100, 0100, 0100, 0100, 0100, 0100 ] // median history bellow 50%
+      100_000, // nominal reward
+      entry_fee_bid, // clearing bid
+      entry_fee_bid, // median win bid
+      vector[ entry_fee_bid, entry_fee_bid, entry_fee_bid, entry_fee_bid, entry_fee_bid, entry_fee_bid, ] // median history bellow 50%
     );
 
     // trigger epoch
     mock::trigger_epoch(root);
-
+    print(&transaction_fee::system_fees_collected());
     // check subsidy increased by 5%
     // fees collected = entry fee + reward * 105%
-    // entry fee = 100 * 10 = 1_000
-    // reward = 1050 * 10 = 10_500
+    // entry fee = 100_000 * 0.1 * 10 = 100_000
+    // reward = 100_000 * 1.05 * 10 = 1_050_000
     // fees collected = 11_500
-    assert!(transaction_fee::system_fees_collected() == 11_500, 7357001);
+    assert!(transaction_fee::system_fees_collected() == 1150000, 7357001);
   }
 
   #[test(root = @ol_framework)]
   fun epoch_decrease_thermostat(root: &signer) {
     let vals = common_test_setup(root);
 
+    let entry_fee_bid = 0970;
     // mock bids
+    let this_epoch = epoch_helper::get_current_epoch();
     vector::for_each(vals, |a| {
       let sig = account::create_signer_for_test(a);
-      secret_bid::mock_revealed_bid(root, &sig, 0970, 30); // 97% for 30 epochs
+      secret_bid::mock_revealed_bid(root, &sig, entry_fee_bid, this_epoch);
     });
 
     // mock bid history to decrease thermostat by 5%
     proof_of_fee::test_mock_reward(
       root,
       100_000, // nominal reward
-      0970, // clearing bid
-      0970, // median win bid
-      vector[ 0970, 0970, 0970, 0970, 0970, 0970 ] // median history above 95%
+      entry_fee_bid, // clearing bid
+      entry_fee_bid, // median win bid
+      vector[ entry_fee_bid, entry_fee_bid, entry_fee_bid, entry_fee_bid, 0970, entry_fee_bid ] // median history above 95%
     );
 
     // trigger epoch
