@@ -5,7 +5,7 @@ module ol_framework::test_slow_wallet {
   use diem_framework::stake;
   use diem_framework::account;
   use ol_framework::slow_wallet;
-  use ol_framework::mock;
+  use ol_framework::mock::{Self, default_tx_fee_account_at_genesis};
   use ol_framework::ol_account;
   use ol_framework::libra_coin;
   use ol_framework::epoch_boundary;
@@ -112,6 +112,7 @@ module ol_framework::test_slow_wallet {
   fun test_epoch_drip(root: signer) {
     let set = mock::genesis_n_vals(&root, 4);
     mock::ol_initialize_coin_and_fund_vals(&root, 100, false);
+    mock::mock_tx_fees_in_account(&root, default_tx_fee_account_at_genesis());
 
     let a = *vector::borrow(&set, 0);
     assert!(slow_wallet::is_slow(a), 7357000);
@@ -122,12 +123,13 @@ module ol_framework::test_slow_wallet {
 
     let (u, b) = ol_account::balance(a);
     print(&b);
-    assert!(b==500_000_100, 735702);
+    assert!(b==(default_tx_fee_account_at_genesis() + 100), 735702);
     assert!(u==100, 735703);
 
     slow_wallet::slow_wallet_epoch_drip(&root, 233);
     let (u, b) = ol_account::balance(a);
-    assert!(b==500_000_100, 735704);
+    // no change total balances
+    assert!(b==(default_tx_fee_account_at_genesis() + 100), 735704);
     assert!(u==333, 735705);
   }
 
