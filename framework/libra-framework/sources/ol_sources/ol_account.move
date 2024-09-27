@@ -38,6 +38,8 @@ module ol_framework::ol_account {
     friend ol_framework::test_multi_action;
     #[test_only]
     friend ol_framework::test_slow_wallet;
+    #[test_only]
+    friend ol_framework::mock;
 
     /// Account does not exist.
     const EACCOUNT_NOT_FOUND: u64 = 1;

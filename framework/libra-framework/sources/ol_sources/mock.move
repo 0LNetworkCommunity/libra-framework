@@ -219,7 +219,7 @@ module ol_framework::mock {
       let addr = vector::borrow(&vals, i);
 
       let coin = pledge_accounts::test_single_withdrawal(root, @0xBA7, amount);
-      ol_account::deposit_coins(*addr, coin);
+      ol_account::vm_deposit_coins_locked(root, *addr, coin);
 
       let b = libra_coin::balance(*addr);
 
@@ -363,7 +363,7 @@ module ol_framework::mock {
   public fun meta_epoch(root: signer) {
     ol_test_genesis(&root);
     musical_chairs::initialize(&root, 10);
-    // ol_initialize_coin(&root);
+
     let epoch = reconfiguration::current_epoch();
     trigger_epoch(&root);
     let new_epoch = reconfiguration::current_epoch();

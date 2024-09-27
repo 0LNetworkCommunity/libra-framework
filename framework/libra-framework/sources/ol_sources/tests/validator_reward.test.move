@@ -4,86 +4,54 @@
 module ol_framework::test_reconfiguration {
   use std::vector;
   use diem_framework::stake;
-  use diem_framework::transaction_fee;
-  // use diem_framework::coin;
-  use ol_framework::mock;
+  // use diem_framework::transaction_fee;
+  use ol_framework::mock::{Self, default_tx_fee_account_at_genesis};
   use ol_framework::testnet;
   use ol_framework::libra_coin;
   use ol_framework::proof_of_fee;
   use diem_framework::reconfiguration;
   use ol_framework::epoch_helper;
   use ol_framework::ol_account;
-  use ol_framework::infra_escrow;
 
-   use diem_std::debug::print;
+  //  use diem_std::debug::print;
 
   // Scenario: all genesis validators make it to next epoch
   #[test(root = @ol_framework)]
   fun reconfig_reward_happy_case(root: signer) {
-    let vals = mock::genesis_n_vals(&root, 5);
+    let _vals = mock::genesis_n_vals(&root, 5);
 
-    mock::pof_default(&root);
-    assert!(vector::length(&vals) == 5, 7357001);
-    let vals = stake::get_current_validators();
-    assert!(vector::length(&vals) == 5, 7357002);
-    // all vals compliant
-    mock::mock_all_vals_good_performance(&root);
+    let starting_balance = 500_000;
+    mock::ol_initialize_coin_and_fund_vals(&root, starting_balance, false);
+    mock::mock_tx_fees_in_account(&root, default_tx_fee_account_at_genesis());
 
-    let (unlocked, alice_bal) = ol_account::balance(@0x1000a);
-    assert!(unlocked==0, 7367001);
-    assert!(alice_bal==0, 7357002);
-
-    let (reward_one, _entry_fee, _, _ ) = proof_of_fee::get_consensus_reward();
+    let (reward_one, genesis_entry_fee, _, _ ) = proof_of_fee::get_consensus_reward();
+    // entry fee at genesis is zero
+    assert!(genesis_entry_fee == 0, 7357004);
 
     // The epoch's reward BEFORE reconfiguration
-    assert!(reward_one == 1000000, 7357004);
-
-    let infra = infra_escrow::infra_escrow_balance();
-    print(&555);
-    print(&infra);
-
-    let subsidy = transaction_fee::system_fees_collected();
-    print(&666);
-    print(&subsidy);
+    assert!(reward_one == 1_000_000, 7357004);
 
     // run ol reconfiguration
     mock::trigger_epoch(&root);
 
-    let infra = infra_escrow::infra_escrow_balance();
-    print(&5552);
-    print(&infra);
-
-    let subsidy = transaction_fee::system_fees_collected();
-    print(&6662);
-    print(&subsidy);
-
+    // magic: in test mode and under block 100 all validators perform
     let vals = stake::get_current_validators();
     assert!(vector::length(&vals) == 5, 7357005);
-    // let alice_bal = libra_coin::balance(@0x1000a);
+
     let (_unlocked, alice_bal) = ol_account::balance(@0x1000a);
 
     let (_, entry_fee, _,  _ ) = proof_of_fee::get_consensus_reward();
+
     // need to check that the user paid an PoF entry fee for next epoch.
-    // which means the balance will be the nominal reward, net of the PoF clearing price bid
-    assert!(alice_bal == (reward_one - entry_fee), 7357006);
-
-    // test new subsidy
-    let (reward_two, _entry_fee, _, _ ) = proof_of_fee::get_consensus_reward();
-    print(&777);
-    print(&reward_two);
-    let new_budget = reward_two * 5;
-    print(&new_budget);
-
-    let subsidy = transaction_fee::system_fees_collected();
-    print(&888);
-    print(&subsidy);
+    // which means the balance will be:
+    //  the nominal reward minus, entry fee (clearing price), plus any existing balance.
+    assert!(alice_bal == (reward_one - entry_fee + starting_balance), 7357006);
 
   }
 
   #[test(root = @ol_framework)]
   fun drop_non_performing(root: signer) {
     let _vals = mock::genesis_n_vals(&root, 5);
-    // mock::ol_initialize_coin(&root);
     mock::pof_default(&root);
     assert!(libra_coin::balance(@0x1000a) == 0, 7357000);
 
