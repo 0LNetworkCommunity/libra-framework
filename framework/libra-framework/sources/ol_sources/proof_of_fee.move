@@ -1145,23 +1145,7 @@ module ol_framework::proof_of_fee {
     assert!(median_bid == 33, 1005);
   }
 
-  // #[test(vm = @ol_framework)]
-  // fun pof_set_retract(vm: signer) {
-  //     use diem_framework::account;
-
-  //     validator_universe::initialize(&vm);
-
-  //     let sig = account::create_signer_for_test(@0x123);
-  //     let (_sk, pk, pop) = stake::generate_identity();
-  //     stake::initialize_test_validator(&pk, &pop, &sig, 100, true, true);
-
-  //     validator_universe::is_in_universe(@0x123);
-
-  // }
-
-
   // Calculate Final Set Size tests
-
   #[test]
   fun test_calculate_final_set_size_boot_up_happy_day() {
     // Happy Day: test complete boot up with plenty qualified bidders over multiple epochs
