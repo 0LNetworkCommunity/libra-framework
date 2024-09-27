@@ -15,21 +15,23 @@ module ol_framework::secret_bid {
   use diem_std::comparator;
   use diem_framework::epoch_helper;
   use diem_framework::reconfiguration;
+  use diem_framework::system_addresses;
 
   use ol_framework::testnet;
   use ol_framework::address_utils;
 
+  friend ol_framework::genesis;
   friend ol_framework::proof_of_fee;
 
   #[test_only]
   use diem_framework::account;
-  #[test_only]
-  use diem_framework::system_addresses;
 
   #[test_only]
-  friend ol_framework::test_pof;
+  friend ol_framework::test_boundary;
   #[test_only]
   friend ol_framework::mock;
+  #[test_only]
+  friend ol_framework::test_pof;
 
   /// User bidding not initialized
   const ECOMMIT_BID_NOT_INITIALIZED: u64 = 1;
@@ -54,6 +56,14 @@ module ol_framework::secret_bid {
   struct Bid has drop, copy {
     entry_fee: u64,
     epoch: u64,
+  }
+
+  public(friend) fun genesis_helper(framework: &signer, validator: &signer, entry_fee: u64) acquires CommittedBid {
+    system_addresses::assert_diem_framework(framework);
+    commit_entry_fee_impl(validator, b"genesis");
+
+    let state = borrow_global_mut<CommittedBid>(signer::address_of(validator));
+    state.reveal_entry_fee = entry_fee;
   }
 
   /// Transaction entry function for committing bid
@@ -223,6 +233,12 @@ module ol_framework::secret_bid {
 
     // state.reveal_entry_fee
     get_bid_unchecked(user)
+  }
+
+   /// Find the most recent epoch the validator has placed a bid on.
+  public(friend) fun latest_epoch_bid(user: address): u64 acquires CommittedBid {
+    let state = borrow_global<CommittedBid>(user);
+    state.commit_epoch
   }
 
   /// does the user have a current bid

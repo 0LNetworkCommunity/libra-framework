@@ -13,6 +13,7 @@ module ol_framework::test_boundary {
   use ol_framework::burn;
   use ol_framework::mock;
   use ol_framework::proof_of_fee;
+  use ol_framework::secret_bid;
   use ol_framework::jail;
   use ol_framework::slow_wallet;
   use ol_framework::vouch;
@@ -285,7 +286,7 @@ module ol_framework::test_boundary {
     // mock bids
     vector::for_each(vals, |a| {
       let sig = account::create_signer_for_test(a);
-      proof_of_fee::pof_update_bid(&sig, 0100, 30); // 10% for 30 epochs
+      secret_bid::mock_revealed_bid(root, &sig, 0100, 30); // 10% for 30 epochs
     });
 
     // mock bid history to increase thermostat by 5%
@@ -315,7 +316,7 @@ module ol_framework::test_boundary {
     // mock bids
     vector::for_each(vals, |a| {
       let sig = account::create_signer_for_test(a);
-      proof_of_fee::pof_update_bid(&sig, 0970, 30); // 97% for 30 epochs
+      secret_bid::mock_revealed_bid(root, &sig, 0970, 30); // 97% for 30 epochs
     });
 
     // mock bid history to decrease thermostat by 5%

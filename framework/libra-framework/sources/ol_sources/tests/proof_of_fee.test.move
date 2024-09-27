@@ -2,6 +2,7 @@
 module ol_framework::test_pof {
   use ol_framework::mock;
   use ol_framework::account;
+  use ol_framework::epoch_helper;
   use ol_framework::proof_of_fee;
   use ol_framework::reconfiguration;
   use ol_framework::jail;
@@ -14,7 +15,7 @@ module ol_framework::test_pof {
   use diem_framework::chain_id;
   use std::vector;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   const Alice: address = @0x1000a;
   const Bob: address = @0x1000b;
@@ -85,8 +86,6 @@ module ol_framework::test_pof {
     mock_good_bid(&root, &alice);
 
     let (err, pass) = proof_of_fee::audit_qualification(alice);
-    print(&epoch_helper::get_current_epoch());
-    print(&err);
     assert!(pass, 1006);
   }
 
@@ -134,7 +133,8 @@ module ol_framework::test_pof {
     assert!(!jail::is_jailed(alice), 7357001);
     let a_sig = account::create_signer_for_test(alice);
 
-    secret_bid::mock_revealed_bid(&root, &a_sig, 100, 1);
+    let epoch = epoch_helper::get_current_epoch();
+    secret_bid::mock_revealed_bid(&root, &a_sig, 100, epoch);
     let bid = secret_bid::get_bid_unchecked(alice);
     assert!(bid == 100, 7357001);
 
@@ -157,6 +157,7 @@ module ol_framework::test_pof {
 
   #[test(root = @ol_framework)]
   fun audit_expired(root: signer) {
+    use ol_framework::epoch_helper;
     let set = mock::genesis_n_vals(&root, 7);
     mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
     let alice = *vector::borrow(&set, 0);
@@ -180,17 +181,19 @@ module ol_framework::test_pof {
     secret_bid::mock_revealed_bid(&root, &a_sig, 100, 0);
 
     let bid = secret_bid::get_bid_unchecked(alice);
-    assert!(bid == 1, 1006);
+    assert!(bid == 100, 1003);
 
     // should NOT pass audit.
     let (_err, pass) = proof_of_fee::audit_qualification(alice);
-    assert!(!pass, 1008);
+    assert!(!pass, 1004);
 
     // fix it
-    proof_of_fee::pof_update_bid(&a_sig, 1, 1000);
+    let epoch = epoch_helper::get_current_epoch();
+    secret_bid::mock_revealed_bid(&root, &a_sig, 100, epoch);
+
 
     let (_err, pass) = proof_of_fee::audit_qualification(alice);
-    assert!(pass, 1009);
+    assert!(pass, 1005);
 
   }
 
@@ -312,7 +315,7 @@ module ol_framework::test_pof {
     // set an expired bid for alice
     let alice = vector::borrow(&set, 0);
     let alice_sig = account::create_signer_for_test(*alice);
-    proof_of_fee::pof_update_bid(&alice_sig, 55, 1);
+    secret_bid::mock_revealed_bid(&root, &alice_sig, 55, 1);
 
     // advance the epoch 2x, so the previous bid is expired.
     mock::mock_all_vals_good_performance(&root);
@@ -405,7 +408,7 @@ module ol_framework::test_pof {
 
     // Ok now EVE changes her mind. Will force the bid to expire.
     let a_sig = account::create_signer_for_test(*vector::borrow(&set, 4));
-    proof_of_fee::pof_update_bid(&a_sig, 0, 0);
+    secret_bid::mock_revealed_bid(&root, &a_sig, 0, 0);
     slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
     let sorted = proof_of_fee::get_bidders(true);
