@@ -437,6 +437,7 @@ module ol_framework::test_burn {
     assert!(cumu_burn == 0, 7357004);
 
     // simulate epoch boundary burn
+    mock::mock_tx_fees_in_account(root, 60_000_000);
     let all_fees = transaction_fee::test_root_withdraw_all(root);
     burn::epoch_burn_fees(root, &mut all_fees);
     coin::destroy_zero(all_fees); // destroy the hot potato
