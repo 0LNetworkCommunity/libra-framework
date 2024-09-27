@@ -21,10 +21,10 @@ pub enum ValidatorTxs {
         #[clap(short, long)]
         /// Percentage of the nominal reward you will bid to join the
         /// validator set, with three decimal places: 1.234 is 123.4%
-        bid_pct: f64,
+        bid_pct: Option<f64>,
         #[clap(short, long)]
         /// Epoch until the bid is valid (will expire in `expiry` + 1)
-        expiry: u64,
+        epoch_expiry: u64,
         #[clap(short, long)]
         /// Eliminates the bid. There are only a limited amount of retractions that can happen in an epoch
         retract: bool,
@@ -70,23 +70,25 @@ impl ValidatorTxs {
         let p = match self {
             ValidatorTxs::Pof {
                 bid_pct,
-                expiry: epoch_expiry,
+                epoch_expiry,
                 retract,
             } => {
                 if *retract {
                     ProofOfFeePofRetractBid {}
-                } else {
+                } else if let Some(b) = bid_pct {
                     // TODO: the u64 will truncate, but without rounding it will drop the last digit.
-                    let scaled_bid = (bid_pct * 1000.0).round() as u64; // scale to 10ˆ3.
+                    let scaled_bid = (b * 1000.0).round() as u64; // scale to 10ˆ3.
                     if scaled_bid > 1100 {
                         bail!(
-                            "a bid amount at 110.0% or above the epoch's reward, will be rejected"
-                        );
+                        "a bid amount at 110.0% or above the epoch's reward, will be rejected"
+                    );
                     }
                     ProofOfFeePofUpdateBid {
                         bid: scaled_bid,
                         epoch_expiry: *epoch_expiry,
                     }
+                } else {
+                    todo!()
                 }
             }
             ValidatorTxs::Jail { unjail_acct } => JailUnjailByVoucher {
