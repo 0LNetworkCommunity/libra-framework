@@ -66,7 +66,7 @@ pub(crate) fn listen(
                             .expect("could not access Sender client")
                             .sync_sign_submit_wait(payload)
                         {
-                            Ok(r) => {
+                            Ok(_r) => {
                                 busy = false;
                             }
                             Err(e) => {
