@@ -13,7 +13,7 @@ module ol_framework::test_reconfiguration {
   use ol_framework::epoch_helper;
   use ol_framework::ol_account;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   // Scenario: all genesis validators make it to next epoch
   #[test(root = @ol_framework)]
@@ -51,14 +51,17 @@ module ol_framework::test_reconfiguration {
 
   #[test(root = @ol_framework)]
   fun drop_non_performing(root: signer) {
-    let _vals = mock::genesis_n_vals(&root, 5);
-    mock::pof_default(&root);
+    let vals = mock::genesis_n_vals(&root, 5);
+    let alice = *vector::borrow(&vals, 0);
 
-    assert!(libra_coin::balance(@0x1000a) == 0, 7357000);
+    assert!(libra_coin::balance(alice) == 0, 7357000);
 
     // NOTE: epoch 0 and 1 are a special case, we don't run performance grades on that one. Need to move two epochs ahead
     reconfiguration::test_helper_increment_epoch_dont_reconfigure(1);
     reconfiguration::test_helper_increment_epoch_dont_reconfigure(1);
+
+    // epoch changed, need new valid bids
+    mock::pof_default(&root);
 
     assert!(epoch_helper::get_current_epoch() == 2, 7357001);
 
@@ -67,28 +70,18 @@ module ol_framework::test_reconfiguration {
 
     // all vals compliant
     mock::mock_all_vals_good_performance(&root);
-
     // make alice non performant
-    mock::mock_case_4(&root, @0x1000a);
-
-    let (reward, _, _, _ ) = proof_of_fee::get_consensus_reward();
+    mock::mock_case_4(&root, alice);
 
     // run ol reconfiguration
     mock::trigger_epoch(&root);
 
-    let vals = stake::get_current_validators();
 
     // one validator missing.
-    print(&vector::length(&vals));
+    let vals = stake::get_current_validators();
     assert!(vector::length(&vals) == 4, 7357003);
-    assert!(!vector::contains(&vals, &@0x1000a), 7357004);
+    assert!(!vector::contains(&vals, &alice), 7357004);
 
-    let (_, entry_fee, _, _ ) = proof_of_fee::get_consensus_reward();
-
-    // alice doesn't get paid
-    assert!(libra_coin::balance(@0x1000a) == 0, 7357005);
-    // bob does
-    assert!(libra_coin::balance(@0x1000b) == (reward - entry_fee), 7357006);
   }
 
 

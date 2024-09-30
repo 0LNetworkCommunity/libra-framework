@@ -15,7 +15,7 @@ module ol_framework::test_pof {
   use diem_framework::chain_id;
   use std::vector;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   const Alice: address = @0x1000a;
   const Bob: address = @0x1000b;
@@ -299,19 +299,21 @@ module ol_framework::test_pof {
     let set = mock::genesis_n_vals(&root, 4);
     mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
 
-    let alice_sig = account::create_signer_for_test(@0x10001);
+    let alice_addr = *vector::borrow(&set, 0);
+    let alice_sig = account::create_signer_for_test(alice_addr);
     secret_bid::mock_revealed_bid(&root, &alice_sig, 55, 10);
-    print(&secret_bid::has_valid_bid(@0x10001));
+    assert!(secret_bid::has_valid_bid(alice_addr) == false, 7357001);
 
-    // Get all vals but don't filter the ones that have passing bids
+    // Get all bidders, but don't run audit
     let sorted = proof_of_fee::get_bidders(false);
     let bids_len = vector::length(&sorted);
     assert!(bids_len == vector::length(&set), 1000);
 
+    // now filter for expired bids, should have one missing
+    let sorted_audit = proof_of_fee::get_bidders(true);
 
-    let sorted_two = proof_of_fee::get_bidders(true);
-    assert!(vector::length(&sorted_two) != vector::length(&set), 1004);
-    assert!(vector::length(&sorted_two) == vector::length(&set) - 1, 1005);
+    assert!(vector::length(&sorted_audit) != vector::length(&set), 1004);
+    assert!(vector::length(&sorted_audit) == vector::length(&set) - 1, 1005);
   }
 
   // We can send the fill seats function a list of validators, and the list of performing validators, and it will return the winning bidders and the bid.

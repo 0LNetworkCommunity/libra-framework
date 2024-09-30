@@ -514,6 +514,7 @@ module ol_framework::proof_of_fee {
       // TODO: make this it's own function so it can be publicly callable, it's useful generally, and for debugging.
 
       let valid = secret_bid::has_valid_bid(val);
+
       if (!valid) vector::push_back(&mut errors, EBID_EXPIRED); // 16
       // skip the user if they don't have sufficient UNLOCKED funds
       // or if the bid expired.
