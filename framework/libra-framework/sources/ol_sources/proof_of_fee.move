@@ -24,7 +24,8 @@ module ol_framework::proof_of_fee {
   use ol_framework::epoch_helper;
   use ol_framework::address_utils;
   use ol_framework::secret_bid;
-  //use diem_std::debug::print;
+
+  use diem_std::debug::print;
 
   friend diem_framework::genesis;
   friend ol_framework::epoch_boundary;
@@ -169,9 +170,12 @@ module ol_framework::proof_of_fee {
     system_addresses::assert_ol(vm);
 
     let all_bidders = get_bidders(false);
-    let only_qualified_bidders = get_bidders(true);
+    print(&@0x100000000001);
 
-    // Calculate the final set size considering the number of compliant validators,
+
+    let only_qualified_bidders = get_bidders(true);
+    print(&only_qualified_bidders);
+    // Calculate the final set size considering the number of compliantget_bidders validators,
     // number of qualified bidders, and musical chairs set size suggestion
     let final_set_size = calculate_final_set_size(
       vector::length(outgoing_compliant_set),
@@ -181,7 +185,10 @@ module ol_framework::proof_of_fee {
     // This is the core of the mechanism, the uniform price auction
     // the winners of the auction will be the validator set.
     // Other lists are created for audit purposes of the BoundaryStatus
-    let (auction_winners, entry_fee, _clearing_bid, _proven, _unproven) = fill_seats_and_get_price(vm, final_set_size, &only_qualified_bidders, outgoing_compliant_set);
+    let (auction_winners, entry_fee, _clearing_bid, proven, unproven) = fill_seats_and_get_price(vm, final_set_size, &only_qualified_bidders, outgoing_compliant_set);
+    print(&auction_winners);
+    print(&proven);
+    print(&unproven);
 
     (auction_winners, all_bidders, only_qualified_bidders, entry_fee)
   }
@@ -259,6 +266,7 @@ module ol_framework::proof_of_fee {
   #[view]
   public fun get_bidders(remove_unqualified: bool): vector<address> acquires ConsensusReward {
     let eligible_validators = validator_universe::get_eligible_validators();
+    print(&eligible_validators);
     let (bidders, _) = sort_vals_impl(&eligible_validators, remove_unqualified);
     bidders
   }
@@ -282,7 +290,8 @@ module ol_framework::proof_of_fee {
       // TODO: Ensure that this address is an active validator
       let cur_address = *vector::borrow<address>(eligible_validators, k);
       let entry_fee = secret_bid::current_revealed_bid(cur_address);
-      let (_, qualified) = audit_qualification(cur_address);
+      let (e, qualified) = audit_qualification(cur_address);
+      print(&e);
       if (remove_unqualified && !qualified) {
         k = k + 1;
         continue
@@ -401,9 +410,13 @@ module ol_framework::proof_of_fee {
     proven_nodes: &vector<address>
   ): (vector<address>, u64, u64, vector<address>, vector<address>) acquires ConsensusReward {
     system_addresses::assert_ol(vm);
+    print(&@0x200000001);
+    print(sorted_vals_by_bid);
 
     // NOTE: this is duplicate work, but we are double checking we are getting a proper sort.
     let (sorted_vals_by_bid, _) = sort_vals_impl(sorted_vals_by_bid, true);
+    print(&@0x200000002);
+    print(&sorted_vals_by_bid);
 
     // Now we can seat the validators based on the algo:
     // A. seat the highest bidding 2/3 proven nodes of previous epoch
@@ -421,15 +434,18 @@ module ol_framework::proof_of_fee {
 
     let num_unproven_added = 0;
     let i = 0u64;
+
     while (
       (vector::length(&proposed_validators) < final_set_size) && // until seats full
       (i < vector::length(&sorted_vals_by_bid))
     ) {
+      print(&i);
       let val = vector::borrow(&sorted_vals_by_bid, i);
       if (!account::exists_at(*val)) {
         i = i + 1;
         continue
       };
+      print(val);
       // check if a proven node
       // NOTE: if the top bidders are all "proven" nodes, then there will
       // be no reason to add an unproven. Unproven nodes will only
@@ -480,6 +496,10 @@ module ol_framework::proof_of_fee {
       cr.net_reward = cr.nominal_reward;
     };
 
+    print(&@0x20000003);
+    print(&proposed_validators);
+    print(&audit_add_proven_vals);
+    print(&audit_add_unproven_vals);
 
     return (proposed_validators, cr.entry_fee, cr.clearing_bid, audit_add_proven_vals, audit_add_unproven_vals)
   }

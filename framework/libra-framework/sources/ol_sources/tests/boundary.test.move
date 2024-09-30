@@ -45,6 +45,9 @@ module ol_framework::test_boundary {
     reconfiguration::test_helper_increment_epoch_dont_reconfigure(1);
     reconfiguration::test_helper_increment_epoch_dont_reconfigure(1);
 
+    // need to mock the bids again since we jumped to epoch 2 and they would have expired.
+    mock::pof_default(root);
+
     set
   }
 
@@ -54,10 +57,10 @@ module ol_framework::test_boundary {
     let _vals = common_test_setup(&root);
 
     mock::trigger_epoch(&root);
-    print(&epoch_boundary::get_qualified_bidders());
-    print(&epoch_boundary::get_auction_winners());
-    assert!(1==2, 0); // TODO:
-
+    let qualified = epoch_boundary::get_qualified_bidders();
+    let win = epoch_boundary::get_qualified_bidders();
+    assert!(vector::length(&qualified) == 10, 7357001);
+    assert!(vector::length(&win)  == 10, 7357002);
   }
 
   // We need to test e2e of the epoch boundary

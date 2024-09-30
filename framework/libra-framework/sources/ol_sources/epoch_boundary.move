@@ -323,7 +323,6 @@ module diem_framework::epoch_boundary {
     assert!(supply_b == supply_a, ESUPPLY_SHOULD_NOT_CHANGE);
 
     print(&string::utf8(b"settle_accounts"));
-    print(&@0x11111111111);
 
     settle_accounts(root, compliant_vals, status);
 
