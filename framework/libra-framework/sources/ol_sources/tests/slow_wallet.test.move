@@ -191,9 +191,6 @@ module ol_framework::test_slow_wallet {
     // slow transfer
     let b_balance = libra_coin::balance(@0x456);
     assert!(b_balance == transfer_amount, 735704);
-    // print(&alice_init_balance);
-    // print(&transfer_amount);
-    // print(&slow_wallet::unlocked_amount(@0x123));
 
     assert!(slow_wallet::unlocked_amount(@0x123) == (alice_init_balance - transfer_amount), 735705);
     assert!(slow_wallet::unlocked_amount(@0x456) == transfer_amount, 735706);

@@ -18,7 +18,7 @@ module ol_framework::test_donor_voice {
   use std::vector;
   use std::signer;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
     fun dv_init(root: &signer, alice: &signer, bob: &signer) {
@@ -488,7 +488,6 @@ module ol_framework::test_donor_voice {
       // the default timed payment is 3 epochs, we are in epoch 1
       let list = donor_voice_txs::find_by_deadline(donor_voice_address, 3);
       assert!(vector::contains(&list, &first_uid_bob), 73570027);
-      print(&list);
       assert!(vector::contains(&list, &second_uid_bob), 73570028);
 
       // process epoch 3 accounts
@@ -502,7 +501,6 @@ module ol_framework::test_donor_voice {
       // MARLON'S FIRST PAYMENT GOES THROUGH
       let (_, marlon_rando_balance_post) =
       ol_account::balance(signer::address_of(marlon_rando));
-      print(&marlon_rando_balance_post);
 
       // the first proposal should be processed
       let (found, idx, status_enum, completed) =
@@ -522,23 +520,9 @@ module ol_framework::test_donor_voice {
       assert!(completed, 73570036); // now vote is completed
 
 
-
-
       assert!(marlon_rando_balance_post == (marlon_rando_balance_pre +
       marlon_pay_one + marlon_pay_two),
       73570027);
-
-      // // MARLON'S SECOND PAYMENT SHOULD SUCCEED
-
-      // mock::trigger_epoch(root); // epoch 5 should include the next payment
-      // let (_, marlon_rando_balance_post) =
-      // ol_account::balance(signer::address_of(marlon_rando));
-
-      // print(&marlon_rando_balance_pre);
-      // print(&marlon_rando_balance_post);
-
-      // assert!(marlon_rando_balance_post == (marlon_rando_balance_pre +
-      // marlon_pay_one + marlon_pay_two), 73570028);
     }
 
 
@@ -658,9 +642,6 @@ module ol_framework::test_donor_voice {
       mock::trigger_epoch(root); // epoch 5 should include the next payment
       let (_, marlon_rando_balance_post) =
       ol_account::balance(signer::address_of(marlon_rando));
-
-      print(&marlon_rando_balance_pre);
-      print(&marlon_rando_balance_post);
 
       assert!(marlon_rando_balance_post == (marlon_rando_balance_pre +
       marlon_pay_one + marlon_pay_two), 73570028);

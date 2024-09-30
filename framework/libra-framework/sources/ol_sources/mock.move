@@ -24,7 +24,7 @@ module ol_framework::mock {
   use ol_framework::pledge_accounts;
   use ol_framework::secret_bid;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   const ENO_GENESIS_END_MARKER: u64 = 1;
   const EDID_NOT_ADVANCE_EPOCH: u64 = 2;
@@ -401,8 +401,6 @@ module ol_framework::mock {
     let _vals = genesis_n_vals(root, n_vals); // need to include eve to init funds
 
     ol_initialize_coin_and_fund_vals(root, EPOCH_REWARD, true);
-    let supply_pre = libra_coin::supply();
-    print(&supply_pre);
 
     assert!(libra_coin::supply() == FINAL_SUPPLY_AT_GENESIS, 73570001);
   }

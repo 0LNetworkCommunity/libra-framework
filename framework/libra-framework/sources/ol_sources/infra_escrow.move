@@ -27,9 +27,6 @@ module ol_framework::infra_escrow{
     friend ol_framework::epoch_boundary;
 
     #[test_only]
-    use diem_framework::debug::print;
-
-    #[test_only]
     friend ol_framework::mock;
 
 
@@ -130,7 +127,6 @@ module ol_framework::infra_escrow{
 
     #[test_only]
     public(friend) fun test_fund_account_from_infra(framework: &signer, to: address, amount: u64) {
-      print(&amount);
       // belt and suspenders
       system_addresses::assert_diem_framework(framework);
       assert!(testnet::is_not_mainnet(), error::invalid_state(EWITHDRAW_NOT_ON_MAINNET));

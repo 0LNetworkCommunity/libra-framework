@@ -8,7 +8,8 @@ module ol_framework::musical_chairs {
   use ol_framework::grade;
   use ol_framework::jail;
   use ol_framework::testnet;
-  use diem_std::debug::print;
+
+  // use diem_std::debug::print;
 
   friend diem_framework::genesis;
   friend diem_framework::diem_governance;
@@ -195,11 +196,6 @@ module ol_framework::musical_chairs {
 
     let good_len = vector::length(&compliant_nodes) ;
     let bad_len = vector::length(&non_compliant_nodes);
-    print(&@0x9999999999);
-    print(&good_len);
-    print(&bad_len);
-    print(&compliant_nodes);
-    print(&non_compliant_nodes);
 
     // sanity check that the bad ones are not in the compliant list
     vector::for_each_ref(&non_compliant_nodes, |el| {

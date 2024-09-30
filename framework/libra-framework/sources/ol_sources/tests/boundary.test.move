@@ -24,7 +24,7 @@ module ol_framework::test_boundary {
   use ol_framework::block;
   use ol_framework::ol_account;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   const Alice: address = @0x1000a;
   const Bob: address = @0x1000b;
@@ -247,7 +247,7 @@ module ol_framework::test_boundary {
     // make Alice val not compliant to end up in jail
     stake::mock_performance(&root, alice_addr, 10, 10);
     let (a, _, _) = grade::get_validator_grade(@0x1000a);
-    print(&a);
+
     // Alice has a bad grade
     assert!(a == false, 73570001);
 
@@ -269,49 +269,6 @@ module ol_framework::test_boundary {
     assert!(alice_before == alice_after, 7357004);
   }
 
-  // #[test(root = @ol_framework)]
-  // fun e2e_boundary_excludes_jail(root: signer) {
-  //   let vals = common_test_setup(&root);
-  //   let alice_addr = *vector::borrow(&vals, 0);
-
-  //   // mock vals performance
-  //   let i = 1;
-  //   while (i < vector::length(&vals)) {
-  //     let addr = *vector::borrow(&vals, i);
-  //     stake::mock_performance(&root, addr, 10, 0);
-  //     i = i + 1;
-  //   };
-
-
-  //   // make Alice val not compliant to end up in jail
-  //   stake::mock_performance(&root, alice_addr, 10, 10);
-  //   let (a, _, _) = grade::get_validator_grade(@0x1000a);
-  //   print(&a);
-  //   assert!(a == false, 73570003);
-  //   // // get Alice balance before epoch boundary
-  //   let (_unlocked, alice_before) = ol_account::balance(alice_addr);
-
-  //   // // new epoch
-  //   mock::trigger_epoch(&root);
-
-  //   // // check that Alice is jailed
-  //   assert!(jail::is_jailed(alice_addr), 7357001);
-
-  //   // // ensure Alice did not receive rewards
-  //   let (_unlocked, alice_after) = ol_account::balance(alice_addr);
-  //   assert!(alice_before == alice_after, 7357002);
-
-  //   // the attempted validator set is reduced by 1
-  //   assert!(epoch_boundary::get_seats_offered() == 9, 7357003);
-
-  //   // // check subsidy for new rewards and fees collected
-  //   // // fees collected = 9 * 1_000_000 + 9 * 2_000 = 9_018_000
-  //   // assert!(transaction_fee::system_fees_collected() == 9_018_000, 7357004);
-
-  //   // // all vals had winning bids, but it was less than the seats on offer
-  //   // assert!(vector::length(&epoch_boundary::get_auction_winners()) == vector::length(&qualified_bidders) , 7357005);
-  //   // assert!(epoch_boundary::get_reconfig_success(), 7357006);
-  // }
 
   #[test(root = @ol_framework, marlon = @0x12345)]
   fun epoch_any_address_trigger(root: &signer, marlon: &signer) {
@@ -361,7 +318,7 @@ module ol_framework::test_boundary {
 
     // trigger epoch
     mock::trigger_epoch(root);
-    // print(&transaction_fee::system_fees_collected());
+
     // check subsidy increased by 5%
     // fees collected = entry fee + reward * 105%
     // entry fee = 100_000 * 0.1 * 10 = 100_000
