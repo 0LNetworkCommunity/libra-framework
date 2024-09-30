@@ -13,7 +13,7 @@ module ol_framework::test_reconfiguration {
   use ol_framework::epoch_helper;
   use ol_framework::ol_account;
 
-  //  use diem_std::debug::print;
+  use diem_std::debug::print;
 
   // Scenario: all genesis validators make it to next epoch
   #[test(root = @ol_framework)]
@@ -53,6 +53,7 @@ module ol_framework::test_reconfiguration {
   fun drop_non_performing(root: signer) {
     let _vals = mock::genesis_n_vals(&root, 5);
     mock::pof_default(&root);
+
     assert!(libra_coin::balance(@0x1000a) == 0, 7357000);
 
     // NOTE: epoch 0 and 1 are a special case, we don't run performance grades on that one. Need to move two epochs ahead
@@ -68,7 +69,7 @@ module ol_framework::test_reconfiguration {
     mock::mock_all_vals_good_performance(&root);
 
     // make alice non performant
-    mock::mock_case_4(&root, *vector::borrow(&vals, 0));
+    mock::mock_case_4(&root, @0x1000a);
 
     let (reward, _, _, _ ) = proof_of_fee::get_consensus_reward();
 
@@ -78,6 +79,7 @@ module ol_framework::test_reconfiguration {
     let vals = stake::get_current_validators();
 
     // one validator missing.
+    print(&vector::length(&vals));
     assert!(vector::length(&vals) == 4, 7357003);
     assert!(!vector::contains(&vals, &@0x1000a), 7357004);
 

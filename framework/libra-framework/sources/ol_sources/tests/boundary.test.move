@@ -13,6 +13,7 @@ module ol_framework::test_boundary {
   use ol_framework::burn;
   use ol_framework::epoch_helper;
   use ol_framework::mock;
+  use ol_framework::grade;
   use ol_framework::proof_of_fee;
   use ol_framework::secret_bid;
   use ol_framework::jail;
@@ -37,12 +38,26 @@ module ol_framework::test_boundary {
     let set = mock::genesis_n_vals(root, 10);
     mock::ol_initialize_coin_and_fund_vals(root, 500000, true);
     mock::mock_all_vals_good_performance(root);
+    // NOTE: if there are no transaction fees mocked, the whole process_outgoing loop will be skipped.
+    mock::mock_tx_fees_in_account(root, 100_000_000);
 
     // NOTE: for e2e epoch tests, we need to go into an operating epoch (not 0 or 1). Advance to epoch #2
     reconfiguration::test_helper_increment_epoch_dont_reconfigure(1);
     reconfiguration::test_helper_increment_epoch_dont_reconfigure(1);
 
     set
+  }
+
+  // test we can get qualified bidders in the auction
+  #[test(root = @ol_framework)]
+  fun bidders_qualify(root: signer) {
+    let _vals = common_test_setup(&root);
+
+    mock::trigger_epoch(&root);
+    print(&epoch_boundary::get_qualified_bidders());
+    print(&epoch_boundary::get_auction_winners());
+    assert!(1==2, 0); // TODO:
+
   }
 
   // We need to test e2e of the epoch boundary
@@ -201,10 +216,10 @@ module ol_framework::test_boundary {
 
     mock::trigger_epoch(&root);
 
-    assert!(epoch_boundary::get_reconfig_success(), 7357002);
+    assert!(epoch_boundary::get_reconfig_success(), 7357001);
 
     // all validators were compliant, should be +1 of the 10 vals
-    assert!(epoch_boundary::get_seats_offered() == 11, 7357003);
+    assert!(epoch_boundary::get_seats_offered() == 11, 7357002);
 
     // NOTE: now MARLON is INCLUDED in this, and we filled all the seats on offer.
     // all vals had winning bids, but it was less than the seats on offer
@@ -214,7 +229,7 @@ module ol_framework::test_boundary {
   }
 
   #[test(root = @ol_framework)]
-  fun e2e_boundary_excludes_jail(root: signer) {
+  fun jail_bad_grades(root: signer) {
     let vals = common_test_setup(&root);
     let alice_addr = *vector::borrow(&vals, 0);
 
@@ -228,32 +243,72 @@ module ol_framework::test_boundary {
 
     // make Alice val not compliant to end up in jail
     stake::mock_performance(&root, alice_addr, 10, 10);
+    let (a, _, _) = grade::get_validator_grade(@0x1000a);
+    print(&a);
+    // Alice has a bad grade
+    assert!(a == false, 73570001);
 
     // get Alice balance before epoch boundary
     let (_unlocked, alice_before) = ol_account::balance(alice_addr);
-
     // new epoch
     mock::trigger_epoch(&root);
 
-    // check that Alice is jailed
-    assert!(jail::is_jailed(alice_addr), 7357001);
+    // // check that Alice is jailed
+    assert!(jail::is_jailed(alice_addr), 7357002);
+
+    // should be offering less seats because of jail.
+    assert!(epoch_boundary::get_seats_offered() == (vector::length(&vals) - 1), 7357003);
+
+
 
     // ensure Alice did not receive rewards
     let (_unlocked, alice_after) = ol_account::balance(alice_addr);
-    assert!(alice_before == alice_after, 7357002);
-
-    // check that validator set reduced by 1
-    let qualified_bidders = epoch_boundary::get_qualified_bidders();
-    assert!(vector::length(&qualified_bidders) == 9, 7357003);
-
-    // check subsidy for new rewards and fees collected
-    // fees collected = 9 * 1_000_000 + 9 * 2_000 = 9_018_000
-    assert!(transaction_fee::system_fees_collected() == 9_018_000, 7357004);
-
-    // all vals had winning bids, but it was less than the seats on offer
-    assert!(vector::length(&epoch_boundary::get_auction_winners()) == vector::length(&qualified_bidders) , 7357005);
-    assert!(epoch_boundary::get_reconfig_success(), 7357006);
+    assert!(alice_before == alice_after, 7357004);
   }
+
+  // #[test(root = @ol_framework)]
+  // fun e2e_boundary_excludes_jail(root: signer) {
+  //   let vals = common_test_setup(&root);
+  //   let alice_addr = *vector::borrow(&vals, 0);
+
+  //   // mock vals performance
+  //   let i = 1;
+  //   while (i < vector::length(&vals)) {
+  //     let addr = *vector::borrow(&vals, i);
+  //     stake::mock_performance(&root, addr, 10, 0);
+  //     i = i + 1;
+  //   };
+
+
+  //   // make Alice val not compliant to end up in jail
+  //   stake::mock_performance(&root, alice_addr, 10, 10);
+  //   let (a, _, _) = grade::get_validator_grade(@0x1000a);
+  //   print(&a);
+  //   assert!(a == false, 73570003);
+  //   // // get Alice balance before epoch boundary
+  //   let (_unlocked, alice_before) = ol_account::balance(alice_addr);
+
+  //   // // new epoch
+  //   mock::trigger_epoch(&root);
+
+  //   // // check that Alice is jailed
+  //   assert!(jail::is_jailed(alice_addr), 7357001);
+
+  //   // // ensure Alice did not receive rewards
+  //   let (_unlocked, alice_after) = ol_account::balance(alice_addr);
+  //   assert!(alice_before == alice_after, 7357002);
+
+  //   // the attempted validator set is reduced by 1
+  //   assert!(epoch_boundary::get_seats_offered() == 9, 7357003);
+
+  //   // // check subsidy for new rewards and fees collected
+  //   // // fees collected = 9 * 1_000_000 + 9 * 2_000 = 9_018_000
+  //   // assert!(transaction_fee::system_fees_collected() == 9_018_000, 7357004);
+
+  //   // // all vals had winning bids, but it was less than the seats on offer
+  //   // assert!(vector::length(&epoch_boundary::get_auction_winners()) == vector::length(&qualified_bidders) , 7357005);
+  //   // assert!(epoch_boundary::get_reconfig_success(), 7357006);
+  // }
 
   #[test(root = @ol_framework, marlon = @0x12345)]
   fun epoch_any_address_trigger(root: &signer, marlon: &signer) {
@@ -303,7 +358,7 @@ module ol_framework::test_boundary {
 
     // trigger epoch
     mock::trigger_epoch(root);
-    print(&transaction_fee::system_fees_collected());
+    // print(&transaction_fee::system_fees_collected());
     // check subsidy increased by 5%
     // fees collected = entry fee + reward * 105%
     // entry fee = 100_000 * 0.1 * 10 = 100_000

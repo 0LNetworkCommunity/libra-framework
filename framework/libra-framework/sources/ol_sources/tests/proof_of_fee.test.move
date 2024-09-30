@@ -15,7 +15,7 @@ module ol_framework::test_pof {
   use diem_framework::chain_id;
   use std::vector;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   const Alice: address = @0x1000a;
   const Bob: address = @0x1000b;
@@ -88,6 +88,35 @@ module ol_framework::test_pof {
     let (_err, pass) = proof_of_fee::audit_qualification(alice);
     assert!(pass, 1006);
   }
+
+  #[test(root = @ol_framework)]
+  fun meta_get_bidders (root: signer) {
+    let set = mock::genesis_n_vals(&root, 4);
+    mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
+
+    let alice = *vector::borrow(&set, 0);
+
+    assert!(!jail::is_jailed(alice), 1001);
+
+    let exclude_bad = true;
+
+    // all bidders will be 4
+    let bidders = proof_of_fee::get_bidders(!exclude_bad);
+    assert!(vector::length(&bidders) == 4, 1002);
+
+    // filtering for qualified should have no impact, since they all qualify
+    let bidders_filtered = proof_of_fee::get_bidders(exclude_bad);
+    assert!(vector::length(&bidders_filtered) == 4, 1002);
+
+    // now jail one
+    jail::jail(&root, alice);
+    assert!(jail::is_jailed(alice), 1002);
+
+    let bidders_filtered = proof_of_fee::get_bidders(exclude_bad);
+    assert!(vector::length(&bidders_filtered) == 3, 1003);
+  }
+
+
 
   #[test(root = @ol_framework)]
   fun audit_vouch (root: signer) {
@@ -302,8 +331,6 @@ module ol_framework::test_pof {
     let set = mock::genesis_n_vals(&root, 4);
     mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
 
-    let (val_universe, _their_bids) = mock::pof_default(&root);
-
     let len = vector::length(&set);
     let i = 0;
     while (i < len) {
@@ -320,19 +347,19 @@ module ol_framework::test_pof {
     // advance the epoch 2x, so the previous bid is expired.
     mock::mock_all_vals_good_performance(&root);
     mock::trigger_epoch(&root);
+
     mock::mock_all_vals_good_performance(&root);
     mock::trigger_epoch(&root);
 
     // Get all vals but don't filter the ones that have passing bids
     let sorted = proof_of_fee::get_bidders(false);
-    let len = vector::length(&sorted);
-    assert!(len == vector::length(&val_universe), 1000);
-    assert!(vector::length(&sorted) == vector::length(&val_universe), 1002);
+    let bids_len = vector::length(&sorted);
+    assert!(bids_len == vector::length(&set), 1000);
 
 
     let sorted_two = proof_of_fee::get_bidders(true);
-    assert!(vector::length(&sorted_two) != vector::length(&val_universe), 1004);
-    assert!(vector::length(&sorted_two) == vector::length(&val_universe) - 1, 1005);
+    assert!(vector::length(&sorted_two) != vector::length(&set), 1004);
+    assert!(vector::length(&sorted_two) == vector::length(&set) - 1, 1005);
   }
 
   // We can send the fill seats function a list of validators, and the list of performing validators, and it will return the winning bidders and the bid.

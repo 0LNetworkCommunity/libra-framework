@@ -11,7 +11,7 @@ module diem_framework::epoch_boundary {
   use diem_framework::reconfiguration;
   use diem_framework::transaction_fee;
   use diem_framework::system_addresses;
-  use ol_framework::jail;
+  // use ol_framework::jail;
   use ol_framework::safe;
   use ol_framework::burn;
   use ol_framework::stake;
@@ -313,6 +313,7 @@ module diem_framework::epoch_boundary {
     print(&string::utf8(b"musical_chairs::stop_the_music"));
     let (compliant_vals, n_seats) = musical_chairs::stop_the_music(root,
     closing_epoch, epoch_round);
+    print(&compliant_vals);
     status.incoming_compliant_count = vector::length(&compliant_vals);
     status.incoming_compliant = compliant_vals;
     status.incoming_seats_offered = n_seats;
@@ -322,6 +323,8 @@ module diem_framework::epoch_boundary {
     assert!(supply_b == supply_a, ESUPPLY_SHOULD_NOT_CHANGE);
 
     print(&string::utf8(b"settle_accounts"));
+    print(&@0x11111111111);
+
     settle_accounts(root, compliant_vals, status);
 
     print(&string::utf8(b"slow_wallet::on_new_epoch"));
@@ -409,33 +412,27 @@ module diem_framework::epoch_boundary {
 
 
   /// process the payments for performant validators
-  /// jail the non performant
   /// NOTE: receives from reconfiguration.move a mutable borrow of a coin to pay reward
   /// NOTE: burn remaining fees from transaction fee account happens in reconfiguration.move (it's not a validator_universe concern)
   // Returns (compliant_vals, reward_deposited)
   fun process_outgoing_validators(root: &signer, reward_budget: &mut Coin<LibraCoin>, reward_per: u64, compliant_vals: vector<address>): (vector<address>, u64){
     system_addresses::assert_ol(root);
-    let vals = stake::get_current_validators();
+    // let vals = stake::get_current_validators();
     let reward_deposited = 0;
 
     let i = 0;
-    while (i < vector::length(&vals)) {
-      let addr = vector::borrow(&vals, i);
+    while (i < vector::length(&compliant_vals)) {
+      let addr = vector::borrow(&compliant_vals, i);
       // belt and suspenders for dropped accounts in hard fork.
       if (!account::exists_at(*addr)) {
         i = i + 1;
         continue
       };
-      let performed = vector::contains(&compliant_vals, addr);
-      if (!performed) {
-        jail::jail(root, *addr);
-      } else {
-        // vector::push_back(&mut compliant_vals, *addr);
-        if (libra_coin::value(reward_budget) >= reward_per) {
-          let user_coin = libra_coin::extract(reward_budget, reward_per);
-          reward_deposited = reward_deposited + libra_coin::value(&user_coin);
-          rewards::process_single(root, *addr, user_coin, 1);
-        };
+
+      if (libra_coin::value(reward_budget) >= reward_per) {
+        let user_coin = libra_coin::extract(reward_budget, reward_per);
+        reward_deposited = reward_deposited + libra_coin::value(&user_coin);
+        rewards::process_single(root, *addr, user_coin, 1);
       };
 
       i = i + 1;
