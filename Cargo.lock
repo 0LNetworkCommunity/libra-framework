@@ -5813,6 +5813,7 @@ dependencies = [
  "clap 4.5.19",
  "diem-backup-cli",
  "diem-config",
+ "diem-crypto",
  "diem-db",
  "diem-db-tool",
  "diem-executor-types",
@@ -5823,6 +5824,7 @@ dependencies = [
  "glob",
  "libra-types",
  "num_cpus",
+ "serde 1.0.210",
  "serde_json",
  "tokio",
 ]

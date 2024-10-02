@@ -1,16 +1,24 @@
 //! read-archive
+use std::path::PathBuf;
 
 use anyhow::{anyhow, Error, Result};
-// use diem_crypto::HashValue;
-// use diem_types::account_state_blob::AccountStateBlob;
-
-// use backup_cli::{
-//     storage::{FileHandle, FileHandleRef},
-//     utils::read_record_bytes::ReadRecordBytes,
-// };
-
-use std::path::PathBuf;
+use diem_backup_cli::{
+  utils::read_record_bytes::ReadRecordBytes,
+  storage::{FileHandle, FileHandleRef},
+  backup_types::state_snapshot::manifest::StateSnapshotChunk,
+};
+use diem_crypto::HashValue;
+use diem_types::transaction::Version;
+use serde::{Deserialize, Serialize};
 use tokio::{fs::OpenOptions, io::AsyncRead};
+
+#[derive(Clone, Eq, PartialEq, Deserialize, Serialize)]
+pub struct AccountStateBlobV5 {
+    blob: Vec<u8>,
+    // #[serde(skip)]
+    // hash: HashValue,
+}
+
 
 #[derive(Deserialize, Serialize)]
 pub struct StateSnapshotBackupV5 {
@@ -51,7 +59,7 @@ pub fn read_from_snaphot_manifest(path: &PathBuf) -> Result<StateSnapshotBackupV
 pub async fn read_account_state_chunk(
     file_handle: FileHandle,
     archive_path: &PathBuf,
-) -> Result<Vec<(HashValue, AccountStateBlob)>, Error> {
+) -> Result<Vec<(HashValue, AccountStateBlobV5)>, Error> {
     let full_handle = archive_path
         .parent()
         .expect("could not read archive path")
