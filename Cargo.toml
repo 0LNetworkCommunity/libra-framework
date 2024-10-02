@@ -63,6 +63,7 @@ diem-rest-client = { git = "https://github.com/0LNetworkCommunity/diem.git", bra
 diem-sdk = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 diem-config = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 diem-crypto = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-crypto-derive = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 diem-genesis = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 diem-global-constants = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 diem-keygen = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }

@@ -140,7 +140,7 @@ pub async fn manifest_to_json(manifest_path: PathBuf, out_path: Option<PathBuf>)
     let archive_path = manifest_path.parent().unwrap();
     let account_states = accounts_from_snapshot_backup(snapshot_manifest, archive_path)
         .await
-        .expect("could not parse snapshot");
+        .expect("could not decode snapshot");
     let mut legacy_recovery_vec = Vec::new();
     for account_state in account_states.iter() {
         let legacy_recovery = legacy_recovery_v6::get_legacy_recovery(account_state)
@@ -177,7 +177,7 @@ async fn test_deserialize_account() {
     let archive_path = this_path.parent().unwrap();
     let account_states = accounts_from_snapshot_backup(snapshot_manifest, archive_path)
         .await
-        .expect("could not parse snapshot");
+        .expect("could not decode snapshot");
     let mut legacy_recovery_vec = Vec::new();
     for account_state in account_states.iter() {
         let legacy_recovery =
