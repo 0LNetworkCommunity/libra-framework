@@ -1,23 +1,96 @@
 // // Copyright (c) The Diem Core Contributors
 // // SPDX-License-Identifier: Apache-2.0
 
-use anyhow::{Error, Result};
+use anyhow::{Context, Result};
 use diem_crypto::{
     hash::{CryptoHash, CryptoHasher},
     HashValue,
 };
-
-use std::collections::BTreeMap;
+use anyhow::bail;
+use libra_types::legacy_types::diem_account_v5::DiemAccountResourceV5;
+use libra_types::legacy_types::core_account_v5::AccountResourceV5;
+use libra_types::legacy_types::legacy_address_v5::LegacyAddressV5;
+use libra_types::legacy_types::struct_tag_v5::StructTagV5;
 use diem_crypto_derive::CryptoHasher;
+use move_core_types::move_resource::MoveResource;
+use move_core_types::language_storage::StructTag;
 use serde::{Deserialize, Deserializer, Serialize};
-use std::{convert::TryFrom, fmt};
+use std::collections::BTreeMap;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
-pub struct AccountStateV5(BTreeMap<Vec<u8>, Vec<u8>>);
+pub struct AccountStateV5(pub BTreeMap<Vec<u8>, Vec<u8>>);
 
+impl AccountStateV5 {
+    pub fn get_resource_data<T: MoveResource>(&self) -> Result<&[u8]> {
+        // NOTE: don't forget access_vector: has a byte prepended
+        let struct_tag = T::struct_tag();
+
+        let legacy_struct_tag = StructTagV5::convert_to_legacy(&struct_tag)?;
+        let key = legacy_struct_tag.access_vector();
+
+        dbg!(&hex::encode(&key));
+        let errmsg = format!(
+            "could not find in btree type {}",
+            T::struct_tag().to_canonical_string()
+        );
+
+        Ok(self.0.get(&key).context(errmsg)?)
+    }
+
+    pub fn find_bytes_struct_tag(&self, s: &StructTag) -> Result<&[u8]>  {
+        let errmsg = format!(
+            "could not find in btree type {}",
+            s.to_canonical_string()
+        );
+        let key = s.access_vector();
+        Ok(self.0.get(&key).context(errmsg)?)
+
+    }
+
+    pub fn find_bytes_legacy_struct_tag_v5(&self, legacy_struct_tag: &StructTagV5) -> Result<&[u8]>  {
+        let key = legacy_struct_tag.access_vector();
+
+        dbg!(&hex::encode(&key));
+        let errmsg = format!(
+            "could not find in btree type {}",
+            legacy_struct_tag.module
+        );
+
+        Ok(self.0.get(&key).context(errmsg)?)
+    }
+
+    pub fn get_resource<T: MoveResource>(&self) -> Result<T> {
+        let bytes = self.get_resource_data::<T>()?;
+        dbg!(&hex::encode(&bytes));
+        Ok(bcs::from_bytes(bytes)?)
+    }
+
+    pub fn get_address(&self) -> Result<LegacyAddressV5> {
+        let dr = self.get_diem_account_resource()?;
+        Ok(dr.address())
+    }
+
+    pub fn get_diem_account_resource(&self) -> Result<DiemAccountResourceV5> {
+        self.get_resource::<DiemAccountResourceV5>()
+    }
+
+    pub fn get_account_resource(&self) -> Result<AccountResourceV5> {
+        match self.get_resource::<AccountResourceV5>() {
+            Ok(x) => Ok(x),
+            _ => match self.get_resource::<DiemAccountResourceV5>() {
+                Ok(diem_ar) => Ok(AccountResourceV5::new(
+                    diem_ar.sequence_number(),
+                    diem_ar.authentication_key().to_vec(),
+                    diem_ar.address(),
+                )),
+                _ => bail!("can't find an AccountResource or DiemAccountResource"),
+            },
+        }
+    }
+}
 #[derive(Clone, Eq, PartialEq, Serialize, CryptoHasher)]
 pub struct AccountStateBlob {
-    blob: Vec<u8>,
+    pub blob: Vec<u8>,
     #[serde(skip)]
     hash: HashValue,
 }
@@ -46,33 +119,6 @@ impl AccountStateBlob {
         Self { blob, hash }
     }
 }
-
-impl fmt::Debug for AccountStateBlob {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let decoded = bcs::from_bytes(&self.blob)
-            .map(|account_state: AccountStateV5| format!("{:#?}", account_state))
-            .unwrap_or_else(|_| String::from("[fail]"));
-
-        write!(
-            f,
-            "AccountStateBlob {{ \n \
-             Raw: 0x{} \n \
-             Decoded: {} \n \
-             }}",
-            hex::encode(&self.blob),
-            decoded,
-        )
-    }
-}
-
-impl TryFrom<&AccountStateBlob> for AccountStateV5 {
-    type Error = Error;
-
-    fn try_from(account_state_blob: &AccountStateBlob) -> Result<Self> {
-        bcs::from_bytes(&account_state_blob.blob).map_err(Into::into)
-    }
-}
-
 
 impl CryptoHash for AccountStateBlob {
     type Hasher = AccountStateBlobHasher;
