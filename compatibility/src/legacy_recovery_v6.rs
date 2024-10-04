@@ -1,14 +1,16 @@
 //! recovery
 
-use crate::exports::AuthenticationKey;
-
-use super::ancestry_legacy::LegacyAncestryResource;
-use crate::{
+use anyhow::anyhow;
+use diem_types::{
+    account_state::AccountState,
+    account_view::AccountView,
+    validator_config::{ValidatorConfig, ValidatorOperatorConfigResource},
+};
+use libra_types::{
     core_types::legacy_currency_info::CurrencyInfoResource,
-    legacy_types::wallet::{
-        CommunityWalletsResourceLegacy, SlowWalletListResource, SlowWalletResource,
-    },
+    exports::AuthenticationKey,
     move_resource::{
+        ancestry::AncestryResource,
         burn::{BurnCounterResource, UserBurnPreferenceResource},
         cumulative_deposits::{CumulativeDepositResource, LegacyBalanceResource},
         donor_voice::RegistryResource,
@@ -20,19 +22,14 @@ use crate::{
         receipts::ReceiptsResource,
         validator_universe::ValidatorUniverseResource,
         vouch::MyVouchesResource,
+        wallet::{CommunityWalletsResource, SlowWalletListResource, SlowWalletResource},
     },
-};
-use anyhow::anyhow;
-use diem_types::{
-    account_state::AccountState,
-    account_view::AccountView,
-    validator_config::{ValidatorConfig, ValidatorOperatorConfigResource},
 };
 use move_core_types::account_address::AccountAddress;
 use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf, str::FromStr};
 
-use crate::move_resource::{
+use libra_types::move_resource::{
     ol_account::BurnTrackerResource, proof_of_fee::ConsensusRewardResource,
 };
 
@@ -79,13 +76,13 @@ pub struct LegacyRecoveryV6 {
     pub val_operator_cfg: Option<ValidatorOperatorConfigResource>,
 
     /// Community wallets associated with the account.
-    pub comm_wallet: Option<CommunityWalletsResourceLegacy>,
+    pub comm_wallet: Option<CommunityWalletsResource>,
 
     /// Information about the currency associated with the account.
     pub currency_info: Option<CurrencyInfoResource>,
 
     /// Ancestry information of the account in the legacy system.
-    pub ancestry: Option<LegacyAncestryResource>,
+    pub ancestry: Option<AncestryResource>,
 
     /// Receipts resource for the account.
     pub receipts: Option<ReceiptsResource>,
@@ -221,10 +218,10 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
 
         // comm_wallet
         legacy_recovery.comm_wallet =
-            account_state.get_move_resource::<CommunityWalletsResourceLegacy>()?;
+            account_state.get_move_resource::<CommunityWalletsResource>()?;
 
         // ancestry
-        legacy_recovery.ancestry = account_state.get_move_resource::<LegacyAncestryResource>()?;
+        legacy_recovery.ancestry = account_state.get_move_resource::<AncestryResource>()?;
 
         // receipts
         legacy_recovery.receipts = account_state.get_move_resource::<ReceiptsResource>()?;

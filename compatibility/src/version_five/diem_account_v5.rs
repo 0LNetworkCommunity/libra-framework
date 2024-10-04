@@ -1,16 +1,16 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::version_five::language_v5::StructTagV5;
+use crate::version_five::legacy_address_v5::LegacyAddressV5;
+use crate::version_five::event_v5::EventHandleV5;
+
+use move_core_types::ident_str;
 use move_core_types::{
-    account_address::AccountAddress,
     identifier::IdentStr,
     move_resource::{MoveResource, MoveStructType},
 };
-use move_core_types::ident_str;
-use diem_types::event::EventHandle;
 use serde::{Deserialize, Serialize};
-use crate::legacy_types::struct_tag_v5::StructTagV5;
-use crate::legacy_types::legacy_address_v5::LegacyAddressV5;
 
 use super::legacy_address_v5::LEGACY_CORE_CODE_ADDRESS;
 
@@ -23,8 +23,8 @@ pub struct DiemAccountResourceV5 {
     authentication_key: Vec<u8>,
     withdrawal_capability: Option<WithdrawCapabilityResource>,
     key_rotation_capability: Option<KeyRotationCapabilityResource>,
-    received_events: EventHandle,
-    sent_events: EventHandle,
+    received_events: EventHandleV5,
+    sent_events: EventHandleV5,
     sequence_number: u64,
 }
 
@@ -33,8 +33,8 @@ impl DiemAccountResourceV5 {
     pub fn new(
         sequence_number: u64,
         authentication_key: Vec<u8>,
-        sent_events: EventHandle,
-        received_events: EventHandle,
+        sent_events: EventHandleV5,
+        received_events: EventHandleV5,
     ) -> Self {
         DiemAccountResourceV5 {
             authentication_key,
@@ -67,28 +67,35 @@ impl DiemAccountResourceV5 {
     }
 
     /// Return the sent_events handle for the given AccountResource
-    pub fn sent_events(&self) -> &EventHandle {
+    pub fn sent_events(&self) -> &EventHandleV5 {
         &self.sent_events
     }
 
     /// Return the received_events handle for the given AccountResource
-    pub fn received_events(&self) -> &EventHandle {
+    pub fn received_events(&self) -> &EventHandleV5 {
         &self.received_events
     }
 
     pub fn address(&self) -> LegacyAddressV5 {
-      // cast address from
-       LegacyAddressV5::from_hex_literal(&self.sent_events().key().get_creator_address().to_hex_literal()).expect("cannot decode DiemAccount address")
+        // cast address from
+        LegacyAddressV5::from_hex_literal(
+            &self
+                .sent_events()
+                .key()
+                .get_creator_address()
+                .to_hex_literal(),
+        )
+        .expect("cannot decode DiemAccount address")
     }
 
     // for compatibility, the struct tag uses different address format
     pub fn v5_legacy_struct_tag() -> StructTagV5 {
-      StructTagV5 {
-          address: LEGACY_CORE_CODE_ADDRESS,
-          module: ident_str!("DiemAccount").into(),
-          name: ident_str!("DiemAccount").into(),
-          type_params: vec![],
-      }
+        StructTagV5 {
+            address: LEGACY_CORE_CODE_ADDRESS,
+            module: ident_str!("DiemAccount").into(),
+            name: ident_str!("DiemAccount").into(),
+            type_params: vec![],
+        }
     }
 }
 
@@ -98,7 +105,6 @@ impl MoveStructType for DiemAccountResourceV5 {
 }
 
 impl MoveResource for DiemAccountResourceV5 {}
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WithdrawCapabilityResource {

@@ -1,9 +1,7 @@
 //! read-archive
 
-use crate::version_five_balance::BalanceResource;
-use crate::{version_five_account_blob::AccountStateBlob, version_five_freezing::FreezingBit};
+use crate::version_five::{account_blob::AccountStateBlob, hash_value_v5::HashValue};
 
-use crate::version_five_hash_value::HashValue;
 use anyhow::{anyhow, Context, Error, Result};
 use diem_backup_cli::{
     backup_types::state_snapshot::manifest::StateSnapshotChunk,
@@ -71,7 +69,7 @@ pub async fn read_account_state_chunk(
         dbg!(&record_bytes.len());
         dbg!(&hex::encode(&record_bytes));
         dbg!(&record_bytes);
-        let bcs = bcs_old::from_bytes(&record_bytes).context("could not deserialize bcs chunk")?;
+        let bcs = bcs::from_bytes(&record_bytes).context("could not deserialize bcs chunk")?;
         chunk.push(bcs);
     }
     Ok(chunk)
@@ -106,41 +104,28 @@ pub async fn v5_accounts_from_snapshot_backup(
 
 #[test]
 fn test_string() {
-    use crate::version_five_account_blob::AccountStateV5;
-    // use move_core_types::language_storage::StructTag;
-    use libra_types::legacy_types::struct_tag_v5::StructTagV5;
+    use super::account_blob::AccountStateV5;
+
+    use super::balance_v5::BalanceResource;
+    use super::freezing_v5::FreezingBit;
 
     let bytes = b" \0\x03Z|\x96)\xb7\xe5.\x94\xdee\xe6\xa8\x92p\x1f\xe2\x83Q\x18d\x05\xbe\x96\xed#\xf4\xb1%/z\xd4\x03\x06\x1f\x01\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x01\x05Roles\x06RoleId\0\x08\n\0\0\0\0\0\0\0(\x01\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x01\x08Receipts\x0cUserReceipts\0\x04\0\0\0\0*\x01\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x01\x0bDiemAccount\x0bDiemAccount\0\x8d\x01 \x89EP$\xb0\xc9\x15|ja\x03\xaf-\xb4\x98\xf4\xc4\x8f\xd6\xf9\x82\x92\xda3\xb1\x1cHx\xb3m\xde\x1b\x01\xc4\x8f\xd6\xf9\x82\x92\xda3\xb1\x1cHx\xb3m\xde\x1b\x01\xc4\x8f\xd6\xf9\x82\x92\xda3\xb1\x1cHx\xb3m\xde\x1b\x01\0\0\0\0\0\0\0\x18\0\0\0\0\0\0\0\0\xc4\x8f\xd6\xf9\x82\x92\xda3\xb1\x1cHx\xb3m\xde\x1b\0\0\0\0\0\0\0\0\x18\x01\0\0\0\0\0\0\0\xc4\x8f\xd6\xf9\x82\x92\xda3\xb1\x1cHx\xb3m\xde\x1b\0\0\0\0\0\0\0\0-\x01\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x01\x05Event\x14EventHandleGenerator\0\x18\x02\0\0\0\0\0\0\0\xc4\x8f\xd6\xf9\x82\x92\xda3\xb1\x1cHx\xb3m\xde\x1b.\x01\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x01\x0fAccountFreezing\x0bFreezingBit\0\x01\0@\x01\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x01\x0bDiemAccount\x07Balance\x01\x07\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x01\x03GAS\x03GAS\0\x08@B\x0f\0\0\0\0\0";
 
     let (_h, b): (HashValue, AccountStateBlob) = bcs::from_bytes(bytes).expect("cant decode");
 
     let acc_state: AccountStateV5 = bcs::from_bytes(&b.blob).unwrap();
+    let ar = acc_state.get_account_resource().unwrap();
+    dbg!(&ar);
 
     let s = acc_state.get_resource::<FreezingBit>().unwrap();
     dbg!(&s);
 
-    // let s = acc_state.get_resource::<BalanceResource>().unwrap();
-    // dbg!(&s);
-    let balance_key = hex::decode("01000000000000000000000000000000010b4469656d4163636f756e740742616c616e636501070000000000000000000000000000000000000000000000000000000000000001034741530347415300").unwrap();
+    let _balance_key = hex::decode("01000000000000000000000000000000010b4469656d4163636f756e740742616c616e636501070000000000000000000000000000000000000000000000000000000000000001034741530347415300").unwrap();
     let balance_key = hex::decode("01000000000000000000000000000000010b4469656d4163636f756e740742616c616e6365010700000000000000000000000000000001034741530347415300").unwrap();
     let b = acc_state.0.get(&balance_key).unwrap();
     dbg!(&b);
-    let res: BalanceResource = bcs::from_bytes(&b).unwrap();
+    let res: BalanceResource = bcs::from_bytes(b).unwrap();
     dbg!(&res);
-
-    // let s = StructTagV5::new("AccountFreezing", "FreezingBit", None);
-
-    // dbg!(&s);
-    // let b = acc_state.find_bytes_legacy_struct_tag_v5(&s).unwrap();
-    // dbg!(&b);
-    // #[derive(Debug, Serialize, Deserialize)]
-    // struct FreezingBit {
-    //     is_frozen: bool,
-    // }
-
-    // let f: FreezingBit = bcs::from_bytes(&b).expect("decode");
-    // dbg!(&f);
-
 }
 
 #[test]
@@ -167,7 +152,7 @@ fn sanity_test() {
     dbg!(&b);
     let expected_bytes = vec![0x7f, 0x00, 0x00, 0x01, 0x41, 0x1f];
 
-    assert!(&b == &expected_bytes, "not match");
+    assert!(b == expected_bytes, "not match");
 
     let socket_addr: SocketAddr = bcs::from_bytes(&expected_bytes).unwrap();
 
@@ -179,8 +164,8 @@ fn sanity_test() {
 
 #[test]
 fn decode_encode_struct_tag() {
-    use libra_types::legacy_types::struct_tag_v5::StructTagV5;
-    use libra_types::legacy_types::legacy_address_v5::LEGACY_CORE_CODE_ADDRESS;
+    use super::language_v5::StructTagV5;
+    use super::legacy_address_v5::LEGACY_CORE_CODE_ADDRESS;
     use move_core_types::ident_str;
     let s = StructTagV5 {
         address: LEGACY_CORE_CODE_ADDRESS,
@@ -190,16 +175,17 @@ fn decode_encode_struct_tag() {
     };
 
     let bytes = bcs::to_bytes(&s).unwrap();
-    let h = hex::encode(&bytes);
+    let h = hex::encode(bytes);
     dbg!(&h);
 
     let expected_key =
         "000000000000000000000000000000010b4469656d4163636f756e740b4469656d4163636f756e7400";
 
-    assert!(expected_key == &h);
+    assert!(expected_key == h);
 
-    let patch_expected_key = "01000000000000000000000000000000010b4469656d4163636f756e740b4469656d4163636f756e7400";
+    let patch_expected_key =
+        "01000000000000000000000000000000010b4469656d4163636f756e740b4469656d4163636f756e7400";
     // lookup will fail unless it's using the access_vector() bit
     // "resource keys" have prepended 01
-    assert!(&hex::encode(s.access_vector()) == patch_expected_key);
+    assert!(hex::encode(s.access_vector()) == patch_expected_key);
 }

@@ -1,12 +1,7 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
-use crate::version_five_safe_serialize;
-
-use move_core_types::{
-  identifier::{Identifier, IdentStr},
-  // safe_serialize,
-};
-use libra_types::legacy_types::legacy_address_v5::LegacyAddressV5;
+use crate::version_five::{legacy_address_v5::LegacyAddressV5, safe_serialize_v5};
+use move_core_types::identifier::{IdentStr, Identifier};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 
@@ -18,7 +13,7 @@ pub const CORE_CODE_ADDRESS: LegacyAddressV5 = LegacyAddressV5::new([
 ]);
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Hash, Eq, Clone, PartialOrd, Ord)]
-pub enum TypeTag {
+pub enum TypeTagV5 {
     Bool,
     U8,
     U64,
@@ -27,29 +22,29 @@ pub enum TypeTag {
     Signer,
     Vector(
         #[serde(
-            serialize_with = "version_five_safe_serialize::type_tag_recursive_serialize",
-            deserialize_with = "version_five_safe_serialize::type_tag_recursive_deserialize"
+            serialize_with = "safe_serialize_v5::type_tag_recursive_serialize",
+            deserialize_with = "safe_serialize_v5::type_tag_recursive_deserialize"
         )]
-        Box<TypeTag>,
+        Box<TypeTagV5>,
     ),
     Struct(
         #[serde(
-            serialize_with = "version_five_safe_serialize::type_tag_recursive_serialize",
-            deserialize_with = "version_five_safe_serialize::type_tag_recursive_deserialize"
+            serialize_with = "safe_serialize_v5::type_tag_recursive_serialize",
+            deserialize_with = "safe_serialize_v5::type_tag_recursive_deserialize"
         )]
-        Box<StructTag>,
+        Box<StructTagV5>,
     ),
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Hash, Eq, Clone, PartialOrd, Ord)]
-pub struct StructTag {
+pub struct StructTagV5 {
     pub address: LegacyAddressV5,
     pub module: Identifier,
     pub name: Identifier,
-    pub type_params: Vec<TypeTag>,
+    pub type_params: Vec<TypeTagV5>,
 }
 
-impl StructTag {
+impl StructTagV5 {
     pub fn access_vector(&self) -> Vec<u8> {
         let mut key = vec![RESOURCE_TAG];
         key.append(&mut bcs::to_bytes(self).unwrap());
@@ -66,7 +61,7 @@ impl StructTag {
 #[derive(Serialize, Deserialize, Debug, PartialEq, Hash, Eq, Clone, PartialOrd, Ord)]
 pub struct ResourceKey {
     pub address: LegacyAddressV5,
-    pub type_: StructTag,
+    pub type_: StructTagV5,
 }
 
 impl ResourceKey {
@@ -74,13 +69,13 @@ impl ResourceKey {
         self.address
     }
 
-    pub fn type_(&self) -> &StructTag {
+    pub fn type_(&self) -> &StructTagV5 {
         &self.type_
     }
 }
 
 impl ResourceKey {
-    pub fn new(address: LegacyAddressV5, type_: StructTag) -> Self {
+    pub fn new(address: LegacyAddressV5, type_: StructTagV5) -> Self {
         ResourceKey { address, type_ }
     }
 }
@@ -125,7 +120,7 @@ impl Display for ModuleId {
     }
 }
 
-impl Display for StructTag {
+impl Display for StructTagV5 {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         write!(
             f,
@@ -146,17 +141,17 @@ impl Display for StructTag {
     }
 }
 
-impl Display for TypeTag {
+impl Display for TypeTagV5 {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         match self {
-            TypeTag::Struct(s) => write!(f, "{}", s),
-            TypeTag::Vector(ty) => write!(f, "vector<{}>", ty),
-            TypeTag::U8 => write!(f, "u8"),
-            TypeTag::U64 => write!(f, "u64"),
-            TypeTag::U128 => write!(f, "u128"),
-            TypeTag::Address => write!(f, "address"),
-            TypeTag::Signer => write!(f, "signer"),
-            TypeTag::Bool => write!(f, "bool"),
+            TypeTagV5::Struct(s) => write!(f, "{}", s),
+            TypeTagV5::Vector(ty) => write!(f, "vector<{}>", ty),
+            TypeTagV5::U8 => write!(f, "u8"),
+            TypeTagV5::U64 => write!(f, "u64"),
+            TypeTagV5::U128 => write!(f, "u128"),
+            TypeTagV5::Address => write!(f, "address"),
+            TypeTagV5::Signer => write!(f, "signer"),
+            TypeTagV5::Bool => write!(f, "bool"),
         }
     }
 }
@@ -167,8 +162,8 @@ impl Display for ResourceKey {
     }
 }
 
-impl From<StructTag> for TypeTag {
-    fn from(t: StructTag) -> TypeTag {
-        TypeTag::Struct(Box::new(t))
+impl From<StructTagV5> for TypeTagV5 {
+    fn from(t: StructTagV5) -> TypeTagV5 {
+        TypeTagV5::Struct(Box::new(t))
     }
 }

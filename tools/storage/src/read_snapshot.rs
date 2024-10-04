@@ -15,7 +15,7 @@ use diem_types::{
         state_value::StateValue,
     },
 };
-use libra_types::legacy_types::legacy_recovery_v6;
+use libra_backwards_compatibility::legacy_recovery_v6;
 use serde_json::json;
 use std::{
     collections::HashMap,
@@ -23,9 +23,6 @@ use std::{
     path::{Path, PathBuf},
 };
 use tokio::{fs::OpenOptions, io::AsyncRead};
-
-#[cfg(test)]
-use libra_types::legacy_types::legacy_recovery_v6::{get_legacy_recovery, AccountRole};
 
 ////// SNAPSHOT FILE IO //////
 /// read snapshot manifest file into object
@@ -180,8 +177,8 @@ async fn test_deserialize_account() {
         .expect("could not decode snapshot");
     let mut legacy_recovery_vec = Vec::new();
     for account_state in account_states.iter() {
-        let legacy_recovery =
-            get_legacy_recovery(account_state).expect("could not get legacy recovery");
+        let legacy_recovery = legacy_recovery_v6::get_legacy_recovery(account_state)
+            .expect("could not get legacy recovery");
 
         legacy_recovery_vec.push(legacy_recovery);
     }
@@ -202,7 +199,7 @@ async fn test_deserialize_account() {
     assert_eq!(
         legacy_recovery_vec
             .iter()
-            .filter(|l| l.role == AccountRole::System)
+            .filter(|l| l.role == legacy_recovery_v6::AccountRole::System)
             .fold(0, |count, _| count + 1),
         1
     );
@@ -210,7 +207,7 @@ async fn test_deserialize_account() {
     assert_eq!(
         legacy_recovery_vec
             .iter()
-            .filter(|l| l.role == AccountRole::Validator)
+            .filter(|l| l.role == legacy_recovery_v6::AccountRole::Validator)
             .fold(0, |count, _| count + 1),
         74
     );
@@ -219,7 +216,7 @@ async fn test_deserialize_account() {
     assert_eq!(
         legacy_recovery_vec
             .iter()
-            .filter(|l| l.role == AccountRole::Operator)
+            .filter(|l| l.role == legacy_recovery_v6::AccountRole::Operator)
             .fold(0, |count, _| count + 1),
         0
     );

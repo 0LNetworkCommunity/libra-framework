@@ -1,5 +1,5 @@
 use diem_types::account_address::AccountAddress;
-use libra_types::legacy_types::legacy_recovery_v6::LegacyRecoveryV6;
+use libra_backwards_compatibility::legacy_recovery_v6::LegacyRecoveryV6;
 use serde::Serialize;
 use std::collections::BTreeMap;
 

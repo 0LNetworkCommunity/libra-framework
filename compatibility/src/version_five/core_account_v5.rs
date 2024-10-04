@@ -1,20 +1,16 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-
+use move_core_types::ident_str;
 use move_core_types::{
-
     identifier::IdentStr,
     move_resource::{MoveResource, MoveStructType},
 };
-use move_core_types::ident_str;
 use serde::{Deserialize, Serialize};
-use crate::legacy_types::struct_tag_v5::StructTagV5;
 
 use super::legacy_address_v5::LegacyAddressV5;
 
 pub const CORE_ACCOUNT_MODULE_IDENTIFIER: &IdentStr = ident_str!("Account");
-
 
 /// A Rust representation of an Account resource.
 /// This is not how the Account is represented in the VM but it's a convenient representation.

@@ -18,3 +18,4 @@ pub mod receipts;
 pub mod txschedule;
 pub mod validator_universe;
 pub mod vouch;
+pub mod wallet;

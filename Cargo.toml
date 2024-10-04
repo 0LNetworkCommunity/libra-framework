@@ -2,6 +2,7 @@
 resolver = "2"
 
 members = [
+  "compatibility",
   "framework",
   "framework/cached-packages",
   "smoke-tests",
@@ -33,6 +34,7 @@ version = "7.0.3"
 [workspace.dependencies]
 ######## Internal crate dependencies ########
 # Internal crate dependencies.
+libra-backwards-compatibility = { path = "compatibility" }
 libra-cached-packages = { path = "framework/cached-packages" }
 libra-config = { path = "tools/config" }
 libra-framework = { path = "framework" }

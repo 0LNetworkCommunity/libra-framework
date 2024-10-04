@@ -7,22 +7,21 @@ use move_core_types::{
     move_resource::{MoveResource, MoveStructType},
 };
 use serde::{Deserialize, Serialize};
-// NOTE: these are legacy structs for v5
 
 /// Struct that represents a CommunityWallet resource
 /// TODO: this is incorrect field structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CommunityWalletsResourceLegacy {
+pub struct CommunityWalletsResource {
     // List
     pub list: Vec<AccountAddress>,
 }
 
-impl MoveStructType for CommunityWalletsResourceLegacy {
+impl MoveStructType for CommunityWalletsResource {
     const MODULE_NAME: &'static IdentStr = ident_str!("community_wallet");
     const STRUCT_NAME: &'static IdentStr = ident_str!("CommunityWallet");
 }
 
-impl MoveResource for CommunityWalletsResourceLegacy {}
+impl MoveResource for CommunityWalletsResource {}
 
 /// Struct that represents a SlowWallet resource
 #[derive(Debug, Serialize, Deserialize, Clone)]
