@@ -34,6 +34,13 @@ pub struct StateSnapshotBackupV5 {
     pub proof: FileHandle,
 }
 
+/// The tuple in which all account bytes are stored as
+/// All backup records are stored with the data byte length. See ReadRecordBytes.
+/// An account's on-chain bytes are represented in storage files as an AccountStateBlob. However, the chunks are stored with a tuple of  HashValue of the bytes prior to they bytes themselves.
+// NOTE: Paradoxically the data layout of the AccountStateBlob also has a `hash` field, but this one is not serialized. Unclear why the tuple is needed when the blob could have been de/serialized fully. Alas.
+
+pub struct AccountStateBlobRecord(HashValue, AccountStateBlob);
+
 ////// SNAPSHOT FILE IO //////
 /// read snapshot manifest file into object
 pub fn v5_read_from_snapshot_manifest(path: &PathBuf) -> Result<StateSnapshotBackupV5, Error> {
@@ -51,7 +58,7 @@ pub fn v5_read_from_snapshot_manifest(path: &PathBuf) -> Result<StateSnapshotBac
 pub async fn read_account_state_chunk(
     file_handle: FileHandle,
     archive_path: &PathBuf,
-) -> Result<Vec<(HashValue, AccountStateBlob)>, Error> {
+) -> Result<Vec<AccountStateBlobRecord>, Error> {
     let full_handle = archive_path
         .parent()
         .expect("could not read archive path")
