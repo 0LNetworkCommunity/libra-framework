@@ -8,11 +8,12 @@ use crate::version_five::event_v5::EventHandleV5;
 use move_core_types::ident_str;
 use move_core_types::{
     identifier::IdentStr,
-    move_resource::{MoveResource, MoveStructType},
 };
 use serde::{Deserialize, Serialize};
 
 use super::legacy_address_v5::LEGACY_CORE_CODE_ADDRESS;
+use super::move_resource_v5::{MoveResourceV5, MoveStructTypeV5};
+
 
 /// The Identifier for the Account module.
 pub const DIEM_ACCOUNT_MODULE_IDENTIFIER: &IdentStr = ident_str!("DiemAccount");
@@ -99,33 +100,33 @@ impl DiemAccountResourceV5 {
     }
 }
 
-impl MoveStructType for DiemAccountResourceV5 {
+impl MoveStructTypeV5 for DiemAccountResourceV5 {
     const MODULE_NAME: &'static IdentStr = DIEM_ACCOUNT_MODULE_IDENTIFIER;
     const STRUCT_NAME: &'static IdentStr = DIEM_ACCOUNT_MODULE_IDENTIFIER;
 }
 
-impl MoveResource for DiemAccountResourceV5 {}
+impl MoveResourceV5 for DiemAccountResourceV5 {}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WithdrawCapabilityResource {
     account_address: LegacyAddressV5,
 }
 
-impl MoveStructType for WithdrawCapabilityResource {
+impl MoveStructTypeV5 for WithdrawCapabilityResource {
     const MODULE_NAME: &'static IdentStr = DIEM_ACCOUNT_MODULE_IDENTIFIER;
     const STRUCT_NAME: &'static IdentStr = ident_str!("WithdrawCapability");
 }
 
-impl MoveResource for WithdrawCapabilityResource {}
+impl MoveResourceV5 for WithdrawCapabilityResource {}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct KeyRotationCapabilityResource {
     account_address: LegacyAddressV5,
 }
 
-impl MoveStructType for KeyRotationCapabilityResource {
+impl MoveStructTypeV5 for KeyRotationCapabilityResource {
     const MODULE_NAME: &'static IdentStr = DIEM_ACCOUNT_MODULE_IDENTIFIER;
     const STRUCT_NAME: &'static IdentStr = ident_str!("KeyRotationCapability");
 }
 
-impl MoveResource for KeyRotationCapabilityResource {}
+impl MoveResourceV5 for KeyRotationCapabilityResource {}

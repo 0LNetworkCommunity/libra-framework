@@ -1,22 +1,21 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-#[allow(unused)]
-
+#[allow(dead_code)]
 use crate::version_five::{
     core_account_v5::AccountResourceV5, diem_account_v5::DiemAccountResourceV5,
     language_storage_v5::StructTagV5, legacy_address_v5::LegacyAddressV5,
 };
-use anyhow::bail;
-use anyhow::{Context, Result};
+use crate::version_five::move_resource_v5::MoveResourceV5;
+use anyhow::{bail, Context, Result};
 use diem_crypto::{
     hash::{CryptoHash, CryptoHasher},
     HashValue,
 };
 
 use diem_crypto_derive::CryptoHasher;
-use move_core_types::language_storage::StructTag;
-use move_core_types::move_resource::MoveResource;
+// use move_core_types::language_storage::StructTag;
+// use move_core_types::move_resource::MoveResource;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::BTreeMap;
 
@@ -24,12 +23,12 @@ use std::collections::BTreeMap;
 pub struct AccountStateV5(pub BTreeMap<Vec<u8>, Vec<u8>>);
 
 impl AccountStateV5 {
-    pub fn get_resource_data<T: MoveResource>(&self) -> Result<&[u8]> {
+    pub fn get_resource_data<T: MoveResourceV5>(&self) -> Result<&[u8]> {
         // NOTE: don't forget access_vector: has a byte prepended
         let struct_tag = T::struct_tag();
 
-        let legacy_struct_tag = convert_to_legacy(&struct_tag)?;
-        let key = legacy_struct_tag.access_vector();
+        // let legacy_struct_tag = convert_to_legacy(&struct_tag)?;
+        let key = struct_tag.access_vector();
 
         let errmsg = format!(
             "could not find in btree type {}",
@@ -39,11 +38,11 @@ impl AccountStateV5 {
         Ok(self.0.get(&key).context(errmsg)?)
     }
 
-    pub fn find_bytes_struct_tag(&self, s: &StructTag) -> Result<&[u8]> {
-        let errmsg = format!("could not find in btree type {}", s.to_canonical_string());
-        let key = s.access_vector();
-        Ok(self.0.get(&key).context(errmsg)?)
-    }
+    // pub fn find_bytes_struct_tag(&self, s: &StructTagV5) -> Result<&[u8]> {
+    //     let errmsg = format!("could not find in btree type {}", s.to_canonical_string());
+    //     let key = s.access_vector();
+    //     Ok(self.0.get(&key).context(errmsg)?)
+    // }
 
     pub fn find_bytes_legacy_struct_tag_v5(
         &self,
@@ -57,7 +56,7 @@ impl AccountStateV5 {
         Ok(self.0.get(&key).context(errmsg)?)
     }
 
-    pub fn get_resource<T: MoveResource>(&self) -> Result<T> {
+    pub fn get_resource<T: MoveResourceV5>(&self) -> Result<T> {
         let bytes = self.get_resource_data::<T>()?;
         Ok(bcs::from_bytes(bytes)?)
     }
@@ -115,6 +114,10 @@ impl AccountStateBlob {
         let hash = hasher.finish();
         Self { blob, hash }
     }
+    // convert from vec<u8> to btree k-v representation
+    pub fn to_account_state(&self) -> Result<AccountStateV5> {
+        Ok(bcs::from_bytes(&self.blob)?)
+    }
 }
 
 impl CryptoHash for AccountStateBlob {
@@ -125,13 +128,13 @@ impl CryptoHash for AccountStateBlob {
     }
 }
 
-pub fn convert_to_legacy(s: &StructTag) -> Result<StructTagV5> {
-    let legacy_address = LegacyAddressV5::from_hex_literal(&s.address.to_hex_literal())?;
+// pub fn convert_to_legacy(s: &StructTag) -> Result<StructTagV5> {
+//     let legacy_address = LegacyAddressV5::from_hex_literal(&s.address.to_hex_literal())?;
 
-    Ok(StructTagV5 {
-        address: legacy_address,
-        module: s.module.clone(),
-        name: s.name.clone(),
-        type_params: vec![], // TODO // s.type_params.clone(),
-    })
-}
+//     Ok(StructTagV5 {
+//         address: legacy_address,
+//         module: s.module.clone(),
+//         name: s.name.clone(),
+//         type_params: vec![], // TODO // s.type_params.clone(),
+//     })
+// }

@@ -12,7 +12,7 @@ use libra_types::{
     move_resource::{
         ancestry::AncestryResource,
         burn::{BurnCounterResource, UserBurnPreferenceResource},
-        cumulative_deposits::{CumulativeDepositResource, LegacyBalanceResource},
+        cumulative_deposits::{CumulativeDepositResource, LegacyBalanceResourceV6},
         donor_voice::RegistryResource,
         donor_voice_txs::TxScheduleResource,
         fee_maker::{EpochFeeMakerRegistryResource, FeeMakerResource},
@@ -67,7 +67,7 @@ pub struct LegacyRecoveryV6 {
     pub role: AccountRole,
 
     /// The balance resource of the account in the legacy system.
-    pub balance: Option<LegacyBalanceResource>,
+    pub balance: Option<LegacyBalanceResourceV6>,
 
     /// Validator configuration information.
     pub val_cfg: Option<ValidatorConfig>,
@@ -201,7 +201,7 @@ pub fn get_legacy_recovery(account_state: &AccountState) -> anyhow::Result<Legac
         // balance
         legacy_recovery.balance = account_state
             .get_coin_store_resource()?
-            .map(|r| LegacyBalanceResource { coin: r.coin() });
+            .map(|r| LegacyBalanceResourceV6 { coin: r.coin() });
 
         // validator config
         legacy_recovery.val_cfg = account_state.get_validator_config_resource()?;
