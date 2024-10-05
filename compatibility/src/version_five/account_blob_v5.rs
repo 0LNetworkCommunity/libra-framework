@@ -3,7 +3,7 @@
 
 use crate::version_five::{
     core_account_v5::AccountResourceV5, diem_account_v5::DiemAccountResourceV5,
-    language_v5::StructTagV5, legacy_address_v5::LegacyAddressV5,
+    language_storage_v5::StructTagV5, legacy_address_v5::LegacyAddressV5,
 };
 use anyhow::bail;
 use anyhow::{Context, Result};

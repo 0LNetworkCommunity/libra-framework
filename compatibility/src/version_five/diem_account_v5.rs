@@ -1,7 +1,7 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::version_five::language_v5::StructTagV5;
+use crate::version_five::language_storage_v5::StructTagV5;
 use crate::version_five::legacy_address_v5::LegacyAddressV5;
 use crate::version_five::event_v5::EventHandleV5;
 

@@ -1,6 +1,6 @@
 //! read-archive
 
-use crate::version_five::{account_blob::AccountStateBlob, hash_value_v5::HashValue};
+use crate::version_five::{account_blob_v5::AccountStateBlob, hash_value_v5::HashValue};
 
 use anyhow::{anyhow, Context, Error, Result};
 use diem_backup_cli::{
@@ -104,7 +104,7 @@ pub async fn v5_accounts_from_snapshot_backup(
 
 #[test]
 fn test_string() {
-    use super::account_blob::AccountStateV5;
+    use super::account_blob_v5::AccountStateV5;
 
     use super::balance_v5::BalanceResource;
     use super::freezing_v5::FreezingBit;
@@ -164,7 +164,7 @@ fn sanity_test() {
 
 #[test]
 fn decode_encode_struct_tag() {
-    use super::language_v5::StructTagV5;
+    use super::language_storage_v5::StructTagV5;
     use super::legacy_address_v5::LEGACY_CORE_CODE_ADDRESS;
     use move_core_types::ident_str;
     let s = StructTagV5 {
