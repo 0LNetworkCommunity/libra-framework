@@ -39,6 +39,7 @@ pub struct StateSnapshotBackupV5 {
 /// An account's on-chain bytes are represented in storage files as an AccountStateBlob. However, the chunks are stored with a tuple of  HashValue of the bytes prior to they bytes themselves.
 // NOTE: Paradoxically the data layout of the AccountStateBlob also has a `hash` field, but this one is not serialized. Unclear why the tuple is needed when the blob could have been de/serialized fully. Alas.
 
+#[derive(Clone, Deserialize, Serialize)]
 pub struct AccountStateBlobRecord(HashValue, AccountStateBlob);
 
 ////// SNAPSHOT FILE IO //////
@@ -98,10 +99,10 @@ pub async fn v5_accounts_from_snapshot_backup(
     for chunk in manifest.chunks {
         dbg!(&i);
 
-        let blobs = read_account_state_chunk(chunk.blobs, archive_path).await?;
+        let records = read_account_state_chunk(chunk.blobs, archive_path).await?;
 
-        for (_key, blob) in blobs {
-            account_state_blobs.push(blob)
+        for rec in records {
+            account_state_blobs.push(rec.1)
         }
         i += 1;
     }
@@ -110,9 +111,8 @@ pub async fn v5_accounts_from_snapshot_backup(
 }
 
 #[test]
-fn test_string() {
+fn decode_record_from_string() {
     use super::account_blob_v5::AccountStateV5;
-
     use super::balance_v5::BalanceResource;
     use super::freezing_v5::FreezingBit;
 
@@ -121,22 +121,34 @@ fn test_string() {
     let (_h, b): (HashValue, AccountStateBlob) = bcs::from_bytes(bytes).expect("cant decode");
 
     let acc_state: AccountStateV5 = bcs::from_bytes(&b.blob).unwrap();
-    let ar = acc_state.get_account_resource().unwrap();
-    dbg!(&ar);
 
-    let s = acc_state.get_resource::<FreezingBit>().unwrap();
-    dbg!(&s);
-
-    let _balance_key = hex::decode("01000000000000000000000000000000010b4469656d4163636f756e740742616c616e636501070000000000000000000000000000000000000000000000000000000000000001034741530347415300").unwrap();
+    // Sanity check that our access_path_vector we generate
+    // can be used to access a value in the K-V store
     let balance_key = hex::decode("01000000000000000000000000000000010b4469656d4163636f756e740742616c616e6365010700000000000000000000000000000001034741530347415300").unwrap();
     let b = acc_state.0.get(&balance_key).unwrap();
-    dbg!(&b);
+    assert!(!b.is_empty());
+    // also check that a simple BalanceResource can be found in the bytes
     let res: BalanceResource = bcs::from_bytes(b).unwrap();
-    dbg!(&res);
+    assert!(res.coin() == 1000000);
+
+    // We should be able to get the resource directly using a method on AccountStateV5.
+    // Among other things, a FreezingBit resource would be found on a backup
+    // record. Note it is the simplest structure did not use an AccountAddress
+    // for example, which makes it easier to check.
+
+    let s = acc_state.get_resource::<FreezingBit>().unwrap();
+    assert!(s.is_frozen() == false);
+
+    // Finally a DiemAccount resource should be found in this payload.
+    // This is the most complex structure, since involves some
+    // nested types like EventHandle and WithdrawCapability
+    let ar = acc_state.get_account_resource().unwrap();
+    assert!(ar.sequence_number() == 0);
+
 }
 
 #[test]
-fn sanity_test() {
+fn sanity_test_bcs() {
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Deserialize, Serialize)]
@@ -170,7 +182,7 @@ fn sanity_test() {
 }
 
 #[test]
-fn decode_encode_struct_tag() {
+fn decode_encode_v5_struct_tag() {
     use super::language_storage_v5::StructTagV5;
     use super::legacy_address_v5::LEGACY_CORE_CODE_ADDRESS;
     use move_core_types::ident_str;

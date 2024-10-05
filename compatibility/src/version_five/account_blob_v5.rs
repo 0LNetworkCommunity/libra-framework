@@ -1,5 +1,7 @@
-// // Copyright (c) The Diem Core Contributors
-// // SPDX-License-Identifier: Apache-2.0
+// Copyright (c) The Diem Core Contributors
+// SPDX-License-Identifier: Apache-2.0
+
+#[allow(unused)]
 
 use crate::version_five::{
     core_account_v5::AccountResourceV5, diem_account_v5::DiemAccountResourceV5,
@@ -29,7 +31,6 @@ impl AccountStateV5 {
         let legacy_struct_tag = convert_to_legacy(&struct_tag)?;
         let key = legacy_struct_tag.access_vector();
 
-        dbg!(&hex::encode(&key));
         let errmsg = format!(
             "could not find in btree type {}",
             T::struct_tag().to_canonical_string()
@@ -58,7 +59,6 @@ impl AccountStateV5 {
 
     pub fn get_resource<T: MoveResource>(&self) -> Result<T> {
         let bytes = self.get_resource_data::<T>()?;
-        dbg!(&hex::encode(bytes));
         Ok(bcs::from_bytes(bytes)?)
     }
 
