@@ -1,19 +1,16 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::version_five::event_v5::EventHandleV5;
 use crate::version_five::language_storage_v5::StructTagV5;
 use crate::version_five::legacy_address_v5::LegacyAddressV5;
-use crate::version_five::event_v5::EventHandleV5;
 
 use move_core_types::ident_str;
-use move_core_types::{
-    identifier::IdentStr,
-};
+use move_core_types::identifier::IdentStr;
 use serde::{Deserialize, Serialize};
 
 use super::legacy_address_v5::LEGACY_CORE_CODE_ADDRESS;
 use super::move_resource_v5::{MoveResourceV5, MoveStructTypeV5};
-
 
 /// The Identifier for the Account module.
 pub const DIEM_ACCOUNT_MODULE_IDENTIFIER: &IdentStr = ident_str!("DiemAccount");

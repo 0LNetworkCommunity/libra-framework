@@ -250,12 +250,12 @@ impl HashValue {
 
     /// Full hex representation of a given hash value.
     pub fn to_hex(&self) -> String {
-        format!("{:x}", self)
+        format!("{:x}", &self)
     }
 
     /// Full hex representation of a given hash value with `0x` prefix.
     pub fn to_hex_literal(&self) -> String {
-        format!("{:#x}", self)
+        format!("{:#x}", &self)
     }
 
     /// Parse a given hex string to a hash value.

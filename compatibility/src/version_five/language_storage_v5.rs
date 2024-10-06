@@ -1,5 +1,7 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
+#![allow(dead_code)]
+
 use crate::version_five::{legacy_address_v5::LegacyAddressV5, safe_serialize_v5};
 use move_core_types::identifier::{IdentStr, Identifier};
 use serde::{Deserialize, Serialize};

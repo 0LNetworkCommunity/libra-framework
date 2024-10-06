@@ -2,13 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use move_core_types::ident_str;
-use move_core_types::{
-    identifier::IdentStr,
-    move_resource::{MoveResource, MoveStructType},
-};
+use move_core_types::identifier::IdentStr;
 use serde::{Deserialize, Serialize};
 
 use super::legacy_address_v5::LegacyAddressV5;
+use super::move_resource_v5::{MoveResourceV5, MoveStructTypeV5};
 
 pub const CORE_ACCOUNT_MODULE_IDENTIFIER: &IdentStr = ident_str!("Account");
 
@@ -61,9 +59,9 @@ impl AccountResourceV5 {
     // }
 }
 
-impl MoveStructType for AccountResourceV5 {
+impl MoveStructTypeV5 for AccountResourceV5 {
     const MODULE_NAME: &'static IdentStr = CORE_ACCOUNT_MODULE_IDENTIFIER;
     const STRUCT_NAME: &'static IdentStr = CORE_ACCOUNT_MODULE_IDENTIFIER;
 }
 
-impl MoveResource for AccountResourceV5 {}
+impl MoveResourceV5 for AccountResourceV5 {}

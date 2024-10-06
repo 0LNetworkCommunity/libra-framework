@@ -1,12 +1,12 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
+#![allow(dead_code)]
 
-#[allow(dead_code)]
+use crate::version_five::move_resource_v5::MoveResourceV5;
 use crate::version_five::{
     core_account_v5::AccountResourceV5, diem_account_v5::DiemAccountResourceV5,
     language_storage_v5::StructTagV5, legacy_address_v5::LegacyAddressV5,
 };
-use crate::version_five::move_resource_v5::MoveResourceV5;
 use anyhow::{bail, Context, Result};
 use diem_crypto::{
     hash::{CryptoHash, CryptoHasher},
@@ -14,8 +14,6 @@ use diem_crypto::{
 };
 
 use diem_crypto_derive::CryptoHasher;
-// use move_core_types::language_storage::StructTag;
-// use move_core_types::move_resource::MoveResource;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::BTreeMap;
 
@@ -24,25 +22,17 @@ pub struct AccountStateV5(pub BTreeMap<Vec<u8>, Vec<u8>>);
 
 impl AccountStateV5 {
     pub fn get_resource_data<T: MoveResourceV5>(&self) -> Result<&[u8]> {
-        // NOTE: don't forget access_vector: has a byte prepended
-        let struct_tag = T::struct_tag();
+        // NOTE: when encoding you should use access_vector: since there's a magic a bit prepended to flag resources.
 
-        // let legacy_struct_tag = convert_to_legacy(&struct_tag)?;
-        let key = struct_tag.access_vector();
+        let key = T::struct_tag().access_vector();
 
         let errmsg = format!(
-            "could not find in btree type {}",
-            T::struct_tag().to_canonical_string()
+            "could not find in btree type {:?}",
+            &T::struct_tag().module_id()
         );
 
         Ok(self.0.get(&key).context(errmsg)?)
     }
-
-    // pub fn find_bytes_struct_tag(&self, s: &StructTagV5) -> Result<&[u8]> {
-    //     let errmsg = format!("could not find in btree type {}", s.to_canonical_string());
-    //     let key = s.access_vector();
-    //     Ok(self.0.get(&key).context(errmsg)?)
-    // }
 
     pub fn find_bytes_legacy_struct_tag_v5(
         &self,
@@ -127,14 +117,3 @@ impl CryptoHash for AccountStateBlob {
         self.hash
     }
 }
-
-// pub fn convert_to_legacy(s: &StructTag) -> Result<StructTagV5> {
-//     let legacy_address = LegacyAddressV5::from_hex_literal(&s.address.to_hex_literal())?;
-
-//     Ok(StructTagV5 {
-//         address: legacy_address,
-//         module: s.module.clone(),
-//         name: s.name.clone(),
-//         type_params: vec![], // TODO // s.type_params.clone(),
-//     })
-// }

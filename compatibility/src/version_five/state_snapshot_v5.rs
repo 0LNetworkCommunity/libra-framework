@@ -116,13 +116,13 @@ fn decode_record_from_string() {
 
     let acc_state: AccountStateV5 = bcs::from_bytes(&b.blob).unwrap();
 
-        // We should be able to get the resource directly using a method on AccountStateV5.
+    // We should be able to get the resource directly using a method on AccountStateV5.
     // Among other things, a FreezingBit resource would be found on a backup
     // record. Note it is the simplest structure did not use an AccountAddress
     // for example, which makes it easier to check.
 
     let s = acc_state.get_resource::<FreezingBit>().unwrap();
-    assert!(s.is_frozen() == false);
+    assert!(!s.is_frozen());
 
     // Sanity check that our access_path_vector we generate
     // can be used to access a value in the K-V store
@@ -135,14 +135,11 @@ fn decode_record_from_string() {
     let res: BalanceResourceV5 = bcs::from_bytes(b).unwrap();
     assert!(res.coin() == 1000000);
 
-
-
     // Finally a DiemAccount resource should be found in this payload.
     // This is the most complex structure, since involves some
     // nested types like EventHandle and WithdrawCapability
     let ar = acc_state.get_account_resource().unwrap();
     assert!(ar.sequence_number() == 0);
-
 }
 
 #[test]
@@ -205,4 +202,15 @@ fn decode_encode_v5_struct_tag() {
     // lookup will fail unless it's using the access_vector() bit
     // "resource keys" have prepended 01
     assert!(hex::encode(s.access_vector()) == patch_expected_key);
+}
+
+#[test]
+fn nested_generic_structs() {
+    use crate::version_five::balance_v5::BalanceResourceV5;
+    use crate::version_five::move_resource_v5::MoveStructTypeV5;
+    // This is the balance resource access_path as vector in storage
+    let balance_key = hex::decode("01000000000000000000000000000000010b4469656d4163636f756e740742616c616e6365010700000000000000000000000000000001034741530347415300").unwrap();
+
+    let vec = BalanceResourceV5::struct_tag().access_vector();
+    assert!(balance_key == vec);
 }
