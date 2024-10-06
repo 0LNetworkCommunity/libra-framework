@@ -43,7 +43,7 @@ pub struct StateSnapshotBackupV5 {
 pub struct AccountStateBlobRecord(HashValue, AccountStateBlob);
 
 ////// SNAPSHOT FILE IO //////
-/// read snapshot manifest file into object
+/// read snapshot manifest file into struct
 pub fn v5_read_from_snapshot_manifest(path: &PathBuf) -> Result<StateSnapshotBackupV5, Error> {
     let config = std::fs::read_to_string(path).map_err(|e| {
         format!("Error: cannot read file {:?}, error: {:?}", &path, &e);
