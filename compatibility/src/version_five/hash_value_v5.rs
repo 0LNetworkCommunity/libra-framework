@@ -121,19 +121,19 @@ use tiny_keccak::{Hasher, Sha3};
 
 /// Output value of our hash function. Intentionally opaque for safety and modularity.
 #[derive(Clone, Copy, Eq, Hash, PartialEq, PartialOrd, Ord)]
-pub struct HashValue {
-    hash: [u8; HashValue::LENGTH],
+pub struct HashValueV5 {
+    hash: [u8; HashValueV5::LENGTH],
 }
 
-impl HashValue {
+impl HashValueV5 {
     /// The length of the hash in bytes.
     pub const LENGTH: usize = 32;
     /// The length of the hash in bits.
     pub const LENGTH_IN_BITS: usize = Self::LENGTH * 8;
 
     /// Create a new [`HashValue`] from a byte array.
-    pub fn new(hash: [u8; HashValue::LENGTH]) -> Self {
-        HashValue { hash }
+    pub fn new(hash: [u8; HashValueV5::LENGTH]) -> Self {
+        HashValueV5 { hash }
     }
 
     /// Create from a slice (e.g. retrieved from storage).
@@ -150,22 +150,22 @@ impl HashValue {
 
     /// Creates a zero-initialized instance.
     pub const fn zero() -> Self {
-        HashValue {
-            hash: [0; HashValue::LENGTH],
+        HashValueV5 {
+            hash: [0; HashValueV5::LENGTH],
         }
     }
 
     /// Create a cryptographically random instance.
     pub fn random() -> Self {
         let mut rng = OsRng;
-        let hash: [u8; HashValue::LENGTH] = rng.gen();
-        HashValue { hash }
+        let hash: [u8; HashValueV5::LENGTH] = rng.gen();
+        HashValueV5 { hash }
     }
 
     /// Creates a random instance with given rng. Useful in unit tests.
     pub fn random_with_rng<R: Rng>(rng: &mut R) -> Self {
-        let hash: [u8; HashValue::LENGTH] = rng.gen();
-        HashValue { hash }
+        let hash: [u8; HashValueV5::LENGTH] = rng.gen();
+        HashValueV5 { hash }
     }
 
     /// Convenience function that computes a `HashValue` internally equal to
@@ -177,7 +177,7 @@ impl HashValue {
     pub fn sha3_256_of(buffer: &[u8]) -> Self {
         let mut sha3 = Sha3::v256();
         sha3.update(buffer);
-        HashValue::from_keccak(sha3)
+        HashValueV5::from_keccak(sha3)
     }
 
     #[cfg(test)]
@@ -189,7 +189,7 @@ impl HashValue {
         for buffer in buffers {
             sha3.update(buffer);
         }
-        HashValue::from_keccak(sha3)
+        HashValueV5::from_keccak(sha3)
     }
 
     fn as_ref_mut(&mut self) -> &mut [u8] {
@@ -241,7 +241,7 @@ impl HashValue {
     }
 
     /// Returns the length of common prefix of `self` and `other` in bits.
-    pub fn common_prefix_bits_len(&self, other: HashValue) -> usize {
+    pub fn common_prefix_bits_len(&self, other: HashValueV5) -> usize {
         self.iter_bits()
             .zip(other.iter_bits())
             .take_while(|(x, y)| x == y)
@@ -278,7 +278,7 @@ impl HashValue {
     }
 }
 
-impl ser::Serialize for HashValue {
+impl ser::Serialize for HashValueV5 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,
@@ -295,14 +295,14 @@ impl ser::Serialize for HashValue {
     }
 }
 
-impl<'de> de::Deserialize<'de> for HashValue {
+impl<'de> de::Deserialize<'de> for HashValueV5 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: de::Deserializer<'de>,
     {
         if deserializer.is_human_readable() {
             let encoded_hash = <String>::deserialize(deserializer)?;
-            HashValue::from_hex(encoded_hash.as_str())
+            HashValueV5::from_hex(encoded_hash.as_str())
                 .map_err(<D::Error as ::serde::de::Error>::custom)
         } else {
             // See comment in serialize.
@@ -316,19 +316,19 @@ impl<'de> de::Deserialize<'de> for HashValue {
     }
 }
 
-impl Default for HashValue {
+impl Default for HashValueV5 {
     fn default() -> Self {
-        HashValue::zero()
+        HashValueV5::zero()
     }
 }
 
-impl AsRef<[u8; HashValue::LENGTH]> for HashValue {
-    fn as_ref(&self) -> &[u8; HashValue::LENGTH] {
+impl AsRef<[u8; HashValueV5::LENGTH]> for HashValueV5 {
+    fn as_ref(&self) -> &[u8; HashValueV5::LENGTH] {
         &self.hash
     }
 }
 
-impl std::ops::Deref for HashValue {
+impl std::ops::Deref for HashValueV5 {
     type Target = [u8; Self::LENGTH];
 
     fn deref(&self) -> &Self::Target {
@@ -336,7 +336,7 @@ impl std::ops::Deref for HashValue {
     }
 }
 
-impl std::ops::Index<usize> for HashValue {
+impl std::ops::Index<usize> for HashValueV5 {
     type Output = u8;
 
     fn index(&self, s: usize) -> &u8 {
@@ -344,7 +344,7 @@ impl std::ops::Index<usize> for HashValue {
     }
 }
 
-impl fmt::Binary for HashValue {
+impl fmt::Binary for HashValueV5 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for byte in &self.hash {
             write!(f, "{:08b}", byte)?;
@@ -353,7 +353,7 @@ impl fmt::Binary for HashValue {
     }
 }
 
-impl fmt::LowerHex for HashValue {
+impl fmt::LowerHex for HashValueV5 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if f.alternate() {
             write!(f, "0x")?;
@@ -365,7 +365,7 @@ impl fmt::LowerHex for HashValue {
     }
 }
 
-impl fmt::Debug for HashValue {
+impl fmt::Debug for HashValueV5 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "HashValue(")?;
         <Self as fmt::LowerHex>::fmt(self, f)?;
@@ -375,7 +375,7 @@ impl fmt::Debug for HashValue {
 }
 
 /// Will print shortened (4 bytes) hash
-impl fmt::Display for HashValue {
+impl fmt::Display for HashValueV5 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for byte in self.hash.iter().take(4) {
             write!(f, "{:02x}", byte)?;
@@ -384,17 +384,17 @@ impl fmt::Display for HashValue {
     }
 }
 
-impl From<HashValue> for Bytes {
-    fn from(value: HashValue) -> Bytes {
+impl From<HashValueV5> for Bytes {
+    fn from(value: HashValueV5) -> Bytes {
         Bytes::copy_from_slice(value.hash.as_ref())
     }
 }
 
-impl FromStr for HashValue {
+impl FromStr for HashValueV5 {
     type Err = HashValueParseError;
 
     fn from_str(s: &str) -> Result<Self, HashValueParseError> {
-        HashValue::from_hex(s)
+        HashValueV5::from_hex(s)
     }
 }
 
@@ -421,17 +421,17 @@ pub struct HashValueBitIterator<'a> {
 
 impl<'a> HashValueBitIterator<'a> {
     /// Constructs a new `HashValueBitIterator` using given `HashValue`.
-    fn new(hash_value: &'a HashValue) -> Self {
+    fn new(hash_value: &'a HashValueV5) -> Self {
         HashValueBitIterator {
             hash_bytes: hash_value.as_ref(),
-            pos: (0..HashValue::LENGTH_IN_BITS),
+            pos: (0..HashValueV5::LENGTH_IN_BITS),
         }
     }
 
     /// Returns the `index`-th bit in the bytes.
     fn get_bit(&self, index: usize) -> bool {
         assert!(index < self.pos.end); // assumed precondition
-        assert!(self.hash_bytes.len() == HashValue::LENGTH); // invariant
+        assert!(self.hash_bytes.len() == HashValueV5::LENGTH); // invariant
         assert!(self.pos.end == self.hash_bytes.len() * 8); // invariant
         let pos = index / 8;
         let bit = 7 - index % 8;

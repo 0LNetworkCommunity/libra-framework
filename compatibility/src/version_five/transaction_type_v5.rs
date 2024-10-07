@@ -1,9 +1,13 @@
+use crate::version_five::hash_value_v5::HashValueV5;
+
 use diem_crypto::{ed25519::{Ed25519Signature, Ed25519PublicKey, PublicKey, Signature}, multi_ed25519::{MultiEd25519PublicKey, MultiEd25519Signature}};
 
+use diem_types::transaction::Script;
+use diem_types::transaction::ChangeSet;
 
 use diem_types::{chain_id::ChainId, transaction::authenticator::AccountAuthenticator};
 use serde::{Deserialize, Serialize};
-
+use diem_types::vm_status::AbortLocation;
 use super::legacy_address_v5::LegacyAddressV5;
 
 // #[allow(clippy::large_enum_variant)]
@@ -16,11 +20,11 @@ pub enum TransactionV5 {
     UserTransaction(SignedTransaction),
 
     /// Transaction that applies a WriteSet to the current storage, it's applied manually via db-bootstrapper.
-    // GenesisTransaction(WriteSetPayload),
-    GenesisTransaction(Vec<u8>),
+    GenesisTransaction(WriteSetPayload),
+    // GenesisTransaction(Vec<u8>),
 
     /// Transaction to update the block metadata resource at the beginning of a block.
-    BlockMetadata(Vec<u8>),
+    BlockMetadata(BlockMetadata),
 }
 
 
@@ -30,71 +34,70 @@ struct SignedTransaction {
     raw_txn: RawTransaction,
 
     /// Public key and signature to authenticate
-    // authenticator: Vec<u8>,
     authenticator: TransactionAuthenticator,
 }
 
 
-// /// Two different kinds of WriteSet transactions.
-// #[derive(Clone, Debug, Serialize, Deserialize)]
-// enum WriteSetPayload {
-//     /// Directly passing in the WriteSet.
-//     Direct(ChangeSet),
-//     /// Generate the WriteSet by running a script.
-//     Script {
-//         /// Execute the script as the designated signer.
-//         execute_as: AccountAddress,
-//         /// Script body that gets executed.
-//         script: Script,
-//     },
-// }
+/// Two different kinds of WriteSet transactions.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+enum WriteSetPayload {
+    /// Directly passing in the WriteSet.
+    Direct(ChangeSet),
+    /// Generate the WriteSet by running a script.
+    Script {
+        /// Execute the script as the designated signer.
+        execute_as: LegacyAddressV5,
+        /// Script body that gets executed.
+        script: Script,
+    },
+}
 
 
-// #[derive(Clone, Debug, Serialize, Deserialize)]
-// struct BlockMetadata {
-//     id: HashValue,
-//     round: u64,
-//     timestamp_usecs: u64,
-//     // The vector has to be sorted to ensure consistent result among all nodes
-//     previous_block_votes: Vec<AccountAddress>,
-//     proposer: AccountAddress,
-// }
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct BlockMetadata {
+    id: HashValueV5,
+    round: u64,
+    timestamp_usecs: u64,
+    // The vector has to be sorted to ensure consistent result among all nodes
+    previous_block_votes: Vec<LegacyAddressV5>,
+    proposer: LegacyAddressV5,
+}
 
 
-// #[derive(Clone, Debug, Serialize, Deserialize)]
-// struct TransactionInfo {
-//     /// The hash of this transaction.
-//     transaction_hash: HashValue,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct TransactionInfo {
+    /// The hash of this transaction.
+    transaction_hash: HashValueV5,
 
-//     /// The root hash of Sparse Merkle Tree describing the world state at the end of this
-//     /// transaction.
-//     state_root_hash: HashValue,
+    /// The root hash of Sparse Merkle Tree describing the world state at the end of this
+    /// transaction.
+    state_root_hash: HashValueV5,
 
-//     /// The root hash of Merkle Accumulator storing all events emitted during this transaction.
-//     event_root_hash: HashValue,
+    /// The root hash of Merkle Accumulator storing all events emitted during this transaction.
+    event_root_hash: HashValueV5,
 
-//     /// The amount of gas used.
-//     gas_used: u64,
+    /// The amount of gas used.
+    gas_used: u64,
 
-//     /// The vm status. If it is not `Executed`, this will provide the general error class. Execution
-//     /// failures and Move abort's recieve more detailed information. But other errors are generally
-//     /// categorized with no status code or other information
-//     status: KeptVMStatus,
-// }
+    /// The vm status. If it is not `Executed`, this will provide the general error class. Execution
+    /// failures and Move abort's recieve more detailed information. But other errors are generally
+    /// categorized with no status code or other information
+    status: KeptVMStatus,
+}
 
 
-// #[derive(Clone, Serialize, Deserialize)]
-// enum KeptVMStatus {
-//     Executed,
-//     OutOfGas,
-//     MoveAbort(AbortLocation, /* code */ u64),
-//     ExecutionFailure {
-//         location: AbortLocation,
-//         function: u16,
-//         code_offset: u16,
-//     },
-//     MiscellaneousError,
-// }
+#[derive(Clone, Debug, Serialize, Deserialize)]
+enum KeptVMStatus {
+    Executed,
+    OutOfGas,
+    MoveAbort(AbortLocation, /* code */ u64),
+    ExecutionFailure {
+        location: AbortLocation,
+        function: u16,
+        code_offset: u16,
+    },
+    MiscellaneousError,
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 
@@ -136,15 +139,22 @@ struct RawTransaction {
 pub enum TransactionPayload {
     /// A system maintenance transaction.
     // WriteSet(WriteSetPayload),
+    #[serde(with = "serde_bytes")]
+
     WriteSet(Vec<u8>),
     /// A transaction that executes code.
     // Script(Script),
+    #[serde(with = "serde_bytes")]
+
     Script(Vec<u8>),
     /// A transaction that publishes code.
     // Module(Module),
+    #[serde(with = "serde_bytes")]
+
     Module(Vec<u8>),
     /// A transaction that executes an existing script function published on-chain.
     // ScriptFunction(ScriptFunction),
+    #[serde(with = "serde_bytes")]
     ScriptFunction(Vec<u8>),
 
 }

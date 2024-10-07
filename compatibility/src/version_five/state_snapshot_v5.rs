@@ -1,6 +1,6 @@
 //! read-archive
 
-use crate::version_five::{account_blob_v5::AccountStateBlob, hash_value_v5::HashValue};
+use crate::version_five::{account_blob_v5::AccountStateBlob, hash_value_v5::HashValueV5};
 
 use anyhow::{anyhow, Context, Error, Result};
 use diem_backup_cli::{
@@ -18,7 +18,7 @@ pub struct StateSnapshotBackupV5 {
     /// Version at which this state snapshot is taken.
     pub version: Version,
     /// Hash of the state tree root.
-    pub root_hash: HashValue,
+    pub root_hash: HashValueV5,
     /// All account blobs in chunks.
     pub chunks: Vec<StateSnapshotChunk>,
     /// BCS serialized
@@ -40,7 +40,7 @@ pub struct StateSnapshotBackupV5 {
 // NOTE: Paradoxically the data layout of the AccountStateBlob also has a `hash` field, but this one is not serialized. Unclear why the tuple is needed when the blob could have been de/serialized fully. Alas.
 
 #[derive(Clone, Deserialize, Serialize)]
-pub struct AccountStateBlobRecord(HashValue, AccountStateBlob);
+pub struct AccountStateBlobRecord(HashValueV5, AccountStateBlob);
 
 ////// SNAPSHOT FILE IO //////
 /// read snapshot manifest file into struct
@@ -112,7 +112,7 @@ fn decode_record_from_string() {
 
     let bytes = b" \0\x03Z|\x96)\xb7\xe5.\x94\xdee\xe6\xa8\x92p\x1f\xe2\x83Q\x18d\x05\xbe\x96\xed#\xf4\xb1%/z\xd4\x03\x06\x1f\x01\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x01\x05Roles\x06RoleId\0\x08\n\0\0\0\0\0\0\0(\x01\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x01\x08Receipts\x0cUserReceipts\0\x04\0\0\0\0*\x01\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x01\x0bDiemAccount\x0bDiemAccount\0\x8d\x01 \x89EP$\xb0\xc9\x15|ja\x03\xaf-\xb4\x98\xf4\xc4\x8f\xd6\xf9\x82\x92\xda3\xb1\x1cHx\xb3m\xde\x1b\x01\xc4\x8f\xd6\xf9\x82\x92\xda3\xb1\x1cHx\xb3m\xde\x1b\x01\xc4\x8f\xd6\xf9\x82\x92\xda3\xb1\x1cHx\xb3m\xde\x1b\x01\0\0\0\0\0\0\0\x18\0\0\0\0\0\0\0\0\xc4\x8f\xd6\xf9\x82\x92\xda3\xb1\x1cHx\xb3m\xde\x1b\0\0\0\0\0\0\0\0\x18\x01\0\0\0\0\0\0\0\xc4\x8f\xd6\xf9\x82\x92\xda3\xb1\x1cHx\xb3m\xde\x1b\0\0\0\0\0\0\0\0-\x01\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x01\x05Event\x14EventHandleGenerator\0\x18\x02\0\0\0\0\0\0\0\xc4\x8f\xd6\xf9\x82\x92\xda3\xb1\x1cHx\xb3m\xde\x1b.\x01\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x01\x0fAccountFreezing\x0bFreezingBit\0\x01\0@\x01\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x01\x0bDiemAccount\x07Balance\x01\x07\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x01\x03GAS\x03GAS\0\x08@B\x0f\0\0\0\0\0";
 
-    let (_h, b): (HashValue, AccountStateBlob) = bcs::from_bytes(bytes).expect("cant decode");
+    let (_h, b): (HashValueV5, AccountStateBlob) = bcs::from_bytes(bytes).expect("cant decode");
 
     let acc_state: AccountStateV5 = bcs::from_bytes(&b.blob).unwrap();
 
