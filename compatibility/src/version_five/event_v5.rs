@@ -15,12 +15,12 @@ use super::legacy_address_v5::LegacyAddressV5;
 /// By design, the lower part of EventKey is the same as account address.
 #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
 
-pub struct EventKey([u8; EventKey::LENGTH]);
+pub struct EventKeyV5([u8; EventKeyV5::LENGTH]);
 
-impl EventKey {
+impl EventKeyV5 {
     /// Construct a new EventKey from a byte array slice.
     pub fn new(key: [u8; Self::LENGTH]) -> Self {
-        EventKey(key)
+        EventKeyV5(key)
     }
 
     /// The number of bytes in an EventKey.
@@ -38,7 +38,7 @@ impl EventKey {
 
     /// Get the account address part in this event key
     pub fn get_creator_address(&self) -> LegacyAddressV5 {
-        LegacyAddressV5::try_from(&self.0[EventKey::LENGTH - LegacyAddressV5::LENGTH..])
+        LegacyAddressV5::try_from(&self.0[EventKeyV5::LENGTH - LegacyAddressV5::LENGTH..])
             .expect("get_creator_address failed")
     }
 
@@ -61,7 +61,7 @@ impl EventKey {
         let (lhs, rhs) = output_bytes.split_at_mut(8);
         lhs.copy_from_slice(&salt.to_le_bytes());
         rhs.copy_from_slice(addr.as_ref());
-        EventKey(output_bytes)
+        EventKeyV5(output_bytes)
     }
 
     pub fn from_hex<T: AsRef<[u8]>>(hex: T) -> Result<Self, EventKeyParseError> {
@@ -77,27 +77,27 @@ impl EventKey {
     }
 }
 
-impl FromStr for EventKey {
+impl FromStr for EventKeyV5 {
     type Err = EventKeyParseError;
 
     fn from_str(s: &str) -> Result<Self, EventKeyParseError> {
-        EventKey::from_hex(s)
+        EventKeyV5::from_hex(s)
     }
 }
 
-impl From<EventKey> for [u8; EventKey::LENGTH] {
-    fn from(event_key: EventKey) -> Self {
+impl From<EventKeyV5> for [u8; EventKeyV5::LENGTH] {
+    fn from(event_key: EventKeyV5) -> Self {
         event_key.0
     }
 }
 
-impl From<&EventKey> for [u8; EventKey::LENGTH] {
-    fn from(event_key: &EventKey) -> Self {
+impl From<&EventKeyV5> for [u8; EventKeyV5::LENGTH] {
+    fn from(event_key: &EventKeyV5) -> Self {
         event_key.0
     }
 }
 
-impl ser::Serialize for EventKey {
+impl ser::Serialize for EventKeyV5 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,
@@ -113,7 +113,7 @@ impl ser::Serialize for EventKey {
     }
 }
 
-impl<'de> de::Deserialize<'de> for EventKey {
+impl<'de> de::Deserialize<'de> for EventKeyV5 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: de::Deserializer<'de>,
@@ -122,7 +122,7 @@ impl<'de> de::Deserialize<'de> for EventKey {
 
         if deserializer.is_human_readable() {
             let s = <String>::deserialize(deserializer)?;
-            EventKey::from_hex(s).map_err(D::Error::custom)
+            EventKeyV5::from_hex(s).map_err(D::Error::custom)
         } else {
             // See comment in serialize.
             #[derive(::serde::Deserialize)]
@@ -135,7 +135,7 @@ impl<'de> de::Deserialize<'de> for EventKey {
     }
 }
 
-impl fmt::LowerHex for EventKey {
+impl fmt::LowerHex for EventKeyV5 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if f.alternate() {
             write!(f, "0x")?;
@@ -149,23 +149,23 @@ impl fmt::LowerHex for EventKey {
     }
 }
 
-impl fmt::Display for EventKey {
+impl fmt::Display for EventKeyV5 {
     fn fmt(&self, f: &mut fmt::Formatter) -> std::fmt::Result {
         write!(f, "{:x}", self)
     }
 }
 
-impl fmt::Debug for EventKey {
+impl fmt::Debug for EventKeyV5 {
     fn fmt(&self, f: &mut fmt::Formatter) -> std::fmt::Result {
         write!(f, "EventKey({:x})", self)
     }
 }
 
-impl TryFrom<&[u8]> for EventKey {
+impl TryFrom<&[u8]> for EventKeyV5 {
     type Error = EventKeyParseError;
 
     /// Tries to convert the provided byte array into Event Key.
-    fn try_from(bytes: &[u8]) -> Result<EventKey, EventKeyParseError> {
+    fn try_from(bytes: &[u8]) -> Result<EventKeyV5, EventKeyParseError> {
         Self::from_bytes(bytes)
     }
 }
@@ -187,17 +187,17 @@ pub struct EventHandleV5 {
     /// Number of events in the event stream.
     count: u64,
     /// The associated globally unique key that is used as the key to the EventStore.
-    key: EventKey,
+    key: EventKeyV5,
 }
 
 impl EventHandleV5 {
     /// Constructs a new Event Handle
-    pub fn new(key: EventKey, count: u64) -> Self {
+    pub fn new(key: EventKeyV5, count: u64) -> Self {
         EventHandleV5 { count, key }
     }
 
     /// Return the key to where this event is stored in EventStore.
-    pub fn key(&self) -> &EventKey {
+    pub fn key(&self) -> &EventKeyV5 {
         &self.key
     }
 
@@ -231,13 +231,13 @@ impl EventHandleV5 {
 }
 #[cfg(test)]
 mod tests {
-    use super::EventKey;
+    use super::EventKeyV5;
 
     #[test]
     fn test_display_impls() {
         let hex = "1000000000000000ca843279e3427144cead5e4d5999a3d0";
 
-        let key = EventKey::from_hex(hex).unwrap();
+        let key = EventKeyV5::from_hex(hex).unwrap();
 
         assert_eq!(format!("{}", key), hex);
         assert_eq!(format!("{:x}", key), hex);
@@ -248,7 +248,7 @@ mod tests {
     #[test]
     fn test_invalid_length() {
         let bytes = vec![1; 123];
-        EventKey::from_bytes(bytes).unwrap_err();
+        EventKeyV5::from_bytes(bytes).unwrap_err();
     }
 
     // #[test]
@@ -264,10 +264,10 @@ mod tests {
         let hex = "1000000000000000ca843279e3427144cead5e4d5999a3d0";
         let json_hex = "\"1000000000000000ca843279e3427144cead5e4d5999a3d0\"";
 
-        let key = EventKey::from_hex(hex).unwrap();
+        let key = EventKeyV5::from_hex(hex).unwrap();
 
         let json = serde_json::to_string(&key).unwrap();
-        let json_key: EventKey = serde_json::from_str(json_hex).unwrap();
+        let json_key: EventKeyV5 = serde_json::from_str(json_hex).unwrap();
 
         assert_eq!(json, json_hex);
         assert_eq!(key, json_key);
