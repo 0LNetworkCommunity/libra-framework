@@ -6,7 +6,7 @@ pub mod legacy_address_v5;
 pub mod state_snapshot_v5;
 pub mod transaction_manifest_v5;
 pub mod transaction_restore_v5;
-pub mod transaction_type_v5;
+// pub mod transaction_type_v5;
 // NOTE: the ones below should likely be private always,
 // so that they do not get suggested in the place of
 // up-to-date structs of the same name.
