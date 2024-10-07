@@ -80,7 +80,7 @@ pub async fn read_account_state_chunk(
     Ok(chunk)
 }
 
-async fn open_for_read(file_handle: &FileHandleRef) -> Result<Box<dyn AsyncRead + Send + Unpin>> {
+pub async fn open_for_read(file_handle: &FileHandleRef) -> Result<Box<dyn AsyncRead + Send + Unpin>> {
     let file = OpenOptions::new().read(true).open(file_handle).await?;
     Ok(Box::new(file))
 }
