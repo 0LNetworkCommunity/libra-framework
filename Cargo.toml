@@ -18,6 +18,7 @@ members = [
   "transactional-tests",
   "types",
   "upgrade-tests",
+  "warehouse",
 ]
 
 # All workspace members should inherit these keys for package declarations.
@@ -48,6 +49,7 @@ libra-twin-tests = { path = "testsuites/twin" }
 libra-types = { path = "types" }
 libra-txs = { path = "tools/txs" }
 libra-wallet = { path = "tools/wallet" }
+libra-warehouse = { path = "warehouse" }
 
 diem-api-types = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 diem-debugger = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }

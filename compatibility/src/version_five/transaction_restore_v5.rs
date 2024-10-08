@@ -40,6 +40,8 @@ pub async fn read_transaction_chunk(
     while let Some(record_bytes) = file.read_record_bytes().await? {
         let txn: TxRecord = bcs::from_bytes(&record_bytes)?;
         dbg!(&txn.0);
+        dbg!(&txn.1);
+        // dbg!(&txn.2);
         txns.push(txn);
     }
     Ok(txns)
