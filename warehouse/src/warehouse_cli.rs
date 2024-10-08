@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+
 use clap::{Parser, Subcommand};
 use std::{fs, path::PathBuf};
 
