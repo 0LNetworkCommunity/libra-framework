@@ -6005,6 +6005,7 @@ dependencies = [
  "anyhow",
  "clap 4.5.19",
  "glob",
+ "libra-backwards-compatibility",
  "tokio",
 ]
 

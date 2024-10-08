@@ -5,7 +5,7 @@ use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
 };
-
+use libra_backwards_compatibility::version_five::{transaction_manifest_v5::v5_read_from_transaction_manifest, transaction_restore_v5};
 #[derive(Clone, Debug)]
 pub struct ArchiveMap(pub BTreeMap<PathBuf, ManifestInfo>);
 
@@ -52,10 +52,12 @@ pub fn scan_dir_archive(start_dir: &Path) -> Result<ArchiveMap> {
     for entry in glob(&pattern)? {
         match entry {
             Ok(path) => {
+                let dir = path.parent().context("no parent dir found")?.to_owned();
+                let contents = test_content(&path);
                 let m = ManifestInfo {
-                    dir: path.parent().context("no parent dir found")?.to_owned(),
-                    version: EncodingVersion::V5,
-                    contents: test_content(&path),
+                    dir: dir.clone(),
+                    version: test_version(&contents, &path, &dir),
+                    contents,
                     processed: false,
                 };
 
@@ -67,6 +69,7 @@ pub fn scan_dir_archive(start_dir: &Path) -> Result<ArchiveMap> {
     Ok(ArchiveMap(archive))
 }
 
+/// find out the type of content in the manifest
 fn test_content(manifest_path: &Path) -> BundleContent {
     let s = manifest_path.to_str().expect("path invalid");
     if s.contains("transaction.manifest") {
@@ -80,4 +83,21 @@ fn test_content(manifest_path: &Path) -> BundleContent {
     };
 
     BundleContent::Unknown
+}
+
+fn test_version(content: &BundleContent, manifest_file: &Path, dir_archive: &Path) -> EncodingVersion {
+  // can it read a v5 chunk?
+  match content {
+    BundleContent::Unknown => { return EncodingVersion::Unknown },
+    BundleContent::StateSnapshot => { },
+    BundleContent::Transaction => {
+      if v5_read_from_transaction_manifest(manifest_file).is_ok() {
+        return EncodingVersion::V5
+      }
+
+    },
+    BundleContent::EpochEnding => { },
+  }
+
+  EncodingVersion::Unknown
 }

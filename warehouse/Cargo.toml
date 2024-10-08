@@ -13,4 +13,5 @@ version.workspace = true
 anyhow = { workspace = true }
 clap = { workspace = true }
 glob = { workspace = true }
-tokio ={ workspace = true }
+tokio = { workspace = true }
+libra-backwards-compatibility = { workspace = true }

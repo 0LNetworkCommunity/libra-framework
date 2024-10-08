@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use anyhow::Result;
 use libra_warehouse::scan::scan_dir_archive;
 

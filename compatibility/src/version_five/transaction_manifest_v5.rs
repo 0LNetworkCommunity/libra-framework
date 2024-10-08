@@ -1,6 +1,6 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use anyhow::{ensure, Result};
 use diem_backup_cli::storage::FileHandle;
 use diem_types::transaction::Version;
@@ -77,7 +77,7 @@ impl TransactionBackup {
 
 ////// TX FILES IO //////
 /// read tx manifest file into struct
-pub fn v5_read_from_transaction_manifest(path: &PathBuf) -> Result<
+pub fn v5_read_from_transaction_manifest(path: &Path) -> Result<
 TransactionBackup>{
     let config = std::fs::read_to_string(path).map_err(|e| {
         format!("Error: cannot read file {:?}, error: {:?}", &path, &e);
