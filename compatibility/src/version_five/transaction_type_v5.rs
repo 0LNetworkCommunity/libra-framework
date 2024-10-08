@@ -1,4 +1,7 @@
 use crate::version_five::hash_value_v5::HashValueV5;
+use crate::version_five::language_storage_v5::ModuleIdV5;
+use crate::version_five::event_v5::EventKeyV5;
+use crate::version_five::language_storage_v5::TypeTagV5;
 
 use diem_crypto::{ed25519::{Ed25519Signature, Ed25519PublicKey, PublicKey, Signature}, multi_ed25519::{MultiEd25519PublicKey, MultiEd25519Signature}};
 
@@ -7,11 +10,10 @@ use diem_types::transaction::ChangeSet;
 
 use diem_types::{chain_id::ChainId, transaction::authenticator::AccountAuthenticator};
 use serde::{Deserialize, Serialize};
-use diem_types::vm_status::AbortLocation;
 use super::legacy_address_v5::LegacyAddressV5;
 
 // #[allow(clippy::large_enum_variant)]
-#[derive(Clone, Debug, Serialize, Deserialize,)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum TransactionV5 {
     /// Transaction submitted by the user. e.g: P2P payment transaction, publishing module
     /// transaction, etc.
@@ -21,7 +23,6 @@ pub enum TransactionV5 {
 
     /// Transaction that applies a WriteSet to the current storage, it's applied manually via db-bootstrapper.
     GenesisTransaction(WriteSetPayload),
-    // GenesisTransaction(Vec<u8>),
 
     /// Transaction to update the block metadata resource at the beginning of a block.
     BlockMetadata(BlockMetadata),
@@ -29,7 +30,7 @@ pub enum TransactionV5 {
 
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-struct SignedTransaction {
+pub struct SignedTransaction {
     /// The raw transaction
     raw_txn: RawTransaction,
 
@@ -40,7 +41,7 @@ struct SignedTransaction {
 
 /// Two different kinds of WriteSet transactions.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-enum WriteSetPayload {
+pub enum WriteSetPayload {
     /// Directly passing in the WriteSet.
     Direct(ChangeSet),
     /// Generate the WriteSet by running a script.
@@ -54,7 +55,7 @@ enum WriteSetPayload {
 
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-struct BlockMetadata {
+pub struct BlockMetadata {
     id: HashValueV5,
     round: u64,
     timestamp_usecs: u64,
@@ -65,7 +66,7 @@ struct BlockMetadata {
 
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-struct TransactionInfo {
+pub struct TransactionInfoV5 {
     /// The hash of this transaction.
     transaction_hash: HashValueV5,
 
@@ -100,7 +101,14 @@ enum KeptVMStatus {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum AbortLocation {
+    /// Indicates `abort` occurred in the specified module
+    Module(ModuleIdV5),
+    /// Indicates the `abort` occurred in a script
+    Script,
+}
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 struct RawTransaction {
     /// Sender's address.
     sender: LegacyAddressV5,
@@ -181,23 +189,23 @@ pub enum TransactionAuthenticator {
 }
 
 
-// /// Support versioning of the data structure.
-// #[derive(Clone, Serialize, Deserialize)]
-// enum ContractEvent {
-//     V0(ContractEventV0),
-// }
+/// Support versioning of the data structure.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum ContractEventV5 {
+    V0(ContractEventV0),
+}
 
 
-// /// Entry produced via a call to the `emit_event` builtin.
-// #[derive(Clone, Serialize, Deserialize)]
-// struct ContractEventV0 {
-//     /// The unique key that the event was emitted to
-//     key: EventKey,
-//     /// The number of messages that have been emitted to the path previously
-//     sequence_number: u64,
-//     /// The type of the data
-//     type_tag: TypeTag,
-//     /// The data payload of the event
-//     #[serde(with = "serde_bytes")]
-//     event_data: Vec<u8>,
-// }
+/// Entry produced via a call to the `emit_event` builtin.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct ContractEventV0 {
+    /// The unique key that the event was emitted to
+    key: EventKeyV5,
+    /// The number of messages that have been emitted to the path previously
+    sequence_number: u64,
+    /// The type of the data
+    type_tag: TypeTagV5,
+    /// The data payload of the event
+    #[serde(with = "serde_bytes")]
+    event_data: Vec<u8>,
+}

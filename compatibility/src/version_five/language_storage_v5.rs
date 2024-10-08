@@ -53,8 +53,8 @@ impl StructTagV5 {
         key
     }
 
-    pub fn module_id(&self) -> ModuleId {
-        ModuleId::new(self.address, self.module.to_owned())
+    pub fn module_id(&self) -> ModuleIdV5 {
+        ModuleIdV5::new(self.address, self.module.to_owned())
     }
 }
 
@@ -85,20 +85,20 @@ impl ResourceKey {
 /// Represents the initial key into global storage where we first index by the address, and then
 /// the struct tag
 #[derive(Serialize, Deserialize, Debug, PartialEq, Hash, Eq, Clone, PartialOrd, Ord)]
-pub struct ModuleId {
+pub struct ModuleIdV5 {
     address: LegacyAddressV5,
     name: Identifier,
 }
 
-impl From<ModuleId> for (LegacyAddressV5, Identifier) {
-    fn from(module_id: ModuleId) -> Self {
+impl From<ModuleIdV5> for (LegacyAddressV5, Identifier) {
+    fn from(module_id: ModuleIdV5) -> Self {
         (module_id.address, module_id.name)
     }
 }
 
-impl ModuleId {
+impl ModuleIdV5 {
     pub fn new(address: LegacyAddressV5, name: Identifier) -> Self {
-        ModuleId { address, name }
+        ModuleIdV5 { address, name }
     }
 
     pub fn name(&self) -> &IdentStr {
@@ -116,7 +116,7 @@ impl ModuleId {
     }
 }
 
-impl Display for ModuleId {
+impl Display for ModuleIdV5 {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         write!(f, "{}::{}", self.address, self.name)
     }
