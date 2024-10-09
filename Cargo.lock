@@ -278,7 +278,7 @@ checksum = "7abe79b0e4288889c4574159ab790824d0033b9fdcb2a112a3182fac2e514565"
 dependencies = [
  "num-bigint",
  "num-traits 0.2.19",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 1.0.109",
 ]
@@ -314,7 +314,7 @@ version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ae3281bc6d0fd7e549af32b52511e1302185bd688fd3359fa36423346ff682ea"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 1.0.109",
 ]
@@ -394,7 +394,7 @@ version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c7c24de15d275a1ecfd47a380fb4d5ec9bfe0933f309ed5e705b775596a3574d"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
 ]
@@ -405,7 +405,7 @@ version = "0.1.83"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "721cae7de5c34fbb2acd27e21e6d2cf7b886dce0c27388d46c4e6c47ea4318dd"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
 ]
@@ -551,7 +551,7 @@ version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3deeecb812ca5300b7d3f66f730cc2ebd3511c3d36c691dd79c165d5b19a26e3"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 1.0.109",
 ]
@@ -592,7 +592,7 @@ dependencies = [
  "lazycell",
  "peeking_take_while",
  "prettyplease",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "regex",
  "rustc-hash",
@@ -787,9 +787,9 @@ checksum = "df8670b8c7b9dae1793364eafadf7239c40d669904660c5960d74cfd80b46a53"
 
 [[package]]
 name = "cc"
-version = "1.1.24"
+version = "1.1.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "812acba72f0a070b003d3697490d2b55b837230ae7c6c6497f05cc2ddbb8d938"
+checksum = "2e80e3b6a3ab07840e1cae9b0666a63970dc28e8ed5ffbcdacbfc760c281bfc1"
 dependencies = [
  "jobserver",
  "libc",
@@ -924,9 +924,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.19"
+version = "4.5.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7be5744db7978a28d9df86a214130d106a89ce49644cbc4e3f0c22c3fba30615"
+checksum = "b97f376d85a664d5837dbae44bf546e6477a679ff6610010f17276f686d867e8"
 dependencies = [
  "clap_builder",
  "clap_derive 4.5.18",
@@ -934,9 +934,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.19"
+version = "4.5.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5fbc17d3ef8278f55b282b2a2e75ae6f6c7d4bb70ed3d0382375104bfafdb4b"
+checksum = "19bc80abd44e4bed93ca373a0704ccbd1b710dc5749406201bb018272808dc54"
 dependencies = [
  "anstream",
  "anstyle",
@@ -946,11 +946,11 @@ dependencies = [
 
 [[package]]
 name = "clap_complete"
-version = "4.5.32"
+version = "4.5.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "74a01f4f9ee6c066d42a1c8dedf0dcddad16c72a8981a309d6398de3a75b0c39"
+checksum = "9646e2e245bf62f45d39a0f3f36f1171ad1ea0d6967fd114bca72cb02a8fcdfb"
 dependencies = [
- "clap 4.5.19",
+ "clap 4.5.20",
 ]
 
 [[package]]
@@ -961,7 +961,7 @@ checksum = "ae6371b8bdc8b7d3959e9cf7b22d4435ef3e79e138688421ec654acf8c81b008"
 dependencies = [
  "heck 0.4.1",
  "proc-macro-error",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 1.0.109",
 ]
@@ -973,7 +973,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ac6a0c7b1a9e9a5186361f67dfa1b88213572f427fb9ab038efb2bd8c582dab"
 dependencies = [
  "heck 0.5.0",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
 ]
@@ -1100,7 +1100,7 @@ version = "0.2.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eff1a44b93f47b1bac19a27932f5c591e43d1ba357ee4f61526c8a25603f0eb1"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "unicode-xid 0.2.6",
 ]
@@ -1136,13 +1136,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "cookie_store"
-version = "0.16.2"
+name = "cookie"
+version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d606d0fba62e13cf04db20536c05cb7f13673c161cb47a47a82b9b9e7d3f1daa"
+checksum = "7efb37c3e1ccb1ff97164ad95ac1606e8ccd35b3fa0a7d99a304c7f4a428cc24"
 dependencies = [
- "cookie",
- "idna 0.2.3",
+ "percent-encoding",
+ "time",
+ "version_check",
+]
+
+[[package]]
+name = "cookie_store"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "387461abbc748185c3a6e1673d826918b450b87ff22639429c694619a83b6cf6"
+dependencies = [
+ "cookie 0.17.0",
+ "idna 0.3.0",
  "log",
  "publicsuffix",
  "serde 1.0.210",
@@ -1391,7 +1402,7 @@ checksum = "109c1ca6e6b7f82cc233a97004ea8ed7ca123a9af07a8230878fcfda9b158bf0"
 dependencies = [
  "fnv",
  "ident_case",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "strsim 0.10.0",
  "syn 1.0.109",
@@ -1405,7 +1416,7 @@ checksum = "95133861a8032aaea082871032f5815eb9e98cef03fa916ab4500513994df9e5"
 dependencies = [
  "fnv",
  "ident_case",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "strsim 0.11.1",
  "syn 2.0.79",
@@ -1459,6 +1470,12 @@ dependencies = [
  "once_cell",
  "parking_lot_core 0.9.10",
 ]
+
+[[package]]
+name = "data-encoding"
+version = "2.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e8566979429cf69b49a5c740c60791108e86440e8be149bbea4fe54d2c32d6e2"
 
 [[package]]
 name = "datatest-stable"
@@ -1525,7 +1542,7 @@ version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fcc3dd5e9e9c0b295d6e1e4d811fb6f157d5ffd784b8d202fc62eac8035a770b"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 1.0.109",
 ]
@@ -1536,7 +1553,7 @@ version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67e77553c4162a157adbf834ebae5b415acbecbeafc7a74b0e886657506a7611"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
 ]
@@ -1548,7 +1565,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f33878137e4dafd7fa914ad4e259e18a4e8e532b9617a2d0150262bf53abfce"
 dependencies = [
  "convert_case",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "rustc_version",
  "syn 2.0.79",
@@ -1575,14 +1592,14 @@ dependencies = [
 [[package]]
 name = "diem"
 version = "2.0.2"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "async-trait",
  "base64 0.13.1",
  "bcs 0.1.4",
  "chrono",
- "clap 4.5.19",
+ "clap 4.5.20",
  "clap_complete",
  "codespan-reporting",
  "diem-api-types",
@@ -1656,7 +1673,7 @@ dependencies = [
 [[package]]
 name = "diem-accumulator"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "diem-crypto",
@@ -1666,7 +1683,7 @@ dependencies = [
 [[package]]
 name = "diem-aggregator"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -1684,7 +1701,7 @@ dependencies = [
 [[package]]
 name = "diem-api"
 version = "0.2.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1725,7 +1742,7 @@ dependencies = [
 [[package]]
 name = "diem-api-types"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1752,13 +1769,13 @@ dependencies = [
 [[package]]
 name = "diem-backup-cli"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "async-trait",
  "bcs 0.1.4",
  "bytes",
- "clap 4.5.19",
+ "clap 4.5.20",
  "csv",
  "diem-backup-service",
  "diem-config",
@@ -1799,7 +1816,7 @@ dependencies = [
 [[package]]
 name = "diem-backup-service"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -1821,7 +1838,7 @@ dependencies = [
 [[package]]
 name = "diem-bitvec"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "serde 1.0.210",
  "serde_bytes",
@@ -1830,7 +1847,7 @@ dependencies = [
 [[package]]
 name = "diem-block-executor"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -1855,11 +1872,11 @@ dependencies = [
 [[package]]
 name = "diem-block-partitioner"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.19",
+ "clap 4.5.20",
  "dashmap 5.5.3",
  "diem-crypto",
  "diem-logger",
@@ -1875,7 +1892,7 @@ dependencies = [
 [[package]]
 name = "diem-bounded-executor"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "futures",
  "tokio",
@@ -1884,7 +1901,7 @@ dependencies = [
 [[package]]
 name = "diem-build-info"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "shadow-rs",
 ]
@@ -1892,7 +1909,7 @@ dependencies = [
 [[package]]
 name = "diem-cached-packages"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "bcs 0.1.4",
  "diem-framework",
@@ -1905,7 +1922,7 @@ dependencies = [
 [[package]]
 name = "diem-channels"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "diem-infallible",
@@ -1917,17 +1934,17 @@ dependencies = [
 [[package]]
 name = "diem-cli-common"
 version = "1.0.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anstyle",
- "clap 4.5.19",
+ "clap 4.5.20",
  "clap_complete",
 ]
 
 [[package]]
 name = "diem-compression"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "diem-logger",
  "diem-metrics-core",
@@ -1939,7 +1956,7 @@ dependencies = [
 [[package]]
 name = "diem-config"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -1969,7 +1986,7 @@ dependencies = [
 [[package]]
 name = "diem-consensus"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -2031,7 +2048,7 @@ dependencies = [
 [[package]]
 name = "diem-consensus-notifications"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "async-trait",
  "diem-crypto",
@@ -2046,7 +2063,7 @@ dependencies = [
 [[package]]
 name = "diem-consensus-types"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -2069,7 +2086,7 @@ dependencies = [
 [[package]]
 name = "diem-crash-handler"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "backtrace",
  "diem-logger",
@@ -2081,7 +2098,7 @@ dependencies = [
 [[package]]
 name = "diem-crypto"
 version = "0.0.3"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "ark-ec",
@@ -2118,9 +2135,9 @@ dependencies = [
 [[package]]
 name = "diem-crypto-derive"
 version = "0.0.3"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 1.0.109",
 ]
@@ -2128,7 +2145,7 @@ dependencies = [
 [[package]]
 name = "diem-data-client"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "async-trait",
  "diem-config",
@@ -2155,7 +2172,7 @@ dependencies = [
 [[package]]
 name = "diem-data-streaming-service"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "async-trait",
  "diem-channels",
@@ -2181,7 +2198,7 @@ dependencies = [
 [[package]]
 name = "diem-db"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -2189,7 +2206,7 @@ dependencies = [
  "bcs 0.1.4",
  "byteorder",
  "claims",
- "clap 4.5.19",
+ "clap 4.5.20",
  "dashmap 5.5.3",
  "diem-accumulator",
  "diem-config",
@@ -2229,7 +2246,7 @@ dependencies = [
 [[package]]
 name = "diem-db-indexer"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -2255,11 +2272,11 @@ dependencies = [
 [[package]]
 name = "diem-db-tool"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "async-trait",
- "clap 4.5.19",
+ "clap 4.5.20",
  "diem-backup-cli",
  "diem-backup-service",
  "diem-config",
@@ -2279,10 +2296,10 @@ dependencies = [
 [[package]]
 name = "diem-debugger"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
- "clap 4.5.19",
+ "clap 4.5.20",
  "diem-crypto",
  "diem-gas",
  "diem-gas-profiling",
@@ -2310,9 +2327,9 @@ dependencies = [
 [[package]]
 name = "diem-enum-conversion-derive"
 version = "0.0.3"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 1.0.109",
 ]
@@ -2320,7 +2337,7 @@ dependencies = [
 [[package]]
 name = "diem-event-notifications"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "async-trait",
  "diem-channels",
@@ -2337,7 +2354,7 @@ dependencies = [
 [[package]]
 name = "diem-executor"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "arr_macro",
@@ -2368,7 +2385,7 @@ dependencies = [
 [[package]]
 name = "diem-executor-test-helpers"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "diem-cached-packages",
@@ -2392,7 +2409,7 @@ dependencies = [
 [[package]]
 name = "diem-executor-types"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -2413,7 +2430,7 @@ dependencies = [
 [[package]]
 name = "diem-fallible"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "thiserror",
 ]
@@ -2421,12 +2438,12 @@ dependencies = [
 [[package]]
 name = "diem-faucet-core"
 version = "2.0.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "async-trait",
  "captcha",
- "clap 4.5.19",
+ "clap 4.5.20",
  "deadpool-redis",
  "diem-config",
  "diem-faucet-metrics-server",
@@ -2455,7 +2472,7 @@ dependencies = [
 [[package]]
 name = "diem-faucet-metrics-server"
 version = "2.0.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "diem-logger",
@@ -2470,13 +2487,13 @@ dependencies = [
 [[package]]
 name = "diem-forge"
 version = "0.0.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "again",
  "anyhow",
  "async-trait",
  "chrono",
- "clap 4.5.19",
+ "clap 4.5.20",
  "diem",
  "diem-cached-packages",
  "diem-cli-common",
@@ -2525,7 +2542,7 @@ dependencies = [
 [[package]]
 name = "diem-framework"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "ark-bls12-381",
@@ -2538,7 +2555,7 @@ dependencies = [
  "better_any",
  "blake2-rfc",
  "blst",
- "clap 4.5.19",
+ "clap 4.5.20",
  "codespan-reporting",
  "curve25519-dalek",
  "diem-aggregator",
@@ -2590,11 +2607,11 @@ dependencies = [
 [[package]]
 name = "diem-gas"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.19",
+ "clap 4.5.20",
  "diem-framework",
  "diem-gas-algebra-ext",
  "diem-global-constants",
@@ -2613,7 +2630,7 @@ dependencies = [
 [[package]]
 name = "diem-gas-algebra-ext"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "move-core-types",
 ]
@@ -2621,7 +2638,7 @@ dependencies = [
 [[package]]
 name = "diem-gas-profiling"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "diem-framework",
@@ -2639,7 +2656,7 @@ dependencies = [
 [[package]]
 name = "diem-genesis"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -2665,7 +2682,7 @@ dependencies = [
 [[package]]
 name = "diem-github-client"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "diem-proxy",
  "serde 1.0.210",
@@ -2677,24 +2694,24 @@ dependencies = [
 [[package]]
 name = "diem-global-constants"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 
 [[package]]
 name = "diem-id-generator"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 
 [[package]]
 name = "diem-indexer"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "async-trait",
  "bcs 0.1.4",
  "bigdecimal",
  "chrono",
- "clap 4.5.19",
+ "clap 4.5.20",
  "diem-api",
  "diem-api-types",
  "diem-bitvec",
@@ -2726,7 +2743,7 @@ dependencies = [
 [[package]]
 name = "diem-indexer-grpc-fullnode"
 version = "1.0.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -2763,12 +2780,12 @@ dependencies = [
 [[package]]
 name = "diem-infallible"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 
 [[package]]
 name = "diem-inspection-service"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "diem-build-info",
@@ -2791,7 +2808,7 @@ dependencies = [
 [[package]]
 name = "diem-jellyfish-merkle"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -2817,7 +2834,7 @@ dependencies = [
 [[package]]
 name = "diem-keygen"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "diem-crypto",
  "diem-types",
@@ -2827,7 +2844,7 @@ dependencies = [
 [[package]]
 name = "diem-language-e2e-tests"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -2865,9 +2882,9 @@ dependencies = [
 [[package]]
 name = "diem-log-derive"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 1.0.109",
 ]
@@ -2875,7 +2892,7 @@ dependencies = [
 [[package]]
 name = "diem-logger"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "backtrace",
  "chrono",
@@ -2899,7 +2916,7 @@ dependencies = [
 [[package]]
 name = "diem-mempool"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2939,7 +2956,7 @@ dependencies = [
 [[package]]
 name = "diem-mempool-notifications"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "async-trait",
  "diem-runtimes",
@@ -2953,7 +2970,7 @@ dependencies = [
 [[package]]
 name = "diem-memsocket"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "bytes",
  "diem-infallible",
@@ -2964,7 +2981,7 @@ dependencies = [
 [[package]]
 name = "diem-metrics-core"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "prometheus",
@@ -2973,7 +2990,7 @@ dependencies = [
 [[package]]
 name = "diem-move-stdlib"
 version = "0.1.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "hex",
@@ -2996,7 +3013,7 @@ dependencies = [
 [[package]]
 name = "diem-moving-average"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "chrono",
 ]
@@ -3004,7 +3021,7 @@ dependencies = [
 [[package]]
 name = "diem-mvhashmap"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -3019,7 +3036,7 @@ dependencies = [
 [[package]]
 name = "diem-netcore"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "bytes",
  "diem-memsocket",
@@ -3036,7 +3053,7 @@ dependencies = [
 [[package]]
 name = "diem-network"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3079,7 +3096,7 @@ dependencies = [
 [[package]]
 name = "diem-network-builder"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "async-trait",
  "bcs 0.1.4",
@@ -3105,10 +3122,10 @@ dependencies = [
 [[package]]
 name = "diem-network-checker"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
- "clap 4.5.19",
+ "clap 4.5.20",
  "diem-config",
  "diem-crypto",
  "diem-logger",
@@ -3122,7 +3139,7 @@ dependencies = [
 [[package]]
 name = "diem-network-discovery"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -3148,11 +3165,11 @@ dependencies = [
 [[package]]
 name = "diem-node"
 version = "1.6.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.19",
+ "clap 4.5.20",
  "diem-api",
  "diem-backup-service",
  "diem-build-info",
@@ -3213,7 +3230,7 @@ dependencies = [
 [[package]]
 name = "diem-node-identity"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "claims",
@@ -3225,9 +3242,9 @@ dependencies = [
 [[package]]
 name = "diem-num-variants"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 1.0.109",
 ]
@@ -3235,7 +3252,7 @@ dependencies = [
 [[package]]
 name = "diem-openapi"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "async-trait",
  "percent-encoding",
@@ -3248,7 +3265,7 @@ dependencies = [
 [[package]]
 name = "diem-package-builder"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "diem-framework",
@@ -3261,7 +3278,7 @@ dependencies = [
 [[package]]
 name = "diem-peer-monitoring-service-client"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "async-trait",
  "diem-channels",
@@ -3287,7 +3304,7 @@ dependencies = [
 [[package]]
 name = "diem-peer-monitoring-service-server"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "bcs 0.1.4",
  "bytes",
@@ -3314,7 +3331,7 @@ dependencies = [
 [[package]]
 name = "diem-peer-monitoring-service-types"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "bcs 0.1.4",
  "cfg_block",
@@ -3327,7 +3344,7 @@ dependencies = [
 [[package]]
 name = "diem-proptest-helpers"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "crossbeam",
  "proptest",
@@ -3337,7 +3354,7 @@ dependencies = [
 [[package]]
 name = "diem-protos"
 version = "1.0.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "pbjson",
  "prost",
@@ -3348,7 +3365,7 @@ dependencies = [
 [[package]]
 name = "diem-proxy"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "ipnet",
 ]
@@ -3356,7 +3373,7 @@ dependencies = [
 [[package]]
 name = "diem-push-metrics"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "diem-logger",
  "diem-metrics-core",
@@ -3367,7 +3384,7 @@ dependencies = [
 [[package]]
 name = "diem-rate-limiter"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "diem-infallible",
  "diem-logger",
@@ -3381,11 +3398,11 @@ dependencies = [
 [[package]]
 name = "diem-release-builder"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.19",
+ "clap 4.5.20",
  "diem",
  "diem-api-types",
  "diem-build-info",
@@ -3417,7 +3434,7 @@ dependencies = [
 [[package]]
 name = "diem-resource-viewer"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "diem-types",
@@ -3429,7 +3446,7 @@ dependencies = [
 [[package]]
 name = "diem-rest-client"
 version = "0.0.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -3455,7 +3472,7 @@ dependencies = [
 [[package]]
 name = "diem-retrier"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "diem-logger",
  "tokio",
@@ -3464,7 +3481,7 @@ dependencies = [
 [[package]]
 name = "diem-rocksdb-options"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "diem-config",
  "rocksdb",
@@ -3473,11 +3490,11 @@ dependencies = [
 [[package]]
 name = "diem-rosetta"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.19",
+ "clap 4.5.20",
  "diem-cached-packages",
  "diem-config",
  "diem-crypto",
@@ -3507,7 +3524,7 @@ dependencies = [
 [[package]]
 name = "diem-runtimes"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "tokio",
 ]
@@ -3515,7 +3532,7 @@ dependencies = [
 [[package]]
 name = "diem-safety-rules"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "diem-config",
  "diem-consensus-types",
@@ -3539,7 +3556,7 @@ dependencies = [
 [[package]]
 name = "diem-schemadb"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "diem-infallible",
@@ -3553,7 +3570,7 @@ dependencies = [
 [[package]]
 name = "diem-scratchpad"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "bitvec 0.19.6",
  "diem-crypto",
@@ -3570,7 +3587,7 @@ dependencies = [
 [[package]]
 name = "diem-sdk"
 version = "0.0.3"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -3590,11 +3607,11 @@ dependencies = [
 [[package]]
 name = "diem-sdk-builder"
 version = "0.2.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.19",
+ "clap 4.5.20",
  "diem-types",
  "heck 0.3.3",
  "move-core-types",
@@ -3609,7 +3626,7 @@ dependencies = [
 [[package]]
 name = "diem-secure-net"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "diem-logger",
  "diem-metrics-core",
@@ -3621,7 +3638,7 @@ dependencies = [
 [[package]]
 name = "diem-secure-storage"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -3643,7 +3660,7 @@ dependencies = [
 [[package]]
 name = "diem-short-hex-str"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "mirai-annotations",
  "serde 1.0.210",
@@ -3654,7 +3671,7 @@ dependencies = [
 [[package]]
 name = "diem-speculative-state-helper"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "crossbeam",
@@ -3666,7 +3683,7 @@ dependencies = [
 [[package]]
 name = "diem-state-sync-driver"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3701,7 +3718,7 @@ dependencies = [
 [[package]]
 name = "diem-state-view"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -3715,7 +3732,7 @@ dependencies = [
 [[package]]
 name = "diem-storage-interface"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "arr_macro",
@@ -3742,7 +3759,7 @@ dependencies = [
 [[package]]
 name = "diem-storage-service-client"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "async-trait",
  "diem-channels",
@@ -3756,7 +3773,7 @@ dependencies = [
 [[package]]
 name = "diem-storage-service-server"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "bcs 0.1.4",
  "bytes",
@@ -3782,7 +3799,7 @@ dependencies = [
 [[package]]
 name = "diem-storage-service-types"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "bcs 0.1.4",
  "diem-compression",
@@ -3797,7 +3814,7 @@ dependencies = [
 [[package]]
 name = "diem-temppath"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "hex",
  "rand 0.7.3",
@@ -3806,7 +3823,7 @@ dependencies = [
 [[package]]
 name = "diem-time-service"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "diem-infallible",
  "enum_dispatch",
@@ -3819,12 +3836,12 @@ dependencies = [
 [[package]]
 name = "diem-transaction-emitter-lib"
 version = "0.0.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "again",
  "anyhow",
  "async-trait",
- "clap 4.5.19",
+ "clap 4.5.20",
  "diem",
  "diem-config",
  "diem-crypto",
@@ -3850,12 +3867,12 @@ dependencies = [
 [[package]]
 name = "diem-transaction-generator-lib"
 version = "0.0.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "again",
  "anyhow",
  "async-trait",
- "clap 4.5.19",
+ "clap 4.5.20",
  "diem",
  "diem-config",
  "diem-crypto",
@@ -3880,11 +3897,11 @@ dependencies = [
 [[package]]
 name = "diem-transactional-test-harness"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.19",
+ "clap 4.5.20",
  "diem-api-types",
  "diem-cached-packages",
  "diem-crypto",
@@ -3912,7 +3929,7 @@ dependencies = [
 [[package]]
 name = "diem-types"
 version = "0.0.3"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "arr_macro",
@@ -3945,12 +3962,12 @@ dependencies = [
 [[package]]
 name = "diem-utils"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 
 [[package]]
 name = "diem-validator-interface"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3971,7 +3988,7 @@ dependencies = [
 [[package]]
 name = "diem-vault-client"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "base64 0.13.1",
  "chrono",
@@ -3987,7 +4004,7 @@ dependencies = [
 [[package]]
 name = "diem-vm"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -4034,7 +4051,7 @@ dependencies = [
 [[package]]
 name = "diem-vm-genesis"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -4055,7 +4072,7 @@ dependencies = [
 [[package]]
 name = "diem-vm-logging"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "arc-swap",
  "diem-crypto",
@@ -4071,7 +4088,7 @@ dependencies = [
 [[package]]
 name = "diem-vm-types"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "diem-aggregator",
@@ -4084,7 +4101,7 @@ dependencies = [
 [[package]]
 name = "diem-vm-validator"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "diem-gas",
@@ -4099,7 +4116,7 @@ dependencies = [
 [[package]]
 name = "diem-warp-webserver"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -4140,7 +4157,7 @@ checksum = "e7f2c3de51e2ba6bf2a648285696137aaf0f5f487bcbea93972fe8a364e131a4"
 dependencies = [
  "diesel_table_macro_syntax",
  "dsl_auto_type",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
 ]
@@ -4250,7 +4267,7 @@ dependencies = [
  "darling 0.20.10",
  "either",
  "heck 0.5.0",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
 ]
@@ -4320,7 +4337,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aa18ce2bc66555b3218614519ac839ddb759a7d6720732f979ef8d13be147ecd"
 dependencies = [
  "once_cell",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
 ]
@@ -4524,9 +4541,9 @@ dependencies = [
 
 [[package]]
 name = "futures-channel"
-version = "0.3.24"
+version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30bdd20c28fadd505d0fd6712cdfcb0d4b5648baf45faef7f852afb2399bb050"
+checksum = "2dff15bf788c671c1934e366d07e30c1814a8ef514e1af724a602e8a2fbe1b10"
 dependencies = [
  "futures-core",
  "futures-sink",
@@ -4534,15 +4551,15 @@ dependencies = [
 
 [[package]]
 name = "futures-core"
-version = "0.3.30"
+version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dfc6580bb841c5a68e9ef15c77ccc837b40a7504914d52e47b8b0e9bbda25a1d"
+checksum = "05f29059c0c2090612e8d742178b0580d2dc940c837851ad723096f87af6663e"
 
 [[package]]
 name = "futures-executor"
-version = "0.3.24"
+version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ff63c23854bee61b6e9cd331d523909f238fc7636290b96826e9cfa5faa00ab"
+checksum = "1e28d1d997f585e54aebc3f97d39e72338912123a67330d723fdbb564d646c9f"
 dependencies = [
  "futures-core",
  "futures-task",
@@ -4551,38 +4568,38 @@ dependencies = [
 
 [[package]]
 name = "futures-io"
-version = "0.3.30"
+version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a44623e20b9681a318efdd71c299b6b222ed6f231972bfe2f224ebad6311f0c1"
+checksum = "9e5c1b78ca4aae1ac06c48a526a655760685149f0d465d21f37abfe57ce075c6"
 
 [[package]]
 name = "futures-macro"
-version = "0.3.24"
+version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42cd15d1c7456c04dbdf7e88bcd69760d74f3a798d6444e16974b505b0e62f17"
+checksum = "162ee34ebcb7c64a8abebc059ce0fee27c2262618d7b60ed8faf72fef13c3650"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
- "syn 1.0.109",
+ "syn 2.0.79",
 ]
 
 [[package]]
 name = "futures-sink"
-version = "0.3.30"
+version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9fb8e00e87438d937621c1c6269e53f536c14d3fbd6a042bb24879e57d474fb5"
+checksum = "e575fab7d1e0dcb8d0c7bcf9a63ee213816ab51902e6d244a95819acacf1d4f7"
 
 [[package]]
 name = "futures-task"
-version = "0.3.30"
+version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38d84fa142264698cdce1a9f9172cf383a0c82de1bddcf3092901442c4097004"
+checksum = "f90f7dce0722e95104fcb095585910c0977252f286e354b5e3bd38902cd99988"
 
 [[package]]
 name = "futures-util"
-version = "0.3.24"
+version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44fb6cb1be61cc1d2e43b262516aafcf63b241cffdb1d3fa115f91d9c7b09c90"
+checksum = "9fa08315bb612088cc391249efdc3bc77536f16c91f6cf495e6fbe85b20a4a81"
 dependencies = [
  "futures-channel",
  "futures-core",
@@ -5104,17 +5121,6 @@ checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
 
 [[package]]
 name = "idna"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "418a0a6fab821475f634efe3ccc45c013f742efe03d853e8d3355d5cb850ecf8"
-dependencies = [
- "matches",
- "unicode-bidi",
- "unicode-normalization",
-]
-
-[[package]]
-name = "idna"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e14ddfc70884202db2244c223200c204c2bda1bc6e0998d11b5e024d657209e6"
@@ -5200,7 +5206,7 @@ version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "11d7a9f6330b71fea57921c9b61c47ee6e84f72d394754eff6163ae67e7395eb"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 1.0.109",
 ]
@@ -5234,7 +5240,7 @@ checksum = "0a0c890c85da4bab7bce4204c707396bbd3c6c8a681716a51c8814cfc2b682df"
 dependencies = [
  "anyhow",
  "proc-macro-hack",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 1.0.109",
 ]
@@ -5245,7 +5251,7 @@ version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7cab85a7ed0bd5f0e76d93846e0147172bed2e2d3f859bcc33a8d9699cad1a75"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
 ]
 
@@ -5297,7 +5303,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "232929e1d75fe899576a3d5c7416ad0d88dbfbb3c3d6aa00873a7408a50ddb88"
 dependencies = [
  "ahash 0.8.11",
- "clap 4.5.19",
+ "clap 4.5.20",
  "crossbeam-channel",
  "crossbeam-utils",
  "dashmap 6.1.0",
@@ -5619,7 +5625,7 @@ name = "libra"
 version = "7.0.3"
 dependencies = [
  "anyhow",
- "clap 4.5.19",
+ "clap 4.5.20",
  "diem",
  "diem-config",
  "diem-node",
@@ -5678,7 +5684,7 @@ version = "7.0.3"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.19",
+ "clap 4.5.20",
  "dialoguer",
  "diem",
  "diem-config",
@@ -5703,7 +5709,7 @@ version = "7.0.3"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.19",
+ "clap 4.5.20",
  "dialoguer",
  "diem",
  "diem-build-info",
@@ -5725,7 +5731,7 @@ dependencies = [
  "base64 0.13.1",
  "bcs 0.1.4",
  "chrono",
- "clap 4.5.19",
+ "clap 4.5.20",
  "dialoguer",
  "diem-config",
  "diem-crypto",
@@ -5760,7 +5766,7 @@ name = "libra-query"
 version = "7.0.3"
 dependencies = [
  "anyhow",
- "clap 4.5.19",
+ "clap 4.5.20",
  "diem-api-types",
  "diem-debugger",
  "diem-sdk",
@@ -5779,7 +5785,7 @@ version = "7.0.3"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.19",
+ "clap 4.5.20",
  "diem-api-types",
  "diem-config",
  "diem-crypto",
@@ -5835,7 +5841,7 @@ version = "7.0.3"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.19",
+ "clap 4.5.20",
  "diem-backup-cli",
  "diem-config",
  "diem-db",
@@ -5859,7 +5865,7 @@ version = "7.0.3"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.19",
+ "clap 4.5.20",
  "dialoguer",
  "diem-api-types",
  "diem-config",
@@ -5888,7 +5894,7 @@ version = "7.0.3"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.19",
+ "clap 4.5.20",
  "dialoguer",
  "diem",
  "diem-forge",
@@ -5922,7 +5928,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "bcs 0.1.4",
- "clap 4.5.19",
+ "clap 4.5.20",
  "console",
  "diem",
  "diem-api-types",
@@ -5976,7 +5982,7 @@ dependencies = [
  "anyhow",
  "blst",
  "byteorder",
- "clap 4.5.19",
+ "clap 4.5.20",
  "dialoguer",
  "diem-config",
  "diem-crypto",
@@ -6003,7 +6009,7 @@ name = "libra-warehouse"
 version = "7.0.3"
 dependencies = [
  "anyhow",
- "clap 4.5.19",
+ "clap 4.5.20",
  "glob",
  "libra-backwards-compatibility",
  "tokio",
@@ -6222,12 +6228,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "matches"
-version = "0.1.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2532096657941c2fea9c289d370a250971c689d4f143798ff67113ec042024a5"
-
-[[package]]
 name = "matchit"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6256,7 +6256,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ffb161cc72176cb37aa47f1fc520d3ef02263d67d661f44f05d05a079e1237fd"
 dependencies = [
  "migrations_internals",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
 ]
 
@@ -6319,7 +6319,7 @@ checksum = "1fafa6961cabd9c63bcd77a45d7e3b7f3b552b70417831fb0f56db717e72407e"
 [[package]]
 name = "move-abigen"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6336,7 +6336,7 @@ dependencies = [
 [[package]]
 name = "move-binary-format"
 version = "0.0.3"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "arbitrary",
@@ -6353,12 +6353,12 @@ dependencies = [
 [[package]]
 name = "move-borrow-graph"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 
 [[package]]
 name = "move-bytecode-source-map"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6373,7 +6373,7 @@ dependencies = [
 [[package]]
 name = "move-bytecode-utils"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "move-binary-format",
@@ -6385,7 +6385,7 @@ dependencies = [
 [[package]]
 name = "move-bytecode-verifier"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "fail 0.4.0",
@@ -6399,10 +6399,10 @@ dependencies = [
 [[package]]
 name = "move-bytecode-viewer"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
- "clap 4.5.19",
+ "clap 4.5.20",
  "crossterm 0.26.1",
  "move-binary-format",
  "move-bytecode-source-map",
@@ -6416,11 +6416,11 @@ dependencies = [
 [[package]]
 name = "move-cli"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.19",
+ "clap 4.5.20",
  "codespan-reporting",
  "colored",
  "difference",
@@ -6460,7 +6460,7 @@ dependencies = [
 [[package]]
 name = "move-command-line-common"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "difference",
@@ -6477,11 +6477,11 @@ dependencies = [
 [[package]]
 name = "move-compiler"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.19",
+ "clap 4.5.20",
  "codespan-reporting",
  "difference",
  "hex",
@@ -6506,7 +6506,7 @@ dependencies = [
 [[package]]
 name = "move-core-types"
 version = "0.0.4"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "arbitrary",
@@ -6528,11 +6528,11 @@ dependencies = [
 [[package]]
 name = "move-coverage"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.19",
+ "clap 4.5.20",
  "codespan",
  "colored",
  "move-binary-format",
@@ -6548,10 +6548,10 @@ dependencies = [
 [[package]]
 name = "move-disassembler"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
- "clap 4.5.19",
+ "clap 4.5.20",
  "colored",
  "move-binary-format",
  "move-bytecode-source-map",
@@ -6566,7 +6566,7 @@ dependencies = [
 [[package]]
 name = "move-docgen"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "codespan",
@@ -6585,7 +6585,7 @@ dependencies = [
 [[package]]
 name = "move-errmapgen"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6599,11 +6599,11 @@ dependencies = [
 [[package]]
 name = "move-ir-compiler"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.19",
+ "clap 4.5.20",
  "move-binary-format",
  "move-bytecode-source-map",
  "move-bytecode-verifier",
@@ -6618,7 +6618,7 @@ dependencies = [
 [[package]]
 name = "move-ir-to-bytecode"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "codespan-reporting",
@@ -6637,7 +6637,7 @@ dependencies = [
 [[package]]
 name = "move-ir-to-bytecode-syntax"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "hex",
@@ -6650,7 +6650,7 @@ dependencies = [
 [[package]]
 name = "move-ir-types"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "hex",
@@ -6664,7 +6664,7 @@ dependencies = [
 [[package]]
 name = "move-model"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "codespan",
@@ -6691,11 +6691,11 @@ dependencies = [
 [[package]]
 name = "move-package"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.19",
+ "clap 4.5.20",
  "colored",
  "dirs-next",
  "itertools",
@@ -6727,12 +6727,12 @@ dependencies = [
 [[package]]
 name = "move-prover"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "async-trait",
  "atty",
- "clap 4.5.19",
+ "clap 4.5.20",
  "codespan",
  "codespan-reporting",
  "futures",
@@ -6764,7 +6764,7 @@ dependencies = [
 [[package]]
 name = "move-prover-boogie-backend"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -6793,7 +6793,7 @@ dependencies = [
 [[package]]
 name = "move-resource-viewer"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6808,7 +6808,7 @@ dependencies = [
 [[package]]
 name = "move-stackless-bytecode"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "codespan",
  "codespan-reporting",
@@ -6834,7 +6834,7 @@ dependencies = [
 [[package]]
 name = "move-stdlib"
 version = "0.1.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "hex",
@@ -6857,7 +6857,7 @@ dependencies = [
 [[package]]
 name = "move-symbol-pool"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "once_cell",
  "serde 1.0.210",
@@ -6866,7 +6866,7 @@ dependencies = [
 [[package]]
 name = "move-table-extension"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6883,10 +6883,10 @@ dependencies = [
 [[package]]
 name = "move-transactional-test-runner"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
- "clap 4.5.19",
+ "clap 4.5.20",
  "colored",
  "move-binary-format",
  "move-bytecode-source-map",
@@ -6914,11 +6914,11 @@ dependencies = [
 [[package]]
 name = "move-unit-test"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "better_any",
- "clap 4.5.19",
+ "clap 4.5.20",
  "codespan-reporting",
  "colored",
  "itertools",
@@ -6944,7 +6944,7 @@ dependencies = [
 [[package]]
 name = "move-vm-runtime"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "better_any",
  "fail 0.4.0",
@@ -6961,7 +6961,7 @@ dependencies = [
 [[package]]
 name = "move-vm-test-utils"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "move-binary-format",
@@ -6975,7 +6975,7 @@ dependencies = [
 [[package]]
 name = "move-vm-types"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "bcs 0.1.4",
  "move-binary-format",
@@ -7126,7 +7126,7 @@ version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "876a53fff98e03a936a674b29568b0e605f06b29372c2489ff4de23f1949743d"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 1.0.109",
 ]
@@ -7227,12 +7227,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.20.1"
+version = "1.20.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82881c4be219ab5faaf2ad5e5e5ecdff8c66bd7402ca3160975c93b24961afd1"
-dependencies = [
- "portable-atomic",
-]
+checksum = "1261fe7e33c73b354eab43b1273a57c8f967d0391e80353e51f764ac02cf6775"
 
 [[package]]
 name = "opaque-debug"
@@ -7261,7 +7258,7 @@ version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a948666b637a0f465e8564c73e89d4dde00d72d4d473cc972f390fc3dcee7d9c"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
 ]
@@ -7327,7 +7324,7 @@ checksum = "03f2cb802b5bdfdf52f1ffa0b54ce105e4d346e91990dd571f86c91321ad49e2"
 dependencies = [
  "Inflector",
  "proc-macro-error",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 1.0.109",
 ]
@@ -7340,7 +7337,7 @@ checksum = "5f7d21ccd03305a674437ee1248f3ab5d4b1db095cf1caf49f1713ddf61956b7"
 dependencies = [
  "Inflector",
  "proc-macro-error",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 1.0.109",
 ]
@@ -7378,7 +7375,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1557010476e0595c9b568d16dcfb81b93cdeb157612726f5170d31aa707bed27"
 dependencies = [
  "proc-macro-crate 1.3.1",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 1.0.109",
 ]
@@ -7538,7 +7535,7 @@ checksum = "94429506bde1ca69d1b5601962c73f4172ab4726571a59ea95931218cb0e930e"
 dependencies = [
  "pest",
  "pest_meta",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
 ]
@@ -7614,20 +7611,20 @@ dependencies = [
 
 [[package]]
 name = "pin-project"
-version = "1.1.5"
+version = "1.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6bf43b791c5b9e34c3d182969b4abb522f9343702850a2e57f460d00d09b4b3"
+checksum = "baf123a161dde1e524adf36f90bc5d8d3462824a9c43553ad07a8183161189ec"
 dependencies = [
  "pin-project-internal",
 ]
 
 [[package]]
 name = "pin-project-internal"
-version = "1.1.5"
+version = "1.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f38a4412a78282e09a2cf38d195ea5420d15ba0602cb375210efbc877243965"
+checksum = "a4502d8515ca9f32f1fb543d987f63d95a14934883db45bdb48060b6b69257f8"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
 ]
@@ -7673,7 +7670,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "chrono",
- "cookie",
+ "cookie 0.16.2",
  "futures-util",
  "headers",
  "http",
@@ -7710,7 +7707,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42ddcf4680d8d867e1e375116203846acb088483fa2070244f90589f458bbb31"
 dependencies = [
  "proc-macro-crate 2.0.2",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
 ]
@@ -7751,7 +7748,7 @@ dependencies = [
  "indexmap 1.9.3",
  "mime",
  "proc-macro-crate 1.3.1",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "regex",
  "syn 1.0.109",
@@ -7816,7 +7813,7 @@ version = "0.2.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "479cf940fbbb3426c32c5d5176f62ad57549a0bb84773423ba8be9d089f5faba"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "syn 2.0.79",
 ]
 
@@ -7859,7 +7856,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da25490ff9892aab3fcf7c36f08cfb902dd3e71ca0f9f9517bea02a73a5ce38c"
 dependencies = [
  "proc-macro-error-attr",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 1.0.109",
  "version_check",
@@ -7871,7 +7868,7 @@ version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a1be40180e52ecc98ad80b184934baf3d0d29f979574e439af5a55274b35f869"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "version_check",
 ]
@@ -7893,9 +7890,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.86"
+version = "1.0.87"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e719e8df665df0d1c8fbfd238015744736151d4445ec0836b8e628aae103b77"
+checksum = "b3e4daa0dcf6feba26f985457cdf104d4b4256fc5a09547140f3631bb076b19a"
 dependencies = [
  "unicode-ident",
 ]
@@ -7976,7 +7973,7 @@ checksum = "e5d2d8d10f3c6ded6da8b05b5fb3b8a5082514344d56c9f871412d29b4e075b4"
 dependencies = [
  "anyhow",
  "itertools",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 1.0.109",
 ]
@@ -8062,7 +8059,7 @@ version = "1.0.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5b9d34b8991d19d98081b46eacdd8eb58c6f2b201139f7c5f643cc155a633af"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
 ]
 
 [[package]]
@@ -8273,7 +8270,7 @@ version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bcc303e793d3734489387d205e9b186fac9c6cfacedd98cbb2e8a5943595f3e6"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
 ]
@@ -8324,13 +8321,13 @@ checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 
 [[package]]
 name = "reqwest"
-version = "0.11.23"
+version = "0.11.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37b1ae8d9ac08420c66222fb9096fc5de435c3c48542bc5336c51892cffafb41"
+checksum = "dd67538700a17451e7cba03ac727fb961abb7607553461627b97de0b89cf4a62"
 dependencies = [
  "base64 0.21.7",
  "bytes",
- "cookie",
+ "cookie 0.17.0",
  "cookie_store",
  "encoding_rs",
  "futures-core",
@@ -8349,9 +8346,11 @@ dependencies = [
  "once_cell",
  "percent-encoding",
  "pin-project-lite",
+ "rustls-pemfile 1.0.4",
  "serde 1.0.210",
  "serde_json",
  "serde_urlencoded",
+ "sync_wrapper",
  "system-configuration",
  "tokio",
  "tokio-native-tls",
@@ -8642,9 +8641,9 @@ dependencies = [
 
 [[package]]
 name = "schannel"
-version = "0.1.24"
+version = "0.1.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9aaafd5a2b6e3d657ff009d82fbd630b6bd54dd4eb06f21693925cdf80f9b8b"
+checksum = "01227be5826fa0690321a2ba6c5cd57a19cf3f6a09e76973b58e61de6ab9d1c1"
 dependencies = [
  "windows-sys 0.59.0",
 ]
@@ -8828,7 +8827,7 @@ version = "1.0.210"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "243902eda00fad750862fc144cea25caca5e20d615af0a81bee94ca738f1df1f"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
 ]
@@ -8880,9 +8879,9 @@ dependencies = [
 
 [[package]]
 name = "serde_with"
-version = "3.10.0"
+version = "3.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9720086b3357bcb44fce40117d769a4d068c70ecfa190850a980a71755f66fcc"
+checksum = "8e28bdad6db2b8340e449f7108f020b3b092e8583a9e3fb82713e1d4e71fe817"
 dependencies = [
  "base64 0.22.1",
  "chrono",
@@ -8898,12 +8897,12 @@ dependencies = [
 
 [[package]]
 name = "serde_with_macros"
-version = "3.10.0"
+version = "3.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f1abbfe725f27678f4663bcacb75a83e829fd464c25d78dd038a3a29e307cec"
+checksum = "9d846214a9854ef724f3da161b426242d8de7c1fc7de2f89bb1efcb154dca79d"
 dependencies = [
  "darling 0.20.10",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
 ]
@@ -9143,7 +9142,7 @@ checksum = "b7c388c1b5e93756d0c740965c41e8822f866621d41acbdf6336a6a168f8840c"
 [[package]]
 name = "smoke-test"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#fe9453ded98e8d21c63772a9d3c6bc1e5d235fe1"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -9275,7 +9274,7 @@ checksum = "dcb5ae327f9cc13b68763b5749770cb9e048a99bd9dfdfa58d0cf05d5f64afe0"
 dependencies = [
  "heck 0.3.3",
  "proc-macro-error",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 1.0.109",
 ]
@@ -9293,7 +9292,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e385be0d24f186b4ce2f9982191e7101bb737312ad61c1f2f984f34bcf85d59"
 dependencies = [
  "heck 0.4.1",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "rustversion",
  "syn 1.0.109",
@@ -9322,7 +9321,7 @@ version = "1.0.109"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b64191b275b66ffe2469e8af2c1cfe3bafa67b529ead792a6d0160888b4237"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "unicode-ident",
 ]
@@ -9333,7 +9332,7 @@ version = "2.0.79"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "89132cd0bf050864e1d38dc3bbc07a0eb8e7530af26344d3d2bbbef83499f590"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "unicode-ident",
 ]
@@ -9490,7 +9489,7 @@ version = "1.0.64"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08904e7672f5eb876eaaf87e0ce17857500934f4981c4a0ab2b4aa98baac7fc3"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
 ]
@@ -9634,7 +9633,7 @@ version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "630bdcf245f78637c13ec01ffae6187cca34625e8c63150d424b59e55af2675e"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
 ]
@@ -9705,9 +9704,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-tungstenite"
-version = "0.18.0"
+version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "54319c93411147bced34cb5609a80e0a8e44c5999c93903a81cd866630ec0bfd"
+checksum = "212d5dcb2a1ce06d81107c3d0ffa3121fe974b73f068c8282cb1c32328113b6c"
 dependencies = [
  "futures-util",
  "log",
@@ -9903,7 +9902,7 @@ version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ad0c048e114d19d1140662762bfdb10682f3bc806d8be18af846600214dd9af"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 1.0.109",
 ]
@@ -9926,7 +9925,7 @@ version = "0.1.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34704c8d6ebcbc939824180af020566b01a7c01f80641264eba0999f6c2b6be7"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
 ]
@@ -10031,13 +10030,13 @@ dependencies = [
 
 [[package]]
 name = "tungstenite"
-version = "0.18.0"
+version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30ee6ab729cd4cf0fd55218530c4522ed30b7b6081752839b68fcec8d0960788"
+checksum = "9e3dac10fd62eaf6617d3a904ae222845979aec67c615d1c842b4002c7666fb9"
 dependencies = [
- "base64 0.13.1",
  "byteorder",
  "bytes",
+ "data-encoding",
  "http",
  "httparse",
  "log",
@@ -10394,9 +10393,9 @@ dependencies = [
 
 [[package]]
 name = "warp"
-version = "0.3.5"
+version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba431ef570df1287f7f8b07e376491ad54f84d26ac473489427231e1718e1f69"
+checksum = "c1e92e22e03ff1230c03a1a8ee37d2f89cd489e2e541b7550d6afad96faed169"
 dependencies = [
  "bytes",
  "futures-channel",
@@ -10416,7 +10415,7 @@ dependencies = [
  "serde_json",
  "serde_urlencoded",
  "tokio",
- "tokio-rustls 0.23.4",
+ "tokio-rustls 0.24.1",
  "tokio-stream",
  "tokio-tungstenite",
  "tokio-util 0.7.12",
@@ -10462,7 +10461,7 @@ dependencies = [
  "bumpalo",
  "log",
  "once_cell",
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
  "wasm-bindgen-shared",
@@ -10496,7 +10495,7 @@ version = "0.2.93"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "afc340c74d9005395cf9dd098506f7f44e38f2b4a21c6aaacf9a105ea5e1e836"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
  "wasm-bindgen-backend",
@@ -10511,9 +10510,9 @@ checksum = "c62a0a307cb4a311d3a07867860911ca130c3494e8c2719593806c08bc5d0484"
 
 [[package]]
 name = "wasm-streams"
-version = "0.3.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4609d447824375f43e1ffbc051b50ad8f4b3ae8219680c94452ea05eb240ac7"
+checksum = "4e072d4e72f700fb3443d8fe94a39315df013eef1104903cdb0a2abd322bbecd"
 dependencies = [
  "futures-util",
  "js-sys",
@@ -10796,7 +10795,7 @@ checksum = "85e60b0d1b5f99db2556934e21937020776a5d31520bf169e851ac44e6420214"
 [[package]]
 name = "x25519-dalek"
 version = "1.2.0"
-source = "git+https://github.com/0LNetworkCommunity/x25519-dalek?branch=zeroize_v1#762a9501668d213daa4a1864fa1f9db22716b661"
+source = "git+https://github.com/0LNetworkCommunity/x25519-dalek#b9cdbaf36bf2a83438d9f660e5a708c82ed60d8e"
 dependencies = [
  "curve25519-dalek",
  "rand_core 0.5.1",
@@ -10834,7 +10833,7 @@ version = "0.7.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fa4f8080344d4671fb4e831a13ad1e68092748387dfc4f55e356242fae12ce3e"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
 ]
@@ -10854,7 +10853,7 @@ version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ce36e65b0d2999d2aafac989fb249189a141aee1f53c612c1f37d72631959f69"
 dependencies = [
- "proc-macro2 1.0.86",
+ "proc-macro2 1.0.87",
  "quote 1.0.37",
  "syn 2.0.79",
 ]
