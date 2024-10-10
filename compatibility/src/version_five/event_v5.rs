@@ -32,7 +32,7 @@ impl EventKeyV5 {
     }
 
     /// Convert event key into a byte array.
-    pub fn to_vec(&self) -> Vec<u8> {
+    pub fn to_vec(self) -> Vec<u8> {
         self.0.to_vec()
     }
 

@@ -144,7 +144,7 @@ impl HashValueV5 {
     }
 
     /// Dumps into a vector.
-    pub fn to_vec(&self) -> Vec<u8> {
+    pub fn to_vec(self) -> Vec<u8> {
         self.hash.to_vec()
     }
 
@@ -249,12 +249,12 @@ impl HashValueV5 {
     }
 
     /// Full hex representation of a given hash value.
-    pub fn to_hex(&self) -> String {
+    pub fn to_hex(self) -> String {
         format!("{:x}", &self)
     }
 
     /// Full hex representation of a given hash value with `0x` prefix.
-    pub fn to_hex_literal(&self) -> String {
+    pub fn to_hex_literal(self) -> String {
         format!("{:#x}", &self)
     }
 

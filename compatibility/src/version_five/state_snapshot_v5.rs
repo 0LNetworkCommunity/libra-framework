@@ -10,7 +10,7 @@ use diem_backup_cli::{
 };
 use diem_types::transaction::Version;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tokio::{fs::OpenOptions, io::AsyncRead};
 
 #[derive(Deserialize, Serialize)]
@@ -58,7 +58,7 @@ pub fn v5_read_from_snapshot_manifest(path: &PathBuf) -> Result<StateSnapshotBac
 /// parse each chunk of a state snapshot manifest
 pub async fn read_account_state_chunk(
     file_handle: FileHandle,
-    archive_path: &PathBuf,
+    archive_path: &Path,
 ) -> Result<Vec<AccountStateBlobRecord>, Error> {
     let full_handle = archive_path
         .parent()
@@ -80,7 +80,9 @@ pub async fn read_account_state_chunk(
     Ok(chunk)
 }
 
-pub async fn open_for_read(file_handle: &FileHandleRef) -> Result<Box<dyn AsyncRead + Send + Unpin>> {
+pub async fn open_for_read(
+    file_handle: &FileHandleRef,
+) -> Result<Box<dyn AsyncRead + Send + Unpin>> {
     let file = OpenOptions::new().read(true).open(file_handle).await?;
     Ok(Box::new(file))
 }
@@ -88,7 +90,7 @@ pub async fn open_for_read(file_handle: &FileHandleRef) -> Result<Box<dyn AsyncR
 /// Tokio async parsing of state snapshot into blob
 pub async fn v5_accounts_from_snapshot_backup(
     manifest: StateSnapshotBackupV5,
-    archive_path: &PathBuf,
+    archive_path: &Path,
 ) -> Result<Vec<AccountStateBlob>, Error> {
     // parse AccountStateBlob from chunks of the archive
     let mut account_state_blobs: Vec<AccountStateBlob> = Vec::new();

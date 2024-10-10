@@ -1,10 +1,9 @@
 use std::path::PathBuf;
 
 use libra_backwards_compatibility::version_five::{
-  transaction_manifest_v5::v5_read_from_transaction_manifest,
-  transaction_restore_v5::read_transaction_chunk,
+    transaction_manifest_v5::v5_read_from_transaction_manifest,
+    transaction_restore_v5::read_transaction_chunk,
 };
-
 
 fn fixtures_path() -> PathBuf {
     let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -31,6 +30,8 @@ async fn parse_tx_chunk() {
     assert!(manifest.exists());
 
     let res = v5_read_from_transaction_manifest(&manifest).unwrap();
-    let tx_chunk = read_transaction_chunk(&res.chunks[0].transactions, &archive).await.unwrap();
+    let tx_chunk = read_transaction_chunk(&res.chunks[0].transactions, &archive)
+        .await
+        .unwrap();
     dbg!(&tx_chunk.len());
 }

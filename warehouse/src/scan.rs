@@ -1,11 +1,13 @@
 //! scan
+#![allow(dead_code)]
+
 use anyhow::{Context, Result};
 use glob::glob;
+use libra_backwards_compatibility::version_five::transaction_manifest_v5::v5_read_from_transaction_manifest;
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
 };
-use libra_backwards_compatibility::version_five::{transaction_manifest_v5::v5_read_from_transaction_manifest, transaction_restore_v5};
 #[derive(Clone, Debug)]
 pub struct ArchiveMap(pub BTreeMap<PathBuf, ManifestInfo>);
 
@@ -23,7 +25,7 @@ pub struct ManifestInfo {
 }
 
 #[derive(Clone, Debug)]
-enum EncodingVersion {
+pub enum EncodingVersion {
     Unknown,
     V5,
     V6,
@@ -31,7 +33,7 @@ enum EncodingVersion {
 }
 
 #[derive(Clone, Debug)]
-enum BundleContent {
+pub enum BundleContent {
     Unknown,
     StateSnapshot,
     Transaction,
@@ -56,7 +58,7 @@ pub fn scan_dir_archive(start_dir: &Path) -> Result<ArchiveMap> {
                 let contents = test_content(&path);
                 let m = ManifestInfo {
                     dir: dir.clone(),
-                    version: test_version(&contents, &path, &dir),
+                    version: test_version(&contents, &path),
                     contents,
                     processed: false,
                 };
@@ -85,19 +87,18 @@ fn test_content(manifest_path: &Path) -> BundleContent {
     BundleContent::Unknown
 }
 
-fn test_version(content: &BundleContent, manifest_file: &Path, dir_archive: &Path) -> EncodingVersion {
-  // can it read a v5 chunk?
-  match content {
-    BundleContent::Unknown => { return EncodingVersion::Unknown },
-    BundleContent::StateSnapshot => { },
-    BundleContent::Transaction => {
-      if v5_read_from_transaction_manifest(manifest_file).is_ok() {
-        return EncodingVersion::V5
-      }
+fn test_version(content: &BundleContent, manifest_file: &Path) -> EncodingVersion {
+    // can it read a v5 chunk?
+    match content {
+        BundleContent::Unknown => return EncodingVersion::Unknown,
+        BundleContent::StateSnapshot => {}
+        BundleContent::Transaction => {
+            if v5_read_from_transaction_manifest(manifest_file).is_ok() {
+                return EncodingVersion::V5;
+            }
+        }
+        BundleContent::EpochEnding => {}
+    }
 
-    },
-    BundleContent::EpochEnding => { },
-  }
-
-  EncodingVersion::Unknown
+    EncodingVersion::Unknown
 }

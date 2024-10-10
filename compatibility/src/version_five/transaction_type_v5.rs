@@ -1,18 +1,21 @@
+use crate::version_five::event_v5::EventKeyV5;
 use crate::version_five::hash_value_v5::HashValueV5;
 use crate::version_five::language_storage_v5::ModuleIdV5;
-use crate::version_five::event_v5::EventKeyV5;
 use crate::version_five::language_storage_v5::TypeTagV5;
 
-use diem_crypto::{ed25519::{Ed25519Signature, Ed25519PublicKey, PublicKey, Signature}, multi_ed25519::{MultiEd25519PublicKey, MultiEd25519Signature}};
+use diem_crypto::{
+    ed25519::{Ed25519PublicKey, Ed25519Signature},
+    multi_ed25519::{MultiEd25519PublicKey, MultiEd25519Signature},
+};
 
-use diem_types::transaction::Script;
 use diem_types::transaction::ChangeSet;
+use diem_types::transaction::Script;
 
+use super::legacy_address_v5::LegacyAddressV5;
 use diem_types::{chain_id::ChainId, transaction::authenticator::AccountAuthenticator};
 use serde::{Deserialize, Serialize};
-use super::legacy_address_v5::LegacyAddressV5;
 
-// #[allow(clippy::large_enum_variant)]
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum TransactionV5 {
     /// Transaction submitted by the user. e.g: P2P payment transaction, publishing module
@@ -28,7 +31,6 @@ pub enum TransactionV5 {
     BlockMetadata(BlockMetadata),
 }
 
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SignedTransaction {
     /// The raw transaction
@@ -37,7 +39,6 @@ pub struct SignedTransaction {
     /// Public key and signature to authenticate
     authenticator: TransactionAuthenticator,
 }
-
 
 /// Two different kinds of WriteSet transactions.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -53,7 +54,6 @@ pub enum WriteSetPayload {
     },
 }
 
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BlockMetadata {
     id: HashValueV5,
@@ -63,7 +63,6 @@ pub struct BlockMetadata {
     previous_block_votes: Vec<LegacyAddressV5>,
     proposer: LegacyAddressV5,
 }
-
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TransactionInfoV5 {
@@ -85,7 +84,6 @@ pub struct TransactionInfoV5 {
     /// categorized with no status code or other information
     status: KeptVMStatus,
 }
-
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 enum KeptVMStatus {
@@ -141,32 +139,26 @@ struct RawTransaction {
     chain_id: ChainId,
 }
 
-
 /// Different kinds of transactions.
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum TransactionPayload {
     /// A system maintenance transaction.
     // WriteSet(WriteSetPayload),
     #[serde(with = "serde_bytes")]
-
     WriteSet(Vec<u8>),
     /// A transaction that executes code.
     // Script(Script),
     #[serde(with = "serde_bytes")]
-
     Script(Vec<u8>),
     /// A transaction that publishes code.
     // Module(Module),
     #[serde(with = "serde_bytes")]
-
     Module(Vec<u8>),
     /// A transaction that executes an existing script function published on-chain.
     // ScriptFunction(ScriptFunction),
     #[serde(with = "serde_bytes")]
     ScriptFunction(Vec<u8>),
-
 }
-
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum TransactionAuthenticator {
@@ -188,17 +180,15 @@ pub enum TransactionAuthenticator {
     },
 }
 
-
 /// Support versioning of the data structure.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ContractEventV5 {
     V0(ContractEventV0),
 }
 
-
 /// Entry produced via a call to the `emit_event` builtin.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-struct ContractEventV0 {
+pub struct ContractEventV0 {
     /// The unique key that the event was emitted to
     key: EventKeyV5,
     /// The number of messages that have been emitted to the path previously

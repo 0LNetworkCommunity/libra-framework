@@ -1,6 +1,5 @@
-
 use clap::{Parser, Subcommand};
-use std::{fs, path::PathBuf};
+use std::path::PathBuf;
 
 // use crate::{read_snapshot, restore, restore_bundle::RestoreBundle};
 
@@ -20,18 +19,17 @@ pub enum Sub {
     /// Tries to identify the libra version they belong to (v5 etc.)
     // #[clap(su)]
     Scan {
-      #[clap(long, short('d'))]
-      dir_archive: PathBuf
+        #[clap(long, short('d'))]
+        dir_archive: PathBuf,
     },
-
 }
 
 impl WarehouseCli {
-  pub fn run(&self) {
-    match &self.command {
-        Sub::Scan { dir_archive } => {
-          dbg!(&dir_archive)
-        },
-    };
-  }
+    pub fn run(&self) {
+        match &self.command {
+            Sub::Scan { dir_archive } => {
+                dbg!(&dir_archive)
+            }
+        };
+    }
 }
