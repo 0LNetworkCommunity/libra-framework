@@ -40,6 +40,8 @@ async fn read_full_snapshot() -> anyhow::Result<()> {
     assert!(!f.is_frozen());
     let b = first_account.get_resource::<BalanceResourceV5>()?;
     assert!(b.coin() == 100135989588);
+    let addr = first_account.get_address()?;
+    assert!(addr.len() > 0);
 
     Ok(())
 }

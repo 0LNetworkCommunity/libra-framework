@@ -26,7 +26,7 @@ use tokio::{fs::OpenOptions, io::AsyncRead};
 
 ////// SNAPSHOT FILE IO //////
 /// read snapshot manifest file into object
-pub fn load_snapshot_manifest(path: &PathBuf) -> Result<StateSnapshotBackup, Error> {
+pub fn load_snapshot_manifest(path: &Path) -> Result<StateSnapshotBackup, Error> {
     let config = std::fs::read_to_string(path).map_err(|e| {
         format!("Error: cannot read file {:?}, error: {:?}", &path, &e);
         e
@@ -123,11 +123,11 @@ pub async fn accounts_from_snapshot_backup(
 
 #[test]
 // TODO: adapt for V7.
-#[ignore]
+
 fn test_parse_manifest() {
     use std::str::FromStr;
     let mut this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
-    this_path.push("fixtures/state_epoch_79_ver_33217173.795d/state.manifest");
+    this_path.push("fixtures/v7/state_epoch_116_ver_38180075.05af/state.manifest");
     let _r = load_snapshot_manifest(&this_path).expect("parse manifest");
     // dbg!(&r.epoch);
 }

@@ -16,5 +16,18 @@ async fn can_init(pool: SqlitePool) -> anyhow::Result<()> {
     .last_insert_rowid();
 
     assert!(id == 1);
+
+
+    let id = sqlx::query(
+        r#"
+      INSERT INTO balance (account_address, balance, chain_timestamp, height, epoch_number)
+      VALUES ("00000000000000000000000000000000e8953084617dd5c6071cf2918215e183", 11, 22222222, 600, 1)
+      "#,
+    )
+    .execute(&mut *conn)
+    .await?
+    .last_insert_rowid();
+
+    assert!(id == 1);
     Ok(())
 }

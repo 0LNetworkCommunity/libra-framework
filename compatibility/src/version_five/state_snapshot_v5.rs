@@ -10,7 +10,7 @@ use diem_backup_cli::{
 };
 use diem_types::transaction::Version;
 use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use tokio::{fs::OpenOptions, io::AsyncRead};
 
 #[derive(Deserialize, Serialize)]
@@ -44,7 +44,7 @@ pub struct AccountStateBlobRecord(HashValueV5, AccountStateBlob);
 
 ////// SNAPSHOT FILE IO //////
 /// read snapshot manifest file into struct
-pub fn v5_read_from_snapshot_manifest(path: &PathBuf) -> Result<StateSnapshotBackupV5, Error> {
+pub fn v5_read_from_snapshot_manifest(path: &Path) -> Result<StateSnapshotBackupV5, Error> {
     let config = std::fs::read_to_string(path).map_err(|e| {
         format!("Error: cannot read file {:?}, error: {:?}", &path, &e);
         e
@@ -106,6 +106,13 @@ pub async fn v5_accounts_from_snapshot_backup(
     Ok(account_state_blobs)
 }
 
+/// one step extraction of account state blobs from a manifest path
+pub async fn v5_accounts_from_manifest_path(manifest_file: &Path) -> Result<Vec<AccountStateBlob>>{
+  let archive_path = manifest_file.parent().context("could not get archive path from manifest file")?;
+  let manifest = v5_read_from_snapshot_manifest(manifest_file)?;
+  v5_accounts_from_snapshot_backup(manifest, archive_path).await
+}
+
 #[test]
 fn decode_record_from_string() {
     use super::account_blob_v5::AccountStateV5;
@@ -142,6 +149,10 @@ fn decode_record_from_string() {
     // nested types like EventHandle and WithdrawCapability
     let ar = acc_state.get_account_resource().unwrap();
     assert!(ar.sequence_number() == 0);
+
+    let address = ar.address();
+    assert!(address.len() > 0);
+
 }
 
 #[test]

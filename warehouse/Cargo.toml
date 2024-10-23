@@ -14,5 +14,7 @@ anyhow = { workspace = true }
 clap = { workspace = true }
 glob = { workspace = true }
 libra-backwards-compatibility = { workspace = true }
+libra-storage = { workspace =  true }
+libra-types = { workspace =  true }
 sqlx = { workspace = true }
 tokio = { workspace = true }

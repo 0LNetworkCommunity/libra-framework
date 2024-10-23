@@ -3,7 +3,11 @@
 
 use anyhow::{Context, Result};
 use glob::glob;
-use libra_backwards_compatibility::version_five::transaction_manifest_v5::v5_read_from_transaction_manifest;
+use libra_backwards_compatibility::version_five::{
+    state_snapshot_v5::v5_read_from_snapshot_manifest,
+    transaction_manifest_v5::v5_read_from_transaction_manifest,
+};
+use libra_storage::read_snapshot::load_snapshot_manifest;
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
@@ -88,11 +92,20 @@ fn test_content(manifest_path: &Path) -> BundleContent {
 }
 
 fn test_version(content: &BundleContent, manifest_file: &Path) -> EncodingVersion {
-    // can it read a v5 chunk?
     match content {
         BundleContent::Unknown => return EncodingVersion::Unknown,
-        BundleContent::StateSnapshot => {}
+        BundleContent::StateSnapshot => {
+            // first check if the v7 manifest will parse
+            if load_snapshot_manifest(manifest_file).is_ok() {
+                return EncodingVersion::V7;
+            }
+
+            if v5_read_from_snapshot_manifest(manifest_file).is_ok() {
+                return EncodingVersion::V5;
+            }
+        }
         BundleContent::Transaction => {
+            // TODO: v5 manifests appear to have the same format this is a noop
             if v5_read_from_transaction_manifest(manifest_file).is_ok() {
                 return EncodingVersion::V5;
             }

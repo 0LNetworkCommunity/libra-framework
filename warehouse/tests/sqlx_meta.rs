@@ -4,7 +4,7 @@
 use sqlx::{Pool, Row, Sqlite};
 
 #[sqlx::test]
-async fn basic_test(pool: Pool<Sqlite>) -> anyhow::Result<()> {
+async fn sql_insert_test(pool: Pool<Sqlite>) -> anyhow::Result<()> {
     let mut conn = pool.acquire().await?;
 
     let a = sqlx::query("SELECT * FROM foo").execute(&mut *conn).await;
@@ -55,7 +55,7 @@ async fn basic_test(pool: Pool<Sqlite>) -> anyhow::Result<()> {
 }
 
 #[sqlx::test]
-async fn test_migrate(pool: Pool<Sqlite>) -> anyhow::Result<()> {
+async fn test_migrate_from_file(pool: Pool<Sqlite>) -> anyhow::Result<()> {
     // The directory must be relative to the project root (the directory containing Cargo.toml), unlike include_str!() which uses compiler internals to get the path of the file where it was invoked.
     sqlx::migrate!("tests/mock_migrations").run(&pool).await?;
 
