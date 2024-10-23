@@ -2,14 +2,16 @@ use crate::table_structs::{WarehouseAccount, WarehouseState};
 use anyhow::Result;
 use sqlx::{sqlite::SqliteQueryResult, SqlitePool};
 
-pub async fn load_account_state(pool: &SqlitePool, accounts: Vec<WarehouseState>) -> Result<()> {
+pub async fn load_account_state(pool: &SqlitePool, accounts: &Vec<WarehouseState>) -> Result<i64> {
+    let mut rows = 0;
     // insert missing accounts
     for ws in accounts.iter() {
-        insert_one_account(pool, &ws.account).await?;
+        let res= insert_one_account(pool, &ws.account).await?;
+        rows = res.last_insert_rowid();
     }
 
     // increment the balance changes
-    Ok(())
+    Ok(rows)
 }
 
 pub async fn insert_one_account(pool: &SqlitePool, acc: &WarehouseAccount) -> Result<SqliteQueryResult> {
