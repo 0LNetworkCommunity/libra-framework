@@ -57,7 +57,11 @@ pub async fn commit_batch_query(pool: &SqlitePool, batch_accounts: &[WarehouseAc
         b.push_bind(acc.address.to_hex_literal()).push_bind(true);
     });
 
+    // makes sure the txs don't fail on repeated attempts to add users
+    query_builder.push("ON CONFLICT (account_address) DO NOTHING");
+
     let query = query_builder.build();
-    query.execute(pool).await?;
+    let _res = query.execute(pool).await?;
+
     Ok(())
 }

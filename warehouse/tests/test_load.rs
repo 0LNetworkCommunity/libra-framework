@@ -61,7 +61,12 @@ async fn batch_duplicates_fail_gracefully(pool: SqlitePool) -> anyhow::Result<()
       vec_acct.push(acc);
     }
 
+  // should not fail if duplicates exists on same batch
   libra_warehouse::load::commit_batch_query(&pool, &vec_acct).await?;
+
+  // also should not fail if duplicates are on separate batches
+  libra_warehouse::load::commit_batch_query(&pool, &vec_acct).await?;
+
   Ok(())
 }
 
