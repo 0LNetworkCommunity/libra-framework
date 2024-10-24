@@ -21,10 +21,10 @@ async fn insert_one_account(pool: SqlitePool) -> anyhow::Result<()> {
       address: marlon
     };
 
-    libra_warehouse::load::insert_one_account(&pool, &acc).await?;
+    libra_warehouse::load_account::insert_one_account(&pool, &acc).await?;
 
     // second time should error if we are using the same account
-    assert!(libra_warehouse::load::insert_one_account(&pool, &acc).await.is_err());
+    assert!(libra_warehouse::load_account::insert_one_account(&pool, &acc).await.is_err());
 
     Ok(())
 }
@@ -42,7 +42,7 @@ async fn batch_insert(pool: SqlitePool) -> anyhow::Result<()>{
       vec_acct.push(acc);
     }
 
-  libra_warehouse::load::commit_batch_query(&pool, &vec_acct).await?;
+  libra_warehouse::load_account::impl_batch_insert(&pool, &vec_acct).await?;
   Ok(())
 }
 
@@ -62,10 +62,10 @@ async fn batch_duplicates_fail_gracefully(pool: SqlitePool) -> anyhow::Result<()
     }
 
   // should not fail if duplicates exists on same batch
-  libra_warehouse::load::commit_batch_query(&pool, &vec_acct).await?;
+  libra_warehouse::load_account::impl_batch_insert(&pool, &vec_acct).await?;
 
   // also should not fail if duplicates are on separate batches
-  libra_warehouse::load::commit_batch_query(&pool, &vec_acct).await?;
+  libra_warehouse::load_account::impl_batch_insert(&pool, &vec_acct).await?;
 
   Ok(())
 }
@@ -81,7 +81,7 @@ async fn test_e2e_load_v5_snapshot(pool: SqlitePool) -> anyhow::Result<()> {
     // NOTE: the parsing drops 1 blob, which is the 0x1 account, because it would not have the DiemAccount struct on it as a user address would have.
     assert!(wa_vec.len() == 17338);
 
-    let res = libra_warehouse::load::load_account_state(&pool, &wa_vec).await?;
+    let res = libra_warehouse::load_account::load_account_state(&pool, &wa_vec).await?;
 
     assert!(res == 17338);
     Ok(())

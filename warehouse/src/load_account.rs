@@ -40,14 +40,14 @@ pub async fn batch_insert_account(
     let chunks: Vec<&[WarehouseAccount]> = acc.chunks(batch_len).collect();
 
     for c in chunks {
-        commit_batch_query(pool, c).await?;
+        impl_batch_insert(pool, c).await?;
     }
 
     Ok(())
 }
 
 // TODO: return specific commit errors for this batch
-pub async fn commit_batch_query(pool: &SqlitePool, batch_accounts: &[WarehouseAccount]) -> Result<()> {
+pub async fn impl_batch_insert(pool: &SqlitePool, batch_accounts: &[WarehouseAccount]) -> Result<()> {
     let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
         // Note the trailing space; most calls to `QueryBuilder` don't automatically insert
         "INSERT INTO users (account_address, is_legacy) ",
