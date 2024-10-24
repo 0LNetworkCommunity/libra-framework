@@ -4,9 +4,9 @@ use anyhow::Result;
 use libra_backwards_compatibility::version_five::state_snapshot_v5::v5_accounts_from_manifest_path;
 use libra_types::exports::AccountAddress;
 
-use crate::table_structs::{WarehouseAccount, WarehouseState};
+use crate::table_structs::{WarehouseAccount, WarehouseRecord, WarehouseTime};
 
-pub async fn extract_v5_snapshot(v5_manifest_path: &Path) -> Result<Vec<WarehouseState>> {
+pub async fn extract_v5_snapshot(v5_manifest_path: &Path) -> Result<Vec<WarehouseRecord>> {
     let account_blobs = v5_accounts_from_manifest_path(&v5_manifest_path).await?;
     dbg!(&account_blobs.len());
     let mut warehouse_state = vec![];
@@ -17,10 +17,11 @@ pub async fn extract_v5_snapshot(v5_manifest_path: &Path) -> Result<Vec<Warehous
             Ok(a) => {
                 let address_literal = a.to_hex_literal();
                 let cast_address = AccountAddress::from_hex_literal(&address_literal)?;
-                let s = WarehouseState {
+                let s = WarehouseRecord {
                     account: WarehouseAccount {
                         address: cast_address,
                     },
+                    time: WarehouseTime::default(),
                     balance: None,
                 };
                 warehouse_state.push(s);
