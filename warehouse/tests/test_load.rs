@@ -29,7 +29,41 @@ async fn insert_one_account(pool: SqlitePool) -> anyhow::Result<()> {
     Ok(())
 }
 
+#[sqlx::test]
+async fn batch_insert(pool: SqlitePool) -> anyhow::Result<()>{
+  libra_warehouse::migrate::maybe_init(&pool).await?;
+    let mut vec_acct: Vec<WarehouseAccount> = vec![];
 
+    for _i in [..3] {
+      let acc = WarehouseAccount {
+        // uniques
+        address: AccountAddress::random()
+      };
+      vec_acct.push(acc);
+    }
+
+  libra_warehouse::load::commit_batch_query(&pool, &vec_acct).await?;
+  Ok(())
+}
+
+#[sqlx::test]
+async fn batch_duplicates_fail_gracefully(pool: SqlitePool) -> anyhow::Result<()>{
+  libra_warehouse::migrate::maybe_init(&pool).await?;
+    let mut vec_acct: Vec<WarehouseAccount> = vec![];
+
+    // will create duplicates
+    let marlon = AccountAddress::random();
+
+    for _i in [..3] {
+      let acc = WarehouseAccount {
+        address: marlon
+      };
+      vec_acct.push(acc);
+    }
+
+  libra_warehouse::load::commit_batch_query(&pool, &vec_acct).await?;
+  Ok(())
+}
 
 #[sqlx::test]
 
