@@ -123,8 +123,10 @@ async fn batch_insert_coin(pool: SqlitePool) -> anyhow::Result<()> {
     Ok(())
 }
 
+// The table should not update if the balance remains the same.
+// new records are only inserted when the balance changes.
 #[sqlx::test]
-async fn increment_coin(pool: SqlitePool) -> anyhow::Result<()> {
+async fn increment_coin_noop(pool: SqlitePool) -> anyhow::Result<()> {
     libra_warehouse::migrate::maybe_init(&pool).await?;
     let mut vec_state: Vec<WarehouseRecord> = vec![];
     let marlon = AccountAddress::random();
@@ -153,6 +155,7 @@ async fn increment_coin(pool: SqlitePool) -> anyhow::Result<()> {
     // fist must load accounts
     let _res = libra_warehouse::load_account::batch_insert_account(&pool, &vec_state, 10).await?;
 
+    // since the balance never changed but the times changed, there are no updates to the table.
     let res = libra_warehouse::load_coin::alt_increment_one_balance(&pool, &vec_state[0]).await?;
     assert!(res.rows_affected() == 1);
 
@@ -165,6 +168,57 @@ async fn increment_coin(pool: SqlitePool) -> anyhow::Result<()> {
     let res = libra_warehouse::query_balance::query_last_balance(&pool, marlon).await?;
 
     assert!(res.balance == 10);
+
+    Ok(())
+}
+
+
+// Increment the balance table when there balance changes.
+#[sqlx::test]
+async fn increment_coin(pool: SqlitePool) -> anyhow::Result<()> {
+    libra_warehouse::migrate::maybe_init(&pool).await?;
+    let mut vec_state: Vec<WarehouseRecord> = vec![];
+    let marlon = AccountAddress::random();
+    // same user, and same balance, but incremental timestamps
+    for i in 0..3 {
+        let state = WarehouseRecord {
+            account: WarehouseAccount {
+                // same user
+                address: marlon,
+            },
+            time: WarehouseTime {
+                timestamp: 12 * i,
+                version: 2 * i,
+                epoch: 3 * i,
+            },
+            balance: Some(WarehouseBalance {
+                balance: 0,
+                // different balance each time
+                legacy_balance: Some(10 * i),
+            }),
+        };
+
+        vec_state.push(state);
+    }
+
+    // fist must load accounts
+    let _res = libra_warehouse::load_account::batch_insert_account(&pool, &vec_state, 10).await?;
+
+    // the balance CHANGES, so each increment will create a new record
+    let res = libra_warehouse::load_coin::alt_increment_one_balance(&pool, &vec_state[0]).await?;
+    assert!(res.rows_affected() == 1);
+
+    let res = libra_warehouse::query_balance::query_last_balance(&pool, marlon).await?;
+    assert!(res.balance == 0); // 10 * 0th
+
+    let res = libra_warehouse::load_coin::alt_increment_one_balance(&pool, &vec_state[1]).await?;
+    assert!(res.rows_affected() == 1);
+
+    let res = libra_warehouse::load_coin::alt_increment_one_balance(&pool, &vec_state[2]).await?;
+    assert!(res.rows_affected() == 1);
+
+    let res = libra_warehouse::query_balance::query_last_balance(&pool, marlon).await?;
+    assert!(res.balance == 20);
 
     Ok(())
 }
