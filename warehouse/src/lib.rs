@@ -5,3 +5,4 @@ pub mod extract;
 pub mod table_structs;
 pub mod load_account;
 pub mod load_coin;
+pub mod query_balance;

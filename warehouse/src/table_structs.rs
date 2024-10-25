@@ -37,11 +37,12 @@ pub struct WarehouseAccount {
   pub address: AccountAddress,
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, sqlx::FromRow)]
 pub struct WarehouseBalance {
   // balances in v6+ terms
+  #[sqlx(try_from = "i64")]
   pub balance: u64,
   // the balance pre v6 recast
+  #[sqlx(default)]
   pub legacy_balance: Option<u64>,
-
 }

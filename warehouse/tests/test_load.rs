@@ -84,7 +84,7 @@ async fn test_e2e_load_v5_snapshot(pool: SqlitePool) -> anyhow::Result<()> {
     // NOTE: the parsing drops 1 blob, which is the 0x1 account, because it would not have the DiemAccount struct on it as a user address would have.
     assert!(wa_vec.len() == 17338);
 
-    let res = libra_warehouse::load_account::load_account_state(&pool, &wa_vec).await?;
+    let res = libra_warehouse::load_account::batch_insert_account(&pool, &wa_vec, 1000).await?;
 
     assert!(res == 17338);
     Ok(())
@@ -161,5 +161,10 @@ async fn increment_coin(pool: SqlitePool) -> anyhow::Result<()> {
 
     let res = libra_warehouse::load_coin::alt_increment_one_balance(&pool, &vec_state[2]).await?;
     assert!(res.rows_affected() == 0);
+
+    let res = libra_warehouse::query_balance::query_last_balance(&pool, marlon).await?;
+
+    assert!(res.balance == 10);
+
     Ok(())
 }
