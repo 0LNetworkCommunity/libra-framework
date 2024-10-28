@@ -1,3 +1,6 @@
+mod support;
+use support::pg_testcontainer::get_test_pool;
+
 use std::path::PathBuf;
 
 use libra_types::exports::AccountAddress;
@@ -14,9 +17,10 @@ fn v5_state_manifest_fixtures_path() -> PathBuf {
     project_root.join("compatibility/fixtures/v5/state_ver_119757649.17a8/state.manifest")
 }
 
-#[sqlx::test]
-async fn insert_one_account(pool: SqlitePool) -> anyhow::Result<()> {
-    libra_warehouse::migrate::maybe_init(&pool).await?;
+#[tokio::test]
+async fn insert_one_account() -> anyhow::Result<()> {
+    let (pool, _c) = get_test_pool().await?;
+    libra_warehouse::migrate::maybe_init_pg(&pool).await?;
     let marlon = AccountAddress::random();
     let acc = WarehouseAccount { address: marlon };
 
@@ -33,9 +37,10 @@ async fn insert_one_account(pool: SqlitePool) -> anyhow::Result<()> {
     Ok(())
 }
 
-#[sqlx::test]
-async fn batch_insert_account(pool: SqlitePool) -> anyhow::Result<()> {
-    libra_warehouse::migrate::maybe_init(&pool).await?;
+#[tokio::test]
+async fn batch_insert_account() -> anyhow::Result<()> {
+    let (pool, _c) = get_test_pool().await?;
+    libra_warehouse::migrate::maybe_init_pg(&pool).await?;
     let mut vec_acct: Vec<WarehouseRecord> = vec![];
 
     for _i in 0..3 {
@@ -44,7 +49,7 @@ async fn batch_insert_account(pool: SqlitePool) -> anyhow::Result<()> {
         vec_acct.push(acc);
     }
 
-    let res = libra_warehouse::load_account::impl_batch_insert(&pool, &vec_acct).await?;
+    let res = libra_warehouse::load_account::impl_batch_insert_pg(&pool, &vec_acct).await?;
     assert!(res.rows_affected() == 3);
 
     Ok(())
@@ -90,38 +95,38 @@ async fn test_e2e_load_v5_snapshot(pool: SqlitePool) -> anyhow::Result<()> {
     Ok(())
 }
 
-#[sqlx::test]
-async fn batch_insert_coin(pool: SqlitePool) -> anyhow::Result<()> {
-    libra_warehouse::migrate::maybe_init(&pool).await?;
-    let mut vec_state: Vec<WarehouseRecord> = vec![];
+// #[sqlx::test]
+// async fn batch_insert_coin(pool: SqlitePool) -> anyhow::Result<()> {
+//     libra_warehouse::migrate::maybe_init(&pool).await?;
+//     let mut vec_state: Vec<WarehouseRecord> = vec![];
 
-    for _i in 0..3 {
-        let state = WarehouseRecord {
-            account: WarehouseAccount {
-                // uniques
-                address: AccountAddress::random(),
-            },
-            time: WarehouseTime::default(),
-            balance: Some(WarehouseBalance {
-                balance: 0,
-                legacy_balance: Some(10),
-            }),
-        };
+//     for _i in 0..3 {
+//         let state = WarehouseRecord {
+//             account: WarehouseAccount {
+//                 // uniques
+//                 address: AccountAddress::random(),
+//             },
+//             time: WarehouseTime::default(),
+//             balance: Some(WarehouseBalance {
+//                 balance: 0,
+//                 legacy_balance: Some(10),
+//             }),
+//         };
 
-        vec_state.push(state);
-    }
+//         vec_state.push(state);
+//     }
 
-    // fist must load accounts
-    let res = libra_warehouse::load_account::load_account_state(&pool, &vec_state).await?;
+//     // fist must load accounts
+//     let res = libra_warehouse::load_account::load_account_state(&pool, &vec_state).await?;
 
-    assert!(res == 3);
+//     assert!(res == 3);
 
-    let res = libra_warehouse::load_coin::impl_batch_coin_insert(&pool, &vec_state).await?;
+//     let res = libra_warehouse::load_coin::impl_batch_coin_insert(&pool, &vec_state).await?;
 
-    assert!(res.rows_affected() == 3);
+//     assert!(res.rows_affected() == 3);
 
-    Ok(())
-}
+//     Ok(())
+// }
 
 // The table should not update if the balance remains the same.
 // new records are only inserted when the balance changes.

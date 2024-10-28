@@ -1,5 +1,5 @@
 mod support;
-use sqlx::{Pool, Row, Sqlite};
+use sqlx::Row;
 
 #[tokio::test]
 
