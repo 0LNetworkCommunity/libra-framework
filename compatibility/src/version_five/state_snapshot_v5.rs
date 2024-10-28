@@ -107,10 +107,12 @@ pub async fn v5_accounts_from_snapshot_backup(
 }
 
 /// one step extraction of account state blobs from a manifest path
-pub async fn v5_accounts_from_manifest_path(manifest_file: &Path) -> Result<Vec<AccountStateBlob>>{
-  let archive_path = manifest_file.parent().context("could not get archive path from manifest file")?;
-  let manifest = v5_read_from_snapshot_manifest(manifest_file)?;
-  v5_accounts_from_snapshot_backup(manifest, archive_path).await
+pub async fn v5_accounts_from_manifest_path(manifest_file: &Path) -> Result<Vec<AccountStateBlob>> {
+    let archive_path = manifest_file
+        .parent()
+        .context("could not get archive path from manifest file")?;
+    let manifest = v5_read_from_snapshot_manifest(manifest_file)?;
+    v5_accounts_from_snapshot_backup(manifest, archive_path).await
 }
 
 #[test]
@@ -152,7 +154,6 @@ fn decode_record_from_string() {
 
     let address = ar.address();
     assert!(address.len() > 0);
-
 }
 
 #[test]

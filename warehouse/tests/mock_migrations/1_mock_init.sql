@@ -1,5 +1,5 @@
 CREATE TABLE
   foo (
-    contact_id INTEGER PRIMARY KEY,
-    first_name TEXT NOT NULL
+    contact_id int,
+    first_name varchar(80) NOT NULL
   );

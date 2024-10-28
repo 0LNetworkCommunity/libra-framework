@@ -17,7 +17,6 @@ async fn can_init(pool: SqlitePool) -> anyhow::Result<()> {
 
     assert!(id == 1);
 
-
     let id = sqlx::query(
         r#"
       INSERT INTO balance (account_address, balance, chain_timestamp, db_version, epoch_number)

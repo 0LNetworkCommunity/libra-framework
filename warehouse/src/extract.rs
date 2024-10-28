@@ -7,7 +7,7 @@ use libra_types::exports::AccountAddress;
 use crate::table_structs::{WarehouseAccount, WarehouseRecord, WarehouseTime};
 
 pub async fn extract_v5_snapshot(v5_manifest_path: &Path) -> Result<Vec<WarehouseRecord>> {
-    let account_blobs = v5_accounts_from_manifest_path(&v5_manifest_path).await?;
+    let account_blobs = v5_accounts_from_manifest_path(v5_manifest_path).await?;
     dbg!(&account_blobs.len());
     let mut warehouse_state = vec![];
     for el in account_blobs.iter() {

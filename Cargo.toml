@@ -279,6 +279,7 @@ syn = { version = "1.0.92", features = ["derive", "extra-traits"] }
 sysinfo = "0.28.4"
 tempfile = "3.3.0"
 termcolor = "1.1.2"
+testcontainers = { version = "0.15" }
 textwrap = "0.15.0"
 thiserror = "1.0.37"
 tiny-bip39 = "0.8.2"

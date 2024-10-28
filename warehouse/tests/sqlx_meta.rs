@@ -1,8 +1,7 @@
-// in cargo.toml...
-// sqlx = { version = "0.8", features = [ "runtime-tokio", "tls-native-tls", "sqlite", "migrate"] }
-
+mod support;
 use sqlx::{Pool, Row, Sqlite};
 
+// NOTE: for reference, this is the sqlx test framework runtime, which can setup sqlite dbs. Left here for reference
 #[sqlx::test]
 async fn sql_insert_test(pool: Pool<Sqlite>) -> anyhow::Result<()> {
     let mut conn = pool.acquire().await?;
@@ -54,31 +53,62 @@ async fn sql_insert_test(pool: Pool<Sqlite>) -> anyhow::Result<()> {
     Ok(())
 }
 
-#[sqlx::test]
-async fn test_migrate_from_file(pool: Pool<Sqlite>) -> anyhow::Result<()> {
+// #[sqlx::test]
+// async fn test_migrate_from_file(pool: Pool<Sqlite>) -> anyhow::Result<()> {
+//     // The directory must be relative to the project root (the directory containing Cargo.toml), unlike include_str!() which uses compiler internals to get the path of the file where it was invoked.
+//     sqlx::migrate!("tests/mock_migrations").run(&pool).await?;
+
+//     let mut conn = pool.acquire().await?;
+
+//     let id = sqlx::query(
+//         r#"
+//           INSERT INTO foo (contact_id, first_name)
+//           VALUES
+//             (1, "hello");
+//         "#,
+//     )
+//     .execute(&mut *conn)
+//     .await?
+//     .last_insert_rowid();
+
+//     assert!(id == 1);
+
+//     let a = sqlx::query("SELECT * FROM foo")
+//         .fetch_all(&mut *conn)
+//         .await?;
+
+//     let q = a.first().unwrap().get_unchecked::<u64, _>(0);
+//     assert!(q == 1);
+
+//     Ok(())
+// }
+
+#[tokio::test]
+
+async fn test_migrate_from_file_pg() -> anyhow::Result<()> {
+    let (pool, _c) = support::pg_testcontainer::get_test_pool().await?;
     // The directory must be relative to the project root (the directory containing Cargo.toml), unlike include_str!() which uses compiler internals to get the path of the file where it was invoked.
     sqlx::migrate!("tests/mock_migrations").run(&pool).await?;
 
     let mut conn = pool.acquire().await?;
 
-    let id = sqlx::query(
+    let rows = sqlx::query(
         r#"
           INSERT INTO foo (contact_id, first_name)
-          VALUES
-            (1, "hello");
+          VALUES (1, 'hello');
         "#,
     )
     .execute(&mut *conn)
     .await?
-    .last_insert_rowid();
+    .rows_affected();
 
-    assert!(id == 1);
+    assert!(rows == 1);
 
     let a = sqlx::query("SELECT * FROM foo")
         .fetch_all(&mut *conn)
         .await?;
 
-    let q = a.first().unwrap().get_unchecked::<u64, _>(0);
+    let q = a.first().unwrap().get_unchecked::<i64, _>(0);
     assert!(q == 1);
 
     Ok(())

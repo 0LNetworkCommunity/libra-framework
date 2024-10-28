@@ -16,5 +16,9 @@ glob = { workspace = true }
 libra-backwards-compatibility = { workspace = true }
 libra-storage = { workspace =  true }
 libra-types = { workspace =  true }
+once_cell = { workspace =  true }
 sqlx = { workspace = true }
 tokio = { workspace = true }
+
+[dev-dependencies]
+testcontainers = { workspace = true }

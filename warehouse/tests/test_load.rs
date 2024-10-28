@@ -172,7 +172,6 @@ async fn increment_coin_noop(pool: SqlitePool) -> anyhow::Result<()> {
     Ok(())
 }
 
-
 // Increment the balance table when there balance changes.
 #[sqlx::test]
 async fn increment_coin(pool: SqlitePool) -> anyhow::Result<()> {

@@ -36,8 +36,8 @@ fn test_scan_dir_for_v7_manifests() -> Result<()> {
     assert!(archives.len() == 3);
 
     for (p, a) in archives.iter() {
-      dbg!(&p);
-      dbg!(&a);
+        dbg!(&p);
+        dbg!(&a);
     }
 
     Ok(())

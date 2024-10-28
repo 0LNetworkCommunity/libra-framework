@@ -8,7 +8,6 @@ fn v5_state_manifest_fixtures_path() -> PathBuf {
     project_root.join("compatibility/fixtures/v5/state_ver_119757649.17a8/state.manifest")
 }
 
-
 #[tokio::test]
 
 async fn test_extract_v5_manifest() -> Result<()> {

@@ -21,8 +21,9 @@ pub async fn query_last_balance(
         "#
     );
 
-    let row  = sqlx::query_as::<_, WarehouseBalance>(&query_template)
-    .fetch_one(pool).await?;
+    let row = sqlx::query_as::<_, WarehouseBalance>(&query_template)
+        .fetch_one(pool)
+        .await?;
 
     Ok(row)
 }

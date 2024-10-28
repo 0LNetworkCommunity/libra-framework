@@ -2,7 +2,7 @@ use crate::table_structs::{WarehouseAccount, WarehouseRecord};
 use anyhow::Result;
 use sqlx::{sqlite::SqliteQueryResult, QueryBuilder, Sqlite, SqlitePool};
 
-pub async fn load_account_state(pool: &SqlitePool, accounts: &Vec<WarehouseRecord>) -> Result<i64> {
+pub async fn load_account_state(pool: &SqlitePool, accounts: &[WarehouseRecord]) -> Result<i64> {
     let mut rows = 0;
     // insert missing accounts
     for ws in accounts.iter() {
@@ -48,14 +48,18 @@ pub async fn batch_insert_account(
 }
 
 // TODO: return specific commit errors for this batch
-pub async fn impl_batch_insert(pool: &SqlitePool, batch_accounts: &[WarehouseRecord]) -> Result<SqliteQueryResult> {
+pub async fn impl_batch_insert(
+    pool: &SqlitePool,
+    batch_accounts: &[WarehouseRecord],
+) -> Result<SqliteQueryResult> {
     let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
         // Note the trailing space; most calls to `QueryBuilder` don't automatically insert
         "INSERT INTO users (account_address, is_legacy) ",
     );
 
     query_builder.push_values(batch_accounts, |mut b, acc| {
-        b.push_bind(acc.account.address.to_hex_literal()).push_bind(true);
+        b.push_bind(acc.account.address.to_hex_literal())
+            .push_bind(true);
     });
 
     // makes sure the txs don't fail on repeated attempts to add users
