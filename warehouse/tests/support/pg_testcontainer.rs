@@ -1,6 +1,5 @@
 use once_cell::sync::Lazy;
 use sqlx::PgPool;
-use std::{thread, time::Duration};
 use testcontainers::{clients::Cli, core::WaitFor, Container, GenericImage, RunnableImage};
 
 // need to wrap the docker cli in a once_cell so that the borrow does not cause issues when container is passed along
@@ -32,16 +31,14 @@ pub fn start_container<'a>() -> Container<'a, GenericImage> {
         .with_env_var("POSTGRES_USER".to_owned(), "postgres".to_owned())
         .with_env_var("POSTGRES_PASSWORD".to_owned(), "postgres".to_owned())
         .with_wait_for(WaitFor::message_on_stdout(
-            "database system is ready to accept connections",
+            // "database system is ready to accept connections",
+            "PostgreSQL init process complete; ready for start up."
         ));
 
     let image = RunnableImage::from(container);
     // need to wrap the docker cli in a once_cell so that the borrow does not cause issues when container is passed along
     let container = CLI.run(image);
     container.start();
-    // TODO: not sure why we need a bit of a wait since we have the WaitFor above
-    // will otherwise get: "unexpected response from SSLRequest: 0x00 (sqlx_postgres::connection::tls:97)"
-    thread::sleep(Duration::from_millis(500));
 
     container
 }

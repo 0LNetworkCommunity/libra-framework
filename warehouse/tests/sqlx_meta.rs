@@ -53,35 +53,6 @@ async fn sql_insert_test(pool: Pool<Sqlite>) -> anyhow::Result<()> {
     Ok(())
 }
 
-// #[sqlx::test]
-// async fn test_migrate_from_file(pool: Pool<Sqlite>) -> anyhow::Result<()> {
-//     // The directory must be relative to the project root (the directory containing Cargo.toml), unlike include_str!() which uses compiler internals to get the path of the file where it was invoked.
-//     sqlx::migrate!("tests/mock_migrations").run(&pool).await?;
-
-//     let mut conn = pool.acquire().await?;
-
-//     let id = sqlx::query(
-//         r#"
-//           INSERT INTO foo (contact_id, first_name)
-//           VALUES
-//             (1, "hello");
-//         "#,
-//     )
-//     .execute(&mut *conn)
-//     .await?
-//     .last_insert_rowid();
-
-//     assert!(id == 1);
-
-//     let a = sqlx::query("SELECT * FROM foo")
-//         .fetch_all(&mut *conn)
-//         .await?;
-
-//     let q = a.first().unwrap().get_unchecked::<u64, _>(0);
-//     assert!(q == 1);
-
-//     Ok(())
-// }
 
 #[tokio::test]
 
@@ -110,6 +81,5 @@ async fn test_migrate_from_file_pg() -> anyhow::Result<()> {
 
     let q = a.first().unwrap().get_unchecked::<i64, _>(0);
     assert!(q == 1);
-
     Ok(())
 }
