@@ -26,7 +26,6 @@ fn test_scan_dir_for_v5_manifests() -> Result<()> {
 }
 
 #[test]
-
 fn test_scan_dir_for_v7_manifests() -> Result<()> {
     let start_here = v7_fixtures_path();
 

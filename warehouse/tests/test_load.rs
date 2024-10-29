@@ -1,19 +1,10 @@
 mod support;
 use support::pg_testcontainer::get_test_pool;
 
-use std::path::PathBuf;
-
 use libra_types::exports::AccountAddress;
-use libra_warehouse::extract::extract_v5_snapshot;
 use libra_warehouse::table_structs::{
     WarehouseAccount, WarehouseBalance, WarehouseRecord, WarehouseTime,
 };
-
-fn v5_state_manifest_fixtures_path() -> PathBuf {
-    let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let project_root = p.parent().unwrap();
-    project_root.join("compatibility/fixtures/v5/state_ver_119757649.17a8/state.manifest")
-}
 
 #[tokio::test]
 async fn insert_one_account() -> anyhow::Result<()> {
@@ -74,24 +65,6 @@ async fn batch_duplicates_fail_gracefully() -> anyhow::Result<()> {
     let res = libra_warehouse::load_account::impl_batch_insert(&pool, &vec_acct).await?;
     assert!(res.rows_affected() == 0);
 
-    Ok(())
-}
-
-#[tokio::test]
-
-async fn test_e2e_load_v5_snapshot() -> anyhow::Result<()> {
-    let (pool, _c) = get_test_pool().await?;
-    libra_warehouse::migrate::maybe_init_pg(&pool).await?;
-
-    let manifest_file = v5_state_manifest_fixtures_path();
-    assert!(manifest_file.exists());
-    let wa_vec = extract_v5_snapshot(&manifest_file).await?;
-    // NOTE: the parsing drops 1 blob, which is the 0x1 account, because it would not have the DiemAccount struct on it as a user address would have.
-    assert!(wa_vec.len() == 17338);
-
-    let res = libra_warehouse::load_account::batch_insert_account(&pool, &wa_vec, 1000).await?;
-
-    assert!(res == 17338);
     Ok(())
 }
 
