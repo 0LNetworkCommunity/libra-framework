@@ -32,7 +32,7 @@ pub fn start_container<'a>() -> Container<'a, GenericImage> {
         .with_env_var("POSTGRES_PASSWORD".to_owned(), "postgres".to_owned())
         .with_wait_for(WaitFor::message_on_stdout(
             // "database system is ready to accept connections",
-            "PostgreSQL init process complete; ready for start up."
+            "PostgreSQL init process complete; ready for start up.",
         ));
 
     let image = RunnableImage::from(container);

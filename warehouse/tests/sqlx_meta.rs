@@ -31,7 +31,6 @@ async fn test_migrate_from_file_pg() -> anyhow::Result<()> {
     Ok(())
 }
 
-
 // NOTE: left for reference, this is the sqlx test framework runtime, which can setup sqlite dbs. Left here for reference
 // #[sqlx::test]
 // async fn sql_insert_test(pool: Pool<Sqlite>) -> anyhow::Result<()> {

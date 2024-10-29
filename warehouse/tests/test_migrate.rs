@@ -7,7 +7,7 @@ async fn can_init_pg() -> anyhow::Result<()> {
     let mut conn = pool.acquire().await?;
 
     let id = sqlx::query(
-      r#"
+        r#"
       INSERT INTO users (account_address, is_legacy)
       VALUES ('00000000000000000000000000000000e8953084617dd5c6071cf2918215e183', TRUE)
       "#,
@@ -21,7 +21,7 @@ async fn can_init_pg() -> anyhow::Result<()> {
     let id = sqlx::query(
       r#"
       INSERT INTO balance (account_address, balance, chain_timestamp, db_version, epoch_number)
-      VALUES ('00000000000000000000000000000000e8953084617dd5c6071cf2918215e183', 11, '2024-10-28 12:34:56', 600, 1)
+      VALUES ('00000000000000000000000000000000e8953084617dd5c6071cf2918215e183', 11, 192837564738291845, 600, 1)
       "#,
     )
     .execute(&mut *conn)

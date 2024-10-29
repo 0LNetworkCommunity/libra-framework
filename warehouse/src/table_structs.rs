@@ -1,4 +1,6 @@
 use libra_types::exports::AccountAddress;
+// use serde::{Serialize, Deserialize};
+use sqlx::prelude::FromRow;
 
 #[derive(Debug, Clone)]
 /// The basic information for an account
@@ -35,12 +37,19 @@ pub struct WarehouseAccount {
     pub address: AccountAddress,
 }
 
-#[derive(Debug, Default, Clone, sqlx::FromRow)]
+#[derive(Debug, Default, Clone, FromRow)]
 pub struct WarehouseBalance {
     // balances in v6+ terms
     #[sqlx(try_from = "i64")]
     pub balance: u64,
-    // the balance pre v6 recast
-    #[sqlx(default)]
-    pub legacy_balance: Option<u64>,
 }
+
+// #[derive(Debug, Default, Clone, FromRow)]
+// pub struct WarehouseBalanceAlt {
+//     // balances in v6+ terms
+//     #[sqlx(try_from = "i64")]
+//     pub balance: u64,
+//     // the balance pre v6 recast
+//     #[sqlx(default, try_from = "i64")]
+//     pub legacy_balance: Option<u64>,
+// }

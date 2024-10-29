@@ -1,12 +1,12 @@
 use anyhow::Result;
 use libra_types::exports::AccountAddress;
-use sqlx::SqlitePool;
+use sqlx::PgPool;
 
 use crate::table_structs::WarehouseBalance;
 
 // TODO: return specific commit errors for this batch
 pub async fn query_last_balance(
-    pool: &SqlitePool,
+    pool: &PgPool,
     account: AccountAddress,
 ) -> Result<WarehouseBalance> {
     let account_address = account.to_hex_literal();
@@ -21,9 +21,7 @@ pub async fn query_last_balance(
         "#
     );
 
-    let row = sqlx::query_as::<_, WarehouseBalance>(&query_template)
-        .fetch_one(pool)
-        .await?;
+    let row: WarehouseBalance = sqlx::query_as(&query_template).fetch_one(pool).await?;
 
     Ok(row)
 }

@@ -9,8 +9,6 @@ use libra_warehouse::table_structs::{
     WarehouseAccount, WarehouseBalance, WarehouseRecord, WarehouseTime,
 };
 
-use sqlx::SqlitePool;
-
 fn v5_state_manifest_fixtures_path() -> PathBuf {
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let project_root = p.parent().unwrap();
@@ -55,9 +53,10 @@ async fn batch_insert_account() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[sqlx::test]
-async fn batch_duplicates_fail_gracefully(pool: SqlitePool) -> anyhow::Result<()> {
-    libra_warehouse::migrate::maybe_init(&pool).await?;
+#[tokio::test]
+async fn batch_duplicates_fail_gracefully() -> anyhow::Result<()> {
+    let (pool, _c) = get_test_pool().await?;
+    libra_warehouse::migrate::maybe_init_pg(&pool).await?;
     let mut vec_acct: Vec<WarehouseRecord> = vec![];
 
     // will create duplicates
@@ -78,10 +77,11 @@ async fn batch_duplicates_fail_gracefully(pool: SqlitePool) -> anyhow::Result<()
     Ok(())
 }
 
-#[sqlx::test]
+#[tokio::test]
 
-async fn test_e2e_load_v5_snapshot(pool: SqlitePool) -> anyhow::Result<()> {
-    libra_warehouse::migrate::maybe_init(&pool).await?;
+async fn test_e2e_load_v5_snapshot() -> anyhow::Result<()> {
+    let (pool, _c) = get_test_pool().await?;
+    libra_warehouse::migrate::maybe_init_pg(&pool).await?;
 
     let manifest_file = v5_state_manifest_fixtures_path();
     assert!(manifest_file.exists());
@@ -95,44 +95,43 @@ async fn test_e2e_load_v5_snapshot(pool: SqlitePool) -> anyhow::Result<()> {
     Ok(())
 }
 
-// #[sqlx::test]
-// async fn batch_insert_coin(pool: SqlitePool) -> anyhow::Result<()> {
-//     libra_warehouse::migrate::maybe_init(&pool).await?;
-//     let mut vec_state: Vec<WarehouseRecord> = vec![];
+#[tokio::test]
+async fn batch_insert_coin() -> anyhow::Result<()> {
+    let (pool, _c) = get_test_pool().await?;
+    libra_warehouse::migrate::maybe_init_pg(&pool).await?;
 
-//     for _i in 0..3 {
-//         let state = WarehouseRecord {
-//             account: WarehouseAccount {
-//                 // uniques
-//                 address: AccountAddress::random(),
-//             },
-//             time: WarehouseTime::default(),
-//             balance: Some(WarehouseBalance {
-//                 balance: 0,
-//                 legacy_balance: Some(10),
-//             }),
-//         };
+    let mut vec_state: Vec<WarehouseRecord> = vec![];
 
-//         vec_state.push(state);
-//     }
+    for _i in 0..3 {
+        let state = WarehouseRecord {
+            account: WarehouseAccount {
+                // uniques
+                address: AccountAddress::random(),
+            },
+            time: WarehouseTime::default(),
+            balance: Some(WarehouseBalance { balance: 10 }),
+        };
 
-//     // fist must load accounts
-//     let res = libra_warehouse::load_account::load_account_state(&pool, &vec_state).await?;
+        vec_state.push(state);
+    }
 
-//     assert!(res == 3);
+    // fist must load accounts
+    let res = libra_warehouse::load_account::load_account_state(&pool, &vec_state).await?;
+    assert!(res == 3);
 
-//     let res = libra_warehouse::load_coin::impl_batch_coin_insert(&pool, &vec_state).await?;
+    let res = libra_warehouse::load_coin::impl_batch_coin_insert(&pool, &vec_state).await?;
+    dbg!(&res);
+    assert!(res.rows_affected() == 3);
 
-//     assert!(res.rows_affected() == 3);
-
-//     Ok(())
-// }
+    Ok(())
+}
 
 // The table should not update if the balance remains the same.
 // new records are only inserted when the balance changes.
-#[sqlx::test]
-async fn increment_coin_noop(pool: SqlitePool) -> anyhow::Result<()> {
-    libra_warehouse::migrate::maybe_init(&pool).await?;
+#[tokio::test]
+async fn increment_coin_noop() -> anyhow::Result<()> {
+    let (pool, _c) = get_test_pool().await?;
+    libra_warehouse::migrate::maybe_init_pg(&pool).await?;
     let mut vec_state: Vec<WarehouseRecord> = vec![];
     let marlon = AccountAddress::random();
     // same user, and same balance, but incremental timestamps
@@ -148,9 +147,9 @@ async fn increment_coin_noop(pool: SqlitePool) -> anyhow::Result<()> {
                 epoch: 3 * i,
             },
             balance: Some(WarehouseBalance {
-                balance: 0,
+                balance: 10,
                 // same balance
-                legacy_balance: Some(10),
+                // legacy_balance: Some(10),
             }),
         };
 
@@ -177,10 +176,11 @@ async fn increment_coin_noop(pool: SqlitePool) -> anyhow::Result<()> {
     Ok(())
 }
 
-// Increment the balance table when there balance changes.
-#[sqlx::test]
-async fn increment_coin(pool: SqlitePool) -> anyhow::Result<()> {
-    libra_warehouse::migrate::maybe_init(&pool).await?;
+// Only increment the balance table when their balance changes.
+#[tokio::test]
+async fn increment_coin() -> anyhow::Result<()> {
+    let (pool, _c) = get_test_pool().await?;
+    libra_warehouse::migrate::maybe_init_pg(&pool).await?;
     let mut vec_state: Vec<WarehouseRecord> = vec![];
     let marlon = AccountAddress::random();
     // same user, and same balance, but incremental timestamps
@@ -195,11 +195,7 @@ async fn increment_coin(pool: SqlitePool) -> anyhow::Result<()> {
                 version: 2 * i,
                 epoch: 3 * i,
             },
-            balance: Some(WarehouseBalance {
-                balance: 0,
-                // different balance each time
-                legacy_balance: Some(10 * i),
-            }),
+            balance: Some(WarehouseBalance { balance: 10 * i }),
         };
 
         vec_state.push(state);

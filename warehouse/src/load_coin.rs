@@ -1,9 +1,9 @@
 use crate::table_structs::WarehouseRecord;
 use anyhow::Result;
-use sqlx::{sqlite::SqliteQueryResult, QueryBuilder, Sqlite, SqlitePool};
+use sqlx::{postgres::PgQueryResult, PgPool, Postgres, QueryBuilder};
 
 pub async fn batch_insert_account(
-    pool: &SqlitePool,
+    pool: &PgPool,
     acc: &[WarehouseRecord],
     batch_len: usize,
 ) -> Result<()> {
@@ -18,12 +18,12 @@ pub async fn batch_insert_account(
 
 // TODO: return specific commit errors for this batch
 pub async fn impl_batch_coin_insert(
-    pool: &SqlitePool,
+    pool: &PgPool,
     batch_accounts: &[WarehouseRecord],
-) -> Result<SqliteQueryResult> {
+) -> Result<PgQueryResult> {
     let filtered = batch_accounts.iter().filter(|el| el.balance.is_some());
 
-    let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
+    let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
         r#"
       INSERT INTO balance (account_address, balance, chain_timestamp, db_version, epoch_number)
       "#,
@@ -31,7 +31,7 @@ pub async fn impl_batch_coin_insert(
 
     query_builder.push_values(filtered, |mut b, acc| {
         let this_account = acc.account.address.to_hex_literal();
-        let this_balance = acc.balance.as_ref().unwrap().legacy_balance.unwrap() as i64;
+        let this_balance = acc.balance.as_ref().unwrap().balance as i64;
         let this_timestamp = acc.time.timestamp as i64;
         b.push_bind(this_account)
             .push_bind(this_balance)
@@ -47,12 +47,10 @@ pub async fn impl_batch_coin_insert(
 }
 
 pub async fn alt_increment_one_balance(
-    pool: &SqlitePool,
+    pool: &PgPool,
     record: &WarehouseRecord,
-) -> Result<SqliteQueryResult> {
-    // let filtered = batch_accounts.iter().filter(|el| el.balance.is_some());
-
-    let mut query_builder: QueryBuilder<Sqlite> =
+) -> Result<PgQueryResult> {
+    let mut query_builder: QueryBuilder<Postgres> =
         QueryBuilder::new(increment_balance_template(record));
     let query = query_builder.build();
     let res = query.execute(pool).await?;
@@ -62,7 +60,7 @@ pub async fn alt_increment_one_balance(
 
 fn increment_balance_template(record: &WarehouseRecord) -> String {
     let this_account = record.account.address.to_hex_literal();
-    let this_balance = record.balance.as_ref().unwrap().legacy_balance.unwrap() as i64;
+    let this_balance = record.balance.as_ref().unwrap().balance as i64;
     let this_timestamp = record.time.timestamp as i64;
     let this_version = record.time.version as i64;
     let this_epoch = record.time.epoch as i64;
@@ -96,8 +94,8 @@ fn test_format() {
         },
         time: WarehouseTime::default(),
         balance: Some(WarehouseBalance {
-            balance: 0,
-            legacy_balance: Some(10),
+            balance: 10,
+            // legacy_balance: Some(10),
         }),
     };
     let s = increment_balance_template(&record);
