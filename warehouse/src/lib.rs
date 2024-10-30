@@ -7,3 +7,4 @@ pub mod query_balance;
 pub mod scan;
 pub mod table_structs;
 pub mod warehouse_cli;
+pub mod extract_transactions;

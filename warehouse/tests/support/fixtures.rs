@@ -28,3 +28,20 @@ pub fn v7_state_manifest_fixtures_path() -> PathBuf {
     );
     dir
 }
+
+
+pub fn v7_tx_manifest_fixtures_path() -> PathBuf {
+    let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .canonicalize()
+        .unwrap();
+    assert!(&p.exists(), "not at the cargo manifest dir");
+    let project_root = p.parent().unwrap();
+    assert!(&project_root.exists(), "cannot find project root dir");
+    let dir = project_root.join("tools/storage/fixtures/v7/transaction_38100001-.541f");
+    assert!(
+        &dir.exists(),
+        "fixtures for backup archive cannot be found at path {}",
+        &dir.display()
+    );
+    dir
+}
