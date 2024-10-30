@@ -37,3 +37,20 @@ async fn test_e2e_load_v7_snapshot() -> anyhow::Result<()> {
     assert!(res == 24607);
     Ok(())
 }
+
+#[tokio::test]
+async fn test_e2e_load_v7_snapshot_on_age_graph() -> anyhow::Result<()> {
+    // USING APACHE/AGE
+    let (pool, _c) = crate::support::age_testcontainer::get_test_age_pool().await?;
+
+    let archive_dir = fixtures::v7_state_manifest_fixtures_path();
+    let wa_vec = extract_current_snapshot(&archive_dir).await?;
+    // NOTE: the parsing drops 1 blob, which is the 0x1 account, because it would not have the DiemAccount struct on it as a user address would have.
+    assert!(wa_vec.len() == 24607);
+
+    libra_warehouse::migrate::maybe_init_pg(&pool).await?;
+    let res = libra_warehouse::load_account::batch_insert_account(&pool, &wa_vec, 1000).await?;
+
+    assert!(res == 24607);
+    Ok(())
+}

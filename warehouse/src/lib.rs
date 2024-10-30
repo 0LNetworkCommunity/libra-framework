@@ -1,3 +1,4 @@
+pub mod age_init;
 pub mod extract;
 pub mod load_account;
 pub mod load_coin;
