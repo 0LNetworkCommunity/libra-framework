@@ -1,16 +1,15 @@
-
 use std::path::Path;
 
 use anyhow::{anyhow, Result};
 
 use diem_backup_cli::backup_types::transaction::manifest::TransactionBackup;
 use diem_backup_cli::backup_types::transaction::manifest::TransactionChunk;
+use diem_backup_cli::utils::read_record_bytes::ReadRecordBytes;
+use diem_types::contract_event::ContractEvent;
 use diem_types::transaction::Transaction;
 use diem_types::transaction::TransactionInfo;
-use diem_types::contract_event::ContractEvent;
 use diem_types::write_set::WriteSet;
 use libra_backwards_compatibility::version_five::state_snapshot_v5::open_for_read;
-use diem_backup_cli::utils::read_record_bytes::ReadRecordBytes;
 
 /// read snapshot manifest file into object
 pub fn load_tx_chunk_manifest(path: &Path) -> anyhow::Result<TransactionBackup> {
@@ -34,12 +33,11 @@ pub struct TransactionArchiveChunk {
     pub write_sets: Vec<WriteSet>,
 }
 
-
 pub async fn load_chunk(
     archive_path: &Path,
     manifest: TransactionChunk,
 ) -> Result<TransactionArchiveChunk> {
-        let full_handle = archive_path
+    let full_handle = archive_path
         .parent()
         .expect("could not read archive path")
         .join(&manifest.transactions);
@@ -65,7 +63,6 @@ pub async fn load_chunk(
     }
 
     // TODO: for purposes of explorer/warehouse do we want to do the full tx restore controller verifications
-
 
     Ok(TransactionArchiveChunk {
         manifest,

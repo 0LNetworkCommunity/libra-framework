@@ -24,7 +24,6 @@ impl WarehouseRecord {
         self.time.epoch = epoch;
     }
 }
-
 // holds timestamp, chain height, and epoch
 #[derive(Debug, Clone, Default)]
 pub struct WarehouseTime {
@@ -44,12 +43,23 @@ pub struct WarehouseBalance {
     pub balance: u64,
 }
 
-// #[derive(Debug, Default, Clone, FromRow)]
-// pub struct WarehouseBalanceAlt {
-//     // balances in v6+ terms
-//     #[sqlx(try_from = "i64")]
-//     pub balance: u64,
-//     // the balance pre v6 recast
-//     #[sqlx(default, try_from = "i64")]
-//     pub legacy_balance: Option<u64>,
-// }
+#[derive(Debug, Clone, FromRow)]
+pub struct WarehouseTxMeta {
+    pub sender: AccountAddress,
+    pub module: String,
+    pub function: String,
+    // TODO: we can only seem to access the tx expiration timestamp which the user defined.
+    pub timestamp: u64,
+}
+
+#[derive(Debug, Clone, FromRow)]
+pub struct WarehouseDepositTx {
+    pub meta: WarehouseTxMeta,
+    pub to: AccountAddress,
+    pub amount: u64,
+}
+#[derive(Debug, Clone, FromRow)]
+pub struct WarehouseGenericTx {
+    pub meta: WarehouseTxMeta,
+    pub args: serde_json::Value,
+}

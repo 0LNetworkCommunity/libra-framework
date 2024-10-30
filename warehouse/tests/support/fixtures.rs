@@ -29,7 +29,6 @@ pub fn v7_state_manifest_fixtures_path() -> PathBuf {
     dir
 }
 
-
 pub fn v7_tx_manifest_fixtures_path() -> PathBuf {
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .canonicalize()

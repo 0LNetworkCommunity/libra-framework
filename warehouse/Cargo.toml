@@ -12,12 +12,14 @@ version.workspace = true
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true }
-glob = { workspace = true }
 diem-types = { workspace = true }
+glob = { workspace = true }
 libra-backwards-compatibility = { workspace = true }
+libra-cached-packages = { workspace = true }
 libra-storage = { workspace =  true }
 libra-types = { workspace =  true }
 once_cell = { workspace =  true }
+serde_json = { workspace =  true }
 sqlx = { workspace = true }
 tokio = { workspace = true }
 
