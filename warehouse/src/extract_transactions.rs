@@ -1,6 +1,7 @@
 use crate::table_structs::{WarehouseDepositTx, WarehouseTxMaster};
 use anyhow::Result;
-use diem_types::transaction::SignedTransaction;
+use diem_types::account_config::WithdrawEvent;
+use diem_types::{account_config::DepositEvent, transaction::SignedTransaction};
 use libra_backwards_compatibility::sdk::v7_libra_framework_sdk_builder::EntryFunctionCall as V7EntryFunctionCall;
 use libra_cached_packages::libra_stdlib::EntryFunctionCall;
 use libra_storage::read_tx_chunk::{load_chunk, load_tx_chunk_manifest};
@@ -59,11 +60,25 @@ pub async fn extract_current_transactions(archive_path: &Path) -> Result<Vec<War
                 .expect("could not index on tx_info chunk, vectors may not be same length");
             let tx_hash_info = tx_info.transaction_hash();
 
+            let tx_events = chunk
+                .event_vecs
+                .iter()
+                .nth(i)
+                .expect("could not index on events chunk, vectors may not be same length");
+
             if let Some(signed_transaction) = tx.try_as_signed_user_txn() {
                 let tx = make_master_tx(signed_transaction, epoch, round, timestamp)?;
 
                 // sanity check that we are talking about the same block, and reading vectors sequentially.
                 assert!(tx.tx_hash == tx_hash_info, "transaction hashes do not match in transaction vector and transaction_info vector");
+
+                dbg!(&tx_events);
+                tx_events.iter().for_each(|el| {
+                    let we: Result<WithdrawEvent, _> = el.try_into();
+                    let de: Result<DepositEvent, _>  = el.try_into();
+                    dbg!(&we);
+                    dbg!(&de);
+                });
 
                 user_txs.push(tx);
 
@@ -72,7 +87,10 @@ pub async fn extract_current_transactions(archive_path: &Path) -> Result<Vec<War
         }
     }
     // TODO: use logging
-    assert!(user_txs_in_chunk == user_txs.len(), "don't parse same amount of user txs as in chunk");
+    assert!(
+        user_txs_in_chunk == user_txs.len(),
+        "don't parse same amount of user txs as in chunk"
+    );
     println!("user transactions found in chunk: {}", user_txs_in_chunk);
 
     Ok(user_txs)
