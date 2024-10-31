@@ -1,7 +1,6 @@
 use crate::table_structs::{WarehouseDepositTx, WarehouseTxMaster};
 use anyhow::Result;
 use diem_types::account_config::WithdrawEvent;
-use diem_types::transaction::Transaction;
 use diem_types::{account_config::DepositEvent, transaction::SignedTransaction};
 use libra_backwards_compatibility::sdk::v7_libra_framework_sdk_builder::EntryFunctionCall as V7EntryFunctionCall;
 use libra_cached_packages::libra_stdlib::EntryFunctionCall;
