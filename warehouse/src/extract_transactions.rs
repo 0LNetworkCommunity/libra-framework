@@ -1,13 +1,13 @@
+use crate::table_structs::{WarehouseDepositTx, WarehouseTxMaster};
 use anyhow::Result;
 use diem_types::transaction::SignedTransaction;
+use libra_backwards_compatibility::sdk::v7_libra_framework_sdk_builder::EntryFunctionCall as V7EntryFunctionCall;
 use libra_cached_packages::libra_stdlib::EntryFunctionCall;
 use libra_storage::read_tx_chunk::{load_chunk, load_tx_chunk_manifest};
 use serde_json::json;
 use std::path::Path;
 
-use crate::table_structs::{WarehouseDepositTx, WarehouseGenericTx, WarehouseTxMeta};
-
-pub async fn extract_current_transactions(archive_path: &Path) -> Result<()> {
+pub async fn extract_current_transactions(archive_path: &Path) -> Result<Vec<WarehouseTxMaster>> {
     let manifest_file = archive_path.join("transaction.manifest");
     assert!(
         manifest_file.exists(),
@@ -16,59 +16,112 @@ pub async fn extract_current_transactions(archive_path: &Path) -> Result<()> {
     );
     let manifest = load_tx_chunk_manifest(&manifest_file)?;
 
-    let mut user_txs = 0;
+    let mut user_txs_in_chunk = 0;
+    let mut epoch = 0;
+    let mut round = 0;
+    let mut timestamp = 0;
+
+    let mut user_txs: Vec<WarehouseTxMaster> = vec![];
 
     for each_chunk_manifest in manifest.chunks {
-        let deserialized = load_chunk(archive_path, each_chunk_manifest).await?;
+        let chunk = load_chunk(archive_path, each_chunk_manifest).await?;
 
-        for tx in deserialized.txns {
-            match tx {
-                diem_types::transaction::Transaction::UserTransaction(signed_transaction) => {
-                    // maybe_decode_entry_function(&signed_transaction);
-                    if let Ok(t) = try_decode_deposit_tx(&signed_transaction) {
-                        dbg!(&t);
-                    }
-                    user_txs += 1;
+        for (i, tx) in chunk.txns.iter().enumerate() {
+            // TODO: unsure if this is off by one
+            // perhaps reverse the vectors before transforming
+
+            // first increment the block metadata. This assumes the vector is sequential.
+            if let Some(block) = tx.try_as_block_metadata() {
+                // check the epochs are incrementing or not
+                if epoch > block.epoch()
+                    && round > block.round()
+                    && timestamp > block.timestamp_usecs()
+                {
+                    dbg!(
+                        epoch,
+                        block.epoch(),
+                        round,
+                        block.round(),
+                        timestamp,
+                        block.timestamp_usecs()
+                    );
                 }
-                diem_types::transaction::Transaction::GenesisTransaction(_write_set_payload) => {}
-                diem_types::transaction::Transaction::BlockMetadata(_block_metadata) => {}
-                diem_types::transaction::Transaction::StateCheckpoint(_hash_value) => {}
+
+                epoch = block.epoch();
+                round = block.round();
+                timestamp = block.timestamp_usecs();
+            }
+
+            let tx_info = chunk
+                .txn_infos
+                .iter()
+                .nth(i)
+                .expect("could not index on tx_info chunk, vectors may not be same length");
+            let tx_hash_info = tx_info.transaction_hash();
+
+            if let Some(signed_transaction) = tx.try_as_signed_user_txn() {
+                let tx = make_master_tx(signed_transaction, epoch, round, timestamp)?;
+
+                // sanity check that we are talking about the same block, and reading vectors sequentially.
+                assert!(tx.tx_hash == tx_hash_info, "transaction hashes do not match in transaction vector and transaction_info vector");
+
+                user_txs.push(tx);
+
+                user_txs_in_chunk += 1;
             }
         }
     }
     // TODO: use logging
-    println!("user transactions found in chunk: {}", user_txs);
-    Ok(())
+    assert!(user_txs_in_chunk == user_txs.len(), "don't parse same amount of user txs as in chunk");
+    println!("user transactions found in chunk: {}", user_txs_in_chunk);
+
+    Ok(user_txs)
 }
 
-pub fn decode_tx_meta(user_tx: &SignedTransaction) -> Result<WarehouseTxMeta> {
-    let timestamp = user_tx.expiration_timestamp_secs();
-    let sender = user_tx.sender();
-
+pub fn make_master_tx(
+    user_tx: &SignedTransaction,
+    epoch: u64,
+    round: u64,
+    block_timestamp: u64,
+) -> Result<WarehouseTxMaster> {
+    let tx_hash = user_tx.clone().committed_hash();
     let raw = user_tx.raw_transaction_ref();
     let p = raw.clone().into_payload().clone();
     let ef = p.into_entry_function();
-    let module = ef.module().to_string();
-    let function = ef.function().to_string();
 
-    Ok(WarehouseTxMeta {
-        sender,
-        module,
-        function,
-        timestamp,
-    })
+    let tx = WarehouseTxMaster {
+        tx_hash,
+        expiration_timestamp: user_tx.expiration_timestamp_secs(),
+        sender: user_tx.sender(),
+        epoch,
+        round,
+        block_timestamp,
+        module: ef.module().to_string(),
+        function: ef.function().to_string(),
+
+        args: function_args_to_json(user_tx)?,
+    };
+
+    Ok(tx)
 }
 
-pub fn maybe_decode_generic_entry_function(
-    user_tx: &SignedTransaction,
-) -> Result<WarehouseGenericTx> {
-    Ok(WarehouseGenericTx {
-        meta: decode_tx_meta(user_tx)?,
-        args: json!(""),
-    })
+pub fn function_args_to_json(user_tx: &SignedTransaction) -> Result<serde_json::Value> {
+    // TODO: match all decoding of functions from V5-V7.
+    let json = match V7EntryFunctionCall::decode(user_tx.payload()) {
+        Some(a) => {
+            json!(a)
+        }
+        None => {
+            // TODO: put a better error message here, but don't abort
+            json!("could not parse")
+        }
+    };
+
+    Ok(json)
 }
 
-pub fn try_decode_deposit_tx(user_tx: &SignedTransaction) -> Result<WarehouseDepositTx> {
+// TODO: unsure if this needs to happen on Rust side
+fn _try_decode_deposit_tx(user_tx: &SignedTransaction) -> Result<WarehouseDepositTx> {
     let (to, amount) = match EntryFunctionCall::decode(user_tx.payload()) {
         Some(EntryFunctionCall::OlAccountTransfer { to, amount }) => (to, amount),
         // many variants
@@ -76,7 +129,7 @@ pub fn try_decode_deposit_tx(user_tx: &SignedTransaction) -> Result<WarehouseDep
     };
 
     Ok(WarehouseDepositTx {
-        meta: decode_tx_meta(user_tx)?,
+        tx_hash: user_tx.clone().committed_hash(),
         to,
         amount,
     })

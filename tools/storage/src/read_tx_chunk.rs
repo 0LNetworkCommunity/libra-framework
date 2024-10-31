@@ -25,6 +25,8 @@ pub fn load_tx_chunk_manifest(path: &Path) -> anyhow::Result<TransactionBackup> 
 
 // similar to Loaded Chunk
 // diem/storage/backup/backup-cli/src/backup_types/transaction/restore.rs
+// The vectors below are OF THE SAME LENGTH
+// It is a table where for example, a tx without events will be an empty slot in the vector.
 pub struct TransactionArchiveChunk {
     pub manifest: TransactionChunk,
     pub txns: Vec<Transaction>,
@@ -61,6 +63,15 @@ pub async fn load_chunk(
         event_vecs.push(events);
         write_sets.push(write_set);
     }
+
+    // the chunk is a table implements with vectors,
+    // they should have the same length
+    assert!(
+        txns.len() == txn_infos.len()
+        && txn_infos.len() == event_vecs.len()
+        && event_vecs.len() == write_sets.len(),
+        "transactions chunk have different vector length for txs, events, and writesets"
+    );
 
     // TODO: for purposes of explorer/warehouse do we want to do the full tx restore controller verifications
 

@@ -13,6 +13,7 @@ version.workspace = true
 anyhow = { workspace = true }
 clap = { workspace = true }
 diem-types = { workspace = true }
+diem-crypto = { workspace = true }
 glob = { workspace = true }
 libra-backwards-compatibility = { workspace = true }
 libra-cached-packages = { workspace = true }
