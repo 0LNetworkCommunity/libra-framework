@@ -46,7 +46,7 @@ pub struct WarehouseBalance {
 
 #[derive(Debug, Clone, FromRow)]
 pub struct WarehouseTxMaster {
-    pub tx_hash: HashValue, // like primary key, but not
+    pub tx_hash: HashValue, // primary key
     pub sender: AccountAddress,
     pub module: String,
     pub function: String,
@@ -59,7 +59,14 @@ pub struct WarehouseTxMaster {
 
 #[derive(Debug, Clone, FromRow)]
 pub struct WarehouseDepositTx {
-    pub tx_hash: HashValue, // like primary key, but not
+    pub tx_hash: HashValue, // primary key
     pub to: AccountAddress,
     pub amount: u64,
+}
+
+#[derive(Debug, Clone, FromRow)]
+pub struct WarehouseEvent {
+    pub tx_hash: HashValue, // primary key
+    pub event_name: String,
+    pub data: serde_json::Value,
 }

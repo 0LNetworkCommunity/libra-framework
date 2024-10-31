@@ -1,6 +1,8 @@
-use crate::table_structs::{WarehouseDepositTx, WarehouseTxMaster};
+use crate::table_structs::{WarehouseDepositTx, WarehouseEvent, WarehouseTxMaster};
 use anyhow::Result;
-use diem_types::account_config::WithdrawEvent;
+use diem_crypto::HashValue;
+use diem_types::account_config::{NewBlockEvent, WithdrawEvent};
+use diem_types::contract_event::ContractEvent;
 use diem_types::{account_config::DepositEvent, transaction::SignedTransaction};
 use libra_backwards_compatibility::sdk::v7_libra_framework_sdk_builder::EntryFunctionCall as V7EntryFunctionCall;
 use libra_cached_packages::libra_stdlib::EntryFunctionCall;
@@ -8,7 +10,9 @@ use libra_storage::read_tx_chunk::{load_chunk, load_tx_chunk_manifest};
 use serde_json::json;
 use std::path::Path;
 
-pub async fn extract_current_transactions(archive_path: &Path) -> Result<Vec<WarehouseTxMaster>> {
+pub async fn extract_current_transactions(
+    archive_path: &Path,
+) -> Result<(Vec<WarehouseTxMaster>, Vec<WarehouseEvent>)> {
     let manifest_file = archive_path.join("transaction.manifest");
     assert!(
         manifest_file.exists(),
@@ -23,6 +27,7 @@ pub async fn extract_current_transactions(archive_path: &Path) -> Result<Vec<War
     let mut timestamp = 0;
 
     let mut user_txs: Vec<WarehouseTxMaster> = vec![];
+    let mut events: Vec<WarehouseEvent> = vec![];
 
     for each_chunk_manifest in manifest.chunks {
         let chunk = load_chunk(archive_path, each_chunk_manifest).await?;
@@ -66,19 +71,14 @@ pub async fn extract_current_transactions(archive_path: &Path) -> Result<Vec<War
                 .nth(i)
                 .expect("could not index on events chunk, vectors may not be same length");
 
+            let mut decoded_events = decode_events(tx_hash_info, tx_events)?;
+            events.append(&mut decoded_events);
+
             if let Some(signed_transaction) = tx.try_as_signed_user_txn() {
                 let tx = make_master_tx(signed_transaction, epoch, round, timestamp)?;
 
                 // sanity check that we are talking about the same block, and reading vectors sequentially.
                 assert!(tx.tx_hash == tx_hash_info, "transaction hashes do not match in transaction vector and transaction_info vector");
-
-                dbg!(&tx_events);
-                tx_events.iter().for_each(|el| {
-                    let we: Result<WithdrawEvent, _> = el.try_into();
-                    let de: Result<DepositEvent, _> = el.try_into();
-                    dbg!(&we);
-                    dbg!(&de);
-                });
 
                 user_txs.push(tx);
 
@@ -93,7 +93,7 @@ pub async fn extract_current_transactions(archive_path: &Path) -> Result<Vec<War
     );
     println!("user transactions found in chunk: {}", user_txs_in_chunk);
 
-    Ok(user_txs)
+    Ok((user_txs, events))
 }
 
 pub fn make_master_tx(
@@ -121,6 +121,41 @@ pub fn make_master_tx(
     };
 
     Ok(tx)
+}
+
+pub fn decode_events(
+    tx_hash: HashValue,
+    tx_events: &[ContractEvent],
+) -> Result<Vec<WarehouseEvent>> {
+    let list: Vec<WarehouseEvent> = tx_events
+        .iter()
+        .filter_map(|el| {
+            // too much noise
+            if NewBlockEvent::try_from_bytes(el.event_data()).is_ok() {
+                return None;
+            }
+
+            let event_name = el.type_tag().to_canonical_string();
+
+            let mut data = json!("unknown data");
+
+            if let Some(e) = WithdrawEvent::try_from_bytes(el.event_data()).ok() {
+                data = json!(e);
+            }
+
+            if let Some(e) = DepositEvent::try_from_bytes(el.event_data()).ok() {
+                data = json!(e);
+            }
+
+            Some(WarehouseEvent {
+                tx_hash,
+                event_name,
+                data,
+            })
+        })
+        .collect();
+
+    Ok(list)
 }
 
 pub fn function_args_to_json(user_tx: &SignedTransaction) -> Result<serde_json::Value> {
