@@ -68,8 +68,8 @@ pub async fn load_chunk(
     // they should have the same length
     assert!(
         txns.len() == txn_infos.len()
-        && txn_infos.len() == event_vecs.len()
-        && event_vecs.len() == write_sets.len(),
+            && txn_infos.len() == event_vecs.len()
+            && event_vecs.len() == write_sets.len(),
         "transactions chunk have different vector length for txs, events, and writesets"
     );
 

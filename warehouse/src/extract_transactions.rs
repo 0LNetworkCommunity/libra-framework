@@ -1,6 +1,7 @@
 use crate::table_structs::{WarehouseDepositTx, WarehouseTxMaster};
 use anyhow::Result;
 use diem_types::account_config::WithdrawEvent;
+use diem_types::transaction::Transaction;
 use diem_types::{account_config::DepositEvent, transaction::SignedTransaction};
 use libra_backwards_compatibility::sdk::v7_libra_framework_sdk_builder::EntryFunctionCall as V7EntryFunctionCall;
 use libra_cached_packages::libra_stdlib::EntryFunctionCall;
@@ -75,7 +76,7 @@ pub async fn extract_current_transactions(archive_path: &Path) -> Result<Vec<War
                 dbg!(&tx_events);
                 tx_events.iter().for_each(|el| {
                     let we: Result<WithdrawEvent, _> = el.try_into();
-                    let de: Result<DepositEvent, _>  = el.try_into();
+                    let de: Result<DepositEvent, _> = el.try_into();
                     dbg!(&we);
                     dbg!(&de);
                 });
