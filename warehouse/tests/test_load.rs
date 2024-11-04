@@ -89,7 +89,7 @@ async fn batch_insert_coin() -> anyhow::Result<()> {
     }
 
     // fist must load accounts
-    let res = libra_warehouse::load_account::load_account_state(&pool, &vec_state).await?;
+    let res = libra_warehouse::load_account::load_account_state_depr(&pool, &vec_state).await?;
     assert!(res == 3);
 
     let res = libra_warehouse::load_coin::impl_batch_coin_insert(&pool, &vec_state).await?;

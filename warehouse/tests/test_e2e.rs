@@ -59,11 +59,14 @@ async fn test_e2e_load_v7_snapshot_on_age_graph() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
-async fn test_two_tx_archives() -> anyhow::Result<()> {
+async fn test_ingest_two_v6_snapshot_archives() -> anyhow::Result<()> {
+    let (pool, _c) = get_test_pool().await?;
+    libra_warehouse::migrate::maybe_init_pg(&pool).await?;
+
     // V6 archive should have two State Snapshot archives
     let archive_dir = fixtures::v6_tx_manifest_fixtures_path();
 
-    let count_processed = restaurant::sushi_train(archive_dir.parent().unwrap()).await?;
+    let count_processed = restaurant::sushi_train(archive_dir.parent().unwrap(), &pool).await?;
     assert!(count_processed == 2);
 
     Ok(())
