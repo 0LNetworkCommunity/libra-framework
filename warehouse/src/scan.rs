@@ -44,9 +44,9 @@ pub enum BundleContent {
     EpochEnding,
 }
 
-/// Crawl a directory and find all .manifest files
-pub fn scan_dir_archive(start_dir: &Path) -> Result<ArchiveMap> {
-    let path = start_dir.canonicalize()?;
+/// Crawl a directory and find all .manifest files.
+pub fn scan_dir_archive(parent_dir: &Path) -> Result<ArchiveMap> {
+    let path = parent_dir.canonicalize()?;
 
     let pattern = format!(
         "{}/**/*.manifest",
