@@ -12,8 +12,10 @@ version.workspace = true
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true }
+diem-temppath = { workspace = true }
 diem-types = { workspace = true }
 diem-crypto = { workspace = true }
+flate2 = { workspace = true }
 glob = { workspace = true }
 libra-backwards-compatibility = { workspace = true }
 libra-cached-packages = { workspace = true }
@@ -23,6 +25,7 @@ once_cell = { workspace =  true }
 serde_json = { workspace =  true }
 sqlx = { workspace = true }
 tokio = { workspace = true }
+
 
 [dev-dependencies]
 testcontainers = { workspace = true }
