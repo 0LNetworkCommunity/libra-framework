@@ -60,7 +60,7 @@ fn decompress_file(src_path: &Path, dst_dir: &Path) -> Result<PathBuf> {
 
 /// Unzip all .gz files into the same directory
 /// Warning: this will take up a lot of disk space, should not be used in production
-pub fn decompress_all_gz(parent_dir: &Path) -> Result<ArchiveMap> {
+pub fn decompress_all_gz(parent_dir: &Path) -> Result<()> {
     let path = parent_dir.canonicalize()?;
 
     let pattern = format!(
@@ -70,9 +70,13 @@ pub fn decompress_all_gz(parent_dir: &Path) -> Result<ArchiveMap> {
 
     for entry in glob(&pattern)? {
         match entry {
-            Ok(src_path) => decompress_file(&src_path, &src_path.parent().unwrap()),
-            Err(e) => println!("{:?}", e),
+            Ok(src_path) => {
+                let _ = decompress_file(&src_path, &src_path.parent().unwrap());
+            }
+            Err(e) => {
+                println!("{:?}", e);
+            }
         }
     }
-    Ok(ArchiveMap(archive))
+    Ok(())
 }

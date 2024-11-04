@@ -1,5 +1,5 @@
 pub mod age_init;
-pub mod extract;
+pub mod extract_snapshot;
 pub mod extract_transactions;
 pub mod load_account;
 pub mod load_coin;
@@ -9,3 +9,4 @@ pub mod scan;
 pub mod table_structs;
 pub mod warehouse_cli;
 pub mod unzip_temp;
+pub mod restaurant;

@@ -3,7 +3,10 @@ mod support;
 use support::fixtures;
 use support::pg_testcontainer::get_test_pool;
 
-use libra_warehouse::extract::{extract_current_snapshot, extract_v5_snapshot};
+use libra_warehouse::{
+    extract_snapshot::{extract_current_snapshot, extract_v5_snapshot},
+    restaurant,
+};
 
 #[tokio::test]
 async fn test_e2e_load_v5_snapshot() -> anyhow::Result<()> {
@@ -52,5 +55,14 @@ async fn test_e2e_load_v7_snapshot_on_age_graph() -> anyhow::Result<()> {
     let res = libra_warehouse::load_account::batch_insert_account(&pool, &wa_vec, 1000).await?;
 
     assert!(res == 24607);
+    Ok(())
+}
+
+#[tokio::test]
+async fn try_one_step() -> anyhow::Result<()> {
+    let archive_dir = fixtures::v7_state_manifest_fixtures_path();
+
+    let _ = restaurant::sushi_train(&archive_dir).await?;
+
     Ok(())
 }

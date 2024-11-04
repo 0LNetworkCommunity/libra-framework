@@ -1,7 +1,7 @@
 mod support;
 
 use anyhow::Result;
-use libra_warehouse::extract::{extract_current_snapshot, extract_v5_snapshot};
+use libra_warehouse::extract_snapshot::{extract_current_snapshot, extract_v5_snapshot};
 use support::fixtures::{v5_state_manifest_fixtures_path, v7_state_manifest_fixtures_path};
 
 #[tokio::test]
