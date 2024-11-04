@@ -59,10 +59,12 @@ async fn test_e2e_load_v7_snapshot_on_age_graph() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
-async fn try_one_step() -> anyhow::Result<()> {
-    let archive_dir = fixtures::v7_state_manifest_fixtures_path();
+async fn test_two_tx_archives() -> anyhow::Result<()> {
+    // V6 archive should have two State Snapshot archives
+    let archive_dir = fixtures::v6_tx_manifest_fixtures_path();
 
-    let _ = restaurant::sushi_train(&archive_dir).await?;
+    let count_processed = restaurant::sushi_train(archive_dir.parent().unwrap()).await?;
+    assert!(count_processed == 2);
 
     Ok(())
 }

@@ -8,22 +8,26 @@ use crate::scan::BundleContent::*;
 use anyhow::Result;
 
 /// ingest all the archives sequentially.
-pub async fn sushi_train(parent_dir: &Path) -> Result<()> {
+pub async fn sushi_train(parent_dir: &Path) -> Result<u64> {
     let s = scan_dir_archive(parent_dir)?;
-
-    for (i, (_p, m)) in s.0.iter().enumerate() {
+    let mut archives_processed = 0u64;
+    for (i, (p, m)) in s.0.iter().enumerate() {
         match m.contents {
-            Unknown => todo!(),
-            StateSnapshot => {
-                dbg!(&i);
-
-                let records = extract_current_snapshot(&m.archive_dir).await?;
-                dbg!(&records.len());
+            Unknown => {
+                println!("unknown archive type found at {p:?}")
             }
-            Transaction => todo!(),
-            EpochEnding => todo!(),
+            StateSnapshot => {
+                let records = extract_current_snapshot(&m.archive_dir).await?;
+                archives_processed += 1;
+            }
+            Transaction => {
+                println!("transaction archive found at {p:?}")
+            }
+            EpochEnding => {
+                println!("epoch ending archive found at {p:?}")
+            }
         }
     }
 
-    Ok(())
+    Ok(archives_processed)
 }
