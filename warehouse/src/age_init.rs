@@ -1,3 +1,5 @@
+use std::{thread, time::Duration};
+
 use anyhow::Result;
 use sqlx::PgPool;
 
@@ -34,11 +36,29 @@ pub async fn init_age_db(pool: &PgPool) -> Result<()> {
     .execute(pool)
     .await?;
 
+    // sanity check the AGE tables are initialized
     let query = sqlx::query(&format!("SELECT create_graph('{AGE_TABLE_NAME}');"))
         .execute(pool)
         .await?;
 
     assert!(query.rows_affected() == 1);
+
+    // Need to touch the DB for Voodoo to work
+    let query = sqlx::query("SELECT 1+1;").execute(pool).await.unwrap();
+
+    // then we can select the AGE tables
+    let _query = sqlx::query(&format!("SELECT * FROM ag_graph;"))
+        .execute(pool)
+        .await?;
+
+    // Need to touch the DB for Voodoo to work
+    let query = sqlx::query("SELECT 1+1;").execute(pool).await.unwrap();
+    // If you try again without voodoo you will suffer with:
+    // thread 'test_cypher_tx_load' panicked at warehouse/tests/test_load_cypher_tx.rs:14:30:
+    // could not init AGE db: error returned from database: relation "ag_graph" does not exist
+    let _query = sqlx::query(&format!("SELECT * FROM ag_graph;"))
+        .execute(pool)
+        .await?;
 
     Ok(())
 }
