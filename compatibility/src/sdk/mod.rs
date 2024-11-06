@@ -1,1 +1,2 @@
+pub mod v6_libra_framework_sdk_builder;
 pub mod v7_libra_framework_sdk_builder;

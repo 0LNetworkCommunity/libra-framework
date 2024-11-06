@@ -83,6 +83,6 @@ async fn test_tx_insert() -> Result<()> {
 async fn test_init_indices() {
     let c = start_neo4j_container();
     let port = c.get_host_port_ipv4(7687);
-    let graph = get_neo4j_pool(port).await.expect("could not get n2o4j connection pool");
+    let graph = get_neo4j_pool(port).await.expect("could not get neo4j connection pool");
     init_neo4j(graph).await.expect("could start index");
 }

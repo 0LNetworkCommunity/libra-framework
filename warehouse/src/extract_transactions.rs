@@ -4,6 +4,7 @@ use diem_crypto::HashValue;
 use diem_types::account_config::{NewBlockEvent, WithdrawEvent};
 use diem_types::contract_event::ContractEvent;
 use diem_types::{account_config::DepositEvent, transaction::SignedTransaction};
+use libra_backwards_compatibility::sdk::v6_libra_framework_sdk_builder::EntryFunctionCall as V6EntryFunctionCall;
 use libra_backwards_compatibility::sdk::v7_libra_framework_sdk_builder::EntryFunctionCall as V7EntryFunctionCall;
 use libra_cached_packages::libra_stdlib::EntryFunctionCall;
 use libra_storage::read_tx_chunk::{load_chunk, load_tx_chunk_manifest};
@@ -110,12 +111,15 @@ pub fn make_master_tx(
     let tx = WarehouseTxMaster {
         tx_hash,
         expiration_timestamp: user_tx.expiration_timestamp_secs(),
-        sender: user_tx.sender(),
+        sender: user_tx.sender().to_hex_literal(),
         epoch,
         round,
         block_timestamp,
-        module: ef.module().to_string(),
-        function: ef.function().to_string(),
+        function: format!(
+            "{}::{}",
+            ef.module().short_str_lossless(),
+            ef.function().to_string()
+        ),
         recipients: None,
         args: function_args_to_json(user_tx)?,
     };
@@ -164,9 +168,15 @@ pub fn function_args_to_json(user_tx: &SignedTransaction) -> Result<serde_json::
         Some(a) => {
             json!(a)
         }
-        None => {
-            // TODO: put a better error message here, but don't abort
-            json!("could not parse")
+        _ => {
+            // NOW Try the V6 payloads
+            match V6EntryFunctionCall::decode(user_tx.payload()) {
+                Some(a) => json!(a),
+                _ => {
+                    // TODO: put a better error message here, but don't abort
+                    json!({ "error": "could not decode function bytes"})
+                }
+            }
         }
     };
 

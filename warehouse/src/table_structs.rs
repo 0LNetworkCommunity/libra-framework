@@ -48,8 +48,7 @@ pub struct WarehouseBalance {
 #[derive(Debug, Clone, FromRow)]
 pub struct WarehouseTxMaster {
     pub tx_hash: HashValue, // primary key
-    pub sender: AccountAddress,
-    pub module: String,
+    pub sender: String,
     pub function: String,
     pub epoch: u64,
     pub round: u64,
@@ -64,8 +63,7 @@ impl Default for WarehouseTxMaster {
     fn default() -> Self {
         Self {
             tx_hash: HashValue::zero(),
-            sender: AccountAddress::ZERO,
-            module: "none".to_owned(),
+            sender: AccountAddress::ZERO.short_str_lossless(),
             function: "none".to_owned(),
             epoch: 0,
             round: 0,
@@ -79,8 +77,8 @@ impl Default for WarehouseTxMaster {
 
 impl WarehouseTxMaster {
     pub fn to_cypher(&self) -> String {
-        let hash_str = self.tx_hash.to_string();
-        let sender_str = self.sender.to_hex_literal();
+        let hash_str = &self.tx_hash.to_string();
+        let sender_str = &self.sender;
 
         format!(r#"MERGE (from:Account {{address: '{sender_str}'}}), (to:Account {{address: '{sender_str}'}})
 
