@@ -116,7 +116,7 @@ pub fn make_master_tx(
         block_timestamp,
         module: ef.module().to_string(),
         function: ef.function().to_string(),
-
+        recipients: None,
         args: function_args_to_json(user_tx)?,
     };
 

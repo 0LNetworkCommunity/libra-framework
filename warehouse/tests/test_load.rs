@@ -59,10 +59,10 @@ async fn batch_duplicates_fail_gracefully() -> anyhow::Result<()> {
     }
 
     // should not fail if duplicates exists on same batch
-    let res = libra_warehouse::load_account::impl_batch_insert(&pool, &vec_acct).await?;
+    let res = libra_warehouse::load_account::impl_batch_insert_pg(&pool, &vec_acct).await?;
     assert!(res.rows_affected() == 1);
     // also should not fail if duplicates are on separate batches
-    let res = libra_warehouse::load_account::impl_batch_insert(&pool, &vec_acct).await?;
+    let res = libra_warehouse::load_account::impl_batch_insert_pg(&pool, &vec_acct).await?;
     assert!(res.rows_affected() == 0);
 
     Ok(())

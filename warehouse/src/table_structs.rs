@@ -1,5 +1,6 @@
 use diem_crypto::HashValue;
 use libra_types::exports::AccountAddress;
+use serde_json::json;
 // use serde::{Serialize, Deserialize};
 use sqlx::prelude::FromRow;
 
@@ -54,7 +55,37 @@ pub struct WarehouseTxMaster {
     pub round: u64,
     pub block_timestamp: u64,
     pub expiration_timestamp: u64,
+    // maybe there are counterparties otherwise
+    pub recipients: Option<Vec<AccountAddress>>,
     pub args: serde_json::Value,
+}
+
+impl Default for WarehouseTxMaster {
+    fn default() -> Self {
+        Self {
+            tx_hash: HashValue::zero(),
+            sender: AccountAddress::ZERO,
+            module: "none".to_owned(),
+            function: "none".to_owned(),
+            epoch: 0,
+            round: 0,
+            block_timestamp: 0,
+            expiration_timestamp: 0,
+            recipients: None,
+            args: json!(""),
+        }
+    }
+}
+
+impl WarehouseTxMaster {
+    pub fn to_cypher(&self) -> String {
+        let hash_str = self.tx_hash.to_string();
+        let sender_str = self.sender.to_hex_literal();
+
+        format!(r#"MERGE (from:Account {{address: '{sender_str}'}}), (to:Account {{address: '{sender_str}'}})
+
+        MERGE(from)-[r:Tx {{txs_hash: '{hash_str}'}}]-(to)"#)
+    }
 }
 
 #[derive(Debug, Clone, FromRow)]
