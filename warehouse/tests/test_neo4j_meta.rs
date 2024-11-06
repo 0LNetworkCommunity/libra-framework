@@ -1,18 +1,11 @@
 mod support;
 
 use anyhow::Result;
-use libra_warehouse::neo4j_init::init_neo4j;
+use libra_warehouse::neo4j_init::{get_neo4j_pool, create_indexes};
 // use libra_warehouse::table_structs::WarehouseTxMaster;
-use neo4rs::{query, Graph, Node};
+use neo4rs::{query, Node};
 use support::neo4j_testcontainer::start_neo4j_container;
 
-/// get a
-pub async fn get_neo4j_pool(port: u16) -> Result<Graph> {
-    let uri = format!("127.0.0.1:{port}");
-    let user = "neo4j";
-    let pass = "neo";
-    Ok(Graph::new(uri, user, pass).await?)
-}
 
 #[tokio::test]
 async fn test_neo4j_connect() -> Result<()> {
@@ -84,5 +77,5 @@ async fn test_init_indices() {
     let c = start_neo4j_container();
     let port = c.get_host_port_ipv4(7687);
     let graph = get_neo4j_pool(port).await.expect("could not get neo4j connection pool");
-    init_neo4j(graph).await.expect("could start index");
+    create_indexes(&graph).await.expect("could start index");
 }

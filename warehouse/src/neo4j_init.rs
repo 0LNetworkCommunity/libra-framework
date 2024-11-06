@@ -18,16 +18,25 @@ pub static INDEX_TX_TIMESTAMP: &str =
 pub static INDEX_TX_FUNCTION: &str =
     "CREATE INDEX tx_function IF NOT EXISTS FOR ()-[r:Tx]-() ON (r.function)";
 
-pub async fn init_neo4j(graph: Graph) -> Result<()>{
+/// get the driver connection object
+pub async fn get_neo4j_pool(port: u16) -> Result<Graph> {
+    let uri = format!("127.0.0.1:{port}");
+    let user = "neo4j";
+    let pass = "neo";
+    Ok(Graph::new(uri, user, pass).await?)
+}
+
+pub async fn create_indexes(graph: &Graph) -> Result<()> {
     let mut txn = graph.start_txn().await.unwrap();
 
     txn.run_queries([
-      ACCOUNT_CONSTRAINT,
-      TX_CONSTRAINT,
-      INDEX_HEX_ADDR,
-      INDEX_TX_TIMESTAMP,
-      INDEX_TX_FUNCTION,
-    ]).await?;
+        ACCOUNT_CONSTRAINT,
+        TX_CONSTRAINT,
+        INDEX_HEX_ADDR,
+        INDEX_TX_TIMESTAMP,
+        INDEX_TX_FUNCTION,
+    ])
+    .await?;
     txn.commit().await?;
     Ok(())
 }

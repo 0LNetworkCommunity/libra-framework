@@ -76,13 +76,14 @@ impl Default for WarehouseTxMaster {
 }
 
 impl WarehouseTxMaster {
-    pub fn to_cypher(&self) -> String {
+    pub fn to_cypher(&self) -> Vec<String> {
         let hash_str = &self.tx_hash.to_string();
         let sender_str = &self.sender;
 
-        format!(r#"MERGE (from:Account {{address: '{sender_str}'}}), (to:Account {{address: '{sender_str}'}})
-
-        MERGE(from)-[r:Tx {{txs_hash: '{hash_str}'}}]-(to)"#)
+        vec![
+          format!("MERGE (from:Account {{address: '{sender_str}'}})"),
+          format!(" MERGE (from:Account {{address: '{sender_str}'}})-[r:Tx {{txs_hash: '{hash_str}'}}]->(to:Account {{address: '{sender_str}'}})")
+        ]
     }
 }
 
