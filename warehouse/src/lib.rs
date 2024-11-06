@@ -10,3 +10,4 @@ pub mod table_structs;
 pub mod warehouse_cli;
 pub mod unzip_temp;
 pub mod restaurant;
+pub mod neo4j_init;
