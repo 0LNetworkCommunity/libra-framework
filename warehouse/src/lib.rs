@@ -4,6 +4,7 @@ pub mod extract_snapshot;
 pub mod extract_transactions;
 pub mod load_account;
 pub mod load_coin;
+pub mod load_entrypoint;
 pub mod load_tx_cypher;
 pub mod migrate;
 pub mod neo4j_init;

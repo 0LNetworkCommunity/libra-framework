@@ -55,7 +55,7 @@ pub struct WarehouseTxMaster {
     pub block_timestamp: u64,
     pub expiration_timestamp: u64,
     // maybe there are counter parties
-    pub recipients: Option<Vec<AccountAddress>>,
+    pub recipient: Option<String>,
     pub args: serde_json::Value,
 }
 
@@ -69,7 +69,7 @@ impl Default for WarehouseTxMaster {
             round: 0,
             block_timestamp: 0,
             expiration_timestamp: 0,
-            recipients: None,
+            recipient: None,
             args: json!(""),
         }
     }
@@ -82,9 +82,11 @@ impl WarehouseTxMaster {
     /// JSON5 but the last time someone updated
     /// that crate was 3 years ago.
     pub fn to_cypher_object_template(&self) -> String {
+        let recipient = self.recipient.as_ref().unwrap_or(&self.sender);
+
         format!(
             r#"{{tx_hash: "{}", sender: "{}", recipient: "{}"}}"#,
-            self.tx_hash, self.sender, self.sender,
+            self.tx_hash, self.sender, recipient,
         )
     }
 
@@ -93,13 +95,16 @@ impl WarehouseTxMaster {
         let mut list_literal = "".to_owned();
         for el in txs {
             let s = el.to_cypher_object_template();
-            list_literal = format!("{}\n", s);
+            list_literal.push_str(&s);
+            list_literal.push(',');
+            // list_literal = format!("{},\n{}", list_literal, s);
         }
+        list_literal.pop(); // need to drop last comma ","
         format!("[{}]", list_literal)
     }
 
     // NOTE: this seems to be memory inefficient.
-    // also creates a vendor lockin with neo4rs instead of any open cypher.
+    // also creates a vendor lock-in with neo4rs instead of any open cypher.
     // Hence the query templating
     pub fn to_boltmap(&self) -> BoltMap {
         let mut map = BoltMap::new();

@@ -4,6 +4,6 @@ use libra_warehouse::warehouse_cli::WarehouseCli;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    WarehouseCli::parse().run();
+    WarehouseCli::parse().run().await?;
     Ok(())
 }

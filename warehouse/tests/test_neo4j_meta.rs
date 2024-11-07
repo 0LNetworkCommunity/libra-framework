@@ -1,7 +1,9 @@
 mod support;
 
 use anyhow::Result;
-use libra_warehouse::neo4j_init::{create_indexes, get_neo4j_pool};
+use libra_warehouse::neo4j_init::{
+    create_indexes, get_credentials_from_env, get_neo4j_localhost_pool, get_neo4j_remote_pool,
+};
 use neo4rs::{query, Node};
 use std::collections::HashMap;
 
@@ -11,7 +13,7 @@ use support::neo4j_testcontainer::start_neo4j_container;
 async fn test_neo4j_connect() -> Result<()> {
     let c = start_neo4j_container();
     let port = c.get_host_port_ipv4(7687);
-    let graph = get_neo4j_pool(port).await?;
+    let graph = get_neo4j_localhost_pool(port).await?;
 
     let mut txn = graph.start_txn().await.unwrap();
 
@@ -41,7 +43,7 @@ async fn test_neo4j_connect() -> Result<()> {
 async fn test_tx_insert() -> Result<()> {
     let c = start_neo4j_container();
     let port = c.get_host_port_ipv4(7687);
-    let graph = get_neo4j_pool(port).await?;
+    let graph = get_neo4j_localhost_pool(port).await?;
 
     let mut txn = graph.start_txn().await.unwrap();
 
@@ -76,7 +78,7 @@ async fn test_tx_insert() -> Result<()> {
 async fn test_init_indices() {
     let c = start_neo4j_container();
     let port = c.get_host_port_ipv4(7687);
-    let graph = get_neo4j_pool(port)
+    let graph = get_neo4j_localhost_pool(port)
         .await
         .expect("could not get neo4j connection pool");
     create_indexes(&graph).await.expect("could start index");
@@ -86,7 +88,7 @@ async fn test_init_indices() {
 async fn test_unwind_create() -> Result<()> {
     let c = start_neo4j_container();
     let port = c.get_host_port_ipv4(7687);
-    let graph = get_neo4j_pool(port)
+    let graph = get_neo4j_localhost_pool(port)
         .await
         .expect("could not get neo4j connection pool");
     create_indexes(&graph).await?;
@@ -108,10 +110,10 @@ async fn test_unwind_create() -> Result<()> {
 }
 
 #[tokio::test]
-async fn test_batch_with_hasmap() -> Result<()> {
+async fn test_batch_with_hashmap() -> Result<()> {
     let c = start_neo4j_container();
     let port = c.get_host_port_ipv4(7687);
-    let graph = get_neo4j_pool(port)
+    let graph = get_neo4j_localhost_pool(port)
         .await
         .expect("could not get neo4j connection pool");
     create_indexes(&graph).await?;
@@ -146,6 +148,25 @@ async fn test_batch_with_hasmap() -> Result<()> {
 
     // Execute the query
     graph.run(cypher_query).await?;
+
+    Ok(())
+}
+
+#[ignore]
+#[tokio::test]
+async fn get_remote_neo4j() -> Result<()> {
+    let uri = "neo4j+s://b2600969.databases.neo4j.io";
+
+    // TODO: get from ENV
+    let user = "neo4j";
+    let (_, _, pass) = get_credentials_from_env()?;
+    let g = get_neo4j_remote_pool(uri, user, &pass).await?;
+
+    let mut rows = g
+        .execute("CREATE (p: Account {name: 'hi'})\n RETURN p".into())
+        .await?;
+    let r = rows.next().await?;
+    dbg!(&r);
 
     Ok(())
 }

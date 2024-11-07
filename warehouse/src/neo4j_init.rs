@@ -1,5 +1,9 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use neo4rs::Graph;
+
+pub static URI_ENV: &str = "LIBRA_GRAPH_DB_URI";
+pub static USER_ENV: &str = "LIBRA_GRAPH_DB_USER";
+pub static PASS_ENV: &str = "LIBRA_GRAPH_DB_PASS";
 
 pub static ACCOUNT_UNIQUE: &str =
     "CREATE CONSTRAINT unique_address FOR (n:Account) REQUIRE n.address IS UNIQUE";
@@ -21,13 +25,28 @@ pub static INDEX_TX_TIMESTAMP: &str =
 pub static INDEX_TX_FUNCTION: &str =
     "CREATE INDEX tx_function IF NOT EXISTS FOR ()-[r:Tx]-() ON (r.function)";
 
-/// get the driver connection object
-pub async fn get_neo4j_pool(port: u16) -> Result<Graph> {
+/// get the testing neo4j connection
+pub async fn get_neo4j_localhost_pool(port: u16) -> Result<Graph> {
     let uri = format!("127.0.0.1:{port}");
     let user = "neo4j";
     let pass = "neo";
     Ok(Graph::new(uri, user, pass).await?)
 }
+
+/// get the driver connection object
+pub async fn get_neo4j_remote_pool(uri: &str, user: &str, pass: &str) -> Result<Graph> {
+    Ok(Graph::new(uri, user, pass).await?)
+}
+
+pub fn get_credentials_from_env() -> Result<(String, String, String)> {
+    let uri = std::env::var(URI_ENV).context(format!("could not get env var {}", URI_ENV))?;
+    let user = std::env::var(USER_ENV).context(format!("could not get env var {}", USER_ENV))?;
+    let pass = std::env::var(PASS_ENV).context(format!("could not get env var {}", PASS_ENV))?;
+
+    Ok((uri, user, pass))
+}
+
+// get_neo4j_localhost_pool
 
 pub async fn create_indexes(graph: &Graph) -> Result<()> {
     let mut txn = graph.start_txn().await.unwrap();

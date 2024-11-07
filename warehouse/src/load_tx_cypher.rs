@@ -1,41 +1,40 @@
 use anyhow::Result;
 use neo4rs::{query, Graph};
 
-use crate::table_structs::WarehouseTxMaster;
+use crate::{cypher_templates::write_batch_tx_string, table_structs::WarehouseTxMaster};
 
-pub async fn load_tx_cypher(
+pub async fn tx_batch(
     txs: &[WarehouseTxMaster],
     pool: &Graph,
     batch_len: usize,
-) -> Result<()> {
+) -> Result<(u64, u64)> {
     let chunks: Vec<&[WarehouseTxMaster]> = txs.chunks(batch_len).collect();
+    let mut merged_count = 0u64;
+    let mut ignored_count = 0u64;
+
     for c in chunks {
-        impl_batch_tx_insert(pool, c).await?;
+        let (m, ig) = impl_batch_tx_insert(pool, c).await?;
+        merged_count += m;
+        ignored_count += ig;
     }
 
-    Ok(())
+    Ok((merged_count, ignored_count))
 }
 
-pub async fn impl_batch_tx_insert(pool: &Graph, batch_txs: &[WarehouseTxMaster]) -> Result<u64> {
-    let transactions = WarehouseTxMaster::slice_to_bolt_list(batch_txs);
+pub async fn impl_batch_tx_insert(
+    pool: &Graph,
+    batch_txs: &[WarehouseTxMaster],
+) -> Result<(u64, u64)> {
+    let list_str = WarehouseTxMaster::slice_to_template(batch_txs);
+    let cypher_string = write_batch_tx_string(list_str);
 
-    // for tx in batch_txs {
-    //     let mut this_query = tx.to_hashmap();
-    //     transactions.push(this_query);
-    // }
+    // Execute the query
+    let cypher_query = query(&cypher_string);
+    let mut res = pool.execute(cypher_query).await?;
 
-    let mut txn = pool.start_txn().await?;
+    let row = res.next().await?.unwrap();
+    let merged: i64 = row.get("merged_tx_count").unwrap();
+    let ignored: i64 = row.get("ignored_tx_count").unwrap();
 
-    let q = query(
-        "UNWIND $transactions AS tx
-         MERGE (from:Account {address: tx.sender})
-         MERGE (to:Account {address: tx.recipient})
-         MERGE (from)-[:Tx {tx_hash: tx.tx_hash}]->(to)",
-    )
-    .param("transactions", transactions);
-
-    txn.run(q).await?;
-    txn.commit().await?;
-
-    Ok(0)
+    Ok((merged as u64, ignored as u64))
 }

@@ -106,7 +106,7 @@ pub fn make_master_tx(
     let p = raw.clone().into_payload().clone();
     let ef = p.into_entry_function();
 
-    let tx = WarehouseTxMaster {
+    let mut tx = WarehouseTxMaster {
         tx_hash,
         expiration_timestamp: user_tx.expiration_timestamp_secs(),
         sender: user_tx.sender().to_hex_literal(),
@@ -114,9 +114,13 @@ pub fn make_master_tx(
         round,
         block_timestamp,
         function: format!("{}::{}", ef.module().short_str_lossless(), ef.function()),
-        recipients: None,
+        recipient: None,
         args: function_args_to_json(user_tx)?,
     };
+
+    if let Ok(deposit) = try_decode_deposit_tx(user_tx) {
+        tx.recipient = Some(deposit.to.to_hex_literal());
+    }
 
     Ok(tx)
 }
@@ -178,7 +182,7 @@ pub fn function_args_to_json(user_tx: &SignedTransaction) -> Result<serde_json::
 }
 
 // TODO: unsure if this needs to happen on Rust side
-fn _try_decode_deposit_tx(user_tx: &SignedTransaction) -> Result<WarehouseDepositTx> {
+fn try_decode_deposit_tx(user_tx: &SignedTransaction) -> Result<WarehouseDepositTx> {
     let (to, amount) = match EntryFunctionCall::decode(user_tx.payload()) {
         Some(EntryFunctionCall::OlAccountTransfer { to, amount }) => (to, amount),
         // many variants
