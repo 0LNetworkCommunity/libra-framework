@@ -1,5 +1,3 @@
-
-
 use anyhow::Result;
 use sqlx::PgPool;
 
@@ -47,18 +45,14 @@ pub async fn init_age_db(pool: &PgPool) -> Result<()> {
     let _query = sqlx::query("SELECT 1+1;").execute(pool).await.unwrap();
 
     // then we can select the AGE tables
-    let _query = sqlx::query(&format!("SELECT * FROM ag_graph;"))
-        .execute(pool)
-        .await?;
+    let _query = sqlx::query("SELECT * FROM ag_graph;").execute(pool).await?;
 
     // Need to touch the DB for Voodoo to work
     let _query = sqlx::query("SELECT 1+1;").execute(pool).await.unwrap();
     // If you try again without voodoo you will suffer with:
     // thread 'test_cypher_tx_load' panicked at warehouse/tests/test_load_cypher_tx.rs:14:30:
     // could not init AGE db: error returned from database: relation "ag_graph" does not exist
-    let _query = sqlx::query(&format!("SELECT * FROM ag_graph;"))
-        .execute(pool)
-        .await?;
+    let _query = sqlx::query("SELECT * FROM ag_graph;").execute(pool).await?;
 
     Ok(())
 }

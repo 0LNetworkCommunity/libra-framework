@@ -1,11 +1,14 @@
 use anyhow::Result;
 use neo4rs::Graph;
 
-pub static ACCOUNT_CONSTRAINT: &str =
+pub static ACCOUNT_UNIQUE: &str =
     "CREATE CONSTRAINT unique_address FOR (n:Account) REQUIRE n.address IS UNIQUE";
 
+// pub static ACCOUNT_NOT_NULL: &str =
+//   "CREATE CONSTRAINT account_not_null FOR (n:Account) REQUIRE n.address IS NOT NULL";
+
 pub static TX_CONSTRAINT: &str =
-    "CREATE CONSTRAINT unique_tx_hash FOR ()-[r:Tx]-() REQUIRE r.txs_hash IS UNIQUE";
+    "CREATE CONSTRAINT unique_tx_hash FOR ()-[r:Tx]-() REQUIRE r.tx_hash IS UNIQUE";
 
 // assumes the Account.address is stored as a hex string
 // NOTE: hex numericals may query faster but will be hard to use in user interface
@@ -30,7 +33,7 @@ pub async fn create_indexes(graph: &Graph) -> Result<()> {
     let mut txn = graph.start_txn().await.unwrap();
 
     txn.run_queries([
-        ACCOUNT_CONSTRAINT,
+        ACCOUNT_UNIQUE,
         TX_CONSTRAINT,
         INDEX_HEX_ADDR,
         INDEX_TX_TIMESTAMP,

@@ -1,11 +1,11 @@
 mod support;
 
 use anyhow::Result;
-use libra_warehouse::neo4j_init::{get_neo4j_pool, create_indexes};
-// use libra_warehouse::table_structs::WarehouseTxMaster;
+use libra_warehouse::neo4j_init::{create_indexes, get_neo4j_pool};
 use neo4rs::{query, Node};
-use support::neo4j_testcontainer::start_neo4j_container;
+use std::collections::HashMap;
 
+use support::neo4j_testcontainer::start_neo4j_container;
 
 #[tokio::test]
 async fn test_neo4j_connect() -> Result<()> {
@@ -66,7 +66,7 @@ async fn test_tx_insert() -> Result<()> {
         let node: Node = row.get("p").unwrap();
         let id: String = node.get("address").unwrap();
         dbg!(&id);
-        assert!(id == "0xa11ce".to_owned());
+        assert!(id == *"0xa11ce");
     }
 
     Ok(())
@@ -76,6 +76,76 @@ async fn test_tx_insert() -> Result<()> {
 async fn test_init_indices() {
     let c = start_neo4j_container();
     let port = c.get_host_port_ipv4(7687);
-    let graph = get_neo4j_pool(port).await.expect("could not get neo4j connection pool");
+    let graph = get_neo4j_pool(port)
+        .await
+        .expect("could not get neo4j connection pool");
     create_indexes(&graph).await.expect("could start index");
+}
+
+#[tokio::test]
+async fn test_unwind_create() -> Result<()> {
+    let c = start_neo4j_container();
+    let port = c.get_host_port_ipv4(7687);
+    let graph = get_neo4j_pool(port)
+        .await
+        .expect("could not get neo4j connection pool");
+    create_indexes(&graph).await?;
+
+    // Build the query and add the transactions as a parameter
+    let cypher_query = query(
+        r#"WITH [
+        {from_address: "0xa11ce", to_address: "0x808", tx_hash: "0000000"}, {from_address: "0xb0b", to_address: "0x909", tx_hash: "1111111"}
+        ] AS tx_data
+        UNWIND tx_data AS tx
+        MERGE (from:Account {address: tx.from_address})
+        MERGE (to:Account {address: tx.to_address})
+        MERGE (from)-[:Tx {tx_hash: tx.tx_hash}]->(to)"#,
+    );
+    // Execute the query
+    graph.run(cypher_query).await?;
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_batch_with_hasmap() -> Result<()> {
+    let c = start_neo4j_container();
+    let port = c.get_host_port_ipv4(7687);
+    let graph = get_neo4j_pool(port)
+        .await
+        .expect("could not get neo4j connection pool");
+    create_indexes(&graph).await?;
+
+    // Define a batch of transactions as a vector of HashMaps
+    let transactions = vec![
+        {
+            let mut map = HashMap::new();
+            map.insert("from_address".to_string(), "0xa11ce".to_string());
+            map.insert("to_address".to_string(), "0x808".to_string());
+            map.insert("txs_hash".to_string(), "0000000".to_string());
+            map
+        },
+        {
+            let mut map = HashMap::new();
+            map.insert("from_address".to_string(), "0xb0b".to_string());
+            map.insert("to_address".to_string(), "0x909".to_string());
+            map.insert("txs_hash".to_string(), "1111111".to_string());
+            map
+        },
+        // Add more transactions as needed
+    ];
+
+    // Build the query and add the transactions as a parameter
+    let cypher_query = query(
+        "UNWIND $transactions AS tx
+         MERGE (from:Account {address: tx.from_address})
+         MERGE (to:Account {address: tx.to_address})
+         MERGE (from)-[:Tx {txs_hash: tx.txs_hash}]->(to)",
+    )
+    .param("transactions", transactions); // Pass the batch as a parameter
+
+    // Execute the query
+    graph.run(cypher_query).await?;
+
+    Ok(())
 }

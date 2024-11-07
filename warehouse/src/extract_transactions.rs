@@ -61,15 +61,13 @@ pub async fn extract_current_transactions(
 
             let tx_info = chunk
                 .txn_infos
-                .iter()
-                .nth(i)
+                .get(i)
                 .expect("could not index on tx_info chunk, vectors may not be same length");
             let tx_hash_info = tx_info.transaction_hash();
 
             let tx_events = chunk
                 .event_vecs
-                .iter()
-                .nth(i)
+                .get(i)
                 .expect("could not index on events chunk, vectors may not be same length");
 
             let mut decoded_events = decode_events(tx_hash_info, tx_events)?;
@@ -115,11 +113,7 @@ pub fn make_master_tx(
         epoch,
         round,
         block_timestamp,
-        function: format!(
-            "{}::{}",
-            ef.module().short_str_lossless(),
-            ef.function().to_string()
-        ),
+        function: format!("{}::{}", ef.module().short_str_lossless(), ef.function()),
         recipients: None,
         args: function_args_to_json(user_tx)?,
     };
@@ -143,11 +137,11 @@ pub fn decode_events(
 
             let mut data = json!("unknown data");
 
-            if let Some(e) = WithdrawEvent::try_from_bytes(el.event_data()).ok() {
+            if let Ok(e) = WithdrawEvent::try_from_bytes(el.event_data()) {
                 data = json!(e);
             }
 
-            if let Some(e) = DepositEvent::try_from_bytes(el.event_data()).ok() {
+            if let Ok(e) = DepositEvent::try_from_bytes(el.event_data()) {
                 data = json!(e);
             }
 

@@ -1,7 +1,7 @@
 use diem_crypto::HashValue;
 use libra_types::exports::AccountAddress;
+use neo4rs::{BoltList, BoltMap, BoltType};
 use serde_json::json;
-// use serde::{Serialize, Deserialize};
 use sqlx::prelude::FromRow;
 
 #[derive(Debug, Clone)]
@@ -54,7 +54,7 @@ pub struct WarehouseTxMaster {
     pub round: u64,
     pub block_timestamp: u64,
     pub expiration_timestamp: u64,
-    // maybe there are counterparties otherwise
+    // maybe there are counter parties
     pub recipients: Option<Vec<AccountAddress>>,
     pub args: serde_json::Value,
 }
@@ -76,14 +76,56 @@ impl Default for WarehouseTxMaster {
 }
 
 impl WarehouseTxMaster {
-    pub fn to_cypher(&self) -> Vec<String> {
-        let hash_str = &self.tx_hash.to_string();
-        let sender_str = &self.sender;
+    /// since no sane Cypher serialization libraries exist.
+    /// and I'm not going to write a deserializer.
+    /// and JSON is not the same format as cypher property maps
+    /// JSON5 but the last time someone updated
+    /// that crate was 3 years ago.
+    pub fn to_cypher_object_template(&self) -> String {
+        format!(
+            r#"{{tx_hash: "{}", sender: "{}", recipient: "{}"}}"#,
+            self.tx_hash, self.sender, self.sender,
+        )
+    }
 
-        vec![
-          format!("MERGE (from:Account {{address: '{sender_str}'}})"),
-          format!(" MERGE (from:Account {{address: '{sender_str}'}})-[r:Tx {{txs_hash: '{hash_str}'}}]->(to:Account {{address: '{sender_str}'}})")
-        ]
+    /// make a string from the warehouse object
+    pub fn slice_to_template(txs: &[Self]) -> String {
+        let mut list_literal = "".to_owned();
+        for el in txs {
+            let s = el.to_cypher_object_template();
+            list_literal = format!("{}\n", s);
+        }
+        format!("[{}]", list_literal)
+    }
+
+    // NOTE: this seems to be memory inefficient.
+    // also creates a vendor lockin with neo4rs instead of any open cypher.
+    // Hence the query templating
+    pub fn to_boltmap(&self) -> BoltMap {
+        let mut map = BoltMap::new();
+        map.put("tx_hash".into(), self.tx_hash.to_string().into());
+        map.put("sender".into(), self.sender.clone().into());
+        map.put("recipient".into(), self.sender.clone().into());
+
+        // TODO
+        // map.put("epoch".into(), self.epoch.into());
+        // map.put("round".into(), self.round.into());
+        // map.put("epoch".into(), self.epoch.into());
+        // map.put("block_timestamp".into(), self.block_timestamp.into());
+        // map.put(
+        //     "expiration_timestamp".into(),
+        //     self.expiration_timestamp.into(),
+        // );
+        map
+    }
+    /// how one might implement the bolt types.
+    pub fn slice_to_bolt_list(txs: &[Self]) -> BoltType {
+        let mut list = BoltList::new();
+        for el in txs {
+            let map = el.to_boltmap();
+            list.push(BoltType::Map(map));
+        }
+        BoltType::List(list)
     }
 }
 

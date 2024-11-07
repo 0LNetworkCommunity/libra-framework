@@ -71,7 +71,7 @@ pub fn decompress_all_gz(parent_dir: &Path) -> Result<()> {
     for entry in glob(&pattern)? {
         match entry {
             Ok(src_path) => {
-                let _ = decompress_file(&src_path, &src_path.parent().unwrap());
+                let _ = decompress_file(&src_path, src_path.parent().unwrap());
             }
             Err(e) => {
                 println!("{:?}", e);

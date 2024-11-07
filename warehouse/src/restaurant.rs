@@ -14,7 +14,7 @@ use sqlx::PgPool;
 pub async fn sushi_train(parent_dir: &Path, pool: &PgPool) -> Result<u64> {
     let s = scan_dir_archive(parent_dir)?;
     let mut archives_processed = 0u64;
-    for (_i, (p, m)) in s.0.iter().enumerate() {
+    for (p, m) in s.0.iter() {
         match m.contents {
             Unknown => {
                 println!("unknown archive type found at {p:?}")
