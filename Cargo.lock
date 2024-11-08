@@ -6394,6 +6394,7 @@ name = "libra-warehouse"
 version = "7.0.3"
 dependencies = [
  "anyhow",
+ "chrono",
  "clap 4.5.20",
  "diem-crypto",
  "diem-temppath",
@@ -6406,6 +6407,7 @@ dependencies = [
  "libra-types",
  "neo4rs",
  "once_cell",
+ "serde 1.0.214",
  "serde_json",
  "sqlx",
  "testcontainers",

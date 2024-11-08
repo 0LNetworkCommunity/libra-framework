@@ -14,3 +14,4 @@ pub mod scan;
 pub mod table_structs;
 pub mod unzip_temp;
 pub mod warehouse_cli;
+pub mod supporting_data;
