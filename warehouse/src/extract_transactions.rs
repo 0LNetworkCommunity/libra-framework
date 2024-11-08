@@ -8,6 +8,7 @@ use libra_backwards_compatibility::sdk::v6_libra_framework_sdk_builder::EntryFun
 use libra_backwards_compatibility::sdk::v7_libra_framework_sdk_builder::EntryFunctionCall as V7EntryFunctionCall;
 use libra_cached_packages::libra_stdlib::EntryFunctionCall;
 use libra_storage::read_tx_chunk::{load_chunk, load_tx_chunk_manifest};
+use libra_types::util::format_signed_transaction;
 use serde_json::json;
 use std::path::Path;
 
@@ -104,7 +105,14 @@ pub fn make_master_tx(
     let tx_hash = user_tx.clone().committed_hash();
     let raw = user_tx.raw_transaction_ref();
     let p = raw.clone().into_payload().clone();
-    let ef = p.into_entry_function();
+    let function = match p {
+        diem_types::transaction::TransactionPayload::Script(script) =>  "Script".to_owned(),
+        diem_types::transaction::TransactionPayload::ModuleBundle(_module_bundle) => "ModuleBundle".to_owned(),
+        diem_types::transaction::TransactionPayload::EntryFunction(ef) => {
+          format!("{}::{}", ef.module().short_str_lossless(), ef.function())
+        },
+        diem_types::transaction::TransactionPayload::Multisig(_multisig) => "Multisig".to_string(),
+    };
 
     let mut tx = WarehouseTxMaster {
         tx_hash,
@@ -113,7 +121,7 @@ pub fn make_master_tx(
         epoch,
         round,
         block_timestamp,
-        function: format!("{}::{}", ef.module().short_str_lossless(), ef.function()),
+        function,
         recipient: None,
         args: function_args_to_json(user_tx)?,
     };
@@ -171,8 +179,9 @@ pub fn function_args_to_json(user_tx: &SignedTransaction) -> Result<serde_json::
             match V6EntryFunctionCall::decode(user_tx.payload()) {
                 Some(a) => json!(a),
                 _ => {
+                    let txt = format_signed_transaction(user_tx);
                     // TODO: put a better error message here, but don't abort
-                    json!({ "error": "could not decode function bytes"})
+                    json!({ "error": "not an entry function", "raw": txt })
                 }
             }
         }

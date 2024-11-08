@@ -10,6 +10,8 @@ use neo4rs::Graph;
 /// takes all the archives from a map, and tries to load them sequentially
 pub async fn ingest_all(archive_map: &ArchiveMap, pool: &Graph) -> Result<()> {
     for (_p, m) in archive_map.0.iter() {
+        println!("\nProcessing: {:?} with archive: {}", m.contents,  m.archive_dir.display());
+
         let (merged, ignored) = try_load_one_archive(m, pool).await?;
         println!(
             "TOTAL transactions updated: {}, ignored: {}",
@@ -31,7 +33,8 @@ pub async fn try_load_one_archive(man: &ManifestInfo, pool: &Graph) -> Result<(u
             let (merged, ignored) = load_tx_cypher::tx_batch(&txs, pool, 100).await?;
             records_updated += merged;
             records_ignored += ignored;
-            println!("transactions updated: {}, ignored: {}", merged, ignored);
+            // TODO: make debug log
+            // println!("transactions updated: {}, ignored: {}", merged, ignored);
         }
         crate::scan::BundleContent::EpochEnding => todo!(),
     }
