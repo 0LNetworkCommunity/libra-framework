@@ -36,21 +36,33 @@ pub enum EncodingVersion {
     V7,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, clap::ValueEnum)]
 pub enum BundleContent {
     Unknown,
     StateSnapshot,
     Transaction,
     EpochEnding,
 }
+impl BundleContent {
+  pub fn filename(&self) -> String {
+    match self {
+        BundleContent::Unknown => "*.manifest".to_string(),
+        BundleContent::StateSnapshot => "state.manifest".to_string(),
+        BundleContent::Transaction => "transaction.manifest".to_string(),
+        BundleContent::EpochEnding => "epoch_ending.manifest".to_string(),
+    }
+  }
+}
 
 /// Crawl a directory and find all .manifest files.
-pub fn scan_dir_archive(parent_dir: &Path) -> Result<ArchiveMap> {
+/// Optionally find
+pub fn scan_dir_archive(parent_dir: &Path, content_opt: Option<BundleContent>) -> Result<ArchiveMap> {
     let path = parent_dir.canonicalize()?;
-
+    let filename = content_opt.unwrap_or(BundleContent::Unknown).filename();
     let pattern = format!(
-        "{}/**/*.manifest",
-        path.to_str().context("cannot parse starting dir")?
+        "{}/**/{}",
+        path.to_str().context("cannot parse starting dir")?,
+        filename,
     );
 
     let mut archive = BTreeMap::new();

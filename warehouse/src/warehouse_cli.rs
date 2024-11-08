@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use crate::{
     load_entrypoint::{ingest_all, try_load_one_archive},
     neo4j_init::{get_credentials_from_env, PASS_ENV, URI_ENV, USER_ENV},
-    scan::scan_dir_archive,
+    scan::{scan_dir_archive, BundleContent},
 };
 
 #[derive(Parser)]
@@ -33,6 +33,9 @@ pub enum Sub {
     IngestAll {
         #[clap(long, short('d'))]
         start_path: PathBuf,
+        #[clap(long, short('c'))]
+        archive_content: Option<BundleContent>,
+
     },
     /// process and load a single archive
     LoadOne {
@@ -49,13 +52,13 @@ pub enum Sub {
 impl WarehouseCli {
     pub async fn run(&self) -> anyhow::Result<()> {
         match &self.command {
-            Sub::IngestAll { start_path } => {
-                let map = scan_dir_archive(start_path)?;
+            Sub::IngestAll { start_path, archive_content } => {
+                let map = scan_dir_archive(start_path, archive_content.to_owned())?;
                 let pool = try_db_connection_pool(self).await?;
 
                 ingest_all(&map, &pool).await?;
             }
-            Sub::LoadOne { archive_dir } => match scan_dir_archive(archive_dir)?.0.get(archive_dir)
+            Sub::LoadOne { archive_dir } => match scan_dir_archive(archive_dir, None)?.0.get(archive_dir)
             {
                 Some(man) => {
                     let pool = try_db_connection_pool(self).await?;
@@ -68,7 +71,7 @@ impl WarehouseCli {
                     ));
                 }
             },
-            Sub::Check { archive_dir } => match scan_dir_archive(archive_dir)?.0.get(archive_dir) {
+            Sub::Check { archive_dir } => match scan_dir_archive(archive_dir, None)?.0.get(archive_dir) {
                 Some(_) => todo!(),
                 None => {
                     bail!(format!(

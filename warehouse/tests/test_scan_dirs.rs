@@ -25,7 +25,7 @@ fn v7_fixtures_gzipped() -> PathBuf {
 fn test_scan_dir_for_v5_manifests() -> Result<()> {
     let start_here = v5_fixtures_path();
 
-    let s = scan_dir_archive(&start_here)?;
+    let s = scan_dir_archive(&start_here, None)?;
 
     assert!(s.0.len() == 2);
     Ok(())
@@ -35,7 +35,7 @@ fn test_scan_dir_for_v5_manifests() -> Result<()> {
 fn test_scan_dir_for_v7_manifests() -> Result<()> {
     let start_here = v7_fixtures_path();
 
-    let s = scan_dir_archive(&start_here)?;
+    let s = scan_dir_archive(&start_here, None)?;
 
     let archives = s.0;
     assert!(archives.len() == 3);
@@ -47,7 +47,7 @@ fn test_scan_dir_for_v7_manifests() -> Result<()> {
 fn test_scan_dir_for_compressed_v7_manifests() -> Result<()> {
     let start_here = v7_fixtures_gzipped();
 
-    let archives = scan_dir_archive(&start_here)?;
+    let archives = scan_dir_archive(&start_here, None)?;
 
     // a normal scan should find no files.
     assert!(archives.0.iter().len() == 0);
@@ -55,7 +55,7 @@ fn test_scan_dir_for_compressed_v7_manifests() -> Result<()> {
     // This time the scan should find readable files
     let unzipped_dir = make_temp_unzipped(&start_here, true)?;
 
-    let archives = scan_dir_archive(&unzipped_dir)?;
+    let archives = scan_dir_archive(&unzipped_dir, None)?;
     assert!(archives.0.iter().len() > 0);
 
     Ok(())

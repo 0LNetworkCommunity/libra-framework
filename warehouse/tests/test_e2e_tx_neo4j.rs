@@ -53,7 +53,7 @@ async fn test_parse_archive_into_neo4j() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_load_entry_point_tx() -> anyhow::Result<()> {
     let archive_path = support::fixtures::v6_tx_manifest_fixtures_path();
-    let archive = scan_dir_archive(&archive_path)?;
+    let archive = scan_dir_archive(&archive_path, None)?;
     let (_, man) = archive.0.first_key_value().unwrap();
 
     let c = start_neo4j_container();

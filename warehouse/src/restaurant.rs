@@ -12,7 +12,7 @@ use sqlx::PgPool;
 /// ingest all the archives sequentially.
 /// not very good, and made for the lazy
 pub async fn sushi_train(parent_dir: &Path, pool: &PgPool) -> Result<u64> {
-    let s = scan_dir_archive(parent_dir)?;
+    let s = scan_dir_archive(parent_dir, None)?;
     let mut archives_processed = 0u64;
     for (p, m) in s.0.iter() {
         match m.contents {
