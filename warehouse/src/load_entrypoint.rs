@@ -10,7 +10,11 @@ use neo4rs::Graph;
 /// takes all the archives from a map, and tries to load them sequentially
 pub async fn ingest_all(archive_map: &ArchiveMap, pool: &Graph) -> Result<()> {
     for (_p, m) in archive_map.0.iter() {
-        println!("\nProcessing: {:?} with archive: {}", m.contents,  m.archive_dir.display());
+        println!(
+            "\nProcessing: {:?} with archive: {}",
+            m.contents,
+            m.archive_dir.display()
+        );
 
         let (merged, ignored) = try_load_one_archive(m, pool).await?;
         println!(

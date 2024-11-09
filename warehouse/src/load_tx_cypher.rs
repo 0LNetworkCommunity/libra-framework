@@ -25,7 +25,7 @@ pub async fn impl_batch_tx_insert(
     pool: &Graph,
     batch_txs: &[WarehouseTxMaster],
 ) -> Result<(u64, u64)> {
-    let list_str = WarehouseTxMaster::slice_to_template(batch_txs);
+    let list_str = WarehouseTxMaster::to_cypher_map(batch_txs);
     let cypher_string = write_batch_tx_string(list_str);
 
     // Execute the query

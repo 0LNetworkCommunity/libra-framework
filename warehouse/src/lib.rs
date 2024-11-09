@@ -11,7 +11,7 @@ pub mod neo4j_init;
 pub mod query_balance;
 pub mod restaurant;
 pub mod scan;
+pub mod supporting_data;
 pub mod table_structs;
 pub mod unzip_temp;
 pub mod warehouse_cli;
-pub mod supporting_data;

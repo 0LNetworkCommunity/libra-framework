@@ -84,7 +84,7 @@ async fn insert_with_cypher_string() -> Result<()> {
     // two tx records
     let list = vec![tx1, tx2];
 
-    let list_str = WarehouseTxMaster::slice_to_template(&list);
+    let list_str = WarehouseTxMaster::to_cypher_map(&list);
     let cypher_string = write_batch_tx_string(list_str);
 
     let c = start_neo4j_container();

@@ -106,11 +106,13 @@ pub fn make_master_tx(
     let raw = user_tx.raw_transaction_ref();
     let p = raw.clone().into_payload().clone();
     let function = match p {
-        diem_types::transaction::TransactionPayload::Script(_script) =>  "Script".to_owned(),
-        diem_types::transaction::TransactionPayload::ModuleBundle(_module_bundle) => "ModuleBundle".to_owned(),
+        diem_types::transaction::TransactionPayload::Script(_script) => "Script".to_owned(),
+        diem_types::transaction::TransactionPayload::ModuleBundle(_module_bundle) => {
+            "ModuleBundle".to_owned()
+        }
         diem_types::transaction::TransactionPayload::EntryFunction(ef) => {
-          format!("{}::{}", ef.module().short_str_lossless(), ef.function())
-        },
+            format!("{}::{}", ef.module().short_str_lossless(), ef.function())
+        }
         diem_types::transaction::TransactionPayload::Multisig(_multisig) => "Multisig".to_string(),
     };
 

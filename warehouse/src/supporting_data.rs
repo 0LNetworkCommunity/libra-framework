@@ -20,6 +20,72 @@ pub struct Order {
     accepter: u32,
 }
 
+impl Default for Order {
+    fn default() -> Self {
+        Self {
+            user: 0,
+            order_type: "Sell".to_string(),
+            amount: 1.0,
+            price: 1.0,
+            created_at: DateTime::<Utc>::from_timestamp_nanos(0),
+            filled_at: DateTime::<Utc>::from_timestamp_nanos(0),
+            accepter: 1,
+        }
+    }
+}
+
+impl Order {
+    pub fn to_cypher_object_template(&self) -> String {
+        format!(
+            r#"{{user: {}, accepter: {}, order_type: "{}", amount {}, price: {}, created_at: "{}", filled_at: "{}"}}"#,
+            self.user,
+            self.accepter,
+            self.order_type,
+            self.amount,
+            self.price,
+            self.created_at.to_string(),
+            self.filled_at.to_string(),
+        )
+    }
+
+    /// create a cypher query string for the map object
+    pub fn to_cypher_map(list: &[Self]) -> String {
+        let mut list_literal = "".to_owned();
+        for el in list {
+            let s = el.to_cypher_object_template();
+            list_literal.push_str(&s);
+            list_literal.push(',');
+        }
+        list_literal.pop(); // need to drop last comma ","
+        format!("[{}]", list_literal)
+    }
+
+    pub fn write_trade_data_string(list_str: String) -> String {
+        format!(
+            r#"
+  WITH {list_str} AS tx_data
+  UNWIND tx_data AS tx
+  MERGE (:SwapAccount {{id: tx.user}})
+  MERGE (:SwapAccount {{id: tx.accepter}})
+  MERGE (from)-[rel:Swap {{
+    order_type: tx.order_type,
+    amount: tx.amount,
+    price: tx.price,
+    tx.created_at,
+    tx.filled_at,
+  }}]->(to)
+
+  ON CREATE SET rel.created = true
+  ON MATCH SET rel.created = false
+  WITH tx, rel
+  RETURN
+      COUNT(CASE WHEN rel.created = true THEN 1 END) AS merged_tx_count,
+      COUNT(CASE WHEN rel.created = false THEN 1 END) AS ignored_tx_count
+"#
+        )
+    }
+}
+
 // Custom deserialization function for "amount"
 fn deserialize_amount<'de, D>(deserializer: D) -> Result<f64, D::Error>
 where
@@ -34,7 +100,7 @@ fn deserialize_orders(json_data: &str) -> Result<Vec<Order>> {
     Ok(orders)
 }
 
-pub fn read_json_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<Order>> {
+pub fn read_orders_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<Order>> {
     let mut file = File::open(path)?;
     let mut json_data = String::new();
     file.read_to_string(&mut json_data)?;

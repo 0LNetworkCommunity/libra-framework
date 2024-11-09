@@ -35,7 +35,6 @@ pub enum Sub {
         start_path: PathBuf,
         #[clap(long, short('c'))]
         archive_content: Option<BundleContent>,
-
     },
     /// process and load a single archive
     LoadOne {
@@ -52,34 +51,40 @@ pub enum Sub {
 impl WarehouseCli {
     pub async fn run(&self) -> anyhow::Result<()> {
         match &self.command {
-            Sub::IngestAll { start_path, archive_content } => {
+            Sub::IngestAll {
+                start_path,
+                archive_content,
+            } => {
                 let map = scan_dir_archive(start_path, archive_content.to_owned())?;
                 let pool = try_db_connection_pool(self).await?;
 
                 ingest_all(&map, &pool).await?;
             }
-            Sub::LoadOne { archive_dir } => match scan_dir_archive(archive_dir, None)?.0.get(archive_dir)
-            {
-                Some(man) => {
-                    let pool = try_db_connection_pool(self).await?;
-                    try_load_one_archive(man, &pool).await?;
+            Sub::LoadOne { archive_dir } => {
+                match scan_dir_archive(archive_dir, None)?.0.get(archive_dir) {
+                    Some(man) => {
+                        let pool = try_db_connection_pool(self).await?;
+                        try_load_one_archive(man, &pool).await?;
+                    }
+                    None => {
+                        bail!(format!(
+                            "ERROR: cannot find .manifest file under {}",
+                            archive_dir.display()
+                        ));
+                    }
                 }
-                None => {
-                    bail!(format!(
-                        "ERROR: cannot find .manifest file under {}",
-                        archive_dir.display()
-                    ));
+            }
+            Sub::Check { archive_dir } => {
+                match scan_dir_archive(archive_dir, None)?.0.get(archive_dir) {
+                    Some(_) => todo!(),
+                    None => {
+                        bail!(format!(
+                            "ERROR: cannot find .manifest file under {}",
+                            archive_dir.display()
+                        ));
+                    }
                 }
-            },
-            Sub::Check { archive_dir } => match scan_dir_archive(archive_dir, None)?.0.get(archive_dir) {
-                Some(_) => todo!(),
-                None => {
-                    bail!(format!(
-                        "ERROR: cannot find .manifest file under {}",
-                        archive_dir.display()
-                    ));
-                }
-            },
+            }
         };
         Ok(())
     }

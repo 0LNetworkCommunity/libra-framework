@@ -91,13 +91,12 @@ impl WarehouseTxMaster {
     }
 
     /// make a string from the warehouse object
-    pub fn slice_to_template(txs: &[Self]) -> String {
+    pub fn to_cypher_map(txs: &[Self]) -> String {
         let mut list_literal = "".to_owned();
         for el in txs {
             let s = el.to_cypher_object_template();
             list_literal.push_str(&s);
             list_literal.push(',');
-            // list_literal = format!("{},\n{}", list_literal, s);
         }
         list_literal.pop(); // need to drop last comma ","
         format!("[{}]", list_literal)
