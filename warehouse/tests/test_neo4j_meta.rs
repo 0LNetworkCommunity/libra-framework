@@ -1,11 +1,12 @@
 mod support;
 
 use anyhow::Result;
+use chrono::{DateTime, Utc};
 use libra_warehouse::neo4j_init::{
     create_indexes, get_credentials_from_env, get_neo4j_localhost_pool, get_neo4j_remote_pool,
 };
 use neo4rs::{query, Node};
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 
 use support::neo4j_testcontainer::start_neo4j_container;
 
@@ -167,6 +168,59 @@ async fn get_remote_neo4j() -> Result<()> {
         .await?;
     let r = rows.next().await?;
     dbg!(&r);
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_timestamp() -> Result<()> {
+    let this_time = DateTime::<Utc>::from_str("2024-11-01 00:00:00+0000")?;
+
+    // mostly testing timestamp insertion
+    let insert_query = format!(
+        r#"
+      CREATE (t:TestTime {{user: 1, timestamp_micro: {}, date_time: datetime("{}") }})
+      RETURN t
+    "#,
+        this_time.timestamp_micros(),
+        this_time.to_rfc3339(),
+    );
+
+
+    let c = start_neo4j_container();
+    let port = c.get_host_port_ipv4(7687);
+    let graph = get_neo4j_localhost_pool(port).await?;
+
+    let mut res1 = graph.execute(query(&insert_query)).await?;
+
+    while let Some(row) = res1.next().await? {
+        let n: Node = row.get("t").unwrap();
+        let d: DateTime::<Utc> = n.get("date_time").unwrap();
+        assert!(d == this_time);
+
+        let t: i64 = n.get("timestamp_micro").unwrap();
+        assert!(t == this_time.timestamp_micros());
+    }
+
+    // Now try to query it
+    let range_query = r#"
+      MATCH (t:TestTime)
+      WHERE t.date_time >= datetime("2024-10-01T00:00:00+0000")
+      AND t.date_time <= datetime("2024-11-02T00:00:00+0000")
+      RETURN t
+    "#;
+
+    // now check data was loaded
+    let mut result = graph.execute(query(range_query)).await?;
+
+    while let Some(row) = result.next().await? {
+        let n: Node = row.get("t").unwrap();
+        let d: DateTime::<Utc> = n.get("date_time").unwrap();
+        assert!(d == this_time);
+
+        let t: i64 = n.get("timestamp_micro").unwrap();
+        assert!(t == this_time.timestamp_micros());
+    }
 
     Ok(())
 }

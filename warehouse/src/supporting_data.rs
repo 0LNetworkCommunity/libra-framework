@@ -5,19 +5,19 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[allow(dead_code)]
 pub struct Order {
-    user: u32,
+    pub user: u32,
     #[serde(rename = "orderType")]
-    order_type: String,
+    pub order_type: String,
     #[serde(deserialize_with = "deserialize_amount")]
-    amount: f64,
+    pub amount: f64,
     #[serde(deserialize_with = "deserialize_amount")]
-    price: f64,
-    created_at: DateTime<Utc>,
-    filled_at: DateTime<Utc>,
-    accepter: u32,
+    pub price: f64,
+    pub created_at: DateTime<Utc>,
+    pub filled_at: DateTime<Utc>,
+    pub accepter: u32,
 }
 
 impl Default for Order {
@@ -37,7 +37,7 @@ impl Default for Order {
 impl Order {
     pub fn to_cypher_object_template(&self) -> String {
         format!(
-            r#"{{user: {}, accepter: {}, order_type: "{}", amount {}, price: {}, created_at: "{}", filled_at: "{}"}}"#,
+            r#"{{user: {}, accepter: {}, order_type: "{}", amount: {}, price:{}, created_at: "{}", filled_at: "{}"}}"#,
             self.user,
             self.accepter,
             self.order_type,

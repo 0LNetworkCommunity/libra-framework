@@ -8,7 +8,7 @@ use libra_warehouse::{
     neo4j_init::get_neo4j_localhost_pool,
     supporting_data::{read_orders_from_file, Order},
 };
-use neo4rs::query;
+use neo4rs::{query, Node};
 
 #[test]
 fn open_parse_file() {
@@ -31,30 +31,45 @@ async fn test_order_cypher_insert() -> Result<()> {
     let port = c.get_host_port_ipv4(7687);
     let graph = get_neo4j_localhost_pool(port).await?;
 
-    let list = vec![Order::default()];
+    let order = Order::default();
+    let list = vec![order.clone()];
     let cypher_map = Order::to_cypher_map(&list);
-
+    dbg!(&cypher_map);
     // mostly testing timestamp insertion
-    let query_str = format!(
+    let insert_query = format!(
         r#"
       WITH {} as orders
       UNWIND orders as o
-      CREATE (maker:SwapId {{user: o.user, amount: o.amount, filled_at: o.filled_at}})
+      MERGE (u:SwapId {{user: o.user, amount: o.amount, filled_at: o.filled_at}})
+
+      ON CREATE SET u.created = true
+      ON MATCH SET u.created = false
+      WITH o, u
+      RETURN
+          COUNT(CASE WHEN u.created = true THEN 1 END) AS merged_tx_count,
+          COUNT(CASE WHEN u.created = false THEN 1 END) AS ignored_tx_count
     "#,
         cypher_map
     );
 
-    let _result = graph.execute(query(&query_str)).await.unwrap();
+    let mut res1 = graph.execute(query(&insert_query)).await?;
 
-    // let mut result = graph
-    //     .execute(query("MATCH (p:Person {name: $this_name}) RETURN p").param("this_name", "alice"))
-    //     .await
-    //     .unwrap();
-    // while let Ok(Some(row)) = result.next().await {
-    //     let node: Node = row.get("p").unwrap();
-    //     let id: u64 = node.get("id").unwrap();
-    //     assert!(id == 123);
-    // }
+    while let Some(row) = res1.next().await? {
+        dbg!(&row);
+        let count: i64 = row.get("merged_tx_count").unwrap();
+        assert!(count == 1);
+    }
+
+    // now check data was loaded
+    let mut result = graph.execute(query("MATCH (p:SwapId) RETURN p")).await?;
+    println!("hi");
+
+    while let Some(row) = result.next().await? {
+        dbg!(&row);
+        let n: Node = row.get("p").unwrap();
+        let count: i64 = n.get("user").unwrap();
+        assert!(count == 0);
+    }
 
     Ok(())
 }
