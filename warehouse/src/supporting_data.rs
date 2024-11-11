@@ -1,5 +1,6 @@
 use anyhow::Result;
 use chrono::{DateTime, Utc};
+use log::info;
 use serde::{Deserialize, Deserializer};
 use std::fs::File;
 use std::io::Read;
@@ -35,16 +36,20 @@ impl Default for Order {
 }
 
 impl Order {
+    /// creates one transaction record in the cypher query map format
+    /// Note original data was in an RFC rfc3339 with Z for UTC, Cypher seems to prefer with offsets +00000
     pub fn to_cypher_object_template(&self) -> String {
         format!(
-            r#"{{user: {}, accepter: {}, order_type: "{}", amount: {}, price:{}, created_at: "{}", filled_at: "{}"}}"#,
+            r#"{{user: {}, accepter: {}, order_type: "{}", amount: {}, price:{}, created_at: datetime("{}"), created_at_ts: {}, filled_at: datetime("{}"), filled_at_ts: {} }}"#,
             self.user,
             self.accepter,
             self.order_type,
             self.amount,
             self.price,
-            self.created_at.to_string(),
-            self.filled_at.to_string(),
+            self.created_at.to_rfc3339(),
+            self.created_at.timestamp_micros(),
+            self.filled_at.to_rfc3339(),
+            self.filled_at.timestamp_micros()
         )
     }
 
@@ -60,20 +65,22 @@ impl Order {
         format!("[{}]", list_literal)
     }
 
-    pub fn write_trade_data_string(list_str: String) -> String {
+    pub fn cypher_batch_insert_str(list_str: String) -> String {
         format!(
             r#"
   WITH {list_str} AS tx_data
   UNWIND tx_data AS tx
-  MERGE (:SwapAccount {{id: tx.user}})
-  MERGE (:SwapAccount {{id: tx.accepter}})
-  MERGE (from)-[rel:Swap {{
+  MERGE (maker:SwapAccount {{swap_id: tx.user}})
+  MERGE (taker:SwapAccount {{swap_id: tx.accepter}})
+  MERGE (maker)-[rel:Swap {{
     order_type: tx.order_type,
     amount: tx.amount,
     price: tx.price,
-    tx.created_at,
-    tx.filled_at,
-  }}]->(to)
+    created_at: tx.created_at,
+    created_at_ts: tx.created_at_ts,
+    filled_at: tx.filled_at,
+    filled_at_ts: tx.filled_at_ts
+  }}]->(taker)
 
   ON CREATE SET rel.created = true
   ON MATCH SET rel.created = false
@@ -104,7 +111,11 @@ pub fn read_orders_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<Order>> {
     let mut file = File::open(path)?;
     let mut json_data = String::new();
     file.read_to_string(&mut json_data)?;
-    Ok(deserialize_orders(&json_data)?)
+    let des = deserialize_orders(&json_data)?;
+
+    info!("Swap orders loaded: {}", des.len());
+
+    Ok(des)
 }
 
 #[test]

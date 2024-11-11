@@ -8,7 +8,7 @@ use libra_warehouse::scan::scan_dir_archive;
 use libra_warehouse::table_structs::WarehouseTxMaster;
 use libra_warehouse::{
     extract_transactions::extract_current_transactions,
-    neo4j_init::{create_indexes, get_neo4j_localhost_pool},
+    neo4j_init::{get_neo4j_localhost_pool, maybe_create_indexes},
 };
 use neo4rs::query;
 use support::neo4j_testcontainer::start_neo4j_container;
@@ -25,7 +25,9 @@ async fn test_parse_archive_into_neo4j() -> anyhow::Result<()> {
     let graph = get_neo4j_localhost_pool(port)
         .await
         .expect("could not get neo4j connection pool");
-    create_indexes(&graph).await.expect("could start index");
+    maybe_create_indexes(&graph)
+        .await
+        .expect("could start index");
 
     // load in batches
     let (merged, ignored) = tx_batch(&txs, &graph, 100).await?;
@@ -61,7 +63,9 @@ async fn test_load_entry_point_tx() -> anyhow::Result<()> {
     let graph = get_neo4j_localhost_pool(port)
         .await
         .expect("could not get neo4j connection pool");
-    create_indexes(&graph).await.expect("could start index");
+    maybe_create_indexes(&graph)
+        .await
+        .expect("could start index");
 
     let (merged, ignored) = try_load_one_archive(man, &graph).await?;
     assert!(merged == 705);
@@ -92,7 +96,7 @@ async fn insert_with_cypher_string() -> Result<()> {
     let graph = get_neo4j_localhost_pool(port)
         .await
         .expect("could not get neo4j connection pool");
-    create_indexes(&graph).await?;
+    maybe_create_indexes(&graph).await?;
 
     // Execute the query
     let cypher_query = query(&cypher_string);
@@ -129,7 +133,7 @@ async fn test_bolt_serialize() -> Result<()> {
     let graph = get_neo4j_localhost_pool(port)
         .await
         .expect("could not get neo4j connection pool");
-    create_indexes(&graph).await?;
+    maybe_create_indexes(&graph).await?;
 
     // Define a batch of transactions as a vector of HashMaps
     let transactions = vec![WarehouseTxMaster::default()];

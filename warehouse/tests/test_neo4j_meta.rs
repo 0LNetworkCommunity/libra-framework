@@ -3,7 +3,7 @@ mod support;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use libra_warehouse::neo4j_init::{
-    create_indexes, get_credentials_from_env, get_neo4j_localhost_pool, get_neo4j_remote_pool,
+    get_credentials_from_env, get_neo4j_localhost_pool, get_neo4j_remote_pool, maybe_create_indexes,
 };
 use neo4rs::{query, Node};
 use std::{collections::HashMap, str::FromStr};
@@ -82,7 +82,9 @@ async fn test_init_indices() {
     let graph = get_neo4j_localhost_pool(port)
         .await
         .expect("could not get neo4j connection pool");
-    create_indexes(&graph).await.expect("could start index");
+    maybe_create_indexes(&graph)
+        .await
+        .expect("could start index");
 }
 
 #[tokio::test]
@@ -92,7 +94,7 @@ async fn test_unwind_create() -> Result<()> {
     let graph = get_neo4j_localhost_pool(port)
         .await
         .expect("could not get neo4j connection pool");
-    create_indexes(&graph).await?;
+    maybe_create_indexes(&graph).await?;
 
     // Build the query and add the transactions as a parameter
     let cypher_query = query(
@@ -117,7 +119,7 @@ async fn test_batch_with_hashmap() -> Result<()> {
     let graph = get_neo4j_localhost_pool(port)
         .await
         .expect("could not get neo4j connection pool");
-    create_indexes(&graph).await?;
+    maybe_create_indexes(&graph).await?;
 
     // Define a batch of transactions as a vector of HashMaps
     let transactions = vec![
@@ -186,7 +188,6 @@ async fn test_timestamp() -> Result<()> {
         this_time.to_rfc3339(),
     );
 
-
     let c = start_neo4j_container();
     let port = c.get_host_port_ipv4(7687);
     let graph = get_neo4j_localhost_pool(port).await?;
@@ -195,7 +196,7 @@ async fn test_timestamp() -> Result<()> {
 
     while let Some(row) = res1.next().await? {
         let n: Node = row.get("t").unwrap();
-        let d: DateTime::<Utc> = n.get("date_time").unwrap();
+        let d: DateTime<Utc> = n.get("date_time").unwrap();
         assert!(d == this_time);
 
         let t: i64 = n.get("timestamp_micro").unwrap();
@@ -215,7 +216,7 @@ async fn test_timestamp() -> Result<()> {
 
     while let Some(row) = result.next().await? {
         let n: Node = row.get("t").unwrap();
-        let d: DateTime::<Utc> = n.get("date_time").unwrap();
+        let d: DateTime<Utc> = n.get("date_time").unwrap();
         assert!(d == this_time);
 
         let t: i64 = n.get("timestamp_micro").unwrap();

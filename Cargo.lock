@@ -4528,6 +4528,19 @@ dependencies = [
 
 [[package]]
 name = "env_logger"
+version = "0.9.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a12e6657c4c97ebab115a42dcee77225f7f482cdd841cf7088c657a42e9e00e7"
+dependencies = [
+ "atty",
+ "humantime",
+ "log",
+ "regex",
+ "termcolor",
+]
+
+[[package]]
+name = "env_logger"
 version = "0.11.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e13fa619b91fb2381732789fc5de83b45675e882f66623b7d8cb4f643017018d"
@@ -5279,6 +5292,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "humantime"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
+
+[[package]]
 name = "hyper"
 version = "0.14.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5688,7 +5707,7 @@ dependencies = [
  "crossbeam-channel",
  "crossbeam-utils",
  "dashmap 6.1.0",
- "env_logger",
+ "env_logger 0.11.5",
  "indexmap 2.6.0",
  "is-terminal",
  "itoa",
@@ -6399,12 +6418,14 @@ dependencies = [
  "diem-crypto",
  "diem-temppath",
  "diem-types",
+ "env_logger 0.9.3",
  "flate2",
  "glob",
  "libra-backwards-compatibility",
  "libra-cached-packages",
  "libra-storage",
  "libra-types",
+ "log",
  "neo4rs",
  "once_cell",
  "serde 1.0.214",

@@ -8,6 +8,7 @@ pub static PASS_ENV: &str = "LIBRA_GRAPH_DB_PASS";
 pub static ACCOUNT_UNIQUE: &str =
     "CREATE CONSTRAINT unique_address FOR (n:Account) REQUIRE n.address IS UNIQUE";
 
+// TODO: not null requires enterprise neo4j :/
 // pub static ACCOUNT_NOT_NULL: &str =
 //   "CREATE CONSTRAINT account_not_null FOR (n:Account) REQUIRE n.address IS NOT NULL";
 
@@ -24,6 +25,9 @@ pub static INDEX_TX_TIMESTAMP: &str =
 
 pub static INDEX_TX_FUNCTION: &str =
     "CREATE INDEX tx_function IF NOT EXISTS FOR ()-[r:Tx]-() ON (r.function)";
+
+pub static INDEX_SWAP_ID: &str =
+    "CREATE INDEX swap_account_id IF NOT EXISTS FOR (n:SwapAccount) ON (n.swap_id)";
 
 /// get the testing neo4j connection
 pub async fn get_neo4j_localhost_pool(port: u16) -> Result<Graph> {
@@ -46,9 +50,7 @@ pub fn get_credentials_from_env() -> Result<(String, String, String)> {
     Ok((uri, user, pass))
 }
 
-// get_neo4j_localhost_pool
-
-pub async fn create_indexes(graph: &Graph) -> Result<()> {
+pub async fn maybe_create_indexes(graph: &Graph) -> Result<()> {
     let mut txn = graph.start_txn().await.unwrap();
 
     txn.run_queries([
@@ -57,6 +59,7 @@ pub async fn create_indexes(graph: &Graph) -> Result<()> {
         INDEX_HEX_ADDR,
         INDEX_TX_TIMESTAMP,
         INDEX_TX_FUNCTION,
+        INDEX_SWAP_ID,
     ])
     .await?;
     txn.commit().await?;

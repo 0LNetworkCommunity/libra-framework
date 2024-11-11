@@ -5,14 +5,15 @@ use std::path::PathBuf;
 
 use crate::{
     load_entrypoint::{ingest_all, try_load_one_archive},
-    neo4j_init::{get_credentials_from_env, PASS_ENV, URI_ENV, USER_ENV},
+    load_supporting_data,
+    neo4j_init::{self, get_credentials_from_env, PASS_ENV, URI_ENV, USER_ENV},
     scan::{scan_dir_archive, BundleContent},
 };
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 #[clap(arg_required_else_help(true))]
-/// DB tools e.g.: backup, restore, export to json
+/// Extract transform and load data into a graph datawarehouse
 pub struct WarehouseCli {
     #[clap(long, short('d'))]
     /// URI of graphDB e.g. neo4j+s://localhost:port
@@ -46,6 +47,11 @@ pub enum Sub {
         #[clap(long, short('d'))]
         archive_dir: PathBuf,
     },
+    /// add supporting data in addition to chain records
+    Enrich {
+        #[clap(long)]
+        swap_record_json: PathBuf,
+    },
 }
 
 impl WarehouseCli {
@@ -57,13 +63,15 @@ impl WarehouseCli {
             } => {
                 let map = scan_dir_archive(start_path, archive_content.to_owned())?;
                 let pool = try_db_connection_pool(self).await?;
-
+                neo4j_init::maybe_create_indexes(&pool).await?;
                 ingest_all(&map, &pool).await?;
             }
             Sub::LoadOne { archive_dir } => {
                 match scan_dir_archive(archive_dir, None)?.0.get(archive_dir) {
                     Some(man) => {
                         let pool = try_db_connection_pool(self).await?;
+                        neo4j_init::maybe_create_indexes(&pool).await?;
+
                         try_load_one_archive(man, &pool).await?;
                     }
                     None => {
@@ -84,6 +92,13 @@ impl WarehouseCli {
                         ));
                     }
                 }
+            }
+            Sub::Enrich { swap_record_json } => {
+                let pool = try_db_connection_pool(self).await?;
+                neo4j_init::maybe_create_indexes(&pool).await?;
+
+                let batch_len = 1000; // TODO: make this a param
+                load_supporting_data::load_from_json(swap_record_json, &pool, batch_len);
             }
         };
         Ok(())
