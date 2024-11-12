@@ -98,7 +98,7 @@ impl WarehouseCli {
                 neo4j_init::maybe_create_indexes(&pool).await?;
 
                 let batch_len = 1000; // TODO: make this a param
-                load_supporting_data::load_from_json(swap_record_json, &pool, batch_len);
+                load_supporting_data::load_from_json(swap_record_json, &pool, batch_len).await?;
             }
         };
         Ok(())

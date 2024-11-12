@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use anyhow::Result;
+use log::info;
 use neo4rs::{query, Graph};
 
 use crate::supporting_data::{read_orders_from_file, Order};

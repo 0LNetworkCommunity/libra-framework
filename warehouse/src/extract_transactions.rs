@@ -1,5 +1,6 @@
-use crate::table_structs::{WarehouseDepositTx, WarehouseEvent, WarehouseTxMaster};
+use crate::table_structs::{TransferTx, TxTypes, WarehouseEvent, WarehouseTxMaster};
 use anyhow::Result;
+use chrono::DateTime;
 use diem_crypto::HashValue;
 use diem_types::account_config::{NewBlockEvent, WithdrawEvent};
 use diem_types::contract_event::ContractEvent;
@@ -75,7 +76,8 @@ pub async fn extract_current_transactions(
             events.append(&mut decoded_events);
 
             if let Some(signed_transaction) = tx.try_as_signed_user_txn() {
-                let tx = make_master_tx(signed_transaction, epoch, round, timestamp)?;
+                let mut tx = make_master_tx(signed_transaction, epoch, round, timestamp)?;
+                tx.events = decoded_events;
 
                 // sanity check that we are talking about the same block, and reading vectors sequentially.
                 assert!(tx.tx_hash == tx_hash_info, "transaction hashes do not match in transaction vector and transaction_info vector");
@@ -126,6 +128,9 @@ pub fn make_master_tx(
         function,
         recipient: None,
         args: function_args_to_json(user_tx)?,
+        tx_type: TxTypes::Unknown,
+        block_datetime: DateTime::from_timestamp_micros(block_timestamp as i64).unwrap(),
+        events: vec![],
     };
 
     if let Ok(deposit) = try_decode_deposit_tx(user_tx) {
@@ -142,7 +147,7 @@ pub fn decode_events(
     let list: Vec<WarehouseEvent> = tx_events
         .iter()
         .filter_map(|el| {
-            // too much noise
+            // exclude block announcements, too much noise
             if NewBlockEvent::try_from_bytes(el.event_data()).is_ok() {
                 return None;
             }
@@ -193,14 +198,14 @@ pub fn function_args_to_json(user_tx: &SignedTransaction) -> Result<serde_json::
 }
 
 // TODO: unsure if this needs to happen on Rust side
-fn try_decode_deposit_tx(user_tx: &SignedTransaction) -> Result<WarehouseDepositTx> {
+fn try_decode_deposit_tx(user_tx: &SignedTransaction) -> Result<TransferTx> {
     let (to, amount) = match EntryFunctionCall::decode(user_tx.payload()) {
         Some(EntryFunctionCall::OlAccountTransfer { to, amount }) => (to, amount),
         // many variants
         _ => anyhow::bail!("not a deposit tx"),
     };
 
-    Ok(WarehouseDepositTx {
+    Ok(TransferTx {
         tx_hash: user_tx.clone().committed_hash(),
         to,
         amount,

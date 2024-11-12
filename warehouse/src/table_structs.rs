@@ -1,76 +1,79 @@
+
+use chrono::{DateTime, Utc};
 use diem_crypto::HashValue;
 use libra_types::exports::AccountAddress;
 use neo4rs::{BoltList, BoltMap, BoltType};
 use serde_json::json;
 use sqlx::prelude::FromRow;
 
+
 #[derive(Debug, Clone)]
-/// The basic information for an account
-pub struct WarehouseRecord {
-    pub account: WarehouseAccount,
-    pub time: WarehouseTime,
-    pub balance: Option<WarehouseBalance>,
+pub enum TxTypes {
+  Unknown,
+  Transfer(TransferTx),
+  Onboarding,
+  Vouch,
+  Configuration,
+  Miner,
+  Script,
+  MiscEntryFunction(MiscTx),
 }
 
-impl WarehouseRecord {
-    pub fn new(address: AccountAddress) -> Self {
-        Self {
-            account: WarehouseAccount { address },
-            time: WarehouseTime::default(),
-            balance: Some(WarehouseBalance::default()),
-        }
-    }
-    pub fn set_time(&mut self, timestamp: u64, version: u64, epoch: u64) {
-        self.time.timestamp = timestamp;
-        self.time.version = version;
-        self.time.epoch = epoch;
-    }
-}
-// holds timestamp, chain height, and epoch
-#[derive(Debug, Clone, Default)]
-pub struct WarehouseTime {
-    pub timestamp: u64,
-    pub version: u64,
-    pub epoch: u64,
-}
-#[derive(Debug, Clone)]
-pub struct WarehouseAccount {
-    pub address: AccountAddress,
+
+#[derive(Debug, Clone, FromRow)]
+pub struct TransferTx {
+    pub tx_hash: HashValue, // primary key
+    pub to: AccountAddress,
+    pub amount: u64,
 }
 
-#[derive(Debug, Default, Clone, FromRow)]
-pub struct WarehouseBalance {
-    // balances in v6+ terms
-    #[sqlx(try_from = "i64")]
-    pub balance: u64,
+#[derive(Debug, Clone, FromRow)]
+pub struct MiscTx {
+    pub tx_hash: HashValue, // primary key
+    pub data: serde_json::Value,
 }
+
+#[derive(Debug, Clone, FromRow)]
+pub struct WarehouseEvent {
+    pub tx_hash: HashValue, // primary key
+    pub event_name: String,
+    pub data: serde_json::Value,
+}
+
+
 
 #[derive(Debug, Clone, FromRow)]
 pub struct WarehouseTxMaster {
     pub tx_hash: HashValue, // primary key
+    pub tx_type: TxTypes,
     pub sender: String,
     pub function: String,
     pub epoch: u64,
     pub round: u64,
     pub block_timestamp: u64,
+    pub block_datetime: DateTime<Utc>,
     pub expiration_timestamp: u64,
     // maybe there are counter parties
     pub recipient: Option<String>,
     pub args: serde_json::Value,
+    pub events: Vec<WarehouseEvent>,
 }
 
 impl Default for WarehouseTxMaster {
     fn default() -> Self {
         Self {
             tx_hash: HashValue::zero(),
+            tx_type: TxTypes::Configuration,
             sender: AccountAddress::ZERO.short_str_lossless(),
             function: "none".to_owned(),
             epoch: 0,
             round: 0,
             block_timestamp: 0,
+            block_datetime: DateTime::<Utc>::from_timestamp_micros(0).unwrap(),
             expiration_timestamp: 0,
             recipient: None,
             args: json!(""),
+            events: vec!(),
         }
     }
 }
@@ -133,16 +136,44 @@ impl WarehouseTxMaster {
     }
 }
 
-#[derive(Debug, Clone, FromRow)]
-pub struct WarehouseDepositTx {
-    pub tx_hash: HashValue, // primary key
-    pub to: AccountAddress,
-    pub amount: u64,
+
+#[derive(Debug, Clone)]
+/// The basic information for an account
+pub struct WarehouseRecord {
+    pub account: WarehouseAccount,
+    pub time: WarehouseTime,
+    pub balance: Option<WarehouseBalance>,
 }
 
-#[derive(Debug, Clone, FromRow)]
-pub struct WarehouseEvent {
-    pub tx_hash: HashValue, // primary key
-    pub event_name: String,
-    pub data: serde_json::Value,
+impl WarehouseRecord {
+    pub fn new(address: AccountAddress) -> Self {
+        Self {
+            account: WarehouseAccount { address },
+            time: WarehouseTime::default(),
+            balance: Some(WarehouseBalance::default()),
+        }
+    }
+    pub fn set_time(&mut self, timestamp: u64, version: u64, epoch: u64) {
+        self.time.timestamp = timestamp;
+        self.time.version = version;
+        self.time.epoch = epoch;
+    }
+}
+// holds timestamp, chain height, and epoch
+#[derive(Debug, Clone, Default)]
+pub struct WarehouseTime {
+    pub timestamp: u64,
+    pub version: u64,
+    pub epoch: u64,
+}
+#[derive(Debug, Clone)]
+pub struct WarehouseAccount {
+    pub address: AccountAddress,
+}
+
+#[derive(Debug, Default, Clone, FromRow)]
+pub struct WarehouseBalance {
+    // balances in v6+ terms
+    #[sqlx(try_from = "i64")]
+    pub balance: u64,
 }
