@@ -1,5 +1,5 @@
 mod support;
-use log::{error};
+use log::error;
 use support::neo4j_testcontainer::start_neo4j_container;
 
 use std::path::PathBuf;

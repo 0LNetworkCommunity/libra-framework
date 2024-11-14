@@ -30,6 +30,7 @@ serde_json = { workspace =  true }
 sqlx = { workspace = true }
 tokio = { workspace = true }
 neo4rs = { workspace = true }
+cypher-dto = "0.3.1"
 
 
 [dev-dependencies]

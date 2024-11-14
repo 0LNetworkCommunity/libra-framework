@@ -11,7 +11,6 @@ pub async fn swap_batch(txs: &[Order], pool: &Graph, batch_len: usize) -> Result
     let mut merged_count = 0u64;
     let mut ignored_count = 0u64;
 
-
     for (i, c) in chunks.iter().enumerate() {
         info!("batch #{}", i);
 
@@ -21,14 +20,12 @@ pub async fn swap_batch(txs: &[Order], pool: &Graph, batch_len: usize) -> Result
 
         merged_count += m;
         ignored_count += ig;
-
     }
 
     Ok((merged_count, ignored_count))
 }
 
 pub async fn impl_batch_tx_insert(pool: &Graph, batch_txs: &[Order]) -> Result<(u64, u64)> {
-
     let list_str = Order::to_cypher_map(batch_txs);
     let cypher_string = Order::cypher_batch_insert_str(list_str);
 

@@ -103,11 +103,14 @@ async fn insert_with_cypher_string() -> Result<()> {
     let mut res = graph.execute(cypher_query).await?;
 
     let row = res.next().await?.unwrap();
-    let merged: i64 = row.get("merged_tx_count").unwrap();
-    assert!(merged == 2);
-
-    let existing: i64 = row.get("ignored_tx_count").unwrap();
-    assert!(existing == 0);
+    let created: i64 = row.get("created_accounts").unwrap();
+    assert!(created == 2);
+    let unchanged: i64 = row.get("unchanged_accounts").unwrap();
+    assert!(unchanged == 0);
+    let unchanged: i64 = row.get("unchanged_accounts").unwrap();
+    assert!(unchanged == 0);
+    let created_tx: i64 = row.get("created_tx").unwrap();
+    assert!(created_tx == 2);
 
     // get the sum of all transactions in db
     let cypher_query = query(
@@ -117,8 +120,6 @@ async fn insert_with_cypher_string() -> Result<()> {
 
     // Execute the query
     let mut result = graph.execute(cypher_query).await?;
-
-    // Fetch the first row only
     let row = result.next().await?.unwrap();
     let total_tx_count: i64 = row.get("total_tx_count").unwrap();
     assert!(total_tx_count == 2);

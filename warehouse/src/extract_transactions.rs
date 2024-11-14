@@ -1,4 +1,4 @@
-use crate::table_structs::{TransferTx, TxTypes, WarehouseEvent, WarehouseTxMaster};
+use crate::table_structs::{RelationLabel, TransferTx, WarehouseEvent, WarehouseTxMaster};
 use anyhow::Result;
 use chrono::DateTime;
 use diem_crypto::HashValue;
@@ -127,8 +127,9 @@ pub fn make_master_tx(
         block_timestamp,
         function,
         recipient: None,
-        args: function_args_to_json(user_tx)?,
-        tx_type: TxTypes::Unknown,
+        // args: function_args_to_json(user_tx)?,
+        entry_function: None,
+        relation_label: RelationLabel::Unknown,
         block_datetime: DateTime::from_timestamp_micros(block_timestamp as i64).unwrap(),
         events: vec![],
     };

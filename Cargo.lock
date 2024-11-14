@@ -1200,6 +1200,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e"
 
 [[package]]
+name = "convert_case"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec182b0ca2f35d8fc196cf3404988fd8b8c739a4d270ff118a398feb0cbec1ca"
+dependencies = [
+ "unicode-segmentation",
+]
+
+[[package]]
 name = "cookie"
 version = "0.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1472,6 +1481,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "cypher-dto"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e61cebf7f3761a2cf01d64d39e1d87350d3198fc8020658d83dd3c6ca2016d28"
+dependencies = [
+ "chrono",
+ "cypher-dto-macros",
+ "neo4rs 0.7.3",
+ "thiserror",
+]
+
+[[package]]
+name = "cypher-dto-macros"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1a45e6c6223ab2a1a632c0004302f32aadf7a56bdae6401b131b5680c54e9483"
+dependencies = [
+ "convert_case 0.6.0",
+ "quote 1.0.37",
+ "syn 2.0.87",
+]
+
+[[package]]
 name = "darling"
 version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1718,7 +1750,7 @@ version = "0.99.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f33878137e4dafd7fa914ad4e259e18a4e8e532b9617a2d0150262bf53abfce"
 dependencies = [
- "convert_case",
+ "convert_case 0.4.0",
  "proc-macro2 1.0.89",
  "quote 1.0.37",
  "rustc_version",
@@ -6415,6 +6447,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "clap 4.5.20",
+ "cypher-dto",
  "diem-crypto",
  "diem-temppath",
  "diem-types",
@@ -6426,7 +6459,7 @@ dependencies = [
  "libra-storage",
  "libra-types",
  "log",
- "neo4rs",
+ "neo4rs 0.8.0",
  "once_cell",
  "serde 1.0.214",
  "serde_json",
@@ -7480,6 +7513,33 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "tempfile",
+]
+
+[[package]]
+name = "neo4rs"
+version = "0.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "623040036ae866f7a060146ebc964aa89231e73aa93297b79b8925fa942824da"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "chrono",
+ "chrono-tz 0.8.6",
+ "deadpool",
+ "delegate",
+ "futures",
+ "log",
+ "neo4rs-macros",
+ "paste",
+ "pin-project-lite",
+ "rustls-native-certs 0.7.3",
+ "rustls-pemfile 2.2.0",
+ "serde 1.0.214",
+ "thiserror",
+ "tokio",
+ "tokio-rustls 0.26.0",
+ "url",
+ "webpki-roots",
 ]
 
 [[package]]

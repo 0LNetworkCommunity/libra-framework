@@ -1,24 +1,25 @@
+use crate::cypher_templates::to_cypher_object;
 
 use chrono::{DateTime, Utc};
 use diem_crypto::HashValue;
+use libra_backwards_compatibility::sdk::v7_libra_framework_sdk_builder::EntryFunctionCall;
 use libra_types::exports::AccountAddress;
 use neo4rs::{BoltList, BoltMap, BoltType};
-use serde_json::json;
+use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 
 
-#[derive(Debug, Clone)]
-pub enum TxTypes {
-  Unknown,
-  Transfer(TransferTx),
-  Onboarding,
-  Vouch,
-  Configuration,
-  Miner,
-  Script,
-  MiscEntryFunction(MiscTx),
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum RelationLabel {
+    Unknown,
+    Transfer,
+    Onboarding,
+    Vouch,
+    Configuration,
+    Miner,
+    Script,
+    MiscEntryFunction,
 }
-
 
 #[derive(Debug, Clone, FromRow)]
 pub struct TransferTx {
@@ -33,19 +34,25 @@ pub struct MiscTx {
     pub data: serde_json::Value,
 }
 
-#[derive(Debug, Clone, FromRow)]
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
 pub struct WarehouseEvent {
     pub tx_hash: HashValue, // primary key
     pub event_name: String,
     pub data: serde_json::Value,
 }
 
+#[derive(Debug, Deserialize, Clone, Serialize)]
+pub enum EntryFunctionArgs {
+    V7(EntryFunctionCall),
+    // TODO:
+    // V6(V6EntryFunctionCall),
+    // V5(V5EntryFunctionCall),
+}
 
-
-#[derive(Debug, Clone, FromRow)]
+#[derive(Debug, Clone, FromRow, Deserialize, Serialize)]
 pub struct WarehouseTxMaster {
     pub tx_hash: HashValue, // primary key
-    pub tx_type: TxTypes,
+    pub relation_label: RelationLabel,
     pub sender: String,
     pub function: String,
     pub epoch: u64,
@@ -53,9 +60,9 @@ pub struct WarehouseTxMaster {
     pub block_timestamp: u64,
     pub block_datetime: DateTime<Utc>,
     pub expiration_timestamp: u64,
-    // maybe there are counter parties
+    // TODO: remove
     pub recipient: Option<String>,
-    pub args: serde_json::Value,
+    pub entry_function: Option<EntryFunctionArgs>,
     pub events: Vec<WarehouseEvent>,
 }
 
@@ -63,7 +70,7 @@ impl Default for WarehouseTxMaster {
     fn default() -> Self {
         Self {
             tx_hash: HashValue::zero(),
-            tx_type: TxTypes::Configuration,
+            relation_label: RelationLabel::Configuration,
             sender: AccountAddress::ZERO.short_str_lossless(),
             function: "none".to_owned(),
             epoch: 0,
@@ -72,8 +79,9 @@ impl Default for WarehouseTxMaster {
             block_datetime: DateTime::<Utc>::from_timestamp_micros(0).unwrap(),
             expiration_timestamp: 0,
             recipient: None,
-            args: json!(""),
-            events: vec!(),
+            entry_function: None,
+            // args: json!(""),
+            events: vec![],
         }
     }
 }
@@ -87,9 +95,14 @@ impl WarehouseTxMaster {
     pub fn to_cypher_object_template(&self) -> String {
         let recipient = self.recipient.as_ref().unwrap_or(&self.sender);
 
+        let tx_data = match &self.entry_function {
+            Some(ef) => to_cypher_object(ef, None).unwrap_or("{test: 0}".to_string()),
+            None => "{test: 1}".to_owned(),
+        };
+
         format!(
-            r#"{{tx_hash: "{}", sender: "{}", recipient: "{}"}}"#,
-            self.tx_hash, self.sender, recipient,
+            r#"{{tx_hash: "{}", sender: "{}", args: {}, recipient: "{}"}}"#,
+            self.tx_hash, self.sender, tx_data, recipient,
         )
     }
 
@@ -135,7 +148,6 @@ impl WarehouseTxMaster {
         BoltType::List(list)
     }
 }
-
 
 #[derive(Debug, Clone)]
 /// The basic information for an account
