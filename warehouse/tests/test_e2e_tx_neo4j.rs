@@ -2,7 +2,7 @@ mod support;
 use anyhow::Result;
 use diem_crypto::HashValue;
 use libra_warehouse::cypher_templates::write_batch_tx_string;
-use libra_warehouse::load_entrypoint::try_load_one_archive;
+use libra_warehouse::load::try_load_one_archive;
 use libra_warehouse::load_tx_cypher::tx_batch;
 use libra_warehouse::scan::scan_dir_archive;
 use libra_warehouse::table_structs::WarehouseTxMaster;

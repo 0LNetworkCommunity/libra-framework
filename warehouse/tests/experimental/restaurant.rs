@@ -1,13 +1,15 @@
 //! in_jest
 use std::path::Path;
 
-use crate::extract_snapshot::extract_current_snapshot;
-use crate::load_account;
-use crate::scan::scan_dir_archive;
-use crate::scan::BundleContent::*;
+use libra_warehouse::{
+    extract_snapshot::extract_current_snapshot,
+    scan::{scan_dir_archive, BundleContent::*},
+};
 
 use anyhow::Result;
 use sqlx::PgPool;
+
+use super::load_account;
 
 /// ingest all the archives sequentially.
 /// not very good, and made for the lazy

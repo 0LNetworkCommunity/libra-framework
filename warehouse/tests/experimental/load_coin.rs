@@ -1,4 +1,4 @@
-use crate::table_structs::WarehouseRecord;
+use libra_warehouse::table_structs::WarehouseRecord;
 use anyhow::Result;
 use sqlx::{postgres::PgQueryResult, PgPool, Postgres, QueryBuilder};
 
@@ -84,7 +84,7 @@ fn increment_balance_template(record: &WarehouseRecord) -> String {
 
 #[test]
 fn test_format() {
-    use crate::table_structs::{WarehouseAccount, WarehouseBalance, WarehouseTime};
+    use libra_warehouse::table_structs::{WarehouseAccount, WarehouseBalance, WarehouseTime};
     use libra_types::exports::AccountAddress;
 
     let record = WarehouseRecord {

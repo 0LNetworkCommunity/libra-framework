@@ -1,4 +1,6 @@
 mod support;
+mod experimental;
+
 use support::pg_testcontainer::get_test_pool;
 
 use libra_types::exports::AccountAddress;
@@ -9,16 +11,16 @@ use libra_warehouse::table_structs::{
 #[tokio::test]
 async fn insert_one_account() -> anyhow::Result<()> {
     let (pool, _c) = get_test_pool().await?;
-    libra_warehouse::migrate::maybe_init_pg(&pool).await?;
+    experimental::pg_migrate::maybe_init_pg(&pool).await?;
     let marlon = AccountAddress::random();
     let acc = WarehouseAccount { address: marlon };
 
-    let res = libra_warehouse::load_account::insert_one_account(&pool, &acc).await?;
+    let res = experimental::load_account::insert_one_account(&pool, &acc).await?;
     assert!(res.rows_affected() == 1);
 
     // second time should error if we are using the same account
     assert!(
-        libra_warehouse::load_account::insert_one_account(&pool, &acc)
+        experimental::load_account::insert_one_account(&pool, &acc)
             .await
             .is_err()
     );
@@ -29,7 +31,7 @@ async fn insert_one_account() -> anyhow::Result<()> {
 #[tokio::test]
 async fn batch_insert_account() -> anyhow::Result<()> {
     let (pool, _c) = get_test_pool().await?;
-    libra_warehouse::migrate::maybe_init_pg(&pool).await?;
+    experimental::pg_migrate::maybe_init_pg(&pool).await?;
     let mut vec_acct: Vec<WarehouseRecord> = vec![];
 
     for _i in 0..3 {
@@ -38,7 +40,7 @@ async fn batch_insert_account() -> anyhow::Result<()> {
         vec_acct.push(acc);
     }
 
-    let res = libra_warehouse::load_account::impl_batch_insert_pg(&pool, &vec_acct).await?;
+    let res = experimental::load_account::impl_batch_insert_pg(&pool, &vec_acct).await?;
     assert!(res.rows_affected() == 3);
 
     Ok(())
@@ -47,7 +49,7 @@ async fn batch_insert_account() -> anyhow::Result<()> {
 #[tokio::test]
 async fn batch_duplicates_fail_gracefully() -> anyhow::Result<()> {
     let (pool, _c) = get_test_pool().await?;
-    libra_warehouse::migrate::maybe_init_pg(&pool).await?;
+    experimental::pg_migrate::maybe_init_pg(&pool).await?;
     let mut vec_acct: Vec<WarehouseRecord> = vec![];
 
     // will create duplicates
@@ -59,10 +61,10 @@ async fn batch_duplicates_fail_gracefully() -> anyhow::Result<()> {
     }
 
     // should not fail if duplicates exists on same batch
-    let res = libra_warehouse::load_account::impl_batch_insert_pg(&pool, &vec_acct).await?;
+    let res = experimental::load_account::impl_batch_insert_pg(&pool, &vec_acct).await?;
     assert!(res.rows_affected() == 1);
     // also should not fail if duplicates are on separate batches
-    let res = libra_warehouse::load_account::impl_batch_insert_pg(&pool, &vec_acct).await?;
+    let res = experimental::load_account::impl_batch_insert_pg(&pool, &vec_acct).await?;
     assert!(res.rows_affected() == 0);
 
     Ok(())
@@ -71,7 +73,7 @@ async fn batch_duplicates_fail_gracefully() -> anyhow::Result<()> {
 #[tokio::test]
 async fn batch_insert_coin() -> anyhow::Result<()> {
     let (pool, _c) = get_test_pool().await?;
-    libra_warehouse::migrate::maybe_init_pg(&pool).await?;
+    experimental::pg_migrate::maybe_init_pg(&pool).await?;
 
     let mut vec_state: Vec<WarehouseRecord> = vec![];
 
@@ -89,10 +91,10 @@ async fn batch_insert_coin() -> anyhow::Result<()> {
     }
 
     // fist must load accounts
-    let res = libra_warehouse::load_account::load_account_state_depr(&pool, &vec_state).await?;
+    let res = experimental::load_account::load_account_state_depr(&pool, &vec_state).await?;
     assert!(res == 3);
 
-    let res = libra_warehouse::load_coin::impl_batch_coin_insert(&pool, &vec_state).await?;
+    let res = experimental::load_coin::impl_batch_coin_insert(&pool, &vec_state).await?;
     dbg!(&res);
     assert!(res.rows_affected() == 3);
 
@@ -104,7 +106,7 @@ async fn batch_insert_coin() -> anyhow::Result<()> {
 #[tokio::test]
 async fn increment_coin_noop() -> anyhow::Result<()> {
     let (pool, _c) = get_test_pool().await?;
-    libra_warehouse::migrate::maybe_init_pg(&pool).await?;
+    experimental::pg_migrate::maybe_init_pg(&pool).await?;
     let mut vec_state: Vec<WarehouseRecord> = vec![];
     let marlon = AccountAddress::random();
     // same user, and same balance, but incremental timestamps
@@ -130,19 +132,19 @@ async fn increment_coin_noop() -> anyhow::Result<()> {
     }
 
     // fist must load accounts
-    let _res = libra_warehouse::load_account::batch_insert_account(&pool, &vec_state, 10).await?;
+    let _res = experimental::load_account::batch_insert_account(&pool, &vec_state, 10).await?;
 
     // since the balance never changed but the times changed, there are no updates to the table.
-    let res = libra_warehouse::load_coin::alt_increment_one_balance(&pool, &vec_state[0]).await?;
+    let res = experimental::load_coin::alt_increment_one_balance(&pool, &vec_state[0]).await?;
     assert!(res.rows_affected() == 1);
 
-    let res = libra_warehouse::load_coin::alt_increment_one_balance(&pool, &vec_state[1]).await?;
+    let res = experimental::load_coin::alt_increment_one_balance(&pool, &vec_state[1]).await?;
     assert!(res.rows_affected() == 0);
 
-    let res = libra_warehouse::load_coin::alt_increment_one_balance(&pool, &vec_state[2]).await?;
+    let res = experimental::load_coin::alt_increment_one_balance(&pool, &vec_state[2]).await?;
     assert!(res.rows_affected() == 0);
 
-    let res = libra_warehouse::query_balance::query_last_balance(&pool, marlon).await?;
+    let res = experimental::query_balance::query_last_balance(&pool, marlon).await?;
 
     assert!(res.balance == 10);
 
@@ -153,7 +155,7 @@ async fn increment_coin_noop() -> anyhow::Result<()> {
 #[tokio::test]
 async fn increment_coin() -> anyhow::Result<()> {
     let (pool, _c) = get_test_pool().await?;
-    libra_warehouse::migrate::maybe_init_pg(&pool).await?;
+    experimental::pg_migrate::maybe_init_pg(&pool).await?;
     let mut vec_state: Vec<WarehouseRecord> = vec![];
     let marlon = AccountAddress::random();
     // same user, and same balance, but incremental timestamps
@@ -175,22 +177,22 @@ async fn increment_coin() -> anyhow::Result<()> {
     }
 
     // fist must load accounts
-    let _res = libra_warehouse::load_account::batch_insert_account(&pool, &vec_state, 10).await?;
+    let _res = experimental::load_account::batch_insert_account(&pool, &vec_state, 10).await?;
 
     // the balance CHANGES, so each increment will create a new record
-    let res = libra_warehouse::load_coin::alt_increment_one_balance(&pool, &vec_state[0]).await?;
+    let res = experimental::load_coin::alt_increment_one_balance(&pool, &vec_state[0]).await?;
     assert!(res.rows_affected() == 1);
 
-    let res = libra_warehouse::query_balance::query_last_balance(&pool, marlon).await?;
+    let res = experimental::query_balance::query_last_balance(&pool, marlon).await?;
     assert!(res.balance == 0); // 10 * 0th
 
-    let res = libra_warehouse::load_coin::alt_increment_one_balance(&pool, &vec_state[1]).await?;
+    let res = experimental::load_coin::alt_increment_one_balance(&pool, &vec_state[1]).await?;
     assert!(res.rows_affected() == 1);
 
-    let res = libra_warehouse::load_coin::alt_increment_one_balance(&pool, &vec_state[2]).await?;
+    let res = experimental::load_coin::alt_increment_one_balance(&pool, &vec_state[2]).await?;
     assert!(res.rows_affected() == 1);
 
-    let res = libra_warehouse::query_balance::query_last_balance(&pool, marlon).await?;
+    let res = experimental::query_balance::query_last_balance(&pool, marlon).await?;
     assert!(res.balance == 20);
 
     Ok(())

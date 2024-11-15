@@ -1,4 +1,4 @@
-use crate::table_structs::{WarehouseAccount, WarehouseRecord};
+use libra_warehouse::table_structs::{WarehouseAccount, WarehouseRecord};
 use anyhow::Result;
 use sqlx::{postgres::PgQueryResult, PgPool, Postgres, QueryBuilder};
 

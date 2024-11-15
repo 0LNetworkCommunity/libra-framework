@@ -1,9 +1,10 @@
 mod support;
+mod experimental;
 
 #[tokio::test]
 async fn can_init_pg() -> anyhow::Result<()> {
     let (pool, _c) = support::pg_testcontainer::get_test_pool().await?;
-    libra_warehouse::migrate::maybe_init_pg(&pool).await?;
+    experimental::pg_migrate::maybe_init_pg(&pool).await?;
     let mut conn = pool.acquire().await?;
 
     let id = sqlx::query(

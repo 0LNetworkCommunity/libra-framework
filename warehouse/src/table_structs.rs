@@ -6,8 +6,6 @@ use libra_backwards_compatibility::sdk::v7_libra_framework_sdk_builder::EntryFun
 use libra_types::exports::AccountAddress;
 use neo4rs::{BoltList, BoltMap, BoltType};
 use serde::{Deserialize, Serialize};
-use sqlx::prelude::FromRow;
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum RelationLabel {
@@ -21,20 +19,20 @@ pub enum RelationLabel {
     MiscEntryFunction,
 }
 
-#[derive(Debug, Clone, FromRow)]
+#[derive(Debug, Clone)]
 pub struct TransferTx {
     pub tx_hash: HashValue, // primary key
     pub to: AccountAddress,
     pub amount: u64,
 }
 
-#[derive(Debug, Clone, FromRow)]
+#[derive(Debug, Clone)]
 pub struct MiscTx {
     pub tx_hash: HashValue, // primary key
     pub data: serde_json::Value,
 }
 
-#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WarehouseEvent {
     pub tx_hash: HashValue, // primary key
     pub event_name: String,
@@ -49,7 +47,7 @@ pub enum EntryFunctionArgs {
     // V5(V5EntryFunctionCall),
 }
 
-#[derive(Debug, Clone, FromRow, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WarehouseTxMaster {
     pub tx_hash: HashValue, // primary key
     pub relation_label: RelationLabel,
@@ -183,9 +181,8 @@ pub struct WarehouseAccount {
     pub address: AccountAddress,
 }
 
-#[derive(Debug, Default, Clone, FromRow)]
+#[derive(Debug, Default, Clone)]
 pub struct WarehouseBalance {
     // balances in v6+ terms
-    #[sqlx(try_from = "i64")]
     pub balance: u64,
 }

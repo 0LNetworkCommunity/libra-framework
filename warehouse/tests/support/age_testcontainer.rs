@@ -1,4 +1,4 @@
-use libra_warehouse::age_init::{cypher_template, init_age_db};
+use super::age_init::{cypher_template, init_age_db};
 use once_cell::sync::Lazy;
 use sqlx::PgPool;
 use testcontainers::{clients::Cli, core::WaitFor, Container, GenericImage, RunnableImage};

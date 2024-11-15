@@ -4,7 +4,7 @@ use neo4rs::Graph;
 use std::path::PathBuf;
 
 use crate::{
-    load_entrypoint::{ingest_all, try_load_one_archive},
+    load::{ingest_all, try_load_one_archive},
     load_supporting_data,
     neo4j_init::{self, get_credentials_from_env, PASS_ENV, URI_ENV, USER_ENV},
     scan::{scan_dir_archive, BundleContent},
