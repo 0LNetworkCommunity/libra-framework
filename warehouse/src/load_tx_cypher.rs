@@ -1,30 +1,66 @@
 use anyhow::Result;
 use neo4rs::{query, Graph};
+use std::fmt::Display;
 
 use crate::{cypher_templates::write_batch_tx_string, table_structs::WarehouseTxMaster};
+
+/// response for the batch insert tx
+#[derive(Debug, Clone)]
+pub struct BatchTxReturn {
+    pub created_accounts: u64,
+    pub modified_accounts: u64,
+    pub unchanged_accounts: u64,
+    pub created_tx: u64,
+}
+
+impl Display for BatchTxReturn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Total Transactions - created accounts: {}, modified accounts: {}, unchanged accounts: {}, transactions created: {}",
+          self.created_accounts,
+          self.modified_accounts,
+          self.unchanged_accounts,
+          self.created_tx
+        )
+    }
+}
+
+impl BatchTxReturn {
+    pub fn new() -> Self {
+        Self {
+            created_accounts: 0,
+            modified_accounts: 0,
+            unchanged_accounts: 0,
+            created_tx: 0,
+        }
+    }
+    pub fn increment(&mut self, new: &BatchTxReturn) {
+        self.created_accounts += new.created_accounts;
+        self.modified_accounts += new.modified_accounts;
+        self.unchanged_accounts += new.unchanged_accounts;
+        self.created_tx += new.created_tx;
+    }
+}
 
 pub async fn tx_batch(
     txs: &[WarehouseTxMaster],
     pool: &Graph,
     batch_len: usize,
-) -> Result<(u64, u64)> {
+) -> Result<BatchTxReturn> {
     let chunks: Vec<&[WarehouseTxMaster]> = txs.chunks(batch_len).collect();
-    let mut merged_count = 0u64;
-    let mut ignored_count = 0u64;
+    let mut all_results = BatchTxReturn::new();
 
     for c in chunks {
-        let (m, ig) = impl_batch_tx_insert(pool, c).await?;
-        merged_count += m;
-        ignored_count += ig;
+        let batch = impl_batch_tx_insert(pool, c).await?;
+        all_results.increment(&batch);
     }
 
-    Ok((merged_count, ignored_count))
+    Ok(all_results)
 }
 
 pub async fn impl_batch_tx_insert(
     pool: &Graph,
     batch_txs: &[WarehouseTxMaster],
-) -> Result<(u64, u64)> {
+) -> Result<BatchTxReturn> {
     let list_str = WarehouseTxMaster::to_cypher_map(batch_txs);
     let cypher_string = write_batch_tx_string(list_str);
 
@@ -33,8 +69,15 @@ pub async fn impl_batch_tx_insert(
     let mut res = pool.execute(cypher_query).await?;
 
     let row = res.next().await?.unwrap();
-    let merged: i64 = row.get("merged_tx_count").unwrap();
-    let ignored: i64 = row.get("ignored_tx_count").unwrap();
+    let created_accounts: u64 = row.get("created_accounts").unwrap();
+    let modified_accounts: u64 = row.get("modified_accounts").unwrap();
+    let unchanged_accounts: u64 = row.get("unchanged_accounts").unwrap();
+    let created_tx: u64 = row.get("created_tx").unwrap();
 
-    Ok((merged as u64, ignored as u64))
+    Ok(BatchTxReturn {
+        created_accounts,
+        modified_accounts,
+        unchanged_accounts,
+        created_tx,
+    })
 }

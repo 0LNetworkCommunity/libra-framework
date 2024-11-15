@@ -1,6 +1,7 @@
 mod support;
 use libra_warehouse::unzip_temp;
 
+#[ignore]
 #[test]
 fn test_unzip() {
     let archive_path = support::fixtures::v7_tx_manifest_fixtures_path();

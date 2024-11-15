@@ -26,7 +26,7 @@ SET rel.created_at = timestamp(), rel.modified_at = null
 WITH
   COUNT(CASE WHEN from.created_at = timestamp() THEN 1 END) AS created_accounts,
   COUNT(CASE WHEN from.modified_at = timestamp() AND from.created_at IS NULL THEN 1 END) AS modified_accounts,
-  COUNT(CASE WHEN from.modified_at IS NULL OR (from.modified_at < timestamp()) THEN 1 END) AS unchanged_accounts,
+  COUNT(CASE WHEN from.modified_at < timestamp() THEN 1 END) AS unchanged_accounts,
   COUNT(CASE WHEN rel.created_at = timestamp() THEN 1 END) AS created_tx
 RETURN created_accounts, modified_accounts, unchanged_accounts, created_tx
 "#

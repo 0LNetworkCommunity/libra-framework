@@ -1,6 +1,6 @@
 use crate::{
     extract_transactions::extract_current_transactions,
-    load_tx_cypher,
+    load_tx_cypher::{self, BatchTxReturn},
     scan::{ArchiveMap, ManifestInfo},
 };
 
@@ -16,31 +16,28 @@ pub async fn ingest_all(archive_map: &ArchiveMap, pool: &Graph) -> Result<()> {
             m.archive_dir.display()
         );
 
-        let (merged, ignored) = try_load_one_archive(m, pool).await?;
+        let batch_tx_return = try_load_one_archive(m, pool).await?;
         println!(
-            "TOTAL transactions updated: {}, ignored: {}",
-            merged, ignored
+            "SUCCESS: {}", batch_tx_return
         );
     }
 
     Ok(())
 }
 
-pub async fn try_load_one_archive(man: &ManifestInfo, pool: &Graph) -> Result<(u64, u64)> {
-    let mut records_updated = 0u64;
-    let mut records_ignored = 0u64;
+pub async fn try_load_one_archive(man: &ManifestInfo, pool: &Graph) -> Result<BatchTxReturn> {
+    let mut all_results = BatchTxReturn::new();
     match man.contents {
         crate::scan::BundleContent::Unknown => todo!(),
         crate::scan::BundleContent::StateSnapshot => todo!(),
         crate::scan::BundleContent::Transaction => {
             let (txs, _) = extract_current_transactions(&man.archive_dir).await?;
-            let (merged, ignored) = load_tx_cypher::tx_batch(&txs, pool, 100).await?;
-            records_updated += merged;
-            records_ignored += ignored;
+            let batch_res = load_tx_cypher::tx_batch(&txs, pool, 100).await?;
+            all_results.increment(&batch_res);
             // TODO: make debug log
             // println!("transactions updated: {}, ignored: {}", merged, ignored);
         }
         crate::scan::BundleContent::EpochEnding => todo!(),
     }
-    Ok((records_updated, records_ignored))
+    Ok(all_results)
 }

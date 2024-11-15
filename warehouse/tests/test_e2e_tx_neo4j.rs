@@ -30,10 +30,11 @@ async fn test_parse_archive_into_neo4j() -> anyhow::Result<()> {
         .expect("could start index");
 
     // load in batches
-    let (merged, ignored) = tx_batch(&txs, &graph, 100).await?;
-    assert!(merged == 705);
-    assert!(ignored == 0);
-
+    let res = tx_batch(&txs, &graph, 100).await?;
+    assert!(res.created_accounts == 118);
+    assert!(res.modified_accounts == 0);
+    assert!(res.unchanged_accounts == 0);
+    assert!(res.created_tx == 705);
     // CHECK
     // get the sum of all transactions in db
     let cypher_query = query(
@@ -67,9 +68,11 @@ async fn test_load_entry_point_tx() -> anyhow::Result<()> {
         .await
         .expect("could start index");
 
-    let (merged, ignored) = try_load_one_archive(man, &graph).await?;
-    assert!(merged == 705);
-    assert!(ignored == 0);
+    let res = try_load_one_archive(man, &graph).await?;
+    assert!(res.created_accounts == 118);
+    assert!(res.modified_accounts == 0);
+    assert!(res.unchanged_accounts == 0);
+    assert!(res.created_tx == 705);
     Ok(())
 }
 
@@ -103,12 +106,12 @@ async fn insert_with_cypher_string() -> Result<()> {
     let mut res = graph.execute(cypher_query).await?;
 
     let row = res.next().await?.unwrap();
-    let created: i64 = row.get("created_accounts").unwrap();
-    assert!(created == 2);
-    let unchanged: i64 = row.get("unchanged_accounts").unwrap();
-    assert!(unchanged == 0);
-    let unchanged: i64 = row.get("unchanged_accounts").unwrap();
-    assert!(unchanged == 0);
+    let created_accounts: i64 = row.get("created_accounts").unwrap();
+    assert!(created_accounts == 2);
+    let modified_accounts: i64 = row.get("modified_accounts").unwrap();
+    assert!(modified_accounts == 0);
+    let unchanged_accounts: i64 = row.get("unchanged_accounts").unwrap();
+    assert!(unchanged_accounts == 0);
     let created_tx: i64 = row.get("created_tx").unwrap();
     assert!(created_tx == 2);
 
