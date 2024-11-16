@@ -17,10 +17,16 @@ ON CREATE SET to.created_at = timestamp(), to.modified_at = null
 ON MATCH SET to.modified_at = timestamp()
 
 // CREATE Transaction Relationship and set creation flag
-CREATE (from)-[rel:Tx {{tx_hash: tx.tx_hash}}]->(to)
-// flattened keys
-SET rel += tx.args
-SET rel.created_at = timestamp(), rel.modified_at = null
+
+MERGE (from)-[rel:Tx {{tx_hash: tx.tx_hash}}]->(to)
+ON CREATE SET rel.created_at = timestamp(), rel.modified_at = null
+ON MATCH SET rel.modified_at = timestamp()
+SET
+    rel += tx.args,
+    rel.block_datetime = tx.block_datetime,
+    rel.block_timestamp = tx.block_timestamp,
+    rel.relation = tx.relation,
+    rel.function = tx.function
 
 // Count created, modified, and unchanged Account nodes and Tx relationships based on current timestamp
 WITH

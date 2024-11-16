@@ -93,14 +93,14 @@ impl WarehouseTxMaster {
     pub fn to_cypher_object_template(&self) -> String {
         let recipient = self.recipient.as_ref().unwrap_or(&self.sender);
 
-        let tx_data = match &self.entry_function {
+        let tx_args = match &self.entry_function {
             Some(ef) => to_cypher_object(ef, None).unwrap_or("{test: 0}".to_string()),
             None => "{test: 1}".to_owned(),
         };
 
         format!(
-            r#"{{tx_hash: "{}", sender: "{}", args: {}, recipient: "{}"}}"#,
-            self.tx_hash, self.sender, tx_data, recipient,
+            r#"{{tx_hash: "{}", block_datetime: datetime("{}"), block_timestamp: {}, relation: "{:?}", function: "{}", sender: "{}", args: {}, recipient: "{}"}}"#,
+            self.tx_hash, self.block_datetime.to_rfc3339(), self.block_timestamp, self.relation_label, self.function, self.sender, tx_args, recipient,
         )
     }
 

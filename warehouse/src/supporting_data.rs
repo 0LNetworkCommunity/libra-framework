@@ -8,7 +8,7 @@ use std::path::Path;
 
 #[derive(Clone, Debug, Deserialize)]
 #[allow(dead_code)]
-pub struct Order {
+pub struct SwapOrder {
     pub user: u32,
     #[serde(rename = "orderType")]
     pub order_type: String,
@@ -21,7 +21,7 @@ pub struct Order {
     pub accepter: u32,
 }
 
-impl Default for Order {
+impl Default for SwapOrder {
     fn default() -> Self {
         Self {
             user: 0,
@@ -35,7 +35,7 @@ impl Default for Order {
     }
 }
 
-impl Order {
+impl SwapOrder {
     /// creates one transaction record in the cypher query map format
     /// Note original data was in an RFC rfc3339 with Z for UTC, Cypher seems to prefer with offsets +00000
     pub fn to_cypher_object_template(&self) -> String {
@@ -102,12 +102,12 @@ where
     s.parse::<f64>().map_err(serde::de::Error::custom)
 }
 
-fn deserialize_orders(json_data: &str) -> Result<Vec<Order>> {
-    let orders: Vec<Order> = serde_json::from_str(json_data)?;
+fn deserialize_orders(json_data: &str) -> Result<Vec<SwapOrder>> {
+    let orders: Vec<SwapOrder> = serde_json::from_str(json_data)?;
     Ok(orders)
 }
 
-pub fn read_orders_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<Order>> {
+pub fn read_orders_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<SwapOrder>> {
     let mut file = File::open(path)?;
     let mut json_data = String::new();
     file.read_to_string(&mut json_data)?;

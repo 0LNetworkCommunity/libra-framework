@@ -8,7 +8,7 @@ use anyhow::Result;
 use libra_warehouse::{
     load_supporting_data, log_setup,
     neo4j_init::{get_neo4j_localhost_pool, maybe_create_indexes},
-    supporting_data::{read_orders_from_file, Order},
+    supporting_data::{read_orders_from_file, SwapOrder},
 };
 use neo4rs::query;
 
@@ -26,21 +26,21 @@ async fn test_swap_batch_cypher() -> Result<()> {
     let port = c.get_host_port_ipv4(7687);
     let graph = get_neo4j_localhost_pool(port).await?;
     // Three user ids exist in these two transactions
-    let order1 = Order {
+    let order1 = SwapOrder {
         user: 1234,
         accepter: 666,
         ..Default::default()
     };
 
-    let order2 = Order {
+    let order2 = SwapOrder {
         user: 4567,
         accepter: 666,
         ..Default::default()
     };
 
     let list = vec![order1.clone(), order2];
-    let cypher_map = Order::to_cypher_map(&list);
-    let insert_query = Order::cypher_batch_insert_str(cypher_map);
+    let cypher_map = SwapOrder::to_cypher_map(&list);
+    let insert_query = SwapOrder::cypher_batch_insert_str(cypher_map);
 
     let mut res1 = graph.execute(query(&insert_query)).await?;
 

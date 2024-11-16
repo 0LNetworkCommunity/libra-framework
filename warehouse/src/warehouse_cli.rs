@@ -50,7 +50,11 @@ pub enum Sub {
     /// add supporting data in addition to chain records
     Enrich {
         #[clap(long)]
+        /// file with swap records
         swap_record_json: PathBuf,
+        #[clap(long)]
+        /// skip ahead to a batch in case you got disconnected
+        skip_to_batch: Option<usize>
     },
 }
 
@@ -93,12 +97,12 @@ impl WarehouseCli {
                     }
                 }
             }
-            Sub::Enrich { swap_record_json } => {
+            Sub::Enrich { swap_record_json , skip_to_batch} => {
                 let pool = try_db_connection_pool(self).await?;
                 neo4j_init::maybe_create_indexes(&pool).await?;
 
                 let batch_len = 1000; // TODO: make this a param
-                load_supporting_data::load_from_json(swap_record_json, &pool, batch_len).await?;
+                load_supporting_data::load_from_json(swap_record_json, &pool, batch_len, *skip_to_batch).await?;
             }
         };
         Ok(())
