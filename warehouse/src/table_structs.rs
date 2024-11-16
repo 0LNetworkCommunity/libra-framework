@@ -100,7 +100,14 @@ impl WarehouseTxMaster {
 
         format!(
             r#"{{tx_hash: "{}", block_datetime: datetime("{}"), block_timestamp: {}, relation: "{:?}", function: "{}", sender: "{}", args: {}, recipient: "{}"}}"#,
-            self.tx_hash, self.block_datetime.to_rfc3339(), self.block_timestamp, self.relation_label, self.function, self.sender, tx_args, recipient,
+            self.tx_hash.to_hex_literal(),
+            self.block_datetime.to_rfc3339(),
+            self.block_timestamp,
+            self.relation_label,
+            self.function,
+            self.sender,
+            tx_args,
+            recipient,
         )
     }
 

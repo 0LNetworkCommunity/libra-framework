@@ -17,9 +17,7 @@ pub async fn ingest_all(archive_map: &ArchiveMap, pool: &Graph) -> Result<()> {
         );
 
         let batch_tx_return = try_load_one_archive(m, pool).await?;
-        println!(
-            "SUCCESS: {}", batch_tx_return
-        );
+        println!("SUCCESS: {}", batch_tx_return);
     }
 
     Ok(())

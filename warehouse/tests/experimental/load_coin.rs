@@ -1,5 +1,5 @@
-use libra_warehouse::table_structs::WarehouseRecord;
 use anyhow::Result;
+use libra_warehouse::table_structs::WarehouseRecord;
 use sqlx::{postgres::PgQueryResult, PgPool, Postgres, QueryBuilder};
 
 pub async fn batch_insert_account(
@@ -84,8 +84,8 @@ fn increment_balance_template(record: &WarehouseRecord) -> String {
 
 #[test]
 fn test_format() {
-    use libra_warehouse::table_structs::{WarehouseAccount, WarehouseBalance, WarehouseTime};
     use libra_types::exports::AccountAddress;
+    use libra_warehouse::table_structs::{WarehouseAccount, WarehouseBalance, WarehouseTime};
 
     let record = WarehouseRecord {
         account: WarehouseAccount {

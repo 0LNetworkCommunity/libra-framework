@@ -24,9 +24,7 @@ pub async fn query_last_balance(
     let row = sqlx::query(&query_template).fetch_one(pool).await?;
     dbg!(&row);
 
-    let dummy = WarehouseBalance {
-        balance: 0,
-    };
+    let dummy = WarehouseBalance { balance: 0 };
 
     Ok(dummy)
 }

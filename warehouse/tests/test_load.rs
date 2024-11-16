@@ -1,5 +1,5 @@
-mod support;
 mod experimental;
+mod support;
 
 use support::pg_testcontainer::get_test_pool;
 
@@ -19,11 +19,9 @@ async fn insert_one_account() -> anyhow::Result<()> {
     assert!(res.rows_affected() == 1);
 
     // second time should error if we are using the same account
-    assert!(
-        experimental::load_account::insert_one_account(&pool, &acc)
-            .await
-            .is_err()
-    );
+    assert!(experimental::load_account::insert_one_account(&pool, &acc)
+        .await
+        .is_err());
 
     Ok(())
 }

@@ -1,5 +1,5 @@
-mod support;
 mod experimental;
+mod support;
 
 #[tokio::test]
 async fn can_init_pg() -> anyhow::Result<()> {

@@ -1,5 +1,5 @@
-use libra_warehouse::table_structs::{WarehouseAccount, WarehouseRecord};
 use anyhow::Result;
+use libra_warehouse::table_structs::{WarehouseAccount, WarehouseRecord};
 use sqlx::{postgres::PgQueryResult, PgPool, Postgres, QueryBuilder};
 
 pub async fn insert_one_account(pool: &PgPool, acc: &WarehouseAccount) -> Result<PgQueryResult> {

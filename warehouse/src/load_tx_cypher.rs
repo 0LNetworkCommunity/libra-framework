@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use neo4rs::{query, Graph};
 use std::fmt::Display;
 
@@ -21,6 +21,12 @@ impl Display for BatchTxReturn {
           self.unchanged_accounts,
           self.created_tx
         )
+    }
+}
+
+impl Default for BatchTxReturn {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -66,13 +72,22 @@ pub async fn impl_batch_tx_insert(
 
     // Execute the query
     let cypher_query = query(&cypher_string);
-    let mut res = pool.execute(cypher_query).await?;
+    let mut res = pool
+        .execute(cypher_query)
+        .await
+        .context("execute query error")?;
 
-    let row = res.next().await?.unwrap();
-    let created_accounts: u64 = row.get("created_accounts").unwrap();
-    let modified_accounts: u64 = row.get("modified_accounts").unwrap();
-    let unchanged_accounts: u64 = row.get("unchanged_accounts").unwrap();
-    let created_tx: u64 = row.get("created_tx").unwrap();
+    let row = res.next().await?.context("no row returned")?;
+    let created_accounts: u64 = row
+        .get("created_accounts")
+        .context("no created_accounts field")?;
+    let modified_accounts: u64 = row
+        .get("modified_accounts")
+        .context("no modified_accounts field")?;
+    let unchanged_accounts: u64 = row
+        .get("unchanged_accounts")
+        .context("no unchanged_accounts field")?;
+    let created_tx: u64 = row.get("created_tx").context("no created_tx field")?;
 
     Ok(BatchTxReturn {
         created_accounts,
