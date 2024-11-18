@@ -1,10 +1,13 @@
-use std::path::Path;
+use std::{path::Path, thread, time::Duration};
 
 use anyhow::{Context, Result};
-use log::info;
+use log::{error, info, warn};
 use neo4rs::{query, Graph};
 
-use crate::supporting_data::{read_orders_from_file, SwapOrder};
+use crate::{
+    queue,
+    supporting_data::{read_orders_from_file, SwapOrder},
+};
 
 pub async fn swap_batch(
     txs: &[SwapOrder],
@@ -16,21 +19,52 @@ pub async fn swap_batch(
     let mut merged_count = 0u64;
     let mut ignored_count = 0u64;
 
+    let archive_id = "swap_orders";
+    info!("archive: {}", archive_id);
+
     for (i, c) in chunks.iter().enumerate() {
         if let Some(skip) = skip_to_batch {
             if i < skip {
                 continue;
             };
         };
-
         info!("batch #{}", i);
 
-        let (m, ig) = impl_batch_tx_insert(pool, c).await?;
-        info!("merged {}", m);
-        info!("ignored {}", ig);
+        match queue::is_complete(pool, archive_id, i).await {
+            Ok(Some(true)) => {
+                info!("...skipping, already loaded.");
+                // skip this one
+                continue;
+            }
+            Ok(Some(false)) => {
+                // keep going
+            }
+            _ => {
+                info!("...not found in queue, adding to queue.");
 
-        merged_count += m;
-        ignored_count += ig;
+                // no task found in db, add to queue
+                queue::update_task(pool, archive_id, false, i).await?;
+            }
+        }
+        info!("...loading to db");
+
+        match impl_batch_tx_insert(pool, c).await {
+            Ok((m, ig)) => {
+                queue::update_task(pool, archive_id, true, i).await?;
+
+                info!("...success");
+                info!("merged {}", m);
+                info!("ignored {}", ig);
+
+                merged_count += m;
+                ignored_count += ig;
+            }
+            Err(e) => {
+              error!("skipping batch, could not insert: {:?}", e);
+              warn!("waiting 5 secs before retrying connection");
+              thread::sleep(Duration::from_secs(5));
+            },
+        };
     }
 
     Ok((merged_count, ignored_count))

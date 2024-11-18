@@ -1,12 +1,12 @@
 mod support;
-use log::error;
+
 use support::neo4j_testcontainer::start_neo4j_container;
 
 use std::path::PathBuf;
 
 use anyhow::Result;
 use libra_warehouse::{
-    load_supporting_data, log_setup,
+    load_supporting_data,
     neo4j_init::{get_neo4j_localhost_pool, maybe_create_indexes},
     supporting_data::{read_orders_from_file, SwapOrder},
 };
@@ -65,28 +65,19 @@ async fn test_swap_batch_cypher() -> Result<()> {
 
 #[tokio::test]
 async fn e2e_swap_data() -> Result<()> {
-    log_setup();
-    error!("start container");
-
-    let start = std::time::Instant::now();
-
     let c = start_neo4j_container();
     let port = c.get_host_port_ipv4(7687);
     let graph = get_neo4j_localhost_pool(port).await?;
     maybe_create_indexes(&graph).await?;
-    dbg!(&start.elapsed());
-
-    let start = std::time::Instant::now();
 
     let path = env!("CARGO_MANIFEST_DIR");
     let buf = PathBuf::from(path).join("tests/fixtures/savedOlOrders2.json");
     let orders = read_orders_from_file(buf).unwrap();
 
     assert!(orders.len() == 25450);
-    dbg!(&start.elapsed());
 
-    // load 100 orders
-    load_supporting_data::swap_batch(&orders[..1000], &graph, 1000).await?;
+    // load 1000 orders
+    load_supporting_data::swap_batch(&orders[..1000], &graph, 1000, None).await?;
 
     // now check data was loaded
     let mut result = graph
@@ -96,8 +87,7 @@ async fn e2e_swap_data() -> Result<()> {
     // check accounts should have been inserted
     while let Some(row) = result.next().await? {
         let num: i64 = row.get("num").unwrap();
-        dbg!(&num);
-        // assert!(num == 3);
+        assert!(num == 850);
     }
 
     Ok(())

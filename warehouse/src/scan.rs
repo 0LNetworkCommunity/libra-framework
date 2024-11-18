@@ -18,8 +18,10 @@ pub struct ArchiveMap(pub BTreeMap<PathBuf, ManifestInfo>);
 #[derive(Clone, Debug)]
 
 pub struct ManifestInfo {
-    /// the enclosing directory of the .manifest file
+    /// the enclosing directory of the local .manifest file
     pub archive_dir: PathBuf,
+    /// the name of the directory, as a unique archive identifier
+    pub archive_id: String,
     /// what libra version were these files encoded with (v5 etc)
     pub version: EncodingVersion,
     /// contents of the manifest
@@ -75,8 +77,10 @@ pub fn scan_dir_archive(
             Ok(path) => {
                 let dir = path.parent().context("no parent dir found")?.to_owned();
                 let contents = test_content(&path);
+                let archive_id = dir.file_name().unwrap().to_str().unwrap().to_owned();
                 let m = ManifestInfo {
                     archive_dir: dir.clone(),
+                    archive_id,
                     version: test_version(&contents, &path),
                     contents,
                     processed: false,

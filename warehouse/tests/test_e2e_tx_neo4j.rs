@@ -30,7 +30,8 @@ async fn test_parse_archive_into_neo4j() -> anyhow::Result<()> {
         .expect("could start index");
 
     // load in batches
-    let res = tx_batch(&txs, &graph, 100).await?;
+    let archive_id = archive_path.file_name().unwrap().to_str().unwrap();
+    let res = tx_batch(&txs, &graph, 100, archive_id).await?;
     assert!(res.created_accounts == 118);
     assert!(res.modified_accounts == 0);
     assert!(res.unchanged_accounts == 0);

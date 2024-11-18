@@ -30,7 +30,7 @@ pub async fn try_load_one_archive(man: &ManifestInfo, pool: &Graph) -> Result<Ba
         crate::scan::BundleContent::StateSnapshot => todo!(),
         crate::scan::BundleContent::Transaction => {
             let (txs, _) = extract_current_transactions(&man.archive_dir).await?;
-            let batch_res = load_tx_cypher::tx_batch(&txs, pool, 100).await?;
+            let batch_res = load_tx_cypher::tx_batch(&txs, pool, 1000, &man.archive_id).await?;
             all_results.increment(&batch_res);
             // TODO: make debug log
             // println!("transactions updated: {}, ignored: {}", merged, ignored);

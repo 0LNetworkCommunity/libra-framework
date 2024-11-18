@@ -1,8 +1,9 @@
 use anyhow::{Context, Result};
+use log::info;
 use neo4rs::{query, Graph};
 use std::fmt::Display;
 
-use crate::{cypher_templates::write_batch_tx_string, table_structs::WarehouseTxMaster};
+use crate::{cypher_templates::write_batch_tx_string, queue, table_structs::WarehouseTxMaster};
 
 /// response for the batch insert tx
 #[derive(Debug, Clone)]
@@ -51,13 +52,38 @@ pub async fn tx_batch(
     txs: &[WarehouseTxMaster],
     pool: &Graph,
     batch_len: usize,
+    archive_id: &str,
 ) -> Result<BatchTxReturn> {
     let chunks: Vec<&[WarehouseTxMaster]> = txs.chunks(batch_len).collect();
     let mut all_results = BatchTxReturn::new();
+    info!("archive: {}", archive_id);
 
-    for c in chunks {
+    for (i, c) in chunks.into_iter().enumerate() {
+        info!("batch #{}", i);
+        // check if this is already completed, or should be inserted.
+        match queue::is_complete(pool, archive_id, i).await {
+            Ok(Some(true)) => {
+                info!("...skipping, already loaded.");
+                // skip this one
+                continue
+            }
+            Ok(Some(false)) => {
+                // keep going
+            }
+            _ => {
+                info!("...not found in queue, adding to queue.");
+
+                // no task found in db, add to queue
+                queue::update_task(pool, archive_id, false, i).await?;
+            }
+        }
+        info!("...loading to db");
+
         let batch = impl_batch_tx_insert(pool, c).await?;
+
         all_results.increment(&batch);
+        queue::update_task(pool, archive_id, true, i).await?;
+        info!("...success");
     }
 
     Ok(all_results)

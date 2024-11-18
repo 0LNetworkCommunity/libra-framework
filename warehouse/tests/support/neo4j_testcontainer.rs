@@ -16,7 +16,6 @@ pub fn start_neo4j_container<'a>() -> Container<'a, GenericImage> {
         // .with_env_var("NEO4J_PLUGINS".to_owned(), r#"["graph-data-science"]"#);
         .with_wait_for(WaitFor::message_on_stdout("Started."));
 
-
     let image = RunnableImage::from(container);
     // need to wrap the docker cli in a once_cell so that the borrow does not cause issues when container is passed along
     let container = CLI.run(image);
