@@ -368,6 +368,3 @@ incremental = true
 
 [profile.test]
 inherits = "dev"
-
-[patch.crates-io]
-x25519-dalek = { git = "https://github.com/0LNetworkCommunity/x25519-dalek", rev = "762a9501668d213daa4a1864fa1f9db22716b661" }

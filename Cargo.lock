@@ -439,8 +439,8 @@ dependencies = [
  "bytes",
  "futures-util",
  "http 0.2.12",
- "http-body",
- "hyper",
+ "http-body 0.4.6",
+ "hyper 0.14.31",
  "itoa",
  "matchit",
  "memchr",
@@ -448,9 +448,9 @@ dependencies = [
  "percent-encoding",
  "pin-project-lite",
  "rustversion",
- "serde 1.0.214",
+ "serde 1.0.215",
  "sync_wrapper",
- "tower",
+ "tower 0.4.13",
  "tower-layer",
  "tower-service",
 ]
@@ -465,7 +465,7 @@ dependencies = [
  "bytes",
  "futures-util",
  "http 0.2.12",
- "http-body",
+ "http-body 0.4.6",
  "mime",
  "rustversion",
  "tower-layer",
@@ -522,7 +522,7 @@ name = "bcs"
 version = "0.1.4"
 source = "git+https://github.com/aptos-labs/bcs.git?rev=d31fab9d81748e2594be5cd5cdf845786a30562d#d31fab9d81748e2594be5cd5cdf845786a30562d"
 dependencies = [
- "serde 1.0.214",
+ "serde 1.0.215",
  "thiserror",
 ]
 
@@ -532,7 +532,7 @@ version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85b6598a2f5d564fb7855dc6b06fd1c38cff5a72bd8b863a4d021938497b440a"
 dependencies = [
- "serde 1.0.214",
+ "serde 1.0.215",
  "thiserror",
 ]
 
@@ -567,7 +567,7 @@ dependencies = [
  "num-bigint",
  "num-integer",
  "num-traits 0.2.19",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -576,7 +576,7 @@ version = "1.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1f45e9417d87227c7a56d22e471c6206462cba514c7590c09aff4cf6d1ddcad"
 dependencies = [
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -709,13 +709,13 @@ dependencies = [
 
 [[package]]
 name = "bstr"
-version = "1.10.0"
+version = "1.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40723b8fb387abc38f4f4a37c09073622e41dd12327033091ef8950659e6dc0c"
+checksum = "1a68f1f47cdf0ec8ee4b941b2eee2a80cb796db73118c0dd09ac63fbe405be22"
 dependencies = [
  "memchr",
- "regex-automata 0.4.8",
- "serde 1.0.214",
+ "regex-automata 0.4.9",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -787,9 +787,9 @@ checksum = "df8670b8c7b9dae1793364eafadf7239c40d669904660c5960d74cfd80b46a53"
 
 [[package]]
 name = "cc"
-version = "1.1.36"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "baee610e9452a8f6f0a1b6194ec09ff9e2d85dea54432acdae41aa0761c95d70"
+checksum = "fd9de9f2205d5ef3fd67e685b0df337994ddd4495e2a28d185500d0e1edfea47"
 dependencies = [
  "jobserver",
  "libc",
@@ -827,7 +827,7 @@ dependencies = [
  "iana-time-zone",
  "js-sys",
  "num-traits 0.2.19",
- "serde 1.0.214",
+ "serde 1.0.215",
  "wasm-bindgen",
  "windows-targets 0.52.6",
 ]
@@ -901,7 +901,7 @@ dependencies = [
  "bitflags 1.3.2",
  "strsim 0.8.0",
  "textwrap 0.11.0",
- "unicode-width",
+ "unicode-width 0.1.14",
  "vec_map",
 ]
 
@@ -924,9 +924,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.20"
+version = "4.5.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b97f376d85a664d5837dbae44bf546e6477a679ff6610010f17276f686d867e8"
+checksum = "fb3b4b9e5a7c7514dfa52869339ee98b3156b0bfb4e8a77c4ff4babb64b1604f"
 dependencies = [
  "clap_builder",
  "clap_derive 4.5.18",
@@ -934,23 +934,23 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.20"
+version = "4.5.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19bc80abd44e4bed93ca373a0704ccbd1b710dc5749406201bb018272808dc54"
+checksum = "b17a95aa67cc7b5ebd32aa5370189aa0d79069ef1c64ce893bd30fb24bff20ec"
 dependencies = [
  "anstream",
  "anstyle",
- "clap_lex 0.7.2",
+ "clap_lex 0.7.3",
  "strsim 0.11.1",
 ]
 
 [[package]]
 name = "clap_complete"
-version = "4.5.37"
+version = "4.5.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11611dca53440593f38e6b25ec629de50b14cdfa63adc0fb856115a2c6d97595"
+checksum = "d9647a559c112175f17cf724dc72d3645680a883c58481332779192b0d8e7a01"
 dependencies = [
- "clap 4.5.20",
+ "clap 4.5.21",
 ]
 
 [[package]]
@@ -989,9 +989,9 @@ dependencies = [
 
 [[package]]
 name = "clap_lex"
-version = "0.7.2"
+version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1462739cb27611015575c0c11df5df7601141071f07518d56fcc1be504cbec97"
+checksum = "afb84c814227b90d6895e01398aee0d8033c00e7466aca416fb6a8e0eb19d8a7"
 
 [[package]]
 name = "codespan"
@@ -1000,7 +1000,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3362992a0d9f1dd7c3d0e89e0ab2bb540b7a95fea8cd798090e758fda2899b5e"
 dependencies = [
  "codespan-reporting",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -1009,9 +1009,9 @@ version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3538270d33cc669650c4b093848450d380def10c331d38c768e34cac80576e6e"
 dependencies = [
- "serde 1.0.214",
+ "serde 1.0.215",
  "termcolor",
- "unicode-width",
+ "unicode-width 0.1.14",
 ]
 
 [[package]]
@@ -1047,7 +1047,7 @@ dependencies = [
  "memchr",
  "pin-project-lite",
  "tokio",
- "tokio-util 0.7.12",
+ "tokio-util",
 ]
 
 [[package]]
@@ -1059,7 +1059,7 @@ dependencies = [
  "lazy_static 1.5.0",
  "nom 5.1.3",
  "rust-ini",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde-hjson",
  "serde_json",
  "toml 0.5.11",
@@ -1075,7 +1075,7 @@ dependencies = [
  "encode_unicode",
  "lazy_static 1.5.0",
  "libc",
- "unicode-width",
+ "unicode-width 0.1.14",
  "windows-sys 0.52.0",
 ]
 
@@ -1156,7 +1156,7 @@ dependencies = [
  "idna 0.3.0",
  "log",
  "publicsuffix",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_derive",
  "serde_json",
  "time",
@@ -1181,9 +1181,9 @@ checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
 
 [[package]]
 name = "cpufeatures"
-version = "0.2.14"
+version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "608697df725056feaccfa42cffdaeeec3fccc4ffc38358ecd19b243e716a78e0"
+checksum = "0ca741a962e1b0bff6d724a1a0958b686406e853bb14061f218562e1896f95e6"
 dependencies = [
  "libc",
 ]
@@ -1262,7 +1262,7 @@ dependencies = [
  "bitflags 1.3.2",
  "crossterm_winapi",
  "libc",
- "mio",
+ "mio 0.8.11",
  "parking_lot 0.12.3",
  "signal-hook",
  "signal-hook-mio",
@@ -1278,7 +1278,7 @@ dependencies = [
  "bitflags 1.3.2",
  "crossterm_winapi",
  "libc",
- "mio",
+ "mio 0.8.11",
  "parking_lot 0.12.3",
  "signal-hook",
  "signal-hook-mio",
@@ -1333,14 +1333,14 @@ dependencies = [
 
 [[package]]
 name = "csv"
-version = "1.3.0"
+version = "1.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac574ff4d437a7b5ad237ef331c17ccca63c46479e5b5453eb8e10bb99a759fe"
+checksum = "acdc4883a9c96732e4733212c01447ebd805833b7275a73ca3ee080fd77afdaf"
 dependencies = [
  "csv-core",
  "itoa",
  "ryu",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -1527,7 +1527,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b42b6fa04a440b495c8b04d0e71b707c585f83cb9cb28cf8cd0d976c315e31b4"
 dependencies = [
  "powerfmt",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -1592,14 +1592,14 @@ dependencies = [
 [[package]]
 name = "diem"
 version = "2.0.2"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "async-trait",
  "base64 0.13.1",
  "bcs 0.1.4",
  "chrono",
- "clap 4.5.20",
+ "clap 4.5.21",
  "clap_complete",
  "codespan-reporting",
  "diem-api-types",
@@ -1657,7 +1657,7 @@ dependencies = [
  "regex",
  "reqwest",
  "self_update",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "serde_yaml 0.8.26",
  "shadow-rs",
@@ -1665,7 +1665,7 @@ dependencies = [
  "termcolor",
  "thiserror",
  "tokio",
- "tokio-util 0.7.12",
+ "tokio-util",
  "toml 0.5.11",
  "walkdir",
 ]
@@ -1673,7 +1673,7 @@ dependencies = [
 [[package]]
 name = "diem-accumulator"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "diem-crypto",
@@ -1683,7 +1683,7 @@ dependencies = [
 [[package]]
 name = "diem-aggregator"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -1701,7 +1701,7 @@ dependencies = [
 [[package]]
 name = "diem-api"
 version = "0.2.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1723,7 +1723,7 @@ dependencies = [
  "fail 0.5.1",
  "futures",
  "hex",
- "hyper",
+ "hyper 0.14.31",
  "itertools",
  "mime",
  "move-core-types",
@@ -1733,7 +1733,7 @@ dependencies = [
  "poem",
  "poem-openapi",
  "regex",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "tokio",
  "url",
@@ -1742,7 +1742,7 @@ dependencies = [
 [[package]]
 name = "diem-api-types"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1762,20 +1762,20 @@ dependencies = [
  "move-resource-viewer",
  "poem",
  "poem-openapi",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
 ]
 
 [[package]]
 name = "diem-backup-cli"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "async-trait",
  "bcs 0.1.4",
  "bytes",
- "clap 4.5.20",
+ "clap 4.5.21",
  "csv",
  "diem-backup-service",
  "diem-config",
@@ -1804,19 +1804,19 @@ dependencies = [
  "rand 0.7.3",
  "regex",
  "reqwest",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "serde_yaml 0.8.26",
  "tokio",
  "tokio-io-timeout",
  "tokio-stream",
- "tokio-util 0.7.12",
+ "tokio-util",
 ]
 
 [[package]]
 name = "diem-backup-service"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -1828,9 +1828,9 @@ dependencies = [
  "diem-runtimes",
  "diem-storage-interface",
  "diem-types",
- "hyper",
+ "hyper 0.14.31",
  "once_cell",
- "serde 1.0.214",
+ "serde 1.0.215",
  "tokio",
  "warp",
 ]
@@ -1838,16 +1838,16 @@ dependencies = [
 [[package]]
 name = "diem-bitvec"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_bytes",
 ]
 
 [[package]]
 name = "diem-block-executor"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -1872,11 +1872,11 @@ dependencies = [
 [[package]]
 name = "diem-block-partitioner"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.20",
+ "clap 4.5.21",
  "dashmap 5.5.3",
  "diem-crypto",
  "diem-logger",
@@ -1892,7 +1892,7 @@ dependencies = [
 [[package]]
 name = "diem-bounded-executor"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "futures",
  "tokio",
@@ -1901,7 +1901,7 @@ dependencies = [
 [[package]]
 name = "diem-build-info"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "shadow-rs",
 ]
@@ -1909,7 +1909,7 @@ dependencies = [
 [[package]]
 name = "diem-cached-packages"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "bcs 0.1.4",
  "diem-framework",
@@ -1922,7 +1922,7 @@ dependencies = [
 [[package]]
 name = "diem-channels"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "diem-infallible",
@@ -1934,17 +1934,17 @@ dependencies = [
 [[package]]
 name = "diem-cli-common"
 version = "1.0.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anstyle",
- "clap 4.5.20",
+ "clap 4.5.21",
  "clap_complete",
 ]
 
 [[package]]
 name = "diem-compression"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "diem-logger",
  "diem-metrics-core",
@@ -1956,7 +1956,7 @@ dependencies = [
 [[package]]
 name = "diem-config"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -1976,7 +1976,7 @@ dependencies = [
  "num_cpus",
  "poem-openapi",
  "rand 0.7.3",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_merge",
  "serde_yaml 0.8.26",
  "thiserror",
@@ -1986,7 +1986,7 @@ dependencies = [
 [[package]]
 name = "diem-consensus"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -2037,7 +2037,7 @@ dependencies = [
  "once_cell",
  "rand 0.7.3",
  "rayon",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_bytes",
  "serde_json",
  "thiserror",
@@ -2048,14 +2048,14 @@ dependencies = [
 [[package]]
 name = "diem-consensus-notifications"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "async-trait",
  "diem-crypto",
  "diem-runtimes",
  "diem-types",
  "futures",
- "serde 1.0.214",
+ "serde 1.0.215",
  "thiserror",
  "tokio",
 ]
@@ -2063,7 +2063,7 @@ dependencies = [
 [[package]]
 name = "diem-consensus-types"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -2079,26 +2079,26 @@ dependencies = [
  "mirai-annotations",
  "rand 0.7.3",
  "rayon",
- "serde 1.0.214",
+ "serde 1.0.215",
  "tokio",
 ]
 
 [[package]]
 name = "diem-crash-handler"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "backtrace",
  "diem-logger",
  "move-core-types",
- "serde 1.0.214",
+ "serde 1.0.215",
  "toml 0.5.11",
 ]
 
 [[package]]
 name = "diem-crypto"
 version = "0.0.3"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "ark-ec",
@@ -2121,7 +2121,7 @@ dependencies = [
  "rand 0.7.3",
  "rand_core 0.5.1",
  "ring 0.16.20",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde-name",
  "serde_bytes",
  "sha2 0.10.8",
@@ -2135,7 +2135,7 @@ dependencies = [
 [[package]]
 name = "diem-crypto-derive"
 version = "0.0.3"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "proc-macro2 1.0.89",
  "quote 1.0.37",
@@ -2145,7 +2145,7 @@ dependencies = [
 [[package]]
 name = "diem-data-client"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "async-trait",
  "diem-config",
@@ -2164,7 +2164,7 @@ dependencies = [
  "futures",
  "itertools",
  "rand 0.7.3",
- "serde 1.0.214",
+ "serde 1.0.215",
  "thiserror",
  "tokio",
 ]
@@ -2172,7 +2172,7 @@ dependencies = [
 [[package]]
 name = "diem-data-streaming-service"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "async-trait",
  "diem-channels",
@@ -2189,7 +2189,7 @@ dependencies = [
  "enum_dispatch",
  "futures",
  "once_cell",
- "serde 1.0.214",
+ "serde 1.0.215",
  "thiserror",
  "tokio",
  "tokio-stream",
@@ -2198,7 +2198,7 @@ dependencies = [
 [[package]]
 name = "diem-db"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -2206,7 +2206,7 @@ dependencies = [
  "bcs 0.1.4",
  "byteorder",
  "claims",
- "clap 4.5.20",
+ "clap 4.5.21",
  "dashmap 5.5.3",
  "diem-accumulator",
  "diem-config",
@@ -2237,7 +2237,7 @@ dependencies = [
  "proptest",
  "proptest-derive",
  "rayon",
- "serde 1.0.214",
+ "serde 1.0.215",
  "static_assertions",
  "status-line",
  "thiserror",
@@ -2246,7 +2246,7 @@ dependencies = [
 [[package]]
 name = "diem-db-indexer"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -2266,17 +2266,17 @@ dependencies = [
  "move-core-types",
  "move-resource-viewer",
  "num-derive",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
 name = "diem-db-tool"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "async-trait",
- "clap 4.5.20",
+ "clap 4.5.21",
  "diem-backup-cli",
  "diem-backup-service",
  "diem-config",
@@ -2296,10 +2296,10 @@ dependencies = [
 [[package]]
 name = "diem-debugger"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
- "clap 4.5.20",
+ "clap 4.5.21",
  "diem-crypto",
  "diem-gas",
  "diem-gas-profiling",
@@ -2327,7 +2327,7 @@ dependencies = [
 [[package]]
 name = "diem-enum-conversion-derive"
 version = "0.0.3"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "proc-macro2 1.0.89",
  "quote 1.0.37",
@@ -2337,7 +2337,7 @@ dependencies = [
 [[package]]
 name = "diem-event-notifications"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "async-trait",
  "diem-channels",
@@ -2347,14 +2347,14 @@ dependencies = [
  "diem-storage-interface",
  "diem-types",
  "futures",
- "serde 1.0.214",
+ "serde 1.0.215",
  "thiserror",
 ]
 
 [[package]]
 name = "diem-executor"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "arr_macro",
@@ -2379,13 +2379,13 @@ dependencies = [
  "num_cpus",
  "once_cell",
  "rayon",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
 name = "diem-executor-test-helpers"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "diem-cached-packages",
@@ -2409,7 +2409,7 @@ dependencies = [
 [[package]]
 name = "diem-executor-types"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -2423,14 +2423,14 @@ dependencies = [
  "diem-types",
  "itertools",
  "once_cell",
- "serde 1.0.214",
+ "serde 1.0.215",
  "thiserror",
 ]
 
 [[package]]
 name = "diem-fallible"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "thiserror",
 ]
@@ -2438,12 +2438,12 @@ dependencies = [
 [[package]]
 name = "diem-faucet-core"
 version = "2.0.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "async-trait",
  "captcha",
- "clap 4.5.20",
+ "clap 4.5.21",
  "deadpool-redis",
  "diem-config",
  "diem-faucet-metrics-server",
@@ -2462,7 +2462,7 @@ dependencies = [
  "rand 0.7.3",
  "redis",
  "reqwest",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "serde_yaml 0.8.26",
  "tokio",
@@ -2472,7 +2472,7 @@ dependencies = [
 [[package]]
 name = "diem-faucet-metrics-server"
 version = "2.0.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "diem-logger",
@@ -2480,20 +2480,20 @@ dependencies = [
  "once_cell",
  "poem",
  "prometheus",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
 ]
 
 [[package]]
 name = "diem-forge"
 version = "0.0.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "again",
  "anyhow",
  "async-trait",
  "chrono",
- "clap 4.5.20",
+ "clap 4.5.21",
  "diem",
  "diem-cached-packages",
  "diem-cli-common",
@@ -2516,10 +2516,11 @@ dependencies = [
  "either",
  "futures",
  "hex",
- "hyper",
+ "hyper 0.14.31",
  "hyper-tls",
  "itertools",
  "json-patch",
+ "jsonptr",
  "k8s-openapi",
  "kube",
  "num_cpus",
@@ -2529,7 +2530,7 @@ dependencies = [
  "rayon",
  "regex",
  "reqwest",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "serde_yaml 0.8.26",
  "tempfile",
@@ -2542,7 +2543,7 @@ dependencies = [
 [[package]]
 name = "diem-framework"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "ark-bls12-381",
@@ -2555,7 +2556,7 @@ dependencies = [
  "better_any",
  "blake2-rfc",
  "blst",
- "clap 4.5.20",
+ "clap 4.5.21",
  "codespan-reporting",
  "curve25519-dalek",
  "diem-aggregator",
@@ -2590,7 +2591,7 @@ dependencies = [
  "rand_core 0.5.1",
  "rayon",
  "ripemd",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_bytes",
  "serde_json",
  "serde_yaml 0.8.26",
@@ -2607,11 +2608,11 @@ dependencies = [
 [[package]]
 name = "diem-gas"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.20",
+ "clap 4.5.21",
  "diem-framework",
  "diem-gas-algebra-ext",
  "diem-global-constants",
@@ -2630,7 +2631,7 @@ dependencies = [
 [[package]]
 name = "diem-gas-algebra-ext"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "move-core-types",
 ]
@@ -2638,7 +2639,7 @@ dependencies = [
 [[package]]
 name = "diem-gas-profiling"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "diem-framework",
@@ -2656,7 +2657,7 @@ dependencies = [
 [[package]]
 name = "diem-genesis"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -2675,17 +2676,17 @@ dependencies = [
  "diem-vm",
  "diem-vm-genesis",
  "rand 0.7.3",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_yaml 0.8.26",
 ]
 
 [[package]]
 name = "diem-github-client"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "diem-proxy",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "thiserror",
  "ureq",
@@ -2694,24 +2695,24 @@ dependencies = [
 [[package]]
 name = "diem-global-constants"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 
 [[package]]
 name = "diem-id-generator"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 
 [[package]]
 name = "diem-indexer"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "async-trait",
  "bcs 0.1.4",
  "bigdecimal",
  "chrono",
- "clap 4.5.20",
+ "clap 4.5.21",
  "diem-api",
  "diem-api-types",
  "diem-bitvec",
@@ -2733,7 +2734,7 @@ dependencies = [
  "reqwest",
  "reqwest-middleware",
  "reqwest-retry",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "sha2 0.9.9",
  "tokio",
@@ -2743,7 +2744,7 @@ dependencies = [
 [[package]]
 name = "diem-indexer-grpc-fullnode"
 version = "1.0.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -2765,12 +2766,12 @@ dependencies = [
  "fail 0.5.1",
  "futures",
  "hex",
- "hyper",
+ "hyper 0.14.31",
  "move-binary-format",
  "move-core-types",
  "move-package",
  "once_cell",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "tokio",
  "tokio-stream",
@@ -2780,12 +2781,12 @@ dependencies = [
 [[package]]
 name = "diem-infallible"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 
 [[package]]
 name = "diem-inspection-service"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "diem-build-info",
@@ -2796,7 +2797,7 @@ dependencies = [
  "diem-network",
  "diem-runtimes",
  "futures",
- "hyper",
+ "hyper 0.14.31",
  "once_cell",
  "prometheus",
  "reqwest",
@@ -2808,7 +2809,7 @@ dependencies = [
 [[package]]
 name = "diem-jellyfish-merkle"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -2827,14 +2828,14 @@ dependencies = [
  "proptest",
  "proptest-derive",
  "rayon",
- "serde 1.0.214",
+ "serde 1.0.215",
  "thiserror",
 ]
 
 [[package]]
 name = "diem-keygen"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "diem-crypto",
  "diem-types",
@@ -2844,7 +2845,7 @@ dependencies = [
 [[package]]
 name = "diem-language-e2e-tests"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -2876,13 +2877,13 @@ dependencies = [
  "proptest-derive",
  "rand 0.7.3",
  "rayon",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
 name = "diem-log-derive"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "proc-macro2 1.0.89",
  "quote 1.0.37",
@@ -2892,7 +2893,7 @@ dependencies = [
 [[package]]
 name = "diem-logger"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "backtrace",
  "chrono",
@@ -2904,7 +2905,7 @@ dependencies = [
  "hostname",
  "once_cell",
  "prometheus",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "strum",
  "strum_macros",
@@ -2916,7 +2917,7 @@ dependencies = [
 [[package]]
 name = "diem-mempool"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2946,7 +2947,7 @@ dependencies = [
  "once_cell",
  "rand 0.7.3",
  "rayon",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "thiserror",
  "tokio",
@@ -2956,13 +2957,13 @@ dependencies = [
 [[package]]
 name = "diem-mempool-notifications"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "async-trait",
  "diem-runtimes",
  "diem-types",
  "futures",
- "serde 1.0.214",
+ "serde 1.0.215",
  "thiserror",
  "tokio",
 ]
@@ -2970,7 +2971,7 @@ dependencies = [
 [[package]]
 name = "diem-memsocket"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "bytes",
  "diem-infallible",
@@ -2981,7 +2982,7 @@ dependencies = [
 [[package]]
 name = "diem-metrics-core"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "prometheus",
@@ -2990,7 +2991,7 @@ dependencies = [
 [[package]]
 name = "diem-move-stdlib"
 version = "0.1.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "hex",
@@ -3013,7 +3014,7 @@ dependencies = [
 [[package]]
 name = "diem-moving-average"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "chrono",
 ]
@@ -3021,7 +3022,7 @@ dependencies = [
 [[package]]
 name = "diem-mvhashmap"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -3036,7 +3037,7 @@ dependencies = [
 [[package]]
 name = "diem-netcore"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "bytes",
  "diem-memsocket",
@@ -3044,16 +3045,16 @@ dependencies = [
  "diem-types",
  "futures",
  "pin-project",
- "serde 1.0.214",
+ "serde 1.0.215",
  "tokio",
- "tokio-util 0.7.12",
+ "tokio-util",
  "url",
 ]
 
 [[package]]
 name = "diem-network"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3084,19 +3085,19 @@ dependencies = [
  "once_cell",
  "pin-project",
  "rand 0.7.3",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_bytes",
  "serde_json",
  "thiserror",
  "tokio",
  "tokio-retry",
- "tokio-util 0.7.12",
+ "tokio-util",
 ]
 
 [[package]]
 name = "diem-network-builder"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "async-trait",
  "bcs 0.1.4",
@@ -3115,31 +3116,31 @@ dependencies = [
  "futures",
  "maplit",
  "rand 0.7.3",
- "serde 1.0.214",
+ "serde 1.0.215",
  "tokio",
 ]
 
 [[package]]
 name = "diem-network-checker"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
- "clap 4.5.20",
+ "clap 4.5.21",
  "diem-config",
  "diem-crypto",
  "diem-logger",
  "diem-network",
  "diem-types",
  "futures",
- "serde 1.0.214",
+ "serde 1.0.215",
  "tokio",
 ]
 
 [[package]]
 name = "diem-network-discovery"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -3165,11 +3166,11 @@ dependencies = [
 [[package]]
 name = "diem-node"
 version = "1.6.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.20",
+ "clap 4.5.21",
  "diem-api",
  "diem-backup-service",
  "diem-build-info",
@@ -3219,7 +3220,7 @@ dependencies = [
  "maplit",
  "rand 0.7.3",
  "rayon",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "serde_yaml 0.8.26",
  "tokio",
@@ -3230,7 +3231,7 @@ dependencies = [
 [[package]]
 name = "diem-node-identity"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "claims",
@@ -3242,7 +3243,7 @@ dependencies = [
 [[package]]
 name = "diem-num-variants"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "proc-macro2 1.0.89",
  "quote 1.0.37",
@@ -3252,20 +3253,20 @@ dependencies = [
 [[package]]
 name = "diem-openapi"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "async-trait",
  "percent-encoding",
  "poem",
  "poem-openapi",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
 ]
 
 [[package]]
 name = "diem-package-builder"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "diem-framework",
@@ -3278,7 +3279,7 @@ dependencies = [
 [[package]]
 name = "diem-peer-monitoring-service-client"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "async-trait",
  "diem-channels",
@@ -3295,7 +3296,7 @@ dependencies = [
  "futures",
  "once_cell",
  "rand 0.7.3",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "thiserror",
  "tokio",
@@ -3304,7 +3305,7 @@ dependencies = [
 [[package]]
 name = "diem-peer-monitoring-service-server"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "bcs 0.1.4",
  "bytes",
@@ -3323,7 +3324,7 @@ dependencies = [
  "diem-types",
  "futures",
  "once_cell",
- "serde 1.0.214",
+ "serde 1.0.215",
  "thiserror",
  "tokio",
 ]
@@ -3331,20 +3332,20 @@ dependencies = [
 [[package]]
 name = "diem-peer-monitoring-service-types"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "bcs 0.1.4",
  "cfg_block",
  "diem-config",
  "diem-types",
- "serde 1.0.214",
+ "serde 1.0.215",
  "thiserror",
 ]
 
 [[package]]
 name = "diem-proptest-helpers"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "crossbeam",
  "proptest",
@@ -3354,18 +3355,18 @@ dependencies = [
 [[package]]
 name = "diem-protos"
 version = "1.0.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "pbjson",
  "prost",
- "serde 1.0.214",
+ "serde 1.0.215",
  "tonic",
 ]
 
 [[package]]
 name = "diem-proxy"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "ipnet",
 ]
@@ -3373,7 +3374,7 @@ dependencies = [
 [[package]]
 name = "diem-push-metrics"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "diem-logger",
  "diem-metrics-core",
@@ -3384,7 +3385,7 @@ dependencies = [
 [[package]]
 name = "diem-rate-limiter"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "diem-infallible",
  "diem-logger",
@@ -3392,17 +3393,17 @@ dependencies = [
  "futures",
  "pin-project",
  "tokio",
- "tokio-util 0.7.12",
+ "tokio-util",
 ]
 
 [[package]]
 name = "diem-release-builder"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.20",
+ "clap 4.5.21",
  "diem",
  "diem-api-types",
  "diem-build-info",
@@ -3422,7 +3423,7 @@ dependencies = [
  "move-core-types",
  "move-model",
  "once_cell",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "serde_yaml 0.8.26",
  "tempfile",
@@ -3434,7 +3435,7 @@ dependencies = [
 [[package]]
 name = "diem-resource-viewer"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "diem-types",
@@ -3446,7 +3447,7 @@ dependencies = [
 [[package]]
 name = "diem-rest-client"
 version = "0.0.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -3462,7 +3463,7 @@ dependencies = [
  "move-core-types",
  "poem-openapi",
  "reqwest",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "thiserror",
  "tokio",
@@ -3472,7 +3473,7 @@ dependencies = [
 [[package]]
 name = "diem-retrier"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "diem-logger",
  "tokio",
@@ -3481,7 +3482,7 @@ dependencies = [
 [[package]]
 name = "diem-rocksdb-options"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "diem-config",
  "rocksdb",
@@ -3490,11 +3491,11 @@ dependencies = [
 [[package]]
 name = "diem-rosetta"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.20",
+ "clap 4.5.21",
  "diem-cached-packages",
  "diem-config",
  "diem-crypto",
@@ -3513,7 +3514,7 @@ dependencies = [
  "once_cell",
  "percent-encoding",
  "reqwest",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "serde_yaml 0.8.26",
  "tokio",
@@ -3524,7 +3525,7 @@ dependencies = [
 [[package]]
 name = "diem-runtimes"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "tokio",
 ]
@@ -3532,7 +3533,7 @@ dependencies = [
 [[package]]
 name = "diem-safety-rules"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "diem-config",
  "diem-consensus-types",
@@ -3548,7 +3549,7 @@ dependencies = [
  "diem-vault-client",
  "once_cell",
  "rand 0.7.3",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "thiserror",
 ]
@@ -3556,7 +3557,7 @@ dependencies = [
 [[package]]
 name = "diem-schemadb"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "diem-infallible",
@@ -3570,7 +3571,7 @@ dependencies = [
 [[package]]
 name = "diem-scratchpad"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "bitvec 0.19.6",
  "diem-crypto",
@@ -3587,7 +3588,7 @@ dependencies = [
 [[package]]
 name = "diem-sdk"
 version = "0.0.3"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -3600,18 +3601,18 @@ dependencies = [
  "ed25519-dalek-bip32",
  "move-core-types",
  "rand_core 0.5.1",
- "serde 1.0.214",
+ "serde 1.0.215",
  "tiny-bip39",
 ]
 
 [[package]]
 name = "diem-sdk-builder"
 version = "0.2.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.20",
+ "clap 4.5.21",
  "diem-types",
  "heck 0.3.3",
  "move-core-types",
@@ -3626,19 +3627,19 @@ dependencies = [
 [[package]]
 name = "diem-secure-net"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "diem-logger",
  "diem-metrics-core",
  "once_cell",
- "serde 1.0.214",
+ "serde 1.0.215",
  "thiserror",
 ]
 
 [[package]]
 name = "diem-secure-storage"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -3652,7 +3653,7 @@ dependencies = [
  "diem-vault-client",
  "enum_dispatch",
  "rand 0.7.3",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "thiserror",
 ]
@@ -3660,10 +3661,10 @@ dependencies = [
 [[package]]
 name = "diem-short-hex-str"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "mirai-annotations",
- "serde 1.0.214",
+ "serde 1.0.215",
  "static_assertions",
  "thiserror",
 ]
@@ -3671,7 +3672,7 @@ dependencies = [
 [[package]]
 name = "diem-speculative-state-helper"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "crossbeam",
@@ -3683,7 +3684,7 @@ dependencies = [
 [[package]]
 name = "diem-state-sync-driver"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3709,7 +3710,7 @@ dependencies = [
  "futures",
  "once_cell",
  "reqwest",
- "serde 1.0.214",
+ "serde 1.0.215",
  "thiserror",
  "tokio",
  "tokio-stream",
@@ -3718,13 +3719,13 @@ dependencies = [
 [[package]]
 name = "diem-state-view"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
  "diem-crypto",
  "diem-types",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_bytes",
  "serde_json",
 ]
@@ -3732,7 +3733,7 @@ dependencies = [
 [[package]]
 name = "diem-storage-interface"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "arr_macro",
@@ -3752,14 +3753,14 @@ dependencies = [
  "once_cell",
  "parking_lot 0.12.3",
  "rayon",
- "serde 1.0.214",
+ "serde 1.0.215",
  "thiserror",
 ]
 
 [[package]]
 name = "diem-storage-service-client"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "async-trait",
  "diem-channels",
@@ -3773,7 +3774,7 @@ dependencies = [
 [[package]]
 name = "diem-storage-service-server"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "bcs 0.1.4",
  "bytes",
@@ -3791,7 +3792,7 @@ dependencies = [
  "futures",
  "lru 0.7.8",
  "once_cell",
- "serde 1.0.214",
+ "serde 1.0.215",
  "thiserror",
  "tokio",
 ]
@@ -3799,7 +3800,7 @@ dependencies = [
 [[package]]
 name = "diem-storage-service-types"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "bcs 0.1.4",
  "diem-compression",
@@ -3807,14 +3808,14 @@ dependencies = [
  "diem-crypto",
  "diem-types",
  "num-traits 0.2.19",
- "serde 1.0.214",
+ "serde 1.0.215",
  "thiserror",
 ]
 
 [[package]]
 name = "diem-temppath"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "hex",
  "rand 0.7.3",
@@ -3823,7 +3824,7 @@ dependencies = [
 [[package]]
 name = "diem-time-service"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "diem-infallible",
  "enum_dispatch",
@@ -3836,12 +3837,12 @@ dependencies = [
 [[package]]
 name = "diem-transaction-emitter-lib"
 version = "0.0.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "again",
  "anyhow",
  "async-trait",
- "clap 4.5.20",
+ "clap 4.5.21",
  "diem",
  "diem-config",
  "diem-crypto",
@@ -3859,7 +3860,7 @@ dependencies = [
  "rand 0.7.3",
  "rand_core 0.5.1",
  "reqwest",
- "serde 1.0.214",
+ "serde 1.0.215",
  "tokio",
  "url",
 ]
@@ -3867,12 +3868,12 @@ dependencies = [
 [[package]]
 name = "diem-transaction-generator-lib"
 version = "0.0.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "again",
  "anyhow",
  "async-trait",
- "clap 4.5.20",
+ "clap 4.5.21",
  "diem",
  "diem-config",
  "diem-crypto",
@@ -3889,7 +3890,7 @@ dependencies = [
  "rand 0.7.3",
  "rand_core 0.5.1",
  "reqwest",
- "serde 1.0.214",
+ "serde 1.0.215",
  "tokio",
  "url",
 ]
@@ -3897,11 +3898,11 @@ dependencies = [
 [[package]]
 name = "diem-transactional-test-harness"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.20",
+ "clap 4.5.21",
  "diem-api-types",
  "diem-cached-packages",
  "diem-crypto",
@@ -3922,14 +3923,14 @@ dependencies = [
  "move-transactional-test-runner",
  "move-vm-runtime",
  "once_cell",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
 ]
 
 [[package]]
 name = "diem-types"
 version = "0.0.3"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "arr_macro",
@@ -3951,7 +3952,7 @@ dependencies = [
  "proptest-derive",
  "rand 0.7.3",
  "rayon",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_bytes",
  "serde_json",
  "serde_yaml 0.8.26",
@@ -3962,12 +3963,12 @@ dependencies = [
 [[package]]
 name = "diem-utils"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 
 [[package]]
 name = "diem-validator-interface"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3988,14 +3989,14 @@ dependencies = [
 [[package]]
 name = "diem-vault-client"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "base64 0.13.1",
  "chrono",
  "diem-crypto",
  "native-tls",
  "once_cell",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "thiserror",
  "ureq",
@@ -4004,7 +4005,7 @@ dependencies = [
 [[package]]
 name = "diem-vm"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -4042,7 +4043,7 @@ dependencies = [
  "ouroboros 0.15.6",
  "rand 0.7.3",
  "rayon",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "smallvec",
  "tracing",
@@ -4051,7 +4052,7 @@ dependencies = [
 [[package]]
 name = "diem-vm-genesis"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -4066,13 +4067,13 @@ dependencies = [
  "move-vm-types",
  "once_cell",
  "rand 0.7.3",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
 name = "diem-vm-logging"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "arc-swap",
  "diem-crypto",
@@ -4082,13 +4083,13 @@ dependencies = [
  "diem-state-view",
  "diem-types",
  "once_cell",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
 name = "diem-vm-types"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "diem-aggregator",
@@ -4101,7 +4102,7 @@ dependencies = [
 [[package]]
 name = "diem-vm-validator"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "diem-gas",
@@ -4116,15 +4117,15 @@ dependencies = [
 [[package]]
 name = "diem-warp-webserver"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
  "diem-api-types",
  "diem-config",
  "diem-logger",
- "hyper",
- "serde 1.0.214",
+ "hyper 0.14.31",
+ "serde 1.0.215",
  "serde_json",
  "warp",
 ]
@@ -4289,7 +4290,7 @@ version = "1.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "91cff35c70bba8a626e3185d8cd48cc11b5437e1a5bcd15b9b5fa3c64b6dfee7"
 dependencies = [
- "serde 1.0.214",
+ "serde 1.0.215",
  "signature",
 ]
 
@@ -4302,7 +4303,7 @@ dependencies = [
  "curve25519-dalek",
  "ed25519",
  "rand 0.7.3",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_bytes",
  "sha2 0.9.9",
  "zeroize",
@@ -4384,7 +4385,7 @@ version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c138974f9d5e7fe373eb04df7cae98833802ae4b11c24ac7039a21d5af4b26c"
 dependencies = [
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -4427,9 +4428,9 @@ dependencies = [
 
 [[package]]
 name = "fastrand"
-version = "2.1.1"
+version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8c02a5121d4ea3eb16a80748c74f5549a5665e4c21333c6098f283870fbdea6"
+checksum = "486f806e73c5707928240ddc295403b1b93c96a02038563881c4a2fd84b81ac4"
 
 [[package]]
 name = "fdeflate"
@@ -4485,12 +4486,21 @@ checksum = "0ce7134b9999ecaf8bcd65542e436736ef32ddca1b3e06094cb6ec5755203b80"
 
 [[package]]
 name = "flate2"
-version = "1.0.34"
+version = "1.0.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1b589b4dc103969ad3cf85c950899926ec64300a1a46d76c03a6072957036f0"
+checksum = "c936bfdafb507ebbf50b8074c54fa31c5be9a1e7e5f467dd659697041407d07c"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
+]
+
+[[package]]
+name = "fluent-uri"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "17c704e9dbe1ddd863da1e6ff3567795087b1eb201ce80d8fa81162e1516500d"
+dependencies = [
+ "bitflags 1.3.2",
 ]
 
 [[package]]
@@ -4669,10 +4679,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8fc3cb4d91f53b50155bdcfd23f6a4c39ae1969c2ae85982b135750cccaf5fce"
 dependencies = [
  "cfg-if",
- "js-sys",
  "libc",
  "wasi 0.9.0+wasi-snapshot-preview1",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -4747,7 +4755,7 @@ dependencies = [
  "aho-corasick",
  "bstr",
  "log",
- "regex-automata 0.4.8",
+ "regex-automata 0.4.9",
  "regex-syntax 0.8.5",
 ]
 
@@ -4789,7 +4797,7 @@ dependencies = [
  "indexmap 2.6.0",
  "slab",
  "tokio",
- "tokio-util 0.7.12",
+ "tokio-util",
  "tracing",
 ]
 
@@ -4802,7 +4810,7 @@ dependencies = [
  "log",
  "pest",
  "pest_derive",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "thiserror",
 ]
@@ -4845,8 +4853,23 @@ checksum = "06683b93020a07e3dbcf5f8c0f6d40080d725bea7936fc01ad345c01b97dc270"
 dependencies = [
  "base64 0.21.7",
  "bytes",
- "headers-core",
+ "headers-core 0.2.0",
  "http 0.2.12",
+ "httpdate",
+ "mime",
+ "sha1",
+]
+
+[[package]]
+name = "headers"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "322106e6bd0cba2d5ead589ddb8150a13d7c4217cf80d7c4f682ca994ccc6aa9"
+dependencies = [
+ "base64 0.21.7",
+ "bytes",
+ "headers-core 0.3.0",
+ "http 1.1.0",
  "httpdate",
  "mime",
  "sha1",
@@ -4859,6 +4882,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e7f66481bfee273957b1f20485a4ff3362987f85b2c236580d81b4eb7a326429"
 dependencies = [
  "http 0.2.12",
+]
+
+[[package]]
+name = "headers-core"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "54b4a22553d4242c49fddb9ba998a99962b5cc6f22cb5a3482bec22522403ce4"
+dependencies = [
+ "http 1.1.0",
 ]
 
 [[package]]
@@ -4909,7 +4941,7 @@ version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 dependencies = [
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -4972,6 +5004,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "home"
+version = "0.5.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e3d1354bf6b7235cb4a0576c2619fd4ed18183f689b12b006a0ee7329eeff9a5"
+dependencies = [
+ "windows-sys 0.52.0",
+]
+
+[[package]]
 name = "hostname"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5022,10 +5063,27 @@ dependencies = [
 ]
 
 [[package]]
-name = "http-range-header"
-version = "0.3.1"
+name = "http-body"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "add0ab9360ddbd88cfeb3bd9574a1d85cfdfa14db10b3e21d3700dbc4328758f"
+checksum = "1efedce1fb8e6913f23e0c92de8e62cd5b772a67e7b3946df930a62566c93184"
+dependencies = [
+ "bytes",
+ "http 1.1.0",
+]
+
+[[package]]
+name = "http-body-util"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "793429d76616a256bcb62c2a2ec2bed781c8307e797e2598c50010f2bee2544f"
+dependencies = [
+ "bytes",
+ "futures-util",
+ "http 1.1.0",
+ "http-body 1.0.1",
+ "pin-project-lite",
+]
 
 [[package]]
 name = "httparse"
@@ -5060,7 +5118,7 @@ dependencies = [
  "futures-util",
  "h2",
  "http 0.2.12",
- "http-body",
+ "http-body 0.4.6",
  "httparse",
  "httpdate",
  "itoa",
@@ -5073,18 +5131,61 @@ dependencies = [
 ]
 
 [[package]]
-name = "hyper-rustls"
-version = "0.23.2"
+name = "hyper"
+version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1788965e61b367cd03a62950836d5cd41560c3577d90e40e0819373194d1661c"
+checksum = "bbbff0a806a4728c99295b254c8838933b5b082d75e3cb70c8dab21fdfbcfa9a"
 dependencies = [
- "http 0.2.12",
- "hyper",
- "log",
- "rustls 0.20.9",
- "rustls-native-certs",
+ "bytes",
+ "futures-channel",
+ "futures-util",
+ "http 1.1.0",
+ "http-body 1.0.1",
+ "httparse",
+ "itoa",
+ "pin-project-lite",
+ "smallvec",
  "tokio",
- "tokio-rustls 0.23.4",
+ "want",
+]
+
+[[package]]
+name = "hyper-http-proxy"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5d06dbdfbacf34d996c6fb540a71a684a7aae9056c71951163af8a8a4c07b9a4"
+dependencies = [
+ "bytes",
+ "futures-util",
+ "headers 0.4.0",
+ "http 1.1.0",
+ "hyper 1.5.0",
+ "hyper-rustls",
+ "hyper-util",
+ "pin-project-lite",
+ "rustls-native-certs 0.7.3",
+ "tokio",
+ "tokio-rustls 0.26.0",
+ "tower-service",
+]
+
+[[package]]
+name = "hyper-rustls"
+version = "0.27.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08afdbb5c31130e3034af566421053ab03787c640246a446327f550d11bcb333"
+dependencies = [
+ "futures-util",
+ "http 1.1.0",
+ "hyper 1.5.0",
+ "hyper-util",
+ "log",
+ "rustls 0.23.17",
+ "rustls-native-certs 0.8.0",
+ "rustls-pki-types",
+ "tokio",
+ "tokio-rustls 0.26.0",
+ "tower-service",
 ]
 
 [[package]]
@@ -5093,10 +5194,23 @@ version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbb958482e8c7be4bc3cf272a766a2b0bf1a6755e7a6ae777f017a31d11b13b1"
 dependencies = [
- "hyper",
+ "hyper 0.14.31",
  "pin-project-lite",
  "tokio",
  "tokio-io-timeout",
+]
+
+[[package]]
+name = "hyper-timeout"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b90d566bffbce6a75bd8b09a05aa8c2cb1fabb6cb348f8840c9e4c90a0d83b0"
+dependencies = [
+ "hyper 1.5.0",
+ "hyper-util",
+ "pin-project-lite",
+ "tokio",
+ "tower-service",
 ]
 
 [[package]]
@@ -5106,10 +5220,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6183ddfa99b85da61a140bea0efc93fdf56ceaa041b37d553518030827f9905"
 dependencies = [
  "bytes",
- "hyper",
+ "hyper 0.14.31",
  "native-tls",
  "tokio",
  "tokio-native-tls",
+]
+
+[[package]]
+name = "hyper-util"
+version = "0.1.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df2dcfbe0677734ab2f3ffa7fa7bfd4706bfdc1ef393f2ee30184aed67e631b4"
+dependencies = [
+ "bytes",
+ "futures-channel",
+ "futures-util",
+ "http 1.1.0",
+ "http-body 1.0.1",
+ "hyper 1.5.0",
+ "pin-project-lite",
+ "socket2",
+ "tokio",
+ "tower-service",
+ "tracing",
 ]
 
 [[package]]
@@ -5300,7 +5433,7 @@ dependencies = [
  "globset",
  "log",
  "memchr",
- "regex-automata 0.4.8",
+ "regex-automata 0.4.9",
  "same-file",
  "walkdir",
  "winapi-util",
@@ -5348,7 +5481,7 @@ version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4551f042f3438e64dbd6226b20527fc84a6e1fe65688b58746a2f53623f25f5c"
 dependencies = [
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -5414,7 +5547,7 @@ checksum = "bd070e393353796e801d209ad339e89596eb4c8d430d18ede6a1cced8fafbd99"
 dependencies = [
  "autocfg",
  "hashbrown 0.12.3",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -5425,20 +5558,20 @@ checksum = "707907fe3c25f5424cce2cb7e1cbcafee6bdbe735ca90ef77c29e84591e5b9da"
 dependencies = [
  "equivalent",
  "hashbrown 0.15.1",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
 name = "indicatif"
-version = "0.17.8"
+version = "0.17.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "763a5a8f45087d6bcea4222e7b72c291a054edf80e4ef6efd2a4979878c7bea3"
+checksum = "cbf675b85ed934d3c67b5c5469701eec7db22689d0a2139d856e0925fa28b281"
 dependencies = [
  "console",
- "instant",
  "number_prefix",
  "portable-atomic",
- "unicode-width",
+ "unicode-width 0.2.0",
+ "web-time",
 ]
 
 [[package]]
@@ -5454,7 +5587,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "232929e1d75fe899576a3d5c7416ad0d88dbfbb3c3d6aa00873a7408a50ddb88"
 dependencies = [
  "ahash 0.8.11",
- "clap 4.5.20",
+ "clap 4.5.21",
  "crossbeam-channel",
  "crossbeam-utils",
  "dashmap 6.1.0",
@@ -5598,36 +5731,51 @@ dependencies = [
 
 [[package]]
 name = "json-patch"
-version = "0.2.7"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eb3fa5a61630976fc4c353c70297f2e93f1930e3ccee574d59d618ccbd5154ce"
+checksum = "5b1fb8864823fad91877e6caea0baca82e49e8db50f8e5c9f9a453e27d3330fc"
 dependencies = [
- "serde 1.0.214",
+ "jsonptr",
+ "serde 1.0.215",
  "serde_json",
- "treediff",
+ "thiserror",
 ]
 
 [[package]]
-name = "jsonpath_lib"
-version = "0.3.0"
+name = "jsonpath-rust"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eaa63191d68230cccb81c5aa23abd53ed64d83337cacbb25a7b8c7979523774f"
+checksum = "19d8fe85bd70ff715f31ce8c739194b423d79811a19602115d611a3ec85d6200"
 dependencies = [
- "log",
- "serde 1.0.214",
+ "lazy_static 1.5.0",
+ "once_cell",
+ "pest",
+ "pest_derive",
+ "regex",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "jsonptr"
+version = "0.4.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1c6e529149475ca0b2820835d3dce8fcc41c6b943ca608d32f35b449255e4627"
+dependencies = [
+ "fluent-uri",
+ "serde 1.0.215",
  "serde_json",
 ]
 
 [[package]]
 name = "k8s-openapi"
-version = "0.13.1"
+version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f8de9873b904e74b3533f77493731ee26742418077503683db44e1b3c54aa5c"
+checksum = "9c8847402328d8301354c94d605481f25a6bdc1ed65471fd96af8eca71141b13"
 dependencies = [
- "base64 0.13.1",
- "bytes",
+ "base64 0.22.1",
  "chrono",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde-value",
  "serde_json",
 ]
@@ -5643,9 +5791,9 @@ dependencies = [
 
 [[package]]
 name = "kube"
-version = "0.65.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ec231e9ec9e84789f9eb414d1ac40ce6c90d0517fb272a335b4233f2e272b1e"
+checksum = "efffeb3df0bd4ef3e5d65044573499c0e4889b988070b08c50b25b1329289a1f"
 dependencies = [
  "k8s-openapi",
  "kube-client",
@@ -5654,52 +5802,55 @@ dependencies = [
 
 [[package]]
 name = "kube-client"
-version = "0.65.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95dddb1fcced906d79cdae530ff39079c2d3772b2d623088fdbebe610bfa8217"
+checksum = "8bf471ece8ff8d24735ce78dac4d091e9fcb8d74811aeb6b75de4d1c3f5de0f1"
 dependencies = [
- "base64 0.13.1",
+ "base64 0.22.1",
  "bytes",
  "chrono",
- "dirs-next",
  "either",
  "futures",
- "http 0.2.12",
- "http-body",
- "hyper",
+ "home",
+ "http 1.1.0",
+ "http-body 1.0.1",
+ "http-body-util",
+ "hyper 1.5.0",
+ "hyper-http-proxy",
  "hyper-rustls",
- "hyper-timeout",
- "jsonpath_lib",
+ "hyper-timeout 0.5.2",
+ "hyper-util",
+ "jsonpath-rust",
  "k8s-openapi",
  "kube-core",
  "pem",
- "pin-project",
- "rustls 0.20.9",
- "rustls-pemfile 0.2.1",
- "serde 1.0.214",
+ "rustls 0.23.17",
+ "rustls-pemfile 2.2.0",
+ "secrecy",
+ "serde 1.0.215",
  "serde_json",
- "serde_yaml 0.8.26",
+ "serde_yaml 0.9.34+deprecated",
  "thiserror",
  "tokio",
- "tokio-util 0.6.10",
- "tower",
+ "tokio-util",
+ "tower 0.5.1",
  "tower-http",
  "tracing",
 ]
 
 [[package]]
 name = "kube-core"
-version = "0.65.0"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c52b6ab05d160691083430f6f431707a4e05b64903f2ffa0095ee5efde759117"
+checksum = "f42346d30bb34d1d7adc5c549b691bce7aa3a1e60254e68fab7e2d7b26fe3d77"
 dependencies = [
  "chrono",
  "form_urlencoded",
- "http 0.2.12",
+ "http 1.1.0",
  "json-patch",
  "k8s-openapi",
- "once_cell",
- "serde 1.0.214",
+ "serde 1.0.215",
+ "serde-value",
  "serde_json",
  "thiserror",
 ]
@@ -5737,9 +5888,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.161"
+version = "0.2.164"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e9489c2807c139ffd9c1794f4af0ebe86a828db53ecdc7fea2111d0fed085d1"
+checksum = "433bfe06b8c75da9b2e3fbea6e5329ff87748f0b144ef75306e674c3f6f7c13f"
 
 [[package]]
 name = "libgit2-sys"
@@ -5776,7 +5927,7 @@ name = "libra"
 version = "7.0.3"
 dependencies = [
  "anyhow",
- "clap 4.5.20",
+ "clap 4.5.21",
  "diem",
  "diem-config",
  "diem-node",
@@ -5812,7 +5963,7 @@ dependencies = [
  "move-core-types",
  "once_cell",
  "rand 0.7.3",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_bytes",
  "serde_json",
  "tiny-keccak",
@@ -5836,7 +5987,7 @@ version = "7.0.3"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.20",
+ "clap 4.5.21",
  "dialoguer",
  "diem",
  "diem-config",
@@ -5848,7 +5999,7 @@ dependencies = [
  "libra-types",
  "libra-wallet",
  "reqwest",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "serde_yaml 0.8.26",
  "tokio",
@@ -5861,7 +6012,7 @@ version = "7.0.3"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.20",
+ "clap 4.5.21",
  "dialoguer",
  "diem",
  "diem-build-info",
@@ -5883,7 +6034,7 @@ dependencies = [
  "base64 0.13.1",
  "bcs 0.1.4",
  "chrono",
- "clap 4.5.20",
+ "clap 4.5.21",
  "dialoguer",
  "diem-config",
  "diem-crypto",
@@ -5907,7 +6058,7 @@ dependencies = [
  "libra-types",
  "libra-wallet",
  "move-core-types",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "tokio",
  "ureq",
@@ -5918,7 +6069,7 @@ name = "libra-query"
 version = "7.0.3"
 dependencies = [
  "anyhow",
- "clap 4.5.20",
+ "clap 4.5.21",
  "diem-api-types",
  "diem-debugger",
  "diem-sdk",
@@ -5937,7 +6088,7 @@ version = "7.0.3"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.20",
+ "clap 4.5.21",
  "diem-api-types",
  "diem-config",
  "diem-crypto",
@@ -5993,7 +6144,7 @@ version = "7.0.3"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.20",
+ "clap 4.5.21",
  "diem-backup-cli",
  "diem-config",
  "diem-db",
@@ -6016,7 +6167,7 @@ version = "7.0.3"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.20",
+ "clap 4.5.21",
  "dialoguer",
  "diem-api-types",
  "diem-config",
@@ -6045,7 +6196,7 @@ version = "7.0.3"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.20",
+ "clap 4.5.21",
  "dialoguer",
  "diem",
  "diem-forge",
@@ -6064,7 +6215,7 @@ dependencies = [
  "libra-smoke-tests",
  "libra-types",
  "libra-wallet",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "serde_yaml 0.8.26",
  "smoke-test",
@@ -6079,7 +6230,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "bcs 0.1.4",
- "clap 4.5.20",
+ "clap 4.5.21",
  "console",
  "diem",
  "diem-api-types",
@@ -6098,7 +6249,7 @@ dependencies = [
  "once_cell",
  "rand 0.7.3",
  "reqwest",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "serde_with",
  "serde_yaml 0.8.26",
@@ -6133,7 +6284,7 @@ dependencies = [
  "anyhow",
  "blst",
  "byteorder",
- "clap 4.5.20",
+ "clap 4.5.21",
  "dialoguer",
  "diem-config",
  "diem-crypto",
@@ -6148,7 +6299,7 @@ dependencies = [
  "pbkdf2 0.7.5",
  "rand 0.7.3",
  "rpassword",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "serde_yaml 0.8.26",
  "sha2 0.9.9",
@@ -6195,7 +6346,7 @@ dependencies = [
  "libsecp256k1-gen-ecmult",
  "libsecp256k1-gen-genmult",
  "rand 0.8.5",
- "serde 1.0.214",
+ "serde 1.0.215",
  "sha2 0.9.9",
  "typenum",
 ]
@@ -6312,7 +6463,7 @@ version = "0.4.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a7a70ba024b9dc04c27ea2f0c0548feb474ec5c54bba33a7f72f873a39d07b24"
 dependencies = [
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -6391,7 +6542,7 @@ version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd01039851e82f8799046eabbb354056283fb265c8ec0996af940f4e85a380ff"
 dependencies = [
- "serde 1.0.214",
+ "serde 1.0.215",
  "toml 0.8.2",
 ]
 
@@ -6451,6 +6602,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "mio"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "80e04d1dcff3aae0704555fe5fee3bcfaf3d1fdf8a7e521d5b9d2b42acb52cec"
+dependencies = [
+ "hermit-abi 0.3.9",
+ "libc",
+ "wasi 0.11.0+wasi-snapshot-preview1",
+ "windows-sys 0.52.0",
+]
+
+[[package]]
 name = "mirai-annotations"
 version = "1.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6465,7 +6628,7 @@ checksum = "1fafa6961cabd9c63bcd77a45d7e3b7f3b552b70417831fb0f56db717e72407e"
 [[package]]
 name = "move-abigen"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6476,13 +6639,13 @@ dependencies = [
  "move-command-line-common",
  "move-core-types",
  "move-model",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
 name = "move-binary-format"
 version = "0.0.3"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "arbitrary",
@@ -6492,19 +6655,19 @@ dependencies = [
  "proptest",
  "proptest-derive",
  "ref-cast",
- "serde 1.0.214",
+ "serde 1.0.215",
  "variant_count",
 ]
 
 [[package]]
 name = "move-borrow-graph"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 
 [[package]]
 name = "move-bytecode-source-map"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6513,13 +6676,13 @@ dependencies = [
  "move-core-types",
  "move-ir-types",
  "move-symbol-pool",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
 name = "move-bytecode-utils"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "move-binary-format",
@@ -6531,7 +6694,7 @@ dependencies = [
 [[package]]
 name = "move-bytecode-verifier"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "fail 0.4.0",
@@ -6545,10 +6708,10 @@ dependencies = [
 [[package]]
 name = "move-bytecode-viewer"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
- "clap 4.5.20",
+ "clap 4.5.21",
  "crossterm 0.26.1",
  "move-binary-format",
  "move-bytecode-source-map",
@@ -6562,11 +6725,11 @@ dependencies = [
 [[package]]
 name = "move-cli"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.20",
+ "clap 4.5.21",
  "codespan-reporting",
  "colored",
  "difference",
@@ -6595,7 +6758,7 @@ dependencies = [
  "move-vm-types",
  "once_cell",
  "reqwest",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "serde_yaml 0.8.26",
  "tempfile",
@@ -6606,7 +6769,7 @@ dependencies = [
 [[package]]
 name = "move-command-line-common"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "difference",
@@ -6615,7 +6778,7 @@ dependencies = [
  "move-core-types",
  "num-bigint",
  "once_cell",
- "serde 1.0.214",
+ "serde 1.0.215",
  "sha2 0.9.9",
  "walkdir",
 ]
@@ -6623,11 +6786,11 @@ dependencies = [
 [[package]]
 name = "move-compiler"
 version = "0.0.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.20",
+ "clap 4.5.21",
  "codespan-reporting",
  "difference",
  "hex",
@@ -6652,7 +6815,7 @@ dependencies = [
 [[package]]
 name = "move-core-types"
 version = "0.0.4"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "arbitrary",
@@ -6666,7 +6829,7 @@ dependencies = [
  "proptest-derive",
  "rand 0.8.5",
  "ref-cast",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_bytes",
  "uint",
 ]
@@ -6674,11 +6837,11 @@ dependencies = [
 [[package]]
 name = "move-coverage"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.20",
+ "clap 4.5.21",
  "codespan",
  "colored",
  "move-binary-format",
@@ -6688,16 +6851,16 @@ dependencies = [
  "move-ir-types",
  "once_cell",
  "petgraph 0.5.1",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
 name = "move-disassembler"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
- "clap 4.5.20",
+ "clap 4.5.21",
  "colored",
  "move-binary-format",
  "move-bytecode-source-map",
@@ -6712,7 +6875,7 @@ dependencies = [
 [[package]]
 name = "move-docgen"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "codespan",
@@ -6725,13 +6888,13 @@ dependencies = [
  "num",
  "once_cell",
  "regex",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
 name = "move-errmapgen"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6739,17 +6902,17 @@ dependencies = [
  "move-command-line-common",
  "move-core-types",
  "move-model",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
 name = "move-ir-compiler"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.20",
+ "clap 4.5.21",
  "move-binary-format",
  "move-bytecode-source-map",
  "move-bytecode-verifier",
@@ -6764,7 +6927,7 @@ dependencies = [
 [[package]]
 name = "move-ir-to-bytecode"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "codespan-reporting",
@@ -6783,7 +6946,7 @@ dependencies = [
 [[package]]
 name = "move-ir-to-bytecode-syntax"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "hex",
@@ -6796,7 +6959,7 @@ dependencies = [
 [[package]]
 name = "move-ir-types"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "hex",
@@ -6804,13 +6967,13 @@ dependencies = [
  "move-core-types",
  "move-symbol-pool",
  "once_cell",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
 name = "move-model"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "codespan",
@@ -6830,18 +6993,18 @@ dependencies = [
  "num",
  "once_cell",
  "regex",
- "serde 1.0.214",
+ "serde 1.0.215",
  "trace",
 ]
 
 [[package]]
 name = "move-package"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
- "clap 4.5.20",
+ "clap 4.5.21",
  "colored",
  "dirs-next",
  "itertools",
@@ -6861,7 +7024,7 @@ dependencies = [
  "ptree",
  "regex",
  "reqwest",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_yaml 0.8.26",
  "sha2 0.9.9",
  "tempfile",
@@ -6873,12 +7036,12 @@ dependencies = [
 [[package]]
 name = "move-prover"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "async-trait",
  "atty",
- "clap 4.5.20",
+ "clap 4.5.21",
  "codespan",
  "codespan-reporting",
  "futures",
@@ -6900,7 +7063,7 @@ dependencies = [
  "once_cell",
  "pretty",
  "rand 0.8.5",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "simplelog",
  "tokio",
@@ -6910,7 +7073,7 @@ dependencies = [
 [[package]]
 name = "move-prover-boogie-backend"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -6930,7 +7093,7 @@ dependencies = [
  "pretty",
  "rand 0.8.5",
  "regex",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "tera",
  "tokio",
@@ -6939,7 +7102,7 @@ dependencies = [
 [[package]]
 name = "move-resource-viewer"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6948,13 +7111,13 @@ dependencies = [
  "move-bytecode-utils",
  "move-core-types",
  "once_cell",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
 name = "move-stackless-bytecode"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "codespan",
  "codespan-reporting",
@@ -6974,13 +7137,13 @@ dependencies = [
  "once_cell",
  "paste",
  "petgraph 0.5.1",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
 name = "move-stdlib"
 version = "0.1.1"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "hex",
@@ -7003,16 +7166,16 @@ dependencies = [
 [[package]]
 name = "move-symbol-pool"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "once_cell",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
 name = "move-table-extension"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -7029,10 +7192,10 @@ dependencies = [
 [[package]]
 name = "move-transactional-test-runner"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
- "clap 4.5.20",
+ "clap 4.5.21",
  "colored",
  "move-binary-format",
  "move-bytecode-source-map",
@@ -7060,11 +7223,11 @@ dependencies = [
 [[package]]
 name = "move-unit-test"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "better_any",
- "clap 4.5.20",
+ "clap 4.5.21",
  "codespan-reporting",
  "colored",
  "itertools",
@@ -7090,7 +7253,7 @@ dependencies = [
 [[package]]
 name = "move-vm-runtime"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "better_any",
  "fail 0.4.0",
@@ -7107,7 +7270,7 @@ dependencies = [
 [[package]]
 name = "move-vm-test-utils"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "move-binary-format",
@@ -7115,19 +7278,19 @@ dependencies = [
  "move-table-extension",
  "move-vm-types",
  "once_cell",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
 name = "move-vm-types"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "bcs 0.1.4",
  "move-binary-format",
  "move-core-types",
  "once_cell",
- "serde 1.0.214",
+ "serde 1.0.215",
  "smallvec",
 ]
 
@@ -7511,7 +7674,7 @@ dependencies = [
  "byte-slice-cast",
  "impl-trait-for-tuples",
  "parity-scale-codec-derive",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -7606,16 +7769,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "599fe9aefc2ca0df4a96179b3075faee2cacb89d4cf947a00b9a89152dfffc9d"
 dependencies = [
  "base64 0.13.1",
- "serde 1.0.214",
-]
-
-[[package]]
-name = "pbkdf2"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "216eaa586a190f0a738f2f918511eecfa90f13295abec0e457cdebcceda80cbd"
-dependencies = [
- "crypto-mac 0.8.0",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -7632,6 +7786,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "pbkdf2"
+version = "0.12.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f8ed6a7761f76e3b9f92dfb0a60a6a6477c61024b775147ff0973a02653abaf2"
+dependencies = [
+ "digest 0.10.7",
+ "hmac 0.12.1",
+]
+
+[[package]]
 name = "peeking_take_while"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7639,11 +7803,12 @@ checksum = "19b17cddbe7ec3f8bc800887bab5e717348c95ea2ca0b1bf0837fb964dc67099"
 
 [[package]]
 name = "pem"
-version = "1.1.1"
+version = "3.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a8835c273a76a90455d7344889b0964598e3316e2a79ede8e36f16bdcf2228b8"
+checksum = "8e459365e590736a54c3fa561947c84837534b8e9af6fc5bf781307e82658fae"
 dependencies = [
- "base64 0.13.1",
+ "base64 0.22.1",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -7818,9 +7983,9 @@ dependencies = [
  "chrono",
  "cookie 0.16.2",
  "futures-util",
- "headers",
+ "headers 0.3.9",
  "http 0.2.12",
- "hyper",
+ "hyper 0.14.31",
  "mime",
  "multer",
  "parking_lot 0.12.3",
@@ -7831,7 +7996,7 @@ dependencies = [
  "regex",
  "rfc7239",
  "rustls-pemfile 1.0.4",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "serde_urlencoded",
  "serde_yaml 0.9.34+deprecated",
@@ -7842,7 +8007,7 @@ dependencies = [
  "tokio",
  "tokio-rustls 0.24.1",
  "tokio-stream",
- "tokio-util 0.7.12",
+ "tokio-util",
  "tracing",
 ]
 
@@ -7874,7 +8039,7 @@ dependencies = [
  "poem-openapi-derive",
  "quick-xml 0.26.0",
  "regex",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "serde_urlencoded",
  "serde_yaml 0.9.34+deprecated",
@@ -8064,7 +8229,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ae2f6a3f14ff35c16b51ac796d1dc73c15ad6472c48836c6c467f6d52266648"
 dependencies = [
  "reqwest",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "time",
  "url",
@@ -8141,18 +8306,18 @@ dependencies = [
  "config",
  "directories",
  "petgraph 0.6.5",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde-value",
  "tint",
 ]
 
 [[package]]
 name = "publicsuffix"
-version = "2.2.3"
+version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96a8c1bda5ae1af7f99a2962e49df150414a43d62404644d98dd5c3a93d07457"
+checksum = "6f42ea446cab60335f76979ec15e12619a2165b5ae2c12166bef27d283a9fadf"
 dependencies = [
- "idna 0.3.0",
+ "idna 1.0.3",
  "psl-types",
 ]
 
@@ -8187,7 +8352,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f50b1c63b38611e7d4d7f68b82d3ad0cc71a2ad2e7f61fc10f1328d917c93cd"
 dependencies = [
  "memchr",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -8368,7 +8533,7 @@ dependencies = [
  "ryu",
  "sha1_smol",
  "tokio",
- "tokio-util 0.7.12",
+ "tokio-util",
  "url",
 ]
 
@@ -8429,7 +8594,7 @@ checksum = "b544ef1b4eac5dc2db33ea63606ae9ffcfac26c1416a2806ae0bf5f56b201191"
 dependencies = [
  "aho-corasick",
  "memchr",
- "regex-automata 0.4.8",
+ "regex-automata 0.4.9",
  "regex-syntax 0.8.5",
 ]
 
@@ -8444,9 +8609,9 @@ dependencies = [
 
 [[package]]
 name = "regex-automata"
-version = "0.4.8"
+version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "368758f23274712b504848e9d5a6f010445cc8b87a7cdb4d7cbee666c1288da3"
+checksum = "809e8dc61f6de73b46c85f4c96486310fe304c434cfa43669d7b40f711150908"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -8480,8 +8645,8 @@ dependencies = [
  "futures-util",
  "h2",
  "http 0.2.12",
- "http-body",
- "hyper",
+ "http-body 0.4.6",
+ "hyper 0.14.31",
  "hyper-tls",
  "ipnet",
  "js-sys",
@@ -8493,14 +8658,14 @@ dependencies = [
  "percent-encoding",
  "pin-project-lite",
  "rustls-pemfile 1.0.4",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "serde_urlencoded",
  "sync_wrapper",
  "system-configuration",
  "tokio",
  "tokio-native-tls",
- "tokio-util 0.7.12",
+ "tokio-util",
  "tower-service",
  "url",
  "wasm-bindgen",
@@ -8520,7 +8685,7 @@ dependencies = [
  "async-trait",
  "http 0.2.12",
  "reqwest",
- "serde 1.0.214",
+ "serde 1.0.215",
  "task-local-extensions",
  "thiserror",
 ]
@@ -8537,7 +8702,7 @@ dependencies = [
  "futures",
  "getrandom 0.2.15",
  "http 0.2.12",
- "hyper",
+ "hyper 0.14.31",
  "parking_lot 0.11.2",
  "reqwest",
  "reqwest-middleware",
@@ -8677,9 +8842,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.38.39"
+version = "0.38.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "375116bee2be9ed569afe2154ea6a99dfdffd257f533f187498c2a8f5feaf4ee"
+checksum = "d7f649912bc1495e167a6edee79151c84b1bad49748cb4f1f1167f459f6224f6"
 dependencies = [
  "bitflags 2.6.0",
  "errno",
@@ -8727,6 +8892,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustls"
+version = "0.23.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f1a745511c54ba6d4465e8d5dfbd81b45791756de28d4981af70d6dca128f1e"
+dependencies = [
+ "log",
+ "once_cell",
+ "ring 0.17.8",
+ "rustls-pki-types",
+ "rustls-webpki 0.102.8",
+ "subtle",
+ "zeroize",
+]
+
+[[package]]
 name = "rustls-native-certs"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8739,12 +8919,29 @@ dependencies = [
 ]
 
 [[package]]
-name = "rustls-pemfile"
-version = "0.2.1"
+name = "rustls-native-certs"
+version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5eebeaeb360c87bfb72e84abdb3447159c0eaececf1bef2aecd65a8be949d1c9"
+checksum = "e5bfb394eeed242e909609f56089eecfe5fda225042e8b171791b9c95f5931e5"
 dependencies = [
- "base64 0.13.1",
+ "openssl-probe",
+ "rustls-pemfile 2.2.0",
+ "rustls-pki-types",
+ "schannel",
+ "security-framework",
+]
+
+[[package]]
+name = "rustls-native-certs"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fcaf18a4f2be7326cd874a5fa579fae794320a0f388d365dca7e480e55f83f8a"
+dependencies = [
+ "openssl-probe",
+ "rustls-pemfile 2.2.0",
+ "rustls-pki-types",
+ "schannel",
+ "security-framework",
 ]
 
 [[package]]
@@ -8866,6 +9063,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "secrecy"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e891af845473308773346dc847b2c23ee78fe442e0472ac50e22a18a93d3ae5a"
+dependencies = [
+ "zeroize",
+]
+
+[[package]]
 name = "security-framework"
 version = "2.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8880,9 +9086,9 @@ dependencies = [
 
 [[package]]
 name = "security-framework-sys"
-version = "2.12.0"
+version = "2.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea4a292869320c0272d7bc55a5a6aafaff59b4f63404a003887b679a2e05b4b6"
+checksum = "fa39c7303dc58b5543c94d22c1766b0d31f2ee58306363ea622b10bbc075eaa2"
 dependencies = [
  "core-foundation-sys",
  "libc",
@@ -8894,7 +9100,7 @@ version = "0.34.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b28d58e73c427061f46c801176f54349be3c1a2818cf549e1d9bcac37eef7bca"
 dependencies = [
- "hyper",
+ "hyper 0.14.31",
  "indicatif",
  "log",
  "quick-xml 0.22.0",
@@ -8920,9 +9126,9 @@ checksum = "9dad3f759919b92c3068c696c15c3d17238234498bbdcc80f2c469606f948ac8"
 
 [[package]]
 name = "serde"
-version = "1.0.214"
+version = "1.0.215"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f55c3193aca71c12ad7890f1785d2b73e1b9f63a0bbc353c08ef26fe03fc56b5"
+checksum = "6513c1ad0b11a9376da888e3e0baa0077f1aed55c17f50e7b2397136129fb88f"
 dependencies = [
  "serde_derive",
 ]
@@ -8937,7 +9143,7 @@ dependencies = [
  "heck 0.3.3",
  "include_dir 0.6.2",
  "maplit",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde-reflection 0.3.5",
  "serde_bytes",
  "serde_yaml 0.8.26",
@@ -8963,7 +9169,7 @@ version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "12c47087018ec281d1cdab673d36aea22d816b54d498264029c05d5fa1910da6"
 dependencies = [
- "serde 1.0.214",
+ "serde 1.0.215",
  "thiserror",
 ]
 
@@ -8973,7 +9179,7 @@ version = "0.3.5"
 source = "git+https://github.com/aptos-labs/serde-reflection?rev=839aed62a20ddccf043c08961cfe74875741ccba#839aed62a20ddccf043c08961cfe74875741ccba"
 dependencies = [
  "once_cell",
- "serde 1.0.214",
+ "serde 1.0.215",
  "thiserror",
 ]
 
@@ -8984,7 +9190,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f05a5f801ac62a51a49d378fdb3884480041b99aced450b28990673e8ff99895"
 dependencies = [
  "once_cell",
- "serde 1.0.214",
+ "serde 1.0.215",
  "thiserror",
 ]
 
@@ -8995,7 +9201,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f3a1a3341211875ef120e117ea7fd5228530ae7e7036a779fdc9117be6b3282c"
 dependencies = [
  "ordered-float",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -9004,14 +9210,14 @@ version = "0.11.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "387cc504cb06bb40a96c8e04e951fe01854cf6bc921053c954e4a606d9675c6a"
 dependencies = [
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.214"
+version = "1.0.215"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de523f781f095e28fa605cdce0f8307e451cc0fd14e2eb4cd2e98a355b147766"
+checksum = "ad1e866f866923f252f05c889987993144fb74e722403468a4ebd70c3cd756c0"
 dependencies = [
  "proc-macro2 1.0.89",
  "quote 1.0.37",
@@ -9020,15 +9226,15 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.132"
+version = "1.0.133"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d726bfaff4b320266d395898905d0eba0345aae23b54aee3a737e260fd46db03"
+checksum = "c7fceb2473b9166b2294ef05efcb65a3db80803f0b03ef86a5fc88a2b85ee377"
 dependencies = [
  "indexmap 2.6.0",
  "itoa",
  "memchr",
  "ryu",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -9037,7 +9243,7 @@ version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "606e91878516232ac3b16c12e063d4468d762f16d77e7aef14a1f2326c5f409b"
 dependencies = [
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "thiserror",
 ]
@@ -9048,7 +9254,7 @@ version = "0.6.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "87607cb1398ed59d48732e575a4c28a7a8ebf2454b964fe3f224f2afc07909e1"
 dependencies = [
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -9060,7 +9266,7 @@ dependencies = [
  "form_urlencoded",
  "itoa",
  "ryu",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -9074,7 +9280,7 @@ dependencies = [
  "hex",
  "indexmap 1.9.3",
  "indexmap 2.6.0",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_derive",
  "serde_json",
  "serde_with_macros",
@@ -9101,7 +9307,7 @@ checksum = "578a7433b776b56a35785ed5ce9a7e777ac0598aac5a6dd1b4b18a307c7fc71b"
 dependencies = [
  "indexmap 1.9.3",
  "ryu",
- "serde 1.0.214",
+ "serde 1.0.215",
  "yaml-rust",
 ]
 
@@ -9114,7 +9320,7 @@ dependencies = [
  "indexmap 2.6.0",
  "itoa",
  "ryu",
- "serde 1.0.214",
+ "serde 1.0.215",
  "unsafe-libyaml",
 ]
 
@@ -9222,7 +9428,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34db1a06d485c9142248b7a054f034b349b212551f3dfd19c94d45a754a217cd"
 dependencies = [
  "libc",
- "mio",
+ "mio 0.8.11",
  "signal-hook",
 ]
 
@@ -9328,7 +9534,7 @@ checksum = "b7c388c1b5e93756d0c740965c41e8822f866621d41acbdf6336a6a168f8840c"
 [[package]]
 name = "smoke-test"
 version = "0.1.0"
-source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=unpin-futures-channel#da0bde414a3968d336006eb19fd4c608e7430a3b"
+source = "git+https://github.com/0LNetworkCommunity/diem.git?branch=release#b285b459c7ffaab470b07396857fe6a235f6ecbc"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -9593,9 +9799,9 @@ dependencies = [
 
 [[package]]
 name = "tempfile"
-version = "3.13.0"
+version = "3.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0f2c9fc62d0beef6951ccffd757e241266a2c833136efbe35af6cd2567dca5b"
+checksum = "28cce251fcbc87fac86a866eeb0d6c2d536fc16d06f184bb61aeae11aa4cee0c"
 dependencies = [
  "cfg-if",
  "fastrand",
@@ -9620,7 +9826,7 @@ dependencies = [
  "pest_derive",
  "rand 0.8.5",
  "regex",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "slug",
  "unic-segment",
@@ -9641,7 +9847,7 @@ version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
 dependencies = [
- "unicode-width",
+ "unicode-width 0.1.14",
 ]
 
 [[package]]
@@ -9651,7 +9857,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cd05616119e612a8041ef58f2b578906cc2531a6069047ae092cfb86a325d835"
 dependencies = [
  "smawk",
- "unicode-width",
+ "unicode-width 0.1.14",
 ]
 
 [[package]]
@@ -9662,7 +9868,7 @@ checksum = "b7b3e525a49ec206798b40326a44121291b530c963cfb01018f63e135bac543d"
 dependencies = [
  "smawk",
  "unicode-linebreak",
- "unicode-width",
+ "unicode-width 0.1.14",
 ]
 
 [[package]]
@@ -9673,18 +9879,18 @@ checksum = "23d434d3f8967a09480fb04132ebe0a3e088c173e6d0ee7897abbdf4eab0f8b9"
 
 [[package]]
 name = "thiserror"
-version = "1.0.68"
+version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02dd99dc800bbb97186339685293e1cc5d9df1f8fae2d0aecd9ff1c77efea892"
+checksum = "b6aaf5339b578ea85b50e080feb250a3e8ae8cfcdff9a461c9ec2904bc923f52"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.68"
+version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7c61ec9a6f64d2793d8a45faba21efbe3ced62a886d44c36a009b2b519b4c7e"
+checksum = "4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1"
 dependencies = [
  "proc-macro2 1.0.89",
  "quote 1.0.37",
@@ -9722,7 +9928,7 @@ dependencies = [
  "num-conv",
  "num_threads",
  "powerfmt",
- "serde 1.0.214",
+ "serde 1.0.215",
  "time-core",
  "time-macros",
 ]
@@ -9754,17 +9960,15 @@ dependencies = [
 
 [[package]]
 name = "tiny-bip39"
-version = "0.8.2"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ffc59cb9dfc85bb312c3a78fd6aa8a8582e310b0fa885d5bb877f6dcc601839d"
+checksum = "a30fd743a02bf35236f6faf99adb03089bb77e91c998dac2c2ad76bb424f668c"
 dependencies = [
- "anyhow",
- "hmac 0.8.1",
  "once_cell",
- "pbkdf2 0.4.0",
- "rand 0.7.3",
+ "pbkdf2 0.12.2",
+ "rand 0.8.5",
  "rustc-hash",
- "sha2 0.9.9",
+ "sha2 0.10.8",
  "thiserror",
  "unicode-normalization",
  "wasm-bindgen",
@@ -9807,21 +10011,20 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.32.1"
+version = "1.41.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "777d57dcc6bb4cf084e3212e1858447222aa451f21b5e2452497d9100da65b91"
+checksum = "22cfb5bee7a6a52939ca9224d6ac897bb669134078daa8735560897f69de4d33"
 dependencies = [
  "backtrace",
  "bytes",
  "libc",
- "mio",
- "num_cpus",
+ "mio 1.0.2",
  "parking_lot 0.12.3",
  "pin-project-lite",
  "signal-hook-registry",
  "socket2",
  "tokio-macros",
- "windows-sys 0.48.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -9836,9 +10039,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-macros"
-version = "2.1.0"
+version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "630bdcf245f78637c13ec01ffae6187cca34625e8c63150d424b59e55af2675e"
+checksum = "693d596312e88961bc67d7f1f97af8a70227d9f90c31bba5806eec004978d752"
 dependencies = [
  "proc-macro2 1.0.89",
  "quote 1.0.37",
@@ -9847,13 +10050,14 @@ dependencies = [
 
 [[package]]
 name = "tokio-metrics"
-version = "0.1.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bcb585a0069b53171684e22d5255984ec30d1c7304fd0a4a9a603ffd8c765cdd"
+checksum = "eace09241d62c98b7eeb1107d4c5c64ca3bd7da92e8c218c153ab3a78f9be112"
 dependencies = [
  "futures-util",
  "pin-project-lite",
  "tokio",
+ "tokio-stream",
 ]
 
 [[package]]
@@ -9910,6 +10114,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "tokio-rustls"
+version = "0.26.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0c7bc40d0e5a97695bb96e27995cd3a08538541b0a846f65bba7a359f36700d4"
+dependencies = [
+ "rustls 0.23.17",
+ "rustls-pki-types",
+ "tokio",
+]
+
+[[package]]
 name = "tokio-stream"
 version = "0.1.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9934,20 +10149,6 @@ dependencies = [
 
 [[package]]
 name = "tokio-util"
-version = "0.6.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "36943ee01a6d67977dd3f84a5a1d2efeb4ada3a1ae771cadfaa535d9d9fc6507"
-dependencies = [
- "bytes",
- "futures-core",
- "futures-sink",
- "log",
- "pin-project-lite",
- "tokio",
-]
-
-[[package]]
-name = "tokio-util"
 version = "0.7.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61e7c3654c13bcd040d4a03abee2c75b1d14a37b423cf5a813ceae1cc903ec6a"
@@ -9966,7 +10167,7 @@ version = "0.5.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f4f7f0dd8d50a853a531c426359045b1998f04219d88799810762cd4ad314234"
 dependencies = [
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -9975,7 +10176,7 @@ version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "185d8ab0dfbb35cf1399a6344d8484209c088f75f8f68230da55d48d95d43e3d"
 dependencies = [
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_spanned",
  "toml_datetime",
  "toml_edit 0.20.2",
@@ -9987,7 +10188,7 @@ version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7cda73e2f1397b1262d6dfdcef8aafae14d1de7748d66822d3bfeeb6d03e5e4b"
 dependencies = [
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -9999,7 +10200,7 @@ dependencies = [
  "combine",
  "indexmap 1.9.3",
  "itertools",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -10020,7 +10221,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "396e4d48bbb2b7554c944bde63101b5ae446cff6ec4a24227428f15eb72ef338"
 dependencies = [
  "indexmap 2.6.0",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_spanned",
  "toml_datetime",
  "winnow",
@@ -10042,20 +10243,20 @@ dependencies = [
  "futures-util",
  "h2",
  "http 0.2.12",
- "http-body",
- "hyper",
- "hyper-timeout",
+ "http-body 0.4.6",
+ "hyper 0.14.31",
+ "hyper-timeout 0.4.1",
  "percent-encoding",
  "pin-project",
  "prost",
  "prost-derive",
- "rustls-native-certs",
+ "rustls-native-certs 0.6.3",
  "rustls-pemfile 1.0.4",
  "tokio",
  "tokio-rustls 0.23.4",
  "tokio-stream",
- "tokio-util 0.7.12",
- "tower",
+ "tokio-util",
+ "tower 0.4.13",
  "tower-layer",
  "tower-service",
  "tracing",
@@ -10076,7 +10277,24 @@ dependencies = [
  "rand 0.8.5",
  "slab",
  "tokio",
- "tokio-util 0.7.12",
+ "tokio-util",
+ "tower-layer",
+ "tower-service",
+ "tracing",
+]
+
+[[package]]
+name = "tower"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2873938d487c3cfb9aed7546dc9f2711d867c9f90c46b889989a2cb84eba6b4f"
+dependencies = [
+ "futures-core",
+ "futures-util",
+ "pin-project-lite",
+ "sync_wrapper",
+ "tokio",
+ "tokio-util",
  "tower-layer",
  "tower-service",
  "tracing",
@@ -10084,18 +10302,16 @@ dependencies = [
 
 [[package]]
 name = "tower-http"
-version = "0.2.5"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aba3f3efabf7fb41fae8534fc20a817013dd1c12cb45441efb6c82e6556b4cd8"
+checksum = "403fa3b783d4b626a8ad51d766ab03cb6d2dbfc46b1c5d4448395e6628dc9697"
 dependencies = [
- "base64 0.13.1",
- "bitflags 1.3.2",
+ "base64 0.22.1",
+ "bitflags 2.6.0",
  "bytes",
- "futures-core",
- "futures-util",
- "http 0.2.12",
- "http-body",
- "http-range-header",
+ "http 1.1.0",
+ "http-body 1.0.1",
+ "mime",
  "pin-project-lite",
  "tower-layer",
  "tower-service",
@@ -10185,7 +10401,7 @@ version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bc6b213177105856957181934e4920de57730fc69bf42c37ee5bb664d406d9e1"
 dependencies = [
- "serde 1.0.214",
+ "serde 1.0.215",
  "tracing-core",
 ]
 
@@ -10199,7 +10415,7 @@ dependencies = [
  "nu-ansi-term",
  "once_cell",
  "regex",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "sharded-slab",
  "smallvec",
@@ -10219,15 +10435,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "treediff"
-version = "3.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "761e8d5ad7ce14bb82b7e61ccc0ca961005a275a060b9644a2431aa11553c2ff"
-dependencies = [
- "serde_json",
-]
-
-[[package]]
 name = "try-lock"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10243,7 +10450,7 @@ dependencies = [
  "cassowary",
  "crossterm 0.25.0",
  "unicode-segmentation",
- "unicode-width",
+ "unicode-width 0.1.14",
 ]
 
 [[package]]
@@ -10436,6 +10643,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7dd6e30e90baa6f72411720665d41d89b9a3d039dc45b8faea1ddd07f617f6af"
 
 [[package]]
+name = "unicode-width"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fc81956842c57dac11422a97c3b8195a1ff727f06e85c84ed2e8aa277c9a0fd"
+
+[[package]]
 name = "unicode-xid"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10487,7 +10700,7 @@ dependencies = [
  "native-tls",
  "once_cell",
  "qstring",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "url",
 ]
@@ -10501,7 +10714,7 @@ dependencies = [
  "form_urlencoded",
  "idna 1.0.3",
  "percent-encoding",
- "serde 1.0.214",
+ "serde 1.0.215",
 ]
 
 [[package]]
@@ -10627,9 +10840,9 @@ dependencies = [
  "bytes",
  "futures-channel",
  "futures-util",
- "headers",
+ "headers 0.3.9",
  "http 0.2.12",
- "hyper",
+ "hyper 0.14.31",
  "log",
  "mime",
  "mime_guess",
@@ -10638,13 +10851,13 @@ dependencies = [
  "pin-project",
  "rustls-pemfile 2.2.0",
  "scoped-tls",
- "serde 1.0.214",
+ "serde 1.0.215",
  "serde_json",
  "serde_urlencoded",
  "tokio",
  "tokio-rustls 0.25.0",
  "tokio-tungstenite",
- "tokio-util 0.7.12",
+ "tokio-util",
  "tower-service",
  "tracing",
 ]
@@ -10767,6 +10980,16 @@ name = "web-sys"
 version = "0.3.72"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f6488b90108c040df0fe62fa815cbdee25124641df01814dd7282749234c6112"
+dependencies = [
+ "js-sys",
+ "wasm-bindgen",
+]
+
+[[package]]
+name = "web-time"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a6580f308b1fad9207618087a65c04e7a10bc77e02c8e84e9b00dd4b12fa0bb"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
@@ -11033,7 +11256,7 @@ checksum = "85e60b0d1b5f99db2556934e21937020776a5d31520bf169e851ac44e6420214"
 [[package]]
 name = "x25519-dalek"
 version = "1.2.0"
-source = "git+https://github.com/0LNetworkCommunity/x25519-dalek?rev=762a9501668d213daa4a1864fa1f9db22716b661#762a9501668d213daa4a1864fa1f9db22716b661"
+source = "git+https://github.com/0LNetworkCommunity/x25519-dalek?branch=zeroize_v1#762a9501668d213daa4a1864fa1f9db22716b661"
 dependencies = [
  "curve25519-dalek",
  "rand_core 0.5.1",
@@ -11061,7 +11284,7 @@ version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c5b1314b079b0930c31e3af543d8ee1757b1951ae1e1565ec704403a7240ca5"
 dependencies = [
- "serde 1.0.214",
+ "serde 1.0.215",
  "stable_deref_trait",
  "yoke-derive",
  "zerofrom",
