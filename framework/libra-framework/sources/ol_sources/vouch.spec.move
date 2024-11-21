@@ -15,7 +15,7 @@ spec ol_framework::vouch {
             len(global<ReceivedVouches>(addr).epoch_vouched);
     }
 
-    // Previous specs remain the same...
+
 
     spec true_friends(addr: address): vector<address> {
         pragma aborts_if_is_partial = true;
