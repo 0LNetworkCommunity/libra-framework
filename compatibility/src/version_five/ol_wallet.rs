@@ -9,23 +9,23 @@ use super::{language_storage_v5::CORE_CODE_ADDRESS, legacy_address_v5::LegacyAdd
 
 /// Struct that represents a CommunityWallet resource
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CommunityWalletsResourceLegacy {
+pub struct CommunityWalletsResourceLegacyV5 {
     /// List
     pub list: Vec<LegacyAddressV5>,
 }
 
-impl MoveStructTypeV5 for CommunityWalletsResourceLegacy {
+impl MoveStructTypeV5 for CommunityWalletsResourceLegacyV5 {
     const MODULE_NAME: &'static IdentStr = ident_str!("Wallet");
     const STRUCT_NAME: &'static IdentStr = ident_str!("CommunityWalletList");
 }
 
-impl CommunityWalletsResourceLegacy {
+impl CommunityWalletsResourceLegacyV5 {
     ///
     pub fn struct_tag() -> StructTagV5 {
         StructTagV5 {
             address: CORE_CODE_ADDRESS,
-            module: CommunityWalletsResourceLegacy::module_identifier(),
-            name: CommunityWalletsResourceLegacy::struct_identifier(),
+            module: CommunityWalletsResourceLegacyV5::module_identifier(),
+            name: CommunityWalletsResourceLegacyV5::struct_identifier(),
             type_params: vec![],
         }
     }
@@ -38,27 +38,27 @@ impl CommunityWalletsResourceLegacy {
 
 /// Struct that represents a SlowWallet resource
 #[derive(Debug, Serialize, Deserialize)]
-pub struct SlowWalletResource {
+pub struct SlowWalletResourceV5 {
     ///
     pub unlocked: u64,
     ///
     pub transferred: u64,
 }
 
-impl MoveStructTypeV5 for SlowWalletResource {
+impl MoveStructTypeV5 for SlowWalletResourceV5 {
     const MODULE_NAME: &'static IdentStr = ident_str!("DiemAccount");
     const STRUCT_NAME: &'static IdentStr = ident_str!("SlowWallet");
 }
 
-impl MoveResourceV5 for SlowWalletResource {}
+impl MoveResourceV5 for SlowWalletResourceV5 {}
 
-impl SlowWalletResource {
+impl SlowWalletResourceV5 {
     ///
     pub fn struct_tag() -> StructTagV5 {
         StructTagV5 {
             address: CORE_CODE_ADDRESS,
-            module: SlowWalletResource::module_identifier(),
-            name: SlowWalletResource::struct_identifier(),
+            module: SlowWalletResourceV5::module_identifier(),
+            name: SlowWalletResourceV5::struct_identifier(),
             type_params: vec![],
         }
     }
@@ -71,23 +71,23 @@ impl SlowWalletResource {
 
 /// Struct that represents a SlowWallet resource
 #[derive(Debug, Serialize, Deserialize)]
-pub struct SlowWalletListResource {
+pub struct SlowWalletListResourceV5 {
     ///
     pub list: Vec<LegacyAddressV5>,
 }
 
-impl MoveStructTypeV5 for SlowWalletListResource {
+impl MoveStructTypeV5 for SlowWalletListResourceV5 {
     const MODULE_NAME: &'static IdentStr = ident_str!("DiemAccount");
     const STRUCT_NAME: &'static IdentStr = ident_str!("SlowWalletList");
 }
 
-impl SlowWalletListResource {
+impl SlowWalletListResourceV5 {
     ///
     pub fn struct_tag() -> StructTagV5 {
         StructTagV5 {
             address: CORE_CODE_ADDRESS,
-            module: SlowWalletListResource::module_identifier(),
-            name: SlowWalletListResource::struct_identifier(),
+            module: SlowWalletListResourceV5::module_identifier(),
+            name: SlowWalletListResourceV5::struct_identifier(),
             type_params: vec![],
         }
     }
