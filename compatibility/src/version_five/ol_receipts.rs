@@ -3,7 +3,7 @@ use anyhow::Result;
 use move_core_types::{ident_str, identifier::IdentStr};
 use serde::{Deserialize, Serialize};
 
-use super::{language_storage_v5::CORE_CODE_ADDRESS, legacy_address_v5::LegacyAddressV5};
+use super::{language_storage_v5::CORE_CODE_ADDRESS, legacy_address_v5::LegacyAddressV5, move_resource_v5::MoveResourceV5};
 
 /// Struct that represents a CurrencyInfo resource
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,6 +22,9 @@ impl MoveStructTypeV5 for ReceiptsResource {
     const MODULE_NAME: &'static IdentStr = ident_str!("Receipts");
     const STRUCT_NAME: &'static IdentStr = ident_str!("UserReceipts");
 }
+
+impl MoveResourceV5 for ReceiptsResource {}
+
 
 impl ReceiptsResource {
     ///

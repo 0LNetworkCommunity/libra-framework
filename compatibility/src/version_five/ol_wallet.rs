@@ -3,7 +3,7 @@ use anyhow::Result;
 use move_core_types::{ident_str, identifier::IdentStr};
 use serde::{Deserialize, Serialize};
 
-use super::{language_storage_v5::CORE_CODE_ADDRESS, legacy_address_v5::LegacyAddressV5};
+use super::{language_storage_v5::CORE_CODE_ADDRESS, legacy_address_v5::LegacyAddressV5, move_resource_v5::MoveResourceV5};
 
 // NOTE: these are legacy structs for v5
 
@@ -49,6 +49,8 @@ impl MoveStructTypeV5 for SlowWalletResource {
     const MODULE_NAME: &'static IdentStr = ident_str!("DiemAccount");
     const STRUCT_NAME: &'static IdentStr = ident_str!("SlowWallet");
 }
+
+impl MoveResourceV5 for SlowWalletResource {}
 
 impl SlowWalletResource {
     ///

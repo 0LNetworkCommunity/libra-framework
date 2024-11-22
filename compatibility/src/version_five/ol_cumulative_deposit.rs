@@ -4,7 +4,7 @@ use anyhow::Result;
 use move_core_types::{ident_str, identifier::IdentStr};
 use serde::{Deserialize, Serialize};
 
-use super::language_storage_v5::CORE_CODE_ADDRESS;
+use super::{language_storage_v5::CORE_CODE_ADDRESS, move_resource_v5::MoveResourceV5};
 
 /// Struct that represents a CurrencyInfo resource
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -19,6 +19,8 @@ impl MoveStructTypeV5 for CumulativeDepositResource {
     const MODULE_NAME: &'static IdentStr = ident_str!("DiemAccount");
     const STRUCT_NAME: &'static IdentStr = ident_str!("CumulativeDeposits");
 }
+
+impl MoveResourceV5 for CumulativeDepositResource {}
 
 impl CumulativeDepositResource {
     ///
