@@ -61,12 +61,12 @@ impl StructTagV5 {
 /// Represents the initial key into global storage where we first index by the address, and then
 /// the struct tag
 #[derive(Serialize, Deserialize, Debug, PartialEq, Hash, Eq, Clone, PartialOrd, Ord)]
-pub struct ResourceKey {
+pub struct ResourceKeyV5 {
     pub address: LegacyAddressV5,
     pub type_: StructTagV5,
 }
 
-impl ResourceKey {
+impl ResourceKeyV5 {
     pub fn address(&self) -> LegacyAddressV5 {
         self.address
     }
@@ -76,9 +76,9 @@ impl ResourceKey {
     }
 }
 
-impl ResourceKey {
+impl ResourceKeyV5 {
     pub fn new(address: LegacyAddressV5, type_: StructTagV5) -> Self {
-        ResourceKey { address, type_ }
+        ResourceKeyV5 { address, type_ }
     }
 }
 
@@ -158,7 +158,7 @@ impl Display for TypeTagV5 {
     }
 }
 
-impl Display for ResourceKey {
+impl Display for ResourceKeyV5 {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         write!(f, "0x{}/{}", self.address.short_str_lossless(), self.type_)
     }

@@ -6,7 +6,6 @@ use super::move_resource_v5::{MoveResourceV5, MoveStructTypeV5};
 use move_core_types::{
     ident_str,
     identifier::IdentStr,
-    // move_resource::{MoveResource, MoveStructType},
 };
 
 use serde::{Deserialize, Serialize};

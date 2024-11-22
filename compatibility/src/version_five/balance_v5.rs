@@ -1,10 +1,13 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::version_five::language_storage_v5::{StructTagV5, TypeTagV5};
-use crate::version_five::legacy_address_v5::LEGACY_CORE_CODE_ADDRESS;
-use crate::version_five::move_resource_v5::MoveResourceV5;
-use crate::version_five::move_resource_v5::MoveStructTypeV5;
+use crate::version_five::{
+    language_storage_v5::{StructTagV5, TypeTagV5},
+    legacy_address_v5::LEGACY_CORE_CODE_ADDRESS,
+    move_resource_v5::MoveResourceV5,
+    move_resource_v5::MoveStructTypeV5,
+};
+
 use move_core_types::{ident_str, identifier::IdentStr};
 use serde::{Deserialize, Serialize};
 /// The balance resource held under an account.
