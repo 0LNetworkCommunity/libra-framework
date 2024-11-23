@@ -17,9 +17,9 @@ pub mod transaction_type_v5;
 // so that they do not get suggested in the place of
 // up-to-date structs of the same name.
 
-mod account_blob_v5;
-mod event_v5;
-mod hash_value_v5;
-mod language_storage_v5;
-mod move_resource_v5;
-mod safe_serialize_v5;
+pub mod account_blob_v5;
+pub mod event_v5;
+pub mod hash_value_v5;
+pub mod language_storage_v5;
+pub mod move_resource_v5;
+pub mod safe_serialize_v5;
