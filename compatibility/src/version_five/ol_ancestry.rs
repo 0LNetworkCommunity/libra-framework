@@ -1,4 +1,3 @@
-
 use crate::version_five::{
     language_storage_v5::StructTagV5, move_resource_v5::MoveResourceV5,
     move_resource_v5::MoveStructTypeV5,
@@ -12,7 +11,6 @@ use super::{language_storage_v5::CORE_CODE_ADDRESS, legacy_address_v5::LegacyAdd
 /// Struct that represents a AutoPay resource
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AncestryResource {
-    ///
     pub tree: Vec<LegacyAddressV5>,
 }
 
@@ -23,7 +21,6 @@ impl MoveStructTypeV5 for AncestryResource {
 impl MoveResourceV5 for AncestryResource {}
 
 impl AncestryResource {
-    ///
     pub fn struct_tag() -> StructTagV5 {
         StructTagV5 {
             address: CORE_CODE_ADDRESS,
@@ -33,7 +30,6 @@ impl AncestryResource {
         }
     }
 
-    ///
     pub fn try_from_bytes(bytes: &[u8]) -> Result<Self> {
         bcs::from_bytes(bytes).map_err(Into::into)
     }

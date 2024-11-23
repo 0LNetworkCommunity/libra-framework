@@ -7,19 +7,13 @@ use super::{language_storage_v5::CORE_CODE_ADDRESS, move_resource_v5::MoveResour
 /// Struct that represents a CurrencyInfo resource
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TowerStateResource {
-    ///
     pub previous_proof_hash: Vec<u8>,
     /// user's latest verified_tower_height
     pub verified_tower_height: u64,
-    ///
     pub latest_epoch_mining: u64,
-    ///
     pub count_proofs_in_epoch: u64,
-    ///
     pub epochs_validating_and_mining: u64,
-    ///
     pub contiguous_epochs_validating_and_mining: u64,
-    ///
     pub epochs_since_last_account_creation: u64,
 }
 
@@ -30,7 +24,6 @@ impl MoveStructTypeV5 for TowerStateResource {
 impl MoveResourceV5 for TowerStateResource {}
 
 impl TowerStateResource {
-    ///
     pub fn struct_tag() -> StructTagV5 {
         StructTagV5 {
             address: CORE_CODE_ADDRESS,
@@ -40,7 +33,6 @@ impl TowerStateResource {
         }
     }
 
-    ///
     pub fn try_from_bytes(bytes: &[u8]) -> Result<Self> {
         bcs::from_bytes(bytes).map_err(Into::into)
     }

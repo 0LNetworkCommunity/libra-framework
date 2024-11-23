@@ -1,4 +1,3 @@
-
 use crate::version_five::{language_storage_v5::StructTagV5, move_resource_v5::MoveStructTypeV5};
 use anyhow::Result;
 use move_core_types::{ident_str, identifier::IdentStr};
@@ -9,9 +8,7 @@ use super::{language_storage_v5::CORE_CODE_ADDRESS, move_resource_v5::MoveResour
 /// Struct that represents a CurrencyInfo resource
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CumulativeDepositResource {
-    ///
     pub value: u64,
-    ///
     pub index: u64,
 }
 
@@ -23,7 +20,6 @@ impl MoveStructTypeV5 for CumulativeDepositResource {
 impl MoveResourceV5 for CumulativeDepositResource {}
 
 impl CumulativeDepositResource {
-    ///
     pub fn struct_tag() -> StructTagV5 {
         StructTagV5 {
             address: CORE_CODE_ADDRESS,
@@ -33,7 +29,6 @@ impl CumulativeDepositResource {
         }
     }
 
-    ///
     pub fn try_from_bytes(bytes: &[u8]) -> Result<Self> {
         bcs::from_bytes(bytes).map_err(Into::into)
     }

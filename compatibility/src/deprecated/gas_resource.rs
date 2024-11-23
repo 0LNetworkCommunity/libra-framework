@@ -24,18 +24,15 @@ pub struct GasResource {
 }
 
 impl GasResource {
-    ///
-    pub fn new(value: u64) -> Self {
+       pub fn new(value: u64) -> Self {
         Self { value }
     }
 
-    ///
-    pub fn value(&self) -> u64 {
+       pub fn value(&self) -> u64 {
         self.value
     }
 
-    ///
-    pub fn struct_tag() -> StructTag {
+       pub fn struct_tag() -> StructTag {
         StructTag {
             address: CORE_CODE_ADDRESS,
             name: GasResource::struct_identifier(),
@@ -44,8 +41,7 @@ impl GasResource {
         }
     }
 
-    ///
-    pub fn access_path_for() -> Vec<u8> {
+       pub fn access_path_for() -> Vec<u8> {
         AccessPath::resource_access_vec(GasResource::struct_tag())
     }
 }

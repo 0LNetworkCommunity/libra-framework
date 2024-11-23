@@ -15,47 +15,33 @@ use super::legacy_address::LegacyAddress;
 /// Struct that represents a AutoPay resource
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AutoPayResource {
-    ///
-    pub payment: Vec<Payment>,
-    ///
-    pub prev_bal: u64,
+       pub payment: Vec<Payment>,
+       pub prev_bal: u64,
 }
 
 /// Struct that represents a view for AutoPay resource
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AutoPayView {
-    ///
-    pub payments: Vec<PaymentView>,
-    ///
-    pub recurring_sum: u64,
+       pub payments: Vec<PaymentView>,
+       pub recurring_sum: u64,
 }
 
 /// Autopay instruction
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PaymentView {
-    ///
-    pub uid: u64,
-    ///
-    pub in_type: u8,
-    ///
-    pub type_desc: String,
-    ///
-    pub payee: LegacyAddress,
-    ///
-    pub end_epoch: u64,
-    ///
-    pub prev_bal: u64,
-    ///
-    pub amt: u64,
-    ///
-    pub amount: String,
-    ///
-    pub note: Option<String>,
+       pub uid: u64,
+       pub in_type: u8,
+       pub type_desc: String,
+       pub payee: LegacyAddress,
+       pub end_epoch: u64,
+       pub prev_bal: u64,
+       pub amt: u64,
+       pub amount: String,
+       pub note: Option<String>,
 }
 
 impl PaymentView {
-    ///
-    pub fn is_percent_of_change(&self) -> bool {
+       pub fn is_percent_of_change(&self) -> bool {
         self.in_type == 1u8
     }
 }
@@ -63,18 +49,12 @@ impl PaymentView {
 /// Autopay instruction
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Payment {
-    ///
-    pub uid: u64,
-    ///
-    pub in_type: u8,
-    ///
-    pub payee: LegacyAddress,
-    ///
-    pub end_epoch: u64,
-    ///
-    pub prev_bal: u64,
-    ///
-    pub amt: u64,
+       pub uid: u64,
+       pub in_type: u8,
+       pub payee: LegacyAddress,
+       pub end_epoch: u64,
+       pub prev_bal: u64,
+       pub amt: u64,
 }
 
 impl Payment {
@@ -105,8 +85,7 @@ impl Payment {
 // impl MoveResource for AutoPayResource {}
 
 impl AutoPayResource {
-    // ///
-    // pub fn struct_tag() -> StructTag {
+    //    // pub fn struct_tag() -> StructTag {
     //     StructTag {
     //         address: CORE_CODE_ADDRESS,
     //         module: AutoPayResource::module_identifier(),
@@ -114,23 +93,19 @@ impl AutoPayResource {
     //         type_params: vec![],
     //     }
     // }
-    // ///
-    // pub fn access_path(account: LegacyAddress) -> AccessPath {
+    //    // pub fn access_path(account: LegacyAddress) -> AccessPath {
     //     let resource_key = ResourceKey::new(account, AutoPayResource::struct_tag());
     //     AccessPath::resource_access_path(resource_key)
     // }
-    // ///
-    // pub fn resource_path() -> Vec<u8> {
+    //    // pub fn resource_path() -> Vec<u8> {
     //     AccessPath::resource_access_vec(AutoPayResource::struct_tag())
     // }
 
-    ///
-    pub fn try_from_bytes(bytes: &[u8]) -> Result<Self> {
+       pub fn try_from_bytes(bytes: &[u8]) -> Result<Self> {
         bcs::from_bytes(bytes).map_err(Into::into)
     }
 
-    // ///
-    // pub fn get_view(&self) -> AutoPayView {
+    //    // pub fn get_view(&self) -> AutoPayView {
     //     let payments = self.payment.iter().map(|each| {
     //         PaymentView {
     //             uid: each.uid,

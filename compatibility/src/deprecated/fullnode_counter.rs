@@ -14,18 +14,12 @@ use serde::{Deserialize, Serialize};
 /// Struct that represents a CurrencyInfo resource
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FullnodeCounterResource {
-    ///
-    pub proofs_submitted_in_epoch: u64,
-    ///
-    pub proofs_paid_in_epoch: u64,
-    ///
-    pub subsidy_in_epoch: u64,
-    ///
-    pub cumulative_proofs_submitted: u64,
-    ///
-    pub cumulative_proofs_paid: u64,
-    ///
-    pub cumulative_subsidy: u64,
+       pub proofs_submitted_in_epoch: u64,
+       pub proofs_paid_in_epoch: u64,
+       pub subsidy_in_epoch: u64,
+       pub cumulative_proofs_submitted: u64,
+       pub cumulative_proofs_paid: u64,
+       pub cumulative_subsidy: u64,
 }
 
 impl MoveStructType for FullnodeCounterResource {
