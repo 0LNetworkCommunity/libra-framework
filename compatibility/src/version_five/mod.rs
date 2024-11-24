@@ -10,7 +10,6 @@ pub mod ol_receipts;
 pub mod ol_tower_state;
 pub mod ol_wallet;
 pub mod script_v5;
-// mod serde_helper_vec_bytes;
 pub mod state_snapshot_v5;
 pub mod transaction_argument_v5;
 pub mod transaction_manifest_v5;
