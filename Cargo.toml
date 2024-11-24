@@ -150,7 +150,10 @@ diesel_migrations = { version = "2.1.0", features = ["postgres"] }
 digest = "0.9.0"
 dir-diff = "0.3.2"
 dirs = "4.0.0"
-ed25519-dalek = { version = "1", features = ["std", "serde"] } # Latest is 2.x.x but we have to stick with 1.x.x due to api changes requiring significant application code changes.
+ed25519-dalek = { version = "1", features = [
+  "std",
+  "serde",
+] } # Latest is 2.x.x but we have to stick with 1.x.x due to api changes requiring significant application code changes.
 ed25519-dalek-bip32 = "0.2" # Latest is 3.x.x but we have to stick with 2.x.x due to api changes requiring significant application code changes.
 either = "1.6.1"
 enum_dispatch = "0.3.8"
@@ -340,7 +343,7 @@ move-compiler = { git = "https://github.com/0LNetworkCommunity/diem.git", branch
 move-model = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 move-vm-test-utils = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 move-vm-types = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-move-vm-runtime =  { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+move-vm-runtime = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
 
 # uses a profile similar to `cli` in Diem/Cargo.toml
 # optimized for performance and size

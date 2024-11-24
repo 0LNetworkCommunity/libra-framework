@@ -15,6 +15,7 @@ pub mod transaction_argument_v5;
 pub mod transaction_manifest_v5;
 pub mod transaction_restore_v5;
 pub mod transaction_type_v5;
+pub mod transaction_view_v5;
 
 // NOTE: the ones below should likely be private always,
 // so that they do not get suggested in the place of
