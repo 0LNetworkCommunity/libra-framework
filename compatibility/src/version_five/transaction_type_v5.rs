@@ -1,7 +1,11 @@
-use crate::version_five::event_v5::EventKeyV5;
-use crate::version_five::hash_value_v5::HashValueV5;
-use crate::version_five::language_storage_v5::ModuleIdV5;
-use crate::version_five::language_storage_v5::TypeTagV5;
+use crate::version_five::{
+    event_v5::EventKeyV5,
+    hash_value_v5::HashValueV5,
+    language_storage_v5::{ModuleIdV5, TypeTagV5},
+    legacy_address_v5::LegacyAddressV5,
+    module_v5::ModuleBundle,
+    script_v5::Script,
+};
 
 use diem_crypto::{
     ed25519::{Ed25519PublicKey, Ed25519Signature},
@@ -9,11 +13,11 @@ use diem_crypto::{
 };
 
 use diem_types::transaction::ChangeSet;
-use diem_types::transaction::Script;
 
-use super::legacy_address_v5::LegacyAddressV5;
 use diem_types::{chain_id::ChainId, transaction::authenticator::AccountAuthenticator};
 use serde::{Deserialize, Serialize};
+
+use super::script_v5::ScriptFunction;
 
 #[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -41,7 +45,7 @@ pub struct SignedTransaction {
 }
 
 /// Two different kinds of WriteSet transactions.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum WriteSetPayload {
     /// Directly passing in the WriteSet.
     Direct(ChangeSet),
@@ -52,6 +56,15 @@ pub enum WriteSetPayload {
         /// Script body that gets executed.
         script: Script,
     },
+}
+
+impl WriteSetPayload {
+    pub fn should_trigger_reconfiguration_by_default(&self) -> bool {
+        match self {
+            Self::Direct(_) => true,
+            Self::Script { .. } => false,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -139,25 +152,53 @@ struct RawTransaction {
     chain_id: ChainId,
 }
 
-/// Different kinds of transactions.
+// /// Different kinds of transactions.
+// #[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+// pub enum TransactionPayload {
+//     /// A system maintenance transaction.
+//     WriteSet(WriteSetPayload),
+//     #[serde(with = "serde_bytes")]
+//     WriteSet(Vec<u8>),
+//     /// A transaction that executes code.
+//     // Script(Script),
+//     #[serde(with = "serde_bytes")]
+//     Script(Vec<u8>),
+//     /// A transaction that publishes code.
+//     // Module(Module),
+//     #[serde(with = "serde_bytes")]
+//     Module(Vec<u8>),
+//     /// A transaction that executes an existing script function published on-chain.
+//     // ScriptFunction(ScriptFunction),
+//     #[serde(with = "serde_bytes")]
+//     ScriptFunction(Vec<u8>),
+// }
+
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum TransactionPayload {
     /// A system maintenance transaction.
-    // WriteSet(WriteSetPayload),
-    #[serde(with = "serde_bytes")]
-    WriteSet(Vec<u8>),
+    WriteSet(WriteSetPayload),
     /// A transaction that executes code.
-    // Script(Script),
-    #[serde(with = "serde_bytes")]
-    Script(Vec<u8>),
-    /// A transaction that publishes code.
-    // Module(Module),
-    #[serde(with = "serde_bytes")]
-    Module(Vec<u8>),
+    Script(Script),
+    /// A transaction that publishes multiple modules at the same time.
+    ModuleBundle(ModuleBundle),
     /// A transaction that executes an existing script function published on-chain.
-    // ScriptFunction(ScriptFunction),
-    #[serde(with = "serde_bytes")]
-    ScriptFunction(Vec<u8>),
+    ScriptFunction(ScriptFunction),
+}
+
+impl TransactionPayload {
+    pub fn should_trigger_reconfiguration_by_default(&self) -> bool {
+        match self {
+            Self::WriteSet(ws) => ws.should_trigger_reconfiguration_by_default(),
+            Self::Script(_) | Self::ScriptFunction(_) | Self::ModuleBundle(_) => false,
+        }
+    }
+
+    pub fn into_script_function(self) -> ScriptFunction {
+        match self {
+            Self::ScriptFunction(f) => f,
+            payload => panic!("Expected ScriptFunction(_) payload, found: {:#?}", payload),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
