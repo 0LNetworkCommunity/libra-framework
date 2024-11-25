@@ -35,9 +35,11 @@ type Bytes = Vec<u8>;
 ///     pub fn decode(&Script) -> Option<ScriptCall> { .. }
 /// }
 /// ```
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "fuzzing", derive(proptest_derive::Arbitrary))]
-#[cfg_attr(feature = "fuzzing", proptest(no_params))]
+
+//////// 0L ////////
+#[derive(Clone, Debug, PartialEq, PartialOrd, Eq, serde::Deserialize, serde::Serialize)]
+// #[cfg_attr(feature = "fuzzing", derive(proptest_derive::Arbitrary))]
+// #[cfg_attr(feature = "fuzzing", proptest(no_params))]
 pub enum ScriptCall {
     /// # Summary
     /// Adds a zero `Currency` balance to the sending `account`. This will enable `account` to
@@ -1441,9 +1443,8 @@ pub enum ScriptCall {
 ///     pub fn decode(&TransactionPayload) -> Option<ScriptFunctionCall> { .. }
 /// }
 /// ```
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "fuzzing", derive(proptest_derive::Arbitrary))]
-#[cfg_attr(feature = "fuzzing", proptest(no_params))]
+#[derive(Clone, Debug, PartialEq, PartialOrd, Eq, serde::Deserialize, serde::Serialize)]
+
 pub enum ScriptFunctionCall {
     /// # Summary
     /// Adds a zero `Currency` balance to the sending `account`. This will enable `account` to
@@ -4352,7 +4353,7 @@ pub fn encode_create_acc_user_script_function(
         ],
     ))
 }
-
+#[allow(clippy::too_many_arguments)]
 pub fn encode_create_acc_val_script_function(
     challenge: Vec<u8>,
     solution: Vec<u8>,
@@ -5769,6 +5770,7 @@ pub fn encode_rotate_shared_ed25519_public_key_script_function(
 /// | `Errors::INVALID_ARGUMENT` | `SlidingNonce::ENONCE_TOO_NEW`              | The `sliding_nonce` is too far in the future.                                              |
 /// | `Errors::INVALID_ARGUMENT` | `SlidingNonce::ENONCE_ALREADY_RECORDED`     | The `sliding_nonce` has been previously recorded.                                          |
 /// | `Errors::REQUIRES_ADDRESS` | `CoreAddresses::EDIEM_ROOT`                 | `account` is not the Diem Root account.                                                    |
+#[allow(clippy::too_many_arguments)]
 pub fn encode_set_gas_constants_script_function(
     sliding_nonce: u64,
     global_memory_per_byte_cost: u64,

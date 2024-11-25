@@ -35,7 +35,10 @@ type Bytes = Vec<u8>;
 ///     pub fn decode(&Script) -> Option<ScriptCall> { .. }
 /// }
 /// ```
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+
+//////// 0L ////////
+#[derive(Clone, Debug, PartialEq, PartialOrd, Eq, serde::Deserialize, serde::Serialize)]
+
 // #[cfg_attr(feature = "fuzzing", derive(proptest_derive::Arbitrary))]
 // #[cfg_attr(feature = "fuzzing", proptest(no_params))]
 pub enum ScriptCall {
@@ -1441,7 +1444,7 @@ pub enum ScriptCall {
 ///     pub fn decode(&TransactionPayload) -> Option<ScriptFunctionCall> { .. }
 /// }
 /// ```
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, PartialEq, PartialOrd, Eq, serde::Deserialize, serde::Serialize)]
 // #[cfg_attr(feature = "fuzzing", derive(proptest_derive::Arbitrary))]
 // #[cfg_attr(feature = "fuzzing", proptest(no_params))]
 pub enum ScriptFunctionCall {
