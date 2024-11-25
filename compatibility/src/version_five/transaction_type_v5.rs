@@ -38,10 +38,10 @@ pub enum TransactionV5 {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SignedTransaction {
     /// The raw transaction
-    raw_txn: RawTransaction,
+    pub raw_txn: RawTransaction,
 
     /// Public key and signature to authenticate
-    authenticator: TransactionAuthenticator,
+    pub authenticator: TransactionAuthenticator,
 }
 
 /// Two different kinds of WriteSet transactions.
@@ -120,58 +120,43 @@ pub enum AbortLocation {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-struct RawTransaction {
+pub struct RawTransaction {
     /// Sender's address.
-    sender: LegacyAddressV5,
+    pub sender: LegacyAddressV5,
 
     /// Sequence number of this transaction. This must match the sequence number
     /// stored in the sender's account at the time the transaction executes.
-    sequence_number: u64,
+    pub sequence_number: u64,
 
     /// The transaction payload, e.g., a script to execute.
-    payload: TransactionPayload,
+    pub payload: TransactionPayload,
 
     /// Maximal total gas to spend for this transaction.
-    max_gas_amount: u64,
+    pub max_gas_amount: u64,
 
     /// Price to be paid per gas unit.
-    gas_unit_price: u64,
+    pub gas_unit_price: u64,
 
     /// The currency code, e.g., "XUS", used to pay for gas. The `max_gas_amount`
     /// and `gas_unit_price` values refer to units of this currency.
-    gas_currency_code: String,
+    pub gas_currency_code: String,
 
     /// Expiration timestamp for this transaction, represented
     /// as seconds from the Unix Epoch. If the current blockchain timestamp
     /// is greater than or equal to this time, then the transaction has
     /// expired and will be discarded. This can be set to a large value far
     /// in the future to indicate that a transaction does not expire.
-    expiration_timestamp_secs: u64,
+    pub expiration_timestamp_secs: u64,
 
     /// Chain ID of the Diem network this transaction is intended for.
-    chain_id: ChainId,
+    pub chain_id: ChainId,
 }
 
-// /// Different kinds of transactions.
-// #[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
-// pub enum TransactionPayload {
-//     /// A system maintenance transaction.
-//     WriteSet(WriteSetPayload),
-//     #[serde(with = "serde_bytes")]
-//     WriteSet(Vec<u8>),
-//     /// A transaction that executes code.
-//     // Script(Script),
-//     #[serde(with = "serde_bytes")]
-//     Script(Vec<u8>),
-//     /// A transaction that publishes code.
-//     // Module(Module),
-//     #[serde(with = "serde_bytes")]
-//     Module(Vec<u8>),
-//     /// A transaction that executes an existing script function published on-chain.
-//     // ScriptFunction(ScriptFunction),
-//     #[serde(with = "serde_bytes")]
-//     ScriptFunction(Vec<u8>),
-// }
+impl RawTransaction {
+    pub fn into_payload(self) -> TransactionPayload {
+        self.payload
+    }
+}
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum TransactionPayload {
