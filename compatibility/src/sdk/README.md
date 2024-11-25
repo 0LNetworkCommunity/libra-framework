@@ -1,5 +1,11 @@
 # Versions of Libra SDK
 
+The historical SDKs include:
+- v5.0.0 (genesis 11/2021)
+- v5.2.0 (last production v5)
+- v6.9.9 (last v6)
+- v7.0.3 (production as of 11/2024)
+
 ## Why do we need these?
 Transactions submitted to blockchain are done in bytecode. Decoding that bytecode into a useful object (function name, arguments, timestamp) is hard to do if you do not have the Rust serialization lib which generated the bytecode originally.
 
