@@ -4,6 +4,7 @@ pub mod diem_account_v5;
 pub mod freezing_v5;
 pub mod legacy_address_v5;
 pub mod module_v5;
+pub mod new_epoch_v5;
 pub mod ol_ancestry;
 pub mod ol_cumulative_deposit;
 pub mod ol_receipts;
