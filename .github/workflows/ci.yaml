@@ -52,7 +52,7 @@ jobs:
           shared-key: "libra-framework"
           cache-all-crates: true
 
-      # fail fast if types doesnt compile, everything else will fail.
+      # fail fast if types doesn't compile, everything else will fail.
       - name: types
         working-directory: ./types
         run: cargo test --no-fail-fast
@@ -258,17 +258,14 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: setup env
-        # if: ${{runner.environment == 'self-hosted'}}
         uses: ./.github/actions/build_env
 
       - uses: actions/download-artifact@v4.1.2
-        # if: ${{runner.environment == 'self-hosted'}}
         with:
           name: framework-build
           path: framework/
       - name: rescue
         if: always()
-        # if: ${{runner.environment == 'self-hosted'}}
         working-directory: ./tools/rescue
         run: RUST_MIN_STACK=104857600 cargo test --no-fail-fast -- --test-threads=1
   storage:
@@ -277,6 +274,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: setup env
         uses: ./.github/actions/build_env
 
@@ -284,9 +282,9 @@ jobs:
         with:
           shared-key: "libra-framework"
           cache-all-crates: true
+
       - name: storage
         working-directory: ./tools/storage
-        # TODO: not testing the V6 file parsing
         run: cargo test --no-fail-fast
 
   twin-testsuite:
@@ -295,6 +293,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: setup env
         uses: ./.github/actions/build_env
 
