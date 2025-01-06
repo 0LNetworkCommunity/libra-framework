@@ -29,6 +29,7 @@ jobs:
         with:
           shared-key: "libra-framework"
           cache-all-crates: true
+          cache-on-failure: true
 
       - name: format
         uses: actions-rs/cargo@v1
