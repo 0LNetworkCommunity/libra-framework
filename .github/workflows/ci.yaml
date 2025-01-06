@@ -47,7 +47,7 @@ jobs:
       - name: setup env
         uses: ./.github/actions/build_env
 
-      - uses: Swatinem/rust-cache@v2.7.3
+      - uses: Swatinem/rust-cache@v2
         with:
           shared-key: "libra-framework"
           cache-all-crates: true
@@ -68,7 +68,7 @@ jobs:
       - name: setup env
         uses: ./.github/actions/build_env
 
-      - uses: Swatinem/rust-cache@v2.7.3
+      - uses: Swatinem/rust-cache@v2
         with:
           shared-key: "libra-framework"
           cache-all-crates: true
@@ -96,7 +96,7 @@ jobs:
           name: framework-build
           path: framework/
 
-      - uses: Swatinem/rust-cache@v2.7.3
+      - uses: Swatinem/rust-cache@v2
         with:
           shared-key: "libra-framework"
           cache-all-crates: true
@@ -117,7 +117,7 @@ jobs:
       - name: setup env
         uses: ./.github/actions/build_env
 
-      - uses: Swatinem/rust-cache@v2.7.3
+      - uses: Swatinem/rust-cache@v2
         with:
           shared-key: "libra-framework"
           cache-all-crates: true
@@ -144,7 +144,7 @@ jobs:
       - name: setup env
         uses: ./.github/actions/build_env
 
-      - uses: Swatinem/rust-cache@v2.7.3
+      - uses: Swatinem/rust-cache@v2
         with:
           shared-key: "libra-framework"
           cache-all-crates: true
@@ -170,7 +170,7 @@ jobs:
       - name: setup env
         uses: ./.github/actions/build_env
 
-      - uses: Swatinem/rust-cache@v2.7.3
+      - uses: Swatinem/rust-cache@v2
         with:
           shared-key: "libra-framework"
           cache-all-crates: true
@@ -210,7 +210,7 @@ jobs:
       - name: setup env
         uses: ./.github/actions/build_env
 
-      - uses: Swatinem/rust-cache@v2.7.3
+      - uses: Swatinem/rust-cache@v2
         with:
           shared-key: "libra-framework"
           cache-all-crates: true
@@ -267,7 +267,7 @@ jobs:
       - name: setup env
         uses: ./.github/actions/build_env
 
-      - uses: Swatinem/rust-cache@v2.7.3
+      - uses: Swatinem/rust-cache@v2
         with:
           shared-key: "libra-framework"
           cache-all-crates: true
@@ -291,7 +291,7 @@ jobs:
       - name: setup env
         uses: ./.github/actions/build_env
 
-      - uses: Swatinem/rust-cache@v2.7.3
+      - uses: Swatinem/rust-cache@v2
         with:
           shared-key: "libra-framework"
           cache-all-crates: true
@@ -311,7 +311,7 @@ jobs:
       - name: setup env
         uses: ./.github/actions/build_env
 
-      - uses: Swatinem/rust-cache@v2.7.3
+      - uses: Swatinem/rust-cache@v2
         with:
           shared-key: "libra-framework"
           cache-all-crates: true
