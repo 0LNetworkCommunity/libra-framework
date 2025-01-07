@@ -4,10 +4,12 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use diem_forge::Swarm;
+use libra_cached_packages::libra_stdlib;
 use libra_query::query_view;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
-use libra_txs::{submit_transaction::Sender, txs_cli_governance::GovernanceTxs, txs_cli_stream::StreamTxs};
-use libra_cached_packages::libra_stdlib;
+use libra_txs::{
+    submit_transaction::Sender, txs_cli_governance::GovernanceTxs, txs_cli_stream::StreamTxs,
+};
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 /// Test triggering a new epoch
@@ -60,12 +62,13 @@ async fn sync_trigger_epoch() -> anyhow::Result<()> {
     .await
     .expect("Query failed: get epoch failed");
 
-    assert!(&after_trigger_epoch_query_res.as_array().unwrap()[0] == "3", "epoch should be 3");
-
+    assert!(
+        &after_trigger_epoch_query_res.as_array().unwrap()[0] == "3",
+        "epoch should be 3"
+    );
 
     Ok(())
 }
-
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 /// Test triggering a new epoch
@@ -103,7 +106,7 @@ async fn background_trigger_epoch() -> anyhow::Result<()> {
     let wrapped_sender = Arc::new(Mutex::new(validator_sender));
 
     // run the txs tool in background in stream mode
-    std::thread::spawn(move || { trigger_epoch_cmd.start(wrapped_sender) });
+    std::thread::spawn(move || trigger_epoch_cmd.start(wrapped_sender));
 
     //////// FLIP BIT ////////
     std::thread::sleep(Duration::from_secs(10));
@@ -123,12 +126,13 @@ async fn background_trigger_epoch() -> anyhow::Result<()> {
     .await
     .expect("Query failed: get epoch failed");
 
-    assert!(&after_trigger_epoch_query_res.as_array().unwrap()[0] == "3", "epoch should be 3");
-
+    assert!(
+        &after_trigger_epoch_query_res.as_array().unwrap()[0] == "3",
+        "epoch should be 3"
+    );
 
     Ok(())
 }
-
 
 // helper for the testnet root to enable epoch boundary trigger
 async fn helper_set_enable_trigger(ls: &mut LibraSmoke) {

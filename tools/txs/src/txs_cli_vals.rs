@@ -80,8 +80,8 @@ impl ValidatorTxs {
                     let scaled_bid = (b * 1000.0).round() as u64; // scale to 10ˆ3.
                     if scaled_bid > 1100 {
                         bail!(
-                        "a bid amount at 110.0% or above the epoch's reward, will be rejected"
-                    );
+                            "a bid amount at 110.0% or above the epoch's reward, will be rejected"
+                        );
                     }
                     ProofOfFeePofUpdateBid {
                         bid: scaled_bid,

@@ -7,7 +7,6 @@ use std::sync::mpsc::Sender;
 use std::thread;
 use std::time::Duration;
 
-
 pub fn epoch_tickle_poll(mut tx: Sender<TransactionPayload>, client: Client, delay_secs: u64) {
     println!("polling epoch boundary");
     let handle = thread::spawn(move || loop {

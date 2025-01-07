@@ -12,9 +12,9 @@ use std::thread::{self, JoinHandle};
 pub enum StreamTxs {
     /// Trigger the epoch boundary when available
     EpochTickle {
-    /// optional, seconds delay between attempts, defaults to 60s
-    #[clap(short, long)]
-      delay: Option<u64>
+        /// optional, seconds delay between attempts, defaults to 60s
+        #[clap(short, long)]
+        delay: Option<u64>,
     },
     /// Submit secret PoF bids in background, and reveal when window opens
     PofBid,
@@ -51,7 +51,6 @@ pub(crate) fn listen(
     rx: Receiver<TransactionPayload>,
     send: Arc<Mutex<LibraSender>>,
 ) -> JoinHandle<()> {
-
     thread::spawn(move || {
         let mut busy = false;
 
