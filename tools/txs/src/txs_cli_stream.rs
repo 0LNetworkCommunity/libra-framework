@@ -47,6 +47,7 @@ pub(crate) fn init_channel() -> (Sender<TransactionPayload>, Receiver<Transactio
     mpsc::channel::<TransactionPayload>()
 }
 
+#[allow(unused_assignments)]
 pub(crate) fn listen(
     rx: Receiver<TransactionPayload>,
     send: Arc<Mutex<LibraSender>>,
