@@ -1,16 +1,5 @@
-/// Test that verifies a user CANNOT create a lockbox with a non-standard duration
-    /// This test demonstrates that the DEFAULT_LOCKS list IS enforced
-    spec test_non_standard_duration(framework: &signer, bob_sig: &signer) {
-        // Pre-conditions
-        requires signer::address_of(bob_sig) != @0x0;  // Bob must have valid address
-        
-        // Post-conditions
-        // The test should fail when attempting a non-standard duration (e.g., 5*12 months)
-        // This shows that DEFAULT_LOCKS is enforced
-        aborts_with error::invalid_argument(EINVALID_DURATION);
-    }
 
-File file without spec above 
+
 spec ol_framework::lockbox {
 
     /// Specification for maybe_initialize:
@@ -100,6 +89,16 @@ spec ol_framework::lockbox {
         days / 10000000 + 1
     }
 
-    
+    /// Test that verifies a user CANNOT create a lockbox with a non-standard duration
+    /// This test demonstrates that the DEFAULT_LOCKS list IS enforced
+    spec test_non_standard_duration(framework: &signer, bob_sig: &signer) {
+        // Pre-conditions
+        requires signer::address_of(bob_sig) != @0x0;  // Bob must have valid address
+        
+        // Post-conditions
+        // The test should fail when attempting a non-standard duration (e.g., 5*12 months)
+        // This shows that DEFAULT_LOCKS is enforced
+        aborts_with error::invalid_argument(EINVALID_DURATION);
+    }
 }
 
