@@ -23,7 +23,9 @@ module ol_framework::proof_of_fee {
   use ol_framework::slow_wallet;
   use ol_framework::epoch_helper;
   use ol_framework::address_utils;
-  //use diem_std::debug::print;
+  use ol_framework::secret_bid;
+
+  // use diem_std::debug::print;
 
   friend diem_framework::genesis;
   friend ol_framework::epoch_boundary;
@@ -53,6 +55,9 @@ module ol_framework::proof_of_fee {
   const LONG_WINDOW: u64 = 10; // 10 epochs
   /// Margin for vouches
   const VOUCH_MARGIN: u64 = 2;
+  /// Maximum days before a bid expires.
+  const MAXIMUM_BID_EXPIRATION_EPOCHS: u64 = 30;
+
 
   //////// ERRORS /////////
   /// Not an active validator
@@ -75,6 +80,10 @@ module ol_framework::proof_of_fee {
   const EBID_EXPIRED: u64 = 16;
   /// not enough coin balance
   const ELOW_UNLOCKED_COIN_BALANCE: u64 = 17;
+  /// reward should never reach zero, very bad
+  const EWTF_WHY_IS_REWARD_ZERO: u64 = 18;
+  /// don't try to set a net reward greater than the max epoch reward
+  const ENET_REWARD_GREATER_THAN_REWARD: u64 = 19;
 
   // A struct on the validators account which indicates their
   // latest bid (and epoch)
@@ -157,13 +166,14 @@ module ol_framework::proof_of_fee {
     vm: &signer,
     outgoing_compliant_set: &vector<address>,
     mc_set_size: u64 // musical chairs set size suggestion
-  ): (vector<address>, vector<address>, vector<address>, u64) acquires ProofOfFeeAuction, ConsensusReward {
+  ): (vector<address>, vector<address>, vector<address>, u64) acquires ConsensusReward {
     system_addresses::assert_ol(vm);
 
     let all_bidders = get_bidders(false);
+
     let only_qualified_bidders = get_bidders(true);
 
-    // Calculate the final set size considering the number of compliant validators,
+    // Calculate the final set size considering the number of compliantget_bidders validators,
     // number of qualified bidders, and musical chairs set size suggestion
     let final_set_size = calculate_final_set_size(
       vector::length(outgoing_compliant_set),
@@ -249,20 +259,21 @@ module ol_framework::proof_of_fee {
 
 
   #[view]
-  public fun get_bidders(remove_unqualified: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
+  public fun get_bidders(remove_unqualified: bool): vector<address> acquires ConsensusReward {
     let eligible_validators = validator_universe::get_eligible_validators();
+
     let (bidders, _) = sort_vals_impl(&eligible_validators, remove_unqualified);
     bidders
   }
 
   #[view]
   // same as get bidders, but returns the bid
-  public fun get_bidders_and_bids(remove_unqualified: bool): (vector<address>, vector<u64>) acquires ProofOfFeeAuction, ConsensusReward {
+  public fun get_bidders_and_bids(remove_unqualified: bool): (vector<address>, vector<u64>) acquires ConsensusReward {
     let eligible_validators = validator_universe::get_eligible_validators();
     sort_vals_impl(&eligible_validators, remove_unqualified)
   }
   // returns two lists: ordered bidder addresss and the list of bids bid
-  fun sort_vals_impl(eligible_validators: &vector<address>, remove_unqualified: bool): (vector<address>, vector<u64>) acquires ProofOfFeeAuction, ConsensusReward {
+  fun sort_vals_impl(eligible_validators: &vector<address>, remove_unqualified: bool): (vector<address>, vector<u64>) acquires ConsensusReward {
     // let eligible_validators = validator_universe::get_eligible_validators();
     let length = vector::length<address>(eligible_validators);
 
@@ -273,13 +284,14 @@ module ol_framework::proof_of_fee {
     while (k < length) {
       // TODO: Ensure that this address is an active validator
       let cur_address = *vector::borrow<address>(eligible_validators, k);
-      let (bid, _expire) = current_bid(cur_address);
-      let (_, qualified) = audit_qualification(cur_address);
+      let entry_fee = secret_bid::current_revealed_bid(cur_address);
+      let (_err, qualified) = audit_qualification(cur_address);
+
       if (remove_unqualified && !qualified) {
         k = k + 1;
         continue
       };
-      vector::push_back<u64>(&mut bids, bid);
+      vector::push_back<u64>(&mut bids, entry_fee);
       vector::push_back<address>(&mut filtered_vals, cur_address);
       k = k + 1;
     };
@@ -391,7 +403,7 @@ module ol_framework::proof_of_fee {
     final_set_size: u64,
     sorted_vals_by_bid: &vector<address>,
     proven_nodes: &vector<address>
-  ): (vector<address>, u64, u64, vector<address>, vector<address>) acquires ProofOfFeeAuction, ConsensusReward {
+  ): (vector<address>, u64, u64, vector<address>, vector<address>) acquires ConsensusReward {
     system_addresses::assert_ol(vm);
 
     // NOTE: this is duplicate work, but we are double checking we are getting a proper sort.
@@ -413,10 +425,12 @@ module ol_framework::proof_of_fee {
 
     let num_unproven_added = 0;
     let i = 0u64;
+
     while (
       (vector::length(&proposed_validators) < final_set_size) && // until seats full
       (i < vector::length(&sorted_vals_by_bid))
     ) {
+
       let val = vector::borrow(&sorted_vals_by_bid, i);
       if (!account::exists_at(*val)) {
         i = i + 1;
@@ -452,7 +466,7 @@ module ol_framework::proof_of_fee {
     // Find the clearing price which all validators will pay
     let lowest_bidder = vector::borrow(&proposed_validators, vector::length(&proposed_validators) - 1);
 
-    let (lowest_bid_pct, _) = current_bid(*lowest_bidder);
+    let lowest_bid_pct = secret_bid::current_revealed_bid(*lowest_bidder);
 
     // update the clearing price
     let cr = borrow_global_mut<ConsensusReward>(@ol_framework);
@@ -472,13 +486,12 @@ module ol_framework::proof_of_fee {
       cr.net_reward = cr.nominal_reward;
     };
 
-
     return (proposed_validators, cr.entry_fee, cr.clearing_bid, audit_add_proven_vals, audit_add_unproven_vals)
   }
 
   #[view]
   /// consolidate all the checks for a validator to be seated
-  public fun audit_qualification(val: address): (vector<u64>, bool) acquires ProofOfFeeAuction, ConsensusReward {
+  public fun audit_qualification(val: address): (vector<u64>, bool) acquires  ConsensusReward {
 
       let errors = vector::empty<u64>();
       // Safety check: node has valid configs
@@ -495,12 +508,14 @@ module ol_framework::proof_of_fee {
       if (!is_above_thresh) vector::push_back(&mut errors, ETOO_FEW_VOUCHES); // 14
 
       // check if current BIDS are valid
-      let (bid_pct, expire) = current_bid(val);
-      if (bid_pct == 0) vector::push_back(&mut errors, EBID_IS_ZERO); // 15
+      let entry_fee_bid = secret_bid::current_revealed_bid(val);
+      if (entry_fee_bid == 0) vector::push_back(&mut errors, EBID_IS_ZERO); // 15
       // Skip if the bid expired. belt and suspenders, this should have been checked in the sorting above.
       // TODO: make this it's own function so it can be publicly callable, it's useful generally, and for debugging.
 
-      if (epoch_helper::get_current_epoch() > expire) vector::push_back(&mut errors, EBID_EXPIRED); // 16
+      let valid = secret_bid::has_valid_bid(val);
+
+      if (!valid) vector::push_back(&mut errors, EBID_EXPIRED); // 16
       // skip the user if they don't have sufficient UNLOCKED funds
       // or if the bid expired.
       let unlocked_coins = slow_wallet::unlocked_amount(val);
@@ -600,7 +615,7 @@ module ol_framework::proof_of_fee {
 
   /// find the median bid to push to history
   // this is needed for reward_thermostat
-  fun set_history(vm: &signer, proposed_validators: &vector<address>) acquires ProofOfFeeAuction, ConsensusReward {
+  fun set_history(vm: &signer, proposed_validators: &vector<address>) acquires ConsensusReward {
     system_addresses::assert_ol(vm);
 
     let median_bid = get_median(proposed_validators);
@@ -617,7 +632,7 @@ module ol_framework::proof_of_fee {
     };
   }
 
-  fun get_median(proposed_validators: &vector<address>):u64 acquires ProofOfFeeAuction {
+  fun get_median(proposed_validators: &vector<address>):u64 {
     // TODO: the list is sorted above, so
     // we assume the median is the middle element
     let len = vector::length(proposed_validators);
@@ -629,8 +644,8 @@ module ol_framework::proof_of_fee {
     } else {
       vector::borrow(proposed_validators, 0)
     };
-    let (median_bid, _) = current_bid(*median_bidder);
-    return median_bid
+
+    secret_bid::current_revealed_bid(*median_bidder)
   }
 
   //////////////// GETTERS ////////////////
@@ -645,24 +660,42 @@ module ol_framework::proof_of_fee {
 
   // get the current bid for a validator
   // CONSENSUS CRITICAL
-  // ALL EYES ON THIS
   // Proof of Fee returns the current bid of the validator during the auction for upcoming epoch seats.
   // returns (current bid, expiration epoch)
+  // #[view]
+  // public fun current_bid(node_addr: address): (u64, u64) acquires ProofOfFeeAuction {
+  //   if (exists<ProofOfFeeAuction>(node_addr)) {
+  //     let pof = borrow_global<ProofOfFeeAuction>(node_addr);
+  //     let e = epoch_helper::get_current_epoch();
+  //     // check the expiration of the bid
+  //     // the bid is zero if it expires.
+  //     // The expiration epoch number is inclusive of the epoch.
+  //     // i.e. the bid expires on e + 1.
+  //     if (pof.epoch_expiration >= e || pof.epoch_expiration == 0) {
+  //       return (pof.bid, pof.epoch_expiration)
+  //     };
+  //     return (0, pof.epoch_expiration)
+  //   };
+  //   return (0, 0)
+  // }
+
+
   #[view]
-  public fun current_bid(node_addr: address): (u64, u64) acquires ProofOfFeeAuction {
-    if (exists<ProofOfFeeAuction>(node_addr)) {
-      let pof = borrow_global<ProofOfFeeAuction>(node_addr);
-      let e = epoch_helper::get_current_epoch();
-      // check the expiration of the bid
-      // the bid is zero if it expires.
-      // The expiration epoch number is inclusive of the epoch.
-      // i.e. the bid expires on e + 1.
-      if (pof.epoch_expiration >= e || pof.epoch_expiration == 0) {
-        return (pof.bid, pof.epoch_expiration)
-      };
-      return (0, pof.epoch_expiration)
-    };
-    return (0, 0)
+  /// Convenience function to calculate the implied net reward
+  /// that the validator is seeking on a per-epoch basis.
+  /// @returns the unscaled coin value (not human readable) of the net reward
+  /// the user expects
+  public fun user_net_reward(node_addr: address): u64 acquires
+  ConsensusReward {
+    // get the user percentage rate
+
+    let user_entry_fee = secret_bid::current_revealed_bid(node_addr);
+    if (user_entry_fee == 0) return 0;
+    // get the current nominal reward
+    let (nominal_reward, _, _ , _) = get_consensus_reward();
+    if (user_entry_fee >= nominal_reward) return 0;
+
+    return nominal_reward - user_entry_fee
   }
 
   #[view]
@@ -696,7 +729,7 @@ module ol_framework::proof_of_fee {
 
 
   // Get the top N validators by bid, this is FILTERED by default
-  public(friend) fun top_n_accounts(account: &signer, n: u64, unfiltered: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
+  public(friend) fun top_n_accounts(account: &signer, n: u64, unfiltered: bool): vector<address> acquires ConsensusReward {
     system_addresses::assert_vm(account);
 
     let eligible_validators = get_bidders(unfiltered);
@@ -735,6 +768,47 @@ module ol_framework::proof_of_fee {
     pof.bid = bid;
   }
 
+  /// converts a current desired net_reward to the internal bid percentage
+  // Note: this uses the current epoch reward, which may not reflect the
+  // incoming epochs ajusted reward.
+  fun convert_net_reward_to_bid(net_reward: u64): u64 acquires ConsensusReward {
+    // if user wants zero, return 100% scaled
+    if (net_reward == 0) {
+      return 1000
+    };
+
+    let (nominal_reward, _, _ , _) = get_consensus_reward();
+    assert!(nominal_reward > 0, EWTF_WHY_IS_REWARD_ZERO);
+    assert!(net_reward <  nominal_reward, ENET_REWARD_GREATER_THAN_REWARD);
+
+    let pct_with_decimal = (net_reward * 10) / nominal_reward;
+
+    return pct_with_decimal
+  }
+
+  /// Instead of setting a bid with the internal variables of pct bid, we
+  /// allow the user to set their expected net_reward in an epoch
+  fun set_net_reward(account_sig: &signer, net_reward: u64, expiry_epoch: u64) acquires
+  ConsensusReward, ProofOfFeeAuction {
+    // double check the epoch expiry
+    let epoch_checked = check_epoch_expiry(expiry_epoch);
+    // convert to bid
+    let scaled_pct = convert_net_reward_to_bid(net_reward);
+    set_bid(account_sig, scaled_pct, epoch_checked);
+  }
+
+  /// check if the expiry is too far in the future
+  /// and if so, return what the maximum allowed would be.
+  /// if within range returns the provided epoch without change
+  /// @returns checked epoch for bid expiration
+  fun check_epoch_expiry(expiry_epoch: u64): u64 {
+    let this_epoch = epoch_helper::get_current_epoch();
+    if (expiry_epoch > MAXIMUM_BID_EXPIRATION_EPOCHS) {
+      return this_epoch + MAXIMUM_BID_EXPIRATION_EPOCHS
+    };
+    expiry_epoch
+  }
+
   /// Note that the validator will not be bidding on any future
   /// epochs if they retract their bid. The must set a new bid.
   fun retract_bid(account_sig: &signer) acquires ProofOfFeeAuction {
@@ -765,9 +839,18 @@ module ol_framework::proof_of_fee {
   }
 
   /// update the bid for the sender
-  public entry fun pof_update_bid(sender: &signer, bid: u64, epoch_expiry: u64) acquires ProofOfFeeAuction {
+  // Deprecated
+  // public entry fun pof_update_bid(sender: &signer, bid: u64, epoch_expiry: u64) acquires ProofOfFeeAuction {
+  //   // update the bid, initializes if not already.
+  //   set_bid(sender, bid, epoch_expiry);
+  // }
+
+  /// update the bid using estimated net reward instead of the internal bid variables
+  public entry fun pof_update_bid_net_reward(sender: &signer, net_reward: u64,
+  epoch_expiry: u64) acquires ProofOfFeeAuction, ConsensusReward {
+    let checked_epoch = check_epoch_expiry(epoch_expiry);
     // update the bid, initializes if not already.
-    set_bid(sender, bid, epoch_expiry);
+    set_net_reward(sender, net_reward, checked_epoch);
   }
 
   /// retract bid
@@ -1068,23 +1151,7 @@ module ol_framework::proof_of_fee {
     assert!(median_bid == 33, 1005);
   }
 
-  // #[test(vm = @ol_framework)]
-  // fun pof_set_retract(vm: signer) {
-  //     use diem_framework::account;
-
-  //     validator_universe::initialize(&vm);
-
-  //     let sig = account::create_signer_for_test(@0x123);
-  //     let (_sk, pk, pop) = stake::generate_identity();
-  //     stake::initialize_test_validator(&pk, &pop, &sig, 100, true, true);
-
-  //     validator_universe::is_in_universe(@0x123);
-
-  // }
-
-
   // Calculate Final Set Size tests
-
   #[test]
   fun test_calculate_final_set_size_boot_up_happy_day() {
     // Happy Day: test complete boot up with plenty qualified bidders over multiple epochs
