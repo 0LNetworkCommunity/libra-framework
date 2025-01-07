@@ -37,8 +37,10 @@ module ol_framework::lockbox {
   /// The locked units for this box duration should have changed.
   const EDURATION_UNITS_SHOULD_CHANGE: u64 = 8;
 
+  /// Duration not in allowed list
+  const EINVALID_DURATION: u64 = 9;
 
-  const DEFAULT_LOCKS: vector<u64> = vector[1*12, 4*12, 8*12, 16*12, 20*12, 24*12, 28*12, 32*12];
+  const DEFAULT_LOCKS: vector<u64> = vector[1*12, 2*12, 3*12, 4*12, 8*12, 16*12, 20*12, 24*12, 28*12, 32*12];
 
   struct Lockbox has key, store {
     locked_coins: Coin<LibraCoin>,
@@ -61,9 +63,25 @@ module ol_framework::lockbox {
     }
   }
 
+  /// Checks if a duration is in the DEFAULT_LOCKS list
+  fun is_valid_duration(duration: u64): bool {
+    let i = 0;
+    let len = vector::length(&DEFAULT_LOCKS);
+    while (i < len) {
+      if (*vector::borrow(&DEFAULT_LOCKS, i) == duration) {
+        return true
+      };
+      i = i + 1;
+    };
+    false
+  }
+
   /// Creates a lockbox. The lockbox cannot be dropped, and so must be
   /// stored in the same call.
   public(friend) fun new(locked_coins: Coin<LibraCoin>, duration_type: u64): Lockbox {
+      // Validate that the duration is in the allowed list
+      assert!(is_valid_duration(duration_type), error::invalid_argument(EINVALID_DURATION));
+      
       Lockbox {
         locked_coins,
         duration_type,
@@ -366,4 +384,37 @@ module ol_framework::lockbox {
     assert!(bal2 == 123, 7357007);
   }
 
+  #[test(framework = @0x1, bob_sig = @0x10002)]
+  #[expected_failure(abort_code = 65545)] // error::invalid_argument(EINVALID_DURATION)
+  fun test_non_standard_duration(framework: &signer, bob_sig: &signer) acquires SlowWalletV2 {
+    let bob_addr = signer::address_of(bob_sig);
+    let coin = test_setup(framework, 100);
+
+    // Try to create a lockbox with a non-standard duration (5*12 months)
+    // This should fail because 5*12 is not in DEFAULT_LOCKS
+    add_to_or_create_box(bob_sig, coin, 5*12);
+
+    // These assertions should never be reached because the above call should fail
+    let (found, _) = idx_by_duration(bob_addr, 5*12);
+    assert!(!found, 7357001);
+  }
+
+  #[test(framework = @0x1, bob_sig = @0x10002)]
+  fun test_standard_duration(framework: &signer, bob_sig: &signer) acquires SlowWalletV2 {
+    let bob_addr = signer::address_of(bob_sig);
+    let coin = test_setup(framework, 100);
+
+    // Try to create a lockbox with a standard duration (4*12 months)
+    // This should succeed because 4*12 is in DEFAULT_LOCKS
+    add_to_or_create_box(bob_sig, coin, 4*12);
+
+    // Verify the lockbox was created with the standard duration
+    let (found, idx) = idx_by_duration(bob_addr, 4*12);
+    assert!(found, 7357001);
+    assert!(idx == 0, 7357002);
+
+    // Verify the balance
+    let balance = balance_duration(bob_addr, 4*12);
+    assert!(balance == 100, 7357003);
+  }
 }
