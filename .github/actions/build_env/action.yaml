@@ -34,12 +34,6 @@ runs:
       shell: bash
       run: rustup component add rustfmt clippy
 
-    - name: also rust cache
-      uses: Swatinem/rust-cache@v2.7.0
-      with:
-        shared-key: "libra"
-        cache-on-failure: "true"
-
     # call own action for libra_cli
     # known issue with needing to hard code the @version
     # https://github.com/orgs/community/discussions/41927
