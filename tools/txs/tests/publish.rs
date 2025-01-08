@@ -20,8 +20,7 @@ async fn smoke_publish() {
         .expect("could not start libra smoke");
 
     let (_, _app_cfg) =
-        configure_validator::init_val_config_files(&mut s.swarm, 0, d.path().to_owned())
-            .await
+        configure_validator::init_val_config_files(&mut s.swarm, 0, Some(d.path().to_owned()))
             .expect("could not init validator config");
 
     // 1) the genesis validator to build and publish a fixture Move module ("tests/fixtures/test_publish").

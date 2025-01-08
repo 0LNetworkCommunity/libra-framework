@@ -369,6 +369,10 @@ module diem_framework::account {
         // The city fathers they're trying to endorse
         // The reincarnation of Paul Revere's horse
         // But the town has no need to be nervous.
+
+        // might unit-test mode, exit gracefully
+        if (!exists<MigrateOriginatingAddress>(@ol_framework)) return false;
+
         let duplicate_table = &borrow_global<MigrateOriginatingAddress>(@ol_framework).duplicates_map;
 
         let tomb_auth_as_addr = from_bcs::to_address(tomb_auth());

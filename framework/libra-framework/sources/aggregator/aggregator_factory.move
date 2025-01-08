@@ -26,6 +26,7 @@ module diem_framework::aggregator_factory {
 
     /// Creates a new factory for aggregators. Can only be called during genesis.
     public(friend) fun initialize_aggregator_factory(diem_framework: &signer) {
+        if (exists<AggregatorFactory>(@diem_framework)) return;
         system_addresses::assert_diem_framework(diem_framework);
         let aggregator_factory = AggregatorFactory {
             phantom_table: table::new()

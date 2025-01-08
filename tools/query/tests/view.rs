@@ -15,7 +15,7 @@ async fn libra_view_test() {
         type_args: None,
         args: None,
     };
-    match q.query_to_json(Some(c.to_owned())).await {
+    match q.query_to_json(&c).await {
         Ok(v) => {
             println!("v: {:?}", v);
         }

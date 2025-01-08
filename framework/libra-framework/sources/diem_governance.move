@@ -22,11 +22,7 @@ module diem_framework::diem_governance {
     use ol_framework::musical_chairs;
     use ol_framework::testnet;
 
-    #[test_only]
-    use ol_framework::libra_coin::LibraCoin;
-    #[test_only]
-    use diem_framework::coin;
-
+    // #[test_only]
     // use diem_std::debug::print;
 
     /// The specified address already been used to vote on the same proposal
@@ -423,7 +419,7 @@ module diem_framework::diem_governance {
     }
 
     #[view]
-    // is the proposal complete and executed?
+    // how many votes on the proposal
     public fun get_votes(proposal_id: u64): (u128, u128) {
       voting::get_votes<GovernanceProposal>(@diem_framework, proposal_id)
     }
@@ -605,57 +601,6 @@ module diem_framework::diem_governance {
     }
 
     #[test_only]
-    public entry fun test_voting_generic(
-        diem_framework: signer,
-        proposer: signer,
-        yes_voter: signer,
-        no_voter: signer,
-        multi_step: bool,
-        use_generic_resolve_function: bool,
-    ) acquires ApprovedExecutionHashes, GovernanceConfig, GovernanceEvents, GovernanceResponsbility, VotingRecords {
-        setup_voting(&diem_framework, &proposer, &yes_voter, &no_voter);
-
-        let execution_hash = vector::empty<u8>();
-        vector::push_back(&mut execution_hash, 1);
-
-        create_proposal_for_test(proposer, multi_step);
-
-        vote(&yes_voter, 0, true); //////// 0L ////////
-        vote(&no_voter, 0, false);  //////// 0L ////////
-
-        // Once expiration time has passed, the proposal should be considered resolve now as there are more yes votes
-        // than no.
-        timestamp::update_global_time_for_test(100001000000);
-        let proposal_state = voting::get_proposal_state<GovernanceProposal>(signer::address_of(&diem_framework), 0);
-        // let (yes, no) = voting::get_votes<GovernanceProposal>(signer::address_of(&diem_framework), 0);
-
-        assert!(proposal_state == PROPOSAL_STATE_SUCCEEDED, proposal_state);
-
-        // Add approved script hash.
-        add_approved_script_hash(0);
-        let approved_hashes = borrow_global<ApprovedExecutionHashes>(@diem_framework).hashes;
-        assert!(*simple_map::borrow(&approved_hashes, &0) == execution_hash, 0);
-
-        // Resolve the proposal.
-        let account = resolve_proposal_for_test(0, @diem_framework, use_generic_resolve_function, true);
-        assert!(signer::address_of(&account) == @diem_framework, 1);
-        assert!(voting::is_resolved<GovernanceProposal>(@diem_framework, 0), 2);
-        let approved_hashes = borrow_global<ApprovedExecutionHashes>(@diem_framework).hashes;
-        assert!(!simple_map::contains_key(&approved_hashes, &0), 3);
-    }
-
-    #[test(diem_framework = @diem_framework, proposer = @0x123, yes_voter = @0x234, no_voter = @345)]
-    public entry fun test_voting(
-        diem_framework: signer,
-        proposer: signer,
-        yes_voter: signer,
-        no_voter: signer,
-    ) acquires ApprovedExecutionHashes, GovernanceConfig, GovernanceEvents, GovernanceResponsbility, VotingRecords {
-        test_voting_generic(diem_framework, proposer, yes_voter, no_voter, false, false);
-    }
-
-
-    #[test_only]
     //////// 0L //////// remove minimum threshold
     public fun initialize_for_test(root: &signer) {
       system_addresses::assert_ol(root);
@@ -668,47 +613,7 @@ module diem_framework::diem_governance {
       initialize(root, min_voting_threshold, dummy, voting_duration_secs);
     }
 
-    #[test_only]
-    public fun setup_voting(
-        diem_framework: &signer,
-        proposer: &signer,
-        yes_voter: &signer,
-        no_voter: &signer,
-    ) acquires GovernanceResponsbility {
-        // use std::vector;
-        use diem_framework::account;
-        // use diem_framework::coin;
-        // use diem_framework::diem_coin::{Self, DiemCoin};
-
-        timestamp::set_time_has_started_for_testing(diem_framework);
-        account::create_account_for_test(signer::address_of(diem_framework));
-        account::create_account_for_test(signer::address_of(proposer));
-        account::create_account_for_test(signer::address_of(yes_voter));
-        account::create_account_for_test(signer::address_of(no_voter));
-
-        // Initialize the governance.
-        let min_voting_threshold = 0;
-        let dummy = 0; // see code, requires refactor
-        let voting_duration = 1000;
-        initialize(diem_framework, min_voting_threshold, dummy, voting_duration);
-        store_signer_cap(
-            diem_framework,
-            @diem_framework,
-            account::create_test_signer_cap(@diem_framework),
-        );
-
-        let (burn_cap, mint_cap) = libra_coin::initialize_for_test(diem_framework);
-        coin::register<LibraCoin>(proposer);
-        coin::register<LibraCoin>(yes_voter);
-        coin::register<LibraCoin>(no_voter);
-
-        libra_coin::test_mint_to(diem_framework, signer::address_of(proposer), 50);
-        libra_coin::test_mint_to(diem_framework, signer::address_of(yes_voter), 10);
-        libra_coin::test_mint_to(diem_framework, signer::address_of(no_voter), 5);
-
-        coin::destroy_mint_cap<LibraCoin>(mint_cap);
-        coin::destroy_burn_cap<LibraCoin>(burn_cap);
-    }
+    // COMMIT NOTE: remove vendor tests for coin-based voting. Silly rabbit.
 
     #[verify_only]
     public fun initialize_for_verification(

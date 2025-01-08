@@ -24,8 +24,7 @@ async fn smoke_gov_script() {
         .expect("could not start libra smoke");
 
     let (_, _app_cfg) =
-        configure_validator::init_val_config_files(&mut s.swarm, 0, d.path().to_owned())
-            .await
+        configure_validator::init_val_config_files(&mut s.swarm, 0, Some(d.path().to_owned()))
             .expect("could not init validator config");
 
     let this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();

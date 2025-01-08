@@ -11,7 +11,7 @@ module ol_framework::vouch {
     use diem_framework::system_addresses;
     use diem_framework::transaction_fee;
 
-     use diem_std::debug::print;
+    use diem_std::debug::print;
 
     friend diem_framework::genesis;
     friend ol_framework::proof_of_fee;

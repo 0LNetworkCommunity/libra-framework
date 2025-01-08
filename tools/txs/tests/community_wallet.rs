@@ -1527,8 +1527,7 @@ async fn setup_environment() -> (LibraSmoke, TempPath, AccountAddress, String, A
         .await
         .expect("Could not start libra smoke");
 
-    configure_validator::init_val_config_files(&mut s.swarm, 0, dir.path().to_owned())
-        .await
+    configure_validator::init_val_config_files(&mut s.swarm, 0, Some(dir.path().to_owned()))
         .expect("Could not initialize validator config");
 
     let account_address = "0x029633a96b0c0e81cc26cf2baefdbd479dab7161fbd066ca3be850012342cdee";
